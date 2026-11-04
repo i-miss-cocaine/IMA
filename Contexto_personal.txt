@@ -251,3 +251,15 @@ ACTUALIZACIÓN DE CONTINUIDAD IMA - LOTE D1 (2026-11-04)
 - Última tarea histórica revisada: REQ-EXP-003. Próximo sublote: D2 (REQ-EXP-004 a REQ-EXP-006).
 - AUD-NG-101 permanece En Ejecución. No se modificó código fuente, completadas_legacy.md ni ChangesLogs.txt. No se accedió al Spreadsheet productivo ni se ejecutaron pruebas.
 ================================================================
+
+
+================================================================
+ACTUALIZACIÓN DE CONTINUIDAD IMA - LOTE D2 (2026-11-04)
+================================================================
+- Commit de resultados D2: `78115d361326b5618e8ce73ac5585b8e143b0e61`.
+- Tareas históricas revisadas: REQ-EXP-004 (Cumple parcialmente), REQ-EXP-005 (Cumple parcialmente con riesgo crítico), REQ-EXP-006 (Cumple parcialmente).
+- Hallazgos añadidos a Pendientes.md: AUD-NG-119 a AUD-NG-126. Informe: AUDITORIA_LOTE_D2.md.
+- Última tarea histórica revisada: REQ-EXP-006. Próximo lote: E.
+- Hallazgos críticos de seguridad/datos: cierre de año puede borrar entregas de todos los docentes; endpoints de asistencia carecen de alcance docente y familiar; notas y asistencia se sobrescriben sin historial; el respaldo de cierre no se genera.
+- AUD-NG-101 permanece En Ejecución. No se modificó código fuente, completadas_legacy.md ni ChangesLogs.txt. No se ejecutaron pruebas ni se accedió a datos productivos.
+================================================================
