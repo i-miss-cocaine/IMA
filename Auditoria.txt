@@ -3940,3 +3940,64 @@ RESULTADOS DEL LOTE E1
 - REQ-EXP-008: Cumple parcialmente. HMAC-SHA256, tokens de sesión, expiración, revocación, matriz de roles, validación contextual y error AUTH_PERMISSION_DENIED existen; las claves fallback son predecibles y hay acciones que saltan la matriz RBAC, con IDOR en tickets y acceso a reglas de automatización.
 - No se ejecutaron pruebas de autenticación ni se inspeccionaron propiedades de despliegue. No se modificó código fuente, completadas_legacy.md ni ChangesLogs.txt.
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-04
+AUDITORÍA DE CONTINUIDAD - LOTE E2A DE completadas_legacy.md
+TAREAS: REQ-EXP-009 Y REQ-EXP-010
+RAMA DE TRABAJO: NG_beta_0.0.0.1_work
+===============================================================================
+
+[AUD-NG-129] REQ-EXP-009 - MATRÍCULA/REMATRÍCULA TIENE DOS FLUJOS Y NO SIEMPRE CREA CARGOS
+- Archivo: backend/academic-service/Code.gs, líneas 11141-11224 y 12685-12755; js/secretary.js (conversión de admisión).
+- Módulo/función: Matrícula y rematrícula / createStudentEnrollment, renewStudentEnrollment, registerStudentEnrollment y convertAdmissionToStudent.
+- Tipo: Integridad de expediente y asociación financiera.
+- Evidencia: convertAdmissionToStudent llama registerStudentEnrollment y el flujo antiguo crea cargos; el flujo más nuevo createStudentEnrollment/renewStudentEnrollment usa LockService y evita duplicados por estudiante/año, pero solo crea la fila de matrícula y no genera/vincula cargos del periodo. El control del flujo antiguo compara estudiante+concepto, sin periodo como parte explícita de la clave.
+- Impacto: una rematrícula puede quedar sin cargo asociado; flujos distintos producen historiales y cobros diferentes.
+- Severidad: ALTO.
+- Tarea derivada: AUD-NG-129 en Pendientes.md.
+
+[AUD-NG-130] REQ-EXP-009 - DATOS FINANCIEROS SE DEVUELVEN SIN PERMISO Y LAS CONSULTAS MODIFICAN CARGOS
+- Archivo: backend/academic-service/Code.gs, líneas 12745-12820; backend/accounting-service/Code.gs, líneas 1030-1125 y 3825-3895; js/student.js, líneas 138-180 y 2630-2660.
+- Módulo/función: Historial de matrícula, saldo y becas.
+- Tipo: Autorización financiera, separación lectura/escritura e integridad.
+- Evidencia: getStudentEnrollmentHistory devuelve cargos al estudiante sin comprobar tienePermisoFinanciero; fetchAndRenderStudentEnrollment muestra saldo pendiente en badge sin validar ese permiso. getStudentAccountStatement llama applyApprovedScholarshipsToCharges, que modifica cargos durante una consulta de lectura. applyApprovedScholarshipsToCharges recorre cargos pendientes del usuario sin limitar por periodo de vigencia.
+- Impacto: exposición de datos financieros cuando el permiso está deshabilitado y modificación retroactiva de cargos al consultar un estado de cuenta.
+- Severidad: ALTO.
+- Tarea derivada: AUD-NG-130 en Pendientes.md.
+
+[AUD-NG-131] REQ-EXP-010 A 012 - ENDPOINT ACCOUNTING CONFIGURADO COMO PLACEHOLDER
+- Archivo: js/config.js, líneas 300-350; js/api.js; backend/accounting-service/Code.gs.
+- Módulo/función: Registro de servicios / SERVICE_URLS.ACCOUNTING y SERVICE_REGISTRY.ACCOUNTING.
+- Tipo: Integración y despliegue.
+- Evidencia: SERVICE_URLS.ACCOUNTING y endpointUrl de SERVICE_REGISTRY usan la cadena placeholder AKfycbzAccountingSvc y el registro declara healthStatus ACTIVE. El árbol de páginas HTML no contiene un dashboard contable y ninguna página revisada carga js/accounting.js.
+- Impacto: las funciones de contabilidad/facturación no tienen una URL de despliegue verificable desde el frontend; el estado ACTIVE no representa disponibilidad probada.
+- Severidad: CRÍTICO.
+- Tarea derivada: AUD-NG-131 en Pendientes.md.
+
+[AUD-NG-132] REQ-EXP-010 - PREVIEW DE CARGOS USA COLUMNAS INCORRECTAS Y DEDUPE GLOBAL
+- Archivo: backend/accounting-service/Code.gs, líneas 2421-2612 y 2612-2790; backend/academic-service/Code.gs, líneas 11141-11224 y 12685-12755.
+- Módulo/función: Cargos mensuales / previewBatchMonthlyCharges y generateBatchMonthlyCharges.
+- Tipo: Regla financiera y consistencia de datos.
+- Evidencia: El esquema de Matriculas escrito por los flujos académicos es [matriculaId, fecha, userId, alumno, grado, seccion, periodo, tipo, estado, becaDescuento, observaciones]. El preview lee r[4] como ciclo/año, r[5] como grado, r[6] como sección, r[9] como tipo de beca, r[10] como porcentaje y r[11] como exoneración. Además, existingSet incluye claves estudiante+concepto y estudiante+mes+año y ambas se prueban como duplicado, aunque el dedupe correcto debe incluir estudiante+concepto+periodo. Si no hay tarifa, usa 1200 como monto base fijo.
+- Impacto: estudiantes pueden quedar fuera del lote, recibir clasificación incorrecta, no generar meses posteriores/conceptos adicionales o recibir un cargo arbitrario sin tarifa configurada.
+- Severidad: CRÍTICO.
+- Tarea derivada: AUD-NG-132 en Pendientes.md.
+
+[AUD-NG-133] REQ-EXP-010 - PAGO NO VALIDA PROPIEDAD DEL CARGO NI SALDO Y LA IDEMPOTENCIA NO ES ATÓMICA
+- Archivo: backend/accounting-service/Code.gs, líneas 3891-4035 y 500-680.
+- Módulo/función: recordStudentPayment y wrapper idempotente.
+- Tipo: Integridad transaccional y prevención de duplicados.
+- Evidencia: recordStudentPayment localiza targetCargo por cargoId, pero no compara el userId propietario de la fila con el userId del pagador; no limita montoAbono al saldo; no usa LockService propio. checkAndRegisterIdempotencyKey consulta CacheService y saveIdempotentResult persiste después de la operación, por lo que dos solicitudes concurrentes pueden pasar la consulta. La clave puede caer a referencia/SIN-REF.
+- Impacto: abonos cruzados, sobrepagos y pagos duplicados o falsamente considerados duplicados.
+- Severidad: ALTO.
+- Tarea derivada: AUD-NG-133 en Pendientes.md.
+
+===============================================================================
+RESULTADOS DEL LOTE E2A
+===============================================================================
+- REQ-EXP-009: Cumple parcialmente. Existe historial de matrícula y dos flujos de alta/rematrícula, pero el flujo nuevo no genera cargos y el control financiero no respeta completamente permisos/periodos.
+- REQ-EXP-010: Cumple parcialmente. Existen conceptos, tarifas, cargos por lote, estados de cuenta, abonos parciales, reversos y anulaciones; sin embargo, el endpoint de ACCOUNTING es placeholder, el preview de cargos tiene mapeo/dedupe incorrectos y el registro de pagos tiene brechas de integridad.
+- No se ejecutaron pruebas ni se consultaron datos productivos. No se modificó código fuente, completadas_legacy.md ni ChangesLogs.txt.
+===============================================================================

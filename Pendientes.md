@@ -18057,3 +18057,49 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Descripción del Alcance:** La lista de acciones permitidas incondicionalmente en `validateRolePermission` omite la matriz RBAC y la validación contextual. Dentro de esa lista, `getProblemTickets` filtra por `payload.userId` y si falta devuelve todos los tickets; `replyProblemTicket` permite responder a cualquier ticket si no se envía userId; `submitProblemTicket` acepta un userId de cliente; `getAutomationRules` no realiza control de rol. Sustituir el bypass por permisos explícitos y usar exclusivamente `_verifiedUserId` para acciones personales.
 - **Criterios de Aceptación:** Cada acción está asignada a roles explícitos; ausencia o falsificación de userId no amplía el acceso; usuario solo consulta/responde sus tickets; ticket de otro usuario requiere rol autorizado; solo Administrador/Desarrollador/Director acceden a reglas de automatización; las acciones no autorizadas devuelven `AUTH_PERMISSION_DENIED`; pruebas de IDOR y acceso cruzado.
 - **Estado:** [ ] Pendiente
+
+
+### [AUD-NG-129] Unificar matrícula y rematrícula con cargos financieros por periodo
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-129 (REQ-EXP-009).
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** `backend/academic-service/Code.gs`; `backend/accounting-service/Code.gs`; `js/secretary.js`.
+- **Dependencias Expuestas:** `convertAdmissionToStudent`, `registerStudentEnrollment`, `createStudentEnrollment`, `renewStudentEnrollment`, `Matriculas`, `CargosEstudiante`.
+- **Descripción del Alcance:** Existen dos flujos distintos: la conversión de admisión llama a `registerStudentEnrollment` y genera cargos, mientras `createStudentEnrollment`/`renewStudentEnrollment` crea la matrícula con bloqueo e idempotencia pero no genera ni vincula el cargo del periodo. El control de duplicados del flujo antiguo usa estudiante+concepto, sin periodo como clave explícita. Unificar los flujos y asociar cada matrícula con sus cargos del mismo periodo lectivo.
+- **Criterios de Aceptación:** Matrícula inicial y rematrícula generan una sola matrícula por estudiante/periodo y los cargos correspondientes; clave única por estudiante+periodo+concepto; las operaciones repetidas son idempotentes; becas, descuentos y exoneraciones se aplican según vigencia; historial por periodo permanece consultable; pruebas de reintento y concurrencia.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-130] Respetar permisos financieros y aplicar beneficios por periodo sin mutar consultas
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-130 (REQ-EXP-009).
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** `backend/academic-service/Code.gs`; `backend/accounting-service/Code.gs`; `js/student.js`; `student-dashboard.html`.
+- **Dependencias Expuestas:** `getStudentEnrollmentHistory`, `getStudentAccountStatement`, `applyApprovedScholarshipsToCharges`, `tienePermisoFinanciero`, `tab-financial`.
+- **Descripción del Alcance:** `getStudentEnrollmentHistory` devuelve cargos al estudiante sin validar `tienePermisoFinanciero`, y el dashboard muestra el saldo pendiente en el badge sin comprobar el permiso. `getStudentAccountStatement` aplica becas/descuentos modificando cargos durante una consulta de lectura; la función de aplicación no restringe los cargos al periodo de vigencia de la solicitud. Separar lectura y escritura, aplicar permisos financieros en servidor y limitar beneficios a cargos elegibles del periodo correspondiente.
+- **Criterios de Aceptación:** Sin permiso financiero, el estudiante conserva acceso académico, pero no recibe saldos/cargos/comprobantes por UI ni API; las consultas no modifican hojas; los beneficios se aplican solo por una acción autorizada, al periodo/conceptos elegibles, con registro de quién/cuándo; pruebas de permiso habilitado/deshabilitado y periodos anteriores.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-131] Configurar y verificar el endpoint real del microservicio ACCOUNTING
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-131 (REQ-EXP-010 a REQ-EXP-012).
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** `js/config.js`; `js/api.js`; configuración de despliegue Apps Script; `backend/accounting-service/Code.gs`.
+- **Dependencias Expuestas:** `SERVICE_URLS.ACCOUNTING`, `SERVICE_REGISTRY.ACCOUNTING.endpointUrl`, `fetchApi`, health check.
+- **Descripción del Alcance:** La URL configurada para ACCOUNTING contiene el identificador placeholder `AKfycbzAccountingSvc`, y el registro marca el servicio como ACTIVE. No se observó una URL de despliegue real ni una página que cargue `js/accounting.js`. Configurar el deployment real, validar el endpoint desde el cliente y no declarar ACTIVE un servicio no comprobado.
+- **Criterios de Aceptación:** URL real de Apps Script configurada en SERVICE_URLS y SERVICE_REGISTRY; health check autenticado exitoso; fetchApi resuelve acciones del servicio; no quedan placeholders en configuración activa; prueba de integración que confirma lectura y escritura en el Spreadsheet esperado.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-132] Corregir el motor de cargos mensuales y su deduplicación por periodo
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-132 (REQ-EXP-010).
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** `backend/accounting-service/Code.gs`; pruebas de generación de cargos.
+- **Dependencias Expuestas:** `previewBatchMonthlyCharges`, `generateBatchMonthlyCharges`, `Matriculas`, `CargosEstudiante`, tarifas y conceptos.
+- **Descripción del Alcance:** El preview interpreta columnas de `Matriculas` con índices que no corresponden al esquema escrito por `registerStudentEnrollment`/`createStudentEnrollment` (grado, sección, periodo, tipo, estado, beca y observaciones). Además, la deduplicación añade claves genéricas estudiante+concepto y estudiante+mes+año, bloqueando periodos futuros o conceptos distintos del mismo mes. Cuando no encuentra tarifa, aplica un monto fijo de 1200 en vez de reportar falta de configuración. Corregir el mapeo por encabezados y usar una única clave estudiante+concepto+mes+año; no inventar tarifas.
+- **Criterios de Aceptación:** El preview usa campos correctos; puede generar el mismo concepto para meses distintos y varios conceptos para un mismo mes; no duplica el mismo concepto/periodo; tarifa faltante produce error/pendiente sin cargo; pruebas con varios grados, secciones, años y conceptos.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-133] Asegurar integridad e idempotencia atómica de pagos y abonos
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-133 (REQ-EXP-010).
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** `backend/accounting-service/Code.gs`.
+- **Dependencias Expuestas:** `recordStudentPayment`, `checkAndRegisterIdempotencyKey`, `saveIdempotentResult`, `CargosEstudiante`, `PagosAbonos`.
+- **Descripción del Alcance:** `recordStudentPayment` no verifica que cargoId pertenezca al userId pagador, permite abonos superiores al saldo y no usa bloqueo transaccional propio. La idempotencia consulta CacheService y guarda el resultado después de ejecutar, sin reservar atómicamente la clave. El fallback de referencia `SIN-REF` puede convertir pagos distintos sin referencia en falsos duplicados. Validar propiedad y saldo, y hacer la reserva idempotente atómica.
+- **Criterios de Aceptación:** El cargo pertenece al estudiante pagador; no se acepta sobrepago salvo que se registre explícitamente como crédito; cada pago tiene clave única no reutilizable; reintentos/concurrencia no duplican pagos; referencias vacías no colisionan; se conserva trazabilidad de pagos parciales, reversos y ajustes; pruebas concurrentes y de pago cruzado.
+- **Estado:** [ ] Pendiente

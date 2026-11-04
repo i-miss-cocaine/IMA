@@ -139,3 +139,14 @@ Se recuperó y leyó el contenido íntegro de `Pendientes.md`, se confirmó que 
 - **Pruebas:** no ejecutadas; no se inspeccionaron Script Properties de producción.
 - **Código fuente:** sin modificaciones; no se alteró completadas_legacy.md ni ChangesLogs.txt.
 - **Siguiente sublote:** E2 (REQ-EXP-009 a REQ-EXP-012).
+
+
+## 13. Resultados de auditoría - Lote E2A (2026-11-04)
+
+- **Subdivisión:** E2A revisa REQ-EXP-009 y REQ-EXP-010; E2B revisará REQ-EXP-011 y REQ-EXP-012.
+- **Resultados:** REQ-EXP-009 (Cumple parcialmente: dos flujos de matrícula, asociación de cargos incompleta y permiso financiero no aplicado a todas las lecturas); REQ-EXP-010 (Cumple parcialmente: backend financiero existe, pero endpoint placeholder, mapeo/dedupe de cargos y validación transaccional de pagos presentan defectos).
+- **Hallazgos:** AUD-NG-129 a AUD-NG-133, añadidos a Auditoria.txt y Pendientes.md.
+- **Informe:** `AUDITORIA_LOTE_E2A.md`.
+- **Pruebas:** no ejecutadas; revisión estática de servicios y UI.
+- **Código fuente:** sin modificaciones; no se alteró completadas_legacy.md ni ChangesLogs.txt.
+- **Siguiente sublote:** E2B (REQ-EXP-011 a REQ-EXP-012).

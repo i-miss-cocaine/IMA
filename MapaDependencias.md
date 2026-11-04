@@ -348,3 +348,18 @@
 - `validateRolePermission` -> `validateContextualAccess` -> `getGuardianStudents` para restricciones de estudiante y vínculo familiar; un allowlist de acciones especiales retorna antes de esta validación.
 - `generateSessionToken` y `verifySessionToken` firman/verifican con HMAC-SHA256; el fallback de `getAuthTokenSecret` deriva una clave de SPREADSHEET_ID.
 - `getProblemTickets`, `replyProblemTicket` y `submitProblemTicket` consumen identificadores de usuario del payload; `getAutomationRules` lee reglas sin comprobar rol dentro de la función.
+
+
+## Relaciones verificadas durante auditoría de continuidad - Lote E2A (2026-11-04)
+
+### Matrícula y cargos
+- `js/secretary.js` / conversión de admisión -> ACADEMIC/`convertAdmissionToStudent` -> `registerStudentEnrollment` -> hojas `Matriculas` y `CargosEstudiante`.
+- ACADEMIC/`createStudentEnrollment` y `renewStudentEnrollment` -> `Matriculas`; el flujo nuevo no invoca el generador de cargos.
+- ACADEMIC/`getStudentEnrollmentHistory` -> `Matriculas` + `CargosEstudiante`; `js/student.js` lo usa para actualizar `student-enrollment-badge`.
+
+### Contabilidad
+- `js/config.js` / `SERVICE_URLS.ACCOUNTING` y `SERVICE_REGISTRY.ACCOUNTING.endpointUrl` -> `fetchApi` en `js/api.js`; el valor actual es un placeholder.
+- ACCOUNTING/`previewBatchMonthlyCharges` -> `Matriculas`, tarifas/conceptos y cargos existentes; ACCOUNTING/`generateBatchMonthlyCharges` -> `CargosEstudiante` y aplica beneficios aprobados.
+- ACCOUNTING/`getStudentAccountStatement` -> `CargosEstudiante` + `PagosAbonos`; actualmente llama a `applyApprovedScholarshipsToCharges` durante la consulta.
+- ACCOUNTING/`recordStudentPayment` -> `PagosAbonos` + actualización de `CargosEstudiante`; el control de propiedad de cargo y saldo debe reforzarse.
+- `js/accounting.js` contiene funciones de UI, pero no se carga desde las páginas HTML actuales.
