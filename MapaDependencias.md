@@ -87,5 +87,6 @@
 
 ### Respaldo e integridad de auditoría
 - backend/accounting-service/Code.gs: blob SHA 38b979d41596b85e888b4a7060b37bbac0840a28 (respaldo Git inmutable consultado antes de documentar hallazgos).
-- js/accounting.js: blob SHA b7653b3bff71829f0f67cf47cb894413c56a444a (respaldo Git inmutable consultado antes de documentar hallazgos).
+- js/accounting.js: blob SHA a79ead4a54ad6fdb2f1e9df4775491ff7191a0c7 (respaldo Git inmutable consultado antes de documentar hallazgos).
+- dashboard-contabilidad.html: blob SHA b7653b3bff71829f0f67cf47cb894413c56a444a.
 - No se modificó código ni se ejecutaron operaciones contra hojas de cálculo o cuentas bancarias reales. La revisión es estática y no certifica comportamiento operativo.
