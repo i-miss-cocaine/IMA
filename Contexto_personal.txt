@@ -666,3 +666,59 @@ La búsqueda estaba intentando seguir el flujo completo, no solo la existencia d
 - Respaldos de código de C1.1: USER 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ACADEMIC daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; ACCOUNTING 38b979d41596b85e888b4a7060b37bbac0840a28; TASK 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe; EXAM 1d93296628fae31f680004f637897e2b1314a64c; js/auth.js 8444dd085a3186106d2db7005b61ef934d3c22d8; js/api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9.
 - Código fuente y completadas.md no modificados; ChangesLogs.txt sin cambios. No merge.
 - Pruebas dinámicas y despliegue no ejecutados.
+
+
+---
+
+## CHECKPOINT - AUDITORÍA completadas.md - C1.3
+**Fecha:** 2026-11-04
+
+### Estado exacto del repositorio
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- HEAD antes del commit de este checkpoint: af4ba116b52bca8910489739ed10f62c95d2c470.
+- Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59; verificada intacta.
+- Archivo fuente completadas.md: SHA f57f1aef832e81e44fc4f7ec36a852d50e464676; sin modificaciones.
+- METODOLOGIA_DESARROLLO.md: SHA 1a2d4de602a1449b697c2da82ab6423e7c61b280; sin modificaciones.
+
+### Resultado de auditoría
+- C0: AUDIT-CR-01 a AUDIT-CR-04, 4/4.
+- C1.1: TAREA-01, cumple parcialmente; AUD-NG-159.
+- C1.2: FASE2-T01, cumple parcialmente; AUD-NG-160.
+- C1.3: FASE2-T02, cumple parcialmente; hallazgo nuevo AUD-NG-161.
+- Progreso: 7/183 identificadores únicos auditados; 176 pendientes.
+- Informe: AUDITORIA_COMPLETADAS_FASE2_T02.md.
+- AUD-NG-161 se registró en Auditoria.txt y como tarea pendiente en Pendientes.md.
+- Hallazgos existentes relacionados: AUD-NG-006 (idempotencia en fetchApi y reserva atómica) y AUD-NG-133 (idempotencia transaccional de pagos); no se duplicaron sus causas.
+
+### Punto exacto donde terminó la inspección
+- js/api.js: fetchApi, líneas 10-14, 25-69 y 143-151. Se confirmó que todas las acciones usan POST, los reintentos no clasifican escrituras y el cliente no genera claves idempotentes.
+- backend/academic-service/Code.gs: helpers de idempotencia, líneas 268-312; router de doPost, líneas 840-965; createAdmissionRequest, líneas 985-1055; createStudentEnrollment, líneas 11140-11220.
+- backend/accounting-service/Code.gs: helpers de idempotencia, líneas 220-264; router de doPost, líneas 572-604 y 775-785; recordStudentPayment, líneas 3890-3955; runCriticalProcessConcurrencySuite, líneas 10505-10550.
+- La suite runCriticalProcessConcurrencySuite no ejecuta concurrencia real ni comprueba unicidad; marca PASSED con conteos de filas, consulta TransaccionesCobro mientras recordStudentPayment escribe PagosAbonos y no cubre matrículas ni planillas.
+- No se ejecutaron pruebas dinámicas, concurrencia real, pérdida de respuesta, navegador ni escrituras en Google Sheets productivo.
+
+### Respaldos de código antes de la inspección
+- js/api.js: 6b24f666db30a811a8e9b38d466fc6001cf6dfa9.
+- backend/academic-service/Code.gs: daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc.
+- backend/accounting-service/Code.gs: 38b979d41596b85e888b4a7060b37bbac0840a28.
+
+### Commits documentales de C1.3
+- Informe FASE2-T02: 877fc8f710bee0515de3186439b87c6f2fd82922.
+- Registro Auditoria.txt / AUD-NG-161: a6802646e45346e945faf1ad31d5953b819ab0d9.
+- Tarea Pendientes.md / AUD-NG-161: d98da8112d584319c11aced0a0bb6bf2121489d9.
+- MapaDependencias.md: ccc93fb3669f3dff6b2a049c17ad0237dc47f351.
+- Plan maestro: af4ba116b52bca8910489739ed10f62c95d2c470.
+- El commit de este checkpoint es el siguiente y debe verificarse como HEAD al reanudar.
+
+### Estado de archivos y restricciones
+- No se modificó código fuente, completadas.md, ChangesLogs.txt ni la rama base.
+- Pendientes.md se actualizó anexando AUD-NG-161 al contenido existente; no se sustituyeron ni eliminaron registros anteriores.
+- Se mantuvieron commits documentales modulares, todos en NG_beta_0.0.0.1_work.
+- No se hizo merge ni se abrió Pull Request.
+
+### Próximo punto de continuación
+- Siguiente tarea exacta: **T-UX-01**, inmediatamente después de FASE2-T02 en completadas.md.
+- Leer sus criterios completos y contrastarlos con js/api.js, js/ui-common.js y js/auth.js, incluyendo expiración, autorización, limpieza de almacenamiento, redirección y banner informativo.
+- Auditarla como identificador independiente, vinculando hallazgos existentes sin duplicar causas.
+- Después continuar secuencialmente por los identificadores únicos de completadas.md. No repetir C0, TAREA-01, FASE2-T01 ni FASE2-T02.
