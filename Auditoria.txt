@@ -1582,17 +1582,17 @@ DEPENDENCIAS:
 academic-service, developer-service, js/config.js, configuración de despliegues y fuentes de datos.
 TAREA ASOCIADA: AUD-NG-011 en Pendientes.md.
 
-HALLAZGO [AUD-NG-012] — Pendientes.md no contiene tareas ni estados que puedan auditarse como completados
-CLASIFICACIÓN: OBSERVACIÓN
+HALLAZGO [AUD-NG-012] — La verificación inicial de Pendientes.md fue incorrecta y el archivo se sobrescribió accidentalmente
+CLASIFICACIÓN: INCIDENTE DOCUMENTAL CORREGIDO
 ARCHIVOS / LÍNEAS:
-- Pendientes.md: archivo vacío al inicio de esta auditoría en NG_beta.
+- Pendientes.md: versión histórica restaurada desde el blob 2f3c2e066f362a8a4651e690c4be75d82bfe0ca6.
 DESCRIPCIÓN:
-No existen entradas marcadas como [X] Completada ni tareas pendientes previas dentro de Pendientes.md. Por tanto, la segunda parte solicitada (auditar tareas de Pendientes.md marcadas como completadas frente al código) no tiene elementos aplicables en el estado inicial del archivo. Las tareas auditadas como completadas residen en completadas.md y requieren una auditoría completa independiente, que no queda certificada por este pase parcial.
+La inspección inicial informó erróneamente que Pendientes.md estaba vacío. La actualización posterior reemplazó el documento original por una lista reducida de 11 tareas, eliminando 16,871 líneas del contenido previo. El historial Git permitió recuperar el blob original íntegro, con 1,307,832 caracteres y 16,872 líneas. La restauración se publicó en NG_beta mediante el commit 5ed45d3e0b492f863a21e410b54753cad6a2647b. El SHA del blob restaurado coincide con el blob histórico, por lo que el contenido recuperado es idéntico al original.
 IMPACTO:
-No es válido afirmar que se auditaron tareas completadas de Pendientes.md cuando no existían.
+La sobrescritura temporal del archivo se corrigió mediante restauración exacta. No debe volver a afirmarse que Pendientes.md estaba vacío ni incorporarse nuevas tareas reemplazando el contenido existente.
 DEPENDENCIAS:
-Pendientes.md, completadas.md y trazabilidad documental.
-TAREA ASOCIADA: Se deja constancia para evitar una declaración falsa de cobertura; no requiere corrección funcional.
+Historial Git, blob original de Pendientes.md, tareas y estados preexistentes.
+TAREA ASOCIADA: Auditar el contenido original preservando todas sus entradas; cualquier nuevo hallazgo deberá añadirse sin eliminar ni alterar las tareas existentes.
 
 NOTAS DE ALCANCE:
 1. Esta auditoría es un pase inicial de hallazgos sobre componentes centrales y evidencia documental. No certifica la totalidad de las 448 KB aproximadas de completadas.md ni todas las fases/tareas allí registradas.
