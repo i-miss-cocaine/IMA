@@ -1876,3 +1876,40 @@ Inventario corregido:
 - 191 tareas originales + 27 tareas de auditoría = 218 entradas de tarea.
 Las 108 tareas originales [ ] siguen fuera del alcance de cumplimiento de esta auditoría.
 ===============================================================================
+
+===============================================================================
+AUD-NG-029
+Fecha: 2026-11-04
+Archivo auditado: backend/accounting-service/Code.gs
+Módulo: Compras, recepción física e inventario
+Funciones y rangos inspeccionados:
+- recordPurchaseReceipt (líneas 6972-7142).
+- recordInventoryMovement (líneas 6050-6163).
+Tarea original relacionada: [TASK-012] [F18-Task01] Corregir el control de recepciones parciales y entregas escalonadas.
+Tipo: Incumplimiento funcional / integridad de inventario y control de recepción.
+Severidad: Crítico.
+
+Evidencia técnica:
+1. recordPurchaseReceipt acumula cantidades recibidas por código, pero no rechaza cantidades nuevas superiores al saldo pendiente autorizado. La función incrementa recibidaConforme incluso cuando supera solicitada y puede marcar la orden RecibidaTotal; no exige autorización excepcional documentada.
+2. Si el código de artículo recibido no existe en cumulativeReceived, la función igualmente agrega el artículo conforme a itemsToInventory y permite registrarlo en Kardex. Esto permite ingresar artículos no incluidos en la orden de compra.
+3. La función no recibe ni valida una clave de idempotencia y crea un nuevo REC-CMP basado únicamente en Date.now(). Una repetición de la petición puede crear otra recepción y volver a ejecutar el movimiento de inventario.
+4. La llamada a recordInventoryMovement no proporciona referenciaMovimiento ni documentOrigen. La función de Kardex inspeccionada no realiza deduplicación por referencia: calcula el saldo actual y agrega una nueva fila. Por tanto, el candado serializa operaciones, pero no impide que dos solicitudes repetidas incrementen dos veces las existencias.
+5. La estructura de la recepción no contiene una operación de devolución posterior ni una conciliación de cantidades devueltas. El historial de recepciones previas se suma sin una contrapartida que reduzca la cantidad conforme recibida por devoluciones.
+
+Impacto potencial:
+- Recepción de cantidades superiores a las autorizadas y cierre incorrecto de órdenes.
+- Ingreso a inventario de artículos ajenos a la orden aprobada.
+- Duplicación de existencias ante reintentos o doble envío de una recepción.
+- Imposibilidad de reflejar correctamente devoluciones posteriores en el saldo acumulado de recepción.
+
+Dependencias relacionadas:
+- OrdenesCompra, RecepcionesCompra, InventariosKardex.
+- recordPurchaseReceipt, recordInventoryMovement, getPurchaseReceipts.
+
+Conclusión:
+La implementación cubre el registro separado de recepciones, acumulación parcial básica y exclusión de unidades dañadas/rechazadas en el ingreso inicial. Sin embargo, no cumple los criterios de exceso autorizado, validación de artículos de la orden, idempotencia de recepción ni devoluciones con ajuste de cantidades. La tarea [TASK-012] no puede considerarse íntegramente completada. No se ejecutaron pruebas sobre hojas de cálculo reales ni datos de producción.
+===============================================================================
+
+RECTIFICACIÓN DEL INVENTARIO (2026-11-04)
+Tras agregar AUD-NG-029, el inventario vigente es: 83 tareas originales [X] completadas, 108 tareas originales [ ] pendientes de implementación y 28 tareas AUD-NG nuevas pendientes. Total: 191 tareas originales + 28 derivadas de auditoría = 219 entradas.
+===============================================================================
