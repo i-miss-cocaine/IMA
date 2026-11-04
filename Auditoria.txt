@@ -1425,3 +1425,179 @@ RESULTADO DE EVALUACIÓN:
   3. Implementar verifyWorkflowDecisionAuditChain para auditar la integridad criptográfica de la cadena histórica y recordWorkflowDecisionCorrection para asentar correcciones inmutables vinculadas.
   4. Extender tests/regression/academic-grading-suite.js con 4 nuevas aserciones alcanzando 243/243 pruebas aprobadas al 100%.
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-04
+TIPO: AUDITORÍA DE TAREAS REGISTRADAS COMO COMPLETADAS Y CONTRASTE CON CÓDIGO ACTUAL
+RAMA: NG_beta
+ALCANCE: Revisión inicial de autenticación, autorización, comunicación API, pruebas de regresión y trazabilidad documental.
+ESTADO: PARCIAL; NO CONSTITUYE CERTIFICACIÓN INTEGRAL DE TODAS LAS TAREAS DE completadas.md.
+
+HALLAZGO [AUD-NG-001] — Flujo de token de sesión no integrado entre backend y frontend
+CLASIFICACIÓN: CRÍTICO
+ARCHIVOS / LÍNEAS:
+- js/api.js: 11-14, 35-55, 86-87.
+- js/auth.js: 138-157.
+- backend/user-service/Code.gs: 2510 en adelante (generación y respuesta de loginUser).
+- backend/task-service/Code.gs: 225-245.
+- backend/exam-service/Code.gs: 207-227.
+DESCRIPCIÓN:
+El backend genera un token de sesión durante loginUser y los servicios TASK/EXAM buscan sessionToken, authToken o token en el payload para validar las operaciones protegidas. Sin embargo, js/auth.js construye y persiste currentUser sin copiar el token de result.data al objeto userData. js/api.js únicamente agrega requesterUserId y requesterRole, pero no transmite un token de sesión. Por tanto, el flujo visible de autenticación no proporciona a las operaciones protegidas la credencial que sus validadores esperan. Las acciones incluidas en PUBLIC_ACTIONS quedan como excepción y pueden continuar ejecutándose sin sesión.
+IMPACTO:
+Las operaciones protegidas pueden fallar por ausencia de credenciales, mientras las acciones declaradas públicas eluden el control de sesión. El sistema no demuestra el cumplimiento de los criterios de autenticación de TAREA-01 y TAREA-F4-P0-01.
+DEPENDENCIAS:
+loginUser, currentUser, fetchApi, verifySessionToken, validateRolePermission y todos los endpoints de TASK/EXAM.
+TAREA ASOCIADA: AUD-NG-001 en Pendientes.md.
+
+HALLAZGO [AUD-NG-002] — Acciones de consulta sensibles declaradas públicas sin identidad verificada ni aislamiento suficiente
+CLASIFICACIÓN: CRÍTICO
+ARCHIVOS / LÍNEAS:
+- backend/task-service/Code.gs: 85-89, 613-647, 1177-1207, 1407-1442, 2299-2333.
+- backend/exam-service/Code.gs: 75-77, 609-633, 1057-1091.
+- backend/task-service/Code.gs y backend/exam-service/Code.gs: validateRolePermission y doPost.
+DESCRIPCIÓN:
+PUBLIC_ACTIONS retorna autorización inmediata antes de validar token. En TASK se incluyen getStudentTasks, getAllTasks, getAllStudentProjects y getDriveStorageQuotaMetricsReport, entre otras. getStudentTasks acepta userId, grado y seccion del payload cuando no existe _verifiedUserId; getAllTasks devuelve registros sin exigir profesorId y devuelve campos como descripción y archivoUrl; getAllStudentProjects permite consultar proyectos filtrando por grado/sección suministrados por el solicitante; getDriveStorageQuotaMetricsReport consulta cuota/uso de Drive bajo la identidad de ejecución. En EXAM, getStudentExams y getAllExams también son públicas: getStudentExams utiliza userId/grado/seccion del payload si no hay identidad verificada, y getAllExams devuelve los exámenes sin requerir profesorId. La presencia de filtros opcionales no sustituye autorización ni demuestra aislamiento de registros.
+IMPACTO:
+Riesgo de consulta no autenticada de tareas, datos de entregas/proyectos, metadatos de exámenes y métricas de almacenamiento institucional. La exposición efectiva debe probarse en el despliegue real, pero el bypass de validación de sesión y la ausencia de identidad confiable en estos handlers sí están demostrados en el código.
+DEPENDENCIAS:
+PUBLIC_ACTIONS, validateRolePermission, doPost, getStudentTasks, getAllTasks, getAllStudentProjects, getDriveStorageQuotaMetricsReport, getStudentExams y getAllExams.
+TAREA ASOCIADA: AUD-NG-002 en Pendientes.md.
+
+HALLAZGO [AUD-NG-003] — La expiración del token no es obligatoria
+CLASIFICACIÓN: CRÍTICO
+ARCHIVOS / LÍNEAS:
+- backend/task-service/Code.gs: 145-167.
+- backend/exam-service/Code.gs: 127-149.
+- backend/user-service/Code.gs: 1083-1105.
+DESCRIPCIÓN:
+verifySessionToken rechaza el token únicamente cuando claims.exp existe y now > claims.exp. No rechaza explícitamente claims sin exp, con exp no numérico o con una estructura temporal incompleta. Un token firmado sin expiración puede superar esta comprobación.
+IMPACTO:
+No se garantiza la caducidad obligatoria de todas las sesiones y se debilita el criterio de rechazo de credenciales vencidas o malformadas.
+DEPENDENCIAS:
+generateSessionToken, verifySessionToken y validadores de autorización de los servicios.
+TAREA ASOCIADA: AUD-NG-003 en Pendientes.md.
+
+HALLAZGO [AUD-NG-004] — Se deriva el secreto HMAC desde un identificador de spreadsheet y una cadena fija
+CLASIFICACIÓN: CRÍTICO
+ARCHIVOS / LÍNEAS:
+- backend/user-service/Code.gs: 991-1005.
+- backend/task-service/Code.gs: getAuthTokenSecret (bloque equivalente).
+- backend/exam-service/Code.gs: getAuthTokenSecret (bloque equivalente).
+DESCRIPCIÓN:
+Cuando AUTH_TOKEN_SECRET no existe en Script Properties, getAuthTokenSecret deriva el secreto con SHA-256 de SPREADSHEET_ID + "_MASTER_AUTH_HMAC_SECRET" y luego intenta persistirlo. No falla de forma cerrada si la propiedad no está configurada. Si el ID de spreadsheet se conoce o se expone, el secreto resultante es predecible por construcción. También debe verificarse que todos los servicios compartan una política segura y coherente de rotación y distribución de secretos.
+IMPACTO:
+Riesgo de falsificación de tokens si un tercero puede conocer el identificador y reproducir la derivación; incumplimiento del principio de secreto aleatorio independiente.
+DEPENDENCIAS:
+Script Properties, SPREADSHEET_ID, generateSessionToken, computeHmacSignature y verifySessionToken.
+TAREA ASOCIADA: AUD-NG-004 en Pendientes.md.
+
+HALLAZGO [AUD-NG-005] — Revocación de cuentas potencialmente demorada por caché de estado de 60 segundos
+CLASIFICACIÓN: ALTO
+ARCHIVOS / LÍNEAS:
+- backend/task-service/Code.gs: 179-200.
+- backend/exam-service/Code.gs: 161-182.
+- backend/user-service/Code.gs: bloque equivalente de verifySessionToken e invalidación de caché.
+DESCRIPCIÓN:
+La verificación del estado de cuenta almacena acct_state_<userId> en ScriptCache durante 60 segundos. Una desactivación o suspensión realizada en la hoja Usuarios puede no reflejarse hasta que expire la entrada, salvo que todos los flujos de cambio de estado invaliden esa clave en cada servicio pertinente. El código observado no demuestra invalidación coordinada e inmediata de todas las cachés de los servicios.
+IMPACTO:
+La revocación efectiva puede demorarse y el plazo real depende de la invalidación distribuida y de la caché de cada servicio.
+DEPENDENCIAS:
+Usuarios, CacheService, invalidateUserRoleCache, manageInstitutionalDataCache y validadores de sesión.
+TAREA ASOCIADA: AUD-NG-005 en Pendientes.md.
+
+HALLAZGO [AUD-NG-006] — Reintentos de fetchApi sin clasificación por semántica de operación ni clave de idempotencia
+CLASIFICACIÓN: CRÍTICO
+ARCHIVOS / LÍNEAS:
+- js/api.js: 11-14, 86-87, 136-153.
+- backend/accounting-service/Code.gs y backend/academic-service/Code.gs: consumidores de operaciones de escritura.
+DESCRIPCIÓN:
+fetchApi aplica hasta dos reintentos cuando detecta determinados errores de red, sin clasificar la acción como lectura, escritura idempotente o escritura no idempotente y sin adjuntar una clave de idempotencia común. Si el servidor completa una escritura y la respuesta se pierde, el cliente puede repetir la misma operación y provocar efectos duplicados, salvo que el endpoint concreto implemente una protección idempotente propia. No se demuestra cobertura uniforme de esa protección para todas las acciones.
+IMPACTO:
+Duplicación potencial de pagos, registros, documentos, matrículas, entregas u otras operaciones con efectos secundarios. FASE2-T02 no queda demostrada como completada.
+DEPENDENCIAS:
+fetchApi, contratos de acciones, mecanismos de idempotencia de cada servicio y persistencia.
+TAREA ASOCIADA: AUD-NG-006 en Pendientes.md.
+
+HALLAZGO [AUD-NG-007] — El timeout configurado por llamada no se aplica
+CLASIFICACIÓN: MEDIO
+ARCHIVOS / LÍNEAS:
+- js/api.js: 26-34, 207-210.
+DESCRIPCIÓN:
+fetchApi fija el temporizador de AbortController en 60000 ms. No lee options.timeout. checkMicroserviceHealth invoca fetchApi con { timeout: 6000 }, pero ese valor no afecta el tiempo de espera real; el health check puede tardar hasta el límite fijo de 60 segundos.
+IMPACTO:
+La supervisión de salud puede reportar tarde una caída o degradación y la configuración de timeout por operación no tiene efecto.
+DEPENDENCIAS:
+fetchApi, checkMicroserviceHealth, checkAllMicroservicesHealth y paneles de monitoreo.
+TAREA ASOCIADA: AUD-NG-007 en Pendientes.md.
+
+HALLAZGO [AUD-NG-008] — Los fallbacks de consultas pueden devolver status success ante un error de red
+CLASIFICACIÓN: ALTO
+ARCHIVOS / LÍNEAS:
+- js/api.js: 155-205.
+DESCRIPCIÓN:
+Tras agotar reintentos, las acciones cuyo nombre comienza con get devuelven objetos con status: success, data: [] e isFallback: true. Algunas acciones específicas también devuelven success con colecciones vacías. Los consumidores que solo evalúen status pueden interpretar la ausencia de datos como una consulta válida sin registros, ocultando la indisponibilidad del servicio. La marca isFallback existe, pero no se demuestra que todos los consumidores la comprueben.
+IMPACTO:
+Estados de interfaz inconsistentes, decisiones basadas en datos vacíos falsos y pérdida de visibilidad de fallos operativos.
+DEPENDENCIAS:
+fetchApi, consumidores de acciones get*, PersistenceManager y dashboards.
+TAREA ASOCIADA: AUD-NG-008 en Pendientes.md.
+
+HALLAZGO [AUD-NG-009] — La suite de regresión de evaluaciones comprueba principalmente presencia textual, no comportamiento
+CLASIFICACIÓN: ALTO
+ARCHIVOS / LÍNEAS:
+- tests/regression/academic-grading-suite.js: estructura completa de aserciones.
+- tests/regression/modular-dashboard-suite.js: estructura completa de aserciones.
+DESCRIPCIÓN:
+Las suites verifican existencia de archivos y presencia de cadenas/nombres de funciones mediante fs.existsSync e includes(). Estas aserciones pueden pasar aunque las funciones contengan lógica incorrecta, no persistan datos, omitan autorización, fallen ante concurrencia o no respeten límites de acceso. No se encontró evidencia en estas suites de pruebas funcionales integradas que ejerciten esos comportamientos contra datos controlados.
+IMPACTO:
+Los porcentajes de pruebas reportados no demuestran por sí mismos el cumplimiento funcional ni los criterios de aceptación de las fases. F9-Task09 y F8-Task04 no quedan verificadas funcionalmente con estas suites.
+DEPENDENCIAS:
+academic-grading-suite.js, modular-dashboard-suite.js, runAcademicGradingRegressionSuite y runModularAndDynamicDashboardsRegressionSuite.
+TAREA ASOCIADA: AUD-NG-009 en Pendientes.md.
+
+HALLAZGO [AUD-NG-010] — MapaDependencias.md no satisface el inventario de trazabilidad exigido
+CLASIFICACIÓN: MEDIO
+ARCHIVOS / LÍNEAS:
+- MapaDependencias.md: 1-19 (contenido completo).
+DESCRIPCIÓN:
+El documento registra algunas relaciones de módulos y cuatro microservicios, pero no inventaría por archivo las funciones, parámetros, retornos, consumidores, variables globales, constantes, clases, eventos, dependencias entrantes/salientes ni contratos entre módulos. Tampoco relaciona de forma completa las tareas y criterios de aceptación con pruebas y evidencias. El contenido actual es insuficiente para cumplir el inventario exigido por METODOLOGIA_DESARROLLO.md.
+IMPACTO:
+No puede determinarse de forma fiable el impacto colateral de cambios ni comprobarse la trazabilidad completa de TAREA-02.
+DEPENDENCIAS:
+MapaDependencias.md, servicios backend, módulos JS y pruebas.
+TAREA ASOCIADA: AUD-NG-010 en Pendientes.md.
+
+HALLAZGO [AUD-NG-011] — La arquitectura curricular por microservicios independientes no está demostrada
+CLASIFICACIÓN: OBSERVACIÓN
+ARCHIVOS / LÍNEAS:
+- backend/ (inventario de servicios disponible en NG_beta).
+- MapaDependencias.md: 13-19.
+- completadas.md: tarea de arquitectura curricular TAREA-09 y tareas asociadas.
+DESCRIPCIÓN:
+La estructura documentada identifica servicios generales USER, ACADEMIC, ACCOUNTING, TASK y EXAM, pero no demuestra servicios independientes por cada área curricular ni evidencia de despliegue, permisos, fuentes de datos y contratos separados para cada una. La existencia de funciones académicas o de configuración no prueba por sí sola el aislamiento operativo por área. El hallazgo es falta de evidencia suficiente, no afirmación de inexistencia absoluta.
+IMPACTO:
+No se puede certificar el criterio arquitectónico descrito en TAREA-09.
+DEPENDENCIAS:
+academic-service, developer-service, js/config.js, configuración de despliegues y fuentes de datos.
+TAREA ASOCIADA: AUD-NG-011 en Pendientes.md.
+
+HALLAZGO [AUD-NG-012] — Pendientes.md no contiene tareas ni estados que puedan auditarse como completados
+CLASIFICACIÓN: OBSERVACIÓN
+ARCHIVOS / LÍNEAS:
+- Pendientes.md: archivo vacío al inicio de esta auditoría en NG_beta.
+DESCRIPCIÓN:
+No existen entradas marcadas como [X] Completada ni tareas pendientes previas dentro de Pendientes.md. Por tanto, la segunda parte solicitada (auditar tareas de Pendientes.md marcadas como completadas frente al código) no tiene elementos aplicables en el estado inicial del archivo. Las tareas auditadas como completadas residen en completadas.md y requieren una auditoría completa independiente, que no queda certificada por este pase parcial.
+IMPACTO:
+No es válido afirmar que se auditaron tareas completadas de Pendientes.md cuando no existían.
+DEPENDENCIAS:
+Pendientes.md, completadas.md y trazabilidad documental.
+TAREA ASOCIADA: Se deja constancia para evitar una declaración falsa de cobertura; no requiere corrección funcional.
+
+NOTAS DE ALCANCE:
+1. Esta auditoría es un pase inicial de hallazgos sobre componentes centrales y evidencia documental. No certifica la totalidad de las 448 KB aproximadas de completadas.md ni todas las fases/tareas allí registradas.
+2. No se ejecutaron pruebas funcionales ni se inspeccionaron despliegues Apps Script, hojas de cálculo reales, permisos de Drive ni registros de producción.
+3. Los riesgos de exposición se derivan de la ruta de autorización y los handlers inspeccionados; su explotación efectiva y el volumen de datos accesibles requieren pruebas controladas autorizadas.
+4. No se modificó código de aplicación.
+
+===============================================================================
