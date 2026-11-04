@@ -3814,3 +3814,94 @@ RESULTADOS DEL LOTE D1
 - REQ-EXP-003: Cumple parcialmente. Existe jerarquía de navegación y validación backend de cuatro factores; faltan catálogo dinámico de secciones y salto automático de sección única. El filtro de parcial en grados/secciones se mantiene en AUD-NG-115.
 - No se ejecutaron pruebas ni se modificó código fuente. No se modificó completadas_legacy.md ni ChangesLogs.txt.
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-04
+AUDITORÍA DE CONTINUIDAD - LOTE D2 DE completadas_legacy.md
+TAREAS: REQ-EXP-004 A REQ-EXP-006
+RAMA BASE: NG_beta_0.0.0.1 / COMMIT 44d9891132332e692dbe2ba8602b41f50a508a59
+RAMA DE TRABAJO: NG_beta_0.0.0.1_work
+===============================================================================
+
+[AUD-NG-119] REQ-EXP-005 - CIERRE DE AÑO PERMITE BORRADO CRUZADO ENTRE DOCENTES
+- Archivo: backend/task-service/Code.gs, líneas 100-115 y 524-612; js/teacher.js, líneas 7289-7320.
+- Módulo/función: Cierre de año / closeAcademicYear.
+- Tipo: Seguridad, autorización contextual e integridad de datos.
+- Evidencia: ROLE_PERMISSIONS permite closeAcademicYear al rol Profesor. El payload profesorId no se vincula con _verifiedUserId. Aunque la limpieza de Tareas y ConfiguracionAcademica filtra por profesorId, el bucle de Entregas no aplica filtro alguno y elimina todas las filas de la hoja. La variable entregaUserIdIdx se declara, pero no se utiliza. validateContextualAccess no impone propiedad docente para esta acción.
+- Impacto: un profesor puede invocar el cierre con otro profesorId y borrar su configuración/tareas; cualquier cierre granular elimina además las entregas de todos los docentes y mueve sus archivos a papelera.
+- Severidad: CRÍTICO.
+- Tarea derivada: AUD-NG-119 en Pendientes.md.
+
+[AUD-NG-120] REQ-EXP-005 - RESPALDO ANUNCIADO NO SE CREA Y EL CIERRE NO INCLUYE EXÁMENES
+- Archivo: backend/task-service/Code.gs, líneas 524-612 y enrutador de acciones; teacher-dashboard.html / js/teacher.js (modal de cierre).
+- Módulo/función: Respaldo y purga de año escolar.
+- Tipo: Integridad, recuperación y coherencia UI/API.
+- Evidencia: closeAcademicYear crea backupId como cadena BACKUP-timestamp, pero no genera archivo ni copia de Spreadsheet; format solo se registra en Log_Cierres. El enrutador contiene una acción generateAcademicArchiveZip, pero no existe función con ese nombre en el único archivo del microservicio task-service. closeAcademicYear elimina Tareas, Entregas y filas de ConfiguracionAcademica, pero no limpia Examenes, PreguntasExamen ni EntregasExamen. Si setTrashed falla, la fila de Entregas se elimina igualmente. La UI anuncia archivo de respaldo y eliminación de exámenes.
+- Impacto: el usuario puede recibir un identificador de respaldo inexistente; cierre incompleto de datos académicos y pérdida de referencias cuando falla Drive.
+- Severidad: ALTO.
+- Tarea derivada: AUD-NG-120 en Pendientes.md.
+
+[AUD-NG-121] REQ-EXP-004 - ENTREGA TARDÍA SE MARCA, PERO NO APLICA EL 50%
+- Archivo: backend/task-service/Code.gs, líneas 892-972 y 1064-1087; js/teacher.js, líneas 4670-4720.
+- Módulo/función: Entregas y calificación / submitAssignment y gradeSubmission.
+- Tipo: Regla de negocio y cálculo de nota.
+- Evidencia: submitAssignment compara fecha de entrega con fechaLimite y asigna estado EntregadaTarde, pero no calcula un factor 0.5. gradeSubmission guarda directamente la calificación enviada por el cliente. No se observó aplicación server-side de la penalización del 50%.
+- Impacto: una entrega tardía puede recibir la misma nota que una entrega puntual; la regla puede omitirse o manipularse desde el cliente.
+- Severidad: ALTO.
+- Tarea derivada: AUD-NG-121 en Pendientes.md.
+
+[AUD-NG-122] REQ-EXP-004 - ENDPOINTS DE ASISTENCIA NO VALIDAN ÁMBITO DEL DOCENTE
+- Archivo: backend/academic-service/Code.gs, líneas 168-370, 465-505, 8085-8450 y 916-920 (enrutador).
+- Módulo/función: Asistencia / openAttendanceSession, saveClassAttendance, getClassAttendance, saveDailyAttendance y getDailyAttendance.
+- Tipo: Seguridad contextual y aislamiento de registros.
+- Evidencia: ROLE_PERMISSIONS habilita las acciones de asistencia al Profesor. validateContextualAccess solo restringe estudiantes por su propio userId y aplica ámbito cuando se envían scopeType/requestedValue; las operaciones de asistencia no usan esos campos. validateAcademicResponsibilityAndScopeAccess existe como acción separada, pero doPost no la invoca automáticamente para estas funciones. getDailyAttendance ignora grado/sección y devuelve todas las filas de la fecha; getClassAttendance solo filtra por sesionId y devuelve todas si no se especifica. saveDailyAttendance/saveClassAttendance aceptan userIds y sesiones sin comprobar asignación docente.
+- Impacto: docentes autenticados pueden consultar o modificar registros de asistencia fuera de sus grupos asignados.
+- Severidad: CRÍTICO.
+- Tarea derivada: AUD-NG-122 en Pendientes.md.
+
+[AUD-NG-123] REQ-EXP-004 - PADRES/TUTORES PUEDEN CONSULTAR ASISTENCIA AJENA
+- Archivo: backend/academic-service/Code.gs, líneas 168-370, 465-505, 8405-8430 y 9638-9675.
+- Módulo/función: Privacidad familiar / getDailyAttendance, getClassAttendance y getStudentAttendanceSummary.
+- Tipo: Privacidad y autorización por relación familiar.
+- Evidencia: ROLE_PERMISSIONS concede getDailyAttendance, getClassAttendance y getStudentAttendanceSummary a Padre, Tutor y Responsable. validateContextualAccess no comprueba RelacionesFamiliares para esos roles. getStudentAttendanceSummary acepta cualquier userId; getDailyAttendance retorna todas las filas de una fecha e ignora grado/sección; getClassAttendance retorna todos los registros si falta sesionId.
+- Impacto: un titular familiar puede consultar datos de asistencia de estudiantes no vinculados y registros de otros grupos.
+- Severidad: CRÍTICO.
+- Tarea derivada: AUD-NG-123 en Pendientes.md.
+
+[AUD-NG-124] REQ-EXP-004 - CALIFICACIONES SE SOBRESCRIBEN SIN PROPIEDAD NI HISTORIAL DE RECTIFICACIÓN
+- Archivo: backend/task-service/Code.gs, líneas 100-115 y 1064-1087; backend/exam-service/Code.gs, líneas 100-150 y 1220-1250; js/teacher.js, líneas 4670-4720.
+- Módulo/función: Calificación de tareas y exámenes / gradeSubmission y gradeExamSubmission.
+- Tipo: Integridad, autorización y trazabilidad histórica.
+- Evidencia: ambos endpoints aceptan entregaId y escriben calificacion/estado/comentario directamente en la fila. No se verifica que la tarea/examen pertenezca al profesor autenticado ni se registra el valor anterior de la nota. EntregasVersiones versiona la entrega del estudiante, no las rectificaciones de calificación; EntregasExamen tampoco mantiene un historial de notas. Los endpoints getTeacherActivity/getTeacherExamActivity reciben profesorId en payload.
+- Impacto: un profesor puede modificar una entrega ajena si conoce su ID y una rectificación elimina la evidencia de la nota previa.
+- Severidad: ALTO.
+- Tarea derivada: AUD-NG-124 en Pendientes.md.
+
+[AUD-NG-125] REQ-EXP-004 - CORRECCIONES DE ASISTENCIA SOBRESCRIBEN EL REGISTRO ORIGINAL
+- Archivo: backend/academic-service/Code.gs, líneas 8160-8305 y 8331-8404.
+- Módulo/función: saveClassAttendance y saveDailyAttendance.
+- Tipo: Trazabilidad y conservación histórica.
+- Evidencia: ambas funciones buscan la fila por sesión/userId y reemplazan estado, hora, tardanza, justificación u observación en la misma fila. saveDailyAttendance actualiza también FechaRegistro. No se conserva un evento anterior con valor previo, actor ni motivo.
+- Impacto: las correcciones de asistencia no son auditables y sustituyen el estado previamente registrado.
+- Severidad: ALTO.
+- Tarea derivada: AUD-NG-125 en Pendientes.md.
+
+[AUD-NG-126] REQ-EXP-006 - ORDEN INVERSO EN LA VISTA EXPANDIDA DE ASIGNATURAS
+- Archivo: js/student.js, líneas 1700-1715 y 1745-1760.
+- Módulo/función: Dashboard estudiantil / renderSubjectNavigation y expandSubject.
+- Tipo: Consistencia UX y prioridad de actividades.
+- Evidencia: pendingActivities se ordena ascendentemente por fechaLimite para seleccionar la prioridad de la tarjeta; expandSubject vuelve a ordenar subjActivities descendentemente con new Date(b.fechaLimite || 0) - new Date(a.fechaLimite || 0), colocando vencimientos posteriores antes que los próximos.
+- Impacto: el orden de prioridad del resumen no coincide con el listado expandido y las tareas urgentes pueden quedar debajo.
+- Severidad: BAJO.
+- Tarea derivada: AUD-NG-126 en Pendientes.md.
+
+===============================================================================
+RESULTADOS DEL LOTE D2
+===============================================================================
+- REQ-EXP-004: Cumple parcialmente. Hay integración de tareas/exámenes en el dashboard y módulo de asistencia, pero faltan penalización tardía del 50%, control contextual de asistencia y trazabilidad de cambios de notas/asistencia.
+- REQ-EXP-005: Cumple parcialmente con riesgo crítico. La confirmación UI y setTrashed existen, pero el cierre granular borra entregas de todos los docentes; el respaldo no se crea y el cierre no incluye exámenes.
+- REQ-EXP-006: Cumple parcialmente. Encabezado de estudiante, WhatsApp, tarjetas por GranularConfig y filtro de unidad activa están implementados; la vista expandida invierte el orden de vencimientos.
+- El informe de Fase 10 que declara 86/86 criterios completados no sustituye la validación del código; los endpoints inspeccionados muestran brechas de autorización y auditoría.
+- No se ejecutaron pruebas ni se accedió a datos productivos. No se modificó código fuente, completadas_legacy.md ni ChangesLogs.txt.
+===============================================================================

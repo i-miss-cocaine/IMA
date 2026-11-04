@@ -310,3 +310,27 @@
 - `js/teacher.js` / `initAssignmentBuilder`: construye asignaciones y llama a `fetchApi('ACADEMIC','updateAcademicConfig')`; usa `window.GLOBAL_SCOPE` y `confirmedAssignments`.
 - `js/teacher.js` / `pushNav` y `renderCurrentLevel`: mantienen `navStack` y despachan los niveles Grados, Secciones, Asignaturas, Alumnos y Detalles a sus funciones de renderizado.
 - `renderGrados`, `renderSecciones` y `renderAsignaturas`: consumen `GLOBAL_SCOPE`; el filtrado por parcial se aplica explícitamente en `renderAsignaturas`, no en los dos niveles anteriores (hallazgo AUD-NG-115).
+
+
+## Relaciones verificadas durante auditoría de continuidad - Lote D2 (2026-11-04)
+
+### Tareas, entregas y evaluaciones
+- `backend/task-service/Code.gs` / `submitAssignment` (líneas 892-972) -> `Tareas`, `Entregas` y `EntregasVersiones`; detecta estado `EntregadaTarde` y conserva versiones de entregas.
+- `gradeSubmission` (líneas 1064-1087) actualiza calificación/estado/comentario en `Entregas`; no escribe una rectificación en `EntregasVersiones`.
+- `backend/exam-service/Code.gs` / `getTeacherExamActivity` y `gradeExamSubmission` (líneas 1180-1250) -> `Examenes` y `EntregasExamen`; la calificación se actualiza en la fila existente.
+- `js/teacher.js` / `fetchTeacherActivity` y `saveGradeBtn.onclick` unen actividad de TASK/EXAM y despachan la calificación al microservicio correspondiente.
+
+### Cierre de año
+- `teacher-dashboard.html` / modal de cierre -> `js/teacher.js` / botón `btnCloseYear` -> `fetchApi('TASK','closeAcademicYear')`.
+- `closeAcademicYear` (task-service, líneas 524-612) -> `Tareas`, `Entregas`, `ConfiguracionAcademica`, `Log_Cierres` y DriveApp; no se observó integración con las hojas `Examenes`, `PreguntasExamen` o `EntregasExamen`.
+
+### Asistencia y privacidad
+- `js/teacher.js` / `initAttendanceModule` y `loadAttendanceSheet` (líneas 5450-5530) -> USER/getStudentsByGradoSeccion y ACADEMIC/getDailyAttendance.
+- `backend/academic-service/Code.gs` / `openAttendanceSession`, `saveClassAttendance`, `getClassAttendance`, `saveDailyAttendance`, `getDailyAttendance`, `getStudentAttendanceSummary` -> `SesionesAsistencia` y `RegistrosAsistencia`.
+- `js/student.js` / `fetchAndRenderStudentAttendanceSummary` (línea 1046) -> ACADEMIC/getStudentAttendanceSummary.
+- ROLE_PERMISSIONS otorga acciones de consulta de asistencia a Padre/Tutor/Responsable y Profesor; validateContextualAccess no aplica vínculo familiar ni asignación docente a estos endpoints en la ruta inspeccionada.
+
+### Dashboard y recursos estudiantiles
+- `js/student.js` / `renderSubjectNavigation` (líneas 1608-1775) -> `GLOBAL_SCOPE.GranularConfig`, `academicHistory`, tareas/exámenes; ordena pendientes por fecha límite ascendente para la tarjeta.
+- `expandSubject` (líneas 1745-1760) -> `renderActivitiesIntoContainer`; vuelve a ordenar las actividades en sentido descendente.
+- `js/index-ui.js` / `renderDownloadSubjects` y `renderDownloadTopics` (líneas 220-335) -> `GLOBAL_SCOPE.UnidadActual` para filtrar recursos por unidad activa.

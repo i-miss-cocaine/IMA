@@ -115,3 +115,15 @@ Se recuperó y leyó el contenido íntegro de `Pendientes.md`, se confirmó que 
 - **Pruebas:** inspección de suites sin pruebas dirigidas identificables; no se ejecutaron pruebas.
 - **Código fuente:** sin modificaciones; no se alteró completadas_legacy.md ni ChangesLogs.txt.
 - **Siguiente sublote:** D2 (REQ-EXP-004 a REQ-EXP-006).
+
+
+## 11. Resultados de auditoría - Lote D2 (2026-11-04)
+
+- **Subdivisión:** D2 completa la revisión de REQ-EXP-004 a REQ-EXP-006.
+- **Rama base:** `NG_beta_0.0.0.1`, commit `44d9891132332e692dbe2ba8602b41f50a508a59`; trabajo documental en `NG_beta_0.0.0.1_work`.
+- **Resultados:** REQ-EXP-004 (Cumple parcialmente: integración de tareas/exámenes y asistencia existe, pero penalización 50%, ámbitos de asistencia y trazabilidad histórica tienen brechas); REQ-EXP-005 (Cumple parcialmente con riesgo crítico: cierre granular borra entregas globales, respaldo ficticio y sin limpieza de exámenes); REQ-EXP-006 (Cumple parcialmente: contacto, tarjetas y filtro de unidad implementados; orden de la vista expandida es inverso).
+- **Hallazgos:** AUD-NG-119 a AUD-NG-126, añadidos a Auditoria.txt y Pendientes.md.
+- **Informe:** `AUDITORIA_LOTE_D2.md`.
+- **Pruebas:** no ejecutadas; revisión estática de endpoints y UI. No se accedió a datos productivos.
+- **Código fuente:** sin modificaciones; no se alteró completadas_legacy.md ni ChangesLogs.txt.
+- **Siguiente lote:** E.

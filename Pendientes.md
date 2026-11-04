@@ -17965,3 +17965,76 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Descripción del Alcance:** El constructor de asignaciones presenta secciones fijas A/B/C en lugar de derivarlas de la configuración académica vigente. La navegación observada agrega el nivel Secciones mediante pushNav y no se encontró una condición que omita automáticamente ese nivel cuando el grado tiene una sola sección. Derivar las secciones del contexto configurado y permitir el salto directo a Asignaturas cuando solo exista una sección autorizada, conservando el contexto grado/sección en el estado e historial de navegación.
 - **Criterios de Aceptación:** Los grados con una sección pasan directamente a Asignaturas con la sección correcta; los grados con varias secciones muestran el selector; el constructor solo ofrece secciones realmente configuradas para el grado/parcial; atrás/adelante del navegador restaura el contexto; pruebas cubren cero, una y varias secciones.
 - **Estado:** [ ] Pendiente
+
+
+### [AUD-NG-119] Aislar el cierre de año al docente autenticado y sus entregas
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-119 (REQ-EXP-005).
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** `backend/task-service/Code.gs`; `js/teacher.js`.
+- **Dependencias Expuestas:** `closeAcademicYear`, `validateRolePermission`, `validateContextualAccess`, `ROLE_PERMISSIONS`, `Tareas`, `Entregas`, `ConfiguracionAcademica` y DriveApp.
+- **Descripción del Alcance:** La acción `closeAcademicYear` está permitida al rol Profesor y recibe `profesorId` desde el payload sin vincularlo a `_verifiedUserId`. Además, el bucle de Entregas elimina todas las filas, sin filtrar por las tareas del profesor. Vincular el cierre granular a la identidad verificada y resolver el propietario de cada entrega mediante su tarea antes de borrar filas o archivos. El cierre global debe quedar reservado a roles administrativos autorizados.
+- **Criterios de Aceptación:** Un profesor solo puede cerrar su propio ámbito; no puede enviar el ID de otro docente; el cierre de un docente no elimina entregas, archivos, tareas ni configuración de terceros; solo roles administrativos pueden ejecutar el cierre global; una prueba con dos docentes demuestra aislamiento completo.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-120] Implementar respaldo real y cierre completo de tareas y exámenes
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-120 (REQ-EXP-005).
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** `backend/task-service/Code.gs`; `backend/exam-service/Code.gs`; `teacher-dashboard.html`; `js/teacher.js`.
+- **Dependencias Expuestas:** `closeAcademicYear`, `generateAcademicArchiveZip`, `Examenes`, `PreguntasExamen`, `EntregasExamen`, `Tareas`, `Entregas`, DriveApp y `Log_Cierres`.
+- **Descripción del Alcance:** La interfaz ofrece formatos ZIP/RAR/7Z y anuncia un respaldo, pero `closeAcademicYear` solo genera un identificador ficticio `BACKUP-` y registra el formato; no crea un archivo. La acción `generateAcademicArchiveZip` aparece en el enrutador pero no existe una función en el microservicio. El cierre elimina Tareas, Entregas y configuración, pero no Examenes, PreguntasExamen ni EntregasExamen. Completar el respaldo antes de la purga, definir formatos realmente soportados y sincronizar el alcance de limpieza con la interfaz. No borrar referencias de entrega si el movimiento del archivo a papelera falla.
+- **Criterios de Aceptación:** El respaldo existe y puede verificarse antes de borrar datos; incluye manifiesto y conteos de tareas, entregas, exámenes y archivos; los formatos ofrecidos funcionan o se limitan a los soportados; el cierre limpia todos los módulos acordados; los errores de Drive producen resultado parcial y preservan referencias; el log registra el ID real del respaldo y resultados verificables.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-121] Aplicar en servidor la penalización del 50% por entrega tardía
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-121 (REQ-EXP-004).
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** `backend/task-service/Code.gs`; `js/teacher.js`; pruebas de calificación.
+- **Dependencias Expuestas:** `submitAssignment`, `gradeSubmission`, `EntregadaTarde`, `fechaLimite` y cálculo de calificación.
+- **Descripción del Alcance:** `submitAssignment` identifica una entrega posterior a `fechaLimite` y cambia su estado a `EntregadaTarde`, pero no aplica el factor del 50%. `gradeSubmission` guarda directamente la calificación enviada por el cliente, sin cálculo ni validación server-side. Implementar la regla en servidor y conservar nota base y nota final para evitar manipulación desde el navegador o aplicación doble.
+- **Criterios de Aceptación:** Una entrega a tiempo conserva el 100% de la nota base; una entrega tardía recibe exactamente el 50%; re-calificar no vuelve a reducir la nota; el servidor calcula el resultado independientemente del cliente; pruebas cubren límite horario, zona horaria y reintentos.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-122] Aplicar ámbito docente en todas las operaciones de asistencia
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-122 (REQ-EXP-004).
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** `backend/academic-service/Code.gs`; pruebas de seguridad de asistencia.
+- **Dependencias Expuestas:** `openAttendanceSession`, `saveClassAttendance`, `bulkApplyAttendanceStatus`, `getClassAttendance`, `saveDailyAttendance`, `getDailyAttendance`, `getBatchAttendanceRecords`, `validateContextualAccess` y `validateAcademicResponsibilityAndScopeAccess`.
+- **Descripción del Alcance:** Las acciones de asistencia están permitidas al rol Profesor, pero las funciones reciben grado, sección, sesión y userIds desde el payload sin comprobar que correspondan a asignaciones del docente autenticado. `getDailyAttendance` ignora grado/sección y devuelve todas las filas del día; `getClassAttendance` filtra solo por sesionId y devuelve todo si se omite. Implementar autorización contextual server-side con `_verifiedUserId` y asignaciones docentes para lecturas y escrituras.
+- **Criterios de Aceptación:** Un docente solo consulta y modifica sesiones, estudiantes, grados, secciones y asignaturas de su asignación vigente; los filtros se aplican en servidor; se rechazan sesiones ajenas y userIds fuera del grupo; Dirección/Administrador conservan el alcance institucional; pruebas negativas con dos docentes y grupos distintos.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-123] Restringir la consulta de asistencia de padres y tutores a sus representados
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-123 (REQ-EXP-004).
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** `backend/academic-service/Code.gs`; módulo de relaciones familiares.
+- **Dependencias Expuestas:** `getDailyAttendance`, `getClassAttendance`, `getStudentAttendanceSummary`, `ROLE_PERMISSIONS`, `validateContextualAccess` y `RelacionesFamiliares`.
+- **Descripción del Alcance:** Los roles Padre, Tutor y Responsable tienen permisos para consultar asistencia. `getDailyAttendance` devuelve todos los registros de una fecha, `getClassAttendance` puede devolver todos los registros si no se envía sesionId y `getStudentAttendanceSummary` acepta cualquier userId. La validación contextual restringe al propio estudiante, pero no comprueba la relación familiar de estos roles. Validar cada consulta contra los vínculos activos del titular y denegar consultas institucionales amplias.
+- **Criterios de Aceptación:** Un padre/tutor solo puede consultar los estudiantes vinculados y vigentes; no puede consultar otro userId ni la asistencia completa de una fecha/grupo; estudiantes solo ven su propia información; pruebas cruzadas con dos familias.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-124] Validar propiedad y conservar historial de rectificaciones de calificaciones
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-124 (REQ-EXP-004).
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** `backend/task-service/Code.gs`; `backend/exam-service/Code.gs`; pruebas de calificaciones.
+- **Dependencias Expuestas:** `getTeacherActivity`, `getTeacherExamActivity`, `gradeSubmission`, `gradeExamSubmission`, `EntregasVersiones`, `EntregasExamen` y `_verifiedUserId`.
+- **Descripción del Alcance:** Los endpoints de calificación reciben entregaId y actualizan nota/estado/comentario directamente, sin comprobar que el examen o tarea pertenezca al docente autenticado ni conservar el valor anterior de la calificación. La tabla EntregasVersiones conserva versiones de entregas, pero no las rectificaciones de nota; EntregasExamen tampoco registra historial de cambios de calificación. Vincular la operación al docente propietario y añadir historial append-only de cambios.
+- **Criterios de Aceptación:** Un docente no puede calificar entregas de otro docente; cada rectificación conserva valor anterior/nuevo, actor, fecha y motivo; las consultas de actividad usan identidad verificada y ámbito asignado; pruebas cubren cambio de nota y acceso cruzado.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-125] Preservar historial inmutable de correcciones de asistencia
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-125 (REQ-EXP-004).
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** `backend/academic-service/Code.gs`; pruebas de asistencia.
+- **Dependencias Expuestas:** `saveClassAttendance`, `saveDailyAttendance`, `RegistrosAsistencia`, actor autenticado y registro de auditoría.
+- **Descripción del Alcance:** Las funciones de guardado actualizan en sitio los campos de asistencia de una sesión/estudiante y reemplazan la marca temporal; no conservan el estado anterior ni registran quién realizó la corrección. Añadir un historial append-only antes de modificar una fila existente, sin impedir correcciones autorizadas.
+- **Criterios de Aceptación:** Cada corrección conserva estado/observación/justificación anterior y nuevo, actor, fecha y motivo; la fila actual refleja el último estado; los registros de auditoría no se editan ni borran; pruebas cubren múltiples correcciones y concurrencia.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-126] Unificar el orden de actividades por fecha límite en la vista expandida
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-126 (REQ-EXP-006).
+- **Severidad/Clasificación:** Bajo
+- **Archivos Involucrados:** `js/student.js`; pruebas de interfaz del dashboard estudiantil.
+- **Dependencias Expuestas:** `renderSubjectNavigation`, `expandSubject`, `pendingActivities` y `renderActivitiesIntoContainer`.
+- **Descripción del Alcance:** El resumen de la tarjeta ordena pendientes por fecha límite ascendente (próxima entrega primero), pero la vista expandida vuelve a ordenar todas las actividades en descendente, colocando fechas más lejanas antes que las próximas. Mantener un criterio único de prioridad en ambas vistas y ubicar fechas ausentes al final.
+- **Criterios de Aceptación:** Tarjeta y vista expandida muestran las actividades pendientes en el mismo orden ascendente por vencimiento; las actividades sin fecha quedan al final; empates tienen orden estable; pruebas con fechas pasadas, próximas, futuras y nulas.
+- **Estado:** [ ] Pendiente
