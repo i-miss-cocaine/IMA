@@ -163,3 +163,16 @@ En la rama NG_beta, Pendientes.md sí existe y es el registro oficial de tareas.
 ================================================================
 FIN DEL CONTEXTO
 ================================================================
+
+
+================================================================
+ADENDA IMA — AUTORIZACIÓN DE RAMA DE TRABAJO (2026-11-04)
+================================================================
+- Instrucción posterior y expresa del usuario: crear y utilizar exclusivamente la rama `NG_beta_work`, creada desde `NG_beta` en el commit base `a0d2e04760c06e6c71a836cb8db509e379cfd893`.
+- Esta autorización específica sustituye para esta auditoría la regla anterior que limitaba el trabajo de IMA directamente a `NG_beta`. `NG_beta` queda como rama base de referencia y no debe modificarse.
+- No modificar `main`, otras ramas ni integrar cambios mediante merge. Todo cambio de esta auditoría se realiza únicamente en `NG_beta_work`.
+- Tarea en curso: [AUD-NG-101] Auditar individualmente las 49 tareas históricas declaradas como completadas (En Ejecución).
+- Registro oficial actualizado en esta rama: `Pendientes.md`. La tarea se añadió de forma aditiva al final del archivo, preservando las 17,793 líneas previas.
+- Estado al iniciar: ninguna de las 49 tareas se declara auditada en esta continuación; el Lote A está pendiente de inspección formal.
+- Último commit base verificado: `a0d2e04760c06e6c71a836cb8db509e379cfd893`. La rama de trabajo se creó sin diferencias respecto de `NG_beta`.
+================================================================

@@ -2,7 +2,8 @@
 
 **Fecha de inicio:** 2026-11-04  
 **Repositorio:** i-miss-cocaine/IMA  
-**Rama de trabajo:** `NG_beta`  
+**Rama base:** `NG_beta`  
+**Rama de trabajo autorizada por instrucción expresa posterior del usuario:** `NG_beta_work`  
 **Registro auditado:** `completadas_legacy.md` (blob SHA `c9622ea9e03ec16dcecb12ae97b17b89ed204157`)  
 **Metodología:** `METODOLOGIA_DESARROLLO.md` (blob SHA `1a2d4de602a1449b697c2da82ab6423e7c61b280`)
 
@@ -40,7 +41,7 @@ No se modificará código fuente durante esta auditoría. No se cambiarán las m
 | G | REQ-DOC-001 a REQ-DOC-006 | Guías, contenido docente, tareas y disponibilidad |
 | H | REQ-DOC-007 a REQ-DOC-012 | Dashboard estudiantil, Drive, metadatos, exportación, analítica y seguridad |
 
-Cada lote tendrá un informe y commit documental independiente después de completar la inspección y la verificación del propio informe. Si un lote es demasiado extenso, se subdividirá sin combinar cambios no relacionados.
+Cada lote tendrá un informe y commit documental independiente después de completar la inspección y la verificación del propio informe. Si un lote es demasiado extenso, se subdividirá sin combinar cambios no relacionados. Todos los cambios de esta auditoría se realizarán exclusivamente en `NG_beta_work`; `NG_beta` será solo la rama base.
 
 ## 4. Entregables y controles
 
@@ -48,18 +49,18 @@ Cada lote tendrá un informe y commit documental independiente después de compl
 - `Pendientes.md`: tareas nuevas concretas derivadas de hallazgos, sin borrar ni reescribir registros existentes.
 - `MapaDependencias.md`: actualizar solo las relaciones que hayan sido inspeccionadas y verificadas.
 - Informes de lote: conservar el estado de cada una de las 49 tareas y sus referencias.
-- Commits modulares en `NG_beta`; verificar cada escritura y no integrar ramas externas.
+- Commits modulares en `NG_beta_work`; verificar cada escritura y no integrar ramas externas.
 
 ## 5. Condiciones iniciales observadas
 
 - `METODOLOGIA_DESARROLLO.md` está presente en `NG_beta`; sus instrucciones se consideran obligatorias. No se modificará su contenido.
-- El archivo de contexto real es `Contexto_personal.txt` (blob SHA `35523b53fdc29ef26c66e73600712af9d7fac9ad`); fue leído. No existe el nombre exacto `contexto_personal.md`, pero el TXT contiene las reglas aplicables a IMA. Entre ellas: registrar la tarea en `Pendientes.md` antes de iniciarla, mantener ID/título/estado en el contexto, no marcar tareas completadas sin verificación y aprobación del usuario, preservar registros y no modificar ramas distintas de `NG_beta` ni hacer merges.
+- El archivo de contexto real es `Contexto_personal.txt` (blob SHA `35523b53fdc29ef26c66e73600712af9d7fac9ad`); fue leído. No existe el nombre exacto `contexto_personal.md`, pero el TXT contiene las reglas aplicables a IMA. Entre ellas: registrar la tarea en `Pendientes.md` antes de iniciarla, mantener ID/título/estado en el contexto, no marcar tareas completadas sin verificación y aprobación del usuario, y preservar registros. Una instrucción expresa posterior del usuario autorizó crear `NG_beta_work` desde `NG_beta`; esta rama de trabajo sustituye la restricción anterior para esta auditoría, manteniendo `NG_beta` y `main` sin modificaciones y sin merges.
 - `completadas_legacy.md` conserva las 49 entradas históricas y advierte que su estado no certifica implementación funcional.
-- `Pendientes.md` en la raíz de `NG_beta` tiene blob SHA `482cfd7a49bc9cc04a1d4d609a70bb1bfda55768`. El conector devuelve cuerpo vacío incluso al solicitar rangos y base64, pero el SHA no corresponde a un blob vacío y la comparación de Git entre el snapshot `9665b2569404c2e19c0de341552048367fb37fc9` y `NG_beta` reporta cambios sustanciales (17,694 adiciones y 314 eliminaciones). Por ello **no se considera vacío**: su contenido actual no se ha podido leer con la herramienta disponible. No se reemplazará ni actualizará hasta recuperar y revisar el contenido completo y localizar un ID libre para registrar esta auditoría.
+- `Pendientes.md` en la raíz de `NG_beta` tiene blob SHA `482cfd7a49bc9cc04a1d4d609a70bb1bfda55768`. El conector devuelve cuerpo vacío incluso al solicitar rangos y base64, pero el SHA no corresponde a un blob vacío y la comparación de Git entre el snapshot `9665b2569404c2e19c0de341552048367fb37fc9` y `NG_beta` reporta cambios sustanciales (17,694 adiciones y 314 eliminaciones). Por ello **no se considera vacío**: su contenido actual no se ha podido leer con la herramienta disponible. El contenido completo se recuperó mediante el objeto Git blob SHA `482cfd7a49bc9cc04a1d4d609a70bb1bfda55768` (17,793 líneas; 1,416,057 caracteres). Se confirmó que el último ID de hallazgo era AUD-NG-100 y que AUD-NG-101 no existía en el registro. La tarea de auditoría se añadió de forma aditiva al final de `Pendientes.md` en `NG_beta_work`.
 - `MapaDependencias.md` existe, pero su encabezado corresponde a v7.6.1; se tratará como referencia heredada y se verificará antes de confiar en sus relaciones.
 - `Auditoria.txt` y `ChangesLogs.txt` contienen registros históricos extensos; cualquier adición deberá anexarse sin alterar el contenido previo.
 
 ## 6. Estado de avance
 
-**Plan creado. Auditoría formal de las 49 tareas: bloqueada antes de iniciar el Lote A.**  
-Se realizaron consultas preliminares de solo lectura sobre la metodología, los archivos de contexto y fragmentos del servicio académico, pero no se declara ninguna tarea auditada ni aprobada. La inspección formal no comenzará hasta poder leer el `Pendientes.md` actual, confirmar un ID disponible y registrar la auditoría en `Pendientes.md` y `Contexto_personal.txt`, tal como exige el contexto del repositorio.
+**Tarea AUD-NG-101 registrada y en ejecución en `NG_beta_work`. Auditoría formal preparada para iniciar el Lote A.**  
+Se recuperó y leyó el contenido íntegro de `Pendientes.md`, se confirmó que AUD-NG-101 era el siguiente ID libre y se registró la tarea de auditoría de forma aditiva. También se añadió el ID, título y estado al archivo `Contexto_personal.txt`. Las consultas preliminares anteriores no se consideran auditoría formal; ninguna de las 49 tareas se declara auditada o aprobada. El Lote A aún no ha comenzado.

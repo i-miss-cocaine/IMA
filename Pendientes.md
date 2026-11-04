@@ -17790,3 +17790,16 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Estado:** [ ] Pendiente
 
 ---
+
+---
+
+## TAREA DE AUDITORÍA DE CONTINUIDAD — COMPLETADAS_LEGACY (2026-11-04)
+
+### [AUD-NG-101] Auditar individualmente las 49 tareas históricas declaradas como completadas
+- **Origen del Hallazgo:** `completadas_legacy.md` (49 registros históricos) y `AUDITORIA_COMPLETADAS_LEGACY_PLAN.md`.
+- **Severidad/Clasificación:** Alto (integridad funcional, seguridad y trazabilidad del estado del sistema).
+- **Archivos Involucrados:** `completadas_legacy.md`; archivos fuente y pruebas identificados por cada requisito histórico; `Auditoria.txt`; `Pendientes.md`; `MapaDependencias.md`; `AUDITORIA_COMPLETADAS_LEGACY_PLAN.md`.
+- **Dependencias Expuestas:** Requisitos originales de las 49 tareas; módulos, funciones, variables, permisos, persistencia y pruebas relacionados, que deberán identificarse y verificarse individualmente durante cada lote.
+- **Descripción del Alcance:** Ejecutar una auditoría técnica manual, individual y trazable de las 49 tareas del registro histórico, organizadas en los lotes A-H del plan. Contrastar cada requisito y criterio de aceptación con el código vigente en la rama de trabajo y con los cambios posteriores que pudieran sustituir, ampliar o retirar la implementación original. Evaluar calidad, seguridad, validaciones, casos límite, persistencia, concurrencia, manejo de errores, dependencias y pruebas pertinentes. Registrar cada hallazgo en `Auditoria.txt` con evidencia técnica, severidad e impacto; convertir todo hallazgo que requiera acción en una tarea concreta, verificable y vinculada al registro de auditoría dentro de `Pendientes.md`. No modificar código fuente ni reescribir las marcas o el contenido histórico de `completadas_legacy.md`.
+- **Criterios de Aceptación:** Las 49 tareas cuentan con evaluación individual y estado de auditoría sustentado; cada conclusión incluye rutas, rangos de líneas y referencias de cambios o pruebas cuando existan; todos los hallazgos accionables tienen una tarea derivada vinculada; los registros históricos se conservan íntegros; no se modifica código fuente durante la auditoría; ningún estado se declara completado sin evidencia suficiente y aprobación del usuario.
+- **Estado:** [ ] En Ejecución
