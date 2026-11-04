@@ -17145,3 +17145,15 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Descripción del Alcance:** Hacer obligatoria la conciliación para toda obligación vinculada a una orden de compra; eliminar el bypass no autorizado y rechazar facturas sin partidas conciliables. Resolver la autorización de diferencias exclusivamente con el rol e identidad verificados por el servidor y registrar responsable, fecha, justificación y detalle de discrepancias. Comparar importes de subtotal, impuestos, total, descuentos, transporte y cargos adicionales. Implementar una reserva transaccional de cantidades recibidas/facturadas para impedir que conciliaciones concurrentes consuman el mismo saldo.
 - **Criterios de Aceptación:** Una obligación vinculada a orden no puede aprobarse ni avanzar a pago sin conciliación; Contador no puede autorizar diferencias mediante datos del cliente; toda excepción conserva auditoría verificable; las diferencias de cantidades, precios, impuestos y cargos se detectan; dos conciliaciones concurrentes no pueden facturar más unidades que las recibidas; reprocesar una factura no duplica obligaciones ni asientos.
 - **Estado:** [ ] Pendiente
+
+
+---
+
+### [AUD-NG-031] Completar interfaz de compras
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-031
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** js/accounting.js, dashboard-contabilidad.html
+- **Dependencias Expuestas:** renderComprasModule y servicios de compras.
+- **Descripción del Alcance:** Implementar las operaciones de solicitudes, cotizaciones, órdenes, recepciones, conciliación y proveedores desde la interfaz. Sustituir las alertas simuladas por formularios conectados al backend y cargar las partidas reales de las facturas. Completar indicadores, cuentas por pagar, presupuesto, búsqueda y filtros.
+- **Criterios de Aceptación:** Los procesos se ejecutan con datos reales desde la interfaz; los indicadores y la conciliación reflejan datos del backend; búsqueda y filtros funcionan; se validan permisos, errores y envíos repetidos.
+- **Estado:** [ ] Pendiente
