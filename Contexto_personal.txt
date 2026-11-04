@@ -240,3 +240,14 @@ ACTUALIZACIÓN DE CONTINUIDAD IMA - AUDITORÍA LOTE C (2026-11-04)
 - AUD-NG-101 permanece En Ejecución; el total histórico sigue siendo 49 tareas. No se modificó código fuente, completadas_legacy.md ni ChangesLogs.txt. No se accedió al Spreadsheet productivo ni se ejecutaron pruebas.
 - La heurística de cuota registrada en la actualización del Lote B sigue vigente: no existe cálculo fiable de tareas por cuota; dividir en lotes, crear commits independientes y no hacer escrituras parciales. No volver a duplicar estimaciones como si fueran límites garantizados.
 ================================================================
+
+
+================================================================
+ACTUALIZACIÓN DE CONTINUIDAD IMA - LOTE D1 (2026-11-04)
+================================================================
+- Commit de resultados D1: `36c521a93aa461f261a351c8d86542f746cf4518`.
+- Tareas históricas revisadas en D1: REQ-EXP-001 (Cumple parcialmente), REQ-EXP-002 (No verificable; libro XLSX no inspeccionado), REQ-EXP-003 (Cumple parcialmente).
+- Hallazgos añadidos: AUD-NG-117 y AUD-NG-118 en Pendientes.md. Informe: AUDITORIA_LOTE_D1.md.
+- Última tarea histórica revisada: REQ-EXP-003. Próximo sublote: D2 (REQ-EXP-004 a REQ-EXP-006).
+- AUD-NG-101 permanece En Ejecución. No se modificó código fuente, completadas_legacy.md ni ChangesLogs.txt. No se accedió al Spreadsheet productivo ni se ejecutaron pruebas.
+================================================================
