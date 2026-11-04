@@ -263,3 +263,22 @@ ACTUALIZACIÓN DE CONTINUIDAD IMA - LOTE D2 (2026-11-04)
 - Hallazgos críticos de seguridad/datos: cierre de año puede borrar entregas de todos los docentes; endpoints de asistencia carecen de alcance docente y familiar; notas y asistencia se sobrescriben sin historial; el respaldo de cierre no se genera.
 - AUD-NG-101 permanece En Ejecución. No se modificó código fuente, completadas_legacy.md ni ChangesLogs.txt. No se ejecutaron pruebas ni se accedió a datos productivos.
 ================================================================
+
+
+================================================================
+ACTUALIZACIÓN DE CONTINUIDAD IMA - LOTE E1 Y CUOTA (2026-11-04)
+================================================================
+- Commit de resultados E1: `cbb900668056a23c1e95d8d9c6bb3e20c55b40bc`.
+- Tareas históricas revisadas: REQ-EXP-007 (Cumple en las vistas/activos principales inspeccionados) y REQ-EXP-008 (Cumple parcialmente: claves HMAC fallback predecibles, bypass RBAC e IDOR en tickets).
+- Hallazgos añadidos: AUD-NG-127 y AUD-NG-128. Informe: AUDITORIA_LOTE_E1.md.
+- Última tarea histórica revisada: REQ-EXP-008. Próximo sublote: E2 (REQ-EXP-009 a REQ-EXP-012).
+- AUD-NG-101 permanece En Ejecución. No se modificó código fuente, completadas_legacy.md ni ChangesLogs.txt. No se inspeccionaron propiedades secretas de producción ni se ejecutaron pruebas.
+
+### Corrección y precisión de la estimación de cuota (fuentes oficiales consultadas)
+- La FAQ oficial del plan Gratis, consultada el 2026-11-04, indica que los chats de texto cotidianos son ilimitados sujetos a medidas contra abuso; cargas de archivos, voz, análisis de datos y otras herramientas tienen límites separados. La misma FAQ explica que “chat lleno” depende del contexto de la conversación, incluyendo mensajes del usuario y respuestas del asistente, y que no existe una cantidad fija de mensajes por chat.
+- La página oficial de precios consultada el 2026-11-04 lista para GPT Instant en Free una ventana total de contexto de 27K y una entrada aproximada de hasta 12 páginas. Es una fotografía del producto en esa fecha y puede cambiar; la ventana se comparte con instrucciones del sistema, memoria, razonamiento y generación de respuestas, por lo que no todo el espacio está disponible para el contenido del usuario.
+- La guía oficial de tokens indica como regla aproximada para inglés 1 token ≈ 4 caracteres o 0.75 palabras; varía por idioma, modelo y codificación. No permite convertir directamente líneas de código, llamadas GitHub o tareas en una cuota restante.
+- No hay una fórmula pública para saber cuántas tareas de auditoría caben en la cuota de herramientas GitHub o en el contexto de esta conversación; el asistente no puede consultar el contador restante. Por tanto, la estimación anterior de 4 tareas por lote no debe tratarse como límite seguro.
+- Heurística revisada para este repositorio: 2-3 tareas complejas por sublote y commit independiente; 3-4 tareas simples solo si los archivos inspeccionados son pequeños. Para lotes extensos, dividir en sublotes, registrar el último ID revisado y crear el commit al cerrar cada sublote. Esto reduce el riesgo de perder trabajo, pero no garantiza un número fijo de mensajes ni de tareas.
+- Fuentes oficiales: https://help.openai.com/es-419/articles/9275245-chatgpt-free-tier-faq ; https://chatgpt.com/pricing/ ; https://help.openai.com/en/articles/4936856-understanding-and-counting-tokens
+================================================================
