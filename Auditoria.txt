@@ -1601,3 +1601,219 @@ NOTAS DE ALCANCE:
 4. No se modificó código de aplicación.
 
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-04
+TIPO: SEGUNDA PASADA DE AUDITORÍA DE TAREAS MARCADAS COMO COMPLETADAS EN PENDIENTES.MD
+RAMA: NG_beta
+INVENTARIO: 83 entradas marcadas [X] identificadas en Pendientes.md (33 en la sección histórica y 50 en el backlog numerado).
+ALCANCE DE ESTA PASADA: revisión dirigida de criterios críticos en F10/F11, F15, F16, F17, F18/F19, F22 y F23.
+ESTADO: PARCIAL. No certifica todavía las 83 tareas; los hallazgos siguientes se basan en los bloques de código indicados. No se ejecutaron pruebas contra despliegues reales.
+
+HALLAZGO [AUD-NG-013] — El rol enviado por el cliente prevalece sobre el rol verificado al filtrar expedientes de bienestar
+CLASIFICACIÓN: CRÍTICO
+ARCHIVOS / LÍNEAS:
+- backend/academic-service/Code.gs: 8694-8754.
+- backend/academic-service/Code.gs: 182-255 (matriz de permisos de getAttendanceFollowupCases).
+DESCRIPCIÓN:
+getAttendanceFollowupCases calcula roleUpper como authRole || _verifiedRole. authRole es un campo del payload y puede ser suministrado por el cliente; el rol verificado por token queda en segundo lugar. El filtrado de casos confidenciales usa roleUpper para determinar isFullAccessRole. Los roles Profesor, Secretaría y Subdirector tienen permiso de invocar esta acción en la matriz. Un usuario con uno de esos roles puede enviar authRole='ADMINISTRADOR' y alterar la decisión del filtro. La validación de bienestar se ejecuta solo cuando categoriaCaso coincide exactamente con Consejería u Orientación; el filtro posterior sigue usando roleUpper.
+IMPACTO:
+Posible consulta de expedientes confidenciales mediante suplantación del atributo de rol en el payload. La exposición debe confirmarse con una prueba autorizada en un despliegue controlado.
+DEPENDENCIAS:
+validateRolePermission, _verifiedRole, getAttendanceFollowupCases, validateStudentWelfareAccess, CasosSeguimiento.
+TAREAS RELACIONADAS MARCADAS COMPLETADAS: F10-Task01, F11-Task01.
+TAREA ASOCIADA: AUD-NG-013 en Pendientes.md.
+
+HALLAZGO [AUD-NG-014] — La emisión fiscal no verifica de forma completa el estado y la pertenencia del correlativo al rango CAI
+CLASIFICACIÓN: CRÍTICO
+ARCHIVOS / LÍNEAS:
+- backend/accounting-service/Code.gs: 4357-4535.
+DESCRIPCIÓN:
+Cuando el cliente suministra cai, createFiscalInvoice selecciona la fila cuyo CAI coincide sin exigir que su estado sea Activo; la condición de estado solo se aplica al buscar un CAI automáticamente. Además, si numeroFactura llega en el payload, se acepta como targetNumeroFactura sin comprobar que coincida con el prefijo y el rango autorizado. El control numérico calcula el límite a partir del sufijo de rangoFinal, pero no valida integralmente la secuencia suministrada contra rangoInicial/rangoFinal y el formato autorizado.
+IMPACTO:
+Riesgo de emitir con una autorización inactiva o con numeración que no corresponda al rango autorizado, pese a que el endpoint informa una emisión fiscal exitosa.
+DEPENDENCIAS:
+AutorizacionesCAI, createFiscalInvoice, LockService, FacturasFiscales.
+TAREA RELACIONADA MARCADA COMPLETADA: TASK-001 / F15-Task01.
+TAREA ASOCIADA: AUD-NG-014 en Pendientes.md.
+
+HALLAZGO [AUD-NG-015] — La generación masiva aplica una tarifa predeterminada arbitraria y una clave de duplicidad demasiado amplia
+CLASIFICACIÓN: CRÍTICO
+ARCHIVOS / LÍNEAS:
+- backend/accounting-service/Code.gs: 2490-2610 (previewBatchMonthlyCharges).
+- backend/accounting-service/Code.gs: 2612-2705 (generateBatchMonthlyCharges).
+DESCRIPCIÓN:
+Cuando no encuentra tarifa ni concepto configurado, previewBatchMonthlyCharges asigna montoBase=1200 en lugar de dejar al estudiante identificado como sin tarifa y bloquear/solicitar configuración. Además, la detección de duplicados agrega claves userId_mes_ano sin concepto, por lo que puede considerar generado cualquier concepto adicional del mismo estudiante y período. generateBatchMonthlyCharges replica esa clave amplia. El campo fallidos permanece en cero y los errores de aplicación de becas se silencian mediante catch vacío después de crear el cargo.
+IMPACTO:
+Cargos generados con importes no autorizados, conceptos válidos omitidos y reportes que pueden declarar éxito aunque no se hayan aplicado beneficios aprobados.
+DEPENDENCIAS:
+TarifasPlanPago, ConceptosCobro, CargosEstudiante, previewBatchMonthlyCharges, generateBatchMonthlyCharges, applyApprovedScholarshipsToCharges.
+TAREA RELACIONADA MARCADA COMPLETADA: TASK-002 / F15-Task02.
+TAREA ASOCIADA: AUD-NG-015 en Pendientes.md.
+
+HALLAZGO [AUD-NG-016] — La reversión parcial marca el pago completo como revertido y distorsiona el saldo del cargo
+CLASIFICACIÓN: CRÍTICO
+ARCHIVOS / LÍNEAS:
+- backend/accounting-service/Code.gs: 17180-17290.
+- backend/accounting-service/Code.gs: 17423-17500.
+DESCRIPCIÓN:
+reversePayment admite montoReversion parcial, pero cambia el estado del registro completo a Revertido. Después calcula los pagos restantes contando únicamente registros Confirmado; el pago parcialmente revertido deja de computar por completo. Esto impide distinguir el importe original, el importe revertido y el remanente aún aplicado. processPaymentRefund tampoco comprueba que el estado del pago sea elegible antes de permitir un reembolso, aunque sí calcula reembolsos anteriores.
+IMPACTO:
+Saldos de cuentas por cobrar incorrectos, reversión parcial no recuperable como operación independiente y posibilidad de reembolsar pagos que ya fueron revertidos/anulados.
+DEPENDENCIAS:
+PagosAbonos, CargosEstudiante, MovimientosCajaBancos, AsientosContables, reversePayment, processPaymentRefund.
+TAREA RELACIONADA MARCADA COMPLETADA: TASK-003 / F15-Task03.
+TAREA ASOCIADA: AUD-NG-016 en Pendientes.md.
+
+HALLAZGO [AUD-NG-017] — El proceso de desvinculación laboral utiliza una variable no definida y se interrumpe después de desactivar la cuenta
+CLASIFICACIÓN: CRÍTICO
+ARCHIVOS / LÍNEAS:
+- backend/accounting-service/Code.gs: 17535-17623.
+DESCRIPCIÓN:
+processEmployeeOffboarding desestructura motivoSalida, pero las instrucciones que actualizan las observaciones de Usuarios y ExpedientesLaborales interpolan motivoBaja, identificador que no está declarado en el ámbito de la función. Cuando existe una fila de usuario, la primera referencia produce ReferenceError después de cambiar el estado de la cuenta y antes de cerrar expediente, adscripciones, ámbitos, áreas y coordinaciones. El flujo queda interrumpido y no completa la cascada.
+IMPACTO:
+Desvinculación parcialmente ejecutada: cuenta desactivada pero expediente y asignaciones posiblemente activos. La respuesta no alcanza el cierre normal ni registra todas las etapas.
+DEPENDENCIAS:
+processEmployeeOffboarding, Usuarios, ExpedientesLaborales, HistorialAdscripciones, AsignacionesAmbitosRoles, DocentesAreasAcademicas, CoordinacionesArea.
+TAREA RELACIONADA MARCADA COMPLETADA: TASK-006 / F16-Task03.
+TAREA ASOCIADA: AUD-NG-017 en Pendientes.md.
+
+HALLAZGO [AUD-NG-018] — La reasignación de docente a un área modifica la fila histórica en lugar de preservar la asignación anterior
+CLASIFICACIÓN: ALTO
+ARCHIVOS / LÍNEAS:
+- backend/academic-service/Code.gs: 14048-14135.
+DESCRIPCIÓN:
+assignTeacherToAcademicArea localiza una asignación activa existente y actualiza en la misma fila tipo de vinculación, fechas, estado y motivo. La actualización también modifica la fila existente de CoordinacionesArea. No se cierra la asignación anterior ni se crea una nueva versión cuando cambian sus condiciones.
+IMPACTO:
+Se pierde la trazabilidad histórica de cambios de área, tipo de vinculación o coordinación, contradiciendo el criterio de conservar asignaciones históricas inmutables.
+DEPENDENCIAS:
+DocentesAreasAcademicas, CoordinacionesArea, assignTeacherToAcademicArea, getTeachersByAcademicArea.
+TAREA RELACIONADA MARCADA COMPLETADA: TASK-005 / F16-Task02.
+TAREA ASOCIADA: AUD-NG-018 en Pendientes.md.
+
+HALLAZGO [AUD-NG-019] — La planilla excluye cambios contractuales dentro del mismo período en vez de ponderar cada intervalo
+CLASIFICACIÓN: ALTO
+ARCHIVOS / LÍNEAS:
+- backend/accounting-service/Code.gs: 4841-4889.
+DESCRIPCIÓN:
+calculatePayrollPeriod obtiene los contratos cuya vigencia se cruza con el período. Si encuentra más de uno, registra CONTRATOS_SUPERPUESTOS y excluye al empleado. Esto también ocurre cuando hay contratos sucesivos no superpuestos que cubren intervalos distintos del mismo mes. El criterio de F17-Task01 exige calcular cada intervalo con sus condiciones salariales y ponderar el resultado.
+IMPACTO:
+Empleados con cambio salarial o contractual dentro del mes quedan fuera de la nómina en lugar de recibir el cálculo proporcional correcto.
+DEPENDENCIAS:
+ContratosLaborales, ExpedientesLaborales, calculatePayrollPeriod, PlanillasNomenclatura.
+TAREA RELACIONADA MARCADA COMPLETADA: TASK-007 / F17-Task01.
+TAREA ASOCIADA: AUD-NG-019 en Pendientes.md.
+
+HALLAZGO [AUD-NG-020] — Las incapacidades aprobadas se marcan procesadas sin calcular subsidio ni tratamiento remunerativo
+CLASIFICACIÓN: ALTO
+ARCHIVOS / LÍNEAS:
+- backend/accounting-service/Code.gs: 5006-5017.
+DESCRIPCIÓN:
+El bloque de IncapacidadesMedicas agrega la fila a incUpdates cuando el estado es Aprobado, Aceptado o Cubierto, pero no calcula importe, subsidio, deducción ni bonificación asociada. Después marca la novedad como procesada en nómina. El criterio F17-Task02 exige aplicar el tratamiento legal de incapacidad aceptada por IHSS, evitando clasificarla como ausencia injustificada.
+IMPACTO:
+La incapacidad puede quedar consumida por la planilla sin reflejar el importe o subsidio correspondiente, perdiéndose la posibilidad de procesarla posteriormente.
+DEPENDENCIAS:
+IncapacidadesMedicas, calculatePayrollPeriod, incUpdates, PlanillasNomenclatura.
+TAREA RELACIONADA MARCADA COMPLETADA: TASK-008 / F17-Task02.
+TAREA ASOCIADA: AUD-NG-020 en Pendientes.md.
+
+HALLAZGO [AUD-NG-021] — El ISR anualizado no descuenta retenciones previas ni proyecta según los meses restantes
+CLASIFICACIÓN: CRÍTICO
+ARCHIVOS / LÍNEAS:
+- backend/accounting-service/Code.gs: 5027-5067.
+DESCRIPCIÓN:
+El cálculo fija annualGross como salario contractual por 12 más horas extras por 12, calcula una retención mensual dividiendo el impuesto anual entre 12 y no consulta retenciones acumuladas de meses anteriores ni meses restantes del ejercicio. Los umbrales y la deducción médica de L 40,000 están hardcodeados, no leídos desde PoliticasFiscales con vigencia por ejercicio. Esto no implementa el recálculo de saldo anual pendiente exigido por F17-Task04.
+IMPACTO:
+Retención mensual potencialmente incorrecta ante ingresos a mitad de año, cambios salariales, retenciones previas o actualización de parámetros fiscales.
+DEPENDENCIAS:
+PoliticasFiscales, calculatePayrollPeriod, PlanillasNomenclatura, historial de retenciones ISR.
+TAREA RELACIONADA MARCADA COMPLETADA: TASK-010 / F17-Task04.
+TAREA ASOCIADA: AUD-NG-021 en Pendientes.md.
+
+HALLAZGO [AUD-NG-022] — Las aportaciones patronales se calculan con parámetros fijos sin vigencia ni evidencia de asiento contable
+CLASIFICACIÓN: ALTO
+ARCHIVOS / LÍNEAS:
+- backend/accounting-service/Code.gs: 5073-5104.
+DESCRIPCIÓN:
+calculatePayrollPeriod aplica porcentajes y techo patronal como constantes directas (IHSS 7.2%, RAP 1.5%, INFOP 1.0%, techo L 10,317.38). No consulta PoliticasFiscales ni conserva una versión de parámetros por período. En el flujo inspeccionado se escriben importes en PlanillasNomenclatura, pero no se genera allí el asiento contable de gasto y pasivo patronal requerido por F17-Task03.
+IMPACTO:
+Cambios normativos obligan a modificar código y no queda demostrada la contabilización automática de las obligaciones patronales ni la preservación de parámetros históricos.
+DEPENDENCIAS:
+PoliticasFiscales, calculatePayrollPeriod, PlanillasNomenclatura, AsientosContables, recordAccountingJournalEntry.
+TAREA RELACIONADA MARCADA COMPLETADA: TASK-009 / F17-Task03.
+TAREA ASOCIADA: AUD-NG-022 en Pendientes.md.
+
+HALLAZGO [AUD-NG-023] — Las suites de compras e inventario validan datos simulados y no ejecutan los módulos reales
+CLASIFICACIÓN: ALTO
+ARCHIVOS / LÍNEAS:
+- backend/accounting-service/Code.gs: 10552-10656 (suite F18).
+- backend/accounting-service/Code.gs: 10866-10964 y bloques siguientes (suite F19).
+DESCRIPCIÓN:
+Las pruebas revisadas construyen objetos locales y verifican operaciones aritméticas o condiciones sobre esos objetos. Por ejemplo, la suite F18 crea proveedores/cotizaciones simuladas y compara importes; la suite F19 calcula saldos de bodegas y transferencias con variables locales. No invocan recordInventoryMovement, transferInventoryStock, flujos de recepción, conciliación o persistencia real. Sus resultados no demuestran los criterios funcionales de los módulos.
+IMPACTO:
+La suite puede aprobar aunque la implementación de producción falle en persistencia, permisos, concurrencia, rollback o integridad de inventario/compras.
+DEPENDENCIAS:
+runPhase18PurchasingAndSuppliersRegressionSuite, runPhase19InventoryAndAssetsRegressionSuite, recordInventoryMovement, transferInventoryStock, tests de integración.
+TAREAS RELACIONADAS MARCADAS COMPLETADAS: TASK-018 / F18-Task20 y TASK-022 / F19-Task20.
+TAREA ASOCIADA: AUD-NG-023 en Pendientes.md.
+
+HALLAZGO [AUD-NG-024] — El motor de workflows no vincula la decisión al revisor autenticado ni a la asignación de etapa
+CLASIFICACIÓN: CRÍTICO
+ARCHIVOS / LÍNEAS:
+- backend/user-service/Code.gs: 6757-6845.
+- backend/user-service/Code.gs: 920-990 (matriz de permisos).
+DESCRIPCIÓN:
+processWorkflowDecision toma revisorId del payload antes de _verifiedUserId, por lo que el identificador auditado puede ser suministrado por el cliente. Además, el bloque no comprueba que el usuario autenticado sea el asignado a la etapa, ni valida que su rol esté autorizado para esa etapa concreta. La matriz RBAC permite invocar processWorkflowDecision a varios perfiles institucionales, pero la función no aplica autorización contextual por solicitud/etapa.
+IMPACTO:
+Posible suplantación de revisor y resolución de etapas por un usuario que tiene acceso general a la acción pero no está asignado a esa solicitud o etapa.
+DEPENDENCIAS:
+processWorkflowDecision, validateRolePermission, _verifiedUserId, _verifiedRole, SolicitudesTramites, RevisionesDecisionesTramite.
+TAREA RELACIONADA MARCADA COMPLETADA: TASK-044 / F23-Task01.
+TAREA ASOCIADA: AUD-NG-024 en Pendientes.md.
+
+HALLAZGO [AUD-NG-025] — La reserva de claves de idempotencia no es atómica frente a solicitudes concurrentes
+CLASIFICACIÓN: ALTO
+ARCHIVOS / LÍNEAS:
+- backend/user-service/Code.gs: 1303-1355 y 1360-1605.
+DESCRIPCIÓN:
+doPost consulta checkAndRegisterIdempotencyKey, ejecuta la operación y solo después llama saveIdempotentResult. No hay candado ni reserva atómica de la clave entre la consulta y la ejecución. Dos solicitudes simultáneas con la misma clave pueden leer caché vacía y ejecutar ambas antes de que alguna guarde el resultado. CacheService además conserva los resultados durante un tiempo limitado, por lo que no sustituye un registro durable para operaciones financieras o institucionales críticas.
+IMPACTO:
+La implementación no garantiza que una clave compartida impida efectos duplicados bajo concurrencia, pese a la etiqueta de idempotencia.
+DEPENDENCIAS:
+checkAndRegisterIdempotencyKey, saveIdempotentResult, CacheService, doPost, acciones con efectos secundarios.
+TAREA RELACIONADA MARCADA COMPLETADA: TASK-045 / F23-Task02.
+TAREA ASOCIADA: AUD-NG-025 en Pendientes.md.
+
+HALLAZGO [AUD-NG-026] — La verificación de la cadena criptográfica no comprueba continuidad ni cubre todo el contenido de la decisión
+CLASIFICACIÓN: ALTO
+ARCHIVOS / LÍNEAS:
+- backend/user-service/Code.gs: 6805-6835 y 7403-7465.
+DESCRIPCIÓN:
+El hash calculado en processWorkflowDecision incluye ID, solicitud, etapa, revisor, acción, fecha y hashPrevio, pero excluye observaciones internas y públicas. verifyWorkflowDecisionAuditChain recalcula cada hash usando el hashPrevio almacenado, pero no verifica que ese valor sea igual al hashActual de la decisión inmediatamente anterior. Por tanto, no detecta alteraciones aisladas de observaciones ni una ruptura de continuidad si el registro y su hash se modifican conjuntamente.
+IMPACTO:
+La verificación reporta una integridad más amplia de la que realmente acredita; el historial no queda completamente protegido contra alteraciones.
+DEPENDENCIAS:
+processWorkflowDecision, verifyWorkflowDecisionAuditChain, RevisionesDecisionesTramite, computeDocumentSHA256.
+TAREA RELACIONADA MARCADA COMPLETADA: TASK-049 / F23-Task06.
+TAREA ASOCIADA: AUD-NG-026 en Pendientes.md.
+
+HALLAZGO [AUD-NG-027] — El registro de firma acepta identidad y hash del documento suministrados por el cliente
+CLASIFICACIÓN: CRÍTICO
+ARCHIVOS / LÍNEAS:
+- backend/user-service/Code.gs: 6935-6975.
+DESCRIPCIÓN:
+registerDocumentSignature recibe firmanteId, rolFirmante y documentoHash desde payload y los utiliza para generar el hash, pero no exige que firmanteId coincida con _verifiedUserId ni que rolFirmante corresponda al rol verificado. documentoHash es opcional; si falta, registra la conformidad con DOC-N/A y hash vacío. El cálculo SHA-256 no constituye por sí solo una firma digital avanzada ni prueba que el titular haya consentido el documento.
+IMPACTO:
+Posibilidad de registrar conformidades atribuidas a otra identidad y de crear registros sin vinculación criptográfica efectiva al documento.
+DEPENDENCIAS:
+registerDocumentSignature, _verifiedUserId, _verifiedRole, FirmasConformidades, generateSignatureAuditCertificate.
+TAREA RELACIONADA MARCADA COMPLETADA: TASK-039 / F22-Task02.
+TAREA ASOCIADA: AUD-NG-027 en Pendientes.md.
+
+NOTAS DE ALCANCE DE ESTA PASADA:
+1. Se identificaron 83 entradas marcadas [X] en Pendientes.md; esta pasada examinó criterios y código de un subconjunto de ellas, principalmente componentes críticos.
+2. Los hallazgos no implican que cada función relacionada esté ausente; describen criterios incumplidos o evidencia insuficiente en los bloques inspeccionados.
+3. No se ejecutaron pruebas contra Apps Script desplegado, hojas de cálculo reales, cuentas independientes, permisos de Drive, proveedores de firma ni datos de producción.
+4. No se modificó código de aplicación. Los hallazgos se convertirán en tareas separadas en Pendientes.md, preservando las entradas originales.
+===============================================================================
