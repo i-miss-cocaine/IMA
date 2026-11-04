@@ -141,6 +141,22 @@ En la rama NG_beta, Pendientes.md sí existe y es el registro oficial de tareas.
 - Registrar el último commit y la rama de trabajo después de verificarlos.
 - Si el agente se interrumpe, el siguiente agente debe comenzar leyendo contexto_personal.md, Pendientes.md y METODOLOGIA_DESARROLLO.md; después debe auditar cualquier tarea que figure En proceso.
 
+8.1 PROTOCOLO OBLIGATORIO DE CHECKPOINT DETALLADO
+
+- Crear o actualizar un punto de control (checkpoint) en el documento de contexto antes de finalizar una iteración, cuando exista riesgo de interrupción, al cerrar cada sublote de auditoría y siempre que el usuario solicite guardar el estado para una próxima sesión.
+- El checkpoint debe ser acumulativo: agregar la nueva entrada sin borrar, reemplazar, resumir ni alterar reglas, registros o checkpoints anteriores.
+- Registrar el repositorio, el nombre exacto del archivo de contexto existente, la rama base, la rama de trabajo y el HEAD/commit más reciente, verificando esos datos inmediatamente antes de escribir.
+- En auditorías, indicar por separado: último ID/tarea completamente auditado; estado de la tarea que quedó en curso (si existe); siguiente ID/tarea que debe revisarse; y lote/sub lote al que pertenece. No presentar una exploración parcial como auditoría concluida.
+- Identificar con precisión el punto técnico donde se detuvo el trabajo: archivo, función, clase o módulo, rango de líneas o sección consultada y, cuando sea posible, la última operación de lectura realizada.
+- Explicar qué se estaba buscando en ese punto y qué preguntas técnicas intentaba responder la inspección. Registrar también las rutas, funciones, variables, endpoints, dependencias o criterios concretos que faltan por revisar.
+- Registrar los resultados parciales que ya están respaldados por evidencia, los requisitos verificados, los requisitos pendientes de comprobar y las limitaciones (por ejemplo, pruebas no ejecutadas, entornos no disponibles o configuraciones productivas no inspeccionadas).
+- Referenciar los informes, tareas, hallazgos y commits anteriores que la próxima iteración debe consultar para evitar duplicar trabajo. Indicar expresamente qué tareas/lotes no deben repetirse y por qué.
+- Registrar los archivos modificados y no modificados durante la iteración, así como las pruebas y verificaciones realmente ejecutadas. Nunca afirmar que se ejecutó una prueba, revisión o validación que no se realizó.
+- Si la iteración termina antes de completar una tarea o sublote, guardar el punto exacto de interrupción y la próxima acción concreta. No crear un registro parcial que presente como coherentes resultados incompletos; conservar intactos los archivos fuente y los registros existentes.
+- La siguiente iteración debe leer primero el contexto y las normas/metodología aplicables, verificar la rama y el HEAD actuales, consultar los archivos e informes citados en el checkpoint y reanudar desde el siguiente elemento pendiente de inspección. No reiniciar desde el principio ni repetir trabajo ya documentado, salvo que una verificación de cambios posteriores, regresiones o inconsistencias lo justifique.
+- Si el nombre o la extensión del archivo de contexto indicado por una instrucción no coincide con el archivo que realmente existe en el repositorio, comprobar el árbol del repositorio y actualizar el archivo existente con su nombre exacto. No crear copias con nombres o extensiones alternativos.
+- Cada checkpoint debe terminar con una instrucción concreta de continuidad (archivo y tarea/ID desde donde comenzar), no con una indicación ambigua como “continuar auditoría”.
+
 9. CONTINUIDAD DEL TRABAJO
 
 - Continuar con la siguiente tarea pendiente de Pendientes.md, respetando estrictamente todas las instrucciones anteriores.
