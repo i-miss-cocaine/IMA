@@ -3905,3 +3905,38 @@ RESULTADOS DEL LOTE D2
 - El informe de Fase 10 que declara 86/86 criterios completados no sustituye la validación del código; los endpoints inspeccionados muestran brechas de autorización y auditoría.
 - No se ejecutaron pruebas ni se accedió a datos productivos. No se modificó código fuente, completadas_legacy.md ni ChangesLogs.txt.
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-04
+AUDITORÍA DE CONTINUIDAD - LOTE E1 DE completadas_legacy.md
+TAREAS: REQ-EXP-007 Y REQ-EXP-008
+RAMA BASE: NG_beta_0.0.0.1 / COMMIT 44d9891132332e692dbe2ba8602b41f50a508a59
+RAMA DE TRABAJO: NG_beta_0.0.0.1_work
+===============================================================================
+
+[AUD-NG-127] REQ-EXP-008 - CLAVES HMAC DE RESPALDO PREDECIBLES
+- Archivo: backend/user-service/Code.gs, líneas 8-10, 986-1100 y 2626-2637.
+- Módulo/función: Identidad y tokens / getAuthTokenSecret, generateSessionToken, verifySessionToken, requestPasswordRecovery y resetPassword.
+- Tipo: Seguridad criptográfica.
+- Evidencia: getAuthTokenSecret usa AUTH_TOKEN_SECRET si existe; si falta, deriva SHA-256 de SPREADSHEET_ID + la cadena fija _MASTER_AUTH_HMAC_SECRET y devuelve esa clave incluso si no logra persistirla. SPREADSHEET_ID está incluido en el código versionado. Los tokens de recuperación usan SECRET_KEY, cuyo fallback es el literal IMA-PORTAL-DEVELOPMENT-KEY-UNSECURE. La firma HMAC-SHA256 está implementada, pero la confidencialidad/aleatoriedad de las claves no está garantizada por esos fallbacks.
+- Impacto: si la propiedad de producción no está configurada, un tercero que conozca el código puede calcular las claves y fabricar tokens de sesión o de recuperación.
+- Severidad: CRÍTICO.
+- Tarea derivada: AUD-NG-127 en Pendientes.md.
+
+[AUD-NG-128] REQ-EXP-008 - BYPASS DE MATRIZ RBAC Y FILTRADO DE TICKETS BASADO EN USERID DEL CLIENTE
+- Archivo: backend/user-service/Code.gs, líneas 400-620, 1253-1290 y 6500-6635.
+- Módulo/función: Autorización central / validateRolePermission y módulo de tickets/automatización.
+- Tipo: RBAC, IDOR y privacidad.
+- Evidencia: validateRolePermission retorna autorizado antes de validateContextualAccess y ROLE_PERMISSIONS para diez acciones, entre ellas submitProblemTicket, getProblemTickets, replyProblemTicket y getAutomationRules. getProblemTickets toma currentUserId de payload.userId/currentUser.userId; si no se envía, la condición de filtro no se ejecuta y devuelve todos los tickets. replyProblemTicket usa la misma fuente y permite responder a cualquier ticket cuando currentUserId es vacío. submitProblemTicket registra el userId suministrado por el cliente. getAutomationRules no contiene comprobación de rol, aunque configureAutomationRules sí exige Administrador/Desarrollador/Director.
+- Impacto: exposición de tickets de otros usuarios, respuestas no autorizadas, suplantación de propietario y lectura de reglas internas por roles no autorizados.
+- Severidad: CRÍTICO.
+- Tarea derivada: AUD-NG-128 en Pendientes.md.
+
+===============================================================================
+RESULTADOS DEL LOTE E1
+===============================================================================
+- REQ-EXP-007: Cumple en las vistas/activos principales inspeccionados. index.html, login.html, register.html, student-dashboard.html y teacher-dashboard.html utilizan el nombre New Generation Bilingual School and Institute, el recurso imagenes/new-generation-logo.png y manifest.json; el manifest declara el nombre/short_name e iconos nuevos. No se observó la marca anterior en los encabezados de esos archivos.
+- REQ-EXP-008: Cumple parcialmente. HMAC-SHA256, tokens de sesión, expiración, revocación, matriz de roles, validación contextual y error AUTH_PERMISSION_DENIED existen; las claves fallback son predecibles y hay acciones que saltan la matriz RBAC, con IDOR en tickets y acceso a reglas de automatización.
+- No se ejecutaron pruebas de autenticación ni se inspeccionaron propiedades de despliegue. No se modificó código fuente, completadas_legacy.md ni ChangesLogs.txt.
+===============================================================================

@@ -127,3 +127,15 @@ Se recuperó y leyó el contenido íntegro de `Pendientes.md`, se confirmó que 
 - **Pruebas:** no ejecutadas; revisión estática de endpoints y UI. No se accedió a datos productivos.
 - **Código fuente:** sin modificaciones; no se alteró completadas_legacy.md ni ChangesLogs.txt.
 - **Siguiente lote:** E.
+
+
+## 12. Resultados de auditoría - Lote E1 (2026-11-04)
+
+- **Subdivisión:** E1 revisa REQ-EXP-007 y REQ-EXP-008; E2 revisará REQ-EXP-009 a REQ-EXP-012.
+- **Rama base:** `NG_beta_0.0.0.1`, commit `44d9891132332e692dbe2ba8602b41f50a508a59`; trabajo documental en `NG_beta_0.0.0.1_work`.
+- **Resultados:** REQ-EXP-007 (Cumple en páginas y recursos principales inspeccionados); REQ-EXP-008 (Cumple parcialmente: HMAC/RBAC presentes, pero claves fallback predecibles y bypass de permisos con IDOR en tickets).
+- **Hallazgos:** AUD-NG-127 y AUD-NG-128, añadidos a Auditoria.txt y Pendientes.md.
+- **Informe:** `AUDITORIA_LOTE_E1.md`.
+- **Pruebas:** no ejecutadas; no se inspeccionaron Script Properties de producción.
+- **Código fuente:** sin modificaciones; no se alteró completadas_legacy.md ni ChangesLogs.txt.
+- **Siguiente sublote:** E2 (REQ-EXP-009 a REQ-EXP-012).

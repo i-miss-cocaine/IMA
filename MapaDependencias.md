@@ -334,3 +334,17 @@
 - `js/student.js` / `renderSubjectNavigation` (líneas 1608-1775) -> `GLOBAL_SCOPE.GranularConfig`, `academicHistory`, tareas/exámenes; ordena pendientes por fecha límite ascendente para la tarjeta.
 - `expandSubject` (líneas 1745-1760) -> `renderActivitiesIntoContainer`; vuelve a ordenar las actividades en sentido descendente.
 - `js/index-ui.js` / `renderDownloadSubjects` y `renderDownloadTopics` (líneas 220-335) -> `GLOBAL_SCOPE.UnidadActual` para filtrar recursos por unidad activa.
+
+
+## Relaciones verificadas durante auditoría de continuidad - Lote E1 (2026-11-04)
+
+### Marca institucional y PWA
+- `index.html`, `login.html`, `register.html`, `student-dashboard.html` y `teacher-dashboard.html` enlazan `manifest.json` y `imagenes/new-generation-logo.png`; los títulos principales usan New Generation Bilingual School and Institute.
+- `manifest.json` define `name`, `short_name`, `start_url`, `display` e iconos del recurso `new-generation-logo.png`.
+
+### Autenticación y RBAC
+- `js/api.js` incorpora `sessionToken` en las peticiones a los microservicios.
+- `backend/user-service/Code.gs` / `doPost` -> `validateRolePermission` -> `getUserVerifiedRole` -> `verifySessionToken` -> `getAuthTokenSecret`; el rol y userId verificados se colocan en `payload._verifiedRole` y `payload._verifiedUserId`.
+- `validateRolePermission` -> `validateContextualAccess` -> `getGuardianStudents` para restricciones de estudiante y vínculo familiar; un allowlist de acciones especiales retorna antes de esta validación.
+- `generateSessionToken` y `verifySessionToken` firman/verifican con HMAC-SHA256; el fallback de `getAuthTokenSecret` deriva una clave de SPREADSHEET_ID.
+- `getProblemTickets`, `replyProblemTicket` y `submitProblemTicket` consumen identificadores de usuario del payload; `getAutomationRules` lee reglas sin comprobar rol dentro de la función.

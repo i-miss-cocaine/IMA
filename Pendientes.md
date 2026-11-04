@@ -18038,3 +18038,22 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Descripción del Alcance:** El resumen de la tarjeta ordena pendientes por fecha límite ascendente (próxima entrega primero), pero la vista expandida vuelve a ordenar todas las actividades en descendente, colocando fechas más lejanas antes que las próximas. Mantener un criterio único de prioridad en ambas vistas y ubicar fechas ausentes al final.
 - **Criterios de Aceptación:** Tarjeta y vista expandida muestran las actividades pendientes en el mismo orden ascendente por vencimiento; las actividades sin fecha quedan al final; empates tienen orden estable; pruebas con fechas pasadas, próximas, futuras y nulas.
 - **Estado:** [ ] Pendiente
+
+
+### [AUD-NG-127] Eliminar secretos HMAC predecibles y exigir configuración segura
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-127 (REQ-EXP-008).
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** `backend/user-service/Code.gs`; configuración de Script Properties de todos los microservicios que validan tokens.
+- **Dependencias Expuestas:** `getAuthTokenSecret`, `SECRET_KEY`, `generateSessionToken`, `verifySessionToken`, `requestPasswordRecovery`, `resetPassword`, `DEBUG_MODE`.
+- **Descripción del Alcance:** El secreto de sesión `AUTH_TOKEN_SECRET` se deriva, si falta, de `SPREADSHEET_ID` y una cadena pública fija; el ID está incluido en el código versionado. Los tokens de recuperación usan además un secreto fallback literal conocido. Reemplazar ambos fallbacks por secretos criptográficamente aleatorios provisionados fuera del repositorio y hacer que el servicio falle cerrado si faltan. Rotar tokens existentes y revisar el modo DEBUG en despliegue productivo.
+- **Criterios de Aceptación:** No hay secretos fallback en código; ausencia de Script Properties impide emitir/verificar tokens y devuelve error seguro; claves con entropía adecuada y rotación documentada; tokens firmados con la clave anterior quedan invalidados tras la rotación; DEBUG_MODE está desactivado en producción; pruebas demuestran que no se pueden falsificar sesiones ni recuperación de contraseña con valores públicos.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-128] Eliminar bypass RBAC y vincular tickets a la identidad verificada
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-128 (REQ-EXP-008).
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** `backend/user-service/Code.gs`; pruebas de autorización.
+- **Dependencias Expuestas:** `validateRolePermission`, `validateContextualAccess`, `getProblemTickets`, `submitProblemTicket`, `replyProblemTicket`, `getAutomationRules`, `_verifiedUserId`.
+- **Descripción del Alcance:** La lista de acciones permitidas incondicionalmente en `validateRolePermission` omite la matriz RBAC y la validación contextual. Dentro de esa lista, `getProblemTickets` filtra por `payload.userId` y si falta devuelve todos los tickets; `replyProblemTicket` permite responder a cualquier ticket si no se envía userId; `submitProblemTicket` acepta un userId de cliente; `getAutomationRules` no realiza control de rol. Sustituir el bypass por permisos explícitos y usar exclusivamente `_verifiedUserId` para acciones personales.
+- **Criterios de Aceptación:** Cada acción está asignada a roles explícitos; ausencia o falsificación de userId no amplía el acceso; usuario solo consulta/responde sus tickets; ticket de otro usuario requiere rol autorizado; solo Administrador/Desarrollador/Director acceden a reglas de automatización; las acciones no autorizadas devuelven `AUTH_PERMISSION_DENIED`; pruebas de IDOR y acceso cruzado.
+- **Estado:** [ ] Pendiente
