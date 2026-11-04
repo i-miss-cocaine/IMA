@@ -207,3 +207,14 @@ Se recuperó y leyó el contenido íntegro de `Pendientes.md`, se confirmó que 
 - **Pruebas:** no ejecutadas; inspección estática manual.
 - **Código fuente:** sin modificaciones; no se alteró completadas_legacy.md.
 - **Siguiente sublote:** H1 (REQ-DOC-007 a REQ-DOC-009).
+
+
+## 19. Resultados de auditoría - Lote H1 (2026-11-04)
+
+- **Subdivisión:** H1 revisa REQ-DOC-007 a REQ-DOC-009.
+- **Resultados:** REQ-DOC-007 (Cumple parcialmente: hay tarjetas por asignatura y expansión, pero falta tema, integración de materiales y exclusión de guías de los pendientes/vencimientos); REQ-DOC-008 (Cumple parcialmente: el árbol Drive no coincide con el requerido, la normalización es insuficiente y la carga reanudable no está conectada); REQ-DOC-009 (Cumple parcialmente: la hoja existe, pero metadatos clave se completan con defaults y la carga reanudable no registra).
+- **Hallazgos:** AUD-NG-153 a AUD-NG-155, añadidos a Auditoria.txt y Pendientes.md.
+- **Informe:** AUDITORIA_LOTE_H1.md.
+- **Pruebas:** no ejecutadas; inspección estática manual.
+- **Código fuente:** sin modificaciones; no se alteró completadas_legacy.md.
+- **Siguiente sublote:** H2 (REQ-DOC-010 a REQ-DOC-012).

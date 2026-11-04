@@ -4284,3 +4284,60 @@ RESULTADOS DEL LOTE G2
 - Pruebas: no ejecutadas; revisión estática manual.
 - Código fuente: sin modificaciones. No se modificó completadas_legacy.md.
 ===============================================================================
+
+
+===============================================================================
+[AUD-NG-153] REQ-DOC-007 - DASHBOARD AGRUPA ACTIVIDADES PERO OMITE TEMA Y CONFUNDE GUÍAS CON PENDIENTES
+- Fecha: 2026-11-04.
+- Archivo/Módulo: student-dashboard.html:145-188; js/student.js:1257-1304, 1608-1750, 1697-1710, 1816-1975; backend/task-service/Code.gs:613-685.
+- Tipo: Incumplimiento funcional y presentación inconsistente de estados.
+- Evidencia:
+  1. Existe agrupamiento por asignatura, selector de parcial y expansión de tarjetas.
+  2. allActivitiesData se construye con tareas y exámenes; los materiales de getStudyMaterials se cargan en un flujo separado y no se integran en las tarjetas por materia.
+  3. getStudentTasks no devuelve tema; getActivityHtml no lo muestra. El DTO devuelve parcial, pero se utiliza como filtro/selector global, no como dato visible por tarjeta.
+  4. pendingActivities cuenta toda actividad sin entrega, sin excluir GuiaEstudio/MaterialApoyo. La etiqueta Vencida (-50% Pts) también se calcula para actividades sin entrega sin comprobar el tipo de recurso.
+  5. La rama de guía usa activity.archivoUrl, pero getStudentTasks no devuelve ese campo.
+- Impacto: las tarjetas no contienen todos los datos solicitados; una guía puede aparecer en el contador/prioridad de pendientes y recibir una etiqueta de vencimiento/penalización visual. Los materiales del aula virtual no aparecen integrados en las tarjetas por asignatura.
+- Severidad: ALTO.
+- Tarea derivada: AUD-NG-153.
+
+===============================================================================
+[AUD-NG-154] REQ-DOC-008 - DRIVE NO USA LA JERARQUÍA DOCENTE REQUERIDA Y LA CARGA REANUDABLE ESTÁ DESCONECTADA
+- Fecha: 2026-11-04.
+- Archivo/Módulo: backend/task-service/Code.gs:704-779, 109-118, 375-415, 1455-1472, 1819-1900 y 2120-2175; backend/academic-service/Code.gs:4246-4265; js/student.js:2210-2216 y 2301-2315; js/ui-common.js:2732-2775.
+- Tipo: Incumplimiento de almacenamiento, normalización e integración de carga.
+- Evidencia:
+  1. uploadFile crea grado/sección/alumno/parcial/asignatura/tarea bajo DRIVE_FOLDER_ID; no crea Área/New Generation/Docentes/Asignaturas/Nombre/Año/Parcial/Tipo.
+  2. getOrCreateFolder solo aplica trim y getFoldersByName exacto; no normaliza acentos/case/espacios ni sanitiza. tryLock no se comprueba antes de crear.
+  3. ACADEMIC inicializa New Generation/Direccion/Secretaria, no el árbol docente requerido.
+  4. El cliente activa uploadResumableFile para archivos >=9.5 MB. El helper llama initiateResumableUpload, pero esa acción no está permitida para Estudiante/Alumno en ROLE_PERMISSIONS ni despachada por doPost.
+  5. La ruta reanudable prevista almacena en .temp_resumable_uploads y no mueve el archivo final a la jerarquía institucional. El helper devuelve sessionKey como fileId/folderId, no el Drive fileId real.
+- Impacto: los archivos de entrega no quedan en la estructura solicitada; nombres equivalentes pueden generar carpetas duplicadas; los archivos grandes no pueden iniciar su carga reanudable y el contrato de identificadores no permite una referencia fiable al archivo final.
+- Severidad: ALTO.
+- Tarea derivada: AUD-NG-154.
+
+===============================================================================
+[AUD-NG-155] REQ-DOC-009 - METADATOS DOCUMENTALES PARCIALES Y NO REGISTRADOS EN TODAS LAS RUTAS
+- Fecha: 2026-11-04.
+- Archivo/Módulo: backend/task-service/Code.gs:29-60, 704-779 y 2120-2175.
+- Tipo: Incumplimiento de integridad y trazabilidad documental.
+- Evidencia:
+  1. Existe MetadatosArchivos con 19 columnas y logFileMetadata registra ID, nombre, tipo, asignatura, grado, sección, parcial, año, tema, tarea, profesor, fecha, estado, Drive ID, ruta, MIME y tamaño.
+  2. uploadFile solo envía fileName/fileId/fileUrl/mimeType/sizeBytes/tareaId/asignatura/parcial/grado/seccion/profesorId. Titulo, TipoRecurso y Tema se completan con defaults; Año usa el año calendario; NombreOriginal y NombreFisico son iguales; RutaDrive almacena fileUrl en vez de la ruta jerárquica.
+  3. reconstructFileParts crea el archivo final sin invocar logFileMetadata.
+  4. logFileMetadata captura errores sin propagarlos, por lo que una carga puede finalizar aunque falle el registro documental.
+- Impacto: los registros no permiten reconstruir con fiabilidad el título, nombre físico, tipo de recurso, año lectivo, tema ni ubicación jerárquica de cada archivo; las rutas de carga reanudable no tienen metadatos.
+- Severidad: ALTO.
+- Tarea derivada: AUD-NG-155.
+
+===============================================================================
+RESULTADOS DEL LOTE H1
+===============================================================================
+- REQ-DOC-007: Cumple parcialmente. El dashboard agrupa y expande actividades, pero omite tema, no integra materiales educativos en tarjetas y cuenta guías como pendientes/vencidas.
+- REQ-DOC-008: Cumple parcialmente. Hay creación de carpetas, pero el árbol no coincide con el requerido, no normaliza nombres y la carga reanudable está desconectada.
+- REQ-DOC-009: Cumple parcialmente. Existe una hoja de metadatos, pero varias columnas se rellenan con defaults y la ruta reanudable no registra metadatos.
+- Hallazgos añadidos: AUD-NG-153 a AUD-NG-155.
+- Informe: AUDITORIA_LOTE_H1.md.
+- Pruebas: no ejecutadas; revisión estática manual.
+- Código fuente: sin modificaciones. No se modificó completadas_legacy.md.
+===============================================================================

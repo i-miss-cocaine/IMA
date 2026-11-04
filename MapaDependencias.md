@@ -463,3 +463,23 @@
 - TASK/getStudentTasks devuelve fechaDisponible ISO -> js/student.js/getActivityHtml consulta horaDisponible.
 - TASK/submitAssignment consulta fechaLimite para marcar tardanza, pero no aplica fechaDisponible; no existe enforcement de disponibilidad en el endpoint.
 - TASK/createTask guarda estado inicial Activa; getStudentTasks no expone la máquina de estados descrita en la tarea.
+
+
+## Relaciones verificadas durante auditoría de continuidad - Lote H1 (2026-11-04)
+
+### Dashboard estudiantil (REQ-DOC-007)
+- TASK/getStudentTasks -> DTO de tareas (sin tema ni archivoUrl) -> js/student.js/allActivitiesData -> renderSubjectNavigation -> tarjetas por asignatura.
+- EXAM/getStudentExams -> allActivitiesData; getStudyMaterials se carga por un flujo de aula virtual separado y no se integra en esas tarjetas.
+- renderSubjectNavigation/pendingActivities -> cuenta cualquier actividad sin entrega, incluidas filas GuiaEstudio/MaterialApoyo.
+- getActivityHtml -> guía informativa visual, estados de entrega y etiqueta de vencimiento; el cálculo de vencimiento no excluye guías.
+
+### Carpetas y carga Drive (REQ-DOC-008)
+- js/student.js/startAutomatedUpload -> uploadFile para carga directa -> DRIVE_FOLDER_ID/grado/sección/alumno/parcial/asignatura/tarea.
+- getOrCreateFolder -> getFoldersByName exacto -> createFolder; solo trim y bloqueo no verificado, sin normalización canónica.
+- js/student.js (>9.5 MB) -> js/ui-common.js/uploadResumableFile -> sendApiRequest(initiateResumableUpload) -> backend TASK; la acción no está autorizada ni despachada en doPost.
+- TASK/initiateResumableUpload -> .temp_resumable_uploads/sessionKey; reconstructFileParts crea archivo final en esa carpeta temporal y no registra metadatos ni mueve a la jerarquía institucional.
+
+### Metadatos documentales (REQ-DOC-009)
+- TASK/uploadFile -> logFileMetadata -> hoja MetadatosArchivos (19 columnas).
+- uploadFile solo envía un subconjunto de los campos; logFileMetadata completa título/tipo/tema/año/ruta con valores por defecto o fileUrl.
+- reconstructFileParts no invoca logFileMetadata; la ruta reanudable no deja registro documental.

@@ -18279,3 +18279,31 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Descripción del Alcance:** Definir un contrato único de disponibilidad como fecha/hora completa con zona horaria explícita. Convertir el input del docente al campo persistido esperado y devolver exactamente el mismo nombre/formato en getStudentTasks. El cliente debe ocultar/deshabilitar la entrega antes de la disponibilidad, pero el backend también debe rechazar cualquier entrega final anticipada, sin confundir disponibilidad con fecha límite. Completar los estados de programación/publicación/disponibilidad/vencimiento/cierre y su transición controlada.
 - **Criterios de Aceptación:** La fecha/hora configurada se persiste y se devuelve sin pérdida de zona horaria; la UI y backend usan el mismo contrato; submitAssignment rechaza entregas antes de la disponibilidad aun con llamada directa; la fecha límite sigue calculando tardanza de forma independiente; los estados reflejan correctamente programación, disponibilidad, entrega, vencimiento y cierre. Pruebas en límites exactos, antes/después, zona horaria y bypass del cliente.
 - **Estado:** [ ] Pendiente
+
+
+### [AUD-NG-153] Completar las tarjetas estudiantiles con tema, recursos y estados coherentes
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-153 (REQ-DOC-007).
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** student-dashboard.html; js/student.js; backend/task-service/Code.gs; js/api.js.
+- **Dependencias Expuestas:** renderSubjectNavigation, getActivityHtml, getStudentTasks, getStudyMaterials, tipoRecurso, tema, parcial, fechaLimite, archivoUrl.
+- **Descripción del Alcance:** Completar el DTO de actividades con tema y metadatos de recursos; integrar en las tarjetas por asignatura las guías/materiales y tareas evaluables del parcial correspondiente. Excluir guías informativas de contadores de pendientes, prioridades, estados de vencimiento y penalizaciones. Mostrar por tarjeta título, asignatura, tema, parcial, fechas y estado inequívoco (pendiente, entregada, vencida), conservando la expansión por materia y el aislamiento académico.
+- **Criterios de Aceptación:** Las tarjetas contienen todos los campos requeridos; guías y tareas aparecen diferenciadas y solo las tareas evaluables se cuentan como pendientes/vencidas; el enlace de descarga de guía funciona; filtros por parcial/asignatura/grado/sección siguen siendo correctos. Pruebas de guía sin entrega, tarea pendiente, tarea entregada, tarea vencida y cambio de parcial.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-154] Implementar la jerarquía documental docente y normalización canónica de carpetas Drive
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-154 (REQ-DOC-008).
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** backend/task-service/Code.gs; backend/academic-service/Code.gs; js/student.js; js/ui-common.js.
+- **Dependencias Expuestas:** DRIVE_FOLDER_ID, getOrCreateFolder, uploadFile, initiateResumableUpload, uploadChunk, reconstructFileParts, uploadResumableFile, DriveApp.
+- **Descripción del Alcance:** Implementar el árbol Área/New Generation/Docentes/Asignaturas/[Nombre]/[Año]/Parcial I..IV/[Tipo]. Normalizar y sanitizar los nombres antes de buscar/crear carpetas para evitar duplicados por diferencias de mayúsculas, acentos o espacios. Aplicar el mismo destino a cargas normales y reanudables; completar el despacho y permisos de las acciones de carga; reconstruir y mover el archivo final al destino canónico y devolver el Drive fileId real, no una sessionKey.
+- **Criterios de Aceptación:** Todos los tipos de archivo permitidos terminan en la carpeta correspondiente a su asignatura/año/parcial/tipo; variaciones triviales reutilizan la misma carpeta; las cargas grandes funcionan de principio a fin; la respuesta contiene Drive fileId/fileUrl válidos; no quedan archivos finales en carpetas temporales. Pruebas de ruta, duplicados, cargas pequeñas/grandes, reanudación y reemplazo.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-155] Completar y asegurar el registro de metadatos para todas las cargas documentales
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-155 (REQ-DOC-009).
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** backend/task-service/Code.gs; backend/academic-service/Code.gs; js/student.js; js/ui-common.js.
+- **Dependencias Expuestas:** MetadatosArchivos, logFileMetadata, uploadFile, initiateResumableUpload, reconstructFileParts, Drive ID, ruta Drive, MIME, tamaño, metadatos académicos.
+- **Descripción del Alcance:** Registrar por cada archivo lógico un único registro completo con ID, título, nombre original, nombre físico, tipo de recurso, asignatura, grado, sección, parcial, año lectivo, tema, tarea, profesor, fechas, estado, Drive ID, ruta jerárquica, MIME y tamaño. Diferenciar nombre original y físico, obtener año lectivo/tema/tipo del contexto real, registrar el destino canónico y conectar el logger a todas las rutas de carga, incluida la reanudable. Los errores de metadatos deben generar un resultado controlado y trazable, no quedar ocultos.
+- **Criterios de Aceptación:** Cada archivo final tiene un registro único y completo; los fragmentos temporales no generan registros duplicados como si fueran documentos independientes; la ruta guardada corresponde a la carpeta Drive real; la carga no se confirma sin metadatos consistentes o sin una cola de reintento verificable. Pruebas de uploadFile, carga reanudable, reemplazo, metadatos faltantes y persistencia.
+- **Estado:** [ ] Pendiente
