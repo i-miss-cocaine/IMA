@@ -17133,3 +17133,15 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Descripción del Alcance:** Validar cada artículo recibido contra las partidas autorizadas de la orden y rechazar artículos no incluidos, salvo autorización excepcional registrada. Calcular el saldo pendiente por partida y bloquear cantidades superiores a las autorizadas o requerir una aprobación excepcional trazable. Incorporar una clave de idempotencia persistente por recepción y propagar una referencia única al movimiento de Kardex para impedir duplicaciones ante reintentos. Implementar el registro de devoluciones posteriores y descontarlas de las cantidades conformes acumuladas, manteniendo el historial documental.
 - **Criterios de Aceptación:** No se acepta un artículo ajeno a la orden sin autorización; no se reciben unidades por encima del saldo autorizado sin excepción documentada; repetir la misma solicitud no crea otra recepción ni otro movimiento Kardex; cada movimiento se vincula a una recepción mediante referencia persistente; las devoluciones reducen las cantidades netas recibidas y ajustan existencias; se prueban recepciones parciales, múltiples partidas, daños, rechazos, excesos, devoluciones y reintentos concurrentes.
 - **Estado:** [ ] Pendiente
+
+
+---
+
+### [AUD-NG-030] Exigir conciliación completa y autorización verificada de diferencias en cuentas por pagar
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-030
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** backend/accounting-service/Code.gs
+- **Dependencias Expuestas:** verifyThreeWayMatch, recordAccountsPayableExpense, validateRolePermission, ROLE_PERMISSIONS, OrdenesCompra, RecepcionesCompra, CuentasPorPagarGastos
+- **Descripción del Alcance:** Hacer obligatoria la conciliación para toda obligación vinculada a una orden de compra; eliminar el bypass no autorizado y rechazar facturas sin partidas conciliables. Resolver la autorización de diferencias exclusivamente con el rol e identidad verificados por el servidor y registrar responsable, fecha, justificación y detalle de discrepancias. Comparar importes de subtotal, impuestos, total, descuentos, transporte y cargos adicionales. Implementar una reserva transaccional de cantidades recibidas/facturadas para impedir que conciliaciones concurrentes consuman el mismo saldo.
+- **Criterios de Aceptación:** Una obligación vinculada a orden no puede aprobarse ni avanzar a pago sin conciliación; Contador no puede autorizar diferencias mediante datos del cliente; toda excepción conserva auditoría verificable; las diferencias de cantidades, precios, impuestos y cargos se detectan; dos conciliaciones concurrentes no pueden facturar más unidades que las recibidas; reprocesar una factura no duplica obligaciones ni asientos.
+- **Estado:** [ ] Pendiente
