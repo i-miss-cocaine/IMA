@@ -17121,3 +17121,15 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Descripción del Alcance:** Ajustar el motor de décimo tercer y décimo cuarto mes para calcular el beneficio considerando la vigencia de cada contrato y los cambios salariales dentro del período de acumulación, conforme a la regla salarial aplicable. Corregir el cálculo de aportaciones patronales del cierre genérico para que los valores cero explícitos de beneficios extraordinarios no activen tasas de respaldo. Implementar la emisión y persistencia de una boleta PDF individual vinculada inequívocamente a planillaId y empleadoId. Generar asientos contables específicos y diferenciados para el pasivo y gasto de cada beneficio, conservando el ciclo de aprobación/cierre y evitando contabilizaciones duplicadas.
 - **Criterios de Aceptación:** Los períodos con más de un contrato o cambio salarial se calculan por tramos y con base salarial verificable; los beneficios extraordinarios con aportaciones patronales en cero conservan esos ceros al aprobarse/cerrarse; cada empleado obtiene un PDF real almacenado y vinculado a la planilla y al beneficio correctos; cada planilla extraordinaria genera un asiento equilibrado con cuentas diferenciadas; la misma planilla no puede generar boletas o asientos duplicados; las pruebas cubren períodos completos, ingresos/salidas parciales, cambios contractuales, anticipos, aprobación y cierre.
 - **Estado:** [ ] Pendiente
+
+
+---
+
+### [AUD-NG-029] Reforzar la validación de cantidades, referencias e idempotencia en recepciones de compra
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-029
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** backend/accounting-service/Code.gs
+- **Dependencias Expuestas:** recordPurchaseReceipt, recordInventoryMovement, getPurchaseReceipts, OrdenesCompra, RecepcionesCompra, InventariosKardex
+- **Descripción del Alcance:** Validar cada artículo recibido contra las partidas autorizadas de la orden y rechazar artículos no incluidos, salvo autorización excepcional registrada. Calcular el saldo pendiente por partida y bloquear cantidades superiores a las autorizadas o requerir una aprobación excepcional trazable. Incorporar una clave de idempotencia persistente por recepción y propagar una referencia única al movimiento de Kardex para impedir duplicaciones ante reintentos. Implementar el registro de devoluciones posteriores y descontarlas de las cantidades conformes acumuladas, manteniendo el historial documental.
+- **Criterios de Aceptación:** No se acepta un artículo ajeno a la orden sin autorización; no se reciben unidades por encima del saldo autorizado sin excepción documentada; repetir la misma solicitud no crea otra recepción ni otro movimiento Kardex; cada movimiento se vincula a una recepción mediante referencia persistente; las devoluciones reducen las cantidades netas recibidas y ajustan existencias; se prueban recepciones parciales, múltiples partidas, daños, rechazos, excesos, devoluciones y reintentos concurrentes.
+- **Estado:** [ ] Pendiente
