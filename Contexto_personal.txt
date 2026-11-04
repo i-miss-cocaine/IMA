@@ -390,3 +390,48 @@ La búsqueda estaba intentando seguir el flujo completo, no solo la existencia d
 - Última operación de lectura de código antes de registrar este checkpoint: `backend/accounting-service/Code.gs`, líneas 195-300.
 - Próximo paso recomendado: continuar con el Lote G desde `REQ-EXP-020`, documentar cada sublote con commits pequeños y actualizar el contexto al cerrar cada sublote.
 ================================================================
+
+
+---
+
+## CHECKPOINT DE CONTINUIDAD - AUDITORÍA COMPLETADAS_LEGACY - LOTE G1
+**Fecha:** 2026-11-04
+
+### Estado exacto del repositorio
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Rama base protegida:** NG_beta_0.0.0.1 (HEAD verificado: 44d9891132332e692dbe2ba8602b41f50a508a59).
+- **Rama de trabajo autorizada:** NG_beta_0.0.0.1_work.
+- **HEAD de cierre del sublote G1, verificado después del commit:** 9ac3cf38c8ef1eb014b42484277a7cfb87225755.
+- **Commit de resultados G1:** docs(audit): documentar lote G1 REQ-DOC-001 a REQ-DOC-003.
+- El presente checkpoint se guarda en el commit inmediatamente posterior al commit de resultados; al reanudar, verificar el HEAD actual de NG_beta_0.0.0.1_work antes de editar.
+
+### Progreso de auditoría
+- El inventario histórico de completadas_legacy.md contiene 49 tareas.
+- Lotes A-F2 completados en iteraciones anteriores: 37 tareas históricas revisadas.
+- Lote G1 completado en esta iteración: REQ-DOC-001, REQ-DOC-002 y REQ-DOC-003.
+- **Total revisado: 40 de 49. Restan 9 tareas históricas.**
+- Las tres tareas del Lote G1 quedaron clasificadas como **Cumple parcialmente**.
+- Hallazgos derivados registrados: AUD-NG-147, AUD-NG-148 y AUD-NG-149, todos en estado pendiente de implementación en Pendientes.md.
+- Informe detallado: AUDITORIA_LOTE_G1.md.
+- Se actualizaron Auditoria.txt, Pendientes.md, AUDITORIA_COMPLETADAS_LEGACY_PLAN.md y MapaDependencias.md.
+- No se modificó completadas_legacy.md, ChangesLogs.txt ni ningún archivo de código fuente.
+
+### Punto exacto donde terminó la inspección
+- Último contrato inspeccionado: backend/task-service/Code.gs, función createTask, líneas 447-471.
+- Último handler inspeccionado: js/teacher.js, submit de create-assignment-form, líneas 4738-4748.
+- También quedaron inspeccionados los campos de teacher-dashboard.html:219-274, el editor Quill y el despacho TASK/createTask.
+- No se ejecutaron pruebas automatizadas, pruebas de interfaz ni llamadas a microservicios productivos.
+
+### Próximo punto de continuación (NO repetir G1)
+- Continuar con **Lote G2**, empezando por **REQ-DOC-004**, seguido por REQ-DOC-005 y REQ-DOC-006.
+- Para REQ-DOC-004, revisar la distinción entre recursos/guías informativas y tareas evaluables en backend/task-service/Code.gs, js/teacher.js, js/student.js y teacher-dashboard.html. Verificar que las guías no creen entregas, calificaciones ni penalizaciones, y que las tareas evaluables sí mantengan el flujo de entrega.
+- Para REQ-DOC-005, inspeccionar la regla de fecha límite predeterminada respecto a fechaClase en teacher-dashboard.html y js/teacher.js; verificar fines de semana, fechas pasadas y cambios manuales.
+- Para REQ-DOC-006, inspeccionar el contrato de hora de disponibilidad y fecha límite en el formulario, el submit handler, createTask/getStudentTasks y el estado de entrega en js/student.js. Verificar el nombre y formato del campo entre frontend/backend, y que no se pueda entregar antes de la hora habilitada ni después del cierre.
+- Mantener la auditoría estática y manual. No corregir código durante la auditoría. Convertir hallazgos confirmados en tareas nuevas sin alterar registros anteriores.
+- Usar exclusivamente NG_beta_0.0.0.1_work para cambios documentales de auditoría; no hacer merge ni modificar NG_beta_0.0.0.1.
+
+### Reglas de continuidad
+- No repetir los lotes A-F2 ni G1.
+- No modificar ni eliminar entradas históricas de completadas_legacy.md.
+- No marcar las tareas históricas como completadas solo porque existan elementos de interfaz o comentarios; comparar criterios con el comportamiento real del código.
+- Antes de continuar, verificar HEAD, árbol de trabajo y estado de los archivos documentales; después leer REQ-DOC-004 desde completadas_legacy.md y continuar desde la evidencia, no desde suposiciones.
