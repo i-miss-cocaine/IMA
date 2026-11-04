@@ -150,3 +150,14 @@ Se recuperó y leyó el contenido íntegro de `Pendientes.md`, se confirmó que 
 - **Pruebas:** no ejecutadas; revisión estática de servicios y UI.
 - **Código fuente:** sin modificaciones; no se alteró completadas_legacy.md ni ChangesLogs.txt.
 - **Siguiente sublote:** E2B (REQ-EXP-011 a REQ-EXP-012).
+
+
+## 14. Resultados de auditoría - Lote E2B (2026-11-04)
+
+- **Subdivisión:** E2B completa la revisión de REQ-EXP-011 y REQ-EXP-012.
+- **Resultados:** REQ-EXP-011 (Cumple parcialmente: backend de comprobantes existe, portal no conectado, PDF/correlativo no implementados); REQ-EXP-012 (Cumple parcialmente: separación de tablas existe, pero CAI/rango/correlativo no están protegidos frente al payload y la consulta no está aislada).
+- **Hallazgos:** AUD-NG-134 a AUD-NG-137, añadidos a Auditoria.txt y Pendientes.md. AUD-NG-127 se amplía al microservicio ACCOUNTING.
+- **Informe:** `AUDITORIA_LOTE_E2B.md`.
+- **Pruebas:** no ejecutadas; revisión estática de UI y endpoints.
+- **Código fuente:** sin modificaciones; no se alteró completadas_legacy.md ni ChangesLogs.txt.
+- **Siguiente lote:** F (REQ-EXP-013 en adelante).

@@ -4001,3 +4001,57 @@ RESULTADOS DEL LOTE E2A
 - REQ-EXP-010: Cumple parcialmente. Existen conceptos, tarifas, cargos por lote, estados de cuenta, abonos parciales, reversos y anulaciones; sin embargo, el endpoint de ACCOUNTING es placeholder, el preview de cargos tiene mapeo/dedupe incorrectos y el registro de pagos tiene brechas de integridad.
 - No se ejecutaron pruebas ni se consultaron datos productivos. No se modificó código fuente, completadas_legacy.md ni ChangesLogs.txt.
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-04
+AUDITORÍA DE CONTINUIDAD - LOTE E2B DE completadas_legacy.md
+TAREAS: REQ-EXP-011 Y REQ-EXP-012
+RAMA DE TRABAJO: NG_beta_0.0.0.1_work
+===============================================================================
+
+[AUD-NG-134] REQ-EXP-011 - PORTAL FINANCIERO SIN HANDLERS Y GENERADOR DE RECIBO NO CREA PDF
+- Archivo: student-dashboard.html, líneas 120-310 y scripts finales; js/student.js, líneas 138-180 y 2630-2660; js/accounting.js; backend/accounting-service/Code.gs, líneas 3934-3940 y 4080-4268.
+- Módulo/función: Portal de pagos y recibos / tab-financial, voucher-modal, uploadPaymentVoucher, generatePaymentReceiptPDF.
+- Tipo: Integración UI/API, privacidad de archivos y numeración documental.
+- Evidencia: student-dashboard.html incluye tab-financial y voucher-modal, pero student.js solo conecta las pestañas de actividades/progreso y no contiene handlers para tab-financial ni voucher-form. Ninguna página HTML actual carga js/accounting.js. uploadPaymentVoucher sube el archivo y lo comparte con DriveApp.Access.ANYONE_WITH_LINK. recordStudentPayment genera reciboId aleatorio de seis dígitos. generatePaymentReceiptPDF solo devuelve receiptData como JSON; no crea PDF ni URL de descarga.
+- Impacto: el estudiante no puede completar el flujo desde el portal; comprobantes almacenados quedan accesibles por enlace público; no existe recibo PDF correlativo.
+- Severidad: ALTO.
+- Tarea derivada: AUD-NG-134 en Pendientes.md.
+
+[AUD-NG-135] REQ-EXP-012 - CONTROL DE CAI Y CORRELATIVO FISCAL PUEDE SER SOBRESCRITO POR EL CLIENTE
+- Archivo: backend/accounting-service/Code.gs, líneas 4268-4555.
+- Módulo/función: Facturación fiscal SAR / configureSARAuthorizedCAI y createFiscalInvoice.
+- Tipo: Integridad fiscal y control de secuencia.
+- Evidencia: configureSARAuthorizedCAI no valida orden de rango, solapamientos ni estructura del CAI. createFiscalInvoice selecciona un CAI explícito aunque esté inactivo, permite que payload sobrescriba rangoInicial/rangoFinal/fechaLimiteEmision y numeroFactura, no valida que el número explícito corresponda al siguiente correlativo ni que sea único, y no verifica que reciboCajaId exista como pago confirmado/no facturado. La tasaISV se acepta desde items del cliente.
+- Impacto: emisión con rango/CAI no vigente o número no autorizado, duplicidad de factura y discrepancia tributaria.
+- Severidad: CRÍTICO.
+- Tarea derivada: AUD-NG-135 en Pendientes.md.
+
+[AUD-NG-136] REQ-EXP-011/012 - CONSULTAS FINANCIERAS Y DOCUMENTOS FISCALES SIN VÍNCULO FAMILIAR
+- Archivo: backend/accounting-service/Code.gs, líneas 195-230, 418-455, 3825-3895, 4080-4268 y 4553-4615.
+- Módulo/función: ABAC financiero / getStudentAccountStatement, getPaymentVouchers, generatePaymentReceiptPDF y getFiscalInvoices.
+- Tipo: Privacidad e IDOR.
+- Evidencia: ROLE_PERMISSIONS permite a Padre/Tutor/Responsable consultar estados de cuenta, comprobantes, recibos y facturas. validateContextualAccess solo comprueba que Estudiante/Alumno no envíe otro userId; no verifica relación familiar. getFiscalInvoices devuelve todos si no hay userId/facturaId y permite facturaId arbitrario; generatePaymentReceiptPDF busca por reciboId/pagoId sin verificar propietario; getPaymentVouchers no fuerza el ID del representado para roles familiares.
+- Impacto: acceso a información financiera y fiscal de estudiantes no vinculados.
+- Severidad: CRÍTICO.
+- Tarea derivada: AUD-NG-136 en Pendientes.md.
+
+[AUD-NG-137] REQ-EXP-007 - NOMBRE DE INSTITUCIÓN DISTINTO EN DATOS DE RECIBO
+- Archivo: backend/accounting-service/Code.gs, líneas 4230-4255.
+- Módulo/función: Datos institucionales de recibos.
+- Tipo: Coherencia de marca documental.
+- Evidencia: generatePaymentReceiptPDF declara institucion = "New Generation Christian Academy", mientras las páginas principales y manifest usan "New Generation Bilingual School and Institute".
+- Impacto: documentos financieros pueden presentar una razón/nombre institucional diferente al portal.
+- Severidad: BAJO.
+- Tarea derivada: AUD-NG-137 en Pendientes.md.
+
+===============================================================================
+RESULTADOS DEL LOTE E2B
+===============================================================================
+- REQ-EXP-011: Cumple parcialmente. Existe subida backend de comprobantes, pero el portal no tiene handlers conectados; el archivo se comparte públicamente; el recibo no genera PDF y su número es aleatorio, no correlativo.
+- REQ-EXP-012: Cumple parcialmente. FacturasFiscales y PagosAbonos son estructuras separadas y createFiscalInvoice mantiene una referencia opcional a reciboCajaId; sin embargo, CAI/rangos/número se pueden sobrescribir desde payload y la consulta de facturas no está aislada por titular.
+- REQ-EXP-007: las vistas principales sí están rebrandeadas; el dato institucional del recibo mantiene una denominación distinta. AUD-NG-137.
+- Se amplía AUD-NG-127: ACCOUNTING también deriva AUTH_TOKEN_SECRET de SPREADSHEET_ID y mantiene DEBUG_MODE=true.
+- No se ejecutaron pruebas ni se accedió a datos productivos. No se modificó código fuente, completadas_legacy.md ni ChangesLogs.txt.
+===============================================================================

@@ -18043,9 +18043,9 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 ### [AUD-NG-127] Eliminar secretos HMAC predecibles y exigir configuración segura
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-127 (REQ-EXP-008).
 - **Severidad/Clasificación:** Crítico
-- **Archivos Involucrados:** `backend/user-service/Code.gs`; configuración de Script Properties de todos los microservicios que validan tokens.
+- **Archivos Involucrados:** `backend/user-service/Code.gs`; `backend/accounting-service/Code.gs`; configuración de Script Properties de todos los microservicios que validan tokens.
 - **Dependencias Expuestas:** `getAuthTokenSecret`, `SECRET_KEY`, `generateSessionToken`, `verifySessionToken`, `requestPasswordRecovery`, `resetPassword`, `DEBUG_MODE`.
-- **Descripción del Alcance:** El secreto de sesión `AUTH_TOKEN_SECRET` se deriva, si falta, de `SPREADSHEET_ID` y una cadena pública fija; el ID está incluido en el código versionado. Los tokens de recuperación usan además un secreto fallback literal conocido. Reemplazar ambos fallbacks por secretos criptográficamente aleatorios provisionados fuera del repositorio y hacer que el servicio falle cerrado si faltan. Rotar tokens existentes y revisar el modo DEBUG en despliegue productivo.
+- **Descripción del Alcance:** El secreto de sesión `AUTH_TOKEN_SECRET` se deriva, si falta, de `SPREADSHEET_ID` y una cadena pública fija; el ID está incluido en el código versionado. El mismo fallback está presente en ACCOUNTING. Los tokens de recuperación de USER usan además un secreto fallback literal conocido. Ambos servicios tienen DEBUG_MODE habilitado. Reemplazar ambos fallbacks por secretos criptográficamente aleatorios provisionados fuera del repositorio y hacer que el servicio falle cerrado si faltan. Rotar tokens existentes y revisar el modo DEBUG en despliegue productivo.
 - **Criterios de Aceptación:** No hay secretos fallback en código; ausencia de Script Properties impide emitir/verificar tokens y devuelve error seguro; claves con entropía adecuada y rotación documentada; tokens firmados con la clave anterior quedan invalidados tras la rotación; DEBUG_MODE está desactivado en producción; pruebas demuestran que no se pueden falsificar sesiones ni recuperación de contraseña con valores públicos.
 - **Estado:** [ ] Pendiente
 
@@ -18102,4 +18102,41 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Dependencias Expuestas:** `recordStudentPayment`, `checkAndRegisterIdempotencyKey`, `saveIdempotentResult`, `CargosEstudiante`, `PagosAbonos`.
 - **Descripción del Alcance:** `recordStudentPayment` no verifica que cargoId pertenezca al userId pagador, permite abonos superiores al saldo y no usa bloqueo transaccional propio. La idempotencia consulta CacheService y guarda el resultado después de ejecutar, sin reservar atómicamente la clave. El fallback de referencia `SIN-REF` puede convertir pagos distintos sin referencia en falsos duplicados. Validar propiedad y saldo, y hacer la reserva idempotente atómica.
 - **Criterios de Aceptación:** El cargo pertenece al estudiante pagador; no se acepta sobrepago salvo que se registre explícitamente como crédito; cada pago tiene clave única no reutilizable; reintentos/concurrencia no duplican pagos; referencias vacías no colisionan; se conserva trazabilidad de pagos parciales, reversos y ajustes; pruebas concurrentes y de pago cruzado.
+- **Estado:** [ ] Pendiente
+
+
+### [AUD-NG-134] Conectar el portal financiero estudiantil y generar recibos PDF correlativos
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-134 (REQ-EXP-011).
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** `student-dashboard.html`; `js/student.js`; `js/accounting.js`; `backend/accounting-service/Code.gs`; `js/config.js`.
+- **Dependencias Expuestas:** `tab-financial`, `voucher-modal`, `uploadPaymentVoucher`, `generatePaymentReceiptPDF`, `PagosAbonos`, `ComprobantesPago`.
+- **Descripción del Alcance:** El portal contiene pestaña financiera y modal de comprobante, pero `student.js` solo conecta las pestañas de actividades/progreso y no registra handlers para `tab-financial` ni `voucher-modal`; `js/accounting.js` no se carga en las páginas actuales. El backend sube comprobantes, pero comparte los archivos con ANYONE_WITH_LINK. `generatePaymentReceiptPDF` devuelve un objeto JSON, no un archivo PDF; el recibo usa un número aleatorio de seis dígitos, no correlativo.
+- **Criterios de Aceptación:** El estudiante consulta cargos/vencimientos, sube comprobantes desde el portal y descarga un PDF real; los archivos de comprobantes permanecen privados y se sirven solo tras autorización; el recibo tiene correlativo secuencial único con bloqueo; la UI maneja estados de revisión/aprobación/rechazo; pruebas end-to-end.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-135] Endurecer CAI, rango y correlativo de facturación fiscal hondureña
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-135 (REQ-EXP-012).
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** `backend/accounting-service/Code.gs`.
+- **Dependencias Expuestas:** `configureSARAuthorizedCAI`, `createFiscalInvoice`, `AutorizacionesCAI`, `FacturasFiscales`, `PagosAbonos`.
+- **Descripción del Alcance:** `configureSARAuthorizedCAI` registra rangos sin validar formato, inicio/fin, solapamientos o vencimiento. `createFiscalInvoice` acepta CAI inactivo si el cliente lo especifica, permite sobrescribir rangos/fecha/numeroFactura desde payload, no exige que el número coincida con el siguiente correlativo ni comprueba unicidad; tampoco verifica que reciboCajaId corresponda a un pago confirmado y no facturado. La tasa ISV también puede venir del cliente. La separación de hojas entre recibos internos y FacturasFiscales sí existe, pero el control fiscal debe ser autoritativo en servidor.
+- **Criterios de Aceptación:** Solo se emite con CAI activo y vigente; rango autorizado proviene de la hoja y no del payload; el correlativo siguiente se genera en servidor y queda dentro del rango; no se permiten duplicados ni saltos no autorizados; el pago asociado existe, está confirmado y no tiene factura previa; tasas tributarias provienen de política configurada; pruebas de expiración, rango agotado, CAI inactivo y concurrencia.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-136] Restringir estados de cuenta, comprobantes, recibos y facturas a la familia autorizada
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-136 (REQ-EXP-011/012).
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** `backend/accounting-service/Code.gs`; módulo de relaciones familiares.
+- **Dependencias Expuestas:** `validateContextualAccess`, `getStudentAccountStatement`, `getPaymentVouchers`, `generatePaymentReceiptPDF`, `getFiscalInvoices`, `uploadPaymentVoucher`, `RelacionesFamiliares`.
+- **Descripción del Alcance:** Padre/Tutor/Responsable tienen permisos para consultar estados de cuenta, comprobantes, recibos y facturas, pero `validateContextualAccess` solo restringe al Estudiante cuando se envía userId; no verifica vínculos familiares. `getFiscalInvoices` devuelve todas las facturas si no hay filtros y permite buscar cualquier facturaId; `generatePaymentReceiptPDF` busca cualquier reciboId/pagoId; `getPaymentVouchers` puede devolver todos los comprobantes si el familiar no envía userId. Forzar identidad verificada para estudiantes y validar cada estudiante contra relaciones familiares activas para titulares.
+- **Criterios de Aceptación:** Estudiante solo accede a su cuenta/recibos/facturas; Padre/Tutor/Responsable solo a hijos o representados vinculados; los identificadores de recibo/factura no permiten IDOR; consultas sin filtros no devuelven información global; pruebas cruzadas entre familias y estudiantes.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-137] Unificar el nombre institucional en recibos y documentos financieros
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-137 (REQ-EXP-007).
+- **Severidad/Clasificación:** Bajo
+- **Archivos Involucrados:** `backend/accounting-service/Code.gs`; configuración central de marca y plantillas documentales.
+- **Dependencias Expuestas:** `generatePaymentReceiptPDF`, datos de institución, `manifest.json` y marca New Generation.
+- **Descripción del Alcance:** Los encabezados de las páginas principales usan New Generation Bilingual School and Institute, pero los datos de recibo generados por el backend declaran `New Generation Christian Academy`. Centralizar el nombre oficial y consumirlo desde todos los documentos y vistas.
+- **Criterios de Aceptación:** Recibos, facturas y documentos institucionales usan exactamente la marca oficial configurada; no quedan nombres alternativos o anteriores en los documentos generados; prueba de renderizado.
 - **Estado:** [ ] Pendiente

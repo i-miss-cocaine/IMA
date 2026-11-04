@@ -363,3 +363,21 @@
 - ACCOUNTING/`getStudentAccountStatement` -> `CargosEstudiante` + `PagosAbonos`; actualmente llama a `applyApprovedScholarshipsToCharges` durante la consulta.
 - ACCOUNTING/`recordStudentPayment` -> `PagosAbonos` + actualización de `CargosEstudiante`; el control de propiedad de cargo y saldo debe reforzarse.
 - `js/accounting.js` contiene funciones de UI, pero no se carga desde las páginas HTML actuales.
+
+
+## Relaciones verificadas durante auditoría de continuidad - Lote E2B (2026-11-04)
+
+### Portal de pagos y recibos
+- `student-dashboard.html` define `tab-financial` y `voucher-modal`; `js/student.js` no conecta esos elementos y solo activa pestañas de actividades/progreso.
+- `backend/accounting-service/Code.gs` / `uploadPaymentVoucher` -> `ComprobantesPago` y DriveApp; el archivo queda compartido ANYONE_WITH_LINK.
+- `recordStudentPayment` -> `PagosAbonos` con reciboId aleatorio; `generatePaymentReceiptPDF` consulta el pago y retorna un objeto JSON, sin generar archivo PDF.
+- `js/accounting.js` no está cargado por las páginas HTML actuales.
+
+### Facturación fiscal
+- `configureSARAuthorizedCAI` -> `AutorizacionesCAI`.
+- `createFiscalInvoice` -> `FacturasFiscales` y actualiza `AutorizacionesCAI.UltimoCorrelativo`; recibe opcionalmente `reciboCajaId` para relacionar un recibo interno.
+- `getFiscalInvoices` consulta `FacturasFiscales`; actualmente permite consulta sin filtros y por facturaId sin validar titular.
+- `PagosAbonos` (recibo interno) y `FacturasFiscales` (documento fiscal) son hojas separadas, pero la vinculación recibo-factura no valida pago confirmado ni unicidad.
+
+### Identidad institucional
+- El portal usa New Generation Bilingual School and Institute; los datos de recibo en ACCOUNTING declaran New Generation Christian Academy.
