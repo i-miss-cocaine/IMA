@@ -53,13 +53,13 @@ Cada lote tendrá un informe y commit documental independiente después de compl
 ## 5. Condiciones iniciales observadas
 
 - `METODOLOGIA_DESARROLLO.md` está presente en `NG_beta`; sus instrucciones se consideran obligatorias. No se modificará su contenido.
-- No se encontró `contexto_personal.md` ni `contexto_personal.md`/variantes de mayúsculas consultadas en la raíz de `NG_beta`. Se continuará respetando las reglas de trabajo previamente establecidas para el repositorio: operar únicamente en `NG_beta`, preservar registros y no hacer merges.
+- El archivo de contexto real es `Contexto_personal.txt` (blob SHA `35523b53fdc29ef26c66e73600712af9d7fac9ad`); fue leído. No existe el nombre exacto `contexto_personal.md`, pero el TXT contiene las reglas aplicables a IMA. Entre ellas: registrar la tarea en `Pendientes.md` antes de iniciarla, mantener ID/título/estado en el contexto, no marcar tareas completadas sin verificación y aprobación del usuario, preservar registros y no modificar ramas distintas de `NG_beta` ni hacer merges.
 - `completadas_legacy.md` conserva las 49 entradas históricas y advierte que su estado no certifica implementación funcional.
-- `Pendientes.md` en la raíz de `NG_beta` se recuperó como archivo de contenido vacío (blob SHA `482cfd7a49bc9cc04a1d4d609a70bb1bfda55768`). No se asumirá que puede reemplazarse: antes de cualquier actualización se investigará su historial y se preservará cualquier contenido recuperable.
+- `Pendientes.md` en la raíz de `NG_beta` tiene blob SHA `482cfd7a49bc9cc04a1d4d609a70bb1bfda55768`. El conector devuelve cuerpo vacío incluso al solicitar rangos y base64, pero el SHA no corresponde a un blob vacío y la comparación de Git entre el snapshot `9665b2569404c2e19c0de341552048367fb37fc9` y `NG_beta` reporta cambios sustanciales (17,694 adiciones y 314 eliminaciones). Por ello **no se considera vacío**: su contenido actual no se ha podido leer con la herramienta disponible. No se reemplazará ni actualizará hasta recuperar y revisar el contenido completo y localizar un ID libre para registrar esta auditoría.
 - `MapaDependencias.md` existe, pero su encabezado corresponde a v7.6.1; se tratará como referencia heredada y se verificará antes de confiar en sus relaciones.
 - `Auditoria.txt` y `ChangesLogs.txt` contienen registros históricos extensos; cualquier adición deberá anexarse sin alterar el contenido previo.
 
 ## 6. Estado de avance
 
-**Plan creado. Auditoría de las 49 tareas: pendiente de ejecución.**  
-Primer paso: inspección manual del lote A, comenzando por las funciones y dependencias del servicio académico y del servicio de usuarios. No se declara ningún requisito aprobado hasta disponer de evidencia del código vigente.
+**Plan creado. Auditoría formal de las 49 tareas: bloqueada antes de iniciar el Lote A.**  
+Se realizaron consultas preliminares de solo lectura sobre la metodología, los archivos de contexto y fragmentos del servicio académico, pero no se declara ninguna tarea auditada ni aprobada. La inspección formal no comenzará hasta poder leer el `Pendientes.md` actual, confirmar un ID disponible y registrar la auditoría en `Pendientes.md` y `Contexto_personal.txt`, tal como exige el contexto del repositorio.
