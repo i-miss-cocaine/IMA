@@ -18351,3 +18351,19 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
   - Pruebas negativas: llamada anónima con userId ajeno, sessionId ajeno, token inválido más userId, token válido con IDs manipulados y revocación administrativa autorizada.
 - **Relaciones:** AUD-NG-001 (propagación del token), AUD-NG-005 (revocación coherente entre servicios), TAREA-01, FASE2-T01 y TAREA-F4-P0-03.
 - **Estado:** [ ] Pendiente
+
+
+### [AUD-NG-160] Revalidar el rol vigente o invalidar tokens después de cambios de privilegios
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-160 (auditoría de completadas.md, FASE2-T01).
+- **Severidad/Clasificación:** Alto (P1).
+- **Archivos Involucrados:** backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; backend/task-service/Code.gs; backend/exam-service/Code.gs.
+- **Dependencias Expuestas:** generateSessionToken, verifySessionToken, claims.role, Usuarios, CacheService, dispatchSecurityEvent, revocación de sesiones.
+- **Descripción del Alcance:** Garantizar que los cambios de rol o privilegios se apliquen a sesiones ya emitidas. Revalidar el rol/versión vigente desde una fuente autoritativa en cada servicio, o invalidar coordinadamente las sesiones activas cuando cambie el rol. No depender únicamente del claim role emitido al iniciar sesión.
+- **Criterios de Aceptación:**
+  - Un usuario degradado no conserva permisos del rol anterior mediante un token todavía vigente.
+  - Los cambios de rol, asignación o revocación de privilegios se propagan a USER, ACADEMIC, ACCOUNTING, TASK y EXAM dentro del plazo documentado.
+  - Los tokens antiguos se rechazan tras el cambio; los nuevos tokens reflejan el rol vigente.
+  - Las cachés de rol/estado usan claves por usuario y versión y se invalidan coordinadamente.
+  - Pruebas con token emitido antes del cambio, rol degradado/promovido, caché caliente/fría y llamadas directas a cada microservicio.
+- **Relaciones:** AUD-NG-003 (vigencia de token), AUD-NG-005 (revocación y coherencia de estado), AUD-NG-159 (logout no autorizado), FASE2-T01 y TAREA-F4-P0-03.
+- **Estado:** [ ] Pendiente
