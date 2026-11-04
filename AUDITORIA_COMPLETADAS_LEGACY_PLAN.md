@@ -103,3 +103,15 @@ Se recuperó y leyó el contenido íntegro de `Pendientes.md`, se confirmó que 
 - **Código fuente:** sin modificaciones. No se alteró completadas_legacy.md ni se actualizó ChangesLogs.txt.
 - **Tarea principal:** AUD-NG-101 permanece En Ejecución. Ninguna marca histórica se modificó.
 - **Siguiente lote:** D.
+
+
+## 10. Resultados de auditoría - Lote D1 (2026-11-04)
+
+- **Subdivisión:** el Lote D (REQ-EXP-001 a REQ-EXP-006) se separa en D1 (001-003) y D2 (004-006) para mantener commits modulares.
+- **Rama base:** `NG_beta_0.0.0.1`, commit `44d9891132332e692dbe2ba8602b41f50a508a59`; trabajo documental en `NG_beta_0.0.0.1_work`.
+- **Resultados:** REQ-EXP-001 (Cumple parcialmente: metodología de ocho fases documentada, cumplimiento histórico integral no verificable); REQ-EXP-002 (No verificable: libro XLSX presente, datos no inspeccionados); REQ-EXP-003 (Cumple parcialmente: jerarquía y validación 4 factores, pero catálogo de secciones fijo y sin salto automático en sección única; filtro parcial de grados/secciones ya registrado en AUD-NG-115).
+- **Hallazgos:** AUD-NG-117 y AUD-NG-118, añadidos a Auditoria.txt y Pendientes.md.
+- **Informe:** `AUDITORIA_LOTE_D1.md`.
+- **Pruebas:** inspección de suites sin pruebas dirigidas identificables; no se ejecutaron pruebas.
+- **Código fuente:** sin modificaciones; no se alteró completadas_legacy.md ni ChangesLogs.txt.
+- **Siguiente sublote:** D2 (REQ-EXP-004 a REQ-EXP-006).

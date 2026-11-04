@@ -17946,3 +17946,22 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Descripción del Alcance:** La implementación actual guarda en HistorialAcademico el mes de registro como instantánea y no modifica las filas históricas al configurar un parcial posterior. La tarea histórica solicitó confirmar si esa hoja debe representar un hito (snapshot) o un intervalo. Formalizar la decisión funcional antes de alterar datos históricos y contrastarla con el modelo PeriodosAcademicos; no inferir ni cambiar la semántica sin aprobación.
 - **Criterios de Aceptación:** Existe una decisión documentada y aprobada sobre snapshot o intervalo; una prueba en entorno controlado realiza una transición real entre parciales y demuestra el comportamiento esperado; no se reescriben registros históricos productivos durante la validación.
 - **Estado:** [ ] Pendiente
+
+
+### [AUD-NG-117] Inspeccionar el libro de referencia y conciliar sus datos con el modelo académico
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-117 (REQ-EXP-002).
+- **Severidad/Clasificación:** Medio
+- **Archivos Involucrados:** `backend/Spreadsheet/AREA DE INFORMATICA IMA.xlsx`; `backend/academic-service/Code.gs`; `backend/user-service/Code.gs`.
+- **Dependencias Expuestas:** `ConfiguracionAcademica`, `HistorialAcademico`, `Tareas`, `Entregas`, claves primarias, índices y relaciones entre entidades.
+- **Descripción del Alcance:** El libro XLSX de referencia está versionado en el repositorio, pero su contenido binario no pudo inspeccionarse con el conector GitHub disponible; tampoco se accedió al Spreadsheet operativo. Realizar la revisión manual del libro y contrastar las hojas, encabezados, tipos, claves, relaciones y registros con el modelo vigente de los microservicios. Documentar discrepancias sin modificar datos productivos.
+- **Criterios de Aceptación:** Se registra inventario de hojas y columnas, claves primarias/foráneas o claves lógicas, duplicados y relaciones; se compara el libro de referencia con el esquema vigente 9/8 y los modelos Tareas/Entregas; se adjunta evidencia reproducible y se identifican divergencias; no se borran ni migran registros sin autorización.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-118] Completar navegación jerárquica con secciones dinámicas y salto automático
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-118 (REQ-EXP-003).
+- **Severidad/Clasificación:** Medio
+- **Archivos Involucrados:** `js/teacher.js`; `teacher-dashboard.html`; pruebas de regresión de navegación académica.
+- **Dependencias Expuestas:** `initAssignmentBuilder`, `window.GLOBAL_SCOPE`, `GranularConfig`, `renderGrados`, `renderSecciones`, `renderAsignaturas`, `pushNav` y `renderCurrentLevel`.
+- **Descripción del Alcance:** El constructor de asignaciones presenta secciones fijas A/B/C en lugar de derivarlas de la configuración académica vigente. La navegación observada agrega el nivel Secciones mediante pushNav y no se encontró una condición que omita automáticamente ese nivel cuando el grado tiene una sola sección. Derivar las secciones del contexto configurado y permitir el salto directo a Asignaturas cuando solo exista una sección autorizada, conservando el contexto grado/sección en el estado e historial de navegación.
+- **Criterios de Aceptación:** Los grados con una sección pasan directamente a Asignaturas con la sección correcta; los grados con varias secciones muestran el selector; el constructor solo ofrece secciones realmente configuradas para el grado/parcial; atrás/adelante del navegador restaura el contexto; pruebas cubren cero, una y varias secciones.
+- **Estado:** [ ] Pendiente

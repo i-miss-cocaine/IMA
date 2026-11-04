@@ -300,3 +300,13 @@
 - `js/student.js` / `renderStudentHeader` (líneas 80-120) consume `currentUser.email` y `currentUser.telefono`; construye el enlace `wa.me/504`.
 - `student-dashboard.html` (líneas 152-166) presenta selector de parcial e instrucción para seleccionar asignatura.
 - `js/student.js` / `renderSubjectNavigation` (líneas 1608-1670) utiliza `GLOBAL_SCOPE.GranularConfig`, selector de parcial y la variable local `matchParcial` para filtrar asignaturas.
+
+
+## Relaciones verificadas durante auditoría de continuidad - Lote D1 (2026-11-04)
+
+- `METODOLOGIA_DESARROLLO.md`: define los archivos maestros `Auditoria.txt`, `ChangesLogs.txt`, `Pendientes.md`, `MapaDependencias.md` y el flujo de ocho fases Fase 0-Fase 7 (secciones 3-4).
+- `backend/Spreadsheet/AREA DE INFORMATICA IMA.xlsx`: archivo de referencia versionado (blob SHA `d013d4d3b35252b62327ef210829d6855c107f47`, 904,629 bytes); el contenido no pudo inspeccionarse en esta sesión.
+- `backend/academic-service/Code.gs` / `updateAcademicConfig`: recibe `fullScope.hierarchicalAssignments`, valida conflictos por parcial/grado/sección/asignatura y persiste filas en `ConfiguracionAcademica`.
+- `js/teacher.js` / `initAssignmentBuilder`: construye asignaciones y llama a `fetchApi('ACADEMIC','updateAcademicConfig')`; usa `window.GLOBAL_SCOPE` y `confirmedAssignments`.
+- `js/teacher.js` / `pushNav` y `renderCurrentLevel`: mantienen `navStack` y despachan los niveles Grados, Secciones, Asignaturas, Alumnos y Detalles a sus funciones de renderizado.
+- `renderGrados`, `renderSecciones` y `renderAsignaturas`: consumen `GLOBAL_SCOPE`; el filtrado por parcial se aplica explícitamente en `renderAsignaturas`, no en los dos niveles anteriores (hallazgo AUD-NG-115).

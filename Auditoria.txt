@@ -3779,3 +3779,38 @@ RAMA DOCUMENTAL DE TRABAJO: NG_beta_0.0.0.1_work
 ===============================================================================
 FIN DE HALLAZGOS DEL LOTE C
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-04
+AUDITORÍA DE CONTINUIDAD - LOTE D1 DE completadas_legacy.md
+TAREAS: REQ-EXP-001 A REQ-EXP-003
+RAMA BASE: NG_beta_0.0.0.1 / COMMIT 44d9891132332e692dbe2ba8602b41f50a508a59
+RAMA DE TRABAJO: NG_beta_0.0.0.1_work
+===============================================================================
+
+[AUD-NG-117] REQ-EXP-002 - LIBRO XLSX DE REFERENCIA PRESENTE, PERO DATOS NO INSPECCIONADOS
+- Archivo: backend/Spreadsheet/AREA DE INFORMATICA IMA.xlsx (blob d013d4d3b35252b62327ef210829d6855c107f47; 904,629 bytes); backend/academic-service/Code.gs.
+- Tipo: Evidencia insuficiente / verificación de datos.
+- Evidencia: el libro de referencia existe en el árbol Git. El conector permite obtener su contenido base64, pero no ofrece una ruta para materializar y analizar el binario XLSX en esta sesión; tampoco hay conexión a la hoja de cálculo productiva. La inspección del backend confirma modelos de ConfiguracionAcademica e HistorialAcademico, pero no demuestra la estructura ni integridad de las hojas del libro de referencia, ni las relaciones reales de Tareas y Entregas.
+- Impacto: no puede certificarse la normalización de entidades, claves primarias e índices en los datos de referencia ni su correspondencia con el modelo operativo.
+- Severidad: MEDIO (bloqueo de verificación, no evidencia de corrupción).
+- Tarea derivada: AUD-NG-117 en Pendientes.md.
+
+[AUD-NG-118] REQ-EXP-003 - NAVEGACIÓN JERÁRQUICA SIN SALTO DE SECCIÓN ÚNICA Y CON CATÁLOGO FIJO
+- Archivo: js/teacher.js, líneas 400-405, 3786-3890 y 3210-3245 aprox.; backend/academic-service/Code.gs, líneas 12434-12453.
+- Módulo/función: Constructor de asignaciones y navegación docente.
+- Tipo: Lógica de navegación y consistencia de catálogo.
+- Evidencia: el constructor crea opciones de sección con la constante ["A", "B", "C"] (líneas 400-405) en lugar de leer las secciones autorizadas de GLOBAL_SCOPE/GranularConfig. La navegación usa pushNav para insertar el nivel recibido y renderCurrentLevel para mostrarlo; no se encontró una rama que omita Secciones cuando el grado tiene una sola sección. La validación de unicidad de cuatro factores (parcial, grado, sección, asignatura) sí está presente en updateAcademicConfig (líneas 12434-12453), y renderAsignaturas filtra por parcial/grado/sección. El filtro incompleto de parcial en grados/secciones ya está registrado como AUD-NG-115 y no se duplica.
+- Impacto: opciones de sección pueden no corresponder al catálogo real y la navegación exige un paso redundante en grados con sección única.
+- Severidad: MEDIO.
+- Tarea derivada: AUD-NG-118 en Pendientes.md.
+
+===============================================================================
+RESULTADOS DEL LOTE D1
+===============================================================================
+- REQ-EXP-001: Cumple parcialmente. METODOLOGIA_DESARROLLO.md contiene el flujo formal de ocho fases (Fase 0 a Fase 7) y define los archivos maestros; no hay evidencia suficiente para certificar que todas las modificaciones históricas hayan cumplido íntegramente cada fase y sus respaldos/verificaciones.
+- REQ-EXP-002: No verificable con la evidencia disponible. El XLSX está presente, pero no se inspeccionó su contenido ni los datos de la hoja productiva.
+- REQ-EXP-003: Cumple parcialmente. Existe jerarquía de navegación y validación backend de cuatro factores; faltan catálogo dinámico de secciones y salto automático de sección única. El filtro de parcial en grados/secciones se mantiene en AUD-NG-115.
+- No se ejecutaron pruebas ni se modificó código fuente. No se modificó completadas_legacy.md ni ChangesLogs.txt.
+===============================================================================
