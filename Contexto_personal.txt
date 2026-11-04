@@ -435,3 +435,51 @@ La búsqueda estaba intentando seguir el flujo completo, no solo la existencia d
 - No modificar ni eliminar entradas históricas de completadas_legacy.md.
 - No marcar las tareas históricas como completadas solo porque existan elementos de interfaz o comentarios; comparar criterios con el comportamiento real del código.
 - Antes de continuar, verificar HEAD, árbol de trabajo y estado de los archivos documentales; después leer REQ-DOC-004 desde completadas_legacy.md y continuar desde la evidencia, no desde suposiciones.
+
+
+---
+
+## CHECKPOINT DE CONTINUIDAD - AUDITORÍA COMPLETADAS_LEGACY - LOTE G2
+**Fecha:** 2026-11-04
+
+### Estado exacto del repositorio
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Rama base protegida:** NG_beta_0.0.0.1 (HEAD verificado: 44d9891132332e692dbe2ba8602b41f50a508a59).
+- **Rama de trabajo autorizada:** NG_beta_0.0.0.1_work.
+- **HEAD de cierre del sublote G2, verificado después del commit:** bd9b0896287b6848447250f7b699758d4d67cb97.
+- **Commit de resultados G2:** docs(audit): documentar lote G2 REQ-DOC-004 a REQ-DOC-006.
+- El presente checkpoint se guarda en el commit inmediatamente posterior al commit de resultados; al reanudar, verificar el HEAD actual de NG_beta_0.0.0.1_work antes de editar.
+
+### Progreso de auditoría
+- Inventario histórico: 49 tareas en completadas_legacy.md.
+- Lotes A-F2: 37 tareas revisadas en iteraciones anteriores.
+- Lote G1: REQ-DOC-001 a REQ-DOC-003, 3 tareas revisadas.
+- Lote G2: REQ-DOC-004 a REQ-DOC-006, 3 tareas revisadas.
+- **Total revisado: 43 de 49. Restan 6 tareas históricas.**
+- Hallazgos derivados del Lote G1: AUD-NG-147 a AUD-NG-149.
+- Hallazgos derivados del Lote G2: AUD-NG-150 a AUD-NG-152.
+- Los seis hallazgos nuevos están registrados en Auditoria.txt y Pendientes.md, en estado pendiente.
+- Informes: AUDITORIA_LOTE_G1.md y AUDITORIA_LOTE_G2.md.
+- Plan maestro y MapaDependencias.md actualizados.
+- No se modificó completadas_legacy.md, ChangesLogs.txt ni ningún archivo de código fuente.
+
+### Punto exacto donde terminó la inspección
+- Último endpoint inspeccionado: backend/task-service/Code.gs, función submitAssignment, líneas 892-990.
+- Último renderizador inspeccionado: js/student.js, función getActivityHtml, líneas 1816-1900.
+- Último flujo de fechas revisado: teacher-dashboard.html:270-278, js/teacher.js:4738-4748 y backend/task-service/Code.gs:createTask/getStudentTasks.
+- No se ejecutaron pruebas automatizadas, pruebas de interfaz ni llamadas a servicios productivos.
+
+### Próximo punto de continuación (NO repetir G1 ni G2)
+- Continuar con **Lote H**, comenzando por **REQ-DOC-007**, seguido por REQ-DOC-008 y REQ-DOC-009.
+- REQ-DOC-007: revisar visualización de tareas y recursos en el dashboard estudiantil; tarjetas por asignatura, título, tema, parcial, fechas, estado y separación de guías/tareas. Considerar lo ya inspeccionado en js/student.js y student-dashboard.html, pero no repetir la auditoría de DOC-001/004; centrarse en el alcance adicional de la tarea.
+- REQ-DOC-008: revisar estructura jerárquica de carpetas Google Drive y nomenclatura; comprobar creación real de carpetas, rutas por año/grado/sección/asignatura/parcial/tema, metadatos y usos por upload/download; no dar por implementado por comentarios o nombres de funciones.
+- REQ-DOC-009: leer su alcance exacto en completadas_legacy.md y revisar la funcionalidad relacionada en el frontend y microservicio correspondiente; verificar persistencia, permisos, integridad y comportamiento real.
+- Después de H1, continuar con H2: REQ-DOC-010 a REQ-DOC-012.
+- Mantener auditoría estática/manual; no corregir código fuente durante la auditoría. Registrar hallazgos confirmados como nuevas tareas, sin modificar registros anteriores.
+
+### Reglas de continuidad
+- No repetir lotes A-F2, G1 ni G2.
+- No modificar ni eliminar entradas históricas de completadas_legacy.md.
+- No marcar tareas históricas como completadas solo por comentarios, formularios o wrappers sin implementación conectada.
+- Usar exclusivamente NG_beta_0.0.0.1_work para documentación y commits de auditoría; no hacer merge ni modificar NG_beta_0.0.0.1.
+- Antes de continuar, verificar HEAD, árbol de trabajo y SHA de archivos documentales; leer REQ-DOC-007 desde completadas_legacy.md y seguir la evidencia del código.
