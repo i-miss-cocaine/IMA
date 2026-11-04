@@ -17803,3 +17803,81 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Descripción del Alcance:** Ejecutar una auditoría técnica manual, individual y trazable de las 49 tareas del registro histórico, organizadas en los lotes A-H del plan. Contrastar cada requisito y criterio de aceptación con el código vigente en la rama de trabajo y con los cambios posteriores que pudieran sustituir, ampliar o retirar la implementación original. Evaluar calidad, seguridad, validaciones, casos límite, persistencia, concurrencia, manejo de errores, dependencias y pruebas pertinentes. Registrar cada hallazgo en `Auditoria.txt` con evidencia técnica, severidad e impacto; convertir todo hallazgo que requiera acción en una tarea concreta, verificable y vinculada al registro de auditoría dentro de `Pendientes.md`. No modificar código fuente ni reescribir las marcas o el contenido histórico de `completadas_legacy.md`.
 - **Criterios de Aceptación:** Las 49 tareas cuentan con evaluación individual y estado de auditoría sustentado; cada conclusión incluye rutas, rangos de líneas y referencias de cambios o pruebas cuando existan; todos los hallazgos accionables tienen una tarea derivada vinculada; los registros históricos se conservan íntegros; no se modifica código fuente durante la auditoría; ningún estado se declara completado sin evidencia suficiente y aprobación del usuario.
 - **Estado:** [ ] En Ejecución
+
+
+---
+
+## HALLAZGOS DERIVADOS DE LA AUDITORÍA - LOTE A (2026-11-04)
+
+### [AUD-NG-102] Preservar parcial y unidad en la clave de persistencia granular
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-102
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** backend/academic-service/Code.gs
+- **Dependencias Expuestas:** updateAcademicConfig, finalConfigMap, oldRow, ConfiguracionAcademica.
+- **Descripción del Alcance:** La clave de finalConfigMap y la búsqueda oldRow omiten parcial y unidad. El guardado puede reutilizar la fila de otro parcial/unidad y la reescritura seguida de deleteRows elimina las filas que colisionan.
+- **Criterios de Aceptación:** La clave y la búsqueda incluyen todas las dimensiones de identidad del registro; dos parciales/unidades distintos permanecen independientes; actualizar una fila no modifica ni elimina otra; pruebas cubren inserción y actualización.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-103] Preservar parcial, tema y unidad al cargar y guardar el constructor docente
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-103
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** js/teacher.js; backend/academic-service/Code.gs
+- **Dependencias Expuestas:** loadAcademicAdminData, confirmedAssignments, hierarchicalAssignments, getAcademicConfig, updateAcademicConfig.
+- **Descripción del Alcance:** La carga transforma GranularConfig y descarta parcial y tema; el guardado asigna temas General y toma UnidadActual de la primera asignación. El backend ignora entry.unidad y aplica una unidad común. Además, la carga no filtra el conjunto por parcial seleccionado.
+- **Criterios de Aceptación:** Cargar y volver a guardar sin cambios conserva exactamente los registros; cambiar un parcial no reetiqueta los demás; cada fila conserva tema y unidad; una asignación no hereda la unidad de la primera fila.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-104] Corregir el uso del almacén IndexedDB del dashboard estudiantil
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-104
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** js/persistence.js; js/student.js
+- **Dependencias Expuestas:** PersistenceManager.STORES/get/set/delete, fetchAllActivities, academic-scope-updated.
+- **Descripción del Alcance:** fetchAllActivities usa cache_estudiante_dashboard_<userId> como primer argumento de get/set, es decir, como nombre de object store. PersistenceManager solo crea el almacén fijo cache_estudiante_dashboard. La lectura está fuera del try principal y puede abortar la carga; el listener invalida el almacén fijo, no el nombre dinámico.
+- **Criterios de Aceptación:** Usar un almacén fijo declarado y pasar el userId como key; get/set/delete comparten el mismo contrato; el evento invalida solo la entrada del usuario; un fallo de caché no impide la consulta al servidor ni deja isFetchingActivities bloqueado.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-105] Alinear el contrato de almacenamiento, permisos y lectura del historial académico
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-105
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** backend/academic-service/Code.gs; js/student.js
+- **Dependencias Expuestas:** ROLE_PERMISSIONS, saveToAcademicHistory, getAcademicHistory, fetchAcademicHistory.
+- **Descripción del Alcance:** saveToAcademicHistory crea IDs hist-XXXX en la primera columna y profesorId en la octava, sin studentId. getAcademicHistory compara verifiedUserId con r[0]. Además, getAcademicHistory está permitido para Alumno, pero no para Estudiante, aunque el dashboard estudiantil invoca la acción.
+- **Criterios de Aceptación:** Definir si el historial es de asignaciones por grupo o individual; alinear esquema, filtro y permisos; la lectura usa una columna de identidad real o un alcance institucional validado; los roles estudiantiles previstos pueden consultar únicamente su historial.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-106] Vincular el grado y la sección consultados con la identidad estudiantil verificada
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-106
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** backend/academic-service/Code.gs
+- **Dependencias Expuestas:** ROLE_PERMISSIONS, validateContextualAccess, validateRolePermission, getAcademicConfig, doPost.
+- **Descripción del Alcance:** Estudiante y Alumno tienen permiso para getAcademicConfig. El control contextual no valida grado/sección; getAcademicConfig confía en esos valores del payload y los filtros ausentes actúan como comodines. Aunque el despachador añade _verifiedUserId, la función no lo usa para derivar el alcance.
+- **Criterios de Aceptación:** El estudiante solo obtiene la configuración de su grado/sección; alterar u omitir esos filtros no amplía el acceso; el servidor deriva el ámbito desde el perfil autenticado o rechaza ámbitos ajenos.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-107] Aplicar la validación de grado del estudiante antes de autorizar recursos por tema
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-107
+- **Severidad/Clasificación:** Medio
+- **Archivos Involucrados:** js/config.js
+- **Dependencias Expuestas:** SUBJECT_GRADE_MAP, isContentAuthorized, GLOBAL_SCOPE.
+- **Descripción del Alcance:** Cuando contentTopic coincide con TemaActual, isContentAuthorized retorna true antes de ejecutar la validación Tier 2 que compara asignatura y contentGrade con el grado del usuario. Con metadata incompleta, el mapa de grado no se aplica en esa rama.
+- **Criterios de Aceptación:** Las restricciones del perfil se aplican antes de cualquier retorno de autorización; un recurso temático de una asignatura ajena al grado se rechaza incluso si el tema coincide; pruebas cubren metadata presente y ausente.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-108] Aislar la configuración académica por el profesor autenticado
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-108
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** backend/academic-service/Code.gs
+- **Dependencias Expuestas:** ROLE_PERMISSIONS, validateContextualAccess, validateRolePermission, getAcademicConfig, updateAcademicConfig, _verifiedUserId.
+- **Descripción del Alcance:** El rol Profesor puede leer y actualizar la configuración, pero getAcademicConfig confía en payload.profesorId y updateAcademicConfig en fullScope.profesorId. El control contextual no vincula esos campos con _verifiedUserId.
+- **Criterios de Aceptación:** Para Profesor, el backend deriva profesorId de la sesión y rechaza IDs de terceros; los roles administrativos usan una política explícita; pruebas negativas demuestran que un docente no puede leer ni modificar la configuración de otro.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-109] Añadir pruebas funcionales de regresión para el lote académico histórico
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-109
+- **Severidad/Clasificación:** Medio
+- **Archivos Involucrados:** tests/regression/academic-grading-suite.js; tests/regression/modular-dashboard-suite.js; nueva suite de regresión
+- **Dependencias Expuestas:** Persistencia granular, RBAC/ABAC, historial, IndexedDB y navegación.
+- **Descripción del Alcance:** Las dos suites existentes no contienen pruebas conductuales para UNIF-001, FIX-001, HIST-001, AUTH-001, PROF-001 o NAV-001, ni ejercitan getAcademicConfig, updateAcademicConfig o getAcademicHistory para validar sus contratos.
+- **Criterios de Aceptación:** Las pruebas cubren conservación entre parciales/unidades, aislamiento de profesor y estudiante, lectura del historial por roles, aislamiento de caché por usuario y navegación con una o varias secciones; fallan ante los defectos registrados.
+- **Estado:** [ ] Pendiente
+

@@ -176,3 +176,20 @@ ADENDA IMA — AUTORIZACIÓN DE RAMA DE TRABAJO (2026-11-04)
 - Estado al iniciar: ninguna de las 49 tareas se declara auditada en esta continuación; el Lote A está pendiente de inspección formal.
 - Último commit base verificado: `a0d2e04760c06e6c71a836cb8db509e379cfd893`. La rama de trabajo se creó sin diferencias respecto de `NG_beta`.
 ================================================================
+
+
+================================================================
+ACTUALIZACIÓN DE CONTINUIDAD IMA - AUDITORÍA LOTE A (2026-11-04)
+================================================================
+- Rama de trabajo: NG_beta_work.
+- Commit de referencia verificado antes del registro de resultados: 28c08ba9736532075e41f3255c0f387a88d23484.
+- La rama NG_beta permanece como base y no se modifica. No se modifica main ni se hacen merges.
+- Tarea principal AUD-NG-101: permanece En Ejecución; el alcance completo de 49 tareas no ha terminado.
+- Lote A inspeccionado individualmente: UNIF-001, FIX-001, HIST-001, AUTH-001, PROF-001 y NAV-001.
+- Resultado: UNIF-001 (Cumple parcialmente); FIX-001 (Cumple parcialmente); HIST-001 (Cumple parcialmente); AUTH-001 (No cumple); PROF-001 (No cumple); NAV-001 (Cumple).
+- Hallazgos y tareas derivadas añadidas de forma aditiva: AUD-NG-102 a AUD-NG-109.
+- Última tarea histórica auditada: NAV-001.
+- No se modificó código fuente, no se ejecutaron pruebas y no se interactuó con la hoja de cálculo productiva. Ninguna tarea histórica se marca como completada.
+- Próximo paso: continuar con el Lote B, sin saltar tareas ni alterar los registros históricos.
+- Evidencia detallada: AUDITORIA_LOTE_A.md; registro de hallazgos: Auditoria.txt; tareas derivadas: Pendientes.md.
+================================================================

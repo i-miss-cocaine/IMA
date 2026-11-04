@@ -3518,3 +3518,173 @@ INVENTARIO COMPLEMENTARIO POSTERIOR A TASK-050 (2026-11-04)
 - Archivos adicionales inspeccionados: backend/accounting-service/Code.gs, backend/user-service/Code.gs y js/ui-common.js.
 - No se modificó código ni se ejecutaron pruebas u operaciones sobre datos reales.
 ===============================================================================
+
+
+===============================================================================
+AUDITORÍA TÉCNICA - LOTE A DE completadas_legacy.md (2026-11-04)
+RAMA: NG_beta_work
+TAREA PRINCIPAL: AUD-NG-101 (En Ejecución)
+ALCANCE: UNIF-001, FIX-001, HIST-001, AUTH-001, PROF-001 y NAV-001
+TIPO DE REVISIÓN: Inspección estática manual del código vigente y contraste con commits históricos.
+ARCHIVOS Y RESPALDOS:
+- backend/academic-service/Code.gs: daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc
+- js/teacher.js: c475fce5afcd28fca23e7b64398ad32b17773746
+- js/student.js: e2888cea60322e49a40b89adadb8010489605dcc
+- js/config.js: 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc
+- js/persistence.js: 94ac26feb4f7f31f1f3f2a238e164d23be565d94
+- tests/regression/academic-grading-suite.js: 3433b707edd4a2f35c68368a3172932adc2a3b32
+- tests/regression/modular-dashboard-suite.js: 0495e1d526a872c33310935a003a83d924d34683
+NOTA: No se modificó código fuente, no se ejecutaron suites ni se interactuó con la hoja productiva. Los hallazgos son estáticos y no representan pruebas de explotación.
+===============================================================================
+
+AUD-NG-102
+Fecha: 2026-11-04
+Tarea auditada: UNIF-001
+Archivo auditado: backend/academic-service/Code.gs
+Módulo: Identidad de registros y conservación de configuraciones por parcial/unidad
+Funciones y rangos: updateAcademicConfig (líneas 12404-12514).
+Tipo: La clave de consolidación y la búsqueda de la fila previa omiten el parcial y la unidad.
+Severidad: Crítico.
+Evidencia técnica:
+1. ConfiguracionAcademica se define con nueve columnas: ID, Fecha, Parcial, Grado, Sección, Asignatura, Unidad, Tema y profesorId.
+2. finalConfigMap construye su clave con grado, sección, asignatura, tema y profesorId; no incluye Parcial ni Unidad.
+3. La búsqueda oldRow compara profesorId, grado, sección, asignatura y tema, pero tampoco compara parcial ni unidad; cuando encuentra una fila previa, reemplaza sus columnas de parcial y unidad por los valores del guardado actual.
+4. Después de formar Object.values(finalConfigMap), el código reescribe el bloque de datos desde la fila 2 y elimina las filas sobrantes.
+Impacto: Dos configuraciones del mismo docente con igual grado/sección/asignatura/tema pero distinto parcial o unidad pueden colisionar. La fila previa puede convertirse al parcial actual y las filas adicionales pueden eliminarse al reescribir la hoja. El riesgo alcanza las configuraciones de cualquier docente que tenga registros repetidos entre parciales o unidades.
+Conclusión: La persistencia granular no conserva de forma independiente todas las dimensiones que componen el registro. Hallazgo estático; no se ejecutó una escritura sobre la hoja productiva.
+Tarea asociada: AUD-NG-102 en Pendientes.md.
+===============================================================================
+
+AUD-NG-103
+Fecha: 2026-11-04
+Tarea auditada: UNIF-001
+Archivos auditados: js/teacher.js; backend/academic-service/Code.gs
+Módulo: Round-trip de la configuración granular entre backend y constructor docente
+Funciones y rangos: loadAcademicAdminData (js/teacher.js:339-365); guardado de fullScope (js/teacher.js:500-545); getAcademicConfig/updateAcademicConfig (backend/academic-service/Code.gs:12388-12514).
+Tipo: La interfaz reduce registros granulares a campos incompletos y los vuelve a guardar con valores comunes.
+Severidad: Alto.
+Evidencia técnica:
+1. getAcademicConfig devuelve todas las filas del docente en GranularConfig, sin filtrar por parcial; ParcialActual se toma de la última fila devuelta.
+2. loadAcademicAdminData transforma cada fila en confirmedAssignments conservando grado, sección, asignatura y unidad, pero descarta parcial y tema.
+3. El guardado genera hierarchicalAssignments con temas: ["General"] para todas las asignaciones y fija UnidadActual con la unidad de la primera asignación.
+4. updateAcademicConfig lee entry.temas, pero no utiliza entry.unidad; escribe unidadNorm derivada de fullScope.UnidadActual para todas las filas generadas.
+Impacto: Al editar una configuración, asignaciones de varios parciales pueden aparecer juntas y ser guardadas bajo el parcial seleccionado. Los temas específicos se sustituyen por General y las unidades individuales pueden convertirse en la unidad de la primera asignación.
+Conclusión: La interfaz no conserva la granularidad que el backend devuelve ni la que el esquema pretende almacenar. Hallazgo estático.
+Tarea asociada: AUD-NG-103 en Pendientes.md.
+===============================================================================
+
+AUD-NG-104
+Fecha: 2026-11-04
+Tarea auditada: FIX-001
+Archivos auditados: js/persistence.js; js/student.js
+Módulo: Caché local aislado por estudiante
+Funciones y rangos: PersistenceManager.STORES/get/set/delete (js/persistence.js:7-15, 78-145); fetchAllActivities (js/student.js:1168-1210); listener academic-scope-updated (js/student.js:2658-2667).
+Tipo: El identificador de caché por estudiante se utiliza como nombre de almacén, aunque el motor solo crea almacenes estáticos.
+Severidad: Alto.
+Evidencia técnica:
+1. PersistenceManager.STORES declara cache_estudiante_dashboard como almacén fijo; no crea almacenes dinámicos con sufijo de usuario.
+2. PersistenceManager.get(store, key) y set(store, data, key) usan el primer argumento como nombre del object store y abren una transacción sobre ese nombre.
+3. fetchAllActivities construye cache_estudiante_dashboard_<userId> y lo pasa como primer argumento a PersistenceManager.get y set, sin proporcionar el segundo argumento key.
+4. La llamada await PersistenceManager.get(cacheKeyDashboard) ocurre después de isFetchingActivities = true y antes del bloque try principal; un almacén inexistente puede rechazar la promesa y abortar la carga antes de consultar los servicios.
+5. El listener academic-scope-updated invalida el almacén fijo cache_estudiante_dashboard, no el almacén dinámico que fetchAllActivities intenta utilizar.
+Impacto: El acceso al almacén dinámico puede producir NotFoundError de IndexedDB; la carga de actividades puede abortarse antes de llegar al servidor y el indicador isFetchingActivities puede quedar activo. La persistencia e invalidación por usuario no funcionan de forma coherente.
+Conclusión: El cambio que añadió aislamiento por estudiante no respeta la interfaz de PersistenceManager ni su lista de almacenes. Hallazgo estático; no se ejecutó en navegador.
+Tarea asociada: AUD-NG-104 en Pendientes.md.
+===============================================================================
+
+AUD-NG-105
+Fecha: 2026-11-04
+Tarea auditada: HIST-001
+Archivos auditados: backend/academic-service/Code.gs; js/student.js
+Módulo: Lectura del historial académico por el estudiante
+Funciones y rangos: ROLE_PERMISSIONS (backend/academic-service/Code.gs:242-263); saveToAcademicHistory/getAcademicHistory (12515-12624); fetchAcademicHistory (js/student.js:1148-1162).
+Tipo: El filtro de estudiante compara el ID de sesión con el ID del registro histórico y el rol Estudiante no tiene permiso para invocar la lectura.
+Severidad: Alto.
+Evidencia técnica:
+1. saveToAcademicHistory crea IDs hist-XXXX en la columna 1 y almacena profesorId en la columna 8; el esquema no contiene un identificador de estudiante.
+2. getAcademicHistory asigna verifiedUserId a targetStudentId para los roles Estudiante y Alumno, pero compara ese valor con r[0], que es el ID hist-XXXX.
+3. ROLE_PERMISSIONS concede getAcademicHistory a Alumno, pero no a Estudiante.
+4. fetchAcademicHistory invoca getAcademicHistory desde el dashboard estudiantil sin enviar estudianteId; el servidor aplica el ID verificado y el filtro descrito.
+Impacto: El rol Estudiante recibe rechazo RBAC; el rol Alumno supera RBAC, pero el filtro por ID no coincide con los IDs hist-XXXX y devuelve un historial vacío. La tabla tampoco tiene un campo que permita asociar esos registros a un estudiante.
+Conclusión: La escritura de registros históricos existe, pero el contrato de lectura individual no coincide con el esquema ni con los permisos. Hallazgo estático.
+Tarea asociada: AUD-NG-105 en Pendientes.md.
+===============================================================================
+
+AUD-NG-106
+Fecha: 2026-11-04
+Tarea auditada: AUTH-001
+Archivo auditado: backend/academic-service/Code.gs
+Módulo: Autorización contextual server-side de getAcademicConfig
+Funciones y rangos: ROLE_PERMISSIONS (líneas 242-263); validateContextualAccess/validateRolePermission (aprox. 460-560); getAcademicConfig (12388-12402); doPost (671-700).
+Tipo: El endpoint permite a los roles de estudiante filtrar por grado y sección enviados por el cliente sin validar que pertenezcan a la identidad autenticada.
+Severidad: Alto.
+Evidencia técnica:
+1. ROLE_PERMISSIONS incluye getAcademicConfig para Estudiante y Alumno.
+2. validateContextualAccess comprueba studentId/estudianteId/targetUserId/userId cuando se envían, pero no valida grado ni sección.
+3. getAcademicConfig filtra las filas con los valores grado y seccion del payload; cuando esos valores faltan, las condiciones !grado y !seccion actúan como comodines y pueden devolver todas las filas.
+4. validateRolePermission incorpora _verifiedUserId y _verifiedRole al payload, pero getAcademicConfig no los utiliza para derivar o validar el grado y la sección.
+Impacto: Un estudiante autenticado puede solicitar configuraciones de otro grado/sección alterando el payload; si omite los filtros, puede obtener un conjunto mucho más amplio de configuraciones docentes. La información expuesta incluye asignaturas, parciales, unidades, temas y profesorId.
+Conclusión: El filtro de interfaz no constituye control de acceso. La consulta necesita derivar el alcance del estudiante desde la identidad verificada o rechazar cualquier ámbito no autorizado. Hallazgo estático; no se enviaron solicitudes de explotación.
+Tarea asociada: AUD-NG-106 en Pendientes.md.
+===============================================================================
+
+AUD-NG-107
+Fecha: 2026-11-04
+Tarea auditada: AUTH-001
+Archivo auditado: js/config.js
+Módulo: Defensa de filtrado de recursos educativos por perfil
+Funciones y rangos: SUBJECT_GRADE_MAP (aprox. líneas 375-390); isContentAuthorized (610-720).
+Tipo: La rama de recursos con tema puede retornar antes de ejecutar la validación de perfil que consulta SUBJECT_GRADE_MAP.
+Severidad: Medio.
+Evidencia técnica:
+1. SUBJECT_GRADE_MAP define el grado requerido para asignaturas conocidas.
+2. isContentAuthorized ejecuta primero los controles globales y, cuando contentTopic coincide con TemaActual, retorna true dentro del bloque de tema.
+3. La validación Tier 2 que compara la asignatura y contentGrade con el grado del usuario aparece después de ese return, por lo que no se ejecuta en esa rama.
+Impacto: Para recursos temáticos cuyo alcance global no incluya metadata suficiente de grado/asignatura, la validación específica del mapa de grado no se aplica. Los filtros globales pueden seguir restringiendo cuando reciben metadata completa, por lo que el hallazgo se clasifica como brecha de defensa en profundidad, no como explotación confirmada.
+Conclusión: La comprobación por perfil debe ejecutarse antes de cualquier retorno de autorización. Hallazgo estático.
+Tarea asociada: AUD-NG-107 en Pendientes.md.
+===============================================================================
+
+AUD-NG-108
+Fecha: 2026-11-04
+Tarea auditada: PROF-001
+Archivo auditado: backend/academic-service/Code.gs
+Módulo: Propiedad de configuraciones docentes y protección IDOR
+Funciones y rangos: ROLE_PERMISSIONS (líneas 242-263); validateContextualAccess/validateRolePermission (aprox. 460-560); getAcademicConfig/updateAcademicConfig (12388-12514).
+Tipo: Los endpoints confían en profesorId enviado por el cliente y no lo vinculan con _verifiedUserId.
+Severidad: Crítico.
+Evidencia técnica:
+1. ROLE_PERMISSIONS concede getAcademicConfig y updateAcademicConfig al rol Profesor.
+2. validateRolePermission verifica el token y agrega _verifiedUserId/_verifiedRole; validateContextualAccess no compara profesorId con el usuario verificado.
+3. getAcademicConfig filtra por el profesorId recibido en payload.
+4. updateAcademicConfig toma fullScope.profesorId como propietario de las filas que conserva, reemplaza o elimina; no comprueba que coincida con _verifiedUserId.
+Impacto: Un profesor autenticado puede consultar la configuración de otro docente y enviar un updateAcademicConfig con el profesorId de otra persona, afectando sus registros. No se realizó una petición de explotación; la conclusión deriva del flujo estático de autorización y despacho.
+Conclusión: El backend debe derivar el profesorId del token para el rol Profesor y reservar el acceso cruzado a roles institucionales expresamente autorizados. Hallazgo estático de severidad crítica.
+Tarea asociada: AUD-NG-108 en Pendientes.md.
+===============================================================================
+
+AUD-NG-109
+Fecha: 2026-11-04
+Tarea auditada: UNIF-001 / FIX-001 / HIST-001 / AUTH-001 / PROF-001 / NAV-001
+Archivos auditados: tests/regression/academic-grading-suite.js; tests/regression/modular-dashboard-suite.js
+Módulo: Cobertura de aceptación conductual del Lote A
+Funciones y rangos: Pruebas de persistencia granular, RBAC/ABAC, historial, IndexedDB y navegación.
+Tipo: Las suites de regresión presentes no cubren el comportamiento de las seis tareas del Lote A.
+Severidad: Medio.
+Evidencia técnica:
+1. El directorio tests/regression contiene academic-grading-suite.js y modular-dashboard-suite.js.
+2. No se encontraron en esas suites referencias a UNIF-001, FIX-001, HIST-001, AUTH-001, PROF-001, NAV-001 ni pruebas que invoquen getAcademicConfig, updateAcademicConfig o getAcademicHistory.
+3. academic-grading-suite.js contiene principalmente aserciones de presencia de funciones y marcadores de fases posteriores; no verifica aislamiento por profesor/estudiante, preservación entre parciales ni el flujo IndexedDB descrito.
+Impacto: Los defectos de pérdida de configuración, acceso cruzado, historial vacío y fallo de caché pueden introducirse sin que las suites actuales los detecten.
+Conclusión: Hace falta cobertura conductual de los contratos y controles que estas tareas pretendían garantizar. No se ejecutaron las suites durante esta auditoría; se inspeccionó su contenido.
+Tarea asociada: AUD-NG-109 en Pendientes.md.
+===============================================================================
+
+INVENTARIO POSTERIOR AL LOTE A (2026-11-04)
+- Tareas históricas inspeccionadas: 6 (UNIF-001, FIX-001, HIST-001, AUTH-001, PROF-001 y NAV-001).
+- Estados: UNIF-001 parcial; FIX-001 parcial; HIST-001 parcial; AUTH-001 no cumple; PROF-001 no cumple; NAV-001 cumple.
+- Hallazgos nuevos: 8 (AUD-NG-102 a AUD-NG-109).
+- Tareas derivadas añadidas a Pendientes.md: 8 (AUD-NG-102 a AUD-NG-109).
+- No se modificó código fuente, no se alteraron marcas históricas y no se actualizaron ChangesLogs.txt.
+- No se accedió a la hoja de cálculo productiva ni se ejecutaron pruebas de explotación.
+===============================================================================
