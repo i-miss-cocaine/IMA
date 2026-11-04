@@ -1864,3 +1864,15 @@ Dependencias relacionadas:
 Conclusión:
 La tarea [TASK-011] no puede considerarse íntegramente cumplida con la evidencia de código inspeccionada. Se confirma implementación parcial del cálculo proporcional y la deducción de anticipos, pero faltan garantías para cambios salariales/contractuales, boletas PDF reales y asientos diferenciados; además existe una interacción defectuosa con el cálculo genérico de aportaciones patronales. No se ejecutaron pruebas contra hojas reales ni datos de producción.
 ===============================================================================
+
+===============================================================================
+RECTIFICACIÓN DEL INVENTARIO (2026-11-04)
+===============================================================================
+La primera separación del inventario restó por error las tareas AUD-NG del total de encabezados pendientes. La revisión de encabezados confirma que las tareas originales pendientes son 108, no 82.
+Inventario corregido:
+- 83 tareas originales [X] completadas.
+- 108 tareas originales [ ] pendientes de implementación.
+- 27 tareas nuevas AUD-NG pendientes derivadas de auditoría.
+- 191 tareas originales + 27 tareas de auditoría = 218 entradas de tarea.
+Las 108 tareas originales [ ] siguen fuera del alcance de cumplimiento de esta auditoría.
+===============================================================================
