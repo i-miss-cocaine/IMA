@@ -309,3 +309,15 @@ ACTUALIZACIÓN DE CONTINUIDAD IMA - LOTE F1 (2026-11-04)
 - Última tarea histórica revisada: REQ-EXP-015. Próximo sublote: F2 (REQ-EXP-016 en adelante).
 - No se modificó código fuente, completadas_legacy.md ni ChangesLogs.txt. No se ejecutaron pruebas ni se accedió a datos productivos.
 ================================================================
+
+
+================================================================
+ACTUALIZACIÓN DE CONTINUIDAD IMA - LOTE F2 (2026-11-04)
+================================================================
+- Commit de resultados F2: `7ece90d40232abdb6cc1d985046cdc2d7b31fea0`.
+- Tareas históricas revisadas: REQ-EXP-016 a REQ-EXP-019 (todas Cumple parcialmente).
+- Hallazgos añadidos: AUD-NG-143 a AUD-NG-146. Informe: AUDITORIA_LOTE_F2.md.
+- Riesgos destacados: contrato de noticias desalineado (data/noticias, Activo/Activa, fechaExpiracion/fechaFin), audiencia/vigencia no configurables desde UI; ping incompleto para TASK/EXAM y monitoreo omite DEVELOPER/ACCOUNTING; logs centrales de DEVELOPER son sampleLogs y filtros/DTO del viewer no coinciden; backups usan hash no criptográfico, checksum se acepta por Boolean(storedChecksum), restore UI manda propiedades incorrectas, no se encontró scheduler/retención.
+- Última tarea histórica revisada: REQ-EXP-019. Próximo lote: G (REQ-EXP-020 en adelante y tareas DOC).
+- No se modificó código fuente, completadas_legacy.md ni ChangesLogs.txt. No se ejecutaron pruebas ni se accedió a datos productivos.
+================================================================
