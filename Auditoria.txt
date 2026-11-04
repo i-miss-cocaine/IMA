@@ -1817,3 +1817,50 @@ NOTAS DE ALCANCE DE ESTA PASADA:
 3. No se ejecutaron pruebas contra Apps Script desplegado, hojas de cálculo reales, cuentas independientes, permisos de Drive, proveedores de firma ni datos de producción.
 4. No se modificó código de aplicación. Los hallazgos se convertirán en tareas separadas en Pendientes.md, preservando las entradas originales.
 ===============================================================================
+
+
+===============================================================================
+INVENTARIO DEL BACKLOG Y CONTINUACIÓN DE AUDITORÍA (2026-11-04)
+===============================================================================
+
+Inventario de encabezados de tareas en Pendientes.md, rama NG_beta:
+- Tareas originales marcadas [X] Completada: 83.
+- Tareas originales marcadas [ ] Pendiente de implementación: 82.
+- Tareas nuevas derivadas de auditorías anteriores (AUD-NG-001 a AUD-NG-011 y AUD-NG-013 a AUD-NG-027): 26.
+- Total de entradas de tarea registradas: 191.
+- Alcance de la auditoría de cumplimiento: únicamente las 83 tareas originales [X].
+- Las 82 tareas originales [ ] no se consideran incumplimientos ni implementaciones parciales; están pendientes de ejecución.
+- Las 26 tareas AUD-NG son correcciones/validaciones nuevas y permanecen pendientes.
+
+AUD-NG-028
+Fecha: 2026-11-04
+Archivo auditado: backend/accounting-service/Code.gs
+Módulo: Planillas y beneficios laborales extraordinarios
+Funciones y rangos inspeccionados:
+- calculateExtraordinaryPayroll (líneas 5334-5539).
+- updatePayrollPeriodStatus (líneas 5151-5215).
+- generatePayrollReceiptPDF (líneas 5910-5935).
+Tarea original relacionada: [TASK-011] [F17-Task05] Crear el cálculo y procesamiento independiente del décimo tercer y décimo cuarto mes.
+Tipo: Incumplimiento funcional / integridad de cálculo y cierre contable.
+Severidad: Alto.
+
+Evidencia técnica:
+1. calculateExtraordinaryPayroll obtiene los contratos del expediente y selecciona empContracts[empContracts.length - 1], sin filtrar por vigencia del contrato dentro del período de acumulación ni dividir el período cuando existen varios contratos o cambios de salario. Después aplica ese único salario contractual a todos los días acumulados. Esto no acredita el uso del salario ordinario devengado/promedio o salario vigente conforme al caso, ni permite calcular tramos con cambios contractuales.
+2. La función crea filas en PlanillasNomenclatura con estado "Calculada" y descuenta anticipos, pero no genera una boleta individual ni un asiento contable en ese flujo.
+3. updatePayrollPeriodStatus sí permite procesar esas filas mediante el ciclo genérico, pero calcula aportaciones patronales con expresiones del tipo parseFloat(data[i][16] || (Math.min(sBase, 10317.38) * 0.072)). Como calculateExtraordinaryPayroll guarda cero en las columnas patronales, el operador || activa los porcentajes de respaldo y puede imputar aportaciones patronales a beneficios extraordinarios aunque la fila las haya guardado en cero. Además, el asiento utiliza cuentas genéricas de salarios y aportaciones patronales, no cuentas diferenciadas de pasivo y gasto para 13º/14º mes.
+4. generatePayrollReceiptPDF recibe planillaId pero no lo utiliza para localizar la fila; busca solo por empleadoId y, opcionalmente, periodoMes. Para beneficios extraordinarios del mismo empleado pueden existir varias filas/planillas con el mismo periodoClave. Además, construye una URL de PDF y la devuelve, pero en el cuerpo inspeccionado no genera ni guarda un archivo PDF.
+5. La función de cálculo no acredita por sí sola el cierre, la emisión de boletas individuales ni el registro contable específico exigidos por los criterios de aceptación. El ciclo genérico de estado no corrige las deficiencias anteriores.
+
+Impacto potencial:
+- Cálculo incorrecto de beneficios cuando cambian contratos o salarios dentro del período.
+- Imputación indebida de aportaciones patronales durante la aprobación/cierre de planillas extraordinarias.
+- Boletas equivocadas o ambiguas al ignorar planillaId, y referencias PDF que no prueban la existencia de un archivo generado.
+- Incumplimiento de la trazabilidad contable diferenciada exigida para los beneficios.
+
+Dependencias relacionadas:
+- ContratosLaborales, ExpedientesLaborales, PlanillasNomenclatura, AnticiposPrestamosEmpleado, BoletasPago, AsientosContables.
+- calculatePayrollPeriod, calculateExtraordinaryPayroll, updatePayrollPeriodStatus, generatePayrollReceiptPDF, recordAccountingJournalEntry.
+
+Conclusión:
+La tarea [TASK-011] no puede considerarse íntegramente cumplida con la evidencia de código inspeccionada. Se confirma implementación parcial del cálculo proporcional y la deducción de anticipos, pero faltan garantías para cambios salariales/contractuales, boletas PDF reales y asientos diferenciados; además existe una interacción defectuosa con el cálculo genérico de aportaciones patronales. No se ejecutaron pruebas contra hojas reales ni datos de producción.
+===============================================================================
