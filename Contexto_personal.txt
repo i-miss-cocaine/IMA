@@ -40,7 +40,7 @@ Archivos relevantes en IMA:
 - Auditoria.txt y Auditoría.txt: registros de auditoría existentes.
 - ChangesLogs.txt: registro de cambios existente.
 
-En la rama NG_beta, Pendientes.md sí existe y es el registro oficial de tareas. No se encontraron, al momento de esta actualización, archivos llamados contexto_personal.md ni proceso de desarrollo.md. No sustituir Pendientes.md por otro registro.
+En la rama NG_beta, Pendientes.md sí existe y es el registro oficial de tareas. No se encontró, al momento de esta actualización, un archivo llamado contexto_personal.md en IMA. No sustituir Pendientes.md por otro registro.
 
 1.2 Proyecto GPSpedia (proyecto al que se refieren las reglas de desarrollo siguientes)
 
@@ -139,7 +139,7 @@ En la rama NG_beta, Pendientes.md sí existe y es el registro oficial de tareas.
 - Registrar el estado real de la tarea, sin anticipar su finalización.
 - Indicar qué requisitos se verificaron y cuáles quedaron pendientes, cuando corresponda.
 - Registrar el último commit y la rama de trabajo después de verificarlos.
-- Si el agente se interrumpe, el siguiente agente debe comenzar leyendo contexto_personal.md, Pendientes.md y el METODOLOGIA_DESARROLLO.md; después debe auditar cualquier tarea que figure En proceso.
+- Si el agente se interrumpe, el siguiente agente debe comenzar leyendo contexto_personal.md, Pendientes.md y METODOLOGIA_DESARROLLO.md; después debe auditar cualquier tarea que figure En proceso.
 
 9. CONTINUIDAD DEL TRABAJO
 
