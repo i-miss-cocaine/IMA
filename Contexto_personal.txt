@@ -532,3 +532,49 @@ La búsqueda estaba intentando seguir el flujo completo, no solo la existencia d
 - No alterar ni eliminar entradas históricas de completadas_legacy.md.
 - No marcar tareas como cumplidas por comentarios, botones o wrappers sin implementación conectada.
 - Antes de continuar, verificar HEAD y SHAs documentales; leer REQ-DOC-010 directamente desde completadas_legacy.md y comparar con el código actual.
+
+
+---
+
+## CHECKPOINT FINAL - AUDITORÍA COMPLETADAS_LEGACY CERRADA
+**Fecha:** 2026-11-04
+
+### Estado exacto del repositorio
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Rama base protegida:** NG_beta_0.0.0.1 (HEAD verificado: 44d9891132332e692dbe2ba8602b41f50a508a59).
+- **Rama de trabajo autorizada:** NG_beta_0.0.0.1_work.
+- **HEAD de cierre de resultados, verificado:** b2e1f4fa036edfb4028972230eb37e25341dd437.
+- **Commit de resultados H2:** docs(audit): cerrar lote H2 y auditoría de 49 tareas legacy.
+- El presente checkpoint se guarda en el commit inmediatamente posterior; al reanudar, verificar el HEAD actual antes de cualquier operación.
+
+### Resultado final
+- El inventario de completadas_legacy.md contiene 49 tareas históricas.
+- Lotes A-F2: 37 tareas revisadas en iteraciones anteriores.
+- Lotes G1, G2, H1 y H2: 12 tareas revisadas en esta continuidad.
+- **Total: 49/49 tareas históricas auditadas. No quedan tareas históricas pendientes de revisión.**
+- No se modificó completadas_legacy.md ni se cambió el estado de sus registros históricos.
+- Los resultados de los lotes G1, G2, H1 y H2 están en AUDITORIA_LOTE_G1.md, AUDITORIA_LOTE_G2.md, AUDITORIA_LOTE_H1.md y AUDITORIA_LOTE_H2.md.
+- Se actualizaron Auditoria.txt, Pendientes.md, AUDITORIA_COMPLETADAS_LEGACY_PLAN.md y MapaDependencias.md.
+- Hallazgos nuevos añadidos: AUD-NG-147 a AUD-NG-158 (12 tareas nuevas, en estado pendiente).
+- En H2 se evitaron duplicados: los defectos ya cubiertos se vincularon a AUD-NG-001, AUD-NG-002, AUD-NG-004, AUD-NG-108, AUD-NG-119, AUD-NG-120, AUD-NG-121, AUD-NG-122, AUD-NG-124, AUD-NG-144 a AUD-NG-146, AUD-NG-152, TASK-085 y TASK-142.
+- No se modificó código fuente, ChangesLogs.txt ni los identificadores/estados históricos.
+- No se ejecutaron pruebas ni se accedió a Google Drive/Sheets productivos.
+
+### Punto exacto donde terminó el trabajo
+- Última tarea revisada: REQ-DOC-012.
+- Último código de autorización inspeccionado: backend/task-service/Code.gs, validateContextualAccess, líneas 236-258; getDynamicPermissionsForRole, líneas 283-335; createTask/updateTask, líneas 447-495.
+- Último análisis de desempeño: js/student.js, líneas 1370-1460; backend/academic-service/Code.gs, getStudentAttendanceSummary, líneas 9638-9680.
+- Último panel revisado: js/developer.js, handler de exportación; js/api.js, wrapper exportSchoolYearArchive; backend/task-service/Code.gs, router generateAcademicArchiveZip.
+- Commit de resultados final: b2e1f4fa036edfb4028972230eb37e25341dd437.
+
+### Estado siguiente
+- La auditoría histórica está cerrada. No reiniciar ni repetir los 49 registros.
+- El siguiente trabajo, si se autoriza, es priorizar y planificar la implementación de AUD-NG-147 a AUD-NG-158 junto con las tareas existentes relacionadas.
+- No comenzar correcciones de código sin una instrucción específica de implementación y sin leer de nuevo la metodología vigente.
+- Mantener la regla de trabajar solo en NG_beta_0.0.0.1_work; no hacer merge ni modificar NG_beta_0.0.0.1.
+- El estado de la tarea maestra de auditoría no se altera en este checkpoint; queda pendiente de confirmación explícita del usuario si desea cambiar su estado administrativo.
+
+### Regla para la próxima iteración
+- Verificar HEAD de NG_beta_0.0.0.1_work y confirmar que NG_beta_0.0.0.1 permanece intacta.
+- Leer Pendientes.md para priorizar los hallazgos existentes y nuevos sin duplicar tareas.
+- No volver a auditar completadas_legacy.md salvo que el usuario solicite una reauditoría por cambios posteriores en el código.
