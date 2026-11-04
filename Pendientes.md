@@ -18335,3 +18335,19 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Descripción del Alcance:** Aplicar ABAC server-side a todas las escrituras docentes. Derivar profesorId/autorId exclusivamente de la sesión verificada y comprobar que asignatura, grado y sección pertenecen a asignaciones vigentes del docente. Verificar propiedad/ámbito antes de editar o eliminar una tarea/material. Añadir historial append-only de cambios de fecha límite con valor anterior/nuevo, actor verificado, timestamp y motivo. Coordinar con AUD-NG-001/AUD-NG-004 para token y secreto, y con TASK-085/TASK-142 para privacidad documental, sin duplicar esos alcances.
 - **Criterios de Aceptación:** Un profesor no puede crear, editar ni eliminar tareas/materiales fuera de sus asignaciones aunque manipule el payload; el servidor deriva identidad y ámbito de claims verificados; updateTask rechaza tareas de otro profesor; cada cambio de fecha límite conserva historial inmutable con actor/fecha/motivo; pruebas negativas con dos docentes y dos secciones, modificación de IDs y múltiples cambios de fecha.
 - **Estado:** [ ] Pendiente
+
+
+### [AUD-NG-159] Proteger logoutUser y revocación de sesiones contra revocación arbitraria de cuentas
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-159 (auditoría de completadas.md, TAREA-01).
+- **Severidad/Clasificación:** Crítico (P0).
+- **Archivos Involucrados:** backend/user-service/Code.gs; js/auth.js; js/api.js.
+- **Dependencias Expuestas:** PUBLIC_ACTIONS, validateRolePermission, logoutUser, revokeUserSession, verifySessionToken, generateSessionToken, loginUser, CacheService.
+- **Descripción del Alcance:** Eliminar el bypass de autenticación para logoutUser. Exigir un token de sesión válido y derivar userId/sessionId exclusivamente de sus claims verificados. El cierre ordinario debe revocar únicamente la sesión actual. Las revocaciones globales por userId deben quedar restringidas a una operación administrativa protegida, con motivo, actor verificado y auditoría. Evitar que una marca de revocación global impida autenticaciones nuevas legítimas o establecer un mecanismo explícito y seguro de limpieza/rotación.
+- **Criterios de Aceptación:**
+  - Una llamada sin token o con token inválido no puede revocar ninguna sesión.
+  - Un usuario solo puede cerrar la sesión identificada por sus propios claims; manipular userId/sessionId en el payload no cambia el objetivo.
+  - Una revocación global requiere rol/permiso administrativo explícito y deja actor, objetivo, motivo y timestamp auditables.
+  - Un usuario puede autenticarse de nuevo después de una revocación de sesión ordinaria; el cierre de una sesión no bloquea tokens nuevos.
+  - Pruebas negativas: llamada anónima con userId ajeno, sessionId ajeno, token inválido más userId, token válido con IDs manipulados y revocación administrativa autorizada.
+- **Relaciones:** AUD-NG-001 (propagación del token), AUD-NG-005 (revocación coherente entre servicios), TAREA-01, FASE2-T01 y TAREA-F4-P0-03.
+- **Estado:** [ ] Pendiente
