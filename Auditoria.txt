@@ -2882,3 +2882,200 @@ INVENTARIO POSTERIOR A TASK-045 (2026-11-04)
 - ChangesLogs.txt no se modifica porque no hubo cambios de código.
 - TASK-044 y TASK-045 se registran como auditadas con hallazgos; el estado [X] original no certifica que los criterios estén satisfechos.
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-04
+AUDITORÍA FUNCIONAL Y TÉCNICA - [TASK-046] Y [TASK-047]: ENRUTAMIENTO DE SPREADSHEETS Y CATÁLOGO INSTITUCIONAL DE SERVICIOS
+RAMA: NG_beta
+ARCHIVOS AUDITADOS: backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; backend/developer-service/Code.gs; tests/regression/academic-grading-suite.js; Pendientes.md; MapaDependencias.md
+ALCANCE Y CRITERIO:
+- Continuación secuencial desde TASK-045. Se auditan TASK-046 / F23-Task03 y TASK-047 / F23-Task04.
+- Ambas tareas figuran [X] y con Estado [X] Completada en Pendientes.md. Se contrasta el estado declarado con las funciones, sus consumidores, persistencia y pruebas.
+- Inspección estática manual. No se abrieron Spreadsheets externos, no se consultaron cuentas Google de terceros y no se ejecutaron operaciones de registro o enrutamiento.
+===============================================================================
+
+AUD-NG-073
+Fecha: 2026-11-04
+Tarea auditada: TASK-046 / F23-Task03
+Archivos auditados: backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs
+Módulo: Integración del enrutador dinámico con las operaciones de negocio
+Funciones y rangos: resolveSpreadsheetSource y registerSpreadsheetSource en los tres servicios; dispatchers doPost respectivos.
+Tipo: Función de resolución expuesta como endpoint pero no integrada en los consumidores de datos.
+Severidad: Crítico.
+Evidencia técnica:
+1. En cada servicio, las únicas apariciones de resolveSpreadsheetSource son su caso de despacho y la declaración de la propia función; no se localizaron llamadas desde operaciones de negocio consumidoras.
+2. registerSpreadsheetSource también aparece como endpoint despachado y declaración, sin evidencia de integración con los consumidores.
+3. resolveSpreadsheetSource devuelve un spreadsheetId, pero las funciones auditadas continúan abriendo el identificador estático SPREADSHEET_ID para acceder a hojas.
+Impacto: La existencia del endpoint no cambia la fuente real de lectura/escritura de los módulos; registrar una partición no garantiza que el proceso académico, contable o de usuario utilice esa fuente.
+Dependencias: doPost, resolveSpreadsheetSource, registerSpreadsheetSource, SPREADSHEET_ID y funciones de persistencia de los tres microservicios.
+Conclusión: El enrutador está implementado como consulta aislada, pero no se demuestra que gobierne las operaciones de negocio. Hallazgo estático.
+Tarea asociada: AUD-NG-073 en Pendientes.md.
+===============================================================================
+
+AUD-NG-074
+Fecha: 2026-11-04
+Tarea auditada: TASK-046 / F23-Task03
+Archivos auditados: backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs
+Módulo: Catálogo institucional centralizado de fuentes de datos
+Funciones y rangos: registerSpreadsheetSource y resolveSpreadsheetSource (user-service 7293-7380 aprox.; academic-service 11453-11540 aprox.; accounting-service 14598-14692 aprox.).
+Tipo: Catálogos replicados localmente por microservicio en lugar de una fuente central compartida.
+Severidad: Crítico.
+Evidencia técnica:
+1. Cada microservicio ejecuta SpreadsheetApp.openById(SPREADSHEET_ID) para leer/escribir su propia hoja CatalogoSpreadsheets.
+2. Los tres servicios mantienen implementaciones locales de registerSpreadsheetSource y resolveSpreadsheetSource, en lugar de consultar un catálogo institucional común.
+3. La misma partición puede registrarse de forma independiente en los catálogos locales; no existe en las funciones inspeccionadas un mecanismo que sincronice sus cambios ni que garantice una única fuente de verdad.
+Impacto: Los servicios pueden resolver distintos spreadsheetId para el mismo dominio/año, dependiendo del catálogo local; la distribución de datos no queda coordinada por un registro central.
+Dependencias: CatalogoSpreadsheets, SPREADSHEET_ID, registerSpreadsheetSource, resolveSpreadsheetSource y los tres microservicios.
+Conclusión: Hay catálogos homónimos por servicio, no un catálogo único compartido que evite mantener identificadores separados. Hallazgo estático.
+Tarea asociada: AUD-NG-074 en Pendientes.md.
+===============================================================================
+
+AUD-NG-075
+Fecha: 2026-11-04
+Tarea auditada: TASK-046 / F23-Task03
+Archivos auditados: backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs
+Módulo: Resolución multidimensional de particiones
+Funciones y rangos: registerSpreadsheetSource y resolveSpreadsheetSource en los tres servicios.
+Tipo: Clave de resolución limitada a dominio y año lectivo; dimensiones adicionales se ignoran.
+Severidad: Alto.
+Evidencia técnica:
+1. resolveSpreadsheetSource extrae dominioArea, anoLectivo, departamento y servicio, pero la búsqueda candidate solo compara dominioArea y anoLectivo.
+2. Las funciones de registro en user-service y academic-service reciben departamento y servicio, pero no los incluyen en la fila persistida ni en la clave de unicidad.
+3. La función de registro de accounting-service persiste fuenteId, dominioArea, anoLectivo, spreadsheetId, urlAcceso, estado, schemaVersion y observaciones; no almacena departamento, área de responsabilidad, cuenta propietaria o servicio responsable.
+4. Dos fuentes para el mismo dominio y año, pero departamentos, áreas o cuentas distintas, no pueden resolverse de forma diferenciada mediante la clave actual.
+Impacto: La consulta puede seleccionar una partición que coincide en dominio/año pero pertenece a otro departamento o servicio; no se satisface el aislamiento por cuenta, área y responsabilidad solicitado.
+Dependencias: dominioArea, anoLectivo, departamento, servicio, CatalogoSpreadsheets y registerSpreadsheetSource.
+Conclusión: El modelo actual solo resuelve por dos dimensiones y no implementa el conjunto de claves de partición exigido. Hallazgo estático.
+Tarea asociada: AUD-NG-075 en Pendientes.md.
+===============================================================================
+
+AUD-NG-076
+Fecha: 2026-11-04
+Tarea auditada: TASK-046 / F23-Task03
+Archivos auditados: backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs
+Módulo: Fallback y aislamiento de fuentes por ciclo lectivo
+Funciones y rangos: resolveSpreadsheetSource en los tres servicios (user-service 7339-7380; academic-service 11499-11540; accounting-service 14651-14692 aprox.).
+Tipo: Fallback automático al Spreadsheet principal sin validación de autorización o política explícita.
+Severidad: Crítico.
+Evidencia técnica:
+1. Cuando no existe una fila exacta para dominioArea y anoLectivo, resolveSpreadsheetSource devuelve status success y spreadsheetId = SPREADSHEET_ID con resolved = false.
+2. No exige una política de fallback, un indicador de fuente predeterminada autorizada ni confirmación de compatibilidad del dominio/año solicitado.
+3. No se distingue entre ausencia legítima de partición y error de catálogo, configuración incompleta o fuente no provisionada.
+Impacto: Una consulta puede continuar contra el Spreadsheet principal aunque la partición solicitada no exista; esto puede mezclar ciclos lectivos o dominios y ocultar errores de configuración.
+Dependencias: resolveSpreadsheetSource, SPREADSHEET_ID, dominioArea, anoLectivo y CatalogoSpreadsheets.
+Conclusión: La función devuelve éxito con una fuente predeterminada para cualquier ausencia de coincidencia, sin demostrar que esa fuente sea correcta para el contexto. Hallazgo estático.
+Tarea asociada: AUD-NG-076 en Pendientes.md.
+===============================================================================
+
+AUD-NG-077
+Fecha: 2026-11-04
+Tarea auditada: TASK-046 / F23-Task03
+Archivos auditados: backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs
+Módulo: Validación, versionado y trazabilidad de fuentes
+Funciones y rangos: registerSpreadsheetSource y resolveSpreadsheetSource en los tres servicios.
+Tipo: Registro sin comprobar existencia/permisos/esquema y sobrescritura sin historial.
+Severidad: Alto.
+Evidencia técnica:
+1. registerSpreadsheetSource valida presencia textual de dominioArea, anoLectivo y spreadsheetId, pero no abre el Spreadsheet de destino ni comprueba que exista, que el servicio tenga acceso o que su esquema sea compatible.
+2. resolveSpreadsheetSource devuelve schemaVersion almacenada o "1.0", pero no compara esa versión con un contrato esperado ni valida hojas/columnas requeridas.
+3. Cuando encuentra una fuente con la misma clave, registerSpreadsheetSource reemplaza spreadsheetId, URL, estado y schemaVersion sobre la misma fila; no conserva una versión histórica del vínculo ni una bitácora de cambio.
+4. No se observa control de concurrencia en la operación de alta/actualización.
+Impacto: Una referencia inválida o inaccesible puede quedar registrada como exitosa; una modificación puede cambiar la fuente activa sin conservar evidencia suficiente de la referencia previa.
+Dependencias: SpreadsheetApp.openById, CatalogoSpreadsheets, schemaVersion, registerSpreadsheetSource y resolveSpreadsheetSource.
+Conclusión: El catálogo guarda metadatos declarados, pero no acredita disponibilidad, permisos, compatibilidad ni conservación histórica de la fuente. Hallazgo estático.
+Tarea asociada: AUD-NG-077 en Pendientes.md.
+===============================================================================
+
+AUD-NG-078
+Fecha: 2026-11-04
+Tarea auditada: TASK-047 / F23-Task04
+Archivo auditado: backend/developer-service/Code.gs
+Módulo: Registro de servicios y concesión de permisos
+Funciones y rangos: registerServiceInstance (2473-2528 aprox.); getCentralServiceRegistry (2417-2470 aprox.).
+Tipo: Registro incompleto con permisos wildcard por defecto y ausencia de verificación de propiedad/recursos.
+Severidad: Crítico.
+Evidencia técnica:
+1. registerServiceInstance solo exige serviceId y name; endpointUrl, cuentaPropietaria, spreadsheetAsociado, dominioDatos y permisosConcedidos son opcionales.
+2. Si permisosConcedidos no es un arreglo, la función persiste ["*"], concediendo por defecto todos los permisos.
+3. Si no se indica cuenta propietaria o Spreadsheet, asigna valores genéricos sistema@institucional.edu y SPREADSHEET_ID.
+4. No se registra un identificador de proyecto Apps Script ni se comprueba que el solicitante controle la cuenta, endpoint o Spreadsheet declarados.
+5. La detección de duplicados solo compara serviceId; no comprueba colisiones de endpoint, proyecto, Spreadsheet o cuenta.
+Impacto: El catálogo puede declarar como activo un servicio sin endpoint ni recurso propio y concederle permisos globales por omisión; la propiedad y autorización de cuentas externas no quedan demostradas.
+Dependencias: registerServiceInstance, CatalogoServicios, cuentaPropietaria, endpointUrl, spreadsheetAsociado, permisosConcedidos y SPREADSHEET_ID.
+Conclusión: Existe alta de metadatos de servicio, pero no un proceso verificado de registro multicuenta ni un modelo de privilegios de mínimo alcance. Hallazgo estático.
+Tarea asociada: AUD-NG-078 en Pendientes.md.
+===============================================================================
+
+AUD-NG-079
+Fecha: 2026-11-04
+Tarea auditada: TASK-047 / F23-Task04
+Archivo auditado: backend/developer-service/Code.gs
+Módulo: Lectura del catálogo central de servicios
+Funciones y rangos: getCentralServiceRegistry (2417-2470 aprox.).
+Tipo: Respuesta de catálogo hardcodeada y supresión de errores de lectura.
+Severidad: Alto.
+Evidencia técnica:
+1. Cuando CatalogoServicios no contiene filas, getCentralServiceRegistry devuelve una lista defaultServices escrita en código, con cuentas propietarias y registros predefinidos.
+2. Los registros predeterminados asignan el mismo SPREADSHEET_ID a los servicios y usan correos de dominio de ejemplo como primary@domain.edu, academic@domain.edu y accounting@domain.edu.
+3. Si ocurre cualquier excepción al abrir o leer el catálogo o al parsear los permisos JSON, el catch devuelve status success y la misma lista predeterminada en lugar de reportar el error.
+Impacto: El consumidor puede interpretar registros de ejemplo o una lectura fallida como inventario institucional real, ocultando errores del catálogo y presentando propietarios/recursos no verificados.
+Dependencias: getCentralServiceRegistry, CatalogoServicios, defaultServices, SPREADSHEET_ID y JSON.parse.
+Conclusión: El endpoint no garantiza que una respuesta success represente datos leídos del catálogo; puede devolver valores hardcodeados o fallback ante excepción. Hallazgo estático.
+Tarea asociada: AUD-NG-079 en Pendientes.md.
+===============================================================================
+
+AUD-NG-080
+Fecha: 2026-11-04
+Tarea auditada: TASK-047 / F23-Task04
+Archivo auditado: backend/developer-service/Code.gs
+Módulo: Ciclo de vida e historial del servicio
+Funciones y rangos: updateServiceStatus (2531-2572 aprox.); registerServiceInstance (2473-2528 aprox.).
+Tipo: Historial parcial, actor aportado por cliente y escritura de estado no atómica.
+Severidad: Alto.
+Evidencia técnica:
+1. updateServiceStatus acepta updatedBy del payload y lo persiste como actor; si no se suministra utiliza "Administrador". La función no deriva el actor de identidad verificada en el bloque inspeccionado.
+2. Actualiza primero el estado de CatalogoServicios y después anexa la fila en HistorialServiciosDistribuidos; si falla la segunda escritura, el cambio queda aplicado sin historial.
+3. Solo se registra historial de cambios de estado; no se observa en estas funciones historial para cambio de propietario, responsable, endpoint, Spreadsheet, dominio o permisos.
+4. registerServiceInstance crea la fila inicial directamente sin generar un evento de alta en HistorialServiciosDistribuidos.
+5. No se observa LockService para serializar cambios concurrentes sobre el mismo servicio.
+Impacto: El catálogo puede contener cambios de estado sin una traza íntegra y no conserva la historia de modificaciones de los metadatos esenciales requeridos para auditar la propiedad y relaciones del servicio.
+Dependencias: updateServiceStatus, registerServiceInstance, HistorialServiciosDistribuidos, updatedBy, CatalogoServicios y LockService.
+Conclusión: Existe bitácora limitada de estado, pero no historial completo ni escritura consistente entre estado e historial. Hallazgo estático.
+Tarea asociada: AUD-NG-080 en Pendientes.md.
+===============================================================================
+
+AUD-NG-081
+Fecha: 2026-11-04
+Tarea auditada: TASK-046 y TASK-047 / F23-Task03 y F23-Task04
+Archivos auditados: tests/regression/academic-grading-suite.js; backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; backend/developer-service/Code.gs
+Módulo: Evidencia de aceptación del enrutador y catálogo distribuido
+Funciones y rangos: bloque TASK-046/TASK-047 en academic-grading-suite.js (372-378 aprox.).
+Tipo: Aserciones estructurales sin verificación de enrutamiento, aislamiento multicuenta o permisos.
+Severidad: Alto.
+Evidencia técnica:
+1. TASK-046 comprueba con includes que existe resolveSpreadsheetSource en los tres servicios y que existen cadenas SOURCE_SPREADSHEET_DISABLED; no registra ni resuelve una partición real ni verifica el Spreadsheet efectivamente utilizado por un consumidor.
+2. TASK-047 comprueba presencia de CatalogoServicios, registerServiceInstance, DUPLICATE_SERVICE_REGISTRATION e HistorialServiciosDistribuidos; no crea servicios bajo dos cuentas, no verifica propiedad, endpoint, permisos efectivos, estados suspendidos ni historial de metadatos.
+Impacto: La suite puede aprobar aunque el enrutador no esté integrado y el catálogo permita permisos wildcard, registros incompletos o respuestas de fallback no verificadas.
+Dependencias: tests/regression/academic-grading-suite.js, resolveSpreadsheetSource, registerSpreadsheetSource, getCentralServiceRegistry, registerServiceInstance y updateServiceStatus.
+Conclusión: Las pruebas actuales verifican presencia de código y cadenas; no acreditan los criterios de aceptación funcionales de TASK-046/TASK-047. Hallazgo estático.
+Tarea asociada: AUD-NG-081 en Pendientes.md.
+===============================================================================
+
+INVENTARIO POSTERIOR A TASK-047 (2026-11-04)
+- Última tarea auditada: TASK-047 / F23-Task04 (Catálogo institucional de cuentas, servicios y permisos distribuidos).
+- Tareas auditadas en esta continuación: TASK-046 y TASK-047 (2 tareas consecutivas adicionales).
+- Hallazgos nuevos: 9 (AUD-NG-073 a AUD-NG-081).
+- Tareas derivadas: 9 (AUD-NG-073 a AUD-NG-081), todas [ ] Pendiente de implementación.
+- Archivos auditados y respaldos Git inmutables:
+  * backend/user-service/Code.gs: 12079dd410aa6d8afbce55a4bc62a79dea605f9f
+  * backend/academic-service/Code.gs: daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc
+  * backend/accounting-service/Code.gs: 38b979d41596b85e888b4a7060b37bbac0840a28
+  * backend/developer-service/Code.gs: 8aa4bac67cfe5c8c54da51a0784a56fef633e412
+  * tests/regression/academic-grading-suite.js: 3433b707edd4a2f35c68368a3172932adc2a3b32
+- Alcance: integración real del router, catálogos de fuentes, dimensiones de partición, fallback, validación de existencia/esquema, catálogo de servicios, permisos, propiedad, estados, historial y pruebas.
+- Tipo de revisión: inspección estática manual. No se abrieron hojas de otras cuentas ni se realizaron operaciones en servicios externos.
+- Cambios: solo anexos documentales en Auditoria.txt, Pendientes.md y MapaDependencias.md. No se modificó código ni se eliminó contenido.
+- ChangesLogs.txt no se modifica porque no hubo cambios de código.
+- TASK-046 y TASK-047 quedan auditadas con hallazgos; su marca [X] no se toma como prueba de cumplimiento funcional.
+===============================================================================

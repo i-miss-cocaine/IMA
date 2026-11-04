@@ -17528,3 +17528,91 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Estado:** [ ] Pendiente
 
 ---
+
+
+---
+
+## TAREAS DERIVADAS DE AUDITORÍA — TASK-046 Y TASK-047 / FASE 23 (2026-11-04)
+
+### [AUD-NG-073] Integrar el enrutador de fuentes en las operaciones reales de cada microservicio
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-073 (TASK-046 / F23-Task03)
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs
+- **Dependencias Expuestas:** resolveSpreadsheetSource, registerSpreadsheetSource, SPREADSHEET_ID y funciones de lectura/escritura.
+- **Descripción del Alcance:** Incorporar la resolución dinámica en los puntos de acceso a datos de negocio, reemplazando el uso rígido de SPREADSHEET_ID donde corresponda. Cada operación debe resolver su fuente según contexto y abrir/utilizar el Spreadsheet autorizado, sin limitarse a exponer el endpoint de consulta.
+- **Criterios de Aceptación:** Una operación real en cada microservicio usa la fuente asignada a su dominio/año; cambiar la partición cambia el destino de lectura/escritura de forma verificable; ninguna función sensible continúa usando la fuente principal por omisión cuando existe partición aplicable.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-074] Centralizar el catálogo de fuentes para todos los microservicios
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-074 (TASK-046 / F23-Task03)
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; servicio central de configuración
+- **Dependencias Expuestas:** CatalogoSpreadsheets, registerSpreadsheetSource, resolveSpreadsheetSource y SPREADSHEET_ID.
+- **Descripción del Alcance:** Establecer una fuente de verdad institucional compartida para el catálogo de particiones y eliminar los registros locales divergentes por servicio. Definir acceso autenticado de lectura/escritura, contrato de sincronización y estrategia de migración que conserve referencias históricas.
+- **Criterios de Aceptación:** Los tres servicios consultan el mismo catálogo; una modificación registrada queda visible consistentemente; no existen copias locales editables que puedan divergir; los registros previos conservan sus identificadores y trazabilidad.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-075] Incorporar todas las dimensiones de partición en el catálogo y en su clave de resolución
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-075 (TASK-046 / F23-Task03)
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; esquema CatalogoSpreadsheets
+- **Dependencias Expuestas:** dominioArea, anoLectivo, departamento, servicio, cuenta propietaria, tipo de información y área de responsabilidad.
+- **Descripción del Alcance:** Ampliar el modelo y la clave de búsqueda para resolver particiones por dominio, ciclo lectivo, departamento, área, servicio, tipo de información y cuenta propietaria, con reglas explícitas de precedencia y unicidad.
+- **Criterios de Aceptación:** Dos fuentes con mismo dominio/año y diferente departamento/servicio se resuelven por contexto sin colisión; las claves únicas y reglas de fallback están documentadas; el catálogo conserva propietario y servicio responsable.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-076] Bloquear fallback silencioso a la fuente principal cuando no existe una partición autorizada
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-076 (TASK-046 / F23-Task03)
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs
+- **Dependencias Expuestas:** resolveSpreadsheetSource, SPREADSHEET_ID, política de fuentes predeterminadas y aislamiento por ciclo lectivo.
+- **Descripción del Alcance:** Definir una política explícita de fuente predeterminada por dominio y servicio. Si no existe coincidencia ni fallback autorizado, devolver error de fuente no configurada; no resolver automáticamente al Spreadsheet principal de forma global.
+- **Criterios de Aceptación:** Una fuente inexistente no provoca lectura de otra partición; el fallback solo opera si existe una regla vigente y autorizada; los ciclos lectivos quedan aislados y el error se registra de forma trazable.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-077] Validar disponibilidad, permisos, esquema y cambios históricos de las fuentes
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-077 (TASK-046 / F23-Task03)
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; CatalogoSpreadsheets
+- **Dependencias Expuestas:** registerSpreadsheetSource, resolveSpreadsheetSource, schemaVersion, SpreadsheetApp.openById y bitácora de fuentes.
+- **Descripción del Alcance:** Antes de activar una fuente, verificar que el Spreadsheet exista, que el servicio tenga acceso y que cumpla el contrato de hojas/columnas esperado. Mantener historial inmutable de altas, cambios de ID, estado, esquema y propietario; serializar modificaciones concurrentes.
+- **Criterios de Aceptación:** Una fuente inexistente/inaccesible/incompatible se rechaza; las versiones de esquema se comparan con el contrato; cada cambio conserva valores anteriores, actor y fecha; las altas concurrentes no generan registros duplicados.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-078] Exigir metadatos verificados y permisos de mínimo privilegio al registrar servicios
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-078 (TASK-047 / F23-Task04)
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** backend/developer-service/Code.gs; CatalogoServicios; integración de cuentas Google/Apps Script
+- **Dependencias Expuestas:** registerServiceInstance, cuentaPropietaria, endpointUrl, spreadsheetAsociado, permisosConcedidos y proyecto Apps Script.
+- **Descripción del Alcance:** Requerir y validar propietario, proyecto Apps Script, endpoint desplegado, Spreadsheet, dominio, versión de contrato y permisos explícitos. Verificar control/acceso del responsable sobre los recursos antes de activar el servicio. Eliminar el permiso ["*"] como valor predeterminado; aplicar lista cerrada de privilegios de mínimo alcance.
+- **Criterios de Aceptación:** No se activa un servicio sin recursos/propietario verificados; no se asignan permisos wildcard por omisión; un propietario no verificado es rechazado; cada servicio conserva projectId, endpoint, Spreadsheet y permisos efectivos.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-079] Evitar que el catálogo devuelva servicios de ejemplo o éxito ante errores de lectura
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-079 (TASK-047 / F23-Task04)
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** backend/developer-service/Code.gs
+- **Dependencias Expuestas:** getCentralServiceRegistry, CatalogoServicios, defaultServices y JSON.parse.
+- **Descripción del Alcance:** Separar explícitamente datos de demostración de datos institucionales. Cuando el catálogo esté vacío, devolver una colección vacía o un estado de inicialización; ante errores de lectura/parseo, devolver error observable y registrar incidente sin presentar el fallback como inventario real.
+- **Criterios de Aceptación:** Un catálogo vacío devuelve cero servicios reales; un error de lectura no se convierte en status success con datos de ejemplo; ningún propietario/Spreadsheet ficticio se presenta como registrado; las respuestas distinguen demo, vacío y error.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-080] Completar el historial de cambios de servicios con actor verificado y persistencia consistente
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-080 (TASK-047 / F23-Task04)
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** backend/developer-service/Code.gs; CatalogoServicios; HistorialServiciosDistribuidos
+- **Dependencias Expuestas:** registerServiceInstance, updateServiceStatus, updatedBy, _verifiedUserId, LockService y bitácora de cambios.
+- **Descripción del Alcance:** Registrar altas y toda modificación de propietario, responsable, endpoint, Spreadsheet, dominio, versión, permisos y estado. Derivar actor de la sesión verificada; coordinar actualización del catálogo e historial como una operación recuperable y proteger cambios concurrentes.
+- **Criterios de Aceptación:** Cada cambio conserva valor anterior/nuevo, actor autenticado, fecha y motivo; un fallo no deja el catálogo cambiado sin historial; altas también generan evento; no se acepta updatedBy arbitrario como prueba de identidad.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-081] Implementar pruebas funcionales de enrutamiento y registro multicuenta
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-081 (TASK-046 y TASK-047 / F23-Task03 y F23-Task04)
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** tests/regression/academic-grading-suite.js; backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; backend/developer-service/Code.gs; entorno aislado
+- **Dependencias Expuestas:** resolveSpreadsheetSource, registerSpreadsheetSource, registerServiceInstance, getCentralServiceRegistry, updateServiceStatus y CatalogoServicios.
+- **Descripción del Alcance:** Sustituir comprobaciones includes por pruebas funcionales en Spreadsheets aislados y cuentas de prueba autorizadas. Verificar selección de partición real, aislamiento de ciclos, ausencia de fallback no autorizado, esquema incompatible, fuente deshabilitada, registro multicuenta, permisos, revocación, historial y duplicados.
+- **Criterios de Aceptación:** Las pruebas consultan/escriben en la partición esperada; demuestran aislamiento entre dominios/ciclos; intentos sin permiso son rechazados; servicios de dos cuentas se registran con recursos verificados; los estados y el historial coinciden con las operaciones; ningún dato de producción se altera.
+- **Estado:** [ ] Pendiente
+
+---
