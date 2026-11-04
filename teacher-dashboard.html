@@ -1,0 +1,1474 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>Panel del Docente - New Generation Bilingual School and Institute</title>
+    <link rel="icon" type="image/png" href="imagenes/new-generation-logo.png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="New Generation">
+    <link rel="apple-touch-icon" href="imagenes/new-generation-logo.png">
+    <meta name="description" content="Panel de administración para profesores: gestión de alumnos, tareas, exámenes y reportes académicos.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SheetJS for Excel export -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <!-- Quill Rich Text Editor -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css?v=22">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* REQ: Force Black Text in Task Editor (v7.6.2) */
+        /* Eliminado !important para permitir que el selector de color funcione */
+        .ql-editor, .ql-editor p, .ql-editor span, .ql-editor li, .ql-editor h1, .ql-editor h2, .ql-editor strong {
+            color: #000000;
+            font-size: 16px;
+        }
+        /* REQ: Fix Quill toolbar visibility and labels (v7.6.1) */
+        .ql-snow.ql-toolbar button, .ql-snow .ql-toolbar button {
+            color: #4b5563 !important;
+            width: 28px !important;
+            height: 24px !important;
+        }
+        .ql-snow.ql-toolbar button:hover, .ql-snow .ql-toolbar button:hover {
+            color: #2563eb !important;
+        }
+        .ql-snow .ql-stroke {
+            stroke: currentColor !important;
+        }
+        .ql-snow .ql-fill {
+            fill: currentColor !important;
+        }
+    </style>
+</head>
+<body class="font-inter antialiased text-gray-900 bg-gray-50 min-h-screen flex flex-col">
+
+
+    <!-- ENCABEZADO INSTITUCIONAL (A-75) -->
+    <header id="main-header" class="fixed w-full z-[100] transition-all duration-300 bg-white border-b border-gray-100">
+        <div class="container mx-auto px-4 md:px-6 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <a href="index.html" class="flex items-center gap-3 group" title="Ir al inicio">
+                    <img src="imagenes/new-generation-logo.png" alt="Logotipo oficial de New Generation Bilingual School and Institute" class="logo-img transition-transform duration-300 group-hover:scale-105">
+                    <div class="header-title-container">
+                        <h1 class="text-sm md:text-xl font-black text-gray-900 uppercase tracking-tighter leading-none">New Generation</h1>
+                        <p class="text-[9px] md:text-[11px] font-bold text-blue-600 uppercase tracking-widest mt-1">Bilingual School & Institute</p>
+                    </div>
+                </a>
+            </div>
+
+            <nav class="hidden md:flex items-center gap-0">
+                <a href="index.html" class="nav-link-desktop">Inicio</a>
+                <a href="teacher-dashboard.html" id="nav-portal-link" class="nav-link-desktop">Portal</a>
+
+                <!-- Dropdown Cursos -->
+                <div class="relative group">
+                    <button class="nav-link-desktop flex items-center gap-1">
+                        Cursos <i class="fas fa-chevron-down text-[8px] opacity-50 group-hover:rotate-180 transition-transform"></i>
+                    </button>
+                    <div class="absolute left-0 mt-0 dropdown-container-ima bg-white rounded-xl shadow-2xl py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 translate-y-1 border border-gray-100 z-[110]">
+                        <div id="desktop-courses-menu"></div>
+                    </div>
+                </div>
+
+                <!-- Dropdown Contenido -->
+                <div class="relative group">
+                    <button class="nav-link-desktop flex items-center gap-1">
+                        Contenido <i class="fas fa-chevron-down text-[8px] opacity-50 group-hover:rotate-180 transition-transform"></i>
+                    </button>
+                    <div class="absolute left-0 mt-0 dropdown-container-ima bg-white rounded-xl shadow-2xl py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 translate-y-1 border border-gray-100 z-[110]">
+                        <div id="desktop-content-menu"></div>
+                    </div>
+                </div>
+
+                <a href="#" onclick="handleHeaderAction('show-activities')" class="nav-link-desktop">Actividades</a>
+                <a href="pseudocode.html" class="nav-link-desktop">Pseudocódigo</a>
+                <button id="open-profile-btn" class="nav-link-desktop">Mi perfil</button>
+            </nav>
+
+            <div class="flex items-center gap-4">
+                <img src="imagenes/bandera-de-honduras.png" alt="Bandera Nacional de Honduras" width="24" class="opacity-100 block">
+            </div>
+        </div>
+    </header>
+
+    <main class="mt-[4.5rem] pb-12 flex-grow">
+        <div class="container mx-auto px-4 md:px-6">
+            <div class="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-gray-100 pb-6">
+                <div>
+                    <h1 class="text-xl font-semibold text-gray-900 uppercase tracking-tighter">Panel de Gestión</h1>
+                    <p class="text-xs font-medium text-gray-400 uppercase tracking-widest mt-1">Bienvenido, <span id="teacher-name" class="text-blue-600"></span></p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="flex -space-x-2">
+                        <div class="w-8 h-8 rounded-full border-2 border-white bg-blue-100 flex items-center justify-center text-[10px] font-semibold text-blue-600">ISE</div>
+                    </div>
+                    <span class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">Área de Informática</span>
+                </div>
+            </div>
+
+
+
+            <nav class="flex flex-nowrap overflow-x-auto gap-2 md:gap-3 mb-6 pb-2 scroll-horizontal-clean">
+                <button id="nav-dashboard" class="flex-none px-4 py-2 rounded-xl font-semibold transition-all text-[10px] uppercase tracking-widest bg-blue-600 text-white">Entregas</button>
+                <button id="nav-reportes" class="flex-none px-4 py-2 rounded-xl font-semibold transition-all text-[10px] uppercase tracking-widest bg-gray-100 text-gray-500">Reportes</button>
+                <button id="nav-tareas" class="flex-none px-4 py-2 rounded-xl font-semibold transition-all text-[10px] uppercase tracking-widest bg-gray-100 text-gray-500">Actividades</button>
+                <button id="nav-proyectos" class="flex-none px-4 py-2 rounded-xl font-semibold transition-all text-[10px] uppercase tracking-widest bg-gray-100 text-gray-500">Proyectos</button>
+                <button id="nav-logros" class="flex-none px-4 py-2 rounded-xl font-semibold transition-all text-[10px] uppercase tracking-widest bg-gray-100 text-gray-500">Logros</button>
+                <button id="nav-guias" class="flex-none px-4 py-2 rounded-xl font-semibold transition-all text-[10px] uppercase tracking-widest bg-gray-100 text-gray-500">Guías de Estudio</button>
+                <button id="nav-news" class="flex-none px-4 py-2 rounded-xl font-semibold transition-all text-[10px] uppercase tracking-widest bg-gray-100 text-gray-500">Noticias</button>
+                <button id="nav-admin" class="flex-none px-4 py-2 rounded-xl font-semibold transition-all text-[10px] uppercase tracking-widest bg-gray-100 text-gray-500">Administración</button>
+            </nav>
+
+            <!-- Sección de Dashboard (Entregas Operativas) -->
+            <section id="section-dashboard" class="animate-fade-in-up">
+                 <div class="flex flex-col space-y-4 mb-6">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <h2 class="text-lg font-semibold text-gray-900 uppercase tracking-tighter" id="dashboard-level-title">Control de Entregas</h2>
+                        <div class="flex flex-wrap items-center gap-2" id="filters-container">
+                            <select id="filter-grado" class="p-2 bg-white border border-gray-100 rounded-xl text-[10px] font-semibold uppercase tracking-widest focus:ring-2 focus:ring-blue-500/20 outline-none">
+                                <option value="">Grados</option>
+                                <option value="Décimo">10°</option>
+                                <option value="Undécimo">11°</option>
+                                <option value="Duodécimo">12°</option>
+                            </select>
+                            <select id="filter-seccion" class="p-2 bg-white border border-gray-100 rounded-xl text-[10px] font-semibold uppercase tracking-widest focus:ring-2 focus:ring-blue-500/20 outline-none">
+                                <option value="">Secc</option>
+                                <option value="A">A</option>
+                                <option value="B">B</option>
+                                <option value="C">C</option>
+                            </select>
+                            <input type="text" id="filter-asignatura" placeholder="Materia..." class="p-2 bg-white border border-gray-100 rounded-xl text-[10px] font-semibold uppercase tracking-widest focus:ring-2 focus:ring-blue-500/20 outline-none w-24">
+                            <select id="filter-estado" class="p-2 bg-white border border-gray-100 rounded-xl text-[10px] font-semibold uppercase tracking-widest focus:ring-2 focus:ring-blue-500/20 outline-none">
+                                <option value="">Todos los Estados</option>
+                                <option value="Pendiente">Pendientes</option>
+                                <option value="Por calificar">Por calificar</option>
+                                <option value="Completada">Completadas</option>
+                                <option value="Rechazada">Rechazadas</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="w-full relative">
+                        <input type="text" id="student-search" placeholder="Buscar expediente..." class="w-full pl-10 pr-4 py-3 bg-white border-none rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all text-xs font-medium uppercase tracking-widest">
+                        <svg class="w-4 h-4 text-gray-400 absolute left-4 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+                 </div>
+                <div class="table-container overflow-x-auto bg-white rounded-3xl shadow-sm border border-gray-100">
+                    <div class="p-4 border-b border-gray-100 flex items-center space-x-4 hidden" id="back-btn-container">
+                        <button id="back-nav-btn" class="flex items-center space-x-2 text-blue-600 font-medium hover:text-blue-800 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                            <span>Regresar</span>
+                        </button>
+                    </div>
+                    <table class="w-full">
+                        <thead class="bg-gray-50 border-b border-gray-100" id="dashboard-table-head">
+                            <!-- Cabecera dinámica -->
+                        </thead>
+                        <tbody id="submissions-table-body" class="divide-y divide-gray-100 text-sm">
+                            <!-- Las entregas se cargarán aquí -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Sección de Tareas (Unificada) -->
+            <section id="section-tareas" class="hidden animate-fade-in-up">
+                <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+                    <h2 class="text-2xl font-medium text-gray-800">Gestión de Tareas y Exámenes</h2>
+                    <div class="flex gap-2">
+                        <button id="btn-show-create-task" class="bg-blue-600 text-white px-4 py-2 rounded-xl font-medium text-sm shadow hover:bg-blue-700 transition-all">+ Nueva Tarea</button>
+                        <button id="btn-show-create-exam" class="bg-purple-600 text-white px-4 py-2 rounded-xl font-medium text-sm shadow hover:bg-purple-700 transition-all">+ Nuevo Examen</button>
+                    </div>
+                </div>
+
+                <!-- Lista de Tareas Existentes -->
+                <div id="tareas-list-view" class="table-container overflow-x-auto bg-white rounded-3xl shadow-sm border border-gray-100 mb-8">
+                    <table class="w-full">
+                        <thead class="bg-gray-50 border-b border-gray-100">
+                            <tr>
+                                <th class="p-4 text-left font-medium text-gray-500 uppercase tracking-wider text-[0.7rem]">Título</th>
+                                <th class="p-4 text-left font-medium text-gray-500 uppercase tracking-wider text-[0.7rem]">Materia</th>
+                                <th class="p-4 text-left font-medium text-gray-500 uppercase tracking-wider text-[0.7rem]">Grado/Secc</th>
+                                <th class="p-4 text-left font-medium text-gray-500 uppercase tracking-wider text-[0.7rem]">Fecha Límite</th>
+                                <th class="p-4 text-right font-medium text-gray-500 uppercase tracking-wider text-[0.7rem]">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tasks-management-table-body" class="divide-y divide-gray-100 text-sm">
+                            <!-- Las tareas/exámenes se cargarán aquí -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Formulario Unificado (Crear Tarea) -->
+                <div id="tareas-create-view" class="hidden animate-fade-in-up">
+                    <div class="flex items-center space-x-4 mb-6">
+                        <button id="btn-back-to-tareas" class="text-blue-600 font-medium flex items-center hover:underline">
+                            <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                            Volver a la lista
+                        </button>
+                        <h3 class="text-xl font-medium text-gray-800" id="tareas-form-title">Crear Nueva Tarea</h3>
+                    </div>
+
+                    <div id="form-container-crear-tarea" class="hidden">
+                        <div class="dashboard-card">
+                            <form id="create-assignment-form">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div class="md:col-span-2">
+                                        <label class="block font-medium text-gray-700 mb-2">Tipo de Tarea</label>
+                                        <select name="tipo" id="create-task-type" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400" required>
+                                            <option value="Tarea" selected>Tarea (Estándar)</option>
+                                            <option value="Crédito Extra">Crédito Extra (Recuperación)</option>
+                                        </select>
+                                    </div>
+                                    <div id="extra-credit-association-container" class="hidden md:col-span-2">
+                                        <label class="block font-medium text-gray-700 mb-2">Vincular con Tarea Rechazada</label>
+                                        <select name="tareaAsociadaId" id="extra-credit-task-asoc" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400">
+                                            <option value="">Seleccione la tarea a reemplazar...</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block font-medium text-gray-700 mb-2">Título</label>
+                                        <input type="text" name="titulo" id="create-task-title" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400" required>
+                                    </div>
+                                    <div>
+                                        <label class="block font-medium text-gray-700 mb-2">Asignatura</label>
+                                        <input type="text" name="asignatura" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400" required>
+                                    </div>
+                                    <div class="md:col-span-2">
+                                        <label class="block font-medium text-gray-700 mb-2">Descripción</label>
+                                        <div id="editor-task-container" style="height: 200px;" class="bg-white rounded-xl opacity-50 pointer-events-none"></div>
+                                        <input type="hidden" name="descripcion" id="hidden-task-description">
+                                    </div>
+                                    <div>
+                                        <label class="block font-medium text-gray-700 mb-2">Parcial</label>
+                                        <select name="parcial" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400" required>
+                                            <option value="Primer Parcial">Primer Parcial</option>
+                                            <option value="Segundo Parcial">Segundo Parcial</option>
+                                            <option value="Tercer Parcial">Tercer Parcial</option>
+                                            <option value="Cuarto Parcial">Cuarto Parcial</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block font-medium text-gray-700 mb-2">Grado</label>
+                                        <select name="gradoAsignado" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400" required>
+                                            <option value="Décimo">Décimo</option>
+                                            <option value="Undécimo">Undécimo</option>
+                                            <option value="Duodécimo">Duodécimo</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block font-medium text-gray-700 mb-2">Sección (Opcional)</label>
+                                        <input type="text" name="seccionAsignada" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400">
+                                    </div>
+                                    <div>
+                                        <label class="block font-medium text-gray-700 mb-2">Fecha de la Clase (Impartida)</label>
+                                        <input type="date" name="fechaClase" id="create-task-class-date" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400" title="Fecha en que se imparte el contenido">
+                                    </div>
+                                    <div>
+                                        <label class="block font-medium text-gray-700 mb-2">Fecha Límite de Entrega</label>
+                                        <input type="date" name="fechaLimite" id="create-task-due-date" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400" required>
+                                    </div>
+                                    <div>
+                                        <label class="block font-medium text-gray-700 mb-2">Hora de Disponibilidad (Opcional)</label>
+                                        <input type="time" name="horaDisponible" id="create-task-available-time" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400" title="Hora a partir de la cual el alumno puede entregar">
+                                    </div>
+                                </div>
+                                <button type="submit" class="mt-8 bg-blue-600 text-white font-medium py-4 px-10 rounded-2xl shadow-lg hover:shadow-xl transition-all">Crear Tarea</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div id="form-container-crear-examen" class="hidden">
+                        <div class="dashboard-card">
+                            <form id="create-exam-form">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 border-b pb-6">
+                                    <div>
+                                        <label class="block font-medium text-gray-700 mb-2">Título del Examen</label>
+                                        <input type="text" name="titulo" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400" required>
+                                    </div>
+                                    <div>
+                                        <label class="block font-medium text-gray-700 mb-2">Asignatura</label>
+                                        <input type="text" name="asignatura" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400" required>
+                                    </div>
+                                    <div class="md:col-span-2">
+                                        <label class="block font-medium text-gray-700 mb-2">Instrucciones (Editor Enriquecido)</label>
+                                        <div id="editor-exam-container" style="height: 150px;" class="bg-white rounded-xl"></div>
+                                        <input type="hidden" name="descripcion" id="hidden-exam-description">
+                                    </div>
+                                    <div>
+                                        <label class="block font-medium text-gray-700 mb-2">Grado</label>
+                                        <select name="gradoAsignado" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400" required>
+                                            <option value="Décimo">Décimo</option>
+                                            <option value="Undécimo">Undécimo</option>
+                                            <option value="Duodécimo">Duodécimo</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block font-medium text-gray-700 mb-2">Fecha Límite</label>
+                                        <input type="date" name="fechaLimite" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400" required>
+                                    </div>
+                                </div>
+                                <div id="questions-container" class="space-y-4"></div>
+                                <div class="flex flex-col sm:flex-row items-center justify-between mt-8 gap-4">
+                                    <button type="button" id="add-question-btn" class="w-full sm:w-auto bg-green-500 text-white font-medium py-3 px-6 rounded-xl shadow hover:bg-green-600 transition-all">Añadir Pregunta</button>
+                                    <button type="submit" class="w-full sm:w-auto bg-purple-600 text-white font-medium py-4 px-10 rounded-2xl shadow-lg hover:shadow-xl transition-all">Guardar Examen</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sección de Proyectos PSeInt -->
+            <section id="section-proyectos" class="hidden animate-fade-in-up">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-medium text-gray-800">Proyectos de Pseudocódigo</h2>
+                    <div class="flex gap-2">
+                         <select id="proj-filter-grado" class="p-2 border rounded-xl text-xs">
+                            <option value="">Grado</option>
+                            <option value="Décimo">10°</option>
+                            <option value="Undécimo">11°</option>
+                            <option value="Duodécimo">12°</option>
+                        </select>
+                        <select id="proj-filter-seccion" class="p-2 border rounded-xl text-xs">
+                            <option value="">Secc</option>
+                            <option value="A">A</option>
+                            <option value="B">B</option>
+                            <option value="C">C</option>
+                        </select>
+                        <button id="refresh-projects-btn" class="bg-blue-100 text-blue-600 p-2 rounded-xl">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.001 0 01-15.357-2m15.357 2H15"></path></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="table-container overflow-x-auto bg-white rounded-3xl shadow-sm border border-gray-100">
+                    <table class="w-full">
+                        <thead class="bg-gray-50 border-b border-gray-100">
+                            <tr>
+                                <th class="p-4 text-left font-medium text-gray-500 uppercase tracking-wider text-[0.7rem]">Alumno</th>
+                                <th class="p-4 text-left font-medium text-gray-500 uppercase tracking-wider text-[0.7rem]">Proyecto</th>
+                                <th class="p-4 text-left font-medium text-gray-500 uppercase tracking-wider text-[0.7rem]">Grado/Secc</th>
+                                <th class="p-4 text-left font-medium text-gray-500 uppercase tracking-wider text-[0.7rem]">Última Modif.</th>
+                                <th class="p-4 text-right font-medium text-gray-500 uppercase tracking-wider text-[0.7rem]">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="projects-table-body" class="divide-y divide-gray-100 text-sm"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Sección de Logros -->
+            <section id="section-logros" class="hidden animate-fade-in-up">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-medium text-gray-800">Logros y Récords</h2>
+                    <div class="flex gap-2">
+                        <select id="logros-filter-grado" class="p-2 border rounded-xl text-xs">
+                            <option value="">Grado</option>
+                            <option value="Décimo">10°</option>
+                            <option value="Undécimo">11°</option>
+                            <option value="Duodécimo">12°</option>
+                        </select>
+                        <select id="logros-filter-seccion" class="p-2 border rounded-xl text-xs">
+                            <option value="">Secc</option>
+                            <option value="A">A</option>
+                            <option value="B">B</option>
+                            <option value="C">C</option>
+                        </select>
+                        <button id="refresh-logros-btn" class="bg-blue-100 text-blue-600 p-2 rounded-xl">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.001 0 01-15.357-2m15.357 2H15"></path></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="table-container overflow-x-auto bg-white rounded-3xl shadow-sm border border-gray-100">
+                    <table class="w-full">
+                        <thead class="bg-gray-50 border-b border-gray-100">
+                            <tr>
+                                <th class="p-4 text-left font-medium text-gray-500 uppercase tracking-wider text-[0.7rem]">#</th>
+                                <th class="p-4 text-left font-medium text-gray-500 uppercase tracking-wider text-[0.7rem]">Alumno</th>
+                                <th class="p-4 text-left font-medium text-gray-500 uppercase tracking-wider text-[0.7rem]">Juego</th>
+                                <th class="p-4 text-left font-medium text-gray-500 uppercase tracking-wider text-[0.7rem]">Récord Máximo</th>
+                                <th class="p-4 text-left font-medium text-gray-500 uppercase tracking-wider text-[0.7rem]">Último Logro</th>
+                                <th class="p-4 text-left font-medium text-gray-500 uppercase tracking-wider text-[0.7rem]">Fecha</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logros-table-body" class="divide-y divide-gray-100 text-sm"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Sección de Guías de Estudio (REQ-DOC-001) -->
+            <section id="section-guias" class="hidden animate-fade-in-up">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">Guías de Estudio por Asignatura y Parcial</h2>
+                        <p class="text-xs text-gray-500 mt-1">Material formativo de repaso y estudio para los alumnos sin ponderación evaluable obligatoria.</p>
+                    </div>
+                    <button id="btn-show-create-guia" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-medium hover:bg-blue-700 transition-all shadow-sm flex items-center gap-2">
+                        <i class="fas fa-plus"></i> Nueva Guía de Estudio
+                    </button>
+                </div>
+
+                <!-- Formulario de Creación / Edición de Guía -->
+                <div id="guia-create-container" class="hidden bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 mb-8 animate-fade-in">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 id="guia-form-title" class="text-lg font-bold text-gray-800">Publicar Guía de Estudio</h3>
+                        <button type="button" id="btn-cancel-guia" class="text-gray-400 hover:text-gray-600 text-sm font-semibold">Cancelar</button>
+                    </div>
+                    <form id="form-guia-estudio" class="space-y-4">
+                        <input type="hidden" id="guia-id">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Asignatura *</label>
+                                <select id="guia-materia" class="w-full p-3 bg-gray-50 border rounded-xl text-sm" required>
+                                    <option value="">Selecciona Asignatura</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Grado *</label>
+                                <select id="guia-grado" class="w-full p-3 bg-gray-50 border rounded-xl text-sm" required>
+                                    <option value="">Selecciona Grado</option>
+                                    <option value="7mo">7mo Grado</option>
+                                    <option value="8vo">8vo Grado</option>
+                                    <option value="9no">9no Grado</option>
+                                    <option value="10mo">10mo Grado</option>
+                                    <option value="11mo">11mo Grado</option>
+                                    <option value="12mo">12mo Grado</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Sección</label>
+                                <select id="guia-seccion" class="w-full p-3 bg-gray-50 border rounded-xl text-sm">
+                                    <option value="Todas">Todas las Secciones</option>
+                                    <option value="A">Sección A</option>
+                                    <option value="B">Sección B</option>
+                                    <option value="U">Sección Única</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Parcial *</label>
+                                <select id="guia-parcial" class="w-full p-3 bg-gray-50 border rounded-xl text-sm" required>
+                                    <option value="I Parcial">I Parcial</option>
+                                    <option value="II Parcial">II Parcial</option>
+                                    <option value="III Parcial">III Parcial</option>
+                                    <option value="IV Parcial">IV Parcial</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Título de la Guía *</label>
+                            <input type="text" id="guia-titulo" class="w-full p-3 bg-gray-50 border rounded-xl text-sm" placeholder="Ej. Guía de Repaso para Examen del II Parcial" required>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Descripción / Instrucciones</label>
+                            <textarea id="guia-descripcion" rows="3" class="w-full p-3 bg-gray-50 border rounded-xl text-sm" placeholder="Temas evaluados, ejercicios recomendados, fechas de asesoría..."></textarea>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Enlace o URL del Archivo / Documento</label>
+                                <input type="url" id="guia-archivo-url" class="w-full p-3 bg-gray-50 border rounded-xl text-sm" placeholder="https://drive.google.com/...">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Nombre o Formato del Archivo</label>
+                                <input type="text" id="guia-archivo-nombre" class="w-full p-3 bg-gray-50 border rounded-xl text-sm" placeholder="Ej. Guia_Estudio_Matematicas.pdf">
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end gap-3 pt-4 border-t">
+                            <button type="button" id="btn-cancel-guia-2" class="px-5 py-2.5 rounded-xl border border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50">Cancelar</button>
+                            <button type="submit" id="btn-save-guia" class="bg-blue-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-700 shadow-md">Publicar Guía</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Filtros y Lista de Guías de Estudio -->
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 mb-6">
+                    <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
+                        <div class="flex flex-wrap gap-3 w-full md:w-auto">
+                            <select id="filtro-guia-parcial" class="p-2.5 border rounded-xl text-xs bg-gray-50 font-medium">
+                                <option value="">Todos los Parciales</option>
+                                <option value="I Parcial">I Parcial</option>
+                                <option value="II Parcial">II Parcial</option>
+                                <option value="III Parcial">III Parcial</option>
+                                <option value="IV Parcial">IV Parcial</option>
+                            </select>
+                            <select id="filtro-guia-grado" class="p-2.5 border rounded-xl text-xs bg-gray-50 font-medium">
+                                <option value="">Todos los Grados</option>
+                                <option value="7mo">7mo Grado</option>
+                                <option value="8vo">8vo Grado</option>
+                                <option value="9no">9no Grado</option>
+                                <option value="10mo">10mo Grado</option>
+                                <option value="11mo">11mo Grado</option>
+                                <option value="12mo">12mo Grado</option>
+                            </select>
+                        </div>
+                        <button id="btn-reload-guias" class="text-xs text-blue-600 hover:text-blue-800 font-bold flex items-center gap-1.5 self-end md:self-auto">
+                            <i class="fas fa-sync-alt"></i> Actualizar Guías
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-container overflow-x-auto bg-white rounded-3xl shadow-sm border border-gray-100">
+                    <table class="w-full text-left">
+                        <thead class="bg-gray-50 border-b border-gray-100 text-gray-500 uppercase text-[10px] tracking-wider">
+                            <tr>
+                                <th class="p-4">Título & Guía</th>
+                                <th class="p-4">Asignatura</th>
+                                <th class="p-4">Grado / Secc</th>
+                                <th class="p-4">Parcial</th>
+                                <th class="p-4">Documento</th>
+                                <th class="p-4">Estado</th>
+                                <th class="p-4 text-right">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="guias-table-body" class="divide-y divide-gray-100 text-sm">
+                            <tr>
+                                <td colspan="7" class="p-8 text-center text-gray-400">Cargando guías de estudio...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Sección de Noticias -->
+            <section id="section-news" class="hidden animate-fade-in-up">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                    <h2 class="text-2xl font-medium text-gray-800">Gestión de Noticias</h2>
+                    <button id="btn-create-news" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-medium hover:bg-blue-700 transition-all shadow-sm">Nueva Noticia</button>
+                </div>
+
+                <div id="news-management-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Noticias cargadas para gestión -->
+                </div>
+            </section>
+
+            <!-- Sección de Administración (Task 10) -->
+            <section id="section-admin" class="hidden animate-fade-in-up">
+                <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-6">
+                    <div>
+                        <h2 class="text-2xl font-medium text-gray-800 tracking-tight">Administración del Sistema</h2>
+                        <p class="text-xs font-medium text-gray-400 uppercase tracking-widest mt-1">Consola Técnica y Operaciones Institucionales</p>
+                    </div>
+                </div>
+
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Tarjeta de Gestión Académica (Rediseñada) -->
+                    <div class="card-ima border-blue-100 bg-blue-50/30 p-8 rounded-[2.5rem]">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-12 h-12 bg-blue-600 text-white rounded-2xl flex items-center justify-center text-xl shadow-lg shadow-blue-100">
+                                <i class="fas fa-tasks"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-800">Gestión Académica</h3>
+                        </div>
+
+                        <div class="space-y-6">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Parcial Activo</label>
+                                    <select id="admin-parcial-actual" class="w-full p-3 bg-white border border-blue-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-400 outline-none">
+                                        <option value="I parcial">I parcial</option>
+                                        <option value="II parcial">II parcial</option>
+                                        <option value="III parcial">III parcial</option>
+                                        <option value="IV parcial">IV parcial</option>
+                                    </select>
+                                </div>
+                                <div class="sm:col-span-1">
+                                    <!-- Espacio reservado o campo adicional -->
+                                </div>
+                            </div>
+
+                            <div class="bg-white p-6 rounded-3xl border border-blue-100 shadow-sm">
+                                <h4 class="text-xs font-black text-blue-600 uppercase tracking-widest mb-4">Constructor de Asignaciones</h4>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Grado</label>
+                                        <select id="builder-grado" class="w-full p-2 bg-gray-50 border border-gray-100 rounded-xl text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-500/20">
+                                            <option value="">Seleccione Grado</option>
+                                            <option value="Décimo">10° Grado</option>
+                                            <option value="Undécimo">11° Grado</option>
+                                            <option value="Duodécimo">12° Grado</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Sección</label>
+                                        <select id="builder-seccion" class="w-full p-2 bg-gray-50 border border-gray-100 rounded-xl text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-500/20" disabled>
+                                            <option value="">Seleccione Sección</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Asignatura</label>
+                                        <select id="builder-asignatura" class="w-full p-2 bg-gray-50 border border-gray-100 rounded-xl text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-500/20" disabled>
+                                            <option value="">Seleccione Asignatura</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Unidad</label>
+                                        <select id="builder-unidad" class="w-full p-2 bg-gray-50 border border-gray-100 rounded-xl text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-500/20" disabled>
+                                            <option value="I unidad">I unidad</option>
+                                            <option value="II unidad">II unidad</option>
+                                            <option value="III unidad">III unidad</option>
+                                            <option value="IV unidad">IV unidad</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <button id="btn-add-assignment" class="w-full py-2 bg-blue-50 text-blue-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all">
+                                    + Añadir a mi lista
+                                </button>
+                            </div>
+
+                            <div class="space-y-2">
+                                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Mi Carga Académica Confirmada</label>
+                                <div id="admin-assignments-list" class="space-y-2 max-h-64 overflow-y-auto pr-2 scroll-minimalist">
+                                    <p class="text-[10px] text-gray-400 italic p-4 text-center border-2 border-dashed border-gray-100 rounded-2xl">No ha añadido asignaciones aún.</p>
+                                </div>
+                            </div>
+
+                            <button id="btn-save-academic-config" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 disabled:opacity-50" disabled>
+                                Guardar Configuración Final
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tarjeta de Cierre de Año -->
+                    <div class="card-ima border-red-100 bg-red-50/30 p-8 rounded-[2.5rem]">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-12 h-12 bg-red-600 text-white rounded-2xl flex items-center justify-center text-xl shadow-lg shadow-red-100">
+                                <i class="fas fa-calendar-times"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-800">Finalizar Año Escolar</h3>
+                        </div>
+                        <p class="text-sm text-gray-600 mb-8 leading-relaxed">
+                            Esta acción archivará todas las actividades del año actual, eliminará tareas, exámenes y entregas activas, y reiniciará los contadores para el nuevo ciclo escolar.
+                            <strong class="text-red-600">Esta acción no se puede deshacer.</strong>
+                        </p>
+
+                        <div class="space-y-4">
+                            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Formato de Respaldo Histórico</label>
+                            <div class="flex gap-2">
+                                <select id="backup-format" class="flex-grow p-3 bg-white border border-red-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-red-400 outline-none">
+                                    <option value="ZIP">Formato Comprimido (.ZIP)</option>
+                                    <option value="RAR">Formato Comprimido (.RAR)</option>
+                                    <option value="7Z">Formato Comprimido (.7Z)</option>
+                                </select>
+                                <button id="btn-close-year" class="bg-red-600 text-white px-8 py-3 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-red-700 transition-all shadow-lg shadow-red-100">
+                                    Ejecutar Cierre
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tarjeta de Gestión Contable y Cobranza (REQ-EXP-010) -->
+                    <div class="card-ima border-blue-100 bg-blue-50/20 p-8 rounded-[2.5rem] md:col-span-2">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-12 h-12 bg-blue-600 text-white rounded-2xl flex items-center justify-center text-xl shadow-lg shadow-blue-100">
+                                <i class="fas fa-cash-register"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-800">Caja y Gestión Financiera Institucional</h3>
+                                <p class="text-xs text-gray-500 font-medium">Registro de pagos y abonos para cuentas por cobrar</p>
+                            </div>
+                        </div>
+
+                        <form id="cashier-payment-form" class="grid grid-cols-1 md:grid-cols-4 gap-4 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">ID de Estudiante</label>
+                                <input type="text" id="cashier-user-id" placeholder="USR-..." class="w-full p-2.5 bg-gray-50 border rounded-xl text-xs font-semibold" required>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">ID Cargo Financiero</label>
+                                <input type="text" id="cashier-cargo-id" placeholder="CHG-..." class="w-full p-2.5 bg-gray-50 border rounded-xl text-xs font-semibold" required>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Monto de Abono (L.)</label>
+                                <input type="number" step="0.01" id="cashier-monto" placeholder="0.00" class="w-full p-2.5 bg-gray-50 border rounded-xl text-xs font-semibold" required>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Método de Pago</label>
+                                <select id="cashier-metodo" class="w-full p-2.5 bg-gray-50 border rounded-xl text-xs font-semibold">
+                                    <option value="Efectivo">Efectivo en Caja</option>
+                                    <option value="Transferencia">Transferencia Bancaria</option>
+                                    <option value="Tarjeta">Tarjeta Débito/Crédito</option>
+                                    <option value="Cheque">Cheque Certificado</option>
+                                </select>
+                            </div>
+                            <div class="md:col-span-3">
+                                <input type="text" id="cashier-ref" placeholder="Referencia de pago o recibo manual..." class="w-full p-2.5 bg-gray-50 border rounded-xl text-xs font-semibold">
+                            </div>
+                            <div>
+                                <button type="submit" id="btn-cashier-submit" class="w-full py-2.5 bg-blue-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-blue-700 shadow-md">
+                                    Registrar Abono
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Tarjeta de Configuración de Parámetros Institucionales (Laborales y Tributarios) -->
+                    <div class="card-ima border-purple-100 bg-purple-50/20 p-8 rounded-[2.5rem] md:col-span-2">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-12 h-12 bg-purple-600 text-white rounded-2xl flex items-center justify-center text-xl shadow-lg shadow-purple-100">
+                                <i class="fas fa-sliders-h"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-800">Parámetros del Sistema (Laboral, Salarial e Impuestos)</h3>
+                                <p class="text-xs text-gray-500 font-medium">Configuración de techos IHSS, porcentajes de deducción, tasas de ISV y factores de horas extras</p>
+                            </div>
+                        </div>
+
+                        <form id="system-parameters-form" class="space-y-6 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Techo Cotización IHSS (L.)</label>
+                                    <input type="number" step="0.01" id="param-ihss-techo" class="w-full p-2.5 bg-gray-50 border rounded-xl text-xs font-semibold" required>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">% Deducción IHSS (ej. 0.035)</label>
+                                    <input type="number" step="0.001" id="param-ihss-pct" class="w-full p-2.5 bg-gray-50 border rounded-xl text-xs font-semibold" required>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">% Aporte RAP (ej. 0.015)</label>
+                                    <input type="number" step="0.001" id="param-rap-pct" class="w-full p-2.5 bg-gray-50 border rounded-xl text-xs font-semibold" required>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Factor Hora Extra Diurna</label>
+                                    <input type="number" step="0.01" id="param-he-diurna" class="w-full p-2.5 bg-gray-50 border rounded-xl text-xs font-semibold" required>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Horas Laborales Mes</label>
+                                    <input type="number" id="param-horas-mes" class="w-full p-2.5 bg-gray-50 border rounded-xl text-xs font-semibold" required>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Tasa ISV General (ej. 0.15)</label>
+                                    <input type="number" step="0.01" id="param-isv-general" class="w-full p-2.5 bg-gray-50 border rounded-xl text-xs font-semibold" required>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Tasa ISV Especial (ej. 0.18)</label>
+                                    <input type="number" step="0.01" id="param-isv-especial" class="w-full p-2.5 bg-gray-50 border rounded-xl text-xs font-semibold" required>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Límite Tramo 1 ISR (L.)</label>
+                                    <input type="number" step="1000" id="param-isr-limite1" class="w-full p-2.5 bg-gray-50 border rounded-xl text-xs font-semibold" required>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Frecuencia Pago Defecto</label>
+                                    <select id="param-frecuencia-pago" class="w-full p-2.5 bg-gray-50 border rounded-xl text-xs font-semibold">
+                                        <option value="Quincenal">Quincenal</option>
+                                        <option value="Semanal">Semanal</option>
+                                        <option value="Mensual">Mensual</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Tope Deducción Quincenal (%)</label>
+                                    <input type="number" step="1" id="param-max-deduc-quincenal" class="w-full p-2.5 bg-gray-50 border rounded-xl text-xs font-semibold" placeholder="40" required>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Tope Deducción Mensual (%)</label>
+                                    <input type="number" step="1" id="param-max-deduc-mensual" class="w-full p-2.5 bg-gray-50 border rounded-xl text-xs font-semibold" placeholder="40" required>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Regla Día No Laborable / Feriado</label>
+                                    <select id="param-regla-no-laborable" class="w-full p-2.5 bg-gray-50 border rounded-xl text-xs font-semibold">
+                                        <option value="Adelantar">Adelantar al día hábil previo</option>
+                                        <option value="Posponer">Posponer al día hábil posterior</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="flex justify-end">
+                                <button type="submit" id="btn-save-parameters" class="px-6 py-2.5 bg-purple-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-purple-700 shadow-md">
+                                    Guardar Parámetros en Spreadsheet
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Panel de Deducciones Recurrentes y Reglas de Pago -->
+                    <div class="card-ima border-teal-100 bg-white p-8 rounded-[2.5rem] shadow-sm">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-12 h-12 bg-teal-600 text-white rounded-2xl flex items-center justify-center text-xl shadow-lg shadow-teal-100">
+                                <i class="fas fa-hand-holding-usd"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-800">Deducciones Recurrentes y Simulación de Pago</h3>
+                                <p class="text-xs text-gray-500 font-medium">Asignar deducciones adicionales en cuotas fijas y verificar fechas de pago frente a feriados o domingos</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Formulario de Deducción Recurrente -->
+                            <form id="recurring-deduction-form" class="space-y-4 bg-teal-50/40 p-6 rounded-2xl border border-teal-100">
+                                <h4 class="font-bold text-sm text-teal-800 flex items-center gap-2">
+                                    <i class="fas fa-plus-circle"></i> Registrar Deducción Recurrente
+                                </h4>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">ID Empleado</label>
+                                    <input type="text" id="rec-ded-empid" class="w-full p-2.5 bg-white border rounded-xl text-xs font-semibold" placeholder="EMP-..." required>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Nombre / Concepto de Deducción</label>
+                                    <input type="text" id="rec-ded-nombre" class="w-full p-2.5 bg-white border rounded-xl text-xs font-semibold" placeholder="Ej. Préstamo Institucional, Anticipo" required>
+                                </div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Monto por Cuota (L.)</label>
+                                        <input type="number" step="0.01" id="rec-ded-monto" class="w-full p-2.5 bg-white border rounded-xl text-xs font-semibold" placeholder="500.00" required>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Total de Cuotas</label>
+                                        <input type="number" id="rec-ded-cuotas" class="w-full p-2.5 bg-white border rounded-xl text-xs font-semibold" placeholder="6" required>
+                                    </div>
+                                </div>
+                                <button type="submit" class="w-full py-2.5 bg-teal-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-teal-700 shadow-md">
+                                    Guardar Deducción Recurrente
+                                </button>
+                            </form>
+
+                            <!-- Simulador de Fecha Efectiva de Pago -->
+                            <div class="space-y-4 bg-blue-50/40 p-6 rounded-2xl border border-blue-100">
+                                <h4 class="font-bold text-sm text-blue-800 flex items-center gap-2">
+                                    <i class="fas fa-calendar-check"></i> Comprobador de Regla de Días No Laborables
+                                </h4>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Fecha Programada de Pago</label>
+                                    <input type="date" id="sim-fecha-pago" class="w-full p-2.5 bg-white border rounded-xl text-xs font-semibold">
+                                </div>
+                                <div>
+                                    <button type="button" id="btn-simulate-payment-date" class="w-full py-2.5 bg-blue-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-blue-700 shadow-md">
+                                        Calcular Fecha Efectiva
+                                    </button>
+                                </div>
+                                <div id="sim-payment-result" class="p-3 bg-white rounded-xl border border-blue-100 text-xs text-gray-700 hidden">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tarjeta de Gestión de Inventarios, Activos y Proveedores (REQ-EXP-015) -->
+                    <div class="card-ima md:col-span-2 border-emerald-100 bg-white p-8 rounded-[2.5rem] shadow-sm">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-12 h-12 bg-emerald-600 text-white rounded-2xl flex items-center justify-center text-xl shadow-lg shadow-emerald-100">
+                                <i class="fas fa-boxes"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-800">Inventario, Activos Fijos y Proveedores</h3>
+                                <p class="text-xs text-gray-500 font-medium">Control de existencias, préstamos, bajas, compras y alertas automáticas de stock mínimo</p>
+                            </div>
+                        </div>
+
+                        <!-- Alertas de Stock Mínimo -->
+                        <div id="inventory-low-stock-alert" class="p-4 mb-6 bg-red-50 border border-red-200 rounded-2xl text-xs text-red-700 hidden">
+                            <div class="flex items-center gap-2 font-bold mb-1">
+                                <i class="fas fa-exclamation-circle text-base"></i>
+                                <span>Alerta de Existencias Críticas</span>
+                            </div>
+                            <p id="inventory-alert-list" class="text-[11px]"></p>
+                        </div>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <!-- Formulario de Alta de Artículo / Activo -->
+                            <form id="inventory-item-form" class="space-y-4 bg-gray-50/60 p-5 rounded-2xl border border-gray-100">
+                                <h4 class="font-bold text-xs text-gray-700 uppercase tracking-wider flex items-center gap-2">
+                                    <i class="fas fa-plus"></i> Registrar Artículo o Activo
+                                </h4>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Nombre del Bien</label>
+                                    <input type="text" id="inv-nombre" class="w-full p-2.5 bg-white border rounded-xl text-xs font-semibold" placeholder="Ej. Proyector Epson, Resmas de Papel" required>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Categoría</label>
+                                        <select id="inv-categoria" class="w-full p-2.5 bg-white border rounded-xl text-xs font-semibold">
+                                            <option value="Consumible">Consumible</option>
+                                            <option value="Activo Fijo">Activo Fijo</option>
+                                            <option value="Mobiliario">Mobiliario</option>
+                                            <option value="Tecnológico">Tecnológico</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Ubicación</label>
+                                        <input type="text" id="inv-ubicacion" class="w-full p-2.5 bg-white border rounded-xl text-xs font-semibold" placeholder="Lab Computo / Bodega" required>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-3 gap-2">
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Stock Inicial</label>
+                                        <input type="number" id="inv-stock-inicial" class="w-full p-2.5 bg-white border rounded-xl text-xs font-semibold" placeholder="10" required>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Stock Mínimo</label>
+                                        <input type="number" id="inv-stock-minimo" class="w-full p-2.5 bg-white border rounded-xl text-xs font-semibold" placeholder="3" required>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Costo Unit. (L.)</label>
+                                        <input type="number" step="0.01" id="inv-costo" class="w-full p-2.5 bg-white border rounded-xl text-xs font-semibold" placeholder="150.00">
+                                    </div>
+                                </div>
+                                <button type="submit" id="btn-save-inv-item" class="w-full py-2.5 bg-emerald-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-emerald-700 shadow-md">
+                                    Guardar Artículo
+                                </button>
+                            </form>
+
+                            <!-- Formulario de Movimiento de Kardex -->
+                            <form id="inventory-movement-form" class="space-y-4 bg-gray-50/60 p-5 rounded-2xl border border-gray-100">
+                                <h4 class="font-bold text-xs text-gray-700 uppercase tracking-wider flex items-center gap-2">
+                                    <i class="fas fa-dolly"></i> Movimiento de Kardex
+                                </h4>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">ID de Artículo</label>
+                                    <input type="text" id="inv-mov-artid" class="w-full p-2.5 bg-white border rounded-xl text-xs font-semibold" placeholder="ART-..." required>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Tipo de Movimiento</label>
+                                        <select id="inv-mov-tipo" class="w-full p-2.5 bg-white border rounded-xl text-xs font-semibold">
+                                            <option value="Entrada">Entrada (Compra/Donación)</option>
+                                            <option value="Salida">Salida (Consumo)</option>
+                                            <option value="Prestamo">Préstamo Temporal</option>
+                                            <option value="Devolucion">Devolución de Préstamo</option>
+                                            <option value="Baja">Baja (Dañado/Obsolescencia)</option>
+                                            <option value="Ajuste">Ajuste de Conteo Físico</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Cantidad</label>
+                                        <input type="number" id="inv-mov-cantidad" class="w-full p-2.5 bg-white border rounded-xl text-xs font-semibold" placeholder="1" required>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Referencia / Factura / Solicitante</label>
+                                    <input type="text" id="inv-mov-ref" class="w-full p-2.5 bg-white border rounded-xl text-xs font-semibold" placeholder="Prof. Juan Pérez / Req-04">
+                                </div>
+                                <button type="submit" id="btn-save-inv-mov" class="w-full py-2.5 bg-blue-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-blue-700 shadow-md">
+                                    Registrar Movimiento
+                                </button>
+                            </form>
+
+                            <!-- Formulario de Directorio de Proveedores -->
+                            <form id="supplier-form" class="space-y-4 bg-gray-50/60 p-5 rounded-2xl border border-gray-100">
+                                <h4 class="font-bold text-xs text-gray-700 uppercase tracking-wider flex items-center gap-2">
+                                    <i class="fas fa-truck"></i> Directorio de Proveedores
+                                </h4>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Nombre Comercial</label>
+                                    <input type="text" id="prov-nombre" class="w-full p-2.5 bg-white border rounded-xl text-xs font-semibold" placeholder="Distribuidora Escolar S.A." required>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">RTN</label>
+                                        <input type="text" id="prov-rtn" maxlength="14" class="w-full p-2.5 bg-white border rounded-xl text-xs font-semibold" placeholder="08011990123456">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Teléfono</label>
+                                        <input type="tel" id="prov-telefono" class="w-full p-2.5 bg-white border rounded-xl text-xs font-semibold" placeholder="+504 9999-0000">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Rubro / Categoría</label>
+                                    <input type="text" id="prov-rubro" class="w-full p-2.5 bg-white border rounded-xl text-xs font-semibold" placeholder="Papelería / Tecnología / Mobiliario">
+                                </div>
+                                <button type="submit" id="btn-save-supplier" class="w-full py-2.5 bg-purple-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-purple-700 shadow-md">
+                                    Guardar Proveedor
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Tarjeta de Banco de Preguntas -->
+                    <div class="card-ima border-amber-100 bg-amber-50/30 p-8 rounded-[2.5rem]">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-12 h-12 bg-amber-500 text-white rounded-2xl flex items-center justify-center text-xl shadow-lg shadow-amber-100">
+                                <i class="fas fa-database"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-800">Banco de Preguntas</h3>
+                        </div>
+                        <p class="text-sm text-gray-600 mb-6 leading-relaxed">
+                            Centraliza y administra todas las preguntas y actividades educativas desde Google Sheets.
+                        </p>
+
+                        <div class="flex flex-col gap-3">
+                            <button id="btn-migrate-questions" class="flex items-center justify-center gap-2 bg-amber-500 text-white py-3 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-amber-600 transition-all shadow-lg shadow-amber-100">
+                                <i class="fas fa-sync-alt"></i> Sincronizar / Migrar Banco
+                            </button>
+                            <p id="migration-status-msg" class="text-[10px] text-center font-bold text-amber-600 uppercase hidden"></p>
+                        </div>
+                    </div>
+
+                    <!-- Tarjeta de Información de Promoción -->
+                    <div class="card-ima border-blue-100 bg-blue-50/30 p-8 rounded-[2.5rem]">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-12 h-12 bg-blue-600 text-white rounded-2xl flex items-center justify-center text-xl shadow-lg shadow-blue-100">
+                                <i class="fas fa-user-graduate"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-800">Promoción Estudiantil</h3>
+                        </div>
+                        <p class="text-sm text-gray-600 mb-6 leading-relaxed">
+                            Al finalizar el año, las cuentas de los alumnos permanecen activas. Los estudiantes podrán actualizar su grado y sección la próxima vez que inicien sesión o intenten registrarse nuevamente con el mismo correo.
+                        </p>
+                        <ul class="text-xs text-blue-700 space-y-2 font-medium">
+                            <li class="flex items-center gap-2"><i class="fas fa-check-circle"></i> Los alumnos conservan sus credenciales.</li>
+                            <li class="flex items-center gap-2"><i class="fas fa-check-circle"></i> Se detectarán cuentas existentes automáticamente.</li>
+                            <li class="flex items-center gap-2"><i class="fas fa-check-circle"></i> Historial archivado disponible para el docente.</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sección de Reportes (Académico) -->
+            <section id="section-reportes" class="hidden animate-fade-in-up">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+                    <h2 class="text-2xl font-medium text-gray-800">Reportes Académicos</h2>
+                    <button id="export-excel-btn" class="bg-green-600 text-white px-6 py-3 rounded-2xl font-semibold shadow-lg hover:bg-green-700 transition-all flex items-center gap-2">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        EXPORTAR REPORTE EXCEL
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 bg-white p-5 rounded-[1.5rem] border border-gray-50 shadow-sm">
+                    <div>
+                        <label class="block text-[9px] font-semibold text-gray-400 uppercase tracking-widest mb-2">Grado Académico</label>
+                        <select id="report-grado" class="w-full p-3 bg-gray-50 border-none rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500/20">
+                            <option value="Décimo">Décimo</option>
+                            <option value="Undécimo">Undécimo</option>
+                            <option value="Duodécimo">Duodécimo</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[9px] font-semibold text-gray-400 uppercase tracking-widest mb-2">Sección</label>
+                        <select id="report-seccion" class="w-full p-3 bg-gray-50 border-none rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500/20">
+                            <option value="A">Sección A</option>
+                            <option value="B">Sección B</option>
+                            <option value="C">Sección C</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[9px] font-semibold text-gray-400 uppercase tracking-widest mb-2">Parcial</label>
+                        <select id="report-parcial" class="w-full p-3 bg-gray-50 border-none rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500/20">
+                            <option value="Primer Parcial">Primer Parcial</option>
+                            <option value="Segundo Parcial">Segundo Parcial</option>
+                            <option value="Tercer Parcial">Tercer Parcial</option>
+                            <option value="Cuarto Parcial">Cuarto Parcial</option>
+                        </select>
+                    </div>
+                    <div class="flex items-end">
+                        <button id="btn-generate-report" class="btn-ima-primary w-full py-3 text-xs">Generar Reporte</button>
+                    </div>
+                </div>
+
+                <div class="table-container overflow-x-auto bg-white rounded-3xl shadow-sm border border-gray-100">
+                    <table class="w-full" id="report-table">
+                        <thead class="bg-gray-50 border-b border-gray-100" id="report-table-head">
+                            <!-- Cabecera de reporte -->
+                        </thead>
+                        <tbody id="report-table-body" class="divide-y divide-gray-100 text-sm">
+                            <!-- Se poblará vía js/teacher.js -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Modal de Perfil -->
+    <div id="profile-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center hidden z-[70] backdrop-blur-sm">
+        <div class="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-md mx-4 animate-fade-in-up">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-medium text-gray-800">Mi Perfil</h2>
+                <button id="close-profile-modal" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <form id="profile-form" class="space-y-4">
+                <div>
+                    <label class="block font-medium text-gray-700 mb-2">Nombre Completo</label>
+                    <input type="text" id="profile-nombre" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400" required>
+                </div>
+                <div>
+                    <label class="block font-medium text-gray-700 mb-2">Correo Electrónico</label>
+                    <input type="email" id="profile-email" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400" required>
+                </div>
+                <div>
+                    <label class="block font-medium text-gray-700 mb-2">Teléfono</label>
+                    <input type="text" id="profile-telefono" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400" required>
+                </div>
+                <hr class="my-6">
+                <h3 class="font-medium text-gray-800 mb-2">Cambiar Contraseña</h3>
+                <div>
+                    <label class="block font-medium text-gray-700 mb-2">Contraseña Actual</label>
+                    <input type="password" id="profile-current-password" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400">
+                </div>
+                <div>
+                    <label class="block font-medium text-gray-700 mb-2">Nueva Contraseña</label>
+                    <input type="password" id="profile-password" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400">
+                </div>
+
+                <div class="flex flex-col gap-3 mt-8">
+                    <div class="flex space-x-4">
+                        <button type="button" id="cancel-profile-btn" class="flex-1 py-3 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition-colors">Cerrar</button>
+                        <button type="submit" class="flex-1 py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 shadow-lg transition-all">Guardar Cambios</button>
+                    </div>
+                    <button type="button" onclick="window.handleLogout()" class="w-full py-3 bg-red-50 text-red-600 font-semibold rounded-xl hover:bg-red-100 transition-colors flex items-center justify-center gap-2">
+                        <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lightbox Modal -->
+    <!-- Modal de Noticias -->
+    <div id="news-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center hidden z-[60] backdrop-blur-sm">
+        <div class="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-4xl mx-4 max-h-[90vh] flex flex-col overflow-hidden animate-fade-in-up">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-medium text-gray-800">Publicar Noticia</h2>
+                <button id="close-news-modal" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <form id="news-form" class="space-y-4 overflow-y-auto pr-2">
+                <div>
+                    <label for="news-title" class="block font-medium text-gray-700 mb-1">Título</label>
+                    <input type="text" id="news-title" required class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400" placeholder="Título de la noticia">
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label for="news-category" class="block font-medium text-gray-700 mb-1">Categoría</label>
+                        <select id="news-category" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400">
+                            <option value="General">General</option>
+                            <option value="Aviso">Aviso</option>
+                            <option value="Evento">Evento</option>
+                            <option value="Académico">Académico</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="news-expiration" class="block font-medium text-gray-700 mb-1">Fecha de Expiración (Vigencia)</label>
+                        <input type="date" id="news-expiration" class="w-full p-2.5 border rounded-xl text-sm">
+                    </div>
+                    <div>
+                        <label for="news-image-input" class="block font-medium text-gray-700 mb-1">Imagen de Portada</label>
+                        <input type="file" id="news-image-input" accept="image/*,.heic" class="w-full p-2.5 border rounded-xl text-sm">
+                        <input type="hidden" id="news-image-url">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                    <div>
+                        <label for="news-audience-level" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Audiencia: Nivel</label>
+                        <select id="news-audience-level" class="w-full p-2 bg-white border rounded-lg text-xs font-semibold">
+                            <option value="Todos">Todos los niveles</option>
+                            <option value="Prebásica">Prebásica</option>
+                            <option value="Básica">Básica</option>
+                            <option value="Media">Media</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="news-audience-grade" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Audiencia: Grado</label>
+                        <input type="text" id="news-audience-grade" class="w-full p-2 bg-white border rounded-lg text-xs font-semibold" placeholder="Todos o ej. 7mo Grado">
+                    </div>
+                    <div>
+                        <label for="news-audience-section" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Audiencia: Sección</label>
+                        <input type="text" id="news-audience-section" class="w-full p-2 bg-white border rounded-lg text-xs font-semibold" placeholder="Todos o ej. A">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-medium text-gray-700 mb-2">Contenido de la Noticia</label>
+                    <div id="editor-news-container" class="bg-white h-64 rounded-xl border"></div>
+                </div>
+
+                <div class="flex gap-3 pt-4 sticky bottom-0 bg-white py-2">
+                    <button type="button" id="cancel-news-btn" class="btn-ima-cancel flex-1 py-3">Cancelar</button>
+                    <button type="submit" id="save-news-btn" class="btn-ima-primary flex-1 py-3">Publicar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="image-lightbox-modal" class="fixed inset-0 bg-gray-900 bg-opacity-90 flex items-center justify-center hidden z-[70] backdrop-blur-md">
+        <div class="bg-white p-6 rounded-3xl shadow-2xl w-full max-w-4xl mx-4 relative">
+            <div class="flex justify-between items-center border-b pb-4 mb-6">
+                <h2 id="lightbox-title" class="text-xl font-medium text-gray-800">Vista Previa</h2>
+                <button id="close-lightbox-btn" class="text-gray-400 hover:text-gray-800 transition-colors">
+                    <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="flex justify-center bg-gray-50 rounded-2xl overflow-hidden">
+                <img id="lightbox-image" src="" alt="Vista previa" class="max-w-full max-h-[70vh] object-contain">
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Calificación -->
+    <div id="grade-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center hidden z-[60] backdrop-blur-sm">
+        <div class="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-md mx-4 animate-fade-in-up">
+            <h2 class="text-xl font-medium text-gray-800 mb-4">Calificar Entrega</h2>
+
+            <div class="space-y-2 mb-6 text-sm bg-gray-50 p-4 rounded-xl border border-gray-100">
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-500 font-medium">Alumno:</span>
+                    <span id="student-name-modal" class="font-medium text-gray-800"></span>
+                </div>
+                <div id="student-extra-info" class="space-y-2">
+                    <div class="flex flex-col">
+                        <span class="text-gray-500 font-medium text-[10px] uppercase tracking-widest">Nombre de la tarea:</span>
+                        <span id="grade-modal-task-title" class="font-bold text-gray-800 leading-tight"></span>
+                    </div>
+                    <div class="flex justify-between items-center border-t border-gray-100 pt-2">
+                        <span class="text-gray-500 font-medium">Fecha de entrega:</span>
+                        <span id="grade-modal-date" class="font-medium text-gray-700"></span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-500 font-medium">Hora de entrega:</span>
+                        <span id="grade-modal-time" class="text-gray-700 font-medium"></span>
+                    </div>
+                </div>
+                <div class="flex justify-between pt-2 border-t border-gray-100 mt-2">
+                    <span class="text-gray-500 font-medium">Archivo:</span>
+                    <a id="file-link-modal" href="index.html" target="_blank" class="text-blue-600 font-medium hover:underline">Ver Entrega</a>
+                </div>
+            </div>
+
+            <div class="space-y-6">
+                <div>
+                    <label for="calificacion" class="block font-medium text-gray-700 mb-2">Calificación (0-100)</label>
+                    <input type="number" id="calificacion" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400">
+                </div>
+
+                <div>
+                    <label for="estado" class="block font-medium text-gray-700 mb-2">Estado</label>
+                    <select id="estado" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400">
+                        <option value="Pendiente de revisión">Pendiente de revisión</option>
+                        <option value="Completada">Completada</option>
+                        <option value="Rechazada">Rechazada</option>
+                        <option value="Tarea incompleta">Tarea incompleta</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="comentario" class="block font-medium text-gray-700 mb-2">Comentario (Opcional)</label>
+                    <textarea id="comentario" rows="3" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400" placeholder="Añade una retroalimentación..."></textarea>
+                </div>
+            </div>
+
+            <div class="flex space-x-4 mt-10">
+                <button id="cancel-grade-btn" class="btn-ima-cancel flex-1 py-3">Cancelar</button>
+                <button id="save-grade-btn" class="btn-ima-primary flex-1 py-3">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NAVEGACIÓN MÓVIL (A-75): Barra Inferior Icon-Only -->
+    <div class="mobile-bottom-nav md:hidden z-[2000]">
+        <a href="index.html" class="bottom-nav-item" title="Inicio">
+            <i class="fas fa-home text-xl"></i>
+        </a>
+        <a href="teacher-dashboard.html" id="mobile-portal-bottom-nav" class="bottom-nav-item active" title="Portal">
+            <i class="fas fa-th-large text-xl"></i>
+        </a>
+        <button class="bottom-nav-item" onclick="window.openAcademicHierarchy('Presentaciones')" title="Cursos">
+            <i class="fas fa-book-open text-xl"></i>
+        </button>
+        <button class="bottom-nav-item" onclick="window.openAcademicHierarchy('Contenido')" title="Contenido">
+            <i class="fas fa-file-pdf text-xl"></i>
+        </button>
+        <a href="#" onclick="handleHeaderAction('show-activities')" class="bottom-nav-item" title="Actividades">
+            <i class="fas fa-gamepad text-xl"></i>
+        </a>
+        <a href="pseudocode.html" class="bottom-nav-item" title="Pseudocódigo">
+            <i class="fas fa-code text-xl"></i>
+        </a>
+        <button id="mobile-profile-btn-nav" class="bottom-nav-item" title="Perfil">
+            <i class="fas fa-user-circle text-xl"></i>
+        </button>
+    </div>
+
+    <footer class="bg-white/50 py-6 mt-auto">
+        <div class="container mx-auto px-6 text-center">
+            <p class="text-[10px] font-medium text-gray-400 uppercase tracking-widest mb-2">
+                &copy; 2026 <strong>New Generation Bilingual School and Institute</strong>.
+            </p>
+            <p class="text-[10px] font-medium text-gray-400 uppercase tracking-widest opacity-60">
+                <a href="#" class="hover:text-blue-600 transition-colors">Privacidad</a>
+                <span class="mx-1">-</span>
+                <a href="#" class="hover:text-blue-600 transition-colors">Términos y Condiciones</a>
+                <span class="mx-1">-</span>
+                <a href="#" class="hover:text-blue-600 transition-colors">Contáctanos</a>
+            </p>
+        </div>
+    </footer>
+
+    <!-- Modal de Instrucciones iOS -->
+    <div id="ios-install-modal" class="fixed inset-0 z-[70] flex items-center justify-center bg-black bg-opacity-50 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-white w-full max-w-sm mx-4 rounded-3xl shadow-2xl overflow-hidden p-6 text-center">
+            <div class="flex justify-center mb-4">
+                <div class="bg-blue-100 p-3 rounded-full">
+                    <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                </div>
+            </div>
+            <h3 class="text-xl font-medium text-gray-800 mb-2">Instalar en iOS</h3>
+            <p class="text-gray-600 mb-6 text-sm">Para instalar esta aplicación en tu iPhone o iPad:</p>
+            <div class="space-y-4 text-left mb-6">
+                <div class="flex items-center space-x-3">
+                    <span class="bg-gray-200 text-gray-700 w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium">1</span>
+                    <span class="text-sm">Busca en el menú de compartir la opción:</span>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <span class="bg-gray-200 text-gray-700 w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium">2</span>
+                    <span class="text-sm">"Añadir a la pantalla de inicio"</span>
+                </div>
+            </div>
+            <button id="close-ios-modal" class="w-full bg-blue-600 text-white font-medium py-3 rounded-xl hover:bg-blue-700 transition-colors">Entendido</button>
+        </div>
+    </div>
+
+    <!-- Modal de Detalles de Tarea -->
+    <div id="task-details-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center hidden z-[60] backdrop-blur-sm">
+        <div class="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-lg mx-4 animate-fade-in-up max-h-[90vh] overflow-y-auto">
+            <h2 id="detail-titulo" class="text-xl font-medium text-gray-800 mb-3">Detalles de Tarea</h2>
+            <div class="space-y-3 mb-6 text-sm">
+                <div class="text-gray-600 quill-content" id="detail-descripcion"></div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div><span class="block text-gray-400 font-medium uppercase text-[10px]">Materia</span> <span id="detail-asignatura" class="font-medium"></span></div>
+                    <div><span class="block text-gray-400 font-medium uppercase text-[10px]">Parcial</span> <span id="detail-parcial" class="font-medium"></span></div>
+                    <div><span class="block text-gray-400 font-medium uppercase text-[10px]">Grado</span> <span id="detail-grado" class="font-medium"></span></div>
+                    <div><span class="block text-gray-400 font-medium uppercase text-[10px]">Sección</span> <span id="detail-seccion" class="font-medium"></span></div>
+                    <div><span class="block text-gray-400 font-medium uppercase text-[10px]">Fecha Límite</span> <span id="detail-fecha" class="font-medium text-red-600"></span></div>
+                    <div><span class="block text-gray-400 font-medium uppercase text-[10px]">Puntaje Máximo</span> <span id="detail-puntaje" class="font-medium text-blue-600"></span></div>
+                </div>
+                <div id="detail-archivo-container" class="mt-4 hidden">
+                    <span class="block text-gray-400 font-medium uppercase text-[10px]">Archivo Adjunto</span>
+                    <a id="detail-archivo-link" href="#" target="_blank" class="text-blue-600 font-medium hover:underline">Ver Recurso</a>
+                </div>
+            </div>
+            <div class="flex space-x-4">
+                <button id="close-task-modal-btn" class="btn-ima-cancel flex-1 py-3">Cerrar</button>
+                <button id="edit-task-btn" class="btn-ima-primary flex-1 py-3">Editar</button>
+                <button id="delete-task-btn" class="btn-ima-cancel flex-1 py-3">Eliminar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Código de Proyecto -->
+    <div id="project-code-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center hidden z-[80] backdrop-blur-md">
+        <div class="bg-white p-6 rounded-3xl shadow-2xl w-full max-w-4xl mx-4 flex flex-col max-h-[90vh]">
+            <div class="flex justify-between items-center mb-4">
+                <h2 id="project-code-title" class="text-xl font-medium text-gray-800">Visualizar Proyecto</h2>
+                <button id="close-project-modal" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <pre id="project-code-content" class="flex-grow bg-gray-900 text-green-400 p-6 rounded-2xl overflow-auto font-mono text-sm leading-relaxed"></pre>
+        </div>
+    </div>
+
+    <!-- Modal de Edición de Tarea -->
+    <div id="edit-task-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center hidden z-[70] backdrop-blur-sm">
+        <div class="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 animate-fade-in-up max-h-[90vh] overflow-y-auto">
+            <h2 class="text-xl font-medium text-gray-800 mb-4">Editar Asignación</h2>
+            <form id="edit-assignment-form">
+                <input type="hidden" id="edit-id">
+                <input type="hidden" id="edit-tipo-orig">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="md:col-span-2">
+                        <label class="block font-medium text-gray-700 mb-1">Tipo de Tarea</label>
+                        <select id="edit-task-type" name="tipo" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400" required>
+                            <option value="Tarea" selected>Tarea</option>
+                            <option value="Crédito Extra">Crédito Extra</option>
+                        </select>
+                    </div>
+                    <div id="edit-extra-credit-association-container" class="hidden md:col-span-2">
+                        <label class="block font-medium text-gray-700 mb-1">Vincular con Tarea Rechazada</label>
+                        <select name="tareaAsociadaId" id="edit-extra-credit-task-asoc" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400">
+                            <option value="">Seleccione la tarea a reemplazar...</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block font-medium text-gray-700 mb-1">Título</label>
+                        <input type="text" id="edit-titulo" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400" required>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block font-medium text-gray-700 mb-1">Descripción</label>
+                        <div id="editor-edit-container" style="height: 150px;" class="bg-white rounded-xl mb-2"></div>
+                        <input type="hidden" id="edit-descripcion">
+                    </div>
+                    <div>
+                        <label class="block font-medium text-gray-700 mb-1">Asignatura</label>
+                        <input type="text" id="edit-asignatura" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400" required>
+                    </div>
+                    <div>
+                        <label class="block font-medium text-gray-700 mb-1">Parcial</label>
+                        <select id="edit-parcial" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400">
+                            <option value="Primer Parcial">Primer Parcial</option>
+                            <option value="Segundo Parcial">Segundo Parcial</option>
+                            <option value="Tercer Parcial">Tercer Parcial</option>
+                            <option value="Cuarto Parcial">Cuarto Parcial</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-medium text-gray-700 mb-1">Grado</label>
+                        <select id="edit-grado" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400">
+                            <option value="Décimo">Décimo</option>
+                            <option value="Undécimo">Undécimo</option>
+                            <option value="Duodécimo">Duodécimo</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-medium text-gray-700 mb-1">Sección</label>
+                        <input type="text" id="edit-seccion" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400">
+                    </div>
+                    <div>
+                        <label class="block font-medium text-gray-700 mb-1">Fecha de Clase</label>
+                        <input type="date" id="edit-fecha-clase" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400">
+                    </div>
+                    <div>
+                        <label class="block font-medium text-gray-700 mb-1">Fecha Límite</label>
+                        <input type="date" id="edit-fecha" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400" required>
+                    </div>
+                    <div>
+                        <label class="block font-medium text-gray-700 mb-1">Hora de Disponibilidad</label>
+                        <input type="time" id="edit-hora-disponible" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400">
+                    </div>
+                    <div>
+                        <label class="block font-medium text-gray-700 mb-1">Puntaje Máximo</label>
+                        <input type="number" id="edit-puntaje" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400" min="1" max="100">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block font-medium text-gray-700 mb-1">URL de Archivo/Guía (Drive)</label>
+                        <input type="text" id="edit-archivo" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400" placeholder="https://drive.google.com/...">
+                    </div>
+                    <div id="edit-exam-only-fields" class="hidden">
+                        <label class="block font-medium text-gray-700 mb-1">Tiempo Límite (min)</label>
+                        <input type="number" id="edit-tiempo" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400">
+                    </div>
+                </div>
+                <div class="flex space-x-4 mt-8">
+                    <button type="button" id="cancel-edit-btn" class="btn-ima-cancel flex-1 py-3">Cancelar</button>
+                    <button type="submit" class="btn-ima-primary flex-1 py-3">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/config.js?v=22"></script>
+    <script src="js/persistence.js?v=22"></script>
+    <script src="js/api.js?v=22"></script>
+    <script src="js/games-adapter.js?v=22"></script>
+    <script src="js/ui-common.js?v=22"></script>
+    <script src="js/data.js?v=22"></script>
+    <script src="js/teacher.js?v=22"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.setupCommonUI) window.setupCommonUI();
+            if (window.renderCommonNav) window.renderCommonNav();
+        });
+    </script>
+</body>
+</html>
