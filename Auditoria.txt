@@ -27,3 +27,21 @@
 - Tarea derivada: AUD-NG-160.
 - No duplicar: AUD-NG-005 trata la revocación del estado de cuenta y su coherencia entre servicios; este hallazgo trata la vigencia del rol firmado en los tokens.
 ===============================================================================
+
+
+===============================================================================
+[AUD-NG-161] LA SUITE DE CONCURRENCIA REPORTA ÉXITO SIN VALIDAR IDEMPOTENCIA NI CONCURRENCIA REAL
+- Fecha: 2026-11-04.
+- Archivo/Módulo: backend/accounting-service/Code.gs, función runCriticalProcessConcurrencySuite (líneas 10505-10550); relación con recordStudentPayment (líneas 3890-3955), js/api.js/fetchApi y helpers de idempotencia de ACADEMIC/ACCOUNTING.
+- Tipo: Deficiencia crítica de pruebas / falsos positivos de integridad transaccional.
+- Evidencia:
+  1. La prueba de concurrencia únicamente intenta adquirir un LockService y lo libera; no ejecuta dos operaciones simultáneas ni verifica contención o exclusión mutua.
+  2. La prueba denominada "Integridad de Transacciones de Cobro" lee y cuenta filas de TransaccionesCobro y asigna PASSED incondicionalmente, sin buscar claves duplicadas ni ejecutar pagos.
+  3. recordStudentPayment persiste los pagos en PagosAbonos, no en TransaccionesCobro; la comprobación de la suite no observa esa ruta.
+  4. La prueba de CUV cuenta filas de DocumentosEscolaresEmitidos y asigna PASSED sin comparar códigos ni comprobar unicidad.
+  5. La suite no simula pérdida de respuesta, reintentos con la misma clave, reutilización incompatible, fallo tras persistencia, matrículas ni planillas.
+- Impacto: la suite puede reportar todos los casos como aprobados sin demostrar idempotencia, unicidad documental o concurrencia. Los resultados pueden inducir a considerar verificados procesos financieros y administrativos que no fueron ejercitados.
+- Severidad: ALTO (P1).
+- Tarea derivada: AUD-NG-161.
+- Control de duplicados: AUD-NG-006 ya cubre la idempotencia del cliente y la reserva atómica de claves; AUD-NG-133 cubre la idempotencia transaccional de pagos. AUD-NG-161 se limita a reemplazar las pruebas que generan falsos positivos por pruebas conductuales reales y no duplica la corrección de esos mecanismos.
+===============================================================================
