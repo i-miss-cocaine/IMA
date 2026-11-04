@@ -17208,3 +17208,59 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Descripción del Alcance:** Consultar calificaciones, materias reprobadas y tareas pendientes desde fuentes académicas persistidas para el año lectivo solicitado. Eliminar la dependencia de mockFailingSubjects y mockMissingTasks enviados por el cliente. Leer umbrales de configuración institucional versionada. Implementar envío real de notificaciones o registrar resultado verificable por destinatario. Aplicar autorización por identidad y ámbito al consultar alertas.
 - **Criterios de Aceptación:** Las alertas usan datos persistidos y filtrados por anolectivo; datos simulados del cliente no alteran resultados; umbrales son trazables a configuración vigente; cada destinatario tiene constancia de envío o fallo y no se declara notificado sin entrega; usuarios no consultan estudiantes fuera de su ámbito; se conserva deduplicación y se prueban períodos, umbrales y reintentos.
 - **Estado:** [ ] Pendiente
+
+
+---
+### [AUD-NG-040] Implementar generación real y almacenamiento verificable del PDF oficial de órdenes de compra
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-040 (TASK-015 / F18-Task04)
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** backend/accounting-service/Code.gs; almacenamiento documental en Google Drive
+- **Dependencias Expuestas:** generatePurchaseOrderPDF, doPost, OrdenesCompra, Google Drive API, servicio de conversión PDF, permisos de archivo
+- **Descripción del Alcance:** Sustituir la URL construida manualmente por la generación efectiva de un archivo PDF válido. Construir el documento a partir de datos persistidos, convertirlo a MIME application/pdf, almacenarlo en la ubicación institucional autorizada, recuperar su identificador y URL real, y persistir esa referencia solo después de confirmar la creación. Los errores de generación o almacenamiento deben devolver error y no un falso status success.
+- **Criterios de Aceptación:** La operación produce un archivo descargable con MIME application/pdf; el archivo existe en Drive y su acceso respeta los permisos institucionales; la URL guardada corresponde al archivo real; fallos de conversión o almacenamiento no actualizan la orden ni reportan éxito; se verifica apertura y contenido del PDF generado.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-041] Completar los datos oficiales de la orden y validar partidas, impuestos y total antes de generar el PDF
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-041 (TASK-015 / F18-Task04)
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** backend/accounting-service/Code.gs; esquema de datos de ProveedoresActivos y OrdenesCompra
+- **Dependencias Expuestas:** createPurchaseOrder, generatePurchaseOrderPDF, ProveedoresActivos, OrdenesCompra, detalleItems, solicitudId, cotizacionId, reglas fiscales ISV
+- **Descripción del Alcance:** Completar los datos faltantes del proveedor y de entrega (incluyendo dirección y contacto), identificar correctamente departamento y solicitante, incorporar referencias a solicitud y cotización aprobadas, condiciones de pago, transporte, descuentos, exención y desglose fiscal, y total en letras. Validar estructura y valores de cada partida; no continuar con partidas vacías cuando el JSON sea inválido. Calcular o contrastar subtotal, impuestos y total con reglas fiscales aplicables y rechazar discrepancias en lugar de usar silenciosamente el monto almacenado.
+- **Criterios de Aceptación:** El PDF contiene todos los campos documentales definidos en TASK-015; el departamento no se sustituye por centro de costo; el ISV solo se aplica cuando corresponde y admite exención; la suma de partidas, descuentos, transporte e impuestos coincide con el total persistido; JSON inválido, cantidades/precios inválidos o diferencias bloquean la emisión y producen un error identificable.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-042] Conservar un historial inmutable de versiones documentales de cada orden de compra
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-042 (TASK-015 / F18-Task04)
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** backend/accounting-service/Code.gs; almacenamiento documental en Google Drive; estructura de historial de órdenes
+- **Dependencias Expuestas:** generatePurchaseOrderPDF, modifyPurchaseOrderAmount, OrdenesCompra.VersionDocumental, OrdenesCompra.ArchivoPdfUrl, historial documental, LockService
+- **Descripción del Alcance:** Implementar un registro histórico por versión que conserve número, fecha, actor verificado, motivo, identificador/URL del archivo y estado de la versión. Cada nueva emisión o revisión debe crear un archivo distinto sin sobrescribir ni perder la referencia anterior. Serializar la asignación de versiones para evitar colisiones concurrentes y definir un esquema de numeración inequívoco.
+- **Criterios de Aceptación:** Cada versión apunta a un archivo real e independiente; las versiones anteriores siguen accesibles y no se alteran; se puede consultar la secuencia completa de versiones y sus metadatos; solicitudes concurrentes no generan números duplicados ni sobrescriben archivos; el motivo de versión queda persistido.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-043] Implementar una máquina de estados con transiciones permitidas y bitácora completa
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-043 (TASK-015 / F18-Task04)
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** backend/accounting-service/Code.gs; estructura de OrdenesCompra y bitácora de estados
+- **Dependencias Expuestas:** approvePurchaseOrder, recordPurchaseReceipt, OrdenesCompra.EstadoOrden, RecepcionesCompra, LockService, reglas de transición
+- **Descripción del Alcance:** Definir una matriz explícita de transiciones origen-destino y precondiciones por transición. Rechazar saltos de estado, retrocesos y cambios desde estados terminales salvo flujo formal de reapertura. Centralizar los cambios de estado de aprobación y recepción en una operación que registre estado anterior/nuevo, fecha, motivo y referencia de evidencia.
+- **Criterios de Aceptación:** Solo se ejecutan transiciones expresamente permitidas; no se puede pasar de Borrador directamente a recepción o cierre; envío requiere aprobación; aceptación/rechazo del proveedor y recepción requieren sus evidencias; estados terminales bloquean cambios no autorizados; cada transición conserva actor, fecha, motivo y estado previo sin sobrescribir historial.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-044] Atribuir aprobaciones y transiciones a la identidad autenticada del usuario
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-044 (TASK-015 / F18-Task04)
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** backend/accounting-service/Code.gs
+- **Dependencias Expuestas:** validateRolePermission, doPost, _verifiedUserId, _verifiedRole, approvePurchaseOrder, OrdenesCompra.AprobadoPor, bitácora de estados
+- **Descripción del Alcance:** Derivar el actor exclusivamente de _verifiedUserId y el rol de _verifiedRole establecidos por validateRolePermission. No aceptar authenticatedUserId, userId, actorId ni authRole del cliente como identidad o autoridad. Usar la identidad verificada para la regla de no autoaprobación y guardar el identificador real del aprobador en el registro y la bitácora.
+- **Criterios de Aceptación:** Manipular IDs o roles del payload no altera la identidad ni permisos; la aprobación queda atribuida al usuario autenticado; la autoaprobación se bloquea comparando identidades verificadas; la bitácora conserva actor y rol verificados para cada transición.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-045] Exigir revisión, re-aprobación y nueva versión al modificar órdenes ya aprobadas o enviadas
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-045 (TASK-015 / F18-Task04)
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** backend/accounting-service/Code.gs; almacenamiento documental e historial de órdenes
+- **Dependencias Expuestas:** modifyPurchaseOrderAmount, approvePurchaseOrder, generatePurchaseOrderPDF, OrdenesCompra.DetalleItemsJSON, MontoTotal, EstadoOrden, VersionDocumental, ArchivoPdfUrl
+- **Descripción del Alcance:** Impedir cambios directos de partidas o importes en órdenes aprobadas, emitidas, enviadas, aceptadas o parcialmente recibidas. Implementar una revisión formal que conserve la versión anterior, registre motivo y actor verificado, vuelva a someter los cambios a aprobación y, cuando corresponda, requiera aceptación del proveedor antes de continuar la recepción.
+- **Criterios de Aceptación:** Una orden en curso no cambia silenciosamente de importe o partidas; la revisión crea una versión nueva y conserva la anterior; los cambios requieren re-aprobación según los umbrales; una orden enviada o aceptada no continúa con condiciones modificadas sin evidencia de comunicación/aceptación; el presupuesto se ajusta una sola vez y de forma trazable.
+- **Estado:** [ ] Pendiente

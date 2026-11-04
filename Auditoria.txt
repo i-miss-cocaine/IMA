@@ -2152,3 +2152,131 @@ CORTE DE PROGRESO DE AUDITORÍA (2026-11-04)
 - Los hallazgos AUD-NG-032 a AUD-NG-039 se documentaron por separado como tareas nuevas pendientes ([ ]), no como tareas completadas ni como evidencia de implementación.
 - La revisión registrada corresponde a inspección estática; no implica que se hayan ejecutado pruebas funcionales.
 ===============================================================================
+
+
+===============================================================================
+AUD-NG-040
+Fecha: 2026-11-04
+Archivo auditado: backend/accounting-service/Code.gs
+Módulo: Generación documental de órdenes de compra
+Funciones y rangos: generatePurchaseOrderPDF (6861-6943); despacho doPost (572-690); esquema OrdenesCompra (157).
+Tarea original relacionada: TASK-015 / F18-Task04.
+Tipo: Incumplimiento funcional crítico; generación documental simulada.
+Severidad: Crítico.
+Evidencia técnica:
+1. generatePurchaseOrderPDF construye una cadena pdfUrl con una ruta fija bajo newgeneration.edu.hn, pero no crea un Blob PDF, no convierte HTML/documento a PDF, no llama a DriveApp.createFile ni almacena un archivo en Google Drive.
+2. La función actualiza las columnas VersionDocumental y ArchivoPdfUrl y devuelve un objeto JavaScript documentData junto con status success; ese objeto no es un archivo PDF ni acredita que la URL exista.
+3. El mensaje de respuesta afirma que el documento PDF fue generado exitosamente sin verificar creación, existencia, MIME type, permisos ni acceso al archivo.
+4. La ruta de despacho sí expone generatePurchaseOrderPDF mediante doPost; el problema está en la implementación de la operación, no en la ausencia del endpoint.
+Impacto: El usuario puede comunicar al proveedor un enlace inexistente y considerar formalizada una adquisición sin documento descargable ni evidencia documental.
+Dependencias: generatePurchaseOrderPDF, doPost, OrdenesCompra.VersionDocumental, OrdenesCompra.ArchivoPdfUrl, Google Drive y servicio de generación PDF.
+Conclusión: La implementación simula la referencia de un PDF, pero no genera ni persiste el archivo. La aceptación central de TASK-015 no está satisfecha. Hallazgo estático; no se invocó el endpoint ni se comprobó un archivo en Drive.
+===============================================================================
+
+===============================================================================
+AUD-NG-041
+Fecha: 2026-11-04
+Archivo auditado: backend/accounting-service/Code.gs
+Módulo: Contenido y consistencia financiera del documento de orden de compra
+Funciones y rangos: esquema OrdenesCompra (157); esquema ProveedoresActivos (aprox. 155); createPurchaseOrder (6565-6594); generatePurchaseOrderPDF (6861-6943).
+Tarea original relacionada: TASK-015 / F18-Task04.
+Tipo: Omisión de requisitos documentales y falta de validación de importes.
+Severidad: Alto.
+Evidencia técnica:
+1. El esquema ProveedoresActivos disponible en el archivo contiene proveedor, RTN, teléfono, email, rubro y estado, pero no dirección ni persona de contacto. El documento solo copia RTN, teléfono y email.
+2. documentData no incluye referencia a solicitud/cotización aprobada, dirección de entrega, condiciones comerciales de pago, transporte, descuentos, desglose de exención/impuestos ni total en letras.
+3. El campo departamentoSolicitante se alimenta de r[8], que en OrdenesCompra es CentroCosto; no existe evidencia de que sea el departamento solicitante.
+4. El ISV se calcula siempre como subtotal * 0.15, sin condición de aplicabilidad o exención.
+5. montoTotal se toma directamente de r[7] si existe, sin comprobar que coincida con partidas, subtotal e impuesto calculados. Si el JSON de partidas falla al parsearse, la excepción se absorbe y el documento continúa con una lista vacía.
+Impacto: Documento incompleto o con datos institucionales incorrectos; discrepancias entre partidas, impuestos y total, con riesgo de formalizar importes erróneos.
+Dependencias: OrdenesCompra, ProveedoresActivos, createPurchaseOrder, generatePurchaseOrderPDF, detalleItems, montoTotal y reglas fiscales de ISV.
+Conclusión: La estructura retornada no satisface varios campos obligatorios y no acredita consistencia matemática del documento. Hallazgo estático; no se contrastó con facturas ni reglas fiscales operativas.
+===============================================================================
+
+===============================================================================
+AUD-NG-042
+Fecha: 2026-11-04
+Archivo auditado: backend/accounting-service/Code.gs
+Módulo: Versionado y conservación histórica de órdenes de compra
+Funciones y rangos: esquema OrdenesCompra (157); generatePurchaseOrderPDF (6871-6897); modifyPurchaseOrderAmount (6748-6853).
+Tarea original relacionada: TASK-015 / F18-Task04.
+Tipo: Pérdida potencial de trazabilidad documental y versionado no histórico.
+Severidad: Alto.
+Evidencia técnica:
+1. OrdenesCompra dispone de una sola columna VersionDocumental y una sola columna ArchivoPdfUrl; no se observa un registro histórico de versiones asociado a la orden en este flujo.
+2. generatePurchaseOrderPDF escribe la nueva versión y URL directamente en esas dos celdas, sustituyendo los valores previos; no conserva una referencia histórica independiente.
+3. La versión solo aumenta cuando incrementarVersion es verdadero. observacionesVersion se recibe, pero no se utiliza.
+4. No se observa bloqueo de concurrencia en generatePurchaseOrderPDF para serializar la asignación de versiones.
+5. modifyPurchaseOrderAmount cambia el importe y, opcionalmente, las partidas sin generar una nueva versión documental ni conservar el documento anterior.
+Impacto: No puede demostrarse qué documento recibió el proveedor en cada momento; cambios concurrentes o posteriores pueden sobrescribir la referencia vigente y romper la trazabilidad.
+Dependencias: OrdenesCompra.VersionDocumental, OrdenesCompra.ArchivoPdfUrl, generatePurchaseOrderPDF, modifyPurchaseOrderAmount y almacenamiento documental.
+Conclusión: El número de versión es un campo mutable, no un historial inmutable de documentos. El requisito de conservar el archivo histórico no está implementado. Hallazgo estático; no se generaron versiones reales.
+===============================================================================
+
+===============================================================================
+AUD-NG-043
+Fecha: 2026-11-04
+Archivo auditado: backend/accounting-service/Code.gs
+Módulo: Máquina de estados de órdenes de compra
+Funciones y rangos: approvePurchaseOrder (6596-6740); recordPurchaseReceipt (6978-7145); esquema OrdenesCompra (157).
+Tarea original relacionada: TASK-015 / F18-Task04.
+Tipo: Transiciones de estado incompletamente restringidas y ausencia de bitácora.
+Severidad: Alto.
+Evidencia técnica:
+1. approvePurchaseOrder valida que nuevoEstado pertenezca a una lista de estados, pero esa lista no define ni verifica las transiciones permitidas desde cada estado actual.
+2. Solo se impone una condición específica para Emitida y EnviadaProveedor; otros estados pueden solicitarse desde estados incompatibles, por ejemplo saltar desde Borrador a RecibidaTotal o Cerrada, porque no existe una matriz de transiciones origen-destino.
+3. No se observa una bitácora estructurada con cada estado anterior/nuevo, fecha y motivo; el estado actual se sobrescribe en la columna EstadoOrden y las observaciones se concatenan como texto.
+4. recordPurchaseReceipt actualiza directamente EstadoOrden a RecibidaParcial, RecibidaTotal o EnDisputa, fuera de un registro común de transiciones.
+5. La lista incluye estados como RechazadaProveedor, AceptadaProveedor, EnDisputa y Cerrada, pero no se exige para todos ellos evidencia o precondiciones propias de la transición.
+Impacto: El ciclo puede saltarse aprobaciones, aceptación del proveedor o recepción; se pierde la secuencia verificable necesaria para control contractual y auditoría.
+Dependencias: approvePurchaseOrder, recordPurchaseReceipt, OrdenesCompra.EstadoOrden, RecepcionesCompra y bitácora de estados.
+Conclusión: La implementación reconoce nombres de estado, pero no implementa una máquina de estados completa ni la bitácora exigida. Hallazgo estático; no se ejecutaron transiciones en entorno operativo.
+===============================================================================
+
+===============================================================================
+AUD-NG-044
+Fecha: 2026-11-04
+Archivo auditado: backend/accounting-service/Code.gs
+Módulo: Identidad del aprobador y atribución de transiciones
+Funciones y rangos: validateRolePermission (434-480); doPost (572-590); approvePurchaseOrder (6620-6627 y 6732-6734).
+Tarea original relacionada: TASK-015 / F18-Task04.
+Tipo: Trazabilidad de actor insuficiente; identidad de aprobación tomada del payload.
+Severidad: Alto.
+Evidencia técnica:
+1. doPost valida el token y añade _verifiedUserId y _verifiedRole al payload; esta identidad verificada está disponible para la operación.
+2. approvePurchaseOrder calcula aprobadorId desde authenticatedUserId, userId o actorId enviados por el cliente, sin utilizar _verifiedUserId.
+3. La columna AprobadoPor se actualiza con authRole (rol) o un texto predeterminado, no con el identificador verificado de la persona que ejecutó la transición.
+4. La comprobación de autoaprobación depende de aprobadorId; al provenir del payload, no acredita que el actor comparado sea quien autenticó la sesión.
+Impacto: La bitácora no identifica de forma confiable a la persona que aprobó o cambió el estado; los controles de separación de funciones y la responsabilidad individual quedan debilitados.
+Dependencias: validateRolePermission, doPost, _verifiedUserId, _verifiedRole, approvePurchaseOrder y OrdenesCompra.AprobadoPor.
+Conclusión: La autenticación general existe, pero approvePurchaseOrder no utiliza la identidad autenticada para atribuir la aprobación. Hallazgo estático; no se probaron sesiones con distintos usuarios.
+===============================================================================
+
+===============================================================================
+AUD-NG-045
+Fecha: 2026-11-04
+Archivo auditado: backend/accounting-service/Code.gs
+Módulo: Modificación de órdenes aprobadas o comunicadas al proveedor
+Funciones y rangos: modifyPurchaseOrderAmount (6748-6853); generatePurchaseOrderPDF (6861-6943).
+Tarea original relacionada: TASK-015 / F18-Task04.
+Tipo: Integridad contractual y falta de revisión documental posterior a emisión.
+Severidad: Alto.
+Evidencia técnica:
+1. modifyPurchaseOrderAmount permite modificar importes y partidas en estados Aprobada, Emitida, EnviadaProveedor, AceptadaProveedor, PendienteRecepcion y RecibidaParcial; solo bloquea Cancelada, Cerrada, Liquidada y RecibidaTotal.
+2. La función conserva el estado existente después de cambiar el importe o detalle; no exige una nueva aprobación ni registra aceptación del proveedor para la modificación.
+3. La modificación no incrementa VersionDocumental, no genera nuevo documento y no preserva una versión anterior.
+4. El motivo se concatena en Observaciones, pero no constituye una revisión documental vinculada a la versión emitida ni una transición controlada.
+Impacto: Una orden ya aprobada o enviada puede cambiar materialmente sin una nueva formalización, manteniendo el estado de aceptación anterior y el enlace documental previo.
+Dependencias: modifyPurchaseOrderAmount, approvePurchaseOrder, generatePurchaseOrderPDF, OrdenesCompra.DetalleItemsJSON, MontoTotal, EstadoOrden, VersionDocumental y ArchivoPdfUrl.
+Conclusión: La modificación de una orden en curso no activa un proceso de revisión, re-aprobación y versionado. Hallazgo estático; no se modificaron órdenes reales.
+===============================================================================
+
+INVENTARIO POSTERIOR A TASK-015 (2026-11-04)
+- Tarea completada auditada: TASK-015 / F18-Task04.
+- Hallazgos nuevos documentados: 6 (AUD-NG-040 a AUD-NG-045).
+- Tareas nuevas agregadas a Pendientes.md: 6 (AUD-NG-040 a AUD-NG-045).
+- Archivos de código inspeccionados: backend/accounting-service/Code.gs; no se modificó código.
+- Alcance de inspección: esquema OrdenesCompra/ProveedoresActivos, despacho/autorización, creación/aprobación/modificación de órdenes, generación documental, consulta y recepción relacionada.
+- Tipo de revisión: inspección estática manual; no se ejecutaron pruebas funcionales, de Drive, fiscales, concurrentes ni de integración.
+- La auditoría de TASK-015 queda registrada como revisión con hallazgos; no valida la tarea como funcionalmente correcta.
+===============================================================================
