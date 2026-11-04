@@ -17264,3 +17264,91 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Descripción del Alcance:** Impedir cambios directos de partidas o importes en órdenes aprobadas, emitidas, enviadas, aceptadas o parcialmente recibidas. Implementar una revisión formal que conserve la versión anterior, registre motivo y actor verificado, vuelva a someter los cambios a aprobación y, cuando corresponda, requiera aceptación del proveedor antes de continuar la recepción.
 - **Criterios de Aceptación:** Una orden en curso no cambia silenciosamente de importe o partidas; la revisión crea una versión nueva y conserva la anterior; los cambios requieren re-aprobación según los umbrales; una orden enviada o aceptada no continúa con condiciones modificadas sin evidencia de comunicación/aceptación; el presupuesto se ajusta una sola vez y de forma trazable.
 - **Estado:** [ ] Pendiente
+
+ 
+---
+ 
+## TAREAS DERIVADAS DE AUDITORÍA — TASK-016 / F18-Task06 (2026-11-04)
+ 
+### [AUD-NG-046] Exigir conciliación de tres vías satisfactoria antes de habilitar cualquier pago a proveedores
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-046 (TASK-016 / F18-Task06)
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** backend/accounting-service/Code.gs
+- **Dependencias Expuestas:** doPost, validateRolePermission, recordAccountsPayableExpense, verifyThreeWayMatch, recordSupplierPayment, CuentasPorPagarGastos.EstadoAprobacion y Observaciones.
+- **Descripción del Alcance:** Hacer obligatoria la conciliación entre orden aprobada, recepción física conforme y factura para toda obligación vinculada a compras. Eliminar la posibilidad de dejar una obligación pagable por ausencia de orden/partidas o por un bypass no autorizado. Persistir el resultado de conciliación y exigir evidencia verificable de resultado satisfactorio antes de aceptar recordSupplierPayment. Los casos legítimamente exentos deberán tener una política explícita, permiso verificado y motivo persistido, sin aceptar flags de autorización arbitrarios del cliente.
+- **Criterios de Aceptación:** Una factura vinculada a compra no puede quedar Aprobada ni recibir pagos si no existe resultado satisfactorio de Three-Way Match; omitir orden o partidas no evita el control; una discrepancia bloquea pagos; un bypass no autorizado es rechazado; el resultado y actor autorizado quedan persistidos y son consultables.
+- **Estado:** [ ] Pendiente
+ 
+### [AUD-NG-047] Crear un registro estructurado e inmutable del detalle de cada pago parcial a proveedores
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-047 (TASK-016 / F18-Task06)
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** backend/accounting-service/Code.gs; almacenamiento contable; dashboard-contabilidad.html; js/accounting.js
+- **Dependencias Expuestas:** CuentasPorPagarGastos, recordSupplierPayment, recordCashBankMovement, MovimientosCajaBancos, cuentaBancariaId, comprobanteUrl y AsientosContables.
+- **Descripción del Alcance:** Definir una entidad persistente de pagos de proveedores con identificador único, obligación, proveedor, factura, importe, fecha, método, cuenta bancaria, referencia, URL de comprobante, actor autenticado, estado, movimiento de caja asociado y asiento contable relacionado. Cada abono debe conservarse como registro individual sin depender de texto libre en Observaciones. Persistir los campos cuentaBancariaId y comprobanteUrl y relacionarlos con el movimiento y la obligación.
+- **Criterios de Aceptación:** Dos abonos de una misma factura generan dos registros independientes; cada registro conserva todos los metadatos; el historial permite reconstruir fecha, importe, cuenta, referencia y comprobante; recargar consultas conserva los datos; ningún abono previo se sobrescribe al registrar otro.
+- **Estado:** [ ] Pendiente
+ 
+### [AUD-NG-048] Rechazar cualquier pago o nota de crédito que exceda el saldo exacto de la obligación
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-048 (TASK-016 / F18-Task06)
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** backend/accounting-service/Code.gs
+- **Dependencias Expuestas:** recordSupplierPayment, applySupplierCreditNote, TotalMonto, SaldoPendiente y TotalAbonado.
+- **Descripción del Alcance:** Sustituir la tolerancia que permite exceder el saldo por una validación monetaria estricta basada en importes normalizados a dos decimales. El pago y la nota de crédito nunca podrán exceder el saldo disponible. Definir explícitamente el tratamiento de redondeos sin permitir que el agregado de abonos supere el total liquidable. Mantener invariantes verificables entre total, saldo, pagos y créditos.
+- **Criterios de Aceptación:** Un saldo de L 100.00 rechaza L 100.01 y cualquier importe superior; L 100.00 exactos liquidan el saldo; después de cualquier operación SaldoPendiente nunca es negativo y TotalAbonado nunca supera el total pagadero; las pruebas cubren límites de centavos y errores de redondeo.
+- **Estado:** [ ] Pendiente
+ 
+### [AUD-NG-049] Garantizar consistencia atómica entre pagos, movimientos de caja y asientos contables
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-049 (TASK-016 / F18-Task06)
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** backend/accounting-service/Code.gs
+- **Dependencias Expuestas:** LockService, recordSupplierPayment, applySupplierCreditNote, recordCashBankMovement, recordAccountingJournalEntry, CuentasPorPagarGastos, MovimientosCajaBancos y AsientosContables.
+- **Descripción del Alcance:** Rediseñar la secuencia de persistencia para que la obligación, el movimiento financiero y el asiento contable formen una operación consistente. No devolver éxito si falta cualquiera de los registros obligatorios. Implementar control de estado de operación, recuperación/reconciliación idempotente o compensación documentada ante fallos parciales, evitando que una excepción posterior deje saldos modificados sin contrapartida.
+- **Criterios de Aceptación:** Si falla la escritura de movimiento o asiento, la operación no se reporta como exitosa ni deja saldo final divergente; cada pago aceptado tiene exactamente un movimiento y un asiento balanceado; las notas de crédito aceptadas tienen su asiento correspondiente; reintentos no duplican ninguno de los registros; se prueban fallos inducidos en cada punto de persistencia.
+- **Estado:** [ ] Pendiente
+ 
+### [AUD-NG-050] Hacer obligatoria la idempotencia y validar la unicidad de referencias bancarias de pagos
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-050 (TASK-016 / F18-Task06)
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** backend/accounting-service/Code.gs
+- **Dependencias Expuestas:** doPost, checkAndRegisterIdempotencyKey, saveIdempotentResult, recordSupplierPayment, referenciaBancaria y entidad de pagos de proveedores.
+- **Descripción del Alcance:** Exigir clave de idempotencia para registrar pagos o generar una clave de operación segura en servidor; persistir la relación entre clave, firma del payload y resultado. Validar unicidad de la referencia bancaria según banco/cuenta/proveedor y período definido, con normalización y control de concurrencia. Evitar depender exclusivamente del caché temporal.
+- **Criterios de Aceptación:** Un reintento idéntico devuelve el resultado original sin crear otro pago; reutilizar la misma clave con payload distinto se rechaza; una referencia bancaria ya aplicada no puede crear un segundo egreso; la unicidad persiste tras expirar caché y recargar el servicio.
+- **Estado:** [ ] Pendiente
+ 
+### [AUD-NG-051] Implementar registro central de notas de crédito y deduplicación global por proveedor
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-051 (TASK-016 / F18-Task06)
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** backend/accounting-service/Code.gs; almacenamiento contable; dashboard-contabilidad.html; js/accounting.js
+- **Dependencias Expuestas:** applySupplierCreditNote, CuentasPorPagarGastos, Observaciones, numeroNotaCredito, proveedorId, factura y AsientosContables.
+- **Descripción del Alcance:** Crear un registro independiente de notas de crédito comerciales con número, proveedor emisor, factura relacionada, importe, fecha, motivo, documento soporte, obligación, actor, estado de aplicación y asiento contable. Aplicar una restricción de unicidad por emisor/proveedor y número de documento, con control concurrente. Registrar el importe aplicado y su relación con el saldo sin utilizar Observaciones como fuente de verdad.
+- **Criterios de Aceptación:** Una nota no puede aplicarse dos veces a la misma obligación ni a obligaciones distintas; una nota de otro proveedor con igual numeración se evalúa conforme a la clave compuesta; cada aplicación conserva evidencia y asiento; el saldo no se reduce si la nota no queda registrada íntegramente.
+- **Estado:** [ ] Pendiente
+ 
+### [AUD-NG-052] Persistir estados de vencimiento y validar fechas de las obligaciones
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-052 (TASK-016 / F18-Task06)
+- **Severidad/Clasificación:** Medio
+- **Archivos Involucrados:** backend/accounting-service/Code.gs; almacenamiento contable; dashboard-contabilidad.html; js/accounting.js
+- **Dependencias Expuestas:** getSupplierAccountsPayableSummary, FechaVencimiento, EstadoPago, EstadoAprobacion y CuentasPorPagarGastos.
+- **Descripción del Alcance:** Validar formato y obligatoriedad de fecha de vencimiento según política; distinguir fecha ausente/inválida de una obligación corriente; persistir o derivar de forma consistente el estado Vencida sin confundirlo con EstadoPago; exponer listas y conteos por rangos de 7, 15 y 30 días, con reglas de inclusión documentadas.
+- **Criterios de Aceptación:** Una fecha inválida no se clasifica como Corriente; una obligación con saldo positivo y fecha pasada se identifica como Vencida en consultas y reportes; una obligación pagada no aparece como vencida; las listas y conteos por período coinciden; los estados se reconstruyen correctamente tras recargar.
+- **Estado:** [ ] Pendiente
+ 
+### [AUD-NG-053] Implementar la interfaz operativa de cuentas por pagar, pagos y notas de crédito
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-053 (TASK-016 / F18-Task06)
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** dashboard-contabilidad.html; js/accounting.js; backend/accounting-service/Code.gs
+- **Dependencias Expuestas:** fetchApi, recordAccountsPayableExpense, recordSupplierPayment, applySupplierCreditNote y getSupplierAccountsPayableSummary.
+- **Descripción del Alcance:** Incorporar una sección de cuentas por pagar en el dashboard contable con listado y filtros por proveedor, factura, estado y vencimiento; detalle de obligación e historial de pagos; formulario para registrar abonos con cuenta, referencia y comprobante; formulario para aplicar notas de crédito; consulta de vencimientos y saldos. Respetar RBAC, validación de formularios, bloqueo de doble envío y actualización del estado tras persistencia.
+- **Criterios de Aceptación:** Un usuario autorizado consulta obligaciones y vencimientos; registra abonos parciales y observa el historial; aplica notas de crédito únicas; usuarios sin permisos no ven ni ejecutan acciones; los datos sobreviven a recarga y coinciden con backend; los controles impiden doble envío.
+- **Estado:** [ ] Pendiente
+ 
+### [AUD-NG-054] Sustituir pruebas simuladas de cuentas por pagar por pruebas funcionales sobre operaciones reales
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-054 (TASK-016 / F18-Task06)
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** backend/accounting-service/Code.gs; tests/regression/academic-grading-suite.js; tests/regression/
+- **Dependencias Expuestas:** runPhase18PurchasingAndSuppliersRegressionSuite, recordAccountsPayableExpense, recordSupplierPayment, applySupplierCreditNote, getSupplierAccountsPayableSummary, SpreadsheetApp y AsientosContables.
+- **Descripción del Alcance:** Reemplazar o complementar REG-F18-06 y REG-F18-08 con pruebas aisladas que invoquen las funciones reales mediante dobles controlados de persistencia o un Spreadsheet de prueba. Verificar sobrepagos en límites de centavos, duplicidad de referencias, aplicación global de notas, bloqueo por conciliación, fallos de persistencia, asientos balanceados, vencimientos y recuperación de estado. No considerar aserciones de presencia de cadenas como evidencia funcional.
+- **Criterios de Aceptación:** Las pruebas ejecutan las funciones de negocio reales; verifican valores persistidos y relaciones entre hojas; incluyen fallos inducidos y reintentos; prueban permisos y casos límite; la suite demuestra que ningún pago aceptado carece de movimiento o asiento; se documentan resultados reproducibles y cobertura por requisito.
+- **Estado:** [ ] Pendiente
+ 
+---
