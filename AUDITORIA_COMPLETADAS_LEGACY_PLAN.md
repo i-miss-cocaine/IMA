@@ -75,3 +75,18 @@ Se recuperó y leyó el contenido íntegro de `Pendientes.md`, se confirmó que 
 - Informe: AUDITORIA_LOTE_A.md.
 - Inspección estática manual; no se modificó código ni se ejecutaron pruebas.
 - AUD-NG-101 permanece En Ejecución; el Lote B es el siguiente.
+
+
+## 8. Resultados de auditoría - Lote B (2026-11-04)
+
+- **Rama base inspeccionada:** `NG_beta_0.0.0.1`, commit `44d9891132332e692dbe2ba8602b41f50a508a59`.
+- **Rama de trabajo documental creada por autorización expresa del usuario:** `NG_beta_0.0.0.1_work`; la rama base no se modifica y no se realizan merges.
+- **Tareas inspeccionadas:** CORS-001, LOOP-001, UI-001 y DB-001.
+- **Resultados:** CORS-001 (Cumple parcialmente: `text/plain` está presente, pero no se probó el endpoint desplegado y la ruta vigente migró a ACADEMIC); LOOP-001 (Cumple parcialmente: el flag evita llamadas concurrentes y no se encontró recursión directa, pero un rechazo de caché antes del try/finally puede dejar el flag activo); UI-001 (Reemplazada por implementación posterior: navegación por tarjetas vigente y selector histórico de parcial incorporado posteriormente); DB-001 (Cumple parcialmente: esquema 9/8 y escritura granular presentes, pero no se valida el esquema de hojas preexistentes).
+- **Hallazgos:** AUD-NG-110 a AUD-NG-112, añadidos de forma aditiva a Auditoria.txt y Pendientes.md.
+- **Informe:** `AUDITORIA_LOTE_B.md`.
+- **Dependencias verificadas:** se añadió un bloque acotado a `MapaDependencias.md`; no se certifica el grafo completo heredado.
+- **Pruebas:** inspeccionadas las suites existentes, sin pruebas dirigidas identificables para estos cuatro contratos; no se ejecutaron pruebas ni se accedió a la hoja productiva o a despliegues GAS.
+- **Código fuente:** sin modificaciones. No se actualizó `ChangesLogs.txt` y no se alteraron los estados históricos en `completadas_legacy.md`.
+- **Tarea principal:** AUD-NG-101 permanece En Ejecución. Ninguna de las cuatro tareas históricas se marca como aprobada/completada por esta auditoría.
+- **Siguiente lote:** C.

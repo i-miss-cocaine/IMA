@@ -17881,3 +17881,31 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Criterios de Aceptación:** Las pruebas cubren conservación entre parciales/unidades, aislamiento de profesor y estudiante, lectura del historial por roles, aislamiento de caché por usuario y navegación con una o varias secciones; fallan ante los defectos registrados.
 - **Estado:** [ ] Pendiente
 
+
+
+### [AUD-NG-110] Garantizar la liberación del bloqueo de carga ante fallos de caché
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-110 (LOOP-001).
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** `js/student.js`; `js/persistence.js`; pruebas de regresión del dashboard estudiantil.
+- **Dependencias Expuestas:** `fetchAllActivities`, `isFetchingActivities`, `PersistenceManager.get`, `PersistenceManager.init`, IndexedDB y evento `academic-scope-updated`.
+- **Descripción del Alcance:** El bloqueo `isFetchingActivities` se activa antes de consultar la caché, pero la llamada `await PersistenceManager.get(cacheKeyDashboard)` está fuera del bloque `try/finally`. Si la inicialización de IndexedDB o la consulta rechaza la promesa, la función sale antes de ejecutar el `finally` y deja el bloqueo activado. Reorganizar el flujo para que toda operación posterior a la activación del bloqueo quede protegida por una liberación garantizada; ante un fallo de caché, permitir continuar con la carga remota o mostrar un error recuperable sin dejar el dashboard bloqueado. No duplicar ni sustituir el alcance de AUD-NG-104, que aborda el nombre inválido del almacén IndexedDB.
+- **Criterios de Aceptación:** Una excepción/rechazo simulado en `PersistenceManager.get` o `init` no deja `isFetchingActivities` en `true`; una llamada posterior a `fetchAllActivities` puede ejecutarse; no se produce rechazo no controlado; el camino normal conserva el renderizado desde caché y la sincronización remota; las pruebas cubren éxito, caché ausente y error de IndexedDB.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-111] Validar el esquema de las hojas académicas existentes sin pérdida de datos
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-111 (DB-001).
+- **Severidad/Clasificación:** Medio
+- **Archivos Involucrados:** `backend/academic-service/Code.gs`; pruebas de regresión del esquema académico.
+- **Dependencias Expuestas:** `getOrCreateSheet`, `ConfiguracionAcademica`, `HistorialAcademico`, `updateAcademicConfig`, `saveToAcademicHistory` y SpreadsheetApp.
+- **Descripción del Alcance:** `getOrCreateSheet` crea los encabezados de nueve columnas para `ConfiguracionAcademica` y ocho para `HistorialAcademico` únicamente cuando la hoja no existe. Si la hoja ya existe, no valida nombres, orden ni cantidad de columnas y las funciones consumidoras asumen índices fijos. Implementar una comprobación explícita del esquema existente y un procedimiento de migración no destructivo o un error controlado cuando detecte incompatibilidades. Preservar íntegramente los registros existentes y mantener el almacenamiento granular por fila, sin serializar arreglos JSON en celdas.
+- **Criterios de Aceptación:** Hojas nuevas y existentes válidas conservan exactamente los encabezados y orden esperados (9/8 columnas); una hoja con encabezados incompatibles no se modifica silenciosamente ni provoca escrituras desplazadas; toda migración conserva y contabiliza los registros; las pruebas verifican esquema correcto, esquema heredado, filas adicionales y ausencia de pérdida de datos/serialización JSON.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-112] Verificar CORS real del endpoint académico vigente
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-112 (CORS-001).
+- **Severidad/Clasificación:** Medio
+- **Archivos Involucrados:** `js/api.js`; `js/config.js`; pruebas de integración del endpoint ACADEMIC.
+- **Dependencias Expuestas:** `fetchApi`, `SERVICE_URLS`, `syncAcademicScope`, endpoint `ACADEMIC/getAcademicConfig` y despliegue de Google Apps Script.
+- **Descripción del Alcance:** El encabezado `Content-Type: text/plain` está implementado, pero no se encontró evidencia de una prueba de integración desde el origen web real. Además, la ruta histórica `USER/getAcademicConfig` fue sustituida por `ACADEMIC/getAcademicConfig` tras la modularización del servicio académico. Verificar el flujo vigente desde el navegador contra el despliegue de prueba y documentar el resultado sin modificar datos productivos.
+- **Criterios de Aceptación:** Una petición POST desde el origen autorizado usa `text/plain`, no requiere preflight OPTIONS por encabezados no simples, llega al endpoint ACADEMIC vigente, recibe JSON válido y no produce `TypeError: Failed to fetch`; la prueba utiliza datos de lectura y no modifica la hoja productiva; el resultado y el despliegue probado quedan identificados.
+- **Estado:** [ ] Pendiente

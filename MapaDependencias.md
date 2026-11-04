@@ -259,3 +259,23 @@
 - Los parámetros anoLectivo, grado, seccion, fechaInicio, fechaFin y estado se extraen del payload, pero no filtran las iteraciones reales de ComprobantesPago/PagosAbonos ni CalificacionesEstudiantes.
 - js/ui-common.js: renderReportsCenterUI (aprox. 2955-3024) no contiene controles de búsqueda o filtrado; el backend no incorpora area en la búsqueda textual.
 - AUD-NG-097 se vincula con la tarea AUD-NG-094; AUD-NG-099 se vincula con AUD-NG-091; las nuevas tareas AUD-NG-098 y AUD-NG-100 se agregan al final de Pendientes.md.
+
+
+## Relaciones verificadas durante auditoría de continuidad - Lote B (2026-11-04)
+
+> Este bloque registra únicamente relaciones inspeccionadas en el snapshot NG_beta_0.0.0.1 (commit 44d9891132332e692dbe2ba8602b41f50a508a59). No certifica el grafo completo ni sustituye los apartados heredados de este mapa.
+
+### Transporte HTTP y configuración académica
+- `js/api.js` / `fetchApi` (líneas 15-190 aprox.) -> `window.SERVICE_URLS` de `js/config.js`; envía POST con `Content-Type: text/plain` y cuerpo JSON; utiliza `window.PersistenceManager.get/reconcile` cuando se configura caché.
+- `js/config.js` / `window.syncAcademicScope` (líneas 391-480) -> `fetchApi('ACADEMIC', 'getAcademicConfig', ...)`; normaliza respuesta y actualiza `window.GLOBAL_SCOPE` / `window.PARCIAL_ACTUAL`; cuando cambia el alcance emite `academic-scope-updated`.
+- `js/student.js` (líneas 2658-2667) escucha `academic-scope-updated`; si no existe una carga activa invalida caché y vuelve a invocar `fetchAllActivities`.
+
+### Dashboard estudiantil y persistencia local
+- `js/student.js` / `fetchAllActivities` (líneas 1165-1346) -> `PersistenceManager.get`, `syncAcademicScope`, `fetchApi('TASK','getStudentTasks')`, `fetchApi('EXAM','getStudentExams')`, `renderStudentExpediente` y `renderSubjectNavigation`.
+- `js/student.js` / `renderSubjectNavigation` (desde línea 1608) -> `window.GLOBAL_SCOPE.GranularConfig`, `academicHistory`, `window.isContentAuthorized` y el contenedor HTML `#tasks-list`; construye tarjetas por asignatura y la vista expandida.
+- `js/persistence.js` / `PersistenceManager.get` (línea 77) -> `init` (IndexedDB, línea 20); `init` solo crea los almacenes enumerados en `STORES` (línea 10) y puede rechazar si falla `indexedDB.open`.
+
+### Persistencia académica tabular
+- `backend/academic-service/Code.gs` / `getOrCreateSheet` (líneas 84-92) crea `ConfiguracionAcademica` con 9 columnas y `HistorialAcademico` con 8 columnas cuando la hoja no existe.
+- `getAcademicConfig` (línea 12388) lee índices de la tabla de 9 columnas; `updateAcademicConfig` (línea 12404) reconstruye filas granulares y escribe con el ancho de encabezados existente; `saveToAcademicHistory` (línea 12515) genera filas de 8 columnas.
+- La consulta de configuración del frontend se dirige al microservicio ACADEMIC; el código actual de `backend/user-service/Code.gs` ya no contiene las funciones `getAcademicConfig` ni `updateAcademicConfig`.

@@ -3688,3 +3688,45 @@ INVENTARIO POSTERIOR AL LOTE A (2026-11-04)
 - No se modificó código fuente, no se alteraron marcas históricas y no se actualizaron ChangesLogs.txt.
 - No se accedió a la hoja de cálculo productiva ni se ejecutaron pruebas de explotación.
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-04
+AUDITORÍA DE CONTINUIDAD - LOTE B DE completadas_legacy.md
+RAMA BASE INSPECCIONADA: NG_beta_0.0.0.1
+COMMIT DE CÓDIGO DE REFERENCIA: 44d9891132332e692dbe2ba8602b41f50a508a59
+RAMA DOCUMENTAL DE TRABAJO: NG_beta_0.0.0.1_work
+===============================================================================
+
+[AUD-NG-110] LOOP-001 - BLOQUEO DE CARGA NO SE LIBERA SI FALLA LA CONSULTA PREVIA DE CACHÉ
+- Archivo: js/student.js, líneas 1165-1177 y 1205-1346; js/persistence.js, líneas 20-43 y 77-85.
+- Módulo/función: Dashboard estudiantil / fetchAllActivities; PersistenceManager.get e init.
+- Tipo: Control de flujo y recuperación de errores.
+- Evidencia: fetchAllActivities activa isFetchingActivities en la línea 1167 y espera PersistenceManager.get en la línea 1176 antes de entrar al try de la línea 1205. El finally que restablece isFetchingActivities está en las líneas 1345-1346. PersistenceManager.get depende de init; init rechaza la promesa si indexedDB.open falla. Por tanto, un rechazo antes del try evita el finally y deja el bloqueo activo, impidiendo nuevas cargas.
+- Contexto de dependencias: el evento academic-scope-updated de js/config.js (línea 441) es atendido en js/student.js (línea 2658), donde la llamada se omite si isFetchingActivities sigue activo. El nombre dinámico del almacén empleado en la consulta de caché coincide además con el hallazgo previo AUD-NG-104; no se duplica ese hallazgo aquí.
+- Impacto: un fallo de inicialización/lectura de IndexedDB puede dejar el dashboard sin capacidad de reintentar la carga durante la sesión.
+- Severidad: ALTO.
+- Tarea derivada: AUD-NG-110 en Pendientes.md.
+
+[AUD-NG-111] DB-001 - EL ESQUEMA SE DEFINE AL CREAR LA HOJA, PERO NO SE VALIDA SI YA EXISTE
+- Archivo: backend/academic-service/Code.gs, líneas 84-92, 12388-12504 y 12515-12584.
+- Módulo/función: Persistencia académica / getOrCreateSheet, getAcademicConfig, updateAcademicConfig y saveToAcademicHistory.
+- Tipo: Integridad y compatibilidad del esquema.
+- Evidencia: getOrCreateSheet agrega encabezados de nueve columnas a ConfiguracionAcademica y ocho a HistorialAcademico solo dentro de la condición de hoja inexistente. Si la hoja existe, devuelve el objeto sin comparar encabezados, orden ni cantidad de columnas. Los lectores y escritores posteriores utilizan índices fijos y escriben arreglos de 9/8 posiciones.
+- Contexto de dependencias: el código académico fue trasladado de user-service a academic-service mediante el commit histórico 0f795e265c237fb093dd375dc5d088b708901211. updateAcademicConfig expande grados/secciones/asignaturas/temas mediante filas granulares y saveToAcademicHistory escribe filas de ocho columnas; no se observó serialización JSON en esos registros.
+- Impacto: una hoja preexistente con estructura heredada o alterada puede interpretarse o escribirse con columnas desplazadas sin detección explícita. No se accedió a la hoja productiva, por lo que no se afirma que exista actualmente una hoja incompatible.
+- Severidad: MEDIO.
+- Tarea derivada: AUD-NG-111 en Pendientes.md.
+
+[AUD-NG-112] CORS-001 - ENCABEZADO SIMPLE IMPLEMENTADO, PERO SIN VERIFICACIÓN DE RED DEL ENDPOINT VIGENTE
+- Archivo: js/api.js, líneas 55-57; js/config.js, líneas 391-467.
+- Módulo/función: Transporte HTTP / fetchApi y syncAcademicScope.
+- Tipo: Verificación de integración y vigencia de contrato.
+- Evidencia: fetchApi configura POST con Content-Type text/plain y cuerpo JSON, configuración compatible con una solicitud CORS simple respecto de ese encabezado. La ruta activa de consulta académica es ACADEMIC/getAcademicConfig desde js/config.js, no USER/getAcademicConfig, tras la modularización académica histórica 0f795e265c237fb093dd375dc5d088b708901211.
+- Impacto: el cambio de encabezado está presente en el código, pero no se ejecutó una petición desde el origen web desplegado ni se verificó la respuesta real del endpoint; no puede certificarse el criterio de aceptación de conectividad únicamente por inspección estática.
+- Severidad: MEDIO.
+- Tarea derivada: AUD-NG-112 en Pendientes.md.
+
+===============================================================================
+FIN DE HALLAZGOS DEL LOTE B
+===============================================================================
