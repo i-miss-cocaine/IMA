@@ -4341,3 +4341,63 @@ RESULTADOS DEL LOTE H1
 - Pruebas: no ejecutadas; revisión estática manual.
 - Código fuente: sin modificaciones. No se modificó completadas_legacy.md.
 ===============================================================================
+
+
+===============================================================================
+[AUD-NG-156] REQ-DOC-010 - CONFIGURACIÓN ADMINISTRATIVA DE HORARIOS DE PUBLICACIÓN E INTERVALO POST-CLASE AUSENTE
+- Fecha: 2026-11-04.
+- Archivo/Módulo: developer-dashboard.html; js/developer.js; js/api.js; backend/academic-service/Code.gs; backend/task-service/Code.gs.
+- Tipo: Incumplimiento funcional de configuración administrativa.
+- Evidencia:
+  1. El panel contiene controles de salud, logs, respaldos y exportación, pero no se encontraron campos ni handlers para hora de publicación o intervalo post-clase.
+  2. No se encontraron wrappers ni propiedades de backend para persistir/consultar esa configuración.
+  3. La configuración es una dependencia de REQ-DOC-006/AUD-NG-152, pero la capa administrativa que debería definirla no existe.
+  4. La exportación de año lectivo llama a ACADEMIC/exportSchoolYearArchive, acción que no existe. TASK tiene un case generateAcademicArchiveZip sin función implementada y no se encontró Utilities.zip. Este defecto ya está cubierto por AUD-NG-120.
+  5. Health checks, logs y backups presentan los defectos ya registrados en AUD-NG-144, AUD-NG-145 y AUD-NG-146.
+- Impacto: no se pueden administrar centralmente las horas de publicación ni el intervalo post-clase. La exportación tampoco produce un archivo real, y los demás componentes tienen tareas activas.
+- Severidad: MEDIO.
+- Tarea derivada: AUD-NG-156.
+- Control de duplicados: la exportación/health/logs/backups no genera tareas nuevas; se remite a AUD-NG-120 y AUD-NG-144 a AUD-NG-146. AUD-NG-156 cubre únicamente la configuración horaria administrativa, complementaria a AUD-NG-152.
+
+===============================================================================
+[AUD-NG-157] REQ-DOC-011 - MÉTRICAS DE DESEMPEÑO TRATAN DATOS AUSENTES COMO VALORES Y OMITEN PROYECTOS
+- Fecha: 2026-11-04.
+- Archivo/Módulo: js/student.js:1257-1304, 1370-1460 y 2870-2975; backend/academic-service/Code.gs:9638-9680; backend/task-service/Code.gs:1000-1090.
+- Tipo: Incumplimiento analítico e integridad de indicadores.
+- Evidencia:
+  1. allActivitiesData integra tareas y exámenes, pero no proyectos.
+  2. gradeSum usa calificacion || 0; las actividades sin calificación se computan como cero.
+  3. Sin actividades, deliveryRate y academicPerformance son 0 y punctualityRate es 1; compositeProgress puede devolver 20% sin datos.
+  4. getStudentAttendanceSummary devuelve 100.0% cuando no hay registros de asistencia.
+  5. El tercer eje de la gráfica es igual a avgICR por construcción; no se encontró un cálculo GP independiente.
+  6. La penalización tardía del 50% no se aplica en el flujo de calificación; ya está registrada en AUD-NG-121 y no se duplica.
+- Impacto: los indicadores pueden presentar rendimiento/asistencia falsos y no representan el conjunto completo de evidencias académicas.
+- Severidad: ALTO.
+- Tarea derivada: AUD-NG-157.
+
+===============================================================================
+[AUD-NG-158] REQ-DOC-012 - ESCRITURAS DOCENTES SIN VALIDACIÓN DE ASIGNACIÓN Y FECHAS LÍMITE SIN HISTORIAL
+- Fecha: 2026-11-04.
+- Archivo/Módulo: backend/task-service/Code.gs:85-119, 236-258, 283-335, 447-495 y 1665-1695; backend/academic-service/Code.gs:465-545; js/api.js.
+- Tipo: Seguridad de autorización contextual e integridad/auditoría.
+- Evidencia:
+  1. El rol Profesor tiene permisos para createTask/updateTask/createStudyMaterial. validateContextualAccess en TASK solo restringe roles estudiantiles/familiares; no valida asignaciones de profesor a asignatura/grado/sección.
+  2. createTask confía en profesorId, asignatura, grado y sección del payload; createStudyMaterial confía en autorId y contexto; updateTask actualiza por tareaId sin comprobar propiedad. No se consulta AsignacionesDocentes ni se compara el propietario con _verifiedUserId.
+  3. updateTask sobrescribe fechaLimite sin conservar valor anterior, actor, timestamp ni motivo; no se encontró historial append-only de fechas límite.
+  4. Los defectos de propagación de sesión, secreto HMAC, lecturas sensibles, alcance de configuración/cierre/asistencia y propiedad de calificaciones ya están registrados en AUD-NG-001, AUD-NG-002, AUD-NG-004, AUD-NG-108, AUD-NG-119, AUD-NG-122 y AUD-NG-124. Los enlaces públicos/privacidad Drive se relacionan con TASK-085 y TASK-142. No se duplican esos alcances.
+- Impacto: un profesor con rol válido puede intentar crear/editar tareas y materiales en ámbitos académicos ajenos; las modificaciones de fecha límite no son auditables.
+- Severidad: CRÍTICO.
+- Tarea derivada: AUD-NG-158.
+
+===============================================================================
+RESULTADOS DEL LOTE H2 Y CIERRE
+===============================================================================
+- REQ-DOC-010: Cumple parcialmente. La configuración de horarios/intervalo no existe; exportación, health, logs y backups ya están cubiertos por AUD-NG-120 y AUD-NG-144 a AUD-NG-146.
+- REQ-DOC-011: Cumple parcialmente. El rendimiento omite proyectos y convierte ausencias en valores; la penalización tardía se vincula a AUD-NG-121.
+- REQ-DOC-012: Cumple parcialmente. El microservicio TASK no valida asignación docente en escrituras y no conserva historial de cambios de fecha límite; otros controles de seguridad ya tienen tareas existentes.
+- Hallazgos nuevos: AUD-NG-156 a AUD-NG-158.
+- Informe: AUDITORIA_LOTE_H2.md.
+- Auditoría histórica: 49/49 tareas revisadas.
+- Pruebas: no ejecutadas; inspección estática manual.
+- Código fuente: sin modificaciones. No se modificó completadas_legacy.md ni ChangesLogs.txt.
+===============================================================================

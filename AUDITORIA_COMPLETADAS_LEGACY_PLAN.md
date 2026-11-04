@@ -218,3 +218,16 @@ Se recuperó y leyó el contenido íntegro de `Pendientes.md`, se confirmó que 
 - **Pruebas:** no ejecutadas; inspección estática manual.
 - **Código fuente:** sin modificaciones; no se alteró completadas_legacy.md.
 - **Siguiente sublote:** H2 (REQ-DOC-010 a REQ-DOC-012).
+
+
+## 20. Resultados de auditoría - Lote H2 y cierre de auditoría histórica (2026-11-04)
+
+- **Subdivisión:** H2 revisa REQ-DOC-010 a REQ-DOC-012.
+- **Resultados:** REQ-DOC-010 (Cumple parcialmente: la configuración administrativa de horarios no existe; exportación/health/logs/backups se relacionan con AUD-NG-120 y AUD-NG-144 a AUD-NG-146); REQ-DOC-011 (Cumple parcialmente: cálculo analítico omite proyectos y convierte datos ausentes en valores; penalización tardía relacionada con AUD-NG-121); REQ-DOC-012 (Cumple parcialmente: TASK no aplica ámbito docente en escrituras ni conserva historial de fechas límite; otros controles de seguridad ya tienen tareas existentes).
+- **Hallazgos nuevos:** AUD-NG-156 a AUD-NG-158, añadidos a Auditoria.txt y Pendientes.md.
+- **Informe:** AUDITORIA_LOTE_H2.md.
+- **Cierre:** 49 de 49 tareas históricas de completadas_legacy.md revisadas (37 de lotes A-F2 y 12 de lotes G1-G2-H1-H2). No quedan tareas históricas pendientes de auditoría.
+- **Hallazgos relacionados sin duplicar:** AUD-NG-001, AUD-NG-002, AUD-NG-004, AUD-NG-108, AUD-NG-119, AUD-NG-120, AUD-NG-121, AUD-NG-122, AUD-NG-124, AUD-NG-144 a AUD-NG-146, AUD-NG-152, TASK-085 y TASK-142.
+- **Pruebas:** no ejecutadas; inspección estática manual.
+- **Código fuente:** sin modificaciones. No se alteró completadas_legacy.md ni ChangesLogs.txt.
+- **Estado siguiente:** auditoría histórica cerrada; queda priorizar e implementar hallazgos pendientes con autorización y metodología correspondiente.

@@ -18307,3 +18307,31 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Descripción del Alcance:** Registrar por cada archivo lógico un único registro completo con ID, título, nombre original, nombre físico, tipo de recurso, asignatura, grado, sección, parcial, año lectivo, tema, tarea, profesor, fechas, estado, Drive ID, ruta jerárquica, MIME y tamaño. Diferenciar nombre original y físico, obtener año lectivo/tema/tipo del contexto real, registrar el destino canónico y conectar el logger a todas las rutas de carga, incluida la reanudable. Los errores de metadatos deben generar un resultado controlado y trazable, no quedar ocultos.
 - **Criterios de Aceptación:** Cada archivo final tiene un registro único y completo; los fragmentos temporales no generan registros duplicados como si fueran documentos independientes; la ruta guardada corresponde a la carpeta Drive real; la carga no se confirma sin metadatos consistentes o sin una cola de reintento verificable. Pruebas de uploadFile, carga reanudable, reemplazo, metadatos faltantes y persistencia.
 - **Estado:** [ ] Pendiente
+
+
+### [AUD-NG-156] Implementar configuración administrativa de hora de publicación e intervalo post-clase
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-156 (REQ-DOC-010).
+- **Severidad/Clasificación:** Medio
+- **Archivos Involucrados:** developer-dashboard.html; js/developer.js; js/api.js; backend/academic-service/Code.gs; js/config.js; backend/task-service/Code.gs.
+- **Dependencias Expuestas:** horaPublicacion, intervaloPostClase, ConfiguracionAcademica, updateAcademicConfig, getAcademicConfig, AUD-NG-152.
+- **Descripción del Alcance:** Añadir al panel de desarrollador controles administrativos para configurar la hora de publicación y el intervalo post-clase, con validación de formato, unidad y rango. Persistir estos valores en configuración institucional, devolverlos desde el backend y hacerlos disponibles al flujo de programación de tareas. Esta tarea implementa la fuente administrativa de configuración; AUD-NG-152 implementa el contrato de disponibilidad y su enforcement en tareas.
+- **Criterios de Aceptación:** El administrador puede consultar/actualizar los valores; los cambios persisten tras recargar y se aplican a nuevas programaciones; usuarios no autorizados no pueden modificarlos; la hora y el intervalo tienen zona horaria/unidad explícitas; pruebas de permisos, límites y propagación a TASK.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-157] Corregir el cálculo integral de desempeño y representar ausencia de datos sin valores ficticios
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-157 (REQ-DOC-011).
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** js/student.js; js/api.js; backend/academic-service/Code.gs; backend/task-service/Code.gs.
+- **Dependencias Expuestas:** allActivitiesData, renderStudentProgress, compositeProgress, academicPerformance, deliveryRate, punctualityRate, getStudentAttendanceSummary, ICR, GP, Mastery, proyectos, AUD-NG-121.
+- **Descripción del Alcance:** Definir un modelo analítico que integre notas por asignatura, tareas, proyectos y exámenes, utilizando la penalización tardía implementada por AUD-NG-121 sin volver a aplicarla. Separar el índice de asistencia del desempeño académico. Representar calificaciones pendientes, asignaturas sin evaluación y ausencia de registros de asistencia como no disponibles, no como cero ni 100%. Corregir el cálculo de progreso sin actividades y definir métricas ICR/GP/Mastery independientes, documentadas y no redundantes.
+- **Criterios de Aceptación:** Los proyectos se incluyen en el conjunto analítico; una actividad sin nota no reduce el promedio a cero; sin actividades no se genera un porcentaje compuesto ficticio; sin registros de asistencia se muestra "Sin registros"/N/A; la asistencia permanece separada; ICR, GP y Mastery tienen fórmulas y fuentes independientes; pruebas con datos completos, parciales y ausentes.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-158] Aplicar autorización contextual a escrituras docentes y conservar historial de fechas límite
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-158 (REQ-DOC-012).
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** backend/task-service/Code.gs; backend/academic-service/Code.gs; js/api.js; pruebas de seguridad académica.
+- **Dependencias Expuestas:** validateRolePermission, validateContextualAccess, getDynamicPermissionsForRole, createTask, updateTask, createStudyMaterial, AsignacionesDocentes, _verifiedUserId, fechaLimite, historial de tareas.
+- **Descripción del Alcance:** Aplicar ABAC server-side a todas las escrituras docentes. Derivar profesorId/autorId exclusivamente de la sesión verificada y comprobar que asignatura, grado y sección pertenecen a asignaciones vigentes del docente. Verificar propiedad/ámbito antes de editar o eliminar una tarea/material. Añadir historial append-only de cambios de fecha límite con valor anterior/nuevo, actor verificado, timestamp y motivo. Coordinar con AUD-NG-001/AUD-NG-004 para token y secreto, y con TASK-085/TASK-142 para privacidad documental, sin duplicar esos alcances.
+- **Criterios de Aceptación:** Un profesor no puede crear, editar ni eliminar tareas/materiales fuera de sus asignaciones aunque manipule el payload; el servidor deriva identidad y ámbito de claims verificados; updateTask rechaza tareas de otro profesor; cada cambio de fecha límite conserva historial inmutable con actor/fecha/motivo; pruebas negativas con dos docentes y dos secciones, modificación de IDs y múltiples cambios de fecha.
+- **Estado:** [ ] Pendiente

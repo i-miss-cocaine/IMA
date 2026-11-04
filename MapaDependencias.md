@@ -483,3 +483,24 @@
 - TASK/uploadFile -> logFileMetadata -> hoja MetadatosArchivos (19 columnas).
 - uploadFile solo envía un subconjunto de los campos; logFileMetadata completa título/tipo/tema/año/ruta con valores por defecto o fileUrl.
 - reconstructFileParts no invoca logFileMetadata; la ruta reanudable no deja registro documental.
+
+
+## Relaciones verificadas durante auditoría de continuidad - Lote H2 (2026-11-04)
+
+### Panel de desarrollador (REQ-DOC-010)
+- developer-dashboard.html/export controls -> js/developer.js -> window.exportSchoolYearArchive -> js/api.js/exportSchoolYearArchive -> ACADEMIC action ausente.
+- TASK/doPost incluye case generateAcademicArchiveZip, pero no existe implementación de la función ni Utilities.zip; relacionado con AUD-NG-120.
+- Health checks/logs/backups -> AUD-NG-144/AUD-NG-145/AUD-NG-146.
+- No existe configuración de horaPublicacion/intervaloPostClase en developer-dashboard, js/developer, js/api o ACADEMIC; nueva dependencia AUD-NG-156, complementaria a AUD-NG-152.
+
+### Analítica y asistencia (REQ-DOC-011)
+- TASK/getStudentTasks + EXAM/getStudentExams -> js/student.js/allActivitiesData -> renderStudentProgress; no incorpora proyectos.
+- renderStudentProgress -> gradeSum/calificacion||0, deliveryRate y punctualityRate; ausencia de actividades puede producir compositeProgress 20%.
+- ACADEMIC/getStudentAttendanceSummary -> porcentajeAsistencia 100.0 cuando no hay filas -> dashboard muestra asistencia perfecta sin registros.
+- Penalización tardía del 50% -> AUD-NG-121; no duplicar.
+
+### Autorización de escrituras y trazabilidad (REQ-DOC-012)
+- TASK/validateRolePermission -> validateContextualAccess; el control contextual solo restringe roles estudiantiles/familiares, no valida asignación de Profesor.
+- TASK/createTask/createStudyMaterial -> profesorId/autorId del payload -> hojas Tareas/MaterialesEducativos; no compara con _verifiedUserId ni AsignacionesDocentes.
+- TASK/updateTask -> sobrescribe fechaLimite en Tareas; no registra valor anterior/nuevo ni historial append-only.
+- Sesión/HMAC -> AUD-NG-001/AUD-NG-004; lectura contextual -> AUD-NG-002; config/cierre/asistencia/calificaciones -> AUD-NG-108/AUD-NG-119/AUD-NG-122/AUD-NG-124; privacidad Drive -> TASK-085/TASK-142.
