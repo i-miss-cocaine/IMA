@@ -3278,3 +3278,147 @@ INVENTARIO POSTERIOR A TASK-049 (2026-11-04)
 - ChangesLogs.txt no se modifica porque no hubo cambios de código.
 - TASK-048 y TASK-049 quedan auditadas con hallazgos; el estado [X] no se toma como evidencia suficiente de cumplimiento.
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-04
+AUDITORÍA FUNCIONAL Y TÉCNICA - [TASK-050] [F24-Task01]: CATÁLOGO CENTRALIZADO DE INFORMES INSTITUCIONALES
+RAMA: NG_beta
+ARCHIVOS AUDITADOS: backend/user-service/Code.gs; backend/academic-service/Code.gs; js/ui-common.js; tests/regression/academic-grading-suite.js
+ALCANCE Y CRITERIO:
+- Continuación secuencial desde TASK-049. Se audita TASK-050 / F24-Task01, que figura [X] en el encabezado de Pendientes.md, aunque su campo interno Estado conserva [ ] Pendiente.
+- Se contrastan los requisitos del catálogo, los metadatos por informe, el despacho de acciones, la generación real, la autorización por perfil, la interfaz y las pruebas.
+- Inspección estática manual de las rutas y funciones involucradas. No se ejecutaron operaciones contra datos institucionales ni pruebas con efectos persistentes. No se modificó código fuente.
+- Respaldos Git inmutables de los archivos inspeccionados:
+  * backend/user-service/Code.gs: SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f
+  * backend/academic-service/Code.gs: SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc
+  * js/ui-common.js: SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67
+  * tests/regression/academic-grading-suite.js: SHA 3433b707edd4a2f35c68368a3172932adc2a3b32
+===============================================================================
+
+AUD-NG-091
+Fecha: 2026-11-04
+Tarea auditada: TASK-050 / F24-Task01
+Archivos auditados: backend/user-service/Code.gs; js/ui-common.js
+Módulo: Resolución y generación de informes institucionales
+Funciones y rangos: getInstitutionalReportCatalog (backend/user-service/Code.gs:8396-8621); generateInstitutionalReport (8624-8752); renderReportsCenterUI y triggerReportGeneration (js/ui-common.js:2960-3035).
+Tipo: El generador no resuelve cada identificador del catálogo ni utiliza los metadatos de servicio/filtros/formato.
+Severidad: Alto.
+Evidencia técnica:
+1. El catálogo central registra identificadores distintos como REP-ACAD-01 a REP-ACAD-04, REP-CONT-01 a REP-CONT-04, REP-SEC-01/02, REP-RH-01, REP-TIENDA-01, REP-CAF-01 y REP-PLAT-01, cada uno con service, filters, indicators, supportedFormats y rolesPermitidos.
+2. generateInstitutionalReport solo distingue el bloque financiero mediante reportId === "REP-CONT-01" o category === "CONTABILIDAD", y el académico mediante reportId === "REP-ACAD-01" o category === "ACADEMICA". Por tanto, otros identificadores de esas categorías se procesan como si fueran REP-CONT-01 o REP-ACAD-01.
+3. Los identificadores de otras categorías caen en una rama genérica que devuelve un registro de ejemplo "INF-001", sin consultar la fuente declarada por el catálogo ni ejecutar el informe correspondiente.
+4. El generador no consulta catalogMaster, no resuelve el campo service, no aplica los filtros declarados ni valida el formato solicitado.
+5. renderReportsCenterUI muestra título, categoría, descripción, ID y formatos; triggerReportGeneration envía únicamente reportId y category. La interfaz no construye controles para los filtros declarados ni selecciona un formato de salida.
+Impacto: El usuario puede seleccionar un informe y recibir datos de otro informe de la misma categoría o un resultado genérico de muestra. Los criterios de conservar los generadores existentes, conectar cada informe por ID y aplicar parámetros no quedan satisfechos.
+Dependencias: catalogMaster, getInstitutionalReportCatalog, generateInstitutionalReport, reportId, category, service, filters, supportedFormats, renderReportsCenterUI y triggerReportGeneration.
+Conclusión: Existe un catálogo descriptivo, pero la ruta de generación no está conectada de forma individual a los informes anunciados. Hallazgo estático.
+Tarea asociada: AUD-NG-091 en Pendientes.md.
+===============================================================================
+
+AUD-NG-092
+Fecha: 2026-11-04
+Tarea auditada: TASK-050 / F24-Task01
+Archivo auditado: backend/academic-service/Code.gs
+Módulo: Despacho de generación de informes académicos
+Funciones y rangos: doPost/switch de acciones (línea 714); getAcademicInstitutionalReportCatalog (11353-11452); archivo completo (14,317 líneas).
+Tipo: El despachador invoca una función de generación que no está declarada en el archivo del microservicio.
+Severidad: Alto.
+Evidencia técnica:
+1. El switch de doPost registra case "generateInstitutionalReport": result = generateInstitutionalReport(payload); break.
+2. En backend/academic-service/Code.gs no existe una declaración function generateInstitutionalReport; la función de catálogo getAcademicInstitutionalReportCatalog termina antes de la siguiente declaración function registerSpreadsheetSource.
+3. El repositorio contiene únicamente backend/academic-service/Code.gs dentro de ese directorio; no se localizó otro archivo fuente del mismo microservicio que declare el símbolo invocado.
+Impacto: Una solicitud de generación dirigida al microservicio académico puede fallar por referencia a función no definida, por lo que los informes académicos anunciados no cuentan con un generador propio verificable en ese servicio.
+Dependencias: doPost, generateInstitutionalReport, getAcademicInstitutionalReportCatalog y backend/academic-service/Code.gs.
+Conclusión: El enrutador expone una acción sin implementación local correspondiente. Hallazgo estático; no se envió una solicitud de explotación.
+Tarea asociada: AUD-NG-092 en Pendientes.md.
+===============================================================================
+
+AUD-NG-093
+Fecha: 2026-11-04
+Tarea auditada: TASK-050 / F24-Task01
+Archivo auditado: backend/academic-service/Code.gs
+Módulo: Filtrado de catálogo por rol autenticado
+Funciones y rangos: validateRolePermission (529-552); doPost (671-714); getAcademicInstitutionalReportCatalog (11353-11452).
+Tipo: El catálogo prioriza campos de rol declarados por el cliente sobre el rol verificado por el token.
+Severidad: Alto.
+Evidencia técnica:
+1. validateRolePermission verifica el token de sesión y escribe el rol autenticado en payload._verifiedRole.
+2. A pesar de ello, getAcademicInstitutionalReportCatalog resuelve verifiedRole usando primero payload.requesterRole, después payload.authRole y finalmente payload._verifiedRole.
+3. Un cliente que tenga autorización para invocar la acción por la matriz dinámica puede enviar requesterRole o authRole con un perfil distinto al de su sesión y alterar el filtro rolesPermitidos aplicado al catálogo.
+4. La función usa "Director" como rol predeterminado cuando ninguno de esos valores está disponible, en lugar de denegar por ausencia de identidad verificada.
+Impacto: La visibilidad del catálogo puede depender de un rol declarado por el cliente y no de la identidad autenticada; esto debilita el aislamiento por perfil que constituye el objetivo de TASK-050.
+Dependencias: validateRolePermission, doPost, getAcademicInstitutionalReportCatalog, requesterRole, authRole, _verifiedRole y rolesPermitidos.
+Conclusión: La sesión se verifica en el despachador, pero el filtro interno del catálogo no prioriza la identidad resultante de esa verificación. La explotación depende de que la acción esté concedida al rol solicitante; hallazgo estático.
+Tarea asociada: AUD-NG-093 en Pendientes.md.
+===============================================================================
+
+AUD-NG-094
+Fecha: 2026-11-04
+Tarea auditada: TASK-050 / F24-Task01
+Archivos auditados: backend/user-service/Code.gs; backend/academic-service/Code.gs
+Módulo: Coherencia entre perfiles anunciados y autorización de acciones de informes
+Funciones y rangos: ROLE_PERMISSIONS (backend/user-service/Code.gs:926-982; backend/academic-service/Code.gs:168-260); validateRolePermission en ambos servicios.
+Tipo: Los perfiles incluidos en rolesPermitidos no tienen concesión estática explícita para consultar/generar informes.
+Severidad: Medio.
+Evidencia técnica:
+1. El catálogo user-service declara perfiles como Director, Subdirector, Secretaría, Profesor y Contador en rolesPermitidos para distintos informes.
+2. En ROLE_PERMISSIONS de user-service, los roles Director, Subdirector, Secretaría y Contador no incluyen getInstitutionalReportCatalog ni generateInstitutionalReport; los permisos comodín están asignados a Administrador y Desarrollador.
+3. En ROLE_PERMISSIONS de academic-service, Director y los demás perfiles institucionales no incluyen getInstitutionalReportCatalog ni generateInstitutionalReport; Administrador dispone del comodín.
+4. validateRolePermission consulta primero MatrizPermisosRoles desde Spreadsheet y puede sobreescribir el resultado estático. Esa configuración externa no forma parte del repositorio inspeccionado, por lo que no es posible certificar que los perfiles anunciados tengan concesiones dinámicas activas.
+Impacto: En ausencia de concesiones dinámicas externas, perfiles anunciados por el catálogo no pueden consultar ni generar los informes; la autorización efectiva no queda reproducible ni verificable únicamente con el repositorio.
+Dependencias: ROLE_PERMISSIONS, validateRolePermission, getDynamicPermissionsForRole, MatrizPermisosRoles, getInstitutionalReportCatalog, generateInstitutionalReport y rolesPermitidos.
+Conclusión: Existe una discrepancia entre los permisos declarados en el catálogo y la matriz estática del servidor. La configuración dinámica externa requiere verificación independiente.
+Tarea asociada: AUD-NG-094 en Pendientes.md.
+===============================================================================
+
+AUD-NG-095
+Fecha: 2026-11-04
+Tarea auditada: TASK-050 / F24-Task01
+Archivo auditado: tests/regression/academic-grading-suite.js
+Módulo: Evidencia de aceptación funcional del catálogo de informes
+Funciones y rangos: aserciones TASK-050 (líneas 389-390).
+Tipo: Pruebas de presencia textual sin validación de comportamiento, permisos ni generación por identificador.
+Severidad: Medio.
+Evidencia técnica:
+1. Las dos aserciones de TASK-050 comprueban mediante includes que existan getInstitutionalReportCatalog, rolesPermitidos, getAcademicInstitutionalReportCatalog, REP-ACAD-04, REP-CONT-04 y soloActivos.
+2. No se invoca el catálogo ni el generador con roles distintos, identificadores diferentes, filtros, formatos, categorías, informes inactivos o IDs desconocidos.
+3. No se comprueba que un perfil no autorizado reciba 403, que un informe de servicio ACCOUNTING/ACADEMIC sea dirigido al generador correcto ni que cada ID devuelva datos propios del informe solicitado.
+Impacto: La suite puede aprobar aunque los informes se resuelvan incorrectamente, aunque se suplante el rol de consulta o aunque el servicio académico no disponga de un generador.
+Dependencias: tests/regression/academic-grading-suite.js, getInstitutionalReportCatalog, getAcademicInstitutionalReportCatalog, generateInstitutionalReport y validateRolePermission.
+Conclusión: Las pruebas actuales acreditan presencia de símbolos y metadatos, no el cumplimiento funcional de los criterios de TASK-050. Hallazgo estático.
+Tarea asociada: AUD-NG-095 en Pendientes.md.
+===============================================================================
+
+AUD-NG-096
+Fecha: 2026-11-04
+Tarea auditada: TASK-050 / F24-Task01
+Archivo auditado: Pendientes.md
+Módulo: Consistencia del estado y trazabilidad del backlog
+Tipo: El encabezado y el campo Estado de la misma tarea presentan estados contradictorios.
+Severidad: Observación.
+Evidencia técnica:
+1. La entrada inicia con "### [X] [TASK-050] [F24-Task01]", que la clasifica como completada en el encabezado.
+2. La misma entrada termina con "- **Estado:** [ ] Pendiente".
+3. Los criterios de aceptación de la entrada permanecen marcados [ ], mientras ChangesLogs.txt registra que TASK-050 fue marcada como completada [X].
+Impacto: El inventario no permite determinar de forma inequívoca el estado administrativo de TASK-050 ni distinguir entre implementación registrada y cumplimiento funcional verificado.
+Dependencias: Pendientes.md, ChangesLogs.txt, Auditoria.txt y criterios de aceptación de TASK-050.
+Conclusión: Se requiere una rectificación documental aditiva posterior a la revisión y autorización correspondiente; esta auditoría no modifica la entrada histórica original.
+Tarea asociada: AUD-NG-096 en Pendientes.md.
+===============================================================================
+
+INVENTARIO POSTERIOR A TASK-050 (2026-11-04)
+- Última tarea auditada: TASK-050 / F24-Task01 (Catálogo Centralizado de Informes Institucionales con Permisos por Perfil).
+- Tareas auditadas en esta continuación: TASK-050 (1 tarea consecutiva).
+- Hallazgos nuevos: 6 (AUD-NG-091 a AUD-NG-096).
+- Tareas derivadas: 6 (AUD-NG-091 a AUD-NG-096), agregadas al final de Pendientes.md sin alterar entradas anteriores.
+- Respaldos Git inmutables:
+  * backend/user-service/Code.gs: SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f
+  * backend/academic-service/Code.gs: SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc
+  * js/ui-common.js: SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67
+  * tests/regression/academic-grading-suite.js: SHA 3433b707edd4a2f35c68368a3172932adc2a3b32
+- Tipo de revisión: inspección estática manual; no se ejecutaron pruebas con efectos persistentes ni se modificaron datos operativos.
+- Cambios: anexos documentales en Auditoria.txt, Pendientes.md y MapaDependencias.md. No se modificó código fuente.
+- ChangesLogs.txt no se modifica porque no hubo cambios de código ni implementación.
+- TASK-050 queda auditada con hallazgos; la marca [X] no se considera evidencia suficiente de cumplimiento funcional.
+===============================================================================

@@ -17704,3 +17704,64 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Estado:** [ ] Pendiente
 
 ---
+
+
+---
+
+## TAREAS DERIVADAS DE AUDITORÍA — TASK-050 / F24-Task01 (2026-11-04)
+
+### [AUD-NG-091] Conectar cada identificador del catálogo con su generador, filtros y servicio real
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-091 (TASK-050 / F24-Task01)
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; js/ui-common.js
+- **Dependencias Expuestas:** catalogMaster, getInstitutionalReportCatalog, generateInstitutionalReport, reportId, service, filters, supportedFormats, renderReportsCenterUI y triggerReportGeneration.
+- **Descripción del Alcance:** Implementar una resolución explícita por identificador de informe. Cada ID debe invocar el generador y fuente de datos declarados en el catálogo, aplicar sus filtros y producir uno de los formatos admitidos. Eliminar el enrutamiento basado únicamente en category y los resultados genéricos de muestra para informes institucionales reales. Rechazar IDs desconocidos o inactivos sin ejecutar un generador alternativo.
+- **Criterios de Aceptación:** Cada ID del catálogo produce el informe correspondiente; REP-CONT-02/03/04 no devuelve el contenido de REP-CONT-01; REP-ACAD-02/03/04 no devuelve el contenido de REP-ACAD-01; los informes administrativos, de RRHH, tienda, cafetería y plataforma consultan su fuente correcta; los filtros y formatos declarados se aplican y validan; un ID desconocido/inactivo se rechaza.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-092] Implementar el generador académico invocado por el despachador
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-092 (TASK-050 / F24-Task01)
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** backend/academic-service/Code.gs; tests/regression/academic-grading-suite.js
+- **Dependencias Expuestas:** doPost, generateInstitutionalReport, getAcademicInstitutionalReportCatalog y reportId.
+- **Descripción del Alcance:** Definir e integrar una implementación local de generación académica que corresponda a los informes REP-ACAD-01 a REP-ACAD-04 y a los identificadores académicos/administrativos asignados a este servicio. Mantener la autorización del despachador y evitar referencias a funciones no declaradas.
+- **Criterios de Aceptación:** El símbolo invocado por doPost existe en el microservicio; cada ID académico genera el contenido correspondiente; una acción inválida devuelve un error controlado; existen pruebas de integración para los informes académicos sin alterar datos reales.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-093] Derivar el rol del catálogo académico exclusivamente de la sesión verificada
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-093 (TASK-050 / F24-Task01)
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** backend/academic-service/Code.gs; tests/regression/academic-grading-suite.js
+- **Dependencias Expuestas:** validateRolePermission, doPost, getAcademicInstitutionalReportCatalog, requesterRole, authRole, _verifiedRole y rolesPermitidos.
+- **Descripción del Alcance:** Eliminar la prioridad de requesterRole y authRole enviados por el cliente. Resolver el rol únicamente desde _verifiedRole asignado después de verificar la sesión firmada. Si no existe un rol verificado, denegar la consulta en lugar de asumir Director.
+- **Criterios de Aceptación:** Alterar requesterRole/authRole no cambia el catálogo visible; el rol del resultado coincide con los claims de la sesión; una solicitud sin rol verificado se rechaza; las pruebas cubren intentos de suplantación con roles de mayor privilegio.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-094] Alinear los permisos de consulta y generación con los perfiles publicados en el catálogo
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-094 (TASK-050 / F24-Task01)
+- **Severidad/Clasificación:** Medio
+- **Archivos Involucrados:** backend/user-service/Code.gs; backend/academic-service/Code.gs; configuración MatrizPermisosRoles; tests/regression/academic-grading-suite.js
+- **Dependencias Expuestas:** ROLE_PERMISSIONS, validateRolePermission, getDynamicPermissionsForRole, MatrizPermisosRoles, getInstitutionalReportCatalog, generateInstitutionalReport y rolesPermitidos.
+- **Descripción del Alcance:** Definir de forma trazable qué perfiles pueden consultar el catálogo y generar cada informe. Alinear ROLE_PERMISSIONS y la matriz dinámica con rolesPermitidos; incorporar validación de permisos por reportId también en el generador, sin confiar exclusivamente en que la interfaz o el catálogo oculten opciones.
+- **Criterios de Aceptación:** Cada perfil anunciado tiene una concesión verificable y limitada; perfiles no autorizados reciben 403 en consulta y generación directa; un perfil autorizado para un informe no obtiene otros informes por cambiar reportId; la configuración efectiva queda documentada y cubierta por pruebas positivas y negativas.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-095] Sustituir las pruebas de presencia textual por pruebas funcionales del catálogo
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-095 (TASK-050 / F24-Task01)
+- **Severidad/Clasificación:** Medio
+- **Archivos Involucrados:** tests/regression/academic-grading-suite.js; backend/user-service/Code.gs; backend/academic-service/Code.gs; js/ui-common.js
+- **Dependencias Expuestas:** getInstitutionalReportCatalog, getAcademicInstitutionalReportCatalog, generateInstitutionalReport, validateRolePermission y triggerReportGeneration.
+- **Descripción del Alcance:** Incorporar pruebas funcionales aisladas para cada identificador del catálogo, filtrado por rol, categorías, filtros, formatos, servicios de destino, informes inactivos, IDs desconocidos y acceso directo no autorizado. Utilizar datos de prueba aislados y no modificar hojas operativas.
+- **Criterios de Aceptación:** La suite verifica resultados propios de cada ID; detecta la suplantación de rol; comprueba 403 para perfiles no autorizados; valida filtros y formatos; detecta despachos a funciones inexistentes; los casos negativos no generan escrituras persistentes.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-096] Rectificar de forma aditiva el estado contradictorio de TASK-050
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-096 (TASK-050 / F24-Task01)
+- **Severidad/Clasificación:** Observación
+- **Archivos Involucrados:** Pendientes.md; ChangesLogs.txt; Auditoria.txt
+- **Dependencias Expuestas:** Encabezado [X] de TASK-050, campo Estado [ ] Pendiente, criterios de aceptación y registro histórico de ChangesLogs.txt.
+- **Descripción del Alcance:** Determinar el estado administrativo de TASK-050 a partir de la verificación funcional y la revisión correspondiente. Documentar la rectificación mediante una anotación aditiva y trazable, sin borrar ni reescribir el registro histórico original. No declarar cumplimiento mientras existan criterios de aceptación no satisfechos.
+- **Criterios de Aceptación:** El inventario permite identificar inequívocamente el estado de TASK-050; la rectificación conserva el encabezado y contenido históricos; la decisión se apoya en evidencias y revisión formal; las tareas derivadas permanecen vinculadas a AUD-NG-091 a AUD-NG-096.
+- **Estado:** [ ] Pendiente
+
+---
