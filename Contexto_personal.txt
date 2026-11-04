@@ -642,3 +642,27 @@ La búsqueda estaba intentando seguir el flujo completo, no solo la existencia d
 - Auditarla como registro independiente y contrastarla con los hallazgos AUD-NG-001/002/003/004/005/159, sin duplicar causas.
 - Después continuar secuencialmente por C1. No repetir C0 ni TAREA-01.
 - Las tareas TAREA-F4-P0-01 a TAREA-F4-P0-04 y las F4 posteriores aparecen en el registro y deben auditarse individualmente aunque compartan componentes con TAREA-01.
+
+ 
+---
+
+## CHECKPOINT - AUDITORÍA completadas.md - C1.2
+**Fecha:** 2026-11-04
+
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- HEAD previo al checkpoint: 4fc3dd91926c82aa92f9a71ebe56e7f3dac30bee.
+- Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59; permanece intacta.
+- Inventario corregido: 231 declaraciones de tareas, 183 identificadores únicos.
+- C0: 4/4 cumplen.
+- C1.1 / TAREA-01: cumple parcialmente; nuevo AUD-NG-159 (logoutUser público permite revocación arbitraria).
+- C1.2 / FASE2-T01: cumple parcialmente; nuevo AUD-NG-160 (los tokens conservan claims.role antiguo después de cambio de privilegios).
+- Progreso: 6/183 identificadores únicos auditados; 177 pendientes.
+- Informes: AUDITORIA_COMPLETADAS_LOTE_C0.md, AUDITORIA_COMPLETADAS_LOTE_C1.md, AUDITORIA_COMPLETADAS_FASE2_T01.md.
+- Nuevos hallazgos registrados: AUD-NG-159 y AUD-NG-160 en Auditoria.txt y Pendientes.md.
+- Hallazgos relacionados existentes: AUD-NG-001 a AUD-NG-005, AUD-NG-013, AUD-NG-112, AUD-NG-083, AUD-NG-084, AUD-NG-086, TASK-048, TASK-085, TASK-142 y TASK-418.
+- Último análisis de autenticación: USER/generateSessionToken y verifySessionToken; el token expira a las 24 horas y firma el rol al iniciar sesión, pero no revalida el rol vigente. Los validadores de los servicios usan claims.role.
+- Última tarea auditada: FASE2-T01.
+- Siguiente tarea exacta: FASE2-T02 (idempotencia y reintentos HTTP), en completadas.md inmediatamente después de FASE2-T01.
+- Respaldos de código de C1.1: USER 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ACADEMIC daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; ACCOUNTING 38b979d41596b85e888b4a7060b37bbac0840a28; TASK 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe; EXAM 1d93296628fae31f680004f637897e2b1314a64c; js/auth.js 8444dd085a3186106d2db7005b61ef934d3c22d8; js/api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9.
+- Código fuente y completadas.md no modificados; ChangesLogs.txt sin cambios. No merge.
+- Pruebas dinámicas y despliegue no ejecutados.
