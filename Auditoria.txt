@@ -4172,3 +4172,59 @@ RESULTADOS DEL LOTE F2
 - REQ-EXP-019: Cumple parcialmente. ACADEMIC puede crear/listar respaldos y tiene restore/verify, pero checksum y validación están rotos, UI restore no pasa los parámetros esperados y no se encontró programación/retención.
 - No se ejecutaron pruebas ni se accedió a datos productivos. No se modificó código fuente, completadas_legacy.md ni ChangesLogs.txt.
 ===============================================================================
+
+
+===============================================================================
+[AUD-NG-147] REQ-DOC-001 - GUÍAS DE ESTUDIO SIN CRUD CONECTADO, FILTROS DE AUDIENCIA NI AISLAMIENTO
+- Fecha: 2026-11-04.
+- Archivo/Módulo: teacher-dashboard.html:422-535; js/teacher.js:1947-1994; student-dashboard.html:209-230; js/student.js:807-836 y 1816-1824; js/api.js:313-329; backend/academic-service/Code.gs:671-810; backend/task-service/Code.gs:85-119, 225-226 y 1632-1715.
+- Tipo: Incumplimiento funcional, contrato API roto, control de acceso y sanitización.
+- Evidencia:
+  1. El formulario dedicado form-guia-estudio y sus controles existen en teacher-dashboard.html, pero js/teacher.js no contiene manejadores para form-guia-estudio, guia-materia, btn-save-guia ni los controles de la sección. La vista dedicada del estudiante existe en student-dashboard.html, pero js/student.js no referencia tab-guias, view-guias, student-guia-parcial, btn-student-reload-guias ni student-guias-list.
+  2. js/api.js declara saveStudyGuide/getStudyGuides/toggleStudyGuideStatus y llama a createOrUpdateStudyGuide/getStudyGuides/toggleStudyGuideStatus en ACADEMIC; no se encontraron estas acciones en el router doPost ni sus funciones en backend/academic-service/Code.gs.
+  3. La ruta alternativa TASK/getStudyMaterials está incluida en PUBLIC_ACTIONS (85-89). validateRolePermission retorna autorizado inmediatamente para PUBLIC_ACTIONS (225-226), sin validar token. getStudyMaterials (1632-1662) recibe grado/asignatura, pero no filtra por esos campos y no contempla sección; solo filtra aulaId/parcial/unidad/tema. La UI envía grado y asignatura (js/student.js:807-811), pero el backend los ignora.
+  4. createStudyMaterial (1665-1695) valida únicamente título y URL; no aplica lista MIME, carga documental ni sanitización. No existe operación de actualización/sustitución; deleteStudyMaterial solo marca Eliminado.
+  5. js/student.js:819-830 concatena directamente campos almacenados en innerHTML y en href sin escape contextual visible.
+- Impacto: las guías dedicadas no se pueden gestionar desde la interfaz; la consulta genérica puede exponer materiales sin autenticación y de otras asignaturas/grados; contenido almacenado puede introducir HTML/atributos no confiables en el dashboard.
+- Severidad: ALTO.
+- Tarea derivada: AUD-NG-147.
+
+===============================================================================
+[AUD-NG-148] REQ-DOC-002 - CONTENIDO DE CLASES Y PRESENTACIONES SIN GESTIÓN PERSISTENTE POR TEMA
+- Fecha: 2026-11-04.
+- Archivo/Módulo: js/config.js:351-369; js/teacher.js:523 y 1947-1994; teacher-dashboard.html; js/data.js:41-50; backend/academic-service/Code.gs:12393-12408; backend/task-service/Code.gs:1665-1695.
+- Tipo: Incumplimiento funcional, persistencia y trazabilidad de recursos.
+- Evidencia:
+  1. PRESENTATION_INDEX en js/config.js contiene cuatro asociaciones estáticas de tema/asignatura/grado/archivo; no se encontró consumidor del índice en js/teacher.js ni js/student.js.
+  2. TemaActual se inicializa como General en js/teacher.js:523. getAcademicConfig obtiene temas de ConfiguracionAcademica, pero no registra contenido de clase, fecha impartida, editor enriquecido, archivo de presentación Drive, documentos complementarios ni tareas asociadas.
+  3. js/teacher.js contiene un handler para virtual-classroom-publisher-form (1947-1994), pero ese formulario no existe en teacher-dashboard.html. El flujo genérico createStudyMaterial fija unidad y tema a valores genéricos y no vincula fecha, clase, asignatura, grado, sección, presentación Drive ni tareas.
+  4. js/data.js contiene un catálogo estático de temas/rutas locales; no es un CRUD docente ni demuestra persistencia de asociaciones tras recarga.
+- Impacto: no existe evidencia de una cadena persistente tema-clase-presentación-recursos-tareas; los materiales no pueden gestionarse con el alcance académico requerido.
+- Severidad: ALTO.
+- Tarea derivada: AUD-NG-148.
+
+===============================================================================
+[AUD-NG-149] REQ-DOC-003 - TAREAS SIN MODALIDADES POLIMÓRFICAS NI VALIDACIÓN OBLIGATORIA EN SERVIDOR
+- Fecha: 2026-11-04.
+- Archivo/Módulo: teacher-dashboard.html:219-274; js/teacher.js:3069-3136 y 4738-4748; backend/task-service/Code.gs:447-471.
+- Tipo: Incumplimiento funcional y validación insuficiente.
+- Evidencia:
+  1. El formulario solo permite Tarea/Crédito Extra y un editor Quill. No ofrece modalidades diferenciadas para documento adjunto ni ejercicios a desarrollar, ni un control de carga de archivo en el formulario de creación.
+  2. js/teacher.js copia quillTask.root.innerHTML a descripcion y envía createTask sin comprobar contenido vacío.
+  3. descripcion es un input hidden sin required. fechaLimite es required en HTML, pero el backend no puede depender de esa validación del navegador.
+  4. createTask extrae el payload y ejecuta appendRow sin validar título, descripción, fechaLimite o modalidad. El backend acepta registros incompletos mediante una llamada directa.
+- Impacto: se pueden persistir tareas sin contenido o fecha límite; las modalidades documentales y de ejercicios no están disponibles en el flujo de creación.
+- Severidad: ALTO.
+- Tarea derivada: AUD-NG-149.
+
+===============================================================================
+RESULTADOS DEL LOTE G1
+===============================================================================
+- REQ-DOC-001: Cumple parcialmente. La vista y los wrappers están declarados, pero el CRUD dedicado no está conectado; el servicio ACADEMIC no implementa las acciones y el flujo genérico TASK permite lectura pública sin filtrar grado/asignatura/sección.
+- REQ-DOC-002: Cumple parcialmente. Hay un índice estático de presentaciones y un publicador genérico, pero no una gestión persistente de clases/presentaciones asociadas por tema.
+- REQ-DOC-003: Cumple parcialmente. Existe creación estándar con Quill, pero faltan dos modalidades y la validación de contenido/fecha no se aplica en backend.
+- Hallazgos añadidos: AUD-NG-147 a AUD-NG-149.
+- Informe: AUDITORIA_LOTE_G1.md.
+- Pruebas: no ejecutadas; revisión estática manual.
+- Código fuente: sin modificaciones. No se modificaron completadas_legacy.md ni ChangesLogs.txt.
+===============================================================================

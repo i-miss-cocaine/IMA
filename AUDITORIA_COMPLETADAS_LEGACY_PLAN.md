@@ -184,3 +184,15 @@ Se recuperó y leyó el contenido íntegro de `Pendientes.md`, se confirmó que 
 - **Pruebas:** no ejecutadas; revisión estática de servicios y UI.
 - **Código fuente:** sin modificaciones; no se alteró completadas_legacy.md ni ChangesLogs.txt.
 - **Siguiente lote:** G (REQ-EXP-020 en adelante y tareas DOC).
+
+
+## 17. Resultados de auditoría - Lote G1 (2026-11-04)
+
+- **Subdivisión:** G1 revisa REQ-DOC-001 a REQ-DOC-003.
+- **Rama base:** NG_beta_0.0.0.1; rama de trabajo documental: NG_beta_0.0.0.1_work.
+- **Resultados:** REQ-DOC-001 (Cumple parcialmente: vista y wrappers declarados, pero CRUD dedicado desconectado, acciones ACADEMIC inexistentes y lectura TASK pública sin filtros completos); REQ-DOC-002 (Cumple parcialmente: índice estático y publicador genérico, sin gestión persistente por tema); REQ-DOC-003 (Cumple parcialmente: creación estándar con Quill, sin tres modalidades ni validación obligatoria en servidor).
+- **Hallazgos:** AUD-NG-147 a AUD-NG-149, añadidos a Auditoria.txt y Pendientes.md.
+- **Informe:** AUDITORIA_LOTE_G1.md.
+- **Pruebas:** no ejecutadas; inspección estática manual.
+- **Código fuente:** sin modificaciones; no se alteró completadas_legacy.md ni ChangesLogs.txt.
+- **Siguiente sublote:** G2 (REQ-DOC-004 a REQ-DOC-006).

@@ -422,3 +422,23 @@
 - `js/teacher.js` llama a ACADEMIC directamente, pero manda confirmationCode en vez de confirmCode y omite confirmed.
 - `js/developer.js` usa wrappers API antiguos que llaman acciones USER no implementadas y fallback mock.
 - No se encontró trigger programado ni política de retención.
+
+
+## Relaciones verificadas durante auditoría de continuidad - Lote G1 (2026-11-04)
+
+### Guías de estudio (REQ-DOC-001)
+- teacher-dashboard.html (form-guia-estudio) -> no se encontraron listeners en js/teacher.js para crear/editar/consultar/desactivar.
+- student-dashboard.html (view-guias) -> no se encontraron listeners en js/student.js para cargar la vista dedicada.
+- js/api.js (saveStudyGuide/getStudyGuides/toggleStudyGuideStatus) -> acciones ACADEMIC createOrUpdateStudyGuide/getStudyGuides/toggleStudyGuideStatus; no se encontraron en el router/funciones de backend/academic-service/Code.gs.
+- js/student.js (fetchAndRenderVirtualClassroom) -> TASK/getStudyMaterials -> backend/task-service/Code.gs -> hoja MaterialesEducativos. El endpoint público no aplica grado/asignatura/sección aunque el cliente envía algunos de esos filtros.
+- TASK/createStudyMaterial -> MaterialesEducativos; TASK/deleteStudyMaterial marca estado Eliminado. No se encontró operación de actualización/sustitución.
+
+### Contenido de clase y presentaciones (REQ-DOC-002)
+- js/config.js (PRESENTATION_INDEX) -> cuatro asociaciones estáticas tema/asignatura/grado/archivo; no se encontró consumidor en js/teacher.js ni js/student.js.
+- js/teacher.js (virtual-classroom-publisher-form) -> TASK/createPost o TASK/createStudyMaterial; el formulario referenciado no existe en teacher-dashboard.html y la ruta de material usa unidad/tema genéricos.
+- js/data.js -> catálogo estático de temas y rutas HTML locales; no se verificó relación persistente con Drive, fecha de clase ni tareas asociadas.
+
+### Creación de tareas (REQ-DOC-003)
+- teacher-dashboard.html (create-assignment-form) -> js/teacher.js (Quill y submit handler) -> TASK/createTask -> hoja Tareas.
+- createTask almacena los campos recibidos, pero no valida título, descripción, fecha límite ni modalidad en servidor.
+- El formulario ofrece Tarea/Crédito Extra y un único editor; no se observó selección de modalidad documental o ejercicios.
