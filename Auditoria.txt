@@ -1913,3 +1913,36 @@ La implementación cubre el registro separado de recepciones, acumulación parci
 RECTIFICACIÓN DEL INVENTARIO (2026-11-04)
 Tras agregar AUD-NG-029, el inventario vigente es: 83 tareas originales [X] completadas, 108 tareas originales [ ] pendientes de implementación y 28 tareas AUD-NG nuevas pendientes. Total: 191 tareas originales + 28 derivadas de auditoría = 219 entradas.
 ===============================================================================
+
+===============================================================================
+AUD-NG-030
+Fecha: 2026-11-04
+Archivo: backend/accounting-service/Code.gs
+Funciones: verifyThreeWayMatch (7374-7556), recordAccountsPayableExpense (7557-7689), RBAC (195-225, 619-620).
+Tarea original: [TASK-013] [F18-Task02] Conciliación documental de tres vías.
+Tipo: Control de autorización y conciliación incompleto.
+Severidad: Crítico.
+
+Evidencia:
+1. recordAccountsPayableExpense solo ejecuta verifyThreeWayMatch si hay ordenCompraId, partidasFacturadas es un array y bypassConciliacion es falso. Si se omiten las partidas o se activa bypassConciliacion, la obligación queda Aprobado y Pendiente Pago sin conciliación; no se verifica quién autorizó la omisión.
+2. verifyThreeWayMatch acepta authRole del payload para conceder DiferenciaAutorizada. Contador tiene permiso para ejecutar ambas acciones según ROLE_PERMISSIONS. No se usa _verifiedRole, por lo que el rol enviado por el cliente puede prevalecer en esta decisión.
+3. motivoAutorizacion se recibe pero no se valida ni se registra. No queda evidencia estructurada del responsable verificado, fecha y justificación.
+4. Se comparan códigos de artículo, precio unitario y cantidad recibida. No se comparan los importesSubtotal, impuestos e importeTotal recibidos con los cálculos de las partidas; tampoco se concilian descuentos, transporte ni otros cargos. La tolerancia solo se aplica al precio unitario.
+5. Las facturas previas se reconstruyen desde texto ITEMS_JSON en observaciones. No existe una reserva transaccional de cantidades recibidas para impedir que conciliaciones concurrentes utilicen el mismo saldo.
+6. Se almacena un marcador textual MATCH, pero no el detalle íntegro de discrepancias ni una resolución auditable.
+
+Impacto:
+- Obligaciones aprobadas sin conciliación.
+- Aprobación de diferencias sin autorización verificada.
+- Diferencias de impuestos y cargos no detectadas.
+- Riesgo de sobrefacturación por concurrencia y trazabilidad insuficiente.
+
+Dependencias: ROLE_PERMISSIONS, validateRolePermission, verifyThreeWayMatch, recordAccountsPayableExpense, OrdenesCompra, RecepcionesCompra, CuentasPorPagarGastos.
+
+Conclusión:
+La implementación cubre comparaciones parciales de artículos, precios y cantidades, pero no acredita la conciliación completa ni el control de autorización y persistencia exigidos. [TASK-013] no puede considerarse íntegramente completada. No se probaron transacciones con datos reales.
+===============================================================================
+
+RECTIFICACIÓN DEL INVENTARIO (2026-11-04)
+Tras agregar AUD-NG-030: 83 tareas originales [X], 108 tareas originales [ ] y 29 tareas AUD-NG nuevas. Total: 191 tareas originales + 29 derivadas = 220 entradas.
+===============================================================================
