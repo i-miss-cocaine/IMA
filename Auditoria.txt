@@ -2480,3 +2480,245 @@ INVENTARIO POSTERIOR A TASK-016 (2026-11-04)
 - Cambios documentales: se actualizó MapaDependencias.md y se anexó esta auditoría; Pendientes.md recibe las tareas derivadas. ChangesLogs.txt no se modifica porque no hubo cambios de código ni implementación.
 - La auditoría TASK-016 queda registrada como revisión con hallazgos; no valida la tarea como funcionalmente correcta ni autoriza su cierre.
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-04
+AUDITORÍA FUNCIONAL Y TÉCNICA - [TASK-038] A [TASK-042]: GESTIÓN DOCUMENTAL, VALIDACIÓN BINARIA, HASHES, CERTIFICADOS, FIRMA AVANZADA Y REGRESIÓN FASE 22
+RAMA: NG_beta
+ARCHIVOS AUDITADOS: backend/accounting-service/Code.gs; backend/user-service/Code.gs; backend/developer-service/Code.gs; tests/regression/academic-grading-suite.js; Pendientes.md; MapaDependencias.md
+ALCANCE Y CRITERIO:
+- El último registro de auditoría anterior corresponde a TASK-037 / F21-Task34. Se continúa en orden con TASK-038, TASK-039, TASK-040, TASK-041 y TASK-042.
+- Las cinco tareas muestran [X] en el encabezado de Pendientes.md, pero cada bloque conserva "Estado: [ ] Pendiente". La contradicción se registra como inconsistencia del inventario; no se interpreta la marca por sí sola como evidencia de cumplimiento.
+- Revisión estática manual de funciones, flujos, persistencia, seguridad, despacho y pruebas. No se ejecutaron las suites ni se accedió a Drive o a hojas operativas.
+===============================================================================
+
+AUD-NG-055
+Fecha: 2026-11-04
+Tarea auditada: TASK-038 / F22-Task01
+Archivos auditados: backend/accounting-service/Code.gs; backend/user-service/Code.gs
+Módulo: Validación binaria de archivos adjuntos
+Funciones y rangos: validateFileBinaryIntegrity (accounting-service, 3975-4098 aprox.; user-service, 5313-5435 aprox.).
+Tipo: Validación incompleta de firmas y ausencia de comprobación estructural de formatos.
+Severidad: Crítico.
+Evidencia técnica:
+1. La detección PDF compara únicamente los primeros cuatro bytes (%PDF) y no exige la firma completa %PDF-.
+2. Se reconoce ZIP/OOXML por la cabecera PK 03 04, pero no se inspecciona el paquete ZIP ni se comprueba la estructura interna OpenXML de DOCX/XLSX.
+3. La función solo contrasta explícitamente extensión/contenido para PDF, JPEG y PNG. No exige que WEBP, DOCX o XLSX coincidan con el formato detectado.
+4. Cuando el contenido no coincide con ninguno de los formatos conocidos, detectedFormat permanece "unknown", pero la función igualmente retorna valid:true. El MIME puede conservar el valor declarado por el cliente.
+5. No se valida la integridad estructural de PDF o imágenes ni se rechazan sistemáticamente archivos truncados que contengan solo una cabecera reconocible.
+Impacto: Archivos arbitrarios, corruptos o con contenido incompatible pueden superar la validación y llegar a los flujos de almacenamiento como si fueran adjuntos permitidos. La aceptación de ZIP genérico como DOCX/XLSX no satisface el requisito de validar estructura OpenXML.
+Dependencias: uploadPaymentVoucher, submitInstitutionalFormRequest, Utilities.base64Decode, MIME declarado, Google Drive y expedientes asociados.
+Conclusión: Existe detección parcial de cabeceras, pero no validación binaria/estructural suficiente para acreditar los formatos y rechazar archivos falsificados. Hallazgo estático.
+Tarea asociada: AUD-NG-055 en Pendientes.md.
+===============================================================================
+
+AUD-NG-056
+Fecha: 2026-11-04
+Tarea auditada: TASK-038 / F22-Task01
+Archivos auditados: backend/accounting-service/Code.gs; backend/user-service/Code.gs
+Módulo: Arquitectura compartida de seguridad de adjuntos
+Funciones y rangos: validateFileBinaryIntegrity (accounting-service, 3975-4098 aprox.; user-service, 5313-5435 aprox.).
+Tipo: Duplicación de lógica crítica de validación entre microservicios.
+Severidad: Alto.
+Evidencia técnica:
+1. Ambos microservicios contienen una implementación local de validateFileBinaryIntegrity con la misma lógica de extensiones peligrosas, decodificación Base64, detección de cabeceras y selección de MIME.
+2. Los endpoints de cada servicio invocan su propia copia, sin una dependencia compartida ni contrato de versión común.
+3. Una corrección aplicada a una copia no garantiza que la otra reciba los mismos controles, límites y rechazos.
+Impacto: La política de seguridad de archivos puede divergir entre cargas de comprobantes y adjuntos de trámites; un módulo podría aceptar contenido que otro rechace.
+Dependencias: backend/accounting-service/Code.gs, backend/user-service/Code.gs, uploadPaymentVoucher, submitInstitutionalFormRequest y Google Drive.
+Conclusión: La validación se reutiliza por duplicación de código, no mediante un componente central con comportamiento uniforme. Hallazgo estático.
+Tarea asociada: AUD-NG-056 en Pendientes.md.
+===============================================================================
+
+AUD-NG-057
+Fecha: 2026-11-04
+Tarea auditada: TASK-038 / F22-Task01
+Archivos auditados: backend/accounting-service/Code.gs; backend/user-service/Code.gs
+Módulo: Recepción y persistencia de adjuntos
+Funciones y rangos: uploadPaymentVoucher (4100-4165 aprox.); submitInstitutionalFormRequest (5438-5525 aprox.).
+Tipo: Rutas de omisión de validación y éxito reportado ante fallos de almacenamiento.
+Severidad: Crítico.
+Evidencia técnica:
+1. uploadPaymentVoucher solo valida cuando fileData y fileName están presentes simultáneamente; si falta uno, continúa y registra el comprobante sin archivo validado.
+2. submitInstitutionalFormRequest admite adjuntoUrl o adjuntoFileId y los conserva sin descargar, inspeccionar ni verificar el contenido binario en el servidor.
+3. En ambos endpoints, los errores al crear el archivo en Drive se capturan y solo se envían a logDebug; el flujo continúa escribiendo el registro de comprobante/solicitud y devuelve status success aunque comprobanteUrl/finalAdjuntoUrl permanezca vacío o apunte a una referencia no verificada.
+4. No se observa una operación compensatoria que elimine un archivo ya creado si falla la escritura posterior del registro.
+Impacto: Se pueden crear expedientes con adjuntos ausentes o no validados mientras la API informa éxito; también pueden quedar archivos huérfanos si la persistencia posterior falla.
+Dependencias: DriveApp, getOrCreateFolderNews, uploadPaymentVoucher, submitInstitutionalFormRequest, ComprobantesPago y SolicitudesTramites.
+Conclusión: La validación no cubre todas las rutas de entrada y el resultado exitoso no garantiza la persistencia íntegra del adjunto. Hallazgo estático.
+Tarea asociada: AUD-NG-057 en Pendientes.md.
+===============================================================================
+
+AUD-NG-058
+Fecha: 2026-11-04
+Tarea auditada: TASK-038 / F22-Task01
+Archivos auditados: backend/accounting-service/Code.gs; backend/user-service/Code.gs
+Módulo: Privacidad y permisos de archivos en Google Drive
+Funciones y rangos: uploadPaymentVoucher (4100-4165 aprox.); submitInstitutionalFormRequest (5438-5525 aprox.).
+Tipo: Exposición de documentos mediante enlaces públicos.
+Severidad: Crítico.
+Evidencia técnica:
+1. Ambos endpoints llaman file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW) después de crear el archivo.
+2. Los archivos corresponden a comprobantes de pago y adjuntos de trámites institucionales, que pueden contener datos personales, académicos o financieros.
+3. El enlace se devuelve o almacena para su consulta, pero la política aplicada permite el acceso a cualquier persona que obtenga el enlace, sin comprobar sesión o relación con el expediente en el momento de abrirlo.
+Impacto: La confidencialidad de documentos de estudiantes, tutores y operaciones financieras depende de que el enlace no se divulgue; la URL funciona como credencial portadora y permite exposición fuera del control RBAC del servicio.
+Dependencias: DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW, ComprobantesPago, SolicitudesTramites y expedientes institucionales.
+Conclusión: La política de compartición observada es pública por enlace y no implementa acceso privado mediado por autorización institucional. Hallazgo estático.
+Tarea asociada: AUD-NG-058 en Pendientes.md.
+===============================================================================
+
+AUD-NG-059
+Fecha: 2026-11-04
+Tarea auditada: TASK-039 / F22-Task02
+Archivos auditados: backend/accounting-service/Code.gs
+Módulo: Emisión documental y huella SHA-256
+Funciones y rangos: computeDocumentSHA256 (4071-4098 aprox.); generateSchoolDocument (15040-15150 aprox.); verifySchoolDocumentByCUV (15151-15235 aprox.).
+Tipo: Hash calculado sobre metadatos en lugar de bytes del PDF definitivo; verificación no recalcula integridad.
+Severidad: Crítico.
+Evidencia técnica:
+1. generateSchoolDocument calcula sha256Hash sobre una cadena formada por docId, plantillaId, targetId, datos JSON, CUV y fecha; no obtiene bytes de un PDF definitivo.
+2. La función construye driveFileId con el texto "DRV-" + docId y driveUrl con una URL derivada de ese identificador; en el bloque inspeccionado no crea un archivo PDF en Drive.
+3. verifySchoolDocumentByCUV lee sha256Hash de la columna 15 y lo devuelve como dato registrado, pero no recupera el archivo de Drive ni calcula un hash actual para compararlo con el original.
+4. computeDocumentSHA256 admite cadenas que no sean Base64/Data URL y en ese caso calcula el hash de su representación textual; por ello la longitud hexadecimal de 64 no demuestra que se haya aplicado a los bytes del PDF.
+Impacto: El valor presentado como huella documental no demuestra la integridad del archivo firmado/emitido y no detecta modificaciones posteriores del documento.
+Dependencias: DocumentosEscolaresEmitidos, generateSchoolDocument, verifySchoolDocumentByCUV, computeDocumentSHA256 y Google Drive.
+Conclusión: Hay cálculo SHA-256, pero no existe vinculación verificable con un PDF definitivo almacenado ni comparación de bytes actuales. Hallazgo estático.
+Tarea asociada: AUD-NG-059 en Pendientes.md.
+===============================================================================
+
+AUD-NG-060
+Fecha: 2026-11-04
+Tarea auditada: TASK-039 / F22-Task02
+Archivos auditados: backend/user-service/Code.gs
+Módulo: Registro de firmas y vínculo con documentos
+Funciones y rangos: registerDocumentSignature (6935-6986 aprox.); doPost/ROLE_PERMISSIONS (927-962 y 1351-1495 aprox.).
+Tipo: Registro de firma que confía en el hash aportado por el cliente y no fija una versión documental verificable.
+Severidad: Crítico.
+Evidencia técnica:
+1. registerDocumentSignature recibe documentoHash desde payload y lo persiste sin recuperar el documento, comparar contra su hash original ni verificar que corresponda a la versión que se firma.
+2. No se exige que documentoId exista en DocumentosEscolaresEmitidos ni se valida una versión documental inmutable en la fila de firma.
+3. signatureHash se calcula sobre una cadena de metadatos (documentoHash, solicitudId, documentoId, firmanteId, rol y fecha), no sobre el contenido del documento firmado ni sobre una firma criptográfica del firmante.
+4. La función acepta ipOrigen desde payload y usa 127.0.0.1 como valor por defecto, lo cual no acredita la IP real ni la identidad del firmante.
+5. No se observa en esta función un control de idempotencia propio ni una unicidad persistente que impida registrar dos firmas para una misma transacción/firmante mediante solicitudes repetidas sin token.
+Impacto: Una firma puede quedar vinculada a un hash elegido por el cliente, a un documento inexistente o a una versión distinta; el registro no prueba por sí solo la integridad ni la autoría criptográfica.
+Dependencias: registerDocumentSignature, FirmasConformidades, DocumentosEscolaresEmitidos, computeDocumentSHA256 y checkAndRegisterIdempotencyKey.
+Conclusión: Se genera una huella SHA-256 de metadatos de la operación, pero no se verifica que la firma quede vinculada a los bytes y versión exactos del documento. Hallazgo estático.
+Tarea asociada: AUD-NG-060 en Pendientes.md.
+===============================================================================
+
+AUD-NG-061
+Fecha: 2026-11-04
+Tarea auditada: TASK-040 / F22-Task03
+Archivos auditados: backend/user-service/Code.gs; backend/accounting-service/Code.gs
+Módulo: Certificado de finalización y expediente probatorio
+Funciones y rangos: generateSignatureAuditCertificate (6987-7085 aprox.); verifySchoolDocumentByCUV (15151-15235 aprox.).
+Tipo: Certificado no persistido y clasificación incorrecta de estados de firma.
+Severidad: Crítico.
+Evidencia técnica:
+1. generateSignatureAuditCertificate arma y devuelve un objeto JavaScript; en la función inspeccionada no crea un archivo independiente, no lo guarda en Drive ni registra un identificador/copia inmutable del certificado.
+2. No se observó invocación automática de generateSignatureAuditCertificate al completar registerDocumentSignature o al cambiar una transacción avanzada a Completada.
+3. estadoFinalProceso solo devuelve "Rechazado" si el estado de SolicitudesTramites es exactamente "Rechazada"; cualquier otro estado, incluso Pendiente, Cancelada o vencida, puede etiquetarse "CompletadoConExito".
+4. verifySchoolDocumentByCUV agrega una pista de firmas al consultar el CUV, pero no acredita que el proceso esté completado ni que el certificado se haya emitido y preservado como artefacto.
+5. El orden de firmantes se deriva del orden actual de filas, sin ordenar ni comprobar secuencia/estado de cada firma; el hash del certificado se calcula sobre metadatos serializados y no sobre un archivo de certificado conservado.
+Impacto: El sistema puede presentar como completado un proceso no finalizado y no conserva un certificado probatorio independiente cuya integridad pueda verificarse posteriormente.
+Dependencias: generateSignatureAuditCertificate, registerDocumentSignature, checkAdvancedSignatureStatus, verifySchoolDocumentByCUV, FirmasConformidades y DocumentosEscolaresEmitidos.
+Conclusión: Existe una estructura de datos para una pista de auditoría, pero no un certificado persistido, inmutable y generado al completar válidamente la transacción. Hallazgo estático.
+Tarea asociada: AUD-NG-061 en Pendientes.md.
+===============================================================================
+
+AUD-NG-062
+Fecha: 2026-11-04
+Tarea auditada: TASK-041 / F22-Task04
+Archivos auditados: backend/user-service/Code.gs
+Módulo: Integración con proveedores de firma electrónica avanzada
+Funciones y rangos: createAdvancedSignatureRequest (7188-7239 aprox.); checkAdvancedSignatureStatus (7240-7295 aprox.); configureAdvancedSignatureProvider (7087-7148 aprox.).
+Tipo: Flujo simulado sin comunicación ni autenticación verificable del proveedor.
+Severidad: Crítico.
+Evidencia técnica:
+1. createAdvancedSignatureRequest registra una fila en TransaccionesFirmaAvanzada y devuelve Pendiente; no realiza una solicitud HTTP al endpoint configurado ni entrega el documento al proveedor.
+2. checkAdvancedSignatureStatus acepta respuestaProveedor dentro del payload recibido por doPost. Si nuevoEstado es "Completada", actualiza la hoja y llama registerDocumentSignature sin validar firma criptográfica del callback, identidad del proveedor, token de transacción, certificado X.509, cadena de confianza, sellado de tiempo o hash recuperado del documento.
+3. hashValidado y certificadoX509 son valores suministrados por el llamador y se almacenan/usan sin validar autenticidad ni correspondencia con el documento.
+4. El campo tokenCUV se extrae de respuestaProveedor pero no se utiliza para verificar la transacción.
+5. La respuesta "esFirmadoValido" se deriva exclusivamente de estadoActual === "Completada", aunque ese estado pudo ser fijado por el propio payload.
+Impacto: Un usuario con acceso a la acción puede intentar declarar una firma como completada sin una confirmación autenticada del PSC; la plataforma puede atribuir valor de firma avanzada a una transición que no ha sido verificada.
+Dependencias: validateRolePermission, doPost, createAdvancedSignatureRequest, checkAdvancedSignatureStatus, TransaccionesFirmaAvanzada, ConfiguracionFirmaAvanzada y registerDocumentSignature.
+Conclusión: La implementación actual administra registros locales de solicitudes y estados; no demuestra una integración funcional ni una verificación criptográfica del proveedor de certificación. Hallazgo estático.
+Tarea asociada: AUD-NG-062 en Pendientes.md.
+===============================================================================
+
+AUD-NG-063
+Fecha: 2026-11-04
+Tarea auditada: TASK-041 / F22-Task04
+Archivos auditados: backend/user-service/Code.gs
+Módulo: Protección de credenciales de proveedores
+Funciones y rangos: configureAdvancedSignatureProvider (7087-7148 aprox.); getAdvancedSignatureProviderConfig (7149-7187 aprox.).
+Tipo: Persistencia de clave API en texto claro.
+Severidad: Alto.
+Evidencia técnica:
+1. configureAdvancedSignatureProvider recibe apiKey y la escribe directamente en la columna 4 de ConfiguracionFirmaAvanzada.
+2. getAdvancedSignatureProviderConfig enmascara la clave en el objeto de respuesta, pero ese enmascaramiento no cifra ni protege el valor almacenado en la hoja.
+3. No se observa uso de PropertiesService, gestor de secretos ni cifrado de credenciales en el flujo inspeccionado.
+Impacto: Cualquier persona o proceso con acceso de lectura a la hoja puede recuperar credenciales de proveedor y utilizarlas fuera del flujo autorizado.
+Dependencias: ConfiguracionFirmaAvanzada, configureAdvancedSignatureProvider, getAdvancedSignatureProviderConfig, apiKey y permisos de Spreadsheet.
+Conclusión: El secreto se oculta en la respuesta del endpoint, pero permanece almacenado en texto claro en la hoja. Hallazgo estático.
+Tarea asociada: AUD-NG-063 en Pendientes.md.
+===============================================================================
+
+AUD-NG-064
+Fecha: 2026-11-04
+Tarea auditada: TASK-042 / F22-Task13
+Archivos auditados: backend/accounting-service/Code.gs; backend/developer-service/Code.gs; tests/regression/academic-grading-suite.js
+Módulo: Cobertura y validez de las pruebas de regresión Fase 22
+Funciones y rangos: runPhase22DocumentManagementAndSACERegressionSuite (accounting-service, 11718-11940 aprox.; developer-service, 1012-1070 aprox.); bloque TASK-038 a TASK-042 en academic-grading-suite.js (337-358 aprox.).
+Tipo: Pruebas superficiales, simuladas y aserciones estructurales que no acreditan los criterios funcionales.
+Severidad: Alto.
+Evidencia técnica:
+1. Las aserciones TASK-038 a TASK-042 en academic-grading-suite.js se limitan a comprobar presencia de nombres, variables y cadenas mediante includes; no ejecutan los flujos ni comprueban persistencia.
+2. PT22-07 calcula hashes de cadenas de prueba y verifica únicamente longitud de 64 caracteres; no invoca registerDocumentSignature ni verifica el vínculo con bytes documentales.
+3. PT22-12 calcula un SHA-256 de texto y comprueba su longitud; no genera, guarda ni verifica un certificado.
+4. PT22-04 prueba el rechazo de la extensión .exe, no archivos ejecutables renombrados como PDF; PT22-06 valida una cadena dummy que empieza por cabecera PDF, sin comprobar que sea un PDF estructuralmente válido.
+5. PT22-11 puede aprobar con la respuesta predeterminada PSC-HN-DEFAULT cuando la hoja no contiene proveedores; no verifica conectividad ni identidad de un PSC real.
+6. La suite del developer-service contiene tres casos con pass:true y expected/actual constantes; no consulta el catálogo de acciones, esquemas reales ni servicios remotos.
+Impacto: Las suites pueden informar éxito aunque fallen las condiciones centrales de integridad documental, persistencia de certificados y autenticidad de firma avanzada.
+Dependencias: academic-grading-suite.js, runPhase22DocumentManagementAndSACERegressionSuite, configureSchoolDocumentTemplate, generateSchoolDocument, registerDocumentSignature y checkAdvancedSignatureStatus.
+Conclusión: La cobertura existente es principalmente estructural y de demostración; no constituye evidencia reproducible de cumplimiento de TASK-038 a TASK-041. Hallazgo estático.
+Tarea asociada: AUD-NG-064 en Pendientes.md.
+===============================================================================
+
+AUD-NG-065
+Fecha: 2026-11-04
+Tarea auditada: TASK-042 / F22-Task13
+Archivos auditados: backend/accounting-service/Code.gs
+Módulo: Aislamiento y seguridad de ejecución de pruebas
+Funciones y rangos: runPhase22DocumentManagementAndSACERegressionSuite (11718-11940 aprox.); configureSchoolDocumentTemplate; generateSchoolDocument.
+Tipo: Suite con escrituras persistentes y fixture inconsistente.
+Severidad: Alto.
+Evidencia técnica:
+1. PT22-01 crea una plantilla con ID dinámico "PLANTILLA-TEST-CONSTANCIA-" + Date.now().
+2. PT22-02 intenta generar el documento con el ID fijo "PLANTILLA-TEST-CONSTANCIA", que no coincide con el ID dinámico creado en PT22-01; salvo que exista una plantilla previa con ese ID fijo, el caso no utiliza el fixture recién creado y puede fallar de forma dependiente del estado de la hoja.
+3. PT22-01 invoca configureSchoolDocumentTemplate y PT22-02 invoca generateSchoolDocument, que escriben en hojas vinculadas a SPREADSHEET_ID. La suite no elimina ni revierte los registros de prueba después de ejecutarse.
+4. El conjunto de casos no implementa un mecanismo de aislamiento de datos ni un entorno de Spreadsheet desechable.
+Impacto: La ejecución puede contaminar datos persistentes y producir resultados no deterministas; una suite de regresión puede modificar el entorno que pretende verificar.
+Dependencias: SPREADSHEET_ID, PlantillasEscolares, DocumentosEscolaresEmitidos, configureSchoolDocumentTemplate, generateSchoolDocument y runPhase22DocumentManagementAndSACERegressionSuite.
+Conclusión: La suite no acredita aislamiento ni limpieza de datos de prueba y contiene una referencia de fixture inconsistente. No se ejecutó la suite durante esta auditoría.
+Tarea asociada: AUD-NG-065 en Pendientes.md.
+===============================================================================
+
+INVENTARIO POSTERIOR A TASK-042 (2026-11-04)
+- Última tarea auditada: TASK-042 / F22-Task13 (Suite de pruebas automatizadas y regresión integral de la Fase 22).
+- Tareas auditadas en esta continuación: TASK-038, TASK-039, TASK-040, TASK-041 y TASK-042 (5 tareas consecutivas).
+- Estado declarado en encabezado de Pendientes.md: [X] para las cinco tareas; campo interno "Estado: [ ] Pendiente" para las cinco. Se registra la contradicción y no se considera prueba de cumplimiento.
+- Hallazgos nuevos: 11 (AUD-NG-055 a AUD-NG-065).
+- Tareas derivadas: 11 (AUD-NG-055 a AUD-NG-065), todas [ ] Pendiente de implementación.
+- Archivos auditados y respaldos Git inmutables:
+  * backend/accounting-service/Code.gs: 38b979d41596b85e888b4a7060b37bbac0840a28
+  * backend/user-service/Code.gs: 12079dd410aa6d8afbce55a4bc62a79dea605f9f
+  * backend/developer-service/Code.gs: 8aa4bac67cfe5c8c54da51a0784a56fef633e412
+  * tests/regression/academic-grading-suite.js: 3433b707edd4a2f35c68368a3172932adc2a3b32
+- Alcance: validación binaria, rutas de carga, privacidad de Drive, hashes documentales, registro de firmas, certificados probatorios, configuración y callbacks PSC, suites contables/developer y pruebas estáticas.
+- Tipo de revisión: inspección estática manual de código y dependencias. No se ejecutaron pruebas, no se cargaron archivos, no se invocó ningún PSC y no se accedió a hojas o documentos operativos.
+- Cambios: solo se anexan registros de auditoría, tareas pendientes y mapa de dependencias. No se modifica código ni se elimina o reemplaza contenido histórico.
+- ChangesLogs.txt no se modifica porque no hubo cambios de código.
+- La auditoría de TASK-038 a TASK-042 registra incumplimientos y no certifica funcionalidad completa.
+===============================================================================
