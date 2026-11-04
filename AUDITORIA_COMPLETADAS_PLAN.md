@@ -104,3 +104,13 @@ Al reanudar:
 - No verificable desde el repositorio: identidad de ejecución y permisos efectivos del despliegue Apps Script; requieren inspección de configuración del despliegue. Tampoco se ejecutaron pruebas reales de origen/CSRF.
 - Inventario corregido: 231 declaraciones; 183 identificadores únicos. C0: 4/183; con TAREA-01: 5/183 auditados, 178 pendientes.
 - Siguiente tarea: FASE2-T01; continuar con el resto del lote C1 y auditar individualmente las ampliaciones posteriores F4.
+
+## 10. Resultado del lote C1.2 - FASE2-T01 (2026-11-04)
+
+- Dictamen: Cumple parcialmente.
+- Evidencia: existen validadores HMAC/RBAC y derivación de identidad desde claims; el frontend no conserva ni transmite sessionToken (AUD-NG-001); TASK/EXAM mantienen consultas sensibles en PUBLIC_ACTIONS (AUD-NG-002); el claim role se emite por 24 horas y no se compara con el rol vigente (nuevo AUD-NG-160).
+- Hallazgos vinculados: AUD-NG-001 a AUD-NG-005, AUD-NG-013, AUD-NG-112, AUD-NG-159, TASK-048, AUD-NG-083, AUD-NG-084 y AUD-NG-086.
+- Hallazgos nuevos de la auditoría de completadas.md: AUD-NG-159 y AUD-NG-160.
+- Progreso: 6/183 identificadores únicos auditados; 177 pendientes.
+- Siguiente registro: FASE2-T02.
+- Pruebas de integración y despliegue: no ejecutadas.

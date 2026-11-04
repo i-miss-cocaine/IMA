@@ -15,3 +15,15 @@
 - Tarea derivada: AUD-NG-159.
 - Control de duplicados: AUD-NG-001 cubre la propagación del token del cliente; AUD-NG-005 cubre la coherencia de revocación entre servicios; AUD-NG-159 cubre específicamente el bypass de autenticación en logout y la revocación arbitraria de identidades ajenas. No se duplica el alcance de los anteriores.
 ===============================================================================
+
+===============================================================================
+[AUD-NG-160] LOS TOKENS CONSERVAN EL ROL ANTIGUO DESPUÉS DE UN CAMBIO DE PRIVILEGIOS
+- Fecha: 2026-11-04.
+- Archivos: backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; backend/task-service/Code.gs; backend/exam-service/Code.gs.
+- Tipo: autorización y vigencia de privilegios.
+- Evidencia: generateSessionToken incluye el rol al emitir un token con vigencia de 24 horas. verifySessionToken comprueba firma, expiración, revocación y estado de cuenta, pero no compara el rol del token con el rol vigente del usuario ni con una versión de permisos. Los validadores de los servicios utilizan el rol incluido en el token. No se encontró invalidación automática de tokens ante cambios de rol.
+- Impacto: tras una degradación de rol, un token anterior puede conservar permisos previos hasta su expiración o revocación manual.
+- Severidad: ALTO (P1).
+- Tarea derivada: AUD-NG-160.
+- No duplicar: AUD-NG-005 trata la revocación del estado de cuenta y su coherencia entre servicios; este hallazgo trata la vigencia del rol firmado en los tokens.
+===============================================================================

@@ -531,3 +531,10 @@
 - TASK/PUBLIC_ACTIONS (75-90) y EXAM/PUBLIC_ACTIONS (60-80) -> consultas académicas quedan fuera del control de token; relacionadas con AUD-NG-002.
 - AUTH común en los cinco servicios -> fallback HMAC derivado de SPREADSHEET_ID y validación de exp opcional en varios verificadores; AUD-NG-003/AUD-NG-004.
 - Hallazgo nuevo AUD-NG-159: revocación de sesiones ajenas desde logoutUser público.
+
+## Lote C1.2 - autorización institucional FASE2-T01 (2026-11-04)
+- USER/generateSessionToken -> incluye role en claims y exp de 24 horas.
+- USER/verifySessionToken -> valida firma, expiración condicional, revocación y estado de cuenta; no revalida el rol vigente del usuario.
+- ACADEMIC/ACCOUNTING/TASK/EXAM/validateRolePermission -> usa claims.role como userRole.
+- USER/getUserVerifiedRole -> no implementa caché de decisión por usuario; el estado de cuenta sí se cachea por userId. La matriz dinámica es global por rol/acción.
+- Cambio de rol -> no se identificó invalidación automática de tokens ni versión de rol; nuevo AUD-NG-160.
