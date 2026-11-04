@@ -588,11 +588,11 @@ La búsqueda estaba intentando seguir el flujo completo, no solo la existencia d
 - **Rama de trabajo:** NG_beta_0.0.0.1_work.
 - **HEAD antes del plan:** aa234f7ae36ea8aa305253b40df8c2d7090c7ff2.
 - **Rama base NG_beta_0.0.0.1:** 44d9891132332e692dbe2ba8602b41f50a508a59 (verificada sin modificaciones).
-- **Archivo a auditar:** completadas.md, 5,963 líneas, 251 encabezados de tarea y 224 identificadores únicos.
+- **Archivo a auditar:** completadas.md, 5,963 líneas, 231 declaraciones de tarea y 183 identificadores únicos.
 - **SHA de respaldo de completadas.md:** f57f1aef832e81e44fc4f7ec36a852d50e464676.
 - **SHA de METODOLOGIA_DESARROLLO.md:** 1a2d4de602a1449b697c2da82ab6423e7c61b280.
 - **Plan formal:** AUDITORIA_COMPLETADAS_PLAN.md.
-- **Progreso de auditoría:** 0/224 identificadores auditados. Solo se hizo inventario estructural; no se ha emitido ningún dictamen de implementación.
+- **Progreso de auditoría:** 0/183 identificadores auditados. Solo se hizo inventario estructural; no se ha emitido ningún dictamen de implementación.
 - **Primera tarea:** AUDIT-CR-01.
 - **Regla:** inspección manual, sin modificación de código ni de completadas.md. Registrar SHA de respaldo de cada archivo antes de su inspección. Commits modulares y checkpoints en la rama de trabajo; no merge ni cambios en rama base.
 
@@ -610,7 +610,35 @@ La búsqueda estaba intentando seguir el flujo completo, no solo la existencia d
 - C0: AUDIT-CR-01 a AUDIT-CR-04; 4/4 cumplen el alcance específico.
 - Hallazgos nuevos: ninguno; Auditoria.txt y Pendientes.md no se modificaron.
 - Informe: AUDITORIA_COMPLETADAS_LOTE_C0.md.
-- Progreso: 4/224 identificadores únicos auditados; 220 pendientes.
+- Progreso: 4/183 identificadores únicos auditados; 179 pendientes.
 - Última inspección: openGlobalOmniboxModal, bloque focus/select en js/ui-common.js:4992-5000 y listener input/debounce en el bloque de inicialización.
 - Siguiente punto: C1, TAREA-01 (seguridad de servicios), comenzar por identidad y sesión en USER y propagación a los servicios.
 - No se modificó código fuente, completadas.md ni ChangesLogs.txt. No se hizo merge.
+
+
+---
+
+## CHECKPOINT - AUDITORÍA completadas.md - C1.1
+**Fecha:** 2026-11-04
+
+### Estado exacto
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- HEAD previo a este checkpoint: 1f4c7b3efef89d64c026be89ae9268b14531363d.
+- Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59; permanece intacta.
+- Inventario corregido de completadas.md: 231 declaraciones de tarea y 183 identificadores únicos. La cifra anterior de 251 correspondía a encabezados Markdown, no a declaraciones de tareas.
+- C0 cerrado: AUDIT-CR-01 a AUDIT-CR-04, 4/4 cumplen.
+- C1.1: TAREA-01 auditada con dictamen CUMPLE PARCIALMENTE.
+- Progreso: 5/183 identificadores únicos auditados; 178 pendientes.
+- Hallazgo nuevo: AUD-NG-159, registrado en Auditoria.txt y Pendientes.md.
+- Hallazgos relacionados ya existentes: AUD-NG-001, AUD-NG-002, AUD-NG-003, AUD-NG-004, AUD-NG-005, AUD-NG-112, TASK-085, TASK-142 y TASK-418.
+- Informe: AUDITORIA_COMPLETADAS_LOTE_C1.md.
+- Últimos archivos inspeccionados: backend/user-service/Code.gs (PUBLIC_ACTIONS 920-924, verifySessionToken/getUserVerifiedRole, revokeUserSession 2318-2332, logoutUser 2456-2475, loginUser 2479-2537); js/auth.js:140-165; js/api.js:45-57; puntos de entrada/validadores RBAC de ACADEMIC, ACCOUNTING, TASK y EXAM.
+- SHA de respaldo: USER 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ACADEMIC daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; ACCOUNTING 38b979d41596b85e888b4a7060b37bbac0840a28; TASK 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe; EXAM 1d93296628fae31f680004f637897e2b1314a64c; js/auth.js 8444dd085a3186106d2db7005b61ef934d3c22d8; js/api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9.
+- Código fuente y completadas.md: sin modificaciones. ChangesLogs.txt sin cambios.
+- No se hicieron pruebas dinámicas ni se verificó la configuración real de despliegues Apps Script.
+
+### Punto exacto de continuidad
+- Siguiente tarea: FASE2-T01 (línea aproximada 72 de completadas.md).
+- Auditarla como registro independiente y contrastarla con los hallazgos AUD-NG-001/002/003/004/005/159, sin duplicar causas.
+- Después continuar secuencialmente por C1. No repetir C0 ni TAREA-01.
+- Las tareas TAREA-F4-P0-01 a TAREA-F4-P0-04 y las F4 posteriores aparecen en el registro y deben auditarse individualmente aunque compartan componentes con TAREA-01.
