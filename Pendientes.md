@@ -16869,3 +16869,243 @@ REGLA RECTORA INNEGOCIABLE DEL BACKLOG:
 ---
 ## FASE 24 — INFORMES, INDICADORES Y ANÁLISIS INSTITUCIONAL
 ---
+
+---
+
+## TAREAS NUEVAS DERIVADAS DE LA AUDITORÍA DE TAREAS MARCADAS COMO COMPLETADAS (NG_beta)
+
+Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 83 entradas originales marcadas como completadas. El estado [X] original se conserva hasta que cada criterio sea revalidado; estas tareas nuevas registran los incumplimientos encontrados.
+
+### [AUD-NG-001] Corregir la integración del token de sesión entre login y llamadas API
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-001
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** js/auth.js, js/api.js, backend/user-service/Code.gs, backend/task-service/Code.gs, backend/exam-service/Code.gs
+- **Dependencias Expuestas:** loginUser, currentUser, fetchApi, generateSessionToken, verifySessionToken
+- **Descripción del Alcance:** Conservar el token devuelto por loginUser en la sesión de usuario y transmitirlo en todas las llamadas protegidas. Definir un contrato único de token entre frontend y servicios y evitar que las operaciones protegidas dependan de credenciales que el cliente no conserva.
+- **Criterios de Aceptación:** El inicio de sesión almacena la credencial; fetchApi la envía sin permitir que el payload sobrescriba identidad verificada; una operación protegida válida funciona y una llamada sin token es rechazada.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-002] Eliminar consultas sensibles de las listas de acciones públicas y aplicar autorización contextual
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-002
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** backend/task-service/Code.gs, backend/exam-service/Code.gs
+- **Dependencias Expuestas:** PUBLIC_ACTIONS, validateRolePermission, getStudentTasks, getAllTasks, getAllStudentProjects, getDriveStorageQuotaMetricsReport, getStudentExams, getAllExams
+- **Descripción del Alcance:** Retirar de PUBLIC_ACTIONS las consultas que contienen datos institucionales o personales. Obtener el usuario objetivo exclusivamente de claims verificados y comprobar permisos de rol, relación familiar, grupo y ámbito antes de devolver registros.
+- **Criterios de Aceptación:** Las consultas sensibles sin token fallan; manipular userId, grado o sección no permite consultar registros ajenos; cada rol solo obtiene los datos autorizados y los intentos indebidos quedan auditados.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-003] Exigir expiración válida y obligatoria en todos los tokens de sesión
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-003
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** backend/user-service/Code.gs, backend/task-service/Code.gs, backend/exam-service/Code.gs
+- **Dependencias Expuestas:** generateSessionToken, verifySessionToken, claims.exp
+- **Descripción del Alcance:** Rechazar tokens sin exp, con exp no numérico, vencido o con estructura de claims incompleta. Aplicar la misma validación en todos los servicios que aceptan tokens.
+- **Criterios de Aceptación:** Tokens sin expiración, con expiración inválida o vencida son rechazados en todos los microservicios; los tokens válidos emitidos por loginUser siguen funcionando.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-004] Sustituir la derivación predecible del secreto HMAC por configuración segura
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-004
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** backend/user-service/Code.gs, backend/task-service/Code.gs, backend/exam-service/Code.gs, backend/academic-service/Code.gs, backend/accounting-service/Code.gs
+- **Dependencias Expuestas:** AUTH_TOKEN_SECRET, Script Properties, computeHmacSignature, generateSessionToken, verifySessionToken
+- **Descripción del Alcance:** Eliminar el fallback derivado de SPREADSHEET_ID y exigir un secreto aleatorio de alta entropía configurado fuera del código. Definir distribución segura, rotación y compatibilidad coordinada entre servicios.
+- **Criterios de Aceptación:** Si falta el secreto, el servicio falla de forma cerrada; ningún servicio deriva secretos de identificadores públicos; la rotación invalida o migra credenciales según procedimiento documentado.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-005] Garantizar revocación inmediata y coherente del estado de cuenta en todos los servicios
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-005
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** backend/user-service/Code.gs, backend/task-service/Code.gs, backend/exam-service/Code.gs, backend/academic-service/Code.gs, backend/accounting-service/Code.gs
+- **Dependencias Expuestas:** Usuarios, CacheService, acct_state_*, revokeUserSession, invalidateUserRoleCache, manageInstitutionalDataCache
+- **Descripción del Alcance:** Centralizar o coordinar la invalidación de cachés de estado de cuenta y sesiones para que una suspensión o desvinculación se aplique en todos los servicios sin esperar a la expiración de caché.
+- **Criterios de Aceptación:** Tras desactivar una cuenta, todos los servicios rechazan nuevas solicitudes en la siguiente operación; las pruebas cubren caché caliente y fría, revocación de sesión y fallos parciales.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-006] Incorporar idempotencia por operación en reintentos del cliente API
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-006
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** js/api.js y endpoints de escritura en backend/
+- **Dependencias Expuestas:** fetchApi, contratos de acciones, claves de idempotencia, persistencia
+- **Descripción del Alcance:** Clasificar acciones por semántica de lectura/escritura y enviar una clave idempotente estable para cada operación de escritura reintentable. El servidor debe reservar la clave atómicamente y devolver el resultado original ante duplicados.
+- **Criterios de Aceptación:** Simular pérdida de respuesta después de persistir una escritura y comprobar que el reintento no duplica datos, pagos, documentos ni movimientos.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-007] Aplicar el timeout configurado por llamada en fetchApi
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-007
+- **Severidad/Clasificación:** Medio
+- **Archivos Involucrados:** js/api.js
+- **Dependencias Expuestas:** fetchApi, checkMicroserviceHealth, checkAllMicroservicesHealth
+- **Descripción del Alcance:** Usar options.timeout cuando se configure y definir un valor predeterminado cuando no se suministre. Limpiar el temporizador en todos los caminos de éxito, error y reintento.
+- **Criterios de Aceptación:** Una llamada con timeout de 6000 ms aborta dentro del margen definido; las llamadas sin opción conservan el límite predeterminado; los reintentos no dejan temporizadores activos.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-008] Diferenciar fallos de red de respuestas legítimas vacías
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-008
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** js/api.js y consumidores de acciones get*
+- **Dependencias Expuestas:** fetchApi, isFallback, PersistenceManager, dashboards
+- **Descripción del Alcance:** Evitar devolver status=success con colecciones vacías cuando la consulta falló. Definir un estado de error/fallback explícito y actualizar consumidores para presentar datos obsoletos o indisponibilidad sin confundirlos con ausencia real de registros.
+- **Criterios de Aceptación:** Una caída del servicio nunca se presenta como consulta exitosa vacía; los consumidores distinguen respuesta remota, caché y fallback.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-009] Sustituir pruebas de presencia textual por pruebas funcionales reproducibles
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-009
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** tests/regression/academic-grading-suite.js, tests/regression/modular-dashboard-suite.js y suites relacionadas
+- **Dependencias Expuestas:** Persistencia, RBAC/ABAC, concurrencia, idempotencia, servicios académicos y dashboards
+- **Descripción del Alcance:** Crear pruebas que ejecuten funciones y flujos reales contra dependencias aisladas o mocks conductuales controlados, validando persistencia, permisos, límites, concurrencia, recuperación y efectos colaterales. Las pruebas de includes() y existencia de archivos no se considerarán evidencia funcional.
+- **Criterios de Aceptación:** Cada criterio de aceptación tiene un caso reproducible que invoca el comportamiento bajo prueba; los reportes distinguen pruebas unitarias, integración y pruebas de despliegue.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-010] Completar el inventario técnico de MapaDependencias.md
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-010
+- **Severidad/Clasificación:** Medio
+- **Archivos Involucrados:** MapaDependencias.md y módulos frontend/backend
+- **Dependencias Expuestas:** Funciones, variables globales, constantes, clases, eventos, imports, consumidores y contratos de API
+- **Descripción del Alcance:** Documentar por archivo las funciones, parámetros, retornos, consumidores, variables, constantes, clases, eventos y dependencias entrantes/salientes. Vincular componentes con tareas y pruebas.
+- **Criterios de Aceptación:** El mapa permite rastrear un elemento hasta sus consumidores y pruebas; cada módulo central cuenta con su inventario y contratos.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-011] Demostrar o completar el aislamiento de microservicios por área curricular
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-011
+- **Severidad/Clasificación:** Observación
+- **Archivos Involucrados:** backend/, js/config.js, configuración de despliegues, MapaDependencias.md
+- **Dependencias Expuestas:** academic-service, developer-service, fuentes de datos, permisos y contratos interservicio
+- **Descripción del Alcance:** Documentar y verificar qué servicios son independientes por área curricular, qué despliegues y fuentes de datos utilizan, y cómo se limitan sus permisos. Si la separación no existe, diseñar la arquitectura requerida sin asumir que la modularización funcional equivale a aislamiento operativo.
+- **Criterios de Aceptación:** Cada área declarada dispone de evidencia de despliegue, fuente de datos, permisos, contratos y pruebas de aislamiento; las áreas no implementadas quedan identificadas como pendientes.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-013] Corregir la suplantación de rol en consultas de expedientes de bienestar
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-013
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** backend/academic-service/Code.gs
+- **Dependencias Expuestas:** getAttendanceFollowupCases, validateStudentWelfareAccess, _verifiedRole, CasosSeguimiento
+- **Descripción del Alcance:** Utilizar exclusivamente _verifiedRole para decisiones de autorización y eliminar la precedencia de authRole suministrado por el cliente. Aplicar la verificación de confidencialidad a toda consulta, aunque categoriaCaso se omita o manipule.
+- **Criterios de Aceptación:** Un Profesor, Secretaría o Subdirector no puede elevar su rol enviando authRole; los casos confidenciales quedan restringidos según la configuración institucional; los intentos no autorizados generan auditoría.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-014] Validar estado, prefijo y rango completo del CAI antes de emitir facturas
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-014
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** backend/accounting-service/Code.gs
+- **Dependencias Expuestas:** createFiscalInvoice, AutorizacionesCAI, FacturasFiscales, LockService
+- **Descripción del Alcance:** Rechazar CAI inactivos, vencidos o agotados incluso cuando se envíen explícitamente. Validar que el número propuesto respete prefijo, rango inicial/final y correlativo siguiente; no aceptar correlativos arbitrarios del cliente.
+- **Criterios de Aceptación:** CAI inactivo o vencido siempre se rechaza; números fuera de prefijo/rango se rechazan; dos emisiones concurrentes reciben correlativos únicos y consecutivos; recibos internos no consumen correlativos fiscales.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-015] Corregir tarifas faltantes y deduplicación de generación masiva de cargos
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-015
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** backend/accounting-service/Code.gs
+- **Dependencias Expuestas:** previewBatchMonthlyCharges, generateBatchMonthlyCharges, TarifasPlanPago, ConceptosCobro, CargosEstudiante, applyApprovedScholarshipsToCharges
+- **Descripción del Alcance:** Eliminar la tarifa fallback fija de L 1,200 y bloquear o excluir con incidencia los estudiantes sin tarifa autorizada. La clave de deduplicación debe incluir estudiante, concepto, período y año lectivo; registrar fallos de aplicación de becas y no informar éxito total si hubo errores.
+- **Criterios de Aceptación:** Estudiantes sin tarifa no generan cargos; dos conceptos distintos del mismo estudiante/período se procesan independientemente; reintentos no duplican el mismo concepto; descuentos aprobados quedan reflejados o el lote reporta fallo explícito.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-016] Corregir reversión parcial y validación de elegibilidad de reembolsos
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-016
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** backend/accounting-service/Code.gs
+- **Dependencias Expuestas:** reversePayment, processPaymentRefund, PagosAbonos, CargosEstudiante, MovimientosCajaBancos, AsientosContables
+- **Descripción del Alcance:** Modelar reversión parcial sin marcar el pago completo como revertido cuando conserva saldo aplicado. Calcular el saldo del cargo con importes netos reales y rechazar reembolsos de pagos anulados, revertidos o no confirmados.
+- **Criterios de Aceptación:** Reversiones parciales sucesivas suman sin exceder el pago; el remanente permanece aplicado; el cargo refleja el saldo exacto; pagos no elegibles no admiten reembolso; los contra-asientos cuadran por importe.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-017] Corregir la variable de motivo y garantizar la continuidad del offboarding
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-017
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** backend/accounting-service/Code.gs
+- **Dependencias Expuestas:** processEmployeeOffboarding, Usuarios, ExpedientesLaborales, HistorialAdscripciones, AsignacionesAmbitosRoles, DocentesAreasAcademicas, CoordinacionesArea
+- **Descripción del Alcance:** Sustituir las referencias no definidas motivoBaja por el dato validado motivoSalida. Añadir estado por etapa y reanudación idempotente para que un fallo posterior a desactivar la cuenta no deje una desvinculación incompleta sin trazabilidad.
+- **Criterios de Aceptación:** La función no produce ReferenceError; cada etapa registra resultado; fallos parciales pueden reanudarse; la cuenta permanece desactivada; todas las adscripciones y responsabilidades se cierran; la operación repetida no duplica ni revierte pasos.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-018] Preservar historial inmutable de asignaciones docentes a áreas académicas
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-018
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** backend/academic-service/Code.gs
+- **Dependencias Expuestas:** assignTeacherToAcademicArea, DocentesAreasAcademicas, CoordinacionesArea
+- **Descripción del Alcance:** Cuando cambien fechas, tipo de vinculación o coordinación, cerrar la asignación anterior y crear una nueva versión vinculada, sin sobrescribir los datos históricos.
+- **Criterios de Aceptación:** Las rotaciones conservan registros anteriores inmutables; consultas históricas reconstruyen titularidad y vigencias; no existen asignaciones activas duplicadas.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-019] Calcular nómina por intervalos cuando cambian contratos dentro del período
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-019
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** backend/accounting-service/Code.gs
+- **Dependencias Expuestas:** calculatePayrollPeriod, ContratosLaborales, ExpedientesLaborales, PlanillasNomenclatura
+- **Descripción del Alcance:** Diferenciar contratos realmente superpuestos de contratos sucesivos no superpuestos. Calcular cada intervalo del período con su salario, jornada y condiciones vigentes y sumar los importes proporcionales.
+- **Criterios de Aceptación:** Un cambio salarial a mitad de mes aplica ambos salarios por sus días; contratos superpuestos siguen generando incidencia; no se excluyen contratos sucesivos válidos.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-020] Integrar el tratamiento remunerativo de incapacidades médicas en nómina
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-020
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** backend/accounting-service/Code.gs
+- **Dependencias Expuestas:** calculatePayrollPeriod, IncapacidadesMedicas, PlanillasNomenclatura, incUpdates
+- **Descripción del Alcance:** Calcular y registrar el tratamiento salarial/subsidio aplicable a incapacidades aprobadas por IHSS. No marcar una incapacidad como procesada si no se ha aplicado el importe o tratamiento correspondiente.
+- **Criterios de Aceptación:** Las incapacidades no se descuentan como ausencias injustificadas; los importes se calculan con reglas vigentes; cada registro se procesa una sola vez y conserva su referencia de origen.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-021] Completar el cálculo anualizado del ISR con saldo pendiente y parámetros por ejercicio
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-021
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** backend/accounting-service/Code.gs
+- **Dependencias Expuestas:** calculatePayrollPeriod, PoliticasFiscales, PlanillasNomenclatura, retenciones ISR históricas
+- **Descripción del Alcance:** Proyectar ingresos conforme a meses efectivos restantes, restar retenciones acumuladas y distribuir el saldo anual pendiente. Leer tramos, deducciones y vigencias desde parámetros fiscales versionados, sin constantes anuales hardcodeadas.
+- **Criterios de Aceptación:** Casos de ingreso a mitad de año, aumento salarial y retenciones previas coinciden con cálculo independiente basado en tabla oficial del ejercicio; planillas históricas conservan los parámetros aplicados.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-022] Parametrizar aportaciones patronales y demostrar su contabilización
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-022
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** backend/accounting-service/Code.gs
+- **Dependencias Expuestas:** calculatePayrollPeriod, PoliticasFiscales, PlanillasNomenclatura, AsientosContables
+- **Descripción del Alcance:** Obtener porcentajes, techos, bases y vigencias patronales desde políticas versionadas. Integrar el gasto y pasivo patronal al asiento contable automático sin afectar el salario neto del trabajador.
+- **Criterios de Aceptación:** Cada período usa parámetros vigentes; se preservan versiones históricas; el asiento patronal cuadra por partida doble y no se duplica ante reintentos.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-023] Sustituir pruebas simuladas de compras e inventario por pruebas de comportamiento
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-023
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** backend/accounting-service/Code.gs, tests/regression/
+- **Dependencias Expuestas:** runPhase18PurchasingAndSuppliersRegressionSuite, runPhase19InventoryAndAssetsRegressionSuite, persistencia, Kardex, compras y activos
+- **Descripción del Alcance:** Hacer que las pruebas ejerciten funciones de producción mediante dependencias aisladas, datos controlados y verificaciones de persistencia, permisos, concurrencia y rollback. Mantener separadas las pruebas de lógica pura y las de integración.
+- **Criterios de Aceptación:** Cada criterio de aceptación de F18/F19 tiene una prueba que invoca el flujo real; las pruebas detectan errores de persistencia y no solo resultados calculados en variables locales.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-024] Vincular las decisiones de workflow con identidad autenticada y asignación de etapa
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-024
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** backend/user-service/Code.gs
+- **Dependencias Expuestas:** processWorkflowDecision, validateRolePermission, SolicitudesTramites, RevisionesDecisionesTramite
+- **Descripción del Alcance:** Tomar el revisor exclusivamente de _verifiedUserId; validar rol y asignación contra la definición y etapa de cada workflow; impedir decisiones fuera del ámbito asignado.
+- **Criterios de Aceptación:** revisorId manipulado no altera el autor; un usuario no asignado no puede aprobar/rechazar; cada decisión queda vinculada a identidad y etapa autorizadas.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-025] Hacer atómica la reserva de claves de idempotencia
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-025
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** backend/user-service/Code.gs
+- **Dependencias Expuestas:** checkAndRegisterIdempotencyKey, saveIdempotentResult, CacheService, doPost
+- **Descripción del Alcance:** Reservar la clave de idempotencia antes de ejecutar la operación mediante mecanismo atómico y persistente; distinguir en curso, completada y fallida; devolver el mismo resultado ante duplicados concurrentes.
+- **Criterios de Aceptación:** Dos solicitudes simultáneas con igual clave ejecutan el efecto una sola vez; claves reutilizadas con payload distinto se rechazan; la idempotencia crítica no depende únicamente de caché volátil.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-026] Completar la continuidad y cobertura de datos de la cadena de auditoría de workflows
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-026
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** backend/user-service/Code.gs
+- **Dependencias Expuestas:** processWorkflowDecision, verifyWorkflowDecisionAuditChain, RevisionesDecisionesTramite, computeDocumentSHA256
+- **Descripción del Alcance:** Incluir en el hash todos los campos cuya integridad se promete proteger y verificar que cada hashPrevio coincide con el hashActual del evento anterior. Definir anclaje o autenticación criptográfica que impida recalcular hashes libremente tras modificar la hoja.
+- **Criterios de Aceptación:** Alterar observaciones, actor, decisión, fecha o enlace previo produce una inconsistencia; la verificación comprueba continuidad global y por solicitud.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-027] Vincular las conformidades con la identidad verificada y el documento exacto
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-027
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** backend/user-service/Code.gs
+- **Dependencias Expuestas:** registerDocumentSignature, FirmasConformidades, _verifiedUserId, _verifiedRole, generateSignatureAuditCertificate
+- **Descripción del Alcance:** Obtener firmante y rol desde la sesión autenticada; exigir documentoHash calculado sobre el documento exacto y verificar que el firmante esté autorizado para ese trámite. No presentar un hash SHA-256 de datos controlados por el cliente como prueba de firma avanzada.
+- **Criterios de Aceptación:** No es posible firmar en nombre de otro usuario; toda conformidad se vincula a documento y versión identificables; los registros incompletos o sin autorización se rechazan.
+- **Estado:** [ ] Pendiente
