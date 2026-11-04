@@ -282,3 +282,17 @@ ACTUALIZACIÓN DE CONTINUIDAD IMA - LOTE E1 Y CUOTA (2026-11-04)
 - Heurística revisada para este repositorio: 2-3 tareas complejas por sublote y commit independiente; 3-4 tareas simples solo si los archivos inspeccionados son pequeños. Para lotes extensos, dividir en sublotes, registrar el último ID revisado y crear el commit al cerrar cada sublote. Esto reduce el riesgo de perder trabajo, pero no garantiza un número fijo de mensajes ni de tareas.
 - Fuentes oficiales: https://help.openai.com/es-419/articles/9275245-chatgpt-free-tier-faq ; https://chatgpt.com/pricing/ ; https://help.openai.com/en/articles/4936856-understanding-and-counting-tokens
 ================================================================
+
+
+================================================================
+ACTUALIZACIÓN DE CONTINUIDAD IMA - LOTES E2A/E2B (2026-11-04)
+================================================================
+- Commit E2A: `e460be0e5cd350bf3251454d131188c276a305a2` (REQ-EXP-009/010; AUD-NG-129 a AUD-NG-133; informe AUDITORIA_LOTE_E2A.md).
+- Commit E2B: `7c6743db2d634aea98c80f010c923dc0f7c4dc54` (REQ-EXP-011/012; AUD-NG-134 a AUD-NG-137; informe AUDITORIA_LOTE_E2B.md).
+- Hallazgo AUD-NG-127 ampliado: ACCOUNTING también deriva AUTH_TOKEN_SECRET de SPREADSHEET_ID y mantiene DEBUG_MODE=true.
+- Últimas tareas históricas revisadas: REQ-EXP-012. REQ-EXP-009 a 012: todas Cumple parcialmente.
+- Hallazgos acumulados nuevos en Pendientes.md: AUD-NG-119 a AUD-NG-137 (19 tareas, incluyendo ampliación de AUD-NG-127).
+- Próximo lote: F, comenzando por REQ-EXP-013.
+- Riesgos principales de los lotes E: claves HMAC predecibles, bypass RBAC/IDOR, endpoint ACCOUNTING placeholder, matrícula/rematrícula con flujos divergentes, motor de cargos con mapeo/dedupe defectuoso, integridad de pagos, portal financiero no conectado, recibos no PDF/correlativos y control CAI fiscal insuficiente.
+- No se modificó código fuente, completadas_legacy.md ni ChangesLogs.txt. No se ejecutaron pruebas ni se accedió a datos productivos.
+================================================================
