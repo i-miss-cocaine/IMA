@@ -18367,3 +18367,23 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
   - Pruebas con token emitido antes del cambio, rol degradado/promovido, caché caliente/fría y llamadas directas a cada microservicio.
 - **Relaciones:** AUD-NG-003 (vigencia de token), AUD-NG-005 (revocación y coherencia de estado), AUD-NG-159 (logout no autorizado), FASE2-T01 y TAREA-F4-P0-03.
 - **Estado:** [ ] Pendiente
+
+
+### [AUD-NG-161] Sustituir la suite de concurrencia por pruebas reales de idempotencia y recuperación de reintentos
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-161 (auditoría de completadas.md, FASE2-T02).
+- **Severidad/Clasificación:** Alto (P1; integridad de pruebas y verificación transaccional).
+- **Archivos Involucrados:** backend/accounting-service/Code.gs; backend/academic-service/Code.gs; js/api.js; tests/regression/ y/o nueva suite de integración aislada.
+- **Dependencias Expuestas:** runCriticalProcessConcurrencySuite; fetchApi; checkAndRegisterIdempotencyKey; saveIdempotentResult; LockService; CacheService; PagosAbonos; TransaccionesCobro; DocumentosEscolaresEmitidos; Matriculas; procesos de planilla.
+- **Descripción del Alcance:** Reemplazar las comprobaciones nominales de runCriticalProcessConcurrencySuite por pruebas conductuales que ejecuten operaciones reales en un entorno aislado. La suite actual solo adquiere un lock, cuenta filas y marca PASSED sin verificar invariantes; además consulta TransaccionesCobro, mientras recordStudentPayment escribe en PagosAbonos. Implementar casos que comprueben contención concurrente, pérdida de respuesta después de persistir, reintento con la misma clave, rechazo de una clave reutilizada con payload incompatible, recuperación de una operación no ejecutada y reconocimiento de una operación ya completada. Cubrir pagos, emisión documental/CUV, matrículas y planillas. No duplicar la implementación de claves estables y reserva atómica del cliente/backend (AUD-NG-006) ni la corrección transaccional específica de pagos (AUD-NG-133); esta tarea se limita a que las pruebas realmente detecten sus incumplimientos.
+- **Criterios de Aceptación:**
+  - Ningún caso obtiene PASSED por contar filas o adquirir un lock sin validar el resultado de negocio.
+  - La prueba de pagos inspecciona PagosAbonos y comprueba unicidad de la clave/operación y ausencia de doble efecto.
+  - La prueba de CUV compara los códigos emitidos y falla ante duplicados.
+  - Dos solicitudes concurrentes con la misma clave producen un solo efecto observable.
+  - Una respuesta perdida seguida de reintento devuelve/reconoce el resultado original sin crear otra entidad.
+  - Una clave reutilizada con contenido incompatible se rechaza.
+  - Se cubren matrículas y planillas, además de pagos y documentos.
+  - Los fallos de validación, autorización, persistencia y caché producen resultados de prueba diferenciados; la suite no informa éxito si un caso no se ejecutó.
+  - Las pruebas utilizan fixtures/datos aislados y no alteran registros productivos.
+- **Relaciones:** AUD-NG-006 (idempotencia por operación en fetchApi); AUD-NG-133 (idempotencia atómica de pagos); FASE2-T02.
+- **Estado:** [ ] Pendiente
