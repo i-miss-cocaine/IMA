@@ -2280,3 +2280,203 @@ INVENTARIO POSTERIOR A TASK-015 (2026-11-04)
 - Tipo de revisión: inspección estática manual; no se ejecutaron pruebas funcionales, de Drive, fiscales, concurrentes ni de integración.
 - La auditoría de TASK-015 queda registrada como revisión con hallazgos; no valida la tarea como funcionalmente correcta.
 ===============================================================================
+
+===============================================================================
+AUD-NG-046
+Fecha: 2026-11-04
+Tarea auditada: TASK-016 / F18-Task06
+Archivo auditado: backend/accounting-service/Code.gs
+Módulo: Registro de obligaciones y bloqueo por conciliación de tres vías
+Funciones y rangos: recordAccountsPayableExpense (7557-7690); recordSupplierPayment (7692-7788); verifyThreeWayMatch (7374-7555 aprox.); doPost (572-635).
+Tipo: Omisión de control obligatorio previo al pago; bypass de conciliación.
+Severidad: Crítico.
+Evidencia técnica:
+1. recordAccountsPayableExpense inicializa estadoAprobacion como "Aprobado" y estadoPago como "Pendiente Pago".
+2. verifyThreeWayMatch solo se invoca cuando concurren las tres condiciones: ordenCompraId, partidasFacturadas como array y bypassConciliacion falso.
+3. Si la factura no incluye ordenCompraId, no incluye partidasFacturadas o envía bypassConciliacion verdadero, la función omite la conciliación y conserva la obligación en estado "Aprobado".
+4. recordSupplierPayment bloquea estados BloqueadoPorDiscrepancia, EnDisputa y Rechazado, pero no exige evidencia de conciliación exitosa ni verifica un resultado de Three-Way Match persistido.
+5. El criterio de TASK-016 exige bloquear pagos de facturas que no hayan superado la conciliación de tres vías; la ruta actual permite crear obligaciones pagables sin demostrar que el control se ejecutó.
+Impacto: Se pueden registrar pagos a facturas sin correspondencia comprobada entre orden, recepción física y factura. Riesgo de pago de bienes no recibidos, importes no autorizados o facturas no conciliadas.
+Dependencias: doPost, validateRolePermission, recordAccountsPayableExpense, verifyThreeWayMatch, recordSupplierPayment, CuentasPorPagarGastos.EstadoAprobacion y Observaciones.
+Conclusión: El bloqueo existe únicamente para ciertos resultados de conciliación, no como precondición obligatoria de todo pago. Hallazgo estático; no se realizaron pagos ni se consultaron datos operativos.
+Tarea asociada: AUD-NG-046 en Pendientes.md.
+===============================================================================
+
+===============================================================================
+AUD-NG-047
+Fecha: 2026-11-04
+Tarea auditada: TASK-016 / F18-Task06
+Archivo auditado: backend/accounting-service/Code.gs
+Módulo: Registro histórico y datos de pagos parciales a proveedores
+Funciones y rangos: esquema CuentasPorPagarGastos (157 aprox.); recordSupplierPayment (7692-7788); recordCashBankMovement (4594-4620).
+Tipo: Trazabilidad incompleta de pagos y persistencia de datos operativos omitidos.
+Severidad: Alto.
+Evidencia técnica:
+1. El esquema CuentasPorPagarGastos conserva únicamente agregados de TotalMonto, SaldoPendiente y TotalAbonado, además de Observaciones; no define una hoja o entidad de detalle para cada pago parcial.
+2. recordSupplierPayment concatena un marcador [ABONO_PAG-PRV-...] en Observaciones, pero no registra cada pago como una fila estructurada asociada a la obligación.
+3. La función recibe cuentaBancariaId y comprobanteUrl, pero no los utiliza en las escrituras posteriores.
+4. recordCashBankMovement recibe tipo, categoría, monto, método, referencia, proveedor, responsable y observaciones; su esquema no almacena cuentaBancariaId ni comprobanteUrl.
+5. No se registra una fecha de pago como campo propio del evento de abono; la fecha del movimiento de caja no queda vinculada mediante un identificador persistido del pago en una tabla de detalle.
+Impacto: No se puede reconstruir de forma estructurada cada pago, su fecha, cuenta de origen y comprobante. La conciliación bancaria y la revisión documental dependen de texto libre y datos que se descartan.
+Dependencias: CuentasPorPagarGastos, recordSupplierPayment, recordCashBankMovement, MovimientosCajaBancos, cuentaBancariaId, comprobanteUrl y AsientosContables.
+Conclusión: Se actualizan saldos agregados y se genera un movimiento de caja, pero no se conserva el expediente completo de cada abono requerido por TASK-016. Hallazgo estático.
+Tarea asociada: AUD-NG-047 en Pendientes.md.
+===============================================================================
+
+===============================================================================
+AUD-NG-048
+Fecha: 2026-11-04
+Tarea auditada: TASK-016 / F18-Task06
+Archivo auditado: backend/accounting-service/Code.gs
+Módulo: Validación monetaria y control de sobrepagos
+Funciones y rangos: recordSupplierPayment (7692-7788); applySupplierCreditNote (7790-7867).
+Tipo: Tolerancia que permite exceder el saldo y descuadrar los agregados de la obligación.
+Severidad: Crítico.
+Evidencia técnica:
+1. recordSupplierPayment rechaza el abono únicamente cuando abono > saldoActual + 0.01.
+2. Por tanto, un abono que exceda el saldo por hasta L 0.01 no es rechazado.
+3. El saldo nuevo se limita con Math.max(0, saldoActual - abono), mientras TotalAbonado aumenta por el importe completo del abono.
+4. Si se acepta esa diferencia, TotalAbonado puede superar el importe liquidable y la suma SaldoPendiente + TotalAbonado puede diferir de TotalMonto.
+5. applySupplierCreditNote aplica la misma tolerancia de L 0.01 y limita el saldo a cero, sin mantener un registro contable auxiliar del importe excedente.
+Impacto: Se admiten sobrepagos o notas de crédito por encima del saldo exacto; los saldos agregados pueden perder consistencia monetaria y generar diferencias entre obligación, pagos y créditos.
+Dependencias: recordSupplierPayment, applySupplierCreditNote, TotalMonto, SaldoPendiente, TotalAbonado y precisión decimal de moneda.
+Conclusión: La validación no es estricta al centavo y el cálculo posterior puede ocultar el excedente al fijar el saldo en cero. Hallazgo estático; no se modificaron registros financieros.
+Tarea asociada: AUD-NG-048 en Pendientes.md.
+===============================================================================
+
+===============================================================================
+AUD-NG-049
+Fecha: 2026-11-04
+Tarea auditada: TASK-016 / F18-Task06
+Archivo auditado: backend/accounting-service/Code.gs
+Módulo: Atomicidad entre saldo de obligación, movimiento de caja y asiento contable
+Funciones y rangos: recordSupplierPayment (7692-7788); applySupplierCreditNote (7790-7867); recordCashBankMovement (4594-4620); recordAccountingJournalEntry (8007-8045).
+Tipo: Persistencia parcial y confirmación de éxito sin asiento contable garantizado.
+Severidad: Crítico.
+Evidencia técnica:
+1. recordSupplierPayment modifica EstadoPago, SaldoPendiente y TotalAbonado antes de registrar el movimiento de caja y el asiento contable.
+2. La escritura del movimiento de caja ocurre después de actualizar la obligación; no existe compensación o reversión de las escrituras anteriores si falla.
+3. El registro del asiento contable está dentro de try/catch. Si recordAccountingJournalEntry falla, el error solo se envía a logDebug y la función continúa devolviendo status "success" con asientoContable null.
+4. applySupplierCreditNote actualiza saldo y observaciones antes de intentar crear el asiento; también absorbe el fallo contable y puede devolver éxito sin asiento.
+5. No se observa una transacción distribuida, registro de operación pendiente ni mecanismo de reconciliación que cierre la brecha entre obligación, caja y libro diario.
+Impacto: Una obligación puede figurar pagada o reducida sin egreso contable correspondiente; un fallo entre escrituras puede dejar caja, saldo y libro diario en estados divergentes.
+Dependencias: LockService, recordSupplierPayment, applySupplierCreditNote, recordCashBankMovement, recordAccountingJournalEntry, CuentasPorPagarGastos, MovimientosCajaBancos y AsientosContables.
+Conclusión: El candado serializa la sección de cada función, pero no garantiza atomicidad entre hojas ni impide responder éxito si falla el asiento. Hallazgo estático.
+Tarea asociada: AUD-NG-049 en Pendientes.md.
+===============================================================================
+
+===============================================================================
+AUD-NG-050
+Fecha: 2026-11-04
+Tarea auditada: TASK-016 / F18-Task06
+Archivo auditado: backend/accounting-service/Code.gs
+Módulo: Idempotencia de pagos y unicidad de referencias bancarias
+Funciones y rangos: checkAndRegisterIdempotencyKey / saveIdempotentResult (232-273); doPost (572-635); recordSupplierPayment (7692-7788).
+Tipo: Protección anti-duplicación opcional y ausencia de unicidad de referencia bancaria.
+Severidad: Alto.
+Evidencia técnica:
+1. checkAndRegisterIdempotencyKey solo activa el caché si el cliente envía idempotencyToken o idempotencyKey; si no existe, retorna null.
+2. recordSupplierPayment no exige una clave de idempotencia ni busca referencias bancarias ya utilizadas antes de aplicar el abono.
+3. referenciaBancaria se incluye en el marcador de Observaciones y se envía a MovimientosCajaBancos, pero no se valida su unicidad.
+4. El identificador interno pagoRefId se construye con Date.now(), sin una comprobación de colisión contra pagos anteriores.
+Impacto: Reintentos sin token o solicitudes repetidas con una referencia bancaria ya utilizada pueden generar egresos y abonos duplicados.
+Dependencias: doPost, checkAndRegisterIdempotencyKey, saveIdempotentResult, recordSupplierPayment, referenciaBancaria y MovimientosCajaBancos.
+Conclusión: El mecanismo genérico de idempotencia es optativo y no sustituye la validación persistente de unicidad de referencia bancaria. Hallazgo estático.
+Tarea asociada: AUD-NG-050 en Pendientes.md.
+===============================================================================
+
+===============================================================================
+AUD-NG-051
+Fecha: 2026-11-04
+Tarea auditada: TASK-016 / F18-Task06
+Archivo auditado: backend/accounting-service/Code.gs
+Módulo: Registro y aplicación única de notas de crédito comerciales
+Funciones y rangos: esquema CuentasPorPagarGastos (157 aprox.); applySupplierCreditNote (7790-7867).
+Tipo: Dedupe local al texto de una obligación, sin registro central de notas de crédito.
+Severidad: Alto.
+Evidencia técnica:
+1. applySupplierCreditNote detecta duplicados buscando el texto [NC_numeroNotaCredito:] dentro de Observaciones de la obligación consultada.
+2. La comprobación se limita a la fila de obligacionId; no consulta otras obligaciones para determinar si el mismo número de nota de crédito ya fue aplicado.
+3. No existe en el esquema inspeccionado una entidad independiente que registre número de nota, proveedor emisor, factura, importe, fecha, estado y obligación afectada con una restricción de unicidad.
+4. El asiento contable utiliza numeroNotaCredito como referenciaId sin incorporar una clave compuesta verificable proveedor-nota-obligación.
+5. La nota reduce SaldoPendiente, pero no se conserva un total acumulado de créditos aplicados ni un registro de aplicación separado del texto libre.
+Impacto: Una misma nota comercial puede ser aplicada en más de una obligación o perder trazabilidad si se edita el texto de observaciones; el control de duplicidad no es global.
+Dependencias: applySupplierCreditNote, CuentasPorPagarGastos, Observaciones, numeroNotaCredito, proveedorId, factura y AsientosContables.
+Conclusión: La prevención existente evita repetir el mismo marcador en una sola obligación, pero no garantiza unicidad global ni trazabilidad formal de la nota. Hallazgo estático.
+Tarea asociada: AUD-NG-051 en Pendientes.md.
+===============================================================================
+
+===============================================================================
+AUD-NG-052
+Fecha: 2026-11-04
+Tarea auditada: TASK-016 / F18-Task06
+Archivo auditado: backend/accounting-service/Code.gs
+Módulo: Clasificación, vencimiento y estados de cuentas por pagar
+Funciones y rangos: getSupplierAccountsPayableSummary (7869-7935); esquema CuentasPorPagarGastos (157 aprox.).
+Tipo: Clasificación temporal no persistida y tratamiento incompleto de fechas.
+Severidad: Medio.
+Evidencia técnica:
+1. getSupplierAccountsPayableSummary calcula clasificacionVencimiento en memoria y no actualiza EstadoPago ni otro campo persistente al detectar una obligación vencida.
+2. El esquema solo dispone de EstadoAprobacion y EstadoPago; no incorpora un estado formal independiente de vencimiento ni un historial de cambios de estado.
+3. La función crea el arreglo corrientes, pero no lo incluye en la respuesta ni devuelve una lista de obligaciones por categoría; devuelve únicamente conteos de vencidas y rangos próximos.
+4. Cuando FechaVencimiento está vacía o no es válida, diasParaVencer permanece null y clasificacionVencimiento queda "Corriente", aunque no se puede demostrar que la obligación esté dentro de plazo.
+5. La clasificación VenceEn7Dias, VenceEn15Dias y VenceEn30Dias es excluyente por prioridad; no se expone una agrupación acumulativa de 7/15/30 días.
+Impacto: La vista de tesorería puede presentar obligaciones sin fecha válida como corrientes y el estado Vencida no queda persistido para filtros, reportes o procesos posteriores.
+Dependencias: getSupplierAccountsPayableSummary, FechaVencimiento, EstadoPago, EstadoAprobacion y CuentasPorPagarGastos.
+Conclusión: Existe cálculo informativo de proximidad de vencimiento, pero no ciclo de estados persistido ni tratamiento explícito de fecha ausente o inválida. Hallazgo estático.
+Tarea asociada: AUD-NG-052 en Pendientes.md.
+===============================================================================
+
+===============================================================================
+AUD-NG-053
+Fecha: 2026-11-04
+Tarea auditada: TASK-016 / F18-Task06
+Archivos auditados: dashboard-contabilidad.html; js/accounting.js
+Módulo: Interfaz de usuario de cuentas por pagar
+Funciones y rangos: dashboard-contabilidad.html (1-85); js/accounting.js (archivo completo, controlador de panel).
+Tipo: Ausencia de interfaz operativa para las funciones de cuentas por pagar.
+Severidad: Alto.
+Evidencia técnica:
+1. dashboard-contabilidad.html carga js/accounting.js como controlador del panel de contabilidad.
+2. El menú y las vistas inspeccionadas contienen pestañas de resumen, comprobantes, compras, inventario, biblioteca, libro diario, presupuestos, descuentos, cuentas por cobrar e informes.
+3. En js/accounting.js no se localizaron llamadas fetchApi ni formularios asociados a recordSupplierPayment, applySupplierCreditNote o getSupplierAccountsPayableSummary.
+4. La interfaz de compras existente se centra en solicitudes, cotizaciones, órdenes, recepciones, proveedores y Three-Way Match; no constituye una pantalla de administración de pagos parciales y notas de crédito.
+Impacto: Aunque el backend expone endpoints para CxP, el usuario contable no dispone en el dashboard inspeccionado de un flujo visible para consultar vencimientos, registrar abonos, aplicar notas de crédito o consultar el historial de pagos.
+Dependencias: dashboard-contabilidad.html, js/accounting.js, fetchApi, recordSupplierPayment, applySupplierCreditNote y getSupplierAccountsPayableSummary.
+Conclusión: La presencia de endpoints no acredita la implementación de la interfaz operativa prevista para la gestión de cuentas por pagar. Hallazgo estático.
+Tarea asociada: AUD-NG-053 en Pendientes.md.
+===============================================================================
+
+===============================================================================
+AUD-NG-054
+Fecha: 2026-11-04
+Tarea auditada: TASK-016 / F18-Task06
+Archivos auditados: backend/accounting-service/Code.gs; tests/regression/academic-grading-suite.js
+Módulo: Verificación funcional y pruebas de regresión de cuentas por pagar
+Funciones y rangos: runPhase18PurchasingAndSuppliersRegressionSuite (10552-10830 aprox.); bloque TASK-016 en tests/regression/academic-grading-suite.js (204-208).
+Tipo: Pruebas simuladas y aserciones de presencia sin ejecución de las operaciones reales.
+Severidad: Alto.
+Evidencia técnica:
+1. El caso REG-F18-06 de la suite crea variables locales saldoInicial, saldoPendiente y totalAbonado, y modifica esas variables para simular abonos, sobrepago y nota de crédito.
+2. El caso no invoca recordSupplierPayment ni applySupplierCreditNote, no utiliza SpreadsheetApp y no comprueba filas persistidas, asientos contables, referencias duplicadas o fallos parciales.
+3. El bloque TASK-016 de academic-grading-suite.js verifica la presencia de nombres de funciones, códigos y cadenas mediante acctCode.includes; no ejecuta el flujo de negocio.
+4. El caso REG-F18-08 E2E también representa pagos mediante variables locales y traceLog, sin conectar las operaciones reales del servicio.
+Impacto: La suite puede aprobar aunque las funciones reales permitan los defectos descritos en AUD-NG-046 a AUD-NG-053; el resultado de las pruebas no certifica persistencia, atomicidad, deduplicación ni integración contable.
+Dependencias: runPhase18PurchasingAndSuppliersRegressionSuite, tests/regression/academic-grading-suite.js, recordAccountsPayableExpense, recordSupplierPayment, applySupplierCreditNote, getSupplierAccountsPayableSummary y SpreadsheetApp.
+Conclusión: Las pruebas actuales son demostraciones simuladas y comprobaciones estructurales; no constituyen evidencia funcional de los criterios de aceptación de TASK-016. No se ejecutaron pruebas ni se alteró el entorno.
+Tarea asociada: AUD-NG-054 en Pendientes.md.
+===============================================================================
+
+INVENTARIO POSTERIOR A TASK-016 (2026-11-04)
+- Última tarea auditada: TASK-016 / F18-Task06 (Gestión de cuentas por pagar con abonos, vencimientos y notas de crédito).
+- Estado declarado en Pendientes.md antes de la auditoría: [X] Completado; la auditoría estática encontró incumplimientos y no certifica la tarea.
+- Hallazgos nuevos documentados: 9 (AUD-NG-046 a AUD-NG-054).
+- Tareas nuevas derivadas: 9 (AUD-NG-046 a AUD-NG-054), todas pendientes de implementación.
+- Archivos inspeccionados: backend/accounting-service/Code.gs; dashboard-contabilidad.html; js/accounting.js; tests/regression/academic-grading-suite.js; MapaDependencias.md.
+- Copias de referencia Git de código: backend/accounting-service/Code.gs SHA 38b979d41596b85e888b4a7060b37bbac0840a28; js/accounting.js SHA b7653b3bff71829f0f67cf47cb894413c56a444a.
+- Alcance: esquema de CuentasPorPagarGastos, autenticación/RBAC y despacho, conciliación de tres vías, pagos parciales, movimientos de caja, asientos contables, notas de crédito, clasificación de vencimientos, interfaz y pruebas.
+- Tipo de revisión: inspección estática manual. No se ejecutaron pruebas funcionales, no se accedió a datos financieros reales y no se modificó código.
+- Limitaciones: no se inspeccionó la hoja de cálculo operativa, cuentas bancarias, comprobantes ni el comportamiento desplegado de Apps Script.
+- Cambios documentales: se actualizó MapaDependencias.md y se anexó esta auditoría; Pendientes.md recibe las tareas derivadas. ChangesLogs.txt no se modifica porque no hubo cambios de código ni implementación.
+- La auditoría TASK-016 queda registrada como revisión con hallazgos; no valida la tarea como funcionalmente correcta ni autoriza su cierre.
+===============================================================================
