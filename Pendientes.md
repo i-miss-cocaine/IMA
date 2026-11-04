@@ -17909,3 +17909,40 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Descripción del Alcance:** El encabezado `Content-Type: text/plain` está implementado, pero no se encontró evidencia de una prueba de integración desde el origen web real. Además, la ruta histórica `USER/getAcademicConfig` fue sustituida por `ACADEMIC/getAcademicConfig` tras la modularización del servicio académico. Verificar el flujo vigente desde el navegador contra el despliegue de prueba y documentar el resultado sin modificar datos productivos.
 - **Criterios de Aceptación:** Una petición POST desde el origen autorizado usa `text/plain`, no requiere preflight OPTIONS por encabezados no simples, llega al endpoint ACADEMIC vigente, recibe JSON válido y no produce `TypeError: Failed to fetch`; la prueba utiliza datos de lectura y no modifica la hoja productiva; el resultado y el despliegue probado quedan identificados.
 - **Estado:** [ ] Pendiente
+
+
+### [AUD-NG-113] Completar la clave Upsert de configuración académica con el parcial
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-113 (CONF-001).
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** `backend/academic-service/Code.gs`; pruebas de regresión de configuración académica.
+- **Dependencias Expuestas:** `updateAcademicConfig`, `ConfiguracionAcademica`, `hierarchicalAssignments`, `finalConfigMap`, `saveToAcademicHistory`.
+- **Descripción del Alcance:** El Upsert actual busca `oldRow` por profesor, grado, sección, asignatura y tema, pero no incluye el parcial; la clave de `finalConfigMap` tampoco incluye el parcial. Al configurar el mismo contexto en otro parcial puede reutilizarse y sobrescribirse una fila de un periodo distinto. Incorporar el parcial normalizado a la clave de búsqueda y de persistencia, y conservar las filas del mismo profesor que pertenezcan a otros parciales al reconstruir la hoja. Mantener Parcial y Unidad como campos independientes.
+- **Criterios de Aceptación:** Dos parciales con el mismo grado/sección/asignatura/tema/profesor generan dos contextos diferenciados; actualizar un parcial modifica exclusivamente su fila; no se pierden filas de otros parciales ni se crean duplicados al repetir la operación; pruebas cubren ruta jerárquica y ruta de producto cartesiano.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-114] Implementar el ciclo de vida de fechas de ConfiguracionAcademica
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-114 (DATE-001).
+- **Severidad/Clasificación:** Medio
+- **Archivos Involucrados:** `backend/academic-service/Code.gs`; pruebas de regresión de periodos académicos.
+- **Dependencias Expuestas:** `updateAcademicConfig`, `ConfiguracionAcademica.Fecha`, `ParcialActual`, `currentMonth`, `PeriodosAcademicos`.
+- **Descripción del Alcance:** La ruta heredada asigna únicamente el nombre del mes actual a la columna Fecha y no actualiza la fecha del parcial anterior con un intervalo de inicio y fin. Implementar el ciclo requerido: al crear un parcial, registrar el mes de inicio; al configurar el siguiente, cerrar el periodo anterior con su intervalo (mes inicial - mes final), sin alterar registros de otros docentes ni perder la fecha inicial. Evaluar explícitamente la interoperabilidad con la tabla PeriodosAcademicos existente para evitar dos fuentes de verdad.
+- **Criterios de Aceptación:** El primer registro conserva su mes de inicio; al pasar al siguiente parcial, el anterior obtiene el intervalo esperado y el nuevo registra el mes actual; la operación es idempotente y no cambia otros contextos; pruebas cubren cambio secuencial de parciales, repetición y periodos con datos heredados.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-115] Aplicar el parcial vigente en todos los niveles de navegación docente
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-115 (NAV-002).
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** `js/teacher.js`; `backend/academic-service/Code.gs`; pruebas de regresión de navegación docente.
+- **Dependencias Expuestas:** `renderGrados`, `renderSecciones`, `renderAsignaturas`, `window.GLOBAL_SCOPE`, `GranularConfig`, `getAcademicConfig`.
+- **Descripción del Alcance:** `renderGrados` usa `GLOBAL_SCOPE.GradoActual`, que el backend construye con filas de todos los parciales del profesor; `renderSecciones` filtra GranularConfig solo por grado. Aplicar el parcial activo también al conjunto de grados y secciones, derivando ambos desde registros de `GranularConfig` cuyo `parcial` coincida con `GLOBAL_SCOPE.ParcialActual`. Mantener el filtro actual de asignaturas por parcial, grado y sección.
+- **Criterios de Aceptación:** Con dos parciales que contengan grados/secciones diferentes, la navegación del docente muestra únicamente grados, secciones y asignaturas del parcial activo; cambiar el parcial actualiza los tres niveles; no se recuperan elementos históricos como fallback; pruebas cubren datos multi-parcial.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-116] Definir y verificar la semántica temporal de HistorialAcademico
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-116 (POST-001).
+- **Severidad/Clasificación:** Observación
+- **Archivos Involucrados:** `backend/academic-service/Code.gs`; `AUDITORIA_COMPLETADAS_LEGACY_PLAN.md`; pruebas de transición de parcial.
+- **Dependencias Expuestas:** `saveToAcademicHistory`, `HistorialAcademico.Fecha`, `ConfiguracionAcademica.Fecha`, `PeriodosAcademicos`.
+- **Descripción del Alcance:** La implementación actual guarda en HistorialAcademico el mes de registro como instantánea y no modifica las filas históricas al configurar un parcial posterior. La tarea histórica solicitó confirmar si esa hoja debe representar un hito (snapshot) o un intervalo. Formalizar la decisión funcional antes de alterar datos históricos y contrastarla con el modelo PeriodosAcademicos; no inferir ni cambiar la semántica sin aprobación.
+- **Criterios de Aceptación:** Existe una decisión documentada y aprobada sobre snapshot o intervalo; una prueba en entorno controlado realiza una transición real entre parciales y demuestra el comportamiento esperado; no se reescriben registros históricos productivos durante la validación.
+- **Estado:** [ ] Pendiente

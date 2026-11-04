@@ -90,3 +90,16 @@ Se recuperó y leyó el contenido íntegro de `Pendientes.md`, se confirmó que 
 - **Código fuente:** sin modificaciones. No se actualizó `ChangesLogs.txt` y no se alteraron los estados históricos en `completadas_legacy.md`.
 - **Tarea principal:** AUD-NG-101 permanece En Ejecución. Ninguna de las cuatro tareas históricas se marca como aprobada/completada por esta auditoría.
 - **Siguiente lote:** C.
+
+
+## 9. Resultados de auditoría - Lote C (2026-11-04)
+
+- **Rama base inspeccionada:** `NG_beta_0.0.0.1`, commit `44d9891132332e692dbe2ba8602b41f50a508a59`; trabajo documental en `NG_beta_0.0.0.1_work`.
+- **Tareas inspeccionadas:** CONF-001, DATE-001, NAV-002, STUD-002, POST-001, MOD-001, FIX-002 y FIX-003.
+- **Resultados:** CONF-001 (Cumple parcialmente: Parcial y Unidad separados, pero Upsert omite Parcial en la clave); DATE-001 (No cumple: no cierra el intervalo del parcial anterior); NAV-002 (Cumple parcialmente: grados/secciones no se filtran por parcial activo); STUD-002 (Reemplazada parcialmente: tarjeta y texto correctos, pero la restricción de parcial vigente fue ampliada posteriormente con selector histórico); POST-001 (No verificable sin transición real: el código opera como snapshot); MOD-001 (Cumple: lógica migrada a academic-service); FIX-002 (Cumple en código: deduplicación normalizada por cinco factores); FIX-003 (Cumple: matchParcial está declarada y aplicada).
+- **Hallazgos:** AUD-NG-113 a AUD-NG-116, añadidos a Auditoria.txt y Pendientes.md.
+- **Informe:** `AUDITORIA_LOTE_C.md`.
+- **Pruebas:** suites inspeccionadas sin pruebas dirigidas identificables para los contratos de este lote; no se ejecutaron pruebas ni se accedió a datos productivos.
+- **Código fuente:** sin modificaciones. No se alteró completadas_legacy.md ni se actualizó ChangesLogs.txt.
+- **Tarea principal:** AUD-NG-101 permanece En Ejecución. Ninguna marca histórica se modificó.
+- **Siguiente lote:** D.

@@ -3730,3 +3730,52 @@ RAMA DOCUMENTAL DE TRABAJO: NG_beta_0.0.0.1_work
 ===============================================================================
 FIN DE HALLAZGOS DEL LOTE B
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-04
+AUDITORÍA DE CONTINUIDAD - LOTE C DE completadas_legacy.md
+RAMA BASE INSPECCIONADA: NG_beta_0.0.0.1
+COMMIT DE CÓDIGO DE REFERENCIA: 44d9891132332e692dbe2ba8602b41f50a508a59
+RAMA DOCUMENTAL DE TRABAJO: NG_beta_0.0.0.1_work
+===============================================================================
+
+[AUD-NG-113] CONF-001 - UPSERT NO INCLUYE EL PARCIAL EN LA CLAVE DE BÚSQUEDA
+- Archivo: backend/academic-service/Code.gs, líneas 12404-12504 (especialmente 12466-12472 y 12484-12491).
+- Módulo/función: Configuración académica / updateAcademicConfig.
+- Tipo: Integridad de datos y Upsert.
+- Evidencia: Parcial y Unidad se normalizan por separado (líneas 12425-12426), pero la búsqueda oldRow compara profesorId, grado, sección, asignatura y tema sin comparar r[2] (Parcial). La clave de finalConfigMap también omite el parcial. Si el mismo contexto se configura en dos parciales, la búsqueda puede reutilizar una fila de otro periodo y sobrescribir su parcial/unidad, en lugar de mantener dos contextos independientes.
+- Impacto: pérdida o sustitución de configuración de un parcial anterior y colisión de contextos históricos.
+- Severidad: ALTO.
+- Tarea derivada: AUD-NG-113 en Pendientes.md.
+
+[AUD-NG-114] DATE-001 - NO SE CIERRA EL INTERVALO DEL PARCIAL ANTERIOR
+- Archivo: backend/academic-service/Code.gs, líneas 12426-12427, 12472-12475, 12491-12494 y 12530-12577.
+- Módulo/función: Ciclo de fechas / updateAcademicConfig y saveToAcademicHistory.
+- Tipo: Lógica temporal y persistencia.
+- Evidencia: currentMonth se calcula como el nombre del mes actual y se escribe como valor completo de Fecha al insertar o actualizar ConfiguracionAcademica. No se localizó una operación en esta ruta que recupere la fecha inicial del parcial anterior y la transforme en un intervalo inicio-fin al configurar el siguiente. HistorialAcademico también registra el mes de la instantánea. Existe una tabla PeriodosAcademicos con campos FechaInicio/FechaFin, pero no se encontró integración de esa tabla con el flujo heredado de updateAcademicConfig.
+- Impacto: ConfiguracionAcademica no conserva el rango de vigencia descrito por DATE-001; además puede haber dos representaciones temporales no sincronizadas.
+- Severidad: MEDIO.
+- Tarea derivada: AUD-NG-114 en Pendientes.md.
+
+[AUD-NG-115] NAV-002 - GRADOS Y SECCIONES NO SE LIMITAN AL PARCIAL ACTIVO
+- Archivo: js/teacher.js, líneas 3786-3890; backend/academic-service/Code.gs, líneas 12388-12402.
+- Módulo/función: Navegación docente / renderGrados, renderSecciones y renderAsignaturas.
+- Tipo: Filtrado de contexto académico.
+- Evidencia: renderGrados consume GLOBAL_SCOPE.GradoActual, pero getAcademicConfig construye GradoActual a partir de todas las filas relevantes del profesor, sin filtrar por parcial. renderSecciones deriva sus valores de GranularConfig filtrando solo por grado. renderAsignaturas sí compara r.parcial con GLOBAL_SCOPE.ParcialActual además de grado y sección.
+- Impacto: pueden mostrarse grados y secciones configurados únicamente en otros parciales, aunque las asignaturas finales se filtren por el parcial activo.
+- Severidad: ALTO.
+- Tarea derivada: AUD-NG-115 en Pendientes.md.
+
+[AUD-NG-116] POST-001 - SEMÁNTICA DE FECHA EN HISTORIAL NO VALIDADA CON UNA TRANSICIÓN REAL
+- Archivo: backend/academic-service/Code.gs, líneas 12515-12584; modelo PeriodosAcademicos (tabla creada en getOrCreateSheet).
+- Módulo/función: Historial académico / saveToAcademicHistory.
+- Tipo: Observación funcional y temporal.
+- Evidencia: saveToAcademicHistory guarda currentMonth como fecha de registro y evita insertar nuevamente el mismo contexto de cinco factores; no actualiza la fila anterior para formar un intervalo. El código representa el historial como instantánea, pero no se ejecutó un cambio real de parcial para comprobar el comportamiento de persistencia ni existe una decisión funcional documentada que confirme snapshot frente a intervalo.
+- Impacto: no puede cerrarse la observación POST-001 con inspección estática únicamente; existe riesgo de divergencia entre HistorialAcademico y PeriodosAcademicos si ambos representan periodos de forma distinta.
+- Severidad: OBSERVACIÓN.
+- Tarea derivada: AUD-NG-116 en Pendientes.md.
+
+===============================================================================
+FIN DE HALLAZGOS DEL LOTE C
+===============================================================================

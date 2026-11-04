@@ -279,3 +279,24 @@
 - `backend/academic-service/Code.gs` / `getOrCreateSheet` (líneas 84-92) crea `ConfiguracionAcademica` con 9 columnas y `HistorialAcademico` con 8 columnas cuando la hoja no existe.
 - `getAcademicConfig` (línea 12388) lee índices de la tabla de 9 columnas; `updateAcademicConfig` (línea 12404) reconstruye filas granulares y escribe con el ancho de encabezados existente; `saveToAcademicHistory` (línea 12515) genera filas de 8 columnas.
 - La consulta de configuración del frontend se dirige al microservicio ACADEMIC; el código actual de `backend/user-service/Code.gs` ya no contiene las funciones `getAcademicConfig` ni `updateAcademicConfig`.
+
+
+## Relaciones verificadas durante auditoría de continuidad - Lote C (2026-11-04)
+
+> Relaciones acotadas a los archivos y funciones inspeccionados en el commit de referencia 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+### Configuración y persistencia académica
+- `backend/academic-service/Code.gs` / `getAcademicConfig` (líneas 12388-12402) consulta `ConfiguracionAcademica` por profesor o grado/sección y devuelve `GradoActual`, `SeccionActual`, `AsignaturaActual` y `GranularConfig` a partir de las filas relevantes.
+- `updateAcademicConfig` (líneas 12404-12513) escribe la tabla `ConfiguracionAcademica`, separa `ParcialActual` y `UnidadActual`, valida conflictos entre docentes y llama a `saveToAcademicHistory` antes de liberar el ScriptLock.
+- `saveToAcademicHistory` (líneas 12515-12584) lee y escribe `HistorialAcademico`; construye una clave de deduplicación con parcial, grado, sección, asignatura y profesor.
+- La tabla `PeriodosAcademicos` se crea en `getOrCreateSheet`; en la ruta auditada no se observó llamada desde `updateAcademicConfig` ni desde `saveToAcademicHistory`.
+
+### Navegación docente
+- `js/teacher.js` / `renderGrados` (línea 3786) consume `window.GLOBAL_SCOPE.GradoActual`.
+- `renderSecciones` (línea 3836) consume `window.GLOBAL_SCOPE.GranularConfig` y filtra por grado.
+- `renderAsignaturas` (línea 3871) consume `window.GLOBAL_SCOPE.GranularConfig` y filtra por parcial activo, grado y sección.
+
+### Dashboard estudiantil
+- `js/student.js` / `renderStudentHeader` (líneas 80-120) consume `currentUser.email` y `currentUser.telefono`; construye el enlace `wa.me/504`.
+- `student-dashboard.html` (líneas 152-166) presenta selector de parcial e instrucción para seleccionar asignatura.
+- `js/student.js` / `renderSubjectNavigation` (líneas 1608-1670) utiliza `GLOBAL_SCOPE.GranularConfig`, selector de parcial y la variable local `matchParcial` para filtrar asignaturas.
