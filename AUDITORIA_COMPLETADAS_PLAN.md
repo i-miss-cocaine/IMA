@@ -80,3 +80,16 @@ Al reanudar:
 2. Leer este plan, \`Contexto_personal.txt\`, \`METODOLOGIA_DESARROLLO.md\`, \`Pendientes.md\`, \`Auditoria.txt\` y \`MapaDependencias.md\`.
 3. Continuar desde el último checkpoint confirmado, sin repetir lotes cerrados.
 4. Mantener los identificadores y estados históricos de \`completadas.md\` intactos.
+
+
+## 8. Resultados del lote C0 (2026-11-04)
+
+- Alcance: AUDIT-CR-01 a AUDIT-CR-04.
+- Resultado: las cuatro tareas cumplen su alcance específico en el código actual.
+- Evidencia: backend/user-service/Code.gs:839-843; js/ui-common.js:4709-4720, 4758-4847 y 4935-5000.
+- Hallazgos nuevos: ninguno; Auditoria.txt y Pendientes.md permanecen sin cambios.
+- Observación: las referencias de línea de completadas.md son históricas y han cambiado en el código actual.
+- Pruebas: inspección estática/manual; no se ejecutó navegador ni Apps Script.
+- Progreso: 4/224 identificadores únicos auditados; 220 pendientes.
+- Siguiente lote: C1, iniciar por TAREA-01.
+- Código fuente y completadas.md: sin modificaciones.

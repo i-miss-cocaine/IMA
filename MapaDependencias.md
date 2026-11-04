@@ -513,3 +513,10 @@
 - La auditoría de completadas_legacy.md no cubre este registro; se abre un proceso separado por lotes C0-C6.
 - Criterio: no inferir cumplimiento a partir de [X]; contrastar cada requisito con su flujo real y considerar versiones repetidas/actualizadas de identificadores.
 - Primer punto de inspección: AUDIT-CR-01; todavía no se ha dictaminado ninguna tarea de completadas.md.
+
+
+## Lote C0 - componentes de Code Review verificados (2026-11-04)
+- backend/user-service/Code.gs/normalizeString (839-843) -> parseGrade; normalización NFD, minúsculas, eliminación de diacríticos y trim.
+- js/ui-common.js/toggleRoleMenuAccordionSection (4709-4720) -> controles de acordeón del menú móvil y selección de sección inicial.
+- js/ui-common.js/openMobileHamburgerDrawer (4758-4847) -> botón hamburguesa; crea el drawer una vez y agrega el nodo a document.body; las aperturas siguientes reutilizan el nodo.
+- js/ui-common.js/openGlobalOmniboxModal (4935-5000) -> input Omnibox y listener input/debounce; focus/select se ejecuta al abrir el modal, no al escribir.

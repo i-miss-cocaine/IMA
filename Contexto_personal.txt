@@ -595,3 +595,22 @@ La búsqueda estaba intentando seguir el flujo completo, no solo la existencia d
 - **Progreso de auditoría:** 0/224 identificadores auditados. Solo se hizo inventario estructural; no se ha emitido ningún dictamen de implementación.
 - **Primera tarea:** AUDIT-CR-01.
 - **Regla:** inspección manual, sin modificación de código ni de completadas.md. Registrar SHA de respaldo de cada archivo antes de su inspección. Commits modulares y checkpoints en la rama de trabajo; no merge ni cambios en rama base.
+
+
+---
+
+## CHECKPOINT - AUDITORÍA completadas.md - C0 CERRADO
+**Fecha:** 2026-11-04
+
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- HEAD previo al commit C0: c70c99496e359f0f9426c8d796bdc09c7a9fb8d6.
+- Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59, sin cambios.
+- completadas.md: SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, sin modificaciones.
+- Respaldos Git registrados antes de inspección: backend/user-service/Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; js/ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67.
+- C0: AUDIT-CR-01 a AUDIT-CR-04; 4/4 cumplen el alcance específico.
+- Hallazgos nuevos: ninguno; Auditoria.txt y Pendientes.md no se modificaron.
+- Informe: AUDITORIA_COMPLETADAS_LOTE_C0.md.
+- Progreso: 4/224 identificadores únicos auditados; 220 pendientes.
+- Última inspección: openGlobalOmniboxModal, bloque focus/select en js/ui-common.js:4992-5000 y listener input/debounce en el bloque de inicialización.
+- Siguiente punto: C1, TAREA-01 (seguridad de servicios), comenzar por identidad y sesión en USER y propagación a los servicios.
+- No se modificó código fuente, completadas.md ni ChangesLogs.txt. No se hizo merge.
