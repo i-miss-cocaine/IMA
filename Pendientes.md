@@ -17109,3 +17109,15 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Descripción del Alcance:** Obtener firmante y rol desde la sesión autenticada; exigir documentoHash calculado sobre el documento exacto y verificar que el firmante esté autorizado para ese trámite. No presentar un hash SHA-256 de datos controlados por el cliente como prueba de firma avanzada.
 - **Criterios de Aceptación:** No es posible firmar en nombre de otro usuario; toda conformidad se vincula a documento y versión identificables; los registros incompletos o sin autorización se rechazan.
 - **Estado:** [ ] Pendiente
+
+
+---
+
+### [AUD-NG-028] Completar el cálculo, cierre, boletas y contabilización de beneficios extraordinarios
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-028
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** backend/accounting-service/Code.gs
+- **Dependencias Expuestas:** calculateExtraordinaryPayroll, updatePayrollPeriodStatus, generatePayrollReceiptPDF, ContratosLaborales, ExpedientesLaborales, PlanillasNomenclatura, AnticiposPrestamosEmpleado, BoletasPago, AsientosContables, recordAccountingJournalEntry
+- **Descripción del Alcance:** Ajustar el motor de décimo tercer y décimo cuarto mes para calcular el beneficio considerando la vigencia de cada contrato y los cambios salariales dentro del período de acumulación, conforme a la regla salarial aplicable. Corregir el cálculo de aportaciones patronales del cierre genérico para que los valores cero explícitos de beneficios extraordinarios no activen tasas de respaldo. Implementar la emisión y persistencia de una boleta PDF individual vinculada inequívocamente a planillaId y empleadoId. Generar asientos contables específicos y diferenciados para el pasivo y gasto de cada beneficio, conservando el ciclo de aprobación/cierre y evitando contabilizaciones duplicadas.
+- **Criterios de Aceptación:** Los períodos con más de un contrato o cambio salarial se calculan por tramos y con base salarial verificable; los beneficios extraordinarios con aportaciones patronales en cero conservan esos ceros al aprobarse/cerrarse; cada empleado obtiene un PDF real almacenado y vinculado a la planilla y al beneficio correctos; cada planilla extraordinaria genera un asiento equilibrado con cuentas diferenciadas; la misma planilla no puede generar boletas o asientos duplicados; las pruebas cubren períodos completos, ingresos/salidas parciales, cambios contractuales, anticipos, aprobación y cierre.
+- **Estado:** [ ] Pendiente
