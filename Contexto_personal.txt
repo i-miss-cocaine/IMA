@@ -40,7 +40,7 @@ Archivos relevantes en IMA:
 - Auditoria.txt y Auditoría.txt: registros de auditoría existentes.
 - ChangesLogs.txt: registro de cambios existente.
 
-En la rama NG_beta no se encontraron, al momento de esta actualización, archivos llamados tareas.txt, contexto_personal.md ni proceso de desarollo.md. No asumir que esos archivos existen en IMA ni sustituir con ellos los registros oficiales de IMA.
+En la rama NG_beta, Pendientes.md sí existe y es el registro oficial de tareas. No se encontraron, al momento de esta actualización, archivos llamados contexto_personal.md ni proceso de desarrollo.md. No sustituir Pendientes.md por otro registro.
 
 1.2 Proyecto GPSpedia (proyecto al que se refieren las reglas de desarrollo siguientes)
 
@@ -80,35 +80,35 @@ En la rama NG_beta no se encontraron, al momento de esta actualización, archivo
 - Formato de referencia:
   - [Task_01] Reubicación de logo oficial (Completado)
   - [Task_02] Auditoría de ui.js (En proceso)
-- Registrar cada tarea en tareas.txt antes de comenzar su ejecución.
+- Registrar cada tarea en Pendientes.md antes de comenzar su ejecución.
 - Antes de iniciar una tarea, registrar en contexto_personal.md su ID, título y estado En proceso.
 - No marcar ninguna tarea como completada hasta que haya sido ejecutada, verificada y aprobada por el usuario.
 - Si se encuentra una tarea marcada como En proceso, realizar automáticamente una auditoría de su estado para determinar si fue ejecutada correctamente o si el agente se interrumpió durante su desarrollo. Continuar el trabajo pendiente según los resultados de esa auditoría.
 - Si un archivo necesario para trabajar está corrupto o vacío, recuperar su última versión funcional disponible. Después, auditar las tareas anteriores para verificar si están implementadas y cumplen todos sus requisitos, y actualizar sus estados de acuerdo con los hallazgos.
-- Si la tarea ya existe en tareas.txt, registrar su ID, título y estado En proceso en contexto_personal.md antes de ejecutarla.
+- Si la tarea ya existe en Pendientes.md, registrar su ID, título y estado En proceso en contexto_personal.md antes de ejecutarla.
 - No crear IDs duplicados ni alterar la secuencia existente.
 - Mantener contexto_personal.md actualizado para que otro agente pueda retomar el trabajo sin depender del historial conversacional.
 
-4. REGISTRO DE TAREAS EN tareas.txt
+4. REGISTRO DE TAREAS EN Pendientes.md
 
 - Registrar cada tarea asignándole un ID que siga la secuencia existente, un título breve y un indicador [X] cuando corresponda.
 - Marcar una tarea como completada únicamente después de que el usuario haya revisado y aprobado satisfactoriamente los cambios.
 - Registrar todos y cada uno de los requisitos de la tarea, sin omitir detalles ni resumirlos.
 - Corregir errores ortográficos y mejorar la claridad de la redacción, conservando íntegramente el alcance y el nivel de detalle de los requisitos originales.
 - No sustituir requisitos por resúmenes ni eliminar condiciones, criterios de aceptación, restricciones o dependencias.
-- El documento de contexto mantiene únicamente ID, título y estado por tarea; el detalle íntegro de requisitos pertenece a tareas.txt.
+- El documento de contexto mantiene únicamente ID, título y estado por tarea; el detalle íntegro de requisitos pertenece a Pendientes.md.
 
 5. IDENTIFICACIÓN, PRIORIZACIÓN Y EJECUCIÓN DE TAREAS
 
-- Identificar las tareas pendientes en tareas.txt y ejecutarlas en el orden y la prioridad establecidos.
+- Identificar las tareas pendientes en Pendientes.md y ejecutarlas en el orden y la prioridad establecidos.
 - No intentar ejecutar todas las tareas a la vez.
 - Evaluar si es viable agrupar varias tareas en un mismo commit únicamente cuando pueda garantizarse el cumplimiento de todos sus requisitos y del proceso de desarrollo.
 - Indicar qué tareas se ejecutarán en cada commit y cuáles quedarán pendientes para los siguientes, respetando siempre el procedimiento.
-- Ejecutar las tareas en el orden establecido en tareas.txt.
+- Ejecutar las tareas en el orden establecido en Pendientes.md.
 - Cada commit debe contener cambios funcionales.
 - Están prohibidos los commits vacíos.
 - Están prohibidos los commits que modifiquen únicamente archivos de registros, auditoría, logs o documentación.
-- Las modificaciones exclusivas de ChangesLogs.txt, Auditoría.txt y tareas.txt no constituyen una tarea funcional.
+- Las modificaciones exclusivas de ChangesLogs.txt, Auditoría.txt y Pendientes.md no constituyen una tarea funcional.
 - No utilizar una modificación documental aislada para simular el cumplimiento de una tarea funcional.
 - Si una solicitud exige expresamente crear o actualizar documentación, registrar esa labor y respetar las restricciones de commit aplicables; no introducir cambios funcionales ajenos solo para justificar un commit.
 
@@ -116,7 +116,7 @@ En la rama NG_beta no se encontraron, al momento de esta actualización, archivo
 
 - Verificar el código existente antes de implementar cualquier cambio.
 - Si ya cumple todos los requisitos de una tarea, agregar en la primera línea del bloque de código correspondiente un comentario identificativo de la tarea.
-- En ese supuesto, actualizar Auditoría.txt y ChangesLogs.txt, marcar la tarea con [X] en tareas.txt y continuar inmediatamente con la siguiente, sin detenerse ni solicitar confirmación.
+- En ese supuesto, actualizar Auditoría.txt y ChangesLogs.txt, marcar la tarea con [X] en Pendientes.md y continuar inmediatamente con la siguiente, sin detenerse ni solicitar confirmación.
 - Esta regla de reconocimiento de implementación existente no elimina la obligación general de que el usuario apruebe los cambios antes de marcar una tarea como completada. Si la regla entra en conflicto con el requisito de aprobación, mantener el estado sin completar y solicitar la revisión del usuario.
 - No declarar cumplimiento basándose únicamente en comentarios, nombres de funciones, documentación o supuestos. Debe existir evidencia verificable de todos los requisitos funcionales.
 
@@ -128,7 +128,7 @@ En la rama NG_beta no se encontraron, al momento de esta actualización, archivo
 - Realizar un Code Review antes de cada commit, limitado a la tarea actual.
 - Están prohibidos los commits con blocking issues.
 - Corregir todos los bloqueos y repetir el Code Review hasta eliminarlos.
-- Cumplir estrictamente los procedimientos establecidos en proceso de desarrollo.md (verificar el nombre y la ubicación exactos del documento en GPSpedia antes de utilizarlo).
+- Cumplir estrictamente los procedimientos establecidos en METODOLOGIA_DESARROLLO.md (verificar su existencia y ubicación exactas en GPSpedia antes de utilizarlo).
 - No eliminar tareas ni sobrescribir registros ajenos a la tarea actual.
 - Conservar el contenido histórico de los registros; las actualizaciones deben ser aditivas y limitadas al alcance autorizado.
 - No declarar que una prueba, auditoría o Code Review fue satisfactorio si no se ejecutó y documentó evidencia suficiente.
@@ -139,13 +139,13 @@ En la rama NG_beta no se encontraron, al momento de esta actualización, archivo
 - Registrar el estado real de la tarea, sin anticipar su finalización.
 - Indicar qué requisitos se verificaron y cuáles quedaron pendientes, cuando corresponda.
 - Registrar el último commit y la rama de trabajo después de verificarlos.
-- Si el agente se interrumpe, el siguiente agente debe comenzar leyendo contexto_personal.md, tareas.txt y el procedimiento oficial; después debe auditar cualquier tarea que figure En proceso.
+- Si el agente se interrumpe, el siguiente agente debe comenzar leyendo contexto_personal.md, Pendientes.md y el METODOLOGIA_DESARROLLO.md; después debe auditar cualquier tarea que figure En proceso.
 
 9. CONTINUIDAD DEL TRABAJO
 
-- Continuar con la siguiente tarea pendiente de tareas.txt, respetando estrictamente todas las instrucciones anteriores.
+- Continuar con la siguiente tarea pendiente de Pendientes.md, respetando estrictamente todas las instrucciones anteriores.
 - No saltar tareas por conveniencia ni cambiar su prioridad sin autorización.
-- No iniciar una tarea si no está registrada previamente en tareas.txt.
+- No iniciar una tarea si no está registrada previamente en Pendientes.md.
 - No comenzar implementación antes de actualizar contexto_personal.md con la tarea en estado En proceso.
 - Si falta información o existe una contradicción entre registros, detener la implementación, investigar el historial y preservar los registros originales.
 - La aprobación del usuario es el criterio final para cerrar una tarea.
