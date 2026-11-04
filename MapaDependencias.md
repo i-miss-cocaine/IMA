@@ -442,3 +442,24 @@
 - teacher-dashboard.html (create-assignment-form) -> js/teacher.js (Quill y submit handler) -> TASK/createTask -> hoja Tareas.
 - createTask almacena los campos recibidos, pero no valida título, descripción, fecha límite ni modalidad en servidor.
 - El formulario ofrece Tarea/Crédito Extra y un único editor; no se observó selección de modalidad documental o ejercicios.
+
+
+## Relaciones verificadas durante auditoría de continuidad - Lote G2 (2026-11-04)
+
+### Guías informativas y tareas evaluables (REQ-DOC-004)
+- backend/task-service/Code.gs/getStudentTasks -> DTO con tipoRecurso, pero sin archivoUrl -> js/student.js/getActivityHtml espera archivoUrl para la descarga de guías.
+- js/student.js/getActivityHtml -> rama visual GuiaEstudio/MaterialApoyo sin botón de entrega.
+- js/student.js/submit modal -> TASK/submitAssignment -> Entregas; submitAssignment no valida tipoRecurso.
+- TASK/gradeSubmission -> hoja Entregas; no consulta el tipo de recurso de la tarea relacionada.
+- TASK/createTask -> hoja Tareas con tipoRecurso; el formulario docente no expone un selector para guía/material de apoyo/ejercicios.
+
+### Fecha impartida y fecha límite (REQ-DOC-005)
+- teacher-dashboard.html/fechaClase + fechaLimite -> js/teacher.js/FormData -> TASK/createTask.
+- El formulario envía fechaClase, pero createTask no la recibe ni la persiste; no se encontró cálculo fechaClase + 1 ni validación cruzada.
+- TASK/createTask/updateTask -> hoja Tareas almacena fechaLimite, no fechaClase.
+
+### Hora de disponibilidad (REQ-DOC-006)
+- teacher-dashboard.html/horaDisponible (HH:MM) -> FormData de js/teacher.js sin conversión -> TASK/createTask espera fechaDisponible.
+- TASK/getStudentTasks devuelve fechaDisponible ISO -> js/student.js/getActivityHtml consulta horaDisponible.
+- TASK/submitAssignment consulta fechaLimite para marcar tardanza, pero no aplica fechaDisponible; no existe enforcement de disponibilidad en el endpoint.
+- TASK/createTask guarda estado inicial Activa; getStudentTasks no expone la máquina de estados descrita en la tarea.

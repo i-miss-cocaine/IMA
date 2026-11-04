@@ -196,3 +196,14 @@ Se recuperó y leyó el contenido íntegro de `Pendientes.md`, se confirmó que 
 - **Pruebas:** no ejecutadas; inspección estática manual.
 - **Código fuente:** sin modificaciones; no se alteró completadas_legacy.md ni ChangesLogs.txt.
 - **Siguiente sublote:** G2 (REQ-DOC-004 a REQ-DOC-006).
+
+
+## 18. Resultados de auditoría - Lote G2 (2026-11-04)
+
+- **Subdivisión:** G2 revisa REQ-DOC-004 a REQ-DOC-006.
+- **Resultados:** REQ-DOC-004 (Cumple parcialmente: distinción visual, pero submitAssignment/gradeSubmission no bloquean guías y el DTO omite archivoUrl); REQ-DOC-005 (Cumple parcialmente: campos presentes, sin cálculo predeterminado, persistencia de fechaClase ni validación); REQ-DOC-006 (Cumple parcialmente: contrato horaDisponible/fechaDisponible incongruente, UI desconectada y sin enforcement de servidor).
+- **Hallazgos:** AUD-NG-150 a AUD-NG-152, añadidos a Auditoria.txt y Pendientes.md.
+- **Informe:** AUDITORIA_LOTE_G2.md.
+- **Pruebas:** no ejecutadas; inspección estática manual.
+- **Código fuente:** sin modificaciones; no se alteró completadas_legacy.md.
+- **Siguiente sublote:** H1 (REQ-DOC-007 a REQ-DOC-009).

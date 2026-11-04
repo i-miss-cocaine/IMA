@@ -4228,3 +4228,59 @@ RESULTADOS DEL LOTE G1
 - Pruebas: no ejecutadas; revisión estática manual.
 - Código fuente: sin modificaciones. No se modificaron completadas_legacy.md ni ChangesLogs.txt.
 ===============================================================================
+
+
+===============================================================================
+[AUD-NG-150] REQ-DOC-004 - SEPARACIÓN VISUAL DE GUÍAS SIN INVARIANTE EN BACKEND
+- Fecha: 2026-11-04.
+- Archivo/Módulo: js/student.js:1820-1823; backend/task-service/Code.gs:447-471, 613-697, 892-990 y 1064-1090; teacher-dashboard.html:219-226.
+- Tipo: Incumplimiento de lógica de negocio y consistencia de recursos.
+- Evidencia:
+  1. getActivityHtml muestra GuiaEstudio/MaterialApoyo como material informativo y no crea botón de entrega.
+  2. getStudentTasks devuelve tipoRecurso, pero no devuelve archivoUrl, aunque el renderer lo necesita para el enlace de descarga.
+  3. createTask acepta tipoRecurso, pero el formulario docente solo ofrece Tarea/Crédito Extra; no hay selección funcional de guía/material de apoyo/ejercicios.
+  4. submitAssignment no consulta tipoRecurso y crea entregas para cualquier tarea existente. gradeSubmission tampoco verifica si la tarea asociada es evaluable.
+  5. MaterialesEducativos constituye una ruta separada, pero no asegura las reglas del caso en que una guía esté representada como fila de Tareas.
+- Impacto: la distinción visual puede eludirse mediante llamadas directas; se pueden crear entregas y calificaciones para recursos marcados como guía, y el enlace de archivo no se devuelve en el DTO de getStudentTasks.
+- Severidad: ALTO.
+- Tarea derivada: AUD-NG-150.
+
+===============================================================================
+[AUD-NG-151] REQ-DOC-005 - FECHA DE CLASE SIN CÁLCULO PREDETERMINADO NI VALIDACIÓN
+- Fecha: 2026-11-04.
+- Archivo/Módulo: teacher-dashboard.html:270-274; js/teacher.js:4738-4748; backend/task-service/Code.gs:447-471 y 474-495.
+- Tipo: Incumplimiento funcional y validación temporal incompleta.
+- Evidencia:
+  1. El formulario muestra fechaClase y fechaLimite, pero no se encontraron listeners o referencias en js/teacher.js que calculen la fecha límite por defecto.
+  2. El submit handler envía FormData sin derivar fechaLimite de fechaClase.
+  3. createTask no recibe ni persiste fechaClase; el dato se pierde al llegar al backend.
+  4. No hay validación de servidor que impida fechaLimite anterior a fechaClase. required solo valida presencia en el formulario.
+- Impacto: el docente debe introducir manualmente la fecha límite y puede guardar una fecha anterior a la impartición de la clase; no se cumple la regla de sugerir el día siguiente.
+- Severidad: MEDIO.
+- Tarea derivada: AUD-NG-151.
+
+===============================================================================
+[AUD-NG-152] REQ-DOC-006 - DISPONIBILIDAD TEMPORAL DESCONECTADA Y SIN BLOQUEO DE SERVIDOR
+- Fecha: 2026-11-04.
+- Archivo/Módulo: teacher-dashboard.html:278; js/teacher.js:4738-4748; backend/task-service/Code.gs:448-469, 613-697 y 892-990; js/student.js:1872-1887.
+- Tipo: Incumplimiento crítico de control de disponibilidad.
+- Evidencia:
+  1. El formulario envía horaDisponible (HH:MM), pero createTask solo lee fechaDisponible.
+  2. getStudentTasks devuelve fechaDisponible en ISO, mientras js/student.js consulta horaDisponible.
+  3. submitAssignment no compara la fecha/hora actual con la disponibilidad configurada; solo calcula si la entrega es tardía con fechaLimite.
+  4. La fila de Tareas inicia en estado Activa y el DTO no expone una máquina de estados programada/publicada/disponible/vencida/cerrada.
+- Impacto: la hora configurada no se persiste desde la interfaz, el bloqueo visual no recibe el campo esperado y el endpoint acepta entregas anticipadas por llamada directa.
+- Severidad: CRÍTICO.
+- Tarea derivada: AUD-NG-152.
+
+===============================================================================
+RESULTADOS DEL LOTE G2
+===============================================================================
+- REQ-DOC-004: Cumple parcialmente. La UI separa visualmente guías y tareas, pero el backend acepta entregas/calificaciones para recursos marcados como guía y no devuelve archivoUrl al renderer.
+- REQ-DOC-005: Cumple parcialmente. Existen campos de fecha de clase y fecha límite, pero no cálculo predeterminado, persistencia de fechaClase ni validación temporal.
+- REQ-DOC-006: Cumple parcialmente. La hora se envía con un nombre distinto al esperado por backend; la UI consulta una propiedad distinta a la devuelta y el servidor no bloquea entregas anticipadas.
+- Hallazgos añadidos: AUD-NG-150 a AUD-NG-152.
+- Informe: AUDITORIA_LOTE_G2.md.
+- Pruebas: no ejecutadas; revisión estática manual.
+- Código fuente: sin modificaciones. No se modificó completadas_legacy.md.
+===============================================================================

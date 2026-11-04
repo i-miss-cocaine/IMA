@@ -18251,3 +18251,31 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Descripción del Alcance:** Implementar las tres modalidades de creación requeridas: A) editor de texto enriquecido; B) documento adjunto con validación de MIME y metadatos; C) ejercicios a desarrollar con su estructura e instrucciones. Definir y persistir un discriminador de modalidad que permita al estudiante visualizar cada tipo correctamente. Añadir validación de servidor para impedir el guardado si falta título, contenido válido (texto enriquecido no vacío, archivo válido o estructura de ejercicios completa, según modalidad) o fecha límite. La validación no debe depender de atributos HTML ni del comportamiento del cliente.
 - **Criterios de Aceptación:** Las tres modalidades pueden crearse y consultarse tras recargar; el backend rechaza payloads sin título, sin contenido válido o sin fecha límite; rechaza modalidad desconocida o adjuntos con MIME no autorizado; las instrucciones/archivos se almacenan y se muestran correctamente en el dashboard estudiantil. Pruebas de cada modalidad, payload vacío directo, fecha límite ausente, MIME inválido y persistencia.
 - **Estado:** [ ] Pendiente
+
+
+### [AUD-NG-150] Reforzar la separación entre guías informativas y tareas evaluables en el servidor
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-150 (REQ-DOC-004).
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** js/teacher.js; js/student.js; backend/task-service/Code.gs; teacher-dashboard.html.
+- **Dependencias Expuestas:** tipoRecurso, getStudentTasks, getActivityHtml, createTask, submitAssignment, gradeSubmission, archivoUrl, MaterialesEducativos, hoja Tareas, hoja Entregas.
+- **Descripción del Alcance:** Mantener una clasificación inequívoca de tarea evaluable, ejercicios, guía de estudio y material de apoyo. El backend debe impedir crear entregas, borradores, calificaciones o penalizaciones sobre tipos informativos. El DTO estudiantil debe incluir los metadatos de archivo necesarios para mostrar/descargar la guía y separar los recursos informativos de la cola de tareas evaluables. El formulario docente debe ofrecer los tipos admitidos y persistir el discriminador sin depender de payloads arbitrarios.
+- **Criterios de Aceptación:** Una guía/material de apoyo se consulta y descarga, pero submitAssignment/saveSubmissionDraft/gradeSubmission rechazan operaciones evaluables para ese tipo. Las tareas y ejercicios evaluables conservan su flujo normal. getStudentTasks devuelve los campos requeridos por el renderer. Pruebas directas de endpoints para cada tipo y verificación de ausencia de entregas/notas/penalizaciones para guías.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-151] Calcular y validar la fecha límite a partir de la fecha impartida
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-151 (REQ-DOC-005).
+- **Severidad/Clasificación:** Medio
+- **Archivos Involucrados:** teacher-dashboard.html; js/teacher.js; backend/task-service/Code.gs.
+- **Dependencias Expuestas:** create-task-class-date, create-task-due-date, fechaClase, fechaLimite, createTask, updateTask, hoja Tareas.
+- **Descripción del Alcance:** Implementar la sugerencia de fecha límite como el día calendario siguiente a fechaClase, permitir modificación manual y persistir fechaClase junto a fechaLimite. Validar en servidor que ambas fechas sean válidas y que fechaLimite no sea anterior a fechaClase, tanto al crear como al editar una tarea.
+- **Criterios de Aceptación:** Al seleccionar fechaClase, el formulario propone el día siguiente; el docente puede modificarlo; el servidor rechaza fecha límite anterior o fecha inválida; fechaClase y fechaLimite sobreviven a recarga. Pruebas de mismo día, día siguiente, cambio manual, fin de mes/año y fechas pasadas.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-152] Corregir el contrato de disponibilidad y bloquear entregas antes de la hora habilitada
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-152 (REQ-DOC-006).
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** teacher-dashboard.html; js/teacher.js; js/student.js; backend/task-service/Code.gs; js/config.js; js/developer.js.
+- **Dependencias Expuestas:** horaDisponible, fechaDisponible, createTask, getStudentTasks, getActivityHtml, submitAssignment, saveSubmissionDraft, estado de tarea, fechaLimite.
+- **Descripción del Alcance:** Definir un contrato único de disponibilidad como fecha/hora completa con zona horaria explícita. Convertir el input del docente al campo persistido esperado y devolver exactamente el mismo nombre/formato en getStudentTasks. El cliente debe ocultar/deshabilitar la entrega antes de la disponibilidad, pero el backend también debe rechazar cualquier entrega final anticipada, sin confundir disponibilidad con fecha límite. Completar los estados de programación/publicación/disponibilidad/vencimiento/cierre y su transición controlada.
+- **Criterios de Aceptación:** La fecha/hora configurada se persiste y se devuelve sin pérdida de zona horaria; la UI y backend usan el mismo contrato; submitAssignment rechaza entregas antes de la disponibilidad aun con llamada directa; la fecha límite sigue calculando tardanza de forma independiente; los estados reflejan correctamente programación, disponibilidad, entrega, vencimiento y cierre. Pruebas en límites exactos, antes/después, zona horaria y bypass del cliente.
+- **Estado:** [ ] Pendiente
