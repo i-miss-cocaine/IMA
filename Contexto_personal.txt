@@ -193,3 +193,14 @@ ACTUALIZACIÓN DE CONTINUIDAD IMA - AUDITORÍA LOTE A (2026-11-04)
 - Próximo paso: continuar con el Lote B, sin saltar tareas ni alterar los registros históricos.
 - Evidencia detallada: AUDITORIA_LOTE_A.md; registro de hallazgos: Auditoria.txt; tareas derivadas: Pendientes.md.
 ================================================================
+
+
+================================================================
+REFERENCIA DE COMMIT - RESULTADOS DEL LOTE A (2026-11-04)
+================================================================
+- Rama: NG_beta_work.
+- Commit de resultados verificado: a55147854a4022392102f0fe7a1ed9fce14b17a8 (docs(audit): documentar resultados del lote A).
+- El commit añade el informe AUDITORIA_LOTE_A.md, ocho hallazgos en Auditoria.txt, ocho tareas derivadas en Pendientes.md y la actualización del plan y del contexto.
+- La comparación con NG_beta confirma que los cambios de esta auditoría son exclusivamente documentales; no se modificó código fuente.
+- Estado de AUD-NG-101: En Ejecución. Próximo lote: B.
+================================================================

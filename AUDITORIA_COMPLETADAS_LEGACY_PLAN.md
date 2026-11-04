@@ -63,7 +63,7 @@ Cada lote tendrá un informe y commit documental independiente después de compl
 ## 6. Estado de avance
 
 **Tarea AUD-NG-101 registrada y en ejecución en `NG_beta_work`. Auditoría formal preparada para iniciar el Lote A.**  
-Se recuperó y leyó el contenido íntegro de `Pendientes.md`, se confirmó que AUD-NG-101 era el siguiente ID libre y se registró la tarea de auditoría de forma aditiva. También se añadió el ID, título y estado al archivo `Contexto_personal.txt`. Las consultas preliminares anteriores no se consideran auditoría formal; ninguna de las 49 tareas se declara auditada o aprobada. El Lote A aún no ha comenzado.
+Se recuperó y leyó el contenido íntegro de `Pendientes.md`, se confirmó que AUD-NG-101 era el siguiente ID libre y se registró la tarea de auditoría de forma aditiva. También se añadió el ID, título y estado al archivo `Contexto_personal.txt`. Las consultas preliminares anteriores no se consideran auditoría formal; ninguna de las 49 tareas se declara auditada o aprobada. El Lote A no había comenzado al momento del registro inicial; su resultado posterior se consigna en la sección 7.
 
 
 ## 7. Resultados de lotes
