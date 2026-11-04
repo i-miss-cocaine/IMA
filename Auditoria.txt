@@ -1946,3 +1946,33 @@ La implementación cubre comparaciones parciales de artículos, precios y cantid
 RECTIFICACIÓN DEL INVENTARIO (2026-11-04)
 Tras agregar AUD-NG-030: 83 tareas originales [X], 108 tareas originales [ ] y 29 tareas AUD-NG nuevas. Total: 191 tareas originales + 29 derivadas = 220 entradas.
 ===============================================================================
+
+===============================================================================
+AUD-NG-031
+Fecha: 2026-11-04
+Archivos: js/accounting.js, dashboard-contabilidad.html
+Tarea original: [TASK-014] [F18-Task03] Interfaz operativa del módulo de compras.
+Funciones inspeccionadas: renderComprasModule (875-954), vistas de solicitudes/cotizaciones/órdenes/recepciones/conciliación/proveedores (955-1323).
+Tipo: Implementación parcial de interfaz.
+Severidad: Alto.
+
+Evidencia:
+1. El panel muestra cuatro indicadores; el de conciliación permanece como texto fijo "Activa". No están los indicadores de cotizaciones, aprobaciones, facturas, pagos, cuentas por pagar y contratos.
+2. openNewPurchaseRequestModal, viewPurchaseRequestDetails y openNewSupplierModal solo ejecutan alert(); no presentan formularios ni vistas operativas.
+3. Cotizaciones y órdenes se muestran en tablas, sin controles de carga, comparación, adjudicación, aprobación, emisión o descarga.
+4. Recepciones solo se consultan; la interfaz no permite registrar entregas parciales o totales.
+5. La vista de conciliación pide el ID de orden y número de factura, pero envía una partida constante ITEM-GEN con cantidad 1 y precio 100, no las partidas reales de la factura.
+6. Las vistas inspeccionadas no presentan búsqueda, filtros, ordenamiento ni el seguimiento de cuentas por pagar y presupuesto exigidos.
+
+Impacto:
+La interfaz cubre consultas básicas, pero no permite completar los procesos principales que la tarea declara operativos. La conciliación mostrada no representa los datos reales de la factura.
+
+Dependencias: dashboard-contabilidad.html, js/accounting.js, fetchBackendAccounting, createPurchaseRequest, getPurchaseRequests, getPurchaseQuotations, getPurchaseOrders, getPurchaseReceipts, verifyThreeWayMatch, registerSupplier.
+
+Conclusión:
+[TASK-014] está implementada parcialmente y no satisface los criterios de aceptación. No se ejecutaron pruebas de navegador ni del servicio desplegado.
+===============================================================================
+
+RECTIFICACIÓN DEL INVENTARIO (2026-11-04)
+Tras agregar AUD-NG-031: 83 tareas originales [X], 108 tareas originales [ ] y 30 tareas AUD-NG nuevas. Total: 191 tareas originales + 30 derivadas = 221 entradas.
+===============================================================================
