@@ -742,3 +742,16 @@ CHECKPOINT C1.4 - AUDITORÍA T-UX-01 (2026-11-04)
 - Siguiente tarea exacta: TAREA-02. Consultar primero sus requisitos completos en Pendientes.md y el plan/informes previos; no repetir T-UX-01.
 - Continuidad: verificar HEAD actual de ambas ramas antes de cualquier acción. Mantener NG_beta_0.0.0.1 intacta, no hacer merge y trabajar solo en NG_beta_0.0.0.1_work.
 ================================================================
+
+
+================================================================
+REGLA OPERATIVA AÑADIDA - UN COMMIT POR TAREA (2026-11-04)
+================================================================
+- Regla: cada tarea debe cerrarse con un único commit que incluya todos los archivos modificados por esa tarea, tanto código como documentación/registros autorizados.
+- No crear un commit por archivo. Primero reunir y revisar el conjunto completo de cambios de la tarea; después incorporarlo en un único commit.
+- No mezclar en un commit cambios de tareas distintas. Cada tarea independiente tendrá su propio commit.
+- El mensaje debe identificar la tarea. Antes de actualizar la rama, verificar que el commit contiene todos los archivos previstos, no incluye cambios ajenos y conserva los registros anteriores.
+- Si la herramienta bloquea la creación del árbol, commit o actualización de la rama, no dividir la tarea en commits parciales: mantener la rama intacta, informar el bloqueo y buscar un método autorizado para el commit único.
+- Esta regla complementa las reglas existentes de METODOLOGIA_DESARROLLO.md; no elimina ni sustituye ninguna regla ni registro histórico.
+- Aplicación: rama de trabajo NG_beta_0.0.0.1_work; respetar siempre la rama base intacta, la prohibición de merge y las demás restricciones vigentes.
+================================================================

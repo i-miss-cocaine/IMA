@@ -748,3 +748,17 @@ SI NO SE DOCUMENTA, NO EXISTE.
 SI NO SE PUEDE TRAZAR, NO SE APRUEBA.
 SI NO PASA CODE REVIEW, NO SE CIERRA.
 EL INCUMPLIMIENTO DE CUALQUIER PASO DEL PRESENTE COMPENDIO INVALIDA EL PROCESO COMPLETO Y REINICIA LAS ACCIONES DESDE LA FASE DE AUDITORÍA INICIAL.
+
+
+# 15. CONTROL DE COMMITS POR TAREA (REGLA OBLIGATORIA)
+
+1. **Un commit por tarea:** cada tarea autorizada y ejecutada debe quedar registrada en un único commit que agrupe todos los archivos modificados como consecuencia de esa misma tarea.
+2. **Agrupación completa:** antes de crear el commit se deben identificar y preparar todos los cambios pertenecientes a la tarea, incluidos los cambios de código y los registros/documentos que correspondan (por ejemplo, Auditoria.txt, Pendientes.md, MapaDependencias.md, ChangesLogs.txt, informes y checkpoints), respetando las restricciones particulares de cada archivo y fase.
+3. **Prohibido un commit por archivo:** no se crearán commits independientes para cada archivo modificado dentro de una misma tarea. Los archivos se incorporarán juntos en el mismo commit.
+4. **No mezclar tareas:** un commit no debe agrupar cambios pertenecientes a tareas distintas. Si se ejecutan varias tareas, cada una tendrá su propio commit con todos sus archivos relacionados.
+5. **Cierre antes de confirmar:** revisar el conjunto completo de cambios, verificar que no falten archivos, que no se hayan incluido modificaciones ajenas y que se preserven todos los registros históricos. Después crear el único commit de la tarea y verificar su contenido y el avance de la rama.
+6. **Integridad y trazabilidad:** el mensaje del commit debe identificar la tarea o su propósito. El commit debe conservar la historia previa y ser descendiente de la rama de trabajo autorizada. No se debe reescribir historia ni forzar actualizaciones de rama para aplicar esta regla.
+7. **Bloqueos o fallos:** si no es posible incluir todos los archivos de la tarea en un solo commit, no se debe sustituir la regla creando commits parciales por archivo. Se conservará intacta la rama, se documentará qué quedó preparado y qué operación fue bloqueada, y se solicitará/intentará un método autorizado que permita completar el commit único.
+8. **Alcance:** esta regla aplica a auditorías, documentación, desarrollo, correcciones, verificaciones y cualquier otra tarea del repositorio. No autoriza modificar archivos prohibidos ni omitir fases, revisiones, aprobaciones, respaldos o controles establecidos en las reglas anteriores.
+
+Esta regla se añade de forma acumulativa y complementaria. No deroga, reemplaza ni modifica ninguna instrucción anterior de este documento.
