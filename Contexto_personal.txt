@@ -722,3 +722,23 @@ La búsqueda estaba intentando seguir el flujo completo, no solo la existencia d
 - Leer sus criterios completos y contrastarlos con js/api.js, js/ui-common.js y js/auth.js, incluyendo expiración, autorización, limpieza de almacenamiento, redirección y banner informativo.
 - Auditarla como identificador independiente, vinculando hallazgos existentes sin duplicar causas.
 - Después continuar secuencialmente por los identificadores únicos de completadas.md. No repetir C0, TAREA-01, FASE2-T01 ni FASE2-T02.
+
+
+================================================================
+CHECKPOINT C1.4 - AUDITORÍA T-UX-01 (2026-11-04)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto existente: Contexto_personal.txt (no crear variantes de nombre/extensión).
+- Rama base: NG_beta_0.0.0.1; HEAD verificado: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Rama de trabajo autorizada: NG_beta_0.0.0.1_work; HEAD antes de este commit: ca50510249494edb18cf256b760b76ed4fc05db5.
+- Última tarea histórica auditada antes de esta iteración: FASE2-T02. Tarea auditada en esta iteración: T-UX-01. Dictamen: CUMPLE PARCIALMENTE.
+- Evidencia revisada: js/api.js / fetchApi (116-135); js/ui-common.js / handleSessionExpired (239-252) y runUXSuiteTests / UX-01 (1853-1860); js/auth.js completo; login.html completo; backend/user-service/Code.gs / getUserVerifiedRole y doPost.
+- Resultado: el manejador de expiración existe y limpia claves de sesión/redirige, pero fetchApi no lo invoca; login no procesa session_expired; el backend mezcla AUTH_PERMISSION_DENIED de autenticación con denegaciones RBAC; UX-01 solo verifica existencia de la función.
+- Hallazgo nuevo: AUD-NG-162 (ALTO/P1), añadido de forma aditiva a Auditoria.txt y Pendientes.md. No duplicar AUD-NG-001, AUD-NG-003, AUD-NG-005, AUD-NG-159 ni AUD-NG-160.
+- Informe: AUDITORIA_COMPLETADAS_T-UX-01.md. Plan: sección 21 de AUDITORIA_COMPLETADAS_LEGACY_PLAN.md. Dependencias: sección T-UX-01/AUD-NG-162 de MapaDependencias.md.
+- Pruebas: solo inspección estática/manual; no se ejecutaron pruebas de navegador, expiración real, revocación real ni almacenamiento del navegador.
+- Archivos documentales actualizados en esta iteración: Pendientes.md, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_LEGACY_PLAN.md y este Contexto_personal.txt; se añade AUDITORIA_COMPLETADAS_T-UX-01.md. No se modificó código fuente, completadas.md, completadas_legacy.md ni ChangesLogs.txt.
+- Progreso acumulado: 8/183 identificadores únicos auditados; 175 pendientes.
+- Siguiente tarea exacta: TAREA-02. Consultar primero sus requisitos completos en Pendientes.md y el plan/informes previos; no repetir T-UX-01.
+- Continuidad: verificar HEAD actual de ambas ramas antes de cualquier acción. Mantener NG_beta_0.0.0.1 intacta, no hacer merge y trabajar solo en NG_beta_0.0.0.1_work.
+================================================================

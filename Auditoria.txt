@@ -45,3 +45,21 @@
 - Tarea derivada: AUD-NG-161.
 - Control de duplicados: AUD-NG-006 ya cubre la idempotencia del cliente y la reserva atómica de claves; AUD-NG-133 cubre la idempotencia transaccional de pagos. AUD-NG-161 se limita a reemplazar las pruebas que generan falsos positivos por pruebas conductuales reales y no duplica la corrección de esos mecanismos.
 ===============================================================================
+
+
+===============================================================================
+[AUD-NG-162] EL FLUJO DE EXPIRACIÓN DE SESIÓN NO ESTÁ INTEGRADO CON FETCHAPI NI CON LOGIN
+- Fecha: 2026-11-04.
+- Archivos/Módulos: js/api.js (fetchApi); js/ui-common.js (setupCommonUI / handleSessionExpired / runUXSuiteTests); js/auth.js; login.html; backend/user-service/Code.gs (getUserVerifiedRole / doPost).
+- Tipo: Integración incompleta de autenticación y autorización / deficiencia de pruebas UX.
+- Evidencia:
+  1. js/ui-common.js define handleSessionExpired y elimina currentUser, usuario_actual, usuario_sesion y sessionToken de localStorage/sessionStorage, luego redirige a login.html?session_expired=.... La función está definida dentro de setupCommonUI.
+  2. js/api.js, fetchApi (líneas 116-135), detecta AUTH_PERMISSION_DENIED, registra el rechazo y muestra un toast, pero no invoca handleSessionExpired, no limpia credenciales ni redirige.
+  3. js/auth.js y login.html no procesan session_expired ni presentan un aviso de sesión expirada.
+  4. El backend devuelve AUTH_PERMISSION_DENIED ante fallos de autenticación, pero también usa el mismo código para denegaciones ordinarias de rol/permisos. Un cierre automático ante cualquier AUTH_PERMISSION_DENIED podría expulsar a usuarios con sesiones válidas.
+  5. runUXSuiteTests / UX-01 comprueba únicamente que handleSessionExpired exista; no ejecuta el flujo ni valida limpieza, redirección, aviso o preservación de sesión ante permisos insuficientes.
+- Impacto: una sesión expirada/revocada puede permanecer en el cliente sin un cierre coherente y sin aviso al usuario; una corrección ingenua podría cerrar sesiones válidas ante una denegación RBAC. La prueba actual puede producir un falso positivo.
+- Severidad: ALTO (P1).
+- Tarea derivada: AUD-NG-162.
+- Control de duplicados: AUD-NG-001 cubre propagación de sessionToken; AUD-NG-003 la vigencia del token backend; AUD-NG-005 la coherencia de revocación; AUD-NG-159 el bypass de logout/revocación arbitraria; AUD-NG-160 la vigencia del rol firmado. AUD-NG-162 cubre exclusivamente la diferenciación del contrato de error y la integración conductual del flujo UX de expiración.
+===============================================================================

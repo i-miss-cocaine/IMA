@@ -551,3 +551,12 @@
 - ACCOUNTING/runCriticalProcessConcurrencySuite (10505-10550) -> comprueba adquisición de un único lock y conteos de filas; marca PASSED sin verificar unicidad ni concurrencia real. Consulta TransaccionesCobro, mientras recordStudentPayment escribe PagosAbonos.
 - Hallazgos relacionados: AUD-NG-006 (idempotencia por operación desde el cliente), AUD-NG-133 (idempotencia atómica de pagos). Hallazgo nuevo AUD-NG-161: suite de concurrencia con falsos positivos.
 - Respaldo de código: js/api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; ACADEMIC daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; ACCOUNTING 38b979d41596b85e888b4a7060b37bbac0840a28.
+
+
+## Seguridad de sesión y experiencia de expiración (T-UX-01 / AUD-NG-162, auditoría 2026-11-04)
+- backend/user-service/Code.gs: getUserVerifiedRole -> verifySessionToken; doPost devuelve actualmente AUTH_PERMISSION_DENIED ante rechazo de autenticación, pero el mismo código se utiliza para denegaciones normales de rol/permisos.
+- js/api.js: fetchApi detecta AUTH_PERMISSION_DENIED y muestra toast; no conecta con handleSessionExpired ni limpia credenciales.
+- js/ui-common.js: setupCommonUI define handleSessionExpired, que limpia currentUser, usuario_actual, usuario_sesion y sessionToken de localStorage/sessionStorage y redirige a login.html?session_expired=....
+- login.html / js/auth.js: no interpretan session_expired ni muestran aviso de sesión expirada.
+- js/ui-common.js: runUXSuiteTests / UX-01 verifica solo la existencia de handleSessionExpired, no el flujo conductual.
+- Dependencia requerida: el contrato backend debe separar autenticación inválida/expirada/revocada de autorización insuficiente antes de que fetchApi invoque el manejador; un rechazo RBAC no debe cerrar una sesión válida.

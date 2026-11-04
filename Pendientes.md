@@ -18387,3 +18387,22 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
   - Las pruebas utilizan fixtures/datos aislados y no alteran registros productivos.
 - **Relaciones:** AUD-NG-006 (idempotencia por operación en fetchApi); AUD-NG-133 (idempotencia atómica de pagos); FASE2-T02.
 - **Estado:** [ ] Pendiente
+
+
+### [AUD-NG-162] Integrar la expiración de sesión con el cliente API y mostrar aviso en login
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-162 (auditoría de completadas.md, T-UX-01).
+- **Severidad/Clasificación:** Alto (P1; autenticación, autorización y experiencia de sesión).
+- **Archivos Involucrados:** js/api.js; js/ui-common.js; js/auth.js; login.html; backend/user-service/Code.gs; pruebas UX/regresión.
+- **Dependencias Expuestas:** fetchApi; handleSessionExpired; setupCommonUI; sessionToken; currentUser; usuario_actual; usuario_sesion; getUserVerifiedRole; verifySessionToken; doPost; AUTH_PERMISSION_DENIED; login.html?session_expired=; runUXSuiteTests / UX-01.
+- **Descripción del Alcance:** Completar el flujo extremo a extremo de expiración y rechazo de autenticación. Actualmente ui-common.js define handleSessionExpired y elimina claves de sesión/redirige al login, pero fetchApi no invoca el manejador. login.html y auth.js no interpretan el parámetro session_expired ni muestran aviso. El backend utiliza AUTH_PERMISSION_DENIED tanto para tokens ausentes/inválidos como para denegaciones ordinarias de rol. Definir un contrato inequívoco que distinga autenticación inválida, expirada o revocada de autorización insuficiente; conectar fetchApi con el manejador únicamente para los primeros casos; conservar la sesión cuando el usuario simplemente carezca de permiso; y presentar en login un aviso informativo y seguro. La inicialización de setupCommonUI debe garantizar que el manejador esté disponible antes de que fetchApi lo necesite, sin introducir dependencias de orden frágiles.
+- **Criterios de Aceptación:**
+  - El backend devuelve un código/estado diferenciable para token ausente, inválido, expirado o revocado, distinto de una denegación ordinaria de rol/permisos.
+  - fetchApi identifica el error de autenticación y llama a handleSessionExpired una sola vez, evitando ciclos de redirección o múltiples notificaciones.
+  - La expiración elimina las claves de sesión pertinentes de localStorage y sessionStorage y redirige al login con un motivo controlado y codificado.
+  - login.html interpreta session_expired y muestra un aviso claro sin reflejar texto arbitrario del query string ni introducir XSS.
+  - Una respuesta de permiso insuficiente no elimina credenciales, no cierra la sesión y no redirige al login.
+  - El comportamiento funciona aunque las llamadas API se produzcan durante la inicialización; la disponibilidad del manejador no depende de un orden accidental de scripts.
+  - Las pruebas conductuales cubren token ausente, inválido, expirado, revocado, permiso insuficiente, limpieza de ambos almacenamientos, redirección, banner y ausencia de doble ejecución.
+  - La suite UX-01 falla cuando cualquier parte del flujo extremo a extremo está desconectada; no basta con comprobar typeof handleSessionExpired.
+- **Relaciones:** AUD-NG-001 (propagación del token); AUD-NG-003 (vigencia del token backend); AUD-NG-005 (coherencia de revocación); AUD-NG-159 (protección de logout/revocación); AUD-NG-160 (vigencia del rol firmado). Esta tarea se limita al contrato de errores y a la integración UX de expiración, sin duplicar la corrección de esos mecanismos.
+- **Estado:** [ ] Pendiente

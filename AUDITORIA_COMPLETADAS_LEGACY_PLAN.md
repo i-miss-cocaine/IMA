@@ -231,3 +231,15 @@ Se recuperó y leyó el contenido íntegro de `Pendientes.md`, se confirmó que 
 - **Pruebas:** no ejecutadas; inspección estática manual.
 - **Código fuente:** sin modificaciones. No se alteró completadas_legacy.md ni ChangesLogs.txt.
 - **Estado siguiente:** auditoría histórica cerrada; queda priorizar e implementar hallazgos pendientes con autorización y metodología correspondiente.
+
+
+## 21. Auditoría de tareas completadas - T-UX-01 (2026-11-04)
+
+- **Tarea auditada:** T-UX-01 - Manejo Centralizado de Expiración de Sesión y Excepciones de Autorización.
+- **Dictamen:** Cumple parcialmente. El manejador de expiración existe, pero fetchApi no lo invoca; login.html/js/auth.js no interpretan session_expired ni muestran aviso; el backend mezcla errores de autenticación con denegaciones de permisos; UX-01 solo verifica la existencia de la función.
+- **Hallazgo nuevo:** AUD-NG-162 (ALTO/P1), registrado en Auditoria.txt y convertido en tarea pendiente en Pendientes.md.
+- **Informe:** AUDITORIA_COMPLETADAS_T-UX-01.md.
+- **Pruebas:** inspección estática/manual. No se ejecutaron pruebas de navegador ni escenarios reales de expiración/revocación.
+- **Código fuente:** sin modificaciones. No se alteraron completadas.md, completadas_legacy.md ni ChangesLogs.txt.
+- **Progreso:** 8 de 183 identificadores únicos auditados; 175 pendientes.
+- **Siguiente tarea:** TAREA-02. No repetir T-UX-01 salvo que cambios posteriores o regresiones lo justifiquen.
