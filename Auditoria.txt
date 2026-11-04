@@ -3079,3 +3079,202 @@ INVENTARIO POSTERIOR A TASK-047 (2026-11-04)
 - ChangesLogs.txt no se modifica porque no hubo cambios de código.
 - TASK-046 y TASK-047 quedan auditadas con hallazgos; su marca [X] no se toma como prueba de cumplimiento funcional.
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-04
+AUDITORÍA FUNCIONAL Y TÉCNICA - [TASK-048] Y [TASK-049]: PROTOCOLO INTERSERVICIO HMAC Y CADENA DE INTEGRIDAD DE DECISIONES
+RAMA: NG_beta
+ARCHIVOS AUDITADOS: backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; backend/developer-service/Code.gs; tests/regression/academic-grading-suite.js
+ALCANCE Y CRITERIO:
+- Continuación secuencial desde TASK-047. Se auditan TASK-048 / F23-Task05 y TASK-049 / F23-Task06.
+- Ambas tareas figuran [X] y con Estado [X] Completada en Pendientes.md. Se contrastan los requisitos con las rutas reales de entrada, helpers, secretos, persistencia y verificación.
+- Inspección estática manual. No se generaron sobres, no se enviaron solicitudes interservicio y no se modificó historial operativo.
+===============================================================================
+
+AUD-NG-082
+Fecha: 2026-11-04
+Tarea relacionada: TASK-047 / F23-Task04 (hallazgo adicional detectado durante la revisión del plano de control)
+Archivo auditado: backend/developer-service/Code.gs
+Módulo: Autenticación del plano de control y administración del catálogo
+Funciones y rangos: ROLE_PERMISSIONS (27-33); doPost (145 en adelante, despacho y autorización).
+Tipo: El plano de control acepta authRole enviado por el cliente cuando no hay token de sesión.
+Severidad: Crítico.
+Evidencia técnica:
+1. En doPost, si no se presenta sessionToken/authToken/token, el código toma payload.authRole como userRole.
+2. ROLE_PERMISSIONS asigna ["*"] al rol Administrador.
+3. La autorización del dispatcher compara la acción contra ROLE_PERMISSIONS[userRole] sin verificar que authRole proceda de una sesión o identidad autenticada.
+4. Por tanto, la autorización de registerServiceInstance, updateServiceStatus y otras acciones administrativas puede depender de un valor de rol declarado por el propio solicitante.
+Impacto: Un cliente sin token válido puede declarar authRole = "Administrador" y superar la comprobación de permisos del plano de control; la protección de catálogo y servicios no queda garantizada por identidad verificada.
+Dependencias: doPost, ROLE_PERMISSIONS, authRole, verifySessionToken, registerServiceInstance y updateServiceStatus.
+Conclusión: El fallback de rol no autenticado permite suplantación de privilegios en el servicio de control. Hallazgo estático; no se envió una petición de explotación.
+Tarea asociada: AUD-NG-082 en Pendientes.md.
+===============================================================================
+
+AUD-NG-083
+Fecha: 2026-11-04
+Tarea auditada: TASK-048 / F23-Task05
+Archivos auditados: backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; backend/developer-service/Code.gs
+Módulo: Integración del protocolo de comunicación interservicio
+Funciones y rangos: createInterServiceEnvelope y verifyInterServiceEnvelope (USER 1009-1055 aprox.; ACADEMIC 345-391; ACCOUNTING 298-344; DEVELOPER 59-105 aprox.).
+Tipo: Helpers HMAC declarados pero no conectados al despacho ni a llamadas interservicio.
+Severidad: Crítico.
+Evidencia técnica:
+1. En cada uno de los cuatro servicios, createInterServiceEnvelope y verifyInterServiceEnvelope aparecen únicamente como declaraciones; no se localizaron llamadas desde doPost ni desde otros consumidores.
+2. Los dispatchers reciben acciones y payload directamente; no exigen un sobre firmado ni ejecutan verifyInterServiceEnvelope antes de despachar.
+3. No se encontró una llamada de salida que utilice createInterServiceEnvelope para construir y enviar solicitudes a otro servicio.
+Impacto: La presencia de funciones HMAC no demuestra que la comunicación real esté autenticada; los endpoints ordinarios no quedan protegidos por el protocolo descrito en la tarea.
+Dependencias: doPost, createInterServiceEnvelope, verifyInterServiceEnvelope y fetch/UrlFetchApp de los microservicios.
+Conclusión: El protocolo existe como código auxiliar no integrado; no se demuestra autenticación HMAC en el tráfico interservicio efectivo. Hallazgo estático.
+Tarea asociada: AUD-NG-083 en Pendientes.md.
+===============================================================================
+
+AUD-NG-084
+Fecha: 2026-11-04
+Tarea auditada: TASK-048 / F23-Task05
+Archivos auditados: backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; backend/developer-service/Code.gs
+Módulo: Gestión de secretos, identidad por servicio y rotación
+Funciones y rangos: getAuthTokenSecret (USER 991-1007 aprox.; ACADEMIC 327-343; ACCOUNTING 280-296; DEVELOPER 41-57).
+Tipo: Secreto de respaldo derivado de un identificador predecible y ausencia de un almacén de claves por par de servicios.
+Severidad: Crítico.
+Evidencia técnica:
+1. getAuthTokenSecret intenta leer AUTH_TOKEN_SECRET desde PropertiesService, pero si no existe calcula SHA-256 de SPREADSHEET_ID + "_MASTER_AUTH_HMAC_SECRET".
+2. El valor de respaldo es determinista y depende de un identificador de Spreadsheet utilizado como configuración, no de un secreto aleatorio generado y distribuido de forma segura.
+3. Los cuatro servicios implementan la misma estrategia local; no se observó un registro de claves por emisor/receptor, versión de clave, fecha de rotación ni revocación selectiva.
+4. createInterServiceEnvelope y verifyInterServiceEnvelope permiten customSecret opcional, pero no se observó un gestor que resuelva automáticamente la clave autorizada para cada servicio.
+Impacto: La clave de respaldo puede ser reproducible si se conoce el identificador y el algoritmo; además, la comunicación entre despliegues con propiedades locales distintas no dispone de un mecanismo automático de confianza/rotación.
+Dependencias: PropertiesService, AUTH_TOKEN_SECRET, SPREADSHEET_ID, getAuthTokenSecret y customSecret.
+Conclusión: Se utiliza PropertiesService, pero el fallback determinista y la ausencia de gestión por servicio no satisfacen el ciclo de vida de credenciales requerido. Hallazgo estático.
+Tarea asociada: AUD-NG-084 en Pendientes.md.
+===============================================================================
+
+AUD-NG-085
+Fecha: 2026-11-04
+Tarea auditada: TASK-048 / F23-Task05
+Archivos auditados: backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; backend/developer-service/Code.gs
+Módulo: Protección anti-replay y validación de sobres
+Funciones y rangos: verifyInterServiceEnvelope (USER 1029-1055 aprox.; ACADEMIC 365-391; ACCOUNTING 318-344; DEVELOPER 79-105 aprox.).
+Tipo: Registro de requestId en caché antes de comprobar HMAC y protección anti-replay no atómica.
+Severidad: Alto.
+Evidencia técnica:
+1. verifyInterServiceEnvelope consulta CacheService por REPLAY_REQ_requestId y, si no existe, escribe "SEEN" con TTL 300 segundos antes de calcular y comparar expectedSig con hmacSignature.
+2. Una solicitud con firma inválida puede consumir el requestId y hacer que una solicitud válida posterior con el mismo identificador sea rechazada como repetida.
+3. La consulta y cache.put no constituyen una reserva atómica; dos peticiones simultáneas pueden superar la lectura inicial antes de que cualquiera escriba.
+4. La protección depende de CacheService y su TTL de 300 segundos; no existe registro persistente de requestId procesados en el bloque inspeccionado.
+Impacto: El orden de validación permite denegación de servicio por envenenamiento de identificadores y la concurrencia/evicción del caché debilita la garantía anti-replay.
+Dependencias: verifyInterServiceEnvelope, CacheService, REPLAY_REQ_, hmacSignature y requestId.
+Conclusión: La protección anti-replay está implementada como caché temporal y se ejecuta antes de autenticar criptográficamente el sobre. Hallazgo estático.
+Tarea asociada: AUD-NG-085 en Pendientes.md.
+===============================================================================
+
+AUD-NG-086
+Fecha: 2026-11-04
+Tarea auditada: TASK-048 / F23-Task05
+Archivos auditados: backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; backend/developer-service/Code.gs
+Módulo: Autorización de operaciones interservicio y contrato de protocolo
+Funciones y rangos: verifyInterServiceEnvelope (USER 1029-1055; ACADEMIC 365-391; ACCOUNTING 318-344; DEVELOPER 79-105 aprox.).
+Tipo: Verificación criptográfica sin autorización de emisor/acción ni validación de versión/esquema.
+Severidad: Crítico.
+Evidencia técnica:
+1. verifyInterServiceEnvelope comprueba campos obligatorios, targetService, vigencia, anti-replay y HMAC, pero no consulta CatalogoServicios para comprobar que sourceService esté registrado/activo.
+2. No comprueba que el emisor tenga permiso para ejecutar la acción solicitada ni que el receptor permita esa combinación sourceService/action.
+3. El sobre no contiene versión explícita del protocolo ni un identificador de versión de clave; tampoco se valida el esquema del payload según acción.
+4. La validez del HMAC se devuelve como valid:true, sin separar autenticación del emisor de autorización de la operación.
+Impacto: Incluso cuando se valida una firma, no existe en esta función una decisión de autorización granular por emisor, receptor y acción; la autenticación no equivale a permiso de acceso.
+Dependencias: verifyInterServiceEnvelope, CatalogoServicios, sourceService, targetService, action, permisosConcedidos y versión del protocolo.
+Conclusión: El helper verifica integridad/autenticidad bajo una clave compartida, pero no aplica autorización granular ni contrato versionado. Hallazgo estático.
+Tarea asociada: AUD-NG-086 en Pendientes.md.
+===============================================================================
+
+AUD-NG-087
+Fecha: 2026-11-04
+Tarea auditada: TASK-049 / F23-Task06
+Archivo auditado: backend/user-service/Code.gs
+Módulo: Verificación de continuidad de la cadena de hashes
+Funciones y rangos: processWorkflowDecision (6757-6870 aprox.); verifyWorkflowDecisionAuditChain (7403-7465 aprox.).
+Tipo: La verificación recalcula hashes individuales, pero no valida el enlace entre eventos consecutivos ni marca hashes ausentes.
+Severidad: Crítico.
+Evidencia técnica:
+1. verifyWorkflowDecisionAuditChain recalcula hashActual usando los campos de cada fila y el hashPrevio almacenado, pero no compara hashPrevio con hashActual del evento anterior.
+2. Cuando una fila carece de hashActualAlmacenado, el bloque simplemente omite la comprobación y no agrega inconsistencia.
+3. Cuando se consulta por solicitudId, primero filtra filas de esa solicitud y luego verifica cada fila aislada; no reconstruye ni verifica la cadena global de la que esas decisiones forman parte.
+4. No se comprueba que el primer evento use el hash génesis ni que el último hash coincida con un checkpoint externo.
+Impacto: La función puede devolver cadenaValida = true aunque falte un hash o se haya roto el enlace entre eventos, siempre que los hashes individuales presentes coincidan con sus propios datos almacenados.
+Dependencias: verifyWorkflowDecisionAuditChain, hashPrevio, hashActual, RevisionesDecisionesTramite y processWorkflowDecision.
+Conclusión: Existe recálculo SHA-256 por fila, pero no una verificación de continuidad de la cadena. Hallazgo estático.
+Tarea asociada: AUD-NG-087 en Pendientes.md.
+===============================================================================
+
+AUD-NG-088
+Fecha: 2026-11-04
+Tarea auditada: TASK-049 / F23-Task06
+Archivo auditado: backend/user-service/Code.gs
+Módulo: Integridad de los datos probatorios del evento
+Funciones y rangos: processWorkflowDecision (6757-6870 aprox.); verifyWorkflowDecisionAuditChain (7403-7465 aprox.); recordWorkflowDecisionCorrection (7467-7525 aprox.).
+Tipo: Campos probatorios relevantes no están incluidos en el material que se somete a hash.
+Severidad: Alto.
+Evidencia técnica:
+1. El hash de una decisión ordinaria incluye decId, solicitudId, etapa, callerId, acción, fecha y hashPrevio; no incluye observaciones internas, observaciones públicas ni ipOrigen.
+2. El hash de una corrección incluye corrId, solicitudId, etapa derivada, caller, nueva acción, fecha y hashPrevio; no incluye decisionIdOriginal ni motivoCorreccion.
+3. motivoCorreccion se almacena en una columna separada y también dentro de observaciones, pero la verificación no lo incorpora al hash recalculado.
+Impacto: La justificación de una decisión/corrección y otros metadatos pueden modificarse sin que el recálculo actual del hash detecte necesariamente el cambio.
+Dependencias: processWorkflowDecision, recordWorkflowDecisionCorrection, verifyWorkflowDecisionAuditChain, observacionesInternas, observacionesPublicas, ipOrigen y motivoCorreccion.
+Conclusión: El hash protege un subconjunto de columnas y no la totalidad de los datos probatorios registrados. Hallazgo estático.
+Tarea asociada: AUD-NG-088 en Pendientes.md.
+===============================================================================
+
+AUD-NG-089
+Fecha: 2026-11-04
+Tarea auditada: TASK-049 / F23-Task06
+Archivo auditado: backend/user-service/Code.gs
+Módulo: Autorización y consistencia de correcciones históricas
+Funciones y rangos: recordWorkflowDecisionCorrection (7467-7525 aprox.); doPost y validateRolePermission.
+Tipo: Corrección con actor aportado por cliente, relación documental incompleta y ausencia de exclusión mutua.
+Severidad: Crítico.
+Evidencia técnica:
+1. recordWorkflowDecisionCorrection utiliza revisorId del payload o el literal "Auditor/Dirección"; no deriva el actor de _verifiedUserId ni comprueba que el actor tenga permiso específico de corrección.
+2. Busca decisionIdOriginal, pero no verifica que la solicitudId suministrada coincida con la solicitudId de la fila original.
+3. No valida nuevaAccionDecision contra una lista cerrada de acciones correctivas permitidas.
+4. No utiliza LockService al leer el último hash y anexar la corrección; dos correcciones simultáneas pueden leer el mismo hash previo y crear ramas concurrentes.
+5. El vínculo con decisionIdOriginal se conserva principalmente dentro de texto libre en observaciones, no como campo relacional independiente en el registro.
+Impacto: Una corrección puede atribuirse a un actor declarado por el cliente, asociarse a una solicitud distinta de la original o romper la secuencia esperada bajo concurrencia.
+Dependencias: recordWorkflowDecisionCorrection, decisionIdOriginal, solicitudId, revisorId, nuevaAccionDecision, RevisionesDecisionesTramite y LockService.
+Conclusión: El endpoint agrega filas de corrección, pero no demuestra autorización contextual ni integridad relacional/concurrente suficiente. Hallazgo estático.
+Tarea asociada: AUD-NG-089 en Pendientes.md.
+===============================================================================
+
+AUD-NG-090
+Fecha: 2026-11-04
+Tarea auditada: TASK-048 y TASK-049 / F23-Task05 y F23-Task06
+Archivos auditados: tests/regression/academic-grading-suite.js; backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; backend/developer-service/Code.gs
+Módulo: Evidencia de aceptación de protocolo HMAC y auditoría criptográfica
+Funciones y rangos: bloque TASK-048/TASK-049 en academic-grading-suite.js (380-386 aprox.).
+Tipo: Pruebas estructurales que no ejecutan comunicación, manipulación de cadena ni correcciones.
+Severidad: Alto.
+Evidencia técnica:
+1. TASK-048 comprueba mediante includes la presencia de createInterServiceEnvelope, INTERSERVICE_REPLAY_DETECTED e INVALID_INTERSERVICE_SIGNATURE; no realiza llamadas entre cuentas ni intenta un callback firmado real.
+2. TASK-049 comprueba la presencia de verifyWorkflowDecisionAuditChain, AUDIT_CHAIN_INTEGRITY_COMPROMISED, recordWorkflowDecisionCorrection y nombres de hashes; no modifica una fila de prueba ni comprueba que la auditoría detecte el cambio.
+3. No se observan pruebas que cubran secreto ausente, secreto derivado, firma inválida antes/después del anti-replay, replay concurrente, permiso por acción, hashPrevio desconectado, hash ausente, modificación de observaciones o corrección cruzada de solicitud.
+Impacto: Las pruebas pueden aprobar aunque las garantías de autenticación interservicio y detección de manipulación no se apliquen o sean incompletas.
+Dependencias: tests/regression/academic-grading-suite.js, createInterServiceEnvelope, verifyInterServiceEnvelope, getAuthTokenSecret, verifyWorkflowDecisionAuditChain y recordWorkflowDecisionCorrection.
+Conclusión: La suite comprueba presencia de código, no el comportamiento criptográfico ni la integridad efectiva del historial. Hallazgo estático.
+Tarea asociada: AUD-NG-090 en Pendientes.md.
+===============================================================================
+
+INVENTARIO POSTERIOR A TASK-049 (2026-11-04)
+- Última tarea auditada: TASK-049 / F23-Task06 (Auditoría criptográfica y encadenamiento anti-manipulación de decisiones).
+- Tareas auditadas en esta continuación: TASK-048 y TASK-049 (2 tareas consecutivas adicionales); se agregó AUD-NG-082 como hallazgo de seguridad relacionado con TASK-047.
+- Hallazgos nuevos: 9 (AUD-NG-082 a AUD-NG-090).
+- Tareas derivadas: 9 (AUD-NG-082 a AUD-NG-090), todas [ ] Pendiente de implementación.
+- Archivos auditados y respaldos Git inmutables:
+  * backend/user-service/Code.gs: SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f
+  * backend/academic-service/Code.gs: SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc
+  * backend/accounting-service/Code.gs: SHA 38b979d41596b85e888b4a7060b37bbac0840a28
+  * backend/developer-service/Code.gs: SHA 8aa4bac67cfe5c8c54da51a0784a56fef633e412
+  * tests/regression/academic-grading-suite.js: SHA 3433b707edd4a2f35c68368a3172932adc2a3b32
+- Alcance: integración del protocolo, secretos y rotación, anti-replay, autorización granular, continuidad de hashes, integridad de campos probatorios, correcciones y pruebas.
+- Tipo de revisión: inspección estática manual. No se ejecutaron pruebas ni se enviaron solicitudes interservicio; no se modificaron registros operativos.
+- Cambios: solo anexos en Auditoria.txt, Pendientes.md y MapaDependencias.md. No se modificó código ni se eliminó contenido histórico.
+- ChangesLogs.txt no se modifica porque no hubo cambios de código.
+- TASK-048 y TASK-049 quedan auditadas con hallazgos; el estado [X] no se toma como evidencia suficiente de cumplimiento.
+===============================================================================

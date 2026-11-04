@@ -17616,3 +17616,91 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Estado:** [ ] Pendiente
 
 ---
+
+
+---
+
+## TAREAS DERIVADAS DE AUDITORÍA — TASK-047 (HALLAZGO ADICIONAL), TASK-048 Y TASK-049 / FASE 23 (2026-11-04)
+
+### [AUD-NG-082] Exigir sesión autenticada en el plano de control y rechazar roles declarados por el cliente
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-082 (TASK-047 / F23-Task04)
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** backend/developer-service/Code.gs
+- **Dependencias Expuestas:** doPost, ROLE_PERMISSIONS, authRole, verifySessionToken, registerServiceInstance y updateServiceStatus.
+- **Descripción del Alcance:** Eliminar el fallback que utiliza payload.authRole cuando no existe token. Resolver el rol exclusivamente a partir de una sesión firmada y vigente, y rechazar solicitudes sin credenciales verificables. Aplicar el mismo principio a todas las acciones del plano de control y registrar el actor autenticado.
+- **Criterios de Aceptación:** Un payload sin token se rechaza aunque declare Administrador; un token inválido/expirado se rechaza; el rol efectivo proviene de claims verificados; las acciones administrativas quedan cubiertas por pruebas RBAC negativas y positivas.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-083] Integrar la verificación HMAC en el tráfico real de todos los microservicios
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-083 (TASK-048 / F23-Task05)
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; backend/developer-service/Code.gs
+- **Dependencias Expuestas:** createInterServiceEnvelope, verifyInterServiceEnvelope, doPost, UrlFetchApp/fetch y endpoints interservicio.
+- **Descripción del Alcance:** Definir un punto único de creación y verificación de sobres e integrarlo en todas las llamadas entre servicios. Los endpoints que admitan tráfico interservicio deben exigir el sobre validado antes del despacho; las llamadas de salida deben firmar el payload y enviar el sobre completo.
+- **Criterios de Aceptación:** Toda llamada entre servicios pasa por el protocolo; los endpoints rechazan sobres ausentes o inválidos; las llamadas internas existentes quedan migradas; la prueba de integración acredita comunicación entre despliegues separados.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-084] Implementar gestión segura de secretos por servicio con rotación y revocación
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-084 (TASK-048 / F23-Task05)
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; backend/developer-service/Code.gs; PropertiesService/gestor de secretos
+- **Dependencias Expuestas:** getAuthTokenSecret, AUTH_TOKEN_SECRET, SPREADSHEET_ID, customSecret y catálogo de credenciales.
+- **Descripción del Alcance:** Eliminar secretos derivados de identificadores públicos/configurables. Generar secretos aleatorios de alta entropía y gestionar claves por emisor/receptor con versión, vigencia, rotación solapada, revocación individual y auditoría de uso. No exponer secretos al frontend ni registrarlos en logs.
+- **Criterios de Aceptación:** La ausencia de una clave configurada produce error seguro, no un fallback predecible; cada par de servicios utiliza credenciales administrables; la rotación permite transición controlada; revocar un servicio no invalida a los demás.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-085] Corregir el orden y la atomicidad de la protección anti-replay
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-085 (TASK-048 / F23-Task05)
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; backend/developer-service/Code.gs
+- **Dependencias Expuestas:** verifyInterServiceEnvelope, CacheService, requestId y registro persistente de solicitudes.
+- **Descripción del Alcance:** Validar primero estructura, destinatario, vigencia y firma HMAC; solo después reservar el requestId mediante operación atómica y persistente o un mecanismo equivalente. Rechazar replays concurrentes y mantener la deduplicación por un período coherente con la ventana de validez y retención definida.
+- **Criterios de Aceptación:** Una firma inválida no consume requestId; dos solicitudes concurrentes con igual requestId producen una sola aceptación; un replay dentro de la ventana se rechaza incluso ante evicción de caché; el registro permite auditoría posterior.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-086] Aplicar autorización por emisor, receptor, acción y versión de contrato
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-086 (TASK-048 / F23-Task05)
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; backend/developer-service/Code.gs; CatalogoServicios
+- **Dependencias Expuestas:** verifyInterServiceEnvelope, CatalogoServicios, permisosConcedidos, sourceService, targetService, action y versión del protocolo.
+- **Descripción del Alcance:** Separar autenticación de autorización. Comprobar que el emisor está registrado, activo y posee permiso explícito para la acción solicitada sobre el receptor; validar contrato y esquema por versión, con respuestas y errores normalizados.
+- **Criterios de Aceptación:** Un servicio desconocido/inactivo es rechazado; una acción no autorizada se bloquea aunque el HMAC sea correcto; los payloads incompatibles se rechazan; se puede revocar un permiso por acción sin afectar otras relaciones.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-087] Verificar la continuidad real de la cadena y rechazar hashes ausentes
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-087 (TASK-049 / F23-Task06)
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** backend/user-service/Code.gs; RevisionesDecisionesTramite; servicio de auditoría
+- **Dependencias Expuestas:** verifyWorkflowDecisionAuditChain, hashPrevio, hashActual, hash génesis y checkpoints.
+- **Descripción del Alcance:** Validar cada hash y además comprobar que hashPrevio coincida exactamente con hashActual del evento inmediatamente anterior, comenzando por el valor génesis. Marcar como inconsistencia cualquier hash vacío, enlace roto, evento eliminado o secuencia incompleta; al filtrar por solicitud, verificar el tramo global correspondiente sin perder continuidad.
+- **Criterios de Aceptación:** Cambiar un dato, quitar un hash, alterar un enlace o eliminar una fila de prueba produce cadena inválida; una cadena completa se verifica de forma determinista; el último hash se compara con un checkpoint confiable.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-088] Incluir todos los datos probatorios y relaciones en el hash de cada evento
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-088 (TASK-049 / F23-Task06)
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** backend/user-service/Code.gs; RevisionesDecisionesTramite
+- **Dependencias Expuestas:** processWorkflowDecision, recordWorkflowDecisionCorrection, verifyWorkflowDecisionAuditChain, observaciones, ipOrigen, motivoCorreccion y decisionIdOriginal.
+- **Descripción del Alcance:** Definir un esquema canónico del evento que incluya identificadores, proceso, actor verificado, acción, fecha, IP/fuente confiable, observaciones, motivo, referencia a evento original y hash previo. Serializar de forma determinista y someter todos los campos probatorios a la función criptográfica.
+- **Criterios de Aceptación:** Modificar cualquier campo probatorio provoca fallo de integridad; una corrección queda vinculada estructuralmente al evento original; los hashes se recalculan sobre el mismo esquema canónico en escritura y verificación.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-089] Autorizar y serializar las correcciones de decisiones históricas
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-089 (TASK-049 / F23-Task06)
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** backend/user-service/Code.gs; RevisionesDecisionesTramite
+- **Dependencias Expuestas:** recordWorkflowDecisionCorrection, validateRolePermission, _verifiedUserId, decisionIdOriginal, solicitudId, nuevaAccionDecision y LockService.
+- **Descripción del Alcance:** Derivar actor de la sesión verificada y exigir permiso específico de corrección. Comprobar que la solicitud corresponde al evento original, validar el tipo de corrección y conservar una relación estructurada. Proteger lectura del último hash y append mediante exclusión mutua; impedir correcciones duplicadas o bifurcaciones.
+- **Criterios de Aceptación:** Un actor sin permiso no corrige; revisorId manipulado no cambia al autor; una solicitud distinta del evento original es rechazada; acciones no permitidas se rechazan; dos correcciones simultáneas no crean ramas ni eventos duplicados.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-090] Implementar pruebas funcionales de HMAC, anti-replay y auditoría histórica
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-090 (TASK-048 y TASK-049 / F23-Task05 y F23-Task06)
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** tests/regression/academic-grading-suite.js; cuatro microservicios; entorno de integración aislado
+- **Dependencias Expuestas:** createInterServiceEnvelope, verifyInterServiceEnvelope, getAuthTokenSecret, verifyWorkflowDecisionAuditChain y recordWorkflowDecisionCorrection.
+- **Descripción del Alcance:** Sustituir aserciones de presencia por pruebas reales entre despliegues aislados. Cubrir secretos ausentes/rotados/revocados, firma inválida, expiración, replay simple y concurrente, autorización por acción, manipulación/eliminación de eventos, hash previo roto, campos probatorios y correcciones cruzadas.
+- **Criterios de Aceptación:** Las pruebas envían sobres reales entre servicios; verifican autenticación y autorización por separado; cada alteración del historial se detecta; las correcciones válidas quedan encadenadas; los escenarios negativos no producen efectos persistentes.
+- **Estado:** [ ] Pendiente
+
+---
