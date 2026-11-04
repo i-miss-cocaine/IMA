@@ -321,3 +321,56 @@ ACTUALIZACIÓN DE CONTINUIDAD IMA - LOTE F2 (2026-11-04)
 - Última tarea histórica revisada: REQ-EXP-019. Próximo lote: G (REQ-EXP-020 en adelante y tareas DOC).
 - No se modificó código fuente, completadas_legacy.md ni ChangesLogs.txt. No se ejecutaron pruebas ni se accedió a datos productivos.
 ================================================================
+
+
+================================================================
+PUNTO DE CONTROL DE CONTINUIDAD - AUDITORÍA LEGACY (2026-11-04 16:10, GUATEMALA)
+================================================================
+REPOSITORIO: `i-miss-cocaine/IMA`
+RAMA DE TRABAJO: `NG_beta_0.0.0.1_work`
+RAMA BASE DE AUDITORÍA: `NG_beta_0.0.0.1`
+HEAD DE LA RAMA DE TRABAJO ANTES DE ESTE PUNTO DE CONTROL: `be77e9b164c2e731b1e7f45de7545b4a4ed8bf84`
+
+### 1. ARCHIVO DE CONTEXTO Y NORMAS
+- El archivo existente en el repositorio se llama exactamente `Contexto_personal.txt`; no existe `contexto_personal.md` ni `Contexto_personal.md` en el árbol de esta rama. Este punto de control se registra en el archivo real, sin crear un duplicado con otra extensión.
+- Se volvió a leer `METODOLOGIA_DESARROLLO.md` y el historial de este archivo de contexto antes de registrar el checkpoint.
+- Mantener el trabajo documental en `NG_beta_0.0.0.1_work`. No modificar la rama base ni hacer merge. No modificar código fuente durante la auditoría. Registrar hallazgos como tareas en `Pendientes.md` solo después de verificarlos y conservar intactos los registros existentes de `completadas_legacy.md` y `ChangesLogs.txt`, salvo autorización expresa.
+
+### 2. ÚLTIMO PUNTO DE AUDITORÍA COMPLETADO Y SIGUIENTE TAREA
+- La última auditoría histórica completada y registrada es el **Lote F2**, que cubrió `REQ-EXP-016` a `REQ-EXP-019`. Las cuatro quedaron como **Cumple parcialmente**, con hallazgos `AUD-NG-143` a `AUD-NG-146` y el informe `AUDITORIA_LOTE_F2.md`.
+- El plan `AUDITORIA_COMPLETADAS_LEGACY_PLAN.md`, sección 16, y la actualización previa de este contexto indican que el siguiente tramo es el **Lote G: comenzar en `REQ-EXP-020` y continuar con los requerimientos históricos posteriores, incluidos los DOC que correspondan**.
+- Por tanto, la próxima iteración debe abrir `completadas_legacy.md` inmediatamente después de `REQ-EXP-019`, identificar el texto completo de `REQ-EXP-020` y las tareas siguientes, y comenzar allí. No reiniciar desde REQ-EXP-001 ni repetir E2/F1/F2.
+
+### 3. QUÉ SE ESTABA INSPECCIONANDO EN LA SESIÓN INMEDIATAMENTE ANTERIOR A ESTE CHECKPOINT
+Se produjo una exploración adicional de los módulos de matrícula y finanzas estudiantiles, correspondiente al contenido de `REQ-EXP-009` a `REQ-EXP-012`. Esa exploración **no constituye un lote nuevo ni una auditoría concluida**: esas cuatro tareas ya fueron revisadas en E2A/E2B y sus resultados están documentados. La exploración no debe reemplazar ni duplicar esos informes.
+
+Archivos y zonas consultados durante esa exploración:
+- `completadas_legacy.md`, aproximadamente líneas 220-355: descripción y criterios de REQ-EXP-009 a REQ-EXP-019.
+- `js/config.js`, líneas 1-110 y 270-355: catálogos de módulos/capacidades, versiones y registro de microservicios, incluyendo ACCOUNTING.
+- `backend/academic-service/Code.gs`, líneas 11120-11240 y 12600-12835: funciones de matrícula/inscripción, conversión desde admisión e historial de matrícula.
+- `backend/accounting-service/Code.gs`, líneas 195-300 (último fragmento consultado), además de las zonas 355-410, 1030-1125, 2430-2790, 3825-4035 y 4183-4555: enrutamiento del servicio, cargos, pagos, comprobantes, recibos, ajustes y otras operaciones financieras.
+- `js/student.js`, líneas 120-230 y 400-690; `student-dashboard.html`, líneas 120-310; `js/secretary.js`: búsqueda de las vistas y llamadas de matrícula/finanzas, comprobantes y portal estudiantil.
+- También se buscaron referencias de matrícula, recibos, comprobantes y funciones de pagos en los archivos anteriores.
+
+### 4. PREGUNTAS TÉCNICAS QUE MOTIVARON ESA EXPLORACIÓN
+La búsqueda estaba intentando seguir el flujo completo, no solo la existencia de funciones:
+1. Cómo se crea o renueva una matrícula, cómo se persiste su historial y cómo se convierte una solicitud de admisión en expediente/matrícula.
+2. Cómo se asocian los cargos a la matrícula y cómo el portal del alumno consulta estados de cuenta y vencimientos.
+3. Si la interfaz estudiantil está realmente conectada con las funciones backend para subir/revisar comprobantes de pago.
+4. Si los pagos confirmados producen recibos PDF únicos y correlativos, y si existe separación real entre recibo interno y factura fiscal.
+5. Cómo se enrutan las acciones hacia ACCOUNTING y qué validaciones de identidad/rol/contexto se aplican en cada endpoint.
+
+### 5. RESULTADOS PREVIOS QUE DEBEN CONSULTARSE ANTES DE CONTINUAR ESA LÍNEA
+- `AUDITORIA_LOTE_E2A.md`: `REQ-EXP-009` y `REQ-EXP-010`; hallazgos `AUD-NG-129` a `AUD-NG-133`.
+- `AUDITORIA_LOTE_E2B.md`: `REQ-EXP-011` y `REQ-EXP-012`; hallazgos `AUD-NG-134` a `AUD-NG-137`, además de la ampliación de `AUD-NG-127` al servicio ACCOUNTING.
+- El plan de auditoría, secciones 13 y 14, resume que matrícula tiene flujos divergentes/asociación de cargos incompleta; el endpoint ACCOUNTING presenta defectos de enrutamiento/mapeo/deduplicación y validación transaccional; el portal de pagos no está conectado plenamente; los recibos PDF/correlativos no están implementados; y la protección del CAI/rango fiscal es insuficiente.
+- No crear tareas duplicadas para estos defectos. Si una nueva inspección desde el siguiente lote revela una relación o regresión posterior, comparar primero con AUD-NG-129 a AUD-NG-137 y ampliar el hallazgo existente cuando corresponda, siguiendo la metodología.
+
+### 6. ESTADO DEL TRABAJO AL DETENERSE
+- No se editó código fuente.
+- No se modificaron `completadas_legacy.md` ni `ChangesLogs.txt`.
+- Esta exploración adicional no generó hallazgos nuevos ni cambios en `Pendientes.md`.
+- No se ejecutaron pruebas ni se accedió a datos productivos.
+- Última operación de lectura de código antes de registrar este checkpoint: `backend/accounting-service/Code.gs`, líneas 195-300.
+- Próximo paso recomendado: continuar con el Lote G desde `REQ-EXP-020`, documentar cada sublote con commits pequeños y actualizar el contexto al cerrar cada sublote.
+================================================================
