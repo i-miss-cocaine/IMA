@@ -17458,3 +17458,73 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Estado:** [ ] Pendiente
 
 ---
+
+
+---
+
+## TAREAS DERIVADAS DE AUDITORÍA — TASK-044 Y TASK-045 / FASE 23 (2026-11-04)
+
+### [AUD-NG-066] Autorizar cada decisión según identidad autenticada y etapa activa
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-066 (TASK-044 / F23-Task01)
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** backend/user-service/Code.gs; modelo de workflows; SolicitudesTramites; FlujosAprobacion
+- **Dependencias Expuestas:** processWorkflowDecision, validateRolePermission, _verifiedUserId, _verifiedRole, revisorId, etapaNombre y pasosEtapas.
+- **Descripción del Alcance:** Derivar el actor exclusivamente de la sesión verificada; ignorar/rechazar revisorId enviado por cliente cuando no coincida con _verifiedUserId. Resolver en servidor la etapa activa desde la solicitud y la definición vigente del flujo; comprobar que el actor o su grupo tiene asignación y permiso para esa etapa antes de aceptar la decisión.
+- **Criterios de Aceptación:** Manipular revisorId no altera al actor registrado; un usuario con rol general pero no asignado a la etapa es rechazado; una etapa arbitraria enviada por cliente se ignora/rechaza; delegaciones válidas quedan trazadas con titular y ejecutor.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-067] Aplicar una máquina de estados estricta basada en la definición persistida del workflow
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-067 (TASK-044 / F23-Task01)
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** backend/user-service/Code.gs; FlujosAprobacion; SolicitudesTramites; RevisionesDecisionesTramite
+- **Dependencias Expuestas:** processWorkflowDecision, FlujosAprobacion.pasosEtapas, estado actual, accionDecision y siguiente etapa.
+- **Descripción del Alcance:** Cargar la definición publicada del workflow y calcular la etapa activa, acciones permitidas, grupos autorizados y siguiente responsable en servidor. Validar estado de origen y transición permitida con lista cerrada; rechazar acciones desconocidas y duplicidades de todas las decisiones que afecten una etapa, no solo APROBADO/RECHAZADO.
+- **Criterios de Aceptación:** Una acción no definida se rechaza sin escritura; cada transición coincide con el flujo publicado; una etapa no activa no puede resolverse; se bloquean duplicados de aprobación, rechazo, devolución y derivación conforme a política.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-068] Hacer consistente la escritura del historial y el estado de cada trámite
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-068 (TASK-044 / F23-Task01)
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** backend/user-service/Code.gs; SolicitudesTramites; RevisionesDecisionesTramite
+- **Dependencias Expuestas:** processWorkflowDecision, LockService, appendRow, setValue y getWorkflowHistory.
+- **Descripción del Alcance:** Diseñar persistencia recuperable para que la decisión y el nuevo estado del trámite se confirmen como una sola operación lógica. Incorporar identificador de operación y estado de procesamiento, validar las escrituras y permitir recuperación segura ante fallo parcial sin duplicar ni perder el historial.
+- **Criterios de Aceptación:** Fallos inducidos después de cada escritura no dejan estado contradictorio; cada decisión confirmada tiene exactamente una actualización de estado; la recuperación puede completarse de forma idempotente; el historial conserva las decisiones anteriores.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-069] Propagar claves idempotentes en fetchApi y controlar los reintentos de POST
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-069 (TASK-045 / F23-Task02)
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** js/api.js; backend/user-service/Code.gs; servicios consumidores de fetchApi
+- **Dependencias Expuestas:** fetchApi, MAX_RETRIES, idempotencyToken, idempotencyKey, checkAndRegisterIdempotencyKey y saveIdempotentResult.
+- **Descripción del Alcance:** Generar y conservar una clave de operación por solicitud lógica, propagarla en todos los intentos y exigirla para operaciones mutables/reintentables. Desactivar reintentos automáticos para acciones no idempotentes que no tengan clave o protocolo seguro de repetición. Mantener la misma clave en reintentos y una clave nueva para una operación legítima diferente.
+- **Criterios de Aceptación:** Una respuesta perdida después de una escritura no crea un segundo registro; todos los reintentos de una operación usan la misma clave; una nueva acción del usuario usa otra clave; las mutaciones sin protección no se reintentan automáticamente.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-070] Persistir resultados idempotentes más allá del caché temporal
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-070 (TASK-045 / F23-Task02)
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** backend/user-service/Code.gs; almacenamiento persistente de operaciones
+- **Dependencias Expuestas:** CacheService, checkAndRegisterIdempotencyKey, saveIdempotentResult y doPost.
+- **Descripción del Alcance:** Crear un registro durable de claves, usuario, acción, firma del payload, estado de operación, resultado y fecha de expiración/retención. Mantener CacheService solo como optimización, no como fuente de verdad. Definir política de retención, recuperación y manejo de resultados grandes o fallos de almacenamiento.
+- **Criterios de Aceptación:** La misma clave recupera el resultado tras expirar/evictar caché y tras reinicio del servicio; claves con payload distinto se rechazan; los errores al guardar la clave no permiten reportar una operación como protegida; la retención se aplica según política auditable.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-071] Reservar claves idempotentes de forma atómica antes de ejecutar operaciones
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-071 (TASK-045 / F23-Task02)
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** backend/user-service/Code.gs; almacenamiento persistente de operaciones
+- **Dependencias Expuestas:** checkAndRegisterIdempotencyKey, saveIdempotentResult, LockService y doPost.
+- **Descripción del Alcance:** Implementar reserva atómica por clave con estados EnProceso/Completada/Fallida y exclusión mutua o restricción única persistente. Si otra petición llega mientras la primera está en proceso, devolver estado recuperable o esperar el resultado, sin ejecutar la operación otra vez.
+- **Criterios de Aceptación:** Dos solicitudes simultáneas con la misma clave producen un único efecto; una clave reservada no se puede ejecutar por segunda vez; fallos permiten recuperación controlada; la clave queda vinculada al resultado definitivo.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-072] Implementar pruebas funcionales de concurrencia, autorización e idempotencia
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-072 (TASK-044 y TASK-045 / F23-Task01 y F23-Task02)
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** tests/regression/academic-grading-suite.js; backend/user-service/Code.gs; js/api.js; entorno de pruebas aislado
+- **Dependencias Expuestas:** processWorkflowDecision, fetchApi, checkAndRegisterIdempotencyKey, saveIdempotentResult, SolicitudesTramites y RevisionesDecisionesTramite.
+- **Descripción del Alcance:** Sustituir las aserciones de presencia textual por pruebas reales con persistencia aislada. Cubrir revisor manipulado, etapa incorrecta, transición inválida, dos decisiones simultáneas, fallo entre escrituras, POST repetido tras pérdida de respuesta, clave con payload diferente, expiración de caché y solicitudes interservicio.
+- **Criterios de Aceptación:** Las pruebas invocan las operaciones reales y verifican filas/resultados; una sola decisión gana la concurrencia; no hay efectos duplicados en reintentos; las operaciones no autorizadas se rechazan; cada criterio produce evidencia reproducible.
+- **Estado:** [ ] Pendiente
+
+---

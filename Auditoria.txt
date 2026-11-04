@@ -2722,3 +2722,163 @@ INVENTARIO POSTERIOR A TASK-042 (2026-11-04)
 - ChangesLogs.txt no se modifica porque no hubo cambios de código.
 - La auditoría de TASK-038 a TASK-042 registra incumplimientos y no certifica funcionalidad completa.
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-04
+AUDITORÍA FUNCIONAL Y TÉCNICA - [TASK-044] Y [TASK-045]: MOTOR DE WORKFLOWS, AUTORIZACIÓN DE ETAPAS E IDEMPOTENCIA
+RAMA: NG_beta
+ARCHIVOS AUDITADOS: backend/user-service/Code.gs; js/api.js; tests/regression/academic-grading-suite.js; Pendientes.md; MapaDependencias.md
+ALCANCE Y CRITERIO:
+- Continuación secuencial posterior a TASK-042. TASK-043 aparece únicamente como encabezado de prioridad sin descripción funcional propia; las siguientes tareas definidas son TASK-044 y TASK-045.
+- Ambas tareas figuran [X] y con Estado [X] Completada en Pendientes.md. La marca se contrastó con el código y las pruebas, sin aceptarla como evidencia suficiente.
+- Revisión estática manual de funciones, control de acceso, transición de estados, persistencia, reintentos y caché. No se ejecutaron pruebas concurrentes ni se modificaron datos operativos.
+===============================================================================
+
+AUD-NG-066
+Fecha: 2026-11-04
+Tarea auditada: TASK-044 / F23-Task01
+Archivo auditado: backend/user-service/Code.gs
+Módulo: Autorización de decisiones y asignación de revisores
+Funciones y rangos: processWorkflowDecision (6757-6870 aprox.); validateRolePermission (1253-1308 aprox.); doPost (1351-1608 aprox.).
+Tipo: Falta de autorización contextual del revisor para la etapa activa y confianza en identificadores/etapas enviados por el cliente.
+Severidad: Crítico.
+Evidencia técnica:
+1. processWorkflowDecision establece callerId mediante revisorId del payload antes de utilizar payload._verifiedUserId. Un cliente puede enviar un revisorId distinto del usuario autenticado y ese valor se registra como autor de la decisión.
+2. targetEtapa se obtiene de etapaNombre enviado por el cliente antes de usar asignadoAActual; no se comprueba que esa etapa sea la etapa activa de la solicitud.
+3. callerRole se obtiene de _verifiedRole, pero no se utiliza para autorizar la decisión. La función no comprueba que callerId sea el responsable de la etapa ni que pertenezca al grupo de aprobadores autorizado.
+4. validateRolePermission valida el permiso general para ejecutar processWorkflowDecision según rol, pero la función auditada no aplica una autorización específica sobre el revisor y la etapa concreta.
+Impacto: Un usuario con permiso general sobre la acción podría atribuir la decisión a otro identificador o indicar una etapa distinta de la asignada, sin que el código inspeccionado demuestre autorización individual sobre esa etapa.
+Dependencias: validateRolePermission, _verifiedUserId, _verifiedRole, revisorId, etapaNombre, SolicitudesTramites y FlujosAprobacion.
+Conclusión: Hay control RBAC general y candado de concurrencia, pero no se demuestra autorización del usuario autenticado como revisor de la etapa activa. Hallazgo estático.
+Tarea asociada: AUD-NG-066 en Pendientes.md.
+===============================================================================
+
+AUD-NG-067
+Fecha: 2026-11-04
+Tarea auditada: TASK-044 / F23-Task01
+Archivo auditado: backend/user-service/Code.gs
+Módulo: Máquina de estados y definición del workflow
+Funciones y rangos: processWorkflowDecision (6757-6870 aprox.); FlujosAprobacion; SolicitudesTramites.
+Tipo: Transiciones no gobernadas por la definición persistida del flujo y falta de validación estricta de acciones/estados.
+Severidad: Crítico.
+Evidencia técnica:
+1. processWorkflowDecision no consulta FlujosAprobacion ni recupera los pasosEtapas de la definición vigente para determinar la etapa activa, el grupo aprobador o la siguiente etapa.
+2. La función solo bloquea los estados finales Aprobada, Rechazada y Cancelada; no valida una lista completa de estados de origen ni las precondiciones específicas de cada transición.
+3. accionDecision no se valida contra una lista cerrada antes de persistir. Cualquier valor no reconocido cae en el bloque else, conserva el asignado actual, establece estadoFinalCalculado = "En Revisión" y aun así registra una decisión como exitosa.
+4. La detección de etapa resuelta solo considera decisiones APROBADO o RECHAZADO; decisiones previas de otros tipos no quedan cubiertas por esa condición de duplicidad.
+Impacto: El motor puede aceptar decisiones no definidas y transiciones que no corresponden al workflow publicado; el historial y el estado operativo pueden divergir de la definición institucional.
+Dependencias: processWorkflowDecision, FlujosAprobacion, pasosEtapas, SolicitudesTramites.Estado y RevisionesDecisionesTramite.
+Conclusión: La transición se calcula con condiciones fijas en la función y no con la definición persistida del workflow; las acciones desconocidas no son rechazadas. Hallazgo estático.
+Tarea asociada: AUD-NG-067 en Pendientes.md.
+===============================================================================
+
+AUD-NG-068
+Fecha: 2026-11-04
+Tarea auditada: TASK-044 / F23-Task01
+Archivo auditado: backend/user-service/Code.gs
+Módulo: Consistencia transaccional de decisiones
+Funciones y rangos: processWorkflowDecision (6757-6870 aprox.).
+Tipo: Escrituras secuenciales en historial y solicitud sin transacción/recuperación ante fallo parcial.
+Severidad: Crítico.
+Evidencia técnica:
+1. La función ejecuta decSheet.appendRow con la decisión antes de actualizar la fila de SolicitudesTramites.
+2. Posteriormente realiza varias escrituras independientes con getRange(...).setValue para estado, asignado, observaciones y fecha.
+3. El bloque finally libera el ScriptLock, pero no revierte ni reconcilia una decisión ya anexada si una escritura posterior falla.
+4. No se observa un estado de operación intermedio ni un mecanismo de recuperación que permita distinguir una decisión completa de una persistencia parcial.
+Impacto: Un fallo después de appendRow puede dejar una decisión en el historial sin que la solicitud refleje la transición correspondiente; el siguiente intento puede encontrar la etapa como resuelta y bloquear la recuperación normal.
+Dependencias: LockService, RevisionesDecisionesTramite, SolicitudesTramites, processWorkflowDecision y getWorkflowHistory.
+Conclusión: El candado serializa la sección crítica, pero no convierte las escrituras de varias hojas/rangos en una transacción atómica. Hallazgo estático.
+Tarea asociada: AUD-NG-068 en Pendientes.md.
+===============================================================================
+
+AUD-NG-069
+Fecha: 2026-11-04
+Tarea auditada: TASK-045 / F23-Task02
+Archivos auditados: js/api.js; backend/user-service/Code.gs
+Módulo: Reintentos HTTP e idempotencia del cliente
+Funciones y rangos: fetchApi (js/api.js:11-181 aprox.); doPost (backend/user-service/Code.gs:1351-1608 aprox.).
+Tipo: Reintentos automáticos de operaciones POST sin clave de idempotencia generada o propagada.
+Severidad: Crítico.
+Evidencia técnica:
+1. fetchApi envía todas las acciones mediante POST y serializa {action, payload}; no genera ni incorpora idempotencyToken/idempotencyKey en el payload ni un encabezado Idempotency-Key.
+2. Ante errores de red/fetch/Failed, fetchApi repite la misma acción hasta dos veces llamando nuevamente fetchApi con el mismo payload.
+3. El servidor solo puede recuperar un resultado previo cuando el cliente suministra una clave idempotente; si no existe, checkAndRegisterIdempotencyKey retorna null y la operación se ejecuta otra vez.
+4. No se observa una distinción en fetchApi que desactive reintentos automáticos para acciones mutables/no idempotentes.
+Impacto: Si el servidor completa una escritura pero se pierde la respuesta, el cliente puede repetir el POST y crear solicitudes, decisiones, notificaciones u otros efectos duplicados.
+Dependencias: fetchApi, MAX_RETRIES, checkAndRegisterIdempotencyKey, saveIdempotentResult, idempotencyToken e idempotencyKey.
+Conclusión: El mecanismo del servidor es optativo y el cliente reintenta mutaciones sin enviar una clave; el flujo integrado no garantiza idempotencia ante pérdida de respuesta. Hallazgo estático.
+Tarea asociada: AUD-NG-069 en Pendientes.md.
+===============================================================================
+
+AUD-NG-070
+Fecha: 2026-11-04
+Tarea auditada: TASK-045 / F23-Task02
+Archivo auditado: backend/user-service/Code.gs
+Módulo: Persistencia y conservación de claves idempotentes
+Funciones y rangos: getIdempotencyPayloadSignature (209-216 aprox.); checkAndRegisterIdempotencyKey (1310-1336 aprox.); saveIdempotentResult (1337-1350 aprox.); doPost (1351-1608 aprox.).
+Tipo: Idempotencia opcional, temporal y dependiente de caché volátil.
+Severidad: Alto.
+Evidencia técnica:
+1. Si no se suministra idempotencyToken o idempotencyKey, checkAndRegisterIdempotencyKey retorna null y la operación continúa sin protección.
+2. saveIdempotentResult conserva resultado en CacheService.getScriptCache con TTL de 21600 segundos (6 horas), no en un registro persistente.
+3. La escritura en caché está dentro de try/catch; ante error solo se registra console.warn y la operación conserva su respuesta exitosa sin respaldo durable de la clave.
+4. Tras expiración/evicción de caché, una repetición de la misma operación ya no puede recuperar el resultado anterior desde este mecanismo.
+Impacto: La protección de duplicados depende de que el cliente incluya la clave y de que el caché conserve la entrada; no cubre reintentos tardíos ni garantiza unicidad persistente.
+Dependencias: CacheService, checkAndRegisterIdempotencyKey, saveIdempotentResult, doPost e idempotencyToken.
+Conclusión: El mecanismo evita algunos reintentos dentro de la ventana de caché, pero no constituye un registro idempotente durable. Hallazgo estático.
+Tarea asociada: AUD-NG-070 en Pendientes.md.
+===============================================================================
+
+AUD-NG-071
+Fecha: 2026-11-04
+Tarea auditada: TASK-045 / F23-Task02
+Archivo auditado: backend/user-service/Code.gs
+Módulo: Concurrencia del registro idempotente
+Funciones y rangos: checkAndRegisterIdempotencyKey (1310-1336 aprox.); saveIdempotentResult (1337-1350 aprox.); doPost (1351-1608 aprox.).
+Tipo: Ausencia de reserva atómica de la clave antes de ejecutar la operación.
+Severidad: Crítico.
+Evidencia técnica:
+1. checkAndRegisterIdempotencyKey consulta el caché y retorna null cuando no encuentra resultado.
+2. La operación de negocio se ejecuta después de esa consulta.
+3. saveIdempotentResult escribe el resultado únicamente después de completar la operación.
+4. No existe en ese flujo una reserva atómica/estado EnProceso ni un LockService asociado a la clave que impida que dos solicitudes concurrentes con la misma clave superen simultáneamente la consulta inicial.
+Impacto: Dos peticiones simultáneas con la misma clave pueden observar ausencia de resultado y ejecutar dos veces la misma operación antes de que cualquiera almacene el resultado.
+Dependencias: CacheService, LockService, checkAndRegisterIdempotencyKey, saveIdempotentResult y operaciones mutables de doPost.
+Conclusión: La lectura previa y escritura posterior del caché no forman una sección crítica idempotente; la clave no queda reservada antes de la ejecución. Hallazgo estático.
+Tarea asociada: AUD-NG-071 en Pendientes.md.
+===============================================================================
+
+AUD-NG-072
+Fecha: 2026-11-04
+Tarea auditada: TASK-044 y TASK-045 / F23-Task01 y F23-Task02
+Archivos auditados: tests/regression/academic-grading-suite.js; backend/user-service/Code.gs
+Módulo: Evidencia de aceptación y regresión de workflows/idempotencia
+Funciones y rangos: bloque TASK-044/TASK-045 (academic-grading-suite.js:363-370 aprox.).
+Tipo: Pruebas estructurales que no ejecutan decisiones, concurrencia ni reintentos idempotentes.
+Severidad: Alto.
+Evidencia técnica:
+1. Las aserciones TASK-044 verifican presencia de cadenas como processWorkflowDecision, WORKFLOW_CONCURRENCY_LOCKED, STAGE_ALREADY_RESOLVED_CONFLICT y nombres de variables mediante includes.
+2. Las aserciones TASK-045 verifican presencia de checkAndRegisterIdempotencyKey, saveIdempotentResult y códigos de error; no envían solicitudes duplicadas ni comparan filas persistidas.
+3. No se observa en este bloque una prueba que ejecute dos decisiones concurrentes, manipule revisorId/etapaNombre, provoque un fallo entre appendRow y setValue, pierda una respuesta HTTP o repita un POST sin clave.
+Impacto: La suite puede aprobar por presencia textual aunque las rutas reales no cumplan autorización por etapa, atomicidad o deduplicación concurrente.
+Dependencias: tests/regression/academic-grading-suite.js, processWorkflowDecision, fetchApi, checkAndRegisterIdempotencyKey y saveIdempotentResult.
+Conclusión: La evidencia actual de TASK-044/TASK-045 es estructural y no demuestra los criterios de aceptación declarados. Hallazgo estático.
+Tarea asociada: AUD-NG-072 en Pendientes.md.
+===============================================================================
+
+INVENTARIO POSTERIOR A TASK-045 (2026-11-04)
+- Última tarea auditada: TASK-045 / F23-Task02 (Idempotencia de solicitudes, decisiones y operaciones institucionales).
+- Tareas auditadas en esta continuación: TASK-044 y TASK-045 (2 tareas consecutivas adicionales).
+- Hallazgos nuevos: 7 (AUD-NG-066 a AUD-NG-072).
+- Tareas derivadas: 7 (AUD-NG-066 a AUD-NG-072), todas [ ] Pendiente de implementación.
+- Archivos auditados y respaldos Git inmutables:
+  * backend/user-service/Code.gs: 12079dd410aa6d8afbce55a4bc62a79dea605f9f
+  * js/api.js: 6b24f666db30a811a8e9b38d466fc6001cf6dfa9
+  * tests/regression/academic-grading-suite.js: 3433b707edd4a2f35c68368a3172932adc2a3b32
+- Alcance: autorización por etapa, integridad del estado del workflow, persistencia de decisiones, reintentos de fetchApi, claves idempotentes, caché, concurrencia y pruebas de regresión.
+- Tipo de revisión: inspección estática manual. No se ejecutaron pruebas concurrentes, no se enviaron solicitudes a servicios desplegados y no se modificó código.
+- Cambios: solo se anexan registros de auditoría, tareas pendientes y mapa de dependencias. No se modifica código ni se elimina o reemplaza contenido histórico.
+- ChangesLogs.txt no se modifica porque no hubo cambios de código.
+- TASK-044 y TASK-045 se registran como auditadas con hallazgos; el estado [X] original no certifica que los criterios estén satisfechos.
+===============================================================================
