@@ -227,3 +227,16 @@ ACTUALIZACIÓN DE CONTINUIDAD IMA - AUDITORÍA LOTE B (2026-11-04)
 - Heurística operativa conservadora: trabajar un lote histórico por vez (el Lote B tuvo 4 tareas), guardar un commit independiente al cerrar cada lote, no editar código durante la auditoría, preservar los blobs SHA como respaldo y mantener el contexto de continuidad actualizado. Si una auditoría no termina, dejar registrado el último elemento revisado y crear un commit solo con resultados completos y coherentes; nunca hacer una escritura parcial de Pendientes.md.
 - Esta heurística es una medida de seguridad del repositorio, no una garantía frente a límites dinámicos del producto.
 ================================================================
+
+
+================================================================
+ACTUALIZACIÓN DE CONTINUIDAD IMA - AUDITORÍA LOTE C (2026-11-04)
+================================================================
+- Rama base: `NG_beta_0.0.0.1`; rama de trabajo: `NG_beta_0.0.0.1_work`. Mantener la rama base intacta y no realizar merges.
+- Commit de resultados del Lote C: `66e344b33fcc875af323f3d6f89d6ab9d710c4a9`.
+- Ocho tareas históricas auditadas: CONF-001 (Cumple parcialmente), DATE-001 (No cumple), NAV-002 (Cumple parcialmente), STUD-002 (Reemplazada parcialmente por selector histórico posterior), POST-001 (No verificable empíricamente), MOD-001 (Cumple), FIX-002 (Cumple en código) y FIX-003 (Cumple).
+- Hallazgos añadidos a Pendientes.md: AUD-NG-113 a AUD-NG-116. Informe: AUDITORIA_LOTE_C.md. Auditoria.txt, MapaDependencias.md y AUDITORIA_COMPLETADAS_LEGACY_PLAN.md actualizados de forma aditiva.
+- Última tarea histórica revisada: FIX-003. Próximo lote: D.
+- AUD-NG-101 permanece En Ejecución; el total histórico sigue siendo 49 tareas. No se modificó código fuente, completadas_legacy.md ni ChangesLogs.txt. No se accedió al Spreadsheet productivo ni se ejecutaron pruebas.
+- La heurística de cuota registrada en la actualización del Lote B sigue vigente: no existe cálculo fiable de tareas por cuota; dividir en lotes, crear commits independientes y no hacer escrituras parciales. No volver a duplicar estimaciones como si fueran límites garantizados.
+================================================================
