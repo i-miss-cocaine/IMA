@@ -2473,7 +2473,7 @@ INVENTARIO POSTERIOR A TASK-016 (2026-11-04)
 - Hallazgos nuevos documentados: 9 (AUD-NG-046 a AUD-NG-054).
 - Tareas nuevas derivadas: 9 (AUD-NG-046 a AUD-NG-054), todas pendientes de implementación.
 - Archivos inspeccionados: backend/accounting-service/Code.gs; dashboard-contabilidad.html; js/accounting.js; tests/regression/academic-grading-suite.js; MapaDependencias.md.
-- Copias de referencia Git de código: backend/accounting-service/Code.gs SHA 38b979d41596b85e888b4a7060b37bbac0840a28; js/accounting.js SHA b7653b3bff71829f0f67cf47cb894413c56a444a.
+- Copias de referencia Git de código: backend/accounting-service/Code.gs SHA 38b979d41596b85e888b4a7060b37bbac0840a28; js/accounting.js SHA a79ead4a54ad6fdb2f1e9df4775491ff7191a0c7; dashboard-contabilidad.html SHA b7653b3bff71829f0f67cf47cb894413c56a444a.
 - Alcance: esquema de CuentasPorPagarGastos, autenticación/RBAC y despacho, conciliación de tres vías, pagos parciales, movimientos de caja, asientos contables, notas de crédito, clasificación de vencimientos, interfaz y pruebas.
 - Tipo de revisión: inspección estática manual. No se ejecutaron pruebas funcionales, no se accedió a datos financieros reales y no se modificó código.
 - Limitaciones: no se inspeccionó la hoja de cálculo operativa, cuentas bancarias, comprobantes ni el comportamiento desplegado de Apps Script.
