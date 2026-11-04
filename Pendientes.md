@@ -17765,3 +17765,28 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Estado:** [ ] Pendiente
 
 ---
+
+
+---
+
+## AMPLIACIÓN DE TAREAS DERIVADAS DE AUDITORÍA — TASK-050 / F24-Task01 (2026-11-04)
+
+### [AUD-NG-098] Eliminar datos ficticios de los resultados institucionales
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-098 (TASK-050 / F24-Task01)
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** backend/user-service/Code.gs; generadores académicos y financieros
+- **Dependencias Expuestas:** generateInstitutionalReport, ComprobantesPago, PagosAbonos, CalificacionesEstudiantes, rows y summary.
+- **Descripción del Alcance:** Retirar filas, importes, nombres, promedios y porcentajes codificados como datos de muestra de las respuestas productivas. Cuando no existan datos, devolver colección vacía y métricas con semántica explícita de ausencia; los datos demostrativos deberán permanecer aislados del entorno productivo y claramente etiquetados.
+- **Criterios de Aceptación:** Una fuente vacía nunca devuelve transacciones o alumnos ficticios; cada total se calcula exclusivamente con registros reales válidos; no aparecen constantes de muestra como resultados institucionales.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-100] Implementar búsqueda y filtros visibles en el centro de informes
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-100 (TASK-050 / F24-Task01)
+- **Severidad/Clasificación:** Medio
+- **Archivos Involucrados:** js/ui-common.js; backend/user-service/Code.gs
+- **Dependencias Expuestas:** renderReportsCenterUI, sendApiRequest, query, categoria, area y catalogMaster.
+- **Descripción del Alcance:** Incorporar controles de búsqueda por nombre/descripción y filtros por categoría/área; transmitir sus valores al endpoint y actualizar las tarjetas sin duplicar definiciones. Incluir el área responsable en la búsqueda textual cuando query sea el criterio usado.
+- **Criterios de Aceptación:** La búsqueda encuentra por nombre, descripción, categoría y área; los filtros pueden combinarse; limpiar criterios restaura los resultados autorizados; no se muestran informes fuera de los permisos del usuario.
+- **Estado:** [ ] Pendiente
+
+---

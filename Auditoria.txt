@@ -3422,3 +3422,99 @@ INVENTARIO POSTERIOR A TASK-050 (2026-11-04)
 - ChangesLogs.txt no se modifica porque no hubo cambios de código ni implementación.
 - TASK-050 queda auditada con hallazgos; la marca [X] no se considera evidencia suficiente de cumplimiento funcional.
 ===============================================================================
+
+
+===============================================================================
+ANEXO COMPLEMENTARIO DE AUDITORÍA - TASK-050 / F24-Task01 (2026-11-04)
+RAMA: NG_beta
+ARCHIVOS ADICIONALES INSPECCIONADOS: backend/accounting-service/Code.gs; backend/user-service/Code.gs; js/ui-common.js
+RESPALDO ADICIONAL:
+- backend/accounting-service/Code.gs: SHA 38b979d41596b85e888b4a7060b37bbac0840a28
+- backend/user-service/Code.gs: SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f
+- js/ui-common.js: SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67
+ALCANCE: Ampliación de la inspección de la función generadora financiera, aplicación efectiva de filtros y controles visibles de búsqueda. Se conservan íntegros los registros AUD-NG-091 a AUD-NG-096 ya incorporados.
+===============================================================================
+
+AUD-NG-097
+Fecha: 2026-11-04
+Tarea auditada: TASK-050 / F24-Task01
+Archivo auditado: backend/user-service/Code.gs
+Módulo: Autorización de acceso a datos de informes individuales
+Funciones y rangos: getInstitutionalReportCatalog (8396-8621); generateInstitutionalReport (8624-8752).
+Tipo: El generador no valida el permiso del perfil para el identificador solicitado.
+Severidad: Crítico.
+Evidencia técnica:
+1. getInstitutionalReportCatalog filtra los elementos devueltos usando rolesPermitidos y el rol resuelto para la consulta del catálogo.
+2. generateInstitutionalReport obtiene verifiedRole, pero no consulta rolesPermitidos ni comprueba que ese rol pueda acceder al reportId solicitado.
+3. La función selecciona la rama de datos con reportId/category recibidos y no comprueba el estado Activo del elemento solicitado.
+4. La validación general de la acción en doPost no equivale a validar el permiso específico del informe.
+Impacto: Si un perfil tiene concedida la acción general de generación por ROLE_PERMISSIONS o MatrizPermisosRoles, puede solicitar directamente un informe restringido o inactivo cambiando reportId/category, aunque no aparezca en su catálogo.
+Dependencias: getInstitutionalReportCatalog, generateInstitutionalReport, getUserVerifiedRole, validateRolePermission, rolesPermitidos, estado, reportId y category.
+Conclusión: El filtrado de visibilidad no está replicado en la operación que entrega los datos. Hallazgo estático; no se enviaron solicitudes de explotación.
+Tarea asociada: AUD-NG-094 en Pendientes.md (tarea ya registrada para alinear permisos generales y por informe).
+===============================================================================
+
+AUD-NG-098
+Fecha: 2026-11-04
+Tarea auditada: TASK-050 / F24-Task01
+Archivo auditado: backend/user-service/Code.gs
+Módulo: Integridad y veracidad de los datos reportados
+Funciones y rangos: generateInstitutionalReport (8624-8752).
+Tipo: Respuesta de producción sustituye fuentes vacías por registros y métricas ficticias.
+Severidad: Crítico.
+Evidencia técnica:
+1. Cuando no se encuentran transacciones financieras, rows recibe TRX-1001 / Estudiante Muestra / L. 2,500.00 y el resumen fija totalConfirmedIncome = 2500 y countConfirmed = 1.
+2. Cuando no hay calificaciones académicas, se agregan EST-001 / Juan Pérez y EST-002 / María López con promedios de ejemplo.
+3. El resumen académico fija promedioInstitucional en 85.2 / 100 y porcentajeAprobacion en 94.5%, sin derivarlos del conjunto consultado.
+4. La rama genérica agrega INF-001 y lo devuelve con status success.
+Impacto: El centro de informes puede presentar registros inventados como información institucional real, falsear ingresos y métricas y provocar decisiones basadas en resultados no existentes.
+Dependencias: generateInstitutionalReport, ComprobantesPago, PagosAbonos, CalificacionesEstudiantes, rows, summary y displayReportModal.
+Conclusión: Los datos de demostración no están separados ni identificados como simulados en la respuesta productiva.
+Tarea asociada: AUD-NG-098 en Pendientes.md.
+===============================================================================
+
+AUD-NG-099
+Fecha: 2026-11-04
+Tarea auditada: TASK-050 / F24-Task01
+Archivo auditado: backend/user-service/Code.gs
+Módulo: Correspondencia entre filtros anunciados y registros devueltos
+Funciones y rangos: generateInstitutionalReport (8624-8752).
+Tipo: Los filtros recibidos no limitan el conjunto fuente.
+Severidad: Alto.
+Evidencia técnica:
+1. La función extrae anoLectivo, grado, seccion, fechaInicio, fechaFin y estado del payload.
+2. La rama financiera itera todos los registros de la hoja seleccionada y no aplica período lectivo ni límites de fecha.
+3. La rama académica itera CalificacionesEstudiantes sin filtrar por grado, sección, año lectivo ni período.
+4. Los valores grado/seccion se usan en filas ficticias de respaldo, no como predicados de selección de los registros reales.
+Impacto: Un informe solicitado para un período, grado o sección puede mezclar registros ajenos al filtro solicitado y producir totales no comparables.
+Dependencias: generateInstitutionalReport, anoLectivo, grado, seccion, fechaInicio, fechaFin, estado, ComprobantesPago y CalificacionesEstudiantes.
+Conclusión: Los filtros del catálogo no se corresponden con condiciones efectivas de lectura en las ramas revisadas.
+Tarea asociada: AUD-NG-091 en Pendientes.md (tarea ya registrada para conectar cada ID con su generador y aplicar sus filtros).
+===============================================================================
+
+AUD-NG-100
+Fecha: 2026-11-04
+Tarea auditada: TASK-050 / F24-Task01
+Archivos auditados: backend/user-service/Code.gs; js/ui-common.js
+Módulo: Búsqueda y filtrado visible del catálogo
+Funciones y rangos: getInstitutionalReportCatalog (8396-8621); renderReportsCenterUI (aprox. 2955-3024).
+Tipo: El centro de informes no presenta controles de búsqueda/filtro y la búsqueda backend omite el área.
+Severidad: Medio.
+Evidencia técnica:
+1. El catálogo acepta categoria y area como parámetros separados; la búsqueda query compara title, description y category, pero no compara area.
+2. renderReportsCenterUI solicita el catálogo sin enviar query, categoria ni area.
+3. La interfaz construye tarjetas y botones de generación, pero no presenta controles de búsqueda por nombre/descripción ni filtros por categoría/área.
+Impacto: Los usuarios no pueden localizar informes desde el centro por los criterios funcionales solicitados y no pueden restringir visualmente el catálogo por área o categoría.
+Dependencias: getInstitutionalReportCatalog, query, categoria, area, renderReportsCenterUI, sendApiRequest y reports-catalog-grid.
+Conclusión: La búsqueda/filtros no están expuestos en la interfaz y el criterio textual no incluye el área responsable.
+Tarea asociada: AUD-NG-100 en Pendientes.md.
+===============================================================================
+
+INVENTARIO COMPLEMENTARIO POSTERIOR A TASK-050 (2026-11-04)
+- Última tarea auditada: TASK-050 / F24-Task01.
+- Hallazgos complementarios: 4 (AUD-NG-097 a AUD-NG-100).
+- Hallazgos totales registrados para TASK-050: 10 (AUD-NG-091 a AUD-NG-100).
+- Tareas derivadas nuevas en este anexo: AUD-NG-098 y AUD-NG-100; AUD-NG-097 se vincula a AUD-NG-094 y AUD-NG-099 se vincula a AUD-NG-091, ya registradas en Pendientes.md.
+- Archivos adicionales inspeccionados: backend/accounting-service/Code.gs, backend/user-service/Code.gs y js/ui-common.js.
+- No se modificó código ni se ejecutaron pruebas u operaciones sobre datos reales.
+===============================================================================

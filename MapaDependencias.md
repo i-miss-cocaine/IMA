@@ -250,3 +250,12 @@
 - AUD-NG-096: encabezado y campo Estado de TASK-050 contradictorios.
 - Revisión estática manual; no se ejecutaron operaciones sobre datos institucionales ni se modificó código fuente.
 - Última tarea auditada: TASK-050 / F24-Task01. Siguiente tarea secuencial: TASK-051 / F24-Task02.
+
+
+### Ampliación de evidencia de TASK-050 (AUD-NG-097 a AUD-NG-100)
+- backend/accounting-service/Code.gs: getComparativeFinancialSummary (14398-14493 aprox.) existe como generador financiero multianual, pero no está conectado desde generateInstitutionalReport del user-service.
+- backend/user-service/Code.gs: generateInstitutionalReport (8624-8752) no valida rolesPermitidos ni estado Activo por reportId antes de devolver datos; la validación general de acción del despachador no reemplaza el permiso por recurso.
+- La misma función introduce TRX-1001 por L. 2,500.00, alumnos EST-001/EST-002 y métricas académicas constantes cuando no hay registros fuente; también devuelve INF-001 en la rama genérica.
+- Los parámetros anoLectivo, grado, seccion, fechaInicio, fechaFin y estado se extraen del payload, pero no filtran las iteraciones reales de ComprobantesPago/PagosAbonos ni CalificacionesEstudiantes.
+- js/ui-common.js: renderReportsCenterUI (aprox. 2955-3024) no contiene controles de búsqueda o filtrado; el backend no incorpora area en la búsqueda textual.
+- AUD-NG-097 se vincula con la tarea AUD-NG-094; AUD-NG-099 se vincula con AUD-NG-091; las nuevas tareas AUD-NG-098 y AUD-NG-100 se agregan al final de Pendientes.md.
