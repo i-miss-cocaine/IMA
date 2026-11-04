@@ -507,7 +507,7 @@
 
 
 ## Auditoría del registro completadas.md - inventario inicial (2026-11-04)
-- Fuente: completadas.md (5,963 líneas; 251 encabezados; 224 identificadores únicos).
+- Fuente: completadas.md (5,963 líneas; 231 declaraciones; 183 identificadores únicos).
 - SHA de referencia: f57f1aef832e81e44fc4f7ec36a852d50e464676.
 - Plan de auditoría: AUDITORIA_COMPLETADAS_PLAN.md.
 - La auditoría de completadas_legacy.md no cubre este registro; se abre un proceso separado por lotes C0-C6.
@@ -520,3 +520,14 @@
 - js/ui-common.js/toggleRoleMenuAccordionSection (4709-4720) -> controles de acordeón del menú móvil y selección de sección inicial.
 - js/ui-common.js/openMobileHamburgerDrawer (4758-4847) -> botón hamburguesa; crea el drawer una vez y agrega el nodo a document.body; las aperturas siguientes reutilizan el nodo.
 - js/ui-common.js/openGlobalOmniboxModal (4935-5000) -> input Omnibox y listener input/debounce; focus/select se ejecuta al abrir el modal, no al escribir.
+
+## Lote C1.1 - seguridad de identidad y sesiones (2026-11-04)
+- js/auth.js/login handler (140-165) -> recibe loginUser; construye currentUser sin conservar sessionToken.
+- js/api.js/fetchApi (45-57) -> añade requesterUserId/requesterRole desde localStorage/sessionStorage; body no transmite sessionToken.
+- USER/loginUser (2479-2537) -> emite sessionToken firmado y lo devuelve; USER/getUserVerifiedRole verifica claims.
+- USER/PUBLIC_ACTIONS (920-924) -> incluye logoutUser como acción pública.
+- USER/logoutUser (2456-2475) -> acepta userId/sessionId del payload y llama revokeUserSession sin exigir que los valores pertenezcan al token.
+- USER/revokeUserSession (2318-2332) -> escribe marcas revoked_user_/revoked_session_ durante 21,600 segundos; verifySessionToken rechaza revoked_user_ y loginUser no limpia esa marca.
+- TASK/PUBLIC_ACTIONS (75-90) y EXAM/PUBLIC_ACTIONS (60-80) -> consultas académicas quedan fuera del control de token; relacionadas con AUD-NG-002.
+- AUTH común en los cinco servicios -> fallback HMAC derivado de SPREADSHEET_ID y validación de exp opcional en varios verificadores; AUD-NG-003/AUD-NG-004.
+- Hallazgo nuevo AUD-NG-159: revocación de sesiones ajenas desde logoutUser público.

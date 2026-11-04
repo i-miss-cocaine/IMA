@@ -68,7 +68,7 @@ La calidad se dictamina por separado del cumplimiento funcional.
 ## 6. Estado y checkpoint inicial
 
 - Auditoría de \`completadas_legacy.md\`: cerrada previamente (49/49); no se repite.
-- Auditoría de \`completadas.md\`: iniciada, 0/224 identificadores únicos auditados; inventario estructural realizado.
+- Auditoría de \`completadas.md\`: iniciada, 0/183 identificadores únicos auditados; inventario estructural realizado.
 - Primera tarea a auditar: AUDIT-CR-01, contrastando su afirmación de implementación en \`backend/user-service/Code.gs\` con el código actual.
 - No se han añadido hallazgos ni se ha modificado código.
 - Próxima acción: auditar C0 manualmente y registrar resultados por evidencia; después continuar C1.
@@ -90,6 +90,17 @@ Al reanudar:
 - Hallazgos nuevos: ninguno; Auditoria.txt y Pendientes.md permanecen sin cambios.
 - Observación: las referencias de línea de completadas.md son históricas y han cambiado en el código actual.
 - Pruebas: inspección estática/manual; no se ejecutó navegador ni Apps Script.
-- Progreso: 4/224 identificadores únicos auditados; 220 pendientes.
+- Progreso: 4/183 identificadores únicos auditados; 179 pendientes.
 - Siguiente lote: C1, iniciar por TAREA-01.
 - Código fuente y completadas.md: sin modificaciones.
+
+## 9. Resultado parcial del lote C1.1 - TAREA-01 (2026-11-04)
+
+- Dictamen: Cumple parcialmente.
+- Evidencia: js/auth.js:140-165 no conserva sessionToken en currentUser; js/api.js:45-57 envía requesterUserId/requesterRole del almacenamiento local, pero no sessionToken. USER emite el token en backend/user-service/Code.gs:2479-2537 y getUserVerifiedRole lo verifica, pero el frontend no completa el contrato.
+- Controles parciales: existen validadores HMAC/RBAC en los cinco servicios, con identidades derivadas de claims cuando el token llega.
+- Incumplimientos ya registrados: AUD-NG-001, AUD-NG-002, AUD-NG-003, AUD-NG-004, AUD-NG-005, AUD-NG-112, TASK-085, TASK-142 y TASK-418.
+- Hallazgo nuevo: AUD-NG-159. USER/logoutUser es público y permite revocar sesiones de userId/sessionId arbitrarios.
+- No verificable desde el repositorio: identidad de ejecución y permisos efectivos del despliegue Apps Script; requieren inspección de configuración del despliegue. Tampoco se ejecutaron pruebas reales de origen/CSRF.
+- Inventario corregido: 231 declaraciones; 183 identificadores únicos. C0: 4/183; con TAREA-01: 5/183 auditados, 178 pendientes.
+- Siguiente tarea: FASE2-T01; continuar con el resto del lote C1 y auditar individualmente las ampliaciones posteriores F4.
