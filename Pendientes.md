@@ -17133,3 +17133,78 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Descripción del Alcance:** Validar cada artículo recibido contra las partidas autorizadas de la orden y rechazar artículos no incluidos, salvo autorización excepcional registrada. Calcular el saldo pendiente por partida y bloquear cantidades superiores a las autorizadas o requerir una aprobación excepcional trazable. Incorporar una clave de idempotencia persistente por recepción y propagar una referencia única al movimiento de Kardex para impedir duplicaciones ante reintentos. Implementar el registro de devoluciones posteriores y descontarlas de las cantidades conformes acumuladas, manteniendo el historial documental.
 - **Criterios de Aceptación:** No se acepta un artículo ajeno a la orden sin autorización; no se reciben unidades por encima del saldo autorizado sin excepción documentada; repetir la misma solicitud no crea otra recepción ni otro movimiento Kardex; cada movimiento se vincula a una recepción mediante referencia persistente; las devoluciones reducen las cantidades netas recibidas y ajustan existencias; se prueban recepciones parciales, múltiples partidas, daños, rechazos, excesos, devoluciones y reintentos concurrentes.
 - **Estado:** [ ] Pendiente
+
+---
+## Tareas derivadas de la auditoría técnica del 2026-11-04
+
+### [AUD-NG-032] Restringir el acceso y las operaciones sobre expedientes sensibles de seguimiento estudiantil
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-032 (F10-Task01 y F11-Task01)
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** backend/academic-service/Code.gs
+- **Dependencias Expuestas:** validateRolePermission, getAttendanceFollowupCases, saveAttendanceFollowupCase, addCaseFollowUpNote, ROLE_PERMISSIONS, expedientes de seguimiento estudiantil
+- **Descripción del Alcance:** Derivar el rol privilegiado exclusivamente de la sesión verificada; impedir que authRole del payload prevalezca sobre _verifiedRole. Aplicar autorización por expediente y categoría en lectura, creación y agregado de notas. Ejecutar la protección confidencial aunque categoriaCaso se omita o manipule. Verificar que el usuario tenga autorización sobre el expediente concreto.
+- **Criterios de Aceptación:** Una cuenta Secretaria no obtiene acceso confidencial enviando authRole de Consejeros; omitir o manipular categoriaCaso no evita restricciones; las operaciones de escritura rechazan expedientes ajenos; las notas confidenciales no se exponen a roles no autorizados; se prueban roles, categorías omitidas/manipuladas y expedientes de otros estudiantes.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-033] Validar importes contables y vincular las aprobaciones de compra con la identidad verificada
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-033 (F11-Task02)
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** backend/accounting-service/Code.gs
+- **Dependencias Expuestas:** recordAccountingJournalEntry, verifyAccountingIntegrity, approvePurchaseOrder, createPurchaseOrder, validateRolePermission, AsientosContables, OrdenesCompra
+- **Descripción del Alcance:** Rechazar importes no numéricos, NaN e infinitos antes de calcular el equilibrio. Unificar los campos débito/crédito entre registro y verificación. Obtener al aprobador exclusivamente de _verifiedUserId y derivar al solicitante de la sesión verificada; impedir que userId, actorId, authenticatedUserId o solicitanteUserId del payload suplanten a los actores reales.
+- **Criterios de Aceptación:** Un asiento con texto no numérico o valores no finitos es rechazado y nunca queda Asentado; el verificador detecta desequilibrios con los campos persistidos; el aprobador coincide con _verifiedUserId; no se puede crear o aprobar una orden atribuyéndola a otra persona; se prueban importes válidos, inválidos, desequilibrios y suplantación.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-034] Aplicar autorización por participante e identidad verificada al centro de comunicaciones institucionales
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-034 (F11-Task03)
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** backend/user-service/Code.gs, dashboard-direccion.html, js/secretary.js, js/teacher.js
+- **Dependencias Expuestas:** getInstitutionalConversations, getConversationMessages, sendInstitutionalMessage, archiveInstitutionalConversation, validateRolePermission, _verifiedUserId, _verifiedRole, adjuntosUrls, participantes
+- **Descripción del Alcance:** Exigir identidad autenticada en consulta, lectura, envío y archivo. Filtrar conversaciones y mensajes por pertenencia efectiva; derivar remitenteUserId del servidor; impedir lectura con solo conversationId; comprobar participación antes de archivar. Validar propiedad y permisos de cada adjunto. Completar la integración de interfaz sin asumir que existe js/principal.js.
+- **Criterios de Aceptación:** Omitir o manipular userId no amplía conversaciones; conocer conversationId no permite leer sin ser participante; remitente coincide con _verifiedUserId; solo participantes autorizados archivan; adjuntos ajenos se rechazan; las interfaces que ofrecen mensajería consumen endpoints existentes y manejan respuestas y errores.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-035] Incorporar vigencia, programación y segmentación autenticada en comunicados institucionales
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-035 (F11-Task04)
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** backend/user-service/Code.gs
+- **Dependencias Expuestas:** createInstitutionalAnnouncement, getInstitutionalAnnouncements, ComunicadosInstitucionales, validateRolePermission, _verifiedUserId, _verifiedRole
+- **Descripción del Alcance:** Ampliar el modelo con inicio/fin de vigencia y estados de borrador, programado, publicado y retirado. Validar fechas y transiciones en servidor. Resolver audiencia y permisos desde la sesión verificada y relaciones institucionales persistidas, no desde el payload. Excluir comunicados fuera de vigencia o cuya fecha de publicación no haya llegado.
+- **Criterios de Aceptación:** Se pueden guardar borradores; los programados no aparecen antes de su inicio; los vencidos dejan de mostrarse; los cambios de estado requieren permisos verificados; manipular audiencia o rol no permite consultar comunicados ajenos; se prueban límites temporales y transiciones inválidas.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-036] Verificar la relación legal del tutor y la identidad en solicitudes y confirmaciones de lectura
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-036 (F11-Task05)
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** backend/user-service/Code.gs
+- **Dependencias Expuestas:** getAuthorizationRequests, submitAuthorizationRequest, respondToAuthorizationRequest, submitAnnouncementReceiptConfirmation, RelacionesFamiliares, _verifiedUserId, _verifiedRole
+- **Descripción del Alcance:** Obtener tutor y usuario que responde exclusivamente de la sesión verificada. Comprobar en RelacionesFamiliares la relación legal vigente con el estudiante para consultar, crear y responder solicitudes. Impedir tutorUserId arbitrario o TODOS como sustituto de una relación autorizada. Registrar confirmaciones con identidad autenticada y metadatos generados en servidor, sin confiar en userId o ipMetadata del cliente.
+- **Criterios de Aceptación:** Un tutor no consulta solicitudes de otro cambiando tutorUserId; no crea solicitudes para estudiantes sin relación autorizada; destinatarios colectivos requieren regla institucional verificable; confirmaciones se atribuyen al usuario autenticado y sus metadatos no son falsificables; se conservan controles de vencimiento y duplicidad.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-037] Garantizar autorización de visibilidad y prevención atómica de traslapes en el calendario institucional
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-037 (F11-Task06)
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** backend/user-service/Code.gs
+- **Dependencias Expuestas:** checkCalendarEventOverlap, saveInstitutionalCalendarEvent, getInstitutionalCalendarEvents, persistencia y bloqueo del calendario, reglas de visibilidad
+- **Descripción del Alcance:** Impedir que permitirTraslape omita validación salvo permiso especial verificado, motivo y registro auditable. Ejecutar comprobación y persistencia en sección crítica atómica. Aplicar visibilidad al usuario autenticado sin depender del filtro visibilidad enviado por el cliente.
+- **Criterios de Aceptación:** Un usuario ordinario no fuerza permitirTraslape; excepciones registran actor y justificación; solicitudes concurrentes incompatibles no guardan ambos eventos; omitir o manipular visibilidad no expone eventos privados; se prueban conflictos por horario, espacio, organizador y participantes, además de concurrencia.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-038] Validar pertenencia del expediente antes de vincular citas de orientación y acompañamiento
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-038 (F11-Task07)
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** backend/academic-service/Code.gs
+- **Dependencias Expuestas:** scheduleGuidanceAppointment, getAttendanceFollowupCases, expedientes de seguimiento, userId, casoId, notas públicas y confidenciales
+- **Descripción del Alcance:** Validar que casoId exista, esté vigente y corresponda al estudiante indicado y al ámbito institucional del usuario que programa. Derivar o verificar el estudiante desde el expediente autorizado en lugar de aceptar una asociación arbitraria. Mantener la separación de notas y sus permisos de lectura.
+- **Criterios de Aceptación:** No se vincula una cita de un estudiante con el expediente de otro; identificadores inexistentes o fuera del ámbito son rechazados; notas confidenciales siguen ocultas a roles no autorizados; se prueban casos válidos, inexistentes, cruzados y sin permisos.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-039] Calcular alertas tempranas con datos académicos persistidos y notificaciones verificables
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-039 (F11-Task08)
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** backend/academic-service/Code.gs
+- **Dependencias Expuestas:** evaluateAndDispatchEarlyWarningAlerts, getEarlyWarningAlerts, calificaciones, tareas, períodos lectivos, configuración de umbrales, notificaciones institucionales, _verifiedUserId, _verifiedRole
+- **Descripción del Alcance:** Consultar calificaciones, materias reprobadas y tareas pendientes desde fuentes académicas persistidas para el año lectivo solicitado. Eliminar la dependencia de mockFailingSubjects y mockMissingTasks enviados por el cliente. Leer umbrales de configuración institucional versionada. Implementar envío real de notificaciones o registrar resultado verificable por destinatario. Aplicar autorización por identidad y ámbito al consultar alertas.
+- **Criterios de Aceptación:** Las alertas usan datos persistidos y filtrados por anolectivo; datos simulados del cliente no alteran resultados; umbrales son trazables a configuración vigente; cada destinatario tiene constancia de envío o fallo y no se declara notificado sin entrega; usuarios no consultan estudiantes fuera de su ámbito; se conserva deduplicación y se prueban períodos, umbrales y reintentos.
+- **Estado:** [ ] Pendiente

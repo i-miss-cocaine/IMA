@@ -1979,3 +1979,165 @@ Tras agregar AUD-NG-031: 83 tareas originales [X], 108 tareas originales [ ] y 3
 
 
 Inventario actualizado después de AUD-NG-031: 83 tareas originales completadas; 108 originales pendientes de implementación; 30 tareas AUD-NG nuevas. Total: 221 entradas.
+
+===============================================================================
+AUD-NG-032
+Fecha: 2026-11-04
+Archivo auditado: backend/academic-service/Code.gs
+Módulo: Seguimiento estudiantil y expedientes confidenciales
+Funciones y rangos: validateRolePermission (524-585); getAttendanceFollowupCases (aprox. 8696-8765); saveAttendanceFollowupCase; addCaseFollowUpNote.
+Tareas originales relacionadas: F10-Task01 y F11-Task01.
+Tipo: Vulnerabilidad de autorización y exposición de información sensible.
+Severidad: Crítico.
+Evidencia técnica:
+1. validateRolePermission obtiene el rol real y guarda _verifiedRole, pero no elimina ni sustituye authRole del payload.
+2. La matriz permite a Secretaria ejecutar getAttendanceFollowupCases.
+3. getAttendanceFollowupCases consulta authRole antes que _verifiedRole para acceso privilegiado. La protección confidencial depende de que categoriaCaso llegue exactamente como Consejería u Orientación.
+4. Una cuenta Secretaria puede enviar authRole=Consejeros y omitir categoriaCaso, alcanzando una ruta que puede devolver expedientes y notas confidenciales.
+5. saveAttendanceFollowupCase y addCaseFollowUpNote están habilitadas para Secretaria y operan por casoId sin comprobación interna suficiente de autorización sobre el expediente.
+Impacto: Exposición o modificación de expedientes sensibles por usuarios sin autorización funcional sobre el caso.
+Dependencias: validateRolePermission, _verifiedRole, ROLE_PERMISSIONS, getAttendanceFollowupCases, saveAttendanceFollowupCase, addCaseFollowUpNote y registros de seguimiento.
+Conclusión: La autorización no queda ligada consistentemente al rol verificado ni a la pertenencia del expediente. Hallazgo estático; no se ejecutaron pruebas funcionales ni se accedió a datos de producción.
+===============================================================================
+
+===============================================================================
+AUD-NG-033
+Fecha: 2026-11-04
+Archivo auditado: backend/accounting-service/Code.gs
+Módulo: Asientos contables y aprobación de órdenes de compra
+Funciones y rangos: recordAccountingJournalEntry (aprox. 8017-8055); verifyAccountingIntegrity (aprox. 14287-14320); approvePurchaseOrder; createPurchaseOrder.
+Tarea original relacionada: F11-Task02.
+Tipo: Defecto de validación contable y suplantación de identidad en autorización.
+Severidad: Crítico.
+Evidencia técnica:
+1. recordAccountingJournalEntry acumula debe y haber mediante parseFloat sin rechazar valores no numéricos ni validar finitud. Con abc, parseFloat produce NaN y Math.abs(totalDebe-totalHaber)>0.01 resulta falso, por lo que el flujo puede continuar como equilibrado.
+2. verifyAccountingIntegrity lee debito y credito, mientras el registro utiliza debe y haber.
+3. approvePurchaseOrder obtiene la identidad del aprobador de authenticatedUserId, userId o actorId del payload en lugar de _verifiedUserId.
+4. createPurchaseOrder acepta solicitanteUserId desde el payload.
+Impacto: Asientos inválidos aceptados, verificaciones que no detectan diferencias y suplantación de actores en compras.
+Dependencias: recordAccountingJournalEntry, verifyAccountingIntegrity, approvePurchaseOrder, createPurchaseOrder, validateRolePermission, _verifiedUserId, AsientosContables y OrdenesCompra.
+Conclusión: No se garantizan validación numérica ni identidad verificable en el ciclo contable y de compras. Hallazgo estático; no se ejecutaron transacciones contra hojas reales.
+===============================================================================
+
+===============================================================================
+AUD-NG-034
+Fecha: 2026-11-04
+Archivo auditado: backend/user-service/Code.gs
+Módulo: Comunicaciones y mensajería contextual
+Funciones y rangos: getInstitutionalConversations (9307-9445); getConversationMessages; sendInstitutionalMessage; archiveInstitutionalConversation; ROLE_PERMISSIONS.
+Tarea original relacionada: F11-Task03.
+Tipo: Control de acceso insuficiente, suplantación de remitente e integración incompleta.
+Severidad: Crítico.
+Evidencia técnica:
+1. getInstitutionalConversations no filtra participantes cuando se omite userId y puede devolver todas las conversaciones.
+2. getConversationMessages permite recuperar mensajes mediante conversationId sin exigir identidad ni pertenencia.
+3. sendInstitutionalMessage acepta remitenteUserId del cliente sin vincularlo a _verifiedUserId.
+4. archiveInstitutionalConversation cambia estado sin comprobar participación autorizada.
+5. adjuntosUrls se almacena sin validar propiedad o acceso.
+6. La matriz habilita acciones a Padre y Profesor, pero js/principal.js no existe en NG_beta; js/secretary.js no contiene endpoints de mensajería; dashboard-direccion.html carga js/secretary.js y js/teacher.js.
+Impacto: Lectura de conversaciones ajenas, suplantación, archivo no autorizado, exposición de adjuntos e integración incompleta.
+Dependencias: getInstitutionalConversations, getConversationMessages, sendInstitutionalMessage, archiveInstitutionalConversation, validateRolePermission, _verifiedUserId, ROLE_PERMISSIONS, adjuntosUrls y archivos de interfaz citados.
+Conclusión: Los endpoints no aseguran aislamiento por participante ni identidad del remitente y la integración no está acreditada. Hallazgo estático; no se ejecutaron pruebas de navegador ni de servicio desplegado.
+===============================================================================
+
+===============================================================================
+AUD-NG-035
+Fecha: 2026-11-04
+Archivo auditado: backend/user-service/Code.gs
+Módulo: Noticias, anuncios y comunicados institucionales
+Funciones y rangos: esquema ComunicadosInstitucionales (aprox. 887); createInstitutionalAnnouncement (3817-3869); getInstitutionalAnnouncements.
+Tarea original relacionada: F11-Task04.
+Tipo: Incumplimiento funcional y filtrado de audiencia/vigencia no confiable.
+Severidad: Alto.
+Evidencia técnica:
+1. El esquema no contempla fechas de inicio y fin ni programación.
+2. createInstitutionalAnnouncement crea directamente estado Publicado, sin flujo de borrador o programación.
+3. getInstitutionalAnnouncements excluye únicamente Retirado y no filtra por vigencia.
+4. La audiencia y el rol usados para filtrar se reciben del payload y no se derivan de la sesión autenticada.
+Impacto: Publicación inmediata no autorizada, comunicados fuera de período y exposición o exclusión incorrecta mediante manipulación de audiencia o rol.
+Dependencias: ComunicadosInstitucionales, createInstitutionalAnnouncement, getInstitutionalAnnouncements, validateRolePermission, _verifiedRole y configuración de audiencia.
+Conclusión: No se acreditan programación, vigencia ni segmentación confiable. Hallazgo estático; no se probaron publicaciones en entorno operativo.
+===============================================================================
+
+===============================================================================
+AUD-NG-036
+Fecha: 2026-11-04
+Archivo auditado: backend/user-service/Code.gs
+Módulo: Solicitudes de autorización y confirmaciones de lectura
+Funciones y rangos: getAuthorizationRequests (desde 6036); respondToAuthorizationRequest (desde 6117); submitAuthorizationRequest; submitAnnouncementReceiptConfirmation.
+Tarea original relacionada: F11-Task05.
+Tipo: Autorización y atribución de identidad no confiables.
+Severidad: Crítico.
+Evidencia técnica:
+1. getAuthorizationRequests utiliza tutorUserId del cliente como filtro; un tutor puede enviar su ID aunque la solicitud pertenezca a otro.
+2. submitAuthorizationRequest acepta tutorUserId arbitrario o TODOS sin comprobar relación legal vigente en RelacionesFamiliares.
+3. submitAnnouncementReceiptConfirmation acepta userId e ipMetadata del payload en lugar de identidad verificada.
+4. respondToAuthorizationRequest sí registra fecha, usa identidad autenticada y bloquea solicitudes vencidas o duplicadas; esos controles parciales no corrigen las fallas restantes.
+Impacto: Consulta o respuesta de solicitudes de terceros, solicitudes de tutores no vinculados y confirmaciones atribuidas a personas distintas.
+Dependencias: getAuthorizationRequests, submitAuthorizationRequest, respondToAuthorizationRequest, submitAnnouncementReceiptConfirmation, RelacionesFamiliares, _verifiedUserId y _verifiedRole.
+Conclusión: La relación legal del tutor y la identidad no se validan consistentemente. Hallazgo estático; no se ejecutaron pruebas con cuentas ni relaciones familiares reales.
+===============================================================================
+
+===============================================================================
+AUD-NG-037
+Fecha: 2026-11-04
+Archivo auditado: backend/user-service/Code.gs
+Módulo: Calendario institucional y prevención de traslapes
+Funciones y rangos: checkCalendarEventOverlap (6240-6333); saveInstitutionalCalendarEvent; getInstitutionalCalendarEvents (6454-6518).
+Tarea original relacionada: F11-Task06.
+Tipo: Concurrencia insuficiente y autorización de visibilidad incompleta.
+Severidad: Alto.
+Evidencia técnica:
+1. checkCalendarEventOverlap contiene lógica de intervalos, espacios, organizadores y participantes.
+2. saveInstitutionalCalendarEvent permite permitirTraslape=true para omitir validación sin permiso especial verificado ni justificación auditable.
+3. La comprobación y el guardado no son atómicos; solicitudes concurrentes pueden superar la comprobación antes de persistir.
+4. getInstitutionalCalendarEvents no aplica visibilidad según usuario autenticado y solo filtra si el cliente envía visibilidad.
+Impacto: Eventos incompatibles reservados simultáneamente, bypass de traslapes y exposición de eventos privados.
+Dependencias: checkCalendarEventOverlap, saveInstitutionalCalendarEvent, getInstitutionalCalendarEvents, persistencia, bloqueo y reglas de visibilidad.
+Conclusión: La detección existe, pero no está protegida contra bypass o concurrencia y las consultas no aíslan por visibilidad. Hallazgo estático; no se ejecutaron pruebas concurrentes ni por roles.
+===============================================================================
+
+===============================================================================
+AUD-NG-038
+Fecha: 2026-11-04
+Archivo auditado: backend/academic-service/Code.gs
+Módulo: Citas de orientación y acompañamiento estudiantil
+Funciones y rangos: scheduleGuidanceAppointment (9048-9265).
+Tarea original relacionada: F11-Task07.
+Tipo: Integridad referencial y autorización de expediente.
+Severidad: Crítico.
+Evidencia técnica:
+1. scheduleGuidanceAppointment recibe casoId del cliente y lo vincula directamente con userId indicado, sin comprobar suficientemente que el caso exista, pertenezca al estudiante y esté dentro del ámbito autorizado.
+2. La función sí mantiene estados, separa notas públicas y confidenciales y oculta las confidenciales a roles ajenos a bienestar; esas protecciones no garantizan la relación caso-estudiante.
+3. No se observó envío directo de notificaciones públicas en esta ruta.
+Impacto: Asociación de citas con expedientes de otros estudiantes y contaminación de historiales de acompañamiento.
+Dependencias: scheduleGuidanceAppointment, casoId, userId, getAttendanceFollowupCases, expedientes y notas públicas/confidenciales.
+Conclusión: Se requiere validar pertenencia del caso y ámbito del actor antes de guardar. Hallazgo estático; no se ejecutaron pruebas con expedientes reales.
+===============================================================================
+
+===============================================================================
+AUD-NG-039
+Fecha: 2026-11-04
+Archivo auditado: backend/academic-service/Code.gs
+Módulo: Alertas tempranas de rendimiento y deserción escolar
+Funciones y rangos: evaluateAndDispatchEarlyWarningAlerts (aprox. 9267-9545); getEarlyWarningAlerts.
+Tarea original relacionada: F11-Task08.
+Tipo: Fuente de datos simulada, incumplimiento funcional y autorización incompleta.
+Severidad: Alto.
+Evidencia técnica:
+1. anolectivo se recibe pero no se usa para filtrar registros.
+2. Materias reprobadas y tareas pendientes proceden de mockFailingSubjects y mockMissingTasks enviados por el cliente; si faltan, se consideran cero y no se consultan registros académicos reales.
+3. Los umbrales llegan del payload o valores predeterminados, no de configuración persistente.
+4. notificadoA se registra como texto estático sin envío efectivo observado.
+5. getEarlyWarningAlerts acepta userId del payload sin verificar identidad o ámbito.
+6. Existe deduplicación de alertas activas por estudiante/período/grado/sección.
+Impacto: Alertas incompletas o manipulables, omisión de riesgos reales, ausencia de notificación efectiva y exposición fuera del ámbito autorizado.
+Dependencias: evaluateAndDispatchEarlyWarningAlerts, getEarlyWarningAlerts, calificaciones, tareas, anolectivo, umbrales, notificaciones, _verifiedUserId, _verifiedRole y deduplicación.
+Conclusión: La deduplicación está presente, pero los indicadores no proceden de fuentes persistidas y no se acredita notificación efectiva ni autorización por ámbito. Hallazgo estático; no se ejecutaron pruebas con datos reales.
+===============================================================================
+
+INVENTARIO POSTERIOR A AUD-NG-039 (2026-11-04)
+- Hallazgos nuevos documentados: 8 (AUD-NG-032 a AUD-NG-039).
+- Tareas nuevas agregadas a Pendientes.md: 8 (AUD-NG-032 a AUD-NG-039).
+- Los registros históricos anteriores se conservan sin modificación.
+===============================================================================
