@@ -578,3 +578,20 @@ La búsqueda estaba intentando seguir el flujo completo, no solo la existencia d
 - Verificar HEAD de NG_beta_0.0.0.1_work y confirmar que NG_beta_0.0.0.1 permanece intacta.
 - Leer Pendientes.md para priorizar los hallazgos existentes y nuevos sin duplicar tareas.
 - No volver a auditar completadas_legacy.md salvo que el usuario solicite una reauditoría por cambios posteriores en el código.
+
+
+---
+
+## CHECKPOINT DE INICIO - AUDITORÍA DE completadas.md
+**Fecha:** 2026-11-04
+
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **HEAD antes del plan:** aa234f7ae36ea8aa305253b40df8c2d7090c7ff2.
+- **Rama base NG_beta_0.0.0.1:** 44d9891132332e692dbe2ba8602b41f50a508a59 (verificada sin modificaciones).
+- **Archivo a auditar:** completadas.md, 5,963 líneas, 251 encabezados de tarea y 224 identificadores únicos.
+- **SHA de respaldo de completadas.md:** f57f1aef832e81e44fc4f7ec36a852d50e464676.
+- **SHA de METODOLOGIA_DESARROLLO.md:** 1a2d4de602a1449b697c2da82ab6423e7c61b280.
+- **Plan formal:** AUDITORIA_COMPLETADAS_PLAN.md.
+- **Progreso de auditoría:** 0/224 identificadores auditados. Solo se hizo inventario estructural; no se ha emitido ningún dictamen de implementación.
+- **Primera tarea:** AUDIT-CR-01.
+- **Regla:** inspección manual, sin modificación de código ni de completadas.md. Registrar SHA de respaldo de cada archivo antes de su inspección. Commits modulares y checkpoints en la rama de trabajo; no merge ni cambios en rama base.

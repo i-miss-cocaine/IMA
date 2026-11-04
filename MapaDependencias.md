@@ -504,3 +504,12 @@
 - TASK/createTask/createStudyMaterial -> profesorId/autorId del payload -> hojas Tareas/MaterialesEducativos; no compara con _verifiedUserId ni AsignacionesDocentes.
 - TASK/updateTask -> sobrescribe fechaLimite en Tareas; no registra valor anterior/nuevo ni historial append-only.
 - Sesión/HMAC -> AUD-NG-001/AUD-NG-004; lectura contextual -> AUD-NG-002; config/cierre/asistencia/calificaciones -> AUD-NG-108/AUD-NG-119/AUD-NG-122/AUD-NG-124; privacidad Drive -> TASK-085/TASK-142.
+
+
+## Auditoría del registro completadas.md - inventario inicial (2026-11-04)
+- Fuente: completadas.md (5,963 líneas; 251 encabezados; 224 identificadores únicos).
+- SHA de referencia: f57f1aef832e81e44fc4f7ec36a852d50e464676.
+- Plan de auditoría: AUDITORIA_COMPLETADAS_PLAN.md.
+- La auditoría de completadas_legacy.md no cubre este registro; se abre un proceso separado por lotes C0-C6.
+- Criterio: no inferir cumplimiento a partir de [X]; contrastar cada requisito con su flujo real y considerar versiones repetidas/actualizadas de identificadores.
+- Primer punto de inspección: AUDIT-CR-01; todavía no se ha dictaminado ninguna tarea de completadas.md.
