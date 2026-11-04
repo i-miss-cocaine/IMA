@@ -670,7 +670,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (currentUser) {
                 var portalBtn = document.createElement('a');
-                portalBtn.href = currentUser.rol === 'Profesor' ? 'teacher-dashboard.html' : 'student-dashboard.html';
+                var portalHref = 'student-dashboard.html';
+                if (currentUser.rol === 'Desarrollador') {
+                    portalHref = 'developer-dashboard.html';
+                } else if (currentUser.rol === 'Profesor' || currentUser.rol === 'Administrador' || currentUser.rol === 'Director') {
+                    portalHref = 'teacher-dashboard.html';
+                }
+                portalBtn.href = portalHref;
                 portalBtn.className = 'px-10 py-5 rounded-2xl font-bold text-xl bg-blue-700 text-white hover:bg-blue-800 transition-all duration-300 ease-in-out shadow-lg hover:shadow-xl transform hover:-translate-y-1';
                 portalBtn.textContent = 'Ir al Portal';
                 portalBtn.setAttribute('aria-label', 'Ir a mi portal académico');
@@ -781,7 +787,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (!newsContainer || data.length === 0) return;
 
-        var newsToShow = data.slice(0, 3);
+        // Filtrar exclusivamente noticias activas y vigentes
+        var today = new Date().toISOString().split('T')[0];
+        var filteredData = [];
+        for (var k = 0; k < data.length; k++) {
+            var item = data[k];
+            var isActive = item.estado ? (item.estado === 'Activo') : true;
+            var notExpired = !item.fechaExpiracion || item.fechaExpiracion >= today;
+            if (isActive && notExpired) {
+                filteredData.push(item);
+            }
+        }
+
+        if (filteredData.length === 0) {
+            newsContainer.innerHTML = '<div class="col-span-full text-center py-12 text-gray-400 font-medium text-sm">No hay avisos o noticias vigentes en este momento.</div>';
+            return;
+        }
+
+        var newsToShow = filteredData.slice(0, 3);
         var newsHtml = [];
 
         for (var i = 0; i < newsToShow.length; i++) {

@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-    <title>Panel del Docente - Área de Informática ISEMED</title>
-    <link rel="icon" type="image/png" href="IMA-Logo.png">
+    <title>Panel del Docente - New Generation Bilingual School and Institute</title>
+    <link rel="icon" type="image/png" href="imagenes/new-generation-logo.png">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2563eb">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="InformaticApp">
-    <link rel="apple-touch-icon" href="IMA-Logo.png">
+    <meta name="apple-mobile-web-app-title" content="New Generation">
+    <link rel="apple-touch-icon" href="imagenes/new-generation-logo.png">
     <meta name="description" content="Panel de administración para profesores: gestión de alumnos, tareas, exámenes y reportes académicos.">
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS for Excel export -->
@@ -54,10 +54,10 @@
         <div class="container mx-auto px-4 md:px-6 flex justify-between items-center">
             <div class="flex items-center gap-4">
                 <a href="index.html" class="flex items-center gap-3 group" title="Ir al inicio">
-                    <img src="imagenes/logo.png" alt="Escudo institucional del Área de Informática ISEMED" class="logo-img transition-transform duration-300 group-hover:scale-105">
+                    <img src="imagenes/new-generation-logo.png" alt="Logotipo oficial de New Generation Bilingual School and Institute" class="logo-img transition-transform duration-300 group-hover:scale-105">
                     <div class="header-title-container">
-                        <h1 class="text-sm md:text-xl font-black text-gray-900 uppercase tracking-tighter leading-none">ISEMED</h1>
-                        <p class="text-[9px] md:text-[11px] font-bold text-blue-600 uppercase tracking-widest mt-1">Área de Informática</p>
+                        <h1 class="text-sm md:text-xl font-black text-gray-900 uppercase tracking-tighter leading-none">New Generation</h1>
+                        <p class="text-[9px] md:text-[11px] font-bold text-blue-600 uppercase tracking-widest mt-1">Bilingual School & Institute</p>
                     </div>
                 </a>
             </div>
@@ -120,6 +120,7 @@
                 <button id="nav-tareas" class="flex-none px-4 py-2 rounded-xl font-semibold transition-all text-[10px] uppercase tracking-widest bg-gray-100 text-gray-500">Actividades</button>
                 <button id="nav-proyectos" class="flex-none px-4 py-2 rounded-xl font-semibold transition-all text-[10px] uppercase tracking-widest bg-gray-100 text-gray-500">Proyectos</button>
                 <button id="nav-logros" class="flex-none px-4 py-2 rounded-xl font-semibold transition-all text-[10px] uppercase tracking-widest bg-gray-100 text-gray-500">Logros</button>
+                <button id="nav-guias" class="flex-none px-4 py-2 rounded-xl font-semibold transition-all text-[10px] uppercase tracking-widest bg-gray-100 text-gray-500">Guías de Estudio</button>
                 <button id="nav-news" class="flex-none px-4 py-2 rounded-xl font-semibold transition-all text-[10px] uppercase tracking-widest bg-gray-100 text-gray-500">Noticias</button>
                 <button id="nav-admin" class="flex-none px-4 py-2 rounded-xl font-semibold transition-all text-[10px] uppercase tracking-widest bg-gray-100 text-gray-500">Administración</button>
             </nav>
@@ -265,8 +266,16 @@
                                         <input type="text" name="seccionAsignada" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400">
                                     </div>
                                     <div>
-                                        <label class="block font-medium text-gray-700 mb-2">Fecha Límite</label>
-                                        <input type="date" name="fechaLimite" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400" required>
+                                        <label class="block font-medium text-gray-700 mb-2">Fecha de la Clase (Impartida)</label>
+                                        <input type="date" name="fechaClase" id="create-task-class-date" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400" title="Fecha en que se imparte el contenido">
+                                    </div>
+                                    <div>
+                                        <label class="block font-medium text-gray-700 mb-2">Fecha Límite de Entrega</label>
+                                        <input type="date" name="fechaLimite" id="create-task-due-date" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400" required>
+                                    </div>
+                                    <div>
+                                        <label class="block font-medium text-gray-700 mb-2">Hora de Disponibilidad (Opcional)</label>
+                                        <input type="time" name="horaDisponible" id="create-task-available-time" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400" title="Hora a partir de la cual el alumno puede entregar">
                                     </div>
                                 </div>
                                 <button type="submit" class="mt-8 bg-blue-600 text-white font-medium py-4 px-10 rounded-2xl shadow-lg hover:shadow-xl transition-all">Crear Tarea</button>
@@ -392,6 +401,142 @@
                 </div>
             </section>
 
+            <!-- Sección de Guías de Estudio (REQ-DOC-001) -->
+            <section id="section-guias" class="hidden animate-fade-in-up">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">Guías de Estudio por Asignatura y Parcial</h2>
+                        <p class="text-xs text-gray-500 mt-1">Material formativo de repaso y estudio para los alumnos sin ponderación evaluable obligatoria.</p>
+                    </div>
+                    <button id="btn-show-create-guia" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-medium hover:bg-blue-700 transition-all shadow-sm flex items-center gap-2">
+                        <i class="fas fa-plus"></i> Nueva Guía de Estudio
+                    </button>
+                </div>
+
+                <!-- Formulario de Creación / Edición de Guía -->
+                <div id="guia-create-container" class="hidden bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 mb-8 animate-fade-in">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 id="guia-form-title" class="text-lg font-bold text-gray-800">Publicar Guía de Estudio</h3>
+                        <button type="button" id="btn-cancel-guia" class="text-gray-400 hover:text-gray-600 text-sm font-semibold">Cancelar</button>
+                    </div>
+                    <form id="form-guia-estudio" class="space-y-4">
+                        <input type="hidden" id="guia-id">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Asignatura *</label>
+                                <select id="guia-materia" class="w-full p-3 bg-gray-50 border rounded-xl text-sm" required>
+                                    <option value="">Selecciona Asignatura</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Grado *</label>
+                                <select id="guia-grado" class="w-full p-3 bg-gray-50 border rounded-xl text-sm" required>
+                                    <option value="">Selecciona Grado</option>
+                                    <option value="7mo">7mo Grado</option>
+                                    <option value="8vo">8vo Grado</option>
+                                    <option value="9no">9no Grado</option>
+                                    <option value="10mo">10mo Grado</option>
+                                    <option value="11mo">11mo Grado</option>
+                                    <option value="12mo">12mo Grado</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Sección</label>
+                                <select id="guia-seccion" class="w-full p-3 bg-gray-50 border rounded-xl text-sm">
+                                    <option value="Todas">Todas las Secciones</option>
+                                    <option value="A">Sección A</option>
+                                    <option value="B">Sección B</option>
+                                    <option value="U">Sección Única</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Parcial *</label>
+                                <select id="guia-parcial" class="w-full p-3 bg-gray-50 border rounded-xl text-sm" required>
+                                    <option value="I Parcial">I Parcial</option>
+                                    <option value="II Parcial">II Parcial</option>
+                                    <option value="III Parcial">III Parcial</option>
+                                    <option value="IV Parcial">IV Parcial</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Título de la Guía *</label>
+                            <input type="text" id="guia-titulo" class="w-full p-3 bg-gray-50 border rounded-xl text-sm" placeholder="Ej. Guía de Repaso para Examen del II Parcial" required>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Descripción / Instrucciones</label>
+                            <textarea id="guia-descripcion" rows="3" class="w-full p-3 bg-gray-50 border rounded-xl text-sm" placeholder="Temas evaluados, ejercicios recomendados, fechas de asesoría..."></textarea>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Enlace o URL del Archivo / Documento</label>
+                                <input type="url" id="guia-archivo-url" class="w-full p-3 bg-gray-50 border rounded-xl text-sm" placeholder="https://drive.google.com/...">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Nombre o Formato del Archivo</label>
+                                <input type="text" id="guia-archivo-nombre" class="w-full p-3 bg-gray-50 border rounded-xl text-sm" placeholder="Ej. Guia_Estudio_Matematicas.pdf">
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end gap-3 pt-4 border-t">
+                            <button type="button" id="btn-cancel-guia-2" class="px-5 py-2.5 rounded-xl border border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50">Cancelar</button>
+                            <button type="submit" id="btn-save-guia" class="bg-blue-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-700 shadow-md">Publicar Guía</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Filtros y Lista de Guías de Estudio -->
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 mb-6">
+                    <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
+                        <div class="flex flex-wrap gap-3 w-full md:w-auto">
+                            <select id="filtro-guia-parcial" class="p-2.5 border rounded-xl text-xs bg-gray-50 font-medium">
+                                <option value="">Todos los Parciales</option>
+                                <option value="I Parcial">I Parcial</option>
+                                <option value="II Parcial">II Parcial</option>
+                                <option value="III Parcial">III Parcial</option>
+                                <option value="IV Parcial">IV Parcial</option>
+                            </select>
+                            <select id="filtro-guia-grado" class="p-2.5 border rounded-xl text-xs bg-gray-50 font-medium">
+                                <option value="">Todos los Grados</option>
+                                <option value="7mo">7mo Grado</option>
+                                <option value="8vo">8vo Grado</option>
+                                <option value="9no">9no Grado</option>
+                                <option value="10mo">10mo Grado</option>
+                                <option value="11mo">11mo Grado</option>
+                                <option value="12mo">12mo Grado</option>
+                            </select>
+                        </div>
+                        <button id="btn-reload-guias" class="text-xs text-blue-600 hover:text-blue-800 font-bold flex items-center gap-1.5 self-end md:self-auto">
+                            <i class="fas fa-sync-alt"></i> Actualizar Guías
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-container overflow-x-auto bg-white rounded-3xl shadow-sm border border-gray-100">
+                    <table class="w-full text-left">
+                        <thead class="bg-gray-50 border-b border-gray-100 text-gray-500 uppercase text-[10px] tracking-wider">
+                            <tr>
+                                <th class="p-4">Título & Guía</th>
+                                <th class="p-4">Asignatura</th>
+                                <th class="p-4">Grado / Secc</th>
+                                <th class="p-4">Parcial</th>
+                                <th class="p-4">Documento</th>
+                                <th class="p-4">Estado</th>
+                                <th class="p-4 text-right">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="guias-table-body" class="divide-y divide-gray-100 text-sm">
+                            <tr>
+                                <td colspan="7" class="p-8 text-center text-gray-400">Cargando guías de estudio...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
             <!-- Sección de Noticias -->
             <section id="section-news" class="hidden animate-fade-in-up">
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
@@ -409,9 +554,10 @@
                 <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-6">
                     <div>
                         <h2 class="text-2xl font-medium text-gray-800 tracking-tight">Administración del Sistema</h2>
-                        <p class="text-xs font-medium text-gray-400 uppercase tracking-widest mt-1">Cierre de Ciclo Escolar</p>
+                        <p class="text-xs font-medium text-gray-400 uppercase tracking-widest mt-1">Consola Técnica y Operaciones Institucionales</p>
                     </div>
                 </div>
+
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Tarjeta de Gestión Académica (Rediseñada) -->
@@ -516,6 +662,320 @@
                                     Ejecutar Cierre
                                 </button>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Tarjeta de Gestión Contable y Cobranza (REQ-EXP-010) -->
+                    <div class="card-ima border-blue-100 bg-blue-50/20 p-8 rounded-[2.5rem] md:col-span-2">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-12 h-12 bg-blue-600 text-white rounded-2xl flex items-center justify-center text-xl shadow-lg shadow-blue-100">
+                                <i class="fas fa-cash-register"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-800">Caja y Gestión Financiera Institucional</h3>
+                                <p class="text-xs text-gray-500 font-medium">Registro de pagos y abonos para cuentas por cobrar</p>
+                            </div>
+                        </div>
+
+                        <form id="cashier-payment-form" class="grid grid-cols-1 md:grid-cols-4 gap-4 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">ID de Estudiante</label>
+                                <input type="text" id="cashier-user-id" placeholder="USR-..." class="w-full p-2.5 bg-gray-50 border rounded-xl text-xs font-semibold" required>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">ID Cargo Financiero</label>
+                                <input type="text" id="cashier-cargo-id" placeholder="CHG-..." class="w-full p-2.5 bg-gray-50 border rounded-xl text-xs font-semibold" required>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Monto de Abono (L.)</label>
+                                <input type="number" step="0.01" id="cashier-monto" placeholder="0.00" class="w-full p-2.5 bg-gray-50 border rounded-xl text-xs font-semibold" required>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Método de Pago</label>
+                                <select id="cashier-metodo" class="w-full p-2.5 bg-gray-50 border rounded-xl text-xs font-semibold">
+                                    <option value="Efectivo">Efectivo en Caja</option>
+                                    <option value="Transferencia">Transferencia Bancaria</option>
+                                    <option value="Tarjeta">Tarjeta Débito/Crédito</option>
+                                    <option value="Cheque">Cheque Certificado</option>
+                                </select>
+                            </div>
+                            <div class="md:col-span-3">
+                                <input type="text" id="cashier-ref" placeholder="Referencia de pago o recibo manual..." class="w-full p-2.5 bg-gray-50 border rounded-xl text-xs font-semibold">
+                            </div>
+                            <div>
+                                <button type="submit" id="btn-cashier-submit" class="w-full py-2.5 bg-blue-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-blue-700 shadow-md">
+                                    Registrar Abono
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Tarjeta de Configuración de Parámetros Institucionales (Laborales y Tributarios) -->
+                    <div class="card-ima border-purple-100 bg-purple-50/20 p-8 rounded-[2.5rem] md:col-span-2">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-12 h-12 bg-purple-600 text-white rounded-2xl flex items-center justify-center text-xl shadow-lg shadow-purple-100">
+                                <i class="fas fa-sliders-h"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-800">Parámetros del Sistema (Laboral, Salarial e Impuestos)</h3>
+                                <p class="text-xs text-gray-500 font-medium">Configuración de techos IHSS, porcentajes de deducción, tasas de ISV y factores de horas extras</p>
+                            </div>
+                        </div>
+
+                        <form id="system-parameters-form" class="space-y-6 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Techo Cotización IHSS (L.)</label>
+                                    <input type="number" step="0.01" id="param-ihss-techo" class="w-full p-2.5 bg-gray-50 border rounded-xl text-xs font-semibold" required>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">% Deducción IHSS (ej. 0.035)</label>
+                                    <input type="number" step="0.001" id="param-ihss-pct" class="w-full p-2.5 bg-gray-50 border rounded-xl text-xs font-semibold" required>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">% Aporte RAP (ej. 0.015)</label>
+                                    <input type="number" step="0.001" id="param-rap-pct" class="w-full p-2.5 bg-gray-50 border rounded-xl text-xs font-semibold" required>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Factor Hora Extra Diurna</label>
+                                    <input type="number" step="0.01" id="param-he-diurna" class="w-full p-2.5 bg-gray-50 border rounded-xl text-xs font-semibold" required>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Horas Laborales Mes</label>
+                                    <input type="number" id="param-horas-mes" class="w-full p-2.5 bg-gray-50 border rounded-xl text-xs font-semibold" required>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Tasa ISV General (ej. 0.15)</label>
+                                    <input type="number" step="0.01" id="param-isv-general" class="w-full p-2.5 bg-gray-50 border rounded-xl text-xs font-semibold" required>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Tasa ISV Especial (ej. 0.18)</label>
+                                    <input type="number" step="0.01" id="param-isv-especial" class="w-full p-2.5 bg-gray-50 border rounded-xl text-xs font-semibold" required>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Límite Tramo 1 ISR (L.)</label>
+                                    <input type="number" step="1000" id="param-isr-limite1" class="w-full p-2.5 bg-gray-50 border rounded-xl text-xs font-semibold" required>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Frecuencia Pago Defecto</label>
+                                    <select id="param-frecuencia-pago" class="w-full p-2.5 bg-gray-50 border rounded-xl text-xs font-semibold">
+                                        <option value="Quincenal">Quincenal</option>
+                                        <option value="Semanal">Semanal</option>
+                                        <option value="Mensual">Mensual</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Tope Deducción Quincenal (%)</label>
+                                    <input type="number" step="1" id="param-max-deduc-quincenal" class="w-full p-2.5 bg-gray-50 border rounded-xl text-xs font-semibold" placeholder="40" required>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Tope Deducción Mensual (%)</label>
+                                    <input type="number" step="1" id="param-max-deduc-mensual" class="w-full p-2.5 bg-gray-50 border rounded-xl text-xs font-semibold" placeholder="40" required>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Regla Día No Laborable / Feriado</label>
+                                    <select id="param-regla-no-laborable" class="w-full p-2.5 bg-gray-50 border rounded-xl text-xs font-semibold">
+                                        <option value="Adelantar">Adelantar al día hábil previo</option>
+                                        <option value="Posponer">Posponer al día hábil posterior</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="flex justify-end">
+                                <button type="submit" id="btn-save-parameters" class="px-6 py-2.5 bg-purple-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-purple-700 shadow-md">
+                                    Guardar Parámetros en Spreadsheet
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Panel de Deducciones Recurrentes y Reglas de Pago -->
+                    <div class="card-ima border-teal-100 bg-white p-8 rounded-[2.5rem] shadow-sm">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-12 h-12 bg-teal-600 text-white rounded-2xl flex items-center justify-center text-xl shadow-lg shadow-teal-100">
+                                <i class="fas fa-hand-holding-usd"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-800">Deducciones Recurrentes y Simulación de Pago</h3>
+                                <p class="text-xs text-gray-500 font-medium">Asignar deducciones adicionales en cuotas fijas y verificar fechas de pago frente a feriados o domingos</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Formulario de Deducción Recurrente -->
+                            <form id="recurring-deduction-form" class="space-y-4 bg-teal-50/40 p-6 rounded-2xl border border-teal-100">
+                                <h4 class="font-bold text-sm text-teal-800 flex items-center gap-2">
+                                    <i class="fas fa-plus-circle"></i> Registrar Deducción Recurrente
+                                </h4>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">ID Empleado</label>
+                                    <input type="text" id="rec-ded-empid" class="w-full p-2.5 bg-white border rounded-xl text-xs font-semibold" placeholder="EMP-..." required>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Nombre / Concepto de Deducción</label>
+                                    <input type="text" id="rec-ded-nombre" class="w-full p-2.5 bg-white border rounded-xl text-xs font-semibold" placeholder="Ej. Préstamo Institucional, Anticipo" required>
+                                </div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Monto por Cuota (L.)</label>
+                                        <input type="number" step="0.01" id="rec-ded-monto" class="w-full p-2.5 bg-white border rounded-xl text-xs font-semibold" placeholder="500.00" required>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Total de Cuotas</label>
+                                        <input type="number" id="rec-ded-cuotas" class="w-full p-2.5 bg-white border rounded-xl text-xs font-semibold" placeholder="6" required>
+                                    </div>
+                                </div>
+                                <button type="submit" class="w-full py-2.5 bg-teal-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-teal-700 shadow-md">
+                                    Guardar Deducción Recurrente
+                                </button>
+                            </form>
+
+                            <!-- Simulador de Fecha Efectiva de Pago -->
+                            <div class="space-y-4 bg-blue-50/40 p-6 rounded-2xl border border-blue-100">
+                                <h4 class="font-bold text-sm text-blue-800 flex items-center gap-2">
+                                    <i class="fas fa-calendar-check"></i> Comprobador de Regla de Días No Laborables
+                                </h4>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Fecha Programada de Pago</label>
+                                    <input type="date" id="sim-fecha-pago" class="w-full p-2.5 bg-white border rounded-xl text-xs font-semibold">
+                                </div>
+                                <div>
+                                    <button type="button" id="btn-simulate-payment-date" class="w-full py-2.5 bg-blue-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-blue-700 shadow-md">
+                                        Calcular Fecha Efectiva
+                                    </button>
+                                </div>
+                                <div id="sim-payment-result" class="p-3 bg-white rounded-xl border border-blue-100 text-xs text-gray-700 hidden">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tarjeta de Gestión de Inventarios, Activos y Proveedores (REQ-EXP-015) -->
+                    <div class="card-ima md:col-span-2 border-emerald-100 bg-white p-8 rounded-[2.5rem] shadow-sm">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-12 h-12 bg-emerald-600 text-white rounded-2xl flex items-center justify-center text-xl shadow-lg shadow-emerald-100">
+                                <i class="fas fa-boxes"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-800">Inventario, Activos Fijos y Proveedores</h3>
+                                <p class="text-xs text-gray-500 font-medium">Control de existencias, préstamos, bajas, compras y alertas automáticas de stock mínimo</p>
+                            </div>
+                        </div>
+
+                        <!-- Alertas de Stock Mínimo -->
+                        <div id="inventory-low-stock-alert" class="p-4 mb-6 bg-red-50 border border-red-200 rounded-2xl text-xs text-red-700 hidden">
+                            <div class="flex items-center gap-2 font-bold mb-1">
+                                <i class="fas fa-exclamation-circle text-base"></i>
+                                <span>Alerta de Existencias Críticas</span>
+                            </div>
+                            <p id="inventory-alert-list" class="text-[11px]"></p>
+                        </div>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <!-- Formulario de Alta de Artículo / Activo -->
+                            <form id="inventory-item-form" class="space-y-4 bg-gray-50/60 p-5 rounded-2xl border border-gray-100">
+                                <h4 class="font-bold text-xs text-gray-700 uppercase tracking-wider flex items-center gap-2">
+                                    <i class="fas fa-plus"></i> Registrar Artículo o Activo
+                                </h4>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Nombre del Bien</label>
+                                    <input type="text" id="inv-nombre" class="w-full p-2.5 bg-white border rounded-xl text-xs font-semibold" placeholder="Ej. Proyector Epson, Resmas de Papel" required>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Categoría</label>
+                                        <select id="inv-categoria" class="w-full p-2.5 bg-white border rounded-xl text-xs font-semibold">
+                                            <option value="Consumible">Consumible</option>
+                                            <option value="Activo Fijo">Activo Fijo</option>
+                                            <option value="Mobiliario">Mobiliario</option>
+                                            <option value="Tecnológico">Tecnológico</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Ubicación</label>
+                                        <input type="text" id="inv-ubicacion" class="w-full p-2.5 bg-white border rounded-xl text-xs font-semibold" placeholder="Lab Computo / Bodega" required>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-3 gap-2">
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Stock Inicial</label>
+                                        <input type="number" id="inv-stock-inicial" class="w-full p-2.5 bg-white border rounded-xl text-xs font-semibold" placeholder="10" required>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Stock Mínimo</label>
+                                        <input type="number" id="inv-stock-minimo" class="w-full p-2.5 bg-white border rounded-xl text-xs font-semibold" placeholder="3" required>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Costo Unit. (L.)</label>
+                                        <input type="number" step="0.01" id="inv-costo" class="w-full p-2.5 bg-white border rounded-xl text-xs font-semibold" placeholder="150.00">
+                                    </div>
+                                </div>
+                                <button type="submit" id="btn-save-inv-item" class="w-full py-2.5 bg-emerald-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-emerald-700 shadow-md">
+                                    Guardar Artículo
+                                </button>
+                            </form>
+
+                            <!-- Formulario de Movimiento de Kardex -->
+                            <form id="inventory-movement-form" class="space-y-4 bg-gray-50/60 p-5 rounded-2xl border border-gray-100">
+                                <h4 class="font-bold text-xs text-gray-700 uppercase tracking-wider flex items-center gap-2">
+                                    <i class="fas fa-dolly"></i> Movimiento de Kardex
+                                </h4>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">ID de Artículo</label>
+                                    <input type="text" id="inv-mov-artid" class="w-full p-2.5 bg-white border rounded-xl text-xs font-semibold" placeholder="ART-..." required>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Tipo de Movimiento</label>
+                                        <select id="inv-mov-tipo" class="w-full p-2.5 bg-white border rounded-xl text-xs font-semibold">
+                                            <option value="Entrada">Entrada (Compra/Donación)</option>
+                                            <option value="Salida">Salida (Consumo)</option>
+                                            <option value="Prestamo">Préstamo Temporal</option>
+                                            <option value="Devolucion">Devolución de Préstamo</option>
+                                            <option value="Baja">Baja (Dañado/Obsolescencia)</option>
+                                            <option value="Ajuste">Ajuste de Conteo Físico</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Cantidad</label>
+                                        <input type="number" id="inv-mov-cantidad" class="w-full p-2.5 bg-white border rounded-xl text-xs font-semibold" placeholder="1" required>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Referencia / Factura / Solicitante</label>
+                                    <input type="text" id="inv-mov-ref" class="w-full p-2.5 bg-white border rounded-xl text-xs font-semibold" placeholder="Prof. Juan Pérez / Req-04">
+                                </div>
+                                <button type="submit" id="btn-save-inv-mov" class="w-full py-2.5 bg-blue-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-blue-700 shadow-md">
+                                    Registrar Movimiento
+                                </button>
+                            </form>
+
+                            <!-- Formulario de Directorio de Proveedores -->
+                            <form id="supplier-form" class="space-y-4 bg-gray-50/60 p-5 rounded-2xl border border-gray-100">
+                                <h4 class="font-bold text-xs text-gray-700 uppercase tracking-wider flex items-center gap-2">
+                                    <i class="fas fa-truck"></i> Directorio de Proveedores
+                                </h4>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Nombre Comercial</label>
+                                    <input type="text" id="prov-nombre" class="w-full p-2.5 bg-white border rounded-xl text-xs font-semibold" placeholder="Distribuidora Escolar S.A." required>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">RTN</label>
+                                        <input type="text" id="prov-rtn" maxlength="14" class="w-full p-2.5 bg-white border rounded-xl text-xs font-semibold" placeholder="08011990123456">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Teléfono</label>
+                                        <input type="tel" id="prov-telefono" class="w-full p-2.5 bg-white border rounded-xl text-xs font-semibold" placeholder="+504 9999-0000">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Rubro / Categoría</label>
+                                    <input type="text" id="prov-rubro" class="w-full p-2.5 bg-white border rounded-xl text-xs font-semibold" placeholder="Papelería / Tecnología / Mobiliario">
+                                </div>
+                                <button type="submit" id="btn-save-supplier" class="w-full py-2.5 bg-purple-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-purple-700 shadow-md">
+                                    Guardar Proveedor
+                                </button>
+                            </form>
                         </div>
                     </div>
 
@@ -678,7 +1138,7 @@
                     <input type="text" id="news-title" required class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400" placeholder="Título de la noticia">
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                         <label for="news-category" class="block font-medium text-gray-700 mb-1">Categoría</label>
                         <select id="news-category" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400">
@@ -689,9 +1149,33 @@
                         </select>
                     </div>
                     <div>
+                        <label for="news-expiration" class="block font-medium text-gray-700 mb-1">Fecha de Expiración (Vigencia)</label>
+                        <input type="date" id="news-expiration" class="w-full p-2.5 border rounded-xl text-sm">
+                    </div>
+                    <div>
                         <label for="news-image-input" class="block font-medium text-gray-700 mb-1">Imagen de Portada</label>
                         <input type="file" id="news-image-input" accept="image/*,.heic" class="w-full p-2.5 border rounded-xl text-sm">
                         <input type="hidden" id="news-image-url">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                    <div>
+                        <label for="news-audience-level" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Audiencia: Nivel</label>
+                        <select id="news-audience-level" class="w-full p-2 bg-white border rounded-lg text-xs font-semibold">
+                            <option value="Todos">Todos los niveles</option>
+                            <option value="Prebásica">Prebásica</option>
+                            <option value="Básica">Básica</option>
+                            <option value="Media">Media</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="news-audience-grade" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Audiencia: Grado</label>
+                        <input type="text" id="news-audience-grade" class="w-full p-2 bg-white border rounded-lg text-xs font-semibold" placeholder="Todos o ej. 7mo Grado">
+                    </div>
+                    <div>
+                        <label for="news-audience-section" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Audiencia: Sección</label>
+                        <input type="text" id="news-audience-section" class="w-full p-2 bg-white border rounded-lg text-xs font-semibold" placeholder="Todos o ej. A">
                     </div>
                 </div>
 
@@ -809,7 +1293,7 @@
     <footer class="bg-white/50 py-6 mt-auto">
         <div class="container mx-auto px-6 text-center">
             <p class="text-[10px] font-medium text-gray-400 uppercase tracking-widest mb-2">
-                &copy; 2026 Área de Informática <strong>ISEMED</strong>.
+                &copy; 2026 <strong>New Generation Bilingual School and Institute</strong>.
             </p>
             <p class="text-[10px] font-medium text-gray-400 uppercase tracking-widest opacity-60">
                 <a href="#" class="hover:text-blue-600 transition-colors">Privacidad</a>
@@ -941,8 +1425,16 @@
                         <input type="text" id="edit-seccion" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400">
                     </div>
                     <div>
+                        <label class="block font-medium text-gray-700 mb-1">Fecha de Clase</label>
+                        <input type="date" id="edit-fecha-clase" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400">
+                    </div>
+                    <div>
                         <label class="block font-medium text-gray-700 mb-1">Fecha Límite</label>
                         <input type="date" id="edit-fecha" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400" required>
+                    </div>
+                    <div>
+                        <label class="block font-medium text-gray-700 mb-1">Hora de Disponibilidad</label>
+                        <input type="time" id="edit-hora-disponible" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400">
                     </div>
                     <div>
                         <label class="block font-medium text-gray-700 mb-1">Puntaje Máximo</label>
