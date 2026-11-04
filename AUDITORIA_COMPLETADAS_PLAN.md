@@ -114,3 +114,18 @@ Al reanudar:
 - Progreso: 6/183 identificadores únicos auditados; 177 pendientes.
 - Siguiente registro: FASE2-T02.
 - Pruebas de integración y despliegue: no ejecutadas.
+
+
+## 11. Resultado del lote C1.3 - FASE2-T02 (2026-11-04)
+
+- Dictamen: Cumple parcialmente.
+- Evidencia principal: js/api.js/fetchApi reintenta solicitudes POST sin clasificar la semántica de la acción ni generar una clave estable; ACADEMIC y ACCOUNTING aceptan claves opcionales y almacenan resultados en CacheService después de ejecutar, sin reserva atómica. El TTL es de 21,600 segundos.
+- Controles parciales: recordStudentPayment consulta claves/referencias en PagosAbonos; createAdmissionRequest usa LockService y deduplicación natural; createStudentEnrollment bloquea y devuelve matrículas activas existentes para el mismo estudiante/año.
+- Hallazgos existentes vinculados: AUD-NG-006 (idempotencia por operación en cliente/API) y AUD-NG-133 (idempotencia atómica de pagos).
+- Hallazgo nuevo: AUD-NG-161. runCriticalProcessConcurrencySuite (ACCOUNTING:10505-10550) no prueba concurrencia ni unicidad; marca PASSED a partir de conteos, consulta TransaccionesCobro en lugar de PagosAbonos y no cubre matrícula ni planilla.
+- Informe: AUDITORIA_COMPLETADAS_FASE2_T02.md.
+- Archivos inspeccionados y SHA de respaldo: js/api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; backend/academic-service/Code.gs daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; backend/accounting-service/Code.gs 38b979d41596b85e888b4a7060b37bbac0840a28.
+- Progreso: 7/183 identificadores únicos auditados; 176 pendientes.
+- Código fuente y completadas.md: sin modificaciones. ChangesLogs.txt sin cambios.
+- Pruebas concurrentes, pérdida de respuesta, navegador y despliegue productivo: no ejecutadas.
+- Siguiente registro: T-UX-01, inmediatamente después de FASE2-T02 en completadas.md.
