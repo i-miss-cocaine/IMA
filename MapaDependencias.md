@@ -538,3 +538,16 @@
 - ACADEMIC/ACCOUNTING/TASK/EXAM/validateRolePermission -> usa claims.role como userRole.
 - USER/getUserVerifiedRole -> no implementa caché de decisión por usuario; el estado de cuenta sí se cachea por userId. La matriz dinámica es global por rol/acción.
 - Cambio de rol -> no se identificó invalidación automática de tokens ni versión de rol; nuevo AUD-NG-160.
+
+
+## Lote C1.3 - idempotencia y reintentos HTTP FASE2-T02 (2026-11-04)
+- js/api.js/fetchApi (10-14, 25-69, 143-151) -> construye solicitudes POST para todas las acciones; reintenta errores de red hasta dos veces sin clasificar lecturas/escrituras ni generar una clave idempotente.
+- ACADEMIC/doPost (router y despacho) -> validateRolePermission -> checkAndRegisterIdempotencyKey -> handler -> saveIdempotentResult.
+- ACCOUNTING/doPost (572-604 y final del despacho) -> validateRolePermission -> checkAndRegisterIdempotencyKey -> handler -> saveIdempotentResult.
+- ACADEMIC/ACCOUNTING/checkAndRegisterIdempotencyKey (268-312 / 220-264) -> CacheService con clave IDEM_<action>_<token>; lectura y escritura de resultado separadas, sin reserva atómica, TTL de 21,600 segundos.
+- ACCOUNTING/recordStudentPayment (3890-3955) -> deduplicación local en PagosAbonos por idempotencyKey/tokenTransaccion/referencia; no hay bloqueo alrededor de consulta e inserción. Alcance transaccional existente: AUD-NG-133.
+- ACADEMIC/createAdmissionRequest (985-1055) -> chequeo de clave, LockService y deduplicación natural por identidad; el resultado se guarda después de la escritura.
+- ACADEMIC/createStudentEnrollment (11140-11220) -> LockService y detección de matrícula activa por estudiante/año; no vincula una clave idempotente con el resultado.
+- ACCOUNTING/runCriticalProcessConcurrencySuite (10505-10550) -> comprueba adquisición de un único lock y conteos de filas; marca PASSED sin verificar unicidad ni concurrencia real. Consulta TransaccionesCobro, mientras recordStudentPayment escribe PagosAbonos.
+- Hallazgos relacionados: AUD-NG-006 (idempotencia por operación desde el cliente), AUD-NG-133 (idempotencia atómica de pagos). Hallazgo nuevo AUD-NG-161: suite de concurrencia con falsos positivos.
+- Respaldo de código: js/api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; ACADEMIC daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; ACCOUNTING 38b979d41596b85e888b4a7060b37bbac0840a28.
