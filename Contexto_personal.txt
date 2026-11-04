@@ -204,3 +204,26 @@ REFERENCIA DE COMMIT - RESULTADOS DEL LOTE A (2026-11-04)
 - La comparación con NG_beta confirma que los cambios de esta auditoría son exclusivamente documentales; no se modificó código fuente.
 - Estado de AUD-NG-101: En Ejecución. Próximo lote: B.
 ================================================================
+
+
+================================================================
+ACTUALIZACIÓN DE CONTINUIDAD IMA - AUDITORÍA LOTE B (2026-11-04)
+================================================================
+- Instrucción expresa más reciente del usuario: rama base de esta auditoría `NG_beta_0.0.0.1`; crear y utilizar exclusivamente `NG_beta_0.0.0.1_work`.
+- Rama de trabajo creada desde el commit base `44d9891132332e692dbe2ba8602b41f50a508a59`. La rama base `NG_beta_0.0.0.1`, `NG_beta` y `main` no se modificaron; no se realizaron merges.
+- Tarea principal AUD-NG-101: permanece En Ejecución; el alcance de 49 tareas no ha terminado.
+- Lote B inspeccionado individualmente: CORS-001 (Cumple parcialmente), LOOP-001 (Cumple parcialmente), UI-001 (Reemplazada por implementación posterior) y DB-001 (Cumple parcialmente).
+- Hallazgos y tareas derivadas añadidas de forma aditiva: AUD-NG-110, AUD-NG-111 y AUD-NG-112 en Pendientes.md; evidencia en Auditoria.txt; dependencias verificadas del lote añadidas a MapaDependencias.md.
+- Informe: AUDITORIA_LOTE_B.md. Plan actualizado: AUDITORIA_COMPLETADAS_LEGACY_PLAN.md.
+- Commit de resultados del Lote B: `1ea146a4297bc4dcf9e0c6f564297f279cbb6bbb`.
+- No se modificó código fuente, no se alteró completadas_legacy.md, no se actualizaron ChangesLogs.txt, no se accedió al Spreadsheet productivo y no se ejecutaron pruebas. Ninguna tarea histórica se marca como aprobada o completada.
+- Última tarea histórica auditada: DB-001. Próximo paso: continuar con el Lote C.
+- Rama de trabajo después del commit de resultados: `NG_beta_0.0.0.1_work`; verificar el HEAD actual al retomar.
+
+### Registro de estimación de cuota y prevención de interrupciones
+- Consulta de documentación oficial realizada el 2026-11-04. En ChatGPT Free, los chats de texto cotidianos están descritos como ilimitados sujetos a medidas contra abuso; existen límites separados para herramientas. El aviso de contexto lleno depende de la cantidad de información de los mensajes de usuario y del asistente, no de un número fijo de mensajes.
+- No existe una fórmula pública que convierta tareas de auditoría, llamadas al conector GitHub o commits en una cantidad garantizada de cuota disponible. El asistente no puede consultar el saldo restante de uso ni el contador exacto de tokens de esta conversación; por tanto, no debe inventar un límite ni prometer que cierto número de tareas cabe en la cuota.
+- Como referencia de tamaño, OpenAI indica que en inglés 1 token equivale aproximadamente a 4 caracteres o 0.75 palabras; el español, el código, los nombres de archivos y el razonamiento pueden variar. Esta estimación sirve solo para dimensionar texto, no para calcular el saldo real de ChatGPT.
+- Heurística operativa conservadora: trabajar un lote histórico por vez (el Lote B tuvo 4 tareas), guardar un commit independiente al cerrar cada lote, no editar código durante la auditoría, preservar los blobs SHA como respaldo y mantener el contexto de continuidad actualizado. Si una auditoría no termina, dejar registrado el último elemento revisado y crear un commit solo con resultados completos y coherentes; nunca hacer una escritura parcial de Pendientes.md.
+- Esta heurística es una medida de seguridad del repositorio, no una garantía frente a límites dinámicos del producto.
+================================================================
