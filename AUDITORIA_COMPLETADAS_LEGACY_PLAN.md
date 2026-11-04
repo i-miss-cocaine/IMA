@@ -173,3 +173,14 @@ Se recuperó y leyó el contenido íntegro de `Pendientes.md`, se confirmó que 
 - **Pruebas:** no ejecutadas; revisión estática.
 - **Código fuente:** sin modificaciones; no se alteró completadas_legacy.md ni ChangesLogs.txt.
 - **Siguiente sublote:** F2 (REQ-EXP-016 en adelante).
+
+
+## 16. Resultados de auditoría - Lote F2 (2026-11-04)
+
+- **Subdivisión:** F2 revisa REQ-EXP-016 a REQ-EXP-019.
+- **Resultados:** REQ-EXP-016 (Cumple parcialmente: contrato de noticias desalineado y audiencia/vigencia no configurables); REQ-EXP-017 (Cumple parcialmente: ping real incompleto y health DEVELOPER simulado); REQ-EXP-018 (Cumple parcialmente: logs reales con viewer incompatible y API central simulada); REQ-EXP-019 (Cumple parcialmente: backup manual ACADEMIC existe, pero hash/validación/restore/schedule/retención defectuosos).
+- **Hallazgos:** AUD-NG-143 a AUD-NG-146, añadidos a Auditoria.txt y Pendientes.md.
+- **Informe:** `AUDITORIA_LOTE_F2.md`.
+- **Pruebas:** no ejecutadas; revisión estática de servicios y UI.
+- **Código fuente:** sin modificaciones; no se alteró completadas_legacy.md ni ChangesLogs.txt.
+- **Siguiente lote:** G (REQ-EXP-020 en adelante y tareas DOC).

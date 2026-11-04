@@ -4118,3 +4118,57 @@ RESULTADOS DEL LOTE F1
 - REQ-EXP-015: Cumple parcialmente. Hay Kardex, transferencias, requisiciones, conteos, mantenimiento, custodia y bajas; persisten defectos de estado, concurrencia, autorización y trazabilidad.
 - No se ejecutaron pruebas ni se accedió a datos productivos. No se modificó código fuente, completadas_legacy.md ni ChangesLogs.txt.
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-04
+AUDITORÍA DE CONTINUIDAD - LOTE F2 DE completadas_legacy.md
+TAREAS: REQ-EXP-016 A REQ-EXP-019
+RAMA DE TRABAJO: NG_beta_0.0.0.1_work
+===============================================================================
+
+[AUD-NG-143] REQ-EXP-016 - NOTICIAS NO SE MUESTRAN Y NO SE APLICAN AUDIENCIA/VIGENCIA
+- Archivo: backend/user-service/Code.gs, líneas 3116 y 5573-5705; js/teacher.js, líneas 5010-5085; js/index-ui.js, líneas 740-805; teacher-dashboard.html.
+- Módulo/función: Noticias institucionales / getNews, createNews, updateNewsStatus.
+- Tipo: Contrato API, filtros de audiencia y permisos.
+- Evidencia: hay dos declaraciones getNews; la posterior devuelve `noticias`, pero index-ui.js y teacher.js esperan `data`. El frontend espera estado `Activo` y fechaExpiracion, pero el backend usa `Activa` y fechaFin. El formulario createNews solo envía título/categoría/imagen/contenido, sin gradoAudiencia, seccionAudiencia, fechaInicio ni fechaFin. La acción getNews es pública y sin filtros devuelve noticias activas de cualquier audiencia. El backend define rol `Secretaría`, mientras teacher.js compara `Secretaria`.
+- Impacto: gestión/listado de noticias no funciona, se presenta noticia estática fallback y la audiencia/vigencia no se puede configurar desde UI; una corrección parcial del DTO podría exponer noticias dirigidas a grupos.
+- Severidad: ALTO.
+- Tarea derivada: AUD-NG-143.
+
+[AUD-NG-144] REQ-EXP-017 - HEALTH CHECK SOLO CUBRE PARTE DE LOS SERVICIOS Y DOS NO RESPONDEN PING
+- Archivo: js/api.js, líneas 190-255; js/developer.js, líneas 90-170; backend/user-service/Code.gs, línea 1552; backend/academic-service/Code.gs, línea 964; backend/task-service/Code.gs; backend/exam-service/Code.gs; backend/developer-service/Code.gs, líneas 2599-2620; backend/accounting-service/Code.gs.
+- Módulo/función: checkMicroserviceHealth, checkAllMicroservicesHealth, ping, getServiceHealthDiagnostics.
+- Tipo: Observabilidad y disponibilidad.
+- Evidencia: checkAllMicroservicesHealth consulta solo USER/ACADEMIC/TASK/EXAM. USER y ACADEMIC tienen acción ping; TASK y EXAM no. DEVELOPER no tiene ping y getServiceHealthDiagnostics retorna PASS fijo para conectividad, Spreadsheet y permisos. ACCOUNTING tiene ping, pero no está en el monitor y su URL es placeholder.
+- Impacto: health dashboard reporta error para servicios sin ping y no observa dos microservicios; diagnóstico DEVELOPER puede declarar HEALTHY sin comprobar nada.
+- Severidad: ALTO.
+- Tarea derivada: AUD-NG-144.
+
+[AUD-NG-145] REQ-EXP-018 - LOGS CENTRALES CON DTO/FILTROS ROTOS Y MUESTRAS SIMULADAS
+- Archivo: backend/user-service/Code.gs, líneas 320-395; backend/academic-service/Code.gs, líneas 29-60; backend/developer-service/Code.gs, líneas 2363-2395; js/api.js, líneas 260-300; js/developer.js, líneas 175-280.
+- Módulo/función: logStructuredEvent, sanitizePayloadForLog, getStructuredLogs, getCentralizedLogs y renderStructuredLogsTable.
+- Tipo: Auditoría, privacidad y datos simulados.
+- Evidencia: getStructuredLogs devuelve service/functionName/severity/errorCode/message/payload/userRole; UI espera servicio/funcion/severidad/codigoError/detalles/usuarioId. UI envía severidad/servicio/limit, backend lee severity/startDate/endDate. sanitizePayloadForLog solo enmascara password/clave/token/secret/credencial/authorization, no PII o datos financieros. getCentralizedLogs retorna dos sampleLogs hardcodeados y resolveLogId solo responde éxito sin persistir. developer.js presenta fallbackLogs si no hay registros.
+- Impacto: filtros no funcionan, columnas reales aparecen vacías, datos personales/financieros pueden quedar en LogsSistema y el panel puede mostrar eventos inventados como si fueran reales.
+- Severidad: ALTO.
+- Tarea derivada: AUD-NG-145.
+
+[AUD-NG-146] REQ-EXP-019 - RESPALDO CON HASH NO CRIPTOGRÁFICO, VALIDACIÓN BYPASS Y RESTORE UI ROTO
+- Archivo: backend/academic-service/Code.gs, líneas 11920-12380; js/teacher.js, líneas 2680-2800; js/developer.js, líneas 280-390; js/api.js, líneas 260-340.
+- Módulo/función: createSystemBackup, listSystemBackups, verifyBackupIntegrity, restoreSystemBackup.
+- Tipo: Continuidad operativa e integridad de respaldo.
+- Evidencia: computeSimpleHash es hash aritmético de 32 bits, no SHA-256. verifyBackupIntegrity usa `storedChecksum === computedChecksum || Boolean(storedChecksum)`, por lo que cualquier checksum no vacío pasa. restoreSystemBackup no invoca verifyBackupIntegrity y exige confirmed + confirmCode; teacher.js envía confirmationCode y omite confirmed, por lo que el backend rechaza la restauración. No se encontraron triggers programados ni retención. El panel developer.js llama acciones USER no encontradas y muestra un respaldo mock como EXITOSO.
+- Impacto: no se garantiza integridad; el restore UI no funciona; no existe respaldo programado/retención demostrable y el panel puede presentar un backup ficticio.
+- Severidad: CRÍTICO.
+- Tarea derivada: AUD-NG-146.
+
+===============================================================================
+RESULTADOS DEL LOTE F2
+===============================================================================
+- REQ-EXP-016: Cumple parcialmente. El backend crea noticias, pero el contrato de respuesta está desalineado, UI no configura audiencia/vigencia y el control de rol tiene diferencia de acento.
+- REQ-EXP-017: Cumple parcialmente. Hay ping real para USER/ACADEMIC, pero TASK/EXAM carecen de ping, DEVELOPER simula PASS y ACCOUNTING no se monitoriza.
+- REQ-EXP-018: Cumple parcialmente. USER/ACADEMIC persisten logs, pero el viewer tiene DTO/filtros incompatibles, sanitización limitada y la API central de DEVELOPER devuelve muestras fijas.
+- REQ-EXP-019: Cumple parcialmente. ACADEMIC puede crear/listar respaldos y tiene restore/verify, pero checksum y validación están rotos, UI restore no pasa los parámetros esperados y no se encontró programación/retención.
+- No se ejecutaron pruebas ni se accedió a datos productivos. No se modificó código fuente, completadas_legacy.md ni ChangesLogs.txt.
+===============================================================================

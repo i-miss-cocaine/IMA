@@ -18186,3 +18186,40 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Descripción del Alcance:** `confirmTransferReceipt` acepta cantidad recibida superior a la despachada e infla stock. `deliverMaterialRequisition` entrega solicitudes sin exigir estado aprobado, no usa lock y descuenta desde el nombre del departamento como si fuera almacén. `reconcilePhysicalCount` no bloquea ni impide repetir una conciliación, por lo que vuelve a aplicar ajustes. `manageMaintenanceOrder` puede descontar repuestos otra vez al actualizar una orden ya completada. `recordInventoryMovement` trata tipos desconocidos como ajuste absoluto de stock. La baja de activos carece de idempotencia/lock y el catálogo permite sobrescribir custodio/estado sin historial.
 - **Criterios de Aceptación:** Recepción no supera cantidad despachada y discrepancias requieren motivo; requisición solo se entrega tras aprobación y desde almacén válido; conteo conciliado una sola vez bajo lock; repuestos se descuentan una sola vez por orden; tipos de movimiento whitelist; bajas idempotentes y autorizadas; cambios patrimoniales conservan historial; pruebas de doble ejecución y stock negativo/inflado.
 - **Estado:** [ ] Pendiente
+
+
+### [AUD-NG-143] Corregir contrato de noticias, audiencia, vigencia y permisos de Secretaría
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-143 (REQ-EXP-016).
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** `backend/user-service/Code.gs`; `js/teacher.js`; `js/index-ui.js`; `teacher-dashboard.html`.
+- **Dependencias Expuestas:** `getNews`, `createNews`, `updateNewsStatus`, `nav-news`, `renderNewsHTML`, `fetchNewsManagement`.
+- **Descripción del Alcance:** Hay dos declaraciones de `getNews`; la posterior devuelve `noticias`, mientras la UI espera `data`. El frontend compara estado `Activo` y campo `fechaExpiracion`, pero el backend usa `Activa` y `fechaFin`. El formulario solo envía título/categoría/imagen/contenido, por lo que la audiencia queda Todos/Todas y no hay fecha de expiración. La consulta pública no filtra audiencia si no recibe grado/sección. Además, el backend usa rol `Secretaría` y el control de teacher.js compara `Secretaria`.
+- **Criterios de Aceptación:** Un único contrato DTO; UI y backend comparten nombres de campos/estados; formulario captura audiencia, grado, sección y vigencia; consulta pública solo devuelve comunicados públicos, consulta autenticada filtra por audiencia; solo roles autorizados publican/gestionan; pruebas por audiencia, expiración y rol con/sin acento.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-144] Completar health checks ping-pong para todos los microservicios reales
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-144 (REQ-EXP-017).
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** `js/api.js`; `js/developer.js`; `backend/user-service/Code.gs`; `backend/academic-service/Code.gs`; `backend/task-service/Code.gs`; `backend/exam-service/Code.gs`; `backend/developer-service/Code.gs`; `backend/accounting-service/Code.gs`; `js/config.js`.
+- **Dependencias Expuestas:** `checkMicroserviceHealth`, `checkAllMicroservicesHealth`, acción `ping`, `getServiceHealthDiagnostics`, `SERVICE_URLS`.
+- **Descripción del Alcance:** El monitor mide round-trip para USER/ACADEMIC/TASK/EXAM, pero TASK y EXAM no implementan la acción ping; DEVELOPER tampoco y su getServiceHealthDiagnostics devuelve PASS fijo sin probar conectividad/permisos; ACCOUNTING sí tiene ping pero se omite del monitor y su URL está placeholder. La lista de servicios monitorizados no refleja la arquitectura actual de seis servicios.
+- **Criterios de Aceptación:** Cada microservicio expone ping autenticado con timestamp y prueba real de acceso a su dependencia crítica; monitor dinámico incluye todos los servicios registrados; latencia y fallback distinguidos; no se muestran PASS simulados; endpoint placeholder se marca como no desplegado; pruebas online/offline/timeout por servicio.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-145] Conectar bitácora central real, filtros y sanitización de datos sensibles
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-145 (REQ-EXP-018).
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** `backend/user-service/Code.gs`; `backend/academic-service/Code.gs`; `backend/developer-service/Code.gs`; `js/developer.js`; `js/api.js`.
+- **Dependencias Expuestas:** `logStructuredEvent`, `sanitizePayloadForLog`, `getStructuredLogs`, `getCentralizedLogs`, `renderStructuredLogsTable`.
+- **Descripción del Alcance:** El backend USER devuelve campos ingleses (service/functionName/severity/errorCode/message/payload/userRole), pero developer.js espera campos españoles; la UI envía severidad/servicio/limit y el backend solo lee severity/startDate/endDate, por lo que los filtros no funcionan. La sanitización solo enmascara credenciales, no PII/RTN/cuentas/datos financieros. developer-service.getCentralizedLogs devuelve dos logs de muestra hardcodeados y marcar resuelto solo responde éxito sin persistir. La UI usa fallback con registros ficticios.
+- **Criterios de Aceptación:** DTO único y filtros por servicio/severidad/fecha/límite funcionales; logs centrales leídos de fuente persistente; marcar resuelto persiste auditoría sin alterar evento original; sanitización de PII y datos financieros definida por esquema; sin registros ficticios como fallback; pruebas de filtros, campos y sanitización.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-146] Completar respaldo seguro: SHA-256 real, validación previa, restauración y retención
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-146 (REQ-EXP-019).
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** `backend/academic-service/Code.gs`; `backend/user-service/Code.gs`; `js/teacher.js`; `js/developer.js`; `js/api.js`.
+- **Dependencias Expuestas:** `createSystemBackup`, `listSystemBackups`, `verifyBackupIntegrity`, `restoreSystemBackup`, `previewBackupRestoreImpact`, `getBackupsList`, `createSpreadsheetBackup`, `restoreSpreadsheetBackup`.
+- **Descripción del Alcance:** createSystemBackup usa computeSimpleHash (hash de 32 bits, no SHA-256). verifyBackupIntegrity considera válido cualquier checksum no vacío por la condición `storedChecksum === computedChecksum || Boolean(storedChecksum)`. restoreSystemBackup no llama a verifyBackupIntegrity y requiere `confirmed` + `confirmCode`, mientras teacher.js envía `confirmationCode` y omite `confirmed`, por lo que la restauración UI falla. No se encontraron triggers programados ni política de retención. El panel developer.js llama acciones USER no encontradas y presenta un respaldo ficticio como fallback.
+- **Criterios de Aceptación:** SHA-256 criptográfico; comparación estricta y validación de estructura/enlaces antes de restaurar; restore exige token de confirmación de un solo uso generado en servidor y dos pasos UI; bloqueo durante restauración y reconciliación post-restore; creación programada con triggers reales; retención configurable con borrado seguro; UI consume acciones reales sin mocks; pruebas de checksum corrupto, restore, schedule y retención.
+- **Estado:** [ ] Pendiente

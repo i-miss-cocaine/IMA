@@ -400,3 +400,25 @@
 - `createMaterialRequisition` -> `MaterialesSolicitudes`; `deliverMaterialRequisition` -> salida de Kardex.
 - `createPhysicalInventoryCount`/`reconcilePhysicalCount` -> `InventariosConteosFisicos` + ajustes Kardex.
 - `manageMaintenanceOrder` -> `MantenimientoOrdenes` + repuestos en Kardex; `manageAssetItem`, `assignAssetCustody`, `returnAssetCustody` y `registerAssetDisposal` -> activos, asignaciones y bajas.
+
+
+## Relaciones verificadas durante auditoría de continuidad - Lote F2 (2026-11-04)
+
+### Noticias
+- `js/teacher.js` -> USER/`createNews`, USER/`getNews`, USER/`updateNewsStatus`; el DTO de respuesta de la última declaración `getNews` no coincide con el que espera la UI.
+- `js/index-ui.js` -> USER/`getNews` sin audiencia; renderizador espera `data`, estado `Activo` y campo `fechaExpiracion`.
+
+### Salud de microservicios
+- `js/api.js` / `checkAllMicroservicesHealth` -> USER/ACADEMIC/TASK/EXAM mediante acción `ping`.
+- USER y ACADEMIC implementan ping; TASK/EXAM no. DEVELOPER ofrece `getServiceHealthDiagnostics` con PASS fijo; ACCOUNTING tiene ping pero no está en la lista monitorizada.
+
+### Logs
+- USER/ACADEMIC/`logStructuredEvent` -> hoja compartida `LogsSistema` con sanitización limitada a credenciales.
+- USER/`getStructuredLogs` -> `js/developer.js` viewer; campos y filtros no coinciden.
+- DEVELOPER/`getCentralizedLogs` devuelve sampleLogs hardcodeados y no persiste resolución.
+
+### Respaldos
+- ACADEMIC/`createSystemBackup` -> Drive `New Generation/Respaldos`; `listSystemBackups` lista archivos; `verifyBackupIntegrity` calcula hash y `restoreSystemBackup` restaura hojas.
+- `js/teacher.js` llama a ACADEMIC directamente, pero manda confirmationCode en vez de confirmCode y omite confirmed.
+- `js/developer.js` usa wrappers API antiguos que llaman acciones USER no implementadas y fallback mock.
+- No se encontró trigger programado ni política de retención.
