@@ -161,3 +161,15 @@ Se recuperó y leyó el contenido íntegro de `Pendientes.md`, se confirmó que 
 - **Pruebas:** no ejecutadas; revisión estática de UI y endpoints.
 - **Código fuente:** sin modificaciones; no se alteró completadas_legacy.md ni ChangesLogs.txt.
 - **Siguiente lote:** F (REQ-EXP-013 en adelante).
+
+
+## 15. Resultados de auditoría - Lote F1 (2026-11-04)
+
+- **Subdivisión:** F1 revisa REQ-EXP-013 a REQ-EXP-015.
+- **Resultados:** REQ-EXP-013 (Cumple parcialmente: cierre/conciliación y bypass three-way match); REQ-EXP-014 (Cumple parcialmente: autoservicio IDOR y tasas IHSS/ISR/RAP desactualizadas); REQ-EXP-015 (Cumple parcialmente: inventario/activos existen, pero hay recepciones/ajustes repetibles y requisiciones sin aprobación obligatoria).
+- **Hallazgos:** AUD-NG-138 a AUD-NG-142, añadidos a Auditoria.txt y Pendientes.md.
+- **Informe:** `AUDITORIA_LOTE_F1.md`.
+- **Fuentes oficiales de referencia laboral/tributaria:** comunicado IHSS 2025; tabla progresiva SAR 2026; RAP planes obligatorios; Decreto 47-2024.
+- **Pruebas:** no ejecutadas; revisión estática.
+- **Código fuente:** sin modificaciones; no se alteró completadas_legacy.md ni ChangesLogs.txt.
+- **Siguiente sublote:** F2 (REQ-EXP-016 en adelante).

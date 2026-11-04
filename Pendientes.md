@@ -18140,3 +18140,49 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Descripción del Alcance:** Los encabezados de las páginas principales usan New Generation Bilingual School and Institute, pero los datos de recibo generados por el backend declaran `New Generation Christian Academy`. Centralizar el nombre oficial y consumirlo desde todos los documentos y vistas.
 - **Criterios de Aceptación:** Recibos, facturas y documentos institucionales usan exactamente la marca oficial configurada; no quedan nombres alternativos o anteriores en los documentos generados; prueba de renderizado.
 - **Estado:** [ ] Pendiente
+
+
+### [AUD-NG-138] Corregir cierres de caja y conciliación bancaria por sesión/cuenta
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-138 (REQ-EXP-013).
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** `backend/accounting-service/Code.gs`.
+- **Dependencias Expuestas:** `recordCashBankMovement`, `closeCashSession`, `getCashBankSummary`, `performBankReconciliation`, `MovimientosCajaBancos`, `CierresCaja`.
+- **Descripción del Alcance:** `closeCashSession` suma todos los movimientos con estado Registrado sin filtrar por sesión/fecha ni distinguir efectivo de banco y no marca movimientos como cerrados; cierres posteriores vuelven a sumar movimientos históricos. `performBankReconciliation` concilia por referencia e importe sin cuenta, fecha ni estado de conciliación y no evita reutilizar una partida. `recordCashBankMovement` no usa bloqueo ni clave única.
+- **Criterios de Aceptación:** Apertura/cierre con identificador y periodo; arqueo solo de movimientos de efectivo de la sesión; movimientos cerrados no vuelven a entrar en otro cierre; conciliación por cuenta, fecha, importe y referencia con estado único; bloqueo/idempotencia; pruebas de cierres consecutivos y partidas duplicadas.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-139] Impedir bypass de autorización en cuentas por pagar y three-way match
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-139 (REQ-EXP-013).
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** `backend/accounting-service/Code.gs`.
+- **Dependencias Expuestas:** `recordAccountsPayableExpense`, `verifyThreeWayMatch`, `recordPurchaseReceipt`, `modifyPurchaseOrderAmount`, `generatePurchaseOrderPDF`.
+- **Descripción del Alcance:** `verifyThreeWayMatch` utiliza `authRole` del payload para autorizar diferencias; `recordAccountsPayableExpense` acepta `bypassConciliacion` sin validar autorización de servidor y deja aprobada una obligación si no se envía orden/partidas. No se verifica factura duplicada por proveedor. `generatePurchaseOrderPDF` devuelve una URL fija de dominio sin crear un archivo PDF real.
+- **Criterios de Aceptación:** Usar exclusivamente `_verifiedRole`; el bypass requiere permiso explícito y motivo auditado; compras con orden exigen recepción y factura coincidentes; gastos sin orden usan flujo de aprobación independiente; factura de proveedor única; PDF real con URL verificada; pruebas de rol falsificado y bypass.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-140] Vincular autoservicio, asistencia y recibos de nómina a la identidad verificada
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-140 (REQ-EXP-014).
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** `backend/accounting-service/Code.gs`.
+- **Dependencias Expuestas:** `getEmployeeSelfServicePortal`, `recordStaffCheckIn`, `getStaffAttendanceLogs`, `generatePayrollReceiptPDF`, `_verifiedUserId`, `_verifiedRole`.
+- **Descripción del Alcance:** El autoservicio confía en `authRole` y `authUserId` del cliente; el registro de asistencia acepta `empleadoId` y horario esperado desde payload; el empleado puede consultar logs sin indicar empleadoId y obtener registros globales; la generación de recibo acepta empleadoId arbitrario y devuelve una URL de PDF no generada.
+- **Criterios de Aceptación:** Empleado usa siempre `_verifiedUserId`; el horario esperado proviene de contrato/horario autorizado; solo RRHH/roles autorizados registran asistencia de terceros; el empleado solo consulta su asistencia/boleta; PDF real y privado; pruebas IDOR y suplantación.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-141] Actualizar cálculo de nómina a parámetros legales hondureños vigentes y versionados
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-141 (REQ-EXP-014).
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** `backend/accounting-service/Code.gs`; tabla de políticas de nómina.
+- **Dependencias Expuestas:** `calculatePayrollPeriod`, deducciones IHSS/RAP/ISR, horas extras y aportaciones patronales.
+- **Descripción del Alcance:** El cálculo usa IHSS trabajador 3.5%, patrono 7.2% y techo L 10,317.38; el último comunicado oficial IHSS revisado establece para 2025 5% trabajador, 8.7% patrono y techo L 11,903.13. El ISR usa tramos anteriores a la tabla progresiva SAR 2026. RAP se calcula con un techo fijo 10,317.38 sin distinguir los techos publicados por RAP y no se encontró el aporte patronal del 4% al Fondo de Reserva Laboral creado por Decreto 47-2024. Las horas extras se multiplican por 1.25 sin diferenciar jornada diurna/nocturna/feriado.
+- **Criterios de Aceptación:** Tasas y techos configurables/versionados por ejercicio, régimen y tipo de empresa; actualizar tabla ISR SAR 2026; IHSS/RAP/Reserva Laboral conforme a normativa vigente y excepciones aplicables; reglas diferenciadas de horas extras; trazabilidad de fuente/fecha de cada política; pruebas unitarias con casos oficiales y validación por responsable contable/legal.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-142] Hacer transaccionales y auditables los movimientos de inventario, requisiciones y mantenimiento
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-142 (REQ-EXP-015).
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** `backend/accounting-service/Code.gs`.
+- **Dependencias Expuestas:** `recordInventoryMovement`, `transferInventoryStock`, `confirmTransferReceipt`, `deliverMaterialRequisition`, `reconcilePhysicalCount`, `manageMaintenanceOrder`, `registerAssetDisposal`, `manageAssetItem`.
+- **Descripción del Alcance:** `confirmTransferReceipt` acepta cantidad recibida superior a la despachada e infla stock. `deliverMaterialRequisition` entrega solicitudes sin exigir estado aprobado, no usa lock y descuenta desde el nombre del departamento como si fuera almacén. `reconcilePhysicalCount` no bloquea ni impide repetir una conciliación, por lo que vuelve a aplicar ajustes. `manageMaintenanceOrder` puede descontar repuestos otra vez al actualizar una orden ya completada. `recordInventoryMovement` trata tipos desconocidos como ajuste absoluto de stock. La baja de activos carece de idempotencia/lock y el catálogo permite sobrescribir custodio/estado sin historial.
+- **Criterios de Aceptación:** Recepción no supera cantidad despachada y discrepancias requieren motivo; requisición solo se entrega tras aprobación y desde almacén válido; conteo conciliado una sola vez bajo lock; repuestos se descuentan una sola vez por orden; tipos de movimiento whitelist; bajas idempotentes y autorizadas; cambios patrimoniales conservan historial; pruebas de doble ejecución y stock negativo/inflado.
+- **Estado:** [ ] Pendiente

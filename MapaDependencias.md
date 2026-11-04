@@ -381,3 +381,22 @@
 
 ### Identidad institucional
 - El portal usa New Generation Bilingual School and Institute; los datos de recibo en ACCOUNTING declaran New Generation Christian Academy.
+
+
+## Relaciones verificadas durante auditoría de continuidad - Lote F1 (2026-11-04)
+
+### Caja, bancos y cuentas por pagar
+- `recordCashBankMovement` -> `MovimientosCajaBancos`; `closeCashSession` -> `CierresCaja`; `performBankReconciliation` compara movimientos y partidas importadas.
+- `recordAccountsPayableExpense` -> `verifyThreeWayMatch` -> `OrdenesCompra` + `RecepcionesCompra` + factura proveedor -> `CuentasPorPagarGastos`.
+- `recordSupplierPayment` -> `PagosProveedores` + salida de caja/banco + asiento; `applySupplierCreditNote` actualiza saldo de proveedor.
+
+### Nómina y RRHH
+- `calculatePayrollPeriod` -> `ExpedientesLaborales`, contratos, asistencia, horas extra, incapacidades y `Nomina`; calcula IHSS/RAP/ISR con parámetros hardcodeados.
+- `recordStaffCheckIn` y `getStaffAttendanceLogs` -> `AsistenciaPersonal`; `getEmployeeSelfServicePortal` consulta expediente/contrato/recibos.
+- `generatePayrollReceiptPDF` devuelve una URL nominal, no un archivo generado.
+
+### Inventario y activos
+- `recordInventoryMovement` -> `InventariosKardex`; `transferInventoryStock` -> salida en origen + `TransferenciasInventario`; `confirmTransferReceipt` -> entrada en destino.
+- `createMaterialRequisition` -> `MaterialesSolicitudes`; `deliverMaterialRequisition` -> salida de Kardex.
+- `createPhysicalInventoryCount`/`reconcilePhysicalCount` -> `InventariosConteosFisicos` + ajustes Kardex.
+- `manageMaintenanceOrder` -> `MantenimientoOrdenes` + repuestos en Kardex; `manageAssetItem`, `assignAssetCustody`, `returnAssetCustody` y `registerAssetDisposal` -> activos, asignaciones y bajas.

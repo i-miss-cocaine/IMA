@@ -4055,3 +4055,66 @@ RESULTADOS DEL LOTE E2B
 - Se amplía AUD-NG-127: ACCOUNTING también deriva AUTH_TOKEN_SECRET de SPREADSHEET_ID y mantiene DEBUG_MODE=true.
 - No se ejecutaron pruebas ni se accedió a datos productivos. No se modificó código fuente, completadas_legacy.md ni ChangesLogs.txt.
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-04
+AUDITORÍA DE CONTINUIDAD - LOTE F1 DE completadas_legacy.md
+TAREAS: REQ-EXP-013 A REQ-EXP-015
+RAMA DE TRABAJO: NG_beta_0.0.0.1_work
+===============================================================================
+
+[AUD-NG-138] REQ-EXP-013 - CIERRE DE CAJA REPROCESA MOVIMIENTOS Y CONCILIACIÓN BANCARIA ES INSUFICIENTE
+- Archivo: backend/accounting-service/Code.gs, líneas 4594-4755 y 7324-7557.
+- Módulo/función: Caja/Bancos / recordCashBankMovement, closeCashSession, performBankReconciliation.
+- Tipo: Integridad contable y conciliación.
+- Evidencia: closeCashSession suma todos los movimientos Registrado sin sesión/periodo y sin distinguir banco/efectivo; no cambia su estado tras el cierre. performBankReconciliation compara referencia e importe, sin cuenta/fecha ni marca de conciliación única. recordCashBankMovement no usa lock ni idempotencia.
+- Impacto: cierres consecutivos duplican movimientos históricos; partidas bancarias pueden conciliarse incorrectamente o reutilizarse.
+- Severidad: CRÍTICO.
+- Tarea derivada: AUD-NG-138.
+
+[AUD-NG-139] REQ-EXP-013 - THREE-WAY MATCH PUEDE SER OMITIDO O AUTORIZADO CON ROL FALSIFICADO
+- Archivo: backend/accounting-service/Code.gs, líneas 6756-6944 y 7374-7650.
+- Módulo/función: Compras/Cuentas por Pagar / verifyThreeWayMatch y recordAccountsPayableExpense.
+- Tipo: Autorización financiera y control de compras.
+- Evidencia: verifyThreeWayMatch usa authRole del payload para autorizar discrepancias; recordAccountsPayableExpense permite bypassConciliacion sin autorización servidor y deja Aprobado cuando no se envía orden/partidas. No se observa validación de factura proveedor duplicada. generatePurchaseOrderPDF devuelve URL estática de dominio y objeto documental, sin crear PDF.
+- Impacto: obligación aprobada sin cotejo o con rol falsificado; documentos de compra no descargables realmente.
+- Severidad: CRÍTICO.
+- Tarea derivada: AUD-NG-139.
+
+[AUD-NG-140] REQ-EXP-014 - AUTOSERVICIO Y ASISTENCIA DE EMPLEADOS CONFÍAN EN IDENTIFICADORES DEL CLIENTE
+- Archivo: backend/accounting-service/Code.gs, líneas 5593-5785 y 5890-6050.
+- Módulo/función: Nómina/RRHH / recordStaffCheckIn, getStaffAttendanceLogs, getEmployeeSelfServicePortal y generatePayrollReceiptPDF.
+- Tipo: IDOR, suplantación y privacidad laboral.
+- Evidencia: Empleado tiene permisos para check-in, logs, autoservicio y recibo. recordStaffCheckIn acepta empleadoId/horaEntradaEsperada del payload; getStaffAttendanceLogs no fuerza el empleado autenticado y sin filtro puede devolver todos; getEmployeeSelfServicePortal usa authRole/authUserId del cliente; generatePayrollReceiptPDF acepta empleadoId y construye una URL de PDF sin generar archivo.
+- Impacto: empleado puede registrar asistencia de terceros, consultar información laboral ajena o generar enlaces de recibos de otros.
+- Severidad: CRÍTICO.
+- Tarea derivada: AUD-NG-140.
+
+[AUD-NG-141] REQ-EXP-014 - TASAS IHSS/ISR/RAP DESACTUALIZADAS Y FALTA RESERVA LABORAL
+- Archivo: backend/accounting-service/Code.gs, líneas 4880-5150.
+- Módulo/función: calculatePayrollPeriod.
+- Tipo: Cumplimiento laboral/tributario.
+- Evidencia de código: usa IHSS empleado 3.5%, patrono 7.2%, techo L 10,317.38; ISR anual con límites L 199,539.96 / 304,324.78 / 707,729.04; RAP con techo fijo L 10,317.38; no existe ReservaLaboral/FondoReserva en el servicio. Horas extra usa multiplicador único 1.25.
+- Contraste normativo consultado: comunicado oficial IHSS establece para 2025 5% trabajador, 8.7% patrono y techo L 11,903.13 (https://portalunico.iaip.gob.hn/ver_archivo/MjQyMDU5Ng%3D%3D). SAR publicó tabla progresiva 2026 con exento hasta L 228,324.32; 15% hasta L 348,154.10; 20% hasta L 809,660.75; 25% en adelante (https://www.sar.gob.hn/2026/01/actualizacion-de-la-tabla-progresiva-2026/). RAP informa aportes de 1.5% sobre el techo afectado y publica techos diferenciados por tipo de empresa (https://www.rap.hn/planes-individuales-obligatorios/). Decreto 47-2024 crea aporte patronal del 4% del salario ordinario hasta tres salarios mínimos del nivel más alto (https://leyes.hn/gaceta/36545, art. 4).
+- Impacto: cálculo de retenciones/costos patronales puede ser incorrecto y no reflejar obligaciones vigentes.
+- Severidad: CRÍTICO.
+- Tarea derivada: AUD-NG-141.
+
+[AUD-NG-142] REQ-EXP-015 - INVENTARIO ADMITE RECEPCIONES/CONCILIACIONES REPETIDAS Y MOVIMIENTOS NO VÁLIDOS
+- Archivo: backend/accounting-service/Code.gs, líneas 6050-6265, 13140-13890 y 9793-10070.
+- Módulo/función: Kardex, transferencias, requisiciones, conteos, mantenimiento y activos.
+- Tipo: Integridad de inventario y trazabilidad patrimonial.
+- Evidencia: confirmTransferReceipt no limita cantidadRecibida a cantidadDespachada; deliverMaterialRequisition no verifica aprobación, no usa lock y descuenta desde departamento como ubicación; reconcilePhysicalCount no usa lock ni verifica estado previo, permitiendo repetir ajustes; manageMaintenanceOrder vuelve a descontar repuestos al actualizar orden completada; recordInventoryMovement acepta tipo desconocido y establece saldo igual a cantidad; registerAssetDisposal no es idempotente; manageAssetItem sobrescribe campos patrimoniales sin historial.
+- Impacto: inventario inflado/depletado, entregas no aprobadas, doble ajuste y pérdida de trazabilidad de activos.
+- Severidad: CRÍTICO.
+- Tarea derivada: AUD-NG-142.
+
+===============================================================================
+RESULTADOS DEL LOTE F1
+===============================================================================
+- REQ-EXP-013: Cumple parcialmente. Hay caja/bancos, conciliación, compras y cuentas por pagar, pero el cierre/conciliación y los permisos de three-way match presentan fallos críticos.
+- REQ-EXP-014: Cumple parcialmente. Hay cálculo de nómina, asistencia y autoservicio, pero los identificadores no se vinculan a la identidad verificada y las tasas legales usadas están desactualizadas frente a las fuentes oficiales revisadas.
+- REQ-EXP-015: Cumple parcialmente. Hay Kardex, transferencias, requisiciones, conteos, mantenimiento, custodia y bajas; persisten defectos de estado, concurrencia, autorización y trazabilidad.
+- No se ejecutaron pruebas ni se accedió a datos productivos. No se modificó código fuente, completadas_legacy.md ni ChangesLogs.txt.
+===============================================================================
