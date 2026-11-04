@@ -296,3 +296,16 @@ ACTUALIZACIÓN DE CONTINUIDAD IMA - LOTES E2A/E2B (2026-11-04)
 - Riesgos principales de los lotes E: claves HMAC predecibles, bypass RBAC/IDOR, endpoint ACCOUNTING placeholder, matrícula/rematrícula con flujos divergentes, motor de cargos con mapeo/dedupe defectuoso, integridad de pagos, portal financiero no conectado, recibos no PDF/correlativos y control CAI fiscal insuficiente.
 - No se modificó código fuente, completadas_legacy.md ni ChangesLogs.txt. No se ejecutaron pruebas ni se accedió a datos productivos.
 ================================================================
+
+
+================================================================
+ACTUALIZACIÓN DE CONTINUIDAD IMA - LOTE F1 (2026-11-04)
+================================================================
+- Commit de resultados F1: `d6394442d7f8a914a602fcaeba55bd75d3098d52`.
+- Tareas históricas revisadas: REQ-EXP-013, REQ-EXP-014 y REQ-EXP-015 (todas Cumple parcialmente).
+- Hallazgos añadidos: AUD-NG-138 a AUD-NG-142. Informe: AUDITORIA_LOTE_F1.md.
+- Riesgos destacados: cierres de caja reprocesan movimientos; three-way match permite bypass/rol cliente; autoservicio laboral y asistencia confían en identificadores del payload; parámetros IHSS/ISR/RAP desactualizados; inventario permite recepción/conciliación/requisición/mantenimiento con transiciones repetibles o sin aprobación.
+- Parámetros legales contrastados con comunicado IHSS 2025, tabla SAR 2026, página RAP y Decreto 47-2024. No se encontró una actualización IHSS 2026 separada en esta revisión; validar con responsable contable antes de producción.
+- Última tarea histórica revisada: REQ-EXP-015. Próximo sublote: F2 (REQ-EXP-016 en adelante).
+- No se modificó código fuente, completadas_legacy.md ni ChangesLogs.txt. No se ejecutaron pruebas ni se accedió a datos productivos.
+================================================================
