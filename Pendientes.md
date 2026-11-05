@@ -19325,7 +19325,7 @@ AUD-NG-163 permanece DUPLICADA y consolidada; no reabrirla como tarea independie
 ---
 
 ### [TASK-483] Completar el menú lateral responsivo y específico por rol en todos los dashboards
-- **Origen del Hallazgo:** AUD-NG-186 en Auditoria.txt (T-UX-09; reconciliación con T-UX-13 y T-UX-20).
+- **Origen del Hallazgo:** AUD-NG-186 en Auditoria.txt (T-UX-09; reconciliación con T-UX-13 y T-UX-20). Ampliación de evidencia: AUD-NG-194 (T-UX-13, disparador móvil oculto y estado activo/semántica incompletos).
 - **Severidad/Clasificación:** Medio / P2.
 - **Archivos Involucrados:** `js/ui-common.js`, `css/style.css`, dashboards HTML.
 - **Dependencias Expuestas:** `initRoleNavigationMenu`, `openMobileHamburgerDrawer`, `toggleRoleMenuAccordionSection`, `#main-header`, navegación desktop, `#desktop-sidebar-container`, `#btn-desktop-sidebar-toggle`, roles institucionales y rutas de dashboards.
@@ -19336,13 +19336,18 @@ AUD-NG-163 permanece DUPLICADA y consolidada; no reabrirla como tarea independie
   4. Integrar la navegación móvil en los dashboards que usan encabezados alternativos o layouts dinámicos, sin depender exclusivamente de `#main-header`.
   5. Implementar apertura/cierre y acordeones con transición verificable, cierre por fondo/enlace y respeto a `prefers-reduced-motion`.
   6. Mantener estado accesible con `aria-expanded`, `aria-controls`, foco y navegación por teclado/táctil.
+  7. Insertar el disparador móvil en un contenedor visible en el viewport objetivo. No anidar un botón `md:hidden` dentro de un `nav.hidden.md:flex` ni depender de un selector ausente.
+  8. Representar las acciones inmediatas (por ejemplo, abrir un modal de gráficas) con controles de acción, no con enlaces `javascript:void(0)`.
+  9. Identificar la ruta activa visual y semánticamente (por ejemplo, `aria-current="page"`) y mantener sincronizado el estado de los acordeones.
 - **Criterios de Aceptación:**
   - Cada rol solo ve las rutas que le corresponden y dispone de acceso a su dashboard principal.
   - Coordinación, Dirección, Secretaría y Desarrollador no quedan sin su ruta principal en el menú cuando este sea aplicable.
   - El menú desktop existe y su control colapsa/expande el contenedor real; no hay listeners asociados a IDs inexistentes.
   - El drawer se puede abrir, cerrar y recorrer en los dashboards aplicables, incluidos los layouts alternativos definidos en alcance.
+  - En cada dashboard móvil aplicable, el disparador es visible y operable; el estilo de su padre no lo oculta y el botón no queda invisible en escritorio por una combinación contradictoria de clases.
   - El panel y los acordeones muestran una transición real; con movimiento reducido, la animación se desactiva sin impedir la interacción.
-  - Los controles anuncian su estado expandido/contraído y el foco no se pierde al abrir/cerrar.
+  - Los controles anuncian su estado expandido/contraído, la ruta activa se anuncia semánticamente y el foco se gestiona al abrir/cerrar.
+  - Las acciones inmediatas son botones y las rutas de navegación son enlaces con destinos válidos.
   - Pruebas por rol y viewport verifican rutas visibles, rutas reales, ausencia de opciones ajenas y operación con teclado/táctil.
 - **Estado:** [ ] Pendiente.
 
