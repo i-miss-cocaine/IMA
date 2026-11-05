@@ -1201,3 +1201,27 @@ No se crea AUD-NG nuevo.
 - UX-06 de `runUXSuiteTests` (ui-common.js:1896-1904) comprueba presencia de función, no atajo ni búsqueda funcional.
 - T-UX-14 añade requisitos de no interceptar campos editables, navegación directa y consultas vacías/especiales; quedan para su auditoría dedicada.
 - T-UX-10 amplía las pruebas de flujo; se revisará en su turno.
+
+
+## Navegación lateral por rol y drawer móvil (T-UX-09 / T-UX-13 / T-UX-20, C1.49)
+
+### Componentes compartidos
+- `js/ui-common.js:4710-4721` -> `toggleRoleMenuAccordionSection(sectionId,containerId)`; alterna `hidden` y cierra las secciones hermanas.
+- `js/ui-common.js:4723-4755` -> `initRoleNavigationMenu()`; lee `currentUser.rol` desde almacenamiento cliente, intenta enlazar `btn-desktop-sidebar-toggle` con `desktop-sidebar-container` y agrega botón hamburguesa a `#main-header nav` o `#main-header .container`.
+- `js/ui-common.js:4757-4890` -> `openMobileHamburgerDrawer()`; genera un drawer con tres grupos estáticos (Académico, Gestión, Servicios). El rol solo determina cuál grupo abrir inicialmente; no filtra enlaces ni construye un menú por rol.
+- `js/ui-common.js:4917-4924` -> inicialización diferida en DOMContentLoaded.
+- `js/ui-common.js:1918-1926` -> UX-09 prueba solo presencia de funciones.
+- `css/style.css:175-190` -> `.mobile-menu-backdrop` tiene transición, pero el drawer no usa esa clase.
+- `css/style.css:195-201` -> existen `.animate-fade-in-up` y `.animate-fade-in-left`, no una regla para `.animate-fade-in`; el panel del drawer tampoco declara transición.
+
+### Dashboards
+- `dashboard-cafeteria.html`, `dashboard-contabilidad.html`, `dashboard-direccion.html`, `dashboard-recursos-humanos.html`, `dashboard-secretaria.html`, `dashboard-tienda.html`, `student-dashboard.html`, `teacher-dashboard.html` y `dashboard-coordinacion.html` cargan `js/ui-common.js` y tienen `#main-header`; Coordinación carece de nav y recibe el botón por el contenedor.
+- `developer-dashboard.html` no carga `js/ui-common.js` y no contiene `#main-header`, nav, aside ni botón hamburguesa compartido.
+- `app/html/dashboards/dynamic-dashboard.html` carga `ui-common.js`, pero su header no tiene `id=main-header`, por lo que el selector de inserción no encuentra destino.
+- En los 11 dashboards inspeccionados no aparecen `btn-desktop-sidebar-toggle` ni `desktop-sidebar-container`; la rama de colapso desktop no tiene elementos conectados.
+- El drawer móvil omite destinos propios como dashboard-coordinacion.html, dashboard-direccion.html, dashboard-secretaria.html y developer-dashboard.html.
+
+### Reconciliación y corrección
+- T-UX-13 requiere opciones comunes/exclusivas por panel, rutas reales, sección activa, teclado/táctil y drawer móvil; T-UX-20 amplía la adaptación responsive. Ambas se revisarán formalmente después.
+- TASK-253 contempla un drawer responsive/accesibilidad y TASK-430 coherencia visual del sidebar; no cubren la matriz de autorización/rutas observada.
+- AUD-NG-186 / TASK-483 registra la brecha concreta para corregir la navegación por rol, el desktop sidebar y las transiciones.

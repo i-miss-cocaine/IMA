@@ -2131,3 +2131,55 @@ ARCHIVOS DE ESTA ITERACIÓN:
 - Regla de publicación: exactamente un commit final descendiente de a5d2d0e7c2c4df2824ab99fef12d19338b40605e, sin commits intermedios. El commit de cierre que contiene este checkpoint se confirma externamente consultando HEAD después de publicar.
 - Próxima acción: auditar T-UX-09 en completadas.md, contrastando su requisito y las ampliaciones posteriores con los módulos de navegación por rol y drawer móvil.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.49 - AUDITORÍA T-UX-09 (2026-11-05)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: dc01a689afd8a3ce01851493399310e95d12575f (cierre C1.48).
+- Árbol de partida: 57f43b9321ddd4666617360b52297d47a60daaf4.
+- HEAD de rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59; comparación inicial 94 commits por delante y 0 por detrás.
+- Última tarea auditada y cerrada: T-UX-09 - Menú Lateral Responsivo Específico por Rol con Colapso Móvil Suave.
+- Dictamen: CUMPLE PARCIALMENTE. Drawer/acordeón presentes, pero el contenido no se filtra por rol; la rama desktop no encuentra sus IDs en los dashboards inspeccionados; developer/dynamic dashboard no reciben menú común; el panel se oculta sin transición real.
+- Tarea en curso: ninguna; inspección estática/manual T-UX-09 cerrada.
+- Siguiente tarea exacta según el orden de completadas.md: T-UX-10 - Completar la verificación funcional y automatizar las pruebas de experiencia de usuario.
+- Progreso acumulado: 50/183 identificadores auditados; 133 pendientes.
+
+RECUPERACIÓN E INVENTARIO DE Pendientes.md:
+- Lectura convencional de Pendientes.md en el checkpoint anterior devolvió 0 caracteres; se mantuvo la recuperación desde el blob exacto de la rama de trabajo.
+- Blob de origen de esta iteración: b52b2dc96f0c869387a59514b4a53f56ea0ca983, HEAD de NG_beta_0.0.0.1_work al cierre C1.48.
+- Contenido antes de esta iteración: 1,636,118 caracteres y 19,324 líneas.
+- Inventario previo: 482 IDs TASK únicos (máximo TASK-482) y 180 IDs AUD-NG únicos (máximo AUD-NG-185), 662 identificadores combinados.
+- Se agregó TASK-483 vinculada a AUD-NG-186.
+- Inventario posterior: 483 IDs TASK únicos y 181 IDs AUD-NG únicos, 664 identificadores combinados. Contenido posterior: 1,638,593 caracteres y 19,348 líneas.
+- No se modificaron estados históricos ni se reemplazó contenido previo; se anexó la nueva tarea.
+
+HALLAZGO:
+- AUD-NG-186 (MEDIO/P2): el drawer móvil es genérico para todos los roles; no incluye rutas de Coordinación/Dirección/Secretaría/Desarrollador; el colapso desktop apunta a IDs ausentes; developer-dashboard y dynamic-dashboard no reciben el menú compartido; no hay transición real de panel.
+- TASK-483 se registró en Pendientes.md. No se modificó completadas.md.
+- T-UX-13 y T-UX-20 contienen ampliaciones posteriores del menú y la adaptación móvil; se auditarán formalmente en sus turnos.
+- T-UX-10 UX-09 solo verifica presencia de funciones, no conducta.
+
+ARCHIVOS Y SHAs DE RESPALDO:
+- js/ui-common.js: 986938b8a311a41ed4cb3d135b66b6aaea4bed67.
+- css/style.css: f1ff84312ce70949a58eaa099b2aad0ff0a59cb6.
+- completadas.md: f57f1aef832e81e44fc4f7ec36a852d50e464676.
+- METODOLOGIA_DESARROLLO.md: 214e8221bd076c4e89012636c105bffd5ca36467.
+- Pendientes.md origen: b52b2dc96f0c869387a59514b4a53f56ea0ca983.
+- Auditoria.txt origen: f2733a438e74a9602735bda9094ac0b2acec0902.
+- MapaDependencias.md origen: e15bc3a8aa90ab19026cb4c761c41ed769b4bd5f.
+- AUDITORIA_COMPLETADAS_PLAN.md origen: e9091e98f32cd0add926a3a840dd763632847ecc.
+- Contexto_personal.txt origen: 162a57bd71503e9f7a6b6f6a5a1346280561a548.
+- Rama base: 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+ARCHIVOS DE ESTA ITERACIÓN:
+- Modificados: Pendientes.md, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt.
+- Nuevo: AUDITORIA_COMPLETADAS_T-UX-09.md.
+- Sin modificar: código fuente, completadas.md, completadas_legacy.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, rama base y demás ramas.
+- Pruebas: inspección estática/manual. No se ejecutaron navegador, DOM real, pruebas táctiles/teclado ni suites automatizadas.
+- Regla de publicación: exactamente un commit final descendiente de dc01a689afd8a3ce01851493399310e95d12575f, sin commits intermedios. El commit de cierre que contiene este checkpoint se confirma externamente consultando HEAD después de publicar.
+- Próxima acción: auditar T-UX-10 en completadas.md y contrastar los casos UX-01 a UX-09 con pruebas conductuales reales en los dashboards y servicios.
+================================================================

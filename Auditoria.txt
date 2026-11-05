@@ -5746,3 +5746,41 @@ RECONCILIACIÓN:
 PRUEBAS Y LÍMITES:
 Inspección estática/manual de los rangos indicados. No se ejecutaron navegador, DOM real, suite automatizada, Apps Script, Google Sheets ni llamadas productivas. Código fuente sin modificaciones.
 ===============================================================================
+
+
+===============================================================================
+RESULTADO DE AUDITORÍA DE COMPLETADAS - T-UX-09
+FECHA: 2026-11-05
+DICTAMEN: CUMPLE PARCIALMENTE
+TAREA: T-UX-09 - Menú Lateral Responsivo Específico por Rol con Colapso Móvil Suave
+ARCHIVOS PRINCIPALES:
+- js/ui-common.js (SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67)
+- css/style.css (SHA f1ff84312ce70949a58eaa099b2aad0ff0a59cb6)
+- Dashboards HTML (revisión de 11 páginas principales)
+EVIDENCIA:
+- toggleRoleMenuAccordionSection: js/ui-common.js:4710-4721; alterna la sección y cierra las hermanas.
+- initRoleNavigationMenu: js/ui-common.js:4723-4755; intenta conectar toggle desktop y crea botón móvil solo si encuentra #main-header nav o #main-header .container.
+- openMobileHamburgerDrawer: js/ui-common.js:4757-4890; crea tres grupos estáticos y solo cambia la sección inicial según una subcadena del rol.
+- DOMContentLoaded: js/ui-common.js:4917-4924; invoca el inicializador.
+- UX-09 de runUXSuiteTests: js/ui-common.js:1918-1926; verifica únicamente typeof de las dos funciones.
+- css/style.css:175-190 define .mobile-menu-backdrop, clase que el drawer no usa; líneas 195-201 definen animate-fade-in-up/left, no .animate-fade-in.
+- dashboard-coordinacion.html:15-30 contiene #main-header sin nav; el helper usa el contenedor para insertar el botón.
+- developer-dashboard.html:1-30 no carga ui-common.js ni contiene main-header/nav/aside/menú compartido.
+- app/html/dashboards/dynamic-dashboard.html:1-35 carga ui-common.js, pero el header no tiene id main-header.
+- Los 11 dashboards principales inspeccionados no contienen btn-desktop-sidebar-toggle ni desktop-sidebar-container; el control desktop definido en initRoleNavigationMenu queda sin destino.
+DICTAMEN FUNCIONAL:
+- El drawer y acordeón existen y operan en el flujo nominal, pero el menú es genérico: todos los roles reciben los tres grupos y todos sus enlaces; el rol solo elige la sección inicial.
+- Faltan rutas de Coordinación, Dirección, Secretaría y Desarrollador en el drawer; el rol Coordinador tampoco tiene rama propia.
+- La apertura/cierre utiliza hidden inmediato; no hay transición real del panel ni regla CSS para animate-fade-in.
+- Cobertura incompleta en developer-dashboard y dynamic-dashboard.
+HALLAZGO:
+- AUD-NG-186 (MEDIO/P2): navegación móvil genérica, ausencia de sidebar desktop funcional y transición/coverage incompletas.
+- Crear TASK-483 para completar menú por rol, rutas, desktop/móvil y transiciones accesibles.
+RECONCILIACIÓN:
+- T-UX-13 amplía menú específico por panel, rutas reales, sección activa y teclado/táctil; se auditará en su turno.
+- T-UX-20 amplía adaptación móvil; se auditará en su turno.
+- T-UX-10 UX-09 solo comprueba presencia de funciones, no conducta.
+- TASK-253 (drawer responsive/accesibilidad) y TASK-430 (coherencia visual del sidebar) son relacionados, pero no sustituyen la matriz de navegación por rol.
+PRUEBAS Y LÍMITES:
+Inspección estática/manual de ui-common.js, style.css y 11 dashboards principales. No se ejecutaron navegador, DOM real, pruebas táctiles/teclado ni suites automatizadas. Código fuente sin modificaciones.
+===============================================================================

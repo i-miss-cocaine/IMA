@@ -589,3 +589,16 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Código fuente:** sin modificaciones. `completadas.md`, `ChangesLogs.txt` y `METODOLOGIA_DESARROLLO.md` sin cambios.
 - **Progreso:** 49/183 identificadores auditados; 134 pendientes.
 - **Siguiente tarea:** T-UX-09 - Menú Lateral Responsivo Específico por Rol con Colapso Móvil Suave.
+
+
+## 54. Resultado C1.49 - T-UX-09 (2026-11-05)
+
+- **Dictamen:** CUMPLE PARCIALMENTE. Existe drawer móvil y acordeón; sin embargo, el contenido se genera igual para todos los roles y el rol solo determina el grupo inicialmente expandido. El toggle desktop apunta a IDs ausentes en los 11 dashboards inspeccionados. Developer y dynamic dashboard no reciben el menú común; la apertura/cierre no implementa transición real.
+- **AUD-NG-186 / TASK-483 (MEDIO/P2):** completar menú lateral responsivo específico por rol, rutas de todos los dashboards, control desktop real y transiciones móviles.
+- **Evidencia:** `js/ui-common.js` SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67, líneas 4710-4924; `css/style.css` SHA f1ff84312ce70949a58eaa099b2aad0ff0a59cb6, líneas 175-201; revisión de 11 dashboards principales; UX-09 de runUXSuiteTests (líneas 1918-1926).
+- **Reconciliación:** T-UX-13 amplía rutas por panel, estado activo y teclado/táctil; T-UX-20 amplía adaptación móvil. Se auditarán en su turno. TASK-253 y TASK-430 son relacionados, pero no cubren la matriz funcional de navegación por rol.
+- **Backlog:** Pendientes.md recuperado del blob vigente de NG_beta_0.0.0.1_work, SHA b52b2dc96f0c869387a59514b4a53f56ea0ca983. Se agregó TASK-483 vinculada a AUD-NG-186. Inventario previo: 482 TASK únicos y 180 AUD-NG únicos; posterior: 483 TASK y 181 AUD-NG únicos (664 identificadores combinados).
+- **Pruebas:** inspección estática/manual de funciones, estilos y 11 dashboards. No se ejecutaron navegador, DOM real, pruebas táctiles/teclado ni suites automatizadas.
+- **Código fuente:** sin modificaciones. `completadas.md`, `ChangesLogs.txt` y `METODOLOGIA_DESARROLLO.md` sin cambios.
+- **Progreso:** 50/183 identificadores auditados; 133 pendientes.
+- **Siguiente tarea:** T-UX-10 - Completar la verificación funcional y automatizar las pruebas de experiencia de usuario.

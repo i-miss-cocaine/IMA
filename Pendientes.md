@@ -19321,3 +19321,27 @@ AUD-NG-163 permanece DUPLICADA y consolidada; no reabrirla como tarea independie
   - La navegación válida continúa funcionando mediante listeners registrados de forma segura.
   - Pruebas de regresión verifican XSS almacenado y manipulación de atributos en título, subtítulo, categoría, icono, tipo, ID y consulta vacía.
 - **Estado:** [ ] Pendiente.
+
+---
+
+### [TASK-483] Completar el menú lateral responsivo y específico por rol en todos los dashboards
+- **Origen del Hallazgo:** AUD-NG-186 en Auditoria.txt (T-UX-09; reconciliación con T-UX-13 y T-UX-20).
+- **Severidad/Clasificación:** Medio / P2.
+- **Archivos Involucrados:** `js/ui-common.js`, `css/style.css`, dashboards HTML.
+- **Dependencias Expuestas:** `initRoleNavigationMenu`, `openMobileHamburgerDrawer`, `toggleRoleMenuAccordionSection`, `#main-header`, navegación desktop, `#desktop-sidebar-container`, `#btn-desktop-sidebar-toggle`, roles institucionales y rutas de dashboards.
+- **Descripción del Alcance:**
+  1. Sustituir el drawer genérico por una estructura de navegación derivada de la matriz de roles/rutas autorizadas. Separar enlaces comunes, opciones exclusivas por rol y acciones inmediatas.
+  2. Incluir rutas reales para cada dashboard y rol (incluidos Coordinación, Dirección, Secretaría y Desarrollador cuando corresponda); no mostrar secciones completas de otros roles como menú común.
+  3. Implementar una navegación desktop real con su contenedor y control de colapso, o eliminar los controles muertos si la arquitectura elegida es otra.
+  4. Integrar la navegación móvil en los dashboards que usan encabezados alternativos o layouts dinámicos, sin depender exclusivamente de `#main-header`.
+  5. Implementar apertura/cierre y acordeones con transición verificable, cierre por fondo/enlace y respeto a `prefers-reduced-motion`.
+  6. Mantener estado accesible con `aria-expanded`, `aria-controls`, foco y navegación por teclado/táctil.
+- **Criterios de Aceptación:**
+  - Cada rol solo ve las rutas que le corresponden y dispone de acceso a su dashboard principal.
+  - Coordinación, Dirección, Secretaría y Desarrollador no quedan sin su ruta principal en el menú cuando este sea aplicable.
+  - El menú desktop existe y su control colapsa/expande el contenedor real; no hay listeners asociados a IDs inexistentes.
+  - El drawer se puede abrir, cerrar y recorrer en los dashboards aplicables, incluidos los layouts alternativos definidos en alcance.
+  - El panel y los acordeones muestran una transición real; con movimiento reducido, la animación se desactiva sin impedir la interacción.
+  - Los controles anuncian su estado expandido/contraído y el foco no se pierde al abrir/cerrar.
+  - Pruebas por rol y viewport verifican rutas visibles, rutas reales, ausencia de opciones ajenas y operación con teclado/táctil.
+- **Estado:** [ ] Pendiente.
