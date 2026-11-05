@@ -904,3 +904,13 @@ CHECKPOINT C1.11 - AUDITORÍA TAREA-09 (2026-11-05)
 - No se modifica código fuente, completadas.md, ChangesLogs.txt ni metodología. No se ejecutaron pruebas reales.
 - Siguiente tarea: TAREA-10.
 ================================================================
+
+
+================================================================
+CORRECCIÓN C1.11a - RESTAURACIÓN DE Pendientes.md (2026-11-05)
+================================================================
+- El commit inicial de TAREA-09 dejó Pendientes.md reducido a 478 caracteres por una lectura parcial.
+- Se restauró el contenido completo previo (1,515,247 caracteres), preservando AUD-NG-164 y todos los registros.
+- Se añadió la ampliación de criterios de AUD-NG-011 para TAREA-09.
+- Corrección en commit separado; no se reescribió historia ni se modificó la rama base.
+================================================================

@@ -633,3 +633,7 @@
 - fetchApi resuelve solo SERVICE_URLS genéricos; no usa el mapa especializado. deployAcademicMicroserviceInstance registra metadatos y marca PASS/Activo sin deployment real; runCurricularAreaServiceTests devuelve PASS constante.
 - createTask y createExam no persisten areaId. No se demuestra aislamiento operativo por área.
 - Hallazgos existentes: AUD-NG-011, AUD-NG-078/079/083/084/086/131/144 y AUD-NG-164. No se crea uno nuevo.
+
+
+## Corrección de integridad - Pendientes.md (2026-11-05)
+Se restauró el contenido íntegro previo a TAREA-09 (1,515,247 caracteres) tras detectar que la primera actualización había guardado solo 478 caracteres. Se conservaron todos los registros y se añadió la ampliación de AUD-NG-011.

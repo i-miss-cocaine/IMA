@@ -22,3 +22,7 @@ AUD-NG-011 ya exige evidencia de despliegue, fuente de datos, permisos, contrato
 ## Calidad y límites
 
 Calidad insuficiente por catálogo estático, despliegue simulado y pruebas PASS ficticias. Auditoría estática; no se ejecutaron despliegues reales ni pruebas de RBAC, aislamiento, herramientas especializadas o persistencia de datos. No se modificó código fuente, completadas.md ni ChangesLogs.txt.
+
+
+## Addendum de integridad documental (2026-11-05)
+Durante la verificación del commit se detectó que Pendientes.md había sido reemplazado por una lectura parcial de 478 caracteres. Se restauró desde el blob completo previo a TAREA-09 (1,515,247 caracteres), conservando todos los registros y añadiendo la ampliación de AUD-NG-011. No se reescribió historia ni se modificó la rama base.

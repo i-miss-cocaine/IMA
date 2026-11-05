@@ -4596,3 +4596,6 @@ AUDITORÍA DE completadas.md - TAREA-09 (2026-11-05)
 - Calidad: insuficiente; inspección estática sin pruebas reales.
 - Progreso: 15/183; 168 pendientes. Siguiente: TAREA-10.
 ===============================================================================
+
+
+CORRECCIÓN DE INTEGRIDAD DE Pendientes.md (2026-11-05): la verificación posterior al commit de TAREA-09 detectó que el archivo había quedado reducido a un fragmento de 478 caracteres. Se restauró íntegramente desde el blob previo a TAREA-09 (1,515,247 caracteres), conservando AUD-NG-164 y todos los registros; se añadió al final la ampliación de criterios de AUD-NG-011. Esta reparación documental no modifica código, completadas.md ni ChangesLogs.txt.
