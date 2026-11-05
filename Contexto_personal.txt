@@ -1404,3 +1404,25 @@ CHECKPOINT C1.32 - AUDITORÍA FASE2-04 (2026-11-05)
 - Siguiente tarea exacta: FASE2-05 - Mecanismo Atómico de Sincronización, LockService e Idempotencia.
 - Continuidad: leer este checkpoint, verificar rama y HEAD, consultar AUDITORIA_COMPLETADAS_FASE2-04.md y reanudar en FASE2-05 sin repetir FASE2-04.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.33 - AUDITORÍA FASE2-05 (2026-11-05)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- HEAD de partida: 95a23f76e2e03b2d673bd50825859708ba34a135 (C1.32 / FASE2-04).
+- Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios ni merge.
+- Tarea auditada: FASE2-05 - Mecanismo Atómico de Sincronización, LockService e Idempotencia.
+- Dictamen: CUMPLE PARCIALMENTE; idempotencia check-then-save, rutas sin lock y pruebas de concurrencia nominales.
+- Progreso: 36/183 identificadores únicos; 147 pendientes.
+- Evidencia: accounting-service/Code.gs SHA 38b979d41596b85e888b4a7060b37bbac0840a28; academic-service/Code.gs SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; js/api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9.
+- Hallazgos ampliados: AUD-NG-006 (fetchApi no genera claves; backend no reserva atómicamente), AUD-NG-129 (registro de matrícula legacy sin lock y escrituras parciales), AUD-NG-133 (pagos sin lock ni clave obligatoria), AUD-NG-161 (suites sin concurrencia real, helper académico solo usado en suite, bypass skipLock/isInternalCall).
+- FASE2-T02 y FASE2-T06 están marcadas completadas, pero sus implementaciones posteriores no acreditan los criterios completos.
+- Archivos modificados: Auditoria.txt, MapaDependencias.md, Pendientes.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt y AUDITORIA_COMPLETADAS_FASE2-05.md.
+- Código fuente, completadas.md, completadas_legacy.md, ChangesLogs.txt y METODOLOGIA_DESARROLLO.md: sin modificaciones.
+- Pruebas: inspección estática/manual; no se ejecutaron HTTP, Apps Script, concurrencia real, pruebas de caché ni operaciones productivas.
+- Última tarea auditada: FASE2-05. No hay tarea en curso.
+- Siguiente tarea exacta: FASE2-06 - Motor de Eventos Inter-Módulo y Despacho Multicanal.
+- Continuidad: leer este checkpoint, verificar rama y HEAD, consultar AUDITORIA_COMPLETADAS_FASE2-05.md y continuar en FASE2-06 sin repetir FASE2-05.
+================================================================

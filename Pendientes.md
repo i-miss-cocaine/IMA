@@ -16967,6 +16967,10 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Dependencias Expuestas:** fetchApi, contratos de acciones, claves de idempotencia, persistencia
 - **Descripción del Alcance:** Clasificar acciones por semántica de lectura/escritura y enviar una clave idempotente estable para cada operación de escritura reintentable. El servidor debe reservar la clave atómicamente y devolver el resultado original ante duplicados.
 - **Criterios de Aceptación:** Simular pérdida de respuesta después de persistir una escritura y comprobar que el reintento no duplica datos, pagos, documentos ni movimientos.
+
+- **Ampliación C1.33 / FASE2-05 (2026-11-05):** En `js/api.js`, `fetchApi` (11-205) no genera ni agrega `idempotencyKey`/`idempotencyToken`; ante fallos de red reintenta la misma acción y payload hasta dos veces. En Accounting y Academic, `checkAndRegisterIdempotencyKey` solo consulta `CacheService.getScriptCache()`; no reserva una clave pendiente ni adquiere un lock antes de ejecutar. `saveIdempotentResult` escribe el resultado después de que la operación termina exitosamente y lo conserva 21600 segundos (6 horas). Dos solicitudes simultáneas pueden observar cache miss y ejecutar ambas; una escritura parcial que termina en error tampoco guarda resultado y el reintento puede repetirla.
+- **Criterios adicionales:** generar una clave estable por mutación antes del primer intento; reservarla atómicamente con estado en curso; persistir resultado/estado de forma recuperable y con retención definida; asociar operación, actor verificado e institución; resolver reintentos concurrentes y respuestas perdidas sin duplicar efectos; probar expiración/evicción de caché y fallos después de persistencia. FASE2-T02 marcada completada no acredita estos criterios.
+
 - **Estado:** [ ] Pendiente
 
 ### [AUD-NG-007] Aplicar el timeout configurado por llamada en fetchApi
@@ -18123,6 +18127,10 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Dependencias Expuestas:** `convertAdmissionToStudent`, `registerStudentEnrollment`, `createStudentEnrollment`, `renewStudentEnrollment`, `Matriculas`, `CargosEstudiante`.
 - **Descripción del Alcance:** Existen dos flujos distintos: la conversión de admisión llama a `registerStudentEnrollment` y genera cargos, mientras `createStudentEnrollment`/`renewStudentEnrollment` crea la matrícula con bloqueo e idempotencia pero no genera ni vincula el cargo del periodo. El control de duplicados del flujo antiguo usa estudiante+concepto, sin periodo como clave explícita. Unificar los flujos y asociar cada matrícula con sus cargos del mismo periodo lectivo.
 - **Criterios de Aceptación:** Matrícula inicial y rematrícula generan una sola matrícula por estudiante/periodo y los cargos correspondientes; clave única por estudiante+periodo+concepto; las operaciones repetidas son idempotentes; becas, descuentos y exoneraciones se aplican según vigencia; historial por periodo permanece consultable; pruebas de reintento y concurrencia.
+
+- **Ampliación C1.33 / FASE2-05 (2026-11-05):** `registerStudentEnrollment` (Academic, 12670) no adquiere LockService ni reserva una clave idempotente. Primero actualiza/añade la fila de `Matriculas` y después añade cargos a `CargosEstudiante` mediante escrituras separadas, sin rollback ni estado recuperable si falla una escritura intermedia. `existingCargos` se lee una sola vez antes del bucle y no se actualiza tras cada alta, por lo que conceptos repetidos en el mismo payload pueden superar la deduplicación local. La ruta nueva `createStudentEnrollment` sí bloquea, pero admite `skipLock`; doPost solo lo elimina cuando `isInternalCall` es falso y no acredita que esa bandera provenga de una llamada interna autenticada.
+- **Criterios adicionales:** unificar ambas rutas en una operación atómica o con saga/reanudación explícita; bloquear la lectura-verificación-escritura de matrícula y cargos; reservar clave idempotente por estudiante+periodo+concepto; evitar duplicados dentro del mismo lote; no aceptar banderas de omisión de lock desde payload externo; reconciliar fallos parciales sin duplicar matrícula ni cargos.
+
 - **Estado:** [ ] Pendiente
 
 ### [AUD-NG-130] Respetar permisos financieros y aplicar beneficios por periodo sin mutar consultas
@@ -18159,6 +18167,10 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Dependencias Expuestas:** `recordStudentPayment`, `checkAndRegisterIdempotencyKey`, `saveIdempotentResult`, `CargosEstudiante`, `PagosAbonos`.
 - **Descripción del Alcance:** `recordStudentPayment` no verifica que cargoId pertenezca al userId pagador, permite abonos superiores al saldo y no usa bloqueo transaccional propio. La idempotencia consulta CacheService y guarda el resultado después de ejecutar, sin reservar atómicamente la clave. El fallback de referencia `SIN-REF` puede convertir pagos distintos sin referencia en falsos duplicados. Validar propiedad y saldo, y hacer la reserva idempotente atómica.
 - **Criterios de Aceptación:** El cargo pertenece al estudiante pagador; no se acepta sobrepago salvo que se registre explícitamente como crédito; cada pago tiene clave única no reutilizable; reintentos/concurrencia no duplican pagos; referencias vacías no colisionan; se conserva trazabilidad de pagos parciales, reversos y ajustes; pruebas concurrentes y de pago cruzado.
+
+- **Ampliación C1.33 / FASE2-05 (2026-11-05):** Se confirma en `recordStudentPayment` (Accounting, 3891) que el flujo no adquiere LockService. La clave es opcional (`idempotencyKey || tokenTransaccion || referencia`); si no se proporciona, se omite la búsqueda de duplicados y se persiste igualmente. La búsqueda previa en `PagosAbonos` y el `appendRow` no forman una sección crítica, por lo que dos solicitudes simultáneas pueden superar la comprobación y registrar dos abonos. El wrapper de doPost tampoco resuelve la carrera: consulta CacheService antes del handler y guarda el resultado después.
+- **Pruebas adicionales:** dos pagos simultáneos con la misma clave y sin clave; reintento tras respuesta perdida; error después de appendRow; cargo ajeno; sobrepago; referencias vacías y repetidas. Debe comprobarse un solo efecto observable en `PagosAbonos` y el estado/saldo del cargo.
+
 - **Estado:** [ ] Pendiente
 
 
@@ -18445,6 +18457,10 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
   - Los fallos de validación, autorización, persistencia y caché producen resultados de prueba diferenciados; la suite no informa éxito si un caso no se ejecutó.
   - Las pruebas utilizan fixtures/datos aislados y no alteran registros productivos.
 - **Relaciones:** AUD-NG-006 (idempotencia por operación en fetchApi); AUD-NG-133 (idempotencia atómica de pagos); FASE2-T02.
+
+- **Ampliación C1.33 / FASE2-05 (2026-11-05):** Además de `runCriticalProcessConcurrencySuite` (Accounting, 10505-10550), `runConcurrencyAndConsistencySuite` (Academic, 3296-3320) solo invoca una vez `withConcurrencyLock` con una función que devuelve `executed:true`; no inicia dos operaciones concurrentes ni verifica persistencia/invariantes. La suite devuelve `status:"success"` aunque `todasPruebasPasaron` sea falso. `withConcurrencyLock` solo tiene esa llamada desde la propia suite, no está integrado como ejecutor de operaciones reales.
+- **Alcance adicional:** comprobar que `LockService.getScriptLock()` en proyectos Apps Script separados no se interprete como bloqueo distribuido entre Accounting y Academic; verificar operaciones que escriben recursos compartidos mediante un mecanismo común o una estrategia de consistencia explícita. Probar `createStudentEnrollment` con `skipLock` e `isInternalCall:true`, además de la ruta legacy `registerStudentEnrollment` sin lock y fallos entre escrituras. Mantener las relaciones con AUD-NG-006, AUD-NG-129 y AUD-NG-133 sin duplicarlas.
+
 - **Estado:** [ ] Pendiente
 
 

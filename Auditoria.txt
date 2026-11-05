@@ -5265,3 +5265,42 @@ completadas.md declara FASE2-04 completada, severidad Crítico y solo backend/ac
 - No se modificó código fuente, completadas.md, completadas_legacy.md, ChangesLogs.txt ni METODOLOGIA_DESARROLLO.md.
 CONCLUSIÓN: FASE2-04 solo cumple parcialmente. Hay emisión con correlativo, CUV y bloqueo parcial, pero no sistema unificado UUID, la hoja tiene esquema desalineado, el correlativo no segmenta año, el fallback CUV no valida unicidad y la consulta pública expone datos internos sin comprobar vigencia.
 ================================================================
+
+
+================================================================
+AUDITORÍA FASE2-05 - SINCRONIZACIÓN ATÓMICA, LOCKSERVICE E IDEMPOTENCIA
+FECHA: 2026-11-05 | CHECKPOINT C1.33
+DICTAMEN: CUMPLE PARCIALMENTE; IDEMPOTENCIA NO ATÓMICA Y RUTAS DE ESCRITURA SIN BLOQUEO
+ARCHIVOS: backend/accounting-service/Code.gs; backend/academic-service/Code.gs; js/api.js
+SHAS: ACCOUNTING 38b979d41596b85e888b4a7060b37bbac0840a28; ACADEMIC daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; API 6b24f666db30a811a8e9b38d466fc6001cf6dfa9
+================================================================
+ALCANCE:
+completadas.md declara FASE2-05 completada, pero solo conserva título, origen, severidad y dos archivos. Se contrastó con FASE2-T02 (idempotencia) y FASE2-T06 (concurrencia/consistencia), posteriores y también marcadas completadas.
+
+1. IDEMPOTENCIA:
+- Accounting y Academic mantienen checkAndRegisterIdempotencyKey / saveIdempotentResult. El primero consulta CacheService; ante cache miss devuelve null sin reservar clave ni estado en curso.
+- saveIdempotentResult solo guarda respuestas exitosas después de ejecutar el handler, con TTL 21600 segundos. Dos solicitudes simultáneas con la misma clave pueden ejecutar ambas; una escritura parcial que termina en error no queda registrada para recuperación.
+- doPost consulta antes del switch y guarda después (Accounting 585/839; Academic 685/969).
+- js/api.js fetchApi (11-205) no genera claves idempotentes. Reintenta fallos de red hasta dos veces con el mismo payload; una respuesta perdida después de persistir puede repetir una mutación.
+
+2. BLOQUEOS Y OPERACIONES:
+- Accounting sí contiene LockService en múltiples operaciones (por ejemplo generateBatchMonthlyCharges 2619, createFiscalInvoice 4388, calculatePayrollPeriod 4750, recordInventoryMovement 6069, generateSchoolDocument 15045 y processPaymentRefund 17440), pero recordStudentPayment (3891-3975) no adquiere lock. Su deduplicación es opcional y la lectura previa seguida de appendRow no es atómica.
+- Academic createStudentEnrollment (11141 aprox.) adquiere lock salvo skipLock; doPost elimina skipLock solo si payload.isInternalCall es falso, pero no autentica esa bandera.
+- Academic registerStudentEnrollment (12670-12730 aprox.) no adquiere lock; modifica Matriculas y después CargosEstudiante en escrituras separadas, sin rollback ni estado de recuperación. existingCargos es una instantánea que no se actualiza dentro del bucle.
+- Los locks getScriptLock de proyectos distintos no forman por sí solos un bloqueo distribuido entre Accounting y Academic.
+
+3. SUITES:
+- Accounting runCriticalProcessConcurrencySuite (10505-10550) adquiere un lock y marca PASSED verificaciones que solo cuentan filas de TransaccionesCobro y DocumentosEscolaresEmitidos. No ejecuta operaciones concurrentes ni compara claves únicas; los pagos reales escriben en PagosAbonos.
+- Academic withConcurrencyLock (3278-3292) libera el lock en finally, pero su único consumidor es runConcurrencyAndConsistencySuite (3296-3320). La suite ejecuta una única función local que devuelve executed:true; no prueba contención, escrituras, recuperación ni consistencia entre servicios. Devuelve status success aun cuando todasPruebasPasaron sea falso.
+- FASE2-T06 no acredita la formalización de concurrencia en operaciones reales; el helper de bloqueo no se ha integrado como ejecutor común.
+
+4. RECONCILIACIÓN:
+- AUD-NG-006 cubre claves estables de fetchApi y reserva atómica; se amplía con ausencia de clave en cliente y check-then-save en ambos servicios.
+- AUD-NG-129 cubre flujos de matrícula; se amplía con ausencia de lock, escrituras parciales y duplicados dentro del lote.
+- AUD-NG-133 cubre pago sin lock, clave opcional y falta de validación de propiedad/saldo.
+- AUD-NG-161 cubre suites falsas, operaciones concurrentes, rutas legacy, bypass skipLock/isInternalCall y recuperación; se amplía con la suite académica y alcance local de ScriptLock.
+- No se crea nuevo AUD-NG. FASE2-T02 y FASE2-T06 se consideran implementaciones parciales, no evidencia de cumplimiento completo.
+
+5. PRUEBAS Y LÍMITES:
+Inspección estática/manual. No se ejecutaron HTTP, Apps Script, contención real, pérdida de respuesta, caché caliente/fría, fixtures aislados ni operaciones productivas. No se modificó código fuente, completadas.md, completadas_legacy.md, ChangesLogs.txt ni METODOLOGIA_DESARROLLO.md.
+================================================================

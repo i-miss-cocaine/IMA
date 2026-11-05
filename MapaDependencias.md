@@ -929,3 +929,14 @@ No se crea AUD-NG nuevo.
 - `PUBLIC_ACTIONS -> validateRolePermission -> doPost -> verifySchoolDocumentByCUV`: acción pública sin token; el handler proyecta campos internos del documento y de FirmasConformidades.
 - `user-service/Code.gs:1706-1740` y `academic-service/Code.gs:2100-2160` mantienen generadores institucionales duplicados; Accounting no los integra en la emisión documental.
 - Reconciliación: TASK-118 (motor central y IDs ad-hoc), TASK-351 (verificación CUV y privacidad), AUD-NG-059 (hash binario), AUD-NG-061 (certificado) y AUD-NG-161 (pruebas de unicidad/concurrencia).
+
+
+## Auditoría FASE2-05 - Sincronización atómica, LockService e idempotencia (C1.33)
+- `js/api.js:11-205`: `fetchApi` reintenta fallos de red sin generar clave idempotente por mutación.
+- `accounting-service/Code.gs:232-273` y `academic-service/Code.gs:279-320`: helpers basados en CacheService, consulta previa y guardado posterior; no reservan clave atómicamente.
+- `accounting-service/Code.gs:3891`: `recordStudentPayment` carece de lock propio y admite ausencia de clave.
+- `academic-service/Code.gs:11141`: `createStudentEnrollment` tiene lock opcional controlado por `skipLock`; `isInternalCall` procede del payload.
+- `academic-service/Code.gs:12670`: `registerStudentEnrollment` modifica Matriculas y CargosEstudiante en escrituras separadas sin lock.
+- `academic-service/Code.gs:3278-3320`: `withConcurrencyLock` solo se usa en `runConcurrencyAndConsistencySuite`, que no prueba concurrencia real.
+- `accounting-service/Code.gs:10505-10550`: suite contable marca PASS por conteo de filas y una adquisición de lock.
+- Reconciliación: AUD-NG-006, AUD-NG-129, AUD-NG-133 y AUD-NG-161; sin nuevo ID de hallazgo.
