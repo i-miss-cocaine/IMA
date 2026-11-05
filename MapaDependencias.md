@@ -1061,3 +1061,31 @@ No se crea AUD-NG nuevo.
 - `PreferenciasNotificacion` se persiste, pero no se aplica desde `sendMultiChannelNotification`.
 - `ReglasAutomatizacionAlertas` se persiste, pero no es consumida por el evaluador de alertas académicas.
 - Reconciliar con AUD-NG-006, AUD-NG-039, AUD-NG-161, AUD-NG-176/177, TASK-404, TASK-422 y TASK-474/475. No crear hallazgos duplicados.
+
+
+
+## Trazabilidad y correlación de operaciones (FASE2-T08 / C1.43, 2026-11-05)
+
+### Cliente y despacho
+- js/api.js:fetchApi (11+) -> USER doPost (1351-1620): no se genera ni propaga requestId/correlationId. Los reintentos POST no tienen identidad estable.
+- USER doPost -> logStructuredEvent (326-350) -> LogsSistema: esquema sin correlationId/requestId, dependencia ni duración; la redacción cubre solo claves de credenciales.
+- js/api.js:window.logStructuredEvent (257+) -> acción recordStructuredLog: el dispatcher USER no contiene esa acción.
+- USER:delegateToTaskService (7946-7964) -> TASK_SERVICE_URL: transmite JSON plano, no sobre HMAC; ante excepción retorna status success local. Reconciliar AUD-NG-083/AUD-NG-174.
+
+### Trazabilidad
+- USER:recordTraceabilityLog (4548-4573) -> BitacoraTrazabilidad. Solo se invoca mediante el dispatcher; no hay llamadas desde operaciones de negocio. errorDetails no se sanitiza.
+- USER:getTraceabilityCorrelationLogs (4575-4616) -> BitacoraTrazabilidad. Filtros actuales: correlationId, estado y servicio; sin acción, intervalo temporal ni paginación segura.
+- USER:getPaginatedAuditLogReport (4243-4364) -> BitacoraEventos + BitacoraTraceability. El segundo nombre no coincide con BitacoraTrazabilidad; el DTO de BitacoraEventos tampoco coincide con el encabezado real del productor registerAndDispatchEvent.
+- createInterServiceEnvelope/verifyInterServiceEnvelope (1009-1055) están declaradas sin consumidores; el tráfico interservicio no queda correlacionado ni autenticado por ese helper.
+
+### Conservación y permisos
+- getRetentionPolicies (2120+) define AUDIT_LOGS=365 días; executeDataRetentionPolicyCheck (2203-2254) consulta BitacoraEventos con índices de fecha/severidad incompatibles y no aplica a LogsSistema/BitacoraTrazabilidad.
+- purgeStructuredLogs (7967-7990) elimina todo LogsSistema sin retención por antigüedad ni preservación legal.
+- ROLE_PERMISSIONS (926+) permite las rutas de trazabilidad a Administrador/Desarrollador y Director; getStructuredLogs no figura en permisos de Director. La autorización de escritura no valida identidad del servicio emisor.
+
+### Reconciliación
+- AUD-NG-145: bitácora, filtros, redacción y retención.
+- TASK-278: correlationId/sagaId, visor unificado, reconstrucción cronológica, RBAC y paginación.
+- AUD-NG-174: envelope API, correlación, errores y fallback.
+- AUD-NG-083: integración HMAC en tráfico real.
+- TASK-474: correlación/causation de eventos y productores autenticados.

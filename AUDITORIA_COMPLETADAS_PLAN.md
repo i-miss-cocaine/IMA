@@ -506,3 +506,18 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Código fuente:** sin modificaciones. completadas.md, completadas_legacy.md, ChangesLogs.txt y METODOLOGIA_DESARROLLO.md sin modificaciones.
 - **Progreso:** 43/183 identificadores auditados; 140 pendientes.
 - **Siguiente tarea:** FASE2-T08 - Implementar trazabilidad y correlación de operaciones entre servicios. Reconciliar los antecedentes de correlationId/sagaId y registros estructurados antes de iniciar.
+
+
+
+## 48. Resultado C1.43 - FASE2-T08 (2026-11-05)
+
+- **Dictamen:** NO CUMPLE INTEGRALMENTE. No existe generación/propagación de correlationId en fetchApi, los helpers HMAC no están conectados al tráfico real, recordTraceabilityLog carece de productores operativos y las consultas/retención tienen incompatibilidades de esquema.
+- **Continuidad histórica:** se revisaron los antecedentes AUD-NG-145, TASK-278, AUD-NG-174, AUD-NG-083 y TASK-474. Sus alcances cubren las brechas; no se crean IDs duplicados.
+- **Evidencia:** User SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; js/api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; Academic SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; Accounting SHA 38b979d41596b85e888b4a7060b37bbac0840a28; Task SHA 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe; Exam SHA 1d93296628fae31f680004f637897e2b1314a64c; Developer SHA 8aa4bac67cfe5c8c54da51a0784a56fef633e412.
+- **Evidencia ampliada:** getStructuredLogs no filtra por correlación/acción/servicio; recordTraceabilityLog no sanitiza errorDetails y no tiene productores; getTraceabilityCorrelationLogs carece de periodo/acción/paginación; getPaginatedAuditLogReport consulta BitacoraTraceability y un DTO incompatible con BitacoraEventos; executeDataRetentionPolicyCheck usa columnas incorrectas y no purga LogsSistema/BitacoraTrazabilidad; purgeStructuredLogs elimina todo LogsSistema.
+- **Reconciliación de backlog:** ampliar AUD-NG-145, TASK-278, AUD-NG-174, AUD-NG-083 y TASK-474. Sin IDs nuevos ni cambios de estado.
+- **Backlog:** Pendientes.md recuperado del blob del HEAD de partida SHA f9f2bfcf70173efc4b8dead23dbe8d44a55b8a4b (1,621,560 caracteres, 19,223 líneas antes de la ampliación). Blob preparado tras ampliar cinco tareas existentes: SHA 093007608b9c1fdd550305bb8e16ef966c6c4201. Inventario: 478 IDs TASK + 175 IDs AUD-NG = 653 IDs únicos; máximos TASK-478/AUD-NG-180. Sin nuevos IDs.
+- **Pruebas:** inspección estática/manual. No se ejecutó la suite de integración porque puede operar colas reales; no se ejecutaron Apps Script, HTTP, triggers, despliegues ni operaciones productivas.
+- **Código fuente:** sin modificaciones. completadas.md y METODOLOGIA_DESARROLLO.md sin modificaciones.
+- **Progreso:** 44/183 identificadores auditados; 139 pendientes.
+- **Siguiente tarea:** T-UX-02 - Soporte Universal Tecla Escape para Cierre de Modales y Restauración de Foco.

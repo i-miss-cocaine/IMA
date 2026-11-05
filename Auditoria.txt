@@ -5562,3 +5562,42 @@ Criterios 1-10: respectivamente no demostrado, no cumple, parcial, no cumple, no
 
 PRUEBAS Y LÍMITES: inspección estática/manual; no se ejecutó la suite porque llama a retryFailedEventsQueue sobre la hoja real y puede causar despachos. No se ejecutaron Apps Script, HTTP, triggers, proveedores, correos, concurrencia ni operaciones productivas. No se modificó código fuente.
 ===============================================================================
+
+
+
+===============================================================================
+FECHA: 2026-11-05
+AUDITORÍA DE TAREA COMPLETADA [FASE2-T08] — TRAZABILIDAD Y CORRELACIÓN ENTRE SERVICIOS
+HEAD DE PARTIDA: 57f7e330ed997457b34c8849cf869297054a5783
+RAMA BASE: 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios)
+ARCHIVOS Y RANGOS INSPECCIONADOS:
+- js/api.js: fetchApi (11+), window.logStructuredEvent (257+).
+- backend/user-service/Code.gs: sanitizePayloadForLog (50-67), createInterServiceEnvelope/verifyInterServiceEnvelope (1009-1055), getStructuredLogs (353-392), logStructuredEvent (326-350), getRetentionPolicies (2120+), executeDataRetentionPolicyCheck (2203-2254), getPaginatedAuditLogReport (4243-4364), recordTraceabilityLog (4548-4573), getTraceabilityCorrelationLogs (4575-4616), doPost/dispatcher (1351-1620), ROLE_PERMISSIONS (926+), delegateToTaskService (7946-7964), purgeStructuredLogs (7967-7990), registerAndDispatchEvent (4618+).
+SHAS:
+- User: 12079dd410aa6d8afbce55a4bc62a79dea605f9f.
+- js/api.js: 6b24f666db30a811a8e9b38d466fc6001cf6dfa9.
+- Academic: daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc.
+- Accounting: 38b979d41596b85e888b4a7060b37bbac0840a28.
+- Task: 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe.
+- Exam: 1d93296628fae31f680004f637897e2b1314a64c.
+- Developer: 8aa4bac67cfe5c8c54da51a0784a56fef633e412.
+DICTAMEN: NO CUMPLE INTEGRALMENTE.
+
+EVIDENCIA PRINCIPAL:
+1. fetchApi no genera ni propaga requestId/correlationId. Sus reintentos POST carecen de identidad estable y registro de intento.
+2. createInterServiceEnvelope/verifyInterServiceEnvelope siguen sin consumidores. delegateToTaskService transmite JSON plano y convierte una excepción de dependencia en status success local.
+3. recordTraceabilityLog es un helper manual sin llamadas desde operaciones de negocio; guarda errorDetails sin sanitizar. getTraceabilityCorrelationLogs carece de filtro por acción/periodo y paginación segura.
+4. logStructuredEvent/LogsSistema no incorporan correlationId, requestId, dependencia ni duración. sanitizePayloadForLog solo cubre claves de credenciales; message/errorDetails y PII/finanzas quedan fuera de redacción suficiente.
+5. getStructuredLogs filtra solo severidad/fechas, sin servicio/acción/correlationId, y devuelve payload. La ruta cliente recordStructuredLog no existe en el dispatcher USER.
+6. getPaginatedAuditLogReport consulta BitacoraTraceability, mientras el productor escribe BitacoraTrazabilidad. Además, su DTO esperado no coincide con las diez columnas reales de BitacoraEventos; el campo de fecha se lee desde TipoEvento y el correlationId desde ErrorDetalle.
+7. La política AUDIT_LOGS de 365 días no se aplica a LogsSistema ni BitacoraTrazabilidad. executeDataRetentionPolicyCheck usa columnas incorrectas de BitacoraEventos; purgeStructuredLogs borra todo LogsSistema sin antigüedad ni preservación legal.
+8. RBAC restringe las consultas por acción (Admin/Desarrollador y Director en rutas de trazabilidad), pero Director puede invocar recordTraceabilityLog con origen/destino no autenticados. El permiso de lectura no sustituye la autenticación del emisor.
+
+RECONCILIACIÓN:
+- Ampliar AUD-NG-145, TASK-278, AUD-NG-174, AUD-NG-083 y TASK-474; no crear IDs nuevos ni cambiar estados.
+- FASE2-T08 no cumple integralmente. Criterios de aceptación 1, 3 y 6 no cumplen; 2, 4 y 5 parciales.
+- La prueba INT-05 ya presenta desajuste logs/registros y no acredita un flujo distribuido real; no se ejecutó la suite por sus efectos secundarios sobre colas reales.
+
+PRUEBAS Y LÍMITES: inspección estática/manual. No se ejecutaron Apps Script, HTTP, triggers, despliegues, suites con efectos productivos ni operaciones reales. Código fuente sin modificaciones.
+PRÓXIMA TAREA: T-UX-02. Progreso: 44/183 identificadores auditados; 139 pendientes.
+===============================================================================

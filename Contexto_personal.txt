@@ -1794,3 +1794,58 @@ ARCHIVOS DE LA ITERACIÓN:
 - No ejecutar runInterdepartmentalIntegrationTestSuite: puede procesar la cola real.
 - Próxima acción: crear el árbol con exactamente los seis archivos documentales indicados; revisar diff/árbol completo; crear un único commit descendiente de dfdcb1ec6f9b3884308b422a168e4ca9ddd8c21a; actualizar solo NG_beta_0.0.0.1_work; verificar commit, árbol, lista de archivos, HEAD de trabajo y rama base 44d9891132332e692dbe2ba8602b41f50a508a59.
 ================================================================
+
+ 
+================================================================
+CHECKPOINT C1.43 - AUDITORÍA FASE2-T08 (2026-11-05)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto real: Contexto_personal.txt.
+- Rama de trabajo autorizada: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: 57f7e330ed997457b34c8849cf869297054a5783.
+- Rama base al inicio: 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios.
+- La rama de trabajo estaba 88 commits por delante y 0 por detrás de la base.
+- Última tarea completamente auditada: FASE2-T08 - Implementar trazabilidad y correlación de operaciones entre servicios.
+- Dictamen: NO CUMPLE INTEGRALMENTE; completadas.md la marca [X], pero no se genera/propaga correlación distribuida y las consultas/retención tienen incompatibilidades.
+- Tarea en curso: ninguna; auditoría estática/manual de FASE2-T08 cerrada.
+- Siguiente tarea exacta según completadas.md: T-UX-02 - Soporte Universal Tecla Escape para Cierre de Modales y Restauración de Foco.
+- Progreso: 44/183 identificadores auditados; 139 pendientes.
+
+RECUPERACIÓN E INVENTARIO DE Pendientes.md:
+- La lectura convencional de Pendientes.md devolvió 0 caracteres.
+- Se recuperó el blob del HEAD de partida: SHA f9f2bfcf70173efc4b8dead23dbe8d44a55b8a4b; 1,621,560 caracteres y 19,223 líneas.
+- Se amplió evidencia en AUD-NG-145, TASK-278, AUD-NG-174, AUD-NG-083 y TASK-474; no se cambió el estado de ninguna tarea.
+- Blob preparado de Pendientes.md: 093007608b9c1fdd550305bb8e16ef966c6c4201; 1,623,550 caracteres y 19,228 líneas.
+- Inventario antes/después: 478 IDs TASK únicos + 175 IDs AUD-NG únicos = 653 IDs únicos. Máximos TASK-478 y AUD-NG-180. No se crearon IDs nuevos.
+
+RECONCILIACIÓN HISTÓRICA:
+- AUD-NG-145: logs centrales, filtros, sanitización y retención efectiva.
+- TASK-278: propagación correlationId/sagaId y visor unificado con RBAC/paginación.
+- AUD-NG-174: envelope API, correlación, clasificación de errores y fallback.
+- AUD-NG-083: integración HMAC en el tráfico interservicio real.
+- TASK-474: correlación/causation de eventos y productores autenticados.
+- No crear IDs duplicados; no cambiar estados de tareas existentes.
+
+EVIDENCIA Y SHAS:
+- completadas.md: f57f1aef832e81e44fc4f7ec36a852d50e464676.
+- METODOLOGIA_DESARROLLO.md: 214e8221bd076c4e89012636c105bffd5ca36467.
+- backend/user-service/Code.gs: 12079dd410aa6d8afbce55a4bc62a79dea605f9f.
+- js/api.js: 6b24f666db30a811a8e9b38d466fc6001cf6dfa9.
+- Academic: daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc.
+- Accounting: 38b979d41596b85e888b4a7060b37bbac0840a28.
+- Task: 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe.
+- Exam: 1d93296628fae31f680004f637897e2b1314a64c.
+- Developer: 8aa4bac67cfe5c8c54da51a0784a56fef633e412.
+- Informe nuevo: AUDITORIA_COMPLETADAS_FASE2-T08.md; blob b405b5048e7d3f9fa3176a355a723c79600185d5.
+- Auditoria.txt blob preparado: b3ff32eb74d0528425449f37db5b34362ea996bc.
+- MapaDependencias.md blob preparado: eccf51fa7df2cf0a0fb42d0b81138109f778488c.
+- AUDITORIA_COMPLETADAS_PLAN.md blob preparado: 4dffd3941106d2d990404f90fd96f15ba666bea1.
+
+ARCHIVOS DE LA ITERACIÓN:
+- Modificados: Pendientes.md, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt.
+- Nuevo: AUDITORIA_COMPLETADAS_FASE2-T08.md.
+- Sin modificar: código fuente, completadas.md, completadas_legacy.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md y rama base.
+- No se ejecutaron Apps Script, HTTP, triggers, despliegues, pruebas concurrentes ni operaciones productivas. No ejecutar runInterdepartmentalIntegrationTestSuite: puede procesar colas reales.
+- Regla de publicación: exactamente un commit final descendiente de 57f7e330ed997457b34c8849cf869297054a5783; no crear commits intermedios. Actualizar solo NG_beta_0.0.0.1_work y verificar HEAD/árbol/archivos. La rama base debe permanecer en 44d9891132332e692dbe2ba8602b41f50a508a59.
+================================================================
