@@ -643,3 +643,10 @@ Se restauró el contenido íntegro previo a TAREA-09 (1,515,247 caracteres) tras
 - Dictamen: CUMPLE PARCIALMENTE. Existen borradores/versiones/comentarios/rúbricas básicas; faltan tareas grupales/recurrentes, intentos, recibo persistido/idempotencia y revisión parcial.
 - getSubmissionComments devuelve comentarios privados sin filtrar; getSubmissionVersions permite consulta por entregaId sin validar propiedad. addSubmissionComment confía en autor/rol/privacidad enviados por el cliente.
 - Hallazgo nuevo: AUD-NG-165. Se amplían AUD-NG-149/121/152/124/158/002.
+
+
+## Auditoría de completadas.md - TAREA-11 (2026-11-05)
+- Dictamen: CUMPLE PARCIALMENTE. BancoPreguntas tiene CRUD/consulta básica y filtros, pero manageQuestionBank/getQuestionBank no validan esquema ni referencias; createExam omite campos declarados en los esquemas de Examenes y PreguntasExamen.
+- exam.js soporta cinco familias; faltan modalidades abiertas, numéricas, ordenación y adjuntos. submitExam califica por igualdad/cantidad, ignora puntos y no aplica intentos/fechas/duración ni idempotencia.
+- getExamQuestions oculta la respuesta correcta; localStorage solo ofrece recuperación local. No se acredita analítica psicométrica real.
+- Hallazgo nuevo: AUD-NG-166. Se amplían AUD-NG-121/124/006/011/002/158 sin duplicar.

@@ -4615,3 +4615,18 @@ CORRECCIÓN DE INTEGRIDAD DE Pendientes.md (2026-11-05): la verificación poster
 - Pruebas: inspección estática; no se ejecutaron pruebas de roles, acceso cruzado, idempotencia o concurrencia.
 - Progreso: 16/183; 167 pendientes. Siguiente: TAREA-11.
 ===============================================================================
+
+
+===============================================================================
+[AUD-NG-166] TAREA-11 - INTEGRIDAD DEL BANCO Y MOTOR DE EXÁMENES
+- Fecha: 2026-11-05. Severidad: ALTO (P1).
+- Evidencia: manageQuestionBank/getQuestionBank carecen de validación de esquema y referencias; JSON inválido puede persistirse y fallar al consultar. createExam persiste solo 10 columnas de Examenes aunque el esquema declara 14, y solo 6 columnas de PreguntasExamen aunque declara 10; omite área/duración/intentos/aleatoriedad, puntos, dificultad y BancoPreguntaID. exam.js cubre cinco familias; faltan respuesta extensa, numérica, ordenación y adjuntos. submitExam califica por igualdad/cantidad, ignora puntos y no contempla corrección parcial/manual; tampoco aplica fechas, duración o intentos ni idempotencia. localStorage solo recupera en el mismo navegador. No se acredita analítica psicométrica por reactivo/grupo.
+- Impacto: reactivos incompletos/inconsistentes, notas incorrectas, ausencia de control real de intentos/tiempo, entregas duplicadas y analítica no confiable.
+- Criterios: validar esquema y referencias en servidor; conservar vínculo/versionado/snapshot de reactivos; implementar modalidades y reglas; aplicar puntos y corrección parcial/manual; persistir configuración y validar fechas/duración/intentos; idempotencia y recuperación; analítica psicométrica reproducible.
+- Tareas relacionadas: AUD-NG-121, AUD-NG-124, AUD-NG-006, AUD-NG-011, AUD-NG-002 y AUD-NG-158.
+- Control de duplicados: AUD-NG-166 se limita al modelo/validación de reactivos, modalidades, snapshot y analítica; no duplica controles transversales relacionados.
+- TAREA-11: CUMPLE PARCIALMENTE. Existe banco básico y ocultación de respuesta correcta en getExamQuestions, pero persistencia y flujos no cumplen el alcance completo.
+- Calidad: insuficiente por desalineación de esquemas/escrituras, validación débil, cobertura incompleta y puntuación deficiente.
+- Pruebas: inspección estática/manual; no se ejecutaron pruebas funcionales ni de permisos/concurrencia.
+- Progreso: 17/183; 166 pendientes. Siguiente: TAREA-12.
+===============================================================================

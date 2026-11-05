@@ -18524,3 +18524,26 @@ Exigir proyectos y deployments reales por área, endpoints y fuentes verificadas
 - **Estado:** [ ] Pendiente
 
 Hallazgo nuevo: AUD-NG-165. Los demás vacíos de TAREA-10 amplían tareas existentes.
+
+
+---
+
+## Ampliación de criterios derivada de TAREA-11 (2026-11-05)
+
+- **AUD-NG-121:** hacer cumplir en backend fecha de apertura/cierre, duración y máximo de intentos por estudiante; rechazar entregas fuera de ventana o después del máximo permitido y no confiar en temporizadores del cliente.
+- **AUD-NG-124:** incorporar corrección manual por pregunta abierta, puntuación parcial, rúbricas/criterios y guardado del progreso de revisión con historial.
+- **AUD-NG-006:** aplicar clave idempotente y reserva atómica a submitExam; una repetición tras timeout debe recuperar la entrega existente y no crear otra.
+- **AUD-NG-011:** persistir areaId/ámbito curricular en exámenes y reactivos; validar asignación/área y resolver el servicio autorizado.
+- **AUD-NG-002:** validar propiedad antes de consultar resultados por entregaExamenId y controlar el momento/rol de exposición de respuestas correctas.
+- **AUD-NG-158:** limitar gestión/consulta de bancos y exámenes al ámbito curricular y asignaciones verificadas del docente.
+
+### [AUD-NG-166] Completar el modelo verificable de reactivos y la integridad del motor de exámenes
+- **Origen:** Auditoría de completadas.md / TAREA-11.
+- **Severidad:** Alto (P1).
+- **Archivos:** backend/exam-service/Code.gs; js/exam.js; js/quizpro.js; exam.html; results.html.
+- **Problema:** el banco carece de validación de esquema/referencias; createExam no persiste todos los campos declarados de Examenes/PreguntasExamen; no conserva vínculo/versionado de reactivos reutilizados; faltan modalidades exigidas; no existe snapshot inmutable para exámenes ya realizados; la analítica psicométrica requerida no está implementada de forma verificable.
+- **Criterios:** validar tipos, opciones, respuestas, puntos y referencias curriculares en servidor; persistir área/tema/dificultad/etiquetas/objetivos/criterios; relación estable/versionada con BancoPreguntas; soportar las nueve modalidades (incluidos adjuntos); conservar snapshot de reactivos aplicados; ofrecer analítica psicométrica reproducible por pregunta/tema/asignatura/grupo.
+- **Tareas relacionadas (no duplicadas):** AUD-NG-121 (fechas/duración/intentos), AUD-NG-124 (rúbricas/revisión parcial), AUD-NG-006 (idempotencia), AUD-NG-011 (área/routing), AUD-NG-002 (propiedad/consultas), AUD-NG-158 (ámbito docente).
+- **Estado:** [ ] Pendiente
+
+Hallazgo nuevo: AUD-NG-166. Progreso de auditoría: 17/183; 166 pendientes. Siguiente tarea: TAREA-12.

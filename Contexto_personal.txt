@@ -930,3 +930,21 @@ CHECKPOINT C1.12 - AUDITORÍA TAREA-10 (2026-11-05)
 - No se modifica código fuente, completadas.md, ChangesLogs.txt ni metodología. No se ejecutaron pruebas de roles/acceso cruzado/idempotencia.
 - Siguiente tarea: TAREA-11.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.13 - AUDITORÍA TAREA-11 (2026-11-05)
+================================================================
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- HEAD anterior: b3566a684384c016fd15c5b42bb137cf1c18f9ba.
+- Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59; no modificada.
+- Tarea auditada: TAREA-11 - ampliar el motor de exámenes y banco de preguntas por área curricular.
+- Dictamen: CUMPLE PARCIALMENTE. Existe banco básico con filtros, pero sin validación completa; createExam no persiste todos los campos declarados de Examenes/PreguntasExamen; la interfaz no cubre las nueve modalidades; submitExam ignora puntos y no implementa revisión manual/parcial, enforcement de fechas/duración/intentos ni idempotencia; localStorage solo permite recuperación local; no se acredita analítica psicométrica.
+- Hallazgo nuevo: AUD-NG-166. Se amplían AUD-NG-121/124/006/011/002/158.
+- Informe: AUDITORIA_COMPLETADAS_TAREA-11.md. Sección del plan: 22.
+- Archivos del commit único de tarea: Auditoria.txt, Pendientes.md, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt e informe TAREA-11.
+- Sin modificaciones en código fuente, completadas.md, completadas_legacy.md ni ChangesLogs.txt.
+- No se ejecutaron pruebas funcionales, de navegador, permisos, concurrencia ni despliegue.
+- Progreso: 17/183 identificadores únicos auditados; 166 pendientes.
+- Siguiente tarea: TAREA-12.
+================================================================

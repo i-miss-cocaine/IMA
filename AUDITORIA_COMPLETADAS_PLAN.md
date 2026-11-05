@@ -223,3 +223,10 @@ Al reanudar:
 - Dictamen: CUMPLE PARCIALMENTE. El servicio contiene creación, borradores, versiones, comentarios y rúbricas básicas, pero no acredita tareas grupales/recurrentes, límites de intentos, comprobantes persistidos/idempotencia ni revisión parcial. getSubmissionComments expone comentarios privados y getSubmissionVersions no verifica propiedad por entregaId.
 - Hallazgo nuevo: AUD-NG-165, privacidad y acceso contextual a comentarios/versiones.
 - Se amplían AUD-NG-149/121/152/124/158/002. Progreso 16/183; 167 pendientes. Siguiente: TAREA-11.
+
+
+## 22. Resultado C1.13 - TAREA-11 (2026-11-05)
+- Dictamen: CUMPLE PARCIALMENTE. Banco básico con filtros, pero sin validación de esquema/referencias. createExam no persiste los campos declarados de Examenes/PreguntasExamen; la UI solo cubre cinco familias; submitExam ignora puntos, no implementa revisión manual/parcial y no aplica fechas/duración/intentos/idempotencia. localStorage solo recupera en el mismo navegador; no se acredita analítica psicométrica.
+- Hallazgo nuevo: AUD-NG-166. Se amplían AUD-NG-121/124/006/011/002/158.
+- Calidad: insuficiente; desalineación entre esquemas y escrituras, validación débil y contratos incompletos. Revisión estática/manual; sin pruebas funcionales ni de permisos/concurrencia.
+- Progreso: 17/183; 166 pendientes. Siguiente: TAREA-12.
