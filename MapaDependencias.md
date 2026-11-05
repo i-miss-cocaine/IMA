@@ -1276,3 +1276,57 @@ No se crea AUD-NG nuevo.
 - AUD-NG-188 / TASK-485: inicializar y unificar router/historial; resolver URL directa, atrás/adelante, permisos y rutas inválidas.
 - AUD-NG-189 / TASK-486: corregir snapshot y restaurar filtros, búsqueda, orden, página, selección y scroll; integrar stack de Docente.
 - AUD-NG-162 mantiene el alcance de expiración; T-UX-13/TASK-483 cubre menú y rutas visibles; T-UX-15 cubre filtros/paginación, no la preservación contextual.
+
+
+## Paneles de control por rol y departamento (T-UX-12, C1.52)
+
+### Estudiante
+- `js/student.js:5-19` -> `consolidateStudentDashboardSummary`; helper declarado sin consumidor.
+- El helper cuenta pendientes mediante `!actividad.entregado`; el modelo de actividades procesado por el módulo utiliza `actividad.entrega.estado`. La integración requiere normalizar el contrato y separar tareas de exámenes.
+- `student-dashboard.html` -> actividades, progreso, finanzas y guías; no se encontró componente que invoque el consolidado.
+
+### Docente
+- `js/teacher.js:117-134` -> `consolidateTeacherDashboardSummary`; helper declarado sin consumidor.
+- `teacher-dashboard.html:127-172` -> panel principal de control de entregas con filtros y tabla; no presenta los indicadores calculados por el helper.
+- `js/teacher.js` obtiene estudiantes, tareas, exámenes y entregas para reportes, pero no pasa esos datos al helper de resumen.
+
+### Contabilidad
+- `js/accounting.js:10-24` -> `consolidateAccountingDashboardSummary`; helper declarado sin consumidor.
+- `js/accounting.js:1802-1811` -> `renderResumenModule` es texto estático, sin consulta ni render de indicadores.
+- `dashboard-contabilidad.html:90-99` -> contenedor de módulo; no hay KPIs financieros reales en el resumen.
+- El helper transforma objeto ausente/campos no numéricos en L 0.00 y cero facturas; debe distinguir no disponible de cero confirmado.
+
+### Dirección
+- `dashboard-direccion.html:62-73` -> `pending-approvals-count` inicial en cero y bandeja con texto estático.
+- No se encontró consumidor de esos IDs en `js/secretary.js` ni `js/teacher.js`.
+- `backend/accounting-service/Code.gs:999-1027` -> existe `getDiscountScholarshipRequests`, pero no está conectado a la bandeja cargada por Dirección.
+
+### Coordinación
+- `js/secretary.js:522-570` -> `loadCoordinatorDashboardData` consulta `getCoordinatorOverview`, pero fija el indicador de sílabos en `0 Pendientes` y el mensaje de lista en “Todas las jornalizaciones y sílabos están al día”.
+- `backend/academic-service/Code.gs:6200-6224` -> `getCoordinatorOverview` solo devuelve ofertas, asignaciones y horarios; no expone el estado de sílabos/jornalizaciones.
+- El contador de docentes, ofertas y vacantes sin asignación sí se calcula desde los datos devueltos; no se extiende el hallazgo a esos indicadores.
+
+### Dashboard dinámico y responsabilidades
+- `js/ui-common.js:5819-5863` -> `loadDynamicDashboard` genera tarjetas de módulos; “Acceder” es un span sin enlace/listener.
+- `backend/user-service/Code.gs:9254-9293` -> `getUserDynamicDashboardConfig` usa mapa fijo de seis roles y fallback `mod_mis_clases`/`mod_mis_horarios` para roles no incluidos.
+- `F8-Task12` (antes TAREA-AD-07) proporciona consola de roles/responsabilidades, pero la configuración devuelta no demuestra integración de módulos dinámicos ni accesos reales para todos los roles.
+- T-UX-13/TASK-483 resuelve navegación lateral; no sustituye el destino funcional de cada módulo dinámico.
+
+### Recursos Humanos: contrato de respuesta
+- `dashboard-recursos-humanos.html:2360-2415` -> `loadHRDashboardData` espera `resLeaves.data`, `tipoSolicitud`, `userId` y estado `Pendiente`.
+- `backend/accounting-service/Code.gs:8578-8606` -> `getVacationRequests` devuelve `solicitudes`, `tipo`, `expedienteId`; la creación registra `PendienteAprobacion`.
+- Resultado: contador/lista no procesan la respuesta real y dejan valores iniciales.
+
+### Recursos Humanos: autorización y aislamiento
+- `backend/accounting-service/Code.gs:198-205` -> el rol `Empleado` tiene permiso de acción para `getEmployeeRecords` y `getLeaveVacationRequests`.
+- `backend/accounting-service/Code.gs:420-432` -> `validateContextualAccess` aplica aislamiento a Estudiante/Alumno, no a Empleado.
+- `backend/accounting-service/Code.gs:8152-8189` -> `getEmployeeRecords` solo filtra por IDs opcionales; sin filtros devuelve todos los expedientes.
+- `backend/accounting-service/Code.gs:8578-8606` -> `getVacationRequests` solo filtra por expediente/estado opcionales; sin filtro devuelve todas las solicitudes.
+- Los endpoints deben resolver titularidad desde `_verifiedUserId`; los parámetros de cliente no prueban identidad.
+
+### Hallazgos y tareas
+- AUD-NG-190 / TASK-487 -> integrar resúmenes reales de Estudiante, Docente y Contabilidad; alinear modelos y distinguir cero/no disponible.
+- AUD-NG-191 / TASK-488 -> conectar Dirección, obtener pendientes reales de Coordinación y completar mapa/accesos del dashboard dinámico.
+- AUD-NG-192 / TASK-489 -> alinear contrato de solicitudes de vacaciones entre RR. HH. y accounting-service.
+- AUD-NG-193 / TASK-490 -> aplicar aislamiento por empleado en servidor para expedientes y solicitudes laborales.
+- T-UX-16, F8-Task12, T-UX-13, T-UX-20 y TAREA-04 se conservan como dependencias relacionadas, no como sustitutos de las correcciones anteriores.
