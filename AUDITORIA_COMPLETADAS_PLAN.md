@@ -647,3 +647,18 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Commits modulares:** el usuario autorizó expresamente dividir la iteración en commits modulares. Commits publicados durante esta iteración: bcf8facf7e15bd2c512b8d1ec715aeb9d69f832e (backlog); e45fc8dc134bfcdd5cfea70af48b40f108fccb6a (informe); 4469e070431569c3d71102dc66e86e4b234b8a36 (bitácora); a3f3f2d6fdf4c3ceb94e8e9fd8d2e3d827de08da (mapa). La verificación final de HEAD queda para el cierre del checkpoint.
 - **Progreso:** 53/183 identificadores auditados; 130 pendientes.
 - **Siguiente tarea:** T-UX-13 - Completar el menú lateral específico de cada panel. Reconciliar AUD-NG-186/TASK-483 y las ampliaciones posteriores antes de auditarla.
+
+
+## 58. Resultado C1.53 - T-UX-13 (2026-11-05)
+
+- **Dictamen:** NO CUMPLE. El drawer común es genérico y no filtra rutas por rol; no hay sidebar desktop funcional; el disparador móvil se inserta dentro de un nav oculto en ocho dashboards y recibe una clase que lo oculta en escritorio; Developer no carga el módulo y dynamic-dashboard no tiene el selector de header requerido. No se marca la ruta activa ni se exponen estados ARIA de acordeones; una acción inmediata se modela como enlace.
+- **AUD-NG-194 (MEDIO/P2) / TASK-483 existente:** el disparador móvil queda invisible por anidamiento en `nav.hidden.md:flex`; el drawer carece de ruta activa/estado accesible y mezcla una acción con enlaces. Se amplía TASK-483 sin crear tarea duplicada.
+- **Evidencia:** `js/ui-common.js` SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67, líneas 4710-4721, 4723-4755, 4757-4890 y 4917-4924; `css/style.css` SHA f1ff84312ce70949a58eaa099b2aad0ff0a59cb6, líneas 175-201 y 1053-1063; once dashboards revisados con SHAs registrados en `AUDITORIA_COMPLETADAS_T-UX-13.md`.
+- **Reconciliación:** T-UX-13 aparece dos veces en completadas.md (líneas 695 y 1584); la primera es la versión completa, la segunda abreviada. T-UX-09 aparece dos veces y su auditoría C1.49 creó AUD-NG-186/TASK-483. T-UX-19/T-UX-20 y T-UX-10/UX-09 son relacionadas, pero no sustituyen la navegación por rol. T-UX-11/TASK-485/486 cubre historial, no el menú.
+- **Pendientes:** se amplió el bloque existente TASK-483 con AUD-NG-194 y criterios específicos para visibilidad del disparador por viewport, ruta activa semántica, botón para acciones y gestión del foco. Estado sigue [ ] Pendiente. No se creó un nuevo TASK.
+- **Inventario:** Pendientes.md recuperado desde el blob vigente del HEAD de trabajo al devolver 0 caracteres la lectura convencional. Blob previo 42999b169766bbfd10a2d3de02fc40fc937fc620 (1,664,739 caracteres, 19,537 líneas). Blob posterior cf9bacd54ac4e90e2d9289f41d1db61bac6090b4 (1,665,667 caracteres, 19,542 líneas). Se preservó todo el contenido y se actualizó únicamente TASK-483; inventario previsto: 490 TASK únicos y 189 AUD-NG únicos (679 IDs combinados), a verificar desde el blob publicado.
+- **Pruebas:** inspección estática/manual de la especificación ampliada, JS, CSS y 11 dashboards. No se ejecutaron navegador, DOM real, viewports, teclado/táctil, lectores de pantalla ni suites automatizadas.
+- **Código fuente:** sin modificaciones. `completadas.md`, `ChangesLogs.txt` y `METODOLOGIA_DESARROLLO.md` intactos.
+- **Archivos/documentos:** creado `AUDITORIA_COMPLETADAS_T-UX-13.md`; actualizados Pendientes.md (TASK-483), Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md y Contexto_personal.txt.
+- **Progreso acumulado:** 54/183 identificadores auditados; 129 pendientes.
+- **Siguiente tarea:** T-UX-14 - Completar la búsqueda global y optimizar sus resultados. Reconciliar AUD-NG-184/TASK-481, AUD-NG-185/TASK-482, T-UX-06 y T-UX-10 antes de revisar el código vigente.
