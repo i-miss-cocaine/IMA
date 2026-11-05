@@ -1,6 +1,25 @@
 CONTEXTO PERSONAL Y CONTINUIDAD DEL AGENTE DESARROLLADOR
 ================================================================
 
+# GATE PRIORITARIO IMA: COMMITS CONSOLIDADOS Y CHECKPOINTS OBLIGATORIOS
+
+**LECTURA Y CUMPLIMIENTO OBLIGATORIOS ANTES DE CUALQUIER TRABAJO EN IMA.** Estas reglas son controles de entrada y salida, no sugerencias. Si alguna no puede cumplirse, se detiene el trabajo sin continuar ni publicar cambios parciales.
+
+A. **COMMIT ÚNICO:** por cada iteración de trabajo se prepara y verifica el conjunto completo de cambios de todos los archivos relacionados y se publica exactamente un commit final. Nunca crear commits por archivo, documento, carpeta, subtarea o avance intermedio. Esta instrucción prevalece sobre cualquier texto anterior ambiguo de «un commit por tarea», «commits modulares», «lotes» o «subdividir por cuota». Solo separar en más de un commit si el usuario lo autoriza expresamente. Si el commit único no es posible, detenerse sin commits parciales.
+
+B. **CHECKPOINT OBLIGATORIO:** antes de pausar, terminar una sesión/iteración, transferir el trabajo, cerrar un sublote o detenerse por un bloqueo, agregar un checkpoint acumulativo al archivo de contexto real existente. No borrar, reescribir ni resumir checkpoints anteriores. No se permite terminar la iteración dejando el checkpoint para después.
+
+C. **PUERTA DE INICIO:** antes de modificar cualquier archivo, leer el contexto completo, la metodología completa, el plan vigente y el último checkpoint; verificar repositorio, rama de trabajo, rama base y HEAD de ambas ramas. Si no existe checkpoint fiable o hay contradicción de instrucciones, investigar y detenerse hasta resolverla.
+
+D. **PUERTA DE CIERRE:** el checkpoint debe incluir estado exacto de tarea/lote, último elemento terminado, elemento en curso, siguiente acción concreta, archivo/función/sección/rango exacto, evidencia y SHA de respaldo, pruebas realmente ejecutadas/no ejecutadas, archivos modificados/no modificados, limitaciones, rama y HEAD de partida. Tras publicar el único commit, verificar el HEAD de la rama y la integridad del commit; no crear un segundo commit solo para añadir el SHA que el propio commit no puede contener. El SHA final se confirma consultando el HEAD de GitHub y se comunica en el reporte de cierre.
+
+E. **VERIFICACIÓN:** antes del único commit revisar el diff total y confirmar que todos los cambios relacionados estén incluidos, que no existan cambios ajenos, que el historial previo se conserve y que la rama base permanezca intacta. Después comprobar que el commit incluye el checkpoint y todos los archivos de la iteración.
+
+Estas reglas son específicas y prioritarias para IMA. No modifican ni autorizan alterar las instrucciones de otros repositorios/proyectos. En caso de contradicción, prevalece esta adenda IMA más reciente y la instrucción expresa del usuario.
+
+---
+
+
 ÚLTIMA ACTUALIZACIÓN: 2026-11-04
 DOCUMENTO: Contexto_personal.txt
 PROPÓSITO: Permitir que el agente desarrollador retome el trabajo sin perder las reglas, restricciones ni el estado real de ejecución.
@@ -1488,3 +1507,26 @@ Esta regla se debe leer y cumplir antes de iniciar cualquier operación Git en e
 7. Esta regla no autoriza modificar archivos restringidos, saltar controles, reescribir historia, usar force push ni tocar la rama base. Los commits separados solo se permiten cuando el usuario autorice expresamente separar tareas independientes.
 
 La regla complementa y aclara la sección 15 de METODOLOGIA_DESARROLLO.md. No elimina ni reemplaza ninguna otra regla o registro histórico.
+
+
+================================================================
+CHECKPOINT C1.36 - REFUERZO OBLIGATORIO DE COMMITS Y CONTINUIDAD (2026-11-05)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto real: Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: 67e15005e627116a9c7d30a0318096750554a7be.
+- Objetivo de esta iteración: reforzar como gates obligatorios las reglas de un solo commit consolidado y checkpoint acumulativo; evitar que las instrucciones anteriores ambiguas se interpreten como permiso para commits atómicos o para omitir puntos de control.
+- Estado: documentación de control preparada para publicarse en un único commit que incluye todos los archivos listados abajo.
+- Cambios previstos: Contexto_personal.txt (gate prioritario al inicio y este checkpoint); METODOLOGIA_DESARROLLO.md (gate de inicio/cierre, sustitución de sección 15 por regla de un commit por iteración y nueva sección 16 de checkpoints); AUDITORIA_COMPLETADAS_PLAN.md (gate obligatorio al final); Instrucciones.txt (adenda IMA al inicio tras el marcador protegido).
+- Regla de commit: exactamente un commit final para todos los cambios de esta iteración; no commits por archivo/documento/tarea, ni intermedios. Si falla, detenerse sin commits parciales.
+- Regla de checkpoint: anexar antes de cada pausa/cierre/transferencia/interrupción/bloqueo; nunca borrar ni reescribir checkpoints previos; incluir ubicación exacta y siguiente acción reproducible.
+- Limitación técnica de autorreferencia: este checkpoint registra el HEAD de partida. El SHA del commit que lo contiene no puede escribirse dentro del mismo contenido sin alterar ese SHA; se identificará como el commit que contiene este checkpoint y se verificará consultando el HEAD de GitHub después de publicar. No crear commit adicional para ese dato.
+- Archivos de la iteración: Contexto_personal.txt, METODOLOGIA_DESARROLLO.md, AUDITORIA_COMPLETADAS_PLAN.md e Instrucciones.txt.
+- Código fuente y Pendientes.md: sin modificaciones.
+- Pruebas: revisión documental y verificación Git de contenido/árbol/HEAD; no se ejecutaron pruebas de aplicación.
+- Último trabajo funcional auditado: FASE2-07 (C1.35), dictamen NO CUMPLE INTEGRALMENTE. No repetir FASE2-07 salvo verificación de regresión/estado posterior.
+- Siguiente continuidad funcional: resolver la lectura segura de Pendientes.md, verificar duplicados y registrar la tarea de remediación de AUD-NG-178; después identificar el siguiente ID completado no auditado. Antes de hacerlo, verificar rama/HEAD y releer este gate y el checkpoint.
+- Commit de cierre: el commit único que contiene este checkpoint y los otros tres documentos; confirmar SHA en el HEAD de NG_beta_0.0.0.1_work tras actualizar la referencia.
+================================================================

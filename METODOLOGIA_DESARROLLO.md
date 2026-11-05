@@ -4,6 +4,22 @@
 
 ----------------------------------------PROHIBIDO AGREGAR CONTENIDO ANTES DE ESTA LINEA-------------------------------------
 
+# BLOQUEO DE INICIO/Cierre IMA - LEER ANTES DE TRABAJAR
+
+Estas condiciones son obligatorias y tienen prioridad para el repositorio IMA. No son recomendaciones. Si no se pueden cumplir, detener el trabajo antes de modificar o publicar archivos.
+
+1. **Inicio obligatorio:** leer íntegramente `Contexto_personal.txt`, este documento, el plan de auditoría vigente y el checkpoint más reciente; verificar rama de trabajo, rama base y HEAD de ambas. No empezar desde memoria conversacional ni desde un checkpoint antiguo si existe uno posterior.
+2. **Un solo commit por iteración completa:** reunir en un único commit final todos los archivos cambiados durante la iteración, incluidos código, pruebas y documentos/checkpoints permitidos. Quedan prohibidos los commits por archivo, por documento, por carpeta, por subtarea o intermedios. La división en lotes organiza el análisis, no la publicación. Esta regla reemplaza cualquier lectura anterior de «un commit por tarea» que pudiera provocar varios commits en una misma iteración. Solo una autorización expresa del usuario permite dividir una iteración en varios commits.
+3. **No sortear bloqueos:** si GitHub, API, cuota o tamaño impide crear/publicar el commit único, detenerse sin commits parciales. Registrar el bloqueo en el checkpoint disponible y solicitar una vía autorizada; nunca fragmentar la entrega para eludir el límite.
+4. **Checkpoint de cierre obligatorio:** antes de pausar, cerrar una iteración/sesión, transferir el trabajo, cerrar un sublote o detenerse por un bloqueo, actualizar acumulativamente el archivo de contexto real. Es un requisito de cierre, no opcional. No finalizar la ejecución ni entregar el trabajo sin haber preparado el checkpoint.
+5. **Contenido mínimo del checkpoint:** repositorio; archivo de contexto exacto; rama base y rama de trabajo; HEAD verificado de partida; commit de cierre (identificado como el HEAD que contiene el checkpoint y confirmado por consulta GitHub después de publicar); última tarea/ID completamente terminado; tarea/ID en curso; siguiente tarea/ID; lote; archivos/rutas y funciones/secciones/rangos exactos inspeccionados; qué se buscaba y qué falta; evidencia y SHA de respaldo; resultados parciales; pruebas ejecutadas y no ejecutadas; archivos modificados y no modificados; bloqueos y próxima acción concreta.
+6. **Checkpoint acumulativo:** anexar una entrada nueva sin eliminar, reemplazar, resumir ni reordenar reglas, registros ni checkpoints previos. No crear archivos de contexto alternativos ni cambiar la extensión del archivo existente.
+7. **Verificación previa y posterior:** antes del commit revisar el diff total y confirmar que el conjunto esté completo, sin cambios ajenos ni pérdida de historial. Crear un único commit. Después verificar SHA, árbol, archivos incluidos, HEAD de la rama de trabajo y que la rama base no haya cambiado. El SHA final no se escribe dentro del mismo checkpoint que forma parte de ese commit (sería una autorreferencia imposible); se confirma externamente consultando el HEAD y se incluye en el reporte de cierre/PR.
+8. **Condición de cierre:** si falta el checkpoint, no se considera cerrada la iteración. Si no se puede escribir/publicar el checkpoint junto con el resto de los cambios en el único commit, detenerse y reportar la limitación; no realizar un commit adicional solo para corregirlo.
+
+---
+
+
 ## PROHIBIDO BORRAR, MODIFICAR O ALTERAR LAS SIGUIENTES INSTRUCCIONES
 
 Este documento define el proceso oficial, unificado y obligatorio de trabajo para todos los proyectos, desarrollos técnicos y generación de contenidos del ecosistema educativo.
@@ -750,16 +766,28 @@ SI NO PASA CODE REVIEW, NO SE CIERRA.
 EL INCUMPLIMIENTO DE CUALQUIER PASO DEL PRESENTE COMPENDIO INVALIDA EL PROCESO COMPLETO Y REINICIA LAS ACCIONES DESDE LA FASE DE AUDITORÍA INICIAL.
 
 
-# 15. CONTROL DE COMMITS POR TAREA (REGLA OBLIGATORIA)
+# 15. CONTROL DE COMMITS CONSOLIDADOS (REGLA OBLIGATORIA)
 
-1. **Un commit por tarea:** cada tarea autorizada y ejecutada debe quedar registrada en un único commit que agrupe todos los archivos modificados como consecuencia de esa misma tarea.
-2. **Agrupación completa:** antes de crear el commit se deben identificar y preparar todos los cambios pertenecientes a la tarea, incluidos los cambios de código y los registros/documentos que correspondan (por ejemplo, Auditoria.txt, Pendientes.md, MapaDependencias.md, ChangesLogs.txt, informes y checkpoints), respetando las restricciones particulares de cada archivo y fase.
-3. **Prohibido un commit por archivo:** no se crearán commits independientes para cada archivo modificado dentro de una misma tarea. Los archivos se incorporarán juntos en el mismo commit.
-4. **No mezclar tareas:** un commit no debe agrupar cambios pertenecientes a tareas distintas. Si se ejecutan varias tareas, cada una tendrá su propio commit con todos sus archivos relacionados.
-5. **Cierre antes de confirmar:** revisar el conjunto completo de cambios, verificar que no falten archivos, que no se hayan incluido modificaciones ajenas y que se preserven todos los registros históricos. Después crear el único commit de la tarea y verificar su contenido y el avance de la rama.
-6. **Integridad y trazabilidad:** el mensaje del commit debe identificar la tarea o su propósito. El commit debe conservar la historia previa y ser descendiente de la rama de trabajo autorizada. No se debe reescribir historia ni forzar actualizaciones de rama para aplicar esta regla.
-7. **Bloqueos o fallos:** si no es posible incluir todos los archivos de la tarea en un solo commit, no se debe sustituir la regla creando commits parciales por archivo. Se conservará intacta la rama, se documentará qué quedó preparado y qué operación fue bloqueada, y se solicitará/intentará un método autorizado que permita completar el commit único.
-8. **Alcance:** esta regla aplica a auditorías, documentación, desarrollo, correcciones, verificaciones y cualquier otra tarea del repositorio. No autoriza modificar archivos prohibidos ni omitir fases, revisiones, aprobaciones, respaldos o controles establecidos en las reglas anteriores.
-9. **UN SOLO COMMIT FINAL, SIN COMMITS ATÓMICOS NI INTERMEDIOS:** para cada tarea/iteración de trabajo, primero se completan y verifican todos los cambios de todos los archivos relacionados y después se crea exactamente un commit que los agrupe. Está prohibido crear commits por archivo, por documento, por carpeta o commits parciales durante la edición. Si la entrega completa no puede confirmarse en un único commit por límites de GitHub/API/cuota, detenerse sin publicar commits parciales; no fragmentar para eludir el bloqueo. Solo se separarán tareas independientes en commits distintos cuando el usuario lo autorice expresamente.
+1. **Un solo commit por iteración completa:** cada iteración de trabajo debe quedar registrada en exactamente un commit final que agrupe todos los archivos modificados como consecuencia de esa iteración.
+2. **Agrupación completa:** antes de crear el commit se deben identificar, preparar y revisar todos los cambios relacionados, incluidos código, pruebas, Auditoria.txt, Pendientes.md, MapaDependencias.md, ChangesLogs.txt, informes y checkpoints, respetando las restricciones particulares de cada archivo y fase.
+3. **PROHIBIDOS los commits atómicos:** nunca crear commits independientes por archivo, documento, carpeta, subtarea o avance intermedio. No publicar un commit para «guardar» una parte mientras se sigue editando.
+4. **La organización por tareas/lotes no fragmenta la publicación:** pueden documentarse tareas y subtareas por separado, pero todos los cambios de la misma iteración se reúnen en un único commit. No crear un commit por cada tarea si forman parte de la misma iteración. Solo se permiten commits separados cuando el usuario lo autorice expresamente.
+5. **Cierre antes de confirmar:** revisar el diff completo; verificar que no falten archivos, que no se incluyan modificaciones ajenas y que se preserven todos los registros históricos. El checkpoint obligatorio debe estar incluido en ese mismo commit.
+6. **Integridad y trazabilidad:** el mensaje del commit debe identificar la iteración y su propósito. El commit debe ser descendiente del HEAD verificado de la rama de trabajo autorizada. No reescribir historia, no usar force push ni tocar la rama base.
+7. **Bloqueos o fallos:** si no es posible incluir/publicar todos los cambios en un único commit, detenerse sin crear commits parciales. Documentar el bloqueo en el checkpoint preparado y reportarlo. No dividir el trabajo para eludir límites/cuotas.
+8. **Verificación posterior:** confirmar el SHA final, el árbol, la lista de archivos y el HEAD de la rama después de publicar. Verificar también que la rama base permanezca sin cambios. No crear un segundo commit solo para añadir el SHA del commit que contiene el propio checkpoint; ese SHA se confirma externamente y se informa en el reporte.
+9. **Alcance:** esta regla aplica a auditorías, documentación, desarrollo, correcciones, verificaciones y cualquier otra tarea de IMA. No autoriza modificar archivos prohibidos ni omitir fases, revisiones, aprobaciones, respaldos o controles establecidos en las demás reglas.
 
-Esta regla se añade de forma acumulativa y complementaria. No deroga, reemplaza ni modifica ninguna instrucción anterior de este documento.
+Esta sección reemplaza cualquier interpretación anterior de «un commit por tarea» que genere más de un commit para una misma iteración. No deroga las demás restricciones de alcance, seguridad, revisión ni preservación histórica.
+
+# 16. CHECKPOINTS OBLIGATORIOS Y CONTROL DE CONTINUIDAD
+
+1. **Checkpoint como condición de cierre:** toda iteración debe terminar con un checkpoint actualizado en el archivo de contexto existente. También es obligatorio antes de cualquier pausa planificada, interrupción, transferencia a otro agente/chat, cierre de sublote o detención por bloqueo. No se puede declarar terminada una iteración sin él.
+2. **Checkpoint como condición de inicio:** antes de comenzar, el agente debe leer el último checkpoint y comprobarlo contra el estado real de GitHub. Si el checkpoint está ausente, incompleto, contradictorio o apunta a una rama/HEAD distinto, primero debe resolver la discrepancia y documentarla; no continuar a ciegas.
+3. **Acumulación e inmutabilidad:** cada checkpoint se agrega como nueva entrada cronológica. Está prohibido borrar, sustituir, resumir o reordenar checkpoints/registros previos, o crear un segundo archivo de contexto con otra extensión.
+4. **Datos obligatorios:** incluir repositorio, archivo de contexto exacto, rama base, rama de trabajo, HEAD de partida verificado, último commit conocido, último ID/tarea/lote completado, elemento en curso y estado, siguiente elemento exacto, archivos y funciones/secciones/rangos inspeccionados, propósito de la inspección, hallazgos respaldados, requisitos pendientes, SHAs de respaldo, pruebas ejecutadas/no ejecutadas, archivos modificados/no modificados, restricciones/bloqueos y próxima acción concreta.
+5. **Punto de reanudación reproducible:** especificar qué archivo abrir, qué función/segmento revisar, qué criterio se estaba contrastando, qué resultado se obtuvo y qué consulta concreta sigue. No usar frases vagas como «continuar auditoría».
+6. **Cierre Git:** preparar el checkpoint junto con los demás cambios antes del commit único de la iteración. Tras publicar, verificar que ese commit contiene el checkpoint. Como el SHA de un commit no puede incluirse dentro del contenido que determina su propio SHA, registrar dentro del checkpoint el HEAD de partida y la indicación «commit de cierre: el commit que contiene este checkpoint»; consultar el HEAD de la rama después de publicar y comunicar el SHA final en el reporte y/o PR. No crear un segundo commit para añadirlo.
+7. **Bloqueo:** si no es posible preparar o publicar el checkpoint dentro del commit único, detenerse sin commits parciales. El estado no se considera cerrado; informar qué quedó preparado y qué impidió publicarlo.
+8. **Auditoría de continuidad al reanudar:** verificar rama/HEAD de ambas ramas, leer contexto/metodología/plan/informes citados, comprobar cambios posteriores que puedan invalidar evidencia y continuar desde el siguiente elemento pendiente sin repetir trabajo concluido salvo que haya una razón documentada.
+

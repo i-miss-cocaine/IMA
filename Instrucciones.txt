@@ -1,5 +1,19 @@
 #Importante: 
 ----------------------------------------PROHIBIDO AGREGAR CONTENIDO ANTES DE ESTA LINEA-------------------------------------
+
+# ADENDA PRIORITARIA IMA: COMMIT ÚNICO Y CHECKPOINT (NO OMITIR)
+
+Esta adenda se aplica exclusivamente cuando el trabajo se realiza en el repositorio IMA. No altera las instrucciones específicas de GPSpedia ni autoriza trabajar en otros repositorios.
+
+1. Antes de trabajar en IMA, leer Contexto_personal.txt, METODOLOGIA_DESARROLLO.md, el plan vigente y el checkpoint más reciente; verificar la rama de trabajo, la rama base y ambos HEAD.
+2. **Un solo commit final por iteración completa:** todos los archivos modificados en esa iteración se agrupan en un único commit. Prohibidos commits por archivo, documento, carpeta, tarea/subtarea o avances intermedios. La división en lotes solo organiza el análisis; no divide commits. Solo el usuario puede autorizar expresamente más de un commit.
+3. Si no se puede publicar el conjunto completo en un commit, detenerse sin commits parciales. No intentar eludir bloqueos, límites o cuotas mediante commits pequeños.
+4. Antes de pausar, cerrar la iteración/sesión, transferir el trabajo, terminar un sublote o detenerse por un bloqueo, anexar obligatoriamente un checkpoint acumulativo a Contexto_personal.txt. No se permite cerrar la ejecución sin checkpoint.
+5. El checkpoint debe permitir reanudar sin consultar el chat: repositorio; ramas y HEAD de partida; último ID/tarea/lote terminado; tarea en curso; siguiente ID/tarea exacta; archivo/función/sección/rango exacto; qué se buscaba; resultados y evidencia; SHA de respaldo; pruebas ejecutadas/no ejecutadas; archivos modificados/no modificados; bloqueos y siguiente acción.
+6. El checkpoint se incluye en el mismo commit único de la iteración. Después se verifica el SHA final consultando el HEAD de GitHub. No se crea otro commit para agregar el SHA del commit que contiene el checkpoint.
+7. Si falta cualquier requisito, el gate falla: no empezar o no cerrar/publicar hasta corregirlo. Nunca declarar una tarea o iteración completada sin verificar checkpoint, commit y rama.
+
+
 ##PROHIBIDO BORRAR LAS SIGUIENTES INSTRUCCIONES.
 — PROCEDIMIENTO OBLIGATORIO DE TRABAJO.
 ===================================================================

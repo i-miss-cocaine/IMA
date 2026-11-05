@@ -433,3 +433,16 @@ CHECKPOINT C1.35 - AUDITORÍA FASE2-07 (2026-11-05)
 - Progreso: 38/183 identificadores auditados; 145 pendientes.
 - Última tarea auditada: FASE2-07. Siguiente: recuperar íntegramente Pendientes.md, verificar duplicados y registrar la remediación de AUD-NG-178; luego identificar el siguiente ID completado no auditado.
 ===============================================================================
+
+
+## GATE OBLIGATORIO DE ITERACIÓN, COMMIT ÚNICO Y CHECKPOINT
+
+Estas reglas son condición de inicio y cierre para todo trabajo de esta auditoría:
+
+- Antes de trabajar, leer Contexto_personal.txt completo, METODOLOGIA_DESARROLLO.md completa, este plan y el último checkpoint; verificar HEAD de NG_beta_0.0.0.1_work y NG_beta_0.0.0.1. No continuar si existe contradicción o checkpoint no validado.
+- Todos los cambios de una iteración completa (incluidos todos los archivos documentales, de auditoría y de control) deben publicarse en exactamente un commit final. Prohibidos commits por archivo, commits atómicos, commits intermedios y dividir por subtarea/lote/tamaño/cuota. Solo el usuario puede autorizar expresamente más de un commit.
+- La revisión total del diff se realiza antes de crear ese único commit. Si no es posible publicar el conjunto completo, detenerse sin commits parciales.
+- Antes de cualquier pausa, cierre, transferencia, interrupción o bloqueo se agrega un checkpoint acumulativo en Contexto_personal.txt. No se puede cerrar la iteración ni responder como trabajo terminado si no se preparó el checkpoint.
+- El checkpoint debe indicar HEAD de partida, ramas, último ID terminado, tarea en curso, siguiente tarea exacta, archivo/función/rango de continuidad, evidencia/SHA, pruebas reales, archivos cambiados, bloqueos y acción siguiente. El commit final se identifica como el que contiene el checkpoint y su SHA se confirma consultando el HEAD tras publicarlo (no se intenta autorreferenciar dentro del propio archivo).
+- Después del commit se verifican SHA, árbol, archivos incluidos, HEAD de trabajo y que la rama base siga intacta. No hacer un segundo commit para completar el checkpoint.
+
