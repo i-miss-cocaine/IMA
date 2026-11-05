@@ -1099,3 +1099,28 @@ No se crea AUD-NG nuevo.
 - Registro duplicado: auto-init ui-common.js:3490-3493 más llamadas DOMContentLoaded desde js/index-ui.js:11, teacher-dashboard.html:1469 y student-dashboard.html:401; falta guard de listener único.
 - Prueba UX-02 (1846-1867) solo valida existencia de trackModalFocus, no comportamiento.
 - Hallazgo AUD-NG-181; ampliar TASK-258. No crear TASK-479. AUD-NG-169 permanece como accesibilidad general de paneles.
+
+
+## Protección contra pérdida de cambios no guardados (T-UX-03 / T-UX-17 / C1.45)
+
+### Frontend compartido
+- `js/ui-common.js:5371-5430` -> `window.setupUnsavedChangesProtection(containerIdOrElement, options)`.
+- Entrada: ID o elemento contenedor y `options.message`.
+- Estado local: `isDirty`; operaciones: `markDirty`, `markClean`; binding: `bindInputs`.
+- Controles enlazados: descendientes `input, textarea, select`, eventos `input/change`.
+- Formularios: eventos `submit/reset` enlazados al formulario contenedor o a los formularios descendientes existentes al inicializar.
+- Campos dinámicos: `MutationObserver` observa `childList/subtree` y vuelve a enlazar controles.
+- Salida: objeto con `markClean`, `markDirty`, `isDirty` y `resetProtection`.
+- Protección de navegación: cada invocación registra un listener independiente en `window.beforeunload`.
+
+### Prueba UX
+- `js/ui-common.js:1869-1875` -> caso UX-03 en `window.runUXSuiteTests`; actualmente comprueba solo la existencia de `setupUnsavedChangesProtection`, no el comportamiento.
+- Reconciliar la mejora pendiente con AUD-NG-182/TASK-479. T-UX-17 y T-UX-10 figuran completadas, pero su cumplimiento funcional no queda demostrado por el código y la prueba existente.
+
+### Relaciones y riesgos
+- `submit` -> `markClean` inmediato, sin confirmación de persistencia; puede ocultar un guardado cancelado/fallido.
+- `reset` -> `markClean` inmediato, sin comprobar cancelación.
+- `MutationObserver` re-enlaza inputs, pero no agrega handlers submit/reset a subformularios insertados después de inicializar.
+- No existe snapshot del estado inicial; revertir manualmente un valor no restaura clean.
+- No existe teardown para el listener global ni para MutationObserver; una instancia retirada puede conservar estado y listener.
+- Dependencias externas: DOM Form/Input/Textarea/Select, eventos DOM, MutationObserver, beforeunload y flujos de guardado de los formularios consumidores.

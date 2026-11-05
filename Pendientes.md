@@ -19226,3 +19226,30 @@ AUD-NG-163 permanece DUPLICADA y consolidada; no reabrirla como tarea independie
   - El comportamiento de LockService anidado queda probado o eliminado por diseño.
 - **Relaciones:** AUD-NG-161 (pruebas de concurrencia/recuperación), AUD-NG-023 (suites que no ejercitan los módulos reales), TASK-012 (recepción de compras marcada completada).
 - **Estado:** [ ] Pendiente
+
+
+---
+
+### [TASK-479] [AUD-NG-182] [P1] Corregir el ciclo de vida y la detección real de cambios no guardados
+- **Origen del Hallazgo:** Auditoria.txt (AUD-NG-182).
+- **Severidad/Clasificación:** Alto.
+- **Archivos Involucrados:** `js/ui-common.js`.
+- **Dependencias Expuestas:** `window.setupUnsavedChangesProtection`, `window.runUXSuiteTests` / UX-03, eventos DOM `input/change/submit/reset`, `MutationObserver`, `window.beforeunload`, formularios y flujos de guardado de los paneles consumidores.
+- **Descripción del Alcance:**
+  1. Capturar una línea base del estado inicial de los controles compatibles y determinar el estado modificado comparando valores actuales contra esa línea base, de modo que revertir un campo a su valor inicial quite el estado dirty.
+  2. Mantener la advertencia activa durante intentos de guardado cancelados, rechazados o fallidos. La limpieza del estado debe realizarse únicamente mediante una confirmación explícita posterior al guardado exitoso (o una operación equivalente documentada), nunca por el mero evento submit.
+  3. No limpiar el estado dirty cuando un evento reset haya sido cancelado; tras un reset efectivo, actualizar la línea base y confirmar el estado limpio.
+  4. Gestionar controles agregados y retirados dinámicamente, incluidos formularios descendientes insertados después de la inicialización; documentar el contrato para contenteditable y controles personalizados, o incorporarlos de forma verificable.
+  5. Implementar un ciclo de vida explícito de registro/desregistro: evitar listeners beforeunload duplicados, retirar los listeners propios y desconectar MutationObserver al desmontar/reinicializar la protección. Una instancia retirada no debe seguir bloqueando navegación.
+  6. Preservar compatibilidad con la interfaz pública existente (`markClean`, `markDirty`, `isDirty`, `resetProtection`) o documentar y migrar de forma controlada todos sus consumidores.
+  7. Ampliar UX-03 con pruebas conductuales aisladas para modificación/reversión, submit exitoso/cancelado/fallido, reset cancelado/efectivo, controles y formularios dinámicos, beforeunload, múltiples instancias y teardown. No considerar como PASS la sola existencia de la función.
+- **Criterios de Aceptación:**
+  - Modificar un control hace que la protección indique dirty y abandonar la página solicita confirmación nativa del navegador.
+  - Restaurar todos los controles a sus valores iniciales devuelve el estado a clean y no genera advertencia.
+  - Un submit cancelado o un guardado fallido conserva dirty y la advertencia; solo el guardado confirmado limpia el estado.
+  - Un reset cancelado conserva el estado anterior; un reset efectivo restablece el baseline y deja el formulario limpio.
+  - Los controles y subformularios añadidos dinámicamente reciben seguimiento completo; los retirados dejan de influir en el estado.
+  - Al desmontar la protección se retiran sus listeners/observadores y una instancia antigua no puede disparar advertencias.
+  - Varias instancias activas no duplican listeners globales ni interfieren entre sí.
+  - UX-03 verifica los comportamientos anteriores y diferencia PASS, FAIL, BLOCKED y NOT RUN; las pruebas no operan sobre formularios/datos productivos.
+- **Estado:** [ ] Pendiente.

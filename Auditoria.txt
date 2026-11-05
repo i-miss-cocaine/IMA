@@ -5632,3 +5632,33 @@ Implementación centralizada en un listener, pero acoplada a una lista manual de
 PRUEBAS Y LÍMITES:
 Inspección estática/manual de los rangos indicados y sus consumidores. No se ejecutó navegador, eventos de teclado reales, lector de pantalla ni prueba DOM automatizada. No se modificó código fuente ni se realizaron operaciones productivas.
 ================================================================
+
+
+================================================================
+AUD-NG-182 - PROTECCIÓN DE CAMBIOS NO GUARDADOS CON ESTADO Y CICLO DE VIDA INCOMPLETOS
+FECHA: 2026-11-05
+SEVERIDAD: ALTO (P1)
+ARCHIVO PRINCIPAL: js/ui-common.js
+SHA DE RESPALDO: 986938b8a311a41ed4cb3d135b66b6aaea4bed67
+RANGOS: js/ui-common.js:5371-5430 (setupUnsavedChangesProtection); js/ui-common.js:1869-1875 (caso UX-03 de runUXSuiteTests).
+TAREAS HISTÓRICAS RELACIONADAS: T-UX-03, T-UX-17 y T-UX-10 (completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676).
+TIPO: Incumplimiento funcional de protección de formularios, limpieza prematura de estado y pruebas nominales.
+DESCRIPCIÓN Y EVIDENCIA:
+1. setupUnsavedChangesProtection inicializa isDirty=false y solo conmuta un booleano. No captura ni compara valores iniciales. Si el usuario modifica un campo y lo devuelve a su valor original, la advertencia permanece (falso positivo); no se detectan cambios programáticos sin evento input/change.
+2. markClean está conectado directamente a submit. El evento no acredita persistencia exitosa: un handler puede cancelar el envío o la petición asíncrona puede fallar después de que el estado se haya limpiado. El usuario puede abandonar y perder cambios sin advertencia (falso negativo). reset también limpia sin comprobar si el evento fue cancelado.
+3. MutationObserver vuelve a enlazar input/change a controles añadidos, pero no registra submit/reset en formularios añadidos dinámicamente dentro de un wrapper. El selector no contempla contenteditable ni controles personalizados.
+4. Cada invocación añade un listener anónimo a window.beforeunload y crea un MutationObserver sin conservar referencias para liberarlos. resetProtection solo limpia el estado y vuelve a enlazar inputs; no desconecta el observer ni retira listeners. Una instancia desmontada que permanezca dirty puede seguir bloqueando la navegación y las invocaciones repetidas acumulan listeners/observadores.
+5. El caso UX-03 de runUXSuiteTests solo comprueba typeof window.setupUnsavedChangesProtection === 'function'; no prueba dirty/revert, submit cancelado/fallido/exitoso, reset cancelado, controles dinámicos, beforeunload ni teardown.
+IMPACTO:
+La protección puede advertir cuando no existen cambios reales y, más grave, dejar de advertir cuando el guardado no se confirmó. Los listeners/observadores persistentes pueden provocar bloqueos de navegación después de desmontar formularios y aumentar recursos retenidos.
+DEPENDENCIAS:
+setupUnsavedChangesProtection; containerIdOrElement; options.message; isDirty/markDirty/markClean; bindInputs; input/change/submit/reset; MutationObserver; window.beforeunload; resetProtection; runUXSuiteTests/UX-03; formularios y navegación compartida.
+RECONCILIACIÓN:
+- T-UX-03 solo acredita la existencia de la protección básica; no hay prueba de comportamiento real.
+- T-UX-17 amplió los criterios y está marcada [X], pero la comparación contra estado inicial y la limpieza tras guardado confirmado no están implementadas.
+- T-UX-10 exige pruebas funcionales completas; UX-03 solo comprueba presencia de función.
+- No se encontró una tarea pendiente que cubra el contrato transversal de estado dirty, beforeunload y teardown. Las tareas de borradores/autoguardado son complementarias y no sustituyen esta protección.
+- Crear TASK-479 vinculada a AUD-NG-182. No modificar completadas.md ni duplicar tareas de borradores.
+PRUEBAS Y LÍMITES:
+Inspección estática/manual. No se ejecutaron navegador, eventos DOM reales, suites automatizadas, Apps Script ni guardados reales. No se certificó la integración de cada formulario consumidor. Código fuente sin modificaciones.
+================================================================

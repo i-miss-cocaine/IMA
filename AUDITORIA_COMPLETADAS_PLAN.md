@@ -535,3 +535,16 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Progreso:** 45/183 identificadores auditados; 138 pendientes.
 - **Siguiente tarea:** T-UX-03 - Módulo de Protección contra Pérdida de Cambios No Guardados en Formularios.
 
+
+
+## 50. Resultado C1.45 - T-UX-03 (2026-11-05)
+
+- **Dictamen:** CUMPLE PARCIALMENTE. La implementación cubre el caso nominal de un control modificado y beforeunload, pero no cumple la ampliación T-UX-17 ni la verificación funcional exigida por T-UX-10.
+- **Evidencia:** `js/ui-common.js` SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67; `setupUnsavedChangesProtection` líneas 5371-5430; caso UX-03 de `runUXSuiteTests` líneas 1869-1875; `completadas.md` SHA f57f1aef832e81e44fc4f7ec36a852d50e464676.
+- **Hallazgos:** no existe snapshot/compare de valores iniciales; submit/reset limpian estado antes de confirmar resultado; MutationObserver solo re-enlaza inputs y no gestiona formularios añadidos; selector no cubre contenteditable/controles personalizados; listeners beforeunload y observers carecen de teardown; UX-03 solo comprueba existencia de la función.
+- **Reconciliación:** T-UX-17 es la ampliación histórica del mismo módulo y está marcada completada, pero sus criterios no están implementados. T-UX-10 también está marcada completada, pero su prueba UX-03 es nominal. Las tareas de borradores/autoguardado no cubren este contrato transversal. Crear AUD-NG-182/TASK-479; no duplicar tareas existentes ni modificar completadas.md.
+- **Backlog:** recuperado desde el blob vigente de la rama de trabajo, SHA 0be7e975c1aec2ccc36a3c11cc0b75cae9522032, 1,625,662 caracteres y 19,229 líneas. La lectura convencional devolvió 0 caracteres. Inventario previo: 478 IDs TASK únicos y 176 referencias AUD-NG (172 encabezados y 4 referencias cruzadas); máximo TASK-478/AUD-NG-181. Se añadió TASK-479/AUD-NG-182. Inventario posterior: 479 TASK y 177 referencias AUD-NG, 656 IDs combinados.
+- **Pruebas:** inspección estática/manual. No se ejecutaron navegador, eventos DOM reales, suites automatizadas, Apps Script, HTTP ni guardados reales.
+- **Código fuente:** sin modificaciones. `completadas.md`, `ChangesLogs.txt` y `METODOLOGIA_DESARROLLO.md` sin cambios.
+- **Progreso:** 46/183 identificadores auditados; 137 pendientes.
+- **Siguiente tarea:** T-UX-05 - Normalización Diacrítica Insensible a Tildes para Búsquedas y Filtros. T-UX-04 no aparece en la secuencia vigente entre T-UX-03 y T-UX-05.

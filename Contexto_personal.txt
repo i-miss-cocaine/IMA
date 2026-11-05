@@ -1911,3 +1911,55 @@ ARCHIVOS DE ESTA ITERACIÓN:
 - Regla de publicación: exactamente un commit final descendiente de 462131e176e7d7c9e1b9b215efbe3db8f7bbe906; no crear commits intermedios. Actualizar solo NG_beta_0.0.0.1_work; verificar HEAD, árbol y archivos incluidos. La rama base debe permanecer en 44d9891132332e692dbe2ba8602b41f50a508a59.
 - Commit de cierre: el commit que contiene este checkpoint; su SHA se confirma externamente tras publicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.45 - AUDITORÍA T-UX-03 (2026-11-05)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto real: Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: 4938025465aa4318107953d8d1498968c5f26380 (commit C1.44).
+- HEAD de rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios.
+- Comparación de ramas al inicio: 90 commits por delante y 0 por detrás.
+- Última tarea auditada y cerrada: T-UX-03 - Módulo de Protección contra Pérdida de Cambios No Guardados en Formularios.
+- Dictamen: CUMPLE PARCIALMENTE. El caso nominal de cambio + beforeunload existe; la ampliación T-UX-17 no se cumple integralmente y UX-03 de T-UX-10 solo verifica presencia de la función.
+- Tarea en curso: ninguna; inspección estática/manual de T-UX-03 cerrada.
+- Siguiente tarea exacta según completadas.md: T-UX-05 - Normalización Diacrítica Insensible a Tildes para Búsquedas y Filtros. T-UX-04 no aparece en la secuencia vigente.
+- Progreso: 46/183 identificadores auditados; 137 pendientes.
+
+RECUPERACIÓN E INVENTARIO DE Pendientes.md:
+- La lectura convencional por ruta devolvió 0 caracteres.
+- Rama/HEAD de recuperación: NG_beta_0.0.0.1_work / 4938025465aa4318107953d8d1498968c5f26380; se confirmó que el blob del HEAD vigente es 0be7e975c1aec2ccc36a3c11cc0b75cae9522032.
+- Se recuperó el blob del HEAD de la rama de trabajo, no una rama externa ni una copia legacy.
+- Blob de origen: 0be7e975c1aec2ccc36a3c11cc0b75cae9522032; 1,625,662 caracteres y 19,229 líneas. Se verificaron encabezado inicial, cierre final, encabezados de tareas y ausencia previa de TASK-479/AUD-NG-182.
+- Inventario previo conforme a C1.44: 478 IDs TASK únicos y 176 referencias AUD-NG (172 encabezados + 4 referencias cruzadas), 654 IDs combinados. Se agregó un encabezado TASK-479 y una referencia AUD-NG-182.
+- Inventario posterior: 479 IDs TASK únicos, 177 referencias AUD-NG (173 encabezados + 4 referencias cruzadas), 656 IDs combinados. No se alteraron estados históricos.
+- Respaldo inmutable de origen: blob 0be7e975c1aec2ccc36a3c11cc0b75cae9522032.
+
+HALLAZGO Y RECONCILIACIÓN:
+- AUD-NG-182 (ALTO/P1): estado dirty sin baseline, limpieza prematura en submit/reset, gestión parcial de campos dinámicos, ausencia de teardown y prueba UX-03 nominal.
+- T-UX-03 original cubre cambio + beforeunload; T-UX-17 amplía el contrato y está marcada [X], pero no se implementa la comparación inicial ni la limpieza tras guardado confirmado.
+- T-UX-10 exige flujos funcionales; su UX-03 solo verifica typeof de la función.
+- Tareas de borradores/autoguardado localizadas en Pendientes.md son complementarias; no duplican la protección transversal.
+- Se creó TASK-479 en Pendientes.md; no se modificó completadas.md.
+
+ARCHIVOS Y SHAS DE RESPALDO:
+- js/ui-common.js: 986938b8a311a41ed4cb3d135b66b6aaea4bed67.
+- completadas.md: f57f1aef832e81e44fc4f7ec36a852d50e464676.
+- Auditoria.txt origen: 6bac6c5674932277b83269573f74ca06d5ab58f7.
+- MapaDependencias.md origen: 21abd8a19e69d4153277ee5d727d594b687b04a8.
+- AUDITORIA_COMPLETADAS_PLAN.md origen: 1854633aa7a866f7bdd868326d3aff79141a59a5.
+- Contexto_personal.txt origen: 09f0ff8c105bcbca91f9cf069d522ef5435a04ac.
+- Pendientes.md origen: 0be7e975c1aec2ccc36a3c11cc0b75cae9522032.
+- Rama base: 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+ARCHIVOS DE ESTA ITERACIÓN:
+- Modificados: Pendientes.md, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt.
+- Nuevo: AUDITORIA_COMPLETADAS_T-UX-03.md.
+- Sin modificar: código fuente, completadas.md, completadas_legacy.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md y rama base.
+- Pruebas: inspección estática/manual de setupUnsavedChangesProtection y runUXSuiteTests/UX-03. No se ejecutaron navegador, eventos DOM reales, suites automatizadas, Apps Script, HTTP ni guardados reales. No se certificó cada formulario consumidor.
+- Regla de publicación: un único commit final descendiente de 4938025465aa4318107953d8d1498968c5f26380; sin commits intermedios. El commit de cierre será el que contiene este checkpoint y su SHA se confirma externamente después de publicar.
+- Próxima acción: auditar T-UX-05 contrastando completadas.md con js/ui-common.js y reconciliar cualquier tarea posterior que amplíe el normalizador diacrítico.
+================================================================
