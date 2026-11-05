@@ -17,6 +17,15 @@ E. **VERIFICACIÓN:** antes del único commit revisar el diff total y confirmar 
 
 Estas reglas son específicas y prioritarias para IMA. No modifican ni autorizan alterar las instrucciones de otros repositorios/proyectos. En caso de contradicción, prevalece esta adenda IMA más reciente y la instrucción expresa del usuario.
 
+F. **RECUPERACIÓN HISTÓRICA OBLIGATORIA CUANDO UN ARCHIVO DEVUELVA CERO CARACTERES:** una respuesta de lectura con contenido vacío (0 caracteres), incluso si Git informa que el archivo existe y tiene un blob SHA, NO demuestra que el archivo esté vacío, eliminado, corrupto ni que carezca de historial. Está prohibido sobrescribirlo, recrearlo o sustituirlo por una versión legacy antes de recuperar y verificar su contenido.
+   1. Confirmar repositorio, rama de trabajo autorizada y HEAD actual. La búsqueda de historial, commits, árboles y blobs para recuperar el archivo se limita exclusivamente a esa rama de trabajo y a sus commits alcanzables. No usar la rama base, otras ramas, ramas remotas ajenas ni copias legacy como fuente de restauración. Una copia legacy puede utilizarse únicamente como referencia comparativa si el alcance lo permite.
+   2. Consultar el historial del archivo dentro de la rama de trabajo, identificar el blob más reciente cuyo contenido completo pueda recuperarse y contrastar también el blob del HEAD actual. Si el blob actual puede recuperarse íntegramente, tiene prioridad; si no, seleccionar el commit histórico más reciente de esa misma rama que conserve una versión íntegra y estructuralmente válida. No elegir una versión solo por tamaño o fecha.
+   3. Verificar el contenido recuperado: SHA del blob, tamaño/caracteres, líneas, estructura inicial y final, encabezados, identificadores y estados. Para registros de tareas, inventariar los identificadores reales por categoría (sin contar marcadores o plantillas como tareas), total de tareas únicas, último identificador y, cuando corresponda, tareas completadas y pendientes. Comparar con el registro legacy solo para demostrar diferencias, nunca para reemplazar el historial de trabajo.
+   4. Preservar el blob y el commit de origen como respaldo inmutable. Antes de restaurar, reconciliar cambios posteriores, tareas nuevas, duplicados y estados; revisar el diff completo. La restauración solo se ejecuta si está autorizada y puede hacerse sin pérdida histórica, siguiendo el commit único por iteración. Si no se puede recuperar o validar íntegramente, detenerse y documentar el bloqueo; no escribir sobre el archivo.
+   5. **Inventario obligatorio en el checkpoint:** registrar ruta, rama, HEAD consultado, commit y blob SHA seleccionados, motivo de selección, resultado de la lectura convencional (0 caracteres), caracteres/tamaño y líneas recuperadas, cantidad de tareas por categoría, total de identificadores únicos de tarea, identificador máximo/último, estados completados/pendientes cuando se puedan contar de forma fiable, comparación con legacy y validaciones realizadas/no realizadas. No declarar «recuperado íntegramente» sin esa evidencia.
+
+Esta regla aplica a cualquier archivo funcional o documental del repositorio IMA, especialmente `Pendientes.md` y `completadas.md`.
+
 ---
 
 
@@ -1577,4 +1586,26 @@ CHECKPOINT C1.37 - AUDITORÍA FASE2-T04 (2026-11-05)
 - Pruebas: inspección estática/manual. No se ejecutaron pruebas automatizadas, Apps Script, HTTP, navegador, pruebas de caché real, concurrencia, acceso a Sheets/Drive productivo ni operaciones productivas.
 - Última tarea completamente auditada: FASE2-T04. No hay tarea en curso.
 - Siguiente tarea exacta: FASE2-T05 - Unificar y validar el sistema de identificadores institucionales. Continuar contrastando sus diez requisitos con backend/accounting-service/Code.gs, backend/academic-service/Code.gs y backend/user-service/Code.gs; revisar los generadores y validadores reales, las llamadas desde escrituras, CUV y relaciones entre PersonaID/UserId/ExpedienteID/documentos, y considerar las auditorías posteriores para no duplicar AUD-NG-059, AUD-NG-061, AUD-NG-161 ni hallazgos de concurrencia.
+================================================================
+
+
+================================================================
+CHECKPOINT C1.38 - REGLA DE RECUPERACIÓN HISTÓRICA E INVENTARIO DE TAREAS (2026-11-05)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto: Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- HEAD de partida verificado: e0126cb6ca94ec55bd43785fb02815be83b16afc.
+- Rama base protegida NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59; no modificada.
+- Objetivo: incorporar al gate prioritario una regla obligatoria para recuperar archivos cuya lectura devuelva cero caracteres, utilizando exclusivamente el historial alcanzable de la rama de trabajo actual; exigir inventario cuantitativo de tareas en el checkpoint.
+- Regla incorporada: cero caracteres no significa archivo vacío ni autoriza sobrescritura. Consultar HEAD, historial por ruta, árboles y blobs exclusivamente en NG_beta_0.0.0.1_work; seleccionar el blob íntegro más reciente de esa rama, validar contenido/estructura/IDs/estados, conservar SHA de respaldo y detenerse si no puede demostrarse integridad. La rama base y otras ramas no son fuentes de recuperación; los archivos legacy son solo comparadores.
+- Incidencia que motivó la regla: fetch_file de Pendientes.md devolvió 0 caracteres, aunque el objeto Git de la rama de trabajo contiene el documento completo.
+- Inventario recuperado de Pendientes.md: blob SHA 4bddbc2f2198d6e144c46674b79589207f624c21; commit de origen/HEAD e0126cb6ca94ec55bd43785fb02815be83b16afc; 1,609,995 caracteres; 19,154 líneas; 476 identificadores TASK reales (TASK-001 a TASK-476); 170 identificadores AUD-NG; 646 identificadores únicos de tarea en total, excluyendo el marcador plantilla TASK-XXX; último identificador TASK-476, vinculado a AUD-NG-178. El documento conserva además 424 referencias de fase, que no se cuentan como tareas adicionales.
+- Comparación legacy: pendiente_legacy.md, blob SHA 5b35a722efbe4368b19a7d4947033dba9da3d410; 1,307,758 caracteres; 16,872 líneas; 474 identificadores TASK (hasta TASK-474) y 506 encabezados de tarea/fase según su estructura. El backlog actual contiene más tareas y 170 hallazgos AUD-NG adicionales; el legacy no se utilizó como fuente de restauración.
+- Inventario de completadas.md: blob SHA f57f1aef832e81e44fc4f7ec36a852d50e464676; 448,006 caracteres; 5,963 líneas; 221 encabezados de tareas e identificadores únicos detectados (153 TAREA, 27 T-UX y 41 FASE).
+- Validación: los blobs de Pendientes.md, pendiente_legacy.md y completadas.md se recuperaron por SHA y se inspeccionaron sus dimensiones, estructura y extremos. La lectura convencional vacía de Pendientes.md no se tomó como contenido real. No se restauró ni sobrescribió Pendientes.md ni se modificó completadas.md.
+- Archivos modificados en esta iteración: únicamente Contexto_personal.txt (adenda F y este checkpoint). Pendientes.md, completadas.md, pendiente_legacy.md, metodología, plan, código fuente y rama base: sin modificaciones.
+- Pruebas: revisión documental y verificación Git de HEAD/SHAs e inventario de contenido. No se ejecutaron pruebas de aplicación.
+- Siguiente paso funcional: continuar en FASE2-T05 - Unificar y validar el sistema de identificadores institucionales, según C1.37, después de verificar el HEAD de trabajo y releer el gate y este checkpoint. No repetir FASE2-T04.
+- Commit de cierre: el único commit que contiene este checkpoint; verificar SHA/árbol/HEAD después de publicar y confirmar que la rama base permanece intacta.
 ================================================================
