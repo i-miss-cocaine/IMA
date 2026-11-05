@@ -2076,3 +2076,58 @@ ARCHIVOS DE ESTA ITERACIÓN:
 - Publicación: un solo commit final descendiente de 6781139d0250c301ca7d98e5c86d3bf266a54a00, con los cinco archivos documentales anteriores. Sin commits intermedios.
 - Tras publicar, verificar SHA del commit, árbol, lista exacta de archivos, HEAD de NG_beta_0.0.0.1_work y que NG_beta_0.0.0.1 siga en 44d9891132332e692dbe2ba8602b41f50a508a59.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.48 - AUDITORÍA T-UX-06 (2026-11-05)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto real: Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: a5d2d0e7c2c4df2824ab99fef12d19338b40605e (cierre C1.47).
+- Árbol de partida: 83ff08acef8248a4b935cc1bbfec2b0eff9b5aa9.
+- HEAD de rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios.
+- Comparación al inicio: 93 commits por delante y 0 por detrás (verificar de nuevo tras publicar).
+- Última tarea auditada y cerrada: T-UX-06 - Omnibox Unificado Multi-Entidad con Atajo Global Ctrl + K.
+- Dictamen: CUMPLE PARCIALMENTE. Apertura/atajos/foco y consulta multi-entidad presentes; fallan controles de autorización por entidad para noticias/solicitudes y el renderizado permite XSS almacenado.
+- Tarea en curso: ninguna; inspección estática/manual T-UX-06 cerrada.
+- Siguiente tarea exacta según el orden de completadas.md: T-UX-09 - Menú Lateral Responsivo Específico por Rol con Colapso Móvil Suave.
+- Progreso acumulado: 49/183 identificadores auditados; 134 pendientes.
+
+RECUPERACIÓN E INVENTARIO DE Pendientes.md:
+- La lectura convencional de Pendientes.md en la rama de trabajo devolvió 0 caracteres.
+- HEAD/árbol de recuperación: a5d2d0e7c2c4df2824ab99fef12d19338b40605e / 83ff08acef8248a4b935cc1bbfec2b0eff9b5aa9; se recuperó exclusivamente el blob del HEAD de NG_beta_0.0.0.1_work, SHA e050c03b97fc08916b878c34dcd5c247403d8c4b. No se usó otra rama, rama base ni copia legacy.
+- Contenido recuperado antes de editar: 1,632,208 caracteres y 19,283 líneas. Se preservó íntegramente y se anexaron dos tareas al final.
+- Inventario previo: 480 IDs TASK únicos (máximo TASK-480) y 178 IDs AUD-NG únicos (máximo AUD-NG-183), 658 identificadores combinados.
+- Se agregaron TASK-481 vinculada a AUD-NG-184 y TASK-482 vinculada a AUD-NG-185.
+- Inventario posterior: 482 IDs TASK únicos y 180 IDs AUD-NG únicos, 662 identificadores combinados. Contenido posterior: 1,636,118 caracteres y 19,324 líneas. No se modificaron estados históricos.
+- Respaldo inmutable del backlog original: blob e050c03b97fc08916b878c34dcd5c247403d8c4b.
+
+HALLAZGOS:
+- AUD-NG-184 (ALTO/P1): searchGlobalOmnibox permite buscar noticias sin aplicar estado/vigencia/audiencia y solicitudes sin filtrar propietario/estudiante/permiso departamental. La acción está autorizada para cualquier rol autenticado; falta autorización contextual por entidad.
+- AUD-NG-185 (ALTO/P1): executeOmniboxSearch interpola contenido de resultados no confiable en innerHTML y onclick. La descripción de trámites procede de payload de usuario y puede activar XSS almacenado al ser mostrada.
+- TASK-481 y TASK-482 se registraron en Pendientes.md. No se modificó completadas.md.
+- T-UX-14 tiene requisitos posteriores de navegación, contexto de atajos y consultas vacías/especiales; se documentaron indicios para su auditoría dedicada, sin declarar esa tarea auditada.
+- T-UX-10 UX-06 solo comprueba typeof de la función; sus pruebas funcionales quedan para la auditoría específica de T-UX-10.
+
+ARCHIVOS Y SHAs DE RESPALDO:
+- js/ui-common.js: 986938b8a311a41ed4cb3d135b66b6aaea4bed67.
+- backend/user-service/Code.gs: 12079dd410aa6d8afbce55a4bc62a79dea605f9f.
+- completadas.md: f57f1aef832e81e44fc4f7ec36a852d50e464676.
+- METODOLOGIA_DESARROLLO.md: 214e8221bd076c4e89012636c105bffd5ca36467.
+- Pendientes.md origen: e050c03b97fc08916b878c34dcd5c247403d8c4b.
+- Auditoria.txt origen: 38d3ebf35162de5f18e6c1d862e8fb92a80a2b55.
+- MapaDependencias.md origen: 2179271f741e0f77a71b09e17817d4088bd27b85.
+- AUDITORIA_COMPLETADAS_PLAN.md origen: abc4d5b1366f0f85e8df18b64ebb69683415bb90.
+- Contexto_personal.txt origen: fad5942e2f1d705d5654eaae3bbd893082c946ae.
+- Rama base: 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+ARCHIVOS DE ESTA ITERACIÓN:
+- Modificados: Pendientes.md, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt.
+- Nuevo: AUDITORIA_COMPLETADAS_T-UX-06.md.
+- Sin modificar: código fuente, completadas.md, completadas_legacy.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, rama base y demás ramas.
+- Pruebas: inspección estática/manual de funciones y dependencias. No se ejecutaron navegador, DOM real, suites automatizadas, Apps Script, Google Sheets ni operaciones productivas.
+- Regla de publicación: exactamente un commit final descendiente de a5d2d0e7c2c4df2824ab99fef12d19338b40605e, sin commits intermedios. El commit de cierre que contiene este checkpoint se confirma externamente consultando HEAD después de publicar.
+- Próxima acción: auditar T-UX-09 en completadas.md, contrastando su requisito y las ampliaciones posteriores con los módulos de navegación por rol y drawer móvil.
+================================================================

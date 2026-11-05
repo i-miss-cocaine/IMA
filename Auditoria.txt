@@ -5714,3 +5714,35 @@ RECONCILIACIÓN:
 PRUEBAS Y LÍMITES:
 Inspección estática/manual. No se ejecutaron navegador, DOM real, suites automatizadas ni servicios backend. No se modificó código fuente ni se realizaron operaciones productivas.
 ===============================================================================
+
+
+===============================================================================
+RESULTADO DE AUDITORÍA DE COMPLETADAS - T-UX-06
+FECHA: 2026-11-05
+DICTAMEN: CUMPLE PARCIALMENTE
+TAREA: T-UX-06 - Omnibox Unificado Multi-Entidad con Atajo Global Ctrl + K
+ARCHIVOS PRINCIPALES:
+- js/ui-common.js (SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67)
+- backend/user-service/Code.gs (SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f)
+EVIDENCIA:
+- openGlobalOmniboxModal: líneas 4937-5009; crea/reutiliza modal, guarda el activador, aplica debounce de 300 ms y enfoca el campo.
+- closeGlobalOmniboxModal: líneas 4994-5009; oculta el modal y restaura el foco.
+- Listener Ctrl+K/Cmd+K/Escape: js/ui-common.js:5072-5082.
+- executeOmniboxSearch: js/ui-common.js:5011-5059; consume fetchApi(USER, searchGlobalOmnibox) y concatena campos de respuesta en innerHTML/onclick sin escape contextual.
+- searchGlobalOmnibox: backend/user-service/Code.gs:7992-8142; consulta expedientes, usuarios, noticias y solicitudes.
+- getUserVerifiedRole: backend/user-service/Code.gs:1146-1164; valida token firmado y obtiene claims.
+- validateRolePermission: backend/user-service/Code.gs:1253-1264; autoriza searchGlobalOmnibox para cualquier rol autenticado.
+- getNews: backend/user-service/Code.gs:3116-3148; aplica estado, vigencia y audiencia, controles ausentes en el buscador.
+- getAdministrativeRequests: backend/user-service/Code.gs:5036-5069; limita resultados mediante UserId/EstudianteID, controles ausentes en el buscador global.
+- submitAdministrativeRequest: backend/user-service/Code.gs:5134-5166; almacena descripción recibida del usuario, que luego se devuelve como título.
+HALLAZGOS:
+- AUD-NG-184 (ALTO/P1): el omnibox consulta noticias sin comprobar estado/vigencia/audiencia y solicitudes sin propietario ni permiso departamental; exposición de descripciones de trámites ajenos.
+- AUD-NG-185 (ALTO/P1): el frontend inserta title/category/subtitle/icon/type/id sin escape contextual en innerHTML y onclick; una descripción almacenada puede ejecutar XSS al mostrarse.
+RECONCILIACIÓN:
+- T-UX-14 amplía el comportamiento de atajos, autorización por entidad, navegación y consultas vacías/especiales. Se observaron brechas pendientes de dictamen formal en su auditoría específica.
+- T-UX-10 UX-06 solo comprueba typeof de la función; no prueba atajo, backend, permisos ni flujo multi-entidad.
+- TASK-296 aborda XSS en el catálogo de recursos, no el sink del omnibox; no duplica AUD-NG-185.
+- Se agregan TASK-481/AUD-NG-184 y TASK-482/AUD-NG-185 en Pendientes.md.
+PRUEBAS Y LÍMITES:
+Inspección estática/manual de los rangos indicados. No se ejecutaron navegador, DOM real, suite automatizada, Apps Script, Google Sheets ni llamadas productivas. Código fuente sin modificaciones.
+===============================================================================

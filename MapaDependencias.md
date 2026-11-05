@@ -1173,3 +1173,31 @@ No se crea AUD-NG nuevo.
 - La ñ se reduce a n y la puntuación se convierte en espacios; son decisiones más amplias que la aceptación mínima y pueden afectar búsquedas con nombres/identificadores especiales.
 - Otros módulos mantienen normalizadores NFD locales para casos específicos; no existe centralización total de todos los usos de texto.
 - Estado T-UX-05: CUMPLE; sin nuevo AUD-NG ni TASK.
+
+
+## Omnibox multi-entidad, autorización y renderizado (T-UX-06, C1.48)
+
+### Frontend
+- `js/ui-common.js:4937-5009` -> `window.openGlobalOmniboxModal` / `window.closeGlobalOmniboxModal`: creación/reutilización del modal, input, debounce, foco y restauración.
+- `js/ui-common.js:5011-5059` -> `window.executeOmniboxSearch`: llamada a `fetchApi('USER','searchGlobalOmnibox', payload)`, renderizado de resultados en `#omnibox-results-container`.
+- `js/ui-common.js:5061-5070` -> `window.handleOmniboxResultClick`: abre expediente para `user/student_file`; otras entidades solo muestran toast.
+- `js/ui-common.js:5072-5082` -> listener global Ctrl+K/Cmd+K/Escape.
+- Riesgo: datos title/category/subtitle/icon/type/id se interpolan en HTML/atributos sin escape contextual. La descripción de una solicitud puede proceder de un usuario final. Depuración y corrección: TASK-482/AUD-NG-185.
+
+### Backend y dependencias
+- `backend/user-service/Code.gs:7992-8142` -> `searchGlobalOmnibox(payload)`; entidades: ExpedientesEstudiantes, Matriculas, Usuarios, NoticiasPortal y SolicitudesTramites.
+- `backend/user-service/Code.gs:841-844` -> `normalizeString(str)`; normalización NFD en el servidor.
+- `backend/user-service/Code.gs:1146-1164` -> `getUserVerifiedRole(payload)`; verifica token firmado y expone claims verificados en payload interno.
+- `backend/user-service/Code.gs:1253-1264` -> `validateRolePermission(action,payload)`; la acción omnibox está autorizada para todo rol autenticado; la política por entidad debe imponerse dentro del buscador.
+- `backend/user-service/Code.gs:1351-1365` -> `doPost(e)`; ejecuta validación de rol antes del dispatch.
+- `backend/user-service/Code.gs:3116-3148` -> `getNews(payload)`; filtra noticias activas, vigencia y audiencia de grado/sección.
+- `backend/user-service/Code.gs:5036-5069` -> `getAdministrativeRequests(payload)`; filtra por UserId/EstudianteID y fuerza claims para estudiantes.
+- `backend/user-service/Code.gs:5134-5166` -> `submitAdministrativeRequest(payload)`; almacena descripción aportada por usuario en SolicitudesTramites.
+- Dependencias de datos: encabezado de SolicitudesTramites en Code.gs:890 (SolicitudID, UserId, EstudianteID, TipoTramite, Descripcion, AdjuntoUrl, Estado, AsignadoA, ObservacionesAdmin, FechaSolicitud, FechaResolucion); NoticiasPortal en Code.gs:876 (incluye GradoAudiencia, SeccionAudiencia, FechaInicio, FechaFin y Estado).
+- Brechas: búsqueda global no aplica aislamiento de solicitudes ni filtros de audiencia/vigencia a noticias. TASK-481/AUD-NG-184.
+- Brecha XSS: salida del omnibox sin codificación contextual. TASK-482/AUD-NG-185.
+
+### Pruebas y reconciliación
+- UX-06 de `runUXSuiteTests` (ui-common.js:1896-1904) comprueba presencia de función, no atajo ni búsqueda funcional.
+- T-UX-14 añade requisitos de no interceptar campos editables, navegación directa y consultas vacías/especiales; quedan para su auditoría dedicada.
+- T-UX-10 amplía las pruebas de flujo; se revisará en su turno.

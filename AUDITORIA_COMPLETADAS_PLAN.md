@@ -575,3 +575,17 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Código fuente:** sin modificaciones. completadas.md, ChangesLogs.txt y METODOLOGIA_DESARROLLO.md intactos.
 - **Progreso:** 48/183 identificadores auditados; 135 pendientes.
 - **Siguiente tarea:** T-UX-06 - Omnibox Unificado Multi-Entidad con Atajo Global Ctrl + K.
+
+
+## 53. Resultado C1.48 - T-UX-06 (2026-11-05)
+
+- **Dictamen:** CUMPLE PARCIALMENTE. El modal abre con Ctrl+K/Cmd+K, cierra con Escape, enfoca el campo, restaura el foco y consulta expedientes, usuarios, noticias y trámites. La autenticación por token firmado existe, pero la autorización por entidad es incompleta: noticias no respetan estado/vigencia/audiencia y trámites no se filtran por titular/estudiante/permiso departamental.
+- **AUD-NG-184 / TASK-481 (ALTO/P1):** exposición de noticias y solicitudes fuera del ámbito autorizado en `searchGlobalOmnibox`.
+- **AUD-NG-185 / TASK-482 (ALTO/P1):** XSS almacenado por interpolación sin escape de resultados en `innerHTML` y `onclick`; la descripción de solicitud puede ser aportada por usuario.
+- **Evidencia:** `js/ui-common.js` SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67, líneas 4937-5082; `backend/user-service/Code.gs` SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f, líneas 7992-8142, además de validación, filtros de noticias y solicitudes en las líneas indicadas en el informe C1.48.
+- **Reconciliación:** T-UX-14 amplía la búsqueda con navegación directa, contextos de atajo y manejo de consultas vacías/especiales; las brechas observadas se revisarán formalmente en su auditoría. T-UX-10 UX-06 solo verifica presencia de función.
+- **Backlog:** Pendientes.md se recuperó del blob e050c03b97fc08916b878c34dcd5c247403d8c4b del HEAD de NG_beta_0.0.0.1_work, al devolver 0 caracteres la lectura convencional. Se preservó el contenido y se agregaron TASK-481/AUD-NG-184 y TASK-482/AUD-NG-185. Inventario previo: 480 TASK únicos y 178 AUD-NG únicos; inventario posterior: 482 TASK y 180 AUD-NG únicos (662 identificadores combinados).
+- **Pruebas:** inspección estática/manual. No se ejecutaron navegador, DOM real, suites automatizadas, Apps Script, Google Sheets ni operaciones productivas.
+- **Código fuente:** sin modificaciones. `completadas.md`, `ChangesLogs.txt` y `METODOLOGIA_DESARROLLO.md` sin cambios.
+- **Progreso:** 49/183 identificadores auditados; 134 pendientes.
+- **Siguiente tarea:** T-UX-09 - Menú Lateral Responsivo Específico por Rol con Colapso Móvil Suave.

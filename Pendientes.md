@@ -19280,3 +19280,44 @@ AUD-NG-163 permanece DUPLICADA y consolidada; no reabrirla como tarea independie
   - Los dos helpers administrativos existen en `window` desde la carga normal de `ui-common.js`; los botones de Dirección y Secretaría funcionan sin invocar previamente el badge.
   - UX-04 comprueba comportamiento e integración, no solo `typeof`.
 - **Estado:** [ ] Pendiente.
+
+---
+
+### [TASK-481] Aplicar autorización contextual por entidad en la búsqueda Omnibox
+- **Origen del Hallazgo:** AUD-NG-184 en Auditoria.txt (T-UX-06, búsqueda global de noticias y trámites).
+- **Severidad/Clasificación:** Alto / P1.
+- **Archivos Involucrados:** `backend/user-service/Code.gs`.
+- **Dependencias Expuestas:** `searchGlobalOmnibox`, `validateRolePermission`, `getUserVerifiedRole`, `getNews`, `getAdministrativeRequests`, hojas `NoticiasPortal` y `SolicitudesTramites`, claims de usuario/rol, grado y sección.
+- **Descripción del Alcance:**
+  1. Definir y aplicar en servidor la política de acceso por entidad y tipo de registro; no conceder acceso global a noticias/trámites por el solo hecho de tener una sesión válida.
+  2. Para solicitudes, limitar los resultados al titular/estudiante vinculado o al personal con permiso departamental explícito. Obtener el usuario efectivo de los claims verificados; ignorar IDs de propietario enviados libremente por el cliente.
+  3. Para noticias, excluir registros retirados/inactivos/fuera de vigencia y aplicar GradoAudiencia/SeccionAudiencia al contexto verificado del usuario.
+  4. Evitar que filtros vacíos o parciales amplíen el conjunto de resultados más allá de los permisos del usuario.
+  5. Mantener las restricciones de acceso al combinar varias entidades y al ordenar/limitar resultados.
+- **Criterios de Aceptación:**
+  - Un estudiante solo obtiene sus solicitudes y las de los estudiantes que estén autorizados por una relación verificada; un usuario no puede consultar solicitudes ajenas cambiando parámetros.
+  - Tutor/responsable solo obtiene solicitudes de estudiantes vinculados y vigentes.
+  - Personal solo obtiene las solicitudes que correspondan a su rol/departamento autorizado.
+  - Noticias fuera de vigencia, retiradas o dirigidas a otra audiencia no aparecen en resultados.
+  - Pruebas negativas demuestran que cambiar userId, estudianteId, grado, sección o filtros no permite ampliar el alcance.
+  - Una sesión inválida o expirada no obtiene resultados.
+- **Estado:** [ ] Pendiente.
+
+### [TASK-482] Renderizar resultados del Omnibox mediante salida segura por contexto
+- **Origen del Hallazgo:** AUD-NG-185 en Auditoria.txt (T-UX-06, renderizado de resultados).
+- **Severidad/Clasificación:** Alto / P1.
+- **Archivos Involucrados:** `js/ui-common.js`; revisar el contrato de salida de `backend/user-service/Code.gs`.
+- **Dependencias Expuestas:** `executeOmniboxSearch`, `handleOmniboxResultClick`, `#omnibox-results-container`, respuesta `searchGlobalOmnibox`, campos title/category/subtitle/icon/type/id y descripciones persistidas en `SolicitudesTramites`.
+- **Descripción del Alcance:**
+  1. Eliminar la concatenación de datos no confiables en `innerHTML` y atributos `onclick`.
+  2. Construir el resultado con APIs DOM, `textContent` y `addEventListener`; si se conserva una plantilla HTML, aplicar escape específico para cada contexto.
+  3. Validar `type` contra una allowlist y transportar el ID como dato, no como código ejecutable.
+  4. Tratar también de forma segura la consulta reflejada en el mensaje de cero resultados.
+  5. Mantener el estilo, la insignia de coincidencia exacta y el comportamiento de navegación sin introducir interpretación de marcado.
+- **Criterios de Aceptación:**
+  - Una descripción de trámite que contenga etiquetas HTML, atributos de evento, comillas o secuencias de cierre se muestra como texto inerte.
+  - Ningún campo recibido del backend puede crear nodos ejecutables ni modificar atributos/eventos del contenedor.
+  - Los identificadores y tipos malformados son rechazados o no generan manejadores ejecutables.
+  - La navegación válida continúa funcionando mediante listeners registrados de forma segura.
+  - Pruebas de regresión verifican XSS almacenado y manipulación de atributos en título, subtítulo, categoría, icono, tipo, ID y consulta vacía.
+- **Estado:** [ ] Pendiente.
