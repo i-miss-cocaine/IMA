@@ -5873,3 +5873,29 @@ AUDITORÍA DE completadas.md - T-UX-13 (2026-11-05)
 - No se crea un TASK nuevo; TASK-483 ya cubre la corrección integral del menú móvil/desktop por rol y dashboards alternativos.
 - Pruebas y límites: inspección estática/manual de especificación, JS, CSS y 11 dashboards. No se ejecutaron navegador, DOM real, viewports, teclado/táctil, lectores de pantalla ni suites automatizadas. No se afirma validación runtime. Código fuente sin modificaciones.
 ===============================================================================
+
+
+===============================================================================
+RESULTADO DE AUDITORÍA DE COMPLETADAS - T-UX-14
+FECHA: 2026-11-05
+DICTAMEN: NO CUMPLE
+TAREA: T-UX-14 - Completar la búsqueda global y optimizar sus resultados
+ARCHIVOS:
+- js/ui-common.js (SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67), líneas 4937-5082.
+- backend/user-service/Code.gs (SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f), líneas 841-844, 1146-1164, 1253-1264 y 7992-8144.
+- js/api.js (SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9), desde línea 601.
+HALLAZGOS:
+- AUD-NG-195 (ALTO/P1): searchGlobalOmnibox limita expedientes/usuarios por una allowlist general de roles, pero no comprueba ámbito académico/departamental por registro. El enmascaramiento de DNI no evita la exposición de nombres, identificadores, grados, secciones y correos de registros fuera del ámbito funcional del solicitante. Se amplía TASK-481.
+- AUD-NG-196 (MEDIO/P2): el guard de consulta mínima omite filterSeccion y la consulta vacía puede coincidir con todos los registros de NoticiasPortal/SolicitudesTramites cuando otro filtro habilita la búsqueda; los filtros académicos no se aplican a esas entidades. Se amplía TASK-481.
+- AUD-NG-197 (ALTO/P1): handleOmniboxResultClick no navega a noticias ni trámites; cierra el modal y solo presenta un toast. Los resultados user se dirigen indiscriminadamente al modal de expediente estudiantil. Se registra en TASK-491.
+- AUD-NG-198 (MEDIO/P2): el listener Ctrl+K/Cmd+K intercepta cualquier contexto, incluidos controles editables, y ejecuta preventDefault sin comprobar composición o destino. Se registra en TASK-491.
+- AUD-NG-199 (MEDIO/P2): los expedientes se agregan sin límite y preceden a usuarios/noticias/trámites; results.slice(0,20) puede excluir todas las demás entidades. Se registra en TASK-491.
+- AUD-NG-200 (MEDIO/P2): no se cancela ni invalida una búsqueda previa al emitir otra, por lo que una respuesta tardía puede reemplazar la consulta actual; si fetchApi no existe, permanece el estado de carga. Se registra en TASK-491.
+RECONCILIACIÓN:
+- AUD-NG-184/TASK-481 y AUD-NG-185/TASK-482 de T-UX-06 siguen vigentes.
+- TASK-481 se amplió con AUD-NG-195/AUD-NG-196. TASK-482 no se duplicó.
+- AUD-NG-187/TASK-484 (T-UX-10) cubre la calidad de la suite UX, no la corrección funcional del Omnibox.
+- TASK-491 agrupa únicamente navegación, atajo contextual, priorización multi-entidad y resiliencia asíncrona.
+PRUEBAS:
+Inspección estática/manual de los rangos y dependencias citados. No se ejecutaron navegador, DOM, eventos de teclado/IME, Apps Script, Sheets, API productiva ni suites automatizadas. Código fuente sin modificaciones.
+===============================================================================

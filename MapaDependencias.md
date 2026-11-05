@@ -1366,3 +1366,34 @@ No se crea AUD-NG nuevo.
 - AUD-NG-186 / TASK-483: hallazgo original T-UX-09 de menú genérico, rutas incompletas y desktop no funcional.
 - AUD-NG-194 / TASK-483: ampliación T-UX-13 por disparador móvil oculto debido al anidamiento en `nav.hidden.md:flex`, falta de estado activo accesible y mezcla de acción inmediata como enlace. No se crea tarea duplicada.
 - T-UX-19 cubre accesibilidad general; T-UX-20 adaptación móvil; T-UX-11/TASK-485/486 historial/contexto. Se mantienen relacionados, no sustituyen la matriz de menú/rutas por rol.
+
+
+===============================================================================
+MAPA DE DEPENDENCIAS - AUDITORÍA T-UX-14
+===============================================================================
+Archivo: js/ui-common.js
+SHA: 986938b8a311a41ed4cb3d135b66b6aaea4bed67
+- openGlobalOmniboxModal (4937-4993): crea/reutiliza modal; registra input/debounce; depende de document, setTimeout y executeOmniboxSearch.
+- closeGlobalOmniboxModal (4995-5009): oculta modal y restaura foco a omniboxActiveTrigger.
+- executeOmniboxSearch (5011-5059): construye payload, invoca fetchApi(USER, searchGlobalOmnibox), procesa respuesta y escribe resultados en #omnibox-results-container mediante innerHTML.
+- handleOmniboxResultClick (5062-5070): consume type/id; solo abre StudentFileModal para user/student_file; news/request solo producen toast.
+- listener window keydown (5072-5082): consume Ctrl+K/Cmd+K/Escape; no filtra controles editables ni composición IME.
+Dependencias salientes:
+- fetchApi (js/api.js), showToast, openStudentFileModal, document/window, #modal-global-omnibox, #omnibox-search-input, #omnibox-results-container.
+- TASK-482 debe resolver el sink de HTML/onclick y la consulta reflejada; TASK-491 debe resolver rutas, atajo contextual, orden y concurrencia.
+
+Archivo: backend/user-service/Code.gs
+SHA: 12079dd410aa6d8afbce55a4bc62a79dea605f9f
+- normalizeString (841-844): normaliza minúsculas, NFD, marcas diacríticas y espacios externos.
+- getUserVerifiedRole (1146-1164): deriva rol/identidad desde la sesión verificada.
+- validateRolePermission (1253-1264): autoriza searchGlobalOmnibox para cualquier rol autenticado y delega alcance a la función.
+- searchGlobalOmnibox (7992-8144): consulta ExpedientesEstudiantes, Matriculas, Usuarios, NoticiasPortal y SolicitudesTramites; filtra expediente por campos académicos, pero no aplica autorización contextual por registro a todas las entidades; agrega entidades por bloques y aplica límite global de 20.
+Dependencias salientes:
+- SpreadsheetApp/Spreadsheet ID, hojas de expediente/matrícula/usuarios/noticias/trámites, normalizeString, getUserVerifiedRole.
+- getNews (3116-3148) y getAdministrativeRequests (5036-5069) contienen reglas de audiencia/titularidad que deben reconciliarse con la búsqueda.
+Relaciones:
+- TASK-481: autorización contextual por entidad y semántica de filtros.
+- TASK-482: salida DOM segura y prevención XSS en consumidor.
+- TASK-491: navegación real, atajos y resiliencia asíncrona.
+- TASK-484: pruebas conductuales UX-01..UX-09.
+===============================================================================

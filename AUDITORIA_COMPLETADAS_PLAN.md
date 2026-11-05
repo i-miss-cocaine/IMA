@@ -662,3 +662,18 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Archivos/documentos:** creado `AUDITORIA_COMPLETADAS_T-UX-13.md`; actualizados Pendientes.md (TASK-483), Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md y Contexto_personal.txt.
 - **Progreso acumulado:** 54/183 identificadores auditados; 129 pendientes.
 - **Siguiente tarea:** T-UX-14 - Completar la búsqueda global y optimizar sus resultados. Reconciliar AUD-NG-184/TASK-481, AUD-NG-185/TASK-482, T-UX-06 y T-UX-10 antes de revisar el código vigente.
+
+
+## 59. Resultado C1.54 - T-UX-14 (2026-11-05)
+
+- **Dictamen:** NO CUMPLE. El backend no limita expedientes/usuarios por ámbito académico/departamental por registro; noticias y trámites carecen de filtros de audiencia/titularidad en la búsqueda. El guard omite filterSeccion y consultas vacías habilitadas por otros filtros pueden coincidir con todos los registros de noticias/trámites. El atajo Ctrl+K/Cmd+K interrumpe campos editables; noticias/trámites no navegan a sus registros; el límite de 20 puede excluir entidades; respuestas asíncronas antiguas pueden sobrescribir las actuales y la ausencia de fetchApi deja carga permanente.
+- **AUD-NG-195 / TASK-481 (ALTO/P1):** ampliar autorización contextual a expedientes/usuarios y ámbito académico/departamental por registro.
+- **AUD-NG-196 / TASK-481 (MEDIO/P2):** corregir el contrato de filtros, la detección de filterSeccion y el comportamiento de consultas vacías/multientidad.
+- **AUD-NG-197..AUD-NG-200 / TASK-491:** navegación real por tipo, atajos que respeten controles editables, distribución global de resultados y control de concurrencia/errores.
+- **Reconciliación:** AUD-NG-184/TASK-481 y AUD-NG-185/TASK-482 continúan vigentes; T-UX-10/AUD-NG-187/TASK-484 cubre la validez de la suite, no el comportamiento del Omnibox.
+- **Evidencia:** js/ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67 (4937-5082); backend/user-service/Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f (841-844, 1146-1164, 1253-1264, 7992-8144); js/api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9.
+- **Backlog:** recuperado Pendientes.md desde blob de la rama de trabajo cf9bacd54ac4e90e2d9289f41d1db61bac6090b4 (1,665,667 caracteres, 19,542 líneas). TASK-481 ampliada y TASK-491 creada; blob actualizado 4039a6dc496848c5cf6b112bc41b681d80488bb7 (1,671,553 caracteres, 19,573 líneas). IDs añadidos: AUD-NG-195..AUD-NG-200 y TASK-491. No se modificaron estados históricos.
+- **Pruebas:** inspección estática/manual. No se ejecutaron navegador, DOM, teclado/IME, Apps Script, Sheets, APIs productivas ni suites automatizadas.
+- **Código:** sin modificaciones; completadas.md y METODOLOGIA_DESARROLLO.md sin cambios.
+- **Progreso:** 55/183 identificadores auditados; 128 pendientes.
+- **Siguiente tarea:** T-UX-15 - Implementar filtros avanzados, vistas guardadas y paginación coherente. Reconciliar tareas históricas y posteriores relacionadas con filtros, persistencia de vistas, ordenamiento y paginación antes de iniciar.

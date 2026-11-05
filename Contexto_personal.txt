@@ -2470,3 +2470,70 @@ ARCHIVOS DE ESTA ITERACIÓN:
 - Próxima acción: auditar T-UX-14; reconciliar primero AUD-NG-184/TASK-481 y AUD-NG-185/TASK-482, revisar las ampliaciones posteriores T-UX-06/T-UX-10, inspeccionar el flujo completo del Omnibox en frontend/backend y comprobar permisos, XSS, errores y navegación.
 
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.54 - AUDITORÍA T-UX-14 (2026-11-05)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto real: Contexto_personal.txt.
+- Rama base protegida: NG_beta_0.0.0.1.
+- Rama de trabajo autorizada: NG_beta_0.0.0.1_work.
+- HEAD de partida verificado: cf28bbfe02211df88579ce42dd989f0dcf8796fa (C1.53).
+- HEAD de rama base al inicio: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Comparación al inicio: 110 commits por delante y 0 por detrás de la rama base.
+- Última tarea auditada y cerrada: T-UX-14 - Completar la búsqueda global y optimizar sus resultados.
+- Dictamen: NO CUMPLE.
+- Tarea en curso: ninguna; inspección estática/manual de T-UX-14 cerrada.
+- Siguiente tarea: T-UX-15 - Implementar filtros avanzados, vistas guardadas y paginación coherente.
+- Progreso acumulado: 55/183 identificadores auditados; 128 pendientes.
+
+RECONCILIACIÓN HISTÓRICA:
+- T-UX-06 (AUD-NG-184/TASK-481 y AUD-NG-185/TASK-482) fue revisada mediante AUDITORIA_COMPLETADAS_T-UX-06.md. Ambos hallazgos siguen vigentes en el código actual.
+- T-UX-10 fue revisada mediante AUDITORIA_COMPLETADAS_T-UX-10.md. UX-06 solo comprueba la existencia de openGlobalOmniboxModal; AUD-NG-187/TASK-484 cubre la validez de la suite, no los defectos funcionales del Omnibox.
+- T-UX-14 aparece en completadas.md como tarea histórica marcada [X]. La especificación funcional se contrastó con el código actual; no se modificó completadas.md ni su estado.
+- La especificación fuente AUDITORIA_FASE3_EXPERIENCIA_USUARIO_NAVEGACION.md no existe en el árbol actual; se usó completadas.md y evidencia histórica verificable.
+- Se mantuvo separación de auditor/desarrollador; no se corrigió código.
+
+HALLAZGOS Y TAREAS:
+- AUD-NG-195 (ALTO/P1): el backend permite a roles de una allowlist buscar expedientes/usuarios institucionales sin validar ámbito académico/departamental por registro. Se amplió TASK-481.
+- AUD-NG-196 (MEDIO/P2): el guard de consulta mínima omite filterSeccion y consultas vacías habilitadas por otros filtros pueden coincidir con todas las noticias/trámites; filtros académicos no se aplican a esas entidades. Se amplió TASK-481.
+- AUD-NG-197 (ALTO/P1): noticias/trámites no tienen navegación directa; handleOmniboxResultClick solo muestra toast. TASK-491.
+- AUD-NG-198 (MEDIO/P2): Ctrl+K/Cmd+K intercepta controles editables y no considera composición IME. TASK-491.
+- AUD-NG-199 (MEDIO/P2): el límite results.slice(0,20) puede excluir usuarios/noticias/trámites si expedientes ocupan los primeros lugares. TASK-491.
+- AUD-NG-200 (MEDIO/P2): respuestas asíncronas fuera de orden pueden sobrescribir resultados actuales; ausencia de fetchApi deja el estado de carga. TASK-491.
+- TASK-481 ampliada con AUD-NG-195/AUD-NG-196; TASK-482 permanece pendiente sin duplicación; TASK-491 creada. TASK-484 permanece como marco de pruebas UX.
+- No se modificaron estados históricos de completadas.md ni de tareas existentes.
+
+RECUPERACIÓN E INVENTARIO DE Pendientes.md:
+- Rama de recuperación: NG_beta_0.0.0.1_work exclusivamente.
+- Lectura convencional devolvió 0 caracteres; se recuperó el blob vigente desde la misma rama: cf9bacd54ac4e90e2d9289f41d1db61bac6090b4, 1,665,667 caracteres y 19,542 líneas.
+- Blob actualizado tras ampliar TASK-481 y agregar TASK-491: 4039a6dc496848c5cf6b112bc41b681d80488bb7, 1,671,553 caracteres y 19,573 líneas.
+- Inventario base C1.53: 490 TASK únicos y 189 AUD-NG únicos (679 IDs combinados).
+- Inventario actualizado: 491 TASK únicos; 195 AUD-NG únicos (AUD-NG-200 máximo); 686 IDs combinados. Se agregaron seis referencias AUD-NG y una tarea.
+- No se cambió el contenido de tareas históricas fuera de TASK-481; TASK-482/483/484 conservan estado pendiente.
+
+ARCHIVOS Y SHAs DE RESPALDO:
+- completadas.md: f57f1aef832e81e44fc4f7ec36a852d50e464676.
+- METODOLOGIA_DESARROLLO.md: 214e8221bd076c4e89012636c105bffd5ca36467.
+- js/ui-common.js: 986938b8a311a41ed4cb3d135b66b6aaea4bed67.
+- backend/user-service/Code.gs: 12079dd410aa6d8afbce55a4bc62a79dea605f9f.
+- js/api.js: 6b24f666db30a811a8e9b38d466fc6001cf6dfa9.
+- Pendientes.md blob previo: cf9bacd54ac4e90e2d9289f41d1db61bac6090b4.
+- Pendientes.md blob posterior: 4039a6dc496848c5cf6b112bc41b681d80488bb7.
+- Auditoria.txt origen: e48c8c0062e9b5168d39d35ce08ea1c90cec5328.
+- MapaDependencias.md origen: cec8b49799c86c7fecf5e0add18fa3dd637c357a.
+- AUDITORIA_COMPLETADAS_PLAN.md origen: b612b99a7adcbc2d8c06484d315834476ed3b11c.
+- Contexto_personal.txt origen: e45165fbb371f92e0e9bad3aaf88e57d6e51736e.
+
+ARCHIVOS DE ESTA ITERACIÓN:
+- Modificados: Pendientes.md, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt.
+- Nuevo: AUDITORIA_COMPLETADAS_T-UX-14.md.
+- Sin modificar: código fuente, completadas.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md y rama base.
+- Pruebas: inspección estática/manual de funciones, contratos, filtros, permisos, resultados y dependencias. No se ejecutaron navegador, DOM real, teclado/IME, Apps Script, Sheets, APIs productivas ni suites automatizadas.
+- Commits modulares autorizados expresamente por el usuario:
+  - TASK-481 ampliada y TASK-491 agregada en Pendientes.md: 2a34c3f91fc6a64425e19df4687e593075f65f45.
+  - Los documentos de auditoría, mapa, plan, informe y este checkpoint se publican en el commit final de cierre de C1.54.
+- Commit de cierre: el commit que contiene este checkpoint; su SHA se confirmará externamente después de publicar.
+- Próxima acción concreta: auditar T-UX-15; reconciliar sus ampliaciones posteriores con TASK-481/TASK-491 y revisar las implementaciones de filtros, vistas guardadas, ordenamiento, paginación y restauración de estado.
+================================================================

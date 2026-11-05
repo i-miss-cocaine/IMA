@@ -19284,27 +19284,23 @@ AUD-NG-163 permanece DUPLICADA y consolidada; no reabrirla como tarea independie
 ---
 
 ### [TASK-481] Aplicar autorización contextual por entidad en la búsqueda Omnibox
-- **Origen del Hallazgo:** AUD-NG-184 (T-UX-06, exposición de noticias y trámites), AUD-NG-195 (T-UX-14, alcance institucional excesivo en expedientes y usuarios) y AUD-NG-196 (T-UX-14, filtros incompletos y consultas vacías).
+- **Origen del Hallazgo:** AUD-NG-184 en Auditoria.txt (T-UX-06, búsqueda global de noticias y trámites).
 - **Severidad/Clasificación:** Alto / P1.
 - **Archivos Involucrados:** `backend/user-service/Code.gs`.
-- **Dependencias Expuestas:** `searchGlobalOmnibox`, `validateRolePermission`, `getUserVerifiedRole`, `validateContextualAccess`, `getNews`, `getAdministrativeRequests`, hojas `ExpedientesEstudiantes`, `Matriculas`, `Usuarios`, `NoticiasPortal` y `SolicitudesTramites`, claims verificados, grado, sección y departamento.
+- **Dependencias Expuestas:** `searchGlobalOmnibox`, `validateRolePermission`, `getUserVerifiedRole`, `getNews`, `getAdministrativeRequests`, hojas `NoticiasPortal` y `SolicitudesTramites`, claims de usuario/rol, grado y sección.
 - **Descripción del Alcance:**
-  1. Definir y aplicar en servidor la política de acceso por entidad y tipo de registro; no conceder acceso global a noticias, trámites, expedientes o usuarios por el solo hecho de tener una sesión válida o pertenecer a una lista general de roles.
+  1. Definir y aplicar en servidor la política de acceso por entidad y tipo de registro; no conceder acceso global a noticias/trámites por el solo hecho de tener una sesión válida.
   2. Para solicitudes, limitar los resultados al titular/estudiante vinculado o al personal con permiso departamental explícito. Obtener el usuario efectivo de los claims verificados; ignorar IDs de propietario enviados libremente por el cliente.
   3. Para noticias, excluir registros retirados/inactivos/fuera de vigencia y aplicar GradoAudiencia/SeccionAudiencia al contexto verificado del usuario.
-  4. Para expedientes y usuarios, comprobar el ámbito académico, institucional o departamental concreto del solicitante. Profesor, Coordinador, Consejeros, Contador y RecursosHumanos no deben recibir automáticamente todos los expedientes/usuarios por figurar en una allowlist; verificar grupos, secciones, responsabilidades y permisos efectivos antes de devolver cada registro. El enmascaramiento de DNI no sustituye el control de acceso.
-  5. Corregir el contrato de filtros: incluir `filterSeccion` en la detección de filtros válidos; aplicar cada filtro únicamente a entidades con ese atributo y no devolver colecciones completas de noticias/trámites cuando la consulta esté vacía y exista otro filtro. Una combinación de filtros nunca debe ampliar el conjunto autorizado.
-  6. Gestionar consultas vacías, parciales y filtros incompletos con una política explícita por entidad. No utilizar `indexOf("")` como coincidencia general para registros que no cumplen los filtros aplicables.
-  7. Mantener las restricciones de acceso al combinar varias entidades y al ordenar/limitar resultados; la paginación o el límite global no debe permitir recuperar registros que no superaron la autorización.
+  4. Evitar que filtros vacíos o parciales amplíen el conjunto de resultados más allá de los permisos del usuario.
+  5. Mantener las restricciones de acceso al combinar varias entidades y al ordenar/limitar resultados.
 - **Criterios de Aceptación:**
-  - Un estudiante solo obtiene sus solicitudes y expedientes; un tutor/responsable solo los de estudiantes vinculados mediante una relación verificada y vigente.
-  - Personal docente, coordinación, consejería, contabilidad y RR. HH. solo obtiene los registros incluidos en su ámbito y permisos efectivos; manipular grado, sección, departamento o IDs no amplía el alcance.
-  - Personal administrativo conserva únicamente el acceso global expresamente autorizado para su función.
+  - Un estudiante solo obtiene sus solicitudes y las de los estudiantes que estén autorizados por una relación verificada; un usuario no puede consultar solicitudes ajenas cambiando parámetros.
+  - Tutor/responsable solo obtiene solicitudes de estudiantes vinculados y vigentes.
+  - Personal solo obtiene las solicitudes que correspondan a su rol/departamento autorizado.
   - Noticias fuera de vigencia, retiradas o dirigidas a otra audiencia no aparecen en resultados.
-  - Un usuario no puede consultar solicitudes ajenas cambiando parámetros, enviando filtros vacíos o combinando filtros parciales.
-  - Una consulta vacía con `filterSeccion` u otro filtro produce el comportamiento definido para esa entidad; nunca devuelve noticias/trámites sin filtrar ni omite silenciosamente un filtro válido.
-  - Los filtros de grado/sección/año/estado no se aplican a entidades que carecen de esos campos como si fueran filtros universales; el contrato declara y respeta su ámbito.
-  - Pruebas negativas cubren IDs manipulados, filtros ausentes, vacíos, parciales y combinados, roles con distintos ámbitos y sesión inválida/expirada.
+  - Pruebas negativas demuestran que cambiar userId, estudianteId, grado, sección o filtros no permite ampliar el alcance.
+  - Una sesión inválida o expirada no obtiene resultados.
 - **Estado:** [ ] Pendiente.
 
 ### [TASK-482] Renderizar resultados del Omnibox mediante salida segura por contexto
@@ -19542,31 +19538,4 @@ AUD-NG-163 permanece DUPLICADA y consolidada; no reabrirla como tarea independie
   - Pruebas de regresión cubren empleado A consultando empleado B, filtros ausentes, IDs manipulados, usuario sin expediente, rol RR. HH. autorizado y rol no autorizado.
   - Las pruebas no utilizan ni exponen datos personales productivos.
 - **Relaciones y límites:** T-UX-12 exige que los servicios respeten los permisos efectivos. TASK-489 corrige el contrato de presentación de solicitudes; TASK-490 corrige la autorización y el aislamiento de datos. No ampliar permisos de RR. HH. ni duplicar las tareas generales de RBAC ya registradas.
-- **Estado:** [ ] Pendiente.
-
-
----
-
-### [TASK-491] Completar la navegación y la resiliencia funcional del Omnibox
-- **Origen del Hallazgo:** AUD-NG-197, AUD-NG-198, AUD-NG-199 y AUD-NG-200 (T-UX-14, navegación de resultados, atajo contextual, priorización multi-entidad y control de solicitudes asíncronas).
-- **Severidad/Clasificación:** Alto / P1 para la navegación incompleta; Medio / P2 para atajos, priorización y resiliencia.
-- **Archivos Involucrados:** `js/ui-common.js`; revisar contratos/rutas de `backend/user-service/Code.gs`, módulos de destino y `tests/regression/`.
-- **Dependencias Expuestas:** `openGlobalOmniboxModal`, `closeGlobalOmniboxModal`, `executeOmniboxSearch`, `handleOmniboxResultClick`, listener global `keydown`, `fetchApi`, `searchGlobalOmnibox`, tipos `student_file`, `user`, `news`, `request`, rutas de dashboards/módulos y contenedor `#omnibox-results-container`.
-- **Descripción del Alcance:**
-  1. Mantener Ctrl+K/Cmd+K sin interceptar escritura ni atajos legítimos cuando el foco esté en input, textarea, select, elementos contenteditable, composición IME u otro contexto editable. Evitar aperturas repetidas por key-repeat y no cancelar eventos ajenos al Omnibox.
-  2. Definir un mapa explícito y validado de tipo de resultado a destino real. Los tipos `news` y `request` deben abrir el registro correcto por su identificador y contexto; no basta con cerrar el modal y mostrar un toast. El tipo `user` no debe tratarse automáticamente como expediente estudiantil si su naturaleza/destino es distinto.
-  3. Mantener la navegación segura para resultados válidos y rechazar tipos o destinos desconocidos sin presentar una navegación ficticia. Reutilizar la salida segura y la validación de datos exigidas por TASK-482.
-  4. Aplicar una estrategia global de relevancia y límites por entidad antes del corte final. Los expedientes no deben ocupar todos los primeros 20 lugares e impedir que usuarios, noticias o trámites pertinentes aparezcan; preservar coincidencias exactas y criterios de orden definidos.
-  5. Evitar que una respuesta de una consulta anterior sobrescriba los resultados de una consulta más reciente. Usar cancelación o identificador de solicitud/consulta y actualizar el DOM únicamente con la respuesta vigente.
-  6. Si `fetchApi` no existe, falla la configuración o la solicitud no puede iniciarse, sustituir el indicador de carga por un estado de error recuperable y liberar el estado de espera. No dejar el Omnibox indefinidamente en “Buscando resultados”.
-  7. Incorporar pruebas conductuales reproducibles para atajos en campos editables, navegación de cada tipo, orden y límite multi-entidad, respuestas fuera de orden, ausencia de `fetchApi`, error de red y recuperación. Reconciliar con TASK-484 para no duplicar el framework general de pruebas UX.
-- **Criterios de Aceptación:**
-  - Ctrl+K/Cmd+K abre el Omnibox desde contextos no editables y no roba la escritura ni interrumpe composición/edición dentro de controles.
-  - Cada tipo de resultado permitido abre el módulo y registro correctos; noticias y trámites no se limitan a un mensaje informativo.
-  - Los tipos no reconocidos no ejecutan navegación arbitraria ni anuncian éxito.
-  - Una búsqueda multi-entidad relevante conserva representación de las entidades autorizadas; el límite global no excluye sistemáticamente categorías por el volumen de expedientes.
-  - Al escribir consultas consecutivas, solo la respuesta correspondiente a la última consulta modifica los resultados visibles.
-  - La ausencia de `fetchApi`, un fallo de red o una respuesta inválida producen un estado visible de error y permiten volver a intentar.
-  - Los casos positivos, negativos y de concurrencia quedan cubiertos por pruebas conductuales; los casos no ejecutados no cuentan como aprobados.
-- **Relaciones y límites:** TASK-481 resuelve autorización/alcance de datos; TASK-482 resuelve XSS y salida segura; TASK-484 define pruebas conductuales UX-01..UX-09. TASK-491 cubre navegación y resiliencia del consumidor Omnibox sin duplicar esos alcances.
 - **Estado:** [ ] Pendiente.
