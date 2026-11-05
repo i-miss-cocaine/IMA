@@ -246,3 +246,11 @@ Al reanudar:
 - Calidad: insuficiente por divergencia de fuentes, esquema de horarios inconsistente y comprobación de sustituciones/carga no fiable.
 - Pruebas: inspección estática/manual; no se ejecutaron pruebas con datos reales, concurrencia, múltiples docentes, periodos, permisos ni despliegue.
 - Progreso: 19/183; 164 pendientes. Siguiente: TAREA-14.
+
+
+## 25. Resultado C1.16 - TAREA-14 (2026-11-05)
+- Dictamen: CUMPLE PARCIALMENTE. El panel del estudiante unifica tareas/exámenes y estados, y el docente navega entregas por contexto; existen caché, indicador online/offline y cola local. No obstante, fetchEntregasRecientes no tiene contenedor ni llamada, solo consulta tareas y ordena por fecha de entrega; los filtros docentes se basan en GLOBAL_SCOPE general. El cache-first se reemplaza por error al fallar la red, queueOfflineAction no está integrado en mutaciones académicas, la resolución de conflictos solo muestra éxito y el indicador no verifica servicios. Hay controles clicables sin semántica de teclado/ARIA y el formulario no se adapta por área; WCAG 2.2 AA no está demostrado.
+- Hallazgo nuevo: AUD-NG-169. Se amplían AUD-NG-126, AUD-NG-158, TASK-065, TASK-129 y TASK-130, sin duplicar sus alcances.
+- Calidad: insuficiente para aceptación integral por falta de bandeja docente conectada, recuperación offline real y accesibilidad funcional.
+- Pruebas: inspección estática/manual; no se ejecutaron pruebas de navegador, dispositivos táctiles, lectores de pantalla, red desconectada, sincronización ni despliegue.
+- Progreso: 20/183; 163 pendientes. Siguiente: TAREA-15.

@@ -4660,3 +4660,18 @@ CORRECCIÓN DE INTEGRIDAD DE Pendientes.md (2026-11-05): la verificación poster
 - Pruebas: inspección estática/manual; no se ejecutaron pruebas con datos reales, concurrencia, permisos, periodos ni despliegue.
 - Progreso: 19/183; 164 pendientes. Siguiente: TAREA-14.
 ===============================================================================
+
+
+===============================================================================
+[AUD-NG-169] TAREA-14 - UX DOCENTE/ESTUDIANTE, BANDEJA Y ACCESIBILIDAD
+- Fecha: 2026-11-05. Severidad: MEDIO (P2).
+- Evidencia: fetchEntregasRecientes está definida pero no tiene contenedor op-table-body/op-table-head en teacher-dashboard.html ni llamada desde js/teacher.js; consulta solo tareas y ordena por item.fecha en vez de fecha límite/prioridad. Los filtros docentes usan GLOBAL_SCOPE general y no demuestran ámbito de asignaciones. Las tarjetas de asignatura son div con onclick sin teclado/semántica; filas de gestión también son clicables. Los dashboards no contienen aria-* y el badge de conexión no anuncia estado. El formulario de tareas solo activa/desactiva editor y asociación de crédito extra, sin adaptación por área. El offline cache se reemplaza por pantalla de error al fallar red; el conflicto de cola muestra éxito sin modificar la cola ni aplicar resolución.
+- Impacto: docentes no identifican revisiones prioritarias desde una bandeja; riesgo de operaciones offline perdidas/no recuperables; confusión sobre estado de sincronización; barreras de teclado/lectores de pantalla y formularios no adaptados.
+- Criterios: bandeja docente visible para tareas/exámenes, con prioridad reproducible y filtros autorizados; navegación semántica y teclado; nombres/estados accesibles y feedback aria-live; formularios por modalidad/área; conservar caché y diferenciar datos locales; pruebas WCAG 2.2 AA/táctiles.
+- Tareas relacionadas: AUD-NG-126 (orden de actividades), AUD-NG-158 (ámbito docente), TASK-065 (cola/reintentos/sincronización), TASK-129/TASK-130 (ayudas accesibles).
+- Control de duplicados: AUD-NG-169 cubre integración de la bandeja y accesibilidad global de paneles; no duplica cola resiliente TASK-065, orden AUD-NG-126 ni autorización AUD-NG-158.
+- TAREA-14: CUMPLE PARCIALMENTE. Hay vistas unificadas, estados, caché, responsive y piezas de offline, pero la bandeja docente no está conectada, la cola no resuelve conflictos y no se acredita accesibilidad WCAG 2.2 AA.
+- Calidad: insuficiente para aceptación integral por operación offline simulada, navegación sin semántica de teclado y falta de bandeja priorizada.
+- Pruebas: inspección estática/manual; no se ejecutaron pruebas de navegador, dispositivos táctiles, lectores de pantalla, red desconectada, sincronización ni despliegue.
+- Progreso: 20/183; 163 pendientes. Siguiente: TAREA-15.
+===============================================================================

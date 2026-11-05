@@ -984,3 +984,21 @@ CHECKPOINT C1.15 - AUDITORÍA TAREA-13 (2026-11-05)
 - Progreso: 19/183 identificadores únicos auditados; 164 pendientes.
 - Siguiente tarea exacta: TAREA-14.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.16 - AUDITORÍA TAREA-14 (2026-11-05)
+================================================================
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- HEAD anterior: b192d81faeac030aca1d1e1e6c840aec4103dd89.
+- Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59; no modificada.
+- Tarea auditada: TAREA-14 - experiencia de usuario de docentes y estudiantes.
+- Dictamen: CUMPLE PARCIALMENTE. La vista estudiantil consolida actividades y estados; la vista docente combina tareas/exámenes en navegación jerárquica. Sin embargo, la bandeja priorizada no está conectada; los filtros no parten del ámbito docente verificado; el modo offline no conserva la vista cacheada ante fallo remoto ni sincroniza operaciones académicas; la resolución de conflictos simula éxito; controles clave no son accesibles por teclado y no se demuestra WCAG 2.2 AA.
+- Hallazgo nuevo: AUD-NG-169. Se amplían AUD-NG-126, AUD-NG-158, TASK-065, TASK-129 y TASK-130.
+- Informe: AUDITORIA_COMPLETADAS_TAREA-14.md. Sección del plan: 25.
+- Archivos previstos para el commit único de tarea: Auditoria.txt, Pendientes.md, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt e informe TAREA-14.
+- Sin modificaciones en código fuente, completadas.md, completadas_legacy.md, ChangesLogs.txt ni metodología.
+- No se ejecutaron pruebas de navegador, dispositivos táctiles, lectores de pantalla, red desconectada, sincronización ni despliegue.
+- Progreso: 20/183 identificadores únicos auditados; 163 pendientes.
+- Siguiente tarea exacta: TAREA-15.
+================================================================

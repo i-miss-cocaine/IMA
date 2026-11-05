@@ -672,3 +672,13 @@ Se restauró el contenido íntegro previo a TAREA-09 (1,515,247 caracteres) tras
 - Dependencias: OfertaAcademica, OfertasAcademicas (divergencia detectada), AsignacionesDocentes, DocentesAreasAcademicas, CoordinacionesArea, HorariosClase, HorariosLaborales, SedesAulas, MantenimientoAulas, CalendarioAcademico y EscenariosHorarios.
 - Hallazgo AUD-NG-168: fuentes de oferta incompatibles, esquema de horarios interpretado con índices incorrectos, sustituciones no verificables, estados/años mezclados en carga y ocupación, e interfaz de área incompleta.
 - Controles relacionados: AUD-NG-164 (fuente curricular canónica) y AUD-NG-158 (ABAC docente).
+
+
+## TAREA-14 - Experiencia de usuario de docentes y estudiantes
+
+- student-dashboard.html / js/student.js: fetchAllActivities, renderSubjectNavigation, expandSubject, renderActivitiesIntoContainer, getActivityHtml y renderActivities.
+- teacher-dashboard.html / js/teacher.js: fetchEntregasRecientes (bandeja no conectada), fetchTeacherActivity, renderCurrentLevel, renderGrados, renderSecciones, renderAsignaturas, renderAlumnos, renderManagementTable y updateCreateTaskUIState.
+- js/ui-common.js: updateOnlineBadge, queueOfflineAction, syncOfflineQueue, processQueueItems, openConflictResolutionModal y resolveConflictChoice.
+- Dependencias: js/api.js (fetchApi y fallback de red), js/persistence.js (PersistenceManager y clave activa por userId), IndexedDB sync_queue, GLOBAL_SCOPE.GranularConfig.
+- Hallazgo AUD-NG-169: bandeja docente no integrada; filtros no derivados del ámbito docente verificado; controles clicables sin semántica/teclado; formulario no adaptado por área; modo offline y resolución de conflictos incompletos.
+- Tareas relacionadas: AUD-NG-126 (orden tarjeta/expandido), AUD-NG-158 (ámbito docente), TASK-065 (cola offline), TASK-129/TASK-130 (ayudas contextuales).

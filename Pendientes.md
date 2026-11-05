@@ -18586,3 +18586,24 @@ Hallazgo nuevo: AUD-NG-167. Progreso de auditoría: 18/183; 165 pendientes. Sigu
 - **Estado:** [ ] Pendiente
 
 Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Siguiente tarea: TAREA-14.
+
+
+---
+
+## Ampliación de criterios derivada de TAREA-14 (2026-11-05)
+
+- **AUD-NG-126:** el defecto de orden tarjeta/vista expandida sigue presente; mantener el criterio de vencimiento ascendente y fechas nulas al final.
+- **AUD-NG-158:** la UI docente debe construir grado/sección/asignatura/alumno desde asignaciones vigentes del docente; el backend debe validar esos ámbitos contra claims verificados y no confiar en profesorId del payload.
+- **TASK-065:** conectar queueOfflineAction a las mutaciones académicas; implementar sendApiRequest/transport real para syncOfflineQueue, estados de fallo/reintento, y resolución efectiva de conflictos en IndexedDB. No mostrar “Conflicto Resuelto” si la elección no se aplicó.
+- **TASK-129/TASK-130:** coordinar sus componentes de ayuda contextual y formularios con el cumplimiento WCAG 2.2 AA de student-dashboard.html y teacher-dashboard.html; las mejoras de tooltips/help-text no sustituyen la accesibilidad semántica/teclado de controles principales.
+
+### [AUD-NG-169] Integrar la bandeja docente y asegurar accesibilidad funcional en los paneles académicos
+- **Origen:** Auditoría de completadas.md / TAREA-14.
+- **Severidad:** Medio (P2).
+- **Archivos:** student-dashboard.html; teacher-dashboard.html; js/student.js; js/teacher.js; js/ui-common.js.
+- **Problema:** fetchEntregasRecientes no está conectado a un contenedor ni se invoca; consulta solo tareas y ordena por fecha de entrega, no por prioridad/vencimiento. Los filtros docentes usan configuración global en vez de asignaciones verificadas. Tarjetas y filas clicables carecen de semántica/teclado; falta anuncio accesible de estados. Formulario adaptativo solo cubre parcialmente Crédito Extra, no área curricular/modalidades. El modo offline no mantiene la vista cacheada al fallar la red y la resolución de conflictos no aplica ninguna acción.
+- **Criterios:** bandeja visible para tareas/exámenes con prioridad/filtros de ámbito; navegación semántica y teclado; etiquetas/estados y aria-live; formularios adaptados por tipo y área; conservar caché y mostrar estado real de sincronización; validación WCAG 2.2 AA y pruebas táctiles/lectores de pantalla.
+- **Tareas relacionadas (no duplicadas):** AUD-NG-126 (orden), AUD-NG-158 (ABAC docente), TASK-065 (cola/reintentos), TASK-129/TASK-130 (ayudas contextuales).
+- **Estado:** [ ] Pendiente
+
+Hallazgo nuevo: AUD-NG-169. Progreso de auditoría: 20/183; 163 pendientes. Siguiente tarea: TAREA-15.
