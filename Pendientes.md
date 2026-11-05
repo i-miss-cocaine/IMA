@@ -3242,6 +3242,8 @@ REGLA RECTORA INNEGOCIABLE DEL BACKLOG:
   - [ ] Comprobar que un cliente con una versión antigua no puede sobrescribir silenciosamente una configuración nueva.
   - [ ] Verificar que la invalidación de caché no elimina datos de negocio ajenos a la configuración.
   - [ ] Comprobar que las cachés de los servicios dependientes se actualizan correctamente.
+- **Ampliación C1.26 / FASE2-T19:** `js/config.js` declara `CACHE_POLICIES`, pero no se observa su consumo en `fetchApi` ni en `PersistenceManager`. Los TTL declarados (roles 21600 s, catálogos 43200 s y permisos de sesión 3600 s) no corresponden al comportamiento observado: no hay escritura de `user_role_`, el estado de cuenta usa 60 s y la matriz dinámica usa 600 s globales. `manageInstitutionalDataCache(FLUSH_GLOBAL)` solo registra un evento y no purga claves; `INVALIDATE_USER` ignora el booleano de `invalidateUserRoleCache` y devuelve éxito aunque la purga falle. La ruta `purgeSecurityCaches` está autorizada y enrutada, pero no existe una definición local en el único `Code.gs` del servicio. No se observó enlace de invalidación/versionado desde `saveSystemConfiguration`. En frontend, `PersistenceManager` conserva `updated_at` pero no aplica TTL ni expone estado de obsolescencia.
+- **Criterios adicionales:** La política central debe reflejar los TTL y ámbitos realmente aplicados, ser consumida por backend y frontend y definir invalidación por clave/ámbito. Las operaciones de purga deben eliminar las claves pertinentes y devolver error si no se completan; no deben afirmar éxito por registrar un evento. Probar dos sesiones, cambios globales/departamentales/personales, fuente no disponible, caché local vencida y recuperación de conexión; los datos locales deben marcarse como obsoletos y no presentarse como confirmados.
 - **Estado:** [ ] Pendiente
 
 ---
@@ -9272,6 +9274,8 @@ REGLA RECTORA INNEGOCIABLE DEL BACKLOG:
   - [ ] Los errores por cuotas se registran y presentan de manera controlada al usuario.
   - [ ] Se registran tiempos de respuesta y cantidades procesadas en los eventos de auditoría.
   - [ ] Las pruebas comparativas demuestran una mejora medible en tiempos de respuesta frente a las consultas originales.
+- **Ampliación C1.26 / FASE2-T19:** Las operaciones de caché observadas no registran métricas de hit/miss, edad de entrada, invalidaciones, bytes almacenados ni latencia comparativa. Los mensajes de consola de `fetchApi` no constituyen telemetría de rendimiento ni permiten comparar consumo de cuotas.
+- **Criterios adicionales:** Instrumentar métricas por servicio/clave/política sin registrar datos sensibles; ejecutar comparativas con caché fría, caliente y desactivada, midiendo latencia, lecturas/escrituras de Spreadsheet, consumo de cuotas, tamaño y consistencia tras mutaciones. Incorporar las métricas a los informes operativos.
 - **Estado:** [ ] Pendiente
 
 ---
@@ -14333,6 +14337,8 @@ REGLA RECTORA INNEGOCIABLE DEL BACKLOG:
   - [ ] Simular límites de ejecución de 6 minutos y comprobar que los trabajos extensos se fraccionan de forma reanudable.
   - [ ] Comparar métricas de consumo de celdas y tiempo de ejecución antes y después de la optimización.
   - [ ] Verificar que el uso de caché no genera inconsistencias en estados de decisiones críticas.
+- **Ampliación C1.26 / FASE2-T19:** La regla de utilizar `CacheService` solo para datos que admiten consistencia eventual debe aplicarse expresamente a decisiones de autorización, estado de cuenta, delegaciones, permisos y datos financieros. Las cachés de seguridad requieren identidad, TTL acotado e invalidación verificable; los fallos de la fuente de verdad deben distinguirse de la ausencia legítima de datos. La caché local IndexedDB debe exponer antigüedad y estado de sincronización, no presentar contenido vencido como confirmado.
+- **Criterios adicionales:** Ninguna decisión crítica puede conceder permisos basándose en una entrada vencida ni en un fallback estático tras fallo de fuente. Los datos personales y respuestas idempotentes deben permanecer aislados por usuario. Las pruebas deben cubrir fuente caída, caché caliente/fría, expiración, mutación e identidad cruzada.
 - **Estado:** [ ] Pendiente
 
 ---
@@ -16919,6 +16925,8 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Dependencias Expuestas:** Usuarios, CacheService, acct_state_*, revokeUserSession, invalidateUserRoleCache, manageInstitutionalDataCache
 - **Descripción del Alcance:** Centralizar o coordinar la invalidación de cachés de estado de cuenta y sesiones para que una suspensión o desvinculación se aplique en todos los servicios sin esperar a la expiración de caché.
 - **Criterios de Aceptación:** Tras desactivar una cuenta, todos los servicios rechazan nuevas solicitudes en la siguiente operación; las pruebas cubren caché caliente y fría, revocación de sesión y fallos parciales.
+- **Ampliación C1.26 / FASE2-T19:** En USER, `verifySessionToken` conserva `acct_state_<userId>` durante 60 segundos. `manageAccountState` cambia la hoja pero no invoca directamente `invalidateUserRoleCache`; el único archivo del proyecto USER no contiene una definición local de `dispatchSecurityEvent`, aunque la llama después de escribir el estado. `loginUser` bloquea la cuenta tras cinco intentos fallidos y `registerUser(forceUpdate)` puede reactivarla sin purgar `acct_state`. `invalidateUserRoleCache` elimina `user_role_` (sin escritura identificada en el archivo) y `acct_state_`. La invalidación debe ejecutarse y verificarse en todos los cambios de estado, incluidos bloqueos automáticos y reactivaciones; no debe declararse éxito si falla.
+- **Criterios adicionales:** Con caché caliente y fría, probar suspensión, bloqueo por fuerza bruta, desactivación, reactivación y revocación en USER, TASK, EXAM, ACADEMIC y ACCOUNTING. Confirmar rechazo en la siguiente operación o documentar un límite de propagación verificable; simular fallos parciales de invalidación y comprobar que el resultado no se reporta como propagado.
 - **Estado:** [ ] Pendiente
 
 ### [AUD-NG-006] Incorporar idempotencia por operación en reintentos del cliente API
@@ -17515,6 +17523,8 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Dependencias Expuestas:** CacheService, checkAndRegisterIdempotencyKey, saveIdempotentResult y doPost.
 - **Descripción del Alcance:** Crear un registro durable de claves, usuario, acción, firma del payload, estado de operación, resultado y fecha de expiración/retención. Mantener CacheService solo como optimización, no como fuente de verdad. Definir política de retención, recuperación y manejo de resultados grandes o fallos de almacenamiento.
 - **Criterios de Aceptación:** La misma clave recupera el resultado tras expirar/evictar caché y tras reinicio del servicio; claves con payload distinto se rechazan; los errores al guardar la clave no permiten reportar una operación como protegida; la retención se aplica según política auditable.
+- **Ampliación C1.26 / FASE2-T19:** La ruta `createInstitutionalServiceRequest` utiliza `COMM_REQ_<idempotencyKey>` durante 600 segundos y devuelve el resultado cacheado sin comparar el usuario verificado, la acción ni una firma del payload. La clave no contiene identidad y `CacheService.getScriptCache()` es compartida por el proyecto; reutilizar la misma clave desde otra cuenta puede devolver la solicitud y los datos del primer solicitante. El registro durable y la protección idempotente deben abarcar esta ruta, no solo `IDEM_USER_<action>_<token>`.
+- **Criterios adicionales:** Reutilizar una clave desde otro usuario nunca devuelve el resultado ajeno; misma identidad y payload idéntico devuelve el resultado idempotente; payload o identidad distintos se rechazan. Las claves, firmas y registros persistentes deben incluir la identidad verificada y conservar el aislamiento entre servicios/acciones.
 - **Estado:** [ ] Pendiente
 
 ### [AUD-NG-071] Reservar claves idempotentes de forma atómica antes de ejecutar operaciones
@@ -18374,6 +18384,8 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
   - Las cachés de rol/estado usan claves por usuario y versión y se invalidan coordinadamente.
   - Pruebas con token emitido antes del cambio, rol degradado/promovido, caché caliente/fría y llamadas directas a cada microservicio.
 - **Relaciones:** AUD-NG-003 (vigencia de token), AUD-NG-005 (revocación y coherencia de estado), AUD-NG-159 (logout no autorizado), FASE2-T01 y TAREA-F4-P0-03.
+- **Ampliación C1.26 / FASE2-T19:** La matriz dinámica se guarda bajo `dynamic_permissions_matrix` global durante 600 segundos y se invalida desde `savePermissionMatrix`; si la lectura de la fuente falla con caché fría, `getDynamicPermissionsForRole` devuelve `null` y `validateRolePermission` recurre a `ROLE_PERMISSIONS`, sin distinguir ausencia legítima de reglas de un error de fuente. Esto puede reactivar un permiso estático que la matriz dinámica había denegado. Además, `active_delegations_<userId>` conserva delegaciones durante 300 segundos; crear y revocar las invalida, pero la expiración automática registrada por `getSecurityDelegations` no purga la clave y `hasActiveDelegationForAction` no revalida las fechas al consumir una entrada caliente.
+- **Criterios adicionales:** Distinguir explícitamente matriz inexistente de fuente no disponible y fallar de forma segura ante error de lectura; probar denegaciones dinámicas con caché fría, caliente y caída de Spreadsheet. En delegaciones, expirar la entrada al llegar la fecha límite (TTL limitado por el tiempo restante) o comprobar vigencia en cada hit; probar caducidad y revocación con caché caliente.
 - **Estado:** [ ] Pendiente
 
 

@@ -335,3 +335,13 @@ Al reanudar:
 - **Pruebas:** inspección estática/manual; no se ejecutaron pings, caídas, latencia, cuotas, filtros, roles ni colas.
 - **Progreso:** 28/183 identificadores auditados; 155 pendientes.
 - **Siguiente tarea:** FASE2-T19.
+
+
+## 34. Resultado C1.26 - FASE2-T19 (2026-11-05)
+- **Dictamen:** CUMPLE PARCIALMENTE. Hay cachés con TTL y algunas invalidaciones correctas, pero las políticas declaradas no gobiernan el runtime, existen rutas de invalidación sin efecto, una caché de permisos puede recurrir a permisos estáticos ante fallo de fuente, las delegaciones expiradas pueden seguir autorizando hasta 300 s y COMM_REQ_ no separa resultados por identidad. IndexedDB no aplica TTL ni expone obsolescencia.
+- **Evidencia:** USER Code.gs contiene acct_state_ (60 s), revoked_user_/revoked_session_ (21600 s), active_delegations_ (300 s), dynamic_permissions_matrix (600 s), IDEM_USER_ (21600 s), REPLAY_REQ_ (300 s) y COMM_REQ_ (600 s). CACHE_POLICIES declara roles 6 h, catálogos 12 h, permisos 1 h y finanzas sin caché, pero no se integra con fetchApi/PersistenceManager. FLUSH_GLOBAL solo registra; INVALIDATE_USER ignora el resultado; purgeSecurityCaches no tiene definición local. manageAccountState, loginUser y registerUser(forceUpdate) no aseguran invalidación directa de acct_state_. La expiración automática de delegaciones no purga la entrada. La lectura fallida de matriz dinámica retorna null y el validador cae a ROLE_PERMISSIONS. createInstitutionalServiceRequest devuelve un hit COMM_REQ_ sin comprobar identidad/firma. PersistenceManager conserva updated_at pero no verifica TTL ni stale.
+- **Reconciliación:** no crear AUD-NG nuevo. Ampliar AUD-NG-005, AUD-NG-160, AUD-NG-070, TASK-062, TASK-234 y TASK-400.
+- **Calidad:** parcial; las optimizaciones puntuales no forman una política coherente y existen riesgos de autorización, privacidad y consistencia.
+- **Pruebas:** inspección estática/manual; no se ejecutaron Apps Script, concurrencia, pruebas con dos usuarios, expiración, caídas de fuente, latencia ni cuotas.
+- **Progreso:** 29/183 identificadores auditados; 154 pendientes.
+- **Siguiente tarea:** T-UX-26.

@@ -845,3 +845,22 @@ No se crea AUD-NG nuevo.
 - AUD-NG-163 sigue duplicada y consolidada; no ejecutar independientemente.
 
 No se crea AUD-NG nuevo.
+
+
+### Auditoría FASE2-T19 - Mapa de cachés y dependencias (C1.26)
+
+| Clave / almacén | TTL observado | Ámbito | Fuente / consumidor | Invalidación observada | Brecha |
+|---|---:|---|---|---|---|
+| `acct_state_<userId>` | 60 s | Usuario | USER / verifySessionToken | invalidateUserRoleCache | No todos los cambios de estado la invocan; lockout/reactivación no purgan. |
+| `revoked_user_<userId>`, `revoked_session_<sessionId>` | 21600 s | Usuario / sesión | USER / verifySessionToken | revokeUserSession | Revocación temporal; coherencia interservicio pendiente. |
+| `active_delegations_<userId>` | 300 s | Usuario | USER / hasActiveDelegationForAction | Crear y revocar delegación | Expiración automática no invalida; hit no revalida fechas. |
+| `dynamic_permissions_matrix` | 600 s | Global por rol | USER / getDynamicPermissionsForRole | savePermissionMatrix | Error de fuente se confunde con ausencia y cae a permisos estáticos. |
+| `IDEM_USER_<action>_<token>` | 21600 s | ScriptCache compartida; firma incluye identidad | USER / doPost | Expiración | Temporal; persistencia durable y aislamiento deben cubrir todos los flujos. |
+| `REPLAY_REQ_<requestId>` | 300 s | Global por requestId | USER / verifyInterServiceEnvelope | Expiración | Se registra antes de validar firma; relacionado con AUD-NG-085. |
+| `COMM_REQ_<idempotencyKey>` | 600 s | Global, sin identidad en clave | USER / createInstitutionalServiceRequest | Expiración | Puede devolver a otra cuenta el resultado cacheado del primer solicitante. |
+| IndexedDB `academic_stats/config_<userId>` | Sin TTL | Usuario en syncAcademicScope | js/config.js, js/api.js, js/persistence.js | Reconciliación con respuesta servidor | No verifica antigüedad ni expone estado obsoleto. |
+
+- CACHE_POLICIES en js/config.js declara TTL/ámbitos, pero no se conecta con CacheService ni PersistenceManager.
+- manageInstitutionalDataCache(FLUSH_GLOBAL) registra el evento, no ejecuta purga. INVALIDATE_USER no propaga el fallo de invalidación.
+- purgeSecurityCaches y dispatchSecurityEvent se invocan/enrutan, pero no tienen definición local en el único archivo backend/user-service/Code.gs.
+- Dependencias de remediación: AUD-NG-005, AUD-NG-160, AUD-NG-070, TASK-062, TASK-234 y TASK-400.

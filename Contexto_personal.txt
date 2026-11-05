@@ -1234,3 +1234,27 @@ CHECKPOINT C1.25 - AUDITORÍA FASE2-T18 (2026-11-05)
 - La planificación AUDITORIA_FASE2_ARQUITECTURA_INTEROPERABILIDAD.md no está disponible; se utilizó el alcance explícito de completadas.md.
 - No repetir TAREA-01 a TAREA-20 ni FASE2-T17/FASE2-T18. Siguiente tarea exacta: FASE2-T19.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.26 - AUDITORÍA FASE2-T19 (2026-11-05)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- HEAD de partida verificado: 5493985322278be08607a613ef5b0b9c7860330b (commit C1.25 / FASE2-T18).
+- Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59; intacta, sin merge.
+- Última tarea auditada: FASE2-T19 - gestión de caché de datos institucionales.
+- Dictamen: CUMPLE PARCIALMENTE; TTL/políticas no están conectados al runtime, invalidación global no ejecuta purga, estado y delegaciones pueden permanecer obsoletos, matriz dinámica cae a permisos estáticos ante error de fuente, COMM_REQ_ no aísla por identidad y IndexedDB no aplica TTL.
+- Progreso: 29/183 identificadores únicos auditados; 154 pendientes.
+- Hallazgo nuevo: ninguno. Se amplían AUD-NG-005, AUD-NG-160, AUD-NG-070, TASK-062, TASK-234 y TASK-400. No crear AUD-NG duplicado.
+- Informe: AUDITORIA_COMPLETADAS_FASE2-T19.md. Sección del plan: 34.
+- Archivos fuente y SHA:
+  * backend/user-service/Code.gs: 12079dd410aa6d8afbce55a4bc62a79dea605f9f.
+  * js/config.js: 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc.
+  * js/api.js: 6b24f666db30a811a8e9b38d466fc6001cf6dfa9.
+  * js/persistence.js: 94ac26feb4f7f31f1f3f2a238e164d23be565d94.
+- Documentos actualizados: Auditoria.txt, Pendientes.md, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt e informe FASE2-T19. Todos los cambios documentales de esta tarea se agrupan en un solo commit.
+- Sin cambios en código fuente, completadas.md, completadas_legacy.md, ChangesLogs.txt ni METODOLOGIA_DESARROLLO.md.
+- Pruebas: inspección estática/manual; no se ejecutaron pruebas en Apps Script, concurrencia, fuentes caídas, expiración, latencia, cuotas ni pruebas de identidad cruzada. No se usaron datos productivos.
+- No repetir FASE2-T19. Siguiente identificador en el orden de completadas.md: T-UX-26; comprobar antes su posible cobertura histórica.
+================================================================
