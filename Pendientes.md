@@ -19022,6 +19022,13 @@ AUD-NG-163 permanece DUPLICADA y consolidada; no reabrirla como tarea independie
   - Las pruebas cubren éxito, vacío, error de negocio, autorización, excepción, HTTP no exitoso, HTML, JSON inválido, timeout y Accounting.
   - La suite solo marca PASS cuando se cumplen los resultados esperados, no por la mera presencia de claves en una respuesta error.
   - Los mensajes dinámicos no se interpretan como HTML.
+- **Ampliación derivada de FASE2-T03:**
+  1. Inventariar todas las operaciones expuestas por USER, ACADEMIC y ACCOUNTING y sus consumidores reales; documentar propósito, parámetros, tipos, campos obligatorios, restricciones, respuesta, errores, autenticación/autorización, efectos secundarios y semántica de repetición/idempotencia.
+  2. Definir una política explícita de versionado y compatibilidad de contratos que contemple campos nuevos, campos opcionales, deprecaciones y cambios incompatibles, con pruebas que detecten regresiones antes del despliegue.
+- **Criterios de aceptación adicionales:**
+  - El catálogo cubre todas las acciones públicas de los tres servicios y enlaza cada operación con sus consumidores reales.
+  - Las solicitudes inválidas se rechazan en el servidor según tipos, campos y rangos documentados.
+  - Los cambios compatibles mantienen consumidores existentes; los incompatibles se versionan o se rechazan por pruebas de contrato.
 - **Estado:** [ ] Pendiente
 
 
@@ -19096,4 +19103,32 @@ AUD-NG-163 permanece DUPLICADA y consolidada; no reabrirla como tarea independie
   - Los enlaces no permitidos se rechazan antes de generar o enviar el correo.
   - Los logs y errores no incluyen credenciales ni datos sensibles completos.
   - Las pruebas de seguridad usan datos sintéticos y verifican tanto las respuestas como los valores persistidos.
+- **Estado:** [ ] Pendiente
+
+---
+
+### [TASK-476] [AUD-NG-178] Establecer criterios reproducibles de escalabilidad y un plan de evolución del almacenamiento transaccional
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-178; auditoría FASE2-07 (C1.35) y requisitos de FASE2-T12.
+- **Prioridad:** P2
+- **Severidad/Clasificación:** Medio (escalabilidad, integridad y continuidad de datos).
+- **Archivos Involucrados:** backend/academic-service/Code.gs; backend/accounting-service/Code.gs; tests/regression/; documentación de arquitectura y operación.
+- **Dependencias Expuestas:** evaluateTransactionalStorageMigrationNeed, Google Sheets, operaciones multi-entidad, identificadores institucionales, relaciones académicas/contables, permisos, respaldos, sincronización y reconciliación.
+- **Descripción del Alcance:**
+  1. Inventariar entidades, volúmenes, operaciones críticas y transacciones lógicas que abarcan varias hojas o servicios; identificar relaciones, invariantes y límites de consistencia.
+  2. Definir y recopilar métricas reproducibles por servicio, acción y operación: volumen de filas/entidades, tamaño real, lecturas/escrituras, latencia y percentiles, errores, cuotas, concurrencia, crecimiento histórico y coste de procesamiento.
+  3. Establecer una línea base con escenarios representativos y documentar entorno, volumen, datos sintéticos, procedimiento, repeticiones y resultados.
+  4. Definir umbrales de alerta y criterios de decisión derivados de carga esperada, límites oficiales, tendencias y objetivos de servicio; no utilizar únicamente constantes arbitrarias.
+  5. Comparar alternativas (optimización de Sheets, lotes, particionamiento y almacenamiento transaccional adecuado) según transacciones, integridad referencial, concurrencia, consultas, costes, operación, seguridad y recuperación.
+  6. Diseñar migración gradual solo con evidencia suficiente, identificando fuente de verdad, lectura/escritura, sincronización, corte, validación de paridad y reversión.
+  7. Preservar IDs, relaciones, historial, auditoría, permisos, referencias a archivos y trazabilidad.
+  8. Incorporar pruebas aisladas de carga, concurrencia, consistencia, reconciliación, recuperación y reversión con datos sintéticos; no operar sobre hojas productivas desde las suites.
+  9. Documentar responsables, métricas, criterios de activación, fases, riesgos y condiciones para detener o revertir.
+- **Criterios de Aceptación:**
+  - Las mediciones son repetibles y comparables con una línea base explícita.
+  - Los umbrales se justifican con límites documentados, carga prevista y evidencia, no solo con valores fijos.
+  - La recomendación compara alternativas y cuantifica riesgos, costes y beneficios.
+  - No se propone ni ejecuta migración por superar un único umbral arbitrario.
+  - El plan conserva IDs, relaciones, historial, permisos, integridad y trazabilidad.
+  - Existen pruebas sintéticas de consistencia, concurrencia, sincronización, corte y reversión.
+  - La suite no lee ni modifica datos productivos para medir capacidad.
 - **Estado:** [ ] Pendiente

@@ -5427,3 +5427,14 @@ AUDITORÍA DE completadas.md - FASE2-07 (2026-11-05)
 - Pruebas: inspección estática/manual. No se ejecutaron Apps Script, HTTP, cuotas reales, carga, benchmarks, concurrencia ni migraciones. No se usaron datos productivos ni se modificó código fuente.
 - Progreso: 38/183 identificadores auditados; 145 pendientes. Informe: AUDITORIA_COMPLETADAS_FASE2-07.md.
 ===============================================================================
+
+
+================================================================
+AMPLIACIÓN DE AUD-NG-174 - CONTRATOS API, INVENTARIO Y COMPATIBILIDAD (FASE2-T03 / C1.36)
+FECHA: 2026-11-05
+ARCHIVOS: js/api.js; backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs
+EVIDENCIA: js/api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; Academic SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; Accounting SHA 38b979d41596b85e888b4a7060b37bbac0840a28; User SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9.
+DESCRIPCIÓN: FASE2-T03 exige inventario de operaciones y consumidores, documentación por endpoint de propósito, parámetros, tipos, restricciones, respuestas, errores, autorización, efectos secundarios y reglas de repetición, además de política de compatibilidad. Los routers solo exponen listas de acciones y permisos; no se encontró catálogo contractual completo. textResponse solo agrega status/timestamp/código genérico, asigna success por defecto y no establece versión ni envelope común. fetchApi parsea JSON sin validar esquema, convierte respuestas incompletas en data vacía y puede devolver status success con isFallback. La suite académica cubre cuatro operaciones locales, permite PASS con status error y no prueba transporte; no se identificó suite contractual equivalente para Accounting. User doPost también expone err.message en el catch.
+IMPACTO: cambios de API pueden romper consumidores sin detección; errores, respuestas vacías y fallbacks pueden confundirse; parámetros y efectos secundarios carecen de contrato verificable; cambios incompatibles pueden llegar a producción sin pruebas.
+AMPLIACIÓN DE TAREA: extender AUD-NG-174 con catálogo completo de operaciones/consumidores, esquemas, autorización, efectos secundarios, repetición, versionado y compatibilidad. No duplicar hallazgo.
+================================================================

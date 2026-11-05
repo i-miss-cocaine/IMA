@@ -446,3 +446,13 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - El checkpoint debe indicar HEAD de partida, ramas, último ID terminado, tarea en curso, siguiente tarea exacta, archivo/función/rango de continuidad, evidencia/SHA, pruebas reales, archivos cambiados, bloqueos y acción siguiente. El commit final se identifica como el que contiene el checkpoint y su SHA se confirma consultando el HEAD tras publicarlo (no se intenta autorreferenciar dentro del propio archivo).
 - Después del commit se verifican SHA, árbol, archivos incluidos, HEAD de trabajo y que la rama base siga intacta. No hacer un segundo commit para completar el checkpoint.
 
+
+
+## 43. Resultado C1.36 - FASE2-T03 (2026-11-05)
+- **Dictamen:** CUMPLE PARCIALMENTE. Existen textResponse en Academic/Accounting y suite parcial en Academic; no hay contratos completos por endpoint, inventario de consumidores, validación transversal, versionado ni pruebas conductuales de compatibilidad.
+- **Evidencia:** js/api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; Academic SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; Accounting SHA 38b979d41596b85e888b4a7060b37bbac0840a28; User SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9. La suite validateApiContractsTestSuite cubre cuatro acciones locales y acepta status:error como PASS; fetchApi no valida esquemas y produce falsos éxitos de fallback.
+- **Reconciliación:** ampliar AUD-NG-174; no duplicar AUD-NG-007, AUD-NG-006 ni AUD-NG-161.
+- **Backlog:** recuperado Pendientes.md íntegro desde blob SHA 52a3215094b8bc28b494402c08c15186b5a3eef3; se registró TASK-476 para AUD-NG-178 y se amplió AUD-NG-174.
+- **Pruebas:** inspección estática/manual. No se ejecutaron Apps Script, HTTP, navegador ni suites automatizadas.
+- **Progreso:** 39/183 identificadores auditados; 144 pendientes.
+- **Siguiente tarea:** FASE2-T04 - Establecer una fuente de verdad institucional para catálogos, configuraciones y referencias.

@@ -957,3 +957,12 @@ No se crea AUD-NG nuevo.
 - ui-common.renderPaginatedTable no tiene consumidores localizados y su callback remoto no está integrado; los endpoints Academic/Accounting leen las hojas completas; ampliar TASK-429.
 - Academic/Accounting duplican evaluateTransactionalStorageMigrationNeed con umbrales fijos y sin plan de migración; hallazgo AUD-NG-178.
 - AUD-NG-163 permanece duplicada; no reabrir.
+
+
+## FASE2-T03 - Contratos API y compatibilidad (C1.36)
+- `js/api.js:11-181` (`fetchApi`): envía POST JSON {action,payload}; enriquece payload con requesterUserId/requesterRole del almacenamiento del navegador; no valida esquema de entrada/salida ni versión; ante fallos devuelve status success/data vacía/isFallback para lecturas.
+- `backend/academic-service/Code.gs:20-25` y `backend/accounting-service/Code.gs:20-25`: `textResponse` asigna success si falta status, agrega timestamp y código genérico solo para errores; no fija envelope/version/correlationId ni mensaje público normalizado.
+- `backend/academic-service/Code.gs:3915-3965`: `validateApiContractsTestSuite` cubre cuatro acciones locales; ping es sintético y PASS acepta status success o error. La suite devuelve status success aunque todasPruebasPasaron sea falso.
+- `backend/user-service/Code.gs:1351-1620`: dispatcher por acción y autorización; catch devuelve err.message. No se encontró catálogo formal de contratos por operación.
+- `backend/accounting-service/Code.gs:572-785`: dispatcher por acción con autorización e idempotencia opcional; no se identificó suite contractual equivalente.
+- Reconciliación: ampliar AUD-NG-174 con catálogo de endpoints/consumidores, tipos, validación, efectos secundarios, idempotencia/repetición y compatibilidad versionada. No duplicar AUD-NG-007/AUD-NG-006/AUD-NG-161.
