@@ -2302,3 +2302,89 @@ ARCHIVOS DE ESTA ITERACIÓN:
 - Publicación: un solo commit final descendiente de 05eb016f4ba1e149111091b47ed72ad97520e37d. Sin commits intermedios.
 - Próxima acción: auditar T-UX-12, contrastando sus paneles por rol/departamento con implementaciones posteriores y tareas existentes.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.52 - AUDITORÍA T-UX-12 (2026-11-05)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto real: Contexto_personal.txt.
+- Rama de trabajo autorizada: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado por checkpoint anterior: 05eb016f4ba1e149111091b47ed72ad97520e37d.
+- Árbol de partida registrado: 7511da6a2db0efc225f3cd9c3b680f6c7fa6616d.
+- HEAD de rama base al inicio y al último compare consultado: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Comparación al inicio: rama de trabajo 97 commits por delante, 0 por detrás de la rama base.
+- Última tarea auditada y cerrada: T-UX-12 - Consolidar los paneles de control por rol y departamento.
+- Dictamen: NO CUMPLE. Los helpers de resumen de Estudiante, Docente y Contabilidad no están integrados; el helper estudiantil usa un campo incompatible con el modelo de entregas y el resumen contable es estático. Dirección y Coordinación muestran indicadores sin fuente real o hardcodeados. RR. HH. no procesa las solicitudes por discrepancias entre respuesta, campos y estados. El rol Empleado puede consultar expedientes/solicitudes laborales ajenas por falta de aislamiento en servidor.
+- Tarea en curso: ninguna; inspección estática/manual de T-UX-12 cerrada.
+- Siguiente tarea según completadas.md: T-UX-13 - Completar el menú lateral específico de cada panel. Reconciliar AUD-NG-186/TASK-483 y sus ampliaciones antes de comenzar.
+- Progreso acumulado: 53/183 identificadores auditados; 130 pendientes.
+
+RECONCILIACIÓN HISTÓRICA:
+- No se encontró auditoría anterior específica de T-UX-12 en Auditoria.txt, MapaDependencias.md ni en el plan antes de C1.52.
+- T-UX-16 amplía notificaciones, tareas y aprobaciones; F8-Task12 (antes TAREA-AD-07) amplía la consola administrativa de roles; T-UX-13/TASK-483 cubre navegación por rol; T-UX-20 cubre responsividad; TAREA-04 cubre optimización de paneles analíticos. Ninguna sustituye los criterios de T-UX-12 sobre resúmenes, datos reales, accesos y permisos.
+- La Secretaría sí tiene métricas de admisiones conectadas a getAdmissionRequests; el hallazgo de Coordinación se limita al contador/mensaje de sílabos y jornalizaciones.
+- No se modificó completadas.md ni se cambió el estado histórico [X] de T-UX-12.
+
+HALLAZGOS Y TAREAS:
+- AUD-NG-190 (ALTO/P1): los resúmenes de Estudiante, Docente y Contabilidad no están integrados; el helper de Estudiante usa actividad.entregado mientras el módulo procesa actividad.entrega.estado; el resumen contable es estático y convierte datos ausentes en cero. TASK-487.
+- AUD-NG-191 (ALTO/P1): Dirección conserva contador/lista estáticos; Coordinación fija sílabos pendientes en cero sin fuente; dashboard dinámico solo mapea seis roles, aplica fallback docente a otros y muestra “Acceder” sin navegación. TASK-488.
+- AUD-NG-192 (ALTO/P1): el dashboard de RR. HH. espera resLeaves.data/tipoSolicitud/userId/Pendiente, pero backend devuelve solicitudes/tipo/expedienteId/PendienteAprobacion. TASK-489.
+- AUD-NG-193 (ALTO/P1): getEmployeeRecords y getVacationRequests no aplican aislamiento de titularidad; Empleado tiene permisos de acción y puede consultar expedientes/solicitudes de otros usuarios si omite o manipula filtros. TASK-490.
+- Tareas creadas en Pendientes.md: TASK-487, TASK-488, TASK-489 y TASK-490. No se alteraron estados históricos ni se modificó código fuente.
+
+RECUPERACIÓN E INVENTARIO DE Pendientes.md:
+- Ruta: Pendientes.md.
+- Rama de recuperación: NG_beta_0.0.0.1_work, exclusivamente.
+- HEAD consultado antes de la actualización: 05eb016f4ba1e149111091b47ed72ad97520e37d (C1.51).
+- La lectura convencional de fetch_file devolvió 0 caracteres. Se recuperó el blob que el propio HEAD de la rama de trabajo reportó: 4d4f07655166ebd44bb51e564cdefa3cc73112e2.
+- Blob recuperado íntegramente: 1,650,380 caracteres y 19,437 líneas. Se verificaron encabezado, contenido final, TASK-485/TASK-486, estados y estructura. El blob 4d2f3cd3bbe391a716f085f77864b82b53d920a2 de C1.51 corresponde al contenido previo; se priorizó el blob más reciente del HEAD actual de la rama.
+- Se preservó el blob 4d4f07655166ebd44bb51e564cdefa3cc73112e2 como respaldo inmutable. No se consultó ni utilizó una rama externa, versión legacy o rama base para recuperar el archivo.
+- Después de agregar las cuatro tareas, blob nuevo: 42999b169766bbfd10a2d3de02fc40fc937fc620; 1,664,739 caracteres y 19,537 líneas.
+- Inventario posterior: 490 encabezados TASK únicos, máximo TASK-490; 490 referencias TASK únicas. 188 referencias AUD-NG únicas, máximo AUD-NG-193. Total combinado: 678 identificadores únicos.
+- Estados por encabezado: 43 completados (incluye estados [X] explícitos y encabezado marcado); 394 pendientes; 53 sin estado explícito. No se modificaron estados históricos.
+- Validaciones: todos los IDs nuevos TASK-487..TASK-490 y AUD-NG-190..AUD-NG-193 aparecen en el blob actualizado; contenido final incluye las cuatro tareas completas.
+
+ARCHIVOS Y SHAs DE RESPALDO:
+- completadas.md: f57f1aef832e81e44fc4f7ec36a852d50e464676.
+- METODOLOGIA_DESARROLLO.md: 214e8221bd076c4e89012636c105bffd5ca36467.
+- js/student.js: e2888cea60322e49a40b89adadb8010489605dcc.
+- js/teacher.js: c475fce5afcd28fca23e7b64398ad32b17773746.
+- js/accounting.js: a79ead4a54ad6fdb2f1e9df4775491ff7191a0c7.
+- js/secretary.js: 08a81266957b4c18cc25f8ba6749eac30a8f2c2c.
+- js/ui-common.js: 986938b8a311a41ed4cb3d135b66b6aaea4bed67.
+- backend/accounting-service/Code.gs: 38b979d41596b85e888b4a7060b37bbac0840a28.
+- backend/academic-service/Code.gs: daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc.
+- backend/user-service/Code.gs: 12079dd410aa6d8afbce55a4bc62a79dea605f9f.
+- dashboard-direccion.html: fefaa3bf7884288aef563cfb8aaf244e6cea8b7c.
+- dashboard-recursos-humanos.html: 406bedbae5a5bb3b5c03e4ea7aaa95ed68aea8ee.
+- dashboard-contabilidad.html: b7653b3bff71829f0f67cf47cb894413c56a444a.
+- student-dashboard.html: 6379ea0ed39d71b89747a0280bb925fdf12202c1.
+- teacher-dashboard.html: cbb9e6a272a7d8ad33f99727303305d950533e71.
+- dashboard-coordinacion.html: 08de8e4eb150ee9f6aad536ca08e8f76f2e0e896.
+- dashboard-secretaria.html: fa0d8c23aace24a6acab2d4956398a7f5e1309b8.
+- app/html/dashboards/dynamic-dashboard.html: 765a45e5666c24c430e841cb70c3d71d03cf9074.
+- Pendientes.md blob previo: 4d4f07655166ebd44bb51e564cdefa3cc73112e2.
+- Pendientes.md blob posterior: 42999b169766bbfd10a2d3de02fc40fc937fc620.
+- Auditoria.txt antes: c32cea7f84d2d146f7b65ea39b7e463bbf085ce2.
+- MapaDependencias.md antes: 03ba11612e38eedd2631ea8474d0c05572e10a5f.
+- AUDITORIA_COMPLETADAS_PLAN.md antes: c93f36bc7056f7324bc404a45b8b50368d6712e2.
+- Contexto_personal.txt antes: 71b91da4746f055fe1c8913a157280247cd5af89.
+
+ARCHIVOS DE ESTA ITERACIÓN:
+- Modificados: Pendientes.md, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt.
+- Nuevos: AUDITORIA_COMPLETADAS_T-UX-12.md.
+- Sin modificar: código fuente, completadas.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, rama base y demás ramas.
+- Pruebas: inspección estática/manual de funciones, contratos, permisos y dashboards. No se ejecutaron navegador, DOM real, APIs, Apps Script, Google Sheets, pruebas de permisos en entorno activo ni suites automatizadas.
+- Publicación modular autorizada expresamente por el usuario. Commits previos a este checkpoint:
+  - Pendientes.md: bcf8facf7e15bd2c512b8d1ec715aeb9d69f832e.
+  - Informe T-UX-12: e45fc8dc134bfcdd5cfea70af48b40f108fccb6a.
+  - Auditoria.txt: 4469e070431569c3d71102dc66e86e4b234b8a36.
+  - MapaDependencias.md: a3f3f2d6fdf4c3ceb94e8e9fd8d2e3d827de08da.
+  - AUDITORIA_COMPLETADAS_PLAN.md: 583f8498eab0803444eafac05eb8656b851380e6.
+  - Corrección de referencia del plan: ca2427033f54d37c66eabbea5be93b472ca18303.
+- El commit que contiene este checkpoint se confirmará externamente consultando HEAD después de publicar; no escribir su propio SHA dentro de este checkpoint.
+- Próxima acción: auditar T-UX-13, reconciliar AUD-NG-186/TASK-483, revisar cambios posteriores de navegación y verificar todos los dashboards/roles cubiertos.
+
+================================================================
