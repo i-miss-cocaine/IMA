@@ -4599,3 +4599,19 @@ AUDITORÍA DE completadas.md - TAREA-09 (2026-11-05)
 
 
 CORRECCIÓN DE INTEGRIDAD DE Pendientes.md (2026-11-05): la verificación posterior al commit de TAREA-09 detectó que el archivo había quedado reducido a un fragmento de 478 caracteres. Se restauró íntegramente desde el blob previo a TAREA-09 (1,515,247 caracteres), conservando AUD-NG-164 y todos los registros; se añadió al final la ampliación de criterios de AUD-NG-011. Esta reparación documental no modifica código, completadas.md ni ChangesLogs.txt.
+
+
+===============================================================================
+[AUD-NG-165] TAREA-10 - PRIVACIDAD DE COMENTARIOS Y VERSIONES DE ENTREGAS
+- Fecha: 2026-11-05. Severidad: ALTO (P1).
+- Evidencia: getSubmissionComments devuelve comentarios privados (esPrivado=true) sin filtrar por rol/propiedad y permite buscar por entregaId/tareaId sin comprobar relación. ROLE_PERMISSIONS concede esa consulta a estudiantes, padres, tutores y responsables. getSubmissionVersions permite consultar por entregaId sin validar propietario/ámbito. addSubmissionComment acepta autorId, rolAutor y esPrivado desde el payload; returnSubmissionForRevision usa profesorId enviado por el cliente.
+- Impacto: exposición de notas internas y versiones/archivos de entregas de terceros; suplantación de autor/rol en comentarios.
+- Tareas relacionadas: AUD-NG-002 (consultas públicas), AUD-NG-124 (propiedad/calificaciones), AUD-NG-158 (ABAC escrituras docentes).
+- Criterios: filtrar comentarios privados por docente/rol autorizado; derivar autor desde token; validar propiedad/relación de entrega; impedir consulta por ID arbitrario; preservar relaciones e historial al eliminar.
+- Control de duplicados: AUD-NG-165 se limita a privacidad/propiedad de comentarios y versiones; las tareas relacionadas cubren consultas públicas, calificación y ámbito docente.
+- TAREA-10: CUMPLE PARCIALMENTE. ChangesLogs registra solo comentario identificativo; el código ya tiene borradores/versiones/comentarios/rúbricas básicos, pero faltan modalidades grupales/recurrentes, límites de intentos, comprobante persistido/idempotencia y revisión parcial.
+- Hallazgo nuevo: AUD-NG-165. Se amplían AUD-NG-149/121/152/124/158/002.
+- Calidad: insuficiente por exposición de comentarios privados, consultas de versiones sin ámbito y flujos incompletos.
+- Pruebas: inspección estática; no se ejecutaron pruebas de roles, acceso cruzado, idempotencia o concurrencia.
+- Progreso: 16/183; 167 pendientes. Siguiente: TAREA-11.
+===============================================================================

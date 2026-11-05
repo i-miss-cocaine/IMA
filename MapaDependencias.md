@@ -637,3 +637,9 @@
 
 ## Corrección de integridad - Pendientes.md (2026-11-05)
 Se restauró el contenido íntegro previo a TAREA-09 (1,515,247 caracteres) tras detectar que la primera actualización había guardado solo 478 caracteres. Se conservaron todos los registros y se añadió la ampliación de AUD-NG-011.
+
+
+## Auditoría de completadas.md - TAREA-10 (2026-11-05)
+- Dictamen: CUMPLE PARCIALMENTE. Existen borradores/versiones/comentarios/rúbricas básicas; faltan tareas grupales/recurrentes, intentos, recibo persistido/idempotencia y revisión parcial.
+- getSubmissionComments devuelve comentarios privados sin filtrar; getSubmissionVersions permite consulta por entregaId sin validar propiedad. addSubmissionComment confía en autor/rol/privacidad enviados por el cliente.
+- Hallazgo nuevo: AUD-NG-165. Se amplían AUD-NG-149/121/152/124/158/002.

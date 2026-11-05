@@ -217,3 +217,9 @@ Al reanudar:
 - Se detectó que la actualización inicial de TAREA-09 había guardado solo un fragmento de 478 caracteres.
 - Se restauró el contenido íntegro previo (1,515,247 caracteres), se conservó AUD-NG-164 y se agregó la ampliación de AUD-NG-011.
 - Reparación documental en commit separado; sin borrar registros ni reescribir commits.
+
+
+## 21. Resultado C1.12 - TAREA-10 (2026-11-05)
+- Dictamen: CUMPLE PARCIALMENTE. El servicio contiene creación, borradores, versiones, comentarios y rúbricas básicas, pero no acredita tareas grupales/recurrentes, límites de intentos, comprobantes persistidos/idempotencia ni revisión parcial. getSubmissionComments expone comentarios privados y getSubmissionVersions no verifica propiedad por entregaId.
+- Hallazgo nuevo: AUD-NG-165, privacidad y acceso contextual a comentarios/versiones.
+- Se amplían AUD-NG-149/121/152/124/158/002. Progreso 16/183; 167 pendientes. Siguiente: TAREA-11.

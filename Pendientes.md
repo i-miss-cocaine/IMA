@@ -18500,3 +18500,27 @@ Hallazgo nuevo: ninguno. Las brechas de TAREA-07 se vinculan a tareas preexisten
 
 ## Ampliación TAREA-09 / AUD-NG-011 (2026-11-05)
 Exigir proyectos y deployments reales por área, endpoints y fuentes verificadas, routing desde js/api.js, pruebas de conectividad/RBAC/integridad realmente ejecutadas y persistencia/validación de areaId en tareas y exámenes. No aceptar PASS constantes ni registros de catálogo como prueba de despliegue. Relacionar con AUD-NG-078/079/083/084/086/131/144 y AUD-NG-164. Recomendar revaluar severidad de AUD-NG-011 a Alto (P1). No crear hallazgo duplicado.
+
+
+---
+
+## Ampliación de criterios existentes derivada de TAREA-10 (2026-11-05)
+
+- **AUD-NG-149:** incorporar asignaciones individuales/grupales/recurrentes; persistir y versionar el ciclo de vida de la tarea; emitir comprobante con token almacenado y verificable; usar clave idempotente para evitar entregas/versiones duplicadas. Validar modalidad y alcance al crear.
+- **AUD-NG-121:** aplicar en servidor el límite de intentos configurado y las reglas de reentrega, además de la penalización tardía; el comentario actual sobre límites no constituye una validación.
+- **AUD-NG-152:** completar transiciones publicable/programada, abierta, vencida y cerrada, separando apertura, fecha límite y cierre.
+- **AUD-NG-124:** preservar historial de rúbricas, revisiones parciales, criterios y cambios de evaluación; no sobrescribir silenciosamente el progreso.
+- **AUD-NG-158:** derivar autor/profesor de claims verificados en comentarios y devoluciones; comprobar propiedad de la tarea y asignación docente.
+- **AUD-NG-002:** mantener protegidas las consultas sensibles de tareas y entregas, sin bypass por PUBLIC_ACTIONS.
+
+### [AUD-NG-165] Proteger la privacidad y el acceso contextual a comentarios y versiones de entregas
+- **Origen:** Auditoría de completadas.md / TAREA-10.
+- **Severidad:** Alto (P1; privacidad de entregas y retroalimentación).
+- **Archivos:** backend/task-service/Code.gs; js/student.js; js/teacher.js; student-dashboard.html; teacher-dashboard.html.
+- **Dependencias:** ROLE_PERMISSIONS, validateContextualAccess, getSubmissionComments, addSubmissionComment, getSubmissionVersions, returnSubmissionForRevision, deleteSubmission, EntregasVersiones, ComentariosEntregas, _verifiedUserId.
+- **Problema:** getSubmissionComments devuelve también registros esPrivado=true a cualquier rol que tenga permiso de consulta (incluidos estudiante, padre, tutor y responsable) y no valida propiedad/relación con el expediente. getSubmissionVersions permite consultar por entregaId sin comprobar que la entrega pertenezca al usuario o al ámbito docente. addSubmissionComment confía en autorId, rolAutor y esPrivado recibidos del cliente. returnSubmissionForRevision usa profesorId del payload para identificar al autor. deleteSubmission elimina la fila principal y el archivo, pero no elimina ni marca de forma coherente las versiones/comentarios relacionados.
+- **Criterios de aceptación:** comentarios privados solo visibles para docentes asignados y roles expresamente autorizados; estudiantes y responsables solo reciben comentarios públicos de entregas propias/vinculadas; versiones filtradas por propietario o asignación docente aun cuando se consulte por entregaId; autor y rol derivados del token verificado; el cliente no puede elevar esPrivado ni suplantar docentes; devoluciones verifican propiedad de la tarea; borrado lógico conserva trazabilidad y referencias; pruebas negativas con dos estudiantes, dos docentes y responsables no vinculados.
+- **Tareas relacionadas (no duplicadas):** AUD-NG-002 (consultas públicas), AUD-NG-124 (propiedad/calificaciones), AUD-NG-158 (ABAC de escrituras docentes).
+- **Estado:** [ ] Pendiente
+
+Hallazgo nuevo: AUD-NG-165. Los demás vacíos de TAREA-10 amplían tareas existentes.

@@ -914,3 +914,19 @@ CORRECCIÓN C1.11a - RESTAURACIÓN DE Pendientes.md (2026-11-05)
 - Se añadió la ampliación de criterios de AUD-NG-011 para TAREA-09.
 - Corrección en commit separado; no se reescribió historia ni se modificó la rama base.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.12 - AUDITORÍA TAREA-10 (2026-11-05)
+================================================================
+- Rama: NG_beta_0.0.0.1_work; HEAD previo: feec1f5f075f2438c5c1d13f887f05744ca08af1.
+- Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59; intacta.
+- Última tarea: TAREA-10 - tareas, entregas, revisiones y retroalimentación.
+- Dictamen: CUMPLE PARCIALMENTE. Progreso: 16/183; 167 pendientes.
+- Evidencia: hay borradores/versiones/comentarios/rúbricas básicas; faltan tareas grupales/recurrentes, límites de intentos, comprobante persistido/idempotencia y revisión parcial. getSubmissionComments expone comentarios privados; getSubmissionVersions no valida propiedad por entregaId.
+- Hallazgo nuevo: AUD-NG-165. Se amplían AUD-NG-149/121/152/124/158/002.
+- Informe: AUDITORIA_COMPLETADAS_TAREA-10.md. Sección del plan: 21.
+- Archivos del único commit: Auditoria.txt, Pendientes.md, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt e informe TAREA-10.
+- No se modifica código fuente, completadas.md, ChangesLogs.txt ni metodología. No se ejecutaron pruebas de roles/acceso cruzado/idempotencia.
+- Siguiente tarea: TAREA-11.
+================================================================
