@@ -466,3 +466,15 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Pruebas:** inspección estática/manual; no se ejecutaron Apps Script, HTTP, navegador, caché real ni operaciones productivas.
 - **Progreso:** 40/183 identificadores únicos auditados; 143 pendientes.
 - **Siguiente tarea:** FASE2-T05 - Unificar y validar el sistema de identificadores institucionales.
+
+
+## 45. Resultado C1.40 - FASE2-T05 (2026-11-05)
+- **Dictamen:** CUMPLE PARCIALMENTE; no satisface los criterios de aceptación.
+- **Evidencia:** ACCOUNTING SHA 38b979d41596b85e888b4a7060b37bbac0840a28; ACADEMIC SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; USER SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676.
+- **Hallazgos:** generador duplicado USER/ACADEMIC; ScriptLock local no compartido; rutas ACADEMIC con skipLock sin lock exterior y bypass mediante isInternalCall; PersonaID/UserId/ExpedienteID sin validación referencial transversal; fallbacks constantes por entidad (EXP/STU/PER/USR/REL/INV/MAT/MOV-000001 y ADM-000001) y detección de duplicados mediante Observaciones; createPerson con PER-timestamp; validador que siempre marca formato válido; auditor de colisiones limitado a cuatro tablas; ACCOUNTING conserva ID documental timestamp, correlativo no segmentado por año y consulta CUV pública con datos internos.
+- **Reconciliación:** ampliar TASK-118. Mantener TASK-351, AUD-NG-059, AUD-NG-061 y AUD-NG-161. No crear AUD-NG duplicado.
+- **Backlog:** lectura convencional de Pendientes.md devolvió 0 caracteres. Recuperado el blob vigente del HEAD de la rama de trabajo: SHA 4bddbc2f2198d6e144c46674b79589207f624c21, 1,609,995 caracteres y 19,154 líneas. Se amplía TASK-118; no se restaura ni se reemplaza el archivo por una copia legacy.
+- **Inventario corregido:** 476 IDs TASK únicos (TASK-001 a TASK-476), 173 IDs AUD-NG únicos (169 encabezados y 4 referencias sin encabezado: AUD-NG-170/176/177/178), total 649 IDs únicos. El checkpoint C1.38 había consignado 170 IDs AUD-NG; esta revisión exhaustiva corrige el conteo sin alterar el checkpoint histórico. El archivo legacy contiene 473 IDs TASK (TASK-001 a TASK-473), no 474 como se había consignado en C1.38.
+- **Pruebas:** inspección estática/manual. No se ejecutaron Apps Script, HTTP, concurrencia real, suites automatizadas ni operaciones productivas.
+- **Progreso:** 41/183 identificadores auditados; 142 pendientes.
+- **Siguiente tarea:** FASE2-T06 - Corregir y formalizar la concurrencia y la consistencia entre servicios. Reconciliar C1.33/AUD-NG-161 antes de continuar para no repetir su alcance.

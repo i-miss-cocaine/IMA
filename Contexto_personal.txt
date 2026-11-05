@@ -1631,3 +1631,33 @@ CHECKPOINT C1.39 - ALCANCE UNIVERSAL DE LA REGLA DE RECUPERACIÓN (2026-11-05)
 - Próximo paso funcional: FASE2-T05 - Unificar y validar el sistema de identificadores institucionales, conforme a C1.37/C1.38. No repetir FASE2-T04.
 - Commit de cierre: el único commit que contiene esta aclaración y C1.39; confirmar SHA, árbol, archivo incluido y HEAD después de publicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.40 - AUDITORÍA FASE2-T05 E INVENTARIO CORREGIDO (2026-11-05)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto: Contexto_personal.txt.
+- Rama de trabajo autorizada: NG_beta_0.0.0.1_work.
+- HEAD de partida verificado: eddcef8ca734ba8736d975348b52e6fd28475722.
+- Rama base protegida: NG_beta_0.0.0.1; HEAD verificado: 44d9891132332e692dbe2ba8602b41f50a508a59; sin modificaciones.
+- Checkpoint anterior: C1.39 - alcance universal de recuperación histórica.
+- Contexto leído íntegramente: SHA 779062120ec682b839e387c06bcb8e17a3e2797c; 155986 caracteres.
+- Metodología leída íntegramente: SHA 214e8221bd076c4e89012636c105bffd5ca36467; 48,440 caracteres.
+- Plan leído íntegramente: SHA 987965c526b797b2c5872db595c18d43acf97fb0; 51155 caracteres.
+- Tarea auditada: FASE2-T05 - Unificar y validar el sistema de identificadores institucionales.
+- Dictamen: CUMPLE PARCIALMENTE; no satisface los criterios de aceptación.
+- Progreso: 41/183 identificadores auditados; 142 pendientes.
+- Evidencia de código: ACCOUNTING 38b979d41596b85e888b4a7060b37bbac0840a28; ACADEMIC daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; USER 12079dd410aa6d8afbce55a4bc62a79dea605f9f.
+- Hallazgos principales: generador secuencial duplicado; locks locales no coordinados entre servicios; bypass skipLock/isInternalCall y llamadas sin lock exterior; fallbacks constantes por entidad sin validación de unicidad; PersonaID/UserId/ExpedienteID sin validación transversal; detección de duplicados mediante Observaciones; IDs ad hoc; validador superficial; auditoría de colisiones limitada; ACCOUNTING no usa el generador canónico para documentos y mantiene exposición/validación insuficiente del CUV.
+- Reconciliación: ampliar TASK-118; mantener TASK-351, AUD-NG-059, AUD-NG-061 y AUD-NG-161. No crear AUD-NG duplicado.
+- Recuperación obligatoria de Pendientes.md: fetch_file devolvió 0 caracteres en HEAD eddcef8ca734ba8736d975348b52e6fd28475722. Se recuperó el blob vigente desde el árbol/historial de NG_beta_0.0.0.1_work, SHA 4bddbc2f2198d6e144c46674b79589207f624c21, cuyo último commit de modificación visible es e0126cb6ca94ec55bd43785fb02815be83b16afc. El HEAD actual conserva ese mismo blob. Contenido: 1,609,995 caracteres; 19,154 líneas; 476 IDs TASK únicos y 476 encabezados (TASK-001 a TASK-476); 173 IDs AUD-NG únicos, de los cuales 169 tienen encabezado y cuatro son referencias sin encabezado (AUD-NG-170/176/177/178); total 649 IDs únicos.
+- Comparación legacy, solo como referencia: pendiente_legacy.md blob SHA 5b35a722efbe4368b19a7d4947033dba9da3d410; 1,307,758 caracteres; 16,872 líneas; 473 IDs TASK únicos/encabezados (TASK-001 a TASK-473). No se usó como fuente de restauración. Se corrigen aditivamente los conteos anteriores de C1.38 (170 AUD-NG en actual y 474 TASK en legacy).
+- Inventario completadas.md: SHA f57f1aef832e81e44fc4f7ec36a852d50e464676; 448,006 caracteres; 5,963 líneas; 221 identificadores únicos detectados (153 TAREA, 27 T-UX y 41 FASE).
+- Archivos modificados en esta iteración: Pendientes.md (ampliación de TASK-118), Auditoria.txt (registro acumulativo), MapaDependencias.md (relaciones y dependencias), AUDITORIA_COMPLETADAS_PLAN.md (resultado C1.40), nuevo AUDITORIA_COMPLETADAS_FASE2-T05.md y Contexto_personal.txt (este checkpoint).
+- Sin modificaciones: backend/accounting-service/Code.gs, backend/academic-service/Code.gs, backend/user-service/Code.gs, completadas.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md y rama base.
+- Pruebas: inspección estática/manual y verificación de blobs/árbol/SHAs. No se ejecutaron Apps Script, HTTP, pruebas de concurrencia real, suites automatizadas, consultas ni escrituras productivas en Sheets/Drive.
+- Última tarea auditada: FASE2-T05. No hay implementación de código en curso.
+- Siguiente tarea exacta: FASE2-T06 - Corregir y formalizar la concurrencia y la consistencia entre servicios. Antes de iniciarla, reconciliar C1.33/FASE2-05 y AUD-NG-161 para evitar duplicar el alcance de idempotencia, locks, bypass y pruebas.
+- Commit de cierre: el único commit que contiene este checkpoint y los demás documentos de la iteración; confirmar SHA/árbol/archivos/HEAD después de publicar.
+================================================================

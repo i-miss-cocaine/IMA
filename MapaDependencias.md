@@ -981,3 +981,29 @@ No se crea AUD-NG nuevo.
 - backend/academic-service/Code.gs:5995-6027: getSubjectCatalog repite índice de estado incorrecto; createSubjectCatalogItem admite área por defecto General y genera ID basado en timestamp.
 - backend/user-service/Code.gs:185-200: getSharedConfigurationsCatalog publica versiones estáticas, no fuente persistente de catálogos.
 - Reconciliación: ampliar AUD-NG-175; no duplicar TASK-062 (versionado/invalidez), TASK-046/AUD-NG-083/084/086 (enrutamiento) ni AUD-NG-158 (estado/ámbito de áreas).
+
+
+## FASE2-T05 - Identidad institucional, secuencias y relaciones entre servicios (auditoría C1.40)
+
+### Fuente de numeración
+- USER: generateInstitutionalId (1706-1743) utiliza la hoja compartida SecuenciasIDs y un ScriptLock local.
+- ACADEMIC: generateInstitutionalId (2107-2154) implementa la misma lógica, también sobre SecuenciasIDs y con ScriptLock local.
+- La hoja compartida no equivale a un lock compartido: no se acredita exclusión mutua entre los proyectos de microservicio. ACADEMIC acepta skipLock y varias funciones lo usan sin lock exterior visible.
+- ACCOUNTING no utiliza el generador canónico para el documento escolar; generateSchoolDocument asigna DOC-EM-año-timestamp y un CUV separado.
+
+### Identidad de personas y cuentas
+- USER.Personas.PersonaID (columna A) y USER.Usuarios.UserId (A)/PersonaID (J) son claves diferentes. createPerson genera PER-timestamp; generateInstitutionalId puede generar PER-secuencia. linkPersonAccount escribe PersonaID sin validar que exista en Personas ni que el vínculo sea único.
+- ACADEMIC.ExpedientesEstudiantes.ExpedienteID (A)/PersonaID (B) enlaza con la identidad de Persona por convención, pero convertAdmissionToStudent genera el PersonaID sin crear el registro maestro Personas. Si no recibe UserId, genera USR- y lo usa en matrícula sin crear/comprobar la cuenta Usuarios. Ante respuesta sin generatedId, el flujo contempla constantes fijas por entidad (EXP/STU/PER/USR/REL/INV/MAT/MOV-000001), sin reserva ni validación de unicidad. La detección de duplicado busca la identificación mediante includes en Observaciones, no en un campo de identidad dedicado.
+- Matriculas.UserId, DocumentosEstudiante.ExpedienteID y DocumentosEscolaresEmitidos.targetEntityId dependen de estas claves, pero no existe un validador referencial transversal que compruebe existencia, tipo, estado y pertenencia antes de persistir.
+
+### Validadores, auditoría y CUV
+- generateInstitutionalUUID usa Math.random y no persiste ni comprueba colisiones.
+- validateInstitutionalIdentifier identifica prefijos, pero siempre devuelve isValidFormat=true y no comprueba existencia/estado.
+- auditInstitutionalIdentifierCollisions solo inspecciona cuatro tablas académicas, primera columna; no cubre personas, cuentas, expedientes, matrículas, documentos, contabilidad ni referencias cruzadas.
+- ACCOUNTING.DocumentosEscolaresEmitidos tiene desalineación de esquema (8 encabezados frente a 15 valores); docId/correlativo/CUV no se vinculan con un contrato íntegro. La consulta CUV pública expone datos internos y no valida vigencia.
+
+### Dependencias y reconciliación
+- TASK-118: generador canónico, unicidad, prefijos, identidad interna y relaciones.
+- TASK-351 / AUD-NG-059 / AUD-NG-061: CUV, integridad binaria y certificado.
+- AUD-NG-161: exclusión mutua, bypass skipLock, colisiones y pruebas conductuales.
+- No crear un hallazgo duplicado; las relaciones descritas son dependencias lógicas observadas, no claves foráneas ya garantizadas.
