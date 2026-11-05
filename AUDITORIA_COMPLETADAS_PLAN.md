@@ -174,3 +174,15 @@ Al reanudar:
 - Progreso: 11/183; 172 pendientes.
 - Pruebas: inspección estática; sin pruebas entre deployments ni inspección de Google Workspace productivo.
 - Siguiente tarea: TAREA-06.
+
+
+## 16. Resultado del lote C1.8 - TAREA-06 (2026-11-05)
+
+- Tarea auditada: completar la gestión institucional de carpetas y permisos documentales.
+- Dictamen: Cumple parcialmente.
+- Evidencia: TASK y USER usan tryLock sin comprobar adquisición; ACCOUNTING y ACADEMIC crean carpetas sin bloqueo; EXAM no tiene helper equivalente. Las búsquedas son por nombre y no existe catálogo común de IDs estables. USER/ACCOUNTING/TASK contienen enlaces o carpetas ANYONE_WITH_LINK. USER/ACCOUNTING hacen fallback silencioso a la raíz de Drive.
+- Hallazgos nuevos: ninguno. Se amplían AUD-NG-154/155, AUD-NG-058, TASK-139/140/143/295/345/346 y TASK-149/150/456.
+- Calidad: insuficiente por implementación fragmentada, concurrencia no garantizada, rutas no canónicas y permisos públicos.
+- Pruebas: inspección estática; no se ejecutaron pruebas de concurrencia, permisos heredados ni acceso anónimo.
+- Progreso: 12/183; 171 pendientes.
+- Siguiente tarea: TAREA-07.

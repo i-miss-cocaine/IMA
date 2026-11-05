@@ -600,3 +600,12 @@
 - Los sobres interservicio son definiciones no invocadas en USER/ACADEMIC/ACCOUNTING; TASK/EXAM carecen de ellas.
 - Hallazgos existentes: AUD-NG-075/076/077, AUD-NG-078/079/080/081/082, AUD-NG-083/084/085/086, AUD-NG-131/AUD-NG-144 y TASK-064.
 - No se crea AUD-NG nuevo; se amplían criterios existentes para identidad de ejecución, recuperación de cuentas, Shared Drives/delegación y onboarding departamental.
+
+
+## Auditoría de completadas.md - TAREA-06 (2026-11-05)
+- Dictamen: CUMPLE PARCIALMENTE.
+- TASK/USER agregan helpers con tryLock, pero no comprueban si el lock fue adquirido. ACCOUNTING no usa bloqueo y ACADEMIC tiene helpers locales sin bloqueo; EXAM no presenta helper equivalente.
+- ScriptLock no coordina proyectos Apps Script distintos. Las carpetas se buscan por nombre exacto, sin catálogo común de IDs estables.
+- USER/ACCOUNTING/TASK tienen usos de ANYONE_WITH_LINK; TASK hace pública la carpeta de entregas. USER/ACCOUNTING recurren silenciosamente a la raíz de Drive cuando PARENT_FOLDER_ID falta o falla.
+- Hallazgos existentes: AUD-NG-154/155, AUD-NG-058, TASK-139/140/143/295/345/346 y TASK-149/150/456.
+- No se crea AUD-NG nuevo; se amplían criterios de las tareas existentes.

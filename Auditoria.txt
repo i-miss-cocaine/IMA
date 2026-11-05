@@ -4535,3 +4535,21 @@ AUDITORÍA DE completadas.md - TAREA-05 (2026-11-05)
 - Progreso: 11/183 identificadores auditados; 172 pendientes.
 - Siguiente tarea: TAREA-06.
 ===============================================================================
+
+
+===============================================================================
+AUDITORÍA DE completadas.md - TAREA-06 (2026-11-05)
+- Dictamen: CUMPLE PARCIALMENTE.
+- ChangesLogs.txt atribuye dos cambios: getOrCreateFolder en TASK y getOrCreateFolderNews en USER. No acredita la gestión institucional completa exigida en los cinco archivos/cliente listados en completadas.md.
+- TASK y USER usan tryLock(15000) pero no verifican si el bloqueo se adquirió; ACCOUNTING no usa bloqueo y ACADEMIC crea carpetas con helper local sin bloqueo. EXAM no presenta helper equivalente.
+- ScriptLock es local al proyecto Apps Script; no evita duplicados entre proyectos distintos que comparten un padre de Drive.
+- Las búsquedas usan getFoldersByName por nombre exacto; no se demuestra catálogo común de IDs estables ni normalización completa.
+- USER/ACCOUNTING hacen fallback silencioso a DriveApp.getRootFolder() si PARENT_FOLDER_ID falta o falla.
+- ACCOUNTING (2), USER (2) y TASK (2) contienen usos de ANYONE_WITH_LINK; en TASK se hace pública la carpeta de entregas. No hay prueba de privacidad/inherencia.
+- No se demuestra estructura institucional completa, permisos por operación, conciliación de referencias ni ciclo de archivo/traslado/eliminación.
+- Hallazgos nuevos: ninguno. Se amplían AUD-NG-154/155, AUD-NG-058, TASK-139/140/143/295/345/346 y TASK-149/150/456.
+- Calidad: insuficiente por cobertura fragmentada, locks no verificados, ausencia de IDs/rutas canónicas y enlaces públicos.
+- Pruebas: inspección estática; no se ejecutaron pruebas de concurrencia, permisos heredados ni acceso anónimo.
+- Progreso: 12/183 identificadores auditados; 171 pendientes.
+- Siguiente tarea: TAREA-07.
+===============================================================================

@@ -834,3 +834,23 @@ CHECKPOINT C1.7 - AUDITORÍA TAREA-05 (2026-11-05)
 - No se ejecutaron pruebas entre deployments ni inspección de Workspace productivo.
 - Siguiente tarea: TAREA-06.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.8 - AUDITORÍA TAREA-06 (2026-11-05)
+================================================================
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- HEAD antes del commit de TAREA-06: 709cc6d6026a6fc8835008f88f30ffc4677f2905.
+- Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59; permanece intacta.
+- Última tarea auditada: TAREA-06 - gestión institucional de carpetas y permisos documentales.
+- Dictamen: CUMPLE PARCIALMENTE.
+- Progreso: 12/183 identificadores auditados; 171 pendientes.
+- Evidencia: TASK/USER usan tryLock sin verificar adquisición; ACCOUNTING y ACADEMIC crean carpetas sin bloqueo; EXAM no tiene helper equivalente. No hay catálogo común de IDs estables; existen enlaces públicos en USER/ACCOUNTING/TASK y fallback silencioso a raíz de Drive.
+- Hallazgos nuevos: ninguno. Se amplían AUD-NG-154/155, AUD-NG-058, TASK-139/140/143/295/345/346 y TASK-149/150/456.
+- Informe: AUDITORIA_COMPLETADAS_TAREA-06.md.
+- Sección del plan: 16.
+- Archivos del único commit: Auditoria.txt, Pendientes.md, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt e informe TAREA-06.
+- No se modifica código fuente, completadas.md, ChangesLogs.txt ni metodología.
+- No se ejecutaron pruebas de concurrencia, permisos heredados ni acceso anónimo.
+- Siguiente tarea exacta: TAREA-07.
+================================================================

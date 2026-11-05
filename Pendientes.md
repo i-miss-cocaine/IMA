@@ -18452,3 +18452,20 @@ No se crea un AUD-NG nuevo. Se añaden estas precisiones a las tareas existentes
 - TASK-064: atribuir consumo de cuotas a la identidad y servicio reales.
 
 Hallazgo nuevo: ninguno. Las brechas de TAREA-05 se vinculan a tareas preexistentes.
+
+
+---
+
+## Ampliación de criterios existentes derivada de TAREA-06 (2026-11-05)
+
+No se crea un AUD-NG nuevo. Las brechas se vinculan a tareas ya existentes y se precisan sus criterios:
+
+- AUD-NG-154: ampliar los archivos cubiertos a backend/accounting-service/Code.gs y backend/user-service/Code.gs, además de TASK/ACADEMIC. Normalizar nombres (case, acentos y espacios), usar IDs estables y rutas canónicas; verificar que tryLock se adquirió antes de continuar. Considerar que ScriptLock solo coordina ejecuciones del mismo proyecto y definir un mecanismo seguro cuando varios deployments comparten el mismo padre de Drive. Incluir todas las estructuras departamentales, no solo la docente.
+- AUD-NG-155: verificar que toda carga (normal y reanudable) conserva el Drive fileId real, ruta, metadatos y relación con expediente/registro; detectar archivos huérfanos y fallos de persistencia.
+- AUD-NG-058/TASK-143: incluir también las rutas del servicio TASK que comparten carpetas con ANYONE_WITH_LINK; auditar archivos y carpetas existentes, permisos heredados y accesibilidad anónima, y confirmar la revocación efectiva de enlaces no autorizados.
+- TASK-139/TASK-140/TASK-295/TASK-346: aplicar permisos por operación, categoría/sensibilidad, rol, departamento y relación con expediente; evaluar herencia y revocar accesos residuales.
+- TASK-345: detectar archivos/carpetas inexistentes, movidos, inaccesibles, huérfanos y referencias rotas.
+- TASK-149/TASK-150/TASK-456: definir archivado, traslado, conservación y eliminación con autorización, retención y trazabilidad.
+- Las rutas de USER/ACCOUNTING que sustituyen PARENT_FOLDER_ID ausente o inválido por DriveApp.getRootFolder() deben generar error/alerta observable o usar una política de fallback explícita y autorizada; no crear silenciosamente en la raíz de la cuenta ejecutora.
+
+Hallazgo nuevo: ninguno. La cobertura se mantiene en tareas preexistentes.
