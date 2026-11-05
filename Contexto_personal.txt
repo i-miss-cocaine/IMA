@@ -1282,3 +1282,25 @@ CHECKPOINT C1.27 - AUDITORÍA T-UX-26 (2026-11-05)
 - Pruebas: inspección estática/manual; no se ejecutaron pruebas de navegador, multiusuario ni Apps Script. No se usaron datos productivos.
 - Siguiente tarea en el orden de completadas.md: T-UX-27. Antes de auditar, verificar su cobertura histórica y los cambios posteriores.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.28 - AUDITORÍA T-UX-27 (2026-11-05)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- HEAD de partida verificado: e1ed75f4984c0c314ebd828d65e368824b34cbb9 (C1.27 / T-UX-26).
+- Tarea auditada: T-UX-27 - Optimizar el rendimiento percibido y la respuesta de las interfaces.
+- Dictamen: CUMPLE PARCIALMENTE / INSUFICIENTE. renderUIProgressSkeleton está definido pero no se encontraron consumidores; no hay medición general de operaciones UI ni deduplicación; debounce solo en Omnibox; fetchApi ignora options.timeout y usa 60 s fijos.
+- Progreso: 31/183 identificadores únicos auditados; 152 pendientes.
+- Hallazgo nuevo: ninguno. Se amplían AUD-NG-007, TASK-252 y TASK-429.
+- Informe: AUDITORIA_COMPLETADAS_T-UX-27.md. Sección del plan: 36.
+- Evidencia:
+  * js/ui-common.js: 986938b8a311a41ed4cb3d135b66b6aaea4bed67.
+  * js/api.js: 6b24f666db30a811a8e9b38d466fc6001cf6dfa9.
+  * tests/regression/modular-dashboard-suite.js: 0495e1d526a872c33310935a003a83d924d34683.
+- Archivos documentales actualizados: Auditoria.txt, Pendientes.md, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt e informe T-UX-27.
+- No modificar código fuente, completadas.md, completadas_legacy.md, ChangesLogs.txt ni METODOLOGIA_DESARROLLO.md.
+- Pruebas: inspección estática/manual; no se ejecutaron benchmarks, pruebas de navegador, red lenta ni dispositivos reales.
+- Siguiente tarea en el orden de completadas.md: TAREA-17. Antes de auditar, verificar cobertura histórica y cambios posteriores.
+================================================================

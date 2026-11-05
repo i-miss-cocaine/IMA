@@ -878,3 +878,17 @@ No se crea AUD-NG nuevo.
 - Hallazgo AUD-NG-173: integrar la vista, conectar productores reales, asegurar navegación al registro y añadir pruebas.
 - TASK-067: ampliar aislamiento local por usuario/institución para `INSTITUTIONAL_RECENT_ACTIVITY_LOG_V1`.
 - TASK-221: mantener la bandeja unificada como fuente de verdad para tareas pendientes; el historial reciente solo enlaza a ella.
+
+
+### T-UX-27 - Rendimiento percibido y respuesta de interfaces (C1.28)
+| Capacidad | Estado observado | Brecha |
+|---|---|---|
+| Medición de operaciones UI | Solo ping medido con Date.now | Sin telemetría de apertura de vistas, filtros, tablas, modales ni formularios. |
+| Skeleton de carga | Helper definido en ui-common.js | Sin consumidores encontrados en JS ni dashboards principales. |
+| Debounce | Omnibox a 300 ms | No hay política común para filtros ni deduplicación de lecturas concurrentes. |
+| fetchApi timeout | 60000 ms fijo | Ignora options.timeout; checkMicroserviceHealth solicita 6000 ms sin efecto. |
+| Pruebas de rendimiento | Sin pruebas T-UX-27 identificables | No hay benchmarks ni escenarios móviles/escritorio. |
+
+- TASK-252: ampliar medición de rendimiento percibido del cliente.
+- TASK-429: integrar skeleton, debounce y deduplicación segura de lecturas.
+- AUD-NG-007: corregir timeout configurable de fetchApi.

@@ -354,3 +354,12 @@ Al reanudar:
 - **Pruebas:** inspección estática de js/ui-common.js, dashboards principales, ChangesLogs.txt y suite modular; no se ejecutaron pruebas de navegador ni multiusuario.
 - **Progreso:** 30/183 identificadores auditados; 153 pendientes.
 - **Siguiente tarea:** T-UX-27.
+
+
+## 36. Resultado C1.28 - T-UX-27 (2026-11-05)
+- **Dictamen:** CUMPLE PARCIALMENTE / INSUFICIENTE. Solo se identifica renderUIProgressSkeleton; no hay consumidores encontrados, medición general de operaciones UI ni deduplicación de solicitudes. El debounce de Omnibox es puntual. fetchApi ignora options.timeout y conserva 60 s aunque checkMicroserviceHealth pide 6 s.
+- **Reconciliación:** no crear AUD-NG nuevo. Ampliar TASK-252 (telemetría cliente), TASK-429 (skeleton/debounce/deduplicación segura) y AUD-NG-007 (timeout real).
+- **Calidad:** helper aislado, sin ciclo de vida de carga; no hay evidencia de mejora medible.
+- **Pruebas:** inspección estática de 24 archivos JS, dashboards principales, api.js, ui-common.js, ChangesLogs y suite modular. No se ejecutaron benchmarks ni pruebas de red lenta/dispositivos reales.
+- **Progreso:** 31/183 identificadores auditados; 152 pendientes.
+- **Siguiente tarea:** TAREA-17.

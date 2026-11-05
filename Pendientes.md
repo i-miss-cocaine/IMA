@@ -10023,6 +10023,8 @@ REGLA RECTORA INNEGOCIABLE DEL BACKLOG:
   - [ ] Las operaciones que superan sus umbrales generan eventos de advertencia en observabilidad.
   - [ ] La telemetría no almacena credenciales, tokens ni datos personales sensibles.
   - [ ] El volumen de registros de telemetría se mantiene acotado mediante políticas de retención.
+- **Ampliación C1.28 / T-UX-27:** Extender la telemetría al rendimiento percibido en cliente: duración de operaciones UI frecuentes (omnibox, apertura de paneles, filtros, tablas, modales y formularios), tiempo hasta primer contenido y tiempo hasta datos confirmados. Correlacionar cuando sea posible con servicio/acción backend, sin almacenar PII ni valores de formularios. Actualmente solo se mide latencia de ping en checkMicroserviceHealth; no hay medición general de acciones del usuario.
+- **Criterios adicionales:** Instrumentar una muestra representativa de operaciones en escritorio y móvil; reportar mediana/p90/p95, errores, cancelaciones y frescura del dato. Comparar antes/después de cambios y establecer umbrales verificables por operación.
 - **Estado:** [ ] Pendiente
 
 ---
@@ -15603,6 +15605,8 @@ REGLA RECTORA INNEGOCIABLE DEL BACKLOG:
   - [ ] Las tablas con más de 1,000 registros cambian de página y filtran en menos de 100ms sin congelar la interfaz.
   - [ ] En pantallas móviles, las tablas se transforman en tarjetas legibles con acciones accesibles.
   - [ ] La exportación de datos a hojas de cálculo respeta los filtros aplicados y no trunca filas.
+- **Ampliación C1.28 / T-UX-27:** Integrar `renderUIProgressSkeleton` en las vistas dinámicas que realmente cargan datos; actualmente solo existe su definición en `js/ui-common.js` y no se encontraron llamadas en los 24 archivos JS ni en los dashboards HTML principales revisados. Evitar que el esqueleto sustituya el estado de error, vacío o datos cacheados obsoletos.
+- **Criterios adicionales:** Aplicar debounce a filtros/búsquedas que disparan consultas y deduplicar únicamente lecturas idempotentes concurrentes con la misma clave normalizada (servicio, acción, usuario/contexto y payload); no fusionar mutaciones ni consultas de usuarios distintos. Probar cancelación/race conditions y que la respuesta antigua no sobrescriba resultados nuevos. Mantener skeleton accesible con aria-busy/estado de carga y retirarlo en éxito, vacío y error.
 - **Estado:** [ ] Pendiente
 
 ---
@@ -16947,6 +16951,8 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Dependencias Expuestas:** fetchApi, checkMicroserviceHealth, checkAllMicroservicesHealth
 - **Descripción del Alcance:** Usar options.timeout cuando se configure y definir un valor predeterminado cuando no se suministre. Limpiar el temporizador en todos los caminos de éxito, error y reintento.
 - **Criterios de Aceptación:** Una llamada con timeout de 6000 ms aborta dentro del margen definido; las llamadas sin opción conservan el límite predeterminado; los reintentos no dejan temporizadores activos.
+- **Ampliación C1.28 / T-UX-27:** Se confirma en `js/api.js` que `checkMicroserviceHealth` llama a `fetchApi(..., { timeout: 6000 })`, pero `fetchApi` ignora `options.timeout` y programa siempre 60000 ms. El parámetro no limita la solicitud; la medición de latencia del health check puede tardar hasta 60 s en vez de 6 s.
+- **Criterios adicionales:** Probar timeout de 6000 ms con servidor lento, abort real, limpieza de temporizador, reintentos y fallback; documentar el límite efectivo en cada intento y no reportar el health check como dentro del umbral si excedió el timeout solicitado.
 - **Estado:** [ ] Pendiente
 
 ### [AUD-NG-008] Diferenciar fallos de red de respuestas legítimas vacías
