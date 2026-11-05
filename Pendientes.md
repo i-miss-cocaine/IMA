@@ -14576,6 +14576,7 @@ REGLA RECTORA INNEGOCIABLE DEL BACKLOG:
   - [ ] Los responsables autorizados pueden reconocer y cerrar formalmente la alerta.
   - [ ] El historial de alertas conserva todos los cambios de estado y notas de revisión.
   - [ ] Las alertas académicas preexistentes siguen funcionando correctamente sin regresiones.
+- **Ampliación de evidencia (C1.42 / FASE2-T07, 2026-11-05):** `calculateLateFeesForAccount` (backend/accounting-service/Code.gs:1223-1278) calcula recargos a partir de `RecargosMoras` y devuelve un resumen en la respuesta; no persiste una alerta, no crea evento y no registra entrega a responsables. La automatización de alertas financieras por mora debe integrarse con el alcance de esta tarea, sin confundir el cálculo de recargo con el despacho de una alerta.
 - **Estado:** [ ] Pendiente
 
 ---
@@ -15435,6 +15436,7 @@ REGLA RECTORA INNEGOCIABLE DEL BACKLOG:
   - [ ] Comprobar que las preferencias personales no alteran cálculos financieros, fechas almacenadas ni permisos de acceso.
   - [ ] Intentar modificar una preferencia no permitida mediante petición directa y comprobar que el servidor la rechaza.
   - [ ] Verificar que las preferencias visuales y de notificación existentes continúan funcionando sin regresiones.
+- **Ampliación de evidencia (C1.42 / FASE2-T07, 2026-11-05):** `getNotificationPreferences` (backend/user-service/Code.gs:4973-4984) devuelve valores fijos. `getUserSettings`/`saveUserSettings` sí consultan y persisten `PreferenciasNotificacion` (aprox. 7645-7715), pero `sendMultiChannelNotification` (4818-4935) no consulta esas preferencias ni aplica el parámetro `canal`. Debe definirse y probarse la precedencia entre preferencias opcionales y comunicaciones institucionales obligatorias, sin permitir que una preferencia personal suprima acciones críticas.
 - **Estado:** [ ] Pendiente
 
 ---
@@ -17271,6 +17273,7 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Dependencias Expuestas:** evaluateAndDispatchEarlyWarningAlerts, getEarlyWarningAlerts, calificaciones, tareas, períodos lectivos, configuración de umbrales, notificaciones institucionales, _verifiedUserId, _verifiedRole
 - **Descripción del Alcance:** Consultar calificaciones, materias reprobadas y tareas pendientes desde fuentes académicas persistidas para el año lectivo solicitado. Eliminar la dependencia de mockFailingSubjects y mockMissingTasks enviados por el cliente. Leer umbrales de configuración institucional versionada. Implementar envío real de notificaciones o registrar resultado verificable por destinatario. Aplicar autorización por identidad y ámbito al consultar alertas.
 - **Criterios de Aceptación:** Las alertas usan datos persistidos y filtrados por anolectivo; datos simulados del cliente no alteran resultados; umbrales son trazables a configuración vigente; cada destinatario tiene constancia de envío o fallo y no se declara notificado sin entrega; usuarios no consultan estudiantes fuera de su ámbito; se conserva deduplicación y se prueban períodos, umbrales y reintentos.
+- **Ampliación de evidencia (C1.42 / FASE2-T07, 2026-11-05):** `evaluateAndDispatchEarlyWarningAlerts` (backend/academic-service/Code.gs:9264-9535) extrae `anolectivo` pero no lo usa para filtrar `RegistrosAsistencia` ni matrículas; el período se conserva como etiqueta y parte de la clave, no como filtro de fuente. `mockFailingSubjects` y `mockMissingTasks` siguen aceptándose desde el payload. `configureAutomationRules` (backend/user-service/Code.gs:6551-6604) escribe `ReglasAutomatizacionAlertas`, pero el evaluador académico no consume esa hoja; `notificadoA` es una cadena fija, no una constancia por destinatario, y la clave de deduplicación no incluye el año lectivo. Mantener este alcance en esta tarea existente, sin crear un hallazgo duplicado.
 - **Estado:** [ ] Pendiente
 
 
@@ -19105,6 +19108,7 @@ AUD-NG-163 permanece DUPLICADA y consolidada; no reabrirla como tarea independie
   - Las pruebas usan fixtures/almacenamiento aislado y verifican persistencia, concurrencia, pérdida de respuesta, fallos parciales, recuperación, orden y ausencia de duplicados.
   - Ejecutar la suite no procesa colas ni envía comunicaciones de producción.
   - Las métricas distinguen eventos pendientes, atascados, procesados y fallidos por tipo y servicio.
+- **Ampliación de evidencia (C1.42 / FASE2-T07, 2026-11-05):** `retryFailedNotificationsQueue` (backend/user-service/Code.gs:4761-4817) reintenta todos los registros `Pendiente_Reintento` sin contador persistente, `maxRetries`, `nextAttemptAt` ni retroceso progresivo. Además, `registerAndDispatchEvent` puede marcar el evento `PROCESADO` cuando `sendMultiChannelNotification` devuelve `status: success` aunque `estadoEntrega` sea `Pendiente_Reintento`. La política debe coordinar la cola secundaria por canal y separar el estado del evento del resultado de entrega de cada destinatario.
 - **Estado:** [ ] Pendiente
 
 ---

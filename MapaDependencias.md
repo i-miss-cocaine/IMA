@@ -1032,3 +1032,32 @@ No se crea AUD-NG nuevo.
 - `LockService.getScriptLock()` protege el proyecto Apps Script correspondiente; no coordina automáticamente deployments independientes Academic y Accounting aunque compartan el mismo Spreadsheet.
 - Las operaciones multihoja necesitan estado durable de operación, idempotencia y estrategia de recuperación; un lock local solo serializa la sección crítica dentro de su proyecto.
 - Reconciliar las brechas con AUD-NG-006, AUD-NG-023, AUD-NG-049, AUD-NG-129, AUD-NG-133, AUD-NG-161 y TASK-118; evitar registrar duplicados.
+
+
+## Motor de eventos, notificaciones y automatización (FASE2-T07 / C1.42, 2026-11-05)
+
+### User Service
+- `doPost` (1351-1558) -> `validateRolePermission` -> `checkAndRegisterIdempotencyKey` -> dispatch. Expone `registerAndDispatchEvent`, `retryFailedEventsQueue`, `sendMultiChannelNotification`, `retryFailedNotificationsQueue`, `configureNotificationChannel`, `getNotificationChannelConfigs`, `configureAutomationRules`, `getAutomationRules`.
+- `registerAndDispatchEvent` (4618-4699) -> `BitacoraEventos` y `sendMultiChannelNotification`; persiste después del efecto secundario; deduplica solo por tipo + originRequestId cuando el registro ya está PROCESADO; originService no está autenticado. AUD-NG-176/TASK-474.
+- `retryFailedEventsQueue` (4700-4760) -> `BitacoraEventos`; no reserva filas, no aplica nextAttemptAt/backoff y trata GLOBAL como no-op que termina PROCESADO. AUD-NG-176/TASK-474.
+- `retryFailedNotificationsQueue` (4761-4817) -> `BandejaNotificaciones` y `MailApp`; reintenta Pendiente_Reintento sin máximo/contador/backoff. Ampliación TASK-474.
+- `sendMultiChannelNotification` (4818-4935) -> `BandejaNotificaciones`, `MailApp`; no consume CanalesProveedoresConfig ni PreferenciasNotificacion; estado de email pendiente puede retornar status success. AUD-NG-176/177, TASK-422/474/475.
+- `getNotificationPreferences` (4973-4984) devuelve valores fijos; `getUserSettings`/`saveUserSettings` (aprox. 7645-7715) consultan y persisten PreferenciasNotificacion, sin integración visible en el despachador. TASK-422.
+- `configureAutomationRules`/`getAutomationRules` (6551-6604) -> `ReglasAutomatizacionAlertas`; guardan y leen reglas, pero el evaluador académico revisado no consume esa hoja. AUD-NG-039.
+- `configureNotificationChannel`/`getNotificationChannelConfigs` (7526-7612) -> `CanalesProveedoresConfig`; configuración y credenciales no tienen separación segura. AUD-NG-177/TASK-475.
+- `runInterdepartmentalIntegrationTestSuite` (218-310) llama a la cola real; no es un fixture aislado y devuelve status success aunque haya pruebas fallidas. AUD-NG-161/TASK-474.
+
+### Academic Service
+- `evaluateAndDispatchEarlyWarningAlerts` (9264-9535) -> `RegistrosAsistencia`, `Matriculas`, `AlertasTempranas`, `CasosSeguimiento`; no filtra por año lectivo/período, acepta mocks del payload para notas/tareas, no consume reglas configuradas en User y registra destinatarios como texto. AUD-NG-039.
+- `getEarlyWarningAlerts` (9537+) consulta AlertasTempranas; el alcance de usuario debe derivarse de identidad/ámbito verificado, no solo de filtros del payload. AUD-NG-039.
+
+### Accounting Service
+- `configureLateFeeRule` (1148-1198) y `getLateFeeRules` (1196-1222) -> `RecargosMoras`.
+- `calculateLateFeesForAccount` (1223-1278) -> `getStudentAccountStatement` y `RecargosMoras`; calcula importes y devuelve DTO, sin persistir alerta ni emitir evento/notificación. TASK-404.
+
+### Dependencias y reconciliación
+- `BitacoraEventos` -> productor `registerAndDispatchEvent` -> `BandejaNotificaciones`/`MailApp`; el efecto precede al registro durable.
+- `CanalesProveedoresConfig` no está conectado al despachador multicanal.
+- `PreferenciasNotificacion` se persiste, pero no se aplica desde `sendMultiChannelNotification`.
+- `ReglasAutomatizacionAlertas` se persiste, pero no es consumida por el evaluador de alertas académicas.
+- Reconciliar con AUD-NG-006, AUD-NG-039, AUD-NG-161, AUD-NG-176/177, TASK-404, TASK-422 y TASK-474/475. No crear hallazgos duplicados.

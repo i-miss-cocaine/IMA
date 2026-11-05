@@ -492,3 +492,17 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Código fuente:** sin modificaciones. No se alteraron completadas.md, completadas_legacy.md, ChangesLogs.txt ni METODOLOGIA_DESARROLLO.md.
 - **Progreso:** 42/183 identificadores auditados; 141 pendientes.
 - **Siguiente tarea:** FASE2-T07 - Fortalecer el motor de eventos y la ejecución de procesos automáticos. No repetir FASE2-T06 salvo regresión o cambio posterior.
+
+
+## 47. Resultado C1.42 - FASE2-T07 (2026-11-05)
+
+- **Dictamen:** NO CUMPLE INTEGRALMENTE. La tarea figura [X], pero los criterios funcionales de eventos, reintentos, recuperación, preferencias y alertas no se demuestran.
+- **Continuidad histórica:** C1.34/FASE2-06 ya había auditado el núcleo del motor y creó AUD-NG-176/TASK-474 y AUD-NG-177/TASK-475. Los SHAs de User/Academic/Accounting/Task siguen idénticos, por lo que los hallazgos persisten; esta auditoría amplía el contraste a los 12 requisitos y 10 criterios de FASE2-T07 sin duplicar IDs.
+- **Evidencia:** User SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; Academic SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; Accounting SHA 38b979d41596b85e888b4a7060b37bbac0840a28; Task SHA 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe; completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676.
+- **Reconciliación:** mantener AUD-NG-176/TASK-474 (outbox, autenticación de emisor, productores, reintentos, estados por canal, recuperación y pruebas); AUD-NG-177/TASK-475 (secretos y HTML); AUD-NG-006/AUD-NG-161 (idempotencia/pruebas); AUD-NG-039 (alertas académicas); TASK-422 (preferencias); TASK-404 (alertas financieras/mora). No crear nuevos IDs.
+- **Evidencia ampliada:** retryFailedNotificationsQueue carece de maxRetries/backoff; evento puede quedar PROCESADO con entrega pendiente; getNotificationPreferences devuelve valores fijos y sendMultiChannelNotification no consume preferencias/canales; configureAutomationRules no alimenta el evaluador académico; evaluateAndDispatchEarlyWarningAlerts no filtra año/período y acepta mocks del payload; calculateLateFeesForAccount no genera alerta/evento.
+- **Backlog:** Pendientes.md recuperado del blob vigente del HEAD de partida SHA fb62c27bf00ab5b0e923170cd549643210e5a7eb (1,619,187 caracteres, 19,219 líneas). Se ampliaron notas de evidencia de TASK-474, TASK-422, TASK-404 y AUD-NG-039; sin cambio de estado ni IDs nuevos. Inventario antes/después: 478 IDs TASK + 175 IDs AUD-NG = 653 IDs únicos; máximos TASK-478/AUD-NG-180.
+- **Pruebas:** inspección estática/manual. No se ejecutó runInterdepartmentalIntegrationTestSuite porque invoca la cola real y puede causar efectos secundarios; no se ejecutaron Apps Script, HTTP, triggers, proveedores, correos, concurrencia ni operaciones productivas.
+- **Código fuente:** sin modificaciones. completadas.md, completadas_legacy.md, ChangesLogs.txt y METODOLOGIA_DESARROLLO.md sin modificaciones.
+- **Progreso:** 43/183 identificadores auditados; 140 pendientes.
+- **Siguiente tarea:** FASE2-T08 - Implementar trazabilidad y correlación de operaciones entre servicios. Reconciliar los antecedentes de correlationId/sagaId y registros estructurados antes de iniciar.

@@ -1721,3 +1721,76 @@ ARCHIVOS DE ESTA ITERACIÓN:
 - Acción siguiente: iniciar FASE2-T07, leyendo primero su definición en completadas.md y reconciliando los hallazgos previos de eventos/notificaciones en Pendientes.md. No repetir FASE2-T06 salvo cambio posterior o regresión.
 - Regla de publicación: todos los archivos anteriores se deben incluir en exactamente un commit final de la rama de trabajo. No crear commits intermedios ni parciales. Tras el commit, verificar HEAD de trabajo, SHA/árbol/archivos del commit y que NG_beta_0.0.0.1 siga en 44d9891132332e692dbe2ba8602b41f50a508a59.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.42 - AUDITORÍA FASE2-T07 (2026-11-05)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto real: Contexto_personal.txt (no crear contexto_personal.md).
+- Rama de trabajo autorizada: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: dfdcb1ec6f9b3884308b422a168e4ca9ddd8c21a (C1.41 / FASE2-T06).
+- Rama base al inicio: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Última tarea completamente auditada: FASE2-T07 - Fortalecer el motor de eventos y la ejecución de procesos automáticos.
+- Dictamen: NO CUMPLE INTEGRALMENTE; completadas.md la marca [X], pero no satisface varios requisitos/criterios.
+- Tarea en curso: ninguna; inspección estática de FASE2-T07 cerrada.
+- Siguiente tarea exacta: FASE2-T08 - Implementar trazabilidad y correlación de operaciones entre servicios.
+- Progreso: 43/183 identificadores auditados; 140 pendientes.
+
+RECUPERACIÓN Y ACTUALIZACIÓN DE Pendientes.md:
+- La lectura convencional del archivo devolvió 0 caracteres.
+- Se recuperó el blob que estaba en el árbol del HEAD de partida: SHA fb62c27bf00ab5b0e923170cd549643210e5a7eb, 1,619,187 caracteres y 19,219 líneas.
+- Se amplió el contenido de tareas existentes sin cambiar estados ni crear nuevos IDs:
+  - TASK-474: política de reintento de la cola secundaria y discrepancia entre evento PROCESADO y entrega Pendiente_Reintento.
+  - TASK-422: getNotificationPreferences fijo y preferencias persistidas no aplicadas por sendMultiChannelNotification; política de notificaciones obligatorias.
+  - TASK-404: cálculo de mora sin alerta/evento/notificación persistida.
+  - AUD-NG-039: filtros de año/período, mocks de payload, reglas de automatización no consumidas y ausencia de constancia por destinatario.
+- Blob actualizado de Pendientes.md: f9f2bfcf70173efc4b8dead23dbe8d44a55b8a4b.
+- Contenido actualizado: 1,621,560 caracteres y 19,223 líneas.
+- Inventario antes/después: 478 IDs TASK únicos + 175 IDs AUD-NG únicos = 653 IDs únicos. Máximos TASK-478 y AUD-NG-180. No se crearon IDs nuevos.
+
+RECONCILIACIÓN HISTÓRICA:
+- C1.34/FASE2-06 ya auditó el núcleo del motor de eventos y creó AUD-NG-176/TASK-474 y AUD-NG-177/TASK-475.
+- SHAs actuales de User, Academic, Accounting y Task son idénticos a los de C1.34: 12079dd410aa6d8afbce55a4bc62a79dea605f9f; daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; 38b979d41596b85e888b4a7060b37bbac0840a28; 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe.
+- Se reutiliza esa evidencia y no se duplican hallazgos. FASE2-T07 amplía el alcance a preferencias, reglas de automatización, alertas académicas/mora, estados por canal, orden, ciclos y detección de procesos atascados.
+- Mantener AUD-NG-006/AUD-NG-161, AUD-NG-039, AUD-NG-176/TASK-474, AUD-NG-177/TASK-475, TASK-422 y TASK-404.
+- FASE2-T07 no cumple integralmente. Detalles en AUDITORIA_COMPLETADAS_FASE2-T07.md.
+
+ARCHIVOS Y FUNCIONES INSPECCIONADOS:
+- completadas.md (FASE2-T07; SHA f57f1aef832e81e44fc4f7ec36a852d50e464676).
+- METODOLOGIA_DESARROLLO.md (SHA 214e8221bd076c4e89012636c105bffd5ca36467; 794 líneas; gates de inicio/cierre, auditoría manual, trazabilidad, un commit y checkpoints).
+- backend/user-service/Code.gs: runInterdepartmentalIntegrationTestSuite (218-310), doPost (1351-1558), idempotencia (1290-1350), registerAndDispatchEvent (4618-4699), retryFailedEventsQueue (4700-4760), retryFailedNotificationsQueue (4761-4817), sendMultiChannelNotification (4818-4935), getNotificationPreferences (4973-4984), configureAutomationRules/getAutomationRules (6551-6604), configureNotificationChannel/getNotificationChannelConfigs (7526-7612), getUserSettings/saveUserSettings (aprox. 7645-7715).
+- backend/academic-service/Code.gs: evaluateAndDispatchEarlyWarningAlerts (9264-9535), getEarlyWarningAlerts (9537+).
+- backend/accounting-service/Code.gs: configureLateFeeRule (1148-1198), getLateFeeRules (1196-1222), calculateLateFeesForAccount (1223-1278).
+- backend/task-service/Code.gs: doPost (368+); se reutiliza auditoría anterior al confirmar SHA idéntico.
+- AUDITORIA_COMPLETADAS_FASE2-06.md (C1.34) SHA d5588887a3fc77b1f24c1c9846549e2fe6b4cd43.
+
+HALLAZGOS RECONCILIADOS:
+- registerAndDispatchEvent ejecuta efectos antes de persistir, no autentica originService, acepta originRequestId opcional, deduplica solo eventos PROCESADO, no usa reserva atómica y genera eventId con Math.random.
+- retryFailedEventsQueue carece de reserva exclusiva, nextAttemptAt, backoff/jitter y uso de maxRetries; GLOBAL puede marcarse PROCESADO sin despacho; no hay lease/estado EN_PROCESO ni recuperación de atascos.
+- retryFailedNotificationsQueue no tiene contador persistente ni política de máximo/backoff. El evento puede quedar PROCESADO aunque el correo esté Pendiente_Reintento.
+- No hay integración demostrada de productores en Academic/Accounting/Task/Exam; canales configurados no se consumen; no hay causationId ni límites de recursión.
+- runInterdepartmentalIntegrationTestSuite opera sobre la cola real, puede causar efectos secundarios y devuelve status success con pruebas fallidas; no se ejecutó.
+- getNotificationPreferences devuelve valores fijos; getUserSettings/saveUserSettings sí persisten preferencias, pero el despachador no las consume.
+- configureAutomationRules guarda ReglasAutomatizacionAlertas, pero el evaluador académico no consume esa hoja.
+- evaluateAndDispatchEarlyWarningAlerts no filtra por año lectivo/período, acepta mockFailingSubjects/mockMissingTasks del payload, usa dedup sin año y notificadoA fijo; mantener AUD-NG-039.
+- calculateLateFeesForAccount solo calcula y devuelve importes, no crea alerta/evento; mantener TASK-404.
+- configureNotificationChannel/getNotificationChannelConfigs continúan con configuración JSON y marcador HASH_CONFIG_PROTECTED; sendMultiChannelNotification inserta HTML y enlace sin saneamiento; mantener AUD-NG-177/TASK-475.
+- No se generaron nuevos hallazgos porque los alcances están cubiertos por tareas activas existentes; solo se amplió evidencia.
+
+ARCHIVOS DE LA ITERACIÓN:
+- Modificados: Pendientes.md, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt.
+- Nuevo: AUDITORIA_COMPLETADAS_FASE2-T07.md.
+- Sin modificar: código fuente, completadas.md, completadas_legacy.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, informes históricos y rama base.
+- SHAs preparados:
+  - Pendientes.md blob: f9f2bfcf70173efc4b8dead23dbe8d44a55b8a4b.
+  - Auditoria.txt blob: 1be8f346bff0a5fc96b50e4f6532a6a97053a0d6.
+  - MapaDependencias.md blob: 29085e8acc2859826af44e4291bccdf606e412af.
+  - AUDITORIA_COMPLETADAS_PLAN.md blob: 7cba07d879a953f5a85c9012832943e7c0344344.
+  - Informe nuevo AUDITORIA_COMPLETADAS_FASE2-T07.md blob: 538c376bf04145d7aac73a9cabbc99bc45870242.
+- Contexto_personal.txt de partida SHA: 91c69b3d44052f95e8671f2242734bbcccb979e8.
+- No se ejecutaron pruebas runtime, Apps Script, HTTP, triggers, proveedores, correo, concurrencia ni operaciones productivas.
+- No ejecutar runInterdepartmentalIntegrationTestSuite: puede procesar la cola real.
+- Próxima acción: crear el árbol con exactamente los seis archivos documentales indicados; revisar diff/árbol completo; crear un único commit descendiente de dfdcb1ec6f9b3884308b422a168e4ca9ddd8c21a; actualizar solo NG_beta_0.0.0.1_work; verificar commit, árbol, lista de archivos, HEAD de trabajo y rama base 44d9891132332e692dbe2ba8602b41f50a508a59.
+================================================================

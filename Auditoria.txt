@@ -5526,3 +5526,39 @@ IMPACTO: existencias duplicadas y divergencia entre InventariosKardex, Recepcion
 
 PRUEBAS Y LÍMITES: inspección estática/manual. No se ejecutaron Apps Script, HTTP, concurrencia real, suites automatizadas ni operaciones productivas. No se modificó código fuente.
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-05
+AUDITORÍA DE TAREA COMPLETADA [FASE2-T07] — MOTOR DE EVENTOS Y PROCESOS AUTOMÁTICOS
+ARCHIVOS Y RANGOS INSPECCIONADOS:
+- backend/user-service/Code.gs: runInterdepartmentalIntegrationTestSuite (218-310), doPost (1351-1558), getIdempotencyPayloadSignature/checkAndRegisterIdempotencyKey (1290-1350), registerAndDispatchEvent (4618-4699), retryFailedEventsQueue (4700-4760), retryFailedNotificationsQueue (4761-4817), sendMultiChannelNotification (4818-4935), getNotificationPreferences (4973-4984), configureAutomationRules/getAutomationRules (6551-6604), configureNotificationChannel/getNotificationChannelConfigs (7526-7612), getUserSettings/saveUserSettings (aprox. 7645-7715).
+- backend/academic-service/Code.gs: evaluateAndDispatchEarlyWarningAlerts (9264-9535), getEarlyWarningAlerts (9537+).
+- backend/accounting-service/Code.gs: configureLateFeeRule (1148-1198), getLateFeeRules (1196-1222), calculateLateFeesForAccount (1223-1278).
+- backend/task-service/Code.gs: doPost (368+); el SHA coincide con C1.34.
+SHAS DE RESPALDO:
+- User: 12079dd410aa6d8afbce55a4bc62a79dea605f9f.
+- Academic: daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc.
+- Accounting: 38b979d41596b85e888b4a7060b37bbac0840a28.
+- Task: 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe.
+- completadas.md: f57f1aef832e81e44fc4f7ec36a852d50e464676.
+DICTAMEN: NO CUMPLE INTEGRALMENTE.
+
+RECONCILIACIÓN:
+- C1.34/FASE2-06 ya documentó el núcleo del motor de eventos y generó AUD-NG-176/TASK-474 y AUD-NG-177/TASK-475. Los SHAs actuales de User/Academic/Accounting/Task coinciden con aquella evidencia; las brechas persisten. No duplicar esos hallazgos.
+- Mantener AUD-NG-006/AUD-NG-161 para idempotencia y pruebas; AUD-NG-039 para alertas académicas; TASK-422 para preferencias; TASK-404 para alertas financieras y operativas.
+- Ampliar la evidencia de TASK-474: retryFailedNotificationsQueue no tiene contador persistente, maxRetries, nextAttemptAt ni backoff; registerAndDispatchEvent puede marcar PROCESADO aunque estadoEntrega sea Pendiente_Reintento.
+- Ampliar TASK-422: getNotificationPreferences devuelve valores fijos; getUserSettings/saveUserSettings persisten PreferenciasNotificacion, pero sendMultiChannelNotification no consume esas preferencias ni el parámetro canal; falta definir excepciones para notificaciones institucionales obligatorias.
+- Ampliar AUD-NG-039: evaluateAndDispatchEarlyWarningAlerts no filtra por anolectivo/período, usa mockFailingSubjects/mockMissingTasks del payload, no consume ReglasAutomatizacionAlertas, deduplica sin año lectivo y no acredita envío por destinatario.
+- Ampliar TASK-404: calculateLateFeesForAccount solo calcula y devuelve recargos; no persiste alerta ni publica evento/notificación a responsables.
+- No se crean nuevos IDs AUD-NG/TASK; se actualizan notas de evidencia en tareas existentes.
+
+DICTAMEN POR ALCANCE:
+1-2. No hay catálogo/contrato completo ni autenticación del emisor; originRequestId opcional; mantener TASK-474.
+3-8. eventId aleatorio, deduplicación no atómica, persistencia posterior al efecto, estados incompletos, reintentos sin backoff/nextAttemptAt, ausencia de orden/lease y detección de atascos; mantener TASK-474/AUD-NG-006/AUD-NG-161.
+9-10. Preferencias persistidas no consumidas por el despachador; canales configurados no integrados; evento PROCESADO puede tener correo pendiente; mantener TASK-422/TASK-474/TASK-475.
+11-12. No hay causationId/profundidad máxima; redacción de logs no demostrada; mantener TASK-474/TASK-475.
+Criterios 1-10: respectivamente no demostrado, no cumple, parcial, no cumple, no cumple, parcial, no demostrado, no cumple, no cumple y no cumple. Detalle en AUDITORIA_COMPLETADAS_FASE2-T07.md.
+
+PRUEBAS Y LÍMITES: inspección estática/manual; no se ejecutó la suite porque llama a retryFailedEventsQueue sobre la hoja real y puede causar despachos. No se ejecutaron Apps Script, HTTP, triggers, proveedores, correos, concurrencia ni operaciones productivas. No se modificó código fuente.
+===============================================================================
