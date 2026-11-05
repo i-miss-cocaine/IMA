@@ -19434,3 +19434,103 @@ AUD-NG-163 permanece DUPLICADA y consolidada; no reabrirla como tarea independie
   - Pruebas reproducibles cubren cambios de filtros, página, orden, detalle, recarga, atrás/adelante y datos ausentes.
 - **Relaciones y límites:** TASK-485 proporciona el enrutador/historial; TASK-486 implementa snapshot/restauración del contexto de vistas. T-UX-15 cubre filtros/paginación como funcionalidad propia, pero no sustituye la preservación de su estado durante navegación.
 - **Estado:** [ ] Pendiente.
+
+
+---
+
+### [TASK-487] Integrar indicadores operativos reales en los paneles de Estudiante, Docente y Contabilidad
+- **Origen del Hallazgo:** AUD-NG-190 en Auditoria.txt (T-UX-12; consolidación y calidad de los resúmenes por rol).
+- **Severidad/Clasificación:** Alto / P1.
+- **Archivos Involucrados:** `js/student.js`, `student-dashboard.html`, `js/teacher.js`, `teacher-dashboard.html`, `js/accounting.js`, `dashboard-contabilidad.html` y los servicios backend que suministran las métricas académicas, de tareas y financieras.
+- **Dependencias Expuestas:** `consolidateStudentDashboardSummary`, `consolidateTeacherDashboardSummary`, `consolidateAccountingDashboardSummary`, `renderResumenModule`, datos de actividades/entregas, asignaciones docentes, estudiantes, ingresos, egresos, cuentas pendientes y contexto de usuario/período.
+- **Descripción del Alcance:**
+  1. Integrar los tres consolidadores con sus dashboards y fuentes de datos autorizadas. Actualmente cada helper solo aparece declarado en su módulo; no se encontró consumidor que lo invoque ni elementos del HTML que presenten sus resultados.
+  2. Estudiante: construir el resumen desde el modelo real de actividades. El módulo procesa entregas mediante `actividad.entrega.estado`, mientras el helper cuenta pendientes con `!actividad.entregado`; alinear el contrato y diferenciar tareas de exámenes para que el total no mezcle categorías ni clasifique como pendientes actividades ya entregadas/revisadas.
+  3. Docente: obtener y consolidar clases/asignaciones vigentes, estudiantes y entregas que realmente requieren revisión; enlazar cada indicador con la lista o acción correspondiente y respetar las asignaciones del docente autenticado.
+  4. Contabilidad: sustituir el contenido estático de `renderResumenModule` por indicadores alimentados por servicios financieros reales. Integrar el helper contable con las respuestas efectivas de ingresos, egresos, saldo y facturas/cuentas pendientes, sin asumir nombres de campos que el backend no entregue.
+  5. Separar visual y semánticamente indicadores de resumen, avisos, tareas que requieren atención y listas operativas; evitar duplicar en las tarjetas los registros completos de las tablas.
+  6. Distinguir explícitamente valor cero, dato no disponible, carga pendiente y error. No convertir objetos ausentes, respuestas incompletas ni fallos de servicio en métricas de cero.
+  7. Aplicar contexto de usuario, rol, asignación académica, período lectivo/financiero y frescura de los datos; no reutilizar resultados de otro usuario ni de otro período.
+  8. Proporcionar accesos directos funcionales a las tareas prioritarias y verificar que cada destino y acción esté autorizado en servidor.
+- **Criterios de Aceptación:**
+  - Los tres helpers se invocan desde los flujos reales de sus dashboards y sus resultados se muestran en componentes visibles.
+  - El resumen estudiantil distingue tareas, exámenes, pendientes y entregas según los estados reales del modelo; no depende de una propiedad inexistente o desactualizada.
+  - El resumen docente coincide con las clases, estudiantes y entregas que corresponden al docente autenticado y al período activo.
+  - El resumen contable presenta importes y pendientes reconciliables con las respuestas del servicio financiero; no conserva el placeholder textual como panel principal.
+  - Una respuesta vacía válida muestra cero solo cuando el servicio confirma que no existen registros; un error o dato ausente se representa como no disponible.
+  - Los accesos directos conducen a registros/operaciones reales y no a controles decorativos o vistas sin acción.
+  - Pruebas reproducibles cubren usuario sin asignaciones, período sin registros, respuestas parciales, error de servicio, datos obsoletos y valores positivos/cero.
+- **Relaciones y límites:** T-UX-16 cubre el centro de notificaciones y la diferenciación de avisos/tareas/aprobaciones; TAREA-04 cubre optimización de paneles analíticos y tablas extensas. Se reutilizan sus contratos sin duplicar su alcance. TASK-487 se limita a integrar y hacer correctos los resúmenes de Estudiante, Docente y Contabilidad.
+- **Estado:** [ ] Pendiente.
+
+---
+
+### [TASK-488] Completar los indicadores y accesos operativos de Dirección, Coordinación y dashboards dinámicos por rol
+- **Origen del Hallazgo:** AUD-NG-191 en Auditoria.txt (T-UX-12; paneles departamentales y configuración dinámica de responsabilidades).
+- **Severidad/Clasificación:** Alto / P1.
+- **Archivos Involucrados:** `dashboard-direccion.html`, `dashboard-coordinacion.html`, `js/secretary.js`, `js/ui-common.js`, `app/html/dashboards/dynamic-dashboard.html`, `backend/accounting-service/Code.gs`, `backend/academic-service/Code.gs` y `backend/user-service/Code.gs`.
+- **Dependencias Expuestas:** `#pending-approvals-count`, `#approvals-list-container`, `getDiscountScholarshipRequests`, `initCoordinatorDashboard`, `loadCoordinatorDashboardData`, `getCoordinatorOverview`, estados de jornalizaciones/sílabos, `loadDynamicDashboard`, `getUserDynamicDashboardConfig`, catálogo de roles, responsabilidades, módulos y rutas autorizadas.
+- **Descripción del Alcance:**
+  1. Dirección: conectar el contador y la bandeja de aprobaciones con las solicitudes reales de becas/descuentos y sus estados. El HTML conserva el valor inicial cero y el mensaje estático de ausencia de solicitudes; no se encontró consumidor frontend para esos dos elementos. Existe el servicio `getDiscountScholarshipRequests`, que devuelve `solicitudes`, y debe evaluarse/reutilizarse con el contrato y permisos efectivos.
+  2. Coordinación: reemplazar el valor fijo `0 Pendientes` y el mensaje `Todas las jornalizaciones y sílabos están al día` por un cálculo respaldado por estados reales. `getCoordinatorOverview` actualmente devuelve ofertas, asignaciones y horarios, pero no incluye estados de sílabos/jornalizaciones.
+  3. Dashboard dinámico: hacer que la configuración presentada corresponda a las responsabilidades y módulos realmente configurados para el rol. La implementación actual utiliza un mapa fijo de seis roles y asigna `mod_mis_clases`/`mod_mis_horarios` como fallback genérico para cualquier rol no incluido.
+  4. Convertir cada acceso `Acceder` del dashboard dinámico en un control navegable y autorizado hacia una ruta/módulo real. Actualmente se representa como un `span` visual sin enlace ni manejador de navegación.
+  5. Reconciliar los identificadores y alias de roles con los valores realmente persistidos; no asumir que roles con/sin tildes, alias o nombres históricos son equivalentes sin normalización explícita.
+  6. Diferenciar cero real, ausencia de datos, carga y error en todos los indicadores; no declarar que no existen pendientes cuando la fuente no se consulta o no contiene el dato.
+  7. Mantener los accesos y datos limitados por rol, responsabilidad, ámbito departamental y permisos de servidor; la previsualización administrativa no debe conceder permisos ni mostrar datos reales ajenos.
+- **Criterios de Aceptación:**
+  - Dirección muestra el número y detalle de aprobaciones reales; el contador coincide con la bandeja y los cambios de estado se reflejan tras actualizar.
+  - La bandeja no presenta un mensaje estático de ausencia de solicitudes cuando existen registros pendientes, ni confunde error de consulta con una lista vacía.
+  - Coordinación calcula pendientes de sílabos/jornalizaciones a partir de estados consultados; no fija el contador en cero ni declara cumplimiento total sin evidencia.
+  - El dashboard dinámico contempla todos los roles que deban utilizarlo y no asigna módulos docentes por defecto a roles no reconocidos.
+  - Cada módulo mostrado dispone de una ruta real y un acceso funcional autorizado; no quedan tarjetas meramente decorativas.
+  - Los módulos y datos visibles coinciden con las responsabilidades activas del usuario y con la configuración vigente del servidor.
+  - Pruebas reproducibles cubren cada rol soportado, rol desconocido/inactivo, permisos insuficientes, cero registros, pendientes existentes y errores de servicio.
+- **Relaciones y límites:** F8-Task12 (antes TAREA-AD-07) es una ampliación administrativa relacionada, pero su consola de roles no sustituye la implementación de los paneles ni demuestra que los módulos configurados se conviertan en accesos reales. T-UX-13/TASK-483 trata la navegación lateral; T-UX-16 trata notificaciones y aprobaciones. No duplicar sus alcances.
+- **Estado:** [ ] Pendiente.
+
+---
+
+### [TASK-489] Corregir el contrato de datos entre el panel de Recursos Humanos y las solicitudes de vacaciones
+- **Origen del Hallazgo:** AUD-NG-192 en Auditoria.txt (T-UX-12; integridad de indicadores y listas de RR. HH.).
+- **Severidad/Clasificación:** Alto / P1.
+- **Archivos Involucrados:** `dashboard-recursos-humanos.html`, `backend/accounting-service/Code.gs` y, si se centraliza el contrato, `js/api.js` o el adaptador de datos correspondiente.
+- **Dependencias Expuestas:** `loadHRDashboardData`, acción `getLeaveVacationRequests`, wrapper `getVacationRequests`, campos `solicitudes`, `data`, `tipo`, `tipoSolicitud`, `expedienteId`, `userId` y estados de solicitud.
+- **Descripción del Alcance:**
+  1. Unificar el contrato de respuesta de `getLeaveVacationRequests` y su consumidor. El backend devuelve `{status, solicitudes}`, mientras el dashboard valida `resLeaves.data`; por ello la lista y el contador no se actualizan con la respuesta real.
+  2. Alinear los campos representados: el backend entrega `tipo` y `expedienteId`, mientras el HTML intenta leer `tipoSolicitud` y `userId`. No mostrar identificadores o textos genéricos como si fueran el nombre del empleado.
+  3. Alinear los estados de negocio. La creación registra `PendienteAprobacion`, pero el contador compara únicamente con `Pendiente`; normalizar o mapear estados de forma explícita y conservar el estado original para trazabilidad.
+  4. Representar estados vacíos, error, carga y respuesta incompleta por separado; no dejar el cero inicial como si fuera un recuento confirmado.
+  5. Mantener la consulta de RR. HH. y la vista de autoservicio de empleados con contratos distintos y permisos adecuados; no solucionar el problema ampliando exposición de solicitudes de terceros.
+- **Criterios de Aceptación:**
+  - La lista de vacaciones procesa el arreglo que realmente devuelve el backend y muestra los campos correctos.
+  - Las solicitudes en estado pendiente de aprobación se cuentan correctamente, independientemente de la etiqueta interna usada por el backend, mediante un mapeo documentado.
+  - Solicitudes aprobadas/rechazadas no se cuentan como pendientes y se presentan con su estado correcto.
+  - Una respuesta vacía válida muestra cero; un error, ausencia de campo o respuesta malformada muestra un estado de error/no disponible.
+  - Pruebas reproducibles cubren solicitudes pendientes, aprobadas, rechazadas, arreglo vacío, campos incompletos y fallo de servicio.
+- **Relaciones y límites:** T-UX-12 requiere que los indicadores reflejen datos reales y distingan valores no disponibles de cero. TASK-489 corrige exclusivamente el contrato del panel de RR. HH.; la autorización y aislamiento entre empleados se registra por separado en TASK-490.
+- **Estado:** [ ] Pendiente.
+
+---
+
+### [TASK-490] Aislar en servidor los expedientes y solicitudes laborales de cada empleado
+- **Origen del Hallazgo:** AUD-NG-193 en Auditoria.txt (T-UX-12; permisos efectivos y confidencialidad del panel de RR. HH.).
+- **Severidad/Clasificación:** Alto / P1 (exposición de información laboral entre usuarios autenticados).
+- **Archivos Involucrados:** `backend/accounting-service/Code.gs` y pruebas de regresión del servicio de Contabilidad/RR. HH.
+- **Dependencias Expuestas:** `ROLE_PERMISSIONS.Empleado`, `validateRolePermission`, `validateContextualAccess`, `_verifiedUserId`, `getEmployeeRecords`, `getLeaveVacationRequests`, `getVacationRequests`, `ExpedientesLaborales` y `SolicitudesVacaciones`.
+- **Descripción del Alcance:**
+  1. Aplicar aislamiento ABAC en servidor para las consultas de autoservicio laboral. Actualmente el rol `Empleado` tiene permiso para `getEmployeeRecords` y `getLeaveVacationRequests`, pero `validateContextualAccess` solo aplica aislamiento contextual específico a Estudiante/Alumno.
+  2. En `getEmployeeRecords`, vincular la consulta del empleado autenticado con `_verifiedUserId` y resolver su propio expediente en servidor. No permitir que el cliente obtenga todos los expedientes omitiendo filtros ni que consulte otro `userId` o `expedienteId`.
+  3. En `getVacationRequests` (invocado por `getLeaveVacationRequests`), limitar al empleado autenticado a sus propias solicitudes. No confiar en `expedienteId` aportado por el cliente como prueba de titularidad.
+  4. Mantener la consulta global únicamente para los roles administrativos autorizados (por ejemplo, RecursosHumanos) y validar explícitamente la capacidad requerida antes de devolver información de terceros.
+  5. Revisar los campos de salida para no exponer observaciones, motivos u otros datos laborales ajenos a quien consulta; devolver únicamente los datos necesarios para cada vista.
+  6. Registrar y rechazar intentos de manipular IDs de otros empleados sin revelar si el expediente o solicitud existe.
+- **Criterios de Aceptación:**
+  - Un empleado autenticado sin filtros solo obtiene su expediente y sus propias solicitudes; nunca recibe la colección completa.
+  - Cambiar `userId`, `expedienteId` o identificadores de solicitud en el payload no permite leer datos de otro empleado.
+  - Recursos Humanos conserva el acceso global que corresponda a su función y los demás roles solo acceden mediante permisos explícitos.
+  - Las comprobaciones se realizan en el backend con identidad verificada; ocultar controles en el frontend no cuenta como autorización.
+  - Pruebas de regresión cubren empleado A consultando empleado B, filtros ausentes, IDs manipulados, usuario sin expediente, rol RR. HH. autorizado y rol no autorizado.
+  - Las pruebas no utilizan ni exponen datos personales productivos.
+- **Relaciones y límites:** T-UX-12 exige que los servicios respeten los permisos efectivos. TASK-489 corrige el contrato de presentación de solicitudes; TASK-490 corrige la autorización y el aislamiento de datos. No ampliar permisos de RR. HH. ni duplicar las tareas generales de RBAC ya registradas.
+- **Estado:** [ ] Pendiente.
