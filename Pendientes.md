@@ -1,4 +1,4 @@
-undefined### [TASK-474] Reconstruir el motor de eventos intermodulares con persistencia durable, despacho y recuperación verificables
+### [TASK-474] Reconstruir el motor de eventos intermodulares con persistencia durable, despacho y recuperación verificables
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-176; auditoría FASE2-06 y requisitos de FASE2-T07
 - **Severidad/Clasificación:** Alto
 - **Archivos Involucrados:**
