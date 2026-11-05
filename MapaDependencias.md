@@ -650,3 +650,15 @@ Se restauró el contenido íntegro previo a TAREA-09 (1,515,247 caracteres) tras
 - exam.js soporta cinco familias; faltan modalidades abiertas, numéricas, ordenación y adjuntos. submitExam califica por igualdad/cantidad, ignora puntos y no aplica intentos/fechas/duración ni idempotencia.
 - getExamQuestions oculta la respuesta correcta; localStorage solo ofrece recuperación local. No se acredita analítica psicométrica real.
 - Hallazgo nuevo: AUD-NG-166. Se amplían AUD-NG-121/124/006/011/002/158 sin duplicar.
+
+
+## TAREA-12 - Evaluación académica unificada, rúbricas y calificaciones
+
+- backend/academic-service/Code.gs: calculateUnifiedAcademicGrade, previewAcademicGradeCalculation, auditAcademicGradesIntegrity, generateStudentReportCard y validateAcademicResponsibilityAndScopeAccess.
+- backend/exam-service/Code.gs: getGradebookData, saveGradebookGrades, getEvaluationCategories, saveEvaluationCategory, getRubrics, saveRubric, saveCompetencyEvaluation, getCompetencyEvaluations, saveStudentRecovery, closePeriodGradebook, publishGradebookForContext, reviewPeriodGradebook, reopenPeriodGradebook, rectifyStudentGrade y getStudentAcademicReport.
+- js/teacher.js: fetchGradebookData, renderGradebookTable, quickRecoveryPrompt, btn-gb-save-all y btn-gb-close-period.
+- teacher-dashboard.html: interfaz de libro de calificaciones y modal de notas.
+- js/student.js: consumo/resumen de desempeño del estudiante.
+- Dependencias: CategoriasEvaluacion, CalificacionesEstudiantes, CierresPeriodos, RubricasEvaluacion, EvaluacionesCompetencias, RecuperacionesEstudiante, HistorialRectificacionesNotas, Matriculas, Calificaciones / Notas.
+- Hallazgo AUD-NG-167: claves de calificación no contextuales; ponderaciones duplicadas; cálculo, rúbricas y estados no unificados; boletines/SACE no conectados a fuente consolidada.
+- Controles relacionados: AUD-NG-002 (consultas de resultados), AUD-NG-158 (ABAC docente), AUD-NG-124 (historial de calificación de entregas).

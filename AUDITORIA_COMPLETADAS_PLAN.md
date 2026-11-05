@@ -230,3 +230,11 @@ Al reanudar:
 - Hallazgo nuevo: AUD-NG-166. Se amplían AUD-NG-121/124/006/011/002/158.
 - Calidad: insuficiente; desalineación entre esquemas y escrituras, validación débil y contratos incompletos. Revisión estática/manual; sin pruebas funcionales ni de permisos/concurrencia.
 - Progreso: 17/183; 166 pendientes. Siguiente: TAREA-12.
+
+
+## 23. Resultado C1.14 - TAREA-12 (2026-11-05)
+- Dictamen: CUMPLE PARCIALMENTE. Hay cálculo ponderado, categorías, rúbricas, competencias, recuperaciones, cierre/revisión y rectificación, pero el libro usa claves globales evaluacionId+userId, mezcla periodos/asignaturas, y la UI recalcula con porcentajes hardcodeados. El cálculo unificado confía en flags del cliente y admite pesos inválidos; rúbricas/competencias no validan esquema ni se integran en la UI. Cierre/publicación no filtra el contexto completo y no exige revisión; rectificación/reapertura no tienen autorización específica verificable. Recuperación usa CAT-GLOBAL; boletines consultan tablas legacy y se marcan oficiales por periodoId, sin SACE verificable.
+- Hallazgo nuevo: AUD-NG-167. Se amplían AUD-NG-002 y AUD-NG-158; AUD-NG-124 conserva su alcance de historial de entregas.
+- Calidad: insuficiente por fuentes de datos incompatibles, pesos duplicados, claves incompletas y máquina de estados no protegida.
+- Pruebas: inspección estática/manual; no se ejecutaron pruebas de navegador, Apps Script, concurrencia, permisos, datos reales, SACE ni despliegue.
+- Progreso: 18/183; 165 pendientes. Siguiente: TAREA-13.

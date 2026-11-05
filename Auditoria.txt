@@ -4630,3 +4630,18 @@ CORRECCIÓN DE INTEGRIDAD DE Pendientes.md (2026-11-05): la verificación poster
 - Pruebas: inspección estática/manual; no se ejecutaron pruebas funcionales ni de permisos/concurrencia.
 - Progreso: 17/183; 166 pendientes. Siguiente: TAREA-12.
 ===============================================================================
+
+
+===============================================================================
+[AUD-NG-167] TAREA-12 - INTEGRIDAD DEL LIBRO DE CALIFICACIONES Y CICLO INSTITUCIONAL
+- Fecha: 2026-11-05. Severidad: ALTO (P1).
+- Evidencia: saveGradebookGrades usa evaluacionId+userId como clave, sin periodo/año/asignatura/grupo; getGradebookData no filtra notas por asignatura/parcial. La UI recalcula con pesos hardcodeados 35/40/15/10 y no usa el cálculo unificado. saveEvaluationCategory no valida porcentajes/ámbito/escala; saveRubric acepta criterios JSON sin esquema; competencias no validan catálogos ni rúbrica. calculateUnifiedAcademicGrade confía en flags del payload, permite pesos inválidos y mezcla nota porcentual con puntosPosibles en PuntosObtenidos. closePeriodGradebook cierra/publica directamente; publishGradebookForContext ignora asignatura/periodo. La UI omite periodoId al guardar; Profesor tiene permiso para revisar/reabrir/rectificar; rectificación no verifica autoridad y el historial no es atómico. Recuperación usa CAT-GLOBAL y nota original cliente. generateStudentReportCard usa tablas legacy y marca oficial por presencia de periodoId, sin comprobar publicación/cierre ni SACE real.
+- Impacto: sobrescritura de notas entre periodos/asignaturas, resultados no reproducibles, exposición o publicación prematura, cambios no autorizados, boletines incorrectos y falta de trazabilidad institucional.
+- Criterios: clave contextual estable; validación de notas/pesos y configuración por ámbito; cálculo servidor único con pendientes diferenciados de cero; rúbricas/competencias con esquema y referencias; máquina de estados con revisión/autorización y publicación contextual; rectificación atómica con actor verificado; recuperación vinculada a registro real; boletines desde fuente consolidada y mapeo SACE verificable.
+- Tareas relacionadas: AUD-NG-002 (consultas/propiedad), AUD-NG-158 (ABAC docente), AUD-NG-124 (historial de notas en entregas de tareas/exámenes, sin duplicar el libro académico).
+- Control de duplicados: AUD-NG-167 se limita al libro académico, ponderaciones, rúbricas, estados y boletines; no reemplaza controles generales de sesión/ABAC ni el historial de calificación de entregas.
+- TAREA-12: CUMPLE PARCIALMENTE. Existen cálculo, categorías, rúbricas, recuperación, cierre/revisión y rectificación, pero no forman un flujo institucional coherente y verificable.
+- Calidad: insuficiente por desalineación de fuentes de datos, ponderaciones hardcodeadas, claves incompletas, rúbricas sin validación y cierre/publicación sin contexto suficiente.
+- Pruebas: inspección estática/manual; no se ejecutaron pruebas funcionales, de concurrencia, permisos, datos reales, integración SACE ni despliegue.
+- Progreso: 18/183; 165 pendientes. Siguiente: TAREA-13.
+===============================================================================

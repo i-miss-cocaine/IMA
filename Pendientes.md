@@ -18547,3 +18547,23 @@ Hallazgo nuevo: AUD-NG-165. Los demás vacíos de TAREA-10 amplían tareas exist
 - **Estado:** [ ] Pendiente
 
 Hallazgo nuevo: AUD-NG-166. Progreso de auditoría: 17/183; 166 pendientes. Siguiente tarea: TAREA-12.
+
+
+---
+
+## Ampliación de criterios derivada de TAREA-12 (2026-11-05)
+
+- **AUD-NG-002:** getStudentAcademicReport debe derivar el estudiante de claims verificados o comprobar relación familiar; no debe exponer registros no publicados ni ignorar el ámbito/periodo autorizado.
+- **AUD-NG-158:** incluir todas las operaciones de calificación institucional, rúbricas, competencias, recuperación, cierre, revisión, reapertura y rectificación en ABAC server-side; actor/autoridad deben derivarse de claims, no de campos libres del payload.
+- **AUD-NG-124:** conservar su alcance original de historial/propiedad de calificaciones de entregas; no absorber el libro académico consolidado, que se registra en AUD-NG-167.
+
+### [AUD-NG-167] Unificar la integridad del libro de calificaciones y el ciclo institucional de evaluación
+- **Origen:** Auditoría de completadas.md / TAREA-12.
+- **Severidad:** Alto (P1).
+- **Archivos:** backend/academic-service/Code.gs; backend/exam-service/Code.gs; js/teacher.js; js/student.js; teacher-dashboard.html.
+- **Problema:** calificaciones identificadas solo por evaluacionId+userId; consultas sin filtro completo por periodo/asignatura; ponderaciones duplicadas/hardcodeadas; cálculo unificado con validaciones insuficientes; rúbricas/competencias sin esquema ni integración UI; cierre/publicación y rectificación sin transición/autoridad contextual verificable; recuperación CAT-GLOBAL; boletines desconectados de la fuente consolidada y equivalencia SACE no acreditada.
+- **Criterios:** clave contextual estable; validar configuración de ponderaciones y notas; cálculo server-side único con pendientes distintos de cero; rúbricas analíticas y competencias vinculadas a catálogos; revisión/publicación/cierre/rectificación con permisos y transiciones verificadas; recuperación asociada a calificación real; boletines oficiales desde notas consolidadas y compatibilidad SACE demostrable.
+- **Tareas relacionadas (no duplicadas):** AUD-NG-002 (propiedad y consulta), AUD-NG-158 (ABAC docente), AUD-NG-124 (historial de calificaciones de entregas, no del libro consolidado).
+- **Estado:** [ ] Pendiente
+
+Hallazgo nuevo: AUD-NG-167. Progreso de auditoría: 18/183; 165 pendientes. Siguiente tarea: TAREA-13.

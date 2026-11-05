@@ -948,3 +948,21 @@ CHECKPOINT C1.13 - AUDITORÍA TAREA-11 (2026-11-05)
 - Progreso: 17/183 identificadores únicos auditados; 166 pendientes.
 - Siguiente tarea: TAREA-12.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.14 - AUDITORÍA TAREA-12 (2026-11-05)
+================================================================
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- HEAD anterior: 1303de14aa54e13354778d3a8c7c5196603e786b.
+- Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59; no modificada.
+- Tarea auditada: TAREA-12 - unificar evaluación académica, rúbricas y calificaciones.
+- Dictamen: CUMPLE PARCIALMENTE. Existen cálculo, categorías, rúbricas, competencias, recuperaciones, cierre/revisión y rectificación, pero no forman un flujo institucional coherente. Las notas se identifican sin periodo/asignatura; la UI usa ponderaciones fijas; las rúbricas no están integradas; cierre/publicación y rectificación carecen de controles contextuales suficientes; boletines y SACE no usan una fuente consolidada verificable.
+- Hallazgo nuevo: AUD-NG-167. Se amplían AUD-NG-002 y AUD-NG-158; AUD-NG-124 conserva el alcance de historial de calificación de entregas.
+- Informe: AUDITORIA_COMPLETADAS_TAREA-12.md. Sección del plan: 23.
+- Archivos previstos para el commit único de tarea: Auditoria.txt, Pendientes.md, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt e informe TAREA-12.
+- Sin modificaciones en código fuente, completadas.md, completadas_legacy.md, ChangesLogs.txt ni metodología.
+- No se ejecutaron pruebas funcionales, navegador, Apps Script, concurrencia, permisos, datos reales, SACE ni despliegue.
+- Progreso: 18/183 identificadores únicos auditados; 165 pendientes.
+- Siguiente tarea exacta: TAREA-13.
+================================================================
