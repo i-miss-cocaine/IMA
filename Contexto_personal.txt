@@ -2537,3 +2537,53 @@ ARCHIVOS DE ESTA ITERACIÓN:
 - Commit de cierre: el commit que contiene este checkpoint; su SHA se confirmará externamente después de publicar.
 - Próxima acción concreta: auditar T-UX-15; reconciliar sus ampliaciones posteriores con TASK-481/TASK-491 y revisar las implementaciones de filtros, vistas guardadas, ordenamiento, paginación y restauración de estado.
 ================================================================
+
+
+
+================================================================
+CHECKPOINT C1.55 - INICIO Y RECONCILIACIÓN DE AUDITORÍA T-UX-15 (2026-11-05)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto real: Contexto_personal.txt.
+- Rama base protegida: NG_beta_0.0.0.1.
+- Rama de trabajo autorizada: NG_beta_0.0.0.1_work.
+- HEAD de partida verificado de la rama de trabajo: bec68deadce76d1fd95d50740798876dcf643090.
+- HEAD verificado de la rama base: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Comparación de rama de trabajo contra C1.54 (cf28bbfe02211df88579ce42dd989f0dcf8796fa): 3 commits por delante, 0 por detrás. HEAD actual corresponde al commit bec68deadce76d1fd95d50740798876dcf643090. La rama base no presenta cambios respecto al HEAD registrado en C1.54.
+- Última tarea auditada y cerrada: T-UX-14 (NO CUMPLE).
+- Tarea en curso: T-UX-15 - Implementar filtros avanzados, vistas guardadas y paginación coherente.
+- Próxima tarea: T-UX-16, únicamente después de cerrar T-UX-15.
+- Progreso acumulado de referencia: 55/183 identificadores auditados; 128 pendientes. No se incrementa en este checkpoint porque T-UX-15 no está cerrada.
+- Lote: Fase 3, experiencia de usuario y navegación unificada.
+
+RECONCILIACIÓN E INICIO:
+- Se confirmó en completadas.md (SHA f57f1aef832e81e44fc4f7ec36a852d50e464676) que T-UX-15 figura como [X] histórica. La especificación exige: filtros por campos pertinentes a cada módulo; combinación predecible; identificación y eliminación individual de filtros activos; conservación de filtros en paginación y navegación al detalle; vistas reutilizables cuando proceda; diferenciación entre vistas personales y compartidas.
+- El checkpoint C1.54 confirma T-UX-15 como siguiente tarea y exige reconciliar tareas históricas/posteriores relacionadas con filtros, persistencia, ordenamiento y paginación.
+- Se revisaron los registros de AUDITORIA_COMPLETADAS_PLAN.md (SHA 016461b468e30f1fe42f0041937d0c6e67260fc5) y el backlog recuperado. TASK-485 aborda enrutamiento/historial y TASK-486 snapshot/restauración del estado de listas/detalle; son dependencias relacionadas, no sustitutos de filtros/paginación como funcionalidad. TASK-249 aborda persistencia de vistas personalizadas de reportes institucionales (columnas, filtros, orden, agrupaciones, permisos, compartir y exportar); debe mantenerse separado del alcance genérico de vistas de tablas/listas de T-UX-15 para evitar duplicación. TAREA-04 y tareas de escalabilidad/paginación deben reconciliarse con precisión antes de proponer nuevos IDs.
+- Se inspeccionó manualmente js/ui-common.js (SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67), sección de renderPaginatedTable y bloque T-UX-15/setupAdvancedTableFilters (rango consultado 1980-2250). Evidencia preliminar: renderPaginatedTable separa paginación local/remota pero no recibe un contrato común de filtros/ordenamiento; setupAdvancedTableFilters filtra datos locales por coincidencia de subcadena y expone métodos de set/remove/clear/save/load; filterFields no interviene en el filtrado; las vistas se almacenan en localStorage por containerId, sin identidad/rol/ámbito ni semántica de vistas compartidas; no se observó UI de chips ni catálogo/gestión de vistas dentro de este bloque. Estas observaciones son preliminares y no constituyen aún dictamen final.
+- Se inspeccionaron referencias directas en js/teacher.js (SHA c475fce5afcd28fca23e7b64398ad32b17773746), js/student.js (SHA e2888cea60322e49a40b89adadb8010489605dcc), js/accounting.js (SHA a79ead4a54ad6fdb2f1e9df4775491ff7191a0c7) y js/secretary.js (SHA 08a81266957b4c18cc25f8ba6749eac30a8f2c2c); no se localizaron referencias directas a setupAdvancedTableFilters, renderPaginatedTable o SAVED_TABLE_VIEWS_CACHE en esos cuatro archivos. Falta revisar los demás consumidores/módulos y confirmar el alcance completo.
+- No se ha emitido dictamen final ni se han creado hallazgos AUD-NG/TASK. No se ha modificado código ni Pendientes.md.
+
+RECUPERACIÓN DE Pendientes.md:
+- Ruta exacta: Pendientes.md, rama NG_beta_0.0.0.1_work, HEAD bec68deadce76d1fd95d50740798876dcf643090.
+- La lectura convencional mediante fetch_file devolvió 0 caracteres con blob SHA 4039a6dc496848c5cf6b112bc41b681d80488bb7.
+- Se recuperó el contenido de ese blob desde la misma rama/HEAD. Resultado: 1,671,553 caracteres y 19,573 líneas. No se restauró ni sobrescribió el archivo; el contenido se conserva como respaldo para reconciliación. Falta completar la validación estructural/inventario de IDs y reconciliar todas las tareas pertinentes antes de modificarlo.
+- El blob recuperado coincide con el blob SHA registrado al cierre de C1.54. No se consultaron ramas externas para recuperación.
+
+ARCHIVOS Y SHAs DE RESPALDO:
+- Contexto_personal.txt previo: f9469a54d7ea5fa6ed6c22aaa56e6d87a4084aaf.
+- completadas.md: f57f1aef832e81e44fc4f7ec36a852d50e464676.
+- METODOLOGIA_DESARROLLO.md: 214e8221bd076c4e89012636c105bffd5ca36467.
+- AUDITORIA_COMPLETADAS_PLAN.md: 016461b468e30f1fe42f0041937d0c6e67260fc5.
+- AUDITORIA_COMPLETADAS_T-UX-14.md: 8c6c0fa77cb77976b9a56f4db715bc8dae77270f.
+- js/ui-common.js: 986938b8a311a41ed4cb3d135b66b6aaea4bed67.
+- Pendientes.md blob recuperado: 4039a6dc496848c5cf6b112bc41b681d80488bb7.
+
+PRUEBAS Y ESTADO:
+- Pruebas ejecutadas: inspección estática/manual de especificación, checkpoint, backlog recuperado, helper compartido y cuatro módulos JS.
+- No ejecutadas: navegador/DOM real, filtros por módulo en runtime, paginación local/remota con filtros/orden, persistencia entre usuarios/roles, vistas compartidas, navegación detalle/atrás/adelante, pruebas de accesibilidad ni suites automatizadas.
+- Archivos modificados en esta iteración: Contexto_personal.txt únicamente (checkpoint).
+- Archivos no modificados: código fuente, Pendientes.md, completadas.md, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md y METODOLOGIA_DESARROLLO.md.
+- Próxima acción concreta: completar la lectura/reconciliación de tareas de backlog relacionadas con T-UX-15; revisar todos los consumidores de tablas/listas y las implementaciones de filtros, ordenamiento, paginación y vistas guardadas; inspeccionar los flujos de detalle/restauración para separar TASK-486; determinar si TASK-249/TAREA-04 u otra tarea existente absorbe partes del alcance; cerrar dictamen con evidencia exacta y registrar solo hallazgos no duplicados en Pendientes.md, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md e informe T-UX-15.
+- Commit de checkpoint: el commit que contiene esta entrada; su SHA se confirmará externamente después de publicar.
+================================================================
