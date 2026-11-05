@@ -1089,3 +1089,13 @@ No se crea AUD-NG nuevo.
 - AUD-NG-174: envelope API, correlación, errores y fallback.
 - AUD-NG-083: integración HMAC en tráfico real.
 - TASK-474: correlación/causation de eventos y productores autenticados.
+
+ 
+## T-UX-02 / AUD-NG-181 - ciclo de vida de modales y foco (C1.44, 2026-11-05)
+
+- `js/ui-common.js:87-143`: `trackModalFocus` mantiene una sola referencia global; Escape oculta IDs predefinidos y nodos con role=dialog/.modal/[data-modal], cierra todos los encontrados y restaura solo esa referencia.
+- Captura de foco disponible en seis abridores: profile (157), dashboard settings (1630), omnibox (4938), shared detail (5315), administración de usuarios (5469) y seguridad (5618). Abridores como document reader (2628), contextual help (3086), report issue (3748), tickets (3889/4074), analytics chart (4604) y mobile drawer (aprox. 4755) no registran activador.
+- Cobertura ausente: `index.html:391` / `js/index-ui.js:868-895` (`news-detail-modal`); `dashboard-direccion.html:421-455` / `js/secretary.js:462-465,808-813` (modal de responsabilidades y analíticas). Son overlays `.fixed.inset-0` sin role=dialog, .modal ni data-modal y no figuran en activeModals.
+- Registro duplicado: auto-init ui-common.js:3490-3493 más llamadas DOMContentLoaded desde js/index-ui.js:11, teacher-dashboard.html:1469 y student-dashboard.html:401; falta guard de listener único.
+- Prueba UX-02 (1846-1867) solo valida existencia de trackModalFocus, no comportamiento.
+- Hallazgo AUD-NG-181; ampliar TASK-258. No crear TASK-479. AUD-NG-169 permanece como accesibilidad general de paneles.

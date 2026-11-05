@@ -521,3 +521,17 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Código fuente:** sin modificaciones. completadas.md y METODOLOGIA_DESARROLLO.md sin modificaciones.
 - **Progreso:** 44/183 identificadores auditados; 139 pendientes.
 - **Siguiente tarea:** T-UX-02 - Soporte Universal Tecla Escape para Cierre de Modales y Restauración de Foco.
+
+ 
+## 49. Resultado C1.44 - T-UX-02 (2026-11-05)
+
+- **Dictamen:** CUMPLE PARCIALMENTE. Existe listener keydown Escape y cierre de una lista de modales/diálogos, pero no cubre todos los overlays reales y la restauración de foco no funciona universalmente.
+- **Evidencia principal:** js/ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67; listener 87-143; UX-02 superficial en 1846-1867; auto-init 3490-3493; omnibox listener duplicado 5073-5085.
+- **Superficies confirmadas:** index.html SHA cd742047cdc4948259dd721119429b04f78330ca / news-detail-modal:391; js/index-ui.js SHA c637535e8cc84f02aa18631bc964ff7ef545722e / showNewsDetail:868-895 y setupCommonUI:11; dashboard-direccion.html SHA fefaa3bf7884288aef563cfb8aaf244e6cea8b7c / overlays:421-455; js/secretary.js SHA 08a81266957b4c18cc25f8ba6749eac30a8f2c2c / abridores:462-465, 808-813; teacher-dashboard.html SHA cbb9e6a272a7d8ad33f99727303305d950533e71 / setupCommonUI:1469; student-dashboard.html SHA 6379ea0ed39d71b89747a0280bb925fdf12202c1 / setupCommonUI:401.
+- **Hallazgo:** AUD-NG-181 (ALTO). Ampliar TASK-258, que ya contempla Escape universal, foco de retorno y confinamiento de foco. No crear TASK-479 ni duplicar AUD-NG-169.
+- **Calidad:** insuficiente por selector incompleto, lista estática, referencia global no apilada, cierres simultáneos y listeners duplicados.
+- **Pruebas:** inspección estática/manual; no se ejecutaron navegador, KeyboardEvent real, lectores de pantalla ni pruebas DOM automatizadas.
+- **Código:** sin modificaciones; completadas.md y METODOLOGIA_DESARROLLO.md intactos.
+- **Progreso:** 45/183 identificadores auditados; 138 pendientes.
+- **Siguiente tarea:** T-UX-03 - Módulo de Protección contra Pérdida de Cambios No Guardados en Formularios.
+

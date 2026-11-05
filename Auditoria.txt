@@ -5601,3 +5601,34 @@ RECONCILIACIÓN:
 PRUEBAS Y LÍMITES: inspección estática/manual. No se ejecutaron Apps Script, HTTP, triggers, despliegues, suites con efectos productivos ni operaciones reales. Código fuente sin modificaciones.
 PRÓXIMA TAREA: T-UX-02. Progreso: 44/183 identificadores auditados; 139 pendientes.
 ===============================================================================
+
+ 
+================================================================
+AUD-NG-181 - CIERRE UNIVERSAL DE MODALES CON ESCAPE Y RESTAURACIÓN DE FOCO INCOMPLETOS
+FECHA: 2026-11-05
+SEVERIDAD: ALTO (P1)
+ARCHIVO PRINCIPAL: js/ui-common.js
+SHA DE RESPALDO: 986938b8a311a41ed4cb3d135b66b6aaea4bed67
+ARCHIVOS DE SUPERFICIE/CONSUMIDORES: index.html; js/index-ui.js; dashboard-direccion.html; js/secretary.js; teacher-dashboard.html; student-dashboard.html.
+RANGOS: js/ui-common.js:87-143, 157, 1630, 1846-1867, 2628-2672, 3086-3137, 3748-3762, 3889-3899, 4074-4084, 4604-4635, 4755-4847, 4936-5005, 5073-5085, 5315-5329, 5469-5539, 5618-5697, 3490-3493; index.html:391; js/index-ui.js:11, 868-895; dashboard-direccion.html:421-455; js/secretary.js:462-465, 808-813; teacher-dashboard.html:1469; student-dashboard.html:401.
+TIPO: Incumplimiento funcional de teclado, restauración de foco y duplicación de listeners.
+DESCRIPCIÓN Y EVIDENCIA:
+1. El listener Escape (ui-common.js:92-143) cierra los IDs de activeModals (95-119) y los elementos coincidentes con [role="dialog"], .modal o [data-modal] (127-131). No incluye cualquier overlay .fixed.inset-0; por ello deja fuera diálogos reales que no tengan esos atributos/clases ni un ID de la lista.
+2. Casos reproducibles por inspección de contratos: index.html:391 declara news-detail-modal con fixed inset-0 y hidden, sin role=dialog/.modal/data-modal y fuera de activeModals. js/index-ui.js:868-895 lo abre quitando hidden y bloquea el scroll del body. Escape no lo oculta ni restaura body.style.overflow. dashboard-direccion.html:421 y 442 declara modal-role-responsibility-config y modal-academic-analytics con el mismo patrón sin role/.modal/data-modal ni IDs en activeModals; js/secretary.js:462-465 y 808-813 los abre quitando hidden. Escape no los cierra.
+3. trackModalFocus (88-90) guarda un único elemento en window.lastActiveElementBeforeModal. Solo se llama desde seis abridores en ui-common.js (157, 1630, 4938, 5315, 5469 y 5618). Otros abridores visibles de la misma biblioteca (openDocumentReader, openContextualHelpModal, openReportIssueModal, openMyTicketsModal, openAdminTicketsModal, openAnalyticsChartModal y openMobileHamburgerDrawer) no guardan su activador. La restauración de Escape (137-141) depende de que esa referencia exista y siga en document.body; puede ser nula o quedar obsoleta.
+4. El listener cierra todos los modales que encuentra en una sola pulsación; no mantiene pila ni identifica el diálogo superior. Con modales anidados, el elemento de retorno puede pertenecer a un modal padre que también se oculta. La restauración no comprueba que el activador permanezca visible/fuera de ancestros ocultos.
+5. setupCommonUI registra el listener cada vez que se ejecuta, sin bandera de inicialización ni retirada previa. ui-common.js:3490-3493 hace auto-inicialización y, además, js/index-ui.js:11, teacher-dashboard.html:1469 y student-dashboard.html:401 llaman setupCommonUI durante DOMContentLoaded. En esas páginas se agregan varios listeners Escape y se repiten los efectos de cierre/restauración.
+6. runUXSuiteTests (1846-1867) declara PASS para UX-02 comprobando únicamente typeof window.trackModalFocus === 'function'; no genera KeyboardEvent, no abre/cierra un modal, no verifica la restauración ni la cobertura de los distintos patrones. La prueba no detecta los defectos descritos.
+IMPACTO:
+La tecla Escape no cierra todos los modales de la plataforma; algunos overlays mantienen el scroll bloqueado. El foco puede perderse, quedar en un elemento oculto o regresar al activador de otro modal. La inicialización repetida duplica listeners y ejecuta múltiples cierres por una pulsación.
+DEPENDENCIAS:
+setupCommonUI; window.trackModalFocus; window.lastActiveElementBeforeModal; activeModals; closeInteractiveGuide; runUXSuiteTests; openProfileModal; openDashboardSettingsModal; openDocumentReader; openContextualHelpModal; openReportIssueModal; openMyTicketsModal; openAdminTicketsModal; openAnalyticsChartModal; openMobileHamburgerDrawer; openGlobalOmniboxModal/closeGlobalOmniboxModal; renderSharedDetailViewModal; index.html/news-detail-modal; dashboard-direccion.html/modal-role-responsibility-config y modal-academic-analytics; js/index-ui.js; js/secretary.js.
+RELACIÓN Y NO DUPLICACIÓN:
+- T-UX-02: CUMPLE PARCIALMENTE; hay listener Escape y cierre de un subconjunto de modales, pero la cobertura y la restauración de foco no son universales.
+- TASK-258 ya contiene el requisito exacto de Escape para cualquier modal/drawer, retorno al activador, focus trap y navegación por teclado. Ampliar esa tarea con esta evidencia, no crear una nueva TASK.
+- AUD-NG-169 conserva accesibilidad general de paneles docentes/estudiantes; no sustituye la corrección concreta del ciclo de vida de modales.
+CALIDAD:
+Implementación centralizada en un listener, pero acoplada a una lista manual de IDs y una variable global de foco sin pila. El selector dinámico depende de convenciones ARIA/clases que varios modales existentes no cumplen. La prueba UX-02 es superficial y no acredita comportamiento.
+PRUEBAS Y LÍMITES:
+Inspección estática/manual de los rangos indicados y sus consumidores. No se ejecutó navegador, eventos de teclado reales, lector de pantalla ni prueba DOM automatizada. No se modificó código fuente ni se realizaron operaciones productivas.
+================================================================

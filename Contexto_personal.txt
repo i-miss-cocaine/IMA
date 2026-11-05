@@ -1849,3 +1849,65 @@ ARCHIVOS DE LA ITERACIÓN:
 - No se ejecutaron Apps Script, HTTP, triggers, despliegues, pruebas concurrentes ni operaciones productivas. No ejecutar runInterdepartmentalIntegrationTestSuite: puede procesar colas reales.
 - Regla de publicación: exactamente un commit final descendiente de 57f7e330ed997457b34c8849cf869297054a5783; no crear commits intermedios. Actualizar solo NG_beta_0.0.0.1_work y verificar HEAD/árbol/archivos. La rama base debe permanecer en 44d9891132332e692dbe2ba8602b41f50a508a59.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.44 - AUDITORÍA T-UX-02 (2026-11-05)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto real: Contexto_personal.txt.
+- Rama de trabajo autorizada: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: 462131e176e7d7c9e1b9b215efbe3db8f7bbe906 (C1.43 / FASE2-T08).
+- HEAD de rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios.
+- La rama de trabajo estaba 89 commits por delante y 0 por detrás de la base.
+- Última tarea auditada y cerrada en esta iteración: T-UX-02 - Soporte Universal Tecla Escape para Cierre de Modales y Restauración de Foco.
+- Dictamen: CUMPLE PARCIALMENTE. Existe listener Escape, pero no detecta todos los overlays, la restauración de foco no cubre todos los abridores, no hay pila de modales y el registro de listeners se duplica cuando setupCommonUI se invoca más de una vez.
+- Tarea en curso: ninguna; inspección estática/manual de T-UX-02 cerrada.
+- Siguiente tarea exacta según completadas.md: T-UX-03 - Módulo de Protección contra Pérdida de Cambios No Guardados en Formularios.
+- Progreso: 45/183 identificadores auditados; 138 pendientes.
+
+RECUPERACIÓN E INVENTARIO DE Pendientes.md:
+- La lectura convencional por ruta devolvió 0 caracteres, aunque Git devolvió blob SHA 093007608b9c1fdd550305bb8e16ef966c6c4201.
+- HEAD de origen: 462131e176e7d7c9e1b9b215efbe3db8f7bbe906; el árbol de ese HEAD confirma que Pendientes.md apunta a ese blob.
+- Se recuperó el blob actual del HEAD de la rama de trabajo, no una copia legacy ni una rama externa. Se conservó el SHA de origen como respaldo inmutable.
+- Blob de origen: 093007608b9c1fdd550305bb8e16ef966c6c4201; 1,623,550 caracteres y 19,228 líneas. Se verificaron encabezado inicial, cierre final, encabezados y estado de TASK-258.
+- Se amplió TASK-258, conservando su estado [ ] Pendiente. No se creó TASK-479 ni se alteraron estados históricos.
+- Blob preparado actualizado: 0be7e975c1aec2ccc36a3c11cc0b75cae9522032; 1,625,662 caracteres y 19,229 líneas.
+- Inventario actualizado por identificadores únicos mencionados: 478 IDs TASK (máximo TASK-478) y 176 referencias AUD-NG (máximo AUD-NG-181), 654 identificadores combinados. De las 176 referencias AUD-NG, 172 aparecen en líneas de encabezado y cuatro son referencias cruzadas (AUD-NG-170, AUD-NG-176, AUD-NG-177 y el nuevo AUD-NG-181); no se contabilizó una referencia como tarea TASK nueva.
+- TASK-258 aparece una vez como tarea y conserva estado [ ] Pendiente. No se cambió completadas.md.
+
+HALLAZGO Y RECONCILIACIÓN:
+- AUD-NG-181 (ALTO): cierre Escape no universal, restauración de foco parcial y listeners keydown duplicados.
+- Casos no detectados: index.html:391 / js/index-ui.js:868-895 (news-detail-modal); dashboard-direccion.html:421 / js/secretary.js:462-465 (modal-role-responsibility-config); dashboard-direccion.html:442 / js/secretary.js:808-813 (modal-academic-analytics).
+- trackModalFocus solo tiene seis call sites en ui-common.js:157, 1630, 4938, 5315, 5469 y 5618; varios abridores no guardan activador. El handler cierra todos los diálogos detectados en una pulsación y no mantiene una pila.
+- setupCommonUI auto-inicializa en ui-common.js:3490-3493 y vuelve a llamarse desde js/index-ui.js:11, teacher-dashboard.html:1469 y student-dashboard.html:401; el listener en ui-common.js:92 no tiene guard de registro único.
+- runUXSuiteTests UX-02 (1846-1867) solo comprueba existencia de trackModalFocus.
+- Reconciliar con TASK-258, que ya exige Escape universal, retorno exacto del foco, focus trap y navegación por teclado. AUD-NG-169 conserva accesibilidad general de paneles; no duplicar ni crear una TASK nueva.
+
+ARCHIVOS Y SHAS DE RESPALDO:
+- completadas.md: f57f1aef832e81e44fc4f7ec36a852d50e464676.
+- METODOLOGIA_DESARROLLO.md: 214e8221bd076c4e89012636c105bffd5ca36467.
+- js/ui-common.js: 986938b8a311a41ed4cb3d135b66b6aaea4bed67.
+- index.html: cd742047cdc4948259dd721119429b04f78330ca.
+- js/index-ui.js: c637535e8cc84f02aa18631bc964ff7ef545722e.
+- dashboard-direccion.html: fefaa3bf7884288aef563cfb8aaf244e6cea8b7c.
+- js/secretary.js: 08a81266957b4c18cc25f8ba6749eac30a8f2c2c.
+- teacher-dashboard.html: cbb9e6a272a7d8ad33f99727303305d950533e71.
+- student-dashboard.html: 6379ea0ed39d71b89747a0280bb925fdf12202c1.
+- Pendientes.md origen: 093007608b9c1fdd550305bb8e16ef966c6c4201; nuevo blob 0be7e975c1aec2ccc36a3c11cc0b75cae9522032.
+- Auditoria.txt origen b3ff32eb74d0528425449f37db5b34362ea996bc; nuevo blob 6bac6c5674932277b83269573f74ca06d5ab58f7.
+- MapaDependencias.md origen eccf51fa7df2cf0a0fb42d0b81138109f778488c; nuevo blob 21abd8a19e69d4153277ee5d727d594b687b04a8.
+- AUDITORIA_COMPLETADAS_PLAN.md origen 4dffd3941106d2d990404f90fd96f15ba666bea1; nuevo blob 3a3d290301d4cdd2f4f5913d3b842fba5ae51699.
+- Informe nuevo AUDITORIA_COMPLETADAS_T-UX-02.md: blob 7da3f0111fa9d95c139b566564237342f74bef67.
+- Contexto_personal.txt de partida: 72ba5b849e50fa04760a59546040659763517f8b.
+
+ARCHIVOS DE ESTA ITERACIÓN:
+- Modificados: Pendientes.md, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt.
+- Nuevo: AUDITORIA_COMPLETADAS_T-UX-02.md.
+- Sin modificar: código fuente (incluido js/ui-common.js), completadas.md, completadas_legacy.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md y rama base.
+- Pruebas: inspección estática/manual de funciones, abridores y consumidores concretos. No se ejecutaron navegador, KeyboardEvent real, DOM automation, lectores de pantalla, Apps Script, HTTP, triggers, despliegues ni operaciones productivas.
+- La auditoría manual cubrió los rangos funcionales de Escape/foco y sus consumidores identificados; no se declara inspeccionado cada bloque no relacionado de los 5,872 renglones de ui-common.js.
+- Regla de publicación: exactamente un commit final descendiente de 462131e176e7d7c9e1b9b215efbe3db8f7bbe906; no crear commits intermedios. Actualizar solo NG_beta_0.0.0.1_work; verificar HEAD, árbol y archivos incluidos. La rama base debe permanecer en 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Commit de cierre: el commit que contiene este checkpoint; su SHA se confirma externamente tras publicar.
+================================================================
