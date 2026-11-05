@@ -18418,7 +18418,7 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 
 ---
 
-### [AUD-NG-163] Instrumentar cuotas, capacidad operativa y reanudación segura de trabajos masivos
+### [AUD-NG-163] (DUPLICADO, CONSERVADO PARA TRAZABILIDAD) Instrumentar cuotas, capacidad operativa y reanudación segura de trabajos masivos
 - **Origen del Hallazgo:** Auditoría de completadas.md / TAREA-03 (supervisión operativa y prevención de agotamiento de cuotas).
 - **Severidad/Clasificación:** Alto (P1; disponibilidad, continuidad operativa y consumo de recursos).
 - **Archivos Involucrados:** `backend/user-service/Code.gs`; `backend/academic-service/Code.gs`; `backend/accounting-service/Code.gs`; `backend/task-service/Code.gs`; `backend/exam-service/Code.gs`; `js/api.js`; `js/persistence.js`; pruebas de integración/carga.
@@ -18432,4 +18432,7 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
   - Los trabajos masivos registran progreso y último elemento confirmado; reanudarlos no duplica ni pierde operaciones.
   - Los límites de concurrencia y duración están documentados y se aplican a procesos críticos.
   - Las pruebas aisladas cubren umbral, clasificación, alerta, agotamiento simulado, fallo parcial, reanudación, duplicación y concurrencia.
-- **Estado:** [ ] Pendiente
+- **Estado:** [DUPLICADA] No ejecutar independientemente; consolidada en tareas preexistentes.
+
+
+Nota de reconciliación (2026-11-05): AUD-NG-163 se solapa con TASK-064 (cuotas/capacidad/alertas), AUD-NG-144/AUD-NG-145 (health checks/bitácora), AUD-NG-006/AUD-NG-069/AUD-NG-133/AUD-NG-161 (reintentos/idempotencia/pruebas) y TASK-154/TASK-227/TASK-265 (checkpoints/reanudación). Se conserva el rastro, pero no debe ejecutarse como tarea independiente.

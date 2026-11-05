@@ -65,3 +65,7 @@ La auditoría fue estática y documental sobre los archivos del repositorio en l
 - No se modifica código fuente, `completadas.md`, `ChangesLogs.txt` ni `METODOLOGIA_DESARROLLO.md`.
 - La tarea se cerrará en un solo commit con todos los archivos de esta iteración.
 - La rama base `NG_beta_0.0.0.1` no se modifica y no se hace merge.
+
+
+## Addendum de control de duplicados (2026-11-05)
+En revisión posterior se identificó que AUD-NG-163 se solapa con tareas preexistentes. Se conserva el registro histórico, pero queda marcado como duplicado y no debe ejecutarse por separado: TASK-064 (cuotas/capacidad/alertas); AUD-NG-144/AUD-NG-145 (health checks/bitácora); AUD-NG-006/AUD-NG-069/AUD-NG-133/AUD-NG-161 (reintentos/idempotencia/pruebas); TASK-154/TASK-227/TASK-265 (checkpoints y reanudación). El dictamen de TAREA-03 permanece CUMPLE PARCIALMENTE.

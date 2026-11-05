@@ -802,3 +802,15 @@ CHECKPOINT C1.6 - AUDITORÍA TAREA-03 (2026-11-05)
 - Pruebas: inspección estática/manual; no se ejecutaron pruebas de carga, cuotas, concurrencia, reanudación ni despliegue.
 - Siguiente tarea exacta: TAREA-05. TAREA-04 no aparece como identificador único en completadas.md entre TAREA-03 y TAREA-05; verificar secuencia/inventario al iniciar la próxima iteración.
 ================================================================
+
+
+================================================================
+NOTA C1.6a - RECONCILIACIÓN AUD-NG-163 (2026-11-05)
+================================================================
+- HEAD previo: a9e659e4d10731808efa32f21e442a28e3ee499a.
+- AUD-NG-163 se detectó como duplicado de TASK-064, AUD-NG-144/145, AUD-NG-006/069/133/161 y TASK-154/227/265.
+- Se conservó el registro y se marcó DUPLICADA en Pendientes.md; no ejecutar independientemente.
+- TAREA-03 mantiene CUMPLE PARCIALMENTE y progreso 10/183.
+- Siguiente tarea: TAREA-05.
+- Sin cambios en código fuente, completadas.md, ChangesLogs.txt ni metodología.
+================================================================

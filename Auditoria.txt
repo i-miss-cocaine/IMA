@@ -4513,3 +4513,6 @@ AUDITORÍA DE completadas.md - TAREA-03 (2026-11-05)
 - Progreso: 10/183 identificadores únicos auditados; 173 pendientes.
 - Siguiente tarea: TAREA-05, siguiente identificador único de completadas.md. TAREA-04 no aparece como identificador en el inventario actual entre TAREA-03 y TAREA-05.
 ===============================================================================
+
+
+CORRECCIÓN DE TRAZABILIDAD AUD-NG-163 (2026-11-05): revisión posterior identificó solapamiento con tareas preexistentes. TASK-064 cubre cuotas/capacidad/alertas; AUD-NG-144/AUD-NG-145 cubren health checks/bitácora; AUD-NG-006/AUD-NG-069/AUD-NG-133/AUD-NG-161 cubren reintentos/idempotencia/pruebas; TASK-154/TASK-227/TASK-265 cubren checkpoints/colas/reanudación. AUD-NG-163 se conserva como rastro, pero queda marcado duplicado y no debe ejecutarse independientemente. Dictamen TAREA-03 y progreso 10/183 no cambian.

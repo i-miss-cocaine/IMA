@@ -156,3 +156,9 @@ Al reanudar:
 - **Archivos fuente y completadas.md:** sin modificaciones. ChangesLogs.txt sin cambios.
 - **Pruebas:** inspección estática/manual; no se ejecutaron pruebas de carga, cuotas, concurrencia, reanudación ni despliegue.
 - **Siguiente tarea:** TAREA-05. TAREA-04 no aparece como identificador único en completadas.md entre TAREA-03 y TAREA-05.
+
+
+## 14. Reconciliación AUD-NG-163 (2026-11-05)
+- AUD-NG-163 se identificó como duplicado de tareas existentes y se marcó como tal en Pendientes.md.
+- Cobertura: TASK-064 (cuotas/capacidad/alertas); AUD-NG-144/AUD-NG-145 (health checks/bitácora); AUD-NG-006/AUD-NG-069/AUD-NG-133/AUD-NG-161 (reintentos/idempotencia/pruebas); TASK-154/TASK-227/TASK-265 (checkpoints y reanudación).
+- Se conserva el registro histórico, sin ejecutarlo por separado. TAREA-03 sigue CUMPLE PARCIALMENTE; 10/183.
