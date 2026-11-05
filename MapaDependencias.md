@@ -560,3 +560,13 @@
 - login.html / js/auth.js: no interpretan session_expired ni muestran aviso de sesión expirada.
 - js/ui-common.js: runUXSuiteTests / UX-01 verifica solo la existencia de handleSessionExpired, no el flujo conductual.
 - Dependencia requerida: el contrato backend debe separar autenticación inválida/expirada/revocada de autorización insuficiente antes de que fetchApi invoque el manejador; un rechazo RBAC no debe cerrar una sesión válida.
+
+ 
+## Auditoría de completadas.md - TAREA-02 (2026-11-05)
+
+- **Dictamen:** Cumple parcialmente; no existe actualmente una matriz maestra unificada de requisitos, dependencias y pruebas.
+- **Evidencia:** MapaDependencias.md contiene relaciones técnicas parciales y anexos de auditoría, pero no la sección de matriz maestra que ChangesLogs.txt atribuye a TAREA-02. README.md ofrece una descripción arquitectónica general sin IDs de requisitos, criterios, pruebas, evidencias, prioridades ni tareas de resolución.
+- **Trazabilidad:** ChangesLogs.txt registra históricamente la supuesta adición de la matriz, pero el artefacto actual no la contiene. La versión actual del mapa tampoco permite detectar de forma sistemática requisitos sin implementación, pruebas huérfanas o componentes sin responsable.
+- **Hallazgo existente:** AUD-NG-010 cubre la insuficiencia del inventario y la trazabilidad; su alcance se amplía en Pendientes.md. AUD-NG-011 permanece relacionado con la evidencia de aislamiento curricular.
+- **No duplicar:** No se crea un nuevo AUD-NG para esta causa.
+- **Calidad:** el mapa mezcla relaciones puntuales y anexos de distintas auditorías sin un esquema uniforme ni control integral de cobertura.

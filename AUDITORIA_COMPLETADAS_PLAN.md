@@ -129,3 +129,17 @@ Al reanudar:
 - Código fuente y completadas.md: sin modificaciones. ChangesLogs.txt sin cambios.
 - Pruebas concurrentes, pérdida de respuesta, navegador y despliegue productivo: no ejecutadas.
 - Siguiente registro: T-UX-01, inmediatamente después de FASE2-T02 en completadas.md.
+
+ 
+## 12. Resultado del lote C1.5 - TAREA-02 (2026-11-05)
+
+- **Tarea auditada:** TAREA-02 - Consolidar la matriz maestra de requisitos, dependencias y pruebas.
+- **Dictamen:** Cumple parcialmente.
+- **Evidencia:** MapaDependencias.md contiene relaciones parciales, pero no la matriz maestra descrita en ChangesLogs.txt. README.md es descriptivo y no relaciona requisitos con criterios, pruebas, evidencias, estados, prioridades y tareas de resolución. El documento AUDITORIA_FASE1_PLANIFICACION_EXPANSION.md no está presente en la raíz actual.
+- **Hallazgo nuevo:** ninguno. La causa ya está registrada en AUD-NG-010; se amplía su alcance en Pendientes.md. AUD-NG-011 se mantiene como dependencia relacionada.
+- **Calidad:** insuficiente por fragmentación documental, ausencia de estructura uniforme y discrepancia entre el changelog histórico y el artefacto actual.
+- **Integridad:** se recuperó Auditoria.txt desde el último snapshot íntegro anterior (commit b2e1f4fa036edfb4028972230eb37e25341dd437), conservando los registros históricos anteriores, y se anexaron AUD-NG-159 a AUD-NG-162 y este resultado.
+- **Progreso:** 9/183 identificadores únicos auditados; 174 pendientes.
+- **Archivos fuente y completadas.md:** sin modificaciones. ChangesLogs.txt sin cambios.
+- **Pruebas:** inspección estática/manual de documentación; no se ejecutaron pruebas de código ni de despliegue.
+- **Siguiente tarea:** TAREA-03.

@@ -16965,6 +16965,14 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Descripción del Alcance:** Documentar por archivo las funciones, parámetros, retornos, consumidores, variables, constantes, clases, eventos y dependencias entrantes/salientes. Vincular componentes con tareas y pruebas.
 - **Criterios de Aceptación:** El mapa permite rastrear un elemento hasta sus consumidores y pruebas; cada módulo central cuenta con su inventario y contratos.
 - **Estado:** [ ] Pendiente
+- **Ampliación de alcance derivada de TAREA-02 (auditoría 2026-11-05):** además del inventario técnico por archivo, consolidar en el mismo registro maestro los requisitos funcionales, técnicos, de seguridad, rendimiento y mantenimiento, con identificadores estables para requisitos y subcapacidades. Cada registro debe relacionar fase/función, tipo y origen del requisito, componente, dependencias, criterios de aceptación, pruebas reproducibles, evidencias, estado funcional y de verificación, prioridad, tarea de resolución y cambios/versiones que puedan afectar su cumplimiento.
+- **Criterios adicionales de aceptación:**
+  - Distinguir requisitos originales, capacidades existentes, defectos, funcionalidades incompletas, propuestas nuevas y elementos no verificables.
+  - Detectar requisitos sin implementación o evidencia, pruebas sin requisito asociado y componentes sin responsable o documentación suficiente.
+  - Relacionar frontend, servicios, tablas, permisos, archivos e integraciones, incluyendo las áreas curriculares y servicios especializados.
+  - Mantener trazabilidad de cambios entre requisito, componente, dependencia, prueba y tarea de resolución; identificar el impacto potencial de cada cambio.
+  - Calcular cobertura sobre elementos identificables y evidencias ejecutadas; los bloqueos y elementos no probados no se contabilizan como éxitos.
+
 
 ### [AUD-NG-011] Demostrar o completar el aislamiento de microservicios por área curricular
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-011

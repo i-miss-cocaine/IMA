@@ -755,3 +755,28 @@ REGLA OPERATIVA AÑADIDA - UN COMMIT POR TAREA (2026-11-04)
 - Esta regla complementa las reglas existentes de METODOLOGIA_DESARROLLO.md; no elimina ni sustituye ninguna regla ni registro histórico.
 - Aplicación: rama de trabajo NG_beta_0.0.0.1_work; respetar siempre la rama base intacta, la prohibición de merge y las demás restricciones vigentes.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.5 - AUDITORÍA TAREA-02 (2026-11-05)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- HEAD antes del commit de TAREA-02: c0d27dacb187cf652914e70eecda069a564fb0b5.
+- Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59; verificada sin modificaciones.
+- Última tarea auditada: TAREA-02 - Consolidar la matriz maestra de requisitos, dependencias y pruebas.
+- Dictamen: CUMPLE PARCIALMENTE.
+- Progreso acumulado: 9/183 identificadores únicos auditados; 174 pendientes.
+- Evidencia principal: MapaDependencias.md no contiene la matriz maestra afirmada en ChangesLogs.txt; README.md es descriptivo y no ofrece trazabilidad requisito-prueba-evidencia; la fuente AUDITORIA_FASE1_PLANIFICACION_EXPANSION.md no está presente en la raíz actual.
+- Hallazgo nuevo: ninguno. La causa está cubierta por AUD-NG-010; se amplió esa tarea en Pendientes.md con los criterios completos de TAREA-02. AUD-NG-011 queda relacionado por el alcance de áreas curriculares.
+- Informe: AUDITORIA_COMPLETADAS_TAREA-02.md (blob SHA 5ad63b05f9c8ad52d8299a3cb3e15be6e6a29b41).
+- Sección del plan: sección 12 de AUDITORIA_COMPLETADAS_PLAN.md.
+- MapaDependencias.md: se añadió el resultado de auditoría y la relación con AUD-NG-010/AUD-NG-011; no se implementó la matriz.
+- Integridad de Auditoria.txt: la rama contenía solo 7,551 caracteres con AUD-NG-159 a AUD-NG-162. Se restauró el snapshot íntegro del commit b2e1f4fa036edfb4028972230eb37e25341dd437 (423,466 caracteres; blob 2752d81a022f28724fc2c4bce42bc700f1c216b9) y se anexaron AUD-NG-159 a AUD-NG-162 y el resultado de TAREA-02. Se preservan los registros históricos anteriores.
+- Pendientes.md: se amplió aditivamente AUD-NG-010; no se creó una tarea duplicada ni se alteró su estado pendiente.
+- Archivos modificados en el único commit de esta tarea: Auditoria.txt, Pendientes.md, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt y AUDITORIA_COMPLETADAS_TAREA-02.md.
+- No se modificó código fuente, completadas.md, ChangesLogs.txt ni METODOLOGIA_DESARROLLO.md.
+- No se ejecutaron pruebas automatizadas, de navegador, de servicios ni de despliegue.
+- Respaldos antes de la tarea: completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676; MapaDependencias.md a40ee1d2f245516abd0798e6597f936845d051d6; README.md 1d76341a6a286ebd0115e319f77b8c33b727dbba; Pendientes.md 995f1408b3bc75207f2a64bf43b60e0bbcd6f783; Auditoria.txt e12b691d8870b08d3512e655d9ea020fd61705d7; ChangesLogs.txt d57cf4bd861b5c3720e60cf83241ed804ff645d9; METODOLOGIA_DESARROLLO.md 3973a5ecb370a24a7fa568cb4b0afa771d629793.
+- Siguiente tarea exacta: TAREA-03. No repetir TAREA-02 ni T-UX-01 ni las tareas anteriores.
+================================================================
