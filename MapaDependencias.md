@@ -1124,3 +1124,28 @@ No se crea AUD-NG nuevo.
 - No existe snapshot del estado inicial; revertir manualmente un valor no restaura clean.
 - No existe teardown para el listener global ni para MutationObserver; una instancia retirada puede conservar estado y listener.
 - Dependencias externas: DOM Form/Input/Textarea/Select, eventos DOM, MutationObserver, beforeunload y flujos de guardado de los formularios consumidores.
+
+
+## Indicador de frescura de datos y actualización manual (T-UX-04 / T-UX-21 / C1.46)
+
+### Componente compartido
+- `js/ui-common.js:5438-5789` -> `window.renderDataFreshnessBadge(containerIdOrElement, lastUpdatedTimestamp, onRefreshCallback)`.
+- Inserta `.data-freshness-badge-element` en el contenedor recibido; muestra antigüedad relativa y hora local.
+- El botón `.btn-refresh-badge` solo recibe listener cuando se proporciona `onRefreshCallback`.
+- El timestamp ausente se sustituye por `new Date()`; la confirmación del callback se considera fallida solo si `success === false`.
+- La función exterior no se cierra hasta la línea 5789.
+
+### Dependencias y consumidores
+- `runUXSuiteTests` / UX-04: `js/ui-common.js:1879-1885`; solo comprueba que exista la función.
+- `window.openUserManagementAdministrationModal` se declara en `js/ui-common.js:5468-5614`, dentro del renderer.
+- `window.openSecurityAndComplianceDashboardModal` se declara en `js/ui-common.js:5617-5765`, dentro del renderer.
+- Consumidores: `dashboard-direccion.html:188-198` y `dashboard-secretaria.html:330-331`; los botones omiten la acción cuando los helpers no están definidos.
+- No se localizaron llamadas externas a `renderDataFreshnessBadge` en los 21 archivos JavaScript ni en los 13 HTML principales de dashboards revisados.
+
+### Riesgos y reconciliación
+- No hay integración del badge en las vistas revisadas ni callback de actualización conectado a operaciones reales.
+- Sin timestamp se presenta la hora actual como si fuera una sincronización; timestamp inválido puede producir `Invalid Date`.
+- Sin callback, el botón queda visible pero inerte; un callback ambiguo puede tratarse como éxito y renovar timestamp sin confirmación explícita.
+- Los estados actualizado/desactualizado/pendiente/error de T-UX-21 no están modelados integralmente.
+- El anidamiento de los helpers administrativos es una regresión colateral del límite incorrecto de `renderDataFreshnessBadge`.
+- AUD-NG-183/TASK-480 concentra la corrección del renderer, integración, contrato de refresh, estados, pruebas y restauración de helpers.

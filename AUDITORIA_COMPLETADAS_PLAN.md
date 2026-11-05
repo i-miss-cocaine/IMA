@@ -548,3 +548,17 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Código fuente:** sin modificaciones. `completadas.md`, `ChangesLogs.txt` y `METODOLOGIA_DESARROLLO.md` sin cambios.
 - **Progreso:** 46/183 identificadores auditados; 137 pendientes.
 - **Siguiente tarea:** T-UX-05 - Normalización Diacrítica Insensible a Tildes para Búsquedas y Filtros. T-UX-04 no aparece en la secuencia vigente entre T-UX-03 y T-UX-05.
+
+
+## 51. Resultado C1.46 - T-UX-04 (2026-11-05)
+
+- **Dictamen:** NO CUMPLE. El renderer existe, pero no se encontraron llamadas externas en los 21 archivos JavaScript ni en los 13 HTML principales de dashboards revisados; no se inserta un badge visible ni hay callback real de actualización. La prueba UX-04 solo comprueba existencia de función.
+- **Evidencia principal:** `js/ui-common.js` SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67; renderer 5438-5789; UX-04 1879-1885; `completadas.md` SHA f57f1aef832e81e44fc4f7ec36a852d50e464676.
+- **Regresión:** `renderDataFreshnessBadge` no se cierra hasta 5789. Las asignaciones globales `openUserManagementAdministrationModal` (5468-5614) y `openSecurityAndComplianceDashboardModal` (5617-5765) quedan anidadas en su cuerpo. Los consumidores de `dashboard-direccion.html` (188-198) y `dashboard-secretaria.html` (330-331) omiten la acción cuando `typeof` no es función.
+- **Ampliación histórica:** T-UX-21 exige estados actualizado/desactualizado/pendiente/error, timestamp efectivo y actualización manual solo tras éxito. El timestamp ausente se sustituye por la hora actual; el callback considera fallo solo `success === false`; el botón queda inerte si no hay callback.
+- **Reconciliación de secuencia:** T-UX-04 sí aparece en la lista formal FASE 3 de `completadas.md` (1536-1545), además del registro 1150-1158; el checkpoint C1.45 lo omitió al revisar únicamente la secuencia resumida. No existía auditoría previa en `Auditoria.txt`; se audita ahora antes de T-UX-05. T-UX-21 (1183-1192) es su ampliación.
+- **Backlog:** recuperado desde el blob del HEAD de trabajo `215944966aa45bbe47182296630e2b68d094272d`, SHA `2d8dceee1b4c943277489c632c62773cd3a845f6`, 1,628,909 caracteres y 19,256 líneas. Inventario previo: 479 IDs TASK únicos y 177 IDs AUD-NG únicos (173 encabezados únicos + 4 referencias cruzadas), máximo TASK-479/AUD-NG-182. Se añadió TASK-480/AUD-NG-183. Inventario posterior: 480 TASK y 178 AUD-NG (174 encabezados únicos + 4 referencias cruzadas), 658 IDs combinados.
+- **Pruebas:** inspección estática/manual de la función, límites, prueba UX-04, consumidores y búsqueda de referencias en 21 JS/13 HTML principales. No se ejecutaron navegador, DOM real, suites automatizadas, Apps Script ni sincronizaciones.
+- **Código fuente:** sin modificaciones. `completadas.md`, `ChangesLogs.txt` y `METODOLOGIA_DESARROLLO.md` sin cambios.
+- **Progreso:** 47/183 identificadores auditados; 136 pendientes.
+- **Siguiente tarea:** T-UX-05 - Normalización Diacrítica Insensible a Tildes para Búsquedas y Filtros.

@@ -19253,3 +19253,30 @@ AUD-NG-163 permanece DUPLICADA y consolidada; no reabrirla como tarea independie
   - Varias instancias activas no duplican listeners globales ni interfieren entre sí.
   - UX-03 verifica los comportamientos anteriores y diferencia PASS, FAIL, BLOCKED y NOT RUN; las pruebas no operan sobre formularios/datos productivos.
 - **Estado:** [ ] Pendiente.
+
+
+---
+
+### [TASK-480] [AUD-NG-183] [P1] Integrar y corregir el indicador de frescura y su ciclo de actualización
+- **Origen del Hallazgo:** Auditoria.txt (AUD-NG-183).
+- **Severidad/Clasificación:** Alto.
+- **Archivos Involucrados:** `js/ui-common.js`, `dashboard-direccion.html`, `dashboard-secretaria.html` y las vistas que deban mostrar la frescura de sus datos.
+- **Dependencias Expuestas:** `window.renderDataFreshnessBadge`, `window.openUserManagementAdministrationModal`, `window.openSecurityAndComplianceDashboardModal`, `runUXSuiteTests` / UX-04, timestamps reales de sincronización y operaciones de actualización de cada vista.
+- **Descripción del Alcance:**
+  1. Cerrar correctamente `renderDataFreshnessBadge` antes de declarar otros helpers globales; garantizar que los dos modales administrativos se registren al cargar `ui-common.js`, sin depender de invocar el indicador.
+  2. Integrar el badge en las vistas de lista/paneles pertinentes y pasar la fecha/hora de la última actualización confirmada por la fuente real de datos; no usar la hora de renderizado como sustituto.
+  3. Definir tratamiento explícito para timestamp ausente, inválido o futuro. Mostrar “Sin dato”/estado equivalente cuando no exista una actualización verificable, sin fingir frescura ni mostrar `Invalid Date`.
+  4. Modelar estados distinguibles de actualizado, desactualizado, pendiente y error, con umbral de antigüedad documentado y mensajes accesibles.
+  5. Definir contrato inequívoco para actualización manual: el botón debe estar deshabilitado/oculto si no existe callback; el callback debe confirmar éxito explícitamente y devolver timestamp válido; solo el éxito confirmado renueva la marca. Manejar excepciones, rechazos y callbacks sin respuesta para retirar el spinner y conservar el timestamp previo.
+  6. Conectar el callback con la operación real de recarga/sincronización de cada vista integrada, evitando marcar éxito antes de completar la operación.
+  7. Verificar que los botones de gestión de usuarios y seguridad de Dirección, y gestión de usuarios de Secretaría, abran sus modales después de la carga normal de la página.
+  8. Ampliar UX-04 con pruebas conductuales para inserción en DOM, timestamp reciente/antiguo/ausente/inválido, estados, callback ausente, éxito confirmado, fallo, excepción, timeout y registro global de los dos helpers. Las pruebas deben ser aisladas y no sincronizar datos productivos.
+- **Criterios de Aceptación:**
+  - El indicador aparece en las vistas configuradas y refleja el timestamp de una actualización real confirmada.
+  - La falta de timestamp no se presenta como “Hace un momento”; los valores inválidos/futuros se muestran de forma segura.
+  - Los estados actualizado, desactualizado, pendiente y error son distinguibles.
+  - Sin callback no aparece una acción manual engañosa; con callback, solo una confirmación explícita de éxito actualiza la hora.
+  - Un fallo, rechazo, excepción o ausencia de respuesta no renueva el timestamp y siempre libera el indicador de carga.
+  - Los dos helpers administrativos existen en `window` desde la carga normal de `ui-common.js`; los botones de Dirección y Secretaría funcionan sin invocar previamente el badge.
+  - UX-04 comprueba comportamiento e integración, no solo `typeof`.
+- **Estado:** [ ] Pendiente.

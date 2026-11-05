@@ -1963,3 +1963,62 @@ ARCHIVOS DE ESTA ITERACIÓN:
 - Regla de publicación: un único commit final descendiente de 4938025465aa4318107953d8d1498968c5f26380; sin commits intermedios. El commit de cierre será el que contiene este checkpoint y su SHA se confirma externamente después de publicar.
 - Próxima acción: auditar T-UX-05 contrastando completadas.md con js/ui-common.js y reconciliar cualquier tarea posterior que amplíe el normalizador diacrítico.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.46 - AUDITORÍA T-UX-04 (2026-11-05)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto real: Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida: 215944966aa45bbe47182296630e2b68d094272d.
+- HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios.
+- Comparación al inicio: 91 commits ahead, 0 behind.
+- Última tarea auditada y cerrada: T-UX-04 - Indicador e Badge de Frescura de Datos Sincronizados con Trigger Manual.
+- Dictamen: NO CUMPLE. No hay llamadas externas del renderer en los 21 JS ni en los 13 HTML principales de dashboards revisados; el badge no se integra en vistas. La prueba UX-04 solo comprueba presencia de función. Además, el renderer engloba accidentalmente dos asignaciones globales de modales administrativos, que no se registran al cargar el script.
+- Ampliación T-UX-21: incumple el contrato de timestamp efectivo, estados de sincronización y actualización manual confirmada.
+- Tarea en curso: ninguna; auditoría estática/manual T-UX-04 cerrada.
+- Siguiente tarea exacta: T-UX-05 - Normalización Diacrítica Insensible a Tildes para Búsquedas y Filtros.
+- Progreso: 47/183 identificadores auditados; 136 pendientes.
+
+CORRECCIÓN DE CONTINUIDAD DEL CHECKPOINT C1.45:
+- C1.45 afirmó que T-UX-04 no aparecía en la secuencia vigente entre T-UX-03 y T-UX-05. Esa afirmación fue incompleta: T-UX-04 está presente en la lista formal FASE 3 de completadas.md, líneas 1536-1545, y también en el registro 1150-1158. T-UX-21 (1183-1192) amplía el mismo componente.
+- No existía auditoría previa de T-UX-04 en Auditoria.txt. Se auditó ahora antes de T-UX-05; no se modifica ni reordena completadas.md.
+
+RECUPERACIÓN E INVENTARIO DE Pendientes.md:
+- La lectura convencional por ruta devolvió 0 caracteres.
+- HEAD de recuperación: 215944966aa45bbe47182296630e2b68d094272d; blob vigente confirmado: 2d8dceee1b4c943277489c632c62773cd3a845f6.
+- Se recuperó exclusivamente el blob de la rama de trabajo actual, no una rama externa ni legacy.
+- Blob de origen: 2d8dceee1b4c943277489c632c62773cd3a845f6; 1,628,909 caracteres y 19,256 líneas. Se verificaron encabezado, cierre, inventario e inexistencia previa de TASK-480/AUD-NG-183.
+- Inventario previo: 479 IDs TASK únicos (477 encabezados de tarea únicos más referencias) y 177 IDs AUD-NG únicos (173 encabezados únicos + 4 referencias cruzadas), máximo TASK-479/AUD-NG-182.
+- Se agregó un encabezado TASK-480 vinculado a AUD-NG-183.
+- Inventario posterior: 480 IDs TASK únicos y 178 IDs AUD-NG únicos (174 encabezados únicos + 4 referencias cruzadas), 658 IDs combinados. No se alteraron estados históricos.
+- Respaldo inmutable: blob 2d8dceee1b4c943277489c632c62773cd3a845f6.
+
+HALLAZGO Y RECONCILIACIÓN:
+- AUD-NG-183 (ALTO/P1): renderer de frescura no integrado; no hay callback real; timestamp ausente suplido por hora actual; confirmación de éxito permisiva; estados T-UX-21 incompletos; dos helpers administrativos anidados y no registrados globalmente.
+- Consumidores afectados: dashboard-direccion.html:188-198 y dashboard-secretaria.html:330-331.
+- Tareas de caché/observabilidad AUD-NG-064/AUD-NG-077 son complementarias y no duplican este componente visual ni la regresión.
+- Se creó TASK-480; no se modificó completadas.md.
+
+ARCHIVOS Y SHAS DE RESPALDO:
+- js/ui-common.js: 986938b8a311a41ed4cb3d135b66b6aaea4bed67.
+- dashboard-direccion.html: fefaa3bf7884288aef563cfb8aaf244e6cea8b7c.
+- dashboard-secretaria.html: fa0d8c23aace24a6acab2d4956398a7f5e1309b8.
+- completadas.md: f57f1aef832e81e44fc4f7ec36a852d50e464676.
+- Auditoria.txt origen: 6d5649eb0292983d928b2927d364bdaeecc8f17c.
+- MapaDependencias.md origen: 5c6fe4d89ed286347b638521b46b817251fa9fce.
+- AUDITORIA_COMPLETADAS_PLAN.md origen: bbf6892c826c3fa554d958a5e20c3c2c6e79d42a.
+- Contexto_personal.txt origen: 44f10cb27932c7044d694dca2fda828671903170.
+- Pendientes.md origen: 2d8dceee1b4c943277489c632c62773cd3a845f6.
+- Rama base: 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+ARCHIVOS DE ESTA ITERACIÓN:
+- Modificados: Pendientes.md, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt.
+- Nuevo: AUDITORIA_COMPLETADAS_T-UX-04.md.
+- Sin modificar: código fuente, completadas.md, completadas_legacy.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md y rama base.
+- Pruebas: inspección estática/manual. No se ejecutaron navegador, DOM real, suites automatizadas, Apps Script ni sincronizaciones reales.
+- Regla de publicación: exactamente un commit final descendiente de 215944966aa45bbe47182296630e2b68d094272d; sin commits intermedios. El SHA del commit de cierre se confirma externamente después de publicarlo.
+- Próxima acción: auditar T-UX-05, contrastando su requisito directo y la ampliación de normalización en T-UX-14, además de los consumidores de filtros.
+================================================================

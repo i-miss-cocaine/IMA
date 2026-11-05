@@ -5662,3 +5662,32 @@ RECONCILIACIÓN:
 PRUEBAS Y LÍMITES:
 Inspección estática/manual. No se ejecutaron navegador, eventos DOM reales, suites automatizadas, Apps Script ni guardados reales. No se certificó la integración de cada formulario consumidor. Código fuente sin modificaciones.
 ================================================================
+
+
+================================================================
+AUD-NG-183 - INDICADOR DE FRESCURA SIN INTEGRACIÓN Y REGRESIÓN POR ANIDAMIENTO DE HELPERS
+FECHA: 2026-11-05
+SEVERIDAD: ALTO (P1)
+ARCHIVO PRINCIPAL: js/ui-common.js
+SHA DE RESPALDO: 986938b8a311a41ed4cb3d135b66b6aaea4bed67
+RANGOS: js/ui-common.js:5438-5789 (renderDataFreshnessBadge y cierre); 5468-5614 (openUserManagementAdministrationModal anidada); 5617-5765 (openSecurityAndComplianceDashboardModal anidada); 5771-5789 (callback de actualización); 1879-1885 (UX-04).
+CONSUMIDORES AFECTADOS: dashboard-direccion.html:188-198; dashboard-secretaria.html:330-331.
+TAREAS HISTÓRICAS: T-UX-04 (completadas.md:1150-1158 y 1536-1545); ampliación T-UX-21 (1183-1192); T-UX-10/UX-04.
+TIPO: Función de UI desconectada, contrato de timestamp/refresh no verificable y regresión por anidamiento accidental.
+DESCRIPCIÓN Y EVIDENCIA:
+1. renderDataFreshnessBadge existe, pero no tiene llamadas externas localizadas en los 21 archivos JavaScript ni en los 13 HTML principales de dashboards revisados. No se inserta en vistas de lista ni paneles; tampoco hay callback real conectado a una operación de actualización.
+2. La función inicia en la línea 5438 y el único cierre exterior aparece en 5789. Las asignaciones window.openUserManagementAdministrationModal (5468-5614) y window.openSecurityAndComplianceDashboardModal (5617-5765) quedan dentro de su cuerpo y solo se ejecutan al invocar el renderer con un contenedor válido. Los consumidores de Dirección (188-198) y Secretaría (330-331) comprueban typeof y no hacen nada si el helper no está definido. No se encontraron invocaciones externas del renderer en los archivos revisados.
+3. Si lastUpdatedTimestamp falta o es falsy, se usa new Date() y se muestra “Hace un momento”, simulando una sincronización reciente. Una fecha inválida puede producir “Invalid Date”.
+4. El botón manual se dibuja aunque no exista onRefreshCallback, quedando inerte. En el callback solo success === false se considera fallo; undefined y cualquier valor distinto de false se tratan como éxito y pueden fijar la hora actual sin timestamp confirmado. Excepciones o callbacks que nunca responden pueden dejar el spinner activo.
+5. El renderer no modela de forma explícita los estados actualizado/desactualizado/pendiente/error requeridos por T-UX-21.
+6. UX-04 solo comprueba typeof window.renderDataFreshnessBadge === 'function'; no valida renderizado, timestamp, estados, actualización, fallo ni integración.
+IMPACTO:
+El badge no aparece en las vistas principales revisadas; el botón no está conectado a datos reales. Además, la estructura del renderer condiciona la definición de dos helpers administrativos, dejando potencialmente inoperantes los botones de gestión de usuarios y seguridad de Dirección y gestión de usuarios de Secretaría.
+RECONCILIACIÓN:
+- T-UX-04 está presente en la lista formal de FASE 3 de completadas.md; el checkpoint C1.45 lo omitió al considerar solo la secuencia resumida. No había auditoría previa en Auditoria.txt; se audita en C1.46 antes de T-UX-05.
+- T-UX-21 amplía los estados de sincronización y exige timestamp actualizado solo tras éxito confirmado; la implementación no satisface el contrato.
+- Tareas de caché/observabilidad existentes (AUD-NG-064/AUD-NG-077) son complementarias, no duplican el componente visual ni el defecto de anidamiento.
+- Crear TASK-480 vinculada a AUD-NG-183. No modificar completadas.md ni los estados históricos.
+PRUEBAS Y LÍMITES:
+Inspección estática/manual. Se localizaron las referencias en 21 archivos JS y 13 HTML principales de dashboards. No se ejecutaron navegador, DOM real, suites automatizadas, Apps Script ni sincronizaciones reales. No se modificó código fuente.
+================================================================
