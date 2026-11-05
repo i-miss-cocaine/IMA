@@ -1304,3 +1304,30 @@ CHECKPOINT C1.28 - AUDITORÍA T-UX-27 (2026-11-05)
 - Pruebas: inspección estática/manual; no se ejecutaron benchmarks, pruebas de navegador, red lenta ni dispositivos reales.
 - Siguiente tarea en el orden de completadas.md: TAREA-17. Antes de auditar, verificar cobertura histórica y cambios posteriores.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.29 - AUDITORÍA FASE2-01 (2026-11-05)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- HEAD de partida verificado: c56025c1ff88905f7be530d89ace3c4b8da79a42 (C1.28 / T-UX-27).
+- Tarea auditada: FASE2-01 - Protocolo de Interoperabilidad y Aislamiento entre Servicios Departamentales.
+- Dictamen: NO CUMPLE. No hay HMAC aplicado al tráfico real, doPost no verifica sobres, USER→TASK envía JSON plano, los cinco servicios principales comparten SPREADSHEET_ID y el resolver de fuentes no está integrado universalmente.
+- Progreso: 32/183 identificadores únicos auditados; 151 pendientes.
+- Hallazgo nuevo: ninguno. Se amplían AUD-NG-083, AUD-NG-084, AUD-NG-086 y TASK-046. TASK-048 conserva su estado histórico, pero sus checks completados no están respaldados por el código runtime revisado.
+- Informe: AUDITORIA_COMPLETADAS_FASE2-01.md. Sección del plan: 37.
+- Evidencia:
+  * js/config.js: 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc.
+  * js/api.js: 6b24f666db30a811a8e9b38d466fc6001cf6dfa9.
+  * backend/user-service/Code.gs: 12079dd410aa6d8afbce55a4bc62a79dea605f9f.
+  * backend/accounting-service/Code.gs: 38b979d41596b85e888b4a7060b37bbac0840a28.
+  * backend/academic-service/Code.gs: daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc.
+  * backend/task-service/Code.gs: 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe.
+  * backend/exam-service/Code.gs: 1d93296628fae31f680004f637897e2b1314a64c.
+  * backend/developer-service/Code.gs: 8aa4bac67cfe5c8c54da51a0784a56fef633e412.
+- Archivos documentales actualizados: Auditoria.txt, Pendientes.md, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt e informe FASE2-01.
+- No modificar completadas.md, completadas_legacy.md, ChangesLogs.txt ni METODOLOGIA_DESARROLLO.md; sin cambios de código fuente.
+- Pruebas: inspección estática/manual; no se ejecutaron HTTP entre deployments, rotación PropertiesService ni pruebas multi-cuenta.
+- Corrección de secuencia: TAREA-17 a TAREA-20 ya habían sido auditadas en C1.20-C1.23; no repetir. Próxima tarea exacta: FASE2-02.
+================================================================

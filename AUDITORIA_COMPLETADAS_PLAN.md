@@ -363,3 +363,12 @@ Al reanudar:
 - **Pruebas:** inspección estática de 24 archivos JS, dashboards principales, api.js, ui-common.js, ChangesLogs y suite modular. No se ejecutaron benchmarks ni pruebas de red lenta/dispositivos reales.
 - **Progreso:** 31/183 identificadores auditados; 152 pendientes.
 - **Siguiente tarea:** TAREA-17.
+
+
+## 37. Resultado C1.29 - FASE2-01 (2026-11-05)
+- **Dictamen:** NO CUMPLE. Helpers HMAC no conectados a doPost ni a llamadas reales; USER→TASK usa JSON plano; cinco servicios comparten SPREADSHEET_ID; resolver dinámico parcial; fallback de secreto determinista; pruebas de arquitectura locales/estáticas sin E2E.
+- **Reconciliación:** ampliar AUD-NG-083, AUD-NG-084, AUD-NG-086 y TASK-046. TASK-048 figura completada pero sus checks de tráfico autenticado/rotación no están sustentados; no crear AUD-NG nuevo.
+- **Calidad:** arquitectura declarativa, no protocolo operativo; aislamiento de datos y autenticación entre servicios no acreditados.
+- **Pruebas:** inspección estática/manual; no se ejecutaron llamadas HTTP entre deployments, rotación de claves ni pruebas de aislamiento multi-cuenta.
+- **Progreso:** 32/183 identificadores auditados; 151 pendientes.
+- **Siguiente tarea:** FASE2-02.

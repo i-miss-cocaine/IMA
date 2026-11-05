@@ -2390,6 +2390,8 @@ REGLA RECTORA INNEGOCIABLE DEL BACKLOG:
   - [X] Registrar una nueva partición sin tener que modificar cada consumidor.
   - [X] Comprobar la compatibilidad de esquemas entre particiones.
   - [X] Verificar que las referencias históricas no cambian al registrar nuevas fuentes.
+- **Ampliación C1.29 / FASE2-01:** USER, ACCOUNTING, ACADEMIC, TASK y EXAM mantienen el mismo `SPREADSHEET_ID` literal. `resolveSpreadsheetSource` solo está definido en USER/ACCOUNTING/ACADEMIC y cada uno tiene una única llamada adicional; TASK y EXAM no lo implementan. En USER/ACCOUNTING/ACADEMIC la mayoría de accesos siguen usando `SpreadsheetApp.openById(SPREADSHEET_ID)` (más de 150 referencias por servicio). El `SERVICE_REGISTRY.resources.spreadsheetId` del frontend contiene IDs de ejemplo que no corresponden al ID operativo. No se acredita partición física ni resolución universal por servicio/dominio.
+- **Criterios adicionales:** Cada servicio debe resolver su fuente autorizada por catálogo, dominio, cuenta y contexto; los accesos directos fijos deben migrarse o justificarse. Probar aislamiento de lecturas/escrituras entre USER, ACADEMIC, TASK, EXAM y ACCOUNTING con fuentes distintas; no aceptar IDs placeholder ni fallback a la hoja compartida.
 - **Estado:** [X] Completada
 
 ---
@@ -2479,6 +2481,7 @@ REGLA RECTORA INNEGOCIABLE DEL BACKLOG:
   - [X] Rechazar intento de ejecutar una operación no autorizada.
   - [X] Inspeccionar el frontend para comprobar que no contiene secretos ni claves de servicio.
   - [X] Verificar que los errores no exponen claves ni tokens en texto plano.
+- **Nota de auditoría C1.29 / FASE2-01:** Aunque los criterios de esta tarea figuran [X], el código revisado no demuestra comunicación autenticada entre despliegues. `createInterServiceEnvelope`/`verifyInterServiceEnvelope` aparecen como definiciones aisladas, no como llamadas; los doPost de los servicios despachan tras validación de usuario/rol sin verificar sobres interservicio. La ruta USER→TASK envía JSON sin sobre HMAC. Los follow-ups pendientes son AUD-NG-083, AUD-NG-084 y AUD-NG-086; no considerar acreditados los checks de integración, rotación y revocación hasta pruebas E2E entre proyectos independientes.
 - **Estado:** [X] Completada
 
 ---
@@ -17664,6 +17667,8 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Dependencias Expuestas:** createInterServiceEnvelope, verifyInterServiceEnvelope, doPost, UrlFetchApp/fetch y endpoints interservicio.
 - **Descripción del Alcance:** Definir un punto único de creación y verificación de sobres e integrarlo en todas las llamadas entre servicios. Los endpoints que admitan tráfico interservicio deben exigir el sobre validado antes del despacho; las llamadas de salida deben firmar el payload y enviar el sobre completo.
 - **Criterios de Aceptación:** Toda llamada entre servicios pasa por el protocolo; los endpoints rechazan sobres ausentes o inválidos; las llamadas internas existentes quedan migradas; la prueba de integración acredita comunicación entre despliegues separados.
+- **Ampliación C1.29 / FASE2-01:** En USER, ACCOUNTING, ACADEMIC y DEVELOPER, `createInterServiceEnvelope` y `verifyInterServiceEnvelope` solo aparecen como definiciones, sin consumidores. Los doPost de USER, ACCOUNTING, ACADEMIC, TASK, EXAM y DEVELOPER no llaman a `verifyInterServiceEnvelope` antes del despacho. La única salida server-to-server observada, `delegateToTaskService`, envía `{action,payload}` JSON plano por UrlFetchApp.fetch, sin sobre firmado.
+- **Criterios adicionales:** Migrar la ruta USER→TASK y todas las llamadas interservicio a un helper común; exigir sobre válido en el receptor antes del despacho; comprobar con dos deployments/proyectos reales que una llamada sin firma, con firma alterada o destino incorrecto se rechaza.
 - **Estado:** [ ] Pendiente
 
 ### [AUD-NG-084] Implementar gestión segura de secretos por servicio con rotación y revocación
@@ -17673,6 +17678,8 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Dependencias Expuestas:** getAuthTokenSecret, AUTH_TOKEN_SECRET, SPREADSHEET_ID, customSecret y catálogo de credenciales.
 - **Descripción del Alcance:** Eliminar secretos derivados de identificadores públicos/configurables. Generar secretos aleatorios de alta entropía y gestionar claves por emisor/receptor con versión, vigencia, rotación solapada, revocación individual y auditoría de uso. No exponer secretos al frontend ni registrarlos en logs.
 - **Criterios de Aceptación:** La ausencia de una clave configurada produce error seguro, no un fallback predecible; cada par de servicios utiliza credenciales administrables; la rotación permite transición controlada; revocar un servicio no invalida a los demás.
+- **Ampliación C1.29 / FASE2-01:** `getAuthTokenSecret` cae a SHA-256 de `SPREADSHEET_ID + "_MASTER_AUTH_HMAC_SECRET"` cuando falta `AUTH_TOKEN_SECRET`. El mismo `SPREADSHEET_ID` está hardcodeado en USER, ACCOUNTING, ACADEMIC, TASK y EXAM; por tanto el fallback es predecible desde un identificador presente en el código y no separa servicios. No se acredita rotación/versión de claves ni revocación selectiva en el tráfico real.
+- **Criterios adicionales:** Eliminar fallback determinista; requerir secretos aleatorios provisionados por servicio/emisor-receptor en PropertiesService, con versión, rotación solapada y revocación. La ausencia de secreto debe fallar de forma cerrada; probar que revocar una relación no invalida otras.
 - **Estado:** [ ] Pendiente
 
 ### [AUD-NG-085] Corregir el orden y la atomicidad de la protección anti-replay
@@ -17691,6 +17698,8 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Dependencias Expuestas:** verifyInterServiceEnvelope, CatalogoServicios, permisosConcedidos, sourceService, targetService, action y versión del protocolo.
 - **Descripción del Alcance:** Separar autenticación de autorización. Comprobar que el emisor está registrado, activo y posee permiso explícito para la acción solicitada sobre el receptor; validar contrato y esquema por versión, con respuestas y errores normalizados.
 - **Criterios de Aceptación:** Un servicio desconocido/inactivo es rechazado; una acción no autorizada se bloquea aunque el HMAC sea correcto; los payloads incompatibles se rechazan; se puede revocar un permiso por acción sin afectar otras relaciones.
+- **Ampliación C1.29 / FASE2-01:** `verifyInterServiceEnvelope` solo comprueba campos, target, ventana temporal, anti-replay y HMAC; no valida que `sourceService` esté registrado/activo, ni permiso explícito por emisor-receptor-acción, ni versión/esquema de contrato. Además registra `requestId` en CacheService antes de verificar la firma, permitiendo que un paquete no autenticado consuma una clave de replay. `auditInterServiceCalls` devuelve siempre `auditLogs: []`; `auditServiceBackendIsolationAndDriveSecurity` devuelve flags hardcodeadas; la suite de arquitectura ejecuta funciones locales/mock y no prueba llamadas entre servicios.
+- **Criterios adicionales:** Validar emisor, receptor, acción y versión/esquema contra catálogo confiable antes de ejecutar; verificar HMAC antes de reservar el nonce anti-replay; auditar tráfico real con correlationId. Las pruebas deben incluir emisor desconocido/inactivo, acción no autorizada, contrato incompatible, firma válida pero permiso insuficiente, replay y dos proyectos separados.
 - **Estado:** [ ] Pendiente
 
 ### [AUD-NG-087] Verificar la continuidad real de la cadena y rechazar hashes ausentes

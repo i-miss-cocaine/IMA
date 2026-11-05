@@ -892,3 +892,12 @@ No se crea AUD-NG nuevo.
 - TASK-252: ampliar medición de rendimiento percibido del cliente.
 - TASK-429: integrar skeleton, debounce y deduplicación segura de lecturas.
 - AUD-NG-007: corregir timeout configurable de fetchApi.
+
+
+### FASE2-01 - Protocolo de interoperabilidad y aislamiento departamental (C1.29)
+- USER/ACCOUNTING/ACADEMIC/DEVELOPER definen helpers HMAC sin consumidores; TASK/EXAM carecen de ellos. Ningún doPost verifica sobre interservicio.
+- USER→TASK envía JSON plano por UrlFetchApp; no hay firma ni autenticación del servicio emisor.
+- USER, ACCOUNTING, ACADEMIC, TASK y EXAM usan el mismo SPREADSHEET_ID; la mayoría de funciones abre esa hoja directamente. El resolver dinámico tiene uso puntual y no está implementado en TASK/EXAM.
+- El fallback AUTH_TOKEN_SECRET deriva de SPREADSHEET_ID; no es secreto aleatorio por servicio.
+- SERVICE_REGISTRY contiene IDs de hojas de ejemplo; ACCOUNTING/DEVELOPER tienen endpoints marcadores.
+- Ampliaciones: AUD-NG-083, AUD-NG-084, AUD-NG-086 y TASK-046. TASK-048 mantiene su estado histórico, pero sus checks [X] no quedan acreditados por el tráfico real.
