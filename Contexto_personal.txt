@@ -1038,3 +1038,28 @@ CHECKPOINT C1.17 - AUDITORÍA TAREA-15 (2026-11-05)
 - No repetir TAREA-01 a TAREA-15; revisar informes y dependencias anteriores.
 - Siguiente tarea exacta: TAREA-16, inmediatamente posterior a TAREA-15 en completadas.md.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.18 - CONTINUIDAD DE AUDITORÍA (2026-11-05)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto: Contexto_personal.txt.
+- Rama de trabajo autorizada: NG_beta_0.0.0.1_work.
+- HEAD verificado al crear este checkpoint: 5462a778e3e8e43246b9867ffbac121e6b06de63.
+- Rama base NG_beta_0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59; permanece intacta. No hacer merge ni modificarla.
+- Última tarea con auditoría y commit verificados: TAREA-15, supervisión institucional de servicios, errores y recuperación.
+- Informe vigente: AUDITORIA_COMPLETADAS_TAREA-15.md.
+- Commit de TAREA-15: 5462a778e3e8e43246b9867ffbac121e6b06de63 (un único commit con los archivos documentales de esa tarea).
+- Progreso registrado: 21/183 identificadores auditados; 162 pendientes.
+- Siguiente tarea a auditar: TAREA-16, "Establecer pruebas de carga, concurrencia e integridad para los procesos críticos". IMPORTANTE: en completadas.md figura marcada [X] Completada; precisamente por ello debe auditarse su implementación real y no asumirse que está cumplida.
+- TAREA-16 exige revisar concurrencia/integridad en cobros, matrículas, numeración CUV, entregas y exámenes; LockService e idempotencia; estrés HTTP; aislamiento de caché entre roles/cuentas; reproducibilidad y pruebas sin datos reales.
+- Estado de TAREA-16 en esta continuidad: aún NO auditada. No se modificó código ni se emitió dictamen.
+- En la sesión anterior se inició por error una revisión preliminar de TAREA-12 debido a un checkpoint desactualizado en el resumen conversacional. Al leer Contexto_personal.txt directamente en la rama, se confirmó que TAREA-12, TAREA-13, TAREA-14 y TAREA-15 ya tienen checkpoints e informes posteriores. No repetir esas tareas ni usar el análisis preliminar no consolidado de TAREA-12 como resultado oficial.
+- Evidencia de continuidad comprobada en la rama: checkpoints C1.14 (TAREA-12), C1.15 (TAREA-13), C1.16 (TAREA-14) y C1.17 (TAREA-15); informes TAREA-12 a TAREA-15; plan con secciones 23 a 26.
+- Archivos de trabajo de TAREA-16 por determinar según hallazgos y metodología; antes de editar, revisar los informes anteriores y tareas relacionadas para evitar duplicados. No modificar completadas.md ni completadas_legacy.md.
+- Respetar METODOLOGIA_DESARROLLO.md y el control de commits: un solo commit por tarea que agrupe todos los archivos documentales de la auditoría; nunca un commit por archivo. No mezclar tareas.
+- Para TAREA-16, verificar primero el alcance real y las tareas relacionadas ya registradas (incluidas AUD-NG-006, AUD-NG-161 y tareas de concurrencia/idempotencia); ampliar tareas existentes si corresponde y crear una nueva solo si el alcance no está cubierto.
+- No afirmar que las pruebas se ejecutaron si solo se hace inspección estática. Registrar explícitamente qué pruebas no pudieron ejecutarse.
+- Estado de esta actualización: checkpoint C1.18 añadido mediante un commit documental único; no contiene cambios de código ni resultados de auditoría de TAREA-16.
+================================================================
