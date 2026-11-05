@@ -19162,3 +19162,57 @@ AUD-NG-163 permanece DUPLICADA y consolidada; no reabrirla como tarea independie
   - Existen pruebas sintéticas de consistencia, concurrencia, sincronización, corte y reversión.
   - La suite no lee ni modifica datos productivos para medir capacidad.
 - **Estado:** [ ] Pendiente
+
+
+---
+### [TASK-477] [AUD-NG-179] Evitar el éxito parcial cuando no se adquiere LockService en capacidad y presupuesto
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-179 (auditoría FASE2-T06, 2026-11-05).
+- **Prioridad:** P1 (Alta).
+- **Severidad/Clasificación:** Alto (consistencia de cupos, presupuesto y control de concurrencia).
+- **Archivos Involucrados:**
+  - backend/academic-service/Code.gs (checkEnrollmentCapacity, doPost y pruebas de concurrencia).
+  - backend/accounting-service/Code.gs (recordAccountsPayableExpense y pruebas de presupuesto).
+  - tests/regression/ y/o suite de integración aislada.
+- **Dependencias Expuestas:** LockService, OfertaAcademica, Matriculas, SolicitudesAdmision, CuentasPorPagarGastos, PresupuestosInstitucionales, checkEnrollmentCapacity, recordAccountsPayableExpense, AUD-NG-161 y AUD-NG-049.
+- **Descripción del Alcance:**
+  1. Definir explícitamente si checkEnrollmentCapacity exige un snapshot protegido por lock o si ofrece una consulta deliberadamente no bloqueante. Si el lock es obligatorio y tryLock falla, devolver un error controlado; si la consulta es no bloqueante, eliminar la falsa garantía de protección y documentar la consistencia del snapshot.
+  2. En recordAccountsPayableExpense, impedir que la obligación se confirme como exitosa si no se actualizó el compromiso/ejecución presupuestaria requerido. Adquirir el lock antes de las escrituras irreversibles o persistir un estado pendiente durable con identificador de operación y mecanismo de reconciliación/reanudación.
+  3. Distinguir timeout, fila presupuestaria inexistente, fallo de lectura y fallo de escritura. No convertir ninguno de esos casos en success con ejecucionPresupuestaria null cuando la operación exige actualización presupuestaria.
+  4. Liberar el lock únicamente cuando haya sido adquirido y mantener la liberación en finally para éxito y error.
+  5. Mantener la protección de las rutas externas frente a skipLock/isInternalCall según TASK-118 y AUD-NG-161; no confiar en banderas aportadas por el cliente.
+- **Criterios de Aceptación:**
+  - Un timeout de lock no produce una respuesta que represente una operación protegida como exitosa.
+  - La creación de una obligación y su afectación presupuestaria quedan confirmadas conjuntamente o en un estado pendiente verificable y recuperable.
+  - Una obligación no puede quedar aprobada con el presupuesto sin actualizar y sin señal de reconciliación.
+  - Los errores de contención, validación, persistencia y ausencia de configuración se distinguen.
+  - Las pruebas aisladas fuerzan contención y fallo de escritura y verifican que no exista éxito parcial silencioso.
+  - Ninguna prueba escribe en hojas productivas.
+- **Relaciones:** AUD-NG-161 (pruebas conductuales), AUD-NG-049 (atomicidad de pagos de proveedor), TASK-118 (política de locks y bypasses).
+- **Estado:** [ ] Pendiente
+
+---
+### [TASK-478] [AUD-NG-180] Hacer idempotente y recuperable la recepción de compras y sus movimientos de inventario
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-180 (auditoría FASE2-T06, 2026-11-05).
+- **Prioridad:** P1 (Alta).
+- **Severidad/Clasificación:** Alto (integridad de inventario, recepción y recuperación de operaciones).
+- **Archivos Involucrados:**
+  - backend/accounting-service/Code.gs (recordPurchaseReceipt, recordInventoryMovement, getPurchaseReceipts).
+  - tests/regression/ y/o suite de integración aislada.
+- **Dependencias Expuestas:** OrdenesCompra, RecepcionesCompra, InventariosKardex, recordPurchaseReceipt, recordInventoryMovement, LockService, idempotencia, estado de operación y AUD-NG-161.
+- **Descripción del Alcance:**
+  1. Asignar a cada recepción una clave estable de operación y reservarla atómicamente antes de ejecutar movimientos de inventario. Vincular la clave con la orden, el payload normalizado y el resultado persistido; rechazar su reutilización con datos incompatibles.
+  2. Asociar cada movimiento de InventariosKardex con el identificador de la recepción/operación para que un reintento pueda reconocer movimientos ya aplicados sin volver a incrementar existencias.
+  3. Persistir estados de operación (por ejemplo, Pendiente, EnProceso, Aplicada, RequiereRecuperacion y Fallida) o un mecanismo equivalente que permita conocer qué escrituras se confirmaron.
+  4. Definir un orden de persistencia y una estrategia de recuperación o compensación para fallos entre movimientos de inventario, actualización de OrdenesCompra y creación de RecepcionesCompra. No devolver success hasta que todas las invariantes estén confirmadas.
+  5. Definir el comportamiento de adquisición de locks anidados entre recordPurchaseReceipt y recordInventoryMovement; evitar re-adquirir el mismo lock dentro de una sección crítica o demostrar su comportamiento con pruebas de runtime aisladas.
+  6. Mantener el acumulado de cantidades conformes/no conformes y el estado de la orden coherentes al reanudar una recepción ya iniciada.
+- **Criterios de Aceptación:**
+  - Repetir la misma recepción con la misma clave produce un único efecto observable en inventario y una sola recepción lógica.
+  - La misma clave con payload diferente se rechaza.
+  - Una interrupción después de cualquier movimiento parcial deja un estado detectable y reanudable sin duplicar existencias.
+  - EstadoOrden, RecepcionesCompra e InventariosKardex pueden reconciliarse mediante el ID de operación.
+  - No se devuelve éxito si quedan movimientos o escrituras requeridas sin confirmar.
+  - Las pruebas incluyen concurrencia, pérdida de respuesta, fallo después de cada escritura y reintento; utilizan fixtures aislados y no alteran datos productivos.
+  - El comportamiento de LockService anidado queda probado o eliminado por diseño.
+- **Relaciones:** AUD-NG-161 (pruebas de concurrencia/recuperación), AUD-NG-023 (suites que no ejercitan los módulos reales), TASK-012 (recepción de compras marcada completada).
+- **Estado:** [ ] Pendiente

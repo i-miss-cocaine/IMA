@@ -478,3 +478,17 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Pruebas:** inspección estática/manual. No se ejecutaron Apps Script, HTTP, concurrencia real, suites automatizadas ni operaciones productivas.
 - **Progreso:** 41/183 identificadores auditados; 142 pendientes.
 - **Siguiente tarea:** FASE2-T06 - Corregir y formalizar la concurrencia y la consistencia entre servicios. Reconciliar C1.33/AUD-NG-161 antes de continuar para no repetir su alcance.
+
+
+## 46. Resultado C1.41 - FASE2-T06 (2026-11-05)
+
+- **Dictamen:** CUMPLE PARCIALMENTE; no satisface los criterios de aceptación.
+- **Evidencia:** Academic SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; Accounting SHA 38b979d41596b85e888b4a7060b37bbac0840a28; completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676.
+- **Hallazgos:** helper withConcurrencyLock no integrado en operaciones reales; suites nominales ya cubiertas por AUD-NG-161; ScriptLock local sin coordinación entre proyectos; bypass skipLock/isInternalCall ya cubierto por TASK-118/AUD-NG-161; fallos de adquisición ignorados en checkEnrollmentCapacity y en el bloque presupuestario de recordAccountsPayableExpense (AUD-NG-179); recordPurchaseReceipt puede aplicar movimientos de inventario y fallar antes de registrar la recepción, permitiendo duplicación al reintentar (AUD-NG-180).
+- **Reconciliación:** mantener AUD-NG-006, AUD-NG-023, AUD-NG-049, AUD-NG-129, AUD-NG-133, AUD-NG-161 y TASK-118. No duplicar pagos, matrícula legacy, bypasses ni pruebas nominales.
+- **Backlog:** lectura convencional de Pendientes.md devolvió 0 caracteres. Se recuperó el blob del HEAD actual de la rama de trabajo: SHA 529615b34cb68477c3b04858fa4365c56bf25902, 1,613,270 caracteres y 19,165 líneas. El blob padre 4bddbc2f2198d6e144c46674b79589207f624c21 no fue utilizado como fuente; corresponde al commit padre. Se añadieron AUD-NG-179/TASK-477 y AUD-NG-180/TASK-478.
+- **Inventario antes de añadir:** 476 IDs TASK, 173 IDs AUD-NG, 649 únicos. **Después de añadir:** 478 IDs TASK, 175 IDs AUD-NG, 653 únicos. Últimos IDs: TASK-478 y AUD-NG-180.
+- **Pruebas:** inspección estática/manual. No se ejecutaron Apps Script, HTTP, concurrencia real, pruebas de pérdida de respuesta ni suites automatizadas; no se accedió a datos productivos.
+- **Código fuente:** sin modificaciones. No se alteraron completadas.md, completadas_legacy.md, ChangesLogs.txt ni METODOLOGIA_DESARROLLO.md.
+- **Progreso:** 42/183 identificadores auditados; 141 pendientes.
+- **Siguiente tarea:** FASE2-T07 - Fortalecer el motor de eventos y la ejecución de procesos automáticos. No repetir FASE2-T06 salvo regresión o cambio posterior.

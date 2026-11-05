@@ -1661,3 +1661,63 @@ CHECKPOINT C1.40 - AUDITORÍA FASE2-T05 E INVENTARIO CORREGIDO (2026-11-05)
 - Siguiente tarea exacta: FASE2-T06 - Corregir y formalizar la concurrencia y la consistencia entre servicios. Antes de iniciarla, reconciliar C1.33/FASE2-05 y AUD-NG-161 para evitar duplicar el alcance de idempotencia, locks, bypass y pruebas.
 - Commit de cierre: el único commit que contiene este checkpoint y los demás documentos de la iteración; confirmar SHA/árbol/archivos/HEAD después de publicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.41 - AUDITORÍA FASE2-T06 (2026-11-05)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo autorizada: NG_beta_0.0.0.1_work.
+- HEAD de partida: 18ab0be6ab4890bf8ee2fce351e583654ec578db.
+- Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59; verificada sin cambios.
+- Commit padre de la iteración: eddcef8ca734ba8736d975348b52e6fd28475722.
+- Checkpoint anterior: C1.40 / FASE2-T05.
+- Tarea auditada y terminada: FASE2-T06 - Corregir y formalizar la concurrencia y la consistencia entre servicios.
+- Dictamen: CUMPLE PARCIALMENTE; no satisface los criterios de aceptación.
+- Siguiente tarea exacta: FASE2-T07 - Fortalecer el motor de eventos y la ejecución de procesos automáticos.
+- Tarea en curso: ninguna. La inspección estática de FASE2-T06 quedó cerrada; no se ejecutaron pruebas de runtime.
+
+RECUPERACIÓN DE Pendientes.md:
+- La lectura convencional devolvió 0 caracteres.
+- Se verificó el árbol del HEAD 18ab0be6ab4890bf8ee2fce351e583654ec578db: Pendientes.md apunta al blob SHA 529615b34cb68477c3b04858fa4365c56bf25902 (1,632,906 bytes).
+- Se recuperó ese blob completo mediante Git; contenido decodificado: 1,613,270 caracteres y 19,165 líneas.
+- El árbol del commit padre eddcef8ca734ba8736d975348b52e6fd28475722 apuntaba al blob anterior 4bddbc2f2198d6e144c46674b79589207f624c21 (1,629,602 bytes; checkpoint C1.40 registró 1,609,995 caracteres y 19,154 líneas). Se seleccionó el blob más reciente del HEAD actual; no se utilizó la copia histórica ni completadas_legacy.md.
+- Inventario del blob antes de esta iteración: 476 IDs TASK únicos, 173 IDs AUD-NG únicos, 649 IDs únicos en total; máximo TASK-476 y AUD-NG-178.
+- Después de añadir las dos tareas de esta auditoría: 478 IDs TASK únicos, 175 IDs AUD-NG únicos, 653 IDs únicos; máximo TASK-478 y AUD-NG-180.
+- No se dedujeron cantidades de estados Pendiente/Completada a partir de marcadores anidados, porque no son un inventario fiable de estado por tarea.
+
+EVIDENCIA Y SHAS DE LA AUDITORÍA:
+- completadas.md: f57f1aef832e81e44fc4f7ec36a852d50e464676; FASE2-T06 marcada [X].
+- METODOLOGIA_DESARROLLO.md: 214e8221bd076c4e89012636c105bffd5ca36467.
+- Academic: backend/academic-service/Code.gs SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc.
+- Accounting: backend/accounting-service/Code.gs SHA 38b979d41596b85e888b4a7060b37bbac0840a28.
+- Auditoria.txt actualizado: blob SHA 5741d359ac6bfb41def674e8f25f254bb1afc1b6.
+- MapaDependencias.md actualizado: blob SHA 52f051a0a73d933716fa5c1cd94d54dd34b8bdbb.
+- AUDITORIA_COMPLETADAS_PLAN.md actualizado: blob SHA 7824e7a0978f73a0c769d9a49487ca554c6d9ada.
+- Pendientes.md actualizado: blob SHA fb62c27bf00ab5b0e923170cd549643210e5a7eb; contiene 1,619,187 caracteres y 19,219 líneas.
+- Informe nuevo AUDITORIA_COMPLETADAS_FASE2-T06.md: blob SHA 154063aa1a44e498b7d365bd420cd131b440a57e.
+- Contexto_personal.txt al inicio de la iteración: SHA 2c140959e624bb82623c2afa8a42474522b58400.
+- Informe de continuidad FASE2-T05: AUDITORIA_COMPLETADAS_FASE2-05.md SHA 2e1e6f666dbdddfd5d1b448108822f73e6dddd33.
+
+RESULTADO Y RECONCILIACIÓN:
+- withConcurrencyLock solo tiene definición y llamada desde runConcurrencyAndConsistencySuite; no está integrado en handlers de negocio. La suite no prueba concurrencia real y puede responder status success aunque todasPruebasPasaron sea falso. runCriticalProcessConcurrencySuite solo adquiere un lock y cuenta filas. Mantener AUD-NG-161.
+- LockService.getScriptLock() no coordina deployments Apps Script independientes. Mantener AUD-NG-161/TASK-118.
+- skipLock/isInternalCall controlados desde payload: mantener TASK-118/AUD-NG-161.
+- registerStudentEnrollment sin lock y escrituras parciales: mantener AUD-NG-129.
+- recordStudentPayment sin lock y clave opcional: mantener AUD-NG-133.
+- recordSupplierPayment/applySupplierCreditNote con escrituras parciales y asiento contable no garantizado: mantener AUD-NG-049.
+- Hallazgo nuevo AUD-NG-179 -> TASK-477: checkEnrollmentCapacity y recordAccountsPayableExpense ignoran el fallo de adquisición del lock; en el segundo caso la obligación ya se persiste antes del intento de actualizar presupuesto y el handler puede responder éxito sin ejecución presupuestaria.
+- Hallazgo nuevo AUD-NG-180 -> TASK-478: recordPurchaseReceipt escribe movimientos de inventario antes de persistir recepción y estado de orden; no hay clave idempotente, estado intermedio ni recuperación/compensación, por lo que un reintento tras interrupción puede duplicar existencias.
+- No se duplican AUD-NG-006, AUD-NG-023, AUD-NG-049, AUD-NG-129, AUD-NG-133, AUD-NG-161 ni TASK-118.
+- Progreso de auditoría: 42/183 identificadores únicos auditados; 141 pendientes.
+
+ARCHIVOS DE ESTA ITERACIÓN:
+- Modificados: Pendientes.md, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt.
+- Nuevo: AUDITORIA_COMPLETADAS_FASE2-T06.md.
+- Sin modificar: código fuente, completadas.md, completadas_legacy.md, ChangesLogs.txt y METODOLOGIA_DESARROLLO.md.
+- Sin cambios en la rama base.
+- Pruebas: inspección estática/manual de Academic y Accounting. No se ejecutaron Apps Script, HTTP, suites automatizadas, concurrencia real, pérdida de respuesta ni operaciones sobre datos productivos.
+- Rangos principales de continuidad: Academic doPost 670-977; createAdmissionRequest 984-1100; generateInstitutionalId 2107-2154; convertAdmissionToStudent 2156-2380; withConcurrencyLock/runConcurrencyAndConsistencySuite 3277-3327; checkEnrollmentCapacity 11026-11115; createStudentEnrollment 11141-11221; registerStudentEnrollment 12670+; Accounting doPost 572-970; recordStudentPayment 3891-3968; recordInventoryMovement 6050+; recordPurchaseReceipt 6972-7140; recordAccountsPayableExpense 7557-7687; recordSupplierPayment 7690-7789; applySupplierCreditNote 7792-7873; runCriticalProcessConcurrencySuite 10505-10550.
+- Acción siguiente: iniciar FASE2-T07, leyendo primero su definición en completadas.md y reconciliando los hallazgos previos de eventos/notificaciones en Pendientes.md. No repetir FASE2-T06 salvo cambio posterior o regresión.
+- Regla de publicación: todos los archivos anteriores se deben incluir en exactamente un commit final de la rama de trabajo. No crear commits intermedios ni parciales. Tras el commit, verificar HEAD de trabajo, SHA/árbol/archivos del commit y que NG_beta_0.0.0.1 siga en 44d9891132332e692dbe2ba8602b41f50a508a59.
+================================================================

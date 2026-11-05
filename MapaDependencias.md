@@ -1007,3 +1007,28 @@ No se crea AUD-NG nuevo.
 - TASK-351 / AUD-NG-059 / AUD-NG-061: CUV, integridad binaria y certificado.
 - AUD-NG-161: exclusión mutua, bypass skipLock, colisiones y pruebas conductuales.
 - No crear un hallazgo duplicado; las relaciones descritas son dependencias lógicas observadas, no claves foráneas ya garantizadas.
+
+
+## Concurrencia y consistencia de operaciones (FASE2-T06, auditoría 2026-11-05)
+
+### Academic
+- `doPost` -> `validateRolePermission` -> `checkAndRegisterIdempotencyKey` -> dispatch de acciones; la sanitización de `skipLock` depende de `payload.isInternalCall`.
+- `withConcurrencyLock` (3278-3294) -> `LockService.getScriptLock`; único consumidor observado: `runConcurrencyAndConsistencySuite` (3296-3327). No se encontró conexión con handlers de negocio.
+- `createAdmissionRequest` (984-1100) -> `SolicitudesAdmision`, `SecuenciasIDs`; lock local y generador con skipLock dentro de sección crítica.
+- `convertAdmissionToStudent` (2156-2380) -> `SolicitudesAdmision`, `ExpedientesEstudiantes`, `Usuarios`, `RelacionesFamiliares`, `InvitacionesVinculacion`, `DocumentosEstudiante`, `Matriculas`, `CargosEstudiante`; varias escrituras bajo lock local, sin transacción multihoja.
+- `checkEnrollmentCapacity` (11026-11115) -> `OfertaAcademica`, `Matriculas`, `SolicitudesAdmision`; tryLock sin rama de error ante timeout (AUD-NG-179).
+- `createStudentEnrollment` (11141-11221) -> `ExpedientesEstudiantes`, `Matriculas`, `OfertaAcademica`; lock local salvo bypass skipLock (AUD-NG-161/TASK-118).
+- `registerStudentEnrollment` (12670+) -> `Matriculas` y `CargosEstudiante`; sin lock propio, reconciliado con AUD-NG-129.
+
+### Accounting
+- `doPost` -> validación de rol -> lectura de clave de idempotencia en CacheService -> ejecución -> guardado posterior del resultado; no hay reserva atómica (AUD-NG-006/AUD-NG-161).
+- `recordStudentPayment` (3891-3968) -> `PagosAbonos` y `CargosEstudiante`; sin lock propio, reconciliado con AUD-NG-133.
+- `recordInventoryMovement` (6050+) -> `InventariosKardex`; lock local de Accounting.
+- `recordPurchaseReceipt` (6972-7140 aprox.) -> `OrdenesCompra`, `RecepcionesCompra`, `recordInventoryMovement` -> `InventariosKardex`; lock local, escritura multihoja sin idempotencia/recuperación (AUD-NG-180).
+- `recordAccountsPayableExpense` (7557-7687) -> `CuentasPorPagarGastos` y `PresupuestosInstitucionales`; el lock presupuestario puede fallar después de insertar la obligación y el handler devuelve éxito (AUD-NG-179).
+- `recordSupplierPayment` / `applySupplierCreditNote` -> `CuentasPorPagarGastos`, `MovimientosCajaBancos`, `AsientosContables`; atomicidad parcial ya documentada en AUD-NG-049.
+
+### Ámbito de concurrencia
+- `LockService.getScriptLock()` protege el proyecto Apps Script correspondiente; no coordina automáticamente deployments independientes Academic y Accounting aunque compartan el mismo Spreadsheet.
+- Las operaciones multihoja necesitan estado durable de operación, idempotencia y estrategia de recuperación; un lock local solo serializa la sección crítica dentro de su proyecto.
+- Reconciliar las brechas con AUD-NG-006, AUD-NG-023, AUD-NG-049, AUD-NG-129, AUD-NG-133, AUD-NG-161 y TASK-118; evitar registrar duplicados.

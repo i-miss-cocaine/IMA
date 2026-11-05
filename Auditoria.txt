@@ -5488,3 +5488,41 @@ EVIDENCIA DOCUMENTAL: completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676; P
 PRUEBAS: inspección estática/manual. No se ejecutaron Apps Script, HTTP, concurrencia real, suites automatizadas ni operaciones productivas.
 PROGRESO: 41/183 identificadores auditados; 142 pendientes. Siguiente: FASE2-T06, previa reconciliación con C1.33/AUD-NG-161.
 ================================================================
+
+
+===============================================================================
+FECHA: 2026-11-05
+AUDITORÍA DE TAREA COMPLETADA [FASE2-T06] — CONCURRENCIA Y CONSISTENCIA ENTRE SERVICIOS
+ARCHIVOS AUDITADOS:
+- backend/academic-service/Code.gs: doPost (aprox. 670-977), createAdmissionRequest (984-1100), generateInstitutionalId (2107-2154), convertAdmissionToStudent (2156-2380), withConcurrencyLock/runConcurrencyAndConsistencySuite (3277-3327), checkEnrollmentCapacity (11026-11115), createStudentEnrollment (11141-11221), registerStudentEnrollment (12670 en adelante).
+- backend/accounting-service/Code.gs: doPost (572-970), recordStudentPayment (3891-3968), recordInventoryMovement (6050 en adelante), recordPurchaseReceipt (6972-7140 aprox.), recordAccountsPayableExpense (7557-7687), recordSupplierPayment (7690-7789), applySupplierCreditNote (7792-7873), runCriticalProcessConcurrencySuite (10505-10550).
+SHAS DE RESPALDO:
+- Academic: daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc.
+- Accounting: 38b979d41596b85e888b4a7060b37bbac0840a28.
+DICTAMEN: CUMPLE PARCIALMENTE; no satisface los criterios de aceptación.
+
+RESULTADOS Y RECONCILIACIÓN:
+1. withConcurrencyLock (Academic, 3278-3294) solo se utiliza desde runConcurrencyAndConsistencySuite (3296-3327); no está integrado en operaciones reales. La suite prueba una sola adquisición y devuelve status success aunque todasPruebasPasaron sea falso. Ya cubierto por AUD-NG-161.
+2. runCriticalProcessConcurrencySuite (Accounting, 10505-10550) adquiere un lock y cuenta filas; no ejecuta operaciones concurrentes ni verifica invariantes. Consulta TransaccionesCobro, mientras recordStudentPayment persiste en PagosAbonos. Ya cubierto por AUD-NG-161.
+3. doPost Academic conserva skipLock cuando payload.isInternalCall es verdadero; no se verifica que esa bandera provenga de un sobre interno autenticado. createStudentEnrollment acepta skipLock. Mantener TASK-118/AUD-NG-161.
+4. getScriptLock es local a cada proyecto Apps Script; no coordina por sí solo los deployments Academic y Accounting. Mantener AUD-NG-161/TASK-118.
+5. registerStudentEnrollment no adquiere lock ni idempotencia y escribe Matriculas/CargosEstudiante en pasos separados; recordStudentPayment carece de lock y exige una clave solo de manera opcional. Mantener AUD-NG-129/AUD-NG-133.
+6. recordSupplierPayment y applySupplierCreditNote pueden confirmar éxito después de fallar el asiento contable; mantener AUD-NG-049.
+
+HALLAZGO [AUD-NG-179] — Fallo de adquisición de LockService ignorado en capacidad académica y actualización presupuestaria
+CLASIFICACIÓN: ALTO (P1).
+EVIDENCIA:
+- Academic checkEnrollmentCapacity (11026-11115): tryLock(5000) asigna hasLock, pero si devuelve false la función continúa leyendo OfertaAcademica, Matriculas y SolicitudesAdmision y responde status success. No distingue snapshot sin bloqueo de cálculo protegido.
+- Accounting recordAccountsPayableExpense (7557-7687): la obligación se agrega a CuentasPorPagarGastos antes de intentar tryLock(10000) para actualizar PresupuestosInstitucionales. Si no obtiene el lock, omite la transferencia presupuestaria y devuelve éxito con ejecucionPresupuestaria null, sin estado pendiente ni recuperación.
+IMPACTO: cálculo de cupos sin la consistencia anunciada y obligación financiera confirmada sin actualizar el presupuesto comprometido/ejecutado. Se convierte en TASK-477. No duplicar AUD-NG-161 ni AUD-NG-049.
+
+HALLAZGO [AUD-NG-180] — Recepción de compra puede duplicar existencias tras una interrupción entre escrituras
+CLASIFICACIÓN: ALTO (P1).
+EVIDENCIA:
+- Accounting recordPurchaseReceipt (6972-7140 aprox.) ejecuta recordInventoryMovement por cada ítem conforme antes de actualizar OrdenesCompra y agregar la fila en RecepcionesCompra.
+- recordInventoryMovement (6050 en adelante) agrega cada movimiento a InventariosKardex. recordPurchaseReceipt no recibe ni reserva una clave idempotente, no persiste estado intermedio y no compensa/reconcilia los movimientos ya aplicados si una escritura posterior falla.
+- Un reintento puede crear un nuevo REC-CMP-<timestamp> y volver a ingresar las mismas cantidades; la recepción no tiene una clave estable que permita reconocer el resultado previo.
+IMPACTO: existencias duplicadas y divergencia entre InventariosKardex, RecepcionesCompra y EstadoOrden. Se convierte en TASK-478. La posible adquisición anidada de ScriptLock entre recordPurchaseReceipt y recordInventoryMovement queda como escenario de prueba; no se declara deadlock sin ejecución.
+
+PRUEBAS Y LÍMITES: inspección estática/manual. No se ejecutaron Apps Script, HTTP, concurrencia real, suites automatizadas ni operaciones productivas. No se modificó código fuente.
+===============================================================================
