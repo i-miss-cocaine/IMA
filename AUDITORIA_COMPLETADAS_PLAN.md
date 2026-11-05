@@ -416,3 +416,20 @@ Al reanudar:
 - **Pruebas:** inspección estática/manual; no se ejecutaron Apps Script, HTTP, triggers, concurrencia, envío de correos, llamadas a proveedores ni operaciones productivas.
 - **Progreso:** 37/183 identificadores auditados; 146 pendientes.
 - **Siguiente tarea:** FASE2-07 - Supervisión de Cuotas Operativas, Paginación y Plan de Crecimiento.
+
+ 
+===============================================================================
+CHECKPOINT C1.35 - AUDITORÍA FASE2-07 (2026-11-05)
+===============================================================================
+- Rama: NG_beta_0.0.0.1_work. HEAD de partida: 99801144c1b7f373e49fde6bfefecb9821da9074. Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59, sin cambios.
+- Tarea: FASE2-07 - Supervisión de Cuotas Operativas, Paginación y Plan de Crecimiento.
+- Dictamen: NO CUMPLE INTEGRALMENTE. T09 parcial, T10 parcial y T12 parcial.
+- Evidencia: js/api.js carece de instrumentación OPERATIONAL_HEALTH_METRICS; USER agrega trazas manuales sin cobertura transversal; el panel de salud usa getServiceHealthMetrics no definida; ACADEMIC fija 15.5% de capacidad; paginación backend lee hojas completas; renderPaginatedTable no tiene consumidores localizados; la evaluación de migración solo mide getLastRow y aplica 50,000 filas/2,000 ms.
+- Reconciliación: ampliar TASK-064 y TASK-429, mantener AUD-NG-144/AUD-NG-145/AUD-NG-007/AUD-NG-008/AUD-NG-161; no reabrir AUD-NG-163. Hallazgo nuevo AUD-NG-178 para crecimiento/migración transaccional.
+- La propuesta de tarea para AUD-NG-178 queda pendiente de registrar en Pendientes.md porque la API devolvió contenido vacío en lecturas completas y por rangos para el archivo de 1.62 MB; no se sobrescribió el backlog.
+- Informe: AUDITORIA_COMPLETADAS_FASE2-07.md. Auditoria.txt y MapaDependencias.md se actualizarán en el mismo commit.
+- Archivos fuente inspeccionados: js/api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; js/ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67; USER SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9; ACADEMIC SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; ACCOUNTING SHA 38b979d41596b85e888b4a7060b37bbac0840a28; TASK SHA 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe; EXAM SHA 1d93296628fae31f680004f637897e2b1314a64c.
+- Pruebas: inspección estática/manual; no se ejecutaron Apps Script, HTTP, pruebas de cuota, carga, benchmarks, concurrencia ni migraciones. No se usaron datos productivos.
+- Progreso: 38/183 identificadores auditados; 145 pendientes.
+- Última tarea auditada: FASE2-07. Siguiente: recuperar íntegramente Pendientes.md, verificar duplicados y registrar la remediación de AUD-NG-178; luego identificar el siguiente ID completado no auditado.
+===============================================================================

@@ -950,3 +950,10 @@ No se crea AUD-NG nuevo.
 - sendMultiChannelNotification (4818-4932) solo persiste inbox y utiliza MailApp; no consume canal ni configuración de proveedores. configureNotificationChannel/getNotificationChannelConfigs (7526-7612) guardan y devuelven configuración, pero no están conectados al despachador. sendChannelNotificationTest simula respuesta del proveedor.
 - Hallazgos: AUD-NG-176 (cola durable, integración, idempotencia y pruebas); AUD-NG-177 (secretos de proveedores y contenido HTML). Tareas: TASK-474 y TASK-475. AUD-NG-006 y AUD-NG-161 conservan sus alcances transversales y se amplían por referencia.
 - Calidad: separación insuficiente entre registro, despacho y recuperación; estados y DTO implícitos; no existe prueba aislada que acredite el ciclo de vida del evento.
+
+
+## FASE2-07 - Auditoría de dependencias (2026-11-05)
+- USER/getOperationalCapacityMetrics depende de BitacoraTrazabilidad, sin productores transversales localizados; ampliar TASK-064 y AUD-NG-144/AUD-NG-145.
+- ui-common.renderPaginatedTable no tiene consumidores localizados y su callback remoto no está integrado; los endpoints Academic/Accounting leen las hojas completas; ampliar TASK-429.
+- Academic/Accounting duplican evaluateTransactionalStorageMigrationNeed con umbrales fijos y sin plan de migración; hallazgo AUD-NG-178.
+- AUD-NG-163 permanece duplicada; no reabrir.

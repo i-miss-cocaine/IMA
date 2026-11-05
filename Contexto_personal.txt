@@ -1449,3 +1449,27 @@ CHECKPOINT C1.34 - AUDITORÍA FASE2-06 (2026-11-05)
 - Siguiente tarea exacta: FASE2-07 - Supervisión de Cuotas Operativas, Paginación y Plan de Crecimiento.
 - Continuidad: al reanudar, verificar rama y HEAD; consultar AUDITORIA_COMPLETADAS_FASE2-06.md y continuar en FASE2-07 sin repetir FASE2-06.
 ================================================================
+ 
+================================================================
+CHECKPOINT C1.35 - AUDITORÍA FASE2-07 (2026-11-05)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto: Contexto_personal.txt (no existe contexto_personal.md en la rama).
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- HEAD de partida verificado: 99801144c1b7f373e49fde6bfefecb9821da9074 (C1.34 / FASE2-06).
+- Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios ni merge.
+- Tarea auditada: FASE2-07 - Supervisión de Cuotas Operativas, Paginación y Plan de Crecimiento.
+- Dictamen: NO CUMPLE INTEGRALMENTE. FASE2-T09, T10 y T12 cumplen parcialmente, pero sus criterios principales no están demostrados.
+- Progreso: 38/183 identificadores únicos auditados; 145 pendientes.
+- Informe: AUDITORIA_COMPLETADAS_FASE2-07.md.
+- Evidencia: js/api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; js/ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67; backend/user-service/Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9; backend/academic-service/Code.gs SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; backend/accounting-service/Code.gs SHA 38b979d41596b85e888b4a7060b37bbac0840a28.
+- Hallazgos: T09 no tiene métricas cliente ni cobertura transversal; getOperationalCapacityMetrics depende de BitacoraTrazabilidad manual y el panel usa una función no definida; getStorageQuotaMetricsReport fija 15.5% y lee DriveFileId como tamaño. T10 tiene endpoints que leen hojas completas y un helper remoto sin integración ni manejo de errores; no hay pruebas específicas. T12 usa umbrales fijos 50,000/2,000 ms midiendo solo getLastRow y no diseña migración, sincronización, integridad ni reversión.
+- Reconciliación: ampliar TASK-064 (cuotas), TASK-429 (tablas/paginación), AUD-NG-144/AUD-NG-145 (health/bitácora), AUD-NG-007/AUD-NG-008 (timeout/fallback), AUD-NG-161 (pruebas). AUD-NG-163 permanece duplicada y no debe reabrirse.
+- Hallazgo nuevo: AUD-NG-178 (MEDIO/P2), criterios de crecimiento y migración transaccional sin mediciones reproducibles ni plan verificable. Su tarea de remediación queda pendiente de registro.
+- Limitación: Pendientes.md SHA 52a3215094b8bc28b494402c08c15186b5a3eef3 (aprox. 1.62 MB) devolvió contenido vacío en lectura completa y por rangos. No se modificó para evitar reemplazar el archivo sin preservar su contenido íntegro. En la próxima iteración recuperar el archivo por una vía segura, comprobar si ya existe tarea equivalente y registrar AUD-NG-178 si no hay duplicado.
+- Archivos documentales a incluir en el commit único: Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt y AUDITORIA_COMPLETADAS_FASE2-07.md.
+- Código fuente, Pendientes.md, completadas.md, completadas_legacy.md, ChangesLogs.txt y METODOLOGIA_DESARROLLO.md: sin modificaciones.
+- Pruebas: inspección estática/manual. No se ejecutaron Apps Script, HTTP, cuotas reales, benchmarks, concurrencia, migraciones ni operaciones productivas.
+- Última tarea auditada: FASE2-07. No repetir FASE2-07, TAREA-03 ni TAREA-15; utilizar sus auditorías anteriores como referencias cruzadas.
+- Siguiente paso exacto: verificar rama y HEAD; leer AUDITORIA_COMPLETADAS_FASE2-07.md; resolver la recuperación segura de Pendientes.md y el registro de AUD-NG-178; después identificar el siguiente ID completado no auditado.
+================================================================
