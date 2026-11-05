@@ -305,3 +305,13 @@ Al reanudar:
 - Pruebas: inspección estática/manual; no se ejecutaron migraciones, fixtures, snapshots ni rollback.
 - Progreso: 25/183 identificadores auditados; 158 pendientes.
 - Siguiente tarea: TAREA-20.
+
+
+## 31. Resultado C1.23 - TAREA-20 (2026-11-05)
+- **Dictamen:** CUMPLE PARCIALMENTE. Existe registro básico y baja lógica, pero no se acredita incorporación operativa de un servicio ni activación segura.
+- **Evidencia:** registerCurricularAreaExtension solo exige areaId/name/code y sobrescribe la fila sin lock/versionado. runCurricularAreaServiceTests devuelve PASS constantes y activa. toggleCurricularAreaStatus permite activar directamente. deployAcademicMicroserviceInstance registra metadatos y PASS/Activo sin crear/verificar deployment; después llama al registro que deja el área PendientePruebas. getAcademicAreaTemplateCatalog siembra siete áreas Activo sin pruebas. js/config.js mantiene catálogos estáticos con IDs diferentes; fetchApi solo enruta SERVICE_URLS[service]. La baja no sincroniza deployments/asignaciones/coordinaciones ni demuestra preservación histórica.
+- **Reconciliación:** no crear AUD-NG nuevo. Ampliar AUD-NG-011, AUD-NG-164 y AUD-NG-158.
+- **Calidad:** parcial; los componentes nominales existen, pero onboarding, despliegue, pruebas, permisos por área y ciclo de vida son incompletos o simulados.
+- **Pruebas:** inspección estática/manual; no se ejecutaron endpoints, deployments, RBAC, fixtures ni consultas históricas.
+- **Progreso:** 26/183 identificadores auditados; 157 pendientes.
+- **Siguiente tarea:** FASE2-T17.

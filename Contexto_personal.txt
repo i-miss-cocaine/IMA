@@ -1156,3 +1156,27 @@ CHECKPOINT C1.22 - TAREA-19 (2026-11-05)
 - Inspección manual; no se ejecutaron migraciones ni pruebas con datos. La especificación Fase 1 citada en completadas.md no está disponible.
 - Siguiente tarea exacta: TAREA-20. No repetir TAREA-01 a TAREA-19.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.23 - AUDITORÍA TAREA-20 (2026-11-05)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- HEAD anterior verificado: f1c4f0c4116d8444bf091346ef306805cb78be00.
+- Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59; intacta, sin merge.
+- Última tarea auditada: TAREA-20 - Formalizar la incorporación de nuevas áreas y servicios curriculares.
+- Dictamen: CUMPLE PARCIALMENTE; registro básico y baja lógica existen, pero el onboarding, deployment, pruebas y activación segura no están acreditados.
+- Progreso: 26/183 identificadores únicos auditados; 157 pendientes.
+- Hallazgo nuevo: ninguno. Se amplían AUD-NG-011, AUD-NG-164 y AUD-NG-158.
+- Informe: AUDITORIA_COMPLETADAS_TAREA-20.md. Sección del plan: 31.
+- Archivos fuente y SHA:
+  * backend/academic-service/Code.gs: daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc.
+  * js/config.js: 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc.
+  * js/api.js: 6b24f666db30a811a8e9b38d466fc6001cf6dfa9.
+- Documentos actualizados: Auditoria.txt, Pendientes.md, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt e informe TAREA-20. Agrupar en un solo commit.
+- Sin cambios en código fuente, completadas.md, completadas_legacy.md, ChangesLogs.txt ni METODOLOGIA_DESARROLLO.md.
+- Pruebas: inspección estática/manual; no se ejecutaron deployments, endpoints, pruebas RBAC, integridad, Drive, regresión ni fixtures. No se usaron datos productivos.
+- La planificación AUDITORIA_FASE1_PLANIFICACION_EXPANSION.md no está disponible; se utilizó el alcance explícito de completadas.md.
+- No repetir TAREA-01 a TAREA-20. Siguiente tarea exacta: FASE2-T17.
+================================================================

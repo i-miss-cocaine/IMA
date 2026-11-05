@@ -770,3 +770,26 @@ No se crea AUD-NG nuevo; las brechas se incorporan a tareas existentes.
 - teacher.js (2192-2273) define modal y formulario ausentes en teacher-dashboard.html; el formulario no envía equivalenciasMap. ROLE_PERMISSIONS limita la acción a Director/Admin, no Profesor.
 - Pruebas de regresión revisadas no contienen pruebas de equivalencias/migración.
 - Nuevo AUD-NG-172: migración transaccional, prevalidación, preservación histórica y rollback. Relacionar con AUD-NG-164, AUD-NG-167, TASK-078, AUD-NG-158 y TASK-296.
+
+
+## Auditoría TAREA-20 - ciclo de vida de áreas y servicios curriculares (2026-11-05)
+
+### Componentes y relaciones observadas
+- backend/academic-service/Code.gs: registerCurricularAreaExtension (4084) escribe AreasCurricularesExtensiones; runCurricularAreaServiceTests (4147) simula PASS y activa; toggleCurricularAreaStatus (4206) cambia estado; getAcademicAreaTemplateCatalog (4281) siembra siete áreas predeterminadas; deployAcademicMicroserviceInstance (4494) escribe InstanciasMicroserviciosAcademicos y luego registra área; getInstitutionalCatalog (3824) consulta el catálogo; getAcademicAreaCoordinationScope (4321) consulta CoordinacionesArea; assignTeacherToAcademicArea (14048) crea asignaciones docentes.
+- js/config.js: CURRICULAR_AREAS_CATALOG (171), ACADEMIC_DEPARTMENTS_CATALOG, CURRICULAR_SPECIALIZED_SERVICES (198), SERVICE_URLS (224) y SERVICE_REGISTRY son mapas estáticos no sincronizados con el registro backend de extensiones.
+- js/api.js: fetchApi (11) resuelve endpoints solo con SERVICE_URLS[service]; no resuelve una instancia por areaId ni serviceKey.
+
+### Riesgos de consistencia
+- registerCurricularAreaExtension sobrescribe la fila completa al actualizar un areaId, no bloquea concurrencia ni versiona cambios.
+- runCurricularAreaServiceTests declara PASS fijo y puede activar el área sin pruebas reales.
+- toggleCurricularAreaStatus permite activación directa; deployAcademicMicroserviceInstance marca instancia Activo y connectivityCheck PASS sin despliegue real. Su llamada posterior a registerCurricularAreaExtension deja el área PendientePruebas.
+- getAcademicAreaTemplateCatalog siembra siete áreas como Activo y usa IDs distintos a AREA-01…AREA-12 del cliente.
+- getInstitutionalCatalog no entrega serviceUrl/tools ni filtra inactivos. assignTeacherToAcademicArea no valida área activa; getAcademicAreaCoordinationScope no une el estado del área.
+- La baja lógica conserva la fila, pero no sincroniza deployments, asignaciones, coordinaciones, endpoints ni políticas de consulta histórica.
+
+### Tareas relacionadas
+- AUD-NG-011: deployment real, endpoint por área, pruebas integradas no simuladas y estados coordinados.
+- AUD-NG-164: fuente canónica de áreas/departamentos/servicios, IDs estables, versionado y desactivación histórica segura.
+- AUD-NG-158: ABAC para asignaciones y coordinaciones, validando área activa y ámbito del actor.
+
+No se crea AUD-NG nuevo.

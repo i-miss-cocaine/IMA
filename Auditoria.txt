@@ -4815,3 +4815,31 @@ RELACIONES:
 
 PRUEBAS/LÍMITES: inspección estática/manual; no se ejecutaron migraciones, pruebas con fixtures, snapshot/rollback ni despliegues. No se utilizaron datos productivos ni se modificó código fuente. AUDITORIA_FASE1_PLANIFICACION_EXPANSION.md no está disponible; se usó el alcance explícito de completadas.md.
 ================================================================
+
+
+================================================================
+AUDITORÍA TAREA-20 - INCORPORACIÓN DE NUEVAS ÁREAS Y SERVICIOS CURRICULARES
+FECHA: 2026-11-05 | DICTAMEN: CUMPLE PARCIALMENTE
+
+ARCHIVOS:
+- backend/academic-service/Code.gs SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc
+- js/config.js SHA 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc
+- js/api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9
+
+EVIDENCIA:
+- registerCurricularAreaExtension (4084): solo exige areaId/name/code; serviceKey, serviceUrl, tools y departmentId son opcionales. No valida unicidad de códigos/serviceKey/departamento/endpoint ni usa lock. Si el área existe, sobrescribe la fila completa y reinicia estado a Inactivo_PendientePruebas, sin versionado ni historial.
+- runCurricularAreaServiceTests (4147): testPingConnectivity, testRBACIsolation, testDataIntegrity y testToolsSchema son PASS constantes. No hace llamadas ni validaciones reales; con esos PASS activa el área.
+- toggleCurricularAreaStatus (4206): permite activar directamente sin exigir pruebas previas; cualquier valor distinto de Activo se convierte en Inactivo.
+- deployAcademicMicroserviceInstance (4494): solo registra metadatos; declara diagnostics.connectivityCheck=PASS y estado Activo sin crear/verificar deployment, endpoint, ACL o fuente. Luego llama registerCurricularAreaExtension, que puede dejar el área Inactivo_PendientePruebas mientras la instancia figura Activo.
+- getAcademicAreaTemplateCatalog (4281): si la tabla está vacía siembra siete áreas predeterminadas como Activo, sin pasar por pruebas. Sus IDs no coinciden con AREA-01…AREA-12 del cliente.
+- js/config.js: CURRICULAR_AREAS_CATALOG (171), CURRICULAR_SPECIALIZED_SERVICES (198), SERVICE_URLS (224) son catálogos estáticos; no se sincronizan con nuevas áreas registradas. ACADEMIC_DEPARTMENTS_CATALOG solo lista ocho departamentos frente a doce áreas.
+- js/api.js fetchApi (11) enruta solo mediante SERVICE_URLS[service]; no consulta serviceKey/serviceUrl/areaId dinámico.
+- getInstitutionalCatalog (3824) omite serviceUrl y herramientas; no excluye áreas inactivas.
+- assignTeacherToAcademicArea (14048) no valida que el área exista/esté activa. getAcademicAreaCoordinationScope (4321) no comprueba el estado del área; la baja no revoca asignaciones, coordinaciones ni deployments relacionados.
+- toggleCurricularAreaStatus conserva la fila (baja lógica), pero no verifica integridad de referencias, preservación histórica, consultas históricas, invalidación de caché ni bloqueo de nuevas operaciones. El mensaje de preservación no es evidencia.
+
+RECONCILIACIÓN:
+No crear AUD-NG nuevo. Ampliar AUD-NG-011 (deployment real, endpoints, pruebas no simuladas, ciclo de vida área/instancia), AUD-NG-164 (catálogo único, IDs/códigos únicos, versionado, estado y preservación histórica) y AUD-NG-158 (ABAC en asignaciones/coordinaciones de área).
+
+PRUEBAS/LÍMITES: inspección estática/manual. No se ejecutaron deployments, endpoints, pruebas RBAC, integridad, Drive, regresión ni fixtures. Sin datos productivos ni cambios de código.
+================================================================

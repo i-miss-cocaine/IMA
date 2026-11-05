@@ -18802,3 +18802,34 @@ HALLAZGO TAREA-19 - MIGRACIÓN CURRICULAR SIN PÉRDIDA DE DATOS (2026-11-05)
 
 Hallazgo nuevo: AUD-NG-172. Progreso de auditoría: 25/183 identificadores únicos; 158 pendientes. Siguiente tarea: TAREA-20.
 ================================================================
+
+
+================================================================
+AMPLIACIÓN DE TAREAS EXISTENTES DERIVADA DE TAREA-20 (2026-11-05)
+================================================================
+
+No se crea AUD-NG nuevo. Se amplían tareas pendientes existentes, sin borrar ni reescribir sus registros originales.
+
+### AUD-NG-011 - Aislamiento y despliegue real de microservicios por área
+- El registro de AreasCurricularesExtensiones y de InstanciasMicroserviciosAcademicos no constituye despliegue. Exigir evidencia del proyecto Apps Script, deploymentId/URL real, fuente de datos, identidad de ejecución, ACL y endpoint accesible.
+- deployAcademicMicroserviceInstance no puede escribir estado Activo ni diagnostics.connectivityCheck=PASS por defecto. Debe verificar la instancia real y mantener estados separados y coherentes entre área y deployment; no puede registrar la instancia Activo y dejar el área Inactivo_PendientePruebas.
+- runCurricularAreaServiceTests debe ejecutar conectividad, autenticación/RBAC, esquema, aislamiento, integridad y regresión contra el servicio/área concretos. Prohibido devolver PASS constantes o activar por resultados simulados.
+- toggleCurricularAreaStatus no puede saltarse la puerta de pruebas. La activación requiere evidencia vigente de suite exitosa y deployment verificado; las rutas de despliegue y activación deben compartir la misma política.
+- El enrutador debe resolver el servicio de área por catálogo versionado y endpoint verificado; el flujo actual fetchApi solo consulta SERVICE_URLS[service].
+- La desactivación debe sincronizar el estado del área, instancias, endpoints, permisos, asignaciones y coordinaciones; no dejar deployments activos huérfanos.
+
+### AUD-NG-164 - Catálogo curricular maestro y relaciones
+- Consolidar CURRICULAR_AREAS_CATALOG, CURRICULAR_SPECIALIZED_SERVICES, ACADEMIC_DEPARTMENTS_CATALOG, AreasCurricularesExtensiones y el catálogo institucional en una fuente canónica sincronizada. Resolver IDs divergentes (AREA-01…AREA-12 frente a AREA-MATH/AREA-COMUNICATION, etc.) y códigos repetidos/ausentes.
+- Validar unicidad de areaId, código, serviceKey y pertenencia a departamento; validar formatos y referencias de serviceUrl/herramientas. No aceptar campos críticos opcionales sin estado explícito de configuración incompleta.
+- La actualización de un areaId existente no debe sobrescribir silenciosamente URL, herramientas, departamento, estado o metadatos. Incorporar versión, historial de cambios y previsualización de diferencias.
+- Los catálogos y consultas deben distinguir Activo, Inactivo_PendientePruebas e Inactivo. No convertir estado vacío automáticamente en Activo ni exponer áreas desactivadas como habilitadas.
+- La baja lógica debe preservar referencias históricas consultables, pero impedir nuevas asignaciones/operaciones y registrar qué dependencias permanecen asociadas.
+
+### AUD-NG-158 - Autorización contextual de asignaciones docentes
+- assignTeacherToAcademicArea debe validar en servidor la existencia y estado Activo del areaId antes de crear/reactivar una asignación.
+- getAcademicAreaCoordinationScope y las decisiones ABAC deben excluir áreas inactivas para operaciones vigentes, manteniendo las referencias históricas en consultas de auditoría autorizadas.
+- Desactivar un área debe impedir nuevas asignaciones y coordinaciones y definir la transición de las existentes con actor, motivo y vigencia; no borrar su historial.
+- Probar intentos con areaId inexistente/inactivo, coordinador fuera de ámbito, docente asignado a área desactivada y usuario sin permiso.
+
+Hallazgo nuevo: ninguno; las brechas se corresponden con AUD-NG-011, AUD-NG-164 y AUD-NG-158. Progreso: 26/183 identificadores únicos auditados; 157 pendientes. Siguiente tarea: FASE2-T17.
+================================================================
