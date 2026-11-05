@@ -5190,3 +5190,35 @@ PRUEBAS Y LIMITACIONES
 - No se ejecutaron requests HTTP a deployments, simulaciones de fallos, pruebas de contrato de Accounting ni pruebas de navegador.
 - No se usaron datos productivos; no se afirma validación dinámica.
 ================================================================
+
+
+================================================================
+AUD-NG-175 - CONTRATO Y SINCRONIZACIÓN DE CATÁLOGOS INSTITUCIONALES
+FECHA: 2026-11-05
+TAREA HISTÓRICA: FASE2-03 - Resolución Centralizada de Fuentes de Datos y Catálogos Maestros
+ARCHIVOS: js/config.js; backend/academic-service/Code.gs
+MÓDULO: Catálogos institucionales y sincronización cliente-servidor
+RANGO: js/config.js: 806-835, 938-965; backend/academic-service/Code.gs: 101-150, 3824-3915
+TIPO: Incumplimiento funcional, contrato de datos y manejo de errores
+SEVERIDAD: Alto
+
+DESCRIPCIÓN TÉCNICA:
+1. getInstitutionalCatalog mapea el campo estado de CatalogoAsignaturas desde r[4], pero el esquema declarado por getOrCreateSheet coloca CargaHorariaRef en la columna 5 (índice 4) y Estado en la columna 6 (índice 5). El resultado confunde carga horaria con estado.
+2. getInstitutionalCatalog no excluye registros inactivos. validateCatalogReference valida únicamente la existencia de areaId/asignaturaId/codigo y tampoco verifica estado, por lo que una referencia inactiva puede ser aceptada.
+3. fetchInstitutionalCatalog devuelve status success y datos estáticos de CURRICULAR_AREAS_CATALOG cuando fetchApi no está disponible, la respuesta es inesperada o falla la solicitud. Esto confunde una fuente local/fallback con una consulta satisfactoria al catálogo institucional.
+4. La sincronización del cliente solo procesa areasCurriculares; no incorpora asignaturas desde el catálogo remoto.
+5. registerNewCurricularAreaServiceConfig agrega áreas nuevas, pero no actualiza metadatos de una existente ni aplica un estado de baja/inactividad al catálogo local.
+
+IMPACTO:
+Puede mostrarse una asignatura con un estado incorrecto, aceptarse una referencia a un registro inactivo y ocultarse una caída o incompatibilidad del servicio como si el catálogo institucional hubiera respondido correctamente. La divergencia entre catálogo remoto y configuración local puede persistir sin señal visible.
+
+DEPENDENCIAS:
+fetchInstitutionalCatalog -> fetchApi -> ACADEMIC/getInstitutionalCatalog -> CatalogoAsignaturas y AreasCurricularesExtensiones.
+validateCatalogReference -> getInstitutionalCatalog.
+registerNewCurricularAreaServiceConfig -> CURRICULAR_AREAS_CATALOG y CURRICULAR_SPECIALIZED_SERVICES.
+
+RECONCILIACIÓN:
+Crear AUD-NG-175 en Pendientes.md. Los defectos del enrutador de fuentes se agregan como ampliación de TASK-046 y se mantienen vinculados a AUD-NG-083/084/086; no se crea un hallazgo duplicado para esa parte.
+PRUEBAS:
+Inspección estática/manual de los rangos indicados. No se ejecutaron pruebas automatizadas, llamadas HTTP, validaciones de permisos productivos ni consultas a hojas reales.
+================================================================

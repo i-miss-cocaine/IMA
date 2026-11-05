@@ -909,3 +909,15 @@ No se crea AUD-NG nuevo.
 - Los catch de doPost exponen error.message y el toast de autorización inserta parsed.message con innerHTML.
 - Hallazgo AUD-NG-174: contrato versionado de éxito/error, validación en cliente, distinción vacío/fallback, pruebas reales y render seguro.
 - AUD-NG-007 cubre el timeout configurable; no duplicar.
+
+
+## Auditoría FASE2-03 - Fuentes de datos y catálogos institucionales (C1.31)
+- `js/config.js`
+  - `CURRICULAR_AREAS_CATALOG`, `ACADEMIC_DEPARTMENTS_CATALOG`, `CURRICULAR_SPECIALIZED_SERVICES`: catálogos locales estáticos consumidos por la interfaz.
+  - `fetchInstitutionalCatalog`: consulta `ACADEMIC/getInstitutionalCatalog`; recibe `areasCurriculares` y las incorpora mediante `registerNewCurricularAreaServiceConfig`; mantiene fallback local ante fallo o respuesta inválida.
+  - `registerNewCurricularAreaServiceConfig`: modifica `CURRICULAR_AREAS_CATALOG` y `CURRICULAR_SPECIALIZED_SERVICES`; no sincroniza actualización/inactividad de entradas ya existentes.
+- `backend/academic-service/Code.gs`
+  - `getOrCreateSheet`: inicializa encabezados de `CatalogoAsignaturas` con columnas `AsignaturaID, NombreOficial, Codigo, AreaAcademica, CargaHorariaRef, Estado`; no define encabezados para `CatalogoSpreadsheets`.
+  - `getInstitutionalCatalog`: lee `CatalogoAsignaturas` y `AreasCurricularesExtensiones`; mapea el estado de asignaturas desde el índice incorrecto y no filtra registros inactivos.
+  - `validateCatalogReference`: depende de `getInstitutionalCatalog`; no aplica estado activo.
+  - `registerSpreadsheetSource`, `resolveSpreadsheetSource`, `getSpreadsheetCatalog`: dependen de `CatalogoSpreadsheets` y del `SPREADSHEET_ID` principal; su insuficiente resolución y falta de integración quedan ampliadas en TASK-046, sin duplicar AUD-NG-083/084/086.

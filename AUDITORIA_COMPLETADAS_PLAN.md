@@ -381,3 +381,12 @@ Al reanudar:
 - **Pruebas:** inspección estática; no se ejecutaron HTTP real, fallos de red, pruebas de navegador ni contratos de Accounting.
 - **Progreso:** 33/183 identificadores auditados; 150 pendientes.
 - **Siguiente tarea:** FASE2-03.
+
+
+## 39. Resultado C1.31 - FASE2-03 (2026-11-05)
+- **Dictamen:** CUMPLE PARCIALMENTE. El resolver académico existe pero no resuelve la clave compuesta ni valida disponibilidad/esquema, conserva fallback al Spreadsheet principal y no está integrado de forma general. El catálogo académico mapea mal el estado de asignaturas, no filtra inactivos y el cliente disfraza fallos como éxito con datos estáticos.
+- **Reconciliación:** ampliación de TASK-046; nuevo AUD-NG-175 para contrato y sincronización de catálogos. No duplicar AUD-NG-083, AUD-NG-084 ni AUD-NG-086.
+- **Calidad:** riesgo de lecturas desde partición incorrecta, aceptación de referencias inactivas y divergencia silenciosa entre catálogo remoto y local.
+- **Pruebas:** inspección estática/manual; no se ejecutaron pruebas automatizadas, HTTP real, navegador ni consultas productivas.
+- **Progreso:** 34/183 identificadores auditados; 149 pendientes.
+- **Siguiente tarea:** FASE2-04.

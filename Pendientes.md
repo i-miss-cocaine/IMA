@@ -2394,6 +2394,15 @@ REGLA RECTORA INNEGOCIABLE DEL BACKLOG:
 - **Criterios adicionales:** Cada servicio debe resolver su fuente autorizada por catálogo, dominio, cuenta y contexto; los accesos directos fijos deben migrarse o justificarse. Probar aislamiento de lecturas/escrituras entre USER, ACADEMIC, TASK, EXAM y ACCOUNTING con fuentes distintas; no aceptar IDs placeholder ni fallback a la hoja compartida.
 - **Estado:** [X] Completada
 
+
+**Ampliación C1.31 / FASE2-03 - Auditoría de resolución y catálogo académico (2026-11-05):**
+- En `backend/academic-service/Code.gs`, `registerSpreadsheetSource` (líneas 11453-11496) exige dominio, año y spreadsheetId, pero la clave de actualización solo considera dominio+año. Aunque recibe `departamento` y `servicio`, no los persiste; tampoco registra área de responsabilidad, tipo de información ni cuenta propietaria. `schemaVersion` se almacena sin comprobar compatibilidad. No valida que el Spreadsheet exista, esté disponible o sea accesible por el servicio. Las actualizaciones sobrescriben la fila y no conservan historial de fuentes.
+- `resolveSpreadsheetSource` (líneas 11499-11538) ignora departamento y servicio, resuelve únicamente por dominio+año y devuelve `status:"success"` con `resolved:false` y el `SPREADSHEET_ID` principal cuando no encuentra una partición. Esto puede dirigir una consulta al archivo equivocado y contradice el requisito de no realizar fallback silencioso.
+- `getSpreadsheetCatalog` (líneas 11541-11566) devuelve todas las filas sin distinguir fuentes activas/inactivas ni aplicar un filtro contextual.
+- El helper académico `getOrCreateSheet` (líneas 85-150) no inicializa encabezados para `CatalogoSpreadsheets`. En una instalación donde la hoja no exista, la primera alta puede quedar en la fila 1 y luego ser excluida por los `.slice(1)` usados por el resolver y el catálogo.
+- Se confirma el resultado C1.29: el resolver continúa sin integración general en las operaciones de negocio; la mayoría de accesos académicos siguen abriendo el `SPREADSHEET_ID` fijo. No duplicar AUD-NG-083, AUD-NG-084 ni AUD-NG-086; conservar estos requisitos y esta evidencia como ampliación de TASK-046.
+- **Criterios adicionales:** almacenar y resolver la clave compuesta completa (dominio, departamento, área, año, tipo de información, cuenta y servicio); inicializar esquema explícito; validar ID, permisos y versión; rechazar fuentes inexistentes/incompatibles; eliminar fallback implícito o exigir una fuente predeterminada configurada y autorizada; conservar historial; integrar el resolver en los consumidores de lectura/escritura; probar aislamiento con archivos distintos.
+
 ---
 ---
 ### [TASK-047] [X] [F23-Task04] [P0] [Arquitectura Distribuida - Catálogo Institucional de Cuentas, Servicios y Permisos Distribuidos]
@@ -18984,4 +18993,15 @@ AUD-NG-163 permanece DUPLICADA y consolidada; no reabrirla como tarea independie
   - Las pruebas cubren éxito, vacío, error de negocio, autorización, excepción, HTTP no exitoso, HTML, JSON inválido, timeout y Accounting.
   - La suite solo marca PASS cuando se cumplen los resultados esperados, no por la mera presencia de claves en una respuesta error.
   - Los mensajes dinámicos no se interpretan como HTML.
+- **Estado:** [ ] Pendiente
+
+
+### [AUD-NG-175] Corregir el contrato, la sincronización y la validación de los catálogos institucionales
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-175 (FASE2-03 y revisión de la implementación posterior FASE2-T04).
+- **Severidad/Clasificación:** Alto (integridad y consistencia de catálogos institucionales).
+- **Archivos Involucrados:** `js/config.js`; `backend/academic-service/Code.gs`; `tests/regression/modular-dashboard-suite.js`.
+- **Dependencias Expuestas:** `fetchInstitutionalCatalog`, `registerNewCurricularAreaServiceConfig`, `getInstitutionalCatalog`, `validateCatalogReference`, `CatalogoAsignaturas`, `AreasCurricularesExtensiones`, `fetchApi`.
+- **Descripción del Alcance:** Establecer un contrato versionado y coherente para consultar y sincronizar los catálogos institucionales. Corregir el mapeo del estado de asignaturas, filtrar registros inactivos en consultas y validaciones, sincronizar tanto áreas curriculares como asignaturas y evitar que errores de transporte o respuestas inválidas se presenten como consultas exitosas con datos estáticos. La configuración local podrá utilizarse como caché/fallback únicamente si queda identificada como tal y no sustituye silenciosamente la fuente de verdad. La incorporación o actualización de áreas debe conservar el estado y actualizar los metadatos existentes sin reactivar registros deshabilitados.
+- **Evidencia C1.31:** `getInstitutionalCatalog` (líneas 3824-3883) mapea `CatalogoAsignaturas` con `estado: r[4]`, aunque el encabezado creado por `getOrCreateSheet` define `CargaHorariaRef` en el índice 4 y `Estado` en el índice 5. También devuelve filas sin filtrar por estado. `validateCatalogReference` (líneas 3885-3915) acepta referencias sin comprobar que el registro esté activo. En `js/config.js`, `fetchInstitutionalCatalog` (líneas 806-835) devuelve `status:"success"` con el catálogo estático si falta `fetchApi`, la respuesta no tiene el formato esperado o la petición falla; solo sincroniza `areasCurriculares` y no actualiza el catálogo de asignaturas. `registerNewCurricularAreaServiceConfig` (líneas 938-965) no sincroniza cambios de metadatos de áreas ya existentes ni filtra áreas inactivas.
+- **Criterios de Aceptación:** el campo Estado se obtiene de la columna correcta; áreas/asignaturas inactivas no aparecen como activas ni validan referencias; la respuesta mantiene un esquema y versión explícitos; el cliente sincroniza ambos catálogos; un fallo de red o contrato no se presenta como éxito de la fuente de verdad; los fallbacks se marcan explícitamente como datos locales/no autoritativos; actualizar o desactivar un área se refleja sin duplicados ni reactivación involuntaria; pruebas cubren registros activos/inactivos, referencia inválida, catálogo vacío, respuesta malformada y fallo de transporte.
 - **Estado:** [ ] Pendiente

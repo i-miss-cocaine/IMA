@@ -1355,3 +1355,28 @@ CHECKPOINT C1.30 - AUDITORÍA FASE2-02 (2026-11-05)
 - Pruebas: inspección estática/manual; no se ejecutaron HTTP reales, simulaciones de fallos ni pruebas de navegador.
 - Siguiente tarea exacta en el orden pendiente: FASE2-03.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.31 - AUDITORÍA FASE2-03 (2026-11-05)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto existente: Contexto_personal.txt (no existe contexto_personal.md en el árbol revisado).
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- HEAD de partida verificado: a302f4ccd3d3f4b2e2c2cdfcce4833d25dc0d44a (C1.30 / FASE2-02).
+- Rama base: NG_beta_0.0.0.1; commit verificado: 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios ni merge.
+- Última tarea auditada: FASE2-03 - Resolución Centralizada de Fuentes de Datos y Catálogos Maestros.
+- Dictamen: CUMPLE PARCIALMENTE.
+- Progreso: 34/183 identificadores únicos auditados; 149 pendientes.
+- Alcance original: completadas.md solo conserva título, origen y archivos involucrados; el informe de origen AUDITORIA_FASE2_ARQUITECTURA_INTEROPERABILIDAD.md no está presente en la rama. Para reconstruir el alcance se contrastó con TASK-046 y con la implementación posterior FASE2-T04.
+- Evidencia: js/config.js SHA 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc; backend/academic-service/Code.gs SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc.
+- Hallazgo nuevo: AUD-NG-175 - corregir contrato, sincronización y validación de catálogos institucionales.
+- Hallazgos existentes ampliados: TASK-046 y sus dependencias AUD-NG-083, AUD-NG-084 y AUD-NG-086; no duplicar IDs.
+- Resultados principales: el resolver académico ignora dimensiones de departamento/servicio, guarda metadatos incompletos, no valida esquema ni acceso, y cae al Spreadsheet principal con status success cuando no encuentra partición. En una hoja CatalogoSpreadsheets recién creada no se inicializan encabezados, aunque los lectores excluyen la primera fila. El catálogo de asignaturas usa índice incorrecto para Estado; catálogos y validaciones no filtran inactivos; el cliente oculta fallos del endpoint mediante fallback estático success y solo sincroniza áreas.
+- Archivos modificados en esta tarea: Auditoria.txt, MapaDependencias.md, Pendientes.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt y AUDITORIA_COMPLETADAS_FASE2-03.md.
+- Código fuente, completadas.md, completadas_legacy.md, ChangesLogs.txt y METODOLOGIA_DESARROLLO.md: sin modificaciones.
+- Pruebas: inspección estática/manual. No se ejecutaron pruebas automatizadas, HTTP real, pruebas de navegador, ni consultas o escrituras a hojas productivas.
+- Última tarea completamente auditada: FASE2-03. No hay tarea en curso.
+- Siguiente tarea exacta: FASE2-04 - Sistema Unificado de Identificadores CUV, UUID y Trazabilidad.
+- Continuidad: leer este checkpoint, verificar rama y HEAD, consultar AUDITORIA_COMPLETADAS_FASE2-03.md y reanudar en FASE2-04 sin repetir FASE2-03.
+================================================================
