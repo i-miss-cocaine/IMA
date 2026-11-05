@@ -1002,3 +1002,39 @@ CHECKPOINT C1.16 - AUDITORÍA TAREA-14 (2026-11-05)
 - Progreso: 20/183 identificadores únicos auditados; 163 pendientes.
 - Siguiente tarea exacta: TAREA-15.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.17 - AUDITORÍA TAREA-15 (2026-11-05)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto: Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base: NG_beta_0.0.0.1.
+- HEAD de partida verificado antes del commit de esta tarea: 58e39c0eb89877cd79072adce2e7c19160ec110a.
+- HEAD de la rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59; no modificarla ni hacer merge.
+- Última tarea auditada: TAREA-15 - Completar la supervisión institucional de servicios, errores y recuperación.
+- Dictamen: CUMPLE PARCIALMENTE; calidad insuficiente para aceptación integral.
+- Progreso: 21/183 identificadores auditados; 162 pendientes.
+- Hallazgo nuevo: ninguno. Las brechas se amplían en AUD-NG-131, AUD-NG-144, AUD-NG-145, AUD-NG-083 y TASK-064; las pruebas se vinculan a AUD-NG-161.
+- AUD-NG-163 está marcado DUPLICADA/consolidada; no ejecutarlo independientemente.
+- Informe: AUDITORIA_COMPLETADAS_TAREA-15.md.
+- Sección del plan: 26 de AUDITORIA_COMPLETADAS_PLAN.md.
+- Archivos fuente inspeccionados y SHA:
+  * backend/user-service/Code.gs: 12079dd410aa6d8afbce55a4bc62a79dea605f9f.
+  * backend/academic-service/Code.gs: daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc.
+  * backend/accounting-service/Code.gs: 38b979d41596b85e888b4a7060b37bbac0840a28.
+  * js/ui-common.js: 986938b8a311a41ed4cb3d135b66b6aaea4bed67.
+  * js/api.js: 6b24f666db30a811a8e9b38d466fc6001cf6dfa9.
+  * js/developer.js: 6fa4c4bd9be580c974b1fbede4f0cf79485dc331.
+  * js/config.js: 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc.
+  * backend/developer-service/Code.gs: 8aa4bac67cfe5c8c54da51a0784a56fef633e412.
+- Hallazgos principales: versiones fijas 1.0.0; reporte de salud global sin desglose temporal/servicio; panel consume función inexistente getServiceHealthMetrics; checkAll omite ACCOUNTING/DEVELOPER e incluye TASK/EXAM sin ping; ping existente afirma dbConnected:true; fetchApi timeout fijo 60s; requestId/correlationId no son end-to-end; sobre interservicio sin call sites; sanitización no cubre PII; alertas no están conectadas.
+- Dependencias que deben consultarse sin duplicar: AUD-NG-131 (deployment/versión), AUD-NG-144 (health checks), AUD-NG-145 (bitácora/sanitización), AUD-NG-083 (sobre interservicio), TASK-064 (capacidad/cuotas/alertas), AUD-NG-161 (pruebas aisladas), AUD-NG-163 (duplicada).
+- No se modificó código fuente, completadas.md, completadas_legacy.md, ChangesLogs.txt ni METODOLOGIA_DESARROLLO.md.
+- Archivos documentales de esta tarea: Auditoria.txt, Pendientes.md, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt e informe TAREA-15. Todos deben quedar en un solo commit.
+- Pruebas: inspección estática/manual; no se ejecutaron pruebas de salud en despliegues productivos, caída de servicios, cuota, alertas, trazabilidad distribuida ni recuperación/rollback.
+- Limitación: AUDITORIA_FASE1_PLANIFICACION_EXPANSION.md, referenciado en completadas.md, no está presente en la rama. Se usó el alcance y criterios de completadas.md.
+- No repetir TAREA-01 a TAREA-15; revisar informes y dependencias anteriores.
+- Siguiente tarea exacta: TAREA-16, inmediatamente posterior a TAREA-15 en completadas.md.
+================================================================

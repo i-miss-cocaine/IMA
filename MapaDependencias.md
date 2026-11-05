@@ -682,3 +682,28 @@ Se restauró el contenido íntegro previo a TAREA-09 (1,515,247 caracteres) tras
 - Dependencias: js/api.js (fetchApi y fallback de red), js/persistence.js (PersistenceManager y clave activa por userId), IndexedDB sync_queue, GLOBAL_SCOPE.GranularConfig.
 - Hallazgo AUD-NG-169: bandeja docente no integrada; filtros no derivados del ámbito docente verificado; controles clicables sin semántica/teclado; formulario no adaptado por área; modo offline y resolución de conflictos incompletos.
 - Tareas relacionadas: AUD-NG-126 (orden tarjeta/expandido), AUD-NG-158 (ámbito docente), TASK-065 (cola offline), TASK-129/TASK-130 (ayudas contextuales).
+
+
+## Auditoría TAREA-15 - salud operativa y trazabilidad (2026-11-05)
+
+### Backend USER
+- `getServiceHealthReport` (73-140) -> LogsSistema; controla rol Administrador/Desarrollador/Director; devuelve versiones fijas 1.0.0, conteos globales y categoría heurística. No agrupa por servicio/ventana ni informa latencia/última falla.
+- `getOperationalCapacityMetrics` (4080-4148) -> BitacoraTrazabilidad; calcula llamadas, latencia media, errores y cuota por servicio a partir de registros existentes.
+- `recordTraceabilityLog` (4548-4573) -> BitacoraTrazabilidad; acepta correlationId, origin/target/action/status/duration/error; no contiene requestId.
+- `getStructuredLogs` (353-392) -> LogsSistema; devuelve payload almacenado; sanitizer actual solo enmascara credenciales.
+- `createInterServiceEnvelope`/`verifyInterServiceEnvelope` (1009-1063) -> crean/validan requestId y correlationId, pero no tienen call sites encontrados.
+
+### Clientes y paneles
+- `js/api.js` / `fetchApi` (11-60) envía action+payload sin requestId/correlationId; timeout fijo 60s (26-37).
+- `checkMicroserviceHealth` (207-239) usa acción ping y pide timeout 6s; `checkAllMicroservicesHealth` (245-251) lista USER/ACADEMIC/TASK/EXAM.
+- Ping presente en USER (1552), ACADEMIC (964), ACCOUNTING (834); TASK/EXAM sin ping. Los ping existentes retornan dbConnected:true literal.
+- `js/developer.js` / `executeDevHealthChecks` (90-180) llama checkAll al cargar la consola.
+- `js/ui-common.js` / `openInstitutionalHealthDashboardModal` (1938-1996) lee getServiceHealthMetrics (no definido en los scripts), usa valores vacíos por defecto y no consume getServiceHealthReport ni checkAllMicroservicesHealth.
+
+### Dependencias de corrección
+- AUD-NG-131/AUD-NG-144: deployment/versiones y health checks reales.
+- AUD-NG-145: bitácora central, sanitización PII y DTO/filtros.
+- AUD-NG-083: sobre HMAC y requestId/correlationId interservicio.
+- TASK-064: cuotas, métricas, umbrales y alertas preventivas.
+- AUD-NG-161: pruebas aisladas de recuperación/concurrencia.
+- AUD-NG-163: duplicada, no ejecutar independientemente.

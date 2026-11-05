@@ -18607,3 +18607,33 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 - **Estado:** [ ] Pendiente
 
 Hallazgo nuevo: AUD-NG-169. Progreso de auditoría: 20/183; 163 pendientes. Siguiente tarea: TAREA-15.
+
+
+================================================================
+ADENDA DE AUDITORÍA TAREA-15 (2026-11-05)
+================================================================
+
+### Ampliación de AUD-NG-131 y AUD-NG-144 - Versiones y salud de despliegues
+- El mapa serviceVersions de getServiceHealthReport devuelve 1.0.0 fijo para USER/ACADEMIC/TASK/EXAM/ACCOUNTING y omite DEVELOPER; los encabezados reales de USER/ACADEMIC/ACCOUNTING indican v8.2.0/v8.4.0/v8.0.0.
+- Registrar versión, deployment ID/SHA y fecha de despliegue realmente activos; no confundir versión de código fuente con deployment publicado.
+- checkAllMicroservicesHealth omite ACCOUNTING y DEVELOPER, incluye TASK/EXAM sin acción ping; los ping existentes devuelven dbConnected:true constante. Verificar dependencia real y cubrir todos los servicios registrados.
+- fetchApi ignora options.timeout y fija 60 segundos, por lo que el timeout de 6 segundos del health check no se cumple.
+
+### Ampliación de AUD-NG-145 - Bitácora, PII y trazabilidad
+- LogsSistema no almacena requestId/correlationId y fetchApi no los genera/propaga; integrar identificadores por petición y correlación entre frontend y microservicios.
+- sanitizePayloadForLog solo enmascara credenciales; ampliar sanitización por esquema para PII, RTN, teléfonos, correos, cuentas y datos financieros. getStructuredLogs devuelve el payload almacenado.
+- Conectar getServiceHealthReport al panel institucional y corregir el contrato de campos/filtros; el panel actual lee getServiceHealthMetrics, función no definida en los scripts, y cae a métricas cero.
+
+### Ampliación de AUD-NG-083 - Protocolo interservicio
+- createInterServiceEnvelope/verifyInterServiceEnvelope están declaradas, pero no se encontraron call sites reales en los servicios inspeccionados. Integrar el sobre firmado en el tráfico real y propagar requestId/correlationId hasta logs y respuesta.
+
+### Ampliación de TASK-064 - Capacidad, cuotas y alertas
+- getOperationalCapacityMetrics depende de BitacoraTrazabilidad y solo refleja operaciones registradas; instrumentar de forma transversal sin asumir que una bitácora parcial representa todo el tráfico.
+- getServiceHealthReport usa un umbral fijo errorsCount > 50, sin ventana temporal ni alerta; getOperationalCapacityMetrics usa umbrales fijos (>10% y >5 errores de cuota).
+- El panel no consume métricas válidas y no demuestra alertas preventivas deduplicadas. Medir cuotas/latencia por servicio y acción, declarar explícitamente valores estimados y activar alertas configurables.
+- No duplicar AUD-NG-163, que permanece marcado DUPLICADA y consolidado en AUD-NG-131/144/145, TASK-064 y AUD-NG-161.
+
+### Reconciliación TAREA-15
+No crear AUD-NG-170. Las brechas detectadas quedan vinculadas a AUD-NG-131, AUD-NG-144, AUD-NG-145, AUD-NG-083, TASK-064 y AUD-NG-161. AUD-NG-163 no debe ejecutarse independientemente.
+
+================================================================

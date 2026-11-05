@@ -254,3 +254,14 @@ Al reanudar:
 - Calidad: insuficiente para aceptación integral por falta de bandeja docente conectada, recuperación offline real y accesibilidad funcional.
 - Pruebas: inspección estática/manual; no se ejecutaron pruebas de navegador, dispositivos táctiles, lectores de pantalla, red desconectada, sincronización ni despliegue.
 - Progreso: 20/183; 163 pendientes. Siguiente: TAREA-15.
+
+
+## 26. Resultado C1.17 - TAREA-15 (2026-11-05)
+- **Dictamen:** CUMPLE PARCIALMENTE.
+- **Evidencia:** getServiceHealthReport agrega logs pero fija versiones 1.0.0, no agrupa por servicio/ventana ni mide latencia. El panel ui-common consume getServiceHealthMetrics no definida y muestra cero/verde; el health check cubre servicios incorrectos/incompletos, ping declara dbConnected:true y fetchApi ignora timeout de 6s. requestId/correlationId no se propagan desde fetchApi ni se guardan en LogsSistema; el sobre interservicio está declarado pero no integrado. No hay alertas preventivas deduplicadas demostradas.
+- **Reconciliación:** no crear AUD-NG-170; ampliar AUD-NG-131, AUD-NG-144, AUD-NG-145, AUD-NG-083 y TASK-064; pruebas aisladas vinculadas a AUD-NG-161. AUD-NG-163 permanece duplicada/consolidada.
+- **Calidad:** insuficiente para aceptar la supervisión institucional integral.
+- **Pruebas:** inspección estática/manual; no se ejecutaron health checks productivos, caída de servicios, cuotas, alertas, trazabilidad distribuida ni recuperación/rollback.
+- **Archivos fuente e históricos:** sin modificaciones en código, completadas.md, completadas_legacy.md, ChangesLogs.txt o METODOLOGIA_DESARROLLO.md.
+- **Progreso:** 21/183 identificadores auditados; 162 pendientes.
+- **Siguiente tarea exacta:** TAREA-16, entrada inmediatamente posterior a TAREA-15 en completadas.md.

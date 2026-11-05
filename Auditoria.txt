@@ -4675,3 +4675,31 @@ CORRECCIÓN DE INTEGRIDAD DE Pendientes.md (2026-11-05): la verificación poster
 - Pruebas: inspección estática/manual; no se ejecutaron pruebas de navegador, dispositivos táctiles, lectores de pantalla, red desconectada, sincronización ni despliegue.
 - Progreso: 20/183; 163 pendientes. Siguiente: TAREA-15.
 ===============================================================================
+
+
+================================================================
+AUDITORÍA TAREA-15 - SUPERVISIÓN INSTITUCIONAL, SALUD OPERATIVA Y RECUPERACIÓN
+FECHA: 2026-11-05
+DICTAMEN: CUMPLE PARCIALMENTE
+NO SE CREA AUD-NG-170: las brechas se amplían en tareas existentes.
+
+EVIDENCIA PRINCIPAL:
+- backend/user-service/Code.gs: getServiceHealthReport (73-140) fija serviceVersions en 1.0.0 y agrega LogsSistema sin desglose por servicio/ventana/latencia; operationalStatus depende de errorsCount > 50.
+- backend/user-service/Code.gs: getOperationalCapacityMetrics (4080-4148) obtiene promedios/tasas desde BitacoraTrazabilidad, pero depende de que recordTraceabilityLog se ejecute; la instrumentación no es transversal.
+- js/api.js: checkMicroserviceHealth (207-239), checkAllMicroservicesHealth (245-251), fetchApi (11-60 y 142-198). El monitor cubre USER/ACADEMIC/TASK/EXAM; omite ACCOUNTING/DEVELOPER, TASK/EXAM no implementan ping y fetchApi fija timeout de 60 segundos aunque se soliciten 6.
+- Ping USER/ACADEMIC/ACCOUNTING: devuelve dbConnected:true como literal, no verifica SpreadsheetApp ni la dependencia.
+- js/developer.js: executeDevHealthChecks (90-180) ejecuta chequeo parcial al cargar.
+- js/ui-common.js: openInstitutionalHealthDashboardModal (1938-1996) consume getServiceHealthMetrics, función no definida en los scripts; cae a cero y presenta estado verde. No llama getServiceHealthReport ni checkAllMicroservicesHealth.
+- requestId/correlationId: fetchApi no genera identificadores; LogsSistema no contiene requestId/correlationId; createInterServiceEnvelope/verifyInterServiceEnvelope no tienen call sites; recordTraceabilityLog tiene uso limitado.
+- Sanitización: sanitizePayloadForLog enmascara credenciales, no PII/RTN/cuentas/datos financieros; getStructuredLogs devuelve payload.
+
+AMPLIACIONES DE TAREAS EXISTENTES:
+- AUD-NG-131/AUD-NG-144: versión real por deployment, lista completa de servicios, ping auténtico y verificación de dependencias; no marcar ACTIVE/healthy por constantes.
+- AUD-NG-145: incorporar requestId/correlationId a la bitácora, sanitizar PII/finanzas, y conectar getServiceHealthReport al panel con DTO/filtros correctos.
+- AUD-NG-083: usar realmente el sobre interservicio en las llamadas y validar trazabilidad extremo a extremo.
+- TASK-064: métricas por servicio/acción/ventana, cuotas reales o etiquetadas como estimadas, umbrales configurables y alertas deduplicadas.
+- AUD-NG-161: fixtures y procedimientos de recuperación/rollback sin modificar producción.
+- AUD-NG-163: no ejecutar por separado; permanece DUPLICADA/consolidada.
+
+No se crea una tarea nueva porque el alcance se solapa con las tareas anteriores. Calidad insuficiente para aceptar la supervisión integral.
+================================================================
