@@ -609,3 +609,13 @@
 - USER/ACCOUNTING/TASK tienen usos de ANYONE_WITH_LINK; TASK hace pública la carpeta de entregas. USER/ACCOUNTING recurren silenciosamente a la raíz de Drive cuando PARENT_FOLDER_ID falta o falla.
 - Hallazgos existentes: AUD-NG-154/155, AUD-NG-058, TASK-139/140/143/295/345/346 y TASK-149/150/456.
 - No se crea AUD-NG nuevo; se amplían criterios de las tareas existentes.
+
+
+## Auditoría de completadas.md - TAREA-07 (2026-11-05)
+- Dictamen: CUMPLE PARCIALMENTE.
+- createSystemBackup guarda hojas JSON, no archivos binarios. getBackupFolder utiliza la raíz de la cuenta ejecutora; no se acredita Shared Drive ni programación automática.
+- computeSimpleHash es un hash de 32 bits; verifyBackupIntegrity acepta cualquier checksum no vacío; restoreSystemBackup no verifica la copia antes de escribir y limpia hojas completas.
+- La retención de expedientes/finanzas solo incrementa un contador, sin archivar realmente.
+- No se acreditan alertas de almacenamiento ni RPO/RTO reales.
+- Hallazgos existentes: AUD-NG-146, TASK-151/152, TASK-087/251, TASK-079, TASK-149/150, TASK-064 y TASK-345.
+- No se crea AUD-NG nuevo; se amplían criterios existentes.

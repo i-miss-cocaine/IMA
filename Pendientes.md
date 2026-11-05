@@ -18469,3 +18469,22 @@ No se crea un AUD-NG nuevo. Las brechas se vinculan a tareas ya existentes y se 
 - Las rutas de USER/ACCOUNTING que sustituyen PARENT_FOLDER_ID ausente o inválido por DriveApp.getRootFolder() deben generar error/alerta observable o usar una política de fallback explícita y autorizada; no crear silenciosamente en la raíz de la cuenta ejecutora.
 
 Hallazgo nuevo: ninguno. La cobertura se mantiene en tareas preexistentes.
+
+
+---
+
+## Ampliación de criterios existentes derivada de TAREA-07 (2026-11-05)
+
+No se crea un AUD-NG nuevo. Las brechas se asignan a tareas ya existentes:
+
+- AUD-NG-146: exigir SHA-256 real y comparación estricta (rechazar checksum vacío o distinto); verifyBackupIntegrity debe ejecutarse dentro de restoreSystemBackup antes de cualquier escritura. Validar esquema, alcance y relaciones; corregir el contrato UI/backend de confirmación; exigir copia previa del estado vivo, token contextual de un solo uso, registro de resultado, programación real y retención de backups.
+- TASK-151: incluir inventario y copia recuperable de archivos binarios, manifiesto, hashes SHA-256 por archivo y por respaldo, versiones, relaciones con expedientes y controles de acceso/retención.
+- TASK-152: restaurar datos y binarios, verificar hashes antes/después, evitar sobrescribir archivos/registros posteriores sin autorización y validar referencias/permisos tras recuperar.
+- TASK-087/TASK-251: dry-run con diferencias por registro/ID/dependencia y restauración granular por hoja/entidad; crear respaldo del estado actual antes de restaurar y abortar si falla.
+- TASK-079: medir RPO/RTO reales desde la última copia íntegra hasta la validación post-restauración.
+- TASK-149/TASK-150: aplicar retención real a documentos/expedientes, legal hold y disposición con doble autorización; no incrementar contadores como sustituto de archivar.
+- TASK-064: cuotas y crecimiento por identidad/servicio, umbrales y alertas preventivas.
+- TASK-345: conciliación periódica de archivos físicos, registros y referencias Drive.
+- Documentar la ubicación institucional de backups (incluida evaluación de Shared Drives), propietario, ACL, retención, restauración y continuidad; no depender silenciosamente de la raíz de la cuenta ejecutora.
+
+Hallazgo nuevo: ninguno. Las brechas de TAREA-07 se vinculan a tareas preexistentes.

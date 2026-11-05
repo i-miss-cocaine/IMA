@@ -186,3 +186,15 @@ Al reanudar:
 - Pruebas: inspección estática; no se ejecutaron pruebas de concurrencia, permisos heredados ni acceso anónimo.
 - Progreso: 12/183; 171 pendientes.
 - Siguiente tarea: TAREA-07.
+
+
+## 17. Resultado del lote C1.9 - TAREA-07 (2026-11-05)
+
+- Tarea auditada: implementar una estrategia integral de almacenamiento, conservación y recuperación.
+- Dictamen: Cumple parcialmente.
+- Evidencia: createSystemBackup guarda hojas JSON, no binarios. computeSimpleHash no es SHA-256; verifyBackupIntegrity acepta cualquier checksum no vacío; restoreSystemBackup no verifica antes de escribir y limpia hojas completas. La retención de expedientes/finanzas solo incrementa un contador; no se acreditan triggers, alertas ni RPO/RTO.
+- Hallazgos nuevos: ninguno. Se amplían AUD-NG-146, TASK-151/152, TASK-087/251, TASK-079, TASK-149/150, TASK-064 y TASK-345.
+- Calidad: insuficiente por integridad débil, restauración sin validación previa, falta de binarios y retención incompleta.
+- Pruebas: inspección estática; no se ejecutaron pruebas de corrupción, restore, retención ni recuperación.
+- Progreso: 13/183; 170 pendientes.
+- Siguiente tarea: TAREA-08.

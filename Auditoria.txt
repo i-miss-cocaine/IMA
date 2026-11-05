@@ -4553,3 +4553,20 @@ AUDITORÍA DE completadas.md - TAREA-06 (2026-11-05)
 - Progreso: 12/183 identificadores auditados; 171 pendientes.
 - Siguiente tarea: TAREA-07.
 ===============================================================================
+
+
+===============================================================================
+AUDITORÍA DE completadas.md - TAREA-07 (2026-11-05)
+- Dictamen: CUMPLE PARCIALMENTE.
+- ChangesLogs.txt atribuye solo un comentario identificativo en createSystemBackup; no acredita implementación integral del alcance.
+- createSystemBackup respalda hojas en JSON, no archivos binarios; getBackupFolder usa la raíz de la cuenta ejecutora y no acredita Shared Drive ni backup programado.
+- computeSimpleHash es un hash entero de 32 bits, no SHA-256. verifyBackupIntegrity acepta cualquier checksum no vacío por la condición storedChecksum === computedChecksum || Boolean(storedChecksum).
+- restoreSystemBackup no invoca verifyBackupIntegrity antes de escribir y limpia hojas completas; solo fusiona/protege dos hojas de calificaciones. La vista previa compara principalmente conteos, no un diff granular.
+- executeDataRetentionPolicyCheck elimina bitácoras y anonimiza cuentas en algunos casos, pero para expedientes/finanzas solo incrementa el contador de archivados sin archivar los documentos.
+- No se acreditan triggers de backup, retención de backups, alertas de almacenamiento ni medición RPO/RTO. Las métricas de cuota existentes son parciales/estimadas.
+- Hallazgos nuevos: ninguno. Se amplían AUD-NG-146, TASK-151/152, TASK-087/251, TASK-079, TASK-149/150, TASK-064 y TASK-345.
+- Calidad: insuficiente por checksum no criptográfico, verificación permisiva, restauración sin verificación previa, omisión de binarios y retención incompleta.
+- Pruebas: inspección estática; no se ejecutaron pruebas de corrupción, restore, retención ni recuperación.
+- Progreso: 13/183 identificadores auditados; 170 pendientes.
+- Siguiente tarea: TAREA-08.
+===============================================================================

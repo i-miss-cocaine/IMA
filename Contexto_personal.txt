@@ -854,3 +854,23 @@ CHECKPOINT C1.8 - AUDITORÍA TAREA-06 (2026-11-05)
 - No se ejecutaron pruebas de concurrencia, permisos heredados ni acceso anónimo.
 - Siguiente tarea exacta: TAREA-07.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.9 - AUDITORÍA TAREA-07 (2026-11-05)
+================================================================
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- HEAD antes del commit de TAREA-07: 510cd622feaa5a170c807efd9f3ad1c29cdda003.
+- Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59; permanece intacta.
+- Última tarea auditada: TAREA-07 - almacenamiento, conservación y recuperación.
+- Dictamen: CUMPLE PARCIALMENTE.
+- Progreso: 13/183 identificadores auditados; 170 pendientes.
+- Evidencia: respaldo JSON solo de hojas; checksum de 32 bits y verificación permisiva; restore sin verificación previa; sin archivos binarios; archivado de expedientes/finanzas solo cuenta elementos; sin triggers/alertas/RPO-RTO acreditados.
+- Hallazgos nuevos: ninguno. Se amplían AUD-NG-146, TASK-151/152, TASK-087/251, TASK-079, TASK-149/150, TASK-064 y TASK-345.
+- Informe: AUDITORIA_COMPLETADAS_TAREA-07.md.
+- Sección del plan: 17.
+- Archivos del único commit: Auditoria.txt, Pendientes.md, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt e informe TAREA-07.
+- No se modifica código fuente, completadas.md, ChangesLogs.txt ni metodología.
+- No se ejecutaron pruebas de corrupción, restauración, retención ni recuperación.
+- Siguiente tarea exacta: TAREA-08.
+================================================================
