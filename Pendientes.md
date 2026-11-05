@@ -18436,3 +18436,19 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 
 
 Nota de reconciliación (2026-11-05): AUD-NG-163 se solapa con TASK-064 (cuotas/capacidad/alertas), AUD-NG-144/AUD-NG-145 (health checks/bitácora), AUD-NG-006/AUD-NG-069/AUD-NG-133/AUD-NG-161 (reintentos/idempotencia/pruebas) y TASK-154/TASK-227/TASK-265 (checkpoints/reanudación). Se conserva el rastro, pero no debe ejecutarse como tarea independiente.
+
+
+---
+
+## Ampliación de criterios existentes derivada de TAREA-05 (2026-11-05)
+
+No se crea un AUD-NG nuevo. Se añaden estas precisiones a las tareas existentes, sin borrar ni reemplazar sus registros:
+
+- AUD-NG-075/076/077: comprobar selección y aislamiento por departamento, servicio, dominio, ciclo, tipo de dato y cuenta propietaria; impedir fallback no autorizado al Spreadsheet principal.
+- AUD-NG-078: registrar por servicio cuenta propietaria, identidad administradora, identidad de despliegue y principal de ejecución, proyecto/deployment/version, endpoint, recursos y permisos efectivos. Añadir sustitución del administrador, transferencia/recuperación de propiedad y renovación/revocación de autorizaciones. Evaluar y documentar Google Workspace, Shared Drives y delegación. No aceptar como despliegue una fila de catálogo con PASS fijo; exigir comprobación real. Incorporar un departamento mediante configuración/plantilla sin duplicar backend ni editar listas dispersas.
+- AUD-NG-080/081/082: actor verificado en cambios de propietario/administrador y pruebas de continuidad multicuenta, revocación y recuperación.
+- AUD-NG-083/084/085/086: tráfico interservicio real, secretos independientes por servicio, anti-replay correcto y autorización por emisor/receptor/acción/versión.
+- AUD-NG-131/AUD-NG-144: URLs reales, versiones coherentes y estado operativo comprobado; ningún placeholder puede figurar como ACTIVE.
+- TASK-064: atribuir consumo de cuotas a la identidad y servicio reales.
+
+Hallazgo nuevo: ninguno. Las brechas de TAREA-05 se vinculan a tareas preexistentes.

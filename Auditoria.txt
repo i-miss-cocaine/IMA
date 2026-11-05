@@ -4516,3 +4516,22 @@ AUDITORÍA DE completadas.md - TAREA-03 (2026-11-05)
 
 
 CORRECCIÓN DE TRAZABILIDAD AUD-NG-163 (2026-11-05): revisión posterior identificó solapamiento con tareas preexistentes. TASK-064 cubre cuotas/capacidad/alertas; AUD-NG-144/AUD-NG-145 cubren health checks/bitácora; AUD-NG-006/AUD-NG-069/AUD-NG-133/AUD-NG-161 cubren reintentos/idempotencia/pruebas; TASK-154/TASK-227/TASK-265 cubren checkpoints/colas/reanudación. AUD-NG-163 se conserva como rastro, pero queda marcado duplicado y no debe ejecutarse independientemente. Dictamen TAREA-03 y progreso 10/183 no cambian.
+
+
+===============================================================================
+AUDITORÍA DE completadas.md - TAREA-05 (2026-11-05)
+- Dictamen: CUMPLE PARCIALMENTE.
+- ChangesLogs.txt atribuye a TAREA-05 únicamente SERVICE_VERSIONS y DEPARTMENT_SERVICES_MAP en js/config.js; no registra cambios backend de cuentas, despliegues, permisos o contratos.
+- SERVICE_VERSIONS declara cinco servicios en 1.0.0 y omite DEVELOPER; SERVICE_REGISTRY declara seis en v8.4.0/ACTIVE con recursos de ejemplo. ACCOUNTING y DEVELOPER usan endpoints placeholder.
+- Los cinco servicios backend comparten SPREADSHEET_ID. No se acredita separación de datos ni se pueden identificar desde el código las identidades reales de ejecución y ACL.
+- resolveSpreadsheetSource usa dominio/año y fallback al Spreadsheet principal; departamento/servicio no participan en la clave.
+- deployAcademicMicroserviceInstance solo registra metadatos, fija PASS/Activo y no crea ni comprueba deployment.
+- registerServiceInstance usa defaults y permisos wildcard; getCentralServiceRegistry devuelve datos de ejemplo con success; updateServiceStatus confía en updatedBy del payload.
+- Los sobres interservicio son definiciones no invocadas en USER/ACADEMIC/ACCOUNTING; TASK/EXAM no los implementan. No se encontró UrlFetchApp.fetch entre los cinco servicios.
+- No hay evidencia de cuentas propietarias/ejecutoras reales, ACL por recurso, Shared Drives, delegación ni procedimientos de recuperación de administradores.
+- Hallazgos nuevos: ninguno. Se amplían AUD-NG-075/076/077, AUD-NG-078/079/080/081/082, AUD-NG-083/084/085/086, AUD-NG-131/AUD-NG-144 y TASK-064.
+- Calidad: insuficiente por mapas estáticos/contradictorios, placeholders, despliegue simulado y falta de evidencia de cuentas/ACL.
+- Pruebas: inspección estática; no se ejecutaron pruebas entre deployments ni revisión de Google Workspace productivo.
+- Progreso: 11/183 identificadores auditados; 172 pendientes.
+- Siguiente tarea: TAREA-06.
+===============================================================================

@@ -162,3 +162,15 @@ Al reanudar:
 - AUD-NG-163 se identificó como duplicado de tareas existentes y se marcó como tal en Pendientes.md.
 - Cobertura: TASK-064 (cuotas/capacidad/alertas); AUD-NG-144/AUD-NG-145 (health checks/bitácora); AUD-NG-006/AUD-NG-069/AUD-NG-133/AUD-NG-161 (reintentos/idempotencia/pruebas); TASK-154/TASK-227/TASK-265 (checkpoints y reanudación).
 - Se conserva el registro histórico, sin ejecutarlo por separado. TAREA-03 sigue CUMPLE PARCIALMENTE; 10/183.
+
+
+## 15. Resultado del lote C1.7 - TAREA-05 (2026-11-05)
+
+- Tarea auditada: consolidar la arquitectura de servicios por departamento y la administración de cuentas.
+- Dictamen: Cumple parcialmente.
+- Evidencia: ChangesLogs.txt solo atribuye a TAREA-05 los mapas SERVICE_VERSIONS y DEPARTMENT_SERVICES_MAP en js/config.js. SERVICE_REGISTRY tiene versiones contradictorias, recursos placeholder y estados ACTIVE no verificados; ACCOUNTING/DEVELOPER mantienen endpoint placeholder. Los cinco servicios backend comparten SPREADSHEET_ID. deployAcademicMicroserviceInstance registra una fila y devuelve PASS/Activo sin deployment real.
+- Hallazgos nuevos: ninguno. Se amplían AUD-NG-075/076/077, AUD-NG-078/079/080/081/082, AUD-NG-083/084/085/086, AUD-NG-131/AUD-NG-144 y TASK-064.
+- Calidad: insuficiente; no se documentan/verifican identidades reales de administración/ejecución, ACL de recursos, continuidad de cuentas, Shared Drives ni comunicación interservicio real.
+- Progreso: 11/183; 172 pendientes.
+- Pruebas: inspección estática; sin pruebas entre deployments ni inspección de Google Workspace productivo.
+- Siguiente tarea: TAREA-06.

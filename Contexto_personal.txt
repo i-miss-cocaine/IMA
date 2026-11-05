@@ -814,3 +814,23 @@ NOTA C1.6a - RECONCILIACIÓN AUD-NG-163 (2026-11-05)
 - Siguiente tarea: TAREA-05.
 - Sin cambios en código fuente, completadas.md, ChangesLogs.txt ni metodología.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.7 - AUDITORÍA TAREA-05 (2026-11-05)
+================================================================
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- HEAD antes del commit: 3c8081a2ce51f47e496305521ff3ad81a7158db4.
+- Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59; permanece intacta.
+- Última tarea: TAREA-05 - arquitectura de servicios por departamento y administración de cuentas.
+- Dictamen: CUMPLE PARCIALMENTE.
+- Progreso: 11/183 identificadores auditados; 172 pendientes.
+- Evidencia: mapas estáticos; SERVICE_REGISTRY con versiones/recursos placeholder y estados no verificados; endpoints placeholder; cinco servicios comparten SPREADSHEET_ID; deployAcademicMicroserviceInstance simula el registro y no despliega; sin evidencia de identidades/ACL reales ni tráfico interservicio autenticado.
+- Hallazgos nuevos: ninguno. Ampliados criterios existentes AUD-NG-075/076/077, AUD-NG-078/079/080/081/082, AUD-NG-083/084/085/086, AUD-NG-131/AUD-NG-144 y TASK-064.
+- Informe: AUDITORIA_COMPLETADAS_TAREA-05.md.
+- Sección del plan: 15.
+- Archivos del único commit: Auditoria.txt, Pendientes.md, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt e informe TAREA-05.
+- No se modifica código fuente, completadas.md, ChangesLogs.txt ni metodología.
+- No se ejecutaron pruebas entre deployments ni inspección de Workspace productivo.
+- Siguiente tarea: TAREA-06.
+================================================================

@@ -589,3 +589,14 @@
 - AUD-NG-163 se conserva como rastro histórico, marcado como duplicado y no ejecutable independientemente.
 - Tareas existentes que cubren el alcance: TASK-064; AUD-NG-144/AUD-NG-145; AUD-NG-006/AUD-NG-069/AUD-NG-133/AUD-NG-161; TASK-154/TASK-227/TASK-265.
 - Dictamen TAREA-03: CUMPLE PARCIALMENTE.
+
+
+## Auditoría de completadas.md - TAREA-05 (2026-11-05)
+- Dictamen: CUMPLE PARCIALMENTE.
+- SERVICE_VERSIONS y DEPARTMENT_SERVICES_MAP existen, pero son mapas estáticos; getDepartmentalDependencyMap y CURRICULAR_SPECIALIZED_SERVICES también están codificados en js/config.js.
+- SERVICE_REGISTRY declara seis servicios ACTIVE/v8.4.0 con recursos placeholder; SERVICE_VERSIONS declara cinco servicios en 1.0.0. ACCOUNTING/DEVELOPER tienen endpoints placeholder.
+- Los cinco Code.gs backend usan el mismo SPREADSHEET_ID; no se demuestran identidades de ejecución ni ACL por recurso. resolveSpreadsheetSource ignora departamento/servicio y usa fallback al Spreadsheet principal.
+- deployAcademicMicroserviceInstance registra metadatos, marca PASS/Activo y no crea ni verifica un deployment.
+- Los sobres interservicio son definiciones no invocadas en USER/ACADEMIC/ACCOUNTING; TASK/EXAM carecen de ellas.
+- Hallazgos existentes: AUD-NG-075/076/077, AUD-NG-078/079/080/081/082, AUD-NG-083/084/085/086, AUD-NG-131/AUD-NG-144 y TASK-064.
+- No se crea AUD-NG nuevo; se amplían criterios existentes para identidad de ejecución, recuperación de cuentas, Shared Drives/delegación y onboarding departamental.
