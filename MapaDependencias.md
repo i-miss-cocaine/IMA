@@ -864,3 +864,17 @@ No se crea AUD-NG nuevo.
 - manageInstitutionalDataCache(FLUSH_GLOBAL) registra el evento, no ejecuta purga. INVALIDATE_USER no propaga el fallo de invalidación.
 - purgeSecurityCaches y dispatchSecurityEvent se invocan/enrutan, pero no tienen definición local en el único archivo backend/user-service/Code.gs.
 - Dependencias de remediación: AUD-NG-005, AUD-NG-160, AUD-NG-070, TASK-062, TASK-234 y TASK-400.
+
+
+### T-UX-26 - Vista de actividad reciente contextual (C1.27)
+| Componente | Estado observado | Brecha |
+|---|---|---|
+| `recordRecentActivity` | Implementado en `js/ui-common.js` | No se encontraron productores de eventos en los dashboards principales revisados. |
+| `getRecentActivity` | Filtra por rol y ordena por timestamp | Clave global sin `authUserId`/`institucionId`; ADMIN/DIRECCION ven todo el contenido local. |
+| `renderContextualRecentActivity` | Renderiza etiquetas informativa/pendiente | No se encontró llamada desde los dashboards revisados; título/descripción se insertan con `innerHTML`. |
+| Navegación | Llama a `switchActiveView` con `targetId` | El router solo muestra la vista; no procesa el ID para abrir el registro concreto. |
+| Pruebas | Suite modular revisada | Sin pruebas identificables de T-UX-26/actividad reciente. |
+
+- Hallazgo AUD-NG-173: integrar la vista, conectar productores reales, asegurar navegación al registro y añadir pruebas.
+- TASK-067: ampliar aislamiento local por usuario/institución para `INSTITUTIONAL_RECENT_ACTIVITY_LOG_V1`.
+- TASK-221: mantener la bandeja unificada como fuente de verdad para tareas pendientes; el historial reciente solo enlaza a ella.

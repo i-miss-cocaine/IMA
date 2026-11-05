@@ -1258,3 +1258,27 @@ CHECKPOINT C1.26 - AUDITORÍA FASE2-T19 (2026-11-05)
 - Pruebas: inspección estática/manual; no se ejecutaron pruebas en Apps Script, concurrencia, fuentes caídas, expiración, latencia, cuotas ni pruebas de identidad cruzada. No se usaron datos productivos.
 - No repetir FASE2-T19. Siguiente identificador en el orden de completadas.md: T-UX-26; comprobar antes su posible cobertura histórica.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.27 - AUDITORÍA T-UX-26 (2026-11-05)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- HEAD de partida verificado: 8667e741dcd19ca84834f727b673f617e4f3ec41 (C1.26 / FASE2-T19).
+- Tarea auditada: T-UX-26 - Incorporar una vista de actividad reciente contextual.
+- Dictamen: CUMPLE PARCIALMENTE. Las funciones existen en js/ui-common.js, pero no se encontró integración en los dashboards principales ni productores de eventos; la clave localStorage es global y no incluye authUserId/institucionId; targetId no se procesa para abrir el registro; title/description se insertan con innerHTML; no hay pruebas identificables.
+- Progreso: 30/183 identificadores únicos auditados; 153 pendientes.
+- Hallazgo nuevo: AUD-NG-173 - integrar la vista de actividad reciente contextual, conectar productores, navegar al registro exacto y añadir pruebas.
+- Tarea existente ampliada: TASK-067 - aislamiento multiusuario de la clave INSTITUTIONAL_RECENT_ACTIVITY_LOG_V1.
+- TASK-221 conserva la fuente de verdad de las tareas pendientes; evitar duplicar su bandeja.
+- Informe: AUDITORIA_COMPLETADAS_T-UX-26.md. Sección del plan: 35.
+- Evidencia:
+  * js/ui-common.js: 986938b8a311a41ed4cb3d135b66b6aaea4bed67.
+  * tests/regression/modular-dashboard-suite.js: 0495e1d526a872c33310935a003a83d924d34683.
+  * ChangesLogs.txt declara la implementación en octubre de 2026, pero no acredita integración ni pruebas.
+- Archivos documentales actualizados: Auditoria.txt, Pendientes.md, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt e informe T-UX-26.
+- No modificar código fuente, completadas.md, completadas_legacy.md, ChangesLogs.txt ni METODOLOGIA_DESARROLLO.md.
+- Pruebas: inspección estática/manual; no se ejecutaron pruebas de navegador, multiusuario ni Apps Script. No se usaron datos productivos.
+- Siguiente tarea en el orden de completadas.md: T-UX-27. Antes de auditar, verificar su cobertura histórica y los cambios posteriores.
+================================================================

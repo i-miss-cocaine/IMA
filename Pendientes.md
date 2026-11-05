@@ -3435,6 +3435,8 @@ REGLA RECTORA INNEGOCIABLE DEL BACKLOG:
   - [ ] La restauración de un borrador no altera de forma automática los registros oficiales en la base de datos hasta que el usuario envíe formalmente el formulario.
   - [ ] Se verifica el comportamiento correcto en escenarios de pestañas múltiples y sesiones concurrentes.
   - [ ] Se mantiene total compatibilidad retroactiva con los formularios que ya invocan `auditAndFixAccessibility`.
+- **Ampliación C1.27 / T-UX-26:** Incluir la clave global `INSTITUTIONAL_RECENT_ACTIVITY_LOG_V1` de `js/ui-common.js` en el aislamiento multiusuario. Actualmente `recordRecentActivity` y `getRecentActivity` leen/escriben la misma clave de `localStorage` sin `authUserId` ni `institucionId`; cambiar de cuenta en el mismo navegador puede mostrar actividad de la sesión anterior. La segregación debe basarse en identificadores internos autenticados, no en el rol o nombre visible, y el cierre/cambio de sesión debe aplicar la política de conservación/purga correspondiente.
+- **Criterios adicionales:** Probar dos usuarios y dos instituciones en el mismo navegador, pestañas concurrentes, logout, expiración y cambio de cuenta; confirmar que no se comparten títulos, descripciones, IDs ni destinos de actividad.
 - **Estado:** [ ] Pendiente
 
 ---
@@ -18919,3 +18921,27 @@ No se crea AUD-NG nuevo. Las deficiencias del tablero y de sus fuentes de datos 
 
 AUD-NG-163 permanece DUPLICADA y consolidada; no reabrirla como tarea independiente. Progreso: 28/183 identificadores únicos auditados; 155 pendientes. Siguiente tarea: FASE2-T19.
 ================================================================
+
+
+### [AUD-NG-173] Integrar y completar la vista de actividad reciente contextual
+- **Origen del Hallazgo:** Auditoría de tareas completadas, T-UX-26; evidencia en `js/ui-common.js` y `ChangesLogs.txt` (octubre de 2026).
+- **Severidad/Clasificación:** Medio (P2; integración funcional, navegación y privacidad de actividad).
+- **Archivos Involucrados:** `js/ui-common.js`, paneles de control por rol, módulos que generan actividad, pruebas de regresión; relacionado con TASK-067 y TASK-221.
+- **Problema Detectado:** T-UX-26 implementó `recordRecentActivity`, `getRecentActivity` y `renderContextualRecentActivity`, pero la auditoría no encontró llamadas a esas funciones ni integración del renderizador en los paneles principales revisados (Dirección, Coordinación, Secretaría, Contabilidad, Docente, Estudiante y Desarrollador). Por tanto, el bloque de código existe, pero no se demuestra una vista visible ni un flujo real de registro. El almacenamiento utiliza una clave global de localStorage sin identidad de usuario/institución; el filtrado solo por rol no aísla cuentas. La navegación solo llama a `switchActiveView`; no se demuestra que `targetId` abra o restaure el registro concreto. El renderizado concatena `title` y `description` en `innerHTML` sin escape contextual.
+- **Alcance y requisitos:**
+  1. Integrar el panel en los dashboards pertinentes por rol y conectar eventos reales de módulos, sin inventar actividad ni registrar datos sensibles.
+  2. Asegurar aislamiento por `authUserId` e `institucionId`, coordinado con TASK-067; las reglas de visibilidad deben basarse en permisos vigentes, no solo en valores de rol almacenados localmente.
+  3. Distinguir claramente entradas informativas de tareas pendientes y enlazar las tareas accionables con la bandeja institucional TASK-221, evitando duplicar su fuente de verdad.
+  4. Hacer que el destino valide la existencia y autorización del registro; el `targetId` debe ser consumido por el módulo destino para abrir el elemento concreto, o mostrar una alternativa clara si ya no está disponible.
+  5. Insertar títulos/descripciones como texto seguro (por ejemplo, `textContent`/nodos DOM) y validar timestamps, límites y estructura de cada entrada.
+  6. Definir retención, límite y limpieza de actividad, incluyendo cambio de cuenta, cierre de sesión y datos obsoletos.
+  7. Añadir pruebas automatizadas y de navegador para registrar, filtrar, ordenar, renderizar, navegar, cambiar de usuario y manejar destinos inexistentes.
+- **Criterios de aceptación:**
+  - La vista aparece en cada dashboard que corresponda y muestra solo actividad real y autorizada.
+  - El registro de actividad está conectado a eventos reales; el feed no permanece vacío por falta de productores.
+  - Dos usuarios/instituciones que compartan navegador no pueden ver ni sobrescribir actividad ajena.
+  - Los elementos informativos y pendientes se distinguen y los pendientes remiten a la fuente de verdad.
+  - Abrir un elemento navega al registro exacto autorizado; un registro eliminado o inaccesible se maneja sin error ni fuga.
+  - Contenido de texto malicioso no se interpreta como HTML ejecutable.
+  - Las pruebas cubren orden temporal, roles, permisos, cambio de cuenta y navegación.
+- **Estado:** [ ] Pendiente

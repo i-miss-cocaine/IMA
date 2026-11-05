@@ -345,3 +345,12 @@ Al reanudar:
 - **Pruebas:** inspección estática/manual; no se ejecutaron Apps Script, concurrencia, pruebas con dos usuarios, expiración, caídas de fuente, latencia ni cuotas.
 - **Progreso:** 29/183 identificadores auditados; 154 pendientes.
 - **Siguiente tarea:** T-UX-26.
+
+
+## 35. Resultado C1.27 - T-UX-26 (2026-11-05)
+- **Dictamen:** CUMPLE PARCIALMENTE. El bloque de actividad reciente existe en js/ui-common.js, pero no se encontró integración en dashboards principales ni productores de eventos reales. El filtro por rol no aísla cuentas, la clave localStorage es global, targetId no es consumido para abrir el registro y el render usa innerHTML para título/descripción.
+- **Reconciliación:** nuevo AUD-NG-173 para integración y navegación; ampliar TASK-067 por aislamiento multiusuario. TASK-221 sigue siendo la fuente de verdad de tareas accionables.
+- **Calidad:** funciones aisladas y etiquetadas, pero sin integración de extremo a extremo; riesgo de exposición de actividad al cambiar de usuario y falta de navegación al registro concreto.
+- **Pruebas:** inspección estática de js/ui-common.js, dashboards principales, ChangesLogs.txt y suite modular; no se ejecutaron pruebas de navegador ni multiusuario.
+- **Progreso:** 30/183 identificadores auditados; 153 pendientes.
+- **Siguiente tarea:** T-UX-27.
