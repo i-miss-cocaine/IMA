@@ -4703,3 +4703,32 @@ AMPLIACIONES DE TAREAS EXISTENTES:
 
 No se crea una tarea nueva porque el alcance se solapa con las tareas anteriores. Calidad insuficiente para aceptar la supervisión integral.
 ================================================================
+
+
+================================================================
+AUDITORÍA TAREA-16 - PRUEBAS DE CARGA, CONCURRENCIA E INTEGRIDAD
+FECHA: 2026-11-05
+DICTAMEN: CUMPLE PARCIALMENTE; CALIDAD INSUFICIENTE PARA ACEPTACIÓN INTEGRAL
+
+EVIDENCIA:
+- accounting-service/Code.gs (38b979d41596b85e888b4a7060b37bbac0840a28): recordStudentPayment (línea 3891) no usa LockService; la clave idempotente es opcional. doPost (572) consulta CacheService antes de ejecutar y guarda el resultado después; no reserva atómicamente la clave. runCriticalProcessConcurrencySuite (10505) marca PASSED pagos/CUV por conteo de filas y consulta TransaccionesCobro, aunque recordStudentPayment escribe PagosAbonos. processPaymentRefund sí tiene lock. generateSchoolDocument (15040) bloquea la emisión, pero el fallback CUV tras 100 intentos no revalida unicidad y no hay idempotencia de solicitud.
+- academic-service/Code.gs (daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc): createStudentEnrollment (11141) usa lock; registerStudentEnrollment (12670) no. generateInstitutionalId (2107) permite skipLock. doPost (671) elimina skipLock solo si isInternalCall es falso; esa bandera llega en el payload y no se acredita una procedencia interna autenticada. runConcurrencyAndConsistencySuite (3296) prueba una sola adquisición/liberación, no contención ni integridad de negocio.
+- task-service/Code.gs (1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe): submitAssignment (892) consulta/actualiza Entregas y agrega EntregasVersiones sin lock ni idempotencia; son escrituras separadas.
+- exam-service/Code.gs (1d93296628fae31f680004f637897e2b1314a64c): submitExam (996) inserta EntregasExamen con Date.now(), sin lock, deduplicación ni recuperación de reintento.
+- user-service/Code.gs (12079dd410aa6d8afbce55a4bc62a79dea605f9f): verifySessionToken (1083) y hasActiveDelegationForAction (1165) usan claves por userId; no se encontraron pruebas cruzadas de aislamiento por cuenta/rol.
+- tests/regression/academic-grading-suite.js (3433b707edd4a2f35c68368a3172932adc2a3b32): suite basada en includes() y presencia textual; no ejecuta procesos concurrentes ni verifica invariantes.
+
+DICTAMEN POR ALCANCE:
+- Cobros: no cumple; recordStudentPayment sin lock ni reserva idempotente atómica.
+- Matrículas: parcial; createStudentEnrollment protegido, registerStudentEnrollment no.
+- CUV: parcial; emisión protegida, fallback sin revalidación ni idempotencia de solicitud.
+- Entregas de tareas: no cumple; submitAssignment sin lock/idempotencia y escrituras separadas.
+- Exámenes: no cumple; submitExam sin lock/idempotencia.
+- Estrés HTTP y aislamiento de caché: no demostrado; no se encontró harness de carga en los archivos de prueba examinados ni pruebas conductuales cruzadas.
+
+RECONCILIACIÓN:
+No crear AUD-NG nuevo. Ampliar AUD-NG-006 (reserva atómica y no permitir bypass de lock desde payload), AUD-NG-133 (pagos), AUD-NG-161 (suite conductual real sobre PagosAbonos, CUV, matrículas, planillas, entregas, exámenes, HTTP y caché) y AUD-NG-009 (no aceptar includes() como prueba funcional).
+
+PRUEBAS Y LÍMITES:
+Inspección estática/manual. No se ejecutaron pruebas HTTP, Apps Script, concurrencia real, pérdida de respuesta, caché caliente/fría, fixtures de integración ni despliegues. No se utilizaron datos productivos ni se modificó código fuente.
+================================================================

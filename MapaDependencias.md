@@ -707,3 +707,16 @@ Se restauró el contenido íntegro previo a TAREA-09 (1,515,247 caracteres) tras
 - TASK-064: cuotas, métricas, umbrales y alertas preventivas.
 - AUD-NG-161: pruebas aisladas de recuperación/concurrencia.
 - AUD-NG-163: duplicada, no ejecutar independientemente.
+
+
+## Auditoría TAREA-16 - concurrencia, idempotencia y carga (2026-11-05)
+
+- Accounting: recordStudentPayment (3891) escribe PagosAbonos sin ScriptLock y omite deduplicación cuando falta clave; doPost (572) consulta y guarda resultado en CacheService en pasos separados. runCriticalProcessConcurrencySuite (10505) marca pagos/CUV PASSED por conteo y consulta TransaccionesCobro, no PagosAbonos. generateSchoolDocument (15040) sí bloquea, pero su fallback CUV no revalida unicidad.
+- Academic: createStudentEnrollment (11141) sí bloquea; registerStudentEnrollment (12670) no. generateInstitutionalId (2107) permite skipLock; doPost (671) confía en isInternalCall del payload para conservarlo. runConcurrencyAndConsistencySuite (3296) solo prueba una adquisición/liberación.
+- Task: submitAssignment (892) modifica Entregas y EntregasVersiones sin lock/idempotencia; versionNum deriva de conteo previo.
+- Exam: submitExam (996) inserta EntregasExamen con Date.now() sin lock/deduplicación.
+- Cache: verifySessionToken y hasActiveDelegationForAction usan claves por userId; no hay pruebas de aislamiento por rol/cuenta.
+- Tests: academic-grading-suite.js usa includes() y presencia textual; no prueba concurrencia real. No se encontró harness HTTP de carga en los archivos de prueba examinados.
+- Tareas relacionadas: AUD-NG-006 (idempotencia atómica y lock no evadible), AUD-NG-009 (pruebas conductuales), AUD-NG-133 (pagos), AUD-NG-161 (suite real con fixtures, HTTP y caché).
+
+No se crea AUD-NG nuevo; se amplían tareas existentes.

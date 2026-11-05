@@ -265,3 +265,13 @@ Al reanudar:
 - **Archivos fuente e históricos:** sin modificaciones en código, completadas.md, completadas_legacy.md, ChangesLogs.txt o METODOLOGIA_DESARROLLO.md.
 - **Progreso:** 21/183 identificadores auditados; 162 pendientes.
 - **Siguiente tarea exacta:** TAREA-16, entrada inmediatamente posterior a TAREA-15 en completadas.md.
+
+
+## 27. Resultado C1.19 - TAREA-16 (2026-11-05)
+- Dictamen: CUMPLE PARCIALMENTE; calidad insuficiente para aceptación integral.
+- Evidencia: runCriticalProcessConcurrencySuite adquiere un lock y marca pagos/CUV PASSED por conteo; consulta TransaccionesCobro aunque recordStudentPayment escribe PagosAbonos. runConcurrencyAndConsistencySuite solo prueba una adquisición/liberación. recordStudentPayment carece de lock propio y la reserva de caché no es atómica. createStudentEnrollment y generateSchoolDocument sí usan lock; registerStudentEnrollment, submitAssignment y submitExam no. Las suites inspeccionadas son textuales y no acreditan estrés HTTP ni aislamiento de caché por rol/cuenta.
+- Reconciliación: no crear AUD-NG nuevo. Ampliar AUD-NG-006, AUD-NG-133, AUD-NG-161 y AUD-NG-009.
+- Calidad: insuficiente por ausencia de pruebas concurrentes reales y brechas en pagos, entregas y exámenes.
+- Pruebas: inspección estática/manual; no se ejecutaron pruebas HTTP, Apps Script, fixtures, concurrencia real, caché caliente/fría ni despliegue.
+- Progreso: 22/183 identificadores auditados; 161 pendientes.
+- Siguiente tarea: TAREA-17.

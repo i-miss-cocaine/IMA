@@ -18637,3 +18637,42 @@ ADENDA DE AUDITORÍA TAREA-15 (2026-11-05)
 No crear AUD-NG-170. Las brechas detectadas quedan vinculadas a AUD-NG-131, AUD-NG-144, AUD-NG-145, AUD-NG-083, TASK-064 y AUD-NG-161. AUD-NG-163 no debe ejecutarse independientemente.
 
 ================================================================
+
+
+================================================================
+AMPLIACIÓN DE TAREAS EXISTENTES DERIVADA DE TAREA-16 (2026-11-05)
+================================================================
+
+No se crea un AUD-NG nuevo. Se amplían tareas existentes sin borrar ni reemplazar sus registros.
+
+### AUD-NG-006 - Idempotencia por operación y reintentos
+- La reserva de clave debe ser atómica respecto a ejecución y persistencia; consultar CacheService y guardar el resultado después no impide que dos solicitudes concurrentes procesen la misma operación.
+- La clave debe ser estable por operación, acción y actor verificado; una respuesta perdida debe recuperar el resultado persistido sin repetir efectos.
+- No aceptar skipLock por una bandera isInternalCall suministrada por el cliente. La procedencia interna debe verificarse en servidor.
+- Probar clave incompatible, respuesta perdida, caché expirada, reintento concurrente y ausencia de clave.
+
+### AUD-NG-133 - Integridad e idempotencia atómica de pagos
+- recordStudentPayment no tiene bloqueo propio. La búsqueda previa en PagosAbonos y appendRow no forman una sección crítica.
+- Si no hay idempotencyKey/tokenTransaccion/referencia, se omite la comprobación de duplicado y aun así se persiste el pago.
+- El helper genérico de doPost consulta CacheService antes y guarda resultado después; no reserva la clave atómicamente.
+- Probar pagos concurrentes, propiedad del cargo, saldo, clave vacía, reintento tras persistencia y un solo efecto observable.
+
+### AUD-NG-161 - Suite conductual de concurrencia, idempotencia y recuperación
+- Reemplazar runCriticalProcessConcurrencySuite: adquirir un lock una vez y contar filas no prueba concurrencia ni unicidad. recordStudentPayment escribe PagosAbonos, no TransaccionesCobro.
+- Comparar todos los CUV/correlativos emitidos y fallar ante duplicados; cubrir el fallback posterior a 100 intentos.
+- Ejecutar solicitudes simultáneas y comprobar contención, exclusión, consistencia y ausencia de duplicados.
+- Incluir createStudentEnrollment y registerStudentEnrollment; probar las rutas legacy sin lock.
+- Incluir submitAssignment: concurrencia, versionNum, Entregas/EntregasVersiones y fallo entre escrituras.
+- Incluir submitExam: doble envío, timeout posterior a persistencia y reintento.
+- Incluir planillas y demás operaciones enumeradas en AUD-NG-161.
+- Comprobar que skipLock/isInternalCall no pueda activarse desde payload externo para evadir el bloqueo.
+- Incorporar estrés HTTP controlado y registrar latencia, throughput, errores, reintentos e integridad antes/después.
+- Probar caché caliente/fría alternando cuentas y roles, permisos/revocación y purga parcial; demostrar ausencia de datos cruzados.
+- Usar fixtures/hojas y cuentas aisladas con limpieza verificable; no escribir datos institucionales reales.
+- No devolver éxito global si un caso no se ejecutó o si el resultado se deduce de contar filas/presencia de funciones.
+
+### AUD-NG-009 - Pruebas funcionales reproducibles
+- No aceptar includes() o presencia textual como evidencia de integridad transaccional, concurrencia, aislamiento o recuperación. Las pruebas deben invocar servicios y verificar efectos observables.
+
+Hallazgo nuevo: ninguno. Progreso: 22/183 identificadores únicos; 161 pendientes. Siguiente tarea: TAREA-17.
+================================================================

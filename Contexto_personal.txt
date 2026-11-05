@@ -1063,3 +1063,29 @@ CHECKPOINT C1.18 - CONTINUIDAD DE AUDITORÍA (2026-11-05)
 - No afirmar que las pruebas se ejecutaron si solo se hace inspección estática. Registrar explícitamente qué pruebas no pudieron ejecutarse.
 - Estado de esta actualización: checkpoint C1.18 añadido mediante un commit documental único; no contiene cambios de código ni resultados de auditoría de TAREA-16.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.19 - AUDITORÍA TAREA-16 (2026-11-05)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- HEAD anterior verificado: 5757c0d9a710eeb0d4cee4dfe8155d42da69a808.
+- Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59; permanece intacta, sin merge.
+- Última tarea auditada: TAREA-16 - pruebas de carga, concurrencia e integridad de procesos críticos.
+- Dictamen: CUMPLE PARCIALMENTE; calidad insuficiente para aceptación integral.
+- Progreso: 22/183 identificadores únicos auditados; 161 pendientes.
+- Hallazgo nuevo: ninguno. Se amplían AUD-NG-006, AUD-NG-009, AUD-NG-133 y AUD-NG-161.
+- Informe: AUDITORIA_COMPLETADAS_TAREA-16.md; sección del plan: 27.
+- Archivos fuente y SHA:
+  * backend/accounting-service/Code.gs: 38b979d41596b85e888b4a7060b37bbac0840a28
+  * backend/academic-service/Code.gs: daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc
+  * backend/task-service/Code.gs: 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe
+  * backend/exam-service/Code.gs: 1d93296628fae31f680004f637897e2b1314a64c
+  * backend/user-service/Code.gs: 12079dd410aa6d8afbce55a4bc62a79dea605f9f
+  * tests/regression/academic-grading-suite.js: 3433b707edd4a2f35c68368a3172932adc2a3b32
+- Documentos actualizados: Auditoria.txt, Pendientes.md, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt e informe TAREA-16. Agrupar en un único commit.
+- Sin cambios en código fuente, completadas.md, completadas_legacy.md, ChangesLogs.txt ni METODOLOGIA_DESARROLLO.md.
+- Pruebas: inspección estática/manual; no se ejecutaron HTTP, Apps Script, concurrencia real, pérdida de respuesta, caché caliente/fría, fixtures ni despliegues. No se utilizaron datos productivos.
+- Siguiente tarea exacta: TAREA-17. No repetir TAREA-01 a TAREA-16.
+================================================================
