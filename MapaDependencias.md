@@ -1330,3 +1330,39 @@ No se crea AUD-NG nuevo.
 - AUD-NG-192 / TASK-489 -> alinear contrato de solicitudes de vacaciones entre RR. HH. y accounting-service.
 - AUD-NG-193 / TASK-490 -> aplicar aislamiento por empleado en servidor para expedientes y solicitudes laborales.
 - T-UX-16, F8-Task12, T-UX-13, T-UX-20 y TAREA-04 se conservan como dependencias relacionadas, no como sustitutos de las correcciones anteriores.
+
+
+## Menú lateral por panel/rol y rutas (T-UX-13, C1.53)
+
+### Inicialización compartida: js/ui-common.js
+- Blob SHA: `986938b8a311a41ed4cb3d135b66b6aaea4bed67`.
+- `toggleRoleMenuAccordionSection(sectionId, containerId)`, líneas 4710-4721: alterna `hidden` en la sección elegida y oculta hermanas; no actualiza atributos ARIA.
+- `initRoleNavigationMenu()`, líneas 4723-4755: obtiene `currentUser.rol` de localStorage/sessionStorage; fallback Estudiante. Busca `#btn-desktop-sidebar-toggle` y `#desktop-sidebar-container`, pero no existen en los 11 dashboards revisados. Inserta disparador en `#main-header nav` si existe o en `#main-header .container` como fallback.
+- El disparador generado usa `md:hidden`. En ocho dashboards el nav padre usa `hidden md:flex`, por lo que el botón es invisible en móvil por el padre y en escritorio por su propia clase. Coordinación no tiene nav y el fallback lo inserta en el contenedor.
+- `openMobileHamburgerDrawer()`, líneas 4757-4890: construye tres grupos estáticos y enlaces idénticos para todos los roles; el rol solo decide el grupo inicial. No consulta permisos ni la configuración dinámica del usuario.
+- `DOMContentLoaded`, líneas 4917-4924: invoca el inicializador con demora de 600 ms.
+
+### Dashboards y encabezados
+- Dirección: `dashboard-direccion.html`, SHA `fefaa3bf7884288aef563cfb8aaf244e6cea8b7c`, líneas 15-34; nav `hidden md:flex`.
+- Recursos Humanos: `dashboard-recursos-humanos.html`, SHA `406bedbae5a5bb3b5c03e4ea7aaa95ed68aea8ee`, líneas 15-38; nav `hidden md:flex`.
+- Contabilidad: `dashboard-contabilidad.html`, SHA `b7653b3bff71829f0f67cf47cb894413c56a444a`, líneas 15-39; nav `hidden md:flex`.
+- Estudiante: `student-dashboard.html`, SHA `6379ea0ed39d71b89747a0280bb925fdf12202c1`, encabezado `#main-header`, nav `hidden md:flex`.
+- Docente: `teacher-dashboard.html`, SHA `cbb9e6a272a7d8ad33f99727303305d950533e71`, encabezado `#main-header`, nav `hidden md:flex`.
+- Secretaría: `dashboard-secretaria.html`, SHA `fa0d8c23aace24a6acab2d4956398a7f5e1309b8`, líneas 15-38; nav `hidden md:flex`.
+- Coordinación: `dashboard-coordinacion.html`, SHA `08de8e4eb150ee9f6aad536ca08e8f76f2e0e896`, líneas 16-37; no tiene nav, usa fallback al contenedor.
+- Cafetería: `dashboard-cafeteria.html`, SHA `12f8c828dd1f8f2c3be34e14d8c9478944c64d04`, líneas 15-38; nav `hidden md:flex`.
+- Tienda: `dashboard-tienda.html`, SHA `60fb5c399b527f7d3a6e764332d8496e17643d5c`, líneas 15-38; nav `hidden md:flex`.
+- Developer: `developer-dashboard.html`, SHA `2b69f1bf7ffbbe4902e81de14d6315cedb035a1e`; no carga `js/ui-common.js` ni tiene `#main-header`.
+- Dashboard dinámico: `app/html/dashboards/dynamic-dashboard.html`, SHA `765a45e5666c24c430e841cb70c3d71d03cf9074`; carga `ui-common.js`, pero su header no tiene `id="main-header"`.
+
+### Estilos y accesibilidad
+- `css/style.css`, SHA `f1ff84312ce70949a58eaa099b2aad0ff0a59cb6`, líneas 175-201: backdrop/transiciones y clases `animate-fade-in-up`/`animate-fade-in-left`; el drawer solicita `animate-fade-in`, clase no definida.
+- `css/style.css:1053-1063`: existe regla global `prefers-reduced-motion`; no compensa que el drawer/acordeón no tengan transición efectiva.
+- Drawer sin `aria-current` para la ruta activa; acordeones sin `aria-expanded`/`aria-controls`; sin gestión de Escape, foco inicial, foco atrapado/restaurado ni `aria-modal`.
+- “Gráficas de Rendimiento” abre modal desde un enlace `javascript:void(0)`; es una acción y debe ser botón.
+- Los menús horizontales estáticos de algunos dashboards no sustituyen el sidebar común ni filtran opciones según permisos efectivos.
+
+### Hallazgos y tareas
+- AUD-NG-186 / TASK-483: hallazgo original T-UX-09 de menú genérico, rutas incompletas y desktop no funcional.
+- AUD-NG-194 / TASK-483: ampliación T-UX-13 por disparador móvil oculto debido al anidamiento en `nav.hidden.md:flex`, falta de estado activo accesible y mezcla de acción inmediata como enlace. No se crea tarea duplicada.
+- T-UX-19 cubre accesibilidad general; T-UX-20 adaptación móvil; T-UX-11/TASK-485/486 historial/contexto. Se mantienen relacionados, no sustituyen la matriz de menú/rutas por rol.
