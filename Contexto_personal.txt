@@ -780,3 +780,25 @@ CHECKPOINT C1.5 - AUDITORÍA TAREA-02 (2026-11-05)
 - Respaldos antes de la tarea: completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676; MapaDependencias.md a40ee1d2f245516abd0798e6597f936845d051d6; README.md 1d76341a6a286ebd0115e319f77b8c33b727dbba; Pendientes.md 995f1408b3bc75207f2a64bf43b60e0bbcd6f783; Auditoria.txt e12b691d8870b08d3512e655d9ea020fd61705d7; ChangesLogs.txt d57cf4bd861b5c3720e60cf83241ed804ff645d9; METODOLOGIA_DESARROLLO.md 3973a5ecb370a24a7fa568cb4b0afa771d629793.
 - Siguiente tarea exacta: TAREA-03. No repetir TAREA-02 ni T-UX-01 ni las tareas anteriores.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.6 - AUDITORÍA TAREA-03 (2026-11-05)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- HEAD antes del commit de TAREA-03: e13cf1c7eba0e0124ac067cf5a62299d4f4ab965.
+- Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59; debe permanecer intacta.
+- Última tarea auditada: TAREA-03 - Implementar supervisión operativa y prevención de agotamiento de cuotas.
+- Dictamen: CUMPLE PARCIALMENTE.
+- Progreso acumulado: 10/183 identificadores únicos auditados; 173 pendientes.
+- Evidencia: js/api.js carece de OPERATIONAL_HEALTH_METRICS/getServiceHealthMetrics que ChangesLogs.txt atribuye a TAREA-03. USER tiene agregaciones parciales; ACADEMIC usa capacityUsagePct fijo de 15.5%; TASK mide puntualmente Drive; EXAM mide filas/latencia. No existe instrumentación uniforme de los cinco servicios ni alertas preventivas demostradas.
+- Hallazgo nuevo: AUD-NG-163, añadido a Pendientes.md para métricas reales de cuotas/capacidad, alertas y checkpoints generales.
+- Hallazgos relacionados: AUD-NG-144, AUD-NG-145, AUD-NG-006, AUD-NG-069, AUD-NG-133 y AUD-NG-161; no duplicar sus alcances.
+- Informe: AUDITORIA_COMPLETADAS_TAREA-03.md.
+- Sección del plan: sección 13 de AUDITORIA_COMPLETADAS_PLAN.md.
+- Archivos modificados en el único commit: Auditoria.txt, Pendientes.md, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt y AUDITORIA_COMPLETADAS_TAREA-03.md.
+- No se modificó código fuente, completadas.md, ChangesLogs.txt ni METODOLOGIA_DESARROLLO.md.
+- Pruebas: inspección estática/manual; no se ejecutaron pruebas de carga, cuotas, concurrencia, reanudación ni despliegue.
+- Siguiente tarea exacta: TAREA-05. TAREA-04 no aparece como identificador único en completadas.md entre TAREA-03 y TAREA-05; verificar secuencia/inventario al iniciar la próxima iteración.
+================================================================

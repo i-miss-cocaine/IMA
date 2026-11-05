@@ -18414,3 +18414,22 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
   - La suite UX-01 falla cuando cualquier parte del flujo extremo a extremo está desconectada; no basta con comprobar typeof handleSessionExpired.
 - **Relaciones:** AUD-NG-001 (propagación del token); AUD-NG-003 (vigencia del token backend); AUD-NG-005 (coherencia de revocación); AUD-NG-159 (protección de logout/revocación); AUD-NG-160 (vigencia del rol firmado). Esta tarea se limita al contrato de errores y a la integración UX de expiración, sin duplicar la corrección de esos mecanismos.
 - **Estado:** [ ] Pendiente
+
+
+---
+
+### [AUD-NG-163] Instrumentar cuotas, capacidad operativa y reanudación segura de trabajos masivos
+- **Origen del Hallazgo:** Auditoría de completadas.md / TAREA-03 (supervisión operativa y prevención de agotamiento de cuotas).
+- **Severidad/Clasificación:** Alto (P1; disponibilidad, continuidad operativa y consumo de recursos).
+- **Archivos Involucrados:** `backend/user-service/Code.gs`; `backend/academic-service/Code.gs`; `backend/accounting-service/Code.gs`; `backend/task-service/Code.gs`; `backend/exam-service/Code.gs`; `js/api.js`; `js/persistence.js`; pruebas de integración/carga.
+- **Dependencias Expuestas:** `getOperationalCapacityMetrics`, `getServiceHealthReport`, `getStorageQuotaMetricsReport`, `getDriveStorageQuotaMetricsReport`, `getGradingPerformanceAndPersistenceMetrics`, `fetchApi`, `LockService`, `CacheService`, `BitacoraTrazabilidad`, `LogsSistema` y procesos masivos.
+- **Descripción del Alcance:** Instrumentar de forma consistente el consumo de recursos por servicio y operación. Registrar, cuando la plataforma lo permita, tiempos, volúmenes, errores, reintentos y métricas de uso/umbral de Apps Script, Sheets, Drive, notificaciones y servicios externos. Diferenciar límites diarios, por ejecución, por usuario y de concurrencia; cuando una cuota no sea consultable en tiempo real, documentar explícitamente la limitación y usar indicadores observables sin presentar estimaciones como valores reales. Clasificar errores temporales, permanentes, de cuota, autorización y validación. Implementar umbrales configurables y alertas preventivas deduplicadas para administradores. Incorporar checkpoints persistentes y reanudación segura de trabajos masivos desde el último resultado confirmado, junto con límites de concurrencia y cesión de ejecución para procesos extensos. No duplicar la implementación de idempotencia/reintentos (AUD-NG-006/AUD-NG-069), health checks (AUD-NG-144), bitácora central (AUD-NG-145), ni pruebas de concurrencia/recuperación (AUD-NG-161).
+- **Criterios de Aceptación:**
+  - Las métricas distinguen servicio, operación, periodo, resultado y tipo de error sin depender de contadores exclusivamente locales al navegador.
+  - Los indicadores de cuota se basan en datos reales disponibles o se identifican explícitamente como estimaciones; no se usan porcentajes constantes.
+  - Los errores de cuota se distinguen de errores de permisos, validación, red y lógica.
+  - Los umbrales generan alertas preventivas verificables y no duplicadas a los administradores autorizados.
+  - Los trabajos masivos registran progreso y último elemento confirmado; reanudarlos no duplica ni pierde operaciones.
+  - Los límites de concurrencia y duración están documentados y se aplican a procesos críticos.
+  - Las pruebas aisladas cubren umbral, clasificación, alerta, agotamiento simulado, fallo parcial, reanudación, duplicación y concurrencia.
+- **Estado:** [ ] Pendiente

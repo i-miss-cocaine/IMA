@@ -4481,3 +4481,35 @@ AUDITORÍA DE completadas.md - TAREA-02 (2026-11-05)
 - Pruebas: inspección manual/estática documental; no se ejecutaron pruebas de código ni despliegue.
 - Informe: AUDITORIA_COMPLETADAS_TAREA-02.md.
 ===============================================================================
+
+
+===============================================================================
+[AUD-NG-163] TAREA-03 - MÉTRICAS REALES DE CUOTAS, CAPACIDAD Y CONTINUIDAD OPERATIVA
+- Fecha: 2026-11-05.
+- Archivo/Módulo: backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; backend/task-service/Code.gs; backend/exam-service/Code.gs; js/api.js; js/persistence.js.
+- Tipo: Observabilidad operativa incompleta, medición de cuotas y continuidad de procesos.
+- Evidencia:
+  1. js/api.js no contiene OPERATIONAL_HEALTH_METRICS ni getServiceHealthMetrics, pese a que ChangesLogs.txt atribuye esos símbolos y contadores a TAREA-03. fetchApi mantiene reintentos lineales de 1/2 segundos y clasifica solo ciertos mensajes de red.
+  2. USER/getOperationalCapacityMetrics agrega BitacoraTrazabilidad y clasifica cuotas por coincidencia textual; no demuestra cobertura de eventos de los cinco servicios ni mide cuotas disponibles/consumidas por usuario, ejecución o servicio integrado.
+  3. USER/getServiceHealthReport agrega LogsSistema, usa versiones fijas y umbral global de errores; no acredita emisión de alertas preventivas.
+  4. ACADEMIC/getStorageQuotaMetricsReport asigna capacityUsagePct = 15.5 como valor fijo. TASK/getDriveStorageQuotaMetricsReport realiza una consulta puntual de Drive, no cubre el resto de cuotas. EXAM/getGradingPerformanceAndPersistenceMetrics cuenta filas y mide una lectura puntual, sin telemetría de cuota/error/reintento.
+  5. La persistencia de eventos es heterogénea: USER/ACCOUNTING/ACADEMIC disponen de registro estructurado, mientras TASK/EXAM usan principalmente Logger/console en los flujos revisados. No existe contrato de métricas operativas común verificable.
+  6. js/persistence.js es una caché IndexedDB; no registra checkpoints generales de trabajos masivos. Los locks y colas existentes son puntuales y no definen límites de concurrencia ni reanudación institucional uniforme.
+  7. No se localizaron alertas preventivas de cuota que utilicen umbrales reales y generen notificaciones deduplicadas.
+- Impacto: la administración no puede anticipar con fiabilidad el agotamiento de cuotas ni identificar el servicio/operación responsable; las métricas pueden declarar capacidad normal con datos constantes o incompletos; los trabajos largos pueden fallar sin un checkpoint general recuperable.
+- Severidad: ALTO (P1).
+- Tareas relacionadas: AUD-NG-144 (health checks), AUD-NG-145 (bitácora central), AUD-NG-006/AUD-NG-069 (reintentos e idempotencia), AUD-NG-133 (pagos) y AUD-NG-161 (pruebas de concurrencia/recuperación).
+- Control de duplicados: AUD-NG-163 se limita a medición de recursos/cuotas, alertas y checkpoints generales; no reemplaza ni duplica los alcances específicos de las tareas relacionadas.
+- Tarea derivada: AUD-NG-163.
+
+===============================================================================
+AUDITORÍA DE completadas.md - TAREA-03 (2026-11-05)
+- Dictamen: CUMPLE PARCIALMENTE.
+- Evidencia principal: el código de métricas cliente que ChangesLogs.txt atribuye a TAREA-03 no existe en js/api.js. Los cinco servicios no presentan instrumentación uniforme; USER ofrece agregaciones parciales, ACADEMIC utiliza un porcentaje fijo de 15.5%, TASK tiene una consulta puntual de cuota Drive y EXAM mide filas/latencia de lectura, no cuotas globales.
+- Resiliencia: fetchApi conserva reintentos lineales limitados; los hallazgos AUD-NG-006/AUD-NG-069/AUD-NG-133 y AUD-NG-161 cubren idempotencia y pruebas relacionadas. No se acreditó checkpoint general para trabajos masivos, ni alertas preventivas reales.
+- Hallazgo nuevo: AUD-NG-163; añadido al backlog. Se relaciona con AUD-NG-144/AUD-NG-145 sin duplicar sus causas.
+- Calidad: insuficiente por métricas fragmentadas, valores fijos, ausencia de clasificación homogénea de errores y divergencia entre changelog y código actual.
+- Pruebas: inspección estática/manual; no se ejecutaron pruebas de carga, cuotas, concurrencia, reanudación ni despliegue.
+- Progreso: 10/183 identificadores únicos auditados; 173 pendientes.
+- Siguiente tarea: TAREA-05, siguiente identificador único de completadas.md. TAREA-04 no aparece como identificador en el inventario actual entre TAREA-03 y TAREA-05.
+===============================================================================

@@ -570,3 +570,16 @@
 - **Hallazgo existente:** AUD-NG-010 cubre la insuficiencia del inventario y la trazabilidad; su alcance se amplía en Pendientes.md. AUD-NG-011 permanece relacionado con la evidencia de aislamiento curricular.
 - **No duplicar:** No se crea un nuevo AUD-NG para esta causa.
 - **Calidad:** el mapa mezcla relaciones puntuales y anexos de distintas auditorías sin un esquema uniforme ni control integral de cobertura.
+
+
+## Auditoría de completadas.md - TAREA-03 (2026-11-05)
+- **Dictamen:** CUMPLE PARCIALMENTE.
+- **Trazabilidad de evidencia:** ChangesLogs.txt afirma que js/api.js implementó OPERATIONAL_HEALTH_METRICS, getServiceHealthMetrics, contadores y detección de cuota/backoff; esos símbolos no existen en el archivo vigente.
+- **USER:** getOperationalCapacityMetrics agrega BitacoraTrazabilidad y calcula latencia/error/cuota por texto; getServiceHealthReport agrega LogsSistema y utiliza versiones/umbrales fijos. No se demuestra cobertura de los cinco servicios ni alertas reales.
+- **ACADEMIC:** getStorageQuotaMetricsReport asigna capacityUsagePct = 15.5, por lo que los umbrales no representan uso real.
+- **TASK:** getDriveStorageQuotaMetricsReport consulta Drive de forma puntual; no mide otras cuotas ni capacidad general.
+- **EXAM:** getGradingPerformanceAndPersistenceMetrics mide filas y latencia de lectura de hojas; no mide cuota ni errores operativos.
+- **Cliente/persistencia:** fetchApi mantiene reintentos lineales de 1 y 2 segundos y sin clasificación estructurada de cuotas. js/persistence.js implementa IndexedDB/cache, no checkpoints de trabajos masivos.
+- **Hallazgo nuevo:** AUD-NG-163 para telemetría real de cuotas/capacidad, alertas preventivas y checkpoints generales.
+- **Hallazgos relacionados:** AUD-NG-144 (health checks), AUD-NG-145 (bitácora), AUD-NG-006/AUD-NG-069 (reintentos/idempotencia), AUD-NG-133 (pagos) y AUD-NG-161 (pruebas de concurrencia/recuperación).
+- **No duplicar:** AUD-NG-163 se limita a cuotas, capacidad, alertas y checkpoints; no sustituye los hallazgos relacionados.
