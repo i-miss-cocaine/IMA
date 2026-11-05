@@ -5784,3 +5784,28 @@ RECONCILIACIÓN:
 PRUEBAS Y LÍMITES:
 Inspección estática/manual de ui-common.js, style.css y 11 dashboards principales. No se ejecutaron navegador, DOM real, pruebas táctiles/teclado ni suites automatizadas. Código fuente sin modificaciones.
 ===============================================================================
+
+
+===============================================================================
+AUDITORÍA DE completadas.md - T-UX-10 (2026-11-05)
+===============================================================================
+- Dictamen: NO CUMPLE. runUXSuiteTests existe, pero ocho de nueve casos UX-01..UX-09 comprueban únicamente typeof o presencia de una propiedad; UX-05 ejecuta una sola muestra. UX-07 permite PASS aunque no exista badge porque typeof navigator.onLine === 'boolean' satisface el OR. No hay estados SKIPPED/BLOCKED ni evidencia de integración en los dos archivos de regresión y cinco dashboards revisados.
+- Fuente principal: js/ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67, runUXSuiteTests líneas 1846-1937.
+- Evidencia por caso:
+  - UX-01: typeof handleSessionExpired; no valida limpieza/redirección/aviso ni permiso insuficiente (AUD-NG-162).
+  - UX-02: typeof trackModalFocus; no dispara Escape ni verifica cierre/foco (AUD-NG-181).
+  - UX-03: typeof setupUnsavedChangesProtection; no valida dirty/clean ni navegación (TASK-479).
+  - UX-04: typeof renderDataFreshnessBadge; no valida render, timestamp o callback (TASK-480).
+  - UX-05: una única muestra Matemáticas Rápídas -> matematicas rapidas; sin casos límite/end-to-end.
+  - UX-06: typeof openGlobalOmniboxModal; no prueba consulta, permisos, errores ni navegación (TASK-481/TASK-482).
+  - UX-07: badge || typeof navigator.onLine === 'boolean'; falso positivo posible y sin eventos online/offline (T-UX-22).
+  - UX-08: typeof openReportIssueModal; no prueba submit/recepción/error (T-UX-23).
+  - UX-09: typeof openMobileHamburgerDrawer && typeof toggleRoleMenuAccordionSection; no prueba roles, rutas ni viewport (TASK-483).
+- Resumen: addResult solo emite PASS/FAIL; summary devuelve total/passed/failed/results. No existen SKIPPED/BLOCKED ni clasificación de ejecución. Los try/catch solo capturan excepciones, no convierten las comprobaciones en funcionales.
+- Integración: tests/regression/academic-grading-suite.js SHA 3433b707edd4a2f35c68368a3172932adc2a3b32 y modular-dashboard-suite.js SHA 0495e1d526a872c33310935a003a83d924d34683 no referencian UX-01..UX-09 ni runUXSuiteTests; sus comprobaciones son mayormente fs.existsSync/includes. Cinco dashboards (Dirección, RH, Contabilidad, Estudiante, Docente) cargan ui-common.js, pero no se encontró invocación explícita de la suite en ellos. js/student.js, js/teacher.js y js/accounting.js no contienen referencias directas a runUXSuiteTests ni a los helpers UX listados.
+- Reconciliación: AUD-NG-009 cubre genéricamente pruebas de presencia textual; se mantiene relacionado, no sustituye la suite UX de T-UX-10. AUD-NG-162, AUD-NG-181..186 y TASK-479..483 cubren fallos funcionales concretos; no se duplican.
+- Hallazgo nuevo: AUD-NG-187 (ALTO/P1): la suite UX produce evidencia inválida/falsos PASS y carece de integración/reporte completo.
+- Tarea: TASK-484 - Implementar pruebas conductuales automatizadas para las nueve capacidades UX. Se registra en Pendientes.md con casos por UX-01..UX-09, escenarios negativos/límite, cinco paneles, fixtures aislados, estados PASS/FAIL/SKIPPED/BLOCKED y ejecución reproducible.
+- No se modifica código fuente ni completadas.md.
+- Pruebas: inspección estática/manual; no se ejecutaron navegador, DOM real, APIs, Apps Script, servicios externos ni operaciones productivas.
+===============================================================================

@@ -1225,3 +1225,32 @@ No se crea AUD-NG nuevo.
 - T-UX-13 requiere opciones comunes/exclusivas por panel, rutas reales, sección activa, teclado/táctil y drawer móvil; T-UX-20 amplía la adaptación responsive. Ambas se revisarán formalmente después.
 - TASK-253 contempla un drawer responsive/accesibilidad y TASK-430 coherencia visual del sidebar; no cubren la matriz de autorización/rutas observada.
 - AUD-NG-186 / TASK-483 registra la brecha concreta para corregir la navegación por rol, el desktop sidebar y las transiciones.
+
+
+## Suite de pruebas de experiencia de usuario T-UX-10 (C1.50)
+
+### Contrato de prueba existente
+- `js/ui-common.js:1846-1937` -> `window.runUXSuiteTests()`; produce nueve entradas UX-01..UX-09, con `addResult(id,name,success,detail)`, estado binario PASS/FAIL y resumen total/passed/failed/results.
+- UX-01 -> `handleSessionExpired`; UX-02 -> `trackModalFocus`; UX-03 -> `setupUnsavedChangesProtection`; UX-04 -> `renderDataFreshnessBadge`; UX-05 -> `normalizeSearchString`; UX-06 -> `openGlobalOmniboxModal`; UX-07 -> `#online-status-badge` o `navigator.onLine`; UX-08 -> `openReportIssueModal`; UX-09 -> `openMobileHamburgerDrawer` y `toggleRoleMenuAccordionSection`.
+- UX-01, UX-02, UX-03, UX-04, UX-06, UX-08 y UX-09 solo comprueban existencia de función; UX-05 una entrada fija; UX-07 usa un OR que acepta la propiedad navigator.onLine aunque no exista badge.
+- La suite no modela SKIPPED/BLOCKED, no produce cobertura por escenario y no demuestra que los flujos se ejecuten en los paneles.
+
+### Dependencias y componentes relacionados
+- `js/ui-common.js:34-57` -> `updateOnlineBadge` y listeners online/offline.
+- `js/ui-common.js:88-143` -> `trackModalFocus` y listener Escape (reconciliar AUD-NG-181).
+- `js/ui-common.js:2202-2212` -> `normalizeSearchString`.
+- `js/ui-common.js:3748-3836` -> `openReportIssueModal` y `submitProblemReportForm`.
+- `js/ui-common.js:4937-5082` -> Omnibox (reconciliar TASK-481/TASK-482).
+- `js/ui-common.js:5371-5430` -> protección de cambios no guardados (TASK-479).
+- `js/ui-common.js:5438-5789` -> badge de frescura (TASK-480).
+- `js/ui-common.js:4710-4924` -> navegación por rol (TASK-483).
+- `tests/regression/academic-grading-suite.js` SHA 3433b707edd4a2f35c68368a3172932adc2a3b32: suite Node con fs.existsSync/includes; sin pruebas UX.
+- `tests/regression/modular-dashboard-suite.js` SHA 0495e1d526a872c33310935a003a83d924d34683: verificaciones de archivos/contratos; sin pruebas UX.
+- Dashboards revisados: `dashboard-direccion.html`, `dashboard-recursos-humanos.html`, `dashboard-contabilidad.html`, `student-dashboard.html`, `teacher-dashboard.html`. Cargan ui-common.js, sin invocación explícita encontrada para runUXSuiteTests.
+- Módulos revisados: `js/student.js`, `js/teacher.js`, `js/accounting.js`; no contienen referencias directas a runUXSuiteTests ni a los helpers UX indicados.
+
+### Hallazgo y reconciliación
+- AUD-NG-187 / TASK-484: hacer que los nueve casos ejecuten flujos conductuales, incorporen fixtures aislados y reporten PASS/FAIL/SKIPPED/BLOCKED; cubrir cinco contextos de panel.
+- AUD-NG-009 es la regla general de pruebas funcionales en regresión, no sustituye el trabajo específico UX.
+- AUD-NG-162, AUD-NG-181, TASK-479, TASK-480, TASK-481, TASK-482 y TASK-483 conservan sus alcances funcionales y deben convertirse en dependencias de prueba, no duplicarse.
+- T-UX-13/T-UX-20, T-UX-14, T-UX-17, T-UX-21, T-UX-22 y T-UX-23 son ampliaciones posteriores a incluir en la matriz de regresión.

@@ -19345,3 +19345,43 @@ AUD-NG-163 permanece DUPLICADA y consolidada; no reabrirla como tarea independie
   - Los controles anuncian su estado expandido/contraído y el foco no se pierde al abrir/cerrar.
   - Pruebas por rol y viewport verifican rutas visibles, rutas reales, ausencia de opciones ajenas y operación con teclado/táctil.
 - **Estado:** [ ] Pendiente.
+
+---
+
+### [TASK-484] Implementar pruebas conductuales automatizadas para las nueve capacidades UX
+- **Origen del Hallazgo:** AUD-NG-187 en Auditoria.txt (T-UX-10, suite UX-01 a UX-09).
+- **Severidad/Clasificación:** Alto / P1 (falsa evidencia de cumplimiento y regresiones no detectadas).
+- **Archivos Involucrados:** `js/ui-common.js`, `js/student.js`, `js/teacher.js`, `js/accounting.js`, dashboards HTML y `tests/regression/`.
+- **Dependencias Expuestas:** `runUXSuiteTests`, `handleSessionExpired`, `trackModalFocus`, `setupUnsavedChangesProtection`, `renderDataFreshnessBadge`, `normalizeSearchString`, Omnibox, eventos `online/offline`, `openReportIssueModal`, `submitProblemReportForm`, `openMobileHamburgerDrawer`, API `fetchApi`, permisos y rutas.
+- **Descripción del Alcance:**
+  1. Sustituir las comprobaciones de presencia (`typeof`) por pruebas que invoquen el comportamiento real y verifiquen efectos observables. Mantener los nueve identificadores UX-01 a UX-09 y asociar cada uno con casos reproducibles.
+  2. Implementar la suite en el entorno de pruebas existente (por ejemplo, un módulo dedicado bajo `tests/regression/`) con DOM/ventana simulados o navegador aislado, dependencias controladas, datos sintéticos, limpieza de listeners/estado y sin llamadas ni escrituras productivas.
+  3. UX-01: probar token ausente, inválido, expirado/revocado y permiso insuficiente; verificar limpieza de sesión, redirección/aviso y que una denegación ordinaria no cierre la sesión. Reutilizar el contrato de AUD-NG-162, sin duplicar su corrección.
+  4. UX-02: disparar Escape con cada tipo de modal/overlay cubierto, verificar cierre correcto, foco devuelto al disparador y que no se cierren vistas ajenas. Relacionar AUD-NG-181.
+  5. UX-03: modificar/restaurar controles, cancelar navegación, guardar con éxito/fallo, resetear y agregar/eliminar campos dinámicos; comprobar cuándo existe realmente estado dirty. Relacionar TASK-479.
+  6. UX-04: probar timestamps válidos, ausentes, futuros e inválidos; estados actualizado/desactualizado/pendiente/error y callback de actualización; una operación fallida no debe renovar la hora. Relacionar TASK-480.
+  7. UX-05: probar mayúsculas, tildes, ñ, puntuación, espacios, cadenas vacías/nulas y equivalencia real en filtros/búsqueda; comprobar también que términos distintos no produzcan coincidencias falsas.
+  8. UX-06: probar apertura por Ctrl+K/Cmd+K, foco, resultados válidos, sin coincidencias, permiso insuficiente, error de servicio, navegación y payloads malformados. Reutilizar TASK-481/TASK-482 y las ampliaciones T-UX-14.
+  9. UX-07: simular eventos offline/online y comprobar el texto/estado visible del indicador y su actualización; no considerar suficiente que `navigator.onLine` exista. Reconciliar T-UX-22.
+  10. UX-08: probar validación de campos, envío válido, confirmación de ticket real simulada, error funcional, rechazo de red, reactivación del botón y conservación de datos al fallar. Reconciliar T-UX-23.
+  11. UX-09: probar navegación por rol y viewport (escritorio/móvil), enlaces/rutas permitidos, acordeones, apertura/cierre y ausencia de rutas ajenas. Relacionar TASK-483 y T-UX-13/T-UX-20.
+  12. Ejecutar los casos sobre fixtures representativos de Estudiante, Docente, Dirección, Recursos Humanos y Contabilidad; incluir diferencias de carga/DOM y scripts entre dashboards.
+  13. El reporte debe distinguir `PASS`, `FAIL`, `SKIPPED` y `BLOCKED`, mostrar caso, resultado esperado/obtenido y error; un caso no ejecutado o bloqueado nunca cuenta como aprobado. Documentar un comando reproducible e integrarlo al mecanismo de regresión/CI disponible.
+- **Criterios de Aceptación:**
+  - Los nueve grupos UX-01 a UX-09 tienen casos conductuales identificables y ejecutables; ninguno se considera aprobado por la sola existencia de una función, archivo o elemento.
+  - Cada grupo contiene escenarios positivos, negativos y de límite pertinentes; las aserciones comprueban estado DOM, eventos, navegación, payloads o respuestas esperadas.
+  - UX-01 diferencia expiración/revocación de permiso insuficiente y prueba limpieza/redirección/aviso sin expulsión indebida.
+  - UX-02 demuestra cierre por Escape y restauración correcta del foco en overlays representativos.
+  - UX-03 demuestra dirty/clean real, navegación cancelada y guardado fallido/exitoso.
+  - UX-04 demuestra timestamp efectivo y que el fallo de actualización no modifica la frescura.
+  - UX-05 demuestra equivalencia de búsqueda y ausencia de falsos positivos.
+  - UX-06 prueba éxito, vacío, autorización denegada, error de servicio y navegación sin ejecutar datos arbitrarios.
+  - UX-07 demuestra cambios visibles al disparar offline/online, no solo soporte de la propiedad del navegador.
+  - UX-08 demuestra validación, confirmación de recepción y recuperación ante fallo sin pérdida de campos.
+  - UX-09 demuestra rutas y controles correctos en los cinco contextos/roles y en ambos viewports.
+  - Las pruebas utilizan datos sintéticos y mocks controlados; no llaman servicios productivos ni generan tickets, cambios académicos o escrituras reales.
+  - El resumen informa por separado aprobadas, fallidas, omitidas y bloqueadas; los errores de configuración/entorno no se convierten en PASS.
+  - Existe una instrucción reproducible para ejecutar la suite y evidencia de su ejecución en el flujo de regresión/CI disponible.
+  - Las pruebas se limpian tras cada caso y pueden repetirse sin depender del orden ni dejar listeners, timers, DOM o almacenamiento contaminado.
+- **Relaciones y límites:** AUD-NG-009 (principio general de pruebas conductuales) es relacionado, pero esta tarea se limita a la suite UX-01..UX-09 de T-UX-10. AUD-NG-162, AUD-NG-181, TASK-479, TASK-480, TASK-481, TASK-482 y TASK-483 mantienen sus causas funcionales propias; TASK-484 debe probarlas y no reemplazarlas ni duplicarlas.
+- **Estado:** [ ] Pendiente.

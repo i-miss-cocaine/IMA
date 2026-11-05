@@ -2183,3 +2183,62 @@ ARCHIVOS DE ESTA ITERACIÓN:
 - Regla de publicación: exactamente un commit final descendiente de dc01a689afd8a3ce01851493399310e95d12575f, sin commits intermedios. El commit de cierre que contiene este checkpoint se confirma externamente consultando HEAD después de publicar.
 - Próxima acción: auditar T-UX-10 en completadas.md y contrastar los casos UX-01 a UX-09 con pruebas conductuales reales en los dashboards y servicios.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.50 - AUDITORÍA T-UX-10 (2026-11-05)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto real: Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: 5e138394deae035441a2cefb7ca7b527c70a9e4a (cierre C1.49).
+- Árbol de partida: fae9e08a078bf20fcc949c075dee3b0310cf3eb7.
+- HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59; comparación al inicio 95 commits por delante y 0 por detrás.
+- Última tarea auditada y cerrada: T-UX-10 - Completar la verificación funcional y automatizar las pruebas de experiencia de usuario.
+- Dictamen: NO CUMPLE. runUXSuiteTests en js/ui-common.js:1846-1937 hace comprobaciones de presencia en ocho de nueve casos; UX-05 una sola muestra; UX-07 permite falso PASS sin badge; no distingue SKIPPED/BLOCKED y no hay integración demostrada en suites de regresión ni en los cinco dashboards revisados.
+- Tarea en curso: ninguna; inspección estática/manual de T-UX-10 cerrada.
+- Siguiente tarea: revisar el orden vigente de completadas.md posterior a T-UX-10 y escoger la siguiente tarea no auditada; reconciliar tareas ampliadas y checkpoints anteriores antes de comenzar.
+- Progreso acumulado: 51/183 identificadores auditados; 132 pendientes.
+
+RECUPERACIÓN E INVENTARIO DE Pendientes.md:
+- Lectura convencional anterior devolvió 0 caracteres; blob de recuperación exclusivo de la rama de trabajo en C1.49: 5c25ead336c43d953406fa0ea1a2564fd914add0.
+- Contenido recuperado: 1,638,593 caracteres y 19,348 líneas.
+- Inventario previo: 483 IDs TASK únicos (máximo TASK-483) y 181 IDs AUD-NG únicos (máximo AUD-NG-186), 664 identificadores combinados.
+- Se agregó TASK-484 vinculada a AUD-NG-187.
+- Inventario posterior: 484 IDs TASK únicos y 182 IDs AUD-NG únicos, 666 identificadores combinados. Contenido posterior: 1,644,469 caracteres y 19,388 líneas.
+- Se preservó el contenido existente y no se modificaron estados históricos.
+
+HALLAZGO:
+- AUD-NG-187 (ALTO/P1): la suite UX-01..UX-09 no comprueba los flujos; ocho pruebas son typeof/presencia, UX-05 una muestra y UX-07 tiene un OR que puede aprobar sin badge. El resumen no distingue pruebas omitidas/bloqueadas.
+- TASK-484 quedó registrada al final de Pendientes.md. Su alcance se limita a implementar cobertura conductual y reporte fiable para los nueve casos; AUD-NG-009 es relacionado, y AUD-NG-162/AUD-NG-181/TASK-479..483 siguen siendo las correcciones funcionales vinculadas.
+- No se modifica completadas.md ni se altera el estado histórico [X] de T-UX-10.
+
+ARCHIVOS Y SHAs DE RESPALDO:
+- js/ui-common.js: 986938b8a311a41ed4cb3d135b66b6aaea4bed67.
+- js/student.js: e2888cea60322e49a40b89adadb8010489605dcc.
+- js/teacher.js: c475fce5afcd28fca23e7b64398ad32b17773746.
+- js/accounting.js: a79ead4a54ad6fdb2f1e9df4775491ff7191a0c7.
+- tests/regression/academic-grading-suite.js: 3433b707edd4a2f35c68368a3172932adc2a3b32.
+- tests/regression/modular-dashboard-suite.js: 0495e1d526a872c33310935a003a83d924d34683.
+- dashboard-direccion.html: fefaa3bf7884288aef563cfb8aaf244e6cea8b7c.
+- dashboard-recursos-humanos.html: 406bedbae5a5bb3b5c03e4ea7aaa95ed68aea8ee.
+- dashboard-contabilidad.html: b7653b3bff71829f0f67cf47cb894413c56a444a.
+- student-dashboard.html: 6379ea0ed39d71b89747a0280bb925fdf12202c1.
+- teacher-dashboard.html: cbb9e6a272a7d8ad33f99727303305d950533e71.
+- completadas.md: f57f1aef832e81e44fc4f7ec36a852d50e464676.
+- METODOLOGIA_DESARROLLO.md: 214e8221bd076c4e89012636c105bffd5ca36467.
+- Pendientes.md origen: 5c25ead336c43d953406fa0ea1a2564fd914add0.
+- Auditoria.txt origen: 274603bad775376dc916f97ba8b92726016604e9.
+- MapaDependencias.md origen: 76a645c5dc116be61353f8e20dd207c8b365e7c7.
+- AUDITORIA_COMPLETADAS_PLAN.md origen: ba004aab517d261ec4bff0dc0a63400bed9495f6.
+- Contexto_personal.txt origen: 429fd1b1eae0cfb89fa9431978398a9ced91a27d.
+
+ARCHIVOS DE ESTA ITERACIÓN:
+- Modificados: Pendientes.md, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt.
+- Nuevo: AUDITORIA_COMPLETADAS_T-UX-10.md.
+- Sin modificar: código fuente, completadas.md, completadas_legacy.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, rama base y demás ramas.
+- Pruebas: inspección estática/manual. No se ejecutaron navegador, DOM real, suites automatizadas, APIs, Apps Script ni operaciones productivas.
+- Publicación: exactamente un commit final descendiente de 5e138394deae035441a2cefb7ca7b527c70a9e4a, sin commits intermedios. El SHA de cierre se confirma externamente después de publicar.
+- Próxima acción: revisar la secuencia de tareas posteriores a T-UX-10 en completadas.md y seleccionar la siguiente tarea aún no auditada, reconciliando ampliaciones y hallazgos existentes.
+================================================================
