@@ -275,3 +275,13 @@ Al reanudar:
 - Pruebas: inspección estática/manual; no se ejecutaron pruebas HTTP, Apps Script, fixtures, concurrencia real, caché caliente/fría ni despliegue.
 - Progreso: 22/183 identificadores auditados; 161 pendientes.
 - Siguiente tarea: TAREA-17.
+
+
+## 28. Resultado C1.20 - TAREA-17 (2026-11-05)
+- **Dictamen:** CUMPLE PARCIALMENTE; analítica contextual y exportación institucional no acreditadas.
+- **Evidencia:** getCurricularAnalyticsReport calcula un agregado global y no aplica filtros area/asignatura/grado/programa/periodo; excluye borradores/no publicadas del promedio. La tabla fuente CalificacionesEstudiantes no contiene dimensiones curriculares directas y la función no realiza joins. El controlador teacher.js llama con payload vacío, pero teacher-dashboard.html no contiene el modal. RBAC permite la acción a Director/Admin, no Coordinador/Profesor. Las alertas usan mockFailingSubjects/mockMissingTasks, no filtran asistencia por año/período y su deduplicationKey omite año lectivo. REP-ACAD-01 interpreta columnas incorrectas, ignora filtros y genera filas ficticias si no hay datos. El exportador docente usa parcial actual y asigna cero a entregas ausentes.
+- **Reconciliación:** no crear AUD-NG nuevo. Ampliar TASK-050/051/052/054/235/237, AUD-NG-167, AUD-NG-158 y F11-Task08.
+- **Calidad:** insuficiente para aceptar comparativas homogéneas, alertas académicas reales y exportación analítica confiable.
+- **Pruebas:** inspección estática/manual; no se ejecutaron endpoints, fixtures, pruebas de roles, exportaciones ni notificaciones.
+- **Progreso:** 23/183 identificadores auditados; 160 pendientes.
+- **Siguiente tarea:** TAREA-18.

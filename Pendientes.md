@@ -18676,3 +18676,62 @@ No se crea un AUD-NG nuevo. Se amplían tareas existentes sin borrar ni reemplaz
 
 Hallazgo nuevo: ninguno. Progreso: 22/183 identificadores únicos; 161 pendientes. Siguiente tarea: TAREA-17.
 ================================================================
+
+
+================================================================
+AMPLIACIÓN DE TAREAS EXISTENTES DERIVADA DE TAREA-17 (2026-11-05)
+================================================================
+
+No se crea un AUD-NG nuevo: los defectos de analítica, filtros, series, exportación, fuente académica y permisos se cubren ampliando tareas ya registradas. No se modifica completadas.md ni se cambia el estado de tareas marcadas completadas sin su flujo de revisión.
+
+### TASK-050 - Catálogo institucional de informes
+- Registrar la analítica académica de TAREA-17 como informe propio, con fuente, dimensiones, filtros, formato y roles permitidos. Distinguir distribución de calificaciones, tendencia por parcial, comparativa homogénea y estudiantes en riesgo.
+- Verificar que REP-ACAD-01 y REP-ACAD-02 tengan generadores distintos y coherentes con sus definiciones; no enrutar todo informe category=ACADEMICA a un mismo reporte.
+- No anunciar formatos/roles/filtros que el generador no implementa.
+
+### TASK-051 - Diccionario semántico centralizado
+- La función getCurricularAnalyticsReport no consulta un diccionario semántico ni una definición versionada; sus etiquetas area/asignatura/grado/programa/periodo se devuelven sin filtrar datos.
+- Registrar indicadores académicos con fuente y fórmula verificables: promedio publicado, distribución por bandas, aprobación/reprobación y riesgo académico.
+- Declarar dimensiones válidas y relaciones de unión: EvaluacionID, UserID, matrícula, oferta/asignatura, área, programa, idioma de enseñanza, grado, sección, año lectivo y período.
+- Reconciliar la inconsistencia actual: el encabezado TASK-051 está marcado [X], pero su campo Estado interno dice [ ] Pendiente. No cambiar el estado automáticamente ni borrar el registro; resolverlo mediante revisión explícita.
+
+### TASK-052 - Filtros y dimensiones
+- Incorporar programa e idioma de enseñanza como dimensiones cuando existan en el modelo curricular; mantener área, asignatura, grado, sección, año lectivo y período/parcial.
+- Aplicar los filtros en backend a los registros relacionados, no limitarse a devolver los parámetros como etiquetas. Rechazar combinaciones incompatibles y filtros sin relación válida.
+- Los informes deben usar el mismo universo de estudiantes y período al comparar grado, sección, programa o idioma. No mezclar años lectivos ni períodos distintos.
+
+### TASK-054 - Validación y regresión de informes e indicadores
+- Añadir pruebas conductuales de getCurricularAnalyticsReport: fuente correcta, filtros combinados, agrupación por dimensiones, distribución, promedios, tendencias por parcial y comparación de resultados contra cálculos de referencia.
+- Comprobar que borradores, notas no publicadas y evaluaciones pendientes no entren en promedios oficiales; distinguirlos de entregas ausentes y de calificaciones válidas iguales a cero.
+- Probar el contrato de CalificacionesEstudiantes (ID, EvaluacionID, UserID, NotaObtenida, PuntajePonderado, EsBorrador, EsPublicada, Observaciones, FechaRegistro) contra cada consumidor. Ningún informe puede interpretar EsPublicada como nota ni EvaluationID como nombre de alumno.
+- Comprobar que REP-ACAD-01 aplica anoLectivo/grado/seccion/periodo, que no devuelve alumnos ficticios cuando no hay datos y que REP-ACAD-02 genera el informe de riesgo que declara.
+- Probar roles Director, Coordinador, Profesor y Subdirector; acceso autorizado al informe y rechazo 403 fuera del ámbito. La UI no debe llamar una acción que RBAC rechaza.
+- Verificar exportación frente a la misma consulta tabular, filtros, totales, período y metadatos; no aceptar includes() como prueba.
+- Reprobar F11-Task08 con datos reales aislados: materias reprobadas y tareas pendientes deben salir de registros persistidos, no de mockFailingSubjects/mockMissingTasks del payload.
+
+### TASK-235 - Motor de tendencias históricas
+- Incluir series académicas por parcial, año lectivo, área, asignatura, grado, sección, programa e idioma cuando la dimensión sea válida.
+- Comparar solo períodos equivalentes; marcar períodos incompletos y no convertir ausencia de datos en cero.
+- Los promedios por área/programa deben usar la definición y versión del indicador vigente para cada período y coincidir con el informe individual.
+
+### TASK-237 - Exportación universal CSV/XLSX
+- Incorporar exportación del informe analítico académico real para Dirección y Coordinación, con los mismos filtros/dimensiones que la consulta en pantalla.
+- Exportar datos fuente/agrupaciones y metadatos de período, filtros, fecha de generación y usuario/rol; comprobar igualdad entre pantalla y archivo.
+- No reutilizar como analítica la exportación docente que suma tareas/exámenes ni aceptar un archivo con extensión/formato no coincidente.
+
+### AUD-NG-167 - Fuente única e integridad de calificaciones
+- La analítica debe consumir calificaciones de la fuente canónica y unir EvaluacionID/UserID con los metadatos académicos correctos. No inferir nombre, grado o sección desde columnas de CalificacionesEstudiantes que contienen EvaluationID, UserID y NotaObtenida.
+- Mantener exclusión de borradores/no publicadas y reglas de promedio publicadas; no convertir entregas o notas pendientes en cero.
+
+### AUD-NG-158 - Autorización por ámbito académico
+- getCurricularAnalyticsReport está permitido en ROLE_PERMISSIONS para Administrador/Director, pero no para Coordinador ni Profesor, aunque el controlador esté en js/teacher.js. Definir los roles requeridos y validar alcance institucional/curricular en servidor.
+- Los filtros por grado, sección, programa, idioma y asignatura nunca deben ampliar el ámbito de datos autorizado.
+
+### F11-Task08 - Alertas tempranas (marcada completada)
+- Sustituir mockFailingSubjects y mockMissingTasks por consultas reales de calificaciones publicadas y entregas de tareas.
+- Filtrar asistencia, matrículas, notas y tareas por anolectivo y periodo; la clave de deduplicación debe incluir el año lectivo para no suprimir alertas de ciclos distintos.
+- No presentar NotificadoA como notificación enviada: integrar un canal verificable y registrar resultado/reintento; mantener la creación de caso de seguimiento cuando corresponda.
+- Probar umbrales, exclusiones, deduplicación, cierre/reactivación y consistencia con el reporte de riesgo.
+
+Hallazgo nuevo: ninguno; se amplían tareas existentes. Progreso de auditoría: 23/183 identificadores únicos; 160 pendientes. Siguiente tarea: TAREA-18.
+================================================================

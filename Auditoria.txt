@@ -4732,3 +4732,35 @@ No crear AUD-NG nuevo. Ampliar AUD-NG-006 (reserva atómica y no permitir bypass
 PRUEBAS Y LÍMITES:
 Inspección estática/manual. No se ejecutaron pruebas HTTP, Apps Script, concurrencia real, pérdida de respuesta, caché caliente/fría, fixtures de integración ni despliegues. No se utilizaron datos productivos ni se modificó código fuente.
 ================================================================
+
+
+================================================================
+AUDITORÍA TAREA-17 - ANALÍTICA ACADÉMICA POR ÁREA, ASIGNATURA Y PROGRAMA
+FECHA: 2026-11-05
+DICTAMEN: CUMPLE PARCIALMENTE; NO ACREDITADA LA ANALÍTICA CONTEXTUAL NI LA EXPORTACIÓN INSTITUCIONAL
+
+EVIDENCIA:
+- backend/academic-service/Code.gs (daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc): getCurricularAnalyticsReport (2927-2978) acepta area/asignatura/grado/programa/periodo, pero solo lee CalificacionesEstudiantes completa y no aplica esos filtros ni agrupa por dimensión. Devuelve los valores solicitados como etiquetas. No admite seccion, idioma ni anoLectivo. El promedio excluye borradores/no publicadas/nota no numérica (positivo); alertasAcompanamiento es solo el conteo de notas <70, no alertas reales.
+- backend/exam-service/Code.gs (1d93296628fae31f680004f637897e2b1314a64c): esquema CalificacionesEstudiantes (línea 36) = ID, EvaluacionID, UserID, NotaObtenida, PuntajePonderado, EsBorrador, EsPublicada, Observaciones, FechaRegistro. El endpoint analítico no enlaza EvaluacionID/UserID con evaluación, matrícula, oferta, área, programa, sección o idioma.
+- backend/academic-service/Code.gs: evaluateAndDispatchEarlyWarningAlerts (9264-9535) calcula asistencia desde RegistrosAsistencia sin filtrar por anolectivo/periodo; materias reprobadas y tareas pendientes se reciben de mockFailingSubjects/mockMissingTasks (9424-9429), no de datos reales. La clave de deduplicación (9470 aprox.) no incluye año lectivo. NotificadoA se guarda como texto; no se encontró despacho efectivo a canales de notificación.
+- ROLE_PERMISSIONS (academic-service): getCurricularAnalyticsReport aparece en la lista Director (línea 170), no en Coordinador (222) ni Profesor (242). Sin embargo, js/teacher.js (2282-2306) intenta consumirlo desde el panel docente.
+- js/teacher.js (c475fce5afcd28fca23e7b64398ad32b17773746): el controlador TAREA-17 (2275-2306) busca modal-academic-analytics y llama getCurricularAnalyticsReport con payload vacío. teacher-dashboard.html (cbb9e6a272a7d8ad33f99727303305d950533e71) no contiene el modal, sus controles ni identificadores analytics; el controlador no tiene una interfaz visible conectada.
+- js/teacher.js: reporte tradicional (2940-3045) convierte entregas ausentes en cero (2979), suma puntos heterogéneos y compara total >=70 (2991). El filtro de tareas (3022) usa PARCIAL_ACTUAL en vez del parcial seleccionado; exámenes (3023) no se filtran por parcial. No produce comparativas por programa/idioma.
+- js/teacher.js: export-excel-btn (4585-4627) exporta tareas/exámenes, no el endpoint analítico. Usa PARCIAL_ACTUAL para tareas, no filtra exámenes por parcial y asigna cero a entregas ausentes (4618).
+- backend/user-service/Code.gs (12079dd410aa6d8afbce55a4bc62a79dea605f9f): catálogo institucional (8396-8623) registra REP-ACAD-01 con filtros y roles, pero generateInstitutionalReport (8624; rama académica 8687) interpreta CalificacionesEstudiantes con columnas incompatibles: r[0] como ID estudiante, r[1] como nombre, r[2] como grado, r[3] como sección y r[6] como nota (8701), aunque r[6] es EsPublicada según el esquema real. No aplica anoLectivo/grado/seccion/periodo en esa rama y agrega estudiantes ficticios EST-001/EST-002 si no hay filas (8720). REP-ACAD-02 no tiene una rama de generación propia; category=ACADEMICA cae en el mismo informe REP-ACAD-01.
+- tests/regression/academic-grading-suite.js (3433b707edd4a2f35c68368a3172932adc2a3b32): no contiene pruebas de getCurricularAnalyticsReport ni runPhase24ReportsAndAnalyticsRegressionSuite. No se acreditan comparativas, filtros, exportación ni alertas con datos de referencia.
+
+CUMPLIMIENTO POSITIVO:
+- getCurricularAnalyticsReport excluye borradores, calificaciones no publicadas y valores no numéricos del promedio consolidado.
+- evaluateAndDispatchEarlyWarningAlerts persiste filas en AlertasTempranas, evita duplicados activos por su clave actual y crea CasosSeguimiento para riesgos Alto/Crítico; no obstante, sus métricas académicas son simuladas y el ciclo temporal está incompleto.
+- Existe catálogo REP-ACAD-01 con formatos PDF/EXCEL/PANTALLA y filtros declarados, pero el generador actual no respeta su contrato ni el esquema fuente.
+
+DICTAMEN:
+La función analítica es un agregado global etiquetado con filtros que no se aplican. No ofrece tendencias por parcial ni comparativas homogéneas por grado/sección/programa/idioma. El controlador UI no tiene modal en teacher-dashboard y el endpoint no permite Coordinador/Profesor. El reporte institucional exportable interpreta columnas equivocadas, omite filtros y puede fabricar filas de muestra. Las alertas académicas dependen de valores mock y mezclan períodos/años.
+
+RECONCILIACIÓN:
+No crear AUD-NG nuevo. Ampliar TASK-050 (catálogo), TASK-051 (diccionario semántico; su encabezado [X] contradice el Estado interno [ ] Pendiente), TASK-052 (filtros/dimensiones), TASK-054 (regresión conductual), TASK-235 (series temporales), TASK-237 (exportación), AUD-NG-167 (fuente única de calificaciones), AUD-NG-158 (RBAC/ABAC) y F11-Task08 (alertas tempranas marcadas completadas, pero con métricas mock).
+
+PRUEBAS Y LÍMITES:
+Inspección estática/manual. No se ejecutaron endpoints, cálculos con fixtures, pruebas de roles, exportaciones ni notificaciones. No se utilizaron datos productivos ni se modificó código fuente. AUDITORIA_FASE1_PLANIFICACION_EXPANSION.md, referenciado como origen de TAREA-17, no está disponible en esta rama; se utilizó el alcance explícito de completadas.md.
+================================================================

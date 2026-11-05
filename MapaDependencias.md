@@ -720,3 +720,36 @@ Se restauró el contenido íntegro previo a TAREA-09 (1,515,247 caracteres) tras
 - Tareas relacionadas: AUD-NG-006 (idempotencia atómica y lock no evadible), AUD-NG-009 (pruebas conductuales), AUD-NG-133 (pagos), AUD-NG-161 (suite real con fixtures, HTTP y caché).
 
 No se crea AUD-NG nuevo; se amplían tareas existentes.
+
+
+## Auditoría TAREA-17 - analítica académica y alertas (2026-11-05)
+
+### Fuente de calificaciones y agregación
+- exam-service/Code.gs, esquema CalificacionesEstudiantes (36): ID, EvaluacionID, UserID, NotaObtenida, PuntajePonderado, EsBorrador, EsPublicada, Observaciones, FechaRegistro.
+- academic-service/Code.gs, getCurricularAnalyticsReport (2927): calcula promedio y bandas sobre todas las filas; excluye borradores/no publicadas, pero no une evaluación/usuario/matrícula/oferta ni aplica area/asignatura/grado/programa/periodo. Los filtros solo se reflejan como etiquetas. No recibe sección, idioma ni año lectivo.
+- El valor alertasAcompanamiento cuenta notas <70, no alertas persistidas ni estudiantes únicos.
+
+### Alertas tempranas
+- evaluateAndDispatchEarlyWarningAlerts (9264) calcula asistencia desde RegistrosAsistencia sin limitar año/período. Reprobaciones y tareas pendientes se leen de mockFailingSubjects/mockMissingTasks del payload (9424-9429). La deduplicationKey no contiene anolectivo; NotificadoA es un texto, no prueba notificación enviada. Solo crea caso de seguimiento para riesgo Alto/Crítico.
+
+### Interfaz y autorización
+- teacher.js (2275-2306) define controlador y llama getCurricularAnalyticsReport con {}. teacher-dashboard.html no contiene modal-academic-analytics ni IDs analytics; no hay interfaz integrada.
+- ROLE_PERMISSIONS: acción autorizada para Director/Admin, no Coordinador ni Profesor; el controlador está en teacher.js.
+- Reporte tradicional teacher.js (2940-3045): entregas ausentes como 0, suma puntos heterogéneos, tareas filtradas por PARCIAL_ACTUAL en vez de report-parcial y exámenes sin filtro de parcial.
+
+### Catálogo y exportación
+- user-service/Code.gs: catálogo REP-ACAD-01 (8396+) declara filtros/roles; generateInstitutionalReport (8624; rama académica 8687) usa índices incompatibles con el esquema CalificacionesEstudiantes (r[6] es EsPublicada, no nota), no aplica filtros y agrega EST-001/EST-002 ficticios si no hay datos. REP-ACAD-02 no tiene generador independiente.
+- teacher.js export-excel-btn (4585+) exporta tareas/exámenes, no la analítica por área/programa, y conserva defectos de parcial/ceros.
+
+### Tareas relacionadas
+- TASK-050: catalogar informes académicos analíticos y permisos/formatos reales.
+- TASK-051: diccionario semántico, fuentes y dimensiones; encabezado [X] pero Estado interno [ ] Pendiente.
+- TASK-052: filtros temporales y estructurales, añadir programa/idioma y validar combinaciones.
+- TASK-054: pruebas conductuales de fuente, filtros, RBAC, alertas y exportaciones.
+- TASK-235: tendencias históricas por parcial y dimensiones académicas.
+- TASK-237: exportación CSV/XLSX consistente con filtros y pantalla.
+- AUD-NG-167: fuente única y reglas de calificaciones publicadas.
+- AUD-NG-158: acceso por ámbito curricular verificado.
+- F11-Task08: métricas reales de notas/tareas, filtrado anual y deduplicación de alertas por ciclo.
+
+No se crea AUD-NG nuevo; las brechas se incorporan a tareas existentes.
