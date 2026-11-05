@@ -2022,3 +2022,57 @@ ARCHIVOS DE ESTA ITERACIÓN:
 - Regla de publicación: exactamente un commit final descendiente de 215944966aa45bbe47182296630e2b68d094272d; sin commits intermedios. El SHA del commit de cierre se confirma externamente después de publicarlo.
 - Próxima acción: auditar T-UX-05, contrastando su requisito directo y la ampliación de normalización en T-UX-14, además de los consumidores de filtros.
 ================================================================
+
+ 
+================================================================
+CHECKPOINT C1.47 - AUDITORÍA T-UX-05 (2026-11-05)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto real: Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: 6781139d0250c301ca7d98e5c86d3bf266a54a00.
+- Árbol del HEAD de partida: a44df7fa641f7b41f2056bdab11200ef6b3bb138.
+- HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios.
+- Comparación inicial: rama de trabajo 92 commits por delante y 0 por detrás.
+- Última tarea auditada y cerrada: T-UX-05 - Normalización Diacrítica Insensible a Tildes para Búsquedas y Filtros.
+- Dictamen: CUMPLE. normalizeSearchString usa NFD y elimina marcas diacríticas; la búsqueda de tickets y el componente de filtros normalizan ambos lados antes de comparar con indexOf.
+- Tareas históricas posteriores reconciliadas: T-UX-06 y T-UX-14 (normalización de búsqueda global en backend); T-UX-15 (filtros avanzados frontend); T-UX-10 (prueba UX-05 de normalización).
+- Tarea en curso: ninguna; inspección estática/manual de T-UX-05 cerrada.
+- Siguiente tarea exacta: T-UX-06 - Omnibox Unificado Multi-Entidad con Atajo Global Ctrl + K.
+- Progreso acumulado: 48/183 identificadores auditados; 135 pendientes.
+
+RECUPERACIÓN OBLIGATORIA DE Pendientes.md:
+- La lectura convencional por ruta en NG_beta_0.0.0.1_work devolvió 0 caracteres.
+- HEAD consultado: 6781139d0250c301ca7d98e5c86d3bf266a54a00; árbol consultado: a44df7fa641f7b41f2056bdab11200ef6b3bb138. El árbol confirma que Pendientes.md apunta al blob SHA e050c03b97fc08916b878c34dcd5c247403d8c4b.
+- Se recuperó el blob del HEAD actual de la rama de trabajo mediante fetch_blob. No se utilizó rama base, otra rama, copia legacy ni archivo alternativo.
+- Blob de origen y respaldo inmutable: e050c03b97fc08916b878c34dcd5c247403d8c4b.
+- Contenido recuperado: 1,632,208 caracteres y 19,283 líneas. Se verificaron encabezado inicial y cierre final; se confirmó la presencia de TASK-480 y AUD-NG-183.
+- Inventario actual: 480 IDs TASK únicos y 178 IDs AUD-NG únicos; 658 identificadores combinados; máximos TASK-480 y AUD-NG-183.
+- No se añadió ni modificó ninguna tarea en Pendientes.md, porque T-UX-05 cumple el criterio principal y no se encontró un hallazgo que requiera una nueva tarea.
+
+EVIDENCIA TÉCNICA Y SHAs:
+- completadas.md: f57f1aef832e81e44fc4f7ec36a852d50e464676.
+- METODOLOGIA_DESARROLLO.md: 214e8221bd076c4e89012636c105bffd5ca36467.
+- js/ui-common.js: 986938b8a311a41ed4cb3d135b66b6aaea4bed67.
+- backend/user-service/Code.gs: 12079dd410aa6d8afbce55a4bc62a79dea605f9f.
+- Pendientes.md: e050c03b97fc08916b878c34dcd5c247403d8c4b.
+- Auditoria.txt de partida: 79defd7cf87a096259d11e1240317d3546976072.
+- MapaDependencias.md de partida: cdae8f7da49a88ad095aafcb76b310d68d68a12d.
+- AUDITORIA_COMPLETADAS_PLAN.md de partida: cb5a5fb77138aebba551b99a35040d391b5d60ca.
+- Contexto_personal.txt de partida: af2ab9404f8d55930042aad59450d7518b163834.
+- Nuevos blobs preparados:
+  - Auditoria.txt: 38d3ebf35162de5f18e6c1d862e8fb92a80a2b55.
+  - MapaDependencias.md: 2179271f741e0f77a71b09e17817d4088bd27b85.
+  - AUDITORIA_COMPLETADAS_PLAN.md: abc4d5b1366f0f85e8df18b64ebb69683415bb90.
+  - Informe AUDITORIA_COMPLETADAS_T-UX-05.md: acff199f5c7932fb03c5bb81fc2b37121834dc4c.
+
+ARCHIVOS DE ESTA ITERACIÓN:
+- Modificados: Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt.
+- Nuevo: AUDITORIA_COMPLETADAS_T-UX-05.md.
+- Sin modificar: código fuente, Pendientes.md, completadas.md, completadas_legacy.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, rama base y demás ramas.
+- Pruebas: inspección estática/manual de normalizador, consumidores frontend, test UX-05 y normalizador backend del omnibox. No se ejecutaron navegador, DOM real, suites automatizadas, Google Sheets, servicios backend ni operaciones productivas.
+- No se creó AUD-NG ni TASK nueva.
+- Publicación: un solo commit final descendiente de 6781139d0250c301ca7d98e5c86d3bf266a54a00, con los cinco archivos documentales anteriores. Sin commits intermedios.
+- Tras publicar, verificar SHA del commit, árbol, lista exacta de archivos, HEAD de NG_beta_0.0.0.1_work y que NG_beta_0.0.0.1 siga en 44d9891132332e692dbe2ba8602b41f50a508a59.
+================================================================

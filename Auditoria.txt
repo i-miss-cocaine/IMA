@@ -5691,3 +5691,26 @@ RECONCILIACIÓN:
 PRUEBAS Y LÍMITES:
 Inspección estática/manual. Se localizaron las referencias en 21 archivos JS y 13 HTML principales de dashboards. No se ejecutaron navegador, DOM real, suites automatizadas, Apps Script ni sincronizaciones reales. No se modificó código fuente.
 ================================================================
+
+ 
+===============================================================================
+RESULTADO DE AUDITORÍA DE COMPLETADAS - T-UX-05
+FECHA: 2026-11-05
+DICTAMEN: CUMPLE
+TAREA: T-UX-05 - Normalización Diacrítica Insensible a Tildes para Búsquedas y Filtros
+ARCHIVO PRINCIPAL: js/ui-common.js (SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67)
+EVIDENCIA:
+- normalizeSearchString: líneas 2202-2212; NFD + eliminación U+0300-U+036F + minúsculas + puntuación/espacios.
+- setupAdvancedTableFilters: líneas 2137-2150, normaliza filtros y campos antes de indexOf.
+- renderAdminTicketsUI: líneas 4094-4112, normaliza consulta y ticketId/nombreUsuario/areaFuncion/descripcion; el input admin-ticket-search-input invoca renderAdminTicketsUI en onkeyup.
+- UX-05 de runUXSuiteTests: líneas 1885-1892, verifica «Matemáticas Rápídas» -> «matematicas rapidas».
+- La consulta «matematica» y el texto «Matemáticas» producen cadenas que coinciden por indexOf.
+RECONCILIACIÓN:
+- T-UX-06 y T-UX-14 utilizan normalizeString en backend/user-service/Code.gs para el omnibox; son extensiones del buscador global y no reemplazan la función frontend.
+- T-UX-15 utiliza normalizeSearchString en setupAdvancedTableFilters.
+- T-UX-10 contiene el test UX-05, pero ese caso es unitario y no acredita un flujo end-to-end; se revisará al auditar T-UX-10.
+- Limitaciones de calidad fuera del criterio mínimo: regex \w ASCII, equivalencia de ñ/n y puntuación convertida en separador. No invalidan la aceptación explícita.
+- No se encontró tarea pendiente duplicada. No se crea AUD-NG ni TASK nueva.
+PRUEBAS Y LÍMITES:
+Inspección estática/manual. No se ejecutaron navegador, DOM real, suites automatizadas ni servicios backend. No se modificó código fuente ni se realizaron operaciones productivas.
+===============================================================================

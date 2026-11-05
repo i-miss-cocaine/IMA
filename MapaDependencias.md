@@ -1149,3 +1149,27 @@ No se crea AUD-NG nuevo.
 - Los estados actualizado/desactualizado/pendiente/error de T-UX-21 no están modelados integralmente.
 - El anidamiento de los helpers administrativos es una regresión colateral del límite incorrecto de `renderDataFreshnessBadge`.
 - AUD-NG-183/TASK-480 concentra la corrección del renderer, integración, contrato de refresh, estados, pruebas y restauración de helpers.
+
+ 
+## Normalización diacrítica frontend y búsqueda global (T-UX-05 / T-UX-06 / T-UX-14 / T-UX-15, C1.47)
+
+### Normalizador frontend
+- js/ui-common.js:2202-2212 -> window.normalizeSearchString(str).
+- Convierte a string, minúsculas, NFD, elimina marcas U+0300-U+036F, sustituye signos no alfanuméricos por espacios, colapsa espacios y recorta.
+- Consumidor de búsqueda: renderAdminTicketsUI (4094-4112), que normaliza consulta, ticketId, nombreUsuario, areaFuncion y descripcion antes de usar indexOf. El input admin-ticket-search-input ejecuta el render al escribir.
+- Consumidor de filtros: setupAdvancedTableFilters (2137-2150), que normaliza cada valor de filtro y campo del registro antes de comparar.
+- Prueba UX-05: runUXSuiteTests (1885-1892), verifica la salida del normalizador.
+
+### Normalización en backend y tareas posteriores
+- backend/user-service/Code.gs:841-844 -> normalizeString(str), con lowercase + NFD + eliminación de U+0300-U+036F + trim.
+- searchGlobalOmnibox (aprox. 7990-8142) normaliza la consulta al inicio y normaliza campos de expedientes, usuarios, noticias y trámites antes de buscar.
+- T-UX-06 y T-UX-14 dependen del normalizador backend; no sustituyen el helper frontend.
+- T-UX-15 utiliza normalizeSearchString desde el administrador de filtros avanzados.
+- T-UX-10 incorpora el caso UX-05, pero el test valida la transformación de texto, no el flujo de búsqueda completo.
+
+### Calidad y límites
+- El criterio «matematica» encuentra «Matemáticas» por normalización simétrica y comparación indexOf.
+- La regex \w es ASCII; algunos caracteres Unicode que no se descomponen a ASCII pueden perderse.
+- La ñ se reduce a n y la puntuación se convierte en espacios; son decisiones más amplias que la aceptación mínima y pueden afectar búsquedas con nombres/identificadores especiales.
+- Otros módulos mantienen normalizadores NFD locales para casos específicos; no existe centralización total de todos los usos de texto.
+- Estado T-UX-05: CUMPLE; sin nuevo AUD-NG ni TASK.

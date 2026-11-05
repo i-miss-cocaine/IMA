@@ -562,3 +562,16 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Código fuente:** sin modificaciones. `completadas.md`, `ChangesLogs.txt` y `METODOLOGIA_DESARROLLO.md` sin cambios.
 - **Progreso:** 47/183 identificadores auditados; 136 pendientes.
 - **Siguiente tarea:** T-UX-05 - Normalización Diacrítica Insensible a Tildes para Búsquedas y Filtros.
+
+ 
+## 52. Resultado C1.47 - T-UX-05 (2026-11-05)
+
+- **Dictamen:** CUMPLE. normalizeSearchString usa NFD, elimina marcas diacríticas, convierte a minúsculas y normaliza espacios/puntuación. El flujo renderAdminTicketsUI normaliza query y campos antes de indexOf; «matematica» encuentra «Matemáticas».
+- **Evidencia:** js/ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67; normalizador 2202-2212; setupAdvancedTableFilters 2137-2150; renderAdminTicketsUI 4094-4112; test UX-05 1885-1892.
+- **Reconciliación:** T-UX-06 y T-UX-14 usan normalizeString en backend/user-service/Code.gs para el omnibox; T-UX-15 usa el helper frontend en filtros avanzados. T-UX-10 contiene el test UX-05, que solo verifica transformación y no búsqueda end-to-end; se revisará al auditar T-UX-10.
+- **Calidad:** regex \w ASCII, ñ/n y puntuación convertida a separador son límites de alcance más amplio; no invalidan el criterio de T-UX-05. Algunos módulos conservan normalizadores NFD locales.
+- **Backlog:** Pendientes.md recuperado del blob vigente del HEAD de trabajo SHA e050c03b97fc08916b878c34dcd5c247403d8c4b (1,632,208 caracteres, 19,283 líneas). Inventario: 480 IDs TASK y 178 IDs AUD-NG únicos, máximos TASK-480/AUD-NG-183. No se modificó Pendientes.md; no se creó AUD-NG ni TASK.
+- **Pruebas:** inspección estática/manual; no se ejecutaron navegador, DOM real, suites automatizadas ni servicios backend.
+- **Código fuente:** sin modificaciones. completadas.md, ChangesLogs.txt y METODOLOGIA_DESARROLLO.md intactos.
+- **Progreso:** 48/183 identificadores auditados; 135 pendientes.
+- **Siguiente tarea:** T-UX-06 - Omnibox Unificado Multi-Entidad con Atajo Global Ctrl + K.
