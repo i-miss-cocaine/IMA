@@ -4582,3 +4582,17 @@ AUDITORÍA DE completadas.md - TAREA-07 (2026-11-05)
 - TAREA-08: CUMPLE PARCIALMENTE. ChangesLogs solo registra arreglos estáticos en js/config.js. Calidad insuficiente; inspección estática, sin pruebas funcionales.
 - Progreso: 14/183; 169 pendientes. Siguiente: TAREA-09.
 ===============================================================================
+
+
+===============================================================================
+AUDITORÍA DE completadas.md - TAREA-09 (2026-11-05)
+- Dictamen: CUMPLE PARCIALMENTE.
+- ChangesLogs.txt solo registra CURRICULAR_SPECIALIZED_SERVICES en js/config.js; no registra deployments por área ni cambios en task-service, exam-service o api.js.
+- El mapa contiene 12 claves/herramientas, pero no proyectos, deployment IDs, endpoints, propietarios, fuentes o permisos. fetchApi solo resuelve SERVICE_URLS genéricos.
+- deployAcademicMicroserviceInstance registra metadatos, deja scriptId opcional, fija PASS/Activo y no comprueba un deployment. runCurricularAreaServiceTests devuelve PASS constante y puede activar el área sin pruebas reales.
+- createTask no persiste areaId; createExam tampoco. No se demuestra aislamiento por área.
+- Hallazgos nuevos: ninguno. Se amplía AUD-NG-011 y se relaciona con AUD-NG-078/079/083/084/086/131/144 y AUD-NG-164.
+- Severidad de AUD-NG-011: recomendar revaluación de Observación a Alto (P1).
+- Calidad: insuficiente; inspección estática sin pruebas reales.
+- Progreso: 15/183; 168 pendientes. Siguiente: TAREA-10.
+===============================================================================

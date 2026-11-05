@@ -205,3 +205,9 @@ Al reanudar:
 - Hallazgo nuevo: AUD-NG-164, catálogo curricular maestro y relaciones con planes/ofertas.
 - Tareas relacionadas: TASK-005, AUD-NG-011/018/093/108/111/113/115/117 y TASK-153.
 - Progreso: 14/183; 169 pendientes. Siguiente: TAREA-09.
+
+
+## 19. Resultado C1.11 - TAREA-09 (2026-11-05)
+- Dictamen: CUMPLE PARCIALMENTE. CURRICULAR_SPECIALIZED_SERVICES es un mapa estático de 12 claves/herramientas; no hay deployments ni endpoints por área. fetchApi no usa el mapa. deployAcademicMicroserviceInstance registra metadatos y marca PASS/Activo sin deployment real; runCurricularAreaServiceTests devuelve PASS constante. createTask/createExam no persisten areaId.
+- Hallazgos nuevos: ninguno. Se amplía AUD-NG-011; relacionados AUD-NG-078/079/083/084/086/131/144 y AUD-NG-164.
+- Recomendar revaluación de AUD-NG-011 de Observación a Alto (P1). Progreso 15/183; 168 pendientes. Siguiente: TAREA-10.

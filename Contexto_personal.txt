@@ -888,3 +888,19 @@ CHECKPOINT C1.10 - AUDITORÍA TAREA-08 (2026-11-05)
 - Archivos del commit: Auditoria.txt, Pendientes.md, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt e informe TAREA-08.
 - Sin cambios en código fuente, completadas.md, ChangesLogs.txt ni metodología. Siguiente tarea: TAREA-09.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.11 - AUDITORÍA TAREA-09 (2026-11-05)
+================================================================
+- Rama: NG_beta_0.0.0.1_work; HEAD previo: 0b3e6a010c3fa020946d7fc7559baeeda68b48b3.
+- Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59; intacta.
+- Última tarea: TAREA-09 - servicios Apps Script especializados por área curricular.
+- Dictamen: CUMPLE PARCIALMENTE. Progreso: 15/183; 168 pendientes.
+- Evidencia: mapa estático de 12 serviceKey/herramientas; no hay deployments/endpoints por área. fetchApi no usa ese mapa. deployAcademicMicroserviceInstance simula registro y PASS/Activo; runCurricularAreaServiceTests devuelve PASS constante. createTask/createExam no persisten areaId.
+- Hallazgos nuevos: ninguno. Se amplía AUD-NG-011; relacionados AUD-NG-078/079/083/084/086/131/144 y AUD-NG-164.
+- Informe: AUDITORIA_COMPLETADAS_TAREA-09.md. Sección del plan: 19.
+- Archivos del único commit: Auditoria.txt, Pendientes.md, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt e informe TAREA-09.
+- No se modifica código fuente, completadas.md, ChangesLogs.txt ni metodología. No se ejecutaron pruebas reales.
+- Siguiente tarea: TAREA-10.
+================================================================

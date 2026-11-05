@@ -626,3 +626,10 @@
 - USER usa CatalogoDepartamentos; ACADEMIC usa DepartamentosAcademicos; no se demuestra fuente única.
 - Asignaturas/planes/ofertas carecen de metadatos y validaciones; teacher.js/teacher-dashboard.html no consumen el catálogo para administración.
 - Hallazgo nuevo: AUD-NG-164. Tareas relacionadas: TASK-005, AUD-NG-011/018/093/108/111/113/115/117 y TASK-153.
+
+
+## Auditoría de completadas.md - TAREA-09 (2026-11-05)
+- Dictamen: CUMPLE PARCIALMENTE. CURRICULAR_SPECIALIZED_SERVICES solo declara 12 claves/herramientas; no define proyectos, deployment IDs, endpoints, propietarios, fuentes ni permisos.
+- fetchApi resuelve solo SERVICE_URLS genéricos; no usa el mapa especializado. deployAcademicMicroserviceInstance registra metadatos y marca PASS/Activo sin deployment real; runCurricularAreaServiceTests devuelve PASS constante.
+- createTask y createExam no persisten areaId. No se demuestra aislamiento operativo por área.
+- Hallazgos existentes: AUD-NG-011, AUD-NG-078/079/083/084/086/131/144 y AUD-NG-164. No se crea uno nuevo.
