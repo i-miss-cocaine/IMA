@@ -2388,3 +2388,85 @@ ARCHIVOS DE ESTA ITERACIÓN:
 - Próxima acción: auditar T-UX-13, reconciliar AUD-NG-186/TASK-483, revisar cambios posteriores de navegación y verificar todos los dashboards/roles cubiertos.
 
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.53 - AUDITORÍA T-UX-13 (2026-11-05)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto real: Contexto_personal.txt.
+- Rama de trabajo autorizada: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: f681b2dc4e324fc3aca1018706edd6dc6ce40221 (checkpoint C1.52).
+- Árbol de partida: 2013892f3ceef7cc85ed4ca64508f19cea1e49c9.
+- HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59; permaneció sin cambios.
+- HEAD inmediatamente antes del commit del checkpoint: fb2fbeebb4c6b115cc70a850066fdfdcdb17d196.
+- Comparación antes del checkpoint: rama de trabajo 109 commits por delante, 0 por detrás de la base.
+- El commit que contiene este checkpoint se confirmará consultando HEAD después de publicarlo; no se escribe su propio SHA aquí.
+- Se continúa la auditoría general de las tareas marcadas [X] en completadas.md, según el plan AUDITORIA_COMPLETADAS_PLAN.md. El objetivo vigente sigue siendo completar los 183 identificadores del plan; no se modifica completadas.md.
+- Última tarea auditada y cerrada: T-UX-13 - Completar el menú lateral específico de cada panel.
+- Dictamen: NO CUMPLE. El drawer compartido es genérico y no filtra rutas por rol; no existe sidebar desktop funcional; el disparador móvil se inserta dentro de nav.hidden.md:flex en ocho dashboards y el botón md:hidden queda oculto tanto en móvil (por el padre) como en escritorio (por su clase). Coordinación usa el fallback al contenedor; Developer no carga ui-common.js y dynamic-dashboard no tiene #main-header. No se marca ruta activa ni estado ARIA de acordeones; una acción inmediata se presenta como enlace.
+- Tarea en curso: ninguna; inspección estática/manual de T-UX-13 cerrada.
+- Siguiente tarea: T-UX-14 - Completar la búsqueda global y optimizar sus resultados. Reconciliar AUD-NG-184/TASK-481, AUD-NG-185/TASK-482, T-UX-06 y T-UX-10 antes de revisar la implementación actual.
+- Progreso acumulado: 54/183 identificadores auditados; 129 pendientes.
+
+RECONCILIACIÓN HISTÓRICA:
+- T-UX-13 aparece dos veces en completadas.md: versión ampliada en líneas 695-721 y versión abreviada en línea 1584. Se usó la ampliada como fuente de criterios y se preservó la duplicada.
+- T-UX-09 aparece dos veces; la auditoría C1.49 registró AUD-NG-186 y creó TASK-483. La tarea existente TASK-483 ya cubría menú por rol, rutas, desktop, dashboards alternativos y accesibilidad.
+- Se creó AUD-NG-194 como evidencia nueva del disparador móvil oculto, ausencia de estado activo accesible y acción inmediata implementada como enlace. Se vinculó al TASK-483 existente para evitar duplicación de causa raíz/tarea.
+- T-UX-19 (accesibilidad), T-UX-20 (responsividad), T-UX-10/UX-09 (prueba de presencia) y T-UX-11/TASK-485/486 (historial/contexto) se mantienen como tareas relacionadas; no sustituyen los criterios de T-UX-13.
+- La auditoría fuente AUDITORIA_FASE3_EXPERIENCIA_USUARIO_NAVEGACION.md referida por completadas.md no existe en el árbol actual de la rama; se utilizó la especificación de completadas.md y el registro histórico AUD-NG-186.
+- No se modificó completadas.md ni se alteró el estado histórico [X] de T-UX-13.
+
+HALLAZGOS Y TAREAS:
+- AUD-NG-194 (MEDIO/P2): en ocho dashboards con nav.hidden.md:flex el disparador md:hidden se inserta como hijo de nav, por lo que no se muestra en móvil ni escritorio. Coordinación no tiene nav y usa fallback. Developer carece de ui-common.js y dynamic-dashboard carece de #main-header. El drawer tampoco comunica ruta activa ni estado de acordeones, y mezcla una acción inmediata con enlaces.
+- TASK-483 existente se amplió en Pendientes.md con evidencia AUD-NG-194 y criterios verificables: disparador visible por viewport, ruta activa semántica, acciones como botones, gestión del foco y pruebas por rol/viewport. El estado permanece [ ] Pendiente.
+- No se creó un nuevo TASK ID ni se duplicó el alcance de TASK-483.
+
+RECUPERACIÓN E INVENTARIO DE Pendientes.md:
+- Ruta: Pendientes.md.
+- Rama de recuperación: NG_beta_0.0.0.1_work, exclusivamente.
+- HEAD de partida C1.52: f681b2dc4e324fc3aca1018706edd6dc6ce40221; árbol 2013892f3ceef7cc85ed4ca64508f19cea1e49c9.
+- La lectura convencional de Pendientes.md devolvió 0 caracteres. Se consultó el árbol Git recursivo de ese HEAD y se recuperó el blob exacto 42999b169766bbfd10a2d3de02fc40fc937fc620, 1,664,739 caracteres y 19,537 líneas. Se usó exclusivamente la rama de trabajo; no se consultó rama base, legacy ni rama externa para recuperar contenido.
+- Se preservó íntegramente el contenido y se amplió solo el bloque TASK-483. Blob posterior: cf9bacd54ac4e90e2d9289f41d1db61bac6090b4, 1,665,667 caracteres y 19,542 líneas.
+- Inventario posterior verificado desde el blob: 490 encabezados TASK únicos, máximo TASK-490; 490 referencias TASK únicas; 189 referencias AUD-NG únicas, máximo AUD-NG-194; total 679 IDs combinados.
+- No se creó una tarea nueva; TASK-483 sigue pendiente. No se cambiaron estados históricos.
+
+ARCHIVOS Y SHAs DE RESPALDO:
+- completadas.md: f57f1aef832e81e44fc4f7ec36a852d50e464676.
+- METODOLOGIA_DESARROLLO.md: 214e8221bd076c4e89012636c105bffd5ca36467.
+- js/ui-common.js: 986938b8a311a41ed4cb3d135b66b6aaea4bed67.
+- css/style.css: f1ff84312ce70949a58eaa099b2aad0ff0a59cb6.
+- dashboard-direccion.html: fefaa3bf7884288aef563cfb8aaf244e6cea8b7c.
+- dashboard-recursos-humanos.html: 406bedbae5a5bb3b5c03e4ea7aaa95ed68aea8ee.
+- dashboard-contabilidad.html: b7653b3bff71829f0f67cf47cb894413c56a444a.
+- student-dashboard.html: 6379ea0ed39d71b89747a0280bb925fdf12202c1.
+- teacher-dashboard.html: cbb9e6a272a7d8ad33f99727303305d950533e71.
+- dashboard-secretaria.html: fa0d8c23aace24a6acab2d4956398a7f5e1309b8.
+- dashboard-coordinacion.html: 08de8e4eb150ee9f6aad536ca08e8f76f2e0e896.
+- developer-dashboard.html: 2b69f1bf7ffbbe4902e81de14d6315cedb035a1e.
+- app/html/dashboards/dynamic-dashboard.html: 765a45e5666c24c430e841cb70c3d71d03cf9074.
+- dashboard-cafeteria.html: 12f8c828dd1f8f2c3be34e14d8c9478944c64d04.
+- dashboard-tienda.html: 60fb5c399b527f7d3a6e764332d8496e17643d5c.
+- Pendientes.md blob previo: 42999b169766bbfd10a2d3de02fc40fc937fc620.
+- Pendientes.md blob posterior: cf9bacd54ac4e90e2d9289f41d1db61bac6090b4.
+- Auditoria.txt antes: 140d24451ba70fe0d8c1aa6275a3512da96bf1de.
+- MapaDependencias.md antes: 4f489ee2d449133a18ee54561058a5881479fd23.
+- AUDITORIA_COMPLETADAS_PLAN.md antes: aa7023d8366a24511698596e7e94e1fe3a6b7894.
+- Contexto_personal.txt antes: fcfdda4782d9848dcceb9bebe3b98684702d5ea0.
+
+ARCHIVOS DE ESTA ITERACIÓN:
+- Modificados: Pendientes.md, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt.
+- Nuevo: AUDITORIA_COMPLETADAS_T-UX-13.md.
+- Sin modificar: código fuente, completadas.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, rama base y demás ramas.
+- Pruebas: inspección estática/manual de tarea, JS, CSS y 11 dashboards. No se ejecutaron navegador, DOM real, viewport, teclado/táctil, lectores de pantalla ni suites automatizadas.
+- Publicación modular autorizada expresamente por el usuario en la instrucción anterior de esta misma auditoría. Commits publicados antes de este checkpoint:
+  - Informe T-UX-13: 09a982d422e13e7e3f88d98beeb7f30409e5934c.
+  - Ampliación de TASK-483 en Pendientes.md: c96086ea03926ce8537ff21978d3427fac6c5692.
+  - Auditoria.txt: b3ca444a0847f87427368d6bff076fd97e941a25.
+  - MapaDependencias.md: d2be6d87448157bdc69d1737f8ea1a4ae8ea23cb.
+  - AUDITORIA_COMPLETADAS_PLAN.md: fb2fbeebb4c6b115cc70a850066fdfdcdb17d196.
+- El commit de este checkpoint se confirmará externamente consultando HEAD después de publicar; no escribir su propio SHA dentro de este checkpoint.
+- Próxima acción: auditar T-UX-14; reconciliar primero AUD-NG-184/TASK-481 y AUD-NG-185/TASK-482, revisar las ampliaciones posteriores T-UX-06/T-UX-10, inspeccionar el flujo completo del Omnibox en frontend/backend y comprobar permisos, XSS, errores y navegación.
+
+================================================================
