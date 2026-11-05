@@ -1554,3 +1554,27 @@ CHECKPOINT C1.36 - AUDITORÍA FASE2-T03 (2026-11-05)
 - Última tarea auditada: FASE2-T03. No hay tarea en curso.
 - Siguiente tarea exacta: FASE2-T04. Contrastar sus diez requisitos con js/config.js y backend/academic-service/Code.gs; considerar FASE2-03/C1.31 como implementación posterior, verificando cambios y regresiones sin repetir su auditoría.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.37 - AUDITORÍA FASE2-T04 (2026-11-05)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto: Contexto_personal.txt (archivo real; no crear contexto_personal.md).
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- HEAD de partida verificado: 6ba15688a84db7a7edc0c9b7b7f9c75493a188c1.
+- Rama base: NG_beta_0.0.0.1, HEAD verificado 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios ni merge.
+- Commit de cierre: el commit que contiene este checkpoint; verificar SHA externamente tras publicar.
+- Checkpoint anterior: C1.36 - FASE2-T03.
+- Tarea auditada: FASE2-T04 - Establecer una fuente de verdad institucional para catálogos, configuraciones y referencias.
+- Dictamen: CUMPLE PARCIALMENTE.
+- Progreso: 40/183 identificadores únicos auditados; 143 pendientes.
+- Evidencia: completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676; js/config.js SHA 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc; backend/academic-service/Code.gs SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; backend/user-service/Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; AUDITORIA_COMPLETADAS_FASE2-03.md SHA b0b9a238a27ffc00f356409b7b66e4295e69b5e2; Pendientes.md blob SHA ba9de8d19b8311d99a62681af5cc2b7177132b78.
+- Hallazgos: catálogos de capacidades/módulos/responsabilidades/áreas/departamentos permanecen estáticos en cliente; fetchInstitutionalCatalog solo sincroniza áreas y devuelve success con fallback local ante fallos; getInstitutionalCatalog/getSubjectCatalog leen estado de asignaturas desde columna CargaHorariaRef (r[4]) en lugar de Estado (r[5]); no filtran inactivos; respuesta ALL tiene forma incompatible con validateCatalogReference; el validador no verifica estado ni se integra en escrituras; departmentId se omite; actualización de áreas sobrescribe metadatos/estado sin historial; defaults y IDs timestamp pueden ocultar ausencia de configuración o unicidad.
+- Reconciliación: ampliar AUD-NG-175. No duplicar TASK-062 (versionado/invalidez de configuración), TASK-046/AUD-NG-083/AUD-NG-084/AUD-NG-086 (resolución de fuentes), ni AUD-NG-158 (estado/ámbito de áreas).
+- Archivos modificados en esta iteración: Pendientes.md, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt y nuevo AUDITORIA_COMPLETADAS_FASE2-T04.md.
+- Archivos no modificados: js/config.js, backend/academic-service/Code.gs, backend/user-service/Code.gs, completadas.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md y rama base.
+- Pruebas: inspección estática/manual. No se ejecutaron pruebas automatizadas, Apps Script, HTTP, navegador, pruebas de caché real, concurrencia, acceso a Sheets/Drive productivo ni operaciones productivas.
+- Última tarea completamente auditada: FASE2-T04. No hay tarea en curso.
+- Siguiente tarea exacta: FASE2-T05 - Unificar y validar el sistema de identificadores institucionales. Continuar contrastando sus diez requisitos con backend/accounting-service/Code.gs, backend/academic-service/Code.gs y backend/user-service/Code.gs; revisar los generadores y validadores reales, las llamadas desde escrituras, CUV y relaciones entre PersonaID/UserId/ExpedienteID/documentos, y considerar las auditorías posteriores para no duplicar AUD-NG-059, AUD-NG-061, AUD-NG-161 ni hallazgos de concurrencia.
+================================================================

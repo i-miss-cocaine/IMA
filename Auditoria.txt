@@ -5438,3 +5438,22 @@ DESCRIPCIÓN: FASE2-T03 exige inventario de operaciones y consumidores, document
 IMPACTO: cambios de API pueden romper consumidores sin detección; errores, respuestas vacías y fallbacks pueden confundirse; parámetros y efectos secundarios carecen de contrato verificable; cambios incompatibles pueden llegar a producción sin pruebas.
 AMPLIACIÓN DE TAREA: extender AUD-NG-174 con catálogo completo de operaciones/consumidores, esquemas, autorización, efectos secundarios, repetición, versionado y compatibilidad. No duplicar hallazgo.
 ================================================================
+
+
+================================================================
+FECHA: 2026-11-05
+AUDITORÍA DE TAREA COMPLETADA - FASE2-T04: FUENTE DE VERDAD INSTITUCIONAL PARA CATÁLOGOS, CONFIGURACIONES Y REFERENCIAS
+ARCHIVOS AUDITADOS: js/config.js; backend/academic-service/Code.gs; backend/user-service/Code.gs
+SHAS: js/config.js 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc; Academic daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; User 12079dd410aa6d8afbce55a4bc62a79dea605f9f; completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676.
+DICTAMEN: CUMPLE PARCIALMENTE.
+REQUISITOS: Se inspeccionaron los diez requisitos funcionales y ocho criterios de aceptación de FASE2-T04. Existe almacenamiento académico para asignaturas/áreas y endpoints de consulta/validación, pero no hay fuente de verdad efectiva ni contrato transversal. config.js mantiene capacidades, módulos, responsabilidades, áreas y departamentos estáticos; fetchInstitutionalCatalog sincroniza únicamente áreas y presenta fallos de API como success con datos locales. No se observa uso de CACHE_POLICIES.INSTITUTIONAL_CATALOGS ni invalidación asociada a la modificación de catálogos.
+HALLAZGOS:
+1. Academic getInstitutionalCatalog (3824-3883) y getSubjectCatalog (5995-6010) leen estado de asignaturas desde r[4], aunque CatalogoAsignaturas define CargaHorariaRef en índice 4 y Estado en índice 5. Las consultas no filtran registros inactivos.
+2. getInstitutionalCatalog devuelve arrays para CURRICULAR_AREAS/SUBJECTS, pero un objeto para ALL. validateCatalogReference (3885-3915) solo valida si data es array, no verifica estado activo y no está integrado en las operaciones de escritura inspeccionadas. La referencia manual puede persistirse por rutas que no invocan el validador.
+3. fetchInstitutionalCatalog (config.js 808-825) solo sincroniza areasCurriculares e ignora asignaturas; ausencia de fetchApi, respuesta inesperada o fallo de red se convierten en status success con catálogo estático.
+4. registerNewCurricularAreaServiceConfig (943-965) no actualiza metadatos de IDs existentes ni refleja estado/departamento. registerCurricularAreaExtension sobrescribe filas existentes y fija estado Inactivo_PendientePruebas; no conserva historial. departmentId se persiste pero el catálogo no lo expone.
+5. createSubjectCatalogItem admite areaAcademica por defecto General y genera ID basado en Date.now sin reserva de unicidad visible. Los defaults pueden ocultar configuración requerida.
+6. User getSharedConfigurationsCatalog (185-200) entrega versiones estáticas de servicios; no es una fuente persistente de catálogos institucionales.
+RECONCILIACIÓN: ampliar AUD-NG-175. TASK-062 cubre versión/invalidez de configuración; TASK-046 y AUD-NG-083/084/086 cubren enrutamiento de fuentes; AUD-NG-158 cubre estado/ámbito de áreas. No crear duplicados.
+PRUEBAS: inspección estática/manual. No se ejecutaron Apps Script, HTTP, navegador, caché real, concurrencia ni operaciones productivas.
+================================================================

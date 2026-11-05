@@ -966,3 +966,18 @@ No se crea AUD-NG nuevo.
 - `backend/user-service/Code.gs:1351-1620`: dispatcher por acción y autorización; catch devuelve err.message. No se encontró catálogo formal de contratos por operación.
 - `backend/accounting-service/Code.gs:572-785`: dispatcher por acción con autorización e idempotencia opcional; no se identificó suite contractual equivalente.
 - Reconciliación: ampliar AUD-NG-174 con catálogo de endpoints/consumidores, tipos, validación, efectos secundarios, idempotencia/repetición y compatibilidad versionada. No duplicar AUD-NG-007/AUD-NG-006/AUD-NG-161.
+
+
+## FASE2-T04 - Fuente de verdad institucional para catálogos y configuraciones (C1.37)
+- js/config.js:2-74: catálogos locales de capacidades, módulos y responsabilidades; getters devuelven esos arrays estáticos.
+- js/config.js:76-114: SERVICE_VERSIONS, CACHE_POLICIES y validación de versión. CACHE_POLICIES.INSTITUTIONAL_CATALOGS declara 43,200 s, pero no se consume en fetchInstitutionalCatalog; versionado/invalidez se mantiene en TASK-062.
+- js/config.js:171-200: CURRICULAR_AREAS_CATALOG y ACADEMIC_DEPARTMENTS_CATALOG son copias locales; no se sincroniza departamento.
+- js/config.js:808-825: fetchInstitutionalCatalog llama ACADEMIC/getInstitutionalCatalog; solo agrega áreas y devuelve success con catálogo estático ante ausencia de API, respuesta no válida o error.
+- js/config.js:943-965: registerNewCurricularAreaServiceConfig inserta solo IDs nuevos; no actualiza metadatos/estado de existentes.
+- backend/academic-service/Code.gs:108: CatalogoAsignaturas se define como ID, Nombre, Código, Área, CargaHorariaRef, Estado; el estado está en índice 5.
+- backend/academic-service/Code.gs:3824-3883: getInstitutionalCatalog mapea estado de asignaturas desde índice 4 y no filtra inactivos; respuesta ALL usa objeto y tipos específicos arrays; no incluye departmentId.
+- backend/academic-service/Code.gs:3885-3915: validateCatalogReference no verifica estado y solo admite data array; no se encontró llamado desde las mutaciones inspeccionadas.
+- backend/academic-service/Code.gs:4084-4145, 4206-4235: registro/actualización de áreas sobrescribe fila, fuerza estado pendiente y cambio de estado muta el registro actual.
+- backend/academic-service/Code.gs:5995-6027: getSubjectCatalog repite índice de estado incorrecto; createSubjectCatalogItem admite área por defecto General y genera ID basado en timestamp.
+- backend/user-service/Code.gs:185-200: getSharedConfigurationsCatalog publica versiones estáticas, no fuente persistente de catálogos.
+- Reconciliación: ampliar AUD-NG-175; no duplicar TASK-062 (versionado/invalidez), TASK-046/AUD-NG-083/084/086 (enrutamiento) ni AUD-NG-158 (estado/ámbito de áreas).

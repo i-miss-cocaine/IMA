@@ -456,3 +456,13 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Pruebas:** inspección estática/manual. No se ejecutaron Apps Script, HTTP, navegador ni suites automatizadas.
 - **Progreso:** 39/183 identificadores auditados; 144 pendientes.
 - **Siguiente tarea:** FASE2-T04 - Establecer una fuente de verdad institucional para catálogos, configuraciones y referencias.
+
+
+## 44. Resultado C1.37 - FASE2-T04 (2026-11-05)
+- **Dictamen:** CUMPLE PARCIALMENTE. Hay almacenamiento académico y endpoints de catálogo, pero no existe fuente de verdad transversal: el cliente mantiene listas duplicadas, solo sincroniza áreas, los fallos se convierten en success y la validación de referencias no se integra en escrituras.
+- **Evidencia:** completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676; js/config.js SHA 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc; Academic SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; User SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f. Estado de asignaturas leído desde índice incorrecto r[4] en lugar de r[5]; consultas sin filtro de inactivos; ALL devuelve objeto incompatible con validateCatalogReference; mutaciones no llaman validador; departmentId omitido; no hay historial de cambios.
+- **Reconciliación:** ampliar AUD-NG-175. TASK-062 conserva versionado/invalidez; TASK-046 y AUD-NG-083/084/086 conservan resolución de fuentes; AUD-NG-158 conserva estado/ámbito de áreas.
+- **Backlog:** se amplió AUD-NG-175 en Pendientes.md; no se creó un nuevo AUD-NG ni se modificó completadas.md.
+- **Pruebas:** inspección estática/manual; no se ejecutaron Apps Script, HTTP, navegador, caché real ni operaciones productivas.
+- **Progreso:** 40/183 identificadores únicos auditados; 143 pendientes.
+- **Siguiente tarea:** FASE2-T05 - Unificar y validar el sistema de identificadores institucionales.
