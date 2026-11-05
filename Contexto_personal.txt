@@ -24,7 +24,7 @@ F. **RECUPERACIÓN HISTÓRICA OBLIGATORIA CUANDO UN ARCHIVO DEVUELVA CERO CARACT
    4. Preservar el blob y el commit de origen como respaldo inmutable. Antes de restaurar, reconciliar cambios posteriores, tareas nuevas, duplicados y estados; revisar el diff completo. La restauración solo se ejecuta si está autorizada y puede hacerse sin pérdida histórica, siguiendo el commit único por iteración. Si no se puede recuperar o validar íntegramente, detenerse y documentar el bloqueo; no escribir sobre el archivo.
    5. **Inventario obligatorio en el checkpoint:** registrar ruta, rama, HEAD consultado, commit y blob SHA seleccionados, motivo de selección, resultado de la lectura convencional (0 caracteres), caracteres/tamaño y líneas recuperadas, cantidad de tareas por categoría, total de identificadores únicos de tarea, identificador máximo/último, estados completados/pendientes cuando se puedan contar de forma fiable, comparación con legacy y validaciones realizadas/no realizadas. No declarar «recuperado íntegramente» sin esa evidencia.
 
-Esta regla aplica a cualquier archivo funcional o documental del repositorio IMA, especialmente `Pendientes.md` y `completadas.md`.
+Esta regla aplica a CUALQUIER archivo del repositorio IMA, sin excepción por tipo, extensión, ubicación o propósito: código fuente, documentación, configuraciones, datos, pruebas, recursos, archivos binarios y cualquier otro artefacto versionado. El hecho de que una herramienta devuelva 0 caracteres no permite clasificar el archivo como vacío. Si el archivo no es texto o la lectura textual no es compatible con su formato, la recuperación y validación deben hacerse sobre el objeto Git y sus bytes (incluidos tamaño y SHA); no se debe forzar una interpretación textual. El inventario de tareas/IDs se exige cuando el archivo contenga registros de tareas; para los demás archivos se registra expresamente «no aplica» y se inventarían las propiedades pertinentes al tipo de archivo.
 
 ---
 
@@ -1608,4 +1608,26 @@ CHECKPOINT C1.38 - REGLA DE RECUPERACIÓN HISTÓRICA E INVENTARIO DE TAREAS (202
 - Pruebas: revisión documental y verificación Git de HEAD/SHAs e inventario de contenido. No se ejecutaron pruebas de aplicación.
 - Siguiente paso funcional: continuar en FASE2-T05 - Unificar y validar el sistema de identificadores institucionales, según C1.37, después de verificar el HEAD de trabajo y releer el gate y este checkpoint. No repetir FASE2-T04.
 - Commit de cierre: el único commit que contiene este checkpoint; verificar SHA/árbol/HEAD después de publicar y confirmar que la rama base permanece intacta.
+================================================================
+
+
+================================================================
+CHECKPOINT C1.39 - ALCANCE UNIVERSAL DE LA REGLA DE RECUPERACIÓN (2026-11-05)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto: Contexto_personal.txt.
+- Rama de trabajo autorizada: NG_beta_0.0.0.1_work.
+- HEAD de partida verificado: 26e34270308b79b8e27e6b00ddd06f48d581137c.
+- Rama base protegida: NG_beta_0.0.0.1; HEAD verificado: 44d9891132332e692dbe2ba8602b41f50a508a59; sin modificaciones.
+- Contexto leído íntegramente: blob SHA 65f380ddc53b2004e29db8d9fd7092f65843d6d9; 152651 caracteres.
+- Metodología leída íntegramente: blob SHA 214e8221bd076c4e89012636c105bffd5ca36467; 48440 caracteres.
+- Plan de auditoría leído íntegramente: blob SHA 987965c526b797b2c5872db595c18d43acf97fb0; 51155 caracteres.
+- Checkpoint previo consultado: C1.38.
+- Aclaración solicitada: la regla de recuperación ante lecturas de 0 caracteres aplica a cualquier archivo versionado del repositorio, no únicamente a documentación o registros de tareas.
+- Cambio realizado: se amplió el alcance de la regla F para incluir código, documentación, configuraciones, datos, pruebas, recursos, binarios y cualquier otro artefacto, sin distinción de extensión, ubicación o propósito. Para formatos no textuales o incompatibles con lectura textual, se exige recuperación/verificación del objeto Git y sus bytes, tamaño y SHA; queda prohibido interpretar 0 caracteres como prueba de archivo vacío.
+- Inventario en checkpoint: el conteo de tareas/IDs se aplica cuando el archivo contiene registros de tareas; en otros tipos de archivo se declara «no aplica» y se inventarían propiedades pertinentes al formato. Se mantienen los controles de rama exclusiva, validación íntegra, respaldo y commit único.
+- Alcance de modificación: únicamente se modifica Contexto_personal.txt, sustituyendo la frase que limitaba la regla a archivos funcionales/documentales y anexando este checkpoint. No se altera la regla de selección histórica ni se restaura/modifica ningún otro archivo.
+- Pruebas/verificaciones: revisión de la regla anterior y del cambio propuesto; verificación de HEAD de trabajo/base y lectura de contexto, metodología, plan y C1.38. No se ejecutaron pruebas de aplicación, no aplican a este cambio documental.
+- Próximo paso funcional: FASE2-T05 - Unificar y validar el sistema de identificadores institucionales, conforme a C1.37/C1.38. No repetir FASE2-T04.
+- Commit de cierre: el único commit que contiene esta aclaración y C1.39; confirmar SHA, árbol, archivo incluido y HEAD después de publicar.
 ================================================================
