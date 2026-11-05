@@ -4789,3 +4789,29 @@ RELACIONES:
 
 PRUEBAS/LÍMITES: inspección estática/manual. No se ejecutaron CRUD, versionado, pruebas de permisos, enlaces Drive ni pruebas XSS en navegador. No se utilizaron datos productivos ni se modificó código fuente. El documento AUDITORIA_FASE1_PLANIFICACION_EXPANSION.md no está disponible; se utilizó completadas.md.
 ================================================================
+
+
+================================================================
+AUDITORÍA TAREA-19 - MIGRACIÓN CURRICULAR SIN PÉRDIDA DE DATOS
+FECHA: 2026-11-05 | DICTAMEN: NO CUMPLE
+
+EVIDENCIA:
+- backend/academic-service/Code.gs (SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc): CatalogoAsignaturas/PlanesEstudio/PlanAsignaturas se definen en líneas 108-110. getCurricularEquivalences (3093) solo lee CatalogoAsignaturas; ignora planes y PlanAsignaturas, mapea cada asignatura a sí misma como MapeadoExacto y requiereRevision=false. No detecta ambigüedades ni equivalencias no encontradas.
+- executeCurricularMigration (3130) recibe equivalenciasMap pero no lo utiliza; solo cuenta HistorialAcademico y CalificacionesEstudiantes y comprueba r[0]/r[3] vacíos. duplicadosDetectados y modificacionesEfectuadas permanecen en 0; no detecta huérfanos, no lee boletines/documentos emitidos, no modifica datos ni compara antes/después. En modo REAL devuelve success y afirma que la migración se ejecutó, aunque no realiza escrituras.
+- No se encontró función, tabla o flujo de rollback curricular, snapshot previo, registro de cambios o restauración selectiva de la migración.
+- ROLE_PERMISSIONS: endpoints permitidos para Director/Admin, no Profesor; js/teacher.js (SHA c475fce5afcd28fca23e7b64398ad32b17773746, líneas 2192-2273) define el controlador en el panel docente y llama a los endpoints. El formulario no envía equivalenciasMap. teacher-dashboard.html (SHA cbb9e6a272a7d8ad33f99727303305d950533e71) no contiene modal ni campos de migración.
+- tests/regression/academic-grading-suite.js (SHA 3433b707edd4a2f35c68368a3172932adc2a3b32) no contiene pruebas de getCurricularEquivalences/executeCurricularMigration.
+- Los SHA de los tres archivos principales son idénticos en NG_beta_0.0.0.1 y NG_beta_0.0.0.1_work; no hay corrección posterior en la rama de trabajo.
+
+HALLAZGO NUEVO:
+AUD-NG-172 - Implementar migración curricular transaccional con prevalidación y rollback verificable (P1). Requiere mapeo real entre PlanesEstudio/PlanAsignaturas, revisión manual de ambigüedades, detección de duplicados/huérfanos, snapshot, comparación antes/después, ejecución idempotente, preservación de notas/boletines y rollback verificable.
+
+RELACIONES:
+- AUD-NG-164: catálogo/planes y relaciones curriculares.
+- AUD-NG-167: integridad de calificaciones y boletines históricos.
+- TASK-078: rollback operativo general y delta post-corte; AUD-NG-172 define el flujo curricular específico.
+- AUD-NG-158: RBAC y actor verificado.
+- TASK-296: renderizado seguro de equivalencias.
+
+PRUEBAS/LÍMITES: inspección estática/manual; no se ejecutaron migraciones, pruebas con fixtures, snapshot/rollback ni despliegues. No se utilizaron datos productivos ni se modificó código fuente. AUDITORIA_FASE1_PLANIFICACION_EXPANSION.md no está disponible; se usó el alcance explícito de completadas.md.
+================================================================

@@ -762,3 +762,11 @@ No se crea AUD-NG nuevo; las brechas se incorporan a tareas existentes.
 - teacher.js (2314-2425) espera modal ausente en teacher-dashboard.html. El formulario no envía grado/idioma/version/recursos asociados; tabla inserta campos sin escape contextual y URL sin allowlist.
 - Permisos globales para Profesor/Director/Subdirector/Secretaría, sin ABAC por área/autor/recurso; Coordinador no tiene acciones.
 - Hallazgo AUD-NG-171: catálogo, versionado append-only, relación proyecto-recurso-version, UI y pruebas. Relacionar con AUD-NG-164, AUD-NG-158 y TASK-296.
+
+
+## Auditoría TAREA-19 - migración curricular (2026-11-05)
+- CatalogoAsignaturas/PlanesEstudio/PlanAsignaturas (academic-service, 108-110): la estructura relacional existe, pero getCurricularEquivalences (3093) solo lee CatalogoAsignaturas y asigna cada materia a sí misma como equivalencia exacta. Ignora planOrigenId/planDestinoId y PlanAsignaturas.
+- executeCurricularMigration (3130) recibe equivalenciasMap pero no la utiliza; lee HistorialAcademico/CalificacionesEstudiantes, solo detecta celdas vacías, no cuenta duplicados/huérfanos, no modifica filas y devuelve success incluso en modo REAL. No hay snapshot, comparación antes/después ni rollback curricular.
+- teacher.js (2192-2273) define modal y formulario ausentes en teacher-dashboard.html; el formulario no envía equivalenciasMap. ROLE_PERMISSIONS limita la acción a Director/Admin, no Profesor.
+- Pruebas de regresión revisadas no contienen pruebas de equivalencias/migración.
+- Nuevo AUD-NG-172: migración transaccional, prevalidación, preservación histórica y rollback. Relacionar con AUD-NG-164, AUD-NG-167, TASK-078, AUD-NG-158 y TASK-296.

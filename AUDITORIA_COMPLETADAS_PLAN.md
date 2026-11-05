@@ -295,3 +295,13 @@ Al reanudar:
 - Calidad: insuficiente para aceptar reutilización interdisciplinaria con permisos y preservación histórica.
 - Pruebas: inspección estática/manual; no se ejecutaron CRUD, versionado, ACL, Drive ni pruebas XSS en navegador.
 - Progreso: 24/183 identificadores auditados; 159 pendientes. Siguiente tarea: TAREA-19.
+
+
+## 30. Resultado C1.22 - TAREA-19 (2026-11-05)
+- Dictamen: **NO CUMPLE**. Solo existe un esqueleto nominal de equivalencias/prevalidación; no hay migración real ni rollback.
+- Evidencia: getCurricularEquivalences ignora PlanesEstudio/PlanAsignaturas y marca todas las asignaturas del catálogo como equivalencias exactas consigo mismas. executeCurricularMigration no usa equivalenciasMap, solo cuenta filas y detecta algunos campos vacíos; no detecta duplicados/huérfanos, no modifica datos ni compara antes/después. En modo REAL devuelve success con modificacionesEfectuadas=0. No existe snapshot ni rollback curricular. El modal no está en teacher-dashboard y el endpoint está limitado a Director/Admin, aunque el controlador está en teacher.js.
+- Hallazgo nuevo: AUD-NG-172 (P1), migración curricular transaccional con prevalidación y rollback verificable.
+- Reconciliación: AUD-NG-164 (planes/catálogo), AUD-NG-167 (notas/boletines), TASK-078 (rollback/delta), AUD-NG-158 (RBAC) y TASK-296 (renderizado seguro).
+- Pruebas: inspección estática/manual; no se ejecutaron migraciones, fixtures, snapshots ni rollback.
+- Progreso: 25/183 identificadores auditados; 158 pendientes.
+- Siguiente tarea: TAREA-20.

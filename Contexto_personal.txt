@@ -1138,3 +1138,21 @@ CHECKPOINT C1.21 - AUDITORÍA TAREA-18 (2026-11-05)
 - AUDITORIA_FASE1_PLANIFICACION_EXPANSION.md no está disponible; se usó el alcance explícito de completadas.md.
 - No repetir TAREA-01 a TAREA-18. Siguiente tarea exacta: TAREA-19.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.22 - TAREA-19 (2026-11-05)
+================================================================
+- Rama de trabajo: NG_beta_0.0.0.1_work; HEAD anterior: f586c40ca12dfc034c28584b7ca71839cbc4b2b6.
+- Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59; intacta.
+- Última tarea: TAREA-19 - migración curricular sin pérdida de datos.
+- Dictamen: NO CUMPLE; no existe migración real ni reversión específica.
+- Progreso: 25/183; 158 pendientes.
+- Hallazgo nuevo: AUD-NG-172 (P1). Relacionadas: AUD-NG-164, AUD-NG-167, TASK-078, AUD-NG-158 y TASK-296.
+- Informe: AUDITORIA_COMPLETADAS_TAREA-19.md; sección 30.
+- SHA fuente: academic-service daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; teacher-dashboard cbb9e6a272a7d8ad33f99727303305d950533e71; tests 3433b707edd4a2f35c68368a3172932adc2a3b32.
+- Documentos: Auditoria.txt, Pendientes.md, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt e informe TAREA-19; un solo commit.
+- Sin cambios en código fuente, completadas.md, completadas_legacy.md, ChangesLogs.txt ni metodología.
+- Inspección manual; no se ejecutaron migraciones ni pruebas con datos. La especificación Fase 1 citada en completadas.md no está disponible.
+- Siguiente tarea exacta: TAREA-20. No repetir TAREA-01 a TAREA-19.
+================================================================

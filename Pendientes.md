@@ -18768,3 +18768,37 @@ Nota de secuencia: TAREA-15 registró que no debía crearse AUD-NG-170 porque su
 
 Progreso de auditoría: 24/183 identificadores únicos; 159 pendientes. Siguiente tarea: TAREA-19.
 ================================================================
+
+
+================================================================
+HALLAZGO TAREA-19 - MIGRACIÓN CURRICULAR SIN PÉRDIDA DE DATOS (2026-11-05)
+================================================================
+
+### [AUD-NG-172] Implementar migración curricular transaccional con prevalidación y rollback verificable
+- Severidad: Alto (P1).
+- Origen: Auditoría TAREA-19 de completadas.md; backend/academic-service/Code.gs, js/teacher.js y teacher-dashboard.html.
+- Problema: getCurricularEquivalences ignora PlanesEstudio/PlanAsignaturas y asigna cada asignatura a sí misma como MapeadoExacto, sin comparar plan origen/destino ni revisión. executeCurricularMigration no utiliza equivalenciasMap, no modifica registros, no detecta duplicados/huérfanos, no compara antes/después y aun así devuelve success en modo REAL. No existe rollback curricular ni snapshot de las tablas/boletines afectados. El controlador UI no tiene modal en teacher-dashboard.html.
+- Alcance: consultar planes y relaciones reales; generar mapeos exactos/probables/ambiguos/no encontrados con revisión manual; prevalidar IDs/códigos, relaciones huérfanas, duplicados, matrículas, calificaciones y boletines; producir informe y snapshot verificable antes de cualquier escritura; ejecutar cambios aprobados de forma idempotente y con registro de migración; comparar antes/después; revertir al estado exacto con conservación de operaciones posteriores; UI de administración con confirmación y permisos server-side.
+- Criterios: ninguna equivalencia ambigua se aplica automáticamente; todo registro queda vinculado al destino o explícitamente pendiente; los códigos de estudiante, notas históricas y boletines emitidos permanecen íntegros; duplicados/huérfanos se detectan antes de ejecutar; el reporte contiene totales, diferencias y checksum; modo REAL no puede responder éxito si no aplicó cambios; rollback restaura el snapshot y conserva delta posterior; pruebas con fixtures cubren migración, interrupción y reversión.
+- Relacionadas: AUD-NG-164 (catálogo y planes), AUD-NG-167 (calificaciones históricas), TASK-078 (rollback general y delta post-corte), AUD-NG-158 (RBAC/actor verificado).
+- Estado: [ ] Pendiente
+
+### Ampliación de AUD-NG-164 - Catálogo y planes curriculares
+- Usar PlanesEstudio y PlanAsignaturas como fuente de pertenencia de asignaturas a cada plan. No inferir equivalencia por identidad global de AsignaturaID ni mapear todas las filas del catálogo al mismo plan.
+- Persistir equivalencias entre planOrigenId/planDestinoId con estado de revisión, responsable, fecha y evidencia.
+
+### Ampliación de AUD-NG-167 - Integridad de calificaciones y boletines históricos
+- La migración debe preservar las claves contextuales de calificación, notas publicadas, estados, historial de rectificaciones y boletines/documentos emitidos. Validar referencias a estudiante, evaluación, asignatura, grado, sección, año y periodo antes/después.
+- Comparar conteos y checksums de registros históricos; ninguna nota o documento oficial puede reescribirse silenciosamente.
+
+### Ampliación de TASK-078 - Rollback y delta
+- Aplicar los principios de snapshot previo, exportación delta posterior al corte, orden causal, autorización y acta de reversión a las migraciones curriculares. TASK-078 sigue cubriendo rollback operativo general; AUD-NG-172 define el flujo específico de mapeo y migración curricular.
+
+### Ampliación de AUD-NG-158 - Autorización de migración
+- getCurricularEquivalences/executeCurricularMigration aparecen en permisos de Director/Admin, pero el controlador está en js/teacher.js. Mantener ejecución exclusivamente en roles autorizados, derivar actor de sesión verificada y bloquear cualquier intento de ejecutar migración desde Profesor/Coordinador sin permiso explícito.
+
+### Ampliación de TASK-296 - Salida segura del panel de migración
+- Escapar nombre/código de asignatura al renderizar equivalencias en el panel y validar los datos mostrados para evitar inyección HTML almacenada desde el catálogo curricular.
+
+Hallazgo nuevo: AUD-NG-172. Progreso de auditoría: 25/183 identificadores únicos; 158 pendientes. Siguiente tarea: TAREA-20.
+================================================================
