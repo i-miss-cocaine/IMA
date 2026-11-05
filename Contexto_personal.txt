@@ -874,3 +874,17 @@ CHECKPOINT C1.9 - AUDITORÍA TAREA-07 (2026-11-05)
 - No se ejecutaron pruebas de corrupción, restauración, retención ni recuperación.
 - Siguiente tarea exacta: TAREA-08.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.10 - AUDITORÍA TAREA-08 (2026-11-05)
+================================================================
+- Rama: NG_beta_0.0.0.1_work; HEAD previo: 67325a1eee689c2f043210d8d83114c9f19114c9.
+- Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59; intacta.
+- Última tarea: TAREA-08 - estructura jerárquica de malla curricular.
+- Dictamen: CUMPLE PARCIALMENTE. Progreso: 14/183; 169 pendientes.
+- Evidencia: cliente declara 12 áreas/8 departamentos; backend inicializa 7 áreas distintas y mantiene catálogos departamentales paralelos. Asignaturas/planes/ofertas incompletos; interfaz docente sin CRUD curricular.
+- Hallazgo nuevo: AUD-NG-164. Informe: AUDITORIA_COMPLETADAS_TAREA-08.md. Sección del plan: 18.
+- Archivos del commit: Auditoria.txt, Pendientes.md, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt e informe TAREA-08.
+- Sin cambios en código fuente, completadas.md, ChangesLogs.txt ni metodología. Siguiente tarea: TAREA-09.
+================================================================

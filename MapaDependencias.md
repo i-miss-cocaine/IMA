@@ -619,3 +619,10 @@
 - No se acreditan alertas de almacenamiento ni RPO/RTO reales.
 - Hallazgos existentes: AUD-NG-146, TASK-151/152, TASK-087/251, TASK-079, TASK-149/150, TASK-064 y TASK-345.
 - No se crea AUD-NG nuevo; se amplían criterios existentes.
+
+
+## Auditoría de completadas.md - TAREA-08 (2026-11-05)
+- Dictamen: CUMPLE PARCIALMENTE. js/config.js declara 12 áreas/8 departamentos estáticos; backend inicializa 7 áreas con IDs/departamentos distintos.
+- USER usa CatalogoDepartamentos; ACADEMIC usa DepartamentosAcademicos; no se demuestra fuente única.
+- Asignaturas/planes/ofertas carecen de metadatos y validaciones; teacher.js/teacher-dashboard.html no consumen el catálogo para administración.
+- Hallazgo nuevo: AUD-NG-164. Tareas relacionadas: TASK-005, AUD-NG-011/018/093/108/111/113/115/117 y TASK-153.

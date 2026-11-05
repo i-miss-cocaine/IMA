@@ -18488,3 +18488,11 @@ No se crea un AUD-NG nuevo. Las brechas se asignan a tareas ya existentes:
 - Documentar la ubicación institucional de backups (incluida evaluación de Shared Drives), propietario, ACL, retención, restauración y continuidad; no depender silenciosamente de la raíz de la cuenta ejecutora.
 
 Hallazgo nuevo: ninguno. Las brechas de TAREA-07 se vinculan a tareas preexistentes.
+
+
+### [AUD-NG-164] Completar catálogo curricular maestro y relaciones de asignaturas/planes/ofertas
+- Severidad: Alto (P1).
+- Alcance: consolidar áreas y departamentos; definir asignaturas con ID/código único, área, departamento, programa, grado, idioma, carga horaria, créditos, prerrequisitos y obligatoriedad; versionar planes y validar ofertas; conservar historia y propagar cambios a formularios/reportes.
+- Criterios: fuente única sincronizada cliente/backend; departamentos sin catálogos paralelos; referencias válidas; soporte de modelos hondureños/bilingües; desactivación sin pérdida histórica; pruebas de integridad y múltiples grados.
+- Relacionadas: TASK-005, AUD-NG-011, AUD-NG-018, AUD-NG-093, AUD-NG-108, AUD-NG-111, AUD-NG-113, AUD-NG-115, AUD-NG-117 y TASK-153.
+- Estado: [ ] Pendiente

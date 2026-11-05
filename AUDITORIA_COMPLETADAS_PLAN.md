@@ -198,3 +198,10 @@ Al reanudar:
 - Pruebas: inspección estática; no se ejecutaron pruebas de corrupción, restore, retención ni recuperación.
 - Progreso: 13/183; 170 pendientes.
 - Siguiente tarea: TAREA-08.
+
+
+## 18. Resultado C1.10 - TAREA-08 (2026-11-05)
+- Dictamen: CUMPLE PARCIALMENTE. Cliente declara 12 áreas/8 departamentos; backend inicializa 7 áreas distintas y mantiene catálogos departamentales paralelos. Asignaturas/planes/ofertas tienen metadatos y validaciones incompletos; la interfaz docente no integra el CRUD curricular.
+- Hallazgo nuevo: AUD-NG-164, catálogo curricular maestro y relaciones con planes/ofertas.
+- Tareas relacionadas: TASK-005, AUD-NG-011/018/093/108/111/113/115/117 y TASK-153.
+- Progreso: 14/183; 169 pendientes. Siguiente: TAREA-09.

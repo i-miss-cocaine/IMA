@@ -4570,3 +4570,15 @@ AUDITORÍA DE completadas.md - TAREA-07 (2026-11-05)
 - Progreso: 13/183 identificadores auditados; 170 pendientes.
 - Siguiente tarea: TAREA-08.
 ===============================================================================
+
+
+===============================================================================
+[AUD-NG-164] TAREA-08 - CATÁLOGO CURRICULAR MAESTRO INCOMPLETO
+- Fecha: 2026-11-05. Severidad: ALTO (P1).
+- Evidencia: js/config.js declara 12 áreas/8 departamentos; backend inicializa 7 áreas distintas. USER administra CatalogoDepartamentos y ACADEMIC usa DepartamentosAcademicos sin sincronización. El catálogo de asignaturas solo guarda ID, nombre, código, área y estado; los planes solo nombre, versión, grado y vigencia; las ofertas no validan referencias. La interfaz docente no consume los endpoints de administración curricular.
+- Impacto: catálogos contradictorios, ofertas con referencias inválidas y falta de soporte verificable para programas hondureños/bilingües.
+- Tareas relacionadas: TASK-005, AUD-NG-011/018/093/108/111/113/115/117 y TASK-153.
+- Control de duplicados: se limita al catálogo curricular maestro y sus relaciones; las tareas relacionadas cubren asignaciones, aislamiento, permisos, esquemas y navegación.
+- TAREA-08: CUMPLE PARCIALMENTE. ChangesLogs solo registra arreglos estáticos en js/config.js. Calidad insuficiente; inspección estática, sin pruebas funcionales.
+- Progreso: 14/183; 169 pendientes. Siguiente: TAREA-09.
+===============================================================================
