@@ -901,3 +901,11 @@ No se crea AUD-NG nuevo.
 - El fallback AUTH_TOKEN_SECRET deriva de SPREADSHEET_ID; no es secreto aleatorio por servicio.
 - SERVICE_REGISTRY contiene IDs de hojas de ejemplo; ACCOUNTING/DEVELOPER tienen endpoints marcadores.
 - Ampliaciones: AUD-NG-083, AUD-NG-084, AUD-NG-086 y TASK-046. TASK-048 mantiene su estado histórico, pero sus checks [X] no quedan acreditados por el tráfico real.
+
+
+### FASE2-02 - Normalización de contratos API y manejo controlado de errores (C1.30)
+- Academic/Accounting añaden status, timestamp y code genérico; no hay envelope común completo ni validación de esquema en fetchApi.
+- Las lecturas fallidas pueden retornar status:success/data:[] con isFallback; la suite de Academic acepta status:error como PASS y no prueba HTTP; Accounting carece de suite equivalente.
+- Los catch de doPost exponen error.message y el toast de autorización inserta parsed.message con innerHTML.
+- Hallazgo AUD-NG-174: contrato versionado de éxito/error, validación en cliente, distinción vacío/fallback, pruebas reales y render seguro.
+- AUD-NG-007 cubre el timeout configurable; no duplicar.

@@ -1331,3 +1331,27 @@ CHECKPOINT C1.29 - AUDITORÍA FASE2-01 (2026-11-05)
 - Pruebas: inspección estática/manual; no se ejecutaron HTTP entre deployments, rotación PropertiesService ni pruebas multi-cuenta.
 - Corrección de secuencia: TAREA-17 a TAREA-20 ya habían sido auditadas en C1.20-C1.23; no repetir. Próxima tarea exacta: FASE2-02.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.30 - AUDITORÍA FASE2-02 (2026-11-05)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- HEAD de partida verificado: 17967cec0c62eed762068bfa03be19c88714635f (C1.29 / FASE2-01).
+- Tarea auditada: FASE2-02 - Normalización de Contratos API y Manejo Controlado de Errores.
+- Dictamen: CUMPLE PARCIALMENTE. textResponse añade status/timestamp/code genérico; fetchApi no valida envelope, fallback de lecturas puede aparentar éxito vacío; pruebas académicas locales aceptan error como PASS y Accounting no tiene suite equivalente.
+- Progreso: 33/183 identificadores únicos auditados; 150 pendientes.
+- Hallazgo nuevo: AUD-NG-174 - normalizar contratos de respuesta y errores entre cliente y microservicios.
+- FASE2-T03 es una implementación posterior parcial, pero no acredita transporte E2E ni contratos de Accounting. AUD-NG-007 conserva el timeout configurable.
+- Informe: AUDITORIA_COMPLETADAS_FASE2-02.md. Sección del plan: 38.
+- Evidencia:
+  * js/api.js: 6b24f666db30a811a8e9b38d466fc6001cf6dfa9.
+  * backend/academic-service/Code.gs: daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc.
+  * backend/accounting-service/Code.gs: 38b979d41596b85e888b4a7060b37bbac0840a28.
+  * tests/regression/modular-dashboard-suite.js: 0495e1d526a872c33310935a003a83d924d34683.
+- Archivos documentales actualizados: Auditoria.txt, Pendientes.md, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt e informe FASE2-02.
+- No modificar completadas.md, completadas_legacy.md, ChangesLogs.txt ni METODOLOGIA_DESARROLLO.md; sin cambios de código fuente.
+- Pruebas: inspección estática/manual; no se ejecutaron HTTP reales, simulaciones de fallos ni pruebas de navegador.
+- Siguiente tarea exacta en el orden pendiente: FASE2-03.
+================================================================

@@ -18960,3 +18960,28 @@ AUD-NG-163 permanece DUPLICADA y consolidada; no reabrirla como tarea independie
   - Contenido de texto malicioso no se interpreta como HTML ejecutable.
   - Las pruebas cubren orden temporal, roles, permisos, cambio de cuenta y navegación.
 - **Estado:** [ ] Pendiente
+
+
+### [AUD-NG-174] Normalizar contratos API y manejo de errores entre cliente y microservicios
+- **Origen del Hallazgo:** Auditoría de tareas completadas FASE2-02; contraste con FASE2-T03 y ChangesLogs.txt.
+- **Severidad/Clasificación:** Alto (P1; consistencia operativa y detección fiable de fallos).
+- **Archivos Involucrados:** `js/api.js`, `backend/academic-service/Code.gs`, `backend/accounting-service/Code.gs`, pruebas de contrato/regresión.
+- **Dependencias Expuestas:** `fetchApi`, `textResponse`, `validateApiContractsTestSuite`, `ContentService.MimeType.TEXT`, `isFallback`.
+- **Problema Detectado:** Academic/Accounting solo normalizan status/timestamp y un código genérico; fetchApi no valida un esquema común, acepta respuestas heterogéneas y devuelve éxito vacío con isFallback para algunas lecturas. La suite de Academic permite que status:error cuente como PASS y no prueba el transporte real; Accounting no tiene suite equivalente. Los errores de doPost exponen error.message y el toast de autorización inserta parsed.message mediante innerHTML.
+- **Alcance y requisitos:**
+  1. Definir envelope común versionado para éxito/error con status, data, error.code, mensaje público seguro, timestamp y correlationId/requestId.
+  2. Normalizar excepciones internas a códigos estables sin filtrar stack, identificadores sensibles ni detalles de infraestructura.
+  3. Validar el esquema en fetchApi; distinguir resultado vacío legítimo, error de negocio, HTTP, transporte, timeout, HTML y JSON inválido.
+  4. No devolver status:success para fallos de lectura; conservar un indicador de fallback inequívoco y exigir que los consumidores lo manejen.
+  5. Unificar MIME/serialización y documentar compatibilidad para Academic y Accounting.
+  6. Renderizar mensajes de error como texto seguro, no mediante concatenación en innerHTML.
+  7. Sustituir validateApiContractsTestSuite por pruebas que no acepten errores como éxito y que incluyan Accounting y llamadas reales a endpoints.
+- **Criterios de aceptación:**
+  - Todos los endpoints cubiertos responden con envelope versionado y esquema verificable.
+  - Un error interno conserva código público estable y no filtra error.message sensible.
+  - Una lectura vacía válida se distingue de servicio no disponible o JSON inválido.
+  - El cliente rechaza respuestas incompatibles y los consumidores no presentan fallbacks como datos confirmados.
+  - Las pruebas cubren éxito, vacío, error de negocio, autorización, excepción, HTTP no exitoso, HTML, JSON inválido, timeout y Accounting.
+  - La suite solo marca PASS cuando se cumplen los resultados esperados, no por la mera presencia de claves en una respuesta error.
+  - Los mensajes dinámicos no se interpretan como HTML.
+- **Estado:** [ ] Pendiente

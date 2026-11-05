@@ -372,3 +372,12 @@ Al reanudar:
 - **Pruebas:** inspección estática/manual; no se ejecutaron llamadas HTTP entre deployments, rotación de claves ni pruebas de aislamiento multi-cuenta.
 - **Progreso:** 32/183 identificadores auditados; 151 pendientes.
 - **Siguiente tarea:** FASE2-02.
+
+
+## 38. Resultado C1.30 - FASE2-02 (2026-11-05)
+- **Dictamen:** CUMPLE PARCIALMENTE. textResponse en Academic/Accounting aporta status/timestamp/código genérico, pero fetchApi no valida esquema, usa fallback success/data:[] para ciertas lecturas y no normaliza errores. validateApiContractsTestSuite es local, limitada y acepta status:error como PASS; no hay suite equivalente en Accounting.
+- **Reconciliación:** nuevo AUD-NG-174. AUD-NG-007 mantiene timeout y limpieza de temporizadores. FASE2-T03 aporta helper parcial, no cierre E2E.
+- **Calidad:** contrato incompleto; fallos pueden confundirse con resultados vacíos y las pruebas pueden dar falsos positivos.
+- **Pruebas:** inspección estática; no se ejecutaron HTTP real, fallos de red, pruebas de navegador ni contratos de Accounting.
+- **Progreso:** 33/183 identificadores auditados; 150 pendientes.
+- **Siguiente tarea:** FASE2-03.
