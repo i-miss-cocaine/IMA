@@ -753,3 +753,12 @@ No se crea AUD-NG nuevo; se amplían tareas existentes.
 - F11-Task08: métricas reales de notas/tareas, filtrado anual y deduplicación de alertas por ciclo.
 
 No se crea AUD-NG nuevo; las brechas se incorporan a tareas existentes.
+
+
+## Auditoría TAREA-18 - recursos reutilizables (2026-11-05)
+- ACADEMIC/Code.gs: RecursosEducativosReutilizables (145) no tiene ACL ni historial de versiones; ProyectosInterdisciplinarios (146) no contiene relación a recursos.
+- getReusableResourceCatalog (2989) aplica área/asignatura/grado/idioma, pero ignora tema/categoría y no filtra proyectos por año/área/usuario.
+- manageReusableResource (3046) siempre inserta; recursoId no actualiza; Version es texto libre; proyecto usa año 2026 y departamentos como texto; autorId y URL provienen del cliente.
+- teacher.js (2314-2425) espera modal ausente en teacher-dashboard.html. El formulario no envía grado/idioma/version/recursos asociados; tabla inserta campos sin escape contextual y URL sin allowlist.
+- Permisos globales para Profesor/Director/Subdirector/Secretaría, sin ABAC por área/autor/recurso; Coordinador no tiene acciones.
+- Hallazgo AUD-NG-171: catálogo, versionado append-only, relación proyecto-recurso-version, UI y pruebas. Relacionar con AUD-NG-164, AUD-NG-158 y TASK-296.

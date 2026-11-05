@@ -4764,3 +4764,28 @@ No crear AUD-NG nuevo. Ampliar TASK-050 (catálogo), TASK-051 (diccionario semá
 PRUEBAS Y LÍMITES:
 Inspección estática/manual. No se ejecutaron endpoints, cálculos con fixtures, pruebas de roles, exportaciones ni notificaciones. No se utilizaron datos productivos ni se modificó código fuente. AUDITORIA_FASE1_PLANIFICACION_EXPANSION.md, referenciado como origen de TAREA-17, no está disponible en esta rama; se utilizó el alcance explícito de completadas.md.
 ================================================================
+
+
+================================================================
+AUDITORÍA TAREA-18 - RECURSOS REUTILIZABLES E INTERDISCIPLINARIEDAD
+FECHA: 2026-11-05 | DICTAMEN: CUMPLE PARCIALMENTE
+
+EVIDENCIA:
+- backend/academic-service/Code.gs (SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc): RecursosEducativosReutilizables (línea 145) guarda metadatos y un campo Version, pero no ACL ni historial. ProyectosInterdisciplinarios (146) solo guarda departamentos como texto y no tiene relación con recursos.
+- getReusableResourceCatalog (2989) filtra por área/asignatura/grado/idioma; tema/categoría se reciben pero no se aplican. Los proyectos se listan sin filtros de año/área/usuario.
+- manageReusableResource (3046) siempre hace appendRow, incluso con recursoId existente. No actualiza ni crea versiones enlazadas, no evita duplicados, no usa bloqueo/idempotencia; el año del proyecto está fijado en 2026 y autorId/líder provienen del payload. urlDrive se almacena como texto sin verificar el archivo ni sus permisos.
+- ROLE_PERMISSIONS habilita las acciones para Profesor, Director, Subdirector y Secretaría, pero no implementa ABAC por área/autor/recurso. Coordinador no tiene las acciones.
+- js/teacher.js (SHA c475fce5afcd28fca23e7b64398ad32b17773746), líneas 2314-2425: controlador busca modal inexistente, formulario solo envía título/área/asignatura/tema/URL/tipo/departamentos como texto y currentUser.nombre como autor. La tabla inserta datos controlables mediante innerHTML sin escape ni validación de URL.
+- teacher-dashboard.html (SHA cbb9e6a272a7d8ad33f99727303305d950533e71) no contiene modal/formulario/tabla de recursos ni punto de apertura.
+- tests/regression/academic-grading-suite.js (SHA 3433b707edd4a2f35c68368a3172932adc2a3b32) no contiene pruebas de recursos ni proyectos interdisciplinarios.
+
+HALLAZGO NUEVO:
+AUD-NG-171 - Completar catálogo reutilizable, versionado y relaciones de proyectos interdisciplinarios (P2). TAREA-15 decidió no crear AUD-NG-170 por duplicidad; ese ID permanece sin asignar. AUD-NG-171 es un hallazgo distinto de TAREA-18.
+
+RELACIONES:
+- AUD-NG-164: referencias curriculares canónicas.
+- AUD-NG-158: ABAC por área/departamento/autor/recurso y actor verificado.
+- TASK-296: sanitización de salida, XSS almacenado, enlaces Drive seguros y ACL.
+
+PRUEBAS/LÍMITES: inspección estática/manual. No se ejecutaron CRUD, versionado, pruebas de permisos, enlaces Drive ni pruebas XSS en navegador. No se utilizaron datos productivos ni se modificó código fuente. El documento AUDITORIA_FASE1_PLANIFICACION_EXPANSION.md no está disponible; se utilizó completadas.md.
+================================================================

@@ -1116,3 +1116,25 @@ CHECKPOINT C1.20 - AUDITORÍA TAREA-17 (2026-11-05)
 - La planificación AUDITORIA_FASE1_PLANIFICACION_EXPANSION.md no está disponible en la rama; se usó el alcance explícito de completadas.md.
 - No repetir TAREA-01 a TAREA-17. Siguiente tarea exacta: TAREA-18.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.21 - AUDITORÍA TAREA-18 (2026-11-05)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- HEAD anterior verificado: fa80cfc3c1a73c7d5bbaa9e1b72b277d4aacc86c.
+- Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59; intacta, sin merge.
+- Última tarea auditada: TAREA-18 - reutilización de recursos educativos y proyectos interdisciplinarios.
+- Dictamen: CUMPLE PARCIALMENTE; versionado, relaciones interdisciplinarias y UI no acreditados.
+- Progreso: 24/183 identificadores únicos auditados; 159 pendientes.
+- Hallazgo nuevo: AUD-NG-171 (P2). AUD-NG-170 permanece sin asignar conforme a la decisión específica de TAREA-15.
+- Tareas relacionadas: AUD-NG-164, AUD-NG-158 y TASK-296.
+- Informe: AUDITORIA_COMPLETADAS_TAREA-18.md. Sección del plan: 29.
+- Archivos fuente: backend/academic-service/Code.gs SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; js/teacher.js SHA c475fce5afcd28fca23e7b64398ad32b17773746; teacher-dashboard.html SHA cbb9e6a272a7d8ad33f99727303305d950533e71; tests/regression/academic-grading-suite.js SHA 3433b707edd4a2f35c68368a3172932adc2a3b32.
+- Documentos actualizados: Auditoria.txt, Pendientes.md, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt e informe TAREA-18; agrupar en un solo commit.
+- Sin cambios en código fuente, completadas.md, completadas_legacy.md, ChangesLogs.txt ni METODOLOGIA_DESARROLLO.md.
+- Pruebas: inspección estática/manual; no se ejecutaron CRUD, versionado, ACL, Drive ni XSS en navegador. No se usaron datos productivos.
+- AUDITORIA_FASE1_PLANIFICACION_EXPANSION.md no está disponible; se usó el alcance explícito de completadas.md.
+- No repetir TAREA-01 a TAREA-18. Siguiente tarea exacta: TAREA-19.
+================================================================

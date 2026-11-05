@@ -18735,3 +18735,36 @@ No se crea un AUD-NG nuevo: los defectos de analítica, filtros, series, exporta
 
 Hallazgo nuevo: ninguno; se amplían tareas existentes. Progreso de auditoría: 23/183 identificadores únicos; 160 pendientes. Siguiente tarea: TAREA-18.
 ================================================================
+
+
+================================================================
+HALLAZGO TAREA-18 - RECURSOS REUTILIZABLES Y PROYECTOS INTERDISCIPLINARIOS (2026-11-05)
+================================================================
+
+### [AUD-NG-171] Completar catálogo reutilizable, versionado y relaciones de proyectos interdisciplinarios
+- Severidad: Medio (P2).
+- Origen: Auditoría TAREA-18 de completadas.md; archivos backend/academic-service/Code.gs, js/teacher.js y teacher-dashboard.html.
+- Problema: el backend solo registra filas básicas en RecursosEducativosReutilizables y ProyectosInterdisciplinarios. Los proyectos guardan departamentos como texto, no enlazan RecursoID ni versiones; el año lectivo está fijado en 2026. El campo Version es texto suministrado por el cliente, sin historial ni linaje; manageReusableResource siempre hace appendRow incluso cuando recibe recursoId, por lo que no actualiza ni evita duplicados. El controlador docente busca un modal ausente en teacher-dashboard.html. No se demuestra integración de recursos con actividades publicadas ni preservación de la versión histórica usada.
+- Alcance: catálogo con referencias curriculares canónicas (área, asignatura, grado, tema, idioma); filtros efectivos; versionado append-only con relación padre/hija, autor verificado, fecha y estado; proyectos interdisciplinarios con departamentos/áreas por ID, año lectivo, líder verificado y relación explícita a múltiples recursos/versiones; permisos por recurso/proyecto; UI operativa en teacher-dashboard; prevención de duplicados y pruebas de integridad/historial.
+- Criterios: un recurso se localiza por todas sus dimensiones; proyecto enlaza varios recursos de varias áreas; cada cambio genera nueva versión sin alterar referencias de actividades históricas; reutilización no duplica archivos Drive ni rompe ACL; autoría y permisos derivan de claims verificados; no existen IDs duplicados ni proyectos huérfanos; pruebas cubren dos áreas, dos docentes, versiones y periodos históricos.
+- Relacionadas: AUD-NG-164 (catálogo curricular maestro), AUD-NG-158 (ABAC y actor verificado), TASK-296 (XSS, validación de enlaces y privacidad de Drive).
+- Estado: [ ] Pendiente
+
+### Ampliación de AUD-NG-164 - Catálogo curricular maestro
+- RecursosEducativosReutilizables debe referenciar IDs canónicos de área/asignatura/grado/programa/idioma; no almacenar nombres libres como relaciones definitivas.
+- Validar referencias activas y compatibilidad curricular antes de registrar o versionar un recurso; preservar las etiquetas históricas al desactivar o versionar un catálogo.
+
+### Ampliación de AUD-NG-158 - ABAC y autoría
+- getReusableResourceCatalog/manageReusableResource están permitidas para Profesor, pero no implementan autorización por área, autor, departamento ni recurso; el catálogo devuelve todos los recursos activos si no se envían filtros.
+- Derivar autorId/liderProyectoId del usuario verificado; la UI envía currentUser.nombre y el backend acepta autorId del payload.
+- Verificar acceso al recurso/proyecto antes de listar, modificar, versionar o reutilizar; definir permisos de Coordinación para proyectos compartidos entre departamentos.
+
+### Ampliación de TASK-296 - XSS y enlaces de archivos
+- El catálogo docente inserta titulo, area, asignatura, tema, version y urlDrive directamente en innerHTML; manageReusableResource acepta esos valores desde payload. Aplicar escape de salida por contexto y sanitización de contenido.
+- Validar urlDrive con allowlist de dominios/esquemas HTTPS y comprobar ID/ACL del archivo Drive; rechazar javascript:, data:, URLs externas no permitidas y enlaces sin permiso.
+- Añadir rel="noopener noreferrer" a enlaces target=_blank y pruebas de XSS almacenado usando título/tema/URL maliciosos.
+
+Nota de secuencia: TAREA-15 registró que no debía crearse AUD-NG-170 porque sus brechas ya estaban cubiertas por tareas previas. Ese ID permanece sin asignar. AUD-NG-171 corresponde a un hallazgo nuevo y distinto de TAREA-18.
+
+Progreso de auditoría: 24/183 identificadores únicos; 159 pendientes. Siguiente tarea: TAREA-19.
+================================================================

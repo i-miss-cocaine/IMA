@@ -285,3 +285,13 @@ Al reanudar:
 - **Pruebas:** inspección estática/manual; no se ejecutaron endpoints, fixtures, pruebas de roles, exportaciones ni notificaciones.
 - **Progreso:** 23/183 identificadores auditados; 160 pendientes.
 - **Siguiente tarea:** TAREA-18.
+
+
+## 29. Resultado C1.21 - TAREA-18 (2026-11-05)
+- Dictamen: CUMPLE PARCIALMENTE; versionado, relaciones interdisciplinarias y UI no acreditados.
+- Evidencia: el catálogo filtra parcialmente; manageReusableResource solo inserta filas, no versiona ni actualiza; proyectos guardan departamentos como texto y año 2026 fijo, sin recursos asociados; teacher.js busca un modal ausente; autorId procede del cliente; tabla usa innerHTML con campos controlables y URL sin validar; no hay pruebas específicas.
+- Hallazgo nuevo: AUD-NG-171 (P2), catálogo reutilizable, versionado y relaciones proyecto-recurso. AUD-NG-170 permanece sin asignar por decisión específica de TAREA-15.
+- Reconciliación: ampliar AUD-NG-164, AUD-NG-158 y TASK-296.
+- Calidad: insuficiente para aceptar reutilización interdisciplinaria con permisos y preservación histórica.
+- Pruebas: inspección estática/manual; no se ejecutaron CRUD, versionado, ACL, Drive ni pruebas XSS en navegador.
+- Progreso: 24/183 identificadores auditados; 159 pendientes. Siguiente tarea: TAREA-19.
