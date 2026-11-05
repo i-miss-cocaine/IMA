@@ -1473,3 +1473,18 @@ CHECKPOINT C1.35 - AUDITORÍA FASE2-07 (2026-11-05)
 - Última tarea auditada: FASE2-07. No repetir FASE2-07, TAREA-03 ni TAREA-15; utilizar sus auditorías anteriores como referencias cruzadas.
 - Siguiente paso exacto: verificar rama y HEAD; leer AUDITORIA_COMPLETADAS_FASE2-07.md; resolver la recuperación segura de Pendientes.md y el registro de AUD-NG-178; después identificar el siguiente ID completado no auditado.
 ================================================================
+
+
+# REGLA PRIORITARIA Y OBLIGATORIA: UN SOLO COMMIT CON TODOS LOS CAMBIOS
+
+Esta regla se debe leer y cumplir antes de iniciar cualquier operación Git en este repositorio. Tiene prioridad operativa frente a interpretaciones ambiguas de expresiones como «commits modulares», «por lote» o «por tarea»:
+
+1. **Un único commit al cerrar la tarea/iteración de trabajo:** reunir en ese commit todos los archivos modificados por la tarea o iteración completa. No crear commits intermedios durante la edición.
+2. **PROHIBIDOS los commits atómicos o por archivo:** nunca crear un commit separado por cada archivo, ni dividir una misma entrega documental/código en varios commits para ir guardando avances.
+3. Primero leer, analizar, editar y verificar todos los archivos involucrados. Después preparar el árbol completo y crear exactamente un commit que incluya el conjunto íntegro de cambios relacionados.
+4. Si una auditoría contiene varias subtareas ejecutadas como una misma iteración y sus cambios forman una sola entrega, agrupar todos esos cambios en un solo commit. No fragmentar por archivo, carpeta, tipo de documento o fase interna.
+5. Antes de confirmar, revisar el diff completo, comprobar que no falte ningún archivo, que no haya cambios ajenos y que el historial previo permanezca intacto. Luego crear un único commit y verificar su árbol y SHA.
+6. Si GitHub, la API, una cuota o cualquier restricción impide crear ese commit único, detener la operación y conservar la rama sin commits parciales. No intentar sortear el bloqueo creando varios commits pequeños. Informar el bloqueo y solicitar/usar una vía autorizada que permita publicar el conjunto completo en un solo commit.
+7. Esta regla no autoriza modificar archivos restringidos, saltar controles, reescribir historia, usar force push ni tocar la rama base. Los commits separados solo se permiten cuando el usuario autorice expresamente separar tareas independientes.
+
+La regla complementa y aclara la sección 15 de METODOLOGIA_DESARROLLO.md. No elimina ni reemplaza ninguna otra regla o registro histórico.

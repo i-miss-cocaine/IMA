@@ -28,7 +28,7 @@ Se auditará el registro \`completadas.md\`, independiente de \`completadas_lega
 6. Considerar sustituciones y ampliaciones posteriores. Relacionar hallazgos con tareas actuales de \`Pendientes.md\` y \`Auditoria.txt\`; no duplicar una causa raíz ya registrada, pero sí ampliar evidencia/alcance cuando sea necesario.
 7. Registrar cada hallazgo nuevo en \`Auditoria.txt\` y convertirlo en tarea concreta en \`Pendientes.md\`. Actualizar \`MapaDependencias.md\` y este plan por lote.
 8. No cambiar estados de tareas históricas ni declarar una tarea completa por inferencia.
-9. Commits modulares por lote, siempre en \`NG_beta_0.0.0.1_work\`. No hacer merge, no modificar la rama base, no alterar \`ChangesLogs.txt\` por ser auditoría sin cambios de código.
+9. Todos los cambios de la tarea/iteración completa se agrupan en **un único commit final**, siempre en \`NG_beta_0.0.0.1_work\`. No hacer commits atómicos, por archivo ni intermedios. No dividir una entrega para eludir límites/cuotas: si no se puede confirmar el conjunto completo en un commit, detenerse sin commits parciales. No hacer merge, no modificar la rama base, no alterar \`ChangesLogs.txt\` por ser auditoría sin cambios de código.
 
 ## 3. Respaldo inicial y referencias
 
@@ -54,7 +54,7 @@ Para cada archivo de código y documento que se audite se registrará su propio 
 | C5 | Fase 8: dashboards dinámicos, roles, modularización y Spreadsheets | 4758-5445 | Pendiente |
 | C6 | Fase 9: SACE, calificaciones, evaluaciones y resultados académicos | 5446-5963 | Pendiente |
 
-Los lotes se subdividirán si el tamaño de los archivos, dependencias o cuota lo exige. Cada commit debe dejar un checkpoint exacto de tareas revisadas, archivos inspeccionados, SHA de respaldo, evidencia y siguiente punto.
+La división en lotes es únicamente para organizar el análisis; no autoriza múltiples commits dentro de una misma entrega. Al cerrar cada tarea/iteración se agrupan todos sus archivos en un único commit final. No subdividir commits por tamaño, archivo o cuota. Si el conjunto completo no puede publicarse en un solo commit, detenerse sin commits parciales y documentar el bloqueo. Cada commit final debe dejar un checkpoint exacto de tareas revisadas, archivos inspeccionados, SHA de respaldo, evidencia y siguiente punto.
 
 ## 5. Criterios de dictamen
 
