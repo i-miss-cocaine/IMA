@@ -18833,3 +18833,36 @@ No se crea AUD-NG nuevo. Se amplían tareas pendientes existentes, sin borrar ni
 
 Hallazgo nuevo: ninguno; las brechas se corresponden con AUD-NG-011, AUD-NG-164 y AUD-NG-158. Progreso: 26/183 identificadores únicos auditados; 157 pendientes. Siguiente tarea: FASE2-T17.
 ================================================================
+
+
+================================================================
+AMPLIACIÓN DE TAREAS EXISTENTES DERIVADA DE FASE2-T17 (2026-11-05)
+================================================================
+
+No se crea AUD-NG nuevo. Las brechas se vinculan a tareas existentes.
+
+### TASK-062 - Versionado e invalidación reactiva de configuraciones
+- Unificar SERVICE_VERSIONS, SERVICE_REGISTRY, getSharedConfigVersion, getSharedConfigurationsCatalog y getServiceHealthReport en una fuente autoritativa. Resolver la divergencia entre 1.0.0, v8.4.0 y las versiones indicadas en comentarios/endpoints; incluir DEVELOPER o rechazar servicios no registrados.
+- Sustituir el comparador que ignora patch por comparación SemVer estricta (major/minor/patch y política explícita de prerelease); rechazar versiones malformadas y serviceName desconocidos. Ejemplo de regresión obligatoria: servicio 1.0.0 debe ser incompatible con minVersion 1.0.1.
+- Incorporar handshake de versión en fetchApi: enviar versión del cliente/contrato, consultar versión autoritativa y bloquear acciones incompatibles antes de operar. No continuar silenciosamente ante endpoint sin versión, servicio desconocido o catálogo indisponible.
+- getSharedConfigurationsCatalog debe consultar un catálogo persistente de contratos/configuraciones con id, versión, vigencia, consumidores, versión mínima, compatibilidad, estado deprecado, dependencias y política de migración; legacyVersionSupport no puede ser una bandera sin adaptadores/pruebas.
+- getSystemConfigurations debe exponer versión, timestamp y actor verificados. saveSystemConfiguration no debe fijar versión 1.0 ni sobrescribir sin historial: incrementar versión, conservar valor anterior, registrar actor/fecha/ámbito y devolver configVersion nueva.
+- Agregar control de concurrencia/optimistic locking: dos ediciones sobre la misma versión no deben sobrescribirse; una versión obsoleta debe recibir conflicto y no escribir.
+- Al guardar configuración, invalidar realmente caché en servidor y notificar a consumidores afectados. manageInstitutionalDataCache(FLUSH_GLOBAL) no puede limitarse a registrar un evento; debe purgar las entradas correspondientes y reportar el resultado real.
+- Validar versión vigente en operaciones críticas; definir qué cambios requieren recarga completa y cuáles actualización selectiva. Los fallos de sincronización no pueden reportarse como éxito.
+- Implementar rollback real por versión/snapshot, con previsualización, autorización, auditoría y conservación de historial; el texto rollbackProcedure no basta.
+- Pruebas con cliente actual/obsoleto, major/minor/patch, versiones inválidas, servicio desconocido, servicio nuevo, dos ediciones concurrentes, caché caliente/fría, caída de red, propagación por ámbito, restauración y compatibilidad de registros históricos.
+
+### AUD-NG-077 - Disponibilidad, permisos, esquema e historial de fuentes
+- Comparar schemaVersion registrado con el contrato de hojas/columnas que requiere cada consumidor antes de activar o resolver una fuente. Rechazar versiones incompatibles; no asumir 1.0 cuando la versión falta sin política explícita.
+- registerSpreadsheetSource no debe sobrescribir schemaVersion ni otros metadatos sin historial inmutable, actor verificado, timestamp y validación de compatibilidad. Conservar la versión previa y exigir migración/rollback cuando cambie el esquema.
+- resolveSpreadsheetSource debe comprobar el contrato antes de devolver spreadsheetId; no basta con retornar schemaVersion como dato informativo.
+- Probar fuente antigua, futura, inválida, ausente, migrada y con historial de versiones; confirmar que datos históricos siguen siendo interpretables.
+
+### AUD-NG-078 - Metadatos y permisos verificados de servicios
+- La versión declarada en SERVICE_REGISTRY debe corresponder a la versión real del deployment y del contrato servido. No usar v8.4.0/1.0.0 como etiquetas estáticas sin evidencia del endpoint.
+- Registrar contractVersion, serviceVersion, deploymentId, fecha de vigencia y compatibilidad mínima por servicio; validar coherencia antes de activar y al cambiar endpoint/deployment.
+- El catálogo central debe detectar versiones desconocidas, incompatibles o deprecadas y bloquear su activación o informar el estado real; no asumir compatibilidad por fallback 1.0.0.
+
+Hallazgo nuevo: ninguno; las brechas se corresponden con TASK-062, AUD-NG-077 y AUD-NG-078. Progreso: 27/183 identificadores únicos auditados; 156 pendientes. Siguiente tarea: FASE2-T18.
+================================================================

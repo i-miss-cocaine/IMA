@@ -315,3 +315,13 @@ Al reanudar:
 - **Pruebas:** inspección estática/manual; no se ejecutaron endpoints, deployments, RBAC, fixtures ni consultas históricas.
 - **Progreso:** 26/183 identificadores auditados; 157 pendientes.
 - **Siguiente tarea:** FASE2-T17.
+
+
+## 32. Resultado C1.24 - FASE2-T17 (2026-11-05)
+- **Dictamen:** CUMPLE PARCIALMENTE. Hay constantes de versión y un comparador nominal, pero no existe compatibilidad operativa ni historial/rollback verificable.
+- **Evidencia:** SERVICE_VERSIONS declara cinco servicios 1.0.0 y omite DEVELOPER; SERVICE_REGISTRY declara seis v8.4.0. getSharedConfigVersion y getSharedConfigurationsCatalog devuelven 2.0.0 fijo; backend health y catálogo devuelven versiones 1.0.0 fijas. validateServiceVersionCompatibility ignora patch y acepta 1.0.0 con mínimo 1.0.1; servicios desconocidos/versiones inválidas caen a 1.0.0. fetchApi no negocia versión ni consulta catálogo. saveSystemConfiguration sobrescribe y fija versión 1.0, sin historial/locking; getSystemConfigurations omite versión/fecha/actor. FLUSH_GLOBAL solo registra evento. schemaVersion de fuentes se devuelve sin comparar contrato.
+- **Reconciliación:** no crear AUD-NG nuevo. Ampliar TASK-062, AUD-NG-077 y AUD-NG-078.
+- **Calidad:** parcial; hay metadatos nominales, pero no control real de compatibilidad, evolución histórica ni reversión.
+- **Pruebas:** inspección estática/manual; no se ejecutaron API, sesiones obsoletas, concurrencia, sincronización ni rollback.
+- **Progreso:** 27/183 identificadores auditados; 156 pendientes.
+- **Siguiente tarea:** FASE2-T18.

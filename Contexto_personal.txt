@@ -1180,3 +1180,27 @@ CHECKPOINT C1.23 - AUDITORÍA TAREA-20 (2026-11-05)
 - La planificación AUDITORIA_FASE1_PLANIFICACION_EXPANSION.md no está disponible; se utilizó el alcance explícito de completadas.md.
 - No repetir TAREA-01 a TAREA-20. Siguiente tarea exacta: FASE2-T17.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.24 - AUDITORÍA FASE2-T17 (2026-11-05)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- HEAD anterior verificado: 7990bec9295cad395fe4882f5fa0663c94dcb4d6.
+- Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59; intacta, sin merge.
+- Última tarea auditada: FASE2-T17 - política de versionado y evolución de configuraciones compartidas.
+- Dictamen: CUMPLE PARCIALMENTE; metadatos y comparador nominales, sin handshake operativo, historial, compatibilidad estricta ni rollback.
+- Progreso: 27/183 identificadores únicos auditados; 156 pendientes.
+- Hallazgo nuevo: ninguno. Se amplían TASK-062, AUD-NG-077 y AUD-NG-078.
+- Informe: AUDITORIA_COMPLETADAS_FASE2-T17.md. Sección del plan: 32.
+- Archivos fuente y SHA:
+  * js/config.js: 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc.
+  * backend/user-service/Code.gs: 12079dd410aa6d8afbce55a4bc62a79dea605f9f.
+  * js/api.js: 6b24f666db30a811a8e9b38d466fc6001cf6dfa9.
+- Documentos actualizados: Auditoria.txt, Pendientes.md, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt e informe FASE2-T17. Agrupar en un solo commit.
+- Sin cambios en código fuente, completadas.md, completadas_legacy.md, ChangesLogs.txt ni METODOLOGIA_DESARROLLO.md.
+- Pruebas: inspección estática/manual; no se ejecutaron API, clientes obsoletos, actualizaciones concurrentes, restauraciones ni rollback. No se usaron datos productivos.
+- La planificación AUDITORIA_FASE2_ARQUITECTURA_INTEROPERABILIDAD.md no está disponible; se utilizó el alcance explícito de completadas.md.
+- No repetir TAREA-01 a TAREA-20 ni FASE2-T17. Siguiente tarea exacta: FASE2-T18.
+================================================================

@@ -4843,3 +4843,28 @@ No crear AUD-NG nuevo. Ampliar AUD-NG-011 (deployment real, endpoints, pruebas n
 
 PRUEBAS/LÍMITES: inspección estática/manual. No se ejecutaron deployments, endpoints, pruebas RBAC, integridad, Drive, regresión ni fixtures. Sin datos productivos ni cambios de código.
 ================================================================
+
+
+================================================================
+AUDITORÍA FASE2-T17 - VERSIONADO Y EVOLUCIÓN DE CONFIGURACIONES COMPARTIDAS
+FECHA: 2026-11-05 | DICTAMEN: CUMPLE PARCIALMENTE
+
+ARCHIVOS:
+- js/config.js SHA 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc
+- backend/user-service/Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f
+- js/api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9
+
+EVIDENCIA:
+- js/config.js: SERVICE_VERSIONS (76) declara cinco servicios 1.0.0 y omite DEVELOPER; SERVICE_REGISTRY (245) declara seis servicios, todos v8.4.0. getSharedConfigVersion (93) devuelve 2.0.0. validateServiceVersionCompatibility (97) compara major/minor e ignora patch; 1.0.0 resulta compatible con mínimo 1.0.1. Versiones inválidas o servicios desconocidos se normalizan/fallback a 1.0.0.
+- backend/user-service/Code.gs: getServiceHealthReport (73) y getSharedConfigurationsCatalog (185) devuelven versiones 1.0.0 fijas; el catálogo también fija configVersion 2.0.0, legacyVersionSupport=true y un texto de rollback sin catálogo persistente, historial ni ejecución. doGet (917) no publica versión.
+- js/api.js fetchApi (11) no consulta getSharedConfigurationsCatalog, no envía configVersion/minVersion ni ejecuta el comparador; los consumidores no negocian compatibilidad en el flujo API revisado.
+- runInterdepartmentalIntegrationTestSuite (221) prueba RBAC, idempotencia, eventos, métricas y trazabilidad, no compatibilidad de versiones ni clientes obsoletos.
+- getSystemConfigurations (7743) omite en su respuesta versión, fecha y actor; saveSystemConfiguration (7787) sobrescribe la fila, fija versión 1.0 y no conserva historial, no incrementa versión ni controla concurrencia. No devuelve nueva versión.
+- manageInstitutionalDataCache (156): FLUSH_GLOBAL solo registra el evento y responde que la purga se registró; no elimina caché global. saveSystemConfiguration no invoca invalidación.
+- registerSpreadsheetSource (7293) persiste schemaVersion con default 1.0 y sobrescribe fila; resolveSpreadsheetSource (7339) devuelve la versión sin compararla con contrato requerido. Si no hay fuente, usa fallback y schemaVersion 1.0.
+
+RECONCILIACIÓN:
+No crear AUD-NG nuevo. Ampliar TASK-062 (versionado incremental, handshake, invalidación, concurrencia, historial/rollback), AUD-NG-077 (compatibilidad e historial de schemaVersion) y AUD-NG-078 (versión de contrato verificada en servicios/deployments).
+
+PRUEBAS/LÍMITES: inspección estática/manual. No se ejecutaron llamadas API, clientes obsoletos, actualizaciones concurrentes, restauraciones ni pruebas de rollback. No se usaron datos productivos ni se modificó código fuente. AUDITORIA_FASE2_ARQUITECTURA_INTEROPERABILIDAD.md no está disponible; se usó el alcance de completadas.md.
+================================================================

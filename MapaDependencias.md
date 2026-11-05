@@ -793,3 +793,26 @@ No se crea AUD-NG nuevo; las brechas se incorporan a tareas existentes.
 - AUD-NG-158: ABAC para asignaciones y coordinaciones, validando área activa y ámbito del actor.
 
 No se crea AUD-NG nuevo.
+
+
+## Auditoría FASE2-T17 - versionado de configuraciones compartidas (2026-11-05)
+
+### Componentes y relaciones observadas
+- js/config.js: SERVICE_VERSIONS (76), getSharedConfigVersion (93), validateServiceVersionCompatibility (97), SERVICE_REGISTRY (245). SERVICE_VERSIONS enumera cinco servicios 1.0.0; SERVICE_REGISTRY enumera seis servicios, incluidos DEVELOPER, todos v8.4.0.
+- backend/user-service/Code.gs: getServiceHealthReport (73) y getSharedConfigurationsCatalog (185) devuelven versiones fijas; manageInstitutionalDataCache (156) gestiona invalidación; runInterdepartmentalIntegrationTestSuite (221) no incluye pruebas de versión; registerSpreadsheetSource (7293)/resolveSpreadsheetSource (7339) transportan schemaVersion; getSystemConfigurations (7743)/saveSystemConfiguration (7787) leen/escriben ConfiguracionSistema.
+- js/api.js fetchApi (11) enruta por SERVICE_URLS, sin handshake de versión, consulta del catálogo compartido o bloqueo de consumidor obsoleto.
+
+### Riesgos de consistencia
+- validateServiceVersionCompatibility ignora patch, acepta 1.0.0 frente a mínimo 1.0.1 y asigna 1.0.0 a servicios desconocidos/versiones inválidas.
+- SERVICE_REGISTRY, SERVICE_VERSIONS, getServiceHealthReport y getSharedConfigurationsCatalog declaran versiones distintas y duplicadas; no hay fuente única ni DEVELOPER en SERVICE_VERSIONS.
+- getSharedConfigurationsCatalog devuelve política y rollback en texto fijo, no historial ni compatibilidad persistida.
+- saveSystemConfiguration sobrescribe fila, fija versión 1.0 y no conserva histórico ni control de concurrencia; getSystemConfigurations omite versión/fecha/actor.
+- FLUSH_GLOBAL solo registra evento; no ejecuta purga global. saveSystemConfiguration no dispara invalidación ni entrega nueva versión.
+- schemaVersion se guarda y devuelve sin comparación de contrato ni historial de evolución.
+
+### Tareas relacionadas
+- TASK-062: versionado incremental, handshake, invalidación real, concurrencia, historial y rollback de configuración.
+- AUD-NG-077: validación de compatibilidad e historial de schemaVersion de fuentes.
+- AUD-NG-078: coherencia de versión de contrato con deployment/endpoint real.
+
+No se crea AUD-NG nuevo.
