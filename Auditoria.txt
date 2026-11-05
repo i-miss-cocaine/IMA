@@ -5222,3 +5222,46 @@ Crear AUD-NG-175 en Pendientes.md. Los defectos del enrutador de fuentes se agre
 PRUEBAS:
 Inspección estática/manual de los rangos indicados. No se ejecutaron pruebas automatizadas, llamadas HTTP, validaciones de permisos productivos ni consultas a hojas reales.
 ================================================================
+
+
+================================================================
+REVISIÓN FASE2-04 - IDENTIFICADORES CUV, UUID Y TRAZABILIDAD
+FECHA: 2026-11-05 | CHECKPOINT C1.32
+DICTAMEN: CUMPLE PARCIALMENTE, CON BRECHAS CRÍTICAS DE IDENTIDAD Y PRIVACIDAD
+ARCHIVO PRINCIPAL: backend/accounting-service/Code.gs
+SHA: 38b979d41596b85e888b4a7060b37bbac0840a28
+================================================================
+ALCANCE:
+completadas.md declara FASE2-04 completada, severidad Crítico y solo backend/accounting-service/Code.gs. La entrada no conserva criterios detallados y AUDITORIA_FASE2_ARQUITECTURA_INTEROPERABILIDAD.md no está presente. Se contrastó el título con FASE2-T05 y tareas posteriores.
+
+1. IDENTIDAD Y ESQUEMA:
+- getOrCreateSheet (115-160) inicializa DocumentosEscolaresEmitidos con ocho encabezados. generateSchoolDocument (15040-15149) persiste quince valores y verifySchoolDocumentByCUV lee hasta el índice 14. Los campos de Drive, fecha, versión, correlativo y hash no tienen encabezados alineados al crear la hoja.
+- docId se genera como DOC-EM- + año + Date.now() (15083); no usa UUID ni verifica unicidad persistente. No se encontró Utilities.getUuid ni integración del generador institucional en este flujo de Accounting.
+- targetId acepta payload y cae a GENERICO; solicitanteUserId también acepta payload y, si falta, se iguala a targetId. No se valida que el titular exista ni se deriva el actor desde _verifiedUserId.
+- El correlativo usa el máximo de r[12] de todas las filas (15072-15082), sin filtrar año, aunque el folio incorpora YYYY.
+
+2. CUV:
+- El CUV usa Math.random() y formato CUV-YYYY-###### (15090-15100), con comprobación de candidatos existentes bajo LockService.
+- Tras 100 intentos, el fallback CUV-YYYY-Date.now() (15102-15104) no vuelve a comprobar unicidad. Ya está cubierto por AUD-NG-161; no duplicar.
+- verifySchoolDocumentByCUV busca la primera coincidencia y no rechaza duplicados. Tampoco comprueba estadoDoc ni recalcula el hash binario.
+
+3. EXPOSICIÓN PÚBLICA:
+- PUBLIC_ACTIONS incluye verifySchoolDocumentByCUV (218), por lo que validateRolePermission permite la acción sin token.
+- La respuesta devuelve datosJSON, targetEntityId, solicitanteUserId, driveFileId, driveUrl, observaciones y hash. Si hay firmas, también incluye firmanteId, tokenVerificacion, ipOrigen y signatureHash.
+- El handler devuelve success para cualquier fila encontrada, sin verificar que estadoDoc sea vigente ni diferenciar revocado/anulado/sustituido.
+- Se amplía TASK-351, que ya exige minimización de datos y estados ampliados.
+
+4. RECONCILIACIÓN POSTERIOR:
+- FASE2-T05 está marcada completada, pero generateInstitutionalId permanece duplicada en user-service (1706-1740) y academic-service (2100-2160). Academic permite skipLock desde payload; Accounting no integra ese generador para docId.
+- TASK-118 se amplía con la evidencia de ID temporal, esquema, actor/titular y correlativo anual.
+- AUD-NG-059 conserva la corrección del hash SHA-256 sobre PDF definitivo; AUD-NG-061 la persistencia y validez del certificado; AUD-NG-161 las pruebas reales de colisión, fallback y concurrencia.
+- No se crea nuevo AUD-NG: los defectos se vinculan a TASK-118, TASK-351 y las tareas existentes citadas.
+
+5. CALIDAD Y LÍMITES:
+- El lock se libera en finally, pero no existe idempotencia propia de la solicitud.
+- La estructura de persistencia no coincide con el contrato de lectura/escritura.
+- La verificación pública no minimiza datos ni valida vigencia.
+- Inspección estática/manual. No se ejecutaron HTTP, Apps Script, concurrencia real, ni consultas/escrituras a Drive o Sheets productivos.
+- No se modificó código fuente, completadas.md, completadas_legacy.md, ChangesLogs.txt ni METODOLOGIA_DESARROLLO.md.
+CONCLUSIÓN: FASE2-04 solo cumple parcialmente. Hay emisión con correlativo, CUV y bloqueo parcial, pero no sistema unificado UUID, la hoja tiene esquema desalineado, el correlativo no segmenta año, el fallback CUV no valida unicidad y la consulta pública expone datos internos sin comprobar vigencia.
+================================================================

@@ -5351,6 +5351,13 @@ REGLA RECTORA INNEGOCIABLE DEL BACKLOG:
   - [ ] Las solicitudes concurrentes se serializan mediante `LockService` garantizando números estrictamente distintos.
   - [ ] La tabla `SecuenciasIDs` mantiene actualizado el `UltimoNumero` y fecha para cada tipo de entidad.
 - **Dependencias:** Sistema base de persistencia y LockService.
+
+- **Ampliación C1.32 / FASE2-04 (2026-11-05):** `generateSchoolDocument` asigna `docId = "DOC-EM-" + year + "-" + now.getTime()` (línea 15083), sin UUID ni comprobación persistente de unicidad. No se observa integración de un generador institucional canónico en este flujo. `getOrCreateSheet` define ocho encabezados para `DocumentosEscolaresEmitidos`, mientras el emisor escribe quince campos y el verificador lee hasta el índice 14; los campos de Drive, fecha, versión, correlativo y hash quedan sin encabezado al crear la hoja.
+- **Relaciones de identidad:** `targetEntityId` / `estudianteUserId` y `solicitanteUserId` se aceptan desde payload; si falta el sujeto se asigna `GENERICO`, y si falta el solicitante se reutiliza `targetId`. No se valida la entidad objetivo ni se deriva el actor de `_verifiedUserId`. Separar clave interna inmutable, código visible, titular del documento y actor autenticado.
+- **Correlativos:** `nextCorrelativoNum` toma el máximo de la columna 13 de todas las emisiones sin filtrar el año, aunque el código presenta el folio como `YYYY-######`. La numeración anual debe consultar únicamente la serie/año/ámbito configurados.
+- **Reconciliación FASE2-T05:** `generateInstitutionalId` sigue duplicada en User y Academic; Academic admite `skipLock` desde payload y Accounting no integra el generador para docId. TASK-118 debe cubrir la migración de Accounting y eliminar bypasses.
+- **Criterios adicionales:** ID documental estable y único separado del correlativo público; actor derivado de sesión verificada; titular y referencias validados en servidor; esquema de quince columnas con encabezados alineados; secuencias anuales/por ámbito verificadas; integración real del motor canónico. Conservar IDs históricos y relaciones durante la migración.
+
 - **Estado:** [ ] Pendiente
 
 ---
@@ -12885,6 +12892,12 @@ REGLA RECTORA INNEGOCIABLE DEL BACKLOG:
   - [ ] Modificar el PDF manteniendo el CUV devuelve alerta de hash discrepante.
   - [ ] Documentos anulados reflejan claramente su condición de no vigencia.
 - **Dependencias:** F40-Task06, F40-Task10.
+
+- **Ampliación C1.32 / FASE2-04 (2026-11-05):** `verifySchoolDocumentByCUV` está incluido en `PUBLIC_ACTIONS` (línea 218), por lo que `validateRolePermission` lo autoriza sin token. El handler (15151-15235) devuelve públicamente `datosJSON`, `targetEntityId`, `solicitanteUserId`, `driveFileId`, `driveUrl`, observaciones y hash; cuando hay firmas también expone `firmanteId`, `tokenVerificacion`, `ipOrigen` y `signatureHash`. La consulta debe revelar solo un resumen probatorio mínimo, no el expediente ni datos personales/internos.
+- **Estados:** al encontrar un CUV, el handler devuelve `status:"success"` sin comprobar `estadoDoc`; no distingue documento vigente, revocado, anulado o sustituido. No declarar válido un documento no vigente.
+- **Revaluación de prioridad:** la exposición no autenticada de datos personales y metadatos de firmas puede tener impacto crítico; revisar la prioridad P1 de TASK-351 para tratamiento P0 antes de publicar el portal.
+- **Criterios adicionales:** respuesta pública con campos permitidos explícitos (tipo documental, emisor, fecha y estado); nunca devolver `datosJSON`, IDs internos, URL/ID de Drive, tokens, IP ni metadatos de firmas; validar estado y unicidad del CUV; probar consultas anónimas, documentos vigentes/anulados/revocados, campos sensibles y códigos duplicados. Hash binario sigue en AUD-NG-059 y pruebas de colisión/concurrencia en AUD-NG-161; no duplicar.
+
 - **Estado:** [ ] Pendiente
 
 ---

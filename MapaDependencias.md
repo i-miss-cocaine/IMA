@@ -921,3 +921,11 @@ No se crea AUD-NG nuevo.
   - `getInstitutionalCatalog`: lee `CatalogoAsignaturas` y `AreasCurricularesExtensiones`; mapea el estado de asignaturas desde el índice incorrecto y no filtra registros inactivos.
   - `validateCatalogReference`: depende de `getInstitutionalCatalog`; no aplica estado activo.
   - `registerSpreadsheetSource`, `resolveSpreadsheetSource`, `getSpreadsheetCatalog`: dependen de `CatalogoSpreadsheets` y del `SPREADSHEET_ID` principal; su insuficiente resolución y falta de integración quedan ampliadas en TASK-046, sin duplicar AUD-NG-083/084/086.
+
+
+## Auditoría FASE2-04 - Identificadores documentales, CUV y trazabilidad (C1.32)
+- `backend/accounting-service/Code.gs`: `getOrCreateSheet` crea DocumentosEscolaresEmitidos con ocho encabezados; `generateSchoolDocument` persiste quince campos; `verifySchoolDocumentByCUV` lee hasta el índice 14.
+- `generateSchoolDocument`: LockService, PlantillasEscolares, docId temporal basado en Date.now(), correlativo, CUV, hash de metadatos y persistencia documental.
+- `PUBLIC_ACTIONS -> validateRolePermission -> doPost -> verifySchoolDocumentByCUV`: acción pública sin token; el handler proyecta campos internos del documento y de FirmasConformidades.
+- `user-service/Code.gs:1706-1740` y `academic-service/Code.gs:2100-2160` mantienen generadores institucionales duplicados; Accounting no los integra en la emisión documental.
+- Reconciliación: TASK-118 (motor central y IDs ad-hoc), TASK-351 (verificación CUV y privacidad), AUD-NG-059 (hash binario), AUD-NG-061 (certificado) y AUD-NG-161 (pruebas de unicidad/concurrencia).

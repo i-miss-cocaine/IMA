@@ -1380,3 +1380,27 @@ CHECKPOINT C1.31 - AUDITORÍA FASE2-03 (2026-11-05)
 - Siguiente tarea exacta: FASE2-04 - Sistema Unificado de Identificadores CUV, UUID y Trazabilidad.
 - Continuidad: leer este checkpoint, verificar rama y HEAD, consultar AUDITORIA_COMPLETADAS_FASE2-03.md y reanudar en FASE2-04 sin repetir FASE2-03.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.32 - AUDITORÍA FASE2-04 (2026-11-05)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto: Contexto_personal.txt (no existe contexto_personal.md en la rama).
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- HEAD de partida: f22612474e721ce34a716fce2329717654d70d30 (C1.31 / FASE2-03).
+- Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios ni merge.
+- Tarea auditada: FASE2-04 - Sistema Unificado de Identificadores CUV, UUID y Trazabilidad.
+- Dictamen: CUMPLE PARCIALMENTE, con brechas críticas de identidad y privacidad.
+- Progreso: 35/183 identificadores únicos; 148 pendientes.
+- Evidencia: backend/accounting-service/Code.gs SHA 38b979d41596b85e888b4a7060b37bbac0840a28.
+- Reconciliación: TASK-118 (IDs y motor central), TASK-351 (verificación pública CUV y privacidad), AUD-NG-059 (hash PDF), AUD-NG-061 (certificado), AUD-NG-161 (fallback y pruebas). No se crea AUD-NG nuevo.
+- Evidencia: DocumentosEscolaresEmitidos se crea con ocho encabezados y se escriben quince campos; docId usa Date.now(); correlativo no filtra año; verifySchoolDocumentByCUV es PUBLIC_ACTION y devuelve datosJSON, IDs, enlaces Drive y metadatos de firma sin validar estadoDoc.
+- FASE2-T05: generateInstitutionalId sigue duplicado en User y Academic; Academic permite skipLock desde payload; Accounting no integra el generador.
+- Archivos modificados: Auditoria.txt, MapaDependencias.md, Pendientes.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt y AUDITORIA_COMPLETADAS_FASE2-04.md.
+- Código fuente, completadas.md, completadas_legacy.md, ChangesLogs.txt y METODOLOGIA_DESARROLLO.md: sin modificaciones.
+- Pruebas: inspección estática/manual; no se ejecutaron HTTP, Apps Script, concurrencia real ni operaciones productivas.
+- Última tarea auditada: FASE2-04. No hay tarea en curso.
+- Siguiente tarea exacta: FASE2-05 - Mecanismo Atómico de Sincronización, LockService e Idempotencia.
+- Continuidad: leer este checkpoint, verificar rama y HEAD, consultar AUDITORIA_COMPLETADAS_FASE2-04.md y reanudar en FASE2-05 sin repetir FASE2-04.
+================================================================

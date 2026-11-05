@@ -390,3 +390,13 @@ Al reanudar:
 - **Pruebas:** inspección estática/manual; no se ejecutaron pruebas automatizadas, HTTP real, navegador ni consultas productivas.
 - **Progreso:** 34/183 identificadores auditados; 149 pendientes.
 - **Siguiente tarea:** FASE2-04.
+
+
+## 40. Resultado C1.32 - FASE2-04 (2026-11-05)
+- **Dictamen:** CUMPLE PARCIALMENTE, con brechas críticas. ID documental basado en timestamp; esquema de hoja de ocho encabezados frente a quince campos; correlativo sin segmentación anual; fallback CUV sin revalidar unicidad; verificación pública expone datos internos y no comprueba vigencia.
+- **Reconciliación:** ampliar TASK-118 y TASK-351. Mantener AUD-NG-059 (hash binario), AUD-NG-061 (certificado) y AUD-NG-161 (concurrencia y pruebas). No crear AUD-NG duplicado.
+- **FASE2-T05:** generador institucional duplicado entre User y Academic; Academic admite skipLock desde payload; Accounting no lo integra en emisión documental.
+- **Calidad:** contrato de persistencia inconsistente, identidad actor/titular mezclada y respuesta pública no minimizada.
+- **Pruebas:** inspección estática/manual; no se ejecutaron HTTP, Apps Script, concurrencia real ni operaciones productivas.
+- **Progreso:** 35/183 identificadores auditados; 148 pendientes.
+- **Siguiente tarea:** FASE2-05 - Mecanismo Atómico de Sincronización, LockService e Idempotencia.
