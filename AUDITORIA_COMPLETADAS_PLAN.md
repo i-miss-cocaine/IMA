@@ -325,3 +325,13 @@ Al reanudar:
 - **Pruebas:** inspección estática/manual; no se ejecutaron API, sesiones obsoletas, concurrencia, sincronización ni rollback.
 - **Progreso:** 27/183 identificadores auditados; 156 pendientes.
 - **Siguiente tarea:** FASE2-T18.
+
+
+## 33. Resultado C1.25 - FASE2-T18 (2026-11-05)
+- **Dictamen:** CUMPLE PARCIALMENTE. Existen ping y métricas backend separados, pero el tablero institucional no los integra y puede declarar saludable sin telemetría.
+- **Evidencia:** openInstitutionalHealthDashboardModal busca getServiceHealthMetrics; no se encontró definición en ui-common.js/api.js/developer.js. Si no existe en otro módulo cargado, usa cero y marca todos los servicios operativos. No llama al monitor ni al backend; muestra hora local, sin latencia/colas/dependencias/filtros. checkAllMicroservicesHealth solo incluye USER/ACADEMIC/TASK/EXAM; TASK/EXAM no implementan ping, ACCOUNTING sí pero se omite, DEVELOPER no prueba recursos. USER/ACADEMIC ping devuelven dbConnected fijo. developer.js considera ONLINE una respuesta success incluso si state=Degradado. fetchApi ignora timeout:6000 y fija 60 s. getOperationalCapacityMetrics no tiene ventana temporal/colas y devuelve OPTIMO sin datos; DTO incompatible con UI e INT-04. getServiceHealthDiagnostics tiene PASS fijos y es público; getTraceabilityCorrelationLogs no filtra periodo/tipo ni sanea errorDetails.
+- **Reconciliación:** no crear AUD-NG nuevo. Ampliar AUD-NG-144, AUD-NG-145, AUD-NG-007, AUD-NG-008 y TASK-064. AUD-NG-163 permanece duplicada/consolidada.
+- **Calidad:** parcial; health checks y métricas existen de forma fragmentada, sin tablero confiable ni atribución integral de incidentes.
+- **Pruebas:** inspección estática/manual; no se ejecutaron pings, caídas, latencia, cuotas, filtros, roles ni colas.
+- **Progreso:** 28/183 identificadores auditados; 155 pendientes.
+- **Siguiente tarea:** FASE2-T19.

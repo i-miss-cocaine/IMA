@@ -816,3 +816,32 @@ No se crea AUD-NG nuevo.
 - AUD-NG-078: coherencia de versión de contrato con deployment/endpoint real.
 
 No se crea AUD-NG nuevo.
+
+
+## Auditoría FASE2-T18 - tablero de salud e interoperabilidad (2026-11-05)
+
+### Componentes y flujo revisados
+- ui-common.js openInstitutionalHealthDashboardModal (1939) llama getServiceHealthMetrics; en los scripts revisados no hay definición. Si no se carga externamente, usa métricas cero y pinta OPERATIVO/SALUDABLE.
+- api.js fetchApi (11) aplica timeout fijo 60000 ms; checkMicroserviceHealth (207) envía ping y mide round-trip; checkAllMicroservicesHealth (245) consulta solo USER/ACADEMIC/TASK/EXAM.
+- developer.js executeDevHealthChecks (90) consume el mismo monitor; clasifica status=success como ONLINE aunque state sea Degradado.
+- user-service: getServiceHealthReport (73), getOperationalCapacityMetrics (4080), recordTraceabilityLog (4548), getTraceabilityCorrelationLogs (4575), retryFailedEventsQueue (4700).
+- academic-service: getServiceHealthDiagnostics (4451) y ping (964); el diagnóstico se incluye en PUBLIC_ACTIONS (265).
+- Backend ping: USER (1552), ACADEMIC (964), ACCOUNTING (834); TASK/EXAM no tienen acción ping; DEVELOPER ping delega a doGet (developer-service, 152).
+
+### Brechas de interoperabilidad y datos
+- El modal no llama a checkAllMicroservicesHealth ni a métricas backend; no presenta latencia, cola, dependencias, filtros ni links de diagnóstico. Su hora es local al render.
+- checkAllMicroservicesHealth excluye ACCOUNTING/DEVELOPER y consulta TASK/EXAM sin acción ping. USER/ACADEMIC devuelven dbConnected fijo; DEVELOPER devuelve controlPlaneConnected fijo.
+- fetchApi ignora options.timeout y usa 60 segundos; la llamada de salud declara 6 segundos.
+- getOperationalCapacityMetrics lee BitacoraTrazabilidad sin ventana temporal/cola, y devuelve OPTIMO sin eventos. El DTO no coincide con el esperado por ui-common; INT-04 también espera capacidadOperativa que no existe.
+- getServiceHealthDiagnostics deja connectivity/permissions en PASS fijo y está expuesto en PUBLIC_ACTIONS. getServiceHealthReport aplica umbral acumulado sin periodo ni desglose real por servicio.
+- getTraceabilityCorrelationLogs no filtra por periodo/tipo y devuelve errorDetails sin redacción. retryFailedEventsQueue no se integra al panel.
+
+### Tareas relacionadas
+- AUD-NG-144: ping real, cobertura completa y estado del tablero.
+- AUD-NG-145: filtros, DTO y sanitización de bitácora.
+- AUD-NG-007: timeout por llamada.
+- AUD-NG-008: fallback/ausencia de telemetría no debe convertirse en éxito.
+- TASK-064: métricas, cuotas, colas, frescura, dependencias y alertas.
+- AUD-NG-163 sigue duplicada y consolidada; no ejecutar independientemente.
+
+No se crea AUD-NG nuevo.

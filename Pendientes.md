@@ -18866,3 +18866,44 @@ No se crea AUD-NG nuevo. Las brechas se vinculan a tareas existentes.
 
 Hallazgo nuevo: ninguno; las brechas se corresponden con TASK-062, AUD-NG-077 y AUD-NG-078. Progreso: 27/183 identificadores únicos auditados; 156 pendientes. Siguiente tarea: FASE2-T18.
 ================================================================
+
+
+================================================================
+AMPLIACIÓN DE TAREAS EXISTENTES DERIVADA DE FASE2-T18 (2026-11-05)
+================================================================
+
+No se crea AUD-NG nuevo. Las deficiencias del tablero y de sus fuentes de datos se asignan a tareas pendientes existentes.
+
+### AUD-NG-144 - Health checks reales y cobertura completa de servicios
+- openInstitutionalHealthDashboardModal no puede consumir getServiceHealthMetrics sin definición/contrato disponible ni convertir su fallback de ceros en estado OPERATIVO/SALUDABLE. Debe distinguir NO MEDIDO, SIN TELEMETRÍA, ONLINE, DEGRADADO y OFFLINE.
+- Conectar el tablero institucional a checkAllMicroservicesHealth y a las métricas backend verificadas. No presentar la hora local del render como última medición; mostrar timestamp y antigüedad de cada fuente.
+- Corregir la cobertura: USER/ACADEMIC ping actual responde dbConnected=true fijo; TASK/EXAM no implementan ping; ACCOUNTING sí tiene ping pero está excluido; DEVELOPER delega a doGet/controlPlaneConnected=true sin comprobar dependencias. El inventario monitorizado debe derivarse de SERVICE_REGISTRY y cada servicio debe exponer un ping real con comprobación de dependencia crítica.
+- En getServiceHealthDiagnostics, no dejar connectivity/permissions como PASS por defecto; cada check debe ejecutarse realmente y su resultado debe afectar el estado final. Revisar la exposición pública del diagnóstico: no publicar información operativa interna sin política de acceso.
+- js/developer.js debe clasificar state=Degradado aunque status sea success; no puede mostrar ONLINE/100% Operativo si la latencia rebasa el umbral o faltan servicios del inventario.
+- El estado global debe degradarse cuando una dependencia crítica, servicio esencial o cola de eventos esté fallida/pendiente; la falta de telemetría no equivale a disponibilidad.
+- Pruebas por servicio: ping válido, acción inexistente, endpoint no desplegado, timeout, respuesta lenta, error de dependencia, fallo de Spreadsheet/Drive y ausencia de telemetría. Incluir ACCOUNTING y DEVELOPER.
+
+### AUD-NG-145 - Bitácora central, filtros y sanitización
+- getTraceabilityCorrelationLogs debe admitir filtros por intervalo temporal y tipo/severidad de incidencia, además de servicio/estado/correlationId; mantener paginación y límites seguros.
+- recordTraceabilityLog no debe persistir errorDetails sin sanitización por esquema. getTraceabilityCorrelationLogs no debe devolver PII, credenciales, RTN, cuentas ni datos financieros en bruto; conservar detalle técnico seguro y correlación.
+- Integrar los eventos/mediciones al tablero con DTO consistente. Distinguir origen y destino para identificar la dependencia que causa degradación.
+
+### AUD-NG-007 - Timeout configurable en fetchApi
+- checkMicroserviceHealth pasa timeout:6000, pero fetchApi mantiene 60000 ms fijo. Aplicar options.timeout, abortar dentro del margen configurado y limpiar temporizadores en éxito/error/reintento. El monitor debe mostrar TIMEOUT como estado distinto de offline/servicio sin ping.
+
+### AUD-NG-008 - Diferenciar indisponibilidad de respuestas vacías/fallback
+- El fallback de openInstitutionalHealthDashboardModal no puede convertirse en métricas cero confirmadas ni estado saludable. La UI debe mostrar SIN TELEMETRÍA/ERROR DE CONSULTA y mantener visible el último dato válido con su antigüedad, claramente identificado como obsoleto.
+- No usar status success con colecciones vacías o métricas predeterminadas para concluir que un servicio está operativo.
+
+### TASK-064 - Observabilidad preventiva, métricas y tablero de capacidad
+- Integrar getOperationalCapacityMetrics con el panel. Adaptar el DTO: backend entrega capacidadEstado/resumenGeneral/desgloseServicios y la UI espera totalCalls/successCalls/failedCalls/quotaErrors/serviceMetrics. No mantener dos contratos incompatibles.
+- getOperationalCapacityMetrics debe filtrar por ventana temporal y servicio/acción, identificar origen/destino y registrar frescura real. No devolver OPTIMO si no existen eventos o si los datos exceden la antigüedad permitida; devolver NO_MEDIDO/SIN_DATOS.
+- Medir disponibilidad, latencia, tasa de error, cuotas, reintentos, procesos pendientes y fallidos de BitacoraEventos, trabajos bloqueados y dependencias. Las métricas deben provenir de telemetría real, no de métricasClient confiadas al navegador.
+- Integrar timestamp del último evento medido, período de cálculo, fuente de datos y cobertura de instrumentación. La hora de consulta no sustituye la frescura del dato.
+- Configurar umbrales por servicio/acción y alertas deduplicadas; no usar únicamente umbrales fijos (>10%, >5 cuotas o >50 errores acumulados).
+- La suite INT-04 debe validar el DTO real de getOperationalCapacityMetrics (hoy espera capacidadOperativa, propiedad inexistente) y fallar de forma visible si no se ejecuta/si falla; no devolver éxito global sin considerar casos fallidos.
+- El tablero debe incluir filtros por servicio, periodo y tipo de incidencia; atribución de dependencia; detalle técnico saneado y enlace a diagnóstico/recuperación.
+- Estado global no puede ser saludable con servicios esenciales sin medir, colas críticas pendientes, eventos fallidos permanentes o dependencias críticas degradadas.
+
+AUD-NG-163 permanece DUPLICADA y consolidada; no reabrirla como tarea independiente. Progreso: 28/183 identificadores únicos auditados; 155 pendientes. Siguiente tarea: FASE2-T19.
+================================================================

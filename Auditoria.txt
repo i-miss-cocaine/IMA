@@ -4868,3 +4868,35 @@ No crear AUD-NG nuevo. Ampliar TASK-062 (versionado incremental, handshake, inva
 
 PRUEBAS/LÍMITES: inspección estática/manual. No se ejecutaron llamadas API, clientes obsoletos, actualizaciones concurrentes, restauraciones ni pruebas de rollback. No se usaron datos productivos ni se modificó código fuente. AUDITORIA_FASE2_ARQUITECTURA_INTEROPERABILIDAD.md no está disponible; se usó el alcance de completadas.md.
 ================================================================
+
+
+================================================================
+AUDITORÍA FASE2-T18 - TABLERO DE SALUD E INTEROPERABILIDAD INSTITUCIONAL
+FECHA: 2026-11-05 | DICTAMEN: CUMPLE PARCIALMENTE
+
+ARCHIVOS PRINCIPALES:
+- js/ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67
+- js/api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9
+
+CRUCE DE DEPENDENCIAS:
+- js/developer.js SHA 6fa4c4bd9be580c974b1fbede4f0cf79485dc331
+- backend/user-service/Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f
+- backend/academic-service/Code.gs SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc
+- backend/task-service/Code.gs SHA 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe
+- backend/exam-service/Code.gs SHA 1d93296628fae31f680004f637897e2b1314a64c
+- backend/accounting-service/Code.gs SHA 38b979d41596b85e888b4a7060b37bbac0840a28
+- backend/developer-service/Code.gs SHA 8aa4bac67cfe5c8c54da51a0784a56fef633e412
+
+EVIDENCIA:
+- ui-common.js openInstitutionalHealthDashboardModal (1939) usa getServiceHealthMetrics (1944), sin definición localizada en ui-common.js/api.js/developer.js. Si no se carga desde otro módulo, usa fallback de métricas cero; con cero errores marca cinco tarjetas OPERATIVO y estado global SALUDABLE. No llama a checkAllMicroservicesHealth ni a endpoints de métricas. La hora de actualización es local al render, no la última medición; no hay filtros, latencia, colas, dependencias ni enlaces de recuperación. La función no verifica rol.
+- api.js checkMicroserviceHealth (207) hace ping/round-trip; checkAllMicroservicesHealth (245) solo lista USER/ACADEMIC/TASK/EXAM, omite ACCOUNTING y DEVELOPER. fetchApi fija timeout de 60000 ms (36), aunque checkMicroserviceHealth pasa timeout:6000.
+- USER ping (1552) y ACADEMIC ping (964) devuelven dbConnected=true fijo. ACCOUNTING sí tiene ping (834) pero no se incluye. TASK y EXAM no tienen acción ping, aunque el monitor los consulta. DEVELOPER ping (developer-service, 152) delega a doGet, que devuelve controlPlaneConnected=true sin validar dependencia. js/developer.js executeDevHealthChecks (90) consume la lista de cuatro y considera exitoso cualquier status=success aunque state sea Degradado.
+- user-service getOperationalCapacityMetrics (4080) calcula latencia/error/cuota solo desde BitacoraTrazabilidad, sin ventana temporal ni conteo de BitacoraEventos pendientes/fallidos. Sin filas devuelve tasa 0 y capacidadEstado OPTIMO. Su DTO es resumenGeneral/desgloseServicios; el modal espera totalCalls/successCalls/failedCalls/quotaErrors/serviceMetrics. La suite INT-04 espera capacidadOperativa, propiedad no devuelta por el endpoint.
+- getServiceHealthReport (73) usa errores acumulados de LogsSistema y umbral fijo >50; no ofrece periodo ni desglose real por servicio. getTraceabilityCorrelationLogs (4575) filtra correlationId/status/service, no periodo/tipo, y devuelve errorDetails sin redacción. retryFailedEventsQueue (4700) no alimenta el tablero.
+- academic-service getServiceHealthDiagnostics (4451) deja connectivity/permissions en PASS fijo; prueba Spreadsheet y opcionalmente Drive, no dependencias interservicio. Está incluido en PUBLIC_ACTIONS (265), sin autenticación.
+
+RECONCILIACIÓN:
+No crear AUD-NG nuevo. Ampliar AUD-NG-144 (ping real, cobertura completa y conexión del panel), AUD-NG-145 (bitácora/filtros/sanitización), AUD-NG-007 (timeout configurable), AUD-NG-008 (no convertir fallback en salud exitosa) y TASK-064 (métricas reales, periodo, colas, frescura, dependencias y alertas). AUD-NG-163 permanece duplicada y no debe reabrirse.
+
+PRUEBAS/LÍMITES: inspección estática/manual. No se ejecutaron pings, simulaciones de caída, latencia, cuotas, filtros, roles ni fallos de colas. No se usaron datos productivos ni se modificó código fuente.
+================================================================
