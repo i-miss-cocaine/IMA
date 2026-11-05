@@ -615,3 +615,17 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Código fuente:** sin modificaciones. completadas.md, ChangesLogs.txt y METODOLOGIA_DESARROLLO.md sin cambios.
 - **Progreso:** 51/183 identificadores auditados; 132 pendientes.
 - **Siguiente tarea:** revisar el orden vigente de completadas.md después de T-UX-10 y seleccionar la siguiente tarea no auditada, reconciliando sus ampliaciones posteriores.
+
+
+## 56. Resultado C1.51 - T-UX-11 (2026-11-05)
+
+- **Dictamen:** NO CUMPLE. El gestor de historial `{view,params}` no se inicializa; el listener común no procesa ese estado; no se resuelve el hash inicial y los IDs inexistentes retornan silenciosamente. El caché guarda parámetros del destino en la vista saliente y al regresar solo restaura scroll. Docente usa navegación/stack propio y no se demuestra integración equivalente en los otros paneles.
+- **AUD-NG-188 / TASK-485 (ALTO/P1):** activar router contextual único, inicialización idempotente, rutas directas/hash, atrás/adelante, destinos inválidos y permisos.
+- **AUD-NG-189 / TASK-486 (ALTO/P1):** snapshot/restauración real de filtros, búsqueda, orden, página, selección y scroll; integrar listas/detalle y stack de Docente.
+- **Evidencia:** ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67, líneas 281-385 y 4864-4917; teacher.js SHA c475fce5afcd28fca23e7b64398ad32b17773746, líneas 215-245, 3220-3275 y 5997-6008; student.js SHA e2888cea60322e49a40b89adadb8010489605dcc; accounting.js SHA a79ead4a54ad6fdb2f1e9df4775491ff7191a0c7; siete dashboards revisados.
+- **Reconciliación:** AUD-NG-162 cubre sesión vencida; T-UX-13/TASK-483 menú/rutas visibles; T-UX-14 búsqueda; T-UX-15 filtros/paginación. No duplicar esos alcances.
+- **Backlog:** Pendientes.md recuperado del blob vigente de NG_beta_0.0.0.1_work SHA 4d2f3cd3bbe391a716f085f77864b82b53d920a2, 1,644,469 caracteres y 19,388 líneas. Inventario previo: 484 TASK y 182 AUD-NG únicos. Se agregaron TASK-485/TASK-486 y AUD-NG-188/AUD-NG-189. Inventario posterior: 486 TASK y 184 AUD-NG únicos (670 identificadores combinados).
+- **Pruebas:** inspección estática/manual; no se ejecutaron navegador, DOM real, recarga, eventos popstate ni suites automatizadas.
+- **Código fuente:** sin modificaciones. completadas.md, ChangesLogs.txt y METODOLOGIA_DESARROLLO.md intactos.
+- **Progreso:** 52/183 identificadores auditados; 131 pendientes.
+- **Siguiente tarea:** T-UX-12 - Consolidar los paneles de control por rol y departamento (revisar primero si existen auditorías históricas o hallazgos previos para reconciliar).

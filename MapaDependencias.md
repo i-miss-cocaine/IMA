@@ -1254,3 +1254,25 @@ No se crea AUD-NG nuevo.
 - AUD-NG-009 es la regla general de pruebas funcionales en regresión, no sustituye el trabajo específico UX.
 - AUD-NG-162, AUD-NG-181, TASK-479, TASK-480, TASK-481, TASK-482 y TASK-483 conservan sus alcances funcionales y deben convertirse en dependencias de prueba, no duplicarse.
 - T-UX-13/T-UX-20, T-UX-14, T-UX-17, T-UX-21, T-UX-22 y T-UX-23 son ampliaciones posteriores a incluir en la matriz de regresión.
+
+
+## Navegación contextual e historial de vistas (T-UX-11, C1.51)
+
+### Mecanismo compartido
+- `js/ui-common.js:281-385` -> `handlePopState` dentro de `setupCommonUI`; procesa estados `dashboard-section`, `hierarchical-nav`, modales y estados de índice, pero no procesa `event.state.view`.
+- `js/ui-common.js:4864-4902` -> `VIEW_STATES_CACHE` y `switchActiveView(viewId,pushHistory,stateParams)`; guarda scroll y parámetros del destino dentro del registro de la vista saliente; al restaurar solo lee scrollTop.
+- `js/ui-common.js:4904-4917` -> `initNoLoopHistoryManager`; declara listener popstate para `state.view`, pero no se encontró invocación en módulos ni dashboards revisados.
+- `switchActiveView` agrega `#viewId` al historial, pero no se encontró resolución inicial de `location.hash`; el ID inexistente termina en return silencioso.
+
+### Navegación por panel
+- `js/teacher.js:215-245` -> `window.navigateTo`, estado `dashboard-section`.
+- `js/teacher.js:3220-3275` -> `pushNav`, `popNav`, `syncNavWithState`, stack jerárquico.
+- `js/teacher.js:5997-6008` -> `history.replaceState` para el estado inicial del Docente.
+- `js/student.js` SHA e2888cea60322e49a40b89adadb8010489605dcc: sin referencias a switchActiveView/VIEW_STATES_CACHE/history.pushState/replaceState/popstate.
+- `js/accounting.js` SHA a79ead4a54ad6fdb2f1e9df4775491ff7191a0c7: sin referencias a los mecanismos de estado contextual indicados.
+- Dashboards revisados: Dirección, RH, Contabilidad, Estudiante, Docente, Secretaría y Coordinación; no se encontró invocación de initNoLoopHistoryManager ni integración general del mecanismo switchActiveView.
+
+### Hallazgos y relaciones
+- AUD-NG-188 / TASK-485: inicializar y unificar router/historial; resolver URL directa, atrás/adelante, permisos y rutas inválidas.
+- AUD-NG-189 / TASK-486: corregir snapshot y restaurar filtros, búsqueda, orden, página, selección y scroll; integrar stack de Docente.
+- AUD-NG-162 mantiene el alcance de expiración; T-UX-13/TASK-483 cubre menú y rutas visibles; T-UX-15 cubre filtros/paginación, no la preservación contextual.

@@ -19385,3 +19385,52 @@ AUD-NG-163 permanece DUPLICADA y consolidada; no reabrirla como tarea independie
   - Las pruebas se limpian tras cada caso y pueden repetirse sin depender del orden ni dejar listeners, timers, DOM o almacenamiento contaminado.
 - **Relaciones y límites:** AUD-NG-009 (principio general de pruebas conductuales) es relacionado, pero esta tarea se limita a la suite UX-01..UX-09 de T-UX-10. AUD-NG-162, AUD-NG-181, TASK-479, TASK-480, TASK-481, TASK-482 y TASK-483 mantienen sus causas funcionales propias; TASK-484 debe probarlas y no reemplazarlas ni duplicarlas.
 - **Estado:** [ ] Pendiente.
+
+---
+
+### [TASK-485] Activar un enrutador contextual único con soporte de historial y rutas directas
+- **Origen del Hallazgo:** AUD-NG-188 en Auditoria.txt (T-UX-11, navegación contextual).
+- **Severidad/Clasificación:** Alto / P1.
+- **Archivos Involucrados:** `js/ui-common.js`, `js/teacher.js`, dashboards HTML y módulos de navegación relacionados.
+- **Dependencias Expuestas:** `switchActiveView`, `initNoLoopHistoryManager`, `handlePopState`, `window.navigateTo`, `pushNav`, `popNav`, `syncNavWithState`, `history.pushState`, `history.replaceState`, `popstate`, URL/hash, sesión y permisos efectivos.
+- **Descripción del Alcance:**
+  1. Definir un contrato único de rutas/estados para vistas, secciones de dashboard, navegación jerárquica y overlays; evitar gestores paralelos que no procesen los mismos tipos de estado.
+  2. Garantizar que el consumidor de estados `{view, params}` se inicialice una sola vez antes de aceptar navegación. Actualmente `initNoLoopHistoryManager` está definido, pero no se encontró una invocación en los módulos y páginas inspeccionados.
+  3. Resolver la ruta inicial desde URL/hash al cargar o recargar, además de procesar `popstate`; no depender de que el usuario haya llegado desde otra vista.
+  4. Validar rutas contra un registro de vistas existentes y contra el rol/permisos efectivos. Una ruta inexistente o no autorizada debe mostrar una salida comprensible y no dejar la interfaz en estado ambiguo.
+  5. Unificar o integrar explícitamente la navegación propia de `js/teacher.js` (`navigateTo`, `pushNav`, `popNav`, `syncNavWithState`) con el contrato compartido, sin romper el historial de modales ni crear ciclos de pushState/popstate.
+  6. Integrar las páginas de Dirección, RH, Contabilidad, Estudiante, Docente y los demás dashboards cubiertos por el contrato.
+  7. Reutilizar la diferenciación entre sesión vencida/revocada y permiso insuficiente de AUD-NG-162; la navegación no debe confirmar ni simular una operación guardada ante expiración.
+- **Criterios de Aceptación:**
+  - La inicialización del gestor es explícita, idempotente y ocurre en todos los dashboards que lo requieren.
+  - Abrir una vista y pulsar atrás/adelante restaura la vista correcta; no se ignoran los estados `view` ni se producen bucles de historial.
+  - Una URL directa con ruta/hash válido abre la vista correspondiente tras carga y recarga, sin navegación previa.
+  - Un hash/ruta inexistente o no autorizado produce una vista de error/retorno controlado; nunca un retorno silencioso que mantenga contenido incorrecto.
+  - Los estados de modal, sección, vista y navegación jerárquica no se pisan ni cierran vistas ajenas.
+  - Los paneles de Estudiante, Docente, Dirección, RH y Contabilidad usan el contrato común o un adaptador documentado que garantiza el mismo comportamiento.
+  - Una sesión expirada durante una operación no muestra confirmación de guardado; los errores de permiso conservan la sesión válida.
+  - Pruebas reproducibles cubren carga directa, recarga, atrás/adelante, ruta inválida, acceso denegado, sesión vencida y coexistencia con modales.
+- **Relaciones y límites:** AUD-NG-162 cubre el contrato de expiración; T-UX-13/TASK-483 cubren menú/rutas visibles por rol. TASK-485 se limita al enrutamiento y ciclo de vida del historial, sin duplicar esas correcciones.
+- **Estado:** [ ] Pendiente.
+
+### [TASK-486] Preservar y restaurar el estado real de listas y vistas de detalle al navegar
+- **Origen del Hallazgo:** AUD-NG-189 en Auditoria.txt (T-UX-11, conservación de contexto).
+- **Severidad/Clasificación:** Alto / P1.
+- **Archivos Involucrados:** `js/ui-common.js`, `js/teacher.js`, `js/student.js`, `js/accounting.js` y dashboards HTML.
+- **Dependencias Expuestas:** `VIEW_STATES_CACHE`, `switchActiveView`, `stateParams`, `history.state`, filtros, búsqueda, ordenamiento, paginación, selección, scroll, vistas de detalle y `navStack`.
+- **Descripción del Alcance:**
+  1. Capturar el estado de la vista que se abandona (filtros, consulta, orden, página, pestaña, selección y scroll cuando aplique) antes de cambiar de destino.
+  2. Corregir el contrato de `switchActiveView`: actualmente asigna al caché de la vista saliente el `stateParams` recibido para el destino y, al volver, solo restaura scroll; no consume `cached.params`.
+  3. Restaurar el snapshot al volver desde detalle o mediante atrás/adelante, sin reconstruir la lista con valores por defecto ni ejecutar consultas innecesarias.
+  4. Mantener el estado al abrir una vista de detalle desde una URL directa y al regresar; el flujo no debe depender de una navegación previa.
+  5. Integrar el stack jerárquico de Docente y los estados de listas de Estudiante, Contabilidad, Dirección y RH con el contrato común, o documentar adaptadores con equivalencia comprobable.
+  6. Aislar los snapshots por usuario, rol y vista; evitar persistir datos personales sensibles en URL o almacenamiento no apropiado.
+- **Criterios de Aceptación:**
+  - Desde una lista filtrada y paginada, abrir un registro y regresar conserva exactamente filtros, búsqueda, orden, página, selección y scroll que correspondan.
+  - El snapshot guardado pertenece a la vista saliente y no contiene parámetros del destino.
+  - Al restaurar, se consumen los parámetros almacenados y el contenido coincide con el estado visual.
+  - Abrir un registro directamente y volver conduce a una lista/ubicación de retorno válida o a un fallback explícito.
+  - Los estados de un usuario/rol no se reutilizan para otro usuario/rol.
+  - Pruebas reproducibles cubren cambios de filtros, página, orden, detalle, recarga, atrás/adelante y datos ausentes.
+- **Relaciones y límites:** TASK-485 proporciona el enrutador/historial; TASK-486 implementa snapshot/restauración del contexto de vistas. T-UX-15 cubre filtros/paginación como funcionalidad propia, pero no sustituye la preservación de su estado durante navegación.
+- **Estado:** [ ] Pendiente.

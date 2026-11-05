@@ -5809,3 +5809,21 @@ AUDITORÍA DE completadas.md - T-UX-10 (2026-11-05)
 - No se modifica código fuente ni completadas.md.
 - Pruebas: inspección estática/manual; no se ejecutaron navegador, DOM real, APIs, Apps Script, servicios externos ni operaciones productivas.
 ===============================================================================
+
+
+===============================================================================
+AUDITORÍA DE completadas.md - T-UX-11 (2026-11-05)
+===============================================================================
+- Dictamen: NO CUMPLE. El mecanismo genérico de navegación está incompleto y no integrado. initNoLoopHistoryManager define listener para {view,params}, pero no se encontró invocación en módulos/páginas revisados; handlePopState no procesa event.state.view; no hay resolución de hash inicial ni salida para destino inválido.
+- Evidencia: js/ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67; handlePopState 281-385; switchActiveView 4864-4902; initNoLoopHistoryManager 4904-4917.
+- switchActiveView guarda scrollTop y params: stateParams en la vista saliente, aunque stateParams representa el destino; al regresar solo restaura scrollTop y nunca lee cached.params.
+- El destino inexistente produce return silencioso. La función escribe #viewId en history.pushState, pero no se encontró lector de location.hash para carga directa/recarga en el ámbito revisado.
+- Navegación Docente separada: js/teacher.js SHA c475fce5afcd28fca23e7b64398ad32b17773746; navigateTo 215-245; pushNav/popNav/syncNavWithState 3220-3275; replaceState inicial 5997-6008. ui-common maneja dashboard-section/hierarchical-nav parcialmente; no existe contrato equivalente demostrado para todos los paneles.
+- js/student.js SHA e2888cea60322e49a40b89adadb8010489605dcc: sin referencias a switchActiveView/VIEW_STATES_CACHE/history.pushState/replaceState/popstate. js/accounting.js SHA a79ead4a54ad6fdb2f1e9df4775491ff7191a0c7: sin referencias a dichos mecanismos.
+- Dashboards revisados: Dirección fefaa3bf7884288aef563cfb8aaf244e6cea8b7c; RH 406bedbae5a5bb3b5c03e4ea7aaa95ed68aea8ee; Contabilidad b7653b3bff71829f0f67cf47cb894413c56a444a; Estudiante 6379ea0ed39d71b89747a0280bb925fdf12202c1; Docente cbb9e6a272a7d8ad33f99727303305d950533e71; Secretaría fa0d8c23aace24a6acab2d4956398a7f5e1309b8; Coordinación 08de8e4eb150ee9f6aad536ca08e8f76f2e0e896. No se encontró invocación de initNoLoopHistoryManager ni uso general de switchActiveView.
+- AUD-NG-162 ya cubre sesión expirada/revocada vs permiso insuficiente; no duplicar. T-UX-13/TASK-483 cubre menú y rutas visibles por rol; T-UX-14/TASK-481/TASK-482 búsqueda; T-UX-15 filtros/paginación. Ninguna sustituye el historial contextual y la restauración del estado de lista.
+- AUD-NG-188 (ALTO/P1): gestor {view,params} sin inicialización, popstate sin consumidor efectivo, deep links/hash no resueltos y rutas inválidas silenciosas.
+- AUD-NG-189 (ALTO/P1): caché asigna parámetros del destino a la vista saliente y no restaura filtros/búsqueda/orden/paginación; navegación fragmentada entre paneles.
+- Tareas derivadas: TASK-485 (enrutador contextual único, historial, rutas directas, inválidas y permisos) y TASK-486 (snapshot/restauración del contexto real de listas/detalle).
+- Pruebas: inspección estática/manual; no se ejecutaron navegador, DOM real, recarga, popstate ni suites automatizadas. Código fuente sin cambios.
+===============================================================================

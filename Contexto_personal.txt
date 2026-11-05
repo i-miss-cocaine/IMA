@@ -2242,3 +2242,63 @@ ARCHIVOS DE ESTA ITERACIÓN:
 - Publicación: exactamente un commit final descendiente de 5e138394deae035441a2cefb7ca7b527c70a9e4a, sin commits intermedios. El SHA de cierre se confirma externamente después de publicar.
 - Próxima acción: revisar la secuencia de tareas posteriores a T-UX-10 en completadas.md y seleccionar la siguiente tarea aún no auditada, reconciliando ampliaciones y hallazgos existentes.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.51 - AUDITORÍA T-UX-11 (2026-11-05)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto real: Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida: 05eb016f4ba1e149111091b47ed72ad97520e37d (cierre C1.50).
+- Árbol de partida: 7511da6a2db0efc225f3cd9c3b680f6c7fa6616d.
+- HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59; comparar al cierre.
+- Última tarea auditada y cerrada: T-UX-11 - Unificar la navegación contextual y conservar el estado de las vistas.
+- Dictamen: NO CUMPLE. initNoLoopHistoryManager está definido sin invocación encontrada; handlePopState no procesa state.view; el hash inicial no se resuelve; switchActiveView guarda params del destino en la vista saliente y no restaura cached.params; navegación Docente separada.
+- Tarea en curso: ninguna; inspección estática/manual T-UX-11 cerrada.
+- Siguiente tarea según orden de completadas.md: T-UX-12 - Consolidar los paneles de control por rol y departamento. Reconciliar primero antecedentes históricos.
+- Progreso: 52/183 identificadores auditados; 131 pendientes.
+
+RECUPERACIÓN E INVENTARIO DE Pendientes.md:
+- Blob vigente recuperado exclusivamente de la rama de trabajo: 4d2f3cd3bbe391a716f085f77864b82b53d920a2.
+- Contenido previo: 1,644,469 caracteres y 19,388 líneas.
+- Inventario previo: 484 IDs TASK únicos (máximo TASK-484) y 182 IDs AUD-NG únicos (máximo AUD-NG-187), 666 identificadores combinados.
+- Se agregaron TASK-485/AUD-NG-188 y TASK-486/AUD-NG-189.
+- Inventario posterior: 486 IDs TASK y 184 IDs AUD-NG únicos, 670 identificadores combinados. Contenido posterior: 1650380 caracteres y 19437 líneas.
+- Se preservó el contenido previo y no se cambiaron estados históricos.
+
+HALLAZGOS:
+- AUD-NG-188 (ALTO/P1): el gestor de historial {view,params} no se inicializa; el listener compartido no procesa ese estado; no hay resolución de hash inicial y las rutas inexistentes retornan silenciosamente.
+- AUD-NG-189 (ALTO/P1): switchActiveView guarda parámetros del destino en el caché de la vista saliente y no restaura cached.params; no conserva filtros, búsqueda, orden ni paginación. Navegación fragmentada entre paneles.
+- TASK-485 y TASK-486 se registraron como tareas independientes y ejecutables. AUD-NG-162, T-UX-13/TASK-483 y T-UX-15 se mantienen como dependencias relacionadas, sin duplicación.
+- No se modifica completadas.md ni el estado histórico [X] de T-UX-11.
+
+ARCHIVOS Y SHAs DE RESPALDO:
+- js/ui-common.js: 986938b8a311a41ed4cb3d135b66b6aaea4bed67.
+- js/teacher.js: c475fce5afcd28fca23e7b64398ad32b17773746.
+- js/student.js: e2888cea60322e49a40b89adadb8010489605dcc.
+- js/accounting.js: a79ead4a54ad6fdb2f1e9df4775491ff7191a0c7.
+- dashboard-direccion.html: fefaa3bf7884288aef563cfb8aaf244e6cea8b7c.
+- dashboard-recursos-humanos.html: 406bedbae5a5bb3b5c03e4ea7aaa95ed68aea8ee.
+- dashboard-contabilidad.html: b7653b3bff71829f0f67cf47cb894413c56a444a.
+- student-dashboard.html: 6379ea0ed39d71b89747a0280bb925fdf12202c1.
+- teacher-dashboard.html: cbb9e6a272a7d8ad33f99727303305d950533e71.
+- dashboard-secretaria.html: fa0d8c23aace24a6acab2d4956398a7f5e1309b8.
+- dashboard-coordinacion.html: 08de8e4eb150ee9f6aad536ca08e8f76f2e0e896.
+- completadas.md: f57f1aef832e81e44fc4f7ec36a852d50e464676.
+- METODOLOGIA_DESARROLLO.md: 214e8221bd076c4e89012636c105bffd5ca36467.
+- Pendientes.md origen: 4d2f3cd3bbe391a716f085f77864b82b53d920a2.
+- Auditoria.txt origen: 0f6950eced2a60f9d6aacf3c63d18f18a1d729ce.
+- MapaDependencias.md origen: 1fe3250ecd4f5035e0f8a07f98188d9c4d97d08a.
+- AUDITORIA_COMPLETADAS_PLAN.md origen: 4595bdbabefedfbc5d7b281d4f8c923cf0c8eaf2.
+- Contexto_personal.txt origen: 01badf6fd4b3e79d1bd69493fa2cf66745a4fda9.
+
+ARCHIVOS DE ESTA ITERACIÓN:
+- Modificados: Pendientes.md, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt.
+- Nuevo: AUDITORIA_COMPLETADAS_T-UX-11.md.
+- Sin modificar: código fuente, completadas.md, completadas_legacy.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, rama base y demás ramas.
+- Pruebas: inspección estática/manual. No se ejecutaron navegador, DOM real, recarga, eventos popstate ni suites automatizadas.
+- Publicación: un solo commit final descendiente de 05eb016f4ba1e149111091b47ed72ad97520e37d. Sin commits intermedios.
+- Próxima acción: auditar T-UX-12, contrastando sus paneles por rol/departamento con implementaciones posteriores y tareas existentes.
+================================================================
