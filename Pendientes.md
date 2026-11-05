@@ -18567,3 +18567,22 @@ Hallazgo nuevo: AUD-NG-166. Progreso de auditoría: 17/183; 166 pendientes. Sigu
 - **Estado:** [ ] Pendiente
 
 Hallazgo nuevo: AUD-NG-167. Progreso de auditoría: 18/183; 165 pendientes. Siguiente tarea: TAREA-13.
+
+
+---
+
+## Ampliación de criterios derivada de TAREA-13 (2026-11-05)
+
+- **AUD-NG-164:** usar OfertaAcademica como fuente canónica de ofertas; eliminar la divergencia de lectura con OfertasAcademicas y conservar IDs estables en área/asignatura/plan/oferta.
+- **AUD-NG-158:** incorporar ABAC a asignación, consulta y baja de docentes por área/oferta/grado/sección/periodo; derivar actor de claims verificados para sustituciones, preferencias, horarios y excepciones; validar asignaciones vigentes antes de leer o modificar.
+
+### [AUD-NG-168] Unificar el modelo de asignaciones docentes, carga horaria y planificación de horarios
+- **Origen:** Auditoría de completadas.md / TAREA-13.
+- **Severidad:** Alto (P1).
+- **Archivos:** backend/academic-service/Code.gs; js/teacher.js; teacher-dashboard.html.
+- **Problema:** las funciones de ofertas usan OfertaAcademica mientras la planificación departamental usa OfertasAcademicas; HorariosClase se escribe con una estructura que getClassSchedules interpreta con índices distintos; sustituciones consultan columnas equivocadas y usan estados Activa/Activo inconsistentes; carga, conflictos y ocupación ignoran año/periodo o incluyen estados no vigentes; asignación por área no está integrada en la interfaz; el mapa departamental representa un único docente por oferta.
+- **Criterios:** fuente canónica de ofertas; relación docente-área-asignatura-oferta-grupo-año/periodo; asignaciones compartidas y sustituciones con vigencia; esquema único de horarios; filtros por año/periodo y estado; detección de conflictos verificable; carga calculada solo con bloques vigentes; reportes departamentales/vacantes basados en relaciones canónicas.
+- **Tareas relacionadas (no duplicadas):** AUD-NG-164 (catálogo curricular y ofertas), AUD-NG-158 (ABAC docente y actor verificado).
+- **Estado:** [ ] Pendiente
+
+Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Siguiente tarea: TAREA-14.

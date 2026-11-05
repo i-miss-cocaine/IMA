@@ -4645,3 +4645,18 @@ CORRECCIÓN DE INTEGRIDAD DE Pendientes.md (2026-11-05): la verificación poster
 - Pruebas: inspección estática/manual; no se ejecutaron pruebas funcionales, de concurrencia, permisos, datos reales, integración SACE ni despliegue.
 - Progreso: 18/183; 165 pendientes. Siguiente: TAREA-13.
 ===============================================================================
+
+
+===============================================================================
+[AUD-NG-168] TAREA-13 - INTEGRIDAD DE ASIGNACIONES DOCENTES Y PLANIFICACIÓN HORARIA
+- Fecha: 2026-11-05. Severidad: ALTO (P1).
+- Evidencia: getAcademicOffers/createAcademicOffer consultan OfertaAcademica, mientras getDepartmentAcademicPlanning consulta OfertasAcademicas. HorariosClase se escribe con Estado en r[7] y UltimaModificacion en r[8], pero getClassSchedules interpreta esos índices como grado/sección y filtra cancelados en r[9]/r[10]. createTeacherSubstitution usa r[8] como estado y pasa horaInicio/horaFin/aula como día/inicio/fin al motor de conflictos; además guarda estado Activa mientras el resumen busca Activo. getTeacherTeachingLoad y checkScheduleConflict no aíslan por año y suman/consideran estados distintos de Activo; el reporte de ocupación ignora anoLectivo y usa 40 horas fijas por aula. La interfaz no integra la asignación docente por área.
+- Impacto: vacantes falsas, docentes/sustitutos mal asignados, conflictos no detectados o falsos positivos, carga horaria incorrecta y planificación departamental inconsistente.
+- Criterios: fuente canónica de ofertas; relaciones docente-área-oferta-grupo-periodo; esquema estable de HorariosClase; sustituciones con fechas/estado y comprobación correcta; carga y conflictos solo sobre horarios vigentes del periodo; soporte de docentes compartidos; reportes de vacantes/ocupación derivados de datos canónicos.
+- Tareas relacionadas: AUD-NG-164 (catálogo curricular/ofertas), AUD-NG-158 (ABAC y actor/ámbito docente).
+- Control de duplicados: AUD-NG-168 cubre coherencia funcional del modelo de asignaciones y horarios; AUD-NG-158 cubre autorización contextual y AUD-NG-164 la fuente maestra curricular.
+- TAREA-13: CUMPLE PARCIALMENTE. Hay asignaciones, sustituciones, límites y detección de conflictos básicos, pero las relaciones y los índices/estados usados por consultas y reportes no son coherentes.
+- Calidad: insuficiente por tablas paralelas, lectura de columnas incorrectas, sustituciones no verificables y métricas que mezclan años/estados.
+- Pruebas: inspección estática/manual; no se ejecutaron pruebas con datos reales, concurrencia, permisos, periodos ni despliegue.
+- Progreso: 19/183; 164 pendientes. Siguiente: TAREA-14.
+===============================================================================

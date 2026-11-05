@@ -662,3 +662,13 @@ Se restauró el contenido íntegro previo a TAREA-09 (1,515,247 caracteres) tras
 - Dependencias: CategoriasEvaluacion, CalificacionesEstudiantes, CierresPeriodos, RubricasEvaluacion, EvaluacionesCompetencias, RecuperacionesEstudiante, HistorialRectificacionesNotas, Matriculas, Calificaciones / Notas.
 - Hallazgo AUD-NG-167: claves de calificación no contextuales; ponderaciones duplicadas; cálculo, rúbricas y estados no unificados; boletines/SACE no conectados a fuente consolidada.
 - Controles relacionados: AUD-NG-002 (consultas de resultados), AUD-NG-158 (ABAC docente), AUD-NG-124 (historial de calificación de entregas).
+
+
+## TAREA-13 - Planificación y asignación de carga académica
+
+- backend/academic-service/Code.gs: getDepartmentAcademicPlanning, assignDepartmentHead, getAcademicOffers, createAcademicOffer, getTeacherAssignments, assignTeacherToClass, createTeacherSubstitution, getTeacherSubstitutions, getTeacherTeachingLoad, saveTeacherWorkLoadPreferences, getClassSchedules, createClassSchedule, checkScheduleConflict, getPlanningQualityAndOccupancyReport, assignTeacherToAcademicArea, getTeachersByAcademicArea, getAcademicAreasByTeacher y removeTeacherFromAcademicArea.
+- js/teacher.js: loadMasterSchedules, deleteScheduleBlock, schedule-builder-form, openTeacherWorkLoadPreferencesModal, createTeacherSubstitution, refreshAcademicPlanningData y assignDepartmentHead.
+- teacher-dashboard.html: formulario de horarios, matriz de planificación, preferencias/carga docente, sustituciones y panel departamental.
+- Dependencias: OfertaAcademica, OfertasAcademicas (divergencia detectada), AsignacionesDocentes, DocentesAreasAcademicas, CoordinacionesArea, HorariosClase, HorariosLaborales, SedesAulas, MantenimientoAulas, CalendarioAcademico y EscenariosHorarios.
+- Hallazgo AUD-NG-168: fuentes de oferta incompatibles, esquema de horarios interpretado con índices incorrectos, sustituciones no verificables, estados/años mezclados en carga y ocupación, e interfaz de área incompleta.
+- Controles relacionados: AUD-NG-164 (fuente curricular canónica) y AUD-NG-158 (ABAC docente).

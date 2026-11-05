@@ -238,3 +238,11 @@ Al reanudar:
 - Calidad: insuficiente por fuentes de datos incompatibles, pesos duplicados, claves incompletas y máquina de estados no protegida.
 - Pruebas: inspección estática/manual; no se ejecutaron pruebas de navegador, Apps Script, concurrencia, permisos, datos reales, SACE ni despliegue.
 - Progreso: 18/183; 165 pendientes. Siguiente: TAREA-13.
+
+
+## 24. Resultado C1.15 - TAREA-13 (2026-11-05)
+- Dictamen: CUMPLE PARCIALMENTE. Hay jefaturas, asignación a áreas/ofertas, sustituciones, preferencias de carga y motor de conflictos. Sin embargo, getDepartmentAcademicPlanning consulta OfertasAcademicas mientras getAcademicOffers/createAcademicOffer usan OfertaAcademica; getClassSchedules interpreta Estado/UltimaModificacion como grado/sección; createTeacherSubstitution usa índices incorrectos para buscar y comprobar horarios. Carga y ocupación no filtran por año y mezclan estados; la interfaz no integra asignación docente por área y el resumen de vacantes no representa bien docentes compartidos/sustitutos.
+- Hallazgo nuevo: AUD-NG-168. Se amplían AUD-NG-164 y AUD-NG-158 sin duplicar catálogo curricular ni ABAC.
+- Calidad: insuficiente por divergencia de fuentes, esquema de horarios inconsistente y comprobación de sustituciones/carga no fiable.
+- Pruebas: inspección estática/manual; no se ejecutaron pruebas con datos reales, concurrencia, múltiples docentes, periodos, permisos ni despliegue.
+- Progreso: 19/183; 164 pendientes. Siguiente: TAREA-14.

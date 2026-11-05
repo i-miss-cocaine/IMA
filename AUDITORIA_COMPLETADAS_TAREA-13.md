@@ -1,0 +1,52 @@
+# Auditoría TAREA-13
+
+Fecha: 2026-11-05  
+Rama: NG_beta_0.0.0.1_work  
+Dictamen: **CUMPLE PARCIALMENTE**.
+
+## Alcance y evidencia revisada
+
+Requisito [TAREA-13] de completadas.md: responsables de departamentos; docentes asociados a áreas/asignaturas/grados/secciones; límites de carga y horarios; detección de conflictos de docente/aula; docentes compartidos/sustitutos; planificación departamental, vacantes y carga por área.
+
+Archivos inspeccionados:
+- backend/academic-service/Code.gs (SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc).
+- js/teacher.js (SHA c475fce5afcd28fca23e7b64398ad32b17773746).
+- teacher-dashboard.html (SHA cbb9e6a272a7d8ad33f99727303305d950533e71).
+- ChangesLogs.txt (SHA d57cf4bd861b5c3720e60cf83241ed804ff645d9).
+
+Los tres archivos de código/UI tienen el mismo SHA en NG_beta_0.0.0.1 y NG_beta_0.0.0.1_work; no se identificaron correcciones posteriores en la rama de trabajo.
+
+## Evidencia de cumplimiento parcial
+
+- Existe asignación de jefaturas departamentales mediante assignDepartmentHead y una vista de planificación/vacantes mediante getDepartmentAcademicPlanning.
+- Existe asignación de docentes a áreas en DocentesAreasAcademicas, con fechas, tipo de vinculación y roles de coordinación; hay consultas por área/docente y baja lógica.
+- Existe AsignacionesDocentes para vincular docentes con ofertas, y funciones de sustitución temporal.
+- Existe creación de horarios con LockService, validación de solapamiento, capacidad de aula, jornada laboral y límite de carga configurable.
+- La interfaz incluye matriz de horarios, formulario de horario, configuración de preferencias/carga, sustituciones y panel de vacantes/jefaturas.
+
+## Incumplimientos y defectos
+
+1. **Fuentes de ofertas incompatibles.** getAcademicOffers/createAcademicOffer trabajan con la hoja OfertaAcademica. getDepartmentAcademicPlanning consulta OfertasAcademicas (plural), una hoja distinta que no corresponde al catálogo inicializado/consumido por las funciones de ofertas. La planificación departamental puede devolver cero ofertas y declarar falsamente que no existen vacantes aunque sí haya ofertas en OfertaAcademica.
+2. **Relación docente-área y docente-oferta fragmentada.** assignTeacherToAcademicArea registra pertenencia a un área, pero no la vincula con asignatura, oferta, grado, sección ni periodo. assignTeacherToClass registra solo oferta/docente y no valida que la oferta y el docente existan/estén activos, que la asignación esté dentro de fechas, ni evita duplicados o incompatibilidades. No se demuestra una relación canónica que permita resolver la carga de un docente desde área hasta grupo/periodo.
+3. **Consultas de horarios interpretan columnas incorrectas.** createClassSchedule persiste HorariosClase con el orden [HorarioID, OfertaID, DiaSemana, HoraInicio, HoraFin, AulaCodigo, DocenteUserId, Estado, UltimaModificacion]. getClassSchedules interpreta r[7] como grado y r[8] como sección, aunque esos índices contienen Estado y UltimaModificacion; también asigna materia = r[1] (OfertaID). Sus filtros de grado/sección y los datos devueltos son incorrectos para las filas creadas por el propio servicio. El filtro de cancelados consulta r[9]/r[10], no la columna de estado r[7].
+4. **Año lectivo ausente o ignorado en el modelo de horarios.** La hoja HorariosClase no persiste AnoID/PeriodoID. getClassSchedules recibe anolectivo pero no lo aplica; getTeacherTeachingLoad recibe anoId pero tampoco lo aplica; checkScheduleConflict compara registros sin ámbito temporal. Horarios de años lectivos distintos pueden mezclarse en consultas, carga y detección de conflictos.
+5. **Sustituciones no comprueban correctamente los conflictos.** createTeacherSubstitution filtra horarios por r[8] === Activo, pero en el esquema vigente r[8] es UltimaModificacion y el estado está en r[7]. Además, pasa sched[3] como día, sched[4] como hora de inicio y sched[5] como hora de fin, aunque esos índices representan horaInicio, horaFin y aulaCodigo. Por ello no se comprueba de forma fiable la disponibilidad del sustituto. La asignación se guarda con estado Activa, mientras otras consultas buscan Activo; tampoco se valida superposición de periodos de sustitución ni se refleja el titular/reemplazo en el calendario de forma inequívoca.
+6. **Asignaciones compartidas y vacantes mal representadas.** getDepartmentAcademicPlanning guarda un solo docente por oferta en offerAssignedMap; asignaciones adicionales sobrescriben la anterior en el mapa. Las sustituciones se guardan con estado Activa, pero el resumen departamental considera asignaciones solo cuando r[6] === Activo. Una oferta sustituida puede seguir apareciendo vacante y no se representa de manera fiable una asignación compartida.
+7. **Cálculo de carga docente incluye estados no vigentes.** getTeacherTeachingLoad excluye únicamente filas con estado Inactivo; por tanto puede sumar Borrador y Cancelado como horas activas. Tampoco aplica anoId. saveTeacherWorkLoadPreferences acepta límites sin validar rango/consistencia de horaEntrada/horaSalida y no valida el JSON de días laborales antes de persistirlo.
+8. **Motor de conflictos mezcla estados y periodos.** checkScheduleConflict excluye solo Inactivo, por lo que puede considerar Cancelado como conflicto; además compara horarios de todos los años al no existir filtro de año lectivo. El control de aula, docente y oferta existe, pero la exactitud de sus resultados depende de un esquema de horario consistente y del estado efectivo del bloque.
+9. **Reporte de ocupación no es una medición contextual fiable.** getPlanningQualityAndOccupancyReport recibe anoLectivo pero no filtra por él; incluye filas distintas de Inactivo para el cálculo de ocupación, incluidos borradores/cancelados, y calcula capacidad semanal como 40 horas por aula de forma fija. El porcentaje global puede mezclar años y estados y no representa la disponibilidad real por periodo.
+10. **Interfaz incompleta para asignación por área.** js/teacher.js no consume assignTeacherToAcademicArea, getTeachersByAcademicArea, getAcademicAreasByTeacher ni removeTeacherFromAcademicArea. Las funciones existen en backend y tienen permisos para roles de coordinación/dirección, pero la interfaz revisada no integra el flujo de asignación de docentes a áreas curriculares. La interfaz sí consume jefaturas, vacantes, horarios, preferencias y sustituciones.
+11. **Trazabilidad/autorización contextual transversal.** Las consultas getTeacherAssignments/getClassSchedules y las funciones de asignación reciben identificadores desde payload. El actor/autorizador se registra desde campos declarados por el cliente en varias operaciones. Coordinar con AUD-NG-158 para derivar identidad y ámbito del token, validar asignaciones vigentes y restringir consulta/modificación por área/oferta/grupo sin duplicar el hallazgo transversal.
+
+## Hallazgo nuevo
+
+**AUD-NG-168 - Unificar el modelo de asignaciones docentes, carga horaria y planificación de horarios.** Alto (P1). Alcance: fuente canónica de ofertas y asignaciones; relación verificable docente-área-asignatura-oferta-grado-sección-año/periodo; soporte de asignaciones compartidas y sustituciones con vigencia; esquema único de horarios; filtros temporales; detección de conflictos y carga solo sobre bloques vigentes; paneles departamentales y vacantes calculados desde las mismas relaciones persistidas.
+
+## Ampliaciones de tareas existentes (sin duplicar)
+
+- **AUD-NG-164:** consolidar OfertaAcademica como fuente canónica y evitar que los informes/planificación consulten OfertasAcademicas u otros catálogos paralelos; validar IDs estables entre área, asignatura, plan y oferta.
+- **AUD-NG-158:** aplicar ABAC a asignación/consulta/baja de docentes por área, oferta, grado, sección y periodo; derivar actor de claims verificados para asignaciones, sustituciones, preferencias, horarios y excepciones; no confiar en IDs/autorizadores enviados por el cliente.
+
+## Calidad y límites
+
+Calidad insuficiente: existen funciones y pantallas parciales, pero la divergencia de hojas/esquemas invalida consultas y reportes, las sustituciones leen columnas incorrectas, los cálculos mezclan estados/años y el flujo de área no está integrado en la interfaz. Revisión estática/manual; no se ejecutaron pruebas con datos reales, conflictos concurrentes, múltiples docentes, periodos lectivos, permisos ni despliegue productivo. No se modificó código fuente, completadas.md, completadas_legacy.md ni ChangesLogs.txt.

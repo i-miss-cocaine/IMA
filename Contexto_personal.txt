@@ -966,3 +966,21 @@ CHECKPOINT C1.14 - AUDITORÍA TAREA-12 (2026-11-05)
 - Progreso: 18/183 identificadores únicos auditados; 165 pendientes.
 - Siguiente tarea exacta: TAREA-13.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.15 - AUDITORÍA TAREA-13 (2026-11-05)
+================================================================
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- HEAD anterior: 8e2d6bc593d54d37a4e0f24c4037fec040baab67.
+- Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59; no modificada.
+- Tarea auditada: TAREA-13 - sistema de planificación y asignación de carga académica por área.
+- Dictamen: CUMPLE PARCIALMENTE. Existen jefaturas, asignaciones por área/oferta, sustituciones, límites y motor de conflictos, pero las fuentes de ofertas divergen; getClassSchedules y createTeacherSubstitution interpretan columnas incorrectas; carga/ocupación no aíslan año/periodo ni estados; la asignación docente por área no está integrada en la interfaz.
+- Hallazgo nuevo: AUD-NG-168. Se amplían AUD-NG-164 y AUD-NG-158.
+- Informe: AUDITORIA_COMPLETADAS_TAREA-13.md. Sección del plan: 24.
+- Archivos previstos para el commit único de tarea: Auditoria.txt, Pendientes.md, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt e informe TAREA-13.
+- Sin modificaciones en código fuente, completadas.md, completadas_legacy.md, ChangesLogs.txt ni metodología.
+- No se ejecutaron pruebas con datos reales, concurrencia, múltiples docentes, periodos, permisos ni despliegue.
+- Progreso: 19/183 identificadores únicos auditados; 164 pendientes.
+- Siguiente tarea exacta: TAREA-14.
+================================================================
