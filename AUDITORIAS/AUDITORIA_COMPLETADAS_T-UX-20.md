@@ -108,3 +108,18 @@ Criterios de aceptación:
 - **completadas.md / METODOLOGIA_DESARROLLO.md / ChangesLogs.txt:** sin modificaciones.
 - **Progreso:** 61/183 identificadores auditados; 122 pendientes.
 - **Siguiente tarea:** T-UX-21 - Completar el indicador de frescura de datos y los estados de sincronización.
+
+## Tareas ejecutables derivadas de los hallazgos
+
+### [TASK-494] Corregir jerarquía de overlays, navegación inferior y scroll de modales móviles
+- **Tipo:** tarea nueva identificada en esta auditoría; se formaliza el ID existente, sin duplicarlo.
+- **Hallazgos:** AUD-NG-212 (barra inferior fija por encima de modales) y AUD-NG-213 (modales de perfil/comprobante sin altura máxima ni scroll interno).
+- **Severidad:** Media. **Prioridad:** P2. **Estado:** Pendiente.
+- **Objetivo:** mantener los controles de diálogos móviles visibles y operables.
+- **Acción:** definir política común de capas; ocultar/desactivar navegación inferior durante modal bloqueante; limitar altura de paneles de perfil/comprobante al viewport y habilitar scroll interno; revisar foco y cierre.
+- **Archivos:** css/style.css, index.html, student-dashboard.html y componentes compartidos de modal/navegación.
+- **Dependencias:** TASK-483 (drawer), TASK-493 (modal compartido), TASK-258 (foco/accesibilidad), TASK-484 (pruebas UX).
+- **Alcance:** z-index, overlays, interacción táctil, max-height, overflow y foco; no rehacer drawer ni modal compartido.
+- **Criterios:** (1) barra inferior no tapa/intercepta modales; (2) perfil/comprobante desplazan contenido internamente; (3) cierre/envío accesibles; (4) no queda scroll bloqueado ni foco perdido; (5) probar 320x568, 360x640, 390x844 y horizontal; (6) pruebas conductuales de capas/scroll.
+- **Evidencia de cierre:** pendiente; auditoría estática, sin pruebas runtime.
+

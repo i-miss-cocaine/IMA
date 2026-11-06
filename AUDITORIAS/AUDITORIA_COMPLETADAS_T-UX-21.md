@@ -40,3 +40,18 @@ No ejecutado: navegador/DOM real, pruebas de callbacks, promesas, timeouts, fall
 
 ## Cierre
 T-UX-21: **NO CUMPLE**. Código/tests, completadas.md, Pendientes.md y ChangesLogs.txt sin modificaciones. Progreso: 62/183; 121 pendientes. Siguiente: T-UX-22 - Corregir el significado y el comportamiento del indicador de estado en línea.
+
+## Tareas ejecutables derivadas de los hallazgos
+
+### [TASK-480] Ampliación: indicador de frescura y sincronización efectiva
+- **Tipo:** tarea existente ampliada; no crear ID nuevo.
+- **Hallazgo:** AUD-NG-183 y ampliación T-UX-21: timestamps no verificados, estados incompletos, callback permisivo y helpers administrativos no registrados globalmente.
+- **Severidad/prioridad/estado:** conservar severidad y prioridad oficiales de TASK-480; Pendiente según reconciliación.
+- **Objetivo:** presentar frescura basada en datos confirmados y separar estados de sincronización.
+- **Acción:** no fabricar timestamps; validar fechas ausentes/inválidas/futuras; definir actualizado/desactualizado/pendiente/error; exigir callback y éxito explícitos; preservar timestamp ante fallo/rechazo/excepción/timeout; liberar spinner; registrar helpers globalmente e integrar consumidores reales.
+- **Archivos:** js/ui-common.js, js/api.js y dashboards administrativos consumidores.
+- **Dependencias:** AUD-NG-001 (token), AUD-NG-144 (health checks), TASK-484 (pruebas UX).
+- **Alcance:** renderer de frescura, callback, helpers y ciclo de actualización; no sustituye monitor general de microservicios.
+- **Criterios:** (1) timestamp procede de sincronización confirmada; (2) fechas inválidas no se muestran frescas; (3) cuatro estados diferenciados; (4) botón solo operativo con callback; (5) solo éxito explícito renueva timestamp; (6) fallos conservan timestamp y liberan spinner; (7) helpers disponibles tras carga normal; (8) pruebas de estados/transiciones.
+- **Evidencia de cierre:** pendiente; sin pruebas runtime.
+

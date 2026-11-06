@@ -40,3 +40,18 @@ No ejecutado: navegador/DOM, simulación de eventos, desconexión real, health c
 
 ## Cierre
 T-UX-22: **NO CUMPLE**. Nuevo AUD-NG-214/TASK-495. Código fuente y tests sin modificaciones. Progreso 63/183; 120 pendientes. Siguiente: T-UX-23 - Completar el flujo de reporte de problemas y soporte.
+
+## Tareas ejecutables derivadas de los hallazgos
+
+### [TASK-495] Separar conectividad local, disponibilidad de servicios y sincronización
+- **Tipo:** tarea nueva identificada en esta auditoría; se formaliza TASK-495 sin duplicarlo.
+- **Hallazgo:** AUD-NG-214, navigator.onLine se presenta como estabilidad del servicio y no separa conectividad, salud backend y sincronización.
+- **Severidad:** Media. **Prioridad:** P2. **Estado:** Pendiente.
+- **Objetivo:** mostrar estados respaldados por señales verificables sin confundir red local, backend ni cola sincronizada.
+- **Acción:** representar por separado conectividad del navegador, disponibilidad backend mediante health checks y estado de sincronización; eliminar “Conexión Estable” si solo existe navigator.onLine; no inferir presencia de usuario.
+- **Archivos:** js/ui-common.js, js/api.js y dashboards que muestran el indicador.
+- **Dependencias:** AUD-NG-144 (health checks), AUD-NG-187/TASK-484 (pruebas UX-07), tareas existentes de persistencia/reintentos/idempotencia.
+- **Alcance:** semántica, fuentes de estado, integración visual y transiciones; no implementar presencia ni duplicar monitor.
+- **Criterios:** (1) navigator.onLine solo expresa conectividad local; (2) backend deriva de health checks efectivos; (3) cola solo indica sincronizada tras confirmación; (4) estados separados; (5) desconocido/disponible/no disponible cuando aplique; (6) no inferir presencia; (7) pruebas de pérdida/recuperación, backend caído y sincronización fallida/confirmada.
+- **Evidencia de cierre:** pendiente; sin simulaciones de red ni pruebas runtime.
+
