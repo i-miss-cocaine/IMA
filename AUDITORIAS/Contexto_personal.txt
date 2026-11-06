@@ -4318,3 +4318,32 @@ CHECKPOINT C1.119 - NORMALIZACIÓN DEL INFORME DE FASE 10
 - Próxima acción concreta: continuar con los informes de Fase 16 y Fase 17, en el orden definido por la migración/checkpoints previos. Para cada uno, inventariar primero hallazgos, IDs, prioridades, estados y equivalencias antes de añadir tareas; no inventar IDs ni duplicar tareas existentes.
 - Estado de TASK-DOC-C1.112-01: En curso; migración documental por lotes.
 ================================================================
+
+================================================================
+CHECKPOINT C1.120 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 16
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto: AUDITORIAS/Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: 28e2d2f2014c2b52c6e7f49143c36a625a59a060.
+- HEAD de rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID operativo de sesión: IMA-AUDIT-20261106-2011Z-F10 (se conserva el ID operativo de la iteración iniciada en esta conversación; no es un identificador nativo de ChatGPT).
+- Checkpoint anterior: C1.119 (Fase 10 normalizada).
+- Tarea documental en curso: TASK-DOC-C1.112-01, normalización progresiva de informes históricos.
+- Informe normalizado en esta iteración: AUDITORIAS/AUDITORIA_FASE_16_RECURSOS_HUMANOS.md.
+- SHA del informe antes de modificar: 13946cc9af0557fb380daec180d442ab0fbc036d.
+- SHA del contexto antes de modificar: e2cdcb696fa633d776a99267a5bb778d9e0b9ebb.
+- Inspección documental: informe completo (34,601 caracteres; 316 líneas); secciones A-J, inventario F16-01..F16-25, brechas F.1..F.5, evaluación G, backlog H y continuidad J; revisión de metodología §3.4 y AUDITORIAS/README.md.
+- Tareas originales preservadas: F16-Task01..F16-Task09, con prioridades P0/P1/P2 según sus grupos en §H. El informe fuente no asigna estados explícitos; el bloque lo indica y usa Pendiente como estado operativo de migración, sin afirmar una actualización externa.
+- Tareas nuevas derivadas de brechas explícitas de tabla E y omitidas de §H/§J: F16-Task10 (conversión de candidatos), F16-Task11 (alertas de vencimiento en UI), F16-Task12 (colisiones de horarios laborales/académicos), F16-Task13 (alertas push). No se inventaron IDs de hallazgo ni se alteraron F16-01..F16-25.
+- Reconciliaciones: F16-Task01 con AUD-NG-225/TASK-505 y marca histórica TASK-004; F16-Task02 relacionada pero no equivalente a AUD-NG-018; F16-Task03 con TASK-006/AUD-NG-017; F16-Task06 con TASK-171; F16-Task07 con TASK-365. Se evita implementar tareas duplicadas.
+- Discrepancias preservadas: F16-Task03 prioridad P0 en §H frente a P1 en tabla E; F16-Task05 P1 en §H frente a P0 en tabla E y diferencia entre cálculo actual completo y proyección futura; F16-Task06 frente a estado completo de F16-02 en §B y parcial en §G; F16-Task08 solo figura en §H y no en §F/§J; F16-Task09 suite pendiente en §J pese a pruebas manuales en §G.2.
+- Campos añadidos por tarea: origen, severidad, objetivo, acción, archivos/módulos, dependencias/riesgos, alcance, criterios de aceptación, prioridad, estado y evidencia de cierre.
+- Archivos modificados: AUDITORIAS/AUDITORIA_FASE_16_RECURSOS_HUMANOS.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, AUDITORIAS/README.md, plan maestro y demás informes; rama base sin cambios.
+- Pruebas no ejecutadas: suite Fase 16, Apps Script runtime, HTTP, Google Sheets productivo, navegador/UI, concurrencia y deployments; no hubo cambios de código.
+- HEAD de partida del árbol: 28e2d2f2014c2b52c6e7f49143c36a625a59a060. El único commit de cierre debe contener ambos archivos y este checkpoint.
+- Próxima acción concreta: identificar el informe histórico correspondiente a Fase 17 en AUDITORIAS/, leer su contenido íntegro y cotejar hallazgos, IDs, prioridades, estados y equivalencias antes de añadir su bloque. No repetir Fase 10, Fase 11 ni Fase 16 salvo evidencia nueva.
+- Estado de TASK-DOC-C1.112-01: En curso; migración documental por lotes.
+================================================================

@@ -313,3 +313,173 @@ Las principales oportunidades de mejora se concentran en:
 
 ---
 *Fin del Informe de Auditoría Independiente — Fase 16 (Recursos Humanos y Administración del Personal)*
+
+---
+
+## Tareas ejecutables derivadas de los hallazgos
+
+> Normalización del backlog de Fase 16. Se conservan los nueve IDs originales F16-Task01..F16-Task09 y sus prioridades por sección. El informe no asigna estados explícitos a esas tareas; se consignan como Pendiente para el registro operativo de migración, sin afirmar que se haya cambiado un estado histórico externo. Se identifican tareas cubiertas o ampliadas por IDs anteriores para evitar implementaciones duplicadas. Se crean cuatro IDs de tarea nuevos (F16-Task10..F16-Task13) únicamente para brechas accionables expresamente enumeradas en la tabla E y omitidas del backlog H/J; no se crean IDs de hallazgo ni se altera la numeración F16-01..F16-25 de subcapacidades.
+
+### [F16-Task01] Implementar el catálogo de roles internos organizativos y asignación de responsabilidades
+- **Hallazgo de origen:** C.2, F.1, G.1, tabla E/F16-03, backlog H.1 y continuidad J.
+- **Severidad:** Crítica. **Objetivo:** formalizar responsabilidades organizativas sin confundirlas con privilegios RBAC.
+- **Acción ejecutable:** crear `CatalogoRolesInternos` con nombre, descripción, departamento, vigencia, suplencias y estado; habilitar alta/edición/asignación desde RR. HH.; permitir varias responsabilidades por empleado y revocación con historial; impedir que asignar un rol funcional otorgue permisos administrativos.
+- **Archivos/módulos:** `backend/user-service/Code.gs`, `backend/accounting-service/Code.gs`, `dashboard-recursos-humanos.html`, `AsignacionesAmbitosRoles`, nueva hoja `CatalogoRolesInternos`.
+- **Dependencias/riesgos:** identidad de empleados, catálogo de departamentos/cargos, fechas de vigencia y autorización; riesgo de elevación accidental de privilegios o asignaciones huérfanas.
+- **Alcance:** catálogo y ciclo de vida de responsabilidades internas; no sustituir `ROLE_PERMISSIONS` ni la matriz ABAC.
+- **Criterios de aceptación:** roles configurables desde UI; asignaciones a empleados existentes con inicio/fin; responsabilidades múltiples; revocación conserva historial; ninguna asignación funcional cambia privilegios RBAC.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Reconciliación:** C1.82 vincula esta causa con AUD-NG-225/TASK-505; TASK-004 figura históricamente completada, pero su prueba solo comprobó presencia de símbolos. Mantener F16-Task01 como trazabilidad de origen y ampliar/verificar TASK-505; no implementar en paralelo.
+- **Evidencia de cierre:** pendiente; no se declara ejecución ni verificación.
+
+### [F16-Task02] Desarrollar la gestión de docentes por área académica independiente y comités pedagógicos
+- **Hallazgo de origen:** C.2, F.2, G.1, tabla E/F16-04, backlog H.1 y continuidad J.
+- **Severidad:** Crítica. **Objetivo:** registrar la pertenencia institucional de docentes a una o varias áreas con independencia de su carga lectiva.
+- **Acción ejecutable:** crear `DocentesAreasAcademicas` y endpoints `assignTeacherToAcademicArea` / `getTeachersByAcademicArea`; admitir áreas múltiples, titularidad/coordinación, vigencia, estado y consulta para comités; inactivar al desvincular al empleado sin borrar historial.
+- **Archivos/módulos:** `backend/academic-service/Code.gs`, `backend/accounting-service/Code.gs`, hoja `DocentesAreasAcademicas` y pantallas de coordinación/RR. HH.
+- **Dependencias/riesgos:** `AreasCurricularesExtensiones`, identidad laboral, permisos y asignaciones docentes; riesgo de confundir pertenencia a un área con asignación de una clase.
+- **Alcance:** pertenencia docente-área y comités; no sustituir `AsignacionesDocentes` ni la oferta académica.
+- **Criterios de aceptación:** un docente pertenece a varias áreas sin sección activa; consultas devuelven miembros vigentes; titular/coordinador identificado; desvinculación inactiva la relación conservando historia; accesos respetan ámbito.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Reconciliación:** AUD-NG-018 cubre historial de asignaciones docentes y es dependencia, pero no equivale a la entidad de pertenencia institucional docente-área.
+- **Evidencia de cierre:** pendiente; no se declara ejecución ni verificación.
+
+### [F16-Task03] Ejecutar un offboarding atómico con revocación de accesos en cascada
+- **Hallazgo de origen:** C.1, F.3, G.1, tabla E/F16-20, backlog H.1 y continuidad J.
+- **Severidad:** Crítica. **Objetivo:** impedir que una persona desvinculada conserve cuentas, sesiones, adscripciones o asignaciones activas.
+- **Acción ejecutable:** consolidar `updateEmployeeLaborStatus` en un flujo transaccional/idempotente que cierre expediente con fecha/motivo, invalide adscripciones, desactive cuenta y tokens, termine asignaciones docentes y sustituciones, genere finiquito/liquidación conforme a reglas aplicables y registre `EMPLOYEE_OFFBOARDED_CASCADED`.
+- **Archivos/módulos:** servicios accounting, user y academic; `ExpedientesLaborales`, `HistorialAdscripciones`, `Usuarios`, `AsignacionesDocentes` y sustituciones.
+- **Dependencias/riesgos:** identidad/sesiones, historial laboral, asignaciones académicas, contratos y liquidación; riesgo crítico de accesos residuales o cierres parciales.
+- **Alcance:** desvinculación y revocación coordinada; preservar contratos, asistencias, calificaciones e historia.
+- **Criterios de aceptación:** cuenta inhabilitada inmediatamente; relaciones activas cerradas; fallos no dejan estado parcial irrecuperable; historial íntegro; evento auditable emitido una sola vez.
+- **Prioridad:** P0 en H.1; tabla E asigna P1 (discrepancia).
+- **Estado:** Pendiente.
+- **Reconciliación:** C1.82 vincula offboarding con TASK-006/AUD-NG-017. Reconciliar alcance y ampliar la tarea existente si corresponde; no duplicar implementación.
+- **Evidencia de cierre:** pendiente; no se declara ejecución ni verificación.
+
+### [F16-Task04] Implementar el checklist y proceso de incorporación de nuevos empleados
+- **Hallazgo de origen:** B/F16-06, F.4, H.2 y continuidad J.
+- **Severidad:** Alta. **Objetivo:** asegurar que requisitos documentales y operativos se completen antes de activar plenamente al empleado.
+- **Acción ejecutable:** implementar `ChecklistIncorporacion` con requisitos configurables, estados, fechas, responsables y evidencias para contrato firmado, títulos cotejados, antecedentes, carnet IHSS, examen médico, horario, inducción y equipo; bloquear el estado Activo pleno si faltan requisitos obligatorios.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `dashboard-recursos-humanos.html`, hoja `ChecklistIncorporacion`.
+- **Dependencias/riesgos:** expediente, contratos, almacenamiento, roles RR. HH. y protección de datos médicos; riesgo de activar sin requisitos o bloquear indebidamente.
+- **Alcance:** incorporación previa/posterior al alta; no automatizar decisiones de contratación ni exponer documentación sensible.
+- **Criterios de aceptación:** checklist por empleado con responsable, vencimiento y evidencia; requisitos obligatorios configurables; transición a Activo validada en backend; excepciones autorizadas justificadas y auditadas.
+- **Prioridad:** P1. **Estado:** Pendiente (estado operativo de migración; el informe no declara estado histórico explícito).
+- **Evidencia de cierre:** pendiente; no se declara ejecución ni verificación.
+
+### [F16-Task05] Proyectar saldos de vacaciones futuras y gestionar ausencias fraccionadas
+- **Hallazgo de origen:** backlog H.2, tabla E/F16-11 y continuidad J; B/C declaran completo el cálculo actual.
+- **Severidad:** Alta. **Objetivo:** permitir solicitudes futuras con proyección de días devengados y gestionar permisos fraccionados sin sobreasignar saldos.
+- **Acción ejecutable:** proyectar saldo a fecha de disfrute cuando la política lo permita; admitir medio día/horas; detectar solapamientos y recalcular disponibilidad al aprobar/rechazar.
+- **Archivos/módulos:** accounting-service, dashboard RR. HH., `calculateVacationBalances`, `submitLeaveVacationRequest`, `reviewVacationRequest`, `SolicitudesVacaciones`.
+- **Dependencias/riesgos:** antigüedad, Art. 348, solicitudes aprobadas, jornada y reglas institucionales; riesgo de proyectar días no devengados o descontar dos veces.
+- **Alcance:** proyección y fraccionamiento; no alterar escala legal ni saldos históricos consumidos.
+- **Criterios de aceptación:** proyección reproducible; solicitud fraccionada conserva unidad/duración; solapamientos rechazados; saldo real y proyectado diferenciados; aprobación actualiza saldo una sola vez.
+- **Prioridad:** P1 en H.2; tabla E marca P0 (discrepancia).
+- **Estado:** Pendiente (estado operativo de migración; el informe no declara estado histórico explícito).
+- **Evidencia de cierre:** pendiente; no se declara ejecución ni verificación.
+
+### [F16-Task06] Impedir jerarquías circulares y validar la estructura de departamentos
+- **Hallazgo de origen:** G.1, J, tabla E/F16-02 y backlog H.2. B declara F16-02 completa, pero G.1 identifica cumplimiento parcial por falta de validación de ciclos.
+- **Severidad:** Alta. **Objetivo:** preservar una estructura organizativa acíclica y consistente.
+- **Acción ejecutable:** validar cada alta/cambio de dependencia mediante detección de ciclos; rechazar auto-referencias, ciclos indirectos y referencias a unidades inexistentes.
+- **Archivos/módulos:** `backend/user-service/Code.gs`, `manageDepartmentPositions`, catálogos de departamentos y cargos.
+- **Dependencias/riesgos:** integridad referencial, concurrencia y jerarquías existentes; riesgo de romper consultas, organigrama y autorización por ámbito.
+- **Alcance:** validación de relaciones jerárquicas; no rediseñar catálogos ni borrar estructuras históricas.
+- **Criterios de aceptación:** altas/actualizaciones que generen ciclos rechazadas; relaciones válidas persisten; pruebas cubren ciclo directo/indirecto, referencia inexistente y concurrencia.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Reconciliación:** C1.82 vincula esta causa con TASK-171; verificar cobertura y ampliar esa tarea, sin implementar otro detector.
+- **Evidencia de cierre:** pendiente; no se declara ejecución ni verificación.
+
+### [F16-Task07] Desarrollar el organigrama interactivo y directorio jerárquico
+- **Hallazgo de origen:** F.5, tabla E/F16-22, H.3 y J.
+- **Severidad:** Media. **Objetivo:** permitir a Dirección consultar visualmente la cadena de mando y dependencias institucionales.
+- **Acción ejecutable:** renderizar organigrama SVG/HTML con departamentos, coordinaciones, jefaturas y colaboradores; añadir filtros por área/departamento y estados vigentes.
+- **Archivos/módulos:** `dashboard-recursos-humanos.html`, `js/accounting.js`, endpoints de estructura y directorio.
+- **Dependencias/riesgos:** catálogo de cargos/departamentos, relaciones acíclicas, permisos y vigencia; riesgo de mostrar relaciones obsoletas o datos personales sin autorización.
+- **Alcance:** visualización/consulta; no sustituir el mantenimiento de la estructura.
+- **Criterios de aceptación:** organigrama representa relaciones persistidas; filtros/navegación funcionan; nodos sin jefatura se muestran; datos respetan permisos y se actualizan tras cambios.
+- **Prioridad:** P2. **Estado:** Pendiente.
+- **Reconciliación:** C1.82 vincula organigrama con TASK-365. Mantener F16-Task07 como origen y ampliar/verificar TASK-365; no duplicar componente.
+- **Evidencia de cierre:** pendiente; no se declara ejecución ni verificación.
+
+### [F16-Task08] Exportar expedientes laborales y boletas de liquidación con filtros avanzados
+- **Hallazgo de origen:** backlog H.3. La tabla E/F16-19 agrega filtros cruzados en exportaciones; se integra como ampliación sin crear otro ID.
+- **Severidad:** Media. **Objetivo:** facilitar descarga controlada de expedientes y reportes de personal con información financiera desglosada.
+- **Acción ejecutable:** exportar expediente laboral completo a PDF membretado y nóminas/boletas a Excel con desglose IHSS, RAP e ISR; incorporar filtros cruzados.
+- **Archivos/módulos:** accounting-service, `js/accounting.js`, dashboard RR. HH. y módulos de reportes/exportación.
+- **Dependencias/riesgos:** permisos RR. HH./contabilidad, datos laborales/financieros, plantillas y filtros; riesgo de fuga de salarios o exportaciones inconsistentes.
+- **Alcance:** exportación documental y reportes; no ampliar accesos ni alterar cálculos de nómina.
+- **Criterios de aceptación:** PDF identifica empleado; Excel concilia con fuentes y desglosa retenciones; filtros aplican antes de exportar; usuarios no autorizados reciben denegación; exportaciones auditadas.
+- **Prioridad:** P2. **Estado:** Pendiente (estado operativo de migración; el informe no declara estado histórico explícito).
+- **Procedencia adicional:** F16-19 figura en tabla E, pero no tiene tarea propia en H/J; se integra aquí para evitar duplicación.
+- **Evidencia de cierre:** pendiente; no se declara ejecución ni verificación.
+
+### [F16-Task09] Implementar la suite integral de regresión y concurrencia de la Fase 16
+- **Hallazgo de origen:** H.3 y J (F16-Suite Calidad pendiente). G.2 registra pruebas manuales, no una suite automatizada integral.
+- **Severidad:** Media-alta. **Objetivo:** verificar contratos, vacaciones, offboarding y seguridad ABAC/RBAC, incluyendo concurrencia y regresiones.
+- **Acción ejecutable:** incorporar `runPhase16HumanResourcesRegressionSuite` con casos positivos/negativos para contratos, Art. 348, solapamientos, offboarding en cascada, ABAC, jerarquías y persistencia; registrar entorno, versión, resultado y evidencia.
+- **Archivos/módulos:** `tests/regression/academic-grading-suite.js`, `backend/developer-service/Code.gs` y suites de servicios.
+- **Dependencias/riesgos:** datos aislados, Apps Script, mocks y contratos interservicio; riesgo de falsos positivos si solo se comprueba presencia de símbolos.
+- **Alcance:** suite automatizada Fase 16; no sustituye verificaciones manuales ni extrapola mocks a producción.
+- **Criterios de aceptación:** tareas críticas cubiertas por pruebas conductuales; casos negativos detectan permisos indebidos, ciclos y estados parciales; concurrencia prueba duplicados/colisiones; evidencia reproducible y sin PASS por conteos superficiales.
+- **Prioridad:** P2 (severidad media-alta). **Estado:** Pendiente.
+- **Discrepancia:** G.2 describe pruebas transversales ejecutadas, mientras J mantiene la suite automatizada pendiente; no se equiparan.
+- **Evidencia de cierre:** pendiente; no se declara ejecución ni verificación.
+
+### [F16-Task10] Automatizar la conversión de candidatos seleccionados a empleados
+- **Hallazgo de origen:** tabla E/F16-05: reclutamiento completo, pero conversión de candidato a empleado manual; omitida de H/J.
+- **Severidad:** Media (P2 en tabla E). **Objetivo:** enlazar selección aprobada con creación del expediente laboral.
+- **Acción ejecutable:** crear transición candidato-seleccionado a empleado que valide aprobación, evite duplicados, transfiera datos autorizados y conserve vínculo al proceso de reclutamiento.
+- **Archivos/módulos:** accounting-service, `VacantesLaborales`, `CandidatosVacantes`, `ExpedientesLaborales` e interfaz RR. HH.
+- **Dependencias/riesgos:** identidad, expediente, contrato y onboarding; riesgo de duplicar empleados o convertir candidatos no aprobados.
+- **Alcance:** conversión de candidatos seleccionados; no automatizar decisión de contratación ni sustituir F16-Task04.
+- **Criterios de aceptación:** solo candidatos aprobados se convierten; operación idempotente; expediente conserva vínculo; datos se transfieren con permisos; duplicados rechazados.
+- **Prioridad:** P2. **Estado:** Pendiente. **Tipo:** nueva tarea derivada de la tabla E.
+- **Evidencia de cierre:** pendiente; no se declara ejecución ni verificación.
+
+### [F16-Task11] Integrar alertas de vencimiento de documentos y contratos en la interfaz de RR. HH.
+- **Hallazgo de origen:** tabla E/F16-08: alertas disponibles por API, pero no integradas en la interfaz.
+- **Severidad:** Alta (P1 en tabla E). **Objetivo:** hacer visibles y accionables los vencimientos para responsables autorizados.
+- **Acción ejecutable:** conectar `getEmployeeContractAlerts` y alertas de credenciales/documentos al dashboard; mostrar fecha, tipo, empleado, días restantes y estado, con filtros y navegación autorizada.
+- **Archivos/módulos:** accounting-service, `dashboard-recursos-humanos.html`, `js/accounting.js` y vistas documentales.
+- **Dependencias/riesgos:** fechas de vigencia, permisos, zona horaria y datos documentales; riesgo de alertas tardías o exposición laboral.
+- **Alcance:** UI para alertas existentes; no duplicar cálculo backend ni enviar notificaciones sin autorización.
+- **Criterios de aceptación:** alertas visibles solo a roles autorizados; filtros por vencimiento/estado; datos concilian con API; estados distinguibles; acceso no autorizado denegado.
+- **Prioridad:** P1. **Estado:** Pendiente. **Tipo:** nueva tarea derivada de la tabla E.
+- **Evidencia de cierre:** pendiente; no se declara ejecución ni verificación.
+
+### [F16-Task12] Validar colisiones entre jornadas laborales y horarios académicos
+- **Hallazgo de origen:** tabla E/F16-09: horarios docentes cruzados en memoria y falta validación de colisiones.
+- **Severidad:** Alta (P1 en tabla E). **Objetivo:** impedir asignaciones incompatibles a una misma persona.
+- **Acción ejecutable:** validar disponibilidad al crear/modificar jornadas, turnos, sustituciones y asignaciones docentes; comparar intervalos, vigencia, zona horaria y persona; rechazar conflictos antes de persistir.
+- **Archivos/módulos:** accounting-service, academic-service, `HorariosLaborales`, `AsignacionesTurnosLaborales`, `AsignacionesDocentes`.
+- **Dependencias/riesgos:** modelos de horario/sustitución, concurrencia y calendarios; riesgo de doble asignación o jornadas imposibles.
+- **Alcance:** validación cruzada laboral/académica; no rediseñar motores de horarios.
+- **Criterios de aceptación:** conflictos detectados antes de guardar; intervalos válidos siguen funcionando; pruebas cubren cruces de día, vigencia y concurrencia; error identifica colisión sin exponer datos ajenos.
+- **Prioridad:** P1. **Estado:** Pendiente. **Tipo:** nueva tarea derivada de la tabla E.
+- **Evidencia de cierre:** pendiente; no se declara ejecución ni verificación.
+
+### [F16-Task13] Conectar alertas push de RR. HH. al bus institucional de notificaciones
+- **Hallazgo de origen:** tabla E/F16-18: notificaciones declaradas completas, pero sin alertas push directas.
+- **Severidad:** Media (P2 en tabla E). **Objetivo:** distribuir avisos oportunos de eventos de RR. HH. a destinatarios autorizados.
+- **Acción ejecutable:** integrar vencimientos, ausencias y procesos laborales al bus institucional; definir destinatarios por rol/ámbito, preferencias, deduplicación, estado de entrega y manejo de fallos.
+- **Archivos/módulos:** accounting-service, user-service, `BandejaNotificaciones` y dashboard RR. HH.
+- **Dependencias/riesgos:** preferencias, permisos, identidad, idempotencia y privacidad; riesgo de duplicación o divulgación de información sensible.
+- **Alcance:** entrega push integrada; no crear segundo motor ni incluir diagnósticos médicos o datos sensibles en el mensaje.
+- **Criterios de aceptación:** máximo una notificación por destinatario/evento; destinatarios autorizados; preferencias respetadas; fallos trazados/recuperables; contenido no expone datos sensibles.
+- **Prioridad:** P2. **Estado:** Pendiente. **Tipo:** nueva tarea derivada de la tabla E.
+- **Evidencia de cierre:** pendiente; no se declara ejecución ni verificación.
+
+### Reconciliaciones y discrepancias transversales de Fase 16
+- **F16-Task01:** solapamiento con AUD-NG-225/TASK-505; TASK-004 tiene marca histórica de completado, pero evidencia de prueba insuficiente.
+- **F16-Task02:** relacionado con AUD-NG-018 (historial de asignaciones docentes), pero su alcance docente-área es distinto.
+- **F16-Task03:** solapamiento con TASK-006/AUD-NG-017 (offboarding); reconciliar antes de implementar.
+- **F16-Task05:** H lo clasifica P1 y tabla E P0; B/C declara completo el cálculo actual, pero H/J solicitan proyección futura.
+- **F16-Task06:** solapamiento con TASK-171; B marca F16-02 completa, G.1 detecta cumplimiento parcial.
+- **F16-Task07:** solapamiento con TASK-365; no desarrollar un segundo componente.
+- **F16-Task08:** aparece en H, pero no en brechas F ni continuidad J; se conserva como recomendación histórica P2 y se amplía con F16-19.
+- **F16-Task09:** G.2 registra pruebas manuales, J mantiene suite automatizada pendiente; no son equivalentes.
+- **F16-Task10..13:** IDs nuevos asignados a brechas expresas de la tabla E que no tenían tarea en H/J; no son IDs de hallazgo.
+- **Estado global:** ninguna tarea se declara completada; todas permanecen pendientes de ejecución, reconciliación o evidencia de cierre.
