@@ -84,10 +84,12 @@ Separación lógica entre auditor y desarrollador.
 
 ```
 [Raíz del Proyecto]
-├── Auditoria.txt
 ├── ChangesLogs.txt
-├── Pendientes.md
-└── MapaDependencias.md
+└── AUDITORIAS/
+    ├── Informes de auditoría
+    ├── Auditoria.txt
+    ├── MapaDependencias.md
+    └── Contexto_personal.txt
 ```
 
 ### 3.1 Auditoria.txt
@@ -542,7 +544,7 @@ Modificar estructuras existentes.
 
 La auditoría es exclusivamente una actividad de inspección, documentación y generación de hallazgos.
 
-Toda corrección deberá realizarse posteriormente mediante las tareas registradas en Pendientes.md.
+Toda corrección deberá realizarse posteriormente mediante las tareas ejecutables registradas en el informe de auditoría correspondiente.
 
 
 #### Protocolo obligatorio de registro de tareas en cada informe
@@ -628,15 +630,15 @@ El flujo de trabajo se ejecutará de forma lineal, síncrona y obligatoria. Viol
  * **Acción:** Toda anomalía, desviación estándar o vulnerabilidad observada debe asentarse de inmediato en Auditoria.txt.
  * **Manejo de Hallazgos Fuera de Alcance:** Si durante la inspección de la tarea asignada se detectan fallas críticas o desviaciones ajenas al objetivo actual, se procederá de la siguiente forma:
    1. *Si es completamente seguro y directo:* Se resolverá en el mismo commit, registrando minuciosamente su justificación en ChangesLogs.txt.
-   2. *Si reviste complejidad o riesgo de regresión:* Queda estrictamente prohibido tocarlo. Se procederá a redactar una nueva entrada de tarea en Pendientes.md siguiendo el protocolo del apartado 3.4, y se indexará como referencia cruzada dentro de Auditoria.txt.
+   2. *Si reviste complejidad o riesgo de regresión:* Queda estrictamente prohibido tocarlo. Se añadirá una tarea ejecutable en la sección correspondiente del informe de auditoría que documenta el hallazgo, manteniendo la referencia cruzada en Auditoria.txt.
    3. Todo auditoria se debe de asumir el rol de auditor definido en el apartado 3.5
 ### FASE 2 — Planificación de Implementación
- * **Acción:** Se actualiza el estado de la tarea en Pendientes.md a [ ] En Ejecución. Se revisa que el alcance esté perfectamente delimitado y que se conozcan los impactos sobre el MapaDependencias.md.
+ * **Acción:** Se actualiza el estado de la tarea en la sección de tareas del informe de auditoría que la contiene. Se revisa que el alcance esté perfectamente delimitado y que se conozcan los impactos sobre el MapaDependencias.md.
 ### FASE 3 — Respaldo Íntegro de Seguridad
  * **Acción:** Antes de modificar un solo bit, se creará una copia de seguridad exacta y manual del archivo o archivos a editar.
  * **Requisitos:** El respaldo conservará el nombre de origen y su contenido íntegro, y se almacenará localmente de forma temporal con el único fin de servir como pivote de comparación post-edición.
 ### FASE 4 — Ejecución y Desarrollo Controlado
- * **Acción:** El operador adopta el rol de *Desarrollador*. Se procede a codificar e implementar **ÚNICAMENTE** lo explícitamente solicitado en los criterios de aceptación de la tarea en Pendientes.md.
+ * **Acción:** El operador adopta el rol de *Desarrollador*. Se procede a codificar e implementar **ÚNICAMENTE** lo explícitamente solicitado en los criterios de aceptación de la tarea registrada en el informe de auditoría correspondiente.
  * **Restricciones:** Queda estrictamente **PROHIBIDO**:
    * Alterar estilos tipográficos, clases visuales o propiedades CSS no relacionadas con la tarea.
    * Modificar o alterar flujos lógicos existentes que funcionen de manera correcta.
@@ -656,7 +658,7 @@ El flujo de trabajo se ejecutará de forma lineal, síncrona y obligatoria. Viol
    * Toda observación constructiva **REINICIA EL CICLO COMPLETO** desde la Fase 0 (Auditoría Inicial).
    * Deberá aplicarse el procedimiento completo nuevamente, inclusive si implica volver a alterar archivos que ya habían sido editados. No se admiten parches calientes ni correcciones parciales fuera del flujo.
 ### FASE 7 — Cierre Operativo y Limpieza
- * **Acción:** Una vez que el Code Review otorga la aprobación formal, se completan los registros conclusivos en ChangesLogs.txt y se desplaza la tarea en Pendientes.md a la sección de [X] Completada.
+ * **Acción:** Una vez que el Code Review otorga la aprobación formal, se completan los registros conclusivos en ChangesLogs.txt y se actualiza el estado de la tarea en su informe de auditoría a Completada, anexando evidencia de cierre.
  * **Limpieza de Entorno:** Los archivos temporales de respaldo se eliminarán de forma definitiva únicamente **DESPUÉS** de la aprobación en Code Review. Asimismo, cualquier captura de pantalla, log volátil o ejecutable auxiliar generado para la verificación visual deberá ser purgado del directorio de forma obligatoria en el pre-commit.
 # 5. CLASIFICACIÓN TÉCNICA DE HALLAZGOS
 Todo defecto, desviación o vulnerabilidad identificada en las Fases 0 o 5 debe ser catalogada obligatoriamente bajo la siguiente escala de severidad:
@@ -773,7 +775,7 @@ EL INCUMPLIMIENTO DE CUALQUIER PASO DEL PRESENTE COMPENDIO INVALIDA EL PROCESO C
 # 15. CONTROL DE COMMITS CONSOLIDADOS (REGLA OBLIGATORIA)
 
 1. **Un solo commit por iteración completa:** cada iteración de trabajo debe quedar registrada en exactamente un commit final que agrupe todos los archivos modificados como consecuencia de esa iteración.
-2. **Agrupación completa:** antes de crear el commit se deben identificar, preparar y revisar todos los cambios relacionados, incluidos código, pruebas, Auditoria.txt, Pendientes.md, MapaDependencias.md, ChangesLogs.txt, informes y checkpoints, respetando las restricciones particulares de cada archivo y fase.
+2. **Agrupación completa:** antes de crear el commit se deben identificar, preparar y revisar todos los cambios relacionados, incluidos código, pruebas, ChangesLogs.txt, informes y checkpoints, respetando las restricciones particulares de cada archivo y fase.
 3. **PROHIBIDOS los commits atómicos:** nunca crear commits independientes por archivo, documento, carpeta, subtarea o avance intermedio. No publicar un commit para «guardar» una parte mientras se sigue editando.
 4. **La organización por tareas/lotes no fragmenta la publicación:** pueden documentarse tareas y subtareas por separado, pero todos los cambios de la misma iteración se reúnen en un único commit. No crear un commit por cada tarea si forman parte de la misma iteración. Solo se permiten commits separados cuando el usuario lo autorice expresamente.
 5. **Cierre antes de confirmar:** revisar el diff completo; verificar que no falten archivos, que no se incluyan modificaciones ajenas y que se preserven todos los registros históricos. El checkpoint obligatorio debe estar incluido en ese mismo commit.

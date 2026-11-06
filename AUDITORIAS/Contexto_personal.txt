@@ -3737,3 +3737,22 @@ CHECKPOINT C1.93 - ACTUALIZACIÓN DE METODOLOGÍA DE AUDITORÍA
 - Bloqueos: ninguno identificado hasta la preparación de los objetos Git.
 - Commit de cierre: el commit que contiene este checkpoint; SHA final se verificará después de publicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.94 - REVISIÓN DE CONSISTENCIA DE LA METODOLOGÍA
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Contexto: AUDITORIAS/Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work; rama base: NG_beta_0.0.0.1.
+- HEAD de partida verificado: d9ee75015cc5460fffe98007ed6aced2a68ca4b1.
+- Tree SHA de partida: 8ea6f30054e18e33888fd48afd6388e8584c21f8.
+- ID operativo de sesión: IMA-AUDIT-20261106-1720Z; inicio C1.94; estado: sesión abierta.
+- Motivo: verificación posterior a C1.93 detectó referencias heredadas a Pendientes.md en el árbol de archivos maestros y en fases de desarrollo/cierre.
+- Corrección: sustituir esas referencias por el informe de auditoría que contiene la tarea; actualizar el árbol documental; eliminar Pendientes.md de la lista de archivos agrupados para commits.
+- Alcance: solo METODOLOGIA_DESARROLLO.md y este checkpoint. No se recuperó ni modificó Pendientes.md.
+- Pruebas: búsqueda textual de referencias operativas; lectura de bloques modificados; verificación de rama y árbol.
+- Última auditoría de producto: C1.92 / TAREA-F4-P3-03; siguiente tarea de producto: TAREA-F5-001, aún no iniciada.
+- Próxima acción: revisar e incorporar manualmente la sección de tareas ejecutables en los informes históricos de AUDITORIAS/; luego continuar TAREA-F5-001.
+- Commit de cierre: el commit que contiene este checkpoint; SHA final se verificará después de publicar.
+================================================================
