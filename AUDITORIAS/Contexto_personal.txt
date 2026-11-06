@@ -5106,3 +5106,27 @@ CHECKPOINT C1.147 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME T-UX-19
 - Próximo informe pendiente: inventariar el siguiente conjunto de informes sin bloque y priorizar los históricos restantes.
 - Estado de TASK-DOC-C1.112-01: En curso.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.148 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME FASE2-T05
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida: 52ef31199d7a55304d040a2de59149ea7b20bf62.
+- HEAD de rama base verificado antes del cambio: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID operativo de sesión: IMA-AUDIT-20261106-2117Z-MIGRACION (no es ID nativo de ChatGPT).
+- Checkpoint anterior: C1.147 (T-UX-19 normalizada).
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_COMPLETADAS_FASE2-T05.md.
+- SHA original del informe: d7a7350de17014617566c49a535b1cf3eab5ec8d.
+- SHA original del contexto: 4450c57a118cf93951560937fa59adc289879575.
+- Inspección: informe completo de FASE2-T05; diez requisitos, ocho criterios de aceptación, generadores USER/ACADEMIC, relaciones de identidad, CUV y privacidad.
+- Tareas formalizadas: TASK-118, TASK-039, TASK-040 y TASK-351; se conservaron los IDs existentes y se añadieron origen, severidad, objetivo, acción, módulos, dependencias/riesgos, alcance, criterios, prioridad, estado y evidencia.
+- Reconciliación: AUD-NG-059 -> TASK-039; AUD-NG-061 -> TASK-040; AUD-NG-161 se conserva como hallazgo de pruebas con falsos positivos, sin inventar un ID TASK independiente.
+- No se modificaron código, pruebas, Pendientes.md, completadas.md, ChangesLogs.txt, Auditoria.txt, metodología, README ni rama base.
+- Pruebas runtime no ejecutadas; cambio exclusivamente documental.
+- Próximo informe pendiente: revisar FASE2-T17/T18/T19 y FASE2_T01/T02, y continuar inventario de documentos históricos sin bloque.
+- Estado de TASK-DOC-C1.112-01: En curso.
+================================================================

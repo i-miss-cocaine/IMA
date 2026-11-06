@@ -99,3 +99,62 @@ Inspección estática/manual de los bloques y funciones indicados. No se ejecuta
 - Se revalida TASK-118 con el código actual: convertAdmissionToStudent genera PersonaID/UserId, pero no crea ni valida registros en Personas/Usuarios; registerStudentEnrollment persiste matrícula con UserId sin verificarlo; siguen presentes fallbacks fijos y MAT/CRG timestamp/aleatorios.
 - Evidencia actual: ACADEMIC Code.gs SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc, convertAdmissionToStudent 2156-2385 y registerStudentEnrollment 12670-12755; USER Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f.
 - No se crea ID duplicado. La corrección sigue dentro de TASK-118.
+
+
+---
+
+## Tareas ejecutables derivadas de los hallazgos
+
+> Se formalizan únicamente tareas existentes identificadas en la reconciliación de esta auditoría y en MapaDependencias.md. No se crean nuevos AUD-NG ni TASK. Las marcas históricas [X] de FASE2-T05 no equivalen a cierre técnico.
+
+### [TASK-118] Unificar el sistema institucional de identificadores y validar relaciones
+- **Hallazgo de origen:** requisitos 1..8; duplicidad de generadores USER/ACADEMIC; identidad ad hoc; relaciones PersonaID/UserId/ExpedienteID incompletas; referencias huérfanas.
+- **Severidad:** Crítica. **Objetivo:** disponer de un generador institucional autoritativo y reglas verificables de identidad, unicidad, vigencia y relaciones entre entidades.
+- **Acción ejecutable:** centralizar la generación de IDs y retirar generadores duplicados; impedir que flags de payload como `skipLock` o `isInternalCall` eludan el bloqueo; sustituir IDs de timestamp/aleatorios/fallback constantes en entidades críticas; validar existencia y unicidad de PersonaID/UserId/ExpedienteID y vínculos antes de persistir; ampliar auditoría de colisiones y referencias a todas las entidades críticas; establecer tratamiento de entidades desactivadas, fusionadas o corregidas.
+- **Archivos/módulos:** `backend/user-service/Code.gs`; `backend/academic-service/Code.gs`; `backend/accounting-service/Code.gs`; `SecuenciasIDs`; `Personas`; `Usuarios`; `ExpedientesEstudiantes`; `Matriculas`; `DocumentosEscolaresEmitidos`.
+- **Dependencias/riesgos:** coordinación entre deployments y servicios; LockService local no garantiza exclusión global entre proyectos; riesgo de referencias huérfanas, colisiones, migración de IDs históricos y escrituras parciales.
+- **Alcance:** identidad institucional y relaciones; preservar claves históricas y referencias, con migración controlada y trazable.
+- **Criterios de aceptación:** un único contrato de generación por tipo/entidad; ninguna ruta pública controla bypass de lock; IDs no dependen de timestamp/aleatorio/fallback constante; referencias inexistentes o incompatibles se rechazan; relaciones Persona/Cuenta/Expediente/Matrícula/Documento se verifican; auditoría detecta duplicados y huérfanos en todas las tablas acordadas; pruebas de concurrencia real, reintentos y migración.
+- **Prioridad:** P0 (brechas de unicidad e integridad críticas). **Estado:** Pendiente de ejecución/revalidación.
+- **Evidencia de cierre:** pendiente; la auditoría documenta generadores duplicados, rutas que omiten locks, IDs ad hoc, fallbacks fijos y relaciones no verificadas.
+
+### [TASK-039] Vincular la huella SHA-256 a los bytes del documento definitivo
+- **Hallazgo de origen:** AUD-NG-059; requisito 9; emisión y verificación CUV.
+- **Severidad:** Crítica. **Objetivo:** demostrar integridad del archivo emitido y detectar alteraciones posteriores, no solo conservar un hash de metadatos.
+- **Acción ejecutable:** generar/obtener el PDF definitivo; calcular SHA-256 sobre sus bytes; persistir hash asociado a versión/archivo; recuperar el binario durante verificación CUV y recalcular hash; bloquear o marcar como alterado si falta el archivo o el hash no coincide.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`; `computeDocumentSHA256`; `generateSchoolDocument`; `verifySchoolDocumentByCUV`; `DocumentosEscolaresEmitidos`; almacenamiento Drive.
+- **Dependencias/riesgos:** generación y custodia real del PDF; TASK-351 para estado/privacidad CUV; riesgo de confundir hash de metadatos con integridad binaria.
+- **Alcance:** integridad del binario final y su versión exacta; SHA-256 no prueba por sí solo autoría ni validez legal de una firma.
+- **Criterios de aceptación:** el PDF existe como archivo persistido; hash calculado sobre bytes; hash se conserva por versión; verificación vuelve a calcular y comparar; alteración, ausencia o sustitución genera rechazo/alerta; pruebas de corrupción y re-subida.
+- **Prioridad:** P0. **Estado:** Pendiente de ejecución/revalidación.
+- **Evidencia de cierre:** pendiente; el informe indica hash de metadatos y referencia Drive sintética, sin recálculo de bytes del PDF.
+
+### [TASK-040] Persistir y validar el certificado de finalización y expediente probatorio
+- **Hallazgo de origen:** AUD-NG-061; requisito 9; flujo de firmas y verificación CUV.
+- **Severidad:** Crítica. **Objetivo:** emitir un certificado probatorio persistente y coherente con el estado real, las firmas y la versión exacta del documento.
+- **Acción ejecutable:** persistir el certificado como artefacto inmutable con ID/versionado; invocar su generación al completar el flujo; determinar estado final con una máquina de estados explícita; verificar orden y estado de cada firmante; vincular certificado al hash binario y versión documental; permitir consultar su vigencia sin reconstruirlo únicamente en memoria.
+- **Archivos/módulos:** `backend/user-service/Code.gs`; `generateSignatureAuditCertificate`; `registerDocumentSignature`; `FirmasConformidades`; `SolicitudesTramites`; `backend/accounting-service/Code.gs`; `verifySchoolDocumentByCUV`.
+- **Dependencias/riesgos:** TASK-039 para hash del binario; TASK-351 para exposición CUV; riesgo de declarar completado un trámite pendiente/cancelado/vencido o presentar metadatos como certificado conservado.
+- **Alcance:** certificado de finalización y expediente probatorio; no atribuir validez legal avanzada sin mecanismo de firma y análisis aplicables.
+- **Criterios de aceptación:** certificado se crea y persiste al cumplirse condiciones de finalización; contiene secuencia/identidad/fecha/estado y hash de la versión exacta; estados Pendiente, Cancelada, Rechazada o Vencida no se etiquetan como exitosos; verificación consulta el artefacto persistido; alteración invalida comprobación.
+- **Prioridad:** P0. **Estado:** Pendiente de ejecución/revalidación.
+- **Evidencia de cierre:** pendiente; la auditoría detecta objeto en memoria, ausencia de persistencia y clasificación incorrecta de estados.
+
+### [TASK-351] Restringir y minimizar la verificación pública de documentos CUV
+- **Hallazgo de origen:** requisito 10; exposición en `verifySchoolDocumentByCUV`; reconciliación CUV.
+- **Severidad:** Crítica. **Objetivo:** permitir verificación pública limitada sin exponer datos personales, identificadores internos, URLs de Drive, tokens ni metadatos de firma.
+- **Acción ejecutable:** definir DTO público mínimo; retirar `datosJSON`, IDs internos, `driveFileId`, `driveUrl`, observaciones sensibles, `firmanteId`, `tokenVerificacion`, `ipOrigen` y `signatureHash`; verificar estado documental vigente y unicidad del CUV antes de responder; diferenciar vigente, revocado, anulado, sustituido, inexistente y alterado; registrar consultas sin filtrar secretos.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`; `PUBLIC_ACTIONS`; `validateRolePermission`; `doPost`; `verifySchoolDocumentByCUV`; `DocumentosEscolaresEmitidos`; `FirmasConformidades`.
+- **Dependencias/riesgos:** TASK-039/TASK-040 para integridad y certificado; política de privacidad institucional; riesgo de exposición de PII, tokens y enlaces portadores.
+- **Alcance:** respuesta pública del verificador CUV; mantener datos probatorios completos solo en rutas autenticadas y autorizadas.
+- **Criterios de aceptación:** respuesta pública contiene solo estado, emisor y datos mínimos aprobados; no incluye tokens, IDs internos, URL/ID Drive ni PII no necesaria; rechaza CUV duplicado, inválido o de documento no vigente; pruebas anónimas de minimización y estados.
+- **Prioridad:** P0. **Estado:** Pendiente de ejecución/revalidación.
+- **Evidencia de cierre:** pendiente; la auditoría documenta exposición de datosJSON, IDs, URL/Drive y datos de firma, además de ausencia de validación suficiente de estado.
+
+### Reconciliación y límites
+- **AUD-NG-059:** se mantiene en TASK-039 (integridad SHA-256 de bytes).
+- **AUD-NG-061:** se mantiene en TASK-040 (certificado persistente y clasificación correcta de estados).
+- **AUD-NG-161:** conserva la deficiencia de pruebas con falsos positivos; esta auditoría no recupera un ID TASK independiente para ese hallazgo, por lo que no se inventa. Sus pruebas de unicidad/concurrencia deberán coordinarse con TASK-118 y con el registro existente de AUD-NG-161.
+- **TASK-118/TASK-351:** conservan identidad institucional y privacidad/verificación CUV, respectivamente.
+- **Pruebas:** inspección estática/manual; no se ejecutaron Apps Script, HTTP, concurrencia real, suites automatizadas ni operaciones en Sheets/Drive productivos.
+- **Estado:** FASE2-T05 cumple parcialmente; la marca histórica [X] no se interpreta como cierre de las brechas aquí documentadas.
