@@ -84,3 +84,59 @@ No se modificó código fuente ni se utilizaron datos productivos.
 ## 7. Cierre documental
 
 Se anexa el resultado a \`Auditoria.txt\`, se actualizan \`MapaDependencias.md\`, \`AUDITORIA_COMPLETADAS_PLAN.md\` y \`Contexto_personal.txt\), y se crea este informe. Se preserva \`Pendientes.md\` sin cambios y no se modifica \`completadas.md\`, \`ChangesLogs.txt\`, \`METODOLOGIA_DESARROLLO.md\`, \`README.md\` ni código fuente.
+
+## Tareas ejecutables derivadas de los hallazgos
+
+### [TASK-118] Unificar la generación institucional de identificadores y garantizar su unicidad entre servicios
+
+- **Hallazgo de origen:** secciones 3.2 y 3.3, reconciliación de la sección 4 y dictamen de la sección 5. USER y ACADEMIC mantienen copias independientes de `generateInstitutionalId`; los `ScriptLock` pertenecen a proyectos Apps Script distintos y no coordinan el acceso a `SecuenciasIDs`. ACADEMIC conserva además el fallback constante `USR-000001` cuando la generación no devuelve un ID. La inicialización de hoja/encabezados ocurre antes de adquirir el lock, y no se acredita validación del contador ni unicidad de filas por entidad.
+- **Severidad:** Alta (P1), por el riesgo de colisión de identidad y asociación de registros al usuario equivocado.
+- **Objetivo:** disponer de una única operación institucional, atómica y fail-closed para emitir UserId, compartida por todos los servicios que crean o convierten cuentas, sin fallback temporal ni constante.
+- **Acción ejecutable:**
+  1. Definir un único propietario/servicio de generación de identificadores institucionales y migrar USER, ACADEMIC y cualquier otro consumidor de UserId para que invoquen ese contrato, sin mantener copias independientes del algoritmo.
+  2. Hacer atómica la inicialización de `SecuenciasIDs`, la validación de esquema, la lectura del contador, su incremento y la persistencia. La exclusión mutua debe ser efectiva entre proyectos Apps Script, no depender de ScriptLock locales.
+  3. Validar que exista exactamente una fila por `entityType`, que `UltimoNumero` sea un entero finito no negativo y que el siguiente identificador no esté ya asignado. Ante esquema corrupto, timeout o fallo de persistencia, abortar sin emitir un identificador alternativo.
+  4. Eliminar el fallback `USR-000001` de `convertAdmissionToStudent` y cualquier bypass de bloqueo controlable por payload, incluido `skipLock` si permite saltarse la exclusión mutua desde una frontera no confiable.
+  5. Revisar los callers que ya mantienen locks exteriores (incluidos `createSecurityDelegation` y `manageAccountState`) para evitar adquisición anidada o deadlocks; establecer una única política de locking y un orden de adquisición documentado.
+  6. Hacer atómica o idempotente la relación entre reserva del identificador y persistencia del usuario, de modo que fallos/reintentos no asignen el mismo ID a dos entidades ni consuman silenciosamente secuencias inconsistentes.
+- **Archivos/módulos afectados:** `backend/user-service/Code.gs`; `backend/academic-service/Code.gs`; módulo/servicio institucional de identidad que se defina como propietario; contratos interservicio y configuración de acceso a la secuencia; pruebas de integración asociadas.
+- **Dependencias y riesgos:** AUD-NG-161 cubre las pruebas conductuales de colisión, concurrencia y bypasses; TASK-118 conserva el modelo institucional de IDs. Requiere definir autoridad única y coordinación de exclusión entre proyectos. Riesgos: colisiones entre proyectos, deadlocks por locks anidados, pérdida de números por fallos parciales, incompatibilidad con IDs existentes y asociación incorrecta de matrículas/cuentas. No asumir que ScriptLock de USER protege ejecuciones de ACADEMIC.
+- **Alcance:** UserId institucional y secuencia `USR-` compartida por los flujos de registro y conversión de usuarios. Incluye la robustez de `SecuenciasIDs`, la exclusión mutua distribuida y el manejo fail-closed de errores. No convierte PersonaID, MAT, CRG ni CUV en UserId; esos identificadores conservan sus tareas y contratos propios.
+- **Criterios de aceptación:**
+  1. USER y ACADEMIC utilizan el mismo generador autoritativo; no quedan copias capaces de emitir UserId independientemente.
+  2. La inicialización y actualización de la secuencia son atómicas frente a ejecuciones simultáneas desde ambos proyectos.
+  3. Una prueba concurrente real con llamadas simultáneas USER/ACADEMIC demuestra que no se emiten UserId duplicados y que el contador no retrocede ni pierde actualizaciones.
+  4. Filas duplicadas, contador no numérico/negativo, timeout, error de escritura o respuesta incompleta provocan fallo explícito; nunca se usa `USR-000001`, timestamp ni otro fallback.
+  5. Ningún parámetro del cliente puede omitir la exclusión mutua ni forzar `skipLock`; los callers internos siguen un contrato seguro que no produce locks anidados.
+  6. Reintentos después de pérdida de respuesta o fallo parcial no asignan el mismo UserId a dos usuarios y dejan trazabilidad suficiente para reconciliar la operación.
+  7. Los UserId existentes se preservan; la migración no reescribe identificadores históricos ni rompe referencias.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente. Adjuntar commits de implementación, pruebas concurrentes cruzadas USER/ACADEMIC, pruebas de fallo y reintento, verificación de unicidad sobre fixtures aislados y evidencia de que no se usaron datos productivos.
+
+### [AUD-NG-161] Sustituir las pruebas nominales de concurrencia por pruebas conductuales reales de identidad e integridad
+
+- **Hallazgo de origen:** sección 3.4 y reconciliación de las secciones 4 y 5. La suite existente puede declarar éxito sin ejecutar dos operaciones concurrentes ni comprobar unicidad; no se encontraron aserciones específicas para `registerUser`/`generateInstitutionalId`, colisiones, fallos del generador o concurrencia entre USER y ACADEMIC.
+- **Severidad:** Alta (P1).
+- **Objetivo:** demostrar con pruebas reproducibles que la generación institucional de UserId es única, atómica y segura ante concurrencia, fallos, reintentos y rutas alternativas.
+- **Acción ejecutable:**
+  1. Reemplazar pruebas que asignan `PASSED` incondicionalmente o solo comprueban adquisición/liberación de un lock por escenarios que ejecuten operaciones reales contra fixtures aislados.
+  2. Añadir escenarios simultáneos de registro USER y conversión ACADEMIC contra una secuencia compartida, verificando ausencia de colisiones, monotonía y persistencia consistente.
+  3. Probar primera inicialización concurrente de `SecuenciasIDs`, duplicidad de filas de entidad, contador corrupto, timeout, error entre reserva y persistencia, reintento tras pérdida de respuesta y agotamiento/colisión de candidatos.
+  4. Probar que el fallo del generador aborta la operación y que no se aceptan fallbacks temporales/constantes ni bypasses `skipLock`/equivalentes desde payload.
+  5. Aislar las pruebas de hojas, cuentas y datos productivos; introducir fixtures y limpieza/restauración verificable. Una prueba que no ejecuta el comportamiento debe marcarse como no ejecutada, no como aprobada.
+- **Archivos/módulos afectados:** `backend/accounting-service/Code.gs` (suite de concurrencia actualmente señalada); `tests/regression/academic-grading-suite.js` y nuevas pruebas aisladas de USER/ACADEMIC; harness y fixtures de integración; generador institucional definido por TASK-118.
+- **Dependencias y riesgos:** TASK-118 debe definir el contrato único y la estrategia de locking antes de fijar las aserciones de integración. AUD-NG-006 conserva reserva/idempotencia del cliente; AUD-NG-133 conserva idempotencia transaccional de pagos. No duplicar esos mecanismos ni confundir las pruebas de IDs con las de pagos/CUV.
+- **Alcance:** pruebas conductuales de generación de UserId, concurrencia cruzada, fallos y reintentos, además de la veracidad de la suite que actualmente reporta éxito. No implementa por sí misma el generador ni corrige los mecanismos de pagos o CUV.
+- **Criterios de aceptación:**
+  1. Ningún caso devuelve `PASSED` sin ejecutar una operación y comprobar una propiedad observable.
+  2. Dos o más operaciones simultáneas desde USER y ACADEMIC producen UserId distintos, persistidos una sola vez y asociados al usuario correcto.
+  3. Las pruebas de inicialización, corrupción de secuencia, colisión, timeout, fallo parcial y reintento verifican resultados y estados finales, no solo respuestas nominales.
+  4. Los fallbacks constantes/temporales y bypasses de bloqueo se detectan como fallos.
+  5. Los fixtures no escriben en hojas productivas ni envían notificaciones reales; la limpieza/restauración queda comprobada.
+  6. La suite distingue PASS, FAIL, SKIP y NOT RUN; cualquier escenario no ejecutado se informa como tal y no eleva el dictamen.
+  7. Los resultados son reproducibles y se conserva evidencia de ejecución, datos de fixture y versión del código probado.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente. Registrar ejecución de suite aislada, resultados de cada escenario, evidencia de no colisión y confirmación de aislamiento de datos productivos.
+

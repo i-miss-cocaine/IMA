@@ -6179,3 +6179,30 @@ CHECKPOINT C1.184 — NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-F4-P
 - Regla de publicación: un único commit consolidado con exactamente el informe y Contexto_personal.txt; verificar SHA, padre, árbol, archivos modificados, estadísticas y HEAD posterior. No escribir en la rama base.
 ================================================================
 
+================================================================
+CHECKPOINT C1.185 — NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-F4-P2-01
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo autorizada: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1; HEAD verificado: 44d9891132332e692dbe2ba8602b41f50a508a59. No se realizó ninguna escritura sobre la rama base.
+- HEAD de partida verificado: de1fb8702a0cad6b49ce3a9ed415d1b796781737.
+- Árbol de partida: 43144fb283af3710605f9f391ef4bb40fc5ef6ac.
+- ID operativo de sesión/chat: IMA-AUDIT-20261106-2344Z (identificador operativo, no ID nativo de ChatGPT).
+- Checkpoint inicial: C1.184.
+- Tarea documental general: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: TAREA-F4-P2-01 — eliminación de la generación de identificadores de usuario basada en marcas de tiempo.
+- Dictamen original preservado: CUMPLE PARCIALMENTE. La corrección puntual de registerUser no demuestra unicidad institucional global ni concurrencia cruzada.
+- Verificación previa: el informe íntegro tenía 9.398 caracteres y no contenía la sección obligatoria. Se leyó junto con Contexto_personal.txt, Auditoria.txt, MapaDependencias.md, metodología, README y protocolo C1.112.
+- Tareas existentes desarrolladas sin duplicar IDs: TASK-118 (generador/modelo institucional de identificadores) y AUD-NG-161 (pruebas conductuales reales de colisión, concurrencia y bypasses). Se mantuvieron separadas sus responsabilidades y dependencias.
+- Reconciliación: USER y ACADEMIC conservan generadores duplicados y ScriptLock locales no coordinados; ACADEMIC conserva fallback constante USR-000001; inicialización de SecuenciasIDs previa al lock y posible adquisición anidada quedan en TASK-118. AUD-NG-161 verifica el comportamiento mediante pruebas aisladas, sin asumir que la inspección estática demuestre una colisión ejecutada. No se crean hallazgos nuevos ni se modifica el estado histórico [X].
+- Evidencia cotejada: informe P2-01; Auditoria.txt, hallazgo AUD-NG-161 y reconciliación FASE2-05/TAREA-16; MapaDependencias.md, referencias a generadores USER/ACADEMIC, TASK-118 y AUD-NG-161; metodología §§3.4 y 3.11; AUDITORIAS/README.md.
+- SHAs antes del cambio: informe 8d840fe40801efa14317db75fd78cd5125841576; Contexto_personal.txt 791addcfb6f769ab24963fd45c1aa8e711dec74a; Auditoria.txt 284b7a94b51c8ed99dbfcf734694bc5361f9f111; MapaDependencias.md 4f68d56f910c6a4e87c20ecac82daeb3a615bcaa; metodología cf796728bb384a32537392df2f9c72a339fa03ee; README 2f649c6ffc39ec7cdd242e85cb71b4344fd69e34; protocolo C1.112 e70acbef40f069a2372fae5e1e2c3f7f3aaa9f48.
+- Archivos modificados en esta iteración: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F4-P2-01.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README, hojas productivas y rama base.
+- Pruebas ejecutadas: lectura íntegra del informe; verificación de ausencia del bloque; cotejo de AUD-NG-161/TASK-118 en Auditoria.txt y MapaDependencias.md; lectura del protocolo y metodología; verificación de HEAD, árbol y SHAs de partida; comprobación de IDs existentes y límites entre tareas.
+- Pruebas no ejecutadas: Apps Script, HTTP, Sheets productivas, inicialización concurrente real, concurrencia USER/ACADEMIC, colisiones, timeout, fallos parciales, reintentos, bypasses runtime ni suites automatizadas. Esta iteración no implementa TASK-118 ni AUD-NG-161.
+- Límite: cambio exclusivamente documental. No se declara unicidad global, integridad runtime ni cumplimiento total; se conserva el dictamen CUMPLE PARCIALMENTE.
+- Próximo informe oficial: TAREA-F4-P2-02 — ciclo de vida de cuentas y sesiones. Revisar íntegramente su informe, reconciliar AUD-NG-001, AUD-NG-005 y AUD-NG-159 y comprobar si sus tareas ya están estructuradas, sin duplicar IDs.
+- Regla de publicación: un único commit consolidado con exactamente el informe y Contexto_personal.txt; verificar SHA, padre, árbol, archivos modificados, estadísticas y HEAD posterior. No escribir en la rama base.
+================================================================
+
