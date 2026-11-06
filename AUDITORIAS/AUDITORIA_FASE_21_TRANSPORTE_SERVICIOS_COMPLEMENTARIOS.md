@@ -309,3 +309,194 @@ El diagnóstico técnico y el plan de resolución quedan plenamente establecidos
 - `backend/academic-service/Code.gs`: líneas 101, 487, 775-776, 4879-4995.
 - `backend/Spreadsheet/text.txt`: definición de esquemas de `TransporteRutas` y `TransporteAsignaciones`.
 - `tests/regression/academic-grading-suite.js`: 53 pruebas de regresión automatizadas aprobadas.
+
+---
+
+## Tareas ejecutables derivadas de los hallazgos
+
+> Normalización del plan de resolución de Fase 21. Se conservan los catorce IDs originales F21-Task01..F21-Task14 y sus prioridades P0/P1/P2/P0 Calidad. Los registros TASK-029..TASK-037 contienen discrepancias de correspondencia: TASK-034 describe cierre de recorrido, no rutas asimétricas; TASK-035 describe sincronización de mantenimiento de vehículos, no portal familiar; TASK-036 describe auditoría/migración de datos, no GPS; TASK-037 identifica la suite como F21-Task34, mientras el informe usa F21-Task14. Se conservan las etiquetas originales y se agrega F21-Task15 para la migración de datos, sin reasignar ni borrar IDs existentes.
+
+### [F21-Task01] Control estricto de cupos y prevención de sobrecupo en rutas
+- **Hallazgo de origen:** secciones B, C.1.6/C.1.7, E/F21-07 y F21-31, G.1 y H P0.
+- **Severidad:** Crítica. **Objetivo:** impedir asignaciones que excedan la capacidad oficial y colisiones de horario.
+- **Acción ejecutable:** validar capacidad real del vehículo desde el catálogo maestro al crear/editar asignaciones; usar lock y revalidación atómica de cupos; bloquear duplicados por estudiante/ruta/período y colisiones horarias.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `assignStudentTransport`, `manageTransportRoute`, `TransporteVehiculos`, `TransporteAsignaciones`.
+- **Dependencias/riesgos:** F21-Task05, rutas, turnos y asignaciones vigentes; riesgo crítico de sobrecupo físico.
+- **Alcance:** cupos y disponibilidad; no aceptar capacidad ingresada libremente desde el cliente.
+- **Criterios de aceptación:** capacidad proviene del vehículo activo; operaciones concurrentes no superan cupo; duplicados y colisiones se rechazan; cambios de capacidad revalidan asignaciones existentes.
+- **Prioridad:** P0. **Estado:** Completada históricamente (pendiente de revalidación independiente).
+- **Reconciliación:** TASK-029/F21-Task01 registra ScriptLock, validación de cupos, duplicados y colisiones con códigos `TRANSPORT_CAPACITY_EXCEEDED`, `DUPLICATE_TRANSPORT_ASSIGNMENT` y `TRANSPORT_SCHEDULE_CONFLICT`. Se conserva la implementación histórica; no se reejecutaron pruebas en esta normalización.
+- **Evidencia de cierre:** registro TASK-029 y resultados reportados de 207/207 pruebas; no reejecutados aquí.
+
+### [F21-Task02] Blindar privacidad y aislamiento RBAC/ABAC de asignaciones de transporte
+- **Hallazgo de origen:** secciones B, C.1.6, E/F21-31, G.2, I.1 y H P0.
+- **Severidad:** Crítica. **Objetivo:** impedir que padres, estudiantes o conductores consulten rutas y ubicaciones de menores ajenos a su ámbito.
+- **Acción ejecutable:** filtrar `getTransportAssignments` por usuario autenticado y relaciones familiares verificadas; limitar conductores a su ruta/viaje asignado; auditar intentos no autorizados; impedir consultas públicas de GPS.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `getTransportAssignments`, `ROLE_PERMISSIONS`, `RelacionesFamiliares`, `TransporteAsignaciones`.
+- **Dependencias/riesgos:** identidad verificada, relaciones familiares vigentes, rol, ruta y tokens; riesgo crítico de exposición de ubicación y horarios de menores.
+- **Alcance:** aislamiento de consultas y acciones; no confiar en filtros enviados por el cliente.
+- **Criterios de aceptación:** padre/tutor solo consulta hijos vinculados; estudiante solo su expediente; conductor solo pasajeros de su viaje; rol administrativo autorizado según ámbito; denegaciones quedan auditadas; endpoints no revelan GPS sin sesión válida.
+- **Prioridad:** P0. **Estado:** Completada históricamente (pendiente de revalidación independiente).
+- **Reconciliación:** TASK-030/F21-Task02 registra RBAC/ABAC, filtro por `RelacionesFamiliares` y código `UNAUTHORIZED_ACCESS_ATTEMPT`. Se conserva el antecedente; no se reejecutó la prueba de aislamiento.
+- **Evidencia de cierre:** registro TASK-030 y resultados reportados de 207/207 pruebas; no reejecutados aquí.
+
+### [F21-Task03] Registrar abordaje, descenso y cierre seguro con confirmación de cero pasajeros
+- **Hallazgo de origen:** secciones A.1.5-A.1.9, B, C, E/F21-09/F21-40, G.3 y H P0; ampliación histórica TASK-034.
+- **Severidad:** Crítica. **Objetivo:** mantener manifiesto fiable del viaje y evitar que un autobús cierre recorrido con menores a bordo.
+- **Acción ejecutable:** registrar abordaje y descenso por estudiante/viaje/parada con QR o lista asistida; validar que el estudiante pertenece a la ruta y no fue abordado antes; exigir descenso previo y barrido físico confirmado antes de cerrar.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `recordStudentBoarding`, `recordStudentAlighting`, `getTripPassengerManifest`, `finalizeTransportTrip`, `TransporteViajes`, `TransporteAsistenciaViajes`.
+- **Dependencias/riesgos:** F21-Task01, F21-Task04, rutas, asignaciones y estado del viaje; riesgo crítico para la seguridad física de menores.
+- **Alcance:** trazabilidad de pasajeros y cierre del viaje; no sustituir la entrega segura a adulto autorizado.
+- **Criterios de aceptación:** no se aborda estudiante ajeno a ruta; no hay doble abordaje; descenso exige abordaje previo; manifiesto se actualiza en tiempo real; cierre ordinario se bloquea si quedan pasajeros; barrido físico obligatorio; excepciones quedan justificadas.
+- **Prioridad:** P0. **Estado:** Completada históricamente (pendiente de reconciliación de ID).
+- **Reconciliación:** TASK-031/F21-Task03 registra abordaje/descenso y manifiesto. TASK-034 se etiqueta F21-Task06, pero su contenido implementa `finalizeTransportTrip` y el barrido físico; por alcance pertenece a esta tarea de seguridad de viaje, no a las rutas asimétricas F21-Task06. Se conserva el ID externo y se documenta la correspondencia sin renombrarlo.
+- **Evidencia de cierre:** registros TASK-031/TASK-034 y resultados reportados de 207/207 pruebas; no reejecutados aquí.
+
+### [F21-Task04] Validar personas autorizadas para la recepción y entrega de menores
+- **Hallazgo de origen:** secciones A.1.5, B, C.1.8, E/F21-08, G.3, I.2 y H P0.
+- **Severidad:** Crítica. **Objetivo:** entregar estudiantes únicamente a adultos autorizados y dejar evidencia de quién autorizó/recibió.
+- **Acción ejecutable:** mantener `TransportePersonasAutorizadas` ligada al expediente familiar; validar vigencia y parentesco/autorización al registrar entrega; almacenar receptor, documento, actor autorizante, fecha/hora y excepción aprobada.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `getAuthorizedPickupPersons`, `recordStudentSafeDelivery`, `TransportePersonasAutorizadas`, `RelacionesFamiliares`.
+- **Dependencias/riesgos:** identidad, expediente familiar, permisos y F21-Task03; riesgo crítico de entrega indebida.
+- **Alcance:** control de entrega/recepción; no aceptar autorización verbal no registrada como regla ordinaria.
+- **Criterios de aceptación:** solo adultos autorizados y vigentes reciben al menor; receptor se verifica; excepción de Dirección documentada; operación registra usuario autorizante, identidad del receptor y timestamp; rechazo queda auditado.
+- **Prioridad:** P0. **Estado:** Completada históricamente (pendiente de revalidación independiente).
+- **Reconciliación:** TASK-032/F21-Task04 registra `TransportePersonasAutorizadas`, `getAuthorizedPickupPersons` y bloqueo `UNAUTHORIZED_PICKUP_PERSON`. Se conserva el antecedente sin reejecutar pruebas.
+- **Evidencia de cierre:** registro TASK-032 y resultados reportados de 207/207 pruebas; no reejecutados aquí.
+
+### [F21-Task05] Administrar flota y conductores con validación de vigencias y mantenimiento
+- **Hallazgo de origen:** secciones B, C.1.1/C.1.2/C.1.13, E/F21-01/F21-02, G.4 y H P0; ampliación TASK-035.
+- **Severidad:** Crítica. **Objetivo:** asignar a rutas únicamente vehículos y conductores aptos y vigentes.
+- **Acción ejecutable:** crear catálogos `TransporteVehiculos` y `TransporteConductores`; registrar placa, capacidad, pólizas, revisión técnica, licencia, categoría y acompañantes; bloquear vehículos con seguro/revisión vencidos, conductores con licencia vencida y unidades con órdenes activas de mantenimiento.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `manageTransportVehicle`, `getTransportVehicles`, `manageTransportDriver`, `getTransportDrivers`, `manageTransportRoute`, `TransporteVehiculos`, `TransporteConductores`.
+- **Dependencias/riesgos:** mantenimiento, proveedores, licencias, pólizas y F21-Task01; riesgo de operar vehículos no aptos.
+- **Alcance:** expediente de flota/conductor y disponibilidad; no sustituir el checklist preoperacional F21-Task11.
+- **Criterios de aceptación:** vehículo y conductor tienen ficha independiente; vencimientos bloquean asignación; unidad en mantenimiento activa no se asigna; capacidad proviene del catálogo; vigencias y cambios quedan auditados.
+- **Prioridad:** P0. **Estado:** Completada históricamente (pendiente de revalidación independiente).
+- **Reconciliación:** TASK-033/F21-Task05 registra catálogos y bloqueo `VEHICLE_INSURANCE_EXPIRED`/`DRIVER_LICENSE_EXPIRED`. TASK-035 está etiquetada F21-Task07, pero su contenido sincroniza órdenes de mantenimiento con `TransporteVehiculos` y bloquea con `VEHICLE_UNDER_MAINTENANCE`; se incorpora como ampliación de flota, no como evidencia de portal familiar.
+- **Evidencia de cierre:** registros TASK-033/TASK-035 y resultados reportados de 214/214 pruebas; no reejecutados aquí.
+
+### [F21-Task06] Configurar rutas asimétricas de ida/regreso y días específicos
+- **Hallazgo de origen:** secciones C.1.3-C.1.5, D, F/F21-03..F21-06 y H P1.
+- **Severidad:** Alta. **Objetivo:** modelar rutas diferentes por jornada, días lectivos y eventos.
+- **Acción ejecutable:** permitir segmentos de ida/regreso independientes, paradas ordenadas, horarios por día de semana, rutas especiales y vigencias; validar consistencia con vehículo, conductor y asignaciones.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `manageTransportRoute`, `getTransportRoutes`, `TransporteRutas`, `js/accounting.js`.
+- **Dependencias/riesgos:** F21-Task05, calendario lectivo, paradas georreferenciadas y asignaciones; riesgo de rutas ambiguas o asignaciones en horarios incompatibles.
+- **Alcance:** configuración de recorridos; no confundir ida y regreso como una sola secuencia.
+- **Criterios de aceptación:** ida/regreso con paradas/horarios propios; días lectivos configurables; eventos/vigencias; validación de conflictos; rutas publicadas se reflejan en portal familiar y manifiestos.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Reconciliación:** TASK-034 aparece etiquetada F21-Task06, pero su contenido corresponde al cierre seguro del viaje; no se considera implementación de rutas asimétricas.
+- **Evidencia de cierre:** pendiente; no se encontró evidencia de rutas asimétricas por día/jornada.
+
+### [F21-Task07] Desarrollar portal operativo y familiar de transporte escolar
+- **Hallazgo de origen:** secciones A.2, B, C.1.18, D/F21-28 y H P1.
+- **Severidad:** Alta. **Objetivo:** habilitar administración, operación de conductores y consulta familiar segura.
+- **Acción ejecutable:** crear vistas responsivas para administración de rutas/asignaciones, operación de conductores y consulta familiar de hijos, paradas, horarios, estado de viaje y solicitudes; aplicar filtros ABAC y sesión autenticada.
+- **Archivos/módulos:** dashboards institucionales, dashboard de padres, `js/accounting.js`, `backend/accounting-service/Code.gs`.
+- **Dependencias/riesgos:** F21-Task02, F21-Task03, F21-Task05 y F21-Task06; riesgo de exponer ubicación de menores o presentar datos desactualizados.
+- **Alcance:** interfaz de transporte; no asumir que los endpoints existentes equivalen a portal funcional.
+- **Criterios de aceptación:** panel admin gestiona rutas; conductor ve solo viaje asignado; padre ve solo sus hijos; estado/ETA muestra timestamp de actualización; UI móvil accesible; acciones respetan RBAC/ABAC.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Reconciliación:** TASK-035 aparece etiquetada F21-Task07, pero su contenido es sincronización de mantenimiento con estado del vehículo, no portal operativo/familiar. No se considera evidencia de este portal.
+- **Evidencia de cierre:** pendiente; el informe declara ausente la interfaz dedicada.
+
+### [F21-Task08] Implementar seguimiento GPS, ETA y alertas de retraso/desvío
+- **Hallazgo de origen:** secciones A.1.7, B, C.1.10-C.1.11, D/F21-10/F21-11 y H P1.
+- **Severidad:** Alta. **Objetivo:** ofrecer seguimiento de recorridos con privacidad estricta y alertas oportunas.
+- **Acción ejecutable:** registrar posiciones GPS de viaje con timestamp, precisión y viaje activo; calcular ETA por parada; detectar retrasos/desvíos; enviar avisos solo a tutores/roles autorizados y no exponer enlaces públicos.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, servicio GPS/telemetría, `TransporteViajes`, `TransporteRutas`, servicio multicanal y portal familiar.
+- **Dependencias/riesgos:** F21-Task02/F21-Task06/F21-Task07, conectividad y proveedor GPS; riesgo de rastreo indebido de menores o datos GPS obsoletos.
+- **Alcance:** telemetría y avisos; no almacenar ubicación indefinidamente ni compartir enlaces públicos.
+- **Criterios de aceptación:** posición asociada a viaje activo; ETA indica hora de actualización; desvío/retraso genera evento; acceso requiere sesión y relación autorizada; política de retención aplicada; fallos de señal se muestran como datos no actualizados.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Reconciliación:** TASK-036 aparece etiquetada F21-Task08, pero su contenido es auditoría/migración de datos; no se considera implementación GPS.
+- **Evidencia de cierre:** pendiente; el informe declara ausente el seguimiento GPS.
+
+### [F21-Task09] Integrar cobros recurrentes de transporte con cuentas estudiantiles
+- **Hallazgo de origen:** secciones A.1.9, C.1.14-C.1.17, D/F21-25/F21-26 y H P1.
+- **Severidad:** Alta. **Objetivo:** reflejar tarifas y servicios contratados en el estado de cuenta del estudiante.
+- **Acción ejecutable:** configurar tarifa por ruta/servicio/período; crear cargos mensuales idempotentes vinculados a estudiante, contrato y período; gestionar altas, bajas, cambios y prorrateos; conciliar con pagos.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `CargosEstudiante`, `PagosAbonos`, `TransporteAsignaciones`, módulo de servicios.
+- **Dependencias/riesgos:** inscripción, tarifas, cuentas por cobrar y ciclo escolar; riesgo de cargos duplicados o cobros después de una baja.
+- **Alcance:** facturación de transporte; no ejecutar cobros bancarios ni crear cargos sin contrato/servicio vigente.
+- **Criterios de aceptación:** tarifa versionada; cargo único por estudiante/servicio/período; prorrateo y cancelación auditables; conciliación con pagos; reintentos idempotentes.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el informe indica facturación parcial y ausencia de cargo automático recurrente completo.
+
+### [F21-Task10] Registrar y escalar incidencias y emergencias de transporte
+- **Hallazgo de origen:** secciones A.1.8, C.1.12, D/F21-16..F21-18 y H P1.
+- **Severidad:** Alta. **Objetivo:** documentar averías, accidentes y emergencias y notificar a los responsables.
+- **Acción ejecutable:** crear flujo de incidencias con viaje, vehículo, estudiantes afectados, categoría, gravedad, ubicación, evidencia, responsable y estados; escalar a Dirección y familias según severidad.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, nueva entidad `TransporteIncidencias`, `TransporteViajes`, servicio multicanal y dashboards.
+- **Dependencias/riesgos:** identidad, viaje activo, contactos de emergencia y F21-Task02; riesgo de retraso de respuesta o divulgación excesiva.
+- **Alcance:** registro/escalamiento; no sustituir protocolos externos de emergencia ni prometer atención automática.
+- **Criterios de aceptación:** incidencia ligada a viaje/vehículo; gravedad y responsable obligatorios; notificación según matriz; seguimiento/cierre auditado; información visible solo a roles autorizados.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el informe declara inexistente el módulo de incidencias.
+
+### [F21-Task11] Implementar checklist preoperacional de seguridad vehicular
+- **Hallazgo de origen:** secciones C.1.13, D/F21-39 y H P2.
+- **Severidad:** Media. **Objetivo:** detectar condiciones inseguras antes de iniciar un recorrido.
+- **Acción ejecutable:** registrar inspección diaria de frenos, llantas, luces, cinturones, botiquín, salidas de emergencia y documentación; bloquear salida si hay defecto crítico y crear orden de mantenimiento.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `TransporteVehiculos`, `MantenimientoOrdenes`, UI de conductor.
+- **Dependencias/riesgos:** F21-Task05 y mantenimiento; riesgo de habilitar unidad insegura por checklist incompleto.
+- **Alcance:** inspección previa por viaje/turno; no reemplazar revisión técnico-mecánica legal.
+- **Criterios de aceptación:** checklist fechado por conductor/unidad; campos obligatorios; defectos críticos bloquean despacho; orden de mantenimiento vinculada; auditoría conserva respuestas y responsable.
+- **Prioridad:** P2. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; no se acredita checklist preoperacional.
+
+### [F21-Task12] Gestionar solicitudes familiares de cambio temporal de parada
+- **Hallazgo de origen:** secciones D/F21-43 y H P2.
+- **Severidad:** Media. **Objetivo:** tramitar cambios temporales de parada con autorización verificable.
+- **Acción ejecutable:** permitir que tutor autenticado solicite cambio con estudiante, fecha, parada actual/nueva, motivo y vigencia; someter a aprobación; actualizar manifiesto solo tras aprobar.
+- **Archivos/módulos:** portal familiar, `backend/accounting-service/Code.gs`, `TransporteAsignaciones`, nueva entidad de solicitudes/cambios.
+- **Dependencias/riesgos:** F21-Task02, F21-Task06, capacidad y horarios; riesgo de entregar menor en parada no autorizada.
+- **Alcance:** cambio temporal autorizado; no modificar permanentemente ruta sin proceso administrativo.
+- **Criterios de aceptación:** solicitante vinculado al estudiante; aprobación antes de aplicar; cambio con fecha de inicio/fin; conductor ve versión vigente; historial y notificación quedan registrados.
+- **Prioridad:** P2. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el informe declara ausente el trámite digital.
+
+### [F21-Task13] Administrar transporte extraordinario, excursiones y eventos deportivos
+- **Hallazgo de origen:** secciones A.1.9, D/F21-36..F21-38 y H P2.
+- **Severidad:** Media. **Objetivo:** gestionar viajes especiales con controles equivalentes de seguridad.
+- **Acción ejecutable:** crear solicitud de viaje especial con destino, fecha/hora, pasajeros, autorización, vehículo, conductor, acompañantes, ruta y lista de entrega; validar seguros/licencias/capacidad y aprobación.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `TransporteRutas`, `TransporteVehiculos`, `TransporteViajes`, portal familiar y permisos.
+- **Dependencias/riesgos:** F21-Task03/F21-Task04/F21-Task05; riesgo de excursiones sin autorización o sin control de pasajeros.
+- **Alcance:** viajes fuera de ruta regular; no omitir abordaje, entrega autorizada ni cierre físico.
+- **Criterios de aceptación:** autorización previa; unidad/conductor vigentes; cupo validado; manifiesto y responsables; entrega segura; cierre con barrido físico.
+- **Prioridad:** P2. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el informe declara ausente la gestión de viajes extraordinarios.
+
+### [F21-Task14] Implementar suite automatizada de pruebas y regresión integral de transporte
+- **Hallazgo de origen:** sección H P0 Calidad, PT-21-01..PT-21-53 y registro posterior TASK-037.
+- **Severidad:** Crítica (calidad). **Objetivo:** demostrar seguridad, integridad, privacidad y no regresión del ecosistema de transporte.
+- **Acción ejecutable:** ampliar `runPhase21TransportAndServicesRegressionSuite` para cubrir los 53 escenarios PT-21-01..PT-21-53, incluidos cupos, privacidad, abordaje/descenso, entrega autorizada, cierre, flota, rutas, GPS, incidencias, cobros y servicios complementarios.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `backend/developer-service/Code.gs`, `tests/regression/academic-grading-suite.js`, `modular-dashboard-suite.js`.
+- **Dependencias/riesgos:** F21-Task01..13, datos aislados, permisos, persistencia y contratos de servicios; riesgo de PASS superficial o cobertura parcial.
+- **Alcance:** suite específica Fase 21; reutilizar harness común y probar comportamiento/persistencia, no solo presencia de símbolos.
+- **Criterios de aceptación:** trazabilidad de 53 escenarios; pruebas negativas de privacidad y entrega; concurrencia/idempotencia; persistencia real o dobles conductuales fieles; resultados por caso reproducibles.
+- **Prioridad:** P0 Calidad. **Estado:** Pendiente de ampliación.
+- **Reconciliación:** TASK-037 registra la suite con etiqueta F21-Task34 y solo PT21-01..PT21-12; el informe denomina la suite F21-Task14 y contiene 53 escenarios. Se conserva F21-Task14 como ID del informe y se documenta el ID externo sin renombrar; ampliar cobertura antes de cerrar.
+- **Evidencia de cierre:** parcial/histórica; suite creada y 214/214 + 23/23 pruebas reportadas, pero solo 12 casos PT21 aparecen detallados en el registro de TASK-037.
+
+### [F21-Task15] Auditar y migrar datos históricos de transporte al modelo maestro
+- **Hallazgo de origen:** registro TASK-036 de Auditoria.txt (etiquetado allí como F21-Task08, pero su alcance real es auditoría/migración, no GPS).
+- **Severidad:** Alta. **Objetivo:** corregir rutas sin vehículo maestro, paradas JSON no estructuradas y asignaciones huérfanas sin crear entidades ficticias.
+- **Acción ejecutable:** implementar/ejecutar `auditAndMigrateTransportData` con diagnóstico previo, reporte de discrepancias, vinculación de vehículos reales, normalización de paradas JSON y resolución de asignaciones huérfanas; autoaprovisionar solo cuando exista evidencia de una unidad real.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `auditAndMigrateTransportData`, `TransporteRutas`, `TransporteVehiculos`, `TransporteAsignaciones`.
+- **Dependencias/riesgos:** F21-Task05/F21-Task06, identificadores maestros y relaciones de estudiantes; riesgo de inventar vehículos o reasignar estudiantes incorrectamente.
+- **Alcance:** migración y reconciliación de datos existentes; no generar unidades ficticias ni borrar asignaciones sin resolución.
+- **Criterios de aceptación:** informe antes/después; cada ruta refiere vehículo maestro válido o queda bloqueada para revisión; paradas usan esquema JSON validado; asignaciones huérfanas resueltas con evidencia; operación idempotente y auditable.
+- **Prioridad:** P1 (asignada por impacto de integridad de datos; el registro TASK-036 no declara prioridad).
+- **Estado:** Pendiente de revalidación (TASK-036 registra implementación, pero no evidencia suficiente de migración productiva).
+- **Reconciliación:** TASK-036 está etiquetada F21-Task08 en Auditoria.txt, pero el contenido corresponde a migración de datos. Se crea F21-Task15 para preservar la tarea de migración sin apropiarse del ID F21-Task08 reservado en el informe para GPS.
+- **Evidencia de cierre:** pendiente; el registro describe autoaprovisionamiento correctivo, pero no adjunta inventario de migración antes/después ni evidencia productiva.
+
+### Reconciliaciones y discrepancias transversales de Fase 21
+- **F21-Task01..F21-Task05:** TASK-029..TASK-033 corresponden a cupos, aislamiento RBAC/ABAC, abordaje/descenso, adultos autorizados y flota; se conserva su implementación histórica y las pruebas reportadas.
+- **F21-Task03/F21-Task06:** TASK-034 está etiquetada F21-Task06, pero implementa cierre de recorrido/barrido físico, que funcionalmente amplía F21-Task03; no acredita rutas asimétricas.
+- **F21-Task05/F21-Task07:** TASK-035 está etiquetada F21-Task07, pero implementa sincronización de mantenimiento/estado de vehículo; se incorpora como extensión de flota F21-Task05, no como portal familiar.
+- **F21-Task08/F21-Task15:** TASK-036 está etiquetada F21-Task08, pero implementa auditoría/migración de datos; se conserva separada como F21-Task15 para no dar por implementado GPS.
+- **F21-Task14:** TASK-037 la etiqueta F21-Task34 y reporta PT21-01..PT21-12, mientras el informe requiere 53 escenarios; se conserva la diferencia y la suite queda pendiente de ampliación.
+- **F21-Task06..F21-Task13:** salvo las extensiones descritas, no se encontró evidencia de cierre en los registros cotejados.
+- **Estado global:** F21-Task01..05 tienen implementación histórica reportada; F21-Task06..13 permanecen pendientes; F21-Task14 requiere ampliar cobertura; F21-Task15 requiere revalidar la migración. No se declara que esta iteración haya ejecutado pruebas ni modificado código.

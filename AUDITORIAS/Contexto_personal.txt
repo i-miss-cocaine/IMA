@@ -4435,3 +4435,33 @@ CHECKPOINT C1.123 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 20
 - Próxima acción concreta: continuar con AUDITORIA_FASE_21_TRANSPORTE_SERVICIOS_COMPLEMENTARIOS.md; leer íntegramente el informe, revisar tareas históricas y hallazgos cruzados, reconciliar IDs/estados y añadir el bloque obligatorio sin duplicar trabajo.
 - Estado de TASK-DOC-C1.112-01: En curso; migración documental por lotes.
 ================================================================
+
+================================================================
+CHECKPOINT C1.124 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 21
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto: AUDITORIAS/Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: c9ecc7aa27d307d13c0f4cfb978abc0e91c2c74c.
+- HEAD de rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID operativo de sesión: IMA-AUDIT-20261106-2011Z-F10 (se conserva el identificador operativo de esta conversación; no es un ID nativo de ChatGPT).
+- Checkpoint anterior: C1.123 (Fase 20 normalizada).
+- Tarea documental en curso: TASK-DOC-C1.112-01, normalización progresiva de informes históricos.
+- Informe normalizado en esta iteración: AUDITORIAS/AUDITORIA_FASE_21_TRANSPORTE_SERVICIOS_COMPLEMENTARIOS.md.
+- SHA del informe antes de modificar: de1a5aeb141fd27c2771cef82b97386ff5dc838a.
+- SHA del contexto antes de modificar: 844617ba93d83fb29e8483009f4eb32f203e3c9f.
+- Inspección documental: informe completo (29,895 caracteres; 312 líneas), secciones A-K, capacidades F21-01..F21-44, pruebas PT-21-01..PT-21-53, brechas G, backlog H y seguridad/privacidad I.
+- Fuentes cruzadas: Auditoria.txt (blob 284b7a94b51c8ed99dbfcf734694bc5361f9f111), registros TASK-029..TASK-037; metodología §3.4 y AUDITORIAS/README.md.
+- Tareas originales preservadas: F21-Task01..F21-Task14 y prioridades P0/P1/P2/P0 Calidad.
+- Reconciliación histórica: TASK-029..TASK-033 corresponden a F21-Task01..05; TASK-034 está etiquetada F21-Task06, pero implementa cierre de recorrido y barrido físico (alcance de F21-Task03); TASK-035 está etiquetada F21-Task07, pero implementa sincronización de mantenimiento/estado de vehículo (extensión de F21-Task05); TASK-036 está etiquetada F21-Task08, pero implementa auditoría/migración de datos, no GPS; TASK-037 usa etiqueta F21-Task34 para la suite, mientras el informe usa F21-Task14.
+- Tarea nueva derivada del registro TASK-036: F21-Task15, auditoría y migración de datos históricos de transporte. Se asigna nuevo ID de tarea para preservar el alcance real sin alterar el ID F21-Task08 (GPS) ni inventar IDs de hallazgo.
+- Discrepancia de cobertura: TASK-037 reporta PT21-01..PT21-12 y 214/214 + 23/23 pruebas; el informe enumera PT-21-01..PT-21-53. La suite Fase 21 queda pendiente de ampliar a 53 escenarios.
+- Campos añadidos por tarea: origen, severidad, objetivo, acción, archivos/módulos, dependencias/riesgos, alcance, criterios de aceptación, prioridad, estado y evidencia de cierre.
+- Archivos modificados: AUDITORIAS/AUDITORIA_FASE_21_TRANSPORTE_SERVICIOS_COMPLEMENTARIOS.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, ChangesLogs.txt, Auditoria.txt, METODOLOGIA_DESARROLLO.md, AUDITORIAS/README.md, plan maestro y demás informes; rama base sin cambios.
+- Pruebas no ejecutadas: suite Fase 21, Apps Script runtime, GPS real, correos/notificaciones, Google Sheets productivo, navegador/UI y despliegues; no hubo cambios de código.
+- HEAD de partida del árbol: c9ecc7aa27d307d13c0f4cfb978abc0e91c2c74c. El único commit de cierre debe contener ambos archivos y este checkpoint.
+- Próxima acción concreta: continuar con AUDITORIA_FASE_22_GESTION_DOCUMENTAL_FORMULARIOS_FIRMA_ELECTRONICA.md; leer íntegramente el informe, revisar tareas históricas y hallazgos cruzados, reconciliar IDs/estados y añadir el bloque obligatorio sin duplicar trabajo.
+- Estado de TASK-DOC-C1.112-01: En curso; migración documental por lotes.
+================================================================
