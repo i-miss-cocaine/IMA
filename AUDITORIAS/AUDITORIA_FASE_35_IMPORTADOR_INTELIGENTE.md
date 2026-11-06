@@ -227,3 +227,151 @@ Evaluar integralmente las capacidades del importador inteligente de datos tabula
   - *Defectuosa:* 1 (5.0%)
 - **Cobertura de Verificación Satisfactoria:** 35.0%
 - **Dictamen:** **NO APROBADA PARA CERTIFICACIÓN FINAL** debido a la falta de mapeo semántico interactivo, la ausencia de validación relacional contra la base de datos, el truncamiento de ceros en identificadores y la carencia de reversión segura de lotes.
+
+---
+
+## Tareas ejecutables derivadas de los hallazgos
+
+> Normalización de las nueve tareas descritas en el plan G (F35-Task01..F35-Task09), conservando las prioridades visibles en el informe. Se añaden F35-Task15..F35-Task17 para cubrir brechas explícitas de carga/selección de hojas y encabezados, validaciones por tipo de entidad y esquemas dinámicos multi-módulo que no tienen tarea individual en el plan. La bitácora histórica registra 14 tareas y asigna prioridades a F35-Task10..F35-Task14, pero no conserva sus descripciones; esos IDs se dejan sin reconstruir. Se coordinan tareas coincidentes con F25/F29 para evitar duplicación.
+
+### [F35-Task01] Implementar reconocimiento semántico de encabezados y mapeo interactivo
+- **Hallazgo de origen:** F35-03/F35-04; CAR-F35-03/CAR-F35-04.
+- **Severidad:** Crítica / P0. **Objetivo:** permitir correspondencias automáticas y manuales entre columnas de origen y campos destino sin depender de la posición de la primera columna.
+- **Acción ejecutable:** crear diccionario versionado de sinónimos por entidad; calcular coincidencia exacta/fuzzy con umbrales configurables; mostrar tabla interactiva origen→destino con confianza, tipo y opción de excluir; requerir confirmación del usuario antes de persistir el perfil.
+- **Archivos/módulos:** `js/teacher.js`, `#modal-excel-importer`, `importDataWithColumnMapping`, `validateImportPreview`, catálogo de entidades y campos destino.
+- **Dependencias/riesgos:** F35-Task15/17, F25-Task02 (perfiles de mapeo), F26-Task02 (locale); riesgo de mapear campos semánticamente parecidos pero incompatibles.
+- **Alcance:** sugerencias y mapeo visual; no ejecutar mapeo automático sin confirmación ni aceptar campos destino no permitidos.
+- **Criterios de aceptación:** sinónimos por entidad; score/umbral visible; usuario puede cambiar/excluir mapeo; campos incompatibles se rechazan; mapeo versionado; pruebas con encabezados ambiguos, sinónimos, idiomas, orden variable y falsos positivos.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; frontend envía rígidamente la primera columna como identificador y no existe interfaz visual de correspondencias.
+
+### [F35-Task02] Normalizar tipos, formatos regionales y preservar identificadores
+- **Hallazgo de origen:** F35-06; CAR-F35-06.
+- **Severidad:** Crítica / P0. **Objetivo:** preservar códigos con ceros iniciales y convertir fechas/importes de forma explícita y reversible.
+- **Acción ejecutable:** configurar lectura de identificadores como texto; crear normalizadores por tipo/locale para fecha, decimal, moneda y booleano; exigir selección de formato cuando los valores sean ambiguos; conservar valor bruto y valor normalizado.
+- **Archivos/módulos:** `js/teacher.js`, SheetJS, `validateImportPreview`, `importDataWithColumnMapping`, `js/config.js`.
+- **Dependencias/riesgos:** F26-Task02 (formateo regional), F35-Task16 (validación); riesgo de convertir fechas/identificadores incorrectamente o perder el valor original.
+- **Alcance:** normalización antes de persistir; no modificar identificadores ya almacenados ni inferir locale ambiguo sin confirmación.
+- **Criterios de aceptación:** ceros iniciales conservados; fechas DD/MM y MM/DD desambiguadas; decimales coma/punto interpretados según configuración; moneda explícita; valor original disponible para auditoría; pruebas con 00125, fechas ambiguas, 1.250,50, negativos y nulos.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; la auditoría confirma conversión de códigos como 00125 a 125 y falta de normalización regional.
+
+### [F35-Task03] Validar referencias relacionales y detectar duplicados/conflictos
+- **Hallazgo de origen:** F35-08/F35-09; CAR-F35-08/CAR-F35-09.
+- **Severidad:** Crítica / P0. **Objetivo:** impedir inserciones huérfanas y clasificar correctamente registros nuevos, existentes o conflictivos.
+- **Acción ejecutable:** verificar referencias a estudiantes, matrículas, cuentas y entidades destino; detectar duplicados internos y contra la base; clasificar Crear/Actualizar/Omitir/Conflicto; exigir política de resolución explícita.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `validateImportPreview`, `importDataWithColumnMapping`, catálogos maestros y hojas destino.
+- **Dependencias/riesgos:** F25-Task03 (duplicados y referencias), F29-Task01/07 (identidad/conciliación); riesgo de fusionar personas distintas o sobrescribir registros oficiales.
+- **Alcance:** validación y clasificación previa; no fusionar automáticamente por nombre ni actualizar registros sin permiso.
+- **Criterios de aceptación:** referencias existen y están activas; claves naturales normalizadas; duplicados internos/externos separados; conflicto bloquea escritura; política crear/actualizar/omitir aprobada y auditada; pruebas con huérfanos, duplicados, IDs ambiguos y referencias inactivas.
+- **Prioridad:** P0. **Estado:** Pendiente (ampliación coordinada con F25-Task03).
+- **Evidencia de cierre:** pendiente; el importador no valida existencia de estudiantes/cuentas ni compara duplicados contra la base.
+
+### [F35-Task04] Exigir simulación previa y ejecutar importación atómica por lotes
+- **Hallazgo de origen:** F35-10/F35-11/F35-12; CAR-F35-10..12.
+- **Severidad:** Crítica / P0. **Objetivo:** impedir que el usuario confirme una importación sin conocer sus efectos y garantizar consistencia/idempotencia al escribir.
+- **Acción ejecutable:** hacer obligatorio `validateImportPreview` antes de habilitar confirmación; presentar conteos Crear/Actualizar/Omitir/Error; persistir ejecuciónId y clave idempotente por lote; aplicar LockService, validación final y compensación/rollback ante fallo parcial.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `validateImportPreview`, `importDataWithColumnMapping`, `AuditoriaMigraciones`, UI de importación.
+- **Dependencias/riesgos:** F29-Task06 (dryRun), F29-Task09 (lotes), F25-Task05 (reanudación); riesgo de que preview escriba datos o que reintentos dupliquen efectos.
+- **Alcance:** simulación no destructiva y confirmación transaccional; no enviar directamente a importación real desde el primer botón.
+- **Criterios de aceptación:** preview sin escrituras; confirmación ligada al hash del archivo/mapeo; resumen por acción; LockService; idempotencia por registro/lote; error crítico aborta o compensa según política; pruebas de doble clic, timeout, fallo intermedio y cambio de archivo tras preview.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el botón frontend llama directamente a `importDataWithColumnMapping` y el backend solo registra resumen, sin inserción real completa ni ScriptLock.
+
+### [F35-Task05] Registrar historial y permitir reversión selectiva de lotes
+- **Hallazgo de origen:** F35-15; CAR-F35-15.
+- **Severidad:** Crítica / P0. **Objetivo:** revertir importaciones erróneas sin sobrescribir modificaciones posteriores ni borrar evidencia.
+- **Acción ejecutable:** registrar por ejecución y registro el valor anterior/nuevo, acción, clave, timestamp y actor; implementar `revertImportBatch` con comparación de versión/estado y reversión selectiva; rechazar rollback si el registro fue modificado después.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `AuditoriaMigraciones`, historial de lotes y tablas destino.
+- **Dependencias/riesgos:** F29-Task04 (rollback delta), F35-Task04 y AUD-NG-161; riesgo de eliminar datos legítimos creados después de importar.
+- **Alcance:** reversión de cambios atribuibles a un lote; no borrar historial ni revertir modificaciones posteriores ajenas.
+- **Criterios de aceptación:** snapshot antes/después; ejecuciónId por fila; rollback compara versión actual; conflicto queda en revisión; operación idempotente; log de reversión; pruebas de lote mixto, modificación posterior, reintento y rollback parcial.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; existe `getMigrationLogs`, pero no motor de reversión selectiva.
+
+### [F35-Task06] Persistir perfiles de mapeo reutilizables por formato y origen
+- **Hallazgo de origen:** F35-14; CAR-F35-14.
+- **Severidad:** Alta / P1 en la matriz E. **Objetivo:** reutilizar correspondencias de columnas para proveedores y archivos recurrentes.
+- **Acción ejecutable:** ampliar F25-Task02 con perfiles de importador que guarden origen/proveedor, entidad destino, encabezados, mapeo, reglas, locale y versión; validar compatibilidad antes de aplicar.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `PerfilesMapeoImportacion`, `importDataWithColumnMapping`, UI de mapeo.
+- **Dependencias/riesgos:** F25-Task02, F35-Task01/02/17; riesgo de reutilizar perfiles obsoletos o de otro módulo.
+- **Alcance:** perfil reusable de importación; no crear un segundo repositorio incompatible con `PerfilesMapeoColumnas` de Fase 25.
+- **Criterios de aceptación:** perfil versionado por origen/entidad; mapping validado; compatibilidad de encabezados; usuario autorizado puede guardar/duplicar/retirar; previsualización obligatoria; pruebas de perfil obsoleto, cambio de columnas y ámbito.
+- **Prioridad:** P1. **Estado:** Pendiente (ampliación de F25-Task02).
+- **Evidencia de cierre:** pendiente; no existe tabla ni interfaz para guardar perfiles por proveedor/formato.
+
+### [F35-Task07] Generar CSV descargable de errores y filas observadas
+- **Hallazgo de origen:** F35-13; CAR-F35-13.
+- **Severidad:** Alta / P1. **Objetivo:** entregar al usuario un reporte accionable de cada fila rechazada y su causa.
+- **Acción ejecutable:** generar CSV UTF-8 con número de fila, columna, valor sanitizado, código de error, descripción y acción recomendada; permitir descargar solo registros autorizados y limitar exposición de PII.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `AuditoriaMigraciones`, `validateImportPreview`, UI de resultados.
+- **Dependencias/riesgos:** F35-Task04, F35-Task15/16 y F29-Task18; riesgo de exportar datos sensibles o truncar errores por límite fijo de 20.
+- **Alcance:** reporte de errores/resultados; no exportar credenciales, datos financieros completos o payloads sin sanitizar.
+- **Criterios de aceptación:** CSV completo/paginado; UTF-8 y escape correcto; error asociado a fila/columna; sin límite arbitrario de 20; permisos verificados; totales coinciden con preview; pruebas de caracteres especiales, PII y lotes grandes.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; errores se almacenan en JSON con máximo 20 y no existe descarga CSV.
+
+### [F35-Task08] Procesar archivos grandes por bloques y conservar copia de trabajo
+- **Hallazgo de origen:** F35-18/F35-19; CAR-F35-18/CAR-F35-19.
+- **Severidad:** Alta / P1. **Objetivo:** procesar archivos grandes sin agotar cuotas GAS y conservar evidencia del archivo importado.
+- **Acción ejecutable:** ampliar F25-Task05 con chunking configurable (200 filas iniciales), executionId/cursor/checkpoint y reanudación; almacenar archivo original o copia de trabajo privada en Drive con hash, propietario y política de retención.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `importDataWithColumnMapping`, `AuditoriaMigraciones`, Drive, cola/triggers y `PropertiesService`.
+- **Dependencias/riesgos:** F25-Task05, F29-Task09/18, F35-Task04/05; riesgo de duplicar filas al reanudar o retener archivos sensibles indefinidamente.
+- **Alcance:** lotes y respaldo forense privado; no almacenar el archivo públicamente ni ejecutar una sola petición con todo el payload.
+- **Criterios de aceptación:** tamaño/filas límite configurables; checkpoint durable; reanudación idempotente; progreso y errores visibles; copia privada con SHA-256 y retención; limpieza segura; pruebas con >500 filas, timeout, reintento y archivo eliminado.
+- **Prioridad:** P1. **Estado:** Pendiente (ampliación de F25-Task05).
+- **Evidencia de cierre:** pendiente; archivos >500 filas pueden agotar memoria/tiempo y no se conserva el binario original en Drive.
+
+### [F35-Task09] Rediseñar el importador como asistente guiado responsivo de cuatro pasos
+- **Hallazgo de origen:** F35-17; CAR-F35-17.
+- **Severidad:** Media / P2. **Objetivo:** guiar al usuario por carga, mapeo, simulación y resultados con estados claros.
+- **Acción ejecutable:** rediseñar `#modal-excel-importer` con pasos, validación de avance, resumen, recuperación del paso anterior y diseño adaptable a móvil.
+- **Archivos/módulos:** `teacher-dashboard.html`, `js/teacher.js`, `#modal-excel-importer`.
+- **Dependencias/riesgos:** F35-Task01/04/07; riesgo de permitir confirmar antes de completar validaciones obligatorias.
+- **Alcance:** flujo de UX; no sustituir controles de seguridad/validación backend.
+- **Criterios de aceptación:** cuatro pasos claros; progreso/errores accesibles; navegación atrás sin pérdida; confirmación bloqueada sin preview válido; responsive y teclado; pruebas de cancelación, volver, sesión expirada y error de red.
+- **Prioridad:** P2. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el modal es estático y no presenta asistente secuencial.
+
+### [F35-Task15] Implementar selección de hoja, detección de encabezados y rangos/columnas de origen
+- **Hallazgo de origen:** F35-01/F35-02/F35-05; CAR-F35-01/CAR-F35-02/CAR-F35-05.
+- **Severidad:** Crítica / P0. **Objetivo:** permitir importar desde la hoja y rango correctos aunque el archivo contenga varias pestañas, títulos o columnas irrelevantes.
+- **Acción ejecutable:** mostrar hojas disponibles; detectar filas candidatas de encabezado con confianza; permitir elegir fila/rango de datos, columnas incluidas/excluidas y vista de muestra antes del mapeo.
+- **Archivos/módulos:** `js/teacher.js`, SheetJS, `#modal-excel-importer`, `validateImportPreview`.
+- **Dependencias/riesgos:** F35-Task01/04, F35-Task09; riesgo de seleccionar encabezados equivocados o excluir columnas clave.
+- **Alcance:** configuración del origen; no modificar archivo original ni confiar en detección automática sin revisión.
+- **Criterios de aceptación:** selector de hojas; fila de encabezado editable; rango inicial/final; inclusión/exclusión de columnas; preview con muestra; validación de formato/tamaño/corrupción en cliente y servidor; pruebas con múltiples hojas, títulos, filas vacías, rangos parciales y archivo protegido.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; se lee siempre la primera hoja y se asume encabezado en fila 1, sin MIME real ni selección de rango.
+
+### [F35-Task16] Completar validación de campos obligatorios y reglas de negocio por entidad
+- **Hallazgo de origen:** F35-07; CAR-F35-07.
+- **Severidad:** Crítica / P0. **Objetivo:** validar tipo, longitud, rango, catálogo y reglas de negocio antes de aceptar registros.
+- **Acción ejecutable:** crear esquemas de validación por entidad destino con required, tipo, longitud, patrón, rango, catálogo y validadores relacionales; devolver errores por fila/columna y bloquear registros inválidos según política.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `validateImportPreview`, catálogo de esquemas y módulos destino.
+- **Dependencias/riesgos:** F35-Task02/03/17, F29-Task06 y F25-Task03; riesgo de validar solo en frontend o rechazar registros válidos por reglas desactualizadas.
+- **Alcance:** validación de datos y reglas antes de escribir; no sustituye autorización ni reconciliación posterior.
+- **Criterios de aceptación:** reglas versionadas por entidad; backend aplica todas; catálogo/relaciones comprobados; errores exportables; política parcial/todo-o-nada explícita; pruebas por entidad con tipo incorrecto, campos faltantes y límites.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; `validateImportPreview` solo comprueba la presencia del identificador clave.
+
+### [F35-Task17] Crear catálogo declarativo de esquemas y módulos importables
+- **Hallazgo de origen:** F35-20; CAR-F35-20.
+- **Severidad:** Alta / P1. **Objetivo:** ampliar el importador a nuevos módulos sin hardcodear cada destino en el frontend.
+- **Acción ejecutable:** crear catálogo de entidades importables con campos, tipos, relaciones, permisos, validadores, claves de idempotencia y estrategia de escritura; resolver el esquema en backend según rol y destino autorizado.
+- **Archivos/módulos:** `backend/developer-service/Code.gs`, `backend/accounting-service/Code.gs`, selector `excel-target-module`, catálogo de esquemas y módulos destino.
+- **Dependencias/riesgos:** F25-Task01 (catálogo de integraciones), F35-Task01/03/16, RBAC/ABAC; riesgo de permitir que el cliente seleccione un módulo fuera de sus permisos.
+- **Alcance:** extensibilidad declarativa; no permitir que una definición enviada por el cliente agregue campos o permisos.
+- **Criterios de aceptación:** esquemas versionados y aprobados; destino resuelto en servidor; campos/relaciones validados; permisos por entidad; módulos nuevos se agregan sin cambiar flujo base; pruebas de módulo no autorizado, esquema obsoleto y destino incompatible.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el selector contempla tres módulos, pero el backend carece de esquemas dinámicos por entidad.
+
+### Reconciliaciones y discrepancias transversales de Fase 35
+- **F35-Task03:** ampliar F25-Task03 para deduplicación y referencias; no crear motor paralelo.
+- **F35-Task04:** coordinar dryRun con F29-Task06 y chunking con F25-Task05; simulación y escritura son fases distintas.
+- **F35-Task06:** ampliar F25-Task02; reutilizar el catálogo existente de perfiles de mapeo, no crear dos tablas incompatibles.
+- **F35-Task08:** ampliar F25-Task05/F29-Task09 para ejecución por bloques y recuperación.
+- **F35-Task15/16/17:** formalizan brechas explícitas F35-01/02/05/07/20 no cubiertas por las nueve tareas descritas.
+- **Discrepancia histórica:** Auditoria.txt registra 14 IDs F35-Task01..F35-Task14 (P0 01-09, P1 10-14), mientras el informe actual describe nueve tareas (01-09) con distribución P0 01-05, P1 06-08 y P2 09. No se encontraron descripciones para Task10..Task14 en el informe ni en la bitácora. Se preserva la prioridad del plan visible y se dejan Task10..Task14 como referencias sin alcance recuperable; no se consultó Pendientes.md.
+- **Subcapacidad F35-16:** seguridad RBAC se conserva como completa/verificada según el informe; no se reabre por esta normalización.
+- **Estado global:** F35-Task01..F35-Task09 y F35-Task15..F35-Task17 permanecen pendientes de ejecución/revalidación; F35-Task10..Task14 quedan como referencias históricas sin descripción recuperable.

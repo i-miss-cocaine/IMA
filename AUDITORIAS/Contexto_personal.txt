@@ -4812,3 +4812,31 @@ CHECKPOINT C1.136 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 34
 - Próximo informe pendiente: AUDITORIA_FASE_35_IMPORTADOR_INTELIGENTE.md.
 - Estado de TASK-DOC-C1.112-01: En curso.
 ================================================================
+
+================================================================
+CHECKPOINT C1.137 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 35 (IMPORTADOR)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida: 7b7953139b2d70dcd64e975c9ea734779a3319c8.
+- HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID operativo de sesión: IMA-AUDIT-20261106-2035Z-MIGRACION (no es ID nativo de ChatGPT).
+- Checkpoint anterior: C1.136 (Fase 34 normalizada).
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_FASE_35_IMPORTADOR_INTELIGENTE.md.
+- SHA original del informe: 094bfa998353f4d7c9a243fe0b13aae66830e559.
+- SHA original del contexto: 009cc64c86629ae27bb016411a5f8511815e772c.
+- Inspección: informe completo (17,740 caracteres), 20 subcapacidades F35-01..F35-20, matriz CAR-F35-01..20 y PT-F35-01..12; plan G con nueve tareas descritas.
+- Tareas originales preservadas: F35-Task01..F35-Task09 y prioridades visibles P0/P1/P2 del plan G.
+- Tareas adicionales derivadas de brechas no cubiertas individualmente: F35-Task15 (carga/hojas/encabezados/rangos), F35-Task16 (validaciones por entidad), F35-Task17 (esquemas dinámicos multi-módulo).
+- Reconciliaciones cruzadas: F35-Task03 con F25-Task03; Task04 con F29-Task06/F29-Task09; Task06 con F25-Task02; Task08 con F25-Task05/F29-Task09; F35-Task02 con F26-Task02; TASK-154/TASK-227/TASK-265 como infraestructura de colas/reanudación cuando aplique.
+- Discrepancia histórica: Auditoria.txt registra 14 tareas F35-Task01..Task14, P0 01-09/P1 10-14, pero el informe describe 01-09 y no se recuperó descripción de Task10..14. No se inventan ni se consulta Pendientes.md. Se conserva la prioridad visible del informe y se documenta la diferencia.
+- F35-16 (RBAC) se conserva como completa/verificada; no se reejecutaron pruebas.
+- Campos por tarea: origen, severidad, objetivo, acción, archivos/módulos, dependencias/riesgos, alcance, criterios de aceptación, prioridad, estado y evidencia de cierre.
+- Archivos modificados: AUDITORIAS/AUDITORIA_FASE_35_IMPORTADOR_INTELIGENTE.md; AUDITORIAS/Contexto_personal.txt.
+- No se modificaron código, pruebas, Pendientes.md, completadas.md, ChangesLogs.txt, Auditoria.txt, metodología, README, plan maestro ni rama base.
+- Pruebas no ejecutadas: formatos/hojas, encabezados, mapeo semántico, normalización, referencias, duplicados, dryRun, inserciones atómicas, rollback, perfiles, CSV errores, chunking, respaldo de trabajo, wizard, validaciones y esquemas dinámicos.
+- Próximo informe: continuar el inventario de auditorías faltantes; el segundo informe de Fase 35 de identificadores/normalización se revisará por separado para evitar confundirlo con el importador.
+- Estado de TASK-DOC-C1.112-01: En curso.
+================================================================
