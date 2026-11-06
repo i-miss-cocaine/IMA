@@ -3912,3 +3912,22 @@ CHECKPOINT C1.101 - CONVERSIÓN DE HALLAZGOS HISTÓRICOS (LOTE 5)
 - Pruebas: validación de IDs, acciones y criterios; verificación Git posterior.
 - Commit de cierre: el commit que contiene este checkpoint; SHA final se verificará después de publicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.102 - CONVERSIÓN DE HALLAZGOS HISTÓRICOS (LOTE 6)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Contexto: AUDITORIAS/Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work; rama base: NG_beta_0.0.0.1.
+- HEAD de partida verificado: 6aa82aa49ff373c585ed1951000e2ca7557a2b07; árbol de partida: 3aaeaf64f3e4b90eb9dee5d49781708b5b2ea860.
+- ID operativo de sesión: IMA-AUDIT-20261106-1719Z; checkpoint inicial C1.97; estado: sesión abierta.
+- Alcance: normalización de tareas en informes T-UX-13, T-UX-14 y T-UX-15.
+- Avance publicado acumulado: 25/128 informes históricos con sección normalizada.
+- IDs ampliados: TASK-483/AUD-NG-194; TASK-481/AUD-NG-195/196; TASK-482/AUD-NG-185; TASK-491/AUD-NG-197/198/199/200; TASK-429/AUD-NG-201/202.
+- Deduplicación: los hallazgos se asignan a las tareas existentes que el propio informe identifica; no se crean tareas paralelas para navegación, XSS, autorización o tablas.
+- Restricciones: Pendientes.md no se recupera, lee ni modifica; código fuente y completadas.md no se modifican.
+- Próximo lote: T-UX-16 a T-UX-28; después informes de tareas restantes y auditorías funcionales por fase.
+- Pruebas: revisión de evidencias, severidad, acción y criterios; verificación Git posterior.
+- Commit de cierre: el commit que contiene este checkpoint; SHA final se verifica después de publicar.
+================================================================

@@ -117,3 +117,44 @@ Los hallazgos históricos AUD-NG-184/TASK-481 y AUD-NG-185/TASK-482 continúan v
 - `Pendientes.md` blob posterior: `4039a6dc496848c5cf6b112bc41b681d80488bb7`.
 - HEAD de partida: `cf28bbfe02211df88579ce42dd989f0dcf8796fa`.
 - Rama base: `44d9891132332e692dbe2ba8602b41f50a508a59`.
+
+## Tareas ejecutables derivadas de los hallazgos
+
+### [TASK-481] Ampliar autorización contextual y filtros por entidad del Omnibox
+- **Hallazgos de origen:** AUD-NG-195 (Alto/P1) y AUD-NG-196 (Medio/P2); ampliación de AUD-NG-184/TASK-481.
+- **Severidad:** Alto.
+- **Objetivo:** restringir cada resultado a la relación/ámbito real del usuario y evitar coincidencias universales por consulta vacía.
+- **Acción ejecutable:** aplicar autorización por registro en servidor para expedientes/usuarios; validar asignación docente, departamento y titularidad; validar filtros de grado/sección/año/estado; incluir filterSeccion en la condición de búsqueda; impedir que query vacía coincida con noticias/trámites; aplicar filtros de audiencia/vigencia/titularidad.
+- **Archivos/módulos afectados:** backend/user-service/Code.gs; searchGlobalOmnibox y consultas de expedientes/noticias/trámites.
+- **Dependencias y riesgos:** AUD-NG-184; TASK-484 prueba los casos; no confundir allowlist de roles con autorización por registro.
+- **Alcance:** ampliación de TASK-481.
+- **Criterios de aceptación:** usuarios sin relación no reciben registros; filtros se validan en backend; query vacía no devuelve todo; filtro de sección aislado funciona; noticias/trámites respetan estado, audiencia y titularidad.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas IDOR por rol/entidad y casos de filtros vacíos/incompletos.
+
+### [TASK-482] Mantener renderizado seguro del Omnibox y de la consulta reflejada
+- **Hallazgo de origen:** AUD-NG-185, revalidado en T-UX-14.
+- **Severidad:** Alto.
+- **Objetivo:** evitar XSS al mostrar resultados o texto de búsqueda.
+- **Acción ejecutable:** usar APIs DOM/textContent y listeners; eliminar interpolación de datos en innerHTML/onclick; validar URLs y esquemas permitidos.
+- **Archivos/módulos afectados:** js/ui-common.js, renderizador del Omnibox.
+- **Dependencias y riesgos:** TASK-481 controla autorización, pero no sustituye la sanitización.
+- **Alcance:** mismo sink identificado por AUD-NG-185, sin crear nueva tarea.
+- **Criterios de aceptación:** título, categoría, subtítulo, icono, tipo, ID y query se tratan como texto; URLs no permitidas se rechazan; pruebas XSS sintéticas no ejecutan código.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas de payloads HTML, atributos y URL.
+
+### [TASK-491] Corregir atajos contextuales, navegación de resultados y resiliencia del Omnibox
+- **Hallazgos de origen:** AUD-NG-197 (Alto/P1), AUD-NG-198 (Medio/P2), AUD-NG-199 (Medio/P2) y AUD-NG-200 (Medio/P2).
+- **Severidad:** Alto.
+- **Objetivo:** asegurar que el atajo y los resultados produzcan acciones correctas sin interrumpir edición ni ocultar resultados relevantes.
+- **Acción ejecutable:** no interceptar Ctrl+K en campos editables/IME; navegar al registro concreto de noticias y trámites en lugar de mostrar toast; distribuir el límite de resultados entre entidades y ordenar por relevancia global; cancelar o ignorar respuestas obsoletas; mostrar estado de error cuando fetchApi no esté disponible.
+- **Archivos/módulos afectados:** js/ui-common.js, backend/user-service/Code.gs y rutas de noticias/trámites.
+- **Dependencias y riesgos:** TASK-481 para autorización/filtros; TASK-482 para renderizado; TASK-484 para pruebas.
+- **Alcance:** interacción, navegación y resiliencia del consumidor; no duplicar autorización ni XSS.
+- **Criterios de aceptación:** Ctrl+K no altera escritura en input/textarea/contenteditable; resultados abren entidad correcta; ningún tipo monopoliza el límite; una respuesta antigua no sobrescribe la consulta vigente; ausencia/fallo de fetchApi produce error recuperable visible.
+- **Prioridad:** P1 (subhallazgos P2 conservan su prioridad).
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas de teclado, navegación, distribución multi-entidad y solicitudes fuera de orden.

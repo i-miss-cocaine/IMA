@@ -118,3 +118,18 @@ Inspección estática/manual de código y reconciliación documental. No se ejec
 ## 8. Cierre
 
 T-UX-15 queda auditada con dictamen **NO CUMPLE**. TASK-429 fue ampliada con AUD-NG-201 y AUD-NG-202. No se creó un TASK nuevo. La siguiente tarea de la secuencia es T-UX-16.
+
+## Tareas ejecutables derivadas de los hallazgos
+
+### [TASK-429] Ampliar motor de filtros, paginación y vistas guardadas de tablas
+- **Hallazgos de origen:** AUD-NG-201 (Alto/P1) y AUD-NG-202 (Medio/P2); ampliación de TASK-429.
+- **Severidad:** Alto.
+- **Objetivo:** integrar filtros, orden, paginación y vistas guardadas como un solo estado coherente y aislado por identidad.
+- **Acción ejecutable:** aplicar allowlist y tipos de datos en filtros; conservar 0/false; implementar ordenamiento y chips de filtros activos; sincronizar filtros con paginación local/remota; limitar lecturas y ordenar de forma estable; guardar vistas por usuario/rol/ámbito con modo personal/compartido y gestión de permisos.
+- **Archivos/módulos afectados:** js/ui-common.js, js/teacher.js, js/student.js, js/accounting.js, js/secretary.js y endpoints remotos de tablas.
+- **Dependencias y riesgos:** TASK-486 para restauración de estado de vistas; TASK-249 para visor de reportes (mantener separado); TASK-453 para bandejas documentales (mantener su alcance).
+- **Alcance:** ampliación de TASK-429 para tablas operativas genéricas.
+- **Criterios de aceptación:** filtros por tipo respetan valores 0/false; ordenamiento y filtros activos reflejan el conjunto visible; paginación remota aplica los mismos criterios; vistas guardadas se aíslan por usuario/rol/ámbito; compartición exige permiso; la UI consume el componente en vistas objetivo.
+- **Prioridad:** P1 para motor de filtros; P2 para vistas guardadas.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas funcionales de filtros, paginación, aislamiento y compartición.

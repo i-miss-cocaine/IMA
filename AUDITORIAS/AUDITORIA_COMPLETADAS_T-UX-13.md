@@ -108,3 +108,18 @@ Archivo: `js/ui-common.js`, líneas 4757-4890.
 - No ejecutado: navegador, DOM real, interacción de teclado/táctil, pruebas de viewport, lectores de pantalla ni suites automatizadas.
 - No se modificó código fuente. No se modificó `completadas.md`, `ChangesLogs.txt` ni `METODOLOGIA_DESARROLLO.md`.
 - Dictamen limitado a evidencia estática; la imposibilidad de observar el DOM/runtime se mantiene explícita.
+
+## Tareas ejecutables derivadas de los hallazgos
+
+### [TASK-483] Ampliar menú responsivo con disparador visible y semántica accesible
+- **Hallazgo de origen:** AUD-NG-194; ampliación de AUD-NG-186/TASK-483.
+- **Severidad:** Medio.
+- **Objetivo:** garantizar que el menú pueda abrirse desde móvil y que el estado de navegación sea perceptible y accesible.
+- **Acción ejecutable:** mover el disparador fuera de nav.hidden.md:flex o ubicarlo en un contenedor visible en móvil; cargar el módulo en Developer y exponer el encabezado requerido en dashboard dinámico; actualizar aria-expanded/aria-controls y estado activo; distinguir enlaces de acciones inmediatas; preservar la matriz de rutas por rol.
+- **Archivos/módulos afectados:** js/ui-common.js, dashboards HTML, Developer y dashboard dinámico.
+- **Dependencias y riesgos:** AUD-NG-186/TASK-483; T-UX-19 y T-UX-20 son referencias relacionadas, no sustituyen este alcance.
+- **Alcance:** ampliación de TASK-483, no crear una tarea paralela.
+- **Criterios de aceptación:** disparador visible y operable en los 11 dashboards revisados; menú carga para Developer/dynamic-dashboard; estado activo y semántica ARIA correctos; teclado/táctil permiten navegar; las rutas visibles respetan el rol.
+- **Prioridad:** P2.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas por dashboard, rol y viewport móvil/escritorio.
