@@ -134,3 +134,82 @@ La Fase 26 dispone de bases sólidas en almacenamiento centralizado (`Configurac
    $$\text{Cobertura de Verificación} = \frac{\text{Subcapacidades que Cumplen Criterios}}{\text{Subcapacidades Verificadas}} \times 100 = \frac{11}{14} \times 100 = 78.57\%$$
 3. **Tasa de Aprobación de Pruebas:**
    $$\text{Tasa de Aprobación} = \frac{\text{Criterios Aprobados}}{\text{Criterios Ejecutados}} \times 100 = \frac{11}{11} \times 100 = 100.0\%$$
+
+---
+
+## Tareas ejecutables derivadas de los hallazgos
+
+> Normalización de las brechas y del backlog de Fase 26. Se conservan F26-Task01..F26-Task05 con sus prioridades P0/P1/P2. Se incorpora F26-Task06 para la persistencia de vistas personalizadas, identificada como brecha explícita en F26-008 pero no individualizada en el backlog G. Los alcances de invalidación y reversión de configuración ya tienen cobertura oficial en TASK-062: se mantienen los IDs de trazabilidad F26-Task04/F26-Task05 y se amplía TASK-062, sin crear tareas duplicadas. La vista personalizada se coordina con F24-Task07, ampliándola en vez de duplicar el constructor de informes.
+
+### [F26-Task01] Implementar motor central de precedencia y configuración jerárquica
+- **Hallazgo de origen:** F26-002 y F26-010; secciones C.2/C.9, F.1 y G.1.
+- **Severidad:** Alta / P0. **Objetivo:** resolver configuraciones de manera determinista respetando la precedencia Global → Institucional → Departamental → Personal.
+- **Acción ejecutable:** definir un contrato único de configuración por clave, ámbito, institución, departamento y usuario; implementar resolución por capas, herencia, overrides permitidos y detección de conflictos; validar actor y ámbito en servidor; impedir que una configuración de menor alcance sobrescriba una de mayor alcance; proporcionar valores predeterminados seguros y explicar el origen efectivo de cada valor.
+- **Archivos/módulos:** `backend/user-service/Code.gs` (`saveSystemConfiguration`, `getSharedConfigurationsCatalog`); `backend/developer-service/Code.gs` (`getCentralConfigAndContractCatalog`, `validateServiceConfigDependencies`); `ConfiguracionSistema`, nueva estructura de ámbitos/departamentos y consumidores de configuración.
+- **Dependencias/riesgos:** jerarquía institucional y departamental canónica, RBAC/ABAC y contratos entre servicios; riesgo de fuga de configuración entre departamentos o escalamiento de privilegios.
+- **Alcance:** resolución y persistencia de ámbitos; no permitir que el cliente determine su rol, institución o departamento mediante valores arbitrarios del payload.
+- **Criterios de aceptación:** las cuatro capas se resuelven con precedencia documentada; claves admiten ámbitos explícitos; cada override registra actor/ámbito/versión; acceso se verifica server-side; conflictos se rechazan o resuelven con política determinista; pruebas cubren herencia, ausencia de valor, conflicto, aislamiento entre departamentos y usuario no autorizado.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el informe solo identifica ámbitos GLOBAL y personal, sin una capa departamental formal ni herencia de cuatro niveles.
+
+### [F26-Task02] Centralizar el formateo regional de moneda, fechas, horas y números
+- **Hallazgo de origen:** F26-001; sección C.1, F.3 y G.2.
+- **Severidad:** Alta / P0. **Objetivo:** presentar valores consistentes según la configuración regional institucional, sin conversiones manuales divergentes.
+- **Acción ejecutable:** crear helpers compartidos basados en `Intl.NumberFormat` y `Intl.DateTimeFormat`; consumir moneda/código, locale y zona horaria de configuración validada; sustituir concatenaciones manuales como `"L. " + monto` y formateadores locales dispersos; definir comportamiento para valores nulos, negativos, precisión y fechas ISO-8601.
+- **Archivos/módulos:** `js/config.js`, `js/ui-common.js`, `js/api.js`, componentes de reportes/tablas y módulos financieros; `ConfiguracionSistema`.
+- **Dependencias/riesgos:** F26-Task01 y configuración regional institucional; riesgo de alterar valores numéricos subyacentes al formatear o de confundir UTC con hora local.
+- **Alcance:** presentación y parseo explícito de valores; no cambiar importes almacenados ni asumir que el símbolo monetario determina la moneda.
+- **Criterios de aceptación:** HNL/L se muestra según configuración regional; decimales y separadores son consistentes; fechas/horas respetan zona horaria institucional; almacenamiento y cálculos conservan valores numéricos/instantes originales; pruebas incluyen cero, negativos, nulos, decimales, límites de fecha y cambio de locale/zona.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el informe identifica formateo manual y falta de normalización universal en frontend.
+
+### [F26-Task03] Implementar motor visual de campos personalizados para formularios institucionales
+- **Hallazgo de origen:** F26-007; sección C.6 y G.3.
+- **Severidad:** Media / P1. **Objetivo:** permitir que administradores autorizados configuren campos adicionales sin modificar código fuente.
+- **Acción ejecutable:** ampliar `FormulariosInstitucionales` con un esquema versionado de campos (tipo, etiqueta, obligatoriedad, validaciones, opciones, orden, visibilidad y ámbito); implementar constructor visual, previsualización, publicación y compatibilidad de versiones; validar el esquema y los valores en backend antes de persistir respuestas.
+- **Archivos/módulos:** `backend/user-service/Code.gs`, `FormulariosInstitucionales`, UI administrativa y renderizadores/validadores de formularios.
+- **Dependencias/riesgos:** F26-Task01 para ámbitos y permisos; riesgo de XSS, tipos incompatibles, pérdida de respuestas al cambiar esquemas o campos obligatorios retroactivos.
+- **Alcance:** definición y ejecución de campos dinámicos; no permitir HTML/script arbitrario ni ejecutar lógica enviada por el cliente.
+- **Criterios de aceptación:** tipos permitidos y validaciones server-side; esquema versionado; borradores y publicación separados; respuestas vinculadas a versión del formulario; cambios incompatibles advertidos; pruebas de permisos, XSS, validación, compatibilidad y recuperación de versiones.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; existe un esquema JSON en `FormulariosInstitucionales`, pero el informe señala que falta el constructor visual dinámico.
+
+### [F26-Task04] Invalidar de forma reactiva la caché tras cambios de configuración
+- **Hallazgo de origen:** F26-013; sección C.12, F.2 y G.4.
+- **Severidad:** Alta / P1. **Objetivo:** impedir que clientes y servicios sigan usando parámetros obsoletos después de guardar cambios críticos.
+- **Acción ejecutable:** ampliar la tarea oficial `TASK-062` para que el cambio de configuración incremente una versión/epoch, emita evento de invalidación, propague la nueva versión a los consumidores y fuerce relectura segura; definir TTL y fallback cuando el evento no llegue; cubrir cachés de navegador y backend.
+- **Archivos/módulos:** `backend/user-service/Code.gs` (`saveSystemConfiguration`, `manageInstitutionalDataCache`); `js/api.js`, `js/config.js`, cachés institucionales y consumidores Academic/Accounting.
+- **Dependencias/riesgos:** `TASK-062` (versionado, handshake, invalidación, concurrencia e historial); riesgo de invalidación parcial o tormenta de solicitudes al renovar caché.
+- **Alcance:** ampliación de TASK-062, no tarea independiente duplicada; la invalidación global debe distinguirse de invalidación por institución/ámbito.
+- **Criterios de aceptación:** guardar una clave cambia su versión; consumidores detectan versión obsoleta; evento/TTL recupera cachés desconectadas; aislamiento por institución/usuario; no se informa purga exitosa si no se ejecutó; pruebas de concurrencia, clientes desconectados, reintentos y consistencia eventual.
+- **Prioridad:** P1. **Estado:** Pendiente (alcance F26 vinculado a TASK-062).
+- **Evidencia de cierre:** pendiente; Auditoría FASE2-T17 documentó que `manageInstitutionalDataCache` solo registra FLUSH_GLOBAL y que `saveSystemConfiguration` no invoca invalidación. No se encontró evidencia de cierre conductual de TASK-062.
+
+### [F26-Task05] Incorporar reversión verificable de parámetros críticos
+- **Hallazgo de origen:** F26-012 y protección de parámetros críticos F26-011; G.5.
+- **Severidad:** Media / P2. **Objetivo:** restaurar una versión previa de configuración ante cambios erróneos sin perder trazabilidad.
+- **Acción ejecutable:** ampliar `TASK-062` con historial persistente e inmutable de versiones y operación `rollbackSystemConfiguration`; validar permiso reforzado, ámbito, versión destino y dependencias; registrar quién solicitó/aprobó/ejecutó la reversión; aplicar reversión como nueva versión compensatoria, nunca sobrescribir el historial.
+- **Archivos/módulos:** `backend/user-service/Code.gs`, `ConfiguracionSistema`, `RegistroEventos`, catálogo/versionado central de configuración.
+- **Dependencias/riesgos:** `TASK-062`, F26-Task01 y dependencias de configuración entre servicios; riesgo de restaurar una clave incompatible con el estado actual o borrar evidencia histórica.
+- **Alcance:** ampliar TASK-062; conservar el historial y no hacer rollback destructivo ni revertir automáticamente datos transaccionales dependientes.
+- **Criterios de aceptación:** cada versión conserva valor anterior/nuevo, actor, fecha y motivo; rollback crea nueva versión; se valida autorización y compatibilidad; previsualización muestra impacto; operación idempotente y auditable; pruebas de restauración, rechazo, concurrencia y recuperación ante fallo parcial.
+- **Prioridad:** P2. **Estado:** Pendiente (alcance F26 vinculado a TASK-062).
+- **Evidencia de cierre:** pendiente; la bitácora FASE2-T17 señala que el catálogo contiene texto de rollback pero no historial persistente ni ejecución real.
+
+### [F26-Task06] Persistir y recuperar vistas personalizadas de informes por usuario y ámbito
+- **Hallazgo de origen:** F26-008; sección C.7 e I (próximo paso: vistas guardadas).
+- **Severidad:** Media / P1. **Objetivo:** permitir guardar configuraciones de informes y dashboards para reutilizarlas con permisos y filtros consistentes.
+- **Acción ejecutable:** ampliar `F24-Task07` (dashboards e informes personalizados) con persistencia de vistas: propietario, institución/departamento, informe, columnas, agrupaciones, filtros, orden, versión y fecha; permitir guardar, duplicar, editar, activar y eliminar; validar permisos al guardar y al recuperar.
+- **Archivos/módulos:** `js/ui-common.js` (`modal-dashboard-settings`); `dynamic-dashboard.html`; servicios User/Academic/Accounting y catálogo de informes; nueva estructura `VistasInformesUsuario`.
+- **Dependencias/riesgos:** F26-Task01, F24-Task07, F24-Task01 (catálogo/permisos) y F24-Task06 (filtros); riesgo de compartir vistas entre cuentas o persistir filtros que concedan acceso adicional.
+- **Alcance:** ampliación de F24-Task07, no crear un segundo constructor de informes; la vista guardada nunca sustituye autorización del generador ni ámbito del usuario actual.
+- **Criterios de aceptación:** vistas persistidas por usuario/ámbito; recuperación respeta permisos vigentes; filtros se revalidan en backend; compartir requiere permiso explícito; versiones y propietario trazables; pruebas de aislamiento multiusuario, filtros, borrado y compatibilidad de informes.
+- **Prioridad:** P1. **Estado:** Pendiente (ampliación de F24-Task07).
+- **Evidencia de cierre:** pendiente; el informe identifica reportes configurables parcialmente implementados y ausencia de persistencia de vistas personalizadas.
+
+### Reconciliaciones y discrepancias transversales de Fase 26
+- **F26-Task04/F26-Task05:** se conservan los IDs locales del plan G, pero su ejecución se vincula a TASK-062 (FASE2-T17), que ya abarca versionado, invalidación, concurrencia, historial y rollback. No crear otra tarea maestra para el mismo alcance; verificar y ampliar TASK-062.
+- **F26-Task06:** amplía F24-Task07, que ya cubre dashboards e informes personalizados; el alcance adicional específico es persistencia y recuperación de vistas.
+- **F26-Task01:** el motor de cuatro ámbitos incluye la configuración departamental F26-010 y resolución de conflictos; no separar la misma brecha en otra tarea.
+- **Subcapacidades declaradas completas:** F26-003/004/005/006/009/011/012/014 se preservan como completas/verificadas según el informe. Esta migración documental no reejecuta sus pruebas ni reabre su estado.
+- **Estado global:** F26-Task01..F26-Task06 permanecen pendientes o pendientes de revalidación; no se declara ninguna tarea completada por el hecho de añadir este bloque.

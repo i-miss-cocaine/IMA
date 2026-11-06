@@ -4590,3 +4590,34 @@ CHECKPOINT C1.128 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 25
 - Próxima acción concreta: continuar con AUDITORIA_FASE_26_CONFIGURACION_INSTITUCIONAL_PERSONALIZACION.md; leer íntegramente el informe, revisar tareas históricas y hallazgos cruzados, reconciliar IDs/estados y añadir el bloque obligatorio sin duplicar trabajo.
 - Estado de TASK-DOC-C1.112-01: En curso; migración documental por lotes.
 ================================================================
+
+================================================================
+CHECKPOINT C1.129 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 26
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto: AUDITORIAS/Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: 7729aee83d69e0644b34c397182831cb8f96a027.
+- HEAD de rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID operativo de sesión: IMA-AUDIT-20261106-2035Z-MIGRACION (identificador operativo, no ID nativo de ChatGPT).
+- Checkpoint anterior: C1.128 (Fase 25 normalizada).
+- Tarea documental en curso: TASK-DOC-C1.112-01, normalización progresiva de informes históricos.
+- Informe normalizado: AUDITORIAS/AUDITORIA_FASE_26_CONFIGURACION_INSTITUCIONAL_PERSONALIZACION.md.
+- SHA del informe antes de modificar: 31dcefd96b807b2b53c771a837fffeed57e16f78.
+- SHA del contexto antes de modificar: 10436b7ca356ee90c5dc1617b20cdaa793d5c24d.
+- Inspección: informe completo (13,423 caracteres; 137 líneas), secciones A-I; 14 subcapacidades F26-001..F26-014; 5 tareas originales F26-Task01..F26-Task05.
+- Fuentes cruzadas: Auditoria.txt (blob 284b7a94b51c8ed99dbfcf734694bc5361f9f111), especialmente Auditoría FASE2-T17 (versionado, invalidación, historial y rollback); METODOLOGIA_DESARROLLO.md §3.4 (SHA cf796728bb384a32537392df2f9c72a339fa03ee); AUDITORIAS/README.md (SHA 2f649c6ffc39ec7cdd242e85cb71b4344fd69e34).
+- Tareas originales preservadas: F26-Task01..F26-Task05 y prioridades P0/P1/P2 del apartado G.
+- Tarea adicional derivada de brecha explícita de F26-008: F26-Task06 (persistencia/recuperación de vistas personalizadas), coordinada como ampliación de F24-Task07.
+- Reconciliación TASK-062: F26-Task04 y F26-Task05 mantienen sus referencias locales, pero la ejecución se atribuye a la tarea oficial existente TASK-062 para no duplicar versionado, invalidación, concurrencia, historial y rollback. La bitácora FASE2-T17 describe deficiencias históricas; no hay evidencia de cierre conductual consultada.
+- No se identificaron tareas posteriores con prefijo F26-Task en los segmentos revisados de Auditoria.txt; no se reasignan IDs AUD-NG.
+- Subcapacidades declaradas completas preservadas: F26-003/004/005/006/009/011/012/014; no se reejecutaron pruebas.
+- Campos por tarea: hallazgo de origen, severidad, objetivo, acción, archivos/módulos, dependencias/riesgos, alcance, criterios de aceptación, prioridad, estado y evidencia de cierre.
+- Archivos modificados: AUDITORIAS/AUDITORIA_FASE_26_CONFIGURACION_INSTITUCIONAL_PERSONALIZACION.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, ChangesLogs.txt, Auditoria.txt, METODOLOGIA_DESARROLLO.md, AUDITORIAS/README.md, plan maestro y demás informes; rama base sin cambios.
+- Pruebas no ejecutadas: pruebas runtime de herencia/ámbitos, locales/formatters, constructor dinámico, propagación real de caché, rollback, persistencia de vistas y pruebas multiusuario; no hubo cambios de código.
+- HEAD de partida del árbol: 7729aee83d69e0644b34c397182831cb8f96a027. El commit de cierre debe contener exclusivamente ambos archivos documentales.
+- Próxima acción: inventariar los informes restantes que no contienen el bloque obligatorio y continuar con el siguiente informe pendiente según el orden del repositorio; no asumir que todos los informes Fase 27+ están pendientes sin verificarlos.
+- Estado de TASK-DOC-C1.112-01: En curso; migración documental por lotes.
+================================================================
