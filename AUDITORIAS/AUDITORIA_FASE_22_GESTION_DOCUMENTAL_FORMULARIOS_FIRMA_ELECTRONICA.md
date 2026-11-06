@@ -228,3 +228,133 @@ Se examinaron estándares de gestión documental educativa y plataformas de firm
   - Ausente: 8 (Firma avanzada PSC, múltiples firmantes, OCR, emisión por lotes)
 
 El informe documenta de forma exhaustiva y rigurosa el estado de la Fase 22, permitiendo la integración de su plan de resolución en el backlog central de `Pendientes.md`.
+
+---
+
+## Tareas ejecutables derivadas de los hallazgos
+
+> Normalización del plan de resolución de Fase 22. Se conservan los diez IDs originales F22-Task01..F22-Task10 y sus prioridades P0/P1/P2/P0 Calidad. Auditoria.txt registra TASK-038..TASK-042 con marcas [X] en encabezado, pero los bloques internos conservan Estado Pendiente; esa contradicción no se interpreta como cierre. La auditoría posterior del 2026-11-04 generó AUD-NG-055..AUD-NG-065 (11 hallazgos), que amplían cinco tareas originales. TASK-042 etiqueta la suite como F22-Task13, mientras el informe la identifica como F22-Task10; se conserva el ID del informe y se registra el alias sin renombrar.
+
+### [F22-Task01] Validar binariamente y proteger la recepción y persistencia de archivos adjuntos
+- **Hallazgo de origen:** secciones B, C.5, D/F22-11, G.1 y H P0; ampliaciones AUD-NG-055, AUD-NG-056, AUD-NG-057 y AUD-NG-058.
+- **Severidad:** Crítica. **Objetivo:** impedir archivos falsificados/maliciosos, rutas de omisión y exposición pública de adjuntos institucionales.
+- **Acción ejecutable:** centralizar la validación compartida para Accounting y User; validar firmas binarias completas y estructura real (PDF, JPEG, PNG, WEBP, DOCX/XLSX OpenXML); rechazar unknown, truncados, MIME/extensión incompatibles y ejecutables camuflados; exigir fileData y fileName juntos; descargar/verificar adjuntoUrl/adjuntoFileId en servidor; no continuar si Drive falla; compensar archivos huérfanos; eliminar `ANYONE_WITH_LINK` y servir archivos mediante autorización institucional.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `backend/user-service/Code.gs`, `validateFileBinaryIntegrity`, `uploadPaymentVoucher`, `submitInstitutionalFormRequest`, Google Drive, `ComprobantesPago`, `SolicitudesTramites`.
+- **Dependencias/riesgos:** MIME, decodificación Base64, límites de tamaño, Drive, expediente y permisos RBAC/ABAC; riesgo crítico de malware, éxito falso, archivos huérfanos y fuga de datos.
+- **Alcance:** validación, almacenamiento y recuperación privada de adjuntos; no confiar en MIME/URL/ID aportados por cliente.
+- **Criterios de aceptación:** PDF exige firma completa y estructura válida; ZIP se inspecciona como OpenXML para DOCX/XLSX; formatos desconocidos se rechazan; ambos servicios usan la misma política; todos los caminos de entrada validan; Drive failure no devuelve success ni persiste una referencia vacía; adjuntos no son públicos por enlace; descarga exige sesión/ámbito autorizado.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Reconciliación:** TASK-038/F22-Task01 registró validación inicial y 221/221 pruebas, pero AUD-NG-055 detecta validación incompleta (cabecera PDF parcial, ZIP sin estructura, unknown aceptado); AUD-NG-056 duplicación entre microservicios; AUD-NG-057 bypass de validación y éxito ante fallo de Drive; AUD-NG-058 compartición pública. La marca [X] de Pendientes.md contradice el estado interno [ ] Pendiente y no certifica cierre.
+- **Evidencia de cierre:** pendiente para los cuatro hallazgos; el resultado de pruebas históricas no cubre la validación estructural ni las rutas de almacenamiento/privacidad.
+
+### [F22-Task02] Vincular SHA-256 a los bytes y versión exactos del documento firmado
+- **Hallazgo de origen:** secciones B, C.7, D/F22-15, G.2 y H P0; ampliaciones AUD-NG-059, AUD-NG-060 y AUD-NG-027.
+- **Severidad:** Crítica. **Objetivo:** demostrar integridad del PDF definitivo y atribuir la conformidad al usuario/rol autenticado y a una versión documental inmutable.
+- **Acción ejecutable:** generar y almacenar el PDF final real; calcular SHA-256 sobre sus bytes; guardar hash, versión, DriveFileId y CUV; al verificar, recuperar el archivo y recalcular hash; en `registerDocumentSignature`, derivar firmante/rol de `_verifiedUserId`/`_verifiedRole`, exigir documento existente y hash verificado, y no aceptar documentoHash/firmanteId/rolFirmante/IP del cliente como autoridad.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `backend/user-service/Code.gs`, `computeDocumentSHA256`, `generateSchoolDocument`, `verifySchoolDocumentByCUV`, `registerDocumentSignature`, `DocumentosEscolaresEmitidos`, `FirmasConformidades`.
+- **Dependencias/riesgos:** generación real de PDF, Drive, versionado de plantilla, identidad autenticada y CUV; riesgo de atribución falsa y hash sin relación con el documento.
+- **Alcance:** integridad documental y vínculo firma-documento; no presentar hash de metadatos como hash del archivo.
+- **Criterios de aceptación:** PDF real persistido; hash calculado sobre bytes; verificación recalcula y compara; firma requiere documento/version válida; identidad y rol coinciden con sesión autenticada; solicitudes repetidas son idempotentes; alteración del archivo se detecta.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Reconciliación:** TASK-039/F22-Task02 registró `computeDocumentSHA256` y 221/221 pruebas, pero AUD-NG-059 demuestra hash de metadatos y ausencia de PDF final/verificación de bytes; AUD-NG-060 demuestra que se confía en documentoHash y datos de firmante aportados por cliente; AUD-NG-027 ya identificaba aceptación de identidad/hash del cliente. TASK-351/TASK-118 y AUD-NG-161 son referencias relacionadas para CUV, identidad/correlativo y pruebas de colisión; coordinar sin duplicar esos alcances.
+- **Evidencia de cierre:** pendiente; no se ha demostrado vínculo criptográfico con bytes PDF ni identidad firmante verificada.
+
+### [F22-Task03] Persistir un certificado probatorio inmutable al completar válidamente cada proceso de firma
+- **Hallazgo de origen:** secciones B, C.7, D/F22-19, G.3 y H P0; ampliación AUD-NG-061.
+- **Severidad:** Crítica. **Objetivo:** conservar un expediente probatorio descargable y verificable de cada documento firmado.
+- **Acción ejecutable:** generar certificado final como artefacto independiente (PDF/JSON firmado según diseño), persistirlo en Drive con ID/version/hash y vincularlo al CUV; incluir documento y versión, firmantes ordenados, roles verificados, correos, timestamps, IP obtenida de fuente confiable, tokens y hash del documento; generar solo cuando todos los pasos requeridos estén completados y válidos.
+- **Archivos/módulos:** `backend/user-service/Code.gs`, `generateSignatureAuditCertificate`, `registerDocumentSignature`, `checkAdvancedSignatureStatus`, `backend/accounting-service/Code.gs`, `verifySchoolDocumentByCUV`, `FirmasConformidades`, `DocumentosEscolaresEmitidos`.
+- **Dependencias/riesgos:** F22-Task02, F22-Task04, flujo de múltiples firmantes y estados de trámite; riesgo de declarar completado un trámite pendiente/cancelado o no conservar evidencia.
+- **Alcance:** certificado final y pista probatoria; no tratar un objeto JavaScript devuelto en memoria como certificado persistido.
+- **Criterios de aceptación:** certificado almacenado e inmutable; se genera una sola vez al completar todos los firmantes; estados Pendiente/Cancelada/Vencida/Rechazada nunca se etiquetan como exitosos; orden y firmas se validan; CUV permite recuperar certificado y verificar hashes; correcciones generan nueva evidencia versionada.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Reconciliación:** TASK-040/F22-Task03 registró generador y 227/227 pruebas, pero AUD-NG-061 encuentra certificado solo en memoria, sin persistencia ni disparador automático, y clasifica cualquier estado distinto de Rechazado como CompletadoConExito. Coordinar con TASK-351/AUD-NG-061 para la verificación CUV sin duplicar.
+- **Evidencia de cierre:** pendiente; no existe evidencia de certificado independiente persistido y emitido tras finalización válida.
+
+### [F22-Task04] Integrar firma electrónica avanzada con PSC real y proteger credenciales
+- **Hallazgo de origen:** secciones A.1.6, B, C.7, D/F22-16/F22-38, G.3 y H P0; ampliaciones AUD-NG-062 y AUD-NG-063.
+- **Severidad:** Crítica. **Objetivo:** distinguir conformidad simple de firma avanzada verificable bajo el marco legal hondureño.
+- **Acción ejecutable:** diseñar adaptador desacoplado para PSC acreditado; enviar solicitud real autenticada con documento/hash; validar callback por firma del proveedor, token/nonce, certificado X.509, cadena de confianza, sello de tiempo y hash recuperado del PDF; almacenar secretos en gestor de secretos/PropertiesService protegido, nunca en texto claro en hojas.
+- **Archivos/módulos:** `backend/user-service/Code.gs`, `configureAdvancedSignatureProvider`, `getAdvancedSignatureProviderConfig`, `createAdvancedSignatureRequest`, `checkAdvancedSignatureStatus`, `ConfiguracionFirmaAvanzada`, `TransaccionesFirmaAvanzada`, `ROLE_PERMISSIONS`, `doPost`.
+- **Dependencias/riesgos:** proveedor PSC acreditado, credenciales, PKI, certificados, callback y F22-Task02/03; riesgo crítico de aceptar estados falsos o exponer API keys.
+- **Alcance:** integración real y verificación criptográfica; no afirmar firma avanzada por un estado local ni usar proveedor predeterminado simulado como prueba.
+- **Criterios de aceptación:** comunicación real con endpoint PSC; callback autenticado y anti-replay; certificado y cadena validados; hash corresponde al PDF final; estado no puede cambiarse por payload libre; secretos cifrados/gestionados fuera de hojas; auditoría completa de transacción.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Reconciliación:** TASK-041/F22-Task04 registró funciones de configuración/solicitud/estado y 227/227 pruebas, pero AUD-NG-062 demuestra que no hay llamada HTTP ni validación criptográfica del proveedor y que el payload puede fijar Completada; AUD-NG-063 detecta apiKey en texto claro en `ConfiguracionFirmaAvanzada`. La marca [X] del inventario contradice el estado interno pendiente.
+- **Evidencia de cierre:** pendiente; no se ha demostrado conexión con PSC ni custodia segura de credenciales.
+
+### [F22-Task05] Crear explorador documental institucional unificado
+- **Hallazgo de origen:** secciones C.1, D/F22-01..F22-03, E y H P1.
+- **Severidad:** Alta. **Objetivo:** consultar documentos de estudiantes y empleados desde una vista centralizada.
+- **Acción ejecutable:** crear explorador con búsqueda/filtros por titular, expediente, categoría, departamento, fecha, tipo y estado; recuperar metadatos de documentos emitidos, laborales y trámites desde sus fuentes sin duplicar archivos.
+- **Archivos/módulos:** dashboard de Dirección/Secretaría, `js/teacher.js`, `js/accounting.js`, `DocumentosEscolaresEmitidos`, `DocumentosLaborales`, `SolicitudesTramites`, Google Drive.
+- **Dependencias/riesgos:** F22-Task01, permisos RBAC/ABAC, enlaces privados y paginación; riesgo de exposición entre expedientes.
+- **Alcance:** índice y visualización unificados; no copiar documentos ni abrir enlaces públicos.
+- **Criterios de aceptación:** búsqueda transversal con paginación; acceso por titular/rol/departamento; descarga privada; filtros reproducibles; metadatos consistentes; eventos de consulta/descarga auditados.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el informe identifica repositorio disperso y ausencia de explorador.
+
+### [F22-Task06] Implementar flujos de firma con múltiples firmantes secuenciales o paralelos
+- **Hallazgo de origen:** secciones D/F22-17 y H P1.
+- **Severidad:** Alta. **Objetivo:** completar trámites que requieren consentimiento de más de un tutor o responsable.
+- **Acción ejecutable:** permitir definir firmantes requeridos, orden, rol, plazo y regla de finalización; bloquear cierre hasta recibir todas las firmas obligatorias y conservar el estado por firmante.
+- **Archivos/módulos:** `backend/user-service/Code.gs`, `FlujosAprobacion`, `FirmasConformidades`, `SolicitudesAutorizacion`, dashboards de padres/dirección.
+- **Dependencias/riesgos:** F22-Task02/03/04, relaciones familiares y permisos; riesgo de completar trámite con una sola firma cuando se exigen dos.
+- **Alcance:** secuencia/paralelo y estados de firma; no sustituir la aprobación administrativa.
+- **Criterios de aceptación:** orden y paralelismo configurables; cada firmante validado; rechazo/caducidad bloquea cierre; certificado incluye todas las firmas y su orden; reintentos idempotentes.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; la matriz identifica múltiples firmantes como ausente.
+
+### [F22-Task07] Habilitar formularios imprimibles y carga posterior de escaneos
+- **Hallazgo de origen:** secciones D/F22-06/F22-07 y H P1.
+- **Severidad:** Alta. **Objetivo:** permitir completar formularios manualmente y vincular el escaneo al expediente correcto.
+- **Acción ejecutable:** generar PDF en blanco desde definición/versionado del formulario; al cargar escaneo, validar binariamente con F22-Task01, asociar FormID/versión/solicitud/estudiante y registrar estado de revisión.
+- **Archivos/módulos:** `backend/user-service/Code.gs`, `FormulariosInstitucionales`, `SolicitudesTramites`, `dashboard-padres.html`, `js/portal-padres.js`.
+- **Dependencias/riesgos:** F22-Task01, formularios versionados, almacenamiento privado y expediente; riesgo de escaneos huérfanos o asignados a otra persona.
+- **Alcance:** descarga de formulario en blanco y recepción del escaneo; no tratar el escaneo como firma avanzada.
+- **Criterios de aceptación:** PDF corresponde a versión publicada; carga valida contenido; documento queda asociado a solicitud/expediente; revisión humana conserva responsable/fecha; acceso privado.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; la matriz no acredita el ciclo descarga-imprime-escanea.
+
+### [F22-Task08] Generar documentos oficiales por lotes con CUV y correlativos independientes
+- **Hallazgo de origen:** secciones D/F22-37 y H P1.
+- **Severidad:** Alta. **Objetivo:** emitir constancias/diplomas masivamente sin colisiones ni mezcla de expedientes.
+- **Acción ejecutable:** permitir selección autorizada por grado/sección/grupo; generar cada documento con datos del titular, plantilla/version, correlativo anual y CUV único; aislar errores por registro y ofrecer reporte de lote.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `generateSchoolDocument`, `PlantillasEscolares`, `DocumentosEscolaresEmitidos`, `dashboard-director.html`.
+- **Dependencias/riesgos:** F22-Task02, plantillas, identidad y correlativos; riesgo de documentos cruzados o CUV duplicados.
+- **Alcance:** emisión batch; no firmar automáticamente ni omitir revisión/autoridad.
+- **Criterios de aceptación:** lote conserva trazabilidad individual; cada documento tiene CUV/correlativo único; errores no contaminan otros registros; permisos restringen lotes; reporte de éxito/fallo descargable.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; la matriz identifica generación por lotes como ausente.
+
+### [F22-Task09] Incorporar OCR asistido con revisión humana obligatoria
+- **Hallazgo de origen:** secciones D/F22-30 y H P2.
+- **Severidad:** Media. **Objetivo:** precargar datos de documentos escaneados reduciendo digitación sin aceptar extracción automática como verdad.
+- **Acción ejecutable:** integrar OCR para certificados/partidas; presentar campos extraídos con nivel de confianza y referencia a página/imagen; exigir confirmación humana antes de persistir.
+- **Archivos/módulos:** servicio documental, `FormulariosInstitucionales`, `SolicitudesTramites`, almacenamiento privado y UI de Secretaría.
+- **Dependencias/riesgos:** F22-Task01, proveedor OCR, privacidad y revisión humana; riesgo de datos erróneos o extracción de información sensible.
+- **Alcance:** asistencia de captura; no tomar decisiones de admisión ni sustituir verificación de documentos.
+- **Criterios de aceptación:** extracción con confianza; campos editables; confirmación humana; archivo original preservado; permisos por expediente; registro de correcciones.
+- **Prioridad:** P2. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el informe declara OCR ausente.
+
+### [F22-Task10] Implementar suite conductual, aislada y reproducible de regresión documental
+- **Hallazgo de origen:** sección H P0 Calidad, PT-22-01..PT-22-53 y ampliaciones AUD-NG-064/AUD-NG-065; alias histórico TASK-042/F22-Task13.
+- **Severidad:** Alta (calidad crítica). **Objetivo:** demostrar comportamiento, persistencia, seguridad y no regresión sin contaminar datos institucionales.
+- **Acción ejecutable:** ampliar `runPhase22DocumentManagementAndSACERegressionSuite` con pruebas conductuales de 53 escenarios; ejecutar operaciones reales contra fixture aislado/desechable; corregir ID dinámico/fijo inconsistente; limpiar/revertir escrituras; probar bytes PDF, hashes, persistencia de certificados, callbacks PSC simulados criptográficamente, privacidad Drive, errores de almacenamiento y permisos.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `backend/user-service/Code.gs`, `backend/developer-service/Code.gs`, `tests/regression/academic-grading-suite.js`, `PlantillasEscolares`, `DocumentosEscolaresEmitidos`, `FirmasConformidades`.
+- **Dependencias/riesgos:** F22-Task01..09, entorno aislado, Drive/Sheets de prueba, mocks criptográficos y limpieza; riesgo de mutar datos reales o generar PASS nominal.
+- **Alcance:** pruebas conductuales en entorno aislado; no invocar PSC real ni enviar documentos a terceros en regresión.
+- **Criterios de aceptación:** 53 escenarios trazados a pruebas; aserciones ejecutan contratos y verifican persistencia; PDF/hash/certificado se verifican sobre bytes/artefactos; callbacks inválidos se rechazan; fixtures usan IDs coherentes; limpieza/rollback garantizados; suite no modifica hojas productivas.
+- **Prioridad:** P0 Calidad. **Estado:** Pendiente.
+- **Reconciliación:** TASK-042 se etiqueta F22-Task13 y reporta 12 casos PT22-01..PT22-12, mientras este informe denomina F22-Task10 y exige 53 pruebas. AUD-NG-064 detecta aserciones estructurales/simuladas que no ejecutan flujos; AUD-NG-065 detecta fixture inconsistente y escrituras persistentes sin limpieza. Conservar ambos IDs como referencias históricas y ampliar, sin duplicar el harness.
+- **Evidencia de cierre:** pendiente; la suite existente no cubre los 53 escenarios ni acredita aislamiento/limpieza.
+
+### Reconciliaciones y discrepancias transversales de Fase 22
+- **TASK-038/F22-Task01:** AUD-NG-055..058 amplían validación binaria, duplicación del validador, rutas de omisión/éxito falso y exposición pública; todos pendientes.
+- **TASK-039/F22-Task02:** AUD-NG-059/AUD-NG-060 y AUD-NG-027 demuestran hash de metadatos, confianza en payload y falta de vínculo con bytes/identidad.
+- **TASK-040/F22-Task03:** AUD-NG-061 demuestra que el certificado no se persiste y que estados no exitosos pueden clasificarse como completados.
+- **TASK-041/F22-Task04:** AUD-NG-062/AUD-NG-063 demuestran integración PSC simulada, callbacks no autenticados y clave API en texto claro.
+- **TASK-042/F22-Task13:** corresponde a la suite que el informe denomina F22-Task10; se conserva la diferencia de IDs sin renombrar.
+- **TASK-351, TASK-118 y AUD-NG-161:** referencias posteriores relacionadas con CUV, identidad/correlativos, minimización de datos y pruebas de concurrencia; coordinar con F22-Task02/03/10 sin duplicar sus causas.
+- **Estado global:** F22-Task01..04 y F22-Task10 permanecen Pendientes por hallazgos posteriores; F22-Task05..09 permanecen pendientes de ejecución/evidencia. Ninguna tarea se declara completada por las marcas [X] contradictorias del inventario.

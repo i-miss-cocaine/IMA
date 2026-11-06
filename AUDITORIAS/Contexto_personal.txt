@@ -4465,3 +4465,34 @@ CHECKPOINT C1.124 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 21
 - Próxima acción concreta: continuar con AUDITORIA_FASE_22_GESTION_DOCUMENTAL_FORMULARIOS_FIRMA_ELECTRONICA.md; leer íntegramente el informe, revisar tareas históricas y hallazgos cruzados, reconciliar IDs/estados y añadir el bloque obligatorio sin duplicar trabajo.
 - Estado de TASK-DOC-C1.112-01: En curso; migración documental por lotes.
 ================================================================
+
+================================================================
+CHECKPOINT C1.125 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 22
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto: AUDITORIAS/Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: 62fd11e918ecf0760a16ea0b301fcdd61bdbc0cc.
+- HEAD de rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID operativo de sesión: IMA-AUDIT-20261106-2011Z-F10 (se conserva el identificador operativo de esta conversación; no es un ID nativo de ChatGPT).
+- Checkpoint anterior: C1.124 (Fase 21 normalizada).
+- Tarea documental en curso: TASK-DOC-C1.112-01, normalización progresiva de informes históricos.
+- Informe normalizado en esta iteración: AUDITORIAS/AUDITORIA_FASE_22_GESTION_DOCUMENTAL_FORMULARIOS_FIRMA_ELECTRONICA.md.
+- SHA del informe antes de modificar: ece5b0680fbc84b87ac8f60ca2fe0d44b6a8eacc.
+- SHA del contexto antes de modificar: d9e62d91ea5198d3d72491bb9816ae1026f21544.
+- Inspección documental: informe completo (26,870 caracteres; 231 líneas), secciones A-I, capacidades F22-01..F22-40, pruebas PT-22-01..PT-22-53, brechas G y plan H.
+- Fuentes cruzadas: Auditoria.txt (blob 284b7a94b51c8ed99dbfcf734694bc5361f9f111), TASK-038..TASK-042, AUD-NG-027, AUD-NG-055..AUD-NG-065, TASK-351, TASK-118 y AUD-NG-161; metodología §3.4 y AUDITORIAS/README.md.
+- Tareas originales preservadas: F22-Task01..F22-Task10 con prioridades P0/P1/P2/P0 Calidad.
+- Reconciliación histórica: TASK-038..TASK-041 corresponden a F22-Task01..04; TASK-042 etiqueta la suite como F22-Task13, mientras el informe la denomina F22-Task10. Se conservan los IDs originales y se documenta el alias sin renombrar.
+- Hallazgos posteriores: AUD-NG-055..058 amplían F22-Task01; AUD-NG-059/AUD-NG-060/AUD-NG-027 amplían F22-Task02; AUD-NG-061 amplía F22-Task03; AUD-NG-062/AUD-NG-063 amplían F22-Task04; AUD-NG-064/AUD-NG-065 amplían F22-Task10. Son 11 hallazgos vinculados a cinco tareas originales; no se crean IDs de hallazgo nuevos.
+- Contradicción de estados: encabezados [X] en Pendientes.md frente a Estado interno [ ] Pendiente para TASK-038..042; no se interpretó la marca externa como cierre.
+- Discrepancia de suite: informe exige 53 pruebas; TASK-042 documenta 12 casos; AUD-NG-064/065 detectan pruebas estructurales, fixture inconsistente y escrituras persistentes sin limpieza.
+- Campos añadidos por tarea: origen, severidad, objetivo, acción, archivos/módulos, dependencias/riesgos, alcance, criterios de aceptación, prioridad, estado y evidencia de cierre.
+- Archivos modificados: AUDITORIAS/AUDITORIA_FASE_22_GESTION_DOCUMENTAL_FORMULARIOS_FIRMA_ELECTRONICA.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, ChangesLogs.txt, Auditoria.txt, METODOLOGIA_DESARROLLO.md, AUDITORIAS/README.md, plan maestro y demás informes; rama base sin cambios.
+- Pruebas no ejecutadas: suite Fase 22, Apps Script runtime, Drive/Sheets productivos, cargas reales, PSC externo, navegador/UI y despliegues; no hubo cambios de código.
+- HEAD de partida del árbol: 62fd11e918ecf0760a16ea0b301fcdd61bdbc0cc. El único commit de cierre debe contener ambos archivos y este checkpoint.
+- Próxima acción concreta: continuar con AUDITORIA_FASE_23_MOTOR_INSTITUCIONAL_FLUJOS_TRABAJO.md; leer íntegramente el informe, revisar tareas históricas y hallazgos cruzados, reconciliar IDs/estados y añadir el bloque obligatorio sin duplicar trabajo.
+- Estado de TASK-DOC-C1.112-01: En curso; migración documental por lotes.
+================================================================
