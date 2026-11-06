@@ -204,3 +204,110 @@ Se evaluó el recorrido de extremo a extremo:
   - *Ausente:* 2 (16.7%)
 - **Cobertura de Verificación Satisfactoria:** 58.3%
 - **Dictamen:** **NO APROBADA PARA CERTIFICACIÓN FINAL** debido a la desconexión entre la aprobación de justificaciones en `user-service` y el registro de asistencia en `academic-service`, la carencia de bandeja de salida con acuses de recibo y la falta de acceso contextual para que los docentes consulten las excusas de sus alumnos.
+
+---
+
+## Tareas ejecutables derivadas de los hallazgos
+
+> Normalización de las ocho tareas descritas en el plan F (F34-Task01..F34-Task08), conservando prioridades P0/P1/P2. Se amplía la tarea de consola con las brechas CAR-F34-09/10 de filtros y móvil. Auditoria.txt registra un backlog histórico de 11 tareas, pero solo describe los ocho primeros IDs; F34-Task09..F34-Task11 no tienen título ni criterios recuperables en el informe o la bitácora. No se inventa su contenido.
+
+### [F34-Task01] Unificar ciclo de vida de justificaciones y sincronización con asistencia
+- **Hallazgo de origen:** F34-12, F34-07 y PT-F34-04; dualidad entre user-service y academic-service.
+- **Severidad:** Crítica / P0. **Objetivo:** garantizar que toda justificación aprobada actualice el registro oficial de asistencia sin importar el canal de presentación.
+- **Acción ejecutable:** unificar el flujo de presentación/revisión o crear una operación interservicio canónica; al aprobar, actualizar `RegistrosAsistencia` con `Justificada=true`, conservar la justificación y el evento de decisión; hacer la operación idempotente y reconciliable.
+- **Archivos/módulos:** `backend/user-service/Code.gs` (`submitStudentAbsenceJustification`, `reviewAbsenceJustification`); `backend/academic-service/Code.gs` (`submitAttendanceJustification`, `reviewAttendanceJustification`); `SolicitudesTramites`, `JustificacionesAsistencia`, `RegistrosAsistencia`.
+- **Dependencias/riesgos:** F33-Task01/03, AUD-NG-006 (idempotencia), AUD-NG-158 (contexto/ámbito); riesgo de doble aprobación, actualización parcial o marcar justificada una sesión incorrecta.
+- **Alcance:** una fuente de verdad y sincronización de estado; no mantener dos flujos que puedan divergir ni sobrescribir correcciones históricas.
+- **Criterios de aceptación:** una justificación tiene ID estable y vínculo a alumno/sesión/periodo; aprobación en cualquier interfaz actualiza asistencia; operación idempotente; rechazo/revocación conserva historial; errores generan estado reconciliable; pruebas de ambos canales, duplicados, periodos y concurrencia.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; PT-F34-04 falla cuando la excusa se tramita desde user-service porque no actualiza `RegistrosAsistencia`.
+
+### [F34-Task02] Crear bandeja de salida departamental y acuses de entrega/lectura
+- **Hallazgo de origen:** F34-02 y CAR-F34-02; PT-F34-05 no aprobado.
+- **Severidad:** Crítica / P0. **Objetivo:** rastrear documentos enviados por Secretaría/Dirección y distinguir solicitud de envío, entrega, apertura y recepción formal.
+- **Acción ejecutable:** crear `EntregasDocumentales` y `getDepartmentalOutbox` con documento, destinatario, emisor, departamento, canal, fecha, estado, acuse, hash y correlación; registrar entrega/apertura solo con evidencia verificable.
+- **Archivos/módulos:** `backend/user-service/Code.gs`, `DocumentosEscolaresEmitidos`, `EntregasDocumentales`, bandejas de Secretaría/Dirección y notificaciones.
+- **Dependencias/riesgos:** TASK-221/TASK-318 (bandejas), TASK-227 (eventos workflow), TASK-316 (canales); riesgo de afirmar lectura por simple apertura de enlace o exponer documentos a destinatarios equivocados.
+- **Alcance:** bandeja de salida y acuses; no confundir entrega técnica con lectura humana ni con aceptación legal.
+- **Criterios de aceptación:** estados diferenciados; destinatario/actor verificados; acuse con timestamp y hash del documento exacto; reintentos idempotentes; revocación/expiración de enlaces; filtros por departamento y documento; pruebas de entrega fallida, apertura, destinatario incorrecto y duplicados.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; no existe endpoint formal de salida ni registro de acuses.
+
+### [F34-Task03] Implementar acceso contextual ABAC docente a justificaciones de sus estudiantes
+- **Hallazgo de origen:** F34-11 y CAR-F34-04; PT-F34-06 no aprobado.
+- **Severidad:** Crítica / P0. **Objetivo:** permitir al docente consultar solo justificaciones de estudiantes matriculados en sus asignaturas/secciones vigentes.
+- **Acción ejecutable:** crear `getTeacherStudentJustifications` con identidad derivada de sesión verificada; validar asignación docente, oferta, grupo, periodo y relación con el estudiante; excluir notas internas y datos familiares no necesarios.
+- **Archivos/módulos:** `backend/academic-service/Code.gs`, `ROLE_PERMISSIONS`, `AsignacionesDocentes`, `MatriculasEstudiantes`, justificaciones y `backend/user-service/Code.gs`.
+- **Dependencias/riesgos:** AUD-NG-105/108/158, AUD-NG-217/TASK-496 cuando corresponda; riesgo de IDOR o acceso a alumnos fuera de asignación.
+- **Alcance:** consulta docente de justificaciones; no habilitar acceso a expedientes completos ni observaciones internas administrativas.
+- **Criterios de aceptación:** contexto se deriva del token; asignación y matrícula vigentes verificadas server-side; filtros por año/periodo; respuesta minimizada; denegación fail-closed ante relación ausente; pruebas multi-docente, sección ajena, periodo vencido y usuario manipulado.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; la auditoría confirma que no existe endpoint contextual docente.
+
+### [F34-Task04] Añadir hash SHA-256 a adjuntos y evidencias documentales
+- **Hallazgo de origen:** F34-10 y CAR-F34-05; PT-F34-07 no aprobado.
+- **Severidad:** Crítica / P0. **Objetivo:** detectar sustituciones o alteraciones de archivos almacenados en Drive después de su recepción.
+- **Acción ejecutable:** calcular SHA-256 sobre bytes del archivo al subirlo; guardar hash, tamaño, MIME, propietario, timestamp y referencia; verificar hash al consultar, descargar o incorporar el archivo a una decisión.
+- **Archivos/módulos:** `backend/academic-service/Code.gs` (`uploadStudentDocument`), `backend/user-service/Code.gs`, `SolicitudesTramites`, `DocumentosEstudiante`, `FirmasConformidades` y Drive.
+- **Dependencias/riesgos:** F31-Task09 (seguridad de adjuntos), F29-Task11/15 (integridad y transferencia), TASK-296 (enlaces Drive seguros); riesgo de calcular hash sobre URL/metadatos en lugar de bytes.
+- **Alcance:** integridad binaria de adjuntos; no afirmar antivirus ni autenticidad del autor a partir del hash.
+- **Criterios de aceptación:** SHA-256 de bytes; verificación previa a uso/descarga; discrepancia bloquea el uso y genera incidente; hash ligado al documento/versión; ACL privada; pruebas de sustitución, corrupción, archivo eliminado y re-subida legítima.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; los adjuntos tienen URLs privadas, pero no se calcula ni conserva hash SHA-256.
+
+### [F34-Task05] Registrar historial de asignaciones, reasignaciones y traspasos
+- **Hallazgo de origen:** F34-04 y CAR-F34-07.
+- **Severidad:** Alta / P1. **Objetivo:** conocer quién asignó o reasignó cada expediente, a quién, cuándo y por qué motivo.
+- **Acción ejecutable:** crear bitácora append-only de asignaciones con solicitud, actor, responsable anterior/nuevo, departamento, motivo, timestamp, estado y origen de la regla; validar que el responsable esté activo y pertenezca al ámbito; permitir revisión colegiada cuando corresponda.
+- **Archivos/módulos:** `backend/user-service/Code.gs`, `processWorkflowDecision`, `updateRequestStatus`, `FlujosAprobacion`, `SolicitudesTramites` y nueva hoja `HistorialAsignacionesTramites`.
+- **Dependencias/riesgos:** F30-Task08 (delegación temporal), F33-Task05 (distribución dinámica), AUD-NG-024 (identidad del revisor); riesgo de asignar a usuarios inactivos o perder trazabilidad.
+- **Alcance:** historial y validación de asignaciones; no sustituir el motor de workflow ni permitir que el cliente asigne responsables arbitrarios.
+- **Criterios de aceptación:** cada traspaso append-only; actor derivado de sesión; responsable activo/ámbito validado; motivo obligatorio; asignación múltiple/collegiada con reglas explícitas; pruebas de usuario inactivo, departamento ajeno, delegación vencida y reasignación concurrente.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el backend permite reasignar, pero no conserva historial ni valida todos los casos de pertenencia/actividad.
+
+### [F34-Task06] Enviar notificaciones multicanal reactivas por cambio de estado
+- **Hallazgo de origen:** F34-08 y CAR-F34-08.
+- **Severidad:** Alta / P1. **Objetivo:** informar al solicitante cuando el trámite requiere corrección, se aprueba o se rechaza.
+- **Acción ejecutable:** conectar transiciones autorizadas del workflow con `sendMultiChannelNotification`; incluir estado, acción requerida, fecha límite y enlace seguro; agrupar notificaciones y deduplicar por solicitud/versión/estado/destinatario.
+- **Archivos/módulos:** `backend/user-service/Code.gs`, `processWorkflowDecision`, `createUserNotification`, `sendMultiChannelNotification`, `SolicitudesTramites` y preferencias.
+- **Dependencias/riesgos:** TASK-316 (multicanal/preferencias/reintentos), TASK-227 (eventos workflow), TASK-064 (cuotas); riesgo de revelar observaciones internas o enviar avisos duplicados.
+- **Alcance:** notificación de transiciones al solicitante; no enviar notas internas ni tratar el envío como prueba de recepción.
+- **Criterios de aceptación:** evento solo tras commit de transición; contenido público minimizado; deduplicación; canal según preferencias/consentimiento; reintentos y fallos visibles; pruebas de corrección/aprobación/rechazo, cambio repetido y cuota agotada.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; existe notificación básica al crear trámite, pero no se despachan avisos multicanal reactivos ante cambios de estado.
+
+### [F34-Task07] Delimitar legalmente las conformidades digitales y firmas avanzadas
+- **Hallazgo de origen:** F34-06 y CAR-F34-06; análisis del Decreto 149-2013 de Honduras.
+- **Severidad:** Alta / P1. **Objetivo:** evitar que un token interno de aprobación se presente como firma electrónica avanzada certificada.
+- **Acción ejecutable:** mostrar leyenda legal en visor/constancias que identifique la conformidad como aprobación digital institucional; clasificar trámites que exigen firma avanzada; definir integración futura con certificados PKI/CAdES/PAdES solo mediante proveedor/acreditación apropiados.
+- **Archivos/módulos:** `backend/user-service/Code.gs`, `registerDocumentSignature`, `FirmasConformidades`, visor de documentos, plantillas y portal CUV.
+- **Dependencias/riesgos:** F31-Task07/13, F33-Task07, F40 seguridad documental; riesgo de afirmaciones legales incorrectas o confusión entre consentimiento y firma certificada.
+- **Alcance:** clasificación, advertencia y gobernanza legal; no declarar cumplimiento de firma avanzada ni implementar PKI sin análisis jurídico/técnico.
+- **Criterios de aceptación:** leyenda clara y visible; catálogo de trámites con nivel de firma requerido; conformidad ligada a usuario/documento/hash; aprobación de texto por asesoría legal; rutas que requieren firma avanzada bloqueadas o derivadas al proveedor autorizado; pruebas de presentación y auditoría.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; la auditoría concluye que el token actual es conformidad digital interna, no firma avanzada PKI.
+
+### [F34-Task08] Crear consola unificada de bandejas con filtros avanzados y diseño responsivo
+- **Hallazgo de origen:** F34-01/F34-03 y CAR-F34-01/CAR-F34-09/CAR-F34-10.
+- **Severidad:** Media / P2. **Objetivo:** ofrecer a Secretaría y Dirección una vista operativa de entradas y salidas con filtros, vencimientos y uso móvil.
+- **Acción ejecutable:** unificar bandejas personales/departamentales y salida; incorporar filtros combinados por fecha, estado, prioridad, tipo, estudiante y responsable; paginación/ordenamiento server-side; indicadores SLA y tarjetas responsivas para móviles.
+- **Archivos/módulos:** dashboards Secretaría/Dirección, `js/ui-common.js`, `backend/user-service/Code.gs`, `getDepartmentalWorkInbox`, `getAdministrativeRequests`, `getDepartmentalOutbox`.
+- **Dependencias/riesgos:** TASK-221/TASK-318 (bandejas), TASK-279 (SLA), F33-Task04 (consola de trámites); riesgo de duplicar bandejas existentes o filtrar datos interdepartamentales.
+- **Alcance:** experiencia de bandeja y filtros; no sustituir autorización server-side ni depender de filtrado solo en cliente.
+- **Criterios de aceptación:** filtros combinados server-side; paginación/orden estable; SLA calculado con calendario institucional; estados de carga/error; vista móvil sin desbordamiento; permisos por rol/departamento; pruebas de volumen, accesibilidad, multirol y datos cruzados.
+- **Prioridad:** P2. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; la matriz identifica filtros limitados, ausencia de paginación/orden y tablas que desbordan en móvil.
+
+### Reconciliaciones y discrepancias transversales de Fase 34
+- **F34-Task01:** unificar la fuente de verdad de justificaciones; no mantener el flujo paralelo que deja asistencia sin actualizar.
+- **F34-Task02:** la bandeja de salida y acuse de recepción no quedan cubiertos por la bandeja de entrada general TASK-221/TASK-318; coordinar, no duplicar.
+- **F34-Task03:** ampliar ABAC contextual docente sin reabrir el acceso familiar ya verificado.
+- **F34-Task04:** coordinar hash con F31-Task09/F40 y almacenamiento Drive; no confundir hash con antivirus.
+- **F34-Task05:** coordinar historial de asignación con F30-Task08/F33-Task05; conservar evento de reasignación.
+- **F34-Task06:** ampliar TASK-316/TASK-227; notificación no equivale a acuse formal.
+- **F34-Task07:** distinguir conformidad interna de firma avanzada según análisis legal; no hacer declaraciones de certificación no demostradas.
+- **F34-Task08:** reúne CAR-F34-09 y CAR-F34-10; no crear tareas separadas para filtros y móvil.
+- **Discrepancia histórica:** Auditoria.txt indica un backlog de 11 IDs F34-Task01..F34-Task11, con prioridades P0 para 01-04, P1 para 05-09 y P2 para 10-11; el informe actual describe solo F34-Task01..F34-Task08. No se recuperaron títulos/criterios de Task09..Task11 en la bitácora. Se conservan como IDs históricos sin descripción recuperable; no se inventan ni se consulta Pendientes.md.
+- **Subcapacidades completas preservadas:** F34-05/07/09 y parte de F34-11 se mantienen según el informe; no se reejecutaron pruebas.
+- **Estado global:** F34-Task01..F34-Task08 permanecen pendientes de ejecución/revalidación; F34-Task09..Task11 quedan como referencias históricas sin descripción recuperable.

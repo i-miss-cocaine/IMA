@@ -4785,3 +4785,30 @@ CHECKPOINT C1.135 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 33
 - Próximo informe pendiente: AUDITORIA_FASE_34_BANDEJAS_REVISION_FIRMAS.md.
 - Estado de TASK-DOC-C1.112-01: En curso.
 ================================================================
+
+================================================================
+CHECKPOINT C1.136 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 34
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida: e9b6e0b01b7894eddca67e699187be9cc586ffb0.
+- HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID operativo de sesión: IMA-AUDIT-20261106-2035Z-MIGRACION (no es ID nativo de ChatGPT).
+- Checkpoint anterior: C1.135 (Fase 33 normalizada).
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_FASE_34_BANDEJAS_REVISION_FIRMAS.md.
+- SHA original del informe: 9eea13842fa6f09db36b27745e48ee8dabcdd5fe.
+- SHA original del contexto: 8f88516070c96d8b79fa4e88ff8efe9bb58a2fd8.
+- Inspección: informe completo (19,503 caracteres), 12 subcapacidades F34-01..F34-12, matriz CAR-F34-01..10, criterios PT-F34-01..08 y plan F con ocho tareas descritas.
+- Tareas originales preservadas: F34-Task01..F34-Task08 y prioridades P0/P1/P2 del plan F.
+- Tarea F34-Task08 incluye CAR-F34-09/10 (filtros/paginación y vista móvil).
+- Discrepancia histórica: Auditoria.txt registra 11 IDs F34-Task01..F34-Task11 (P0 01-04, P1 05-09, P2 10-11), pero el informe y la bitácora solo describen Task01..Task08. Task09..Task11 quedan sin alcance recuperable; no se inventan ni se consulta Pendientes.md.
+- Reconciliaciones: F34-Task01 con flujos User/Academic y AUD-NG-006; Task02 con TASK-221/318/TASK-227; Task03 con AUD-NG-105/108/158; Task04 con F31-Task09/F29-Task11/15/TASK-296; Task05 con F30-Task08/F33-Task05/AUD-NG-024; Task06 con TASK-316/TASK-227/TASK-064; Task07 con F31-Task07/13/F33-Task07; Task08 con TASK-221/TASK-318/TASK-279/F33-Task04.
+- Campos por tarea: origen, severidad, objetivo, acción, archivos/módulos, dependencias/riesgos, alcance, criterios de aceptación, prioridad, estado y evidencia de cierre.
+- Archivos modificados: AUDITORIAS/AUDITORIA_FASE_34_BANDEJAS_REVISION_FIRMAS.md; AUDITORIAS/Contexto_personal.txt.
+- No se modificaron código, pruebas, Pendientes.md, completadas.md, ChangesLogs.txt, Auditoria.txt, metodología, README, plan maestro ni rama base.
+- Pruebas no ejecutadas: sincronización justificaciones/asistencia, bandeja salida/acuse, ABAC docente, hash SHA-256 adjuntos, reasignaciones, notificaciones reactivas, clasificación legal firma, consola filtros/SLA/móvil.
+- Próximo informe pendiente: AUDITORIA_FASE_35_IMPORTADOR_INTELIGENTE.md.
+- Estado de TASK-DOC-C1.112-01: En curso.
+================================================================
