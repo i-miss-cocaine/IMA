@@ -5529,3 +5529,33 @@ CHECKPOINT C1.162 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-11
 - Próximo informe: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-12.md; leerlo íntegramente y reconciliar sus hallazgos y tareas relacionadas antes de formalizar.
 - Commit de cierre: un único commit con ambos archivos; verificar SHA, padre, árbol, archivos modificados y HEAD de rama después de publicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.163 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-12
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida declarada en el proyecto: NG_beta_0.0.0.1.
+- HEAD de partida verificado: 96ec0510e4ca49130dc8959c0ef2d725bc917489.
+- Árbol base de la rama de trabajo: 0e5bc9203ec7f3bbe1632f264f18c3d33d2e2820.
+- Rama base: no se realizó consulta nueva en esta iteración; no se efectuó ninguna escritura sobre ella.
+- ID operativo de sesión: IMA-AUDIT-20261106-2219Z (no es ID nativo de ChatGPT).
+- Checkpoint inicial de esta iteración: C1.162.
+- Estado de iteración: cerrada en C1.163.
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-12.md.
+- SHA del informe antes del cambio: edbf42431c28c4e47c3a1ad653639e9b2489f762.
+- SHA del contexto antes del cambio: d0653dac66f75624af41a923782b2b5a9c5ed5ef.
+- Inspección: TAREA-12 CUMPLE PARCIALMENTE. El libro usa claves contextuales insuficientes y consultas sin filtro completo; las ponderaciones son globales/no validadas y la UI recalcula con constantes; el cálculo mezcla escalas y confía en flags del cliente; pendientes pueden convertirse en cero; rúbricas/competencias no están integradas ni validadas; cierre/publicación y rectificación carecen de transiciones/autoridad atómicas; recuperaciones y boletines no están vinculados de forma fiable al periodo y notas consolidadas; SACE no está acreditado.
+- Hallazgo nuevo formalizado: AUD-NG-167 (P1), integridad del libro académico, clave contextual, ponderaciones, cálculo unificado, rúbricas/competencias, estados, cierre/rectificación, recuperaciones y reportes oficiales.
+- Tareas existentes ampliadas: AUD-NG-002 (identidad/relación del estudiante y consultas publicadas); AUD-NG-158 (ABAC y autoridad de operaciones); AUD-NG-124 (separación y continuidad del historial de calificación de entregas).
+- Reconciliación: AUD-NG-167 no absorbe controles transversales de identidad/ABAC ni el historial de entregas; AUD-NG-124 conserva su alcance y no sustituye el historial del libro académico.
+- Archivos modificados: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-12.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, Auditoria.txt, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README y rama base.
+- Pruebas ejecutadas: lectura íntegra de TAREA-12; contraste de AUD-NG-167 y tareas relacionadas en Auditoria.txt; comprobación de que el bloque aún no existía; verificación del HEAD y árbol de partida.
+- Pruebas no ejecutadas: pruebas de cálculo, ponderaciones, rúbricas, competencias, estados, cierre/reapertura, rectificación concurrente, recuperaciones, boletines, SACE, ABAC, Apps Script y producción.
+- Límite: cambio exclusivamente documental. TAREA-12 permanece CUMPLE PARCIALMENTE; AUD-NG-167 y tareas relacionadas no se consideran ejecutadas ni completadas.
+- Próximo informe: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-13.md; leerlo íntegramente y reconciliar sus hallazgos y tareas relacionadas antes de formalizar.
+- Commit de cierre: un único commit con ambos archivos; verificar SHA, padre, árbol, archivos modificados y HEAD de rama después de publicar.
+================================================================

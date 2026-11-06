@@ -50,3 +50,42 @@ Los cinco archivos de código/UI inspeccionados tienen el mismo SHA en NG_beta_0
 ## Calidad y límites
 
 Calidad insuficiente: hay piezas funcionales aisladas, pero persisten múltiples fuentes de verdad, cálculos duplicados, categorías globales, claves de persistencia insuficientes, rúbricas no integradas y transiciones de periodo sin garantías de contexto/autoridad. Revisión estática/manual; no se ejecutaron pruebas de navegador, Apps Script, datos reales, concurrencia, permisos, integración SACE ni despliegue productivo. No se modificó código fuente, completadas.md, completadas_legacy.md ni ChangesLogs.txt.
+
+## Tareas ejecutables derivadas de los hallazgos
+
+### AUD-NG-167 - Integridad del libro de calificaciones y ciclo institucional de evaluación (P1)
+- Definir una clave contextual única para cada calificación que incluya estudiante, actividad/categoría, asignatura, grado/sección, periodo y año lectivo. Evitar que un mismo `evaluacionId + userId` sobrescriba notas de asignaturas o periodos distintos.
+- Hacer que `getGradebookData` y las consultas relacionadas filtren por el mismo contexto completo y por la asignación docente autorizada. No cargar filas de otros periodos/asignaturas por coincidencia de IDs de estudiantes.
+- Convertir las ponderaciones en configuración institucional persistida por asignatura/periodo. Validar porcentajes, escala, suma requerida y ámbito; no usar categorías Global como sustituto silencioso de una configuración contextual.
+- Unificar el cálculo de notas en una sola ruta de backend. La interfaz debe consumir el cálculo y las ponderaciones persistidas, no recalcular con constantes locales ni presentar un resultado distinto al cálculo oficial.
+- Validar en servidor que notas, puntos obtenidos y puntos posibles sean numéricos y estén dentro de sus rangos. Mantener escalas coherentes y rechazar ponderaciones negativas, superiores al límite o incompletas.
+- Distinguir explícitamente actividad pendiente, exenta, ausente justificada, no evaluada y nota cero. La ausencia de datos no debe convertirse en cero ni generar un porcentaje artificial; si no hay actividades calificables, devolver un estado sin calificación en vez de `success` con nota 0.
+- Resolver desde registros institucionales si el periodo es histórico, está cerrado o está publicado. No confiar en flags como `esAnoHistoricoAnterior` o `periodoCerrado` enviados por el cliente.
+- Definir rúbricas analíticas con esquema validado: criterios, niveles, descriptores, ponderaciones y escala. Vincular evaluaciones por competencia con catálogos vigentes y verificar que el nivel seleccionado pertenezca a la rúbrica/competencia aplicable.
+- Integrar los endpoints de rúbricas, competencias y cálculo unificado con la interfaz docente; la existencia de funciones backend no demuestra que el flujo institucional las utilice.
+- Implementar transiciones verificables para pendiente, provisional, revisión, publicada, cerrada y rectificada. Cerrar un periodo debe exigir revisión/aprobación previa y filtrar por asignatura, periodo y contexto exactos; no publicar borradores ajenos al cierre solicitado.
+- Proteger la inalterabilidad de periodos cerrados. Reapertura y rectificación deben requerir autorización contextual, motivo y trazabilidad, con actualización de nota e historial en una operación atómica o protegida contra concurrencia.
+- Vincular las recuperaciones/nivelaciones a la calificación original persistida, estudiante, asignatura y periodo. Verificar la nota original en servidor; no aceptar `CAT-GLOBAL`, `notaOriginal` ni `autorizadoPor` como autoridad o referencia suficiente desde el cliente.
+- Generar boletines desde el libro consolidado y solo presentar resultados oficiales cuando el periodo esté realmente cerrado/publicado. No marcar un boletín como oficial por la mera presencia de `periodoId`.
+- Verificar la correspondencia SACE con catálogos y escalas oficiales, reglas de equivalencia, exportación y cuadro de honor derivado de notas consolidadas. Las etiquetas genéricas no acreditan compatibilidad institucional.
+
+### AUD-NG-002 - Identidad del estudiante y consultas académicas autorizadas
+- Derivar el estudiante objetivo desde los claims verificados para consultas del propio estudiante; para padres/tutores, validar la relación familiar autorizada.
+- Restringir `getStudentAcademicReport` a notas publicadas y al ámbito que la identidad/relación solicitante puede consultar.
+- No permitir que `userId`, `estudianteId`, `periodoId` ni otros filtros enviados por el cliente sustituyan la comprobación de identidad, relación familiar, publicación y alcance institucional.
+
+### AUD-NG-158 - ABAC y autoridad en el ciclo de calificaciones
+- Aplicar validación contextual de asignación docente y ámbito académico a guardado de notas, rúbricas, competencias, recuperaciones, revisión, publicación, cierre, reapertura y rectificación.
+- Derivar el actor de `_verifiedUserId`/claims de sesión y validar el rol autorizado para cada transición. No aceptar `profesorId`, `autorizadoPor` o `authRole` declarados por el cliente como prueba de autoridad.
+- Comprobar la propiedad del periodo/asignatura/grupo antes de modificar datos o cerrar/publicar un conjunto de notas.
+- Mantener este alcance como control transversal de autorización; AUD-NG-167 conserva el modelo y la integridad del libro académico.
+
+### AUD-NG-124 - Separación del historial de calificación de tareas/exámenes
+- Mantener AUD-NG-124 en su alcance original: propiedad y trazabilidad de calificaciones de entregas de tareas/exámenes, incluyendo valor anterior/nuevo, actor y motivo.
+- No trasladar ni duplicar en AUD-NG-124 el libro académico consolidado, las ponderaciones institucionales, el cierre de periodos o los boletines; esas responsabilidades pertenecen a AUD-NG-167.
+- Mantener la coordinación entre ambos flujos sin asumir que el historial de una entrega sustituye el historial institucional de calificaciones.
+
+**Reconciliación y límites:** AUD-NG-167 concentra la integridad funcional del libro consolidado, cálculo, ponderaciones, rúbricas/competencias, estados, periodos, recuperaciones y reportes oficiales. AUD-NG-002 conserva identidad/relación y consultas autorizadas; AUD-NG-158 conserva ABAC/autoridad de operaciones; AUD-NG-124 conserva el historial de calificaciones de entregas de tareas/exámenes. No se crean IDs adicionales ni se duplican los controles transversales.
+
+**Evidencia requerida:** pruebas de aislamiento por contexto; ponderaciones válidas e inválidas; tratamiento de pendientes/exentas/ceros; cálculo reproducible; validación de rúbricas/competencias; transiciones de revisión/publicación/cierre/reapertura/rectificación; concurrencia e historial atómico; recuperación contextual; boletines oficiales y exportación SACE verificable. La auditoría actual es estática y no acredita estos comportamientos.
+
