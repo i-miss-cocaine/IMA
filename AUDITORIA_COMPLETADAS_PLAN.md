@@ -923,3 +923,12 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Pruebas:** inspección estática/manual; no se leyó la hoja real ni se ejecutaron endpoints, pruebas de matriz o invalidación de caché.
 - **Progreso:** 75/183; 108 pendientes.
 - **Siguiente tarea oficial:** TAREA-F4-P1-04 - Implementar una política unificada de autorización contextual RBAC/ABAC.
+
+## 81. Resultado C1.79 - TAREA-F4-P1-04 (2026-11-06)
+
+- **Dictamen:** NO CUMPLE. Los cinco microservicios mantienen validadores contextuales divergentes; ACADEMIC presenta controles condicionales y fail-open, mientras ACCOUNTING/TASK/EXAM carecen de controles familiares/docentes/ámbitos y USER no integra su validador de ámbitos como política común.
+- **Reconciliación:** AUD-NG-105/106/108/128/130/136/217, TASK-496 y AUD-NG-002 cubren exposiciones específicas; AUD-NG-160 y AUD-NG-221/TASK-501 conservan sus alcances. Nuevo AUD-NG-222/TASK-502 para política ABAC contextual común y denegación fail-closed.
+- **Evidencia:** USER SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ACADEMIC SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; ACCOUNTING SHA 38b979d41596b85e888b4a7060b37bbac0840a28; TASK SHA 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe; EXAM SHA 1d93296628fae31f680004f637897e2b1314a64c.
+- **Pruebas:** inspección estática/manual; no se ejecutaron HTTP, pruebas multiusuario/familia/docente, hojas productivas, deployments ni suites automatizadas.
+- **Progreso:** 76/183 identificadores auditados; 107 pendientes.
+- **Siguiente tarea oficial:** TAREA-F4-P1-05 - Incorporar un panel de gobierno de privacidad y gestión de derechos sobre datos (ARCO).

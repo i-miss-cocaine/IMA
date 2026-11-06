@@ -19885,3 +19885,23 @@ AUD-NG-163 permanece DUPLICADA y consolidada; no reabrirla como tarea independie
 - **Corrección:** aplicar dimensiones en cinco servicios, validar catálogos, restringir editor, implementar UI y versionar/auditar cambios.
 - **Aceptación:** reglas del mismo rol/acción con módulos/ámbitos distintos funcionan; perfiles no autorizados no editan; pruebas positivas/negativas pasan en USER/ACADEMIC/ACCOUNTING/TASK/EXAM.
 - **Estado:** [ ] Pendiente
+
+
+### [AUD-NG-222] Establecer autorización contextual ABAC común y fail-closed en los cinco microservicios
+- **Origen del Hallazgo:** Auditoria.txt / TAREA-F4-P1-04, checkpoint C1.79.
+- **Severidad/Clasificación:** Alto (P1) · Seguridad · Autorización contextual · RBAC/ABAC.
+- **Archivos Involucrados:** backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; backend/task-service/Code.gs; backend/exam-service/Code.gs.
+- **Dependencias Expuestas:** validateContextualAccess, validateRolePermission, validateRoleScopeAccess, getGuardianStudents, getAcademicAreaCoordinationScope, AsignacionesAmbitosRoles, AsignacionesDocentes, RelacionesFamiliares.
+- **Descripción del Alcance:** Los cinco servicios implementan validadores contextuales divergentes. ACADEMIC omite el control cuando faltan scopeType/requestedValue, no deniega cuando la hoja de ámbitos no está disponible y captura errores sin denegar; la comprobación de Coordinador compara areaId pero no aplica ambitoSupervision. ACCOUNTING/TASK/EXAM no aplican controles familiares, docentes ni de ámbito en su validador contextual. USER no integra validateRoleScopeAccess como política común y carece de verificación docente en validateContextualAccess.
+- **Reconciliación:** AUD-NG-105/106/108/128/130/136/217 y AUD-NG-002 conservan los hallazgos de exposición específicos; AUD-NG-160 y AUD-NG-221 conservan cachés y matriz. AUD-NG-222 se limita a la ausencia sistémica de una política común y a los caminos fail-open.
+- **Estado:** [ ] Pendiente
+
+### [TASK-502] [TAREA-F4-P1-04] [P1] Centralizar autorización contextual RBAC/ABAC con denegación fail-closed
+- **Prioridad:** P1 (Alta).
+- **Componentes Afectados:** backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; backend/task-service/Code.gs; backend/exam-service/Code.gs.
+- **Origen del Hallazgo:** AUD-NG-222 / TAREA-F4-P1-04.
+- **Problema Detectado:** No existe motor común para validar el contexto del recurso. Las implementaciones locales difieren; hay controles opcionales por campos del payload, excepciones silenciadas y servicios que no validan vínculos familiares, asignaciones docentes ni ámbitos.
+- **Requisitos de Corrección:** Derivar identidad desde claims verificados; definir contrato contextual común por acción/recurso; validar relaciones familiares activas, asignaciones docentes, áreas y ámbitos institucionales; no confiar en IDs/contexto de autorización del cliente; denegar si falta un contexto requerido o falla la fuente de autorización; aplicar la política antes del handler en los cinco servicios; mantener excepciones administrativas explícitas y auditadas.
+- **Criterios de Aceptación:** Pruebas positivas/negativas para estudiante propio/ajeno, familiar vinculado/no vinculado, docente asignado/no asignado, coordinador dentro/fuera de ámbito, ausencia de campos, hoja ausente/vacía y error de lectura; mismos resultados de política en los cinco servicios; no se habilita acceso por payload incompleto ni por error de consulta; sin regresiones en permisos administrativos y delegaciones autorizadas.
+- **Relaciones y límites:** AUD-NG-105/106/108/128/130/136/217 y AUD-NG-002 mantienen hallazgos concretos; AUD-NG-160 cubre rol/cachés; AUD-NG-221 cubre dimensiones de matriz. No duplicar esas superficies.
+- **Estado:** [ ] Pendiente

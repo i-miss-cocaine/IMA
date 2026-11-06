@@ -1701,3 +1701,11 @@ Relaciones:
 - purgeSecurityCaches de servicios no USER elimina perm_matrix_<role>/dynamic_perms_<role>, no dynamic_permissions_matrix (AUD-NG-160).
 - ui-common.js, developer.js y 11 dashboards revisados sin editor/llamadas de matriz.
 - AUD-NG-221/TASK-501: dimensiones y UI; AUD-NG-160: cache; TASK-139: permisos documentales; AUD-NG-094: informes; P1-04: RBAC/ABAC general.
+
+## Registro de dependencias - TAREA-F4-P1-04 (C1.79)
+- USER: validateRolePermission (1253-1295) llama validateContextualAccess (1213-1250), que solo cubre estudiante propio y familiar si targetStudentId viene en payload; no valida ámbito docente. validateRoleScopeAccess (9222-9248) es una acción aislada y no está integrada en el validador central. getGuardianStudents (3480-3580) usa permisos predeterminados true si falta el JSON de permisos.
+- ACADEMIC: validateRolePermission (524-583) llama validateContextualAccess (465-521). La consulta a AsignacionesAmbitosRoles depende de scopeType+requestedValue aportados por cliente; ausencia de hoja/datos y errores capturados no producen denegación. La comprobación de Coordinador compara areaId, no ambitoSupervision (getAcademicAreaCoordinationScope 4321-4349).
+- ACCOUNTING: validateRolePermission (434-483) llama validateContextualAccess (418-431), sin vínculo familiar ni asignación docente; los handlers de estado de cuenta/comprobantes confían en userId del payload para otros roles.
+- TASK: validateRolePermission (225-280) llama validateContextualAccess (209-223), sin reglas familiares/docentes/ámbito; getStudentTasks (613-690) además permanece dentro del alcance de AUD-NG-002 por PUBLIC_ACTIONS.
+- EXAM: validateRolePermission (207-256) llama validateContextualAccess (191-205), sin reglas familiares/docentes/ámbito; getStudentExams (1057-1104) permanece dentro de AUD-NG-002 por PUBLIC_ACTIONS.
+- No hay motor común ni política fail-closed transversal. Reconciliar con AUD-NG-105/106/108/128/130/136/217 y AUD-NG-002; nuevo AUD-NG-222/TASK-502 para la brecha sistémica sin duplicar las exposiciones concretas.
