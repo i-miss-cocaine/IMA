@@ -4236,3 +4236,26 @@ CHECKPOINT C1.116 - CORRECCIÓN DE IDS EN BLOQUE T-UX-23
 - Sin nuevas tareas; sin cambios de código, pruebas, Pendientes.md, completadas.md o rama base.
 - Próximo paso: continuar adaptación de informes históricos restantes.
 ================================================================
+
+================================================================
+CHECKPOINT C1.117 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 18
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- ID operativo de sesión: IMA-AUDIT-20261106-2005Z.
+- Checkpoint anterior registrado: C1.116.
+- HEAD de partida documental: commit de adaptación C1.116 no inferido; se tomó el contenido vigente de la rama de trabajo como fuente.
+- Alcance: continuar TASK-DOC-C1.112-01 y normalizar las tareas históricas del informe AUDITORIAS/AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md.
+- Resultado: agregado al final del informe el bloque obligatorio "Tareas ejecutables derivadas de los hallazgos".
+- Tareas formalizadas: F18-Task01 a F18-Task12. Se conservaron los doce IDs existentes, prioridades y estados Pendiente; no se crearon IDs paralelos.
+- Trazabilidad: F18-Task01 a F18-Task03 se vinculan a las brechas E.1, E.2 y E.3; F18-Task06 y F18-Task07 a E.4 y E.5. Las demás tareas se identifican como acciones del backlog histórico de la sección G, sin inventar una brecha E adicional.
+- Campos incorporados: origen, severidad, objetivo, acción, archivos/módulos, dependencias/riesgos, alcance, criterios de aceptación, prioridad, estado y evidencia de cierre.
+- Límites preservados: donde el informe no aporta evidencia de implementación o ejecución, se mantiene evidencia pendiente; no se afirma que las tareas estén resueltas.
+- Archivo modificado: AUDITORIAS/AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md.
+- Commit de adaptación: b2c05422d00ce635f7302d3970a784886900ffb1.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, ChangesLogs.txt, metodología, rama base y demás informes históricos.
+- Pruebas: verificación documental del bloque añadido y conservación de los IDs F18-Task01..12; no se ejecutaron pruebas runtime porque no hubo cambios de código.
+- Próxima acción: normalizar el informe AUDITORIAS/AUDITORIA-FASE-11-COMUNICACION-BIENESTAR-SUPERVISION-FINANZAS.md. Antes de ampliar o formalizar cada F11-Task01..18, reconciliar su detalle con los hallazgos y conservar sus IDs, prioridad y estado.
+- Estado de TASK-DOC-C1.112-01: En curso; adaptación histórica por lotes.
+================================================================
