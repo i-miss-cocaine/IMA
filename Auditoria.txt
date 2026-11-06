@@ -6204,3 +6204,18 @@ AUDITORÍA TAREA-F4-P0-04 - CHECKPOINT C1.75
 - Fuente original AUDITORIA_FASE4_IDENTIDAD_PERMISOS_GOBIERNO.md citada en completadas.md: no encontrada en el árbol actual. Alcance reconstruido desde completadas.md y evidencia del código vigente.
 - Pruebas: inspección estática/manual. No se ejecutaron deployments, peticiones HTTP, concurrencia real, persistencia de Sheets, medición de rate limiting, recuperación de bloqueos ni suites automatizadas.
 ===============================================================================
+
+===============================================================================
+AUDITORÍA TAREA-F4-P1-01 - CHECKPOINT C1.76
+===============================================================================
+- Dictamen: NO CUMPLE. El motor persiste delegaciones y las consulta desde USER, ACADEMIC y ACCOUNTING, pero no aplica el campo ambito, no limita acciones delegables ni previene delegaciones en cadena; la UI declarada en alcance no permite crear, consultar ni revocar delegaciones.
+- USER SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f: createSecurityDelegation (1746-1800) valida campos/rango temporal y persiste accionesAutorizadas/ambito, pero no valida alcance, lista de acciones, autoridad del delegante ni destino activo. Acepta "*" y acciones arbitrarias. getSecurityDelegations (1803-1859) marca Expirada solo al consultar; delegaciones con fechaInicio futura permanecen etiquetadas Activa.
+- USER hasActiveDelegationForAction (1165-1210), ACADEMIC (624-669) y ACCOUNTING (525-570) autorizan por acción y no leen ambito. validateRolePermission en los tres servicios comprueba delegación después de la matriz dinámica; una denegación explícita puede quedar sobrepuesta por una delegación activa.
+- USER createSecurityDelegation/revokeSecurityDelegation invalidan active_delegations_ solo en ScriptCache USER. ACADEMIC y ACCOUNTING mantienen cachés de script separadas de 300s; la invalidación no se propaga. getSecurityDelegations marca Expirada en la hoja sin purgar cachés, y el helper no revalida fechas en hit caliente. Se amplía AUD-NG-160.
+- El helper de delegaciones permite conceder createSecurityDelegation como acción; el handler no bloquea cadenas ni conserva la identidad del delegante original cuando el ejecutor crea otra delegación.
+- ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67: openUserManagementAdministrationModal (5467-5614) solo consulta usuarios y cambia estado; openSecurityAndComplianceDashboardModal (5616-5750) muestra un contador de delegaciones, pero no llama createSecurityDelegation/getSecurityDelegations/revokeSecurityDelegation ni ofrece gestión de delegaciones.
+- Nuevo AUD-NG-219 (Alto/P1) y TASK-498 para autoridad, ámbito, cadena y UI. AUD-NG-160 se amplía por invalidación interservicio; AUD-NG-217/TAREA-F4-P1-04 conservan los alcances IDOR/ABAC generales. TASK-228/TASK-282/TASK-311 corresponden a workflows/responsabilidades y no duplican el motor de seguridad.
+- Observación diferida para TAREA-F4-P1-09: getSecurityAndComplianceDashboardData envía statusFilter a getSecurityDelegations, que solo lee estado; el contador activeDelegationsCount puede incluir delegaciones expiradas/revocadas. No se contabiliza como hallazgo de P1-01.
+- Fuente original AUDITORIA_FASE4_IDENTIDAD_PERMISOS_GOBIERNO.md citada en completadas.md: no encontrada en el árbol actual; el alcance se reconstruye desde la descripción oficial y código versionado.
+- Pruebas: inspección estática/manual. No se ejecutaron deployments, peticiones HTTP, pruebas de usuarios, validación real de hojas, revocación interservicio, cachés calientes/frías ni suites automatizadas.
+===============================================================================

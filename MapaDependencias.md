@@ -1671,3 +1671,15 @@ Relaciones:
 - USER:loginUser (2536-2545) -> contador por cuenta sin LockService; bloqueo directo en Usuarios!K al quinto intento. No se encontró ventana temporal, espera progresiva ni rate limit por origen confiable.
 - Reconciliación: AUD-NG-145 (bitácoras, sanitización y trazabilidad); AUD-NG-005 (invalidación/propagación del bloqueo automático); AUD-NG-159 (logout/revocación). Nuevo AUD-NG-218/TASK-497 para atomicidad y antiabuso.
 - Inspección estática/manual; sin pruebas runtime, concurrencia, HTTP ni persistencia real de Sheets.
+
+## Registro de dependencias - TAREA-F4-P1-01 (C1.76)
+- USER:createSecurityDelegation (1746-1800) -> DelegacionesSeguridad; persiste delegante, delegado, accionesAutorizadas, ambito, fechas y estado. Valida campos/rango, no autoridad por acción, usuario destino ni ámbito.
+- USER:getSecurityDelegations (1803-1859) -> DelegacionesSeguridad; filtra por delegante/delegado/estado, marca Expirada al consultar; no invalida active_delegations_ y muestra fecha futura como Activa.
+- USER:revokeSecurityDelegation (2276-2315) -> cambia estado y elimina active_delegations_<userId> solo del ScriptCache USER.
+- USER:hasActiveDelegationForAction (1165-1210), ACADEMIC (624-669), ACCOUNTING (525-570) -> DelegacionesSeguridad; comparan userId + action + estado + fechas en cache miss; ignoran ambito; cache TTL 300s sin fechas para revalidar.
+- USER/ACADEMIC/ACCOUNTING:validateRolePermission -> evalúa hasActiveDelegationForAction después de matriz dinámica; una delegación puede autorizar tras dynamicCheck=false.
+- Cachés: create/revoke solo invalidan USER; ACADEMIC y ACCOUNTING mantienen ScriptCache independiente. Ampliar AUD-NG-160.
+- js/ui-common.js (5467-5614, 5616-5750) -> modal de usuarios solo cambia estado; panel de seguridad muestra contador; sin llamadas a createSecurityDelegation/getSecurityDelegations/revokeSecurityDelegation.
+- Reconciliación: AUD-NG-160 (vigencia/cachés); AUD-NG-217 y TAREA-F4-P1-04 (IDOR/ABAC); TASK-228/TASK-282/TASK-311 (delegaciones de workflow, distinto alcance). Nuevo AUD-NG-219/TASK-498.
+- Observación diferida a TAREA-F4-P1-09: el panel envía statusFilter pero getSecurityDelegations espera estado; activeDelegationsCount puede incluir registros no activos.
+- Inspección estática/manual; no pruebas runtime ni despliegues.

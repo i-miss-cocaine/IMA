@@ -893,3 +893,14 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Pruebas:** inspección estática/manual; no se ejecutaron HTTP, deployments, concurrencia real, persistencia de Sheets, rate limiting, recuperación de bloqueos ni suites automatizadas.
 - **Progreso:** 72/183 identificadores auditados; 111 pendientes.
 - **Siguiente tarea oficial:** TAREA-F4-P1-01 - Implementar el motor transversal de delegaciones de seguridad y permisos temporales.
+
+## 78. Resultado C1.76 - TAREA-F4-P1-01 (2026-11-06)
+
+- **Dictamen:** NO CUMPLE. createSecurityDelegation persiste acciones y ámbito, pero no valida autoridad por acción ni limita acciones delegables; USER/ACADEMIC/ACCOUNTING autorizan solo por acción e ignoran ambito. Las delegaciones pueden sobreponerse a una denegación dinámica y permitir cadenas si se delega createSecurityDelegation.
+- **Cachés:** USER invalida solo su ScriptCache; ACADEMIC/ACCOUNTING mantienen cachés de 300 s. Expiración/revocación puede conservar permisos temporalmente. Se amplía AUD-NG-160.
+- **UI:** ui-common.js muestra el contador y una vista administrativa de cuentas, pero no ofrece crear, consultar ni revocar delegaciones.
+- **Reconciliación:** nuevo AUD-NG-219/TASK-498 para autoridad, ámbito, cadena y UI. AUD-NG-160 cubre vigencia/cachés; AUD-NG-217 y TAREA-F4-P1-04 cubren IDOR/ABAC; TASK-228/TASK-282/TASK-311 son delegaciones de workflows.
+- **Evidencia:** USER SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ACADEMIC SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; ACCOUNTING SHA 38b979d41596b85e888b4a7060b37bbac0840a28; ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67.
+- **Pruebas:** inspección estática/manual; no se ejecutaron HTTP, deployments, pruebas multiusuario, cachés reales ni suites automatizadas.
+- **Progreso:** 73/183 identificadores auditados; 110 pendientes.
+- **Siguiente tarea oficial:** TAREA-F4-P1-02 - Implementar el motor automático de retención, archivo y anonimización de datos.

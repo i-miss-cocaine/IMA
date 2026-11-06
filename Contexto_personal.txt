@@ -3110,3 +3110,30 @@ CHECKPOINT C1.75 - TAREA-F4-P0-04
 - Próxima acción reproducible: abrir TAREA-F4-P1-01 en completadas.md y revisar createSecurityDelegation, getSecurityDelegations, revokeSecurityDelegation, validateRolePermission, hasActiveDelegationForAction, hojas DelegacionesSeguridad y la propagación/expiración de permisos temporales; reconciliar TASK-488 y hallazgos existentes antes de crear IDs.
 - Commit de cierre: el commit que contiene este checkpoint.
 ================================================================
+
+================================================================
+CHECKPOINT C1.76 - TAREA-F4-P1-01
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto real: Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: 5633a15ffba136914f090ca1edcaa8bdb1e7205c.
+- HEAD de rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID operativo de sesión: IMA-AUDIT-20261106-1138Z; inicio C1.71; estado ABIERTA.
+- Tarea auditada: TAREA-F4-P1-01 - Implementar el motor transversal de delegaciones de seguridad y permisos temporales.
+- Estado maestro: [X] Completada en completadas.md.
+- Dictamen: NO CUMPLE.
+- Evidencia principal: USER SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ACADEMIC SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; ACCOUNTING SHA 38b979d41596b85e888b4a7060b37bbac0840a28; ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67.
+- Hallazgos: AUD-NG-160 ampliado por invalidación de cachés de delegaciones no propagada a ACADEMIC/ACCOUNTING; nuevo AUD-NG-219 (Alto/P1) y TASK-498 para límites de autoridad, ámbito, delegación en cadena y gestión UI.
+- Reconciliación: AUD-NG-217/TAREA-F4-P1-04 mantienen IDOR/ABAC; TASK-228/TASK-282/TASK-311 corresponden a delegaciones de workflow; TAREA-F4-P1-09 recibirá la observación de filtro incorrecto del contador de delegaciones.
+- Fuente original AUDITORIA_FASE4_IDENTIDAD_PERMISOS_GOBIERNO.md citada en completadas.md: no encontrada en el árbol actual; dictamen basado en descripción oficial y código vigente.
+- Pruebas ejecutadas: inspección estática/manual y comparación de SHA.
+- Pruebas no ejecutadas: HTTP, deployments, datos reales, pruebas multiusuario, cachés calientes/frías, revocación interservicio y suites automatizadas.
+- Progreso: 73/183 identificadores auditados; 110 pendientes.
+- Siguiente tarea exacta: TAREA-F4-P1-02 - Implementar el motor automático de retención, archivo y anonimización de datos.
+- Archivos modificados: Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt, Pendientes.md y nuevo AUDITORIA_COMPLETADAS_TAREA-F4-P1-01.md.
+- Sin modificar: código fuente, completadas.md, ChangesLogs.txt y METODOLOGIA_DESARROLLO.md.
+- Próxima acción reproducible: auditar TAREA-F4-P1-02 revisando getRetentionPolicies, saveRetentionPolicy, executeDataRetentionPolicyCheck, las hojas de retención y los puntos de lectura/escritura de datos personales; reconciliar AUD-NG-145, AUD-NG-160 y hallazgos de privacidad/retención antes de crear IDs.
+- Commit de cierre: el commit que contiene este checkpoint.
+================================================================
