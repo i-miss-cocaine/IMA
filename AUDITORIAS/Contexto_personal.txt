@@ -5499,3 +5499,33 @@ CHECKPOINT C1.161 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-10
 - Próximo informe: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-11.md; leerlo íntegramente y reconciliar AUD-NG-166 y sus tareas relacionadas antes de formalizar.
 - Commit de cierre: un único commit con ambos archivos; verificar SHA, padre, árbol, archivos modificados y HEAD de rama después de publicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.162 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-11
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida declarada en el proyecto: NG_beta_0.0.0.1.
+- HEAD de partida verificado: 0bf3086e93c02b69ef85dc3e73468614006ac074.
+- Árbol base de la rama de trabajo: 489d416f74a90f94b83f86f98143350b9c91aaa7.
+- Rama base: no se realizó consulta nueva en esta iteración; no se efectuó ninguna escritura sobre ella.
+- ID operativo de sesión: IMA-AUDIT-20261106-2219Z (no es ID nativo de ChatGPT).
+- Checkpoint inicial de esta iteración: C1.161.
+- Estado de iteración: cerrada en C1.162.
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-11.md.
+- SHA del informe antes del cambio: fb4b9df745480d774fd7ad1ec8b524ba3540095a.
+- SHA del contexto antes del cambio: 8f96ca354700da943eac25981822de46cf303bd9.
+- Inspección: TAREA-11 CUMPLE PARCIALMENTE. Las escrituras de Examenes/PreguntasExamen omiten columnas declaradas; el banco carece de validación robusta; hay modalidades faltantes; el calificador ignora puntos y no ofrece corrección parcial/manual; duración/intentos/fechas no se aplican; localStorage solo recupera en el dispositivo; submitExam carece de idempotencia; no se acredita analítica psicométrica ni control contextual completo.
+- Hallazgo nuevo formalizado: AUD-NG-166 (P1), integridad de esquema y referencias, metadatos/versionado/snapshot, modalidades y calificadores, puntuación y analítica psicométrica.
+- Tareas existentes ampliadas: AUD-NG-121 (fechas/duración/intentos); AUD-NG-124 (rúbricas, corrección parcial/manual e historial); AUD-NG-006 (idempotencia y recuperación); AUD-NG-011 (areaId y routing curricular); AUD-NG-002 (propiedad de resultados y confidencialidad); AUD-NG-158 (ABAC docente del banco/exámenes).
+- Reconciliación: AUD-NG-166 no absorbe los controles transversales de fechas/intentos, idempotencia, autenticación, propiedad ni ámbito docente. No se crean IDs adicionales.
+- Archivos modificados: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-11.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, Auditoria.txt, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README y rama base.
+- Pruebas ejecutadas: lectura íntegra de TAREA-11; contraste de AUD-NG-166 y de las seis tareas relacionadas en Auditoria.txt; comprobación de que el bloque aún no existía; verificación del HEAD y árbol de partida.
+- Pruebas no ejecutadas: validación de esquema, referencias, modalidades, scoring, rúbricas, snapshot, duración, intentos, idempotencia, ABAC, analítica psicométrica, Apps Script y producción.
+- Límite: cambio exclusivamente documental. TAREA-11 permanece CUMPLE PARCIALMENTE; las tareas referenciadas no se consideran ejecutadas ni completadas.
+- Próximo informe: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-12.md; leerlo íntegramente y reconciliar sus hallazgos y tareas relacionadas antes de formalizar.
+- Commit de cierre: un único commit con ambos archivos; verificar SHA, padre, árbol, archivos modificados y HEAD de rama después de publicar.
+================================================================

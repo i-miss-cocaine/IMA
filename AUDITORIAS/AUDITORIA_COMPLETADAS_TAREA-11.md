@@ -52,3 +52,53 @@ El SHA de backend/exam-service/Code.gs es idéntico en NG_beta_0.0.0.1 y NG_beta
 ## Calidad y límites
 
 Calidad insuficiente: esquemas y escrituras desalineados, validación débil, modalidades incompletas, puntuación que ignora puntos y restricciones declaradas solo en columnas o cliente. Revisión estática/manual; no se ejecutaron pruebas de navegador, Apps Script, permisos, concurrencia, conectividad ni despliegue productivo. No se modificó código fuente, completadas.md, completadas_legacy.md ni ChangesLogs.txt.
+
+
+## Tareas ejecutables derivadas de los hallazgos
+
+### AUD-NG-166 - Integridad del banco de preguntas y del motor de exámenes (P1)
+- Alinear el esquema declarado con las columnas realmente persistidas en `Examenes` y `PreguntasExamen`. Guardar y recuperar todos los campos curriculares y de configuración requeridos, incluidos área, duración, intentos, aleatoriedad, puntos, dificultad y vínculo al reactivo del banco.
+- Validar en servidor el esquema de cada reactivo antes de crear o actualizar: tipo permitido, campos obligatorios, área/asignatura/grado/tema existentes, dificultad válida, puntos positivos, opciones con estructura válida, respuesta compatible con el tipo, etiquetas/objetivos/criterios y referencias existentes.
+- Rechazar JSON malformado o estructuras que no puedan analizarse; no persistir contenido que posteriormente provoque errores en `getQuestionBank`. Validar también los IDs recibidos y evitar sobrescrituras de reactivos ajenos o no autorizadas.
+- Implementar modalidades faltantes (selección múltiple real, respuesta extensa, numérica, ordenación y reactivos con archivos/imágenes) con representación, validación y calificador adecuados para cada modalidad. No basta con mostrar el tipo en la interfaz si el backend no puede validarlo y procesarlo.
+- Mantener un vínculo verificable entre cada pregunta de un examen y el reactivo de origen. Al publicar/iniciar un examen, conservar un snapshot inmutable de texto, opciones, respuesta esperada, puntos, dificultad, rúbrica y versión del reactivo utilizado, de modo que cambios posteriores en el banco no alteren exámenes ya realizados.
+- Calcular resultados a partir de los puntos configurados y de las reglas de cada pregunta, no de una simple proporción de respuestas correctas sobre cantidad de preguntas. Soportar puntuación parcial y derivar las preguntas que requieren corrección manual hacia el flujo de revisión de AUD-NG-124.
+- Producir analítica psicométrica reproducible por reactivo, tema, asignatura y grupo, sustentada en respuestas reales y en la versión de cada reactivo. Incluir como mínimo dificultad, discriminación, análisis de distractores y consistencia cuando el volumen de datos permita calcularlos; indicar insuficiencia de muestra en lugar de inventar métricas.
+- Mantener confidencial la respuesta correcta y los metadatos de calificación: las consultas destinadas al estudiante solo deben devolver los campos necesarios para responder, nunca la clave correcta, rúbricas privadas o datos de evaluación no autorizados.
+- Conservar evidencia de validación de esquemas, integridad de referencias, snapshot, calificación por puntos y resultados psicométricos. La mera existencia de funciones o columnas declaradas no acredita que el flujo las persista ni las aplique.
+
+### AUD-NG-121 - Fechas, duración y máximo de intentos
+- Aplicar en servidor fechas de apertura/cierre, duración efectiva y máximo de intentos por estudiante para los exámenes.
+- Rechazar inicios y envíos fuera de la ventana autorizada y controlar el tiempo desde un registro persistido en backend; un temporizador del navegador no constituye enforcement.
+- Mantener coherencia entre intentos consumidos, borradores, reanudaciones y envíos válidos. La idempotencia de una misma solicitud no debe consumir un intento adicional.
+
+### AUD-NG-124 - Corrección manual, puntuación parcial y trazabilidad de evaluación
+- Extender rúbricas y criterios a preguntas abiertas y modalidades que no admiten corrección automática.
+- Permitir corrección parcial/manual por pregunta y guardar el progreso de revisión antes de publicar el resultado final.
+- Conservar rúbrica/version, puntuaciones por criterio, actor, fecha y rectificaciones; no sobrescribir una evaluación previa sin historial.
+- Mantener la separación entre motor de puntuación y control de propiedad/ámbito docente, que se conserva en AUD-NG-158.
+
+### AUD-NG-006 - Idempotencia y recuperación de envíos
+- Aplicar una clave idempotente estable a la entrega del examen, con reserva atómica y deduplicación en backend.
+- Si la respuesta HTTP se pierde después de persistir el envío, permitir recuperar el resultado asociado a la misma clave sin crear una segunda entrega ni duplicar efectos.
+- Coordinar la protección con reintentos de cliente y escrituras del servidor; no depender de `Date.now()` como identificador único.
+
+### AUD-NG-011 - Área curricular y routing del flujo de exámenes
+- Persistir y validar el `areaId` canónico en la configuración del examen y en sus relaciones curriculares.
+- Enrutar el flujo al servicio/ámbito autorizado por área, evitando que una referencia enviada por el cliente permita cambiar el ámbito de consulta o escritura.
+- Mantener este alcance dentro del aislamiento curricular; no duplicar la validación de asignación docente específica que corresponde a AUD-NG-158.
+
+### AUD-NG-002 - Autenticación de resultados y confidencialidad de respuestas
+- Verificar la identidad y la propiedad de la entrega antes de devolver resultados de examen.
+- Impedir que el estudiante obtenga respuestas correctas, claves, datos de corrección o resultados de terceros mediante endpoints de consulta.
+- Aplicar autenticación y autorización antes de leer; filtros o IDs enviados por el cliente no sustituyen la comprobación de identidad/propiedad.
+
+### AUD-NG-158 - Ámbito docente para banco y exámenes
+- Restringir la gestión y consulta del banco de preguntas al docente con asignación vigente al área/asignatura/grado correspondiente o a un rol institucional expresamente autorizado.
+- Validar el ámbito en backend para cada lectura, creación, modificación y asociación de reactivos/exámenes; no confiar en `profesorId`, `areaId` ni otros atributos de contexto enviados por el cliente.
+- Verificar que el docente solo consulte resultados y entregas de exámenes dentro de sus asignaciones autorizadas. La validación de identidad/propiedad del estudiante se mantiene en AUD-NG-002.
+
+**Reconciliación y límites:** AUD-NG-166 se limita al modelo, validación y versionado de reactivos, modalidades, snapshot, puntuación y analítica. AUD-NG-121 conserva fechas/duración/intentos; AUD-NG-124 la revisión y el historial de calificación; AUD-NG-006 idempotencia/recuperación; AUD-NG-011 el ámbito curricular por área; AUD-NG-002 autenticación/propiedad de resultados y confidencialidad; AUD-NG-158 ABAC docente. No se crean IDs nuevos ni se duplican estos controles.
+
+**Evidencia requerida:** pruebas de esquema y referencias válidas/inválidas; persistencia/lectura completa de columnas; snapshot inmutable; renderizado y validación por modalidad; puntuación por puntos y parcial; protección de respuestas; intentos/duración; idempotencia bajo pérdida de respuesta; pruebas ABAC; y cálculos psicométricos reproducibles con datos suficientes. La auditoría actual es estática y no acredita estos resultados.
+
