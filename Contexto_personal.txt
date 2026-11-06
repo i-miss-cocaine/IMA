@@ -3671,3 +3671,45 @@ CHECKPOINT C1.91 - TAREA-F4-P3-02
 - Bloqueos: ninguno para auditoría estática; faltan datos productivos y prueba de rendimiento.
 - Commit de cierre: el commit que contiene este checkpoint; SHA final se verifica después de publicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.92 - TAREA-F4-P3-03
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto real: Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: bf8b6dcf5377e3ea86eb5e63a9c601c9c82b316b.
+- Tree SHA de partida verificado: 35f575ed77376c5d1b580e272f745f30abf60551.
+- HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Diferencia verificada: 154 commits adelante y 0 detrás.
+- ID operativo de sesión/chat: IMA-AUDIT-20261106-1644Z; inicio C1.86; C1.87-C1.92 intermedios; estado: sesión abierta.
+- Último checkpoint anterior: C1.91 / TAREA-F4-P3-02.
+- Tarea auditada: TAREA-F4-P3-03 - Establecer un sistema de detección y reconciliación de inconsistencias de identidad.
+- Estado maestro histórico: [X] en completadas.md; severidad Bajo; USER Code.gs.
+- Fuente original AUDITORIA_FASE4_IDENTIDAD_PERMISOS_GOBIERNO.md: no localizada.
+- Dictamen C1.92: NO CUMPLE.
+- Evidencia:
+  - USER Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f: auditAndReconcileIdentityInconsistencies 4151-4235; ROLE_PERMISSIONS 940-970; validateRolePermission 1253-1289; doPost 1351-1385; manageDepartmentPositions/HistorialAdscripciones 2800-2925; delegaciones 1746-1860/2276-2315.
+  - Tests academic-grading-suite SHA 3433b707edd4a2f35c68368a3172932adc2a3b32; modular-dashboard-suite SHA 0495e1d526a872c33310935a003a83d924d34683; sin casos específicos.
+- Hallazgos:
+  - Nuevo AUD-NG-231/TASK-511: autoFix puede revocar todas las delegaciones y desactivar todas las adscripciones activas si Usuarios falta/está vacía; autoFix usa truthiness y la cadena "false" activa mutaciones.
+  - El autoFix no adquiere lock, no prevalida candidatos ni ofrece rollback; solo registra resumen, no cambios por registro.
+  - Se amplía AUD-NG-219: revocación directa de delegación no invalida active_delegations_<delegadoId>, a diferencia de revokeSecurityDelegation.
+  - Detección de adscripciones solo verifica userId; no valida deptId/cargoId en catálogos ni estados.
+  - AUD-NG-161: no hay pruebas específicas para autoFix, ausencia/vacío de Usuarios, fallos parciales, caché o concurrencia.
+  - Acción protegida por Director y wildcard Administrador/Desarrollador; no se clasificó como pública.
+- Pruebas ejecutadas: inspección estática de fuente maestra, flags, filas/columnas, permisos, rutas de dominio y tests.
+- Pruebas no ejecutadas: Apps Script runtime, datos productivos, autoFix real, concurrencia, fallo parcial, caché real ni suites automatizadas.
+- Progreso: 89/183 identificadores auditados; 94 pendientes.
+- Última tarea auditada: C1.92 / TAREA-F4-P3-03.
+- Tarea en curso: ninguna.
+- Siguiente tarea exacta: TAREA-F5-001 - Corregir la conversión de aspirantes y garantizar la integridad del expediente.
+- Próxima acción reproducible: revisar convertAdmissionToStudent y createAdmissionRequest; verificar transacción entre aspirante/estudiante/persona/usuario, validación de identidad, idempotencia, estados de solicitud, rollback de escritura parcial, LockService, duplicados y consistencia de expediente; reconciliar AUD-NG-161/TASK-118/AUD-NG-219/AUD-NG-229 antes de crear IDs.
+- Archivos documentales modificados: Auditoria.txt, Pendientes.md, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt y nuevo AUDITORIA_COMPLETADAS_TAREA-F4-P3-03.md.
+- Archivos preservados: código fuente, pruebas, completadas.md, ChangesLogs.txt y METODOLOGIA_DESARROLLO.md.
+- Regla de ID de sesión: ya registrada en METODOLOGIA_DESARROLLO.md, sección 16, punto 9.
+- Bloqueos: ninguno para inspección estática; falta runtime para comprobar la ejecución destructiva y caché.
+- Commit de cierre: el commit que contiene este checkpoint; SHA final se verifica después de publicar.
+================================================================

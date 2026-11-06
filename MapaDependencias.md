@@ -1902,3 +1902,13 @@ Relaciones:
 - La paginación carga ambas hojas completas y ordena allLogs antes de slice. El dashboard Developer llama getStructuredLogs, no getPaginatedAuditLogReport; además envía severidad/servicio/limit, mientras backend espera severity/startDate/endDate, no filtra servicio y devuelve fijo hasta 500. AUD-NG-145.
 - Sin pruebas específicas en tests/regression. AUD-NG-161.
 - No se crean IDs nuevos. Evidencia USER 12079dd410aa6d8afbce55a4bc62a79dea605f9f; developer.js 6fa4c4bd9be580c974b1fbede4f0cf79485dc331.
+
+
+## C1.92 — TAREA-F4-P3-03: reconciliación de inconsistencias de identidad
+
+- auditAndReconcileIdentityInconsistencies (USER 4151-4235) construye validUserIds vacío si Usuarios falta o solo tiene encabezado. Con autoFix truthy, marca todas las delegaciones y adscripciones activas como huérfanas y las cambia a Revocada/Inactiva. No exige autoFix === true.
+- No adquiere LockService, no prevalida todo el lote ni tiene rollback; registra solo issuesCount/fixedCount, no cada ID/estado anterior/nuevo/actor/motivo.
+- La revocación directa de DelegacionesSeguridad no invalida active_delegations_<delegadoId>; se amplía AUD-NG-219.
+- Adscripciones: solo valida userId; no verifica deptId/cargoId contra CatalogoDepartamentos/CatalogoCargos.
+- Nuevo AUD-NG-231/TASK-511 para autoFix fail-safe/atómico/auditable. AUD-NG-161 para pruebas.
+- Evidencia USER 12079dd410aa6d8afbce55a4bc62a79dea605f9f; tests 3433b707edd4a2f35c68368a3172932adc2a3b32/0495e1d526a872c33310935a003a83d924d34683.

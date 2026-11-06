@@ -18566,6 +18566,7 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Ampliación C1.88 / TAREA-F4-P2-04:** La búsqueda en los dos archivos bajo tests/regression no encontró casos para `createSecurityDelegation`, `revokeSecurityDelegation`, `updateUserProfile` o `manageAccountState`. La suite académica solo contiene aserciones de locks para otras operaciones (p. ej. lotes contables/workflow); la suite modular no aporta casos de estas funciones. Se mantiene el alcance de pruebas de concurrencia reales/aisladas de AUD-NG-161; no crear duplicado.
 - **Ampliación C1.90 / TAREA-F4-P3-01:** No se encontraron pruebas para `generatePrivilegeAndAccountAuditReport`, su programación, persistencia/entrega ni su conteo de delegaciones. Los dos archivos tests/regression revisados no contienen referencias a esta función. Se revalida la brecha de pruebas conductuales bajo AUD-NG-161; no crear duplicado.
 - **Ampliación C1.91 / TAREA-F4-P3-02:** No se encontraron pruebas para `getPaginatedAuditLogReport`, mapeo de columnas, nombre de hoja de trazabilidad, filtros, paginación, límite de lectura ni integración con el dashboard Developer. Los dos archivos tests/regression revisados no contienen referencias a la función. Se revalida la brecha de pruebas de auditoría; no crear duplicado.
+- **Ampliación C1.92 / TAREA-F4-P3-03:** No se encontraron pruebas específicas para `auditAndReconcileIdentityInconsistencies`, `autoFix`, ausencia/hoja Usuarios vacía, fallos parciales, invalidación de caché, lock ni auditoría por registro. Se revalida la falta de pruebas conductuales de reconciliación bajo AUD-NG-161.
 - **Estado:** [ ] Pendiente
 
 
@@ -19839,6 +19840,7 @@ AUD-NG-163 permanece DUPLICADA y consolidada; no reabrirla como tarea independie
 - **Ampliación C1.87 / TAREA-F4-P2-03:** Revalidado: el modal administrativo solo renderiza directorio y acción de cambio de estado; no invoca `createSecurityDelegation`, `getSecurityDelegations` ni `revokeSecurityDelegation`, ni ofrece flujos para crear/listar/revocar delegaciones. Se mantiene dentro del alcance de AUD-NG-219/TASK-498; no duplicar.
 - **Ampliación C1.88 / TAREA-F4-P2-04:** Revalidado en USER: `revokeSecurityDelegation` (2276-2314) no adquiere LockService para leer-validar-escribir la revocación; `getSecurityDelegations` (1803-1859) modifica estado a Expirada mediante setValue durante una consulta sin candado. Estas rutas no se coordinan con el lock que sí usa `createSecurityDelegation`, por lo que las transiciones concurrentes pueden competir. Se amplía el hallazgo de ciclo de vida de delegaciones; no crear ID duplicado.
 - **Ampliación C1.90 / TAREA-F4-P3-01:** `generatePrivilegeAndAccountAuditReport` (USER 4415-4440) consulta delegaciones mediante `getSecurityDelegations({statusFilter:"ACTIVA"})`. El handler espera `estado`, no `statusFilter`; además, la llamada interna descarta el payload autenticado y no pasa sessionToken/_verifiedUserId. `getUserVerifiedRole` devuelve NO_ACCESS y el filtro de titular/delegado elimina todas las filas, por lo que `delegacionesSeguridadVigentes` resulta 0. Se amplía el defecto de consulta/estado de delegaciones; no duplicar.
+- **Ampliación C1.92 / TAREA-F4-P3-03:** `auditAndReconcileIdentityInconsistencies` (USER 4151-4235) revoca delegaciones huérfanas escribiendo directamente `DelegacionesSeguridad!H`, sin invocar `revokeSecurityDelegation`, sin eliminar `active_delegations_<delegadoId>` y sin adquirir lock. La caché de autorización puede seguir reflejando la delegación hasta expirar; la operación también puede competir con creación/revocación. Se amplía el hallazgo de ciclo de vida de delegaciones, sin ID duplicado.
 - **Estado:** [ ] Pendiente
 
 ### [TASK-498] [TAREA-F4-P1-01] [P1] Aplicar límites de autoridad y ámbito al motor de delegaciones
@@ -20141,5 +20143,39 @@ AUD-NG-163 permanece DUPLICADA y consolidada; no reabrirla como tarea independie
 - **Requisitos:** activador real; reporte versionado/persistido; destinatarios autorizados; estado de revisión; consulta de delegaciones con identidad verificada y estado correcto; manejo de fallos y reintentos idempotentes.
 - **Criterios:** ejecución programada verificable; informe recuperable; conteo correcto de delegaciones activas; evidencia de revisión y acciones; pruebas de autorización, periodicidad, fallos y duplicados.
 - **Relaciones:** AUD-NG-160, AUD-NG-161, AUD-NG-219, AUD-NG-220.
+- **Estado:** [ ] Pendiente
+
+
+
+---
+
+## C1.92 — Revisión de TAREA-F4-P3-03
+
+### [AUD-NG-231] Hacer fail-safe y trazable la auto-reconciliación de identidades
+- **Origen del Hallazgo:** C1.92 / TAREA-F4-P3-03.
+- **Severidad/Clasificación:** Alta (P1) · Integridad de datos · Operación destructiva · Seguridad.
+- **Archivos Involucrados:** backend/user-service/Code.gs.
+- **Dependencias Expuestas:** auditAndReconcileIdentityInconsistencies, Usuarios, DelegacionesSeguridad, HistorialAdscripciones, CacheService, LockService, logStructuredEvent.
+- **Descripción del Alcance:** El escáner construye validUserIds como conjunto vacío si la hoja Usuarios no existe o contiene solo encabezados. Si se invoca con autoFix truthy, cada delegación/adscripción activa se clasifica como huérfana y se cambia a Revocada/Inactiva; no hay precondición que aborte por fuente maestra ausente/vacía. La condición usa `if (autoFix)`, por lo que la cadena `"false"` también activa mutaciones. Las escrituras se ejecutan sin LockService, sin prevalidación completa ni rollback; se registra solo un resumen (issuesCount/fixedCount), no el ID/estado anterior/nuevo de cada fila. La revocación directa no invalida la caché `active_delegations_<delegadoId>`. Además, la detección de adscripciones solo valida que userId exista; no comprueba que deptId/cargoId existan o estén activos.
+- **Criterios de Aceptación:**
+  - Abortar sin mutaciones si Usuarios no existe, no tiene esquema válido, está vacío o el número de identidades válidas cae bajo una condición de seguridad definida.
+  - Ejecutar en modo diagnóstico por defecto; aplicar cambios únicamente cuando `autoFix === true` (booleano estricto), nunca por strings u otros valores truthy.
+  - Adquirir una sección crítica o usar versión/compare-and-set para evitar reconciliar sobre snapshots obsoletos; liberar lock en finally.
+  - Prevalidar todos los candidatos antes de modificar; si una escritura falla, devolver resultado parcial explícito y permitir recuperación sin ocultar cambios previos.
+  - Para delegaciones, aplicar la revocación por una ruta de dominio que invalide caché y registre motivo/actor/fecha; para adscripciones, registrar actor, motivo y fecha de cierre.
+  - Guardar evidencia por registro (ID, referencia, estado anterior, estado nuevo, motivo, actor, timestamp y resultado), además del resumen.
+  - Validar userId, delegante/delegado, deptId y cargoId contra sus catálogos/estados; no limitarse a la existencia del usuario.
+  - Pruebas aisladas cubren hoja Usuarios ausente/vacía, encabezado solo, autoFix false/"false"/true, un registro huérfano, error en mitad del lote, concurrencia, caché activa y auditoría por registro.
+- **Relaciones y límites:** AUD-NG-219 cubre ciclo de vida/cache de delegaciones; AUD-NG-161 cubre pruebas conductuales; AUD-NG-229 cubre read-modify-write de perfiles; AUD-NG-005 cubre propagación de estado de cuenta. AUD-NG-231 se limita a seguridad y atomicidad del proceso de reconciliación.
+- **Estado:** [ ] Pendiente
+
+### [TASK-511] [AUD-NG-231] Hacer segura y auditable la auto-reconciliación de identidad
+- **Origen:** C1.92 / TAREA-F4-P3-03.
+- **Prioridad:** P1 (Alta).
+- **Componente:** backend/user-service/Code.gs.
+- **Problema:** autoFix puede revocar/desactivar en masa si Usuarios falta/está vacío; valores truthy como "false" activan cambios; no hay lock, rollback ni auditoría individual; no se invalida la caché de delegaciones.
+- **Requisitos:** precondiciones fail-safe; dry-run por defecto; booleano estricto; lock/versionado; prevalidación y recuperación de fallos parciales; invalidación de caché; evidencia por registro; validación de catálogo de departamentos/cargos.
+- **Pruebas:** fuente maestra ausente/vacía; dry-run; autoFix estricto; concurrencia; fallo parcial; caché; delegaciones y adscripciones huérfanas.
+- **Relaciones:** AUD-NG-219, AUD-NG-161, AUD-NG-229, AUD-NG-005.
 - **Estado:** [ ] Pendiente
 

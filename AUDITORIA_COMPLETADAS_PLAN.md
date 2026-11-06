@@ -1060,3 +1060,14 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Pruebas:** inspección estática; no se consultaron hojas productivas ni se midió rendimiento.
 - **Progreso:** 88/183 identificadores auditados; 95 pendientes.
 - **Siguiente tarea oficial:** TAREA-F4-P3-03 - Establecer un sistema de detección y reconciliación de inconsistencias de identidad.
+
+
+## 94. Resultado C1.92 - TAREA-F4-P3-03 (2026-11-06)
+
+- **Dictamen:** NO CUMPLE. Si Usuarios falta o está vacío, validUserIds queda vacío; con autoFix truthy, todas las delegaciones/adscripciones activas se marcan como huérfanas. La cadena "false" también activa cambios. No hay lock, prevalidación, rollback ni auditoría por registro; la revocación directa no invalida caché; la validación de adscripciones no comprueba deptId/cargoId.
+- **Nuevo hallazgo:** AUD-NG-231/TASK-511 para autoFix fail-safe y trazable.
+- **Reconciliación:** ampliar AUD-NG-219 por caché de delegaciones; AUD-NG-161 por falta de pruebas. Sin duplicar AUD-NG-229/AUD-NG-005.
+- **Evidencia:** USER SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; tests SHA 3433b707edd4a2f35c68368a3172932adc2a3b32/0495e1d526a872c33310935a003a83d924d34683; completed SHA f57f1aef832e81e44fc4f7ec36a852d50e464676; changes SHA d57cf4bd861b5c3720e60cf83241ed804ff645d9.
+- **Pruebas:** inspección estática; no se ejecutó autoFix real ni Apps Script.
+- **Progreso:** 89/183 identificadores auditados; 94 pendientes.
+- **Siguiente tarea oficial:** TAREA-F5-001 - Corregir la conversión de aspirantes y garantizar la integridad del expediente.

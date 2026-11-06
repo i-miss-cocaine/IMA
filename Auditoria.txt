@@ -6738,3 +6738,32 @@ RESULTADOS:
 5. No hay pruebas específicas de paginación, mapeo de columnas o integración.
 RECONCILIACIÓN: AUD-NG-145 y AUD-NG-161; no se crean IDs nuevos.
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-06
+CHECKPOINT C1.92 — TAREA-F4-P3-03
+SESIÓN: IMA-AUDIT-20261106-1644Z
+REPOSITORIO: i-miss-cocaine/IMA
+RAMA: NG_beta_0.0.0.1_work
+HEAD DE PARTIDA: bf8b6dcf5377e3ea86eb5e63a9c601c9c82b316b
+DICTAMEN: NO CUMPLE
+
+EVIDENCIA:
+- USER Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f: auditAndReconcileIdentityInconsistencies 4151-4235; manageDepartmentPositions/HistorialAdscripciones 2800-2925; delegaciones 1746-1860 y 2276-2315; permisos/router 940-970, 1253-1289, 1351-1385.
+- Tests SHA 3433b707edd4a2f35c68368a3172932adc2a3b32/0495e1d526a872c33310935a003a83d924d34683; sin casos específicos.
+
+RESULTADOS:
+1. Si Usuarios no existe o solo contiene encabezados, validUserIds queda vacío. Con autoFix truthy, todas las delegaciones y adscripciones activas se clasifican como huérfanas y se marcan Revocada/Inactiva.
+2. El código usa if(autoFix), por lo que el string "false" también activa mutaciones.
+3. No hay lock, prevalidación de todos los candidatos ni rollback. Solo se registra resumen; no evidencia por registro.
+4. La revocación directa no invalida active_delegations_<delegadoId>, a diferencia de revokeSecurityDelegation.
+5. La validación de adscripciones solo comprueba userId; no comprueba deptId/cargoId contra catálogos.
+6. No hay pruebas específicas de autoFix, fuente maestra ausente/vacía, concurrencia, fallos parciales ni caché.
+
+RECONCILIACIÓN:
+- Nuevo AUD-NG-231/TASK-511: seguridad y trazabilidad del autoFix.
+- AUD-NG-219: caché y ciclo de vida de delegaciones.
+- AUD-NG-161: pruebas conductuales.
+- AUD-NG-229 y AUD-NG-005 mantienen alcances separados.
+===============================================================================
