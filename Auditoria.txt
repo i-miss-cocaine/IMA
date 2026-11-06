@@ -5982,3 +5982,21 @@ AUDITORÍA DE completadas.md - T-UX-18 (2026-11-06)
 - Progreso: 59/183 identificadores auditados; 124 pendientes.
 - Siguiente tarea: T-UX-19 - Verificar la accesibilidad y corregir las barreras detectadas.
 ===============================================================================
+
+
+===============================================================================
+AUDITORÍA DE completadas.md - T-UX-19 (2026-11-06)
+===============================================================================
+- Dictamen: NO CUMPLE. T-UX-19 figura [X], pero los flujos principales no acreditan navegación completa por teclado, nombres accesibles de controles/iconos ni asociación coherente entre etiquetas y errores.
+- Especificación: completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676; criterios WCAG 2.2 AA, teclado, foco visible/orden lógico, nombres accesibles y asociación de formularios.
+- Código: js/ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67, líneas 87-143, 1843-1936, 5240-5299 y 5303-5365; css/style.css SHA f1ff84312ce70949a58eaa099b2aad0ff0a59cb6, líneas 970-1050.
+- Vistas: index.html SHA cd742047cdc4948259dd721119429b04f78330ca, líneas 25-60; student-dashboard.html SHA 6379ea0ed39d71b89747a0280bb925fdf12202c1, líneas 25-105; teacher-dashboard.html SHA cbb9e6a272a7d8ad33f99727303305d950533e71, líneas 25-60 y 219-278; dashboard-recursos-humanos.html SHA 406bedbae5a5bb3b5c03e4ea7aaa95ed68aea8ee, líneas 185-230; dashboard-secretaria.html SHA fa0d8c23aace24a6acab2d4956398a7f5e1309b8, líneas 1-80 y 350-435.
+- AUD-NG-210 (ALTO/P1): dropdowns principales dependen de group-hover y no tienen apertura/estado por foco; el CSS .skip-link no se acompaña de un enlace de salto en el inicio de las vistas revisadas; no hay scroll-margin para asegurar que el foco no quede bajo el header fijo. Se vincula a TASK-258 y AUD-NG-181; no se crea duplicado.
+- AUD-NG-211 (ALTO/P1): auditAndFixAccessibility solo trata botones y diálogos, puede fallar al leer icon.className.indexOf en un SVGAnimatedString y asigna “Acción de interfaz” como nombre genérico; no implementa asociación label/error. El botón de cerrar perfil en student-dashboard.html tiene solo SVG sin aria-label; campos del perfil tienen label sin for; controles iniciales de incidencia en RR. HH. dependen de placeholder/tipo. El CSS da estilo a [aria-live], pero ui-common no crea el announcer persistente. Se vincula a TASK-258, AUD-NG-169, TASK-492, TASK-493, TASK-130 y TASK-484; no se crea TASK duplicada.
+- Reconciliación: TASK-258 está pendiente y cubre foco universal, teclado, modales, anuncios ARIA y preferencias; AUD-NG-169 conserva barreras de paneles académicos; TASK-492 cubre campos y coordina semántica; TASK-493 cubre modal de detalle; TASK-484 pruebas UX-01..09. AUD-NG-181 cubre Escape/restauración; no duplicar.
+- CSS: existe :focus-visible de 3 px, media prefers-contrast:high y prefers-reduced-motion:reduce; no se acreditó contraste real por tema, foco no oculto ni cobertura universal. El criterio de TASK-258 pide además prefers-contrast:more.
+- Pruebas: inspección estática/manual de vistas representativas. No se ejecutaron pruebas de teclado, foco, lector de pantalla, contraste por tema, zoom ni formularios en navegador. Cobertura no exhaustiva.
+- Código fuente, tests, completadas.md, Pendientes.md, METODOLOGIA_DESARROLLO.md y ChangesLogs.txt sin modificaciones.
+- Progreso: 60/183 identificadores auditados; 123 pendientes.
+- Siguiente tarea: T-UX-20 - Completar la adaptación móvil y el comportamiento responsivo.
+===============================================================================

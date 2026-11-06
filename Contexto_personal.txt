@@ -2761,3 +2761,33 @@ ARCHIVOS Y SHAs:
 - Publicación: un único commit por Git Database API, hijo del HEAD de partida. El SHA final se verificará externamente tras actualizar la referencia.
 - Próxima acción: verificar HEAD/árbol/archivos del commit; confirmar NG_beta_0.0.0.1_work actualizado y NG_beta_0.0.0.1 intacta; después iniciar T-UX-19 desde su especificación, reconciliando T-UX-18/TASK-492/TASK-493 y las tareas de accesibilidad/pruebas ya existentes.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.62 - CIERRE DE AUDITORÍA T-UX-19 (2026-11-06)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: 88886e8b313129e84f35989cb13f061274c7d12b (C1.61).
+- Tarea auditada: T-UX-19 - Verificar la accesibilidad y corregir las barreras detectadas. Dictamen NO CUMPLE.
+- Siguiente tarea: T-UX-20 - Completar la adaptación móvil y el comportamiento responsivo.
+- Progreso: 60/183 identificadores auditados; 123 pendientes.
+
+HALLAZGOS:
+- AUD-NG-210 (ALTO/P1): menús group-hover sin apertura por foco/estado expandido, falta de skip link operativo en vistas revisadas y ausencia de scroll-margin para asegurar foco no oculto. Relacionado con TASK-258 y AUD-NG-181.
+- AUD-NG-211 (ALTO/P1): helper auditAndFixAccessibility no asocia labels/errors, no implementa focus trap ni announcer, asigna nombre genérico y puede fallar al procesar SVGAnimatedString; ejemplos en Student y RR. HH. Relacionado con TASK-258, AUD-NG-169, TASK-492, TASK-493, TASK-130 y TASK-484.
+- No se crea TASK duplicada. TASK-258 es la corrección transversal pendiente; tareas relacionadas mantienen sus alcances.
+
+EVIDENCIA:
+- ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67.
+- style.css SHA f1ff84312ce70949a58eaa099b2aad0ff0a59cb6.
+- Vistas revisadas: index.html, student-dashboard.html, teacher-dashboard.html, dashboard-recursos-humanos.html y dashboard-secretaria.html. SHAs y líneas están en AUDITORIA_COMPLETADAS_T-UX-19.md.
+- Verificación estática/manual; no se ejecutaron pruebas de teclado en navegador, lectores de pantalla, contraste, zoom ni formularios runtime.
+
+ARCHIVOS:
+- Actualizados documentalmente: Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt.
+- Nuevo informe: AUDITORIA_COMPLETADAS_T-UX-19.md.
+- No modificados: código fuente, tests, completadas.md, Pendientes.md, METODOLOGIA_DESARROLLO.md, ChangesLogs.txt y rama base.
+- Publicación: pendiente de completar/verificar un único commit en NG_beta_0.0.0.1_work. No marcar como publicado hasta verificar HEAD y árbol.
+================================================================

@@ -734,3 +734,17 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Archivos/documentos:** anexado resultado en Auditoria.txt, MapaDependencias.md y plan; creado AUDITORIA_COMPLETADAS_T-UX-18.md; checkpoint C1.61 en Contexto_personal.txt.
 - **Progreso:** 59/183 identificadores auditados; 124 pendientes.
 - **Siguiente tarea:** T-UX-19 - Verificar la accesibilidad y corregir las barreras detectadas.
+
+
+## 64. Resultado C1.62 - T-UX-19 (2026-11-06)
+
+- Dictamen: **NO CUMPLE**. Menús principales dependientes de hover, no se acredita skip link operativo ni foco no oculto; formularios representativos contienen etiquetas sin asociación y controles dependientes de placeholder; helper de accesibilidad parcial y susceptible a excepción ante SVG.
+- AUD-NG-210 (ALTO/P1): barreras de navegación/teclado: dropdowns group-hover sin apertura por foco, estado expandido no actualizado, ausencia de enlace de salto en vistas revisadas y falta de scroll-margin frente al header fijo. Relacionado con TASK-258 y AUD-NG-181.
+- AUD-NG-211 (ALTO/P1): nombres accesibles y semántica incompletos; auditAndFixAccessibility no asocia campos/errores, no crea focus trap/announcer, asigna nombre genérico y puede fallar con SVGAnimatedString. Formularios Student/RR. HH. muestran asociaciones incompletas. Relacionado con TASK-258, AUD-NG-169, TASK-492, TASK-493, TASK-130 y TASK-484.
+- Reconciliación: TASK-258 es la tarea correctiva transversal pendiente; AUD-NG-181 cubre Escape/foco; AUD-NG-169 paneles académicos; TASK-492 campos; TASK-493 modal; TASK-130 ayudas; TASK-484 pruebas UX-01..09. No crear TASK duplicada ni modificar Pendientes.md.
+- Evidencia: ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67; style.css SHA f1ff84312ce70949a58eaa099b2aad0ff0a59cb6; vistas index, Student, Teacher, RR. HH. y Secretaría documentadas en AUDITORIA_COMPLETADAS_T-UX-19.md.
+- Pruebas: inspección estática/manual y reconciliación con backlog. No se ejecutaron teclado en navegador, lectores de pantalla, contraste, zoom ni formularios en runtime.
+- Código/tests, completadas.md, Pendientes.md, METODOLOGIA_DESARROLLO.md y ChangesLogs.txt intactos.
+- Archivos documentales: Auditoria.txt, MapaDependencias.md, este plan, nuevo AUDITORIA_COMPLETADAS_T-UX-19.md y Contexto_personal.txt.
+- Progreso: 60/183 identificadores auditados; 123 pendientes.
+- Siguiente tarea: T-UX-20 - Completar la adaptación móvil y el comportamiento responsivo.

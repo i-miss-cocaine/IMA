@@ -1508,3 +1508,39 @@ Relaciones:
 - `runUXSuiteTests`, `js/ui-common.js:1843-1936`, cubre UX-01..UX-09; no tiene caso de T-UX-18.
 - Suites `tests/regression/academic-grading-suite.js` y `tests/regression/modular-dashboard-suite.js` no referencian los componentes revisados.
 - Inspección estática/manual; no se ejecutaron navegador/DOM, pruebas de foco, XSS ni validación de estados reales.
+
+
+## Accesibilidad, teclado y semántica de controles (T-UX-19, C1.62)
+
+### Núcleo compartido
+- `js/ui-common.js` SHA `986938b8a311a41ed4cb3d135b66b6aaea4bed67`:
+  - `window.trackModalFocus` y listener Escape, líneas 87-143: referencia global única; los defectos de cobertura, pila de modales y restauración ya están en AUD-NG-181/TASK-258.
+  - `window.runUXSuiteTests`, líneas 1843-1936: UX-02 solo comprueba existencia de trackModalFocus; no prueba teclado/foco ni conformidad WCAG.
+  - `window.auditAndFixAccessibility`, líneas 5240-5299: recorre botones y enlaces role=button, asigna etiquetas heurísticas; no asocia labels/errors, no crea live announcer ni implementa focus trap. La lectura de icon.className.indexOf puede fallar cuando el icono es SVG (SVGAnimatedString). El fallback “Acción de interfaz” no identifica la acción concreta.
+  - `window.renderSharedDetailViewModal`, líneas 5303-5365: role=dialog/aria-modal sin aria-labelledby, foco inicial ni confinamiento; su corrección está trazada en TASK-493.
+- No se confirmó una invocación automática de auditAndFixAccessibility dentro de ui-common.js; no se certifica que el helper se ejecute en los flujos reales.
+
+### CSS
+- `css/style.css` SHA `f1ff84312ce70949a58eaa099b2aad0ff0a59cb6`, líneas 970-1050: existe estilo .skip-link, :focus-visible de 3 px, objetivos móviles de 44 px para un subconjunto de controles, estilos para [aria-live], media prefers-contrast:high y prefers-reduced-motion:reduce.
+- No se encontró scroll-margin en la hoja; no se garantiza que el foco quede fuera de la cabecera fija.
+- La regla de contraste usa `high`, no el valor `more` solicitado en TASK-258. No hay mediciones de contraste por tema ni pruebas con los colores reales.
+- Los estilos [aria-live] no crean por sí mismos el contenedor persistente aria-live-announcer exigido por TASK-258.
+
+### Vistas representativas y consumidores
+- `index.html` SHA `cd742047cdc4948259dd721119429b04f78330ca`, líneas 25-60: Cursos/Contenido dependen de group-hover; aria-expanded permanece false en el marcado y no se observa apertura por foco. No hay skip link antes del header en el inicio del body.
+- `student-dashboard.html` SHA `6379ea0ed39d71b89747a0280bb925fdf12202c1`, líneas 25-105: mismo menú dependiente de hover; botón close-profile-modal contiene SVG sin nombre accesible; labels del perfil no usan for ni envuelven los controles.
+- `teacher-dashboard.html` SHA `cbb9e6a272a7d8ad33f99727303305d950533e71`, líneas 25-60 y 219-278: menú equivalente dependiente de hover; formularios representativos no acreditan asociación label/control uniforme.
+- `dashboard-recursos-humanos.html` SHA `406bedbae5a5bb3b5c03e4ea7aaa95ed68aea8ee`, líneas 185-230: varios controles de incidencia comienzan sin label visible asociado y dependen de placeholder/tipo; los labels de controles hermanos no usan for.
+- `dashboard-secretaria.html` SHA `fa0d8c23aace24a6acab2d4956398a7f5e1309b8`: consultado como vista departamental adicional; no se ejecutó el flujo en navegador.
+
+### Reconciliación
+- AUD-NG-210 y AUD-NG-211 son hallazgos de T-UX-19.
+- TASK-258 es la tarea correctiva transversal pendiente para foco, teclado, modales, ARIA live y preferencias de contraste/movimiento.
+- AUD-NG-181 ya cubre Escape/restauración de foco; AUD-NG-169 cubre accesibilidad funcional de paneles académicos.
+- TASK-492 cubre campos y coordina asociación semántica; TASK-493 cubre el modal de detalle; TASK-130 cubre ayudas/descripciones; TASK-484 cubre pruebas conductuales UX-01..UX-09.
+- No crear una tarea nueva ni duplicar esos alcances. T-UX-19 no se considera satisfecha mientras TASK-258 y las dependencias pertinentes sigan sin evidencia de aceptación.
+
+### Límites de verificación
+- Inspección estática/manual de archivos y fragmentos citados.
+- No se ejecutaron navegador/DOM, Tab/Shift+Tab, lectores de pantalla, pruebas de contraste, zoom ni pruebas de formularios/errores en ejecución.
+- La cobertura de páginas fue representativa, no exhaustiva.
