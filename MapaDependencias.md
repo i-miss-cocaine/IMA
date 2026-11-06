@@ -1818,3 +1818,23 @@ Relaciones:
 - AUD-NG-219/TASK-498: autoridad, ámbito y ciclo de vida de delegaciones; se amplía por el contexto autenticado perdido en el contador.
 - AUD-NG-160: cachés de permisos/delegaciones; no se duplica.
 - AUD-NG-227/TASK-507: consistencia de KPI, paginación visible, integración de reportes y salud, y composición del panel. No reimplementa los contratos de log ni el motor de delegaciones.
+
+
+## Registro de dependencias - TAREA-F4-P2-01 (C1.85)
+
+### Identificador de usuario en USER
+- \`registerUser\` (backend/user-service/Code.gs 2393-2450) genera el UserId mediante \`generateInstitutionalId({entityType:"Usuario",prefix:"USR-"})\`; si no recibe generatedId, lanza error y no utiliza timestamp.
+- \`generateInstitutionalId\` (USER 1706-1746) actualiza SecuenciasIDs bajo ScriptLock del proyecto USER. La creación inicial de la hoja ocurre antes del lock.
+- \`createPerson\` (USER 1663-1687) genera PER-ID con timestamp; representa PersonaID, no UserId, y queda fuera del alcance.
+
+### Generación de UserId desde ACADEMIC
+- \`convertAdmissionToStudent\` (ACADEMIC 2156-2390) adquiere un lock exterior y genera UserId en 2238-2239 llamando a su propia copia de \`generateInstitutionalId\` con \`skipLock:true\`.
+- El flujo de conversión mantiene el lock exterior de ACADEMIC; sin embargo, ese lock no coordina con el ScriptLock independiente del proyecto USER.
+- ACADEMIC utiliza fallback constante \`USR-000001\` si no se proporciona userId y el generador no devuelve generatedId.
+- Los generadores USER y ACADEMIC escriben en SecuenciasIDs, pero los ScriptLock pertenecen a proyectos Apps Script distintos; no constituyen un lock distribuido.
+
+### Reconciliación
+- AUD-NG-161 conserva generadores duplicados, alcance local de locks, bypasses y necesidad de pruebas conductuales de colisión/concurrencia.
+- TASK-118 conserva el seguimiento histórico del modelo institucional de identificadores.
+- TAREA-F4-P2-01 cumple parcialmente: el fallback temporal se eliminó de registerUser, pero no se certifica unicidad global ni pruebas runtime.
+- No duplicar AUD-NG-161 ni crear IDs nuevos.

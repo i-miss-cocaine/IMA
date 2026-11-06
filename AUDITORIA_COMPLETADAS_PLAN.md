@@ -987,3 +987,13 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Pruebas:** inspección estática/manual y comparación de SHA; no se ejecutaron Apps Script, HTTP, Sheets productivas, navegador/DOM, filtros con datos reales, paginación >200, pruebas multirol, delegaciones reales, health check productivo, XSS ni suites automatizadas.
 - **Progreso:** 81/183 identificadores auditados; 102 pendientes.
 - **Siguiente tarea oficial:** TAREA-F4-P2-01 - Eliminar la generación de identificadores de usuario basada en marcas de tiempo.
+
+
+## 87. Resultado C1.85 - TAREA-F4-P2-01 (2026-11-06)
+
+- **Dictamen:** CUMPLE PARCIALMENTE. registerUser ya no genera UserId con timestamp y falla de forma cerrada si generateInstitutionalId no devuelve generatedId. No se acredita unicidad global: ACADEMIC conserva un generador duplicado, un ScriptLock independiente y fallback constante USR-000001.
+- **Reconciliación:** no crear AUD-NG/TASK duplicado. Mantener AUD-NG-161/TASK-118 para generadores duplicados, alcance local de ScriptLock, fallback y pruebas conductuales de colisión/concurrencia. AUD-NG-225/226 no corresponden a este ámbito.
+- **Evidencia:** USER SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ACADEMIC SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; tests/regression/academic-grading-suite.js SHA 3433b707edd4a2f35c68368a3172932adc2a3b32; completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676; ChangesLogs.txt SHA d57cf4bd861b5c3720e60cf83241ed804ff645d9.
+- **Pruebas:** inspección estática/manual y búsqueda dirigida. No se ejecutaron Apps Script, HTTP, Sheets productivo, concurrencia cruzada, pruebas de colisión ni suites automatizadas.
+- **Progreso:** 82/183 identificadores auditados; 101 pendientes.
+- **Siguiente tarea oficial:** TAREA-F4-P2-02 - Implementar una gestión completa del ciclo de vida de cuentas y sesiones.

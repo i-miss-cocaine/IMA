@@ -3359,3 +3359,45 @@ CHECKPOINT C1.84 - TAREA-F4-P1-09
 - Bloqueos: ninguno.
 - Commit de cierre: el commit que contiene este checkpoint; SHA final confirmado externamente tras publicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.85 - TAREA-F4-P2-01
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto real: Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: 3ee443cddd959d2c5ff1c4d4c698d944107875f5.
+- HEAD de la rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID operativo de sesión/chat: IMA-AUDIT-20261106-1529Z; inicio C1.85; cierre C1.85; estado: sesión cerrada. Hora de inicio comunicada: 2026-11-06T15:29:51Z. Identificador operativo, no ID nativo de ChatGPT.
+- Último checkpoint/tarea anterior: C1.84 / TAREA-F4-P1-09.
+- Tarea auditada: TAREA-F4-P2-01 - Eliminar la generación de identificadores de usuario basada en marcas de tiempo.
+- Estado maestro: [X] Completada en completadas.md (SHA f57f1aef832e81e44fc4f7ec36a852d50e464676); severidad Media; backend/user-service/Code.gs; criterios detallados originales no disponibles.
+- Dictamen: CUMPLE PARCIALMENTE.
+- Evidencia principal: USER SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ACADEMIC SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; tests/regression/academic-grading-suite.js SHA 3433b707edd4a2f35c68368a3172932adc2a3b32; ChangesLogs.txt SHA d57cf4bd861b5c3720e60cf83241ed804ff645d9.
+- Bloques inspeccionados:
+  - USER ROLE_PERMISSIONS 941-963; doPost/router 1351-1435; createPerson 1663-1687 (exclusión de PersonaID); generateInstitutionalId 1706-1746; registerUser 2393-2450.
+  - ACADEMIC doPost 655-695; generateInstitutionalId 2107-2150; convertAdmissionToStudent 2156-2390, especialmente lock exterior y generación de UserId 2238-2239.
+  - tests/regression/academic-grading-suite.js 1-220 y búsqueda dirigida de registerUser/generateInstitutionalId/USR-/TAREA-F4-P2-01.
+  - completadas.md 1767-1774; ChangesLogs.txt 1744-1748; Auditoria.txt FASE2-05/C1.33 aprox. 5257-5295 y TAREA-16 aprox. 4717-4735.
+- Hallazgos/resultados:
+  - registerUser elimina now.getTime()/Date.now() para UserId, llama generateInstitutionalId y falla de forma cerrada si no recibe generatedId.
+  - USER actualiza SecuenciasIDs bajo ScriptLock de su proyecto; la inicialización de hoja ocurre antes del lock y el contador no valida explícitamente entero finito/una fila por entidad.
+  - ACADEMIC mantiene generador duplicado y genera UserId dentro de convertAdmissionToStudent con skipLock:true bajo lock exterior local. Los ScriptLock de USER y ACADEMIC no se coordinan entre proyectos; existe riesgo estructural de carrera cruzada.
+  - ACADEMIC conserva fallback constante USR-000001 cuando falla el generador y no se proporciona userId; no es timestamp, pero puede duplicarse.
+  - createPerson genera PER-ID timestamp; es PersonaID y queda fuera del alcance.
+  - No hay pruebas específicas de registerUser/generateInstitutionalId en la suite revisada.
+  - Reconciliación: AUD-NG-161/TASK-118 ya cubren generadores duplicados, locks locales, bypass/fallback y pruebas conductuales. No crear AUD-NG/TASK nuevo. AUD-NG-225/226 no aplican.
+- Pruebas ejecutadas: inspección estática/manual, búsqueda dirigida de call sites y pruebas, comparación de SHA y reconciliación histórica.
+- Pruebas no ejecutadas: Apps Script runtime, HTTP, Sheets productivo, creación concurrente de SecuenciasIDs, concurrencia cruzada USER/ACADEMIC, pruebas de colisión, fallo del generador, recuperación ni suites automatizadas.
+- Progreso: 82/183 identificadores auditados; 101 pendientes.
+- Última tarea auditada: C1.85 / TAREA-F4-P2-01.
+- Tarea en curso: ninguna.
+- Siguiente tarea exacta: TAREA-F4-P2-02 - Implementar una gestión completa del ciclo de vida de cuentas y sesiones.
+- Próxima acción reproducible: abrir TAREA-F4-P2-02 en completadas.md y revisar ALLOWED_ACCOUNT_STATE_TRANSITIONS, manageAccountState, loginUser/logoutUser, revokeUserSession, sesiones y estados en USER, clientes js/auth.js/js/ui-common.js y tareas relacionadas; reconciliar AUD-NG-005/AUD-NG-006/AUD-NG-161/AUD-NG-219 antes de crear IDs.
+- Archivos modificados: Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt y nuevo AUDITORIA_COMPLETADAS_TAREA-F4-P2-01.md.
+- Archivos preservados sin cambios: Pendientes.md (blob f8e6091a0db9d95751f46fc8fb2b65544270a9ca), completadas.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README.md, código fuente, pruebas y AUDITORIA_COMPLETADAS_TAREA-F4-P1-09.md.
+- Bloqueos: ninguno.
+- Commit de cierre: el commit que contiene este checkpoint; SHA final confirmado externamente tras publicar.
+================================================================

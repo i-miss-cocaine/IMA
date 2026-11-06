@@ -6456,3 +6456,47 @@ PROGRESO:
 - Última tarea auditada: TAREA-F4-P1-09.
 - Siguiente tarea oficial: TAREA-F4-P2-01 - Eliminar la generación de identificadores de usuario basada en marcas de tiempo.
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-06
+AUDITORÍA DE CUMPLIMIENTO — [TAREA-F4-P2-01] ELIMINAR IDs DE USUARIO BASADOS EN MARCAS DE TIEMPO
+REPOSITORIO: i-miss-cocaine/IMA
+RAMA: NG_beta_0.0.0.1_work
+HEAD DE PARTIDA: 3ee443cddd959d2c5ff1c4d4c698d944107875f5
+SESIÓN/CHAT: IMA-AUDIT-20261106-1529Z
+DICTAMEN: CUMPLE PARCIALMENTE
+
+ALCANCE:
+- completadas.md marca TAREA-F4-P2-01 [X], severidad Media, Identidad y backend/user-service/Code.gs; no conserva criterios detallados.
+- ChangesLogs.txt (1744-1748) especifica que registerUser elimina fallback now.getTime() y utiliza generateInstitutionalId({entityType:"Usuario",prefix:"USR-"}).
+- La fuente original AUDITORIA_FASE4_IDENTIDAD_PERMISOS_GOBIERNO.md no está disponible en la rama.
+
+EVIDENCIA:
+- USER SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f: generateInstitutionalId 1706-1746; registerUser 2393-2450; createPerson 1663-1687 (PER-ID, fuera del alcance); ROLE_PERMISSIONS 941-963; doPost 1351-1435.
+- ACADEMIC SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc: doPost 655-695; generateInstitutionalId 2107-2150; convertAdmissionToStudent 2156-2390, lock exterior y generación de UserId 2238-2239.
+- tests/regression/academic-grading-suite.js SHA 3433b707edd4a2f35c68368a3172932adc2a3b32: inspección 1-220 y búsqueda dirigida sin pruebas específicas de registerUser/generateInstitutionalId.
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, líneas 1767-1774; ChangesLogs.txt SHA d57cf4bd861b5c3720e60cf83241ed804ff645d9, líneas 1744-1748.
+
+RESULTADOS:
+1. registerUser ya no construye UserId mediante now.getTime()/Date.now(). Llama a generateInstitutionalId y lanza error si no recibe generatedId. El cambio puntual documentado está implementado.
+2. USER genera correlativos desde SecuenciasIDs y protege lectura/incremento/escritura con ScriptLock dentro del proyecto USER. La creación inicial de la hoja ocurre antes del lock; el contador no valida explícitamente entero finito ni unicidad de fila por entidad. No se ejecutó concurrencia ni se inspeccionó la hoja productiva.
+3. ACADEMIC mantiene una copia del generador. convertAdmissionToStudent adquiere un lock exterior y llama al generador con skipLock:true; su flujo local queda bajo ese lock. Sin embargo, los ScriptLock de proyectos USER y ACADEMIC son independientes y no coordinan entre sí aunque compartan SecuenciasIDs. Existe riesgo estructural de carrera entre registerUser y convertAdmissionToStudent.
+4. ACADEMIC conserva fallback constante targetUserId -> USR-000001 cuando no llega userId y falla el generador. No es timestamp, pero puede duplicarse y contradice unicidad institucional.
+5. createPerson usa PER- + timestamp, pero genera PersonaID, no UserId; queda fuera del alcance de TAREA-F4-P2-01.
+6. No se encontraron pruebas específicas de registerUser/generateInstitutionalId en tests/regression/academic-grading-suite.js. No se ejecutaron Apps Script, HTTP, Sheets ni pruebas de concurrencia.
+
+DICTAMEN:
+CUMPLE PARCIALMENTE. El cambio puntual de registerUser satisface la eliminación del fallback temporal. No se acredita unicidad global entre servicios ni se dispone de pruebas conductuales. El generador duplicado, el alcance local de ScriptLock, el fallback constante y las pruebas reales ya se reconcilian con AUD-NG-161/TASK-118; no crear hallazgo duplicado.
+
+RECONCILIACIÓN:
+- AUD-NG-161: generadores duplicados, locks locales por proyecto, bypasses y pruebas conductuales de colisión/concurrencia.
+- TASK-118: seguimiento histórico del modelo institucional de IDs, fallback y correlativos.
+- AUD-NG-225/AUD-NG-226 no corresponden a generación de UserId; no relacionar.
+- No se crea AUD-NG ni TASK nuevo.
+
+PRUEBAS Y LÍMITES:
+- Ejecutado: inspección estática/manual, búsqueda dirigida de call sites/pruebas, comparación de SHA y reconciliación histórica.
+- No ejecutado: Apps Script runtime, HTTP, Sheets productivo, concurrencia cruzada, colisiones, fallo de generador, recuperación ni suites automatizadas.
+- No se modificó código fuente.
+===============================================================================
