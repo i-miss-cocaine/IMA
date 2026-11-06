@@ -3931,3 +3931,43 @@ CHECKPOINT C1.102 - CONVERSIÓN DE HALLAZGOS HISTÓRICOS (LOTE 6)
 - Pruebas: revisión de evidencias, severidad, acción y criterios; verificación Git posterior.
 - Commit de cierre: el commit que contiene este checkpoint; SHA final se verifica después de publicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.103 - MIGRACIÓN DE PENDIENTES POR DEPARTAMENTO (INICIO)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto: AUDITORIAS/Contexto_personal.txt.
+- Rama base: NG_beta_0.0.0.1; rama de trabajo: NG_beta_0.0.0.1_work.
+- HEAD de partida verificado: 0258db1ba89c06725a8c0cdbced33795aad7a3fe; árbol de partida: b9672237881356226a21f4c8e6a1c066ac6cf2c5.
+- HEAD de rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59; no debe modificarse.
+- ID operativo de sesión: IMA-AUDIT-20261106-1746Z; checkpoint inicial: C1.103; estado al iniciar: sesión abierta.
+- Alcance: leer íntegramente /Pendientes.md y migrar sus 49 bloques de tareas a seis archivos departamentales bajo /pendientes, con asignación única por jerarquía. Crear README de organización y conservar la fuente sin cambios.
+- Fuente y respaldo de referencia: Pendientes.md, 30.237 caracteres, blob SHA 8867ecf1f58f768cac8fa5ddaa7b50bb68e57158.
+- Distribución preparada: Dirección 10; Secretaria 7; Contabilidad 6; Docente 20; Estudiante 5; Otros 1.
+- Archivos inspeccionados: Pendientes.md; METODOLOGIA_DESARROLLO.md (reglas de checkpoint y commits); AUDITORIAS/README.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos de código: no inspeccionados ni modificados; pruebas de aplicación: no aplican a esta migración documental.
+- Restricciones: Pendientes.md solo lectura; no borrar, editar, resumir ni duplicar bloques; no modificar rama base; un solo commit para todos los archivos de esta iteración.
+- Próxima acción: crear los seis archivos departamentales y README, anexar checkpoint de cierre, revisar integridad y publicar en un único commit.
+- Commit de cierre: el commit que contiene este checkpoint; SHA final se confirma externamente después de publicar.
+================================================================
+
+
+================================================================
+CHECKPOINT C1.104 - MIGRACIÓN DE PENDIENTES POR DEPARTAMENTO (CIERRE)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto: AUDITORIAS/Contexto_personal.txt.
+- Rama base: NG_beta_0.0.0.1; rama de trabajo: NG_beta_0.0.0.1_work.
+- HEAD de partida verificado: 0258db1ba89c06725a8c0cdbced33795aad7a3fe; HEAD de rama base de partida: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID operativo de sesión: IMA-AUDIT-20261106-1746Z; checkpoint inicial: C1.103; checkpoint de cierre: C1.104; estado: sesión cerrada.
+- Alcance ejecutado: migración de todos los bloques de tareas de /Pendientes.md a seis departamentos, preservando el texto íntegro de cada bloque, identificador y estado.
+- Resultado: 49/49 tareas asignadas una sola vez. Dirección 10; Secretaria 7; Contabilidad 6; Docente 20; Estudiante 5; Otros 1.
+- Archivos nuevos: pendientes/README.md; pendientes/Dirección/Pendientes.md; pendientes/Secretaria/Pendientes.md; pendientes/Contabilidad/Pendientes.md; pendientes/Docente/Pendientes.md; pendientes/Estudiante/Pendientes.md; pendientes/Otros/Pendientes.md.
+- Archivo actualizado: AUDITORIAS/Contexto_personal.txt (solo se anexan estos checkpoints; no se agregan tareas operativas).
+- Archivo protegido y no modificado: /Pendientes.md; blob SHA esperado y verificado: 8867ecf1f58f768cac8fa5ddaa7b50bb68e57158.
+- Validaciones previstas/ejecutadas antes del commit: 49 encabezados únicos; 0 IDs sin departamento; suma de distribución = 49; bloques extraídos desde el encabezado de tarea hasta el siguiente separador de sección; revisión del conjunto de rutas.
+- Pruebas de aplicación: no ejecutadas; no hay cambios de código.
+- Bloqueos: ninguno conocido.
+- Commit de cierre: el commit que contiene este checkpoint; consultar HEAD de GitHub después de publicar y reportar SHA final en el cierre conversacional.
+================================================================
