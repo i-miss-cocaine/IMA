@@ -4110,3 +4110,28 @@ CHECKPOINT C1.110 - FASE 1: INVENTARIO Y VALIDACIÓN PREVIA DE MIGRACIÓN
 - Archivos modificados en esta fase: únicamente AUDITORIAS/Contexto_personal.txt para registrar este checkpoint.
 - Commit de checkpoint: pendiente de verificación tras escritura.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.111 - FASE 2: COTEJO ÍNTEGRO DE LA MIGRACIÓN DE TAREAS
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- ID operativo de sesión: IMA-MIGRATION-20261106-1933Z.
+- HEAD de referencia al iniciar esta fase: ff62f718c05e624ac21e1318df849f14cf2e2f3c.
+- Fuente cotejada: objeto Git blob ef47d232db3ed46317dc14f22b1cdf8f938e8405 mediante Git Blobs API. Se recuperaron 1.425.933 caracteres y 17.884 líneas. La lectura del endpoint de contenido de archivo grande devuelve vacío, pero la lectura directa del objeto blob entregó el contenido íntegro.
+- Inventario fuente: 506 encabezados identificados: 33 tareas históricas F10/F11 y 473 encabezados que contienen IDs TASK. De los 473 encabezados TASK, 41 son encabezados estructurales de prioridad/bloque y no tareas ejecutables; quedan 432 tareas TASK reales.
+- Total elegible: 465 bloques (33 históricos F10/F11 + 432 TASK).
+- Distribución cotejada: Dirección 86; Secretaria 140; Contabilidad 89; Docente 30; Estudiante 7; Otros 113. Total 465.
+- Estados de las 432 tareas TASK: 50 [X], 108 [ ] y 274 sin casilla explícita. Las 33 tareas históricas F10/F11 están marcadas [X]. No se alteraron estados.
+- Cotejo de integridad: se comparó cada bloque delimitado de la fuente con el bloque de su archivo departamental. Los 465 bloques existentes coinciden textualmente con sus respectivos bloques fuente; 0 diferencias de contenido, 0 IDs duplicados y 0 registros departamentales ajenos a la fuente.
+- Encabezados excluidos: los 41 IDs estructurales corresponden a títulos de prioridad, bloques o agrupaciones; no son tareas. No se deben migrar como tareas.
+- Corrección importante: TASK-050 y TASK-051 sí son tareas reales, presentes en la fuente y conservadas en Dirección. La afirmación previa del README que decía que no existían era incorrecta.
+- Discrepancia documental resuelta: pendientes/README.md declaraba 463 registros, 430 tareas TASK y 84 tareas de Dirección. Se corrigió a 465 registros, 432 tareas TASK y 86 tareas de Dirección; los demás conteos departamentales no cambiaron.
+- Archivos modificados en esta fase: únicamente pendientes/README.md y AUDITORIAS/Contexto_personal.txt. No fue necesario alterar los seis archivos departamentales porque sus 465 bloques ya coinciden íntegramente con la fuente.
+- Restricciones respetadas: /Pendientes.md raíz no se modificó; los archivos departamentales no se reescribieron; no se copiaron tareas AUD-NG ni tareas de informes de auditoría; la rama base no se modificó.
+- Resultado: cotejo textual completado y distribución histórica de 465 tareas validada. No se declara migración de tareas adicionales, pues la totalidad de los bloques elegibles ya estaba presente en los destinos.
+- Commit de corrección del README: 856c247ab2693970c086ee00880a3bc56a37d04e.
+- Commit de este checkpoint: pendiente de verificación tras escritura.
+================================================================
