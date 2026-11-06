@@ -9,36 +9,36 @@
 
 ## 1. Alcance e inventario
 
-Se auditará el registro \`completadas.md\`, independiente de \`completadas_legacy.md\`.
+Se auditará el registro `completadas.md`, independiente de `completadas_legacy.md`.
 
-- Archivo: 5,963 líneas; SHA Git del contenido de referencia: \`f57f1aef832e81e44fc4f7ec36a852d50e464676\`.
+- Archivo: 5,963 líneas; SHA Git del contenido de referencia: `f57f1aef832e81e44fc4f7ec36a852d50e464676`.
 - Encabezados de tareas: 251.
 - Identificadores únicos: 224.
 - Hay identificadores repetidos, en particular el conjunto T-UX-01 a T-UX-27 aparece en más de una sección/versión. Se deben contrastar ambas descripciones y resolver cuál es la versión ampliada vigente, sin eliminar registros ni asumir que la repetición equivale a una tarea nueva.
 - El resumen ejecutivo y las marcas [X] del documento son afirmaciones del registro, no evidencia de implementación.
-- No modificar, reordenar, normalizar ni corregir \`completadas.md\`.
+- No modificar, reordenar, normalizar ni corregir `completadas.md`.
 
 ## 2. Reglas obligatorias
 
-1. Aplicar íntegramente \`METODOLOGIA_DESARROLLO.md\`, SHA de referencia \`1a2d4de602a1449b697c2da82ab6423e7c61b280\`.
+1. Aplicar íntegramente `METODOLOGIA_DESARROLLO.md`, SHA de referencia `1a2d4de602a1449b697c2da82ab6423e7c61b280`.
 2. Auditoría manual: inspección archivo por archivo, función por función, variable por variable, flujo por flujo y dependencia por dependencia. No usar escáneres, scripts masivos ni validadores automáticos para decidir cumplimiento.
 3. Antes de inspeccionar cada archivo de código, registrar su SHA/blob Git como copia de respaldo inmutable. No modificar código durante esta fase. Al terminar cada archivo, comparar su estado contra ese SHA; si hubiera diferencias, restaurar y documentar.
 4. Contrastar todos los puntos del alcance y criterios de aceptación de cada tarea. Los comentarios, nombres de funciones, UI, wrappers, mocks y marcas de estado no son prueba de ejecución.
 5. Seguir la ruta completa frontend -> API -> router -> función backend -> almacenamiento/servicio externo -> respuesta/UI. Comprobar permisos, integridad, errores, concurrencia, idempotencia, rendimiento, mantenibilidad y regresiones.
-6. Considerar sustituciones y ampliaciones posteriores. Relacionar hallazgos con tareas actuales de \`Pendientes.md\` y \`Auditoria.txt\`; no duplicar una causa raíz ya registrada, pero sí ampliar evidencia/alcance cuando sea necesario.
-7. Registrar cada hallazgo nuevo en \`Auditoria.txt\` y convertirlo en tarea concreta en \`Pendientes.md\`. Actualizar \`MapaDependencias.md\` y este plan por lote.
+6. Considerar sustituciones y ampliaciones posteriores. Relacionar hallazgos con tareas actuales de `Pendientes.md` y `Auditoria.txt`; no duplicar una causa raíz ya registrada, pero sí ampliar evidencia/alcance cuando sea necesario.
+7. Registrar cada hallazgo nuevo en `Auditoria.txt` y convertirlo en tarea concreta en `Pendientes.md`. Actualizar `MapaDependencias.md` y este plan por lote.
 8. No cambiar estados de tareas históricas ni declarar una tarea completa por inferencia.
-9. Todos los cambios de la tarea/iteración completa se agrupan en **un único commit final**, siempre en \`NG_beta_0.0.0.1_work\`. No hacer commits atómicos, por archivo ni intermedios. No dividir una entrega para eludir límites/cuotas: si no se puede confirmar el conjunto completo en un commit, detenerse sin commits parciales. No hacer merge, no modificar la rama base, no alterar \`ChangesLogs.txt\` por ser auditoría sin cambios de código.
+9. Todos los cambios de la tarea/iteración completa se agrupan en **un único commit final**, siempre en `NG_beta_0.0.0.1_work`. No hacer commits atómicos, por archivo ni intermedios. No dividir una entrega para eludir límites/cuotas: si no se puede confirmar el conjunto completo en un commit, detenerse sin commits parciales. No hacer merge, no modificar la rama base, no alterar `ChangesLogs.txt` por ser auditoría sin cambios de código.
 
 ## 3. Respaldo inicial y referencias
 
-- \`completadas.md\`: blob SHA \`f57f1aef832e81e44fc4f7ec36a852d50e464676\`; respaldo de referencia íntegro.
-- \`METODOLOGIA_DESARROLLO.md\`: blob SHA \`1a2d4de602a1449b697c2da82ab6423e7c61b280\`; instrucciones de auditoría.
-- \`Contexto_personal.txt\`: blob SHA \`36db8632556a5fc46054f16224e65b6b11855404\`.
-- \`MapaDependencias.md\`: blob SHA \`c7cda1f2026c2325749cb701d2fdaf9e545e95cc\`.
-- \`AUDITORIA_COMPLETADAS_LEGACY_PLAN.md\`: blob SHA \`c47380f92a43488dcb4a41319dba348cbd1072b7\`.
-- HEAD inicial de la rama de trabajo: \`aa234f7ae36ea8aa305253b40df8c2d7090c7ff2\`.
-- HEAD de la rama base: \`44d9891132332e692dbe2ba8602b41f50a508a59\`.
+- `completadas.md`: blob SHA `f57f1aef832e81e44fc4f7ec36a852d50e464676`; respaldo de referencia íntegro.
+- `METODOLOGIA_DESARROLLO.md`: blob SHA `1a2d4de602a1449b697c2da82ab6423e7c61b280`; instrucciones de auditoría.
+- `Contexto_personal.txt`: blob SHA `36db8632556a5fc46054f16224e65b6b11855404`.
+- `MapaDependencias.md`: blob SHA `c7cda1f2026c2325749cb701d2fdaf9e545e95cc`.
+- `AUDITORIA_COMPLETADAS_LEGACY_PLAN.md`: blob SHA `c47380f92a43488dcb4a41319dba348cbd1072b7`.
+- HEAD inicial de la rama de trabajo: `aa234f7ae36ea8aa305253b40df8c2d7090c7ff2`.
+- HEAD de la rama base: `44d9891132332e692dbe2ba8602b41f50a508a59`.
 
 Para cada archivo de código y documento que se audite se registrará su propio blob SHA antes de leerlo, como pivote de comparación y restauración. Las referencias Git son inmutables; no se escribirá en los archivos originales durante la inspección.
 
@@ -67,9 +67,9 @@ La calidad se dictamina por separado del cumplimiento funcional.
 
 ## 6. Estado y checkpoint inicial
 
-- Auditoría de \`completadas_legacy.md\`: cerrada previamente (49/49); no se repite.
-- Auditoría de \`completadas.md\`: iniciada, 0/183 identificadores únicos auditados; inventario estructural realizado.
-- Primera tarea a auditar: AUDIT-CR-01, contrastando su afirmación de implementación en \`backend/user-service/Code.gs\` con el código actual.
+- Auditoría de `completadas_legacy.md`: cerrada previamente (49/49); no se repite.
+- Auditoría de `completadas.md`: iniciada, 0/183 identificadores únicos auditados; inventario estructural realizado.
+- Primera tarea a auditar: AUDIT-CR-01, contrastando su afirmación de implementación en `backend/user-service/Code.gs` con el código actual.
 - No se han añadido hallazgos ni se ha modificado código.
 - Próxima acción: auditar C0 manualmente y registrar resultados por evidencia; después continuar C1.
 
@@ -77,9 +77,9 @@ La calidad se dictamina por separado del cumplimiento funcional.
 
 Al reanudar:
 1. Verificar HEAD de ambas ramas y confirmar que la rama base no cambió.
-2. Leer este plan, \`Contexto_personal.txt\`, \`METODOLOGIA_DESARROLLO.md\`, \`Pendientes.md\`, \`Auditoria.txt\` y \`MapaDependencias.md\`.
+2. Leer este plan, `Contexto_personal.txt`, `METODOLOGIA_DESARROLLO.md`, `Pendientes.md`, `Auditoria.txt` y `MapaDependencias.md`.
 3. Continuar desde el último checkpoint confirmado, sin repetir lotes cerrados.
-4. Mantener los identificadores y estados históricos de \`completadas.md\` intactos.
+4. Mantener los identificadores y estados históricos de `completadas.md` intactos.
 
 
 ## 8. Resultados del lote C0 (2026-11-04)
@@ -977,3 +977,13 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Pruebas:** inspección estática/manual y búsqueda dirigida de referencias/definiciones; no se ejecutaron Apps Script, HTTP, ScriptCache real, fallos parciales, reintentos, concurrencia, multiusuario, deployments ni suites.
 - **Progreso:** 80/183 identificadores auditados; 103 pendientes.
 - **Siguiente tarea oficial:** TAREA-F4-P1-09 - Crear un panel de seguridad, auditoría y cumplimiento institucional.
+
+
+## 86. Resultado C1.84 - TAREA-F4-P1-09 (2026-11-06)
+
+- **Dictamen:** NO CUMPLE. Los KPI no respetan los filtros aplicados a la tabla; la consulta se corta a 200 eventos sin paginación visible; las consultas de delegaciones desde el panel y el reporte de privilegios pierden el contexto autenticado y usan statusFilter en lugar de estado; los reportes de privilegios/auditoría y el healthReport no se integran en la UI.
+- **Reconciliación:** ampliar AUD-NG-145 por renderizado de registros en innerHTML sin escape contextual y AUD-NG-219 por la consulta de delegaciones sin token/contexto. Nuevo AUD-NG-227/TASK-507 para consistencia de indicadores, paginación e integración del panel. No duplicar las fuentes/DTO de logs ni el motor de delegaciones.
+- **Evidencia:** USER SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67; dashboard-direccion.html SHA fefaa3bf7884288aef563cfb8aaf244e6cea8b7c; completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676.
+- **Pruebas:** inspección estática/manual y comparación de SHA; no se ejecutaron Apps Script, HTTP, Sheets productivas, navegador/DOM, filtros con datos reales, paginación >200, pruebas multirol, delegaciones reales, health check productivo, XSS ni suites automatizadas.
+- **Progreso:** 81/183 identificadores auditados; 102 pendientes.
+- **Siguiente tarea oficial:** TAREA-F4-P2-01 - Eliminar la generación de identificadores de usuario basada en marcas de tiempo.

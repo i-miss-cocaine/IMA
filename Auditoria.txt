@@ -6405,3 +6405,54 @@ PRUEBAS Y LÍMITES:
 - No se modificó código fuente ni se afirmó comportamiento productivo probado.
 - No se crean hallazgos ni tareas nuevos; se amplían AUD-NG-005 y AUD-NG-160 dentro de sus tareas ya existentes.
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-06
+AUDITORÍA DE CUMPLIMIENTO — [TAREA-F4-P1-09] PANEL DE SEGURIDAD, AUDITORÍA Y CUMPLIMIENTO INSTITUCIONAL
+REPOSITORIO: i-miss-cocaine/IMA
+RAMA: NG_beta_0.0.0.1_work
+HEAD DE PARTIDA: 2d78507eceaa335116e58127ecf3d4a845aed204
+SESIÓN/CHAT: IMA-AUDIT-20261106-1512Z
+DICTAMEN: NO CUMPLE
+
+ALCANCE Y LÍMITE DE FUENTE:
+- completadas.md marca TAREA-F4-P1-09 como [X], con severidad Alto y archivos js/ui-common.js, dashboard-direccion.html y backend/user-service/Code.gs; no conserva criterios de aceptación detallados.
+- La fuente original AUDITORIA_FASE4_IDENTIDAD_PERMISOS_GOBIERNO.md no aparece en el árbol actual. No se inventan criterios no disponibles.
+- Se revisaron las rutas de datos, permisos, endpoints y UI del panel, junto con los contratos de logs y delegaciones ya registrados.
+
+EVIDENCIA:
+- backend/user-service/Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f:
+  - ROLE_PERMISSIONS 922-980; getUserVerifiedRole/validateRolePermission 1050-1305; doPost 1345-1480.
+  - getPaginatedAuditLogReport 4243-4369; generatePrivilegeAndAccountAuditReport 4372-4453; getSecurityAndComplianceDashboardData 4454-4540.
+  - getSecurityDelegations 1803-1859; recordTraceabilityLog 4548-4608; registerAndDispatchEvent 4618-4759.
+  - logStructuredEvent 320-380; loginUser 2460-2555.
+- js/ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67: openSecurityAndComplianceDashboardModal 5616-5760.
+- dashboard-direccion.html SHA fefaa3bf7884288aef563cfb8aaf244e6cea8b7c: botón 46; integración del modal/botón dentro del bloque 1-220.
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676: tarea 1757-1761.
+- Pendientes.md SHA previo 2a3bc3bc1afbc92b0793589096c1dab169662552: AUD-NG-145 18358-18375; AUD-NG-219/TASK-498 19809-19835.
+
+HALLAZGOS:
+1. Indicadores inconsistentes: getSecurityAndComplianceDashboardData aplica fecha/usuario/tipo a eventsList, pero incrementa failedLogins/successfulLogins/revokedSessions fuera de esos filtros. Los KPI no coinciden con la tabla filtrada.
+2. Paginación ausente en UI: el backend limita la tabla a 200 eventos mediante slice(0, 200); el modal no tiene controles de página ni cursor y solo muestra el tamaño del arreglo.
+3. Consulta de delegaciones rota: el panel llama getSecurityDelegations({statusFilter:"ACTIVA"}) sin token. getSecurityDelegations exige identidad verificada y lee estado, no statusFilter. El contador puede quedar en cero aunque existan delegaciones activas. Se amplía AUD-NG-219.
+4. Integración incompleta: el backend devuelve activeDelegations y healthReport, pero el modal no los presenta. No se encontraron llamadas UI a generatePrivilegeAndAccountAuditReport ni getPaginatedAuditLogReport.
+5. Renderizado de registros: ui-common.js concatena campos de eventos y err.message dentro de innerHTML sin escape contextual visible. Se amplía AUD-NG-145 como riesgo condicional; no se probó ejecución XSS.
+6. Fuentes de datos: LogsSistema/BitacoraEventos y BitacoraTraceability/BitacoraTrazabilidad ya están cubiertos por AUD-NG-145, incluida la desconexión de eventos LOGIN_FAILED/LOGIN_SUCCESS y el desajuste de esquema. No duplicar.
+7. La gestión de autoridad/ámbito/ciclo de vida de delegaciones permanece en AUD-NG-219/TASK-498. No duplicar el motor.
+
+RECONCILIACIÓN:
+- Ampliar AUD-NG-145 por renderizado UI sin escape contextual.
+- Ampliar AUD-NG-219 por pérdida del token y discrepancia statusFilter/estado en la consulta interna del panel.
+- Crear AUD-NG-227/TASK-507 para consistencia de KPI, paginación visible, integración de reportes y salud operativa. El alcance no reimplementa las fuentes de logs ni el motor de delegaciones.
+
+PRUEBAS Y LÍMITES:
+- Ejecutado: inspección estática/manual de funciones, variables, rutas, permisos, contratos, fuentes y UI; comparación de SHA; reconciliación de hallazgos.
+- No ejecutado: Apps Script runtime, HTTP, Sheets productivas, navegador/DOM, filtros con datos reales, paginación >200, pruebas multirol, consulta real de delegaciones, health check productivo, XSS ni suites automatizadas.
+- No se modificó código fuente.
+
+PROGRESO:
+- 81/183 identificadores auditados; 102 pendientes.
+- Última tarea auditada: TAREA-F4-P1-09.
+- Siguiente tarea oficial: TAREA-F4-P2-01 - Eliminar la generación de identificadores de usuario basada en marcas de tiempo.
+===============================================================================

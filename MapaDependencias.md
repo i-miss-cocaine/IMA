@@ -1788,3 +1788,33 @@ Relaciones:
 - AUD-NG-005: se amplía por handlers ausentes, estado parcial, revocación no propagada, purgadores que borran marcas y cobertura del servicio DEVELOPER.
 - AUD-NG-160: se amplía por claves de caché incompatibles y falta de invalidación de matriz/delegaciones entre servicios.
 - AUD-NG-219/TASK-498: autoridad, ámbito y cadenas de delegación; AUD-NG-221/TASK-501: dimensiones de matriz; AUD-NG-222/TASK-502: ABAC común; AUD-NG-176/TASK-474: cola general de notificaciones. No se crean IDs nuevos.
+
+
+## Registro de dependencias - TAREA-F4-P1-09 (C1.84)
+
+### Dashboard de Dirección y punto de entrada
+- `dashboard-direccion.html:46` declara `btn-security-compliance-dashboard`; el bloque de integración (aprox. 175-205) llama `window.openSecurityAndComplianceDashboardModal`.
+- `js/ui-common.js:5616-5760` crea el modal, filtros de fecha/usuario/tipo, cuatro tarjetas KPI y tabla de eventos.
+- La UI solo invoca `fetchApi("getSecurityAndComplianceDashboardData", ...)` (5715-5720); no consume `generatePrivilegeAndAccountAuditReport` ni `getPaginatedAuditLogReport`.
+
+### USER: contratos y datos del panel
+- `getSecurityAndComplianceDashboardData` (4454-4540) lee `BitacoraEventos`, construye eventsList filtrado y limita la respuesta a 200 eventos.
+- Los contadores failedLogins/successfulLogins/revokedSessions se incrementan fuera del filtro de fecha/usuario/tipo; las tarjetas no reflejan el subconjunto de la tabla.
+- El backend retorna `activeDelegations` y `healthReport`, pero la UI no los representa.
+- La llamada interna `getSecurityDelegations({statusFilter:"ACTIVA"})` no reenvía el token. `getSecurityDelegations` exige `sessionToken/authToken/token`, deriva callerId de `_verifiedUserId` y lee `estado`; por ello la consulta interna no hereda la identidad de Director y no filtra por el parámetro esperado.
+- `generatePrivilegeAndAccountAuditReport` (4372-4453) produce resumen y listas de cuentas privilegiadas/inactivas; el panel no lo solicita.
+- `getPaginatedAuditLogReport` (4243-4369) existe y está en el router, pero el panel no lo solicita ni ofrece paginación.
+- `getOperationalCapacityMetrics` se llama desde el endpoint y su resultado se devuelve como healthReport, pero la UI lo ignora.
+
+### Fuentes de logs y trazabilidad (reconciliación)
+- `logStructuredEvent` (329-352) escribe en `LogsSistema`; `loginUser` (aprox. 2470-2555) registra LOGIN_FAILED/LOGIN_SUCCESS mediante ese helper.
+- `getSecurityAndComplianceDashboardData` lee `BitacoraEventos`; la desconexión de fuentes y los contadores de login ya están documentados en AUD-NG-145 (ampliación C1.75).
+- `registerAndDispatchEvent` (4618-4694) escribe BitacoraEventos con esquema EventID/TipoEvento/ServicioOrigen/RequestIDOrigen/DestinatarioID/DatosJSON/Estado/Intentos/UltimoIntentoFecha/ErrorDetalle; el lector del panel/reportes interpreta otras posiciones. AUD-NG-145 conserva este desajuste.
+- `recordTraceabilityLog` escribe `BitacoraTrazabilidad`; `getPaginatedAuditLogReport` consulta `BitacoraTraceability`. AUD-NG-145 conserva el nombre y DTO incompatibles.
+- El modal interpola datos de eventos y err.message en `innerHTML` (aprox. 5740-5755). AUD-NG-145 se amplía por el renderizado sin escape contextual.
+
+### Reconciliación de hallazgos
+- AUD-NG-145: fuentes, esquema, DTO, sanitización y renderizado seguro de bitácoras.
+- AUD-NG-219/TASK-498: autoridad, ámbito y ciclo de vida de delegaciones; se amplía por el contexto autenticado perdido en el contador.
+- AUD-NG-160: cachés de permisos/delegaciones; no se duplica.
+- AUD-NG-227/TASK-507: consistencia de KPI, paginación visible, integración de reportes y salud, y composición del panel. No reimplementa los contratos de log ni el motor de delegaciones.

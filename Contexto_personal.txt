@@ -3320,3 +3320,42 @@ CHECKPOINT C1.83 - TAREA-F4-P1-08
 - Bloqueos: ninguno al preparar el cierre.
 - Commit de cierre: el commit que contiene este checkpoint.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.84 - TAREA-F4-P1-09
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto real: Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: 2d78507eceaa335116e58127ecf3d4a845aed204.
+- HEAD de la rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID operativo de sesión/chat: IMA-AUDIT-20261106-1512Z; inicio C1.84; cierre C1.84; estado: sesión cerrada. Identificador operativo, no ID nativo de ChatGPT.
+- Último checkpoint/tarea anterior: C1.83 / TAREA-F4-P1-08.
+- Tarea auditada: TAREA-F4-P1-09 - Crear un panel de seguridad, auditoría y cumplimiento institucional.
+- Estado maestro: [X] Completada en completadas.md (SHA f57f1aef832e81e44fc4f7ec36a852d50e464676); la fuente original solo conserva título, origen, severidad y archivos.
+- Dictamen: NO CUMPLE.
+- Evidencia principal: USER SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67; dashboard-direccion.html SHA fefaa3bf7884288aef563cfb8aaf244e6cea8b7c.
+- Bloques inspeccionados:
+  - USER ROLE_PERMISSIONS 922-980; autenticación/autorización 1050-1305; doPost 1345-1480; getSecurityDelegations 1803-1859; getPaginatedAuditLogReport 4243-4369; generatePrivilegeAndAccountAuditReport 4372-4453; getSecurityAndComplianceDashboardData 4454-4540; recordTraceabilityLog 4548-4608; logStructuredEvent 320-380; loginUser 2460-2555; registerAndDispatchEvent/retryFailedEventsQueue 4618-4759.
+  - js/ui-common.js openSecurityAndComplianceDashboardModal 5616-5760.
+  - dashboard-direccion.html botón 46 e integración dentro del bloque 1-220.
+  - completadas.md 1757-1761; Pendientes.md AUD-NG-145 18358-18375 y AUD-NG-219/TASK-498 19809-19835.
+- Hallazgos:
+  - AUD-NG-145 ampliado por interpolación de campos de eventos y err.message en innerHTML sin escape contextual visible; riesgo condicional, sin prueba XSS runtime.
+  - AUD-NG-219 ampliado: getSecurityAndComplianceDashboardData y generatePrivilegeAndAccountAuditReport llaman getSecurityDelegations sin token y con statusFilter, mientras el helper exige identidad verificada y lee estado; ambos contadores pueden quedar en cero.
+  - Nuevo AUD-NG-227/TASK-507: KPI no respetan filtros, tabla limitada a 200 sin paginación UI, reportes de privilegios/auditoría y healthReport no integrados.
+  - No duplicar los problemas de fuentes/esquemas/DTO de AUD-NG-145 ni el motor de delegaciones de AUD-NG-219; AUD-NG-160 permanece separado.
+- Pruebas ejecutadas: inspección estática/manual de rutas, permisos, funciones, contratos, fuentes de datos y renderizado; comparación de SHA; reconciliación histórica.
+- Pruebas no ejecutadas: Apps Script runtime, HTTP, Google Sheets productivo, navegador/DOM, filtros reales, paginación >200, multirol, delegaciones reales, health check productivo, XSS ni suites automatizadas.
+- Progreso: 81/183 identificadores auditados; 102 pendientes.
+- Última tarea completada: C1.84 / TAREA-F4-P1-09.
+- Tarea en curso: ninguna.
+- Siguiente tarea exacta: TAREA-F4-P2-01 - Eliminar la generación de identificadores de usuario basada en marcas de tiempo.
+- Próxima acción reproducible: abrir TAREA-F4-P2-01 en completadas.md y revisar la generación de identificadores de usuario en USER, sus secuencias/locks, call sites, colisiones y pruebas; reconciliar AUD-NG-225/226, generateInstitutionalId y tareas de concurrencia antes de crear IDs.
+- Archivos modificados: Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt, Pendientes.md y nuevo AUDITORIA_COMPLETADAS_TAREA-F4-P1-09.md.
+- Archivos sin modificar: código fuente, completadas.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README.md y archivos de pruebas.
+- Bloqueos: ninguno.
+- Commit de cierre: el commit que contiene este checkpoint; SHA final confirmado externamente tras publicar.
+================================================================
