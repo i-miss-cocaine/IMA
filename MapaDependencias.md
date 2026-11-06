@@ -1838,3 +1838,14 @@ Relaciones:
 - TASK-118 conserva el seguimiento histórico del modelo institucional de identificadores.
 - TAREA-F4-P2-01 cumple parcialmente: el fallback temporal se eliminó de registerUser, pero no se certifica unicidad global ni pruebas runtime.
 - No duplicar AUD-NG-161 ni crear IDs nuevos.
+
+
+## C1.86 — TAREA-F4-P2-02: ciclo de vida de cuentas y sesiones
+
+- USER/loginUser emite sessionToken (24h), pero js/auth.js no conserva data.sessionToken y js/api.js no lo adjunta al cuerpo de fetchApi. AUD-NG-001.
+- USER/logoutUser permanece en PUBLIC_ACTIONS; acepta userId/sessionId del payload y no fuerza que coincidan con claims verificados. ui-common.js/handleLogout solo limpia almacenamiento local y redirige, sin logout remoto. AUD-NG-159.
+- USER/revokeUserSession escribe revoked_user_*/revoked_session_* con TTL 21600s (6h), inferior a la expiración de 24h del token. Si el marcador expira y la cuenta sigue Activa, el token puede seguir vigente. AUD-NG-005.
+- loginUser permite autenticación de cuentas Pendiente/InvitacionEnviada, pero verifySessionToken exige estado Activa. AUD-NG-005.
+- manageAccountState escribe Usuarios!K y registra el cambio antes de invocar dispatchSecurityEvent; no se encontró definición local en el único archivo backend/user-service/Code.gs versionado. La propagación no queda confirmada tras la mutación. AUD-NG-005.
+- Reconciliación: AUD-NG-001, AUD-NG-005 y AUD-NG-159; no crear IDs duplicados. AUD-NG-160 (rol/cachés) y AUD-NG-006 (reintentos/idempotencia) conservan límites separados.
+- Evidencia C1.86: USER 12079dd410aa6d8afbce55a4bc62a79dea605f9f; auth.js 8444dd085a3186106d2db7005b61ef934d3c22d8; api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; ui-common.js 986938b8a311a41ed4cb3d135b66b6aaea4bed67. Sin cambios de código.

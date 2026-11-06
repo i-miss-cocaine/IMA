@@ -3401,3 +3401,46 @@ CHECKPOINT C1.85 - TAREA-F4-P2-01
 - Bloqueos: ninguno.
 - Commit de cierre: el commit que contiene este checkpoint; SHA final confirmado externamente tras publicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.86 - TAREA-F4-P2-02
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto real: Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: 0ccbc15d3337f79128eff3618b322782910c21dc.
+- Tree SHA de partida verificado: 84999959dce28e4f6ef720813f3c337760491893.
+- HEAD de la rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Diferencia verificada: rama de trabajo 148 commits adelante y 0 detrás.
+- ID operativo de sesión/chat: IMA-AUDIT-20261106-1644Z; inicio C1.86; estado: sesión abierta. Hora de inicio comunicada: 2026-11-06T16:44:04Z. Identificador operativo, no ID nativo de ChatGPT.
+- Último checkpoint anterior: C1.85 / TAREA-F4-P2-01.
+- Tarea auditada: TAREA-F4-P2-02 - Implementar una gestión completa del ciclo de vida de cuentas y sesiones.
+- Estado maestro histórico: [X] en completadas.md; severidad Medio; archivos USER, auth.js y ui-common.js. La entrada no conserva criterios de aceptación detallados.
+- Fuente original AUDITORIA_FASE4_IDENTIDAD_PERMISOS_GOBIERNO.md: no localizada en el árbol de esta rama.
+- Dictamen C1.86: NO CUMPLE.
+- Evidencia:
+  - USER Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f: PUBLIC_ACTIONS 922-925; generateSessionToken 1065-1080; verifySessionToken 1083-1140; revokeUserSession 2318-2330; ALLOWED_ACCOUNT_STATE_TRANSITIONS/manageAccountState 2332-2386; logoutUser 2456-2475; loginUser 2479-2547.
+  - auth.js SHA 8444dd085a3186106d2db7005b61ef934d3c22d8: login 138-160 omite el sessionToken al construir currentUser.
+  - api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9: fetchApi 40-57 solo agrega requesterUserId/requesterRole; no transmite sessionToken.
+  - ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67: handleLogout 225-235 limpia estado local y redirige; no solicita logout remoto.
+  - Tests: academic-grading-suite.js SHA 3433b707edd4a2f35c68368a3172932adc2a3b32 y modular-dashboard-suite.js SHA 0495e1d526a872c33310935a003a83d924d34683; búsqueda dirigida sin casos específicos de ciclo de vida de cuentas/sesiones.
+- Hallazgos:
+  - Se revalida AUD-NG-001: login emite token, auth.js lo descarta y api.js no lo transmite.
+  - Se amplía AUD-NG-005: token 24h frente a marcadores de revocación 6h; login acepta Pendiente/InvitacionEnviada mientras verifySessionToken exige Activa; manageAccountState persiste antes de llamar a dispatchSecurityEvent, sin definición local encontrada en el único Code.gs versionado.
+  - Se revalida AUD-NG-159: logoutUser continúa público y acepta IDs del payload; UI no invoca logout remoto.
+  - AUD-NG-160 permanece separado; AUD-NG-006 queda fuera de alcance. No se crean IDs nuevos.
+- Pruebas ejecutadas: inspección estática/manual, búsqueda de funciones/definiciones, cotejo de dos archivos de pruebas y reconciliación histórica.
+- Pruebas no ejecutadas: Apps Script runtime, HTTP, Sheets/CacheService productivos, expiración real de TTL, login/logout multiusuario, navegador/DOM, fallos parciales, concurrencia ni suites automatizadas.
+- Progreso: 83/183 identificadores auditados; 100 pendientes.
+- Última tarea auditada: C1.86 / TAREA-F4-P2-02.
+- Tarea en curso: ninguna.
+- Siguiente tarea exacta: TAREA-F4-P2-03 - Mejorar la experiencia administrativa de gestión de usuarios, permisos y delegaciones.
+- Próxima acción reproducible: abrir TAREA-F4-P2-03 en completadas.md; inspeccionar el modal administrativo de usuarios en js/ui-common.js y dashboard-direccion.html, sus endpoints USER, permisos, confirmaciones, acciones de estado/delegación, autorización de servidor, trazabilidad y pruebas; reconciliar AUD-NG-001/005/159/160/219/221 antes de crear IDs.
+- Archivos documentales modificados: Auditoria.txt, Pendientes.md, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt y nuevo AUDITORIA_COMPLETADAS_TAREA-F4-P2-02.md.
+- Archivos preservados: código fuente, pruebas, completadas.md, ChangesLogs.txt y METODOLOGIA_DESARROLLO.md.
+- Regla de ID de sesión: ya existe en METODOLOGIA_DESARROLLO.md, sección 16, punto 9; no se duplicó.
+- Bloqueos: ninguno tras recuperar el tree SHA.
+- Commit de cierre: el commit que contiene este checkpoint; SHA final se verifica después de publicar.
+================================================================

@@ -6500,3 +6500,47 @@ PRUEBAS Y LÍMITES:
 - No ejecutado: Apps Script runtime, HTTP, Sheets productivo, concurrencia cruzada, colisiones, fallo de generador, recuperación ni suites automatizadas.
 - No se modificó código fuente.
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-06
+CHECKPOINT C1.86 — TAREA-F4-P2-02
+SESIÓN: IMA-AUDIT-20261106-1644Z
+REPOSITORIO: i-miss-cocaine/IMA
+RAMA: NG_beta_0.0.0.1_work
+HEAD DE PARTIDA: 0ccbc15d3337f79128eff3618b322782910c21dc
+DICTAMEN: NO CUMPLE
+
+ALCANCE:
+- completadas.md marca TAREA-F4-P2-02 como [X], severidad Medio, con archivos backend/user-service/Code.gs, js/auth.js y js/ui-common.js; no contiene criterios detallados.
+- ChangesLogs.txt describe ALLOWED_ACCOUNT_STATE_TRANSITIONS y manageAccountState, pero no acredita el ciclo integral de sesiones.
+- La fuente AUDITORIA_FASE4_IDENTIDAD_PERMISOS_GOBIERNO.md no está en el árbol de esta rama.
+
+EVIDENCIA:
+- USER SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f: PUBLIC_ACTIONS 922-925; generateSessionToken 1065-1080; verifySessionToken 1083-1140; revokeUserSession 2318-2330; manageAccountState 2332-2386; logoutUser 2456-2475; loginUser 2479-2547.
+- auth.js SHA 8444dd085a3186106d2db7005b61ef934d3c22d8: login 138-160.
+- api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9: fetchApi 40-57.
+- ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67: handleLogout 225-235.
+- Tests: academic-grading-suite.js SHA 3433b707edd4a2f35c68368a3172932adc2a3b32; modular-dashboard-suite.js SHA 0495e1d526a872c33310935a003a83d924d34683; no se encontraron casos específicos en la búsqueda dirigida.
+
+RESULTADOS:
+1. loginUser emite token de 24h; auth.js no copia data.sessionToken a currentUser y api.js no transmite sessionToken.
+2. handleLogout solo borra estado local y redirige; no llama logoutUser.
+3. logoutUser sigue en PUBLIC_ACTIONS y acepta userId/sessionId del payload; los claims solo completan campos ausentes. Se revalida AUD-NG-159.
+4. revokeUserSession conserva marcas por 21,600s (6h), mientras el token puede vivir 24h. Se amplía AUD-NG-005.
+5. loginUser rechaza Suspendida/Desactivada/Bloqueada, pero permite Pendiente/InvitacionEnviada; verifySessionToken exige Activa. Se amplía AUD-NG-005 por incoherencia de estados.
+6. manageAccountState persiste antes de dispatchSecurityEvent; no hay definición local del dispatcher en el único archivo backend/user-service versionado. La propagación no queda confirmada y no hay rollback tras el error posterior a la escritura. Ya cubierto por AUD-NG-005.
+7. No se encontraron pruebas específicas de ciclo de vida de cuentas/sesiones en los dos archivos de tests/regression revisados.
+
+RECONCILIACIÓN:
+- AUD-NG-001: token no conservado ni transmitido.
+- AUD-NG-005: revocación, TTL, propagación y estados de cuenta.
+- AUD-NG-159: logout público y revocación arbitraria.
+- AUD-NG-160 y AUD-NG-006 conservan alcances separados; no se amplían.
+- No se crean AUD-NG/TASK nuevos.
+
+PRUEBAS Y LÍMITES:
+- Ejecutado: inspección estática/manual, búsqueda de definiciones, búsqueda dirigida en suites, reconciliación con Pendientes/Auditoria/Mapa y verificación de SHA.
+- No ejecutado: Apps Script, HTTP, Sheets/CacheService real, expiración real de TTL, login/logout multiusuario, navegador/DOM, fallos parciales, concurrencia ni suites automatizadas.
+- Código fuente y pruebas sin modificaciones.
+===============================================================================

@@ -997,3 +997,14 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Pruebas:** inspección estática/manual y búsqueda dirigida. No se ejecutaron Apps Script, HTTP, Sheets productivo, concurrencia cruzada, pruebas de colisión ni suites automatizadas.
 - **Progreso:** 82/183 identificadores auditados; 101 pendientes.
 - **Siguiente tarea oficial:** TAREA-F4-P2-02 - Implementar una gestión completa del ciclo de vida de cuentas y sesiones.
+
+
+## 88. Resultado C1.86 - TAREA-F4-P2-02 (2026-11-06)
+
+- **Dictamen:** NO CUMPLE. loginUser emite sessionToken, pero auth.js no lo conserva y api.js no lo transmite; handleLogout solo limpia estado local; logoutUser continúa público y acepta userId/sessionId del payload; la marca de revocación dura 6 horas frente a tokens de 24 horas; login permite Pendiente/InvitacionEnviada aunque verifySessionToken exige Activa; manageAccountState persiste antes de llamar a dispatchSecurityEvent, cuya definición local no aparece en el único Code.gs versionado.
+- **Reconciliación:** revalidar AUD-NG-001 y AUD-NG-159; ampliar AUD-NG-005. AUD-NG-160 conserva vigencia de roles/cachés; AUD-NG-006 conserva reintentos/idempotencia. No se crean IDs nuevos.
+- **Fuente:** completadas.md marca TAREA-F4-P2-02 como [X], pero no conserva criterios detallados. ChangesLogs.txt solo describe máquina de estados y llamada al dispatcher. La fuente original AUDITORIA_FASE4_IDENTIDAD_PERMISOS_GOBIERNO.md no está en el árbol; el dictamen se limita a la evidencia disponible.
+- **Evidencia:** USER SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; auth.js SHA 8444dd085a3186106d2db7005b61ef934d3c22d8; api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67; tests academic-grading-suite.js SHA 3433b707edd4a2f35c68368a3172932adc2a3b32; tests modular-dashboard-suite.js SHA 0495e1d526a872c33310935a003a83d924d34683; completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676; ChangesLogs.txt SHA d57cf4bd861b5c3720e60cf83241ed804ff645d9.
+- **Pruebas:** inspección estática/manual y búsqueda dirigida en ambos archivos bajo tests/regression. No se ejecutaron Apps Script, HTTP, Sheets/CacheService productivos, navegador/DOM, pruebas de TTL, login/logout real ni suites automatizadas.
+- **Progreso:** 83/183 identificadores auditados; 100 pendientes.
+- **Siguiente tarea oficial:** TAREA-F4-P2-03 - Mejorar la experiencia administrativa de gestión de usuarios, permisos y delegaciones.
