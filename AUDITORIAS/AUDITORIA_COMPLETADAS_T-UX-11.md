@@ -90,3 +90,31 @@ La conservación del contexto también es defectuosa: `switchActiveView` guarda 
 - `MapaDependencias.md` origen: 1fe3250ecd4f5035e0f8a07f98188d9c4d97d08a.
 - `AUDITORIA_COMPLETADAS_PLAN.md` origen: 4595bdbabefedfbc5d7b281d4f8c923cf0c8eaf2.
 - `Contexto_personal.txt` origen: 01badf6fd4b3e79d1bd69493fa2cf66745a4fda9.
+
+## Tareas ejecutables derivadas de los hallazgos
+
+### [TASK-485] Activar un enrutador contextual único con historial y rutas directas
+- **Hallazgo de origen:** AUD-NG-188; T-UX-11.
+- **Severidad:** Alto.
+- **Objetivo:** hacer que navegación, URL y estado de vista representen el mismo destino.
+- **Acción ejecutable:** inicializar initNoLoopHistoryManager en la carga común; procesar estados {view, params} desde el listener central; resolver hash/ruta inicial al cargar; validar destinos y mostrar error controlado cuando no existan; normalizar navegación entre paneles.
+- **Archivos/módulos afectados:** js/ui-common.js, módulos de dashboard y handlers de navegación.
+- **Dependencias y riesgos:** AUD-NG-162 para diferenciar sesión expirada de permiso insuficiente; TASK-483 para visibilidad de rutas.
+- **Alcance:** router, historial del navegador y navegación directa.
+- **Criterios de aceptación:** abrir URL directa muestra vista correcta; atrás/adelante restaura destino; vista inválida produce estado/error explícito; listener se inicializa una sola vez; navegación no crea bucles.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas de carga directa, pushState/popstate y destinos inválidos.
+
+### [TASK-486] Preservar y restaurar el estado real de listas y vistas de detalle
+- **Hallazgo de origen:** AUD-NG-189; T-UX-11.
+- **Severidad:** Alto.
+- **Objetivo:** conservar filtros, búsqueda, orden, página y contexto al entrar a detalle y regresar.
+- **Acción ejecutable:** definir snapshot por vista/lista; capturar parámetros de la vista saliente antes de navegar; restaurar snapshot al regresar; evitar almacenar parámetros del destino bajo la vista incorrecta; unificar comportamiento entre paneles.
+- **Archivos/módulos afectados:** js/ui-common.js y consumidores de listas/detalles en dashboards.
+- **Dependencias y riesgos:** TASK-485 para router/historial; TASK-429 para paginación restaurable.
+- **Alcance:** estado de listas, filtros y vistas de detalle.
+- **Criterios de aceptación:** entrar a detalle y regresar conserva búsqueda, filtros, orden, página y scroll; cambios de datos se reconcilian sin perder contexto; snapshot está aislado por vista/usuario; pruebas cubren paneles distintos.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas de navegación ida/vuelta en dashboards.

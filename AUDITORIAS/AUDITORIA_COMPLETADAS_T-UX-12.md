@@ -142,3 +142,56 @@ Se registra AUD-NG-191 / TASK-488 para los paneles de Dirección, Coordinación 
 - No ejecutado: navegador, DOM real, pruebas de interacción, APIs, Apps Script, consultas reales a Google Sheets, pruebas de permisos en entorno activo o suites automatizadas.
 - Resultado: auditoría documental y estática; no se afirma verificación runtime.
 
+## Tareas ejecutables derivadas de los hallazgos
+
+### [TASK-487] Integrar indicadores operativos reales en paneles de Estudiante, Docente y Contabilidad
+- **Hallazgo de origen:** AUD-NG-190; T-UX-12.
+- **Severidad:** Alto.
+- **Objetivo:** que los resúmenes de cada panel se alimenten de datos reales y tengan accesos útiles.
+- **Acción ejecutable:** conectar consolidadores a los dashboards; corregir el campo incompatible del resumen estudiantil; sustituir el resumen contable estático/cero por consulta real; distinguir ausencia de datos de fallo; enlazar indicadores a las vistas correspondientes.
+- **Archivos/módulos afectados:** js/student.js, js/teacher.js, js/accounting.js y sus dashboards.
+- **Dependencias y riesgos:** TASK-483 para navegación; no mostrar métricas ficticias ni valores cero por indisponibilidad.
+- **Alcance:** indicadores de los tres roles.
+- **Criterios de aceptación:** cada KPI deriva de fuente real y documentada; ausencia/indisponibilidad tiene estado diferenciado; accesos abren la vista filtrada correcta; pruebas por rol y datasets vacíos/no vacíos.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas de datos y navegación por dashboard.
+
+### [TASK-488] Completar paneles e indicadores de Dirección, Coordinación y roles dinámicos
+- **Hallazgo de origen:** AUD-NG-191; T-UX-12.
+- **Severidad:** Alto.
+- **Objetivo:** eliminar indicadores estáticos/falsos y asegurar cobertura de paneles por rol.
+- **Acción ejecutable:** conectar indicadores a fuentes reales; corregir los valores que se fijan manualmente en cero o declaran ausencia sin consultar datos; completar navegación y contenido del dashboard dinámico para todos los roles admitidos.
+- **Archivos/módulos afectados:** dashboard-direccion.html, dashboard-coordinacion.html, dashboard dinámico y servicios de métricas.
+- **Dependencias y riesgos:** TASK-483; autorización contextual por rol.
+- **Alcance:** Dirección, Coordinación y dashboards dinámicos.
+- **Criterios de aceptación:** cada indicador tiene fuente y cálculo trazable; ningún KPI muestra cero por ausencia de consulta; cada rol autorizado tiene panel funcional y accesos efectivos; pruebas por rol/estado de datos.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas de integración y matriz de cobertura por rol.
+
+### [TASK-489] Corregir el contrato de datos y la representación del panel de Recursos Humanos
+- **Hallazgo de origen:** AUD-NG-192; T-UX-12.
+- **Severidad:** Alto.
+- **Objetivo:** alinear el panel de RR. HH. con la respuesta real del backend.
+- **Acción ejecutable:** normalizar el DTO entre backend y frontend; alinear solicitudes/data, nombres de campos y estados; validar contadores y listas de vacaciones; manejar estados vacío/error.
+- **Archivos/módulos afectados:** backend/user-service/Code.gs, módulo UI de Recursos Humanos y dashboard correspondiente.
+- **Dependencias y riesgos:** contrato API versionado de AUD-NG-174; no traducir fallos a lista vacía.
+- **Alcance:** consulta y renderizado de solicitudes laborales/vacaciones.
+- **Criterios de aceptación:** esquema documentado coincide en ambos lados; lista/contador muestran los mismos registros; estados se traducen explícitamente; pruebas de éxito, vacío y error.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas de contrato y renderizado.
+
+### [TASK-490] Restringir expedientes y solicitudes laborales al titular o rol administrativo autorizado
+- **Hallazgo de origen:** AUD-NG-193; T-UX-12.
+- **Severidad:** Alto.
+- **Objetivo:** impedir que un empleado autenticado consulte datos laborales de otros empleados.
+- **Acción ejecutable:** derivar identidad del token verificado; filtrar en servidor por titular para rol Empleado; permitir consultas globales solo a roles administrativos explícitamente autorizados; eliminar confianza en targetUserId del payload.
+- **Archivos/módulos afectados:** backend/user-service/Code.gs; endpoints de expedientes y solicitudes laborales.
+- **Dependencias y riesgos:** controles RBAC/ABAC existentes y auditoría de accesos.
+- **Alcance:** lectura de datos laborales y expedientes.
+- **Criterios de aceptación:** empleado no puede leer otro UserId manipulando payload; roles administrativos autorizados mantienen su alcance; accesos denegados se registran; pruebas IDOR por rol.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas de aislamiento y autorización servidor.

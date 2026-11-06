@@ -100,3 +100,18 @@
 - Tarea nueva: TASK-483.
 - Progreso acumulado: **50/183 identificadores auditados; 133 pendientes**.
 - Siguiente tarea: **T-UX-10 - Completar la verificación funcional y automatizar las pruebas de experiencia de usuario**.
+
+## Tareas ejecutables derivadas de los hallazgos
+
+### [TASK-483] Completar el menú lateral responsivo y específico por rol
+- **Hallazgo de origen:** AUD-NG-186; T-UX-09.
+- **Severidad:** Medio.
+- **Objetivo:** proporcionar navegación coherente por rol en todos los dashboards, con sidebar desktop y drawer móvil funcional.
+- **Acción ejecutable:** definir matriz de rutas por rol; generar navegación desde esa matriz; integrar en todos los dashboards incluidos Developer y dashboard dinámico; corregir inserción del botón móvil para que no herede un contenedor oculto; implementar sidebar desktop, transición de colapso y estado activo accesible; separar acciones inmediatas de enlaces.
+- **Archivos/módulos afectados:** js/ui-common.js, js/secretary.js, dashboards HTML y estilos compartidos.
+- **Dependencias y riesgos:** TASK-253 y TASK-430 son referencias relacionadas, no sustituyen este alcance; ampliar con AUD-NG-194 en T-UX-13.
+- **Alcance:** navegación lateral por rol, cobertura de paneles y responsive.
+- **Criterios de aceptación:** cada rol ve solo rutas autorizadas; todos los dashboards tienen navegación funcional en móvil/escritorio; botón hamburguesa visible en viewport móvil; transición de colapso operativa; aria-expanded/aria-controls y foco activo correctos; pruebas por rol/viewport.
+- **Prioridad:** P2.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** matriz de rutas, pruebas por rol y capturas/pruebas responsive.

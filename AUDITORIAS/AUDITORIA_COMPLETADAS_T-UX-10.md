@@ -95,3 +95,18 @@ La función auxiliar `addResult` asigna únicamente `PASS` o `FAIL`; el resumen 
 - `MapaDependencias.md` origen: 76a645c5dc116be61353f8e20dd207c8b365e7c7.
 - `AUDITORIA_COMPLETADAS_PLAN.md` origen: ba004aab517d261ec4bff0dc0a63400bed9495f6.
 - `Contexto_personal.txt` origen: 429fd1b1eae0cfb89fa9431978398a9ced91a27d.
+
+## Tareas ejecutables derivadas de los hallazgos
+
+### [TASK-484] Implementar pruebas conductuales automatizadas para las nueve capacidades UX
+- **Hallazgo de origen:** AUD-NG-187; sección Hallazgo nuevo.
+- **Severidad:** Alto.
+- **Objetivo:** sustituir pruebas nominales por pruebas que ejecuten los flujos UX y verifiquen resultados.
+- **Acción ejecutable:** rediseñar runUXSuiteTests para UX-01..UX-09; probar expiración real y separación autenticación/autorización, Escape/foco, dirty forms, frescura, normalización, omnibox/permisos/navegación, estado en línea, soporte, menú por rol y flujos restantes; añadir estados PASS/FAIL/BLOCKED/SKIPPED con evidencia y errores; integrar ejecución en regresión y dashboards definidos.
+- **Archivos/módulos afectados:** js/ui-common.js, tests/regression, cinco dashboards principales y consumidores UX.
+- **Dependencias y riesgos:** AUD-NG-009 cubre el principio general de pruebas conductuales; AUD-NG-162, 181-186 y TASK-479 a TASK-483 cubren defectos funcionales de producto y no son sustituidos por esta suite.
+- **Alcance:** calidad y ejecución de pruebas UX, no implementar por sí sola las correcciones de producto.
+- **Criterios de aceptación:** cada grupo dispara interacción/función real y valida salida observable; no aprueba por existencia de símbolo; fallos individuales hacen fallar el resultado general; casos bloqueados/omitidos se informan separadamente; suite ejecutable en entorno aislado y conectada a regresión.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** reporte de suite con casos por UX-01..UX-09 y ejecución reproducible.

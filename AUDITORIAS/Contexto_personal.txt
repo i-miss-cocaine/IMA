@@ -3893,3 +3893,22 @@ CHECKPOINT C1.100 - CONVERSIÓN DE HALLAZGOS HISTÓRICOS (LOTE 4)
 - Pruebas: validación de IDs, prioridad y criterios de aceptación; verificación Git posterior.
 - Commit de cierre: el commit que contiene este checkpoint; SHA final se verificará después de publicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.101 - CONVERSIÓN DE HALLAZGOS HISTÓRICOS (LOTE 5)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Contexto: AUDITORIAS/Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work; rama base: NG_beta_0.0.0.1.
+- HEAD de partida verificado: 7685e0449653a544ff95ef71f2f486eea38e9054; árbol de partida: 86b00c403f855de4bfb18a48632854e17d2ec681.
+- ID operativo de sesión: IMA-AUDIT-20261106-1719Z; checkpoint inicial C1.97; estado: sesión abierta.
+- Alcance: normalización de tareas en informes T-UX-09 a T-UX-12.
+- Avance publicado acumulado: 22/128 informes históricos con sección normalizada.
+- IDs incorporados: TASK-483, TASK-484, AUD-NG-188/TASK-485, AUD-NG-189/TASK-486, AUD-NG-190/TASK-487, AUD-NG-191/TASK-488, AUD-NG-192/TASK-489 y AUD-NG-193/TASK-490.
+- Deduplicación: AUD-NG-186/TASK-483 se amplía luego en T-UX-13; AUD-NG-187/TASK-484 prueba la suite sin sustituir tareas funcionales; referencias a tareas UX previas se mantienen sin duplicarlas.
+- Restricciones: Pendientes.md no se recupera, lee ni modifica; código fuente y completadas.md no se modifican.
+- Próximo lote: T-UX-13 a T-UX-15; luego T-UX-16 a T-UX-28.
+- Pruebas: validación de IDs, acciones y criterios; verificación Git posterior.
+- Commit de cierre: el commit que contiene este checkpoint; SHA final se verificará después de publicar.
+================================================================
