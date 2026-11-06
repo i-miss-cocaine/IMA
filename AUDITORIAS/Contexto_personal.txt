@@ -5296,3 +5296,32 @@ CHECKPOINT C1.154 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-02
 - Próximo informe pendiente: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-03.md; revisar el resultado completo, reconciliar AUD-NG-163 y tareas relacionadas antes de formalizar cualquier bloque.
 - Commit de cierre: commit único de ambos archivos; SHA y árbol deben verificarse después de publicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.155 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-03
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.1.
+- HEAD de partida verificado: 0859ae5f84d6de9e1e7d515a7edb138e92278598.
+- HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59 (referencia preservada del checkpoint anterior; no se modificó esta rama).
+- Árbol base de la rama de trabajo: 0664be9a01950e04bcfbfe664c915b15c8d8aeea.
+- ID operativo de sesión: IMA-AUDIT-20261106-2157Z (no es ID nativo de ChatGPT).
+- Checkpoint inicial de esta iteración: C1.154.
+- Estado de iteración: cerrada en C1.155.
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-03.md.
+- SHA del informe antes del cambio: d17d182314066749c6479a7d55adcfc05646cb55.
+- SHA del contexto antes del cambio: cb61973b03890fc2c7326f718e9f739c29aaa667.
+- Inspección: TAREA-03 CUMPLE PARCIALMENTE; métricas fragmentadas, valor fijo de capacidad en ACADEMIC, medición parcial de Drive en TASK, falta de telemetría uniforme y ausencia de alertas preventivas verificables y checkpoints generales.
+- Reconciliación decisiva: AUD-NG-163 está marcado en el addendum como duplicado y no ejecutable independientemente. TASK-064 conserva cuotas/capacidad/alertas; AUD-NG-144/145 conservan health checks y bitácora; TASK-154/TASK-227/TASK-265 conservan checkpoints/reanudación; AUD-NG-006/069/133/161 conservan reintentos, idempotencia y pruebas.
+- Tareas formalizadas en el bloque: se asigna explícitamente la cobertura a TASK-064 y TASK-154/TASK-227/TASK-265, sin crear IDs nuevos, cambiar estados ni reactivar AUD-NG-163.
+- Archivos modificados: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-03.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, Auditoria.txt, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README y rama base.
+- Pruebas ejecutadas: lectura íntegra del informe; contraste de AUD-NG-163 en Auditoria.txt; revisión del addendum de duplicados y de los bloques TASK-064/TASK-154/TASK-227/TASK-265; verificación del HEAD y árbol de partida.
+- Pruebas no ejecutadas: pruebas de carga, agotamiento de cuotas, alertas, concurrencia, reanudación, Apps Script y despliegues productivos.
+- Límite: cambio exclusivamente documental; TAREA-03 permanece CUMPLE PARCIALMENTE y las tareas referenciadas conservan sus estados vigentes.
+- Próximo informe: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-05.md. El registro de progreso indica que TAREA-04 no aparece como identificador en el inventario actual; no inventar ni crear un informe TAREA-04.
+- Commit de cierre: commit único de ambos archivos; verificar SHA, árbol y contenido publicado.
+================================================================

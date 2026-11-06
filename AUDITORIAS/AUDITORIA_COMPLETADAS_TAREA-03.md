@@ -69,3 +69,33 @@ La auditoría fue estática y documental sobre los archivos del repositorio en l
 
 ## Addendum de control de duplicados (2026-11-05)
 En revisión posterior se identificó que AUD-NG-163 se solapa con tareas preexistentes. Se conserva el registro histórico, pero queda marcado como duplicado y no debe ejecutarse por separado: TASK-064 (cuotas/capacidad/alertas); AUD-NG-144/AUD-NG-145 (health checks/bitácora); AUD-NG-006/AUD-NG-069/AUD-NG-133/AUD-NG-161 (reintentos/idempotencia/pruebas); TASK-154/TASK-227/TASK-265 (checkpoints y reanudación). El dictamen de TAREA-03 permanece CUMPLE PARCIALMENTE.
+
+
+---
+
+## Tareas ejecutables derivadas de los hallazgos
+
+> Control de duplicados posterior a la auditoría: AUD-NG-163 se conserva como rastro histórico, pero está marcado como duplicado y NO debe ejecutarse por separado. La cobertura se distribuye entre tareas existentes. Este bloque documenta esa asignación y evita reabrir el hallazgo duplicado.
+
+### [TASK-064] Integrar observabilidad real de salud, capacidad, cuotas y alertas
+- **Hallazgo de origen:** TAREA-03; AUD-NG-163 (registro histórico consolidado/duplicado); relación con las brechas de observabilidad y capacidad descritas en FASE2-T18.
+- **Objetivo:** proporcionar métricas reales y recientes por servicio/operación, identificar consumo y riesgo de agotamiento de cuotas, y emitir alertas preventivas verificables sin confundir ausencia de datos con estado saludable.
+- **Acción ejecutable dentro de la tarea existente:** integrar las métricas reales de cuotas/capacidad en la observabilidad institucional; cubrir los servicios y recursos aplicables; retirar porcentajes fijos y estimaciones presentadas como medición real; identificar la fuente, ventana temporal y última actualización de cada métrica; clasificar errores de cuota, autorización, validación y fallos permanentes; definir umbrales sustentados en mediciones y alertas preventivas deduplicadas; reflejar degradación o estado desconocido cuando falte telemetría. Mantener la integración del tablero y sus contratos en el alcance ya definido para TASK-064.
+- **Archivos/módulos relacionados:** backend/user-service/Code.gs, backend/academic-service/Code.gs, backend/accounting-service/Code.gs, backend/task-service/Code.gs, backend/exam-service/Code.gs, js/api.js, js/persistence.js y tablero institucional; los archivos exactos se conservan según el inventario de TASK-064.
+- **Dependencias y riesgos:** AUD-NG-144 mantiene health checks y cobertura de servicios; AUD-NG-145 mantiene contrato, filtros y sanitización de bitácora; AUD-NG-006/AUD-NG-069/AUD-NG-133/AUD-NG-161 mantienen reintentos, idempotencia y pruebas. No duplicar esos mecanismos. Riesgo de falsos positivos por métricas fijas, eventos incompletos o alertas que solo se representen como campos de respuesta.
+- **Alcance:** telemetría real de consumo/capacidad/cuotas y alertas preventivas integrada en la observabilidad existente. No crea una segunda implementación paralela de health checks o bitácora.
+- **Criterios de aceptación:** métricas trazables a servicio/operación y periodo; valores derivados de fuentes reales, nunca constantes presentadas como consumo; clasificación de cuota y error verificable; umbrales justificados; alertas emitidas y deduplicadas; ausencia/antigüedad de datos produce UNKNOWN o DEGRADED, nunca SALUDABLE; pruebas aisladas cubren cuota cercana al límite, cuota agotada, fuente ausente, alerta repetida y recuperación.
+- **Prioridad y estado:** conservar los vigentes en TASK-064; no se reespecifican en este informe.
+- **Evidencia de cierre:** pendiente; TAREA-03 fue auditada estáticamente y no se probaron cuotas reales, cargas ni alertas en despliegues.
+
+### [TASK-154 / TASK-227 / TASK-265] Conservar la cobertura existente de checkpoints y reanudación
+- **Hallazgo de origen:** TAREA-03, continuidad de trabajos masivos y recuperación; consolidación expresa en el addendum de control de duplicados.
+- **Acción ejecutable:** atender checkpoints, persistencia de progreso, recuperación y reanudación dentro de las tareas ya existentes TASK-154, TASK-227 y TASK-265. No crear un coordinador paralelo ni asignar a AUD-NG-163 una ejecución independiente.
+- **Criterios de aceptación:** utilizar los criterios y estados vigentes de esas tareas; demostrar que el progreso confirmado se conserva y que la reanudación no duplica efectos, en coordinación con AUD-NG-006 y AUD-NG-161.
+- **Estado:** conservar el vigente en cada tarea referenciada; este informe no las modifica ni las declara cerradas.
+
+### Reconciliación de hallazgos relacionados
+- **AUD-NG-163:** duplicado/consolidado; se conserva por trazabilidad histórica y no debe ejecutarse independientemente.
+- **AUD-NG-144 / AUD-NG-145:** mantienen respectivamente health checks/cobertura y bitácora/contratos/sanitización; no se absorben ni duplican.
+- **AUD-NG-006 / AUD-NG-069 / AUD-NG-133 / AUD-NG-161:** mantienen sus ámbitos de reintentos, idempotencia transaccional y pruebas conductuales; TAREA-03 no crea tareas nuevas para esos mecanismos.
+- **Dictamen y límites:** TAREA-03 permanece en CUMPLE PARCIALMENTE. La formalización no prueba cuotas reales, alertas, carga, reanudación ni despliegues; la auditoría fue estática/manual.
