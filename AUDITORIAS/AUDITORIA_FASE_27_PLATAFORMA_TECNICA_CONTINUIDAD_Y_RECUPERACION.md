@@ -115,3 +115,78 @@ La Fase 27 cuenta con una de las infraestructuras de seguridad y continuidad má
    $$\text{Cobertura de Ejecución} = \frac{\text{Pruebas Ejecutadas}}{\text{Total Pruebas Planificadas}} \times 100 = \frac{8}{8} \times 100 = 100.0\%$$
 3. **Cobertura de Verificación (Criterios CA-001 a CA-070):**
    $$\text{Cobertura de Verificación} = \frac{\text{Criterios Aprobados y Verificados}}{\text{Total Criterios Aplicables}} \times 100 = \frac{62}{70} \times 100 = 88.57\%$$
+
+---
+
+## Tareas ejecutables derivadas de los hallazgos
+
+> Normalización de F27-Task01..F27-Task05, conservando prioridades P0/P1/P2 del plan F. Las cinco tareas ya tienen relaciones con tareas/hallazgos históricos. Se conservan sus IDs de fase para trazabilidad, pero la ejecución se coordina con los responsables existentes y no se crean duplicados. AUD-NG-163 permanece duplicada y no debe reabrirse.
+
+### [F27-Task01] Implementar alertas tempranas de cuotas y límites de Google Apps Script
+- **Hallazgo de origen:** E.1; F27-007 y F27-001 como dependencias de observabilidad.
+- **Severidad:** Alta / P0. **Objetivo:** detectar consumo real de cuotas y límites antes de que afecten la continuidad del servicio.
+- **Acción ejecutable:** ampliar `TASK-064` con medición por servicio/acción/ventana de cuotas reales, límites aplicables, proyección de agotamiento, umbrales configurables y alertas deduplicadas; distinguir valores medidos, estimados y no disponibles; registrar fuente, timestamp y frescura.
+- **Archivos/módulos:** `backend/user-service/Code.gs`, `backend/developer-service/Code.gs`, `backend/academic-service/Code.gs`, `backend/accounting-service/Code.gs`, `js/api.js`, `RegistroEventos` y panel de observabilidad.
+- **Dependencias/riesgos:** `TASK-064`, `AUD-NG-144` (health checks), `AUD-NG-145` (bitácora) y `AUD-NG-161` (pruebas); riesgo de confundir estimaciones o métricas incompletas con cuotas oficiales.
+- **Alcance:** monitor preventivo de cuotas y límites GAS/API; no duplicar health checks, bitácora ni colas/reanudación.
+- **Criterios de aceptación:** cada métrica identifica cuota, unidad, fuente y ventana; valores no disponibles no se presentan como cero; umbral 80% configurable; alertas deduplicadas por servicio/cuota/ventana; panel indica frescura y estado; pruebas con umbrales, cuota desconocida, reinicio de ventana y fallos de fuente.
+- **Prioridad:** P0. **Estado:** Pendiente (ampliación de TASK-064).
+- **Reconciliación:** AUD-NG-163 ya fue marcada duplicada/consolidada. TASK-064 cubre cuotas/capacidad/alertas; AUD-NG-144/AUD-NG-145 cubren salud y bitácora. No reactivar AUD-NG-163 ni crear un monitor paralelo.
+- **Evidencia de cierre:** pendiente; la auditoría TAREA-03 documentó porcentajes fijos, métricas parciales y ausencia de alertas preventivas con umbrales reales.
+
+### [F27-Task02] Desacoplar reintentos asíncronos y aplicar circuit breaker
+- **Hallazgo de origen:** E.2; F27-008 como dependencia de continuidad.
+- **Severidad:** Alta / P0. **Objetivo:** evitar que fallos persistentes de servicios secundarios bloqueen la petición síncrona del usuario.
+- **Acción ejecutable:** coordinar la ampliación de `TASK-065` con `TASK-154`, `TASK-227` y `TASK-265` para usar una cola durable con checkpoint, cursor, backoff exponencial con jitter, límite de intentos, dead-letter/revisión, circuit breaker por dependencia y reanudación; responder al usuario con estado pendiente cuando el trabajo sea diferido.
+- **Archivos/módulos:** `js/api.js`, `js/persistence.js`, `backend/developer-service/Code.gs`, servicios que delegan en otros microservicios, cola de trabajos y triggers.
+- **Dependencias/riesgos:** `TASK-065`, `TASK-154`, `TASK-227`, `TASK-265`, idempotencia y trazabilidad; riesgo de ejecutar dos veces operaciones no idempotentes o de perder trabajos al agotar cuota.
+- **Alcance:** reintentos y circuit breaker de operaciones diferibles; no convertir operaciones financieras o académicas críticas en eventual-consistency sin garantías de reserva, idempotencia y confirmación.
+- **Criterios de aceptación:** trabajo persiste antes de confirmar aceptación; reintento no bloquea petición original; backoff/jitter y máximo configurables; circuit breaker abre/cierra con umbrales y ventana; fallos terminales quedan visibles; checkpoints y reanudación no duplican efectos; pruebas de caída, timeout, recuperación, replay y agotamiento de cuota.
+- **Prioridad:** P0. **Estado:** Pendiente (cobertura coordinada con TASK-065/TASK-154/TASK-227/TASK-265).
+- **Reconciliación:** Auditoria.txt identifica TASK-154/TASK-227/TASK-265 como cobertura de checkpoints/colas/reanudación y TASK-065 como cola/reintentos/sincronización. No crear una cola paralela ni duplicar esos IDs.
+- **Evidencia de cierre:** pendiente; el informe describe reintentos en el hilo síncrono y no acredita cola desacoplada ni circuit breaker común.
+
+### [F27-Task03] Implementar restauración granular selectiva por tabla y entidad
+- **Hallazgo de origen:** E.3; F27-003.
+- **Severidad:** Alta / P1. **Objetivo:** restaurar una tabla o entidad concreta sin sobrescribir el resto de los datos institucionales.
+- **Acción ejecutable:** ampliar el flujo oficial de respaldos/restauración (`AUD-NG-146`, `TASK-151`/`TASK-152)) con `targetSheets` o selector equivalente; generar diff/preview, validar esquema, checksum, dependencias y relaciones; aplicar restauración transaccional por etapas con copia de seguridad previa y plan de compensación.
+- **Archivos/módulos:** `backend/academic-service/Code.gs` (`createSystemBackup`, `listSystemBackups`, `restoreSystemBackup`); `backend/developer-service/Code.gs`; metadatos de respaldos y hojas objetivo.
+- **Dependencias/riesgos:** `AUD-NG-146`, `TASK-151`, `TASK-152`, integridad referencial y preservación de calificaciones históricas; riesgo de restaurar una hoja sin sus dependencias o perder datos posteriores al backup.
+- **Alcance:** restauración selectiva y validada; no habilitar restauraciones parciales que rompan relaciones ni omitir checksum/confirmación de seguridad.
+- **Criterios de aceptación:** selector solo acepta hojas permitidas; diff muestra altas/cambios/bajas; checksum SHA-256 se valida antes de escribir; preservación de notas y registros posteriores aplica también en modo selectivo; backup de seguridad antes de restaurar; rollback/compensación probado; operación auditada con actor, motivo y resultado.
+- **Prioridad:** P1. **Estado:** Pendiente (ampliación de AUD-NG-146/TASK-151/TASK-152).
+- **Reconciliación:** la bitácora TAREA-07 ya asigna backups/restauración a AUD-NG-146 y TASK-151/152. La fase conserva F27-Task03 como referencia local y añade el requisito de granularidad, sin crear un motor de respaldo alternativo.
+- **Evidencia de cierre:** pendiente; el informe confirma restauración completa por bloque y ausencia de selección por tabla/entidad.
+
+### [F27-Task04] Crear panel unificado de rendimiento y detección de operaciones lentas
+- **Hallazgo de origen:** F27-007; E.1 y E.4.
+- **Severidad:** Media / P1. **Objetivo:** identificar latencia, operaciones lentas y degradación por servicio con datos observables y comparables.
+- **Acción ejecutable:** ampliar `TASK-064` para métricas por servicio/acción/ventana y `TASK-252` para telemetría continua del rendimiento percibido; instrumentar inicio/fin, duración, resultado, dependencia, correlación y percentiles; definir umbrales y enlaces desde el panel a logs sanitizados.
+- **Archivos/módulos:** `backend/developer-service/Code.gs`, servicios User/Academic/Accounting/Task/Exam, `js/api.js`, `js/ui-common.js`, `RegistroEventos` y panel de salud/rendimiento.
+- **Dependencias/riesgos:** `TASK-064`, `TASK-252`, `AUD-NG-144`, `AUD-NG-145`, `AUD-NG-161`; riesgo de instrumentación incompleta, cardinalidad excesiva o filtración de PII.
+- **Alcance:** telemetría continua y panel de operaciones lentas; no duplicar métricas de cuota ni el trabajo específico de tablas/UI cubierto por TASK-429.
+- **Criterios de aceptación:** duración por acción y servicio con timestamp/correlationId; percentiles y ventana temporal; errores y timeouts separados; umbrales configurables; logs relacionados y sanitizados; datos ausentes se muestran como desconocidos; pruebas con latencia/error simulados y verificación de agregados.
+- **Prioridad:** P1. **Estado:** Pendiente (ampliación de TASK-064/TASK-252).
+- **Reconciliación:** TASK-064 cubre métricas operativas y cuotas; TASK-252 cubre telemetría de rendimiento percibido; TASK-429 se limita al rendimiento de tablas/UI. Coordinar alcances y no crear un panel o sistema de métricas duplicado.
+- **Evidencia de cierre:** pendiente; el informe solo acredita suites sintéticas y operaciones por lotes, no telemetría continua de tiempos por endpoint.
+
+### [F27-Task05] Fortalecer modo fuera de línea y sincronización diferida
+- **Hallazgo de origen:** F27-008; E.2 y dependencia de continuidad.
+- **Severidad:** Media / P2. **Objetivo:** permitir captura offline controlada de asistencia y calificaciones y sincronizarla sin pérdida ni duplicación cuando vuelva la conectividad.
+- **Acción ejecutable:** ampliar `TASK-065` y coordinar el alcance offline de `F28-Task03`; definir almacenamiento local por usuario/institución, cola durable, estado visible, claves idempotentes, validación de vigencia/permisos al sincronizar, detección de conflictos y resolución explícita; no presentar como sincronizado lo que solo está guardado localmente.
+- **Archivos/módulos:** `js/persistence.js`, `js/api.js`, `js/teacher.js`, `backend/academic-service/Code.gs`, servicio de sincronización y almacenamiento local.
+- **Dependencias/riesgos:** `TASK-065`, `F28-Task03`, `AUD-NG-006`, `AUD-NG-161`, autorización contextual y versionado de registros; riesgo de conflicto de calificaciones, duplicación o persistencia de datos sensibles en dispositivos compartidos.
+- **Alcance:** captura offline limitada a operaciones autorizadas y reconciliables; no permitir cambios offline en datos publicados/cerrados sin flujo de rectificación.
+- **Criterios de aceptación:** almacenamiento aislado por usuario/institución; cifrado/protección acorde a sensibilidad; cola durable y reanudable; sincronización idempotente; conflicto no se sobrescribe silenciosamente; expiración/revocación de sesión impide sincronización no autorizada; estado pendiente/error/sincronizado visible; pruebas de desconexión, reinicio, duplicado, conflicto y pérdida de sesión.
+- **Prioridad:** P2. **Estado:** Pendiente (ampliación coordinada con TASK-065/F28-Task03).
+- **Reconciliación:** F28-Task03 ya cubre Background Sync, fallback, idempotencia y conflictos; TASK-065 cubre cola/reintentos/sincronización. La Fase 27 conserva su trazabilidad, pero no crea una segunda cola offline.
+- **Evidencia de cierre:** pendiente; el informe identifica fallback local puntual, no un modo offline integral de asistencia/calificaciones con sincronización diferida.
+
+### Reconciliaciones y discrepancias transversales de Fase 27
+- **F27-Task01:** ampliar TASK-064; AUD-NG-163 está duplicada/consolidada y no debe reabrirse.
+- **F27-Task02:** coordinar TASK-065/TASK-154/TASK-227/TASK-265 para cola, reintentos, circuit breaker y checkpoints; verificar cobertura real antes de cerrar.
+- **F27-Task03:** ampliar AUD-NG-146/TASK-151/TASK-152 con restauración selectiva, manteniendo checksum, preview, preservación y rollback.
+- **F27-Task04:** ampliar TASK-064/TASK-252; TASK-429 cubre rendimiento de tablas/UI y no sustituye telemetría por endpoint.
+- **F27-Task05:** coordinar TASK-065 y F28-Task03; no duplicar cola offline ni su resolución de conflictos.
+- **Subcapacidades declaradas completas:** F27-001..F27-006 se conservan como completas/verificadas según el informe. Esta migración no reejecuta sus pruebas ni certifica el estado actual del código.
+- **Estado global:** F27-Task01..F27-Task05 permanecen pendientes de ejecución/revalidación; no se declara cierre por añadir el bloque.

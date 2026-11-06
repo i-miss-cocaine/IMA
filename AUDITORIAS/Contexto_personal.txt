@@ -4621,3 +4621,32 @@ CHECKPOINT C1.129 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 26
 - Próxima acción: inventariar los informes restantes que no contienen el bloque obligatorio y continuar con el siguiente informe pendiente según el orden del repositorio; no asumir que todos los informes Fase 27+ están pendientes sin verificarlos.
 - Estado de TASK-DOC-C1.112-01: En curso; migración documental por lotes.
 ================================================================
+
+================================================================
+CHECKPOINT C1.130 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 27
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto: AUDITORIAS/Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: 30b144b6c231b3dd2c79e559bce5b71af8200b1b.
+- HEAD de rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID operativo de sesión: IMA-AUDIT-20261106-2035Z-MIGRACION (identificador operativo, no ID nativo de ChatGPT).
+- Checkpoint anterior: C1.129 (Fase 26 normalizada).
+- Tarea documental en curso: TASK-DOC-C1.112-01, normalización progresiva de informes históricos.
+- Informe normalizado: AUDITORIAS/AUDITORIA_FASE_27_PLATAFORMA_TECNICA_CONTINUIDAD_Y_RECUPERACION.md.
+- SHA del informe antes de modificar: 15e0718dc2741f2e18c0806e948aac34ef79aa81.
+- SHA del contexto antes de modificar: 63a49443790ea024708e76f5efc7c5786718a55c.
+- Inspección: informe completo (11,246 caracteres; 118 líneas), secciones A-H; 8 áreas F27-001..F27-008; 5 tareas originales F27-Task01..F27-Task05.
+- Fuentes cruzadas: Auditoria.txt (blob 284b7a94b51c8ed99dbfcf734694bc5361f9f111), entradas TAREA-03/TAREA-07/TAREA-14/TAREA-15/TAREA-16 y referencias TASK-064/TASK-065/TASK-151/TASK-152/TASK-154/TASK-227/TASK-252/TASK-265/TASK-429, AUD-NG-006/AUD-NG-144/AUD-NG-145/AUD-NG-146/AUD-NG-161/AUD-NG-163; metodología §3.4 (SHA cf796728bb384a32537392df2f9c72a339fa03ee) y AUDITORIAS/README.md (SHA 2f649c6ffc39ec7cdd242e85cb71b4344fd69e34).
+- Tareas originales preservadas: F27-Task01..F27-Task05 y prioridades P0/P0/P1/P1/P2 del apartado F.
+- Reconciliación de duplicados: F27-Task01 amplía TASK-064; AUD-NG-163 sigue duplicada/consolidada. F27-Task02 se coordina con TASK-065/TASK-154/TASK-227/TASK-265. F27-Task03 amplía AUD-NG-146/TASK-151/TASK-152. F27-Task04 amplía TASK-064/TASK-252, sin duplicar TASK-429. F27-Task05 se coordina con TASK-065/F28-Task03. No se crearon nuevos IDs AUD-NG/TASK.
+- Subcapacidades declaradas completas preservadas: F27-001..F27-006; no se reejecutaron pruebas.
+- Campos por tarea: hallazgo de origen, severidad, objetivo, acción, archivos/módulos, dependencias/riesgos, alcance, criterios de aceptación, prioridad, estado y evidencia de cierre.
+- Archivos modificados: AUDITORIAS/AUDITORIA_FASE_27_PLATAFORMA_TECNICA_CONTINUIDAD_Y_RECUPERACION.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, ChangesLogs.txt, Auditoria.txt, METODOLOGIA_DESARROLLO.md, AUDITORIAS/README.md, plan maestro y demás informes; rama base sin cambios.
+- Pruebas no ejecutadas: cuotas GAS reales, triggers, circuit breaker, colas/reanudación, restauración granular, benchmarks/telemetría y pruebas offline; no hubo cambios de código.
+- HEAD de partida del árbol: 30b144b6c231b3dd2c79e559bce5b71af8200b1b. El commit de cierre debe contener exclusivamente ambos archivos documentales.
+- Próxima acción: realizar inventario completo de los informes históricos restantes sin bloque y continuar con el siguiente pendiente. No asumir que Fase 29 es el siguiente archivo hasta comprobar el inventario.
+- Estado de TASK-DOC-C1.112-01: En curso; migración documental por lotes.
+================================================================
