@@ -301,3 +301,142 @@ Sin embargo, la fase se encuentra **incompleta e inoperativa para usuarios final
 
 ---
 *Fin del Informe de Auditoría Independiente — Fase 18 (Compras, Proveedores y Contratación de Servicios)*
+
+---
+
+## Tareas ejecutables derivadas de los hallazgos
+
+> Normalización documental del backlog histórico de la Fase 18. Se conservan los doce identificadores preexistentes. Los campos se completan con la evidencia y el alcance ya descritos en las secciones B, E, F y G; cuando el informe no contiene evidencia de implementación o pruebas, no se presume su ejecución.
+
+### [F18-Task01] Implementar el control de recepciones parciales, entregas escalonadas y saldos pendientes
+- **Hallazgo de origen:** Brecha E.1; cierre prematuro de órdenes como `RecibidaTotal` sin conciliar cantidades.
+- **Severidad:** Crítica. **Objetivo:** conservar la integridad de cantidades autorizadas, recibidas y pendientes.
+- **Acción ejecutable:** acumular recepciones por partida; comparar contra cantidades autorizadas; mantener `RecibidaParcial` mientras existan saldos y cerrar solo al completar todas las partidas.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs` (`recordPurchaseReceipt`), `OrdenesCompra`, `RecepcionesCompra`.
+- **Dependencias/riesgos:** consistencia transaccional de recepciones e inventario; riesgo de pérdida de saldos o cierre prematuro.
+- **Alcance:** recepción parcial y cálculo de saldo por partida; no incluye conciliación de facturas (F18-Task02).
+- **Criterios de aceptación:** permitir varias recepciones por orden; no superar cantidades autorizadas; saldo pendiente correcto; estado total únicamente al completar el 100%.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el informe documenta inspección estática, no implementación correctiva.
+
+### [F18-Task02] Desarrollar el motor de validación documental y conciliación de tres vías
+- **Hallazgo de origen:** Brecha E.2; facturas sin conciliación entre orden, recepción y cobro.
+- **Severidad:** Crítica. **Objetivo:** impedir aprobaciones de pago con diferencias no autorizadas.
+- **Acción ejecutable:** implementar `verifyThreeWayMatch`; comparar partidas/precios de la orden, cantidades conformes recibidas y montos de factura; bloquear discrepancias para revisión autorizada.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `CuentasPorPagarGastos`, `OrdenesCompra`, `RecepcionesCompra`.
+- **Dependencias/riesgos:** F18-Task01 y contratos de factura/recepción; riesgo de sobreprecio o pago por mercancía no recibida.
+- **Alcance:** conciliación documental previa a aprobación; no sustituye autorización de pagos ni conciliación bancaria.
+- **Criterios de aceptación:** ninguna factura con diferencia no justificada pasa a aprobada para pago; discrepancias quedan identificadas y sujetas a aprobación autorizada; coincidencias verificables permiten continuar el flujo.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; no se acredita ejecución correctiva.
+
+### [F18-Task03] Construir la consola interactiva de compras y proveedores
+- **Hallazgo de origen:** Brecha E.3; pestaña de compras sin vistas operativas.
+- **Severidad:** Crítica. **Objetivo:** permitir la gestión del ciclo de adquisición desde la plataforma.
+- **Acción ejecutable:** sustituir la vista estática por submódulos de solicitudes, cotizaciones, órdenes, recepciones y proveedores, con tablas y modales conectados a operaciones autorizadas.
+- **Archivos/módulos:** `js/accounting.js` (`renderComprasModule`), `dashboard-contabilidad.html`, servicios backend de contabilidad.
+- **Dependencias/riesgos:** contratos backend, permisos por rol y tareas F18-Task01/02; riesgo de exponer operaciones sin autorización.
+- **Alcance:** interfaz de gestión de compras; no duplicar reglas de negocio en el cliente.
+- **Criterios de aceptación:** usuarios autorizados pueden consultar y ejecutar las operaciones habilitadas; errores y estados se reflejan desde respuestas backend; no se habilitan acciones fuera del rol.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el informe describe la pestaña como estática.
+
+### [F18-Task04] Generar órdenes de compra oficiales en PDF y ciclo de estados
+- **Hallazgo de origen:** backlog de la sección G, vinculado a formalización documental de órdenes; no se asigna una brecha E adicional no documentada.
+- **Severidad:** Crítica. **Objetivo:** emitir un documento oficial, identificable y autorizable para el proveedor.
+- **Acción ejecutable:** implementar `generatePurchaseOrderPDF` con membrete, correlativo único, datos fiscales, partidas, impuestos y firmas; vincular el documento al estado de la orden.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `OrdenesCompra`.
+- **Dependencias/riesgos:** datos completos de proveedor/orden y flujo de autorizaciones; riesgo de emitir documentos inconsistentes o duplicados.
+- **Alcance:** generación y trazabilidad del PDF; no sustituye aprobación multinivel.
+- **Criterios de aceptación:** PDF descargable con los campos indicados, correlativo no duplicado y datos coincidentes con la orden autorizada.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el informe no aporta prueba de generación operativa.
+
+### [F18-Task05] Implementar matriz comparativa de cotizaciones y adjudicación por partidas
+- **Hallazgo de origen:** sección G, recomendación de transparencia y comparación de cotizaciones.
+- **Severidad:** Alta. **Objetivo:** permitir comparar ofertas bajo criterios homogéneos y justificar adjudicaciones.
+- **Acción ejecutable:** comparar hasta cinco cotizaciones por precio unitario, plazo, impuestos y condiciones; permitir adjudicación por partida y conservar el resultado.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `js/accounting.js`, `CotizacionesCompra`.
+- **Dependencias/riesgos:** cotizaciones vinculadas a una misma solicitud y permisos de adjudicación; riesgo de comparar ofertas no equivalentes.
+- **Alcance:** comparación y adjudicación; no reemplaza aprobación de la orden.
+- **Criterios de aceptación:** ofertas comparables aparecen lado a lado; criterios y adjudicación por partida quedan trazables; solo roles autorizados adjudican.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; no se aportan pruebas de esta capacidad.
+
+### [F18-Task06] Completar gestión de cuentas por pagar
+- **Hallazgo de origen:** Brecha E.4; ausencia de abonos parciales, programación por vencimiento y notas de crédito.
+- **Severidad:** Alta. **Objetivo:** controlar saldos, vencimientos y ajustes de obligaciones con proveedores.
+- **Acción ejecutable:** registrar abonos parciales, notas de crédito por devoluciones y consultas de cartera por vencimiento, manteniendo saldo y trazabilidad.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `CuentasPorPagarGastos`.
+- **Dependencias/riesgos:** facturas conciliadas (F18-Task02), permisos financieros y consistencia de saldos; riesgo de pagos duplicados o flujo de caja incorrecto.
+- **Alcance:** ciclo de cuentas por pagar; no incluye conciliación bancaria.
+- **Criterios de aceptación:** abonos reducen saldo sin excederlo; notas de crédito se aplican una sola vez; vencimientos y saldos pendientes se consultan correctamente.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; no se acredita prueba funcional.
+
+### [F18-Task07] Registrar compromisos presupuestarios al emitir órdenes de compra
+- **Hallazgo de origen:** Brecha E.5; la consulta presupuestaria no registra el compromiso al emitir la orden.
+- **Severidad:** Alta. **Objetivo:** prevenir sobregiros por órdenes concurrentes.
+- **Acción ejecutable:** al aprobar/emitar una orden, reservar el monto en `montoComprometido` de la partida y centro de costo; impedir duplicación de reservas y definir liberación ante cancelación.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs` (`checkBudgetAvailability`), `PresupuestosInstitucionales`, `OrdenesCompra`.
+- **Dependencias/riesgos:** autorización de órdenes y consistencia concurrente; riesgo de sobregiro o doble compromiso.
+- **Alcance:** reserva presupuestaria vinculada a la orden; no sustituye el registro contable del gasto.
+- **Criterios de aceptación:** aprobación actualiza el compromiso una sola vez; órdenes concurrentes no exceden el disponible; cancelación libera la reserva según estado y reglas auditables.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; no se acredita prueba de concurrencia.
+
+### [F18-Task08] Capitalizar activos fijos desde la recepción de compras
+- **Hallazgo de origen:** sección G, necesidad de integrar compras de bienes capitalizables con el registro patrimonial.
+- **Severidad:** Alta. **Objetivo:** mantener trazabilidad entre recepción física y alta patrimonial.
+- **Acción ejecutable:** permitir crear el activo desde la recepción cuando la compra esté clasificada como bien capitalizable, capturando serie, ubicación y custodio.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `ActivosPatrimoniales`, `RecepcionesCompra`.
+- **Dependencias/riesgos:** clasificación contable y recepción confirmada; riesgo de activos duplicados o dados de alta sin recepción.
+- **Alcance:** alta patrimonial desde recepción; no incluye depreciación ni bajas de activos.
+- **Criterios de aceptación:** solo recepciones conformes permiten alta; cada activo conserva vínculo con orden/recepción; número de serie y registro no se duplican.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; no se aportan pruebas de integración.
+
+### [F18-Task09] Evaluar y calificar el desempeño de proveedores
+- **Hallazgo de origen:** sección G, mejora de control de calidad de proveedores.
+- **Severidad:** Media. **Objetivo:** disponer de historial verificable de desempeño por proveedor.
+- **Acción ejecutable:** registrar evaluaciones de puntualidad, calidad y soporte y calcular un score histórico consultable.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `ProveedoresActivos`.
+- **Dependencias/riesgos:** datos de órdenes, recepciones e incidencias; riesgo de puntuaciones sin evidencia o criterios consistentes.
+- **Alcance:** evaluación histórica; no automatiza suspensión ni contratación del proveedor.
+- **Criterios de aceptación:** cada evaluación identifica proveedor, periodo, criterios y evidencia; el score puede reconstruirse desde evaluaciones almacenadas.
+- **Prioridad:** P2. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; no se acredita implementación.
+
+### [F18-Task10] Crear visor consolidado del expediente digital de adquisición
+- **Hallazgo de origen:** sección G, necesidad de trazabilidad documental integral.
+- **Severidad:** Media. **Objetivo:** consultar el ciclo documental de una adquisición desde una referencia única.
+- **Acción ejecutable:** permitir búsqueda por solicitud u orden y desplegar documentos vinculados: solicitud, cotizaciones, orden, recepción, factura, asiento y pago.
+- **Archivos/módulos:** `js/accounting.js`, `dashboard-contabilidad.html` y servicios de contabilidad.
+- **Dependencias/riesgos:** relaciones e identificadores consistentes entre documentos y permisos por rol; riesgo de mostrar expedientes de otra unidad.
+- **Alcance:** consulta consolidada y navegación documental; no modifica documentos fuente.
+- **Criterios de aceptación:** una solicitud/orden válida muestra sus documentos asociados; documentos ausentes se identifican sin inventarlos; acceso respeta permisos.
+- **Prioridad:** P2. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; no se acredita prueba del visor.
+
+### [F18-Task11] Generar alertas de retrasos en entregas de compras
+- **Hallazgo de origen:** sección G, seguimiento de fechas estimadas de entrega.
+- **Severidad:** Media. **Objetivo:** advertir oportunamente órdenes pendientes cuya fecha estimada ya venció.
+- **Acción ejecutable:** comparar fecha actual con `fechaEntregaEstimada` de órdenes no completadas y notificar al área de compras, evitando alertas repetidas sin cambio de estado.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `OrdenesCompra`.
+- **Dependencias/riesgos:** fechas válidas, estados de recepción y mecanismo institucional de notificación; riesgo de falsos positivos por órdenes cerradas o fechas incompletas.
+- **Alcance:** alertas de retraso; no modifica automáticamente órdenes ni penaliza proveedores.
+- **Criterios de aceptación:** solo órdenes pendientes vencidas generan alerta; órdenes recibidas/canceladas quedan excluidas; alerta conserva orden, fecha y estado que la originó.
+- **Prioridad:** P2. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; no se acredita ejecución de alertas.
+
+### [F18-Task12] Implementar suite automatizada de pruebas y regresión de compras
+- **Hallazgo de origen:** sección G, necesidad de asegurar el flujo integral de compras.
+- **Severidad:** Media-alta. **Objetivo:** verificar regresivamente el ciclo desde solicitud hasta pago y asiento contable.
+- **Acción ejecutable:** implementar `runPhase18PurchasingAndSuppliersRegressionSuite` con escenarios de solicitud, cotización, autorización, orden, recepción parcial/total, factura, conciliación, pago y asiento.
+- **Archivos/módulos:** `tests/regression/academic-grading-suite.js`, `backend/developer-service/Code.gs` y servicios de contabilidad cubiertos.
+- **Dependencias/riesgos:** contratos y datos de prueba aislados; riesgo de falsos positivos si las pruebas solo verifican presencia de funciones.
+- **Alcance:** pruebas automatizadas del flujo de compras; no sustituye pruebas manuales de aceptación ni pruebas de producción.
+- **Criterios de aceptación:** suite ejecutable y repetible; cubre éxito, rechazo, diferencias, recepción parcial, pagos parciales y permisos; reporta fallos con evidencia y no altera datos reales.
+- **Prioridad:** P2. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el informe identifica la suite como pendiente.
+
