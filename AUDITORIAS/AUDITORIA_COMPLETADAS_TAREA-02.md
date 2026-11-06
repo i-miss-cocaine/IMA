@@ -71,3 +71,28 @@ Durante la continuidad se detectó que Auditoria.txt en la rama de trabajo conte
 - Hallazgo relacionado: AUD-NG-011.
 - Progreso acumulado: 9/183 identificadores únicos auditados; 174 pendientes.
 - Siguiente tarea: TAREA-03.
+
+
+---
+
+## Tareas ejecutables derivadas de los hallazgos
+
+> Este informe no crea un hallazgo nuevo. Formaliza la ampliación de AUD-NG-010 ya identificada en el propio resultado y conserva AUD-NG-011 como dependencia relacionada, sin duplicar su alcance arquitectónico.
+
+### [AUD-NG-010] Consolidar el inventario técnico y la matriz maestra de trazabilidad
+- **Hallazgo de origen:** TAREA-02, evidencia documental y criterios de aceptación; hallazgo preexistente AUD-NG-010 en Auditoria.txt.
+- **Severidad:** Media (clasificación histórica de AUD-NG-010).
+- **Objetivo:** disponer de una fuente documental mantenible que permita identificar el impacto de cambios y demostrar la relación entre requisitos, componentes, tareas, pruebas y evidencias.
+- **Acción ejecutable:** ampliar y normalizar MapaDependencias.md (o el artefacto institucional que se designe como fuente de verdad) con un inventario por archivo de funciones, parámetros, retornos, consumidores, variables globales, constantes, clases, eventos, dependencias entrantes/salientes y contratos entre módulos. Incorporar una matriz que relacione cada requisito y subcapacidad con identificador estable, estado, criterio de aceptación, prioridad, responsable/propietario cuando esté definido, componentes afectados, dependencias, tarea de resolución, pruebas y evidencias verificables. Registrar cambios e impactos sobre requisitos y dependencias, e identificar requisitos sin implementación, pruebas huérfanas y componentes sin responsable. Mantener referencias a los documentos de origen y versionar la matriz; no sustituir el historial ni eliminar entradas existentes.
+- **Archivos/módulos afectados:** MapaDependencias.md; documentación de arquitectura; inventarios de módulos JS y servicios backend; registros de requisitos, tareas, pruebas y evidencias.
+- **Dependencias y riesgos:** AUD-NG-011 se mantiene como dependencia relacionada para la demostración del aislamiento curricular por área; no se incorpora su alcance como parte de esta tarea. Riesgo de una matriz desactualizada o meramente declarativa si no se asignan propietarios y controles de actualización; no declarar cobertura por la sola existencia de referencias.
+- **Alcance:** inventario técnico y trazabilidad institucional de requisitos, subcapacidades, dependencias, criterios, tareas, pruebas y evidencias. No implica modificar código ni certificar por sí sola el aislamiento operativo de microservicios.
+- **Criterios de aceptación:** cada requisito/subcapacidad tiene identificador estable, estado y criterio de aceptación; sus componentes y dependencias están identificados; las tareas de resolución enlazan al requisito; las pruebas enlazan a criterios y evidencia reproducible; se detectan y registran requisitos sin implementación, pruebas huérfanas y componentes sin responsable; los cambios dejan trazabilidad de impacto; el documento tiene estructura uniforme, propietario/versionado y mecanismo de actualización; no se pierden ni sobrescriben registros históricos.
+- **Prioridad:** conservar la prioridad vigente en Pendientes.md; este informe no la reespecifica.
+- **Estado:** Pendiente, según el dictamen y la referencia de estado consignada por la auditoría.
+- **Evidencia de cierre:** matriz publicada y revisada; inventario técnico contrastado con los módulos existentes; cobertura requisito-criterio-tarea-prueba-evidencia; revisión de huérfanos y registro de cambios/impactos.
+
+### Reconciliación de hallazgos relacionados
+- **AUD-NG-010:** identificador existente y responsable del inventario/trazabilidad; se amplía su descripción con los criterios completos de TAREA-02. No se crea un AUD-NG nuevo.
+- **AUD-NG-011:** permanece como dependencia separada para demostrar la arquitectura y el aislamiento por área curricular; no se absorbe en AUD-NG-010.
+- **Dictamen y límites:** TAREA-02 continúa en CUMPLE PARCIALMENTE. La formalización documental no crea la matriz ni demuestra que esté implementada; la auditoría original fue estática y no ejecutó pruebas de código o despliegue.

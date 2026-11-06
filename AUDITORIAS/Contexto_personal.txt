@@ -5267,3 +5267,32 @@ CHECKPOINT C1.153 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME FASE2-T02
 - Commit de cierre: el commit único que contiene este checkpoint y el bloque de tareas del informe; verificar externamente SHA, árbol, archivos y rama base.
 ================================================================
 
+
+
+================================================================
+CHECKPOINT C1.154 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-02
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.1.
+- HEAD de partida verificado: d0ccd81e99326569fc66cc5a28e8f937e499e481.
+- HEAD de rama base verificado antes del cambio: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Árbol base de la rama de trabajo: 9025cb286db337012cc6ca46072047f095504665.
+- ID operativo de sesión: IMA-AUDIT-20261106-2157Z (no es ID nativo de ChatGPT).
+- Checkpoint inicial de esta sesión: C1.153.
+- Estado de sesión: cerrada en C1.154.
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-02.md.
+- SHA del informe antes del cambio: 5ad63b05f9c8ad52d8299a3cb3e15be6e6a29b41.
+- SHA del contexto antes del cambio: 0274589c0980250728c57ffde3a98cef8869870c.
+- Inspección: TAREA-02 CUMPLE PARCIALMENTE; MapaDependencias.md contiene relaciones parciales, pero no la matriz maestra ni el inventario técnico requerido. README es descriptivo y ChangesLogs.txt declara una matriz que no está presente en el artefacto actual.
+- Tarea formalizada: AUD-NG-010 (severidad Media), ampliación del registro existente para inventario técnico y trazabilidad requisito-componente-dependencia-criterio-tarea-prueba-evidencia. Se conserva el estado Pendiente y la prioridad vigente sin reespecificarla.
+- Reconciliación: AUD-NG-011 permanece como dependencia separada para aislamiento curricular por área; no se crea un ID nuevo ni se absorbe su alcance.
+- Archivos modificados: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-02.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, Auditoria.txt, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, MapaDependencias.md, README y rama base.
+- Pruebas ejecutadas: lectura íntegra del informe TAREA-02; consulta del registro AUD-NG-010 en Auditoria.txt; revisión de referencias, criterios y duplicados; verificación de los HEAD de ambas ramas y del árbol de partida.
+- Pruebas no ejecutadas: pruebas de código, validación de matriz desplegada, Apps Script, integraciones, despliegues y fuentes productivas.
+- Límite: cambio exclusivamente documental; la tarea AUD-NG-010 sigue Pendiente y TAREA-02 no se declara funcionalmente completada.
+- Próximo informe pendiente: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-03.md; revisar el resultado completo, reconciliar AUD-NG-163 y tareas relacionadas antes de formalizar cualquier bloque.
+- Commit de cierre: commit único de ambos archivos; SHA y árbol deben verificarse después de publicar.
+================================================================
