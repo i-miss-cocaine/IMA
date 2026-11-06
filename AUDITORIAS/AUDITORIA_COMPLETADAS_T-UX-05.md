@@ -99,3 +99,13 @@ Estas observaciones son mejoras de alcance más amplio y no contradicen el requi
 - Nuevas tareas: ninguna.
 - Progreso acumulado: **48/183 identificadores auditados; 135 pendientes**.
 - Siguiente tarea: **T-UX-06 - Omnibox Unificado Multi-Entidad con Atajo Global Ctrl + K**.
+
+## Tareas ejecutables derivadas de los hallazgos
+
+**No hay tareas ejecutables nuevas derivadas de esta auditoría.**
+
+- **Dictamen:** T-UX-05 cumple.
+- **Hallazgos nuevos:** ninguno.
+- **Acción:** no crear AUD-NG/TASK ni reabrir tareas por observaciones que el informe clasifica como mejoras de alcance más amplio y no contradictorias con el requisito auditado.
+- **Criterios de cierre:** conservar el dictamen y las referencias existentes; cualquier mejora futura requiere evidencia y auditoría propia.
+- **Estado:** Sin tareas nuevas en este informe.

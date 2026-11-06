@@ -61,3 +61,18 @@ T-UX-10 exige pruebas de flujos funcionales completos para la protección de cam
 ## Pruebas y límites
 
 Inspección estática/manual de la implementación y del caso UX-03. No se ejecutaron navegador, eventos DOM reales, pruebas automatizadas, Apps Script ni flujos de guardado reales. No se certifica aquí la integración de cada formulario consumidor. No se modificó código fuente.
+
+## Tareas ejecutables derivadas de los hallazgos
+
+### [TASK-479] Corregir el ciclo de vida de protección contra cambios no guardados
+- **Hallazgo de origen:** AUD-NG-182; secciones 1 a 5.
+- **Severidad:** Alto.
+- **Objetivo:** mostrar advertencia solo cuando el formulario difiere de su línea base y conservar protección hasta confirmar el guardado.
+- **Acción ejecutable:** capturar estado inicial normalizado; comparar valores actuales con la línea base en lugar de marcar dirty por cualquier evento; limpiar dirty solo tras respuesta de guardado exitosa o reset confirmado; observar controles dinámicos; excluir submit fallido; devolver API de teardown para retirar listeners y MutationObserver.
+- **Archivos/módulos afectados:** js/ui-common.js, formularios consumidores y tests/regression.
+- **Dependencias y riesgos:** T-UX-17 y T-UX-10; no cambiar sus estados históricos.
+- **Alcance:** helper compartido setupUnsavedChangesProtection y su integración.
+- **Criterios de aceptación:** cambiar un campo y restaurarlo elimina dirty; submit fallido mantiene advertencia; guardado confirmado limpia; reset restaura línea base; controles agregados dinámicamente quedan observados; teardown elimina listeners/observer; suite UX-03 prueba comportamiento.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas DOM de cambios, guardado, error, reset, controles dinámicos y teardown.

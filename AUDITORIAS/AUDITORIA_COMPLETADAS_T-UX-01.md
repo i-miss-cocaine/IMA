@@ -60,3 +60,18 @@ Hay piezas reutilizables, pero la integración está incompleta. El código de r
 - Hallazgos relacionados: AUD-NG-001, AUD-NG-003, AUD-NG-005, AUD-NG-159 y AUD-NG-160.
 - Progreso acumulado: 8/183 identificadores únicos auditados; 175 pendientes.
 - Siguiente tarea: TAREA-02.
+
+## Tareas ejecutables derivadas de los hallazgos
+
+### [AUD-NG-162] Integrar expiración de sesión y diferenciar autenticación de autorización
+- **Hallazgo de origen:** AUD-NG-162; sección Hallazgo nuevo.
+- **Severidad:** Alto.
+- **Objetivo:** cerrar de forma segura una sesión inválida/expirada/revocada y no cerrar sesiones válidas ante una denegación de permisos.
+- **Acción ejecutable:** definir códigos distintos para autenticación inválida/expirada/revocada y autorización insuficiente; conectar fetchApi con handleSessionExpired; limpiar credenciales locales solo ante fallo de autenticación; interpretar el parámetro de expiración en la página de destino y mostrar aviso; ampliar la suite para ejecutar el flujo y no comprobar solo la existencia del símbolo.
+- **Archivos/módulos afectados:** js/api.js, js/ui-common.js, js/auth.js, login.html, backend/user-service/Code.gs.
+- **Dependencias y riesgos:** AUD-NG-001, AUD-NG-003, AUD-NG-005, AUD-NG-159 y AUD-NG-160; no duplicar sus causas de token/revocación.
+- **Alcance:** contrato de error y experiencia de expiración de sesión.
+- **Criterios de aceptación:** token expirado/revocado provoca limpieza y redirección con aviso; permiso insuficiente muestra denegación sin cerrar sesión; página de login interpreta el parámetro; prueba E2E verifica URL, almacenamiento y mensaje.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas de navegador para sesión expirada, revocada y permiso insuficiente.

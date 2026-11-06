@@ -112,3 +112,31 @@ Los defectos de autorización y renderizado impiden aceptar el criterio «filtra
 - Nuevas tareas: TASK-481 y TASK-482.
 - Progreso acumulado: **49/183 identificadores auditados; 134 pendientes**.
 - Siguiente tarea: **T-UX-09 - Menú Lateral Responsivo Específico por Rol con Colapso Móvil Suave**.
+
+## Tareas ejecutables derivadas de los hallazgos
+
+### [TASK-481] Aplicar autorización contextual y aislamiento por entidad en el Omnibox
+- **Hallazgo de origen:** AUD-NG-184; apartado de búsqueda y autorización.
+- **Severidad:** Alto.
+- **Objetivo:** impedir que la búsqueda global revele entidades fuera del ámbito del usuario.
+- **Acción ejecutable:** derivar identidad/rol desde contexto autenticado; aplicar autorización por tipo y entidad en servidor; limitar resultados a tipos permitidos; corregir filtros vacíos y exclusión de filtros como filterSeccion; hacer que noticias/trámites naveguen al registro autorizado; descartar respuestas asíncronas obsoletas.
+- **Archivos/módulos afectados:** backend/user-service/Code.gs, js/ui-common.js y consumidores del Omnibox.
+- **Dependencias y riesgos:** AUD-NG-001/002 y TASK-296 (este último cubre otro sink de renderizado, no sustituye el aislamiento del Omnibox).
+- **Alcance:** autorización, filtrado, navegación y resiliencia de resultados.
+- **Criterios de aceptación:** manipular IDs/filtros no amplía resultados; consulta vacía no equivale a coincidencia universal; cada tipo devuelve solo entidades autorizadas; cada resultado navega al registro correcto; respuesta antigua no reemplaza consulta nueva.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas por rol/entidad, filtros vacíos, concurrencia de consultas y navegación.
+
+### [TASK-482] Eliminar XSS e inyección de atributos en resultados del Omnibox
+- **Hallazgo de origen:** AUD-NG-185; apartado de renderizado seguro.
+- **Severidad:** Alto.
+- **Objetivo:** evitar que datos persistidos o mensajes externos se interpreten como HTML/atributos ejecutables.
+- **Acción ejecutable:** reemplazar concatenación insegura por textContent/DOM APIs o escape contextual; validar URLs por esquema y destino permitido; no interpolar datos en handlers inline; aplicar la misma política a resultados y mensajes de error.
+- **Archivos/módulos afectados:** js/ui-common.js y renderizadores de resultados del Omnibox.
+- **Dependencias y riesgos:** mantener separación respecto de TASK-296, cuyo alcance es otro componente.
+- **Alcance:** sink de renderizado del Omnibox.
+- **Criterios de aceptación:** payloads HTML/script/atributos se muestran como texto; URLs javascript:/data: y destinos no permitidos se rechazan; pruebas de seguridad cubren todos los campos dinámicos; no quedan handlers inline con datos no confiables.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas XSS/URL con payloads sintéticos y revisión de sinks.

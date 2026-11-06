@@ -107,3 +107,18 @@ La solución centraliza parte del comportamiento, pero depende de una lista manu
 - Identificadores auditados: **45/183**; 138 pendientes.
 - Última tarea auditada: T-UX-02.
 - Próxima tarea exacta según completadas.md: **T-UX-03 - Módulo de Protección contra Pérdida de Cambios No Guardados en Formularios**.
+
+## Tareas ejecutables derivadas de los hallazgos
+
+### [TASK-258] Universalizar Escape, retorno de foco y navegación por teclado
+- **Hallazgo de origen:** AUD-NG-181; ampliación de TASK-258. No crear TASK-479 para este mismo alcance.
+- **Severidad:** Alto.
+- **Objetivo:** garantizar que cualquier modal/drawer se cierre correctamente y restaure el foco sin romper overlays anidados.
+- **Acción ejecutable:** sustituir la lista fija de IDs por un contrato genérico de overlays; cerrar solo el modal superior al pulsar Escape; mantener una pila de activadores; aplicar focus trap y devolver foco al activador visible; registrar listeners una sola vez y retirarlos al desmontar componentes.
+- **Archivos/módulos afectados:** js/ui-common.js y consumidores/plantillas HTML de modales y drawers.
+- **Dependencias y riesgos:** AUD-NG-169 para accesibilidad general; evitar cerrar todos los overlays o enfocar elementos dentro de padres ocultos.
+- **Alcance:** ciclo de vida de modal/drawer, foco y teclado.
+- **Criterios de aceptación:** todos los overlays declarados se cierran con Escape; en anidamiento se cierra solo el superior; foco permanece dentro del diálogo y vuelve al activador correcto; listeners no se duplican; pruebas DOM cubren overlays con/sin role, clase modal y data-modal.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas automatizadas de teclado, foco, anidamiento y desmontaje.

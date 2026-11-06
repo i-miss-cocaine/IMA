@@ -69,3 +69,18 @@ No se encontró una tarea pendiente que cubra específicamente la integración y
 ## Pruebas y límites
 
 Inspección estática/manual de la función, sus límites, la prueba UX-04, los consumidores de los modales y los 21 archivos JavaScript/13 HTML principales revisados para localizar llamadas. No se ejecutaron navegador, DOM real, pruebas automatizadas, Apps Script ni operaciones de sincronización. No se modificó código fuente.
+
+## Tareas ejecutables derivadas de los hallazgos
+
+### [TASK-480] Integrar el indicador de frescura de datos y su ciclo de actualización
+- **Hallazgo de origen:** AUD-NG-183; informe T-UX-04.
+- **Severidad:** Alto.
+- **Objetivo:** mostrar frescura real y permitir actualización manual verificable en las vistas correspondientes.
+- **Acción ejecutable:** integrar renderDataFreshnessBadge en los consumidores; validar timestamp y estado de sincronización; conectar acción manual a la operación real; confirmar éxito solo tras respuesta válida; mover helpers administrativos fuera del renderer y corregir su ciclo de vida.
+- **Archivos/módulos afectados:** js/ui-common.js, dashboards consumidores y funciones de sincronización correspondientes.
+- **Dependencias y riesgos:** AUD-NG-064/AUD-NG-077 son referencias relacionadas de caché/observabilidad, no sustituyen esta integración.
+- **Alcance:** indicador, actualización manual y organización de helpers.
+- **Criterios de aceptación:** cada vista objetivo presenta fecha real o estado desconocido; timestamp ausente/inválido no se sustituye por fecha ficticia; el control manual refleja carga/éxito/error; no anuncia éxito sin confirmación; helpers administrativos son funciones independientes; pruebas UX-04 cubren interacción real.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas de integración por dashboard y sincronización.
