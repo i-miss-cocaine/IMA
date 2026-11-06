@@ -50,3 +50,18 @@ No ejecutado: sesiones con roles reales, persistencia real en Google Sheets, nue
 
 ## Cierre
 T-UX-25: **NO CUMPLE**. Nuevo AUD-NG-216 agregado como ampliación de TASK-422; no se crea tarea separada. Código/tests y completadas.md sin modificaciones. Progreso 66/183; 117 pendientes. Siguiente: T-UX-26 - Incorporar una vista de actividad reciente contextual.
+
+## Tareas ejecutables derivadas de los hallazgos
+
+### [TASK-422] Ampliación: persistencia y gobierno de preferencias personales y por rol
+- **Tipo:** tarea existente ampliada; no crear tarea paralela.
+- **Hallazgo/severidad:** AUD-NG-216, MEDIO/P2; preferencias personales/por rol no se guardan/restauran, backend parcial y permisos incompletos.
+- **Objetivo:** preferencias persistentes separadas de defaults institucionales, con autorización y restablecimiento.
+- **Acción:** ampliar esquema versionado por usuario; persistir opciones soportadas (idioma, formato, tema y widgets definidos); enlazar controles de rol a carga/guardado o retirarlos; implementar reset a defaults; corregir permisos; resolver token mediante AUD-NG-001.
+- **Archivos:** js/ui-common.js, backend/user-service/Code.gs, ROLE_PERMISSIONS y ajustes de dashboards.
+- **Dependencias:** AUD-NG-001 (token), AUD-NG-202/TASK-429 (vistas guardadas), TASK-430 (sistema visual).
+- **Alcance:** preferencias personales, herencia institucional, controles por rol, persistencia y reset; no incluye vistas guardadas de tablas.
+- **Criterios:** preferencias sobreviven nuevo inicio/cambio de dispositivo; personales prevalecen sin alterar defaults institucionales; reset restaura defaults; cada control visible persiste o se identifica como no configurable; matriz de roles segura; identidad deriva del token; pruebas de persistencia/herencia/reset/roles.
+- **Prioridad:** P2. **Estado:** conservar el de TASK-422.
+- **Evidencia:** pendiente; no se probaron sesiones reales ni persistencia en Sheets.
+

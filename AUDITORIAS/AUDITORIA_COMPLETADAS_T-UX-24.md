@@ -43,3 +43,18 @@ No ejecutado: navegador, capturas comparativas, pruebas de contraste automatizad
 
 ## Cierre
 T-UX-24: **NO CUMPLE**. AUD-NG-215 se incorpora como ampliación de TASK-430; no se crea tarea separada. Código/tests y completadas.md sin modificaciones. Progreso 65/183; 118 pendientes. Siguiente: T-UX-25 - Incorporar preferencias de usuario y personalización controlada de vistas.
+
+## Tareas ejecutables derivadas de los hallazgos
+
+### [TASK-430] Ampliación: unificar acciones y estados visuales institucionales
+- **Tipo:** tarea existente ampliada; no crear tarea paralela.
+- **Hallazgo/severidad:** AUD-NG-215, MEDIO/P2; variantes compartidas no se adoptan transversalmente y renderizadores difieren en estados equivalentes.
+- **Objetivo:** establecer sistema de diseño consistente entre departamentos.
+- **Acción:** migrar botones a variantes comunes; definir patrones para éxito, error, advertencia, carga, información y vacío; unificar “Información recibida” y “Se necesita información” entre renderizadores; retirar estilos locales divergentes tras migración.
+- **Archivos:** css/style.css, js/ui-common.js y 12 vistas principales inspeccionadas.
+- **Dependencias:** TASK-492 (campos), TASK-493 (modal), TASK-494 (overlays), TASK-495 (conectividad).
+- **Alcance:** botones, alertas, badges, carga/vacío y renderizadores; no sustituye accesibilidad ni contrato de campos.
+- **Criterios:** controles equivalentes usan variantes compartidas; jerarquía primaria/secundaria/destructiva coherente; estados semánticos iguales tienen reglas equivalentes; patrones comunes disponibles; excepciones documentadas; revisión visual y de contraste/foco.
+- **Prioridad:** P2. **Estado:** conservar el de TASK-430.
+- **Evidencia:** pendiente; sin pruebas visuales/runtime.
+

@@ -47,3 +47,52 @@ No ejecutado: navegador/DOM, envío HTTP, Apps Script, Google Sheets, confirmaci
 
 ## Cierre
 T-UX-23: **NO CUMPLE**. Se reutilizan AUD-NG-001, AUD-NG-128 y TASK-484; sin tareas nuevas. Código/tests, completadas.md, Pendientes.md, METODOLOGIA_DESARROLLO.md y ChangesLogs.txt sin modificaciones. Progreso 64/183; 119 pendientes. Siguiente: T-UX-24 - Normalizar las acciones, los estados y la jerarquía visual institucional.
+
+## Tareas ejecutables derivadas de los hallazgos
+
+**No se crean tareas ni hallazgos nuevos.** Se registran las tareas existentes responsables para mantener la trazabilidad y evitar duplicados.
+
+### Tarea existente asociada a AUD-NG-001: autenticación de llamadas protegidas
+- **Tipo:** tarea existente ya cubierta; conservar su ID oficial.
+- **Hallazgo/severidad:** AUD-NG-001, CRÍTICO; fetchApi no propaga el token de sesión firmado.
+- **Objetivo/acción:** propagar el token vigente y validar sesión en backend; derivar identidad desde token validado, nunca de un campo libre del payload.
+- **Archivos:** js/api.js y consumidores/endpoints protegidos.
+- **Dependencias:** contrato de sesión y validación backend.
+- **Alcance:** transporte de token; no sustituye autorización por rol ni propiedad del ticket.
+- **Criterios:** llamadas protegidas envían token; ausente/expirado se rechaza; identidad deriva del token; pruebas cubren válido, ausente, inválido y expirado.
+- **Prioridad/estado:** conservar los valores de la tarea oficial existente.
+- **Evidencia:** pendiente según dictamen de esta auditoría.
+
+### Tarea existente asociada a AUD-NG-128: autorización y propiedad de tickets
+- **Tipo:** tarea existente ya cubierta; no crear ID paralelo.
+- **Hallazgo/severidad:** AUD-NG-128, CRÍTICO; handlers confían en payload.userId y exponen riesgo IDOR/suplantación.
+- **Objetivo/acción:** derivar identidad del token y validar rol, institución y propiedad en cada handler de ticket.
+- **Archivos:** validateRolePermission, getProblemTickets, replyProblemTicket, submitProblemTicket y backend asociado.
+- **Dependencias:** identidad autenticada de AUD-NG-001.
+- **Alcance:** seguridad/propiedad del flujo de tickets; no duplica bandeja ni clasificación.
+- **Criterios:** manipular IDs no permite acceso cruzado; identidad deriva de sesión; pruebas cubren roles, institución y payload adulterado.
+- **Prioridad/estado:** conservar valores oficiales.
+- **Evidencia:** pendiente.
+
+### [TASK-484] Pruebas conductuales del flujo de soporte UX-08
+- **Tipo:** tarea existente reutilizada.
+- **Hallazgo:** AUD-NG-187/TASK-484 y brechas observadas en T-UX-23.
+- **Objetivo/acción:** probar validación, envío válido, confirmación, error, rechazo de red, reactivación y conservación de datos desde UI hasta respuesta.
+- **Archivos:** UI/modal de soporte, cliente API, backend de tickets y suite UX.
+- **Dependencias:** AUD-NG-001 y AUD-NG-128.
+- **Alcance:** pruebas end-to-end; no reemplaza correcciones de seguridad.
+- **Criterios:** éxito/fallo reflejados; persistencia confirmada; texto se conserva ante fallo; reintento controlado; sin acceso cruzado; suite comprueba comportamiento, no solo presencia DOM.
+- **Prioridad/estado:** conservar los valores de TASK-484.
+- **Evidencia:** pendiente; no se ejecutó navegador, HTTP ni Apps Script.
+
+### [TASK-279] Clasificación automática y SLA como alcance separado
+- **Tipo:** tarea existente ya cubierta.
+- **Hallazgo:** TASK-279 cubre clasificación/SLA, no autenticación ni autorización.
+- **Objetivo/acción:** verificar reglas por tipo/prioridad y tiempos, sin usar esta tarea como sustituto de seguridad.
+- **Archivos:** módulo de tickets y reglas de clasificación/SLA.
+- **Dependencias:** modelo de tickets y permisos validados.
+- **Alcance:** clasificación y SLA únicamente.
+- **Criterios:** reglas y tiempos verificables; esta lógica no concede acceso ni cambia identidad del solicitante.
+- **Prioridad/estado:** conservar valores oficiales de TASK-279.
+- **Evidencia:** pendiente según registro oficial.
+
