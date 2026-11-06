@@ -53,3 +53,30 @@ PRUEBAS Y LIMITACIONES
 - **Evidencia actual:** js/ui-common.js mantiene SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67. recordRecentActivity (1706) y getRecentActivity (1736) usan la clave global INSTITUTIONAL_RECENT_ACTIVITY_LOG_V1 sin authUserId/institucionId. renderContextualRecentActivity (1759) concatena title/description en innerHTML. El clic pasa targetId a switchActiveView, pero switchActiveView (4864-4902) no procesa ese identificador para abrir el registro concreto.
 - **Estado del hallazgo:** AUD-NG-173 sigue pendiente. TASK-067 cubre aislamiento multiusuario; TASK-221 mantiene la fuente de verdad de tareas accionables. No se crea duplicado ni se modifica Pendientes.md.
 - **Pruebas:** inspección estática y comparación SHA. No se ejecutaron pruebas runtime, multiusuario, XSS ni navegación real.
+
+## Tareas ejecutables derivadas de los hallazgos
+
+### [TASK-067] Ampliación: aislar actividad reciente por usuario e institución
+- **Tipo:** tarea existente ampliada; no crear ID duplicado.
+- **Hallazgo:** clave INSTITUTIONAL_RECENT_ACTIVITY_LOG_V1 sin authUserId/institucionId, con riesgo de contaminación entre cuentas.
+- **Severidad/prioridad/estado:** conservar valores oficiales de TASK-067.
+- **Objetivo:** impedir que cuentas o instituciones compartan actividad reciente en el mismo navegador.
+- **Acción:** particionar almacenamiento por usuario e institución autenticados; validar identidad antes de leer/escribir; invalidar contexto al cerrar sesión o cambiar cuenta.
+- **Archivos:** js/ui-common.js y ciclo de sesión.
+- **Dependencias:** AUD-NG-001 (identidad derivada del token).
+- **Alcance:** aislamiento multiusuario del almacenamiento; no cubre integración de la vista ni navegación a registros.
+- **Criterios:** usuarios distintos no comparten eventos; instituciones quedan aisladas; cambio/cierre invalida contexto anterior; pruebas multiusuario confirman aislamiento.
+- **Evidencia:** pendiente.
+
+### [TASK-DOC-C1.114-TUX26-01] Integrar actividad reciente con eventos reales y navegación segura
+- **Tipo:** tarea nueva derivada de AUD-NG-173; ID documental específico para evitar colisión con numeración histórica.
+- **Hallazgo/severidad:** AUD-NG-173, MEDIO; vista no integrada, sin productores reales encontrados, targetId no consumido y renderer inserta contenido mediante innerHTML sin escape contextual.
+- **Objetivo:** convertir funciones aisladas en flujo visible, seguro y contextual por rol.
+- **Acción:** integrar renderer en dashboards; conectar productores reales; definir filtros por rol; validar estructura/timestamp; insertar título/descripción como texto seguro; resolver targetView/targetId contra registro existente y autorizado; fallback si no existe o perdió permiso.
+- **Archivos:** js/ui-common.js, dashboards principales y módulos productores de eventos.
+- **Dependencias:** TASK-067 (aislamiento), TASK-221 (fuente de verdad/ciclo de tareas), AUD-NG-001 (identidad).
+- **Alcance:** integración UI, eventos, validación, renderizado seguro y navegación; excluye duplicar bandeja de tareas.
+- **Criterios:** dashboards muestran eventos pertinentes; aislamiento por usuario/institución; tipos informativo/tarea pendiente distinguidos y enlazados con TASK-221; entradas malformadas/fechas inválidas tratadas; sin inyección HTML; clic abre registro exacto solo con permiso; fallback para registro eliminado/permiso revocado; pruebas de roles, XSS y navegación.
+- **Prioridad:** P2. **Estado:** Pendiente.
+- **Evidencia:** pendiente; no se ejecutaron pruebas de navegador, multiusuario ni Apps Script.
+

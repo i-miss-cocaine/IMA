@@ -92,3 +92,35 @@ No se ejecutaron navegador/DOM, carga directa, recarga, eventos popstate reales,
 - Próxima inspección reproducible: revisar el registro de tareas UX en completadas.md y después continuar con el siguiente identificador pendiente, conservando las dependencias de TASK-485/486 y sin duplicar hallazgos.
 
 ================================================================
+
+## Tareas ejecutables derivadas de los hallazgos
+
+**No se crean hallazgos ni tareas nuevas en esta revalidación.** Las brechas continúan cubiertas por tareas existentes.
+
+### [TASK-485] Router único y navegación entre vistas (AUD-NG-188)
+- **Tipo:** tarea existente ya responsable; no duplicar.
+- **Hallazgo:** AUD-NG-188, contrato común de navegación, history.state/hash y resolución de rutas incompletos.
+- **Objetivo/acción:** implementar router común idempotente; procesar {view, params}; resolver carga directa/hash, recarga, atrás/adelante y rutas inválidas; integrar dashboards y validar permisos.
+- **Archivos:** js/ui-common.js, módulos de navegación por rol y dashboards incluidos.
+- **Dependencias:** autenticación/permisos y contratos de navegación jerárquica.
+- **Alcance:** selección/cambio de vista; no sustituye restauración completa de listas.
+- **Criterios:** URL directa/recarga recuperan destino autorizado; atrás/adelante funcionan; rutas inválidas tienen fallback; dashboards usan contrato común; no hay acceso a rutas no autorizadas.
+- **Prioridad/estado:** conservar valores oficiales de TASK-485.
+- **Evidencia:** pendiente; revalidación estática.
+
+### [TASK-486] Snapshot y restauración de estado contextual de listas (AUD-NG-189)
+- **Tipo:** tarea existente ya responsable; no duplicar.
+- **Hallazgo:** AUD-NG-189, snapshots incompletos o asociados a vista incorrecta; no se restauran consulta, filtros, orden, página, pestaña, selección y scroll.
+- **Objetivo/acción:** capturar estado de vista saliente; restaurar consulta, filtros, orden, página, pestaña, selección y scroll; validar registro/permisos; minimizar datos personales serializados.
+- **Archivos:** js/ui-common.js, js/teacher.js, js/student.js, js/accounting.js, js/secretary.js y dashboards integrados.
+- **Dependencias:** TASK-485 (router), TASK-493 (modal delega restauración), TASK-429 (filtros/paginación).
+- **Alcance:** snapshot/restauración contextual; no sustituye router ni bandeja TASK-221.
+- **Criterios:** snapshot pertenece a vista saliente; todos los campos se restauran; registro/permisos se revalidan; carga directa/recarga coordinadas con TASK-485; no se serializan datos innecesarios; pruebas atrás/adelante y regreso desde detalle.
+- **Prioridad/estado:** conservar valores oficiales de TASK-486.
+- **Evidencia:** pendiente; no se ejecutaron pruebas runtime.
+
+### Tareas relacionadas ya cubiertas
+- **AUD-NG-173 / TASK-DOC-C1.114-TUX26-01:** targetId no consumido y navegación al registro concreto; el desarrollo está en el informe T-UX-26, sin duplicarlo aquí.
+- **TASK-429:** filtros, vistas guardadas y paginación; coordinar con TASK-486.
+- **TASK-493:** modal compartido de detalle; delega restauración de lista a TASK-486.
+

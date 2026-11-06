@@ -49,3 +49,41 @@ PRUEBAS Y LIMITACIONES
 - **Persistencia de brechas:** renderUIProgressSkeleton sigue sin consumidores; no hay medición de duración de acciones frecuentes; fetchApi sigue usando timeout fijo de 60000ms e ignora options.timeout; no hay deduplicación de requests concurrentes. El debounce de Omnibox (300ms) y caché opcional no cubren esos requisitos. La suite sigue sin pruebas T-UX-27.
 - **Reconciliación:** TASK-252, TASK-429 y AUD-NG-007 continúan como responsables. No crear duplicados ni modificar Pendientes.md.
 - **Pruebas:** inspección estática y comparación SHA; no se ejecutaron benchmarks ni pruebas runtime.
+
+## Tareas ejecutables derivadas de los hallazgos
+
+**No se crean tareas nuevas.** Se documentan las ampliaciones de tareas y hallazgos existentes para mantener trazabilidad.
+
+### [TASK-252] Ampliación: medir rendimiento percibido
+- **Tipo:** tarea existente ampliada.
+- **Hallazgo:** falta medición de duración de operaciones habituales y evidencia cuantitativa de fluidez.
+- **Objetivo/acción:** instrumentar operaciones frecuentes, definir métricas/umbrales reproducibles y registrar resultados sin payloads sensibles.
+- **Archivos:** telemetría compartida, js/ui-common.js, js/api.js y operaciones seleccionadas.
+- **Dependencias:** política de privacidad/retención y observabilidad.
+- **Alcance:** rendimiento percibido; no sustituye benchmarks de tablas.
+- **Criterios:** operaciones seleccionadas con métricas reproducibles; percentiles/umbrales definidos; sin datos sensibles; mediciones escritorio/móvil.
+- **Prioridad/estado:** conservar TASK-252.
+- **Evidencia:** pendiente.
+
+### [TASK-429] Ampliación: skeleton, estados de carga y deduplicación segura
+- **Tipo:** tarea existente ampliada.
+- **Hallazgo:** renderUIProgressSkeleton no tiene consumidores; faltan estados carga/error/vacío integrados y deduplicación general de lecturas equivalentes.
+- **Objetivo/acción:** integrar skeleton al ciclo de petición; diferenciar carga/error/vacío; deduplicar solo lecturas concurrentes idénticas; nunca fusionar mutaciones ni peticiones con identidad/payload distintos.
+- **Archivos:** js/ui-common.js, js/api.js, tablas/listados y consumidores fetch.
+- **Dependencias:** TASK-252 (telemetría), AUD-NG-007 (timeout/abort).
+- **Alcance:** feedback de carga y optimización segura de lecturas.
+- **Criterios:** skeleton ligado a petición; error/vacío diferenciados; solo lecturas idénticas comparten resultado; mutaciones no se fusionan; timeout/cancelación probados; pruebas de carga/éxito/error/concurrencia.
+- **Prioridad/estado:** conservar TASK-429.
+- **Evidencia:** pendiente.
+
+### [AUD-NG-007] Ampliación: timeout configurable efectivo en fetchApi
+- **Tipo:** hallazgo existente ampliado; no crear ID nuevo.
+- **Hallazgo:** fetchApi usa 60000 ms fijo e ignora options.timeout; timeout solicitado por checkMicroserviceHealth no surte efecto.
+- **Objetivo/acción:** aplicar timeout por defecto/override, propagar AbortSignal y limpiar temporizadores al resolver/rechazar.
+- **Archivos:** js/api.js y consumidores que configuran timeout.
+- **Dependencias:** contratos fetch y manejo de errores.
+- **Alcance:** timeout/cancelación; no cubre deduplicación.
+- **Criterios:** default y override efectivos; timeout aborta; error identificable; sin temporizadores colgados; pruebas de timeout corto, override, éxito y rechazo.
+- **Prioridad/estado:** conservar AUD-NG-007.
+- **Evidencia:** pendiente.
+
