@@ -3082,3 +3082,31 @@ CHECKPOINT C1.74 - TAREA-F4-P0-03
 - Próxima acción reproducible: auditar TAREA-F4-P0-04, verificando persistencia de intentos fallidos, bloqueo, ventanas temporales, rate limiting, identidad/IP, registros de auditoría y resistencia a bypass.
 - Commit de cierre: el commit que contiene este checkpoint.
 ================================================================
+
+================================================================
+CHECKPOINT C1.75 - TAREA-F4-P0-04
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto real: Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: d8147bf071c790212338870922da7610e2715fd4.
+- HEAD de rama base verificado al inicio: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Último commit conocido al inicio: d8147bf071c790212338870922da7610e2715fd4.
+- ID operativo de sesión: IMA-AUDIT-20261106-1138Z; inicio C1.71; estado ABIERTA. Es un identificador operativo, no un ID técnico nativo de ChatGPT.
+- Tarea auditada: TAREA-F4-P0-04 - Registrar los intentos fallidos de autenticación y reforzar la protección contra ataques.
+- Estado maestro: [X] Completada en completadas.md (SHA f57f1aef832e81e44fc4f7ec36a852d50e464676).
+- Dictamen: NO CUMPLE.
+- Evidencia principal: backend/user-service/Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; loginUser 2479-2554; logStructuredEvent 327-352; getSecurityAndComplianceDashboardData 4453-4545; recordTraceabilityLog 4548-4573; registerAndDispatchEvent 4618-4698; getPaginatedAuditLogReport 4243-4364.
+- Hallazgos: AUD-NG-145 ampliado por desconexión de logs de login, ausencia de trazabilidad, retorno sin log, fallo de escritura silenciado y PII no redactada; AUD-NG-005 ampliado por bloqueo automático sin invalidación/propagación; AUD-NG-159 conserva logout. Nuevo AUD-NG-218 (Crítico/P0) y TASK-497 para contador no atómico, falta de ventana/rate limit y bloqueo inducible.
+- Reconciliación: no duplicar AUD-NG-145 (bitácora central/sanitización), AUD-NG-005 (propagación de estado) ni AUD-NG-159 (logout/revocación).
+- Fuente original AUDITORIA_FASE4_IDENTIDAD_PERMISOS_GOBIERNO.md citada por completadas.md: no encontrada en el árbol actual; dictamen basado en descripción oficial y evidencia versionada.
+- Pruebas ejecutadas: inspección estática/manual, comparación de SHA y lectura de funciones relacionadas.
+- Pruebas no ejecutadas: peticiones HTTP, deployments, persistencia real de Sheets, concurrencia, rate limiting, IP/origen, recuperación de bloqueos, multiusuario y suites automatizadas.
+- Progreso: 72/183 identificadores auditados; 111 pendientes.
+- Siguiente tarea exacta: TAREA-F4-P1-01 - Implementar el motor transversal de delegaciones de seguridad y permisos temporales.
+- Archivos modificados: Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt, Pendientes.md y nuevo AUDITORIA_COMPLETADAS_TAREA-F4-P0-04.md.
+- Archivos sin modificar: código fuente, completadas.md, ChangesLogs.txt y METODOLOGIA_DESARROLLO.md.
+- Próxima acción reproducible: abrir TAREA-F4-P1-01 en completadas.md y revisar createSecurityDelegation, getSecurityDelegations, revokeSecurityDelegation, validateRolePermission, hasActiveDelegationForAction, hojas DelegacionesSeguridad y la propagación/expiración de permisos temporales; reconciliar TASK-488 y hallazgos existentes antes de crear IDs.
+- Commit de cierre: el commit que contiene este checkpoint.
+================================================================

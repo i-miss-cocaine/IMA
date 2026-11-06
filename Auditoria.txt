@@ -6191,3 +6191,16 @@ AUDITORÍA TAREA-F4-P0-03 - CHECKPOINT C1.74
 - Errata: C1.72 asignó logoutUser a AUD-NG-002; se corrige. logoutUser/revokeUserSession pertenece a AUD-NG-159; propagación de revocación a AUD-NG-005. AUD-NG-002 conserva TASK/EXAM y borradores ACADEMIC.
 - Pruebas: inspección estática/manual; no se ejecutaron peticiones HTTP, pruebas runtime de caché, revocación interproyecto, roles ni deployments.
 ===============================================================================
+
+===============================================================================
+AUDITORÍA TAREA-F4-P0-04 - CHECKPOINT C1.75
+===============================================================================
+- Dictamen: NO CUMPLE. loginUser registra parte de los resultados en LogsSistema y bloquea tras cinco contraseñas incorrectas, pero no integra los eventos con BitacoraEventos/BitacoraTrazabilidad ni garantiza protección robusta contra intentos paralelos y abuso de bloqueo.
+- USER SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f: loginUser (2479-2554) registra LOGIN_FAILED/LOGIN_SUCCESS en LogsSistema mediante logStructuredEvent (327-352); no llama recordTraceabilityLog (4548-4573) ni registerAndDispatchEvent (4618-4698). Credenciales ausentes retornan sin registro (2481). El payload conserva identifier/userId (2502, 2540, 2552); sanitizePayloadForLog (50-70) no los redacta y logStructuredEvent suprime fallos de escritura (348-351).
+- getSecurityAndComplianceDashboardData (4453-4545) lee BitacoraEventos y calcula contadores LOGIN_FAILED/LOGIN_SUCCESS (4458-4507), no LogsSistema; por tanto, no consume los eventos emitidos por loginUser. La escritura de trazabilidad usa BitacoraTrazabilidad y el lector paginado referencia BitacoraTraceability. El desajuste de nombres/esquemas y la sanitización se mantienen dentro de AUD-NG-145.
+- loginUser actualiza Usuarios!L con currentFailed + 1 sin LockService (2536-2539); al alcanzar cinco cambia Usuarios!K a Bloqueada (2542-2545). No existe ventana temporal, espera progresiva ni rate limiting por origen confiable. El bloqueo no expira desde loginUser y puede ser inducido por un tercero. Las solicitudes paralelas pueden sobrescribir incrementos por falta de exclusión mutua; no se ejecutó prueba runtime.
+- El bloqueo automático no pasa por manageAccountState ni demuestra invalidación de acct_state_/propagación; se amplía AUD-NG-005. logoutUser sigue cubierto por AUD-NG-159.
+- Nuevo AUD-NG-218 (Crítico/P0) y TASK-497: atomicidad del contador, límites temporales y controles antiabuso. No duplicar AUD-NG-145 ni AUD-NG-005.
+- Fuente original AUDITORIA_FASE4_IDENTIDAD_PERMISOS_GOBIERNO.md citada en completadas.md: no encontrada en el árbol actual. Alcance reconstruido desde completadas.md y evidencia del código vigente.
+- Pruebas: inspección estática/manual. No se ejecutaron deployments, peticiones HTTP, concurrencia real, persistencia de Sheets, medición de rate limiting, recuperación de bloqueos ni suites automatizadas.
+===============================================================================

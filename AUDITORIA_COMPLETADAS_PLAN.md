@@ -883,3 +883,13 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Sesión:** IMA-AUDIT-20261106-1138Z; inicio C1.71; sesión abierta.
 - **Progreso:** 71/183 identificadores auditados; 112 pendientes.
 - **Siguiente tarea:** TAREA-F4-P0-04 - Registrar los intentos fallidos de autenticación y reforzar la protección contra ataques.
+
+## 77. Resultado C1.75 - TAREA-F4-P0-04 (2026-11-06)
+
+- **Dictamen:** NO CUMPLE. loginUser registra LOGIN_FAILED/LOGIN_SUCCESS solo en LogsSistema, no integra BitacoraEventos/BitacoraTrazabilidad; el tablero de seguridad lee BitacoraEventos y no consume esos registros. La bitácora omite credenciales ausentes, suprime fallos de escritura y conserva identifier/userId sin redacción.
+- **Protección antiabuso:** contador por cuenta sin LockService, bloqueo fijo al quinto fallo, sin ventana temporal, espera progresiva ni límite por origen confiable; el bloqueo puede ser inducido y las escrituras concurrentes pueden sobrescribir incrementos.
+- **Reconciliación:** ampliar AUD-NG-145 (bitácoras/PII/trazabilidad) y AUD-NG-005 (propagación del bloqueo automático); AUD-NG-159 conserva logout. Nuevo AUD-NG-218/TASK-497 para atomicidad y rate limiting. No duplicar hallazgos existentes.
+- **Evidencia:** USER SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; loginUser 2479-2554; logStructuredEvent 327-352; getSecurityAndComplianceDashboardData 4453-4545; recordTraceabilityLog 4548-4573; registerAndDispatchEvent 4618-4698; getPaginatedAuditLogReport 4243-4364.
+- **Pruebas:** inspección estática/manual; no se ejecutaron HTTP, deployments, concurrencia real, persistencia de Sheets, rate limiting, recuperación de bloqueos ni suites automatizadas.
+- **Progreso:** 72/183 identificadores auditados; 111 pendientes.
+- **Siguiente tarea oficial:** TAREA-F4-P1-01 - Implementar el motor transversal de delegaciones de seguridad y permisos temporales.

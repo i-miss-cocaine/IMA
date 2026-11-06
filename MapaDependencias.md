@@ -1661,3 +1661,13 @@ Relaciones:
 - La matriz dynamic_permissions_matrix se cachea 600s en los cinco servicios; savePermissionMatrix invalida solo USER y los purgeSecurityCaches remotos eliminan claves diferentes. verifySessionToken no revalida el claim role vigente.
 - handleLogout en ui-common.js solo limpia estado local; no llama logoutUser. handleSessionExpired no está conectado desde api.js; auth.js/api.js tampoco conservan/transmiten sessionToken.
 - Hallazgos: AUD-NG-005, AUD-NG-159 y AUD-NG-160. Errata C1.72: logoutUser pertenece a AUD-NG-159, no a AUD-NG-002. No se crean IDs nuevos.
+
+## Registro de dependencias - TAREA-F4-P0-04 (C1.75)
+- backend/user-service/Code.gs:loginUser (2479-2554) -> Usuarios (columnas 11-13); valida estado, compara SHA-256, reinicia contador en éxito, incrementa contador por contraseña incorrecta y marca Bloqueada al llegar a cinco.
+- USER:loginUser -> logStructuredEvent (327-352) -> LogsSistema. No se encontró llamada a recordTraceabilityLog ni registerAndDispatchEvent desde loginUser.
+- USER:getSecurityAndComplianceDashboardData (4453-4545) -> BitacoraEventos; lee LOGIN_FAILED/LOGIN_SUCCESS desde row[2], por lo que no consume el registro LOGIN_FAILED/LOGIN_SUCCESS almacenado en LogsSistema por loginUser.
+- USER:recordTraceabilityLog (4548-4573) -> BitacoraTrazabilidad; sin llamada desde loginUser. getPaginatedAuditLogReport (4243-4364) consulta BitacoraTraceability y usa un DTO distinto del productor registerAndDispatchEvent (4618-4698).
+- USER:sanitizePayloadForLog (50-70) -> redacta claves de credenciales, pero no identifier/email/userId; logStructuredEvent (327-352) captura y suprime errores de escritura.
+- USER:loginUser (2536-2545) -> contador por cuenta sin LockService; bloqueo directo en Usuarios!K al quinto intento. No se encontró ventana temporal, espera progresiva ni rate limit por origen confiable.
+- Reconciliación: AUD-NG-145 (bitácoras, sanitización y trazabilidad); AUD-NG-005 (invalidación/propagación del bloqueo automático); AUD-NG-159 (logout/revocación). Nuevo AUD-NG-218/TASK-497 para atomicidad y antiabuso.
+- Inspección estática/manual; sin pruebas runtime, concurrencia, HTTP ni persistencia real de Sheets.
