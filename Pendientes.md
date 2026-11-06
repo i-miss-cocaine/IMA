@@ -18528,6 +18528,8 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Ampliación C1.76 / TAREA-F4-P1-01:** USER:createSecurityDelegation (1746-1800) y revokeSecurityDelegation (2276-2315) solo eliminan active_delegations_<userId> del ScriptCache USER. ACADEMIC (hasActiveDelegationForAction 624-669) y ACCOUNTING (525-570) mantienen cachés independientes de 300 segundos y no reciben invalidación al crear/revocar; una delegación nueva puede tardar en aplicarse y una revocada puede seguir autorizando hasta que expire el TTL. getSecurityDelegations (1803-1859) cambia el estado a Expirada al consultar, pero no invalida cachés; las entradas cacheadas no conservan fechas y hasActiveDelegationForAction no revalida vigencia en cada hit. Se amplía el alcance existente, sin crear hallazgo duplicado.
 - **Estado:** [ ] Pendiente
 
+- **Ampliación C1.78 / TAREA-F4-P1-03:** Los cinco getDynamicPermissionsForRole leen solo rol, accion y permitido; ignoran modulo/ambito. savePermissionMatrix actualiza por rol+accion, por lo que reglas diferenciadas colisionan. Se registra la dimensión de la matriz en AUD-NG-221; este hallazgo conserva solo caché/fallback e invalidación.
+
 ### [AUD-NG-161] Sustituir la suite de concurrencia por pruebas reales de idempotencia y recuperación de reintentos
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-161 (auditoría de completadas.md, FASE2-T02).
 - **Severidad/Clasificación:** Alto (P1; integridad de pruebas y verificación transaccional).
@@ -19866,4 +19868,20 @@ AUD-NG-163 permanece DUPLICADA y consolidada; no reabrirla como tarea independie
 - **Problema Detectado:** Si no hay fecha de último acceso, el código usa el contador de intentos fallidos como timestamp. Solo sustituye nombre, correo y teléfono; conserva identificadores y relaciones y no respeta preservacionLegal.
 - **Requisitos de Corrección:** Corregir fecha, detener anonimización sin fecha confiable, aplicar legal hold, transformar identificadores directos/indirectos, mantener integridad referencial en servicios académicos/contables e invalidar sesiones/cachés.
 - **Criterios de Aceptación:** Cuentas sin fecha no se anonimizan por error; registros bajo preservación legal se excluyen; no hay reidentificación desde campos operativos; relaciones consistentes y operaciones auditadas.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-221] Aplicar módulo/ámbito y proteger la matriz dinámica
+- **Origen:** Auditoria.txt / TAREA-F4-P1-03 / C1.78.
+- **Severidad:** Alto (P1).
+- **Archivos:** USER, ACADEMIC, ACCOUNTING, TASK, EXAM; ui-common.js; dashboards.
+- **Dependencias:** MatrizPermisosRoles, getDynamicPermissionsForRole, getPermissionMatrix, savePermissionMatrix, validateRolePermission.
+- **Descripción:** La hoja almacena rol, modulo, accion, permitido y ambito, pero los cinco helpers autorizan solo por rol+acción. savePermissionMatrix también hace upsert por rol+acción, así que reglas del mismo rol/acción para distintos módulos o ámbitos colisionan. No hay interfaz de matriz en ui-common.js ni en los dashboards revisados. savePermissionMatrix no impone una guardia interna de rol; si la matriz concede esa acción a un perfil no administrativo, ese perfil puede modificar permisos de todos.
+- **Criterios:** clave rol+módulo+acción+ámbito; validación de catálogos y reglas no ambiguas; guardia de servidor administrativa para editar; cambios atómicos/versionados/auditados; UI de consulta y edición; pruebas diferenciadas en los cinco servicios.
+- **Relaciones:** AUD-NG-160 cubre caché/fallback; TASK-139 permisos documentales; AUD-NG-094 catálogo de informes; TAREA-F4-P1-04 RBAC/ABAC general.
+- **Estado:** [ ] Pendiente
+
+### [TASK-501] [TAREA-F4-P1-03] [P1] Completar matriz dinámica por rol, módulo, acción y ámbito
+- **Problema:** Se ignoran módulo/ámbito, el upsert colisiona por rol+acción y no existe UI; el editor no tiene guardia interna de rol.
+- **Corrección:** aplicar dimensiones en cinco servicios, validar catálogos, restringir editor, implementar UI y versionar/auditar cambios.
+- **Aceptación:** reglas del mismo rol/acción con módulos/ámbitos distintos funcionan; perfiles no autorizados no editan; pruebas positivas/negativas pasan en USER/ACADEMIC/ACCOUNTING/TASK/EXAM.
 - **Estado:** [ ] Pendiente

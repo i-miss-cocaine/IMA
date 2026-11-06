@@ -1693,3 +1693,11 @@ Relaciones:
 - ACCOUNTING SHA 38b979d41596b85e888b4a7060b37bbac0840a28: sin motor ni invocación; archivado de plantillas no es retención financiera.
 - Triggers: no se encontraron ScriptApp.newTrigger/timeBased en USER, ACADEMIC ni ACCOUNTING.
 - Reconciliación: AUD-NG-145 (logs), AUD-NG-146/TASK-499 (retención/archivo), AUD-NG-220/TASK-500 (anonimización productiva), TASK-081 (datos de prueba), TASK-398/TASK-456 (archivo trámites/documentos).
+
+
+## Dependencias TAREA-F4-P1-03 C1.78
+- USER:getPermissionMatrix (1902-1932) y savePermissionMatrix (1934-1985) -> MatrizPermisosRoles; upsert por rol+acción, aunque guarda modulo/ambito.
+- USER/ACADEMIC/ACCOUNTING/TASK/EXAM:getDynamicPermissionsForRole -> cache dynamic_permissions_matrix TTL 600; usa columnas rol/acción/permitido, ignora modulo/ambito.
+- purgeSecurityCaches de servicios no USER elimina perm_matrix_<role>/dynamic_perms_<role>, no dynamic_permissions_matrix (AUD-NG-160).
+- ui-common.js, developer.js y 11 dashboards revisados sin editor/llamadas de matriz.
+- AUD-NG-221/TASK-501: dimensiones y UI; AUD-NG-160: cache; TASK-139: permisos documentales; AUD-NG-094: informes; P1-04: RBAC/ABAC general.

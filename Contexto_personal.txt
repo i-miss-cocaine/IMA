@@ -3160,3 +3160,11 @@ CHECKPOINT C1.77 - TAREA-F4-P1-02
 - Sin modificar: código fuente, completadas.md, ChangesLogs.txt y METODOLOGIA_DESARROLLO.md.
 - Commit de cierre: el commit que contiene este checkpoint.
 ================================================================
+
+
+=== CHECKPOINT C1.78 ===
+- Sesión IMA-AUDIT-20261106-1138Z; inicio C1.71; abierta.
+- Tarea TAREA-F4-P1-03: NO CUMPLE. Matriz solo rol+acción, ignora módulo/ámbito, upsert colisiona, no hay UI; nuevo AUD-NG-221/TASK-501. AUD-NG-160 conserva cache/fallback.
+- HEAD partida ee2a9fc43d91d38c253bc4778488f613d4d9a219; base 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Progreso 75/183; 108 pendientes. Siguiente TAREA-F4-P1-04 RBAC/ABAC.
+- Archivos: Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt, Pendientes.md, AUDITORIA_COMPLETADAS_TAREA-F4-P1-03.md. Sin tocar código/completadas/ChangesLogs/metodología.

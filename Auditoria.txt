@@ -6236,3 +6236,10 @@ AUDITORÍA TAREA-F4-P1-02 - CHECKPOINT C1.77
 - Pruebas: inspección estática/manual; no se ejecutaron triggers, despliegues, cambios reales de hojas, purga, archivo, anonimización, legal hold ni suites automatizadas.
 - Fuente original AUDITORIA_FASE4_IDENTIDAD_PERMISOS_GOBIERNO.md citada en completadas.md: no encontrada.
 ===============================================================================
+
+
+==== AUDITORÍA TAREA-F4-P1-03 C1.78 ====
+- NO CUMPLE: matriz aplicada solo por rol+acción; modulo/ambito ignorados por cinco servicios; upsert colisiona por rol+acción; editor sin guardia interna; UI ausente.
+- AUD-NG-160 mantiene caché/fallback; nuevo AUD-NG-221/TASK-501 para dimensiones, editor y UI.
+- Evidencia USER 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ACADEMIC daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; ACCOUNTING 38b979d41596b85e888b4a7060b37bbac0840a28; ui-common 986938b8a311a41ed4cb3d135b66b6aaea4bed67.
+- Pruebas estáticas; sin acceso a hoja operativa ni pruebas runtime.

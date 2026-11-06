@@ -914,3 +914,12 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Pruebas:** inspección estática/manual; no triggers, HTTP, deployments, archivo/anonimización reales ni suites.
 - **Progreso:** 74/183; 109 pendientes.
 - **Siguiente tarea oficial:** TAREA-F4-P1-03 - Implementar la matriz dinámica de permisos y su aplicación transversal.
+
+## 80. Resultado C1.78 - TAREA-F4-P1-03 (2026-11-06)
+
+- **Dictamen:** NO CUMPLE. Los cinco servicios solo evalúan rol+acción; módulo y ámbito se almacenan pero se ignoran. savePermissionMatrix también hace upsert por rol+acción y carece de guardia interna que impida a un rol con permiso dinámico editar toda la matriz. No hay interfaz en ui-common.js/dashboards revisados.
+- **Reconciliación:** AUD-NG-160 mantiene caché/fallback e invalidación; nuevo AUD-NG-221/TASK-501 para dimensiones, editor y UI. TASK-139 cubre permisos documentales; AUD-NG-094 catálogo de informes; TAREA-F4-P1-04 modelo contextual general.
+- **Evidencia:** USER SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ACADEMIC SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; ACCOUNTING SHA 38b979d41596b85e888b4a7060b37bbac0840a28; TASK/EXAM inspeccionados en la misma rama; ui-common SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67.
+- **Pruebas:** inspección estática/manual; no se leyó la hoja real ni se ejecutaron endpoints, pruebas de matriz o invalidación de caché.
+- **Progreso:** 75/183; 108 pendientes.
+- **Siguiente tarea oficial:** TAREA-F4-P1-04 - Implementar una política unificada de autorización contextual RBAC/ABAC.
