@@ -5884,3 +5884,32 @@ CHECKPOINT C1.174 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-F4-P0-
 - Próximo informe oficial: TAREA-F4-P0-04 - registrar intentos fallidos de autenticación y reforzar protección contra ataques; leer íntegramente y reconciliar antes de editar.
 - Regla de publicación: un único commit con exactamente el informe y Contexto_personal.txt; verificar SHA, padre, árbol, archivos modificados y HEAD tras publicar.
 ================================================================
+
+================================================================
+CHECKPOINT C1.175 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-F4-P0-04
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.1.
+- HEAD de partida verificado: 455c0d678bce98e36d98cced861976da0ade0748.
+- Árbol base de la rama de trabajo: 7257e48df80df7a24d91ab11c979897a504191b3.
+- HEAD de rama base consultado previamente en esta sesión (solo lectura): 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID operativo de sesión: IMA-AUDIT-20261106-2232Z (no es ID nativo de ChatGPT).
+- Checkpoint inicial de esta iteración: C1.174.
+- Estado de iteración: cerrada en C1.175.
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F4-P0-04.md.
+- SHA del informe antes del cambio: fc109033dd72e3fd8c272771fecb4c8755fa23e0.
+- SHA del contexto antes del cambio: a188f3bcc1527cbf57725d1ee2b123ca0cba00c9.
+- Dictamen original preservado: TAREA-F4-P0-04 NO CUMPLE; estado [X] de completadas.md sin cambios.
+- Inspección: loginUser registra parcialmente LOGIN_FAILED/LOGIN_SUCCESS en LogsSistema, mientras el tablero consume BitacoraEventos; login sin credenciales retorna sin evento; escritura de logs silencia errores; payload conserva identificadores personales; contador de intentos no usa exclusión mutua, carece de ventana/rate limiting y puede bloquear permanentemente; el bloqueo directo no invalida ni propaga estado de cuenta.
+- Reconciliación: AUD-NG-145 ampliado con contrato de eventos de autenticación, integración de fuentes, trazabilidad, fallos de persistencia y redacción de PII; AUD-NG-218/TASK-497 formaliza atomicidad y controles antiabuso; AUD-NG-005 ampliado para bloqueo automático y propagación de estado. AUD-NG-159 permanece separado para logout/revocación.
+- IDs adicionales creados: AUD-NG-218 / TASK-497, conforme al informe de auditoría.
+- Archivos modificados: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F4-P0-04.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, Auditoria.txt, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README y rama base.
+- Pruebas ejecutadas: lectura íntegra de TAREA-F4-P0-04; contraste de AUD-NG-145/005 y registro AUD-NG-218/TASK-497; comprobación de ausencia previa del bloque; verificación de HEAD y SHAs de partida.
+- Pruebas no ejecutadas: HTTP, concurrencia/paralelismo, rate limiting, persistencia real de bitácoras, recuperación de bloqueos, origen/IP y suites automatizadas.
+- Límite: cambio exclusivamente documental; no se considera ejecutada ninguna tarea ni corregido ningún hallazgo.
+- Próximo informe oficial: TAREA-F4-P1-01 - motor transversal de delegaciones de seguridad y permisos temporales; leer íntegramente y reconciliar antes de editar.
+- Regla de publicación: un único commit con exactamente el informe y Contexto_personal.txt; verificar SHA, padre, árbol, archivos modificados y HEAD tras publicar.
+================================================================

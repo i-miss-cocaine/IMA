@@ -69,3 +69,47 @@ La tarea está marcada [X] en completadas.md, pero esa marca no constituye evide
 - Siguiente tarea oficial: TAREA-F4-P1-01 - Implementar el motor transversal de delegaciones de seguridad y permisos temporales.
 - Archivos documentales de esta iteración: Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt, Pendientes.md y este informe.
 - Sin modificación: código fuente, completadas.md, ChangesLogs.txt y METODOLOGIA_DESARROLLO.md.
+
+## Tareas ejecutables derivadas de los hallazgos
+
+> Derivadas de la inspección estática de TAREA-F4-P0-04. Se conserva el dictamen **NO CUMPLE** y el estado [X] de `completadas.md`. No se afirma que los intentos paralelos hayan sido reproducidos ni que el bloqueo haya sido explotado en un deployment.
+
+### AUD-NG-145 — Integrar eventos de autenticación con bitácoras consistentes y datos saneados (ALTO)
+
+- [ ] Definir un DTO canónico de evento de autenticación con nombres de campos, tipos, severidad, timestamp, servicio, acción, resultado, código, correlación y actor seudonimizado; usar el mismo contrato en `logStructuredEvent`, `BitacoraEventos`, `BitacoraTrazabilidad`, lectores API y UI.
+- [ ] Unificar el origen persistente que consume `getSecurityAndComplianceDashboardData` con el que escribe `loginUser`/`logoutUser`; evitar que LOGIN_FAILED/LOGIN_SUCCESS queden solo en `LogsSistema` mientras el tablero lee `BitacoraEventos`.
+- [ ] Conectar el login/logout a la trazabilidad requerida sin duplicar eventos ni confundir `BitacoraTrazabilidad` con `BitacoraTraceability`; documentar nombre, columnas, esquema, paginación y filtros de cada almacén.
+- [ ] Registrar intentos sin identificador/contraseña y errores de validación tempranos con un resultado/código seguro, sin persistir el secreto ni permitir que la omisión de credenciales eluda las métricas antiabuso.
+- [ ] Redactar o seudonimizar identificadores personales del payload (correo, nombre, userId/personaId y datos financieros); conservar solo lo necesario para correlación e investigación. No registrar contraseñas, tokens, cookies, secretos ni payloads completos.
+- [ ] Eliminar el silenciamiento total de fallos de escritura en `logStructuredEvent`: aplicar una política explícita de persistencia/reintento/cola y alertar cuando un evento de seguridad no pueda almacenarse. El flujo de autenticación no debe reportar una auditoría confirmada si el evento no se persistió.
+- [ ] Retirar muestras hardcodeadas y fallbacks que puedan presentarse como eventos reales; los registros sintéticos deben estar identificados inequívocamente como datos de demostración.
+- [ ] Añadir pruebas de contrato para escritura/lectura del mismo evento, filtros, DTO, paginación, fallo de persistencia, datos ausentes, redacción de PII y ausencia de eventos simulados en producción.
+- **Criterio de aceptación:** cada intento de autenticación produce un evento persistido, consultable y correlacionable bajo un esquema único; el tablero muestra solo datos reales y los registros no exponen credenciales ni PII innecesaria. AUD-NG-145 conserva además sus hallazgos más amplios sobre DTO/filtros/logs.
+
+### AUD-NG-218 / TASK-497 — Hacer atómico el contador de intentos y prevenir abuso del bloqueo (CRÍTICO/P0)
+
+- [ ] Proteger la secuencia leer-contar-escribir del contador de intentos fallidos con exclusión mutua/operación atómica apropiada para Google Apps Script y la hoja Usuarios; volver a leer el contador dentro de la sección crítica y no sobrescribir incrementos concurrentes.
+- [ ] Definir el contador y los límites por cuenta con ventana temporal explícita: intentos dentro de una ventana, expiración del contador, enfriamiento progresivo y política de restablecimiento tras autenticación válida. No mantener un bloqueo permanente por cinco intentos sin recuperación definida.
+- [ ] Incorporar rate limiting adicional por origen confiable y señales de abuso, sin confiar ciegamente en `X-Forwarded-For` u otros encabezados controlables por el cliente. Definir cómo se obtiene la IP/origen en el entorno real y qué hacer cuando no está disponible.
+- [ ] Aplicar límites también a identificadores inexistentes y solicitudes con credenciales ausentes/malformadas, evitando que un atacante pueda eludir el control usando nombres de usuario no registrados o solicitudes incompletas.
+- [ ] Evitar que un tercero pueda bloquear indefinidamente una cuenta conocida: diferenciar limitación temporal, desafío adicional y bloqueo administrativo; definir recuperación segura y notificación al titular sin revelar si una cuenta existe.
+- [ ] Mantener respuestas externas genéricas que no permitan enumerar usuarios; registrar internamente códigos diferenciados y contadores seudonimizados para detectar fuerza bruta distribuida, password spraying y abuso de bloqueo.
+- [ ] Definir límites configurables y auditables (umbral, ventana, enfriamiento, origen, excepciones administrativas) con valores validados; evitar valores arbitrarios o modificables desde el payload público.
+- [ ] Añadir pruebas concurrentes controladas que lancen solicitudes simultáneas contra una cuenta de prueba y verifiquen que cada intento se contabiliza exactamente una vez; cubrir umbral, ventana expirada, enfriamiento, login correcto, usuario inexistente, credenciales ausentes, orígenes múltiples y recuperación.
+- **Criterio de aceptación:** no se pierden incrementos concurrentes; el límite temporal funciona de forma reproducible; un tercero no puede imponer un bloqueo permanente a una cuenta ajena; y los controles limitan abuso por cuenta/origen sin filtrar existencia de usuarios.
+
+### AUD-NG-005 — Propagar el bloqueo automático y mantener coherente el estado de cuenta (ALTO)
+
+- [ ] Hacer que el bloqueo automático por intentos fallidos utilice la misma transición de estado autoritativa que `manageAccountState` o una operación equivalente; no escribir directamente el estado en Usuarios sin invalidar `acct_state_<userId>`.
+- [ ] Emitir el evento de cambio de estado hacia los cinco microservicios y aplicar invalidación/bloqueo en sus almacenes de seguridad según el contrato y los criterios ya registrados en C1.174.
+- [ ] Asegurar que el estado Bloqueada se refleje en USER, ACADEMIC, ACCOUNTING, EXAM y TASK dentro del SLA de revocación; reactivación administrativa debe retirar el bloqueo/versión obsoleta de manera controlada.
+- [ ] Añadir pruebas de caché caliente/fría, bloqueo automático, propagación parcial, reintento de evento y reactivación; comprobar que no se permite una operación protegida con estado anterior cacheado.
+- **Criterio de aceptación:** el bloqueo automático invalida el estado cacheado y se propaga a todos los servicios; ninguna sesión mantiene acceso después del SLA acordado.
+
+### Reconciliación y límites
+
+- AUD-NG-145 conserva la auditoría central, DTO, filtros, redacción y trazabilidad; este informe añade el flujo específico de eventos LOGIN/LOGOUT y su consumo por el tablero.
+- AUD-NG-005 conserva invalidación/propagación del estado; este informe añade el origen de bloqueo automático por fuerza bruta.
+- AUD-NG-159 conserva la autorización de logout/revocación de sesión; no se duplica aquí.
+- AUD-NG-218/TASK-497 es el único identificador nuevo para atomicidad y antiabuso; no crear un hallazgo adicional para el mismo contador.
+- No ejecutar pruebas runtime ni modificar código en esta iteración documental. La concurrencia, rate limiting, persistencia y recuperación quedan pendientes de verificación controlada.
