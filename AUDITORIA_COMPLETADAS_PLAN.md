@@ -781,3 +781,13 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Sesión:** IMA-AUDIT-20261106-0254Z; inicio C1.63; sesión abierta.
 - **Progreso:** 63/183 identificadores auditados; 120 pendientes.
 - **Siguiente tarea:** T-UX-23 - Completar el flujo de reporte de problemas y soporte.
+
+## 68. Resultado C1.66 - T-UX-23 (2026-11-06)
+
+- **Dictamen:** NO CUMPLE. El formulario existe y valida localmente, y el handler backend persiste en TicketsReporteProblemas, pero el payload del frontend carece de token; fetchApi no lo adjunta y validateRolePermission rechaza la petición antes de ejecutar el handler.
+- **Reconciliación:** AUD-NG-001 (transporte de token), AUD-NG-128 (RBAC/identidad verificada/IDOR de tickets) y TASK-484 (pruebas UX-08) cubren los defectos observados. No crear hallazgo ni tarea duplicada; Pendientes.md permanece intacto.
+- **Evidencia:** ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67, initProblemReportingUI 3583+, submitProblemReportForm 3768+; api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9, 39-58; user-service/Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f, getUserVerifiedRole 1146+, validateRolePermission 1253-1294, doPost 1351+, submitProblemTicket 400-468. Informe AUDITORIA_COMPLETADAS_T-UX-23.md.
+- **Pruebas:** inspección estática/manual. No se ejecutaron navegador, HTTP, Apps Script, escritura en Sheets ni suites automatizadas.
+- **Sesión:** IMA-AUDIT-20261106-0254Z; inicio C1.63; sesión abierta.
+- **Progreso:** 64/183 identificadores auditados; 119 pendientes.
+- **Siguiente tarea:** T-UX-24 - Normalizar las acciones, los estados y la jerarquía visual institucional.

@@ -1581,3 +1581,13 @@ Relaciones:
 - AUD-NG-144 cubre la integridad y cobertura del health check; TASK-484 pruebas; TASK-494 capas de overlays. Se crea AUD-NG-214/TASK-495 solo para semántica y separación de estados, sin duplicar.
 - La presencia de usuario no se deriva de conectividad; no se encontró señal de presencia en el indicador. No mostrarla sin heartbeat/sesión verificable.
 - Inspección estática; no se ejecutaron navegador, eventos reales ni health checks.
+
+## Flujo de reportes y tickets de soporte (T-UX-23, C1.66)
+- js/ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67: initProblemReportingUI (3583+) crea el acceso global y los modales; openReportIssueModal abre form-report-issue; submitProblemReportForm (3768+) valida descripción/resultado esperado con trim y mínimo 20 caracteres y llama fetchApi('USER','submitProblemTicket',payload).
+- El payload de envío no incluye sessionToken/authToken/token.
+- js/api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9, fetchApi 39-58 solo agrega requesterUserId/requesterRole; no transmite credencial de sesión.
+- backend/user-service/Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f: validateRolePermission 1253-1294 llama getUserVerifiedRole y exige token antes de autorizar submitProblemTicket/getProblemTickets/replyProblemTicket; sin token, doPost rechaza antes de persistir.
+- submitProblemTicket (400-468) tiene validación mínima y append a TicketsReporteProblemas/HistorialMensajesTickets, pero el flujo frontend no alcanza el handler por falta de token.
+- AUD-NG-001 cubre propagación del token; AUD-NG-128 cubre identidad verificada/IDOR de tickets; TASK-484 cubre pruebas conductuales UX-08. No crear duplicados.
+- UX-08 actual (ui-common.js 1912-1915) solo comprueba existencia de openReportIssueModal, no envío/persistencia.
+- Inspección estática; no se ejecutaron navegador, Apps Script, HTTP ni escrituras productivas.

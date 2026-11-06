@@ -2863,3 +2863,25 @@ CHECKPOINT C1.65 - CIERRE DE AUDITORÍA T-UX-22 (2026-11-06)
 - Próxima acción reproducible: revisar initProblemReportingUI, openReportIssueModal, submitProblemReportForm y backend/user-service/Code.gs para validar destino TicketsReporteProblemas, validación y respuesta real; reconciliar con tareas de tickets/soporte existentes.
 - Commit de cierre: el commit que contiene este checkpoint.
 ================================================================
+
+================================================================
+CHECKPOINT C1.66 - CIERRE DE AUDITORÍA T-UX-23 (2026-11-06)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: 67260fa9bfc79c34c9bf945b8b56a9a8ce9ef580.
+- HEAD de rama base verificado al inicio: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID de sesión de auditoría/chat: IMA-AUDIT-20261106-0254Z.
+- Inicio de sesión: C1.63. Estado: ABIERTA; este es checkpoint intermedio.
+- Tarea auditada: T-UX-23 - Completar el flujo de reporte de problemas y soporte. Dictamen NO CUMPLE.
+- Hallazgo confirmado: submitProblemReportForm no adjunta sessionToken/authToken/token; fetchApi solo agrega requesterUserId/requesterRole; validateRolePermission/getUserVerifiedRole exigen token y rechazan antes de ejecutar submitProblemTicket. El handler sí contiene validación y append a TicketsReporteProblemas, pero no se alcanzó por el contrato de autenticación.
+- Reconciliación: AUD-NG-001 cubre la propagación del token; AUD-NG-128 cubre bypass RBAC/IDOR/identidad no verificada en tickets; TASK-484 cubre pruebas conductuales UX-08. No se crea hallazgo ni tarea duplicada; Pendientes.md no se modifica.
+- Evidencia: js/ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67; js/api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; backend/user-service/Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676; Pendientes.md blob SHA 6c7d013b5ead5b9c1dcba3f281c7f91fa63ab0c4.
+- Pruebas: inspección estática/manual de UI, payload, fetchApi, validador de token, router y handler. No ejecutados navegador/DOM, HTTP, Apps Script, Sheets ni suites automatizadas.
+- Archivos previstos: Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, AUDITORIA_COMPLETADAS_T-UX-23.md y Contexto_personal.txt. Código/tests, completadas.md, Pendientes.md, METODOLOGIA_DESARROLLO.md y ChangesLogs.txt sin modificaciones.
+- Progreso: 64/183 identificadores auditados; 119 pendientes.
+- Siguiente tarea exacta: T-UX-24 - Normalizar las acciones, los estados y la jerarquía visual institucional.
+- Próxima acción reproducible: revisar css/style.css y js/ui-common.js para inventariar estilos de botones, acciones principales/secundarias y estados éxito/error/advertencia/carga/vacío; contrastar componentes reales de vistas principales y buscar tareas/hallazgos históricos de design tokens/estados antes de crear nuevos.
+- Commit de cierre: el commit que contiene este checkpoint.
+================================================================
