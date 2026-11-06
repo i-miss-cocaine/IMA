@@ -5706,3 +5706,33 @@ CHECKPOINT C1.168 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-17
 - Próximo informe: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-18.md; leerlo íntegramente y reconciliar hallazgos/tareas antes de formalizar el bloque.
 - Commit de cierre: un único commit con ambos archivos; verificar SHA, padre, árbol, archivos modificados y HEAD de rama después de publicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.169 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-18
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida declarada en el proyecto: NG_beta_0.0.0.1.
+- HEAD de partida verificado: dcc078e86d1c38bf74c35193c622dc11e0e70c3b.
+- Árbol base de la rama de trabajo: 1fbf7e4a24607ed460f413117af0bcf6b6dac929.
+- Rama base: no se realizó consulta nueva en esta iteración; no se efectuó ninguna escritura sobre ella.
+- ID operativo de sesión: IMA-AUDIT-20261106-2219Z (no es ID nativo de ChatGPT).
+- Checkpoint inicial de esta iteración: C1.168.
+- Estado de iteración: cerrada en C1.169.
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-18.md.
+- SHA del informe antes del cambio: c1a9bead2475f4531e6b2ee936b8c9cd9937ec9e.
+- SHA del contexto antes del cambio: 8bd44c80b7aceb2d8d3b4392eab29323acfafd17.
+- Inspección: TAREA-18 CUMPLE PARCIALMENTE. Catálogo de recursos solo contiene metadatos/version textual sin historial ni ACL; proyectos guardan departamentos como texto sin relación a recursos; filtros omiten tema/categoría y contexto temporal; gestión inserta siempre y no deduplica/versiona; año fijo y autor/URL confiados al payload; controlador busca modal inexistente y formulario omite metadatos; riesgo XSS por inserción sin escape y enlaces sin validación.
+- Hallazgo nuevo formalizado: AUD-NG-171 (P2), catálogo reutilizable, versionado/historial inmutable, relaciones Proyecto-Recurso-Versión, contexto multiárea, permisos por recurso, UI, deduplicación y pruebas.
+- Tareas existentes ampliadas: AUD-NG-164 (referencias curriculares canónicas); AUD-NG-158 (ABAC y actor verificado); TASK-296 (sanitización de salida, XSS almacenado, enlaces Drive seguros y ACL).
+- Reconciliación: AUD-NG-171 es distinto de AUD-NG-170, que permanece sin asignar por decisión de TAREA-15. No se crea ID adicional.
+- Archivos modificados: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-18.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, Auditoria.txt, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README y rama base.
+- Pruebas ejecutadas: lectura íntegra de TAREA-18; contraste de AUD-NG-171 y tareas relacionadas en Auditoria.txt; comprobación de que el bloque no existía; verificación del HEAD y árbol de partida.
+- Pruebas no ejecutadas: CRUD, deduplicación, versionado, ACL, Drive, XSS en navegador, UI, Apps Script y producción.
+- Límite: cambio exclusivamente documental. TAREA-18 permanece CUMPLE PARCIALMENTE; AUD-NG-171 y tareas relacionadas no se consideran ejecutadas ni completadas.
+- Próximo informe: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-19.md; leerlo íntegramente y reconciliar hallazgos/tareas relacionadas antes de formalizar.
+- Commit de cierre: un único commit con ambos archivos; verificar SHA, padre, árbol, archivos modificados y HEAD de rama después de publicar.
+================================================================
