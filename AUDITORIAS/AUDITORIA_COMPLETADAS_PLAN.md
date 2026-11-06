@@ -1071,3 +1071,13 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Pruebas:** inspección estática; no se ejecutó autoFix real ni Apps Script.
 - **Progreso:** 89/183 identificadores auditados; 94 pendientes.
 - **Siguiente tarea oficial:** TAREA-F5-001 - Corregir la conversión de aspirantes y garantizar la integridad del expediente.
+
+
+## C1.96. TAREA-F5-001 — conversión de aspirantes y expediente (2026-11-06)
+
+- **Dictamen:** NO CUMPLE. La relación familiar se marca Verificada por coincidencia de email sin token; la solicitud se marca Convertida antes de completar matrícula/cargos/documentos; no hay rollback/recuperación; flags de override del payload usan truthiness; documentos ausentes pasan; oferta inexistente se asume con capacidad 35/Activa; monto fallback 1500; IDs/persona/usuario siguen cubiertos por TASK-118.
+- **Reconciliación:** AUD-NG-036, AUD-NG-129, TASK-118, AUD-NG-161 y AUD-NG-179; nuevos AUD-NG-232/TASK-512 (conversión parcial) y AUD-NG-233/TASK-513 (validación documental/capacidad/overrides).
+- **Evidencia:** ACADEMIC SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; USER SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ACCOUNTING SHA 38b979d41596b85e888b4a7060b37bbac0840a28; tests SHA 3433b707edd4a2f35c68368a3172932adc2a3b32/0495e1d526a872c33310935a003a83d924d34683; informes FASE2-T05/T06.
+- **Pruebas:** inspección estática; no se ejecutó Apps Script, correo/token, fallos inyectados ni datos productivos.
+- **Progreso:** 90/183 identificadores auditados; 93 restantes.
+- **Siguiente tarea oficial:** TAREA-F5-002 — Implementar una máquina de estados y reglas de transición para las solicitudes.

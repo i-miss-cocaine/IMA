@@ -93,3 +93,9 @@ Inspección estática/manual de los bloques y funciones indicados. No se ejecuta
 - Identificadores auditados: **41/183**; 142 pendientes.
 - Última tarea auditada: FASE2-T05.
 - Siguiente tarea: FASE2-T06 - Corregir y formalizar la concurrencia y la consistencia entre servicios. Antes de auditarla, reconciliar el alcance ya documentado en C1.33/FASE2-05 y AUD-NG-161 para no repetirlo.
+
+
+### Revalidación C1.96 / TAREA-F5-001
+- Se revalida TASK-118 con el código actual: convertAdmissionToStudent genera PersonaID/UserId, pero no crea ni valida registros en Personas/Usuarios; registerStudentEnrollment persiste matrícula con UserId sin verificarlo; siguen presentes fallbacks fijos y MAT/CRG timestamp/aleatorios.
+- Evidencia actual: ACADEMIC Code.gs SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc, convertAdmissionToStudent 2156-2385 y registerStudentEnrollment 12670-12755; USER Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f.
+- No se crea ID duplicado. La corrección sigue dentro de TASK-118.

@@ -3773,3 +3773,46 @@ CHECKPOINT C1.95 - FINALIZAR TRASLADO DE ARTEFACTOS DE AUDITORÍA
 - Próxima acción: validar que no queden artefactos de auditoría en la raíz, revisar secciones de tareas ejecutables en informes históricos y luego reanudar TAREA-F5-001.
 - Commit de cierre: el commit que contiene este checkpoint; SHA final se verificará después de publicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.96 - TAREA-F5-001
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Directorio oficial de auditoría: AUDITORIAS/.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: b8853d63f36ee38cae39c950501ab74a819fbc33.
+- Tree SHA de partida: 61dfa7bbf5bd31afafafeea1e53c21215ef743f0.
+- HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Diferencia verificada: 158 commits adelante y 0 detrás.
+- ID operativo de sesión/chat: IMA-AUDIT-20261106-1644Z; inicio C1.86; C1.87-C1.92 intermedios; C1.93-C1.95 fueron checkpoints metodológicos de otras sesiones; estado actual: sesión abierta.
+- Último checkpoint de producto anterior: C1.92 / TAREA-F4-P3-03.
+- Checkpoints metodológicos intermedios: C1.93 (migración AUDITORIAS, sesión 1711Z), C1.94 (consistencia de metodología, sesión 1720Z), C1.95 (traslado de artefactos, sesión 1727Z).
+- Tarea auditada: TAREA-F5-001 - Corregir la conversión de aspirantes y garantizar la integridad del expediente.
+- Estado maestro histórico: [X] en completadas.md; severidad Crítico; criterios marcados [x].
+- Fuente original AUDITORIA_FASE_5_ADMISIONES_PORTAL_FAMILIAS.md: no localizada.
+- Evidencia adicional: AUDITORIAS/AUDITORIA_COMPLETADAS_FASE2-T05.md y T06.md; AUD-NG-036 en bitácora; TASK-118, AUD-NG-129 y AUD-NG-161 reconciliados.
+- Dictamen C1.96: NO CUMPLE.
+- Hallazgos:
+  - AUD-NG-036 ampliado: createAdmissionRequest es pública; conversión vincula por email y crea relación Verificada sin token; la ruta createLinkInvitation/acceptLinkInvitation se evita para cuenta existente; invitación a cuenta nueva se guarda pero no se envía.
+  - AUD-NG-129 ampliado: fallback de monto de matrícula 1500; registerStudentEnrollment expuesta a varios roles sin control de cupos/lock propio, y escribe matrícula/cargos por separado.
+  - TASK-118 revalidado: targetPersonaId/targetUserId generados pero no creados/validados en Personas/Usuarios; registerStudentEnrollment no valida usuario; fallbacks constantes; IDs MAT/CRG timestamp/aleatorios.
+  - AUD-NG-161 ampliado: no hay pruebas específicas de conversión, fallo parcial, overrides, tutor, capacidad o compensación.
+  - AUD-NG-179 revalidado: checkEnrollmentCapacity continúa si tryLock no se adquiere; se requiere fail-closed.
+  - Nuevo AUD-NG-232/TASK-512: solicitud marcada Convertida antes de completar matrícula/cargos/documentos/movimiento; sin rollback/recuperación; reintento temprano no reanuda.
+  - Nuevo AUD-NG-233/TASK-513: flags allowIncompleteOverride/forceCapacityOverride controlados por payload y truthiness; documentos faltantes pasan; oferta inexistente usa capacidad 35/Activa; lock timeout no falla cerrado.
+- Pruebas ejecutadas: inspección estática de solicitud pública, permisos, conversión, invitaciones, relación familiar, documentos, capacidad, matrícula/cargos, auditorías históricas y tests.
+- Pruebas no ejecutadas: Apps Script runtime, conversión real, token/email, fallos inyectados, concurrencia, datos productivos ni suites automatizadas.
+- Progreso: 90/183 identificadores auditados; 93 restantes.
+- Última tarea auditada: C1.96 / TAREA-F5-001.
+- Tarea en curso: ninguna.
+- Siguiente tarea exacta: TAREA-F5-002 - Implementar una máquina de estados y reglas de transición para las solicitudes.
+- Próxima acción reproducible: inspeccionar ALLOWED_ADMISSION_STATE_TRANSITIONS, updateAdmissionStatus, reopenAdmissionRequest y handlers de evaluación/documentos; validar flujo Recibida -> En_Revision -> Evaluacion -> Admitida/Rechazada/En_Espera -> Convertida, justificación obligatoria, requisitos por etapa, actor verificado, historial anterior/nuevo, LockService, idempotencia y separación de estado de admisión/matrícula; reconciliar AUD-NG-232/233, AUD-NG-036 y AUD-NG-161 antes de crear IDs.
+- Archivos documentales actualizados: AUDITORIAS/Auditoria.txt, AUDITORIAS/Auditoría.txt (copia histórica), AUDITORIAS/MapaDependencias.md, AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md, AUDITORIAS/Contexto_personal.txt, informes históricos FASE2-T05/T06 y nuevo AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-001.md.
+- Archivos preservados: código fuente, pruebas, completadas.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md y Pendientes.md (sin modificar).
+- Regla de tareas: cada informe contiene sus tareas ejecutables; Pendientes.md queda fuera del flujo operativo según AUDITORIAS/README.md.
+- Regla de ID de sesión: ya registrada en metodología; se conserva el ID operativo de esta sesión.
+- Bloqueos: ninguno para inspección estática; falta runtime para probar conversión y recuperación.
+- Commit de cierre: el commit que contiene este checkpoint; SHA final se verifica después de publicar.
+================================================================

@@ -113,3 +113,11 @@ Inspección estática/manual de los archivos y rangos citados. No se ejecutaron 
 - Última tarea auditada: FASE2-T06.
 - Siguiente tarea: **FASE2-T07 - Fortalecer el motor de eventos y la ejecución de procesos automáticos**.
 - No repetir los alcances ya documentados en AUD-NG-006/AUD-NG-049/AUD-NG-129/AUD-NG-133/AUD-NG-161, salvo que cambios posteriores o regresiones lo justifiquen.
+
+
+### Revalidación C1.96 / TAREA-F5-001
+- Se revalida AUD-NG-129: montoMatriculaBase usa fallback 1500 si la configuración falta o resulta cero (ACADEMIC 2331-2340); registerStudentEnrollment está expuesta a varios roles y no realiza control de cupos, además de escribir matrícula y cargos por separado.
+- Se revalida AUD-NG-161: no hay pruebas específicas para conversión, fallo parcial, overrides, documentos obligatorios, verificación de tutor ni recuperación.
+- checkEnrollmentCapacity (ACADEMIC 11026-11115) usa capacidad 35/estado Activa si no existe oferta y continúa si tryLock no se adquiere; se relaciona con AUD-NG-179.
+- Evidencia actual: ACADEMIC SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; tests 3433b707edd4a2f35c68368a3172932adc2a3b32/0495e1d526a872c33310935a003a83d924d34683.
+- No se crean IDs duplicados.
