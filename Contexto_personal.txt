@@ -3536,3 +3536,52 @@ CHECKPOINT C1.88 - TAREA-F4-P2-04
 - Bloqueos: ninguno para registrar el resultado estático; falta runtime para confirmar el riesgo de adquisición anidada.
 - Commit de cierre: el commit que contiene este checkpoint; SHA final se verifica después de publicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.89 - TAREA-F4-P2-05
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto real: Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: fe8d4906b9cca5702213ddcdd49e4655892ad472.
+- Tree SHA de partida verificado: 4164efc83f0dd8ad9f5ef1711c0246dcc2e026c4.
+- HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Diferencia verificada: 151 commits adelante y 0 detrás.
+- ID operativo de sesión/chat: IMA-AUDIT-20261106-1644Z; inicio C1.86; C1.87-C1.89 intermedios; estado: sesión abierta.
+- Último checkpoint anterior: C1.88 / TAREA-F4-P2-04.
+- Tarea auditada: TAREA-F4-P2-05 - Consolidar la documentación institucional de privacidad y tratamiento de datos.
+- Estado maestro histórico: [X] en completadas.md; severidad Medio; archivos politica-de-privacidad.html, politica-de-uso.html y politica-financiera.html.
+- Fuente original AUDITORIA_FASE4_IDENTIDAD_PERMISOS_GOBIERNO.md: no localizada.
+- Dictamen C1.89: NO CUMPLE; los documentos existen, pero describen plazos y capacidades no respaldados por los defaults/handlers versionados.
+- Evidencia documental:
+  - politica-de-privacidad.html SHA 8854bae3021e1cdde288709e3fa411b3d6da20c7: RBAC/ABAC línea 50; retención 52-59; ARCO 62-68.
+  - politica-de-uso.html SHA ca252904e9f7ad7301d1793ed07585a92a4c060f: sección 7, líneas 61-62.
+  - politica-financiera.html SHA bb75dc6b72098b825a18025781346b4252fe33cf: conservación permanente, líneas 41-42.
+- Evidencia de implementación:
+  - USER Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f: getRetentionPolicies 2120-2149; saveRetentionPolicy 2153-2199; executeDataRetentionPolicyCheck 2203-2273; ARCO 1986-2117; purgeStructuredLogs 7967-7989; loginUser 2479-2554.
+  - ACADEMIC SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; ACCOUNTING SHA 38b979d41596b85e888b4a7060b37bbac0840a28; búsqueda de triggers.
+- Hallazgos/reconciliación:
+  - AUD-NG-145: documentos 180 días, default 365; purga de bitácoras usa columnas incorrectas y purgeStructuredLogs borra todo LogsSistema sin política.
+  - AUD-NG-146/TASK-499: privacy 30 días USER_SESSIONS frente a default 90 y sin rama ejecutora; expedientes/finanzas permanentes frente a defaults 10/7 años y sin archivo real; sin trigger time-based en USER/ACADEMIC/ACCOUNTING.
+  - AUD-NG-220/TASK-500: 730 días coincide con default, pero fecha fallback usa failedAttempts y anonimización solo cambia nombre/correo/teléfono; conserva IDs/relaciones y no aplica legal hold.
+  - AUD-NG-222/TASK-502: políticas afirman RBAC/ABAC robusto, pero los validadores contextuales siguen divergentes/fail-open.
+  - AUD-NG-223/TASK-503: política anuncia módulo ARCO; backend solo registra/actualiza estado, sin UI ni ejecución del derecho.
+  - No se crean IDs nuevos.
+- Límites:
+  - El contenido de la hoja productiva PoliticasRetencionDatos no está disponible; se documentan defaults del código, no el valor real en producción.
+  - No se validó la legalidad de plazos SAR/educativos ni se emitió opinión jurídica.
+- Pruebas ejecutadas: inspección estática de tres políticas, USER/otros servicios, handlers ARCO, búsquedas de UI y triggers, reconciliación con Pendientes.
+- Pruebas no ejecutadas: motor en producción, lectura de hojas reales, purga/anonimización real, panel ARCO navegador, validación legal externa.
+- Progreso: 86/183 identificadores auditados; 97 pendientes.
+- Última tarea auditada: C1.89 / TAREA-F4-P2-05.
+- Tarea en curso: ninguna.
+- Siguiente tarea exacta: TAREA-F4-P3-01 - Implementar informes periódicos de revisión de privilegios y cuentas.
+- Próxima acción reproducible: revisar generatePrivilegeAndAccountAuditReport, sus fuentes de cuentas privilegiadas/inactivas/delegaciones, definición de “sin iniciar sesión >90 días”, automatización temporal, almacenamiento del informe, destinatarios/alertas, protección de PII y evidencia de ejecución; reconciliar AUD-NG-145/146/160/161/219 antes de crear IDs.
+- Archivos documentales modificados: Auditoria.txt, Pendientes.md, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt y nuevo AUDITORIA_COMPLETADAS_TAREA-F4-P2-05.md.
+- Archivos preservados: código fuente, pruebas, politica-de-privacidad.html, politica-de-uso.html, politica-financiera.html, completadas.md, ChangesLogs.txt y METODOLOGIA_DESARROLLO.md.
+- Regla de ID de sesión: ya registrada en METODOLOGIA_DESARROLLO.md, sección 16, punto 9.
+- Bloqueos: ninguno para auditoría estática; datos productivos de PoliticasRetencionDatos no disponibles.
+- Commit de cierre: el commit que contiene este checkpoint; SHA final se verifica después de publicar.
+================================================================

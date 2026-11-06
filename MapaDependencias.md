@@ -1870,3 +1870,15 @@ Relaciones:
 - generateInstitutionalId inicializa hoja/encabezados SecuenciasIDs antes de adquirir lock. TASK-118.
 - registerUser mantiene check-email y append fuera de una sección crítica única; ya cubierto por TASK-118. loginUser counter sin lock cubierto por AUD-NG-218. Tests reales de concurrencia cubiertos por AUD-NG-161.
 - Evidencia: USER 12079dd410aa6d8afbce55a4bc62a79dea605f9f; tests 3433b707edd4a2f35c68368a3172932adc2a3b32/0495e1d526a872c33310935a003a83d924d34683.
+
+
+## C1.89 — TAREA-F4-P2-05: documentación institucional de privacidad
+
+- La política de privacidad declara 180 días de AUDIT_LOGS, 30 días de USER_SESSIONS, anonimización tras 730 días, y conservación permanente de expedientes académicos/financieros. La política de uso repite 6 meses para logs y permanencia de expedientes/finanzas; política financiera también afirma permanencia.
+- USER defaults: AUDIT_LOGS 365 días; USER_SESSIONS 90; STUDENT_EXPEDIENTS 3650 (10 años); FINANCIAL_RECORDS 2555 (7 años); INACTIVE_USERS 730. La hoja productiva PoliticasRetencionDatos no está disponible en el repo.
+- executeDataRetentionPolicyCheck no procesa USER_SESSIONS; los expedientes/finanzas solo incrementan itemsArchived sin archivar. No se encontraron triggers time-based en USER/ACADEMIC/ACCOUNTING. AUD-NG-146/TASK-499.
+- La purga AUDIT_LOGS usa columnas incompatibles con BitacoraEventos y purgeStructuredLogs borra todas las filas LogsSistema sin aplicar plazos/preservación. AUD-NG-145.
+- INACTIVE_USERS usa failedAttempts como fallback de lastAccess; solo cambia nombre/email/teléfono, conserva IDs/relaciones y no aplica legal hold. AUD-NG-220/TASK-500.
+- La política promete módulo ARCO, pero USER solo registra solicitudes/actualiza estado; no hay UI ni ejecución efectiva. AUD-NG-223/TASK-503.
+- RBAC/ABAC se afirma como riguroso, pero los validadores siguen divergentes/fail-open. AUD-NG-222/TASK-502.
+- No se crean IDs nuevos. Evidencia: privacy 8854bae3021e1cdde288709e3fa411b3d6da20c7; usage ca252904e9f7ad7301d1793ed07585a92a4c060f; financial bb75dc6b72098b825a18025781346b4252fe33cf; USER 12079dd410aa6d8afbce55a4bc62a79dea605f9f.

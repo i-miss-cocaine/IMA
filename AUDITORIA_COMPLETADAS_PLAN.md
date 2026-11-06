@@ -1029,3 +1029,13 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Pruebas:** inspección estática/manual; no se ejecutaron Apps Script runtime ni pruebas concurrentes reales.
 - **Progreso:** 85/183 identificadores auditados; 98 pendientes.
 - **Siguiente tarea oficial:** TAREA-F4-P2-05 - Consolidar la documentación institucional de privacidad y tratamiento de datos.
+
+
+## 91. Resultado C1.89 - TAREA-F4-P2-05 (2026-11-06)
+
+- **Dictamen:** NO CUMPLE. Los documentos declaran 180 días de bitácoras, 30 días de sesiones, 730 días de anonimización y conservación permanente de expedientes académicos/financieros. El motor USER define defaults 365/90/730/3650/2555, no procesa USER_SESSIONS, no archiva registros académicos/financieros y no tiene trigger time-based. La anonimización es parcial y usa fallback incorrecto para fecha; los derechos ARCO no tienen UI ni ejecución.
+- **Reconciliación:** ampliar AUD-NG-145 (bitácoras), AUD-NG-146/TASK-499 (motor), AUD-NG-220/TASK-500 (anonimización), AUD-NG-222/TASK-502 (RBAC/ABAC) y AUD-NG-223/TASK-503 (ARCO). Sin IDs nuevos.
+- **Evidencia:** privacy SHA 8854bae3021e1cdde288709e3fa411b3d6da20c7; usage SHA ca252904e9f7ad7301d1793ed07585a92a4c060f; financial SHA bb75dc6b72098b825a18025781346b4252fe33cf; USER SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ACADEMIC SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; ACCOUNTING SHA 38b979d41596b85e888b4a7060b37bbac0840a28.
+- **Pruebas:** inspección estática y búsquedas de triggers/UI; no se ejecutó motor ni se consultó hoja productiva.
+- **Progreso:** 86/183 identificadores auditados; 97 pendientes.
+- **Siguiente tarea oficial:** TAREA-F4-P3-01 - Implementar informes periódicos de revisión de privilegios y cuentas.

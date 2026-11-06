@@ -6637,3 +6637,41 @@ PRUEBAS Y LÍMITES:
 - No ejecutado: Apps Script runtime, contención real, reentrada/timeout, fallos de Sheets, carreras concurrentes ni suites automatizadas.
 - Código fuente y pruebas sin modificaciones.
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-06
+CHECKPOINT C1.89 — TAREA-F4-P2-05
+SESIÓN: IMA-AUDIT-20261106-1644Z
+REPOSITORIO: i-miss-cocaine/IMA
+RAMA: NG_beta_0.0.0.1_work
+HEAD DE PARTIDA: fe8d4906b9cca5702213ddcdd49e4655892ad472
+DICTAMEN: NO CUMPLE
+
+DOCUMENTOS INSPECCIONADOS:
+- politica-de-privacidad.html SHA 8854bae3021e1cdde288709e3fa411b3d6da20c7: plazos 180 días bitácoras, 30 días sesiones, 730 días cuentas inactivas, permanencia de expedientes académicos/financieros y derechos ARCO.
+- politica-de-uso.html SHA ca252904e9f7ad7301d1793ed07585a92a4c060f: sección 7 afirma RBAC/ABAC, retención y ARCO.
+- politica-financiera.html SHA bb75dc6b72098b825a18025781346b4252fe33cf: conservación permanente de registros financieros/contables.
+
+CONTRASTE CON IMPLEMENTACIÓN:
+1. USER getRetentionPolicies (2129-2134) define defaults 365 días AUDIT_LOGS, 90 días USER_SESSIONS, 3650 días STUDENT_EXPEDIENTS, 2555 días FINANCIAL_RECORDS y 730 días INACTIVE_USERS. Los valores productivos de la hoja PoliticasRetencionDatos no están en el repositorio.
+2. executeDataRetentionPolicyCheck (2203-2273) no procesa USER_SESSIONS; para expedientes/finanzas solo incrementa itemsArchived sin mover registros. No se encontraron triggers time-based en USER/ACADEMIC/ACCOUNTING.
+3. La purga de bitácoras interpreta columnas incompatibles con BitacoraEventos y purgeStructuredLogs borra todas las filas de LogsSistema sin filtro de antigüedad ni preservación. AUD-NG-145.
+4. La anonimización usa uRows[j][12] || uRows[j][11]; loginUser usa col12 para failedAttempts y col13 para último acceso. La rutina solo modifica nombre, correo y teléfono y preserva identificadores/relaciones. AUD-NG-220.
+5. Los handlers ARCO registran solicitudes y actualizan estados, sin ejecutar acceso/exportación, rectificación, eliminación u oposición; no se encontró UI ARCO. AUD-NG-223.
+6. Los documentos afirman RBAC/ABAC robusto, pero persisten validadores contextuales divergentes/fail-open. AUD-NG-222.
+
+RECONCILIACIÓN:
+- AUD-NG-145: retención/purga de bitácoras.
+- AUD-NG-146/TASK-499: motor de retención y archivo.
+- AUD-NG-220/TASK-500: anonimización de cuentas.
+- AUD-NG-222/TASK-502: RBAC/ABAC contextual.
+- AUD-NG-223/TASK-503: derechos ARCO end-to-end.
+- No se crean IDs nuevos.
+
+LÍMITES:
+- No se consultó la hoja productiva PoliticasRetencionDatos.
+- No se ejecutó el motor ni se probaron purgas/anonimización en datos reales.
+- No se emitió opinión jurídica sobre plazos SAR/educativos.
+- No se modificaron políticas, código ni pruebas.
+===============================================================================
