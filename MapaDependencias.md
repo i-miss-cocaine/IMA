@@ -1683,3 +1683,13 @@ Relaciones:
 - Reconciliación: AUD-NG-160 (vigencia/cachés); AUD-NG-217 y TAREA-F4-P1-04 (IDOR/ABAC); TASK-228/TASK-282/TASK-311 (delegaciones de workflow, distinto alcance). Nuevo AUD-NG-219/TASK-498.
 - Observación diferida a TAREA-F4-P1-09: el panel envía statusFilter pero getSecurityDelegations espera estado; activeDelegationsCount puede incluir registros no activos.
 - Inspección estática/manual; no pruebas runtime ni despliegues.
+
+## Registro de dependencias - TAREA-F4-P1-02 (C1.77)
+- USER:getRetentionPolicies (2120-2150) -> PoliticasRetencionDatos; crea AUDIT_LOGS, USER_SESSIONS, STUDENT_EXPEDIENTS, FINANCIAL_RECORDS, INACTIVE_USERS.
+- USER:saveRetentionPolicy (2153-2200) -> PoliticasRetencionDatos; valida acción, no valida días enteros positivos ni restringe categorías.
+- USER:executeDataRetentionPolicyCheck (2203-2273) -> BitacoraEventos y Usuarios. AUDIT_LOGS lee columnas incompatibles; USER_SESSIONS sin handler; STUDENT_EXPEDIENTS/FINANCIAL_RECORDS solo incrementan métricas; INACTIVE_USERS actualiza tres campos y usa failedAttempts como fecha fallback.
+- USER:purgeStructuredLogs (7967-7989) -> LogsSistema; elimina todas las filas sin fecha de corte ni preservación legal (AUD-NG-145).
+- ACADEMIC SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc: sin motor ni invocación; versionado documental no es retención por política.
+- ACCOUNTING SHA 38b979d41596b85e888b4a7060b37bbac0840a28: sin motor ni invocación; archivado de plantillas no es retención financiera.
+- Triggers: no se encontraron ScriptApp.newTrigger/timeBased en USER, ACADEMIC ni ACCOUNTING.
+- Reconciliación: AUD-NG-145 (logs), AUD-NG-146/TASK-499 (retención/archivo), AUD-NG-220/TASK-500 (anonimización productiva), TASK-081 (datos de prueba), TASK-398/TASK-456 (archivo trámites/documentos).

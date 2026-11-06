@@ -904,3 +904,13 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Pruebas:** inspección estática/manual; no se ejecutaron HTTP, deployments, pruebas multiusuario, cachés reales ni suites automatizadas.
 - **Progreso:** 73/183 identificadores auditados; 110 pendientes.
 - **Siguiente tarea oficial:** TAREA-F4-P1-02 - Implementar el motor automático de retención, archivo y anonimización de datos.
+
+## 79. Resultado C1.77 - TAREA-F4-P1-02 (2026-11-06)
+
+- **Dictamen:** NO CUMPLE. El motor solo está en USER; no hay triggers. USER_SESSIONS no se procesa; STUDENT_EXPEDIENTS/FINANCIAL_RECORDS solo incrementan itemsArchived; PRESERVE_LEGAL no se ejecuta. AUDIT_LOGS sigue con columnas incompatibles (AUD-NG-145).
+- **Anonimización:** lastAccess usa el contador de intentos fallidos si falta fecha; solo sustituye tres campos y conserva userId/personaId/hash y relaciones; ignora preservacionLegal. Nuevo AUD-NG-220/TASK-500.
+- **Reconciliación:** ampliar AUD-NG-145 y AUD-NG-146; TASK-499 para motor efectivo y programado. No duplicar TASK-081, TASK-398/TASK-456 ni TASK-151/152.
+- **Evidencia:** USER SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ACADEMIC SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; ACCOUNTING SHA 38b979d41596b85e888b4a7060b37bbac0840a28.
+- **Pruebas:** inspección estática/manual; no triggers, HTTP, deployments, archivo/anonimización reales ni suites.
+- **Progreso:** 74/183; 109 pendientes.
+- **Siguiente tarea oficial:** TAREA-F4-P1-03 - Implementar la matriz dinámica de permisos y su aplicación transversal.

@@ -18368,6 +18368,7 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Ampliación de evidencia C1.43 / FASE2-T08 (2026-11-05):** getRetentionPolicies (2120+) define AUDIT_LOGS con 365 días, pero executeDataRetentionPolicyCheck (2203-2254) intenta purgar solo BitacoraEventos y obtiene la fecha de row[0]/row[1] y severidad de row[2], incompatibles con el esquema vigente. No aplica la política a LogsSistema ni BitacoraTrazabilidad. purgeStructuredLogs (7967-7990), en cambio, elimina todas las filas de LogsSistema sin aplicar antigüedad, preservación legal ni política por categoría. Incorporar retención efectiva, trazable y específica por fuente; no borrar indiscriminadamente.
 
 - **Ampliación C1.75 / TAREA-F4-P0-04:** loginUser (2479-2554) emite LOGIN_FAILED/LOGIN_SUCCESS y logoutUser emite LOGOUT_SUCCESS mediante logStructuredEvent (327-352), que persiste en LogsSistema, no en BitacoraEventos ni BitacoraTrazabilidad. getSecurityAndComplianceDashboardData (4453-4545) calcula failedLoginsCount/successfulLoginsCount leyendo BitacoraEventos (4458-4507), por lo que no consume los eventos de login guardados en LogsSistema. loginUser no invoca recordTraceabilityLog (4548-4573); esta función escribe en BitacoraTrazabilidad, mientras getPaginatedAuditLogReport usa el nombre BitacoraTraceability y un DTO incompatible con registerAndDispatchEvent (AUD-NG-145 ya cubre el desajuste de esquema y nombre). La rama de credenciales ausentes (2481) retorna sin evento. logStructuredEvent captura y suprime errores de escritura (348-351), permitiendo que el flujo continúe sin constancia durable. El payload de login incluye identifier y userId (2502, 2540, 2552); sanitizePayloadForLog solo enmascara claves de credenciales, no estos identificadores. Se amplía este hallazgo existente; no crear otro hallazgo de bitácora.
+- **Ampliación C1.77 / TAREA-F4-P1-02:** En BitacoraEventos, registerAndDispatchEvent usa EventID en row[0], TipoEvento en row[1] y ServicioOrigen en row[2]. executeDataRetentionPolicyCheck (USER 2218-2237) evalúa new Date(row[0] || row[1]) y row[2] como severidad; row[0] contiene EventID no vacío y row[2] no es severidad. La política AUDIT_LOGS no purga las filas esperadas. Se mantiene dentro de AUD-NG-145.
 ### [AUD-NG-146] Completar respaldo seguro: SHA-256 real, validación previa, restauración y retención
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-146 (REQ-EXP-019).
 - **Severidad/Clasificación:** Crítico
@@ -18375,6 +18376,7 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Dependencias Expuestas:** `createSystemBackup`, `listSystemBackups`, `verifyBackupIntegrity`, `restoreSystemBackup`, `previewBackupRestoreImpact`, `getBackupsList`, `createSpreadsheetBackup`, `restoreSpreadsheetBackup`.
 - **Descripción del Alcance:** createSystemBackup usa computeSimpleHash (hash de 32 bits, no SHA-256). verifyBackupIntegrity considera válido cualquier checksum no vacío por la condición `storedChecksum === computedChecksum || Boolean(storedChecksum)`. restoreSystemBackup no llama a verifyBackupIntegrity y requiere `confirmed` + `confirmCode`, mientras teacher.js envía `confirmationCode` y omite `confirmed`, por lo que la restauración UI falla. No se encontraron triggers programados ni política de retención. El panel developer.js llama acciones USER no encontradas y presenta un respaldo ficticio como fallback.
 - **Criterios de Aceptación:** SHA-256 criptográfico; comparación estricta y validación de estructura/enlaces antes de restaurar; restore exige token de confirmación de un solo uso generado en servidor y dos pasos UI; bloqueo durante restauración y reconciliación post-restore; creación programada con triggers reales; retención configurable con borrado seguro; UI consume acciones reales sin mocks; pruebas de checksum corrupto, restore, schedule y retención.
+- **Ampliación C1.77 / TAREA-F4-P1-02:** executeDataRetentionPolicyCheck (USER 2120-2273) no procesa USER_SESSIONS y para STUDENT_EXPEDIENTS/FINANCIAL_RECORDS solo incrementa itemsArchived una vez por política, sin localizar, mover ni archivar registros. saveRetentionPolicy acepta días negativos/no numéricos y categorías arbitrarias; PRESERVE_LEGAL no tiene rama ejecutora. No hay ScriptApp.newTrigger/timeBased en USER, ACADEMIC ni ACCOUNTING ni invocaciones del motor desde esos servicios. Se amplía AUD-NG-146 para el motor de retención/archivo operativo, sin duplicar TASK-151/152 ni AUD-NG-145.
 - **Estado:** [ ] Pendiente
 
 
@@ -19825,4 +19827,43 @@ AUD-NG-163 permanece DUPLICADA y consolidada; no reabrirla como tarea independie
 - **Problema Detectado:** Las delegaciones se conceden por acción sin aplicar el campo ambito; se aceptan acciones arbitrarias/comodín y no se verifica que el delegante pueda concederlas. Una delegación puede sobreponerse a una denegación dinámica y permitir delegación en cadena. La UI incluida en el alcance no permite crear, consultar ni revocar delegaciones.
 - **Requisitos de Corrección:** Validar autoridad y usuario destino; restringir acciones delegables; aplicar ámbito de recurso en todos los servicios; impedir cadenas/ciclos no autorizados; conservar titular y ejecutor; completar el flujo UI de alta/consulta/revocación y estados.
 - **Criterios de Aceptación:** No se autorizan recursos fuera del ámbito; un delegante no concede privilegios superiores a su autoridad; comodines y acciones sensibles requieren política explícita; la denegación dinámica no se omite de forma implícita; se bloquean cadenas no autorizadas; las operaciones quedan trazadas con titular/ejecutor/delegación; UI permite gestionar el ciclo de vida; pruebas conductuales cubren USER, ACADEMIC y ACCOUNTING.
+- **Estado:** [ ] Pendiente
+
+
+### [TASK-499] [TAREA-F4-P1-02] [P1] Implementar ejecución real y programada de políticas de retención y archivo
+- **Prioridad:** P1 (Alta).
+- **Componentes Afectados:** backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; PoliticasRetencionDatos y repositorios de expedientes/finanzas.
+- **Origen del Hallazgo:** AUD-NG-146 / TAREA-F4-P1-02.
+- **Dependencias Principales:** getRetentionPolicies, saveRetentionPolicy, executeDataRetentionPolicyCheck, USER_SESSIONS, STUDENT_EXPEDIENTS, FINANCIAL_RECORDS, AUD-NG-145, TASK-456 y TASK-398.
+- **Problema Detectado:** El motor solo existe en USER y no tiene trigger. USER_SESSIONS no se procesa; STUDENT_EXPEDIENTS/FINANCIAL_RECORDS solo incrementan itemsArchived sin archivar registros. Las políticas admiten días inválidos/categorías arbitrarias y PRESERVE_LEGAL no se ejecuta.
+- **Requisitos de Corrección:** Validar categorías y días positivos; implementar acciones efectivas por categoría; archivar con relaciones, metadatos, permisos de solo lectura y trazabilidad; aplicar legal hold; separar logs (AUD-NG-145) y respaldos (TASK-151/152); programar ejecuciones reales con lotes reanudables, exclusión mutua y reporte verificable.
+- **Criterios de Aceptación:** Cada categoría tiene prueba de selección, elegibilidad, archivo/retención, legal hold y consulta histórica; itemsArchived coincide con registros efectivamente archivados; ejecuciones programadas quedan registradas; fallos parciales se reanudan sin duplicar ni perder relaciones; no se eliminan registros contables/académicos requeridos.
+- **Relaciones y límites:** AUD-NG-145 cubre retención de bitácoras; AUD-NG-146 se amplía a este motor operativo; TASK-456 cubre conservación/disposición documental en Drive; TASK-398 cubre archivo de trámites.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-220] Anonimizar cuentas inactivas sin conservar identificadores ni vulnerar preservación legal
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-220 (TAREA-F4-P1-02, C1.77).
+- **Severidad/Clasificación:** Alto (P1) · Privacidad · Datos personales.
+- **Archivos Involucrados:** backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs.
+- **Dependencias Expuestas:** executeDataRetentionPolicyCheck (2238-2253), Usuarios, personaId, lastAccess, failedAttempts, preservacionLegal y relaciones académicas/financieras.
+- **Descripción del Alcance:** INACTIVE_USERS usa uRows[j][12] como último acceso, pero si está vacío usa uRows[j][11], el contador de intentos fallidos; al convertir ese número en fecha puede tratar una cuenta sin último acceso como antigua desde 1970. Solo cambia nombre, correo y teléfono; el correo incluye userId original y conserva userId, personaId, hash de contraseña y otros atributos. No actualiza relaciones de ACADEMIC/ACCOUNTING ni comprueba preservacionLegal antes de anonimizar.
+- **Criterios de Aceptación:**
+  - Usar fecha válida de último acceso/creación; nunca usar failedAttempts como fecha. Sin fecha confiable, enviar a revisión.
+  - Comprobar preservación legal por registro antes de anonimizar.
+  - Transformar irreversiblemente identificadores directos e indirectos; no conservar userId/personaId/email reversibles en campos operativos.
+  - Mantener integridad referencial mediante pseudónimos estables no reversibles o correspondencia separada, cifrada y restringida cuando sea legalmente necesaria.
+  - Coordinar relaciones USER/ACADEMIC/ACCOUNTING; invalidar sesiones/tokens y cachés cuando corresponda.
+  - Registrar actor, política, registros afectados y resultado sin volcar PII.
+  - Probar cuentas sin último acceso, fechas inválidas, legal hold, reidentificación, relaciones y fallos parciales.
+- **Relaciones y límites:** TASK-081 cubre conjuntos de prueba, no producción; AUD-NG-145 cubre logs; AUD-NG-146/TASK-499 cubren política/archivo.
+- **Estado:** [ ] Pendiente
+
+### [TASK-500] [TAREA-F4-P1-02] [P1] Corregir anonimización de cuentas inactivas y preservar integridad relacional
+- **Prioridad:** P1 (Alta).
+- **Componentes Afectados:** backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; Usuarios y relaciones de expedientes/finanzas.
+- **Origen del Hallazgo:** AUD-NG-220 / TAREA-F4-P1-02.
+- **Dependencias Principales:** executeDataRetentionPolicyCheck, Usuarios, lastAccess, failedAttempts, personaId, preservacionLegal y AUD-NG-145.
+- **Problema Detectado:** Si no hay fecha de último acceso, el código usa el contador de intentos fallidos como timestamp. Solo sustituye nombre, correo y teléfono; conserva identificadores y relaciones y no respeta preservacionLegal.
+- **Requisitos de Corrección:** Corregir fecha, detener anonimización sin fecha confiable, aplicar legal hold, transformar identificadores directos/indirectos, mantener integridad referencial en servicios académicos/contables e invalidar sesiones/cachés.
+- **Criterios de Aceptación:** Cuentas sin fecha no se anonimizan por error; registros bajo preservación legal se excluyen; no hay reidentificación desde campos operativos; relaciones consistentes y operaciones auditadas.
 - **Estado:** [ ] Pendiente

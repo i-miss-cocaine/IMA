@@ -4163,6 +4163,8 @@ RAMA DE TRABAJO: NG_beta_0.0.0.1_work
 - Severidad: CRÍTICO.
 - Tarea derivada: AUD-NG-146.
 
+- Ampliación C1.77 / TAREA-F4-P1-02: executeDataRetentionPolicyCheck (USER 2203-2273) no procesa USER_SESSIONS y solo incrementa itemsArchived para expedientes/finanzas sin archivar registros. saveRetentionPolicy no valida días positivos ni categorías; PRESERVE_LEGAL carece de ejecución. No hay triggers programados ni ejecución desde ACADEMIC/ACCOUNTING. Se amplía este hallazgo sin duplicar AUD-NG-145 ni TASK-151/152.
+
 ===============================================================================
 RESULTADOS DEL LOTE F2
 ===============================================================================
@@ -6218,4 +6220,19 @@ AUDITORÍA TAREA-F4-P1-01 - CHECKPOINT C1.76
 - Observación diferida para TAREA-F4-P1-09: getSecurityAndComplianceDashboardData envía statusFilter a getSecurityDelegations, que solo lee estado; el contador activeDelegationsCount puede incluir delegaciones expiradas/revocadas. No se contabiliza como hallazgo de P1-01.
 - Fuente original AUDITORIA_FASE4_IDENTIDAD_PERMISOS_GOBIERNO.md citada en completadas.md: no encontrada en el árbol actual; el alcance se reconstruye desde la descripción oficial y código versionado.
 - Pruebas: inspección estática/manual. No se ejecutaron deployments, peticiones HTTP, pruebas de usuarios, validación real de hojas, revocación interservicio, cachés calientes/frías ni suites automatizadas.
+===============================================================================
+
+===============================================================================
+AUDITORÍA TAREA-F4-P1-02 - CHECKPOINT C1.77
+===============================================================================
+- Dictamen: NO CUMPLE. El motor existe solo en USER, no tiene ejecución programada, no ejecuta varias categorías y reporta archivados sin archivar registros. La anonimización de usuarios inactivos usa una fecha fallback incorrecta, conserva identificadores y omite preservación legal.
+- USER SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f: getRetentionPolicies 2120-2150; saveRetentionPolicy 2153-2200; executeDataRetentionPolicyCheck 2203-2273; purgeStructuredLogs 7967-7989.
+- USER_SESSIONS no tiene rama. STUDENT_EXPEDIENTS/FINANCIAL_RECORDS solo incrementan itemsArchived una vez por política, sin recorrer ni archivar. PRESERVE_LEGAL no tiene ejecución específica. saveRetentionPolicy no valida días enteros positivos ni restringe categorías.
+- No hay ScriptApp.newTrigger/timeBased en USER, ACADEMIC o ACCOUNTING. El endpoint solo aparece en dispatcher/función USER.
+- AUDIT_LOGS lee row[0]/row[1] como fecha y row[2] como severidad; BitacoraEventos usa EventID, TipoEvento y ServicioOrigen en esas columnas. Se mantiene en AUD-NG-145.
+- INACTIVE_USERS usa uRows[j][12] || uRows[j][11]; índice 11 es contador de intentos fallidos, no fecha. Si falta último acceso, el número se convierte en fecha de 1970. Solo cambia nombre/email/teléfono; conserva userId, personaId, hash y otros atributos; no verifica preservacionLegal ni relaciones ACADEMIC/ACCOUNTING.
+- ACADEMIC SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc y ACCOUNTING SHA 38b979d41596b85e888b4a7060b37bbac0840a28 no contienen ni invocan el motor. El archivo de versiones/plantillas no es retención integral por política.
+- Reconciliación: AUD-NG-145 para bitácoras; AUD-NG-146 se amplía para retención/archivo operativo (observado también en TAREA-07); TASK-499 para motor real/programado; nuevo AUD-NG-220/TASK-500 para anonimización productiva. TASK-081 solo cubre datos de prueba; TASK-398/TASK-456 cubren trámites/documentos; TASK-151/152 respaldos.
+- Pruebas: inspección estática/manual; no se ejecutaron triggers, despliegues, cambios reales de hojas, purga, archivo, anonimización, legal hold ni suites automatizadas.
+- Fuente original AUDITORIA_FASE4_IDENTIDAD_PERMISOS_GOBIERNO.md citada en completadas.md: no encontrada.
 ===============================================================================
