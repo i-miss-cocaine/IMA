@@ -3251,3 +3251,37 @@ CHECKPOINT C1.81 - TAREA-F4-P1-06
 - Próxima acción reproducible: revisar backend/user-service/Code.gs y backend/academic-service/Code.gs, funciones manageDepartmentPositions, getUserInstitutionalAffiliations, catálogo de cargos/departamentos, historial de adscripciones y su integración con permisos/ámbitos; comprobar consistencia con las asignaciones de roles y reconciliar AUD-NG-219/AUD-NG-222/AUD-NG-224 antes de crear nuevos IDs.
 - Commit de cierre: el commit que contiene este checkpoint.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.82 - TAREA-F4-P1-07
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto real: Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base: NG_beta_0.0.0.1.
+- HEAD de partida verificado: 1244d599a185d2760cfe7e050407ad4220f6d37e.
+- HEAD de la rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID operativo de sesión: IMA-AUDIT-20261106-1406Z; checkpoint inicial C1.82; checkpoint de cierre C1.82; estado: sesión cerrada. Es un identificador operativo, no un ID técnico nativo de ChatGPT.
+- Hora UTC de cierre: 2026-11-06T14:14:40Z.
+- Último checkpoint/tarea anterior: C1.81 / TAREA-F4-P1-06.
+- Tarea auditada: TAREA-F4-P1-07 - Implementar gestión institucional de roles, cargos, departamentos y asignaciones.
+- Estado maestro: [X] Completada en completadas.md.
+- Dictamen: NO CUMPLE.
+- Evidencia principal: USER SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ACADEMIC SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; dashboard-recursos-humanos SHA 406bedbae5a5bb3b5c03e4ea7aaa95ed68aea8ee; ui-common SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67; tests SHA 3433b707edd4a2f35c68368a3172932adc2a3b32; Fase16 audit SHA 13946cc9af0557fb380daec180d442ab0fbc036d; completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676.
+- Pendientes.md recuperado del blob SHA a052ef4265d807b440e67b9c074d2a4800bde696 (19,958 líneas, 1,740,094 caracteres); la lectura convencional devolvió 0 caracteres, pero el blob íntegro se recuperó y se contrastó con el blob padre 53ce12f0dbe417900769f72d0617c03e847c8e38 (19,928 líneas).
+- Hallazgos nuevos: AUD-NG-225/TASK-505 (catálogo de roles y asignaciones sin integridad referencial/vigencia efectiva/UI); AUD-NG-226/TASK-506 (departamentos/cargos/adscripciones sin integridad referencial y atomicidad).
+- Reconciliación: TASK-004/F16-Task01 está marcada completada, pero sus tests solo comprueban presencia de símbolos; TASK-171 mantiene ciclos jerárquicos; TASK-365 mantiene organigrama; TASK-006/AUD-NG-017 mantiene offboarding; AUD-NG-018 mantiene historial de asignaciones docentes; AUD-NG-221/TASK-501 y AUD-NG-222/TASK-502 mantienen matriz/ABAC; AUD-NG-145/AUD-NG-224 mantienen bitácoras/versionado. No se duplican esas causas.
+- Fuente original AUDITORIA_FASE4_IDENTIDAD_PERMISOS_GOBIERNO.md no encontrada; completadas.md solo aporta el título de TAREA-F4-P1-07. Se usó AUDITORIA_FASE_16_RECURSOS_HUMANOS.md y el código actual, sin inventar criterios ausentes.
+- Pruebas ejecutadas: inspección estática/manual de funciones, variables, routers, permisos, hojas, call sites y UI; búsqueda dirigida de símbolos; comparación de SHA y revisión de aserciones de test.
+- Pruebas no ejecutadas: HTTP, Apps Script, Google Sheets reales, concurrencia, multiusuario, expiración con reloj controlado, navegador/UI, deployments y suites automatizadas.
+- Progreso: 79/183 identificadores auditados; 104 pendientes.
+- Última tarea completada: C1.82 / TAREA-F4-P1-07.
+- Tarea en curso: ninguna.
+- Siguiente tarea exacta: TAREA-F4-P1-08 - Implementar un mecanismo central de propagación y recuperación de cambios de seguridad.
+- Próxima acción reproducible: abrir backend/user-service/Code.gs y revisar el mecanismo de propagación de eventos de seguridad y recuperación/reintento, sus consumidores en ACADEMIC/ACCOUNTING/TASK/EXAM, colas, invalidación de cachés, idempotencia, estados parciales y permisos; reconciliar AUD-NG-160, AUD-NG-219, AUD-NG-221, AUD-NG-222 y AUD-NG-225/226 antes de crear nuevos IDs.
+- Archivos modificados: Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt, Pendientes.md y nuevo AUDITORIA_COMPLETADAS_TAREA-F4-P1-07.md.
+- Archivos sin modificar: código fuente, completadas.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, dashboard-recursos-humanos.html, js/ui-common.js, backend/user-service/Code.gs y backend/academic-service/Code.gs.
+- Bloqueos: ninguno al preparar el checkpoint; la lectura convencional de Pendientes.md se recuperó por blob Git.
+- Commit de cierre: el commit que contiene este checkpoint.
+================================================================

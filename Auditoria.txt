@@ -6295,3 +6295,52 @@ AUDITORÍA TAREA-F4-P1-06 - CHECKPOINT C1.81
 - Fuente original AUDITORIA_FASE4_IDENTIDAD_PERMISOS_GOBIERNO.md no aparece en el árbol; completadas.md solo contiene título, clasificación y archivos, por lo que no se atribuyen criterios adicionales.
 - Pruebas: inspección estática/manual, búsqueda de call sites y comparación de SHA. No se ejecutaron HTTP, hojas productivas, concurrencia, manipulación controlada, deployments ni suites automatizadas.
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-06
+AUDITORÍA DE CUMPLIMIENTO — [TAREA-F4-P1-07] GESTIÓN INSTITUCIONAL DE ROLES, CARGOS, DEPARTAMENTOS Y ASIGNACIONES
+REPOSITORIO: i-miss-cocaine/IMA
+RAMA: NG_beta_0.0.0.1_work
+HEAD DE PARTIDA: 1244d599a185d2760cfe7e050407ad4220f6d37e
+DICTAMEN: NO CUMPLE
+
+FUENTE Y LÍMITE:
+- completadas.md marca TAREA-F4-P1-07 como [X], pero solo conserva el título.
+- La fuente AUDITORIA_FASE4_IDENTIDAD_PERMISOS_GOBIERNO.md no aparece en el árbol actual.
+- Se contrastó el título con el código actual y con AUDITORIA_FASE_16_RECURSOS_HUMANOS.md, TASK-004, TASK-171 y tareas relacionadas. No se inventan criterios detallados no disponibles.
+
+ARCHIVOS Y BLOQUES:
+- backend/user-service/Code.gs: getOrCreateSheet (863-874), ROLE_PERMISSIONS (941-963), getUserVerifiedRole (1146-1162), validateRolePermission (1253-1295), doPost/router (1351-1420, 1540-1575), generateInstitutionalId (1706-1746), getDynamicPermissionsForRole (1863-1898), manageDepartmentPositions (2801-2894), getUserInstitutionalAffiliations (2894-2934), assignRoleScope (9117-9181), getUserScopeConfig (9183-9220), validateRoleScopeAccess (9222-9251), getUserDynamicDashboardConfig (9254-9304), manageInternalRoleCatalog (9631-9728), getInternalRoleCatalog (9730-9765), getInternalRoleAssignments (9767-9807).
+- backend/academic-service/Code.gs: getAcademicAreaCoordinationScope (4321-4349), assignDepartmentHead (7282-7306), getDepartmentAcademicPlanning (7308-7355), asignaciones docentes a áreas (14048-14316), ROLE_PERMISSIONS/router (168-223, 779-790).
+- dashboard-recursos-humanos.html (981-1013), js/ui-common.js (5818-5863), dashboards de Dirección/Coordinación/Secretaría y tests/regression/academic-grading-suite.js (119-132).
+
+HALLAZGO [AUD-NG-225] — El catálogo de roles internos no gobierna de forma íntegra las asignaciones ni sus vigencias.
+SEVERIDAD: Alto (P1).
+EVIDENCIA:
+- assignRoleScope permite roleId vacío o no existente en CatalogoRolesInternos; busca asignación por userId+scopeType, sin roleId, y la actualización solo modifica scopeValues/estado. No actualiza fechas, roleId ni datos de suplencia.
+- fechaInicio/fechaFin no se validan. getUserScopeConfig filtra solo por estado Activo; getInternalRoleAssignments no excluye fechaInicio futura y no aplica el filtro departamento aunque lo recibe.
+- manageInternalRoleCatalog genera IDs con Date.now y códigos aleatorios de tres dígitos sin control de unicidad concurrente/código único.
+- No existe consola HR revisada que consuma el catálogo/asignaciones. El panel usa puesto/departamento en texto libre y createEmployeeRecord de ACCOUNTING.
+- getUserDynamicDashboardConfig lee Usuarios[3] como rol, pero el esquema define Rol en Usuarios[6]; loadDynamicDashboard muestra “Acceder” como span sin destino/listener.
+- tests/regression/academic-grading-suite.js 119-124 comprueba nombres de funciones/cadenas, no el comportamiento de TASK-004.
+IMPACTO: responsabilidades huérfanas, colisión/sobrescritura de asignaciones, vigencias incorrectas, suplencias no actualizadas y falta de administración funcional.
+RECONCILIACIÓN: TASK-004/F16-Task01 está marcada completada pero su prueba solo es de presencia de símbolos; se registra el remanente sin alterar el histórico. AUD-NG-221/TASK-501 y AUD-NG-222/TASK-502 conservan matriz y autorización contextual. AUD-NG-145/AUD-NG-224 conservan trazabilidad y versionado. Nueva tarea TASK-505.
+
+HALLAZGO [AUD-NG-226] — Departamentos, cargos y adscripciones carecen de integridad referencial y atomicidad operativa.
+SEVERIDAD: Alto (P1).
+EVIDENCIA:
+- CREATE_DEPT admite deptId del cliente sin unicidad y no verifica jefaturaUserId; CREATE_CARGO admite cargoId sin unicidad y no valida deptId; solo hay CREATE_DEPT, CREATE_CARGO y ASSIGN_USER.
+- ASSIGN_USER solo verifica que exista la fila del usuario; no comprueba estado de cuenta ni referencias activas de departamento/cargo. Cierra adscripciones activas antes de generar el nuevo ID/escribir la nueva fila y no protege el flujo completo con LockService.
+- Un fallo después del cierre deja al usuario sin adscripción activa; llamadas concurrentes pueden dejar más de una activa.
+- getUserInstitutionalAffiliations carga el historial completo sin paginación ni filtro de ámbito departamental.
+- ACADEMIC assignDepartmentHead crea/actualiza DepartamentosAcademicos sin validar jefe/departamento; no se encontró relación explícita con CatalogoDepartamentos.
+- dashboard-recursos-humanos.html no invoca los endpoints institucionales; usa texto libre para puesto/departamento.
+IMPACTO: filas huérfanas/duplicadas, adscripciones inconsistentes, pérdida parcial de asignación vigente y divergencia entre catálogos.
+RECONCILIACIÓN: TASK-171 cubre ciclos y jerarquía superior; TASK-365 cubre organigrama; TASK-006/AUD-NG-017 cubren offboarding; AUD-NG-221/222 cubren permisos; AUD-NG-145/224 cubren bitácoras. Nueva tarea TASK-506.
+
+PRUEBAS:
+- Ejecutadas: inspección estática/manual, búsqueda dirigida de referencias y comparación de SHA.
+- No ejecutadas: HTTP, Apps Script, hojas productivas, concurrencia real, multiusuario, navegador/UI, deployments ni suites automatizadas.
+- No se modificó código fuente.
+===============================================================================

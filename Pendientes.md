@@ -19955,3 +19955,43 @@ AUD-NG-163 permanece DUPLICADA y consolidada; no reabrirla como tarea independie
 - **Criterios de Aceptación:** Todas las operaciones auditadas generan filas interpretables por todos los lectores; la migración conserva registros; una alteración se detecta; las fallas no quedan silenciosas; el actor es verificable; roles/ámbitos y paginación se aplican; la UI muestra correctamente el historial de admisión; las pruebas positivas/negativas y de concurrencia pasan.
 - **Relaciones y límites:** AUD-NG-145 mantiene bitácoras/eventos y redacción de PII; TASK-049 mantiene la cadena de workflow. No duplicar.
 - **Estado:** [ ] Pendiente
+
+
+### [AUD-NG-225] [P1] Integridad referencial y vigencia efectiva de responsabilidades institucionales
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-225; auditoría TAREA-F4-P1-07 (C1.82).
+- **Severidad/Clasificación:** Alto (P1) - Integridad de asignaciones, gobierno de roles internos y vigencia temporal.
+- **Archivos Involucrados:** backend/user-service/Code.gs; dashboard-recursos-humanos.html; js/ui-common.js; tests/regression/academic-grading-suite.js.
+- **Dependencias Expuestas:** CatalogoRolesInternos, AsignacionesAmbitosRoles, assignRoleScope, getUserScopeConfig, getInternalRoleAssignments, getUserDynamicDashboardConfig, ROLE_PERMISSIONS, MatrizPermisosRoles, TASK-004, AUD-NG-221, AUD-NG-222, AUD-NG-145, AUD-NG-224.
+- **Descripción del Alcance:** Vincular cada asignación institucional a un rol interno existente y activo del catálogo; definir una clave de unicidad que incluya usuario, rol y ámbito; impedir que actualizaciones sobrescriban atributos no enviados; validar formato, orden y vigencia de fechas; aplicar fechaInicio y fechaFin uniformemente en consultas; validar suplente y su período; conservar historial al modificar/revocar; generar identificadores/códigos únicos bajo concurrencia; incorporar una consola de RRHH para crear/editar/desactivar responsabilidades y asignarlas/consultarlas por empleado, departamento, área y vigencia. Corregir la lectura de Rol en getUserDynamicDashboardConfig para utilizar el campo real de Usuarios y hacer que las tarjetas tengan una ruta de acceso funcional. Mantener separada la responsabilidad institucional de ROLE_PERMISSIONS; no conceder privilegios globales por asignación.
+- **Criterios de Aceptación:** Toda asignación referencia un rol existente y activo; no hay IDs vacíos/inexistentes; múltiples responsabilidades compatibles no colisionan; las modificaciones conservan atributos o generan nueva versión; fechas inválidas y suplencias fuera de vigencia se rechazan; las consultas distinguen asignaciones vigentes e históricas; códigos únicos bajo concurrencia; consola HR funcional y autorizada; la responsabilidad institucional no concede permisos globales; pruebas cubren FK, duplicados, concurrencia, vigencias, suplencias, revocación, UI y separación de permisos.
+- **Estado:** [ ] Pendiente
+
+### [TASK-505] [TAREA-F4-P1-07] [P1] Cerrar la integridad y el ciclo de vida de roles internos y asignaciones institucionales
+- **Origen del Hallazgo:** AUD-NG-225.
+- **Severidad/Clasificación:** Alto (P1).
+- **Archivos Involucrados:** backend/user-service/Code.gs; dashboard-recursos-humanos.html; js/ui-common.js; tests/regression/academic-grading-suite.js.
+- **Dependencias Expuestas:** CatalogoRolesInternos, AsignacionesAmbitosRoles, assignRoleScope, getUserScopeConfig, getInternalRoleAssignments, getUserDynamicDashboardConfig, ROLE_PERMISSIONS, MatrizPermisosRoles.
+- **Descripción del Alcance:** Completar el vínculo entre catálogo y asignaciones, la unicidad y actualización no destructiva, la validación temporal de vigencias/suplencias y la consulta histórica. Implementar la consola de gestión de responsabilidades en RRHH y conectar sus operaciones al backend autenticado. Corregir el origen del rol que consume el dashboard dinámico y conectar las tarjetas a destinos reales, sin convertir responsabilidades organizativas en permisos globales.
+- **Criterios de Aceptación:** Se cumplen los criterios de AUD-NG-225; roles internos gestionados/asignados desde UI; fechas futuras/vencidas correctas; historial preservado; suite comprueba comportamiento y no solo presencia de funciones.
+- **Estado:** [ ] Pendiente
+
+
+
+### [AUD-NG-226] [P1] Integridad referencial y atomicidad en departamentos, cargos y adscripciones
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-226; auditoría TAREA-F4-P1-07 (C1.82).
+- **Severidad/Clasificación:** Alto (P1) - Integridad estructural, persistencia y consistencia de asignaciones.
+- **Archivos Involucrados:** backend/user-service/Code.gs; backend/academic-service/Code.gs; dashboard-recursos-humanos.html; tests/regression/academic-grading-suite.js.
+- **Dependencias Expuestas:** CatalogoDepartamentos, CatalogoCargos, HistorialAdscripciones, DepartamentosAcademicos, Usuarios, manageDepartmentPositions, getUserInstitutionalAffiliations, assignDepartmentHead, generateInstitutionalId, TASK-171, TASK-365, TASK-006, AUD-NG-017, AUD-NG-145, AUD-NG-221, AUD-NG-222, AUD-NG-224.
+- **Descripción del Alcance:** Asegurar unicidad de IDs y códigos, validación de jefaturas/usuarios/departamentos/cargos existentes y activos, y consistencia entre catálogos administrativos y académicos mediante una relación explícita o separación documentada. Rediseñar ASSIGN_USER para validar todo antes de cerrar la adscripción vigente y ejecutar cierre/alta bajo un mecanismo de concurrencia que impida estados parciales o múltiples adscripciones activas. Incorporar operaciones controladas de edición/desactivación conservando historial y consultas paginadas. Conectar la administración con la consola HR autenticada.
+- **Criterios de Aceptación:** No se aceptan IDs duplicados ni referencias a entidades inexistentes/inactivas; IDs del cliente se validan; la generación no usa timestamps como sustituto de unicidad; fallos dejan activa la adscripción anterior; concurrencia no crea más de una activa; consultas aplican permisos/ámbito/paginación; la relación de catálogos se define; consola HR usa datos de catálogo; pruebas cubren FK, duplicados, cuenta inactiva, falla de generación, concurrencia y recuperación. TASK-171 conserva prevención de ciclos y TASK-365 el organigrama visual.
+- **Estado:** [ ] Pendiente
+
+### [TASK-506] [TAREA-F4-P1-07] [P1] Garantizar integridad y atomicidad en departamentos, cargos y adscripciones
+- **Origen del Hallazgo:** AUD-NG-226.
+- **Severidad/Clasificación:** Alto (P1).
+- **Archivos Involucrados:** backend/user-service/Code.gs; backend/academic-service/Code.gs; dashboard-recursos-humanos.html; tests/regression/academic-grading-suite.js.
+- **Dependencias Expuestas:** CatalogoDepartamentos, CatalogoCargos, HistorialAdscripciones, DepartamentosAcademicos, Usuarios, manageDepartmentPositions, assignDepartmentHead, generateInstitutionalId.
+- **Descripción del Alcance:** Cerrar validaciones referenciales, unicidad, consistencia intercatálogo y atomicidad de las operaciones de departamento, cargo y adscripción; conectar flujos a la consola HR con consultas paginadas y auditoría.
+- **Criterios de Aceptación:** Se cumplen los criterios de AUD-NG-226; ningún fallo parcial cierra la asignación anterior; no se generan IDs duplicados ni referencias huérfanas; UI y pruebas verifican comportamiento real.
+- **Estado:** [ ] Pendiente
+

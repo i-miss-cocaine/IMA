@@ -953,3 +953,15 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Pruebas:** inspección estática/manual, búsqueda de call sites y comparación de SHA; no se ejecutaron HTTP, hojas productivas, concurrencia, manipulación controlada, deployments ni suites automatizadas.
 - **Progreso:** 78/183 identificadores auditados; 105 pendientes.
 - **Siguiente tarea oficial:** TAREA-F4-P1-07 - Implementar gestión institucional de roles, cargos, departamentos y asignaciones.
+
+
+## 84. Resultado C1.82 - TAREA-F4-P1-07 (2026-11-06)
+
+- **Dictamen:** NO CUMPLE. Existen catálogos/endpoints parciales, pero las asignaciones internas no validan el rol catalogado ni aplican fechas de inicio/fin uniformemente; las actualizaciones pisan datos sin conservar todos los atributos y no hay consola HR conectada. El panel dinámico lee la columna Sección como rol y sus tarjetas “Acceder” no navegan.
+- **Departamentos/cargos:** CREATE_DEPT/CREATE_CARGO no garantizan unicidad ni referencias válidas; ASSIGN_USER no verifica cuenta activa ni FK, cierra la adscripción previa antes de crear la nueva y carece de lock transaccional; assignDepartmentHead no valida jefe/departamento. La UI usa texto libre.
+- **Reconciliación:** TASK-004 está marcada completada, pero sus tests son aserciones de presencia de símbolos; se registran brechas residuales en AUD-NG-225/TASK-505 y AUD-NG-226/TASK-506. TASK-171 mantiene ciclos; TASK-365 organigrama; TASK-006/AUD-NG-017 offboarding; AUD-NG-018 asignaciones académicas; AUD-NG-221/222 permisos/ABAC; AUD-NG-145/224 trazabilidad/versionado.
+- **Fuente:** completadas.md solo contiene el título de TAREA-F4-P1-07; AUDITORIA_FASE4_IDENTIDAD_PERMISOS_GOBIERNO.md no está en el árbol. Se contrastó con AUDITORIA_FASE_16_RECURSOS_HUMANOS.md y el código actual.
+- **Evidencia:** USER SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ACADEMIC SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; dashboard-recursos-humanos SHA 406bedbae5a5bb3b5c03e4ea7aaa95ed68aea8ee; ui-common SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67; tests SHA 3433b707edd4a2f35c68368a3172932adc2a3b32.
+- **Pruebas:** inspección estática/manual y revisión de aserciones; no se ejecutaron HTTP, Apps Script, Sheets reales, concurrencia, UI en navegador, deployments ni suites.
+- **Progreso:** 79/183 identificadores auditados; 104 pendientes.
+- **Siguiente tarea oficial:** TAREA-F4-P1-08 - Implementar un mecanismo central de propagación y recuperación de cambios de seguridad.

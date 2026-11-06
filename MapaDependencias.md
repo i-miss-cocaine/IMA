@@ -1728,3 +1728,31 @@ Relaciones:
 - getEntityAuditHistory no tiene paginación por cursor ni máximo validado; además, su handler permite Secretaría/Director pero esos roles no tienen permiso estático para la acción, que depende de una concesión dinámica no verificada.
 - BitacoraEventos y BitacoraTrazabilidad conservan los defectos de instrumentación, esquema y DTO ya registrados en AUD-NG-145; no duplicar.
 - Nuevo AUD-NG-224/TASK-504: unificar esquema y escritor, migrar datos históricos, registrar actor/correlationId verificados, integrar versionado e integridad verificable, fallar explícitamente ante errores de auditoría, sanitizar PII, asegurar permisos/paginación y probar USER/ACADEMIC/UI.
+
+
+## Registro de dependencias - TAREA-F4-P1-07 (C1.82)
+
+### USER: estructura organizativa, adscripciones y responsabilidades
+- `doPost` (1351-1420) -> `validateRolePermission` (1253-1295) -> `manageDepartmentPositions` (2801-2894) / `getUserInstitutionalAffiliations` (2894-2934).
+- `manageDepartmentPositions` -> `CatalogoDepartamentos`, `CatalogoCargos`, `Usuarios`, `HistorialAdscripciones`, `generateInstitutionalId` (1706-1746), `invalidateUserRoleCache` (143-156), `recordEntityChangeLog`, `logStructuredEvent`.
+- `getUserInstitutionalAffiliations` -> `HistorialAdscripciones`; lee todas las filas y proyecta historial por userId.
+- `manageInternalRoleCatalog` (9631-9728) / `getInternalRoleCatalog` (9730-9765) -> `CatalogoRolesInternos`.
+- `assignRoleScope` (9117-9181) -> `AsignacionesAmbitosRoles`; recibe roleId/rolId, scopeType, scopeValues, fechas y suplencia. No valida FK contra CatalogoRolesInternos; upsert por userId+scopeType.
+- `getUserScopeConfig` (9183-9220), `validateRoleScopeAccess` (9222-9251) y `getInternalRoleAssignments` (9767-9807) -> `AsignacionesAmbitosRoles`; filtros temporales no son uniformes.
+- `getDynamicPermissionsForRole` (1863-1898) -> `MatrizPermisosRoles`; la ruta de autorización es `getUserVerifiedRole` (1146-1162) -> `validateRolePermission`. La ausencia de acciones en ROLE_PERMISSIONS y la dependencia de la matriz dinámica se reconcilian con AUD-NG-221/222.
+- `getUserDynamicDashboardConfig` (9254-9304) -> `Usuarios`; lee el índice 3 como rol aunque el encabezado de Usuarios define Rol en índice 6. `js/ui-common.js:5818-5863` lo consume y genera tarjetas cuyo “Acceder” no tiene destino/listener.
+
+### ACADEMIC: jefaturas y estructura académica
+- `assignDepartmentHead` (7282-7306) -> `DepartamentosAcademicos`; `getDepartmentAcademicPlanning` (7308-7355) consume la misma hoja y relaciona ofertas/asignaciones docentes.
+- `DepartamentosAcademicos` es un modelo separado de `CatalogoDepartamentos`; no se encontró un identificador de enlace entre ambos.
+- `assignTeacherToAcademicArea` (14048-14193) -> `DocentesAreasAcademicas` y `CoordinacionesArea`; las consultas/bajas relacionadas están en 14195-14316. Esta asignación académica se mantiene separada de la adscripción laboral y de los hallazgos de historial AUD-NG-018.
+
+### UI y pruebas
+- `dashboard-recursos-humanos.html:981-1013` crea expediente mediante ACCOUNTING y solicita puesto/departamento como texto libre; no invoca USER/manageDepartmentPositions ni getUserInstitutionalAffiliations.
+- Dashboards de Dirección, Coordinación y Secretaría revisados no contienen llamadas a esos endpoints ni a assignRoleScope.
+- `tests/regression/academic-grading-suite.js:119-124` valida existencia de símbolos de TASK-004; no prueba integridad, vigencias, concurrencia ni persistencia.
+
+### Reconciliación de dependencias
+- AUD-NG-225/TASK-505: vínculo CatalogoRolesInternos -> AsignacionesAmbitosRoles, vigencias y administración UI.
+- AUD-NG-226/TASK-506: integridad referencial/atomicidad de CatalogoDepartamentos, CatalogoCargos y HistorialAdscripciones.
+- No duplicar TASK-171 (ciclos jerárquicos), TASK-365 (organigrama visual), TASK-006/AUD-NG-017 (offboarding), AUD-NG-018 (historial de asignaciones docentes), AUD-NG-221/222 (matriz y ABAC), AUD-NG-145/224 (bitácoras/versionado).
