@@ -5559,3 +5559,33 @@ CHECKPOINT C1.163 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-12
 - Próximo informe: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-13.md; leerlo íntegramente y reconciliar sus hallazgos y tareas relacionadas antes de formalizar.
 - Commit de cierre: un único commit con ambos archivos; verificar SHA, padre, árbol, archivos modificados y HEAD de rama después de publicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.164 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-13
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida declarada en el proyecto: NG_beta_0.0.0.1.
+- HEAD de partida verificado: b91b8aed4f7ca1b6ea6ff3801b336075d9a69a2f.
+- Árbol base de la rama de trabajo: 23d5122bc2138aa92e0d592f1cfd57436e1d1b15.
+- Rama base: no se realizó consulta nueva en esta iteración; no se efectuó ninguna escritura sobre ella.
+- ID operativo de sesión: IMA-AUDIT-20261106-2219Z (no es ID nativo de ChatGPT).
+- Checkpoint inicial de esta iteración: C1.163.
+- Estado de iteración: cerrada en C1.164.
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-13.md.
+- SHA del informe antes del cambio: 67f35aa518c95e43c21deeda87c80be7013e6d86.
+- SHA del contexto antes del cambio: 7cc8543f011d4781fed1a8b6c1787b27845a05ec.
+- Inspección: TAREA-13 CUMPLE PARCIALMENTE. Planificación consulta OfertasAcademicas mientras el catálogo usa OfertaAcademica; relación docente-área/oferta/grupo fragmentada; lectores de horarios interpretan columnas incorrectas; falta año/periodo en el esquema; sustituciones leen índices/estados incorrectos; asignaciones compartidas se sobrescriben; carga y conflictos mezclan estados/años; ocupación usa capacidad fija; interfaz no integra asignación docente por área.
+- Hallazgo nuevo formalizado: AUD-NG-168 (P1), modelo unificado de asignaciones, relaciones, horarios, periodos, sustituciones, carga, conflictos, ocupación e interfaz.
+- Tareas existentes ampliadas: AUD-NG-164 (fuente canónica de ofertas e IDs curriculares); AUD-NG-158 (ABAC para asignaciones, horarios, sustituciones, preferencias y reportes).
+- Reconciliación: AUD-NG-168 no absorbe catálogo curricular (AUD-NG-164) ni controles transversales de identidad/ámbito (AUD-NG-158). No se crean IDs adicionales.
+- Archivos modificados: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-13.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, Auditoria.txt, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README y rama base.
+- Pruebas ejecutadas: lectura íntegra de TAREA-13; contraste de AUD-NG-168 y de las tareas relacionadas en Auditoria.txt; comprobación de que el bloque aún no existía; verificación del HEAD y árbol de partida.
+- Pruebas no ejecutadas: pruebas de asignaciones, horarios, periodos, sustituciones, concurrencia, carga, ocupación, interfaz, ABAC, Apps Script y producción.
+- Límite: cambio exclusivamente documental. TAREA-13 permanece CUMPLE PARCIALMENTE; AUD-NG-168 y tareas relacionadas no se consideran ejecutadas ni completadas.
+- Próximo informe: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-14.md; leerlo íntegramente y reconciliar hallazgos y tareas relacionadas antes de formalizar.
+- Commit de cierre: un único commit con ambos archivos; verificar SHA, padre, árbol, archivos modificados y HEAD de rama después de publicar.
+================================================================

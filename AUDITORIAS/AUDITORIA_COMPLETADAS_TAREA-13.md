@@ -50,3 +50,37 @@ Los tres archivos de código/UI tienen el mismo SHA en NG_beta_0.0.0.1 y NG_beta
 ## Calidad y límites
 
 Calidad insuficiente: existen funciones y pantallas parciales, pero la divergencia de hojas/esquemas invalida consultas y reportes, las sustituciones leen columnas incorrectas, los cálculos mezclan estados/años y el flujo de área no está integrado en la interfaz. Revisión estática/manual; no se ejecutaron pruebas con datos reales, conflictos concurrentes, múltiples docentes, periodos lectivos, permisos ni despliegue productivo. No se modificó código fuente, completadas.md, completadas_legacy.md ni ChangesLogs.txt.
+
+## Tareas ejecutables derivadas de los hallazgos
+
+### AUD-NG-168 - Modelo unificado de asignaciones docentes, carga horaria y planificación (P1)
+- Establecer una fuente canónica de ofertas y asignaciones. Las consultas de planificación deben consumir la misma entidad persistida que `getAcademicOffers/createAcademicOffer`; eliminar la divergencia entre `OfertaAcademica` y `OfertasAcademicas` o implementar una migración/sincronización explícita y verificable.
+- Definir la relación completa y trazable docente-área-asignatura-oferta-grado-sección-año lectivo-periodo. Cada vínculo debe usar IDs canónicos, validar existencia/estado de las entidades y conservar fechas de vigencia.
+- Validar `assignTeacherToClass` en servidor: docente y oferta existentes/activos, compatibilidad con el área/asignatura/grupo/periodo, vigencia de la asignación y ausencia de duplicados o incompatibilidades.
+- Soportar múltiples docentes por oferta sin sobrescribir asignaciones previas en mapas de un solo valor. Los informes deben representar asignaciones compartidas y distinguir titular, docente asociado y sustituto.
+- Normalizar el esquema de `HorariosClase` y sus lectores/escritores. La interpretación de cada columna debe corresponder al esquema real; validar encabezados y versión del esquema antes de leer/escribir para impedir que Estado o UltimaModificacion se interpreten como grado/sección.
+- Persistir el contexto temporal del horario (año lectivo y periodo) y aplicarlo en `getClassSchedules`, `getTeacherTeachingLoad`, `checkScheduleConflict` y reportes de ocupación. No mezclar horarios de distintos años/periodos.
+- Corregir la detección de conflictos para que utilice las columnas reales de día, hora inicial, hora final, aula, docente y estado; considerar solo bloques vigentes/activos y excluir cancelados o borradores conforme a la regla institucional.
+- Validar sustituciones con el mismo esquema canónico de horario: comprobar disponibilidad del sustituto en día/hora/aula correctos, vigencia temporal de la sustitución y ausencia de solapamientos. Unificar los estados utilizados para asignación y consulta; representar inequívocamente titular y sustituto en el calendario.
+- Calcular carga docente únicamente con asignaciones y horarios vigentes del año/periodo solicitado. Excluir borradores, cancelados e inactivos; validar límites de carga y coherencia de preferencias de entrada/salida y días laborales antes de persistirlas.
+- Calcular ocupación y vacantes desde las mismas relaciones canónicas, con filtros por año/periodo y estado. Sustituir la capacidad semanal fija por parámetros institucionales verificables de disponibilidad/capacidad del aula.
+- Integrar en la interfaz docente el flujo de pertenencia a áreas (asignar, consultar y retirar), manteniendo sincronía con asignaturas, ofertas y grupos. La existencia de endpoints backend sin consumidores UI no acredita el flujo institucional.
+- Mantener historial de cambios de asignación, horario, carga y sustitución con actor, fecha, motivo y vigencia anterior/nueva, sin sobrescribir el único registro histórico.
+
+### AUD-NG-164 - Catálogo curricular como fuente canónica de ofertas
+- Consolidar `OfertaAcademica` como la fuente canónica que consumen creación de ofertas, planificación departamental, asignaciones docentes y horarios.
+- Garantizar IDs estables y referencias válidas entre área, departamento, programa, grado, asignatura, plan y oferta; evitar catálogos paralelos o nombres de hojas divergentes.
+- Validar compatibilidad y vigencia curricular de cada oferta antes de permitir asignaciones docentes, horarios o matrícula.
+- Preservar la responsabilidad de AUD-NG-164 sobre el catálogo maestro; el modelo operativo de asignaciones, sustituciones y horarios se mantiene en AUD-NG-168.
+
+### AUD-NG-158 - ABAC para asignaciones, horarios y planificación
+- Aplicar autorización contextual a asignar/consultar/retirar docentes por área, oferta, grado, sección y periodo.
+- Derivar actor y autorizador de claims verificados; no confiar en `profesorId`, `autorId`, `asignadoPor` ni otros identificadores enviados por el cliente.
+- Validar el ámbito autorizado antes de crear o modificar asignaciones, sustituciones, preferencias de carga, horarios y excepciones.
+- Restringir `getTeacherAssignments`, `getClassSchedules`, planificación departamental y reportes a los ámbitos permitidos por rol y asignación vigente.
+- Mantener el control ABAC transversal separado de la integridad de relaciones y reglas de horario que corresponden a AUD-NG-168.
+
+**Reconciliación y límites:** AUD-NG-168 concentra la integridad de asignaciones, esquema/periodos de horarios, sustituciones, carga, conflictos, ocupación e integración de interfaz. AUD-NG-164 conserva el catálogo curricular maestro y la fuente canónica de ofertas. AUD-NG-158 conserva identidad, autorización y ámbito contextual. No se crean IDs adicionales ni se duplican responsabilidades.
+
+**Evidencia requerida:** pruebas de fuente canónica de ofertas; relaciones docentes/ofertas/grupos válidas e inválidas; asignaciones compartidas; sustituciones con intervalos y conflictos; filtros de año/periodo; lectura/escritura del esquema de horarios; cálculo de carga y ocupación por estado; validación de preferencias; interfaz de áreas; y pruebas ABAC con acceso permitido/denegado. La auditoría actual es estática y no acredita estos resultados.
+
