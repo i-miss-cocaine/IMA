@@ -6059,3 +6059,35 @@ CHECKPOINT C1.180 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-F4-P1-
 - Próximo informe oficial: TAREA-F4-P1-06 - fortalecer la trazabilidad mediante historial de cambios y auditoría de versiones; leer íntegramente y reconciliar antes de normalizar.
 - Regla de publicación: un único commit consolidado con exactamente el informe y Contexto_personal.txt; verificar SHA, padre, árbol, archivos modificados y HEAD tras publicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.181 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-F4-P1-06
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base de referencia protegida: NG_beta_0.0.1.
+- HEAD de partida verificado: 1ddc2081baf1a8d3ec57c2790f2b100a0c4fc09e.
+- Árbol base de la rama de trabajo: 1f78a39db17af9c06a9b911370f0f74a6378d968.
+- HEAD de rama base documentado previamente (solo lectura): 44d9891132332e692dbe2ba8602b41f50a508a59; no se realizó ninguna escritura sobre la rama base en esta iteración.
+- ID operativo de sesión: IMA-AUDIT-20261106-2303Z (no es ID nativo de ChatGPT).
+- Checkpoint inicial de esta iteración: C1.180.
+- Estado de iteración: normalización documental preparada para publicación en C1.181.
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F4-P1-06.md.
+- SHA del informe antes del cambio: eea197f8e2e2d43763e763c4582bb66c4daf0e40.
+- SHA del contexto antes del cambio: 123687ab7a4ba4002d9b492b175c70bd9341bf2d.
+- SHA de referencia de Auditoria.txt consultado: 284b7a94b51c8ed99dbfcf734694bc5361f9f111.
+- SHA de referencia de MapaDependencias.md consultado: 4f68d56f910c6a4e87c20ecac82daeb3a615bcaa.
+- SHA del protocolo C1.112 consultado: e70acbef40f069a2372fae5e1e2c3f7f3aaa9f48.
+- Dictamen original preservado: TAREA-F4-P1-06 NO CUMPLE; estado [X] de completadas.md sin cambios.
+- Hallazgo normalizado: AUD-NG-224/TASK-504. Se desarrolló la tarea existente con todos los campos obligatorios; no se creó un ID duplicado.
+- Reconciliación: AUD-NG-145 conserva bitácoras/eventos/correlación y la dimensión de sanitización de PII; TASK-049 conserva la cadena criptográfica específica de decisiones de workflow; AUD-NG-222/TASK-502 conserva autorización contextual. TASK-504 se limita al historial genérico de entidades.
+- Archivos modificados previstos: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F4-P1-06.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README, hojas productivas y rama base.
+- Pruebas ejecutadas: lectura íntegra del informe TAREA-F4-P1-06; lectura del protocolo C1.112; consulta de Auditoria.txt y MapaDependencias.md para AUD-NG-224/TASK-504; cotejo de AUD-NG-145 y TASK-049; verificación del HEAD y de los SHA de partida; comprobación de que el informe aún no contenía la sección obligatoria.
+- Pruebas no ejecutadas: HTTP, Google Sheets productivas, migración real, concurrencia, alteración controlada de registros, despliegues Apps Script, pruebas UI/navegador ni suites automatizadas. Esta iteración no implementa TASK-504.
+- Límite: cambio exclusivamente documental; no se declara implementada TASK-504 ni demostrada la integridad productiva del historial.
+- Próximo informe oficial: TAREA-F4-P1-07 - gestión institucional de roles, cargos, departamentos y asignaciones; leerlo íntegramente y reconciliar AUD-NG-225/TASK-505 y AUD-NG-226/TASK-506 antes de normalizar.
+- Regla de publicación: un único commit consolidado con exactamente el informe y Contexto_personal.txt; verificar SHA, padre, árbol, archivos modificados y HEAD tras publicar.
+================================================================

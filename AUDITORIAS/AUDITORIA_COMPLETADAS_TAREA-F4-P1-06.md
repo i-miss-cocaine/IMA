@@ -78,3 +78,39 @@ completadas.md identifica como archivos involucrados backend/user-service/Code.g
 - Archivos documentales previstos para esta iteración: Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt, Pendientes.md y este informe.
 - Rama base sin cambios.
 - Commit de cierre: el commit que contiene este checkpoint.
+
+
+## Tareas ejecutables derivadas de los hallazgos
+
+### [TASK-504] Unificar y hacer verificable el historial de cambios de entidades
+
+- **Hallazgo de origen:** AUD-NG-224, sección «Reconciliación y nuevo registro» y hallazgos 1 a 4 de este informe. HistorialCambiosEntidad mezcla contratos incompatibles entre USER y ACADEMIC, permite escritores ad hoc, no garantiza la persistencia de los eventos, carece de versionado e integridad verificable y presenta deficiencias de lectura, autorización y paginación.
+- **Severidad:** Alto.
+- **Objetivo:** disponer de un historial de entidades coherente, íntegro, consultable y atribuible, cuya escritura y lectura conserven el mismo contrato en todos los servicios y cuya evidencia permita detectar alteraciones o discontinuidades.
+- **Acción ejecutable:**
+  1. Definir un esquema canónico versionado para HistorialCambiosEntidad (identificador único, tipo e ID de entidad, acción, snapshots JSON, actor verificado, fecha, correlationId, versión, hash previo y hash actual, más metadatos de esquema).
+  2. Implementar un único escritor compartido o contrato común para USER y ACADEMIC; sustituir los helpers divergentes y los appendRow ad hoc identificados en el informe.
+  3. Diseñar y ejecutar una migración idempotente de filas históricas, identificando el formato de origen, preservando los datos originales y registrando filas ambiguas o inválidas para revisión; no reinterpretar silenciosamente columnas.
+  4. Encadenar y verificar la integridad/versionado del historial general de entidades. Mantener separado el alcance de TASK-049, que protege RevisionesDecisionesTramite, y definir recuperación/continuidad ante registros previos o fallos.
+  5. Hacer que las mutaciones que requieren auditoría reciban confirmación de persistencia; propagar el fallo de registro de forma controlada para impedir respuestas de éxito engañosas y definir compensación o estado recuperable cuando la mutación ya se haya aplicado.
+  6. Aplicar sanitización consistente y minimización de PII antes de persistir snapshots, coordinando la política de redacción con AUD-NG-145 sin duplicar su tarea.
+  7. Corregir getEntityAuditHistory y getAcademicPlanningAuditLogs para leer el contrato canónico; validar límites, añadir paginación estable por cursor y aplicar autorización RBAC/ABAC por acción, entidad y ámbito. Conceder únicamente los accesos necesarios para la consulta de admisiones de Secretaría.
+  8. Actualizar la UI consumidora de Secretaría para presentar historial, errores y estados de consulta de forma fiel; no presentar historial vacío cuando existan filas incompatibles o errores de lectura.
+  9. Añadir pruebas unitarias y de regresión para compatibilidad/migración de esquemas, escritores, lectores, versiones, hashes, alteración y discontinuidad, fallos de persistencia, sanitización, permisos, paginación y flujo UI USER/ACADEMIC.
+- **Archivos/módulos afectados:** backend/user-service/Code.gs; backend/academic-service/Code.gs; js/secretary.js; tests/regression/academic-grading-suite.js y pruebas específicas nuevas si procede; contrato/migración de HistorialCambiosEntidad y documentación técnica asociada.
+- **Dependencias y riesgos:** AUD-NG-145 (bitácoras, correlación y sanitización); TASK-049 (cadena de decisiones de workflow, alcance separado); AUD-NG-222/TASK-502 (autorización contextual); esquema real de Google Sheets y compatibilidad de datos históricos. Riesgos principales: pérdida o reinterpretación de registros durante la migración, bloqueo de mutaciones por indisponibilidad de auditoría, falsos positivos de integridad por cambios legítimos de esquema, exposición de PII y concesiones de acceso excesivas. La migración debe ser reversible o contar con respaldo verificable y ejecución por lotes.
+- **Alcance:** historial genérico de cambios de entidades compartido por USER y ACADEMIC, sus productores, consumidores y presentación de admisiones. No incluye rediseñar BitacoraEventos/BitacoraTraceability, que permanece en AUD-NG-145, ni reemplazar la cadena específica de RevisionesDecisionesTramite cubierta por TASK-049.
+- **Criterios de aceptación:**
+  1. Existe un único contrato documentado y versionado, aplicado de forma idéntica por USER y ACADEMIC.
+  2. No quedan escritores ad hoc que persistan formatos alternativos en HistorialCambiosEntidad.
+  3. La migración clasifica y conserva los registros históricos; los casos ambiguos quedan identificados y no se descartan ni convierten silenciosamente.
+  4. Cada evento persistido contiene actor autenticado/verificado, fecha, correlationId y versión; la cadena de hashes se valida y detecta modificación, eliminación o discontinuidad según el modelo definido.
+  5. Los fallos de auditoría son observables por el llamador y nunca se reporta éxito de una mutación auditada sin la garantía de persistencia acordada.
+  6. Los snapshots aplican redacción/minimización coherente y pruebas que demuestran que email, teléfono, credenciales y otros datos sensibles no se exponen indebidamente.
+  7. Los lectores USER/ACADEMIC interpretan el contrato común; las consultas tienen cursor estable, límites máximos y filtros por entidad.
+  8. RBAC/ABAC bloquea accesos no autorizados y permite solo los roles/ámbitos expresamente concedidos para la consulta de admisiones.
+  9. La UI diferencia historial vacío, error de consulta y datos históricos no migrados; no oculta fallos como ausencia de registros.
+  10. Las pruebas automatizadas cubren escenarios positivos, negativos, migración, concurrencia relevante y regresión de ambos servicios; los resultados y evidencias quedan vinculados al cierre.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente. Registrar SHA de implementación, versión del esquema/migración, resultados de pruebas y verificación de integridad antes de cambiar el estado.
