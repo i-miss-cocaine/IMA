@@ -4560,3 +4560,33 @@ CHECKPOINT C1.127 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 24
 - Próxima acción concreta: continuar con AUDITORIA_FASE_25_INTEGRACIONES_EXTERNAS.md; leer íntegramente el informe, revisar tareas históricas y hallazgos cruzados, reconciliar IDs/estados y añadir el bloque obligatorio sin duplicar trabajo.
 - Estado de TASK-DOC-C1.112-01: En curso; migración documental por lotes.
 ================================================================
+
+================================================================
+CHECKPOINT C1.128 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 25
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto: AUDITORIAS/Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: e3c18499c2d3607e75418acb9598f966c7a1256b.
+- HEAD de rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID operativo de sesión: IMA-AUDIT-20261106-2011Z-F10 (se conserva el identificador operativo de esta conversación; no es un ID nativo de ChatGPT).
+- Checkpoint anterior: C1.127 (Fase 24 normalizada).
+- Tarea documental en curso: TASK-DOC-C1.112-01, normalización progresiva de informes históricos.
+- Informe normalizado en esta iteración: AUDITORIAS/AUDITORIA_FASE_25_INTEGRACIONES_EXTERNAS.md.
+- SHA del informe antes de modificar: aace091314cbb446dbcdb6047cec083bcf74f4a4.
+- SHA del contexto antes de modificar: 172a7095cecee073353c47903a3183dce7e97d9b.
+- Inspección documental: informe completo (16,821 caracteres; 145 líneas), secciones A-I, 20 subcapacidades F25-001..F25-020, pruebas de integración/regresión, brechas F y plan G.
+- Fuentes cruzadas: Auditoria.txt (blob 284b7a94b51c8ed99dbfcf734694bc5361f9f111); no se encontraron tareas históricas TASK/F25-Task posteriores vinculadas a Fase 25; metodología §3.4 y AUDITORIAS/README.md.
+- Tareas originales preservadas: F25-Task01..F25-Task05 y prioridades P0/P1 del plan G.
+- Tareas nuevas derivadas de brechas parciales explícitas de la tabla C: F25-Task06 (conectores reutilizables, F25-012), F25-Task07 (sincronización externa de calendarios, F25-010) y F25-Task08 (reconciliación bidireccional, F25-014). No se inventaron IDs AUD-NG.
+- Subcapacidades declaradas completas preservadas: F25-002/005/006/007/008/009/013/015/016/017/018/020; la normalización no cambia su estado ni afirma revalidación.
+- Métricas históricas: 53/53 pruebas y validaciones SACE reportadas; no se reejecutaron en esta iteración.
+- Campos añadidos por tarea: origen, severidad, objetivo, acción, archivos/módulos, dependencias/riesgos, alcance, criterios de aceptación, prioridad, estado y evidencia de cierre.
+- Archivos modificados: AUDITORIAS/AUDITORIA_FASE_25_INTEGRACIONES_EXTERNAS.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, ChangesLogs.txt, Auditoria.txt, METODOLOGIA_DESARROLLO.md, AUDITORIAS/README.md, plan maestro y demás informes; rama base sin cambios.
+- Pruebas no ejecutadas: suites de integración, importación de grandes volúmenes, webhooks reales, OAuth/calendarios externos, Apps Script runtime, HTTP y despliegues; no hubo cambios de código.
+- HEAD de partida del árbol: e3c18499c2d3607e75418acb9598f966c7a1256b. El único commit de cierre debe contener ambos archivos y este checkpoint.
+- Próxima acción concreta: continuar con AUDITORIA_FASE_26_CONFIGURACION_INSTITUCIONAL_PERSONALIZACION.md; leer íntegramente el informe, revisar tareas históricas y hallazgos cruzados, reconciliar IDs/estados y añadir el bloque obligatorio sin duplicar trabajo.
+- Estado de TASK-DOC-C1.112-01: En curso; migración documental por lotes.
+================================================================

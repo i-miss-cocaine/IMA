@@ -148,3 +148,106 @@ La Fase 25 presenta una base sólida y madura en la generación de archivos ofic
    $$\text{Cobertura de Verificación} = \frac{\text{Subcapacidades que Cumplen Criterios de Aceptación}}{\text{Subcapacidades Verificadas}} \times 100 = \frac{16}{20} \times 100 = 80.0\%$$
 3. **Tasa de Aprobación de Pruebas:**
    $$\text{Tasa de Aprobación} = \frac{\text{Criterios Aprobados}}{\text{Criterios Ejecutados}} \times 100 = \frac{16}{16} \times 100 = 100.0\%$$
+
+---
+
+## Tareas ejecutables derivadas de los hallazgos
+
+> Normalización de las 20 subcapacidades F25-001..F25-020. Se conservan los cinco IDs originales F25-Task01..F25-Task05 y sus prioridades P0/P1. Se añaden F25-Task06..F25-Task08 para brechas parciales explícitas del inventario (conectores reutilizables, sincronización externa de calendarios y reconciliación bidireccional) que no quedaron como tareas independientes en el plan G. No se encontraron TASK/F25-Task posteriores asociados en Auditoria.txt; los cierres del inventario se preservan como evidencia histórica, sin reejecutarlos.
+
+### [F25-Task01] Crear catálogo unificado de integraciones externas
+- **Hallazgo de origen:** F25-001, secciones B/C y G.1.
+- **Severidad:** Crítica. **Objetivo:** gobernar desde una única fuente las integraciones SACE, pasarelas, Google Sheets, correo y calendarios.
+- **Acción ejecutable:** crear `CatalogoIntegraciones` con ID, proveedor, servicio, tipo, endpoint, estado, propietario, método de autenticación, versión de contrato, scopes, timeout, política de reintentos, última verificación y permisos; conectar los servicios existentes a este catálogo.
+- **Archivos/módulos:** `backend/developer-service/Code.gs`, `backend/accounting-service/Code.gs`, `backend/academic-service/Code.gs`, `IntegracionesPasarelas`, `CatalogoSpreadsheets`, nueva hoja `CatalogoIntegraciones`.
+- **Dependencias/riesgos:** cuentas de servicio, secretos, OAuth, endpoints externos y permisos; riesgo de credenciales expuestas o configuración inconsistente.
+- **Alcance:** catálogo y gobernanza; no almacenar secretos en texto claro ni duplicar datos operativos de cada conector.
+- **Criterios de aceptación:** catálogo único con IDs estables; integraciones activas/inactivas y propietario verificable; secretos referenciados desde almacenamiento seguro; health check y última verificación registrados; cambios auditados/versionados; servicios consultan el catálogo en vez de listas locales.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el informe confirma tablas aisladas y ausencia de catálogo unificado.
+
+### [F25-Task02] Persistir perfiles reutilizables de mapeo de columnas para importaciones
+- **Hallazgo de origen:** F25-003, sección F.2 y G.2.
+- **Severidad:** Crítica. **Objetivo:** reutilizar configuraciones de mapeo para cargas recurrentes sin reconfiguración manual.
+- **Acción ejecutable:** crear `PerfilesMapeoColumnas` con propietario, tipo de entidad, origen, encabezados, correspondencia destino, versión, estado y fecha; permitir guardar/cargar/editar perfiles con validación de compatibilidad.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `importDataWithColumnMapping`, `validateImportPreview`, `PerfilesMapeoColumnas`, UI de importación.
+- **Dependencias/riesgos:** importador, catálogo de columnas destino, permisos y esquema de entidad; riesgo de aplicar un perfil obsoleto a columnas distintas.
+- **Alcance:** perfiles versionados y reutilizables; no aplicar automáticamente un perfil incompatible.
+- **Criterios de aceptación:** perfiles guardan mapping JSON validado; usuario autorizado puede reutilizar/duplicar/versionar; cambios de encabezado generan incompatibilidad explícita; previsualización confirma correspondencia antes de escribir; historial de perfil preservado.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el informe confirma que `columnaMapeo` se envía dinámicamente pero no se persiste en una hoja dedicada.
+
+### [F25-Task03] Detectar duplicados avanzados y validar integridad referencial antes de importar
+- **Hallazgo de origen:** F25-004, sección F y G.3.
+- **Severidad:** Crítica. **Objetivo:** evitar duplicados de personas y relaciones huérfanas en importaciones masivas.
+- **Acción ejecutable:** ampliar `importDataWithColumnMapping` con búsqueda previa de DNI, correo y claves naturales según entidad; clasificar coincidencias exactas/posibles; validar referencias a grado, sección, departamento y expediente; ofrecer política explícita rechazar/actualizar/vincular.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `importDataWithColumnMapping`, `validateImportPreview`, catálogos maestros y hojas destino.
+- **Dependencias/riesgos:** F25-Task02, identificadores canónicos y políticas de merge; riesgo de fusionar personas distintas o duplicar expedientes.
+- **Alcance:** detección y decisión previa; no fusionar registros automáticamente solo por nombre.
+- **Criterios de aceptación:** DNI/correo normalizados y comparados; duplicados se muestran antes de escribir; referencias foráneas existen/están activas; política de conflicto seleccionada y auditada; importación repetida es idempotente; errores no dejan escritura parcial.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el informe solo acredita validación de identificador obligatorio y solicita detección avanzada.
+
+### [F25-Task04] Crear endpoint autenticado de webhooks para confirmaciones de pasarelas de pago
+- **Hallazgo de origen:** F25-011, sección F.1 y G.4.
+- **Severidad:** Alta. **Objetivo:** recibir confirmaciones asíncronas de pago y conciliarlas con transacciones institucionales.
+- **Acción ejecutable:** implementar `handlePaymentGatewayWebhook`; validar firma HMAC sobre el cuerpo original, timestamp, nonce/eventId y proveedor configurado; comprobar importe/moneda/referencia; reservar evento idempotentemente y actualizar estado de pago solo después de validar.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `configureGatewayIntegration`, `IntegracionesPasarelas`, `TransaccionesPasarela`, `PagosAbonos`, `AuditoriaMigraciones`.
+- **Dependencias/riesgos:** catálogo de integraciones F25-Task01, secretos seguros, conciliación y pagos; riesgo de falsificación, replay o acreditar pagos inexistentes.
+- **Alcance:** recepción y conciliación; no confiar en la URL/importe/estado del cliente ni considerar la prueba sintética como webhook real.
+- **Criterios de aceptación:** firma HMAC verificada; timestamp/nonce/eventId anti-replay; proveedor y endpoint autorizados; importe/moneda/referencia concilian; evento idempotente; discrepancias quedan en revisión; errores no acreditan pago.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el informe declara que las pasarelas se prueban sintéticamente y no existe endpoint autenticado de webhooks.
+
+### [F25-Task05] Procesar importaciones masivas en lotes reanudables
+- **Hallazgo de origen:** F25-019, sección F.3 y G.5.
+- **Severidad:** Alta. **Objetivo:** procesar archivos de más de 1,000 registros sin exceder el límite de ejecución de Apps Script.
+- **Acción ejecutable:** particionar importaciones en bloques configurables (200 filas iniciales); persistir ejecuciónId, cursor, total, estado, errores y próximo lote; reanudar por trigger/worker; validar cada lote y evitar duplicados al reintentar.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `importDataWithColumnMapping`, `validateImportPreview`, `AuditoriaMigraciones`, cola de trabajos y triggers.
+- **Dependencias/riesgos:** F25-Task02/03, cuotas GAS y consistencia de destino; riesgo de duplicación o lote parcialmente aplicado.
+- **Alcance:** importación fraccionada; no mantener una sola ejecución síncrona para todo el archivo.
+- **Criterios de aceptación:** chunk size configurable y validado; checkpoint durable; reanudación desde cursor; progreso visible; errores por fila/lote; rollback/compensación documentados; reintentos idempotentes; importación final concilia total leído/escrito/rechazado.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el informe advierte que archivos mayores a 1,000 filas pueden exceder seis minutos.
+
+### [F25-Task06] Estandarizar conectores reutilizables bajo un contrato común
+- **Hallazgo de origen:** F25-012 y sección C.
+- **Severidad:** Media. **Objetivo:** evitar controladores independientes incompatibles para cada integración.
+- **Acción ejecutable:** definir interfaz común de conector (configuración, autenticación, health check, request, response, error, timeout, retry, versión); adaptar pasarelas, SACE, Sheets, correo y calendario sin duplicar lógica transversal.
+- **Archivos/módulos:** `backend/developer-service/Code.gs`, servicios Accounting/Academic/User, conectores externos y `CatalogoIntegraciones`.
+- **Dependencias/riesgos:** F25-Task01 y contratos API; riesgo de abstracción excesiva o romper integraciones estables.
+- **Alcance:** capa común y adaptadores; no reescribir integraciones completas sin pruebas de compatibilidad.
+- **Criterios de aceptación:** contrato versionado; adaptadores implementan operaciones mínimas; errores normalizados; timeouts/retries configurables; credenciales no se exponen; pruebas por conector y compatibilidad hacia atrás.
+- **Prioridad:** P2. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el informe clasifica los controladores como independientes y pide estandarización.
+
+### [F25-Task07] Sincronizar calendarios institucionales con Google Calendar/iCal
+- **Hallazgo de origen:** F25-010 y sección C.
+- **Severidad:** Media. **Objetivo:** sincronizar eventos institucionales con calendarios externos y reflejar cambios en ambas direcciones.
+- **Acción ejecutable:** implementar conectores OAuth/ICS para exportar/importar eventos; mantener externalEventId, zona horaria, versión y origen; resolver actualizaciones concurrentes, cancelaciones y eventos duplicados.
+- **Archivos/módulos:** servicios User/Academic, calendario institucional interno, `CatalogoIntegraciones`, almacenamiento de tokens OAuth.
+- **Dependencias/riesgos:** F25-Task01/F25-Task06, permisos de calendario y consentimiento; riesgo de duplicar eventos o filtrar datos personales.
+- **Alcance:** sincronización externa bidireccional; el calendario interno existente no equivale a integración externa.
+- **Criterios de aceptación:** OAuth/scopes mínimos; import/export con IDs externos; zona horaria explícita; deduplicación; conflictos resueltos con regla documentada; revocación de tokens; auditoría de cambios y errores.
+- **Prioridad:** P2. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el informe confirma calendario interno pero falta sincronización externa iCal/Google Calendar.
+
+### [F25-Task08] Implementar motor de reconciliación bidireccional y consistencia de integraciones
+- **Hallazgo de origen:** F25-014 y sección C.
+- **Severidad:** Alta. **Objetivo:** detectar y resolver divergencias entre fuentes institucionales y sistemas externos.
+- **Acción ejecutable:** crear reconciliador por conector con checkpoint, cursor, versión, clave natural, detección de cambios, resolución de conflictos, reintentos y bitácora; distinguir conflicto, duplicado, error transitorio y dato no sincronizable.
+- **Archivos/módulos:** servicios Accounting/Academic/Developer, `AuditoriaMigraciones`, `CatalogoIntegraciones`, cola de trabajos.
+- **Dependencias/riesgos:** F25-Task01/06/07, claves maestras y políticas de autoridad de datos; riesgo de sobrescribir el registro más reciente o crear ciclos de sincronización.
+- **Alcance:** reconciliación por fuente y entidad; no asumir sincronización automática como sobrescritura bidireccional sin política.
+- **Criterios de aceptación:** autoridad por campo definida; cambios con versión/fecha/origen; conflictos enviados a revisión cuando no hay regla; reintentos idempotentes; checkpoints recuperables; informe de diferencias y conciliación final; trazabilidad completa.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el informe indica que solo se registran ejecuciones en AuditoriaMigraciones y falta reconciliación bidireccional automática.
+
+### Reconciliaciones y discrepancias transversales de Fase 25
+- **F25-Task01..F25-Task05:** conservan los cinco elementos originales del plan G; no se encontraron registros posteriores TASK/F25-Task que acrediten su cierre.
+- **F25-Task06:** formaliza la brecha parcial F25-012 de conectores independientes.
+- **F25-Task07:** formaliza la brecha parcial F25-010; el calendario interno no se considera sincronización externa.
+- **F25-Task08:** formaliza F25-014; bitácora de ejecución no equivale a reconciliación bidireccional.
+- **F25-002/005/006/007/008/009/013/015/016/017/018/020:** el informe las clasifica completas/verificadas; se preserva ese estado histórico, sin reauditar código en esta iteración.
+- **Pruebas:** el informe registra 53/53 pruebas de regresión y validaciones SACE; no se ejecutaron nuevamente.
+- **Estado global:** las ocho tareas de este bloque permanecen pendientes; no se modifica el estado de las subcapacidades declaradas completas en la tabla C.
