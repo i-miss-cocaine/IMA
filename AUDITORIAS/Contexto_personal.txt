@@ -5619,3 +5619,32 @@ CHECKPOINT C1.165 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-14
 - Próximo informe: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-15.md; leerlo íntegramente y reconciliar sus hallazgos y tareas relacionadas antes de formalizar.
 - Commit de cierre: un único commit con ambos archivos; verificar SHA, padre, árbol, archivos modificados y HEAD de rama después de publicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.166 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-15
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida declarada en el proyecto: NG_beta_0.0.0.1.
+- HEAD de partida verificado: 9d0c6b30ca300a110e409da6ec33ba038ef6114e.
+- Árbol base de la rama de trabajo: 5a3cdc31bc00bf502002840b9699a3fb12f9c6e5.
+- Rama base: no se realizó consulta nueva en esta iteración; no se efectuó ninguna escritura sobre ella.
+- ID operativo de sesión: IMA-AUDIT-20261106-2219Z (no es ID nativo de ChatGPT).
+- Checkpoint inicial de esta iteración: C1.165.
+- Estado de iteración: cerrada en C1.166.
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-15.md.
+- SHA del informe antes del cambio: 60f30d05e907192b6bffc9b00bc12cab4a4fdbd0.
+- SHA del contexto antes del cambio: 9bf3a7663fe62fff0dbf03a97d6f764f3aa14e64.
+- Inspección: TAREA-15 CUMPLE PARCIALMENTE. Versiones fijas sin vínculo a deployments reales; monitor incompleto y ping con dependencias simuladas; timeout configurado ignorado; panel usa proveedor inexistente y fallback saludable; falta requestId transversal; protocolo interservicio declarado pero no invocado; sanitización omite PII/finanzas; alertas no se emiten/deduplican y no hay recuperación/rollback probado en entorno aislado.
+- No se crea AUD-NG-170. Tareas formalizadas por ampliación de IDs existentes: AUD-NG-131 (deployment/versiones); AUD-NG-144 (health checks); AUD-NG-145 (bitácora/sanitización/correlación); AUD-NG-083 (protocolo interservicio); TASK-064 (capacidad/alertas); AUD-NG-161 (recuperación aislada).
+- Reconciliación: AUD-NG-163 permanece DUPLICADA/consolidada y no se ejecuta independientemente. Cada brecha se asigna al ID preexistente de su dominio.
+- Archivos modificados: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-15.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, Auditoria.txt, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README y rama base.
+- Pruebas ejecutadas: lectura íntegra de TAREA-15; contraste de los seis IDs existentes y del estado duplicado de AUD-NG-163; comprobación de que el bloque aún no existía; verificación del HEAD y árbol de partida.
+- Pruebas no ejecutadas: health checks en deployments, caída/latencia/cuotas, alertas, trazabilidad distribuida, sanitización con datos reales, protocolo entre servicios, recuperación/rollback, Apps Script y producción.
+- Límite: cambio exclusivamente documental. TAREA-15 permanece CUMPLE PARCIALMENTE; no se crea AUD-NG-170 y las tareas referenciadas no se consideran ejecutadas ni completadas.
+- Próximo informe: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-16.md; leerlo íntegramente y reconciliar sus hallazgos/tareas antes de formalizar el bloque.
+- Commit de cierre: un único commit con ambos archivos; verificar SHA, padre, árbol, archivos modificados y HEAD de rama después de publicar.
+================================================================
