@@ -3222,3 +3222,32 @@ CHECKPOINT C1.80 - TAREA-F4-P1-05
 - Próxima acción reproducible: abrir backend/user-service/Code.gs y revisar recordEntityChangeLog, getEntityAuditHistory, funciones de versionado y hojas de historial; verificar snapshots before/after, actor real, recurso, integridad/inmutabilidad, paginación, permisos y sanitización; contrastar con js/ui-common.js y el flujo de consulta UI; reconciliar AUD-NG-145 y hallazgos de bitácoras/versionado antes de crear IDs.
 - Commit de cierre: el commit que contiene este checkpoint.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.81 - TAREA-F4-P1-06
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto real: Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base: NG_beta_0.0.0.1.
+- HEAD de partida verificado: ba92a81f7f3b45a4357fe9c9bfadf6c3fe0290ad (commit que contiene C1.80).
+- HEAD de rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID operativo de sesión: IMA-AUDIT-20261106-1338Z; inicio C1.79; estado ABIERTA. Es un identificador operativo, no un ID técnico nativo de ChatGPT.
+- Último checkpoint/tarea anterior: C1.80 / TAREA-F4-P1-05.
+- Tarea auditada: TAREA-F4-P1-06 - Fortalecer la trazabilidad mediante historial de cambios y auditoría de versiones.
+- Estado maestro: [X] Completada en completadas.md.
+- Dictamen: NO CUMPLE.
+- Evidencia: USER SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ACADEMIC SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; secretary.js SHA 08a81266957b4c18cc25f8ba6749eac30a8f2c2c; ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67; regression suite SHA 3433b707edd4a2f35c68368a3172932adc2a3b32.
+- Hallazgos: USER y ACADEMIC escriben HistorialCambiosEntidad con órdenes de columnas incompatibles; ACADEMIC también escribe filas directas de ocho columnas. getEntityAuditHistory y getAcademicPlanningAuditLogs no reconstruyen uniformemente los registros. La UI de Secretaría solicita SolicitudAdmision y no interpreta filas ACADEMIC. Los dos helpers silencian fallos de escritura. No existe versionado/hash/verificador general; la cadena de TASK-049 solo cubre decisiones de workflow. La consulta carece de paginación segura y el permiso estático para Secretaría/Director no está concedido. USER conserva email/teléfono en snapshots y ACADEMIC no sanitiza.
+- Reconciliación: ampliar AUD-NG-145 por sanitización de PII y conservar sus defectos de BitacoraEventos/BitacoraTrazabilidad; TASK-049 conserva cadena de decisiones. Nuevo AUD-NG-224 (Alto/P1) y TASK-504 para esquema canónico, migración, escritor común, integridad/versionado general, fallos explícitos, sanitización, autorización/paginación y pruebas.
+- Fuente original AUDITORIA_FASE4_IDENTIDAD_PERMISOS_GOBIERNO.md no encontrada; completadas.md solo aporta título, clasificación y archivos.
+- Pruebas ejecutadas: inspección estática/manual, búsqueda de referencias/call sites y comparación de SHA.
+- Pruebas no ejecutadas: HTTP, hojas productivas, concurrencia, alteración controlada, deployments Apps Script y suites automatizadas.
+- Progreso: 78/183 identificadores auditados; 105 pendientes.
+- Archivos documentales modificados: Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt, Pendientes.md y nuevo AUDITORIA_COMPLETADAS_TAREA-F4-P1-06.md.
+- Sin modificar: código fuente, completadas.md, ChangesLogs.txt y METODOLOGIA_DESARROLLO.md.
+- Siguiente tarea exacta: TAREA-F4-P1-07 - Implementar gestión institucional de roles, cargos, departamentos y asignaciones.
+- Próxima acción reproducible: revisar backend/user-service/Code.gs y backend/academic-service/Code.gs, funciones manageDepartmentPositions, getUserInstitutionalAffiliations, catálogo de cargos/departamentos, historial de adscripciones y su integración con permisos/ámbitos; comprobar consistencia con las asignaciones de roles y reconciliar AUD-NG-219/AUD-NG-222/AUD-NG-224 antes de crear nuevos IDs.
+- Commit de cierre: el commit que contiene este checkpoint.
+================================================================

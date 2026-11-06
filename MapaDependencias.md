@@ -1716,3 +1716,15 @@ Relaciones:
 - updatePrivacyRightsRequestStatus actualiza estado y metadatos; no ejecuta la operación ARCO ni valida una máquina de estados/transición.
 - js/ui-common.js (SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67) y los scripts/páginas de dashboards revisados no contienen llamadas ni UI ARCO. politica-de-privacidad.html (SHA 8854bae3021e1cdde288709e3fa411b3d6da20c7) solo registra aceptación de DOC-PRIV mediante ACCOUNTING; no conecta el módulo de derechos.
 - La afirmación de retención automatizada en la política se reconcilia con AUD-NG-146/TASK-499 y AUD-NG-220/TASK-500; no duplicar. Nuevo AUD-NG-223/TASK-503 para ausencia de panel y ejecución end-to-end de derechos ARCO.
+
+
+## Registro de dependencias - TAREA-F4-P1-06 (C1.81)
+- USER: doPost -> validateRolePermission -> getEntityAuditHistory (2745-2798); recordEntityChangeLog (2715-2742) persiste HistorialCambiosEntidad con esquema USER de nueve columnas.
+- ACADEMIC: recordEntityChangeLog (1568-1592) persiste la misma hoja con orden distinto; updateAdmissionStatus/reopenAdmissionRequest (2022-2024, 2094-2096), movimientos de expediente (11211, 11729, 11798, 11850, 11999, 12059) lo invocan. resolveAdmissionDuplicate, unmergeStudentFiles y getStudentFileAdministrativeReports realizan escrituras directas de ocho columnas (10138-10149, 10286-10297, 10399-10410).
+- USER/getEntityAuditHistory interpreta row[1]/row[2] como entityType/entityId; ACADEMIC escribe fecha/tipo en esas posiciones. js/secretary.js/loadAdmissionAuditTrail (1185-1225) solicita SolicitudAdmision y no puede reconstruir filas del esquema ACADEMIC.
+- ACADEMIC/getAcademicPlanningAuditLogs (13705-13735) también usa índices incompatibles. No hay contrato/versión de esquema compartido ni migración de filas antiguas.
+- Ambos recordEntityChangeLog silencian fallos de escritura; USER redacciona solo claves de credenciales y ACADEMIC no sanitiza. Ampliar AUD-NG-145 por exposición de PII; no duplicar.
+- HistorialCambiosEntidad carece de secuencia/hash/verificación general. verifyWorkflowDecisionAuditChain solo cubre RevisionesDecisionesTramite (TASK-049).
+- getEntityAuditHistory no tiene paginación por cursor ni máximo validado; además, su handler permite Secretaría/Director pero esos roles no tienen permiso estático para la acción, que depende de una concesión dinámica no verificada.
+- BitacoraEventos y BitacoraTrazabilidad conservan los defectos de instrumentación, esquema y DTO ya registrados en AUD-NG-145; no duplicar.
+- Nuevo AUD-NG-224/TASK-504: unificar esquema y escritor, migrar datos históricos, registrar actor/correlationId verificados, integrar versionado e integridad verificable, fallar explícitamente ante errores de auditoría, sanitizar PII, asegurar permisos/paginación y probar USER/ACADEMIC/UI.

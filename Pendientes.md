@@ -19925,3 +19925,33 @@ AUD-NG-163 permanece DUPLICADA y consolidada; no reabrirla como tarea independie
 - **Criterios de Aceptación:** Cada tipo de derecho tiene flujo de solicitud, validación, decisión, ejecución y cierre; los tutores solo actúan sobre titulares representados y verificados; no se elimina información bajo conservación legal; solicitudes completadas tienen evidencia de resultado; los usuarios solo consultan sus solicitudes; el panel administrativo filtra y tramita con permisos; pruebas positivas/negativas cubren identidad, representación, legal hold, estados y fallos parciales.
 - **Relaciones y límites:** AUD-NG-145/146 y TASK-499/TASK-500 cubren logs/retención/anonimización; AUD-NG-222/TASK-502 cubre autorización contextual; no duplicar.
 - **Estado:** [ ] Pendiente
+
+
+### [AUD-NG-224] Unificar el historial de cambios de entidades y garantizar integridad/versionado verificable
+- **Origen del Hallazgo:** Auditoria.txt / TAREA-F4-P1-06, checkpoint C1.81.
+- **Severidad/Clasificación:** Alto (P1) · Auditoría · Integridad · Trazabilidad.
+- **Archivos Involucrados:** backend/user-service/Code.gs; backend/academic-service/Code.gs; js/secretary.js; HistorialCambiosEntidad.
+- **Dependencias Expuestas:** recordEntityChangeLog, getEntityAuditHistory, getAcademicPlanningAuditLogs, HistorialCambiosEntidad, BitacoraEventos, BitacoraTrazabilidad, ROLE_PERMISSIONS.
+- **Descripción del Alcance:** USER y ACADEMIC escriben la hoja HistorialCambiosEntidad con órdenes de columnas incompatibles; ACADEMIC además tiene escritores directos de ocho columnas. Los lectores interpretan posiciones distintas y la interfaz de Secretaría no reconstruye el historial de admisiones. Los helpers silencian fallos de persistencia y el historial general no tiene número de versión, cadena criptográfica ni verificador de integridad. La lectura carece de paginación segura y su permiso estático no está concedido a Secretaría/Director. USER deja email/teléfono en snapshots y ACADEMIC no sanitiza.
+- **Reconciliación:** AUD-NG-145 mantiene la sanitización de bitácoras/eventos, el desajuste BitacoraTraceability/BitacoraTrazabilidad, DTO e instrumentación; se amplía a la sanitización de HistorialCambiosEntidad. TASK-049 cubre exclusivamente la cadena de decisiones de workflow. No duplicar esos alcances.
+- **Criterios de Aceptación:**
+  - Definir un esquema canónico versionado para todas las escrituras/lecturas de HistorialCambiosEntidad y migrar/normalizar filas históricas sin perder datos.
+  - Sustituir los escritores duplicados y appendRow ad hoc por un único contrato de persistencia con actor verificado, entityType/entityId, acción, snapshots, fecha y correlationId/requestId.
+  - Garantizar que los fallos de auditoría se registren y se propaguen o queden en una cola/outbox recuperable; no declarar exitosa una mutación crítica si se pierde su evidencia obligatoria.
+  - Incorporar versión secuencial y mecanismo verificable de integridad/tamper-evidence para el historial genérico; permitir verificar la cadena y registrar correcciones sin reescribir eventos anteriores.
+  - Aplicar redacción coherente de credenciales y PII en USER/ACADEMIC, conservando solo datos mínimos necesarios.
+  - Aplicar autorización por rol y ámbito en consultas; conceder explícitamente solo los roles autorizados; exigir entityType/entityId válidos y límite máximo con cursor de paginación.
+  - Alinear getEntityAuditHistory, getAcademicPlanningAuditLogs y js/secretary.js con el mismo DTO y esquema; escapar todos los valores mostrados en UI.
+  - Probar filas de cada formato histórico, migración, escrituras concurrentes, fallo de hoja, alteración de hash, permisos positivos/negativos, PII y consulta/paginación en USER/ACADEMIC/UI.
+- **Relaciones y límites:** AUD-NG-145 conserva LogsSistema, BitacoraEventos, BitacoraTrazabilidad y sanitización; TASK-049 conserva RevisionesDecisionesTramite. No duplicar AUD-NG-224 con esos alcances específicos.
+- **Estado:** [ ] Pendiente
+
+### [TASK-504] [TAREA-F4-P1-06] [P1] Unificar historial de entidades y auditoría de versiones con integridad verificable
+- **Prioridad:** P1 (Alta).
+- **Componentes Afectados:** backend/user-service/Code.gs; backend/academic-service/Code.gs; js/secretary.js; HistorialCambiosEntidad.
+- **Origen del Hallazgo:** AUD-NG-224 / TAREA-F4-P1-06.
+- **Problema Detectado:** USER y ACADEMIC escriben el mismo historial con esquemas distintos; existen filas directas de ocho columnas, los lectores/UI no comparten DTO, los errores de escritura se silencian y no hay integridad/versionado criptográfico general.
+- **Requisitos de Corrección:** establecer esquema canónico y migración; centralizar escritura; usar actor/correlationId verificados; eliminar escritores ad hoc; versionar y verificar integridad; manejar fallos de persistencia; sanitizar PII; restringir consultas y paginar; alinear UI.
+- **Criterios de Aceptación:** Todas las operaciones auditadas generan filas interpretables por todos los lectores; la migración conserva registros; una alteración se detecta; las fallas no quedan silenciosas; el actor es verificable; roles/ámbitos y paginación se aplican; la UI muestra correctamente el historial de admisión; las pruebas positivas/negativas y de concurrencia pasan.
+- **Relaciones y límites:** AUD-NG-145 mantiene bitácoras/eventos y redacción de PII; TASK-049 mantiene la cadena de workflow. No duplicar.
+- **Estado:** [ ] Pendiente

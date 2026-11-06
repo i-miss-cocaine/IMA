@@ -941,3 +941,15 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Pruebas:** inspección estática/manual; no se ejecutaron HTTP, derechos reales, representación legal, hojas productivas, deployments ni suites automatizadas.
 - **Progreso:** 77/183 identificadores auditados; 106 pendientes.
 - **Siguiente tarea oficial:** TAREA-F4-P1-06 - Fortalecer la trazabilidad mediante historial de cambios y auditoría de versiones.
+
+
+## 83. Resultado C1.81 - TAREA-F4-P1-06 (2026-11-06)
+
+- **Dictamen:** NO CUMPLE. USER y ACADEMIC escriben HistorialCambiosEntidad con órdenes de columnas incompatibles; ACADEMIC añade escritores directos de ocho columnas. Los lectores no reconstruyen los registros de forma uniforme; los helpers silencian fallos y el historial general carece de versionado/integridad criptográfica.
+- **Efecto UI:** js/secretary.js solicita historial de SolicitudAdmision mediante USER/getEntityAuditHistory, pero el lector interpreta posiciones del esquema USER y no reconoce filas ACADEMIC; además, Secretaría/Director no tienen concesión estática explícita para la acción y dependen de matriz dinámica.
+- **Privacidad:** USER redacta solo credenciales y conserva email/teléfono en snapshots; ACADEMIC no sanitiza. Ampliar AUD-NG-145, sin duplicar ID.
+- **Reconciliación:** AUD-NG-145 mantiene BitacoraEventos/BitacoraTrazabilidad, DTO, instrumentación y sanitización de logs; TASK-049 solo cubre la cadena de decisiones de workflow. Nuevo AUD-NG-224/TASK-504 para contrato único, migración, escritura común, integridad/versionado general, fallos explícitos, sanitización, autorización/paginación y pruebas.
+- **Evidencia:** USER SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ACADEMIC SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; secretary.js SHA 08a81266957b4c18cc25f8ba6749eac30a8f2c2c; ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67; tests/regression/academic-grading-suite.js SHA 3433b707edd4a2f35c68368a3172932adc2a3b32.
+- **Pruebas:** inspección estática/manual, búsqueda de call sites y comparación de SHA; no se ejecutaron HTTP, hojas productivas, concurrencia, manipulación controlada, deployments ni suites automatizadas.
+- **Progreso:** 78/183 identificadores auditados; 105 pendientes.
+- **Siguiente tarea oficial:** TAREA-F4-P1-07 - Implementar gestión institucional de roles, cargos, departamentos y asignaciones.
