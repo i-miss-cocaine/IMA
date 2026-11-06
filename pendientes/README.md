@@ -1,39 +1,55 @@
-# Organización departamental de pendientes
+# Migración departamental del backlog histórico
 
-Este directorio contiene la distribución departamental de las tareas históricas recuperadas desde `/Pendientes.md`. El archivo de origen se conserva intacto y no forma parte de los archivos operativos departamentales.
+**Estado:** reconstruida desde la copia histórica íntegra; sustituye la distribución anterior basada en una instantánea incompleta.
 
-## Estructura
+## Fuente y trazabilidad
 
-```text
-pendientes/
-├── README.md
-├── Dirección/Pendientes.md
-├── Secretaria/Pendientes.md
-├── Contabilidad/Pendientes.md
-├── Docente/Pendientes.md
-├── Estudiante/Pendientes.md
-└── Otros/Pendientes.md
-```
+- Fuente: `RECUPERACION/Pendientes_RECUPERADO.md`
+- Rama y commit de origen: `NG_beta_0.0.0.1`, `44d9891132332e692dbe2ba8602b41f50a508a59`
+- Blob SHA-1: `ef47d232db3ed46317dc14f22b1cdf8f938e8405`
+- Tamaño Git: **1.443.391 bytes**
+- Líneas: **17.884**
+- Las **16.872 líneas** de `New_Generation:/Pendientes.md` coinciden exactamente con el prefijo de esta fuente.
 
-## Jerarquía para asignación única
+## Inventario migrado
 
-Cuando una tarea afecte a más de un departamento, se registra una sola vez en el departamento de mayor prioridad de esta lista:
+- **33** tareas históricas completadas de F10/F11.
+- **430** bloques reales con identificador `TASK`.
+- **463** registros migrados en total, sin IDs duplicados.
+- Se excluyeron **41 encabezados estructurales** de prioridad o bloque; no son tareas.
+- La fuente no contiene bloques `TASK-050` ni `TASK-051`; no se inventaron.
+- Estados visibles en los encabezados de los 430 bloques `TASK`: 48 `[X]`, 108 `[ ]` y 274 sin casilla explícita. Los 33 registros históricos F10/F11 llevan `[X]`. No se infirió ni alteró ningún estado.
 
-1. Dirección
-2. Secretaria
-3. Contabilidad
-4. Docente
-5. Estudiante
-6. Otros
+## Distribución única por departamento
 
-La asignación se determina por la responsabilidad principal del trabajo, no solo por los archivos técnicos que menciona. Dirección recibe los asuntos de gobierno institucional, supervisión y control transversal; Secretaria, matrícula, expedientes y comunicación institucional; Contabilidad, operaciones financieras, planillas, activos y proveedores; Docente, configuración académica, enseñanza y evaluación; Estudiante, funciones cuyo responsable principal es la experiencia estudiantil; Otros, infraestructura técnica transversal sin propietario funcional más específico.
+| Departamento | Tareas |
+|---|---:|
+| Dirección | 84 |
+| Secretaria | 140 |
+| Contabilidad | 89 |
+| Docente | 30 |
+| Estudiante | 7 |
+| Otros | 113 |
+| **Total** | **463** |
 
-## Integridad de la migración
+## Registros que no se duplican
 
-- Fuente: `/Pendientes.md` (solo lectura).
-- Blob SHA de la fuente: `8867ecf1f58f768cac8fa5ddaa7b50bb68e57158`.
-- Total migrado: **49 tareas**.
-- Distribución: Dirección: 10; Secretaria: 7; Contabilidad: 6; Docente: 20; Estudiante: 5; Otros: 1.
-- Se conservan tareas completadas y pendientes, sin cambiar sus estados ni resumir su contenido.
-- No se duplican tareas entre departamentos.
-- Los archivos departamentales son los destinos operativos para futuras actualizaciones de sus tareas.
+- La fuente contiene **104 encabezados `AUD-NG`**. Se conservan íntegros en el archivo de recuperación, pero no se copian a los departamentos: las tareas derivadas de auditoría deben permanecer en el informe que contiene su hallazgo, conforme a la sección 3.4 de `METODOLOGIA_DESARROLLO.md` y `AUDITORIAS/README.md`.
+- Las tareas de auditoría posteriores registradas en informes oficiales continúan en esos informes; esta migración no crea un backlog paralelo.
+- `TASK-050` y `TASK-051` no tienen bloque en la fuente recuperada; no se reconstruyeron a partir de referencias.
+
+## Regla de clasificación
+
+Jerarquía de asignación única: **Dirección → Secretaria → Contabilidad → Docente → Estudiante → Otros**. La decisión se basa en la responsabilidad funcional principal, no únicamente en los archivos técnicos mencionados. Dirección concentra gobierno y supervisión institucional; Secretaria, expedientes, trámites y comunicaciones; Contabilidad, finanzas, planillas, compras y activos; Docente, enseñanza, evaluación y recursos académicos; Estudiante, experiencia y autoservicio estudiantil; Otros, infraestructura transversal y pruebas compartidas.
+
+## Sustitución de la migración anterior
+
+La distribución anterior de 49 registros se generó desde `/Pendientes.md`, una instantánea de **30.744 bytes** (blob `8867ecf1f58f768cac8fa5ddaa7b50bb68e57158`), que no era la fuente histórica íntegra. Esa distribución queda **supersedida** y no se mezcla con esta migración. Su estado anterior permanece recuperable en el historial Git; los registros que no forman parte del blob histórico requerirán reconciliación independiente antes de incorporarse.
+
+## Integridad
+
+- Cada bloque se conserva textualmente desde `RECUPERACION/Pendientes_RECUPERADO.md`; los comentarios agregados solo documentan rango y departamento.
+- Cada registro aparece una sola vez.
+- No se copiaron encabezados `AUD-NG` ni separadores de prioridad como si fueran tareas.
+- La fuente de recuperación, `/Pendientes.md`, `/pendiente_legacy.md`, informes de auditoría, código y pruebas no se modifican en esta iteración.
+- Los archivos departamentales son una distribución histórica; las nuevas tareas derivadas de auditoría se registran en sus informes oficiales.

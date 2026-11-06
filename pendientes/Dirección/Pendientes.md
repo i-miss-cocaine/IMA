@@ -1,117 +1,3419 @@
-# Pendientes del departamento: Dirección
+# Migración histórica de tareas: Dirección
 
-> Migración íntegra desde `Pendientes.md` (raíz del repositorio). Fuente consultada en la rama `NG_beta_0.0.0.1_work`, blob SHA `8867ecf1f58f768cac8fa5ddaa7b50bb68e57158`. Los bloques de tareas se conservaron completos, incluidos identificadores, descripciones, criterios, severidad y estados. No editar la fuente para mantener esta distribución: los cambios futuros de tareas se registran en los archivos departamentales.
+> Fuente íntegra: `RECUPERACION/Pendientes_RECUPERADO.md`  
+> Blob de origen: `ef47d232db3ed46317dc14f22b1cdf8f938e8405` (1.443.391 bytes; 17.884 líneas).  
+> Registros asignados a este departamento: **84**.  
+> Los bloques se reproducen sin reescritura; cada uno conserva encabezado, identificador, estado, descripción y criterios originales. Los comentarios indican su rango de origen.
 
-**Responsabilidad de clasificación:** Gobierno institucional, metodología, seguridad de roles, administración general, supervisión y continuidad.
+**Criterio de asignación:** responsabilidad funcional principal. Si el alcance funcional es compartido, se aplica la jerarquía Dirección → Secretaria → Contabilidad → Docente → Estudiante → Otros. La infraestructura técnica transversal y las pruebas compartidas se asignan a Otros.
 
-**Tareas migradas:** 10
+**Alcance:** archivo histórico de migración. Las tareas `AUD-NG` derivadas de auditoría no se duplican aquí; permanecen en sus informes conforme a `METODOLOGIA_DESARROLLO.md`, sección 3.4.
+
+## Histórico completado F10/F11
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 189-203; clave F11-Task10; asignación única: Dirección -->
+### [X] [F11-Task10] Implementar el flujo de entrega, observaciones y aprobación de documentación docente
+- **Origen del Hallazgo:** `AUDITORIA-FASE-11-COMUNICACION-BIENESTAR-SUPERVISION-FINANZAS.md` / Área III (P1)
+- **Prioridad:** P1
+- **Severidad/Clasificación:** Alta (Supervisión académica)
+- **Archivos Involucrados:**
+  - `backend/academic-service/Code.gs`
+- **Dependencias Expuestas:** RevisionesPlanificacion
+- **Descripción del Alcance:**
+  Gestionar el ciclo de revisión de documentos docentes (Pendiente, EnRevision, RequiereCorrecciones, Aprobado) permitiendo a coordinadores registrar observaciones y evaluar reenvíos.
+- **Criterios de Aceptación:**
+  - Las aprobaciones quedan ligadas a la versión exacta del documento y al coordinador aprobador.
+- **Estado:** [X] Completado
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 204-218; clave F11-Task11; asignación única: Dirección -->
+### [X] [F11-Task11] Desarrollar el sistema de observaciones, rúbricas de supervisión y evaluaciones pedagógicas
+- **Origen del Hallazgo:** `AUDITORIA-FASE-11-COMUNICACION-BIENESTAR-SUPERVISION-FINANZAS.md` / Área III (P1)
+- **Prioridad:** P1
+- **Severidad/Clasificación:** Alta (Calidad docente)
+- **Archivos Involucrados:**
+  - `backend/academic-service/Code.gs`
+- **Dependencias Expuestas:** SupervisiónPedagógica
+- **Descripción del Alcance:**
+  Configurar rúbricas y pautas de observación en aula, registrar evaluaciones pedagógicas a docentes y definir compromisos de desarrollo profesional.
+- **Criterios de Aceptación:**
+  - El docente puede consultar la retroalimentación sin alterar la pauta de evaluación registrada por la dirección.
+- **Estado:** [X] Completado
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 219-233; clave F11-Task12; asignación única: Dirección -->
+### [X] [F11-Task12] Implementar el sistema de suplencias temporales y relevos docentes con alcance acotado
+- **Origen del Hallazgo:** `AUDITORIA-FASE-11-COMUNICACION-BIENESTAR-SUPERVISION-FINANZAS.md` / Área III (P1)
+- **Prioridad:** P1
+- **Severidad/Clasificación:** Alta (Continuidad académica)
+- **Archivos Involucrados:**
+  - `backend/academic-service/Code.gs`
+- **Dependencias Expuestas:** SustitucionesDocentes
+- **Descripción del Alcance:**
+  Asignar suplentes temporales ante ausencias docentes, otorgando acceso acotado a las secciones del titular sin alterar el nombramiento original ni conceder acceso a otros grupos.
+- **Criterios de Aceptación:**
+  - Al concluir el período de suplencia, los accesos temporales son revocados automáticamente.
+- **Estado:** [X] Completado
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 426-441; clave F10-Task11; asignación única: Dirección -->
+### [X] [F10-Task11] Completar la delegación de responsabilidades para asistentes administrativos y académicos
+- **Origen del Hallazgo:** `AUDITORIA_FASE_10_ASISTENCIA_DISCIPLINA_CONVIVENCIA.md` / Tarea F10-Task03 (P1) y Tarea 10.10
+- **Prioridad:** P1
+- **Severidad/Clasificación:** Alta (Delegación de funciones, roles y auditoría de asistentes)
+- **Archivos Involucrados:**
+  - `backend/user-service/Code.gs`
+  - `backend/academic-service/Code.gs`
+- **Dependencias Expuestas:** AsignacionesAmbitosRoles, log de eventos de auditoría
+- **Descripción del Alcance:**
+  Consolidar el modelo de delegación para asistentes administrativos y académicos, definiendo responsabilidades granulares por cargo (Dirección, Secretaría, Coordinación) con registro de doble identidad (ejecutor y titular delegado) y posibilidad de revocar delegaciones sin alterar historial.
+- **Criterios de Aceptación:**
+  - Las operaciones de los asistentes identifican al autor real y al titular delegado, bloqueando autorizaciones restringidas.
+- **Estado:** [X] Completado
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 509-523; clave F10-Task16; asignación única: Dirección -->
+### [X] [F10-Task16] Ampliar los informes de asistencia, convivencia y seguimiento
+- **Origen del Hallazgo:** `AUDITORIA_FASE_10_ASISTENCIA_DISCIPLINA_CONVIVENCIA.md` / Tarea 10.12 (P2)
+- **Prioridad:** P2
+- **Severidad/Clasificación:** Media (Informes, reportes y estadísticas)
+- **Archivos Involucrados:**
+  - `backend/academic-service/Code.gs`
+- **Dependencias Expuestas:** RegistrosAsistencia, CasosSeguimiento
+- **Descripción del Alcance:**
+  Incorporar informes consolidados de asistencia por clase/día, tardanzas acumuladas, incidencias por estado y resumen de compromisos respetando los permisos de rol.
+- **Criterios de Aceptación:**
+  - Los reportes aplican los filtros seleccionados y excluyen información confidencial de consejería.
+- **Estado:** [X] Completado
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 524-538; clave F10-Task17; asignación única: Dirección -->
+### [X] [F10-Task17] Optimizar el registro de asistencia laboral del personal
+- **Origen del Hallazgo:** `AUDITORIA_FASE_10_ASISTENCIA_DISCIPLINA_CONVIVENCIA.md` / Tarea 10.13 (P2)
+- **Prioridad:** P2
+- **Severidad/Clasificación:** Media (Asistencia de personal laboral)
+- **Archivos Involucrados:**
+  - `backend/accounting-service/Code.gs`
+- **Dependencias Expuestas:** AsistenciaPersonal
+- **Descripción del Alcance:**
+  Optimizar el registro de entrada/salida laboral de empleados, gestión de marcas incompletas y correcciones con trazabilidad sin mezclar datos con la asistencia estudiantil.
+- **Criterios de Aceptación:**
+  - El registro de asistencia laboral se mantiene aislado e íntegro respecto a los registros académicos.
+- **Estado:** [X] Completado
+
+---
+---
+
+## Backlog histórico TASK
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 758-807; clave TASK-004; asignación única: Dirección -->
+### [TASK-004] [X] [F16-Task01] Crear un catálogo dinámico de roles internos organizativos y administrar sus asignaciones
+- **Origen del Hallazgo:** `AUDITORIA_FASE_16_RECURSOS_HUMANOS.md` / Sección F (Brecha F.1) y Sección H (P0)
+- **Prioridad:** P0
+- **Severidad/Clasificación:** Crítica (Gobernanza institucional, responsabilidades organizativas y separación estricta de permisos vs funciones)
+- **Archivos Involucrados:**
+  - `backend/user-service/Code.gs`
+  - `backend/accounting-service/Code.gs`
+  - `dashboard-recursos-humanos.html`
+  - `AsignacionesAmbitosRoles`
+  - Nuevo catálogo lógico `CatalogoRolesInternos`
+- **Dependencias Expuestas:** `AsignacionesAmbitosRoles`, `CatalogoDepartamentos`, `AreasCurricularesExtensiones`, `ROLE_PERMISSIONS`
+- **Descripción del Alcance:**
+  La plataforma permite asignar ámbitos y responsabilidades mediante `assignRoleScope`, pero utiliza valores de `ScopeType` sin un catálogo formal que normalice las responsabilidades organizativas. No existe una interfaz completa para administrar estos roles internos, sus características, departamentos relacionados y vigencias. Esto puede provocar nombres duplicados, responsabilidades inconsistentes y dificultad para conocer qué personas ocupan cada función institucional.
+  Requerimientos Funcionales Detallados:
+  1. Catálogo administrable de responsabilidades internas:
+     - Crear un catálogo formal para registrar: nombre de la responsabilidad, código interno único, descripción, departamento asociado (si aplica), área académica asociada (si aplica), tipo de responsabilidad (administrativa, académica, operativa o de supervisión), vigencia predeterminada, estado (activo o inactivo), responsable principal y posibilidad de suplencia.
+     - Permitir crear responsabilidades personalizadas (ej. «Coordinador del Área de Informática», «Encargado de Laboratorio de Ciencias», «Responsable de Pastoral») sin modificar código duro.
+     - Permitir editar la descripción y configuración de una responsabilidad sin alterar las asignaciones históricas.
+  2. Asignación y ciclo de vida de responsabilidades:
+     - Permitir asignar una responsabilidad a uno o varios empleados simultáneamente.
+     - Permitir que un empleado ejerza varias responsabilidades institucionales a la vez sin duplicar su expediente laboral.
+     - Establecer fechas de inicio y finalización para cada asignación con validación estricta de vigencia.
+     - Registrar quién creó, autorizó, modificó o revocó cada asignación inmutablemente.
+     - Permitir consultar las responsabilidades vigentes e históricas por empleado, departamento o área académica.
+     - Detectar asignaciones incompatibles o duplicadas por errores tipográficos.
+     - Permitir designar un suplente temporal con fechas de vigencia acotadas.
+     - Permitir desactivar una responsabilidad sin borrar las asignaciones históricas.
+  3. Separación obligatoria entre responsabilidad organizativa y permisos de acceso:
+     - El catálogo no debe modificar ni sustituir `ROLE_PERMISSIONS`. Una responsabilidad como «Coordinador de Matemáticas» identifica una función institucional; no debe conceder automáticamente acceso administrativo global en la plataforma.
+     - Si una responsabilidad necesita permisos específicos, la relación debe configurarse mediante una asociación explícita y verificable con los permisos existentes, limitada exclusivamente al ámbito asignado.
+     - La plataforma debe distinguir nítidamente entre: persona con una responsabilidad, persona con autorización para realizar una operación, persona que supervisa una unidad, y persona que sustituye temporalmente a otra.
+  4. Interfaz y adaptaciones técnicas:
+     - Adaptar `assignRoleScope` para referenciar responsabilidades del catálogo formal en lugar de cadenas libres, conservando compatibilidad con las asignaciones previas.
+     - Incorporar consola administrativa en `dashboard-recursos-humanos.html` con filtros por departamento, área, empleado, responsabilidad y vigencia.
+- **Criterios de Aceptación:**
+  - Se puede crear una responsabilidad nueva desde la interfaz sin alterar el código fuente.
+  - El sistema genera o valida un identificador único persistente para cada responsabilidad.
+  - No se permiten responsabilidades duplicadas por diferencias de mayúsculas, espacios o acentos normalizados.
+  - Se puede asignar la misma responsabilidad a distintas personas cuando la configuración lo permita.
+  - Se puede asignar más de una responsabilidad al mismo empleado conservando su expediente único.
+  - Las fechas de vigencia se aplican correctamente y una asignación vencida deja de mostrarse como activa.
+  - Un suplente temporal solo ejerce facultades durante el período expresamente autorizado.
+  - Revocar una responsabilidad no elimina su historial ni destruye evidencias previas.
+  - Crear o asignar una responsabilidad no concede permisos administrativos automáticamente en `ROLE_PERMISSIONS`.
+  - Todas las operaciones quedan registradas con autor, fecha y justificación.
+  - Las asignaciones existentes continúan funcionando tras la incorporación del catálogo.
+- **Estado:** [X] Completado
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 808-856; clave TASK-005; asignación única: Dirección -->
+### [TASK-005] [X] [F16-Task02] Implementar la asignación institucional de docentes a áreas académicas, independiente de la carga lectiva
+- **Origen del Hallazgo:** `AUDITORIA_FASE_16_RECURSOS_HUMANOS.md` / Sección F (Brecha F.2) y Sección H (P0)
+- **Prioridad:** P0
+- **Severidad/Clasificación:** Crítica (Estructura académica institucional, comités pedagógicos y desacoplamiento de asignaturas)
+- **Archivos Involucrados:**
+  - `backend/academic-service/Code.gs`
+  - `backend/accounting-service/Code.gs`
+  - `AreasCurricularesExtensiones`
+  - `CoordinacionesArea`
+  - `AsignacionesDocentes`
+  - Nueva entidad lógica `DocentesAreasAcademicas`
+  - `dashboard-recursos-humanos.html`
+- **Dependencias Expuestas:** `AreasCurricularesExtensiones`, `CoordinacionesArea`, `AsignacionesDocentes`, `ExpedientesLaborales`, `F16-Task01`
+- **Descripción del Alcance:**
+  Las áreas curriculares existen en `AreasCurricularesExtensiones`, y las coordinaciones se administran mediante `CoordinacionesArea`. Sin embargo, no existe una relación institucional independiente que permita registrar que un docente pertenece formalmente a una o varias áreas académicas sin requerir una asignación de asignaturas en el período lectivo vigente. Actualmente, una asignación vinculada a cursos o materias no sustituye la pertenencia a una academia docente o área de conocimiento.
+  Requerimientos Funcionales Detallados:
+  1. Relación independiente docente - área académica:
+     - Crear la entidad y hoja `DocentesAreasAcademicas` vinculando docentes y áreas de forma independiente de la carga horaria.
+     - Permitir asignar un docente a una o varias áreas académicas (ej. pertenecer simultáneamente a Matemáticas y a Informática).
+     - Permitir que un área tenga múltiples docentes adscritos.
+     - Permitir que un docente pertenezca a un área aunque no tenga clases o secciones asignadas en el período activo (ej. docentes en investigación, en suplencia o con carga de coordinación pura).
+     - Definir el tipo de vinculación: Docente integrante, Docente titular o especialista, Coordinador de área, Responsable auxiliar o Colaborador temporal.
+     - Establecer fechas de inicio y finalización de la pertenencia al área con motivo de la asignación.
+  2. Consultas y articulación curricular:
+     - Consultar integrantes por área académica e historial de pertenencia.
+     - Consultar todas las áreas asignadas a un docente.
+     - Relacionar las áreas con las asignaturas correspondientes sin duplicar la definición en el catálogo de asignaturas.
+     - Permitir emitir convocatorias y circulares dirigidas exclusivamente a los integrantes de un área.
+     - Permitir conformar comités pedagógicos por área y nivel educativo.
+  3. Gestión unificada de coordinadores de área:
+     - Aprovechar `CoordinacionesArea` sin crear estructuras paralelas duplicadas, manteniendo coherencia con el catálogo de roles internos (`F16-Task01`).
+     - Distinguir nítidamente entre: docentes integrantes, coordinador titular, coordinador suplente, coordinador anterior y responsable temporal.
+     - Garantizar que los coordinadores solo puedan consultar y supervisar datos dentro del ámbito exacto de su área autorizada.
+- **Criterios de Aceptación:**
+  - Se puede asignar un docente a varias áreas académicas desde la interfaz.
+  - Se pueden asignar varios docentes a una misma área sin crear expedientes laborales duplicados.
+  - La pertenencia formal a un área no exige una asignación lectiva de clases activa en el período.
+  - Se pueden listar todos los docentes adscritos a un área académica en tiempo real.
+  - Se pueden listar todas las áreas a las que pertenece un docente.
+  - Se puede designar un coordinador titular y suplente por área.
+  - Las asignaciones históricas permanecen inmutables al rotar de área o coordinador.
+  - Un docente desvinculado no puede figurar como asignado activo en ningún área.
+  - La desactivación de un área no elimina el historial académico ni las asignaciones anteriores.
+  - Las asignaciones de clases en `AsignacionesDocentes` no se alteran ni duplican.
+  - Los permisos de supervisión del coordinador se mantienen limitados a las asignaturas y docentes de su área.
+- **Estado:** [X] Completado
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 857-910; clave TASK-006; asignación única: Dirección -->
+### [TASK-006] [X] [F16-Task03] Implementar el flujo de desvinculación laboral con revocación coordinada de accesos y asignaciones
+- **Origen del Hallazgo:** `AUDITORIA_FASE_16_RECURSOS_HUMANOS.md` / Sección F (Brecha F.3) y Sección H (P0)
+- **Prioridad:** P0
+- **Severidad/Clasificación:** Crítica (Seguridad de la información, prevención de accesos residuales e integridad en el cese laboral)
+- **Archivos Involucrados:**
+  - `backend/accounting-service/Code.gs`
+  - `backend/user-service/Code.gs`
+  - `backend/academic-service/Code.gs`
+  - `ExpedientesLaborales`
+  - `HistorialAdscripciones`
+  - `Usuarios`
+  - `AsignacionesDocentes`
+  - `CoordinacionesArea`
+  - `AsignacionesAmbitosRoles`
+  - Registros de turnos y sustituciones
+- **Dependencias Expuestas:** `ExpedientesLaborales`, `HistorialAdscripciones`, `Usuarios`, `AsignacionesDocentes`, `CoordinacionesArea`, `AsignacionesAmbitosRoles`, `F16-Task01`, `F16-Task02`
+- **Descripción del Alcance:**
+  `updateEmployeeLaborStatus` cambia el estado laboral y registra la fecha de salida, pero no ejecuta de forma coordinada todas las operaciones necesarias para cerrar la relación laboral. La auditoría identificó que pueden quedar adscripciones activas en `HistorialAdscripciones`, cuentas de usuario activas en `Usuarios`, sesiones/tokens vigentes, asignaciones docentes activas o responsabilidades institucionales abiertas, permitiendo que una persona desvinculada conserve accesos.
+  Requerimientos Funcionales Detallados:
+  1. Flujo integral de desvinculación (Offboarding):
+     - Registrar la solicitud de desvinculación validando que el empleado exista y su estado permita la operación.
+     - Registrar fecha efectiva de salida, motivo estructurado, usuario autorizador y documentación de respaldo adjunta.
+     - Actualizar el estado laboral en `ExpedientesLaborales` a `Retirado` o `Desvinculado`.
+     - Cerrar todas las adscripciones vigentes en `HistorialAdscripciones` marcándolas como `Inactiva` con timestamp de salida.
+     - Finalizar las responsabilidades y ámbitos institucionales en `AsignacionesAmbitosRoles`.
+     - Finalizar o reasignar coordinaciones en `CoordinacionesArea` y suplencias activas.
+     - Cerrar las asignaciones docentes en `AsignacionesDocentes` a partir de la fecha efectiva para evitar clases huérfanas.
+     - Desactivar la cuenta en `Usuarios` e invalidar tokens, credenciales y sesiones en tiempo real.
+     - Impedir nuevas operaciones del empleado a partir de la fecha efectiva de salida.
+     - Conservar permanentemente el expediente laboral, contratos, asistencias y calificaciones históricas (prohibición de borrado físico).
+     - Identificar y listar tareas pendientes (ej. entrega de equipos, traspaso de expedientes, reasignación de cursos).
+  2. Coordinación y resiliencia entre microservicios:
+     - No asumir transacciones atómicas distribuidas en Google Sheets. Implementar una operación coordinada, registrada paso a paso de forma idempotente con registro de estados de ejecución.
+     - Si alguna etapa secundaria falla (ej. cierre de sustitución), el proceso debe quedar identificado como incompleto y permitir reanudación sin duplicar operaciones.
+     - La revocación de accesos en `Usuarios` debe ejecutarse con prioridad inmediata; un fallo posterior en el cierre académico no debe reactivar el acceso del usuario desvinculado.
+  3. Cierre documental y liquidación:
+     - Registrar período trabajado, salarios pendientes, vacaciones acumuladas no gozadas (conforme al Art. 348 del Código de Trabajo), deducciones, indemnizaciones y prestaciones que correspondan.
+     - No emitir cálculos definitivos sin validación previa y autorización de Dirección/Contabilidad.
+     - Emitir registro de auditoría `EMPLOYEE_OFFBOARDED_CASCADED` conservando el autor real y, si intervino un asistente delegado, también el titular delegante.
+- **Criterios de Aceptación:**
+  - Una desvinculación confirmada bloquea de inmediato el inicio de sesión y las llamadas a la API desde la fecha efectiva.
+  - Se invalidan tokens de sesión activos del empleado desvinculado.
+  - No se eliminan físicamente expedientes, contratos, registros de asistencia ni evaluaciones de notas históricas.
+  - Las adscripciones en `HistorialAdscripciones` pasan a estado inactivo.
+  - Las asignaciones de clases posteriores a la fecha efectiva se cierran o marcan para reasignación.
+  - Las responsabilidades organizativas y coordinaciones quedan finalizadas.
+  - Una re-ejecución del proceso no duplica registros ni corrompe el historial.
+  - Si una etapa falla, el sistema identifica las tareas pendientes sin reactivar las cuentas.
+  - Se emite el log estructurado `EMPLOYEE_OFFBOARDED_CASCADED` con trazabilidad completa.
+  - La liquidación laboral permanece en estado preliminar hasta su aprobación formal.
+- **Estado:** [X] Completado
 
 ---
 
-### [REQ-EXP-001] Adopción de Metodología de Desarrollo y Auditoría (Sección 2)
-- **Origen del Hallazgo:** Requerimientos de Desarrollo y Expansión (Sección 2).
-- **Severidad/Clasificación:** Crítico
-- **Archivos Involucrados:** `METODOLOGIA_DESARROLLO.md`, `Auditoria.txt`, `ChangesLogs.txt`, `Pendientes.md`, `MapaDependencias.md`
-- **Dependencias Expuestas:** Todas las dependencias del proyecto.
-- **Descripción del Alcance:** Establecer y cumplir estrictamente el procedimiento obligatorio de 8 fases para la organización, ejecución, verificación y documentación de cambios.
-- **Criterios de Aceptación:** Toda modificación cumple el flujo de auditoría previo, respaldo, registro en auditoría/changeslogs y verificación funcional.
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 2284-2318; clave TASK-044; asignación única: Dirección -->
+### [TASK-044] [X] [F23-Task01] [P0] [Motor de Workflows - Integridad Transaccional, Candados Atómicos y Autorización de Decisiones]
+- **Componentes Afectados:**
+  - `backend/user-service/Code.gs`
+  - `js/api.js`
+- **Dependencias Expuestas:** `SolicitudesTramites`, `RevisionesDecisionesTramite`, `FlujosAprobacion`, `LockService`.
+- **Capacidades Relacionadas:** F23-002, F23-013, F23-014.
+- **Problema Detectado:**
+  El procesamiento de decisiones de aprobación presenta riesgos de concurrencia y validación insuficiente de las transiciones. Dos revisores podrían intentar resolver simultáneamente una misma etapa. Además, la secuencia de aprobación no debe depender de información proporcionada por el cliente, como `siguienteAsignadoA` o `nuevoEstadoSolicitud`.
+- **Requisitos Funcionales:**
+  1. Proteger las decisiones mediante mecanismos de exclusión mutua adecuados (`LockService.getScriptLock()`) para evitar que dos operaciones modifiquen simultáneamente el mismo trámite.
+  2. Antes de aceptar una decisión, recuperar el estado actual de la solicitud y comprobar que coincide con el estado esperado.
+  3. Identificar la etapa activa a partir de la definición y el estado persistido del workflow.
+  4. Validar que el usuario autenticado sea el responsable autorizado de esa etapa o pertenezca al grupo de aprobadores habilitados.
+  5. Comprobar que la operación solicitada esté permitida para el estado actual.
+  6. Impedir que el cliente determine libremente el siguiente responsable, la siguiente etapa o el estado final.
+  7. Calcular las transiciones en el servidor utilizando la definición vigente del flujo.
+  8. Impedir que una decisión se aplique dos veces.
+  9. Registrar la decisión y actualizar el estado de la solicitud de manera consistente.
+  10. Registrar quién realizó la operación, cuándo, sobre qué etapa y cuál fue su resultado.
+  11. Diferenciar los errores de autorización, conflicto de estado, duplicación y fallo de almacenamiento.
+- **Comportamiento Esperado:**
+  Cuando dos revisores intenten resolver la misma solicitud simultáneamente, solamente una operación válida podrá completar la transición. La segunda deberá recibir un resultado de conflicto o de etapa ya resuelta, sin sobrescribir la decisión anterior.
+  Una solicitud no podrá avanzar si el usuario no tiene autorización, si la etapa no está activa o si no se cumplen sus precondiciones.
+- **Criterios de Aceptación:**
+  - [X] Ejecutar dos decisiones simultáneas sobre una misma etapa y comprobar que solamente una se registra como decisión efectiva.
+  - [X] Intentar aprobar una etapa desde una cuenta sin autorización y verificar su rechazo.
+  - [X] Manipular los parámetros de siguiente responsable y siguiente estado desde el cliente y comprobar que son ignorados o rechazados en favor de la definición del servidor.
+  - [X] Intentar aprobar una etapa que ya fue resuelta y comprobar detección de conflicto.
+  - [X] Intentar avanzar una solicitud desde un estado anterior inválido.
+  - [X] Simular un error durante el almacenamiento y comprobar que no se produce una transición inconsistente.
+  - [X] Verificar que las decisiones válidas conservan su historial inalterado.
 - **Estado:** [X] Completada
 
 ---
+---
 
-### [REQ-EXP-002] Auditoría de Hoja de Cálculo de Referencia e Inspección de Datos (Sección 3)
-- **Origen del Hallazgo:** Requerimientos de Desarrollo y Expansión (Sección 3).
-- **Severidad/Clasificación:** Alto
-- **Archivos Involucrados:** `backend/Spreadsheet/AREA DE INFORMATICA IMA.xlsx`, `backend/academic-service/Code.gs`, `backend/user-service/Code.gs`
-- **Dependencias Expuestas:** `ConfiguracionAcademica`, `HistorialAcademico`, `Tareas`, `Entregas`
-- **Descripción del Alcance:** Auditar la estructura de tablas de referencia, normalizar entidades y establecer claves primarias e índices de relación de datos.
-- **Criterios de Aceptación:** Esquema tabular de 9 columnas en `ConfiguracionAcademica` y 8 en `HistorialAcademico` operando sin redundancias JSON.
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 2319-2352; clave TASK-045; asignación única: Dirección -->
+### [TASK-045] [X] [F23-Task02] [P0] [Motor de Workflows - Idempotencia de Solicitudes, Decisiones y Operaciones Institucionales]
+- **Componentes Afectados:**
+  - `backend/user-service/Code.gs`
+  - `js/api.js`
+- **Dependencias Expuestas:** `SolicitudesTramites`, `RevisionesDecisionesTramite`, `F23-Task01`.
+- **Capacidades Relacionadas:** F23-002, F23-015, F23-025, F23-026.
+- **Problema Detectado:**
+  El envío repetido de formularios y las llamadas interservicio pueden generar registros, tareas, decisiones o acciones duplicadas cuando el usuario vuelve a pulsar un botón, pierde la conexión o el servicio no responde a tiempo.
+- **Requisitos Funcionales:**
+  1. Incorporar identificadores únicos de operación para las solicitudes que puedan repetirse.
+  2. Admitir una clave de idempotencia (`Idempotency-Key`) en los envíos de trámites y operaciones sensibles.
+  3. Asociar cada clave con el usuario, tipo de operación y resultado correspondiente.
+  4. Guardar la relación entre la clave y el registro generado.
+  5. Si se recibe nuevamente la misma operación, devolver el resultado previamente registrado cuando corresponda.
+  6. Rechazar la reutilización de una misma clave con un contenido diferente.
+  7. Controlar la duplicación en las decisiones de aprobación.
+  8. Extender la protección a las acciones interservicio y a las tareas generadas por eventos.
+  9. Evitar que un reintento genere varias notificaciones o ejecute dos veces una operación externa.
+  10. Definir una política de conservación de las claves procesadas.
+- **Comportamiento Esperado:**
+  Una operación debe poder repetirse técnicamente sin que sus efectos se dupliquen.
+  Si una solicitud se registra correctamente, pero la respuesta no llega al navegador, el siguiente intento debe recuperar el resultado original y no crear otro trámite.
+- **Criterios de Aceptación:**
+  - [X] Enviar dos veces el mismo formulario con idéntica clave y verificar que se devuelve el mismo resultado sin duplicar registros.
+  - [X] Repetir una solicitud después de una interrupción de conexión y recuperar el trámite original.
+  - [X] Reutilizar una clave con contenido diferente y verificar el rechazo de la solicitud.
+  - [X] Repetir una decisión de aprobación y comprobar que no se duplica la transición.
+  - [X] Repetir una solicitud interservicio y verificar la idempotencia.
+  - [X] Comprobar que no se generan registros ni acciones duplicadas.
+  - [X] Verificar que dos solicitudes legítimas diferentes puedan procesarse independientemente.
 - **Estado:** [X] Completada
 
 ---
+---
 
-### [REQ-EXP-005] Procedimiento de Cierre de Año Escolar y Purga de Drive (Sección 7 / 18)
-- **Origen del Hallazgo:** Requerimientos de Desarrollo y Expansión (Sección 7 / 18 - Fase 3/9).
-- **Severidad/Clasificación:** Crítico
-- **Archivos Involucrados:** `backend/task-service/Code.gs`, `teacher-dashboard.html`, `js/teacher.js`
-- **Dependencias Expuestas:** Google Drive API (DriveApp), Spreadsheets `Tareas`, `Entregas`, `ConfiguracionAcademica`.
-- **Descripción del Alcance:** Ejecutar borrado físico en Google Drive (setTrashed) de archivos de entregas y resetear asignaciones docentes al cerrar el ciclo.
-- **Criterios de Aceptación:** Confirmación explícita, eliminación de archivos en Drive y limpieza de asignaciones para inicio de nuevo año.
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 2397-2443; clave TASK-047; asignación única: Dirección -->
+### [TASK-047] [X] [F23-Task04] [P0] [Arquitectura Distribuida - Catálogo Institucional de Cuentas, Servicios y Permisos Distribuidos]
+- **Componentes Afectados:**
+  - `backend/developer-service/Code.gs`
+  - `backend/accounting-service/Code.gs`
+  - `backend/user-service/Code.gs`
+- **Dependencias Expuestas:** `CatalogoServicios`, `CatalogoSpreadsheets`, `F23-Task03`.
+- **Capacidades Relacionadas:** F23-023, F23-024, F23-008, F23-009.
+- **Problema Detectado:**
+  El catálogo actual de Spreadsheets y el registro de microservicios no proporcionan todavía una administración suficientemente completa de los servicios distribuidos y sus cuentas propietarias. La plataforma debe admitir que diferentes roles o departamentos administren sus propios proyectos Apps Script y sus propios archivos de almacenamiento, sin que la división de cuentas impida la comunicación institucional.
+- **Requisitos Funcionales:**
+  1. Ampliar el catálogo central para registrar cada servicio distribuido.
+  2. Asociar cada servicio con:
+     - Identificador único.
+     - Departamento o rol responsable.
+     - Cuenta propietaria.
+     - Proyecto Apps Script.
+     - Endpoint desplegado.
+     - Spreadsheet asociado.
+     - Dominio de datos.
+     - Estado de disponibilidad.
+     - Versión del contrato de comunicación.
+     - Permisos concedidos.
+  3. Permitir que un responsable registre un servicio bajo su cuenta de Google.
+  4. Permitir que un responsable registre o asocie su Spreadsheet.
+  5. Establecer relaciones entre los servicios y los recursos que administran.
+  6. Permitir registrar varios servicios para un mismo departamento cuando sea necesario.
+  7. Permitir que un servicio atienda más de un dominio de información si sus permisos lo autorizan.
+  8. Incorporar estados de servicio: registrado, activo, degradado, desconectado, suspendido y retirado.
+  9. Permitir habilitar y revocar relaciones de comunicación.
+  10. Conservar el historial de cambios de propietario, responsables, endpoints y recursos.
+  11. Detectar servicios duplicados y registros huérfanos.
+- **Comportamiento Esperado:**
+  El servicio central debe conocer qué servicios existen, quién los administra, qué datos gestionan y qué operaciones están autorizados a realizar.
+  La incorporación de un nuevo departamento no debe requerir reconstruir manualmente la arquitectura de comunicación.
+- **Criterios de Aceptación:**
+  - [X] Registrar servicios de al menos dos cuentas de Google diferentes.
+  - [X] Asociar a cada servicio su propio Spreadsheet.
+  - [X] Consultar los servicios registrados desde el servicio central.
+  - [X] Revocar un servicio sin eliminar su historial ni romper auditorías.
+  - [X] Cambiar el responsable y verificar las autorizaciones actualizadas.
+  - [X] Intentar registrar un servicio duplicado y verificar su rechazo.
+  - [X] Consultar un servicio suspendido y comprobar que se bloquean peticiones.
+  - [X] Comprobar que los permisos de almacenamiento y los privilegios institucionales se administran por separado.
 - **Estado:** [X] Completada
 
 ---
+---
 
-### [REQ-EXP-007] Renombrado Institucional e Identidad Visual PWA (Sección 4)
-- **Origen del Hallazgo:** Requerimientos de Desarrollo y Expansión (Sección 4).
-- **Severidad/Clasificación:** Alto
-- **Archivos Involucrados:** `index.html`, `login.html`, `register.html`, `student-dashboard.html`, `teacher-dashboard.html`, `manifest.json`, `imagenes/new-generation-logo.png`
-- **Dependencias Expuestas:** Encabezados HTML, pies de página, manifiesto PWA, diálogos de login/registro.
-- **Descripción del Alcance:** Reemplazar todas las menciones institucionales anteriores por "New Generation Bilingual School and Institute", renombrar recurso de logotipo a `new-generation-logo.png` y actualizar PWA manifest.
-- **Criterios de Aceptación:** No existen referencias institucionales obsoletas en la UI pública. El logotipo carga correctamente en todas las vistas.
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 2486-2652; clave TASK-049; asignación única: Dirección -->
+### [TASK-049] [X] [F23-Task06] [P0] [Auditoría Criptográfica - Protección de Decisiones Históricas y Auditoría Anti-Manipulación]
+- **Componentes Afectados:**
+  - `backend/user-service/Code.gs`
+- **Dependencias Expuestas:** `RevisionesDecisionesTramite`, `F23-Task01`, `F23-Task13`.
+- **Capacidades Relacionadas:** F23-003, F23-012, F23-028.
+- **Problema Detectado:**
+  El historial de decisiones está implementado y verificado funcionalmente, pero los registros no disponen de garantías suficientes frente a modificaciones posteriores no autorizadas.
+- **Requisitos Funcionales:**
+  1. Conservar los registros históricos de decisiones.
+  2. Evitar modificaciones y eliminaciones silenciosas de eventos anteriores.
+  3. Incorporar un mecanismo de integridad criptográfica.
+  4. Evaluar el encadenamiento de hashes entre eventos consecutivos (`hashPrevio`, `hashActual`).
+  5. Registrar identificador del evento, proceso, actor, operación, fecha y datos relevantes.
+  6. Permitir verificar la integridad de una secuencia histórica mediante una función de auditoría.
+  7. Registrar intentos de modificación o eliminación no autorizada.
+  8. Mantener separados los registros de auditoría y los datos operativos modificables.
+  9. Permitir registrar correcciones mediante nuevos eventos vinculados, sin reescribir silenciosamente el historial.
+  10. Restringir las operaciones administrativas sobre los registros históricos.
+- **Comportamiento Esperado:**
+  Si una decisión histórica cambia de manera no autorizada, la verificación de integridad debe detectar la alteración.
+  Las correcciones legítimas deben quedar documentadas como nuevos eventos vinculados al registro original.
+- **Criterios de Aceptación:**
+  - [X] Crear una secuencia de decisiones encadenadas por hash.
+  - [X] Verificar la integridad matemática de la secuencia histórica.
+  - [X] Modificar un registro histórico de prueba y comprobar que la auditoría detecta la alteración.
+  - [X] Registrar una corrección autorizada como nuevo evento vinculado.
+  - [X] Comprobar que la secuencia histórica conserva todos los eventos originales.
+  - [X] Intentar eliminar registros mediante una cuenta sin privilegios y verificar su bloqueo.
+- **Estado:** [X] Completada
+
+---
+---
+### [X] [TASK-050] [F24-Task01] [P0] [Catálogo de Informes - Catálogo Centralizado de Informes Institucionales con Permisos por Perfil]
+- **Componentes Afectados:**
+  - `backend/user-service/Code.gs`
+  - `backend/academic-service/Code.gs`
+  - `backend/accounting-service/Code.gs`
+  - `js/ui-common.js`
+- **Dependencias Expuestas:** Diccionario de indicadores (`F24-Task02`), control de permisos existente y servicios de generación actuales.
+- **Capacidades Relacionadas:** F24-001, F24-002, F24-010.
+- **Problema Detectado:**
+  Los informes institucionales están implementados mediante funciones independientes. No existe un catálogo centralizado que permita conocer qué informes están disponibles, qué información contienen, qué parámetros aceptan y qué perfiles pueden consultarlos.
+- **Requisitos Funcionales:**
+  1. Crear un catálogo institucional único que consolide los informes existentes de las áreas académica, financiera, administrativa y operativa.
+  2. Registrar para cada informe:
+     - Identificador único.
+     - Nombre visible.
+     - Descripción funcional.
+     - Categoría y área responsable.
+     - Fuente o servicio de datos.
+     - Parámetros y filtros disponibles.
+     - Indicadores incluidos.
+     - Formatos de exportación admitidos.
+     - Perfiles y permisos requeridos.
+     - Estado de disponibilidad.
+  3. Incorporar los informes existentes, incluidos:
+     - Informe financiero y cobranza (`REP-CONT-01`).
+     - Rendimiento académico por grado y sección (`REP-ACAD-01`).
+     - Informes administrativos de expedientes y movimientos (`getStudentFileAdministrativeReports`).
+     - Informe consolidado de asistencia y convivencia (`generateConsolidatedAttendanceAndCoexistenceReport`).
+     - Informe de capacidad y ocupación de secciones (`getSectionCapacityAnalyticsReport`).
+     - Comparativo financiero multianual (`getComparativeFinancialSummary`).
+  4. Permitir que el catálogo se amplíe cuando se incorporen nuevos informes, sin tener que reconstruir la interfaz global.
+  5. Diferenciar informes institucionales predeterminados, informes personalizados y aquellos disponibles únicamente para determinados departamentos.
+  6. Incorporar búsqueda por nombre, categoría, descripción y área.
+  7. Evitar registros duplicados y permitir desactivar informes obsoletos sin eliminar su historial de utilización.
+  8. Proporcionar a la interfaz únicamente los informes que el usuario tenga autorización para consultar.
+- **Cambios Necesarios:**
+  - Incorporar un servicio centralizado de consulta del catálogo (`getInstitutionalReportsCatalog`).
+  - Integrar las definiciones de los informes actualmente dispersos.
+  - Incorporar metadatos y permisos por informe en matriz central.
+  - Adaptar el acceso desde la interfaz global para que utilice el catálogo en lugar de mantener listas independientes.
+  - Conservar los servicios de generación existentes y conectarlos mediante sus identificadores y parámetros correspondientes.
+- **Comportamiento Esperado:**
+  Al ingresar al apartado de informes, cada usuario encontrará un catálogo organizado según sus permisos y responsabilidades. Al seleccionar un informe, la interfaz conocerá qué filtros debe presentar, qué servicio debe consultar y qué formatos están disponibles.
+  La incorporación de un nuevo informe no deberá requerir duplicar la lógica de navegación, autorización y presentación.
+- **Criterios de Aceptación:**
+  - [ ] El catálogo incluye todos los informes existentes identificados en la auditoría.
+  - [ ] Los informes aparecen clasificados en las categorías correspondientes.
+  - [ ] Cada informe devuelve sus metadatos completos y permisos requeridos.
+  - [ ] Los usuarios sin autorización no reciben ni visualizan informes restringidos.
+  - [ ] Un acceso directo a un informe no autorizado es rechazado también en el servidor (403 Forbidden).
+  - [ ] Desactivar un informe impide nuevas consultas, pero conserva sus registros históricos de utilización.
+  - [ ] Agregar un informe nuevo al catálogo permite visualizarlo sin modificar manualmente cada panel.
+  - [ ] Los informes existentes siguen generando exactamente los mismos resultados después de integrarse al catálogo.
+- **Estado:** [ ] Pendiente
+
+---
+---
+### [X] [TASK-051] [F24-Task02] [P0] [Indicadores Centrales - Diccionario Semántico Centralizado de Indicadores Institucionales]
+- **Componentes Afectados:**
+  - `backend/developer-service/Code.gs`
+  - `backend/academic-service/Code.gs`
+  - `backend/accounting-service/Code.gs`
+  - `backend/user-service/Code.gs`
+- **Dependencias Expuestas:** Catálogo de informes (`F24-Task01`), servicios académicos, financieros y administrativos existentes.
+- **Capacidades Relacionadas:** F24-005, F24-006, F24-007, F24-008.
+- **Problema Detectado:**
+  Las fórmulas de los indicadores están distribuidas entre distintos servicios. Esto permite que un mismo concepto pueda calcularse de forma diferente en un panel, un informe o una consulta de otro módulo. La plataforma necesita una definición institucional única para cada indicador.
+- **Requisitos Funcionales:**
+  1. Crear un registro centralizado de indicadores (`DiccionarioIndicadoresInstitucionales`) que permita definir:
+     - Identificador único.
+     - Nombre y descripción.
+     - Área: académica, financiera, administrativa u operativa.
+     - Finalidad.
+     - Fórmula o regla de cálculo.
+     - Unidad de medida.
+     - Fuente de datos.
+     - Campos requeridos.
+     - Estados incluidos y excluidos.
+     - Filtros compatibles.
+     - Dimensiones de agrupación.
+     - Frecuencia de actualización.
+     - Responsable funcional.
+     - Versión de la definición.
+     - Fecha de vigencia.
+  2. Incorporar las definiciones de los indicadores existentes, sin alterar sus fórmulas verificadas.
+  3. Normalizar los indicadores académicos:
+     - Matrícula activa y retirada.
+     - Promedios.
+     - Aprobación y reprobación.
+     - Distribución de calificaciones.
+     - Ausentismo.
+     - Ocupación de secciones.
+     - Riesgo académico.
+  4. Normalizar los indicadores financieros:
+     - Ingresos confirmados.
+     - Egresos devengados.
+     - Balance neto.
+     - Cartera recuperada.
+     - Morosidad.
+     - Flujo de caja.
+     - Ejecución presupuestaria.
+  5. Incorporar los indicadores administrativos y operativos:
+     - Personal activo.
+     - Asistencia del personal.
+     - Solicitudes pendientes.
+     - Trámites resueltos.
+     - Tiempo de resolución.
+  6. Permitir que los indicadores se consulten desde diferentes informes y paneles sin volver a implementar sus fórmulas.
+  7. Permitir nuevas versiones de una definición cuando cambien las reglas institucionales.
+  8. Conservar la definición histórica aplicada a períodos anteriores.
+  9. Distinguir entre indicadores que admiten cálculo en tiempo real y aquellos que utilizan información agregada.
+  10. Incorporar descripciones comprensibles para que los usuarios conozcan qué representa cada indicador y cómo se interpreta.
+- **Cambios Necesarios:**
+  - Crear el registro centralizado de definiciones en tabla o esquema persistente.
+  - Identificar y vincular las fórmulas actuales con sus indicadores correspondientes.
+  - Sustituir gradualmente los cálculos duplicados por consultas a las definiciones normalizadas.
+  - Mantener adaptadores para los servicios que ya generan resultados válidos.
+  - Incorporar control de versiones y vigencia de las definiciones.
+- **Comportamiento Esperado:**
+  Un indicador debe tener una sola definición institucional. Los diferentes módulos podrán consumirlo, pero no deberán implementar versiones independientes de su fórmula.
+  Por ejemplo, el porcentaje de aprobación mostrado en el panel de dirección deberá coincidir con el del informe académico cuando ambos utilicen el mismo período, universo de estudiantes y filtros.
+- **Criterios de Aceptación:**
+  - [ ] Cada indicador tiene un identificador y una definición verificable.
+  - [ ] Las fórmulas existentes se documentan y se comparan con sus resultados actuales antes de migrarlas.
+  - [ ] Los paneles y los informes que utilizan el mismo indicador producen resultados matemáticamente equivalentes.
+  - [ ] Los cambios de fórmula generan una nueva versión secuencial.
+  - [ ] Los informes históricos conservan la versión utilizada originalmente.
+  - [ ] Las definiciones identifican las exclusiones y reglas de cálculo.
+  - [ ] Un indicador no puede publicarse si carece de fuente, fórmula o unidad cuando estas sean necesarias.
+  - [ ] Las fórmulas financieras mantienen la exclusión estricta de operaciones pendientes, canceladas o rechazadas.
+  - [ ] Los indicadores académicos mantienen las reglas de publicación y evaluación existentes (excluyendo borradores).
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 3066-3138; clave TASK-060; asignación única: Dirección -->
+### [TASK-060] [F26-Task01] [P0] [Gobernanza Jerárquica - Motor Central de Configuración Jerárquica y Herencia Departamental]
+- **Componentes Afectados:**
+  - `backend/user-service/Code.gs`
+  - `backend/academic-service/Code.gs`
+  - `backend/accounting-service/Code.gs`
+  - Hojas `ConfiguracionSistema`, `ConfiguracionDepartamental`, `ConfiguracionRoles`
+  - `js/ui-common.js`
+- **Subcapacidades Relacionadas:** F26-002, F26-010.
+- **Estado de Partida:** Implementada parcialmente / Requiere mejoras.
+- **Dependencias Expuestas:** Estructuras de usuarios, roles, departamentos, `ConfiguracionSistema`, permisos server-side y servicios consumidores de configuración.
+- **Problema Detectado:**
+  La plataforma permite administrar configuraciones globales y preferencias individuales, pero no dispone de un nivel departamental formal. Las unidades administrativas no pueden establecer parámetros propios de manera segura y existe riesgo de sobrescribir configuraciones globales. La solución actual necesita evolucionar de una estructura binaria a un sistema de configuración jerárquica que permita administrar valores institucionales, excepciones departamentales y preferencias personales sin generar contradicciones.
+- **Requisitos Funcionales:**
+  1. Jerarquía de resolución de configuración en 4 niveles:
+     - Nivel 1. Global: valores predeterminados del sistema.
+     - Nivel 2. Institucional: valores definidos para la institución.
+     - Nivel 3. Departamental: excepciones o parámetros propios de una unidad/departamento.
+     - Nivel 4. Personal: preferencias individuales permitidas.
+     - La precedencia debe resolverse según el tipo de parámetro. No todos los valores deben admitir sobrescritura en todos los niveles.
+  2. Políticas de alcance declarativas por parámetro:
+     - `Global obligatorio`: no admite sobrescritura en ningún nivel inferior.
+     - `Institucional`: se establece para toda la institución.
+     - `Heredable`: permite excepciones departamentales controladas.
+     - `Personalizable`: admite preferencias individuales de usuario.
+     - `Restringido`: requiere autorización especial para cualquier modificación.
+  3. Herencia y sobrescritura:
+     - Si no existe un valor departamental, utilizar el valor institucional.
+     - Si existe una excepción departamental autorizada, utilizarla dentro de su ámbito.
+     - Si se elimina la excepción, recuperar automáticamente el valor heredado.
+     - Si cambia el valor institucional, actualizar los departamentos que lo heredan.
+     - Conservar las excepciones explícitas que deban mantenerse.
+     - Identificar visualmente si un valor es heredado, sobrescrito o definido localmente.
+     - Permitir restablecer un valor heredado sin tener que copiar manualmente el valor institucional.
+  4. Catálogo de parámetros y metadatos:
+     - Identificador estable (`configId`), clave, tipo de dato, valor predeterminado, ámbitos permitidos, bandera de herencia, bandera de sobrescritura, roles autorizados, restricciones de modificación, dependencias, versión, estado, fecha y responsable de actualización.
+     - No crear una segunda fuente de verdad para parámetros que ya estén almacenados en `ConfiguracionSistema`, `ConfiguracionAcademica` u otras estructuras especializadas.
+  5. Administración departamental:
+     - Permitir que los responsables autorizados consulten y administren las configuraciones de su unidad.
+     - Mostrar valor efectivo, valor institucional de origen, estado de herencia, excepciones existentes, responsable y fecha de actualización.
+     - Una unidad no debe poder modificar configuraciones de otra unidad ni cambiar parámetros institucionales no habilitados para su ámbito.
+  6. Resolución de conflictos:
+     - Aplicar la política de precedencia definida para el parámetro.
+     - Rechazar sobrescrituras prohibidas.
+     - Informar qué valor prevalece y por qué.
+     - Evitar que una excepción departamental modifique configuraciones globales.
+     - Registrar las modificaciones y los conflictos relevantes en bitácora de auditoría.
+- **Cambios Necesarios:**
+  - Ampliar el modelo de configuración existente para representar los cuatro ámbitos (`GLOBAL`, `INSTITUCIONAL`, `DEPARTAMENTAL`, `PERSONAL`).
+  - Incorporar relaciones entre institución, departamentos y usuarios en hoja `ConfiguracionDepartamental`.
+  - Implementar un mecanismo central de lectura y resolución jerárquica de configuraciones (`resolveHierarchicalConfiguration`).
+  - Integrar las operaciones de lectura y escritura de `saveSystemConfiguration` con el nuevo mecanismo.
+  - Adaptar las configuraciones especializadas que deban admitir herencia.
+  - Incorporar controles server-side para verificar ámbito, rol y permisos.
+  - Ampliar la interfaz administrativa para visualizar valores heredados y excepciones.
+  - Mantener compatibilidad con las configuraciones actuales durante la transición.
+- **Comportamiento Esperado:**
+  Una configuración institucional se establece una vez y se aplica a todas las unidades que la heredan. Un departamento puede establecer una excepción cuando el parámetro lo permita. Los usuarios pueden personalizar sus preferencias individuales sin alterar la configuración de su departamento ni de la institución.
+- **Criterios de Aceptación:**
+  - [ ] Crear una configuración institucional y comprobar que se aplica a los departamentos sin excepciones.
+  - [ ] Crear una excepción departamental y comprobar que solo afecta a esa unidad específica.
+  - [ ] Restablecer la herencia y comprobar que se recupera automáticamente el valor institucional.
+  - [ ] Cambiar el valor institucional y comprobar que se actualizan las unidades que heredan.
+  - [ ] Comprobar que las excepciones explícitas se conservan cuando corresponda.
+  - [ ] Intentar modificar una configuración global con un usuario sin permisos y comprobar que el servidor rechaza la operación (403).
+  - [ ] Intentar modificar una unidad ajena y comprobar que la operación se bloquea.
+  - [ ] Intentar sobrescribir un parámetro global obligatorio desde un departamento y comprobar que se rechaza.
+  - [ ] Comprobar que las preferencias personales no alteran configuraciones compartidas.
+  - [ ] Verificar que las configuraciones antiguas siguen resolviéndose correctamente después de la transición.
+  - [ ] Comprobar que no existen dos valores efectivos contradictorios para un mismo parámetro y ámbito.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 3440-3489; clave TASK-068; asignación única: Dirección -->
+### [TASK-068] [F29-Task01] [P0] Sistema Centralizado de Correspondencia de Identificadores y Resolución de Identidades
+- **Orden de Ejecución:** 1
+- **Prioridad:** P0 (Crítica)
+- **Componentes Afectados:**
+  - `backend/accounting-service/Code.gs` (`importDataWithColumnMapping`, `resolveCrossReferenceIdentifier`)
+  - `backend/user-service/Code.gs` (`resolveUserByLegacyId`, `auditAndReconcileIdentityInconsistencies`)
+  - Hoja de cálculo maestra: Nueva hoja `CorrespondenciaIdentificadores`
+  - Base de datos en IndexedDB / Caché de identidades
+- **Subcapacidades Relacionadas:** F29-01, F29-05, F29-09, F29-11.
+- **Estado de Partida:** Defectuosa.
+- **Dependencias Principales:** Ninguna (Base para las demás tareas).
+- **Problema Detectado y Riesgos:**
+  La plataforma importa identificadores de manera plana y no conserva una relación persistente entre los identificadores originales de los sistemas anteriores y los identificadores internos actuales. Esto permite que una misma persona o entidad termine registrada varias veces cuando se importa desde fuentes diferentes o se repite una migración. También existe riesgo de colisión cuando dos estudiantes comparten nombre completo, cuando una fuente no contiene RNE o cuando los sistemas anteriores utilizan códigos internos distintos.
+- **Requisitos Funcionales y Técnicos Convergentes:**
+  1. *Estructura persistente `CorrespondenciaIdentificadores`:*
+     - Columnas mínimas obligatorias:
+       `[idMapeo, sistemaOrigen, tipoEntidad, idOriginalLegado, idNuevoPlataforma, institucionId, hashRegistroOrigen, fechaMigracion, versionMapeo, estadoCorrespondencia, metodoCoincidencia, nivelConfianza, migradoPor]`
+     - Tipo de entidad admitido: estudiante, responsable, empleado, usuario, curso, asignatura, matrícula, cuenta, documento u otra entidad admitida.
+     - Restricción única compuesta: `(sistemaOrigen, tipoEntidad, idOriginalLegado, institucionId)`.
+  2. *Resolución bidireccional y referencias múltiples:*
+     - Permitir que un mismo registro interno tenga varias referencias externas cuando proceda (ej. un alumno con código interno de secretaría `ALU-2018-045` y RNE de SACE `0801200512345`), sin crear registros duplicados.
+     - Funciones: `resolveInternalIdFromLegacy` y `resolveLegacyIdFromInternal`.
+     - Permitir búsquedas por identificador original, identificador actual, sistema de origen y entidad.
+  3. *Motor de detección de coincidencias y homologación:*
+     - Reconocer coincidencias exactas mediante identificadores confiables (RNE, identidad nacional o códigos únicos de origen).
+     - Incorporar mecanismo de detección de posibles coincidencias cuando no existan identificadores confiables (nombres normalizados, fecha de nacimiento, responsables, historial de matrícula).
+     - Clasificación rigurosa de coincidencias:
+       a) Coincidencia confirmada.
+       b) Coincidencia probable pendiente de revisión.
+       c) Coincidencia insuficiente.
+       d) Posible duplicado.
+  4. *Políticas de homónimos y revisión humana obligatoria:*
+     - Prohibición estricta: No fusionar automáticamente personas únicamente por compartir nombre, apellido u otros datos no exclusivos. Dos estudiantes homónimos con RNE o fecha de nacimiento diferentes permanecen como personas independientes.
+     - Interfaz accesible para Secretaría o Administrador autorizado para revisar, confirmar, descartar o vincular coincidencias ambiguas.
+     - Conservar el historial completo de decisiones de vinculación y las identidades originales.
+  5. *Idempotencia en reimportaciones:*
+     - Al reimportar, reconocer correspondencias existentes y actualizar o completar el registro relacionado sin duplicarlo.
+- **Criterios de Aceptación:**
+  - [ ] Una reimportación del mismo archivo o registro no genera duplicados.
+  - [ ] Un registro institucional puede conservar múltiples identificadores de origen vinculados.
+  - [ ] Dos estudiantes homónimos con RNE diferentes permanecen como personas independientes.
+  - [ ] Los registros sin identificador confiable pueden someterse a revisión de coincidencias.
+  - [ ] Las coincidencias ambiguas no se fusionan automáticamente.
+  - [ ] Las decisiones de vinculación pueden consultarse y auditarse en bitácora.
+  - [ ] Las relaciones académicas, familiares y administrativas permanecen asociadas al identificador interno correcto.
+  - [ ] Se demuestra la resolución de identidades provenientes de, al menos, dos fuentes diferentes.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 3638-3673; clave TASK-073; asignación única: Dirección -->
+### [TASK-073] [F29-Task08] [P0] Migración Segura de Usuarios, Roles y Flujo de Activación Masiva de Cuentas
+- **Orden de Ejecución:** 8
+- **Prioridad:** P0 (Crítica)
+- **Componentes Afectados:**
+  - `backend/user-service/Code.gs` (`createMigratedUserAccountsBatch`, `generateAccountActivationToken`, `activateMigratedAccount`)
+  - `js/auth.js`, plantillas de notificación institucional (`MailApp`)
+  - Hoja: `Usuarios`, `RolesPermisos`
+- **Subcapacidades Relacionadas:** F29-09, F29-21.
+- **Estado de Partida:** Implementada parcialmente.
+- **Dependencias Principales:** [F29-Task01], [F29-Task02], [F29-Task25].
+- **Problema Detectado y Riesgos:**
+  Las cuentas migradas necesitan activación inicial segura. Las contraseñas de sistemas anteriores no deben trasladarse en texto plano ni deben asignarse contraseñas genéricas compartidas para toda la institución, lo cual expondría las cuentas a secuestro o acceso no autorizado.
+- **Requisitos Funcionales y Técnicos Convergentes:**
+  1. *Importación segura de cuentas:*
+     - Importar usuarios, roles, perfiles y estados sin almacenar contraseñas en texto plano.
+     - Asignar estado inicial: `estadoCuenta: 'PendienteActivacion'`.
+     - Evitar duplicación reconociendo usuarios existentes a través de `CorrespondenciaIdentificadores`.
+  2. *Tokens criptográficos de activación:*
+     - Generar tokens de un solo uso con vencimiento configurable (ej. 72 horas), vinculados a la cuenta.
+     - Invalidar tokens al utilizarlos, expirar o revocarse.
+  3. *Flujo de primer inicio de sesión y cambio obligatorio de clave:*
+     - Exigir verificación de identidad y establecimiento de contraseña segura que cumpla las políticas institucionales.
+     - Transición a estado `'Activa'` tras el establecimiento exitoso.
+  4. *Asignación rigurosa de roles RBAC:*
+     - Mapear permisos según el modelo de roles actual sin otorgar privilegios por equivalencias ambiguas.
+     - Revisión obligatoria previa para cuentas con roles elevados (Administrador, Contabilidad, Dirección).
+- **Criterios de Aceptación:**
+  - [ ] Ninguna contraseña original se almacena ni transmite en texto plano.
+  - [ ] Los tokens de activación no pueden reutilizarse y vencen según la política definida.
+  - [ ] No se asignan contraseñas genéricas masivas.
+  - [ ] Los usuarios existentes no se duplican.
+  - [ ] Ninguna cuenta hereda privilegios superiores a su perfil autorizado.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 3764-3796; clave TASK-077; asignación única: Dirección -->
+### [TASK-077] [F29-Task21] [P0] Protocolo Técnico de Corte Temporal y Transición Operativa (Cutover)
+- **Orden de Ejecución:** 21
+- **Prioridad:** P0 (Crítica)
+- **Componentes Afectados:**
+  - `backend/developer-service/Code.gs` (`manageSystemOperationalState`, `executeCutoverSequence`)
+  - `js/ui-common.js` (banner institucional de transición)
+  - Hoja: `BitacoraTransicionOperativa`
+- **Subcapacidades Relacionadas:** F29-15, F29-18.
+- **Estado de Partida:** Ausente.
+- **Dependencias Principales:** [F29-Task06], [F29-Task10], [F29-Task11], [F29-Task13], [F29-Task14], [F29-Task22].
+- **Problema Detectado y Riesgos:**
+  Falta de un protocolo formal para congelar escrituras en sistemas legados, sincronizar la brecha final (*delta sync*) y activar la nueva plataforma en un punto de corte controlado.
+- **Requisitos Funcionales y Técnicos Convergentes:**
+  1. *Fases de la secuencia de corte:*
+     - **Preparación:** Verificación de fuentes, aprobación de simulaciones, respaldo completo con hash.
+     - **Congelamiento:** Establecer fecha y hora de corte ($T_0$), detener escrituras en sistemas anteriores.
+     - **Sincronización Delta:** Extraer e importar exclusivamente el diferencial de cambios posterior a la última simulación.
+     - **Validación de Corte:** Conciliación integral origen-destino y pruebas automáticas de humo.
+     - **Go-Live:** Habilitación de accesos en la nueva plataforma, bloqueo de escrituras paralelas en el legado.
+     - **Estabilización:** Monitoreo intensivo de errores y conciliaciones de control.
+  2. *Reglas Go / No-Go automáticas:*
+     - Discrepancia no justificada en saldos iniciales (diferencia > L 0.00) bloquea el Go-Live.
+     - Falta de correspondencia en un expediente activo bloquea la transición del lote.
+     - Fallo en pruebas de humo post-migración bloquea el Go-Live.
+- **Criterios de Aceptación:**
+  - [ ] Se registra y ejecuta el corte con fecha y hora verificables.
+  - [ ] Se congela el sistema anterior y se extrae la brecha delta final.
+  - [ ] Los criterios No-Go impiden la activación ante discrepancias críticas.
+  - [ ] El Go-Live queda documentado con firmas y autorizaciones formales.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 3856-3887; clave TASK-080; asignación única: Dirección -->
+### [TASK-080] [F29-Task24] [P0] Protocolo de Retiro Formal (Decommissioning) y Archivo Histórico de Sistemas Legados
+- **Orden de Ejecución:** 24
+- **Prioridad:** P0 (Crítica)
+- **Componentes Afectados:**
+  - `backend/developer-service/Code.gs` (`archiveLegacySystemSource`)
+  - Documentación de arquitectura institucional
+  - Hoja: `CatalogoFuentesMigracion`
+- **Subcapacidades Relacionadas:** F29-18, F29-19.
+- **Estado de Partida:** Ausente.
+- **Dependencias Principales:** [F29-Task07], [F29-Task13], [F29-Task21], [F29-Task22], [F29-Task23].
+- **Problema Detectado y Riesgos:**
+  No existe un procedimiento formal para retirar sistemas anteriores ni para mantenerlos disponibles exclusivamente en modo de consulta histórica protegida, exponiendo a la institución a infracciones legales de retención documental.
+- **Requisitos Funcionales y Técnicos Convergentes:**
+  1. *Checklist de retiro institucional:*
+     - Verificar migración completa de entidades y documentos.
+     - Aprobación unánime de conciliaciones por Secretaría, Contabilidad y Dirección.
+     - Garantizar período de estabilización operativa mínimo (30 a 60 días) en la nueva plataforma.
+  2. *Modo archivo y solo lectura:*
+     - Poner sistemas legados en solo lectura inhabilitando credenciales de escritura.
+     - Conservar copias frías inmutables en dos ubicaciones separadas.
+     - Definir plazos de retención según legislación hondureña (Código de la Niñez, SAR: 5 a 10 años según tipo documental).
+  3. *Expediente de cierre:*
+     - Emitir certificado de retiro con firmas de Dirección y Secretaría General.
+- **Criterios de Aceptación:**
+  - [ ] Cada sistema retirado dispone de su expediente formal de cierre.
+  - [ ] Se conserva copia inmutable verificable de datos y documentos.
+  - [ ] Se impide cualquier escritura en fuentes declaradas de solo lectura.
+  - [ ] No se autoriza el retiro mientras existan discrepancias críticas sin resolver.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 3888-3913; clave TASK-081; asignación única: Dirección -->
+### [TASK-081] [F29-Task25] [P0] Protección de Datos Personales, Anonimización y Enmascaramiento en Pruebas
+- **Orden de Ejecución:** 25
+- **Prioridad:** P0 (Crítica)
+- **Componentes Afectados:**
+  - `backend/accounting-service/Code.gs` (`anonymizeStagedDatasetForTesting`)
+  - `backend/user-service/Code.gs`
+- **Subcapacidades Relacionadas:** F29-21.
+- **Estado de Partida:** Implementada parcialmente.
+- **Dependencias Principales:** [F29-Task04], [F29-Task08], [F29-Task10].
+- **Problema Detectado y Riesgos:**
+  Las simulaciones y pruebas de migración pueden exponer información personal sensible de menores de edad, tutores o personal (RNE, teléfonos, fichas médicas, salarios) en entornos compartidos o logs técnicos.
+- **Requisitos Funcionales y Técnicos Convergentes:**
+  1. *Políticas de anonimización y enmascaramiento:*
+     - Enmascarar RNE/Identidad, teléfonos, correos, domicilios, fichas médicas y salarios en ejecuciones de prueba.
+     - Mantener consistencia referencial: si un estudiante ficticio se enmascara, sus notas y pagos deben permanecer asociados al mismo identificador ficticio.
+  2. *Protección en bitácoras y diagnóstico:*
+     - Suprimir volcado de datos personales en logs de depuración o reportes de incidencias técnicos.
+     - Destrucción segura de conjuntos de prueba temporales al finalizar los ensayos.
+- **Criterios de Aceptación:**
+  - [ ] Los datos sensibles aparecen enmascarados en entornos de prueba configurados.
+  - [ ] La consistencia relacional se mantiene intacta durante la anonimización.
+  - [ ] Los logs no exponen datos personales sensibles.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 3975-4021; clave TASK-084; asignación única: Dirección -->
+### [TASK-084] [F30-Task03] [P0] Versionado Histórico de Políticas, Aranceles y Parámetros de Cálculo
+- **Orden de Ejecución:** 2
+- **Prioridad:** P0 (Crítica)
+- **Componentes Afectados:**
+  - `backend/accounting-service/Code.gs` (`getHistoricalBillingPolicy`, `freezeChargeFinancialTerms`, `compareBillingPolicyVersions`)
+  - Hoja: `PoliticasTarifariasHistoricas`, `ParametrosInstitucionales`
+- **Subcapacidades Relacionadas:** F30-03.
+- **Origen del Hallazgo:** `AUDITORIA_FASE_30_CONSOLIDACION_CERTIFICACION_MEJORA_CONTINUA.md` / Sección C (F30-03).
+- **Problema Detectado y Riesgos:**
+  Los cálculos financieros dependen de parámetros institucionales que cambian entre períodos. Si se modifica una tarifa, descuento, recargo o regla de cálculo, una consulta o recálculo histórico podría utilizar erróneamente los valores actuales en lugar de los vigentes cuando se generó el cargo original, alterando facturas emitidas, estados de cuenta históricos y reportes contables.
+- **Requisitos Funcionales y Técnicos Convergentes:**
+  1. *Versionado formal de parámetros de cálculo financiero:*
+     - Aranceles de matrícula ordinaria y extraordinaria.
+     - Mensualidades y colegiaturas por nivel/grado.
+     - Cuotas extraordinarias y aranceles de graduación.
+     - Recargos por mora y tasas punitivas.
+     - Descuentos institucionales (pronto pago, hermanos).
+     - Becas y convenios de cooperación.
+     - Políticas de redondeo y precisión monetaria.
+     - Reglas de imputación y distribución de pagos parciales.
+     - Impuestos y parámetros fiscales aplicables (exenciones ISV Art. 15).
+  2. *Estructura del registro inmutable de versión:*
+     - Identificador de política (`politicaId`), institución/sede aplicable, ciclo lectivo o intervalo de vigencia (`fechaInicio`, `fechaFin`).
+     - Fecha de creación, fecha de entrada en vigor, usuario responsable.
+     - Valores anteriores y nuevos, motivo justificado del cambio, estado de aprobación directiva.
+  3. *Enlace inmutable y conservación de cobros:*
+     - Al generar un cargo en `CargosEstudiante`, factura fiscal SAR o comprobante, almacenar una referencia a la versión de política (`politicaId`) y una copia inmutable (snapshot JSON) de los valores aplicados.
+     - Prohibir que una actualización de parámetros modifique automáticamente cargos o documentos ya emitidos.
+  4. *Diferenciación estricta de modalidades de cálculo:*
+     - Recalcular una operación con sus parámetros originales históricos.
+     - Simular un escenario con parámetros actuales (modo sandbox sin alterar base viva).
+     - Rectificar formalmente una operación mediante autorización directiva y registro de contrasiento.
+     - En caso de disputa entre recálculo automático o inmutabilidad absoluta, implementar parámetro configurable (`INMUTABILIDAD_ESTRICTA_CONGELADA` vs `RECALCULO_DINAMICO_VERSIONADO`).
+  5. *Herramientas de auditoría y comparación:*
+     - Comparador interactivo entre versiones para identificar variaciones de conceptos, montos o reglas.
+     - Los cambios retroactivos exigen autorización mancomunada de Dirección y Contabilidad con justificación obligatoria.
+- **Criterios de Aceptación:**
+  - [ ] Un estado de cuenta histórico conserva sus importes intactos tras modificar los aranceles actuales.
+  - [ ] Es posible consultar qué versión de parámetros generó cada cargo específico.
+  - [ ] Se puede reproducir un cálculo histórico con fidelidad idéntica utilizando su versión original.
+  - [ ] Los cambios retroactivos quedan identificados y exigen autorización formal.
+  - [ ] Las simulaciones con parámetros nuevos no modifican registros contables existentes.
+  - [ ] Los reportes históricos y actuales mantienen consistencia y cuadre matemático entre sí.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 4057-4096; clave TASK-086; asignación única: Dirección -->
+### [TASK-086] [F30-Task01] [P0] Orquestador de Transacciones Interdepartamentales y Compensación Automática
+- **Orden de Ejecución:** 4
+- **Prioridad:** P0 (Crítica)
+- **Componentes Afectados:**
+  - `backend/academic-service/Code.gs` (`executeInterdepartmentalTransactionSaga`, `rollbackTransactionSagaStep`, `resumeInterdepartmentalTransaction`)
+  - `backend/accounting-service/Code.gs`, `backend/user-service/Code.gs`
+  - Hoja: `TransaccionesInterdepartamentales`, `IncidenciasTransaccionales`
+- **Subcapacidades Relacionadas:** F30-01, F30-08.
+- **Origen del Hallazgo:** `AUDITORIA_FASE_30_CONSOLIDACION_CERTIFICACION_MEJORA_CONTINUA.md` / Sección C (F30-01) y Sección G.
+- **Problema Detectado y Riesgos:**
+  Las operaciones que atraviesan varios microservicios carecen de un mecanismo uniforme de coordinación distribuida (patrón Saga). Una falla en una etapa intermedia o tardía (ej. error al generar aranceles contables tras haber creado el expediente y la matrícula) deja registros huérfanos o inconsistentes sin compensación automática, requiriendo conciliación manual propensa a errores.
+- **Requisitos Funcionales y Técnicos Convergentes:**
+  1. *Coordinador de transacciones distribuidas por etapas:*
+     - Metadatos por transacción: identificador único de transacción (`sagaId`), identificador de correlación interservicios (`correlationId`), proceso de negocio, estado general, etapas ejecutadas, resultado individual por paso, marcas de tiempo, microservicio responsable y payload mínimo para recuperación o compensación.
+     - Estados explícitos de ciclo de vida: `Pendiente`, `En_Ejecucion`, `Completada`, `Fallida`, `Pendiente_Compensacion`, `Compensada`, `Requiere_Intervencion_Manual`.
+     - Si surge disputa sobre la estrategia ante fallos, permitir configurar el comportamiento (`COMPENSACION_AUTOMATICA_INVERSA` vs `PAUSA_PARA_REANUDACION_ASISTIDA`).
+  2. *Procesos interdepartamentales cubiertos:*
+     - Admisión $\rightarrow$ Expediente $\rightarrow$ Matrícula $\rightarrow$ Asignación Académica $\rightarrow$ Cargo Arancelario Inicial.
+     - Contratación $\rightarrow$ Expediente Laboral $\rightarrow$ Usuario $\rightarrow$ Permisos $\rightarrow$ Registro en Planilla Salarial.
+     - Compra $\rightarrow$ Aprobación Jerárquica $\rightarrow$ Orden $\rightarrow$ Recepción $\rightarrow$ Kardex Inventario $\rightarrow$ Cuenta por Pagar.
+     - Pago $\rightarrow$ Actualización de Cargo $\rightarrow$ Comprobante $\rightarrow$ Asiento Contable por Partida Doble.
+     - Multas o consumos de servicios complementarios $\rightarrow$ Cargo Financiero en Cuenta Estudiantil.
+     - Anulación de operaciones $\rightarrow$ Reversión simétrica de efectos colaterales.
+  3. *Idempotencia, compensación y reanudación:*
+     - Idempotencia estricta mediante claves hash que impidan duplicar expedientes, matrículas, cobros o asientos contables.
+     - Acciones compensatorias preservando trazabilidad: prohibido borrar registros; registrar marcas de anulación/compensación.
+     - Generar ticket de incidencia automática con contexto técnico cuando una compensación automática falle.
+     - Capacidad de reanudar una transacción interrumpida desde la última etapa válida sin duplicar pasos previos.
+     - Aislamiento de responsabilidades: el orquestador interactúa únicamente a través de las APIs autorizadas de cada microservicio.
+- **Criterios de Aceptación:**
+  - [ ] Una falla inducida en cualquier etapa no produce duplicados ni registros inconsistentes en otros servicios.
+  - [ ] Los pasos completados quedan identificados y son auditables con su `sagaId` y `correlationId`.
+  - [ ] Las compensaciones generan trazabilidad y conservan los registros originales con estado compensado.
+  - [ ] Las solicitudes repetidas con el mismo identificador no duplican efectos secundarios.
+  - [ ] Las transacciones que requieren intervención manual aparecen en una bandeja de incidencias para resolución.
+  - [ ] Se verifica la recuperación exitosa de una matrícula interrumpida antes de generar el cargo financiero.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 5544-5576; clave TASK-125; asignación única: Dirección -->
+### [TASK-125] [F37-Task03] [P0] Catálogo de proyecciones de campos y compartición mínima de información entre departamentos
+- **Prioridad:** P0 (Bloqueante / Esencial)
+- **Orden de Ejecución:** 3 (Privacidad, principio de menor privilegio y máscaras de atributos)
+- **Componentes Afectados:**
+  - `backend/accounting-service/Code.gs` (`getStudentMinimalFinancialContext`)
+  - `backend/academic-service/Code.gs`, `backend/user-service/Code.gs`
+  - Hoja de Cálculo: `CatalogoProyeccionesCompartidas`
+- **Subcapacidades Relacionadas:** F37-02, F37-05, F37-08.
+- **Origen del Hallazgo:** `AUDITORIA_FASE_37_AISLAMIENTO_DATOS_ASIGNACION_DEPARTAMENTOS.md` / Sección C (F37-08), Matriz CAR-F37-08 y Especificación Técnica ChatGPT/Jules.
+- **Problema Detectado y Riesgos:**
+  Las consultas interdepartamentales devuelven filas completas u objetos completos de entidades, incluso cuando el departamento receptor solo necesita unos cuantos atributos. Consultas financieras que necesitan validar a un estudiante reciben el expediente completo (teléfonos de emergencia, tutores secundarios, notas disciplinarias, orientaciones psicológicas), exponiendo datos confidenciales innecesarios.
+- **Requerimientos Funcionales y Técnicos Convergentes:**
+  1. *Mecanismo declarativo de proyección de atributos (Lista Blanca):*
+     - Crear un catálogo central de proyecciones por entidad de origen, departamento solicitante, módulo, operación y rol del usuario.
+     - La respuesta del backend debe construirse mediante una lista permitida de campos (proyección estricta), excluyendo por defecto cualquier atributo no autorizado.
+     - Prohibir el uso de listas negras que eliminen atributos a posteriori; la construcción debe ser aditiva solo con los campos autorizados.
+     - Aplicar la máscara en consultas individuales, listados, búsquedas, exportaciones y objetos anidados.
+  2. *Proyección específica para Contabilidad:*
+     - Una consulta financiera sobre un estudiante solo puede retornar: `estudianteId`, `nombreCompleto`, `codigoEstudiante`, `matriculaId`, `grado`, `seccion`, `estadoMatricula`, `periodoAcademico` y `responsablePagoId`.
+     - Excluir estrictamente: teléfonos de emergencia, observaciones disciplinarias, notas académicas, informes psicológicos y documentos personales.
+  3. *Acceso estrictamente de solo lectura:*
+     - Las referencias compartidas entre departamentos deben ser de solo lectura para el departamento receptor sin permitir mutaciones cruzadas.
+- **Criterios de Aceptación:**
+  - [ ] Consultar un estudiante desde Contabilidad devuelve únicamente los campos autorizados en la proyección.
+  - [ ] Los campos restringidos (notas, disciplina, psicología) no aparecen en JSON, objetos anidados ni búsquedas.
+  - [ ] Un usuario con permiso financiero no adquiere acceso a expedientes académicos completos.
+  - [ ] Las consultas conservan los identificadores estables necesarios para relacionar pagos y matrículas.
+  - [ ] Las respuestas de error o depuración no filtran información confidencial.
+- **Dependencias:** F37-Task01.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 6273-6305; clave TASK-146; asignación única: Dirección -->
+### [TASK-146] [F40-Task08] [P0] Implementar bitácora forense de consultas, accesos y descargas (F40-05)
+- **Prioridad:** P0 (Prioridad crítica / Bloqueante)
+- **Orden de Ejecución:** 8 (Auditoría forense y trazabilidad de eventos)
+- **Componentes Afectados:**
+  - `backend/academic-service/Code.gs` (`getSecureDocumentStream`, `getStudentDocuments`)
+  - `backend/accounting-service/Code.gs` (`getEmployeeDocuments`, `getIssuedSchoolDocuments`)
+  - `backend/user-service/Code.gs` (`logStructuredEvent`)
+  - Hoja de Cálculo: `LogsSistema`
+- **Subcapacidades Relacionadas:** F40-05, F40-14.
+- **Origen del Hallazgo:** `AUDITORIA_FASE_40_SEGURIDAD_DOCUMENTAL_TRAZABILIDAD_Y_CONSERVACION.md` / Secciones C (F40-14), D (E2E-02) y Especificación Técnica ChatGPT/Jules.
+- **Problema Detectado y Riesgos:**
+  El historial registra sustituciones pero carece de trazabilidad de consultas, vistas previas, descargas e intentos de acceso denegados. Las descargas directas quedan fuera del radar de seguridad institucional.
+- **Requerimientos Funcionales y Técnicos Convergentes:**
+  1. *Esquema estructurado de eventos forenses:*
+     - Campos obligatorios: ID de evento, Usuario y rol, Documento y versión, Tipo de operación, Fecha y hora ISO, Resultado (SUCCESS/FAILED), Motivo de denegación, Canal de acceso, IP del cliente, ID de sesión/correlación (sin almacenar credenciales ni tokens).
+  2. *Catálogo de eventos estandarizados:*
+     - Registrar: `DOCUMENT_VIEWED`, `DOCUMENT_DOWNLOADED`, `DOCUMENT_PREVIEWED`, `DOCUMENT_VERSION_RESTORED`, `DOCUMENT_ACCESS_DENIED`, `DOCUMENT_PERMISSION_CHANGED`, `DOCUMENT_SIGNATURE_REGISTERED`, `DOCUMENT_INTEGRITY_FAILED`.
+     - Registrar intentos denegados, incluidos aquellos realizados mediante manipulación de IDs.
+     - Permitir búsquedas por usuario, documento, categoría, operación, resultado y fecha.
+     - Proteger la bitácora contra modificaciones desde perfiles operativos ordinarios.
+     - Excluir contraseñas, secretos o contenido completo de archivos en los registros.
+- **Criterios de Aceptación:**
+  - [ ] Visualizar un documento genera el evento `DOCUMENT_VIEWED`.
+  - [ ] Descargar un documento genera el evento `DOCUMENT_DOWNLOADED`.
+  - [ ] Accesos denegados por falta de permisos o manipulación de IDs generan `DOCUMENT_ACCESS_DENIED` con severidad `WARN`.
+  - [ ] Restaurar versiones registra usuario, versión de origen y resultado.
+  - [ ] Los eventos son ordenados y filtrables sin exponer datos sensibles.
+  - [ ] Usuarios operativos no pueden alterar ni borrar eventos de la bitácora.
+- **Dependencias:** F40-Task04, F40-Task03, F40-Task07.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 6306-6338; clave TASK-147; asignación única: Dirección -->
+### [TASK-147] [F40-Task09] [P0] Incorporar un rol independiente de auditoría de solo lectura (F40-03)
+- **Prioridad:** P0 (Prioridad crítica / Bloqueante)
+- **Orden de Ejecución:** 9 (Segregación de funciones y fiscalización institucional)
+- **Componentes Afectados:**
+  - `backend/academic-service/Code.gs` (`ROLE_PERMISSIONS`)
+  - `backend/accounting-service/Code.gs` (`ROLE_PERMISSIONS`)
+  - `backend/user-service/Code.gs` (`ROLE_PERMISSIONS`, `getAuditReport`)
+  - `backend/developer-service/Code.gs` (`ROLE_PERMISSIONS`)
+- **Subcapacidades Relacionadas:** F40-01, F40-17.
+- **Origen del Hallazgo:** `AUDITORIA_FASE_40_SEGURIDAD_DOCUMENTAL_TRAZABILIDAD_Y_CONSERVACION.md` / Secciones C (F40-17), D (E2E-06) y Especificación Técnica ChatGPT/Jules.
+- **Problema Detectado y Riesgos:**
+  No existe un rol de auditoría aislado. Consultar bitácoras exige roles con facultades administrativas, de edición o aprobación, violando la separación de funciones y permitiendo que quien audita pueda modificar los registros que examina.
+- **Requerimientos Funcionales y Técnicos Convergentes:**
+  1. *Definición de rol formal en microservicios:*
+     - Incorporar el rol `Auditor` en `ROLE_PERMISSIONS` de todos los microservicios.
+     - Facultades autorizadas: Metadatos documentales, Historial de versiones, Historial de operaciones, Registros de accesos y descargas, Estado de integridad, Relaciones entre documentos, Políticas de conservación, Firmas y aprobaciones, Reportes de auditoría.
+  2. *Separación estricta y prohibición de modificaciones:*
+     - Separar consulta de metadatos de la descarga de binarios.
+     - Denegar terminantemente: Subir o sustituir documentos, Editar metadatos, Aprobar o rechazar documentos, Firmar documentos, Eliminar o restaurar archivos, Cambiar permisos, Modificar políticas, Alterar registros de auditoría.
+     - Alcance configurable: Institucional, Por departamento, Por expediente, Por periodo, Por categoría documental.
+     - Registrar consultas y exportaciones de auditores. La revocación del rol no altera los registros históricos generados.
+- **Criterios de Aceptación:**
+  - [ ] El rol `Auditor` consulta registros y metadatos dentro de su departamento asignado.
+  - [ ] Consultas fuera de su departamento son denegadas.
+  - [ ] Intentar editar, aprobar, firmar, sustituir o eliminar documentos con rol `Auditor` devuelve denegación de acceso.
+  - [ ] Intentar cambiar permisos o invocar mutaciones backend resulta en rechazo inmediato.
+  - [ ] El rol `Auditor` no hereda facultades de Administrador o Director.
+  - [ ] Las exportaciones realizadas quedan registradas en la bitácora.
+- **Dependencias:** F40-Task01, F40-Task08.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 6506-6551; clave TASK-153; asignación única: Dirección -->
+### [TASK-153] [F41-Task03] [P0] Aislamiento departamental estricto y autorización por ámbito institucional
+- **Prioridad:** P0 (Prioridad crítica / Bloqueante)
+- **Orden de Ejecución:** 1 (Aislamiento perimetral y autorización basada en atributos - ABAC)
+- **Componentes Afectados:**
+  - `backend/academic-service/Code.gs` (`validateAcademicResponsibilityAndScopeAccess`)
+  - `backend/accounting-service/Code.gs` (`validateRolePermission`)
+  - `backend/user-service/Code.gs` (`assignRoleScope`, `getUserContextScope`)
+  - `ROLE_PERMISSIONS` en todos los servicios backend
+  - Estructuras: `ExpedientesInstitucionales`, `DocumentosEstudiante`, `DocumentosLaborales`, `SolicitudesFirmas`
+- **Subcapacidades Relacionadas:** F41-08.
+- **Origen del Hallazgo:** `AUDITORIA_FASE_41_PRUEBAS_INTEGRALES_DIGITALIZACION.md` / Secciones B (F41-08), E (E2E-41-09) y Especificación Técnica ChatGPT/Jules.
+- **Problema Detectado y Riesgos:**
+  Los servicios aplican permisos generales mediante `ROLE_PERMISSIONS`, pero no siempre comprueban que el documento o expediente solicitado pertenezca al departamento autorizado para el usuario. Modificar el identificador enviado en una petición directa puede permitir obtener datos generales de otro ámbito o expediente ajeno.
+- **Requerimientos Funcionales y Técnicos Convergentes:**
+  1. *Validación perimetral del ámbito del usuario:*
+     - Obtener el departamento y los ámbitos autorizados a partir de la identidad autenticada (`payload._verifiedUserId` / `claims`).
+     - No confiar en el departamento ni en el identificador de expediente enviado por el cliente.
+     - Comprobar que el usuario mantiene una relación activa con el departamento asignado.
+     - Considerar los permisos especiales de Dirección, Administración y otros roles con alcance institucional transversal formalmente autorizados.
+  2. *Validación de propiedad del recurso:*
+     - Determinar el departamento propietario del documento, expediente o registro antes de devolver datos o aplicar mutaciones.
+     - Verificar que el recurso pertenece al ámbito autorizado del solicitante.
+     - Repetir la comprobación en operaciones de consulta, modificación, eliminación, descarga, firma y restauración.
+  3. *Control granular por operación:*
+     - Separar estrictamente permisos para: Consultar metadatos, Consultar contenido, Descargar, Crear, Editar, Eliminar, Aprobar, Firmar, Compartir, Revocar acceso, Exportar y Consultar historial.
+  4. *Referencias compartidas autorizadas:*
+     - Permitir compartir referencias específicas entre departamentos bajo autorización explícita sin exponer el expediente completo.
+     - Definir qué campos y documentos quedan disponibles, registrar quién autorizó el acceso, establecer alcance/vigencia y permitir revocarlo.
+     - Verificar nuevamente la vigencia de los permisos al utilizar una referencia compartida.
+  5. *Aislamiento en consultas, búsquedas e importaciones:*
+     - Aplicar filtros departamentales en el backend; evitar que la búsqueda global o autocompletados revelen registros de otros departamentos.
+     - Validar el departamento de destino antes de importar registros; rechazar asignaciones a departamentos no autorizados o archivos que mezclen registros de ámbitos diferentes sin rol institucional global.
+  6. *Parametrización configurable en plataforma:*
+     - Parámetro en `ConfiguracionInstitucional`: `POLITICA_ESTRICTA_AISLAMIENTO_DEPARTAMENTAL`: `BLOQUEO_TOTAL_CROSS_DEPARTAMENTO` (por defecto) vs. `PERMITIR_REFERENCIA_SOLO_LECTURA_INTERDEPARTAMENTAL`.
+- **Criterios de Aceptación:**
+  - [ ] Un usuario de un departamento no puede consultar registros de otro mediante manipulación de IDs en peticiones backend.
+  - [ ] Las consultas directas a los endpoints aplican las mismas restricciones que la interfaz de usuario.
+  - [ ] Las búsquedas y listados no revelan información de departamentos no autorizados ni mediante mensajes de error.
+  - [ ] Las referencias compartidas permiten acceder exclusivamente al contenido autorizado y su revocación es inmediata.
+  - [ ] Las operaciones de descarga, firma y exportación respetan el ámbito departamental asignado.
+  - [ ] Los roles institucionales con acceso global funcionan conforme a sus permisos explícitos sin falsos bloqueos.
+- **Dependencias:** Sistema de usuarios, departamentos, roles y estructura de propiedad documental.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7086-7126; clave TASK-169; asignación única: Dirección -->
+### [TASK-169] [ ] [F16-Task04] Implementar el checklist configurable de incorporación de empleados (Onboarding)
+- **Origen del Hallazgo:** `AUDITORIA_FASE_16_RECURSOS_HUMANOS.md` / Sección F (Brecha F.4) y Sección H (P1)
+- **Prioridad:** P1
+- **Severidad/Clasificación:** Alta (Calidad en la contratación, control de requisitos legales y onboarding estructurado)
+- **Archivos Involucrados:**
+  - `backend/accounting-service/Code.gs`
+  - `dashboard-recursos-humanos.html`
+  - `ExpedientesLaborales`
+  - `ContratosLaborales`
+  - `uploadEmployeeDocument`
+  - Nueva entidad lógica `ChecklistIncorporacion`
+- **Dependencias Expuestas:** `ExpedientesLaborales`, `ContratosLaborales`, `CandidatosVacantes`, Google Drive
+- **Descripción del Alcance:**
+  La creación de un expediente permite registrar a un empleado, pero no existe un proceso estructurado que controle las tareas y requisitos necesarios para completar su incorporación (onboarding). Actualmente no hay una lista formal que permita verificar si se firmó el contrato, se cotejaron títulos, se entregaron antecedentes, se realizó la inducción y se completaron las asignaciones de herramientas y cuentas.
+  Requerimientos Funcionales Detallados:
+  1. Plantillas de incorporación configurables:
+     - Diseñar plantillas diferenciadas según el cargo, departamento, tipo de contrato (docente vs administrativo) y políticas institucionales.
+     - Tareas parametrizables: firma de contrato laboral, recepción y validación de DNI/RTN, cotejo presencial de títulos académicos, antecedentes penales/policiales, carnet IHSS, examen médico de ingreso, asignación de cargo y departamento, asignación de área académica, horario laboral asignado, creación de correo institucional, entrega de equipo de cómputo, inducción institucional y aceptación firmada de políticas de privacidad y financieras.
+     - Clasificar cada tarea como obligatoria u opcional, estableciendo responsables y fechas límite de cumplimiento.
+  2. Seguimiento y ejecución del proceso:
+     - Generar automáticamente el checklist individual al crear un empleado o formalizar una contratación.
+     - Permitir registrar fecha de finalización, responsable que validó la tarea y adjuntar documentos probatorios a Google Drive.
+     - Estados de tarea: `Pendiente`, `EnRevision`, `Completada`, `Rechazada`, `Exenta` (exigiendo motivo obligatorio de al menos 10 caracteres si es exenta o rechazada).
+     - Mostrar porcentaje de avance del proceso en el dashboard de Recursos Humanos.
+     - Permitir que el empleado consulte y cargue documentos desde su portal de autoservicio (`getEmployeeSelfServicePortal`), mientras que RRHH valida y aprueba.
+  3. Estados del ciclo de incorporación:
+     - Transiciones: `ExpedienteCreado` -> `IncorporacionPendiente` -> `IncorporacionEnRevision` -> `IncorporacionCompletada` -> `Activo`.
+     - La activación plena del empleado debe depender del cumplimiento estricto de las tareas obligatorias configuradas.
+     - Reutilizar la información existente si el empleado proviene de la selección en `CandidatosVacantes` sin duplicar registros.
+- **Criterios de Aceptación:**
+  - Se pueden crear y editar plantillas de onboarding desde el dashboard de Recursos Humanos.
+  - El sistema crea la lista de tareas individualizada al iniciar la incorporación de un empleado.
+  - Cada tarea registra estado, responsable, fecha de validación y archivo adjunto en Drive.
+  - La falta de cumplimiento de tareas obligatorias impide el cambio a estado laboral `Activo`.
+  - Las tareas opcionales no bloquean la activación del empleado.
+  - Una tarea rechazada permite al colaborador corregir y volver a cargar la evidencia.
+  - La formalización de un candidato seleccionado reutiliza sus datos sin crear expedientes duplicados.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7127-7169; clave TASK-170; asignación única: Dirección -->
+### [TASK-170] [ ] [F16-Task05] Incorporar proyección de vacaciones futuras y mejorar la gestión de permisos por horas y fracciones de jornada
+- **Origen del Hallazgo:** `AUDITORIA_FASE_16_RECURSOS_HUMANOS.md` / Sección C (C.3), Sección F y Sección H (P1)
+- **Prioridad:** P1
+- **Severidad/Clasificación:** Alta (Experiencia de usuario, planificación del descanso y cumplimiento del Código del Trabajo)
+- **Archivos Involucrados:**
+  - `backend/accounting-service/Code.gs`
+  - `calculateVacationBalances`
+  - `submitLeaveVacationRequest`
+  - `reviewVacationRequest`
+  - `SolicitudesVacaciones`
+  - `IncapacidadesMedicas`
+  - `HorariosLaborales`
+  - `dashboard-recursos-humanos.html`
+- **Dependencias Expuestas:** `SolicitudesVacaciones`, `calculateVacationBalances`, `HorariosLaborales`, Portal de Autoservicio
+- **Descripción del Alcance:**
+  El cálculo actual de vacaciones en `calculateVacationBalances` aplica la escala legal hondureña del Artículo 348 (10, 12, 15 y 20 días según antigüedad). Sin embargo, la auditoría identificó que no se proyecta adecuadamente el saldo disponible a una fecha futura, lo que dificulta solicitar vacaciones que se disfrutarán cuando el empleado ya haya alcanzado la antigüedad necesaria. Además, se requiere ampliar la gestión de permisos por fracciones de jornada y evitar solapamientos.
+  Requerimientos Funcionales Detallados:
+  1. Proyección de saldos futuros de vacaciones:
+     - Diferenciar con total claridad: días ya devengados y disponibles actualmente, días gozados, días en solicitudes aprobadas pendientes de disfrute, días que se proyecta generar hasta la fecha solicitada y saldo neto proyectado a la fecha de disfrute.
+     - Calcular la proyección según la fecha de aniversario laboral y antigüedad legal conforme al Artículo 348.
+     - Permitir seleccionar fechas futuras comprobando si el empleado tendrá saldo suficiente al momento del goce.
+     - Mostrar advertencias claras cuando la solicitud dependa de días aún no devengados.
+     - Parametrizar en la plataforma si la institución autoriza o no solicitudes basadas en saldo proyectado.
+     - La proyección es un cálculo estimativo y no debe acreditar anticipadamente días en el saldo devengado actual.
+  2. Gestión de permisos por horas y fracciones de jornada:
+     - Permitir solicitudes por jornada completa, media jornada o por cantidad de horas específicas.
+     - Calcular la equivalencia en días o deducir horas según el horario asignado al empleado en `HorariosLaborales`.
+     - Excluir días feriados, descansos semanales y días no laborables institucionales del cómputo.
+  3. Control de solapamientos y concurrencia:
+     - Detectar solapamientos entre solicitudes de vacaciones, permisos personales e incapacidades médicas en `IncapacidadesMedicas`.
+     - Evitar que dos solicitudes simultáneas consuman el mismo saldo disponible mediante candados de script.
+     - Reflejar inmediatamente las vacaciones y permisos aprobados en los reportes de asistencia laboral (`DeduccionesAsistencia`).
+- **Criterios de Aceptación:**
+  - El saldo actual coincide exactamente con la escala del Art. 348 del Código del Trabajo.
+  - La proyección a fechas futuras calcula los días que se devengarán sin inflar el saldo legal actual.
+  - Los días aprobados se descuentan una sola vez; las solicitudes rechazadas o canceladas no descuentan saldo.
+  - Se pueden gestionar permisos por fracciones de jornada calculando la duración según el horario asignado.
+  - Se detectan y bloquean solicitudes con fechas solapadas para el mismo empleado.
+  - Los resultados se presentan con idéntica consistencia matemática en RRHH y en el autoservicio del empleado.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7170-7204; clave TASK-171; asignación única: Dirección -->
+### [TASK-171] [ ] [F16-Task06] Implementar validación de jerarquías organizativas y prevención de ciclos
+- **Origen del Hallazgo:** `AUDITORIA_FASE_16_RECURSOS_HUMANOS.md` / Sección F (Brecha en F16-02) y Sección H (P1)
+- **Prioridad:** P1
+- **Severidad/Clasificación:** Alta (Integridad de la estructura organizativa y prevención de recurrencia infinita)
+- **Archivos Involucrados:**
+  - `backend/user-service/Code.gs`
+  - `manageDepartmentPositions`
+  - `CatalogoDepartamentos`
+  - `CatalogoCargos`
+  - `HistorialAdscripciones`
+  - `dashboard-recursos-humanos.html`
+- **Dependencias Expuestas:** `manageDepartmentPositions`, `CatalogoDepartamentos`, `CatalogoCargos`
+- **Descripción del Alcance:**
+  La plataforma permite administrar departamentos y cargos, pero la auditoría identificó que no existe una validación algorítmica para impedir dependencias jerárquicas circulares (ej. Departamento A depende de B y B depende de A). Esto puede provocar bucles infinitos y errores al consultar organigramas, líneas de mando y aprobaciones.
+  Requerimientos Funcionales Detallados:
+  1. Algoritmo de detección de ciclos en grafos jerárquicos:
+     - Validar la jerarquía en backend antes de persistir cualquier creación o modificación de departamento o cargo.
+     - Impedir que una unidad dependa de sí misma (ciclo directo).
+     - Impedir que una unidad dependa de cualquiera de sus unidades subordinadas o descendientes (ciclos indirectos de N niveles).
+     - Permitir múltiples departamentos raíz de nivel superior (sin padre).
+     - Diferenciar claramente las jerarquías administrativas de las líneas de coordinación académica.
+  2. Integridad referencial y mensajes de error:
+     - Rechazar asignaciones de superiores que apunten a departamentos inexistentes o inactivos.
+     - Proporcionar mensajes explicativos claros identificando la cadena de dependencias conflictiva en caso de rechazo.
+     - Incorporar pruebas unitarias para grafos de árbol válidos y grafos con ciclos simulados.
+- **Criterios de Aceptación:**
+  - Se rechaza inmediatamente cualquier intento de asignar una unidad como dependiente de sí misma.
+  - Se detectan y rechazan ciclos indirectos de dos o más niveles de profundidad.
+  - Se permiten estructuras jerárquicas válidas de múltiples niveles sin restricciones indebidas.
+  - Las operaciones rechazadas no alteran los registros de departamentos ni causan estados huérfanos.
+  - La consulta de líneas de mando maneja estructuras extensas sin generar desbordamiento de pila o bucles infinitos.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7205-7238; clave TASK-172; asignación única: Dirección -->
+### [TASK-172] [ ] [F16-Task07] Integrar alertas de vencimiento documental y contractual en el panel de Recursos Humanos
+- **Origen del Hallazgo:** `AUDITORIA_FASE_16_RECURSOS_HUMANOS.md` / Sección B (F16-08, F16-18) y Sección H (P1)
+- **Prioridad:** P1
+- **Severidad/Clasificación:** Alta (Continuidad contractual, cumplimiento legal y experiencia del administrador)
+- **Archivos Involucrados:**
+  - `backend/accounting-service/Code.gs`
+  - `getEmployeeContractAlerts`
+  - `uploadEmployeeDocument`
+  - `getEmployeeDocuments`
+  - `ContratosLaborales`
+  - `ExpedientesLaborales`
+  - `dashboard-recursos-humanos.html`
+- **Dependencias Expuestas:** `getEmployeeContractAlerts`, `ContratosLaborales`, `DocumentosLaborales`, Notificaciones
+- **Descripción del Alcance:**
+  La plataforma dispone de endpoints backend para consultar alertas de contratos (`getEmployeeContractAlerts`), pero parte de esta información no está integrada en una vista de semáforo centralizada en la consola de Recursos Humanos, obligando a revisiones manuales aisladas.
+  Requerimientos Funcionales Detallados:
+  1. Vista centralizada de alertas laborales y documentales:
+     - Visualizar en `dashboard-recursos-humanos.html` un panel consolidado de vencimientos: contratos por vencer, contratos vencidos, documentos laborales expirados (certificaciones, constancias de antecedentes), credenciales por renovar y requisitos obligatorios faltantes.
+     - Filtros interactivos por departamento, cargo, empleado, tipo de documento y nivel de urgencia.
+     - Configuración de anticipación de alertas (30, 60, 90 días) configurable desde la plataforma.
+  2. Gestión de renovaciones y trazabilidad:
+     - Permitir registrar la renovación contractual o actualización de documentos directamente desde el panel de alerta.
+     - Conservar las versiones documentales anteriores asociadas al historial del empleado sin destruirlas.
+     - Despachar notificaciones automáticas preventivas al responsable de RRHH y al colaborador involucrado.
+- **Criterios de Aceptación:**
+  - El panel de RRHH muestra los contratos próximos a vencer con alertas diferenciadas por color según su urgencia.
+  - Los documentos laborales vencidos se identifican y listan automáticamente.
+  - La renovación de un contrato archiva la versión anterior y actualiza la vigencia activa.
+  - Las alertas resueltas se retiran de la bandeja de pendientes conservando su registro histórico.
+  - El módulo de alertas respeta los permisos RBAC impidiendo el acceso a personal no autorizado.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7239-7271; clave TASK-173; asignación única: Dirección -->
+### [TASK-173] [ ] [F16-Task08] Validar colisiones entre horarios laborales, asignaciones docentes y sustituciones
+- **Origen del Hallazgo:** `AUDITORIA_FASE_16_RECURSOS_HUMANOS.md` / Sección F (Brecha en F16-09) y Sección H (P1)
+- **Prioridad:** P1
+- **Severidad/Clasificación:** Alta (Coherencia en la planificación, disponibilidad docente y prevención de solapamientos)
+- **Archivos Involucrados:**
+  - `backend/accounting-service/Code.gs`
+  - `backend/academic-service/Code.gs`
+  - `HorariosLaborales`
+  - `AsignacionesTurnosLaborales`
+  - `AsignacionesDocentes`
+  - `createTeacherSubstitution`
+  - `manageWorkShiftAndSubstitution`
+- **Dependencias Expuestas:** `HorariosLaborales`, `AsignacionesDocentes`, `createTeacherSubstitution`, `HorariosClase`
+- **Descripción del Alcance:**
+  La planificación laboral y académica está implementada, pero algunas validaciones de horarios docentes se realizan en memoria. Se requiere garantizar la detección rigurosa de incompatibilidades en backend entre la jornada laboral del contrato, los turnos asignados, las clases impartidas y las sustituciones temporales.
+  Requerimientos Funcionales Detallados:
+  1. Motor de validación de disponibilidad y solapamiento:
+     - Contrastar asignaciones laborales y académicas activas al programar o modificar turnos, clases o sustituciones.
+     - Validar que un docente no reciba una clase o sustitución fuera de su jornada laboral contratada, ni durante turnos de almuerzo o descansos asignados.
+     - Detectar colisiones entre: jornada laboral, horario de clases en aula, turnos de apoyo, sustituciones activas y permisos/vacaciones aprobados en `SolicitudesVacaciones`.
+  2. Manejo de excepciones autorizadas:
+     - Permitir registrar excepciones justificadas (ej. horas extras autorizadas, eventos institucionales de fin de semana) exigiendo usuario autorizador y motivo formal.
+     - Mostrar advertencias visuales descriptivas antes de confirmar cualquier asignación con conflicto de horario.
+- **Criterios de Aceptación:**
+  - El sistema detecta y bloquea solapamientos entre clases y turnos laborales en backend.
+  - No se pueden asignar sustituciones docentes en fechas u horas con permisos de ausencia o vacaciones aprobadas.
+  - Se consideran estrictamente las fechas de inicio y fin de vigencia de cada compromiso.
+  - Las asignaciones históricas ya vencidas no generan falsos positivos de colisión.
+  - Las excepciones autorizadas quedan registradas con trazabilidad del responsable directivo.
 - **Estado:** [ ] Pendiente
 
 ---
 
-### [REQ-EXP-008] Sistema de Roles y Permisos Granulares Servidor/RBAC (Sección 5)
-- **Origen del Hallazgo:** Requerimientos de Desarrollo y Expansión (Sección 5).
-- **Severidad/Clasificación:** Crítico
-- **Archivos Involucrados:** `backend/user-service/Code.gs`, `js/config.js`, `js/api.js`
-- **Dependencias Expuestas:** Matriz de autorización por rol (Administrador, Director, Subdirector, Secretaría, Contador, Consejeros, Profesor, Asistente, Alumnos/Padres).
-- **Descripción del Alcance:** Validar roles y permisos del lado del servidor en cada endpoint. Garantizar que ocultar botones en la interfaz no sea el único mecanismo de seguridad.
-- **Criterios de Aceptación:** Rechazo explícito en backend (`AUTH_PERMISSION_DENIED`) ante peticiones no autorizadas para la responsabilidad del usuario.
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7351-7383; clave TASK-176; asignación única: Dirección -->
+### [TASK-176] [ ] [F17-Task08] Incorporar una interfaz completa de administración de políticas fiscales, laborales y parámetros de cálculo
+- **Origen del Hallazgo:** `AUDITORIA_FASE_17_PLANILLAS_COMPENSACIONES.md` / Sección B (B.7), Sección G y Sección H (P1)
+- **Prioridad:** P1
+- **Severidad/Clasificación:** Alta (Parametrización contable, gobernanza tributaria y actualización normativa)
+- **Archivos Involucrados:**
+  - `backend/accounting-service/Code.gs` (`configureFiscalPolicy`, `getFiscalPolicies`)
+  - `PoliticasFiscales`
+  - `dashboard-recursos-humanos.html`
+  - `dashboard-contabilidad.html`
+- **Dependencias Expuestas:** `PoliticasFiscales`, `configureFiscalPolicy`, `F17-Task03`, `F17-Task04`, `F17-Task07`
+- **Descripción del Alcance:**
+  Existen funciones básicas en backend (`configureFiscalPolicy` y `getFiscalPolicies`), pero carecen de una interfaz gráfica completa y amigable para gestionar, auditar y actualizar los parámetros laborales y tributarios de Honduras utilizados en los cálculos.
+  Requerimientos Funcionales Detallados:
+  1. Consola administrativa de políticas y techos:
+     - Visualizar y administrar parámetros por tipo de obligación: ISR (tabla progresiva anual del SAR), IHSS (techos de Salud y Maternidad / IVM y tasas obrero-patronales), RAP (techo y porcentajes), INFOP (1.0% patronal), salario mínimo por actividad económica y recargos de horas extras del Art. 330.
+     - Consultar valores activos, versiones y fechas de vigencia.
+     - Crear y modificar parámetros sin tocar directamente Google Sheets, exigiendo fuente normativa oficial (acuerdo ejecutivo, ley o decreto) y justificación.
+  2. Trazabilidad y control de vigencias:
+     - Almacenar historial de versiones de cada parámetro con usuario que autorizó el cambio y timestamp.
+     - Identificar parámetros próximos a vencer o sin vigencia definida.
+     - Modo borrador/revisión: permitir preparar actualizaciones normativas (ej. cambio anual de techos del IHSS o tramos del ISR) y someterlas a validación antes de su activación.
+     - Advertir visualmente si una planilla se va a procesar con parámetros legales vencidos o desactualizados.
+     - Evitar que una actualización se aplique retroactivamente sobre planillas de períodos cerrados.
+- **Criterios de Aceptación:**
+  - El contador o administrador puede actualizar los techos del IHSS y tramos del ISR desde la interfaz.
+  - Toda modificación de un parámetro exige registrar la fuente normativa de respaldo.
+  - Un usuario sin permisos de rol financiero no puede modificar los parámetros legales.
+  - Los parámetros con vigencia futura no afectan los cálculos de nóminas del período corriente.
+  - Al consultar una planilla histórica se visualizan con exactitud los parámetros legales vigentes al momento de su cierre.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 8718-8759; clave TASK-219; asignación única: Dirección -->
+### [TASK-219] [F23-Task07] [P1] [Motor de Workflows - Reglas Configurables, Condiciones y Enrutamiento de Procesos]
+- **Componentes Afectados:**
+  - `backend/user-service/Code.gs`
+- **Dependencias Expuestas:** `FlujosAprobacion`, `F23-Task01`, `F23-Task10`.
+- **Capacidades Relacionadas:** F23-001, F23-005, F23-014.
+- **Problema Detectado:**
+  Los flujos utilizan estructuras JSON y transiciones predominantemente lineales. La selección de responsables y etapas depende parcialmente de parámetros enviados por el frontend y de lógica de negocio dispersa.
+- **Requisitos Funcionales:**
+  1. Ampliar la definición de flujos para admitir condiciones evaluables.
+  2. Definir reglas mediante operadores controlados:
+     - Igualdad y desigualdad.
+     - Comparaciones numéricas (mayor, menor, rangos).
+     - Comparaciones de fechas.
+     - Existencia o ausencia de valores.
+     - Condiciones AND y OR compuestas.
+     - Combinaciones de condiciones y pertenencia a categorías.
+  3. Permitir reglas basadas en datos del trámite, departamento, tipo de operación, monto, ciclo lectivo y rol.
+  4. Definir destinos de transición según el resultado de las condiciones.
+  5. Permitir establecer aprobadores adicionales según umbrales económicos o de riesgo.
+  6. Permitir rutas alternativas por departamento o categoría.
+  7. Validar las expresiones antes de guardar el flujo.
+  8. Impedir la ejecución de código arbitrario introducido en las condiciones.
+  9. Ejecutar la evaluación estrictamente en el servidor.
+  10. Registrar qué regla se evaluó y qué resultado produjo en la bitácora.
+  11. Definir un comportamiento explícito cuando ninguna condición coincide.
+  12. Permitir establecer rutas predeterminadas (fallback routes).
+  13. Versionar las reglas junto con la definición del flujo.
+- **Comportamiento Esperado:**
+  Una operación debe avanzar por la ruta correspondiente a sus datos reales, sin depender de instrucciones manipulables desde el cliente.
+  Ejemplo: una requisición que supere un umbral económico deberá incorporar el nivel de aprobación adicional establecido en su configuración.
+- **Criterios de Aceptación:**
+  - [ ] Crear una regla basada en un monto numérico.
+  - [ ] Probar valores inferiores, iguales y superiores al umbral verificando las ramas resultantes.
+  - [ ] Crear una regla con compuertas AND y otra con OR.
+  - [ ] Comprobar rutas alternativas válidas.
+  - [ ] Introducir una condición sintácticamente inválida y verificar su rechazo.
+  - [ ] Intentar introducir una expresión ejecutable arbitraria y verificar que es sanitizada.
+  - [ ] Modificar los parámetros enviados por el frontend y comprobar que la decisión final depende de las reglas del servidor.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 8760-8801; clave TASK-220; asignación única: Dirección -->
+### [TASK-220] [F23-Task08] [P1] [Motor de Workflows - Diseñador Configurable de Flujos y Validación de Estructuras]
+- **Componentes Afectados:**
+  - `backend/user-service/Code.gs`
+  - `js/api.js`
+- **Dependencias Expuestas:** `FlujosAprobacion`, `F23-Task07`, `F23-Task10`.
+- **Capacidades Relacionadas:** F23-001, F23-005, F23-021, F23-031.
+- **Problema Detectado:**
+  Las definiciones de workflow se almacenan como JSON plano en `PasosEtapasJSON`, sin una herramienta visual suficientemente completa para construir y validar procesos complejos.
+- **Requisitos Funcionales:**
+  1. Proporcionar una interfaz administrativa para configurar procesos sin editar directamente JSON.
+  2. Permitir agregar, modificar, eliminar y ordenar etapas.
+  3. Definir responsables individuales, roles y departamentos.
+  4. Definir estados iniciales, intermedios y terminales.
+  5. Configurar transiciones permitidas.
+  6. Configurar condiciones y rutas alternativas.
+  7. Configurar pasos paralelos.
+  8. Configurar tiempos límite y reglas de escalamiento.
+  9. Mostrar visualmente el recorrido del proceso.
+  10. Validar que todas las rutas tengan un destino válido.
+  11. Detectar etapas sin responsables asignados.
+  12. Detectar rutas sin salida y ciclos involuntarios.
+  13. Detectar estados terminales inaccesibles.
+  14. Permitir guardar borradores sin activar inmediatamente el flujo.
+  15. Proporcionar una vista previa de ejecución con datos de prueba.
+  16. Generar una definición estructurada compatible con el motor de ejecución.
+  17. Mantener compatibilidad con los workflows existentes.
+  18. Permitir consultar y comparar versiones anteriores.
+- **Comportamiento Esperado:**
+  El administrador podrá configurar un proceso desde una interfaz visual, validarlo y publicarlo sin tener que modificar código fuente.
+  La definición resultante deberá ser interpretada por el mismo motor común, no por un ejecutor independiente.
+- **Criterios de Aceptación:**
+  - [ ] Crear un flujo completo desde la interfaz.
+  - [ ] Agregar y reorganizar etapas secuenciales y condicionales.
+  - [ ] Configurar responsables y condiciones evaluables.
+  - [ ] Intentar publicar una ruta incompleta y verificar advertencias de validación.
+  - [ ] Visualizar el recorrido del diagrama de flujo.
+  - [ ] Ejecutar una prueba de simulación con datos de prueba.
+  - [ ] Publicar una nueva versión y comprobar que las instancias anteriores conservan su definición original.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 8855-8886; clave TASK-222; asignación única: Dirección -->
+### [TASK-222] [F23-Task10] [P1] [Motor de Workflows - Procesos Paralelos y Compuertas de Convergencia (Fork / Join)]
+- **Componentes Afectados:**
+  - `backend/user-service/Code.gs`
+- **Dependencias Expuestas:** `FlujosAprobacion`, `F23-Task07`, `F23-Task08`.
+- **Capacidades Relacionadas:** F23-021, F23-001, F23-005.
+- **Problema Detectado:**
+  El motor actual utiliza secuencias lineales. No puede representar adecuadamente operaciones que necesitan revisiones simultáneas de varios departamentos.
+- **Requisitos Funcionales:**
+  1. Permitir dividir un proceso en varias ramas independientes (Fork).
+  2. Crear pasos paralelos que puedan ejecutarse simultáneamente por diferentes revisores.
+  3. Establecer si se requiere la finalización de todas las ramas o de una cantidad determinada (Join).
+  4. Permitir definir reglas AND (todas las ramas aprobadas) y OR (primera rama aprobada).
+  5. Registrar el estado individual de cada rama independiente.
+  6. Impedir que el proceso principal avance antes de cumplir las condiciones de convergencia.
+  7. Permitir que una rama sea rechazada sin perder el historial de las demás.
+  8. Definir qué ocurre cuando una rama queda bloqueada o vence.
+  9. Permitir que las ramas tengan responsables y departamentos diferentes.
+  10. Conservar la relación entre las tareas paralelas y el proceso principal.
+- **Comportamiento Esperado:**
+  Una solicitud puede enviarse simultáneamente a dos departamentos (ej. Dirección y Administración). El proceso continuará cuando se cumpla la condición configurada.
+- **Criterios de Aceptación:**
+  - [ ] Crear dos ramas paralelas sobre un mismo trámite.
+  - [ ] Completar solamente una rama y comprobar que el proceso no avanza cuando se requiere compuerta AND.
+  - [ ] Completar ambas ramas y comprobar la convergencia y avance al siguiente estado.
+  - [ ] Probar una condición de convergencia OR.
+  - [ ] Rechazar una rama y comprobar la propagación del rechazo según las reglas del flujo.
+  - [ ] Simular una rama bloqueada y verificar aislamiento.
+  - [ ] Comprobar que no se dupliquen las etapas posteriores a la convergencia.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 8887-8921; clave TASK-223; asignación única: Dirección -->
+### [TASK-223] [F23-Task11] [P1] [Operaciones y SLA - Gestión de SLA, Vencimientos y Escalamiento Automático]
+- **Componentes Afectados:**
+  - `backend/user-service/Code.gs`
+- **Dependencias Expuestas:** `SolicitudesTramites`, `F23-Task09`, `F23-Task15`.
+- **Capacidades Relacionadas:** F23-006, F23-012, F23-027, F23-030.
+- **Problema Detectado:**
+  No existe un mecanismo completo para controlar los tiempos de respuesta de las etapas ni para escalar automáticamente los trámites estancados.
+- **Requisitos Funcionales:**
+  1. Configurar tiempos máximos por tipo de trámite y etapa (SLA en horas o días hábiles).
+  2. Permitir establecer plazos por departamento y nivel de prioridad.
+  3. Definir calendarios y horarios laborales cuando sean necesarios.
+  4. Establecer anticipación de recordatorios antes del vencimiento.
+  5. Configurar escalamiento por incumplimiento hacia el supervisor jerárquico.
+  6. Notificar al responsable antes del vencimiento.
+  7. Notificar al supervisor cuando se incumpla el SLA.
+  8. Permitir reasignación automática cuando exista una regla autorizada.
+  9. Registrar el momento en que comienza y termina cada etapa.
+  10. Calcular tiempos de espera y tiempos efectivos de atención.
+  11. Excluir periodos suspendidos cuando la política lo permita.
+  12. Evitar que tareas finalizadas continúen generando alertas.
+  13. Controlar la ejecución repetida de los procesos de revisión de vencimientos mediante temporizadores GAS.
+- **Comportamiento Esperado:**
+  Los procesos deben poder supervisarse mediante plazos configurables. Una tarea vencida debe identificarse y generar las acciones de escalamiento establecidas.
+  Los temporizadores deben tolerar retrasos de ejecución propios de los activadores y no asumir que una tarea programada se ejecuta exactamente en el segundo previsto.
+- **Criterios de Aceptación:**
+  - [ ] Configurar un SLA para una etapa de trámite.
+  - [ ] Crear una tarea con vencimiento asignado.
+  - [ ] Comprobar emisión de recordatorios preventivos.
+  - [ ] Simular vencimiento de plazo y verificar escalamiento automático.
+  - [ ] Completar la tarea antes del vencimiento y verificar que no se generen alertas posteriores.
+  - [ ] Ejecutar dos veces el proceso de revisión periódica y comprobar que no se duplican los escalamientos.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 9072-9103; clave TASK-228; asignación única: Dirección -->
+### [TASK-228] [F23-Task16] [P1] [Seguridad y Roles - Delegación Temporal de Aprobaciones Integrada con los Workflows]
+- **Componentes Afectados:**
+  - `backend/user-service/Code.gs`
+- **Dependencias Expuestas:** `F23-Task01`, `F23-Task09`.
+- **Capacidades Relacionadas:** F23-007.
+- **Problema Detectado:**
+  Existe una implementación parcial de delegación, pero no se ha integrado de manera completa con las asignaciones y etapas activas de los procesos.
+- **Requisitos Funcionales:**
+  1. Permitir delegar temporalmente responsabilidades de aprobación por ausencia o vacaciones.
+  2. Definir fecha y hora de inicio y finalización de la delegación.
+  3. Permitir establecer el alcance por tipo de operación, monto o departamento.
+  4. Identificar al responsable titular original y al usuario delegado.
+  5. Validar que el delegado tenga los permisos institucionales necesarios para asumir la responsabilidad.
+  6. Aplicar la delegación a las etapas pendientes correspondientes en la bandeja unificada.
+  7. Registrar las decisiones tomadas por el delegado diferenciando claramente su identidad de la responsabilidad titular.
+  8. Permitir revocar anticipadamente una delegación activa.
+  9. Impedir que una delegación vencida continúe autorizando decisiones.
+  10. Evitar delegaciones circulares o en cascada no autorizadas.
+  11. Permitir configurar si la delegación incluye tareas ya asignadas o solamente tareas nuevas.
+- **Comportamiento Esperado:**
+  Durante una ausencia autorizada, las aprobaciones podrán continuar sin necesidad de modificar manualmente cada proceso configurado.
+- **Criterios de Aceptación:**
+  - [ ] Crear una delegación temporal con rango de fechas.
+  - [ ] Comprobar la transferencia de autorizaciones a la bandeja del delegado.
+  - [ ] Intentar delegar a un usuario sin privilegios suficientes y verificar el rechazo.
+  - [ ] Revocar anticipadamente la delegación y comprobar el cese inmediato de privilegios.
+  - [ ] Verificar que tras expirar la fecha fin, el delegado ya no puede autorizar trámites.
+  - [ ] Consultar el historial de decisiones y comprobar que se identifican tanto el titular como el delegado.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 9279-9324; clave TASK-235; asignación única: Dirección -->
+### [TASK-235] [F24-Task07] [P1] [Analítica Histórica - Motor de Tendencias y Series Históricas Académicas y Administrativas]
+- **Componentes Afectados:**
+  - `backend/academic-service/Code.gs`
+  - `backend/accounting-service/Code.gs`
+  - `js/ui-common.js`
+- **Dependencias Expuestas:** Diccionario de indicadores (`F24-Task02`), DataMart (`F24-Task05`), comparación financiera existente.
+- **Capacidades Relacionadas:** F24-011, F24-012.
+- **Problema Detectado:**
+  Existe una proyección financiera semestral, pero faltan mecanismos equivalentes para analizar la evolución histórica de matrícula, calificaciones y otros indicadores institucionales.
+- **Requisitos Funcionales:**
+  1. Incorporar series temporales para indicadores académicos, financieros, administrativos y operativos.
+  2. Permitir consultar:
+     - Evolución de matrícula por ciclo lectivo y mes.
+     - Evolución de tasas de aprobación y reprobación.
+     - Evolución de promedios académicos generales y por área.
+     - Evolución de asistencia y ausentismo.
+     - Evolución de ingresos y egresos comparativos.
+     - Evolución de morosidad institucional.
+     - Evolución de volumen de trámites y tiempos promedio de resolución.
+  3. Permitir comparar períodos equivalentes (ej. primer trimestre 2024 vs primer trimestre 2025).
+  4. Mostrar variaciones absolutas y porcentuales relativas.
+  5. Identificar máximos, mínimos y promedios en la serie.
+  6. Permitir agrupar por mes, trimestre, semestre y año, cuando corresponda.
+  7. Diferenciar períodos completos e incompletos con marcas visibles.
+  8. Permitir visualizar valores en gráficos interactivos y tablas numéricas estructuradas.
+  9. Mantener la definición histórica del indicador según su versión en la fecha evaluada.
+  10. Incorporar acceso al detalle de los datos que componen un punto de la serie cuando los permisos lo permitan.
+- **Cambios Necesarios:**
+  - Integrar los indicadores analíticos con las estructuras del DataMart.
+  - Incorporar endpoints de consulta de series temporales (`getTimeSeriesAnalytics`).
+  - Extender la comparación existente para que pueda utilizarse también en indicadores académicos y administrativos.
+  - Incorporar visualizaciones gráficas y selectores de período en los paneles de control.
+- **Comportamiento Esperado:**
+  El usuario podrá seleccionar un indicador y consultar cómo ha evolucionado a través de distintos períodos. Podrá identificar cambios, comparar años lectivos y examinar los valores que componen cada resultado.
+- **Criterios de Aceptación:**
+  - [ ] Los valores de la serie temporal coinciden con los informes individuales de cada período.
+  - [ ] Los períodos aparecen presentados en estricto orden cronológico.
+  - [ ] Los períodos sin datos se identifican claramente y no se convierten arbitrariamente en ceros.
+  - [ ] Los cambios de fórmula se identifican en la serie histórica.
+  - [ ] Los porcentajes de variación utilizan una base matemática válida sin errores por división por cero.
+  - [ ] Los valores representados en gráficos coinciden exactamente con los datos tabulares.
+  - [ ] La comparación de períodos incompletos presenta una advertencia clara al usuario.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 9390-9448; clave TASK-238; asignación única: Dirección -->
+### [TASK-238] [F24-Task10] [P1] [Automatización - Programador Automático de Generación de Informes Calendarizados]
+- **Componentes Afectados:**
+  - `backend/user-service/Code.gs`
+  - `backend/developer-service/Code.gs`
+- **Dependencias Expuestas:** Catálogo (`F24-Task01`), permisos, exportador (`F24-Task08`), distribución (`F24-Task11`).
+- **Capacidades Relacionadas:** F24-014, F24-018.
+- **Problema Detectado:**
+  No existe un mecanismo para calendarizar la generación automática de informes mediante procesos programados.
+- **Requisitos Funcionales:**
+  1. Permitir programar informes periódicos:
+     - Diarios.
+     - Semanales (día específico de la semana).
+     - Mensuales (día del mes o primer/último día).
+     - Trimestrales.
+     - Semestrales.
+     - Anuales (cierre de ciclo lectivo o fiscal).
+  2. Configurar en cada programación:
+     - Informe seleccionado.
+     - Filtros aplicables.
+     - Período dinámico de datos (ej. "mes anterior", "ciclo actual").
+     - Frecuencia de ejecución.
+     - Hora planificada.
+     - Zona horaria de la institución.
+     - Fecha de inicio de vigencia.
+     - Fecha de finalización.
+     - Formato de salida (PDF, CSV, XLSX).
+     - Destinatarios autorizados.
+  3. Permitir pausar, reanudar, modificar y cancelar programaciones activas.
+  4. Mantener un historial completo de ejecuciones programadas en hoja `HistorialInformesProgramados`.
+  5. Registrar resultados satisfactorios, tiempos y volumen generado.
+  6. Incorporar reintentos controlados con retroceso exponencial ante fallos temporales.
+  7. Evitar ejecuciones duplicadas mediante marcas de exclusión mutua.
+  8. Permitir programaciones institucionales y personales según los permisos asignados.
+  9. Revalidar los permisos del destinatario y del creador antes de generar cada informe.
+  10. Gestionar cambios en los permisos del creador o de los destinatarios (desactivar si el creador pierde privilegios).
+  11. Permitir programaciones de informes personalizados cuando estén formalmente autorizadas.
+- **Cambios Necesarios:**
+  - Incorporar almacenamiento de programaciones en hoja `ProgramacionInformes`.
+  - Implementar un mecanismo de ejecución mediante activadores temporales Apps Script (`Time-driven triggers`).
+  - Integrar el programador con los servicios de generación y exportación de informes.
+  - Incorporar control de estados de ejecución y política de reintentos.
+  - Registrar cada ejecución en las bitácoras de auditoría institucional.
+  - Evitar depender de una única ejecución prolongada fraccionando envíos en colas asíncronas.
+- **Comportamiento Esperado:**
+  Una programación activa generará el informe en la fecha y frecuencia configuradas. Si falla, quedará registrada y podrá reintentarse sin producir duplicaciones.
+  Las programaciones deben continuar funcionando de manera controlada aunque el usuario creador deje de tener acceso.
+- **Criterios de Aceptación:**
+  - [ ] Una programación válida ejecuta y genera el informe en la frecuencia configurada.
+  - [ ] La zona horaria institucional se respeta estrictamente en los disparos.
+  - [ ] Pausar o cancelar una programación impide inmediatamente nuevas ejecuciones.
+  - [ ] Las ejecuciones fallidas quedan registradas con causa detallada y alerta.
+  - [ ] Los reintentos automáticos no duplican informes ni envían correos repetidos.
+  - [ ] Los permisos de acceso a los datos se comprueban nuevamente en cada ejecución calendarizada.
+  - [ ] Una programación no distribuye datos a destinatarios que hayan perdido autorización.
+  - [ ] El historial permite identificar cada ejecución histórica, fecha y estado final.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 9500-9562; clave TASK-241; asignación única: Dirección -->
+### [TASK-241] [F24-Task13] [P1] [Cuadros de Mando - Integración y Ampliación de Paneles Institucionales por Rol]
+- **Componentes Afectados:**
+  - `backend/accounting-service/Code.gs`
+  - `backend/academic-service/Code.gs`
+  - `backend/user-service/Code.gs`
+  - `js/ui-common.js`
+  - `app/html/dashboards/dynamic-dashboard.html`
+- **Dependencias Expuestas:** Catálogo (`F24-Task01`), diccionario (`F24-Task02`), filtros (`F24-Task03`), series históricas (`F24-Task07`), metas (`F24-Task12`).
+- **Capacidades Relacionadas:** F24-009, F24-010, F24-023.
+- **Problema Detectado:**
+  Existen paneles y servicios analíticos por área, pero falta una integración gráfica global que permita consultar los indicadores de manera coherente desde un espacio institucional unificado.
+- **Requisitos Funcionales:**
+  1. Integrar los paneles existentes en una experiencia de usuario institucional unificada.
+  2. Mantener vistas diferenciadas según el perfil operativo:
+     - Dirección y Rectoría.
+     - Coordinación Académica.
+     - Administración y Contabilidad.
+     - Secretaría General.
+     - Docentes.
+  3. Permitir que cada panel departamental presente:
+     - Indicadores principales en tarjetas de resumen (KPI cards).
+     - Comparaciones temporales y variaciones.
+     - Gráficos de tendencias históricas.
+     - Seguimiento de metas institucionales.
+     - Alertas tempranas activas.
+     - Enlaces directos hacia los informes detallados correspondientes.
+  4. Permitir configurar los widgets visibles cuando el usuario tenga autorización administrativa.
+  5. Permitir organizar y ordenar los widgets sin alterar las definiciones semánticas de los indicadores.
+  6. Conservar las preferencias individuales de visualización por usuario en almacenamiento local.
+  7. Permitir filtros globales en el panel (por período, grado, sección) que se apliquen simultáneamente a los widgets compatibles.
+  8. Permitir abrir el detalle de cualquier indicador haciendo clic sobre su tarjeta o gráfico.
+  9. Mantener los filtros activos al navegar desde un widget hacia su informe detallado correspondiente.
+  10. Mostrar visiblemente la fecha y hora de la última actualización de datos en cada indicador.
+  11. Gestionar estados de carga, ausencia de datos y errores por widget de forma aislada e independiente.
+  12. Mantener un diseño totalmente adaptable a dispositivos móviles y pantallas táctiles (Tailwind CSS responsivo).
+- **Requisitos Específicos por Perfil:**
+  - **Dirección / Rectoría:** Matrícula total y evolución, retención y permanencia, rendimiento académico general, tasa de asistencia institucional, ingresos y egresos consolidados, ejecución presupuestaria global, cumplimiento de metas institucionales y alertas críticas.
+  - **Coordinación Académica:** Tasas de aprobación y reprobación, promedios por grado y sección, ausentismo recurrente, asignaturas con bajo rendimiento relativo, alertas tempranas pedagógicas y avance de planificaciones docentes.
+  - **Contabilidad / Administración:** Ingresos confirmados por caja y bancos, egresos devengados, cuentas por cobrar y por pagar, índice de morosidad, antigüedad de saldos, flujo de caja proyectado y ejecución presupuestaria por categoría.
+  - **Secretaría:** Matrícula por ciclo lectivo, estado de expedientes de estudiantes, trámites y solicitudes pendientes, trámites resueltos, tiempos promedio de atención y movimientos de matrícula (traslados y reincorporaciones).
+  - **Docentes:** Promedios de sus asignaturas asignadas, distribución de calificaciones en sus secciones, asistencia de sus alumnos, estudiantes en riesgo pedagógico y evaluaciones pendientes de calificación.
+- **Cambios Necesarios:**
+  - Integrar los servicios analíticos existentes en endpoints de dashboards consolidados.
+  - Adaptar el motor de dashboard dinámico (`dynamic-dashboard.html`) para consumir el catálogo de indicadores.
+  - Incorporar configuración de widgets por perfil en metadatos del sistema.
+  - Integrar barra de filtros globales de panel.
+  - Implementar navegación contextual desde widgets hacia el visor modal de informes (`displayReportModal`).
+  - Conservar y reforzar los controles de ámbito y permisos RBAC/ABAC existentes en el backend.
+- **Comportamiento Esperado:**
+  Cada usuario accederá a un panel adaptado a sus responsabilidades. Los indicadores serán coherentes con los informes y permitirán profundizar en los resultados sin perder el contexto.
+- **Criterios de Aceptación:**
+  - [ ] Cada perfil institucional visualiza únicamente los widgets e indicadores correspondientes a sus permisos.
+  - [ ] Los valores numéricos de los indicadores en el panel coinciden exactamente con sus informes correspondientes.
+  - [ ] Los filtros globales del panel actualizan simultáneamente todos los widgets compatibles.
+  - [ ] Los enlaces hacia detalles de indicadores conservan íntegros los filtros aplicados en el panel.
+  - [ ] Los widgets que experimenten un error de datos no bloquean ni afectan a los demás widgets independientes.
+  - [ ] La fecha y hora de actualización es claramente visible para el usuario en cada tarjeta.
+  - [ ] Las preferencias individuales de ordenamiento no modifican las vistas de otros usuarios.
+  - [ ] Los usuarios no pueden agregar ni visualizar widgets que expongan información fuera de su ámbito autorizado.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 9851-9903; clave TASK-249; asignación única: Dirección -->
+### [TASK-249] [F26-Task04] [P1] [Reportes Personalizados - Implementar Persistencia de Vistas y Configuraciones Personalizadas de Reportes]
+- **Componentes Afectados:**
+  - `backend/user-service/Code.gs`
+  - `backend/accounting-service/Code.gs`
+  - `backend/academic-service/Code.gs`
+  - Hoja `VistasPersonalizadasReportes`
+  - `js/ui-common.js`
+- **Subcapacidad Relacionada:** F26-008.
+- **Estado de Partida:** Implementada parcialmente.
+- **Dependencias Expuestas:** Reportes institucionales existentes, permisos, catálogos de campos y almacenamiento de preferencias.
+- **Problema Detectado:**
+  Existen definiciones de reportes institucionales, pero falta persistencia de vistas personalizadas por usuario. Los usuarios necesitan conservar sus configuraciones de consulta sin tener que reconstruir filtros, columnas, ordenamientos y agrupaciones cada vez que acceden a un reporte.
+- **Requisitos Funcionales:**
+  1. Configuración de vistas analíticas:
+     - Permitir personalizar reportes mediante: selección de columnas visibles, orden de columnas, filtros aplicados, ordenamiento ascendente/descendente, agrupaciones por categorías, totales y subtotales, períodos de consulta, criterios de búsqueda y opciones de exportación.
+  2. Guardado y reutilización:
+     - Guardar vistas personalizadas con nombre descriptivo y notas.
+     - Modificar, duplicar, establecer como predeterminada (`defaultView`) o eliminar vistas propias.
+     - Recuperar la configuración predeterminada institucional con un clic.
+     - Compartir vistas con usuarios o roles autorizados.
+     - Diferenciar formalmente: vistas personales, vistas compartidas departamentales y plantillas institucionales oficiales.
+  3. Permisos y seguridad estricta:
+     - Una vista guardada no debe ampliar jamás los permisos del usuario.
+     - El servidor debe validar en cada ejecución: acceso al reporte, acceso a cada campo incluido, ámbito del usuario (grado/sección/departamento) y permisos de exportación.
+     - Si un usuario pierde acceso a un campo utilizado en una vista guardada, advertir y omitir el campo sin exponer datos restringidos.
+  4. Compatibilidad ante modificaciones de esquema:
+     - Si un campo del reporte original cambia o se elimina, no ejecutar consultas fallidas silenciosas; advertir al usuario y permitir adaptar la vista guardada.
+  5. Rendimiento y presentación:
+     - Aplicar filtros y ordenamientos en servidor; mantener paginación y mostrar estados de carga sin bloquear la interfaz.
+- **Cambios Necesarios:**
+  - Crear hoja `VistasPersonalizadasReportes` en backend.
+  - Implementar endpoints en backend (`saveReportView`, `getReportViews`, `deleteReportView`).
+  - Asociar vistas con `userId`, `rol` y ámbito departamental.
+  - Integrar validaciones de permisos sobre campos guardados en las consultas de reportes.
+  - Adaptar el visor modal de reportes (`modal-report-viewer`) para permitir seleccionar y guardar vistas.
+- **Comportamiento Esperado:**
+  Un usuario autorizado puede personalizar un reporte, guardar la vista y volver a ejecutarla posteriormente. La configuración permanece disponible sin modificar el reporte institucional original ni ampliar los permisos del usuario.
+- **Criterios de Aceptación:**
+  - [ ] Crear una vista con columnas, filtros y ordenamientos personalizados.
+  - [ ] Guardarla y volver a cargarla posteriormente desde la lista de vistas guardadas.
+  - [ ] Ejecutar nuevamente el reporte y comprobar que conserva todos los criterios configurados.
+  - [ ] Modificar una vista sin afectar otras vistas guardadas ni el reporte institucional original.
+  - [ ] Duplicar y eliminar una vista verificando la correcta actualización del catálogo.
+  - [ ] Comprobar que las vistas personales no son visibles para usuarios no autorizados.
+  - [ ] Compartir una vista y comprobar que los destinatarios conservan sus propias restricciones de datos (RBAC).
+  - [ ] Retirar el permiso de un campo y verificar que una vista que lo utiliza no expone información confidencial.
+  - [ ] Modificar el esquema de un reporte y comprobar que las vistas incompatibles muestran una advertencia amigable.
+  - [ ] Ejecutar reportes con muchos registros y comprobar que se aplican filtros y paginación correctamente.
+  - [ ] Exportar una vista personalizada y comprobar que el resultado coincide exactamente con los filtros y columnas seleccionados.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 10512-10538; clave TASK-275; asignación única: Dirección -->
+### [TASK-275] [F29-Task27] [P1] Panel de Control y Seguimiento Integral de Migraciones
+- **Orden de Ejecución:** 27
+- **Prioridad:** P1 (Alta)
+- **Componentes Afectados:**
+  - `dashboards/dashboard-desarrollador.html`, `js/ui-common.js`
+  - `backend/accounting-service/Code.gs` (`getComprehensiveMigrationDashboardData`)
+- **Subcapacidades Relacionadas:** F29-19.
+- **Estado de Partida:** Requiere mejoras.
+- **Dependencias Principales:** [F29-Task12], [F29-Task13], [F29-Task14], [F29-Task15], [F29-Task20], [F29-Task21].
+- **Problema Detectado y Riesgos:**
+  No existe una interfaz centralizada para supervisar en tiempo real el avance de las fuentes, lotes de datos, estado de simulaciones, incidencias pendientes, estado de pilotos y transición operativa.
+- **Requisitos Funcionales y Técnicos Convergentes:**
+  1. *Vista ejecutiva y operativa de migraciones:*
+     - Mostrar por ejecución: fuente, entidad, archivo, responsable, fecha, estado, registros procesados, válidos, rechazados, porcentaje de avance, errores y resultado de conciliación.
+     - Filtros multicriterio por fuente, entidad, fecha, estado y prioridad.
+  2. *Monitoreo de etapas y pruebas posteriores:*
+     - Estado de pruebas de humo post-migración, alertas financieras y de notas.
+     - Estado de activaciones de usuarios y avances de pilotos.
+     - Vistas diferenciadas por perfil: Dirección (consulta ejecutiva de indicadores) vs Administrador (control operativo).
+- **Criterios de Aceptación:**
+  - [ ] El panel presenta en tiempo real el estado verídico de todas las migraciones.
+  - [ ] Permite identificar inmediatamente ejecuciones detenidas o con fallas críticas.
+  - [ ] Los perfiles de consulta no pueden alterar ejecuciones ni forzar aprobaciones.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 10539-10574; clave TASK-276; asignación única: Dirección -->
+### [TASK-276] [F29-Task28] [P1] Gestión Formal de Aprobaciones, Excepciones y Actas de Aceptación Institucional
+- **Orden de Ejecución:** 28
+- **Prioridad:** P1 (Alta)
+- **Componentes Afectados:**
+  - `backend/user-service/Code.gs` (`submitMigrationApprovalDecision`, `getMigrationApprovals`)
+  - `backend/accounting-service/Code.gs`
+  - Hoja: `AprobacionesMigracion`
+- **Subcapacidades Relacionadas:** F29-12, F29-15, F29-18.
+- **Estado de Partida:** Ausente.
+- **Dependencias Principales:** [F29-Task13], [F29-Task14], [F29-Task21], [F29-Task27].
+- **Problema Detectado y Riesgos:**
+  Falta de separación entre la ejecución técnica y la aprobación institucional formal. Una importación completada por un técnico podría pasarse a producción sin la revisión y firma formal del Director o del Contador General.
+- **Requisitos Funcionales y Técnicos Convergentes:**
+  1. *Flujo de aprobación colegiado por departamento:*
+     - Secretaría: Aprobación de expedientes, matrículas e historiales de notas.
+     - Contabilidad: Aprobación de saldos de corte, facturas y pagos.
+     - Dirección: Autorización final de Go-Live y retiro de sistemas legados.
+     - Administración Técnica: Certificación de respaldos, seguridad y pruebas de humo.
+  2. *Registro formal de decisiones y excepciones:*
+     - Opciones: `APROBADO`, `RECHAZADO`, `DEVUELTO_CON_OBSERVACIONES`.
+     - Documentar justificante para cualquier excepción aceptada.
+     - Emisión de Acta de Aceptación Institucional en PDF descargable con firmas formales.
+     - Cualquier cambio posterior en el archivo de datos o reglas invalida automáticamente la aprobación previa.
+- **Criterios de Aceptación:**
+  - [ ] Una migración requiere aprobación formal de los responsables departamentales competentes.
+  - [ ] Las excepciones críticas quedan documentadas con justificante y firma.
+  - [ ] Se bloquea la transición a producción si existen incidencias bloqueantes sin resolver o sin acta aprobada.
+  - [ ] Una modificación posterior en los datos invalida la aprobación otorgada.
 - **Estado:** [ ] Pendiente
 
 ---
 
-### [REQ-EXP-017] Consola de Administración Técnica, Panel de Estado y Health Checks Ping-Pong (Sección 14.1 - 14.3)
-- **Origen del Hallazgo:** Requerimientos de Desarrollo y Expansión (Sección 14.1 - 14.3).
-- **Severidad/Clasificación:** Crítico
-- **Archivos Involucrados:** `teacher-dashboard.html`, `js/teacher.js`, `backend/academic-service/Code.gs`, `backend/user-service/Code.gs`
-- **Dependencias Expuestas:** Monitoreo de microservicios (USER, ACADEMIC, TASK, EXAM).
-- **Descripción del Alcance:** Construir panel de estado general para el rol Administrador con solicitudes ping-pong de salud real de los endpoints, tiempos de respuesta e indicadores visuales (En línea, Degradado, Fuera de línea).
-- **Criterios de Aceptación:** Verificación real de conectividad sin estados simulados.
+---
+
+# FASE 30: CONSOLIDACIÓN, CERTIFICACIÓN INTERNA Y MEJORA CONTINUA
+
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 10637-10670; clave TASK-279; asignación única: Dirección -->
+### [TASK-279] [F30-Task10] [P1] Clasificación Automática de Incidencias y Gestión Paramétrica de SLA
+- **Orden de Ejecución:** 9
+- **Prioridad:** P1 (Alta)
+- **Componentes Afectados:**
+  - `backend/user-service/Code.gs` (`submitProblemTicket`, `getProblemTicketsWithSLA`, `updateTicketSLAStatus`, `calculateTicketSLAThresholds`)
+  - Hoja: `TicketsSoporte`, `ConfiguracionSLA`
+- **Subcapacidades Relacionadas:** F30-13.
+- **Origen del Hallazgo:** `AUDITORIA_FASE_30_CONSOLIDACION_CERTIFICACION_MEJORA_CONTINUA.md` / Sección C (F30-13).
+- **Problema Detectado y Riesgos:**
+  El módulo de tickets de soporte institucional no categoriza automáticamente la severidad ni gestiona acuerdos de nivel de servicio (SLA) para primera respuesta y solución, provocando demoras en la atención de fallos críticos que afectan la operación diaria.
+- **Requisitos Funcionales y Técnicos Convergentes:**
+  1. *Clasificación por severidad institucional:*
+     - P0 (Crítica): Interrupción grave para la integridad, seguridad o continuidad de la plataforma.
+     - P1 (Alta): Afectación importante de un proceso institucional o de múltiples usuarios.
+     - P2 (Media): Fallo funcional limitado con alternativa operativa viable disponible.
+     - P3 (Baja): Solicitud de mejora, duda funcional o inconveniente menor no urgente.
+  2. *Evaluación automática y confirmación autorizada:*
+     - Evaluar automáticamente severidad según: tipo de problema, módulo, usuarios impactados y riesgo de datos.
+     - Permitir a un responsable de soporte confirmar o modificar la prioridad, registrando motivo formal en bitácora.
+  3. *Gestión paramétrica de SLA y estados de ticket:*
+     - Parámetros configurables de SLA por severidad (tiempos objetivo para primera respuesta, diagnóstico y solución).
+     - Soporte para calendarios laborales y horarios hábiles institucionales excluyendo feriados.
+     - Ciclo de vida: `Nuevo`, `Clasificado`, `Asignado`, `En_Diagnostico`, `En_Desarrollo`, `En_Validacion`, `Resuelto`, `Cerrado`, `Reabierto`, `Bloqueado`.
+     - Alertas antes del vencimiento y escalamiento jerárquico ante incumplimiento.
+     - Vinculación con incidencias relacionadas, tareas técnicas del backlog, versiones y capturas de evidencia.
+- **Criterios de Aceptación:**
+  - [ ] Cada nuevo ticket recibe una clasificación de severidad coherente y fecha límite de SLA calculada.
+  - [ ] Las modificaciones de severidad quedan auditadas con usuario y justificación.
+  - [ ] Se emiten alertas preventivas antes de que un ticket alcance su tiempo límite de atención.
+  - [ ] Los reportes estadísticos reflejan métricas reales de cumplimiento y tiempos promedio de resolución.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 10732-10760; clave TASK-282; asignación única: Dirección -->
+### [TASK-282] [F30-Task08] [P1] Delegación Temporal de Responsabilidades y Sustituciones Administrativas
+- **Orden de Ejecución:** 12
+- **Prioridad:** P1 (Alta)
+- **Componentes Afectados:**
+  - `backend/user-service/Code.gs` (`createTemporaryRoleDelegation`, `getActiveRoleDelegations`, `revokeRoleDelegation`, `verifyActionDelegationPermission`)
+  - Hoja: `DelegacionesResponsabilidad`
+- **Subcapacidades Relacionadas:** F30-07.
+- **Origen del Hallazgo:** `AUDITORIA_FASE_30_CONSOLIDACION_CERTIFICACION_MEJORA_CONTINUA.md` / Sección C (F30-07).
+- **Problema Detectado y Riesgos:**
+  Las ausencias o vacaciones de directores, administradores y coordinadores paralizan autorizaciones clave (compras mayores a L 50,000, revisión de actas de notas, planificaciones pedagógicas). No existe un mecanismo formal para delegar temporalmente atribuciones específicas sin otorgar cuentas compartidas o privilegios permanentes.
+- **Requisitos Funcionales y Técnicos Convergentes:**
+  1. *Estructura formal de la delegación temporal:*
+     - Parámetros: usuario delegante (`titularUserId`), usuario receptor (`delegadoUserId`), conjunto explícito de facultades delegadas, área institucional, fecha/hora inicio, fecha/hora fin, motivo formal y autorizador jerárquico.
+     - Delegar facultades puntuales sin conceder la totalidad de privilegios del delegante.
+     - Bloquear delegaciones circulares o cadenas no autorizadas de delegación.
+  2. *Vigencia automática y trazabilidad de doble identidad:*
+     - Revocación automática inmediata al cumplirse la fecha/hora de término.
+     - Opción de revocación anticipada bajo demanda por el titular o Dirección.
+     - Registro explícito en auditoría de la doble identidad: quién ejecutó la acción en representación de qué titular.
+     - Respetar reglas de aprobación mancomunada existentes en transacciones financieras de alto impacto.
+- **Criterios de Aceptación:**
+  - [ ] El usuario delegado puede ejecutar exclusivamente las facultades autorizadas durante la ventana de vigencia.
+  - [ ] Una delegación vencida o revocada es rechazada de forma inmediata por el backend.
+  - [ ] Los eventos de auditoría registran con claridad al delegante y al ejecutor delegado.
+  - [ ] No es posible delegar permisos superiores a los que ostenta legítimamente el delegante.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 10820-10848; clave TASK-285; asignación única: Dirección -->
+### [TASK-285] [F30-Task19] [P1] Actualización Controlada de Dashboards Ejecutivos e Indicadores Institucionales
+- **Orden de Ejecución:** 15
+- **Prioridad:** P1 (Alta)
+- **Componentes Afectados:**
+  - `dashboards/dashboard-direccion.html`, `js/ui-common.js`
+  - `backend/user-service/Code.gs`, `backend/developer-service/Code.gs`
+- **Subcapacidades Relacionadas:** F30-10, F30-09.
+- **Origen del Hallazgo:** `AUDITORIA_FASE_30_CONSOLIDACION_CERTIFICACION_MEJORA_CONTINUA.md` / Sección C (F30-10).
+- **Problema Detectado y Riesgos:**
+  Los tableros ejecutivos directivos dependen de refrescos bajo demanda manuales, arriesgando la toma de decisiones basada en información obsoleta. Asimismo, existe el riesgo de que distintos paneles calculen indicadores equivalentes con fórmulas o criterios dispares.
+- **Requisitos Funcionales y Técnicos Convergentes:**
+  1. *Gobernanza y cálculo unificado de indicadores:*
+     - Definir por indicador: fuente oficial única, fórmula matemática estandarizada, frecuencia de corte, responsable y grado de precisión.
+     - Prohibir terminantemente que vistas cliente realicen cálculos matemáticos dispares sobre métricas compartidas.
+  2. *Actualización y visualización contextual:*
+     - Diferenciar claramente datos en tiempo real de agregaciones periódicas o saldos históricos cerrados.
+     - Mostrar en la interfaz: fecha y hora de corte del dato (`FechaCorte`), estado de actualización y alertas visuales si la información se encuentra desfasada.
+     - Filtros multicriterio: período lectivo, nivel educativo, grado, sección, departamento y centro de costo.
+     - Desglose jerárquico (drill-down) desde la cifra consolidada hacia los registros individuales respetando los permisos RBAC.
+     - Exportación de reportes asegurando que los archivos generados coincidan exactamente con las cifras en pantalla.
+- **Criterios de Aceptación:**
+  - [ ] Los indicadores institucionales provienen de fuentes oficiales estandarizadas.
+  - [ ] Los paneles de control de distintos roles muestran valores idénticos bajo los mismos criterios y fecha de corte.
+  - [ ] Se indica con total claridad la antigüedad y momento de última sincronización de los datos.
+  - [ ] Las exportaciones reflejan fielmente las cifras visualizadas en la interfaz directiva.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 10849-10882; clave TASK-286; asignación única: Dirección -->
+### [TASK-286] [F30-Task20] [P1] Reconciliación Automatizada de Operaciones y Resultados entre Módulos
+- **Orden de Ejecución:** 16
+- **Prioridad:** P1 (Alta)
+- **Componentes Afectados:**
+  - `backend/accounting-service/Code.gs` (`reconcileCrossModuleTransactions`, `resolveTransactionDiscrepancy`)
+  - `backend/academic-service/Code.gs`
+  - Hoja: `ConciliacionesIntermodulares`, `DiscrepanciasDetectadas`
+- **Subcapacidades Relacionadas:** F30-01, F30-02, F30-03.
+- **Origen del Hallazgo:** `AUDITORIA_FASE_30_CONSOLIDACION_CERTIFICACION_MEJORA_CONTINUA.md` / Sección C (F30-01) y Sección G.
+- **Problema Detectado y Riesgos:**
+  A pesar de las validaciones relacionales, pueden suscitarse operaciones incompletas que no generaron un error fatal visible en su momento (ej. matrícula creada sin cargo inicial por interrupción de red, o pago asentado sin póliza contable asociada), requiriendo un motor periódico de reconciliación cruzada.
+- **Requisitos Funcionales y Técnicos Convergentes:**
+  1. *Rutina de reconciliación automatizada intermodular:*
+     - Matrículas vs Expedientes y Cargos Arancelarios Iniciales.
+     - Pagos vs Cargos Estudiantiles, Comprobantes Fiscales y Asientos de Caja/Bancos.
+     - Anulaciones de Pago vs Contrasientos y Saldos en Estado de Cuenta.
+     - Compras vs Órdenes, Recepciones, Kardex de Inventario y Cuentas por Pagar.
+     - Planillas Salariales vs Marcajes de Asistencia, Deducciones Laborales y Pólizas Contables.
+     - Calificaciones Publicadas vs Actas de Notas Cerradas y Boletines Oficiales.
+     - Multas/Consumos de Servicios Complementarios vs Cargos Financieros Efectivos.
+  2. *Clasificación de discrepancias y resolución asistida:*
+     - Detectar: efectos no generados, efectos duplicados, importes divergentes, estados contradictorios o ausencia de documentos de respaldo.
+     - Clasificar entre: discrepancia en tránsito normal vs error confirmado de inconsistencia.
+     - Asignar discrepancias a responsables departamentales para corrección controlada a través de las interfaces oficiales.
+     - Prohibir modificaciones destructivas automáticas sobre datos históricos cuya causa no haya sido certificada.
+- **Criterios de Aceptación:**
+  - [ ] El motor de conciliación detecta operaciones incompletas o asientos duplicados entre módulos.
+  - [ ] Se emite informe de discrepancias con punteros directos a los registros involucrados.
+  - [ ] Las acciones correctivas quedan debidamente auditadas y verificadas en la siguiente pasada del motor.
+  - [ ] Se generan indicadores cuantitativos de operaciones conciliadas vs discrepantes.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 11127-11160; clave TASK-295; asignación única: Dirección -->
+### [TASK-295] [F31-T14] [P1] Administración Granular de Permisos y Flujos de Aprobación Documental
+- **Orden de Ejecución:** 14
+- **Prioridad:** P1 (Alta)
+- **Componentes Afectados:**
+  - `backend/accounting-service/Code.gs` (`manageDocumentPermissions`, `processDocumentApprovalStep`)
+  - `backend/user-service/Code.gs`
+  - Hoja: `PermisosDocumentales`, `FlujosAprobacionDocumentos`
+- **Subcapacidades Relacionadas:** F31-14.
+- **Origen del Hallazgo:** `AUDITORIA_FASE_31_DISENADOR_UNIVERSAL_DOCUMENTOS_PLANTILLAS.md` / Sección B (F31-14) y Backlog de Implementación F31-T14.
+- **Problema o Carencia:**
+  La plataforma cuenta con permisos por roles generales, pero el sistema documental requiere una granularidad precisa para definir quién puede crear, editar, emitir, aprobar, archivar, descargar o compartir plantillas y documentos específicos según su departamento o confidencialidad.
+- **Requisitos Funcionales y Técnicos Convergentes:**
+  1. *Matriz granular de permisos documentales:*
+     - Operaciones: Crear plantillas, Editar plantillas asignadas, Duplicar, Consultar catálogo, Emitir documentos individuales/masivos, Diseñar formularios, Revisar y aprobar, Publicar versiones, Archivar y Descargar/Imprimir.
+     - Alcance de autorización: Por rol, usuario individual, departamento, categoría documental, plantilla específica o expediente institucional.
+  2. *Flujos de aprobación multinivel:*
+     - Configurar etapas secuenciales de aprobación con responsables asignados.
+     - Decisiones: `Aprobar`, `Rechazar` o `Solicitar_Correcciones` con comentarios obligatorios.
+     - Notificación automática a los participantes de la siguiente etapa.
+     - Impedir la autoaprobación de plantillas cuando la política institucional exija separación de responsabilidades.
+     - Delegación temporal de aprobación autorizada vinculada a [F30-Task08].
+  3. *Seguridad y aplicación estricta en servidor:*
+     - Validación obligatoria en el backend (no limitarse a ocultar botones en el frontend).
+     - Bloquear consultas directas o manipulación de parámetros de URL para acceder a documentos fuera de alcance.
+     - Revocación inmediata: al retirar un permiso, las peticiones subsiguientes son denegadas automáticamente.
+- **Criterios de Aceptación:**
+  - [ ] Los permisos se configuran y aplican de forma granular por operación, departamento y plantilla.
+  - [ ] Los endpoints del backend rechazan cualquier operación no autorizada mediante validación estricta de sesión.
+  - [ ] Las aprobaciones quedan firmadas digitalmente y asociadas a una versión inmutable.
+  - [ ] La revocación de permisos surte efecto inmediato en la siguiente llamada a la API.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 11574-11603; clave TASK-311; asignación única: Dirección -->
+### [TASK-311] [F33-Task05] [P1] Motor de Distribución Dinámica, Asignación Automática y Delegación Temporal
+- **Orden de Ejecución:** 6
+- **Prioridad:** P1 (Alta)
+- **Componentes Afectados:**
+  - `backend/user-service/Code.gs` (`assignRequestToResponsible`, `reassignDepartmentalRequest`, `evaluateRequestRoutingRules`)
+  - Hoja: `FlujosAprobacion`, `SolicitudesTramites`, `DelegacionesResponsabilidad`
+- **Subcapacidades Relacionadas:** F33-08, F33-09.
+- **Origen del Hallazgo:** `AUDITORIA_FASE_33_FORMULARIOS_INSTITUCIONALES_TRAMITES_DIGITALES.md` / Sección C (F33-08, F33-09) y Plan de Implementación F33-Task05.
+- **Problema Detectado y Riesgos:**
+  Los flujos actuales asignan responsables de forma estática. No existe distribución automática según características del expediente (ej. enrutar solicitudes al coordinador del nivel Primaria o Secundaria) ni delegación automática de atribuciones ante ausencias o vacaciones de funcionarios.
+- **Requisitos Funcionales y Técnicos Convergentes:**
+  1. *Reglas de distribución y balanceo automático:*
+     - Criterios de enrutamiento: departamento competente, grado académico, nivel, jornada, sede o categoría del trámite.
+     - Métodos de asignación: a una persona específica, a un grupo de trabajo, a una cola departamental o por distribución equitativa de carga de trabajo (round-robin balanceado).
+  2. *Delegaciones temporales por ausencia:*
+     - Configurar usuario titular, delegado, período de vigencia (inicio y fin), tipos de trámites cubiertos y facultades delegadas.
+     - Durante la vigencia, redirigir automáticamente nuevas asignaciones al sustituto y permitirle despachar la bandeja del titular.
+     - Registro de doble identidad: asentar en auditoría que la decisión fue tomada por el delegado en representación del titular.
+     - Prevención de delegaciones circulares o a usuarios inactivos sin permisos.
+  3. *Reglas de escalamiento por vencimiento de SLA:*
+     - Si una solicitud permanece desatendida al alcanzar el 80% del tiempo límite, notificar al supervisor o elevar su prioridad automáticamente.
+- **Criterios de Aceptación:**
+  - [ ] Las solicitudes se dirigen automáticamente al departamento o coordinador correspondiente según el grado del estudiante.
+  - [ ] Las delegaciones programadas se activan y expiran en las fechas estipuladas sin intervención manual.
+  - [ ] El sustituto solo puede actuar dentro del alcance expresamente delegado.
+  - [ ] El escalamiento ante vencimiento de plazos notifica a los supervisores correspondientes.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 11662-11709; clave TASK-314; asignación única: Dirección -->
+### [TASK-314] [F34-Task05] [P1] Historial de asignaciones, reasignaciones y revisión individual o colegiada
+- **Prioridad:** P1 (Alta)
+- **Orden de Ejecución:** 5 (Coordinación administrativa multidepartamental)
+- **Componentes Afectados:**
+  - `backend/user-service/Code.gs` (`reassignAdministrativeRequest`, `getWorkflowHistory`, `saveApprovalWorkflow`, `processWorkflowDecision`)
+  - Hoja de Cálculo: `HistorialAsignacionesTramites`, `FlujosAprobacion`
+- **Subcapacidades Relacionadas:** F34-04, F34-07, F34-09.
+- **Origen del Hallazgo:** `AUDITORIA_FASE_34_BANDEJAS_REVISION_FIRMAS.md` / Sección C (F34-04), Matriz CAR-F34-07 y Especificación Técnica ChatGPT/Jules.
+- **Problema Detectado y Riesgos:**
+  El sistema permite modificar el responsable mediante `siguienteAsignadoA` y `updateRequestStatus`, pero no conserva un historial estructurado de los traspasos (se sobrescribe el responsable actual). Tampoco existe soporte para asignar un trámite a varios responsables que deban revisar o aprobar de forma concurrente o colegiada (ej. Secretaría + Orientación + Dirección), arriesgando aprobaciones unilaterales en trámites que requieren consenso.
+- **Requisitos Funcionales y Técnicos Convergentes:**
+  1. *Bitácora estructurada de asignaciones y traspasos:*
+     - Registrar en la hoja `HistorialAsignacionesTramites`:
+       * Identificador de asignación (`asignacionId`).
+       * Documento o solicitud (`solicitudId`).
+       * Departamento de origen y departamento de destino.
+       * Responsable anterior y nuevo responsable (`userId`).
+       * Usuario que ordenó la asignación o traspaso.
+       * Fecha y hora ISO exacta.
+       * Motivo fundamentado del cambio.
+       * Tipo de asignación: inicial, reasignación, delegación temporal o transferencia departamental.
+     - Validar que el usuario destinatario esté activo en el sistema y pertenezca al departamento correspondiente antes de procesar el traspaso.
+  2. *Revisión colegiada y reglas de aprobación configurables:*
+     - Permitir asignar un trámite a múltiples responsables concurrentes o secuenciales.
+     - Implementar motor de resolución según reglas configurables en el flujo:
+       * `TODOS_DEBEN_APROBAR` (unanimidad obligatoria).
+       * `BASTA_UNO` (primer responsable que apruebe libera el trámite).
+       * `MAYORIA_SIMPLE` (más del 50% de las decisiones emitidas deben ser favorables).
+       * `NUMERO_FIJO` (requiere un mínimo de N aprobaciones).
+     - Mostrar qué responsables ya completaron su intervención y cuáles siguen pendientes en la bandeja de trabajo.
+     - Evitar que una decisión individual cierre o apruebe definitivamente un proceso que requiere múltiples aprobaciones colegiadas.
+     - Registrar delegaciones temporales de funciones con fecha de inicio y caducidad automática.
+  3. *Parametrización configurable en plataforma:*
+     - Ajuste por tipo de trámite en `FlujosAprobacion`: `REGLA_APROBACION_COLEGIADA` (`TODOS`, `UNO`, `MAYORIA`) y `PERMITIR_REASIGNACION_POR_REVISOR` (Valores: `SOLO_SUPERVISOR_O_ADMIN`, `CUALQUIER_INTEGRANTE_DEPARTAMENTO`).
+- **Criterios de Aceptación:**
+  - [ ] Asignar una solicitud y comprobar que se registra autor, destinatario, fecha y departamento en la bitácora.
+  - [ ] Reasignar la solicitud y verificar que se conservan el responsable anterior y el motivo sin sobrescribir la historia.
+  - [ ] Intentar asignar a un usuario inactivo o ajeno al departamento y comprobar que la operación es rechazada.
+  - [ ] Asignar un documento a varios responsables colegiados y verificar que cada uno registra su decisión independiente.
+  - [ ] Comprobar que una aprobación individual no finaliza un trámite configurado como unánime o colegiado.
+  - [ ] Verificar que una regla de mayoría simple se resuelve de forma matemáticamente exacta al registrar las decisiones.
+  - [ ] Comprobar que las delegaciones temporales expiran automáticamente pasada la fecha límite autorizada.
+  - [ ] Consultar el historial y comprobar la secuencia cronológica completa de traspasos y decisiones colegiadas.
+- **Dependencias:** Motor de flujos de aprobación, sistema de usuarios y departamentos, F34-Task08.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 11792-11830; clave TASK-317; asignación única: Dirección -->
+### [TASK-317] [F34-Task07] [P1] Delimitación del alcance de las firmas institucionales y requisitos para mecanismos de firma legal
+- **Prioridad:** P1 (Alta)
+- **Orden de Ejecución:** 8 (Seguridad jurídica y cumplimiento del Decreto 149-2013)
+- **Componentes Afectados:**
+  - `backend/user-service/Code.gs` (`registerDocumentSignature`, `getWorkflowHistory`, `verifyDocumentSignature`)
+  - `docs/architecture/`
+  - Certificados digitales emitidos y visualizadores de firmas
+  - Hoja de Cálculo: `FirmasConformidades`
+- **Subcapacidades Relacionadas:** F34-06, F34-10.
+- **Origen del Hallazgo:** `AUDITORIA_FASE_34_BANDEJAS_REVISION_FIRMAS.md` / Sección C (F34-06), Matriz CAR-F34-06 y Especificación Técnica ChatGPT/Jules.
+- **Problema Detectado y Riesgos:**
+  El sistema registra conformidades autenticadas mediante `registerDocumentSignature` con tokens pseudo-aleatorios `VERIF-XXXXXXXX`. Sin embargo, estos mecanismos son aprobaciones internas basadas en sesión y no equivalen a una Firma Electrónica Avanzada bajo la Ley sobre Firmas Electrónicas de Honduras (Decreto 149-2013 y Acuerdo 041-2014). Presentarlos erróneamente como "firmas digitales certificadas" expone a la institución a impugnaciones legales de nulidad en contratos laborales, títulos oficiales o actos disciplinarios graves.
+- **Requerimientos Funcionales y Técnicos Convergentes:**
+  1. *Diferenciación conceptual y advertencia legal expresa:*
+     - Diferenciar inequívocamente en la base de datos, en la interfaz y en los documentos generados:
+       * `Aprobación Administrativa`: Aprobación operativa de paso en el flujo.
+       * `Conformidad Digital Institucional`: Consentimiento autenticado en plataforma mediante sesión y token interno `VERIF-`.
+       * `Constancia de Conocimiento`: Toma de razón (ej. docente enterado de inasistencia).
+       * `Firma Electrónica Avanzada / Certificada`: Firma criptográfica con certificado digital emitido por prestador acreditado.
+     - Mostrar una advertencia legal clara en el visor, constancias y documentos generados indicando que la conformidad registrada tiene valor institucional interno conforme al reglamento escolar.
+     - Prohibir terminantemente el uso de expresiones engañosas como "Certificado por Autoridad Certificadora" en sellos internos.
+  2. *Requisitos de firma según nivel de riesgo y preparación para integración externa:*
+     - Catalogar por tipo documental el nivel de firma exigido.
+     - Cuando se vincule un mecanismo de firma avanzada externa, registrar: identidad del firmante, documento y versión firmada, evidencia de autenticación PKI, referencia del certificado, resultado de validación CRL/OCSP y hash del documento firmado.
+     - Asegurar que la introducción de firmas externas no invalide ni borre el historial de conformidades institucionales previas.
+  3. *Parametrización configurable en plataforma:*
+     - Configuración institucional en `ConfiguracionInstitucional`: `NIVEL_FIRMA_REQUERIDO_POR_TIPO_TRAMITE`: Mapeo JSON de trámites a niveles (`CONFORMIDAD_SESION`, `CONFORMIDAD_TOKEN_VERIF`, `FIRMA_AVANZADA_CERTIFICADA`).
+- **Criterios de Aceptación:**
+  - [ ] Registrar una conformidad y verificar que los comprobantes la identifican explícitamente como aprobación interna institucional.
+  - [ ] Comprobar que los tokens `VERIF-` no se presenten como certificados digitales emitidos por una autoridad de certificación acreditada.
+  - [ ] Modificar el documento con posterioridad y comprobar que la firma previa no se traslada a la nueva versión.
+  - [ ] Comprobar que un trámite configurado para requerir firma externa no pueda completarse únicamente con una conformidad simple de sesión.
+  - [ ] Consultar el historial de firmas y verificar la conservación inalterable de los registros previos.
+  - [ ] Revisar la advertencia legal en comprobantes y validar que describe con precisión técnica su alcance jurídico.
+- **Dependencias:** F34-Task04 (integridad criptográfica de documentos), generación de documentos y CUV.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 12058-12090; clave TASK-325; asignación única: Dirección -->
+### [TASK-325] [F35-ID-Task07] [P1] Consola administrativa de gestión de series, versionado y control de permisos
+- **Prioridad:** P1 (Alta / Importante)
+- **Orden de Ejecución:** 7 (Gobernanza administrativa y control de acceso)
+- **Componentes Afectados:**
+  - `backend/user-service/Code.gs` (`getSequenceDefinitions`, `updateSequenceDefinition`)
+  - `teacher-dashboard.html`, `dashboard-direccion.html`, `js/config.js`
+  - Hoja de Cálculo: `DefinicionesNumeracion`, `AuditoriaSecuencias`
+- **Subcapacidades Relacionadas:** F35-ID-11, F35-ID-13, F35-ID-14, F35-ID-18.
+- **Origen del Hallazgo:** `AUDITORIA_FASE_35_REGISTRO_CENTRAL_IDENTIFICADORES_NUMERACION.md` / Sección E, G y Matriz CAR-ID-13, CAR-ID-15, CAR-ID-18.
+- **Problema Detectado y Riesgos:**
+  La administración de secuencias se realiza mediante edición directa de celdas en Google Sheets por parte de técnicos. No existe una interfaz con permisos segregados donde Dirección o Secretaría puedan consultar el último número emitido, ver el estado de las series o solicitar un cambio de prefijo con aprobación auditada.
+- **Requerimientos Funcionales y Técnicos Convergentes:**
+  1. *Consola de supervisión y control de series:*
+     - Proveer interfaz en el panel de Dirección y Configuración para visualizar:
+       * Tipo de entidad y ámbito institucional.
+       * Formato oficial activo y patrón generado.
+       * Último número emitido y siguiente código previsto.
+       * Total de registros que utilizan la definición.
+       * Historial de cambios con usuario, fecha y justificación.
+  2. *Segregación de permisos y versionado:*
+     - Exigir roles `Director` o `Administrador` para modificar o crear definiciones de numeración.
+     - Prohibir eliminar definiciones que ya cuenten con registros asociados; permitir únicamente marcar como `Inactiva` o `Sustituida`.
+     - Exigir confirmación reforzada (con ingreso de contraseña o token) si se intenta adelantar o modificar manualmente un contador.
+- **Criterios de Aceptación:**
+  - [ ] Solo usuarios autorizados pueden consultar y administrar la configuración de numeración.
+  - [ ] Los usuarios ordinarios no tienen acceso a modificar contadores ni formatos.
+  - [ ] Todo cambio en una definición queda asentado en bitácora con trazabilidad completa.
+  - [ ] No es posible eliminar una serie que tenga identificadores emitidos en uso.
+- **Dependencias:** F35-ID-Task02, F35-ID-Task06.
 - **Estado:** [ ] Pendiente
 
 ---
 
-### [REQ-EXP-018] Sistema de Logs Estructurados por Servicio y Función (Sección 14.4 - 14.6)
-- **Origen del Hallazgo:** Requerimientos de Desarrollo y Expansión (Sección 14.4 - 14.6).
-- **Severidad/Clasificación:** Alto
-- **Archivos Involucrados:** `backend/user-service/Code.gs`, `backend/academic-service/Code.gs`, `js/api.js`
-- **Dependencias Expuestas:** Visor de logs en Consola Técnica.
-- **Descripción del Alcance:** Registrar eventos con fecha, hora, severidad, servicio, función y códigos de error unívocos (ej. `AUTH_INVALID_CREDENTIALS`, `SHEETS_WRITE_FAILED`), con filtros por severidad y fecha.
-- **Criterios de Aceptación:** Logs detallados sin exponer información sensible ni contraseñas.
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 12095-12129; clave TASK-326; asignación única: Dirección -->
+### [TASK-326] [F37-Task06] [P1] Diagnóstico de coherencia departamental y detección de registros desalineados
+- **Prioridad:** P1 (Alta / Importante)
+- **Orden de Ejecución:** 6 (Supervisión proactiva e integridad interdepartamental)
+- **Componentes Afectados:**
+  - `backend/accounting-service/Code.gs` (`diagnoseCrossDepartmentalCoherence`)
+  - `backend/developer-service/Code.gs`
+  - Hoja de Cálculo: `AuditoriaCoherenciaDepartamental`
+- **Subcapacidades Relacionadas:** F37-11, F37-12.
+- **Origen del Hallazgo:** `AUDITORIA_FASE_37_AISLAMIENTO_DATOS_ASIGNACION_DEPARTAMENTOS.md` / Sección C (F37-12), Matriz CAR-F37-12 y Especificación Técnica ChatGPT/Jules.
+- **Problema Detectado y Riesgos:**
+  No existe una herramienta que permita detectar sistemáticamente registros guardados en destinos incorrectos, relaciones huérfanas o inconsistencias entre el departamento propietario de una entidad y su ubicación real. La detección depende de hallazgos manuales fortuitos.
+- **Requerimientos Funcionales y Técnicos Convergentes:**
+  1. *Motor automatizado de diagnóstico de coherencia:*
+     - Implementar `diagnoseCrossDepartmentalCoherence(payload)` que compare las asignaciones declaradas con la ubicación real de los registros:
+       * Registros ubicados en un departamento o módulo diferente al propietario.
+       * Registros almacenados en destinos no registrados o inactivos.
+       * Entidades duplicadas entre fuentes supuestamente independientes.
+       * Registros sin identificadores institucionales válidos.
+       * Referencias foráneas a entidades inexistentes o en ámbitos institucionales incorrectos.
+       * Operaciones de importación cuyo estado no coincida con los datos persistidos.
+     - Ejecutar filtros por departamento, módulo, entidad, sede y año lectivo.
+  2. *Reporte estructurado y no destructivo:*
+     - El diagnóstico debe ser estrictamente no destructivo (solo lectura); encontrar anomalías no debe modificar ni borrar registros automáticamente.
+     - Diferenciar errores confirmados de posibles inconsistencias sujetas a revisión.
+     - Mostrar totales por categoría, nivel de gravedad y detalle del registro afectado.
+- **Criterios de Aceptación:**
+  - [ ] Un registro de prueba en un destino incompatible es identificado de inmediato por el diagnóstico.
+  - [ ] Referencias huérfanas a matrículas o estudiantes inexistentes se detectan y catalogan.
+  - [ ] Ejecutar el diagnóstico no modifica ninguna celda de negocio ni expone datos confidenciales ajenos al rol.
+  - [ ] Las excepciones autorizadas e identificadores históricos no se marcan falsamente como errores.
+- **Dependencias:** F37-Task01, F37-Task04, F37-Task05.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 12130-12162; clave TASK-327; asignación única: Dirección -->
+### [TASK-327] [F37-Task07] [P1] Consola administrativa de destinos, fuentes y relaciones interdepartamentales
+- **Prioridad:** P1 (Alta / Importante)
+- **Orden de Ejecución:** 7 (Gobernanza y administración de fuentes en panel de control)
+- **Componentes Afectados:**
+  - `dashboard-direccion.html`, `js/config.js`
+  - `backend/accounting-service/Code.gs` (`getSpreadsheetCatalog`, `registerSpreadsheetSource`, `saveDepartmentalRelationship`)
+  - Hoja de Cálculo: `CatalogoSpreadsheets`, `CatalogoRelacionesInterdepartamentales`, `CatalogoProyeccionesCompartidas`
+- **Subcapacidades Relacionadas:** F37-11.
+- **Origen del Hallazgo:** `AUDITORIA_FASE_37_AISLAMIENTO_DATOS_ASIGNACION_DEPARTAMENTOS.md` / Sección C (F37-11), Matriz CAR-F37-11 y Especificación Técnica ChatGPT/Jules.
+- **Problema Detectado y Riesgos:**
+  La plataforma dispone de `CatalogoSpreadsheets`, pero no de una consola unificada para administrar qué departamentos pueden utilizar qué entidades, qué campos pueden compartir y qué relaciones están autorizadas. La gestión se realiza mediante llamadas directas o edición manual de celdas por personal técnico.
+- **Requerimientos Funcionales y Técnicos Convergentes:**
+  1. *Consola de administración integral en panel directivo:*
+     - Proveer interfaz en el dashboard de Dirección y Configuración para:
+       * *Departamentos y Módulos:* Visualizar áreas registradas, estado y entidades propietarias.
+       * *Destinos y Fuentes:* Supervisar hojas registradas en `CatalogoSpreadsheets`, año lectivo, sede y estado activo/inactivo.
+       * *Relaciones Interdepartamentales:* Consultar y configurar qué departamentos pueden relacionar entidades ajenas y con qué propósito.
+       * *Proyecciones de Datos:* Seleccionar los campos autorizados que puede recibir cada departamento consumidor.
+  2. *Gobernanza y seguridad de configuración:*
+     - Restringir la administración exclusivamente a roles directivos autorizados.
+     - Advertir sobre dependencias operativas activas antes de desactivar una fuente o relación utilizada.
+     - Registrar en bitácora cada modificación con usuario, fecha, valor anterior y nuevo.
+- **Criterios de Aceptación:**
+  - [ ] La consola muestra con claridad las fuentes, relaciones y proyecciones configuradas.
+  - [ ] Registrar un nuevo destino válido lo deja disponible de inmediato sin alterar los existentes.
+  - [ ] Desactivar un destino bloquea nuevas escrituras sin borrar los registros históricos.
+  - [ ] Modificar una proyección aplica de inmediato la nueva máscara de atributos en consultas posteriores.
+  - [ ] Los usuarios sin permisos administrativos no pueden acceder ni modificar las configuraciones.
+- **Dependencias:** F37-Task01, F37-Task03, F37-Task04.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 12163-12194; clave TASK-328; asignación única: Dirección -->
+### [TASK-328] [F37-Task08] [P1] Reasignación asistida y recuperación de registros almacenados en destinos incorrectos
+- **Prioridad:** P1 (Alta / Importante)
+- **Orden de Ejecución:** 8 (Saneamiento asistido y reconciliación de datos mal ubicados)
+- **Componentes Afectados:**
+  - `backend/accounting-service/Code.gs` (`reconcileMisalignedRecord`, `executeAssistedReassignment`)
+  - `backend/developer-service/Code.gs`
+  - Hoja de Cálculo: `RegistroEventos`, `AuditoriaCoherenciaDepartamental`
+- **Subcapacidades Relacionadas:** F37-12.
+- **Origen del Hallazgo:** `AUDITORIA_FASE_37_AISLAMIENTO_DATOS_ASIGNACION_DEPARTAMENTOS.md` / Sección C (F37-12), Matriz CAR-F37-12 y Especificación Técnica ChatGPT/Jules.
+- **Problema Detectado y Riesgos:**
+  No existe una herramienta para corregir de forma controlada registros que hayan terminado en una hoja o fuente incorrecta. Aunque el diagnóstico detecte el problema, se carece de un procedimiento seguro para transferir esos registros sin perder identificadores, relaciones financieras o referencias académicas.
+- **Requerimientos Funcionales y Técnicos Convergentes:**
+  1. *Procedimiento de reasignación asistida:*
+     - A partir de los hallazgos del diagnóstico (F37-Task06), permitir seleccionar registros mal ubicados y mostrar: ubicación actual, departamento propietario, destino correcto, ID institucional y relaciones dependientes.
+     - Validar el destino mediante el mecanismo de enrutamiento central y verificar que el usuario tenga autorización.
+     - Comprobar que el registro no exista ya en el destino receptor (evitar fusiones arbitrarias en caso de conflicto).
+     - Conservar exactamente el identificador institucional inmutable y las relaciones con matrículas y pagos.
+  2. *Previsualización y atomicidad:*
+     - Exigir previsualización antes de confirmar la reasignación, permitiendo cancelar sin efectos.
+     - Operación idempotente: si se interrumpe, permitir reanudación sin duplicar registros.
+     - Auditar en `RegistroEventos` el movimiento con ubicación previa, nueva, responsable y justificación.
+- **Criterios de Aceptación:**
+  - [ ] Seleccionar un registro mal ubicado muestra su destino actual y el esperado con sus dependencias.
+  - [ ] La reasignación traslada el registro a la hoja correcta conservando intacto su identificador institucional.
+  - [ ] Las relaciones con pagos o matrículas permanecen válidas y consultables tras el traslado.
+  - [ ] Si existe colisión o duplicado en el destino, la operación se detiene y solicita resolución explícita.
+  - [ ] Toda reasignación asistida queda registrada con trazabilidad completa en la bitácora central.
+- **Dependencias:** F37-Task01, F37-Task04, F37-Task05, F37-Task06.
 - **Estado:** [ ] Pendiente
 
 ---
 
-### [REQ-EXP-019] Módulo de Copias de Seguridad, Verificación y Mantenimiento Seguro (Sección 14.7 - 14.8)
-- **Origen del Hallazgo:** Requerimientos de Desarrollo y Expansión (Sección 14.7 - 14.8).
-- **Severidad/Clasificación:** Crítico
-- **Archivos Involucrados:** `backend/user-service/Code.gs`, `backend/academic-service/Code.gs`
-- **Dependencias Expuestas:** Drive API, automatización de respaldos de datos de la institución.
-- **Descripción del Alcance:** Crear respaldos manuales/programados, verificar integridad de archivos guardados, control de restauración protegida con confirmación doble y herramientas de mantenimiento seguro.
-- **Criterios de Aceptación:** Generación exitosa de respaldos verificables con políticas de retención.
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 12547-12574; clave TASK-341; asignación única: Dirección -->
+### [TASK-341] [F39-Task14] [P1] Implementación del tablero directivo de avance de digitalización por departamento
+- **Prioridad:** P1 (Alta / Importante)
+- **Orden de Ejecución:** 14 (Supervisión institucional y gobernanza del proceso de transición)
+- **Componentes Afectados:**
+  - `backend/accounting-service/Code.gs` (`getDigitizationProgressReport`)
+  - `dashboard-direccion.html`, `js/config.js`
+  - Hoja de Cálculo: `InventarioDocumentalLegado`, `RegistroEventos`
+- **Subcapacidades Relacionadas:** 3.11, 3.12.
+- **Origen del Hallazgo:** `AUDITORIA_FASE_39_DIGITALIZACION_TRANSICION.md` / Sección C (3.11) y Matriz CAR-F39-11.
+- **Problema Detectado y Riesgos:**
+  La Dirección institucional no dispone de indicadores consolidados para medir el avance del plan de digitalización. Se desconoce qué porcentaje de documentos históricos han sido migrados en Secretaría frente a Contabilidad o RRHH, impidiendo detectar retrasos en la transición.
+- **Requerimientos Funcionales y Técnicos Convergentes:**
+  1. *Panel de control e indicadores en tiempo real:*
+     - Implementar `getDigitizationProgressReport(payload)` que compute sobre `InventarioDocumentalLegado`: total inventariado, documentos pendientes, en proceso, digitalizados, validados, rechazados y duplicados resueltos.
+     - Métricas independientes por departamento (Secretaría, Contabilidad, Recursos Humanos, Dirección).
+     - Fórmulas de avance diferenciadas: cobertura de inventario, progreso de importación y progreso de validación.
+  2. *Seguimiento temporal e incidencias:*
+     - Evolución temporal del avance y acceso directo a incidencias pendientes (archivos corruptos, duplicados sin resolver, documentos sin expediente asignado).
+     - Exportación de informes en Excel y PDF para rendición de cuentas institucional.
+- **Criterios de Aceptación:**
+  - [ ] El panel directivo muestra métricas consolidadas y desglosadas por departamento en tiempo real.
+  - [ ] Diferencia claramente entre documentos simplemente cargados y documentos formalmente validados.
+  - [ ] Permite identificar cuellos de botella e incidencias pendientes con acceso directo a su resolución.
+- **Dependencias:** F39-Task01, F39-Task02, F39-Task03, F39-Task04, F39-Task07, F39-Task08.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 12575-12601; clave TASK-342; asignación única: Dirección -->
+### [TASK-342] [F39-Task15] [P1] Implementación de seguimiento operativo y gestión de tareas de digitalización
+- **Prioridad:** P1 (Alta / Importante)
+- **Orden de Ejecución:** 15 (Asignación y workflow de trabajo operativo de digitalización)
+- **Componentes Afectados:**
+  - `backend/user-service/Code.gs` (`assignDigitizationTask`, `getDigitizationTasks`, `updateDigitizationTaskStatus`)
+  - Hoja de Cálculo: `TareasDigitalizacion`
+- **Subcapacidades Relacionadas:** 3.1, 3.11.
+- **Origen del Hallazgo:** `AUDITORIA_FASE_39_DIGITALIZACION_TRANSICION.md` / Sección 3.11, 3.12 y Especificación Técnica ChatGPT/Jules.
+- **Problema Detectado y Riesgos:**
+  La digitalización involucra múltiples actores (digitalizadores, revisores, secretarios, archivistas) sin un flujo estructurado de tareas. Las actividades se gestionan verbalmente, provocando tareas abandonadas, demoras sin responsable identificado y falta de rendición de cuentas operativa.
+- **Requerimientos Funcionales y Técnicos Convergentes:**
+  1. *Asignación y estados de actividades de digitalización:*
+     - Auto-crear la hoja `TareasDigitalizacion` (`TareaId`, `DocumentoId`, `Departamento`, `ResponsableUserId`, `TipoActividad`, `Estado`, `FechaAsignacion`, `FechaInicio`, `FechaFinalizacion`, `Observaciones`).
+     - Tipos de actividad: clasificar archivos, escanear físicos, validar datos, resolver duplicados, vincular expedientes, aprobar plantillas.
+     - Estados de flujo: `Pendiente`, `Asignada`, `En_Proceso`, `En_Revision`, `Observada`, `Completada`, `Cancelada`.
+  2. *Colaboración y notificaciones:*
+     - Permitir transferir tareas entre responsables conservando trazabilidad.
+     - Notificaciones automáticas al asignar tareas o detectar inconsistencias que requieran revisión.
+- **Criterios de Aceptación:**
+  - [ ] Permite asignar actividades de digitalización a responsables específicos vinculadas a documentos del inventario.
+  - [ ] Registra el ciclo de vida completo de cada tarea con fechas de inicio y finalización.
+  - [ ] Notifica al responsable asignado y muestra tareas pendientes en su bandeja de trabajo.
+- **Dependencias:** F39-Task01, F39-Task14.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 12721-12750; clave TASK-347; asignación única: Dirección -->
+### [TASK-347] [F40-Task17] [P1] Incorporar detección de actividad documental anómala y alertas de seguridad (F40-15)
+- **Prioridad:** P1 (Alta / Importante)
+- **Orden de Ejecución:** 17 (Monitoreo de seguridad y detección de exfiltración)
+- **Componentes Afectados:**
+  - `backend/user-service/Code.gs` (`detectAnomalousDocumentActivity`, `dispatchSecurityAlerts`)
+  - `backend/academic-service/Code.gs`
+  - Hoja de Cálculo: `AlertasSeguridadDocumental`
+- **Subcapacidades Relacionadas:** F40-19.
+- **Origen del Hallazgo:** `AUDITORIA_FASE_40_SEGURIDAD_DOCUMENTAL_TRAZABILIDAD_Y_CONSERVACION.md` / Secciones C (F40-19) y Especificación Técnica ChatGPT/Jules.
+- **Problema Detectado y Riesgos:**
+  No se generan alertas ante ráfagas de descargas masivas, consultas reiteradas a expedientes no asignados o intentos continuos de acceso denegado, dificultando la detección oportuna de incidentes de seguridad.
+- **Requerimientos Funcionales y Técnicos Convergentes:**
+  1. *Evaluación heurística de patrones sobre la bitácora:*
+     - Analizar `LogsSistema` y evaluar umbrales configurables por rol y periodo.
+     - Detectar: Ráfagas de descargas masivas, Consultas repetitivas a expedientes de terceros, Intentos reiterados de acceso denegado, Descarga concentrada de categorías sensibles, Actividad fuera de horarios o ubicaciones habituales, Uso reiterado de enlaces vencidos/revocados.
+  2. *Gestión de alertas e incidentes:*
+     - Clasificar alertas por severidad (`INFO`, `WARN`, `CRITICAL`) con lista de eventos vinculados.
+     - Asignar alerta a un oficial de seguridad o directivo para su investigación.
+     - Opciones: Revisar, Cerrar, Escalar o Confirmar como actividad legítima justificada.
+     - Medidas preventivas configurables: exigir reautenticación o suspender token temporalmente ante riesgos extremos.
+- **Criterios de Aceptación:**
+  - [ ] Superar el umbral configurado de descargas por minuto genera alerta de seguridad.
+  - [ ] Intentos reiterados de acceso denegado disparan alerta con eventos relacionados.
+  - [ ] Operaciones normales dentro de los umbrales no producen falsos positivos.
+  - [ ] La investigación de la alerta conserva la resolución, responsable y fecha de cierre.
+- **Dependencias:** F40-Task08.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 12781-12809; clave TASK-349; asignación única: Dirección -->
+### [TASK-349] [F40-Task19] [P1] Crear un panel de integridad, seguridad y salud documental (F40-17)
+- **Prioridad:** P1 (Alta / Importante)
+- **Orden de Ejecución:** 19 (Tablero directivo de monitoreo de seguridad documental)
+- **Componentes Afectados:**
+  - `backend/academic-service/Code.gs` (`getDocumentSecurityDashboardData`)
+  - `dashboard-direccion.html`, `js/config.js`
+- **Subcapacidades Relacionadas:** F40-22.
+- **Origen del Hallazgo:** `AUDITORIA_FASE_40_SEGURIDAD_DOCUMENTAL_TRAZABILIDAD_Y_CONSERVACION.md` / Secciones C (F40-22) y Especificación Técnica ChatGPT/Jules.
+- **Problema Detectado y Riesgos:**
+  No existe un panel visual para que la Dirección identifique discrepancias de hash, archivos huérfanos, accesos inseguros o fallos de respaldo, forzando auditorías manuales complejas sobre múltiples hojas.
+- **Requerimientos Funcionales y Técnicos Convergentes:**
+  1. *Métricas e indicadores consolidados de salud documental:*
+     - Indicadores en tiempo real: Total de documentos registrados, Archivos físicos localizados en Drive, Archivos huérfanos, Registros sin archivo físico, Discrepancias de hash SHA-256, Documentos sin clasificación de sensibilidad, Permisos/enlaces públicos inseguros, Documentos bajo Legal Hold, Documentos próximos a vencer, Documentos pendientes de disposición, Respaldos exitosos/fallidos, Restauraciones ejecutadas.
+  2. *Navegación y filtros operativos:*
+     - Filtros por departamento, categoría, periodo y estado.
+     - Mostrar fecha de última conciliación y respaldo.
+     - Navegación directa hacia el detalle de cada incidencia según el rol del usuario.
+     - Exportación de métricas e incidencias autorizadas.
+     - Prohibir la exposición de enlaces directos o URLs públicas en el panel.
+- **Criterios de Aceptación:**
+  - [ ] El panel refleja inmediatamente los resultados de las conciliaciones de integridad.
+  - [ ] Documentos alterados aparecen clasificados como incidencias de integridad.
+  - [ ] Filtrar por departamento restringe la información a las atribuciones del usuario.
+  - [ ] El panel no expone URLs directas a archivos privados ni contenidos sensibles sin autorización.
+- **Dependencias:** F40-Task06, F40-Task08, F40-Task15, F40-Task13.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 12810-12842; clave TASK-350; asignación única: Dirección -->
+### [TASK-350] [F40-Task20] [P1] Generar reportes de auditoría exportables, verificables y protegidos (F40-18)
+- **Prioridad:** P1 (Alta / Importante)
+- **Orden de Ejecución:** 20 (Evidencias de fiscalización externa e interna)
+- **Componentes Afectados:**
+  - `backend/user-service/Code.gs` (`exportVerifiableAuditReport`)
+  - `backend/academic-service/Code.gs`
+  - Hoja de Cálculo: `ReportesAuditoriaEmitidos`
+- **Subcapacidades Relacionadas:** F40-24.
+- **Origen del Hallazgo:** `AUDITORIA_FASE_40_SEGURIDAD_DOCUMENTAL_TRAZABILIDAD_Y_CONSERVACION.md` / Secciones C (F40-24) y Especificación Técnica ChatGPT/Jules.
+- **Problema Detectado y Riesgos:**
+  `getAuditReport` entrega datos JSON crudos en pantalla, pero no genera reportes documentales firmados e inmutables que sirvan como evidencia formal para comités de fiscalización o revisiones externas.
+- **Requerimientos Funcionales y Técnicos Convergentes:**
+  1. *Generación de reportes multicriterio:*
+     - Filtros por: Usuario, Documento, Expediente, Departamento, Categoría, Periodo, Operación, Incidente de seguridad.
+     - Contenido: Eventos, resultados, responsables, versiones y referencias.
+     - Diferenciar hechos registrados de alertas u observaciones del auditor.
+     - Incluir fecha/hora de emisión, solicitante, filtros aplicados y alcance.
+  2. *Sellado e inmutabilidad del reporte:*
+     - Salidas en formatos legibles (PDF) y estructurados (CSV/JSON).
+     - Incorporar hash SHA-256 del reporte exportado y manifiesto autenticado con HMAC institucional.
+     - Respetar permisos del solicitante: no incluir datos que el auditor no esté autorizado a ver.
+     - Registrar la emisión y descarga del reporte en la bitácora.
+     - Permitir verificar retrospectivamente que el reporte exportado no ha sido adulterado.
+- **Criterios de Aceptación:**
+  - [ ] Generar un reporte por documento o periodo produce un archivo sellado con hash SHA-256.
+  - [ ] Intentos de incluir documentos fuera del alcance del auditor son excluidos.
+  - [ ] Modificar el PDF o CSV exportado hace fallar la verificación de autenticidad del reporte.
+  - [ ] La emisión del reporte queda registrada en `ReportesAuditoriaEmitidos` con su firma.
+- **Dependencias:** F40-Task06, F40-Task09, F40-Task08.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 13268-13305; clave TASK-365; asignación única: Dirección -->
+### [TASK-365] [ ] [F16-Task09] Desarrollar un organigrama institucional interactivo y directorio de personal
+- **Origen del Hallazgo:** `AUDITORIA_FASE_16_RECURSOS_HUMANOS.md` / Sección F (Brecha F.5) y Sección H (P2)
+- **Prioridad:** P2
+- **Severidad/Clasificación:** Media (Supervisión directiva, claridad organizativa y experiencia de usuario)
+- **Archivos Involucrados:**
+  - `dashboard-recursos-humanos.html`
+  - `js/ui-common.js`
+  - `js/accounting.js`
+  - `backend/user-service/Code.gs`
+  - `backend/academic-service/Code.gs`
+  - `CatalogoDepartamentos`
+  - `CatalogoCargos`
+  - `HistorialAdscripciones`
+  - `AsignacionesAmbitosRoles`
+  - `CoordinacionesArea`
+  - `AreasCurricularesExtensiones`
+- **Dependencias Expuestas:** `CatalogoDepartamentos`, `CatalogoCargos`, `HistorialAdscripciones`, `CoordinacionesArea`, `F16-Task01`, `F16-Task06`
+- **Descripción del Alcance:**
+  El panel de Recursos Humanos presenta información organizativa mediante tablas, pero carece de una representación gráfica dinámica de la estructura institucional que permita a la Dirección y Coordinación visualizar la cadena de mando y las academias docentes.
+  Requerimientos Funcionales Detallados:
+  1. Componente visual interactivo:
+     - Renderizar un organigrama basado en nodos DOM / SVG que muestre departamentos, subdepartamentos, jefaturas, coordinaciones de área y colaboradores adscritos.
+     - Controles interactivos: expandir/contraer ramas, zoom, paneo, búsqueda rápida de empleados por nombre/cargo y filtros por departamento y área académica.
+     - Diferenciación visual clara entre líneas jerárquicas administrativas y coordinaciones académicas funcionales.
+  2. Directorio institucional y privacidad:
+     - Permitir alternar entre vista de organigrama jerárquico y vista de directorio telefónico/correo institucional.
+     - Si un empleado tiene múltiples responsabilidades (ej. docente y coordinador), mostrarlo como un único colaborador con sus diferentes atribuciones vinculadas.
+     - Carga progresiva y optimizada para no saturar memoria ni transferir datos confidenciales de nómina o expedientes médicos.
+- **Criterios de Aceptación:**
+  - El organigrama se genera dinámicamente desde los datos reales de departamentos y adscripciones.
+  - Los cambios en jefaturas o adscripciones se reflejan de inmediato en la visualización.
+  - No se producen bucles visuales en la representación de la estructura.
+  - Un colaborador con múltiples asignaciones mantiene su identidad única sin duplicar fichas.
+  - El visor opera de manera fluida y responsiva en dispositivos de escritorio y móviles.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 13306-13339; clave TASK-366; asignación única: Dirección -->
+### [TASK-366] [ ] [F16-Task10] Implementar exportación avanzada de expedientes laborales, reportes y documentos de liquidación
+- **Origen del Hallazgo:** `AUDITORIA_FASE_16_RECURSOS_HUMANOS.md` / Sección B (F16-19) y Sección H (P2)
+- **Prioridad:** P2
+- **Severidad/Clasificación:** Media (Gestión documental, archivo institucional y exportación para auditorías)
+- **Archivos Involucrados:**
+  - `backend/accounting-service/Code.gs`
+  - `dashboard-recursos-humanos.html`
+  - `js/accounting.js`
+  - `ExpedientesLaborales`
+  - `ContratosLaborales`
+  - `SolicitudesVacaciones`
+  - `EvaluacionesDesempenoRegistros`
+  - `CapacitacionesCursos`
+- **Dependencias Expuestas:** Generadores de documentos, Google Drive, `ExpedientesLaborales`, `ContratosLaborales`
+- **Descripción del Alcance:**
+  La plataforma cuenta con reportes en pantalla, pero necesita ampliar las opciones de exportación estructurada en PDF y Excel para trámites oficiales, auditorías laborales y archivo físico institucional.
+  Requerimientos Funcionales Detallados:
+  1. Expediente individual en PDF con membrete institucional:
+     - Generar PDF completo o modular permitiendo seleccionar secciones: datos personales, historial de puestos y departamentos, contratos y renovaciones, asistencias consolidadas, vacaciones, capacitaciones, evaluaciones de desempeño y medidas disciplinarias (solo para roles autorizados).
+  2. Reportes de personal en Excel:
+     - Exportaciones tabulares de personal activo/inactivo, docentes por área académica, contratos por vencer, ausencias e incapacidades con filtros aplicados.
+  3. Cierre y liquidación laboral:
+     - Generar hojas de cálculo y reportes de finiquito laboral desglosando bases de cálculo, deducciones de ley (IHSS, RAP, ISR) y saldos de vacaciones pendientes con campos para firmas de conformidad.
+  4. Seguridad y protección documental:
+     - Excluir diagnósticos médicos confidenciales de reportes generales; registrar en auditoría qué usuario generó y descargó cada expediente sensible.
+- **Criterios de Aceptación:**
+  - El PDF descargado refleja fielmente el historial del expediente seleccionado con formato formal institucional.
+  - Los archivos de Excel generados mantienen los formatos de fecha, números y fórmulas consistentes.
+  - Los datos médicos confidenciales y salariales están estrictamente aislados según el rol del solicitante.
+  - Se registra la bitácora de descarga de expedientes con usuario, fecha y motivo.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 13340-13373; clave TASK-367; asignación única: Dirección -->
+### [TASK-367] [ ] [F16-Task11] Automatizar la conversión de candidatos seleccionados en expedientes de empleados
+- **Origen del Hallazgo:** `AUDITORIA_FASE_16_RECURSOS_HUMANOS.md` / Sección B (F16-05) y Sección H (P2)
+- **Prioridad:** P2
+- **Severidad/Clasificación:** Media (Eficiencia administrativa en reclutamiento y continuidad del ciclo laboral)
+- **Archivos Involucrados:**
+  - `backend/accounting-service/Code.gs`
+  - `manageJobVacancy`
+  - `submitJobCandidate`
+  - `createEmployeeRecord`
+  - `VacantesLaborales`
+  - `CandidatosVacantes`
+  - `ExpedientesLaborales`
+  - `ContratosLaborales`
+  - `F16-Task04`
+- **Dependencias Expuestas:** `CandidatosVacantes`, `ExpedientesLaborales`, `ContratosLaborales`, `ChecklistIncorporacion`
+- **Descripción del Alcance:**
+  El sistema cuenta con gestión de vacantes y postulantes mediante `manageJobVacancy` y `submitJobCandidate`, pero la formalización de un candidato contratado requiere capturar nuevamente sus datos de forma manual, propiciando errores tipográficos o duplicidades.
+  Requerimientos Funcionales Detallados:
+  1. Conversión fluida de postulante a colaborador:
+     - Acción en interfaz para formalizar la contratación de un candidato con estado `Seleccionado`.
+     - Precargar automáticamente los datos personales, teléfono, correo electrónico y CV previamente registrados en `CandidatosVacantes`.
+     - Validar que la persona no tenga ya un expediente laboral activo previo (detección por DNI/identificación).
+     - Crear o vincular el expediente laboral en `ExpedientesLaborales` y registrar el primer contrato en `ContratosLaborales`.
+     - Disparar automáticamente la plantilla de checklist de incorporación (`F16-Task04`).
+     - Actualizar el estado de la vacante restando las plazas disponibles y marcando la candidatura como `Contratado`.
+- **Criterios de Aceptación:**
+  - Un candidato seleccionado se convierte en empleado con un solo flujo guiado reutilizando sus datos.
+  - Se detectan y alertan posibles expedientes duplicados antes de formalizar la contratación.
+  - Se crea el expediente y el contrato inicial quedando enlazados a la lista de onboarding correspondiente.
+  - El historial del proceso de selección y entrevistas permanece archivado y consultable.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 14054-14078; clave TASK-391; asignación única: Dirección -->
+### [TASK-391] [ ] [F21-Task30] Indicadores de eficiencia operativa y análisis de demanda de transporte
+- **Origen del Hallazgo:** `AUDITORIA_FASE_21_TRANSPORTE_SERVICIOS_COMPLEMENTARIOS.md` / Sección C (3.12) y Plan de Implementación TAREA 29
+- **Prioridad:** P2
+- **Severidad/Clasificación:** Media (Analítica gerencial, toma de decisiones de rutas y costos por alumno)
+- **Archivos Involucrados:**
+  - `backend/accounting-service/Code.gs` (nueva función `getTransportEfficiencyMetrics`)
+  - `TransporteRutas`
+  - `TransporteAsignaciones`
+  - `TransporteViajes`
+- **Dependencias Expuestas:** `TransporteRutas`, `TransporteViajes`, `F21-Task27`
+- **Descripción del Alcance:**
+  Dirección no cuenta con indicadores para evaluar si una ruta es rentable, si está sobreocupada o si existen zonas residenciales con demanda insatisfecha.
+  Requerimientos Funcionales Detallados:
+  1. Indicadores de eficiencia:
+     - Tasa de ocupación promedio de la flota por ruta y jornada.
+     - Índice de puntualidad y duración promedio de recorridos.
+     - Costo operativo promedio por estudiante transportado.
+     - Identificación de zonas geográficas con alta demanda de transporte sin cobertura.
+- **Criterios de Aceptación:**
+  - Se calculan métricas fundamentadas en datos reales de viajes y asignaciones.
+  - Dirección visualiza gráficos de rendimiento de la flota vehicular.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 14079-14099; clave TASK-392; asignación única: Dirección -->
+### [TASK-392] [ ] [F21-Task33] Configuración centralizada de servicios complementarios institucionales
+- **Origen del Hallazgo:** `AUDITORIA_FASE_21_TRANSPORTE_SERVICIOS_COMPLEMENTARIOS.md` / Sección C (1.14) y Plan de Implementación TAREA 32
+- **Prioridad:** P2
+- **Severidad/Clasificación:** Media (Arquitectura reutilizable de servicios escolares, parametrización y escalabilidad)
+- **Archivos Involucrados:**
+  - `backend/accounting-service/Code.gs`
+  - Hoja `ServiciosCatalogoInstitucional`
+- **Dependencias Expuestas:** `CafeteriaMenu`, `TiendaProductos`, `ActividadesExtracurriculares`
+- **Descripción del Alcance:**
+  Los servicios escolares se crearon como funciones aisladas, dificultando la incorporación de nuevas ofertas (tutorías, club de robótica, seguro médico opcional) sin reescribir código.
+  Requerimientos Funcionales Detallados:
+  1. Catálogo maestro de servicios complementarios:
+     - Configurar servicios con categoría, modalidad (recurrente, por consumo, por evento), cupos, responsables, tarifas y reglas de autorización familiar.
+     - Permitir habilitar o pausar servicios por período lectivo conservando la información histórica.
+- **Criterios de Aceptación:**
+  - Se pueden parametrizar nuevos servicios complementarios desde la plataforma.
+  - Los servicios existentes continúan funcionando con plena compatibilidad.
 - **Estado:** [ ] Pendiente
 
 ---
 
-### [REQ-DOC-010] Panel Administrativo del Desarrollador, Consola Técnica y Exportación RAR/ZIP (Sección 10 / 11)
-- **Origen del Hallazgo:** Especificación de Gestión Docente y Tareas (Sección 10 / 11).
-- **Severidad/Clasificación:** Crítico
-- **Archivos Involucrados:** `teacher-dashboard.html`, `js/teacher.js`, `backend/academic-service/Code.gs`
-- **Dependencias Expuestas:** Consola técnica de administración, exportación documental por año lectivo.
-- **Descripción del Alcance:** Configurar horas de publicación e intervalo post-clase, monitoreo de salud de microservicios, visor de logs y exportación comprimida (ZIP/RAR) de archivos del año escolar seleccionado.
-- **Criterios de Aceptación:** Descarga de paquete comprimido respetando la estructura de carpetas sin bloquear la interfaz.
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 14173-14205; clave TASK-396; asignación única: Dirección -->
+### [TASK-396] [F23-Task19] [P2] [Distribución de Carga - Asignación Automática y Reparto Equilibrado de Trabajo]
+- **Componentes Afectados:**
+  - `backend/user-service/Code.gs`
+- **Dependencias Expuestas:** `F23-Task09`, `F23-Task11`.
+- **Capacidades Relacionadas:** F23-022, F23-030, F23-004.
+- **Problema Detectado:**
+  La asignación de responsables depende de mecanismos manuales y no existe un sistema de distribución equilibrada de tareas.
+- **Requisitos Funcionales:**
+  1. Permitir definir grupos de responsables elegibles por departamento o rol.
+  2. Distribuir tareas automáticamente mediante algoritmo Round-Robin.
+  3. Incorporar criterios de carga de trabajo basados en tareas activas por usuario.
+  4. Considerar tareas pendientes, vencidas y niveles de prioridad al balancear.
+  5. Permitir establecer límites de tareas activas concurrentes por responsable.
+  6. Excluir automáticamente a usuarios ausentes, con licencias, inactivos o sin permisos vigentes.
+  7. Permitir establecer especialidades o áreas de competencia dentro del grupo.
+  8. Permitir ponderar la carga según la complejidad del tipo de trámite.
+  9. Registrar el criterio y algoritmo que determinó cada asignación en la bitácora.
+  10. Permitir reasignaciones autorizadas por supervisores.
+  11. Evitar que dos asignaciones simultáneas excedan los límites máximos de carga.
+  12. Permitir que un supervisor modifique la asignación cuando exista una causa justificada.
+- **Comportamiento Esperado:**
+  Las tareas podrán asignarse automáticamente al responsable elegible con menor carga o siguiendo el criterio de distribución configurado.
+- **Criterios de Aceptación:**
+  - [ ] Distribuir varias tareas consecutivas mediante Round-Robin y verificar rotación equitativa.
+  - [ ] Distribuir tareas considerando la carga actual de trabajo de los revisores.
+  - [ ] Excluir de la asignación a un usuario marcado con licencia o inactivo.
+  - [ ] Comprobar que se respetan los límites máximos de asignación concurrente.
+  - [ ] Ejecutar asignaciones concurrentes y verificar que no se produzcan sobrecargas.
+  - [ ] Consultar el registro de auditoría de asignación automática.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 14206-14242; clave TASK-397; asignación única: Dirección -->
+### [TASK-397] [F23-Task20] [P2] [Analítica - Métricas, Analítica y Supervisión del Rendimiento de Procesos]
+- **Componentes Afectados:**
+  - `backend/user-service/Code.gs`
+- **Dependencias Expuestas:** `F23-Task11`, `F23-Task13`.
+- **Capacidades Relacionadas:** F23-027, F23-030, F23-012.
+- **Problema Detectado:**
+  No existe una herramienta suficientemente desarrollada para identificar cuellos de botella, medir tiempos de resolución y supervisar el rendimiento de los departamentos.
+- **Requisitos Funcionales:**
+  1. Calcular tiempo total de resolución de inicio a fin del trámite.
+  2. Calcular tiempo promedio de atención por etapa.
+  3. Calcular tiempos de espera en cola antes de ser tomado por el revisor.
+  4. Calcular tiempos efectivos de atención activa.
+  5. Medir porcentajes de cumplimiento de SLA por departamento y trámite.
+  6. Identificar etapas y transiciones que concentran los mayores retrasos (cuellos de botella).
+  7. Identificar responsables o departamentos con cargas excesivas o demoras recurrentes.
+  8. Medir volúmenes de solicitudes recibidas, aprobadas, rechazadas, devueltas y pendientes.
+  9. Permitir filtrar métricas por departamento, ciclo lectivo, tipo de operación y revisor.
+  10. Mostrar tendencias históricas y evolución de tiempos de respuesta.
+  11. Permitir comparar periodos académicos o meses de gestión.
+  12. Identificar procesos que permanecen estancados o bloqueados por dependencias externas.
+  13. Exportar resultados en formatos estructurados (CSV/JSON/PDF).
+  14. Separar las métricas operativas de datos personales innecesarios para privacidad.
+  15. Permitir configurar umbrales de alerta temprana por acumulación de trabajo.
+- **Comportamiento Esperado:**
+  La dirección y los responsables departamentales podrán identificar qué procesos tardan más, dónde se acumulan las tareas y qué áreas necesitan redistribución de responsabilidades.
+- **Criterios de Aceptación:**
+  - [ ] Generar procesos de prueba con diferentes tiempos de resolución.
+  - [ ] Consultar el cuadro de mando de analítica de procesos y verificar la exactitud de los tiempos calculados.
+  - [ ] Comparar rendimiento entre departamentos o etapas.
+  - [ ] Filtrar indicadores por ciclo lectivo y tipo de trámite.
+  - [ ] Identificar correctamente una etapa con cuello de botella simulado.
+  - [ ] Exportar las métricas y comprobar su consistencia con los datos reales.
+  - [ ] Verificar los controles RBAC sobre la visualización de analíticas departamentales.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 14340-14370; clave TASK-401; asignación única: Dirección -->
+### [TASK-401] [F23-Task24] [P2] [Gobernanza - Mejora del Versionamiento y Compatibilidad de Definiciones de Workflow]
+- **Componentes Afectados:**
+  - `backend/user-service/Code.gs`
+- **Dependencias Expuestas:** `FlujosAprobacion`, `F23-Task08`.
+- **Capacidades Relacionadas:** F23-001, F23-031.
+- **Problema Detectado:**
+  El versionamiento secuencial de definiciones ya está implementado y verificado, pero necesita una administración más completa para soportar modificaciones estructurales y procesos en ejecución.
+- **Requisitos Funcionales:**
+  1. Conservar todas las versiones históricas publicadas de las definiciones de flujo.
+  2. Permitir la comparación visual y estructural entre dos versiones de un mismo flujo (Diff de etapas y reglas).
+  3. Identificar claramente adiciones, modificaciones y eliminaciones de etapas, responsables y compuertas.
+  4. Permitir crear borradores de trabajo (`Borrador`) sin alterar el flujo activo en producción (`Publicado`).
+  5. Ejecutar validaciones estructurales completas antes de autorizar la publicación de una nueva versión.
+  6. Definir qué versión rige para las nuevas solicitudes iniciadas.
+  7. Mantener vinculadas las instancias de trámites en curso a la versión exacta con la que fueron creadas.
+  8. Permitir migraciones controladas de instancias activas hacia la nueva versión mediante procedimiento administrativo explícito.
+  9. Registrar autor, fecha, hora y justificación de cada cambio de versión.
+  10. Impedir que una actualización de configuración altere silenciosamente las reglas de trámites activos.
+- **Comportamiento Esperado:**
+  Las definiciones podrán evolucionar sin alterar las reglas que gobiernan las instancias que ya están en ejecución.
+- **Criterios de Aceptación:**
+  - [ ] Publicar una versión 1.0 de un flujo institucional.
+  - [ ] Crear un borrador, modificar etapas y publicar la versión 2.0.
+  - [ ] Comparar estructuralmente la versión 1.0 con la 2.0 e identificar diferencias.
+  - [ ] Iniciar un trámite en v1.0 y otro en v2.0 y verificar que cada uno sigue su propia definición.
+  - [ ] Comprobar que los trámites en curso en v1.0 no se ven afectados por la publicación de v2.0.
+  - [ ] Ejecutar una migración controlada de prueba con autorización y verificar la actualización del puntero de versión.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 14371-14426; clave TASK-402; asignación única: Dirección -->
+### [TASK-402] [F24-Task09] [P2] [Informes Personalizados - Constructor de Informes Personalizados y Plantillas Reutilizables]
+- **Componentes Afectados:**
+  - `backend/user-service/Code.gs`
+  - `js/ui-common.js`
+- **Dependencias Expuestas:** Catálogo de informes (`F24-Task01`), diccionario semántico (`F24-Task02`), filtros normalizados (`F24-Task03`), exportador (`F24-Task08`).
+- **Capacidades Relacionadas:** F24-020, F24-001.
+- **Problema Detectado:**
+  No existe una interfaz que permita a los usuarios autorizados adaptar informes seleccionando columnas, agrupaciones y criterios de consulta.
+- **Requisitos Funcionales:**
+  1. Incorporar un constructor visual de informes para usuarios con privilegios analíticos.
+  2. Permitir seleccionar:
+     - Informe o fuente de datos de origen.
+     - Columnas visibles disponibles.
+     - Orden de las columnas en la tabla.
+     - Filtros aplicables por defecto.
+     - Criterios de agrupación (por grado, por departamento, por cuenta).
+     - Criterios de ordenamiento ascendente o descendente.
+     - Cálculo de totales y subtotales.
+     - Campos de resumen e indicadores clave.
+     - Formato de visualización tabular o gráfica.
+  3. Permitir guardar configuraciones como informes personalizados persistentes.
+  4. Permitir duplicar una configuración existente como punto de partida.
+  5. Permitir editar, renombrar y eliminar configuraciones propias.
+  6. Permitir compartir informes configurados con otros usuarios o roles autorizados.
+  7. Diferenciar:
+     - Informes personales (visibles solo al creador).
+     - Informes compartidos departamentales.
+     - Plantillas institucionales oficiales.
+  8. Permitir configurar permisos específicos de consulta, edición, exportación y programación.
+  9. Restringir los campos disponibles en el constructor según el perfil del usuario autenticado.
+  10. Utilizar el diccionario semántico para seleccionar indicadores existentes, evitando duplicar fórmulas.
+  11. Incorporar vista previa interactiva antes de guardar la plantilla.
+  12. Permitir que una plantilla guardada vuelva a ejecutarse en cualquier momento con datos actualizados.
+- **Cambios Necesarios:**
+  - Incorporar una estructura persistente para guardar configuraciones de informes en hoja `InformesPersonalizadosConfig`.
+  - Crear la interfaz de construcción y edición de informes en el frontend.
+  - Implementar validación de campos y combinaciones permitidas en el servidor.
+  - Integrar el constructor con el catálogo general y las definiciones de indicadores.
+  - Incorporar permisos específicos para administración de informes personalizados.
+- **Comportamiento Esperado:**
+  Un usuario autorizado podrá adaptar un informe a sus necesidades sin solicitar una modificación del código. Podrá guardar su configuración y volver a utilizarla con nuevos períodos o filtros.
+  El constructor no deberá permitir ejecutar consultas arbitrarias ni acceder a campos restringidos.
+- **Criterios de Aceptación:**
+  - [ ] Un usuario autorizado puede crear y guardar una configuración personalizada de informe.
+  - [ ] La configuración se conserva íntegra al cerrar sesión y volver a abrir el informe.
+  - [ ] Los filtros y columnas guardados se aplican correctamente en la consulta.
+  - [ ] Los usuarios sin permisos de edición no pueden modificar plantillas institucionales oficiales.
+  - [ ] Los campos restringidos o confidenciales no aparecen disponibles en el constructor.
+  - [ ] Una configuración personalizada utiliza estrictamente las fórmulas centrales de los indicadores.
+  - [ ] Duplicar un informe crea una copia independiente sin alterar el original.
+  - [ ] Eliminar una configuración personal no afecta los datos fuente ni otros informes institucionales.
+  - [ ] Los informes compartidos respetan los permisos de acceso asignados.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 14427-14486; clave TASK-403; asignación única: Dirección -->
+### [TASK-403] [F24-Task12] [P2] [Gobierno Institucional - Sistema Institucional de Metas, Objetivos y Cumplimiento de Indicadores]
+- **Componentes Afectados:**
+  - `backend/developer-service/Code.gs`
+  - `backend/accounting-service/Code.gs`
+  - `backend/academic-service/Code.gs`
+  - `js/ui-common.js`
+- **Dependencias Expuestas:** Diccionario semántico (`F24-Task02`), series históricas (`F24-Task07`), paneles por rol (`F24-Task13`).
+- **Capacidades Relacionadas:** F24-021, F24-008.
+- **Problema Detectado:**
+  No existe una estructura para registrar metas institucionales y comparar los resultados reales con los objetivos establecidos.
+- **Requisitos Funcionales:**
+  1. Incorporar un registro central de metas institucionales en hoja `MetasIndicadoresInstitucionales`.
+  2. Permitir asociar cada meta con un indicador del diccionario semántico centralizado.
+  3. Configurar en cada meta:
+     - Nombre de la meta.
+     - Descripción y justificación estratégica.
+     - Indicador asociado (`indicadorId`).
+     - Valor objetivo cuantitativo.
+     - Unidad de medida correspondiente.
+     - Período de evaluación (año lectivo, semestre, mes).
+     - Área responsable (Académica, Financiera, Administrativa).
+     - Departamento específico.
+     - Usuario responsable asignado.
+     - Fecha de inicio.
+     - Fecha de finalización.
+     - Estado (`Planificada`, `EnSeguimiento`, `Cumplida`, `NoCumplida`, `Cancelada`).
+  4. Permitir definir metas institucionales globales, departamentales y académicas por grado/sección.
+  5. Incorporar metas financieras cuando existan datos presupuestarios compatibles.
+  6. Permitir consultar en tiempo real:
+     - Valor objetivo planeado.
+     - Valor actual alcanzado.
+     - Diferencia absoluta y desvío.
+     - Porcentaje de cumplimiento alcanzado.
+     - Evolución del cumplimiento a lo largo del período.
+  7. Mantener historial de modificaciones de metas y reajustes aprobados.
+  8. Permitir establecer metas sucesivas por períodos continuos.
+  9. Diferenciar formalmente metas alcanzadas, en curso, vencidas y aquellas sin datos suficientes.
+  10. Restringir la creación, reajuste y eliminación de metas exclusivamente a perfiles autorizados (Dirección y Administrador).
+- **Cambios Necesarios:**
+  - Incorporar almacenamiento de metas en base de datos persistente.
+  - Integrar las metas con las fórmulas del diccionario de indicadores.
+  - Crear interfaz de configuración y seguimiento visual de metas (barras de avance y porcentajes).
+  - Integrar resultados de cumplimiento en los paneles de control por rol.
+  - Incorporar historial de auditoría para modificaciones de objetivos.
+- **Comportamiento Esperado:**
+  Dirección podrá definir objetivos institucionales y consultar su cumplimiento. Los responsables de cada área podrán consultar las metas correspondientes a sus departamentos.
+  Los resultados se calcularán utilizando el indicador asociado, sin crear fórmulas paralelas.
+- **Criterios de Aceptación:**
+  - [ ] Una meta tiene un indicador, período y responsable claramente identificables.
+  - [ ] El valor actual alcanzado coincide exactamente con el cálculo del indicador correspondiente.
+  - [ ] El porcentaje de cumplimiento se calcula correctamente en base al objetivo.
+  - [ ] Las metas vencidas se identifican y clasifican automáticamente.
+  - [ ] Los cambios en los objetivos de una meta conservan su trazabilidad histórica de modificaciones.
+  - [ ] Los usuarios sin permisos no pueden crear, alterar ni eliminar metas institucionales.
+  - [ ] Los períodos sin datos operativos no generan porcentajes de cumplimiento ficticios.
+  - [ ] Los cuadros de mando muestran de forma clara y fidedigna el progreso de las metas.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 14487-14536; clave TASK-404; asignación única: Dirección -->
+### [TASK-404] [F24-Task14] [P2] [Alertas y Monitoreo - Ampliación de Alertas Tempranas a Indicadores Financieros y Operativos]
+- **Componentes Afectados:**
+  - `backend/accounting-service/Code.gs`
+  - `backend/user-service/Code.gs`
+- **Dependencias Expuestas:** Diccionario de indicadores (`F24-Task02`), metas (`F24-Task12`), paneles (`F24-Task13`).
+- **Capacidades Relacionadas:** F24-022, F24-006, F24-007.
+- **Problema Detectado:**
+  Existe un mecanismo de alertas tempranas para riesgo académico, pero no se dispone de una cobertura equivalente para detectar situaciones relevantes en morosidad, gastos y otros indicadores financieros u operativos.
+- **Requisitos Funcionales:**
+  1. Ampliar el evaluador de alertas tempranas para procesar condiciones sobre indicadores institucionales financieros y operativos.
+  2. Incorporar reglas configurables para:
+     - Incremento anormal de la morosidad institucional (ej. mora > 15% de cartera activa).
+     - Disminución crítica en la recuperación de cobros mensuales.
+     - Sobrecostos en órdenes de compra y requisiciones de almacén.
+     - Desviaciones presupuestarias superiores a umbrales configurados por partida.
+     - Incrementos inusuales de gastos imprevistos en caja chica o cuentas por pagar.
+     - Caídas abruptas en la proyección de ingresos por mensualidades.
+     - Acumulación excesiva de trámites administrativos pendientes en secretaría u orientación.
+     - Aumento injustificado en los tiempos promedio de resolución de trámites.
+  3. Permitir configurar umbrales de activación por período y área responsable.
+  4. Definir usuarios y roles destinatarios de las alertas según el departamento afectado.
+  5. Incorporar niveles de severidad (`Baja`, `Media`, `Alta`, `Crítica`).
+  6. Evitar el despacho repetitivo de alertas ante una misma condición persistente.
+  7. Mantener un historial completo de alertas emitidas en hoja `AlertasInstitucionalesLogs`.
+  8. Permitir reconocer, documentar revisión y cerrar formalmente una alerta activa.
+  9. Identificar con precisión el indicador, período y condición cuantitativa que originaron la alerta.
+  10. Mantener estricta separación de acceso entre alertas académicas, financieras y operativas.
+  11. Restringir la visualización y gestión de alertas según el perfil y permisos del usuario.
+- **Cambios Necesarios:**
+  - Extender el evaluador de alertas existente en el backend (`evaluateAndDispatchInstitutionalAlerts`).
+  - Integrar las reglas de evaluación con el diccionario centralizado de indicadores.
+  - Incorporar interfaz de configuración de umbrales para administradores.
+  - Integrar las alertas en los paneles de control y en el centro de notificaciones multicanal.
+  - Incorporar máquina de estados para el seguimiento de alertas (`Activa`, `EnRevision`, `Mitigada`, `Cerrada`).
+- **Comportamiento Esperado:**
+  Cuando un indicador alcance una condición configurada, el sistema generará una alerta para los responsables correspondientes.
+  Las alertas deben ser señales de revisión, no conclusiones automáticas de fraude, negligencia o incumplimiento.
+- **Criterios de Aceptación:**
+  - [ ] Una condición que supera el umbral configurado genera una alerta institucional estructurada.
+  - [ ] Una condición que permanece dentro de los rangos normales no genera alertas espurias.
+  - [ ] La alerta identifica claramente el indicador, período, valor observado y umbral límite.
+  - [ ] Los destinatarios de la notificación corresponden exclusivamente a los roles autorizados para el área.
+  - [ ] Una misma condición no resuelta no produce notificaciones duplicadas ilimitadas.
+  - [ ] Los responsables autorizados pueden reconocer y cerrar formalmente la alerta.
+  - [ ] El historial de alertas conserva todos los cambios de estado y notas de revisión.
+  - [ ] Las alertas académicas preexistentes siguen funcionando correctamente sin regresiones.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 14537-14582; clave TASK-405; asignación única: Dirección -->
+### [TASK-405] [F24-Task15] [P2] [Eficiencia Operativa - Indicadores de Tiempos de Resolución y Eficiencia Administrativa]
+- **Componentes Afectados:**
+  - `backend/user-service/Code.gs`
+- **Dependencias Expuestas:** Diccionario de indicadores (`F24-Task02`), filtros (`F24-Task03`), fuentes administrativas normalizadas (`F24-Task04`).
+- **Capacidades Relacionadas:** F24-007, F24-008.
+- **Problema Detectado:**
+  Los informes administrativos permiten consultar trámites y movimientos, pero faltan métricas de tiempos de resolución y seguimiento de eficiencia operativa.
+- **Requisitos Funcionales:**
+  1. Incorporar indicadores cuantitativos para trámites y solicitudes institucionales:
+     - Cantidad total de solicitudes recibidas en el período.
+     - Cantidad de solicitudes actualmente pendientes de resolución.
+     - Cantidad de solicitudes resueltas satisfactoriamente.
+     - Cantidad de solicitudes que superaron el tiempo límite estipulado (vencidas).
+     - Tiempo promedio de resolución (en horas y días hábiles).
+     - Tiempo mediano de resolución para eliminar sesgos por valores atípicos.
+     - Tiempo máximo registrado en un trámite resuelto.
+     - Volumen de solicitudes atendidas por cada responsable individual.
+     - Volumen de solicitudes procesadas por departamento institucional.
+     - Porcentaje global de cumplimiento de plazos establecidos (SLA operativo).
+  2. Diferenciar formalmente en el cálculo las fechas de creación, asignación, inicio de atención, resolución y cierre definitivo.
+  3. Permitir filtrar las métricas por tipo de trámite, departamento, responsable y período de tiempo.
+  4. Diferenciar solicitudes canceladas voluntariamente, rechazadas con justificación, reabiertas y completadas.
+  5. Identificar solicitudes que han sufrido múltiples derivaciones o cambios de responsable.
+  6. Permitir comparar tiempos de resolución entre períodos consecutivos.
+  7. Integrar los resultados analíticos en los paneles de control de administración y dirección.
+- **Cambios Necesarios:**
+  - Identificar los registros que almacenan el ciclo de vida de los trámites (`SolicitudesTramites`, `RevisionesDecisionesTramite`).
+  - Incorporar funciones de cálculo de duración y métricas de rendimiento en el backend.
+  - Normalizar los estados incluidos y excluidos según las reglas semánticas.
+  - Integrar los nuevos indicadores con el diccionario semántico centralizado.
+  - Adaptar los informes administrativos existentes para presentar métricas de eficiencia.
+- **Comportamiento Esperado:**
+  La institución podrá conocer cuántos trámites se reciben, cuánto tardan en resolverse y qué departamentos acumulan solicitudes pendientes.
+  Los tiempos deben calcularse a partir de eventos reales y no de fechas estimadas.
+- **Criterios de Aceptación:**
+  - [ ] El tiempo de resolución calculado coincide exactamente con la diferencia entre las fechas de inicio y finalización del trámite.
+  - [ ] Los trámites aún no resueltos no se contabilizan erróneamente como resueltos o completados.
+  - [ ] Las solicitudes canceladas y rechazadas se clasifican y contabilizan según las reglas documentadas.
+  - [ ] Los trámites reabiertos conservan su trazabilidad e historial de tiempos acumulados.
+  - [ ] Los promedios y medianas calculados corresponden estrictamente a los registros fuente analizados.
+  - [ ] Los filtros por departamento y responsable aplican de forma fidedigna sobre los indicadores.
+  - [ ] Los indicadores de eficiencia se presentan de manera coherente en informes y cuadros de mando.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 14632-14675; clave TASK-407; asignación única: Dirección -->
+### [TASK-407] [F24-Task17] [P2] [Analítica de Riesgos - Detección de Anomalías en Indicadores Financieros y Operativos]
+- **Componentes Afectados:**
+  - `backend/accounting-service/Code.gs`
+  - `backend/developer-service/Code.gs`
+- **Dependencias Expuestas:** Indicadores centralizados (`F24-Task02`), DataMart (`F24-Task05`), tendencias (`F24-Task07`), alertas (`F24-Task14`).
+- **Capacidades Relacionadas:** F24-A02, F24-022.
+- **Problema Detectado:**
+  La detección de riesgo está presente en el área académica, pero no existe una capacidad equivalente para identificar patrones inusuales en operaciones financieras y administrativas.
+- **Requisitos Funcionales:**
+  1. Incorporar motor de análisis de anomalías sobre indicadores y transacciones financieras y operativas.
+  2. Evaluar y detectar automáticamente:
+     - Gastos inusuales que superen en más de 2 desviaciones estándar el promedio histórico de la partida.
+     - Variaciones abruptas o caídas imprevistas en los flujos diarios de ingresos.
+     - Cambios atípicos en las tasas de morosidad por nivel o grado.
+     - Desviaciones presupuestarias no justificadas en centros de costo.
+     - Potenciales duplicaciones de pagos o movimientos con referencias o montos idénticos.
+     - Incrementos inesperados en el volumen de requisiciones de materiales.
+     - Acumulación anormal de solicitudes no atendidas en un área específica.
+  3. Permitir configurar umbrales cuantitativos y reglas estadísticas de detección.
+  4. Identificar con claridad el período, la partida y los valores de referencia que originaron la anomalía.
+  5. Diferenciar formalmente anomalías detectadas por reglas fijas de aquellas basadas en análisis estadístico descriptivo.
+  6. Permitir a los responsables revisar, justificar o descartar falsos positivos documentando la razón.
+  7. Registrar en bitácora todas las revisiones y acciones correctivas tomadas.
+  8. Evitar categorizar automáticamente una anomalía como fraude o irregularidad penal; debe tratarse estrictamente como una señal para revisión humana.
+- **Cambios Necesarios:**
+  - Extender los mecanismos analíticos del backend con algoritmos de detección de valores atípicos (outliers).
+  - Integrar datos históricos del DataMart para calcular medias y varianzas de referencia.
+  - Incorporar reglas estadísticas configurables en metadatos del servicio contable.
+  - Crear una vista de auditoría y revisión de anomalías operativas en el panel de control.
+  - Registrar los estados y dictámenes de revisión de anomalías en hoja de bitácora.
+- **Comportamiento Esperado:**
+  El sistema identificará variaciones que merecen revisión y ofrecerá información suficiente para que el responsable investigue su origen.
+- **Criterios de Aceptación:**
+  - [ ] Una variación que cumple con la regla de anomalía genera una bandera de advertencia en el sistema.
+  - [ ] La ficha de anomalía presenta con transparencia el valor observado y los valores históricos de referencia.
+  - [ ] Los falsos positivos pueden ser marcados como revisados y justificados por los auditores autorizados.
+  - [ ] Las anomalías no disparan automáticamente bloqueos o sanciones irreversibles sin intervención humana.
+  - [ ] Únicamente los usuarios con roles de supervisión o auditoría pueden consultar las banderas de anomalía.
+  - [ ] El historial conserva íntegramente las revisiones, comentarios y resoluciones registradas.
+  - [ ] Las reglas y umbrales de detección pueden ajustarse sin modificar el código fuente de los informes.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 14676-14729; clave TASK-408; asignación única: Dirección -->
+### [TASK-408] [F24-Task18] [P2] [Informes Consolidados - Informes Institucionales Consolidados y Análisis Multidimensional]
+- **Componentes Afectados:**
+  - `backend/user-service/Code.gs`
+  - `backend/accounting-service/Code.gs`
+  - `backend/academic-service/Code.gs`
+  - `js/ui-common.js`
+- **Dependencias Expuestas:** Catálogo (`F24-Task01`), diccionario (`F24-Task02`), fuentes normalizadas (`F24-Task04`), DataMart (`F24-Task05`), exportador (`F24-Task08`).
+- **Capacidades Relacionadas:** F24-A06, F24-A07, F24-001.
+- **Problema Detectado:**
+  Existen informes consolidados parciales, pero la integración entre áreas no está suficientemente extendida. La institución necesita informes ejecutivos que reúnan indicadores relacionados sin duplicar cálculos ni perder el origen de los datos.
+- **Requisitos Funcionales:**
+  1. Ampliar y formalizar los informes ejecutivos consolidados:
+     - Resumen Ejecutivo Institucional (Rectoría).
+     - Informe Consolidado de Matrícula y Retención.
+     - Informe Integrado de Rendimiento Académico y Asistencia.
+     - Informe Consolidado de Situación Financiera y Flujo de Fondos.
+     - Informe de Ejecución Presupuestaria y Costos Operativos.
+     - Informe Consolidado de Gestión de Expedientes y Movimientos.
+     - Informe Integrado de Productividad y Trámites Administrativos.
+  2. Permitir agrupar y desagregar los resultados consolidados por:
+     - Período o ciclo lectivo.
+     - Departamento institucional.
+     - Nivel educativo.
+     - Grado y sección.
+     - Categoría financiera.
+     - Usuario responsable.
+  3. Permitir la comparación analítica entre unidades institucionales utilizando indicadores normalizados.
+  4. Permitir visualizar indicadores de distintas áreas en una misma vista correlacionada (ej. asistencia vs rendimiento).
+  5. Mantener claramente identificable la fuente de datos que respalda cada sección del informe.
+  6. Evitar duplicar registros u operaciones al cruzar información de diferentes microservicios.
+  7. Incorporar navegación interactiva hacia el detalle transaccional de cada sección del informe.
+  8. Respetar estrictamente las barreras de permisos RBAC de cada área en los bloques consolidados.
+  9. Permitir la exportación íntegra del informe consolidado en formatos estructurados y PDF formal.
+- **Cambios Necesarios:**
+  - Ampliar los servicios de generación de informes para orquestar consultas a múltiples dominios.
+  - Integrar las llamadas con el diccionario semántico centralizado.
+  - Utilizar las fuentes normalizadas y agregados del DataMart para minimizar el tiempo de respuesta.
+  - Incorporar componentes de visualización multidimensional en la interfaz gráfica.
+  - Integrar la navegación contextual hacia los informes específicos de cada área.
+  - Adaptar el exportador universal para generar documentos consolidados con tablas múltiples.
+- **Comportamiento Esperado:**
+  Dirección podrá consultar un informe institucional que reúna los indicadores principales de diferentes áreas y profundizar en cada uno sin perder los filtros ni la trazabilidad.
+- **Criterios de Aceptación:**
+  - [ ] Cada indicador incluido en el informe consolidado conserva su definición institucional original.
+  - [ ] Los datos consolidados coinciden exactamente con los informes individuales correspondientes de cada módulo.
+  - [ ] No existen duplicaciones de registros ni conteos dobles derivados de la combinación de fuentes.
+  - [ ] Las unidades comparadas utilizan criterios y períodos homogéneos.
+  - [ ] Las vistas de detalle muestran únicamente la información que el usuario está autorizado a consultar.
+  - [ ] Los fallos o retrasos en una fuente secundaria se identifican explícitamente sin enmascarar datos.
+  - [ ] La exportación estructurada conserva fielmente la estructura matricial y los valores numéricos del informe.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 15003-15068; clave TASK-415; asignación única: Dirección -->
+### [TASK-415] [F25-Task10] [P2] [Trazabilidad - Ampliación de la Trazabilidad y Consulta del Historial de Operaciones]
+- **Componentes Afectados:**
+  - `backend/accounting-service/Code.gs`
+  - `backend/user-service/Code.gs`
+  - Hojas `AuditoriaMigraciones`, `RegistroEventos`, `HistorialOperacionesIntegracion`
+- **Estado de Partida:** Capacidad existente; ampliación y optimización.
+- **Dependencias Expuestas:** F25-001, F25-004, F25-005, F25-006, F25-011 y F25-014.
+- **Capacidades Relacionadas:** F25-018, F25-015, F25-001.
+- **Problema que Resuelve:**
+  La plataforma ya registra ejecuciones, errores y estados de importación. La mejora consiste en ofrecer trazabilidad más detallada y unificada de todas las operaciones externas, incluidas sincronizaciones, webhooks, exportaciones y conectores.
+- **Requisitos Funcionales:**
+  1. Registrar cada operación externa en hoja `HistorialOperacionesIntegracion` con:
+     - Identificador de ejecución (`ejecucionId`).
+     - Integración asociada (`integracionId`).
+     - Tipo de operación (Importación, Exportación, Webhook, Sincronización).
+     - Usuario o proceso automatizado responsable.
+     - Fecha y hora exacta ISO.
+     - Fuente de origen y destino.
+     - Perfil y versión de mapeo utilizado.
+     - Versión de plantilla o contrato aplicable.
+     - Cantidad total de registros.
+     - Cantidad de registros procesados con éxito.
+     - Cantidad de registros fallidos.
+     - Estado final de la operación.
+     - Duración en milisegundos.
+     - Errores y excepciones sanitizadas.
+     - Número de reintentos realizados.
+     - Referencia a operaciones relacionadas (`correlationId`).
+  2. Filtros de consulta en historial:
+     - Por integración.
+     - Por usuario responsable.
+     - Por rango de fechas.
+     - Por tipo de operación.
+     - Por estado final.
+     - Por identificador de ejecución.
+     - Por proveedor externo.
+     - Por tipo de error.
+  3. Detalle de ejecución: qué se intentó ejecutar, qué datos fueron procesados, qué registros fallaron y qué reintentos se realizaron.
+  4. Seguridad: no almacenar contraseñas, tokens, números de tarjetas ni información personal sensible innecesaria en los registros de auditoría.
+- **Cambios Necesarios:**
+  1. Extender el esquema de registro para operaciones externas no cubiertas previamente.
+  2. Relacionar todas las operaciones con `CatalogoIntegracionesExternas`.
+  3. Incorporar referencias a perfiles de mapeo, plantillas y versiones de contrato.
+  4. Unificar la consulta de historial (`getIntegrationOperationLogs`) sin eliminar los registros de `AuditoriaMigraciones`.
+  5. Incorporar filtros de búsqueda y vista de detalle en la interfaz gráfica.
+  6. Incorporar métricas de duración y tasas de éxito.
+  7. Mantener el acceso restringido según rol operativo (RBAC).
+- **Comportamiento Esperado:**
+  Los administradores y auditores podrán consultar el historial unificado de intercambios de datos, identificar qué operaciones fallaron, por qué fallaron y qué reintentos se ejecutaron.
+- **Criterios de Aceptación:**
+  - [ ] Consultar una importación anterior y visualizar su detalle de filas y errores.
+  - [ ] Consultar una exportación de datos y verificar metadatos registrados.
+  - [ ] Consultar un webhook recibido verificando la transacción externa asociada.
+  - [ ] Consultar una sincronización de datos con sus diferencias detectadas.
+  - [ ] Filtrar operaciones por integración, estado y rango de fechas de forma fluida.
+  - [ ] Identificar con precisión el usuario o proceso que inició cada operación.
+  - [ ] Consultar los errores específicos de una ejecución sin ambigüedades.
+  - [ ] Comprobar que los reintentos quedan debidamente vinculados a la operación original.
+  - [ ] Verificar que los registros no exponen credenciales, tokens ni datos personales sensibles.
+  - [ ] Comprobar que los registros históricos preexistentes siguen estando disponibles.
+  - [ ] Verificar que los permisos RBAC limitan la consulta del historial exclusivamente a usuarios autorizados.
+  - [ ] Comprobar que los resultados mostrados en el historial coinciden con las operaciones reales ejecutadas.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 15235-15290; clave TASK-419; asignación única: Dirección -->
+### [TASK-419] [F25-Task14] [P2] [Supervisión - Mejoras de Administración y Supervisión Centralizada de Integraciones]
+- **Componentes Afectados:**
+  - `backend/developer-service/Code.gs`
+  - `backend/accounting-service/Code.gs`
+  - `js/ui-common.js`
+- **Estado de Partida:** Mejora sobre catálogo y trazabilidad existentes.
+- **Dependencias Expuestas:** F25-001, F25-015 y F25-018.
+- **Capacidades Relacionadas:** F25-018, F25-001, F25-015.
+- **Problema que Resuelve:**
+  La plataforma cuenta con registros de migración y eventos, pero necesita una experiencia unificada para supervisar la salud de las conexiones y detectar operaciones que requieren intervención.
+- **Requisitos Funcionales:**
+  1. Incorporar un panel de control y supervisión de integraciones externas con indicadores clave:
+     - Total de integraciones registradas en el catálogo.
+     - Cantidad de integraciones activas y en línea.
+     - Cantidad de integraciones desconectadas o suspendidas.
+     - Cantidad de integraciones con errores recurrentes.
+     - Operaciones pendientes de procesamiento en colas.
+     - Operaciones completadas satisfactoriamente en el día.
+     - Operaciones fallidas que requieren atención.
+     - Fecha y hora de la última ejecución global.
+     - Fecha y hora de la última ejecución satisfactoria.
+     - Errores más frecuentes categorizados.
+     - Tiempo promedio de ejecución por conector.
+     - Volumen total de registros procesados en el período.
+  2. Acceso directo al detalle de cada integración y a sus bitácoras de auditoría.
+  3. Alertas operativas estructuradas ante:
+     - Credenciales de pasarelas o servicios a punto de vencer.
+     - Autorización o token revocado por servicio externo.
+     - Fallos repetidos de conexión o timeouts de red.
+     - Importaciones masivas interrumpidas sin reanudar.
+     - Webhooks de pago recibidos y no procesados.
+     - Sincronizaciones con desfase superior al umbral configurado.
+     - Plantillas o esquemas detectados como incompatibles.
+     - Consumo cercano a límites de cuotas de Apps Script / Google APIs.
+     - Operaciones marcadas para revisión manual obligatoria.
+  4. Diferenciar alertas críticas de advertencias meramente informativas.
+- **Cambios Necesarios:**
+  1. Implementar servicio de métricas de integraciones en `developer-service` (`getIntegrationsHealthMetrics`).
+  2. Integrar datos de `CatalogoIntegracionesExternas`, `AuditoriaMigraciones` y `RegistroEventos`.
+  3. Crear vista de supervisión en el panel de administración institucional.
+  4. Incorporar evaluador de alertas de salud de integraciones.
+  5. Implementar filtros por conector, severidad y estado operativo.
+- **Comportamiento Esperado:**
+  Los administradores podrán conocer de un vistazo el estado de salud de todas las conexiones institucionales, anticiparse a caídas de servicio y atender operaciones con fallos sin demoras.
+- **Criterios de Aceptación:**
+  - [ ] Consultar el estado general de las integraciones en el panel de supervisión.
+  - [ ] Verificar que los indicadores de salud proceden de operaciones reales registradas.
+  - [ ] Identificar de forma inmediata integraciones con errores o desconectadas mediante alertas visuales.
+  - [ ] Consultar el detalle de errores específicos de una conexión con un solo clic.
+  - [ ] Verificar que las alertas operativas corresponden a condiciones reales y no espurias.
+  - [ ] Comprobar que una integración inactiva no se presenta falsamente como operativa.
+  - [ ] Verificar que los usuarios solo consultan información y métricas acordes a su perfil RBAC.
+  - [ ] Comprobar que los indicadores de salud se actualizan inmediatamente después de cada ejecución.
 - **Estado:** [ ] Pendiente
 
 ---
 
-### [REQ-DOC-012] Seguridad en Servidor, Permisos y Trazabilidad de Contenidos (Sección 14)
-- **Origen del Hallazgo:** Especificación de Gestión Docente y Tareas (Sección 14).
-- **Severidad/Clasificación:** Crítico
-- **Archivos Involucrados:** `backend/academic-service/Code.gs`, `backend/task-service/Code.gs`, `js/api.js`
-- **Dependencias Expuestas:** Capa de autorización en microservicios backend.
-- **Descripción del Alcance:** Enforzar permisos en el servidor para evitar que docentes publiquen en asignaturas/secciones no asignadas. Proteger credenciales de Drive y registrar trazabilidad de fechas de entrega.
-- **Criterios de Aceptación:** Peticiones no autorizadas rechazadas en backend independientemente de la interfaz cliente.
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 15296-15348; clave TASK-421; asignación única: Dirección -->
+### [TASK-421] [F26-Task06] [P2] [Historial y Recuperación - Centro de Historial, Comparación y Restauración de Configuraciones Críticas]
+- **Componentes Afectados:**
+  - `backend/user-service/Code.gs`
+  - Hojas `ConfiguracionSistema`, `RegistroEventos`, `HistorialVersionesConfiguracion`
+  - `js/ui-common.js`
+- **Subcapacidades Relacionadas:** F26-011, F26-012.
+- **Estado de Partida:** Protección e historial completos y verificados; falta la herramienta de restauración identificada en el backlog.
+- **Dependencias Expuestas:** Versionado actual de `ConfiguracionSistema`, `RegistroEventos`, roles y permisos, motor de precedencia (`F26-Task01`) e invalidación reactiva (`F26-Task05`).
+- **Problema que Resuelve:**
+  La plataforma ya restringe la modificación de configuraciones globales, mantiene versiones y registra eventos. Sin embargo, no dispone de un procedimiento funcional completo para restaurar una versión anterior de un parámetro modificado erróneamente. Se requiere ampliar la trazabilidad existente para ofrecer recuperación controlada, sin sustituir el sistema de auditoría ni eliminar su historial.
+- **Requisitos Funcionales:**
+  1. Consulta del historial de configuraciones:
+     - Vista administrativa filtrable por parámetro, categoría, ámbito, departamento, usuario, fecha y versión.
+     - Mostrar valor anterior, valor nuevo, usuario responsable, fecha/hora, motivo de cambio y versión resultante.
+  2. Comparación visual y estructural de versiones (Diff):
+     - Seleccionar dos versiones históricas y visualizar diferencias: valores anteriores vs nuevos, cambios de tipo, cambios de ámbito, parámetros agregados o desactivados y dependencias afectadas.
+     - Proteger y enmascarar valores sensibles (claves API, credenciales).
+  3. Restauración controlada de versiones (`rollbackSystemConfiguration`):
+     - Restaurar una versión anterior creando una nueva versión secuencial basada en el valor histórico seleccionado.
+     - Conservar la versión actual en el historial sin eliminar versiones intermedias ni reescribir la auditoría.
+     - Registrar quién solicitó y ejecutó la restauración, valor anterior y restaurado, fecha y justificación.
+     - Validar permisos elevados (`Administrador`/`Director`) y dependencias antes de confirmar.
+     - Mostrar advertencia de impacto y solicitar confirmación explícita.
+  4. Restauración selectiva:
+     - Permitir restaurar parámetros individuales o conjuntos relacionados validando compatibilidad entre valores.
+  5. Protección de información histórica:
+     - La restauración de una configuración no debe modificar retroactivamente registros académicos, financieros o administrativos creados bajo la configuración previa.
+  6. Integración con permisos y caché:
+     - Invalidar reactivamente cachés tras la restauración (`F26-Task05`) y registrar eventos estructurados en `RegistroEventos`.
+- **Cambios Necesarios:**
+  - Incorporar almacenamiento de historial detallado en `HistorialVersionesConfiguracion`.
+  - Implementar endpoint en backend `rollbackSystemConfiguration`.
+  - Crear interfaz de usuario para consulta, comparación visual y botón de restauración con modal de confirmación.
+  - Integrar la restauración con el motor de precedencia e invalidación de caché.
+- **Comportamiento Esperado:**
+  Un administrador autorizado puede consultar versiones anteriores, comparar sus diferencias y restaurar una configuración seleccionada. La restauración genera una nueva versión y deja evidencia completa, sin borrar el historial ni alterar registros académicos o financieros existentes.
+- **Criterios de Aceptación:**
+  - [ ] Modificar un parámetro y comprobar que se registra la versión anterior y la nueva en el historial.
+  - [ ] Consultar el historial y localizar la modificación con sus metadatos completos.
+  - [ ] Comparar dos versiones y verificar que se muestran sus diferencias con claridad.
+  - [ ] Restaurar una versión anterior y comprobar que el valor efectivo cambia de inmediato.
+  - [ ] Verificar que la restauración crea una nueva versión secuencial y no elimina las posteriores.
+  - [ ] Intentar restaurar con un usuario sin permisos y comprobar que la operación se rechaza.
+  - [ ] Restaurar un parámetro departamental y comprobar que no afecta a otros departamentos.
+  - [ ] Restaurar varios parámetros relacionados y comprobar que se validan sus dependencias antes de aplicar.
+  - [ ] Simular una restauración incompatible y comprobar que se bloquea sin dejar cambios parciales.
+  - [ ] Comprobar que los registros históricos académicos y financieros no se modifican retroactivamente.
+  - [ ] Verificar que la restauración invalida las cachés afectadas de forma reactiva.
+  - [ ] Comprobar que el historial identifica tanto la versión de origen como la nueva versión restaurada.
 - **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 15502-15533; clave TASK-427; asignación única: Dirección -->
+### [TASK-427] [F28-T07] [P2] Optimización de Paneles Departamentales, Flujos de Trabajo y Accesos Rápidos Personalizados
+- **Tipo:** Optimización Funcional y Productividad Operativa.
+- **Componentes Afectados:**
+  - `dashboards/` (`dashboard-docente.html`, `dashboard-estudiante.html`, `dashboard-contabilidad.html`, etc.)
+  - `js/teacher.js`, `js/accounting.js`, `js/student.js`, `js/ui-common.js`
+- **Subcapacidades Relacionadas:** P01, P02, P03, P04, M04.
+- **Estado de Partida:** Implementada parcialmente.
+- **Dependencias:** Sistema RBAC/ABAC de roles, paneles departamentales existentes.
+- **Problema Detectado y Riesgos:**
+  Aunque cada rol posee su panel respectivo, los usuarios deben navegar múltiples menús para realizar acciones repetitivas cotidianas (ej. pasar lista de la primera hora, registrar pagos de matrícula o consultar notas). No se trata de crear dashboards separados, sino de enriquecer los existentes con accesos rápidos personalizables y memoria de contexto de navegación.
+- **Requisitos Funcionales y Técnicos Convergentes:**
+  1. *Barra de Accesos Rápidos y Favoritos por Usuario:*
+     - Permitir a cada usuario marcar secciones o formularios frecuentes como "Favorito" (icono de estrella accesible).
+     - Presentar widget de accesos rápidos prioritarios en la cabecera del dashboard.
+  2. *Priorización Inteligente por Departamento y Rol:*
+     - *Docente:* Acceso rápido con un clic a "Pasar Asistencia del Día", "Ingreso Rápido de Calificaciones" y "Alertas de Rendimiento".
+     - *Secretaría / Administración:* Acceso rápido a "Nuevo Expediente", "Emisión de Certificados CUV" y "Búsqueda Rápida de Alumnos".
+     - *Dirección:* Acceso directo a "Indicadores de Asistencia Global", "Semáforo Financiero" y "Supervisión Docente".
+     - *Contabilidad:* Acceso prioritario a "Registro de Cobro Rápido", "Aprobación de Comprobantes" y "Cierre de Caja".
+     - *Estudiante / Familia:* Acceso inmediato a "Estado de Cuenta", "Boleta de Calificaciones" y "Tareas Pendientes".
+  3. *Conservación de Contexto de Navegación:*
+     - Recordar la última sección activa y filtros seleccionados (ej. grado, sección y período evaluativo) para que al recargar o regresar de un formulario, el usuario vuelva exactamente al contexto donde estaba trabajando.
+  4. *Seguridad Estricta en Accesos:*
+     - Los accesos rápidos o enlaces directos deben revalidar obligatoriamente los permisos y alcances del usuario en el servidor antes de renderizar la información, previniendo accesos indebidos por manipulación de parámetros.
+- **Criterios de Aceptación:**
+  - [ ] Los usuarios pueden agregar y eliminar accesos favoritos fácilmente.
+  - [ ] Los accesos directos respetan en un 100% las restricciones de rol y departamento.
+  - [ ] El contexto de búsqueda y filtros seleccionados se preserva durante la sesión de trabajo.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 15602-15635; clave TASK-430; asignación única: Dirección -->
+### [TASK-430] [F28-T10] [P2] Profesionalización de la Identidad Visual y Unificación del Sistema de Diseño Institucional
+- **Tipo:** Profesionalización Visual y Calidad de Presentación.
+- **Componentes Afectados:**
+  - Sistema global de estilos (Tailwind CSS, variables CSS institucionales)
+  - Vistas y plantillas de todos los departamentos (`app/html/`, `dashboards/`)
+  - Componentes compartidos de cabecera, navegación lateral, modales, botones y tarjetas
+- **Subcapacidades Relacionadas:** M04, P01, P04, A01, A05.
+- **Estado de Partida:** Requiere mejoras.
+- **Dependencias:** [F28-T05], Tailwind CSS, sistema de componentes compartidos.
+- **Problema Detectado y Riesgos:**
+  Aunque los paneles son funcionales, la plataforma presenta disparidad de estilos entre departamentos (algunos módulos lucen con colores brillantes, bordes excesivamente redondeados o apariencias semejantes a plantillas genéricas o de juguete). Un sistema de gestión educativa de nivel empresarial requiere una identidad visual sobria, madura y profesional, orientada a la productividad académica y administrativa.
+- **Requisitos Funcionales y Visuales Convergentes:**
+  1. *Línea Gráfica de Referencia Institucional:*
+     - Adoptar la madurez, sobriedad y balance visual de plataformas consolidadas de gestión educativa como **PowerSchool SIS** y **Moodle Institucional**:
+       - Paleta cromática corporativa: Azul marino institucional (`#1e3a8a`, `#1e40af`), pizarra neutro (`#0f172a`, `#334155`), fondos en gris suave (`#f8fafc`, `#f1f5f9`) y acentos funcionales controlados (verde esmeralda para éxito, rojo carmesí para alertas críticas, ámbar para advertencias).
+       - Supresión de estridencias: Eliminar gradientes decorativos innecesarios, sombras excesivas y bordes redondeados infantiles. Usar radios sutiles (`rounded-md`, `rounded-lg`).
+  2. *Escala Tipográfica y Jerarquía Clara:*
+     - Tipografía institucional legible (Inter / Roboto / System UI).
+     - Escala tipográfica estricta: Encabezados H1 (1.5rem, semibold), H2 (1.25rem, semibold), H3 (1.125rem, medium), cuerpo de texto (0.875rem / 14px), etiquetas y pies (0.75rem / 12px).
+     - Espaciados y ritmos visuales consistentes (múltiplos de 4px / 8px).
+  3. *Consistencia Interdepartamental:*
+     - Unificar la estructura de cabecera (*topbar*), menú lateral (*sidebar*), barra de herramientas y pie de página en todos los dashboards (Docente, Estudiante, Contabilidad, Dirección, Secretaría).
+     - Ningún módulo debe parecer una aplicación desconectada o creada por otro equipo.
+  4. *Coherencia en Modos Claro y Oscuro:*
+     - Definir tokens de color semánticos (`--bg-surface`, `--text-primary`, `--border-subtle`).
+     - Garantizar que en modo oscuro las tablas, formularios y modales conserven contraste suficiente y descansen la vista sin perder legibilidad.
+- **Criterios de Aceptación:**
+  - [ ] Todos los módulos y dashboards comparten un lenguaje visual homogéneo, sobrio y profesional comparable a PowerSchool SIS.
+  - [ ] Se eliminan elementos visuales estridentes o de apariencia infantil en favor de una interfaz ejecutiva y académica.
+  - [ ] Los contrastes de color cumplen estrictamente las pautas WCAG 2.2 AA en temas claro y oscuro.
+  - [ ] La navegación móvil mantiene la misma seriedad y pulcritud institucional que la versión de escritorio.
+- **Estado:** [ ] Pendiente
+
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 15688-15713; clave TASK-433; asignación única: Dirección -->
+### [TASK-433] [F29-Task20] [P2] Gestión de Pruebas Piloto por Departamento y Grupo de Usuarios
+- **Orden de Ejecución:** 20
+- **Prioridad:** P2 (Media)
+- **Componentes Afectados:**
+  - `backend/user-service/Code.gs` (`setDepartmentPilotStatus`, `isDepartmentInPilotMode`)
+  - `js/ui-common.js`
+  - Hoja: `PilotosDepartamentales`
+- **Subcapacidades Relacionadas:** F29-14.
+- **Estado de Partida:** Ausente.
+- **Dependencias Principales:** [F29-Task08], [F29-Task13], [F29-Task14], [F29-Task25].
+- **Problema Detectado y Riesgos:**
+  No se dispone de un mecanismo para habilitar la plataforma de forma controlada a departamentos seleccionados (ej. Secretaría o Preescolar) mientras el resto sigue en el sistema legado.
+- **Requisitos Funcionales y Técnicos Convergentes:**
+  1. *Administrador de pilotos y feature flags:*
+     - Definir departamento, nivel educativo, grado, sección y usuarios participantes.
+     - Habilitar operaciones de consulta previas a operaciones de escritura.
+  2. *Aislamiento y registro de incidencias del piloto:*
+     - Evitar que un proceso se ejecute simultáneamente en ambos sistemas sin sincronización explícita.
+     - Formulario accesible para registrar discrepancias y retroalimentación de los usuarios piloto.
+- **Criterios de Aceptación:**
+  - [ ] Se habilita la operación piloto para un grupo sin afectar a los usuarios del sistema anterior.
+  - [ ] Se registran y categorizan las incidencias del piloto para su resolución previa al Go-Live.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 15784-15813; clave TASK-437; asignación única: Dirección -->
+### [TASK-437] [F30-Task13] [P2] Módulo de Inducción, Capacitación y Certificación de Competencias del Personal
+- **Orden de Ejecución:** 19
+- **Prioridad:** P2 (Media)
+- **Componentes Afectados:**
+  - `js/games-adapter.js`, `dashboard-direccion.html`, `dashboard-recursos-humanos.html`
+  - Hoja: `CapacitacionesPersonal`, `CursosInduccion`
+- **Subcapacidades Relacionadas:** F30-12.
+- **Origen del Hallazgo:** `AUDITORIA_FASE_30_CONSOLIDACION_CERTIFICACION_MEJORA_CONTINUA.md` / Sección C (F30-12).
+- **Problema Detectado y Riesgos:**
+  La habilitación de funciones operativas críticas a nuevos empleados carece de un mecanismo formal para verificar y certificar que han comprendido las políticas institucionales de seguridad, evaluación de notas y manejo de datos confidenciales, originando errores humanos evitables.
+- **Requisitos Funcionales y Técnicos Convergentes:**
+  1. *Entorno institucional de capacitación guiada:*
+     - Rutas formativas asignadas según departamento, cargo y permisos: lecciones, guías paso a paso, videos explicativos, simuladores interactivos de operaciones rutinarias (sin alterar datos de producción) y cuestionarios de evaluación.
+     - Escenarios prácticos de errores comunes para asegurar que el personal comprende cómo actuar ante situaciones imprevistas.
+  2. *Evaluaciones y umbrales de aprobación paramétricos:*
+     - Evaluaciones prácticas con casos de estudio y validación de decisiones.
+     - Puntaje mínimo de aprobación configurable según la criticidad del rol (`PUNTAJE_MINIMO_CERTIFICACION_ROL`).
+     - Parámetro para definir si la certificación es obligatoria antes de habilitar permisos sensibles (`REQUERIR_CERTIFICACION_PREVIA_OPERACIONES_SENSIBLES`), garantizando que no se bloqueen funciones básicas de consulta.
+  3. *Registro institucional de competencias:*
+     - Asentar en `CapacitacionesPersonal`: usuario, curso/ruta, versión del material, fechas de inicio y término, intentos, puntaje obtenido, competencias aprobadas y capacitador responsable.
+     - Emisión de constancias de certificación interna con fecha de caducidad y recertificación obligatoria ante reformas importantes de software o normativa.
+- **Criterios de Aceptación:**
+  - [ ] Las rutas de capacitación se asignan automáticamente según el rol del usuario creado o modificado.
+  - [ ] Las simulaciones interactivas se ejecutan sin interactuar con la base de datos de producción.
+  - [ ] Las certificaciones alcanzadas son consultables por Dirección y Recursos Humanos.
+  - [ ] El sistema respeta la política configurable de bloqueo o advertencia ante falta de certificación previa.
+- **Estado:** [ ] Pendiente
+
+---
+---
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 15814-15852; clave TASK-438; asignación única: Dirección -->
+### [TASK-438] [F30-Task15] [P2] Protocolo Formal de Autorización de Go-Live y Certificación Departamental
+- **Orden de Ejecución:** 20
+- **Prioridad:** P2 (Media)
+- **Componentes Afectados:**
+  - `backend/user-service/Code.gs` (`submitDepartmentalCertificationApproval`, `getDepartmentalCertifications`, `generateGoLiveAcceptanceCertificate`)
+  - `dashboard-direccion.html`
+  - Hoja: `CertificacionesInstitucionales`, `ActasGoLive`
+- **Subcapacidades Relacionadas:** F30-14, F30-15.
+- **Origen del Hallazgo:** `AUDITORIA_FASE_30_CONSOLIDACION_CERTIFICACION_MEJORA_CONTINUA.md` / Sección E (CERT-01 a CERT-13) y Sección H.
+- **Problema Detectado y Riesgos:**
+  El paso a producción de nuevas versiones en Google Apps Script depende de despliegues manuales sin un protocolo colegiado formal que valide y documente el visto bueno de los responsables departamentales (Dirección, Secretaría, Contabilidad, Docencia, TI), arriesgando publicaciones sin consenso institucional.
+- **Requisitos Funcionales y Técnicos Convergentes:**
+  1. *Ficha formal y estados del despliegue:*
+     - Estados: `En_Preparacion`, `En_Validacion_Tecnica`, `Pendiente_Aprobacion`, `Aprobado`, `Rechazado`, `En_Despliegue`, `En_Observacion`, `Completado`, `Revertido`.
+     - Ficha de despliegue obligatoria: versión, cambios incluidos, módulos involucrados, migraciones requeridas, análisis de riesgos, resultados de pruebas automatizadas, respaldo previo verificado y estrategia de reversión.
+  2. *Checklist automatizado y criterios de reversión:*
+     - Validaciones previas de integridad: contratos interservicios, compatibilidad de esquemas, ejecución de suites de regresión al 100% y salud operativa.
+     - Bloqueo estricto de aprobación ante fallos críticos pendientes sin excepción formal justificada y autorizada.
+     - Criterios objetivos de rollback ante fallos de integridad, degradación severa de rendimiento o interrupción de autenticación.
+     - Distinguir entre rollback de código, reversión de configuración y restauración de datos.
+  3. *Certificación colegiada por departamento:*
+     - Evaluación de las 13 áreas clave: CERT-01 a CERT-13.
+     - Registro por departamento: responsable que valida, dictamen (`APROBADA`, `APROBADA_CON_OBSERVACIONES`, `RECHAZADA`), fecha, versión evaluada y pendientes menores aceptados.
+     - Generación del Acta Institucional de Certificación y Autorización de Go-Live en PDF descargable con firmas formales.
+     - Período de observación post-despliegue con telemetría activa.
+- **Criterios de Aceptación:**
+  - [ ] Cada despliegue cuenta con su ficha técnica completa y validaciones previas aprobadas.
+  - [ ] No es posible autorizar un pase a producción si existen incidencias críticas bloqueantes sin excepción justificada.
+  - [ ] Los líderes departamentales emiten y firman digitalmente sus certificaciones de área.
+  - [ ] El procedimiento de reversión se encuentra probado y listo para actuar ante contingencias.
+  - [ ] Se emite el Acta Oficial de Go-Live y se documentan los resultados del período de observación posterior.
+- **Estado:** [ ] Pendiente
+
+---
+
+---
+
+# FASE 31: DISEÑADOR UNIVERSAL DE DOCUMENTOS Y PLANTILLAS
+
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 16022-16053; clave TASK-445; asignación única: Dirección -->
+### [TASK-445] [F31-T22] [P2] Auditoría Documental Ampliada, Trazabilidad y Métricas Operativas
+- **Orden de Ejecución:** 24
+- **Prioridad:** P2 (Media)
+- **Componentes Afectados:**
+  - `backend/user-service/Code.gs` (`getDocumentLifecycleAuditTrail`, `getDocumentOperationalMetrics`)
+  - `backend/accounting-service/Code.gs`
+  - Hoja: `RegistroEventosDocumentales`, `LogsSistema`
+- **Subcapacidades Relacionadas:** F31-20.
+- **Origen del Hallazgo:** `AUDITORIA_FASE_31_DISENADOR_UNIVERSAL_DOCUMENTOS_PLANTILLAS.md` / Sección B (F31-20) y Backlog de Implementación F31-T22.
+- **Problema o Carencia:**
+  La plataforma registra eventos en bitácoras generales, pero se requiere un seguimiento especializado del ciclo de vida documental que permita a los directivos reconstruir la historia completa de una plantilla, formulario o certificado desde su creación hasta su archivo.
+- **Requisitos Funcionales y Técnicos Convergentes:**
+  1. *Eventos del ciclo de vida registrados:*
+     - Creación, modificación, duplicación, cambio de versión, envío a revisión, aprobación/rechazo, publicación, emisión individual o por lotes, descargas, impresiones, firmas registradas, consultas CUV, asociación a expedientes y archivado.
+     - Metadatos: identificador del evento, usuario responsable, rol activo, fecha/hora, entidad afectada, acción, resultado, motivo y tiempo de procesamiento.
+  2. *Consultas directivas e indicadores operativos:*
+     - Consultar la línea de tiempo completa del ciclo de vida de un documento o plantilla.
+     - Métricas operativas: total de documentos emitidos por departamento, tasa de errores en generación, documentos más solicitados y tiempos promedio de aprobación.
+     - Protección inmutable de los registros contra edición manual y sanitización de datos personales en los logs técnicos.
+- **Criterios de Aceptación:**
+  - [ ] Cualquier acción relevante sobre una plantilla o documento genera un evento trazable en la bitácora.
+  - [ ] Es posible reconstruir la secuencia histórica completa de cualquier documento mediante su identificador o CUV.
+  - [ ] Los registros de auditoría no pueden ser alterados ni eliminados por usuarios ordinarios.
+  - [ ] Los tableros directivos reflejan métricas verídicas de emisión y uso documental.
+- **Estado:** [ ] Pendiente
+
+---
+
+---
+
+# FASE 32: EDITOR VISUAL DE PDF Y CAMPOS SUPERPUESTOS
+
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 16339-16366; clave TASK-456; asignación única: Dirección -->
+### [TASK-456] [F39-Task18] [P2] Implementación de políticas institucionales de conservación y disposición documental
+- **Prioridad:** P2 (Media / Complementaria)
+- **Orden de Ejecución:** 18 (Gobernanza de archivo, retención y disposición final)
+- **Componentes Afectados:**
+  - `backend/academic-service/Code.gs` (`applyDocumentRetentionPolicies`, `archiveExpiredDocuments`)
+  - `backend/accounting-service/Code.gs`
+  - Hoja de Cálculo: `PoliticasRetencionDocumental`, `InventarioDocumentalLegado`
+- **Subcapacidades Relacionadas:** 3.10.
+- **Origen del Hallazgo:** `AUDITORIA_FASE_39_DIGITALIZACION_TRANSICION.md` / Sección 4 (4.4), Matriz CAR-F39-10 y Especificación Técnica ChatGPT/Jules.
+- **Problema Detectado y Riesgos:**
+  Los documentos se acumulan indefinidamente en Drive sin políticas de retención, archivo pasivo o disposición final, dificultando búsquedas históricas y arriesgando incumplimientos de plazos legales de conservación de expedientes escolares.
+- **Requerimientos Funcionales y Técnicos Convergentes:**
+  1. *Políticas de retención y ciclo de vida documental:*
+     - Auto-crear la hoja `PoliticasRetencionDocumental` (`PoliticaId`, `Departamento`, `TipoDocumental`, `Categoria`, `PlazoConservacionAnos`, `RequiereOriginalPermanente`, `NivelConfidencialidad`, `ProcedimientoDisposicion`).
+     - Estados del ciclo de vida: `Activo`, `Historico`, `En_Conservacion`, `Restringido`, `Pendiente_Disposicion`, `Archivado_Permanente`.
+     - Establecer cuáles documentos deben conservarse permanentemente en su formato original y cuáles pueden pasar a archivo pasivo.
+  2. *Disposición controlada y auditoría:*
+     - Identificar documentos que han cumplido su periodo de retención legal sin eliminarlos automáticamente; exigir autorización formal de Dirección antes de cualquier disposición o archivado definitivo.
+- **Criterios de Aceptación:**
+  - [ ] Permite configurar periodos de retención legal según departamento y tipo documental.
+  - [ ] Identifica documentos que han alcanzado su plazo de retención para revisión directiva.
+  - [ ] Bloquea eliminaciones no autorizadas de documentos bajo custodia histórica obligatoria.
+  - [ ] Registra en bitácora toda acción de cambio de estado de conservación o disposición final.
+- **Dependencias:** F39-Task01, F39-Task05, F39-Task10.
+- **Estado:** [ ] Pendiente
+
+---
+
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 16781-16806; clave TASK-471; asignación única: Dirección -->
+### [TASK-471] [F23-Task25] [P3] [Consultas y Trazabilidad - Optimización de Consultas y Visualización del Historial de Procesos]
+- **Componentes Afectados:**
+  - `backend/user-service/Code.gs`
+- **Dependencias Expuestas:** `RevisionesDecisionesTramite`, `F23-Task13`.
+- **Capacidades Relacionadas:** F23-003, F23-020.
+- **Problema Detectado:**
+  El historial está completo y verificado, pero necesita optimización para consultas extensas y expedientes con numerosos eventos.
+- **Requisitos Funcionales:**
+  1. Implementar paginación en la consulta de historial de trámites (`getWorkflowHistory`).
+  2. Permitir filtrar el historial por etapa, revisor, rango de fechas y tipo de decisión.
+  3. Consultar y reconstruir el historial completo de un trámite distribuido entre múltiples particiones.
+  4. Presentar con claridad decisiones, fechas, firmas y observaciones registradas.
+  5. Separar observaciones públicas (visibles al solicitante) de observaciones internas reservadas.
+  6. Permitir localizar el evento de auditoría original a partir de una tarea en la bandeja unificada.
+  7. Mantener estricto orden cronológico en la línea de tiempo.
+  8. Evitar consultas innecesarias a hojas de cálculo secundarias si no hay eventos registrados.
+- **Criterios de Aceptación:**
+  - [ ] Consultar expedientes con historiales extensos (> 50 eventos) y verificar paginación fluida.
+  - [ ] Aplicar filtros combinados y verificar exactitud de los eventos devueltos.
+  - [ ] Comprobar el orden cronológico estricto de las transiciones.
+  - [ ] Verificar que los solicitantes no pueden visualizar observaciones internas marcadas como confidenciales.
+  - [ ] Comprobar que la paginación no omite ni duplica eventos históricos.
+- **Estado:** [ ] Pendiente
+
+---
+---

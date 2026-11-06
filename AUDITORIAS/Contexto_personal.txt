@@ -4015,3 +4015,53 @@ CHECKPOINT C1.106 - RECUPERACIÓN ARCHIVÍSTICA DE PENDIENTES (CIERRE)
 - Siguiente acción: conservar esta copia como respaldo histórico; si se continúa, buscar otros blobs históricos mayores y mantener las tareas posteriores dentro de sus informes oficiales. No clasificar ni usar los archivos departamentales previos como fuente válida.
 - Commit de cierre: el commit que contiene este checkpoint; SHA final se confirma externamente después de publicar.
 ================================================================
+
+
+
+================================================================
+CHECKPOINT C1.107 - MIGRACIÓN CORREGIDA DE TAREAS POR DEPARTAMENTO (INICIO)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto: AUDITORIAS/Contexto_personal.txt.
+- Rama base: NG_beta_0.0.0.1; rama de trabajo: NG_beta_0.0.0.1_work.
+- HEAD de partida verificado: cd8d39bd681fb823a91456e0adac15bbd4b420f0; árbol de partida: d1149a6f1876366f1a3c49091b95e5ab8ced3ae6.
+- HEAD de rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59; no debe modificarse.
+- ID operativo de sesión: IMA-AUDIT-20261106-1805Z; checkpoint inicial: C1.107; estado: sesión abierta.
+- Último checkpoint previo: C1.106 (recuperación archivística cerrada).
+- Alcance: sustituir la migración departamental incorrecta de 49 registros basada en el snapshot incompleto de /Pendientes.md por una distribución histórica fiel a RECUPERACION/Pendientes_RECUPERADO.md.
+- Fuente: blob ef47d232db3ed46317dc14f22b1cdf8f938e8405; 1.443.391 bytes; 17.884 líneas. Las 16.872 líneas de New_Generation coinciden con el prefijo exacto.
+- Inventario validado: 33 tareas históricas completadas F10/F11; 471 encabezados TASK, 41 separadores de prioridad/bloque y 430 bloques reales; 104 encabezados AUD-NG excluidos para no duplicar tareas derivadas de auditoría.
+- Ausencias preservadas: no existen bloques TASK-050 ni TASK-051; no se inventan.
+- Regla aplicada: asignación única por responsabilidad funcional y jerarquía Dirección, Secretaria, Contabilidad, Docente, Estudiante, Otros. Las tareas AUD-NG permanecen en sus informes conforme a METODOLOGIA_DESARROLLO.md §3.4.
+- Archivos preparados: pendientes/README.md; seis archivos departamentales; AUDITORIAS/Contexto_personal.txt.
+- Archivos protegidos: /Pendientes.md, /pendiente_legacy.md, RECUPERACION/Pendientes_RECUPERADO.md, RECUPERACION/README.md, informes, código, pruebas y rama base.
+- Siguiente elemento: extraer, clasificar y verificar los 463 bloques elegibles sin duplicación.
+- Pruebas previstas: conteo, unicidad, exclusión de marcadores/AUD-NG, conservación textual, suma departamental y verificación Git.
+- Pruebas de aplicación: no aplican; no se modifica código.
+- Commit de cierre: el commit que contiene este checkpoint; SHA final se verificará externamente.
+================================================================
+
+
+================================================================
+CHECKPOINT C1.108 - MIGRACIÓN CORREGIDA DE TAREAS POR DEPARTAMENTO (CIERRE)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto: AUDITORIAS/Contexto_personal.txt.
+- Rama base: NG_beta_0.0.0.1; rama de trabajo: NG_beta_0.0.0.1_work.
+- HEAD de partida verificado: cd8d39bd681fb823a91456e0adac15bbd4b420f0; árbol de partida: d1149a6f1876366f1a3c49091b95e5ab8ced3ae6.
+- HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios).
+- ID operativo de sesión: IMA-AUDIT-20261106-1805Z; checkpoint inicial C1.107; checkpoint de cierre C1.108; estado: sesión cerrada.
+- Resultado: migración histórica reconstruida con 463 registros únicos: 33 tareas F10/F11 completadas y 430 bloques TASK.
+- Inventario: 471 encabezados TASK; 41 separadores excluidos; 104 encabezados AUD-NG no duplicados. TASK-050 y TASK-051 no tienen bloques en la fuente.
+- Estados en encabezados TASK: 48 [X], 108 [ ] y 274 sin casilla explícita; los 33 registros F10/F11 estaban marcados [X]. No se infirieron ni alteraron estados.
+- Distribución final: Dirección 84; Secretaria 140; Contabilidad 89; Docente 30; Estudiante 7; Otros 113. Total 463.
+- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, blob ef47d232db3ed46317dc14f22b1cdf8f938e8405, 1.443.391 bytes y 17.884 líneas; las 16.872 líneas de New_Generation coinciden con el prefijo exacto.
+- Criterio: responsabilidad funcional principal y jerarquía Dirección > Secretaria > Contabilidad > Docente > Estudiante > Otros. Cada bloque se copió textualmente con rango de origen.
+- AUD-NG: se conservan en archivo histórico e informes de origen; no se crea registro paralelo, conforme a METODOLOGIA_DESARROLLO.md §3.4 y AUDITORIAS/README.md.
+- Archivos modificados: pendientes/README.md; pendientes/Dirección/Pendientes.md; pendientes/Secretaria/Pendientes.md; pendientes/Contabilidad/Pendientes.md; pendientes/Docente/Pendientes.md; pendientes/Estudiante/Pendientes.md; pendientes/Otros/Pendientes.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: /Pendientes.md; /pendiente_legacy.md; RECUPERACION/Pendientes_RECUPERADO.md; RECUPERACION/README.md; informes; código; pruebas; rama base.
+- Validaciones ejecutadas: 463 bloques; 463 claves únicas; cada bloque aparece una vez; 0 duplicados; 0 AUD-NG copiados; 0 marcadores copiados; suma departamental = 463.
+- Pruebas no ejecutadas: runtime/aplicación; no aplican al cambio documental.
+- Próxima acción: publicar el commit único y verificar HEAD, árbol, archivos y rama base.
+- Commit de cierre: el commit que contiene este checkpoint; SHA final se verificará externamente.
+================================================================
