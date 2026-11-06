@@ -4705,3 +4705,30 @@ CHECKPOINT C1.132 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 30
 - Próximo informe pendiente: AUDITORIA_FASE_31_DISENADOR_UNIVERSAL_DOCUMENTOS_PLANTILLAS.md.
 - Estado de TASK-DOC-C1.112-01: En curso.
 ================================================================
+
+================================================================
+CHECKPOINT C1.133 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 31
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida: 754b51a9ee5b148296e7bda188e07e910609229b.
+- HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID operativo de sesión: IMA-AUDIT-20261106-2035Z-MIGRACION (no es ID nativo de ChatGPT).
+- Checkpoint anterior: C1.132 (Fase 30 normalizada).
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_FASE_31_DISENADOR_UNIVERSAL_DOCUMENTOS_PLANTILLAS.md.
+- SHA original del informe: 744e1aec3762cc4862d409d2e572aa92d8f92e2c.
+- SHA original del contexto: 724721b78e5406379d5c1a44e25745ed19691ac4.
+- Inspección: informe completo (26,815 caracteres), 23 subcapacidades F31-01..F31-23, matriz DOC-01..DOC-30, 13 tareas originales F31-Task01..F31-Task13.
+- Tareas originales preservadas: F31-Task01..F31-Task13 y prioridades P0/P1/P2 del plan G.
+- Tarea adicional derivada de F31-22: F31-Task14 (ampliación del catálogo de documentos institucionales y trámites).
+- Reconciliación histórica: Auditoria.txt menciona un backlog de 24 IDs con formato F31-T01..F31-T24, con prioridades P0/P1/P2, pero no incluye sus descripciones; el informe actual solo define F31-Task01..F31-Task13. No se consultó Pendientes.md ni se inventaron equivalencias o alcances para F31-T14..F31-T24.
+- Subcapacidades completas preservadas: F31-06/07/09/10/11/12/13/14/15/16/17/19/20/21; no se reejecutaron pruebas.
+- Campos por tarea: origen, severidad, objetivo, acción, archivos/módulos, dependencias/riesgos, alcance, criterios de aceptación, prioridad, estado y evidencia de cierre.
+- Archivos modificados: AUDITORIAS/AUDITORIA_FASE_31_DISENADOR_UNIVERSAL_DOCUMENTOS_PLANTILLAS.md; AUDITORIAS/Contexto_personal.txt.
+- No se modificaron código, pruebas, Pendientes.md, completadas.md, ChangesLogs.txt, Auditoria.txt, metodología, README, plan maestro ni rama base.
+- Pruebas no ejecutadas: editor WYSIWYG, constructor de formularios, parseo DOCX, loops, generación masiva, lógica condicional, expedientes, estilos, magic bytes, accesibilidad móvil, QR, multilingüismo, revisión colaborativa y catálogo extendido.
+- Próximo informe pendiente: AUDITORIA_FASE_32_EDITOR_VISUAL_PDF_CAMPOS_SUPERPUESTOS.md.
+- Estado de TASK-DOC-C1.112-01: En curso.
+================================================================

@@ -202,3 +202,176 @@ Las tareas técnicas requeridas para cerrar las brechas identificadas se integra
 - **Dictamen General de la Fase 31:** **APROBADA CON OBSERVACIONES MENORES.**
 
 La plataforma educativa dispone de un ecosistema documental sólido y confiable en su núcleo de emisión oficial: el mecanismo de Código Único de Verificación (CUV) garantiza la autenticidad institucional inmutable de los documentos, la concurrencia se encuentra estrictamente blindada con `LockService` y el catálogo de variables cubre los requerimientos esenciales de secretaría y docencia. Las brechas detectadas se focalizan en la composición avanzada de texto enriquecido (editor Word-like) y el soporte nativo de tablas dinámicas con filas repetibles, aspectos planificados de forma rigurosa en el backlog técnico de resolución.
+
+---
+
+## Tareas ejecutables derivadas de los hallazgos
+
+> Normalización de las 13 tareas originales F31-Task01..F31-Task13, conservando sus prioridades P0/P1/P2. Se añade F31-Task14 para la brecha explícita del catálogo de documentos (F31-22), que aparece parcialmente implementado en la matriz B pero no tiene una tarea propia en el plan G. Se vinculan las capacidades con tareas existentes cuando corresponde. Auditoria.txt menciona además un backlog histórico de 24 IDs con formato F31-T01..F31-T24, pero no conserva sus descripciones; no se presume que sean equivalentes a F31-Task01..13 ni se reconstruyen sin fuente verificable.
+
+### [F31-Task01] Implementar editor universal WYSIWYG de composición documental
+- **Hallazgo de origen:** F31-01/F31-02; brecha F de editor enriquecido completo.
+- **Severidad:** Crítica / P0. **Objetivo:** crear documentos institucionales desde cero con composición paginada y formato controlado, sin depender de Word/Docs externos.
+- **Acción ejecutable:** integrar editor enriquecido con tamaño A4/Carta/Oficio, márgenes, tipografías, interlineado, sangrías, tablas avanzadas, celdas combinadas, saltos de página, encabezados/pies y numeración; guardar contenido estructurado y previsualizar PDF.
+- **Archivos/módulos:** `js/teacher.js`, `js/ui-common.js`, editor PDF Overlay, `backend/accounting-service/Code.gs`, `PlantillasEscolares`.
+- **Dependencias/riesgos:** F31-Task03/08, F26-Task02 (formato regional), motor de PDF y esquema versionado; riesgo de pérdida de formato entre editor y renderizador.
+- **Alcance:** editor de documentos nuevos y plantillas; no sustituir el editor PDF Overlay ya existente ni ejecutar contenido activo.
+- **Criterios de aceptación:** paginación reproducible; estilos y tablas se conservan en PDF; vista previa coincide con salida; guardado versionado; edición por teclado y ratón; pruebas con documentos largos, tablas partidas, saltos, márgenes y fuentes.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; la matriz B reconoce PDF Overlay, pero falta procesador de texto enriquecido y unificación entre dashboards.
+
+### [F31-Task02] Crear diseñador visual de formularios digitales y constructor de campos
+- **Hallazgo de origen:** F31-04; matriz B y plan G.2.
+- **Severidad:** Crítica / P0. **Objetivo:** permitir crear formularios vinculados a plantillas sin editar manualmente JSON ni código.
+- **Acción ejecutable:** implementar constructor drag-and-drop para texto, números, fechas, catálogos, adjuntos y firmas; definir tipo, etiqueta, obligatoriedad, validaciones, orden, visibilidad, ámbito y enlace a variable/plantilla; guardar esquemas versionados.
+- **Archivos/módulos:** `backend/user-service/Code.gs`, `FormulariosInstitucionales`, `SolicitudesTramites`, UI administrativa y renderizador de documentos.
+- **Dependencias/riesgos:** F26-Task03 (motor de campos dinámicos), F33 (trámites/formularios), F31-Task06; riesgo de XSS, esquemas incompatibles y respuestas sin versión.
+- **Alcance:** definición visual y asociación de formularios; no ejecutar scripts arbitrarios ni aceptar validaciones confiadas únicamente al cliente.
+- **Criterios de aceptación:** campos permitidos y tipados; esquema versionado; validación server-side; previsualización; compatibilidad de respuestas históricas; permisos por rol/ámbito; pruebas de XSS, tipos, obligatoriedad, migración de esquema y acceso cruzado.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; existe `definicionJSON`, pero el informe identifica ausencia de constructor visual.
+
+### [F31-Task03] Implementar importador DOCX binario compatible con Word 2013-2017
+- **Hallazgo de origen:** F31-08; brecha F.2 y plan G.3.
+- **Severidad:** Crítica / P0. **Objetivo:** importar plantillas DOCX conservando estructura y formato sin ejecutar macros ni scripts.
+- **Acción ejecutable:** analizar el paquete OpenXML y reconstruir párrafos, estilos, tablas anidadas, bordes, imágenes, encabezados/pies y saltos de página; producir una vista previa de diferencias antes de guardar como plantilla.
+- **Archivos/módulos:** `importDocumentTemplateBase`, `backend/accounting-service/Code.gs`, `backend/user-service/Code.gs`, parser DOCX y `PlantillasEscolares`.
+- **Dependencias/riesgos:** F31-Task01/08, almacenamiento de archivos y límites GAS; riesgo de archivos DOCX malformados, ZIP bombs y pérdida silenciosa de formato.
+- **Alcance:** extracción segura de OpenXML; no ejecutar macros, OLE embebido ni scripts, ni prometer fidelidad perfecta para elementos no soportados.
+- **Criterios de aceptación:** validación MIME/magic bytes y tamaño; parser no ejecuta contenido activo; soporta estilos, tablas, imágenes y saltos definidos; elementos no soportados se reportan; previsualización comparativa; pruebas con Word 2013/2016/2017, archivos dañados y documentos complejos.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; `importDocumentTemplateBase` extrae texto, pero no reconstruye estructuras OpenXML avanzadas.
+
+### [F31-Task04] Ampliar catálogo de variables con secciones y tablas repetibles
+- **Hallazgo de origen:** F31-23 y brecha F.3; plan G.4.
+- **Severidad:** Crítica / P0. **Objetivo:** generar tablas de longitud variable (asignaturas, calificaciones, conceptos de cobro) dentro de plantillas.
+- **Acción ejecutable:** ampliar el motor de plantillas con bloques iterables tipados (por ejemplo `{{#each asignaturas}}...`) y contexto limitado; validar listas, campos permitidos, anidamiento y límites de filas; escapar contenido por contexto.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `generateSchoolDocument`, `PlantillasEscolares`, `populatePropSourceTags` y renderizador HTML/PDF.
+- **Dependencias/riesgos:** F31-Task01, F24-Task02 (diccionario de indicadores cuando se use), seguridad de plantillas; riesgo de inyección HTML o expansión excesiva de documentos.
+- **Alcance:** repetición de datos autorizados; no permitir evaluación de expresiones o acceso libre a objetos internos.
+- **Criterios de aceptación:** sintaxis declarativa y versionada; variables permitidas; escape contextual; límites de iteraciones/tamaño; listas vacías manejadas; pruebas de tablas con 0/1/múltiples filas, datos maliciosos y anidamiento no permitido.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el catálogo actual contiene variables escalares y carece de iteradores para colecciones.
+
+### [F31-Task05] Implementar generación masiva por lotes y paquetes de documentos
+- **Hallazgo de origen:** F31-19 y generación por lotes; plan G.5.
+- **Severidad:** Crítica / P0. **Objetivo:** emitir documentos para grados/secciones completos sin exceder límites de ejecución ni duplicar correlativos.
+- **Acción ejecutable:** crear trabajos de generación con executionId, cursor, lote configurable, progreso, errores por documento y empaquetamiento ZIP; reanudar por trigger/cola y reservar correlativos de forma atómica.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `generateSchoolDocument`, `DocumentosEscolaresEmitidos`, cola de trabajos, triggers y Drive.
+- **Dependencias/riesgos:** F29-Task09, TASK-154/TASK-227/TASK-265, idempotencia y cuotas; riesgo de ZIP incompleto, duplicación de CUV o trabajos abandonados.
+- **Alcance:** generación masiva y descarga empaquetada; no usar una ejecución síncrona única para miles de documentos.
+- **Criterios de aceptación:** lotes reanudables; correlativo/CUV único y reservado; progreso y fallos visibles; paquete ZIP íntegro; permisos por documento; idempotencia ante reintentos; pruebas de timeout, reinicio, lote parcial, ZIP corrupto y duplicado.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el informe reconoce generación individual y por lotes, pero el backlog exige empaquetamiento, progreso y control de timeout.
+
+### [F31-Task06] Implementar motor de lógica condicional y visibilidad dinámica
+- **Hallazgo de origen:** F31-05; plan G.6.
+- **Severidad:** Alta / P1. **Objetivo:** mostrar u ocultar campos/secciones y ajustar obligatoriedad según respuestas y tipo de trámite.
+- **Acción ejecutable:** definir lenguaje declarativo de reglas con AND/OR, operadores y tipos permitidos; evaluar reglas en cliente para UX y revalidarlas en servidor antes de aceptar respuestas; soportar dependencias entre campos.
+- **Archivos/módulos:** `backend/user-service/Code.gs`, `FormulariosInstitucionales`, `SolicitudesTramites`, renderizador de formularios y F33.
+- **Dependencias/riesgos:** F31-Task02, F26-Task03 y F33 formularios/trámites; riesgo de bypass si la obligatoriedad solo se evalúa en UI.
+- **Alcance:** reglas limitadas y versionadas; no ejecutar código arbitrario ni permitir ciclos infinitos de dependencias.
+- **Criterios de aceptación:** operadores y tipos definidos; ciclos detectados; reglas revalidadas server-side; adjuntos obligatorios condicionales; respuestas históricas conservan versión; pruebas AND/OR, campos ocultos, datos falsificados y reglas incompatibles.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el informe indica que la lógica condicional depende de código ad-hoc en cliente.
+
+### [F31-Task07] Vincular automáticamente documentos emitidos con expedientes institucionales
+- **Hallazgo de origen:** F31-16; plan G.7.
+- **Severidad:** Alta / P1. **Objetivo:** asociar cada PDF oficial con el expediente de estudiante, empleado o trámite correspondiente.
+- **Acción ejecutable:** ampliar la emisión para persistir documentId, CUV, targetType, targetId, expediente, categoría, versión, propietario, ACL y metadatos; crear enlace desde expediente y permitir consulta autorizada.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `DocumentosEscolaresEmitidos`, `backend/academic-service/Code.gs`, `DocumentosEstudiante`, `SolicitudesTramites`.
+- **Dependencias/riesgos:** F29-Task15 (transferencia documental), F33 trámites y permisos contextuales; riesgo de adjuntar un documento al expediente equivocado o exponerlo.
+- **Alcance:** asociación automática tras emisión confirmada; no asumir que un enlace Drive equivale a relación de expediente válida.
+- **Criterios de aceptación:** targetType/targetId canónicos; asociación idempotente; CUV y versión preservados; permisos revalidados en lectura; documento visible en expediente autorizado; pruebas de estudiante/empleado/trámite, ID inválido y acceso cruzado.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; existe indexación parcial de targetId/estudianteUserId, pero el plan requiere integración automática completa.
+
+### [F31-Task08] Gestionar estilos corporativos globales y encabezados diferenciados
+- **Hallazgo de origen:** F31-03; plan G.8.
+- **Severidad:** Alta / P1. **Objetivo:** mantener identidad visual consistente con encabezados/pies por página y estilos reutilizables.
+- **Acción ejecutable:** ampliar `configFormatoJSON` con bibliotecas versionadas de estilos, logotipo, tipografía, márgenes, encabezado primera página y páginas pares/impares; permitir herencia por institución/departamento y previsualización.
+- **Archivos/módulos:** `backend/user-service/Code.gs`, `PlantillasEscolares`, `configFormatoJSON`, editor WYSIWYG y generador PDF.
+- **Dependencias/riesgos:** F26-Task01 (ámbitos), F26-Task02 (formatos regionales), F31-Task01; riesgo de sobrescribir estilos locales o generar diferencias entre vista previa y PDF.
+- **Alcance:** estilos de presentación y herencia; no alterar contenido legal ni permitir recursos externos inseguros.
+- **Criterios de aceptación:** estilos versionados por ámbito; precedencia definida; primera página/par/impar configurables; render consistente; previsualización; cambios auditados; pruebas de múltiples plantillas, departamentos y exportación.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; la matriz B identifica formato básico, pero falta biblioteca corporativa y encabezados diferenciados.
+
+### [F31-Task09] Validar criptográficamente adjuntos y aislar archivos potencialmente maliciosos
+- **Hallazgo de origen:** F31-17; seguridad de adjuntos y plan G.9.
+- **Severidad:** Alta / P1. **Objetivo:** evitar que archivos con extensión engañosa o contenido peligroso entren en expedientes.
+- **Acción ejecutable:** ampliar validación de uploads con magic bytes/MIME real, lista permitida, tamaño, checksum, nombre seguro y almacenamiento privado; aislar archivos no verificables y registrar estado de análisis.
+- **Archivos/módulos:** `backend/academic-service/Code.gs`, `uploadStudentDocument`, `DocumentosEstudiante`, `backend/user-service/Code.gs` y Drive.
+- **Dependencias/riesgos:** TASK-296 (sanitización y enlaces Drive seguros), F29-Task11/15 (integridad y transferencia), F40 (seguridad documental); riesgo de malware, archivos públicos o falso MIME.
+- **Alcance:** validación y aislamiento de adjuntos; no afirmar detección antivirus completa si solo se valida firma binaria.
+- **Criterios de aceptación:** magic bytes y MIME coinciden; extensiones peligrosas rechazadas; tamaño y checksum registrados; Drive privado/ACL mínima; archivo sospechoso en cuarentena; pruebas de doble extensión, MIME falso, ZIP anidado, archivo corrupto y enlace anónimo.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el upload tiene límites y tipos permitidos, pero el plan exige validación binaria real y aislamiento.
+
+### [F31-Task10] Optimizar formularios móviles y accesibilidad WCAG
+- **Hallazgo de origen:** F31-18; plan G.10.
+- **Severidad:** Alta / P1. **Objetivo:** permitir diligenciamiento y edición táctil accesibles en pantallas pequeñas.
+- **Acción ejecutable:** adaptar overlays y campos para touch/pointer, zoom, selección, foco, teclado, etiquetas, contraste y anuncios de estado; evitar que controles superpuestos bloqueen desplazamiento o lectura.
+- **Archivos/módulos:** `js/teacher.js`, editor PDF Overlay, formularios y dashboards.
+- **Dependencias/riesgos:** F28-Task04 (foco/atajos) y F28-Task05 (rendimiento UI) si aplican; TASK-129/TASK-130 (ayudas accesibles); riesgo de degradar precisión geométrica en PDF.
+- **Alcance:** UX móvil y accesibilidad de formularios; no limitar la validación a responsive visual.
+- **Criterios de aceptación:** operación táctil con gestos; navegación teclado/foco; nombres accesibles; contraste; zoom sin pérdida; pruebas con lectores de pantalla y dispositivos pequeños; WCAG 2.2 AA verificada por criterios.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; la matriz B pide mejorar manipulación táctil de overlays en pantallas pequeñas.
+
+### [F31-Task11] Generar códigos QR dinámicos para verificación CUV
+- **Hallazgo de origen:** F31-23; plan G.11.
+- **Severidad:** Media / P2. **Objetivo:** facilitar verificación de autenticidad de documentos oficiales desde un dispositivo móvil.
+- **Acción ejecutable:** generar QR que codifique URL pública de verificación CUV sin incluir datos personales; mantener destino estable, firma/consulta server-side y representación en cabecera/pie.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `generateSchoolDocument`, `DocumentosEscolaresEmitidos`, portal público de verificación y renderizador PDF.
+- **Dependencias/riesgos:** CUV existente, F31-Task01/08 y seguridad de enlaces; riesgo de filtrar DNI, nombre u otros datos en el QR.
+- **Alcance:** código QR como atajo al verificador; no reemplaza firma, hash ni control de acceso a documentos privados.
+- **Criterios de aceptación:** QR contiene solo identificador/URL segura; verificación confirma autenticidad y estado; revocación/anulación reflejada; lectura en impresión y móvil; pruebas de QR alterado, documento revocado y datos sensibles.
+- **Prioridad:** P2. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; la matriz B indica CUV activo, pero el plan pide QR dinámico para consulta instantánea.
+
+### [F31-Task12] Implementar plantillas multilingües sincronizadas
+- **Hallazgo de origen:** F31-23; plan G.12.
+- **Severidad:** Media / P2. **Objetivo:** mantener versiones en español e inglés de una plantilla con variables y campos equivalentes.
+- **Acción ejecutable:** ampliar catálogo con idioma, grupo de plantilla, versión relacionada y mapa de variables; validar que ambas versiones compartan contrato de datos y ciclo de aprobación.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `PlantillasEscolares`, `populatePropSourceTags`, editor y generador PDF.
+- **Dependencias/riesgos:** F31-Task04 (variables repetibles), F26-Task02 (locale) y F31-Task08; riesgo de traducciones desfasadas o de omitir cláusulas legales.
+- **Alcance:** español/inglés para plantillas seleccionadas; no traducir automáticamente contenido jurídico sin revisión.
+- **Criterios de aceptación:** plantillas agrupadas por idioma; variables/campos compatibles; aprobación por versión; cambios sincronizados con alerta de desajuste; pruebas de placeholders, tablas repetibles y documentos históricos.
+- **Prioridad:** P2. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; la matriz B señala que falta soporte multilingüe.
+
+### [F31-Task13] Implementar revisión colaborativa y comentarios en borradores de plantillas
+- **Hallazgo de origen:** F31-13/F31-14; plan G.13.
+- **Severidad:** Media / P2. **Objetivo:** permitir revisión interna antes de publicar una plantilla oficial.
+- **Acción ejecutable:** añadir comentarios anclados a versión/sección, autor verificado, fecha, estado, respuesta y resolución; integrar flujo de revisión/aprobación directiva sin modificar documentos ya emitidos.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `PlantillasEscolares`, `FirmasConformidades`, flujo de aprobación y UI de administración.
+- **Dependencias/riesgos:** F22 (gestión documental/firmas), F34 (bandejas/revisión/firmas), AUD-NG-024 (identidad del revisor); riesgo de filtrar comentarios internos o perder trazabilidad de versión.
+- **Alcance:** comentarios sobre borradores y versiones; no alterar documentos emitidos ni confundir comentario con firma/aprobación.
+- **Criterios de aceptación:** comentario ligado a versión y ubicación; autor desde sesión verificada; permisos por rol; resolución auditable; publicación requiere aprobación; historial inmutable; pruebas de acceso cruzado, versión obsoleta y comentario privado.
+- **Prioridad:** P2. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el plan identifica ausencia de revisión colaborativa de borradores.
+
+### [F31-Task14] Ampliar el catálogo de documentos institucionales y trámites
+- **Hallazgo de origen:** F31-22; matriz B, estado parcialmente implementado y próximo paso de ampliar contratos laborales y circulares directivas.
+- **Severidad:** Media / P2. **Objetivo:** cubrir tipos documentales institucionales más allá de constancias, certificados y recibos.
+- **Acción ejecutable:** inventariar categorías y propietarios; añadir contratos laborales, circulares directivas y documentos complementarios con plantillas, variables, permisos, flujo de aprobación, retención y asociación al expediente correspondiente.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `PlantillasEscolares`, `DocumentosEscolaresEmitidos`, `backend/user-service/Code.gs`, expedientes laborales/estudiantiles y catálogos de trámites.
+- **Dependencias/riesgos:** F31-Task07/08/13, F33 formularios/trámites y F40 seguridad documental; riesgo de emitir contratos o circulares con permisos, firmas o retención incorrectos.
+- **Alcance:** ampliar catálogo de tipos; no crear documentos jurídicos sin plantilla aprobada ni duplicar módulos de trámites existentes.
+- **Criterios de aceptación:** catálogo con tipo/propietario/plantilla/flujo; contratos y circulares con versiones aprobadas; variables validadas; permisos/firmas/retención; vínculo a expediente; pruebas de emisión, aprobación, acceso y archivo.
+- **Prioridad:** P2. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; la matriz B confirma catálogo parcial y falta de contratos laborales/circulares.
+
+### Reconciliaciones y discrepancias transversales de Fase 31
+- **F31-Task02:** coordinar el constructor visual con F26-Task03 y F33; el formulario documental debe reutilizar esquemas y no crear un motor incompatible.
+- **F31-Task04:** las secciones repetibles son una ampliación del motor de variables, no un nuevo sistema de plantillas.
+- **F31-Task05:** coordinar lotes con F29-Task09 y TASK-154/TASK-227/TASK-265; correlativos y CUV deben permanecer idempotentes.
+- **F31-Task07:** coordinar asociación con expedientes y F29-Task15; no confundir URL de Drive con relación documental.
+- **F31-Task09:** coordinar validación con TASK-296 y F40; la comprobación MIME/magic bytes no sustituye antivirus.
+- **F31-Task10:** coordinar accesibilidad con F28 y TASK-129/TASK-130.
+- **F31-Task13:** coordinar revisión con F22/F34 y AUD-NG-024; no duplicar bandejas ni firma electrónica.
+- **F31-Task14:** formaliza F31-22, una brecha de catálogo parcial no individualizada en el plan G.
+- **Discrepancia de IDs históricos:** Auditoria.txt registra un backlog de 24 IDs con formato F31-T01..F31-T24, pero el informe vigente define 13 tareas con formato F31-Task01..F31-Task13. No hay descripciones de F31-T14..F31-T24 en la bitácora ni se presume equivalencia. Se conservan los IDs del informe y se solicita recuperar una fuente autorizada para reconciliar el conjunto histórico.
+- **Subcapacidades completas preservadas:** F31-06/07/09/10/11/12/13/14/15/16/17/19/20/21 se mantienen completas/verificadas según matriz B; no se reejecutaron pruebas.
+- **Estado global:** F31-Task01..F31-Task14 permanecen pendientes de ejecución/revalidación; la incorporación documental no certifica su cierre.
