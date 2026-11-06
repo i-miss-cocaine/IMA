@@ -5237,3 +5237,33 @@ CHECKPOINT C1.152 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME FASE2-T01
 - Commit de cierre: el commit único que contiene este checkpoint y el bloque de tareas del informe; verificar externamente su SHA/árbol/archivos.
 ================================================================
 
+================================================================
+CHECKPOINT C1.153 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME FASE2-T02
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto: AUDITORIAS/Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: 49d613b63966742f7eb0ba7805b4e9748c87a567.
+- HEAD de rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Árbol base de la rama de trabajo: 185e8689e1e85864f2816b0f5e11c44be3c21228.
+- ID operativo de sesión: IMA-AUDIT-20261106-2134Z (no es ID nativo de ChatGPT).
+- Checkpoint inicial de esta sesión: C1.152.
+- Estado de sesión: cerrada en C1.153.
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe anterior normalizado: AUDITORIAS/AUDITORIA_COMPLETADAS_FASE2_T01.md (C1.152).
+- Informe normalizado en esta iteración: AUDITORIAS/AUDITORIA_COMPLETADAS_FASE2_T02.md.
+- SHA del informe antes del cambio: 00f998c7c9433d3ef598799411ebd738f2bca762.
+- SHA del contexto antes del cambio: 891e66cedae3273b0272a6825cc0da11c4c296c9.
+- Inspección: dictamen CUMPLE PARCIALMENTE; reintentos POST sin clave estable; idempotencia backend opcional y no atómica; CacheService temporal; deduplicación limitada en pagos/matrículas; suite de concurrencia con resultados PASSED sin verificar invariantes reales.
+- Tarea formalizada: AUD-NG-161 (P1), pruebas conductuales de idempotencia, concurrencia, pagos, CUV, matrícula, planilla, pérdida de respuesta y fallo posterior a persistencia.
+- Reconciliación: AUD-NG-006 conserva idempotencia general cliente/backend; AUD-NG-133 conserva atomicidad transaccional de pagos. No se crean IDs duplicados ni se amplían esos alcances.
+- Archivos modificados: AUDITORIAS/AUDITORIA_COMPLETADAS_FASE2_T02.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, ChangesLogs.txt, Auditoria.txt, METODOLOGIA_DESARROLLO.md, AUDITORIA_COMPLETADAS_PLAN.md, README y rama base.
+- Pruebas ejecutadas: lectura del informe, comparación de SHA, reconciliación documental de IDs y revisión manual de criterios.
+- Pruebas no ejecutadas: suite de concurrencia, Apps Script, HTTP, Google Sheets productivo, navegador, pérdida de respuesta, escrituras simultáneas y despliegues.
+- Límite: cambio exclusivamente documental; AUD-NG-161 permanece Pendiente y FASE2-T02 no se declara funcionalmente completada.
+- Próximo informe: inventariar el siguiente documento histórico pendiente; el checkpoint C1.152 indicó continuar por los informes históricos y no reabrir informes ya normalizados sin evidencia nueva.
+- Commit de cierre: el commit único que contiene este checkpoint y el bloque de tareas del informe; verificar externamente SHA, árbol, archivos y rama base.
+================================================================
+

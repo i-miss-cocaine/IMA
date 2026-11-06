@@ -83,3 +83,27 @@ La implementación tiene buenas piezas parciales (comparación de payload, repla
 - SHA de respaldo: js/api.js `6b24f666db30a811a8e9b38d466fc6001cf6dfa9`; ACADEMIC `daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc`; ACCOUNTING `38b979d41596b85e888b4a7060b37bbac0840a28`.
 - Progreso: 7/183 identificadores únicos auditados; 176 pendientes.
 - Siguiente tarea: `T-UX-01`, inmediatamente después de FASE2-T02 en `completadas.md`.
+
+---
+
+## Tareas ejecutables derivadas de los hallazgos
+
+> Se formaliza AUD-NG-161 como tarea específica de calidad de pruebas. AUD-NG-006 conserva la corrección general de idempotencia del cliente/backend y AUD-NG-133 conserva la atomicidad transaccional de pagos; este informe no duplica esos mecanismos.
+
+### [AUD-NG-161] Sustituir las pruebas nominales por pruebas conductuales de idempotencia y concurrencia
+- **Hallazgo de origen:** criterio 5; función `runCriticalProcessConcurrencySuite` en `backend/accounting-service/Code.gs`; pruebas de LockService, integridad de pagos y unicidad de CUV que reportan `PASSED` sin ejercitar ni comprobar las invariantes correspondientes.
+- **Severidad:** Alta. **Objetivo:** impedir falsos positivos en la suite y obtener evidencia reproducible de que los flujos críticos resisten concurrencia, reintentos, pérdida de respuesta y claves incompatibles.
+- **Acción ejecutable:** reemplazar las comprobaciones nominales por escenarios conductuales que ejecuten dos o más operaciones coordinadas y verifiquen exclusión mutua y resultados persistidos; comprobar duplicados directamente en `PagosAbonos` para la ruta `recordStudentPayment`; comparar CUV reales para demostrar unicidad; añadir casos de matrícula y planilla; simular reintento con la misma clave, reutilización de clave con payload distinto, pérdida de respuesta y fallo después de persistir pero antes de devolver/guardar el resultado; hacer que cada caso derive su estado PASSED/FAILED de aserciones sobre invariantes observables y falle si la preparación o lectura de evidencia no puede completarse.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, función `runCriticalProcessConcurrencySuite`; `recordStudentPayment`; hoja `PagosAbonos`; hoja `DocumentosEscolaresEmitidos`; flujos de matrícula y planilla; archivos de pruebas de regresión que se incorporen al alcance tras su inventario.
+- **Dependencias y riesgos:** AUD-NG-006 conserva la clasificación de operaciones, claves estables y reserva idempotente; AUD-NG-133 conserva la atomicidad, bloqueo y validación de pagos. La suite debe probar esos contratos sin reimplementar sus mecanismos. Riesgo de falsos positivos si se simula concurrencia secuencial, se consulta una hoja distinta de la escritura real o se asigna PASSED sin aserciones.
+- **Alcance:** calidad y cobertura conductual de pruebas para idempotencia, concurrencia y unicidad de las operaciones indicadas. No sustituye ni duplica la implementación de idempotencia general (AUD-NG-006) ni la corrección transaccional de pagos (AUD-NG-133).
+- **Criterios de aceptación:** la suite demuestra contención real entre operaciones simultáneas; la repetición de una misma clave no crea efectos duplicados y devuelve un resultado coherente; una clave reutilizada con payload distinto se rechaza; la pérdida de respuesta y el fallo posterior a persistencia se recuperan sin duplicar; los pagos se verifican en `PagosAbonos`; los CUV se comparan para comprobar unicidad; matrícula y planilla tienen casos de prueba; cualquier falta de datos, error de lectura o aserción fallida produce FAILED y nunca PASSED; los resultados incluyen evidencia identificable y reproducible.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; esta auditoría fue estática/manual y no ejecutó la suite ni operaciones concurrentes reales.
+
+### Reconciliación de hallazgos relacionados
+- **AUD-NG-006:** conserva la política general de reintentos, clasificación de operaciones, generación/transmisión de claves y reserva atómica; FASE2-T02 amplía su evidencia, sin duplicar su implementación.
+- **AUD-NG-133:** conserva la idempotencia transaccional de pagos/abonos, bloqueo, validación de cargo y prevención de colisiones; AUD-NG-161 prueba esas invariantes, no las reemplaza.
+- **Pruebas y límites:** inspección estática/manual del informe y reconciliación de IDs. No se ejecutaron solicitudes concurrentes, navegador, pérdida de respuesta, Apps Script ni escrituras contra Google Sheets productivo.
+- **Dictamen:** FASE2-T02 continúa en CUMPLE PARCIALMENTE; la formalización de AUD-NG-161 no certifica la idempotencia ni la concurrencia funcional.
+
