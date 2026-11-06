@@ -237,3 +237,108 @@ Determinar si las importaciones, registros y operaciones de consulta/actualizaci
   - *Ausente:* 1 (8.4%)
 - **Cobertura de Verificación Satisfactoria:** 59.4% (19/32 pruebas aprobadas)
 - **Dictamen:** **NO APROBADA PARA CERTIFICACIÓN FINAL** debido a la falta de validación server-side del destino solicitado en importaciones, la exposición excesiva de atributos en consultas interdepartamentales y la ausencia de validación previa de referencias foráneas en transacciones financieras.
+
+---
+
+## Tareas ejecutables derivadas de los hallazgos
+
+> Normalización de las seis tareas descritas en el plan I (F37-Task01..F37-Task06), conservando sus prioridades visibles. Se añaden F37-Task09 y F37-Task10 para cubrir la reasignación asistida de registros mal dirigidos (PT-F37-32) y la automatización de la matriz de pruebas de aislamiento. Auditoria.txt registra ocho tareas históricas, pero no contiene descripciones para F37-Task07/08; no se inventan. Se documenta además la diferencia de prioridad de F37-Task05 entre el informe y la bitácora.
+
+### [F37-Task01] Implementar enrutamiento declarativo server-side de destinos de datos
+- **Hallazgo de origen:** F37-01/F37-06; PT-F37-03/04/05/06; CAR-F37-01/CAR-F37-06.
+- **Severidad:** Crítica / P0. **Objetivo:** resolver el destino según entidad, rol verificado y departamento, sin confiar en el destino solicitado por el frontend.
+- **Acción ejecutable:** crear motor declarativo que reciba entidad/tipo de información y contexto verificado; resuelva Spreadsheet/hoja/ámbito desde catálogo; valide que esquema de columnas, rol y departamento coincidan; rechace destinos ambiguos o no autorizados.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs` (`importDataWithColumnMapping`, `resolveSpreadsheetSource`, `CatalogoSpreadsheets`), `backend/developer-service/Code.gs`, `js/teacher.js`, `excel-target-module`.
+- **Dependencias/riesgos:** F35-Task17 (esquemas importables), F35-ID-Task02/07 (formatos/ámbitos y catálogo), F29-Task17 (roles/privacidad); riesgo de escritura cruzada o exposición de datos entre áreas.
+- **Alcance:** enrutamiento y autorización de destino en backend; no aceptar `destinoModulo` como autoridad ni usar la primera hoja coincidente.
+- **Criterios de aceptación:** destino derivado/validado server-side; esquema de entidad coincide; rol y departamento autorizados; destinos múltiples exigen selección explícita validada; falta de configuración falla de forma controlada; pruebas de payload manipulado, destino incompatible, módulo no autorizado y sedes.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; la auditoría confirma que `destinoModulo` llega del cliente sin cotejo semántico ni jurisdiccional.
+
+### [F37-Task02] Crear catálogo de proyecciones y máscaras mínimas de atributos interdepartamentales
+- **Hallazgo de origen:** F37-02/F37-04/F37-08; PT-F37-09/25; CAR-F37-02/CAR-F37-04/CAR-F37-08.
+- **Severidad:** Crítica / P0. **Objetivo:** compartir solo los atributos necesarios para la operación del departamento receptor.
+- **Acción ejecutable:** crear `CatalogoRelacionesInterdepartamentales` con entidad origen/destino, campos permitidos, propósito, rol, ámbito y vigencia; aplicar proyección server-side en consultas; bloquear retornos de filas completas cuando exista máscara.
+- **Archivos/módulos:** servicios User/Academic/Accounting/Developer, `CatalogoRelacionesInterdepartamentales`, consultas de estudiantes, expedientes y pagos.
+- **Dependencias/riesgos:** F30-Task02 (integridad relacional), AUD-NG-158 (ABAC), F29-Task17 (privacidad); riesgo de exposición de teléfonos, tutores secundarios, bienestar u observaciones no pertinentes.
+- **Alcance:** minimización de campos y relaciones autorizadas; no sustituir RBAC ni asumir que ocultar columnas en frontend protege datos.
+- **Criterios de aceptación:** proyecciones versionadas por propósito/departamento; campos se filtran en backend; Contabilidad recibe solo datos mínimos de matrícula; campos sensibles excluidos por defecto; pruebas de endpoints directos, cambio de rol y manipulación de filtros.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; PT-F37-09/25 detectan acceso a expediente completo y retorno de objetos sin máscara.
+
+### [F37-Task03] Validar estrictamente referencias foráneas interdepartamentales
+- **Hallazgo de origen:** F37-07; PT-F37-12/13/20; CAR-F37-07.
+- **Severidad:** Crítica / P0. **Objetivo:** impedir cargos/pagos y registros dependientes asociados a matrículas/cuentas inexistentes o fuera del ámbito.
+- **Acción ejecutable:** validar existencia, estado, propietario departamental, institución y periodo de cada referencia antes de escribir; rechazar referencias ambiguas/inactivas y devolver errores no reveladores.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `recordStudentPayment`, `CargosEstudiante`, `MatriculasEstudiantes`, `CatalogoSpreadsheets`.
+- **Dependencias/riesgos:** F25-Task03, F29-Task01/02/07, F30-Task02; riesgo de cargo huérfano, fraude o fuga de existencia de datos de otra sede.
+- **Alcance:** validación de referencias y ámbito; no aceptar IDs arbitrarios ni depender solo de coincidencia por estudianteId.
+- **Criterios de aceptación:** referencia existe y está activa; periodo/sede/propietario coinciden; autorización se verifica en backend; referencias ambiguas se bloquean; prueba cubre matrícula inexistente, ajena, vencida y válida.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; PT-F37-12/13 fallan porque el backend no valida existencia ni ámbito de matrícula.
+
+### [F37-Task04] Prevenir escrituras cruzadas con idempotencia por departamento y entidad
+- **Hallazgo de origen:** F37-09; PT-F37-22/23/24; CAR-F37-09.
+- **Severidad:** Crítica / P0. **Objetivo:** impedir duplicados, mezcla de destinos y escrituras parciales en importaciones simultáneas.
+- **Acción ejecutable:** incorporar clave compuesta departamento+entidad+operacionId, LockService/serialización por ámbito y registro durable de estado; validar destino de nuevo al confirmar; diseñar compensación para fallos parciales.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `importDataWithColumnMapping`, `AuditoriaMigraciones`, `CatalogoSpreadsheets`, colas de importación.
+- **Dependencias/riesgos:** F35-Task04/08, F25-Task05, F29-Task09, AUD-NG-006; riesgo de locks globales excesivos o idempotencia que colisione entre sedes.
+- **Alcance:** persistencia cruzada y reintentos; no considerar LockService por sí solo como transacción distribuida ni como validación de destino.
+- **Criterios de aceptación:** clave idempotente por operación/ámbito; destino inmutable tras preview; lock o mecanismo equivalente; reintentos no duplican; escritura parcial se detecta y compensa; pruebas de dos imports simultáneos, replay y timeout.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; PT-F37-22 muestra duplicados y PT-F37-23 admite escritura truncada en caso de interrupción.
+
+### [F37-Task05] Diagnosticar registros huérfanos y desalineados entre departamentos
+- **Hallazgo de origen:** F37-12; PT-F37-31; CAR-F37-12.
+- **Severidad:** Alta / P1 según el plan I. **Objetivo:** identificar registros almacenados en un destino distinto del propietario esperado y relaciones huérfanas.
+- **Acción ejecutable:** implementar escaneo de integridad que compare entidad, ámbito, catálogo de destino y relaciones; generar informe con ubicación real/esperada, origen de escritura, impacto y prioridad; permitir exportar hallazgos.
+- **Archivos/módulos:** `backend/developer-service/Code.gs`, `CatalogoSpreadsheets`, `RegistroEventos`, `AuditoriaMigraciones` y servicios Academic/Accounting.
+- **Dependencias/riesgos:** F37-Task01/02/03, F30-Task02, F29-Task18; riesgo de marcar como error un registro histórico válido o reparar sin preservar relaciones.
+- **Alcance:** diagnóstico y reporte; la reparación se ejecuta solo mediante F37-Task09 y aprobación.
+- **Criterios de aceptación:** escaneo de todas las áreas; destino esperado/real; referencias huérfanas y duplicados diferenciados; evidencia/correlationId; exportación de resultados; pruebas de hoja incorrecta, referencia rota y registro histórico legítimo.
+- **Prioridad:** P1 en el plan I; la bitácora histórica asigna P0 a Task05. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; PT-F37-31 confirma que no existe diagnóstico de registros mal asignados.
+
+### [F37-Task06] Crear consola administrativa de destinos, fuentes y relaciones interdepartamentales
+- **Hallazgo de origen:** F37-04/F37-11; CAR-F37-04/CAR-F37-11.
+- **Severidad:** Alta / P1. **Objetivo:** permitir a Dirección administrar destinos, relaciones y reglas de compartición sin modificar código.
+- **Acción ejecutable:** ampliar `CatalogoSpreadsheets` con relaciones, propietario, ámbito, estado y política de proyección; crear consola para crear/editar/desactivar destinos y revisar dependencias; validar cambios con preview y aprobación.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs` (`registerSpreadsheetSource`, `resolveSpreadsheetSource`, `getSpreadsheetCatalog`), `backend/developer-service/Code.gs`, dashboard Dirección.
+- **Dependencias/riesgos:** F35-ID-Task02/07, F26-Task01/05, F37-Task01/02; riesgo de cambios de catálogo que redirijan escrituras o amplíen acceso.
+- **Alcance:** administración de destinos y relaciones; no permitir que usuarios ordinarios cambien fuentes ni que se borren referencias históricas.
+- **Criterios de aceptación:** roles administrativos; cambios versionados; preview de impacto; desactivación no destructiva; validación de destino/relación; pruebas de acceso, sede, rollback y concurrencia.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; existe registro técnico de Spreadsheet, pero no consola para administrar reglas de compartición.
+
+### [F37-Task09] Implementar reasignación asistida de registros ubicados en destinos incorrectos
+- **Hallazgo de origen:** PT-F37-32; F37-12 y CAR-F37-12.
+- **Severidad:** Alta / P1. **Objetivo:** corregir desvíos detectados sin perder identidad, referencias ni trazabilidad.
+- **Acción ejecutable:** crear flujo de reasignación que valide origen/destino, construya plan de movimiento, conserve ID interno, actualice referencias dependientes, genere snapshot y registre aprobación; no mover automáticamente registros ambiguos.
+- **Archivos/módulos:** servicios Developer/Academic/Accounting, `CatalogoSpreadsheets`, `CorrespondenciaIdentificadores`, `RegistroEventos` y `AuditoriaMigraciones`.
+- **Dependencias/riesgos:** F37-Task05/06, F29-Task01/04/07, F35-ID-Task05/08/09; riesgo de duplicar/eliminar el registro o romper relaciones.
+- **Alcance:** reparación controlada de destino; no ejecutar movimientos productivos sin preview, respaldo y autorización.
+- **Criterios de aceptación:** preview muestra filas/relaciones afectadas; ID estable conservado; movimiento idempotente; referencias reconciliadas; snapshot/rollback; actor y motivo registrados; pruebas de destino erróneo, referencias múltiples y conflicto.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; PT-F37-32 falla porque no existe función de reasignación asistida.
+
+### [F37-Task10] Automatizar pruebas de aislamiento y enrutamiento interdepartamental
+- **Hallazgo de origen:** PT-F37-01..PT-F37-32; fallos de destino, proyección, referencias, idempotencia y diagnóstico.
+- **Severidad:** Alta / P1. **Objetivo:** prevenir regresiones en límites entre departamentos y servicios.
+- **Acción ejecutable:** ampliar AUD-NG-161 con fixtures multiinstitución/departamento, roles, esquemas, destinos, referencias y concurrencia; verificar que los endpoints devuelvan solo campos permitidos y que escrituras fuera de ámbito se rechacen.
+- **Archivos/módulos:** `tests/regression/academic-grading-suite.js`, servicios User/Academic/Accounting/Developer, entorno de pruebas aislado.
+- **Dependencias/riesgos:** F37-Task01..Task09, AUD-NG-161; riesgo de contaminar datos reales o de aprobar pruebas estructurales sin validar efectos.
+- **Alcance:** pruebas conductuales aisladas; no usar hojas productivas ni enviar notificaciones reales.
+- **Criterios de aceptación:** 32 escenarios reproducibles; fixtures con dos sedes/departamentos; pruebas positivas/negativas; no fuga de campos; escrituras idempotentes; limpieza/rollback; evidencia por escenario y versión.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; la matriz de 32 pruebas contiene fallos funcionales que deben convertirse en regresiones automatizadas.
+
+### Reconciliaciones y discrepancias transversales de Fase 37
+- **F37-Task01:** destino lo resuelve el servidor; el selector del cliente solo expresa intención y nunca autoriza.
+- **F37-Task02:** las máscaras complementan RBAC/ABAC; no lo sustituyen ni permiten consultar filas completas.
+- **F37-Task03:** coordinar referencias con F25-Task03/F29-Task01 y F30-Task02.
+- **F37-Task04:** coordinar idempotencia con F35-Task04/F25-Task05 y AUD-NG-006; no confundir lock con transacción distribuida.
+- **F37-Task05/09:** diagnóstico identifica; reasignación repara. Son acciones separadas para evitar cambios automáticos inseguros.
+- **F37-Task06:** consola consume catálogo y relaciones, no mantiene un segundo catálogo de spreadsheets.
+- **Discrepancia histórica:** Auditoria.txt registra ocho tareas F37-Task01..F37-Task08 (P0 01-05; P1 06-08), mientras el informe I solo describe F37-Task01..F37-Task06. No se recuperó descripción de Task07/08; no se inventan. Se conserva la diferencia de prioridad de Task05 (P1 en informe, P0 en bitácora).
+- **Subcapacidades completas preservadas:** F37-03/F37-05/F37-10; no se reejecutaron pruebas.
+- **Estado global:** F37-Task01..F37-Task06 y F37-Task09..F37-Task10 permanecen pendientes; F37-Task07/08 quedan como IDs históricos sin descripción recuperable.

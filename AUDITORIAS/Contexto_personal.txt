@@ -4868,3 +4868,32 @@ CHECKPOINT C1.138 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 35 (
 - Próximo informe pendiente: AUDITORIA_FASE_37_AISLAMIENTO_DATOS_ASIGNACION_DEPARTAMENTOS.md (Fase 36 no tiene informe de auditoría con ese patrón en el directorio).
 - Estado de TASK-DOC-C1.112-01: En curso.
 ================================================================
+
+================================================================
+CHECKPOINT C1.139 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 37
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida: 1aa62a24e611acfc58bf8205fa0e3a24142679e9.
+- HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID operativo de sesión: IMA-AUDIT-20261106-2035Z-MIGRACION (no es ID nativo de ChatGPT).
+- Checkpoint anterior: C1.138 (Fase 35 Identificadores normalizada).
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_FASE_37_AISLAMIENTO_DATOS_ASIGNACION_DEPARTAMENTOS.md.
+- SHA original del informe: 14bee549f6104b312c9921047a4b3ea34aff121b.
+- SHA original del contexto: 8785291954c16bcca097894ccce81bce6c9d339c.
+- Inspección: informe completo (20,988 caracteres), 12 subcapacidades F37-01..F37-12, CAR-F37, matriz PT-F37-01..32 y seis tareas descritas en plan I.
+- Tareas originales preservadas: F37-Task01..F37-Task06 y prioridades P0/P1 del plan I.
+- Tareas derivadas adicionales: F37-Task09 (reasignación asistida de registros mal dirigidos, PT-F37-32) y F37-Task10 (suite automatizada de aislamiento/enrutamiento).
+- Discrepancia histórica: Auditoria.txt registra 8 tareas F37-Task01..F37-Task08 (P0 01-05, P1 06-08), pero el informe describe 01..06. No se recuperó alcance de Task07/08; no se inventa.
+- Discrepancia de prioridad: F37-Task05 es P1 en el plan I y P0 en la bitácora; se preserva P1 del informe y se documenta la diferencia.
+- Subcapacidades completas preservadas: F37-03/F37-05/F37-10; no se reejecutaron pruebas.
+- Dependencias cruzadas: F25-Task03/05, F26-Task01/05, F29-Task01/04/07/09/17, F30-Task02, F35-Task03/04/15/16/17, F35-ID-Task02/05/07/08/09, AUD-NG-006/158/161; se coordinan sin duplicar.
+- Campos por tarea: origen, severidad, objetivo, acción, archivos/módulos, dependencias/riesgos, alcance, criterios de aceptación, prioridad, estado y evidencia de cierre.
+- Archivos modificados: AUDITORIAS/AUDITORIA_FASE_37_AISLAMIENTO_DATOS_ASIGNACION_DEPARTAMENTOS.md; AUDITORIAS/Contexto_personal.txt.
+- No se modificaron código, pruebas, Pendientes.md, completadas.md, ChangesLogs.txt, Auditoria.txt, metodología, README, plan maestro ni rama base.
+- Pruebas no ejecutadas: enrutamiento, máscaras, referencias foráneas, idempotencia, diagnóstico, consola, reasignación y suite de 32 escenarios.
+- Próximo informe pendiente: AUDITORIA_FASE_38_AYUDA_CONTEXTUAL_METADATOS_APRENDIZAJE.md.
+- Estado de TASK-DOC-C1.112-01: En curso.
+================================================================
