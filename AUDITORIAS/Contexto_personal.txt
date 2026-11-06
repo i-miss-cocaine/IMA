@@ -5440,3 +5440,32 @@ CHECKPOINT C1.159 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-08
 - Próximo informe: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-09.md; revisar la ampliación de AUD-NG-011 y las tareas relacionadas antes de decidir si existe un bloque propio pendiente o si el informe ya contiene la normalización requerida.
 - Commit de cierre: un único commit con ambos archivos; verificar SHA, padre, árbol, archivos modificados y HEAD de rama después de publicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.160 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-09
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida declarada en el proyecto: NG_beta_0.0.0.1.
+- HEAD de partida verificado: 767568d9564df111dd6de156e2da2b7d0160d431.
+- Árbol base de la rama de trabajo: eccfec85342eda82ca7f356fac8f1c7fde3448ab.
+- Rama base: no se realizó consulta nueva en esta iteración; no se efectuó ninguna escritura sobre ella.
+- ID operativo de sesión: IMA-AUDIT-20261106-2219Z (no es ID nativo de ChatGPT).
+- Checkpoint inicial de esta iteración: C1.159.
+- Estado de iteración: cerrada en C1.160.
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-09.md.
+- SHA del informe antes del cambio: 35ad532a0f80d32997cce828e9624cdee6e900af.
+- SHA del contexto antes del cambio: 0849bd9ad9230fedbec537eafa48be9db8ae2010.
+- Inspección: TAREA-09 CUMPLE PARCIALMENTE. El mapa curricular especializado es declarativo; no acredita proyectos/deployments, endpoints, propietarios, fuentes ni permisos. El cliente enruta por servicios genéricos, el despliegue registra metadatos y fija PASS/Activo sin comprobar una instancia real, las pruebas devuelven PASS constante y tareas/exámenes no persisten ni validan areaId.
+- Tarea formalizada: ampliación de AUD-NG-011 para exigir deployments reales por área, routing por areaId, persistencia/validación de areaId en tareas y exámenes, dispatch real de herramientas, fuentes/ACL aisladas y pruebas ejecutadas contra los deployments.
+- Reconciliación: AUD-NG-078/079 conservan registro e identidad de servicios; AUD-NG-083/084/086 conservan seguridad interservicio; AUD-NG-131/AUD-NG-144 conservan endpoints/health checks; AUD-NG-164 conserva catálogo curricular maestro. No se crea un AUD-NG nuevo.
+- Archivos modificados: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-09.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, Auditoria.txt, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README y rama base.
+- Pruebas ejecutadas: lectura íntegra de TAREA-09; contraste del alcance original de AUD-NG-011 y referencias relacionadas en Auditoria.txt; comprobación de que el bloque aún no existía; verificación del HEAD y árbol de partida.
+- Pruebas no ejecutadas: despliegues reales, conectividad, RBAC, pruebas de aislamiento, persistencia de areaId, dispatch especializado, Apps Script y producción.
+- Límite: cambio exclusivamente documental. TAREA-09 permanece CUMPLE PARCIALMENTE; AUD-NG-011 no se considera completada por esta normalización.
+- Próximo informe: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-10.md; leerlo íntegramente y verificar si contiene tareas propias o amplía identificadores existentes antes de formalizar el bloque.
+- Commit de cierre: un único commit con ambos archivos; verificar SHA, padre, árbol, archivos modificados y HEAD de rama después de publicar.
+================================================================
