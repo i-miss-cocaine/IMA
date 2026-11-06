@@ -63,3 +63,75 @@ No se crea AUD-NG nuevo. Ampliar TASK-050 (catálogo), TASK-051 (diccionario), T
 
 ## Pruebas y límites
 Inspección estática/manual. No se ejecutaron endpoints, cálculos con fixtures, pruebas de roles, exportaciones ni notificaciones. No se utilizaron datos productivos ni se modificó código fuente. La planificación AUDITORIA_FASE1_PLANIFICACION_EXPANSION.md citada por TAREA-17 no está disponible en esta rama; se utilizó el alcance explícito de completadas.md.
+
+
+## Tareas ejecutables derivadas de los hallazgos
+
+**Control de duplicados:** no crear AUD-NG nuevo. Se amplían TASK-050/051/052/054/235/237, AUD-NG-167, AUD-NG-158 y F11-Task08. La discrepancia interna de estado de TASK-051 se conserva para conciliación posterior; este bloque no cambia su estado ni lo declara completado.
+
+### AUD-NG-167 - Fuente única y atribución contextual de calificaciones
+- Exponer una consulta analítica que derive cada nota desde la fuente consolidada del libro académico y enlace `EvaluacionID/UserID` con evaluaciones, matrículas y ofertas curriculares vigentes.
+- Resolver área, asignatura, grado, sección, programa, idioma, año lectivo y periodo desde relaciones persistidas y validadas; no aceptar los parámetros recibidos como etiquetas que aparenten filtros aplicados.
+- Aplicar filtros en backend antes de agrupar/calcular. Cada resultado debe indicar el contexto efectivo y rechazar dimensiones inexistentes o incompatibles.
+- Alinear las dimensiones analíticas con la clave contextual de calificaciones establecida en AUD-NG-167; no inferir asignatura/programa a partir del estudiante sin validar matrícula y oferta vigentes.
+- Mantener la exclusión de borradores y notas no publicadas en promedios e indicadores oficiales. Diferenciar pendiente, exenta, ausente y cero; ninguna ausencia debe convertirse automáticamente en nota cero.
+- Calcular tendencias por parcial/periodo y comparativas solo entre cohortes homogéneas (mismo grado, sección o programa, escala, año/periodo y reglas de evaluación). Indicar cuando no existan datos suficientes o las escalas no sean comparables.
+- Contar alertas activas y estudiantes únicos desde registros de alertas persistidos, no usar el conteo de notas inferiores a un umbral como sustituto de alertas activas.
+
+### TASK-050 - Catálogo institucional de informes
+- Incorporar los informes analíticos académicos requeridos para Dirección y Coordinación con metadatos explícitos: dimensiones, filtros obligatorios, fuente, periodicidad, formato, alcance y roles autorizados.
+- Mantener una definición única de cada informe entre user-service y academic-service; no declarar un informe disponible si carece de generador funcional o de permisos consistentes.
+- Definir REP-ACAD-01 y REP-ACAD-02 con generadores y contratos específicos, evitando que REP-ACAD-02 caiga silenciosamente en una rama genérica de categoría académica.
+- Alinear el catálogo visible con la funcionalidad real y los parámetros aceptados por cada endpoint.
+
+### TASK-051 - Diccionario semántico de indicadores
+- Resolver la inconsistencia de estado registrada en el propio artefacto (encabezado [X] frente a estado interno Pendiente) mediante revisión explícita y evidencia; no cambiar el estado por esta normalización documental.
+- Definir para cada indicador fórmula, unidad, población, granularidad, periodicidad, fuente primaria, filtros válidos, tratamiento de pendientes/ausentes y versión de la definición.
+- Definir indicadores de rendimiento y acompañamiento sin ambigüedad: promedio, distribución, reprobación, tareas pendientes, asistencia, alertas activas y estudiantes únicos.
+- Evitar que dos servicios calculen el mismo indicador con fórmulas o escalas distintas; las consultas y exportaciones deben consumir el diccionario versionado.
+
+### TASK-052 - Filtros y dimensiones efectivas
+- Implementar filtros de área, asignatura, grado, sección, programa, idioma, año lectivo y periodo sobre las relaciones académicas persistidas.
+- Validar combinaciones de dimensiones y permisos en servidor; ignorar o rechazar filtros incompatibles en lugar de devolver un agregado global con etiquetas solicitadas por el cliente.
+- Aplicar el filtro seleccionado de parcial de forma consistente a tareas, exámenes y notas, sin usar constantes como `PARCIAL_ACTUAL` ni omitirlo en una de las fuentes.
+- Mostrar en cada resultado los filtros realmente aplicados y la población incluida/excluida para que el usuario pueda verificar el alcance.
+
+### TASK-054 - Regresión conductual de analítica y alertas
+- Añadir pruebas ejecutables con fixtures que validen filtros, agrupaciones, tendencias, comparativas homogéneas y exclusión de borradores/no publicadas.
+- Verificar casos sin datos, notas pendientes/exentas, escalas distintas, matrículas vencidas y asignaciones curriculares incompatibles.
+- Probar alertas con datos persistidos de asistencia, notas y entregas; incluir deduplicación, cambio de periodo/año y transiciones de estado.
+- Comparar resultados entre endpoint, pantalla y exportación para asegurar que todos usan la misma fuente y cálculo.
+- Probar autorización de Director, Coordinador y Profesor en sus respectivos ámbitos, incluidos intentos de consultar grupos/asignaturas ajenos.
+
+### TASK-235 - Series temporales y comparativas
+- Construir series por parcial, periodo y año lectivo desde calificaciones publicadas y atribuidas a dimensiones verificadas.
+- Mantener comparabilidad de cohortes, escalas y planes curriculares; registrar cambios de fórmula o catálogo que afecten una serie.
+- No rellenar puntos ausentes con cero ni conectar periodos no comparables; indicar huecos y tamaños de muestra.
+- Habilitar comparativas por grado/sección/programa/idioma solo cuando el catálogo y las relaciones acrediten equivalencia.
+
+### TASK-237 - Exportación institucional coherente
+- Exportar el mismo conjunto de datos, filtros, agrupaciones y métricas que entrega la consulta analítica; no reconstruir el reporte sumando tareas/exámenes heterogéneos en el navegador.
+- Corregir el mapeo de columnas de `CalificacionesEstudiantes` usando encabezados/esquema real, no índices incompatibles (en particular, no interpretar `EsPublicada` como nota).
+- Eliminar filas ficticias de estudiantes cuando la fuente no devuelve registros. Un reporte vacío debe informar ausencia de datos.
+- Respetar permisos y ámbito también al generar/descargar; validar nuevamente el contexto del reporte y registrar actor, filtros, fecha y versión de definición.
+- Generar REP-ACAD-01 y REP-ACAD-02 con reglas propias y comprobar que la exportación coincide con pantalla y endpoint.
+
+### AUD-NG-158 - RBAC/ABAC para analítica académica
+- Definir permisos explícitos para Director, Coordinador y Profesor en `getCurricularAnalyticsReport`, coherentes con el propósito y la responsabilidad institucional de cada perfil.
+- Para Profesor, limitar las consultas a asignaturas/grupos con asignación vigente; para Coordinador, limitar al área/departamento autorizado; para Director, aplicar el alcance institucional aprobado.
+- Derivar actor desde sesión verificada y validar el contexto de cada dimensión en backend; no confiar en `profesorId`, `areaId`, `gradoId` o filtros enviados por el cliente.
+- Aplicar las mismas reglas a pantalla, endpoint, exportación y detalle de alertas. Ocultar un botón no sustituye autorización del servidor.
+
+### F11-Task08 - Alertas tempranas basadas en métricas académicas reales
+- Sustituir `mockFailingSubjects` y `mockMissingTasks` del payload por consultas verificadas de notas publicadas y entregas persistidas, atribuidas al estudiante, asignatura, año lectivo y periodo correctos.
+- Calcular asistencia, materias reprobadas y tareas pendientes en backend con reglas institucionales versionadas; ignorar métricas proporcionadas por el cliente.
+- Incluir año lectivo/periodo en la clave de deduplicación para que una alerta de un ciclo no suprima una alerta nueva del siguiente.
+- Mantener estados Activa/EnAtencion/Descartada/Resuelta y deduplicación por estudiante/contexto; contar estudiantes únicos y alertas activas desde registros reales.
+- Persistir y ejecutar la notificación por los canales institucionales configurados. `NotificadoA` debe reflejar un envío comprobado, con fecha, canal y resultado; no basta con guardar texto.
+- Vincular alertas de riesgo alto/crítico con casos de seguimiento, garantizando que el caso y la alerta compartan estudiante, contexto, periodo y trazabilidad.
+- Revisar F11-Task08 aunque figure completada: no cambiar su estado aquí, pero exigir evidencia funcional antes de aceptar su cierre.
+
+**Reconciliación y límites:** AUD-NG-167 conserva el libro académico como fuente única; TASK-050/051 definen catálogo y semántica; TASK-052 aplica filtros; TASK-054 valida conducta; TASK-235 gestiona series; TASK-237 exporta; AUD-NG-158 protege el ámbito; F11-Task08 mantiene la lógica de alertas tempranas. No se crea AUD-NG nuevo. No se altera el estado de TASK-051 ni F11-Task08 en este cambio.
+
+**Evidencia requerida:** filtros reales y agrupaciones por dimensión; atribución mediante relaciones curriculares; tendencias por parcial/año; métricas de alertas desde datos persistidos y deduplicación contextual; permisos por perfil/ámbito; exportación idéntica a la consulta y sin filas ficticias; REP-ACAD-01/02 con generadores funcionales; pruebas con fixtures y resultados reproducibles. La auditoría actual es estática y no acredita esos comportamientos.
+

@@ -5677,3 +5677,32 @@ CHECKPOINT C1.167 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-16
 - Próximo informe: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-17.md; leerlo íntegramente y reconciliar hallazgos y tareas relacionadas antes de formalizar el bloque.
 - Commit de cierre: un único commit con ambos archivos; verificar SHA, padre, árbol, archivos modificados y HEAD de rama después de publicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.168 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-17
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida declarada en el proyecto: NG_beta_0.0.0.1.
+- HEAD de partida verificado: 33c7a919f4bdfe72c319965f3b71bb45114efa48.
+- Árbol base de la rama de trabajo: 12aa0f32d346025beac26ca7e7a9588c230feed2.
+- Rama base: no se realizó consulta nueva en esta iteración; no se efectuó ninguna escritura sobre ella.
+- ID operativo de sesión: IMA-AUDIT-20261106-2219Z (no es ID nativo de ChatGPT).
+- Checkpoint inicial de esta iteración: C1.167.
+- Estado de iteración: cerrada en C1.168.
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-17.md.
+- SHA del informe antes del cambio: 3d315bf717fa2ec1bce59af0fe9bf144cc961235.
+- SHA del contexto antes del cambio: 64aa6b587a72c75ebcbdcfe84661e415fdec13d9.
+- Inspección: TAREA-17 CUMPLE PARCIALMENTE. El endpoint ignora dimensiones y devuelve agregado global; las tablas no enlazan notas con dimensiones curriculares; las alertas usan mocks de reprobación/tareas y asistencia sin periodo; la clave no incluye año lectivo; no hay notificación efectiva acreditada; el controlador docente llama endpoint con payload vacío y no existe modal; permisos no incluyen Coordinador/Profesor; el reporte tradicional convierte ausencias en cero y no aplica parcial de forma coherente; exportación usa otra fuente y mapeo de columnas incompatible; REP-ACAD-02 carece de generador propio; pruebas no cubren analítica.
+- No se crea AUD-NG nuevo. Tareas formalizadas/ampliadas: TASK-050 (catálogo), TASK-051 (diccionario semántico; inconsistencia de estado preservada), TASK-052 (filtros/dimensiones), TASK-054 (regresión conductual), TASK-235 (series temporales), TASK-237 (exportación), AUD-NG-167 (fuente única/atribución de calificaciones), AUD-NG-158 (RBAC/ABAC), F11-Task08 (alertas tempranas con métricas reales y notificación comprobable).
+- Reconciliación: no cambiar el estado de TASK-051 ni F11-Task08 en este bloque. No se declara completada ninguna tarea por la mera formalización de requisitos.
+- Archivos modificados: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-17.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, Auditoria.txt, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README y rama base.
+- Pruebas ejecutadas: lectura íntegra de TAREA-17; contraste de IDs relacionados en Auditoria.txt; comprobación de que el bloque no existía; verificación del HEAD y árbol de partida.
+- Pruebas no ejecutadas: endpoints analíticos, cálculos, filtros, alertas, notificaciones, permisos, exportaciones, fixtures, Apps Script y producción.
+- Límite: cambio exclusivamente documental. TAREA-17 permanece CUMPLE PARCIALMENTE; los IDs ampliados no se consideran ejecutados ni completados.
+- Próximo informe: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-18.md; leerlo íntegramente y reconciliar hallazgos/tareas antes de formalizar el bloque.
+- Commit de cierre: un único commit con ambos archivos; verificar SHA, padre, árbol, archivos modificados y HEAD de rama después de publicar.
+================================================================
