@@ -245,3 +245,132 @@ Las acciones requeridas se estructuran en 10 tareas técnicas organizadas estric
 La plataforma cuenta con un motor de trámites y flujos de aprobación notablemente sólido en su arquitectura backend (`backend/user-service/Code.gs`), con una estructura de datos relacional robusta en `SolicitudesTramites`, `FlujosAprobacion` y `RevisionesDecisionesTramite`. Se destaca la **segregación estricta de observaciones públicas y privadas**, la **asignación atómica de CUV** en los documentos emitidos y el **aislamiento estricto por roles en la consulta de solicitudes**.
 
 Las observaciones pendientes se concentran en habilitar la persistencia de borradores en el servidor para uso multi-dispositivo, el bloqueo granular de campos durante la subsanación de correcciones y la incorporación de bandejas administrativas con semáforos de SLA en los dashboards de Secretaría y Dirección. El plan de resolución de 10 tareas técnicas priorizadas garantiza la convergencia total hacia una experiencia institucional de máxima excelencia.
+
+---
+
+## Tareas ejecutables derivadas de los hallazgos
+
+> Normalización de las 10 tareas originales F33-Task01..F33-Task10, conservando prioridades P0/P1/P2. Las tareas corresponden a brechas parciales identificadas en Fase 33 y a mejoras operativas previstas; las subcapacidades declaradas completas se preservan sin reabrirlas. Se vinculan responsables de fases anteriores cuando el alcance coincide, sin crear duplicados.
+
+### [F33-Task01] Implementar modalidades de trámite en línea, descarga e impresión física
+- **Hallazgo de origen:** Fase 33-01 y 33-03; catálogo JSON sin contrato rígido de modalidades y falta de formularios imprimibles limpios.
+- **Severidad:** Crítica / P0. **Objetivo:** permitir que cada trámite defina claramente entrega digital, descarga en blanco o presentación física.
+- **Acción ejecutable:** ampliar el catálogo de trámites con modalidad permitida, fechas de apertura/cierre, requisitos y versión; generar PDF en blanco con guías/casillas para escritura manual; registrar recepción física escaneada y asociarla al expediente/solicitud.
+- **Archivos/módulos:** `backend/user-service/Code.gs`, `FormulariosInstitucionales`, `SolicitudesTramites`, `backend/accounting-service/Code.gs`, `generateSchoolDocument` y plantillas PDF.
+- **Dependencias/riesgos:** F31-Task01/02/07, F32-Task01 y F29-Task15; riesgo de imprimir una versión obsoleta o perder vínculo entre el documento físico y la solicitud digital.
+- **Alcance:** modalidades y recepción física; no duplicar el motor de formularios ni permitir recepción sin identidad/folio.
+- **Criterios de aceptación:** modalidad declarativa validada en backend; fechas y vigencia aplicadas; PDF vacío conserva formato y campos; folio/QR de recepción; digitalización vinculada a solicitud y expediente; pruebas de modalidad, vencimiento, recepción y duplicados.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; la auditoría identifica modalidad física/descarga como configuración libre y ausencia de PDF imprimible limpio.
+
+### [F33-Task02] Persistir borradores de trámites en backend y sincronizar entre dispositivos
+- **Hallazgo de origen:** Fase 33-04 y riesgo G.1.
+- **Severidad:** Crítica / P0. **Objetivo:** permitir continuar un trámite no enviado desde otro dispositivo sin perder datos ni adjuntos.
+- **Acción ejecutable:** crear `BorradoresTramites` con propietario, institución, formulario/versión, payload, adjuntos, estado, versión, timestamp y expiración; implementar guardar/recuperar/sincronizar con control de concurrencia y cifrado/protección adecuada.
+- **Archivos/módulos:** `backend/user-service/Code.gs`, `BorradoresTramites`, `js/student.js`, `js/persistence.js`, `SolicitudesTramites`.
+- **Dependencias/riesgos:** TASK-062 (versionado/consistencia), F26-Task04 (invalidación), F32-Task08 (autoguardado local); riesgo de mezclar borradores de cuentas distintas o sobrescribir cambios concurrentes.
+- **Alcance:** borradores previos al envío oficial; no confundir borrador con solicitud recibida ni permitir consulta por ID arbitrario.
+- **Criterios de aceptación:** borrador aislado por usuario/institución; guardado y recuperación multi-dispositivo; adjuntos privados; control de versión y conflicto; expiración/purga documentada; envío convierte borrador en solicitud sin duplicar; pruebas de desconexión, cambio de dispositivo, sesión expirada y concurrencia.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; la auditoría indica que los borradores dependen de LocalStorage y no existe hoja backend dedicada.
+
+### [F33-Task03] Implementar subsanación granular y congelamiento de campos aprobados
+- **Hallazgo de origen:** Fase 33-10 y riesgo G.2.
+- **Severidad:** Crítica / P0. **Objetivo:** permitir corregir únicamente los campos observados sin alterar datos previamente validados.
+- **Acción ejecutable:** ampliar `processWorkflowDecision` y el flujo `SOLICITAR_CORRECCION` para registrar campos/secciones observados, abrir solo esos controles, congelar los demás y guardar cada versión con diff, actor y motivo.
+- **Archivos/módulos:** `backend/user-service/Code.gs`, `processWorkflowDecision`, `RevisionesDecisionesTramite`, `SolicitudesTramites`, UI del solicitante.
+- **Dependencias/riesgos:** F31-Task13 (comentarios/revisión), F22/F34 (gestión documental y bandejas), AUD-NG-024 (identidad del revisor); riesgo de modificar datos aprobados o perder historial.
+- **Alcance:** reapertura limitada de campos; no reabrir el expediente completo ni borrar la versión enviada.
+- **Criterios de aceptación:** observaciones vinculadas a campo/sección; controles aprobados de solo lectura; nueva versión conserva anterior; actor/revisor verificados; comparación antes/después; pruebas de modificación permitida/no permitida, adjuntos y múltiples rondas de subsanación.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el sistema puede solicitar corrección, pero la auditoría señala que reabre el trámite sin congelamiento granular.
+
+### [F33-Task04] Crear consola unificada de trámites y bandejas operativas por SLA
+- **Hallazgo de origen:** Fase 33-16 y riesgo G.3.
+- **Severidad:** Alta / P1. **Objetivo:** permitir a Secretaría y Dirección supervisar trámites por estado, prioridad, departamento, responsable y vencimiento.
+- **Acción ejecutable:** implementar bandeja central con filtros, búsqueda, paginación, semáforos de SLA, asignación, historial y acciones permitidas por rol; obtener contadores desde backend y no desde arreglos locales.
+- **Archivos/módulos:** dashboards de Secretaría/Dirección, `js/ui-common.js`, `backend/user-service/Code.gs`, `getAdministrativeRequests`, `SolicitudesTramites`.
+- **Dependencias/riesgos:** TASK-221/TASK-318 (bandejas personales/departamentales y SLA), TASK-279 (clasificación de tickets, solo como patrón de SLA); riesgo de exponer trámites de otros departamentos o mostrar estados desactualizados.
+- **Alcance:** bandeja de trámites; no duplicar la bandeja general de trabajo ni reutilizar sin adaptación el SLA de tickets.
+- **Criterios de aceptación:** filtros aplicados server-side; autorización por rol/departamento; SLA con calendario y prioridad; asignación/acciones auditadas; paginación estable; estados de carga/error; pruebas multirol, vencimiento, reasignación y acceso cruzado.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el portal familiar lista solicitudes, pero falta consola centralizada para Secretaría y Dirección.
+
+### [F33-Task05] Implementar distribución dinámica y delegación temporal de responsables
+- **Hallazgo de origen:** Fase 33-08 y plan H.5.
+- **Severidad:** Alta / P1. **Objetivo:** asignar automáticamente trámites al responsable correcto según departamento/grado y cubrir ausencias sin transferir privilegios permanentes.
+- **Acción ejecutable:** definir reglas de enrutamiento por tipo de trámite, institución, departamento y grado; permitir delegación temporal con inicio/fin, acciones permitidas, sustituto, revocación y registro de ambos actores.
+- **Archivos/módulos:** `backend/user-service/Code.gs`, `saveApprovalWorkflow`, `processWorkflowDecision`, `FlujosAprobacion`, `ROLE_PERMISSIONS`.
+- **Dependencias/riesgos:** F30-Task08 (delegación temporal), F23-Task12 (delegación en motor de workflows), AUD-NG-024 (identidad del revisor); riesgo de delegación circular, fuera de ámbito o autoaprobación.
+- **Alcance:** asignación/delegación de trámites; no modificar rol base ni delegar acciones no permitidas.
+- **Criterios de aceptación:** reglas versionadas; asignación server-side; delegación con vigencia y revocación; actor original y sustituto trazables; restricciones de autoaprobación; pruebas de expiración, ausencia, departamento y conflictos.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; existen flujos secuenciales, pero el plan identifica falta de distribución dinámica y sustitución temporal.
+
+### [F33-Task06] Añadir validaciones cruzadas institucionales y detección de trámites duplicados
+- **Hallazgo de origen:** plan H.6; consistencia entre solicitud y expediente institucional.
+- **Severidad:** Alta / P1. **Objetivo:** detectar datos incompatibles y solicitudes activas equivalentes antes de aceptar una nueva presentación.
+- **Acción ejecutable:** validar identidad, matrícula, grado, sección, estado de expediente y requisitos contra fuentes canónicas; definir clave de duplicidad por tipo/solicitante/periodo/entidad; mostrar advertencia y bloquear duplicados exactos con opción de revisión autorizada.
+- **Archivos/módulos:** `backend/user-service/Code.gs`, `submitInstitutionalFormRequest`, `SolicitudesTramites`, servicios Academic/User y catálogos.
+- **Dependencias/riesgos:** F25-Task03 (duplicados/referencias), AUD-NG-036 (representación familiar), AUD-NG-158 (ABAC contextual); riesgo de falsos positivos que impidan solicitudes legítimas o de duplicados por falta de clave estable.
+- **Alcance:** validación previa y detección de duplicados; no fusionar solicitudes automáticamente ni confiar en identificadores del cliente.
+- **Criterios de aceptación:** validación server-side con fuentes canónicas; clave estable por trámite/periodo; coincidencias exactas y posibles diferenciadas; override autorizado y auditado; pruebas de duplicado exacto, solicitudes similares, distintos periodos y apoderados.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el plan exige validaciones cruzadas y detección de solicitudes activas idénticas.
+
+### [F33-Task07] Completar trazabilidad del legajo documental y firma de conformidad
+- **Hallazgo de origen:** Fase 33-14 y plan H.7.
+- **Severidad:** Alta / P1. **Objetivo:** conservar por separado solicitud original, evidencias, subsanaciones, firma y PDF definitivo dentro del expediente.
+- **Acción ejecutable:** consolidar manifiesto del legajo con IDs estables y referencias a cada artefacto; registrar versiones de solicitud, adjuntos, observaciones, decisiones, firma/hash y documento final CUV; exponer consulta cronológica autorizada.
+- **Archivos/módulos:** `SolicitudesTramites`, `RevisionesDecisionesTramite`, `FirmasConformidades`, `DocumentosEscolaresEmitidos`, expedientes Academic/User.
+- **Dependencias/riesgos:** F31-Task07 (asociación documental), F31-Task13 (revisión colaborativa), F29-Task15 (transferencia documental); riesgo de reemplazar evidencia o confundir hash de firma con integridad de todo el expediente.
+- **Alcance:** legajo completo y versionado; no alterar documentos emitidos ni duplicar el historial de workflow.
+- **Criterios de aceptación:** cada artefacto tiene ID/tipo/versión/actor/fecha; solicitud original inmutable; correcciones anexadas; firma vinculada al hash de versión exacta; PDF final/CUV asociado; ACL por expediente; pruebas de reconstrucción cronológica y acceso restringido.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; existen historial, firma y PDF final por separado, pero el plan exige legajo consolidado con trazabilidad de todos los componentes.
+
+### [F33-Task08] Crear paquetes de trámites agrupados y solicitudes recurrentes anuales
+- **Hallazgo de origen:** plan H.8; agrupación de matrícula, ficha médica, transporte y otros trámites relacionados.
+- **Severidad:** Media / P2. **Objetivo:** simplificar solicitudes relacionadas con progreso y seguimiento consolidado.
+- **Acción ejecutable:** crear definición de paquete con trámites hijos, dependencias, vigencias, requisitos y estados agregados; permitir iniciar/repetir paquete anual con datos históricos precargados y confirmación del solicitante.
+- **Archivos/módulos:** `FormulariosInstitucionales`, `SolicitudesTramites`, `FlujosAprobacion`, portal familiar y bandejas administrativas.
+- **Dependencias/riesgos:** F33-Task01/02/04/06, F31-Task02 y ciclo anual académico; riesgo de enviar parcialmente el paquete o copiar datos obsoletos.
+- **Alcance:** orquestación de solicitudes relacionadas; no convertir un paquete en una transacción monolítica ni enviar cada hijo sin consentimiento.
+- **Criterios de aceptación:** paquete versionado; trámites hijos y dependencias visibles; progreso consolidado; validación independiente por hijo; precarga revisable; envío idempotente; pruebas de paquete incompleto, rechazo parcial, renovación anual y cancelación.
+- **Prioridad:** P2. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el informe no acredita paquetes agrupados ni solicitudes recurrentes.
+
+### [F33-Task09] Generar constancia de recepción física con código QR
+- **Hallazgo de origen:** plan H.9; recepción en ventanilla de documentos físicos.
+- **Severidad:** Media / P2. **Objetivo:** entregar comprobante verificable de radicación y vincular la documentación recibida al expediente.
+- **Acción ejecutable:** al registrar recepción física, emitir PDF con folio, fecha, oficina, trámite, lista de documentos y QR de consulta de estado; no incluir PII en el QR; registrar actor receptor y evidencia de digitalización.
+- **Archivos/módulos:** `backend/user-service/Code.gs`, `SolicitudesTramites`, `DocumentosEscolaresEmitidos`, `generateSchoolDocument`, portal CUV/consulta.
+- **Dependencias/riesgos:** F33-Task01/07, F31-Task11, F32-Task07; riesgo de QR que revele datos personales o constancias duplicadas.
+- **Alcance:** recibo de radicación física; no confundirlo con aprobación del trámite ni con documento final.
+- **Criterios de aceptación:** folio único e idempotente; recibo incluye fecha/actor/documentos; QR apunta a consulta segura; estado de recepción diferenciable de aprobación; PDF vinculado a expediente; pruebas de reimpresión, QR alterado, recepción duplicada y acceso no autorizado.
+- **Prioridad:** P2. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el plan exige un comprobante de recepción física, distinto del PDF final con CUV.
+
+### [F33-Task10] Implementar suite automatizada del ciclo de vida de trámites
+- **Hallazgo de origen:** matriz F24-01..F24-24; plan H.10.
+- **Severidad:** Alta / P1. **Objetivo:** verificar los 24 escenarios de trámites y prevenir regresiones en permisos, borradores, subsanación, adjuntos y firmas.
+- **Acción ejecutable:** ampliar `AUD-NG-161` con pruebas conductuales de extremo a extremo para cada escenario; usar fixtures aislados, usuarios/roles, expedientes y documentos sintéticos; validar persistencia y efectos, no solo presencia textual.
+- **Archivos/módulos:** `tests/regression/academic-grading-suite.js`, servicios User/Academic/Accounting y entorno de pruebas aislado.
+- **Dependencias/riesgos:** F33-Task01..Task09, AUD-NG-161, F31/F32 document workflows; riesgo de mutar datos reales o de falsos PASS por tests estructurales.
+- **Alcance:** pruebas automatizadas de ciclo de vida; no enviar correos reales, no firmar documentos reales ni escribir en hojas productivas.
+- **Criterios de aceptación:** 24 escenarios con fixtures; roles y representación familiar; borradores multi-dispositivo; duplicados; subsanación; adjuntos/ACL; firma/hash/CUV; SLA/bandejas; aislamiento y limpieza; evidencia reproducible por escenario.
+- **Prioridad:** P2 en el plan original (aunque es requisito de calidad transversal). **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; la bitácora solo registra 53/53 pruebas generales y el plan exige suite específica de 24 escenarios.
+
+### Reconciliaciones y discrepancias transversales de Fase 33
+- **F33-Task01:** coordinar modalidades y documentos imprimibles con F31-Task01/02/07 y F32-Task01; no crear un segundo motor PDF.
+- **F33-Task02:** borradores de trámites en backend son distintos del autoguardado local del diseñador PDF F32-Task08; comparten controles de versión y aislamiento.
+- **F33-Task03:** coordinar subsanación con F31-Task13 y F34 revisión/bandejas; conservar solicitud original y campos aprobados.
+- **F33-Task04:** ampliar/coordinar TASK-221/TASK-318 y F30-Task10; el SLA de trámites debe tener calendario y reglas propias, no duplicar la bandeja.
+- **F33-Task05:** coordinar delegación con F30-Task08/F23-Task12; no duplicar motor de delegación.
+- **F33-Task06:** coordinar deduplicación y referencias con F25-Task03; no fusionar solicitudes por coincidencia aproximada sin revisión.
+- **F33-Task07:** coordinar manifiesto con F31-Task07/13 y F29-Task15; mantener firma y CUV asociados a la versión exacta.
+- **F33-Task09:** QR de radicación física no sustituye CUV del documento final ni QR de verificación de autenticidad.
+- **F33-Task10:** ampliar AUD-NG-161; no crear suite paralela ni aceptar pruebas de presencia textual.
+- **Subcapacidades completas preservadas:** Fase 33-02/05/06/07/08/09/11/12/13/14/15 se conservan como completas/verificadas según el informe; no se reejecutaron pruebas.
+- **Estado global:** F33-Task01..F33-Task10 permanecen pendientes de ejecución/revalidación; no se declara ninguna tarea completada por la incorporación documental.

@@ -4759,3 +4759,29 @@ CHECKPOINT C1.134 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 32
 - Próximo informe pendiente: AUDITORIA_FASE_33_FORMULARIOS_INSTITUCIONALES_TRAMITES_DIGITALES.md.
 - Estado de TASK-DOC-C1.112-01: En curso.
 ================================================================
+
+================================================================
+CHECKPOINT C1.135 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 33
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida: 0482d52b0d8b63aa120b0b63b4c0009e3c11360b.
+- HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID operativo de sesión: IMA-AUDIT-20261106-2035Z-MIGRACION (no es ID nativo de ChatGPT).
+- Checkpoint anterior: C1.134 (Fase 32 normalizada).
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_FASE_33_FORMULARIOS_INSTITUCIONALES_TRAMITES_DIGITALES.md.
+- SHA original del informe: 91529773b540fdc0c5d97425dc2002d46aae27d3.
+- SHA original del contexto: 6266a4ddb672ad3c37b90c14ad7f28e05f81993b.
+- Inspección: informe completo (27,330 caracteres), 16 subcapacidades Fase 33-01..16, matriz F24-01..F24-24 y plan H con 10 tareas.
+- Tareas originales preservadas: F33-Task01..F33-Task10 y prioridades P0/P1/P2 del plan H.
+- Subcapacidades completas preservadas: Fase 33-02/05/06/07/08/09/11/12/13/14/15; no se reejecutaron pruebas.
+- Reconciliaciones: F33-Task01 con F31/F32 PDF; Task02 con persistencia de borradores/versionado; Task03 con revisión colaborativa; Task04 con TASK-221/TASK-318/F30-Task10; Task05 con F30-Task08/F23-Task12; Task06 con F25-Task03; Task07 con F31/F29 legajo; Task09 con QR CUV; Task10 con AUD-NG-161.
+- Campos por tarea: origen, severidad, objetivo, acción, archivos/módulos, dependencias/riesgos, alcance, criterios de aceptación, prioridad, estado y evidencia de cierre.
+- Archivos modificados: AUDITORIAS/AUDITORIA_FASE_33_FORMULARIOS_INSTITUCIONALES_TRAMITES_DIGITALES.md; AUDITORIAS/Contexto_personal.txt.
+- No se modificaron código, pruebas, Pendientes.md, completadas.md, ChangesLogs.txt, Auditoria.txt, metodología, README, plan maestro ni rama base.
+- Pruebas no ejecutadas: modalidad física/digital, borradores backend, subsanación granular, bandeja/SLA, delegación, validaciones cruzadas, legajo, paquetes, QR radicación y suite 24 escenarios.
+- Próximo informe pendiente: AUDITORIA_FASE_34_BANDEJAS_REVISION_FIRMAS.md.
+- Estado de TASK-DOC-C1.112-01: En curso.
+================================================================
