@@ -6123,3 +6123,31 @@ CHECKPOINT C1.182 - NORMALIZACIÓN DE TAREAS DEL INFORME TAREA-F4-P1-07
 - Próximo informe oficial: TAREA-F4-P1-08 - mecanismo central de propagación y recuperación de cambios de seguridad; leerlo íntegramente y reconciliar AUD-NG-005 y AUD-NG-176/TASK-474 antes de normalizar sus tareas existentes.
 - Regla de publicación: un único commit consolidado con exactamente el informe y Contexto_personal.txt; verificar SHA, padre, árbol, archivos modificados y HEAD tras publicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.183 — AUDITORÍA Y CREACIÓN DEL INFORME TAREA-F4-P1-08
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: 56367be8c5dfc731931a4f3a2f8317841f0303aa.
+- Árbol de partida: 0e6d5dd25d30dfeab4f68ce4d4f4a262d367f24c.
+- ID operativo de sesión/chat: IMA-AUDIT-20261106-2335Z (identificador operativo, no ID nativo de ChatGPT).
+- Checkpoint inicial: C1.182.
+- Tarea documental general: TASK-DOC-C1.112-01, en curso.
+- Tarea auditada: TAREA-F4-P1-08 - mecanismo central de propagación y recuperación de cambios de seguridad.
+- Dictamen: NO CUMPLE. El estado histórico [X] de completadas.md se conserva y no se toma como evidencia.
+- Recuperación histórica: la ruta AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F4-P1-08.md no existe en el árbol del HEAD. El historial de commits consultado por esa ruta devolvió cero resultados en la rama de trabajo, main y referencia predeterminada. La fuente citada AUDITORIA_FASE4_IDENTIDAD_PERMISOS_GOBIERNO.md tampoco está en el árbol actual. Se creó un informe de auditoría propio a partir del objetivo registrado y la evidencia técnica disponible.
+- Hallazgos formalizados sin IDs nuevos: AUD-NG-005 (propagación de estado/revocación y recuperación) y AUD-NG-160 (vigencia de roles/matriz y cachés). Se desarrollaron las tareas existentes dentro del informe con todos los campos C1.112.
+- Reconciliación: AUD-NG-176/TASK-474 mantiene el motor general de eventos/notificaciones; no sustituye el bus de seguridad. AUD-NG-219/TASK-498 mantiene ciclo de vida de delegaciones; AUD-NG-221/TASK-501 la matriz; AUD-NG-222/TASK-502 ABAC; AUD-NG-145 trazabilidad; AUD-NG-161 pruebas conductuales. No se crean tareas duplicadas.
+- Evidencia principal: USER declara y enruta handlers centrales sin definiciones; manageAccountState persiste antes de llamar al dispatcher ausente; revokeUserSession y loginUser no propagan coordinadamente; los cuatro purgadores locales eliminan revoked_session y usan claves incompatibles; DEVELOPER no verifica estado ni revocación; savePermissionMatrix invalida solo la caché local USER.
+- SHAs inspeccionados: completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676; USER 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ACADEMIC daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; ACCOUNTING 38b979d41596b85e888b4a7060b37bbac0840a28; TASK 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe; EXAM 1d93296628fae31f680004f637897e2b1314a64c; DEVELOPER 8aa4bac67cfe5c8c54da51a0784a56fef633e412; Auditoria.txt 284b7a94b51c8ed99dbfcf734694bc5361f9f111; MapaDependencias.md 4f68d56f910c6a4e87c20ecac82daeb3a615bcaa; protocolo C1.112 e70acbef40f069a2372fae5e1e2c3f7f3aaa9f48.
+- Archivos documentales modificados: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F4-P1-08.md y AUDITORIAS/Contexto_personal.txt.
+- Archivos preservados: código fuente, pruebas, Pendientes.md, completadas.md, Auditoria.txt, MapaDependencias.md, ChangesLogs.txt, metodología, datos productivos y rama base.
+- Pruebas ejecutadas: inspección estática/manual de funciones, declaraciones, routers, validadores y claves; búsqueda de definiciones en seis servicios; consulta del historial Git por la ruta del informe; cotejo de hallazgos y dependencias existentes.
+- Pruebas no ejecutadas: Apps Script, HTTP, ScriptCache de despliegues, revocación real multi-servicio, concurrencia, fallos de red, recuperación de cola, pruebas con reloj controlado ni suites automatizadas.
+- Límite: auditoría documental/estática. No se implementan AUD-NG-005 ni AUD-NG-160 y no se afirma cumplimiento productivo.
+- Próximo informe oficial: TAREA-F4-P1-09 - panel de seguridad, auditoría y cumplimiento institucional. Su auditoría existe; debe revisarse íntegramente para confirmar si el bloque de tareas ya está normalizado y no duplicar AUD-NG-227/TASK-507.
+- Regla de publicación: un único commit en la rama de trabajo; verificar SHA, padre, árbol, exactamente los dos archivos previstos, estadísticas y HEAD posterior. No escribir en la rama base.
+================================================================
