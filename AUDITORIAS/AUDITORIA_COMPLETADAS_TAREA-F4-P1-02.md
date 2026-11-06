@@ -59,3 +59,49 @@ La operación sustituye solo nombre, correo y teléfono. El correo construido co
 - Progreso: 74/183 identificadores auditados; 109 pendientes.
 - Siguiente tarea: TAREA-F4-P1-03 - Implementar la matriz dinámica de permisos y su aplicación transversal.
 - Sin modificación: código fuente, completadas.md, ChangesLogs.txt y METODOLOGIA_DESARROLLO.md.
+
+## Tareas ejecutables derivadas de los hallazgos
+
+> Derivadas de la inspección estática de TAREA-F4-P1-02. Se conserva el dictamen **NO CUMPLE** y el estado [X] de `completadas.md`. No se ejecutaron políticas sobre datos productivos ni se verificaron triggers/deployments.
+
+### AUD-NG-146 — Completar el motor operativo de retención, archivo y ejecución programada (CRÍTICO)
+
+- [ ] Convertir `saveRetentionPolicy` en un contrato validado: categoría de catálogo cerrado, `diasRetencion` entero positivo dentro de límites aprobados, zona horaria, fecha de corte, estado, ámbito de datos, legal hold y versión de política. Rechazar categorías desconocidas y valores negativos, fraccionarios o excesivos.
+- [ ] Implementar ramas funcionales para todas las categorías declaradas: `AUDIT_LOGS`, `USER_SESSIONS`, `STUDENT_EXPEDIENTS`, `FINANCIAL_RECORDS` y `INACTIVE_USERS`; cada rama debe recorrer registros reales, aplicar filtros temporales correctos y reportar contadores derivados de operaciones efectivamente realizadas.
+- [ ] Implementar `USER_SESSIONS` con criterios verificables de expiración/revocación y preservar la evidencia mínima necesaria para seguridad y cumplimiento; no confundir sesiones activas, revocadas y expiradas.
+- [ ] Para `STUDENT_EXPEDIENTS` y `FINANCIAL_RECORDS`, sustituir los incrementos ficticios de `itemsArchived` por archivo real, paginado e idempotente. Definir destino, integridad, referencias, permisos de lectura/restauración y política de conservación; nunca eliminar datos financieros o académicos por una simulación de archivo.
+- [ ] Implementar `PRESERVE_LEGAL` como una restricción ejecutable: consultar un registro autoritativo de preservación legal, bloquear purga/anonimización de elementos sujetos a retención y registrar quién aplicó o levantó la reserva, cuándo y con qué autoridad.
+- [ ] Corregir la lectura de bitácoras para usar el timestamp y la severidad definidos por el DTO/esquema real de `BitacoraEventos`; no interpretar EventID como fecha ni ServicioOrigen como severidad. Coordinar el esquema con AUD-NG-145.
+- [ ] Reemplazar `purgeStructuredLogs` (que elimina todas las filas de `LogsSistema`) por una purga selectiva con fecha de corte, categoría, legal hold, paginación, auditoría y retención mínima. No ejecutar purgas globales por defecto.
+- [ ] Implementar triggers temporales programados con control de duplicados, exclusión mutua, idempotencia, límites de ejecución, reanudación por cursor y registro de cada corrida. Documentar propietario, zona horaria, frecuencia, instalación, actualización y desinstalación del trigger.
+- [ ] Habilitar ejecución coordinada en los servicios que poseen los datos (USER, ACADEMIC y ACCOUNTING) mediante un orquestador verificable; no declarar que USER archivó registros de otro proyecto sin una operación real y confirmada.
+- [ ] Añadir modo de simulación/dry-run que muestre conteos y muestras seudonimizadas, previsualización de elementos afectados y aprobación antes de operaciones irreversibles. Registrar inicio, resultado, errores, cursor y resumen de cada lote.
+- [ ] Añadir pruebas controladas para cada categoría, fechas límite, zona horaria, paginación, legal hold, reanudación, reintentos, duplicados, permisos, fallo parcial y recuperación. Verificar que `itemsEvaluated`/`itemsArchived` coincidan con filas procesadas/archivadas reales.
+- **Criterio de aceptación:** cada categoría realiza la operación definida sobre registros reales de prueba; la ejecución programada es observable y reanudable; el legal hold impide acciones incompatibles; ningún contador reporta archivos que no existen. No confundir el motor de retención con respaldos binarios/restauración de TASK-151/152.
+
+### AUD-NG-145 — Alinear retención de bitácoras con el esquema y las garantías de auditoría (ALTO)
+
+- [ ] Integrar el motor de retención con el DTO canónico y la fuente persistente de eventos definida en el bloque C1.175; leer timestamp, tipo, severidad y servicio desde sus columnas/campos correctos.
+- [ ] Definir periodos de conservación diferenciados por clase de evento y obligación legal; excluir eventos sujetos a legal hold y conservar trazabilidad de cada purga.
+- [ ] Asegurar que la purga no elimine registros de `LogsSistema` sin fecha de corte, clasificación y autorización; manejar filas malformadas en cuarentena en lugar de interpretarlas como antiguas.
+- [ ] Añadir pruebas con timestamps válidos/ausentes, EventID no temporal, severidades, límites de fecha, legal hold, datos corruptos y consulta posterior del registro de purga.
+- **Criterio de aceptación:** la retención elimina o archiva solo eventos que superan el plazo autorizado, preserva evidencia bajo legal hold y mantiene coherencia entre escritura, lectura, panel y auditoría de purga.
+
+### AUD-NG-220 / TASK-500 — Corregir anonimización de cuentas productivas y preservar obligaciones legales (ALTO/P1)
+
+- [ ] Corregir la selección de `lastAccess`: utilizar exclusivamente el campo/columna de último acceso definido por el esquema; si falta o es inválido, no sustituirlo por el contador de intentos fallidos ni inferir antigüedad desde un número. Marcar el registro para revisión o aplicar una política explícita de dato desconocido.
+- [ ] Definir y validar el criterio de inactividad con fecha confiable, umbral aprobado, zona horaria y exclusiones; distinguir cuenta sin último acceso, cuenta nunca activada, cuenta suspendida y cuenta inactiva.
+- [ ] Consultar `preservacionLegal` antes de anonimizar y comprobar obligaciones académicas, financieras, fiscales, contractuales y de auditoría. Un legal hold activo debe impedir la anonimización de campos/registros protegidos hasta su levantamiento autorizado.
+- [ ] Diseñar una transformación de anonimización real: retirar o sustituir nombre, correo, teléfono, userId/personaId y otros identificadores directos o indirectos según el alcance legal; no generar `anon_<userId>@...` ni conservar el identificador original en un campo visible.
+- [ ] Resolver las referencias cruzadas de ACADEMIC y ACCOUNTING para evitar que los registros relacionados reidentifiquen al titular o queden huérfanos. Definir qué datos deben conservarse por obligación y cuáles pueden anonimizarse, seudonimizarse o eliminarse.
+- [ ] Si se necesita conservar correlación, usar un token aleatorio/pseudónimo sin derivación reversible pública y almacenar la tabla de correspondencia separada, cifrada y con acceso restringido; documentar el procedimiento de destrucción de esa correspondencia cuando sea legalmente posible.
+- [ ] Ejecutar la operación en lotes idempotentes con dry-run, aprobación, snapshot/backup verificado, bitácora de cambios y plan de rollback cuando la operación sea reversible. Nunca procesar masivamente sin vista previa y límites de seguridad.
+- [ ] Añadir pruebas con fecha ausente, fecha inválida, contador alto, último acceso reciente/antiguo, legal hold, usuario con historial académico/financiero, relaciones cruzadas, reintento y fallo parcial. Verificar que el proceso no usa la columna de intentos como fecha ni conserva identificadores prohibidos.
+- **Criterio de aceptación:** solo se anonimiza una cuenta cuya inactividad esté demostrada y no tenga preservación legal incompatible; los identificadores directos/indirectos se tratan conforme a política, y los registros relacionados mantienen integridad sin permitir reidentificación no autorizada.
+
+### Reconciliación y límites
+
+- AUD-NG-146 mantiene motor de retención/archivo; TASK-151/152 continúan siendo responsables de respaldos binarios, integridad y restauración, sin sustituir la retención lógica.
+- AUD-NG-145 mantiene DTO, filtros, privacidad y trazabilidad de logs; aquí se amplía su lectura/purga conforme al esquema real.
+- AUD-NG-220/TASK-500 es el alcance nuevo para anonimización de cuentas productivas; TASK-081 se limita a datos de prueba y TASK-398/TASK-456 a trámites/documentos.
+- No se crean otros IDs. No se modifican código, pruebas, estados maestros ni datos productivos en esta iteración documental.
