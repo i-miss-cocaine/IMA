@@ -3756,3 +3756,20 @@ CHECKPOINT C1.94 - REVISIÓN DE CONSISTENCIA DE LA METODOLOGÍA
 - Próxima acción: revisar e incorporar manualmente la sección de tareas ejecutables en los informes históricos de AUDITORIAS/; luego continuar TAREA-F5-001.
 - Commit de cierre: el commit que contiene este checkpoint; SHA final se verificará después de publicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.95 - FINALIZAR TRASLADO DE ARTEFACTOS DE AUDITORÍA
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Contexto: AUDITORIAS/Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work; rama base: NG_beta_0.0.0.1.
+- HEAD de partida verificado: 0713092e2bbb0a8c853dda89cbe89d8d38a13275.
+- Tree SHA de partida: 3100b7a4c192051fb0140309eb6ddd188dd88f1b.
+- ID operativo de sesión: IMA-AUDIT-20261106-1727Z; inicio C1.95; estado: sesión abierta.
+- Verificación C1.94 detectó que cuatro archivos auxiliares conservaban copias en la raíz pese a existir en AUDITORIAS/.
+- Acción: retirar las cuatro entradas raíz Auditoria.txt, Auditoría.txt, Contexto_personal.txt y MapaDependencias.md; conservar sus versiones trasladadas en AUDITORIAS/.
+- No se modifica Pendientes.md ni se intenta recuperar su contenido.
+- Próxima acción: validar que no queden artefactos de auditoría en la raíz, revisar secciones de tareas ejecutables en informes históricos y luego reanudar TAREA-F5-001.
+- Commit de cierre: el commit que contiene este checkpoint; SHA final se verificará después de publicar.
+================================================================
