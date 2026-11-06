@@ -1849,3 +1849,13 @@ Relaciones:
 - manageAccountState escribe Usuarios!K y registra el cambio antes de invocar dispatchSecurityEvent; no se encontró definición local en el único archivo backend/user-service/Code.gs versionado. La propagación no queda confirmada tras la mutación. AUD-NG-005.
 - Reconciliación: AUD-NG-001, AUD-NG-005 y AUD-NG-159; no crear IDs duplicados. AUD-NG-160 (rol/cachés) y AUD-NG-006 (reintentos/idempotencia) conservan límites separados.
 - Evidencia C1.86: USER 12079dd410aa6d8afbce55a4bc62a79dea605f9f; auth.js 8444dd085a3186106d2db7005b61ef934d3c22d8; api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; ui-common.js 986938b8a311a41ed4cb3d135b66b6aaea4bed67. Sin cambios de código.
+
+
+## C1.87 — TAREA-F4-P2-03: interfaz administrativa de usuarios, permisos y delegaciones
+
+- `window.openUserManagementAdministrationModal` permanece anidada dentro de `window.renderDataFreshnessBadge` (ui-common.js 5438-5789). Los dashboards Dirección (39, 185-190) y Secretaría (35, 327-332) no invocan el badge; sus botones no encuentran el helper en la carga normal. Ya cubierto por TASK-480/AUD-NG-183.
+- Las llamadas del modal `fetchApi("getStudents", payload, "USER")` y `fetchApi("manageAccountState", payload, "USER")` invierten la firma `fetchApi(service, action, payload)`. SERVICE_URLS solo define claves de servicio (USER, ACADEMIC, TASK, EXAM, etc.); el helper devuelve error de configuración antes de llamar al backend. Nuevo AUD-NG-228/TASK-508.
+- USER/getStudents (2556-2558) ignora filtros y devuelve solo userId/nombre/numeroLista para estudiantes no desactivados; no devuelve correo/rol/estadoCuenta. La UI presenta defaults y no puede representar ni administrar el universo de cuentas declarado.
+- La vista no contiene flujos de consulta/edición de permisos efectivos ni de creación/listado/revocación de delegaciones. Reconciliar con AUD-NG-221/TASK-501 y AUD-NG-219/TASK-498; no crear duplicados.
+- `tbody.innerHTML` interpola nombre/ID sin escape contextual. Riesgo condicional; requiere DOM seguro y pruebas, sin afirmar explotación demostrada.
+- Evidencia: ui-common.js 986938b8a311a41ed4cb3d135b66b6aaea4bed67; api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; config.js 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc; USER 12079dd410aa6d8afbce55a4bc62a79dea605f9f; dashboard-direccion fefaa3bf7884288aef563cfb8aaf244e6cea8b7c; dashboard-secretaria fa0d8c23aace24a6acab2d4956398a7f5e1309b8.

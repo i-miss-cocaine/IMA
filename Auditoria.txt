@@ -6544,3 +6544,47 @@ PRUEBAS Y LÍMITES:
 - No ejecutado: Apps Script, HTTP, Sheets/CacheService real, expiración real de TTL, login/logout multiusuario, navegador/DOM, fallos parciales, concurrencia ni suites automatizadas.
 - Código fuente y pruebas sin modificaciones.
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-06
+CHECKPOINT C1.87 — TAREA-F4-P2-03
+SESIÓN: IMA-AUDIT-20261106-1644Z
+REPOSITORIO: i-miss-cocaine/IMA
+RAMA: NG_beta_0.0.0.1_work
+HEAD DE PARTIDA: 21688b71856c5acaeddcdde713b72fff4a44ad5b
+DICTAMEN: NO CUMPLE
+
+ALCANCE:
+- completadas.md marca TAREA-F4-P2-03 [X], severidad Medio, archivos js/ui-common.js y dashboards HTML.
+- ChangesLogs.txt describe modal de directorio, búsqueda/filtro y confirmación de acciones; la fuente original AUDITORIA_FASE4_IDENTIDAD_PERMISOS_GOBIERNO.md no está en el árbol.
+
+EVIDENCIA:
+- ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67: renderDataFreshnessBadge 5438-5789; modal 5468-5614; fetchApi 5555/5590; renderizado innerHTML 5568-5581; UX-04 1879-1885.
+- api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9: fetchApi(service, action, payload) 11-23, 40-57.
+- config.js SHA 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc: SERVICE_URLS 224-238.
+- USER SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f: getStudents 2556-2558; delegaciones 1746-1859 y 2276-2314.
+- dashboard-direccion SHA fefaa3bf7884288aef563cfb8aaf244e6cea8b7c: botón/listener 39, 185-190.
+- dashboard-secretaria SHA fa0d8c23aace24a6acab2d4956398a7f5e1309b8: botón/listener 35, 327-332.
+- tests SHA 3433b707edd4a2f35c68368a3172932adc2a3b32 y 0495e1d526a872c33310935a003a83d924d34683; sin casos específicos coincidentes.
+
+RESULTADOS:
+1. openUserManagementAdministrationModal está anidado dentro de renderDataFreshnessBadge. Los dashboards Dirección/Secretaría no llaman al badge; los botones no encuentran el helper y no abren el modal. Ya cubierto por TASK-480/AUD-NG-183.
+2. El modal llama fetchApi("getStudents", payload, "USER") y fetchApi("manageAccountState", payload, "USER"), invirtiendo la firma service/action/payload. SERVICE_URLS solo contiene claves de microservicio como USER; no se envía petición al backend.
+3. getStudents ignora el payload y devuelve solo userId/nombre/numeroLista de Estudiante no Desactivado. No devuelve email/rol/estadoCuenta ni aplica búsqueda/filtro; la UI muestra defaults y no administra todo el directorio.
+4. El modal solo cambia estado. No implementa UI de permisos efectivos/matriz ni crear/listar/revocar delegaciones. AUD-NG-221 y AUD-NG-219 ya cubren esos alcances.
+5. La interpolación de nombre/ID en innerHTML requiere salida segura; riesgo condicional, sin prueba XSS de navegador.
+6. Se crea AUD-NG-228/TASK-508 únicamente para contrato fetchApi y DTO/filtros del directorio; no duplica TASK-480, AUD-NG-219 ni AUD-NG-221.
+
+RECONCILIACIÓN:
+- TASK-480/AUD-NG-183: anidamiento y registro global de modales.
+- AUD-NG-001: sessionToken no conservado/transmitido.
+- AUD-NG-219/TASK-498: ciclo de vida/UI de delegaciones.
+- AUD-NG-221/TASK-501: matriz/UI de permisos.
+- Nuevo AUD-NG-228/TASK-508: contrato de API y datos del directorio administrativo.
+
+PRUEBAS Y LÍMITES:
+- Ejecutado: inspección estática/manual, cotejo de firma fetchApi/SERVICE_URLS, revisión de endpoint, botones de dashboards y búsqueda dirigida de pruebas.
+- No ejecutado: navegador/DOM, Apps Script, HTTP, Sheets productivo, roles reales, filtros, cambios de estado, delegaciones, matriz, XSS ni suites automatizadas.
+- Código fuente y pruebas sin modificaciones.
+===============================================================================

@@ -3444,3 +3444,50 @@ CHECKPOINT C1.86 - TAREA-F4-P2-02
 - Bloqueos: ninguno tras recuperar el tree SHA.
 - Commit de cierre: el commit que contiene este checkpoint; SHA final se verifica después de publicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.87 - TAREA-F4-P2-03
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto real: Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: 21688b71856c5acaeddcdde713b72fff4a44ad5b.
+- Tree SHA de partida verificado: 68d914a4285b4270af88fa7d92d1599951786fdf.
+- HEAD de la rama base: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Diferencia verificada: 149 commits adelante y 0 detrás.
+- ID operativo de sesión/chat: IMA-AUDIT-20261106-1644Z; inicio C1.86; checkpoint intermedio C1.87; estado: sesión abierta. Identificador operativo, no ID nativo de ChatGPT.
+- Último checkpoint anterior: C1.86 / TAREA-F4-P2-02.
+- Tarea auditada: TAREA-F4-P2-03 - Mejorar la experiencia administrativa de gestión de usuarios, permisos y delegaciones.
+- Estado maestro histórico: [X] en completadas.md; severidad Medio; archivos js/ui-common.js y dashboards HTML; criterios detallados originales no disponibles.
+- Fuente original AUDITORIA_FASE4_IDENTIDAD_PERMISOS_GOBIERNO.md: no localizada en el árbol.
+- Dictamen C1.87: NO CUMPLE.
+- Evidencia:
+  - ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67: renderDataFreshnessBadge 5438-5789; openUserManagementAdministrationModal 5468-5614; llamadas fetchApi 5555/5590; innerHTML 5568-5581; UX-04 1879-1885.
+  - api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9: firma fetchApi(service, action, payload) y lookup de URL 11-23.
+  - config.js SHA 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc: SERVICE_URLS con claves USER/ACADEMIC/TASK/EXAM, 224-238.
+  - USER Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f: getStudents 2556-2558; endpoints de delegación 1746-1859/2276-2314; ROLE_PERMISSIONS 940-968.
+  - dashboard-direccion.html SHA fefaa3bf7884288aef563cfb8aaf244e6cea8b7c: botón 39 y listener 185-190.
+  - dashboard-secretaria.html SHA fa0d8c23aace24a6acab2d4956398a7f5e1309b8: botón 35 y listener 327-332.
+  - Tests academic-grading-suite.js SHA 3433b707edd4a2f35c68368a3172932adc2a3b32 y modular-dashboard-suite.js SHA 0495e1d526a872c33310935a003a83d924d34683; sin casos específicos coincidentes.
+- Hallazgos:
+  - Se revalida TASK-480/AUD-NG-183: el modal sigue anidado dentro de renderDataFreshnessBadge; los dashboards no invocan el badge y los botones omiten la acción.
+  - Nuevo AUD-NG-228/TASK-508: llamadas fetchApi invierten service/action/payload y usan SERVICE_URLS.getStudents/manageAccountState inexistentes; getStudents ignora filtros y devuelve solo ID/nombre/numeroLista de estudiantes, sin email/rol/estado.
+  - Se revalida AUD-NG-219/TASK-498: no hay UI para crear/listar/revocar delegaciones.
+  - Se revalida AUD-NG-221/TASK-501: no hay UI de permisos efectivos ni matriz.
+  - Riesgo condicional de innerHTML con nombre no escapado incluido como criterio de salida segura; sin prueba XSS ejecutada.
+- Reconciliación: AUD-NG-001 mantiene falta de token cliente; TASK-480 mantiene anidamiento; AUD-NG-219 delegaciones; AUD-NG-221 permisos; nuevo AUD-NG-228 contrato del directorio. Sin duplicar.
+- Pruebas ejecutadas: inspección estática/manual, comparación de firma API y SERVICE_URLS, búsqueda dirigida de funciones y pruebas.
+- Pruebas no ejecutadas: navegador/DOM, Apps Script, HTTP, Sheets productivo, pruebas reales de roles, filtros, cambio de estado, delegaciones, matriz, XSS ni suites automatizadas.
+- Progreso: 84/183 identificadores auditados; 99 pendientes.
+- Última tarea auditada: C1.87 / TAREA-F4-P2-03.
+- Tarea en curso: ninguna.
+- Siguiente tarea exacta: TAREA-F4-P2-04 - Optimizar la concurrencia y la consistencia de las operaciones de identidad.
+- Próxima acción reproducible: revisar createSecurityDelegation, revokeSecurityDelegation, updateUserProfile y manageAccountState; verificar alcance real de LockService, lectura/modificación/escritura dentro del lock, liberación en finally, colisiones entre flujos, inicialización de hojas y pruebas concurrentes; reconciliar AUD-NG-161/TASK-118, AUD-NG-218/TASK-497, AUD-NG-219/TASK-498 y hallazgos relacionados antes de crear IDs.
+- Archivos documentales modificados: Auditoria.txt, Pendientes.md, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt y nuevo AUDITORIA_COMPLETADAS_TAREA-F4-P2-03.md.
+- Archivos preservados: código fuente, pruebas, completadas.md, ChangesLogs.txt y METODOLOGIA_DESARROLLO.md.
+- Regla de ID de sesión: ya registrada en METODOLOGIA_DESARROLLO.md, sección 16, punto 9.
+- Bloqueos: ninguno.
+- Commit de cierre: el commit que contiene este checkpoint; SHA final se verifica después de publicar.
+================================================================

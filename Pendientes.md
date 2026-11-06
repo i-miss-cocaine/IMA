@@ -19357,6 +19357,7 @@ AUD-NG-163 permanece DUPLICADA y consolidada; no reabrirla como tarea independie
   - Un fallo, rechazo, excepción o ausencia de respuesta no renueva el timestamp y siempre libera el indicador de carga.
   - Los dos helpers administrativos existen en `window` desde la carga normal de `ui-common.js`; los botones de Dirección y Secretaría funcionan sin invocar previamente el badge.
   - UX-04 comprueba comportamiento e integración, no solo `typeof`.
+- **Ampliación C1.87 / TAREA-F4-P2-03:** Revalidado en la rama de trabajo: `renderDataFreshnessBadge` sigue abarcando las declaraciones de `openUserManagementAdministrationModal` y `openSecurityAndComplianceDashboardModal`; no se encontraron llamadas a `renderDataFreshnessBadge` en dashboard-direccion.html ni dashboard-secretaria.html. Ambos botones comprueban `typeof` y omiten la acción cuando el helper aún no está registrado. Se mantiene íntegro el alcance existente de TASK-480; no crear duplicado.
 - **Estado:** [ ] Pendiente.
 
 ---
@@ -19828,6 +19829,7 @@ AUD-NG-163 permanece DUPLICADA y consolidada; no reabrirla como tarea independie
   - Probar acciones permitidas/denegadas, wildcard, ámbito de estudiante/departamento, delegación en cadena, usuario inactivo, inicio futuro, expiración, revocación y ejecución en USER/ACADEMIC/ACCOUNTING.
 - **Relaciones y límites:** AUD-NG-160 cubre vigencia de roles, TTL e invalidación de cachés de seguridad; AUD-NG-217 cubre IDOR/ámbito docente; TAREA-F4-P1-04 y sus hallazgos cubren el marco RBAC/ABAC general. TASK-228/TASK-282/TASK-311 tratan delegaciones de workflows/responsabilidades, no este motor de permisos de seguridad. AUD-NG-219 se limita a autoridad, alcance, cadenas y UI de delegaciones de seguridad.
 - **Ampliación C1.84 / TAREA-F4-P1-09:** \`getSecurityAndComplianceDashboardData\` (USER 4454-4538) llama \`getSecurityDelegations({ statusFilter: "ACTIVA" })\` sin reenviar \`sessionToken\` ni otro token. \`getSecurityDelegations\` (1803-1859) invoca \`getUserVerifiedRole(payload)\`, que devuelve \`NO_ACCESS\` sin token, y obtiene \`callerId\` de \`payload._verifiedUserId\`; además, su contrato lee \`estado\`, no \`statusFilter\`. Para un Director la llamada interna no tiene identidad verificada y la consulta no devuelve delegaciones, por lo que \`activeDelegationsCount\` queda en cero aunque existan registros. Se aclara la observación C1.76 sobre el filtro: el defecto actual más inmediato es la pérdida del contexto autenticado; la discrepancia de nombre del filtro persiste. La corrección del motor y de su UI de ciclo de vida sigue en AUD-NG-219/TASK-498; este registro solo cubre la consulta/indicador del panel.
+- **Ampliación C1.87 / TAREA-F4-P2-03:** Revalidado: el modal administrativo solo renderiza directorio y acción de cambio de estado; no invoca `createSecurityDelegation`, `getSecurityDelegations` ni `revokeSecurityDelegation`, ni ofrece flujos para crear/listar/revocar delegaciones. Se mantiene dentro del alcance de AUD-NG-219/TASK-498; no duplicar.
 - **Estado:** [ ] Pendiente
 
 ### [TASK-498] [TAREA-F4-P1-01] [P1] Aplicar límites de autoridad y ámbito al motor de delegaciones
@@ -19887,6 +19889,7 @@ AUD-NG-163 permanece DUPLICADA y consolidada; no reabrirla como tarea independie
 - **Descripción:** La hoja almacena rol, modulo, accion, permitido y ambito, pero los cinco helpers autorizan solo por rol+acción. savePermissionMatrix también hace upsert por rol+acción, así que reglas del mismo rol/acción para distintos módulos o ámbitos colisionan. No hay interfaz de matriz en ui-common.js ni en los dashboards revisados. savePermissionMatrix no impone una guardia interna de rol; si la matriz concede esa acción a un perfil no administrativo, ese perfil puede modificar permisos de todos.
 - **Criterios:** clave rol+módulo+acción+ámbito; validación de catálogos y reglas no ambiguas; guardia de servidor administrativa para editar; cambios atómicos/versionados/auditados; UI de consulta y edición; pruebas diferenciadas en los cinco servicios.
 - **Relaciones:** AUD-NG-160 cubre caché/fallback; TASK-139 permisos documentales; AUD-NG-094 catálogo de informes; TAREA-F4-P1-04 RBAC/ABAC general.
+- **Ampliación C1.87 / TAREA-F4-P2-03:** Revalidado: aunque el encabezado del modal menciona permisos efectivos, la tabla solo muestra ID, nombre/email, rol y estado; no consulta ni presenta permisos efectivos ni ofrece edición de la matriz. Se mantiene dentro del alcance de AUD-NG-221/TASK-501; no duplicar.
 - **Estado:** [ ] Pendiente
 
 ### [TASK-501] [TAREA-F4-P1-03] [P1] Completar matriz dinámica por rol, módulo, acción y ámbito
@@ -20035,3 +20038,34 @@ AUD-NG-163 permanece DUPLICADA y consolidada; no reabrirla como tarea independie
 - **Criterios de Aceptación:** Las métricas corresponden al filtro visible; todos los eventos pueden recorrerse por páginas; delegaciones activas se cuentan con identidad verificada; los informes de privilegios/cuentas y auditoría son accesibles desde el panel; salud y errores se representan sin falsos ceros; no hay inyección HTML al renderizar registros; las pruebas de permisos, filtros, paginación, estados y seguridad pasan.
 - **Relaciones y límites:** No reemplaza AUD-NG-145 (fuente, esquema, DTO, PII y trazabilidad), AUD-NG-219/TASK-498 (autoridad/ámbito/gestión de delegaciones) ni AUD-NG-160 (cachés). Se limita a la integración y presentación del panel.
 - **Estado:** [ ] Pendiente
+
+
+---
+
+## C1.87 — Revisión de TAREA-F4-P2-03
+
+### [AUD-NG-228] Corregir el contrato de API y los datos del directorio administrativo de usuarios
+- **Origen del Hallazgo:** C1.87 / TAREA-F4-P2-03.
+- **Severidad/Clasificación:** Medio (P2) · Integración frontend/backend · Administración.
+- **Archivos Involucrados:** js/ui-common.js; js/api.js; js/config.js; backend/user-service/Code.gs; dashboard-direccion.html; dashboard-secretaria.html.
+- **Dependencias Expuestas:** window.openUserManagementAdministrationModal, fetchApi(service, action, payload), SERVICE_URLS, getStudents, manageAccountState, Usuarios, estadoCuenta, filtros de directorio.
+- **Descripción del Alcance:** El modal llama `fetchApi("getStudents", payload, "USER")` y `fetchApi("manageAccountState", payload, "USER")`, aunque la firma es `fetchApi(service, action, payload)` y SERVICE_URLS solo contiene claves de microservicio como USER/ACADEMIC/TASK. El helper busca `SERVICE_URLS.getStudents` o `SERVICE_URLS.manageAccountState`, no encuentra URL y devuelve error de configuración antes de enviar la petición. Además, getStudents ignora payload, devuelve únicamente userId/nombre/numeroLista de cuentas con rol Estudiante y excluye Desactivada; no devuelve email/rol/estadoCuenta ni aplica búsqueda por nombre/email/ID o filtro de estado. La UI espera esos campos y muestra valores por defecto (Estudiante/Activa), por lo que el estado real queda falseado y no puede administrar personal ni cuentas desactivadas. El modal interpola nombre/ID en innerHTML sin escape contextual; el nombre procede de Usuarios y debe renderizarse como texto inerte.
+- **Criterios de Aceptación:**
+  - Las llamadas respetan el contrato `fetchApi("USER", "getStudents", payload)` y `fetchApi("USER", "manageAccountState", payload)`, y una prueba confirma que la URL elegida es SERVICE_URLS.USER.
+  - El endpoint del directorio devuelve únicamente campos autorizados y suficientes (ID, nombre, correo/rol/estado cuando corresponda), aplica filtros declarados y permite paginación o límites explícitos.
+  - El directorio cubre el universo de cuentas que la administración está autorizada a gestionar, incluidos estados desactivados cuando el permiso de consulta lo permita; no confunde ausencia de campo con estado Activa.
+  - La acción de cambio de estado presenta el estado real y verifica la respuesta del servidor antes de actualizar la fila.
+  - Los valores de usuario se insertan mediante textContent/DOM seguro o escape contextual; pruebas con nombres/IDs maliciosos no generan nodos ni atributos ejecutables.
+  - Pruebas conductuales cubren carga, URL/acción, filtros, respuesta vacía, errores, roles autorizados/denegados, cambios de estado y persistencia.
+- **Relaciones y límites:** TASK-480/AUD-NG-183 conserva el registro global del modal (anidamiento dentro del renderer); AUD-NG-001 conserva la persistencia/transmisión del sessionToken; AUD-NG-219/TASK-498 conserva los flujos de delegación; AUD-NG-221/TASK-501 conserva la matriz de permisos. AUD-NG-228 se limita al contrato de carga/actualización y al DTO del directorio; no duplica esos alcances.
+- **Estado:** [ ] Pendiente
+
+### [TASK-508] [AUD-NG-228] Corregir contrato de carga y actualización del directorio administrativo
+- **Origen:** C1.87 / TAREA-F4-P2-03.
+- **Severidad:** Medio (P2).
+- **Archivos:** js/ui-common.js; js/api.js; js/config.js; backend/user-service/Code.gs; dashboards de Dirección y Secretaría.
+- **Descripción:** Corregir el orden de parámetros de fetchApi en el modal, alinear el DTO de getStudents con los campos y filtros que presenta la interfaz, mostrar el estado real de cada cuenta y proteger el renderizado de valores de usuario.
+- **Criterios:** llamada al microservicio USER verificada; filtros por texto/estado efectivos; directorio con campos reales y universo autorizado; cambios de estado con confirmación y refresco; salida DOM segura; pruebas conductuales positivas y negativas.
+- **Relaciones:** TASK-480/AUD-NG-183, AUD-NG-001, AUD-NG-219/TASK-498 y AUD-NG-221/TASK-501.
+- **Estado:** [ ] Pendiente
+

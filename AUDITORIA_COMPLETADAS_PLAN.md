@@ -1008,3 +1008,13 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Pruebas:** inspección estática/manual y búsqueda dirigida en ambos archivos bajo tests/regression. No se ejecutaron Apps Script, HTTP, Sheets/CacheService productivos, navegador/DOM, pruebas de TTL, login/logout real ni suites automatizadas.
 - **Progreso:** 83/183 identificadores auditados; 100 pendientes.
 - **Siguiente tarea oficial:** TAREA-F4-P2-03 - Mejorar la experiencia administrativa de gestión de usuarios, permisos y delegaciones.
+
+
+## 89. Resultado C1.87 - TAREA-F4-P2-03 (2026-11-06)
+
+- **Dictamen:** NO CUMPLE. El modal está anidado dentro de renderDataFreshnessBadge y no se registra en la carga normal (TASK-480/AUD-NG-183); las llamadas fetchApi invierten service/action/payload y no llegan al backend; getStudents ignora filtros y no devuelve los campos que la UI muestra. No hay UI de permisos/delegaciones, ya cubiertas por AUD-NG-221 y AUD-NG-219.
+- **Nuevo hallazgo:** AUD-NG-228/TASK-508 para el contrato de fetchApi y el DTO/filtros del directorio. No duplica TASK-480, AUD-NG-219 ni AUD-NG-221.
+- **Evidencia:** ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67; api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; config.js SHA 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc; USER SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; dashboard-direccion SHA fefaa3bf7884288aef563cfb8aaf244e6cea8b7c; dashboard-secretaria SHA fa0d8c23aace24a6acab2d4956398a7f5e1309b8; tests SHA 3433b707edd4a2f35c68368a3172932adc2a3b32/0495e1d526a872c33310935a003a83d924d34683.
+- **Pruebas:** inspección estática/manual y búsqueda dirigida; no se ejecutaron navegador/DOM, Apps Script, HTTP, Sheets productivo ni suites automatizadas.
+- **Progreso:** 84/183 identificadores auditados; 99 pendientes.
+- **Siguiente tarea oficial:** TAREA-F4-P2-04 - Optimizar la concurrencia y la consistencia de las operaciones de identidad.
