@@ -6151,3 +6151,31 @@ CHECKPOINT C1.183 — AUDITORÍA Y CREACIÓN DEL INFORME TAREA-F4-P1-08
 - Próximo informe oficial: TAREA-F4-P1-09 - panel de seguridad, auditoría y cumplimiento institucional. Su auditoría existe; debe revisarse íntegramente para confirmar si el bloque de tareas ya está normalizado y no duplicar AUD-NG-227/TASK-507.
 - Regla de publicación: un único commit en la rama de trabajo; verificar SHA, padre, árbol, exactamente los dos archivos previstos, estadísticas y HEAD posterior. No escribir en la rama base.
 ================================================================
+
+================================================================
+CHECKPOINT C1.184 — NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-F4-P1-09
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo autorizada: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.1; se verificó por separado la referencia NG_beta_0.0.1 con HEAD 44d9891132332e692dbe2ba8602b41f50a508a59. No se realizó ninguna escritura sobre la rama base.
+- HEAD de partida verificado: 6e1623207010345b9f9b4f3750a684ad8951601a.
+- Árbol de partida: 0222516e51b2e3c391b8c783ae142a4bacb86012.
+- ID operativo de sesión/chat: IMA-AUDIT-20261106-2342Z (identificador operativo, no ID nativo de ChatGPT).
+- Checkpoint inicial: C1.183.
+- Tarea documental general: TASK-DOC-C1.112-01, en curso.
+- Tarea normalizada: TAREA-F4-P1-09 — panel de seguridad, auditoría y cumplimiento institucional.
+- Dictamen original preservado: NO CUMPLE. No se altera el estado histórico [X] de completadas.md ni se interpreta como evidencia de cumplimiento.
+- Verificación previa: el informe completo tenía 7.882 caracteres y 70 líneas y no contenía la sección obligatoria. Se leyó íntegramente junto con el protocolo C1.112, el contexto, Auditoria.txt y MapaDependencias.md.
+- Hallazgo/tarea formalizados: AUD-NG-227/TASK-507. Se desarrolló la tarea ya identificada, sin crear un ID nuevo. Severidad Alto; prioridad P1; estado Pendiente.
+- Reconciliación: AUD-NG-145 conserva fuentes, esquemas, DTO, sanitización y renderizado de bitácoras; se amplía por el riesgo de innerHTML sin escape contextual. AUD-NG-219/TASK-498 conserva autoridad, ámbito y ciclo de vida de delegaciones; se amplía por la consulta interna sin token/contexto y el filtro statusFilter incompatible con estado. AUD-NG-227/TASK-507 se limita a composición, KPI, paginación e integración/presentación de reportes y salud. AUD-NG-161 conserva pruebas conductuales. No se duplican IDs ni motores existentes.
+- Evidencia de origen cotejada: informe P1-09; Auditoria.txt líneas 6435-6452; MapaDependencias.md líneas 1793-1820; informe C1.112. Los hallazgos de la auditoría son estáticos/manuales.
+- SHAs de archivos antes del cambio: informe c579e65e84f7cd274f5416c552479b5f92a4371c; Contexto_personal.txt 4e48e2c5626c2488ad97b3815d6c2b0e470b8141; Auditoria.txt 284b7a94b51c8ed99dbfcf734694bc5361f9f111; MapaDependencias.md 4f68d56f910c6a4e87c20ecac82daeb3a615bcaa; protocolo C1.112 e70acbef40f069a2372fae5e1e2c3f7f3aaa9f48.
+- Archivos modificados en esta iteración: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F4-P1-09.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README, hojas productivas y rama base.
+- Pruebas ejecutadas: lectura íntegra del informe P1-09; verificación de ausencia del bloque; lectura del protocolo C1.112; consulta de hallazgos AUD-NG-227, AUD-NG-145 y AUD-NG-219 en Auditoria.txt/MapaDependencias.md; cotejo de contexto y checkpoint C1.183; verificación de HEAD, árbol y SHAs de partida; comprobación de que AUD-NG-227/TASK-507 ya existía para evitar duplicación.
+- Pruebas no ejecutadas: Apps Script, HTTP, Sheets productivas, navegador/DOM, filtros con datos reales, paginación >200, consultas reales de delegaciones, validación multirol, health check productivo, XSS ni suites automatizadas. Esta iteración no implementa TASK-507.
+- Límite: modificación exclusivamente documental; no se declara implementada TASK-507 ni se modifica el dictamen NO CUMPLE.
+- Próximo informe oficial: TAREA-F4-P2-01 — eliminación de la generación de identificadores de usuario basada en marcas de tiempo; continuar según el plan vigente y reconciliar TASK-118/AUD-NG-161.
+- Regla de publicación: un único commit consolidado con exactamente el informe y Contexto_personal.txt; verificar SHA, padre, árbol, archivos modificados, estadísticas y HEAD posterior. No escribir en la rama base.
+================================================================
+

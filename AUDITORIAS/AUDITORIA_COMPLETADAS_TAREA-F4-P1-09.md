@@ -67,3 +67,32 @@ No se modificó código fuente ni se afirma comportamiento productivo probado.
 ## 6. Cierre documental
 
 Se amplían AUD-NG-145 y AUD-NG-219 en `Pendientes.md`; se crea AUD-NG-227/TASK-507 para las brechas propias de integración/presentación del panel. Se actualizan `Auditoria.txt`, `MapaDependencias.md`, `AUDITORIA_COMPLETADAS_PLAN.md`, `Pendientes.md` y `Contexto_personal.txt\), y se crea este informe. No se modifican código fuente, `completadas.md`, `ChangesLogs.txt`, `METODOLOGIA_DESARROLLO.md` ni `README.md`.
+
+## Tareas ejecutables derivadas de los hallazgos
+
+### [AUD-NG-227 / TASK-507] Completar y hacer fiable el panel institucional de seguridad, auditoría y cumplimiento
+
+- **Hallazgo de origen:** secciones 3.1 a 3.4 y dictamen de la sección 4 de este informe. El panel presenta KPI que no respetan los filtros de la tabla, limita los eventos a 200 sin paginación visible, obtiene incorrectamente el conteo de delegaciones por perder el contexto autenticado y no presenta los informes de privilegios/auditoría ni el informe de salud que el backend ya devuelve.
+- **Severidad:** Alto.
+- **Objetivo:** convertir el panel de Dirección en una vista coherente, navegable y verificable de seguridad, auditoría y cumplimiento, manteniendo la autorización del backend y la correspondencia entre filtros, indicadores y registros.
+- **Acción ejecutable:**
+  1. Unificar la aplicación de filtros de fecha, usuario y tipo de evento para que la tabla y todos los KPI se calculen sobre el mismo conjunto de datos; documentar y probar la semántica de cada indicador.
+  2. Sustituir el límite fijo de 200 registros por paginación real, preferiblemente respaldada por consulta paginada/cursor en backend, con total o indicador de continuidad, controles de página y conservación de filtros al navegar.
+  3. Corregir la consulta de delegaciones para conservar el contexto de identidad verificada del solicitante y utilizar el campo de estado que realmente admite el servicio. No omitir autenticación ni duplicar el motor de delegaciones.
+  4. Integrar en la interfaz las acciones autorizadas `generatePrivilegeAndAccountAuditReport` y `getPaginatedAuditLogReport`; presentar también `activeDelegations` y `healthReport` que devuelve el endpoint de consolidación, con estados de carga, vacío y error.
+  5. Añadir pruebas de contrato e integración para filtros/KPI, paginación, permisos por rol, delegaciones y presentación de los informes. Coordinar el tratamiento seguro de los datos renderizados con AUD-NG-145, sin trasladar ni duplicar su alcance de bitácoras, DTO y sanitización.
+- **Archivos/módulos afectados:** `js/ui-common.js` (modal, filtros, renderizado y paginación); `dashboard-direccion.html` (punto de entrada e integración); `backend/user-service/Code.gs` (contrato de consolidación, consulta de delegaciones e integración de reportes); pruebas de regresión/integración correspondientes.
+- **Dependencias y riesgos:** AUD-NG-145 conserva fuentes, esquemas, DTO, sanitización y renderizado seguro de bitácoras; AUD-NG-219/TASK-498 conserva autoridad, ámbito y ciclo de vida de delegaciones; AUD-NG-161 conserva la cobertura de pruebas conductuales. Respetar ROLE_PERMISSIONS y el contexto autenticado. Riesgos: KPI divergentes de la tabla, exposición de datos por controles UI incompletos, paginación costosa si se ordena/carga todo el historial, y duplicación de los motores de logs o delegaciones si se amplían indebidamente estos módulos.
+- **Alcance:** composición e integración del panel de Dirección y sus contratos de presentación/consulta. Incluye consistencia de indicadores, navegación paginada, consulta autorizada de delegaciones, integración de reportes y visualización de salud. No incluye reconstruir el sistema central de bitácoras ni reimplementar el motor de delegaciones; esos alcances permanecen en AUD-NG-145 y AUD-NG-219/TASK-498.
+- **Criterios de aceptación:**
+  1. Para cualquier combinación de filtros admitida, cada KPI se calcula sobre el mismo universo filtrado que la tabla, o la interfaz identifica claramente una métrica global distinta.
+  2. El usuario puede recorrer todos los resultados sin truncamiento silencioso a 200; la paginación conserva filtros y orden, informa continuidad/total y no carga ni ordena innecesariamente todo el historial en memoria.
+  3. El conteo y listado de delegaciones activas se obtienen con identidad verificada y el campo de estado correcto; las pruebas demuestran resultados con delegaciones activas, revocadas y expiradas.
+  4. El panel consume y presenta los informes de privilegios/cuentas y de auditoría paginada, además de delegaciones activas e información de salud devuelta por backend.
+  5. Los endpoints y datos permanecen sujetos a autorización por rol; las pruebas cubren acceso permitido y denegado.
+  6. La UI dispone de estados de carga, vacío y error, y no inserta datos no confiables como HTML ejecutable; la corrección transversal de bitácoras se valida y mantiene trazabilidad con AUD-NG-145.
+  7. Las pruebas automatizadas de regresión/integración cubren los criterios anteriores y dejan evidencia reproducible; las pruebas no ejecutadas en esta auditoría no se consideran aprobadas por defecto.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente. Registrar los commits de implementación, resultados de pruebas automatizadas, comprobaciones de autorización y capturas/logs de validación funcional al completar la tarea.
+
