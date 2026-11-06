@@ -2841,3 +2841,25 @@ CHECKPOINT C1.64 - CIERRE DE AUDITORÍA T-UX-21 (2026-11-06)
 - Próxima acción reproducible: revisar setupCommonUI (js/ui-common.js 1-65), navigator.onLine/eventos online/offline, significado de «Conexión Estable», pruebas UX-07 (1902-1907) y reconciliar T-UX-22 con tareas de offline/sync existentes.
 - Commit de cierre: el commit que contiene este checkpoint.
 ================================================================
+
+================================================================
+CHECKPOINT C1.65 - CIERRE DE AUDITORÍA T-UX-22 (2026-11-06)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: 0539eaa8dac1cee4a04c7d1a479ce4d98bd06c9e.
+- HEAD de rama base verificado al inicio: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID de sesión de auditoría/chat: IMA-AUDIT-20261106-0254Z.
+- Inicio de sesión: C1.63. Estado: ABIERTA; este es checkpoint intermedio.
+- Tarea auditada: T-UX-22 - Corregir el significado y el comportamiento del indicador de estado en línea. Dictamen NO CUMPLE.
+- Hallazgo: AUD-NG-214 (MEDIO/P2), nuevo. navigator.onLine se representa como “Conexión Estable” sin comprobar el backend; “Modo Local” no debe inferirse de la desconexión; no hay separación de presencia; UX-07 es nominal y puede producir falso PASS.
+- Tarea nueva: TASK-495 en Pendientes.md, vinculada a AUD-NG-214. Reutiliza AUD-NG-144 (health checks), AUD-NG-187/TASK-484 (pruebas UX-07) y TASK-494 (capas); no duplica motor offline.
+- Evidencia: js/ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67, líneas 5-61, 1902-1907 y 3490-3494; js/api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9, líneas 207-252; vistas principales consultadas y backlog blob SHA 02c0beadb4bcb01fd54546759b6c529b27fd2113.
+- Pruebas: inspección estática/manual. No ejecutados navegador/DOM, eventos online/offline, health checks reales ni suites automatizadas.
+- Archivos previstos: Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, AUDITORIA_COMPLETADAS_T-UX-22.md, Pendientes.md y Contexto_personal.txt. Código/tests y completadas.md sin modificaciones.
+- Progreso: 63/183 identificadores auditados; 120 pendientes.
+- Siguiente tarea exacta: T-UX-23 - Completar el flujo de reporte de problemas y soporte.
+- Próxima acción reproducible: revisar initProblemReportingUI, openReportIssueModal, submitProblemReportForm y backend/user-service/Code.gs para validar destino TicketsReporteProblemas, validación y respuesta real; reconciliar con tareas de tickets/soporte existentes.
+- Commit de cierre: el commit que contiene este checkpoint.
+================================================================

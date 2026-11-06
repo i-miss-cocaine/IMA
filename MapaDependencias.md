@@ -1572,3 +1572,12 @@ Relaciones:
 - UX-04 (ui-common.js 1879-1885) es una comprobación nominal typeof, no una prueba conductual.
 - No se crea tarea duplicada: TASK-480 ya cubre todas las correcciones y pruebas adicionales. No se modifica Pendientes.md.
 - Verificación estática únicamente; no se ejecutaron navegador/DOM, red, Apps Script, sincronización real ni suites automatizadas.
+
+## Indicador de conectividad y estado de servicios (T-UX-22, C1.65)
+- js/ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67: setupCommonUI (5+) crea/actualiza #online-status-badge en eventos online/offline (35-61); auto-inicialización (3490-3494). navigator.onLine true produce “Conexión Estable”; false produce “Sin Conexión (Modo Local)”. La primera afirmación excede lo que mide la API; la segunda debe diferenciar conectividad de capacidad offline real.
+- El evento online dispara syncOfflineQueue, pero no confirma la sincronización ni prueba disponibilidad del backend.
+- js/api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9: checkMicroserviceHealth (207-237) ejecuta ping por servicio; checkAllMicroservicesHealth (245-252) solo enumera USER/ACADEMIC/TASK/EXAM. El badge no consume estos resultados.
+- UX-07 (ui-common.js 1902-1907) aprueba si existe el elemento O navigator.onLine es booleano; no simula eventos ni comprueba texto/estado. AUD-NG-187/TASK-484 ya cubre las pruebas conductuales.
+- AUD-NG-144 cubre la integridad y cobertura del health check; TASK-484 pruebas; TASK-494 capas de overlays. Se crea AUD-NG-214/TASK-495 solo para semántica y separación de estados, sin duplicar.
+- La presencia de usuario no se deriva de conectividad; no se encontró señal de presencia en el indicador. No mostrarla sin heartbeat/sesión verificable.
+- Inspección estática; no se ejecutaron navegador, eventos reales ni health checks.

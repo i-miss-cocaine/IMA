@@ -19694,3 +19694,33 @@ AUD-NG-163 permanece DUPLICADA y consolidada; no reabrirla como tarea independie
   - Las pruebas distinguen PASS, FAIL, SKIPPED y BLOCKED; un viewport no ejecutado no se cuenta como aprobado.
 - **Relaciones y límites:** TASK-483 cubre el menú/drawer por rol; TASK-429 cubre tablas y modo móvil; TASK-492 cubre campos; TASK-493 cubre seguridad, acciones e integración del modal compartido de detalle; TASK-258 cubre foco y accesibilidad; TASK-484 cubre pruebas UX-01..09. TASK-494 se limita a la adaptación física/visual y jerarquía de capas de modales/overlays móviles, sin duplicar esas tareas.
 - **Estado:** [ ] Pendiente.
+
+---
+### [TASK-495] [AUD-NG-214] [P2] Separar el estado de conectividad del dispositivo, disponibilidad de servicios y presencia de usuario
+- **Origen del Hallazgo:** Auditoría de T-UX-22, C1.65; ampliación de UX-07 en AUD-NG-187/TASK-484.
+- **Prioridad:** P2.
+- **Severidad/Clasificación:** Medio (el indicador presenta conectividad de red como estabilidad general del servicio).
+- **Archivos Involucrados:**
+  - js/ui-common.js (updateOnlineBadge y #online-status-badge).
+  - js/api.js (consumo del resultado de health checks verificados, coordinado con AUD-NG-144).
+  - Vistas que cargan ui-common.js y contextos donde se muestre el indicador.
+  - tests/regression/ (integración con UX-07 de TASK-484).
+- **Dependencias Expuestas:** navigator.onLine; eventos window online/offline; window.updateOnlineBadge; window.checkMicroserviceHealth; window.checkAllMicroservicesHealth; SERVICE_REGISTRY; AUD-NG-144 (health checks reales de servicios); TASK-484 (pruebas UX-01..09); #online-status-badge.
+- **Descripción del Alcance:**
+  1. Diferenciar explícitamente conectividad del navegador/dispositivo de disponibilidad real de Internet y de cada servicio backend. navigator.onLine y los eventos online/offline solo representan el estado de red que expone el navegador; no deben presentarse por sí solos como prueba de que USER/ACADEMIC/TASK/EXAM u otros servicios responden.
+  2. Cambiar etiquetas ambiguas como “Conexión Estable” por estados que describan exactamente lo medido (por ejemplo, “Red disponible” / “Sin conexión de red”). Mantener la disponibilidad del backend como una dimensión independiente.
+  3. Consumir únicamente resultados reales de health check autenticado para mostrar disponibilidad/degradación/indisponibilidad de servicios. Si no hay medición, mostrar “Estado del servicio no verificado” o equivalente; nunca inferir disponibilidad desde navigator.onLine ni desde fallback/success simulado. La cobertura completa de microservicios se delega a AUD-NG-144, sin duplicarla.
+  4. Diferenciar estado local de conectividad de estados de cola (pendiente/en proceso/sincronizado/error). No afirmar “Modo Local” como capacidad operativa completa si el contexto no garantiza que las operaciones offline estén habilitadas y preservadas.
+  5. No representar presencia de usuario a partir de conectividad. Solo mostrar presencia si existe una señal explícita, vigente y autorizada (por ejemplo, heartbeat/sesión gestionada en servidor); si no existe, omitir esa dimensión.
+  6. Actualizar los estados en eventos online/offline y tras resultados de health check; evitar timers obsoletos que oculten una notificación de estado más reciente. Mantener el indicador discreto y coordinar capas/posición con TASK-494.
+  7. Integrar UX-07 con pruebas conductuales de pérdida/recuperación de red, respuesta y fallo del servicio, estado desconocido y ausencia de presencia. Reutilizar TASK-484; no crear una suite paralela.
+- **Criterios de Aceptación:**
+  - El indicador de red no afirma que el backend esté estable cuando solo navigator.onLine es true.
+  - La disponibilidad de servicio se presenta como disponible/degradada/no disponible/no verificada, basada en health check real y timestamp de medición.
+  - Los eventos offline/online actualizan la dimensión de red sin marcar automáticamente el backend como saludable ni sincronizar datos como completados.
+  - Los estados de cola offline y el resultado de la sincronización permanecen separados del estado de conectividad.
+  - No se muestra presencia de usuario sin una señal explícita, vigente y autorizada.
+  - UX-07 prueba eventos offline/online y estados visibles; pruebas de servicio usan respuestas sintéticas aisladas, sin llamadas ni escrituras productivas.
+  - El indicador mantiene presentación discreta y no tapa controles prioritarios; la jerarquía de overlays se coordina con TASK-494.
+- **Relaciones y límites:** AUD-NG-144 cubre la implementación/cobertura de health checks reales de microservicios; TASK-484 cubre la infraestructura y pruebas conductuales UX-07; TASK-494 cubre capas/controles flotantes; las tareas de cola offline cubren persistencia, reintentos e idempotencia. TASK-495 se limita al significado, separación e integración visual de los estados; no duplica health checks ni motor de sincronización.
+- **Estado:** [ ] Pendiente.

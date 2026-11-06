@@ -770,3 +770,14 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Sesión:** IMA-AUDIT-20261106-0254Z; inicio C1.63; sesión abierta (continuará con T-UX-22).
 - **Progreso:** 62/183 identificadores auditados; 121 pendientes.
 - **Siguiente tarea:** T-UX-22 - Corregir el significado y el comportamiento del indicador de estado en línea.
+
+## 67. Resultado C1.65 - T-UX-22 (2026-11-06)
+
+- **Dictamen:** NO CUMPLE. El indicador traduce navigator.onLine a “Conexión Estable”, sin medir disponibilidad del backend; el estado “Modo Local” también debe distinguirse de la conectividad simple. UX-07 es nominal y puede aprobar aunque no exista badge.
+- **AUD-NG-214 (MEDIO/P2):** separar conectividad de dispositivo, salud de servicios y presencia; no inferir backend/presencia desde navigator.onLine. Se registra TASK-495.
+- **Reconciliación:** AUD-NG-144 cubre health checks reales; AUD-NG-187/TASK-484 cubre pruebas conductuales UX-07; TASK-494 cubre capas de overlays; tareas offline cubren colas y reintentos. No duplicar.
+- **Evidencia:** ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67, 35-61 y 3490-3494; UX-07 1902-1907; api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9, 207-252. Informe AUDITORIA_COMPLETADAS_T-UX-22.md.
+- **Pruebas:** inspección estática/manual. No se ejecutaron navegador, eventos online/offline, health checks ni suites automatizadas.
+- **Sesión:** IMA-AUDIT-20261106-0254Z; inicio C1.63; sesión abierta.
+- **Progreso:** 63/183 identificadores auditados; 120 pendientes.
+- **Siguiente tarea:** T-UX-23 - Completar el flujo de reporte de problemas y soporte.
