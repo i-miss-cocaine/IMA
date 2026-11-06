@@ -1018,3 +1018,14 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Pruebas:** inspección estática/manual y búsqueda dirigida; no se ejecutaron navegador/DOM, Apps Script, HTTP, Sheets productivo ni suites automatizadas.
 - **Progreso:** 84/183 identificadores auditados; 99 pendientes.
 - **Siguiente tarea oficial:** TAREA-F4-P2-04 - Optimizar la concurrencia y la consistencia de las operaciones de identidad.
+
+
+## 90. Resultado C1.88 - TAREA-F4-P2-04 (2026-11-06)
+
+- **Dictamen:** NO CUMPLE. El changelog afirma locks en cuatro operaciones USER; el código solo protege createSecurityDelegation y manageAccountState. revokeSecurityDelegation y updateUserProfile no adquieren lock. getSecurityDelegations escribe Expirada sin lock.
+- **Nuevo hallazgo:** AUD-NG-229/TASK-509 por updateUserProfile: read-modify-write de fila completa sin serialización ni control de versión.
+- **Reconciliación:** ampliar AUD-NG-219 por revocación/expiración; TASK-118 por inicialización de SecuenciasIDs antes del lock y posibles adquisiciones anidadas; AUD-NG-161 por falta de pruebas conductuales; AUD-NG-218 conserva login counter. No duplicar.
+- **Evidencia:** USER Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; tests SHA 3433b707edd4a2f35c68368a3172932adc2a3b32/0495e1d526a872c33310935a003a83d924d34683; completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676; ChangesLogs.txt SHA d57cf4bd861b5c3720e60cf83241ed804ff645d9.
+- **Pruebas:** inspección estática/manual; no se ejecutaron Apps Script runtime ni pruebas concurrentes reales.
+- **Progreso:** 85/183 identificadores auditados; 98 pendientes.
+- **Siguiente tarea oficial:** TAREA-F4-P2-05 - Consolidar la documentación institucional de privacidad y tratamiento de datos.

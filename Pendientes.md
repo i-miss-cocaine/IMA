@@ -5369,6 +5369,7 @@ REGLA RECTORA INNEGOCIABLE DEL BACKLOG:
 - **Reconciliación:** TASK-118 es la tarea principal para el generador canónico y las claves internas. AUD-NG-161 conserva bypass/concurrencia; TASK-351 y AUD-NG-059/AUD-NG-061 conservan CUV, integridad binaria y certificado.
 - **Criterios adicionales de aceptación:** un único contrato/generador autoritativo para los servicios; exclusión mutua real entre todos los escritores de SecuenciasIDs; ninguna ruta externa puede omitir lock; todos los IDs críticos se generan sin fallback timestamp/aleatorio no auditado; PersonaID/UserId/ExpedienteID y referencias documentales se validan contra registros maestros antes de persistir; la auditoría de colisiones cubre todas las entidades críticas y referencias, y la fusión conserva relaciones e historial.
 
+- **Ampliación C1.88 / TAREA-F4-P2-04:** En USER, `generateInstitutionalId` (1706-1743) crea `SecuenciasIDs` y escribe encabezados antes de adquirir `LockService.getScriptLock()`; la inicialización inicial no queda protegida. Además, `createSecurityDelegation` mantiene un ScriptLock y llama a `generateInstitutionalId` (que adquiere otro ScriptLock); `manageAccountState` mantiene un ScriptLock y llama a `recordEntityChangeLog`, que a su vez llama al generador. Se identifica una posible adquisición anidada del mismo recurso de bloqueo; su efecto (reentrada/timeout) requiere prueba en Apps Script runtime y no se declara como fallo reproducido. Se revalida también que `registerUser` consulta duplicidad de email antes del lock del generador y hace append después, fuera de una sección crítica única; ya estaba incluido en C1.40. No duplicar TASK-118.
 - **Estado:** [ ] Pendiente
 
 ---
@@ -18559,6 +18560,7 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Ampliación C1.33 / FASE2-05 (2026-11-05):** Además de `runCriticalProcessConcurrencySuite` (Accounting, 10505-10550), `runConcurrencyAndConsistencySuite` (Academic, 3296-3320) solo invoca una vez `withConcurrencyLock` con una función que devuelve `executed:true`; no inicia dos operaciones concurrentes ni verifica persistencia/invariantes. La suite devuelve `status:"success"` aunque `todasPruebasPasaron` sea falso. `withConcurrencyLock` solo tiene esa llamada desde la propia suite, no está integrado como ejecutor de operaciones reales.
 - **Alcance adicional:** comprobar que `LockService.getScriptLock()` en proyectos Apps Script separados no se interprete como bloqueo distribuido entre Accounting y Academic; verificar operaciones que escriben recursos compartidos mediante un mecanismo común o una estrategia de consistencia explícita. Probar `createStudentEnrollment` con `skipLock` e `isInternalCall:true`, además de la ruta legacy `registerStudentEnrollment` sin lock y fallos entre escrituras. Mantener las relaciones con AUD-NG-006, AUD-NG-129 y AUD-NG-133 sin duplicarlas.
 
+- **Ampliación C1.88 / TAREA-F4-P2-04:** La búsqueda en los dos archivos bajo tests/regression no encontró casos para `createSecurityDelegation`, `revokeSecurityDelegation`, `updateUserProfile` o `manageAccountState`. La suite académica solo contiene aserciones de locks para otras operaciones (p. ej. lotes contables/workflow); la suite modular no aporta casos de estas funciones. Se mantiene el alcance de pruebas de concurrencia reales/aisladas de AUD-NG-161; no crear duplicado.
 - **Estado:** [ ] Pendiente
 
 
@@ -19830,6 +19832,7 @@ AUD-NG-163 permanece DUPLICADA y consolidada; no reabrirla como tarea independie
 - **Relaciones y límites:** AUD-NG-160 cubre vigencia de roles, TTL e invalidación de cachés de seguridad; AUD-NG-217 cubre IDOR/ámbito docente; TAREA-F4-P1-04 y sus hallazgos cubren el marco RBAC/ABAC general. TASK-228/TASK-282/TASK-311 tratan delegaciones de workflows/responsabilidades, no este motor de permisos de seguridad. AUD-NG-219 se limita a autoridad, alcance, cadenas y UI de delegaciones de seguridad.
 - **Ampliación C1.84 / TAREA-F4-P1-09:** \`getSecurityAndComplianceDashboardData\` (USER 4454-4538) llama \`getSecurityDelegations({ statusFilter: "ACTIVA" })\` sin reenviar \`sessionToken\` ni otro token. \`getSecurityDelegations\` (1803-1859) invoca \`getUserVerifiedRole(payload)\`, que devuelve \`NO_ACCESS\` sin token, y obtiene \`callerId\` de \`payload._verifiedUserId\`; además, su contrato lee \`estado\`, no \`statusFilter\`. Para un Director la llamada interna no tiene identidad verificada y la consulta no devuelve delegaciones, por lo que \`activeDelegationsCount\` queda en cero aunque existan registros. Se aclara la observación C1.76 sobre el filtro: el defecto actual más inmediato es la pérdida del contexto autenticado; la discrepancia de nombre del filtro persiste. La corrección del motor y de su UI de ciclo de vida sigue en AUD-NG-219/TASK-498; este registro solo cubre la consulta/indicador del panel.
 - **Ampliación C1.87 / TAREA-F4-P2-03:** Revalidado: el modal administrativo solo renderiza directorio y acción de cambio de estado; no invoca `createSecurityDelegation`, `getSecurityDelegations` ni `revokeSecurityDelegation`, ni ofrece flujos para crear/listar/revocar delegaciones. Se mantiene dentro del alcance de AUD-NG-219/TASK-498; no duplicar.
+- **Ampliación C1.88 / TAREA-F4-P2-04:** Revalidado en USER: `revokeSecurityDelegation` (2276-2314) no adquiere LockService para leer-validar-escribir la revocación; `getSecurityDelegations` (1803-1859) modifica estado a Expirada mediante setValue durante una consulta sin candado. Estas rutas no se coordinan con el lock que sí usa `createSecurityDelegation`, por lo que las transiciones concurrentes pueden competir. Se amplía el hallazgo de ciclo de vida de delegaciones; no crear ID duplicado.
 - **Estado:** [ ] Pendiente
 
 ### [TASK-498] [TAREA-F4-P1-01] [P1] Aplicar límites de autoridad y ámbito al motor de delegaciones
@@ -20067,5 +20070,35 @@ AUD-NG-163 permanece DUPLICADA y consolidada; no reabrirla como tarea independie
 - **Descripción:** Corregir el orden de parámetros de fetchApi en el modal, alinear el DTO de getStudents con los campos y filtros que presenta la interfaz, mostrar el estado real de cada cuenta y proteger el renderizado de valores de usuario.
 - **Criterios:** llamada al microservicio USER verificada; filtros por texto/estado efectivos; directorio con campos reales y universo autorizado; cambios de estado con confirmación y refresco; salida DOM segura; pruebas conductuales positivas y negativas.
 - **Relaciones:** TASK-480/AUD-NG-183, AUD-NG-001, AUD-NG-219/TASK-498 y AUD-NG-221/TASK-501.
+- **Estado:** [ ] Pendiente
+
+
+
+---
+
+## C1.88 — Revisión de TAREA-F4-P2-04
+
+### [AUD-NG-229] Serializar las actualizaciones concurrentes de perfiles de usuario
+- **Origen del Hallazgo:** C1.88 / TAREA-F4-P2-04.
+- **Severidad/Clasificación:** Medio (P2) · Integridad de datos · Concurrencia.
+- **Archivos Involucrados:** backend/user-service/Code.gs.
+- **Dependencias Expuestas:** updateUserProfile, hoja Usuarios, getDataRange, setValues, recordEntityChangeLog, LockService.
+- **Descripción del Alcance:** `updateUserProfile` (2654-2695) lee la fila completa de Usuarios, crea una copia local, modifica campos parciales y escribe toda la fila con setValues sin adquirir LockService ni verificar versión/estado previo. Dos actualizaciones concurrentes sobre campos distintos del mismo usuario pueden leer la misma fila inicial y la última escritura sobrescribir cambios de la primera (lost update). El registro de auditoría se ejecuta después de la escritura y no convierte la operación en atómica.
+- **Criterios de Aceptación:**
+  - El read-modify-write de perfil se serializa con un lock adecuado o usa control de versión/compare-and-set que detecte conflictos.
+  - Dos actualizaciones concurrentes de campos distintos no pierden datos; conflictos sobre el mismo campo se resuelven con política explícita.
+  - La actualización, la invalidación de caché y el registro de cambios tienen resultado coherente y verificable; no se declara éxito si la persistencia o la auditoría requerida falla.
+  - El lock se libera en finally y el tiempo de espera produce un error controlado; las escrituras de Sheets se confirman antes de liberar cuando corresponda.
+  - Pruebas aisladas reproducen dos actualizaciones paralelas sobre la misma cuenta y verifican todos los campos finales y la trazabilidad.
+- **Relaciones y límites:** TASK-118 conserva secuencias/duplicidad de email y el generador; AUD-NG-161 conserva la suite conductual de concurrencia; AUD-NG-218 conserva el contador de intentos de login; AUD-NG-219 conserva las transiciones de delegaciones. AUD-NG-229 se limita a la actualización concurrente de perfil; no duplica esos alcances.
+- **Estado:** [ ] Pendiente
+
+### [TASK-509] [AUD-NG-229] Hacer atómica la actualización de perfiles de usuario
+- **Origen:** C1.88 / TAREA-F4-P2-04.
+- **Prioridad:** P2 (Media).
+- **Componentes:** backend/user-service/Code.gs; hoja Usuarios; LockService; historial de cambios.
+- **Problema:** updateUserProfile hace read-modify-write de una fila completa sin exclusión mutua ni control de versión, permitiendo pérdida de cambios concurrentes.
+- **Requisitos:** serializar o versionar la actualización; coordinar persistencia, auditoría e invalidación de caché; manejar timeout/conflicto; probar concurrencia real en datos aislados.
+- **Relaciones:** TASK-118, AUD-NG-161, AUD-NG-218, AUD-NG-219.
 - **Estado:** [ ] Pendiente
 

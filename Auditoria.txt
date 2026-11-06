@@ -6588,3 +6588,52 @@ PRUEBAS Y LÍMITES:
 - No ejecutado: navegador/DOM, Apps Script, HTTP, Sheets productivo, roles reales, filtros, cambios de estado, delegaciones, matriz, XSS ni suites automatizadas.
 - Código fuente y pruebas sin modificaciones.
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-06
+CHECKPOINT C1.88 — TAREA-F4-P2-04
+SESIÓN: IMA-AUDIT-20261106-1644Z
+REPOSITORIO: i-miss-cocaine/IMA
+RAMA: NG_beta_0.0.0.1_work
+HEAD DE PARTIDA: 05987b81b1361d8605829b90dab0b3f5014f17e3
+DICTAMEN: NO CUMPLE
+
+ALCANCE:
+- completadas.md marca TAREA-F4-P2-04 [X], severidad Medio, backend/*/Code.gs.
+- ChangesLogs.txt afirma locks en createSecurityDelegation, revokeSecurityDelegation, updateUserProfile y manageAccountState.
+- Fuente original AUDITORIA_FASE4_IDENTIDAD_PERMISOS_GOBIERNO.md no está en el árbol.
+
+EVIDENCIA USER Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f:
+- generateInstitutionalId 1706-1743.
+- createSecurityDelegation 1746-1801.
+- getSecurityDelegations 1803-1859.
+- revokeSecurityDelegation 2276-2314.
+- manageAccountState 2342-2386.
+- registerUser 2393-2452.
+- updateUserProfile 2654-2695.
+- recordEntityChangeLog 2714-2745.
+
+RESULTADOS:
+1. createSecurityDelegation y manageAccountState sí adquieren ScriptLock y liberan en finally.
+2. revokeSecurityDelegation no adquiere lock, aunque el changelog lo afirma.
+3. updateUserProfile no adquiere lock; lee fila completa y reescribe con setValues, con riesgo de lost update concurrente. Se crea AUD-NG-229/TASK-509.
+4. getSecurityDelegations cambia Activa a Expirada mediante setValue sin lock; puede competir con revokeSecurityDelegation. Ampliar AUD-NG-219.
+5. createSecurityDelegation llama generateInstitutionalId dentro del ScriptLock; manageAccountState llama recordEntityChangeLog dentro del ScriptLock y el logger llama al generador. Posible adquisición anidada; sin prueba runtime no se afirma timeout. Ampliar TASK-118.
+6. generateInstitutionalId inicializa hoja/encabezados antes de adquirir lock. Ampliar TASK-118.
+7. registerUser check-email/append fuera de un lock común ya está en TASK-118; login counter sin lock ya está en AUD-NG-218.
+8. Tests/regression no contienen casos específicos de las cuatro funciones; AUD-NG-161 mantiene la necesidad de pruebas conductuales reales.
+
+RECONCILIACIÓN:
+- AUD-NG-229/TASK-509: updateUserProfile read-modify-write no serializado.
+- AUD-NG-219/TASK-498: revocación/expiración de delegaciones sin coordinación.
+- TASK-118: generador, inicialización de secuencias y llamadas anidadas.
+- AUD-NG-161: pruebas reales de concurrencia.
+- AUD-NG-218: contador de login.
+- Sin duplicar esos alcances.
+
+PRUEBAS Y LÍMITES:
+- Ejecutado: inspección estática/manual de funciones, lock acquisition/release, lecturas/escrituras y llamadas anidadas; búsqueda dirigida en tests.
+- No ejecutado: Apps Script runtime, contención real, reentrada/timeout, fallos de Sheets, carreras concurrentes ni suites automatizadas.
+- Código fuente y pruebas sin modificaciones.
+===============================================================================

@@ -1859,3 +1859,14 @@ Relaciones:
 - La vista no contiene flujos de consulta/edición de permisos efectivos ni de creación/listado/revocación de delegaciones. Reconciliar con AUD-NG-221/TASK-501 y AUD-NG-219/TASK-498; no crear duplicados.
 - `tbody.innerHTML` interpola nombre/ID sin escape contextual. Riesgo condicional; requiere DOM seguro y pruebas, sin afirmar explotación demostrada.
 - Evidencia: ui-common.js 986938b8a311a41ed4cb3d135b66b6aaea4bed67; api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; config.js 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc; USER 12079dd410aa6d8afbce55a4bc62a79dea605f9f; dashboard-direccion fefaa3bf7884288aef563cfb8aaf244e6cea8b7c; dashboard-secretaria fa0d8c23aace24a6acab2d4956398a7f5e1309b8.
+
+
+## C1.88 — TAREA-F4-P2-04: concurrencia y consistencia de identidad
+
+- El changelog afirma LockService en cuatro operaciones USER. Código: createSecurityDelegation (1761-1798) y manageAccountState (2349-2386) sí adquieren ScriptLock; revokeSecurityDelegation (2276-2314) y updateUserProfile (2654-2695) no.
+- updateUserProfile lee una fila completa de Usuarios, modifica copia y reescribe con setValues sin lock/versionado: dos actualizaciones paralelas pueden sobrescribirse. Nuevo AUD-NG-229/TASK-509.
+- getSecurityDelegations (1803-1859) cambia estado Activa a Expirada con setValue sin lock; revokeSecurityDelegation tampoco bloquea. Reconciliar AUD-NG-219/TASK-498.
+- createSecurityDelegation mantiene ScriptLock y llama generateInstitutionalId, que adquiere ScriptLock. manageAccountState mantiene ScriptLock y llama recordEntityChangeLog, que también llama generateInstitutionalId. Posible adquisición anidada, sin confirmar runtime; ampliar TASK-118.
+- generateInstitutionalId inicializa hoja/encabezados SecuenciasIDs antes de adquirir lock. TASK-118.
+- registerUser mantiene check-email y append fuera de una sección crítica única; ya cubierto por TASK-118. loginUser counter sin lock cubierto por AUD-NG-218. Tests reales de concurrencia cubiertos por AUD-NG-161.
+- Evidencia: USER 12079dd410aa6d8afbce55a4bc62a79dea605f9f; tests 3433b707edd4a2f35c68368a3172932adc2a3b32/0495e1d526a872c33310935a003a83d924d34683.

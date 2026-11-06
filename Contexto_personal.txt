@@ -3491,3 +3491,48 @@ CHECKPOINT C1.87 - TAREA-F4-P2-03
 - Bloqueos: ninguno.
 - Commit de cierre: el commit que contiene este checkpoint; SHA final se verifica después de publicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.88 - TAREA-F4-P2-04
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto real: Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: 05987b81b1361d8605829b90dab0b3f5014f17e3.
+- Tree SHA de partida verificado: 427f03e570c6a0b2d0d778027442d286dbfb8a74.
+- HEAD de la rama base: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Diferencia verificada: 150 commits adelante y 0 detrás.
+- ID operativo de sesión/chat: IMA-AUDIT-20261106-1644Z; inicio C1.86; C1.87 y C1.88 intermedios; estado: sesión abierta.
+- Último checkpoint anterior: C1.87 / TAREA-F4-P2-03.
+- Tarea auditada: TAREA-F4-P2-04 - Optimizar la concurrencia y la consistencia de las operaciones de identidad.
+- Estado maestro histórico: [X] en completadas.md; severidad Medio; archivos backend/*/Code.gs; criterios detallados originales no disponibles.
+- Fuente original AUDITORIA_FASE4_IDENTIDAD_PERMISOS_GOBIERNO.md: no localizada.
+- Dictamen C1.88: NO CUMPLE.
+- Contraste del changelog:
+  - createSecurityDelegation: lock presente, 1761-1798.
+  - revokeSecurityDelegation: sin lock, 2276-2314.
+  - updateUserProfile: sin lock, 2654-2695.
+  - manageAccountState: lock presente, 2349-2386.
+  - La declaración de lock en las cuatro funciones no coincide con la implementación actual.
+- Hallazgos:
+  - Nuevo AUD-NG-229/TASK-509: updateUserProfile lee y reescribe la fila completa sin lock ni control de versión; concurrencia puede causar pérdida de cambios.
+  - AUD-NG-219/TASK-498: revokeSecurityDelegation no usa lock y getSecurityDelegations cambia estado a Expirada sin lock; posible carrera con create/revoke/expiry.
+  - TASK-118: generateInstitutionalId crea SecuenciasIDs antes de lock; createSecurityDelegation y manageAccountState llaman directa/indirectamente al generador mientras ya mantienen ScriptLock, con posible adquisición anidada; requiere prueba runtime.
+  - TASK-118 ya cubre check de email y append de registerUser fuera de una sección crítica única.
+  - AUD-NG-218 mantiene contador de intentos de login sin lock.
+  - AUD-NG-161 mantiene pruebas nominales/concurrencia no conductual; no se encontraron pruebas para las cuatro operaciones en tests/regression.
+- Pruebas ejecutadas: inspección estática/manual de cuatro funciones, generador, auditoría de cambios, locks y búsqueda dirigida en tests.
+- Pruebas no ejecutadas: Apps Script runtime, contención real, reentrada/timeout de LockService, fallos de Sheets, inicialización concurrente, carreras de delegación, actualizaciones paralelas de perfil ni suites automatizadas.
+- Progreso: 85/183 identificadores auditados; 98 pendientes.
+- Última tarea auditada: C1.88 / TAREA-F4-P2-04.
+- Tarea en curso: ninguna.
+- Siguiente tarea exacta: TAREA-F4-P2-05 - Consolidar la documentación institucional de privacidad y tratamiento de datos.
+- Próxima acción reproducible: comparar politica-de-privacidad.html y politica-de-uso.html con plazos y obligaciones reales del sistema; verificar retención efectiva en código/hojas, sesiones, cuentas inactivas, expedientes académicos/financieros, derechos ARCO, cookies/consentimiento y correspondencia entre política declarada y comportamiento; reconciliar AUD-NG-145 y tareas de retención antes de crear IDs.
+- Archivos documentales modificados: Auditoria.txt, Pendientes.md, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt y nuevo AUDITORIA_COMPLETADAS_TAREA-F4-P2-04.md.
+- Archivos preservados: código fuente, pruebas, completadas.md, ChangesLogs.txt y METODOLOGIA_DESARROLLO.md.
+- Regla de ID de sesión: ya registrada en METODOLOGIA_DESARROLLO.md, sección 16, punto 9.
+- Bloqueos: ninguno para registrar el resultado estático; falta runtime para confirmar el riesgo de adquisición anidada.
+- Commit de cierre: el commit que contiene este checkpoint; SHA final se verifica después de publicar.
+================================================================
