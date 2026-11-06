@@ -4376,3 +4376,33 @@ CHECKPOINT C1.121 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 17
 - Próxima acción concreta: continuar el inventario de informes históricos de AUDITORIAS que aún carecen del bloque obligatorio. Seleccionar el siguiente informe por evidencia de ausencia del bloque, leerlo íntegramente y reconciliar IDs/estados antes de modificarlo; no repetir Fase 10, 11, 16 ni 17 salvo evidencia nueva.
 - Estado de TASK-DOC-C1.112-01: En curso; migración documental por lotes.
 ================================================================
+
+================================================================
+CHECKPOINT C1.122 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 19
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto: AUDITORIAS/Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: fc37106705c7b8c7858e528c096a986260353dd6.
+- HEAD de rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID operativo de sesión: IMA-AUDIT-20261106-2011Z-F10 (se conserva el identificador operativo de esta conversación; no es un ID nativo de ChatGPT).
+- Checkpoint anterior: C1.121 (Fase 17 normalizada).
+- Tarea documental en curso: TASK-DOC-C1.112-01, normalización progresiva de informes históricos.
+- Informe normalizado en esta iteración: AUDITORIAS/AUDITORIA_FASE_19_INVENTARIO_ACTIVOS_MANTENIMIENTO.md.
+- SHA del informe antes de modificar: 41d6bd113f77202d88ebac59139dcd285ec85852.
+- SHA del contexto antes de modificar: b83ea41f25459edd86590ae024e5e674b36b3d5d.
+- Inspección documental: informe completo (24,493 caracteres; 289 líneas), secciones A-J, capacidades C.2.1..C.2.20, tablas D/E, pruebas PT-01..PT-05, brechas G y backlog H.
+- Fuentes cruzadas: Auditoria.txt (blob 284b7a94b51c8ed99dbfcf734694bc5361f9f111), registros TASK-019/F19-Task01, TASK-020/F19-Task02, TASK-021/F19-Task03, TASK-022/F19-Task20, AUD-NG-023 y AUD-NG-142; metodología §3.4 y AUDITORIAS/README.md.
+- Tareas originales preservadas: F19-Task01..F19-Task12 con prioridades P0/P1/P2/P3 del apartado H.
+- Reconciliación histórica: TASK-019/F19-Task01 consta como completada/verificada, pero queda pendiente de revalidación por AUD-NG-023 y AUD-NG-142; TASK-020/F19-Task02 solo contiene diagnóstico/plan; TASK-021/F19-Task03 tiene plan de acción sin evidencia final; TASK-022 vincula la suite a F19-Task20, mientras el informe usa F19-Task12. No se modifican los IDs históricos.
+- Tareas nuevas derivadas de AUD-NG-142: F19-Task13 (entrega de requisiciones), F19-Task14 (conciliación física atómica), F19-Task15 (consumo idempotente de repuestos), F19-Task16 (baja patrimonial idempotente) y F19-Task17 (historial de activos). Se conserva AUD-NG-142 como ID de hallazgo, sin crear IDs de hallazgo ficticios.
+- Reconciliación de calidad: AUD-NG-023 concluye que la suite F19 construye datos simulados y no ejecuta operaciones reales; la suite F19-Task12 queda pendiente de pruebas conductuales.
+- Campos añadidos por tarea: hallazgo/origen, severidad, objetivo, acción, archivos/módulos, dependencias/riesgos, alcance, criterios de aceptación, prioridad, estado y evidencia de cierre.
+- Archivos modificados: AUDITORIAS/AUDITORIA_FASE_19_INVENTARIO_ACTIVOS_MANTENIMIENTO.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, ChangesLogs.txt, Auditoria.txt, METODOLOGIA_DESARROLLO.md, AUDITORIAS/README.md, plan maestro y demás informes; rama base sin cambios.
+- Pruebas no ejecutadas: suites Fase 19, Apps Script runtime, Google Sheets productivo, transferencias reales, conciliaciones reales, mantenimiento y despliegues; no hubo cambios de código.
+- HEAD de partida del árbol: fc37106705c7b8c7858e528c096a986260353dd6. El único commit de cierre debe contener ambos archivos y este checkpoint.
+- Próxima acción concreta: continuar con AUDITORIA_FASE_20_BIBLIOTECA_RECURSOS_EDUCATIVOS.md; leer íntegramente el informe, revisar tareas históricas y hallazgos cruzados, reconciliar IDs/estados y añadir el bloque obligatorio sin duplicar trabajo.
+- Estado de TASK-DOC-C1.112-01: En curso; migración documental por lotes.
+================================================================
