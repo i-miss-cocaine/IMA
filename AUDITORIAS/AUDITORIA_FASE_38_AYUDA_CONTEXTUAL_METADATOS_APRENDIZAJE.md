@@ -198,3 +198,107 @@ La evaluación abarca la ayuda contextual inmediata (tooltips/popovers), las ins
 
 ### 3. Dictamen Final
 **NO APROBADA PARA CERTIFICACIÓN FINAL** debido a la dependencia de tooltips nativos `title` inaccesibles para teclado y dispositivos táctiles, la persistencia en `localStorage` no sincronizada con el servidor y la carencia de un catálogo central de metadatos de interfaz con claves estables.
+
+---
+
+## Tareas ejecutables derivadas de los hallazgos
+
+> Normalización de las siete tareas descritas en el plan F (F38-Task01..F38-Task07), conservando prioridades P0/P1. Se añade F38-Task12 para la brecha de versionado e internacionalización de metadatos (F38-06/CAR-F38-06), no cubierta como tarea independiente en el plan. Auditoria.txt registra un backlog histórico de 11 IDs, pero no describe F38-Task08..F38-Task11; no se inventa su alcance.
+
+### [F38-Task01] Implementar tooltip universal, adaptativo y accesible (WCAG 2.2 AA)
+- **Hallazgo de origen:** F38-01/F38-02/F38-03; CAR-F38-01/CAR-F38-02/CAR-F38-03.
+- **Severidad:** Crítica / P0. **Objetivo:** proporcionar ayuda contextual operable por mouse, teclado y tacto, con posicionamiento correcto en cualquier viewport.
+- **Acción ejecutable:** crear componente reusable en `js/ui-common.js` con activación hover/focus/touch, `aria-describedby`, foco visible, cierre Escape, gestión de scroll/colisiones y posicionamiento adaptativo.
+- **Archivos/módulos:** `js/ui-common.js`, componentes de formularios, dashboards y `#interactive-guide-box`.
+- **Dependencias/riesgos:** F28-Task04/05 (accesibilidad/móvil), TASK-129/TASK-130; riesgo de tooltip inaccesible, bloqueo de controles o superposición fuera de pantalla.
+- **Alcance:** tooltips y ayudas breves; no reemplazar modales obligatorios de confirmación ni esconder información crítica en hover.
+- **Criterios de aceptación:** teclado Tab/foco; Escape cierra; touch abre/cierra explícitamente; asociación ARIA; posicionamiento sin clipping; contraste y foco; pruebas con teclado, lector de pantalla, móvil, zoom y scroll.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; los atributos title no funcionan adecuadamente con teclado ni tacto y no hay motor flotante adaptativo.
+
+### [F38-Task02] Crear catálogo central de metadatos y descripciones de campos
+- **Hallazgo de origen:** F38-04/F38-05/F38-07; CAR-F38-04/CAR-F38-05/CAR-F38-07.
+- **Severidad:** Crítica / P0. **Objetivo:** mantener definiciones consistentes y reutilizables de etiquetas, ejemplos, formatos y límites de campos.
+- **Acción ejecutable:** crear catálogo `MetadatosInterfaz` o JSON versionado con claves estables `METADATA_KEYS`; exponer `getUIMetadataCatalog`; incluir etiqueta, descripción, ejemplo válido, formato, obligatoriedad, límites y mensajes de error; sustituir textos duplicados en HTML/JS por consumo del catálogo.
+- **Archivos/módulos:** `backend/user-service/Code.gs`, `getUIMetadataCatalog`, `MetadatosInterfaz`, `js/ui-common.js`, formularios de matrícula/calificaciones/importación.
+- **Dependencias/riesgos:** F26-Task01/02 (configuración/locales), F30-Task12 (manuales); riesgo de claves inestables o de mostrar reglas diferentes entre dashboards.
+- **Alcance:** metadatos de interfaz y ayuda; no convertir el catálogo en fuente de autorización ni permitir HTML/JS arbitrario.
+- **Criterios de aceptación:** claves estables; esquema tipado; campos equivalentes consumen misma definición; ejemplos/límites visibles; validación de referencias de claves; caché versionada; pruebas de cobertura, campo desconocido y fallback.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; no existe catálogo central y las ayudas están dispersas en HTML/JS.
+
+### [F38-Task03] Persistir preferencias y progreso de ayuda en servidor por usuario
+- **Hallazgo de origen:** F38-09; CAR-F38-09.
+- **Severidad:** Crítica / P0. **Objetivo:** sincronizar progreso de guías y consejos descartados entre dispositivos sin mezclar usuarios.
+- **Acción ejecutable:** crear `PreferenciasUsuario` y endpoints `saveUserHelpPreferences`/`getUserHelpPreferences`; almacenar tourKey, step, descartado, versión, timestamp y usuario derivado de sesión; resolver conflictos con versión.
+- **Archivos/módulos:** `backend/user-service/Code.gs`, `PreferenciasUsuario`, `js/ui-common.js`, `startInteractiveGuide`.
+- **Dependencias/riesgos:** TASK-062 (versionado/consistencia), F26-Task04 (invalidación), identidad de sesión verificada; riesgo de guardar preferencias bajo ID enviado por cliente.
+- **Alcance:** preferencias de ayuda y progreso; no guardar datos sensibles ni bloquear el uso de la plataforma si el servicio de preferencias falla.
+- **Criterios de aceptación:** usuario derivado del token; aislamiento server-side; sincronización multidispositivo; control de versión; fallback local no autoritativo; fallos no bloquean dashboard; pruebas dos usuarios/dispositivos, caché borrada y concurrencia.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el progreso solo se guarda en localStorage y se pierde al cambiar de dispositivo o borrar caché.
+
+### [F38-Task04] Añadir instrucciones permanentes y advertencias de riesgo junto a campos críticos
+- **Hallazgo de origen:** F38-01/F38-04 y requisito de mantener confirmaciones independientes; CAR-F38-01/CAR-F38-04/CAR-F38-13.
+- **Severidad:** Crítica / P0. **Objetivo:** explicar formatos, límites y consecuencias antes de que el usuario introduzca datos o ejecute operaciones sensibles.
+- **Acción ejecutable:** añadir ayuda inline para fechas, DNI, importes, adjuntos y campos complejos; mostrar formatos válidos, tamaño/tipo máximo, ejemplos y advertencias; mantener confirmaciones destructivas/financieras en componentes independientes.
+- **Archivos/módulos:** formularios de matrícula, calificaciones, importaciones, pagos, horarios y `js/ui-common.js`.
+- **Dependencias/riesgos:** F38-Task02, F31-Task02/09, F35-Task02/16 del importador; riesgo de que un consejo descartado suprima una confirmación obligatoria.
+- **Alcance:** información persistente y contextual; no convertir advertencias en texto opcional ni sustituir validaciones de backend.
+- **Criterios de aceptación:** límites/formato junto al campo; ejemplo válido; advertencias visibles para acciones críticas; descartes de tutorial no afectan confirmaciones; pruebas de accesibilidad, formato inválido y usuario recurrente.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; campos extensos carecen de límites/ejemplos y la ayuda no está uniformemente asociada a controles.
+
+### [F38-Task05] Implementar onboarding de primera visita no invasivo
+- **Hallazgo de origen:** F38-08; CAR-F38-08.
+- **Severidad:** Alta / P1. **Objetivo:** orientar a usuarios nuevos por módulo sin interrumpir el trabajo ni repetir tours descartados.
+- **Acción ejecutable:** detectar primer acceso por usuario/módulo; iniciar tour solo cuando el usuario esté listo; permitir posponer/omitir; persistir estado con F38-Task03 y respetar versión del tour.
+- **Archivos/módulos:** `js/ui-common.js`, `startInteractiveGuide`, dashboards y `PreferenciasUsuario`.
+- **Dependencias/riesgos:** F38-Task03, F38-Task01; riesgo de mostrar tour repetidamente o interferir con tareas urgentes.
+- **Alcance:** onboarding contextual; no bloquear acceso a módulos ni mostrar guías irrelevantes al rol.
+- **Criterios de aceptación:** detección de primera visita real; segmentación por rol/módulo; posponer/omitir; progreso sincronizado; frecuencia controlada; pruebas usuario nuevo/recurrente, cambio de rol y tour actualizado.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el tour existe, pero no se activa automáticamente ni distingue usuarios nuevos/recurrentes.
+
+### [F38-Task06] Crear panel de consulta y restablecimiento de guías desde preferencias
+- **Hallazgo de origen:** F38-10; CAR-F38-10.
+- **Severidad:** Alta / P1. **Objetivo:** permitir que el usuario vuelva a consultar guías o restablezca consejos descartados.
+- **Acción ejecutable:** añadir en preferencias una sección para listar guías disponibles por rol, abrirlas y restablecer progreso individual o global con confirmación; persistir cambios en servidor.
+- **Archivos/módulos:** `js/ui-common.js`, `openContextualHelpModal`, panel de preferencias y `backend/user-service/Code.gs`.
+- **Dependencias/riesgos:** F38-Task02/03, RBAC por rol; riesgo de resetear preferencias de otro usuario o perder el progreso al guardar.
+- **Alcance:** consulta/reset de ayuda; no modificar otras preferencias de usuario.
+- **Criterios de aceptación:** catálogo filtrado por rol; reset individual/global; confirmación clara; estado sincronizado server-side; pruebas de permisos, reset, cancelación y multi-dispositivo.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; se pueden reabrir guías desde soporte, pero no existe control de restablecimiento en preferencias.
+
+### [F38-Task07] Ampliar guías especializadas para procesos administrativos y financieros
+- **Hallazgo de origen:** F38-12; CAR-F38-12.
+- **Severidad:** Alta / P1. **Objetivo:** orientar tareas complejas que requieren secuencias y controles específicos.
+- **Acción ejecutable:** crear guías para conciliación bancaria, importador Excel/CSV, emisión de documentos CUV, cierre de año lectivo y procesos administrativos; vincularlas a controles/contexto de cada módulo.
+- **Archivos/módulos:** `js/ui-common.js`, catálogo de guías `getHelpGuidesCatalog`, dashboards Contabilidad/Dirección/Docencia y documentación operativa.
+- **Dependencias/riesgos:** F30-Task12 (manuales), F35-Task09 (asistente importador), F31-Task01/07 (documentos); riesgo de guías obsoletas o instrucciones incompatibles con permisos.
+- **Alcance:** guías paso a paso; no sustituir manuales completos ni habilitar acciones fuera del rol.
+- **Criterios de aceptación:** guías por rol/módulo; pasos probados por responsable; versión/fecha; links contextuales; errores frecuentes y recuperación; pruebas con usuarios representativos y cambios de interfaz.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; existe guía para diseñador de plantillas, pero faltan conciliación bancaria, cierre de año e importaciones masivas.
+
+### [F38-Task12] Implementar versionado semántico e internacionalización del catálogo de ayuda
+- **Hallazgo de origen:** F38-06 y CAR-F38-06; ausencia de versiones y fallback de idioma.
+- **Severidad:** Media / P1. **Objetivo:** mantener ayudas traducibles y compatibles con versiones distintas de la interfaz.
+- **Acción ejecutable:** ampliar `MetadatosInterfaz` con locale, versión, vigencia, fallback y estado; sincronizar claves entre idiomas y validar que toda versión de UI tenga catálogo compatible.
+- **Archivos/módulos:** `backend/user-service/Code.gs`, `MetadatosInterfaz`, `js/ui-common.js`, configuración regional.
+- **Dependencias/riesgos:** F38-Task02, F26-Task02 (locale), F31-Task12 (plantillas multilingües); riesgo de traducir incorrectamente términos legales o dejar textos desfasados.
+- **Alcance:** español/inglés inicial y versionado de contenidos; no traducir automáticamente mensajes legales críticos sin revisión.
+- **Criterios de aceptación:** locale y fallback explícitos; versión de catálogo vinculada a versión de UI; claves faltantes detectadas; traducciones revisadas; cambios históricos preservados; pruebas de fallback, versión obsoleta y cambio de idioma.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; F38-06 se marca ausente por falta de versionado e internacionalización.
+
+### Reconciliaciones y discrepancias transversales de Fase 38
+- **F38-Task01:** coordinar accesibilidad con F28-Task04/05 y TASK-129/TASK-130; tooltip no debe sustituir labels ni ayudas permanentes.
+- **F38-Task02/12:** mantener un único catálogo de metadatos, con claves estables, versiones y locales; no duplicar textos en HTML/JS.
+- **F38-Task03/05/06:** preferencias de usuario y onboarding comparten persistencia; un único modelo server-side y fallback local no autoritativo.
+- **F38-Task04:** las confirmaciones de operaciones destructivas/financieras permanecen independientes y obligatorias.
+- **F38-Task07:** coordinar manuales con F30-Task12 y guías de importación/documentos F35/F31; evitar instrucciones contradictorias.
+- **Discrepancia histórica:** Auditoria.txt registra 11 IDs F38-Task01..F38-Task11 (P0 01/02/04/05, P1 03/06..10, P2 11), mientras el informe vigente describe F38-Task01..F38-Task07. No se recuperaron descripciones de Task08..Task11; no se inventan ni se consulta Pendientes.md.
+- **Subcapacidades completas preservadas:** F38-11/F38-13/F38-14; no se reejecutaron pruebas.
+- **Estado global:** F38-Task01..F38-Task07 y F38-Task12 permanecen pendientes; F38-Task08..Task11 quedan como referencias históricas sin descripción recuperable.
