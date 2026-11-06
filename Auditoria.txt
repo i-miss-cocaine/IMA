@@ -6084,3 +6084,25 @@ AUDITORÍA DE completadas.md - T-UX-24 (2026-11-06)
 - Pruebas: inspección estática/manual de CSS, variantes de botones, 12 vistas y dos renderizadores de estados de tickets. No se ejecutaron navegador, capturas, comparación visual, contraste automatizado ni suites automatizadas.
 - Código fuente y tests sin modificaciones. completadas.md, METODOLOGIA_DESARROLLO.md y ChangesLogs.txt sin modificaciones.
 ===============================================================================
+
+===============================================================================
+AUDITORÍA DE completadas.md - T-UX-25 (2026-11-06)
+===============================================================================
+- Dictamen: NO CUMPLE. El modal muestra preferencias personales y opciones por rol, pero la persistencia solo cubre una parte de notificaciones. No se implementa el restablecimiento a defaults institucionales ni la persistencia de personalización de vistas/widgets.
+- Especificación: completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, T-UX-25 (aprox. líneas 1244-1254): guardar preferencias útiles de visualización/consulta, mantener defaults institucionales y permitir restablecer preferencias.
+- UI: js/ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67.
+  - openDashboardSettingsModal (1629-1667) muestra la pestaña personal, la de rol y tabs restringidas por rol.
+  - loadUserSettingsInModal (1674-1700) solicita getUserSettings y solo rellena categorías de notificaciones, canal y frecuencia.
+  - renderRoleSettingsInModal (2214+) genera controles específicos de Profesor, Dirección/Administración, Secretaría, Contador, Tienda/Cafetería y otros roles; sus valores son HTML hardcodeado. No existe carga de preferencias de rol ni asociación de cambios a un modelo persistente.
+  - saveDashboardSettingsModal (2439-2498) solo recoge categorías de notificaciones, canal y frecuencia; no lee idioma, formato de fecha, tema, layout de widgets ni controles del panel de rol. No existe botón/handler de restablecimiento individual.
+  - El tab de identidad visual ofrece propuesta de paleta global y aprobación de Dirección; no representa una preferencia visual individual.
+- Backend: backend/user-service/Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f.
+  - getUserSettings/saveUserSettings (7649-7735 aprox.) usan PreferenciasNotificacion, no la entidad común PreferenciasUsuario descrita por TASK-422. Solo persisten categorías, inAppEnabled, canal y frecuencia. uiTheme aparece como "light" en el objeto por defecto, pero no se recupera ni se guarda.
+  - ROLE_PERMISSIONS (920-990) concede getUserSettings/saveUserSettings a Administrador, Desarrollador y Director; Profesor, Estudiante, Secretaría, Contador, Empleado, Coordinador y otros roles no tienen esos permisos, aunque la pestaña personal se muestra en el modal.
+  - validateRolePermission (1245-1315) exige token firmado. fetchApi no transmite sessionToken/authToken/token (AUD-NG-001), por lo que la llamada de UI no llega al handler en el contrato actual. Aun resolviendo el token, la matriz de permisos sigue restringiendo los roles ordinarios.
+- Vistas guardadas: AUD-NG-202 ya documenta que saveView/loadSavedView guarda únicamente filtros en localStorage bajo saved_views_{containerId}, sin aislamiento por usuario/rol/ámbito, sin orden/página/búsqueda y sin operaciones de gestión completas. Esa brecha no se duplica; se referencia como dependencia de la parte de vistas.
+- Reconciliación: TASK-422 (pendiente) cubre preferencias individuales, herencia de defaults, persistencia segura y restablecimiento; se amplía con evidencia C1.68/AUD-NG-216. AUD-NG-001 cubre token; AUD-NG-202/TASK-429 cubre vistas de tablas; TASK-430 sistema visual. No crear nueva tarea.
+- Nuevo hallazgo AUD-NG-216 (MEDIO/P2), añadido como ampliación de TASK-422 en Pendientes.md.
+- Pruebas: inspección estática/manual de modal, carga/guardado, renderizador por rol, ROLE_PERMISSIONS, handlers backend y backlog. No se ejecutaron sesiones con distintos roles, navegador, persistencia en Sheets, cambio de dispositivo ni pruebas automatizadas.
+- Código fuente/tests sin modificaciones. completadas.md, METODOLOGIA_DESARROLLO.md y ChangesLogs.txt sin modificaciones.
+===============================================================================

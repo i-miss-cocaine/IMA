@@ -802,3 +802,14 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Sesión:** IMA-AUDIT-20261106-0254Z; inicio C1.63; sesión abierta.
 - **Progreso:** 65/183 identificadores auditados; 118 pendientes.
 - **Siguiente tarea:** T-UX-25 - Incorporar preferencias de usuario y personalización controlada de vistas.
+
+## 70. Resultado C1.68 - T-UX-25 (2026-11-06)
+
+- **Dictamen:** NO CUMPLE. El modal guarda solo preferencias de notificación; controles de rol son estáticos, no hay reset ni persistencia de tema/layout/idioma/formato. El backend restringe endpoints personales a tres roles y el token no se transmite.
+- **AUD-NG-216 (MEDIO/P2):** ampliar persistencia y aplicación de preferencias personales/rol con defaults institucionales y reset. Se incorpora a TASK-422, no se crea tarea duplicada.
+- **Reconciliación:** AUD-NG-001 token; AUD-NG-202/TASK-429 vistas guardadas de tablas; TASK-422 preferencias personales; TASK-430 sistema visual. Sin duplicados.
+- **Evidencia:** ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67, 1629-1700, 2214+, 2439-2498; user-service/Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f, 920-990, 7649-7735, 1245-1315; Pendientes.md blob SHA dfe26e3bcc5ef7d6228ca251a08e59ce0e59943b. Informe AUDITORIA_COMPLETADAS_T-UX-25.md.
+- **Pruebas:** inspección estática/manual; no se ejecutaron sesiones multirol, persistencia Sheets, restauración cross-device ni suites automatizadas.
+- **Sesión:** IMA-AUDIT-20261106-0254Z; inicio C1.63; sesión abierta.
+- **Progreso:** 66/183 identificadores auditados; 117 pendientes.
+- **Siguiente tarea:** T-UX-26 - Incorporar una vista de actividad reciente contextual.

@@ -2907,3 +2907,25 @@ CHECKPOINT C1.67 - CIERRE DE AUDITORÍA T-UX-24 (2026-11-06)
 - Próxima acción reproducible: revisar UI de preferencias en js/ui-common.js, endpoints getUserSettings/saveUserSettings y almacenamiento en backend/user-service/Code.gs; contrastar alcance personal/por dispositivo/institucional, persistencia, restauración y reset; reconciliar con tareas de preferencias existentes.
 - Commit de cierre: el commit que contiene este checkpoint.
 ================================================================
+
+================================================================
+CHECKPOINT C1.68 - CIERRE DE AUDITORÍA T-UX-25 (2026-11-06)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: c1d1c1870e7019435034c48fa275053c4414740d.
+- HEAD de rama base verificado al inicio: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID de sesión de auditoría/chat: IMA-AUDIT-20261106-0254Z.
+- Inicio de sesión: C1.63. Estado: ABIERTA; checkpoint intermedio.
+- Tarea auditada: T-UX-25 - Incorporar preferencias de usuario y personalización controlada de vistas. Dictamen NO CUMPLE.
+- Hallazgo: AUD-NG-216 (MEDIO/P2). La UI recoge/guarda solo notificaciones; controles de preferencias por rol son estáticos; falta reset y persistencia de tema/layout/idioma/formato; get/save solo permiten Administrador/Desarrollador/Director y fetchApi no transmite token.
+- Reconciliación: se amplía TASK-422 (preferencias personales, herencia institucional, reset y persistencia); AUD-NG-001 cubre token; AUD-NG-202/TASK-429 cubre vistas guardadas de tablas; TASK-430 sistema visual. No se crea tarea nueva separada.
+- Evidencia: js/ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67, líneas 1629-1700, 2214+, 2439-2498; backend/user-service/Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f, líneas 920-990, 7649-7735, 1245-1315; Pendientes.md blob SHA dfe26e3bcc5ef7d6228ca251a08e59ce0e59943b.
+- Pruebas: inspección estática/manual. No ejecutados navegador, sesiones multirol, Sheets, restauración cross-device ni suites automatizadas.
+- Archivos previstos: Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, AUDITORIA_COMPLETADAS_T-UX-25.md, Pendientes.md y Contexto_personal.txt. Código/tests y completadas.md sin modificaciones.
+- Progreso: 66/183 identificadores auditados; 117 pendientes.
+- Siguiente tarea exacta: T-UX-26 - Incorporar una vista de actividad reciente contextual.
+- Próxima acción reproducible: revisar window.RECENT_ACTIVITY_CACHE_KEY, loadRecentActivity, renderRecentActivity, getRecentUserActivity y la persistencia backend si existe; verificar aislamiento por usuario/rol, fuente real, orden temporal, empty/error y navegación de regreso; reconciliar con tareas de actividad/auditoría antes de nuevos hallazgos.
+- Commit de cierre: el commit que contiene este checkpoint.
+================================================================

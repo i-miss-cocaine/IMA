@@ -1598,3 +1598,11 @@ Relaciones:
 - Los estados de tickets no son homogéneos: renderMyTicketsList 3918-3923 y renderAdminTicketsUI 4121-4126 dan distinto tratamiento a “Información recibida” y “Se necesita información”.
 - TASK-430 ya cubre el sistema visual general; se amplía con AUD-NG-215/T-UX-24. TASK-492 conserva estados de campos; TASK-493 modales de detalle; TASK-494 overlays; TASK-495 conectividad. No se crea una tarea duplicada.
 - Inspección estática; no se ejecutaron capturas/navegador ni pruebas de contraste.
+
+## Preferencias personales y personalización controlada (T-UX-25, C1.68)
+- js/ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67: loadUserSettingsInModal (1674-1700) carga solo notificaciones; renderRoleSettingsInModal (2214+) crea controles hardcodeados por rol sin persistencia; saveDashboardSettingsModal (2439-2498) guarda solo categorías/canal/frecuencia. No existe reset individual ni guardado de tema/layout/idioma/formato.
+- El tab de identidad visual propone una paleta global sujeta a Dirección; no es preferencia individual.
+- backend/user-service/Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f: getUserSettings/saveUserSettings (7649-7735) persisten únicamente PreferenciasNotificacion; uiTheme se devuelve por defecto y no se lee/escribe. ROLE_PERMISSIONS (920-990) restringe get/save settings a Administrador/Desarrollador/Director, pese a que el modal ofrece la pestaña personal a otros roles.
+- fetchApi no adjunta token (AUD-NG-001), por lo que el flujo de carga/guardado falla antes de llegar al handler hasta resolver esa dependencia.
+- AUD-NG-202/TASK-429 ya cubre vistas guardadas de tablas con localStorage no aislado y configuración incompleta. TASK-422 cubre preferencias personales/herencia/reset; se amplía con AUD-NG-216. TASK-430 cubre identidad visual general.
+- Inspección estática; no se ejecutaron sesiones multirol, persistencia en Sheets ni restauración entre dispositivos.
