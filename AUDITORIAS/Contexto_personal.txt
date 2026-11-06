@@ -5648,3 +5648,32 @@ CHECKPOINT C1.166 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-15
 - Próximo informe: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-16.md; leerlo íntegramente y reconciliar sus hallazgos/tareas antes de formalizar el bloque.
 - Commit de cierre: un único commit con ambos archivos; verificar SHA, padre, árbol, archivos modificados y HEAD de rama después de publicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.167 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-16
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida declarada en el proyecto: NG_beta_0.0.0.1.
+- HEAD de partida verificado: c71935e413bd75dedfbf8ba183a7b5490f2dafea.
+- Árbol base de la rama de trabajo: 7611529bef7379655a0eb62542ef267d81484e13.
+- Rama base: no se realizó consulta nueva en esta iteración; no se efectuó ninguna escritura sobre ella.
+- ID operativo de sesión: IMA-AUDIT-20261106-2219Z (no es ID nativo de ChatGPT).
+- Checkpoint inicial de esta iteración: C1.166.
+- Estado de iteración: cerrada en C1.167.
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-16.md.
+- SHA del informe antes del cambio: d27339f02f7ad51a0b29be041475180984a408bb.
+- SHA del contexto antes del cambio: 618c70838a0c48e040903a8993d6f5da1ec19960.
+- Inspección: TAREA-16 CUMPLE PARCIALMENTE. Pagos carecen de lock propio y clave obligatoria; cache check-then-save no reserva atómicamente; alta de matrícula secundaria sin lock; bypass skipLock/isInternalCall controlable desde payload; fallback CUV no revalida unicidad; entregas/exámenes carecen de lock/idempotencia; suites marcan PASS sin ejecutar concurrencia ni verificar la hoja real; no existe harness HTTP; aislamiento de caché no demostrado.
+- Tareas existentes ampliadas: AUD-NG-006 (clasificación de reintentos, clave estable y reserva idempotente atómica); AUD-NG-133 (propiedad del cargo, saldo, lock y persistencia transaccional); AUD-NG-161 (pruebas conductuales de concurrencia, carga HTTP, caché y recuperación); AUD-NG-009 (suites funcionales frente a presencia textual).
+- Reconciliación: AUD-NG-006 conserva el contrato transversal; AUD-NG-133 el dominio de pagos; AUD-NG-161 las pruebas reales; AUD-NG-009 la calidad de la evidencia. No se crea ID nuevo.
+- Archivos modificados: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-16.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, Auditoria.txt, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README y rama base.
+- Pruebas ejecutadas: lectura íntegra de TAREA-16; contraste de AUD-NG-006/133/161/009 en Auditoria.txt; comprobación de que el bloque no existía; verificación del HEAD y árbol de partida.
+- Pruebas no ejecutadas: concurrencia real, pagos/matrículas/CUV/entregas/exámenes, carga HTTP, pérdida de respuesta, caché caliente/fría, fixtures, Apps Script y producción.
+- Límite: cambio exclusivamente documental. TAREA-16 permanece CUMPLE PARCIALMENTE; las tareas ampliadas no se consideran ejecutadas ni completadas.
+- Próximo informe: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-17.md; leerlo íntegramente y reconciliar hallazgos y tareas relacionadas antes de formalizar el bloque.
+- Commit de cierre: un único commit con ambos archivos; verificar SHA, padre, árbol, archivos modificados y HEAD de rama después de publicar.
+================================================================
