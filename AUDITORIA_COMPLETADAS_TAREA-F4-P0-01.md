@@ -143,3 +143,7 @@ No se ejecutaron llamadas HTTP contra deployments, pruebas de token firmado, pru
 - El informe original de la Auditoría Fase 4 citado en completadas.md no aparece en el árbol actual; esta limitación queda registrada.
 
 ================================================================
+
+
+## Errata C1.74 - clasificación de logoutUser y revocación
+La sección 4.1 y la reconciliación de la sección 7 asociaron en C1.72 la ruta logoutUser/revokeUserSession a AUD-NG-002. Esa atribución fue duplicada: el repositorio ya contiene AUD-NG-159, que cubre específicamente el bypass de autenticación y la revocación arbitraria de sesiones, y lo relaciona con TAREA-F4-P0-03. La clasificación correcta es AUD-NG-159/AUD-NG-005; AUD-NG-002 conserva el alcance de consultas TASK/EXAM y borradores de admisión ACADEMIC. El código citado en C1.72 sigue siendo evidencia válida; se corrige únicamente su asignación al hallazgo.

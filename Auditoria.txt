@@ -6176,3 +6176,18 @@ AUDITORÍA TAREA-F4-P0-02 - CHECKPOINT C1.73
 - Reconciliación: AUD-NG-105, 106, 108, 128, 130 y 136 ya cubren partes de la superficie; se amplían 105/136, no se duplican. TASK-105 cubre ciclo de vida de justificaciones, no el ámbito docente.
 - Pruebas: inspección estática/manual; no se ejecutaron peticiones HTTP, pruebas multiusuario, familias cruzadas, docentes/asignaciones ni suites automatizadas.
 ===============================================================================
+
+
+===============================================================================
+AUDITORÍA TAREA-F4-P0-03 - CHECKPOINT C1.74
+===============================================================================
+- Dictamen: NO CUMPLE. La revocación se escribe en ScriptCache USER y no se demuestra propagación; los cuatro purgeSecurityCaches remotos eliminan revoked_session_ en vez de establecerlo; USER referencia dispatchSecurityEvent/processSecurityEventQueue/getSecurityEventsQueue/purgeSecurityCaches sin definiciones locales encontradas.
+- USER SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f: revokeUserSession (2318-2330) escribe revoked_user_/revoked_session_ solo en su ScriptCache; manageAccountState (2342-2380) modifica la hoja y llama dispatchSecurityEvent sin definición local; registerUser(forceUpdate) reactiva sin invalidar; manageInstitutionalDataCache(FLUSH_GLOBAL) solo registra/loguea.
+- ACADEMIC SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc (purgeSecurityCaches 3702), ACCOUNTING SHA 38b979d41596b85e888b4a7060b37bbac0840a28 (10200), EXAM SHA 1d93296628fae31f680004f637897e2b1314a64c (948) y TASK SHA 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe (1919): si sessionId existe, cache.remove(revoked_session_ + sessionId); SESSION_REVOKED no establece revoked_user_ si accountState no se incluye.
+- verifySessionToken mantiene acct_state_ por 60s; el código no demuestra invalidación en la siguiente operación.
+- Privilegios: getDynamicPermissionsForRole cachea dynamic_permissions_matrix por 600s en los cinco servicios; savePermissionMatrix invalida USER únicamente; los cuatro purgeSecurityCaches remotos eliminan perm_matrix_/dynamic_perms_, no la clave dinámica real. verifySessionToken acepta el claim role sin comparar con el rol vigente.
+- UI: handleLogout en ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67 solo limpia almacenamiento y redirige; no invoca logoutUser. handleSessionExpired tampoco está conectado desde api.js. auth.js no conserva token y api.js no lo transmite (AUD-NG-001).
+- Hallazgos revalidados: AUD-NG-005, AUD-NG-159 y AUD-NG-160; no se crean IDs nuevos.
+- Errata: C1.72 asignó logoutUser a AUD-NG-002; se corrige. logoutUser/revokeUserSession pertenece a AUD-NG-159; propagación de revocación a AUD-NG-005. AUD-NG-002 conserva TASK/EXAM y borradores ACADEMIC.
+- Pruebas: inspección estática/manual; no se ejecutaron peticiones HTTP, pruebas runtime de caché, revocación interproyecto, roles ni deployments.
+===============================================================================

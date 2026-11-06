@@ -3056,3 +3056,29 @@ CHECKPOINT C1.73 - TAREA-F4-P0-02
 - Próxima acción reproducible: auditar TAREA-F4-P0-03, comprobando revocación inmediata en los cinco microservicios, cachés, tokens activos, logout y actualización de privilegios.
 - Commit de cierre: el commit que contiene este checkpoint.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.74 - TAREA-F4-P0-03
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: 59475ca2d340ea3e9f5a964942ac49bccf72411c.
+- HEAD de rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID operativo de sesión: IMA-AUDIT-20261106-1138Z; inicio C1.71; estado ABIERTA.
+- Tarea auditada: TAREA-F4-P0-03 - Garantizar la revocación efectiva de sesiones y la actualización inmediata de privilegios.
+- Estado maestro: [X] Completada en completadas.md (SHA f57f1aef832e81e44fc4f7ec36a852d50e464676).
+- Dictamen: NO CUMPLE.
+- Hallazgos revalidados: AUD-NG-005, AUD-NG-159 y AUD-NG-160; no se crean IDs nuevos.
+- Corrección de trazabilidad: la asignación de logoutUser a AUD-NG-002 en C1.72 fue duplicada; corresponde a AUD-NG-159. Pendientes.md y el informe C1.72 reciben errata en este checkpoint.
+- Evidencia principal: USER SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ACADEMIC SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; ACCOUNTING SHA 38b979d41596b85e888b4a7060b37bbac0840a28; EXAM SHA 1d93296628fae31f680004f637897e2b1314a64c; TASK SHA 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe; auth.js SHA 8444dd085a3186106d2db7005b61ef934d3c22d8; api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67.
+- Brechas: revocación solo local, manejadores remotos borran marcas de sesión, dispatcher no verificable, estado en caché 60s, matriz de permisos en caché 600s con invalidación no coordinada, claim role sin revalidación, logout de UI local-only.
+- Pruebas: inspección estática/manual. No se ejecutaron deployments, peticiones HTTP, pruebas reales de revocación, caché caliente/fría, cambios de rol ni Script Properties.
+- Progreso: 71/183; 112 pendientes.
+- Siguiente tarea oficial: TAREA-F4-P0-04 - Registrar los intentos fallidos de autenticación y reforzar la protección contra ataques.
+- Archivos modificados: Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt, Pendientes.md, informe C1.72 con errata y nuevo AUDITORIA_COMPLETADAS_TAREA-F4-P0-03.md.
+- Archivos sin modificar: código fuente, completadas.md, ChangesLogs.txt y METODOLOGIA_DESARROLLO.md.
+- Próxima acción reproducible: auditar TAREA-F4-P0-04, verificando persistencia de intentos fallidos, bloqueo, ventanas temporales, rate limiting, identidad/IP, registros de auditoría y resistencia a bypass.
+- Commit de cierre: el commit que contiene este checkpoint.
+================================================================

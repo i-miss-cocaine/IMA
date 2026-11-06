@@ -871,3 +871,15 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Sesión:** IMA-AUDIT-20261106-1138Z; inicio C1.71; sesión abierta.
 - **Progreso:** 70/183 identificadores auditados; 113 pendientes.
 - **Siguiente tarea:** TAREA-F4-P0-03 - Garantizar la revocación efectiva de sesiones y la actualización inmediata de privilegios.
+
+
+## 76. Resultado C1.74 - TAREA-F4-P0-03 (2026-11-06)
+
+- **Dictamen:** NO CUMPLE. USER escribe revocaciones en su ScriptCache sin propagación demostrada; los cuatro servicios secundarios eliminan la marca revoked_session en su purgeSecurityCaches; el dispatcher de seguridad no tiene implementación local encontrada; estado y privilegios mantienen cachés obsoletas; el logout frontend solo limpia almacenamiento local.
+- **Hallazgos revalidados:** AUD-NG-005 (estado y revocación entre servicios), AUD-NG-159 (logout y revocación arbitraria), AUD-NG-160 (rol/privilegios en tokens y cachés). Sin nuevos IDs.
+- **Corrección documental:** la asignación de logoutUser a AUD-NG-002 en C1.72 se corrige; corresponde a AUD-NG-159. AUD-NG-002 conserva TASK/EXAM y borradores ACADEMIC.
+- **Evidencia:** USER SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ACADEMIC SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; ACCOUNTING SHA 38b979d41596b85e888b4a7060b37bbac0840a28; EXAM SHA 1d93296628fae31f680004f637897e2b1314a64c; TASK SHA 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe; auth.js SHA 8444dd085a3186106d2db7005b61ef934d3c22d8; api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67.
+- **Pruebas:** inspección estática/manual; sin peticiones HTTP, pruebas runtime de revocación/caché/roles ni deployments.
+- **Sesión:** IMA-AUDIT-20261106-1138Z; inicio C1.71; sesión abierta.
+- **Progreso:** 71/183 identificadores auditados; 112 pendientes.
+- **Siguiente tarea:** TAREA-F4-P0-04 - Registrar los intentos fallidos de autenticación y reforzar la protección contra ataques.

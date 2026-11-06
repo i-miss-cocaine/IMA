@@ -1652,3 +1652,12 @@ Relaciones:
 - Dependencias comunes: claims verificados, ROLE_PERMISSIONS, validateContextualAccess, relaciones familiares activas, asignaciones docentes vigentes, matrículas y ámbito por grado/sección.
 - Reconciliación: AUD-NG-002, 105, 106, 108, 128, 130 y 136; nuevo AUD-NG-217/TASK-496. TASK-105 conserva ciclo de vida de justificaciones.
 - Sin pruebas runtime ni acceso a datos reales; revisión estática/manual.
+
+
+## Revocación de sesiones y actualización de privilegios (TAREA-F4-P0-03, C1.74)
+- USER revokeUserSession escribe revoked_user_/revoked_session_ solo en su ScriptCache. manageAccountState llama dispatchSecurityEvent sin implementación local encontrada; no hay propagación verificable.
+- ACADEMIC/ACCOUNTING/EXAM/TASK implementan purgeSecurityCaches, pero la rama sessionId elimina revoked_session_ en vez de establecerla; SESSION_REVOKED sin accountState no crea revoked_user_.
+- verifySessionToken conserva acct_state_ 60s. registerUser(forceUpdate) puede reactivar sin purgar. manageInstitutionalDataCache(FLUSH_GLOBAL) no elimina las claves globales.
+- La matriz dynamic_permissions_matrix se cachea 600s en los cinco servicios; savePermissionMatrix invalida solo USER y los purgeSecurityCaches remotos eliminan claves diferentes. verifySessionToken no revalida el claim role vigente.
+- handleLogout en ui-common.js solo limpia estado local; no llama logoutUser. handleSessionExpired no está conectado desde api.js; auth.js/api.js tampoco conservan/transmiten sessionToken.
+- Hallazgos: AUD-NG-005, AUD-NG-159 y AUD-NG-160. Errata C1.72: logoutUser pertenece a AUD-NG-159, no a AUD-NG-002. No se crean IDs nuevos.
