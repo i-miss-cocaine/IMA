@@ -932,3 +932,12 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Pruebas:** inspección estática/manual; no se ejecutaron HTTP, pruebas multiusuario/familia/docente, hojas productivas, deployments ni suites automatizadas.
 - **Progreso:** 76/183 identificadores auditados; 107 pendientes.
 - **Siguiente tarea oficial:** TAREA-F4-P1-05 - Incorporar un panel de gobierno de privacidad y gestión de derechos sobre datos (ARCO).
+
+## 82. Resultado C1.80 - TAREA-F4-P1-05 (2026-11-06)
+
+- **Dictamen:** NO CUMPLE. El backend registra solicitudes ARCO y cambia estados, pero no ejecuta acceso, rectificación, exportación, eliminación u oposición. No se encontró panel de usuario/administrador en UI; la política anuncia un módulo inexistente.
+- **Reconciliación:** AUD-NG-145/146 y TASK-499/TASK-500 cubren bitácoras/retención/anonimización; AUD-NG-222/TASK-502 cubre política ABAC común. Nuevo AUD-NG-223/TASK-503 para panel y ejecución end-to-end de derechos ARCO.
+- **Evidencia:** USER SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67; politica-de-privacidad.html SHA 8854bae3021e1cdde288709e3fa411b3d6da20c7.
+- **Pruebas:** inspección estática/manual; no se ejecutaron HTTP, derechos reales, representación legal, hojas productivas, deployments ni suites automatizadas.
+- **Progreso:** 77/183 identificadores auditados; 106 pendientes.
+- **Siguiente tarea oficial:** TAREA-F4-P1-06 - Fortalecer la trazabilidad mediante historial de cambios y auditoría de versiones.

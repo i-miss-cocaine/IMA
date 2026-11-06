@@ -19905,3 +19905,23 @@ AUD-NG-163 permanece DUPLICADA y consolidada; no reabrirla como tarea independie
 - **Criterios de Aceptación:** Pruebas positivas/negativas para estudiante propio/ajeno, familiar vinculado/no vinculado, docente asignado/no asignado, coordinador dentro/fuera de ámbito, ausencia de campos, hoja ausente/vacía y error de lectura; mismos resultados de política en los cinco servicios; no se habilita acceso por payload incompleto ni por error de consulta; sin regresiones en permisos administrativos y delegaciones autorizadas.
 - **Relaciones y límites:** AUD-NG-105/106/108/128/130/136/217 y AUD-NG-002 mantienen hallazgos concretos; AUD-NG-160 cubre rol/cachés; AUD-NG-221 cubre dimensiones de matriz. No duplicar esas superficies.
 - **Estado:** [ ] Pendiente
+
+
+### [AUD-NG-223] Implementar panel ARCO y ejecución efectiva de derechos sobre datos personales
+- **Origen del Hallazgo:** Auditoria.txt / TAREA-F4-P1-05, checkpoint C1.80.
+- **Severidad/Clasificación:** Alto (P1) · Privacidad · Gobierno de datos · Derechos ARCO.
+- **Archivos Involucrados:** backend/user-service/Code.gs; js/ui-common.js; dashboards institucionales; politica-de-privacidad.html.
+- **Dependencias Expuestas:** submitPrivacyRightsRequest, getPrivacyRightsRequests, updatePrivacyRightsRequestStatus, SolicitudesDerechosPrivacidad, identidad verificada, representación legal, legal hold y operaciones de datos.
+- **Descripción del Alcance:** El backend solo registra solicitudes y actualiza estados. No se encontró panel ARCO ni ejecución de acceso/exportación, rectificación, eliminación u oposición. El modelo vincula la solicitud únicamente al callerId y no identifica titular representado, evidencia, plazo, decisión motivada ni resultado ejecutado. La política anuncia un módulo institucional que no aparece en la UI revisada.
+- **Reconciliación:** AUD-NG-145/146 y TASK-499/TASK-500 cubren bitácoras/retención/anonimización; AUD-NG-222/TASK-502 cubre ABAC transversal. No duplicar esos alcances.
+- **Estado:** [ ] Pendiente
+
+### [TASK-503] [TAREA-F4-P1-05] [P1] Implementar panel y flujo end-to-end de derechos ARCO
+- **Prioridad:** P1 (Alta).
+- **Componentes Afectados:** backend/user-service/Code.gs; js/ui-common.js; dashboards institucionales; politica-de-privacidad.html.
+- **Origen del Hallazgo:** AUD-NG-223 / TAREA-F4-P1-05.
+- **Problema Detectado:** Se persiste la solicitud, pero no se ejecuta el derecho ni existe interfaz de titular/administrador. No se modela la representación de menores ni la evidencia y plazo de tramitación.
+- **Requisitos de Corrección:** Crear panel para titulares y administradores; distinguir titular y representante autorizado; verificar identidad/vínculo; registrar alcance, evidencia, responsable y plazo; definir transiciones controladas; ejecutar acceso/exportación, rectificación, eliminación con legal hold y oposición/restricción; registrar decisión y evidencia sin exponer PII; sincronizar la política publicada con las funciones realmente disponibles.
+- **Criterios de Aceptación:** Cada tipo de derecho tiene flujo de solicitud, validación, decisión, ejecución y cierre; los tutores solo actúan sobre titulares representados y verificados; no se elimina información bajo conservación legal; solicitudes completadas tienen evidencia de resultado; los usuarios solo consultan sus solicitudes; el panel administrativo filtra y tramita con permisos; pruebas positivas/negativas cubren identidad, representación, legal hold, estados y fallos parciales.
+- **Relaciones y límites:** AUD-NG-145/146 y TASK-499/TASK-500 cubren logs/retención/anonimización; AUD-NG-222/TASK-502 cubre autorización contextual; no duplicar.
+- **Estado:** [ ] Pendiente

@@ -1709,3 +1709,10 @@ Relaciones:
 - TASK: validateRolePermission (225-280) llama validateContextualAccess (209-223), sin reglas familiares/docentes/ámbito; getStudentTasks (613-690) además permanece dentro del alcance de AUD-NG-002 por PUBLIC_ACTIONS.
 - EXAM: validateRolePermission (207-256) llama validateContextualAccess (191-205), sin reglas familiares/docentes/ámbito; getStudentExams (1057-1104) permanece dentro de AUD-NG-002 por PUBLIC_ACTIONS.
 - No hay motor común ni política fail-closed transversal. Reconciliar con AUD-NG-105/106/108/128/130/136/217 y AUD-NG-002; nuevo AUD-NG-222/TASK-502 para la brecha sistémica sin duplicar las exposiciones concretas.
+
+## Registro de dependencias - TAREA-F4-P1-05 (C1.80)
+- USER: doPost (1351-1405) -> validateRolePermission (1253-1295) -> submitPrivacyRightsRequest (1986-2025), getPrivacyRightsRequests (2028-2072), updatePrivacyRightsRequestStatus (2075-2117). Los dos primeros están en la lista de autorización temprana de validateRolePermission (1259); sus handlers revalidan sesión con getUserVerifiedRole (1146-1162). El tercero exige Administrador/Desarrollador en handler.
+- SolicitudesDerechosPrivacidad almacena solicitudId, userId, tipoDerecho, motivo, detalles, estado, respuestaAdmin, atendidoPor, fechaSolicitud y fechaRespuesta. No modela titular representado, evidencia, plazo, responsable, decisión motivada, datos afectados ni resultado ejecutado.
+- updatePrivacyRightsRequestStatus actualiza estado y metadatos; no ejecuta la operación ARCO ni valida una máquina de estados/transición.
+- js/ui-common.js (SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67) y los scripts/páginas de dashboards revisados no contienen llamadas ni UI ARCO. politica-de-privacidad.html (SHA 8854bae3021e1cdde288709e3fa411b3d6da20c7) solo registra aceptación de DOC-PRIV mediante ACCOUNTING; no conecta el módulo de derechos.
+- La afirmación de retención automatizada en la política se reconcilia con AUD-NG-146/TASK-499 y AUD-NG-220/TASK-500; no duplicar. Nuevo AUD-NG-223/TASK-503 para ausencia de panel y ejecución end-to-end de derechos ARCO.

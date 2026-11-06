@@ -3196,3 +3196,29 @@ CHECKPOINT C1.79 - TAREA-F4-P1-04
 - Próxima acción reproducible: abrir backend/user-service/Code.gs y revisar las funciones/acciones de privacidad y derechos ARCO, sus permisos en PUBLIC_ACTIONS/ROLE_PERMISSIONS, validación del solicitante, vínculo con titular, alcance de datos, evidencia de identidad, flujo de aprobación/respuesta, trazabilidad y propagación a ACADEMIC/ACCOUNTING; contrastar con política-de-privacidad.html y js/ui-common.js; reconciliar hallazgos existentes antes de crear IDs.
 - Commit de cierre: el commit que contiene este checkpoint.
 ================================================================
+
+================================================================
+CHECKPOINT C1.80 - TAREA-F4-P1-05
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto real: Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base: NG_beta_0.0.0.1.
+- HEAD de partida verificado: 5822b587306661631767749b03a0e8f9e4674003.
+- HEAD de rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID operativo de sesión: IMA-AUDIT-20261106-1338Z; inicio C1.79; estado ABIERTA. Es un identificador operativo, no un ID técnico nativo de ChatGPT.
+- Último checkpoint/tarea anterior: C1.79 / TAREA-F4-P1-04.
+- Tarea auditada: TAREA-F4-P1-05 - Incorporar un panel de gobierno de privacidad y gestión de derechos sobre datos (ARCO).
+- Dictamen: NO CUMPLE.
+- Evidencia principal: USER SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67; politica-de-privacidad.html SHA 8854bae3021e1cdde288709e3fa411b3d6da20c7.
+- Hallazgos: backend solo registra solicitudes y permite cambiar estados; no ejecuta los derechos solicitados ni modela representante/titular distinto, evidencia, plazos o resultado; no se encontró panel ARCO en ui-common.js, scripts ni dashboards; la política anuncia un módulo inexistente y su aceptación solo usa ACCOUNTING.
+- Reconciliación: AUD-NG-145/146, TASK-499/TASK-500 y AUD-NG-222/TASK-502 conservan sus alcances. Nuevo AUD-NG-223/TASK-503 para ausencia de panel y ejecución end-to-end ARCO. No duplicar.
+- Pruebas ejecutadas: inspección estática/manual, búsqueda de símbolos en backend/scripts/dashboards y comparación de SHA.
+- Pruebas no ejecutadas: HTTP, exportación/rectificación/eliminación/oposición real, verificación de representación legal, hojas productivas, deployments y suites automatizadas.
+- Progreso: 77/183 identificadores auditados; 106 pendientes.
+- Archivos modificados: Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt, Pendientes.md y nuevo AUDITORIA_COMPLETADAS_TAREA-F4-P1-05.md.
+- Sin modificar: código fuente, completadas.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, js/ui-common.js y politica-de-privacidad.html.
+- Siguiente tarea exacta: TAREA-F4-P1-06 - Fortalecer la trazabilidad mediante historial de cambios y auditoría de versiones.
+- Próxima acción reproducible: abrir backend/user-service/Code.gs y revisar recordEntityChangeLog, getEntityAuditHistory, funciones de versionado y hojas de historial; verificar snapshots before/after, actor real, recurso, integridad/inmutabilidad, paginación, permisos y sanitización; contrastar con js/ui-common.js y el flujo de consulta UI; reconciliar AUD-NG-145 y hallazgos de bitácoras/versionado antes de crear IDs.
+- Commit de cierre: el commit que contiene este checkpoint.
+================================================================
