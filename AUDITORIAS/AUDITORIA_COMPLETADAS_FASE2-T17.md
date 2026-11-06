@@ -29,3 +29,27 @@ getSharedConfigVersion (93) devuelve literalmente 2.0.0. getSharedConfigurations
 ### 2. Comparación de compatibilidad defectuosa
 
 validateServiceVersionCompatibility (97) compara únicamente igualdad de major y que el minor actual sea mayor o igual al minor requerido. Ignora patch: con versión actual 1.0.0 y mínima requerida 1.0.1 la condición da compatible, aunque el servicio sea inferior a la mínima. No valida estrictamente el formato; los componentes inválidos se sustituyen por valores predeterminados mediante expresiones 
+
+---
+
+## Tareas ejecutables derivadas de los hallazgos
+
+> La reconciliación de esta auditoría no crea hallazgos nuevos: amplía TASK-062 y conserva AUD-NG-077/AUD-NG-078 como referencias específicas de schemaVersion y coherencia entre contrato y deployment. Se formaliza un solo alcance integrado para evitar duplicar versionado, handshake, historial e invalidación.
+
+### [TASK-062] Establecer versionado canónico, negociación de compatibilidad e historial reversible de configuraciones
+- **Hallazgo de origen:** divergencia entre SERVICE_VERSIONS/SERVICE_REGISTRY/catálogo backend; comparador semántico defectuoso; ausencia de handshake en fetchApi; configuraciones sobrescritas sin historial; schemaVersion sin comparación. Referencias AUD-NG-077 y AUD-NG-078.
+- **Severidad:** Media/Alta (cumplimiento parcial con riesgo de incompatibilidad entre servicios). **Objetivo:** garantizar una fuente única y verificable de versiones de servicios, contratos y configuraciones, con compatibilidad comprobada antes de consumir o propagar cambios.
+- **Acción ejecutable:** definir catálogo canónico persistido de servicios/contratos y versión actual/mínima; incluir todos los servicios y deployments reales; corregir comparación semántica incluyendo patch y rechazar versiones/formato/servicios desconocidos; integrar handshake en `fetchApi` y consumidores; exponer versión real en health/deployment; versionar `ConfiguracionSistema` y fuentes de Spreadsheet con actor/fecha; conservar historial inmutable y rollback; aplicar control de concurrencia al guardar; ejecutar invalidación efectiva de caché tras cambios y no declarar purga global si solo se registra un evento.
+- **Archivos/módulos:** `js/config.js` (`SERVICE_VERSIONS`, `SERVICE_REGISTRY`, `getSharedConfigVersion`, `validateServiceVersionCompatibility`); `js/api.js` (`fetchApi`); `backend/user-service/Code.gs` (`getServiceHealthReport`, `getSharedConfigurationsCatalog`, `manageInstitutionalDataCache`, `getSystemConfigurations`, `saveSystemConfiguration`, `registerSpreadsheetSource`, `resolveSpreadsheetSource`); almacenamiento de historial/configuración y endpoints de cada servicio.
+- **Dependencias/riesgos:** coordinar deployments independientes y consumidores antiguos; definir política de compatibilidad hacia atrás y migración de versiones existentes; riesgo de bloqueo de clientes legítimos, versiones declaradas que no reflejan deployment real, sobrescritura concurrente y rollback incompleto.
+- **Alcance:** versionado de servicios, contratos compartidos, configuraciones institucionales y schemaVersion de fuentes; no confundir una constante en frontend/backend con versión real del deployment.
+- **Criterios de aceptación:** existe una sola fuente canónica y todos los servicios/deployments están representados; semver compara major/minor/patch y rechaza valores inválidos; clientes envían/negocian versión y reciben error explícito si son incompatibles; health report refleja versión desplegada; cada cambio guarda versión, actor, fecha y snapshot; rollback restaura versión previa con auditoría; concurrencia no pierde actualizaciones; invalidación realmente purga/renueva cachés; schemaVersion se compara con contrato requerido y conserva historial; pruebas con cliente obsoleto, patch inferior, servicio desconocido, actualización concurrente, rollback y caché.
+- **Prioridad:** conservar la prioridad vigente de TASK-062 (no reespecificada en este informe). **Estado:** Pendiente de ejecución/revalidación.
+- **Evidencia de cierre:** pendiente; se observaron versiones fijas y divergentes, comparador que ignora patch, ausencia de handshake, sobrescritura sin historial/lock y FLUSH_GLOBAL que solo registra evento.
+
+### Reconciliación y límites
+- **TASK-062:** fuente de verdad de la remediación integrada.
+- **AUD-NG-077:** conserva validación de compatibilidad e historial de schemaVersion; coordinar dentro de TASK-062, sin crear tarea paralela.
+- **AUD-NG-078:** conserva coherencia entre versión declarada, deployment y endpoint real; coordinar dentro de TASK-062.
+- **Pruebas:** inspección estática/manual; no se ejecutaron llamadas API, clientes obsoletos, escrituras concurrentes, rollback ni invalidación real.
+- **Estado:** FASE2-T17 cumple parcialmente; no se declara compatibilidad ni rollback implementados por la mera existencia de identificadores de versión.

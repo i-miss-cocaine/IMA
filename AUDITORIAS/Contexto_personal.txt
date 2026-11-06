@@ -5130,3 +5130,27 @@ CHECKPOINT C1.148 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME FASE2-T05
 - Próximo informe pendiente: revisar FASE2-T17/T18/T19 y FASE2_T01/T02, y continuar inventario de documentos históricos sin bloque.
 - Estado de TASK-DOC-C1.112-01: En curso.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.149 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME FASE2-T17
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida: 4275c63ef1502344b183b3ffd018b5ae896e8b37.
+- HEAD de rama base verificado antes del cambio: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID operativo de sesión: IMA-AUDIT-20261106-2117Z-MIGRACION (no es ID nativo de ChatGPT).
+- Checkpoint anterior: C1.148 (FASE2-T05 normalizada).
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_COMPLETADAS_FASE2-T17.md.
+- SHA original del informe: 03bfb22881a473a17797ca7c9ca4dc09ade550f5.
+- SHA original del contexto: 6f40662ced31bf0ec510b0e6118c4abbb0ffc2c4.
+- Inspección: versionado de servicios, semver, handshake, catálogo compartido, persistencia/versionado de configuraciones, schemaVersion e invalidación de caché; contraste con Auditoria.txt y MapaDependencias.md.
+- Tarea formalizada: TASK-062; AUD-NG-077 y AUD-NG-078 se preservan como referencias específicas dentro del mismo alcance, sin duplicar tareas.
+- Prioridad: se conserva la vigente en TASK-062; este informe no la reespecifica.
+- No se modificaron código, pruebas, Pendientes.md, completadas.md, ChangesLogs.txt, Auditoria.txt, metodología, README ni rama base.
+- Pruebas runtime no ejecutadas; cambio exclusivamente documental.
+- Próximo informe pendiente: AUDITORIA_COMPLETADAS_FASE2-T18.md.
+- Estado de TASK-DOC-C1.112-01: En curso.
+================================================================
