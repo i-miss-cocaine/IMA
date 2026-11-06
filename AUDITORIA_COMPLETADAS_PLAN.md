@@ -965,3 +965,15 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Pruebas:** inspección estática/manual y revisión de aserciones; no se ejecutaron HTTP, Apps Script, Sheets reales, concurrencia, UI en navegador, deployments ni suites.
 - **Progreso:** 79/183 identificadores auditados; 104 pendientes.
 - **Siguiente tarea oficial:** TAREA-F4-P1-08 - Implementar un mecanismo central de propagación y recuperación de cambios de seguridad.
+
+
+## 85. Resultado C1.83 - TAREA-F4-P1-08 (2026-11-06)
+
+- **Dictamen:** NO CUMPLE. USER enruta cuatro handlers de propagación/cola/purga sin definiciones locales; manageAccountState persiste antes de invocar dispatchSecurityEvent y termina en error sin rollback ni propagación confirmada. Los purgadores de ACADEMIC/ACCOUNTING/TASK/EXAM son locales y eliminan revoked_session_<id> en vez de establecerlo. DEVELOPER no recibe eventos ni comprueba revocación/estado.
+- **Cachés:** los cinco validadores consumen dynamic_permissions_matrix y active_delegations_<userId>; los purgadores eliminan claves distintas (perm_matrix_/dynamic_perms_ y delegations_). savePermissionMatrix y revokeSecurityDelegation solo invalidan USER. FLUSH_GLOBAL no purga.
+- **Reconciliación:** ampliar AUD-NG-005 (propagación/revocación) y AUD-NG-160 (vigencia/invalidación de roles, matriz y delegaciones). AUD-NG-176/TASK-474 conserva la cola general de notificaciones; AUD-NG-219/498, AUD-NG-221/501 y AUD-NG-222/502 conservan delegaciones, matriz y ABAC. No se crean IDs nuevos.
+- **Fuente:** completadas.md marca TAREA-F4-P1-08 como [X], pero solo aporta título, origen, severidad y backend/*/Code.gs; la fuente original AUDITORIA_FASE4_IDENTIDAD_PERMISOS_GOBIERNO.md no está en el árbol. Se limita el dictamen al título y a las obligaciones ya documentadas.
+- **Evidencia:** USER SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ACADEMIC SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; ACCOUNTING SHA 38b979d41596b85e888b4a7060b37bbac0840a28; TASK SHA 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe; EXAM SHA 1d93296628fae31f680004f637897e2b1314a64c; DEVELOPER SHA 8aa4bac67cfe5c8c54da51a0784a56fef633e412.
+- **Pruebas:** inspección estática/manual y búsqueda dirigida de referencias/definiciones; no se ejecutaron Apps Script, HTTP, ScriptCache real, fallos parciales, reintentos, concurrencia, multiusuario, deployments ni suites.
+- **Progreso:** 80/183 identificadores auditados; 103 pendientes.
+- **Siguiente tarea oficial:** TAREA-F4-P1-09 - Crear un panel de seguridad, auditoría y cumplimiento institucional.

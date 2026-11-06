@@ -3285,3 +3285,38 @@ CHECKPOINT C1.82 - TAREA-F4-P1-07
 - Bloqueos: ninguno al preparar el checkpoint; la lectura convencional de Pendientes.md se recuperó por blob Git.
 - Commit de cierre: el commit que contiene este checkpoint.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.83 - TAREA-F4-P1-08
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto real: Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: 8dc2ee9d8c25c6b694ddbbba916e438976164840.
+- Árbol de partida verificado: 3e7e5a1154db2c96f4c7f93a74e91c86bf63d22b.
+- HEAD de la rama base verificado al inicio: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID operativo de sesión: IMA-AUDIT-20261106-1429Z; checkpoint inicial C1.83; checkpoint de cierre C1.83; estado: sesión cerrada. Es un identificador operativo, no un ID técnico nativo de ChatGPT.
+- Hora UTC de cierre: 2026-11-06T14:34:47.431Z.
+- Último checkpoint/tarea anterior: C1.82 / TAREA-F4-P1-07.
+- Tarea auditada: TAREA-F4-P1-08 - Implementar un mecanismo central de propagación y recuperación de cambios de seguridad.
+- Estado maestro: [X] Completada en completadas.md (SHA f57f1aef832e81e44fc4f7ec36a852d50e464676); solo conserva título, origen, severidad y backend/*/Code.gs.
+- Dictamen: NO CUMPLE.
+- Evidencia principal: USER SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ACADEMIC SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; ACCOUNTING SHA 38b979d41596b85e888b4a7060b37bbac0840a28; TASK SHA 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe; EXAM SHA 1d93296628fae31f680004f637897e2b1314a64c; DEVELOPER SHA 8aa4bac67cfe5c8c54da51a0784a56fef633e412.
+- Bloques inspeccionados: USER invalidateUserRoleCache 143-153; manageInstitutionalDataCache 155-180; verifySessionToken 1098-1134; router 1351-1620 y rutas de seguridad 1463-1466; getDynamicPermissionsForRole 1863-1892; savePermissionMatrix 1934-1980; revokeSecurityDelegation 2276-2315; revokeUserSession 2318-2330; manageAccountState 2342-2386; loginUser 2470-2546; registerAndDispatchEvent 4618-4694; retryFailedEventsQueue 4700-4759. ACADEMIC verifySessionToken 400-445, dynamic permissions 580-620, delegations 624-669, purgeSecurityCaches 3702-3743. ACCOUNTING verifySessionToken 350-400, dynamic permissions 480-525, delegations 528-570, purgeSecurityCaches 10200-10241. TASK verifySessionToken 140-190, dynamic permissions 280-318, delegations 324-366, purgeSecurityCaches 1919-1959. EXAM verifySessionToken 125-170, dynamic permissions 260-300, delegations 301-340, purgeSecurityCaches 948-987. DEVELOPER verifySessionToken 115-147 y doPost 153-210.
+- Hallazgos: se amplían AUD-NG-005 (handlers de seguridad ausentes, propagación parcial, revocación y cobertura DEVELOPER) y AUD-NG-160 (claves reales de caché e invalidación interservicio). No se crean IDs nuevos.
+- Reconciliación: AUD-NG-176/TASK-474 conserva la cola general de notificaciones; AUD-NG-219/TASK-498 autoridad/ámbito de delegaciones; AUD-NG-221/TASK-501 matriz; AUD-NG-222/TASK-502 ABAC. No se duplican.
+- Fuente original AUDITORIA_FASE4_IDENTIDAD_PERMISOS_GOBIERNO.md no encontrada; no se atribuyen criterios no conservados por completadas.md.
+- Pruebas ejecutadas: inspección estática/manual de bloques, routers, validadores, cachés y purgadores; búsqueda dirigida de definiciones/referencias en los seis archivos backend; cotejo de SHA y tareas previas.
+- Pruebas no ejecutadas: Apps Script runtime, HTTP interservicio, ScriptCache/Script Properties reales, caché caliente/fría, simulación de fallos, reintentos reales, concurrencia, multiusuario, deployments y suites automatizadas.
+- Progreso: 80/183 identificadores auditados; 103 pendientes.
+- Última tarea completada: C1.83 / TAREA-F4-P1-08.
+- Tarea en curso: ninguna.
+- Siguiente tarea exacta: TAREA-F4-P1-09 - Crear un panel de seguridad, auditoría y cumplimiento institucional.
+- Próxima acción reproducible: abrir js/ui-common.js, dashboard-direccion.html y backend/user-service/Code.gs; auditar el panel de seguridad, los endpoints getSecurityAndComplianceDashboardData/generatePrivilegeAndAccountAuditReport/getPaginatedAuditLogReport, sus fuentes BitacoraEventos/LogsSistema/BitacoraTrazabilidad y sus permisos/DTO/UI; reconciliar AUD-NG-145, AUD-NG-218, AUD-NG-224, AUD-NG-005 y AUD-NG-160 antes de crear IDs.
+- Archivos modificados: Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt, Pendientes.md y nuevo AUDITORIA_COMPLETADAS_TAREA-F4-P1-08.md.
+- Archivos sin modificar: código fuente, completadas.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md y README.md.
+- Bloqueos: ninguno al preparar el cierre.
+- Commit de cierre: el commit que contiene este checkpoint.
+================================================================

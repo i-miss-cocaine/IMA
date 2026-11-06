@@ -6344,3 +6344,64 @@ PRUEBAS:
 - No ejecutadas: HTTP, Apps Script, hojas productivas, concurrencia real, multiusuario, navegador/UI, deployments ni suites automatizadas.
 - No se modificó código fuente.
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-06
+AUDITORÍA DE CUMPLIMIENTO — [TAREA-F4-P1-08] MECANISMO CENTRAL DE PROPAGACIÓN Y RECUPERACIÓN DE CAMBIOS DE SEGURIDAD
+REPOSITORIO: i-miss-cocaine/IMA
+RAMA: NG_beta_0.0.0.1_work
+HEAD DE PARTIDA: 8dc2ee9d8c25c6b694ddbbba916e438976164840
+DICTAMEN: NO CUMPLE
+
+ALCANCE Y LÍMITE DE FUENTE:
+- completadas.md marca TAREA-F4-P1-08 como [X], con severidad Alto y archivos involucrados backend/*/Code.gs; solo conserva el título, origen, clasificación y alcance general.
+- La fuente AUDITORIA_FASE4_IDENTIDAD_PERMISOS_GOBIERNO.md no aparece en el árbol actual. No se atribuyen criterios detallados ausentes.
+- Se inspeccionaron los seis servicios encontrados bajo backend/*/Code.gs: USER, ACADEMIC, ACCOUNTING, TASK, EXAM y DEVELOPER. DEVELOPER es el plano de control separado; los otros cinco son los microservicios funcionales revisados en checkpoints anteriores.
+
+EVIDENCIA DE RESPALDO:
+- backend/user-service/Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f:
+  - invalidateUserRoleCache 143-153; manageInstitutionalDataCache 155-180.
+  - verifySessionToken 1098-1134; ROLE_PERMISSIONS 941-963; router doPost 1351-1620, rutas de seguridad 1463-1466 y catch 1606-1617.
+  - revokeSecurityDelegation 2276-2315; revokeUserSession 2318-2330; manageAccountState 2342-2386, llamada a dispatchSecurityEvent en 2373-2379.
+  - loginUser 2470-2546; getDynamicPermissionsForRole 1863-1892; savePermissionMatrix 1934-1980.
+  - registerAndDispatchEvent 4618-4694; retryFailedEventsQueue 4700-4759.
+- backend/academic-service/Code.gs SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc:
+  - verifySessionToken 400-445; getDynamicPermissionsForRole 580-620; hasActiveDelegationForAction 624-669; purgeSecurityCaches 3702-3743; router purgeSecurityCaches 707.
+- backend/accounting-service/Code.gs SHA 38b979d41596b85e888b4a7060b37bbac0840a28:
+  - verifySessionToken 350-400; getDynamicPermissionsForRole 480-525; hasActiveDelegationForAction 528-570; purgeSecurityCaches 10200-1041 (bloque hasta 10241); router 594.
+- backend/task-service/Code.gs SHA 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe:
+  - verifySessionToken 140-190; getDynamicPermissionsForRole 280-318; hasActiveDelegationForAction 324-366; purgeSecurityCaches 1919-1959; router 384.
+- backend/exam-service/Code.gs SHA 1d93296628fae31f680004f637897e2b1314a64c:
+  - verifySessionToken 125-170; getDynamicPermissionsForRole 260-300; hasActiveDelegationForAction 301-340; purgeSecurityCaches 948-987; router 360.
+- backend/developer-service/Code.gs SHA 8aa4bac67cfe5c8c54da51a0784a56fef633e412:
+  - verifySessionToken 115-147; doPost 153-210; no purgeSecurityCaches or security-event consumer found.
+
+HALLAZGOS REVALIDADOS Y AMPLIADOS (SIN CREAR IDs DUPLICADOS):
+
+1. AUD-NG-005 — Propagación de estado y revocación entre servicios (Alto/P1).
+- USER doPost enruta dispatchSecurityEvent, processSecurityEventQueue, getSecurityEventsQueue y purgeSecurityCaches (1463-1466), pero el archivo USER no contiene definiciones de esas cuatro funciones. La búsqueda dirigida de sus definiciones en los seis archivos backend no encontró dispatchSecurityEvent, processSecurityEventQueue ni getSecurityEventsQueue; tampoco existe purgeSecurityCaches en USER o DEVELOPER.
+- manageAccountState persiste el nuevo estado en Usuarios!K y escribe historial antes de llamar dispatchSecurityEvent (2342-2386; llamada 2373-2379). Al no existir la función, se produce una excepción después de la mutación; doPost captura el error y responde status:error (1606-1617), sin revertir el estado ni confirmar propagación. Es un resultado parcial que puede parecer fallo al cliente aunque el estado ya cambió.
+- revokeUserSession (2318-2330) solo escribe revoked_user_/revoked_session_ en ScriptCache de USER; no publica un evento ni obtiene confirmación de otros servicios. loginUser bloquea directamente la cuenta en Usuarios al quinto fallo (2542-2545), sin pasar por el mismo flujo de propagación; esta ampliación ya estaba contemplada en AUD-NG-005.
+- ACADEMIC, ACCOUNTING, TASK y EXAM tienen purgadores locales; no son un mecanismo de fan-out. Sus bloques eliminan revoked_session_<sessionId> (ACADEMIC 3720; ACCOUNTING 10218; TASK 1937; EXAM 966), aunque verifySessionToken consulta esa marca para rechazar la sesión (ACADEMIC 431; ACCOUNTING 384; TASK 175; EXAM 157). En un evento SESSION_REVOKED el purgador puede borrar la marca de revocación; además, si solo se aporta sessionId, no crea revoked_user_. El flujo de revocación se contradice a sí mismo.
+- Los purgadores locales solo crean revoked_user_<userId> para ACCOUNT_STATE_CHANGED/SESSION_REVOKED cuando se proporciona accountState distinto de Activa; al recibir SESSION_REVOKED sin accountState no registran esa marca. No se confirma una aplicación durable y uniforme del evento.
+- DEVELOPER verifica firma y expiración del token (115-147), pero no consulta revoked_user_, revoked_session_ ni estado vigente de la cuenta, y no ofrece purgeSecurityCaches ni cola/consumidor de seguridad. Queda fuera de la cobertura de propagación de los cinco servicios funcionales.
+- manageInstitutionalDataCache(FLUSH_GLOBAL) solo registra CACHE_FLUSHED y devuelve status:success (USER 155-180); no elimina las claves globales.
+- registerAndDispatchEvent/retryFailedEventsQueue (USER 4618-4759) son la cola general orientada a notificaciones, no las funciones de cola de seguridad ausentes. Sus defectos de persistencia/reintentos se mantienen en AUD-NG-176/TASK-474 y no se duplican aquí.
+- Impacto: suspensión, bloqueo, revocación o cambios de cuenta pueden quedar aplicados solo en USER, reportarse como error tras persistir o incluso perder la marca de revocación al invocar un purgador remoto. No hay confirmación de todos los consumidores ni recuperación verificable de estados parciales.
+- Reconciliación: se amplía AUD-NG-005 para incluir DEVELOPER, la ausencia de los handlers de cola y el comportamiento destructivo de los purgadores; no se crea otro ID.
+
+2. AUD-NG-160 — Vigencia de roles, matriz dinámica y cachés de privilegios (Alto/P1).
+- USER, ACADEMIC, ACCOUNTING, TASK y EXAM consultan la matriz bajo la clave global dynamic_permissions_matrix (USER 1866; ACADEMIC 589; ACCOUNTING 490; TASK 286; EXAM 263), con TTL de 600 segundos.
+- Los cuatro purgeSecurityCaches remotos eliminan perm_matrix_<role> y dynamic_perms_<role>, no dynamic_permissions_matrix. La purga por rol no invalida la matriz que realmente consume el validador.
+- Los consumidores de delegaciones usan active_delegations_<userId> (USER 1168; ACADEMIC 627; ACCOUNTING 528; TASK 324; EXAM 301), pero los purgadores eliminan delegations_<userId>. La revocación/actualización puede dejar entradas calientes sin invalidar en servicios separados.
+- savePermissionMatrix invalida dynamic_permissions_matrix solo en USER (1977); revokeSecurityDelegation elimina active_delegations_<userId> solo en USER (2308). No se encontró propagación a las cachés independientes de los demás servicios.
+- Impacto: cambios de matriz, rol o delegación pueden seguir usando permisos obsoletos hasta el vencimiento del TTL; la acción nominal de purga puede devolver éxito sin eliminar las claves reales.
+- Reconciliación: se amplía AUD-NG-160 por el desajuste de claves y la falta de invalidación interservicio. AUD-NG-219/TASK-498 conserva autoridad/ámbito de delegaciones; AUD-NG-221/TASK-501 conserva dimensiones/editor de matriz; AUD-NG-222/TASK-502 conserva ABAC común. No se crean IDs duplicados.
+
+PRUEBAS Y LÍMITES:
+- Ejecutado: inspección estática/manual de los bloques indicados, routers, validadores, claves de caché, purgadores y productores; búsqueda dirigida de referencias y definiciones en los seis archivos backend; cotejo con AUD-NG-005, AUD-NG-160, AUD-NG-176 y tareas relacionadas; verificación de SHA.
+- No ejecutado: Apps Script runtime, HTTP entre servicios, acceso a ScriptCache/Script Properties reales, pruebas con caché caliente/fría, simulación de caída de servicio, reintentos reales, concurrencia, multiusuario, deployments ni suites automatizadas.
+- No se modificó código fuente ni se afirmó comportamiento productivo probado.
+- No se crean hallazgos ni tareas nuevos; se amplían AUD-NG-005 y AUD-NG-160 dentro de sus tareas ya existentes.
+===============================================================================

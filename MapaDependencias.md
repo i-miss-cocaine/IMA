@@ -1756,3 +1756,35 @@ Relaciones:
 - AUD-NG-225/TASK-505: vínculo CatalogoRolesInternos -> AsignacionesAmbitosRoles, vigencias y administración UI.
 - AUD-NG-226/TASK-506: integridad referencial/atomicidad de CatalogoDepartamentos, CatalogoCargos y HistorialAdscripciones.
 - No duplicar TASK-171 (ciclos jerárquicos), TASK-365 (organigrama visual), TASK-006/AUD-NG-017 (offboarding), AUD-NG-018 (historial de asignaciones docentes), AUD-NG-221/222 (matriz y ABAC), AUD-NG-145/224 (bitácoras/versionado).
+
+
+## Registro de dependencias - TAREA-F4-P1-08 (C1.83)
+
+### USER: productor y router de cambios de seguridad
+- `doPost` (1351-1620) enruta `purgeSecurityCaches`, `dispatchSecurityEvent`, `processSecurityEventQueue` y `getSecurityEventsQueue` (1463-1466); no se localizaron definiciones locales de esos handlers en USER.
+- `manageAccountState` (2342-2386) -> `Usuarios` columna 11 -> `recordEntityChangeLog` -> llamada a `dispatchSecurityEvent` (2373-2379). La llamada ocurre después de persistir; la referencia no resuelta cae en el catch de `doPost` (1606-1617), sin rollback.
+- `revokeUserSession` (2318-2330) -> ScriptCache USER: `revoked_user_<id>`, `revoked_session_<id>`; no se encontró despacho interservicio.
+- `loginUser` (2470-2546) escribe bloqueo automático en Usuarios!K al quinto intento (2542-2545), sin llamar a `manageAccountState` ni a un evento de seguridad.
+- `invalidateUserRoleCache` (143-153) elimina `user_role_<id>` y `acct_state_<id>` solo en el ScriptCache local.
+- `manageInstitutionalDataCache` (155-180): INVALIDATE_USER actúa localmente; FLUSH_GLOBAL solo registra el pedido y responde success, no elimina claves.
+- `savePermissionMatrix` (1934-1980) elimina `dynamic_permissions_matrix` solo en USER; `revokeSecurityDelegation` (2276-2315) elimina `active_delegations_<id>` solo en USER.
+
+### ACADEMIC / ACCOUNTING / TASK / EXAM: consumidores y purgadores locales
+- Los cinco validadores funcionales (USER/ACADEMIC/ACCOUNTING/TASK/EXAM) consultan `revoked_user_<id>`, `revoked_session_<id>` y `acct_state_<id>` en sus ScriptCache independientes. SHAs: USER 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ACADEMIC daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; ACCOUNTING 38b979d41596b85e888b4a7060b37bbac0840a28; TASK 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe; EXAM 1d93296628fae31f680004f637897e2b1314a64c.
+- `purgeSecurityCaches` existe solo en ACADEMIC (3702-3743), ACCOUNTING (10200-10241), TASK (1919-1959) y EXAM (948-987); cada implementación opera sobre el ScriptCache local.
+- Los cuatro purgadores eliminan `revoked_session_<id>` en lugar de establecer la marca; el validador lee esa misma clave para rechazar la sesión. Con `SESSION_REVOKED` y sessionId pueden borrar la revocación.
+- Los cuatro purgadores eliminan `delegations_<id>`, pero los validadores consultan `active_delegations_<id>`. Eliminan `perm_matrix_<role>` y `dynamic_perms_<role>`, pero los cinco validadores consumen `dynamic_permissions_matrix`.
+- No se encontró llamada interna desde los servicios a un dispatcher central ni productor de evento de seguridad; la existencia de un handler local no demuestra fan-out ni acuse de recibo.
+
+### DEVELOPER: plano de control
+- `backend/developer-service/Code.gs` SHA 8aa4bac67cfe5c8c54da51a0784a56fef633e412: `verifySessionToken` (115-147) verifica firma y expiración, pero no consulta marcadores de revocación ni estado de cuenta; no tiene `purgeSecurityCaches`, dispatcher ni consumidor de eventos de seguridad.
+- Su `doPost` (153-210) valida permisos locales por rol, pero no participa en la propagación/confirmación de cambios de estado o revocación.
+
+### Cola general frente a cola de seguridad
+- USER `registerAndDispatchEvent` (4618-4694) y `retryFailedEventsQueue` (4700-4759) procesan eventos de notificación; no implementan `dispatchSecurityEvent`, `processSecurityEventQueue` ni `getSecurityEventsQueue`.
+- AUD-NG-176/TASK-474 mantiene la cola general, persistencia, idempotencia y reintentos de notificaciones. AUD-NG-005 mantiene la propagación/revocación de seguridad. No fusionar ni duplicar alcances.
+
+### Reconciliación
+- AUD-NG-005: se amplía por handlers ausentes, estado parcial, revocación no propagada, purgadores que borran marcas y cobertura del servicio DEVELOPER.
+- AUD-NG-160: se amplía por claves de caché incompatibles y falta de invalidación de matriz/delegaciones entre servicios.
+- AUD-NG-219/TASK-498: autoridad, ámbito y cadenas de delegación; AUD-NG-221/TASK-501: dimensiones de matriz; AUD-NG-222/TASK-502: ABAC común; AUD-NG-176/TASK-474: cola general de notificaciones. No se crean IDs nuevos.
