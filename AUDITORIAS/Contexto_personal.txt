@@ -3816,3 +3816,23 @@ CHECKPOINT C1.96 - TAREA-F5-001
 - Bloqueos: ninguno para inspección estática; falta runtime para probar conversión y recuperación.
 - Commit de cierre: el commit que contiene este checkpoint; SHA final se verifica después de publicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.97 - CONVERSIÓN DE HALLAZGOS HISTÓRICOS A TAREAS
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Contexto: AUDITORIAS/Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work; rama base: NG_beta_0.0.0.1.
+- HEAD de partida verificado: 346143984e91a52fc84da8c3ac0be956acb578c4; árbol de partida: 94457ffdf140427a1c20bb0598e782ad3a0c5df6.
+- ID operativo de sesión: IMA-AUDIT-20261106-1719Z; checkpoint inicial: C1.97; estado: sesión abierta.
+- Alcance: revisión de los 128 documentos históricos originales de AUDITORIAS/ y conversión de hallazgos a tareas ejecutables dentro del mismo informe.
+- Avance documental publicado: 3/128 informes actualizados: FASE2-01, FASE2-02 y FASE2-03.
+- Tareas incorporadas: AUD-NG-083, AUD-NG-084, AUD-NG-086, TASK-046 (ampliación), AUD-NG-174 y AUD-NG-175. AUD-NG-007 queda como dependencia independiente, sin duplicación.
+- Regla de deduplicación: conservar IDs existentes; las ampliaciones se documentan con el ID responsable; no inventar IDs para hallazgos ya cubiertos.
+- Restricciones: no recuperar, leer ni modificar Pendientes.md; no modificar código fuente ni estados de completadas.md.
+- Inspección: informes históricos FASE2-01 a FASE2-T05 y bitácora Auditoria.txt para verificar severidad/alcance de AUD-NG-083/084/086/174/175.
+- Siguiente lote documental: FASE2-04 a FASE2-T08; después informes de tareas históricas, lotes y fases funcionales.
+- Pruebas: revisión de contenido, IDs y criterios de aceptación; verificación Git posterior.
+- Commit de cierre: el commit que contiene este checkpoint; SHA final se verificará después de publicar.
+================================================================

@@ -60,3 +60,31 @@ En js/config.js:
 ================================================================
 FIN DEL INFORME
 ================================================================
+
+## Tareas ejecutables derivadas de los hallazgos
+
+### [TASK-046] Ampliar la resolución centralizada de fuentes de datos
+- **Hallazgo de origen:** FASE2-03, secciones 1 y 4; ampliación explícita de TASK-046.
+- **Severidad:** Crítico.
+- **Objetivo:** asegurar que la selección de fuente sea inequívoca, validada y compatible con el contexto institucional.
+- **Acción ejecutable:** ampliar la clave de resolución para incluir departamento, servicio y tipo de información además de dominio/año; persistir y consultar esos metadatos; validar existencia, disponibilidad, acceso y schemaVersion; corregir la inicialización/lectura de encabezados; retirar fallback a la hoja principal cuando no exista coincidencia; integrar el resolver en todos los consumidores.
+- **Archivos/módulos afectados:** backend/academic-service/Code.gs, js/config.js y consumidores de fuentes en USER, ACCOUNTING, TASK y EXAM.
+- **Dependencias y riesgos:** AUD-NG-083, AUD-NG-084 y AUD-NG-086; evitar lecturas cruzadas y pérdida de compatibilidad con fuentes existentes.
+- **Alcance:** ampliación de tarea existente, sin generar TASK/AUD duplicado para el enrutamiento ya documentado.
+- **Criterios de aceptación:** dos fuentes del mismo dominio/año pero distinto departamento/servicio/tipo se resuelven independientemente; una fuente ausente/inactiva/sin permiso/esquema incompatible devuelve error explícito; el resolver no usa SPREADSHEET_ID como fallback; todos los consumidores críticos lo invocan.
+- **Prioridad:** P0.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas de resolución por combinación, aislamiento y migración de consumidores.
+
+### [AUD-NG-175] Corregir el contrato y la sincronización de catálogos institucionales
+- **Hallazgo de origen:** AUD-NG-175; secciones 2, 3 y 4.
+- **Severidad:** Alto.
+- **Objetivo:** garantizar que cliente y servidor compartan un catálogo institucional correcto y que las referencias inactivas no se acepten.
+- **Acción ejecutable:** corregir el índice de Estado en CatalogoAsignaturas; filtrar elementos inactivos en consultas; validar estado activo en validateCatalogReference y en mutaciones; sincronizar áreas y asignaturas; actualizar metadatos/estado de registros existentes; sustituir fallback success con catálogo estático por error explícito o estado degradado no confundible con éxito.
+- **Archivos/módulos afectados:** backend/academic-service/Code.gs, js/config.js y consumidores de catálogos.
+- **Dependencias y riesgos:** TASK-046 para la fuente autoritativa; AUD-NG-158 para estado/ámbito de áreas, sin duplicar su causa raíz.
+- **Alcance:** contrato, validación y sincronización; no ampliar aquí versionado/caché transversal asignado a TASK-062.
+- **Criterios de aceptación:** el estado leído coincide con la columna Estado; referencias inactivas se rechazan en servidor; áreas y asignaturas se sincronizan; altas/actualizaciones/bajas reflejan metadatos correctos; indisponibilidad de API no devuelve status success con catálogo local; pruebas cubren catálogo ALL y consultas específicas.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas de contrato/sincronización, casos activos/inactivos y verificación de errores.

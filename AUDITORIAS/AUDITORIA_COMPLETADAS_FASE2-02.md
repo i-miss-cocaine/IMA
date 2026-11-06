@@ -54,3 +54,18 @@ PRUEBAS Y LIMITACIONES
 - No se ejecutaron requests HTTP a deployments, simulaciones de fallos, pruebas de contrato de Accounting ni pruebas de navegador.
 - No se usaron datos productivos; no se afirma validación dinámica.
 ================================================================
+
+## Tareas ejecutables derivadas de los hallazgos
+
+### [AUD-NG-174] Definir y aplicar un contrato común de respuestas y errores
+- **Hallazgo de origen:** AUD-NG-174; secciones 1 a 4.
+- **Severidad:** Alto.
+- **Objetivo:** evitar respuestas incompatibles y que fallos de transporte/servicio se presenten como consultas exitosas vacías.
+- **Acción ejecutable:** definir un envelope versionado de éxito/error con status, data o error estructurado, código estable, mensaje público seguro, metadatos y correlationId; validar el envelope en fetchApi; distinguir colección vacía legítima de indisponibilidad; sustituir la inserción de parsed.message en innerHTML por renderizado seguro como texto; alinear handlers de Academic y Accounting.
+- **Archivos/módulos afectados:** js/api.js, backend/academic-service/Code.gs, backend/accounting-service/Code.gs, tests/regression y pruebas de contrato.
+- **Dependencias y riesgos:** AUD-NG-007 conserva el timeout configurable como tarea independiente; FASE2-T03 aporta el helper parcial. No duplicar esos alcances.
+- **Alcance:** contrato cliente-servidor y pruebas del transporte real para Academic/Accounting.
+- **Criterios de aceptación:** respuestas válidas e inválidas se clasifican inequívocamente; fetchApi rechaza envelopes malformados; un fallo de red nunca se transforma en success/data=[]; colección vacía legítima sigue siendo success; mensajes externos se renderizan como texto; pruebas HTTP cubren éxito, error, JSON inválido, HTML, timeout y caída de dependencia; ambos servicios superan la misma suite.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** especificación de contrato versionada, pruebas HTTP y suite automatizada compartida.

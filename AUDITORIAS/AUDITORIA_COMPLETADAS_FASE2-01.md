@@ -59,3 +59,57 @@ PRUEBAS Y LIMITACIONES
 - Inspección estática/manual de config, api, USER, ACCOUNTING y contraste de los otros cuatro microservicios.
 - No se ejecutaron requests HTTP entre deployments, rotación de PropertiesService, permisos efectivos de Drive/Sheets ni pruebas multi-cuenta. No se usaron datos productivos.
 ================================================================
+
+## Tareas ejecutables derivadas de los hallazgos
+
+### [AUD-NG-083] Integrar autenticación HMAC en el tráfico real entre microservicios
+- **Hallazgo de origen:** AUD-NG-083; secciones 1, 4 y 5.
+- **Severidad:** Crítico.
+- **Objetivo:** impedir que los dispatchers acepten llamadas interservicio sin autenticación verificable.
+- **Acción ejecutable:** integrar la creación del sobre firmado en cada llamada saliente; exigir y verificar el sobre antes del despacho en USER, ACCOUNTING, ACADEMIC, TASK, EXAM y DEVELOPER; retirar las rutas interservicio en JSON plano.
+- **Archivos/módulos afectados:** backend/user-service/Code.gs, backend/academic-service/Code.gs, backend/accounting-service/Code.gs, backend/task-service/Code.gs, backend/exam-service/Code.gs y backend/developer-service/Code.gs.
+- **Dependencias y riesgos:** TASK-046 y contratos de comunicación; mantener compatibilidad versionada durante la transición.
+- **Alcance:** tráfico real entre deployments, no solo helpers declarados ni pruebas locales.
+- **Criterios de aceptación:** cada llamada lleva emisor, receptor, acción, requestId/correlationId, vigencia y firma; cada dispatcher rechaza sobres ausentes, alterados, caducados o dirigidos a otro servicio; pruebas HTTP entre deployments demuestran rechazo y aceptación esperados.
+- **Prioridad:** P0.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** commits, pruebas de integración entre deployments y registros de ejecución.
+
+### [AUD-NG-084] Sustituir secretos predecibles por gestión independiente de claves
+- **Hallazgo de origen:** AUD-NG-084; sección 2.
+- **Severidad:** Crítico.
+- **Objetivo:** eliminar secretos derivados de SPREADSHEET_ID y establecer confianza diferenciada entre servicios.
+- **Acción ejecutable:** retirar el fallback determinista; provisionar secretos aleatorios independientes por relación emisor/receptor; implementar versión, rotación, revocación y transición controlada de claves.
+- **Archivos/módulos afectados:** backend/user-service/Code.gs, backend/academic-service/Code.gs, backend/accounting-service/Code.gs, backend/developer-service/Code.gs y configuración de deployments.
+- **Dependencias y riesgos:** AUD-NG-083 y protocolo de sobres; evitar interrupción de llamadas legítimas durante la rotación.
+- **Alcance:** almacenamiento seguro en propiedades/configuración protegida y resolución de clave autorizada por servicio.
+- **Criterios de aceptación:** no existe derivación de secreto desde identificadores públicos; cada servicio usa credenciales independientes por defecto; rotación y revocación se prueban sin aceptar claves revocadas.
+- **Prioridad:** P0.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** configuración saneada, pruebas de rotación/revocación y revisión de secretos.
+
+### [AUD-NG-086] Autorizar emisor, receptor y acción además de verificar la firma
+- **Hallazgo de origen:** AUD-NG-086; secciones 1 y 5.
+- **Severidad:** Crítico.
+- **Objetivo:** separar autenticación criptográfica de autorización granular del mensaje.
+- **Acción ejecutable:** validar que sourceService esté registrado y activo, que tenga permiso explícito para la acción, que targetService acepte esa combinación y que protocolo, versión de clave y esquema de payload sean compatibles.
+- **Archivos/módulos afectados:** verifyInterServiceEnvelope y catálogo de servicios/permisos de USER, ACADEMIC, ACCOUNTING y DEVELOPER; incorporar controles equivalentes en TASK y EXAM.
+- **Dependencias y riesgos:** AUD-NG-083 y AUD-NG-084; una firma válida no debe otorgar permisos implícitos.
+- **Alcance:** autorización servidor a servidor por emisor/receptor/acción y contrato versionado.
+- **Criterios de aceptación:** emisor desconocido/inactivo, acción no autorizada, receptor incorrecto, versión incompatible y esquema inválido producen denegación; pruebas positivas cubren solo combinaciones registradas.
+- **Prioridad:** P0.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** matriz de permisos, pruebas negativas/positivas y revisión de todos los dispatchers.
+
+### [TASK-046] Completar el enrutamiento universal de fuentes por servicio y ámbito
+- **Hallazgo de origen:** FASE2-01, sección 3; ampliación de TASK-046, sin crear identificador duplicado.
+- **Severidad:** Crítico.
+- **Objetivo:** impedir que los servicios compartan implícitamente una hoja maestra y asegurar que cada operación use su fuente autorizada.
+- **Acción ejecutable:** integrar el resolver en todos los consumidores; resolver por servicio, departamento/área, tipo de información y año lectivo; validar recurso, permisos y esquema; eliminar el fallback silencioso al SPREADSHEET_ID común.
+- **Archivos/módulos afectados:** los seis microservicios y sus consumidores de SpreadsheetApp.openById; catálogo de fuentes y configuración de despliegues.
+- **Dependencias y riesgos:** AUD-NG-083, AUD-NG-084 y AUD-NG-086; migración de datos y compatibilidad de hojas.
+- **Alcance:** resolución y aislamiento efectivos, no solo catálogo estático.
+- **Criterios de aceptación:** cada operación crítica identifica su fuente autorizada; fuente ausente/inactiva/incompatible falla de forma explícita; pruebas multi-servicio/multi-cuenta demuestran ausencia de lecturas y escrituras cruzadas.
+- **Prioridad:** P0.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas de aislamiento, matriz de fuentes y trazas por servicio.
