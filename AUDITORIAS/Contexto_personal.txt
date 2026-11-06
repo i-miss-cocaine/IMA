@@ -5856,3 +5856,31 @@ CHECKPOINT C1.173 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-F4-P0-
 - Próximo informe oficial: TAREA-F4-P0-03 - revocación efectiva de sesiones y actualización inmediata de privilegios; leer íntegramente y reconciliar antes de editar.
 - Regla de publicación: un único commit con exactamente el informe y Contexto_personal.txt; verificar SHA, padre, árbol, archivos modificados y HEAD tras publicar.
 ================================================================
+
+================================================================
+CHECKPOINT C1.174 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-F4-P0-03
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.1.
+- HEAD de partida verificado: bb64c23b78e0de1eddd86a37a1658a182c1f85c4.
+- Árbol base de la rama de trabajo: 6f0bcfb4edfe28ecec8c98ffed5d9c76f10d3130.
+- HEAD de rama base consultado previamente en esta sesión (solo lectura): 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID operativo de sesión: IMA-AUDIT-20261106-2232Z (no es ID nativo de ChatGPT).
+- Checkpoint inicial de esta iteración: C1.173.
+- Estado de iteración: cerrada en C1.174.
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F4-P0-03.md.
+- SHA del informe antes del cambio: c6f356bca3af4bf3e4909f290e4d53bb006b8355.
+- SHA del contexto antes del cambio: 1ce925169ad7d90872374fc3eed725adb568c65a.
+- Dictamen original preservado: TAREA-F4-P0-03 NO CUMPLE; estado [X] de completadas.md sin cambios.
+- Inspección: USER escribe marcas de revocación solo en ScriptCache local; dispatcher/event queue no tiene implementación/dependencia versionada verificable; los cuatro purgeSecurityCaches remotos eliminan revoked_session_ en vez de establecerla; estado de cuenta cacheado 60s y reactivación sin invalidación demostrada; matriz dinámica cacheada 600s con claves de purga incompatibles; claim role no se compara con privilegio vigente; UI limpia almacenamiento pero no invoca logoutUser.
+- Reconciliación: AUD-NG-005 ampliado para eventos/propagación, invalidación de estado, handlers remotos, reactivación y evidencia de ACK; AUD-NG-159 ampliado para cierre remoto desde UI, manteniendo su ámbito de autorización de logout propio definido en C1.172; AUD-NG-160 ampliado para vigencia de rol/versionado y sincronización de matriz. AUD-NG-001 queda como dependencia de transporte del token. No se crean IDs nuevos.
+- Archivos modificados: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F4-P0-03.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, Auditoria.txt, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README y rama base.
+- Pruebas ejecutadas: lectura íntegra de TAREA-F4-P0-03; contraste de AUD-NG-005/159/160 en Auditoria.txt; comprobación de ausencia previa del bloque; verificación de HEAD y SHAs de partida.
+- Pruebas no ejecutadas: HTTP, caché caliente/fría, propagación entre deployments, revocación real, cambio de rol/permisos en producción, Script Properties y suites automatizadas.
+- Límite: cambio exclusivamente documental; no se declara implementada ni completada ninguna tarea.
+- Próximo informe oficial: TAREA-F4-P0-04 - registrar intentos fallidos de autenticación y reforzar protección contra ataques; leer íntegramente y reconciliar antes de editar.
+- Regla de publicación: un único commit con exactamente el informe y Contexto_personal.txt; verificar SHA, padre, árbol, archivos modificados y HEAD tras publicar.
+================================================================

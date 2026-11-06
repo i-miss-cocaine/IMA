@@ -101,3 +101,45 @@ No se ejecutaron peticiones HTTP contra deployments, pruebas reales de revocaci�
 - Próxima tarea oficial: TAREA-F4-P0-04 - Registrar los intentos fallidos de autenticación y reforzar la protección contra ataques.
 
 ================================================================
+
+## Tareas ejecutables derivadas de los hallazgos
+
+> Derivadas de la inspección estática de TAREA-F4-P0-03. Se conserva el dictamen **NO CUMPLE** y el estado `[X]` del registro maestro. La documentación de estas tareas no acredita propagación, revocación ni actualización de privilegios en producción.
+
+### AUD-NG-005 — Propagar revocaciones e invalidar estado de cuenta en todos los servicios (ALTO)
+
+- [ ] Definir un contrato versionado de evento de seguridad para `SESSION_REVOKED`, `ACCOUNT_STATE_CHANGED` y los eventos de reactivación; incluir identificador de evento, usuario objetivo, sesión objetivo cuando aplique, estado/versión, fecha, emisor y correlación, sin incluir credenciales.
+- [ ] Implementar y versionar en USER el dispatcher/cola de seguridad referenciado por `dispatchSecurityEvent`, `processSecurityEventQueue`, `getSecurityEventsQueue` y `purgeSecurityCaches`, o declarar explícitamente la biblioteca externa y su versión si esa es la dependencia real. No asumir que una función existe en deployment si no está trazada.
+- [ ] Garantizar entrega autenticada e íntegra del evento a ACADEMIC, ACCOUNTING, EXAM y TASK, con reintentos controlados, idempotencia, deduplicación, observabilidad y manejo de eventos fuera de orden. Registrar ACK por servicio y fallos no recuperados.
+- [ ] Corregir cada `purgeSecurityCaches` remoto: `SESSION_REVOKED` debe establecer la marca de revocación correspondiente (`cache.put` o almacén autoritativo), no eliminarla; la revocación de usuario debe invalidar/bloquear el usuario objetivo aunque no llegue `accountState`. La respuesta `success` solo se devuelve cuando el evento se aplicó realmente.
+- [ ] Unificar la fuente de verdad para revocaciones. No depender de ScriptCache aislados de proyectos distintos como si fueran compartidos; documentar TTL, consistencia, persistencia, límites y comportamiento cuando un servicio está fuera de línea.
+- [ ] En `manageAccountState`, invalidar o versionar inmediatamente el estado cacheado en todos los servicios al suspender/desactivar; cubrir también la reactivación `registerUser(forceUpdate)` y evitar que una caché anterior mantenga estado incorrecto.
+- [ ] Corregir `manageInstitutionalDataCache(FLUSH_GLOBAL)` para que invalide las claves reales consumidas por validadores, o renombrar/restringir la operación si solo registra el evento. No declarar purga global por un log.
+- [ ] Añadir pruebas de integración con caché caliente/fría y cinco proyectos aislados: revocar sesión, suspender cuenta, reactivar cuenta, servicio desconectado, evento duplicado, evento retrasado, reintento, ACK parcial y recuperación. Medir el tiempo real hasta que todos los servicios deniegan la sesión.
+- **Criterio de aceptación:** tras confirmar la revocación o cambio de estado, cada servicio protegido rechaza la sesión en la siguiente operación dentro del SLA definido; no hay ramas que eliminen la marca de revocación y el sistema informa explícitamente de propagación parcial/fallida.
+
+### AUD-NG-159 — Completar cierre de sesión remoto desde la interfaz (CRÍTICO/P0)
+
+- [ ] Integrar `handleLogout` con el endpoint autenticado `logoutUser` para revocar la sesión propia en backend antes de limpiar el estado local; reutilizar el transporte de token definido en AUD-NG-001.
+- [ ] Definir un comportamiento seguro ante timeout o indisponibilidad: limpiar siempre la credencial local, pero mostrar/registrar que la revocación remota no pudo confirmarse y aplicar una estrategia de reintento idempotente que no reactive ni revoque sesiones ajenas.
+- [ ] Hacer que `handleSessionExpired` y los errores de sesión revocada converjan en un único flujo de limpieza y redirección; no tratar una denegación RBAC ordinaria como expiración de sesión.
+- [ ] Asegurar que el endpoint de logout solo cierre la sesión vinculada a claims verificados, según el alcance de AUD-NG-159 formalizado en C1.172; la interfaz no debe enviar IDs de usuario/sesión como autoridad.
+- [ ] Añadir pruebas frontend/backend para logout normal, doble clic, token ausente, token vencido, backend no disponible, revocación ya aplicada, cierre en otra pestaña y comprobación de que no quedan tokens en localStorage/sessionStorage.
+- **Criterio de aceptación:** el logout local no se presenta como revocación remota confirmada sin ACK del backend; el cierre propio invalida la sesión y no permite manipular la identidad objetivo. La clasificación de errores distingue sesión inválida de permiso insuficiente.
+
+### AUD-NG-160 — Invalidar privilegios antiguos y sincronizar la matriz dinámica (ALTO/P1)
+
+- [ ] Definir una fuente autoritativa y versionada para rol y privilegios vigentes del usuario. Cada cambio de rol/permisos debe incrementar una versión o revocar las sesiones afectadas; no aceptar indefinidamente el claim `role` emitido hasta 24 horas antes.
+- [ ] En los cinco servicios, comparar en cada autorización la versión/rol firmado con el estado vigente o consultar un mecanismo de revocación/versionado compartido; rechazar tokens con rol antiguo, versión revocada o estado no verificable.
+- [ ] Unificar la clave real de caché `dynamic_permissions_matrix` y el contrato de invalidación. Corregir las purgas remotas que hoy eliminan `perm_matrix_<role>`/`dynamic_perms_<role>` mientras los validadores consumen `dynamic_permissions_matrix`.
+- [ ] Propagar cambios de `savePermissionMatrix` desde USER hacia ACADEMIC, ACCOUNTING, EXAM y TASK; invalidar la clave correcta o actualizar una versión autoritativa en todos los servicios, con confirmación y tratamiento de fallos parciales.
+- [ ] Revisar la caché de permisos de 600 segundos: definir TTL como respaldo, no como garantía primaria de actualización inmediata. Los cambios críticos de privilegios deben surtir efecto en el siguiente control de autorización dentro del SLA.
+- [ ] Añadir pruebas de degradación y elevación de rol, cambio de matriz, token emitido antes del cambio, caché caliente/fría, servicio remoto desconectado, evento duplicado y rollback de una versión. Comprobar paridad en los cinco microservicios.
+- **Criterio de aceptación:** ningún token conserva permisos retirados después de la propagación confirmada; los cinco servicios consultan la misma versión efectiva de rol/matriz y las invalidaciones afectan las claves que realmente consumen.
+
+### Reconciliación y límites
+
+- AUD-NG-001 es dependencia para conservar/transmitir la credencial desde el cliente; AUD-NG-005 mantiene propagación de revocación/estado; AUD-NG-159 mantiene autorización del logout y revocación propia; AUD-NG-160 mantiene vigencia del rol y matriz dinámica. No crear IDs adicionales.
+- El dispatcher externo no se declara inexistente en todos los deployments: el hallazgo se limita a que no se encontró implementación ni dependencia versionada verificable en el árbol inspeccionado.
+- No se ejecutaron llamadas HTTP, pruebas runtime de caché, revocación interproyecto ni cambios reales de privilegios. Esas evidencias deben producirse en una fase de implementación/verificación controlada.
+- No modificar código fuente, pruebas, estados maestros ni registros de completitud como parte de esta normalización documental.
