@@ -45,3 +45,70 @@ CONCLUSIÓN:
 FASE2-04 solo cumple parcialmente. Existe emisión con correlativo, CUV y bloqueo parcial, pero no un sistema unificado UUID; la hoja tiene esquema desalineado; el correlativo no segmenta año; el fallback CUV no valida unicidad; y la consulta pública expone datos internos sin comprobar vigencia. Los trabajos correctivos quedan vinculados a TASK-118, TASK-351, AUD-NG-059, AUD-NG-061 y AUD-NG-161.
 ================================================================
 FIN DEL INFORME
+
+## Tareas ejecutables derivadas de los hallazgos
+
+### [TASK-118] Unificar generación de identificadores y validar relaciones institucionales
+- **Hallazgo de origen:** FASE2-04, apartados 1 y 4; ampliación de TASK-118.
+- **Severidad:** Crítico.
+- **Objetivo:** garantizar unicidad, consistencia de esquema y referencias válidas al emitir documentos institucionales.
+- **Acción ejecutable:** sustituir el ID temporal DOC-EM por el generador institucional; validar actor y entidad objetivo desde identidad autenticada; alinear los 15 campos escritos/leídos con los encabezados reales; filtrar correlativos por año; eliminar fallbacks que no vuelvan a comprobar unicidad; exigir idempotencia de solicitud.
+- **Archivos/módulos afectados:** backend/accounting-service/Code.gs; integración con generadores USER/ACADEMIC.
+- **Dependencias y riesgos:** TASK-118 se coordina con AUD-NG-161 y las referencias de seguridad; no duplicar el generador transversal.
+- **Alcance:** emisión documental, identidad, correlativo y esquema de persistencia.
+- **Criterios de aceptación:** encabezados y DTO coinciden exactamente; actor/titular se derivan y validan; IDs/correlativos son únicos bajo concurrencia y segmentados por año; repetición de la misma solicitud no duplica documentos.
+- **Prioridad:** P0.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas de concurrencia/idempotencia y verificación de esquema.
+
+### [AUD-NG-059] Vincular SHA-256 a los bytes del documento definitivo
+- **Hallazgo de origen:** AUD-NG-059; apartado 4.
+- **Severidad:** Crítico.
+- **Objetivo:** que la huella pruebe integridad del archivo PDF real, no de metadatos.
+- **Acción ejecutable:** crear y conservar el PDF definitivo; calcular SHA-256 sobre sus bytes; recuperar el archivo al verificar el CUV y comparar su hash actual con el hash firmado.
+- **Archivos/módulos afectados:** backend/accounting-service/Code.gs; DocumentosEscolaresEmitidos; almacenamiento Drive.
+- **Dependencias y riesgos:** generación PDF y ciclo de vida de documentos; preservar versiones históricas.
+- **Alcance:** hash binario y verificación de alteraciones.
+- **Criterios de aceptación:** PDF persistido con identificador real; hash de 64 caracteres calculado desde bytes; una alteración, sustitución o ausencia del archivo invalida la verificación.
+- **Prioridad:** P0.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas con documento original, modificado, sustituido y ausente.
+
+### [AUD-NG-061] Persistir el certificado probatorio y validar el estado real de la firma
+- **Hallazgo de origen:** AUD-NG-061; apartado 4.
+- **Severidad:** Crítico.
+- **Objetivo:** impedir que procesos pendientes/cancelados se presenten como completados y conservar un certificado verificable.
+- **Acción ejecutable:** generar el certificado al completar el flujo de firma; almacenarlo como artefacto independiente e inmutable; ordenar y validar la secuencia de firmantes; clasificar estados terminales de forma explícita y calcular integridad sobre el archivo conservado.
+- **Archivos/módulos afectados:** backend/user-service/Code.gs, backend/accounting-service/Code.gs; FirmasConformidades y almacenamiento documental.
+- **Dependencias y riesgos:** AUD-NG-059 para integridad binaria; estados de workflow.
+- **Alcance:** certificado, transición final y prueba de firma.
+- **Criterios de aceptación:** solo un flujo realmente completado emite certificado; pendiente/cancelado/rechazado/vencido no se etiqueta como éxito; certificado persistido con hash verificable y orden de firmas comprobado.
+- **Prioridad:** P0.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas de cada estado y verificación posterior del certificado.
+
+### [TASK-351] Minimizar y proteger la verificación pública CUV
+- **Hallazgo de origen:** FASE2-04, apartado 3; ampliación de TASK-351.
+- **Severidad:** Alto.
+- **Objetivo:** evitar exposición pública de datos internos/personales y estados no vigentes.
+- **Acción ejecutable:** limitar la respuesta pública a los campos mínimos de autenticidad; retirar datosJSON, IDs internos, enlaces privados, observaciones y datos de firmantes/tokens/IP; validar estadoDoc y estado de firma antes de responder.
+- **Archivos/módulos afectados:** backend/accounting-service/Code.gs; verifySchoolDocumentByCUV y PUBLIC_ACTIONS.
+- **Dependencias y riesgos:** AUD-NG-059/AUD-NG-061; conservar una ruta privada autenticada para detalles internos.
+- **Alcance:** respuesta pública de consulta CUV.
+- **Criterios de aceptación:** respuestas públicas no contienen PII, datosJSON, tokens, IP ni identificadores internos; documentos anulados/revocados/sustituidos no se muestran como vigentes; pruebas por rol y estado.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas de minimización y matriz de estados.
+
+### [AUD-NG-161] Sustituir pruebas nominales por pruebas conductuales de concurrencia e integridad
+- **Hallazgo de origen:** FASE2-04, apartado 4; referencia ampliada, sin duplicar su objetivo.
+- **Severidad:** Alto.
+- **Objetivo:** demostrar unicidad, idempotencia y recuperación con escenarios reales y aislados.
+- **Acción ejecutable:** añadir pruebas de colisión CUV/ID, dos solicitudes concurrentes, pérdida de respuesta, reintento con la misma clave, fallo parcial y verificación binaria.
+- **Archivos/módulos afectados:** tests/regression y suites de Accounting/Academic.
+- **Dependencias y riesgos:** TASK-118, AUD-NG-059, AUD-NG-061.
+- **Alcance:** pruebas automatizadas aisladas; no operar sobre datos productivos.
+- **Criterios de aceptación:** pruebas fallan ante duplicados/estados incorrectos; ejecutan operaciones reales de prueba y verifican persistencia/rollback; no asignan PASS por conteo o presencia de símbolos.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** resultados reproducibles de la suite aislada.

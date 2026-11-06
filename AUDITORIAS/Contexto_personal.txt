@@ -3836,3 +3836,22 @@ CHECKPOINT C1.97 - CONVERSIÓN DE HALLAZGOS HISTÓRICOS A TAREAS
 - Pruebas: revisión de contenido, IDs y criterios de aceptación; verificación Git posterior.
 - Commit de cierre: el commit que contiene este checkpoint; SHA final se verificará después de publicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.98 - CONVERSIÓN DE HALLAZGOS HISTÓRICOS (LOTE 2)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Contexto: AUDITORIAS/Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work; rama base: NG_beta_0.0.0.1.
+- HEAD de partida verificado: 5229274dd66f621703316eccc5181d34651d439f; árbol de partida: 437d85de3014278a9206c88cb4009f6ce52325f4.
+- ID operativo de sesión: IMA-AUDIT-20261106-1719Z; checkpoint inicial C1.97; estado: sesión abierta.
+- Alcance: conversión de hallazgos de los informes FASE2-04, FASE2-05, FASE2-06, FASE2-07 y FASE2-T03 a tareas ejecutables en sus propios archivos.
+- Avance publicado acumulado: 8/128 informes históricos con sección de tareas normalizada (FASE2-01 a FASE2-07 y FASE2-T03).
+- IDs incluidos: TASK-118, AUD-NG-059, AUD-NG-061, TASK-351, AUD-NG-161, AUD-NG-006, AUD-NG-129, AUD-NG-133, TASK-474, TASK-475, TASK-429, AUD-NG-178 y ampliación AUD-NG-174.
+- Deduplicación: AUD-NG-006/161, AUD-NG-007, AUD-NG-059/061, AUD-NG-129/133 y TASK-429 conservan sus IDs; las ampliaciones se identifican como tales. AUD-NG-174 en T03 amplía el mismo registro de FASE2-02.
+- Restricciones: Pendientes.md no se recupera, lee ni modifica; código fuente y estados maestros completadas.md no se modifican.
+- Próximo lote: FASE2-T04 a FASE2-T08; luego T-UX-01 en adelante, tareas históricas, lotes y auditorías funcionales por fase.
+- Pruebas: validación de IDs/severidad contra Auditoria.txt y revisión de criterios/acciones; verificación Git posterior.
+- Commit de cierre: el commit que contiene este checkpoint; SHA final se verifica después de publicar.
+================================================================

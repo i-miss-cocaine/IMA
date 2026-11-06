@@ -36,3 +36,57 @@ FASE2-05 aparece completada en completadas.md con título, origen, severidad y d
 Inspección estática/manual de los archivos y rangos citados. No se ejecutaron HTTP, Apps Script, concurrencia real, pruebas de pérdida de respuesta ni operaciones productivas. No se modificó código fuente ni completadas.md.
 ================================================================
 FIN DEL INFORME
+
+## Tareas ejecutables derivadas de los hallazgos
+
+### [AUD-NG-006] Aplicar idempotencia por operación antes de ejecutar efectos persistentes
+- **Hallazgo de origen:** FASE2-05, secciones 1 y 4; referencia de hallazgo existente.
+- **Severidad:** Crítico.
+- **Objetivo:** impedir duplicados cuando se pierde la respuesta o el cliente repite una escritura.
+- **Acción ejecutable:** clasificar operaciones de fetchApi por semántica; generar y propagar clave estable; reservarla atómicamente en backend antes del efecto; persistir estados EN_PROCESO/COMPLETADA/ERROR_RECUPERABLE y devolver resultado previo ante repetición.
+- **Archivos/módulos afectados:** js/api.js, backend/academic-service/Code.gs, backend/accounting-service/Code.gs.
+- **Dependencias y riesgos:** contratos de API, TASK-118, AUD-NG-129 y AUD-NG-133.
+- **Alcance:** idempotencia transversal cliente/servidor; evitar duplicar las correcciones específicas de pagos y matrícula.
+- **Criterios de aceptación:** dos solicitudes simultáneas con la misma clave producen un único efecto; pérdida de respuesta y repetición devuelven el resultado original; clave reutilizada con payload distinto se rechaza; claves no se basan en referencias genéricas.
+- **Prioridad:** P0.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas concurrentes y de pérdida de respuesta.
+
+### [AUD-NG-129] Unificar matrícula/rematrícula y garantizar la asociación de cargos
+- **Hallazgo de origen:** FASE2-05, sección 2; referencia existente.
+- **Severidad:** Alto.
+- **Objetivo:** evitar matrículas parciales o sin cargos del periodo.
+- **Acción ejecutable:** consolidar los flujos registerStudentEnrollment/createStudentEnrollment/renewStudentEnrollment bajo un contrato único; validar UserId/estudiante/año; crear o vincular cargos en la misma operación lógica; incluir periodo en la clave de deduplicación; añadir estado y compensación ante fallo.
+- **Archivos/módulos afectados:** backend/academic-service/Code.gs; backend/accounting-service/Code.gs.
+- **Dependencias y riesgos:** TASK-118 y AUD-NG-161; integridad financiera y de expediente.
+- **Alcance:** matrícula/rematrícula y relación con cargos.
+- **Criterios de aceptación:** cada matrícula válida tiene cargos del periodo correctos; repetición no duplica; falla parcial no deja matrícula sin cargo ni cargo huérfano; las referencias de usuario se validan.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas de alta, renovación, duplicado y fallo entre escrituras.
+
+### [AUD-NG-133] Proteger pagos con propiedad, saldo, bloqueo e idempotencia atómica
+- **Hallazgo de origen:** FASE2-05, sección 2; referencia existente.
+- **Severidad:** Alto.
+- **Objetivo:** impedir abonos cruzados, sobrepagos y duplicados.
+- **Acción ejecutable:** comprobar que el cargo pertenece al pagador autenticado; validar saldo vigente y monto; reservar clave idempotente bajo exclusión mutua; registrar pago y actualización de saldo de forma atómica o recuperable.
+- **Archivos/módulos afectados:** backend/accounting-service/Code.gs; PagosAbonos y cargos asociados.
+- **Dependencias y riesgos:** AUD-NG-006 y AUD-NG-161.
+- **Alcance:** recordStudentPayment y wrapper idempotente.
+- **Criterios de aceptación:** usuario no puede abonar cargo ajeno; importe superior al saldo se rechaza; dos abonos concurrentes no superan el saldo ni duplican; repetición devuelve el resultado anterior.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas de propiedad, sobrepago, concurrencia y repetición.
+
+### [AUD-NG-161] Implementar pruebas conductuales aisladas de concurrencia y recuperación
+- **Hallazgo de origen:** FASE2-05, sección 3; ampliación de AUD-NG-161.
+- **Severidad:** Alto.
+- **Objetivo:** demostrar que pagos y matrículas resisten competencia, pérdida de respuesta y fallos parciales.
+- **Acción ejecutable:** reemplazar suites que solo cuentan filas o adquieren un lock por escenarios concurrentes de pago/matrícula, idempotencia, fallo tras persistencia y recuperación; verificar las hojas reales de prueba utilizadas por cada operación.
+- **Archivos/módulos afectados:** tests/regression; suites de Accounting y Academic.
+- **Dependencias y riesgos:** AUD-NG-006, AUD-NG-129 y AUD-NG-133.
+- **Alcance:** pruebas aisladas con datos sintéticos.
+- **Criterios de aceptación:** cada caso ejecuta dos o más operaciones competidoras y verifica unicidad, saldo, estado final y ausencia de escrituras parciales; fallos individuales hacen fallar la suite.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** suite reproducible con reporte por escenario.

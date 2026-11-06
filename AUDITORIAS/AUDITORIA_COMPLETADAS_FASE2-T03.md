@@ -49,3 +49,18 @@ Inspección estática/manual. **No se ejecutaron** Apps Script, HTTP a deploymen
 - Identificadores auditados: **39/183**; 144 pendientes.
 - Última tarea auditada: FASE2-T03.
 - Siguiente tarea: FASE2-T04 - Establecer una fuente de verdad institucional para catálogos, configuraciones y referencias.
+
+## Tareas ejecutables derivadas de los hallazgos
+
+### [AUD-NG-174] Ampliar el contrato API con inventario, esquemas y compatibilidad versionada
+- **Hallazgo de origen:** FASE2-T03, secciones Resultado por requisitos y Reconciliación; ampliación del mismo AUD-NG-174 registrado en FASE2-02.
+- **Severidad:** Alto.
+- **Objetivo:** convertir el contrato común de respuestas en una especificación completa por endpoint, consumidor y efecto.
+- **Acción ejecutable:** inventariar operaciones y consumidores; documentar propósito, parámetros/tipos/restricciones, respuesta/error, autorización, efectos persistentes/externos y semántica de repetición; definir versionado, campos opcionales, deprecación y cambios incompatibles; ampliar la suite compartida para USER, ACADEMIC y ACCOUNTING; asegurar que pruebas atraviesen HTTP/doPost/fetchApi.
+- **Archivos/módulos afectados:** js/api.js, backend/user-service/Code.gs, backend/academic-service/Code.gs, backend/accounting-service/Code.gs, tests/regression y documentación de contratos.
+- **Dependencias y riesgos:** AUD-NG-006 para idempotencia, AUD-NG-007 para timeout, AUD-NG-161 para calidad de pruebas. No crear otro ID para el mismo contrato.
+- **Alcance:** ampliación de AUD-NG-174, no una tarea independiente.
+- **Criterios de aceptación:** cada endpoint tiene contrato versionado y consumidor identificado; validación de request/response y autorización; errores no exponen excepciones internas; cambios incompatibles se detectan; suite compartida prueba transporte real y falla ante status:error inesperado o envelope inválido.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** catálogo API, esquemas versionados y resultados de suite de compatibilidad.

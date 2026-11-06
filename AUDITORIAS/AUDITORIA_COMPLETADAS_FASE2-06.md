@@ -60,3 +60,31 @@ La implementación mezcla registro, ejecución y recuperación; carece de reserv
 Inspección estática/manual. No se ejecutaron Apps Script, HTTP real, triggers, concurrencia, envío de correos, llamadas a proveedores ni operaciones productivas. No se modificó código fuente, completadas.md, completadas_legacy.md, ChangesLogs.txt ni METODOLOGIA_DESARROLLO.md.
 ================================================================
 FIN DEL INFORME
+
+## Tareas ejecutables derivadas de los hallazgos
+
+### [TASK-474] Implementar outbox durable, recuperación e integración real del motor de eventos
+- **Hallazgo de origen:** AUD-NG-176; secciones 1 a 5 y 7.
+- **Severidad:** Alto.
+- **Objetivo:** garantizar procesamiento de eventos sin pérdida, duplicación ni falso estado de éxito.
+- **Acción ejecutable:** persistir evento y clave idempotente antes del despacho; reclamar trabajos mediante lease/lock; definir estados y nextAttemptAt; programar recuperación; integrar productores reales de USER/ACADEMIC/ACCOUNTING/TASK/EXAM; mantener estado por canal y ordenar eventos por entidad.
+- **Archivos/módulos afectados:** backend/user-service/Code.gs y productores/consumidores de los cinco servicios; configuración de triggers.
+- **Dependencias y riesgos:** AUD-NG-006 para idempotencia transversal; AUD-NG-161 para pruebas conductuales.
+- **Alcance:** ciclo completo outbox, despacho, reintento, recuperación y observabilidad.
+- **Criterios de aceptación:** caída entre persistencia y despacho no pierde evento; workers concurrentes no reclaman la misma operación; efectos externos son idempotentes; GLOBAL se expande a destinatarios válidos; estados por canal reflejan entrega real; trigger periódico recupera atascos; pruebas aisladas cubren caída, reintento y duplicado.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas de integración, recuperación y reporte de cola.
+
+### [TASK-475] Proteger secretos de proveedores y sanear contenido/enlaces de notificaciones
+- **Hallazgo de origen:** AUD-NG-177; secciones 6 y 7.
+- **Severidad:** Alto.
+- **Objetivo:** impedir exposición de credenciales y ejecución de contenido no confiable en notificaciones.
+- **Acción ejecutable:** mover credenciales a almacenamiento secreto; no persistirlas en configuracionJSON; eliminar el marcador HASH_CONFIG_PROTECTED como sustituto de protección; redactar secretos al consultar configuración; escapar título/mensaje y validar esquema/protocolo/dominio permitido de enlaceAccion.
+- **Archivos/módulos afectados:** backend/user-service/Code.gs; configuración de canales y plantillas de notificación.
+- **Dependencias y riesgos:** permisos de administración de canales y compatibilidad de proveedores.
+- **Alcance:** almacenamiento, lectura y renderizado de configuración/contenido.
+- **Criterios de aceptación:** respuestas de configuración nunca incluyen secretos; la credencial se obtiene solo en servidor desde almacén protegido; payload con HTML/script se muestra como texto; enlaces javascript:/data: y dominios no autorizados se rechazan.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas de redacción, control de acceso y sanitización.

@@ -72,3 +72,31 @@ No se modificaron código fuente, completadas.md, ChangesLogs.txt, METODOLOGIA_D
 - Identificadores auditados: 38/183; 145 pendientes.
 - Última tarea auditada: FASE2-07.
 - Siguiente paso: recuperar íntegramente Pendientes.md y registrar AUD-NG-178 tras verificar que no exista tarea equivalente; después determinar el siguiente identificador completado no auditado.
+
+## Tareas ejecutables derivadas de los hallazgos
+
+### [TASK-429] Completar paginación eficiente, integrada y verificable
+- **Hallazgo de origen:** FASE2-07, sección 2; ampliación de TASK-429.
+- **Severidad:** Alto.
+- **Objetivo:** evitar lecturas completas y garantizar paginación estable en tablas institucionales.
+- **Acción ejecutable:** integrar renderPaginatedTable con endpoints remotos reales; validar page/pageSize con límites máximos; implementar cursor u orden estable con clave secundaria; reducir lecturas del backend mediante consultas/rangos eficientes; mostrar carga/error y gestionar cambios concurrentes.
+- **Archivos/módulos afectados:** js/ui-common.js, backend/academic-service/Code.gs, backend/accounting-service/Code.gs y consumidores de tablas.
+- **Dependencias y riesgos:** mantener TASK-064 para métricas/cuotas y AUD-NG-007 para timeout; no duplicar tareas de telemetría.
+- **Alcance:** paginación y filtros en tablas; no incluye migración general de almacenamiento.
+- **Criterios de aceptación:** tamaño de página acotado; orden determinista sin duplicados/omisiones al navegar; backend no procesa toda la hoja para cada página; consumidores conectados; pruebas con conjunto vacío, pequeño, grande y modificado durante navegación.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas funcionales y mediciones comparativas de lecturas/latencia.
+
+### [AUD-NG-178] Definir criterios reproducibles de escalabilidad y plan de evolución transaccional
+- **Hallazgo de origen:** AUD-NG-178; sección 3.
+- **Severidad:** Medio.
+- **Objetivo:** fundamentar la evolución del almacenamiento con métricas y criterios verificables, no umbrales arbitrarios.
+- **Acción ejecutable:** inventariar entidades y operaciones transaccionales críticas; medir crecimiento longitudinal, latencia por consulta/operación, lecturas/escrituras, concurrencia y errores; comparar alternativas de almacenamiento; documentar umbrales con evidencia; diseñar migración gradual con preservación de IDs, relaciones, historial, permisos, sincronización, integridad y reversión.
+- **Archivos/módulos afectados:** backend/academic-service/Code.gs, backend/accounting-service/Code.gs, documentación de arquitectura y pruebas de rendimiento.
+- **Dependencias y riesgos:** TASK-064 para métricas/cuotas; AUD-NG-161 para pruebas; no duplicar AUD-NG-163 ni TASK-429.
+- **Alcance:** diagnóstico y plan técnico; no autoriza migrar datos ni cambiar almacenamiento en esta tarea.
+- **Criterios de aceptación:** mediciones reproducibles con conjuntos y cargas representativas; decisión de arquitectura justificada; plan de migración y reversión aprobado; integridad de IDs/relaciones/historial/permisos contemplada.
+- **Prioridad:** P2.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** informe de medición, comparativa técnica y plan de transición.
