@@ -3971,3 +3971,47 @@ CHECKPOINT C1.104 - MIGRACIÓN DE PENDIENTES POR DEPARTAMENTO (CIERRE)
 - Bloqueos: ninguno conocido.
 - Commit de cierre: el commit que contiene este checkpoint; consultar HEAD de GitHub después de publicar y reportar SHA final en el cierre conversacional.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.105 - RECUPERACIÓN ARCHIVÍSTICA DE PENDIENTES (INICIO)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto: AUDITORIAS/Contexto_personal.txt.
+- Rama base: NG_beta_0.0.0.1; rama de trabajo: NG_beta_0.0.0.1_work.
+- HEAD de partida verificado: d1450e695fba6c23f1c77c19174fae0d984a40f4; árbol de partida: b96b734711a0f839dff78c1551c939b521f1f2e5.
+- HEAD de rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59; rama base protegida contra modificaciones en esta iteración.
+- ID operativo de sesión: IMA-AUDIT-20261106-1753Z; checkpoint inicial: C1.105; estado: sesión abierta.
+- Alcance: recuperar de forma archivística la versión más grande localizada y verificable del backlog histórico, preservando íntegramente el contenido preauditoría de New_Generation y las adiciones de auditoría presentes en una versión posterior.
+- Fuente candidata: NG_beta_0.0.0.1:/Pendientes.md, commit 44d9891132332e692dbe2ba8602b41f50a508a59, blob ef47d232db3ed46317dc14f22b1cdf8f938e8405, tamaño Git verificado 1443391 bytes.
+- Comparación previa: las 16.872 líneas de New_Generation:/Pendientes.md (blob 2f3c2e066f362a8a4651e690c4be75d82bfe0ca6) coinciden exactamente con el prefijo de la fuente candidata; no se detectaron líneas faltantes ni alteradas.
+- Documentos revisados: METODOLOGIA_DESARROLLO.md (bloque de inicio/cierre y regla 3.4); AUDITORIAS/README.md; Contexto_personal.txt hasta C1.104; AUDITORIA_COMPLETADAS_PLAN.md; informes FASE2-T05, FASE2-T06, T-UX-13, T-UX-14, T-UX-15 y TAREA-F5-001.
+- Restricción de alcance: recuperación archivística, no reactivación de Pendientes.md como registro operativo. Las tareas posteriores permanecen en sus informes de auditoría conforme a la regla oficial.
+- Archivos sin modificar: /Pendientes.md, /pendiente_legacy.md, /pendientes/, código fuente, pruebas y rama base.
+- Próxima acción: agregar copia exacta bajo /RECUPERACION/, README de procedencia y checkpoint de cierre; publicar todos los cambios en un único commit.
+- Commit de cierre: el commit que contiene este checkpoint; SHA final se confirmará externamente después de publicar.
+================================================================
+
+
+================================================================
+CHECKPOINT C1.106 - RECUPERACIÓN ARCHIVÍSTICA DE PENDIENTES (CIERRE)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto: AUDITORIAS/Contexto_personal.txt.
+- Rama base: NG_beta_0.0.0.1; rama de trabajo: NG_beta_0.0.0.1_work.
+- HEAD de partida: d1450e695fba6c23f1c77c19174fae0d984a40f4; HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios).
+- ID operativo de sesión: IMA-AUDIT-20261106-1753Z; checkpoint inicial C1.105; checkpoint de cierre C1.106; estado: sesión cerrada.
+- Resultado: se recuperó como archivo archivístico la versión más grande localizada y verificada en las ramas inspeccionadas: 1.443.391 bytes, 1.425.933 unidades de texto devueltas por la API y 17.884 líneas.
+- Fuente exacta: NG_beta_0.0.0.1:/Pendientes.md en commit 44d9891132332e692dbe2ba8602b41f50a508a59; blob SHA ef47d232db3ed46317dc14f22b1cdf8f938e8405. La copia recuperada conserva el mismo blob SHA, por lo que no se reescribió ni transformó su contenido.
+- Integridad preauditoría: las 16.872 líneas de New_Generation:/Pendientes.md (commit 6b31c2afedd2568950001eae97eacd7add7f206e; blob 2f3c2e066f362a8a4651e690c4be75d82bfe0ca6) están presentes como prefijo exacto de la versión recuperada.
+- Contenido añadido después de New_Generation: se identificaron 104 IDs AUD-NG distintos en la versión recuperada, además de las referencias originales TASK-001 a TASK-473. La versión recuperada llega hasta AUD-NG-109 (con saltos de numeración existentes en la fuente).
+- Tareas posteriores de auditorías históricas: se verificó que no deben agregarse al backlog archivado, porque la metodología y AUDITORIAS/README.md exigen mantenerlas en sus informes de origen. Evidencia revisada: AUD-NG-179/TASK-477 y AUD-NG-180/TASK-478 en FASE2-T06; TASK-483/AUD-NG-194 en T-UX-13; TASK-481/482/491 y AUD-NG-195 a 200 en T-UX-14; TASK-429/AUD-NG-201/202 en T-UX-15; AUD-NG-232/TASK-512 y AUD-NG-233/TASK-513 en TAREA-F5-001; AUD-NG-230/231 y TASK-510/511 en AUDITORIA_COMPLETADAS_PLAN.md. Se conservan en sus informes y plan, sin duplicarlos.
+- Archivos creados: RECUPERACION/Pendientes_RECUPERADO.md (copia exacta del blob fuente); RECUPERACION/README.md (procedencia, límites y trazabilidad).
+- Archivo actualizado: AUDITORIAS/Contexto_personal.txt (solo anexos C1.105 y C1.106).
+- Archivos protegidos y no modificados: /Pendientes.md (30.744 bytes, blob 8867ecf1f58f768cac8fa5ddaa7b50bb68e57158); /pendiente_legacy.md (blob 5b35a722efbe4368b19a7d4947033dba9da3d410); /pendientes/; código fuente; pruebas; rama base.
+- Pruebas ejecutadas: comparación exacta línea por línea del prefijo New_Generation (16.872/16.872 líneas coincidentes); conteo de líneas e IDs de auditoría; verificación de SHA del blob fuente y de HEAD de ambas ramas antes de publicar.
+- Pruebas no ejecutadas: no aplican pruebas de aplicación; no se modificó código. No se ha demostrado que exista una versión superior a 1.443.391 bytes; el tamaño recordado por el usuario (>1,6 MB) sigue sin localizarse.
+- Bloqueos y límites: el archivo recuperado es el candidato más grande confirmado entre las ramas inspeccionadas, pero no alcanza el tamaño recordado. La recuperación adicional de blobs históricos de mayor tamaño queda abierta.
+- Siguiente acción: conservar esta copia como respaldo histórico; si se continúa, buscar otros blobs históricos mayores y mantener las tareas posteriores dentro de sus informes oficiales. No clasificar ni usar los archivos departamentales previos como fuente válida.
+- Commit de cierre: el commit que contiene este checkpoint; SHA final se confirma externamente después de publicar.
+================================================================
