@@ -295,3 +295,147 @@ Sin embargo, para operar en un entorno de producción real, es mandatorio resolv
 
 ---
 *Fin del Informe de Auditoría Independiente — Fase 17 (Planillas, Compensaciones y Obligaciones Laborales)*
+
+---
+
+## Tareas ejecutables derivadas de los hallazgos
+
+> Normalización del backlog de Fase 17. Se conservan los once IDs originales F17-Task01..F17-Task11 y las prioridades P0/P1/P2 del apartado G. Las tareas F17-Task01..F17-Task05 ya aparecen vinculadas en Auditoria.txt a TASK-007..TASK-011 con una implementación histórica declarada completada; sin embargo, auditorías posteriores documentan brechas residuales AUD-NG-019..AUD-NG-022 y AUD-NG-028. Por ello se conservan sus IDs de origen y se registra su ampliación/reapertura, sin certificar el cierre. F17-Task06..F17-Task11 no muestran evidencia de implementación/cierre en los registros cotejados y se mantienen Pendientes.
+
+### [F17-Task01] Dinamizar el salario base desde los contratos laborales vigentes
+- **Hallazgo de origen:** secciones B.1, E.1, F.1 y G (P0); subcapacidad F17-01 de D.
+- **Severidad:** Crítica. **Objetivo:** calcular cada planilla con las condiciones salariales contractuales reales de cada empleado.
+- **Acción ejecutable:** consultar contratos vigentes por expediente y período; calcular proporcionalmente los intervalos cuando existan cambios de salario, ingresos o salidas dentro del mes; bloquear empleados sin contrato vigente y generar incidencias; resolver contratos sucesivos no superpuestos sin excluir erróneamente al empleado.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `calculatePayrollPeriod`, `ContratosLaborales`, `ExpedientesLaborales`, `PlanillasNomenclatura`, `IncidenciasNomina`.
+- **Dependencias/riesgos:** vigencia contractual, jornada, períodos de pago, historial de salarios y cálculo proporcional; riesgo de pagar salarios arbitrarios o excluir empleados válidos.
+- **Alcance:** salario base ordinario de planilla; no modificar contratos ni recalcular períodos cerrados sin un proceso de rectificación.
+- **Criterios de aceptación:** salario obtenido del contrato vigente para cada intervalo; prorrateo correcto ante altas, bajas y cambios contractuales; ausencia/solapamiento de contrato genera incidencia y no salario de respaldo; resultados reproducibles y auditables.
+- **Prioridad:** P0. **Estado:** Pendiente (reapertura/ampliación).
+- **Reconciliación:** TASK-007/F17-Task01 fue declarada completada el 2026-11-02, pero AUD-NG-019 identifica que contratos sucesivos no superpuestos dentro de un mismo período todavía excluyen al empleado. Ampliar TASK-007 con AUD-NG-019; no duplicar la implementación dinámica ya realizada.
+- **Evidencia de cierre:** pendiente para AUD-NG-019; la implementación histórica de TASK-007 no acredita el requisito ampliado.
+
+### [F17-Task02] Integrar novedades de asistencia, horas extras aprobadas y permisos sin goce en el cálculo de nómina
+- **Hallazgo de origen:** secciones B.3, B.4, C (Art. 330), E.2, F.2 escenarios B/C y G (P0); subcapacidades F17-08, F17-09 y F17-10 de D.
+- **Severidad:** Crítica. **Objetivo:** reflejar en la planilla todas las novedades laborales aprobadas y aplicables al período.
+- **Acción ejecutable:** incorporar horas extras aprobadas, tardanzas/ausencias y permisos sin goce; aplicar recargos diferenciados según tipo de jornada (incluida la distinción 25%, 50% y 75% descrita en C); aplicar el tratamiento remunerativo/subsidio correcto a incapacidades médicas aceptadas por IHSS; mantener marca de procesamiento e idempotencia asociada al planillaId.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `calculatePayrollPeriod`, `calculateOvertime`, `reviewOvertimeRequest`, `AprobacionHorasExtras`, `DeduccionesAsistencia`, `SolicitudesVacaciones`, `IncapacidadesMedicas`, `PlanillasNomenclatura`.
+- **Dependencias/riesgos:** jornada y tarifa ordinaria, calendario, estados de aprobación, incapacidad IHSS, deducciones y recálculo; riesgo de pagos omitidos, descuentos indebidos o novedades consumidas sin importe.
+- **Alcance:** novedades ordinarias del período; la amortización mensual de préstamos permanece en F17-Task06 y no debe duplicarse aquí.
+- **Criterios de aceptación:** solo novedades aprobadas/vigentes se procesan; cada novedad se aplica una vez; horas extras usan recargo legal según categoría; permisos sin goce se prorratean; incapacidad aprobada no se trata como ausencia injustificada y registra importe/subsidio; se conserva trazabilidad del planillaId.
+- **Prioridad:** P0. **Estado:** Pendiente (reapertura/ampliación).
+- **Reconciliación:** TASK-008/F17-Task02 fue declarada completada el 2026-11-02. AUD-NG-020 detecta que incapacidades aprobadas pueden marcarse procesadas sin cálculo de subsidio ni tratamiento remunerativo. Además, el informe C distingue recargos 25/50/75 mientras el registro de TASK-008 describe un factor estándar 1.25. Ampliar TASK-008 con AUD-NG-020 y cerrar la discrepancia de recargos; no duplicar la integración inicial.
+- **Evidencia de cierre:** pendiente para AUD-NG-020 y la cobertura completa de recargos/incapacidades.
+
+### [F17-Task03] Calcular aportaciones patronales legales (IHSS, RAP e INFOP) y contabilizarlas
+- **Hallazgo de origen:** secciones C, E.3, F.1/G y H.2 (P0); subcapacidad F17-13 de D.
+- **Severidad:** Crítica. **Objetivo:** reflejar el costo patronal real y sus obligaciones por pagar sin reducir el salario neto del trabajador.
+- **Acción ejecutable:** calcular IHSS patronal, RAP patronal e INFOP sobre las bases y parámetros oficiales vigentes para el período; separar aportes del trabajador y del patrono; versionar parámetros fiscales por vigencia; incorporar gastos y pasivos patronales al asiento contable y a los reportes.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `calculatePayrollPeriod`, `updatePayrollPeriodStatus`, `getPayrollPeriodSummary`, `PoliticasFiscales`, `PlanillasNomenclatura`, `AsientosContables`, `recordAccountingJournalEntry`.
+- **Dependencias/riesgos:** parámetros oficiales por ejercicio, bases de cotización, cuentas contables y períodos cerrados; riesgo de subestimar obligaciones y costo institucional.
+- **Alcance:** aportes patronales ordinarios de planilla; no deducirlos del salario neto ni asumir tasas históricas como vigentes sin verificación oficial.
+- **Criterios de aceptación:** parámetros versionados y efectivos por período; importes separados de deducciones obreras; asiento balanceado con cuentas diferenciadas de gasto/pasivo patronal; resumen muestra costo laboral total; auditoría reproduce cálculos.
+- **Prioridad:** P0. **Estado:** Pendiente (reapertura/ampliación).
+- **Reconciliación:** TASK-009/F17-Task03 fue declarada completada el 2026-11-02. AUD-NG-022 detecta parámetros hardcodeados sin vigencia y falta de evidencia del asiento patronal en el flujo inspeccionado; AUD-NG-141 advierte que los parámetros legales usados quedaron desactualizados. Ampliar TASK-009 con ambos hallazgos y verificar tasas oficiales vigentes antes de cerrar.
+- **Evidencia de cierre:** pendiente para versionado normativo, contabilización verificable y reconciliación de AUD-NG-022/AUD-NG-141.
+
+### [F17-Task04] Implementar la tabla progresiva oficial del ISR para personas naturales
+- **Hallazgo de origen:** secciones C, E.3, F.1/G y H.2 (P0); subcapacidad F17-04 de D.
+- **Severidad:** Crítica. **Objetivo:** calcular la retención anualizada conforme a la normativa fiscal vigente y al historial real de ingresos/retenciones del empleado.
+- **Acción ejecutable:** parametrizar tramos, deducciones y vigencias fiscales por ejercicio; proyectar ingresos según los meses restantes, deducir conceptos permitidos, consultar retenciones acumuladas y calcular el saldo anual pendiente para distribuirlo en los períodos restantes.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `calculatePayrollPeriod`, `configureFiscalPolicy`, `getFiscalPolicies`, `PoliticasFiscales`, `PlanillasNomenclatura` e historial de retenciones ISR.
+- **Dependencias/riesgos:** tabla oficial SAR por ejercicio, contratos, ingresos variables, IHSS/RAP, retenciones previas y cambios de salario; riesgo de retención insuficiente/excesiva o parámetros fiscales obsoletos.
+- **Alcance:** retención ISR de planillas ordinarias; no fijar permanentemente umbrales o deducciones médicas en código.
+- **Criterios de aceptación:** tramos y deducciones configurables/versionados; cálculo considera ingresos proyectados, meses restantes y retenciones previas; cambios de salario recalculan saldo anual; cada período conserva la versión fiscal aplicada; resultados conciliables.
+- **Prioridad:** P0. **Estado:** Pendiente (reapertura/ampliación).
+- **Reconciliación:** TASK-010/F17-Task04 fue declarada completada el 2026-11-02. AUD-NG-021 detecta que el cálculo divide el impuesto anual entre 12 y no descuenta retenciones previas ni proyecta según los meses restantes; AUD-NG-141 registra parámetros fiscales desactualizados. Ampliar TASK-010 con estos hallazgos; no duplicar el motor progresivo inicial.
+- **Evidencia de cierre:** pendiente para el recálculo anual dinámico, retenciones previas y parámetros oficiales vigentes.
+
+### [F17-Task05] Desarrollar el motor de liquidación del Décimo Tercer Mes y Décimo Cuarto Mes
+- **Hallazgo de origen:** secciones C, E.4, G (P0) y H.2; subcapacidad F17-14 de D.
+- **Severidad:** Crítica. **Objetivo:** calcular y procesar beneficios extraordinarios completos o proporcionales, con tratamiento contable y documental correcto.
+- **Acción ejecutable:** completar `calculateExtraordinaryPayroll` considerando todos los contratos y cambios salariales vigentes durante cada período de acumulación; calcular salario ordinario/promedio según corresponda; generar boleta individual real y asiento contable en cuentas diferenciadas; impedir que el ciclo genérico aplique aportaciones patronales ordinarias a filas extraordinarias cuando no correspondan.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `calculateExtraordinaryPayroll`, `updatePayrollPeriodStatus`, `generatePayrollReceiptPDF`, `ContratosLaborales`, `PlanillasNomenclatura`, `AnticiposPrestamosEmpleado`, `BoletasPago`, `AsientosContables`.
+- **Dependencias/riesgos:** períodos legales de acumulación, historial contractual, anticipos de beneficios, impuestos/exenciones y cuentas contables; riesgo de cálculo erróneo, doble pago o asiento incorrecto.
+- **Alcance:** planillas extraordinarias 13º/14º; no usar sin validación el contrato más reciente para todo el período ni reutilizar sin ajustes el ciclo ordinario.
+- **Criterios de aceptación:** cálculo por intervalos contractuales; proporcionalidad reproducible; anticipos deducidos una sola vez; aportes/retenciones aplicados conforme a la política legal vigente; boleta PDF realmente generada y vinculada al planillaId; asiento diferenciado balanceado; no se activan fallbacks patronales ordinarios.
+- **Prioridad:** P0. **Estado:** Pendiente (reapertura/ampliación).
+- **Reconciliación:** TASK-011/F17-Task05 fue declarada completada el 2026-11-02, pero AUD-NG-028 documenta selección del último contrato sin vigencia por intervalos, falta de boleta/archivo PDF real, asiento genérico y posible aplicación indebida de aportaciones patronales por fallback en `updatePayrollPeriodStatus`. Ampliar TASK-011 con AUD-NG-028; no duplicar la función inicial.
+- **Evidencia de cierre:** pendiente para todos los defectos concretos de AUD-NG-028.
+
+### [F17-Task06] Vincular y amortizar automáticamente préstamos y anticipos en el ciclo mensual de planilla
+- **Hallazgo de origen:** secciones B.5, E.2, D/F17-05 y backlog G.2.
+- **Severidad:** Alta. **Objetivo:** descontar cuotas pactadas y mantener el saldo de deuda actualizado al cerrar cada planilla.
+- **Acción ejecutable:** incluir cuotas mensuales aprobadas en `otrasDeducciones`; al cierre de planilla actualizar saldo pendiente y cuotas pagadas de forma atómica/idempotente; distinguir préstamos ordinarios de anticipos de aguinaldo/14º mes.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `calculatePayrollPeriod`, `updatePayrollPeriodStatus`, `AnticiposPrestamosEmpleado`, `PlanillasNomenclatura`.
+- **Dependencias/riesgos:** autorización del préstamo, calendario de cuotas, cierre/rectificación de planilla e idempotencia; riesgo de doble descuento o saldo incorrecto.
+- **Alcance:** amortización de préstamos/anticipos ordinarios en planilla mensual; los anticipos específicos de beneficios extraordinarios se mantienen coordinados con F17-Task05.
+- **Criterios de aceptación:** solo cuotas vigentes/aprobadas se descuentan; cada cuota se aplica una vez por planilla; saldo y cuotas pagadas se actualizan al cierre; rectificación/reapertura no duplica movimientos; recibo refleja la deducción.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; los registros cotejados acreditan deducción de anticipos de 13º/14º, pero no la amortización mensual general descrita por esta tarea.
+
+### [F17-Task07] Crear catálogo dinámico de conceptos salariales, bonificaciones y deducciones voluntarias
+- **Hallazgo de origen:** secciones B.2, F.1 y tabla D/F17-03; backlog G.2.
+- **Severidad:** Alta. **Objetivo:** administrar conceptos de remuneración y deducción sin fijarlos como columnas rígidas.
+- **Acción ejecutable:** crear `CatalogoConceptosPlanilla` con código, nombre, tipo, fórmula/base, recurrencia, vigencia, tratamiento tributario, cuenta contable, obligatoriedad y estado; permitir configuración autorizada de bonificaciones y deducciones voluntarias.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `dashboard-recursos-humanos.html`, `PlanillasNomenclatura`, nueva hoja `CatalogoConceptosPlanilla`.
+- **Dependencias/riesgos:** políticas fiscales, catálogo contable, roles RR. HH./contabilidad e historial de períodos; riesgo de conceptos mal clasificados o aplicados retroactivamente.
+- **Alcance:** parametrización de conceptos de planilla; no permitir que la UI altere fórmulas legales protegidas sin autorización y versionado.
+- **Criterios de aceptación:** conceptos configurables con código único y vigencia; tratamiento contable/fiscal explícito; conceptos aplicados quedan versionados por período; cambios no alteran planillas cerradas; permisos y auditoría activos.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el informe indica que los conceptos continúan fijados en columnas de la hoja.
+
+### [F17-Task08] Generar y enviar masivamente boletas de pago firmadas por correo
+- **Hallazgo de origen:** backlog G.2; la sección B.6 solo acredita generación/consulta individual de boletas PDF.
+- **Severidad:** Alta. **Objetivo:** distribuir comprobantes de planilla cerrada a cada colaborador con constancia de entrega.
+- **Acción ejecutable:** generar/recuperar boletas individuales vinculadas a la planilla y empleado correctos; permitir envío por lote a correos institucionales validados; registrar destinatario, fecha, estado de entrega y reintentos sin duplicar envíos.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `backend/user-service/Code.gs`, `generatePayrollReceiptPDF`, `getStaffPayrollReceipt`, `BoletasPago`, `PlanillasNomenclatura`.
+- **Dependencias/riesgos:** correo institucional, firma/aprobación de planilla, privacidad salarial y trazabilidad; riesgo de enviar boletas a destinatarios incorrectos.
+- **Alcance:** distribución masiva de boletas ya autorizadas; no exponer salarios en mensajes ni permitir envío antes del cierre.
+- **Criterios de aceptación:** cada boleta corresponde a empleado/planilla; solo planillas cerradas se envían; correo validado por expediente; registro de recepción/estado y reintento idempotente; controles ABAC preservados.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el informe solo acredita descarga/consulta individual, no envío masivo ni registro de recepción.
+
+### [F17-Task09] Crear interfaz gráfica de administración de políticas fiscales y techos salariales
+- **Hallazgo de origen:** backlog G.3; tabla D/F17-04 y sección C describen parámetros fiscales que requieren actualización por ejercicio.
+- **Severidad:** Media. **Objetivo:** permitir que roles autorizados administren políticas fiscales con vigencia y trazabilidad.
+- **Acción ejecutable:** crear panel en RR. HH./Contabilidad para consultar, versionar y actualizar techos IHSS, tramos ISR y parámetros relacionados; validar rangos, fechas efectivas y usuario aprobador.
+- **Archivos/módulos:** `dashboard-recursos-humanos.html`, `dashboard-contabilidad.html`, `backend/accounting-service/Code.gs`, `configureFiscalPolicy`, `getFiscalPolicies`, `PoliticasFiscales`.
+- **Dependencias/riesgos:** fuentes oficiales, permisos financieros, versionado y períodos cerrados; riesgo de cambios fiscales no autorizados o aplicados retroactivamente.
+- **Alcance:** interfaz de configuración de políticas; no sustituye la validación normativa ni altera planillas ya cerradas.
+- **Criterios de aceptación:** roles autorizados pueden crear nueva versión con vigencia; valores se validan; cada cálculo conserva versión usada; cambios auditados y no retroactivos.
+- **Prioridad:** P2. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el informe describe endpoints de política, pero no una interfaz gráfica de administración.
+
+### [F17-Task10] Exportar nóminas para acreditación bancaria en formato ACH
+- **Hallazgo de origen:** backlog G.3; no aparece una brecha específica en E, por lo que se conserva como requerimiento de backlog sin inventar hallazgo adicional.
+- **Severidad:** Media. **Objetivo:** generar archivos de dispersión bancaria correctos y autorizados para pagos masivos.
+- **Acción ejecutable:** implementar exportador ACH configurable por banco local, con cuenta destino validada, identificación del empleado, monto neto, referencia de planilla y controles de totales antes de permitir descarga.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `PlanillasNomenclatura`, `BoletasPago` y módulo de tesorería/exportación.
+- **Dependencias/riesgos:** especificaciones bancarias, datos de cuenta protegidos, autorización de planilla y conciliación; riesgo de transferencias erróneas o duplicadas.
+- **Alcance:** archivo de dispersión; no ejecutar transferencias ni almacenar credenciales bancarias.
+- **Criterios de aceptación:** formato cumple especificación bancaria seleccionada; suma de registros concilia con netos aprobados; cuentas inválidas se bloquean; archivo se genera solo desde planilla autorizada y queda auditado.
+- **Prioridad:** P2. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; no hay evidencia de exportador ACH en el informe.
+
+### [F17-Task11] Implementar suite automatizada de pruebas y regresión de la Fase 17
+- **Hallazgo de origen:** backlog G.3 y SC-17 de sección I (suite pendiente de desarrollo).
+- **Severidad:** Media-alta. **Objetivo:** comprobar cálculo salarial, novedades, obligaciones legales, contabilidad y boletas con pruebas conductuales.
+- **Acción ejecutable:** crear `runPhase17PayrollAndCompensationRegressionSuite` con pruebas para salario contractual y cambios intra-período, horas extras/ausencias/incapacidades, préstamos, aportes patronales, ISR anualizado, 13º/14º mes, asiento de partida doble, boletas y privacidad ABAC; integrar casos de AUD-NG-019..022 y AUD-NG-028.
+- **Archivos/módulos:** `tests/regression/academic-grading-suite.js`, `backend/developer-service/Code.gs`, servicios accounting y datos de prueba aislados.
+- **Dependencias/riesgos:** harness de pruebas, Apps Script, datos aislados, reglas fiscales versionadas y contratos de servicio; riesgo de falsos PASS si solo se comprueba presencia de símbolos o variables simuladas.
+- **Alcance:** regresión específica de planillas/compensaciones; reutilizar infraestructura de pruebas existente y no duplicar suites genéricas.
+- **Criterios de aceptación:** casos positivos/negativos ejecutan operaciones reales o dobles conductuales fieles; pruebas detectan los defectos AUD-NG-019..022 y AUD-NG-028; se validan persistencia, idempotencia, concurrencia y permisos; resultados reproducibles con entorno/versión/evidencia.
+- **Prioridad:** P2 (severidad media-alta). **Estado:** Pendiente.
+- **Reconciliación:** AUD-NG-161 documenta suites nominales que no prueban operaciones reales y no cubren planilla; la suite Fase 17 debe reutilizar el harness sin duplicar infraestructura, pero demostrar los contratos específicos de nómina.
+- **Evidencia de cierre:** pendiente; el informe indica expresamente que SC-17 no dispone de suite automatizada específica.
+
+### Reconciliaciones y discrepancias transversales de Fase 17
+- **F17-Task01:** TASK-007 figura históricamente completada; AUD-NG-019 demuestra una brecha residual en contratos sucesivos dentro del mismo período.
+- **F17-Task02:** TASK-008 figura históricamente completada; AUD-NG-020 demuestra tratamiento incompleto de incapacidades; la tasa única 1.25 descrita en TASK-008 no acredita los recargos diferenciados de la sección C.
+- **F17-Task03:** TASK-009 figura históricamente completada; AUD-NG-022 y AUD-NG-141 cuestionan versionado/vigencia y actualidad de parámetros patronales.
+- **F17-Task04:** TASK-010 figura históricamente completada; AUD-NG-021 y AUD-NG-141 cuestionan retenciones acumuladas, meses restantes y vigencia de la tabla fiscal.
+- **F17-Task05:** TASK-011 figura históricamente completada; AUD-NG-028 identifica defectos en contratos por intervalo, boletas PDF y asientos diferenciados.
+- **F17-Task06:** no se encontró en los registros cotejados evidencia de que la amortización mensual general esté cerrada; la deducción de anticipos extraordinarios en TASK-011 no la sustituye.
+- **F17-Task07..Task10:** se conservan como tareas de backlog sin evidencia de implementación/cierre en las secciones inspeccionadas.
+- **F17-Task11:** AUD-NG-161 es infraestructura/observación transversal relacionada; no equivale a una suite conductual específica de Fase 17.
+- **Estado global:** no se declara ninguna de las once tareas completada en este bloque; las cinco primeras se registran como pendientes de ampliación/revalidación y las restantes como pendientes de ejecución/evidencia.

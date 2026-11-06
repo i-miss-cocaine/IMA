@@ -4347,3 +4347,32 @@ CHECKPOINT C1.120 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 16
 - Próxima acción concreta: identificar el informe histórico correspondiente a Fase 17 en AUDITORIAS/, leer su contenido íntegro y cotejar hallazgos, IDs, prioridades, estados y equivalencias antes de añadir su bloque. No repetir Fase 10, Fase 11 ni Fase 16 salvo evidencia nueva.
 - Estado de TASK-DOC-C1.112-01: En curso; migración documental por lotes.
 ================================================================
+
+================================================================
+CHECKPOINT C1.121 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 17
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto: AUDITORIAS/Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: cba663b5d9beb05398e7ec4eb09052731b50592e.
+- HEAD de rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID operativo de sesión: IMA-AUDIT-20261106-2011Z-F10 (se conserva el identificador operativo de esta conversación; no es un ID nativo de ChatGPT).
+- Checkpoint anterior: C1.120 (Fase 16 normalizada).
+- Tarea documental en curso: TASK-DOC-C1.112-01, normalización progresiva de informes históricos.
+- Informe normalizado en esta iteración: AUDITORIAS/AUDITORIA_FASE_17_PLANILLAS_COMPENSACIONES.md.
+- SHA del informe antes de modificar: 8fa2cb6cc4ed760108dac3e732257c19ae5f8056.
+- SHA del contexto antes de modificar: 5b580df53f164d548bfd665bb059f4a085cfa131.
+- Fuentes consultadas: informe completo de Fase 17 (29,896 caracteres; 298 líneas); Auditoria.txt (blob 284b7a94b51c8ed99dbfcf734694bc5361f9f111, 736,666 caracteres), especialmente registros de TASK-007..TASK-011, AUD-NG-019..AUD-NG-022, AUD-NG-028 y AUD-NG-141; metodología §3.4 (SHA cf796728bb384a32537392df2f9c72a339fa03ee); AUDITORIAS/README.md (SHA 2f649c6ffc39ec7cdd242e85cb71b4344fd69e34); plan maestro de auditoría (SHA a374b91e5e45c0b8d5fd9db939735e6ed434c6cb).
+- Tareas originales preservadas: F17-Task01..F17-Task11 y sus prioridades P0/P1/P2 del apartado G.
+- Reconciliación de tareas históricas: F17-Task01/TASK-007, F17-Task02/TASK-008, F17-Task03/TASK-009, F17-Task04/TASK-010 y F17-Task05/TASK-011 fueron declaradas implementadas/completadas el 2026-11-02; se conservan sus IDs y se reabren documentalmente como pendientes de ampliación/revalidación por AUD-NG-019, AUD-NG-020, AUD-NG-022/AUD-NG-141, AUD-NG-021/AUD-NG-141 y AUD-NG-028 respectivamente.
+- F17-Task06..F17-Task11: no se encontró evidencia de cierre en los registros cotejados; permanecen Pendientes. AUD-NG-161 se reconoce como infraestructura transversal relacionada con pruebas, no como sustituto de la suite Fase 17.
+- Discrepancias: el informe describe recargo estándar 1.25 en el registro histórico TASK-008, mientras la sección C detalla 25/50/75%; se requiere cobertura diferenciada. Los parámetros de IHSS/RAP/ISR citados por el informe son históricos y AUD-NG-141 advierte desactualización; no se deben tratar como valores vigentes sin verificación oficial. TASK-011 no se considera cerrada en su alcance ampliado por los defectos AUD-NG-028.
+- Bloque añadido: sección obligatoria Tareas ejecutables derivadas de los hallazgos con los 11 IDs originales, origen, severidad, objetivo, acción, archivos/módulos, dependencias/riesgos, alcance, criterios de aceptación, prioridad, estado y evidencia de cierre.
+- Archivos modificados: AUDITORIAS/AUDITORIA_FASE_17_PLANILLAS_COMPENSACIONES.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, ChangesLogs.txt, Auditoria.txt, METODOLOGIA_DESARROLLO.md, AUDITORIAS/README.md, plan maestro y demás informes; rama base sin cambios.
+- Pruebas no ejecutadas: suites de planilla, Apps Script runtime, HTTP, Google Sheets productivo, correo real, bancos/ACH y despliegues; no hubo cambios de código.
+- HEAD de partida del árbol: cba663b5d9beb05398e7ec4eb09052731b50592e. El único commit de cierre debe contener ambos archivos y este checkpoint.
+- Próxima acción concreta: continuar el inventario de informes históricos de AUDITORIAS que aún carecen del bloque obligatorio. Seleccionar el siguiente informe por evidencia de ausencia del bloque, leerlo íntegramente y reconciliar IDs/estados antes de modificarlo; no repetir Fase 10, 11, 16 ni 17 salvo evidencia nueva.
+- Estado de TASK-DOC-C1.112-01: En curso; migración documental por lotes.
+================================================================
