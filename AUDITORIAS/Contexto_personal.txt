@@ -4678,3 +4678,30 @@ CHECKPOINT C1.131 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 29
 - Próximo informe pendiente: AUDITORIA_FASE_30_CONSOLIDACION_CERTIFICACION_MEJORA_CONTINUA.md. Revisar IDs y tareas históricas antes de crear o ampliar acciones.
 - Estado de TASK-DOC-C1.112-01: En curso.
 ================================================================
+
+================================================================
+CHECKPOINT C1.132 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 30
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida: fc1f09b38aedc2b5a370ae2716cdfc9582e3097b.
+- HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID operativo de sesión: IMA-AUDIT-20261106-2035Z-MIGRACION (no es ID nativo de ChatGPT).
+- Checkpoint anterior: C1.131 (Fase 29 normalizada).
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_FASE_30_CONSOLIDACION_CERTIFICACION_MEJORA_CONTINUA.md.
+- SHA original del informe: e384b63e7bccbc91de55a004eed7ba6b1ff45435.
+- SHA original del contexto: cbc01fa7ea8f81279bd339dcb6af109a83de447a.
+- Inspección: informe completo (42,906 caracteres; 429 líneas), 15 subcapacidades F30-01..F30-15, matriz INT-01..INT-16, certificación CERT-01..CERT-13 y plan G con 15 tareas descritas.
+- Tareas originales preservadas: F30-Task01..F30-Task15 y prioridades P0/P1/P2 del plan G.
+- Reconciliaciones: F30-Task01 con AUD-NG-006/129/133/161; Task02 con AUD-NG-036/158/164; Task03 con F26-Task01/05 y TASK-062; Task04 con TASK-296/AUD-NG-127/158; Task05 con F27-Task03/AUD-NG-146/TASK-151/152; Task06 con AUD-NG-145/083; Task07 con TASK-316/TASK-064; Task08 con F23-Task12/AUD-NG-024; Task09 con F24-Task03; Task10 con TASK-279/TASK-318; Task11 con TASK-064/AUD-NG-144/TASK-316; Task12 con F38/TASK-129/TASK-130; Task14 con runbooks F27/F29; Task15 con F29-Task08/10/12/16.
+- Discrepancia histórica: Auditoria.txt afirma que el plan previo contenía 20 IDs F30-Task01..20 y distribuye prioridades de Tasks16..20, pero ni el informe actual ni la bitácora describen las acciones de Tasks16..20. No se consultó Pendientes.md ni se inventó su alcance. Quedan como IDs históricos no recuperados.
+- Métricas INT/CERT y 53/53 pruebas son resultados históricos; no se reejecutaron.
+- Campos por tarea: origen, severidad, objetivo, acción, archivos/módulos, dependencias/riesgos, alcance, criterios de aceptación, prioridad, estado y evidencia de cierre.
+- Archivos modificados: AUDITORIAS/AUDITORIA_FASE_30_CONSOLIDACION_CERTIFICACION_MEJORA_CONTINUA.md; AUDITORIAS/Contexto_personal.txt.
+- No se modificaron código, pruebas, Pendientes.md, completadas.md, ChangesLogs.txt, Auditoria.txt, metodología, README, plan maestro ni rama base.
+- Pruebas no ejecutadas: sagas/compensaciones, integridad referencial, recálculo financiero histórico, URLs firmadas, dry-run restore, correlación interservicio, failover SMTP, delegaciones, agregados, SLA, webhooks, manuales/capacitación, runbooks, certificación y despliegues.
+- Próximo informe pendiente: AUDITORIA_FASE_31_DISENADOR_UNIVERSAL_DOCUMENTOS_PLANTILLAS.md.
+- Estado de TASK-DOC-C1.112-01: En curso.
+================================================================

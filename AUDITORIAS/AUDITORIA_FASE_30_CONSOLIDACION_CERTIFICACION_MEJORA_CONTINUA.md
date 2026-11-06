@@ -426,3 +426,194 @@ Las siguientes tareas componen el backlog de trabajo técnico de la Fase 30 para
 La plataforma cuenta con un nivel sobresaliente de robustez en sus componentes nucleares: separación clara de microservicios, seguridad criptográfica en sesiones, inmutabilidad y auditoría de calificaciones, consistencia por partida doble en asientos financieros y capacidad comprobada de recuperación ante contingencias.
 
 Las observaciones identificadas no comprometen la integridad de las operaciones cotidianas y se encuentran debidamente desglosadas y priorizadas en el plan de resolución técnico para ser integradas al backlog maestro de `Pendientes.md`.
+
+---
+
+## Tareas ejecutables derivadas de los hallazgos
+
+> Normalización de las 15 tareas descritas en el plan G (F30-Task01..F30-Task15), preservando IDs y prioridades P0/P1/P2. Se coordinan con tareas existentes cuando el alcance ya está registrado para evitar duplicidad. La bitácora histórica menciona un plan previo de 20 tareas, pero el informe vigente solo contiene las descripciones de F30-Task01..F30-Task15; F30-Task16..F30-Task20 no tienen descripción recuperable en el informe ni en Auditoria.txt (solo consta la distribución de prioridades). No se reconstruyen ni inventan sus alcances.
+
+### [F30-Task01] Implementar orquestador de transacciones interdepartamentales y compensación automática
+- **Hallazgo de origen:** F30-01; brecha de saga/compensación entre Admisión, Matrícula y Cobranza.
+- **Severidad:** Crítica / P0. **Objetivo:** evitar estados parciales cuando un proceso distribuido falla después de crear registros en uno o varios servicios.
+- **Acción ejecutable:** definir saga con pasos, estado durable, clave idempotente, orden de ejecución, compensaciones y política de reintentos; cubrir conversión de admisión, matrícula, cargo inicial, biblioteca y transporte; exponer estado y causa de fallo.
+- **Archivos/módulos:** servicios Academic/User/Accounting y módulos de admisión, matrícula, cargos, biblioteca y transporte; `AuditoriaMigraciones` o bitácora transaccional.
+- **Dependencias/riesgos:** AUD-NG-006 (idempotencia), AUD-NG-129 (matrícula), AUD-NG-133 (pagos), AUD-NG-161 (pruebas conductuales); riesgo de compensar una operación financiera ya confirmada o de duplicar efectos.
+- **Alcance:** orquestación y compensación explícita; no simular atomicidad distribuida con varios appendRow ni borrar asientos confirmados.
+- **Criterios de aceptación:** estado durable por paso; idempotencia por operación; compensación definida para cada efecto; reanudación segura; intervención manual para efectos no compensables; pruebas de fallo en cada etapa y conciliación final de expedientes/cargos/asientos.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; F30-01 indica que la matrícula puede quedar creada sin cargo financiero y que biblioteca/transporte no se reflejan siempre en cuenta consolidada.
+
+### [F30-Task02] Implementar motor de integridad referencial cruzada y detección de registros huérfanos
+- **Hallazgo de origen:** F30-02; relaciones entre Usuarios, ExpedientesEstudiantes, MatriculasEstudiantes, CargosEstudiante, RelacionesFamiliares y AsignacionesDocentes.
+- **Severidad:** Crítica / P0. **Objetivo:** detectar y prevenir relaciones inválidas o huérfanas en el almacenamiento basado en hojas.
+- **Acción ejecutable:** crear catálogo declarativo de entidades, claves y relaciones; implementar validación previa a escritura, escaneo periódico de integridad y reporte de huérfanos; impedir borrados/archivados que rompan relaciones o exigir operación controlada.
+- **Archivos/módulos:** `backend/developer-service/Code.gs`, servicios User/Academic/Accounting, catálogos maestros y hojas de entidades relacionadas.
+- **Dependencias/riesgos:** F29-Task01 (correspondencia de IDs), AUD-NG-036 (relación familiar), AUD-NG-158 (ámbito docente) y AUD-NG-164 (catálogo curricular); riesgo de reparación automática incorrecta.
+- **Alcance:** integridad lógica en Sheets; no asumir que Google Sheets ofrece llaves foráneas ni reparar automáticamente relaciones ambiguas.
+- **Criterios de aceptación:** esquema de relaciones versionado; validación server-side; escaneo informa entidad/clave/origen; borrado lógico conserva referencias; reparaciones requieren regla determinista o aprobación; pruebas de huérfanos, colisiones y relaciones interinstitucionales.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el informe señala ausencia de integridad referencial forzada y riesgo de huérfanos por archivo/eliminación.
+
+### [F30-Task03] Versionar históricamente políticas y tarifas usadas en cálculos financieros
+- **Hallazgo de origen:** F30-03; cambios de `ParametrosInstitucionales` que pueden alterar recálculos extemporáneos.
+- **Severidad:** Crítica / P0. **Objetivo:** reproducir importes históricos con las políticas y tarifas vigentes al momento de emisión.
+- **Acción ejecutable:** persistir versiones inmutables de aranceles, recargos, becas y políticas fiscales; asociar cada cargo/factura/periodo con su versión efectiva; impedir que consultas históricas utilicen valores actuales por defecto.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `ParametrosInstitucionales`, `ConceptosCobro`, `TarifasCobro`, `PoliticasFiscales`, `CargosEstudiante` y estados de cuenta.
+- **Dependencias/riesgos:** F26-Task01 (ámbitos de configuración), F26-Task05/TASK-062 (versionado/rollback), F24-Task02 (diccionario semántico cuando aplique); riesgo de modificar retroactivamente saldos.
+- **Alcance:** versionado de reglas y referencia desde transacciones; no recalcular documentos históricos con la tarifa actual.
+- **Criterios de aceptación:** versiones efectivas por fecha/periodo; cargo guarda versión aplicada; recálculo histórico reproduce monto original; cambios requieren autorización y auditoría; pruebas de modificación de tarifa, mora, beca, impuestos y consulta de ciclos anteriores.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; F30-03 advierte que las tarifas actuales pueden alterar estados de cuenta antiguos si no se fijan al emitir.
+
+### [F30-Task04] Proteger documentos sensibles mediante enlaces temporales firmados
+- **Hallazgo de origen:** F30-04; descargas directas de PDF y comprobantes desde endpoints doGet.
+- **Severidad:** Crítica / P0. **Objetivo:** impedir acceso no autenticado o persistente a comprobantes y documentos oficiales.
+- **Acción ejecutable:** sustituir enlaces públicos/permanentes por URLs de corta duración o tokens firmados HMAC; validar destinatario, documento, institución, expiración y uso; auditar emisión/consumo y revocar enlaces cuando cambie el permiso.
+- **Archivos/módulos:** `backend/user-service/Code.gs`, `backend/accounting-service/Code.gs`, `backend/academic-service/Code.gs`, Google Drive, generadores PDF y handlers `doGet`.
+- **Dependencias/riesgos:** AUD-NG-127 (secreto HMAC), TASK-296 (sanitización y enlaces Drive seguros), AUD-NG-158 (autorización contextual); riesgo de filtración de documentos financieros/académicos.
+- **Alcance:** acceso temporal autenticado; no exponer claves HMAC ni confiar en un token enviado sin comprobar expiración/propietario.
+- **Criterios de aceptación:** token firmado y no predecible; TTL máximo de 15 minutos configurable; vinculado a documento/usuario/institución; autorización revalidada; expiración/revocación efectiva; logs sin token; pruebas de replay, expiración, cambio de rol, acceso cruzado y URL compartida.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el informe solicita confirmar que todas las descargas usan tokens temporales y no URLs públicas de Drive.
+
+### [F30-Task05] Crear simulador de impacto previo a restauración (dry-run restore)
+- **Hallazgo de origen:** F30-08; restauración de hojas completas sin vista previa interactiva del impacto.
+- **Severidad:** Crítica / P0. **Objetivo:** evitar sobrescrituras accidentales y mostrar diferencias antes de restaurar.
+- **Acción ejecutable:** implementar `previewBackupRestoreImpact` que compare backup y estado vivo por hoja/entidad, calcule altas/cambios/bajas, identifique dependencias y preserve registros protegidos; exigir confirmación explícita antes de aplicar.
+- **Archivos/módulos:** `backend/academic-service/Code.gs` (`createSystemBackup`, `listSystemBackups`, `restoreSystemBackup`), `backend/developer-service/Code.gs`, UI de recuperación.
+- **Dependencias/riesgos:** F27-Task03 (restauración granular), AUD-NG-146, TASK-151/TASK-152 y AUD-NG-161; riesgo de ejecutar escrituras durante preview.
+- **Alcance:** simulación no destructiva; no ejecutar restauración real ni omitir checksum y confirmación.
+- **Criterios de aceptación:** dry-run no escribe ni dispara notificaciones; diff por hoja/campo; checksum validado; preservación de notas históricas; impacto y dependencias visibles; usuario autorizado confirma; pruebas de diferencias, hoja faltante, backup corrupto y rollback.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; F30-08 confirma restauración protegida, pero carece de simulación visual previa.
+
+### [F30-Task06] Unificar trazabilidad y correlación de eventos interservicio (Trace ID)
+- **Hallazgo de origen:** F30-05; ausencia de visor interactivo con `correlationId` transversal.
+- **Severidad:** Alta / P1. **Objetivo:** reconstruir el recorrido completo de una operación entre microservicios desde un único identificador.
+- **Acción ejecutable:** ampliar `AUD-NG-145` y `AUD-NG-083` para generar/propagar `correlationId` y `requestId` desde el cliente hasta cada servicio; conectar eventos y logs en un visor con filtros por usuario autorizado, servicio, acción, fecha y severidad.
+- **Archivos/módulos:** `js/api.js`, servicios User/Academic/Accounting/Task/Exam/Developer, `logStructuredEvent`, `RegistroEventos`, `LogsSistema`, dashboard Developer.
+- **Dependencias/riesgos:** AUD-NG-145, AUD-NG-083 y AUD-NG-161; riesgo de fuga de PII o de correlaciones incompletas si un servicio no propaga el contexto.
+- **Alcance:** correlación técnica y visor; no sustituir la auditoría de negocio ni exponer payloads sensibles.
+- **Criterios de aceptación:** ID generado en entrada y propagado en llamadas; eventos de todos los servicios lo conservan; visor ordena la cadena temporal; filtros RBAC/ABAC; sanitización antes de persistir/mostrar; pruebas extremo a extremo con fallos y llamadas anidadas.
+- **Prioridad:** P1. **Estado:** Pendiente (ampliación de AUD-NG-145/AUD-NG-083).
+- **Evidencia de cierre:** pendiente; el informe identifica bitácoras estructuradas pero no un visor de correlación interservicios.
+
+### [F30-Task07] Integrar pasarela alternativa de notificaciones y gestión de cuotas de correo
+- **Hallazgo de origen:** F30-06; cuota diaria MailApp y ausencia de SMTP alternativo.
+- **Severidad:** Alta / P1. **Objetivo:** mantener entrega de notificaciones críticas cuando se agote o degrade la cuota de Google Apps Script.
+- **Acción ejecutable:** ampliar `TASK-316` y `TASK-064` para registrar cuota disponible, clasificar prioridad, encolar envíos, conmutar a proveedor alternativo configurado y deduplicar por destinatario/evento; exigir configuración y prueba del proveedor antes de activarlo.
+- **Archivos/módulos:** `backend/user-service/Code.gs`, `sendMultiChannelNotification`, `retryFailedNotificationsQueue`, `CanalesProveedoresConfig`, monitor de cuotas y UI administrativa.
+- **Dependencias/riesgos:** TASK-316 (multicanal/reintentos), TASK-064 (cuotas/alertas), F25-Task01 (catálogo de integraciones); riesgo de duplicar envíos, exponer datos a proveedor o exceder límites del canal alternativo.
+- **Alcance:** failover de correo y canales; no enviar datos sensibles a proveedores no aprobados ni asumir SMTP disponible sin credenciales/consentimiento.
+- **Criterios de aceptación:** cuota medida/estimada identificada; umbral configurable (85% inicial); prioridad de mensajes; failover solo ante condición definida; idempotencia/deduplicación compartida; consentimiento y secretos seguros; pruebas de cuota agotada, proveedor caído, reintento y no duplicación.
+- **Prioridad:** P1. **Estado:** Pendiente (ampliación de TASK-316/TASK-064).
+- **Evidencia de cierre:** pendiente; F30-06 identifica ausencia de pasarela SMTP alternativa y riesgo de agotamiento de cuota.
+
+### [F30-Task08] Implementar delegación temporal de responsabilidades y aprobaciones
+- **Hallazgo de origen:** F30-07; ausencia de delegación automática durante vacaciones/incapacidad.
+- **Severidad:** Alta / P1. **Objetivo:** mantener continuidad de aprobaciones sin transferir privilegios permanentes ni permitir autoaprobaciones indebidas.
+- **Acción ejecutable:** ampliar el motor de workflows con delegación que especifique delegante, delegado, acciones permitidas, ámbito, inicio/fin, motivo, límites y revocación; resolver la delegación server-side y conservar identidad de ambos actores.
+- **Archivos/módulos:** `backend/user-service/Code.gs`, `saveApprovalWorkflow`, `processWorkflowDecision`, `ROLE_PERMISSIONS`, `DelegacionesTemporales` y auditoría.
+- **Dependencias/riesgos:** RBAC/ABAC, F23-Task12 (delegación contextual del motor de trabajo) y AUD-NG-024 (identidad del revisor); riesgo de escalamiento, delegación circular o aprobación por actor no habilitado.
+- **Alcance:** delegación acotada y revocable; no cambiar el rol base del delegado ni permitir delegar acciones no delegables.
+- **Criterios de aceptación:** vigencia temporal estricta; ámbito y acciones permitidas; actor original y delegado registrados; revocación inmediata; delegación no puede ampliarse a sí misma; conflictos/autoaprobación bloqueados; pruebas de expiración, revocación, delegación anidada y acceso fuera de ámbito.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; F30-07 confirma flujos de aprobación pero no delegación temporal general.
+
+### [F30-Task09] Crear tablas de agregación precalculadas para tableros institucionales
+- **Hallazgo de origen:** F30-09; consultas consolidadas con latencia superior a tres segundos en hojas grandes.
+- **Severidad:** Alta / P1. **Objetivo:** reducir latencia de dashboards mediante agregaciones reproducibles y actualizadas.
+- **Acción ejecutable:** coordinar con F24-Task03 el DataMart institucional; definir agregados canónicos por período/área/rol, triggers reanudables, versión de fórmula y fecha de actualización; cambiar dashboards a consultas paginadas sobre agregados.
+- **Archivos/módulos:** servicios Academic/Accounting/User/Developer, `TablasAgregadas` o DataMart canónico, dashboards y triggers.
+- **Dependencias/riesgos:** F24-Task03 (DataMart), F24-Task02 (diccionario de indicadores), TASK-064 (telemetría) y TASK-429 (rendimiento UI); riesgo de agregados desactualizados o fórmulas divergentes.
+- **Alcance:** agregaciones de lectura para dashboards; no crear un DataMart paralelo ni reemplazar fuentes transaccionales.
+- **Criterios de aceptación:** esquema canónico; actualización idempotente; snapshots versionados; frescura visible; conciliación contra fuentes; consultas más rápidas medidas con dataset de referencia; recuperación de trigger y cambios retroactivos controlados.
+- **Prioridad:** P1. **Estado:** Pendiente (coordinación con F24-Task03).
+- **Evidencia de cierre:** pendiente; F30-09 indica que las consultas pueden superar tres segundos y requiere tablas precalculadas.
+
+### [F30-Task10] Clasificar tickets automáticamente y calcular SLA de soporte
+- **Hallazgo de origen:** F30-13; tickets sin severidad automática ni tiempos límite.
+- **Severidad:** Alta / P1. **Objetivo:** priorizar incidencias y hacer visible el tiempo de respuesta comprometido.
+- **Acción ejecutable:** ampliar `TASK-279` y `TASK-318` con clasificación P0-P3 basada en reglas explicables, categoría, impacto, urgencia, SLA por severidad/horario, pausas justificadas, escalamiento y notificación de vencimiento.
+- **Archivos/módulos:** `backend/user-service/Code.gs`, `submitProblemTicket`, `getProblemTickets`, `replyProblemTicket`, `TicketsReporteProblemas`, bandeja personal/departamental.
+- **Dependencias/riesgos:** TASK-279 (clasificación/SLA), TASK-318 (bandeja personal/SLA), TASK-316 (notificaciones); riesgo de falsos positivos o cambios de severidad sin auditoría.
+- **Alcance:** soporte institucional; no convertir clasificación automática en cierre automático ni alterar el historial de tickets.
+- **Criterios de aceptación:** severidad/categoría calculadas con reglas versionadas; usuario puede solicitar revisión; SLA medido con calendario institucional; pausas/escalamiento auditados; bandeja muestra vencimiento y responsable; pruebas de prioridades, horarios no laborables y reapertura.
+- **Prioridad:** P1. **Estado:** Pendiente (ampliación de TASK-279/TASK-318).
+- **Evidencia de cierre:** pendiente; F30-13 señala que el módulo de tickets carece de clasificación automática y cálculo de SLA.
+
+### [F30-Task11] Implementar alertas push ante degradación de salud de microservicios
+- **Hallazgo de origen:** F30-15; ausencia de notificación proactiva al detectar fallos críticos repetidos.
+- **Severidad:** Alta / P1. **Objetivo:** notificar a responsables sin depender de que consulten manualmente el dashboard.
+- **Acción ejecutable:** ampliar `TASK-064` y `AUD-NG-144` con reglas de degradación, ventanas, umbrales, deduplicación, supresión temporal y despacho webhook; integrar canal autorizado y registro de entrega.
+- **Archivos/módulos:** `backend/developer-service/Code.gs`, `getServiceHealthDiagnostics`, `ensureStandardObservabilitySheets`, `backend/user-service/Code.gs`, servicio de notificaciones y `CanalesProveedoresConfig`.
+- **Dependencias/riesgos:** TASK-064 (métricas/cuotas), AUD-NG-144 (health checks), TASK-316 (multicanal); riesgo de tormenta de alertas o envío a endpoint no autorizado.
+- **Alcance:** notificaciones push de salud; no duplicar monitor de métricas ni considerar una respuesta fallback como servicio saludable.
+- **Criterios de aceptación:** reglas por servicio/dependencia; umbral y ventana configurables; alertas deduplicadas; webhook firmado/secretos seguros; prueba de recuperación y cierre; canal/propietario autorizado; logs sanitizados y fallos de entrega visibles.
+- **Prioridad:** P1. **Estado:** Pendiente (ampliación de TASK-064/AUD-NG-144).
+- **Evidencia de cierre:** pendiente; F30-15 confirma diagnósticos y latencia, pero no alertas push ante degradación repetida.
+
+### [F30-Task12] Elaborar manuales operativos interactivos por departamento
+- **Hallazgo de origen:** F30-11; ausencia de manuales de usuario de extremo a extremo.
+- **Severidad:** Media / P2. **Objetivo:** permitir que Dirección, Secretaría, Docencia, Contabilidad y Familias ejecuten procesos habituales con instrucciones actualizadas.
+- **Acción ejecutable:** crear guías por rol y proceso con pasos, requisitos, permisos, errores frecuentes, capturas/ayudas y fecha/versión; integrarlas en la ayuda contextual existente y asignar propietario editorial.
+- **Archivos/módulos:** `docs/architecture/`, documentación operativa, ayuda contextual UI y catálogos de roles/procesos.
+- **Dependencias/riesgos:** F38 (ayuda contextual/metadatos), TASK-129/TASK-130 (ayudas accesibles); riesgo de manuales obsoletos o que revelen operaciones fuera del rol.
+- **Alcance:** manuales de uso y guías operativas; no duplicar documentación técnica de arquitectura ni exponer información sensible.
+- **Criterios de aceptación:** guías por rol/proceso; pasos validados por responsable; versión y fecha; búsqueda/contextualización; accesibilidad; revisión tras cambios funcionales; pruebas de tareas con usuarios representativos.
+- **Prioridad:** P2. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; F30-11 documenta arquitectura, pero identifica falta de manuales completos por departamento.
+
+### [F30-Task13] Crear módulo de inducción y certificación de competencias del personal
+- **Hallazgo de origen:** F30-12; ausencia de capacitación por rol con evaluación previa a permisos operativos.
+- **Severidad:** Media / P2. **Objetivo:** validar que el personal conoce los procesos y controles antes de ejecutar operaciones sensibles.
+- **Acción ejecutable:** crear rutas de capacitación por rol, contenidos/versiones, ejercicios en sandbox, evaluación con umbral, intentos, vigencia y registro de certificación; vincular la certificación con habilitación solo cuando exista política institucional aprobada.
+- **Archivos/módulos:** módulos de capacitación/ayuda, `backend/user-service/Code.gs`, catálogo de roles, almacenamiento de resultados y dashboard administrativo.
+- **Dependencias/riesgos:** F30-Task12, F26-Task01 (ámbitos/permisos), F38 (ayuda contextual); riesgo de bloquear personal por fallos del módulo o de tratar un test como sustituto de autorización.
+- **Alcance:** formación y evaluación; no conceder roles automáticamente ni retirar acceso crítico sin procedimiento de contingencia.
+- **Criterios de aceptación:** contenidos por rol; entorno de práctica sin datos reales; evaluación versionada; resultados trazables; vigencia/recertificación; accesibilidad; política explícita para habilitación; pruebas de privacidad y permisos.
+- **Prioridad:** P2. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; F30-12 solo identifica juegos/simuladores generales, no inducción ni evaluación institucional.
+
+### [F30-Task14] Documentar runbooks de contingencia y recuperación operativa
+- **Hallazgo de origen:** F30-11; falta de guías de resolución de incidentes para soporte técnico.
+- **Severidad:** Media / P2. **Objetivo:** estandarizar respuesta a interrupciones, degradación, restauración y recuperación.
+- **Acción ejecutable:** documentar runbooks con señales, diagnóstico, severidad, responsables, pasos seguros, escalamiento, criterios de recuperación, rollback y comunicación; versionarlos y ensayarlos en entorno aislado.
+- **Archivos/módulos:** `AUDITORIAS/`, `docs/architecture/`, procedimientos de backup/restore, health checks, colas, cuotas y soporte.
+- **Dependencias/riesgos:** F27-Task01..Task05, F29-Task04/08/16/18, TASK-064 y AUD-NG-146; riesgo de instrucciones obsoletas o de ejecutar comandos destructivos sin aprobación.
+- **Alcance:** procedimientos operativos documentados y ensayados; no ejecutar restauraciones o cambios productivos como parte de la documentación.
+- **Criterios de aceptación:** runbooks por incidente; roles y autorizaciones; precondiciones y rollback; referencias a logs/alertas; revisión por responsable; simulacro documentado; historial de versiones y lecciones aprendidas.
+- **Prioridad:** P2. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; F30-11 señala expresamente que no hay guía de contingencia/recuperación para soporte.
+
+### [F30-Task15] Formalizar autorización de Go-Live y actas de certificación departamental
+- **Hallazgo de origen:** F30-14 y certificación de las 13 áreas; brecha de autorización formal de despliegues.
+- **Severidad:** Media / P2 (con controles de despliegue P0). **Objetivo:** asegurar que cada departamento apruebe formalmente su preparación antes de producción.
+- **Acción ejecutable:** definir flujo de certificación por área con criterios, evidencia, responsable, fecha, versión de código/contratos, excepciones y firmas; integrar checklist de regresión y aprobación técnica/institucional antes de Go-Live.
+- **Archivos/módulos:** `backend/developer-service/Code.gs`, control de versiones/despliegues Apps Script, matriz de certificación, actas y documentación operativa.
+- **Dependencias/riesgos:** F29-Task08/10/12/16, F30-Task14, suites de regresión y permisos de firma; riesgo de aprobación basada en pruebas no reproducibles o versión distinta a la desplegada.
+- **Alcance:** gobierno de certificación y autorización; no ejecutar despliegues ni declarar certificada la plataforma por el mero registro de firmas.
+- **Criterios de aceptación:** criterios por departamento; evidencia ligada a commit/deployment exacto; regresión aprobada; riesgos/excepciones aceptados por responsable; firmas verificables; Go/No-Go auditable; rollback y soporte post-Go documentados.
+- **Prioridad:** P2. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el informe describe suites y control de contratos, pero el plan requiere checklist automatizado y actas de certificación.
+
+### Reconciliaciones y discrepancias transversales de Fase 30
+- **F30-Task01:** coordinar idempotencia y compensación con AUD-NG-006/AUD-NG-129/AUD-NG-133/AUD-NG-161; no crear un segundo mecanismo de pagos/matrículas.
+- **F30-Task02:** coordinar relaciones con AUD-NG-036/AUD-NG-158/AUD-NG-164; no confundir integridad relacional con autorización contextual.
+- **F30-Task03:** coordinar versionado de parámetros con F26-Task01/F26-Task05 y TASK-062; la política/tarifa aplicada debe quedar fijada en cada transacción.
+- **F30-Task04:** ampliar TASK-296/AUD-NG-127/AUD-NG-158; no duplicar sanitización, secreto HMAC o ABAC.
+- **F30-Task05:** ampliar F27-Task03/AUD-NG-146/TASK-151/TASK-152; preview debe ser no destructivo.
+- **F30-Task06:** ampliar AUD-NG-145/AUD-NG-083; no crear una bitácora paralela.
+- **F30-Task07:** ampliar TASK-316/TASK-064; proveedor alternativo requiere configuración/credenciales aprobadas.
+- **F30-Task08:** coordinar con motor de delegación de F23-Task12 y AUD-NG-024; verificar si el alcance temporal general ya fue implementado antes de añadir lógica nueva.
+- **F30-Task09:** coordinar con F24-Task03 DataMart; evitar tablas agregadas incompatibles.
+- **F30-Task10:** ampliar TASK-279/TASK-318; no duplicar SLA ni bandeja de tickets.
+- **F30-Task11:** ampliar TASK-064/AUD-NG-144/TASK-316; no duplicar monitor ni despachador.
+- **F30-Task12:** coordinar con F38 y TASK-129/TASK-130; no duplicar ayuda contextual/accesible.
+- **F30-Task13:** no se encontró una tarea existente con alcance exacto de capacitación/certificación de competencias; conservar el ID F30-Task13 del plan.
+- **F30-Task14:** coordinar con runbooks de recuperación de F27/F29; no crear un segundo procedimiento contradictorio.
+- **F30-Task15:** coordinar con F29-Task08/10/12/16 para cutover, pilotos, retiro y smoke tests.
+- **Discrepancia de inventario:** Auditoria.txt registra que el plan histórico de Fase 30 tenía 20 IDs (F30-Task01..F30-Task20) y distribuye prioridades para Tasks16..20 (P0: 16/17; P1: 18/19/20), pero el informe versionado en esta rama solo describe F30-Task01..F30-Task15. No hay descripciones de Tasks16..20 en el informe ni en la bitácora. No se consultó Pendientes.md (fuera del flujo operativo) ni se inventan tareas faltantes. Se requiere recuperar una fuente documental autorizada antes de asignarles alcance.
+- **Métricas históricas:** INT-01..INT-16, CERT-01..CERT-13 y 53/53 pruebas aparecen como resultados históricos del informe; no se reejecutaron en esta migración.
+- **Estado global:** F30-Task01..F30-Task15 permanecen pendientes de ejecución/revalidación; F30-Task16..F30-Task20 quedan como referencias históricas sin descripción recuperable, no se declaran completadas ni se reconstruyen.
