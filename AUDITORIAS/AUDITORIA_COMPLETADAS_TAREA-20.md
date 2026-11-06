@@ -74,3 +74,39 @@ No se crea un AUD-NG nuevo. Las brechas ya están cubiertas por tareas pendiente
 ## Límites
 
 Inspección estática/manual. No se desplegaron proyectos Apps Script, no se ejecutaron endpoints, pruebas RBAC, pruebas de integridad, consultas a Drive, pruebas de regresión ni fixtures de áreas. No se utilizaron datos institucionales reales y no se modificó código fuente.
+
+
+## Tareas ejecutables derivadas de los hallazgos
+
+### AUD-NG-011 - Despliegue real y lifecycle coherente de áreas/servicios curriculares
+- Definir un contrato único de ciclo de vida para área e instancia de servicio, con estados coherentes (pendiente de configuración, pendiente de pruebas, activo, degradado, desactivado) y transiciones permitidas.
+- Exigir en el registro de un área los campos necesarios para su operación: ID/código canónico, departamento, serviceKey único, deployment/script ID, endpoint, fuente de datos, propietario, herramientas/contratos y permisos. Validar unicidad y referencias antes de guardar.
+- No permitir que `getAcademicAreaTemplateCatalog` cree áreas activas por defecto. Toda área nueva debe quedar pendiente hasta completar configuración, pruebas auténticas y aprobación.
+- Hacer que `runCurricularAreaServiceTests` ejecute verificaciones reales: conectividad al deployment, disponibilidad de endpoint, permisos/RBAC, esquema de herramientas, integridad de datos y regresión. Eliminar resultados PASS constantes.
+- Impedir que cualquier ruta alternativa active un área o instancia sin evidencia vigente de pruebas aprobadas. `toggleCurricularAreaStatus` y `deployAcademicMicroserviceInstance` deben aplicar la misma máquina de estados y no permitir activación directa por un valor del cliente.
+- Verificar deployment y endpoint reales antes de registrar una instancia como activa. No aceptar `connectivityCheck="PASS"` ni `status="Activo"` como valores declarativos sin una comprobación ejecutada.
+- Vincular el estado del área al estado de sus instancias y dependencias; evitar que el servicio aparezca Activo mientras el área permanece pendiente, o viceversa.
+- Mantener una bitácora de configuración, pruebas, despliegue, activación, degradación y desactivación con actor verificado, timestamp, versión y evidencia.
+- Asegurar que los contratos de servicios por área sean compatibles con el enrutamiento común y con las reglas de aislamiento ya registradas; no presentar la arquitectura de microservicios independientes como demostrada por un mapa estático.
+
+### AUD-NG-164 - Catálogo unificado de áreas, departamentos y servicios
+- Consolidar `CURRICULAR_AREAS_CATALOG`, `ACADEMIC_DEPARTMENTS_CATALOG`, `CURRICULAR_SPECIALIZED_SERVICES` y `AreasCurricularesExtensiones` en un catálogo canónico con IDs/códigos únicos y relaciones verificables.
+- Sincronizar backend y cliente desde la misma fuente de verdad; eliminar identificadores paralelos como AREA-01…AREA-12 frente a AREA-MATH/AREA-COMUNICATION sin una tabla de equivalencias explícita.
+- Validar que el departamento exista y esté vigente; impedir duplicidad de código, serviceKey o relaciones inconsistentes.
+- Versionar cambios de nombre, código, departamento, servicio, herramientas y estado; conservar historial anterior y evitar que una actualización reemplace silenciosamente toda la fila.
+- Definir semántica de estado para catálogo, área e instancia, y filtrar de forma coherente las áreas inactivas en catálogos operativos sin borrar su historial.
+- Preservar relaciones históricas y ofrecer consultas de solo lectura para áreas desactivadas; una baja lógica no debe eliminar la trazabilidad ni dejar asignaciones activas huérfanas.
+- Mantener la integridad de matrículas, asignaciones, coordinaciones, recursos, entregas y reportes al cambiar o desactivar un área.
+
+### AUD-NG-158 - ABAC para asignaciones, coordinaciones y operaciones por área
+- Validar en servidor que el `areaId` exista, esté activo y corresponda al departamento/contexto autorizado antes de crear o modificar asignaciones docentes y coordinaciones.
+- Derivar actor desde claims verificados y comprobar rol, asignación y ámbito en cada operación; no confiar en `profesorId`, `autorId`, `areaId` o `nuevoEstado` como prueba de autoridad.
+- Impedir nuevas asignaciones, coordinaciones y operaciones académicas cuando el área esté desactivada o pendiente de pruebas.
+- Al desactivar un área, bloquear nuevas escrituras y accesos operativos; mantener acceso histórico de solo lectura para roles autorizados y gestionar explícitamente las asignaciones/coordinaciones/deployments dependientes.
+- Revocar o invalidar permisos, rutas y cachés operativos asociados a instancias desactivadas, sin borrar historiales ni relaciones históricas.
+- Comprobar que Coordinador solo acceda a áreas activas bajo su coordinación vigente y que la desactivación no deje un ámbito contextual residual.
+
+**Reconciliación y límites:** AUD-NG-011 concentra el despliegue real, las pruebas previas, la habilitación y el lifecycle operativo de los servicios curriculares. AUD-NG-164 conserva la fuente canónica de áreas/departamentos/servicios, IDs, referencias y versionado del catálogo. AUD-NG-158 conserva autorización contextual, asignaciones y revocación de acceso operativo. No se crea un AUD-NG nuevo ni se duplica la responsabilidad de cada tarea.
+
+**Evidencia requerida:** registro con IDs únicos y referencias válidas; plantilla de proyecto/servicio; deployment y endpoint comprobados; pruebas de conectividad/RBAC/esquema/integridad ejecutadas; activación imposible sin PASS real; sincronización backend/cliente; desactivación con revocación operativa y conservación de historiales; pruebas de asignación/coordinación sobre áreas activas/inactivas; y regresión que demuestre que las áreas existentes no se afectan. La auditoría actual es estática y no acredita estos comportamientos.
+

@@ -5767,3 +5767,32 @@ CHECKPOINT C1.170 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-19
 - Próximo informe: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-20.md; leerlo íntegramente y reconciliar hallazgos/tareas relacionadas antes de formalizar.
 - Commit de cierre: un único commit con ambos archivos; verificar SHA, padre, árbol, archivos modificados y HEAD de rama después de publicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.171 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-20
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida declarada en el proyecto: NG_beta_0.0.0.1.
+- HEAD de partida verificado: 06274189f67ab83baf505831ba094a4fcc6feb07.
+- Árbol base de la rama de trabajo: 0237ff93d8d02d1afe80bd7c2637d468ee6e4ba4.
+- Rama base: no se realizó consulta nueva en esta iteración; no se efectuó ninguna escritura sobre ella.
+- ID operativo de sesión: IMA-AUDIT-20261106-2219Z (no es ID nativo de ChatGPT).
+- Checkpoint inicial de esta iteración: C1.170.
+- Estado de iteración: cerrada en C1.171.
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-20.md.
+- SHA del informe antes del cambio: db7d7072376e8b0769fb70aa546e7ea64e5e298e.
+- SHA del contexto antes del cambio: dfd7fd4dd84939c841ea2f86b99cb1ce00008d2c.
+- Inspección: TAREA-20 CUMPLE PARCIALMENTE. Registro de área incompleto y sin unicidad/lock; plantilla no genera proyecto; catálogo vacío crea áreas activas; pruebas de servicio son PASS constantes y activan automáticamente; activación directa elude pruebas; deployment no verifica script/endpoint y declara PASS/Activo; cliente/backend mantienen catálogos estáticos divergentes; enrutamiento no resuelve servicios por área; permisos RBAC básicos pero ABAC insuficiente; desactivación no revoca rutas/asignaciones ni verifica conservación histórica.
+- Tareas existentes ampliadas: AUD-NG-011 (deployment real, pruebas auténticas, lifecycle y activación protegida); AUD-NG-164 (catálogo canónico, IDs/códigos, versionado y semántica de estado); AUD-NG-158 (ABAC de asignaciones/coordinaciones, bloqueo y revocación operativa).
+- Reconciliación: AUD-NG-011 conserva despliegue/activación; AUD-NG-164 conserva catálogo maestro; AUD-NG-158 conserva autorización contextual. No se crea ID nuevo.
+- Archivos modificados: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-20.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, Auditoria.txt, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README y rama base.
+- Pruebas ejecutadas: lectura íntegra de TAREA-20; contraste de AUD-NG-011/164/158 en Auditoria.txt; comprobación de que el bloque no existía; verificación del HEAD y árbol de partida.
+- Pruebas no ejecutadas: despliegues Apps Script, endpoints, health checks, RBAC/ABAC, activación, desactivación, integridad histórica, regresión, fixtures y producción.
+- Límite: cambio exclusivamente documental. TAREA-20 permanece CUMPLE PARCIALMENTE; las tareas ampliadas no se consideran ejecutadas ni completadas.
+- Próximo informe: revisar inventario de AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-21.md; si existe, leerlo íntegramente y reconciliar antes de formalizar.
+- Commit de cierre: un único commit con ambos archivos; verificar SHA, padre, árbol, archivos modificados y HEAD de rama después de publicar.
+================================================================
