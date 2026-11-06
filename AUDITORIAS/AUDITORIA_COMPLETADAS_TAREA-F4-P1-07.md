@@ -84,3 +84,69 @@ La asignación de docentes a áreas académicas y su historial se mantiene dentr
 ## 6. Archivos documentales de cierre
 
 Se registran AUD-NG-225 y AUD-NG-226 en `Auditoria.txt`; se agregan TASK-505 y TASK-506 a `Pendientes.md`; se actualizan `MapaDependencias.md`, `AUDITORIA_COMPLETADAS_PLAN.md` y el checkpoint C1.82 en `Contexto_personal.txt`. `completadas.md`, `ChangesLogs.txt`, `METODOLOGIA_DESARROLLO.md` y el código fuente permanecen intactos.
+
+
+## Tareas ejecutables derivadas de los hallazgos
+
+### [TASK-505] Integrar el catálogo de roles internos con asignaciones, vigencias y administración institucional
+
+- **Hallazgo de origen:** AUD-NG-225, sección 3 de este informe. El catálogo CatalogoRolesInternos no gobierna de forma íntegra AsignacionesAmbitosRoles: se admiten referencias inexistentes, las claves de búsqueda colisionan, las actualizaciones omiten atributos relevantes, las vigencias no se aplican coherentemente, faltan controles de unicidad y no existe una consola administrativa funcional conectada.
+- **Severidad:** Alto.
+- **Objetivo:** garantizar que cada responsabilidad institucional esté asociada a un rol interno válido y activo, tenga una asignación única y temporalmente vigente, y pueda administrarse y consultarse mediante flujos institucionales verificables.
+- **Acción ejecutable:**
+  1. Definir el contrato de CatalogoRolesInternos y AsignacionesAmbitosRoles, con identificadores estables, relación obligatoria al rol, tipo/valor de ámbito, estado, fechas de inicio y fin, datos de suplencia, actor y metadatos de auditoría.
+  2. Validar en servidor que roleId exista y esté activo antes de crear o actualizar una asignación; impedir referencias huérfanas y definir la política ante la desactivación de un rol ya asignado.
+  3. Sustituir la clave de búsqueda userId+scopeType por una clave de negocio que distinga usuario, rol, tipo de ámbito y ámbito concreto; imponer unicidad y evitar sobrescrituras entre responsabilidades diferentes.
+  4. Hacer que el upsert actualice de manera coherente roleId, scopeValues, estado, fechaInicio, fechaFin, esSuplente y suplenteDeUserId; validar formato, zona horaria, orden y reglas de solapamiento temporal.
+  5. Aplicar una única regla de vigencia en getUserScopeConfig y getInternalRoleAssignments: excluir asignaciones futuras, vencidas, suspendidas o incompatibles con el ámbito solicitado; aplicar realmente el filtro departamento y definir cómo se resuelven suplencias activas.
+  6. Garantizar unicidad de ID y codigoInterno del catálogo bajo concurrencia, con bloqueo y comprobación de colisión. Reconciliar la estrategia con AUD-NG-161/TASK-118 para no confundir identificadores de roles con la generación de UserId.
+  7. Construir una consola de RRHH/administración institucional conectada a los endpoints reales para crear/editar/desactivar roles, asignar ámbitos, establecer vigencias y suplencias, consultar historial y mostrar errores de validación. Sustituir los campos de texto libre cuando representen roles institucionales o ámbitos catalogados.
+  8. Corregir getUserDynamicDashboardConfig para leer la columna Rol conforme al esquema real de Usuarios y reparar el control “Acceder” de loadDynamicDashboard para que tenga destino y comportamiento funcional, sin convertir responsabilidades institucionales en permisos globales.
+  9. Añadir pruebas conductuales para referencias inexistentes/inactivas, unicidad, colisiones, actualización completa, vigencias en límites temporales, suplencias, filtros, concurrencia, permisos y flujos de UI; sustituir o complementar las pruebas de presencia de símbolos existentes.
+- **Archivos/módulos afectados:** backend/user-service/Code.gs (assignRoleScope, getUserScopeConfig, manageInternalRoleCatalog, getInternalRoleCatalog, getInternalRoleAssignments, getUserDynamicDashboardConfig); dashboard-recursos-humanos.html; js/ui-common.js; dashboards institucionales que deban consumir la administración; tests/regression/academic-grading-suite.js y pruebas específicas de USER/UI.
+- **Dependencias y riesgos:** AUD-NG-221/TASK-501 (matriz dinámica), AUD-NG-222/TASK-502 (autorización contextual), AUD-NG-145/AUD-NG-224 (trazabilidad y versionado), AUD-NG-161/TASK-118 (controles de generación/colisión, sin ampliar su alcance de UserId). Riesgos: retirar o desactivar roles con asignaciones vigentes, cambios de semántica de claves, duplicados históricos, solapamiento de suplencias y concesiones de acceso más amplias que la responsabilidad institucional.
+- **Alcance:** catálogo de roles internos y asignaciones de ámbitos institucionales, sus reglas de vigencia, administración, consulta y presentación de dashboards. No incluye rediseñar la matriz general de permisos ni la política ABAC, ya cubierta por TASK-501/TASK-502; tampoco convierte el cargo laboral en rol de acceso.
+- **Criterios de aceptación:**
+  1. Toda asignación nueva o editada referencia un roleId existente y activo; las referencias inválidas son rechazadas con error explícito.
+  2. La identidad de una asignación distingue usuario, rol y ámbito; crear o editar una responsabilidad no sobrescribe otra distinta.
+  3. El upsert conserva y actualiza todos los atributos de asignación, fechas y suplencia de forma consistente.
+  4. Las fechas se validan y todas las consultas aplican la misma regla de vigencia; ninguna asignación futura o vencida aparece como activa.
+  5. El filtro departamento/ámbito recibido por los endpoints se aplica efectivamente y los resultados respetan el ámbito autorizado.
+  6. IDs y códigos internos son únicos incluso bajo solicitudes concurrentes; se detectan y resuelven duplicados históricos sin pérdida silenciosa.
+  7. RRHH puede administrar el catálogo y las asignaciones desde una UI conectada a los endpoints, con validaciones y errores visibles.
+  8. El dashboard obtiene el rol desde la columna correcta y sus controles de acceso navegan/ejecutan la acción prevista.
+  9. Las pruebas automatizadas demuestran los casos positivos, negativos, límites temporales, concurrencia, autorización y regresión; las pruebas de presencia de símbolos no se consideran evidencia suficiente.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente. Incorporar SHA de implementación, evidencia de integridad del catálogo/asignaciones, capturas o pruebas de UI y resultados automatizados antes de cambiar el estado.
+
+### [TASK-506] Garantizar integridad referencial y atomicidad en departamentos, cargos y adscripciones institucionales
+
+- **Hallazgo de origen:** AUD-NG-226, sección 3 de este informe. CREATE_DEPT/CREATE_CARGO aceptan identificadores y referencias sin validación suficiente; ASSIGN_USER no valida el estado ni las referencias completas y cierra la adscripción anterior antes de garantizar la nueva; la operación no es atómica bajo fallos o concurrencia; las consultas carecen de paginación y filtro de ámbito; la interfaz no utiliza los catálogos.
+- **Severidad:** Alto.
+- **Objetivo:** mantener catálogos institucionales consistentes y adscripciones laborales válidas, evitando filas huérfanas, duplicados, pérdida parcial de la adscripción vigente y divergencias entre los modelos administrativo y académico.
+- **Acción ejecutable:**
+  1. Formalizar los contratos y relaciones de CatalogoDepartamentos, CatalogoCargos e HistorialAdscripciones, incluidos estado, jerarquía, departamento asociado, jefatura, fechas de vigencia y referencias de usuario.
+  2. Validar en servidor la unicidad de deptId/cargoId, la existencia y estado de departamentos/cargos, la existencia y estado de jefaturas y usuarios, y la compatibilidad de cada cargo con su departamento. Rechazar referencias inexistentes o inactivas.
+  3. Revisar el modelo de departamentos académicos: documentar si DepartamentosAcademicos es una entidad independiente o si debe vincularse con CatalogoDepartamentos; establecer una relación explícita y validable sin fusionar ambos catálogos por suposición.
+  4. Rediseñar ASSIGN_USER como operación transaccional lógica: validar todos los datos, reservar/generar el identificador y preparar la nueva adscripción antes de cerrar la anterior; ejecutar el cambio bajo bloqueo que cubra la operación completa; si la escritura falla, conservar o restaurar la adscripción previa y dejar evidencia recuperable.
+  5. Impedir más de una adscripción activa incompatible por usuario según las reglas institucionales, incluyendo protección frente a solicitudes concurrentes y reintentos idempotentes.
+  6. Completar los tipos de operación de gestión que realmente requiera el modelo (consulta, actualización, desactivación y reasignación), documentando sus transiciones y evitando que un endpoint acepte acciones no implementadas.
+  7. Incorporar paginación estable, límites máximos y filtros por departamento/ámbito a getUserInstitutionalAffiliations; aplicar autorización contextual para impedir consultas fuera del ámbito permitido.
+  8. Conectar la UI de RRHH con los catálogos y operaciones institucionales; reemplazar texto libre por selectores validados donde corresponda y presentar errores, historial y estado de la adscripción.
+  9. Añadir pruebas para integridad referencial, identificadores duplicados, usuario/jefatura inactivos, cargo-departamento incompatible, fallos en cada etapa de reasignación, rollback/recuperación, reintentos, concurrencia, paginación, autorización y UI.
+- **Archivos/módulos afectados:** backend/user-service/Code.gs (manageDepartmentPositions, generateInstitutionalId, getUserInstitutionalAffiliations); backend/academic-service/Code.gs (assignDepartmentHead y consultas relacionadas); dashboard-recursos-humanos.html; tests/regression/academic-grading-suite.js y pruebas específicas de USER/ACADEMIC/UI; contratos y documentación de CatalogoDepartamentos, CatalogoCargos, DepartamentosAcademicos e HistorialAdscripciones.
+- **Dependencias y riesgos:** TASK-171 (ciclos y referencias jerárquicas), TASK-365 (organigrama visual), TASK-006/AUD-NG-017 (offboarding), AUD-NG-018/TASK-005 (asignaciones docentes a áreas académicas), AUD-NG-221/TASK-501 y AUD-NG-222/TASK-502 (permisos y autorización contextual), AUD-NG-145/AUD-NG-224 (bitácoras/versionado). AUD-NG-161/TASK-118 puede aportar controles de generación de identificadores, sin trasladar aquí su alcance de UserId. Riesgos: migración de registros huérfanos, reglas de unicidad no acordes con suplencias o adscripciones históricas, bloqueos concurrentes, rollback incompleto y confusión entre departamento laboral y académico.
+- **Alcance:** CRUD/validación de catálogos administrativos, jefaturas, cargos y adscripciones laborales; consistencia de la reasignación y consulta histórica; relación explícita con el modelo académico cuando proceda. No incluye la asignación de docentes a áreas curriculares (TASK-005/AUD-NG-018), la visualización del organigrama (TASK-365), prevención de ciclos jerárquicos ya cubierta por TASK-171 ni procesos de baja/offboarding de TASK-006.
+- **Criterios de aceptación:**
+  1. No pueden crearse departamentos o cargos con IDs duplicados ni referencias inexistentes/inactivas.
+  2. Las jefaturas y usuarios asignados existen, están activos y cumplen las reglas de ámbito.
+  3. La relación entre departamentos administrativos y académicos está documentada y validada; no se mezclan modelos sin una decisión explícita.
+  4. Una reasignación exitosa deja exactamente el estado activo permitido y conserva el historial; un fallo no cierra ni pierde la adscripción previa.
+  5. Las operaciones concurrentes y los reintentos no producen adscripciones activas duplicadas ni resultados parciales; el mecanismo de bloqueo cubre el flujo completo.
+  6. Las consultas de adscripciones están paginadas, limitadas y filtradas por ámbito con autorización contextual efectiva.
+  7. La UI de RRHH utiliza catálogos institucionales y muestra resultados/errores reales, sin depender de texto libre para referencias controladas.
+  8. Las pruebas automatizadas cubren integridad, fallos, recuperación, concurrencia, paginación, permisos y regresión de USER/ACADEMIC/UI.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente. Registrar SHA de implementación, pruebas de integridad/atomicidad y concurrencia, validación de migración y evidencia de UI antes de cambiar el estado.

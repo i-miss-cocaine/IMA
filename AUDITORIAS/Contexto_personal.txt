@@ -6091,3 +6091,35 @@ CHECKPOINT C1.181 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-F4-P1-
 - Próximo informe oficial: TAREA-F4-P1-07 - gestión institucional de roles, cargos, departamentos y asignaciones; leerlo íntegramente y reconciliar AUD-NG-225/TASK-505 y AUD-NG-226/TASK-506 antes de normalizar.
 - Regla de publicación: un único commit consolidado con exactamente el informe y Contexto_personal.txt; verificar SHA, padre, árbol, archivos modificados y HEAD tras publicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.182 - NORMALIZACIÓN DE TAREAS DEL INFORME TAREA-F4-P1-07
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base de referencia protegida: NG_beta_0.0.1.
+- HEAD de partida verificado: 880c03a3b185c60aaf27b8a4f8ebbce72b2c3582.
+- Árbol base de la rama de trabajo: 6a90ea1b3250edfaf9054f93a699c966d4fa1e96.
+- HEAD de rama base documentado previamente (solo lectura): 44d9891132332e692dbe2ba8602b41f50a508a59; no se realizó ninguna escritura sobre la rama base en esta iteración.
+- ID operativo de sesión: IMA-AUDIT-20261106-2307Z (no es ID nativo de ChatGPT).
+- Checkpoint inicial de esta iteración: C1.181.
+- Estado de iteración: normalización documental preparada para publicación en C1.182.
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F4-P1-07.md.
+- SHA del informe antes del cambio: 8cdc6afa9313e649a95e3b5d28954db2858d2203.
+- SHA del contexto antes del cambio: 301597b436f1b0e07f69dd4e77d32207adfce05d.
+- SHA de referencia de Auditoria.txt consultado: 284b7a94b51c8ed99dbfcf734694bc5361f9f111.
+- SHA de referencia de MapaDependencias.md consultado: 4f68d56f910c6a4e87c20ecac82daeb3a615bcaa.
+- SHA del protocolo C1.112 consultado: e70acbef40f069a2372fae5e1e2c3f7f3aaa9f48.
+- Dictamen original preservado: TAREA-F4-P1-07 NO CUMPLE; estado [X] de completadas.md sin cambios.
+- Hallazgos normalizados: AUD-NG-225/TASK-505 y AUD-NG-226/TASK-506. Se desarrollaron las dos tareas existentes con todos los campos obligatorios; no se crearon IDs duplicados.
+- Reconciliación: TASK-004/F16-Task01 se conserva como antecedente completado con cobertura conductual insuficiente; TASK-171 conserva ciclos jerárquicos; TASK-365 conserva organigrama visual; TASK-006/AUD-NG-017 conserva offboarding; AUD-NG-018/TASK-005 conserva asignaciones docentes a áreas académicas; AUD-NG-221/TASK-501 y AUD-NG-222/TASK-502 conservan matriz y autorización contextual; AUD-NG-145/AUD-NG-224 conservan bitácoras y versionado. AUD-NG-161/TASK-118 se considera dependencia de controles de generación, sin duplicar su alcance de UserId.
+- Archivos modificados previstos: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F4-P1-07.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README, hojas productivas y rama base.
+- Pruebas ejecutadas: lectura íntegra del informe TAREA-F4-P1-07; lectura del protocolo C1.112; consulta de Auditoria.txt y MapaDependencias.md para AUD-NG-225/TASK-505 y AUD-NG-226/TASK-506; cotejo de TASK-004, TASK-171, TASK-365, TASK-006, TASK-005/AUD-NG-018, AUD-NG-221/222 y AUD-NG-145/224; verificación del HEAD, árbol y SHAs de partida; comprobación de ausencia previa de la sección obligatoria.
+- Pruebas no ejecutadas: HTTP, ejecución Apps Script, hojas productivas, migraciones, concurrencia real, rollback bajo fallos, navegador/UI, despliegues ni suites automatizadas. Esta iteración no implementa TASK-505 ni TASK-506.
+- Límite: cambio exclusivamente documental; no se declara implementada ninguna de las dos tareas ni se modifica el dictamen NO CUMPLE.
+- Próximo informe oficial: TAREA-F4-P1-08 - mecanismo central de propagación y recuperación de cambios de seguridad; leerlo íntegramente y reconciliar AUD-NG-005 y AUD-NG-176/TASK-474 antes de normalizar sus tareas existentes.
+- Regla de publicación: un único commit consolidado con exactamente el informe y Contexto_personal.txt; verificar SHA, padre, árbol, archivos modificados y HEAD tras publicar.
+================================================================
