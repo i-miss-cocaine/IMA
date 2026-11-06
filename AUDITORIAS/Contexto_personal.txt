@@ -4925,3 +4925,32 @@ CHECKPOINT C1.140 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 38
 - Próximo informe pendiente: AUDITORIA_FASE_39_DIGITALIZACION_TRANSICION.md.
 - Estado de TASK-DOC-C1.112-01: En curso.
 ================================================================
+
+================================================================
+CHECKPOINT C1.141 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 39
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida: 0a0c4d74415af63b769ef6eeea3391062d506842.
+- HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID operativo de sesión: IMA-AUDIT-20261106-2035Z-MIGRACION (no es ID nativo de ChatGPT).
+- Checkpoint anterior: C1.140 (Fase 38 normalizada).
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_FASE_39_DIGITALIZACION_TRANSICION.md.
+- SHA original del informe: b787363fe9270bf74379b36e9fd680eb72e91950.
+- SHA original del contexto: 7f89bf88912333d37ae954847bd922058a47cdf9.
+- Inspección: informe completo (18,026 caracteres), requisitos 3.1..3.12, CAR-F39-01..14, pruebas P01..P26 y ocho tareas descritas en plan G.
+- Tareas originales preservadas: F39-Task01..F39-Task08 y prioridades visibles P0/P1 del plan G.
+- Tareas adicionales derivadas de CAR-F39-14/P12: F39-Task19 (búsqueda por metadatos/contenido) y F39-Task20 (similitud documental con revisión humana).
+- Discrepancia histórica: Auditoria.txt registra 18 IDs F39-Task01..F39-Task18 (P0 01..07, P1 08..17, P2 18), mientras el informe describe Task01..Task08. No se recuperaron descripciones de Task09..Task18; no se inventan ni se consulta Pendientes.md.
+- Capacidades complementarias 4.1..4.6: referidas en Auditoria.txt, no definidas en el informe disponible; pendientes de recuperación documental.
+- Subcapacidades completas preservadas: 3.6/3.9/3.12; no se reejecutaron pruebas.
+- Dependencias cruzadas: F25-Task05, F29-Task01/09/11/13/15/18, F31-Task02/03/09, F32-Task10, F34-Task04, F35-Task08/15/16/17, F35-ID-Task04/05/08, F37-Task02/06, F24-Task03/07, F30-Task12; se coordinan sin duplicar.
+- Campos por tarea: origen, severidad, objetivo, acción, archivos/módulos, dependencias/riesgos, alcance, criterios de aceptación, prioridad, estado y evidencia de cierre.
+- Archivos modificados: AUDITORIAS/AUDITORIA_FASE_39_DIGITALIZACION_TRANSICION.md; AUDITORIAS/Contexto_personal.txt.
+- No se modificaron código, pruebas, Pendientes.md, completadas.md, ChangesLogs.txt, Auditoria.txt, metodología, README, plan maestro ni rama base.
+- Pruebas no ejecutadas: inventario, SHA-256, custodia Drive, DOCX/PDF/OCR, vinculación histórica, formularios asistidos, dashboard, ZIP/reintentos, búsqueda y similitud documental.
+- Próximo informe pendiente: AUDITORIA_FASE_40_SEGURIDAD_DOCUMENTAL_TRAZABILIDAD_Y_CONSERVACION.md.
+- Estado de TASK-DOC-C1.112-01: En curso.
+================================================================
