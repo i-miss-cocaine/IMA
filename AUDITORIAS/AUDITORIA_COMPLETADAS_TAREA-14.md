@@ -53,3 +53,43 @@ Los siete archivos revisados tienen el mismo SHA en NG_beta_0.0.0.1 y NG_beta_0.
 ## Calidad y límites
 
 Calidad insuficiente: la vista del estudiante y la navegación docente tienen funcionalidades útiles, pero la bandeja de revisión no es accesible, el modo offline no recupera de forma fiable las operaciones académicas, la resolución de conflictos es simulada y hay fallas de semántica/teclado. La interfaz es parcialmente responsive, pero no se demuestra WCAG 2.2 AA. Revisión estática/manual; no se ejecutaron pruebas de navegador, dispositivos táctiles, lectores de pantalla, red desconectada, sincronización real ni despliegue. No se modificó código fuente, completadas.md, completadas_legacy.md ni ChangesLogs.txt.
+
+## Tareas ejecutables derivadas de los hallazgos
+
+### AUD-NG-169 - Bandeja docente operativa y accesibilidad funcional de paneles (P2)
+- Integrar en `teacher-dashboard.html` una bandeja visible y operativa para revisiones de tareas y exámenes. Conectar la consulta de entregas con la interfaz real; una función definida pero no invocada no constituye una bandeja disponible.
+- Unificar las entregas de TASK y EXAM en el listado, mostrar estado, estudiante, asignatura, vencimiento y antigüedad, y permitir navegación directa a la revisión y al expediente autorizado.
+- Definir y aplicar un criterio explícito de prioridad (vencimiento, antigüedad y estado de revisión), con orden determinista y filtros que no sustituyan el ámbito docente autorizado.
+- Proporcionar estados accesibles para carga, vacío, error y actualización de datos. Los mensajes deben describir si los datos provienen de caché, si están desactualizados y cuándo ocurrió la última sincronización.
+- Hacer que tarjetas, filas y controles interactivos sean operables por teclado y semánticamente correctos: elementos nativos o roles apropiados, foco visible, orden lógico, activación con Enter/Espacio y nombres accesibles.
+- Incorporar etiquetas y anuncios accesibles para estados dinámicos de conexión, sincronización y conflictos mediante roles/atributos ARIA adecuados; no depender únicamente de color, iconos o mensajes transitorios.
+- Adaptar los formularios de creación/revisión según tipo de actividad y área curricular: campos, instrucciones, criterios, límites y validaciones deben corresponder a la modalidad seleccionada y aplicarse también en servidor.
+- Garantizar diseño responsivo y objetivos táctiles adecuados en los paneles de estudiante y docente, sin ocultar funciones esenciales en pantallas pequeñas.
+- Verificar WCAG 2.2 AA con pruebas reproducibles de teclado, lector de pantalla, contraste, foco, etiquetas, mensajes de error y tamaño/espaciado de objetivos táctiles. La inspección estática y la presencia aislada de labels no equivalen a certificación.
+- Mantener el acceso al expediente y a las entregas sujeto a las relaciones y autorizaciones verificadas; AUD-NG-169 integra navegación y presentación, pero no sustituye los controles de AUD-NG-002/AUD-NG-158.
+
+### AUD-NG-126 - Orden consistente de actividades
+- Conservar un mismo criterio de orden entre la tarjeta de asignatura y la vista expandida, priorizando vencimientos próximos y actividades pendientes según la regla existente.
+- Añadir pruebas de regresión que comprueben que la vista expandida no invierte el orden ni oculta las actividades urgentes.
+
+### AUD-NG-158 - Filtros docentes basados en asignaciones verificadas
+- Construir los filtros de grado, sección, asignatura y estudiantes a partir de las asignaciones vigentes del docente y del contexto validado en backend.
+- No tratar `GLOBAL_SCOPE` como prueba de asignación individual ni confiar en `profesorId` enviado por el cliente.
+- Restringir consultas y navegación a los grupos/entregas sobre los que el docente tiene responsabilidad vigente; validar también el acceso final al expediente.
+
+### TASK-065 - Sincronización offline real de operaciones académicas
+- Integrar `queueOfflineAction` con las mutaciones académicas que deban sobrevivir a una desconexión (entregas, formularios y operaciones autorizadas de revisión/calificación).
+- Implementar el transporte real utilizado por `syncOfflineQueue`; la sincronización no debe depender de una función global inexistente.
+- Persistir estados, intentos, causas de error, próxima ejecución y resultado por operación. Diferenciar pendientes, en curso, sincronizadas y fallidas.
+- Hacer que la resolución de conflictos aplique realmente la elección local/servidor, actualice la cola y reenvíe o descarte la operación según la decisión. No ocultar el modal ni mostrar “Conflicto resuelto” antes de persistir la resolución.
+- Mantener idempotencia y protección de duplicados durante reintentos y recuperación de conexión.
+
+### TASK-129 y TASK-130 - Ayudas y tooltips accesibles
+- Alinear tooltips y ayudas de formularios con los criterios globales de accesibilidad: asociación programática con el control, activación por teclado, foco/hover apropiados y contenido comprensible.
+- Verificar que las ayudas no oculten información esencial ni sean la única vía para conocer errores, requisitos o estados.
+- Estas tareas complementan la accesibilidad de ayudas; no sustituyen las pruebas WCAG 2.2 AA del panel completo exigidas por AUD-NG-169.
+
+**Reconciliación y límites:** AUD-NG-169 cubre la bandeja docente, navegación y accesibilidad funcional de paneles/formularios. AUD-NG-126 conserva el orden de actividades; AUD-NG-158 conserva ABAC y filtros por asignación; TASK-065 conserva sincronización offline; TASK-129/130 conservan ayudas/tooltips. No se crea un ID duplicado ni se absorbe la implementación offline en AUD-NG-169.
+
+**Evidencia requerida:** bandeja visible con tareas y exámenes; prioridad reproducible; navegación autorizada; pruebas de teclado/lector de pantalla/contraste/foco/ARIA/táctil; formularios por modalidad; caché con estado explícito; y pruebas offline que demuestren persistencia, reintento y resolución efectiva de conflictos. La auditoría actual es estática y no acredita esos resultados.
+

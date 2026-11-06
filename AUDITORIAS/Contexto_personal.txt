@@ -5589,3 +5589,33 @@ CHECKPOINT C1.164 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-13
 - Próximo informe: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-14.md; leerlo íntegramente y reconciliar hallazgos y tareas relacionadas antes de formalizar.
 - Commit de cierre: un único commit con ambos archivos; verificar SHA, padre, árbol, archivos modificados y HEAD de rama después de publicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.165 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-14
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida declarada en el proyecto: NG_beta_0.0.0.1.
+- HEAD de partida verificado: e3c227d8bd4e023b69ac570a2b3ebe7028c68879.
+- Árbol base de la rama de trabajo: 21bbc09e74337ed910a5f3589dcda0dad3c90702.
+- Rama base: no se realizó consulta nueva en esta iteración; no se efectuó ninguna escritura sobre ella.
+- ID operativo de sesión: IMA-AUDIT-20261106-2219Z (no es ID nativo de ChatGPT).
+- Checkpoint inicial de esta iteración: C1.164.
+- Estado de iteración: cerrada en C1.165.
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-14.md.
+- SHA del informe antes del cambio: a01408068446b17dfc49c591775c43eb33b250b9.
+- SHA del contexto antes del cambio: bb2094ea2cbfd79a356d51a3419df54e027a9c27.
+- Inspección: TAREA-14 CUMPLE PARCIALMENTE. La bandeja docente de revisiones no está integrada; los filtros no equivalen a asignaciones verificadas; el caché desaparece ante fallos remotos; la cola offline no está conectada a mutaciones y su transporte no está demostrado; la resolución de conflictos simula éxito; el indicador online no demuestra disponibilidad; faltan semántica/teclado/ARIA y pruebas WCAG 2.2 AA; los formularios no se adaptan completamente por tipo/área.
+- Hallazgo nuevo formalizado: AUD-NG-169 (P2), bandeja docente visible para tareas/exámenes, priorización, navegación, accesibilidad funcional, formularios adaptativos y evidencia WCAG 2.2 AA.
+- Tareas existentes ampliadas: AUD-NG-126 (orden de actividades); AUD-NG-158 (filtros/consultas por asignaciones docentes verificadas); TASK-065 (cola offline, transporte, reintentos y resolución real de conflictos); TASK-129/TASK-130 (tooltips/ayudas accesibles).
+- Reconciliación: AUD-NG-169 no absorbe sincronización offline (TASK-065), orden de actividades (AUD-NG-126) ni ABAC (AUD-NG-158). TASK-129/130 complementan ayudas, pero no certifican accesibilidad integral.
+- Archivos modificados: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-14.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, Auditoria.txt, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README y rama base.
+- Pruebas ejecutadas: lectura íntegra de TAREA-14; contraste de AUD-NG-169 y tareas relacionadas en Auditoria.txt; comprobación de que el bloque aún no existía; verificación del HEAD y árbol de partida.
+- Pruebas no ejecutadas: pruebas de navegador, teclado, lectores de pantalla, contraste, WCAG, táctiles, red desconectada, sincronización, resolución de conflictos, ABAC, Apps Script y producción.
+- Límite: cambio exclusivamente documental. TAREA-14 permanece CUMPLE PARCIALMENTE; AUD-NG-169 y tareas relacionadas no se consideran ejecutadas ni completadas.
+- Próximo informe: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-15.md; leerlo íntegramente y reconciliar sus hallazgos y tareas relacionadas antes de formalizar.
+- Commit de cierre: un único commit con ambos archivos; verificar SHA, padre, árbol, archivos modificados y HEAD de rama después de publicar.
+================================================================
