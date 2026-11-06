@@ -98,3 +98,50 @@ No se ejecutaron llamadas HTTP, pruebas multiusuario, pruebas cruzadas entre fam
 - Próxima tarea oficial: TAREA-F4-P0-03 - Garantizar la revocación efectiva de sesiones y la actualización inmediata de privilegios.
 
 ================================================================
+
+## Tareas ejecutables derivadas de los hallazgos
+
+> Derivadas de la inspección estática de TAREA-F4-P0-02. Se conserva el dictamen **NO CUMPLE** y el estado `[X]` de `completadas.md`; este bloque registra trabajo pendiente y no certifica correcciones.
+
+### AUD-NG-217 / TASK-496 — Restringir el acceso docente a estudiantes, tutores y trámites asignados (CRÍTICO/P0)
+
+- [ ] Implementar una resolución server-side del conjunto de estudiantes asignados al profesor autenticado, basada en asignaciones activas y vigentes. No aceptar como autoridad `userId`, `targetUserId`, `studentId`, `userIdResponsable`, `grado` o `seccion` enviados por el cliente.
+- [ ] En USER, aplicar ese ámbito a `getUserInfo`: el profesor solo podrá consultar perfiles de estudiantes bajo su asignación vigente y la respuesta deberá limitarse a los campos necesarios para su función.
+- [ ] En USER, restringir `getGuardianStudents`: un profesor no puede consultar estudiantes vinculados a cualquier tutor; debe comprobar que cada estudiante pertenece al ámbito docente autorizado. Mantener la validación familiar existente para Padre/Tutor/Responsable.
+- [ ] En USER, filtrar `getAdministrativeRequests` por estudiantes asignados y validar la propiedad/relación antes de devolver trámites. En `submitAdministrativeRequest`, derivar el actor del principal verificado y comprobar la asignación del estudiante antes de aceptar la creación; no permitir que el payload suplante al solicitante o al representado.
+- [ ] Definir comportamiento de denegación uniforme para estudiante fuera de asignación, asignación vencida, asignación revocada, profesor sin asignaciones y roles no docentes; evitar que una consulta sin filtros se convierta en acceso global.
+- [ ] Añadir pruebas multiusuario para profesor A/B, estudiantes asignados/no asignados, tutores con y sin vínculo, trámites de terceros, cambio de IDs en payload, ausencia de filtros y asignación revocada.
+- **Criterio de aceptación:** los cuatro handlers USER aplican el ámbito docente en backend y no revelan perfiles, vínculos familiares ni trámites fuera de asignaciones activas. Evidencia: pruebas negativas/positivas reproducibles y matriz de autorización por rol y relación.
+
+### AUD-NG-105 — Corregir el contrato de historial académico y aplicar autorización contextual (ALTO)
+
+- [ ] Corregir el esquema de historial para almacenar una clave estable de estudiante separada del identificador del registro `hist-XXXX`; migrar o reconciliar registros existentes sin reinterpretar el ID histórico como identidad del estudiante.
+- [ ] Alinear `ROLE_PERMISSIONS`, `getAcademicHistory` y el cliente `fetchAcademicHistory` para que los roles autorizados invoquen el endpoint con un contrato coherente y el servidor derive el principal de claims verificados.
+- [ ] Extender `validateContextualAccess` para Padre/Tutor/Responsable: verificar el vínculo familiar real con cada estudiante solicitado. Para Profesor, comprobar asignación docente activa y alcance sobre el estudiante.
+- [ ] Ignorar/rechazar `estudianteId`, `grado` y `seccion` arbitrarios cuando no estén respaldados por el principal y las relaciones autorizadas. Las consultas sin filtros no deben devolver historiales globales a roles familiares o docentes.
+- [ ] Añadir pruebas de correspondencia entre ID de historial y estudiante, lectura propia, tutor vinculado/no vinculado, profesor asignado/no asignado, rol sin permiso, payload manipulado y conjunto vacío.
+- **Criterio de aceptación:** el estudiante autorizado puede leer su historial mediante una clave de estudiante inequívoca; tutores y profesores solo acceden a historiales de estudiantes vinculados/asignados; no hay consulta global por omisión de filtros.
+
+### AUD-NG-136 — Aislar historial de matrícula, estados de cuenta y comprobantes por vínculo familiar (CRÍTICO)
+
+- [ ] En ACADEMIC, extender `validateContextualAccess` y `getStudentEnrollmentHistory` para que Padre/Tutor/Responsable solo consulten estudiantes vinculados mediante una relación familiar vigente y verificada; el `userId` del payload no acredita propiedad.
+- [ ] En ACCOUNTING, aplicar el mismo vínculo familiar a `getStudentAccountStatement` y `getPaymentVouchers`; no devolver todos los comprobantes cuando falte `userId`, ni aceptar un identificador arbitrario para consultar registros de terceros.
+- [ ] Revisar los endpoints financieros/documentales ya incluidos en AUD-NG-136 (incluidos recibos y facturas fiscales) para exigir titularidad o vínculo familiar antes de recuperar o generar documentos; comprobar también filtros por `reciboId`, `pagoId` y `facturaId`.
+- [ ] Derivar el actor desde claims verificados y resolver el estudiante representado desde relaciones persistidas; validar la relación en cada petición, sin confiar en listas de IDs del cliente ni en filtros de interfaz.
+- [ ] Aplicar denegación por defecto, minimización de campos y separación entre consultas de un titular y consultas administrativas explícitamente autorizadas.
+- [ ] Añadir pruebas cruzadas entre dos familias, tutor sin vínculo, estudiante propio/ajeno, comprobantes sin filtro, IDs de recibo/pago/factura manipulados, y roles administrativos con ámbito explícito.
+- **Criterio de aceptación:** ningún rol familiar accede a matrículas, cargos, estados de cuenta, comprobantes, recibos o facturas de un estudiante no vinculado; omitir filtros no amplía el alcance. Las consultas administrativas requieren permiso y ámbito verificables.
+
+### Dependencias que se mantienen sin duplicar
+
+- **AUD-NG-002:** conserva la corrección de consultas TASK/EXAM en `PUBLIC_ACTIONS`, identidad derivada del token y aislamiento de consultas estudiantiles. No duplicar aquí sus tareas ya registradas en C1.172.
+- **AUD-NG-106 / AUD-NG-108:** permanecen responsables de la autorización contextual de configuración académica y su vínculo con el profesor autenticado; este informe no los reemplaza.
+- **AUD-NG-128:** conserva IDOR de tickets y otras acciones USER distintas de perfiles/tutores/trámites docentes.
+- **AUD-NG-130:** mantiene el alcance de permisos financieros y la prohibición de mutaciones durante consultas.
+- **TASK-105:** mantiene el ciclo de vida/sincronización de justificaciones; no sustituye la autorización contextual del solicitante.
+- No crear otro ID para el ámbito docente USER: AUD-NG-217/TASK-496 es el identificador específico. AUD-NG-105 y AUD-NG-136 se amplían, no se duplican.
+
+### Límites de verificación
+
+- La inspección que origina este bloque es estática. No afirmar explotación, fuga real en producción ni corrección efectiva sin pruebas autorizadas en entorno controlado.
+- No se modifican código fuente, pruebas, estados maestros ni registros de completitud en esta iteración.

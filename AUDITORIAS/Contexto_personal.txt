@@ -5827,3 +5827,32 @@ CHECKPOINT C1.172 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-F4-P0-
 - Próximo informe: TAREA-F4-P0-02, si su archivo existe y no contiene ya el bloque; leer íntegramente y reconciliar antes de editar.
 - Regla de publicación: un único commit con exactamente el informe y Contexto_personal.txt; verificar SHA, padre, árbol, archivos modificados y HEAD tras publicar.
 ================================================================
+
+================================================================
+CHECKPOINT C1.173 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-F4-P0-02
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.1.
+- HEAD de partida verificado: f9ace82c55e567eeb12a6e6bc525960f399de1ba.
+- Árbol base de la rama de trabajo: b12922c95be2d315b7ac4e819298e671ff68bd4c.
+- HEAD de rama base consultado (solo lectura): 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID operativo de sesión: IMA-AUDIT-20261106-2232Z (no es ID nativo de ChatGPT).
+- Checkpoint inicial de esta iteración: C1.172.
+- Estado de iteración: cerrada en C1.173.
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F4-P0-02.md.
+- SHA del informe antes del cambio: d3b2984c91b0569b990bdc861bad9f126fdecaab.
+- SHA del contexto antes del cambio: 192d453ec6a5dab389ea3d94d1124ad93063dcd0.
+- Dictamen original preservado: TAREA-F4-P0-02 NO CUMPLE; estado [X] de completadas.md sin cambios.
+- Inspección: USER carece de ámbito docente para getUserInfo/getGuardianStudents/getAdministrativeRequests/submitAdministrativeRequest; ACADEMIC no verifica vínculo familiar ni asignación docente en getAcademicHistory/getStudentEnrollmentHistory; ACCOUNTING acepta IDs de payload o consultas sin filtro en estados de cuenta/comprobantes; EXAM/TASK conservan consultas estudiantiles públicas bajo AUD-NG-002.
+- Reconciliación: AUD-NG-217/TASK-496 formaliza el ámbito docente USER; AUD-NG-105 se amplía para el esquema/lectura del historial y el alcance familiar/docente; AUD-NG-136 se amplía para historial de matrícula y aislamiento financiero/documental por vínculo familiar. AUD-NG-002, 106, 108, 128 y 130 permanecen con sus ámbitos propios; TASK-105 no sustituye autorización contextual.
+- IDs adicionales creados: ninguno.
+- Archivos modificados: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F4-P0-02.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, Auditoria.txt, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README y rama base.
+- Pruebas ejecutadas: lectura íntegra de TAREA-F4-P0-02; contraste de los hallazgos relacionados en Auditoria.txt; comprobación de ausencia previa del bloque; verificación de HEAD y SHAs de partida.
+- Pruebas no ejecutadas: HTTP, multiusuario, familias cruzadas, asignaciones docentes, matrículas/estados de cuenta reales, consultas a Sheets de producción y suites automatizadas.
+- Límite: cambio exclusivamente documental; el registro de criterios no ejecuta ni completa ninguna tarea.
+- Próximo informe oficial: TAREA-F4-P0-03 - revocación efectiva de sesiones y actualización inmediata de privilegios; leer íntegramente y reconciliar antes de editar.
+- Regla de publicación: un único commit con exactamente el informe y Contexto_personal.txt; verificar SHA, padre, árbol, archivos modificados y HEAD tras publicar.
+================================================================
