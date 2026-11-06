@@ -2819,3 +2819,25 @@ RESULTADO Y RECONCILIACIÓN:
 - No modificar código fuente, tests, completadas.md, METODOLOGIA_DESARROLLO.md ni ChangesLogs.txt en esta iteración.
 - Publicación: preparar todos los cambios en un único commit descendiente del HEAD de partida; verificar HEAD, árbol, archivos incluidos y rama base intacta antes de declarar éxito.
 ================================================================
+
+================================================================
+CHECKPOINT C1.64 - CIERRE DE AUDITORÍA T-UX-21 (2026-11-06)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: deba6d99ba00e6b4bcfb49d012762c7df12d1abc.
+- HEAD de rama base verificado al inicio: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID de sesión de auditoría/chat: IMA-AUDIT-20261106-0254Z.
+- Inicio de sesión: checkpoint C1.63. Estado de sesión: ABIERTA; este es un checkpoint intermedio, no el cierre del chat.
+- Tarea auditada: T-UX-21 - Completar el indicador de frescura de datos y los estados de sincronización. Dictamen NO CUMPLE.
+- Reconciliación: T-UX-04 fue auditada en C1.46; AUD-NG-183/TASK-480 ya cubre la ampliación de T-UX-21 y continúa pendiente. No se crea duplicado.
+- Hallazgos confirmados: timestamp ausente sustituido por hora actual; callback trata solo success===false como fallo y acepta undefined; sin timestamp de retorno usa hora actual; falta modelado completo de cuatro estados; badge sin consumidores externos; openUserManagementAdministrationModal (5468) y openSecurityAndComplianceDashboardModal (5617) anidados en renderDataFreshnessBadge (5438-5789); UX-04 solo comprueba typeof.
+- Evidencia: js/ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67; dashboard-direccion.html SHA fefaa3bf7884288aef563cfb8aaf244e6cea8b7c; dashboard-secretaria.html SHA fa0d8c23aace24a6acab2d4956398a7f5e1309b8; completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676; Pendientes.md blob SHA 02c0beadb4bcb01fd54546759b6c529b27fd2113 (TASK-480).
+- Pruebas: inspección estática/manual y búsqueda en 15 JS/12 HTML. No ejecutados navegador/DOM, red, callbacks, timeouts, Apps Script, sincronización real ni suites automatizadas.
+- Archivos previstos: Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, AUDITORIA_COMPLETADAS_T-UX-21.md, METODOLOGIA_DESARROLLO.md (regla de ID de sesión) y Contexto_personal.txt. Sin cambios de código/tests, completadas.md, Pendientes.md ni ChangesLogs.txt.
+- Progreso: 62/183 identificadores auditados; 121 pendientes.
+- Siguiente tarea exacta: T-UX-22 - Corregir el significado y el comportamiento del indicador de estado en línea.
+- Próxima acción reproducible: revisar setupCommonUI (js/ui-common.js 1-65), navigator.onLine/eventos online/offline, significado de «Conexión Estable», pruebas UX-07 (1902-1907) y reconciliar T-UX-22 con tareas de offline/sync existentes.
+- Commit de cierre: el commit que contiene este checkpoint.
+================================================================

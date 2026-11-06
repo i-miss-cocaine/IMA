@@ -760,3 +760,13 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Archivos/documentos:** se anexan resultados a Auditoria.txt, MapaDependencias.md y este plan; se crea AUDITORIA_COMPLETADAS_T-UX-20.md; se agrega TASK-494 a Pendientes.md; checkpoint C1.63 en Contexto_personal.txt.
 - **Progreso:** 61/183 identificadores auditados; 122 pendientes.
 - **Siguiente tarea:** T-UX-21 - Completar el indicador de frescura de datos y los estados de sincronización.
+
+## 66. Resultado C1.64 - T-UX-21 (2026-11-06)
+
+- **Dictamen:** NO CUMPLE. La implementación del indicador no está integrada, sustituye timestamps ausentes por la hora actual, acepta respuestas de callback no confirmadas y no modela los estados requeridos. Además, conserva anidados dos helpers administrativos.
+- **Reconciliación:** T-UX-04 ya se auditó en C1.46 con AUD-NG-183/TASK-480. La TASK-480 pendiente cubre los requisitos de T-UX-21; no se crea tarea duplicada ni se modifica Pendientes.md.
+- **Evidencia:** js/ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67, 5438-5789; UX-04 1879-1885; dashboard-direccion.html SHA fefaa3bf7884288aef563cfb8aaf244e6cea8b7c, 188-198; dashboard-secretaria.html SHA fa0d8c23aace24a6acab2d4956398a7f5e1309b8, 330-331. Informe: AUDITORIA_COMPLETADAS_T-UX-21.md.
+- **Pruebas:** inspección estática/manual y búsqueda de referencias en 15 JS/12 HTML. No se ejecutaron pruebas de navegador/DOM, sincronización, callbacks ni suites automatizadas.
+- **Sesión:** IMA-AUDIT-20261106-0254Z; inicio C1.63; sesión abierta (continuará con T-UX-22).
+- **Progreso:** 62/183 identificadores auditados; 121 pendientes.
+- **Siguiente tarea:** T-UX-22 - Corregir el significado y el comportamiento del indicador de estado en línea.

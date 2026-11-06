@@ -792,6 +792,8 @@ Esta sección reemplaza cualquier interpretación anterior de «un commit por ta
 8. **Auditoría de continuidad al reanudar:** verificar rama/HEAD de ambas ramas, leer contexto/metodología/plan/informes citados, comprobar cambios posteriores que puedan invalidar evidencia y continuar desde el siguiente elemento pendiente sin repetir trabajo concluido salvo que haya una razón documentada.
 
 
+9. **Identificador de sesión de chat/auditoría:** cada checkpoint debe incluir un ID de sesión único, el checkpoint inicial de esa sesión y su estado (abierta o cerrada). ChatGPT no expone un identificador técnico estable de conversación; por tanto, se utilizará un identificador operativo generado para la auditoría, con formato `IMA-AUDIT-YYYYMMDD-HHMMZ` (añadir sufijo si se necesita evitar colisión). Este ID no debe presentarse como ID nativo de ChatGPT. Todos los checkpoints intermedios y el checkpoint final de una misma conversación conservarán el mismo ID. El último checkpoint de la conversación indicará explícitamente el checkpoint de inicio, el checkpoint de cierre, la hora UTC de cierre y el estado «sesión cerrada». Una conversación posterior recibirá un ID nuevo.
+
 
 # 17. DIAGNÓSTICO Y CONTENCIÓN DE BLOQUEOS DE PUBLICACIÓN EN GITHUB
 

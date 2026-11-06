@@ -1563,3 +1563,12 @@ Relaciones:
 - Calendario: js/teacher.js SHA c475fce5afcd28fca23e7b64398ad32b17773746 (1220-1249) solo persiste filtros de categorías; js/secretary.js SHA 08a81266957b4c18cc25f8ba6749eac30a8f2c2c (590-642) abre y envía un modal de evento. La revisión estática no acredita una interfaz calendario responsiva de extremo a extremo.
 - Hallazgos nuevos: AUD-NG-212 (barra inferior por encima de modales) y AUD-NG-213 (modales largos sin max-height/scroll interno). TASK-494 cubre capas, scroll interno y pruebas en viewports; no duplica TASK-483/429/492/493/258/484.
 - Límite: revisión estática/manual; no se ejecutaron pruebas reales de navegador, viewport, orientación, táctiles, stacking o scroll.
+
+## Frescura de datos y estados de sincronización (T-UX-21, C1.64)
+- T-UX-21 amplía T-UX-04 y queda cubierta por AUD-NG-183/TASK-480, que continúa pendiente.
+- js/ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67: renderDataFreshnessBadge abre en 5438 y cierra hasta 5789; las funciones openUserManagementAdministrationModal (5468) y openSecurityAndComplianceDashboardModal (5617) quedan anidadas en su cuerpo.
+- El timestamp falsy se sustituye por la hora actual; fechas inválidas/futuras no se validan. El botón manual aparece aunque no haya callback; el callback trata solo success===false como fallo y puede aceptar undefined, usando la hora actual si no entrega timestamp. No se implementan claramente los cuatro estados ni timeout/exception robustos.
+- Búsqueda estática de referencias: 15 archivos JS y 12 vistas HTML representativas; no se encontraron invocaciones externas del badge. Dirección (dashboard-direccion.html 188-198) y Secretaría (dashboard-secretaria.html 330-331) dependen de helpers globales que no se registran hasta invocar el badge.
+- UX-04 (ui-common.js 1879-1885) es una comprobación nominal typeof, no una prueba conductual.
+- No se crea tarea duplicada: TASK-480 ya cubre todas las correcciones y pruebas adicionales. No se modifica Pendientes.md.
+- Verificación estática únicamente; no se ejecutaron navegador/DOM, red, Apps Script, sincronización real ni suites automatizadas.
