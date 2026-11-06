@@ -4406,3 +4406,32 @@ CHECKPOINT C1.122 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 19
 - Próxima acción concreta: continuar con AUDITORIA_FASE_20_BIBLIOTECA_RECURSOS_EDUCATIVOS.md; leer íntegramente el informe, revisar tareas históricas y hallazgos cruzados, reconciliar IDs/estados y añadir el bloque obligatorio sin duplicar trabajo.
 - Estado de TASK-DOC-C1.112-01: En curso; migración documental por lotes.
 ================================================================
+
+================================================================
+CHECKPOINT C1.123 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 20
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto: AUDITORIAS/Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: 19f4b47017711d6fbf277c223d4db3843151aa40.
+- HEAD de rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID operativo de sesión: IMA-AUDIT-20261106-2011Z-F10 (se conserva el identificador operativo de esta conversación; no es un ID nativo de ChatGPT).
+- Checkpoint anterior: C1.122 (Fase 19 normalizada).
+- Tarea documental en curso: TASK-DOC-C1.112-01, normalización progresiva de informes históricos.
+- Informe normalizado en esta iteración: AUDITORIAS/AUDITORIA_FASE_20_BIBLIOTECA_RECURSOS_EDUCATIVOS.md.
+- SHA del informe antes de modificar: 1a490dd9f7e01aa044521ddb76a12512e106d188.
+- SHA del contexto antes de modificar: 3d8b591972a55807198a932332047ed94b239bef.
+- Inspección documental: informe completo (25,063 caracteres; 203 líneas), secciones A-H, inventario de implementación, matriz F20-01..F20-60, defectos E, pruebas PT-20-01..PT-20-55 y plan de resolución G.
+- Fuentes cruzadas: Auditoria.txt (blob 284b7a94b51c8ed99dbfcf734694bc5361f9f111), registros TASK-023/TASK-024 para F20-Task01/02 y TASK-025..TASK-028 para F20-Task03/04/05/14; metodología §3.4 y AUDITORIAS/README.md.
+- Tareas originales preservadas: F20-Task01..F20-Task14 con prioridades P0/P1/P2/P0-Calidad del apartado G.
+- Estado histórico: TASK-023/TASK-024 registran implementación ejecutada sin estado de cierre inequívoco en el extracto; F20-Task01/02 quedan pendientes de revalidación. TASK-025..TASK-027 registran implementación y 188/188 + 23/23 pruebas reportadas; F20-Task03/04/05 conservan cierre histórico sin reejecución en esta iteración. TASK-028 registra suite F20-Task14 con PT20-01..PT20-14, pero el informe contiene matriz PT-20-01..PT-20-55; F20-Task14 queda pendiente de ampliar cobertura.
+- F20-Task06..F20-13: no se encontró evidencia de cierre en Auditoria.txt; permanecen pendientes.
+- Campos añadidos por tarea: hallazgo/origen, severidad, objetivo, acción, archivos/módulos, dependencias/riesgos, alcance, criterios de aceptación, prioridad, estado y evidencia de cierre.
+- Archivos modificados: AUDITORIAS/AUDITORIA_FASE_20_BIBLIOTECA_RECURSOS_EDUCATIVOS.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, ChangesLogs.txt, Auditoria.txt, METODOLOGIA_DESARROLLO.md, AUDITORIAS/README.md, plan maestro y demás informes; rama base sin cambios.
+- Pruebas no ejecutadas: suites de biblioteca, Apps Script runtime, Google Sheets productivo, reservas reales, correo/notificaciones, OPAC y despliegues; no hubo cambios de código.
+- HEAD de partida del árbol: 19f4b47017711d6fbf277c223d4db3843151aa40. El único commit de cierre debe contener ambos archivos y este checkpoint.
+- Próxima acción concreta: continuar con AUDITORIA_FASE_21_TRANSPORTE_SERVICIOS_COMPLEMENTARIOS.md; leer íntegramente el informe, revisar tareas históricas y hallazgos cruzados, reconciliar IDs/estados y añadir el bloque obligatorio sin duplicar trabajo.
+- Estado de TASK-DOC-C1.112-01: En curso; migración documental por lotes.
+================================================================

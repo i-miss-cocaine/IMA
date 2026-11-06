@@ -200,3 +200,176 @@ Se examinaron estándares internacionales de automatización bibliotecaria escol
   - Ausente / Propuesta: 28 (Reservas avanzadas, QR, integración patrimonial, OPAC, adquisiciones)
 
 El diagnóstico técnico y el plan de resolución quedan completamente establecidos para su incorporación inmediata al backlog central de `Pendientes.md`.
+
+---
+
+## Tareas ejecutables derivadas de los hallazgos
+
+> Normalización del plan de resolución de Fase 20. Se conservan los catorce IDs originales F20-Task01..F20-Task14 y las prioridades P0/P1/P2/P0-Calidad del apartado G. El registro posterior de Auditoria.txt vincula TASK-023/TASK-024 con F20-Task01/02 y TASK-025..TASK-028 con F20-Task03/04/05/14. Las tareas 03/04/05 tienen implementación y pruebas reportadas como completadas históricamente; las tareas 01/02 tienen plan de acción ejecutado, pero el registro no consigna cierre/verificación final. F20-Task14 tiene suite creada, aunque su cobertura registrada (PT20-01..PT20-14) es menor que la matriz de 55 pruebas del informe.
+
+### [F20-Task01] Implementar las funciones backend de reservas, incidencias y recursos digitales
+- **Hallazgo de origen:** secciones A.2, B, E.1, F (PT-20-26, PT-20-32 y PT-20-40) y G P0.
+- **Severidad:** Crítica. **Objetivo:** eliminar los errores ReferenceError y habilitar reservas, incidencias y recursos digitales.
+- **Acción ejecutable:** implementar `reserveLibraryBook`, `getLibraryReservations`, `recordLibraryIncident`, `getLibraryIncidents`, `manageDigitalResource` y `getDigitalResources`; persistir en hojas específicas; validar ejemplar, usuario, estado, permisos y duplicados; mantener trazabilidad de cada operación.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `ROLE_PERMISSIONS`, `doPost`, `BibliotecaReservas`, `BibliotecaIncidencias`, `RecursosDigitalesBiblioteca`.
+- **Dependencias/riesgos:** usuarios, catálogo/ejemplares, estado de circulación, permisos y acceso digital; riesgo de reservas duplicadas, incidencias huérfanas o exposición de recursos.
+- **Alcance:** backend de las seis acciones; no asumir que estar declaradas en el router equivale a implementación.
+- **Criterios de aceptación:** las seis funciones existen y se despachan; CRUD/consultas persisten correctamente; reserva respeta disponibilidad/lista de espera; incidencias actualizan condición del ejemplar; recursos digitales respetan permisos; errores se devuelven con contrato consistente.
+- **Prioridad:** P0. **Estado:** Pendiente de revalidación.
+- **Reconciliación:** TASK-023/F20-Task01 registra el plan de acción ejecutado y la implementación de las seis funciones, pero el registro no presenta resultado de prueba ni estado de cierre explícito. Verificar el código vigente y completar evidencia; no reimplementar a ciegas.
+- **Evidencia de cierre:** pendiente; no se certifica el cierre solo por la anotación del plan ejecutado.
+
+### [F20-Task02] Conectar y activar el módulo de Biblioteca en la navegación institucional
+- **Hallazgo de origen:** secciones A.2, B, E.2, F (PT-20-44) y G P0.
+- **Severidad:** Crítica. **Objetivo:** hacer accesible el módulo bibliotecario desde el dashboard institucional.
+- **Acción ejecutable:** agregar botón de Biblioteca en `dashboard-contabilidad.html` y conectar `tab === 'biblioteca'` con `renderBibliotecaModule(container)` en `window.switchTab`; comprobar acceso de roles bibliotecarios autorizados.
+- **Archivos/módulos:** `dashboard-contabilidad.html`, `js/accounting.js`, navegación del dashboard y permisos.
+- **Dependencias/riesgos:** F20-Task01, inicialización de UI y RBAC; riesgo de vista huérfana o acceso no autorizado.
+- **Alcance:** navegación y activación de las cinco subpestañas; no duplicar la vista ya desarrollada.
+- **Criterios de aceptación:** botón visible a roles autorizados; selección abre la vista correcta; las cinco subpestañas funcionan; navegación de retorno y permisos se mantienen; usuarios sin acceso no pueden invocar acciones.
+- **Prioridad:** P0. **Estado:** Pendiente de revalidación.
+- **Reconciliación:** TASK-024/F20-Task02 registra el plan de acción ejecutado, pero no un cierre/verificación explícito. Confirmar conexión real y no duplicar el código de vista existente.
+- **Evidencia de cierre:** pendiente; no se certifica el cierre por la sola anotación del plan ejecutado.
+
+### [F20-Task03] Normalizar el catálogo bibliográfico separando Obras y Ejemplares (FRBR/RDA)
+- **Hallazgo de origen:** secciones B, C, D/F20-01..F20-05, E.3 y G P0.
+- **Severidad:** Crítica. **Objetivo:** evitar duplicación de metadatos y separar la entidad intelectual de cada copia física.
+- **Acción ejecutable:** mantener `BibliotecaCatalogoObras` como maestro de ISBN, título, autores, editorial, año y materias; vincular cada fila de `BibliotecaEjemplares` mediante `ObraID` y guardar solo atributos del ejemplar; migrar registros existentes y adaptar consultas/edición.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `manageBibliographicWork`, `getBibliographicWorks`, `manageLibraryBook`, `getLibraryBooks`, `BibliotecaCatalogoObras`, `BibliotecaEjemplares`, `js/accounting.js`.
+- **Dependencias/riesgos:** ISBN, ejemplares, préstamos y reservas; riesgo de perder relaciones o alterar historial de circulación durante migración.
+- **Alcance:** normalización relacional y migración; no borrar ni recrear ejemplares con préstamos activos.
+- **Criterios de aceptación:** una obra puede tener múltiples ejemplares; metadatos se editan una sola vez; ejemplares conservan ID/ubicación/estado; préstamos mantienen sus referencias; ISBN duplicados se detectan según reglas; métricas agregan disponibilidad por obra.
+- **Prioridad:** P0. **Estado:** Completada históricamente (sin reejecución en esta normalización).
+- **Reconciliación:** TASK-025/F20-Task03 registra la hoja de obras, endpoints y adaptación UI. Se conserva la evidencia histórica de implementación; esta iteración documental no reaudita código ni altera el estado.
+- **Evidencia de cierre:** registro histórico TASK-025 y verificación global reportada de 188/188 pruebas y 23/23 pruebas; no se ejecutaron de nuevo aquí.
+
+### [F20-Task04] Configurar políticas de circulación, límites de préstamo y bloqueos por mora
+- **Hallazgo de origen:** secciones C.2-C.3, D/F20-11, F (PT-20-17), E.4 y G P0.
+- **Severidad:** Crítica. **Objetivo:** aplicar reglas de préstamo diferenciadas por rol y evitar sobrecupo o nuevos préstamos con mora activa.
+- **Acción ejecutable:** parametrizar días, cuotas máximas y condiciones por rol/tipo de material en `BibliotecaPoliticasCirculacion`; validar préstamos activos y mora antes de autorizar; calcular vencimiento desde la política vigente.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `processLibraryLoan`, `BibliotecaPoliticasCirculacion`, `BibliotecaPrestamos`.
+- **Dependencias/riesgos:** usuarios, rol vigente, préstamos, reservas y políticas por categoría; riesgo de bloquear usuarios incorrectamente o permitir cupos ilimitados.
+- **Alcance:** políticas de circulación; no codificar cuotas rígidas dentro de la función.
+- **Criterios de aceptación:** cuotas y plazos configurables/versionados; límites por rol aplicados en backend; mora activa bloquea nuevos préstamos; fecha de retorno calculada según política; cambios no alteran préstamos históricos.
+- **Prioridad:** P0. **Estado:** Completada históricamente (sin reejecución en esta normalización).
+- **Reconciliación:** TASK-026/F20-Task04 registra `BibliotecaPoliticasCirculacion`, cuotas por rol y bloqueos `LOAN_LIMIT_EXCEEDED` / `ACTIVE_OVERDUE_BLOCK`. Se conserva la evidencia histórica; no se vuelve a ejecutar la suite en esta iteración.
+- **Evidencia de cierre:** registro histórico TASK-026 y verificación global reportada de 188/188 y 23/23 pruebas; no reejecutadas aquí.
+
+### [F20-Task05] Implementar concurrencia e idempotencia en préstamos y reservas
+- **Hallazgo de origen:** secciones B, D/F20-10/F20-12/F20-16, F (PT-20-24), E.4 y G P0.
+- **Severidad:** Crítica. **Objetivo:** impedir que dos usuarios obtengan el mismo ejemplar o que un reintento cree préstamos/reservas duplicados.
+- **Acción ejecutable:** proteger `processLibraryLoan` y `reserveLibraryBook` con `LockService.getScriptLock()`; volver a leer estado bajo lock; aplicar clave de idempotencia y transición de disponibilidad consistente.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `processLibraryLoan`, `reserveLibraryBook`, `BibliotecaPrestamos`, `BibliotecaReservas`.
+- **Dependencias/riesgos:** F20-Task01, ejemplares, reservas, reintentos HTTP y estados de préstamo; riesgo de doble préstamo o reserva duplicada.
+- **Alcance:** atomicidad de circulación; no mantener locks durante operaciones externas innecesarias.
+- **Criterios de aceptación:** dos préstamos concurrentes del mismo ejemplar producen un único éxito; reintento idempotente devuelve resultado previo; reservas no duplicadas; el estado del ejemplar y el préstamo se actualizan coherentemente.
+- **Prioridad:** P0. **Estado:** Completada históricamente (sin reejecución en esta normalización).
+- **Reconciliación:** TASK-027/F20-Task05 registra lock, relectura de estado y claves de idempotencia. Se conserva la evidencia histórica; no se declara nueva prueba.
+- **Evidencia de cierre:** registro histórico TASK-027 y verificación global reportada de 188/188 y 23/23 pruebas; no reejecutadas aquí.
+
+### [F20-Task06] Implementar devolución con inspección física y derivación a incidencias
+- **Hallazgo de origen:** secciones B, D/F20-19, F (PT-20-21), E.5 y G P1.
+- **Severidad:** Alta. **Objetivo:** evitar que un ejemplar dañado se libere automáticamente como disponible.
+- **Acción ejecutable:** extender la devolución para capturar condición física (Bueno, Deteriorado, Incompleto, DañadoIrreparable); actualizar disponibilidad; crear incidencia y estado maintenance cuando corresponda; derivar reposición si la pérdida es irreparable.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `processLibraryLoan`, `recordLibraryIncident`, `BibliotecaPrestamos`, `BibliotecaIncidencias`, `BibliotecaEjemplares`.
+- **Dependencias/riesgos:** F20-Task01, incidencias, inventario patrimonial y permisos; riesgo de prestar de nuevo ejemplares dañados.
+- **Alcance:** inspección y estado del ejemplar al devolver; no borrar el préstamo histórico.
+- **Criterios de aceptación:** condición obligatoria al devolver; ejemplar dañado/incompleto no queda available; incidencia vinculada a préstamo/ejemplar; devolución idempotente; historial y responsable preservados.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; PT-20-21 fue rechazada porque la devolución marcaba available incondicionalmente.
+
+### [F20-Task07] Implementar renovaciones con bloqueo por reservas pendientes
+- **Hallazgo de origen:** secciones C.3, D/F20-14, E.5 y G P1.
+- **Severidad:** Alta. **Objetivo:** permitir renovación controlada sin perjudicar a usuarios en lista de espera.
+- **Acción ejecutable:** agregar acción de renovación que valide préstamo activo, límite de renovaciones, mora y reservas pendientes; actualizar fecha prevista con política vigente.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `processLibraryLoan` o acción de renovación dedicada, `BibliotecaPrestamos`, `BibliotecaReservas`.
+- **Dependencias/riesgos:** F20-Task01 y F20-Task04; riesgo de extender préstamos cuando existe reserva o de renovar préstamos vencidos sin regularización.
+- **Alcance:** renovación de préstamos; no sustituir el flujo de devolución.
+- **Criterios de aceptación:** renovación solo si cumple política; reserva pendiente bloquea renovación; máximo configurable; nueva fecha se calcula; evento queda auditado.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el informe declara ausente el control de renovación.
+
+### [F20-Task08] Desarrollar portal OPAC de consulta y autoservicio
+- **Hallazgo de origen:** secciones A.1, D/F20-25..F20-30 y G P1.
+- **Severidad:** Alta. **Objetivo:** permitir a estudiantes y docentes buscar obras, consultar ejemplares y gestionar solicitudes desde su portal.
+- **Acción ejecutable:** crear vista OPAC con búsqueda por título/autor/ISBN/materia, disponibilidad por ejemplar, filtros por grado/asignatura y acceso a préstamos/reservas personales.
+- **Archivos/módulos:** dashboard de estudiantes/docentes, `js/accounting.js` o módulo de biblioteca dedicado, endpoints de catálogo y circulación.
+- **Dependencias/riesgos:** F20-Task03, F20-Task04, identidad y ABAC; riesgo de exponer datos de otros usuarios o disponibilidad obsoleta.
+- **Alcance:** consulta/autoservicio; no habilitar administración de catálogo a estudiantes.
+- **Criterios de aceptación:** búsquedas y filtros devuelven datos vigentes; ejemplares y estado se muestran correctamente; usuario consulta solo su expediente; reserva respeta reglas; UI es accesible en móvil.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; no se acredita portal OPAC en el inventario fuente.
+
+### [F20-Task09] Integrar notificaciones multicanal de vencimientos y disponibilidad de reservas
+- **Hallazgo de origen:** secciones A.1, D/F20-31..F20-35 y G P1.
+- **Severidad:** Alta. **Objetivo:** avisar vencimientos próximos y disponibilidad de ejemplares reservados.
+- **Acción ejecutable:** integrar biblioteca con `sendMultiChannelNotification`; programar aviso 24 horas antes del vencimiento y aviso de reserva disponible; deduplicar por evento/usuario y respetar preferencias.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, servicio multicanal, `BibliotecaPrestamos`, `BibliotecaReservas` y preferencias de usuario.
+- **Dependencias/riesgos:** F20-Task01, estados de préstamo/reserva, zona horaria y canales habilitados; riesgo de spam o notificación a destinatario incorrecto.
+- **Alcance:** avisos transaccionales; no crear un segundo sistema de notificaciones.
+- **Criterios de aceptación:** evento válido genera un aviso por usuario; vencimiento usa fecha local; reserva notifica solo cuando el ejemplar está disponible; fallos quedan registrados; preferencias/consentimientos respetados.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; no se acredita integración multicanal en el inventario fuente.
+
+### [F20-Task10] Asociar obras bibliográficas con asignaturas y grados académicos
+- **Hallazgo de origen:** secciones D/F20-36..F20-40 y G P1.
+- **Severidad:** Alta. **Objetivo:** vincular bibliografía recomendada con el currículo institucional.
+- **Acción ejecutable:** crear relación obra-asignatura-grado-nivel con vigencia y tipo de recomendación; permitir consulta desde OPAC y panel docente.
+- **Archivos/módulos:** `backend/academic-service/Code.gs`, `backend/accounting-service/Code.gs`, `BibliotecaCatalogoObras`, catálogos de asignaturas/grados.
+- **Dependencias/riesgos:** F20-Task03, catálogos académicos y permisos; riesgo de referencias a asignaturas/grados inexistentes o inactivos.
+- **Alcance:** asociación curricular; no duplicar catálogos académicos ni asignar libros automáticamente a estudiantes.
+- **Criterios de aceptación:** relaciones validadas contra catálogos activos; múltiples asignaturas/grados por obra; vigencia; filtros por curso; historial de cambios.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; no se identifica relación curricular en el informe fuente.
+
+### [F20-Task11] Integrar colecciones bibliográficas valiosas con inventario patrimonial
+- **Hallazgo de origen:** secciones B, D/F20-41..F20-45 y G P2.
+- **Severidad:** Media. **Objetivo:** controlar colecciones de valor patrimonial sin duplicar registros físicos.
+- **Acción ejecutable:** permitir que ejemplares/colecciones designados se vinculen a `ActivosPatrimoniales` mediante referencia estable; reflejar custodio, ubicación, condición y baja sin crear una segunda ficha patrimonial.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `BibliotecaEjemplares`, `BibliotecaCatalogoObras`, `ActivosPatrimoniales`, `js/accounting.js`.
+- **Dependencias/riesgos:** inventario patrimonial, QR, custodios y bajas; riesgo de doble contabilización o divergencia de ubicación/estado.
+- **Alcance:** vínculo de ejemplares/colecciones seleccionadas; no capitalizar automáticamente cada libro de consumo.
+- **Criterios de aceptación:** referencia patrimonial única; cambios de custodia/estado coherentes; bajas conservan historia; no se crean activos duplicados; permisos contables respetados.
+- **Prioridad:** P2. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el informe declara ausente la integración patrimonial.
+
+### [F20-Task12] Identificar y escanear ejemplares mediante códigos QR/barcode
+- **Hallazgo de origen:** secciones D/F20-07 y G P2.
+- **Severidad:** Media. **Objetivo:** acelerar préstamos/devoluciones y reducir errores de digitación.
+- **Acción ejecutable:** generar etiquetas QR/barcode por EjemplarID; permitir escaneo móvil para recuperar ficha y ejecutar operaciones autorizadas.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `BibliotecaEjemplares`, `js/accounting.js`, UI móvil.
+- **Dependencias/riesgos:** F20-Task03, cámara/dispositivo, permisos y estado del ejemplar; riesgo de códigos duplicados o acceso no autorizado.
+- **Alcance:** identificación de ejemplar; no incluir datos personales o historial de préstamos dentro del código.
+- **Criterios de aceptación:** código único y estable; escaneo resuelve ejemplar correcto; etiqueta reimprimible sin cambiar ID; operaciones requieren autenticación y validación de estado.
+- **Prioridad:** P2. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el informe declara ausentes códigos QR/barcode.
+
+### [F20-Task13] Implementar solicitudes de adquisición bibliográfica y sugerencias de compra
+- **Hallazgo de origen:** secciones D/F20-46..F20-50 y G P2.
+- **Severidad:** Media. **Objetivo:** canalizar necesidades bibliográficas de docentes/estudiantes hacia compras institucionales.
+- **Acción ejecutable:** permitir sugerencias con título, autor, ISBN, motivo y asignatura; someterlas a revisión/aprobación; convertir solicitudes aprobadas en requisición del módulo de compras sin duplicar catálogo ni orden.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `MaterialesSolicitudes` o entidad específica de adquisiciones bibliográficas, módulo de compras y portal de usuarios.
+- **Dependencias/riesgos:** F20-Task03, catálogo de proveedores/compras, presupuesto y permisos; riesgo de duplicados o solicitudes no autorizadas.
+- **Alcance:** solicitud y aprobación de adquisición; no emitir órdenes de compra automáticamente sin revisión.
+- **Criterios de aceptación:** solicitud identifica solicitante y obra; duplicados se detectan; aprobación queda auditada; solo aprobadas se convierten a requisición; estado de compra es consultable.
+- **Prioridad:** P2. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el informe no acredita flujo de sugerencias/adquisiciones.
+
+### [F20-Task14] Implementar suite automatizada de pruebas y regresión integral de Biblioteca
+- **Hallazgo de origen:** apartado G P0 Calidad y matriz F PT-20-01..PT-20-55; registro posterior TASK-028.
+- **Severidad:** Crítica (calidad). **Objetivo:** verificar el comportamiento real del catálogo, circulación, reservas, incidencias, recursos digitales y permisos.
+- **Acción ejecutable:** ampliar `runPhase20LibraryAndResourcesRegressionSuite` para cubrir PT-20-01..PT-20-55, incluyendo persistencia, reservas/listas de espera, daños, mora, límites, concurrencia, renovaciones, recursos digitales, OPAC, integración patrimonial y solicitudes de compra.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `backend/developer-service/Code.gs`, `tests/regression/academic-grading-suite.js`, `modular-dashboard-suite.js`.
+- **Dependencias/riesgos:** F20-Task01..13, datos aislados, permisos y contratos API; riesgo de PASS superficial por mocks o cobertura parcial.
+- **Alcance:** suite específica de biblioteca; reutilizar harness común y no duplicar infraestructura de pruebas.
+- **Criterios de aceptación:** cobertura trazable de 55 escenarios; pruebas conductuales de persistencia/estados/permisos; concurrencia/idempotencia; errores negativos; evidencias reproducibles por caso; no marcar PASS por presencia de símbolos.
+- **Prioridad:** P0 Calidad. **Estado:** Pendiente de ampliación.
+- **Reconciliación:** TASK-028/F20-Task14 registra suite creada y 188/188 pruebas más 23/23 pruebas reportadas. Sin embargo, el mismo registro describe la batería F20 como PT20-01..PT20-14, mientras el informe enumera PT-20-01..PT-20-55. Conservar el antecedente, pero ampliar y mapear la cobertura completa antes de declarar la tarea cerrada.
+- **Evidencia de cierre:** parcial/histórica; suite registrada, pero falta demostrar cobertura de los 55 escenarios del informe.
+
+### Reconciliaciones y discrepancias transversales de Fase 20
+- **F20-Task01/02:** TASK-023/TASK-024 registran acciones de implementación ejecutadas; no contienen estado de cierre/verificación inequívoco en el extracto consultado. Revalidar sin reimplementar a ciegas.
+- **F20-Task03/04/05:** TASK-025/TASK-026/TASK-027 registran implementación y pruebas globales reportadas; se preserva su cierre histórico sin afirmar reejecución en esta iteración.
+- **F20-Task14:** TASK-028 corresponde a la suite, pero su alcance documentado PT20-01..PT20-14 no equivale a la matriz PT-20-01..PT-20-55 del informe.
+- **F20-Task06..F20-13:** no se encontró evidencia de cierre en los registros de Auditoria.txt cotejados; permanecen pendientes.
+- **Estado global:** tareas 03/04/05 conservan su antecedente de completadas; 01/02 quedan pendientes de revalidación; 06..13 pendientes de ejecución; 14 pendiente de ampliar cobertura. No se declara completada ninguna tarea nueva en esta normalización.
