@@ -4086,3 +4086,27 @@ CHECKPOINT C1.109 - RESTAURACIÓN DEL PENDIENTES.MD AUTÉNTICO
 - Restricciones: no modificar el /Pendientes.md raíz durante la migración; no incorporar tareas derivadas de auditorías ni tareas de otros informes; no usar como fuente los archivos departamentales generados por la migración anterior; no modificar la rama base.
 - Estado: restauración completada y fuente raíz recuperada. La migración departamental corregida queda pendiente de ejecución desde esta fuente.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.110 - FASE 1: INVENTARIO Y VALIDACIÓN PREVIA DE MIGRACIÓN
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1 (no modificar).
+- ID operativo de sesión: IMA-MIGRATION-20261106-1931Z.
+- HEAD verificado al inicio de la fase: 1b26f091c8c07cafdcc702bb586fc0469f4d31a9.
+- Alcance ejecutado: inspección de la fuente raíz, metodología de migración, inventario de los seis destinos departamentales y control de unicidad. No se copiaron, eliminaron ni reescribieron tareas en esta fase.
+- Fuente raíz: /Pendientes.md; blob SHA ef47d232db3ed46317dc14f22b1cdf8f938e8405; tamaño Git 1.443.391 bytes. El endpoint de lectura de contenido devolvió texto vacío para este blob grande, por lo que no fue posible realizar todavía la comparación textual completa de cada bloque. El SHA del objeto coincide con la fuente histórica preservada.
+- La copia RECUPERACION/Pendientes_RECUPERADO.md declara el mismo blob SHA ef47d232db3ed46317dc14f22b1cdf8f938e8405; su endpoint de lectura también devolvió contenido vacío en esta sesión.
+- Inventario de encabezados encontrados en los destinos actuales (patrón de encabezado Markdown con identificador TASK o F10/F11): Dirección 86; Secretaria 140; Contabilidad 89; Docente 30; Estudiante 7; Otros 113. Total observado: 465 encabezados.
+- Unicidad entre destinos: 465 identificadores observados; 465 únicos; cero duplicados entre los seis archivos según el patrón inspeccionado.
+- Incidencia de consistencia: pendientes/README.md afirma 463 registros (84 Dirección, 140 Secretaria, 89 Contabilidad, 30 Docente, 7 Estudiante, 113 Otros), pero los archivos actuales contienen 465 encabezados (86 Dirección y los demás conteos coinciden).
+- Incidencia adicional: el archivo departamental de Dirección contiene encabezados TASK-050 y TASK-051, aunque pendientes/README.md afirma que dichos bloques no existen en la fuente. No se asume que el README sea correcto ni que los bloques sean válidos hasta cotejarlos con el contenido fuente íntegro.
+- Regla de clasificación que se mantiene: Dirección > Secretaria > Contabilidad > Docente > Estudiante > Otros; asignación única por responsabilidad funcional principal.
+- Restricciones respetadas: /Pendientes.md raíz no se modificó; no se alteró ningún archivo departamental; no se modificó la rama base; no se incorporaron tareas de auditoría.
+- Resultado de fase: inventario inicial completado; migración bloqueada temporalmente por discrepancia de dos registros y falta de lectura textual del blob grande. No declarar la distribución actual como validada.
+- Próxima acción: obtener el contenido íntegro del blob ef47d232db3ed46317dc14f22b1cdf8f938e8405 mediante una ruta de lectura Git compatible con archivos grandes; comparar bloque por bloque contra los seis destinos, resolver TASK-050/TASK-051 y ajustar los destinos solo después de demostrar procedencia y conservación textual.
+- Archivos modificados en esta fase: únicamente AUDITORIAS/Contexto_personal.txt para registrar este checkpoint.
+- Commit de checkpoint: pendiente de verificación tras escritura.
+================================================================
