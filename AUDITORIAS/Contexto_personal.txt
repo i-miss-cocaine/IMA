@@ -4065,3 +4065,24 @@ CHECKPOINT C1.108 - MIGRACIÓN CORREGIDA DE TAREAS POR DEPARTAMENTO (CIERRE)
 - Próxima acción: publicar el commit único y verificar HEAD, árbol, archivos y rama base.
 - Commit de cierre: el commit que contiene este checkpoint; SHA final se verificará externamente.
 ================================================================
+
+
+
+================================================================
+CHECKPOINT C1.109 - RESTAURACIÓN DEL PENDIENTES.MD AUTÉNTICO
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- ID operativo de sesión: IMA-RESTORE-20261106-1924Z.
+- Motivo: el archivo /Pendientes.md raíz de la rama de trabajo había quedado reducido a una versión de 30.744 bytes (blob 8867ecf1f58f768cac8fa5ddaa7b50bb68e57158), por lo que no correspondía al backlog histórico recuperado.
+- Fuente auténtica: blob Git ef47d232db3ed46317dc14f22b1cdf8f938e8405, recuperado desde la API Git de GitHub y previamente preservado en RECUPERACION/Pendientes_RECUPERADO.md. Procedencia: NG_beta_0.0.0.1:/Pendientes.md, commit 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Restauración: se reemplazó /Pendientes.md en NG_beta_0.0.0.1_work por el contenido exacto del blob fuente. GitHub devolvió como content_sha el mismo SHA ef47d232db3ed46317dc14f22b1cdf8f938e8405, confirmando identidad byte a byte del objeto Git.
+- Inventario del archivo restaurado: 1.443.391 bytes (1,443391 MB decimales; aproximadamente 1,3767 MiB); 1.425.933 caracteres devueltos por la API; 17.884 líneas; 474 encabezados que contienen referencias TASK y 473 identificadores TASK únicos.
+- Commit de restauración: 1767694c6f8a89621671dd2bf82449e346140ba1.
+- HEAD de NG_beta_0.0.0.1_work verificado después de la restauración: 1767694c6f8a89621671dd2bf82449e346140ba1.
+- HEAD de NG_beta_0.0.0.1 verificado: 44d9891132332e692dbe2ba8602b41f50a508a59 (sin modificación).
+- Regla obligatoria para la siguiente migración: migrar únicamente las tareas indicadas en el archivo /Pendientes.md raíz restaurado; copiar cada tarea íntegramente, sin resumir, recortar, parafrasear, corregir ni omitir ningún detalle; asignarla a los archivos dentro de /pendientes/ según la relación departamental y la jerarquía Dirección > Secretaria > Contabilidad > Docente > Estudiante > Otros; si involucra varios departamentos, asignarla al de mayor prioridad jerárquica.
+- Restricciones: no modificar el /Pendientes.md raíz durante la migración; no incorporar tareas derivadas de auditorías ni tareas de otros informes; no usar como fuente los archivos departamentales generados por la migración anterior; no modificar la rama base.
+- Estado: restauración completada y fuente raíz recuperada. La migración departamental corregida queda pendiente de ejecución desde esta fuente.
+================================================================
