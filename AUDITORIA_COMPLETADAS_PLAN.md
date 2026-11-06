@@ -748,3 +748,15 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - Archivos documentales: Auditoria.txt, MapaDependencias.md, este plan, nuevo AUDITORIA_COMPLETADAS_T-UX-19.md y Contexto_personal.txt.
 - Progreso: 60/183 identificadores auditados; 123 pendientes.
 - Siguiente tarea: T-UX-20 - Completar la adaptación móvil y el comportamiento responsivo.
+
+## 65. Resultado C1.63 - T-UX-20 (2026-11-06)
+
+- **Dictamen:** NO CUMPLE. Hay layouts Tailwind adaptativos, pero la barra inferior móvil queda por encima de modales con z-index 60/70/80 y varios modales de formularios carecen de max-height/scroll interno.
+- **AUD-NG-212 (MEDIO/P2):** .mobile-bottom-nav usa z-index 2100 y aparece hasta 767px; overlays de perfil/comprobante/noticia usan z-index inferior. Riesgo de controles tapados o taps interceptados.
+- **AUD-NG-213 (MEDIO/P2):** profile-modal en Inicio/Estudiante y voucher-modal no limitan altura ni habilitan scroll interno; submission-modal/news-detail-modal sí tienen contención. El fallo se documenta como riesgo estático, no como reproducción runtime.
+- **Reconciliación:** TASK-483 (disparador/drawer), TASK-429 (tablas móviles), TASK-492 (campos), TASK-493 (modal compartido de detalle), TASK-258 (foco/accesibilidad) y TASK-484 (pruebas) mantienen sus alcances. Se crea TASK-494 para capas/scroll responsivo de overlays generales.
+- **Evidencia:** ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67; style.css SHA f1ff84312ce70949a58eaa099b2aad0ff0a59cb6; index.html SHA cd742047cdc4948259dd721119429b04f78330ca; student-dashboard.html SHA 6379ea0ed39d71b89747a0280bb925fdf12202c1. Evidencia adicional de dashboards y calendarios en AUDITORIA_COMPLETADAS_T-UX-20.md.
+- **Pruebas:** inspección estática/manual; no se ejecutaron viewports, orientación, touch, teclado, stacking ni scroll en navegador.
+- **Archivos/documentos:** se anexan resultados a Auditoria.txt, MapaDependencias.md y este plan; se crea AUDITORIA_COMPLETADAS_T-UX-20.md; se agrega TASK-494 a Pendientes.md; checkpoint C1.63 en Contexto_personal.txt.
+- **Progreso:** 61/183 identificadores auditados; 122 pendientes.
+- **Siguiente tarea:** T-UX-21 - Completar el indicador de frescura de datos y los estados de sincronización.

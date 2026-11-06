@@ -1544,3 +1544,22 @@ Relaciones:
 - Inspección estática/manual de archivos y fragmentos citados.
 - No se ejecutaron navegador/DOM, Tab/Shift+Tab, lectores de pantalla, pruebas de contraste, zoom ni pruebas de formularios/errores en ejecución.
 - La cobertura de páginas fue representativa, no exhaustiva.
+
+## Adaptación móvil y overlays responsivos (T-UX-20, C1.63)
+- Especificación: T-UX-20 exige paneles sin superposiciones/desbordamientos críticos, menú lateral táctil y tablas con datos/acciones accesibles.
+- js/ui-common.js (SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67):
+  - initRoleNavigationMenu (4723-4755) inserta el botón móvil dentro del primer #main-header nav si existe. En nav.hidden.md:flex el disparador queda oculto por el padre en móvil; AUD-NG-194/TASK-483 ya lo cubren.
+  - openMobileHamburgerDrawer (4760-4890) crea un overlay fixed/inset con panel w-80 y overflow-y-auto; no se establece un max-width relativo al viewport estrecho.
+  - El inicializador se ejecuta diferido desde DOMContentLoaded (4917-4921).
+- css/style.css (SHA f1ff84312ce70949a58eaa099b2aad0ff0a59cb6):
+  - .table-ima-container (413-436) ofrece scroll horizontal; no existe transformación compartida a tarjetas. TASK-429 ya lo exige.
+  - .mobile-bottom-nav (443-459) es fixed, aparece en <=767px y tiene z-index:2100.
+  - body usa overflow-x:hidden (67-78), lo que puede ocultar un desbordamiento en vez de resolver su causa.
+  - La regla de 44px (1013-1021) solo alcanza botones, a.btn, input button/submit y select; no todos los enlaces/controles.
+- Modales:
+  - index.html SHA cd742047cdc4948259dd721119429b04f78330ca: profile-modal z-[70] (217-260); mobile-bottom-nav (301-324); news-detail-modal max-h-[90vh] y scroll interno (391-425).
+  - student-dashboard.html SHA 6379ea0ed39d71b89747a0280bb925fdf12202c1: profile-modal z-[60] (74-115), voucher-modal z-[70] (240-275), submission-modal z-[60] con max-h-[90vh]/overflow-y-auto (281-310), mobile-bottom-nav (327+).
+  - La capa 2100 de la barra inferior supera los z-index 60/70/80 de varios diálogos. Los formularios profile/voucher no tienen límite de altura ni scroll interno; submission/news sí implementan un patrón de contención.
+- Calendario: js/teacher.js SHA c475fce5afcd28fca23e7b64398ad32b17773746 (1220-1249) solo persiste filtros de categorías; js/secretary.js SHA 08a81266957b4c18cc25f8ba6749eac30a8f2c2c (590-642) abre y envía un modal de evento. La revisión estática no acredita una interfaz calendario responsiva de extremo a extremo.
+- Hallazgos nuevos: AUD-NG-212 (barra inferior por encima de modales) y AUD-NG-213 (modales largos sin max-height/scroll interno). TASK-494 cubre capas, scroll interno y pruebas en viewports; no duplica TASK-483/429/492/493/258/484.
+- Límite: revisión estática/manual; no se ejecutaron pruebas reales de navegador, viewport, orientación, táctiles, stacking o scroll.

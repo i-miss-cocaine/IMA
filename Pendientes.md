@@ -19666,3 +19666,31 @@ AUD-NG-163 permanece DUPLICADA y consolidada; no reabrirla como tarea independie
   - Pruebas de regresión reproducibles cubren payloads malformados, XSS, acciones con IDs diferentes, doble apertura, cierre y foco. Usan DOM/fixtures controlados y no mutan datos productivos.
 - **Relaciones y límites:** TASK-482 cubre salida segura del Omnibox; TASK-486 cubre snapshots/restauración de listas; T-UX-19 cubre accesibilidad general; TASK-484 cubre el framework de pruebas UX. TASK-493 se limita al modal compartido de detalle y su integración; no duplica esos alcances.
 - **Estado:** [ ] Pendiente.
+
+---
+### [TASK-494] [T-UX-20 / AUD-NG-212 / AUD-NG-213] [P2] Normalizar la adaptación responsiva y la jerarquía de capas de modales y overlays móviles
+- **Origen del Hallazgo:** Auditoría de T-UX-20, C1.63; Auditoria.txt (AUD-NG-212 y AUD-NG-213).
+- **Severidad/Clasificación:** Medio / P2 (controles de diálogos parcialmente cubiertos por navegación fija y contenido de formularios que puede exceder el viewport).
+- **Archivos Involucrados:**
+  - css/style.css (jerarquía z-index, barra inferior móvil y reglas compartidas de overlays).
+  - js/ui-common.js (ciclo de apertura/cierre de overlays y coordinación de capas, si corresponde).
+  - index.html, student-dashboard.html y demás vistas que contengan modales extensos.
+  - tests/regression/ (pruebas reproducibles de viewport y stacking).
+- **Dependencias Expuestas:** .mobile-bottom-nav; profile-modal; voucher-modal; submission-modal; news-detail-modal; overlays fixed/inset; z-index; max-height; overflow-y; safe-area-inset; TASK-258 (foco y accesibilidad); TASK-483 (drawer); TASK-493 (modal compartido de detalle); TASK-484 (pruebas UX).
+- **Descripción del Alcance:**
+  1. Definir una jerarquía común y verificable entre navegación fija inferior, drawer y diálogos. Mientras un modal esté abierto, la barra inferior no debe quedar visualmente por encima del overlay ni interceptar los clics/taps de sus controles; ocultarla/inertizarla o situar el diálogo en una capa superior mediante un contrato consistente.
+  2. Adaptar los modales con formularios largos (incluidos los de perfil y comprobantes) al alto útil del viewport móvil. Aplicar altura máxima apropiada, desplazamiento vertical dentro del contenido del diálogo y mantener accesibles el título, cierre y acciones principales.
+  3. Evitar que el desplazamiento del documento de fondo sustituya al desplazamiento interno del modal. Considerar áreas seguras del dispositivo y cambios de viewport/orientación sin dejar controles detrás de barras fijas.
+  4. Aplicar las reglas a las vistas que usan los modales compartidos y los modales declarados directamente en HTML, sin alterar los contratos funcionales, validaciones o permisos de cada módulo.
+  5. Coordinar la gestión de foco y cierre con TASK-258/TASK-493; esta tarea se limita a dimensiones, scroll, capas y operabilidad responsiva, no sustituye la accesibilidad semántica ni la seguridad del modal compartido.
+  6. Añadir pruebas de regresión aisladas con fixtures sintéticos para stacking, apertura/cierre, scroll interno y visibilidad de acciones en viewports móviles y orientación horizontal.
+- **Criterios de Aceptación:**
+  - Ninguna barra inferior, drawer u otro control flotante cubre ni intercepta acciones de un modal abierto.
+  - Los modales extensos permanecen dentro del viewport útil y permiten recorrer todo su contenido sin que el botón de guardar/cancelar o el control de cierre quede inaccesible.
+  - El scroll se produce dentro del contenido del modal y no deja el fondo desplazándose de forma independiente.
+  - No hay desbordamiento horizontal crítico ni recorte vertical de contenido en viewports representativos de 320x568, 360x640 y 390x844, tanto en retrato como en paisaje.
+  - La jerarquía de capas se conserva al abrir overlays anidados y al cerrar el superior; no quedan barras o overlays huérfanos.
+  - Las pruebas verifican el estado DOM/estilos y la interacción táctil/teclado con datos sintéticos, sin escrituras productivas.
+  - Las pruebas distinguen PASS, FAIL, SKIPPED y BLOCKED; un viewport no ejecutado no se cuenta como aprobado.
+- **Relaciones y límites:** TASK-483 cubre el menú/drawer por rol; TASK-429 cubre tablas y modo móvil; TASK-492 cubre campos; TASK-493 cubre seguridad, acciones e integración del modal compartido de detalle; TASK-258 cubre foco y accesibilidad; TASK-484 cubre pruebas UX-01..09. TASK-494 se limita a la adaptación física/visual y jerarquía de capas de modales/overlays móviles, sin duplicar esas tareas.
+- **Estado:** [ ] Pendiente.
