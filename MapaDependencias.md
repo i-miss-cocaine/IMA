@@ -1631,3 +1631,14 @@ Relaciones:
 - student.js, accounting.js, secretary.js y los siete dashboards cotejados mantienen los SHA de T-UX-11; la navegación común no muestra integración nueva.
 - Dependencias: AUD-NG-188/TASK-485 (router e historial), AUD-NG-189/TASK-486 (snapshot/restauración), TASK-429/T-UX-15 (estado de filtros/paginación), TASK-493 (detalle), AUD-NG-173 (targetId). No crear tareas duplicadas.
 - La revisión es estática; no se ejecutaron pruebas de navegador, recarga, eventos reales ni sesiones multiusuario.
+
+
+## Autenticación y autorización de los cinco microservicios (TAREA-F4-P0-01, C1.72)
+- USER loginUser emite sessionToken, pero js/auth.js (SHA 8444dd085a3186106d2db7005b61ef934d3c22d8) no lo conserva y js/api.js (SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9) no lo transmite.
+- Los cinco validateRolePermission consultan el token, pero aceptan cualquier acción declarada en PUBLIC_ACTIONS antes de verificarlo.
+- USER: logoutUser público confía en userId/sessionId del payload y llama revokeUserSession sin autenticar el objetivo; posible revocación arbitraria. ACADEMIC: saveAdmissionDraft/getAdmissionDraft públicos seleccionan por emailResponsable/draftKey y permiten leer/modificar borradores sin prueba de propiedad. TASK/EXAM mantienen las consultas sensibles públicas cubiertas por AUD-NG-002.
+- verifySessionToken no exige claims.exp presente/numérico en USER, ACADEMIC, ACCOUNTING, EXAM y TASK; AUD-NG-003 se amplía a todos.
+- getAuthTokenSecret mantiene fallback derivado de SPREADSHEET_ID + cadena fija en los cinco servicios; AUD-NG-004 sigue vigente.
+- Los nombres de rol no están normalizados en los validadores: USER/ACADEMIC/ACCOUNTING usan Director; TASK/EXAM usan Dirección; getDynamicPermissionsForRole usa matrix[role] literal. Reconciliar con TAREA-F4-P1-03/P1-04 y TASK-488.
+- AUD-NG-001/002/003 existentes se amplían; AUD-NG-005 conserva el alcance de propagación de revocaciones. No crear IDs duplicados.
+- Sin pruebas runtime ni acceso a deployments/Script Properties; revisión estática/manual.

@@ -847,3 +847,14 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Sesión actual:** IMA-AUDIT-20261106-1138Z, inicio C1.71; estado abierta.
 - **Progreso de lista maestra:** 68/183 identificadores auditados; 115 pendientes. Sin incremento porque T-UX-28 no figura en completadas.md.
 - **Siguiente acción:** seleccionar el próximo identificador oficial no auditado desde completadas.md; no asumir T-UX-29 sin fuente.
+
+
+## 74. Resultado C1.72 - TAREA-F4-P0-01 (2026-11-06)
+
+- **Dictamen:** NO CUMPLE. El token emitido por USER se descarta en auth.js y fetchApi no lo transmite; los cinco servicios permiten bypass mediante PUBLIC_ACTIONS; USER permite revocación de sesiones con IDs del payload y ACADEMIC expone lectura/escritura de borradores por correo/draftKey; verifySessionToken no exige exp obligatorio; el fallback HMAC predecible permanece.
+- **Evidencia:** auth.js SHA 8444dd085a3186106d2db7005b61ef934d3c22d8; api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; USER SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ACADEMIC SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; ACCOUNTING SHA 38b979d41596b85e888b4a7060b37bbac0840a28; EXAM SHA 1d93296628fae31f680004f637897e2b1314a64c; TASK SHA 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe.
+- **Reconciliación:** AUD-NG-001 (token cliente), AUD-NG-002 (operaciones sensibles públicas), AUD-NG-003 (expiración), AUD-NG-004 (secreto HMAC) y AUD-NG-005 (revocación distribuida) siguen pendientes; AUD-NG-001..003 se amplían. Sin nuevos IDs. Deriva de Director/Dirección se coordina con TAREA-F4-P1-03/P1-04 y TASK-488.
+- **Pruebas:** inspección estática/manual. No se ejecutaron pruebas runtime, tokens, revocación, deployments, Script Properties ni suites automatizadas.
+- **Sesión:** IMA-AUDIT-20261106-1138Z; inicio C1.71; sesión abierta.
+- **Progreso:** 69/183 identificadores auditados; 114 pendientes.
+- **Siguiente tarea:** TAREA-F4-P0-02 - Corregir las vulnerabilidades IDOR y garantizar el aislamiento de datos personales.

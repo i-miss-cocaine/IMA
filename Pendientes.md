@@ -16981,28 +16981,30 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 ### [AUD-NG-001] Corregir la integración del token de sesión entre login y llamadas API
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-001
 - **Severidad/Clasificación:** Crítico
-- **Archivos Involucrados:** js/auth.js, js/api.js, backend/user-service/Code.gs, backend/task-service/Code.gs, backend/exam-service/Code.gs
+- **Archivos Involucrados:** js/auth.js, js/api.js, backend/user-service/Code.gs, backend/academic-service/Code.gs, backend/accounting-service/Code.gs, backend/task-service/Code.gs, backend/exam-service/Code.gs
 - **Dependencias Expuestas:** loginUser, currentUser, fetchApi, generateSessionToken, verifySessionToken
 - **Descripción del Alcance:** Conservar el token devuelto por loginUser en la sesión de usuario y transmitirlo en todas las llamadas protegidas. Definir un contrato único de token entre frontend y servicios y evitar que las operaciones protegidas dependan de credenciales que el cliente no conserva.
 - **Criterios de Aceptación:** El inicio de sesión almacena la credencial; fetchApi la envía sin permitir que el payload sobrescriba identidad verificada; una operación protegida válida funciona y una llamada sin token es rechazada.
 - **Estado:** [ ] Pendiente
 
-### [AUD-NG-002] Eliminar consultas sensibles de las listas de acciones públicas y aplicar autorización contextual
+### [AUD-NG-002] Eliminar operaciones sensibles de las listas de acciones públicas y aplicar autorización contextual
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-002
 - **Severidad/Clasificación:** Crítico
-- **Archivos Involucrados:** backend/task-service/Code.gs, backend/exam-service/Code.gs
-- **Dependencias Expuestas:** PUBLIC_ACTIONS, validateRolePermission, getStudentTasks, getAllTasks, getAllStudentProjects, getDriveStorageQuotaMetricsReport, getStudentExams, getAllExams
-- **Descripción del Alcance:** Retirar de PUBLIC_ACTIONS las consultas que contienen datos institucionales o personales. Obtener el usuario objetivo exclusivamente de claims verificados y comprobar permisos de rol, relación familiar, grupo y ámbito antes de devolver registros.
-- **Criterios de Aceptación:** Las consultas sensibles sin token fallan; manipular userId, grado o sección no permite consultar registros ajenos; cada rol solo obtiene los datos autorizados y los intentos indebidos quedan auditados.
+- **Archivos Involucrados:** backend/user-service/Code.gs, backend/academic-service/Code.gs, backend/task-service/Code.gs, backend/exam-service/Code.gs
+- **Dependencias Expuestas:** PUBLIC_ACTIONS, validateRolePermission, getStudentTasks, getAllTasks, getAllStudentProjects, getDriveStorageQuotaMetricsReport, getStudentExams, getAllExams, saveAdmissionDraft, getAdmissionDraft, logoutUser, revokeUserSession
+- **Descripción del Alcance:** Retirar de PUBLIC_ACTIONS las operaciones que acceden, modifican o revocan datos/sesiones institucionales o personales. Obtener el usuario objetivo exclusivamente de claims verificados. Comprobar permisos de rol, relación familiar, grupo, ámbito y propiedad del borrador antes de devolver o modificar registros. Las rutas públicas de admisión deben usar una capacidad opaca de alta entropía vinculada al borrador, no el correo como prueba de identidad.
+- **Criterios de Aceptación:** Las consultas, escrituras y revocaciones sensibles sin token/capacidad válida fallan; manipular userId, grado o sección no permite consultar registros ajenos; logoutUser deriva userId/sessionId exclusivamente de claims verificados y no acepta objetivos suministrados por el payload; los borradores no pueden leerse ni sobrescribirse con solo conocer emailResponsable; cada rol obtiene solo datos autorizados y los intentos indebidos quedan auditados.
+- **Ampliación C1.72:** USER conserva logoutUser en PUBLIC_ACTIONS; el handler acepta userId/sessionId del payload y llama revokeUserSession, que marca revoked_user_ y revoked_session_ durante 21600 segundos sin verificar al solicitante. ACADEMIC conserva saveAdmissionDraft/getAdmissionDraft en PUBLIC_ACTIONS; ambos seleccionan por draftKey o emailResponsable y getAdmissionDraft devuelve draftData sin demostrar propiedad. La ampliación conserva AUD-NG-002 como causa común (operaciones sensibles que eluden autorización por PUBLIC_ACTIONS); no se crea ID duplicado.
 - **Estado:** [ ] Pendiente
 
 ### [AUD-NG-003] Exigir expiración válida y obligatoria en todos los tokens de sesión
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-003
 - **Severidad/Clasificación:** Crítico
-- **Archivos Involucrados:** backend/user-service/Code.gs, backend/task-service/Code.gs, backend/exam-service/Code.gs
+- **Archivos Involucrados:** backend/user-service/Code.gs, backend/academic-service/Code.gs, backend/accounting-service/Code.gs, backend/task-service/Code.gs, backend/exam-service/Code.gs
 - **Dependencias Expuestas:** generateSessionToken, verifySessionToken, claims.exp
 - **Descripción del Alcance:** Rechazar tokens sin exp, con exp no numérico, vencido o con estructura de claims incompleta. Aplicar la misma validación en todos los servicios que aceptan tokens.
 - **Criterios de Aceptación:** Tokens sin expiración, con expiración inválida o vencida son rechazados en todos los microservicios; los tokens válidos emitidos por loginUser siguen funcionando.
+- **Ampliación C1.72:** La misma condición if (claims.exp && now > claims.exp) está presente en verifySessionToken de ACADEMIC y ACCOUNTING, además de USER, TASK y EXAM. El archivo de la tarea se amplía para cubrir los cinco servicios.
 - **Estado:** [ ] Pendiente
 
 ### [AUD-NG-004] Sustituir la derivación predecible del secreto HMAC por configuración segura

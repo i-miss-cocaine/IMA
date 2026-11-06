@@ -6145,3 +6145,19 @@ REVALIDACIÓN DE NAVEGACIÓN Y RETORNO ENTRE VISTAS - CHECKPOINT C1.71
 - Pendientes.md blob SHA 3d01a8a4cffd0d28de2c2b21ee0732e7631f2b3a conserva TASK-485 y TASK-486 en estado [ ] Pendiente. T-UX-15/TASK-429 y TASK-493 conservan sus límites; AUD-NG-173 ya cubre targetId no consumido. No crear duplicados.
 - Pruebas: inspección estática/manual y comparación de SHA. No se ejecutaron pruebas runtime, navegador, recarga, popstate real, atrás/adelante, filtros, paginación ni pruebas multiusuario.
 ===============================================================================
+
+
+===============================================================================
+AUDITORÍA DE TAREA-F4-P0-01 - CHECKPOINT C1.72
+===============================================================================
+- Dictamen: NO CUMPLE; la tarea figura [X] en completadas.md, pero permanecen brechas críticas en el flujo de token y la autorización de los cinco servicios.
+- USER: loginUser (2479-2545) emite sessionToken; js/auth.js SHA 8444dd085a3186106d2db7005b61ef934d3c22d8 (138-175) no lo conserva; js/api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9 (35-58) no lo envía.
+- Validadores: USER SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f (1253); ACADEMIC SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc (524); ACCOUNTING SHA 38b979d41596b85e888b4a7060b37bbac0840a28 (434); EXAM SHA 1d93296628fae31f680004f637897e2b1314a64c (207); TASK SHA 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe (225). Cada uno consulta token del payload, pero PUBLIC_ACTIONS retorna autorizado antes de verificarlo.
+- AUD-NG-002 se amplía: USER mantiene logoutUser en PUBLIC_ACTIONS (922); logoutUser (2456-2475) confía en userId/sessionId del payload y llama revokeUserSession (2318-2330), que registra revocaciones por 21600 segundos sin autenticar al objetivo. ACADEMIC mantiene saveAdmissionDraft/getAdmissionDraft en PUBLIC_ACTIONS (265); los handlers (1433-1510) seleccionan por emailResponsable/draftKey y permiten leer/modificar borradores sin prueba de propiedad. TASK/EXAM conservan las consultas sensibles públicas ya registradas.
+- AUD-NG-003 se amplía a los cinco servicios: verifySessionToken usa if (claims.exp && now > claims.exp), que no exige expiración presente y numérica.
+- AUD-NG-004 sigue vigente: todos los servicios contienen fallback de secreto HMAC derivado de SPREADSHEET_ID y cadena fija; no se inspeccionaron Script Properties/deployments.
+- Se observa deriva de roles: USER/ACADEMIC/ACCOUNTING usan clave Director; TASK/EXAM usan Dirección. La matriz dinámica indexa el rol literal. Reconciliar con TAREA-F4-P1-03/P1-04 y TASK-488; no crear duplicado todavía.
+- AUD-NG-005 conserva invalidación distribuida; TAREA-F4-P0-02 cubre IDOR general; TAREA-F4-P0-03 cubre revocación; TAREA-F4-P0-04 cubre fuerza bruta. Se mantienen límites separados.
+- Pendientes.md amplía AUD-NG-001 a los cinco servicios, AUD-NG-002 a USER/ACADEMIC/TASK/EXAM y AUD-NG-003 a los cinco servicios. No se crean IDs nuevos.
+- Pruebas: inspección estática/manual; no se ejecutaron peticiones a deployments, pruebas de tokens, revocación, multiusuario, Script Properties ni suites automatizadas.
+===============================================================================

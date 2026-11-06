@@ -3003,3 +3003,30 @@ CHECKPOINT C1.71 - REVALIDACIÓN DE NAVEGACIÓN Y RETORNO ENTRE VISTAS
 - Próxima acción reproducible: abrir completadas.md desde la rama de trabajo y seleccionar el siguiente identificador único aún no auditado, contrastándolo con informes históricos y dependencias.
 - Commit de cierre: el commit que contiene este checkpoint.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.72 - TAREA-F4-P0-01
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: e7178d4bd02afc4d3ad9fd1f2ae538ccf886504c.
+- HEAD de rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID operativo de sesión: IMA-AUDIT-20261106-1138Z; inicio C1.71; estado ABIERTA.
+- Tarea auditada: TAREA-F4-P0-01 - Unificar la autenticación y autorización de los cinco microservicios.
+- Estado maestro: [X] Completada en completadas.md (SHA f57f1aef832e81e44fc4f7ec36a852d50e464676).
+- Dictamen de auditoría: NO CUMPLE.
+- Hallazgos vigentes: AUD-NG-001, AUD-NG-002, AUD-NG-003, AUD-NG-004 y AUD-NG-005 permanecen pendientes. Se amplían AUD-NG-001, AUD-NG-002 y AUD-NG-003; no se crean IDs nuevos.
+- Evidencia principal: auth.js SHA 8444dd085a3186106d2db7005b61ef934d3c22d8; api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; USER SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ACADEMIC SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; ACCOUNTING SHA 38b979d41596b85e888b4a7060b37bbac0840a28; EXAM SHA 1d93296628fae31f680004f637897e2b1314a64c; TASK SHA 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe.
+- Brechas confirmadas: token no persiste ni se transmite; PUBLIC_ACTIONS permite logoutUser/revokeUserSession con IDs del payload; borradores de admisión accesibles por email/draftKey; expiración no obligatoria; fallback HMAC predecible; roles Director/Dirección sin normalización común visible.
+- Relaciones: AUD-NG-005/TAREA-F4-P0-03 conserva la propagación de revocación; TAREA-F4-P0-02 cubre IDOR; TAREA-F4-P0-04 cubre fuerza bruta; TAREA-F4-P1-03/P1-04 y TASK-488 se relacionan con matriz/alias de roles.
+- Informe original AUDITORIA_FASE4_IDENTIDAD_PERMISOS_GOBIERNO.md citado por completadas.md no aparece en el árbol actual; la limitación queda registrada.
+- Pruebas: inspección estática/manual. No se ejecutaron deployments, peticiones HTTP, pruebas de tokens, revocación, multiusuario, consulta de Script Properties ni suites automatizadas.
+- Progreso: 69/183 identificadores; 114 pendientes.
+- Siguiente tarea: TAREA-F4-P0-02 - Corregir las vulnerabilidades IDOR y garantizar el aislamiento de datos personales.
+- Archivos modificados: Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt, Pendientes.md y nuevo AUDITORIA_COMPLETADAS_TAREA-F4-P0-01.md.
+- Archivos sin modificar: código fuente, completadas.md, ChangesLogs.txt y METODOLOGIA_DESARROLLO.md.
+- Próxima acción reproducible: auditar TAREA-F4-P0-02 contra los cinco microservicios, identificadores manipulables, propiedad de registros y ámbitos; reconciliar AUD-NG-002 y hallazgos IDOR existentes.
+- Commit de cierre: el commit que contiene este checkpoint.
+================================================================
