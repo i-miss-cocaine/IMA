@@ -231,3 +231,201 @@ Si bien la plataforma cuenta con una base sólida de versionado documental (`His
 | F40-24 | Exportación de evidencias | Implementada parcialmente | 100% | Concluyente | `getAuditReport` | Solo JSON crudo en pantalla | Generar reporte sellado |
 | F40-25 | Clasificación asistida | Ausente | 100% | Concluyente | N/A | Sin sugerencias inteligentes | Evaluar en fase posterior |
 | F40-26 | Marcas de agua dinámicas | Ausente | 100% | Concluyente | N/A | PDFs sin sello de visualizador | Añadir watermark en visualizador |
+
+---
+
+## Tareas ejecutables derivadas de los hallazgos
+
+> Normalización de las nueve tareas descritas en el plan H (F40-Task01..F40-Task09), conservando sus prioridades P0/P1. Se añaden F40-Task24..F40-Task30 para cubrir características F40-18..F40-20 y F40-24..F40-26, además de una suite E2E de seguridad documental, que no tienen tareas independientes en el plan H. Auditoria.txt registra 23 tareas históricas (01..23), pero no conserva descripciones de Task10..Task23; no se inventan ni se reutilizan esos IDs.
+
+### [F40-Task01] Blindar almacenamiento y erradicar enlaces públicos
+- **Hallazgo de origen:** F40-01/F40-02/F40-03/F40-13; E2E-02/E2E-04.
+- **Severidad:** Crítica / P0. **Objetivo:** impedir acceso anónimo y limitar lectura/descarga según sensibilidad, expediente, departamento y operación.
+- **Acción ejecutable:** retirar `ANYONE_WITH_LINK` de documentos laborales/financieros; establecer ACL privadas; implementar `getSecureDocumentStream` con token efímero vinculado a usuario/documento/versión/operación; aplicar ABAC en backend y taxonomía `NivelSensibilidad` (médico, disciplinario, financiero, académico, laboral).
+- **Archivos/módulos:** `backend/academic-service/Code.gs`, `backend/accounting-service/Code.gs`, `backend/user-service/Code.gs`, `uploadEmployeeDocument`, `uploadPaymentVoucher`, `getStudentDocuments`, `ROLE_PERMISSIONS`, `DocumentosEstudiante`.
+- **Dependencias/riesgos:** TASK-296 (ACL/enlaces Drive seguros), AUD-NG-158/TASK-502 (ABAC), AUD-NG-127 (HMAC), F31-Task09/F34-Task04/F39-Task02; riesgo de enlaces filtrados y acceso fuera de ámbito.
+- **Alcance:** almacenamiento privado y entrega autenticada; no confiar en URL directa de Drive ni en ID enviado por cliente.
+- **Criterios de aceptación:** ningún archivo sensible con ANYONE_WITH_LINK; token aleatorio firmado y de vida corta; usuario/ámbito/documento/versión/operación validados server-side; categorías de sensibilidad con permisos mínimos; revocación efectiva; pruebas anónimas, IDOR, enlace filtrado, cambio de rol y revocación.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; E2E-02/E2E-04 fallan por URLs públicas en contratos laborales y comprobantes.
+
+### [F40-Task02] Implementar integridad criptográfica SHA-256 en binarios
+- **Hallazgo de origen:** F40-09; E2E-01/E2E-05.
+- **Severidad:** Crítica / P0. **Objetivo:** detectar alteraciones o sustituciones de archivos en Drive y respaldos.
+- **Acción ejecutable:** calcular SHA-256 sobre bytes al subir/generar; persistir hash por versión; verificar antes de entregar/restaurar; sustituir `computeSimpleHash` (DJB2) por SHA-256 criptográfico.
+- **Archivos/módulos:** `uploadStudentDocument`, `uploadEmployeeDocument`, `uploadPaymentVoucher`, `generateSchoolDocument`, `createSystemBackup`, `restoreSystemBackup`, `HistorialVersionesDocumentos`.
+- **Dependencias/riesgos:** F34-Task04, F39-Task02, F29-Task11/15, F27-Task03; riesgo de calcular hash de URL/metadatos o de no asociarlo a la versión exacta.
+- **Alcance:** hash de contenido binario; no afirmar autenticidad de autor ni firma legal por usar SHA-256.
+- **Criterios de aceptación:** hash de bytes original/final; registro por versión; verificación antes de entrega y restauración; discrepancia bloquea operación y genera incidente; pruebas de sustitución, corrupción, archivo ausente y re-subida.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; no se calcula SHA-256 en upload y backup usa DJB2 simple.
+
+### [F40-Task03] Crear rol segregado de Auditor de solo lectura
+- **Hallazgo de origen:** F40-17; E2E-06.
+- **Severidad:** Crítica / P0. **Objetivo:** permitir fiscalización independiente sin facultades de crear, editar, aprobar, borrar o administrar.
+- **Acción ejecutable:** registrar rol `Auditor` en ROLE_PERMISSIONS de todos los servicios; permitir consultas explícitas de metadatos/logs y visualización protegida vía stream; negar por defecto cualquier mutación y limitar ámbitos/documentos.
+- **Archivos/módulos:** `ROLE_PERMISSIONS` en servicios User/Academic/Accounting/Developer, `getAuditReport`, `getStudentDocuments`, panel de auditoría.
+- **Dependencias/riesgos:** TASK-502/AUD-NG-222 (RBAC/ABAC), AUD-NG-158, F37-Task02; riesgo de rol nominal que herede permisos administrativos por fallback.
+- **Alcance:** rol read-only segregado; no crear un perfil que herede permisos de Director/Admin.
+- **Criterios de aceptación:** matriz explícita de permisos por operación; mutaciones denegadas en backend; acceso por ámbito; lectura/descarga auditada; pruebas negativas CRUD, aprobación, configuración, eliminación y acceso cruzado.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; E2E-06 falla porque no existe rol Auditor aislado.
+
+### [F40-Task04] Vincular firmas y aprobaciones al hash del documento final
+- **Hallazgo de origen:** F40-08; E2E-03.
+- **Severidad:** Crítica / P0. **Objetivo:** impedir que un documento aprobado o firmado sea sustituido sin detección.
+- **Acción ejecutable:** refactorizar `registerDocumentSignature` para registrar SHA-256 del binario final, identidad verificada, versión, timestamp de servidor y evidencia de consentimiento; bloquear reemplazo de versión aprobada y exigir nueva versión/flujo de rectificación.
+- **Archivos/módulos:** `backend/user-service/Code.gs`, `registerDocumentSignature`, `FirmasConformidades`, `DocumentosEscolaresEmitidos`, Drive y `getSecureDocumentStream`.
+- **Dependencias/riesgos:** F40-Task01/02, F33-Task07, F34-Task07, F31-Task07/13; riesgo de presentar token pseudoaleatorio como firma electrónica avanzada.
+- **Alcance:** integridad y evidencia de conformidad; no declarar firma avanzada PKI/certificada sin proveedor y análisis legal.
+- **Criterios de aceptación:** firma vinculada a hash/versión exacta; identidad y consentimiento trazables; sustitución bloqueada; cambio produce nueva versión y requiere nueva aprobación; verificación detecta alteración; pruebas de modificación directa, replay y firma sobre versión anterior.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el token actual usa `Math.random()` y no está ligado al contenido binario.
+
+### [F40-Task05] Implementar auditoría forense de consultas, vistas y descargas
+- **Hallazgo de origen:** F40-04/F40-05/F40-14; brecha de procedencia y eventos de lectura.
+- **Severidad:** Crítica / P0. **Objetivo:** reconstruir quién consultó/descargó qué documento, en qué versión, desde qué canal y con qué resultado.
+- **Acción ejecutable:** instrumentar `getSecureDocumentStream` y consultas documentales con actor, rol, documentoId, versión, operación, canal de origen, timestamp, IP cuando sea legalmente procedente, resultado y correlationId; sanitizar payloads.
+- **Archivos/módulos:** servicios User/Academic/Accounting, `LogsSistema`, `RegistroEventos`, `getAuditReport`, `getSecureDocumentStream`.
+- **Dependencias/riesgos:** AUD-NG-145 (bitácora), AUD-NG-083 (correlación interservicio), F30-Task06; riesgo de registrar PII excesiva o permitir que el actor altere los logs.
+- **Alcance:** trazabilidad de operaciones documentales; no guardar tokens, contenido sensible ni datos innecesarios.
+- **Criterios de aceptación:** eventos de lectura/descarga/denegación; actor derivado de sesión; origen/canal y correlationId; logs append-only y protegidos; consulta por Auditor; pruebas de descarga directa bloqueada, stream autorizado, acceso denegado y logs sanitizados.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; no se registran consultas ni descargas y las URLs directas evitan el backend.
+
+### [F40-Task06] Implementar motor de retención, archivo pasivo y Legal Hold
+- **Hallazgo de origen:** F40-11; falta de política y ejecución de conservación.
+- **Severidad:** Alta / P1. **Objetivo:** aplicar plazos de retención por categoría y bloquear eliminación cuando exista obligación legal/investigación.
+- **Acción ejecutable:** ampliar `AUD-NG-146/TASK-499` con `PoliticasRetencionDocumental`, categorías, plazo, inicio de cómputo, archivo, legal hold, trigger programado, notificación y bitácora; distinguir archivo lógico de borrado.
+- **Archivos/módulos:** `backend/user-service/Code.gs`, servicios Academic/Accounting, `PoliticasRetencionDocumental`, `executeDataRetentionPolicyCheck`, Drive.
+- **Dependencias/riesgos:** AUD-NG-146/TASK-499, TASK-500 (anonimización), F29-Task15, asesoría legal; riesgo de purgar documentos sujetos a retención o legal hold.
+- **Alcance:** política y archivo de documentos; no ejecutar purga irreversible sin autorización y verificación legal.
+- **Criterios de aceptación:** reglas por categoría/fecha; trigger real y monitoreado; legal hold bloquea; archivo conserva hash/ACL/relación; simulación previa; aprobación de baja; pruebas de vencimiento, hold, archivo y reanudación.
+- **Prioridad:** P1. **Estado:** Pendiente (ampliación de TASK-499/AUD-NG-146).
+- **Evidencia de cierre:** pendiente; el informe no encuentra motor de purga ni política WORM/Legal Hold ejecutable.
+
+### [F40-Task07] Exigir doble autorización para destrucción y baja documental
+- **Hallazgo de origen:** F40-12/F40-21; baja lógica sin doble autorización.
+- **Severidad:** Alta / P1. **Objetivo:** impedir destrucción irreversible por una sola cuenta o por un rol que también solicita la baja.
+- **Acción ejecutable:** crear flujo de disposición con solicitante, motivo, documento/versión/hash, aprobación de Dirección y Secretaría, legal hold, periodo de gracia y ejecución separada; conservar tombstone y acta.
+- **Archivos/módulos:** servicios User/Academic/Accounting, `updateDocumentStatus`, `FirmasConformidades`, `PoliticasRetencionDocumental`.
+- **Dependencias/riesgos:** F40-Task06, F30-Task08 (delegación), F34-Task07 (conformidad), TASK-502; riesgo de autoaprobación o destrucción durante investigación.
+- **Alcance:** disposición/baja documental; no borrar archivos directamente desde el cliente ni eliminar historial.
+- **Criterios de aceptación:** dos aprobadores distintos; separación solicitante/aprobador/ejecutor; legal hold comprobado; periodo de gracia configurable; acta firmada; tombstone y hash conservados; pruebas de autoaprobación, revocación y documento retenido.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; doble aprobación existe solo en órdenes de compra, no en disposición documental.
+
+### [F40-Task08] Crear panel de integridad y conciliación de documentos huérfanos
+- **Hallazgo de origen:** F40-22/F40-23; ausencia de conciliación Drive↔Sheets.
+- **Severidad:** Alta / P1. **Objetivo:** identificar archivos sin registro, registros sin binario, hash discrepante y relaciones rotas.
+- **Acción ejecutable:** ampliar escáner de F37-Task05 con conciliación entre Drive, `DocumentosEstudiante`, `DocumentosEscolaresEmitidos` y manifiestos; presentar estado, hash, propietario, expediente, discrepancia y acción sugerida.
+- **Archivos/módulos:** servicios Developer/Academic/User, panel Dirección, `DocumentosEstudiante`, `DocumentosEscolaresEmitidos`, `CorrespondenciaIdentificadores`.
+- **Dependencias/riesgos:** F37-Task05/09, F39-Task02/03/19, F40-Task02/05; riesgo de eliminar automáticamente archivos sin contexto.
+- **Alcance:** diagnóstico y conciliación; no reparar ni borrar automáticamente.
+- **Criterios de aceptación:** archivos huérfanos y registros sin archivo diferenciados; hash comparado; filtros por departamento/fecha/tipo; acceso por rol; acciones sugeridas con aprobación; pruebas de archivo movido, borrado, duplicado y expediente sin referencia.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; no existe panel ni proceso de conciliación entre Drive y Sheets.
+
+### [F40-Task09] Extender respaldos para incluir binarios y restauración verificable
+- **Hallazgo de origen:** F40-15/F40-16; E2E-05.
+- **Severidad:** Alta / P1. **Objetivo:** recuperar documentos físicos en Drive además de metadatos/filas de Sheets.
+- **Acción ejecutable:** ampliar `createSystemBackup` con manifiesto de archivos, IDs/versiones, SHA-256, ubicación, ACL y referencias; verificar hash antes de restaurar; recuperar binarios faltantes y reconciliar vínculos.
+- **Archivos/módulos:** `backend/academic-service/Code.gs`, `createSystemBackup`, `restoreSystemBackup`, `HistorialVersionesDocumentos`, Drive y manifiesto de backup.
+- **Dependencias/riesgos:** TASK-151/TASK-152, AUD-NG-146, F27-Task03, F29-Task04/11; riesgo de respaldos incompletos o de restaurar ACL públicas.
+- **Alcance:** backup/restauración de binarios y metadatos; no declarar RPO/RTO sin medición y simulacros.
+- **Criterios de aceptación:** manifiesto por archivo; hash validado; binarios recuperables; ACL privada; preview y rollback; prueba de archivo borrado/sustituido, backup corrupto y restauración parcial.
+- **Prioridad:** P1. **Estado:** Pendiente (ampliación de TASK-151/152/AUD-NG-146).
+- **Evidencia de cierre:** pendiente; E2E-05 restaura hojas, pero no puede recuperar binarios eliminados de Drive.
+
+### [F40-Task24] Revisar y revocar permisos heredados u obsoletos automáticamente
+- **Hallazgo de origen:** F40-18; accesos residuales tras egreso o desvinculación laboral.
+- **Severidad:** Alta / P1. **Objetivo:** retirar accesos que ya no corresponden a la relación laboral, académica o familiar vigente.
+- **Acción ejecutable:** programar revisión de ACL por recurso y ámbito; comparar con estado de usuario/relación; proponer revocación de permisos directos/heredados y registrar excepciones aprobadas.
+- **Archivos/módulos:** servicios User/Developer, Google Drive ACL, `ROLE_PERMISSIONS`, `Usuarios`, matrículas, contratos y relaciones familiares.
+- **Dependencias/riesgos:** TASK-502/AUD-NG-222 (ABAC), F29-Task17 (roles/privacidad), F40-Task01/06; riesgo de revocar acceso legítimo por datos de RRHH/egreso desactualizados.
+- **Alcance:** auditoría y revocación controlada; no revocar Shared Drive/propiedad sin validar custodio y política.
+- **Criterios de aceptación:** barrido programado; fuentes de estado canónicas; permisos residuales reportados; revocación con aprobación según categoría; excepciones con vencimiento; pruebas de empleado egresado, estudiante graduado, tutor y permiso heredado.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; F40-18 se encuentra ausente y no hay barrido automatizado de ACL residuales.
+
+### [F40-Task25] Detectar actividad documental anómala y alertar a responsables
+- **Hallazgo de origen:** F40-19; ausencia de alertas por descargas masivas o intentos reiterados.
+- **Severidad:** Alta / P1. **Objetivo:** detectar patrones compatibles con exfiltración o abuso de acceso.
+- **Acción ejecutable:** ampliar AUD-NG-145/TASK-064 con reglas por ventana: descargas por usuario, volumen/bytes, múltiples expedientes, fallos de autorización y accesos fuera de patrón; deduplicar alertas y preservar evidencia.
+- **Archivos/módulos:** `LogsSistema`, `RegistroEventos`, `getSecureDocumentStream`, panel de seguridad y notificaciones.
+- **Dependencias/riesgos:** F40-Task05, AUD-NG-145, TASK-064, AUD-NG-144; riesgo de falsos positivos o de perfilar usuarios sin política de privacidad.
+- **Alcance:** detección basada en eventos autorizados; no bloquear cuentas automáticamente sin umbrales/flujo de revisión.
+- **Criterios de aceptación:** umbrales configurables por rol/ámbito; alertas deduplicadas; evidencia/correlationId; notificación a responsables; supresión/revisión; pruebas de descarga masiva, ráfaga de denegaciones y actividad normal.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; F40-19 no tiene mecanismo de alertas anómalas.
+
+### [F40-Task26] Extender alertas de vencimiento y conservación a todas las categorías
+- **Hallazgo de origen:** F40-20; cobertura parcial limitada a documentos de identidad.
+- **Severidad:** Media / P1. **Objetivo:** avisar sobre vencimiento, renovación, revisión o fin de retención de cada categoría documental aplicable.
+- **Acción ejecutable:** ampliar `checkAndNotifyExpiringStudentDocuments` con reglas por categoría, responsable y calendario; diferenciar vencimiento del documento, fecha de revisión y fin de retención; respetar Legal Hold.
+- **Archivos/módulos:** `backend/academic-service/Code.gs`, `backend/user-service/Code.gs`, `PoliticasRetencionDocumental`, notificaciones y dashboard.
+- **Dependencias/riesgos:** F40-Task06, TASK-316, TASK-064; riesgo de alertar fechas erróneas o purgar documentos aún vigentes.
+- **Alcance:** alertas de vigencia/conservación; no automatizar baja documental al vencer.
+- **Criterios de aceptación:** reglas por categoría; responsables y anticipación configurables; Legal Hold suspende acciones; deduplicación y estado de entrega; pruebas identidad, contrato, comprobante, expediente cerrado y retención suspendida.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; la función actual solo cubre carnés/documentos de identidad de estudiantes.
+
+### [F40-Task27] Exportar evidencias de auditoría en informe sellado e inmutable
+- **Hallazgo de origen:** F40-24; `getAuditReport` solo devuelve JSON.
+- **Severidad:** Media / P1. **Objetivo:** entregar evidencia reproducible para auditoría externa con integridad verificable y filtros explícitos.
+- **Acción ejecutable:** generar paquete PDF/CSV/JSON con criterios, rango temporal, filtros, hash SHA-256, firma institucional autorizada, manifiesto y cadena de custodia; permitir solo a Auditor/roles habilitados.
+- **Archivos/módulos:** `backend/developer-service/Code.gs`, `getAuditReport`, exportador, F40-Task02/03/05 y almacenamiento privado.
+- **Dependencias/riesgos:** F24-Task04 (exportación), F30-Task06 (correlación), F40-Task02/03/05; riesgo de exportar datos fuera de alcance o llamar "firmado" a un PDF sin firma válida.
+- **Alcance:** paquete de evidencia verificable; no modificar logs fuente ni permitir que el exportador altere el rango consultado.
+- **Criterios de aceptación:** filtros y fuentes visibles; hash del paquete; firma/autorización verificable; manifest de archivos; redacción de PII; acceso auditado; pruebas de integridad, rango, rol y reexportación.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el informe confirma JSON filtrado pero no exportación firmada/inmutable.
+
+### [F40-Task28] Implementar clasificación asistida de sensibilidad documental
+- **Hallazgo de origen:** F40-25; ausencia de análisis de metadatos/OCR para sugerir categoría.
+- **Severidad:** Media / P2. **Objetivo:** ayudar a etiquetar documentos sensibles sin confiar ciegamente en clasificación automática.
+- **Acción ejecutable:** sugerir categoría usando tipo, origen, metadatos y texto OCR autorizado; mostrar confianza y explicación; requerir confirmación de usuario autorizado; aplicar etiqueta de sensibilidad a permisos/retención.
+- **Archivos/módulos:** servicios Academic/User/Developer, `NivelSensibilidad`, F39-Task04/19/20, OCR y catálogo documental.
+- **Dependencias/riesgos:** F40-Task01/06, F39-Task04/19, F38-Task02; riesgo de falsos negativos en datos médicos/financieros o de indexar contenido sensible sin autorización.
+- **Alcance:** sugerencia asistida y revisión humana; no asignar automáticamente permisos ni tomar decisiones legales por modelo.
+- **Criterios de aceptación:** categorías controladas; score/explicación; revisión humana; fallback conservador para documentos ambiguos; auditoría de cambios; pruebas de falsos positivos/negativos y datos sensibles.
+- **Prioridad:** P2. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; F40-25 está ausente.
+
+### [F40-Task29] Añadir marcas de agua dinámicas y trazabilidad de copias consultadas
+- **Hallazgo de origen:** F40-26; PDFs sin marca del usuario que los visualiza.
+- **Severidad:** Media / P2. **Objetivo:** disuadir redistribución no autorizada y vincular una copia visible a la sesión/usuario que la recibió.
+- **Acción ejecutable:** renderizar watermark en el stream/preview con identidad minimizada, timestamp y código de seguimiento; no alterar el original custodiado; registrar la versión marcada y su destinatario.
+- **Archivos/módulos:** `getSecureDocumentStream`, visor PDF, `backend/academic-service/Code.gs`, `backend/accounting-service/Code.gs` y generador PDF.
+- **Dependencias/riesgos:** F40-Task01/02/05, F32-Task01 y privacidad; riesgo de incluir PII excesiva o romper validez/integridad del original.
+- **Alcance:** copia de consulta/descarga marcada; no añadir marca al original oficial ni usar watermark como control de acceso.
+- **Criterios de aceptación:** marca ligada a usuario/versión/tiempo; datos minimizados; original sin modificación; salida marcada conserva hash separado; watermark no oculta contenido; pruebas de impresión, descarga, sesión y documentos de alta sensibilidad.
+- **Prioridad:** P2. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; F40-26 está ausente.
+
+### [F40-Task30] Automatizar los seis escenarios E2E de seguridad y conservación documental
+- **Hallazgo de origen:** E2E-01..E2E-06; cobertura de verificación 22/26 y tres escenarios fallidos.
+- **Severidad:** Crítica / P0 para bloqueos de producción. **Objetivo:** convertir las pruebas integrales en regresiones reproducibles que impidan liberar una versión con enlaces públicos, firma desvinculada o falta de rol Auditor.
+- **Acción ejecutable:** ampliar AUD-NG-161 con fixtures de documento sensible, usuario anónimo, auditor, firma, revocación, backup binario y alteración; probar flujo completo desde creación hasta retención/restauración.
+- **Archivos/módulos:** `tests/regression/academic-grading-suite.js`, servicios User/Academic/Accounting/Developer, entorno aislado y harness E2E.
+- **Dependencias/riesgos:** F40-Task01..Task29 y AUD-NG-161; riesgo de probar solo presencia de funciones o de tocar Drive productivo.
+- **Alcance:** pruebas E2E aisladas; no enviar documentos reales ni compartir enlaces públicos durante pruebas.
+- **Criterios de aceptación:** seis escenarios automatizados; E2E-02/03/04/06 bloquean release hasta pasar; E2E-01/05 validan hash/backup binario; fixtures sintéticos; limpieza/rollback; evidencia ligada a commit/deployment.
+- **Prioridad:** P0 para gates de seguridad. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; la matriz reporta tres escenarios fallidos y dos aprobados con observaciones.
+
+### Reconciliaciones y discrepancias transversales de Fase 40
+- **F40-Task01:** retirar ACL públicas y servir mediante stream; TASK-296/AUD-NG-158 se amplían, no se duplican.
+- **F40-Task02:** usar un servicio SHA-256 común con F34-Task04/F39-Task02/F29-Task11; eliminar DJB2 para integridad criptográfica.
+- **F40-Task03:** crear rol Auditor segregado y de solo lectura; coordinar con TASK-502/AUD-NG-222, sin herencia de Admin/Director.
+- **F40-Task04:** firma vinculada a hash/versión; coordinar con F33-Task07/F34-Task07 y aclarar que no equivale automáticamente a firma avanzada.
+- **F40-Task05:** ampliar AUD-NG-145/AUD-NG-083 con eventos de lectura/descarga; no crear una bitácora paralela.
+- **F40-Task06:** ampliar TASK-499/AUD-NG-146; TASK-500 cubre anonimización, no retención.
+- **F40-Task07:** doble autorización documental separada de aprobación de compras.
+- **F40-Task08:** ampliar F37-Task05/09 y F39-Task19 para conciliación Drive/Sheets.
+- **F40-Task09:** ampliar TASK-151/152/AUD-NG-146 con binarios; no declarar RPO/RTO sin pruebas.
+- **F40-Task24..Task30:** derivadas de F40-18..20/F40-24..26 y E2E; no corresponden a una reconstrucción de los IDs históricos ausentes.
+- **Discrepancia histórica:** Auditoria.txt registra 23 tareas F40-Task01..F40-Task23 (P0 01-14, P1 15-21, P2 22-23), pero el informe H describe solo Task01..Task09 (P0 01-05, P1 06-09). No hay descripciones recuperables de Task10..Task23 en el informe ni en la bitácora. Se dejan como referencias históricas sin alcance; no se inventan ni se consulta Pendientes.md.
+- **Métricas históricas:** 53/53 pruebas generales, inspección 26/26 y verificación 22/26; no se reejecutaron en esta migración documental.
+- **Dictamen preservado:** Requiere Mejoras / No Aprobada para Producción Crítica hasta subsanar brechas P0.
+- **Estado global:** F40-Task01..Task09 y F40-Task24..Task30 permanecen pendientes de ejecución/revalidación; Task10..Task23 quedan como referencias históricas sin descripción recuperable.

@@ -4954,3 +4954,32 @@ CHECKPOINT C1.141 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 39
 - Próximo informe pendiente: AUDITORIA_FASE_40_SEGURIDAD_DOCUMENTAL_TRAZABILIDAD_Y_CONSERVACION.md.
 - Estado de TASK-DOC-C1.112-01: En curso.
 ================================================================
+
+================================================================
+CHECKPOINT C1.142 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 40
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida: fb878061bd1037124a39a0c3c16f580fabf3a163.
+- HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID operativo de sesión: IMA-AUDIT-20261106-2035Z-MIGRACION (no es ID nativo de ChatGPT).
+- Checkpoint anterior: C1.141 (Fase 39 normalizada).
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_FASE_40_SEGURIDAD_DOCUMENTAL_TRAZABILIDAD_Y_CONSERVACION.md.
+- SHA original del informe: deab4509bef0b247655fec04d6412604a5df1583.
+- SHA original del contexto: a8db3a32a38f852ecb180b2efe203811e2efbba3.
+- Inspección: informe completo (29,213 caracteres), 26 características F40-01..F40-26, 6 escenarios E2E-01..06, plan H con 9 tareas descritas y registro J de avance.
+- Tareas originales preservadas: F40-Task01..F40-Task09 y prioridades P0/P1 del plan H.
+- Tareas derivadas adicionales: F40-Task24 (revisión de permisos obsoletos), Task25 (alertas anómalas), Task26 (vencimientos), Task27 (exportación sellada de evidencias), Task28 (clasificación asistida), Task29 (watermark dinámico), Task30 (suite E2E).
+- Discrepancia histórica: Auditoria.txt registra 23 tareas F40-Task01..Task23 (P0 01-14, P1 15-21, P2 22-23), pero el informe solo describe 01..09. Task10..Task23 no tienen descripciones recuperables en el informe ni bitácora; no se inventan ni se consulta Pendientes.md.
+- Dictamen preservado: Requiere Mejoras / No Aprobada para Producción Crítica; no se declara remediación ni aprobación.
+- Métricas históricas 53/53 pruebas, inspección 26/26, verificación 22/26; no se reejecutaron.
+- Dependencias cruzadas: F24-Task04, F27-Task03, F29-Task04/11/15, F30-Task06/08/12, F31-Task09, F32-Task01, F33-Task07, F34-Task04/07, F37-Task02/05/09, F39-Task02/03/19, TASK-296/TASK-499/TASK-500/TASK-502/TASK-151/TASK-152/TASK-064, AUD-NG-127/145/146/158/161/083/222; coordinadas sin duplicar.
+- Campos por tarea: origen, severidad, objetivo, acción, archivos/módulos, dependencias/riesgos, alcance, criterios de aceptación, prioridad, estado y evidencia de cierre.
+- Archivos modificados: AUDITORIAS/AUDITORIA_FASE_40_SEGURIDAD_DOCUMENTAL_TRAZABILIDAD_Y_CONSERVACION.md; AUDITORIAS/Contexto_personal.txt.
+- No se modificaron código, pruebas, Pendientes.md, completadas.md, ChangesLogs.txt, Auditoria.txt, metodología, README, plan maestro ni rama base.
+- Pruebas no ejecutadas: enlaces privados/stream, SHA-256, rol Auditor, firma ligada al hash, logs forenses, retención/legal hold, doble aprobación, conciliación Drive/Sheets, backup binario, ACL residual, alertas anómalas, exportación sellada, clasificación, watermark y seis E2E.
+- Próximo informe pendiente: AUDITORIA_FASE_41_CONTINUIDAD_Y_CONSERVACION_OPERATIVA.md (confirmar nombre exacto en el directorio antes de continuar).
+- Estado de TASK-DOC-C1.112-01: En curso.
+================================================================
