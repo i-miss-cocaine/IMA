@@ -4201,3 +4201,24 @@ CHECKPOINT C1.114 - PRIMER LOTE DE NORMALIZACIÓN DE INFORMES HISTÓRICOS
 - Próxima acción: adaptar el informe de auditoría de Fase 28 y continuar con informes históricos restantes.
 - Validación final y commit de checkpoint: pendientes al momento de este registro.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.115 - FORMALIZACIÓN DEL BACKLOG DE AUDITORÍA DE FASE 28
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama: NG_beta_0.0.0.1_work.
+- HEAD de partida: ffe5e3e9a35844f69b56b1815ec4b37f2f84ea57.
+- ID de sesión: IMA-AUDIT-20261106-1950Z.
+- Checkpoint anterior: C1.114.
+- Archivo adaptado: AUDITORIAS/AUDITORIA-FASE-28-ACCESIBILIDAD-MOVILIDAD-CONTINUIDAD.md.
+- Tareas formalizadas dentro del propio informe: F28-Task01, F28-Task02, F28-Task03, F28-Task04 y F28-Task05.
+- F28-Task01: aislamiento de borradores por usuario/sesión, P0.
+- F28-Task02: manifiesto/Service Worker PWA, P1.
+- F28-Task03: Background Sync con fallback e idempotencia, P1.
+- F28-Task04: mejora incremental de foco y atajos, P2; no se convierte en afirmación de incumplimiento WCAG.
+- F28-Task05: optimización de imágenes/lazy loading, P2; se identifica como mejora no como defecto reproducido.
+- Se preservó el contenido previo; no se modificó código, pruebas, Pendientes.md, completadas.md, ChangesLogs.txt ni la rama base.
+- Próxima acción: continuar la adaptación de informes históricos, cotejando IDs/tareas equivalentes antes de crear nuevos.
+- Commit de cierre: pendiente de publicación.
+================================================================

@@ -6891,3 +6891,25 @@ VALIDACIÓN:
 PRÓXIMA ACCIÓN:
 Adaptar AUDITORIA-FASE-28-ACCESIBILIDAD-MOVILIDAD-CONTINUIDAD.md y continuar por lotes con los demás informes históricos.
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-06
+CHECKPOINT C1.115 — FORMALIZACIÓN DEL BACKLOG DE AUDITORÍA DE FASE 28
+SESIÓN: IMA-AUDIT-20261106-1950Z
+REPOSITORIO: i-miss-cocaine/IMA
+RAMA: NG_beta_0.0.0.1_work
+HEAD DE PARTIDA: ffe5e3e9a35844f69b56b1815ec4b37f2f84ea57
+
+ARCHIVO ADAPTADO:
+- AUDITORIAS/AUDITORIA-FASE-28-ACCESIBILIDAD-MOVILIDAD-CONTINUIDAD.md.
+- Se añadió "Tareas ejecutables derivadas de los hallazgos" con los cinco elementos ya enumerados en el Plan de Resolución: F28-Task01 a F28-Task05.
+- F28-Task01 formaliza aislamiento de borradores por usuario/sesión (B03).
+- F28-Task02 formaliza manifiesto y Service Worker para shell estático offline.
+- F28-Task03 formaliza Background Sync con fallback, idempotencia y conflictos.
+- F28-Task04 se clasificó como mejora incremental de foco/atajos; el informe no demuestra por sí solo incumplimiento WCAG.
+- F28-Task05 se clasificó como mejora de rendimiento; el informe no demuestra un defecto reproducido.
+- Se preservó el contenido histórico y se añadieron criterios, archivos, dependencias, alcance, prioridad, estado y evidencia.
+- No se modificaron código, pruebas, Pendientes.md, completadas.md ni ChangesLogs.txt.
+- Próxima acción: continuar con otros informes históricos y cotejar posibles tareas equivalentes antes de crear IDs nuevos.
+===============================================================================

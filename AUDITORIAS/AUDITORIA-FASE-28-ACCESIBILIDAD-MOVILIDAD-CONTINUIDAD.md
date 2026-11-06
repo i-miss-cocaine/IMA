@@ -170,3 +170,77 @@ La Fase 28 cuenta con una arquitectura de movilidad y accesibilidad altamente co
    $$\text{Cobertura de Verificación} = \frac{\text{Criterios Aprobados y Verificados}}{\text{Total Criterios Aplicables}} \times 100 = \frac{27}{28} \times 100 = 96.43\%$$
 3. **Tasa de Aprobación de Pruebas:**
    $$\text{Tasa de Aprobación} = \frac{\text{Pruebas Aprobadas}}{\text{Pruebas Ejecutadas}} \times 100 = \frac{27}{27} \times 100 = 100.0\%$$
+
+
+## Tareas ejecutables derivadas de los hallazgos
+
+### [F28-Task01] Aislamiento de borradores por usuario y sesión
+- **Tipo:** tarea ya identificada en el plan de resolución de esta auditoría; se formaliza sin crear un ID paralelo.
+- **Hallazgo de origen:** brecha B03; la clave actual `draft_ + inp.id` no incorpora identidad y puede exponer borradores entre usuarios que comparten dispositivo.
+- **Severidad:** Crítica (P0), por riesgo de exposición de datos entre cuentas.
+- **Objetivo:** impedir lectura cruzada de borradores y garantizar purga al cerrar sesión.
+- **Acción concreta:** derivar el identificador de usuario desde la sesión autenticada; namespacing de claves por usuario/sesión e input; validar el contexto al restaurar; purgar borradores al cerrar sesión y al cambiar de cuenta; definir tratamiento de migración de claves antiguas sin asociarlas a un usuario incorrecto.
+- **Archivos/módulos afectados:** `js/ui-common.js`, `auditAndFixAccessibility`, `logoutUser` y gestión de sesión.
+- **Dependencias:** autenticación/token de sesión; reglas de retención y recuperación de borradores.
+- **Alcance técnico:** almacenamiento local de borradores de formularios; no incluye la cola offline ni los documentos de IndexedDB.
+- **Criterios de aceptación verificables:** (1) claves incluyen identidad autenticada y ámbito de sesión; (2) usuario A nunca restaura borradores de usuario B en el mismo dispositivo; (3) logout/cambio de cuenta invalida o purga el contexto anterior; (4) datos antiguos no se asignan a un usuario por inferencia; (5) pruebas multiusuario y de cierre de sesión cubren guardar/restaurar/purgar.
+- **Prioridad:** P0.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; esta auditoría documenta la brecha, no una corrección.
+
+### [F28-Task02] Registrar Service Worker y manifiesto PWA para activos estáticos offline
+- **Tipo:** tarea ya identificada en el plan de resolución de esta auditoría.
+- **Hallazgo de origen:** brecha de instalación PWA y caché offline; existe IndexedDB para datos, pero el informe no identifica manifiesto ni registro de Service Worker para activos estáticos.
+- **Severidad:** Alta (P1).
+- **Objetivo:** permitir que la aplicación instalada cargue su shell estático cuando no exista conexión.
+- **Acción concreta:** definir manifiesto web con nombre, iconos, start_url, scope y display; registrar Service Worker con ciclo de actualización controlado; diseñar caché versionada para HTML/CSS/JS esenciales; definir estrategia de actualización, invalidación y fallback offline; no cachear respuestas privadas/sensibles sin política explícita.
+- **Archivos/módulos afectados:** raíz web, HTML de entrada, configuración de build/deploy y nuevo manifiesto/Service Worker.
+- **Dependencias:** estrategia de despliegue y versionado de activos; política de caché y seguridad de datos.
+- **Alcance técnico:** shell y activos estáticos; no sustituye IndexedDB ni la cola de operaciones offline.
+- **Criterios de aceptación verificables:** (1) manifest es válido y enlazado; (2) Service Worker se registra en contexto seguro y controla el scope previsto; (3) shell esencial carga sin red tras una primera visita; (4) actualización de versión invalida caché anterior sin dejar la app inutilizable; (5) no se almacenan respuestas privadas por defecto; (6) pruebas de primera carga, offline, actualización y rollback.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente.
+
+### [F28-Task03] Integrar sincronización periódica mediante Background Sync cuando esté disponible
+- **Tipo:** tarea ya identificada en el plan de resolución de esta auditoría.
+- **Hallazgo de origen:** la sincronización se dispara principalmente por evento `online`; falta integración de Background Sync API donde el navegador la soporte.
+- **Severidad:** Alta (P1).
+- **Objetivo:** reintentar sincronización de acciones encoladas de forma resiliente cuando el navegador recupere conectividad.
+- **Acción concreta:** registrar un sync tag para la cola offline; conectar el evento de Background Sync con `syncOfflineQueue`; implementar fallback para navegadores sin soporte; conservar idempotencia, orden, reintentos y resolución de conflictos; exponer resultado y errores.
+- **Archivos/módulos afectados:** `js/ui-common.js`, `initOfflineDB`, `queueOfflineAction`, `syncOfflineQueue`, Service Worker y gestión de cola.
+- **Dependencias:** F28-Task02 (Service Worker), IndexedDB, tokens de idempotencia y resolución de conflictos.
+- **Alcance técnico:** disparo y reintento de sincronización; no cambia reglas de negocio ni permite repetir mutaciones no idempotentes.
+- **Criterios de aceptación verificables:** (1) registro de sync ocurre cuando se encola trabajo y hay soporte; (2) evento ejecuta sincronización controlada; (3) fallback online/manual funciona sin Background Sync; (4) operaciones no se duplican; (5) conflictos conservan opciones de resolución; (6) errores transitorios reintentan según política; (7) pruebas con navegador compatible/no compatible y red intermitente.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente.
+
+### [F28-Task04] Mejorar foco visible y atajos de teclado accesibles
+- **Tipo:** tarea ya identificada en el plan de resolución de esta auditoría.
+- **Hallazgo de origen:** el plan propone reforzar accesibilidad avanzada; la auditoría original declara navegación y foco como completos, por lo que esta tarea es una mejora incremental y no una declaración de incumplimiento WCAG ya demostrado.
+- **Severidad:** Media (P2).
+- **Objetivo:** facilitar navegación por teclado con foco visible y atajos que no interfieran con tecnologías de asistencia.
+- **Acción concreta:** definir atajos documentados y configurables/no conflictivos; mejorar el indicador de foco de alto contraste; respetar preferencias de movimiento/teclado y evitar capturar combinaciones del navegador o lector de pantalla; anunciar ayuda de atajos.
+- **Archivos/módulos afectados:** `css/style.css`, `js/ui-common.js`, navegación y componentes interactivos.
+- **Dependencias:** sistema de diseño institucional, mapa de accesos directos y pruebas de accesibilidad.
+- **Alcance técnico:** foco visible y atajos; no reabrir como fallidos todos los criterios ACC declarados verificados en el informe.
+- **Criterios de aceptación verificables:** (1) foco visible en controles interactivos y contraste suficiente; (2) atajos documentados y no intrusivos; (3) no interceptan combinaciones reservadas de navegador/lector; (4) funcionan con teclado sin ratón; (5) pruebas manuales con teclado y lector de pantalla; (6) no hay regresión en navegación existente.
+- **Prioridad:** P2.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente.
+
+### [F28-Task05] Optimizar imágenes mediante compresión progresiva y lazy loading
+- **Tipo:** tarea ya identificada en el plan de resolución de esta auditoría.
+- **Hallazgo de origen:** oportunidad de optimización de medios identificada en el plan; el informe no demuestra un defecto reproducido, por lo que se clasifica como mejora de rendimiento.
+- **Severidad:** Media (P2).
+- **Objetivo:** reducir transferencia y memoria de imágenes sin degradación visual inaceptable.
+- **Acción concreta:** comprimir fotografías de perfil y comprobantes en cliente antes de subir, respetando límites de tamaño/tipo y calidad; generar variantes apropiadas; aplicar lazy loading a imágenes fuera del viewport; mantener original cuando la compresión no sea segura o el formato no sea compatible.
+- **Archivos/módulos afectados:** componentes de carga/preview de imágenes, formularios de perfil/comprobantes y vistas con galerías/listados.
+- **Dependencias:** límites del backend, validación de archivos, formatos permitidos y métricas de rendimiento.
+- **Alcance técnico:** imágenes rasterizadas y carga diferida; no comprimir documentos de forma destructiva ni alterar datos originales sin consentimiento.
+- **Criterios de aceptación verificables:** (1) imágenes elegibles se comprimen antes de subir con límites configurados; (2) calidad/dimensiones cumplen umbral definido; (3) lazy loading carga recursos cercanos al viewport; (4) preview y fallback funcionan; (5) originales se preservan cuando no procede compresión; (6) pruebas comparan tamaño, calidad y comportamiento en móvil.
+- **Prioridad:** P2.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente.
+
