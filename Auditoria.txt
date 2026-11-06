@@ -6714,3 +6714,27 @@ PRUEBAS Y LÍMITES:
 - No ejecutado: Apps Script runtime, triggers reales, ejecución periódica, email, datos productivos ni suites automatizadas.
 - Código fuente y pruebas sin modificaciones.
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-06
+CHECKPOINT C1.91 — TAREA-F4-P3-02
+SESIÓN: IMA-AUDIT-20261106-1644Z
+REPOSITORIO: i-miss-cocaine/IMA
+RAMA: NG_beta_0.0.0.1_work
+HEAD DE PARTIDA: ab8ba188f37f43137ac07a66a4dc6a0f57551251
+DICTAMEN: NO CUMPLE
+
+EVIDENCIA:
+- USER Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f: getStructuredLogs 353-394; getPaginatedAuditLogReport 4243-4364; recordTraceabilityLog 4548-4573; getTraceabilityCorrelationLogs 4575-4616; registerAndDispatchEvent 4618-4690.
+- developer.js SHA 6fa4c4bd9be580c974b1fbede4f0cf79485dc331: loadStructuredLogs 195-225.
+- tests SHA 3433b707edd4a2f35c68368a3172932adc2a3b32/0495e1d526a872c33310935a003a83d924d34683; sin casos específicos.
+
+RESULTADOS:
+1. getPaginatedAuditLogReport interpreta BitacoraEventos con un DTO distinto al escritor: row[1] se parsea como fecha aunque contiene TipoEvento; row[2] como eventType aunque contiene ServicioOrigen; row[9] como correlationId aunque contiene ErrorDetalle. Los eventos reales quedan excluidos o mal representados.
+2. Consulta BitacoraTraceability, pero recordTraceabilityLog escribe BitacoraTrazabilidad.
+3. Carga getDataRange completo, acumula y ordena allLogs y después aplica slice; no es paginación eficiente de origen.
+4. developer.js sigue usando getStructuredLogs; envía severidad/servicio/limit, backend espera severity/startDate/endDate, ignora servicio y devuelve fijo hasta 500.
+5. No hay pruebas específicas de paginación, mapeo de columnas o integración.
+RECONCILIACIÓN: AUD-NG-145 y AUD-NG-161; no se crean IDs nuevos.
+===============================================================================

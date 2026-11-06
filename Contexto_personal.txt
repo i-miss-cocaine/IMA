@@ -3629,3 +3629,45 @@ CHECKPOINT C1.90 - TAREA-F4-P3-01
 - Bloqueos: ninguno para inspección estática; falta runtime para verificar ejecución temporal y entrega.
 - Commit de cierre: el commit que contiene este checkpoint; SHA final se verifica después de publicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.91 - TAREA-F4-P3-02
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto real: Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: ab8ba188f37f43137ac07a66a4dc6a0f57551251.
+- Tree SHA de partida verificado: 16fb62d588a39b5b58a67b959c616564434bbc24.
+- HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Diferencia verificada: 153 commits adelante y 0 detrás.
+- ID operativo de sesión/chat: IMA-AUDIT-20261106-1644Z; inicio C1.86; C1.87-C1.91 intermedios; estado: sesión abierta.
+- Último checkpoint anterior: C1.90 / TAREA-F4-P3-01.
+- Tarea auditada: TAREA-F4-P3-02 - Optimizar los informes de auditoría y el diagnóstico de incidencias.
+- Estado maestro histórico: [X] en completadas.md; fuente original de Fase 4 no localizada.
+- Dictamen C1.91: NO CUMPLE.
+- Evidencia:
+  - USER Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f: getStructuredLogs 353-394; getPaginatedAuditLogReport 4243-4364; recordTraceabilityLog 4548-4573; getTraceabilityCorrelationLogs 4575-4616; registerAndDispatchEvent 4618-4690.
+  - developer.js SHA 6fa4c4bd9be580c974b1fbede4f0cf79485dc331: loadStructuredLogs 195-225.
+  - tests academic-grading-suite SHA 3433b707edd4a2f35c68368a3172932adc2a3b32; modular-dashboard-suite SHA 0495e1d526a872c33310935a003a83d924d34683; sin casos específicos.
+- Hallazgos:
+  - AUD-NG-145: getPaginatedAuditLogReport interpreta BitacoraEventos con índices incompatibles con registerAndDispatchEvent; row[1] no es fecha sino TipoEvento, por lo que los registros reales se filtran mal.
+  - AUD-NG-145: la consulta busca BitacoraTraceability, pero recordTraceabilityLog escribe BitacoraTrazabilidad.
+  - AUD-NG-145: carga todas las filas, acumula/ordena allLogs y solo luego aplica slice; no reduce lectura/memoria.
+  - AUD-NG-145: dashboard Developer sigue usando getStructuredLogs; manda severidad/servicio/limit, mientras backend espera severity/startDate/endDate, ignora servicio y devuelve fijo hasta 500.
+  - AUD-NG-161: no hay pruebas específicas para mapeo, filtros, paginación o integración.
+  - No se crean IDs nuevos.
+- Pruebas ejecutadas: inspección estática de lectores/escritores, índices, nombres de hojas, callsite frontend y tests.
+- Pruebas no ejecutadas: hojas productivas, HTTP, navegador, rendimiento con volumen ni suites automatizadas.
+- Progreso: 88/183 identificadores auditados; 95 pendientes.
+- Última tarea auditada: C1.91 / TAREA-F4-P3-02.
+- Tarea en curso: ninguna.
+- Siguiente tarea exacta: TAREA-F4-P3-03 - Establecer un sistema de detección y reconciliación de inconsistencias de identidad.
+- Próxima acción reproducible: inspeccionar auditAndReconcileIdentityInconsistencies y sus detectores de referencias huérfanas, delegaciones, adscripciones, vínculos persona-cuenta; verificar dry-run, autoFix, transacciones/locks, idempotencia, falsos positivos, auditoría antes/después y límites por lote; reconciliar AUD-NG-161/219/229/230 antes de crear IDs.
+- Archivos documentales modificados: Auditoria.txt, Pendientes.md, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt y nuevo AUDITORIA_COMPLETADAS_TAREA-F4-P3-02.md.
+- Archivos preservados: código fuente, pruebas, completadas.md, ChangesLogs.txt y METODOLOGIA_DESARROLLO.md.
+- Regla de ID de sesión: ya registrada en METODOLOGIA_DESARROLLO.md, sección 16, punto 9.
+- Bloqueos: ninguno para auditoría estática; faltan datos productivos y prueba de rendimiento.
+- Commit de cierre: el commit que contiene este checkpoint; SHA final se verifica después de publicar.
+================================================================

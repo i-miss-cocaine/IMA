@@ -1893,3 +1893,12 @@ Relaciones:
 - No hay pruebas específicas del reporte ni de su automatización. AUD-NG-161.
 - Nuevo AUD-NG-230/TASK-510 para scheduler, persistencia/entrega, evidencia de revisión y conteo correcto.
 - Evidencia USER 12079dd410aa6d8afbce55a4bc62a79dea605f9f; developer.js 6fa4c4bd9be580c974b1fbede4f0cf79485dc331; ui-common 986938b8a311a41ed4cb3d135b66b6aaea4bed67; dashboards fefaa3bf7884288aef563cfb8aaf244e6cea8b7c/fa0d8c23aace24a6acab2d4956398a7f5e1309b8.
+
+
+## C1.91 — TAREA-F4-P3-02: informes de auditoría y diagnóstico
+
+- getPaginatedAuditLogReport (USER 4243-4364) mapea BitacoraEventos con índices incompatibles con registerAndDispatchEvent (4618-4690): row[1] se trata como fecha aunque es TipoEvento, row[2] como tipo aunque es ServicioOrigen, row[9] como correlación aunque es ErrorDetalle. AUD-NG-145.
+- El lector consulta BitacoraTraceability, pero recordTraceabilityLog escribe BitacoraTrazabilidad (4548-4573). AUD-NG-145.
+- La paginación carga ambas hojas completas y ordena allLogs antes de slice. El dashboard Developer llama getStructuredLogs, no getPaginatedAuditLogReport; además envía severidad/servicio/limit, mientras backend espera severity/startDate/endDate, no filtra servicio y devuelve fijo hasta 500. AUD-NG-145.
+- Sin pruebas específicas en tests/regression. AUD-NG-161.
+- No se crean IDs nuevos. Evidencia USER 12079dd410aa6d8afbce55a4bc62a79dea605f9f; developer.js 6fa4c4bd9be580c974b1fbede4f0cf79485dc331.
