@@ -6913,3 +6913,13 @@ ARCHIVO ADAPTADO:
 - No se modificaron código, pruebas, Pendientes.md, completadas.md ni ChangesLogs.txt.
 - Próxima acción: continuar con otros informes históricos y cotejar posibles tareas equivalentes antes de crear IDs nuevos.
 ===============================================================================
+
+
+===============================================================================
+ADENDA C1.116 — IDENTIFICADORES EXPLÍCITOS EN EL BLOQUE T-UX-23
+FECHA: 2026-11-06
+SESIÓN: IMA-AUDIT-20261106-1954Z
+- Se ajustaron los encabezados de las dos tareas existentes en AUDITORIA_COMPLETADAS_T-UX-23.md para mostrar sus IDs exactos [AUD-NG-001] y [AUD-NG-128].
+- No se crearon tareas nuevas ni se alteraron sus estados o contenidos técnicos.
+- Motivo: ambos hallazgos ya son registros/tareas oficiales en la bitácora; el bloque debe exponer el ID directamente para trazabilidad.
+===============================================================================

@@ -52,7 +52,7 @@ T-UX-23: **NO CUMPLE**. Se reutilizan AUD-NG-001, AUD-NG-128 y TASK-484; sin tar
 
 **No se crean tareas ni hallazgos nuevos.** Se registran las tareas existentes responsables para mantener la trazabilidad y evitar duplicados.
 
-### Tarea existente asociada a AUD-NG-001: autenticación de llamadas protegidas
+### [AUD-NG-001] Tarea existente: autenticación de llamadas protegidas
 - **Tipo:** tarea existente ya cubierta; conservar su ID oficial.
 - **Hallazgo/severidad:** AUD-NG-001, CRÍTICO; fetchApi no propaga el token de sesión firmado.
 - **Objetivo/acción:** propagar el token vigente y validar sesión en backend; derivar identidad desde token validado, nunca de un campo libre del payload.
@@ -63,7 +63,7 @@ T-UX-23: **NO CUMPLE**. Se reutilizan AUD-NG-001, AUD-NG-128 y TASK-484; sin tar
 - **Prioridad/estado:** conservar los valores de la tarea oficial existente.
 - **Evidencia:** pendiente según dictamen de esta auditoría.
 
-### Tarea existente asociada a AUD-NG-128: autorización y propiedad de tickets
+### [AUD-NG-128] Tarea existente: autorización y propiedad de tickets
 - **Tipo:** tarea existente ya cubierta; no crear ID paralelo.
 - **Hallazgo/severidad:** AUD-NG-128, CRÍTICO; handlers confían en payload.userId y exponen riesgo IDOR/suplantación.
 - **Objetivo/acción:** derivar identidad del token y validar rol, institución y propiedad en cada handler de ticket.

@@ -4222,3 +4222,17 @@ CHECKPOINT C1.115 - FORMALIZACIÓN DEL BACKLOG DE AUDITORÍA DE FASE 28
 - Próxima acción: continuar la adaptación de informes históricos, cotejando IDs/tareas equivalentes antes de crear nuevos.
 - Commit de cierre: pendiente de publicación.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.116 - CORRECCIÓN DE IDS EN BLOQUE T-UX-23
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama: NG_beta_0.0.0.1_work.
+- HEAD de partida: 7df3e2f33cae6c847ef742aac8ebe5e2c380d314.
+- ID de sesión: IMA-AUDIT-20261106-1954Z.
+- Archivo corregido: AUDITORIAS/AUDITORIA_COMPLETADAS_T-UX-23.md.
+- Corrección: encabezados de tareas existentes ahora identifican explícitamente [AUD-NG-001] y [AUD-NG-128].
+- Sin nuevas tareas; sin cambios de código, pruebas, Pendientes.md, completadas.md o rama base.
+- Próximo paso: continuar adaptación de informes históricos restantes.
+================================================================
