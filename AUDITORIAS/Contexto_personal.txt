@@ -5736,3 +5736,34 @@ CHECKPOINT C1.169 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-18
 - Próximo informe: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-19.md; leerlo íntegramente y reconciliar hallazgos/tareas relacionadas antes de formalizar.
 - Commit de cierre: un único commit con ambos archivos; verificar SHA, padre, árbol, archivos modificados y HEAD de rama después de publicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.170 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-19
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida declarada en el proyecto: NG_beta_0.0.0.1.
+- HEAD de partida verificado: 629e94df6ad1745aba11dd399985b8a10410390b.
+- Árbol base de la rama de trabajo: ca4e02f039a7bf9ffae7e6e31a5068f1e53641d6.
+- Rama base: no se realizó consulta nueva en esta iteración; no se efectuó ninguna escritura sobre ella.
+- ID operativo de sesión: IMA-AUDIT-20261106-2219Z (no es ID nativo de ChatGPT).
+- Checkpoint inicial de esta iteración: C1.169.
+- Estado de iteración: cerrada en C1.170.
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-19.md.
+- SHA del informe antes del cambio: 54ed2150695102e4e53cf88b5a1d2dc986a9112a.
+- SHA del contexto antes del cambio: cf8d53c24987278f1b8aa6358db0980eedaf1a9d.
+- Dictamen: TAREA-19 NO CUMPLE.
+- Inspección: equivalencias no comparan planes; motor no usa equivalenciasMap ni modifica registros; prevalidación no detecta duplicados/huérfanos ni documentos emitidos; modo REAL devuelve success sin escrituras; no hay snapshot, diario, comparación antes/después ni rollback curricular; interfaz/modal ausente; permisos del endpoint no coinciden con el controlador docente; pruebas no cubren migración.
+- Hallazgo nuevo formalizado: AUD-NG-172 (P1), migración curricular transaccional con prevalidación, snapshot, ejecución idempotente, preservación de datos, comparación antes/después y rollback selectivo.
+- Tareas existentes ampliadas: AUD-NG-164 (catálogo/relaciones de planes); AUD-NG-167 (preservación de calificaciones/boletines); TASK-078 (rollback operativo general y delta post-corte, sin sustituir rollback específico); AUD-NG-158 (RBAC/actor verificado); TASK-296 (renderizado seguro del panel).
+- Reconciliación: AUD-NG-172 es responsable del flujo curricular específico; TASK-078 aporta mecanismos operativos generales, no el rollback selectivo. No se crean IDs nuevos.
+- Archivos modificados: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-19.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, Auditoria.txt, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README y rama base.
+- Pruebas ejecutadas: lectura íntegra de TAREA-19; contraste de AUD-NG-172 y relaciones en Auditoria.txt; comprobación de que el bloque no existía; verificación del HEAD y árbol de partida.
+- Pruebas no ejecutadas: equivalencias, prevalidación, migración real, snapshot, rollback, comparación de datos, pruebas de permisos, UI, Apps Script y producción.
+- Límite: cambio exclusivamente documental. TAREA-19 permanece NO CUMPLE; las tareas formalizadas no se consideran ejecutadas ni completadas.
+- Próximo informe: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-20.md; leerlo íntegramente y reconciliar hallazgos/tareas relacionadas antes de formalizar.
+- Commit de cierre: un único commit con ambos archivos; verificar SHA, padre, árbol, archivos modificados y HEAD de rama después de publicar.
+================================================================
