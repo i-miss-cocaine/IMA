@@ -2634,3 +2634,39 @@ PRUEBAS Y LÍMITES:
 - Archivos documentales modificados: Pendientes.md, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, nuevo AUDITORIA_COMPLETADAS_T-UX-15.md y Contexto_personal.txt.
 - Próxima acción concreta: verificar el commit que contiene este checkpoint, HEAD de NG_beta_0.0.0.1_work y que NG_beta_0.0.0.1 siga intacta; después iniciar auditoría de T-UX-16 desde el último checkpoint y reconciliar notificaciones/tareas/aprobaciones con hallazgos y tareas ya existentes.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.57 - DIAGNÓSTICO DE BLOQUEOS DE PUBLICACIÓN Y REGLA DE CONTROL (2026-11-06)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto real: Contexto_personal.txt.
+- Rama base protegida: NG_beta_0.0.0.1.
+- Rama de trabajo autorizada: NG_beta_0.0.0.1_work.
+- HEAD de partida verificado: 8cd26581dbad0d668a7dcab3a2cedb39d4dcf34b.
+- HEAD de rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios.
+- Estado de T-UX-16: inspección técnica y reconciliación realizadas; la publicación anterior quedó parcial y la iteración de auditoría no se considera cerrada. Se mantienen los commits previos sin reescribirlos. No avanzar a T-UX-17 hasta completar el cierre documental de T-UX-16 conforme al commit único.
+- Diagnóstico del bloqueo: los registros de continuidad indican que las llamadas de escritura create_blob/create_tree y posteriores update_file fueron detenidas por controles de seguridad de la herramienta/conector. No se dispone del texto literal del rechazo ni de un código HTTP/ID de solicitud de GitHub. Por tanto, no está demostrado que GitHub haya recibido o rechazado esas solicitudes; la causa específica del control de seguridad no es observable desde la evidencia disponible.
+- Verificación GitHub: la comparación de NG_beta_0.0.0.1_work con 8cd26581dbad0d668a7dcab3a2cedb39d4dcf34b devuelve identical, 0 ahead y 0 behind. La comparación de NG_beta_0.0.0.1 con 44d9891132332e692dbe2ba8602b41f50a508a59 también devuelve identical. No hubo cambios de rama durante esta investigación.
+- Documentos inspeccionados: METODOLOGIA_DESARROLLO.md SHA 214e8221bd076c4e89012636c105bffd5ca36467; Contexto_personal.txt SHA c84e26437f5ce3d1d93b80ac26b12cabff127cb5. La metodología ya exige un commit único y prohíbe sortear bloqueos; se añade la sección 17 para clasificar la capa de rechazo, capturar evidencia, diagnosticar códigos HTTP y detenerse sin commits parciales ante un bloqueo previo al despacho.
+- Regla establecida: no atribuir un rechazo a GitHub sin respuesta verificable de su API; conservar el mensaje/código exacto cuando exista; identificar la etapa de Git alcanzada; no reintentar a ciegas; no cambiar a escrituras por archivo ni a endpoints alternativos para eludir controles; mantener el único commit como condición de publicación; no usar force ni tocar la rama base.
+- Archivos de esta actualización: METODOLOGIA_DESARROLLO.md (nueva sección 17) y Contexto_personal.txt (este checkpoint). No se modifica código, Pendientes.md, Auditoria.txt ni la rama base.
+- Pruebas: lecturas GitHub de ambos documentos, consulta del commit y comparación de ramas. No se ejecutó una nueva escritura de prueba para no repetir un bloqueo sin causa identificada.
+- Commit de cierre: el único commit que contiene esta sección y este checkpoint; su SHA se confirmará externamente después de actualizar la referencia.
+- Próxima acción: verificar el HEAD de trabajo tras el commit; después retomar el cierre documental pendiente de T-UX-16, reuniendo todos sus archivos y el checkpoint en un único commit. Si la escritura vuelve a ser bloqueada antes del despacho, detenerse y registrar el mensaje exacto disponible sin publicar partes.
+================================================================
+
+================================================================
+CHECKPOINT C1.58 - EXCEPCIÓN AUTORIZADA PARA CONSOLIDAR T-UX-16 (2026-11-06)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto real: Contexto_personal.txt.
+- Rama base protegida: NG_beta_0.0.0.1; HEAD verificado: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Rama de trabajo: NG_beta_0.0.0.1_work; HEAD antes de reconstrucción: aceca72d08a9b4c8a1f5018db0ec347f55c03ce4.
+- Autorización: el usuario autorizó expresamente en esta conversación, el 2026-11-06, reescribir únicamente la historia necesaria para sustituir los dos commits parciales de T-UX-16 por un solo commit de auditoría. No autoriza otras reescrituras ni cambios en la rama base.
+- Reconstrucción prevista: conservar el punto común bc8b4fe9c2ff489f77de2f640140e89ca124405d; reproducir primero el cambio independiente de diagnóstico GitHub (sección 17 y checkpoint C1.57), añadiendo esta excepción a la metodología; después crear un único commit T-UX-16 con todos sus archivos y su checkpoint de cierre. Los commits parciales 8cbd0bf7c68dc9005141c589ba2076477e7128cb y 8cd26581dbad0d668a7dcab3a2cedb39d4dcf34b serán sustituidos en la cadena de la rama de trabajo.
+- Se conserva C1.57 como registro histórico de lo que se conocía antes de recibir esta autorización. Su afirmación de mantener los commits previos sin reescribirlos queda superada por esta autorización posterior y por el presente checkpoint; no se elimina ni altera el registro anterior.
+- Regla añadida en METODOLOGIA_DESARROLLO.md, sección 15.6 y sección 17.9: una consolidación histórica requiere autorización expresa y específica, limita la reescritura a la rama de trabajo, preserva commits independientes, usa expected_sha y nunca toca la rama base.
+- La secuencia de reconstrucción no se considerará publicada hasta que la referencia de la rama de trabajo se actualice y se verifique. Si la operación de actualización es bloqueada antes del despacho, detenerse sin usar otro endpoint o mecanismo alternativo.
+- Commit de esta actualización metodológica y checkpoint: el commit que contiene este checkpoint. Próxima acción: crear el commit único T-UX-16 como descendiente de esta actualización, incluyendo Pendientes.md, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, AUDITORIA_COMPLETADAS_T-UX-16.md y el checkpoint C1.59.
+================================================================
