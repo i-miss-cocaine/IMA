@@ -2587,3 +2587,50 @@ PRUEBAS Y ESTADO:
 - Próxima acción concreta: completar la lectura/reconciliación de tareas de backlog relacionadas con T-UX-15; revisar todos los consumidores de tablas/listas y las implementaciones de filtros, ordenamiento, paginación y vistas guardadas; inspeccionar los flujos de detalle/restauración para separar TASK-486; determinar si TASK-249/TAREA-04 u otra tarea existente absorbe partes del alcance; cerrar dictamen con evidencia exacta y registrar solo hallazgos no duplicados en Pendientes.md, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md e informe T-UX-15.
 - Commit de checkpoint: el commit que contiene esta entrada; su SHA se confirmará externamente después de publicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.56 - CIERRE DE AUDITORÍA T-UX-15 (2026-11-06)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto real: Contexto_personal.txt.
+- Rama base protegida: NG_beta_0.0.0.1.
+- Rama de trabajo autorizada: NG_beta_0.0.0.1_work.
+- HEAD de partida de esta iteración: c7028852ec21673f0ee4156a01ccceb115c47602 (checkpoint C1.55 de inicio).
+- HEAD de trabajo antes del commit de cierre: f3ae79d967d7c6ec6314a94e19500b2c0407eb01.
+- HEAD de rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios durante esta iteración.
+- La comparación desde HEAD de partida muestra cinco commits por delante y cero por detrás. Se usaron commits modulares porque el usuario lo autorizó expresamente para esta auditoría.
+- Última tarea completamente auditada: T-UX-15 - Implementar filtros avanzados, vistas guardadas y paginación coherente.
+- Dictamen: NO CUMPLE.
+- Siguiente tarea: T-UX-16 - Unificar los estados de notificaciones, tareas pendientes y aprobaciones.
+- Progreso acumulado: 56/183 identificadores auditados; 127 pendientes.
+- Lote: Fase 3, experiencia de usuario y navegación unificada.
+
+RESULTADO DE T-UX-15:
+- Fuente: completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676. T-UX-15 aparece dos veces con el mismo alcance; ambas referencias se reconciliaron.
+- Código auditado: js/ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67.
+- renderPaginatedTable: líneas 1999-2067. Modo remoto condicionado a fetchRemotePage; callback recibe targetPage/pageSize, sin contrato común de filtros/orden. No gestiona loading/error/retry ni normaliza página obsoleta.
+- setupAdvancedTableFilters: líneas 2128-2195. filterFields no se utiliza; comparación solo por subcadena normalizada; AND implícito; setFilter elimina 0/false; item[field] || '' pierde 0/false; no ordena ni crea interfaz de filtros activos; no se integra con renderPaginatedTable.
+- Vistas: saveView/loadSavedView almacena solo filtros en localStorage con clave saved_views_{containerId}; no separa usuario/rol/ámbito, no implementa vistas compartidas ni ciclo completo de gestión, y no guarda orden/paginación.
+- Consumidores revisados: js/teacher.js SHA c475fce5afcd28fca23e7b64398ad32b17773746; js/student.js SHA e2888cea60322e49a40b89adadb8010489605dcc; js/accounting.js SHA a79ead4a54ad6fdb2f1e9df4775491ff7191a0c7; js/secretary.js SHA 08a81266957b4c18cc25f8ba6749eac30a8f2c2c. No se localizaron referencias directas a los helpers en esos cuatro módulos. No se afirma barrido exhaustivo del repositorio.
+- AUD-NG-201 (ALTO/P1): motor de filtros incompleto y sin integración con tablas/paginación.
+- AUD-NG-202 (MEDIO/P2): vistas guardadas sin aislamiento de identidad ni modelo de compartición.
+- Ambos hallazgos se vinculan a TASK-429 existente; no se creó TASK nuevo.
+- Reconciliación: FASE2-07 ya había documentado falta de consumidores de renderPaginatedTable y modalidad remota no integrada, ampliando TASK-429; se conserva sin duplicar. TAREA-04 y FASE2-T10 son antecedentes históricos. TASK-249 cubre vistas de reportes institucionales; TASK-486 snapshot/restauración al navegar; TASK-453 bandejas documentales; T-UX-25/TASK-422 preferencias generales. Ninguna sustituye el alcance genérico ampliado de TASK-429.
+
+ARCHIVOS Y COMMITS MODULARES:
+1. Pendientes.md ampliado con AUD-NG-201/AUD-NG-202 y criterios adicionales de TASK-429. Commit: 1f494dddda055b7f1ec4173142d57d55682b4315. Blob posterior: 2309c594e96cec5f35563776bcd0752d83882f21. El fetch_file convencional sigue devolviendo 0 caracteres; el blob fue recuperado íntegramente y verificado con 1,674,755 caracteres y ambos IDs presentes.
+2. Auditoria.txt anexado con dictamen, evidencia y reconciliación. Commit: eedb1fd70408a2252d9c194b61e5f61cc8160e40.
+3. MapaDependencias.md anexado con funciones, entradas, salidas, dependencias y módulos inspeccionados. Commit: bf7ae353863548a884472ba53a75504cf230ecc8.
+4. AUDITORIA_COMPLETADAS_PLAN.md anexado con resultado C1.55, progreso 56/183 y siguiente tarea T-UX-16. Commit: 7230a4c51fa246f34bd05398e7f92e4c526aa5a4.
+5. Creado AUDITORIA_COMPLETADAS_T-UX-15.md con el informe completo. Commit: f3ae79d967d7c6ec6314a94e19500b2c0407eb01.
+6. Este checkpoint acumulativo se añade a Contexto_personal.txt; su commit de cierre se confirmará consultando HEAD después de publicarlo.
+
+PRUEBAS Y LÍMITES:
+- Pruebas realizadas: inspección estática/manual de la especificación, helper de filtros, paginación, almacenamiento de vistas, cuatro módulos consumidores y reconciliación de tareas históricas.
+- No ejecutadas: navegador/DOM, pruebas funcionales de filtros, paginación local/remota, localStorage multiusuario, compartición, permisos activos, mediciones de rendimiento ni suites automatizadas.
+- Código fuente sin modificaciones.
+- completadas.md y METODOLOGIA_DESARROLLO.md sin modificaciones.
+- Archivos documentales modificados: Pendientes.md, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, nuevo AUDITORIA_COMPLETADAS_T-UX-15.md y Contexto_personal.txt.
+- Próxima acción concreta: verificar el commit que contiene este checkpoint, HEAD de NG_beta_0.0.0.1_work y que NG_beta_0.0.0.1 siga intacta; después iniciar auditoría de T-UX-16 desde el último checkpoint y reconciliar notificaciones/tareas/aprobaciones con hallazgos y tareas ya existentes.
+================================================================
