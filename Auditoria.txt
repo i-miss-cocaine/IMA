@@ -6161,3 +6161,18 @@ AUDITORÍA DE TAREA-F4-P0-01 - CHECKPOINT C1.72
 - Pendientes.md amplía AUD-NG-001 a los cinco servicios, AUD-NG-002 a USER/ACADEMIC/TASK/EXAM y AUD-NG-003 a los cinco servicios. No se crean IDs nuevos.
 - Pruebas: inspección estática/manual; no se ejecutaron peticiones a deployments, pruebas de tokens, revocación, multiusuario, Script Properties ni suites automatizadas.
 ===============================================================================
+
+
+===============================================================================
+AUDITORÍA TAREA-F4-P0-02 - CHECKPOINT C1.73
+===============================================================================
+- Dictamen: NO CUMPLE. La tarea marcada [X] conserva brechas de IDOR/ABAC en los cinco microservicios.
+- USER SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f: ROLE_PERMISSIONS Profesor permite getUserInfo, getGuardianStudents, getAdministrativeRequests y submitAdministrativeRequest (952-988). validateContextualAccess (1190-1255) no verifica asignaciones docentes. getUserInfo (2571-2635), getGuardianStudents (3479-3545), getAdministrativeRequests (5035-5092) y submitAdministrativeRequest (5104-5165) aceptan IDs del payload sin restringir al ámbito docente.
+- Nuevo AUD-NG-217: consultas de perfil, tutor y trámites del Profesor fuera de asignaciones activas; asociado a TASK-496.
+- ACADEMIC SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc: validateContextualAccess (450-524) solo limita Estudiante/Alumno y ámbitos de Coordinador; no valida vínculo familiar ni asignación docente. getAcademicHistory (12587-12645) permite estudianteId/grado/sección del payload a roles Padre/Tutor/Responsable/Profesor; getStudentEnrollmentHistory (12746-12805) permite userId arbitrario a Padre/Tutor/Responsable. Se amplían AUD-NG-105 y AUD-NG-136.
+- ACCOUNTING SHA 38b979d41596b85e888b4a7060b37bbac0840a28: validateContextualAccess (410-434) solo limita Estudiante/Alumno; getStudentAccountStatement (3824-3895) acepta userId de payload; getPaymentVouchers (4150-4215) puede devolver todos los comprobantes sin filtro. AUD-NG-136 sigue pendiente.
+- EXAM SHA 1d93296628fae31f680004f637897e2b1314a64c: getStudentExams (1056-1125) confía en userId/grado/sección del payload y permanece en PUBLIC_ACTIONS; AUD-NG-002 sigue pendiente.
+- TASK SHA 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe: getStudentTasks (612-690) confía en userId/grado/sección del payload y permanece en PUBLIC_ACTIONS; AUD-NG-002 sigue pendiente.
+- Reconciliación: AUD-NG-105, 106, 108, 128, 130 y 136 ya cubren partes de la superficie; se amplían 105/136, no se duplican. TASK-105 cubre ciclo de vida de justificaciones, no el ámbito docente.
+- Pruebas: inspección estática/manual; no se ejecutaron peticiones HTTP, pruebas multiusuario, familias cruzadas, docentes/asignaciones ni suites automatizadas.
+===============================================================================

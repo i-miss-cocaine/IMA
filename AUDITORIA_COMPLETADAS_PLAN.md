@@ -858,3 +858,16 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Sesión:** IMA-AUDIT-20261106-1138Z; inicio C1.71; sesión abierta.
 - **Progreso:** 69/183 identificadores auditados; 114 pendientes.
 - **Siguiente tarea:** TAREA-F4-P0-02 - Corregir las vulnerabilidades IDOR y garantizar el aislamiento de datos personales.
+
+
+## 75. Resultado C1.73 - TAREA-F4-P0-02 (2026-11-06)
+
+- **Dictamen:** NO CUMPLE. USER permite a Profesor consultar perfiles/tutores/trámites fuera de asignaciones activas; ACADEMIC no valida relaciones familiares/ámbito docente para historiales; ACCOUNTING no valida vínculo familiar para estados de cuenta/comprobantes; EXAM/TASK mantienen consultas públicas con IDs de payload.
+- **Hallazgos existentes revalidados:** AUD-NG-002 (EXAM/TASK), AUD-NG-105/106/108 (ACADEMIC), AUD-NG-128 (USER tickets), AUD-NG-130/136 (finanzas/matrícula).
+- **Nuevo hallazgo:** AUD-NG-217, Crítico/P0, para ámbito docente ausente en USER; nueva tarea TASK-496.
+- **Ampliaciones:** AUD-NG-105 exige relación familiar y asignación docente para historial académico; AUD-NG-136 incluye getStudentEnrollmentHistory en la protección de información financiera/familiar.
+- **Evidencia:** USER SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ACADEMIC SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; ACCOUNTING SHA 38b979d41596b85e888b4a7060b37bbac0840a28; EXAM SHA 1d93296628fae31f680004f637897e2b1314a64c; TASK SHA 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe.
+- **Pruebas:** inspección estática/manual; sin peticiones HTTP, pruebas multiusuario/familia/docente ni suites automatizadas.
+- **Sesión:** IMA-AUDIT-20261106-1138Z; inicio C1.71; sesión abierta.
+- **Progreso:** 70/183 identificadores auditados; 113 pendientes.
+- **Siguiente tarea:** TAREA-F4-P0-03 - Garantizar la revocación efectiva de sesiones y la actualización inmediata de privilegios.

@@ -3030,3 +3030,29 @@ CHECKPOINT C1.72 - TAREA-F4-P0-01
 - Próxima acción reproducible: auditar TAREA-F4-P0-02 contra los cinco microservicios, identificadores manipulables, propiedad de registros y ámbitos; reconciliar AUD-NG-002 y hallazgos IDOR existentes.
 - Commit de cierre: el commit que contiene este checkpoint.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.73 - TAREA-F4-P0-02
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: ecd7fd035daaa27dfce79eab48d71bf8be715049.
+- HEAD de rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID operativo de sesión: IMA-AUDIT-20261106-1138Z; inicio C1.71; estado ABIERTA.
+- Tarea auditada: TAREA-F4-P0-02 - Corregir las vulnerabilidades IDOR y garantizar el aislamiento de datos personales.
+- Estado maestro: [X] Completada en completadas.md (SHA f57f1aef832e81e44fc4f7ec36a852d50e464676).
+- Dictamen: NO CUMPLE.
+- Nuevo hallazgo: AUD-NG-217, Crítico/P0, ámbito docente no aplicado en USER; nueva tarea TASK-496.
+- Hallazgos revalidados: AUD-NG-002, AUD-NG-105, AUD-NG-106, AUD-NG-108, AUD-NG-128, AUD-NG-130 y AUD-NG-136.
+- Ampliaciones: AUD-NG-105 añade vínculo familiar y ámbito docente en getAcademicHistory; AUD-NG-136 añade getStudentEnrollmentHistory y vínculo familiar en ACADEMIC.
+- Evidencia principal: USER SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ACADEMIC SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; ACCOUNTING SHA 38b979d41596b85e888b4a7060b37bbac0840a28; EXAM SHA 1d93296628fae31f680004f637897e2b1314a64c; TASK SHA 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe.
+- Pruebas: inspección estática/manual. No se ejecutaron peticiones HTTP, pruebas multiusuario, familias cruzadas, asignaciones docentes reales ni suites automatizadas.
+- Progreso: 70/183; 113 pendientes.
+- Siguiente tarea oficial: TAREA-F4-P0-03 - Garantizar la revocación efectiva de sesiones y la actualización inmediata de privilegios.
+- Archivos modificados: Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt, Pendientes.md y nuevo AUDITORIA_COMPLETADAS_TAREA-F4-P0-02.md.
+- Archivos sin modificar: código fuente, completadas.md, ChangesLogs.txt y METODOLOGIA_DESARROLLO.md.
+- Próxima acción reproducible: auditar TAREA-F4-P0-03, comprobando revocación inmediata en los cinco microservicios, cachés, tokens activos, logout y actualización de privilegios.
+- Commit de cierre: el commit que contiene este checkpoint.
+================================================================

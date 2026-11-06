@@ -17976,8 +17976,9 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Severidad/Clasificación:** Alto
 - **Archivos Involucrados:** backend/academic-service/Code.gs; js/student.js
 - **Dependencias Expuestas:** ROLE_PERMISSIONS, saveToAcademicHistory, getAcademicHistory, fetchAcademicHistory.
-- **Descripción del Alcance:** saveToAcademicHistory crea IDs hist-XXXX en la primera columna y profesorId en la octava, sin studentId. getAcademicHistory compara verifiedUserId con r[0]. Además, getAcademicHistory está permitido para Alumno, pero no para Estudiante, aunque el dashboard estudiantil invoca la acción.
-- **Criterios de Aceptación:** Definir si el historial es de asignaciones por grupo o individual; alinear esquema, filtro y permisos; la lectura usa una columna de identidad real o un alcance institucional validado; los roles estudiantiles previstos pueden consultar únicamente su historial.
+- **Descripción del Alcance:** saveToAcademicHistory crea IDs hist-XXXX en la primera columna y profesorId en la octava, sin studentId. getAcademicHistory compara verifiedUserId con r[0]. Además, getAcademicHistory está permitido para Alumno, pero no para Estudiante, aunque el dashboard estudiantil invoca la acción. La función también permite que Padre/Tutor/Responsable y Profesor consulten usando estudianteId, grado y sección del payload; validateContextualAccess en ACADEMIC solo restringe Estudiante/Alumno y no valida vínculo familiar ni asignación docente. Si se omiten los filtros, el historial puede quedar sin acotar.
+- **Criterios de Aceptación:** Definir si el historial es de asignaciones por grupo o individual; alinear esquema, filtro y permisos; la lectura usa una columna de identidad real o un alcance institucional validado; Estudiante/Alumno solo consultan su historial; Padre/Tutor/Responsable solo consultan estudiantes vinculados activamente; Profesor solo consulta estudiantes de sus asignaciones activas; omitir o manipular estudianteId/grado/sección nunca amplía el acceso.
+- **Ampliación C1.73:** Se confirma que getAcademicHistory solo fuerza verifiedUserId para Estudiante/Alumno. La matriz permite la acción a Padre/Tutor/Responsable y Profesor, pero el control contextual académico no comprueba sus relaciones/ámbitos. Se amplía este hallazgo existente; no se crea ID duplicado.
 - **Estado:** [ ] Pendiente
 
 ### [AUD-NG-106] Vincular el grado y la sección consultados con la identidad estudiantil verificada
@@ -18269,10 +18270,11 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 ### [AUD-NG-136] Restringir estados de cuenta, comprobantes, recibos y facturas a la familia autorizada
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-136 (REQ-EXP-011/012).
 - **Severidad/Clasificación:** Crítico
-- **Archivos Involucrados:** `backend/accounting-service/Code.gs`; módulo de relaciones familiares.
-- **Dependencias Expuestas:** `validateContextualAccess`, `getStudentAccountStatement`, `getPaymentVouchers`, `generatePaymentReceiptPDF`, `getFiscalInvoices`, `uploadPaymentVoucher`, `RelacionesFamiliares`.
-- **Descripción del Alcance:** Padre/Tutor/Responsable tienen permisos para consultar estados de cuenta, comprobantes, recibos y facturas, pero `validateContextualAccess` solo restringe al Estudiante cuando se envía userId; no verifica vínculos familiares. `getFiscalInvoices` devuelve todas las facturas si no hay filtros y permite buscar cualquier facturaId; `generatePaymentReceiptPDF` busca cualquier reciboId/pagoId; `getPaymentVouchers` puede devolver todos los comprobantes si el familiar no envía userId. Forzar identidad verificada para estudiantes y validar cada estudiante contra relaciones familiares activas para titulares.
-- **Criterios de Aceptación:** Estudiante solo accede a su cuenta/recibos/facturas; Padre/Tutor/Responsable solo a hijos o representados vinculados; los identificadores de recibo/factura no permiten IDOR; consultas sin filtros no devuelven información global; pruebas cruzadas entre familias y estudiantes.
+- **Archivos Involucrados:** `backend/accounting-service/Code.gs`, `backend/academic-service/Code.gs`; módulo de relaciones familiares.
+- **Dependencias Expuestas:** `validateContextualAccess`, `getStudentAccountStatement`, `getPaymentVouchers`, `generatePaymentReceiptPDF`, `getFiscalInvoices`, `uploadPaymentVoucher`, `getStudentEnrollmentHistory`, `RelacionesFamiliares`.
+- **Descripción del Alcance:** Padre/Tutor/Responsable tienen permisos para consultar estados de cuenta, comprobantes, recibos y facturas, pero en ACCOUNTING validateContextualAccess solo restringe al Estudiante cuando se envía userId; no verifica vínculos familiares. getFiscalInvoices devuelve todas las facturas si no hay filtros y permite buscar cualquier facturaId; generatePaymentReceiptPDF busca cualquier reciboId/pagoId; getPaymentVouchers puede devolver todos los comprobantes si el familiar no envía userId. Además, ACADEMIC permite getStudentEnrollmentHistory a Padre/Tutor/Responsable; la función acepta userId del payload y solo lo sustituye para Estudiante/Alumno, mientras validateContextualAccess no valida relación familiar.
+- **Criterios de Aceptación:** Estudiante solo accede a su cuenta/recibos/facturas/matrícula; Padre/Tutor/Responsable solo a hijos o representados vinculados activamente y con los permisos financieros aplicables; los identificadores de recibo/factura/matrícula no permiten IDOR; consultas sin filtros no devuelven información global; pruebas cruzadas entre familias y estudiantes.
+- **Ampliación C1.73:** getStudentEnrollmentHistory (ACADEMIC) devuelve matrículas y cargos del userId indicado; los roles Padre/Tutor/Responsable están autorizados, pero no existe comprobación de vínculo familiar en el validador académico. Se incorpora al alcance de aislamiento financiero/familiar ya existente.
 - **Estado:** [ ] Pendiente
 
 ### [AUD-NG-137] Unificar el nombre institucional en recibos y documentos financieros
@@ -19741,3 +19743,23 @@ AUD-NG-163 permanece DUPLICADA y consolidada; no reabrirla como tarea independie
   - El indicador mantiene presentación discreta y no tapa controles prioritarios; la jerarquía de overlays se coordina con TASK-494.
 - **Relaciones y límites:** AUD-NG-144 cubre la implementación/cobertura de health checks reales de microservicios; TASK-484 cubre la infraestructura y pruebas conductuales UX-07; TASK-494 cubre capas/controles flotantes; las tareas de cola offline cubren persistencia, reintentos e idempotencia. TASK-495 se limita al significado, separación e integración visual de los estados; no duplica health checks ni motor de sincronización.
 - **Estado:** [ ] Pendiente.
+
+
+### [AUD-NG-217] Restringir perfiles, vínculos familiares y trámites al ámbito docente autenticado
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-217 (TAREA-F4-P0-02, C1.73).
+- **Severidad/Clasificación:** Crítico · P0 · Seguridad · IDOR · Protección de datos personales.
+- **Archivos Involucrados:** backend/user-service/Code.gs.
+- **Dependencias Expuestas:** ROLE_PERMISSIONS["Profesor"], validateContextualAccess, getUserInfo, getGuardianStudents, getAdministrativeRequests, submitAdministrativeRequest, getMyAssignedSections, getMyTeachingAssignments, AsignacionesDocentes, RelacionesFamiliares.
+- **Descripción del Alcance:** El rol Profesor tiene permiso para getUserInfo, getGuardianStudents, getAdministrativeRequests y submitAdministrativeRequest. validateContextualAccess en USER solo aplica controles específicos a Estudiante/Alumno y Padre/Tutor/Responsable; no valida asignaciones docentes. Los handlers aceptan userId, targetUserId o userIdResponsable del payload sin comprobar que el estudiante pertenezca a las secciones/asignaturas activas del profesor. Esto permite consultar perfiles (correo, teléfono, personaId), obtener estudiantes vinculados a cualquier tutor y leer/crear trámites en nombre de usuarios ajenos.
+- **Criterios de Aceptación:** El servidor deriva el ámbito del profesor desde asignaciones activas; getUserInfo solo devuelve perfiles dentro del ámbito autorizado; getGuardianStudents solo permite consultar tutores de estudiantes asignados; getAdministrativeRequests solo devuelve solicitudes propias o de estudiantes asignados; submitAdministrativeRequest deriva el solicitante desde claims y valida el estudiante objetivo; manipular IDs no amplía el acceso; se prueban casos de profesor asignado/no asignado, otro profesor, otro tutor y otro estudiante.
+- **Estado:** [ ] Pendiente
+
+### [TASK-496] [TAREA-F4-P0-02] [P0] Restringir perfiles, tutores y trámites al ámbito docente autenticado
+- **Prioridad:** P0 (Crítica).
+- **Componentes Afectados:** backend/user-service/Code.gs; hojas AsignacionesDocentes y RelacionesFamiliares.
+- **Origen del Hallazgo:** AUD-NG-217 / TAREA-F4-P0-02.
+- **Dependencias Principales:** validateContextualAccess, ROLE_PERMISSIONS, getUserInfo, getGuardianStudents, getAdministrativeRequests, submitAdministrativeRequest, asignaciones activas de profesor.
+- **Problema Detectado:** Los handlers autorizados para Profesor confían en identificadores de usuario/tutor/estudiante enviados por el cliente y no limitan la consulta/escritura a estudiantes asignados al docente.
+- **Requisitos de Corrección:** Derivar el profesor desde claims verificados; recuperar asignaciones activas y matrículas vigentes; restringir perfiles, vínculos de tutores y trámites al ámbito docente; derivar el solicitante de trámites desde el token; rechazar IDs ajenos y registrar intentos.
+- **Criterios de Aceptación:** No se puede consultar el perfil ni tutor de un estudiante fuera del ámbito asignado; no se pueden leer ni crear trámites en nombre de otro usuario; pruebas negativas de IDOR con IDs válidos de otro estudiante, otro tutor y otro profesor; roles administrativos mantienen solo los permisos explícitos que correspondan.
+- **Estado:** [ ] Pendiente

@@ -1642,3 +1642,13 @@ Relaciones:
 - Los nombres de rol no están normalizados en los validadores: USER/ACADEMIC/ACCOUNTING usan Director; TASK/EXAM usan Dirección; getDynamicPermissionsForRole usa matrix[role] literal. Reconciliar con TAREA-F4-P1-03/P1-04 y TASK-488.
 - AUD-NG-001/002/003 existentes se amplían; AUD-NG-005 conserva el alcance de propagación de revocaciones. No crear IDs duplicados.
 - Sin pruebas runtime ni acceso a deployments/Script Properties; revisión estática/manual.
+
+
+## Aislamiento IDOR/ABAC de datos personales (TAREA-F4-P0-02, C1.73)
+- USER: ROLE_PERMISSIONS Profesor permite getUserInfo, getGuardianStudents, getAdministrativeRequests y submitAdministrativeRequest; validateContextualAccess no valida asignaciones docentes. Los handlers aceptan IDs del payload, exponiendo perfiles, vínculos familiares y trámites fuera del ámbito del profesor. Nuevo AUD-NG-217/TASK-496.
+- ACADEMIC: validateContextualAccess no valida vínculos Padre/Tutor/Responsable ni asignaciones Profesor; getAcademicHistory y getStudentEnrollmentHistory confían en estudianteId/userId del payload. Reutilizar AUD-NG-105 y ampliar AUD-NG-136.
+- ACCOUNTING: validateContextualAccess solo restringe estudiantes; getStudentAccountStatement y getPaymentVouchers carecen de relación familiar, y la consulta sin userId puede devolver todos los comprobantes. AUD-NG-136.
+- EXAM/TASK: getStudentExams/getStudentTasks permanecen en PUBLIC_ACTIONS y consumen userId/grado/sección del payload; AUD-NG-002.
+- Dependencias comunes: claims verificados, ROLE_PERMISSIONS, validateContextualAccess, relaciones familiares activas, asignaciones docentes vigentes, matrículas y ámbito por grado/sección.
+- Reconciliación: AUD-NG-002, 105, 106, 108, 128, 130 y 136; nuevo AUD-NG-217/TASK-496. TASK-105 conserva ciclo de vida de justificaciones.
+- Sin pruebas runtime ni acceso a datos reales; revisión estática/manual.
