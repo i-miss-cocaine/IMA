@@ -2973,3 +2973,33 @@ CHECKPOINT C1.70 - REVALIDACIÓN T-UX-27 (2026-11-06)
 - Próxima acción reproducible: revisar switchActiveView, VIEW_STATES_CACHE, pushState/popstate, enlaces de detalle y TASK-486; verificar targetId, filtros, búsqueda, paginación, scroll y permisos al regresar; reconciliar con snapshots existentes.
 - Commit de cierre: el commit que contiene este checkpoint.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.71 - REVALIDACIÓN DE NAVEGACIÓN Y RETORNO ENTRE VISTAS
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto real: Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: 05537390bb31fd8045fd2e13258ff898b011e010.
+- HEAD de rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Último commit conocido al inicio: 05537390bb31fd8045fd2e13258ff898b011e010.
+- Sesión anterior cerrada: IMA-AUDIT-20261106-0254Z; inicio C1.63; cierre C1.70; hora UTC de cierre 2026-11-06T11:38:40Z; estado SESIÓN CERRADA.
+- ID operativo de la sesión actual: IMA-AUDIT-20261106-1138Z; inicio C1.71; estado ABIERTA. Este ID es operativo y no un identificador técnico nativo de ChatGPT.
+- Elemento revalidado: seguimiento T-UX-28, “Mejorar el comportamiento de navegación y retorno entre vistas”. El identificador T-UX-28 no aparece en completadas.md (SHA f57f1aef832e81e44fc4f7ec36a852d50e464676); por trazabilidad, la revisión se limita al alcance oficial de T-UX-11 y TASK-485/486.
+- Dictamen: NO CUMPLE.
+- Evidencia principal: js/ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67, líneas 281-385 y 4864-4917; js/teacher.js SHA c475fce5afcd28fca23e7b64398ad32b17773746, líneas 3220-3275; student.js SHA e2888cea60322e49a40b89adadb8010489605dcc; accounting.js SHA a79ead4a54ad6fdb2f1e9df4775491ff7191a0c7; secretary.js SHA 08a81266957b4c18cc25f8ba6749eac30a8f2c2c; siete dashboards conservan los SHA del informe T-UX-11.
+- Hallazgos responsables: AUD-NG-188/TASK-485 (router e historial) y AUD-NG-189/TASK-486 (snapshot/restauración). TASK-485 y TASK-486 permanecen [ ] Pendiente en Pendientes.md, blob SHA 3d01a8a4cffd0d28de2c2b21ee0732e7631f2b3a. No se crean IDs nuevos.
+- Reconciliación: T-UX-15/TASK-429 cubre filtros y paginación; TASK-493 cubre modal de detalle; AUD-NG-173 cubre targetId no consumido. No duplicar.
+- Archivos/rangos inspeccionados: ui-common.js 281-385 y 4864-4917; teacher.js 215-245, 3220-3275 y 5997-6008; student.js 1-120; accounting.js 1-100; dashboards de Dirección, RH, Contabilidad, Estudiante, Docente, Secretaría y Coordinación; Pendientes.md TASK-485/486; completadas.md y reportes T-UX-11/T-UX-15.
+- Pruebas ejecutadas: inspección estática/manual y comparación de SHA.
+- Pruebas no ejecutadas: navegador/DOM, carga directa, recarga, popstate real, atrás/adelante, filtros, paginación, selección, pruebas multiusuario/rol y suites automatizadas.
+- Progreso de lista maestra: 68/183; 115 pendientes. No se incrementa porque T-UX-28 no pertenece a completadas.md.
+- Tarea en curso: ninguna; revalidación C1.71 cerrada documentalmente.
+- Siguiente tarea: reconciliar el orden de identificadores no auditados desde completadas.md; no inventar T-UX-29.
+- Archivos modificados: Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt y nuevo AUDITORIA_COMPLETADAS_T-UX-28.md.
+- Archivos sin modificar: código fuente, Pendientes.md, completadas.md, ChangesLogs.txt y METODOLOGIA_DESARROLLO.md.
+- Próxima acción reproducible: abrir completadas.md desde la rama de trabajo y seleccionar el siguiente identificador único aún no auditado, contrastándolo con informes históricos y dependencias.
+- Commit de cierre: el commit que contiene este checkpoint.
+================================================================

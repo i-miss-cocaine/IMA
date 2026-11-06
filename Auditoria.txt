@@ -6132,3 +6132,16 @@ REVALIDACIÓN DE T-UX-27 - CHECKPOINT C1.70 (2026-11-06)
 - Reconciliación: TASK-252 continúa pendiente y cubre telemetría de operaciones UI; TASK-429 contiene la ampliación C1.28 para skeleton, debounce/deduplicación segura y pruebas; AUD-NG-007 cubre options.timeout ignorado. No se crea hallazgo/tarea duplicada ni se modifica Pendientes.md.
 - Pruebas: inspección estática y comparación de SHA. No se ejecutaron benchmarks, navegador, simulación de red lenta, perfiles en equipos móviles ni suites automatizadas.
 ===============================================================================
+
+
+===============================================================================
+REVALIDACIÓN DE NAVEGACIÓN Y RETORNO ENTRE VISTAS - CHECKPOINT C1.71
+===============================================================================
+- Dictamen: NO CUMPLE. La revalidación complementaria de navegación mantiene vigentes AUD-NG-188/TASK-485 y AUD-NG-189/TASK-486.
+- Trazabilidad: C1.70 señaló T-UX-28 como siguiente elemento, pero completadas.md (SHA f57f1aef832e81e44fc4f7ec36a852d50e464676) no contiene T-UX-28. Se audita como revalidación del alcance de T-UX-11/TASK-485/486, no como nuevo identificador maestro.
+- js/ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67: handlePopState (281-385) no procesa {view,params}; switchActiveView (4864-4902) guarda params del destino en la vista saliente y al regresar solo restaura scrollTop; cached.params no se consume; destinos inexistentes retornan silenciosamente; initNoLoopHistoryManager (4904-4917) permanece definido sin inicialización documentada ni resolución de hash inicial.
+- js/teacher.js SHA c475fce5afcd28fca23e7b64398ad32b17773746: pushNav y popNav (3220-3275) limpian studentSearchInput; el stack conserva {level,data}, pero no snapshot explícito de filtros, búsqueda, orden, página, selección o scroll. Para Alumnos, data.students recibe res.data y el objeto data se incorpora a history.state.
+- Los SHA de student.js, accounting.js, secretary.js y siete dashboards revisados coinciden con la auditoría histórica T-UX-11; no hay evidencia de integración común posterior en esos archivos.
+- Pendientes.md blob SHA 3d01a8a4cffd0d28de2c2b21ee0732e7631f2b3a conserva TASK-485 y TASK-486 en estado [ ] Pendiente. T-UX-15/TASK-429 y TASK-493 conservan sus límites; AUD-NG-173 ya cubre targetId no consumido. No crear duplicados.
+- Pruebas: inspección estática/manual y comparación de SHA. No se ejecutaron pruebas runtime, navegador, recarga, popstate real, atrás/adelante, filtros, paginación ni pruebas multiusuario.
+===============================================================================

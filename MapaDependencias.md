@@ -1619,3 +1619,15 @@ Relaciones:
 - fetchApi mantiene timeout fijo 60 s e ignora options.timeout; no existe deduplicación concurrente general. PersistenceManager proporciona caché opcional, no coalescencia de peticiones en vuelo. Omnibox aplica debounce 300 ms.
 - tests/regression/modular-dashboard-suite.js SHA 0495e1d526a872c33310935a003a83d924d34683 no cubre T-UX-27.
 - TASK-252 telemetría UI, TASK-429 skeleton/deduplicación segura y AUD-NG-007 timeout siguen pendientes. No crear duplicados.
+
+
+## Revalidación de navegación y retorno entre vistas (C1.71)
+- js/ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67:
+  - handlePopState (281-385) procesa tipos específicos de estado, pero no {view,params}.
+  - VIEW_STATES_CACHE/switchActiveView (4864-4902) guarda params del destino dentro de la vista saliente; solo restaura scrollTop y no consume cached.params.
+  - initNoLoopHistoryManager (4904-4917) está definido, pero la evidencia histórica y los SHA sin cambios no acreditan inicialización ni resolución de hash directo.
+  - Un viewId inexistente provoca retorno silencioso.
+- js/teacher.js SHA c475fce5afcd28fca23e7b64398ad32b17773746: pushNav/popNav limpian studentSearchInput; navStack/history.state no conservan snapshot explícito de búsqueda/filtros/orden/página/selección/scroll. El nivel Alumnos incorpora data.students a data y luego al estado de historial.
+- student.js, accounting.js, secretary.js y los siete dashboards cotejados mantienen los SHA de T-UX-11; la navegación común no muestra integración nueva.
+- Dependencias: AUD-NG-188/TASK-485 (router e historial), AUD-NG-189/TASK-486 (snapshot/restauración), TASK-429/T-UX-15 (estado de filtros/paginación), TASK-493 (detalle), AUD-NG-173 (targetId). No crear tareas duplicadas.
+- La revisión es estática; no se ejecutaron pruebas de navegador, recarga, eventos reales ni sesiones multiusuario.

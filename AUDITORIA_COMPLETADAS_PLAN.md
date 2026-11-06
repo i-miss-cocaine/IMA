@@ -834,3 +834,16 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Sesión:** IMA-AUDIT-20261106-0254Z; inicio C1.63; sesión abierta.
 - **Progreso:** 68/183 identificadores auditados; 115 pendientes.
 - **Siguiente tarea:** T-UX-28 - Mejorar el comportamiento de navegación y retorno entre vistas.
+
+
+## 73. Revalidación C1.71 - Navegación y retorno entre vistas (seguimiento T-UX-28)
+
+- **Trazabilidad:** T-UX-28 fue señalado como siguiente elemento en C1.70, pero no aparece como identificador en completadas.md (SHA f57f1aef832e81e44fc4f7ec36a852d50e464676). Se limita esta revisión al alcance verificable de T-UX-11 y TASK-485/486.
+- **Dictamen:** NO CUMPLE. El router {view,params} no está integrado con el listener común; el snapshot de switchActiveView almacena parámetros del destino en la vista saliente y solo restaura scroll; el stack de Docente limpia la búsqueda al avanzar/retroceder y no conserva un snapshot completo.
+- **Reconciliación:** AUD-NG-188/TASK-485 y AUD-NG-189/TASK-486 siguen pendientes. TASK-429/T-UX-15 conserva el alcance de filtros/paginación; TASK-493 conserva el modal de detalle; AUD-NG-173 conserva targetId no consumido. No crear hallazgo ni tarea duplicada.
+- **Evidencia:** ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67; teacher.js SHA c475fce5afcd28fca23e7b64398ad32b17773746; student.js SHA e2888cea60322e49a40b89adadb8010489605dcc; accounting.js SHA a79ead4a54ad6fdb2f1e9df4775491ff7191a0c7; secretary.js SHA 08a81266957b4c18cc25f8ba6749eac30a8f2c2c; Pendientes.md blob SHA 3d01a8a4cffd0d28de2c2b21ee0732e7631f2b3a.
+- **Pruebas:** inspección estática/manual y comparación de SHA; no se ejecutaron pruebas runtime, navegación real ni suites automatizadas.
+- **Sesión anterior:** IMA-AUDIT-20261106-0254Z, inicio C1.63, cierre C1.70 a las 2026-11-06T11:38:40Z; estado cerrada.
+- **Sesión actual:** IMA-AUDIT-20261106-1138Z, inicio C1.71; estado abierta.
+- **Progreso de lista maestra:** 68/183 identificadores auditados; 115 pendientes. Sin incremento porque T-UX-28 no figura en completadas.md.
+- **Siguiente acción:** seleccionar el próximo identificador oficial no auditado desde completadas.md; no asumir T-UX-29 sin fuente.
