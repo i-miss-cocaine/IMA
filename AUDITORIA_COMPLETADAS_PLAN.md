@@ -824,3 +824,13 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Sesión:** IMA-AUDIT-20261106-0254Z; inicio C1.63; sesión abierta.
 - **Progreso:** 67/183 identificadores auditados; 116 pendientes.
 - **Siguiente tarea:** T-UX-27 - Optimizar el rendimiento percibido y la respuesta de las interfaces.
+
+## 72. Revalidación C1.70 - T-UX-27 (2026-11-06)
+
+- **Dictamen:** CUMPLE PARCIALMENTE / INSUFICIENTE; las brechas del informe histórico siguen vigentes.
+- **Evidencia:** ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67, renderUIProgressSkeleton 5147 sin consumidores; api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9, timeout fijo 60000ms, options.timeout ignorado, sin deduplicación concurrente; suite SHA 0495e1d526a872c33310935a003a83d924d34683 sin pruebas T-UX-27.
+- **Reconciliación:** TASK-252 instrumentación de rendimiento percibido; TASK-429 skeleton/debounce/deduplicación segura; AUD-NG-007 timeout configurable. No crear hallazgo ni tarea duplicada.
+- **Pruebas:** inspección estática/comparación SHA; no benchmarks ni perfiles runtime.
+- **Sesión:** IMA-AUDIT-20261106-0254Z; inicio C1.63; sesión abierta.
+- **Progreso:** 68/183 identificadores auditados; 115 pendientes.
+- **Siguiente tarea:** T-UX-28 - Mejorar el comportamiento de navegación y retorno entre vistas.

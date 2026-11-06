@@ -1613,3 +1613,9 @@ Relaciones:
 - renderContextualRecentActivity sigue insertando title/description con innerHTML; pasa targetId a switchActiveView, pero switchActiveView (4864-4902) no lo consume.
 - AUD-NG-173 sigue pendiente. TASK-067 cubre aislamiento multiusuario; TASK-221 es la fuente de verdad para pendientes accionables. No crear tarea nueva.
 - Revalidación estática; no se ejecutaron pruebas runtime.
+
+## Revalidación de rendimiento percibido (T-UX-27, C1.70)
+- js/ui-common.js y js/api.js conservan los mismos SHAs del informe histórico. renderUIProgressSkeleton permanece definido en ui-common.js:5147 sin consumidores; no hay métricas generales de operaciones UI.
+- fetchApi mantiene timeout fijo 60 s e ignora options.timeout; no existe deduplicación concurrente general. PersistenceManager proporciona caché opcional, no coalescencia de peticiones en vuelo. Omnibox aplica debounce 300 ms.
+- tests/regression/modular-dashboard-suite.js SHA 0495e1d526a872c33310935a003a83d924d34683 no cubre T-UX-27.
+- TASK-252 telemetría UI, TASK-429 skeleton/deduplicación segura y AUD-NG-007 timeout siguen pendientes. No crear duplicados.

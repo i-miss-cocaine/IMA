@@ -2951,3 +2951,25 @@ CHECKPOINT C1.69 - REVALIDACIÓN T-UX-26 (2026-11-06)
 - Próxima acción reproducible: revisar renderUIProgressSkeleton, llamadas API frecuentes, duplicación/agrupación de solicitudes y métricas de rendimiento; comparar las pruebas y tareas históricas de caché/optimización sin duplicar.
 - Commit de cierre: el commit que contiene este checkpoint.
 ================================================================
+
+================================================================
+CHECKPOINT C1.70 - REVALIDACIÓN T-UX-27 (2026-11-06)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: caa14f524b5003bbc1182f51010ca66ed11f1ca1.
+- HEAD de rama base verificado al inicio: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID de sesión de auditoría/chat: IMA-AUDIT-20261106-0254Z.
+- Inicio de sesión: C1.63. Estado: ABIERTA; checkpoint intermedio.
+- Tarea revalidada: T-UX-27 - Optimizar el rendimiento percibido y la respuesta de las interfaces. Dictamen CUMPLE PARCIALMENTE / INSUFICIENTE; no hay corrección acreditada.
+- SHAs actuales: ui-common.js 986938b8a311a41ed4cb3d135b66b6aaea4bed67; api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; modular-dashboard-suite.js 0495e1d526a872c33310935a003a83d924d34683. Coinciden con el informe histórico.
+- Persisten: renderUIProgressSkeleton sin consumidores; ausencia de métricas de operaciones UI; fetchApi timeout fijo 60000ms sin options.timeout; ausencia de deduplicación concurrente; solo debounce 300ms del Omnibox; suite sin pruebas T-UX-27.
+- Reconciliación: TASK-252 telemetría UI; TASK-429 skeleton/deduplicación; AUD-NG-007 timeout. No se crea nuevo hallazgo/tarea ni se modifica Pendientes.md.
+- Pruebas: inspección estática/comparación SHA. No ejecutados benchmarks, navegador, red lenta ni perfiles de dispositivos.
+- Archivos previstos: Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, AUDITORIA_COMPLETADAS_T-UX-27.md y Contexto_personal.txt. Código/tests, completadas.md, Pendientes.md, METODOLOGIA_DESARROLLO.md y ChangesLogs.txt sin modificaciones.
+- Progreso: 68/183 identificadores auditados; 115 pendientes.
+- Siguiente tarea exacta: T-UX-28 - Mejorar el comportamiento de navegación y retorno entre vistas.
+- Próxima acción reproducible: revisar switchActiveView, VIEW_STATES_CACHE, pushState/popstate, enlaces de detalle y TASK-486; verificar targetId, filtros, búsqueda, paginación, scroll y permisos al regresar; reconciliar con snapshots existentes.
+- Commit de cierre: el commit que contiene este checkpoint.
+================================================================

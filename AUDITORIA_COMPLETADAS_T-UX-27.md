@@ -37,3 +37,15 @@ PRUEBAS Y LIMITACIONES
 - No se ejecutaron pruebas de navegador, benchmarks, simulaciones de red lenta ni perfiles en dispositivos reales.
 - El dictamen no afirma que todas las pantallas de la plataforma hayan sido medidas dinámicamente; no se ejecutó la aplicación completa ni se usaron datos productivos.
 ================================================================
+
+---
+
+## Revalidación C1.70 (2026-11-06)
+
+- **ID de sesión:** IMA-AUDIT-20261106-0254Z (inicio C1.63; sesión abierta).
+- **HEAD de partida:** caa14f524b5003bbc1182f51010ca66ed11f1ca1.
+- **Dictamen:** CUMPLE PARCIALMENTE / INSUFICIENTE; el código no cambió desde el informe histórico.
+- **SHAs verificados:** js/ui-common.js 986938b8a311a41ed4cb3d135b66b6aaea4bed67; js/api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; tests/regression/modular-dashboard-suite.js 0495e1d526a872c33310935a003a83d924d34683.
+- **Persistencia de brechas:** renderUIProgressSkeleton sigue sin consumidores; no hay medición de duración de acciones frecuentes; fetchApi sigue usando timeout fijo de 60000ms e ignora options.timeout; no hay deduplicación de requests concurrentes. El debounce de Omnibox (300ms) y caché opcional no cubren esos requisitos. La suite sigue sin pruebas T-UX-27.
+- **Reconciliación:** TASK-252, TASK-429 y AUD-NG-007 continúan como responsables. No crear duplicados ni modificar Pendientes.md.
+- **Pruebas:** inspección estática y comparación SHA; no se ejecutaron benchmarks ni pruebas runtime.

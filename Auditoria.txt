@@ -6119,3 +6119,16 @@ REVALIDACIÓN DE T-UX-26 - CHECKPOINT C1.69 (2026-11-06)
 - Reconciliación: AUD-NG-173 continúa pendiente en Pendientes.md. TASK-067 ya incluye la clave global de actividad dentro del aislamiento multiusuario; TASK-221 sigue siendo fuente de verdad de tareas accionables. No se crea hallazgo ni tarea duplicada.
 - Pruebas: inspección estática/manual y comparación de SHA. No se ejecutaron pruebas de navegador, multiusuario, XSS, destinos reales, Apps Script ni suites automatizadas.
 ===============================================================================
+
+===============================================================================
+REVALIDACIÓN DE T-UX-27 - CHECKPOINT C1.70 (2026-11-06)
+===============================================================================
+- Dictamen confirmado: CUMPLE PARCIALMENTE / INSUFICIENTE. El informe histórico ya existe y las brechas siguen presentes.
+- SHAs actuales coinciden con los del informe anterior: js/ui-common.js 986938b8a311a41ed4cb3d135b66b6aaea4bed67; js/api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; tests/regression/modular-dashboard-suite.js 0495e1d526a872c33310935a003a83d924d34683.
+- renderUIProgressSkeleton sigue definido en ui-common.js:5147 y la búsqueda de símbolos en los módulos/paneles revisados no encontró consumidores. No hay medición de tiempos de operaciones UI frecuentes; los usos de Date.now en ui-common.js corresponden a timestamps/operaciones locales, no a instrumentación de interacción. En api.js Date.now mide latencia de ping, no acciones de usuario.
+- fetchApi conserva timeout fijo de 60000 ms y no consulta options.timeout; checkMicroserviceHealth pasa timeout:6000, parámetro sin efecto. No se encontró mapa de solicitudes en curso ni deduplicación concurrente en fetchApi. Existe caché opcional mediante PersistenceManager, que no equivale a deduplicación de requests simultáneas.
+- Omnibox mantiene debounce de 300 ms; no representa deduplicación de solicitudes ni optimización general de filtros/listados.
+- modular-dashboard-suite.js conserva el mismo SHA y no contiene pruebas para T-UX-27, skeleton, métricas UI ni deduplicación.
+- Reconciliación: TASK-252 continúa pendiente y cubre telemetría de operaciones UI; TASK-429 contiene la ampliación C1.28 para skeleton, debounce/deduplicación segura y pruebas; AUD-NG-007 cubre options.timeout ignorado. No se crea hallazgo/tarea duplicada ni se modifica Pendientes.md.
+- Pruebas: inspección estática y comparación de SHA. No se ejecutaron benchmarks, navegador, simulación de red lenta, perfiles en equipos móviles ni suites automatizadas.
+===============================================================================
