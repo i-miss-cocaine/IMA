@@ -5202,3 +5202,38 @@ CHECKPOINT C1.151 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME FASE2-T19
 - Próximo informe pendiente: AUDITORIA_COMPLETADAS_FASE2_T01.md (confirmar el orden y nombre exacto en el directorio).
 - Estado de TASK-DOC-C1.112-01: En curso.
 ================================================================
+
+================================================================
+CHECKPOINT C1.152 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME FASE2-T01
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto: AUDITORIAS/Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: f440fd55eb2c268bac1d2c3c78583eaede3ac0a6.
+- HEAD de rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Árbol base de la rama de trabajo: c2e5ced289c4f734d6b142dfd88946847629a3f4.
+- ID operativo de sesión: IMA-AUDIT-20261106-2133Z (no es ID nativo de ChatGPT).
+- Checkpoint inicial de esta sesión: C1.151.
+- Estado de sesión: cerrada en C1.152.
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Último informe completamente normalizado antes de esta iteración: AUDITORIA_COMPLETADAS_FASE2-T19.md (C1.151).
+- Informe normalizado en esta iteración: AUDITORIAS/AUDITORIA_COMPLETADAS_FASE2_T01.md.
+- SHA del informe antes del cambio: 367c0052cb1e69b3d84d1d1cdb81e99450caead6.
+- SHA del contexto antes del cambio: 8301803b20275cd877d3e5550aa6149380a4bb5c.
+- Plan consultado: AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; SHA: a374b91e5e45c0b8d5fd9db939735e6ed434c6cb. Se conserva sin cambios; su progreso de auditoría funcional no reemplaza el orden de migración documental establecido por este contexto.
+- Metodología consultada: METODOLOGIA_DESARROLLO.md; se verificaron los controles de commit único, checkpoint acumulativo, tareas en cada informe y publicación controlada.
+- Verificación de rama: HEAD de NG_beta_0.0.0.1_work confirmado en f440fd55eb2c268bac1d2c3c78583eaede3ac0a6; rama base NG_beta_0.0.0.1 confirmada en 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Inspección del informe: dictamen CUMPLE PARCIALMENTE; evidencia de propagación de token incompleta, acciones públicas/rutas sensibles, expiración condicional, rol firmado obsoleto, revocación arbitraria desde logout y controles de despliegue no verificables.
+- Tareas formalizadas en el informe: AUD-NG-159 (P0, revocación/logout no autorizado) y AUD-NG-160 (P1, ampliación de vigencia del rol firmado; conserva ID existente y coordina la ampliación ya registrada en FASE2-T19).
+- Reconciliación sin duplicados: AUD-NG-001, AUD-NG-002, AUD-NG-003, AUD-NG-005, AUD-NG-013, AUD-NG-112, TASK-048, AUD-NG-083, AUD-NG-084 y AUD-NG-086 se conservan como tareas/controles relacionados en sus ámbitos.
+- Discrepancia de continuidad: el plan contiene resultados anteriores de FASE2-T01 y señala FASE2-T02 como siguiente auditoría funcional; este trabajo corresponde a la migración documental de informes y el checkpoint C1.151 ordena formalizar FASE2-T01. Se sigue ese checkpoint sin reauditar ni modificar completadas.md.
+- Próximo informe: localizar y confirmar la ruta exacta de AUDITORIA_COMPLETADAS_FASE2-T02.md; leerlo íntegramente, reconciliar IDs y formalizar sus tareas en el mismo informe.
+- Pruebas ejecutadas: lectura documental, comparación de SHA, revisión de referencias y reconciliación manual.
+- Pruebas no ejecutadas: Apps Script, endpoints HTTP, navegador, concurrencia, pruebas de integración y validación de despliegues productivos.
+- Archivos modificados: AUDITORIAS/AUDITORIA_COMPLETADAS_FASE2_T01.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, ChangesLogs.txt, Auditoria.txt, METODOLOGIA_DESARROLLO.md, AUDITORIA_COMPLETADAS_PLAN.md, README y rama base.
+- Límite: cambio exclusivamente documental; formalizar tareas no implica ejecutar sus correcciones ni declarar cumplimiento funcional.
+- Commit de cierre: el commit único que contiene este checkpoint y el bloque de tareas del informe; verificar externamente su SHA/árbol/archivos.
+================================================================
+
