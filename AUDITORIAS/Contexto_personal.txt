@@ -4650,3 +4650,31 @@ CHECKPOINT C1.130 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 27
 - Próxima acción: realizar inventario completo de los informes históricos restantes sin bloque y continuar con el siguiente pendiente. No asumir que Fase 29 es el siguiente archivo hasta comprobar el inventario.
 - Estado de TASK-DOC-C1.112-01: En curso; migración documental por lotes.
 ================================================================
+
+================================================================
+CHECKPOINT C1.131 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 29
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: 95385b317dc00a0c460c6585857b211ab20423d2.
+- HEAD de rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID operativo de sesión: IMA-AUDIT-20261106-2035Z-MIGRACION (no es ID nativo de ChatGPT).
+- Checkpoint anterior: C1.130 (Fase 27 normalizada).
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_FASE_29_MIGRACION_Y_TRANSICION.md.
+- SHA original del informe: c8d2628c92e7317e1c4bc464dcb5d00ce16b7e0a.
+- SHA original del contexto: 21b41f98d1650679a7313f42803b6159272a8d68.
+- Inspección: informe completo (32,493 caracteres), 21 subcapacidades F29-01..F29-21, siete brechas BR-29-01..BR-29-07, 12 tareas originales F29-Task01..F29-Task12, plan de cutover y reglas Go/No-Go.
+- Tareas originales preservadas: F29-Task01..F29-Task12 con prioridades P0/P1/P2 del plan I.
+- Tareas adicionales derivadas de estados parciales/defectuosos de la matriz H: F29-Task13 (inventario/extracción/mapeo), F29-Task14 (asistencia histórica), F29-Task15 (transferencia documental), F29-Task16 (smoke tests post-migración), F29-Task17 (roles/privacidad), F29-Task18 (trazabilidad/capacidad).
+- Reconciliaciones: prioridad F29-Task08 es P1 en plan I pero F29-15 aparece P0; F29-Task12 es P2 en plan I pero F29-18 aparece P0. Se preservan valores del plan y se documentan conflictos.
+- Dependencias cruzadas: F25-Task01/02/03/05; F27-Task03; F28-Task03; TASK-064/065/118/151/152/154/227/252/265/429; AUD-NG-001/002/006/036/105/106/108/127/128/130/133/144/145/146/158/161/167. Se citan como dependencias/ampliaciones, sin afirmar cierre ni crear duplicados.
+- F29-16 (respaldos y contingencia) se conserva como completa/verificada según H; no se reejecutaron pruebas.
+- Campos por tarea: origen, severidad, objetivo, acción, archivos/módulos, dependencias/riesgos, alcance, criterios de aceptación, prioridad, estado y evidencia de cierre.
+- Archivos modificados: AUDITORIAS/AUDITORIA_FASE_29_MIGRACION_Y_TRANSICION.md; AUDITORIAS/Contexto_personal.txt.
+- No se modificaron código, pruebas, Pendientes.md, completadas.md, ChangesLogs.txt, Auditoria.txt, metodología, README, plan maestro ni rama base.
+- Pruebas no ejecutadas: dryRun, importación de datos, conciliación, cutover, rollback delta, pilotos, SHA-256 de archivos, cuotas GAS, permisos y smoke tests; no hubo cambios de código.
+- Próximo informe pendiente: AUDITORIA_FASE_30_CONSOLIDACION_CERTIFICACION_MEJORA_CONTINUA.md. Revisar IDs y tareas históricas antes de crear o ampliar acciones.
+- Estado de TASK-DOC-C1.112-01: En curso.
+================================================================
