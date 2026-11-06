@@ -5034,3 +5034,27 @@ CHECKPOINT C1.144 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME T-UX-16
 - Próximo informe pendiente: AUDITORIA_COMPLETADAS_T-UX-17.md.
 - Estado de TASK-DOC-C1.112-01: En curso.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.145 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME T-UX-17
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida: 8042ed302df437ff6d9c67e9027719297275a71f.
+- HEAD de rama base verificado antes del cambio: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID operativo de sesión: IMA-AUDIT-20261106-2117Z-MIGRACION (no es ID nativo de ChatGPT).
+- Checkpoint anterior: C1.144 (T-UX-16 normalizada).
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_COMPLETADAS_T-UX-17.md.
+- SHA original del informe: 53d0005d2d11085177258c9565cc805135a6f488.
+- SHA original del contexto: 3604981f57f23e591b3f1f6492c2c6457a37db85.
+- Inspección: auditoría estática completa de T-UX-17; estado dirty, snapshot, submit/reset, controles dinámicos, teardown, navegación y suite UX-03.
+- Tarea formalizada: TASK-479 vinculada a AUD-NG-182; se preserva su ID existente, prioridad P1 y estado pendiente. No se crea ID duplicado.
+- Reconciliación: T-UX-03/T-UX-17 comparten el mecanismo; T-UX-10 conserva pruebas conductuales UX-03. No se modifica Pendientes.md.
+- No se modificaron código, pruebas, Pendientes.md, completadas.md, ChangesLogs.txt, Auditoria.txt, metodología, README ni rama base.
+- Pruebas runtime no ejecutadas; cambio exclusivamente documental.
+- Próximo informe pendiente: AUDITORIA_COMPLETADAS_T-UX-18.md.
+- Estado de TASK-DOC-C1.112-01: En curso.
+================================================================

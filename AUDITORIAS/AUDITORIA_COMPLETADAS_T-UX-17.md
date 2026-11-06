@@ -86,3 +86,27 @@ En `js/ui-common.js:1869-1875`, `runUXSuiteTests` verifica únicamente que `type
 - **Hallazgo existente:** AUD-NG-182 -> TASK-479; no se duplica.
 - **Progreso:** 58/183 identificadores auditados; 125 pendientes.
 - **Siguiente tarea:** T-UX-18 - Completar los componentes compartidos de formularios, tablas y vistas de detalle.
+
+
+---
+
+## Tareas ejecutables derivadas de los hallazgos
+
+> T-UX-17 amplía T-UX-03 sobre el mismo mecanismo. El hallazgo AUD-NG-182 ya está asociado a TASK-479, que permanece como fuente de verdad; se formaliza aquí su alcance ejecutable sin crear IDs duplicados ni modificar el backlog externo.
+
+### [TASK-479] Implementar protección conductual y ciclo de vida completo para cambios no guardados
+- **Hallazgo de origen:** AUD-NG-182; T-UX-03/T-UX-17; suite UX-03 insuficiente.
+- **Severidad:** Alta. **Objetivo:** advertir únicamente cuando existan cambios reales no guardados y retirar de forma segura toda protección al guardar, restablecer o desmontar el formulario.
+- **Acción ejecutable:** mantener snapshot de valores iniciales y comparar estado actual; actualizar línea base solo después de guardado confirmado; tratar submit/reset cancelables y operaciones asíncronas; observar controles y formularios dinámicos, incluidos controles personalizados/contenteditable; proteger navegación interna además de `beforeunload`; conservar referencias a listeners/MutationObserver y proveer teardown idempotente; evitar listeners duplicados.
+- **Archivos/módulos:** `js/ui-common.js` (`setupUnsavedChangesProtection`, `bindInputs`, `markDirty`, `markClean`, `resetProtection`); integración de formularios y navegación en `js/api.js`, `js/teacher.js`, `js/secretary.js`, `js/accounting.js` y demás consumidores confirmados; `runUXSuiteTests` / UX-03.
+- **Dependencias/riesgos:** mantener compatibilidad de la API retornada; coordinar con guardado asíncrono, formularios dinámicos y navegación SPA. Riesgo de falsos negativos (pérdida de datos) y falsos positivos (advertencias innecesarias), además de fugas de listeners/observadores.
+- **Alcance:** protección transversal de formularios y vistas con cambios pendientes; no limitarse a cargas de archivos ni a la presencia de la función.
+- **Criterios de aceptación:** cambiar un valor y navegar advierte; restaurar exactamente el snapshot elimina el estado dirty; cancelar navegación conserva valores; guardado exitoso limpia estado solo tras confirmación; fallo de servidor mantiene advertencia; reset cancelado no limpia; reset completado actualiza línea base; controles/formularios insertados o retirados se reconcilian; teardown desconecta observer y listeners; inicializaciones repetidas no acumulan handlers; pruebas conductuales cubren todos los escenarios.
+- **Prioridad:** P1 (según TASK-479). **Estado:** Pendiente de ejecución/revalidación.
+- **Evidencia de cierre:** pendiente; la auditoría encontró booleano dirty sin snapshot, limpieza prematura en submit/reset, cobertura incompleta de controles dinámicos, ausencia de teardown e integración no demostrada. UX-03 solo comprueba que la función exista.
+
+### Reconciliación y límites
+- **T-UX-03/T-UX-17:** mismo módulo y requisito ampliado; se mantiene un solo alcance consolidado en TASK-479.
+- **T-UX-10:** conserva la obligación de pruebas funcionales UX-03; no se crea una tarea paralela de pruebas.
+- **Pruebas:** inspección estática/manual; no se ejecutaron navegador/DOM, guardado asíncrono, navegación SPA, eventos cancelables, múltiples instancias ni teardown real.
+- **Estado:** T-UX-17 permanece NO CUMPLE hasta que exista evidencia conductual y de integración; esta normalización no modifica código ni declara la tarea completada.
