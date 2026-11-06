@@ -5469,3 +5469,33 @@ CHECKPOINT C1.160 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-09
 - Próximo informe: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-10.md; leerlo íntegramente y verificar si contiene tareas propias o amplía identificadores existentes antes de formalizar el bloque.
 - Commit de cierre: un único commit con ambos archivos; verificar SHA, padre, árbol, archivos modificados y HEAD de rama después de publicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.161 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-10
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida declarada en el proyecto: NG_beta_0.0.0.1.
+- HEAD de partida verificado: eed7890776af9e64e4038af5f604c4f9fd66869c.
+- Árbol base de la rama de trabajo: 84a773257e9e372ce077adbdee8889d86d7a0314.
+- Rama base: no se realizó consulta nueva en esta iteración; no se efectuó ninguna escritura sobre ella.
+- ID operativo de sesión: IMA-AUDIT-20261106-2219Z (no es ID nativo de ChatGPT).
+- Checkpoint inicial de esta iteración: C1.160.
+- Estado de iteración: cerrada en C1.161.
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-10.md.
+- SHA del informe antes del cambio: e2e8d68fccc7d88185a720ee4422e7c1b2bb8dba.
+- SHA del contexto antes del cambio: 2d9b98ba54f740dbb46f1795047cfa4704fd3ce1.
+- Inspección: TAREA-10 CUMPLE PARCIALMENTE. getSubmissionComments expone comentarios privados y no valida relación; getSubmissionVersions permite consulta por entregaId sin comprobar propiedad/ámbito; addSubmissionComment confía en autorId/rolAutor/esPrivado del cliente; la devolución confía en profesorId; borrado de entrega no mantiene coherentemente versiones/comentarios. Además faltan modalidades grupales/recurrentes, token persistido, idempotencia, límites de intentos, estados de publicación y revisión parcial.
+- Hallazgo nuevo formalizado: AUD-NG-165 (P1), privacidad/propiedad de comentarios y versiones, autoría verificada, autorización contextual y preservación histórica.
+- Tareas existentes ampliadas: AUD-NG-149 (modalidades grupales/recurrentes, token persistido e idempotencia); AUD-NG-121 (intentos/reentregas y penalización); AUD-NG-152 (publicación/apertura/vencimiento/cierre); AUD-NG-124 (rúbricas, revisión parcial e historial); AUD-NG-158 (autoría y ámbito docente); AUD-NG-002 (autenticación de consultas sensibles).
+- Reconciliación: AUD-NG-165 se limita a privacidad/propiedad de comentarios y versiones; AUD-NG-002 conserva autenticación; AUD-NG-124 calificaciones/rúbricas; AUD-NG-158 autoría y ámbito de escrituras. No se crean IDs adicionales.
+- Archivos modificados: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-10.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, Auditoria.txt, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README y rama base.
+- Pruebas ejecutadas: lectura íntegra de TAREA-10; contraste de AUD-NG-165 y las tareas relacionadas en Auditoria.txt; comprobación de que el bloque aún no existía; verificación del HEAD y árbol de partida.
+- Pruebas no ejecutadas: pruebas de roles, acceso cruzado, privacidad, suplantación, historial de eliminación, concurrencia, idempotencia, intentos, estados, rúbricas, Apps Script y producción.
+- Límite: cambio exclusivamente documental. TAREA-10 permanece CUMPLE PARCIALMENTE; las tareas referenciadas no se consideran ejecutadas ni completadas.
+- Próximo informe: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-11.md; leerlo íntegramente y reconciliar AUD-NG-166 y sus tareas relacionadas antes de formalizar.
+- Commit de cierre: un único commit con ambos archivos; verificar SHA, padre, árbol, archivos modificados y HEAD de rama después de publicar.
+================================================================
