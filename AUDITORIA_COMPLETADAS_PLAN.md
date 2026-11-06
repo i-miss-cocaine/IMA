@@ -706,3 +706,16 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Archivos/documentos:** actualizado `MapaDependencias.md`; creado `AUDITORIA_COMPLETADAS_T-UX-16.md`; registrado el resultado en `Auditoria.txt` y en este plan; checkpoint en `Contexto_personal.txt`.
 - **Progreso:** 57/183 identificadores auditados; 126 pendientes.
 - **Siguiente tarea:** T-UX-17 - Corregir y completar la protección de cambios no guardados.
+
+
+## 62. Resultado C1.60 - T-UX-17 (2026-11-06)
+
+- **Dictamen:** NO CUMPLE. El helper mantiene un booleano dirty sin comparar contra valores iniciales; submit/reset limpian antes de confirmar el resultado; el observer no gestiona formularios descendientes agregados; no existe teardown y UX-03 solo comprueba presencia.
+- **Hallazgo/tarea existente:** AUD-NG-182 / TASK-479. Se verificó que TASK-479 sigue en Pendientes.md y cubre snapshot/compare, guardado confirmado, reset cancelable, controles dinámicos, teardown y pruebas conductuales. No se duplica.
+- **Reconciliación:** T-UX-03 es el requisito original; T-UX-17 es su ampliación marcada [X]. T-UX-10 exige pruebas funcionales y UX-03 sigue siendo nominal. Los módulos consumidores seleccionados no invocan el helper; student.js mantiene una advertencia separada para cargas de archivos.
+- **Evidencia:** js/ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67, líneas 5371-5430 y 1869-1875; completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676; TASK-479 en Pendientes.md blob SHA 612eecb1394d79c66e1177cda7180e964e46550c.
+- **Pruebas:** inspección estática/manual y reconciliación. No se ejecutaron navegador/DOM, eventos cancelables, guardado asíncrono, navegación SPA, formularios dinámicos, teardown ni suites automatizadas.
+- **Código fuente:** sin modificaciones. Pendientes.md no se modifica porque TASK-479 ya cubre los hallazgos. completadas.md, METODOLOGIA_DESARROLLO.md y ChangesLogs.txt intactos.
+- **Archivos/documentos:** anexado resultado en Auditoria.txt, MapaDependencias.md y este plan; creado AUDITORIA_COMPLETADAS_T-UX-17.md; checkpoint C1.60 en Contexto_personal.txt.
+- **Progreso:** 58/183 identificadores auditados; 125 pendientes.
+- **Siguiente tarea:** T-UX-18 - Completar los componentes compartidos de formularios, tablas y vistas de detalle.

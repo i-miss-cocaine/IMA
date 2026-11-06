@@ -1459,3 +1459,25 @@ Relaciones:
 - AUD-NG-205 (ALTO/P1) -> TASK-221/TASK-318: normalizador desconectado e inexistencia de agregador personal.
 - AUD-NG-206 (ALTO/P1) -> TASK-227/TASK-316/TASK-045: deduplicación no atómica y clave no persistida.
 - Auditoría estática/manual; no se ejecutaron Apps Script, Sheets, navegador, roles reales, concurrencia, correo ni mutaciones persistentes. Dictamen: NO CUMPLE.
+
+
+## Protección de cambios no guardados (T-UX-17, C1.60)
+
+### Implementación compartida
+- `js/ui-common.js` SHA `986938b8a311a41ed4cb3d135b66b6aaea4bed67`, líneas 5371-5430: `window.setupUnsavedChangesProtection(containerIdOrElement, options)`.
+- Entrada: ID o elemento contenedor; `options.message` personaliza el texto de advertencia.
+- Estado local: booleano `isDirty`; `markDirty` fija true y `markClean` fija false. No existe snapshot de valores iniciales ni comparación de estado.
+- Controles: `input, textarea, select`; eventos `input/change`. No incluye contenteditable ni controles personalizados.
+- Formularios: `submit/reset` se enlazan al formulario contenedor o a formularios descendientes existentes durante la inicialización; ambos limpian inmediatamente.
+- Dinamismo: `MutationObserver(childList/subtree)` vuelve a ejecutar `bindInputs`; no registra submit/reset de subformularios añadidos posteriormente.
+- Navegación: cada instancia agrega listener anónimo a `window.beforeunload`; no intercepta explícitamente transiciones SPA.
+- API devuelta: `markClean`, `markDirty`, `isDirty`, `resetProtection`. No expone teardown ni desconexión del observer/listener.
+
+### Pruebas y consumidores
+- `runUXSuiteTests`, `js/ui-common.js:1869-1875`: UX-03 solo comprueba existencia de la función; no prueba comportamiento.
+- Consumidores revisados: `js/api.js`, `js/student.js`, `js/teacher.js`, `js/secretary.js`, `js/accounting.js`; no se localizaron llamadas directas al helper. student.js conserva un beforeunload separado para cargas de archivos.
+
+### Reconciliación
+- T-UX-03 es el requisito inicial; T-UX-17 amplía la protección y está marcada [X] en completadas.md.
+- AUD-NG-182/TASK-479 ya documenta la falta de snapshot, limpieza prematura, gestión dinámica, teardown y pruebas conductuales. Se revalidó TASK-479 en Pendientes.md y no se crea un duplicado.
+- Dictamen T-UX-17: NO CUMPLE. Inspección estática/manual; no se ejecutaron navegador, DOM, guardado asíncrono, eventos cancelables ni suites.

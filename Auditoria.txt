@@ -5945,3 +5945,24 @@ AUDITORÍA DE completadas.md - T-UX-16 (2026-11-06)
 - Progreso: 57/183; 126 pendientes.
 - Siguiente tarea: T-UX-17 - Corregir y completar la protección de cambios no guardados.
 ===============================================================================
+
+
+===============================================================================
+AUDITORÍA DE completadas.md - T-UX-17 (2026-11-06)
+===============================================================================
+- Dictamen: NO CUMPLE. T-UX-17 está marcada [X], pero la protección transversal de cambios no guardados no satisface los requisitos ampliados.
+- Especificación: completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676. Exige comparación contra estado inicial, advertencia al abandonar vistas, limpieza solo tras guardado correcto y soporte de formularios/campos dinámicos.
+- Código: js/ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67; setupUnsavedChangesProtection líneas 5371-5430; UX-03 en runUXSuiteTests líneas 1869-1875.
+- Estado dirty: booleano sin snapshot/compare; revertir un campo a su valor inicial no limpia el estado.
+- Guardado/reset: submit y reset invocan markClean inmediatamente. Un submit cancelado o un guardado asíncrono fallido puede dejar cambios sin guardar sin advertencia; reset cancelado también limpia prematuramente.
+- Dinamismo: MutationObserver solo vuelve a enlazar input/textarea/select. No enlaza submit/reset a formularios añadidos después de inicializar; no incluye contenteditable ni contrato para controles personalizados.
+- Ciclo de vida: cada instancia instala listener anónimo beforeunload y MutationObserver sin conservar referencias ni ofrecer teardown. resetProtection no elimina recursos. Instancias retiradas pueden seguir advirtiendo y las inicializaciones se acumulan.
+- Alcance de navegación: el helper solo registra beforeunload; no protege explícitamente transiciones internas SPA que no descargan el documento.
+- Prueba: UX-03 solo verifica typeof setupUnsavedChangesProtection === 'function'; no ejecuta escenarios conductuales.
+- Consumidores revisados: js/api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; js/student.js SHA e2888cea60322e49a40b89adadb8010489605dcc; js/teacher.js SHA c475fce5afcd28fca23e7b64398ad32b17773746; js/secretary.js SHA 08a81266957b4c18cc25f8ba6749eac30a8f2c2c; js/accounting.js SHA a79ead4a54ad6fdb2f1e9df4775491ff7191a0c7. No se localizaron llamadas al helper en esos módulos. student.js mantiene un beforeunload separado para cargas de archivos; no equivale a la protección transversal. No se afirma barrido exhaustivo del repositorio.
+- Reconciliación: C1.45 ya registró AUD-NG-182 y TASK-479. El TASK-479 vigente en Pendientes.md cubre los incumplimientos confirmados (snapshot, confirmación de guardado, reset cancelable, dinámicos, teardown y pruebas). No se crea tarea ni hallazgo duplicado; Pendientes.md permanece intacto.
+- Pruebas realizadas: inspección estática/manual. No ejecutadas: navegador/DOM, guardado asíncrono, navegación SPA, eventos cancelables reales, formularios dinámicos, teardown ni suites automatizadas.
+- Código fuente, completadas.md, METODOLOGIA_DESARROLLO.md, ChangesLogs.txt y Pendientes.md sin modificaciones.
+- Progreso: 58/183 identificadores auditados; 125 pendientes.
+- Siguiente tarea: T-UX-18 - Completar los componentes compartidos de formularios, tablas y vistas de detalle.
+===============================================================================

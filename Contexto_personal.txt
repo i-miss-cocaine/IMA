@@ -2688,3 +2688,39 @@ CHECKPOINT C1.59 - CIERRE DE AUDITORÍA T-UX-16 (2026-11-06)
 - Progreso: 57/183 identificadores auditados; 126 pendientes.
 - Commit de cierre: el commit que contiene este checkpoint. Próxima acción: verificar HEAD, árbol y seis archivos de este commit; verificar que el commit de investigación antecede a T-UX-16 y que NG_beta_0.0.0.1 conserva SHA 44d9891132332e692dbe2ba8602b41f50a508a59; después comenzar T-UX-17 desde su especificación y evidencia.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.60 - CIERRE DE AUDITORÍA T-UX-17 (2026-11-06)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto real: Contexto_personal.txt.
+- Rama base protegida: NG_beta_0.0.0.1; HEAD verificado: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- HEAD de partida verificado: 30cd0eea21ccf957e999197a5c9bfe0cbc48f8fb (cierre T-UX-16 / checkpoint C1.59).
+- Última tarea completamente auditada: T-UX-17 - Corregir y completar la protección de cambios no guardados. Dictamen NO CUMPLE.
+- Tarea en curso: ninguna; T-UX-17 queda cerrada documentalmente.
+- Siguiente tarea exacta: T-UX-18 - Completar los componentes compartidos de formularios, tablas y vistas de detalle.
+- Progreso: 58/183 identificadores auditados; 125 pendientes.
+- Lote: Fase 3, experiencia de usuario y navegación unificada.
+
+RESULTADO Y RECONCILIACIÓN:
+- T-UX-17 figura [X] en completadas.md (SHA f57f1aef832e81e44fc4f7ec36a852d50e464676). Su alcance amplía T-UX-03 con comparación de estado inicial, protección ante abandono, limpieza tras guardado correcto y gestión dinámica.
+- Código auditado: js/ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67, función setupUnsavedChangesProtection líneas 5371-5430 y caso UX-03 de runUXSuiteTests líneas 1869-1875.
+- Dictamen NO CUMPLE: booleano dirty sin snapshot/compare; submit/reset limpian prematuramente; MutationObserver solo re-enlaza input/textarea/select y no enlaza submit/reset de subformularios dinámicos; no incluye contenteditable/controles personalizados; no hay teardown de listener beforeunload ni observer; no hay protección explícita de transiciones SPA; UX-03 solo comprueba typeof función.
+- Consumidores seleccionados: js/api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; js/student.js e2888cea60322e49a40b89adadb8010489605dcc; js/teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; js/secretary.js 08a81266957b4c18cc25f8ba6749eac30a8f2c2c; js/accounting.js a79ead4a54ad6fdb2f1e9df4775491ff7191a0c7. No se localizaron llamadas al helper en estos módulos; student.js tiene beforeunload independiente para cargas de archivos. No se afirma barrido exhaustivo.
+- Reconciliación histórica: C1.45 ya había registrado AUD-NG-182 y creado TASK-479. Se recuperó Pendientes.md blob SHA 612eecb1394d79c66e1177cda7180e964e46550c y se confirmó que TASK-479 permanece pendiente y cubre los hallazgos. No se crea AUD-NG/TASK duplicado y no se modifica Pendientes.md.
+- Pruebas realizadas: inspección estática/manual de la especificación, helper, UX-03, módulos consumidores seleccionados, informe T-UX-03 y TASK-479.
+- No ejecutadas: navegador/DOM real, guardado asíncrono, eventos cancelables, navegación SPA, formularios dinámicos, múltiples instancias, teardown ni suites automatizadas.
+
+ARCHIVOS Y SHAs:
+- Auditoria.txt previo: 66f749aae26eb576b58ce7add09aad6aeccca928.
+- MapaDependencias.md previo: f3d57da4229eefc3b50c994661c98204cd5d63e4.
+- AUDITORIA_COMPLETADAS_PLAN.md previo: 729e2fc3b2bfa603b7e7d53c59f6b754875a16ed.
+- Contexto_personal.txt previo: e1cd2a57415eda2586f127c5ccc983d4fcb70de1.
+- Pendientes.md blob verificado: 612eecb1394d79c66e1177cda7180e964e46550c (sin modificación).
+- Código fuente, pruebas, completadas.md, METODOLOGIA_DESARROLLO.md y ChangesLogs.txt sin modificaciones.
+- Archivos modificados en esta iteración: Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, nuevo AUDITORIA_COMPLETADAS_T-UX-17.md y Contexto_personal.txt.
+- Publicación: un único commit mediante Git Database API, descendiente del HEAD de partida. El SHA final se confirmará externamente tras actualizar la referencia.
+- Próxima acción concreta: verificar el commit de cierre, árbol y cinco archivos incluidos; confirmar HEAD de NG_beta_0.0.0.1_work y que la rama base conserve SHA 44d9891132332e692dbe2ba8602b41f50a508a59; después iniciar T-UX-18 desde su especificación y reconciliar componentes compartidos de formularios/tablas/vistas de detalle con tareas posteriores.
+================================================================
