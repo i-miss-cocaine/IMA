@@ -791,3 +791,14 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Sesión:** IMA-AUDIT-20261106-0254Z; inicio C1.63; sesión abierta.
 - **Progreso:** 64/183 identificadores auditados; 119 pendientes.
 - **Siguiente tarea:** T-UX-24 - Normalizar las acciones, los estados y la jerarquía visual institucional.
+
+## 69. Resultado C1.67 - T-UX-24 (2026-11-06)
+
+- **Dictamen:** NO CUMPLE. Las variantes de botones compartidas se usan solo en parte de los paneles; los estados se construyen con alert/Swal/Tailwind local y existen diferencias para el mismo estado en las vistas de tickets.
+- **AUD-NG-215 (MEDIO/P2):** contrato transversal incompleto para jerarquía de acciones y estados success/error/warning/loading/empty. Se incorpora como ampliación de TASK-430; no se crea una tarea paralela.
+- **Reconciliación:** TASK-492 cubre campos de formularios; TASK-493 modal compartido; TASK-494 overlays; TASK-495 conectividad; TASK-430 sistema visual institucional. No duplicar.
+- **Evidencia:** style.css SHA f1ff84312ce70949a58eaa099b2aad0ff0a59cb6, tokens 2-25 y botones 284-348; ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67, estados de tickets 3918-3923 y 4121-4126; 12 vistas principales inventariadas. Informe AUDITORIA_COMPLETADAS_T-UX-24.md.
+- **Pruebas:** inspección estática/manual; no se ejecutaron navegador, comparación de capturas ni contraste automatizado.
+- **Sesión:** IMA-AUDIT-20261106-0254Z; inicio C1.63; sesión abierta.
+- **Progreso:** 65/183 identificadores auditados; 118 pendientes.
+- **Siguiente tarea:** T-UX-25 - Incorporar preferencias de usuario y personalización controlada de vistas.

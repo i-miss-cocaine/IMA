@@ -2885,3 +2885,25 @@ CHECKPOINT C1.66 - CIERRE DE AUDITORÍA T-UX-23 (2026-11-06)
 - Próxima acción reproducible: revisar css/style.css y js/ui-common.js para inventariar estilos de botones, acciones principales/secundarias y estados éxito/error/advertencia/carga/vacío; contrastar componentes reales de vistas principales y buscar tareas/hallazgos históricos de design tokens/estados antes de crear nuevos.
 - Commit de cierre: el commit que contiene este checkpoint.
 ================================================================
+
+================================================================
+CHECKPOINT C1.67 - CIERRE DE AUDITORÍA T-UX-24 (2026-11-06)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: a85d8b640821d6af5b0973132b6bf8c4ad351618.
+- HEAD de rama base verificado al inicio: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID de sesión de auditoría/chat: IMA-AUDIT-20261106-0254Z.
+- Inicio de sesión: C1.63. Estado: ABIERTA; este es checkpoint intermedio.
+- Tarea auditada: T-UX-24 - Normalizar las acciones, los estados y la jerarquía visual institucional. Dictamen NO CUMPLE.
+- Hallazgo: AUD-NG-215 (MEDIO/P2). Las variantes btn-ima-* existen pero su uso en las vistas principales es minoritario; estados de feedback se construyen con alert/Swal/Tailwind ad hoc; los renderizadores de tickets difieren para el mismo estado.
+- Reconciliación: TASK-430 ya cubre el sistema de diseño institucional; se amplía su alcance con criterios explícitos de T-UX-24. TASK-492 cubre estados de campos; TASK-493 modal de detalle; TASK-494 overlays; TASK-495 conectividad. No se crea tarea nueva separada.
+- Evidencia: css/style.css SHA f1ff84312ce70949a58eaa099b2aad0ff0a59cb6, líneas 2-25 y 284-348; js/ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67, líneas 3918-3923 y 4121-4126; vistas HTML principales listadas en AUDITORIA_COMPLETADAS_T-UX-24.md; Pendientes.md blob SHA 6c7d013b5ead5b9c1dcba3f281c7f91fa63ab0c4.
+- Pruebas: inspección estática/manual; no ejecutados navegador, capturas, pruebas de contraste ni suites automatizadas.
+- Archivos previstos: Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, AUDITORIA_COMPLETADAS_T-UX-24.md, Pendientes.md y Contexto_personal.txt. Código/tests y completadas.md sin modificaciones.
+- Progreso: 65/183 identificadores auditados; 118 pendientes.
+- Siguiente tarea exacta: T-UX-25 - Incorporar preferencias de usuario y personalización controlada de vistas.
+- Próxima acción reproducible: revisar UI de preferencias en js/ui-common.js, endpoints getUserSettings/saveUserSettings y almacenamiento en backend/user-service/Code.gs; contrastar alcance personal/por dispositivo/institucional, persistencia, restauración y reset; reconciliar con tareas de preferencias existentes.
+- Commit de cierre: el commit que contiene este checkpoint.
+================================================================

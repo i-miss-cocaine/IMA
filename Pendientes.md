@@ -15719,6 +15719,13 @@ REGLA RECTORA INNEGOCIABLE DEL BACKLOG:
   - [ ] La navegación móvil mantiene la misma seriedad y pulcritud institucional que la versión de escritorio.
 - **Estado:** [ ] Pendiente
 
+- **Ampliación C1.67 / T-UX-24 (2026-11-06):**
+  - **AUD-NG-215 (MEDIO/P2):** concretar el contrato visual de acciones y estados. La hoja css/style.css define .btn-ima, .btn-ima-primary, .btn-ima-cancel, .btn-ima-danger y .btn-ima-ghost, pero una muestra de 12 vistas encuentra uso de btn-ima-* solo en Estudiante y Docente; los demás paneles construyen botones principalmente con clases Tailwind locales. No se garantiza jerarquía equivalente entre acciones principales/secundarias/destructivas.
+  - En css/style.css existen tokens semánticos --color-success, --color-warning, --color-danger y --color-info, pero no se encontraron componentes/clases reutilizables de alertas/estados de éxito, error, advertencia, carga o ausencia de datos (por ejemplo .alert-ima, .status-badge, .btn-loading, .empty-state). js/ui-common.js mezcla alert(), Swal.fire() y HTML/Tailwind construido localmente.
+  - En renderMyTicketsList (js/ui-common.js, 3918-3923) y renderAdminTicketsUI (4121-4126), el mismo estado “Información recibida” usa variantes distintas (purple-50/text-purple-700/border-purple-200 frente a purple-100/text-purple-800/border-purple-300/font-bold); “Se necesita información” también difiere por animate-pulse. Extraer un mapa semántico compartido de estados, sin cambiar las transiciones de negocio.
+  - **Criterios adicionales:** (1) definir variantes compartidas primary, secondary, destructive y quiet, incluidos disabled/loading; (2) definir patrones compartidos para success/error/warning/info/loading/empty con texto, icono y semántica accesible, no solo color; (3) migrar botones equivalentes de las vistas principales al contrato común; (4) unificar el mapa de estados de tickets y otros consumidores; (5) probar consistencia visual y contraste en temas institucionales claro/oscuro; (6) coordinar TASK-492 (estados de campos), TASK-493 (modal detalle), TASK-494 (overlays) y TASK-495 (indicador de conectividad), sin absorber sus alcances.
+  - **Límites:** TASK-430 mantiene el sistema visual institucional general; TASK-492 mantiene el contrato de campos de formulario; TASK-493 el modal compartido; TASK-494 capas responsivas; TASK-495 significado de estados de conectividad. Esta ampliación concreta acciones/estados transversales de T-UX-24 y no crea una tarea duplicada.
+
 ---
 ## FASE 29 — MIGRACIÓN, VALIDACIÓN Y TRANSICIÓN OPERATIVA
 ---

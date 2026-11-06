@@ -1591,3 +1591,10 @@ Relaciones:
 - AUD-NG-001 cubre propagación del token; AUD-NG-128 cubre identidad verificada/IDOR de tickets; TASK-484 cubre pruebas conductuales UX-08. No crear duplicados.
 - UX-08 actual (ui-common.js 1912-1915) solo comprueba existencia de openReportIssueModal, no envío/persistencia.
 - Inspección estática; no se ejecutaron navegador, Apps Script, HTTP ni escrituras productivas.
+
+## Jerarquía de acciones y estados visuales (T-UX-24, C1.67)
+- css/style.css SHA f1ff84312ce70949a58eaa099b2aad0ff0a59cb6 declara tokens semánticos primary/success/warning/danger/info y variantes .btn-ima-primary/cancel/danger/ghost (2-25, 284-348), pero el inventario de 12 vistas encuentra uso de btn-ima-* solo en student-dashboard.html y teacher-dashboard.html. Las otras vistas emplean clases Tailwind locales en botones equivalentes.
+- No se encontraron clases compartidas alert/status/loading/empty; ui-common.js mezcla alert(), Swal.fire() y HTML/Tailwind ad hoc.
+- Los estados de tickets no son homogéneos: renderMyTicketsList 3918-3923 y renderAdminTicketsUI 4121-4126 dan distinto tratamiento a “Información recibida” y “Se necesita información”.
+- TASK-430 ya cubre el sistema visual general; se amplía con AUD-NG-215/T-UX-24. TASK-492 conserva estados de campos; TASK-493 modales de detalle; TASK-494 overlays; TASK-495 conectividad. No se crea una tarea duplicada.
+- Inspección estática; no se ejecutaron capturas/navegador ni pruebas de contraste.

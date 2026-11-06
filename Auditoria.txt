@@ -6068,3 +6068,19 @@ AUDITORÍA DE completadas.md - T-UX-23 (2026-11-06)
 - Pruebas: inspección estática/manual del formulario, validación, payload, fetchApi, token validator, router doPost, handler y backlog. No se ejecutaron navegador/DOM, Apps Script, llamadas HTTP, escrituras en Sheets ni suites automatizadas.
 - Código fuente/tests sin modificaciones. completadas.md, Pendientes.md, METODOLOGIA_DESARROLLO.md y ChangesLogs.txt sin modificaciones.
 ===============================================================================
+
+===============================================================================
+AUDITORÍA DE completadas.md - T-UX-24 (2026-11-06)
+===============================================================================
+- Dictamen: NO CUMPLE. Existen tokens semánticos y variantes de botones compartidas, pero no se aplican de forma consistente entre dashboards. Los estados equivalentes tampoco tienen un contrato compartido.
+- Especificación: completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, T-UX-24 (líneas 1230-1241 aprox.). Exige jerarquía clara entre acciones principales/secundarias, estilos unificados de controles equivalentes y normalización de estados éxito/error/advertencia/carga/vacío.
+- CSS: css/style.css SHA f1ff84312ce70949a58eaa099b2aad0ff0a59cb6. :root declara --color-primary, --color-secondary, --color-success, --color-warning, --color-danger y --color-info (2-25). Define .btn-ima, .btn-ima-primary, .btn-ima-cancel, .btn-ima-danger y .btn-ima-ghost (284-348).
+- Inventario estático de 12 vistas principales: las clases btn-ima-* solo aparecen en student-dashboard.html (3 referencias) y teacher-dashboard.html (10); index.html, Dirección, Secretaría, Contabilidad, RR. HH., Coordinación, Cafetería, Tienda, Developer y dynamic-dashboard no las utilizan. Los demás botones se construyen principalmente con clases Tailwind locales. El recuento es de referencias de clase en el código, no de una medición visual runtime.
+- En css/style.css no se encontraron clases compartidas de alert/status/loading/empty (p. ej. .alert-ima, .status-badge, .btn-loading, .empty-state). Los tokens de color existen, pero no equivalen a componentes reutilizables.
+- js/ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67 usa alert(), Swal.fire() y markup/Tailwind ad hoc para feedback de operaciones. También alterna btn-loading en algunos flujos, pero no se encontró una regla CSS compartida para esa clase.
+- Inconsistencia reproducible por lectura estática: renderMyTicketsList (3918-3923) y renderAdminTicketsUI (4121-4126) asignan variantes distintas al mismo estado “Información recibida”; el estado “Se necesita información” usa animate-pulse en el listado del usuario, pero no en la vista administrativa.
+- Reconciliación: TASK-430 ya cubre sistema de diseño institucional, botones y componentes compartidos; se amplía con criterios concretos de T-UX-24. TASK-492 cubre estados de input/select/textarea; TASK-493 modales de detalle; TASK-494 overlays responsivos; TASK-495 estado de conectividad. No se crea una tarea separada para duplicar el sistema de diseño.
+- Nuevo hallazgo AUD-NG-215 (MEDIO/P2), incorporado como ampliación C1.67 de TASK-430 en Pendientes.md.
+- Pruebas: inspección estática/manual de CSS, variantes de botones, 12 vistas y dos renderizadores de estados de tickets. No se ejecutaron navegador, capturas, comparación visual, contraste automatizado ni suites automatizadas.
+- Código fuente y tests sin modificaciones. completadas.md, METODOLOGIA_DESARROLLO.md y ChangesLogs.txt sin modificaciones.
+===============================================================================
