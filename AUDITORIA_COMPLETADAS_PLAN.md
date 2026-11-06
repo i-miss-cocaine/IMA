@@ -1039,3 +1039,14 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Pruebas:** inspección estática y búsquedas de triggers/UI; no se ejecutó motor ni se consultó hoja productiva.
 - **Progreso:** 86/183 identificadores auditados; 97 pendientes.
 - **Siguiente tarea oficial:** TAREA-F4-P3-01 - Implementar informes periódicos de revisión de privilegios y cuentas.
+
+
+## 92. Resultado C1.90 - TAREA-F4-P3-01 (2026-11-06)
+
+- **Dictamen:** NO CUMPLE. Existe generatePrivilegeAndAccountAuditReport, pero solo devuelve JSON bajo invocación; no hay trigger temporal, callsite frontend, persistencia, entrega ni evidencia de revisión. La métrica de delegaciones usa getSecurityDelegations sin contexto y con filtro statusFilter incompatible, por lo que devuelve cero.
+- **Nuevo hallazgo:** AUD-NG-230/TASK-510 para periodicidad verificable, persistencia/entrega, revisión formal y corrección del conteo de delegaciones.
+- **Reconciliación:** ampliar AUD-NG-219 por consulta de delegaciones sin contexto/filtro; AUD-NG-161 por falta de pruebas específicas. No duplicar AUD-NG-160/220.
+- **Evidencia:** USER SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; frontend SHA 6fa4c4bd9be580c974b1fbede4f0cf79485dc331/986938b8a311a41ed4cb3d135b66b6aaea4bed67/fefaa3bf7884288aef563cfb8aaf244e6cea8b7c/fa0d8c23aace24a6acab2d4956398a7f5e1309b8; backends SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc/38b979d41596b85e888b4a7060b37bbac0840a28/1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe/1d93296628fae31f680004f637897e2b1314a64c/8aa4bac67cfe5c8c54da51a0784a56fef633e412; tests SHA 3433b707edd4a2f35c68368a3172932adc2a3b32/0495e1d526a872c33310935a003a83d924d34683.
+- **Pruebas:** inspección estática y búsqueda de triggers/callsites/tests; no se ejecutó Apps Script ni automatización real.
+- **Progreso:** 87/183 identificadores auditados; 96 pendientes.
+- **Siguiente tarea oficial:** TAREA-F4-P3-02 - Optimizar los informes de auditoría y el diagnóstico de incidencias.

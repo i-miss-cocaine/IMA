@@ -3585,3 +3585,47 @@ CHECKPOINT C1.89 - TAREA-F4-P2-05
 - Bloqueos: ninguno para auditoría estática; datos productivos de PoliticasRetencionDatos no disponibles.
 - Commit de cierre: el commit que contiene este checkpoint; SHA final se verifica después de publicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.90 - TAREA-F4-P3-01
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto real: Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: 9d89ce03c8d39b1100989a5ff1269c2d17be99b8.
+- Tree SHA de partida verificado: da798b49fc05d65291e8b83ecd9863f1f726a765.
+- HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Diferencia verificada: 152 commits adelante y 0 detrás.
+- ID operativo de sesión/chat: IMA-AUDIT-20261106-1644Z; inicio C1.86; C1.87-C1.90 intermedios; estado: sesión abierta.
+- Último checkpoint anterior: C1.89 / TAREA-F4-P2-05.
+- Tarea auditada: TAREA-F4-P3-01 - Implementar informes periódicos de revisión de privilegios y cuentas.
+- Estado maestro histórico: [X] en completadas.md; severidad Bajo; backend/user-service/Code.gs.
+- Fuente original AUDITORIA_FASE4_IDENTIDAD_PERMISOS_GOBIERNO.md: no localizada.
+- Dictamen C1.90: NO CUMPLE.
+- Evidencia:
+  - USER Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f: PUBLIC_ACTIONS 922-926; ROLE_PERMISSIONS 940-968; getUserVerifiedRole 1146-1159; validateRolePermission 1253-1289; doPost 1351-1380; router case 1468; getSecurityDelegations 1803-1859; generatePrivilegeAndAccountAuditReport 4372-4440.
+  - Frontend: developer.js SHA 6fa4c4bd9be580c974b1fbede4f0cf79485dc331; ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67; dashboard-direccion SHA fefaa3bf7884288aef563cfb8aaf244e6cea8b7c; dashboard-secretaria SHA fa0d8c23aace24a6acab2d4956398a7f5e1309b8; sin referencias a generatePrivilegeAndAccountAuditReport.
+  - Backends ACADEMIC/ACCOUNTING/TASK/EXAM/DEVELOPER sin ScriptApp.newTrigger/timeBased en la búsqueda dirigida.
+  - Tests academic-grading-suite SHA 3433b707edd4a2f35c68368a3172932adc2a3b32 y modular-dashboard-suite SHA 0495e1d526a872c33310935a003a83d924d34683; sin casos específicos.
+- Hallazgos:
+  - La función solo calcula y devuelve un objeto; no persiste informe, no lo entrega ni registra revisión de responsable.
+  - No se encontraron triggers temporales en los seis microservicios ni invocaciones frontend. No existe periodicidad demostrada en el repositorio.
+  - La llamada interna getSecurityDelegations({statusFilter:"ACTIVA"}) omite token/verified user y usa clave incorrecta; getSecurityDelegations espera estado y contexto autenticado; el reporte devuelve 0 delegaciones vigentes.
+  - El endpoint no es público: no está en PUBLIC_ACTIONS; Director lo tiene en ROLE_PERMISSIONS y Administrador/Desarrollador por wildcard; doPost verifica autorización.
+  - Nuevo AUD-NG-230/TASK-510 para periodicidad, persistencia/entrega y revisión formal.
+  - AUD-NG-219 se amplía por consulta de delegaciones; AUD-NG-161 por ausencia de pruebas.
+- Pruebas ejecutadas: inspección estática del router/permisos/funciones, búsqueda de callsites frontend, triggers y tests.
+- Pruebas no ejecutadas: Apps Script runtime, instalación de trigger, ejecución periódica, email, datos productivos, delegaciones reales ni suites automatizadas.
+- Progreso: 87/183 identificadores auditados; 96 pendientes.
+- Última tarea auditada: C1.90 / TAREA-F4-P3-01.
+- Tarea en curso: ninguna.
+- Siguiente tarea exacta: TAREA-F4-P3-02 - Optimizar los informes de auditoría y el diagnóstico de incidencias.
+- Próxima acción reproducible: revisar getPaginatedAuditLogReport, sus fuentes BitacoraEventos/BitacoraTraceability, nombres reales de hojas/columnas, DTO, filtros fecha/usuario/acción/tipo, paginación y metadatos; cotejar con recordTraceabilityLog y registerAndDispatchEvent; reconciliar AUD-NG-145 y hallazgos de auditoría antes de crear IDs.
+- Archivos documentales modificados: Auditoria.txt, Pendientes.md, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt y nuevo AUDITORIA_COMPLETADAS_TAREA-F4-P3-01.md.
+- Archivos preservados: código fuente, pruebas, completadas.md, ChangesLogs.txt y METODOLOGIA_DESARROLLO.md.
+- Regla de ID de sesión: ya registrada en METODOLOGIA_DESARROLLO.md, sección 16, punto 9.
+- Bloqueos: ninguno para inspección estática; falta runtime para verificar ejecución temporal y entrega.
+- Commit de cierre: el commit que contiene este checkpoint; SHA final se verifica después de publicar.
+================================================================

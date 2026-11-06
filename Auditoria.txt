@@ -6675,3 +6675,42 @@ LÍMITES:
 - No se emitió opinión jurídica sobre plazos SAR/educativos.
 - No se modificaron políticas, código ni pruebas.
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-06
+CHECKPOINT C1.90 — TAREA-F4-P3-01
+SESIÓN: IMA-AUDIT-20261106-1644Z
+REPOSITORIO: i-miss-cocaine/IMA
+RAMA: NG_beta_0.0.0.1_work
+HEAD DE PARTIDA: 9d89ce03c8d39b1100989a5ff1269c2d17be99b8
+DICTAMEN: NO CUMPLE
+
+ALCANCE:
+- completadas.md marca TAREA-F4-P3-01 [X], severidad Bajo, USER Code.gs.
+- ChangesLogs.txt afirma análisis automatizado y periódico de cuentas privilegiadas, inactivas >90 días y delegaciones vigentes.
+
+EVIDENCIA:
+- USER SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f: permisos/router 922-968, 1146-1159, 1253-1289, 1351-1380; handler 1468; getSecurityDelegations 1803-1859; generatePrivilegeAndAccountAuditReport 4372-4440.
+- Frontend: developer.js 6fa4c4bd9be580c974b1fbede4f0cf79485dc331; ui-common.js 986938b8a311a41ed4cb3d135b66b6aaea4bed67; dashboard-direccion fefaa3bf7884288aef563cfb8aaf244e6cea8b7c; dashboard-secretaria fa0d8c23aace24a6acab2d4956398a7f5e1309b8; sin referencias al reporte.
+- Otros microservicios: ACADEMIC daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; ACCOUNTING 38b979d41596b85e888b4a7060b37bbac0840a28; TASK 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe; EXAM 1d93296628fae31f680004f637897e2b1314a64c; DEVELOPER 8aa4bac67cfe5c8c54da51a0784a56fef633e412; sin triggers time-based en la búsqueda.
+- Tests: 3433b707edd4a2f35c68368a3172932adc2a3b32, 0495e1d526a872c33310935a003a83d924d34683; sin casos específicos.
+
+RESULTADOS:
+1. generatePrivilegeAndAccountAuditReport solo lee Usuarios, arma métricas/arrays, escribe logStructuredEvent y devuelve JSON. No persiste reporte, no envía correo, no registra revisión/decisión.
+2. No hay ScriptApp.newTrigger/timeBased en los seis microservicios inspeccionados; no hay callsite frontend en developer.js, ui-common.js ni dashboards Dirección/Secretaría. No se demuestra periodicidad.
+3. La función llama getSecurityDelegations({statusFilter:"ACTIVA"}) sin token/_verifiedUserId; getUserVerifiedRole devuelve NO_ACCESS, callerId queda undefined y el handler filtra todas las filas. Además, el handler espera estado, no statusFilter. El resumen reporta 0 delegaciones.
+4. El endpoint no es público: está en ROLE_PERMISSIONS de Director y wildcard de Administrador/Desarrollador; doPost valida antes del router.
+5. No hay pruebas específicas del reporte, scheduler, persistencia/entrega ni delegaciones.
+
+RECONCILIACIÓN:
+- AUD-NG-219: consulta interna de delegaciones sin contexto y filtro incompatible.
+- AUD-NG-161: falta de pruebas conductuales.
+- Nuevo AUD-NG-230/TASK-510: falta de periodicidad, persistencia/entrega y revisión formal.
+- AUD-NG-160 y AUD-NG-220 mantienen sus alcances; no se duplican.
+
+PRUEBAS Y LÍMITES:
+- Ejecutado: inspección estática de permisos/router/reporte/delegaciones, búsqueda de llamadas frontend, activadores y pruebas.
+- No ejecutado: Apps Script runtime, triggers reales, ejecución periódica, email, datos productivos ni suites automatizadas.
+- Código fuente y pruebas sin modificaciones.
+===============================================================================

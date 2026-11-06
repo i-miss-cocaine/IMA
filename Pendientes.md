@@ -18563,6 +18563,7 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Alcance adicional:** comprobar que `LockService.getScriptLock()` en proyectos Apps Script separados no se interprete como bloqueo distribuido entre Accounting y Academic; verificar operaciones que escriben recursos compartidos mediante un mecanismo común o una estrategia de consistencia explícita. Probar `createStudentEnrollment` con `skipLock` e `isInternalCall:true`, además de la ruta legacy `registerStudentEnrollment` sin lock y fallos entre escrituras. Mantener las relaciones con AUD-NG-006, AUD-NG-129 y AUD-NG-133 sin duplicarlas.
 
 - **Ampliación C1.88 / TAREA-F4-P2-04:** La búsqueda en los dos archivos bajo tests/regression no encontró casos para `createSecurityDelegation`, `revokeSecurityDelegation`, `updateUserProfile` o `manageAccountState`. La suite académica solo contiene aserciones de locks para otras operaciones (p. ej. lotes contables/workflow); la suite modular no aporta casos de estas funciones. Se mantiene el alcance de pruebas de concurrencia reales/aisladas de AUD-NG-161; no crear duplicado.
+- **Ampliación C1.90 / TAREA-F4-P3-01:** No se encontraron pruebas para `generatePrivilegeAndAccountAuditReport`, su programación, persistencia/entrega ni su conteo de delegaciones. Los dos archivos tests/regression revisados no contienen referencias a esta función. Se revalida la brecha de pruebas conductuales bajo AUD-NG-161; no crear duplicado.
 - **Estado:** [ ] Pendiente
 
 
@@ -19835,6 +19836,7 @@ AUD-NG-163 permanece DUPLICADA y consolidada; no reabrirla como tarea independie
 - **Ampliación C1.84 / TAREA-F4-P1-09:** \`getSecurityAndComplianceDashboardData\` (USER 4454-4538) llama \`getSecurityDelegations({ statusFilter: "ACTIVA" })\` sin reenviar \`sessionToken\` ni otro token. \`getSecurityDelegations\` (1803-1859) invoca \`getUserVerifiedRole(payload)\`, que devuelve \`NO_ACCESS\` sin token, y obtiene \`callerId\` de \`payload._verifiedUserId\`; además, su contrato lee \`estado\`, no \`statusFilter\`. Para un Director la llamada interna no tiene identidad verificada y la consulta no devuelve delegaciones, por lo que \`activeDelegationsCount\` queda en cero aunque existan registros. Se aclara la observación C1.76 sobre el filtro: el defecto actual más inmediato es la pérdida del contexto autenticado; la discrepancia de nombre del filtro persiste. La corrección del motor y de su UI de ciclo de vida sigue en AUD-NG-219/TASK-498; este registro solo cubre la consulta/indicador del panel.
 - **Ampliación C1.87 / TAREA-F4-P2-03:** Revalidado: el modal administrativo solo renderiza directorio y acción de cambio de estado; no invoca `createSecurityDelegation`, `getSecurityDelegations` ni `revokeSecurityDelegation`, ni ofrece flujos para crear/listar/revocar delegaciones. Se mantiene dentro del alcance de AUD-NG-219/TASK-498; no duplicar.
 - **Ampliación C1.88 / TAREA-F4-P2-04:** Revalidado en USER: `revokeSecurityDelegation` (2276-2314) no adquiere LockService para leer-validar-escribir la revocación; `getSecurityDelegations` (1803-1859) modifica estado a Expirada mediante setValue durante una consulta sin candado. Estas rutas no se coordinan con el lock que sí usa `createSecurityDelegation`, por lo que las transiciones concurrentes pueden competir. Se amplía el hallazgo de ciclo de vida de delegaciones; no crear ID duplicado.
+- **Ampliación C1.90 / TAREA-F4-P3-01:** `generatePrivilegeAndAccountAuditReport` (USER 4415-4440) consulta delegaciones mediante `getSecurityDelegations({statusFilter:"ACTIVA"})`. El handler espera `estado`, no `statusFilter`; además, la llamada interna descarta el payload autenticado y no pasa sessionToken/_verifiedUserId. `getUserVerifiedRole` devuelve NO_ACCESS y el filtro de titular/delegado elimina todas las filas, por lo que `delegacionesSeguridadVigentes` resulta 0. Se amplía el defecto de consulta/estado de delegaciones; no duplicar.
 - **Estado:** [ ] Pendiente
 
 ### [TASK-498] [TAREA-F4-P1-01] [P1] Aplicar límites de autoridad y ámbito al motor de delegaciones
@@ -20105,5 +20107,37 @@ AUD-NG-163 permanece DUPLICADA y consolidada; no reabrirla como tarea independie
 - **Problema:** updateUserProfile hace read-modify-write de una fila completa sin exclusión mutua ni control de versión, permitiendo pérdida de cambios concurrentes.
 - **Requisitos:** serializar o versionar la actualización; coordinar persistencia, auditoría e invalidación de caché; manejar timeout/conflicto; probar concurrencia real en datos aislados.
 - **Relaciones:** TASK-118, AUD-NG-161, AUD-NG-218, AUD-NG-219.
+- **Estado:** [ ] Pendiente
+
+
+
+---
+
+## C1.90 — Revisión de TAREA-F4-P3-01
+
+### [AUD-NG-230] Automatizar, persistir y verificar la revisión periódica de privilegios y cuentas
+- **Origen del Hallazgo:** C1.90 / TAREA-F4-P3-01.
+- **Severidad/Clasificación:** Medio (P2) · Seguridad · Gobierno de privilegios · Observabilidad.
+- **Archivos Involucrados:** backend/user-service/Code.gs; configuración de Apps Script/activadores; eventual panel o canal de entrega.
+- **Dependencias Expuestas:** generatePrivilegeAndAccountAuditReport, ScriptApp.newTrigger, getSecurityDelegations, ROLE_PERMISSIONS, LogsSistema, reportes de privilegios.
+- **Descripción del Alcance:** La función genera un objeto y lo devuelve a quien invoca el endpoint, pero no existe activador temporal, invocación desde UI ni persistencia/entrega del informe. Por tanto, no hay evidencia de una revisión periódica automatizada. Además, el resumen consulta delegaciones con `getSecurityDelegations({statusFilter:"ACTIVA"})`, omite el contexto de autenticación y usa un nombre de filtro que el handler no reconoce; el conteo de delegaciones vigentes queda en cero. El evento de log no equivale a conservar el informe ni a demostrar que un responsable revisó los resultados.
+- **Criterios de Aceptación:**
+  - Definir frecuencia, propietario, zona horaria y activador temporal real; documentar instalación, recuperación y prevención de ejecuciones duplicadas.
+  - Persistir cada informe con timestamp, periodo cubierto, versión de política, métricas, detalle permitido, identificador de ejecución y resultado; retenerlo conforme a política.
+  - Entregar el informe a responsables autorizados o exponerlo en un panel protegido; registrar recepción, revisión, decisión y acciones correctivas.
+  - Consultar delegaciones con contexto autenticado verificado y filtro `estado:"Activa"`; contar únicamente delegaciones vigentes al momento del corte.
+  - Manejar errores parciales sin emitir un reporte de éxito incompleto; registrar estado de ejecución y permitir reintento seguro.
+  - Pruebas cubren permisos, cuentas privilegiadas, cuentas sin login, cuentas >90 días, delegaciones Activa/Revocada/Expirada, ejecución duplicada, fallo de envío y persistencia.
+- **Relaciones y límites:** AUD-NG-160 cubre vigencia/invalidación de roles; AUD-NG-161 cubre pruebas reales de concurrencia/automatización; AUD-NG-219 cubre autoridad/consulta de delegaciones; AUD-NG-220 cubre la fecha y anonimización de cuentas inactivas. AUD-NG-230 se limita a la periodicidad, evidencia y consistencia del reporte.
+- **Estado:** [ ] Pendiente
+
+### [TASK-510] [AUD-NG-230] Programar y entregar la revisión periódica de privilegios y cuentas
+- **Origen:** C1.90 / TAREA-F4-P3-01.
+- **Prioridad:** P2 (Media).
+- **Componentes:** backend/user-service/Code.gs; activadores Apps Script; repositorio de informes; panel/notificación administrativa.
+- **Problema:** La función solo devuelve un objeto bajo invocación manual; no hay trigger, persistencia, entrega ni evidencia de revisión. El conteo de delegaciones vigentes es incorrecto por llamada interna sin contexto y filtro statusFilter incompatible.
+- **Requisitos:** activador real; reporte versionado/persistido; destinatarios autorizados; estado de revisión; consulta de delegaciones con identidad verificada y estado correcto; manejo de fallos y reintentos idempotentes.
+- **Criterios:** ejecución programada verificable; informe recuperable; conteo correcto de delegaciones activas; evidencia de revisión y acciones; pruebas de autorización, periodicidad, fallos y duplicados.
+- **Relaciones:** AUD-NG-160, AUD-NG-161, AUD-NG-219, AUD-NG-220.
 - **Estado:** [ ] Pendiente
 

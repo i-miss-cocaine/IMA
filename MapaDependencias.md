@@ -1882,3 +1882,14 @@ Relaciones:
 - La política promete módulo ARCO, pero USER solo registra solicitudes/actualiza estado; no hay UI ni ejecución efectiva. AUD-NG-223/TASK-503.
 - RBAC/ABAC se afirma como riguroso, pero los validadores siguen divergentes/fail-open. AUD-NG-222/TASK-502.
 - No se crean IDs nuevos. Evidencia: privacy 8854bae3021e1cdde288709e3fa411b3d6da20c7; usage ca252904e9f7ad7301d1793ed07585a92a4c060f; financial bb75dc6b72098b825a18025781346b4252fe33cf; USER 12079dd410aa6d8afbce55a4bc62a79dea605f9f.
+
+
+## C1.90 — TAREA-F4-P3-01: informes periódicos de privilegios y cuentas
+
+- USER.generatePrivilegeAndAccountAuditReport (4372-4440) calcula cuentas privilegiadas, inactivas/estancadas y delegaciones, registra un evento y devuelve JSON. No persiste el informe ni registra revisión/decisión.
+- No se encontraron triggers ScriptApp.newTrigger/timeBased ni llamadas frontend en developer.js, ui-common.js, dashboard-direccion o dashboard-secretaria. No hay periodicidad demostrada.
+- La función llama getSecurityDelegations({statusFilter:"ACTIVA"}) sin token/_verifiedUserId; el handler requiere identidad verificada y espera el campo estado. El conteo de delegaciones vigentes resulta 0. AUD-NG-219.
+- La acción no es pública: Director; Administrador/Desarrollador por wildcard; doPost valida permisos. 
+- No hay pruebas específicas del reporte ni de su automatización. AUD-NG-161.
+- Nuevo AUD-NG-230/TASK-510 para scheduler, persistencia/entrega, evidencia de revisión y conteo correcto.
+- Evidencia USER 12079dd410aa6d8afbce55a4bc62a79dea605f9f; developer.js 6fa4c4bd9be580c974b1fbede4f0cf79485dc331; ui-common 986938b8a311a41ed4cb3d135b66b6aaea4bed67; dashboards fefaa3bf7884288aef563cfb8aaf244e6cea8b7c/fa0d8c23aace24a6acab2d4956398a7f5e1309b8.
