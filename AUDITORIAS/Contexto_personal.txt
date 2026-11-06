@@ -4259,3 +4259,32 @@ CHECKPOINT C1.117 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 18
 - Próxima acción: normalizar el informe AUDITORIAS/AUDITORIA-FASE-11-COMUNICACION-BIENESTAR-SUPERVISION-FINANZAS.md. Antes de ampliar o formalizar cada F11-Task01..18, reconciliar su detalle con los hallazgos y conservar sus IDs, prioridad y estado.
 - Estado de TASK-DOC-C1.112-01: En curso; adaptación histórica por lotes.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.118 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 11
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto: AUDITORIAS/Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: 123a1d8d35510129d5479e2def8100036af912c9.
+- HEAD de rama base verificado al inicio: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID operativo de sesión: IMA-AUDIT-20261106-2004Z-F11 (sesión iniciada desde la solicitud del 2026-11-06; no es un identificador nativo de ChatGPT).
+- Checkpoint inicial de esta sesión: C1.117. Estado al cierre de esta iteración: sesión de trabajo abierta para continuar la normalización.
+- Tarea documental en curso: TASK-DOC-C1.112-01, normalización progresiva de informes históricos.
+- Último elemento completamente normalizado antes de esta iteración: AUDITORIAS/AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md (F18-Task01 a F18-Task12).
+- Elemento normalizado en esta iteración: AUDITORIAS/AUDITORIA-FASE-11-COMUNICACION-BIENESTAR-SUPERVISION-FINANZAS.md.
+- Se añadió al final la sección obligatoria "Tareas ejecutables derivadas de los hallazgos", con F11-Task01 a F11-Task18; se conservaron IDs, prioridades y estados del backlog §16.
+- Trazabilidad: F11-Task01/02 se vinculan a las discrepancias de privacidad/integridad de §2, §4 y §5; F11-Task03..06 a brechas de comunicación §1; F11-Task07/08 a bienestar §2; F11-Task09..12 a supervisión §3; F11-Task13..16 a finanzas §4 y backlog §16; F11-Task17 a §3.C.5; F11-Task18 a pruebas pendientes §17. Las tareas sin hallazgo individual explícito se identifican como backlog, sin inventar IDs de hallazgo.
+- Discrepancias preservadas para reconciliación: F11-Task01 (seguridad declarada completa en §2.C.3, riesgo P0 en §5); F11-Task02 (partida doble declarada completa en §4.C.1, riesgo P0 en §5); F11-Task07 (completa y vinculada a F10-Task09 en §2.C.1, pendiente en §16); F11-Task12 (completa en §3.C.4, pendiente en §16). No se cambiaron los estados Pendiente del backlog.
+- Campos añadidos por tarea: origen, severidad, objetivo, acción ejecutable, archivos/módulos, dependencias/riesgos, alcance, criterios de aceptación, prioridad, estado y evidencia de cierre.
+- Archivos modificados en esta iteración: AUDITORIAS/AUDITORIA-FASE-11-COMUNICACION-BIENESTAR-SUPERVISION-FINANZAS.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, AUDITORIAS/README.md, AUDITORIA_COMPLETADAS_PLAN.md, demás informes históricos y rama base.
+- Verificaciones: lectura completa del informe Fase 11; cotejo de los 18 IDs, prioridades y estados de la tabla §16; verificación de la sección normativa §3.4 de METODOLOGIA_DESARROLLO.md y AUDITORIAS/README.md; revisión del diff documental previo al commit. No se ejecutaron pruebas runtime ni la suite de regresión, porque esta iteración solo normaliza documentación.
+- SHA de respaldo del informe antes de modificar: 3038632d3d282c96965105f5e94fbf730c7c901b.
+- SHA de respaldo del contexto antes de modificar: 218abea9d4a9bef47f540ca2c0bac58d27d1e4bb.
+- HEAD de partida del árbol: 123a1d8d35510129d5479e2def8100036af912c9; el commit de cierre será el único commit que incluya ambos archivos y este checkpoint.
+- Próxima acción concreta: normalizar AUDITORIAS/AUDITORIA_FASE_10_ASISTENCIA_DISCIPLINA_CONVIVENCIA.md, comenzando por inventariar hallazgos, IDs, estados y cualquier tarea ya cubierta por otro ID; después continuar fases 16 y 17. No repetir Fase 11 ni Fase 18 salvo que aparezca evidencia de discrepancia.
+- Estado de TASK-DOC-C1.112-01: En curso; migración documental por lotes.
+================================================================
