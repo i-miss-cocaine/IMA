@@ -168,3 +168,129 @@ Evaluar integralmente la capacidad del sistema como un servicio transversal de i
   - *Ausente:* 4 (26.6%)
 - **Cobertura de Verificación Satisfactoria:** 41.7%
 - **Dictamen:** **NO APROBADA PARA CERTIFICACIÓN FINAL** debido a la proliferación masiva de identificadores ad-hoc con timestamps (`Date.now()`), la carencia de ámbitos institucionales por sede, la falta de gestión de identificadores históricos en importaciones y la inexistencia de un servicio de reconstrucción de contadores tras respaldos.
+
+---
+
+## Tareas ejecutables derivadas de los hallazgos
+
+> Normalización de las siete tareas originales F35-ID-Task01..F35-ID-Task07, conservando prioridades P0/P1. Se añaden F35-ID-Task08..F35-ID-Task10 para cubrir consulta/resolución bidireccional, historial de cambios de ID y expiración de reservas, que aparecen como brechas CAR-ID-14/15/19 y no tienen tarea individual en el plan G. Se coordina la tabla de IDs externos con F29-Task01 para evitar crear dos registros maestros incompatibles.
+
+### [F35-ID-Task01] Consolidar motor central de numeración y eliminar generadores ad-hoc
+- **Hallazgo de origen:** CAR-ID-01/CAR-ID-06/CAR-ID-09; más de 150 puntos `Date.now()` y duplicación de `generateInstitutionalId`.
+- **Severidad:** Crítica / P0. **Objetivo:** generar todos los identificadores institucionales mediante un único contrato central, predecible, atómico y auditable.
+- **Acción ejecutable:** crear librería/servicio canónico de asignación; migrar los puntos de generación de trámites, justificaciones, pagos, actas, movimientos y firmas; mantener compatibilidad temporal y detectar llamadas legacy restantes.
+- **Archivos/módulos:** `backend/user-service/Code.gs`, `backend/academic-service/Code.gs`, `backend/accounting-service/Code.gs`, `generateInstitutionalId`, `SecuenciasIDs` y más de 150 puntos de generación identificados.
+- **Dependencias/riesgos:** F29-Task01 (correspondencia de IDs), F35-Task04 (importación), AUD-NG-006 (idempotencia); riesgo de cambiar IDs ya emitidos o romper referencias históricas.
+- **Alcance:** generación de nuevos IDs y migración progresiva; no renumerar registros existentes ni retirar IDs legacy antes de reconciliar sus referencias.
+- **Criterios de aceptación:** un solo contrato de generación; unicidad por entidad/ámbito; LockService o mecanismo equivalente; llamadas ad-hoc reemplazadas o justificadas; telemetría de fallback; pruebas concurrentes, reintentos, colisiones y referencias existentes.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el informe identifica dos motores duplicados y más de 150 generadores basados en timestamp.
+
+### [F35-ID-Task02] Crear catálogo configurable de formatos oficiales y ámbitos de unicidad
+- **Hallazgo de origen:** CAR-ID-02/CAR-ID-03/CAR-ID-13/CAR-ID-18; rigidez de `padStart(6)` y ausencia de ámbito por sede/periodo.
+- **Severidad:** Crítica / P0. **Objetivo:** configurar patrones oficiales por entidad, institución, sede y periodo sin alterar códigos ya emitidos.
+- **Acción ejecutable:** crear `DefinicionesNumeracion` con entidad, prefijo, sufijo, separador, padding, año lectivo, sede, ámbito, vigencia y versión; validar patrón y publicar cambios con historial.
+- **Archivos/módulos:** `backend/developer-service/Code.gs`, `backend/user-service/Code.gs`, `SecuenciasIDs`, `DefinicionesNumeracion` y consola administrativa.
+- **Dependencias/riesgos:** F26-Task01 (jerarquía de configuración), F26-Task05/TASK-062 (versionado/rollback); riesgo de colisiones al cambiar patrón o mezclar sedes.
+- **Alcance:** configuración/versionado de nuevas series; no recalcular identificadores históricos ni cambiar patrón retroactivamente.
+- **Criterios de aceptación:** patrones configurables por entidad/ámbito; versionado y fechas de vigencia; validación sintáctica y de colisión; series activas/sustituidas distinguibles; permisos administrativos; pruebas de cambio de año, sede, padding y formatos legacy.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el motor actual usa formato fijo y no admite año, sede o periodo en el patrón.
+
+### [F35-ID-Task03] Implementar validador de colisiones y solapamiento entre formatos
+- **Hallazgo de origen:** CAR-ID-04/CAR-ID-05/CAR-ID-12; riesgo de series nuevas incompatibles y duplicados.
+- **Severidad:** Crítica / P0. **Objetivo:** impedir que dos series activas produzcan el mismo identificador dentro de un mismo ámbito.
+- **Acción ejecutable:** validar patrones nuevos contra series vigentes y sustituidas; comprobar unicidad server-side antes de persistir; clasificar colisión exacta, solapamiento potencial y duplicado de entidad.
+- **Archivos/módulos:** `backend/developer-service/Code.gs`, `generateInstitutionalId`, `DefinicionesNumeracion`, `SecuenciasIDs`, catálogos maestros.
+- **Dependencias/riesgos:** F35-ID-Task01/02, F35-Task03 del importador, F29-Task01; riesgo de falsos positivos o de no detectar colisiones por sede/periodo.
+- **Alcance:** validación de series e IDs; no reparar ni reasignar automáticamente códigos oficiales ya emitidos.
+- **Criterios de aceptación:** patrones se prueban antes de activar; colisiones exactas bloqueadas; solapamientos potenciales requieren revisión; unicidad comprobada bajo lock; conflictos quedan auditados; pruebas de formatos similares, padding, año y ámbitos separados.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; la matriz CAR-ID-04 y CAR-ID-12 las marca ausentes/parciales.
+
+### [F35-ID-Task04] Integrar importaciones con secuencias y resolver escenarios A-E
+- **Hallazgo de origen:** CAR-ID-07/CAR-ID-11; saltos de secuencia y colisiones al importar IDs superiores.
+- **Severidad:** Crítica / P0. **Objetivo:** importar registros con IDs preexistentes sin dejar el contador por detrás ni producir colisiones futuras.
+- **Acción ejecutable:** ampliar el importador para validar IDs contra `SecuenciasIDs` y la base; implementar políticas configurables para ID nuevo, conservar ID, actualizar contador, asignar nuevo código o enviar a conflicto; recalcular contador cuando el ID importado supera el actual.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `importDataWithColumnMapping`, `validateImportPreview`, `SecuenciasIDs`, Fase 35 Importador.
+- **Dependencias/riesgos:** F35-Task02/03/15/16/17 del importador, F29-Task01/06/07, F35-ID-Task01/03; riesgo de duplicación al mezclar importaciones concurrentes.
+- **Alcance:** coordinación de importación y numeración; no sobrescribir IDs oficiales sin política aprobada.
+- **Criterios de aceptación:** escenarios A-E documentados y probados; importación superior actualiza contador bajo lock; colisión exacta se bloquea o reasigna según política; preview muestra impacto; reintentos idempotentes; pruebas de importación 413 con contador 300, IDs duplicados y concurrencia.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; la matriz señala que el contador no se ajusta al importar IDs superiores y no existe política A-E.
+
+### [F35-ID-Task05] Conservar identificadores históricos y externos en un registro relacional canónico
+- **Hallazgo de origen:** CAR-ID-10/CAR-ID-20; códigos SACE, bancarios y legados sin relación bidireccional.
+- **Severidad:** Crítica / P0. **Objetivo:** resolver códigos internos y externos sin perder identidad histórica ni crear duplicados de entidades.
+- **Acción ejecutable:** ampliar F29-Task01 para usar un registro maestro de correspondencias que incluya ID interno, código externo, sistema origen, entidad, ámbito, vigencia y estado; adoptar `CorrespondenciaIdentificadores` como tabla canónica y mapear `IdentificadoresHistoricosExternos` como nombre lógico/vista compatible si se requiere.
+- **Archivos/módulos:** `backend/developer-service/Code.gs`, servicios User/Academic/Accounting, `CorrespondenciaIdentificadores`, `IdentificadoresHistoricosExternos` (nombre lógico legado) y consultas de entidades.
+- **Dependencias/riesgos:** F29-Task01, F29-Task13, F35-ID-Task01; riesgo de mantener dos tablas que diverjan o asociar un código externo a persona equivocada.
+- **Alcance:** correspondencia bidireccional y temporal; no crear dos fuentes físicas de verdad ni reemplazar IDs internos.
+- **Criterios de aceptación:** un registro canónico con unicidad por sistema/entidad/código; vínculo a ID interno estable; historial de vigencia; consulta por cualquiera de los códigos; conflictos requieren revisión; pruebas SACE/legacy/banco, cambio de código y dos sedes.
+- **Prioridad:** P0. **Estado:** Pendiente (ampliación de F29-Task01).
+- **Evidencia de cierre:** pendiente; no existe una tabla relacional que asocie códigos externos con IDs oficiales.
+
+### [F35-ID-Task06] Reconstruir y auditar contadores de secuencia
+- **Hallazgo de origen:** CAR-ID-07/CAR-ID-17; ausencia de recuperación de secuencias después de restauraciones.
+- **Severidad:** Alta / P1. **Objetivo:** reconstruir el último número realmente emitido para evitar reutilización de IDs.
+- **Acción ejecutable:** implementar `recalculateSequenceCounters(payload)` que lea IDs reales por entidad/ámbito, extraiga componente numérico, calcule máximo y proponga actualización; exigir preview, permiso y auditoría antes de aplicar.
+- **Archivos/módulos:** `backend/developer-service/Code.gs`, `SecuenciasIDs`, `CorrespondenciaIdentificadores`, herramientas de restauración.
+- **Dependencias/riesgos:** F27-Task03 (restauración), F29-Task04/09 (rollback/lotes), F35-ID-Task01/02; riesgo de interpretar mal prefijos/años o saltar secuencias de otro ámbito.
+- **Alcance:** reconstrucción controlada de contadores; no disminuir automáticamente un contador ni reutilizar números reservados.
+- **Criterios de aceptación:** cálculo por entidad/ámbito/versión; preview de máximo detectado; discrepancias explicadas; aplicación autorizada y auditada; operación idempotente; pruebas tras restauración, datos corruptos y formatos con año/sede.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; la matriz CAR-ID-17 marca ausente el recálculo de `UltimoNumero`.
+
+### [F35-ID-Task07] Crear consola administrativa de series y versionado de reglas
+- **Hallazgo de origen:** CAR-ID-01/CAR-ID-13/CAR-ID-18; ausencia de administración de formatos.
+- **Severidad:** Alta / P1. **Objetivo:** permitir a responsables autorizados consultar y configurar series sin modificar registros históricos.
+- **Acción ejecutable:** construir consola para ver último número, entidad, ámbito, patrón, versión, vigencia, reservas y estado; permitir crear nueva versión de regla, aprobar, activar y auditar cambios.
+- **Archivos/módulos:** dashboards Developer/Dirección, `backend/developer-service/Code.gs`, `DefinicionesNumeracion`, `SecuenciasIDs`.
+- **Dependencias/riesgos:** F26-Task01/05, F35-ID-Task02/06 y RBAC/ABAC; riesgo de que un usuario cambie una serie fuera de su institución o genere huecos.
+- **Alcance:** administración y consulta; no permitir editar directamente el contador sin flujo de reconstrucción.
+- **Criterios de aceptación:** vista por ámbito; roles verificados server-side; cambios con motivo y versión; aprobación de cambios críticos; historial no destructivo; pruebas de acceso cruzado, serie inactiva y publicación concurrente.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; CAR-ID-13 indica que no existe interfaz/servicio administrativo de series.
+
+### [F35-ID-Task08] Implementar resolución y búsqueda bidireccional de identificadores
+- **Hallazgo de origen:** CAR-ID-14/CAR-ID-20; consulta por código actual o referencia externa.
+- **Severidad:** Media / P1. **Objetivo:** localizar una entidad por su ID oficial, código SACE, referencia bancaria o código histórico.
+- **Acción ejecutable:** ampliar el registro canónico de F35-ID-Task05 con servicio `resolveInstitutionalIdentifier` que devuelva entidad, ID interno, fuente, vigencia y estado; exigir permisos y limitar atributos devueltos.
+- **Archivos/módulos:** servicios User/Academic/Accounting, `CorrespondenciaIdentificadores`, API de búsqueda y módulos de expediente/contabilidad.
+- **Dependencias/riesgos:** F35-ID-Task05, F29-Task01 y RBAC/ABAC; riesgo de revelar datos personales o resolver referencias ambiguas.
+- **Alcance:** resolución de códigos; no exponer datos del expediente ni permitir búsquedas masivas sin autorización.
+- **Criterios de aceptación:** búsqueda por ID interno/externo; coincidencias múltiples se marcan ambiguas; vigencia y origen visibles; respuesta mínima; auditoría de consultas sensibles; pruebas con códigos antiguos, reemitidos y compartidos entre ámbitos.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; CAR-ID-14 y CAR-ID-20 requieren consulta y resolución bidireccional.
+
+### [F35-ID-Task09] Registrar historial de cambios, sustituciones y reasignaciones de IDs
+- **Hallazgo de origen:** CAR-ID-15; ausencia de bitácora de cambios de identificador.
+- **Severidad:** Media / P1. **Objetivo:** preservar trazabilidad cuando un identificador debe corregirse, reemplazarse o marcarse como obsoleto.
+- **Acción ejecutable:** crear historial append-only con ID anterior/nuevo, entidad, motivo, actor, fecha, origen, aprobación y referencias dependientes; mantener alias de consulta para códigos retirados.
+- **Archivos/módulos:** `backend/developer-service/Code.gs`, `CorrespondenciaIdentificadores`, `RegistroEventos`, `SecuenciasIDs`.
+- **Dependencias/riesgos:** F35-ID-Task05/08, F29-Task01 y F30-Task06; riesgo de alterar relaciones o perder auditoría de un código sustituido.
+- **Alcance:** historial de cambios de ID; no permitir renumeración silenciosa ni borrar códigos anteriores.
+- **Criterios de aceptación:** historial inmutable; motivo/actor obligatorio; alias anterior resuelve al nuevo cuando corresponda; referencias actualizadas con plan; aprobación para IDs oficiales; pruebas de sustitución, reversión, duplicidad y consulta histórica.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; CAR-ID-15 marca ausente la bitácora de reasignación/sustitución.
+
+### [F35-ID-Task10] Implementar reservas temporales y expiración de números no confirmados
+- **Hallazgo de origen:** CAR-ID-19; números reservados por operaciones interrumpidas.
+- **Severidad:** Media / P1. **Objetivo:** evitar que una operación abandonada deje números bloqueados indefinidamente o que se reutilicen IDs ya confirmados.
+- **Acción ejecutable:** definir estados reservado/confirmado/expirado; persistir reservationId, entidad, ámbito, actor, TTL y operación; expirar solo reservas no confirmadas y verificar referencias antes de liberar.
+- **Archivos/módulos:** `backend/developer-service/Code.gs`, `SecuenciasIDs`, `DefinicionesNumeracion`, procesos de emisión y jobs de limpieza.
+- **Dependencias/riesgos:** F35-ID-Task01/02/06 y TASK-062; riesgo de reutilizar un ID ya distribuido o de dejar huecos no explicados.
+- **Alcance:** reservas temporales con TTL; no retroceder secuencias ni liberar un número que figure en una entidad persistida.
+- **Criterios de aceptación:** reserva ligada a operación; TTL configurable; confirmación atómica; expiración auditada; comprobación de no uso antes de liberar; pruebas de timeout, confirmación concurrente, reintento y limpieza.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; CAR-ID-19 indica ausencia de expiración de reservas.
+
+### Reconciliaciones y discrepancias transversales de Fase 35 (Registro Central)
+- **F35-ID-Task01:** reemplaza generadores ad-hoc, pero preserva IDs históricos ya emitidos.
+- **F35-ID-Task02/07:** el catálogo `DefinicionesNumeracion` y la consola administrativa deben respetar la jerarquía de ámbitos F26-Task01 y el versionado/rollback TASK-062.
+- **F35-ID-Task04:** coordinar con Fase 35 Importador (F35-Task02/03/04/15/16/17) y F29-Task01; importación y secuencias deben compartir la misma política de colisión.
+- **F35-ID-Task05:** el informe propone `IdentificadoresHistoricosExternos`, mientras F29-Task01 propone `CorrespondenciaIdentificadores`; usar una sola tabla física canónica y mantener el segundo nombre como alias/vista/documentación, no como fuente paralela.
+- **F35-ID-Task06:** reconstrucción de contadores debe preservar números reservados y ámbitos separados.
+- **F35-ID-Task08/09/10:** resolver búsqueda, historial y reservas como capacidades separadas; no sobrecargar la tabla de secuencias ni eliminar trazabilidad.
+- **Subcapacidades completas preservadas:** CAR-ID-08 (asignación atómica) y CAR-ID-16 (permisos) permanecen completas/verificadas según el informe; no se reejecutaron pruebas.
+- **Estado global:** F35-ID-Task01..F35-ID-Task10 permanecen pendientes de ejecución/revalidación; la normalización no certifica cambios en código.

@@ -4840,3 +4840,31 @@ CHECKPOINT C1.137 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 35 (
 - Próximo informe: continuar el inventario de auditorías faltantes; el segundo informe de Fase 35 de identificadores/normalización se revisará por separado para evitar confundirlo con el importador.
 - Estado de TASK-DOC-C1.112-01: En curso.
 ================================================================
+
+================================================================
+CHECKPOINT C1.138 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 35 (IDENTIFICADORES)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida: a5050ad66df96ec0cbae5b677e5d9b460d07daba.
+- HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID operativo de sesión: IMA-AUDIT-20261106-2035Z-MIGRACION (no es ID nativo de ChatGPT).
+- Checkpoint anterior: C1.137 (Fase 35 Importador normalizada).
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_FASE_35_REGISTRO_CENTRAL_IDENTIFICADORES_NUMERACION.md.
+- SHA original del informe: 9998e15e4c40f88f29f9d9aa62b2e33894bdc027.
+- SHA original del contexto: a06a0df0351a4d7582f7a8b8ff49e778d748e49d.
+- Inspección: informe completo (16,109 caracteres), CAR-ID-01..CAR-ID-20, PT-ID-01..PT-ID-24 y siete tareas originales F35-ID-Task01..F35-ID-Task07.
+- Tareas originales preservadas: F35-ID-Task01..F35-ID-Task07 y prioridades P0/P1 del plan G.
+- Tareas adicionales derivadas de CAR-ID-14/15/19: F35-ID-Task08 (resolución bidireccional), F35-ID-Task09 (historial de cambios de ID), F35-ID-Task10 (reservas temporales).
+- Reconciliación de tabla de IDs externos: F29-Task01 propone CorrespondenciaIdentificadores; este informe propone IdentificadoresHistoricosExternos. Se define una sola tabla física canónica (CorrespondenciaIdentificadores) y el segundo nombre como alias/vista/compatibilidad, evitando dos fuentes de verdad.
+- Subcapacidades completas preservadas: CAR-ID-08 (asignación atómica) y CAR-ID-16 (permisos); no se reejecutaron pruebas.
+- Dependencias cruzadas: F26-Task01/05, F29-Task01/04/09/13, F35-Task02/03/04/15/16/17 del importador, F27-Task03, TASK-062, AUD-NG-006/161; se coordinan sin duplicar.
+- Campos por tarea: origen, severidad, objetivo, acción, archivos/módulos, dependencias/riesgos, alcance, criterios de aceptación, prioridad, estado y evidencia de cierre.
+- Archivos modificados: AUDITORIAS/AUDITORIA_FASE_35_REGISTRO_CENTRAL_IDENTIFICADORES_NUMERACION.md; AUDITORIAS/Contexto_personal.txt.
+- No se modificaron código, pruebas, Pendientes.md, completadas.md, ChangesLogs.txt, Auditoria.txt, metodología, README, plan maestro ni rama base.
+- Pruebas no ejecutadas: motor central, patrones/ámbitos, colisiones, importaciones A-E, correspondencia externa, reconstrucción de contadores, consola, búsquedas, historial y reservas.
+- Próximo informe pendiente: AUDITORIA_FASE_37_AISLAMIENTO_DATOS_ASIGNACION_DEPARTAMENTOS.md (Fase 36 no tiene informe de auditoría con ese patrón en el directorio).
+- Estado de TASK-DOC-C1.112-01: En curso.
+================================================================
