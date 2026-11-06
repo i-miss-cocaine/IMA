@@ -5082,3 +5082,27 @@ CHECKPOINT C1.146 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME T-UX-18
 - Próximo informe pendiente: AUDITORIA_COMPLETADAS_T-UX-19.md.
 - Estado de TASK-DOC-C1.112-01: En curso.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.147 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME T-UX-19
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida: d63bf8051273981e78f2c582aaa75004c63c6f39.
+- HEAD de rama base verificado antes del cambio: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID operativo de sesión: IMA-AUDIT-20261106-2117Z-MIGRACION (no es ID nativo de ChatGPT).
+- Checkpoint anterior: C1.146 (T-UX-18 normalizada).
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_COMPLETADAS_T-UX-19.md.
+- SHA original del informe: 1646573a2a64d7f65e9bf849279014ca496b5130.
+- SHA original del contexto: 8b3440141117b1df9656ddc69e7b1817387be318.
+- Inspección: auditoría estática de menús/teclado, foco, preferencias, nombres accesibles, SVG, formularios, live regions, diálogos y suite UX.
+- Tareas formalizadas: TASK-258 (AUD-NG-210/211) y TASK-484 (pruebas conductuales); se coordinaron TASK-492/TASK-493/TASK-130 y AUD-NG-169/AUD-NG-181 sin duplicar alcances.
+- Dictamen preservado: T-UX-19 NO CUMPLE. No se ejecutaron navegadores, lectores de pantalla, medición de contraste ni suites automatizadas.
+- No se modificaron código, pruebas, Pendientes.md, completadas.md, ChangesLogs.txt, Auditoria.txt, metodología, README ni rama base.
+- Pruebas runtime no ejecutadas; cambio exclusivamente documental.
+- Próximo informe pendiente: inventariar el siguiente conjunto de informes sin bloque y priorizar los históricos restantes.
+- Estado de TASK-DOC-C1.112-01: En curso.
+================================================================

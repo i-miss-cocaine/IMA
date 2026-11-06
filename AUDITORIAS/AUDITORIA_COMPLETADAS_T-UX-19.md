@@ -59,3 +59,38 @@ Inspección estática/manual de especificación, CSS, helpers y vistas represent
 
 ## Cierre
 T-UX-19: **NO CUMPLE**. Código y tests sin modificaciones. `completadas.md`, `Pendientes.md`, `METODOLOGIA_DESARROLLO.md` y `ChangesLogs.txt` intactos. Progreso: 60/183 identificadores auditados; 123 pendientes. Siguiente: **T-UX-20 - Completar la adaptación móvil y el comportamiento responsivo**.
+
+
+---
+
+## Tareas ejecutables derivadas de los hallazgos
+
+> Los hallazgos AUD-NG-210/AUD-NG-211 se reconcilian con tareas existentes. TASK-258 es la remediación transversal; TASK-484 conserva la validación conductual UX; TASK-492/TASK-493 y TASK-130/AUD-NG-169/AUD-NG-181 mantienen sus alcances específicos. No se crean IDs duplicados.
+
+### [TASK-258] Corregir las barreras transversales de accesibilidad y navegación
+- **Hallazgo de origen:** AUD-NG-210 (ALTO/P1); parte de AUD-NG-211 (ALTO/P1).
+- **Severidad:** Alta. **Objetivo:** permitir el uso de flujos principales mediante teclado y tecnologías de asistencia, con foco visible, orden lógico y controles con nombres accesibles.
+- **Acción ejecutable:** hacer que menús se abran y cierren por teclado y actualicen `aria-expanded`; incorporar skip links funcionales; impedir que el foco quede oculto bajo cabeceras fijas; verificar contraste de foco en temas y estados; completar preferencias `prefers-contrast: more` y movimiento reducido; ampliar auditoría de nombres accesibles a controles/enlaces/SVG; sustituir nombres genéricos por etiquetas específicas; asociar labels, ayudas y errores; crear live announcer persistente; completar foco inicial, confinamiento y retorno de foco en diálogos.
+- **Archivos/módulos:** `index.html`, `student-dashboard.html`, `teacher-dashboard.html`, demás vistas de panel; `css/style.css`; `js/ui-common.js` (`auditAndFixAccessibility`, `trackModalFocus`, diálogos y anuncios); componentes de menú y formularios.
+- **Dependencias/riesgos:** TASK-492 para contrato de campos; TASK-493 para modal compartido; TASK-130 para ayudas; AUD-NG-169 para barreras en paneles académicos; AUD-NG-181 para Escape/restauración de foco. Riesgo de regresiones de navegación y accesibilidad parcial por revisar solo controles nativos.
+- **Alcance:** navegación, foco, semántica y preferencias transversales; no duplicar las tareas especializadas de campos, modal o ayudas.
+- **Criterios de aceptación:** flujos principales completables con Tab/Shift+Tab/Enter/Escape; menús operables por teclado con estado ARIA actualizado; skip link visible al enfocarse y funcional; foco nunca oculto por cabecera; nombres accesibles específicos para controles e iconos; labels/errores relacionados semánticamente; live announcements operativos; diálogos con foco inicial, confinamiento y retorno; preferencias de contraste/movimiento respetadas; revisión WCAG 2.2 AA con evidencias por vista y rol.
+- **Prioridad:** P1. **Estado:** Pendiente de ejecución/revalidación.
+- **Evidencia de cierre:** pendiente; el informe documenta menús hover-only, skip link ausente en vistas revisadas, semántica incompleta y helper que no cubre SVG/nombres/diálogos de forma suficiente.
+
+### [TASK-484] Incorporar pruebas conductuales de accesibilidad a la suite UX
+- **Hallazgo de origen:** AUD-NG-211; insuficiencia de `runUXSuiteTests` y UX-02.
+- **Severidad:** Alta. **Objetivo:** verificar el comportamiento real de teclado, foco, nombres accesibles, formularios y anuncios, no solo la existencia de helpers.
+- **Acción ejecutable:** ampliar la suite UX con escenarios de teclado para menús y diálogos; comprobar orden/visibilidad/restauración de foco; calcular/verificar nombres accesibles de controles e iconos; validar asociaciones label/error y live regions; cubrir preferencias de contraste y movimiento; ejecutar casos sobre vistas representativas por rol y registrar resultados reproducibles.
+- **Archivos/módulos:** `js/ui-common.js` (`runUXSuiteTests`); `tests/regression/` y pruebas de interfaz existentes; vistas HTML representativas.
+- **Dependencias/riesgos:** TASK-258 aporta el comportamiento a validar; TASK-492/TASK-493/TASK-130 cubren componentes relacionados. Riesgo de falsos positivos si la suite solo comprueba presencia de funciones o atributos estáticos.
+- **Alcance:** pruebas automatizadas/conductuales de accesibilidad; no reemplaza auditoría manual con lector de pantalla ni certificación WCAG independiente.
+- **Criterios de aceptación:** pruebas fallan ante menú no operable por teclado, foco perdido/oculto, nombre accesible ausente, label/error desconectado o live region inexistente; se ejecutan sobre vistas representativas; resultados incluyen caso, vista, rol y evidencia; los casos no se limitan a `typeof function`.
+- **Prioridad:** P1 (derivada de los hallazgos ALTO/P1). **Estado:** Pendiente de ejecución/revalidación.
+- **Evidencia de cierre:** pendiente; UX-02 verifica presencia de `trackModalFocus` y la suite no acredita navegación completa, WCAG ni comportamiento real.
+
+### Reconciliación y límites
+- **AUD-NG-210:** se conserva en TASK-258 y AUD-NG-181; no crear una segunda tarea de foco/Escape.
+- **AUD-NG-211:** TASK-258 y TASK-484 mantienen accesibilidad transversal y pruebas; TASK-492 cubre campos, TASK-493 modal y TASK-130 ayudas; AUD-NG-169 conserva barreras específicas de paneles académicos.
+- **Pruebas:** solo inspección estática/manual de vistas y helpers representativos; no se ejecutaron navegadores, lectores de pantalla, medición de contraste, zoom, navegación completa ni suites automatizadas.
+- **Estado:** T-UX-19 permanece NO CUMPLE; la normalización no constituye certificación WCAG ni cierre de tareas.
