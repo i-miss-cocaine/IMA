@@ -147,3 +147,53 @@ No se ejecutaron llamadas HTTP contra deployments, pruebas de token firmado, pru
 
 ## Errata C1.74 - clasificación de logoutUser y revocación
 La sección 4.1 y la reconciliación de la sección 7 asociaron en C1.72 la ruta logoutUser/revokeUserSession a AUD-NG-002. Esa atribución fue duplicada: el repositorio ya contiene AUD-NG-159, que cubre específicamente el bypass de autenticación y la revocación arbitraria de sesiones, y lo relaciona con TAREA-F4-P0-03. La clasificación correcta es AUD-NG-159/AUD-NG-005; AUD-NG-002 conserva el alcance de consultas TASK/EXAM y borradores de admisión ACADEMIC. El código citado en C1.72 sigue siendo evidencia válida; se corrige únicamente su asignación al hallazgo.
+
+## Tareas ejecutables derivadas de los hallazgos
+
+> Alcance documental derivado de la inspección estática y de la errata C1.74. El dictamen **NO CUMPLE** y el estado `[X]` del registro maestro se conservan sin reinterpretarlos como evidencia de corrección. Estas tareas no se consideran ejecutadas por incorporarlas aquí.
+
+### AUD-NG-001 — Integrar el token de sesión de extremo a extremo (CRÍTICO)
+
+- [ ] Conservar el `sessionToken` emitido por `loginUser` en la respuesta real, tanto si llega en el nivel superior como en `data.sessionToken`; rechazar respuestas exitosas que no entreguen una credencial válida.
+- [ ] Definir un único contrato de transporte autenticado en `fetchApi` y aplicarlo a todos los servicios protegidos, sin sustituir la credencial por `requesterUserId` o `requesterRole` aportados por el cliente.
+- [ ] Persistir y recuperar la credencial mediante el mecanismo de sesión aprobado; evitar exponerla en logs, mensajes de error, URLs o telemetría. Al cerrar sesión, limpiar credenciales y estado local.
+- [ ] Derivar la identidad y el rol efectivos exclusivamente de claims firmados y verificados en backend. Los campos de identidad enviados por el cliente no deben prevalecer sobre el principal verificado.
+- [ ] Alinear el contrato entre USER, ACADEMIC, ACCOUNTING, TASK y EXAM, documentando explícitamente qué acciones son públicas y cuáles requieren sesión.
+- [ ] Añadir pruebas de contrato que cubran login, persistencia/recuperación, transmisión a los cinco servicios, token ausente, token alterado, expirado y respuesta de autorización; comprobar que no se filtra el token.
+- **Criterio de aceptación:** una operación protegida funciona únicamente con una credencial válida y el principal derivado del token; las pruebas demuestran que no se autoriza por los campos `requester*` del payload. Evidencia: pruebas automatizadas reproducibles y trazas saneadas del flujo completo.
+
+### AUD-NG-002 — Eliminar consultas sensibles públicas y verificar aislamiento (CRÍTICO)
+
+- [ ] Revisar `PUBLIC_ACTIONS` en TASK y EXAM y retirar de la lista las consultas que devuelven tareas, entregas, proyectos, exámenes o métricas institucionales; conservar como públicas únicamente operaciones deliberadamente públicas y de respuesta mínima.
+- [ ] Exigir identidad autenticada y autorización por rol, relación y ámbito para `getStudentTasks`, `getAllTasks`, `getAllStudentProjects`, `getDriveStorageQuotaMetricsReport`, `getStudentExams` y `getAllExams`.
+- [ ] Eliminar el uso de `userId`, `grado` o `seccion` del payload como prueba de identidad. Derivar el estudiante/docente desde claims verificados y comprobar la relación con cada registro consultado.
+- [ ] Revisar `saveAdmissionDraft` y `getAdmissionDraft` en ACADEMIC: los borradores deben requerir sesión autenticada o una capacidad aleatoria, limitada, no enumerable y vinculada al borrador; el correo del responsable o una clave predecible no bastan para acreditar propiedad.
+- [ ] Aplicar autorización antes de leer o mutar datos y limitar los campos devueltos al mínimo necesario; registrar denegaciones sin almacenar datos sensibles.
+- [ ] Crear pruebas negativas multiusuario y por rol/ámbito: anónimo, estudiante ajeno, docente fuera de su grupo, cambio de `userId/grado/seccion` en payload, enumeración de borradores y lectura/escritura cruzada.
+- **Criterio de aceptación:** ninguna consulta o modificación sensible puede ejecutarse sin identidad y ámbito autorizados; las pruebas demuestran aislamiento entre usuarios, grupos y borradores. La comprobación de despliegue real debe registrarse por separado, sin inferir exposición efectiva únicamente del análisis estático.
+
+### AUD-NG-003 — Hacer obligatoria y estricta la expiración de tokens (CRÍTICO)
+
+- [ ] Aplicar el mismo contrato de validación en USER, ACADEMIC, ACCOUNTING, TASK y EXAM.
+- [ ] Rechazar claims sin `exp`, con tipo no numérico, valor no finito, estructura incompleta o fecha ya vencida; validar además que los claims temporales requeridos tengan unidades y rangos coherentes.
+- [ ] Evitar conversiones permisivas o valores por defecto que permitan aceptar tokens sin expiración. Mantener una tolerancia de reloj explícita y acotada, si se define, sin extender silenciosamente la vigencia.
+- [ ] Centralizar o compartir la especificación de validación para impedir divergencias entre servicios y asegurar que todos fallen de forma cerrada ante credenciales malformadas.
+- [ ] Añadir pruebas unitarias y de contrato para `exp` ausente, `null`, texto, cero, negativo, no finito, vencido, vigente y límite exacto; verificar el mismo resultado en los cinco servicios.
+- **Criterio de aceptación:** ningún servicio acepta un token firmado sin expiración numérica válida o fuera de vigencia; las pruebas de paridad entre servicios pasan y documentan la política temporal.
+
+### AUD-NG-159 — Restringir el cierre de sesión y la revocación a identidades autorizadas (CRÍTICO/P0)
+
+- [ ] Retirar `logoutUser` de `PUBLIC_ACTIONS` y exigir un token válido para cerrar la sesión propia.
+- [ ] Obtener `userId` y `sessionId` exclusivamente de claims verificados. Ignorar o rechazar identificadores de objetivo suministrados en el payload cuando no coincidan con el principal y la sesión autenticados.
+- [ ] Separar el cierre de la sesión propia de la revocación administrativa de sesiones ajenas; esta última debe exigir permiso administrativo explícito, ámbito y registro de auditoría.
+- [ ] Revisar `revokeUserSession` para impedir revocaciones arbitrarias por IDs manipulados y definir la semántica de revocación de una sesión frente a todas las sesiones de una cuenta.
+- [ ] Corregir la interacción entre `revoked_user_<userId>`, `revoked_session_<sessionId>` y `loginUser`: una marca temporal de revocación no debe bloquear indefinidamente sesiones nuevas legítimas tras autenticación válida. Definir y probar limpieza/rotación segura de marcas.
+- [ ] Añadir pruebas negativas: logout anónimo, token inválido, suplantación de `userId`, suplantación de `sessionId`, revocación de otra cuenta y revocación sin permiso administrativo; añadir pruebas positivas de cierre propio y de revocación administrativa autorizada.
+- **Criterio de aceptación:** un usuario solo puede revocar su propia sesión; la revocación de terceros exige autorización administrativa verificable. Las pruebas demuestran que no es posible bloquear sesiones ajenas manipulando el payload y que un nuevo inicio de sesión legítimo no queda bloqueado por una marca obsoleta.
+- **Relación de alcance:** AUD-NG-001 cubre la transmisión del token; AUD-NG-005 conserva la coherencia de invalidación/caché entre servicios; AUD-NG-159 cubre exclusivamente el bypass de autenticación y la revocación arbitraria desde `logoutUser`. No trasladar este caso a AUD-NG-002.
+
+### Dependencias y límites de verificación
+
+- Coordinar la implementación con TAREA-F4-P0-02 (IDOR/aislamiento), TAREA-F4-P0-03 (propagación de revocaciones), TAREA-F4-P0-04 (intentos/fuerza bruta) y las tareas de normalización de roles citadas en el informe, sin absorber sus alcances.
+- No se crean IDs nuevos. Se formalizan acciones para AUD-NG-001, AUD-NG-002, AUD-NG-003 y AUD-NG-159, manteniendo AUD-NG-005 como dependencia relacionada.
+- La presente modificación solo convierte hallazgos documentados en trabajo ejecutable; no cambia código, pruebas, estados de `completadas.md` ni el dictamen del informe.

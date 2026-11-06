@@ -5796,3 +5796,34 @@ CHECKPOINT C1.171 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-20
 - Próximo informe: revisar inventario de AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-21.md; si existe, leerlo íntegramente y reconciliar antes de formalizar.
 - Commit de cierre: un único commit con ambos archivos; verificar SHA, padre, árbol, archivos modificados y HEAD de rama después de publicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.172 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-F4-P0-01
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.1.
+- HEAD de partida verificado: 0df7d2b9e1d8dd11c3e0c407f9cf66a42e8f5002.
+- Árbol base de la rama de trabajo: 5bf2aab737036912383864432775df87223b504d.
+- HEAD de rama base consultado (solo lectura): 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID operativo de sesión: IMA-AUDIT-20261106-2232Z (no es ID nativo de ChatGPT).
+- Checkpoint inicial de esta iteración: C1.171.
+- Estado de iteración: cerrada en C1.172.
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F4-P0-01.md.
+- SHA del informe antes del cambio: 0b5748b714d67e92ba6ed49a8854b148b5dbe20c.
+- SHA del contexto antes del cambio: 3f21a623de5cb7ace473d570f0d3858dc8abf024.
+- Dictamen original preservado: TAREA-F4-P0-01 NO CUMPLE; estado [X] de completadas.md no se modifica.
+- Inspección: token emitido por USER no se conserva/transmite desde auth.js/fetchApi; operaciones sensibles TASK/EXAM están en PUBLIC_ACTIONS y confían en identidad/filtros del payload; borradores de admisión ACADEMIC permiten selección/actualización sin propiedad verificada; validación de exp no exige claim temporal numérico en los cinco servicios; logoutUser permite revocación arbitraria mediante IDs suministrados por el solicitante.
+- Reconciliación: AUD-NG-001 ampliado para transporte end-to-end y principal firmado; AUD-NG-002 delimitado a consultas sensibles TASK/EXAM y borradores ACADEMIC; AUD-NG-003 ampliado a validación temporal estricta en USER/ACADEMIC/ACCOUNTING/TASK/EXAM; AUD-NG-159 formalizado como responsable específico del bypass de logout/revocación arbitraria. AUD-NG-005 queda como dependencia de coherencia de invalidación, sin duplicar AUD-NG-159.
+- Errata C1.74 del informe respetada: no se asigna logoutUser a AUD-NG-002.
+- IDs nuevos: ninguno.
+- Archivos modificados: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F4-P0-01.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, Auditoria.txt, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README y rama base.
+- Pruebas ejecutadas: lectura íntegra del informe y errata C1.74; extracción de AUD-NG-001/002/003/005/159 de Auditoria.txt; comprobación de ausencia previa del bloque; verificación de HEAD, árbol y rama base antes de escribir.
+- Pruebas no ejecutadas: llamadas HTTP, validación de tokens en deployments, pruebas multiusuario, revocación real, Script Properties, pruebas automatizadas y producción.
+- Límite: cambio exclusivamente documental. Ninguna tarea se considera ejecutada o completada por registrar sus criterios.
+- Próximo informe: TAREA-F4-P0-02, si su archivo existe y no contiene ya el bloque; leer íntegramente y reconciliar antes de editar.
+- Regla de publicación: un único commit con exactamente el informe y Contexto_personal.txt; verificar SHA, padre, árbol, archivos modificados y HEAD tras publicar.
+================================================================
