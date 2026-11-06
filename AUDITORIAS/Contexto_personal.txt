@@ -4496,3 +4496,35 @@ CHECKPOINT C1.125 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 22
 - Próxima acción concreta: continuar con AUDITORIA_FASE_23_MOTOR_INSTITUCIONAL_FLUJOS_TRABAJO.md; leer íntegramente el informe, revisar tareas históricas y hallazgos cruzados, reconciliar IDs/estados y añadir el bloque obligatorio sin duplicar trabajo.
 - Estado de TASK-DOC-C1.112-01: En curso; migración documental por lotes.
 ================================================================
+
+================================================================
+CHECKPOINT C1.126 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 23
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto: AUDITORIAS/Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: 201a8c111129394f3e84b5f37458053bcfe73b20.
+- HEAD de rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID operativo de sesión: IMA-AUDIT-20261106-2011Z-F10 (se conserva el identificador operativo de esta conversación; no es un ID nativo de ChatGPT).
+- Checkpoint anterior: C1.125 (Fase 22 normalizada).
+- Tarea documental en curso: TASK-DOC-C1.112-01, normalización progresiva de informes históricos.
+- Informe normalizado en esta iteración: AUDITORIAS/AUDITORIA_FASE_23_MOTOR_INSTITUCIONAL_FLUJOS_TRABAJO.md.
+- SHA del informe antes de modificar: 844c570783a9df44ffd9f29a21ab4ce839d14b74.
+- SHA del contexto antes de modificar: 1f7a786af7424203d6734985a8a5d712edac2706.
+- Inspección documental: informe completo (23,536 caracteres; 225 líneas), secciones A-K, 32 subcapacidades F23-001..F23-032, criterios CA-F23-01..05, brechas F, plan H y matriz J.
+- Fuentes cruzadas: Auditoria.txt (blob 284b7a94b51c8ed99dbfcf734694bc5361f9f111), TASK-044..TASK-049, AUD-NG-024..AUD-NG-026, AUD-NG-073..AUD-NG-090, AUD-NG-205/AUD-NG-206 y referencias TASK-221/TASK-227/TASK-316/TASK-318; metodología §3.4 y AUDITORIAS/README.md.
+- Tareas originales preservadas: F23-Task01..F23-Task05 y prioridades P0/P1/P2 del plan H.
+- IDs nuevos derivados de capacidades accionables no cubiertas o colisionadas: F23-Task06 (idempotencia), F23-Task07 (HMAC), F23-Task08 (cadena criptográfica), F23-Task09 (suite conductual), F23-Task10 (catálogo central de servicios), F23-Task11 (diseñador visual), F23-Task12 (delegación), F23-Task13 (cuotas/colas/backoff), F23-Task14 (auditoría estructurada), F23-Task15 (desistimiento/archivo). No se inventaron IDs AUD-NG ni se alteraron F23-001..F23-032.
+- Reconciliación de colisiones: TASK-045 rotulada F23-Task02 se asigna por alcance a F23-Task06; TASK-046 rotulada F23-Task03 se mapea por alcance a F23-Task02; TASK-047 rotulada F23-Task04 se asigna por alcance a F23-Task10; TASK-048 rotulada F23-Task05 se asigna por alcance a F23-Task07; TASK-049 rotulada F23-Task06 se asigna por alcance a F23-Task08. TASK-044 corresponde a F23-Task01.
+- Hallazgos posteriores: AUD-NG-024 extiende F23-Task01; AUD-NG-025 F23-Task06; AUD-NG-073..077 F23-Task02; AUD-NG-078..082 F23-Task10; AUD-NG-083..086 F23-Task07; AUD-NG-026/AUD-NG-087..089 F23-Task08; AUD-NG-081/AUD-NG-090 F23-Task09; AUD-NG-205 F23-Task03; AUD-NG-206 F23-Task05.
+- Reconciliación de pruebas: resultados históricos 235/235, 239/239 y 243/243 se conservan como registros de ejecución, pero AUD-NG-081/AUD-NG-090 indican aserciones estructurales que no prueban llamadas, persistencia, concurrencia ni criptografía real.
+- Referencias sin duplicación: TASK-221/TASK-318 (Inbox/SLA), TASK-227/TASK-316 (notificaciones), AUD-NG-145/AUD-NG-224/TASK-504 (esquema canónico de auditoría); AUD-NG-175 se excluye por pertenecer al catálogo académico.
+- Campos añadidos por tarea: origen, severidad, objetivo, acción, archivos/módulos, dependencias/riesgos, alcance, criterios de aceptación, prioridad, estado y evidencia de cierre.
+- Archivos modificados: AUDITORIAS/AUDITORIA_FASE_23_MOTOR_INSTITUCIONAL_FLUJOS_TRABAJO.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, ChangesLogs.txt, Auditoria.txt, METODOLOGIA_DESARROLLO.md, AUDITORIAS/README.md, plan maestro y demás informes; rama base sin cambios.
+- Pruebas no ejecutadas: suites de workflow, llamadas HMAC entre cuentas, Apps Script runtime, HTTP, Sheets productivo, navegador/UI, triggers SLA y despliegues; no hubo cambios de código.
+- HEAD de partida del árbol: 201a8c111129394f3e84b5f37458053bcfe73b20. El único commit de cierre debe contener ambos archivos y este checkpoint.
+- Próxima acción concreta: continuar con AUDITORIA_FASE_24_INFORMES_INDICADORES_ANALISIS_INSTITUCIONAL.md; leer íntegramente el informe, revisar tareas históricas y hallazgos cruzados, reconciliar IDs/estados y añadir el bloque obligatorio sin duplicar trabajo.
+- Estado de TASK-DOC-C1.112-01: En curso; migración documental por lotes.
+================================================================
