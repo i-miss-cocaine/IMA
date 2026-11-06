@@ -5411,3 +5411,32 @@ CHECKPOINT C1.158 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-07
 - Próximo informe: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-08.md; leerlo íntegramente y reconciliar AUD-NG-164 y las tareas relacionadas antes de formalizar su bloque.
 - Commit de cierre: un único commit con ambos archivos; verificar SHA, padre, árbol, archivos modificados y HEAD de rama después de publicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.159 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-08
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida declarada en el proyecto: NG_beta_0.0.1.
+- HEAD de partida verificado: c31af15318b95064448fe52e44c6265c48fd758a.
+- Árbol base de la rama de trabajo: 6d2b4c79bd716776ced141f92ac44f6db038d6ea.
+- Rama base: no se realizó consulta nueva en esta iteración; no se efectuó ninguna escritura sobre ella.
+- ID operativo de sesión: IMA-AUDIT-20261106-2219Z (no es ID nativo de ChatGPT).
+- Checkpoint inicial de esta iteración: C1.158.
+- Estado de iteración: cerrada en C1.159.
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-08.md.
+- SHA del informe antes del cambio: 15b57a9115bbdf7506d5f51600f46aa7e85ee4ea.
+- SHA del contexto antes del cambio: 3ca8a81fe4ec02791221d9f1cc56e41e4378d506.
+- Inspección: TAREA-08 CUMPLE PARCIALMENTE. Catálogos estáticos divergentes (12 áreas/8 departamentos en cliente frente a 7 áreas inicializadas en ACADEMIC); catálogos USER/ACADEMIC sin sincronización demostrada; modelo de asignaturas y planes incompleto; ofertas sin validación de referencias/compatibilidad; interfaz docente no consume el flujo de administración curricular y puede continuar con identificadores genéricos/sintéticos.
+- Tarea formalizada: AUD-NG-164 (P1), catálogo curricular maestro, IDs/códigos únicos, metadatos completos, relaciones validadas, planes versionados, ofertas verificadas, desactivación con preservación histórica e integración con módulos consumidores.
+- Reconciliación: TASK-005, AUD-NG-011/018/093/108/111/113/115/117 y TASK-153 conservan sus alcances separados. No se crean IDs duplicados ni se absorben sus responsabilidades.
+- Archivos modificados: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-08.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, Auditoria.txt, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README y rama base.
+- Pruebas ejecutadas: lectura íntegra de TAREA-08; contraste de AUD-NG-164 y de las tareas relacionadas en Auditoria.txt; comprobación de que el bloque aún no existía; verificación del HEAD y árbol de partida.
+- Pruebas no ejecutadas: pruebas funcionales del catálogo, integridad referencial, unicidad, versionado, desactivación, preservación histórica, integración UI, Apps Script y producción.
+- Límite: cambio exclusivamente documental. TAREA-08 permanece CUMPLE PARCIALMENTE; AUD-NG-164 no se considera ejecutada ni completada.
+- Próximo informe: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-09.md; revisar la ampliación de AUD-NG-011 y las tareas relacionadas antes de decidir si existe un bloque propio pendiente o si el informe ya contiene la normalización requerida.
+- Commit de cierre: un único commit con ambos archivos; verificar SHA, padre, árbol, archivos modificados y HEAD de rama después de publicar.
+================================================================
