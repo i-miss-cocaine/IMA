@@ -146,3 +146,103 @@ La plataforma cuenta con un excelente control de concurrencia para identificador
 | F41-08 | Aislamiento departamental | Implementada parcialmente | 100% | Sí | Concluyente | `ROLE_PERMISSIONS` | Sin validación de ámbito ABAC | Forzar filtro departamental |
 | F41-09 | Recuperación y reintentos | Requiere mejoras | 100% | Sí | Concluyente | Sin checkpoints por fila | Duplica filas al reintentar | Implementar idempotencia |
 | F41-10 | Auditoría y reversión | Defectuosa | 100% | Sí | Concluyente | `AuditoriaMigraciones` | Sin función rollback | Desarrollar `revertImportBatch` |
+
+---
+## Tareas ejecutables derivadas de los hallazgos
+
+> Se formalizan las ocho tareas descritas explícitamente en el Plan de Resolución (F41-Task01..F41-Task08), conservando prioridades y alcance. La bitácora histórica confirma que el backlog consolidado llegó a once tareas (F41-Task01..F41-Task11), con Task09..Task11 en P2, pero no conserva sus descripciones ni criterios. No se reconstruyen por conjetura ni se crean sustitutos. La subcapacidad F41-03/CAR-F41-02 permanece completa y verificada, por lo que no genera remediación nueva.
+
+### [F41-Task01] Motor de reversión segura de importaciones masivas
+- **Hallazgo de origen:** F41-10; CAR-F41-03; E2E-41-11.
+- **Severidad:** Crítica. **Objetivo:** revertir un lote defectuoso sin borrar ni sobrescribir cambios posteriores o registros dependientes.
+- **Acción ejecutable:** implementar `revertDataImportBatch`; recuperar snapshots de `DetalleRegistrosImportados`; comprobar transacciones hijas y modificaciones posteriores; preparar un plan de reversión; aplicar cambios con bloqueo y control transaccional; registrar conflictos por fila.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `AuditoriaMigraciones`, `DetalleRegistrosImportados` y funciones de importación/persistencia.
+- **Dependencias/riesgos:** snapshots íntegros; coordinación con F41-Task02; riesgo de pérdida de cambios posteriores, reversión parcial y concurrencia.
+- **Alcance:** reversión de lotes con restauración de valores previos; prohibidos los borrados masivos ciegos.
+- **Criterios de aceptación:** reversión completa en lote de prueba; protección y reporte de registros dependientes o modificados después; operación atómica o estado recuperable explícito; auditoría de actor, lote, filas y resultado; pruebas de rollback total, parcial, concurrencia y conflicto.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el informe indica que no existe función de reversión y E2E-41-11 falló.
+
+### [F41-Task02] Reanudación idempotente de importaciones interrumpidas
+- **Hallazgo de origen:** F41-09; CAR-F41-08; E2E-41-10.
+- **Severidad:** Crítica. **Objetivo:** reanudar desde la última fila confirmada sin duplicar registros consolidados.
+- **Acción ejecutable:** generar `idempotencyKey` estable por fila; persistir `batchCheckpoint` y estado durable por fila; consultar el estado antes de escribir; separar filas pendientes, confirmadas y fallidas; permitir reanudación tras timeout o reinicio.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `validateImportPreview`, `importDataWithColumnMapping` y tablas de lotes/detalle/auditoría.
+- **Dependencias/riesgos:** coordinar con F41-Task01 y mecanismos de idempotencia/concurrencia; riesgo de claves inestables y confirmaciones prematuras.
+- **Alcance:** importaciones masivas por lote y fila, con trazabilidad de cada intento.
+- **Criterios de aceptación:** una carga interrumpida de 500 filas se reanuda sin duplicar filas confirmadas; checkpoint sobrevive reinicios; reintentos concurrentes no duplican escrituras; errores por fila pueden reintentarse aisladamente; pruebas de caída antes/después de escritura y confirmación.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el informe describe duplicación al reintentar y E2E-41-10 falló.
+
+### [F41-Task03] Blindaje del aislamiento departamental en endpoints
+- **Hallazgo de origen:** F41-08; CAR-F41-04; E2E-41-09.
+- **Severidad:** Crítica. **Objetivo:** impedir consultas o modificaciones de expedientes ajenos aunque se manipule el identificador.
+- **Acción ejecutable:** aplicar autorización ABAC server-side en endpoints de lectura/escritura; resolver departamento desde identidad autenticada y contrastarlo con el ámbito propietario del recurso; denegar por defecto y registrar intentos fuera de ámbito.
+- **Archivos/módulos:** `backend/user-service/Code.gs`, `backend/academic-service/Code.gs`, `backend/accounting-service/Code.gs`, `ROLE_PERMISSIONS` y endpoints de expedientes/documentos/formularios.
+- **Dependencias/riesgos:** coordinar con RBAC/ABAC institucional y aislamiento F37; no confiar en departamento, rol o ID enviados por el cliente; riesgo IDOR/fuga interdepartamental.
+- **Alcance:** autorización por recurso y departamento en backend, no solo controles de interfaz.
+- **Criterios de aceptación:** ID de otro departamento denegado en todos los endpoints; ámbito derivado de sesión autenticada; excepciones privilegiadas explícitas; pruebas negativas con ID manipulado, cambio de rol y llamadas directas.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; E2E-41-09 falló al retornar datos generales tras alterar el ID.
+
+### [F41-Task04] Ciclo de vida y tracking de solicitudes de firma
+- **Hallazgo de origen:** F41-07; CAR-F41-05; E2E-41-08.
+- **Severidad:** Alta. **Objetivo:** gestionar firmas multietapa con estados verificables, orden de firmantes y notificaciones controladas.
+- **Acción ejecutable:** implementar estados `Borrador`, `Enviado`, `Entregado`, `Visto`, `Firmado`, `Rechazado`, `Cancelado` y `Vencido`; soportar secuencia de firmantes, tokens criptográficamente seguros, vencimiento/revocación y reintentos de notificación; registrar transiciones.
+- **Archivos/módulos:** `backend/user-service/Code.gs`, `registerDocumentSignature`, `SolicitudesFirmas`, `FirmasConformidades` y notificaciones.
+- **Dependencias/riesgos:** identidad, firma electrónica, trazabilidad y notificaciones; riesgo de enlaces reutilizables, transiciones inválidas y firmas fuera de orden.
+- **Alcance:** ciclo de vida de solicitudes; el registro final no sustituye evidencia de entrega o lectura.
+- **Criterios de aceptación:** transiciones validadas por estado/actor; dos o más firmantes completan el orden configurado; tokens impredecibles, de un solo uso y revocables; estados consultables; reintentos no duplican eventos/firmas; pruebas de rechazo, expiración, revocación y orden.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el informe registra firma unitaria inmediata sin tracking y E2E-41-08 falló.
+
+### [F41-Task05] Servicio OCR con corrección humana asistida
+- **Hallazgo de origen:** F41-05; CAR-F41-06; E2E-41-06.
+- **Severidad:** Alta. **Objetivo:** extraer texto de documentos escaneados y validar/corregir resultados antes de persistirlos.
+- **Acción ejecutable:** integrar OCR para español; procesar PDF escaneado e imágenes; devolver texto, coordenadas y confianza por campo; crear interfaz comparativa que marque baja confianza y exija revisión humana.
+- **Archivos/módulos:** servicio OCR/adaptador backend, almacenamiento temporal, frontend de digitalización y flujo de formularios.
+- **Dependencias/riesgos:** definir proveedor, costo, privacidad, retención y límites; riesgo de errores OCR y exposición de datos sensibles.
+- **Alcance:** extracción asistida con revisión humana obligatoria; no persistir como dato validado automáticamente.
+- **Criterios de aceptación:** PDF escaneado produce texto/campos con confianza; valores dudosos resaltados; corrección humana registrada; confirmación requerida antes de persistir; pruebas con baja resolución, inclinación, tablas y caracteres españoles.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; no se localizaron funciones OCR y E2E-41-06 quedó bloqueada.
+
+### [F41-Task06] Convertidor estructural DOCX a formularios digitales
+- **Hallazgo de origen:** F41-04; E2E-41-05.
+- **Severidad:** Media. **Objetivo:** convertir documentos Word en propuestas de formularios digitales conservando su estructura reconocible.
+- **Acción ejecutable:** implementar parser DOCX para tablas, etiquetas y controles de contenido; generar esquema editable; exigir revisión y aprobación antes de publicar.
+- **Archivos/módulos:** backend de formularios, `saveInstitutionalForm`, frontend de creación/edición y almacenamiento de plantillas.
+- **Dependencias/riesgos:** catálogo de campos, validaciones y seguridad de archivos; riesgo de interpretar texto ordinario como campo o perder formato.
+- **Alcance:** conversión asistida DOCX; OCR de PDF escaneado pertenece a F41-Task05.
+- **Criterios de aceptación:** DOCX de prueba con tablas/controles genera esquema editable; etiquetas, tipos y orden preservados; ambigüedades marcadas; publicación requiere aprobación; pruebas con tablas anidadas, celdas combinadas y controles vacíos.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; existe creación JSON, pero no convertidor DOCX y E2E-41-05 falló.
+
+### [F41-Task07] Normalizador inteligente de encabezados y correspondencia de columnas
+- **Hallazgo de origen:** F41-01; CAR-F41-01; E2E-41-01/E2E-41-02.
+- **Severidad:** Media. **Objetivo:** reconocer encabezados equivalentes pese a diferencias de acentos, mayúsculas, espacios, orden y sinónimos.
+- **Acción ejecutable:** normalizar Unicode, tildes, espacios y puntuación; aplicar diccionario de sinónimos y similitud difusa con umbral configurable; mostrar sugerencias y exigir confirmación en casos ambiguos.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `validateImportPreview` e interfaz de mapeo.
+- **Dependencias/riesgos:** conservar mapeo manual y tipos/valores originales; riesgo de emparejamiento falso y asignación a columna incorrecta.
+- **Alcance:** sugerencia de correspondencia de encabezados; no modificar celdas ni inferir silenciosamente casos ambiguos.
+- **Criterios de aceptación:** reconoce tildes, mayúsculas, espacios, orden y sinónimos; muestra confianza; umbral bajo requiere aprobación; pruebas con encabezados desconocidos, duplicados y falsos amigos.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; existe mapeo interactivo, pero el informe recomienda normalización y similitud difusa.
+
+### [F41-Task08] Calibración de fidelidad visual e impresión multiformato
+- **Hallazgo de origen:** F41-06; CAR-F41-07; E2E-41-07; registro H.
+- **Severidad:** Media. **Objetivo:** mantener posición y tipografía de campos superpuestos al previsualizar, exportar e imprimir en Carta, Oficio y A4.
+- **Acción ejecutable:** normalizar coordenadas/dimensiones por formato; establecer CSS de impresión y escalado; comparar PDF con plantilla de referencia; corregir desbordamientos y desplazamientos.
+- **Archivos/módulos:** `js/teacher.js`, `previewSchoolDocument`, editor CUV y generación PDF backend.
+- **Dependencias/riesgos:** diseñador universal de documentos/plantillas; riesgo de regresión y diferencias entre motores de impresión.
+- **Alcance:** renderizado y fidelidad de campos en los formatos indicados, preservando plantillas vigentes.
+- **Criterios de aceptación:** posiciones dentro de tolerancia definida en Carta, Oficio y A4; sin recortes/desbordamientos; regresión visual con varias plantillas, escalas y navegadores.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; se observó desplazamiento A4 vs Carta y E2E-41-07 fue aprobada con observaciones.
+
+### Reconciliación, discrepancias y límites
+- **F41-Task01..F41-Task08:** formalizadas desde el Plan de Resolución; IDs, prioridades y estados preservados.
+- **F41-Task09..F41-Task11:** la bitácora confirma su existencia histórica como tareas P2, pero no conserva sus descripciones; quedan pendientes de recuperación documental, sin inventar objetivos ni criterios.
+- **F41-03/CAR-F41-02:** completa y verificada según el informe; no se crea tarea correctiva para concurrencia de identificadores.
+- **E2E-41-01..E2E-41-12 y métricas 100%/90%/80%:** resultados históricos; esta normalización no reejecuta pruebas ni certifica el estado actual del código.
+- **Dictamen:** Requiere Mejoras / No Aprobada para Producción Crítica; añadir este bloque no cierra brechas funcionales.

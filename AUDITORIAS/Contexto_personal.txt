@@ -4983,3 +4983,30 @@ CHECKPOINT C1.142 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 40
 - Próximo informe pendiente: AUDITORIA_FASE_41_CONTINUIDAD_Y_CONSERVACION_OPERATIVA.md (confirmar nombre exacto en el directorio antes de continuar).
 - Estado de TASK-DOC-C1.112-01: En curso.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.143 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 41
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida: ba696ddac83c7921828faa3058e387f439bcc6cd.
+- HEAD de rama base verificado antes del cambio: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID operativo de sesión: IMA-AUDIT-20261106-2117Z-MIGRACION (no es ID nativo de ChatGPT).
+- Checkpoint anterior: C1.142 (Fase 40 normalizada).
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_FASE_41_PRUEBAS_INTEGRALES_DIGITALIZACION.md.
+- SHA original del informe: e897c073ab94dd4d9a56591e6bc08cc32ff26522.
+- SHA original del contexto: 9faeefe7bff6d369e952adeca228500b310ce872.
+- Inspección: informe completo (17416 caracteres), 10 subcapacidades F41-01..F41-10, 8 criterios CAR-F41-01..CAR-F41-08, 12 pruebas E2E-41-01..E2E-41-12 y ocho tareas explícitas en el Plan de Resolución.
+- Tareas formalizadas: F41-Task01..F41-Task08; prioridades P0 (01..04) y P1 (05..08); se añadieron origen, severidad, objetivo, acción, módulos, dependencias/riesgos, alcance, criterios, estado y evidencia.
+- Discrepancia histórica: Auditoria.txt confirma un backlog consolidado de 11 tareas F41-Task01..F41-Task11 y ubica Task09..Task11 en P2, pero no contiene sus descripciones. No se inventan ni sustituyen; queda pendiente su recuperación documental.
+- Capacidad completa preservada: F41-03/CAR-F41-02 (concurrencia de identificadores) no genera tarea correctiva.
+- Dictamen preservado: Requiere Mejoras / No Aprobada para Producción Crítica. Resultados E2E y métricas 100%/90%/80% históricos; no reejecutados.
+- Archivos modificados: AUDITORIAS/AUDITORIA_FASE_41_PRUEBAS_INTEGRALES_DIGITALIZACION.md; AUDITORIAS/Contexto_personal.txt.
+- No se modificaron código, pruebas, Pendientes.md, completadas.md, ChangesLogs.txt, Auditoria.txt, metodología, README, plan maestro ni rama base.
+- Pruebas runtime no ejecutadas; cambio exclusivamente documental.
+- Próximo paso: inventariar informes restantes y verificar presencia del bloque obligatorio antes de elegir el siguiente archivo.
+- Estado de TASK-DOC-C1.112-01: En curso.
+================================================================
