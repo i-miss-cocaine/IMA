@@ -5966,3 +5966,19 @@ AUDITORÍA DE completadas.md - T-UX-17 (2026-11-06)
 - Progreso: 58/183 identificadores auditados; 125 pendientes.
 - Siguiente tarea: T-UX-18 - Completar los componentes compartidos de formularios, tablas y vistas de detalle.
 ===============================================================================
+
+
+===============================================================================
+AUDITORÍA DE completadas.md - T-UX-18 (2026-11-06)
+===============================================================================
+- Dictamen: NO CUMPLE. La tarea está marcada [X], pero los componentes compartidos de formularios, tablas y vistas de detalle no acreditan el alcance ni los criterios.
+- Especificación: completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676; T-UX-18 exige normalización de formularios/validaciones/mensajes, estados de tabla carga/vacío/error y acciones por fila sobre el registro correcto.
+- Código: js/ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67; css/style.css SHA f1ff84312ce70949a58eaa099b2aad0ff0a59cb6.
+- AUD-NG-207 (MEDIO/P2): renderPaginatedTable (ui-common.js:1998-2069) solo renderiza filas y vacío; no ofrece estado de carga/error/reintento ni contrato explícito de acción/ID de registro. El callback remoto solo recibe página y tamaño. No se encontraron consumidores en los 20 módulos JS revisados ni en 13 páginas HTML de panel/entrada. El hallazgo se vincula a TASK-429, que ya cubre integración, estados, reintento, filtros/orden y paginación; no se duplica.
+- AUD-NG-208 (MEDIO/P2): no existe helper/clase común de campos en ui-common.js/style.css; CSS 749-809 estiliza select y 996-1010 define foco, pero no hay contrato común input/textarea/label/error. Ejemplos: student-dashboard.html:82-105 (p-3), teacher-dashboard.html:219-278 (p-3/font-medium), js/accounting.js:124-158 (p-2/text-xs), dashboard-recursos-humanos.html:190-258 (p-2.5), dashboard-secretaria.html:367-423 (px-3 py-2/text-sm). Se crea TASK-492 para estados y presentación común frontend. TASK-130 cubre ayudas, TASK-307 reglas de negocio backend, TASK-430 sistema de diseño y T-UX-19 semántica accesible; se mantienen sus alcances sin duplicación.
+- AUD-NG-209 (ALTO/P1): renderSharedDetailViewModal (ui-common.js:5303-5365) solo procesa título/subtítulo/insignia/campos; no hay config.actions ni callback/ID de registro pese al comentario que promete acciones por fila. Concatena title, subtitle, badgeText, badgeColor, modalId, f.label y f.value en innerHTML/handlers sin escape/allowlist; riesgo latente de inyección si recibe datos no confiables. trackModalFocus registra el foco previo, pero el helper no enfoca el diálogo ni restaura foco en cierres por botón/fondo. No se encontraron consumidores en los 20 módulos JS ni 13 páginas HTML revisados. Se crea TASK-493. Coordinar con TASK-482 (salida segura Omnibox), TASK-486 (estado de navegación), T-UX-19 y TASK-484.
+- Pruebas: inspección estática/manual y búsqueda de consumidores. No se ejecutaron navegador/DOM, pruebas visuales, validación real de formularios, callbacks de fila, XSS, foco/teclado ni suites automatizadas.
+- Código fuente, completadas.md, METODOLOGIA_DESARROLLO.md y ChangesLogs.txt sin modificaciones. Pendientes.md recibe TASK-492 y TASK-493; TASK-429 ya cubre el defecto de tabla.
+- Progreso: 59/183 identificadores auditados; 124 pendientes.
+- Siguiente tarea: T-UX-19 - Verificar la accesibilidad y corregir las barreras detectadas.
+===============================================================================

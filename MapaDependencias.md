@@ -1481,3 +1481,30 @@ Relaciones:
 - T-UX-03 es el requisito inicial; T-UX-17 amplía la protección y está marcada [X] en completadas.md.
 - AUD-NG-182/TASK-479 ya documenta la falta de snapshot, limpieza prematura, gestión dinámica, teardown y pruebas conductuales. Se revalidó TASK-479 en Pendientes.md y no se crea un duplicado.
 - Dictamen T-UX-17: NO CUMPLE. Inspección estática/manual; no se ejecutaron navegador, DOM, guardado asíncrono, eventos cancelables ni suites.
+
+
+## Componentes compartidos de formularios, tablas y detalle (T-UX-18, C1.61)
+
+### Formularios
+- `css/style.css` SHA `f1ff84312ce70949a58eaa099b2aad0ff0a59cb6`: tokens de color globales en líneas 1-34; estilos de controles `select` en 749-809; foco global en 996-1010. No hay clases comunes de campos, etiquetas, controles input/textarea ni errores de validación.
+- Consumidores con estilos divergentes: `student-dashboard.html` SHA 6379ea0ed39d71b89747a0280bb925fdf12202c1 (form profile 82-105, p-3); `teacher-dashboard.html` SHA cbb9e6a272a7d8ad33f99727303305d950533e71 (form tareas 219-278, p-3/font-medium); `js/accounting.js` SHA a79ead4a54ad6fdb2f1e9df4775491ff7191a0c7 (form kardex 124-158, p-2/text-xs); `dashboard-recursos-humanos.html` SHA 406bedbae5a5bb3b5c03e4ea7aaa95ed68aea8ee (form incidencias 190-258, p-2.5); `dashboard-secretaria.html` SHA fa0d8c23aace24a6acab2d4956398a7f5e1309b8 (form eventos 367-423, px-3 py-2/text-sm).
+- Dependencias de mejora: `js/ui-common.js` para contrato/helper de campo; `css/style.css` para tokens/estados; consumidores HTML/JS de cada rol. T-UX-19 cubre semántica accesible; TASK-130 ayuda contextual; TASK-307 reglas de negocio de validación; TASK-430 sistema visual general.
+
+### Tablas
+- `window.renderPaginatedTable(containerId,data,options)`, `js/ui-common.js:1998-2069`: render local/remoto, `options.renderRow(item,index)`, fila vacía fija; sin API para loading/error/retry ni contrato de ID/acción. Callback remoto solo recibe página/tamaño.
+- `window.setupAdvancedTableFilters(containerId,config)`, `js/ui-common.js:2129-2199`: filtros locales y persistencia de filtros guardados. Defectos adicionales ya asignados a AUD-NG-201/AUD-NG-202 y TASK-429.
+- `window.renderUIProgressSkeleton`, `js/ui-common.js:5147-5165`; CSS skeleton `603-639`: mecanismo genérico separado, no conectado a estados del paginador.
+- `css/style.css:413-436`: solo estilos base de contenedor/encabezados/celdas `.table-ima`.
+- TASK-429 conserva el alcance de integración, estados, reintento, paginación, filtros y orden. TASK-486 mantiene snapshots/restauración de listas al navegar.
+
+### Modal compartido de detalle
+- `window.renderSharedDetailViewModal(config)`, `js/ui-common.js:5303-5365`: contrato actual `modalId/title/subtitle/badgeText/badgeColor/fields`; no procesa acciones ni callbacks. El comentario menciona acciones por fila, pero no hay implementación.
+- Renderiza `title/subtitle/badgeText/badgeColor/fields.label/fields.value/modalId` mediante concatenación y `innerHTML` sin escape/allowlist. Riesgo latente de inyección si recibe valores no confiables.
+- Llama `trackModalFocus()` (definida en 88-91), pero no mueve foco al diálogo ni restaura el foco al cerrar por botón/fondo. Cierre por Escape depende del listener global en 92-145.
+- No se localizaron consumidores en los 20 módulos JS distintos de ui-common ni en las 13 páginas HTML de panel/entrada revisadas.
+- Reconciliación: TASK-493 cubre implementación segura, acciones por registro, integración y pruebas; TASK-482 se limita a salida segura del Omnibox; TASK-486 a snapshot/restauración; T-UX-19 accesibilidad; TASK-484 framework de pruebas UX.
+
+### Pruebas
+- `runUXSuiteTests`, `js/ui-common.js:1843-1936`, cubre UX-01..UX-09; no tiene caso de T-UX-18.
+- Suites `tests/regression/academic-grading-suite.js` y `tests/regression/modular-dashboard-suite.js` no referencian los componentes revisados.
+- Inspección estática/manual; no se ejecutaron navegador/DOM, pruebas de foco, XSS ni validación de estados reales.

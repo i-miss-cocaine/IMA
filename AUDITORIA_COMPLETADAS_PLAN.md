@@ -719,3 +719,18 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Archivos/documentos:** anexado resultado en Auditoria.txt, MapaDependencias.md y este plan; creado AUDITORIA_COMPLETADAS_T-UX-17.md; checkpoint C1.60 en Contexto_personal.txt.
 - **Progreso:** 58/183 identificadores auditados; 125 pendientes.
 - **Siguiente tarea:** T-UX-18 - Completar los componentes compartidos de formularios, tablas y vistas de detalle.
+
+
+## 63. Resultado C1.61 - T-UX-18 (2026-11-06)
+
+- **Dictamen:** NO CUMPLE. No hay contrato común de campos de formulario; los estilos divergen entre Student/Teacher/Accounting/RH/Secretaría. El paginador solo muestra vacío y carece de loading/error/retry; el modal compartido de detalle no implementa acciones, no está integrado y concatena datos sin escape.
+- **AUD-NG-207 (MEDIO/P2):** renderPaginatedTable sin estados de carga/error/reintento ni contrato de acción/ID; sin consumidores hallados. Se vincula a TASK-429 existente (AUD-NG-201/202, T-UX-15, paginación/estados/consumidores); no se crea duplicado.
+- **AUD-NG-208 (MEDIO/P2):** ausencia de contrato compartido de controles/estados visuales de formularios y divergencia entre vistas. Nueva TASK-492. Coordinar con TASK-130 (ayudas), TASK-307 (reglas de validación de negocio), TASK-430 (sistema de diseño) y T-UX-19 (semántica accesible).
+- **AUD-NG-209 (ALTO/P1):** renderSharedDetailViewModal sin acciones/callback/ID, sin consumidores, concatenación insegura en innerHTML/handlers y manejo de foco incompleto. Nueva TASK-493. Coordinar con TASK-482 (Omnibox seguro), TASK-486 (estado de navegación), T-UX-19 y TASK-484.
+- **Reconciliación:** TASK-429 cubre el componente de tablas, estados, filtros, orden, paginación y consumidores; TASK-486 cubre snapshot/restauración de contexto; TASK-482 solo el renderizado seguro del Omnibox; TASK-484 pruebas UX-01..09. No se duplican esos alcances.
+- **Evidencia:** js/ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67, líneas 1843-1936, 1998-2069, 2129-2199, 5147-5165 y 5303-5365; css/style.css SHA f1ff84312ce70949a58eaa099b2aad0ff0a59cb6, líneas 413-436, 603-639, 749-809 y 996-1010; consumidores y SHAs detallados en AUDITORIA_COMPLETADAS_T-UX-18.md.
+- **Pruebas:** inspección estática/manual y búsqueda de consumidores en 20 módulos JS y 13 páginas HTML de panel/entrada. No se ejecutaron navegador/DOM, pruebas visuales, callbacks de fila, XSS, foco/teclado ni validación runtime.
+- **Código fuente:** sin modificaciones. completadas.md, METODOLOGIA_DESARROLLO.md y ChangesLogs.txt intactos. Pendientes.md actualizado solo en NG_beta_0.0.0.1_work con TASK-492/TASK-493.
+- **Archivos/documentos:** anexado resultado en Auditoria.txt, MapaDependencias.md y plan; creado AUDITORIA_COMPLETADAS_T-UX-18.md; checkpoint C1.61 en Contexto_personal.txt.
+- **Progreso:** 59/183 identificadores auditados; 124 pendientes.
+- **Siguiente tarea:** T-UX-19 - Verificar la accesibilidad y corregir las barreras detectadas.

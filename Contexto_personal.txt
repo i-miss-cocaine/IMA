@@ -2724,3 +2724,40 @@ ARCHIVOS Y SHAs:
 - Publicación: un único commit mediante Git Database API, descendiente del HEAD de partida. El SHA final se confirmará externamente tras actualizar la referencia.
 - Próxima acción concreta: verificar el commit de cierre, árbol y cinco archivos incluidos; confirmar HEAD de NG_beta_0.0.0.1_work y que la rama base conserve SHA 44d9891132332e692dbe2ba8602b41f50a508a59; después iniciar T-UX-18 desde su especificación y reconciliar componentes compartidos de formularios/tablas/vistas de detalle con tareas posteriores.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.61 - CIERRE DE AUDITORÍA T-UX-18 (2026-11-06)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto real: Contexto_personal.txt.
+- Rama base protegida: NG_beta_0.0.0.1; HEAD verificado al iniciar: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- HEAD de partida verificado: 79127202e3407e8d1b3ea37c2745f945a4c43e90 (checkpoint C1.60 / cierre T-UX-17).
+- Última tarea auditada: T-UX-18 - Componentes compartidos de formularios, tablas y vistas de detalle. Dictamen NO CUMPLE.
+- Tarea en curso: ninguna; T-UX-18 queda cerrada documentalmente.
+- Siguiente tarea exacta: T-UX-19 - Verificar la accesibilidad y corregir las barreras detectadas.
+- Progreso: 59/183 identificadores auditados; 124 pendientes.
+- Lote: Fase 3, experiencia de usuario y navegación unificada.
+
+RESULTADO Y RECONCILIACIÓN:
+- T-UX-18 figura [X] en completadas.md (SHA f57f1aef832e81e44fc4f7ec36a852d50e464676). Exige formularios equivalentes coherentes, estados de tabla carga/vacío/error y acciones por fila sobre el registro correcto.
+- Código: js/ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67; css/style.css SHA f1ff84312ce70949a58eaa099b2aad0ff0a59cb6.
+- AUD-NG-207 (MEDIO/P2): renderPaginatedTable líneas 1998-2069 solo presenta vacío; carece de loading/error/retry y contrato de acción/ID. El callback remoto recibe únicamente página/tamaño. No se hallaron consumidores en 20 módulos JS distintos de ui-common ni 13 páginas HTML de panel/entrada. Se vincula a TASK-429 existente; no se duplica.
+- AUD-NG-208 (MEDIO/P2): ausencia de clases/helper compartidos para label/input/select/textarea/estados/error. CSS 749-809 solo estiliza select y 996-1010 foco general. Evidencia de divergencia: student-dashboard.html 82-105 (p-3); teacher-dashboard.html 219-278 (p-3); js/accounting.js 124-158 (p-2); dashboard-recursos-humanos.html 190-258 (p-2.5); dashboard-secretaria.html 367-423 (px-3 py-2). Nueva TASK-492; coordinar con TASK-130, TASK-307, TASK-430 y T-UX-19.
+- AUD-NG-209 (ALTO/P1): renderSharedDetailViewModal líneas 5303-5365 no implementa actions/callback/ID pese a comentario, no tiene consumidores hallados y concatena title/subtitle/badgeText/badgeColor/fields/modalId sin escape/allowlist en innerHTML/handlers. trackModalFocus conserva elemento activo pero no enfoca el diálogo ni restaura foco al cerrar por botón/fondo. Nueva TASK-493; coordinar con TASK-482, TASK-486, T-UX-19 y TASK-484.
+- Reconciliación de tabla: TASK-429 ya cubre integración/consumidores, estados, reintento, filtros/orden/paginación; AUD-NG-201/202; no crear duplicado. TASK-486 es snapshot/restauración de lista; TASK-482 solo Omnibox seguro; TASK-484 pruebas UX-01..09.
+- Pruebas realizadas: inspección estática/manual de especificación, funciones, CSS, consumidores y backlog. No se ejecutaron navegador/DOM, pruebas visuales, XSS, callbacks, foco/teclado ni suites.
+
+ARCHIVOS Y SHAs:
+- HEAD de partida: 79127202e3407e8d1b3ea37c2745f945a4c43e90.
+- Auditoria.txt previo: 3fbc9d5dc7e39f86175e9c241b8ae1d6f9b626de.
+- MapaDependencias.md previo: fd864d896de4dbbd8b2e6f54be8cf18973385747.
+- AUDITORIA_COMPLETADAS_PLAN.md previo: 182736242e7545ae83298388308a100decae5edd.
+- Contexto_personal.txt previo: aae6a282201af10d5177a87f357d66d5872a5d2a.
+- Pendientes.md blob previo: undefined.
+- Código fuente js/ui-common.js, css/style.css y módulos consumidores sin modificaciones; completadas.md, METODOLOGIA_DESARROLLO.md y ChangesLogs.txt intactos.
+- Archivos modificados en esta iteración: Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Pendientes.md, nuevo AUDITORIA_COMPLETADAS_T-UX-18.md y Contexto_personal.txt.
+- Publicación: un único commit por Git Database API, hijo del HEAD de partida. El SHA final se verificará externamente tras actualizar la referencia.
+- Próxima acción: verificar HEAD/árbol/archivos del commit; confirmar NG_beta_0.0.0.1_work actualizado y NG_beta_0.0.0.1 intacta; después iniciar T-UX-19 desde su especificación, reconciliando T-UX-18/TASK-492/TASK-493 y las tareas de accesibilidad/pruebas ya existentes.
+================================================================

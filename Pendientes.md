@@ -19612,3 +19612,57 @@ AUD-NG-163 permanece DUPLICADA y consolidada; no reabrirla como tarea independie
   - Los casos positivos, negativos y de concurrencia quedan cubiertos por pruebas conductuales; los casos no ejecutados no cuentan como aprobados.
 - **Relaciones y límites:** TASK-481 resuelve autorización/alcance de datos; TASK-482 resuelve XSS y salida segura; TASK-484 define pruebas conductuales UX-01..UX-09. TASK-491 cubre navegación y resiliencia del consumidor Omnibox sin duplicar esos alcances.
 - **Estado:** [ ] Pendiente.
+
+
+---
+### [TASK-492] [T-UX-18 / AUD-NG-208] [P2] Normalizar los campos y estados visuales de formularios compartidos
+- **Origen del Hallazgo:** Auditoria.txt (AUD-NG-208), auditoría T-UX-18, C1.61.
+- **Severidad/Clasificación:** Medio / P2 (inconsistencia visual y funcional entre formularios equivalentes).
+- **Archivos Involucrados:**
+  - `js/ui-common.js` (contrato/helper compartido de campo, si corresponde).
+  - `css/style.css` (tokens y estilos comunes de campo/estado).
+  - Formularios consumidores en `student-dashboard.html`, `teacher-dashboard.html`, `js/accounting.js`, `dashboard-recursos-humanos.html`, `dashboard-secretaria.html` y demás vistas equivalentes que se identifiquen en el inventario.
+- **Dependencias Expuestas:** tokens CSS institucionales; controles HTML `label/input/select/textarea`; atributos `required/disabled/readonly`; estados de validación; T-UX-19 (semántica accesible); TASK-130 (ayudas contextuales); TASK-307 (reglas de validación de negocio); TASK-430 (sistema de diseño institucional).
+- **Descripción del Alcance:**
+  1. Definir un contrato común de presentación para etiquetas, controles y mensajes de validación de campos, sin trasladar al frontend reglas de negocio que pertenecen al backend.
+  2. Unificar estados visuales default, focus, required/optional, disabled/readonly, invalid/error y valid/success para input, select y textarea, respetando el tipo nativo y la validación HTML.
+  3. Proporcionar un patrón consistente para texto de ayuda y mensajes de error; no sustituir etiquetas por placeholders ni duplicar el catálogo de ayudas de TASK-130.
+  4. Migrar formularios equivalentes de los paneles principales a las clases/contrato común y retirar divergencias locales solo cuando no alteren la lógica ni el diseño funcional del módulo.
+  5. Coordinar las asociaciones label/control y error/control con los requisitos semánticos de T-UX-19, sin considerar el estilo visual como sustituto de accesibilidad.
+  6. Mantener compatibilidad con temas institucionales y diseño responsivo.
+- **Criterios de Aceptación:**
+  - Campos equivalentes en Estudiante, Docente, Contabilidad, RR. HH. y Secretaría comparten las mismas reglas de espaciado, tipografía, bordes y estados.
+  - Los estados inválido/error y válido/éxito son distinguibles y consistentes; el mensaje no depende de alertas improvisadas ni de placeholders.
+  - Campos requeridos, opcionales, deshabilitados y solo lectura se diferencian de forma uniforme sin cambiar sus reglas de negocio.
+  - La validación HTML existente sigue funcionando y los errores de backend se presentan con el patrón común.
+  - Las pruebas reproducibles cubren input/select/textarea, required, disabled, readonly, invalid, mensajes, teclado y viewports representativos.
+  - Las pruebas no modifican datos productivos ni debilitan las validaciones del backend.
+- **Relaciones y límites:** TASK-130 cubre ayudas permanentes y descripciones; TASK-307 cubre motor/reglas de validación de formularios institucionales; TASK-430 cubre sistema visual general; T-UX-19 cubre etiquetas y asociación semántica. TASK-492 se limita al contrato visual/funcional compartido de campos en los formularios generales; no duplica esas tareas.
+- **Estado:** [ ] Pendiente.
+
+
+---
+### [TASK-493] [T-UX-18 / AUD-NG-209] [P1] Completar e integrar de forma segura el modal compartido de detalle
+- **Origen del Hallazgo:** Auditoria.txt (AUD-NG-209), auditoría T-UX-18, C1.61.
+- **Severidad/Clasificación:** Alto / P1 (componente de detalle incompleto y riesgo de inyección al renderizar datos no confiables).
+- **Archivos Involucrados:**
+  - `js/ui-common.js` (`renderSharedDetailViewModal`, `trackModalFocus` y consumidores de vistas de detalle).
+  - `css/style.css` (estados visuales del modal compartido cuando corresponda).
+  - Vistas/listados consumidores y `tests/regression/`.
+- **Dependencias Expuestas:** `window.renderSharedDetailViewModal(config)`; `window.trackModalFocus`; `modalId/title/subtitle/badgeText/badgeColor/fields`; callbacks de acciones; identificador estable del registro; modal `role=dialog`; navegación y contexto de listas; T-UX-19; TASK-482; TASK-484; TASK-486.
+- **Descripción del Alcance:**
+  1. Definir y documentar un contrato de configuración validado que incluya los campos de detalle y una colección explícita de acciones permitidas, con etiqueta, estado y callback que reciba el ID/dato del registro correcto.
+  2. Reemplazar la concatenación de valores de configuración no confiables en `innerHTML` y handlers inline por construcción DOM segura (`textContent`, atributos controlados y `addEventListener`) o escape específico y probado por contexto. Validar `modalId` y restringir colores/variantes a una allowlist.
+  3. No ejecutar IDs, títulos, valores, colores ni datos del backend como código/atributos; las operaciones sensibles deben seguir verificando autorización en servidor.
+  4. Implementar cierre coherente por botón, fondo y Escape, foco inicial/retorno del foco y ciclo de vida sin listeners duplicados. Coordinar la semántica completa de teclado/diálogo con T-UX-19.
+  5. Integrar el componente en flujos reales de detalle de al menos dos módulos con datos sintéticos y acciones ligadas a IDs estables; coordinar el snapshot/restauración de la lista con TASK-486.
+  6. Incorporar estados de contenido vacío y error cuando la consulta de detalle sea parte del contrato del consumidor; no presentar un detalle vacío como registro válido.
+- **Criterios de Aceptación:**
+  - Títulos, subtítulos, etiquetas y valores que contengan HTML, comillas, atributos de evento o secuencias de cierre se muestran como texto inerte.
+  - Valores de `badgeColor` y `modalId` no pueden alterar clases, atributos ni handlers fuera de las opciones permitidas.
+  - Cada acción recibe el identificador del registro que originó el modal; dos registros abiertos sucesivamente no comparten accidentalmente callbacks ni IDs.
+  - El modal abre, cierra por botón/fondo/Escape y devuelve el foco al disparador; no acumula listeners ni deja overlays activos.
+  - Al navegar desde un listado a detalle y regresar, la restauración del estado se delega al contrato de TASK-486 sin sobrescribir filtros/página de la vista saliente.
+  - Pruebas de regresión reproducibles cubren payloads malformados, XSS, acciones con IDs diferentes, doble apertura, cierre y foco. Usan DOM/fixtures controlados y no mutan datos productivos.
+- **Relaciones y límites:** TASK-482 cubre salida segura del Omnibox; TASK-486 cubre snapshots/restauración de listas; T-UX-19 cubre accesibilidad general; TASK-484 cubre el framework de pruebas UX. TASK-493 se limita al modal compartido de detalle y su integración; no duplica esos alcances.
+- **Estado:** [ ] Pendiente.
