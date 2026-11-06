@@ -74,3 +74,62 @@ T-UX-16 **NO CUMPLE**. La existencia de un helper frontend y de endpoints de not
 - `Pendientes.md`: conserva AUD-NG-203..206 y las ampliaciones de TASK-221/227/316/318, AUD-NG-036 y AUD-NG-024.
 - No se modificaron `completadas.md` ni `ChangesLogs.txt`.
 - Siguiente tarea: T-UX-17 - Corregir y completar la protección de cambios no guardados.
+
+
+---
+
+## Tareas ejecutables derivadas de los hallazgos
+
+> Esta auditoría no crea tareas funcionales paralelas. Los cuatro hallazgos AUD-NG-203..AUD-NG-206 se formalizan dentro de sus tareas existentes, preservando sus IDs, prioridades y relaciones. Las marcas históricas [X] de F10-Task12/F11-Task03 no acreditan por sí solas el contrato integrado descrito aquí.
+
+### [TASK-227] Corregir consulta, contrato y eventos de notificaciones
+- **Hallazgo de origen:** AUD-NG-203 (ALTO/P1); parte de AUD-NG-206 (ALTO/P1).
+- **Severidad:** Alta. **Objetivo:** restablecer la lectura de notificaciones con un contrato único, consistente y compatible con todos los productores.
+- **Acción ejecutable:** declarar y validar explícitamente los filtros de `getUnifiedNotifications`; corregir la consulta que hoy puede producir `ReferenceError`; unificar el esquema de `BandejaNotificaciones` y el orden/tipo de sus columnas para `createUserNotification` y `sendMultiChannelNotification`; añadir migración/validación de registros históricos sin desplazar campos.
+- **Archivos/módulos:** `backend/user-service/Code.gs`; `getUnifiedNotifications`; `getUserNotifications`; `getOrCreateSheet`; `createUserNotification`; `sendMultiChannelNotification`; hoja `BandejaNotificaciones`.
+- **Dependencias/riesgos:** coordinar con TASK-316 y TASK-045; riesgo de interpretar campos desplazados como destinatario, fecha, estado o destino de acción.
+- **Alcance:** contrato backend y persistencia de notificaciones; no asumir que la existencia de endpoints demuestra integración con paneles.
+- **Criterios de aceptación:** lectura sin excepciones con hoja vacía y con datos; esquema único versionado; ambos productores escriben el mismo orden y tipos; filtros por usuario/categoría/estado funcionan; registros antiguos migrados o rechazados de forma explícita; pruebas de compatibilidad y regresión.
+- **Prioridad:** P1. **Estado:** Pendiente de ejecución/revalidación.
+- **Evidencia de cierre:** pendiente; el informe documenta variables no declaradas y escrituras incompatibles de nueve y doce columnas.
+
+### [TASK-221] Aplicar autorización por propietario y ámbito en la bandeja unificada
+- **Hallazgo de origen:** AUD-NG-204 (CRÍTICO/P0); coordinación con AUD-NG-036 y AUD-NG-024.
+- **Severidad:** Crítica. **Objetivo:** asegurar que cada usuario solo lea y modifique notificaciones, tareas y aprobaciones dentro de su identidad y ámbito autorizado.
+- **Acción ejecutable:** hacer que `markNotificationAsRead` valide en backend la identidad autenticada y la propiedad del registro antes de mutar; derivar rol/departamento desde contexto verificado y no desde payload; eliminar confianza en IDs de usuario, tutor, revisor o departamento suministrados por el cliente, conservando los alcances específicos de AUD-NG-036/AUD-NG-024.
+- **Archivos/módulos:** `backend/user-service/Code.gs`; `markNotificationAsRead`; `getDepartmentalWorkInbox`; `getAuthorizationRequests`; `processWorkflowDecision`; validadores RBAC/ABAC.
+- **Dependencias/riesgos:** TASK-318; AUD-NG-036; AUD-NG-024; matriz de permisos institucional. Riesgo de IDOR, lectura cruzada y decisiones atribuidas a otra identidad.
+- **Alcance:** controles server-side por usuario, recurso y departamento; no limitarse a ocultar botones en frontend.
+- **Criterios de aceptación:** lectura/marcado de notificación ajena denegados; departamento y rol se derivan de identidad verificada; payload manipulado no altera la autoridad efectiva; pruebas negativas con ID ajeno, departamento falso, tutor falso y revisor falso; cada denegación queda trazada.
+- **Prioridad:** P0. **Estado:** Pendiente de ejecución/revalidación.
+- **Evidencia de cierre:** pendiente; el informe detectó actualización por ID sin comprobación de propietario y confianza en departamento/rol del payload.
+
+### [TASK-318] Completar la bandeja personal integrada de tareas, notificaciones y aprobaciones
+- **Hallazgo de origen:** AUD-NG-205 (ALTO/P1); parte de AUD-NG-204 (CRÍTICO/P0).
+- **Severidad:** Alta. **Objetivo:** entregar una vista unificada real, contextual y autorizada, no solo un helper que transforma un array ya recibido.
+- **Acción ejecutable:** implementar agregador personal backend con contrato estable para notificaciones, tareas y aprobaciones; mapear `notificacionId`, `fechaRegistro`, `enlaceAccion` y los campos reales de cada fuente al modelo canónico; preservar origen, contexto, entidad, vencimiento y acción requerida; conectar consumidores frontend y sincronizar leído/no leído con persistencia y contador.
+- **Archivos/módulos:** `backend/user-service/Code.gs`; `getUserWorkInbox` (a implementar); `getUnifiedNotifications`; `js/ui-common.js`; `js/api.js`; paneles Student, Teacher, Secretary, Accounting y Dirección.
+- **Dependencias/riesgos:** TASK-221 y TASK-227; integración con fuentes de workflow; riesgo de destino genérico, IDs aleatorios, fecha actual sustitutiva y acciones sin contexto.
+- **Alcance:** agregación e integración de la bandeja por usuario/rol; no duplicar motores de aprobación ni productores de notificaciones.
+- **Criterios de aceptación:** cada elemento conserva tipo, origen, fecha, contexto, registro relacionado, vencimiento y acción; helper recibe datos de fuentes reales; paneles consumen el contrato; marcar leído persiste y actualiza contador; roles ven solo elementos autorizados; pruebas por rol, fuente, navegación y estados.
+- **Prioridad:** P1. **Estado:** Pendiente de ejecución/revalidación.
+- **Evidencia de cierre:** pendiente; el helper actual no consulta fuentes, usa nombres de propiedades incompatibles y no se localizaron consumidores conectados.
+
+### [TASK-316] Hacer atómica e idempotente la deduplicación multicanal
+- **Hallazgo de origen:** AUD-NG-206 (ALTO/P1); coordinación con AUD-NG-203.
+- **Severidad:** Alta. **Objetivo:** evitar notificaciones duplicadas ante concurrencia y reintentos, con clave persistida y verificable.
+- **Acción ejecutable:** incorporar clave de deduplicación estable a `createUserNotification` y productores multicanal; reservar la clave de forma atómica antes de insertar; proteger la operación con mecanismo de concurrencia apropiado; hacer idempotentes los reintentos y registrar el resultado de cada canal.
+- **Archivos/módulos:** `backend/user-service/Code.gs`; `createUserNotification`; `sendMultiChannelNotification`; `BandejaNotificaciones`; coordinación con TASK-045.
+- **Dependencias/riesgos:** TASK-227; TASK-045; esquema canónico de notificaciones. Riesgo de carrera entre lectura y append, claves no estables y divergencia entre canales.
+- **Alcance:** deduplicación persistente y segura para productores; no asumir que una consulta previa seguida de append evita duplicados.
+- **Criterios de aceptación:** dos solicitudes concurrentes con la misma clave producen un único registro lógico; reintento devuelve el resultado previo sin duplicar; claves distintas permiten eventos distintos; productor y lector comparten esquema; pruebas de concurrencia, timeout y reintento multicanal.
+- **Prioridad:** P1. **Estado:** Pendiente de ejecución/revalidación.
+- **Evidencia de cierre:** pendiente; el informe encontró lectura seguida de append sin reserva atómica y ausencia de clave equivalente en `createUserNotification`.
+
+### Reconciliación y límites
+- **AUD-NG-203:** se conserva en TASK-227 y TASK-316; no crear una tarea duplicada.
+- **AUD-NG-204:** se conserva en TASK-221/TASK-318 y mantiene relación con AUD-NG-036/AUD-NG-024; no duplicar los hallazgos de identidad existentes.
+- **AUD-NG-205:** se conserva en TASK-318; no crear una segunda bandeja personal.
+- **AUD-NG-206:** se conserva en TASK-227/TASK-316 y coordina TASK-045.
+- **F10-Task12/F11-Task03:** las marcas históricas [X] no sustituyen la validación del contrato actual ni demuestran integración end-to-end.
+- **Pruebas y estado:** solo se realizó inspección estática/manual; no se ejecutaron Apps Script, navegador, roles reales, concurrencia, correo ni mutaciones persistentes. Los hallazgos siguen abiertos hasta aportar evidencia de cierre.

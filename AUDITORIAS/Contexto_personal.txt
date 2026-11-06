@@ -5010,3 +5010,27 @@ CHECKPOINT C1.143 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 41
 - Próximo paso: inventariar informes restantes y verificar presencia del bloque obligatorio antes de elegir el siguiente archivo.
 - Estado de TASK-DOC-C1.112-01: En curso.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.144 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME T-UX-16
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida: 1e376f7d41b8a07babc38ed79eb925e5aa0631b3.
+- HEAD de rama base verificado antes del cambio: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID operativo de sesión: IMA-AUDIT-20261106-2117Z-MIGRACION (no es ID nativo de ChatGPT).
+- Checkpoint anterior: C1.143 (Fase 41 normalizada).
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_COMPLETADAS_T-UX-16.md.
+- SHA original del informe: 815103b86f53ec7a97ee07e88a6e761fb770e121.
+- SHA original del contexto: 3452a6714efd33e9ea301b5ce40e9f7d6015120b.
+- Inspección: auditoría estática completa de T-UX-16; hallazgos AUD-NG-203..AUD-NG-206; consumidores frontend, contrato de notificaciones, persistencia, autorización y reconciliación.
+- Tareas formalizadas: TASK-221, TASK-227, TASK-316 y TASK-318; se preservaron los IDs existentes y se especificaron origen, severidad, objetivo, acción, módulos, dependencias/riesgos, alcance, criterios, prioridad, estado y evidencia.
+- Reconciliaciones: AUD-NG-036/AUD-NG-024 conservan bypasses de identidad; TASK-045 coordina deduplicación; F10-Task12/F11-Task03 no se toman como prueba de integración actual. No se crearon IDs funcionales nuevos.
+- No se modificaron código, pruebas, Pendientes.md, completadas.md, ChangesLogs.txt, Auditoria.txt, metodología, README ni rama base.
+- Pruebas runtime no ejecutadas; cambio exclusivamente documental.
+- Próximo informe pendiente: AUDITORIA_COMPLETADAS_T-UX-17.md.
+- Estado de TASK-DOC-C1.112-01: En curso.
+================================================================
