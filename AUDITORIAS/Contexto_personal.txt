@@ -4160,3 +4160,22 @@ CHECKPOINT C1.112 - VERIFICACIÓN DE LA REGLA DE REGISTRO DE HALLAZGOS Y TAREAS
 - Próxima acción: ejecutar TASK-DOC-C1.112-01 por lotes, adaptar cada informe en su propio archivo, sin duplicar IDs ni perder contenido.
 - Commit de cierre: se confirmará consultando HEAD después de publicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.113 - ADENDA DE TRAZABILIDAD DEL HALLAZGO C1.112
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: f68013d725e7aff34084fe9cad59c44e433e3bfc.
+- HEAD de rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios).
+- ID operativo de sesión: IMA-AUDIT-20261106-1941Z.
+- Alcance: completar en Auditoria.txt los campos formales del hallazgo AUD-DOC-C1.112-01, preservando la entrada anterior y sin crear una tarea duplicada.
+- Corrección documental: se anexó archivo/rango esperado, sector afectado, tipo, descripción, impacto, criticidad y referencia a TASK-DOC-C1.112-01. La ubicación se expresa como sección ausente al final de los informes, porque no existe una línea numérica para un bloque inexistente.
+- Archivos modificados: AUDITORIAS/Auditoria.txt y AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: informe AUDITORIA_REGLA_REGISTRO_HALLAZGOS_TAREAS_C1.112.md; metodología; README; mapa de dependencias; informes históricos; código; pruebas; Pendientes.md; rama base.
+- Pruebas: verificación de anexado y unicidad; no aplican pruebas de runtime.
+- Próxima acción: ejecutar TASK-DOC-C1.112-01 por lotes.
+- Commit de cierre: se confirmará consultando HEAD después de publicar.
+================================================================

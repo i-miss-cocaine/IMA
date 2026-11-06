@@ -6830,3 +6830,27 @@ PRÓXIMA ACCIÓN:
 Ejecutar TASK-DOC-C1.112-01 por lotes, comenzando por los informes con hallazgos accionables que aún no contienen el bloque obligatorio. Cada informe intervenido deberá conservar íntegro su historial y cerrar con su propia sección de tareas.
 
 ===============================================================================
+
+
+===============================================================================
+ADENDA C1.113 — COMPLETITUD DEL REGISTRO FORMAL DEL HALLAZGO AUD-DOC-C1.112-01
+FECHA: 2026-11-06
+SESIÓN: IMA-AUDIT-20261106-1941Z
+REPOSITORIO: i-miss-cocaine/IMA
+RAMA: NG_beta_0.0.0.1_work
+HEAD DE PARTIDA: f68013d725e7aff34084fe9cad59c44e433e3bfc
+
+HALLAZGO: AUD-DOC-C1.112-01
+- Archivo(s) auditado(s): AUDITORIAS/AUDITORIA_COMPLETADAS_T-UX-20.md a AUDITORIA_COMPLETADAS_T-UX-28.md; AUDITORIAS/AUDITORIA-FASE-11-COMUNICACION-BIENESTAR-SUPERVISION-FINANZAS.md; AUDITORIAS/AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md; AUDITORIAS/AUDITORIA-FASE-28-ACCESIBILIDAD-MOVILIDAD-CONTINUIDAD.md.
+- Módulo/sector afectado: control documental y trazabilidad de los informes de auditoría.
+- Línea/rango: sección "Tareas ejecutables derivadas de los hallazgos", cuya ubicación obligatoria es el cierre de cada informe; el encabezado y bloque no existen en los documentos indicados. Al tratarse de una sección ausente, no hay número de línea que citar como ubicación existente.
+- Tipo: incumplimiento metodológico/documental.
+- Descripción técnica: la metodología exige que cada informe contenga la sección propia de tareas. En la muestra, T-UX-20 registra AUD-NG-212/AUD-NG-213 y TASK-494 sin el bloque estructurado; T-UX-21 a T-UX-27 no contienen la sección; T-UX-28 no incorpora la sección para declarar ausencia de tareas nuevas; y las fases 11, 18 y 28 tampoco presentan el formato obligatorio.
+- Impacto potencial: las acciones pueden quedar como resúmenes o planes sin ID trazable, criterios de aceptación, prioridad, estado ni evidencia de cierre; además, la tarea puede separarse del informe que explica su origen.
+- Criticidad: Medio.
+- Tarea asociada: TASK-DOC-C1.112-01, registrada dentro de AUDITORIAS/AUDITORIA_REGLA_REGISTRO_HALLAZGOS_TAREAS_C1.112.md.
+- Estado de la tarea: Pendiente.
+- No se crea un ID duplicado ni una tarea adicional.
+
+Esta adenda completa los campos formales del registro sin alterar ni sustituir la entrada original de C1.112.
+===============================================================================
