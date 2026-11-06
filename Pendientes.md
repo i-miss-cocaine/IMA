@@ -8882,6 +8882,13 @@ REGLA RECTORA INNEGOCIABLE DEL BACKLOG:
   - [ ] Completar una tarea y verificar su retiro de la bandeja de pendientes.
   - [ ] Aplicar filtros simultáneos y verificar ordenamiento.
   - [ ] Verificar que una misma actividad no aparece duplicada.
+
+- **Ampliación C1.57 / T-UX-16 (2026-11-06):**
+  - **AUD-NG-205 (ALTO/P1):** integrar `window.consolidatePendingApprovalsAndNotifications` con datos reales. En `js/ui-common.js:2081-2114` solo transforma un array; no consulta ni consolida fuentes. No hay referencias directas al helper en `js/api.js`, `js/student.js`, `js/teacher.js`, `js/secretary.js` ni `js/accounting.js`. El backend no contiene `getUserWorkInbox`; `getDepartmentalWorkInbox` solo devuelve solicitudes departamentales. Coordinar con TASK-318 sin duplicar SLA.
+  - **AUD-NG-204 (CRÍTICO/P0):** aplicar autorización por registro y departamento en servidor. No confiar en userId, departamento o authRole enviados por el navegador. `markNotificationAsRead` no verifica el propietario y `getDepartmentalWorkInbox` incluye todas las solicitudes si el payload indica direccion/administrador. Reconciliar con AUD-NG-036 (relación legal de tutor) y AUD-NG-024 (identidad del revisor).
+  - El contrato debe distinguir notificación informativa, tarea accionable y aprobación pendiente; incluir fuente, registro relacionado, estado, fecha, vencimiento, prioridad, responsable, ámbito y acción disponible. Los contadores deben derivarse del mismo conjunto autorizado.
+  - **Criterios adicionales:** usuario A no consulta ni altera elementos de B; Secretaría no obtiene solicitudes de Dirección cambiando el parámetro; cada rol ve solo actividades autorizadas; los enlaces revalidan permisos; tareas completadas salen de pendientes sin perder historial; una actividad duplicada por varias fuentes aparece una sola vez con clave estable.
+
 - **Estado:** [ ] Pendiente
 
 ---
@@ -9099,6 +9106,14 @@ REGLA RECTORA INNEGOCIABLE DEL BACKLOG:
   - [ ] Simular un error de envío y comprobar que se encola para reintento.
   - [ ] Comprobar que no se envían notificaciones duplicadas ante reintentos.
   - [ ] Verificar que los destinatarios no reciben información ajena a sus permisos de acceso.
+
+- **Ampliación C1.57 / T-UX-16 (2026-11-06):**
+  - **AUD-NG-203 (ALTO/P1):** `getUnifiedNotifications` (backend/user-service/Code.gs:4033-4072) usa `categoria`, `leido` y `userId` sin declararlos; `getUserNotifications` delega directamente en esta función. Con filas existentes la consulta puede fallar por ReferenceError. Además, getOrCreateSheet define 9 columnas (línea 892), createUserNotification escribe 9 (5007-5030) y sendMultiChannelNotification escribe 12 con orden distinto (4818-4885); el lector interpreta mal las filas multicanal.
+  - **AUD-NG-206 (ALTO/P1):** centralizar deduplicación para todos los productores. sendMultiChannelNotification busca la clave y luego hace append sin reserva atómica; llamadas concurrentes pueden duplicar. createUserNotification no acepta ni persiste clave. Coordinar con TASK-045.
+  - Definir esquema versionado con ID estable, destinatario, tipo, origen, entidad relacionada, título, mensaje, categoría, prioridad, fecha, leído/fecha de lectura, enlace, acción requerida, estado de entrega y clave de deduplicación. Migrar o leer de forma compatible las filas históricas de 9/12 columnas.
+  - Validar enlaces y contenido según TASK-475; no incluir notas internas ni interpretar una notificación como decisión de workflow.
+  - **Criterios adicionales:** consultas con y sin filtros funcionan; contadores coinciden con filas autorizadas; los campos se leen correctamente en ambos formatos; dos creaciones concurrentes con la misma clave producen un evento; cada aviso contiene origen, fecha, contexto y destino.
+
 - **Estado:** [ ] Pendiente
 
 ---
@@ -11824,6 +11839,13 @@ REGLA RECTORA INNEGOCIABLE DEL BACKLOG:
   - [ ] Comprobar que la agrupación de avisos informativos no retrasa las alertas críticas o citaciones urgentes.
   - [ ] Abrir el enlace de notificación con un usuario no autorizado y comprobar que el acceso es denegado.
 - **Dependencias:** F34-Task02 (bandeja de salida), F34-Task05 (asignaciones), centro de notificaciones multicanal.
+
+- **Ampliación C1.57 / T-UX-16 (2026-11-06):**
+  - Reconciliar BandejaNotificaciones: cabecera inicial y createUserNotification usan 9 columnas; sendMultiChannelNotification agrega 12 con orden distinto; retryFailedNotificationsQueue lee columnas 10/11 y no interpreta de forma fiable filas antiguas.
+  - getNotificationPreferences (backend/user-service/Code.gs:4973-4988) devuelve valores fijos y no consulta ni persiste preferencias por usuario. La hoja creada se denomina PreferenciasNotificacion (singular), mientras esta tarea menciona PreferenciasNotificaciones (plural); definir nombre canónico.
+  - La deduplicación actual es lectura seguida de escritura sin reserva atómica y no cubre createUserNotification. La cola debe controlar intentos, backoff, estado final y concurrencia conservando ID/clave de evento.
+  - **Criterios adicionales:** migración de filas de 9/12 columnas; preferencias leídas/guardadas por identidad autenticada; reintentos acotados sin reenviar entregados; deduplicación concurrente; estado de entrega separado de leído/no leído.
+
 - **Estado:** [ ] Pendiente
 
 ---
@@ -11902,6 +11924,12 @@ REGLA RECTORA INNEGOCIABLE DEL BACKLOG:
   - [ ] Suspender una solicitud por requerimiento de subsanación detiene correctamente el cómputo del SLA.
   - [ ] La Dirección puede consultar métricas consolidadas de tiempos de respuesta por departamento.
 - **Dependencias:** F34-Task05 (asignaciones estructuradas), sistema de notificaciones y permisos.
+
+- **Ampliación C1.57 / T-UX-16 (2026-11-06):**
+  - **AUD-NG-204 (CRÍTICO/P0):** getDepartmentalWorkInbox (backend/user-service/Code.gs:3916-3939) recibe departamento/authRole del payload; si departamento normalizado es direccion o administrador incluye todas las filas. RBAC acredita permiso de acción, pero no restringe registros a la unidad efectiva del usuario.
+  - getUserWorkInbox, declarado como componente de esta tarea, no existe en la versión inspeccionada de backend/user-service/Code.gs. TASK-221 debe consolidar tareas y aprobaciones; TASK-318 debe aportar asignaciones personales, solicitudes departamentales pendientes de toma, historial y métricas SLA.
+  - **Criterios adicionales:** cambiar el departamento del payload no amplía resultados; identidad/departamento se derivan de sesión y asignación vigente; las tareas personales y departamentales se distinguen; la bandeja unificada consume solo fuentes autorizadas.
+
 - **Estado:** [ ] Pendiente
 
 ---
@@ -17156,6 +17184,9 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Dependencias Expuestas:** processWorkflowDecision, validateRolePermission, SolicitudesTramites, RevisionesDecisionesTramite
 - **Descripción del Alcance:** Tomar el revisor exclusivamente de _verifiedUserId; validar rol y asignación contra la definición y etapa de cada workflow; impedir decisiones fuera del ámbito asignado.
 - **Criterios de Aceptación:** revisorId manipulado no altera el autor; un usuario no asignado no puede aprobar/rechazar; cada decisión queda vinculada a identidad y etapa autorizadas.
+
+- **Ampliación de evidencia C1.57 / T-UX-16 (2026-11-06):** processWorkflowDecision (backend/user-service/Code.gs:6757-6818) calcula callerId como revisorId || payload._verifiedUserId || "Revisor"; un revisorId enviado por el cliente prevalece sobre la identidad verificada. La autorización debe comprobarse contra _verifiedUserId y asignación persistida. Se mantiene AUD-NG-024.
+
 - **Estado:** [ ] Pendiente
 
 ### [AUD-NG-025] Hacer atómica la reserva de claves de idempotencia
@@ -17255,6 +17286,9 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Dependencias Expuestas:** getAuthorizationRequests, submitAuthorizationRequest, respondToAuthorizationRequest, submitAnnouncementReceiptConfirmation, RelacionesFamiliares, _verifiedUserId, _verifiedRole
 - **Descripción del Alcance:** Obtener tutor y usuario que responde exclusivamente de la sesión verificada. Comprobar en RelacionesFamiliares la relación legal vigente con el estudiante para consultar, crear y responder solicitudes. Impedir tutorUserId arbitrario o TODOS como sustituto de una relación autorizada. Registrar confirmaciones con identidad autenticada y metadatos generados en servidor, sin confiar en userId o ipMetadata del cliente.
 - **Criterios de Aceptación:** Un tutor no consulta solicitudes de otro cambiando tutorUserId; no crea solicitudes para estudiantes sin relación autorizada; destinatarios colectivos requieren regla institucional verificable; confirmaciones se atribuyen al usuario autenticado y sus metadatos no son falsificables; se conservan controles de vencimiento y duplicidad.
+
+- **Ampliación de evidencia C1.57 / T-UX-16 (2026-11-06):** getAuthorizationRequests (backend/user-service/Code.gs:6036-6098) permite eludir el filtro para roles no staff: descarta una fila solo si tutorId no es TODOS, tutorId no coincide con callerId y tutorUserId no coincide con callerId. Como tutorUserId procede del payload, el usuario puede enviar su propio ID y hacer falsa la condición para solicitudes de otros tutores. Derivar tutor exclusivamente de _verifiedUserId y validar relación legal vigente; no usar TODOS como autorización implícita. Se mantiene AUD-NG-036.
+
 - **Estado:** [ ] Pendiente
 
 ### [AUD-NG-037] Garantizar autorización de visibilidad y prevención atómica de traslapes en el calendario institucional

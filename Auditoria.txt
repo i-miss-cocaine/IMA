@@ -5920,3 +5920,28 @@ AUDITORÍA DE completadas.md - T-UX-15 (2026-11-06)
 - Progreso: 56/183 identificadores auditados; 127 pendientes.
 - Siguiente tarea: T-UX-16 - Unificar los estados de notificaciones, tareas pendientes y aprobaciones.
 ===============================================================================
+
+
+===============================================================================
+AUDITORÍA DE completadas.md - T-UX-16 (2026-11-06)
+===============================================================================
+- Dictamen: NO CUMPLE.
+- Especificación: completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, T-UX-16 marcada [X]. Requisitos: tipo/origen/fecha/contexto, diferenciar avisos informativos de tareas accionables, acceso al registro, leído/no leído, deduplicación y presentación según rol.
+- Código: js/ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67; backend/user-service/Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f.
+- Frontend js/ui-common.js:2081-2114: consolidatePendingApprovalsAndNotifications solo transforma un array recibido; no une fuentes de notificaciones, tareas y aprobaciones. Busca id/codigo, fecha/timestamp y modulo/targetModule, pero backend devuelve notificacionId, fechaRegistro y enlaceAccion; termina asignando IDs aleatorios, fecha actual y dashboard. No incorpora origen/contexto/registro relacionado. markAsRead solo modifica memoria y no actualiza pendingApprovalsCount. !!item.leido interpreta la cadena "false" como leída. No se localizaron llamadas al helper en js/api.js, student.js, teacher.js, secretary.js ni accounting.js.
+- Backend getUnifiedNotifications: líneas 4033-4072, usa categoria/leido/userId sin declaración local; getUserNotifications delega en esta función. Con filas existentes puede fallar por ReferenceError. La hoja tiene cabecera de 9 columnas (línea 892); createUserNotification escribe 9 (5007-5030), sendMultiChannelNotification escribe 12 con orden distinto (4818-4885), pero el lector interpreta ambos formatos como el primero.
+- AUD-NG-203 (ALTO/P1): consulta de notificaciones rota y esquemas incompatibles. Asociado a TASK-227/TASK-316.
+- AUD-NG-204 (CRÍTICO/P0): markNotificationAsRead no comprueba propietario; getDepartmentalWorkInbox (3916-3939) confía en departamento/authRole del payload y devuelve todas las filas si el valor es direccion/administrador. Asociado a TASK-221/TASK-318.
+- AUD-NG-205 (ALTO/P1): helper frontend incompleto/desconectado y falta agregador de tareas; getUserWorkInbox no existe en user-service. Asociado a TASK-221/TASK-318.
+- AUD-NG-206 (ALTO/P1): sendMultiChannelNotification hace lectura+append sin reserva atómica; createUserNotification no acepta/persiste deduplicationKey. Asociado a TASK-227/TASK-316; coordinar TASK-045.
+- Reconciliación: F10-Task12 y F11-Task03 figuran [X], pero no prueban esquema común ni integración de todos los productores. TASK-221 cubre bandeja unificada; TASK-227 eventos workflow; TASK-316 multicanal/preferencias/reintentos; TASK-318 bandeja personal/SLA. AUD-NG-036 ya cubre relación legal de tutor y se amplía con bypass tutorUserId; AUD-NG-024 ya cubre identidad del revisor y se amplía con revisorId de cliente. No se crean tareas funcionales paralelas.
+- Seguridad: validateRolePermission/doPost verifica rol de acción, pero markNotificationAsRead no compara destinatario con _verifiedUserId y getDepartmentalWorkInbox no verifica departamento efectivo. getAuthorizationRequests presenta bypass de tutorUserId (AUD-NG-036); processWorkflowDecision prioriza revisorId cliente sobre _verifiedUserId (AUD-NG-024).
+- Calidad: esquema implícito; IDs no estables; contadores desincronizados; enlaces y fechas perdidos; lectura no persistida; ausencia de agregación por rol; deduplicación susceptible a carrera.
+- Dependencias: getUnifiedNotifications -> getUserVerifiedRole, BandejaNotificaciones y getOrCreateSheet; markNotificationAsRead -> RBAC, notificacionId y propietario; getDepartmentalWorkInbox -> SolicitudesTramites, departamento y ROLE_PERMISSIONS; sendMultiChannelNotification/createUserNotification -> dos esquemas, MailApp y deduplicationKey; helper -> rawItems y estado en memoria; workflow -> _verifiedUserId, revisorId, SolicitudesTramites y RevisionesDecisionesTramite.
+- Pruebas: inspección estática/manual y reconciliación. No se ejecutaron Apps Script, Sheets, navegador, roles reales, concurrencia, correo ni mutaciones persistentes.
+- Consumidores consultados: js/api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; js/student.js SHA e2888cea60322e49a40b89adadb8010489605dcc; js/teacher.js SHA c475fce5afcd28fca23e7b64398ad32b17773746; js/secretary.js SHA 08a81266957b4c18cc25f8ba6749eac30a8f2c2c; js/accounting.js SHA a79ead4a54ad6fdb2f1e9df4775491ff7191a0c7. js/principal.js no se encontró en la ruta raíz. La ruta raíz AUDITORIA_FASE3_EXPERIENCIA_USUARIO_NAVEGACION.md devolvió 404; el dictamen usa completadas.md y evidencia de código.
+- Código fuente sin modificaciones.
+- Pendientes.md ampliado en TASK-221/227/316/318 y AUD-NG-036/024; se registran AUD-NG-203..206. No se creó TASK nuevo.
+- Progreso: 57/183; 126 pendientes.
+- Siguiente tarea: T-UX-17 - Corregir y completar la protección de cambios no guardados.
+===============================================================================

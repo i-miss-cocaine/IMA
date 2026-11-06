@@ -2670,3 +2670,21 @@ CHECKPOINT C1.58 - EXCEPCIÓN AUTORIZADA PARA CONSOLIDAR T-UX-16 (2026-11-06)
 - La secuencia de reconstrucción no se considerará publicada hasta que la referencia de la rama de trabajo se actualice y se verifique. Si la operación de actualización es bloqueada antes del despacho, detenerse sin usar otro endpoint o mecanismo alternativo.
 - Commit de esta actualización metodológica y checkpoint: el commit que contiene este checkpoint. Próxima acción: crear el commit único T-UX-16 como descendiente de esta actualización, incluyendo Pendientes.md, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, AUDITORIA_COMPLETADAS_T-UX-16.md y el checkpoint C1.59.
 ================================================================
+
+================================================================
+CHECKPOINT C1.59 - CIERRE DE AUDITORÍA T-UX-16 (2026-11-06)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto real: Contexto_personal.txt.
+- Rama base: NG_beta_0.0.0.1; HEAD verificado antes de la reconstrucción: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- HEAD de partida para esta iteración reconstruida: 8d9136b9d751bb63e68f39fa716e28c216918aaf (commit de documentación de la excepción autorizada y sección 17 del procedimiento Git Database API).
+- Tarea auditada: T-UX-16, unificación de estados de notificaciones, tareas pendientes y aprobaciones. Dictamen NO CUMPLE. Última tarea cerrada: T-UX-16. Siguiente tarea exacta: T-UX-17, protección de cambios no guardados.
+- Evidencia principal: js/ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67, líneas 2081-2114; backend/user-service/Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f, líneas 892, 3916-3939, 4033-4072, 4818-4885, 4993-5030, 6036-6098 y 6757-6818. Consumidores: js/api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; js/student.js e2888cea60322e49a40b89adadb8010489605dcc; js/teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; js/secretary.js 08a81266957b4c18cc25f8ba6749eac30a8f2c2c; js/accounting.js a79ead4a54ad6fdb2f1e9df4775491ff7191a0c7.
+- Hallazgos: AUD-NG-203..206 presentes en Pendientes.md; asociados a TASK-221/227/316/318, AUD-NG-036, AUD-NG-024 y TASK-045 según el informe. No se creó una tarea funcional paralela.
+- Archivos incluidos en el commit único T-UX-16: Pendientes.md (blob vigente verificado), Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, nuevo AUDITORIA_COMPLETADAS_T-UX-16.md y Contexto_personal.txt. No se modifica código fuente, completadas.md ni ChangesLogs.txt.
+- Pruebas realizadas: inspección estática/manual y reconciliación documental. No ejecutadas: Apps Script, Google Sheets, navegador/DOM, sesiones/roles reales, concurrencia, correo, mutaciones persistentes ni suites automatizadas.
+- La reconstrucción histórica sustituye los dos commits parciales de T-UX-16 por un solo commit, manteniendo el commit independiente de metodología/investigación como antecesor. La autorización específica del usuario está documentada en C1.58 y en METODOLOGIA_DESARROLLO.md. La rama base no se modifica.
+- Progreso: 57/183 identificadores auditados; 126 pendientes.
+- Commit de cierre: el commit que contiene este checkpoint. Próxima acción: verificar HEAD, árbol y seis archivos de este commit; verificar que el commit de investigación antecede a T-UX-16 y que NG_beta_0.0.0.1 conserva SHA 44d9891132332e692dbe2ba8602b41f50a508a59; después comenzar T-UX-17 desde su especificación y evidencia.
+================================================================

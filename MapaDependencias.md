@@ -1432,3 +1432,30 @@ Relaciones:
 - AUD-NG-201 / TASK-429: filtro genérico incompleto y sin integración efectiva con paginación/tablas.
 - AUD-NG-202 / TASK-429: persistencia de vistas de tabla sin aislamiento de usuario/rol/ámbito ni modelo de compartición.
 - FASE2-07 ya documentó ausencia de consumidores de renderPaginatedTable y modo remoto no integrado; se conserva el antecedente sin duplicarlo.
+
+## Bandeja unificada de notificaciones, tareas y aprobaciones (T-UX-16, C1.56)
+
+### Frontend
+- `js/ui-common.js` SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67, líneas 2081-2114: `consolidatePendingApprovalsAndNotifications(rawItems)` solo normaliza un array recibido; no agrega fuentes ni obtiene datos.
+- El helper espera `id/codigo`, `fecha/timestamp` y `modulo/targetModule`; backend usa `notificacionId`, `fechaRegistro` y `enlaceAccion`. La transformación pierde identidad/fecha/destino y asigna valores sustitutos.
+- No modela de forma completa origen, contexto, entidad relacionada, vencimiento ni acción requerida. `markAsRead` cambia estado local sin persistencia; `!!item.leido` trata `"false"` como verdadero.
+- No se localizaron consumidores directos del helper en api.js, student.js, teacher.js, secretary.js ni accounting.js.
+
+### Backend y persistencia
+- `backend/user-service/Code.gs` SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f.
+- `getUnifiedNotifications` (4033-4072) usa categoria/leido/userId sin declaración local; `getUserNotifications` delega en ella.
+- `BandejaNotificaciones` se crea con nueve columnas (892); `createUserNotification` escribe nueve (5007-5030), pero `sendMultiChannelNotification` escribe doce en otro orden (4818-4885). Contrato de escritura/lectura incompatible.
+- La deduplicación lectura+append no es atómica; `createUserNotification` no persiste una clave dedup. No se encontró `getUserWorkInbox`.
+
+### Seguridad y dependencias
+- `markNotificationAsRead` (4993-5005) no comprueba propietario.
+- `getDepartmentalWorkInbox` (3916-3939) confía en departamento/rol del payload y la rama direccion/administrador incluye todas las solicitudes.
+- `getAuthorizationRequests` (6036-6098) conserva bypass por `tutorUserId` (AUD-NG-036); `processWorkflowDecision` (6757-6818) prioriza `revisorId` del cliente sobre identidad verificada (AUD-NG-024).
+- Dependencias: TASK-221 bandeja unificada; TASK-227 eventos de workflow; TASK-316 multicanal/deduplicación; TASK-318 bandeja personal/SLA; TASK-045 idempotencia. No crear tareas paralelas.
+
+### Hallazgos vinculados
+- AUD-NG-203 (ALTO/P1) -> TASK-227/TASK-316: consulta backend rota y esquema 9/12 incompatible.
+- AUD-NG-204 (CRÍTICO/P0) -> TASK-221/TASK-318: falta de aislamiento por propietario/departamento.
+- AUD-NG-205 (ALTO/P1) -> TASK-221/TASK-318: normalizador desconectado e inexistencia de agregador personal.
+- AUD-NG-206 (ALTO/P1) -> TASK-227/TASK-316/TASK-045: deduplicación no atómica y clave no persistida.
+- Auditoría estática/manual; no se ejecutaron Apps Script, Sheets, navegador, roles reales, concurrencia, correo ni mutaciones persistentes. Dictamen: NO CUMPLE.

@@ -691,3 +691,18 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Pendientes:** TASK-429 ampliada con AUD-NG-201/AUD-NG-202 y criterios adicionales; no se crea un nuevo TASK.
 - **Progreso:** 56/183 identificadores auditados; 127 pendientes.
 - **Siguiente tarea:** T-UX-16 - Unificar los estados de notificaciones, tareas pendientes y aprobaciones.
+
+## 61. Resultado C1.56 - T-UX-16 (2026-11-06)
+
+- **Dictamen:** NO CUMPLE. El helper frontend no agrega fuentes ni está conectado a los paneles; el contrato de campos no coincide con el backend. `getUnifiedNotifications` usa variables no declaradas; el esquema de `BandejaNotificaciones` difiere entre productores de nueve y doce columnas. La lectura no persiste, los contadores no se sincronizan, la deduplicación no es atómica y hay brechas de autorización por propietario/departamento.
+- **AUD-NG-203 (ALTO/P1):** consulta de notificaciones potencialmente rota y esquema de persistencia incompatible. Asociado a TASK-227/TASK-316.
+- **AUD-NG-204 (CRÍTICO/P0):** falta de autorización por propietario y confianza en departamento/rol del payload. Asociado a TASK-221/TASK-318.
+- **AUD-NG-205 (ALTO/P1):** normalizador frontend incompleto/desconectado y ausencia de agregador personal de tareas. Asociado a TASK-221/TASK-318.
+- **AUD-NG-206 (ALTO/P1):** deduplicación susceptible a carrera y ausencia de clave persistida en `createUserNotification`. Asociado a TASK-227/TASK-316 y coordinación con TASK-045.
+- **Reconciliación:** se amplían TASK-221, TASK-227, TASK-316, TASK-318, AUD-NG-036 y AUD-NG-024; no se crea una tarea funcional paralela. F10-Task12 y F11-Task03 [X] no acreditan integración completa.
+- **Evidencia:** `js/ui-common.js` SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67 (2081-2114); `backend/user-service/Code.gs` SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f (892, 3916-3939, 4033-4072, 4818-4885, 4993-5030, 6036-6098, 6757-6818); consumidores js/api.js, student.js, teacher.js, secretary.js y accounting.js con SHAs registrados en `AUDITORIA_COMPLETADAS_T-UX-16.md`.
+- **Pruebas:** inspección estática/manual y reconciliación documental. No se ejecutaron Apps Script, Sheets, navegador/DOM, roles reales, concurrencia, correo ni suites automatizadas.
+- **Código fuente:** sin modificaciones. `completadas.md` y `ChangesLogs.txt` intactos. `Pendientes.md` conserva AUD-NG-203..206 y las ampliaciones de tareas existentes.
+- **Archivos/documentos:** actualizado `MapaDependencias.md`; creado `AUDITORIA_COMPLETADAS_T-UX-16.md`; registrado el resultado en `Auditoria.txt` y en este plan; checkpoint en `Contexto_personal.txt`.
+- **Progreso:** 57/183 identificadores auditados; 126 pendientes.
+- **Siguiente tarea:** T-UX-17 - Corregir y completar la protección de cambios no guardados.
