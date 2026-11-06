@@ -6030,3 +6030,32 @@ CHECKPOINT C1.179 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-F4-P1-
 - Próximo informe oficial: TAREA-F4-P1-05 - gobierno de privacidad y derechos ARCO; leer íntegramente y reconciliar antes de normalizar.
 - Regla de publicación: un único commit consolidado con exactamente el informe y Contexto_personal.txt; verificar SHA, padre, árbol, archivos modificados y HEAD tras publicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.180 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-F4-P1-05
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base de referencia protegida: NG_beta_0.0.1.
+- HEAD de partida verificado: 4aea7b08625e276b35709d7b721ce38771515f44.
+- Árbol base de la rama de trabajo: 37e86ec57a74a200849b0809e6e1d95c3c1e2d79.
+- HEAD de rama base documentado previamente (solo lectura): 44d9891132332e692dbe2ba8602b41f50a508a59; no se realizó ninguna escritura sobre la rama base en esta iteración.
+- ID operativo de sesión: IMA-AUDIT-20261106-2302Z (no es ID nativo de ChatGPT).
+- Checkpoint inicial de esta iteración: C1.179.
+- Estado de iteración: normalización documental publicada en C1.180.
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F4-P1-05.md.
+- SHA del informe antes del cambio: c6888337f5f14cb545bdc9d761b8ae676e8fdcc7.
+- SHA del contexto antes del cambio: a112f0ad2141c03d2d453f9874f3870a3b5dbc16.
+- Dictamen original preservado: TAREA-F4-P1-05 NO CUMPLE; estado [X] de completadas.md sin cambios.
+- Hallazgo normalizado: AUD-NG-223/TASK-503, panel y tramitación efectiva de derechos ARCO. Se desarrolló la tarea con todos los campos obligatorios del protocolo C1.112; no se creó un ID duplicado.
+- Reconciliación preservada: AUD-NG-145 conserva bitácoras/trazabilidad/sanitización; AUD-NG-146/TASK-499 conserva retención; AUD-NG-220/TASK-500 conserva anonimización; AUD-NG-222/TASK-502 conserva autorización contextual. No se amplían sus alcances ni se duplican tareas.
+- Archivos modificados: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F4-P1-05.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, Auditoria.txt, MapaDependencias.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README, politica-de-privacidad.html, datos productivos y rama base.
+- Pruebas ejecutadas: lectura íntegra del informe TAREA-F4-P1-05; contraste de AUD-NG-223/TASK-503 en Auditoria.txt y MapaDependencias.md; lectura del protocolo C1.112; reconciliación con AUD-NG-145/146/220/222 y TASK-499/500/502; comprobación de ausencia previa de la sección; verificación del HEAD y SHAs de partida.
+- Pruebas no ejecutadas: HTTP, operaciones reales ARCO, validación de representación legal, exportación/rectificación/eliminación/oposición sobre datos productivos, legal hold en runtime, despliegues Apps Script, UI/navegador y suites automatizadas.
+- Límite: cambio exclusivamente documental; no se declara implementada ni completada TASK-503 ni se afirma cumplimiento jurídico.
+- Próximo informe oficial: TAREA-F4-P1-06 - fortalecer la trazabilidad mediante historial de cambios y auditoría de versiones; leer íntegramente y reconciliar antes de normalizar.
+- Regla de publicación: un único commit consolidado con exactamente el informe y Contexto_personal.txt; verificar SHA, padre, árbol, archivos modificados y HEAD tras publicar.
+================================================================
