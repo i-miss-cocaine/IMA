@@ -677,3 +677,17 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Código:** sin modificaciones; completadas.md y METODOLOGIA_DESARROLLO.md sin cambios.
 - **Progreso:** 55/183 identificadores auditados; 128 pendientes.
 - **Siguiente tarea:** T-UX-15 - Implementar filtros avanzados, vistas guardadas y paginación coherente. Reconciliar tareas históricas y posteriores relacionadas con filtros, persistencia de vistas, ordenamiento y paginación antes de iniciar.
+
+
+## 60. Resultado C1.55 - T-UX-15 (2026-11-06)
+
+- **Dictamen:** NO CUMPLE. El motor de filtros es un helper local incompleto, sin allowlist funcional ni tipos/operadores; pierde valores 0/false, no proporciona UI de filtros activos y no integra filtros/orden con paginación. Las vistas guardadas persisten solo filtros en localStorage por containerId, sin identidad/rol/ámbito ni vistas compartidas.
+- **AUD-NG-201 (ALTO/P1) / TASK-429 existente:** completar motor de filtros multicriterio, presentación y eliminación de filtros activos, ordenamiento estable e integración con paginación local/remota.
+- **AUD-NG-202 (MEDIO/P2) / TASK-429 existente:** aislar vistas de tabla por usuario/rol/ámbito y diferenciar vistas personales/compartidas con permisos efectivos; ampliar estado guardado más allá de filtros.
+- **Reconciliación:** FASE2-07 ya había documentado la falta de consumidores de renderPaginatedTable y la modalidad remota no integrada, ampliando TASK-429; no se duplica ese hallazgo. TAREA-04 y FASE2-T10 son antecedentes históricos. TASK-249 cubre vistas de reportes institucionales; TASK-486 cubre snapshot/restauración al navegar; TASK-453 cubre bandejas documentales; T-UX-25/TASK-422 cubren preferencias generales. Se amplía TASK-429 porque ya contiene el alcance de tablas/listados, filtros, ordenamiento y paginación.
+- **Evidencia:** js/ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67, líneas 1999-2067 y 2128-2195; módulos teacher.js, student.js, accounting.js y secretary.js (SHAs registrados en Auditoria.txt y AUDITORIA_COMPLETADAS_T-UX-15.md).
+- **Pruebas:** inspección estática/manual. No se ejecutaron navegador, DOM, localStorage multiusuario, filtros/paginación runtime, compartición, permisos activos ni suites automatizadas.
+- **Código fuente:** sin modificaciones. completadas.md y METODOLOGIA_DESARROLLO.md intactos.
+- **Pendientes:** TASK-429 ampliada con AUD-NG-201/AUD-NG-202 y criterios adicionales; no se crea un nuevo TASK.
+- **Progreso:** 56/183 identificadores auditados; 127 pendientes.
+- **Siguiente tarea:** T-UX-16 - Unificar los estados de notificaciones, tareas pendientes y aprobaciones.
