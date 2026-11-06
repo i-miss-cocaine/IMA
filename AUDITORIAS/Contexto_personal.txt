@@ -6206,3 +6206,30 @@ CHECKPOINT C1.185 — NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-F4-P
 - Regla de publicación: un único commit consolidado con exactamente el informe y Contexto_personal.txt; verificar SHA, padre, árbol, archivos modificados, estadísticas y HEAD posterior. No escribir en la rama base.
 ================================================================
 
+
+
+================================================================
+CHECKPOINT C1.186 — NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-F4-P2-02
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo autorizada: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1; HEAD consultado: 44d9891132332e692dbe2ba8602b41f50a508a59. No se realizó ninguna escritura sobre la rama base.
+- HEAD de partida verificado: ad3005eea57879867caca53527764423b158facb (C1.185); padre de C1.185: de1fb8702a0cad6b49ce3a9ed415d1b796781737.
+- Árbol de partida reconstruido desde el árbol padre y los dos blobs del commit C1.185: a02c70a29bba7650a59eaebb021114c154f24d26. C1.185 se comparó con su padre y contiene exactamente AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F4-P2-01.md (+56) y AUDITORIAS/Contexto_personal.txt (+27), total +83/-0.
+- ID operativo de sesión/chat: IMA-AUDIT-20261106-1750Z (identificador operativo, no ID nativo de ChatGPT).
+- Checkpoint inicial: C1.185.
+- Tarea documental general: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F4-P2-02.md — ciclo de vida de cuentas y sesiones.
+- Dictamen original preservado: NO CUMPLE. No se altera el estado histórico [X] de completadas.md ni se interpreta como evidencia de cumplimiento.
+- Verificación previa: el informe íntegro tiene 8.803 caracteres y 96 líneas; no contenía la sección obligatoria. Se leyó junto con Contexto_personal.txt, Auditorias.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, METODOLOGIA_DESARROLLO.md y AUDITORIAS/README.md.
+- Tareas existentes formalizadas sin duplicar identificadores: AUD-NG-001 (transporte del token), AUD-NG-005 (estado/revocación/propagación) y AUD-NG-159 (logout autenticado/revocación arbitraria). Se conservaron sus IDs originales como identificadores de tarea preexistentes; no se creó TASK nuevo.
+- Reconciliación: AUD-NG-160 conserva la vigencia de roles y cachés de privilegios; AUD-NG-006 conserva reintentos/idempotencia de fetchApi; AUD-NG-002 conserva el alcance de acciones públicas sensibles. AUD-NG-001 se limita al contrato de transporte del token; AUD-NG-005 al estado de cuenta, TTL y propagación; AUD-NG-159 a la autorización del logout y la identidad objetivo. No se duplican ni se absorben esos alcances separados.
+- Evidencia cotejada: informe P2-02 SHA 961f6c8c220c42c21622f7b64ef1d4fbb75473ff; Contexto_personal.txt SHA b8dc6ab4807834139b9f0757fab6cc5437b2ebde; Auditoria.txt SHA 284b7a94b51c8ed99dbfcf734694bc5361f9f111; MapaDependencias.md SHA 4f68d56f910c6a4e87c20ecac82daeb3a615bcaa; AUDITORIA_COMPLETADAS_PLAN.md SHA a374b91e5e45c0b8d5fd9db939735e6ed434c6cb; metodología SHA cf796728bb384a32537392df2f9c72a339fa03ee; README SHA 2f649c6ffc39ec7cdd242e85cb71b4344fd69e34. Evidencia de código y pruebas cotejada contra los SHAs consignados en el informe C1.86.
+- Archivos modificados en esta iteración: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F4-P2-02.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README, hojas productivas y rama base.
+- Pruebas ejecutadas: lectura íntegra del informe y del contexto; lectura completa de metodología y plan; cotejo de los tres hallazgos en Auditoria.txt y sus referencias en MapaDependencias.md/AUDITORIA_COMPLETADAS_PLAN.md; comprobación de que el informe no contenía el bloque; revisión de IDs existentes y separación de alcances; comparación Git C1.184..C1.185 y verificación de los dos archivos del checkpoint previo.
+- Pruebas no ejecutadas: Apps Script, HTTP, Google Sheets/CacheService productivos, navegador/DOM, expiración real de TTL, login/logout multiusuario, revocación interservicio, concurrencia, fallos parciales, dispatcher runtime ni suites automatizadas. Esta iteración no implementa AUD-NG-001, AUD-NG-005 ni AUD-NG-159.
+- Límite: modificación exclusivamente documental. Se preserva NO CUMPLE; no se declara resuelta ninguna vulnerabilidad ni verificado el ciclo de vida runtime.
+- Última tarea normalizada: TAREA-F4-P2-02. Siguiente tarea oficial: TAREA-F4-P2-03 — interfaz administrativa de usuarios, permisos y delegaciones; revisar el informe íntegro y reconciliar AUD-NG-228/TASK-508, TASK-480/AUD-NG-183, AUD-NG-219/TASK-498 y AUD-NG-221/TASK-501 sin duplicar IDs.
+- Regla de publicación: un único commit consolidado con exactamente el informe y Contexto_personal.txt; verificar SHA, padre, árbol, archivos modificados, estadísticas y HEAD posterior. No escribir en la rama base.
+================================================================
