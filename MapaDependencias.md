@@ -1606,3 +1606,10 @@ Relaciones:
 - fetchApi no adjunta token (AUD-NG-001), por lo que el flujo de carga/guardado falla antes de llegar al handler hasta resolver esa dependencia.
 - AUD-NG-202/TASK-429 ya cubre vistas guardadas de tablas con localStorage no aislado y configuración incompleta. TASK-422 cubre preferencias personales/herencia/reset; se amplía con AUD-NG-216. TASK-430 cubre identidad visual general.
 - Inspección estática; no se ejecutaron sesiones multirol, persistencia en Sheets ni restauración entre dispositivos.
+
+## Revalidación de actividad reciente contextual (T-UX-26, C1.69)
+- El informe AUDITORIA_COMPLETADAS_T-UX-26.md ya existía; se revalida sin crear duplicados.
+- js/ui-common.js mantiene SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67, igual al del informe histórico. recordRecentActivity/getRecentActivity conservan una clave localStorage global sin authUserId/institucionId; getRecentActivity filtra por role/GLOBAL y exceptúa ADMIN/DIRECCION.
+- renderContextualRecentActivity sigue insertando title/description con innerHTML; pasa targetId a switchActiveView, pero switchActiveView (4864-4902) no lo consume.
+- AUD-NG-173 sigue pendiente. TASK-067 cubre aislamiento multiusuario; TASK-221 es la fuente de verdad para pendientes accionables. No crear tarea nueva.
+- Revalidación estática; no se ejecutaron pruebas runtime.

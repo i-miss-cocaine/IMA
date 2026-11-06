@@ -6106,3 +6106,16 @@ AUDITORÍA DE completadas.md - T-UX-25 (2026-11-06)
 - Pruebas: inspección estática/manual de modal, carga/guardado, renderizador por rol, ROLE_PERMISSIONS, handlers backend y backlog. No se ejecutaron sesiones con distintos roles, navegador, persistencia en Sheets, cambio de dispositivo ni pruebas automatizadas.
 - Código fuente/tests sin modificaciones. completadas.md, METODOLOGIA_DESARROLLO.md y ChangesLogs.txt sin modificaciones.
 ===============================================================================
+
+===============================================================================
+REVALIDACIÓN DE T-UX-26 - CHECKPOINT C1.69 (2026-11-06)
+===============================================================================
+- Dictamen confirmado: NO CUMPLE / CUMPLE PARCIALMENTE según criterios; no hay evidencia de corrección desde la auditoría histórica.
+- La rama actual mantiene js/ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67, el mismo SHA citado por el informe histórico AUDITORIA_COMPLETADAS_T-UX-26.md (HEAD histórico 8667e741dcd19ca84834f727b673f617e4f3ec41). Por tanto, el bloque T-UX-26 no ha cambiado.
+- Confirmación estática actual: recordRecentActivity (1706) y getRecentActivity (1736) usan la clave global INSTITUTIONAL_RECENT_ACTIVITY_LOG_V1; no incluyen authUserId ni institucionId. getRecentActivity omite el filtro para ADMIN/DIRECCION y el resto filtra por role/GLOBAL, lo que no sustituye aislamiento de identidad.
+- renderContextualRecentActivity (1759) concatena act.title y act.description en innerHTML (aprox. 1810-1824) sin escape contextual.
+- La acción pasa targetId a switchActiveView (1826-1827), pero switchActiveView (4864-4902) solo valida viewId, muestra el contenedor y restaura scroll; no consume stateParams.targetId ni localiza el registro.
+- El informe histórico ya documentó ausencia de llamadas externas a recordRecentActivity/renderContextualRecentActivity en los dashboards principales, ausencia de productores reales y ausencia de pruebas UX-26. Los commits desde el HEAD histórico solo han modificado documentación; ui-common.js mantiene el mismo SHA, por lo que la evidencia de falta de integración sigue vigente. No se ejecutó navegador.
+- Reconciliación: AUD-NG-173 continúa pendiente en Pendientes.md. TASK-067 ya incluye la clave global de actividad dentro del aislamiento multiusuario; TASK-221 sigue siendo fuente de verdad de tareas accionables. No se crea hallazgo ni tarea duplicada.
+- Pruebas: inspección estática/manual y comparación de SHA. No se ejecutaron pruebas de navegador, multiusuario, XSS, destinos reales, Apps Script ni suites automatizadas.
+===============================================================================

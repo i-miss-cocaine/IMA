@@ -813,3 +813,14 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Sesión:** IMA-AUDIT-20261106-0254Z; inicio C1.63; sesión abierta.
 - **Progreso:** 66/183 identificadores auditados; 117 pendientes.
 - **Siguiente tarea:** T-UX-26 - Incorporar una vista de actividad reciente contextual.
+
+## 71. Revalidación C1.69 - T-UX-26 (2026-11-06)
+
+- **Dictamen:** NO CUMPLE / CUMPLE PARCIALMENTE, sin corrección acreditada desde el informe histórico.
+- **Hallazgo:** AUD-NG-173 sigue pendiente; el código de actividad reciente mantiene el mismo SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67. Persiste la clave global sin identidad institucional/usuario, filtrado insuficiente, renderizado innerHTML no seguro, falta de integración/producción real y targetId no consumido por switchActiveView.
+- **Reconciliación:** TASK-067 cubre aislamiento; TASK-221 bandeja de tareas accionables; AUD-NG-173 cubre integración y navegación. No duplicar.
+- **Informe:** AUDITORIA_COMPLETADAS_T-UX-26.md (se agrega revalidación C1.69).
+- **Pruebas:** inspección estática y comparación SHA; no se ejecutaron pruebas de navegador ni multiusuario.
+- **Sesión:** IMA-AUDIT-20261106-0254Z; inicio C1.63; sesión abierta.
+- **Progreso:** 67/183 identificadores auditados; 116 pendientes.
+- **Siguiente tarea:** T-UX-27 - Optimizar el rendimiento percibido y la respuesta de las interfaces.

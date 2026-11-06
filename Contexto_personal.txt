@@ -2929,3 +2929,25 @@ CHECKPOINT C1.68 - CIERRE DE AUDITORÍA T-UX-25 (2026-11-06)
 - Próxima acción reproducible: revisar window.RECENT_ACTIVITY_CACHE_KEY, loadRecentActivity, renderRecentActivity, getRecentUserActivity y la persistencia backend si existe; verificar aislamiento por usuario/rol, fuente real, orden temporal, empty/error y navegación de regreso; reconciliar con tareas de actividad/auditoría antes de nuevos hallazgos.
 - Commit de cierre: el commit que contiene este checkpoint.
 ================================================================
+
+================================================================
+CHECKPOINT C1.69 - REVALIDACIÓN T-UX-26 (2026-11-06)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: e038e833db809155c6dcda5613f97aa3a8ebe41a.
+- HEAD de rama base verificado al inicio: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID de sesión de auditoría/chat: IMA-AUDIT-20261106-0254Z.
+- Inicio de sesión: C1.63. Estado: ABIERTA; checkpoint intermedio.
+- Tarea revalidada: T-UX-26 - Incorporar una vista de actividad reciente contextual. Dictamen NO CUMPLE / CUMPLE PARCIALMENTE; los hallazgos históricos siguen presentes.
+- Código sin cambios: js/ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67, igual al del informe histórico. recordRecentActivity/getRecentActivity usan localStorage global sin authUserId/institucionId; renderContextualRecentActivity concatena title/description en innerHTML; targetId se pasa a switchActiveView pero no se consume.
+- Hallazgo AUD-NG-173 continúa pendiente. TASK-067 cubre aislamiento multiusuario; TASK-221 es fuente de verdad de tareas accionables. No se crea nuevo ID/tarea ni se modifica Pendientes.md.
+- Informe existente AUDITORIA_COMPLETADAS_T-UX-26.md actualizado con revalidación C1.69.
+- Pruebas: inspección estática y comparación de SHA; no ejecutados navegador, multiusuario, XSS, destinos reales, Apps Script ni suites.
+- Archivos previstos: Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, AUDITORIA_COMPLETADAS_T-UX-26.md y Contexto_personal.txt. Código/tests, completadas.md, Pendientes.md, METODOLOGIA_DESARROLLO.md y ChangesLogs.txt sin modificaciones.
+- Progreso: 67/183 identificadores auditados; 116 pendientes.
+- Siguiente tarea exacta: T-UX-27 - Optimizar el rendimiento percibido y la respuesta de las interfaces.
+- Próxima acción reproducible: revisar renderUIProgressSkeleton, llamadas API frecuentes, duplicación/agrupación de solicitudes y métricas de rendimiento; comparar las pruebas y tareas históricas de caché/optimización sin duplicar.
+- Commit de cierre: el commit que contiene este checkpoint.
+================================================================

@@ -42,3 +42,14 @@ PRUEBAS Y LIMITACIONES
 - No se ejecutaron pruebas de navegador, multiusuario ni Apps Script; no se usaron datos productivos.
 - El inventario de llamadas externas se contrastó con búsquedas del repositorio y los dashboards principales, pero no se ejecutó la aplicación completa. El dictamen no equivale a certificación dinámica.
 ================================================================
+
+---
+
+## Revalidación C1.69 (2026-11-06)
+
+- **ID de sesión:** IMA-AUDIT-20261106-0254Z (inicio C1.63; sesión abierta).
+- **HEAD de partida:** e038e833db809155c6dcda5613f97aa3a8ebe41a.
+- **Dictamen:** se confirma que los hallazgos del informe histórico continúan vigentes; no se encontró cambio de código desde la auditoría anterior.
+- **Evidencia actual:** js/ui-common.js mantiene SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67. recordRecentActivity (1706) y getRecentActivity (1736) usan la clave global INSTITUTIONAL_RECENT_ACTIVITY_LOG_V1 sin authUserId/institucionId. renderContextualRecentActivity (1759) concatena title/description en innerHTML. El clic pasa targetId a switchActiveView, pero switchActiveView (4864-4902) no procesa ese identificador para abrir el registro concreto.
+- **Estado del hallazgo:** AUD-NG-173 sigue pendiente. TASK-067 cubre aislamiento multiusuario; TASK-221 mantiene la fuente de verdad de tareas accionables. No se crea duplicado ni se modifica Pendientes.md.
+- **Pruebas:** inspección estática y comparación SHA. No se ejecutaron pruebas runtime, multiusuario, XSS ni navegación real.
