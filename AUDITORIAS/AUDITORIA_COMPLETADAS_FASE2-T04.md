@@ -90,3 +90,57 @@ Inspección estática/manual de los bloques y funciones indicados. **No se ejecu
 - Identificadores auditados: **40/183**; 143 pendientes.
 - Última tarea auditada: FASE2-T04.
 - Siguiente tarea: FASE2-T05 - Unificar y validar el sistema de identificadores institucionales.
+
+## Tareas ejecutables derivadas de los hallazgos
+
+### [AUD-NG-175] Completar la fuente de verdad y sincronización de catálogos
+- **Hallazgo de origen:** AUD-NG-175; ampliación documentada en FASE2-T04.
+- **Severidad:** Alto.
+- **Objetivo:** mantener un catálogo institucional coherente entre servidor y consumidores.
+- **Acción ejecutable:** corregir el mapeo de columnas; excluir referencias inactivas; validar vigencia en cada mutación; sincronizar áreas y asignaturas; actualizar metadatos existentes; impedir fallback silencioso a catálogos locales ante errores.
+- **Archivos/módulos afectados:** backend/academic-service/Code.gs, js/config.js.
+- **Dependencias y riesgos:** TASK-046 para resolver fuente autorizada; AUD-NG-158 para estado/ámbito; TASK-062 para caché/versionado.
+- **Alcance:** ampliación de AUD-NG-175, no crear un hallazgo paralelo.
+- **Criterios de aceptación:** mapeo de columnas coincide con esquema; referencias inactivas se rechazan; cliente y servidor reflejan altas/cambios/bajas; fallos de API no devuelven success con catálogo local.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas de contrato, sincronización y referencias activas/inactivas.
+
+### [TASK-046] Resolver fuentes por departamento, servicio y tipo de información
+- **Hallazgo de origen:** FASE2-T04; tarea existente relacionada.
+- **Severidad:** Crítico.
+- **Objetivo:** evitar que un catálogo o fuente de otro ámbito se use como fallback.
+- **Acción ejecutable:** incluir departamento, servicio y tipo de información en la clave; validar permisos y esquema; integrar resolver en consumidores y retirar fallback implícito a SPREADSHEET_ID.
+- **Archivos/módulos afectados:** backend/academic-service/Code.gs, js/config.js y consumidores de microservicios.
+- **Dependencias y riesgos:** AUD-NG-083/084/086; preservar aislamiento entre servicios.
+- **Alcance:** ampliación de TASK-046 ya existente.
+- **Criterios de aceptación:** selección inequívoca por contexto; fuente ausente/inactiva/incompatible falla de forma explícita; pruebas demuestran ausencia de lecturas cruzadas.
+- **Prioridad:** P0.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** matriz de fuentes y pruebas multiámbito.
+
+### [TASK-062] Aplicar versionado, TTL e invalidación efectiva a catálogos
+- **Hallazgo de origen:** FASE2-T04, requisito 6; referencia a TASK-062.
+- **Severidad:** Medio.
+- **Objetivo:** evitar que los consumidores usen catálogos obsoletos después de cambios.
+- **Acción ejecutable:** integrar CACHE_POLICIES.INSTITUTIONAL_CATALOGS en fetchInstitutionalCatalog; definir versión/ETag o equivalente; invalidar caché al crear, modificar, desactivar o reactivar una referencia; validar compatibilidad de versión.
+- **Archivos/módulos afectados:** js/config.js, backend/academic-service/Code.gs y mecanismo común de caché.
+- **Dependencias y riesgos:** AUD-NG-175 y TASK-046; no mezclar caché con fallback de disponibilidad.
+- **Alcance:** política transversal de versionado e invalidación.
+- **Criterios de aceptación:** TTL configurado se aplica; cambios invalidan entradas afectadas; consumidores detectan versión incompatible; error de API no se transforma en éxito con caché obsoleta.
+- **Prioridad:** P2.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas de TTL, invalidación y compatibilidad.
+
+### [AUD-NG-158] Mantener estado y ámbito departamental de áreas curriculares
+- **Hallazgo de origen:** FASE2-T04, sección de reconciliación; referencia a AUD-NG-158.
+- **Severidad:** Alto.
+- **Objetivo:** conservar estado y departamento de cada área en lectura, actualización y consumo.
+- **Acción ejecutable:** devolver departmentId/estado en el catálogo; filtrar por ámbito autorizado; actualizar registros existentes por ID; preservar historial de cambios de estado/ámbito.
+- **Archivos/módulos afectados:** backend/academic-service/Code.gs, js/config.js y catálogo local sincronizado.
+- **Dependencias y riesgos:** AUD-NG-175/TASK-046; no duplicar el problema de resolución de fuentes.
+- **Alcance:** estado/ámbito de áreas curriculares.
+- **Criterios de aceptación:** el catálogo devuelve estado y departamento correctos; áreas inactivas no aparecen como utilizables; los cambios preservan historial y no cruzan departamentos.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas por departamento y transiciones de estado.

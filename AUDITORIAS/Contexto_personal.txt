@@ -3855,3 +3855,22 @@ CHECKPOINT C1.98 - CONVERSIÓN DE HALLAZGOS HISTÓRICOS (LOTE 2)
 - Pruebas: validación de IDs/severidad contra Auditoria.txt y revisión de criterios/acciones; verificación Git posterior.
 - Commit de cierre: el commit que contiene este checkpoint; SHA final se verifica después de publicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.99 - CONVERSIÓN DE HALLAZGOS HISTÓRICOS (LOTE 3)
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Contexto: AUDITORIAS/Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work; rama base: NG_beta_0.0.0.1.
+- HEAD de partida verificado: 467ad5a63e7eeb742fa3e82827105585d7a6660a; árbol de partida: 681010fe13752baf669c3d575cf1ec9320ad9e5f.
+- ID operativo de sesión: IMA-AUDIT-20261106-1719Z; checkpoint inicial C1.97; estado: sesión abierta.
+- Alcance: convertir hallazgos de FASE2-T04, T06, T07 y T08 en tareas ejecutables dentro de cada informe. FASE2-T05 ya tiene su sección normalizada desde C1.98.
+- Avance publicado acumulado: 12/128 informes históricos con sección de tareas normalizada.
+- IDs incluidos/ampliados: AUD-NG-175, TASK-046, TASK-062, AUD-NG-158, AUD-NG-179/TASK-477, AUD-NG-180/TASK-478, AUD-NG-161, TASK-474, TASK-475, AUD-NG-039, TASK-422, TASK-404, TASK-278, AUD-NG-145, AUD-NG-174 y AUD-NG-083.
+- Deduplicación: tareas ya asignadas se registran como ampliaciones o referencias; no se crean IDs para causas ya cubiertas.
+- Restricciones: Pendientes.md no se recupera, lee ni modifica; código fuente y completadas.md no se modifican.
+- Próximo lote: T-UX-01 a T-UX-06, después T-UX-09 en adelante y los demás informes históricos.
+- Pruebas: revisión de IDs y reconciliación con el texto de cada informe; verificación Git posterior.
+- Commit de cierre: el commit que contiene este checkpoint; SHA final se verifica después de publicar.
+================================================================

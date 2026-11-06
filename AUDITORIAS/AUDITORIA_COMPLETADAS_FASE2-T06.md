@@ -121,3 +121,44 @@ Inspección estática/manual de los archivos y rangos citados. No se ejecutaron 
 - checkEnrollmentCapacity (ACADEMIC 11026-11115) usa capacidad 35/estado Activa si no existe oferta y continúa si tryLock no se adquiere; se relaciona con AUD-NG-179.
 - Evidencia actual: ACADEMIC SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; tests 3433b707edd4a2f35c68368a3172932adc2a3b32/0495e1d526a872c33310935a003a83d924d34683.
 - No se crean IDs duplicados.
+
+## Tareas ejecutables derivadas de los hallazgos
+
+### [AUD-NG-179 / TASK-477] Hacer fail-closed la adquisición de locks y recuperar operaciones presupuestarias
+- **Hallazgo de origen:** FASE2-T06, apartados 3 y 4; hallazgo nuevo.
+- **Severidad:** Alto.
+- **Objetivo:** impedir que operaciones sensibles confirmen éxito después de no adquirir exclusión mutua o dejar escrituras incompletas.
+- **Acción ejecutable:** comprobar explícitamente el resultado de tryLock en checkEnrollmentCapacity y recordAccountsPayableExpense; abortar con error controlado si no se adquiere; registrar estados de operación para conciliar obligaciones y presupuesto; impedir respuestas success con ejecuciónPresupuestaria null.
+- **Archivos/módulos afectados:** backend/academic-service/Code.gs, backend/accounting-service/Code.gs.
+- **Dependencias y riesgos:** AUD-NG-129, AUD-NG-133, AUD-NG-049, AUD-NG-006 y AUD-NG-161; no duplicar sus causas raíz.
+- **Alcance:** lock timeout y consistencia entre obligación y presupuesto.
+- **Criterios de aceptación:** lock no adquirido impide mutación o confirma estado recuperable explícito; obligación y presupuesto terminan conciliados; fallo posterior se detecta y puede recuperarse; nunca se informa éxito ambiguo.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas de timeout, fallo entre escrituras y conciliación.
+
+### [AUD-NG-180 / TASK-478] Hacer idempotente y recuperable la recepción de compras
+- **Hallazgo de origen:** FASE2-T06, apartado 3; hallazgo nuevo.
+- **Severidad:** Alto.
+- **Objetivo:** impedir que un reintento vuelva a ingresar existencias ya aplicadas.
+- **Acción ejecutable:** reservar una clave idempotente de recepción; persistir estado intermedio antes de aplicar movimientos; relacionar cada movimiento de inventario con la recepción; completar comprobante y orden de compra como una operación recuperable; compensar o reanudar de forma segura ante fallo.
+- **Archivos/módulos afectados:** backend/accounting-service/Code.gs; RecepcionesCompra, OrdenesCompra, Kardex/movimientos de inventario.
+- **Dependencias y riesgos:** AUD-NG-006 y AUD-NG-161; mantener integridad de cantidades parciales y orden recibida.
+- **Alcance:** recordPurchaseReceipt y sus movimientos.
+- **Criterios de aceptación:** repetir la misma recepción no duplica stock; fallo después de un movimiento se detecta y reanuda/compensa; cantidad recibida nunca excede lo despachado; estado final y comprobante coinciden.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas de recepción parcial, repetición y fallo inyectado.
+
+### [AUD-NG-161] Ampliar pruebas conductuales de bloqueos y recuperación
+- **Hallazgo de origen:** FASE2-T06; ampliación del hallazgo de pruebas existente.
+- **Severidad:** Alto.
+- **Objetivo:** demostrar que los controles de exclusión y recuperación funcionan en escenarios concurrentes.
+- **Acción ejecutable:** añadir escenarios de lock timeout, dos recepciones simultáneas, fallo entre movimiento y comprobante, y conciliación presupuestaria.
+- **Archivos/módulos afectados:** suites de regresión de Academic y Accounting.
+- **Dependencias y riesgos:** TASK-477, TASK-478, AUD-NG-049, AUD-NG-129 y AUD-NG-133.
+- **Alcance:** pruebas aisladas con datos sintéticos.
+- **Criterios de aceptación:** cada prueba fuerza la condición de carrera/fallo y verifica saldo, stock, estado y ausencia de duplicados; no opera sobre hojas productivas.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** reporte reproducible por escenario.

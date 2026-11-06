@@ -123,3 +123,70 @@ Inspección estática/manual de los rangos indicados y reutilización de evidenc
 - Última tarea auditada: FASE2-T07.
 - Próxima tarea: **FASE2-T08 - Implementar trazabilidad y correlación de operaciones entre servicios**.
 - Reconciliar antes de esa auditoría los hallazgos previos de correlationId/sagaId y logs estructurados; no repetir AUD-NG-176/177 ni los alcances de TASK-474/475.
+
+## Tareas ejecutables derivadas de los hallazgos
+
+### [TASK-474] Ampliar el motor de eventos con reglas, destinatarios y separación por canal
+- **Hallazgo de origen:** FASE2-T07; ampliación de AUD-NG-176/TASK-474.
+- **Severidad:** Alto.
+- **Objetivo:** asegurar que las notificaciones reflejen eventos válidos, destinatarios autorizados y entregas reales.
+- **Acción ejecutable:** completar catálogo de productores/consumidores; autenticar emisor; propagar correlationId/causationId; implementar estados por canal, lease y nextAttemptAt con backoff/jitter; expandir GLOBAL a destinatarios autorizados; evitar ciclos; separar resultado de operación principal de entrega secundaria; medir cola y atascos.
+- **Archivos/módulos afectados:** backend/user-service/Code.gs y productores/consumidores de servicios; triggers y métricas.
+- **Dependencias y riesgos:** AUD-NG-006/AUD-NG-161; AUD-NG-176 ya creado, no generar ID nuevo.
+- **Alcance:** ampliación de TASK-474.
+- **Criterios de aceptación:** eventos tienen origen/destinatarios/contrato; procesamiento concurrente no duplica; fallos se recuperan según política; notificación pendiente no marca evento como entregado; métricas identifican cola y atascos; pruebas aisladas no envían comunicaciones reales.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas del ciclo completo y métricas verificables.
+
+### [TASK-475] Proteger configuración, secretos y contenido multicanal
+- **Hallazgo de origen:** FASE2-T07; ampliación de AUD-NG-177/TASK-475.
+- **Severidad:** Alto.
+- **Objetivo:** proteger credenciales y evitar contenido inseguro en notificaciones/logs.
+- **Acción ejecutable:** separar secretos de configuración funcional; redacted fields al consultar; escapar HTML y validar enlaces; sanear errorDetails y payloads de logs.
+- **Archivos/módulos afectados:** backend/user-service/Code.gs; configuración de proveedores, plantillas y visor de logs.
+- **Dependencias y riesgos:** permisos de canales; no exponer secretos a usuarios con permiso de consulta.
+- **Alcance:** ampliación de TASK-475.
+- **Criterios de aceptación:** ninguna respuesta incluye secretos; HTML se trata como texto; enlaces no permitidos se rechazan; logs no contienen PII/credenciales fuera de allowlist.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas de redacción, sanitización y acceso.
+
+### [AUD-NG-039] Calcular alertas académicas desde datos persistidos y contexto vigente
+- **Hallazgo de origen:** FASE2-T07, apartado de alertas académicas.
+- **Severidad:** Alto.
+- **Objetivo:** eliminar métricas mock y asegurar que alertas correspondan al período/año y destinatarios reales.
+- **Acción ejecutable:** derivar indicadores de notas/entregas persistidas; filtrar por anolectivo y período; incluir año en clave de deduplicación; consultar reglas configuradas; validar ámbito del usuario autenticado y registrar comprobante de entrega por destinatario.
+- **Archivos/módulos afectados:** backend/academic-service/Code.gs; AlertasTempranas, ReglasAutomatizacionAlertas y servicio de notificaciones.
+- **Dependencias y riesgos:** TASK-474 y TASK-422; no usar conteos del payload como fuente autoritativa.
+- **Alcance:** alertas académicas/inasistencia.
+- **Criterios de aceptación:** resultados reproducibles desde registros reales; datos de otro año/período no contaminan el cálculo; no se aceptan métricas mock; cada destinatario tiene estado verificable.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas por año/período y entrega simulada.
+
+### [TASK-422] Aplicar preferencias individuales sin suprimir comunicaciones obligatorias
+- **Hallazgo de origen:** FASE2-T07, sección de preferencias.
+- **Severidad:** Medio.
+- **Objetivo:** hacer que las preferencias persistidas gobiernen categorías, canales y frecuencia de notificación.
+- **Acción ejecutable:** reemplazar valores fijos de getNotificationPreferences por la configuración del usuario; hacer que el despachador consulte preferencias y canales; definir excepciones para avisos institucionales obligatorios.
+- **Archivos/módulos afectados:** backend/user-service/Code.gs y despachador de notificaciones.
+- **Dependencias y riesgos:** TASK-474 y TASK-475.
+- **Alcance:** preferencias y jerarquía de configuración.
+- **Criterios de aceptación:** preferencias guardadas se aplican por usuario; avisos obligatorios siguen entregándose; cambios de preferencia se reflejan en el siguiente despacho.
+- **Prioridad:** P2.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas por categoría, canal y excepción.
+
+### [TASK-404] Persistir y despachar alertas financieras de mora
+- **Hallazgo de origen:** FASE2-T07, sección de alertas financieras.
+- **Severidad:** Alto.
+- **Objetivo:** convertir el cálculo de mora en una alerta operativa verificable.
+- **Acción ejecutable:** persistir alerta/evento cuando una cuenta cumpla reglas; asociar responsables autorizados; despachar notificación y conservar estado/fecha/resultado; deduplicar por cuenta, período y regla.
+- **Archivos/módulos afectados:** backend/accounting-service/Code.gs; reglas de mora, eventos y notificaciones.
+- **Dependencias y riesgos:** TASK-474 y TASK-422.
+- **Alcance:** alertas financieras/operativas; no modificar aquí la fórmula de recargos.
+- **Criterios de aceptación:** cálculo genera alerta persistente con clave única; destinatarios y entrega son verificables; consulta no altera cargos; repetición no duplica alertas.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas de mora, deduplicación y despacho.

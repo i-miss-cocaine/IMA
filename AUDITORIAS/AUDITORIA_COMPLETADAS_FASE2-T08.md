@@ -107,3 +107,70 @@ Inspección estática/manual de los archivos y rangos indicados, contraste de SH
 - Última tarea auditada: FASE2-T08.
 - Próxima tarea exacta según completadas.md: **T-UX-02 - Soporte Universal Tecla Escape para Cierre de Modales y Restauración de Foco**.
 - Código fuente sin modificaciones. No se modificó completadas.md ni METODOLOGIA_DESARROLLO.md.
+
+## Tareas ejecutables derivadas de los hallazgos
+
+### [TASK-278] Completar correlación distribuida y reconstrucción cronológica de operaciones
+- **Hallazgo de origen:** FASE2-T08, sección 4; referencia a TASK-278.
+- **Severidad:** Alto.
+- **Objetivo:** reconstruir una operación completa a través de frontend y microservicios.
+- **Acción ejecutable:** generar requestId/correlationId en el cliente; propagarlo en sobres interservicio y eventos; añadir sagaId/causationId donde corresponda; registrar etapas y relaciones; construir visor cronológico con filtros/paginación y RBAC.
+- **Archivos/módulos afectados:** js/api.js; backend/user-service/Code.gs, academic-service, accounting-service, task-service y exam-service; BitacoraEventos/LogsSistema/BitacoraTrazabilidad; dashboard Developer.
+- **Dependencias y riesgos:** AUD-NG-083 para HMAC; TASK-474 para eventos; AUD-NG-145 para fuentes/DTO de logs.
+- **Alcance:** correlación de operaciones y consulta autorizada, no crear un nuevo esquema de logs paralelo.
+- **Criterios de aceptación:** una operación genera un ID estable que se conserva entre servicios/eventos; visor reconstruye orden y causa; filtros por acción/fecha/servicio funcionan con paginación; el usuario solo consulta ámbitos autorizados.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas E2E multi-servicio y consultas RBAC.
+
+### [AUD-NG-145] Unificar fuentes/DTO de bitácoras, filtros, sanitización y retención
+- **Hallazgo de origen:** FASE2-T08, secciones 2 y 4; ampliación de AUD-NG-145.
+- **Severidad:** Alto.
+- **Objetivo:** garantizar que los eventos producidos sean consultables y seguros en el panel institucional.
+- **Acción ejecutable:** definir un esquema único; alinear escritores y lectores entre LogsSistema, BitacoraEventos y BitacoraTrazabilidad; corregir filtros/campos/periodos; aplicar redacción de PII/secretos; paginar en origen; aplicar retención sobre las fuentes reales.
+- **Archivos/módulos afectados:** backend/user-service/Code.gs, backend/academic-service/Code.gs, backend/accounting-service/Code.gs, dashboard Developer y utilidades de logs.
+- **Dependencias y riesgos:** TASK-278 y AUD-NG-177/TASK-475; conservar trazabilidad histórica.
+- **Alcance:** contrato y operación de bitácoras.
+- **Criterios de aceptación:** cada escritor tiene consumidores compatibles; filtros corresponden a columnas reales; PII/secretos se redactan; paginación ocurre en origen con límites; retención afecta las fuentes correctas y queda auditada.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas de contrato, privacidad, paginación y retención.
+
+### [AUD-NG-174] Propagar y validar metadatos comunes del contrato API
+- **Hallazgo de origen:** FASE2-T08, sección 4; ampliación de AUD-NG-174.
+- **Severidad:** Alto.
+- **Objetivo:** asegurar que requestId/correlationId y errores estructurados sean consistentes en todos los servicios.
+- **Acción ejecutable:** incluir metadatos comunes en request/response; preservar correlationId a través de fetchApi/doPost; clasificar errores y evitar fallback success ante indisponibilidad; validar esquema/versionado en cada frontera.
+- **Archivos/módulos afectados:** js/api.js y dispatchers de USER/ACADEMIC/ACCOUNTING/TASK/EXAM.
+- **Dependencias y riesgos:** AUD-NG-083 y TASK-278.
+- **Alcance:** ampliación de AUD-NG-174 ya registrado en FASE2-02/T03.
+- **Criterios de aceptación:** metadatos se propagan sin regenerarse en cada salto; error de transporte/servicio no se confunde con vacío; contratos versionados y pruebas HTTP verifican correlación.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** suite común de contrato y pruebas de correlación.
+
+### [AUD-NG-083] Integrar HMAC en el tráfico interservicio efectivo
+- **Hallazgo de origen:** FASE2-T08, sección 4; referencia al hallazgo original AUD-NG-083.
+- **Severidad:** Crítico.
+- **Objetivo:** autenticar y autorizar los saltos entre deployments.
+- **Acción ejecutable:** integrar sobre firmado y verificado en cada llamada real, incorporando correlationId y validación de emisor/receptor/acción.
+- **Archivos/módulos afectados:** dispatchers y clientes interservicio de los cinco microservicios.
+- **Dependencias y riesgos:** AUD-NG-084/086, TASK-278 y TASK-474.
+- **Alcance:** ampliación por correlación del mismo hallazgo, sin crear ID duplicado.
+- **Criterios de aceptación:** ninguna llamada interna se despacha sin sobre válido; el mismo correlationId se conserva de extremo a extremo; llamadas no autorizadas se rechazan.
+- **Prioridad:** P0.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas HTTP entre deployments.
+
+### [TASK-474] Relacionar eventos con la operación origen
+- **Hallazgo de origen:** FASE2-T08, sección 4; ampliación de TASK-474.
+- **Severidad:** Alto.
+- **Objetivo:** que cada evento permita identificar la operación que lo produjo y su cadena causal.
+- **Acción ejecutable:** hacer obligatorios correlationId y causationId en eventos derivados; asociar eventId a requestId y servicio productor; validar el emisor y conservar la relación en el outbox.
+- **Archivos/módulos afectados:** backend/user-service/Code.gs y productores/consumidores de eventos.
+- **Dependencias y riesgos:** TASK-278, AUD-NG-083 y AUD-NG-006.
+- **Alcance:** metadatos causales del bus ya asignado a TASK-474.
+- **Criterios de aceptación:** ningún evento derivado carece de correlación/cadena causal; el visor puede reconstruir operación y eventos asociados; pruebas verifican la cadena entre servicios.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas E2E de causalidad y consulta.
