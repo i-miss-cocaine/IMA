@@ -43,3 +43,48 @@ La revisión fue estática. No se accedió a consolas de Apps Script/Google Work
 ## Restricciones
 
 No se modifican código fuente, completadas.md, ChangesLogs.txt ni METODOLOGIA_DESARROLLO.md. La rama base permanece intacta y no se hace merge.
+
+
+---
+
+## Tareas ejecutables derivadas de los hallazgos
+
+> No se crea un AUD-NG nuevo. Este informe amplía criterios de tareas existentes y distribuye los hallazgos por responsabilidad para evitar duplicar partición de datos, identidad, autenticación interservicio, disponibilidad y observabilidad.
+
+### [AUD-NG-075 / AUD-NG-076 / AUD-NG-077] Resolver fuentes de datos por departamento y servicio
+- **Hallazgo de origen:** evidencia 5 y 6; los servicios comparten SPREADSHEET_ID, la resolución usa dominio/año lectivo, ignora departamento/servicio y recurre al Spreadsheet principal.
+- **Acción ejecutable:** completar el modelo de partición y resolución para que departamento, servicio, dominio y año lectivo participen según el contrato definido; validar permisos y pertenencia de cada fuente antes de utilizarla; eliminar fallback silencioso a una fuente compartida cuando no exista una coincidencia autorizada.
+- **Criterios de aceptación:** cada fuente resuelta corresponde al departamento/servicio solicitado y a una identidad autorizada; las fuentes inexistentes, ambiguas o no autorizadas producen error explícito y no acceden al Spreadsheet principal por defecto; las pruebas cubren separación entre departamentos y servicios.
+- **Estado/prioridad:** conservar los valores vigentes de cada tarea; no se reespecifican aquí.
+
+### [AUD-NG-078 / AUD-NG-079 / AUD-NG-080 / AUD-NG-081 / AUD-NG-082] Asegurar identidad, propiedad, mínimo privilegio y administración del registro de servicios
+- **Hallazgo de origen:** evidencia 7, 8, 11 y 12; registro de despliegue simulado, recursos opcionales, defaults y permisos wildcard, catálogo de ejemplo y confianza en updatedBy del payload; ausencia de evidencia sobre propietarios, ejecutores y recuperación de administradores.
+- **Acción ejecutable:** exigir y verificar los identificadores reales de proyecto/deployment/recursos e identidad propietaria, administradora y ejecutora; sustituir valores de ejemplo y estados PASS/Activo no verificados por comprobaciones reales; aplicar permisos explícitos de mínimo privilegio; derivar el actor desde la identidad autenticada y no desde el payload; mantener catálogo real e historial de cambios; documentar y probar recuperación/sustitución de cuentas administrativas y onboarding de nuevas áreas.
+- **Criterios de aceptación:** ningún servicio se registra como activo sin comprobar deployment, endpoint y recursos requeridos; propietario/ejecutor/administrador quedan identificados y autorizados; el catálogo no devuelve registros ficticios como success; cambios de estado registran actor verificado e historial; no existen permisos wildcard por omisión; se documentan y validan procedimientos de recuperación de administradores y alta de áreas.
+- **Estado/prioridad:** conservar los valores vigentes de cada tarea; no se reespecifican aquí.
+
+### [AUD-NG-083 / AUD-NG-084 / AUD-NG-085 / AUD-NG-086] Integrar comunicación interservicio autenticada y protección de secretos
+- **Hallazgo de origen:** evidencia 9 y 10; sobres definidos pero no invocados, ausencia de llamadas de transporte interservicio en los servicios revisados y secreto determinista compartido.
+- **Acción ejecutable:** integrar el transporte real entre servicios; establecer credenciales independientes y protegidas por servicio; validar autenticidad, integridad, anti-replay, acción y versión en el receptor; retirar el fallback determinista compartido; aplicar autorización por operación y registrar fallos sin exponer secretos.
+- **Criterios de aceptación:** las llamadas entre deployments utilizan el contrato autenticado y verificable; los cinco servicios aplicables validan solicitudes entrantes; las credenciales no se derivan de IDs públicos ni se devuelven al cliente; solicitudes repetidas, expiradas, alteradas o no autorizadas se rechazan; las pruebas cubren comunicación y permisos entre servicios.
+- **Estado/prioridad:** conservar los valores vigentes de cada tarea; no se reespecifican aquí.
+
+### [AUD-NG-131 / AUD-NG-144] Corregir endpoints reales y comprobar disponibilidad
+- **Hallazgo de origen:** evidencia 2 y 3; endpoints placeholder para ACCOUNTING/DEVELOPER y versiones/estados de servicio contradictorios o no verificados.
+- **Acción ejecutable:** sustituir placeholders por endpoints reales de deployments autorizados; normalizar el registro de servicios/versiones y verificar la disponibilidad real de cada endpoint, sin inferir estado activo a partir de configuración declarativa.
+- **Criterios de aceptación:** los servicios registrados tienen URL y versión verificadas; no quedan placeholders en rutas activas; health checks consultan deployments reales y distinguen fallo, degradación y ausencia de configuración.
+- **Estado/prioridad:** conservar los valores vigentes de cada tarea; no se reespecifican aquí.
+
+### [TASK-064] Incorporar consumo de cuotas por servicio e identidad en observabilidad
+- **Hallazgo de origen:** relación explícita en el apartado de tareas existentes; consumo de cuotas por servicio/identidad.
+- **Acción ejecutable:** integrar en la observabilidad existente métricas de consumo atribuibles a servicio e identidad, conservando la medición real y las alertas dentro del alcance de TASK-064. No crear un monitor paralelo.
+- **Criterios de aceptación:** los datos de capacidad permiten identificar el servicio/identidad responsable y se presentan con fuente y periodo verificables; se conservan los criterios vigentes de TASK-064.
+- **Estado/prioridad:** conservar los valores vigentes de TASK-064.
+
+### Reconciliación y límites
+- AUD-NG-075/076/077 conservan partición, resolución y permisos de fuentes.
+- AUD-NG-078/079/080/081/082 conservan identidad, propiedad, catálogo, historial, pruebas multicuenta y control administrativo.
+- AUD-NG-083/084/085/086 conservan tráfico interservicio, secretos, anti-replay y autorización por acción/versión.
+- AUD-NG-131/AUD-NG-144 conservan URLs reales, disponibilidad y health checks; TASK-064 conserva cuotas/capacidad por servicio e identidad.
+- No se crean identificadores nuevos ni se declara ejecutada ninguna corrección. TAREA-05 permanece en CUMPLE PARCIALMENTE.
+- **Límites:** inspección estática/manual. No se revisaron consolas reales de Google Workspace/Apps Script, deployments, ACL de Drive/Sheets, cuentas propietarias/ejecutoras ni tráfico entre servicios; tampoco se ejecutaron pruebas multicuenta o entre deployments.

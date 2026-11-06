@@ -5325,3 +5325,32 @@ CHECKPOINT C1.155 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-03
 - Próximo informe: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-05.md. El registro de progreso indica que TAREA-04 no aparece como identificador en el inventario actual; no inventar ni crear un informe TAREA-04.
 - Commit de cierre: commit único de ambos archivos; verificar SHA, árbol y contenido publicado.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.156 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-05
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.1.
+- HEAD de partida verificado: c69836ea45cdc61b89442382aee092a5bb1448c0.
+- HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59 (referencia preservada del checkpoint anterior; no se modificó esta rama).
+- Árbol base de la rama de trabajo: 6782ff283c014b9ac1f58512d5f89f54345392da.
+- ID operativo de sesión: IMA-AUDIT-20261106-2157Z (no es ID nativo de ChatGPT).
+- Checkpoint inicial de esta iteración: C1.155.
+- Estado de iteración: cerrada en C1.156.
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-05.md.
+- SHA del informe antes del cambio: 93eb0eb68c4681cbc00d6bb62b0f7d18e0ac2943.
+- SHA del contexto antes del cambio: 46bfe50a89ec2c812bf1d24f2036c1662e1cd376.
+- Inspección: TAREA-05 CUMPLE PARCIALMENTE; servicios y versiones declarativos/contradictorios, endpoints placeholder, fuentes compartidas y fallback, despliegue simulado, identidades/ACL no verificadas y comunicación interservicio no integrada.
+- Tareas formalizadas por ampliación de IDs existentes: AUD-NG-075/076/077; AUD-NG-078/079/080/081/082; AUD-NG-083/084/085/086; AUD-NG-131/AUD-NG-144; TASK-064. No se crea un AUD-NG nuevo ni se duplican alcances.
+- Criterios añadidos desde el informe: identidad de ejecución y recuperación de cuentas, mínimo privilegio, evaluación de Shared Drives/delegación y onboarding departamental; se mantienen dentro de los IDs ya existentes.
+- Archivos modificados: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-05.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, Auditoria.txt, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README y rama base.
+- Pruebas ejecutadas: lectura íntegra del informe; contraste de TAREA-05 en Auditoria.txt; revisión de IDs relacionados y sus alcances en informes existentes; verificación del HEAD y árbol de partida.
+- Pruebas no ejecutadas: pruebas multicuenta, permisos de Drive/Sheets, consola de Google Workspace, deployments, comunicación interservicio, Apps Script y producción.
+- Límite: cambio exclusivamente documental; TAREA-05 permanece CUMPLE PARCIALMENTE y los IDs referenciados conservan sus estados vigentes.
+- Próximo informe: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-06.md; leerlo íntegramente y reconciliar AUD-NG-154/155, AUD-NG-058 y TASK-139/140/143/295/345/346, TASK-149/150/456 antes de formalizar.
+- Commit de cierre: commit único de ambos archivos; verificar SHA, árbol y contenido publicado.
+================================================================
