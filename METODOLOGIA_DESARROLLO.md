@@ -99,8 +99,16 @@ Registro objetivo de las modificaciones aplicadas con éxito en el repositorio. 
 ### 3.3 MapaDependencias.md
 Inventario técnico y estructural que documenta de forma explícita las relaciones lógicas del sistema, incluyendo funciones, variables de estado, clases, constantes de configuración, rutas de importación y el mapa de enlaces entre los diferentes módulos y el canvas general del proyecto.
 
-### 3.4 Pendientes.md
-Este archivo sustituye de forma definitiva a cualquier versión anterior de gestión de instrucciones (como `Instrucciones.txt`) y actúa como el único registro oficial de tareas autorizadas.
+### 3.4 Registro de tareas derivadas de auditoría
+El registro oficial de tareas originadas por auditorías reside en cada informe de auditoría dentro de `AUDITORIAS/`. Cada informe debe incluir una sección obligatoria titulada **Tareas ejecutables derivadas de los hallazgos**. No se utilizará un archivo maestro externo para registrar estas tareas.
+
+`Pendientes.md` queda fuera del flujo operativo de auditoría y desarrollo: no se recuperará, reconstruirá, actualizará ni utilizará para crear, consultar o administrar tareas. Su contenido histórico no constituye fuente de verdad para el estado de tareas.
+
+Cada tarea debe permanecer en el mismo informe que documenta el hallazgo que la origina y contener: ID único; referencia exacta al hallazgo; severidad; objetivo y acción concreta; archivos/módulos afectados; dependencias; alcance técnico; criterios de aceptación verificables; prioridad; estado (Pendiente, En ejecución, Bloqueada o Completada); y evidencia de cierre cuando corresponda.
+
+La sección de tareas debe distinguir tareas nuevas, tareas existentes ampliadas y tareas ya cubiertas por otro ID. No crear duplicados: cuando un hallazgo amplíe una tarea existente, referenciar el ID existente y describir la ampliación. Un informe sin hallazgos accionables debe indicarlo expresamente.
+
+La ubicación oficial de todos los informes, planes, bitácoras, mapas y checkpoints propios de auditoría es el directorio `AUDITORIAS/`.
 
 ## 3.5 Rol de Auditor
 
@@ -220,17 +228,7 @@ Dependencias relacionadas.
 
 3.11 Conversión Obligatoria de Hallazgos en Tareas
 
-Todo hallazgo registrado en Auditoria.txt deberá convertirse en una tarea concreta dentro del bloque:
--"Tareas Pendientes" del archivo:
-
-Pendientes.md
-Cada tarea deberá:
-Ser específica.
-Ser verificable.
-Tener un objetivo claro.
-Estar vinculada al hallazgo original.
-Permitir su posterior implementación y validación.
-No podrán existir hallazgos sin una tarea asociada.
+Todo hallazgo accionable deberá convertirse en una tarea ejecutable dentro de la sección obligatoria **Tareas ejecutables derivadas de los hallazgos** del mismo informe de auditoría que lo documenta. No podrán existir hallazgos accionables sin tarea asociada. La tarea deberá ser específica, verificable, tener objetivo y alcance claros, estar vinculada al hallazgo original y permitir implementación y validación independientes. Las tareas no se trasladarán a un registro maestro separado.
 
 ## 3.10 Proceso Oficial de Auditoría
 
@@ -547,20 +545,26 @@ La auditoría es exclusivamente una actividad de inspección, documentación y g
 Toda corrección deberá realizarse posteriormente mediante las tareas registradas en Pendientes.md.
 
 
-#### Protocolo de Registro y Estructura en Pendientes.md:
-Toda tarea que sea inyectada en `Pendientes.md` debe estar perfectamente estructurada y tipificada empleando la siguiente plantilla obligatoria de metadatos, garantizando que el desarrollador cuente con el contexto completo antes de operar:
+#### Protocolo obligatorio de registro de tareas en cada informe
+
+Cada archivo de auditoría deberá cerrar con la sección **Tareas ejecutables derivadas de los hallazgos**, usando esta estructura por tarea:
 
 ```markdown
-### [ID-TAREA] Título Descriptivo de la Tarea
-- **Origen del Hallazgo:** [Referencia indexada a Auditoria.txt]
-- **Severidad/Clasificación:** [Crítico | Alto | Medio | Bajo | Observación]
-- **Archivos Involucrados:** [Rutas exactas de los archivos a modificar]
-- **Dependencias Expuestas:** [Lista extraída de MapaDependencias.md]
-- **Descripción del Alcance:** [Especificación técnica unívoca de lo que se debe implementar. PROHIBIDO dejar margen a la ambigüedad]
-- **Criterios de Aceptación:** [Condiciones medibles que debe pasar en la verificación]
-- **Estado:** [ ] Pendiente | [ ] En Ejecución | [ ] Completada
-
+### [TASK-###] Título de la tarea
+- **Hallazgo de origen:** [ID y referencia exacta dentro del informe]
+- **Severidad:** [Crítico | Alto | Medio | Bajo | Observación]
+- **Objetivo:** [Resultado técnico esperado]
+- **Acción ejecutable:** [Cambio concreto que debe realizarse]
+- **Archivos/módulos afectados:** [Rutas y componentes exactos]
+- **Dependencias y riesgos:** [Relaciones y efectos colaterales]
+- **Alcance:** [Límites explícitos de implementación]
+- **Criterios de aceptación:** [Condiciones medibles y verificables]
+- **Prioridad:** [P0 | P1 | P2 | P3]
+- **Estado:** [Pendiente | En ejecución | Bloqueada | Completada]
+- **Evidencia de cierre:** [Commit, pruebas y revisión; completar al cerrar]
 ```
+
+Los IDs deben ser únicos en el proyecto. Las tareas preexistentes se conservan y se amplían por referencia; no se generan IDs duplicados. El informe es la fuente de verdad del estado de sus tareas.
 ## CLASIFICACIÓN DE HALLAZGOS
 Todo hallazgo deberá clasificarse obligatoriamente.
 *Crítico
@@ -598,7 +602,7 @@ El flujo de trabajo se ejecutará de forma lineal, síncrona y obligatoria. Viol
   FASE 1: Registro Formal de Hallazgos
     │
     ▼
-  FASE 2: Planificación e Inyección/Actualización en Pendientes.md
+  FASE 2: Conversión de hallazgos en tareas dentro del informe de auditoría
     │
     ▼
   FASE 3: Respaldo Íntegro de Seguridad
@@ -795,14 +799,13 @@ Esta sección reemplaza cualquier interpretación anterior de «un commit por ta
 9. **Identificador de sesión de chat/auditoría:** cada checkpoint debe incluir un ID de sesión único, el checkpoint inicial de esa sesión y su estado (abierta o cerrada). ChatGPT no expone un identificador técnico estable de conversación; por tanto, se utilizará un identificador operativo generado para la auditoría, con formato `IMA-AUDIT-YYYYMMDD-HHMMZ` (añadir sufijo si se necesita evitar colisión). Este ID no debe presentarse como ID nativo de ChatGPT. Todos los checkpoints intermedios y el checkpoint final de una misma conversación conservarán el mismo ID. El último checkpoint de la conversación indicará explícitamente el checkpoint de inicio, el checkpoint de cierre, la hora UTC de cierre y el estado «sesión cerrada». Una conversación posterior recibirá un ID nuevo.
 
 
-# 17. DIAGNÓSTICO Y CONTENCIÓN DE BLOQUEOS DE PUBLICACIÓN EN GITHUB
+# 17. CONTROL DE PUBLICACIÓN EN GITHUB
 
-1. **No atribuir el bloqueo sin evidencia:** distinguir entre (a) rechazo de la capa de seguridad/ejecución del agente o del conector antes del despacho, (b) error devuelto por el conector al invocar GitHub y (c) respuesta HTTP de GitHub. Solo se afirmará que GitHub rechazó una operación cuando exista una respuesta verificable de la API con su estado y mensaje. Si la herramienta bloquea la operación antes de devolver una respuesta de GitHub, registrar «bloqueo previo al despacho; causa interna no expuesta»; no inventar un 403, falta de permisos, cuota ni protección de rama.
-2. **Captura forense obligatoria:** registrar herramienta/operación, etapa alcanzada (blob, tree, commit o actualización de ref), rama y HEAD esperado, tamaño aproximado del payload, momento, texto literal del error y código HTTP/request ID si la herramienta los expone. Nunca registrar tokens, credenciales ni secretos. Si no se expone el error técnico, consignar expresamente esa limitación.
-3. **Diagnóstico por clase de error:** 401/403: revisar autenticación, permisos Contents y reglas/protecciones aplicables; 404: verificar repositorio, ruta, ref y visibilidad; 409: revisar conflicto/estado del repositorio; 422: validar estructura del árbol, campos requeridos, límites y posible abuso de solicitudes; 429 o respuesta explícita de rate limit: respetar reset/cuota; 5xx o fallo de transporte: tratar como transitorio. No inferir una clase a partir de un mensaje genérico de bloqueo.
-4. **Secuencia de publicación única:** leer HEAD y árbol de la rama autorizada; preparar todos los blobs/entradas; crear un árbol basado en el árbol completo del HEAD (nunca un árbol parcial que elimine archivos no incluidos); crear exactamente un commit cuyo padre sea el HEAD verificado; actualizar la referencia con control de concurrencia/expected SHA; volver a leer HEAD y verificar commit, árbol y archivos. Los pasos de creación de objetos no son commits; solo el commit final debe mover la rama.
-5. **Conflicto concurrente:** si la actualización de ref falla porque el HEAD cambió, no usar force ni sobrescribir. Volver a leer el HEAD, comparar el nuevo estado, reconstruir el árbol/commit sobre el padre vigente y repetir la verificación, siempre como un solo commit publicado para la iteración.
-6. **Bloqueo de seguridad del agente/conector:** si el control de seguridad impide una operación antes del despacho, detener la secuencia. No cambiar a Contents API por archivo, no dividir commits, no probar endpoints alternativos para eludir el control, no crear otra rama ni modificar la rama base. Conservar el trabajo preparado fuera de GitHub solo si el entorno lo permite y reportar exactamente qué operación fue bloqueada; solicitar al usuario una vía autorizada o reanudar cuando el control permita la operación prevista.
-7. **Reintentos:** no repetir ciegamente la misma escritura. Solo reintentar cuando la causa esté identificada y sea corregible o transitoria; antes de cualquier reintento de actualización de ref, consultar el HEAD actual. Si la causa no es visible o persiste el bloqueo, detenerse. Los objetos Git creados pero no referenciados no equivalen a un commit publicado; comprobar la referencia antes de declarar éxito.
-8. **Condición de cierre:** ante cualquier bloqueo que impida publicar el commit único con todos los archivos y el checkpoint, no publicar commits parciales. Registrar el bloqueo en el checkpoint preparado, mantener la iteración abierta y comunicar la próxima acción concreta. Esta regla complementa y no sustituye las secciones 15 y 16.
-9. **Excepción documentada de consolidación histórica:** la reescritura de historia solo podrá realizarse con autorización expresa del usuario para una iteración concreta ya fragmentada. Deben preservarse los cambios independientes posteriores, reconstruirse la cadena de commits en orden lógico y actualizarse la referencia de trabajo con `force` y `expected_sha` como protección de concurrencia. La excepción de T-UX-16 autorizada el 2026-11-06 no constituye permiso general. La rama base está excluida en todos los casos.
+1. **Atribución basada en evidencia:** distinguir entre bloqueo previo al despacho por la capa de seguridad/ejecución, error del conector y respuesta HTTP de GitHub. Solo atribuir un rechazo a GitHub cuando exista respuesta verificable con estado y mensaje. Si la operación se detiene antes del despacho, registrar «bloqueo previo al despacho; causa interna no expuesta».
+2. **Registro técnico:** documentar operación, etapa alcanzada (blob, tree, commit o actualización de referencia), rama, HEAD esperado, tamaño aproximado del contenido, fecha/hora, mensaje literal y código HTTP o request ID cuando estén disponibles. Nunca incluir credenciales, tokens ni secretos.
+3. **Clasificación del resultado:** interpretar los códigos HTTP únicamente cuando estén presentes en la respuesta: 401/403 para autenticación o permisos; 404 para repositorio/ruta/referencia; 409 para conflicto de estado; 422 para validación de la solicitud o del árbol; 429 para límite de solicitudes; 5xx para fallo del servicio. Un mensaje genérico no permite asignar una causa específica.
+4. **Publicación controlada:** consultar HEAD y árbol completos de la rama autorizada; preparar todos los objetos y entradas; construir el árbol nuevo sobre el árbol completo verificado; crear un único commit cuyo padre sea el HEAD consultado; actualizar la referencia con control de concurrencia; volver a consultar la rama y verificar SHA, árbol y archivos incluidos.
+5. **Concurrencia:** si el HEAD cambia antes de actualizar la referencia, detener la publicación, comparar el estado vigente con el conjunto preparado y obtener una nueva base verificada antes de continuar. Nunca sobrescribir cambios concurrentes ni utilizar una actualización forzada no autorizada.
+6. **Bloqueo previo al despacho:** cuando la capa de seguridad impida la operación antes de llegar a GitHub, detener la publicación. No sustituir la operación bloqueada por escrituras parciales, rutas alternativas ni cambios de rama. Registrar el bloqueo en el checkpoint y solicitar una vía autorizada.
+7. **Condición de cierre:** si no es posible publicar en un único commit todos los cambios y el checkpoint obligatorio, no publicar una parte. Mantener la iteración abierta, documentar el estado preparado y comunicar la operación que quedó bloqueada.
+8. **Alcance:** esta sección complementa las reglas de commits y checkpoints de las secciones 15 y 16. La rama base permanece protegida y no se modifica durante este procedimiento.
