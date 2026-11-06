@@ -71,3 +71,46 @@ getSecurityAndComplianceDashboardData pasa statusFilter: "ACTIVA" a getSecurityD
 - Progreso: 73/183 identificadores auditados; 110 pendientes.
 - Siguiente tarea: TAREA-F4-P1-02 - Implementar el motor automático de retención, archivo y anonimización de datos.
 - Sin modificación: código fuente, completadas.md, ChangesLogs.txt y METODOLOGIA_DESARROLLO.md.
+
+## Tareas ejecutables derivadas de los hallazgos
+
+> Derivadas de la inspección estática de TAREA-F4-P1-01. Se conserva el dictamen **NO CUMPLE** y el estado [X] del registro maestro. Las tareas no se consideran ejecutadas por su formalización documental.
+
+### AUD-NG-219 / TASK-498 — Aplicar autoridad, ámbito y límites al motor de delegaciones de seguridad (ALTO/P1)
+
+- [ ] Definir un catálogo explícito de acciones delegables, con clasificación de riesgo y restricciones por rol. Rechazar acciones desconocidas, comodines globales (`*`) y permisos que no estén declarados como delegables.
+- [ ] Validar al crear una delegación que el delegante autenticado tenga autoridad vigente para conceder cada acción y el ámbito solicitado; el delegado debe existir, estar activo y ser elegible para recibirla. No permitir que los campos del payload sustituyan al actor verificado.
+- [ ] Aplicar `ambito` en los tres helpers USER, ACADEMIC y ACCOUNTING. Cada autorización debe comprobar conjuntamente actor delegado, acción, recurso/estudiante/área/servicio dentro del ámbito, estado y ventana temporal. La coincidencia de acción por sí sola no autoriza.
+- [ ] Definir precedencia inequívoca entre matriz dinámica y delegación. Una denegación explícita o una restricción obligatoria no puede ser sobrepuesta por una delegación, salvo excepción formal y acotada que esté representada en política y auditada.
+- [ ] Impedir delegaciones en cadena por defecto: una persona que recibió una delegación no puede volver a delegar esa autoridad. Si se habilita una excepción futura, deberá preservar delegante original, cadena completa, profundidad máxima y autorización explícita; no inferir autoridad desde `_verifiedUserId` o `_delegatedFrom` del payload.
+- [ ] Validar fechas en creación y en cada decisión de autorización: una delegación futura debe quedar Pendiente/Programada, una vencida Expirada y una revocada sin efecto inmediato. No depender de que alguien consulte primero `getSecurityDelegations` para actualizar su estado.
+- [ ] Normalizar estados y fechas en almacenamiento; rechazar rangos inválidos, fechas ambiguas, acciones duplicadas y ámbitos vacíos o excesivos. Registrar quién concedió, a quién, qué acciones, qué ámbito, cuándo y bajo qué autoridad.
+- [ ] Crear pruebas negativas/positivas en USER, ACADEMIC y ACCOUNTING: acción fuera de catálogo, comodín, delegante sin autoridad, destino inactivo, recurso fuera de ámbito, denegación dinámica, delegación futura, vencida, revocada, cadena, y suplantación de identidad.
+- **Criterio de aceptación:** los tres servicios autorizan solo cuando coinciden acción, ámbito, actor y vigencia, y la autoridad del delegante está demostrada. No hay comodines arbitrarios, escalamiento por cadena ni override implícito de denegaciones.
+
+### AUD-NG-160 — Sincronizar cachés y revocación de delegaciones entre servicios (ALTO/P1)
+
+- [ ] Unificar el contrato de caché de delegaciones consumido por USER, ACADEMIC y ACCOUNTING; documentar claves, propietario, TTL, versión y datos que contiene cada entrada.
+- [ ] Al crear, revocar, expirar o modificar una delegación, invalidar/actualizar la entrada correspondiente en los tres ScriptCache independientes mediante el mecanismo de propagación confiable ya requerido por AUD-NG-005. La confirmación de USER no debe implicar propagación exitosa sin ACK de los servicios afectados.
+- [ ] Hacer que los helpers revaliden estado, fechaInicio y fechaFin en cada hit de caché o utilicen una versión/lease que no permita autorizar con una delegación expirada o revocada. El TTL de 300 segundos no debe ser la única garantía de vigencia.
+- [ ] Evitar que la consulta de `getSecurityDelegations` sea la responsable de marcar expiración; el estado efectivo debe calcularse de forma determinista al autorizar y persistirse mediante una transición idempotente cuando corresponda.
+- [ ] Tratar fallos parciales de invalidación: registrar servicios pendientes, reintentar, impedir concesiones/revocaciones inconsistentes según política de riesgo y exponer el estado real de propagación.
+- [ ] Añadir pruebas con cachés calientes/frías y tres proyectos separados: alta, revocación, expiración por tiempo, evento duplicado, servicio desconectado, reintento y autorización inmediatamente posterior al cambio.
+- **Criterio de aceptación:** una delegación revocada o vencida deja de autorizar en los tres servicios dentro del SLA; una delegación nueva no queda oculta por caché obsoleta; cada transición tiene evidencia de propagación.
+
+### Interfaz de gestión — ciclo de vida de delegaciones
+
+- [ ] Incorporar en la interfaz administrativa controles funcionales para crear, listar, consultar detalle y revocar delegaciones; no presentar un contador o texto informativo como si existiera gestión operativa.
+- [ ] Mostrar y editar solo los campos permitidos por la política: delegado, acciones delegables, ámbito, fecha de inicio y fin; validar en cliente para usabilidad y repetir todas las validaciones en backend.
+- [ ] Presentar estado real (Programada, Activa, Expirada, Revocada), delegante, vigencia, alcance y resultado de propagación; distinguir revocación solicitada de revocación confirmada.
+- [ ] Restringir los controles según autoridad del actor; no exponer la UI como mecanismo para eludir el catálogo de acciones ni el ámbito autorizado.
+- [ ] Añadir pruebas de interfaz y contrato API para creación, listado, filtros, detalle, revocación, errores de autorización, expiración y propagación parcial.
+- **Criterio de aceptación:** el ciclo de gestión completo funciona con permisos de backend verificables y refleja el estado persistido/propagado, no datos simulados ni contadores desconectados.
+
+### Reconciliación y límites
+
+- AUD-NG-217 conserva el alcance general de IDOR/ABAC; AUD-NG-219 se limita a la autoridad y semántica del motor de delegaciones.
+- AUD-NG-160 conserva vigencia de privilegios y cachés; aquí se amplía específicamente a cachés de delegaciones en USER/ACADEMIC/ACCOUNTING. AUD-NG-005 sigue siendo responsable del mecanismo transversal de propagación de eventos de seguridad.
+- TASK-228, TASK-282 y TASK-311 siguen siendo workflows/responsabilidades, no sustitutos del motor de permisos.
+- La observación del filtro `statusFilter` y el contador de delegaciones queda reservada para TAREA-F4-P1-09, según el informe; no se incorpora a este bloque.
+- No se crean otros IDs. No se modifican código, pruebas ni estados maestros en esta iteración documental.

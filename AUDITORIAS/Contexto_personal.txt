@@ -5913,3 +5913,33 @@ CHECKPOINT C1.175 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-F4-P0-
 - Próximo informe oficial: TAREA-F4-P1-01 - motor transversal de delegaciones de seguridad y permisos temporales; leer íntegramente y reconciliar antes de editar.
 - Regla de publicación: un único commit con exactamente el informe y Contexto_personal.txt; verificar SHA, padre, árbol, archivos modificados y HEAD tras publicar.
 ================================================================
+
+================================================================
+CHECKPOINT C1.176 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-F4-P1-01
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.1.
+- HEAD de partida verificado: b403a01a9cba820f9e60d5945ee9241977aaad2f.
+- Árbol base de la rama de trabajo: 6fbf3b04ed746a7cf9c4e675bb4ad802259d85e7.
+- HEAD de rama base consultado previamente en esta sesión (solo lectura): 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID operativo de sesión: IMA-AUDIT-20261106-2232Z (no es ID nativo de ChatGPT).
+- Checkpoint inicial de esta iteración: C1.175.
+- Estado de iteración: cerrada en C1.176.
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F4-P1-01.md.
+- SHA del informe antes del cambio: 6e09d517e888d0418b18d43a43f13f4ab99aaa56.
+- SHA del contexto antes del cambio: c634c66908dd425131b2cf3e45197cafebe041dc.
+- Dictamen original preservado: TAREA-F4-P1-01 NO CUMPLE; estado [X] de completadas.md sin cambios.
+- Inspección: USER persiste delegaciones pero los helpers USER/ACADEMIC/ACCOUNTING no aplican ambito; creación no valida autoridad del delegante, catálogo de acciones ni destino activo; comodín y delegación en cadena pueden ampliar privilegios; delegación puede sobreponerse a denegación dinámica; fechas/estados no se revalidan en hit de caché; invalidación solo alcanza ScriptCache USER y no ACADEMIC/ACCOUNTING; UI no implementa crear/listar/revocar.
+- Reconciliación: AUD-NG-219/TASK-498 formaliza autoridad, catálogo, ámbito, precedencia, cadenas y UI; AUD-NG-160 se amplía para sincronización/invalidación de cachés de delegación en tres servicios; AUD-NG-005 permanece como mecanismo transversal de eventos. AUD-NG-217 y TASK-228/282/311 conservan sus ámbitos distintos.
+- Observación diferida: discrepancia statusFilter/contador activeDelegationsCount reservada para TAREA-F4-P1-09.
+- IDs nuevos: AUD-NG-219 / TASK-498, conforme al informe.
+- Archivos modificados: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F4-P1-01.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, Auditoria.txt, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README y rama base.
+- Pruebas ejecutadas: lectura íntegra de TAREA-F4-P1-01; contraste de AUD-NG-160/217/219 y TASK-498 en Auditoria.txt; comprobación de ausencia previa del bloque; verificación de HEAD y SHAs de partida.
+- Pruebas no ejecutadas: HTTP, pruebas multiusuario, cachés calientes/frías, propagación interservicio, revocación real, UI ni suites automatizadas.
+- Límite: cambio exclusivamente documental; no se declara implementada ni completada ninguna tarea.
+- Próximo informe oficial: TAREA-F4-P1-02 - motor automático de retención, archivo y anonimización; leer íntegramente y reconciliar antes de editar.
+- Regla de publicación: un único commit con exactamente el informe y Contexto_personal.txt; verificar SHA, padre, árbol, archivos modificados y HEAD tras publicar.
+================================================================
