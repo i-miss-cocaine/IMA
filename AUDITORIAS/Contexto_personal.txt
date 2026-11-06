@@ -5354,3 +5354,31 @@ CHECKPOINT C1.156 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-05
 - Próximo informe: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-06.md; leerlo íntegramente y reconciliar AUD-NG-154/155, AUD-NG-058 y TASK-139/140/143/295/345/346, TASK-149/150/456 antes de formalizar.
 - Commit de cierre: commit único de ambos archivos; verificar SHA, árbol y contenido publicado.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.157 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-06
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.1.
+- HEAD de partida verificado: f803c10ab93a559c28e503d5bcec171d17a82cca.
+- HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59 (referencia preservada del checkpoint anterior; no se modificó esta rama).
+- Árbol base de la rama de trabajo: eb1275cc0d420eb19af7ef992e5e13c2cdf776be.
+- ID operativo de sesión: IMA-AUDIT-20261106-2157Z (no es ID nativo de ChatGPT).
+- Checkpoint inicial de esta iteración: C1.156.
+- Estado de iteración: cerrada en C1.157.
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-06.md.
+- SHA del informe antes del cambio: fadc1ef7f0b5f07306ab70e291ec44a91706630a.
+- SHA del contexto antes del cambio: 07f57034a5cb236a6587a07455009428e0fe8d45.
+- Inspección: TAREA-06 CUMPLE PARCIALMENTE; locks no verificados/no globales, creación fragmentada, búsqueda por nombre, fallback a raíz de Drive, ausencia de IDs canónicos, enlaces ANYONE_WITH_LINK y falta de conciliación/ciclo de vida.
+- Tareas formalizadas por ampliación de IDs existentes: AUD-NG-154/155; AUD-NG-058/TASK-143; TASK-139/140/295/346; TASK-345; TASK-149/150/456. No se crea un AUD-NG nuevo.
+- Archivos modificados: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-06.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, Auditoria.txt, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README y rama base.
+- Pruebas ejecutadas: lectura íntegra del informe; contraste de TAREA-06 en Auditoria.txt; reconciliación de IDs y ámbitos; verificación del HEAD y árbol de partida.
+- Pruebas no ejecutadas: concurrencia entre proyectos, permisos de Drive, ACL heredadas, acceso anónimo, Shared Drives, Apps Script y producción.
+- Límite: cambio exclusivamente documental; TAREA-06 permanece CUMPLE PARCIALMENTE y los IDs referenciados conservan sus estados vigentes.
+- Próximo informe: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-07.md; revisar AUD-NG-146, TASK-151/152, TASK-087/251, TASK-079, TASK-149/150, TASK-064 y TASK-345 antes de formalizar.
+- Commit de cierre: commit único de ambos archivos; verificar SHA, árbol y contenido publicado.
+================================================================

@@ -65,3 +65,55 @@ La calidad es **insuficiente para declarar TAREA-06 completada**. El bloqueo se 
 ## Restricciones
 
 No se modifican código fuente, completadas.md, ChangesLogs.txt ni METODOLOGIA_DESARROLLO.md. Solo se amplían registros de auditoría y tareas pendientes existentes. La rama base permanece intacta y no se hace merge.
+
+
+---
+
+## Tareas ejecutables derivadas de los hallazgos
+
+> No se crea un AUD-NG nuevo. TAREA-06 amplía criterios de tareas ya existentes; cada brecha se asigna al identificador que conserva su responsabilidad para evitar duplicar jerarquía documental, metadatos, privacidad, permisos, conciliación y ciclo de vida.
+
+### [AUD-NG-154] Completar la jerarquía documental y la resolución canónica de carpetas
+- **Hallazgo de origen:** evidencia técnica 1 y 2; creación fragmentada, locks no verificados, búsquedas por nombre, ausencia de catálogo común de IDs/rutas y fallback silencioso a la raíz de Drive.
+- **Acción ejecutable:** consolidar el catálogo institucional de carpetas y rutas con IDs estables, departamento, tipo de recurso y propietario; normalizar nombres y resolución; comprobar explícitamente la adquisición del bloqueo y manejar el caso de no adquisición; coordinar la creación entre proyectos Apps Script distintos, sin asumir que ScriptLock es global; eliminar el fallback silencioso a DriveApp.getRootFolder(); completar la estructura departamental y los helpers equivalentes en los servicios que la requieren.
+- **Archivos/módulos relacionados:** backend/task-service/Code.gs, backend/user-service/Code.gs, backend/accounting-service/Code.gs, backend/academic-service/Code.gs y backend/exam-service/Code.gs.
+- **Criterios de aceptación:** cada ruta se resuelve por ID canónico y contexto autorizado; la falta de configuración o permiso falla explícitamente; la creación concurrente no genera duplicados entre proyectos; todos los servicios aplicables usan el mecanismo común; los nombres equivalentes se normalizan; no se crean carpetas en la raíz por fallback.
+- **Estado/prioridad:** conservar los valores vigentes de AUD-NG-154.
+
+### [AUD-NG-155] Vincular archivos físicos con registros institucionales y metadatos
+- **Hallazgo de origen:** evidencia técnica 2 y 4; carpetas/archivos pueden crearse sin relación institucional persistida de forma uniforme y no existe conciliación completa de referencias.
+- **Acción ejecutable:** registrar metadatos y vínculo estable entre cada archivo físico, su carpeta canónica y el registro institucional correspondiente; conservar departamento, tipo documental, propietario y referencia del expediente/registro según el modelo existente.
+- **Criterios de aceptación:** cada archivo gestionado conserva ID estable y referencia institucional válida; la consulta del registro resuelve el archivo autorizado; referencias rotas o inexistentes se detectan y no se presentan como vínculos válidos.
+- **Estado/prioridad:** conservar los valores vigentes de AUD-NG-155.
+
+### [AUD-NG-058 / TASK-143] Retirar exposición pública y proteger adjuntos/documentos
+- **Hallazgo de origen:** evidencia técnica 3; usos de ANYONE_WITH_LINK en ACCOUNTING, USER y TASK, incluida una carpeta pública de entregas con posible herencia de acceso.
+- **Acción ejecutable:** eliminar la exposición pública no autorizada de comprobantes, documentos laborales, adjuntos de trámites, imágenes de noticias y entregas; inventariar y remediar enlaces públicos preexistentes; aplicar acceso mediado por autorización y verificar permisos efectivos/heredados antes de devolver enlaces.
+- **Archivos/módulos relacionados:** backend/accounting-service/Code.gs, backend/user-service/Code.gs y backend/task-service/Code.gs.
+- **Criterios de aceptación:** no existen permisos ANYONE_WITH_LINK salvo excepción explícita, aprobada y documentada; usuarios no autorizados no pueden abrir archivos mediante URL directa; la carpeta de entregas no propaga acceso público; se inspeccionan y corrigen recursos preexistentes y nuevos.
+- **Estado/prioridad:** conservar los valores vigentes de AUD-NG-058 y TASK-143.
+
+### [TASK-139 / TASK-140 / TASK-295 / TASK-346] Aplicar permisos granulares, sensibilidad y control de herencia
+- **Hallazgo de origen:** evidencia técnica 3; ausencia de matriz institucional de permisos de Drive por operación y de comprobaciones de permisos heredados.
+- **Acción ejecutable:** aplicar reglas explícitas por lectura, edición, creación y eliminación; clasificar sensibilidad documental; restringir por departamento/expediente; revisar y revocar accesos residuales y permisos heredados que excedan la autorización vigente.
+- **Criterios de aceptación:** cada operación valida actor, recurso y ámbito; los permisos heredados se evalúan; cambios de rol/departamento revocan accesos residuales; los documentos sensibles no quedan accesibles por enlace público ni por permisos amplios heredados.
+- **Estado/prioridad:** conservar los valores vigentes de cada tarea.
+
+### [TASK-345] Conciliar Drive con los registros institucionales
+- **Hallazgo de origen:** evidencia técnica 4; falta de detección general de archivos/carpetas inexistentes, movidos, inaccesibles, huérfanos o con referencias rotas.
+- **Acción ejecutable:** ejecutar conciliación entre IDs de Drive y registros institucionales; detectar discrepancias sin borrar datos automáticamente; registrar estado, causa y acción de reparación autorizada.
+- **Criterios de aceptación:** la conciliación identifica archivos faltantes, movidos, inaccesibles, huérfanos y referencias rotas; los resultados son trazables y la reparación respeta permisos y conserva historial.
+- **Estado/prioridad:** conservar los valores vigentes de TASK-345.
+
+### [TASK-149 / TASK-150 / TASK-456] Implementar conservación, archivo y disposición controlada
+- **Hallazgo de origen:** evidencia técnica 4; ausencia de un ciclo común de mover, archivar, conservar o eliminar documentos con autorización y trazabilidad.
+- **Acción ejecutable:** completar políticas y flujos de conservación, archivo, traslado y disposición/eliminación; validar autorización y periodo de retención; registrar actor, motivo, fecha, ubicación anterior/nueva y evidencia de la operación.
+- **Criterios de aceptación:** ningún documento se elimina o traslada sin autorización y política aplicable; las operaciones quedan auditadas; la recuperación y consulta respetan el historial y las reglas de acceso.
+- **Estado/prioridad:** conservar los valores vigentes de cada tarea.
+
+### Reconciliación y límites
+- AUD-NG-154 conserva jerarquía, nombres, IDs/rutas y cargas; AUD-NG-155 conserva metadatos y vínculo archivo-registro.
+- AUD-NG-058/TASK-143 conservan privacidad y remediación de enlaces; TASK-139/140/295/346 conservan permisos granulares, sensibilidad, herencia y revocación.
+- TASK-345 conserva conciliación Drive-registros; TASK-149/150/456 conservan retención, archivo y disposición controlada.
+- No se crean identificadores nuevos ni se declara ejecutada ninguna corrección. TAREA-06 permanece en CUMPLE PARCIALMENTE.
+- **Límites:** inspección estática/manual. No se inspeccionaron ACL reales, permisos heredados, Shared Drives ni accesos anónimos en producción; no se ejecutaron pruebas de concurrencia o permisos.
