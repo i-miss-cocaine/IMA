@@ -5972,3 +5972,32 @@ CHECKPOINT C1.177 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-F4-P1-
 - Próximo informe oficial: TAREA-F4-P1-03 - matriz dinámica de permisos y aplicación transversal; leer íntegramente y reconciliar antes de editar.
 - Regla de publicación: un único commit con exactamente el informe y Contexto_personal.txt; verificar SHA, padre, árbol, archivos modificados y HEAD tras publicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.178 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-F4-P1-03
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base de referencia protegida: NG_beta_0.0.1.
+- HEAD de partida verificado: 64dfd069a176d8eb8843310f8cb09e5163d36ba5.
+- Árbol base de la rama de trabajo: c266b5cf015edc6135695a73a538a4382cc6b89b.
+- HEAD de rama base documentado previamente (solo lectura): 44d9891132332e692dbe2ba8602b41f50a508a59; no se realizó ninguna escritura sobre la rama base.
+- ID operativo de sesión: IMA-AUDIT-20261106-2242Z (no es ID nativo de ChatGPT).
+- Checkpoint inicial de esta iteración: C1.177.
+- Estado de iteración: normalización documental publicada en C1.178.
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F4-P1-03.md.
+- SHA del informe antes del cambio: e1388e2f02d2600a6776ed22dab047bef56edeff.
+- SHA del contexto antes del cambio: ded44428947b7f3c43b4911a58137bc7edad4fc6.
+- Dictamen original preservado: TAREA-F4-P1-03 NO CUMPLE; estado [X] de completadas.md sin cambios.
+- Hallazgos normalizados: ampliación de AUD-NG-160 para versión/frescura/fallback e invalidación de caché de matriz entre cinco servicios; AUD-NG-221/TASK-501 para rol+módulo+acción+ámbito, upsert sin colisiones, guardia administrativa y editor UI.
+- Reconciliación: AUD-NG-222/TASK-502 conserva autorización contextual RBAC/ABAC general; TASK-139 permisos documentales; AUD-NG-094 permisos de informes. Sin duplicación de IDs.
+- Archivos modificados: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F4-P1-03.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, Auditoria.txt, Auditoría.txt, MapaDependencias.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README y datos productivos.
+- Pruebas ejecutadas: lectura íntegra del informe TAREA-F4-P1-03; contraste de AUD-NG-160/AUD-NG-221/TASK-501 en Auditorias/Auditoria.txt y MapaDependencias.md; lectura de la regla C1.112; contraste de límites con TAREA-F4-P1-04; verificación de SHAs de partida, árbol y HEAD.
+- Pruebas no ejecutadas: endpoints HTTP, hojas operativas, matriz en runtime, editor UI, invalidación de caché, pruebas multiusuario, despliegues y suites automatizadas.
+- Límite: cambio exclusivamente documental; no se declara implementada ni completada ninguna tarea.
+- Próximo informe oficial: TAREA-F4-P1-04 - política unificada de autorización contextual RBAC/ABAC; leer íntegramente y reconciliar antes de normalizar.
+- Regla de publicación: un único commit con exactamente el informe y Contexto_personal.txt; verificar SHA, padre, árbol, archivos modificados y HEAD tras publicar.
+================================================================
