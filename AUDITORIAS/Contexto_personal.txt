@@ -5382,3 +5382,32 @@ CHECKPOINT C1.157 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-06
 - Próximo informe: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-07.md; revisar AUD-NG-146, TASK-151/152, TASK-087/251, TASK-079, TASK-149/150, TASK-064 y TASK-345 antes de formalizar.
 - Commit de cierre: commit único de ambos archivos; verificar SHA, árbol y contenido publicado.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.158 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-07
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida declarada en el proyecto: NG_beta_0.0.1.
+- HEAD de partida verificado: 7cf785fb43ef4430b5a83c957cd926de80dde43b.
+- Árbol base de la rama de trabajo: 5d794159a306c66bf17df3af8252c597b5103120.
+- Rama base: no se pudo consultar en esta iteración (el endpoint devolvió 404); no se afirma una verificación nueva de su HEAD ni se realizó ninguna escritura sobre ella.
+- ID operativo de sesión: IMA-AUDIT-20261106-2219Z (no es ID nativo de ChatGPT).
+- Checkpoint inicial de esta iteración: C1.157.
+- Estado de iteración: cerrada en C1.158.
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-07.md.
+- SHA del informe antes del cambio: b3b6f68572d8fbfd1c0c86b19c8e125793a3afc0.
+- SHA del contexto antes del cambio: 2aad783eee65d0df182cd61a664df25cf506d1be.
+- Inspección: TAREA-07 CUMPLE PARCIALMENTE. El checksum es aritmético y la verificación acepta valores no coincidentes; la restauración no verifica antes de escribir y puede limpiar hojas completas; el respaldo no incluye binarios; el archivado de expedientes/finanzas solo incrementa contadores; no se acreditan programación de respaldos, alertas reales ni medición RPO/RTO.
+- Tareas formalizadas por ampliación de IDs ya citados en el informe: AUD-NG-146; TASK-151/152; TASK-087/251; TASK-079; TASK-149/150; TASK-064; TASK-345. No se crea ningún identificador nuevo ni se cambian estados o prioridades.
+- Reconciliación: AUD-NG-146 concentra integridad y operación del respaldo; TASK-151 cubre binarios/manifiesto; TASK-152 recuperación integral; TASK-087 salvaguarda y simulación; TASK-251 restauración granular; TASK-079 RPO/RTO; TASK-149/150 conservación y disposición; TASK-064 cuotas/alertas; TASK-345 conciliación Drive-registros.
+- Archivos modificados: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-07.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, Auditoria.txt, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README y rama base.
+- Pruebas ejecutadas: lectura íntegra del informe TAREA-07; contraste del hallazgo AUD-NG-146 en Auditoria.txt; lectura de las referencias de tareas en el informe; comprobación de que el bloque aún no existía; verificación del HEAD y árbol de partida.
+- Pruebas no ejecutadas: pruebas de corrupción/checksum, restauración, recuperación de binarios, retención/legal hold, triggers, alertas, medición de cuota, RPO/RTO, Apps Script y producción.
+- Límite: cambio exclusivamente documental. TAREA-07 permanece CUMPLE PARCIALMENTE; las tareas referenciadas no se consideran ejecutadas ni completadas.
+- Próximo informe: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-08.md; leerlo íntegramente y reconciliar AUD-NG-164 y las tareas relacionadas antes de formalizar su bloque.
+- Commit de cierre: un único commit con ambos archivos; verificar SHA, padre, árbol, archivos modificados y HEAD de rama después de publicar.
+================================================================

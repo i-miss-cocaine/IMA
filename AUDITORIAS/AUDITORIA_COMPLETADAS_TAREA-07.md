@@ -76,3 +76,61 @@ La revisión fue estática. No se accedió a los respaldos reales de Drive, perm
 ## Restricciones
 
 No se modifican código fuente, completadas.md, ChangesLogs.txt ni METODOLOGIA_DESARROLLO.md. Solo se amplían registros de auditoría y tareas pendientes existentes. La rama base permanece intacta y no se hace merge.
+
+
+## Tareas ejecutables derivadas de los hallazgos
+
+**Criterio de trazabilidad:** este bloque convierte únicamente las brechas descritas en la auditoría en criterios ejecutables para los identificadores ya existentes. No crea IDs, no altera prioridades ni estados en el registro maestro y no declara implementadas las correcciones.
+
+### AUD-NG-146 - Integridad, verificación y operación del respaldo
+- Sustituir el hash aritmético de 32 bits por SHA-256 verificable para el contenido y los metadatos del respaldo.
+- Hacer que la verificación compare estrictamente el checksum calculado con el almacenado; un valor no vacío o una estructura incompleta no puede producir un resultado válido.
+- Exigir la verificación íntegra antes de cualquier escritura de restauración y bloquearla ante checksum, estructura o referencias inválidas.
+- Alinear el contrato entre la interfaz y el backend para que la confirmación de restauración use los mismos campos y nombres; eliminar la discrepancia entre `confirmationCode` y `confirmed + confirmCode`.
+- Incorporar programación y retención operativa de respaldos, con evidencia de ejecución, resultado y manejo de fallos. La existencia de una función invocable manualmente no acredita automatización.
+- Evitar que paneles o servicios presenten respaldos simulados como exitosos; el estado debe proceder de una operación persistida y verificable.
+
+### TASK-151 - Cobertura de respaldos binarios y manifiesto documental
+- Extender el respaldo más allá de las hojas JSON para incluir los archivos binarios asociados a expedientes y documentos.
+- Mantener un manifiesto que relacione cada archivo con su identificador, ubicación lógica, entidad/registro propietario y dependencias documentales.
+- Calcular y conservar hashes criptográficos de cada binario y del manifiesto para permitir verificar integridad y detectar omisiones o alteraciones.
+- Demostrar que el respaldo cubre los archivos relacionados y no solo las filas que contienen referencias a ellos.
+
+### TASK-152 - Restauración integral y validación posterior
+- Restaurar conjuntamente tablas y archivos binarios respaldados, conservando sus relaciones e identificadores.
+- Verificar hashes, estructura, referencias y consistencia posterior a la recuperación; informar archivos ausentes, duplicados o relaciones rotas.
+- No declarar completa una restauración cuando solo se hayan recuperado hojas de cálculo o cuando falte parte del manifiesto/binarios.
+
+### TASK-087 - Simulación y salvaguarda antes de restaurar
+- Ejecutar una vista previa sin escrituras que identifique impacto, entidades afectadas, conflictos y dependencias.
+- Exigir una copia de salvaguarda previa y un resultado de simulación revisable antes de autorizar cambios.
+- La vista previa debe detectar conflictos de registros e IDs, no limitarse a comparar cantidades de filas.
+
+### TASK-251 - Restauración granular
+- Permitir seleccionar hojas o entidades relacionadas para restauración parcial, manteniendo integridad referencial.
+- Evitar el borrado indiscriminado de hojas completas cuando la operación solicitada sea parcial.
+- Presentar los conflictos entre datos respaldados y datos posteriores a la copia, con una resolución explícita antes de escribir.
+
+### TASK-079 - Continuidad y medición RPO/RTO
+- Registrar el RPO y el RTO observados en ejercicios de respaldo y recuperación, con marca temporal, alcance y resultado.
+- Incorporar pruebas de recuperación en un entorno aislado y conservar evidencia medible; no inferir cumplimiento a partir de la mera existencia de funciones.
+- Documentar las limitaciones y los fallos de recuperación que impidan cumplir los objetivos establecidos.
+
+### TASK-149 y TASK-150 - Retención, preservación y disposición
+- Convertir el archivado de expedientes y registros financieros en una operación real, verificable y trazable; un contador `itemsArchived` no acredita que los datos se hayan archivado.
+- Aplicar políticas de conservación y legal hold a los registros y documentos asociados, impidiendo su eliminación mientras exista una obligación de preservación.
+- Definir la disposición de respaldos vencidos y documentos retenidos mediante autorización controlada, registro de ejecución y evidencia de eliminación/archivo.
+- Validar que las políticas se ejecuten sobre los datos y archivos correspondientes, no solo que estén declaradas o contabilizadas.
+
+### TASK-064 - Cuotas, capacidad y alertas
+- Sustituir los valores fijos o estimaciones parciales por mediciones reales de cuota y consumo, identificando claramente cualquier dato estimado.
+- Inventariar consumo y crecimiento por servicio, cuenta/unidad y tipo de archivo, incluyendo los límites y la fuente de medición.
+- Configurar umbrales y alertas preventivas deduplicadas, con evidencia de emisión y tratamiento; no considerar una constante como medición de capacidad.
+
+### TASK-345 - Conciliación entre Drive y registros
+- Conciliar periódicamente archivos existentes con sus referencias en los registros institucionales.
+- Detectar y reportar archivos huérfanos, referencias inexistentes, documentos duplicados y discrepancias de propietario/ubicación.
+- Conservar resultados de conciliación y trazabilidad de las correcciones, sin eliminar ni mover archivos automáticamente sin autorización.
+
+**Dependencias y límites:** las tareas se mantienen separadas según su responsabilidad: integridad/orquestación (AUD-NG-146), cobertura binaria (TASK-151), recuperación integral (TASK-152), salvaguarda (TASK-087), granularidad (TASK-251), continuidad (TASK-079), ciclo de vida (TASK-149/TASK-150), capacidad (TASK-064) y conciliación (TASK-345). No se crea una tarea adicional ni se cambia el estado de ninguna tarea existente.
+
