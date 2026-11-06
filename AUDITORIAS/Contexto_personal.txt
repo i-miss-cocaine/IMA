@@ -5154,3 +5154,27 @@ CHECKPOINT C1.149 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME FASE2-T17
 - Próximo informe pendiente: AUDITORIA_COMPLETADAS_FASE2-T18.md.
 - Estado de TASK-DOC-C1.112-01: En curso.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.150 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME FASE2-T18
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida: 6aa32b68f80ee398a828ba2d42b99cc9f89b2bf8.
+- HEAD de rama base verificado antes del cambio: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID operativo de sesión: IMA-AUDIT-20261106-2117Z-MIGRACION (no es ID nativo de ChatGPT).
+- Checkpoint anterior: C1.149 (FASE2-T17 normalizada).
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_COMPLETADAS_FASE2-T18.md.
+- SHA original del informe: cbc609cb8d88774b488e5dab30b346566f079699.
+- SHA original del contexto: 14f90fb3c1f2f66dc8a93b4cbd1d45906a3d1bc6.
+- Inspección: tablero, health checks, métricas backend, colas, filtros, contratos DTO, permisos y sanitización de errores.
+- Tarea formalizada: TASK-064 como tarea integradora; AUD-NG-144/145/007/008 se preservan como requisitos específicos dentro de la integración, sin crear IDs duplicados.
+- AUD-NG-163 permanece consolidada y no se reabre.
+- No se modificaron código, pruebas, Pendientes.md, completadas.md, ChangesLogs.txt, Auditoria.txt, metodología, README ni rama base.
+- Pruebas runtime no ejecutadas; cambio exclusivamente documental.
+- Próximo informe pendiente: AUDITORIA_COMPLETADAS_FASE2-T19.md.
+- Estado de TASK-DOC-C1.112-01: En curso.
+================================================================

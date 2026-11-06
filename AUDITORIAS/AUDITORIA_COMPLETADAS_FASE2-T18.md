@@ -99,3 +99,30 @@ AUD-NG-163 permanece duplicada y no debe reabrirse independientemente; conservar
 ## Límites
 
 Inspección estática/manual. No se ejecutaron pings en despliegues, simulaciones de caída, pruebas de latencia, consultas de cuotas, filtros, roles ni fallos de colas. No se usaron datos productivos ni se modificó código fuente.
+
+
+---
+
+## Tareas ejecutables derivadas de los hallazgos
+
+> La reconciliación identifica tareas y hallazgos existentes. TASK-064 es la tarea integradora del tablero de salud/capacidad; AUD-NG-144/145 y AUD-NG-007/008 conservan requisitos específicos que deben satisfacerse dentro de esa integración, sin crear IDs duplicados.
+
+### [TASK-064] Integrar observabilidad real, salud, capacidad y recuperación en el tablero institucional
+- **Hallazgo de origen:** brechas del tablero y health checks; AUD-NG-144, AUD-NG-145, AUD-NG-007 y AUD-NG-008.
+- **Severidad:** Alta. **Objetivo:** mostrar estado operativo real y reciente de todos los servicios y dependencias, métricas de capacidad, colas, errores y enlaces de diagnóstico, sin declarar SALUDABLE/ÓPTIMO ante ausencia de telemetría.
+- **Acción ejecutable:** conectar `openInstitutionalHealthDashboardModal` con health checks y métricas backend; incluir USER/ACADEMIC/ACCOUNTING/TASK/EXAM/DEVELOPER; implementar ping real y autenticado para cada servicio y comprobar recursos críticos; corregir contratos DTO entre modal, monitor y métricas; mostrar latencia, errores/cuotas, procesos pendientes, eventos fallidos, frescura de datos y dependencias causantes; agregar filtros por servicio/periodo/tipo y enlaces autorizados a diagnóstico/recuperación; aplicar sanitización de `errorDetails`; hacer que ausencia de datos, timeout o fallback produzcan estado desconocido/degradado, nunca éxito automático.
+- **Archivos/módulos:** `js/ui-common.js` (`openInstitutionalHealthDashboardModal`); `js/api.js` (`fetchApi`, `checkMicroserviceHealth`, `checkAllMicroservicesHealth`); `js/developer.js`; `backend/user-service/Code.gs` (`getServiceHealthReport`, `getOperationalCapacityMetrics`, `getTraceabilityCorrelationLogs`, `retryFailedEventsQueue`); ping/diagnóstico en USER, ACADEMIC, ACCOUNTING, TASK, EXAM y DEVELOPER.
+- **Dependencias/riesgos:** AUD-NG-144 (ping real/cobertura completa); AUD-NG-145 (filtros/DTO/sanitización); AUD-NG-007 (timeout por llamada); AUD-NG-008 (fallback no equivale a salud); TASK-062 (versiones/contratos); AUD-NG-163 permanece consolidada y no se reabre. Riesgo de falsos positivos, endpoints públicos de diagnóstico, exposición de PII y latencias no representativas.
+- **Alcance:** tablero de observabilidad y salud institucional de extremo a extremo; mantener segregados endpoints de diagnóstico privilegiado y datos sensibles.
+- **Criterios de aceptación:** los seis servicios se consultan mediante ping real; cada respuesta distingue ONLINE/DEGRADED/OFFLINE/UNKNOWN; timeout configurado por llamada se respeta; base de datos/Drive/dependencias se comprueban realmente; métricas incluyen ventana temporal y fecha de última medición; colas pendientes/fallidas alteran el estado; DTO coincide con consumidores; filtros funcionan; errores se redactan; acceso restringido a roles autorizados; sin telemetría el tablero nunca muestra SALUDABLE/ÓPTIMO; pruebas de timeout, caída, latencia, cuotas, cola fallida, permisos y ausencia de datos.
+- **Prioridad:** conservar la prioridad vigente de TASK-064 (no reespecificada en este informe). **Estado:** Pendiente de ejecución/revalidación.
+- **Evidencia de cierre:** pendiente; el modal usa métricas cero y las interpreta como saludable, no consulta métricas reales, omite servicios, y existen contratos incompatibles y diagnósticos incompletos/públicos.
+
+### Reconciliación y límites
+- **AUD-NG-144:** conserva ping real, cobertura completa y estado del tablero; se valida dentro de TASK-064.
+- **AUD-NG-145:** conserva filtros, DTO y sanitización de bitácora; se valida dentro de TASK-064.
+- **AUD-NG-007:** conserva timeout configurable por llamada en fetchApi.
+- **AUD-NG-008:** conserva la regla fail-closed ante ausencia de telemetría/fallback.
+- **AUD-NG-163:** sigue duplicada/consolidada; no reabrir independientemente.
+- **Pruebas:** inspección estática/manual; no se ejecutaron pings en deployments, simulaciones de caída, latencia, cuotas, filtros, roles ni recuperación de colas.
+- **Estado:** FASE2-T18 cumple parcialmente; esta normalización no demuestra operación real ni cierra los hallazgos.
