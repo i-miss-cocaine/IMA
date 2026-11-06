@@ -4732,3 +4732,30 @@ CHECKPOINT C1.133 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 31
 - Próximo informe pendiente: AUDITORIA_FASE_32_EDITOR_VISUAL_PDF_CAMPOS_SUPERPUESTOS.md.
 - Estado de TASK-DOC-C1.112-01: En curso.
 ================================================================
+
+================================================================
+CHECKPOINT C1.134 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 32
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida: 36e764944f52f8b43d668c1f8c290239ec6934f8.
+- HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- ID operativo de sesión: IMA-AUDIT-20261106-2035Z-MIGRACION (no es ID nativo de ChatGPT).
+- Checkpoint anterior: C1.133 (Fase 31 normalizada).
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_FASE_32_EDITOR_VISUAL_PDF_CAMPOS_SUPERPUESTOS.md.
+- SHA original del informe: 2cf98c83fe156e75db014dd81f8bbd8f3426043f.
+- SHA original del contexto: cd81e50ebd247c79662de48cbf81d8dee44b3a02.
+- Inspección: informe completo (25,560 caracteres), 11 áreas funcionales, CAR-01..CAR-15, matriz PDF-01..PDF-30 y plan H con 12 tareas descritas.
+- Tareas originales preservadas: F32-Task01..F32-Task12 y prioridades P0/P1/P2 del plan H.
+- Tarea adicional derivada de CAR-07: F32-Task14 (validación integral de entradas).
+- Discrepancia histórica: Auditoria.txt indica 13 IDs F32-Task01..F32-Task13, con Task13 P1, pero el informe solo describe Task01..Task12 y la bitácora no contiene alcance de Task13. No se inventó contenido ni se reutilizó el ID.
+- Dependencias cruzadas: F31-Task01/02/07/08/09/11/12/14; F26-Task02/03/04; F27-Task03; F29-Task09/15; F28-Task04/05; TASK-062; TASK-154/TASK-227/TASK-265; AUD-NG-127/AUD-NG-161; TASK-296. Se coordinan sin duplicar.
+- Campos por tarea: origen, severidad, objetivo, acción, archivos/módulos, dependencias/riesgos, alcance, criterios de aceptación, prioridad, estado y evidencia de cierre.
+- Archivos modificados: AUDITORIAS/AUDITORIA_FASE_32_EDITOR_VISUAL_PDF_CAMPOS_SUPERPUESTOS.md; AUDITORIAS/Contexto_personal.txt.
+- No se modificaron código, pruebas, Pendientes.md, completadas.md, ChangesLogs.txt, Auditoria.txt, metodología, README, plan maestro ni rama base.
+- Pruebas no ejecutadas: estampado PDF, precisión geométrica, auto-shrink, selección múltiple, controles, formularios, firma/QR, autoguardado, heurísticas, OCR, fidelidad PDF, biblioteca de formatos y validación de entradas.
+- Próximo informe pendiente: AUDITORIA_FASE_33_FORMULARIOS_INSTITUCIONALES_TRAMITES_DIGITALES.md.
+- Estado de TASK-DOC-C1.112-01: En curso.
+================================================================

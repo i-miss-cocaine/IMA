@@ -208,3 +208,163 @@ Las acciones requeridas se estructuran en 12 tareas técnicas organizadas estric
 La plataforma cuenta con un editor visual de PDF Overlay notablemente sólido en su arquitectura cliente (`teacher-dashboard.html` y `js/teacher.js`), destacando por su **sistema de coordenadas relativo porcentual (`xRatio`, `yRatio`) que garantiza total independencia del nivel de zoom**. Asimismo, la persistencia en `PlantillasEscolares` y la emisión oficial con CUV en `DocumentosEscolaresEmitidos` ofrecen un respaldo institucional auditado y confiable.
 
 El riesgo principal identificado radica en la necesidad de consolidar el estampador binario en backend para fusionar directamente los caracteres sobre el PDF original sin intermediación HTML, y dotar al editor de herramientas de alineación magnética y auto-shrink tipográfico. El plan de resolución de 12 tareas técnicas priorizadas en `Pendientes.md` establece la ruta exacta para alcanzar la excelencia funcional.
+
+---
+
+## Tareas ejecutables derivadas de los hallazgos
+
+> Normalización de las 12 tareas descritas en el plan H (F32-Task01..F32-Task12), conservando prioridades P0/P1/P2. La bitácora histórica menciona un backlog de 13 tareas, pero solo describe F32-Task01..F32-Task12; F32-Task13 aparece únicamente como ID y prioridad P1, sin título ni criterios. No se inventa su alcance. Se añade F32-Task14 para cerrar la brecha parcial de validación de campos CAR-07, que no tiene tarea independiente en el plan.
+
+### [F32-Task01] Implementar motor de estampado binario y aplanado definitivo de PDF
+- **Hallazgo de origen:** B.10, C.3, CAR-13 y G.1.
+- **Severidad:** Crítica / P0. **Objetivo:** insertar los valores capturados sobre el PDF original en coordenadas exactas y producir un archivo final aplanado con CUV.
+- **Acción ejecutable:** integrar una biblioteca PDF segura en cliente o servicio de conversión para escribir texto/controles en coordenadas derivadas de ratios y dimensiones reales de página; aplanar campos, preservar páginas y metadatos permitidos y calcular hash después del estampado.
+- **Archivos/módulos:** `backend/accounting-service/Code.gs`, `generateSchoolDocument`, `js/teacher.js`, PDF Overlay y `DocumentosEscolaresEmitidos`.
+- **Dependencias/riesgos:** F31-Task01/07/11, motor CUV/correlativos y F27-Task03 (recuperación); riesgo de desplazamiento, pérdida de fuentes o emitir un PDF visualmente distinto del preview.
+- **Alcance:** estampado binario del PDF original; no sustituirlo por conversión HTML que altere geometría.
+- **Criterios de aceptación:** ratios convertidos a coordenadas de página; dimensiones/rotación/crop box respetadas; campos quedan aplanados; texto y firmas visibles en varios visores; CUV y hash corresponden al archivo final; pruebas con PDFs multipágina, distintos tamaños, rotación, fuentes y overlays.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el informe confirma que `generateSchoolDocument` genera PDF, pero el aplanado binario sobre el PDF base sigue siendo básico/incompleto.
+
+### [F32-Task02] Añadir entradas numéricas de precisión y rejilla magnética
+- **Hallazgo de origen:** C.1, CAR-11/CAR-12 y G.2.
+- **Severidad:** Crítica / P0. **Objetivo:** permitir posicionar campos con precisión milimétrica o porcentual sin depender exclusivamente del mouse.
+- **Acción ejecutable:** añadir inputs X/Y/ancho/alto con unidades explícitas y conversión bidireccional entre mm, puntos y ratios; implementar snap-to-grid configurable y alineación a guías.
+- **Archivos/módulos:** `js/teacher.js`, `#field-props-form`, `updateFieldPropsPanel`, `configFormatoJSON`.
+- **Dependencias/riesgos:** sistema de coordenadas normalizadas existente; riesgo de redondeo acumulativo, confusión de unidades o valores fuera de página.
+- **Alcance:** edición precisa de geometría; no cambiar el modelo persistido sin migración/versionado.
+- **Criterios de aceptación:** unidades visibles y convertibles; valores validados dentro de página; cambios actualizan overlay en tiempo real; snap configurable/desactivable; coordenadas sobreviven zoom 50%-250%; pruebas de conversión, límites, rotación y reabrir plantilla.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; actualmente se muestran ratios, pero no existe entrada manual numérica ni rejilla magnética.
+
+### [F32-Task03] Implementar auto-ajuste tipográfico ante desbordamiento
+- **Hallazgo de origen:** CAR-05 y G.3.
+- **Severidad:** Crítica / P0. **Objetivo:** evitar truncar nombres u otros valores largos en documentos oficiales.
+- **Acción ejecutable:** medir texto con fuente/tamaño reales y reducir progresivamente hasta un mínimo configurable (8 pt inicial) antes de truncar; definir comportamiento para multilínea y textos que no caben incluso al mínimo.
+- **Archivos/módulos:** `js/teacher.js`, renderizador PDF Overlay, `generateSchoolDocument` y configuración de campos.
+- **Dependencias/riesgos:** F32-Task01, tipografías disponibles y motor PDF; riesgo de diferencias de métricas entre Canvas y PDF final.
+- **Alcance:** ajuste de fuente y overflow; no reducir indefinidamente ni ocultar información obligatoria.
+- **Criterios de aceptación:** algoritmo determinista; tamaño mínimo/máximo configurable; texto no se recorta sin aviso; alineación y saltos conservados; preview coincide con PDF; pruebas con nombres largos, ñ/acentos, números y varias fuentes.
+- **Prioridad:** P0. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el informe identifica truncamiento visual de textos largos.
+
+### [F32-Task04] Incorporar selección múltiple y alineación en bloque
+- **Hallazgo de origen:** C.2, CAR-12 y G.2.
+- **Severidad:** Alta / P1. **Objetivo:** editar grupos de campos de manera eficiente y consistente.
+- **Acción ejecutable:** implementar selección múltiple con Shift y marco elástico; agregar alineación izquierda/derecha/centro/superior/inferior y distribución/igualación de dimensiones; mantener selección dentro de la página.
+- **Archivos/módulos:** `js/teacher.js`, `addOverlayField`, `initDragField`, `initResizeField` y lienzo PDF.
+- **Dependencias/riesgos:** F32-Task02 (precisión geométrica); riesgo de arrastrar el PDF o campos no seleccionados.
+- **Alcance:** herramientas de edición en grupo; no alterar coordenadas de otros campos o páginas.
+- **Criterios de aceptación:** selección con teclado/mouse/táctil; límites de página; alineación determinista; undo/redo o cancelación segura; accesibilidad de controles; pruebas con grupos, zoom y campos bloqueados.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; la auditoría señala que solo existe selección individual y falta marquee/Shift.
+
+### [F32-Task05] Ampliar tipos de controles superpuestos
+- **Hallazgo de origen:** B.6, CAR-07 y plan H.5.
+- **Severidad:** Alta / P1. **Objetivo:** cubrir entradas numéricas, moneda y selectores en plantillas PDF.
+- **Acción ejecutable:** añadir controles numéricos con máscara/precisión, moneda HNL, listas desplegables y opciones procedentes de catálogos institucionales; persistir esquema y reglas del control.
+- **Archivos/módulos:** `js/teacher.js`, `#field-props-form`, `configFormatoJSON`, `backend/accounting-service/Code.gs`.
+- **Dependencias/riesgos:** F26-Task02 (formateo regional), F31-Task02 (constructor de formularios) y F32-Task14 (validación); riesgo de valores formateados que alteren el dato numérico.
+- **Alcance:** controles nativos tipados; no permitir opciones arbitrarias que evadan catálogos o permisos.
+- **Criterios de aceptación:** tipo y esquema persistidos; máscara y rango configurables; moneda con unidad explícita; selectores alimentados por catálogo autorizado; valores normalizados en backend; pruebas de nulos, decimales, negativos, límites y opciones obsoletas.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el informe identifica cinco tipos activos y ausencia de números con máscara, selectores y QR.
+
+### [F32-Task06] Generar formulario web interactivo desde plantilla PDF
+- **Hallazgo de origen:** B.7 y plan H.6.
+- **Severidad:** Alta / P1. **Objetivo:** permitir que familias y estudiantes diligencien campos PDF desde una interfaz web adaptable.
+- **Acción ejecutable:** generar un formulario HTML tipado a partir de la plantilla/overlays; validar obligatorios, tipos, longitudes, fechas y patrones en cliente y servidor; conservar la referencia al PDF y la versión de plantilla.
+- **Archivos/módulos:** `js/teacher.js`, `backend/user-service/Code.gs`, `FormulariosInstitucionales`, `SolicitudesTramites`, PDF Overlay.
+- **Dependencias/riesgos:** F31-Task02/06, F33 formularios/trámites y F32-Task05/14; riesgo de desalineación entre el formulario y la versión PDF que se emite.
+- **Alcance:** formulario generado desde una plantilla PDF; no reemplazar el motor de trámites institucional ni confiar en validación cliente.
+- **Criterios de aceptación:** campos derivan de esquema versionado; validación server-side; responsive y accesible; respuestas vinculadas a plantilla/versión; errores conservan datos; emisión reproduce los valores ingresados; pruebas multiusuario, permisos y plantilla modificada.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; la matriz CAR-07 muestra validación parcial y el plan pide generación automática del formulario web.
+
+### [F32-Task07] Añadir firma táctil y código QR en el lienzo PDF
+- **Hallazgo de origen:** B.6 y plan H.7.
+- **Severidad:** Alta / P1. **Objetivo:** capturar firmas manuscritas en dispositivos táctiles y facilitar la verificación CUV desde el documento.
+- **Acción ejecutable:** ampliar el control firma con Canvas/touch/pointer events y renderizar QR que contenga solo URL/identificador CUV; incorporar firma/QR al proceso de estampado final.
+- **Archivos/módulos:** `js/teacher.js`, Canvas Overlay, `backend/user-service/Code.gs`, `backend/accounting-service/Code.gs`, `FirmasConformidades`, `DocumentosEscolaresEmitidos`.
+- **Dependencias/riesgos:** F31-Task11 (QR CUV), F32-Task01 (aplanado), F31-Task09 (seguridad); riesgo de confundir imagen de firma con firma autenticada o exponer datos en QR.
+- **Alcance:** captura y representación; la validez jurídica de firma requiere identidad, consentimiento y evidencia criptográfica separada.
+- **Criterios de aceptación:** captura touch/mouse; trazo conservado; identidad/consentimiento registrados; QR no contiene PII; portal verifica CUV; firma y QR aparecen en PDF final; pruebas de móvil, rotación, revocación y verificación.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el informe acredita control firma básico, pero el plan requiere lienzo táctil y QR.
+
+### [F32-Task08] Implementar autoguardado de borradores de plantilla y recuperación
+- **Hallazgo de origen:** persistencia/continuidad del editor; plan H.8.
+- **Severidad:** Alta / P1. **Objetivo:** evitar pérdida de coordenadas y configuración ante cierres o fallos de conexión.
+- **Acción ejecutable:** guardar borradores locales versionados por usuario/plantilla, registrar cambios incrementales y sincronizar con backend usando control de versión y detección de conflictos; permitir recuperar/descartar borrador.
+- **Archivos/módulos:** `js/persistence.js`, `js/teacher.js`, `savePdfOverlayTemplate`, `configureSchoolDocumentTemplate`.
+- **Dependencias/riesgos:** TASK-062 (versionado/invalidez), F26-Task04 (caché), F31-Task13 (revisión colaborativa); riesgo de mezclar borradores de usuarios o sobrescribir versión publicada.
+- **Alcance:** borradores de diseño no publicados; no publicar ni emitir documentos automáticamente desde una copia local.
+- **Criterios de aceptación:** aislamiento por usuario/institución; guardado incremental; indicador de estado; recuperación tras cierre; conflictos no sobrescriben silenciosamente; publicar requiere permiso; pruebas offline, reinicio, multiusuario y versión obsoleta.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el plan identifica riesgo de perder el diseño ante caídas/conexión y pide autoguardado.
+
+### [F32-Task09] Detectar líneas guía y sugerir ubicación de campos
+- **Hallazgo de origen:** B.2 y plan H.9.
+- **Severidad:** Media / P2. **Objetivo:** reducir trabajo manual sugiriendo cajas sobre líneas y espacios detectables del PDF.
+- **Acción ejecutable:** analizar imagen renderizada en Canvas para detectar segmentos horizontales y regiones candidatas; mostrar sugerencias editables sin aplicarlas automáticamente.
+- **Archivos/módulos:** `js/teacher.js`, `pdfjsLib`, Canvas y editor PDF Overlay.
+- **Dependencias/riesgos:** F32-Task02/04, rendimiento móvil y resolución de render; riesgo de falsos positivos en tablas/gráficos.
+- **Alcance:** sugerencias heurísticas; no inferir campos oficiales ni alterar la plantilla sin confirmación humana.
+- **Criterios de aceptación:** detección configurable; sugerencias con confianza/indicador; edición/rechazo manual; no bloquea UI; pruebas con escaneos, líneas tenues, tablas y fondos complejos.
+- **Prioridad:** P2. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el informe declara OCR/reconocimiento ausente y colocación manual.
+
+### [F32-Task10] Integrar OCR asistido para documentos escaneados
+- **Hallazgo de origen:** B.2, CAR-10 y G.4; plan H.10.
+- **Severidad:** Media / P2. **Objetivo:** extraer texto de PDFs escaneados y sugerir campos editables.
+- **Acción ejecutable:** integrar OCR autorizado (local o proveedor externo) con detección de páginas escaneadas, idioma español y coordenadas de bounding boxes; exigir revisión humana antes de crear campos.
+- **Archivos/módulos:** `js/teacher.js`, servicio OCR, `backend/developer-service/Code.gs` y editor PDF Overlay.
+- **Dependencias/riesgos:** F25-Task01 (integración externa), privacidad de documentos, F32-Task09 y límites GAS; riesgo de enviar documentos personales a proveedores sin autorización o de reconocer mal nombres/números.
+- **Alcance:** OCR asistido y sugerencias; no convertir reconocimiento automático en dato oficial sin revisión.
+- **Criterios de aceptación:** idioma/precisión reportados; coordenadas asociadas; proveedor/consentimiento configurados; datos sensibles protegidos; corrección humana; pruebas con escaneos de baja calidad, español, tablas y manuscritos (marcados como limitados).
+- **Prioridad:** P2. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; no existe motor OCR integrado en el repositorio.
+
+### [F32-Task11] Crear suite de fidelidad PDF y detección de desplazamientos
+- **Hallazgo de origen:** CAR-13/CAR-15 y plan H.11.
+- **Severidad:** Media / P2. **Objetivo:** detectar desplazamientos geométricos entre preview, archivo emitido e impresión en diferentes visores.
+- **Acción ejecutable:** crear fixtures PDF con coordenadas conocidas, textos de longitud variable y rotaciones; comparar posiciones/rasterizados del resultado en navegadores/visores; verificar CUV/hash y regresiones de exportación.
+- **Archivos/módulos:** `tests/regression`, PDF Overlay, `generateSchoolDocument`, `DocumentosEscolaresEmitidos`.
+- **Dependencias/riesgos:** F32-Task01/02/03/07 y AUD-NG-161; riesgo de pruebas que solo inspeccionen existencia de funciones.
+- **Alcance:** pruebas geométricas y de salida PDF; no usar documentos personales productivos.
+- **Criterios de aceptación:** fixtures versionados; tolerancia geométrica definida; pruebas multipágina/tamaño/rotación; preview y PDF final comparados; regresión detecta offsets; resultados reproducibles.
+- **Prioridad:** P2. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; la matriz DOC/PDF no acredita suite dedicada de fidelidad y desplazamiento en distintos visores.
+
+### [F32-Task12] Crear biblioteca de plantillas PDF preimpresas escolares
+- **Hallazgo de origen:** plan H.12 y necesidades de formatos hondureños.
+- **Severidad:** Media / P2. **Objetivo:** reutilizar formatos preimpresos institucionales aprobados sin diseñar cada uno desde cero.
+- **Acción ejecutable:** crear catálogo versionado de plantillas PDF (excusas, fichas acumulativas, solicitudes de matrícula y otros formatos aprobados), con metadatos, institución, año, idioma, permisos y overlays de referencia.
+- **Archivos/módulos:** `PlantillasEscolares`, `DocumentosEscolaresEmitidos`, `js/teacher.js`, catálogo de documentos y Drive.
+- **Dependencias/riesgos:** F31-Task12/14 (multilingüismo/catálogo), F31-Task08 (estilos), F32-Task01 (estampado); riesgo de usar formatos desactualizados o sin autorización.
+- **Alcance:** biblioteca de formatos preimpresos aprobados; no distribuir documentos oficiales no verificados.
+- **Criterios de aceptación:** catálogo con versión/vigencia/propietario; preview del PDF base y overlay; permisos; archivo obsoleto se retira sin borrar historial; pruebas de duplicación, vigencia y emisión.
+- **Prioridad:** P2. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el plan identifica ausencia de biblioteca precargada de formatos escolares hondureños.
+
+### [F32-Task14] Completar validación de entradas de campos superpuestos
+- **Hallazgo de origen:** B.7 y CAR-07; requisito de validación parcial.
+- **Severidad:** Alta / P1. **Objetivo:** asegurar que cada campo PDF reciba datos válidos antes de emitir el documento.
+- **Acción ejecutable:** definir reglas por tipo de control (required, longitud, patrón, rango, fecha, máscara, moneda, catálogo) y ejecutarlas tanto en formulario web como en backend antes de generar PDF/CUV.
+- **Archivos/módulos:** `js/teacher.js`, `backend/user-service/Code.gs`, `backend/accounting-service/Code.gs`, `FormulariosInstitucionales` y esquema de overlays.
+- **Dependencias/riesgos:** F32-Task05/06, F31-Task02, F26-Task02; riesgo de emitir documentos con valores inconsistentes o que un cliente manipule reglas.
+- **Alcance:** validación de valores y tipos; no sustituye autorización de identidad/expediente ni validación de firma.
+- **Criterios de aceptación:** reglas declarativas/versionadas; servidor valida independientemente; errores indican campo sin exponer datos sensibles; formularios preservan datos; validación ejecutada antes de emitir CUV; pruebas de required, fecha inválida, límites, regex, moneda y payload manipulado.
+- **Prioridad:** P1. **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente; el informe califica validación parcial y solo acredita propiedad required más validaciones de trámites separadas.
+
+### Reconciliaciones y discrepancias transversales de Fase 32
+- **F32-Task01:** depende de F31-Task01/07/11; CUV se calcula sobre el archivo final aplanado, no sobre el overlay sin estampar.
+- **F32-Task05/06/14:** coordinar tipos y validación con F31-Task02/F31-Task06 y F26-Task03; no crear esquemas de formulario incompatibles.
+- **F32-Task07:** QR CUV coordina con F31-Task11; firma visual no equivale a firma electrónica autenticada.
+- **F32-Task08:** aislamiento/versionado debe coordinarse con TASK-062 y F26-Task04.
+- **F32-Task09/10:** OCR y detección son asistidos; requieren revisión humana y controles de privacidad.
+- **F32-Task11:** ampliar AUD-NG-161, sin duplicar la suite conductual general.
+- **F32-Task12:** coordinar biblioteca con F31-Task12/14 y control de versiones.
+- **Discrepancia de inventario:** Auditoria.txt afirma que el backlog histórico tenía 13 tareas F32-Task01..F32-Task13, pero el informe actual solo describe 12. F32-Task13 aparece únicamente como ID con prioridad P1, sin título, alcance o criterios. Se conserva como referencia no recuperada; no se inventa su contenido ni se reutiliza el ID.
+- **Estado global:** F32-Task01..F32-Task12 y F32-Task14 permanecen pendientes de ejecución/revalidación; F32-Task13 queda sin descripción recuperable.
