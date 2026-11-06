@@ -6001,3 +6001,32 @@ CHECKPOINT C1.178 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-F4-P1-
 - Próximo informe oficial: TAREA-F4-P1-04 - política unificada de autorización contextual RBAC/ABAC; leer íntegramente y reconciliar antes de normalizar.
 - Regla de publicación: un único commit con exactamente el informe y Contexto_personal.txt; verificar SHA, padre, árbol, archivos modificados y HEAD tras publicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.179 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-F4-P1-04
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base de referencia protegida: NG_beta_0.0.1.
+- HEAD de partida verificado: bed776b0ec49a6a43ee53c65bc95d3d768a65caa.
+- Árbol base de la rama de trabajo: a209710d2b818082d41cd9cc8a8007164ea23deb.
+- HEAD de rama base documentado previamente (solo lectura): 44d9891132332e692dbe2ba8602b41f50a508a59; no se realizó ninguna escritura sobre la rama base en esta iteración.
+- ID operativo de sesión: IMA-AUDIT-20261106-2301Z (no es ID nativo de ChatGPT).
+- Checkpoint inicial de esta iteración: C1.178.
+- Estado de iteración: normalización documental publicada en C1.179.
+- Tarea documental: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F4-P1-04.md.
+- SHA del informe antes del cambio: c4f29123693883ef6403c2397cab369df1eb7110.
+- SHA del contexto antes del cambio: 8b27f6cbd618d3f089ef0454a933589478cfbced.
+- Dictamen original preservado: TAREA-F4-P1-04 NO CUMPLE; estado [X] de completadas.md sin cambios.
+- Hallazgo normalizado: AUD-NG-222/TASK-502, política contextual ABAC común y fail-closed para USER, ACADEMIC, ACCOUNTING, TASK y EXAM. Se desarrolló la tarea con los campos obligatorios de C1.112; no se creó un ID duplicado.
+- Reconciliación preservada: AUD-NG-105/106/108/128/130/136/217, AUD-NG-002, AUD-NG-160 y AUD-NG-221/TASK-501 mantienen sus alcances específicos; TASK-502 aborda la brecha transversal.
+- Archivos modificados: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F4-P1-04.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, Auditoria.txt, MapaDependencias.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README, datos productivos y rama base.
+- Pruebas ejecutadas: lectura íntegra del informe TAREA-F4-P1-04; contraste de AUD-NG-222/TASK-502 y hallazgos relacionados en Auditoria.txt; lectura del protocolo C1.112; cotejo del checkpoint C1.178 y SHAs de partida.
+- Pruebas no ejecutadas: HTTP, pruebas multiusuario/familia/docente, despliegues Apps Script, hojas productivas, integración runtime del motor ABAC, pruebas automatizadas ni pruebas de seguridad dinámicas.
+- Límite: cambio exclusivamente documental; no se declara implementada ni completada TASK-502 ni ningún hallazgo relacionado.
+- Próximo informe oficial: TAREA-F4-P1-05 - gobierno de privacidad y derechos ARCO; leer íntegramente y reconciliar antes de normalizar.
+- Regla de publicación: un único commit consolidado con exactamente el informe y Contexto_personal.txt; verificar SHA, padre, árbol, archivos modificados y HEAD tras publicar.
+================================================================
