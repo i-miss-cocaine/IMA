@@ -6854,3 +6854,40 @@ HALLAZGO: AUD-DOC-C1.112-01
 
 Esta adenda completa los campos formales del registro sin alterar ni sustituir la entrada original de C1.112.
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-06
+CHECKPOINT C1.114 — PRIMER LOTE DE NORMALIZACIÓN DE INFORMES HISTÓRICOS
+SESIÓN: IMA-AUDIT-20261106-1944Z
+REPOSITORIO: i-miss-cocaine/IMA
+RAMA: NG_beta_0.0.0.1_work
+HEAD DE PARTIDA DEL LOTE: 245ce10a4a3111c569af08b58a113c471888327d
+COMMIT DE ADAPTACIÓN: f5009f668f11ae95a4fc50d0b1c946c8f0f98d43
+
+INFORMES ADAPTADOS:
+- T-UX-20: TASK-494 formaliza AUD-NG-212 y AUD-NG-213.
+- T-UX-21: TASK-480 ampliada para AUD-NG-183/T-UX-21.
+- T-UX-22: TASK-495 formaliza AUD-NG-214.
+- T-UX-23: sin tareas nuevas; documentadas tareas existentes responsables para AUD-NG-001, AUD-NG-128, TASK-484 y TASK-279.
+- T-UX-24: TASK-430 ampliada para AUD-NG-215.
+- T-UX-25: TASK-422 ampliada para AUD-NG-216.
+- T-UX-26: TASK-067 ampliada y creada TASK-DOC-C1.114-TUX26-01 para el alcance no cubierto de AUD-NG-173; TASK-221 conserva la fuente de verdad de tareas.
+- T-UX-27: TASK-252, TASK-429 y AUD-NG-007 ampliadas.
+- T-UX-28: sin tareas nuevas; formalizadas TASK-485/AUD-NG-188 y TASK-486/AUD-NG-189.
+
+REGLAS:
+- Se preservó el texto anterior de cada informe y se anexó la sección al final.
+- Se conservaron IDs y estados de tareas preexistentes.
+- Los informes sin tareas nuevas declaran expresamente esa condición y documentan coberturas existentes.
+- No se modificaron código, pruebas, Pendientes.md, completadas.md ni ChangesLogs.txt.
+- No se creó un registro maestro externo.
+- El lote cubre nueve informes; no certifica informes históricos restantes.
+
+VALIDACIÓN:
+- Pendiente de comprobación final de presencia de sección en los nueve archivos y verificación de rama base.
+- No se ejecutaron pruebas runtime; esta fase es documental.
+
+PRÓXIMA ACCIÓN:
+Adaptar AUDITORIA-FASE-28-ACCESIBILIDAD-MOVILIDAD-CONTINUIDAD.md y continuar por lotes con los demás informes históricos.
+===============================================================================

@@ -4179,3 +4179,25 @@ CHECKPOINT C1.113 - ADENDA DE TRAZABILIDAD DEL HALLAZGO C1.112
 - Próxima acción: ejecutar TASK-DOC-C1.112-01 por lotes.
 - Commit de cierre: se confirmará consultando HEAD después de publicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.114 - PRIMER LOTE DE NORMALIZACIÓN DE INFORMES HISTÓRICOS
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida del lote: 245ce10a4a3111c569af08b58a113c471888327d.
+- Commit de adaptación documental: f5009f668f11ae95a4fc50d0b1c946c8f0f98d43.
+- ID operativo de sesión: IMA-AUDIT-20261106-1944Z.
+- Checkpoint anterior: C1.113.
+- Alcance: agregar sección propia de tareas a T-UX-20 a T-UX-28.
+- Informes adaptados: nueve.
+- Tareas nuevas formalizadas: TASK-494 (T-UX-20), TASK-495 (T-UX-22), TASK-DOC-C1.114-TUX26-01 (T-UX-26).
+- Ampliaciones: TASK-480 (T-UX-21), TASK-430 (T-UX-24), TASK-422 (T-UX-25), TASK-067 (T-UX-26), TASK-252/TASK-429/AUD-NG-007 (T-UX-27).
+- Sin tareas nuevas: T-UX-23 y T-UX-28; se documentaron tareas existentes responsables.
+- Se preservó el contenido previo y se anexó el bloque al final de cada informe.
+- No se modificaron código, pruebas, Pendientes.md, completadas.md, ChangesLogs.txt ni rama base.
+- Próxima acción: adaptar el informe de auditoría de Fase 28 y continuar con informes históricos restantes.
+- Validación final y commit de checkpoint: pendientes al momento de este registro.
+================================================================
