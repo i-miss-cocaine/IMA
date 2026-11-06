@@ -1397,3 +1397,38 @@ Relaciones:
 - TASK-491: navegación real, atajos y resiliencia asíncrona.
 - TASK-484: pruebas conductuales UX-01..UX-09.
 ===============================================================================
+
+
+## Filtros avanzados, vistas guardadas y paginación coherente (T-UX-15, C1.55)
+
+### js/ui-common.js
+- SHA de respaldo: 986938b8a311a41ed4cb3d135b66b6aaea4bed67.
+- `renderPaginatedTable`, líneas 1999-2067:
+  - Entrada: containerId, data, options.pageSize/currentPage, options.fetchRemotePage, options.remotePagination, options.headers y options.renderRow.
+  - Paginación local: calcula total sobre data y usa slice(startIndex, startIndex + pageSize).
+  - Paginación remota: se activa por fetchRemotePage; data se trata como página recibida y total proviene de remotePagination.
+  - Eventos: botones anterior/siguiente vuelven a renderizar localmente o llaman fetchRemotePage(targetPage, pageSize).
+  - No recibe ni propaga filtros/ordenamiento como estado de consulta; no gestiona loading/error/retry ni corrige páginas fuera de rango.
+- `SAVED_TABLE_VIEWS_CACHE`, línea 2075: objeto global, escrito por saveView; no se encontró consumidor en los cuatro módulos principales revisados.
+- `setupAdvancedTableFilters`, líneas 2128-2195:
+  - Entradas: config.data, config.filterFields, config.onFilterChange.
+  - Dependencias: normalizeSearchString (líneas 2198-2208), localStorage y SAVED_TABLE_VIEWS_CACHE.
+  - `filterFields` se declara, pero no participa en applyFilters ni valida campos.
+  - applyFilters recorre currentFilters y combina condiciones mediante AND; compara valores como texto normalizado y subcadena.
+  - setFilter usa condición falsy para eliminar valores; item[field] || '' pierde 0 y false.
+  - API pública: setFilter, removeFilter, clearAllFilters, saveView, loadSavedView, getActiveFilters. No genera UI de etiquetas/chips ni implementa ordenamiento.
+  - saveView/loadSavedView guarda solo filtros en localStorage con clave saved_views_{containerId}; no incorpora identidad/rol/ámbito ni comparte vistas.
+- Relación de navegación: TASK-486 conserva/restaura snapshots al navegar; T-UX-15/TASK-429 debe exponer un estado de lista serializable y coordinar su uso, sin duplicar el router/snapshot.
+- Relación de reportes: TASK-249 gestiona vistas analíticas del visor de reportes; no cubre las vistas reutilizables de tablas operativas.
+- Relación de bandejas: TASK-453 implementa filtros/paginación de bandejas documentales en backend; no sustituye el componente común.
+
+### Módulos consumidores inspeccionados
+- `js/teacher.js`: SHA c475fce5afcd28fca23e7b64398ad32b17773746; no se localizaron referencias directas a los helpers.
+- `js/student.js`: SHA e2888cea60322e49a40b89adadb8010489605dcc; no se localizaron referencias directas.
+- `js/accounting.js`: SHA a79ead4a54ad6fdb2f1e9df4775491ff7191a0c7; no se localizaron referencias directas.
+- `js/secretary.js`: SHA 08a81266957b4c18cc25f8ba6749eac30a8f2c2c; no se localizaron referencias directas.
+
+### Hallazgos
+- AUD-NG-201 / TASK-429: filtro genérico incompleto y sin integración efectiva con paginación/tablas.
+- AUD-NG-202 / TASK-429: persistencia de vistas de tabla sin aislamiento de usuario/rol/ámbito ni modelo de compartición.
+- FASE2-07 ya documentó ausencia de consumidores de renderPaginatedTable y modo remoto no integrado; se conserva el antecedente sin duplicarlo.
