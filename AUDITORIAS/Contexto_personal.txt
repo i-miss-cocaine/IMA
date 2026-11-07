@@ -6373,3 +6373,45 @@ CHECKPOINT C1.189 — RECUPERACIÓN ÍNTEGRA DE PENDIENTES.MD
 - Pruebas runtime: no aplican a esta restauración documental. Se verificará SHA del blob, tamaño del árbol, padre, árbol, archivos y estadísticas del commit, y HEAD posterior.
 - Siguiente paso: continuar desde la tarea que corresponda al último checkpoint C1.188, sin inferir que la restauración altera los dictámenes de auditoría.
 ================================================================
+
+
+
+================================================================
+CHECKPOINT C1.190 — NORMALIZACIÓN DE TAREAS DERIVADAS DE TAREA-F4-P2-05
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto: AUDITORIAS/Contexto_personal.txt.
+- Rama de trabajo autorizada: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1; HEAD verificado antes de publicar: 44d9891132332e692dbe2ba8602b41f50a508a59. No se escribe en la rama base.
+- HEAD de partida verificado: 6ee8aa685011b86ce92e425c335cbc8500c1326e.
+- Árbol de partida verificado: b76e7bf7a83952b5890610311fdbd6898cb8cc13.
+- Padre de HEAD de partida: e81d9a49ad082616e76cfb34eabb422946a6c4e2. El HEAD 6ee8aa6 corresponde al commit de recuperación íntegra de Pendientes.md registrado en C1.189.
+- ID operativo de sesión/chat: IMA-AUDIT-20261107-0025Z (inicio C1.189; cierre C1.190; identificador operativo, no ID nativo de ChatGPT).
+- Checkpoint inicial: C1.189. Checkpoint de cierre: C1.190. Hora UTC de cierre: 2026-11-07 00:28Z. Estado de sesión: cerrada.
+- Tarea normalizada: TAREA-F4-P2-05 — consolidación de documentación institucional de privacidad y tratamiento de datos.
+- Dictamen original preservado: NO CUMPLE. Esta iteración normaliza documentalmente hallazgos y tareas; no implementa ni cierra vulnerabilidades.
+- Regla de publicación aplicada: un único commit consolidado; árbol Git construido sobre el árbol completo de HEAD verificado; exactamente dos rutas modificadas; un commit con padre HEAD de partida; actualización de referencia con expected_sha. Prohibidos commits por archivo o intermedios.
+- Árbol consultado: API Git Trees recursivo, 964 entradas, truncated=false. Árbol raíz: b76e7bf7a83952b5890610311fdbd6898cb8cc13.
+- Pendientes.md restaurado y verificado en el árbol de partida: blob 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c, tamaño 1.803.672 bytes. Se conserva sin modificación.
+- Fuentes y SHAs consultados:
+  - Informe P2-05 previo: 4aed45083ac4faf67e05abab703dc7cf830cf705.
+  - Contexto_personal.txt previo: 52c55fbed68d18a73a612917f50ebc1fa687edef.
+  - Auditoria.txt: 284b7a94b51c8ed99dbfcf734694bc5361f9f111.
+  - MapaDependencias.md: 4f68d56f910c6a4e87c20ecac82daeb3a615bcaa.
+  - AUDITORIA_COMPLETADAS_PLAN.md: a374b91e5e45c0b8d5fd9db939735e6ed434c6cb.
+  - METODOLOGIA_DESARROLLO.md: cf796728bb384a32537392df2f9c72a339fa03ee.
+  - completadas.md: f57f1aef832e81e44fc4f7ec36a852d50e464676.
+  - ChangesLogs.txt: d57cf4bd861b5c3720e60cf83241ed804ff645d9.
+  - Informe P1-04 (referencia TASK-502): d26fdadc03fe7bbb4b4c1b4b82b5ca604003f59b.
+  - Informe P1-05 (referencia TASK-503): a9bbba8d1e9e286e699312e04fb2d6e8f06c54e6.
+- Tareas normalizadas: AUD-NG-145 (bitácora y retención segura); AUD-NG-146/TASK-499 (retención/archivo real); AUD-NG-220/TASK-500 (anonimización); AUD-NG-222/TASK-502 (RBAC/ABAC fail-closed); AUD-NG-223/TASK-503 (derechos ARCO).
+- Reconciliación: no se crean IDs nuevos. Se mantienen separados TASK-151/152, TASK-456, TASK-398, AUD-NG-160 y AUD-NG-221/TASK-501.
+- El informe incorpora para cada hallazgo origen, prioridad, acción ejecutable, archivos, criterios de aceptación, dependencias y estado pendiente.
+- Pruebas ejecutadas: lectura del informe P2-05; lectura de bloques del backlog restaurado para AUD-NG-145/146/220/222/223 y TASK-499/500/502/503; cotejo con Auditoria.txt, MapaDependencias.md y plan; lectura de informes P1-04 y P1-05; lectura de reglas 15, 16 y 17 de METODOLOGIA_DESARROLLO.md; verificación de HEAD, árbol completo, rama base y blob Pendientes.md.
+- Pruebas no ejecutadas: lectura de PoliticasRetencionDatos productiva, triggers, pruebas runtime, datos reales, purga/anonimización productiva, panel ARCO en navegador, validación jurídica externa, despliegues Apps Script y suites automatizadas.
+- Archivos que se incluyen en el único commit: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F4-P2-05.md y AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: Pendientes.md, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, ChangesLogs.txt, completadas.md, METODOLOGIA_DESARROLLO.md, código, pruebas, políticas legales y rama base.
+- Progreso preservado: 86/183 identificadores auditados; 97 pendientes.
+- Siguiente tarea: TAREA-F4-P3-01 — implementar informes periódicos de revisión de privilegios y cuentas.
+- Próxima acción: crear blobs de ambos documentos; crear árbol Git nuevo sobre b76e7bf7a83952b5890610311fdbd6898cb8cc13; crear exactamente un commit con padre 6ee8aa685011b86ce92e425c335cbc8500c1326e; actualizar NG_beta_0.0.0.1_work con expected_sha y verificar SHA, padre, árbol y archivos. El SHA final se registra externamente, sin segundo commit.
+================================================================
