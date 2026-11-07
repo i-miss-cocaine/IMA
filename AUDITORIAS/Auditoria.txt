@@ -7863,3 +7863,59 @@ ARCHIVOS:
 SIGUIENTE TAREA:
 TAREA-F6-005 - Crear los microservicios administrativos y financieros con separación por responsabilidades. Buscar primero informe individual e historial; revisar recursos/Drive, límites de responsabilidad, catálogos y pruebas, sin implementar durante la auditoría.
 ===============================================================================
+
+
+===============================================================================
+AUDITORÍA C1.222 - TAREA-F6-005 Y TAREA-F6-030 - 2026-11-07
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: c578aecb7503cdfe7e942a1e927b2416dcb0d739
+Checkpoint inicial: C1.221
+Sesión: IMA-AUDIT-20261107-2030Z
+Informes: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-005.md y AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-030.md
+Dictamen: NO CUMPLE en ambas tareas.
+
+FUENTES:
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676: F6-005 [X], líneas 2619-2657; F6-030 [X], líneas 3443-3516.
+- Pendientes.md blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c: 1.803.672 bytes, 1.782.094 caracteres, 20.182 líneas, sin U+FFFD; no contiene F6-005/F6-030. No se modificó.
+- ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff: F6-005 líneas 1962-1965; F6-030 líneas 2130-2136.
+- Ambos informes individuales no existían; se crearon.
+- F6-030 repite el título de F6-005 y amplía requisitos; se auditaron ambos con la misma evidencia y un único bloque canónico de tareas para evitar duplicados.
+
+HALLAZGOS:
+1. H1 CRÍTICO/P0: accounting-service Code.gs:2398-2421 deja createAdmissionCharge sin cierre antes de la siguiente declaración; no implementa appendRow/creación para cargos nuevos. El archivo llega a EOF en línea 17740 sin cierre extra; sintaxis/compilación no certificable.
+2. H2 CRÍTICO/P0: processPaymentReceipt no existe; generatePaymentReceiptPDF devuelve JSON, no PDF; createFiscalInvoice no valida reciboCajaId; recordStudentPayment no valida propiedad/saldo ni idempotencia atómica (AUD-NG-133); reviewPaymentVoucher cambia estado antes de registrar pago; academic-service registerStudentEnrollment escribe CargosEstudiante directamente.
+3. H3 CRÍTICO/P0: initializeFinancialDriveStructure e initializeDirectionSecretaryDriveStructure crean carpetas pero no ACL; comprobantes y documentos laborales se guardan fuera de la jerarquía y con ANYONE_WITH_LINK; parent puede caer al Drive root; inicializadores sin lock.
+4. H4 ALTO/P1: JWT contiene un solo role; manageUserMultiRolePermissions solo devuelve payload; asignaciones de ámbito no integradas en autorización contable; ACCOUNTING no incluye Secretaría en ROLE_PERMISSIONS estático; no hay trazabilidad de actor/rol verificado por transacción.
+5. H5 ALTO/P1: accounting-service concentra 17.740 líneas en un Code.gs/dispatcher; módulos y subcarpetas hardcodeados, sin configuración para nuevas áreas ni aislamiento de fallos.
+6. H6 ALTO/P1: carpetas Dirección/Secretaría existen, pero sin ACL; initializeDirectionSecretaryDriveStructure está en doPost pero no en ROLE_PERMISSIONS, contradiciendo ChangesLogs.
+7. H7 ALTO/P1: recordStudentPayment no registra operador/rol/contexto; createFiscalInvoice/reviewPaymentVoucher usan payload.authRole en eventos.
+8. H8 ALTO/P1: no hay pruebas E2E de roles, transacciones, privacidad Drive, concurrencia ni fallos selectivos.
+
+HALLAZGOS EXISTENTES AMPLIADOS, SIN NUEVOS IDS GLOBALES:
+- F5-013; AUD-NG-132 (cargos), AUD-NG-133 (pagos/propiedad/saldo/idempotencia), AUD-NG-134 (portal/recibo PDF/enlace público), AUD-NG-135 (CAI/correlativo).
+- AUD-NG-055..065 (validación y seguridad documental/Drive).
+- TAREA-F6-030 se trata como expansión de F6-005; ambas con informe individual y un solo bloque de tareas canónico.
+- No se crean nuevos IDs AUD-NG ni tareas locales duplicadas.
+
+TAREAS DERIVADAS CANÓNICAS:
+- F6-005-A01 P0: reparar sintaxis y creación de cargos.
+- F6-005-A02 P0: integrar cargo/pago/factura/recibo, ownership, saldo, idempotencia y PDF.
+- F6-005-A03 P0: ACL y privacidad Drive, carpetas por área y cargas en jerarquía.
+- F6-005-A04 P1: multirol efectivo, permisos Secretaría y auditoría de contexto verificado.
+- F6-005-A05 P1: módulos desacoplados y subáreas por configuración.
+- F6-005-A06 P1: pruebas E2E de administración, finanzas, roles, Drive y tolerancia a fallos.
+Todas pendientes; F6-030 referencia el mismo bloque, no lo duplica.
+
+PRUEBAS:
+- Ejecutadas: inspección estática/manual de dispatchers, permisos, JWT, módulos, Drive, pagos, facturación, historial y backlog.
+- No ejecutadas: parser/runtime Apps Script, HTTP, Drive/Sheets productivas, facturación SAR, multi-cuenta, concurrencia ni E2E. No se modificaron datos productivos.
+
+ARCHIVOS:
+- Nuevos: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-005.md; AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-030.md.
+- Actualizados: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- Sin cambios: backend/*, js/*, HTML, tests, completadas.md, Pendientes.md, ChangesLogs.txt, metodología, README y rama base.
+
+SIGUIENTE TAREA:
+TAREA-F6-006 - Crear una plantilla de microservicio académico reutilizable para múltiples áreas. Buscar primero informe individual e historial; auditar configuración de siete áreas, IDs inmutables, coordinaciones, almacenamiento aislado y pruebas sin implementar durante la auditoría.
+===============================================================================

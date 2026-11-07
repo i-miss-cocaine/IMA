@@ -1476,3 +1476,17 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **Archivos nuevos/actualizados:** informe individual F6-004; Auditoria.txt; MapaDependencias.md; AUDITORIA_COMPLETADAS_PLAN.md; Contexto_personal.txt.
 - **Archivos sin cambios:** código, JS, HTML, tests, completadas.md, Pendientes.md, ChangesLogs.txt, metodología, README y rama base.
 - **Siguiente tarea:** TAREA-F6-005 - Crear los microservicios administrativos y financieros con separación por responsabilidades. Buscar informe individual e historial antes de auditar código.
+
+
+## C1.222 - Resultado de auditoría TAREA-F6-005 y TAREA-F6-030
+
+- **Dictamen:** NO CUMPLE en ambas tareas. Las dos aparecen [X] en completadas.md; no se cambia el estado histórico.
+- **Relación:** TAREA-F6-030 repite el título de F6-005 y amplía criterios CA-053..060/CA-148..150. Se auditaron ambas; se crean dos informes por ID, pero comparten un único bloque canónico F6-005-A01..A06.
+- **Evidencia crítica:** createAdmissionCharge queda sin cierre ni camino de creación; processPaymentReceipt no existe; generatePaymentReceiptPDF no genera PDF; la cadena de transacción no valida referencias; Drive expone archivos con ANYONE_WITH_LINK y no aplica ACL; JWT contiene un solo role; multirol no está integrado; el dispatcher y carpetas están hardcodeados.
+- **Registros existentes ampliados:** F5-013; AUD-NG-132..135; AUD-NG-055..065; no se crean IDs globales duplicados.
+- **Tareas canónicas:** F6-005-A01..A06 pendientes (sintaxis/cargos, integridad transaccional, ACL Drive, multirol y auditoría, módulos configurables, pruebas E2E).
+- **Pruebas:** inspección estática/manual. No se ejecutaron parser/runtime Apps Script, HTTP, Drive/Sheets productivas, SAR, concurrencia ni E2E.
+- **Archivos nuevos:** informes individuales F6-005 y F6-030.
+- **Archivos actualizados:** Auditoria.txt; MapaDependencias.md; AUDITORIA_COMPLETADAS_PLAN.md; Contexto_personal.txt.
+- **Archivos sin cambios:** backend, js, HTML, tests, completadas.md, Pendientes.md, ChangesLogs.txt, metodología, README y rama base.
+- **Siguiente tarea:** TAREA-F6-006 - Crear una plantilla de microservicio académico reutilizable para múltiples áreas. Buscar informe individual e historial antes de auditar código.

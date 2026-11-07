@@ -2555,3 +2555,46 @@ TAREA-F5-017 NO CUMPLE. La búsqueda, panel y decisiones manuales existen parcia
 - F6-004-A01..A06 pendientes; ver informe individual.
 - Se amplían TASK-046, TASK-047, TASK-048, F23-Task02/07/10, AUD-NG-082..086, AUD-NG-174, TAREA-F6-009 y TAREA-F6-003-A09. No duplicar IDs globales.
 - No se ejecutaron llamadas HTTP, Apps Script, pruebas multi-cuenta ni pruebas contra datos productivos.
+
+
+## C1.222 - TAREA-F6-005 / TAREA-F6-030: servicios administrativos y financieros
+
+**Informes:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-005.md y AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-030.md  
+**Dictamen:** NO CUMPLE en ambas. **HEAD inicial:** c578aecb7503cdfe7e942a1e927b2416dcb0d739.
+
+### Dependencias administrativas y académicas
+- backend/academic-service/Code.gs SHA df87a2eea9f0ef79d0b966d03fd5bbe432003df5:
+  - getStudentFile:2510-2600 devuelve matrículas, tutores, documentos y movimientos, no cargos/pagos/facturas.
+  - registerStudentEnrollment:12800-12875 escribe directamente CargosEstudiante, fuera del flujo contable.
+  - initializeDirectionSecretaryDriveStructure:4246-4278 crea Direccion/Secretaria/Compartido, pero no aplica ACL ni usa lock.
+  - doPost:871 enruta initializeDirectionSecretaryDriveStructure; la acción no aparece en ROLE_PERMISSIONS, contradiciendo ChangesLogs:2130-2136.
+- backend/user-service/Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f:
+  - roles Director/Secretaría:926-982; generateSessionToken:1065-1085 contiene un único role.
+  - assignRoleScope/getInternalRoleAssignments guardan ámbitos, pero no se integran en el claim/validación contable.
+  - getUserDynamicDashboardConfig:9270-9305 utiliza rol principal.
+- backend/developer-service/Code.gs SHA 8aa4bac67cfe5c8c54da51a0784a56fef633e412: manageUserMultiRolePermissions:2585-2596 solo devuelve roles/áreas recibidos.
+
+### Servicio contable y Drive
+- backend/accounting-service/Code.gs SHA 38b979d41596b85e888b4a7060b37bbac0840a28, 17.740 líneas.
+- createAdmissionCharge:2398-2421 no cierra función ni crea cargo nuevo; processPaymentReceipt no existe.
+- recordStudentPayment:3891-3965 conserva brechas AUD-NG-133.
+- reviewPaymentVoucher/generatePaymentReceiptPDF:4183-4260 cambia estado antes de pago y devuelve JSON, no PDF.
+- createFiscalInvoice:4357-4575 guarda reciboCajaId opcional sin validar relación.
+- getParentDriveFolder/getOrCreateFolder:101-113 puede usar Drive root; initializeFinancialDriveStructure:10147-10197 crea subcarpetas sin ACL.
+- uploadPaymentVoucher:4110-4122 y uploadEmployeeDocument:5946-5957 almacenan fuera de la jerarquía y aplican ANYONE_WITH_LINK.
+- ROLE_PERMISSIONS:196-215 no incluye Secretaría; validateRolePermission:434-484 usa claims.role único.
+
+### Hallazgos y tareas
+- H1 P0: sintaxis y creación de cargos.
+- H2 P0: integridad cargo/pago/factura/recibo y PDF.
+- H3 P0: privacidad/ACL de Drive.
+- H4 P1: multirol y contexto de autorización.
+- H5 P1: módulos/subáreas hardcodeados y sin aislamiento.
+- H6 P1: carpetas Dirección/Secretaría sin permisos; acción no autorizada en ROLE_PERMISSIONS.
+- H7 P1: trazabilidad de transacciones incompleta.
+- H8 P1: pruebas E2E no acreditadas.
+- Se amplían F5-013, AUD-NG-132..135 y AUD-NG-055..065. No se crean IDs globales duplicados.
+- Tareas canónicas F6-005-A01..A06 pendientes; F6-030 referencia el mismo bloque.
+
+### Estado de pruebas
+Inspección estática/manual. No se ejecutaron Apps Script, HTTP, Drive/Sheets productivos, facturación SAR, pruebas multirol, concurrencia ni E2E.

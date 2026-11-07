@@ -7446,3 +7446,56 @@ ARCHIVOS MODIFICADOS:
 SIGUIENTE ACCIÓN:
 Auditar TAREA-F6-005 - Crear los microservicios administrativos y financieros con separación por responsabilidades. Buscar primero informe individual e historial; revisar recursos/Drive, límites de responsabilidad, catálogos y pruebas, sin implementar durante la auditoría.
 ===============================================================================
+
+
+===============================================================================
+CHECKPOINT C1.222 - SESIÓN IMA-AUDIT-20261107-2030Z
+Fecha: 2026-11-07
+Estado: sesión cerrada
+Checkpoint inicial: C1.221
+Checkpoint de cierre: C1.222
+Tareas auditadas: TAREA-F6-005 y TAREA-F6-030 (alcance duplicado/ampliado).
+Contexto: ambas tareas están marcadas [X] y carecían de informe individual. Se verificaron servicios académico, usuario, contable y desarrollador; permisos, roles, carpetas Drive, creación de cargos, pagos, facturas, recibos, trazabilidad y modularidad. Dictamen NO CUMPLE en ambas.
+
+REPOSITORIO Y RAMAS:
+- Repositorio: i-miss-cocaine/IMA.
+- Rama base NG_beta_0.0.0.1; no modificada.
+- Rama de trabajo NG_beta_0.0.0.1_work.
+- HEAD inicial verificado: c578aecb7503cdfe7e942a1e927b2416dcb0d739 (C1.221).
+- La comparación anterior con la rama base era 289 commits ahead, 0 behind.
+- Checkpoint previo: C1.221, commit audit(C1.221): audit F6-004 microservice independence.
+
+FUENTES:
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676: TAREA-F6-005 [X] líneas 2619-2657; TAREA-F6-030 [X] líneas 3443-3516.
+- Pendientes.md recuperado desde blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c: 1.803.672 bytes, 1.782.094 caracteres, 20.182 líneas, sin U+FFFD; no contiene F6-005/F6-030 y no se modificó.
+- ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff: F6-005 líneas 1962-1965; F6-030 líneas 2130-2136.
+- F6-005 y F6-030 no tenían informe individual; ambos se crean.
+- F6-030 repite título y amplía requisitos de F6-005; un solo bloque de tareas canónico para evitar duplicados.
+
+HALLAZGOS:
+- H1 P0: createAdmissionCharge (accounting-service:2398-2421) queda sin cierre antes de la siguiente declaración, no implementa appendRow para cargo nuevo; archivo llega a EOF línea 17740 sin cierre extra.
+- H2 P0: processPaymentReceipt no existe; generatePaymentReceiptPDF retorna JSON; createFiscalInvoice no valida reciboCajaId; recordStudentPayment no valida propiedad/saldo ni idempotencia atómica (AUD-NG-133); reviewPaymentVoucher cambia estado antes de registrar pago; matrícula escribe cargos directamente.
+- H3 P0: carpetas sin ACL; uploads de comprobantes/documentos laborales usan ANYONE_WITH_LINK y quedan fuera de la jerarquía; root fallback.
+- H4 P1: token y autorización usan un solo role; multirol no está integrado; ACCOUNTING no incluye Secretaría en ROLE_PERMISSIONS estático; transacciones no registran contexto verificado.
+- H5 P1: accounting-service tiene 17.740 líneas en un solo Code.gs/dispatcher; subáreas hardcodeadas y sin aislamiento.
+- H6 P1: initializeDirectionSecretaryDriveStructure crea carpetas, pero no ACL y no está en ROLE_PERMISSIONS pese a ChangesLogs.
+- H7 P1: falta trazabilidad de actor/rol activo en pagos/facturas.
+- H8 P1: no hay pruebas E2E de privacidad, multirol, integridad ni fallos selectivos.
+
+REGISTROS EXISTENTES:
+- F5-013; AUD-NG-132..135; AUD-NG-055..065. Se amplían, no se duplican.
+- Tareas canónicas F6-005-A01..A06 pendientes; el informe F6-030 referencia el mismo bloque.
+
+PRUEBAS:
+- Ejecutadas: inspección estática/manual de configuración, roles, dispatchers, Drive, facturación, cargos, pagos, recibos, backlog e historial.
+- No ejecutadas: parser/runtime Apps Script, HTTP, Drive/Sheets productivas, facturación SAR, multi-cuenta, concurrencia y E2E. No se modificaron datos productivos.
+
+ARCHIVOS MODIFICADOS:
+- Nuevos: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-005.md; AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-030.md.
+- Actualizados: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- Sin cambios: backend, js, HTML, tests, completadas.md, Pendientes.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README y rama base.
+- No se modificó código ni datos productivos.
+
+SIGUIENTE ACCIÓN:
+Auditar TAREA-F6-006 - Crear una plantilla de microservicio académico reutilizable para múltiples áreas. Buscar primero informe individual e historial; revisar parametrización de siete áreas, IDs inmutables, coordinaciones, almacenamiento aislado y pruebas; no implementar durante la auditoría.
+===============================================================================
