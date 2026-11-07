@@ -7274,3 +7274,29 @@ TAREAS LOCALES: F5-010-A01 esquema OfertaAcademica; A02 conteo por sección; A03
 Pruebas: inspección estática/manual. No ejecutados Apps Script, HTTP, Sheets productivo, navegador, concurrencia real, firma digital ni suites automatizadas.
 Archivos documentales modificados: informe F5-010 nuevo, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md y Contexto_personal.txt. Sin cambios en código, pruebas, completadas.md, Pendientes.md, ChangesLogs.txt, metodología ni rama base.
 ===============================================================================
+
+
+================================================================
+AUDITORÍA TAREA-F5-011 - C1.206 (IMA-AUDIT-20261107-1359Z)
+================================================================
+- Dictamen: NO CUMPLE. Informe: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-011.md.
+- Fuente: completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, líneas 2158-2193; 12 requisitos y 8 criterios, marcada [X]. Pendientes.md blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c (1.782.094 caracteres/20.182 líneas), sin entrada directa F5-011.
+- No existe informe individual F5-011 ni AUDITORIA_FASE_5_ADMISIONES_PORTAL_FAMILIAS.md en árbol/historial; HALLAZGOS-F5-P1-03 no aparece en Auditoria.txt.
+- H1 CRÍTICO/P0: ACADEMIC llama sendMultiChannelNotification como global, pero la única definición está en USER; no hay llamada interservicio autenticada y typeof permite omisión silenciosa.
+- H2 ALTO/P1: no se despachan eventos de documentos, entrevistas/evaluaciones, lista de espera, invitación tutor ni conversión a matrícula; ampliar F5-007-A05, F5-008-A05 y F5-009-A06.
+- H3 ALTO/P1: BandejaNotificaciones inicializa esquema legacy de 9 columnas, sender escribe 12 con otro orden y getPendingReminders mantiene índices legacy; ampliar AUD-NG-145/TASK-474.
+- H4 ALTO/P1: retryFailedNotificationsQueue es síncrono, no se encontró trigger en código, no tiene maxRetries/nextAttemptAt/backoff y los fallos no avanzan contador/estado; ampliar AUD-NG-176/TASK-474/AUD-NG-006.
+- H5 ALTO/P1: getNotificationPreferences devuelve valores hardcodeados y el sender no consulta preferencias persistidas; ampliar TASK-422.
+- H6 ALTO/P1: estado inicial Entregado no prueba entrega; solo se guardan Entregado/Pendiente_Reintento; sender no registra BitacoraTraceability ni transiciones append-only; ampliar AUD-NG-145/TASK-474.
+- H7 MEDIO/P2: Secretaría consulta historial, pero no hay acción de reenvío individual; la cola global no está permitida a roles ordinarios.
+- H8 ALTO/P1: plantilla HTML genérica sin body texto plano, escape de contenido ni validación de enlace; ampliar AUD-NG-177/TASK-475 y AUD-NG-145.
+- H9 ALTO/P1: deduplicación consulta+append no atómicos y no existen pruebas específicas F5-011; ampliar AUD-NG-006/AUD-NG-161/TASK-474/TASK-475.
+- Dependencias existentes: AUD-NG-083 (sobre interservicio HMAC); AUD-NG-145 (bitácora/PII); AUD-NG-161 (pruebas); AUD-NG-176/TASK-474 (outbox/cola); AUD-NG-177/TASK-475 (HTML/secretos); TASK-422 (preferencias). No crear IDs globales duplicados.
+- Tareas locales F5-011-A01..A09: integración interservicio; cobertura de eventos; esquema de bandeja; cola durable; preferencias; plantillas seguras; trazabilidad append-only; consola/reenvío; suite conductual. Detalle y criterios en el informe.
+- Evidencia: ACADEMIC Code.gs SHA df87a2eea9f0ef79d0b966d03fd5bbe432003df5; USER Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; secretary.js SHA 08a81266957b4c18cc25f8ba6749eac30a8f2c2c; dashboard-secretaria.html SHA fa0d8c23aace24a6acab2d4956398a7f5e1309b8; academic-grading-suite.js SHA a22cb3ef376fe09e65c1b17c2f4f5125290bfba6; modular-dashboard-suite.js SHA 0495e1d526a872c33310935a003a83d924d34683.
+- Pruebas ejecutadas: inspección estática/manual de funciones, callsites, RBAC, dispatch, hojas, UI y suites; revisión del árbol/historial y reconciliación de dependencias.
+- No ejecutadas: Apps Script, HTTP, MailApp real, Sheets productivo, triggers en consola, navegador, concurrencia ni suites automatizadas.
+- Archivos documentales modificados: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-011.md (nuevo); AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- Sin modificar: backend/*; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; rama base.
+- Alcance: solo auditoría/documentación; no se ejecutaron las tareas derivadas. El commit C1.205 queda intacto por instrucción del usuario y no se considera evidencia de F5-011.
+================================================================

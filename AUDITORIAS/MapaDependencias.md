@@ -2130,3 +2130,16 @@ TASK-038 (Magic Bytes); TASK-134/TASK-144 (SHA-256/deduplicación/integridad); T
 - Suite estática ampliada en `tests/regression/academic-grading-suite.js`. Prueba local mock del adaptador: 12 aserciones PASS; no equivale a persistencia real de Apps Script/Sheets.
 - Backup inmutable del archivo anterior: blob Git SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc. Nuevo blob Code.gs: df87a2eea9f0ef79d0b966d03fd5bbe432003df5.
 - Estado A01: En ejecución, pendiente round-trip real y revisión externa.
+
+
+## Fase 5 - Notificaciones automáticas y seguimiento de admisión (TAREA-F5-011, C1.206)
+
+- ACADEMIC/createAdmissionRequest (984-1109) y updateAdmissionStatus (1928-2059) invocan sendMultiChannelNotification como global protegido por typeof; ACADEMIC no define esa función. La única definición está en USER/sendMultiChannelNotification (4818-4893), otro microservicio; no se encontró productor interservicio autenticado. Las llamadas pueden omitirse silenciosamente.
+- No hay productores de notificación en scheduleAdmissionInterview/recordInterviewOutcome (1595-1689), addToWaitlist/offerWaitlistSlot/respondToWaitlistSlot (1750-1925) ni convertAdmissionToStudent (2156-2392), incluida la creación de InvitacionesVinculacion.
+- BandejaNotificaciones: inicialización legacy de 9 columnas (USER 889), escritura de 12 columnas en otro orden (4868-4882), lector getPendingReminders usa índices legacy (6521-6545); getAdmissionNotificationLogs asume esquema de 12 campos (4937-4971).
+- retryFailedNotificationsQueue (4761-4815) es síncrono; sin trigger programado localizado, maxRetries, nextAttemptAt ni backoff; fallos no incrementan intentos/estado. No figura en ROLE_PERMISSIONS de Secretaría/Director/Subdirector.
+- getNotificationPreferences devuelve valores fijos y no lee PreferenciasNotificacion; sendMultiChannelNotification no consulta getUserSettings ni preferencias.
+- El sender marca Entregado por defecto, no acredita recibo del proveedor y no registra transiciones en BitacoraTraceability; solo appendRow y logStructuredEvent. La deduplicación check-then-append no es atómica.
+- secretary.js 191, 1357-1402 y dashboard-secretaria.html 198-205 permiten consultar historial; no hay reenvío manual individual. Plantilla solo HTML, sin body texto plano, escape contextual ni validación de enlace.
+- Dictamen F5-011 NO CUMPLE. Informe AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-011.md; subtareas locales A01-A09.
+- Dependencias: ampliar AUD-NG-083 (interservicio HMAC), AUD-NG-145 (trazabilidad/PII), AUD-NG-161 (pruebas), AUD-NG-176/TASK-474 (outbox/cola), AUD-NG-177/TASK-475 (HTML/secretos) y TASK-422 (preferencias). Coordinar F5-007-A05, F5-008-A05, F5-009-A06 y F5-012. No crear IDs globales duplicados.

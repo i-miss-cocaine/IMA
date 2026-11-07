@@ -1196,3 +1196,16 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Pruebas:** mock local del adaptador, 12 aserciones PASS; revisión estática del diff. No ejecutados suite Node completa, Apps Script ni Google Sheets real.
 - **Archivos:** backend/academic-service/Code.gs; tests/regression/academic-grading-suite.js; informe F5-010; MapaDependencias.md; ChangesLogs.txt; Contexto_personal.txt.
 - **Siguiente:** terminar verificación funcional de A01; después F5-010-A02 (conteo por sección). No iniciar F5-011.
+
+
+## C1.206 - TAREA-F5-011: notificaciones automáticas y seguimiento de admisión
+
+- **Dictamen:** NO CUMPLE. La conexión ACADEMIC→USER no está implementada como integración interservicio; los hooks de recepción/estado pueden omitirse silenciosamente; faltan eventos de entrevistas, documentos, lista de espera, invitación y conversión; el esquema de BandejaNotificaciones es incompatible; reintentos no programados ni acotados; preferencias no aplicadas; estado Entregado no prueba entrega; no hay BitacoraTraceability append-only, reenvío manual ni pruebas conductuales específicas.
+- **Informe nuevo desde cero:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-011.md. Ausencia confirmada en árbol e historial. El informe de fase citado y HALLAZGOS-F5-P1-03 tampoco se encontraron en árbol/historial o Auditoria.txt.
+- **Fuente:** completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, líneas 2158-2193 (12 puntos/8 criterios, marcada [X]); Pendientes.md blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c leído íntegro, sin entrada directa F5-011.
+- **Reconciliación:** ampliar AUD-NG-083, AUD-NG-145, AUD-NG-161, AUD-NG-176/TASK-474, AUD-NG-177/TASK-475 y TASK-422; coordinar F5-007-A05, F5-008-A05, F5-009-A06 y F5-012. No crear IDs globales duplicados.
+- **Tareas derivadas locales:** F5-011-A01..A09: integración interservicio; cobertura de eventos; esquema canónico/migración; cola durable; preferencias; plantillas seguras; trazabilidad append-only; consola/reenvío; suite conductual. Detalle y criterios en el informe.
+- **Pruebas:** inspección estática/manual de ACADEMIC/USER, handlers, dispatch, RBAC, esquema, UI y suites; verificación de árbol/historial y blob Pendientes. No ejecutados Apps Script, HTTP, MailApp, Sheets productivo, triggers, navegador, concurrencia ni suites automatizadas.
+- **Archivos documentales:** informe F5-011 nuevo; Auditoria.txt; MapaDependencias.md; AUDITORIA_COMPLETADAS_PLAN.md; Contexto_personal.txt.
+- **Sin cambios:** código, pruebas, completadas.md, Pendientes.md, ChangesLogs.txt, metodología y rama base. C1.205 permanece intacto por instrucción del usuario; su implementación previa no se ejecuta ni se valida en esta iteración.
+- **Continuidad:** C1.205 es el HEAD de partida publicado; C1.206 cierra la auditoría F5-011. Siguiente tarea: TAREA-F5-012 - seguimiento de aspirantes en el portal familiar; comprobar informe e historial antes de auditar.

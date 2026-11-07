@@ -6858,3 +6858,30 @@ CHECKPOINT C1.205 — TAREA-F5-010-A01: ESQUEMA DE OFERTAS
 - Método: una sola iteración/commit consolidado; checkpoint incluido antes de publicar. Fase 5 queda parcialmente bloqueada por falta de runtime/hoja de integración real.
 - Siguiente acción concreta: obtener/usar entorno autorizado de Apps Script/Sheets para crear oferta de prueba, leerla tras recarga y confirmar columnas/capacidad/estado; luego Code Review y continuar F5-010-A02 (conteo por sección).
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.206 - AUDITORÍA TAREA-F5-011
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto: AUDITORIAS/Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1 (44d9891132332e692dbe2ba8602b41f50a508a59); sin escritura.
+- HEAD de partida verificado: 1ad36af1fc3b3b544df46b974acbd3c7f314a2d7.
+- Árbol de partida: dbfff8bcb5f0e24a70b6688598bcef90ec95895d.
+- ID operativo de sesión/chat: IMA-AUDIT-20261107-1359Z; checkpoint inicial C1.206; checkpoint de cierre C1.206; estado: sesión cerrada. Es un identificador operativo, no un ID nativo de ChatGPT.
+- Checkpoint anterior: C1.205. El usuario ordenó expresamente no revertir ese commit y continuar, y aclaró que el alcance es solo auditar tareas completadas, sin implementar. C1.205 queda intacto, pero no es evidencia de auditoría ni autorización para continuar implementaciones.
+- Tarea anterior auditada: TAREA-F5-010 (C1.204, NO CUMPLE). TAREA-F5-010-A01 no se ejecuta bajo la instrucción vigente.
+- Tarea auditada: TAREA-F5-011; estado en completadas.md [X]. Dictamen: NO CUMPLE.
+- Siguiente tarea exacta: TAREA-F5-012, Portal Familiar/seguimiento de aspirantes. Verificar informe individual y su historial antes de auditar.
+- Fuentes: completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676 líneas 2158-2193; Pendientes.md blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c (1.782.094 caracteres/20.182 líneas); METODOLOGIA_DESARROLLO.md SHA cf796728bb384a32537392df2f9c72a339fa03ee; plan previo SHA 3c8f2342c719dc1dfb5ff2f8ed3c43a519dba9e9.
+- Evidencia inspeccionada: ACADEMIC Code.gs SHA df87a2eea9f0ef79d0b966d03fd5bbe432003df5 (dispatcher 900-977; solicitud 984-1109; entrevistas 1595-1689; lista de espera 1750-1925; cambio estado 1928-2059; conversión 2156-2392); USER Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f (hoja 863-905; roles 922-982; doPost 1351-1470; retry 4761-4815; sender 4817-4893; logs 4937-4971; preferencias 4973-4987; settings 7649-7740); secretary.js SHA 08a81266957b4c18cc25f8ba6749eac30a8f2c2c; dashboard-secretaria.html SHA fa0d8c23aace24a6acab2d4956398a7f5e1309b8; tests SHA a22cb3ef376fe09e65c1b17c2f4f5125290bfba6 y 0495e1d526a872c33310935a003a83d924d34683.
+- Hallazgos: H1 crítico integración interservicio ausente; H2 eventos de admisión incompletos; H3 esquema de bandeja incompatible; H4 cola sin programación/límites; H5 preferencias no aplicadas; H6 estados/bitácora sin entrega verificable; H7 sin reenvío manual; H8 plantilla insegura sin texto plano; H9 deduplicación no atómica y sin pruebas específicas.
+- Dependencias: AUD-NG-083, AUD-NG-145, AUD-NG-161, AUD-NG-176/TASK-474, AUD-NG-177/TASK-475, TASK-422; coordinar F5-007-A05, F5-008-A05, F5-009-A06 y F5-012. No crear IDs globales duplicados.
+- Tareas derivadas locales F5-011-A01..A09 registradas en el informe. No se ejecutaron.
+- Pruebas ejecutadas: inspección estática/manual de funciones, callsites, dispatch, RBAC, hojas, UI y suites; árbol/historial; lectura de fuentes y reconciliación de dependencias.
+- No ejecutadas: Apps Script, HTTP, MailApp, Sheets productivo, triggers en consola, navegador, concurrencia real ni suites automatizadas.
+- Archivos documentales modificados en esta iteración: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-011.md (nuevo); AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: backend/*; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; rama base.
+- Próxima acción reproducible: abrir completadas.md en TAREA-F5-012; comprobar en árbol/historial AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-012.md y variante; consultar pendientes/completadas según instrucciones del usuario; auditar backend/user-service getGuardianApplicants/getAdmissionRequests y student.js/Portal Familiar para seguimiento, posición, estado, aislamiento y notificaciones; reconciliar F5-011 y AUD-NG-145/AUD-NG-161 antes de crear tareas.
+================================================================
