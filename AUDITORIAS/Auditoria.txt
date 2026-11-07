@@ -8367,3 +8367,25 @@ ARCHIVOS:
 - Sin cambios: backend/*, js/*, HTML, tests/*, completadas.md, Pendientes.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README, manifest.json y rama base.
 - Siguiente auditoría: TAREA-F6-014 y TAREA-F6-039, centralización de configuración y dependencias sin centralizar todos los datos.
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-07
+AUDITORÍA DE CONTINUIDAD - TAREA-F6-014 Y TAREA-F6-039: CONFIGURACIÓN CENTRAL, DEPENDENCIAS Y CONTRATOS
+ARCHIVOS AUDITADOS: backend/developer-service/Code.gs; js/config.js; js/api.js; USER/ACADEMIC/ACCOUNTING/TASK/EXAM Code.gs; developer-dashboard.html; js/developer.js; tests/regression/academic-grading-suite.js
+RESULTADO:
+- F6-014: NO CUMPLE. F6-039: NO CUMPLE (alcance ampliado).
+- validateServiceConfigDependencies devuelve isReadyForActivation=true, permissionsCheck=PASS y bindings válidos mediante expresiones siempre verdaderas; no comprueba recursos ni permisos.
+- getCentralConfigAndContractCatalog es estático, parcial y no contiene esquemas/contratos completos por operación.
+- fetchApi resuelve URL exclusivamente desde SERVICE_URLS; no consume SERVICE_REGISTRY ni la configuración del control plane.
+- SERVICE_REGISTRY contiene recursos de ejemplo y estado ACTIVE fijo; el registro backend permite endpoints/recursos opcionales y usa defaults ficticios/wildcard.
+- updateServiceStatus solo cambia estado e historial; no retira endpoints ni referencias frontend/contratos.
+- La consola no presenta flujo integrado para configuración y dependencias. Los cambios de roles/áreas no se propagan desde una fuente central demostrada.
+- fetchApi puede retornar status success y data vacía tras error de red para get*, con isFallback; la distinción depende de cada consumidor.
+- Los tests existentes verifican presencia textual para TASK-046/047; no cubren los criterios funcionales de F6-014/F6-039.
+RECONCILIACIÓN:
+- Ampliar AUD-NG-011, AUD-NG-077, AUD-NG-078, AUD-NG-081, AUD-NG-158 y AUD-NG-174; no crear IDs globales duplicados.
+- Ampliar tareas canónicas F6-004-A01/A02/A04/A05/A06, F6-007-A05, F6-008-A04/A05 y F6-009-A02/A06. F6-039 comparte el bloque derivado con F6-014.
+- Se conserva [X] histórica en completadas.md. Pendientes.md se consultó desde el blob íntegro SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c y no se modificó.
+PRUEBAS/LÍMITES: inspección estática/manual. No se ejecutaron Apps Script, OAuth, HTTP, deployments, browser, Drive/Sheets productivas, concurrencia ni E2E. Sin cambios de código o datos productivos.
+===============================================================================

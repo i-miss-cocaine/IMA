@@ -1610,3 +1610,32 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **Archivos actualizados:** Auditoria.txt; MapaDependencias.md; AUDITORIA_COMPLETADAS_PLAN.md; Contexto_personal.txt.
 - **Archivos sin cambios:** backend, js, HTML, tests, completadas.md, Pendientes.md, ChangesLogs.txt, metodología, README, manifest.json y rama base.
 - **Siguiente tarea:** TAREA-F6-014 y TAREA-F6-039, centralización de configuración y dependencias sin centralizar todos los datos.
+
+
+## C1.231 - Auditoría TAREA-F6-014 y TAREA-F6-039
+
+- **Sesión:** IMA-AUDIT-20261107-2125Z-01; checkpoint inicial C1.230.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **HEAD de partida verificado:** 201373cd3b859eb1cc523eda920ab8a91e4af4ce; commit C1.230.
+- **Rama base:** NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59; intacta.
+- **Comparación inicial:** 298 commits adelante, 0 atrás.
+- **Dictamen:** TAREA-F6-014 y TAREA-F6-039 NO CUMPLEN; se conservan las marcas [X] históricas.
+- **Relación:** F6-039 amplía F6-014 con CA-129..CA-135 y CA-168..CA-169; comparten el bloque canónico de tareas derivadas.
+- **Evidencia:** validateServiceConfigDependencies siempre retorna PASS; catálogo de contratos estático e incompleto; fetchApi usa SERVICE_URLS y no el registry; SERVICE_REGISTRY mantiene placeholders y ACTIVE fijos; registro de servicios incompleto; retiro no elimina referencias; dashboard no consume configuración/dependencias; roles permanecen distribuidos; fallback puede ocultar indisponibilidad.
+- **Registros ampliados:** AUD-NG-011/077/078/081/158/174. No se crean IDs globales duplicados.
+- **Tareas canónicas ampliadas:** F6-004-A01/A02/A04/A05/A06; F6-007-A05; F6-008-A04/A05; F6-009-A02/A06. Todas Pendientes.
+- **Pendientes.md:** lectura ordinaria sin contenido; blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c recuperado y consultado: 1.803.672 bytes, 1.782.094 caracteres, 20.182 líneas, sin U+FFFD. No contiene F6-014/F6-039; no se modificó.
+- **Respaldos de código:** DEVELOPER 8aa4bac67cfe5c8c54da51a0784a56fef633e412; config.js 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc; api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; USER 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ACADEMIC df87a2eea9f0ef79d0b966d03fd5bbe432003df5; ACCOUNTING 38b979d41596b85e8884b7060b37bbac0840a28; TASK 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe; EXAM 1d93296628fae31f680004f637897e2b1314a64c; developer.js 6fa4c4bd9be580c974b1fbede4f0cf79485dc331; dashboard 2b69f1bf7ffbbe4902e81de14d6315cedb035a1e; tests a22cb3ef376fe09e65c1b17c2f4f5125290bfba6.
+- **Funciones/rangos:** DEVELOPER getCentralSpreadsheetConfigRegistry 223+, getCentralConfigAndContractCatalog 2262-2285, validateServiceConfigDependencies 2286-2305, getCentralServiceRegistry 2415-2472, registerServiceInstance 2473-2530, updateServiceStatus 2531-2585; config.js 224-335; api.js fetchApi 11-181; dispatchers y ROLE_PERMISSIONS de los cinco servicios; developer dashboard y controlador.
+- **Pruebas ejecutadas:** inspección estática/manual de funciones, llamadas, catálogos, contratos, permisos, UI, pruebas existentes, historial, SHAs, árbol y blob.
+- **Pruebas no ejecutadas:** Apps Script runtime, OAuth, HTTP, deployments, navegador, Drive/Sheets productivas, concurrencia y E2E.
+- **Archivos nuevos:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-014.md; AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-039.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Archivos sin cambios:** backend/*, js/*, HTML, tests/*, completadas.md, Pendientes.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README, manifest.json y rama base.
+- **Sin cambios:** código fuente, configuraciones de despliegue y datos productivos.
+- **Últimas tareas auditadas:** F6-014/F6-039.
+- **Siguiente tarea exacta:** TAREA-F6-015 y TAREA-F6-040; auditar rendimiento, capacidad, resiliencia, concurrencia y recuperación integral. Primero localizar informes individuales e historial; saltar el informe ausente sin omitir la auditoría.
+- **Commit de cierre:** el único commit que incorpora este checkpoint y todos los informes/bitácoras; SHA se confirmará consultando GitHub después de publicar.
+- **Punto de reanudación:** verificar HEAD/árbol del commit de cierre y comparar con rama base; continuar con F6-015/F6-040.
+

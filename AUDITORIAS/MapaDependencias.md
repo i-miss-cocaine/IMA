@@ -2884,3 +2884,30 @@ Inspección estática/manual. No se ejecutaron Apps Script runtime, HTTP, trigge
 - manifest.json SHA 0caa5febfbd7fdbb88e9d174fa6623fb7daebb4e es PWA. No hay appsscript.json, .clasp.json ni workflows CI/CD en el árbol.
 - tests/regression contiene solo academic-grading-suite.js SHA a22cb3ef376fe09e65c1b17c2f4f5125290bfba6 y modular-dashboard-suite.js SHA 0495e1d526a872c33310935a003a83d924d34683; no cubren F6-013/F6-038.
 - Se amplían AUD-NG-011/077/078/081/174. Las tareas locales canónicas F6-013-A01..A07 están en el informe F6-013; F6-038 las referencia y amplía criterios.
+
+
+## C1.231 - TAREA-F6-014 / TAREA-F6-039: configuración central y dependencias
+
+**Informes:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-014.md y AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-039.md.  
+**Dictamen:** ambas NO CUMPLEN; las marcas [X] históricas se conservan.  
+**HEAD auditado:** 201373cd3b859eb1cc523eda920ab8a91e4af4ce.
+
+### Registro, configuración y dependencias
+- backend/developer-service/Code.gs SHA 8aa4bac67cfe5c8c54da51a0784a56fef633e412: getCentralConfigAndContractCatalog (2262-2285) es estático y parcial; validateServiceConfigDependencies (2286-2305) siempre declara PASS; getCentralServiceRegistry (2415-2472) usa defaults ficticios; registerServiceInstance (2473-2530) permite endpoint/recurso opcional y wildcard; updateServiceStatus (2531-2585) solo cambia estado e historial.
+- getCentralSpreadsheetConfigRegistry (223+) consulta únicamente registros de Spreadsheet del control plane y admite datos desde payload cuando no encuentra filas; no resuelve configuración completa por servicio ni dependencias Drive/endpoint/contrato.
+- js/config.js SHA 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc, líneas 224-335: SERVICE_URLS y SERVICE_REGISTRY hardcodeados; URLs marcadoras en ACCOUNTING/DEVELOPER; IDs Spreadsheet/Drive de ejemplo; versión v8.4.0 y ACTIVE fijos.
+- js/api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9, líneas 11-24: fetchApi usa SERVICE_URLS, no consulta SERVICE_REGISTRY ni getServiceDescriptor.
+- developer-dashboard.html SHA 2b69f1bf7ffbbe4902e81de14d6315cedb035a1e y js/developer.js SHA 6fa4c4bd9be580c974b1fbede4f0cf79485dc331: no se localizó UI conectada al catálogo de configuración/dependencias.
+- Los servicios conservan matrices ROLE_PERMISSIONS distribuidas; no se demuestra propagación de cambios de rol/área/coordinación desde una fuente central.
+
+### Dictamen de criterios
+- F6-014 CA-070..CA-073: NO CUMPLE.
+- F6-039 CA-129, CA-130, CA-131, CA-133, CA-135 y CA-169: NO CUMPLE.
+- F6-039 CA-132, CA-134 y CA-168: PARCIAL; existe historial de estado, bandera isFallback y catálogo de acciones, pero no historial/configuración/contratos completos ni consumo obligatorio.
+
+### Reconciliación
+- Se amplían AUD-NG-011/077/078/081/158/174. No se crean IDs globales duplicados.
+- Tareas canónicas ampliadas: F6-004-A01/A02/A04/A05/A06; F6-007-A05; F6-008-A04/A05; F6-009-A02/A06. F6-039 comparte el bloque de F6-014.
+- No se modificó código, configuración, tests, completadas.md, Pendientes.md, ChangesLogs.txt ni rama base.
+- Pruebas estáticas/manuales ejecutadas; Apps Script, HTTP, OAuth, navegador, Drive/Sheets productivas y E2E no ejecutadas.
+
