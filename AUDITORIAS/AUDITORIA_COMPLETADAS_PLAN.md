@@ -1562,3 +1562,17 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **Archivos actualizados:** Auditoria.txt; MapaDependencias.md; AUDITORIA_COMPLETADAS_PLAN.md; Contexto_personal.txt.
 - **Archivos sin cambios:** backend, js, HTML, tests, completadas.md, Pendientes.md, ChangesLogs.txt, metodología, README y rama base.
 - **Siguiente tarea:** TAREA-F6-011 y TAREA-F6-036, respaldos independientes y recuperación por área.
+
+
+## C1.228 - Resultado de auditoría TAREA-F6-011 y TAREA-F6-036
+
+- **Dictamen:** NO CUMPLE en ambas; ambas aparecen [X] en completadas.md y conservan ese estado histórico.
+- **Relación:** F6-036 amplía F6-011 con CA-103..CA-112/CA-160. Se crean informes individuales y un único bloque canónico F6-011-A01..A06.
+- **Evidencia crítica:** computeSimpleHash es hash aritmético 32-bit, verifyBackupIntegrity acepta cualquier checksum no vacío, restoreSystemBackup no verifica antes de limpiar/escribir hojas, backup usa Spreadsheet/carpeta global ACADEMIC, no hay triggers/retención/catálogo central, frontend envía payload incompatible y muestra mocks, reconciliación parcial.
+- **Registros existentes ampliados:** AUD-NG-146, AUD-NG-011 y AUD-NG-086. No se crean IDs globales duplicados.
+- **Tareas canónicas:** F6-011-A01..A06 pendientes (SHA-256/manifiesto, aislamiento por servicio, restore transaccional, reconciliación referencial, scheduling/retención/capacidad, dashboard/API/pruebas/runbook).
+- **Pruebas:** inspección estática/manual; no se ejecutaron Apps Script runtime, HTTP, triggers, Drive/Sheets productivas, restauraciones, concurrencia ni E2E.
+- **Archivos nuevos:** informes individuales F6-011 y F6-036.
+- **Archivos actualizados:** Auditoria.txt; MapaDependencias.md; AUDITORIA_COMPLETADAS_PLAN.md; Contexto_personal.txt.
+- **Archivos sin cambios:** backend, js, HTML, tests, completadas.md, Pendientes.md, ChangesLogs.txt, metodología, README y rama base.
+- **Siguiente tarea:** TAREA-F6-012 y TAREA-F6-037, seguridad, aislamiento y gestión centralizada de permisos.

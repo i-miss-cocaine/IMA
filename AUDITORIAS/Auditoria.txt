@@ -8222,3 +8222,62 @@ ARCHIVOS:
 SIGUIENTE TAREA:
 TAREA-F6-011 y su registro ampliado TAREA-F6-036: respaldos independientes y recuperación por área. Buscar informes individuales e historial; comprobar copia aislada de cada servicio, checksum, catálogo, retención/rotación, preview de impacto, confirmación destructiva, restauración aislada y reconciliación referencial.
 ===============================================================================
+
+
+===============================================================================
+AUDITORÍA C1.228 - TAREA-F6-011 Y TAREA-F6-036 - 2026-11-07
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: 8c5ac21347def05c729a9eb498f90152fe1ec968
+Checkpoint inicial: C1.227
+Sesión: IMA-AUDIT-20261107-2039Z-01
+Informes: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-011.md y AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-036.md
+Dictamen: NO CUMPLE en ambas tareas.
+
+FUENTES:
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676: F6-011 [X], líneas 2798-2820; F6-036 [X], líneas 3705-3732.
+- Pendientes.md: lectura convencional devolvió 0 caracteres; blob del HEAD actual SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c recuperado íntegro: 1.803.672 bytes, 1.782.094 caracteres, 20.182 líneas, sin U+FFFD. AUD-NG-146 permanece [ ] Pendiente. No se modificó.
+- ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff: F6-011 líneas 1993-1997; F6-036 líneas 2174-2177. Las afirmaciones de SHA-256/aislamiento no coinciden con el código.
+- No existían informes individuales F6-011/F6-036; se crean.
+- Rama base NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59; rama de trabajo 295 commits adelante, 0 detrás. Base intacta.
+
+HALLAZGOS:
+1. H1 CRÍTICO/P0: computeSimpleHash es hash aritmético de 32 bits, no SHA-256; verifyBackupIntegrity acepta cualquier checksum no vacío por Boolean(storedChecksum).
+2. H2 CRÍTICO/P0: restoreSystemBackup no llama al verificador ni al preview, solo valida parsed.sheets, limpia hojas completas y escribe sin LockService, staging ni rollback.
+3. H3 CRÍTICO/P0: createSystemBackup opera sobre SPREADSHEET_ID global ACADEMIC, copia todas las hojas y usa carpeta global New Generation/Respaldos; no acepta serviceId/areaId ni aísla Drive/ACL/configuración.
+4. H4 ALTO/P1: listSystemBackups solo recorre archivos y omite checksum, servicio, alcance, versión, estado y resultado; no hay catálogo central persistente.
+5. H5 ALTO/P1: no se encontraron ScriptApp.newTrigger/timeBased ni retención/rotación/capacidad específica de backups en ACADEMIC/USER/DEVELOPER/ACCOUNTING.
+6. H6 ALTO/P1: previewBackupRestoreImpact cuenta filas y tablas esenciales; no simula restore aislado, enlaces Drive rotos no bloquean y no valida relaciones completas.
+7. H7 ALTO/P1: teacher.js envía confirmationCode en vez de confirmed/confirmCode; js/api.js llama wrappers USER inexistentes; developer.js muestra mock EXITOSO y DTO incompatibles.
+8. H8 ALTO/P1: reconcileRestoredDataIntegrity solo inspecciona CalificacionesEstudiantes/HistorialAcademico, devuelve success con inconsistencias y no se invoca desde restore.
+9. H9 MEDIO/P2: tests/regression/academic-grading-suite.js carece de pruebas de backup/restore; no se encontró runbook reproducible.
+
+REGISTROS EXISTENTES AMPLIADOS:
+- AUD-NG-146 (Crítico): SHA-256, validación previa, restauración, retención, UI y pruebas. Confirmado vigente; no se crea ID global duplicado.
+- AUD-NG-011: aislamiento por microservicio y almacenamiento por servicio.
+- AUD-NG-086: trazabilidad de operaciones sensibles.
+- F6-036 amplía F6-011; ambos informes individuales comparten el bloque canónico F6-011-A01..A06.
+
+TAREAS DERIVADAS CANÓNICAS:
+- F6-011-A01 P0: SHA-256 real y manifiesto verificable.
+- F6-011-A02 P0: backups/almacenamiento aislado por microservicio.
+- F6-011-A03 P0: restauración transaccional, contextual y protegida.
+- F6-011-A04 P1: reconciliación referencial completa y bloqueante.
+- F6-011-A05 P1: programación, retención, rotación y capacidad.
+- F6-011-A06 P1: dashboard/API, pruebas de recuperación y runbook.
+Todas pendientes; F6-036 referencia el mismo bloque.
+
+PRUEBAS:
+- Ejecutadas: inspección estática/manual de dispatcher, permisos, checksum, creación/listado, preview, restauración, reconciliación, wrappers API, dashboard, servicios adicionales y suite de regresión.
+- No ejecutadas: Apps Script runtime, HTTP, triggers, Drive/Sheets productivas, restauraciones, concurrencia, E2E ni simulación aislada.
+- No se modificaron datos productivos.
+
+ARCHIVOS MODIFICADOS:
+- Nuevos: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-011.md; AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-036.md.
+- Actualizados: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- Sin cambios: backend, js, HTML, tests, completadas.md, Pendientes.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README y rama base.
+- No se modificó código, configuración ni datos productivos.
+
+SIGUIENTE TAREA:
+Auditar TAREA-F6-012 y su registro ampliado TAREA-F6-037: seguridad, aislamiento y gestión centralizada de permisos. Buscar informes individuales e historial; verificar identidad única, roles múltiples, RBAC/ABAC, autorización server-side por servicio, IDOR, revocación, scopes, auditoría y pruebas directas de backend.
+===============================================================================

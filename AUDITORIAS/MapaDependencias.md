@@ -2777,3 +2777,45 @@ Inspección estática/manual. No se ejecutaron HTTP, Apps Script runtime, cuotas
 
 ### Estado de pruebas
 Inspección estática/manual. No se ejecutaron purgas, cambios de políticas, mantenimiento, comandos ni pruebas productivas.
+
+
+## C1.228 - TAREA-F6-011 / TAREA-F6-036: respaldos y recuperación por área
+
+**Informes:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-011.md y AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-036.md  
+**Dictamen:** NO CUMPLE en ambas. **HEAD inicial:** 8c5ac21347def05c729a9eb498f90152fe1ec968.
+
+### Ruta de backup/restore
+- backend/academic-service/Code.gs SHA df87a2eea9f0ef79d0b966d03fd5bbe432003df5:
+  - dispatcher:690-715 registra createSystemBackup/listSystemBackups/verifyBackupIntegrity/restoreSystemBackup/reconcileRestoredDataIntegrity.
+  - previewBackupRestoreImpact:3174-3220 verifica checksum y cuenta filas; no simula en entorno aislado.
+  - computeSimpleHash:12254-12262 es hash aritmético 32-bit; getBackupFolder:12265-12270 usa raíz Drive global.
+  - createSystemBackup:12274-12320 exporta todas las hojas del SPREADSHEET_ID ACADEMIC, sin serviceId/areaId.
+  - listSystemBackups:12321-12346 enumera archivos y omite checksum/servicio/alcance/estado.
+  - verifyBackupIntegrity:12347-12405 acepta cualquier checksum no vacío y no invalida enlaces Drive rotos.
+  - restoreSystemBackup:12406-12462 no invoca verify/preview, limpia hojas y escribe sin lock/rollback.
+  - reconcileRestoredDataIntegrity:12463-12504 solo inspecciona CalificacionesEstudiantes e HistorialAcademico y no bloquea.
+- backend/user-service/Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f: no implementa createSpreadsheetBackup/getBackupsList/restoreSpreadsheetBackup.
+- backend/developer-service/Code.gs SHA 8aa4bac67cfe5c8c54da51a0784a56fef633e412 y backend/accounting-service/Code.gs SHA 38b979d41596b85e888b4a7060b37bbac0840a28: no implementan backup/restore por servicio.
+- No se encontraron ScriptApp.newTrigger/timeBased en ACADEMIC/USER/DEVELOPER/ACCOUNTING.
+
+### Frontend
+- js/teacher.js SHA c475fce5afcd28fca23e7b64398ad32b17773746: previewAndVerifyBackupRestore:2170-2190; gestor:2680-2800. Restore envía confirmationCode, no confirmed/confirmCode; preview no es obligatorio.
+- js/api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9: wrappers createBackup/getBackupsList/restoreBackup/runMaintenance:285-310 llaman acciones USER inexistentes o createSpreadsheetBackup no implementada.
+- js/developer.js SHA 6fa4c4bd9be580c974b1fbede4f0cf79485dc331: loadBackupsList:306-334 muestra backup mock EXITOSO; render/handlers 336-480 esperan DTO distinto al backend.
+- developer-dashboard.html SHA 2b69f1bf7ffbbe4902e81de14d6315cedb035a1e: selector 330-365 solo USER/ACADEMIC.
+
+### Hallazgos y trazabilidad
+- H1 P0: checksum no criptográfico y bypass Boolean(storedChecksum).
+- H2 P0: restore destructivo sin verificación previa/compatibilidad, clear() de hojas y sin lock/rollback.
+- H3 P0: backup global ACADEMIC, sin serviceId/areaId, ACL ni storage aislado.
+- H4 P1: no hay catálogo central de backup con checksum/estado/alcance.
+- H5 P1: no hay programación, retención, rotación ni capacidad.
+- H6 P1: preview no simula ni bloquea referencias rotas.
+- H7 P1: contrato frontend/backend incompatible y mocks.
+- H8 P1: reconciliación referencial incompleta y no obligatoria.
+- H9 P2: sin pruebas específicas ni runbook.
+- Se amplían AUD-NG-146, AUD-NG-011 y AUD-NG-086; no se crean IDs globales duplicados.
+- Tareas canónicas F6-011-A01..A06 pendientes; F6-036 referencia el mismo bloque.
+
+### Estado de pruebas
+Inspección estática/manual. No se ejecutaron Apps Script runtime, HTTP, triggers, Drive/Sheets productivas, restauraciones, concurrencia, E2E ni simulación aislada.

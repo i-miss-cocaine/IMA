@@ -7771,3 +7771,81 @@ ARCHIVOS MODIFICADOS:
 SIGUIENTE ACCIÓN:
 Auditar TAREA-F6-011 y su registro ampliado TAREA-F6-036: respaldos independientes y recuperación por área. Buscar informes individuales e historial; comprobar copia aislada por servicio, checksum, catálogo, retención/rotación, preview de impacto, confirmación destructiva, restauración aislada y reconciliación referencial.
 ===============================================================================
+
+
+===============================================================================
+CHECKPOINT C1.228 - SESIÓN IMA-AUDIT-20261107-2039Z-01
+Fecha: 2026-11-07
+Hora UTC de cierre registrada: 2026-11-07T20:47:29Z
+Estado: sesión cerrada
+Checkpoint inicial: C1.227
+Checkpoint de cierre: C1.228
+Tareas auditadas: TAREA-F6-011 y TAREA-F6-036 (mismo objetivo y alcance ampliado).
+Contexto: ambas estaban marcadas [X] y carecían de informes individuales. Se verificaron creación/listado, hash, verificación, preview, restore, reconciliación, almacenamiento, scheduling, retención, capacidad, wrappers, dashboard y pruebas. Dictamen NO CUMPLE en ambas.
+
+REPOSITORIO Y RAMAS:
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto: AUDITORIAS/Contexto_personal.txt.
+- Rama base NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59; intacta.
+- Rama de trabajo NG_beta_0.0.0.1_work.
+- HEAD de partida verificado: 8c5ac21347def05c729a9eb498f90152fe1ec968 (C1.227); árbol 9fbd88be4edc85a85e3df1a91701ef1af85cdbb2.
+- Comparación inicial: 295 commits ahead, 0 behind.
+- Último commit conocido: audit(C1.227): audit F6-010 and F6-035 logs commands.
+- Commit de cierre: el commit que contiene este checkpoint; se verificará el HEAD de GitHub después de publicar.
+- Checkpoint previo: C1.227, sesión IMA-AUDIT-20261107-2240Z.
+
+FUENTES Y RESPALDOS:
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676: F6-011 [X], líneas 2798-2820; F6-036 [X], líneas 3705-3732.
+- Pendientes.md en HEAD devuelve 0 caracteres por lectura convencional; blob actual SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c recuperado íntegro: 1.803.672 bytes, 1.782.094 caracteres, 20.182 líneas, sin U+FFFD. AUD-NG-146 [ ] Pendiente. No se modificó.
+- ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff: F6-011 líneas 1993-1997; F6-036 líneas 2174-2177.
+- No existían informes individuales F6-011/F6-036; se crean.
+- AUD-NG-146 está vigente; se amplía sin duplicar ID.
+
+ARCHIVOS/SECCIONES INSPECCIONADOS:
+- backend/academic-service/Code.gs SHA df87a2eea9f0ef79d0b966d03fd5bbe432003df5: ROLE_PERMISSIONS 165-190; dispatcher 690-715; previewBackupRestoreImpact 3174-3220; computeSimpleHash/getBackupFolder/createSystemBackup 12245-12320; listSystemBackups 12321-12346; verifyBackupIntegrity 12347-12405; restoreSystemBackup 12406-12462; reconcileRestoredDataIntegrity 12463-12504.
+- backend/user-service/Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f: getAuditReport 8315-8370; ausencia de handlers backup/restore.
+- backend/developer-service/Code.gs SHA 8aa4bac67cfe5c8c54da51a0784a56fef633e412; backend/accounting-service/Code.gs SHA 38b979d41596b85e888b4a7060b37bbac0840a28: ausencia de handlers backup/restore.
+- js/teacher.js SHA c475fce5afcd28fca23e7b64398ad32b17773746: preview 2170-2190; gestor 2680-2800.
+- js/developer.js SHA 6fa4c4bd9be580c974b1fbede4f0cf79485dc331: backup UI 306-480.
+- js/api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9: wrappers 285-310.
+- developer-dashboard.html SHA 2b69f1bf7ffbbe4902e81de14d6315cedb035a1e: selector/sección 330-365.
+- tests/regression/academic-grading-suite.js SHA a22cb3ef376fe09e65c1b17c2f4f5125290bfba6: sin pruebas backup/restore.
+
+HALLAZGOS:
+- H1 P0: hash aritmético 32-bit y bypass Boolean(storedChecksum).
+- H2 P0: restore sin verificación previa/compatibilidad, clear() de hojas y sin lock/rollback.
+- H3 P0: backup global ACADEMIC, sin serviceId/areaId, ACL ni storage aislado.
+- H4 P1: listado sin catálogo/alcance/checksum/estado.
+- H5 P1: sin triggers, retención, rotación ni capacidad.
+- H6 P1: preview solo cuenta filas y no bloquea referencias Drive rotas.
+- H7 P1: contrato de confirmación incorrecto, wrappers USER inexistentes y mock EXITOSO.
+- H8 P1: reconciliación limitada a dos hojas, no obligatoria ni bloqueante.
+- H9 P2: no hay pruebas específicas ni runbook.
+
+REGISTROS EXISTENTES:
+- AUD-NG-146 (Crítico), AUD-NG-011 y AUD-NG-086 ampliados; no se crean IDs globales duplicados.
+- F6-036 se trata como expansión de F6-011 y referencia el mismo bloque canónico F6-011-A01..A06.
+
+TAREAS DERIVADAS:
+- F6-011-A01 P0: SHA-256 real y manifiesto verificable.
+- F6-011-A02 P0: backups y almacenamiento aislado por microservicio.
+- F6-011-A03 P0: restauración transaccional, contextual y protegida.
+- F6-011-A04 P1: reconciliación referencial completa y bloqueante.
+- F6-011-A05 P1: programación, retención, rotación y capacidad.
+- F6-011-A06 P1: dashboard/API, pruebas de recuperación y runbook.
+Todas pendientes; F6-036 referencia el mismo bloque.
+
+PRUEBAS:
+- Ejecutadas: inspección estática/manual de rutas, dispatchers, permisos, checksum, creación/listado, preview, restore, reconciliación, wrappers, dashboard, servicios adicionales y suite de regresión.
+- No ejecutadas: Apps Script runtime, HTTP, triggers, Drive/Sheets productivas, restauraciones, concurrencia, E2E ni simulación aislada.
+- No se modificaron datos productivos.
+
+ARCHIVOS MODIFICADOS:
+- Nuevos: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-011.md; AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-036.md.
+- Actualizados: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- Sin cambios: backend, js, HTML, tests, completadas.md, Pendientes.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README y rama base.
+- No se modificó código, configuración ni datos productivos.
+
+SIGUIENTE ACCIÓN:
+Auditar TAREA-F6-012 y su registro ampliado TAREA-F6-037: seguridad, aislamiento y gestión centralizada de permisos. Primero buscar informes individuales e historial; después revisar identidad única, roles múltiples, RBAC/ABAC, validación server-side por servicio, IDOR, revocación, scopes, auditoría y pruebas directas al backend.
+===============================================================================
