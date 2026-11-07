@@ -6415,3 +6415,48 @@ CHECKPOINT C1.190 — NORMALIZACIÓN DE TAREAS DERIVADAS DE TAREA-F4-P2-05
 - Siguiente tarea: TAREA-F4-P3-01 — implementar informes periódicos de revisión de privilegios y cuentas.
 - Próxima acción: crear blobs de ambos documentos; crear árbol Git nuevo sobre b76e7bf7a83952b5890610311fdbd6898cb8cc13; crear exactamente un commit con padre 6ee8aa685011b86ce92e425c335cbc8500c1326e; actualizar NG_beta_0.0.0.1_work con expected_sha y verificar SHA, padre, árbol y archivos. El SHA final se registra externamente, sin segundo commit.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.191 — NORMALIZACIÓN DE TAREA-F4-P3-01
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1; HEAD verificado: 44d9891132332e692dbe2ba8602b41f50a508a59. No se realizó ninguna escritura en la rama base.
+- HEAD de partida verificado: ec29bfb01f29ef52742225787acfe4487e3c512a.
+- Árbol de partida verificado: 7912622a07aec5d614d32f3f8051144df6fa6cd7.
+- Padre del HEAD de partida: 6ee8aa685011b86ce92e425c335cbc8500c1326e.
+- ID operativo de sesión/chat: IMA-AUDIT-20261107-0033Z (identificador operativo, no ID nativo de ChatGPT).
+- Checkpoint inicial: C1.190. Checkpoint de cierre: C1.191.
+- Tarea normalizada: TAREA-F4-P3-01 — implementar informes periódicos de revisión de privilegios y cuentas.
+- Informe existente: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F4-P3-01.md; SHA anterior ea8da5de3393ac8e0e89aa72e5e68a489b82d801. No se reconstruyó ni duplicó; se amplió con la sección de tareas ejecutables.
+- Dictamen histórico preservado: NO CUMPLE. La función devuelve JSON bajo invocación, no se acreditó scheduler/persistencia/entrega/revisión y la consulta de delegaciones pierde contexto y usa un filtro incompatible.
+- Regla de recuperación aplicada: el informe existía en la rama actual y su evidencia técnica sigue correspondiendo al HEAD actual. No fue necesario recuperarlo desde el historial ni repetir la auditoría.
+- Evidencia técnica cotejada contra el árbol actual:
+  - backend/user-service/Code.gs: 12079dd410aa6d8afbce55a4bc62a79dea605f9f.
+  - js/developer.js: 6fa4c4bd9be580c974b1fbede4f0cf79485dc331.
+  - js/ui-common.js: 986938b8a311a41ed4cb3d135b66b6aaea4bed67.
+  - dashboard-direccion.html: fefaa3bf7884288aef563cfb8aaf244e6cea8b7c.
+  - dashboard-secretaria.html: fa0d8c23aace24a6acab2d4956398a7f5e1309b8.
+  - backend/academic-service/Code.gs: daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc.
+  - backend/accounting-service/Code.gs: 38b979d41596b85e888b4a7060b37bbac0840a28.
+  - backend/task-service/Code.gs: 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe.
+  - backend/exam-service/Code.gs: 1d93296628fae31f680004f637897e2b1314a64c.
+  - backend/developer-service/Code.gs: 8aa4bac67cfe5c8c54da51a0784a56fef633e412.
+  - tests/regression/academic-grading-suite.js: 3433b707edd4a2f35c68368a3172932adc2a3b32.
+  - tests/regression/modular-dashboard-suite.js: 0495e1d526a872c33310935a003a83d924d34683.
+- Reconciliación documental:
+  - Pendientes.md (blob 631b4c2dbf0e86d5704b63625382d73ccb8ceb3, 1.803.672 bytes) ya contiene AUD-NG-230 y TASK-510 como pendientes, con criterios de aceptación. No se crean IDs ni se modifica el backlog.
+  - Auditoria.txt (blob 284b7a94b51c8ed99dbfcf734694bc5361f9f111) ya registra el resultado C1.90 y la relación con AUD-NG-219/AUD-NG-161.
+  - MapaDependencias.md (blob 4f68d56f910c6a4e87c20ecac82daeb3a615bcaa) y AUDITORIA_COMPLETADAS_PLAN.md (blob a374b91e5e45c0b8d5fd9db939735e6ed434c6cb) se consultaron; no se modificaron porque la relación y el hallazgo ya están reflejados.
+  - ChangesLogs.txt (blob d57cf4bd861b5c3720e60cf83241ed804ff645d9) conserva la afirmación histórica de implementación; se mantiene como antecedente, no como prueba de periodicidad efectiva.
+  - AUD-NG-219 conserva autorización/ámbito/ciclo de vida de delegaciones; AUD-NG-161 conserva pruebas conductuales; AUD-NG-160 y AUD-NG-220 mantienen sus alcances.
+- Tarea normalizada: AUD-NG-230/TASK-510, sin duplicar identificadores. Se incorporaron en el informe frecuencia/propietario/zona horaria, activador idempotente, persistencia/versionado, entrega autorizada, revisión humana, conteo correcto de delegaciones, recuperación y pruebas.
+- Reconciliación del progreso: C1.190 consignó 86/183; el informe histórico C1.90, Auditoria.txt y Pendientes.md registran que TAREA-F4-P3-01 ya fue auditada y reportan 87/183. Se conserva el conteo acumulado 87/183 identificadores auditados y 96 pendientes. Esta normalización no añade otro identificador.
+- Pruebas ejecutadas: lectura íntegra del informe P3-01; cotejo de TASK-510/AUD-NG-230 en Pendientes.md; revisión de registros C1.90 en Auditoria.txt/MapaDependencias.md/plan/ChangesLogs; verificación de los SHA actuales de todos los archivos técnicos citados; verificación de HEAD/árbol antes de publicar.
+- Pruebas no ejecutadas: Apps Script runtime, instalación o ejecución real de triggers, entrega de correo/notificaciones, lectura de hojas productivas, revisión humana real, suites automatizadas y despliegues. Esta iteración no implementa TASK-510.
+- Límite: cambio exclusivamente documental. No se declara resuelto ningún hallazgo ni completada TASK-510; no se modifica código, pruebas, Pendientes.md, completadas.md ni rama base.
+- Archivos incluidos en el único commit: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F4-P3-01.md y AUDITORIAS/Contexto_personal.txt.
+- Regla de publicación: un único commit consolidado, árbol Git nuevo basado en el árbol completo de HEAD verificado, exactamente dos rutas, un padre igual al HEAD de partida y actualización de ref con expected_sha. No crear commits intermedios ni por archivo.
+- Siguiente tarea oficial: TAREA-F4-P3-02 — optimizar los informes de auditoría y el diagnóstico de incidencias. El informe ya existe y deberá leerse íntegramente, reconciliando AUD-NG-145/AUD-NG-161 sin duplicar.
+================================================================

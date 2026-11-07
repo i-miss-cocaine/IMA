@@ -9,7 +9,8 @@
 **Rama base:** `NG_beta_0.0.0.1`  
 **HEAD de rama base:** `44d9891132332e692dbe2ba8602b41f50a508a59`  
 **Diferencia:** 152 commits adelante, 0 detrás.  
-**ID operativo de sesión/chat:** `IMA-AUDIT-20261106-1644Z` (inicio C1.86; C1.87-C1.90 intermedios; sesión abierta; identificador operativo, no ID nativo de ChatGPT).
+**ID operativo de sesión/chat:** `IMA-AUDIT-20261106-1644Z` (inicio C1.86; C1.87-C1.90 intermedios; identificador operativo, no ID nativo de ChatGPT).  
+**Normalización documental:** C1.191, sesión `IMA-AUDIT-20261107-0033Z`; se conserva el dictamen y la evidencia histórica C1.90.
 
 **Dictamen: NO CUMPLE.** Existe una función de generación bajo invocación del endpoint USER, pero no hay programación periódica, persistencia del informe, entrega a responsables ni evidencia de revisión. El conteo de delegaciones vigentes se calcula incorrectamente.
 
@@ -70,18 +71,50 @@ No se encontraron pruebas para la generación del informe, periodicidad, persist
 - **AUD-NG-220:** conserva semántica de inactividad/anonimización; la fecha de la función usa el campo de último acceso existente.
 - **Nuevo AUD-NG-230/TASK-510:** ausencia de ejecución periódica verificable, persistencia/entrega y revisión formal del informe. No duplica los anteriores.
 
-## 5. Pruebas y límites
+## 5. Tareas ejecutables derivadas de los hallazgos
+
+### [AUD-NG-230 / TASK-510] Programar y entregar la revisión periódica de privilegios y cuentas
+
+- **Estado:** Pendiente.
+- **Prioridad:** P2 (Media).
+- **Origen:** C1.90 / TAREA-F4-P3-01. El identificador y la tarea ya existen en `Pendientes.md`; esta normalización desarrolla su alcance sin crear duplicados.
+- **Problema:** `generatePrivilegeAndAccountAuditReport` devuelve datos solo cuando se invoca manualmente. No se verificó un activador temporal, persistencia recuperable, entrega a responsables ni evidencia de revisión. El conteo de delegaciones vigentes es incorrecto por una consulta interna sin contexto verificado y con un filtro que el handler no reconoce.
+- **Acción ejecutable:** implementar un activador temporal real con frecuencia, propietario y zona horaria documentados; instalación idempotente y recuperación ante fallos; generar y persistir cada informe con identificador de ejecución, fecha, periodo cubierto, versión de política, métricas y detalle estrictamente permitido; entregar notificación o acceso a destinatarios autorizados; registrar responsable, fecha, decisión, observaciones y acciones de seguimiento; corregir la consulta de delegaciones usando identidad/ámbito verificados y el nombre de estado que realmente admite el handler; hacer las ejecuciones y entregas reintentables sin duplicar informes ni notificaciones.
+- **Archivos/componentes:** `backend/user-service/Code.gs`, configuración de activadores Apps Script, almacenamiento institucional de informes y panel/canal administrativo autorizado.
+- **Criterios de aceptación:**
+  - Existe un activador temporal instalable y verificable, con frecuencia, propietario y zona horaria definidos.
+  - La instalación/reparación no crea activadores duplicados y permite detectar ejecuciones omitidas o fallidas.
+  - Cada ejecución conserva un informe recuperable, versionado y vinculado a su periodo e identificador de ejecución, sin exponer credenciales ni PII innecesaria.
+  - Solo destinatarios autorizados reciben o consultan los informes.
+  - La revisión humana registra responsable, timestamp, decisión, observaciones y acciones; un log de generación no se acepta como evidencia de revisión.
+  - El conteo de delegaciones distingue Activa, Revocada y Expirada y no depende de una llamada interna que pierda el contexto de autorización.
+  - Fallos parciales de lectura, persistencia o entrega quedan identificados; no se declara éxito con un informe incompleto y el reintento es idempotente.
+  - Las pruebas cubren roles/permisos, cuentas privilegiadas, cuentas sin acceso y con más de 90 días, delegaciones en cada estado, activador, duplicados, persistencia, entrega fallida, reintento y registro de revisión.
+- **Relaciones y límites:** `AUD-NG-160` conserva vigencia e invalidación de roles/cachés; `AUD-NG-161` conserva pruebas conductuales y se amplía para periodicidad, persistencia, entrega y datos del informe; `AUD-NG-219` conserva autoridad, ámbito y ciclo de vida de delegaciones y se amplía por la consulta interna sin contexto/filtro incompatible; `AUD-NG-220` conserva semántica de inactividad y anonimización. `AUD-NG-230/TASK-510` se limita al ciclo periódico, evidencia y consistencia del reporte.
+
+### Reconciliación de tareas existentes
+
+- `AUD-NG-219`: mantener el hallazgo dentro de su alcance existente de autorización, consulta y ciclo de vida de delegaciones; no crear otro motor de delegaciones.
+- `AUD-NG-161`: incorporar los casos de prueba descritos arriba a la tarea de pruebas conductuales existente; no crear una tarea de pruebas duplicada.
+- `AUD-NG-160` y `AUD-NG-220`: no ampliar sus alcances por asuntos que pertenecen a la automatización y trazabilidad del informe.
+- **Backlog:** `AUD-NG-230` y `TASK-510` ya están registrados como pendientes en `Pendientes.md`. No se cambia su estado ni se altera `completadas.md`.
+
+## 6. Pruebas y límites
 
 **Ejecutado:** inspección estática del router, lista de acciones públicas y permisos, función de reporte, función de delegaciones, búsqueda de invocaciones frontend, búsqueda de activadores en seis microservicios y búsqueda dirigida en ambos archivos regression.
 
 **No ejecutado:** Apps Script runtime, instalación de activadores, ejecución programada, entrega por correo, lectura de hojas productivas, verificación de delegaciones reales, ni suites automatizadas. No se modificó código ni pruebas.
 
-## 6. Resultado y continuidad
+## 7. Resultado y continuidad
 
 - **Dictamen:** NO CUMPLE.
 - **Progreso:** 87/183 identificadores auditados; 96 pendientes.
-- **Última tarea auditada:** C1.90 / TAREA-F4-P3-01.
+- **Última tarea auditada:** C1.90 / TAREA-F4-P3-01.  
+- **Última tarea normalizada:** C1.191 / TAREA-F4-P3-01.
 - **Siguiente tarea exacta:** TAREA-F4-P3-02 - Optimizar los informes de auditoría y el diagnóstico de incidencias.
-- **Archivos documentales previstos para C1.90:** Auditoria.txt, Pendientes.md, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt y este informe.
+- **Archivos modificados en C1.191:** este informe y `AUDITORIAS/Contexto_personal.txt`.  
+- **Archivos preservados:** código fuente, pruebas, `Pendientes.md`, `completadas.md`, `Auditoria.txt`, `MapaDependencias.md`, `AUDITORIA_COMPLETADAS_PLAN.md`, `ChangesLogs.txt`, metodología, políticas legales y rama base.  
+- **Progreso reconciliado:** 87/183 identificadores auditados; 96 pendientes. El resultado histórico C1.90 ya registra esta auditoría; C1.191 solo normaliza su documentación y no añade otro identificador.
 - **Archivos preservados:** código fuente, pruebas, completadas.md, ChangesLogs.txt y METODOLOGIA_DESARROLLO.md.
-- **Commit de cierre:** el commit que contiene este checkpoint; SHA final se verifica después de publicar.
+- **Commit de auditoría original:** el registrado en C1.90.  
+- **Commit de normalización:** único commit consolidado de C1.191; SHA y árbol verificados después de publicar.
