@@ -2637,3 +2637,34 @@ Inspección estática/manual. No se ejecutaron Apps Script, HTTP, Drive/Sheets p
 
 ### Estado de pruebas
 Inspección estática/manual. No se ejecutaron Apps Script, HTTP, despliegues, Drive/Sheets productivas, matrículas reales, concurrencia ni E2E.
+
+
+## C1.224 - TAREA-F6-007 / TAREA-F6-032: despliegue de microservicios académicos
+
+**Informes:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-007.md y AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-032.md  
+**Dictamen:** NO CUMPLE en ambas. **HEAD inicial:** 510ddbe23393771e74e5652d52fab0fd40099e3d.
+
+### Despliegue y configuración
+- backend/academic-service/Code.gs SHA df87a2eea9f0ef79d0b966d03fd5bbe432003df5:
+  - deployAcademicMicroserviceInstance:4494-4575 solo actualiza InstanciasMicroserviciosAcademicos; scriptId/driveFolderId vacíos permitidos; spreadsheetId usa base compartida; connectivityCheck PASS y Estado Activo constantes.
+  - getAcademicMicroserviceDeployments:4650-4685 solo lee metadatos, sin deploymentId/URL ni historial.
+  - configureAcademicLevelsAndDynamicStorage:4576-4649 crea carpetas por rol/usuario y niveles en hoja global; no ACL, no recursos por instancia; responsibilities sin uso; areaId/coordinationType solo log.
+  - runCurricularAreaServiceTests:4147-4202 devuelve PASS constantes y activa el área.
+  - toggleCurricularAreaStatus:4206-4245 permite Activo/Inactivo sin puerta de pruebas.
+- developer-dashboard.html SHA 2b69f1bf7ffbbe4902e81de14d6315cedb035a1e y js/developer.js SHA 6fa4c4bd9be580c974b1fbede4f0cf79485dc331 no contienen formulario/handlers de despliegue.
+- js/config.js SHA 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc: líneas 214-215 mantienen procedimiento manual de crear Apps Script y copiar Code.gs.
+- No se encontró aprovisionamiento real por Apps Script API ni deploymentId/endpoint URL en los componentes inspeccionados.
+
+### Hallazgos y tareas
+- H1 P0: registro de metadatos presentado como despliegue real.
+- H2 P0: dashboard sin flujo de despliegue.
+- H3 P1: sin estados, reanudación, rollback ni OAuth.
+- H4 P1: almacenamiento por rol/usuario sin ACL ni aislamiento de instancia.
+- H5 P1: sin historial/versionado.
+- H6 P1: actor y rol enviados por payload, no verificados.
+- H7 P1: coordinaciones/responsabilidades no configuradas realmente.
+- Se amplían AUD-NG-011, AUD-NG-164 y AUD-NG-158; no se crean IDs globales duplicados.
+- Tareas canónicas F6-007-A01..A06 pendientes; F6-032 referencia el mismo bloque.
+
+### Estado de pruebas
+Inspección estática/manual. No se ejecutaron Apps Script API, OAuth, creación de proyectos, deployments, Drive/Sheets productivas, concurrencia ni E2E.

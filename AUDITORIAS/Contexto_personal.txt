@@ -7553,3 +7553,60 @@ ARCHIVOS MODIFICADOS:
 SIGUIENTE ACCIÓN:
 Auditar TAREA-F6-007 y su registro ampliado TAREA-F6-032: despliegue configurable de nuevos microservicios académicos. Buscar informes individuales e historial; comprobar creación real de proyectos/versiones, almacenamiento aislado, URLs, permisos, idempotencia, rollback y pruebas de conectividad antes de dictaminar.
 ===============================================================================
+
+
+===============================================================================
+CHECKPOINT C1.224 - SESIÓN IMA-AUDIT-20261107-2115Z
+Fecha: 2026-11-07
+Estado: sesión cerrada
+Checkpoint inicial: C1.223
+Checkpoint de cierre: C1.224
+Tareas auditadas: TAREA-F6-007 y TAREA-F6-032 (mismo título y alcance ampliado).
+Contexto: ambas tareas estaban marcadas [X] y carecían de informe individual. Se verificaron dashboard, JS, funciones de despliegue, registro de instancias, almacenamiento dinámico, estados, OAuth, idempotencia, rollback, versionado y auditoría. Dictamen NO CUMPLE en ambas.
+
+REPOSITORIO Y RAMAS:
+- Repositorio: i-miss-cocaine/IMA.
+- Rama base NG_beta_0.0.0.1; no modificada.
+- Rama de trabajo NG_beta_0.0.0.1_work.
+- HEAD inicial verificado: 510ddbe23393771e74e5652d52fab0fd40099e3d (C1.223).
+- Comparación anterior con la rama base: 291 commits ahead, 0 behind.
+- Checkpoint previo: C1.223, commit audit(C1.223): audit F6-006 and F6-031 academic template.
+
+FUENTES:
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676: TAREA-F6-007 [X], líneas 2682-2711; TAREA-F6-032 [X], líneas 3576-3608.
+- Pendientes.md blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c: 1.803.672 bytes, 1.782.094 caracteres, 20.182 líneas, sin U+FFFD; no contiene F6-007/F6-032 y no se modificó.
+- ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff: F6-007 líneas 1972-1975; F6-032 líneas 2146-2153.
+- Ambos informes individuales no existían; se crean.
+- F6-032 repite título y amplía criterios; un solo bloque de tareas canónico para evitar duplicados.
+
+HALLAZGOS:
+- H1 P0: deployAcademicMicroserviceInstance solo registra metadatos; no crea proyecto/deploymentId/URL; IDs de script/Drive vacíos permitidos; Spreadsheet compartido; PASS/Activo constantes.
+- H2 P0: dashboard HTML/JS sin formulario/handlers; config.js conserva despliegue manual.
+- H3 P1: sin máquina de estados, fallos, reanudación, rollback ni OAuth pendiente; instancia puede quedar Activa tras fallo parcial.
+- H4 P1: configureAcademicLevelsAndDynamicStorage crea carpetas por rol/usuario sin ACL y hoja global; no recursos por instancia; responsibilities sin uso.
+- H5 P1: no hay historial de versiones ni actualización optativa.
+- H6 P1: requestedBy/userId/authRole no son claims verificados y la fila se sobrescribe.
+- H7 P1: coordinaciones/asignaciones iniciales no se persisten; areaId/coordinationType solo log.
+- H8 P1: no hay pruebas reales de conectividad, RBAC, Drive/Spreadsheet, OAuth, idempotencia o rollback.
+
+REGISTROS EXISTENTES:
+- AUD-NG-011: despliegue real, recursos, endpoint, ACL, estados y pruebas.
+- AUD-NG-164: catálogo curricular y versionado.
+- AUD-NG-158: coordinaciones/ámbitos.
+- F6-006-A02/A06: despliegue aislado y pruebas E2E.
+- Tareas canónicas F6-007-A01..A06 pendientes; F6-032 referencia el mismo bloque.
+
+PRUEBAS:
+- Ejecutadas: inspección estática/manual de dashboard, JavaScript, dispatchers, registros, almacenamiento y funciones de despliegue.
+- No ejecutadas: Apps Script API, OAuth, creación de proyectos, deployments, Drive/Sheets productivas, concurrencia ni E2E.
+- No se modificaron datos productivos.
+
+ARCHIVOS MODIFICADOS:
+- Nuevos: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-007.md; AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-032.md.
+- Actualizados: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- Sin cambios: backend, js, HTML, tests, completadas.md, Pendientes.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README y rama base.
+- No se modificó código ni datos productivos.
+
+SIGUIENTE ACCIÓN:
+Auditar TAREA-F6-008 y su registro ampliado TAREA-F6-033: plano de control central y registro de servicios. Buscar informes individuales e historial; revisar catálogo de servicios/endpoints/recursos, correlationId, timeouts/retries, tolerancia a caída del control plane, multirol y prevención de ejecución arbitraria.
+===============================================================================

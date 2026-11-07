@@ -1504,3 +1504,17 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **Archivos actualizados:** Auditoria.txt; MapaDependencias.md; AUDITORIA_COMPLETADAS_PLAN.md; Contexto_personal.txt.
 - **Archivos sin cambios:** backend, js, HTML, tests, completadas.md, Pendientes.md, ChangesLogs.txt, metodología, README y rama base.
 - **Siguiente tarea:** TAREA-F6-007 y TAREA-F6-032, despliegue configurable de nuevos microservicios académicos.
+
+
+## C1.224 - Resultado de auditoría TAREA-F6-007 y TAREA-F6-032
+
+- **Dictamen:** NO CUMPLE en ambas tareas; ambas aparecen [X] en completadas.md y conservan ese estado histórico.
+- **Relación:** TAREA-F6-032 repite el título de F6-007 y amplía criterios CA-071..079/CA-154. Se crean informes por ID, pero comparten un único bloque canónico F6-007-A01..A06.
+- **Evidencia crítica:** deployAcademicMicroserviceInstance solo registra metadatos, permite IDs vacíos, usa Spreadsheet compartido, marca PASS/Activo sin verificación; el dashboard carece de formulario; no hay estados/reanudación/rollback/OAuth/versionado; la configuración por rol/usuario no aplica ACL ni recursos por instancia.
+- **Registros existentes ampliados:** AUD-NG-011, AUD-NG-164 y AUD-NG-158; no se crean IDs globales duplicados.
+- **Tareas canónicas:** F6-007-A01..A06 pendientes (aprovisionamiento real, estados/rollback/OAuth, aislamiento/ACL, idempotencia, versionado/auditoría, dashboard y pruebas).
+- **Pruebas:** inspección estática/manual; no se ejecutaron Apps Script API, OAuth, despliegues, Drive/Sheets productivas, concurrencia ni E2E.
+- **Archivos nuevos:** informes individuales F6-007 y F6-032.
+- **Archivos actualizados:** Auditoria.txt; MapaDependencias.md; AUDITORIA_COMPLETADAS_PLAN.md; Contexto_personal.txt.
+- **Archivos sin cambios:** backend, js, HTML, tests, completadas.md, Pendientes.md, ChangesLogs.txt, metodología, README y rama base.
+- **Siguiente tarea:** TAREA-F6-008 y TAREA-F6-033, plano de control central y registro de servicios.
