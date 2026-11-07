@@ -8555,3 +8555,33 @@ RECONCILIACIÓN:
 - Tareas derivadas TASK-538..TASK-544, todas Pendientes y registradas en el informe individual; no se modifica Pendientes.md ni completadas.md.
 PRUEBAS/LÍMITES: inspección estática/manual. No ejecutados Apps Script runtime, HTTP/OAuth, navegador, Sheets/Drive productivas, cálculos con contratos reales, concurrencia, fallos de escritura, rollback ni E2E. Sin cambios de código, tests, HTML o datos productivos.
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-07
+[AUD-NG-241] TAREA-F7-IMP-06 - DISPONIBILIDAD, EQUIPAMIENTO Y CAPACIDAD DE ESPACIOS
+SEVERIDAD: CRÍTICO/P0 Y ALTO/P1; riesgo adicional MEDIO/P2 por renderizado no escapado.
+DICTAMEN: NO CUMPLE (marca [X] histórica conservada).
+EVIDENCIA:
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, TAREA-F7-IMP-06 en línea aproximada 4057, CA-F7-39..44; el informe individual no existía. Pendientes.md blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c recuperado íntegramente: 1.803.672 bytes, 1.782.094 caracteres, 20.182 líneas, 945 IDs únicos (TASK 511, F 424, TAREA 10), máximo TASK-511; no contiene TAREA-F7-IMP-06 ni TASK-538..544.
+- backend/academic-service/Code.gs SHA df87a2eea9f0ef79d0b966d03fd5bbe432003df5: getOrCreateSheet (84) define SedesAulas con 7 columnas y no inicializa MantenimientoAulas; getClassroomResources (7694) usa equipamiento en columna 8, omite la primera fila de mantenimiento mediante slice(1) y siembra seis aulas ficticias en una consulta; saveClassroomResource (7752) usa capacidad 30/Básico por defecto; saveClassroomMaintenance (7797) no valida intervalos y marca el aula Indisponible; checkScheduleConflict (7493) no compara fecha de clase con fechaInicio/fechaFin; getScheduleConflictResolutionAlternatives (8085) no exige equipamiento ni pasa fechaEspecifica.
+- Esquema Matriculas en getOrCreateSheet: MatriculaID, Fecha, UserId, Alumno, Grado, Seccion, Periodo, Tipo, Estado. checkScheduleConflict compara m[5] o m[0] con ofertaId; no resuelve la relación de oferta/sección. getSectionCapacityAnalyticsReport (13657) interpreta columnas de matrícula con índices incompatibles.
+- js/teacher.js SHA c475fce5afcd28fca23e7b64398ad32b17773746: openClassroomManagerModal (2534) y controladores de tabla/mantenimiento/formulario existen, pero esperan nodos que no existen en teacher-dashboard.html SHA cbb9e6a272a7d8ad33f99727303305d950533e71; el modal no tiene invocador HTML. La UI fija mantenimiento al día actual y no presenta los intervalos.
+- js/api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9: fetchApi añade requesterUserId/requesterRole, no token. Las acciones son privadas y no están en PUBLIC_ACTIONS; se amplía AUD-NG-001. saveClassroomMaintenance solo está permitido para Administrador/Director; la UI no filtra el botón por rol.
+- getScheduleConflictResolutionAlternatives propone aulas sin requisitos de equipamiento y usa franjas fijas. No hay consulta de ocupación por día/semana/período ni detección de clases futuras afectadas.
+- runAcademicPlanningRegressionSuite TC-F7-04 solo comprueba estructura del reporte; tests/regression/academic-grading-suite.js SHA a22cb3ef376fe09e65c1b17c2f4f5125290bfba6 no contiene casos de aulas/mantenimiento/CA-F7-39..44.
+- ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff, entrada del 2026-10-26 (línea aproximada 2303) afirma que el modal y campo de equipamiento se añadieron al HTML; el HTML actual no contiene esos nodos.
+CRITERIOS: CA-F7-39/40/41/44 NO CUMPLE; CA-F7-42/43 PARCIAL.
+RECONCILIACIÓN:
+- Hallazgo nuevo AUD-NG-241.
+- Ampliar AUD-NG-001 (credenciales de acciones privadas), AUD-NG-236 (validación de conflictos) y AUD-NG-238 (alternativas de resolución).
+- TASK-545: normalizar esquema persistente y retirar siembra ficticia.
+- TASK-546: ciclo de vida y vigencia temporal del mantenimiento.
+- TASK-547: catálogo de equipamiento y recursos compartidos/exclusivos.
+- TASK-548: conteo fiable de matrícula y validación de capacidad.
+- TASK-549: ocupación, clases afectadas y alternativas compatibles.
+- TASK-550: interfaz, autenticación, permisos y renderizado seguro.
+- TASK-551: regresión conductual CA-F7-39..44.
+- Todas las tareas nuevas están Pendientes; no se duplican TASK-538..544 ni el alcance de concurrencia de TAREA-F7-IMP-15.
+PRUEBAS/LÍMITES: inspección estática/manual. No ejecutados Apps Script runtime, HTTP/OAuth, navegador, Sheets/Drive productivas, concurrencia real, rollback ni E2E. Sin cambios de código, pruebas, HTML o datos productivos.
+===============================================================================

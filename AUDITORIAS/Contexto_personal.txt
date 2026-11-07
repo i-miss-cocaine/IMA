@@ -8192,3 +8192,41 @@ Auditar TAREA-F6-015 y TAREA-F6-040. Buscar informes individuales e historial en
 - **Archivos sin cambios:** backend/academic-service/Code.gs; js/teacher.js; teacher-dashboard.html; js/api.js; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; README; manifest.json; rama base.
 - **Punto de reanudación:** abrir completadas.md en TAREA-F7-IMP-06; buscar informe/historial; auditar disponibilidad de espacios, equipamiento, mantenimiento, capacidad, reservas, impacto en clases futuras, recursos alternativos, estados e integración con checkScheduleConflict, sin implementar.
 ===============================================================================
+
+
+===============================================================================
+## C1.238 - Auditoría TAREA-F7-IMP-06
+
+- **ID de sesión operativo:** IMA-AUDIT-20261107-2251Z-01 (no es ID nativo de ChatGPT).
+- **Estado de cierre:** auditoría documental completada; commit único consolidado y verificación posterior pendientes al preparar este checkpoint.
+- **Checkpoint inicial:** C1.237. **Checkpoint de cierre:** C1.238.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Archivo de contexto:** AUDITORIAS/Contexto_personal.txt.
+- **Rama base protegida:** NG_beta_0.0.0.1; HEAD verificado 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **HEAD de partida verificado:** f5aad53e90626b54e5549595530795437c6ea828; corresponde al commit C1.237 `audit: verify F7-IMP-05 teacher workload and preferences (C1.237)`. La rama de trabajo está 305 commits adelante y 0 atrás de la base.
+- **Árbol de partida:** reconstruido para la iteración desde el árbol del padre de C1.237 (bc7d5ff715284c046a685afa08488d96be158e7c) aplicando su diff íntegro de cinco archivos; árbol reconstruido SHA c1f2fcea3990fbfff8bfb9e9a80080676f8d4d34, derivado del árbol padre y de los cinco archivos del diff C1.237 verificado por compare_commits.
+- **Última tarea auditada:** TAREA-F7-IMP-06; dictamen NO CUMPLE; marca [X] histórica preservada.
+- **Tarea en curso al cierre:** ninguna.
+- **Siguiente tarea exacta:** TAREA-F7-IMP-07 (programación de evaluaciones y prevención de sobrecargas).
+- **Lote:** Fase 7, planificación académica, horarios y recursos.
+
+### Evidencia y respaldos
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, 5,963 líneas; TAREA-F7-IMP-06 en línea aproximada 4057, CA-F7-39..44; [X] preservada.
+- Informe individual previo AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-06.md: no existía. Archivo de origen AUDITORIA_FASE_7_PLANIFICACION_HORARIOS_RECURSOS.md: no existe en esta rama.
+- Pendientes.md: lectura convencional 0 caracteres; blob recuperado SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c, 1,803,672 bytes, 1,782,094 caracteres, 20,182 líneas, sin U+FFFD; 945 IDs únicos (511 TASK, 424 Fxx-Task, 10 TAREA), máximo TASK-511. No contiene TAREA-F7-IMP-06 ni TASK-538..544. El SHA del blob en la rama coincide con la referencia; no se requiere restauración ni transferencia.
+- ACADEMIC Code.gs SHA df87a2eea9f0ef79d0b966d03fd5bbe432003df5; js/teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; teacher-dashboard.html cbb9e6a272a7d8ad33f99727303305d950533e71; js/api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; tests academic a22cb3ef376fe09e65c1b17c2f4f5125290bfba6; ChangesLogs.txt 5b5cff1926b73a05d1b92087a7bf4b2db75326ff.
+- Auditoria.txt SHA previo 4160d857f1c63b2139f16ceffef9107818ee1592; MapaDependencias.md SHA previo 6bf636bac8e045ccd176280419a9fb67ab4d97b7; AUDITORIA_COMPLETADAS_PLAN.md SHA previo fd43f3127f47ba6948af371630664c89ca66bb9b; Contexto_personal.txt blob SHA 2da9a936b759afa6c9916ed0e03ed98dc7b67598.
+- Hallazgo nuevo AUD-NG-241; ampliados AUD-NG-001/236/238. Tareas TASK-545..TASK-551 nuevas, verificadas ausentes antes de registrar; todas Pendientes.
+- **Punto técnico inspeccionado:** getOrCreateSheet (84-205), ROLE_PERMISSIONS/PUBLIC_ACTIONS (158-260), dispatcher (800-860), checkScheduleConflict (7493), getClassroomResources (7694), saveClassroomResource (7752), saveClassroomMaintenance (7797), getScheduleConflictResolutionAlternatives (8085), getSectionCapacityAnalyticsReport (13657), runAcademicPlanningRegressionSuite (14109); JS 2534-2678; DOM de teacher-dashboard.html; fetchApi 11-57; test suite y ChangesLogs.
+- **Qué se buscaba:** verificar si las marcas [X] se corresponden con gestión real de espacios, mantenimiento por intervalo, equipamiento compatible, capacidad frente a matrícula, ocupación/impacto y alternativas.
+- **Hallazgos principales:** modal HTML ausente; esquema SedesAulas de 7 columnas frente a uso de 8; MantenimientoAulas sin cabecera y primera fila susceptible de omisión; consulta siembra aulas ficticias; mantenimiento no evalúa fechas; equipamiento libre no se valida; conteo de matrícula usa columnas incompatibles; no se detectan clases futuras ni ocupación por período; acciones privadas no reciben token; renderizado innerHTML sin escape; regresión insuficiente.
+- **Pruebas ejecutadas:** inspección estática/manual y contraste de SHAs/estructura Git.
+- **No ejecutadas:** Apps Script runtime, HTTP/OAuth, navegador, Sheets/Drive productivas, concurrencia real, fallos de escritura, rollback, carga ni E2E. No se ejecutó la suite por falta de entorno aislado y porque registra eventos en Apps Script.
+- **Archivos nuevos:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-06.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Archivos no modificados:** backend/academic-service/Code.gs; teacher-dashboard.html; js/teacher.js; js/api.js; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; README; manifest.json; rama base.
+- **Bloqueos:** ninguno para completar la auditoría documental. Quedan pendientes pruebas de runtime/productivas y la ejecución de TASK-545..TASK-551 por el rol de desarrollo.
+- **Commit de cierre:** se publicará un único commit con los cinco documentos de auditoría/contexto; SHA final se confirmará consultando el HEAD después de actualizar la rama, sin autorreferenciarlo dentro de este checkpoint.
+- **Punto de reanudación:** abrir completadas.md en TAREA-F7-IMP-07; verificar si existe informe individual; auditar los requisitos CA de programación de evaluaciones, sobrecarga diaria, calendario no lectivo, aulas y simulación/reprogramación; no implementar durante la fase de auditoría.
+===============================================================================

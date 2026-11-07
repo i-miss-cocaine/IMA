@@ -3127,3 +3127,41 @@ Todas Pendientes. AUD-NG-240 nuevo; AUD-NG-001/236/239 ampliados.
 
 ### Límites
 Inspección estática/manual. No se ejecutaron Apps Script runtime, HTTP/OAuth, navegador, Sheets/Drive productivas, cálculos con contratos reales, concurrencia, fallos de escritura, rollback ni E2E. Sin cambios en código o datos productivos.
+
+
+## C1.238 - TAREA-F7-IMP-06: disponibilidad, equipamiento y capacidad de espacios
+
+**Informe:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-06.md.  
+**Dictamen:** NO CUMPLE; marca [X] histórica preservada. **HEAD auditado:** f5aad53e90626b54e5549595530795437c6ea828.
+
+### Dependencias inspeccionadas
+- backend/academic-service/Code.gs: getOrCreateSheet (84), ROLE_PERMISSIONS (158+), PUBLIC_ACTIONS, doPost (800+), checkScheduleConflict (7493), getClassroomResources (7694), saveClassroomResource (7752), saveClassroomMaintenance (7797), getScheduleConflictResolutionAlternatives (8085), getSectionCapacityAnalyticsReport (13657), runAcademicPlanningRegressionSuite (14109).
+- js/teacher.js: openClassroomManagerModal (2534), loadClassroomResourcesTable, openClassroomMaintenanceModal y formulario saveClassroomResource.
+- teacher-dashboard.html: no contiene modal-classroom-manager, form-classroom-resource ni tbl-classroom-resources-body.
+- js/api.js: fetchApi (11, 46-57); brecha de token relacionada con AUD-NG-001.
+- tests/regression/academic-grading-suite.js: sin pruebas F7-IMP-06; TC-F7-04 solo comprueba la forma del reporte.
+
+### Relaciones de datos y flujo
+- SedesAulas -> getClassroomResources/saveClassroomResource; esquema declarado de 7 columnas frente al uso de columna 8 para equipamiento.
+- MantenimientoAulas -> saveClassroomMaintenance/getClassroomResources/checkScheduleConflict; falta inicializador de cabecera y el lector descarta la primera fila mediante slice(1).
+- Matriculas/OfertaAcademica/HorariosClase -> checkScheduleConflict; conteo de matrícula compara índices incompatibles con el esquema canónico.
+- getClassroomResources -> getScheduleConflictResolutionAlternatives -> checkScheduleConflict; la alternativa no verifica equipamiento ni intervalo temporal.
+- RecursosEducativosReutilizables no representa un catálogo de equipamiento físico compartido.
+
+### Hallazgos y criterios
+- AUD-NG-241 nuevo; amplía AUD-NG-001 (autenticación), AUD-NG-236 (conflictos) y AUD-NG-238 (alternativas).
+- Interfaz HTML ausente; esquema de mantenimiento incompleto; lectura con siembra de aulas ficticias; indisponibilidad no temporal; equipamiento en texto libre; matrícula vinculada incorrectamente; sin ocupación/impacto futuro; regresión insuficiente.
+- CA-F7-39/40/41/44 NO CUMPLE; CA-F7-42/43 PARCIAL.
+
+### Tareas ejecutables derivadas
+- TASK-545: normalizar esquema de espacios/mantenimiento, encabezados y lecturas sin efectos secundarios.
+- TASK-546: implementar ciclo de vida y evaluación temporal de mantenimiento.
+- TASK-547: modelar equipamiento y recursos compartidos/exclusivos.
+- TASK-548: corregir matrícula efectiva y capacidad.
+- TASK-549: consultar ocupación, clases afectadas y alternativas compatibles.
+- TASK-550: conectar UI/API autenticada, permisos y renderizado seguro.
+- TASK-551: regresión conductual CA-F7-39..44.
+Todas Pendientes. No se duplican TASK-538..544 ni la tarea de concurrencia TAREA-F7-IMP-15.
+
+### Límites
+Inspección estática/manual. No se ejecutaron Apps Script runtime, HTTP/OAuth, navegador, Sheets/Drive productivas, concurrencia real, rollback ni E2E. Sin cambios de código o datos productivos.

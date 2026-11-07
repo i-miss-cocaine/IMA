@@ -1741,3 +1741,22 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
 - **Archivos sin cambios:** backend/academic-service/Code.gs; js/teacher.js; teacher-dashboard.html; js/api.js; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; README; manifest.json; rama base.
 - **Siguiente tarea cronológica:** TAREA-F7-IMP-06, Ampliar la gestión de disponibilidad, equipamiento y capacidad de espacios.
+
+
+===============================================================================
+## C1.238 - Auditoría TAREA-F7-IMP-06
+- **Sesión operativa:** IMA-AUDIT-20261107-2251Z-01.
+- **Checkpoint inicial:** C1.237. **Checkpoint de cierre:** C1.238.
+- **Tarea auditada:** TAREA-F7-IMP-06, “Ampliar la gestión de disponibilidad, equipamiento y capacidad de espacios”.
+- **Dictamen:** NO CUMPLE; la marca [X] histórica se conserva.
+- **Informe:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-06.md.
+- **Hallazgo nuevo:** AUD-NG-241; se amplían AUD-NG-001, AUD-NG-236 y AUD-NG-238.
+- **Criterios:** CA-F7-39/40/41/44 NO CUMPLE; CA-F7-42/43 PARCIAL.
+- **Tareas derivadas:** TASK-545..TASK-551, todas Pendientes y registradas en el informe individual.
+- **Pruebas ejecutadas:** inspección estática/manual de esquema, funciones, estados, validación, recursos, matrícula, UI, API, RBAC, alternativas, historial y SHAs.
+- **No ejecutadas:** Apps Script runtime, HTTP/OAuth, navegador, Sheets/Drive productivas, concurrencia, fallos inyectados, rollback ni E2E.
+- **Archivos nuevos:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-06.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Archivos sin cambios:** backend/academic-service/Code.gs; teacher-dashboard.html; js/teacher.js; js/api.js; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; README; manifest.json; rama base.
+- **Siguiente tarea cronológica:** TAREA-F7-IMP-07, “Fortalecer la programación de evaluaciones y la prevención de sobrecargas”.
+===============================================================================
