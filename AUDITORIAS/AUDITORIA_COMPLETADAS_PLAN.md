@@ -1209,3 +1209,14 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Archivos documentales:** informe F5-011 nuevo; Auditoria.txt; MapaDependencias.md; AUDITORIA_COMPLETADAS_PLAN.md; Contexto_personal.txt.
 - **Sin cambios:** código, pruebas, completadas.md, Pendientes.md, ChangesLogs.txt, metodología y rama base. C1.205 permanece intacto por instrucción del usuario; su implementación previa no se ejecuta ni se valida en esta iteración.
 - **Continuidad:** C1.205 es el HEAD de partida publicado; C1.206 cierra la auditoría F5-011. Siguiente tarea: TAREA-F5-012 - seguimiento de aspirantes en el portal familiar; comprobar informe e historial antes de auditar.
+
+
+## C1.207 - Revalidación TAREA-F5-011 desde el checkpoint válido C1.204
+
+- **Resultado:** TAREA-F5-011 permanece **NO CUMPLE**; se revalidaron los hallazgos H1-H9 y se añadió H10 (riesgo de XSS almacenado en el historial de Secretaría por interpolación de destino/estado sin escape).
+- **Fuente de requisitos:** completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, líneas 2158-2193; 12 puntos y 8 criterios, marcada [X]. Pendientes.md blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c, leído íntegro; sin tarea directa F5-011, con dependencias globales relacionadas.
+- **Normalización:** el informe conserva el bloque F5-011-A01..A09 y agrega F5-011-A10 con hallazgo, severidad, archivos, dependencias y criterios verificables. No se crean IDs globales duplicados.
+- **Evidencia adicional:** js/config.js confirma proyectos Apps Script separados para USER/ACADEMIC; secretary.js 1384 y USER Code.gs 4830-4882/4937-4971 confirman la cadena de datos sin escape.
+- **Pruebas:** inspección estática/manual; no ejecutados navegador, XSS dinámico, Apps Script, HTTP, MailApp, Sheets productivo, triggers ni suites automatizadas.
+- **Archivos:** informe F5-011, Auditoria.txt, MapaDependencias.md, este plan y Contexto_personal.txt. Sin cambios en código, pruebas, completadas.md, Pendientes.md, ChangesLogs.txt, metodología o rama base.
+- **Siguiente tarea:** TAREA-F5-012 - seguimiento de aspirantes en el portal familiar; verificar informe e historial antes de iniciar.

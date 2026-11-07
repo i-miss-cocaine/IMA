@@ -7300,3 +7300,20 @@ AUDITORÍA TAREA-F5-011 - C1.206 (IMA-AUDIT-20261107-1359Z)
 - Sin modificar: backend/*; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; rama base.
 - Alcance: solo auditoría/documentación; no se ejecutaron las tareas derivadas. El commit C1.205 queda intacto por instrucción del usuario y no se considera evidencia de F5-011.
 ================================================================
+
+
+================================================================
+REVALIDACIÓN C1.207 - TAREA-F5-011 / H10
+================================================================
+- Dictamen revalidado: TAREA-F5-011 NO CUMPLE. Informe: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-011.md.
+- Continuidad: C1.204 fue indicado por el usuario como último checkpoint válido; se revalidó F5-011 sin reescribir los commits posteriores de la rama.
+- H1 confirmado: js/config.js (SHA 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc, líneas 216-241) define endpoints USER y ACADEMIC distintos e instruye desplegar cada carpeta backend como proyecto Apps Script independiente; la llamada global directa desde ACADEMIC no cruza proyectos.
+- H10 ALTO/P1: js/secretary.js (SHA 08a81266957b4c18cc25f8ba6749eac30a8f2c2c, líneas 1357-1402) interpola emailDestino/usuarioDestino sin escape en innerHTML (línea 1384), y el estado también se inserta sin escape (1386). USER Code.gs (SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f, líneas 4830-4882 y 4937-4971) persiste y devuelve esos campos desde payload/hoja. Riesgo estático de XSS almacenado; no probado en navegador.
+- Tarea derivada local nueva: F5-011-A10 - Renderizado seguro del historial de notificaciones en Secretaría. Extiende AUD-NG-177/TASK-475 y AUD-NG-145; no crear ID global duplicado. Criterios y archivos en el informe individual.
+- Tareas locales F5-011-A01..A10: todas pendientes; no se implementó ninguna.
+- Evidencia adicional: completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676 (2158-2193); Pendientes.md blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c; academic-grading-suite.js SHA a22cb3ef376fe09e65c1b17c2f4f5125290bfba6 (76-77, solo presencia genérica del motor); config.js SHA 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc.
+- Archivos documentales modificados: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-011.md; AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- Sin modificar: backend/*; js/*; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; rama base.
+- Pruebas ejecutadas: lectura de fuentes, blob, historial/ref y revisión estática manual. No ejecutadas: navegador/XSS dinámico, Apps Script, HTTP, MailApp, Sheets productivo, triggers, concurrencia ni suites automatizadas.
+- Siguiente tarea: TAREA-F5-012 - seguimiento de aspirantes en el portal familiar; comprobar informe individual e historial antes de auditar.
+================================================================

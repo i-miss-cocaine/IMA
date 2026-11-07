@@ -6885,3 +6885,29 @@ CHECKPOINT C1.206 - AUDITORÍA TAREA-F5-011
 - Archivos no modificados: backend/*; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; rama base.
 - Próxima acción reproducible: abrir completadas.md en TAREA-F5-012; comprobar en árbol/historial AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-012.md y variante; consultar pendientes/completadas según instrucciones del usuario; auditar backend/user-service getGuardianApplicants/getAdmissionRequests y student.js/Portal Familiar para seguimiento, posición, estado, aislamiento y notificaciones; reconciliar F5-011 y AUD-NG-145/AUD-NG-161 antes de crear tareas.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.207 - REVALIDACIÓN AUDITORÍA TAREA-F5-011
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto: AUDITORIAS/Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- HEAD de partida verificado: d412880c57308251a7c046a9ba9adb6b055fd389 (commit C1.206); padre: 1ad36af1fc3b3b544df46b974acbd3c7f314a2d7.
+- Árbol de partida reconstruido desde el árbol C1.206 padre y los cinco archivos del commit C1.206: e8a28d1d0602aaa245a033d22bd347773cbad6be.
+- Rama base protegida: NG_beta_0.0.0.1, SHA 44d9891132332e692dbe2ba8602b41f50a508a59; comparación previa: rama de trabajo 274 commits adelante, 0 detrás. Sin escritura.
+- ID operativo de sesión/chat: IMA-AUDIT-20261107-1434Z (identificador operativo, no ID nativo de ChatGPT).
+- Continuidad: el usuario designó C1.204 como último checkpoint válido. Se retomó la auditoría de tareas completadas desde TAREA-F5-011. No se reescribió ni revirtió el historial posterior; C1.205/C1.206 se preservan, y el informe F5-011 fue revalidado independientemente.
+- Tarea auditada: TAREA-F5-011; completadas.md [X], 12 requisitos/8 criterios. Dictamen: NO CUMPLE.
+- Fuentes: completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, líneas 2158-2193; Pendientes.md blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c, 1.782.094 caracteres/20.182 líneas/sin U+FFFD; METODOLOGIA_DESARROLLO.md SHA cf796728bb384a32537392df2f9c72a339fa03ee.
+- Evidencia: ACADEMIC Code.gs SHA df87a2eea9f0ef79d0b966d03fd5bbe432003df5; USER Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; js/config.js SHA 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc; js/secretary.js SHA 08a81266957b4c18cc25f8ba6749eac30a8f2c2c; dashboard-secretaria.html SHA fa0d8c23aace24a6acab2d4956398a7f5e1309b8; academic-grading-suite.js SHA a22cb3ef376fe09e65c1b17c2f4f5125290bfba6.
+- Hallazgos revalidados H1-H9; H10 nuevo: destino y estado se interpolan sin escape en secretary.js 1384/1386 a través del DTO de USER. Riesgo estático de XSS almacenado; no hubo prueba de navegador.
+- Tareas derivadas locales F5-011-A01..A10. A10 cubre el renderizado seguro del historial y amplía AUD-NG-177/TASK-475 y AUD-NG-145. Ninguna tarea derivada fue implementada.
+- Inspección adicional: js/config.js 216-241 acredita endpoints distintos y despliegues Apps Script separados para cada carpeta backend; academic-grading-suite.js 76-77 solo comprueba presencia genérica del motor, no comportamiento F5-011.
+- Pruebas ejecutadas: inspección manual de funciones, llamadas, esquema, RBAC, dispatch, UI, configuración de servicios, suites y dependencias; verificación de branch/base e historial; lectura íntegra de blob Pendientes.md.
+- No ejecutadas: Apps Script, HTTP, MailApp, Sheets productivo, triggers de consola, navegador/XSS dinámico, concurrencia ni suites automatizadas.
+- Archivos documentales modificados: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-011.md; AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- Sin modificar: backend/*; js/*; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; rama base.
+- Método: auditoría/documentación exclusivamente; un solo commit consolidado; checkpoint incluido antes de publicar. No implementación.
+- Próxima tarea exacta: TAREA-F5-012 - seguimiento de aspirantes en el portal familiar. Comprobar primero informe individual e historial; auditar código solo después de confirmar la fuente de tarea.
+================================================================

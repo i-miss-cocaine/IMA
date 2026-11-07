@@ -27,6 +27,7 @@ Se buscó el informe individual AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-011.md
 | backend/user-service/Code.gs | 12079dd410aa6d8afbce55a4bc62a79dea605f9f | getOrCreateSheet 863-905; ROLE_PERMISSIONS 922-982; doPost y autorización 1351-1470; retryFailedNotificationsQueue 4761-4815; sendMultiChannelNotification 4817-4893; getAdmissionNotificationLogs 4937-4971; getNotificationPreferences 4973-4987; getUserSettings/saveUserSettings 7649-7740 |
 | js/secretary.js | 08a81266957b4c18cc25f8ba6749eac30a8f2c2c | openAdmissionDetailModal y llamada de historial 191; loadAdmissionNotificationLogs 1357-1402 |
 | dashboard-secretaria.html | fa0d8c23aace24a6acab2d4956398a7f5e1309b8 | sección modal de avisos 198-205 |
+| js/config.js | `49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc` | SERVICE_URLS USER/ACADEMIC y directriz de crear un proyecto Apps Script por cada carpeta backend (216-241). |
 | tests/regression/academic-grading-suite.js | a22cb3ef376fe09e65c1b17c2f4f5125290bfba6 | comprobación genérica de presencia del motor de notificaciones 76-77; sin casos F5-011 |
 | tests/regression/modular-dashboard-suite.js | 0495e1d526a872c33310935a003a83d924d34683 | inspección de la suite completa; sin casos F5-011 |
 | AUDITORIAS/MapaDependencias.md | 7594272ed7df83083e678e0e93364ce563af3149 | FASE2-06 943-952; hallazgos de lista de espera y coordinación F5-011 2084-2099 |
@@ -90,6 +91,12 @@ sendMultiChannelNotification construye una plantilla HTML genérica (4846-4858) 
 sendMultiChannelNotification consulta la clave de deduplicación y luego inserta la fila sin LockService ni reserva durable (4826-4834 y 4868-4882). Dos llamadas concurrentes pueden observar que la clave aún no existe y guardar/enviar dos correos. Además, createAdmissionRequest tiene una clave NOTIF_RECV_<solicitudId> y updateAdmissionStatus usa NOTIF_STATUS_<solicitudId>_<estado>, pero no se acredita una clave estable para cada evento restante ni la coordinación con la cola. Los dos archivos existentes bajo tests/regression no contienen casos específicos de F5-011; academic-grading-suite solo comprueba la presencia de sendMultiChannelNotification y retryFailedNotificationsQueue como símbolos de F10-Task12 (76-77).
 
 **Impacto:** los criterios de no duplicación y recuperación no están probados. Ampliar AUD-NG-006, AUD-NG-161 y TASK-474/TASK-475.
+
+### H10 - ALTO/P1: el historial de Secretaría inserta el destino de notificación en HTML sin escape
+
+USER/getAdmissionNotificationLogs (4937-4971) devuelve `usuarioDestino` desde la columna 2 y `emailDestino` desde la columna 12 de `BandejaNotificaciones`. USER/sendMultiChannelNotification persiste `targetUser` y `targetEmail` procedentes del payload. En `js/secretary.js`, `loadAdmissionNotificationLogs` (1357-1402) construye el historial mediante `container.innerHTML`: título y mensaje se escapan solo si existe `window.escapeHtml`, pero el destino se interpola directamente en `<strong>` (línea 1384) y el estado también se inserta como texto HTML (línea 1386) sin escape. El destino deriva de datos de entrada persistidos; por tanto, una cadena HTML maliciosa puede alcanzar el DOM cuando Secretaría abre el historial. No se ejecutó prueba en navegador, así que se registra como riesgo estático de XSS almacenado, no como explotación dinámica confirmada.
+
+**Impacto:** posible ejecución de marcado/script en el contexto autenticado del dashboard de Secretaría y exposición de una sesión privilegiada. Ampliar AUD-NG-177/TASK-475 y AUD-NG-145; no crear identificador global duplicado.
 
 ## 4. Matriz de los 12 puntos de alcance
 
@@ -197,6 +204,14 @@ Subtareas locales a TAREA-F5-011; no crear identificadores globales duplicados. 
 - **Dependencias:** AUD-NG-006; AUD-NG-161; TASK-474; TASK-475.
 - **Criterios de aceptación:** fixtures aislados; prueba de dos solicitudes concurrentes con la misma clave; fallo y recuperación después de persistir; no procesa colas ni envía correos productivos; la suite falla si falta un productor o una transición de estado.
 
+### F5-011-A10 - Renderizado seguro del historial de notificaciones en Secretaría
+- **Hallazgo de origen:** H10.
+- **Severidad:** Alto/P1.
+- **Objetivo y acción:** eliminar la interpolación HTML no escapada de destinatario y estado en el historial; renderizar todos los campos dinámicos como texto o aplicar escape contextual obligatorio sin fallback inseguro.
+- **Archivos/módulos:** `js/secretary.js`; `backend/user-service/Code.gs` (contrato de `getAdmissionNotificationLogs`); suite aislada de seguridad UI.
+- **Dependencias:** AUD-NG-177/TASK-475; AUD-NG-145.
+- **Criterios de aceptación:** los campos destinatario, correo, título, mensaje y estado se muestran como texto; payloads con etiquetas, atributos de evento y URLs maliciosas no crean nodos ni ejecutan código; la ausencia de `window.escapeHtml` nunca provoca inserción cruda; prueba de navegador con datos sintéticos confirma el bloqueo.
+
 ## 7. Pruebas y limitaciones
 
 **Ejecutado:** lectura de completadas.md y Pendientes.md por blob; búsqueda del informe individual y del informe de fase en árbol/historial; inspección manual de funciones y callsites ACADEMIC/USER; revisión de RBAC y dispatch; revisión de esquema de hoja y lectores; revisión de UI y suites; reconciliación con AUD-NG-083/145/161/176/177, TASK-422/474/475 y hallazgos F5-008.
@@ -208,3 +223,14 @@ Subtareas locales a TAREA-F5-011; no crear identificadores globales duplicados. 
 ## 8. Dictamen
 
 **TAREA-F5-011: NO CUMPLE.** Hay un motor USER de notificaciones, una vista de historial y dos llamadas intentadas desde ACADEMIC, pero no existe una integración interservicio demostrada; faltan la mayoría de los productores del ciclo de admisión; el esquema de la bandeja es incompatible con lectores legacy; la cola no tiene programación ni límites verificables; las preferencias no se aplican; los estados no acreditan entrega; la bitácora exigida no se escribe; no hay reenvío manual ni pruebas conductuales específicas. La marca [X] de completada.md no queda respaldada por la implementación inspeccionada.
+
+
+## 9. Revalidación independiente C1.207 (continuidad desde C1.204)
+
+- Se retoma la secuencia desde el último checkpoint señalado como válido por el usuario: C1.204. Se verificó el estado publicado de la rama sin reescribir ni revertir los commits posteriores.
+- HEAD de partida de esta revalidación: `d412880c57308251a7c046a9ba9adb6b055fd389` (C1.206); padre `1ad36af1fc3b3b544df46b974acbd3c7f314a2d7`. El commit C1.206 solo añadió documentación de auditoría; los SHA de código examinados permanecen: ACADEMIC `df87a2eea9f0ef79d0b966d03fd5bbe432003df5`, USER `12079dd410aa6d8afbce55a4bc62a79dea605f9f`, secretary.js `08a81266957b4c18cc25f8ba6749eac30a8f2c2c`, config.js `49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc`.
+- H1 se confirma adicionalmente con `js/config.js` (216-241): el repositorio instruye crear un proyecto Apps Script independiente por cada carpeta backend y define URLs distintas para USER y ACADEMIC. Por tanto, la referencia global directa de ACADEMIC a `sendMultiChannelNotification` no constituye una llamada entre proyectos; el bloque `typeof` puede omitirse silenciosamente.
+- H10 se incorpora tras revisar el flujo de datos USER → `getAdmissionNotificationLogs` → `js/secretary.js` → `container.innerHTML`. Es un riesgo estático de XSS almacenado pendiente de verificación en navegador.
+- `completadas.md` mantiene TAREA-F5-011 marcada [X], con 12 requisitos y 8 criterios; el código no los satisface integralmente. `Pendientes.md` se leyó directamente desde el blob `631b4c2dbf0e86d5704b63625382d73ccb8ceb3c` (1.782.094 caracteres/20.182 líneas, sin U+FFFD); no existe tarea directa F5-011, pero sí dependencias AUD-NG-083/145/161/176/177 y TASK-422/474/475.
+- Dictamen revalidado: **TAREA-F5-011 NO CUMPLE**. Se conserva el bloque F5-011-A01..A09 y se añade F5-011-A10; todas las tareas derivadas siguen pendientes, sin implementación.
+- La inspección de código y documentación fue manual. No se ejecutaron Apps Script, HTTP, MailApp, Sheets productivo, triggers, navegador ni suites automatizadas. No se afirma explotación XSS ni entrega de correo reproducida.

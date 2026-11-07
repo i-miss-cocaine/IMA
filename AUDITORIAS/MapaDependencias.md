@@ -2143,3 +2143,11 @@ TASK-038 (Magic Bytes); TASK-134/TASK-144 (SHA-256/deduplicación/integridad); T
 - secretary.js 191, 1357-1402 y dashboard-secretaria.html 198-205 permiten consultar historial; no hay reenvío manual individual. Plantilla solo HTML, sin body texto plano, escape contextual ni validación de enlace.
 - Dictamen F5-011 NO CUMPLE. Informe AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-011.md; subtareas locales A01-A09.
 - Dependencias: ampliar AUD-NG-083 (interservicio HMAC), AUD-NG-145 (trazabilidad/PII), AUD-NG-161 (pruebas), AUD-NG-176/TASK-474 (outbox/cola), AUD-NG-177/TASK-475 (HTML/secretos) y TASK-422 (preferencias). Coordinar F5-007-A05, F5-008-A05, F5-009-A06 y F5-012. No crear IDs globales duplicados.
+
+
+## Fase 5 - Revalidación de notificaciones de admisión (TAREA-F5-011, C1.207)
+
+- Se confirma la separación de despliegues USER y ACADEMIC en `js/config.js` (216-241): URLs distintas y directriz de un proyecto Apps Script por carpeta backend. La llamada global de ACADEMIC a `sendMultiChannelNotification` no constituye integración interservicio autenticada.
+- Flujo adicional H10: USER/`sendMultiChannelNotification` guarda `targetUser/targetEmail` en `BandejaNotificaciones`; USER/`getAdmissionNotificationLogs` devuelve `usuarioDestino/emailDestino`; `js/secretary.js` los interpola en `container.innerHTML` sin escape en el destino (1384) y estado (1386). Riesgo estático de XSS almacenado.
+- Tarea derivada local F5-011-A10: renderizado seguro del historial de notificaciones en Secretaría; ampliar AUD-NG-177/TASK-475 y AUD-NG-145. Criterios en el informe individual.
+- Dictamen F5-011 revalidado: NO CUMPLE. A01-A10 permanecen pendientes; no se modificó código ni pruebas.
