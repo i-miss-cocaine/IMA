@@ -7345,3 +7345,56 @@ ARCHIVOS MODIFICADOS:
 SIGUIENTE ACCIÓN:
 Auditar TAREA-F6-003 - Establecer una batería automatizada de regresión para el ciclo de vida del estudiante. Buscar primero informe individual e historial; después revisar el alcance completo, los casos de prueba, fixtures, concurrencia, fallos simulados, persistencia y cobertura de todos los flujos. No ejecutar pruebas que escriban en datos productivos.
 ===============================================================================
+
+
+===============================================================================
+CHECKPOINT C1.220 - SESIÓN IMA-AUDIT-20261107-1953Z
+Fecha: 2026-11-07
+Estado: sesión cerrada
+Checkpoint inicial: C1.219
+Checkpoint de cierre: C1.220
+Hora UTC de cierre: registrada por timestamp GitHub del commit que contiene este checkpoint.
+
+REPOSITORIO Y RAMAS:
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto: AUDITORIAS/Contexto_personal.txt.
+- Rama base NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Rama de trabajo NG_beta_0.0.0.1_work; HEAD inicial verificado e1de4306ab4ddeb7de91494f96c17e695f5e8b69; árbol c7a7367d1ba053e5a3938c0450e2fa11eb53f09b.
+- Comparación inicial: 287 commits ahead, 0 behind. La base no se modifica.
+- C1.219 consignaba 8c492238 como HEAD previo; e1de430 es el commit descendiente que publicó C1.219. Se resolvió la diferencia consultando ref/commit/árbol actuales.
+
+AUDITORÍA:
+- Última tarea auditada: TAREA-F6-003 - Establecer una batería automatizada de regresión para el ciclo de vida del estudiante.
+- Estado histórico en completadas.md: [X], sin modificar.
+- Dictamen: NO CUMPLE.
+- Informe nuevo: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-003.md.
+- H1 CRÍTICO/P0: suite conectada al SPREADSHEET_ID productivo, TC-07 puede insertar matrícula y cada ejecución registra LogsSistema.
+- H2 CRÍTICO/P0: TC-07 es secuencial, usa skipLock:true, acepta success/error y no verifica filas/idempotencia.
+- H3 ALTO/P1: TC-04 envía nombre/dni, pero findDuplicateStudents espera nombres/apellidos/identificacion.
+- H4 ALTO/P1: TC-01/03 solo inspeccionan matriz en memoria.
+- H5 ALTO/P1: TC-02/05 verifican forma/tipos, no reglas/persistencia.
+- H6 ALTO/P1: TC-06 no compara snapshots de historial.
+- H7 ALTO/P1: cobertura de expediente, fusión, tutores, documentos, movimientos, permisos, Drive y respaldos insuficiente.
+- H8 ALTO/P1: sin fallos de integración/reintentos; suite puede devolver status success con pruebas fallidas.
+- H9 MEDIO/P2: reporte sin SKIP/NOT_RUN ni expected/actual/entrada/evidencia.
+- H10 MEDIO/P2: no runner/CI específico de F6-003.
+- Tareas locales F6-003-A01..A09 pendientes; ver informe individual.
+- Código principal: backend/academic-service/Code.gs SHA df87a2eea9f0ef79d0b966d03fd5bbe432003df5; SPREADSHEET_ID línea 5; ROLE_PERMISSIONS 168; PUBLIC_ACTIONS 265; validateRolePermission 524; dispatcher 892; runStudentLifecycleRegressionSuite línea 3964; runConcurrencyAndConsistencySuite 3296; validateApiContractsTestSuite aprox. 3900; runCurricularAreaServiceTests 4147; findDuplicateStudents 10107; mergeStudentFiles 10282; getStudentGuardians 10553; uploadStudentDocument 10693; getStudentFile 2510; createStudentEnrollment 11271; reconcileStudentLifecycleState 12199.
+- Otros SHAs: user-service 12079dd410aa6d8afbce55a4bc62a79dea605f9f; accounting-service 38b979d41596b85e888b4a7060b37bbac0840a28; developer-service 8aa4bac67cfe5c8c54da51a0784a56fef633e412.
+- Tests: academic-grading-suite.js a22cb3ef376fe09e65c1b17c2f4f5125290bfba6 (412 líneas, sin referencias F6-003); modular-dashboard-suite.js 0495e1d526a872c33310935a003a83d924d34683; no más scripts en tests/regression ni runner/CI identificado.
+- Pendientes.md blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c, 1782094 caracteres, 20182 líneas, sin referencia F6-003; lectura convencional 0 caracteres. Consultado, no modificado.
+- ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff, líneas 1945-1948, solo registra TC-06 y TC-07.
+- Informe individual F6-003 y AUDITORIA_FASE_6_EXPEDIENTE_CICLO_VIDA.md no están en el árbol ni historial consultado.
+- Pruebas ejecutadas: inspección estática de código, parámetros, efectos secundarios, locks, RBAC, dispatcher, logs, dependencias, scripts, árbol, SHAs e historial.
+- Pruebas no ejecutadas: suite F6-003, Apps Script, Sheets, Drive, navegador, HTTP, concurrencia, fallos/reintentos, persistencia y backups. No se ejecutó por riesgo de escritura productiva.
+- No se accedió ni modificó datos productivos.
+
+ARCHIVOS MODIFICADOS:
+- Nuevo: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-003.md.
+- Actualizados: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- Sin cambios: backend, JS, HTML, tests, completadas.md, Pendientes.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README y rama base.
+- No se implementó código ni se modificaron pruebas.
+
+SIGUIENTE ACCIÓN:
+Auditar TAREA-F6-004 - Reestructurar la arquitectura en microservicios independientes. Buscar informe individual e historial; localizar informe de fase y ChangesLogs; revisar requisitos; inspeccionar SERVICE_REGISTRY, SERVICE_URLS, resolución dinámica de endpoints, contratos, despliegues, autenticación interservicio, aislamiento de datos y pruebas; no implementar durante la auditoría.
+===============================================================================

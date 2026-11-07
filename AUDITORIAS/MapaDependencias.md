@@ -2495,3 +2495,32 @@ TAREA-F5-017 NO CUMPLE. La búsqueda, panel y decisiones manuales existen parcia
 ### Tareas derivadas
 - F6-002-A01..A10 pendientes; ver informe individual.
 - TAREA-F6-003 queda como dependencia de suite general; no se duplica ID.
+
+
+## C1.220 - TAREA-F6-003: batería automatizada de regresión del ciclo de vida del estudiante
+
+**Informe:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-003.md  
+**Dictamen:** NO CUMPLE. **HEAD auditado:** e1de4306ab4ddeb7de91494f96c17e695f5e8b69.
+
+### Backend académico y seguridad
+- backend/academic-service/Code.gs SHA df87a2eea9f0ef79d0b966d03fd5bbe432003df5.
+- SPREADSHEET_ID fijo:5; ROLE_PERMISSIONS:168; PUBLIC_ACTIONS:265; validateRolePermission:524; despacho suite:892.
+- runStudentLifecycleRegressionSuite: línea 3964; siete casos TC-01..TC-07.
+- TC-04 usa {nombre,dni}, pero findDuplicateStudents:10107 espera nombres/apellidos/identificacion/fechaNacimiento/email/telefono/solicitudId.
+- TC-07 llama createStudentEnrollment:11271 con userId sintético y skipLock:true, una sola vez; admite success/error y no verifica conteos.
+- Suite registra LogsSistema por logStructuredEvent; no hay entorno de prueba ni aislamiento de SpreadsheetApp.
+- runConcurrencyAndConsistencySuite:3296 solo adquiere/libera un lock una vez; no crea contención.
+- validateApiContractsTestSuite aprox. 3900 valida cuatro contratos simples.
+- runCurricularAreaServiceTests:4147 construye resultados PASS constantes.
+- findDuplicateStudents:10107; mergeStudentFiles:10282; getStudentGuardians:10553; uploadStudentDocument:10693; checkEnrollmentCapacity:11147; createStudentEnrollment:11271; getStudentFile:2510; reconcileStudentLifecycleState:12199.
+- backend/user-service/Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; backend/accounting-service/Code.gs SHA 38b979d41596b85e888b4a7060b37bbac0840a28; backend/developer-service/Code.gs SHA 8aa4bac67cfe5c8c54da51a0784a56fef633e412.
+
+### Scripts y cobertura
+- tests/regression/academic-grading-suite.js SHA a22cb3ef376fe09e65c1b17c2f4f5125290bfba6: 412 líneas; no contiene F6-003 ni casos de ciclo de vida.
+- tests/regression/modular-dashboard-suite.js SHA 0495e1d526a872c33310935a003a83d924d34683: no cubre ciclo de vida.
+- Árbol completo 985 entradas; solo dos scripts en tests/regression; no package.json, runner de pruebas ni CI identificado.
+- RF1-RF7: cobertura insuficiente; CA-016..CA-021 no cumplen; CA-022 parcial.
+- No se ejecutó suite por riesgo de escritura productiva. Ver informe individual.
+
+### Tareas derivadas
+- F6-003-A01..A09 pendientes: entorno aislado; corregir pruebas existentes; concurrencia/idempotencia; expediente/fusión/tutores/documentos; matrículas/movimientos; autorización directa; fallos/reintentos; reporte completo; runner/CI.

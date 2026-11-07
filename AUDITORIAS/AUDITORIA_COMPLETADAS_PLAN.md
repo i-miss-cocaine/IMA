@@ -1433,3 +1433,33 @@ Próxima acción: buscar informe individual F6-003 e historial; revisar alcance 
 HEAD de partida verificado: 8c492238f99f7902c7468b06676aab819f9eab35. Commit de cierre: el commit que contiene este checkpoint; SHA confirmado externamente tras publicar.
 Hora UTC de cierre: 2026-11-07T20:04:00Z. Sesión cerrada.
 ===============================================================================
+
+
+===============================================================================
+CHECKPOINT C1.220 - 2026-11-07 - AUDITORÍA TAREA-F6-003
+Sesión: IMA-AUDIT-20261107-1953Z | checkpoint inicial C1.219 | cierre C1.220
+Repositorio: i-miss-cocaine/IMA
+Rama base: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+Rama trabajo: NG_beta_0.0.0.1_work @ e1de4306ab4ddeb7de91494f96c17e695f5e8b69
+Árbol de partida: c7a7367d1ba053e5a3938c0450e2fa11eb53f09b. Comparación al inicio: 287 ahead, 0 behind.
+Checkpoint C1.219 consignaba 8c492238 como HEAD previo; e1de430 es su commit documental descendiente, sin divergencia.
+Informe nuevo: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-003.md
+Dictamen: NO CUMPLE; TAREA-F6-003 permanece [X] histórico en completadas.md.
+Hallazgos H1-H10: suite conectada a spreadsheet productivo y registra LogsSistema; TC-07 puede insertar matrícula y no prueba concurrencia/idempotencia; TC-04 usa parámetros incompatibles; TC-01/03 son estáticos; TC-02/05 solo validan formato; TC-06 no compara snapshots; cobertura de expediente/Drive/tutores/movimientos/permisos/backups ausente; sin fallos/reintentos; reporte ambiguo; no runner/CI.
+Tareas locales: F6-003-A01..A09 pendientes; ver informe individual.
+Código auditado: backend/academic-service/Code.gs SHA df87a2eea9f0ef79d0b966d03fd5bbe432003df5; suite línea 3964, dispatcher 892, permisos 168, capacidad 11147, matrícula 11271, conciliación 12199, duplicados 10107, merge 10282, tutores 10553, documentos 10693.
+Otros backend SHAs: user-service 12079dd410aa6d8afbce55a4bc62a79dea605f9f; accounting-service 38b979d41596b85e888b4a7060b37bbac0840a28; developer-service 8aa4bac67cfe5c8c54da51a0784a56fef633e412.
+Tests: academic-grading-suite.js a22cb3ef376fe09e65c1b17c2f4f5125290bfba6; modular-dashboard-suite.js 0495e1d526a872c33310935a003a83d924d34683. Solo dos scripts en tests/regression; no runner/CI identificado.
+Pendientes.md: blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c, 1782094 caracteres, 20182 líneas; lectura convencional 0 caracteres; no contiene F6-003. Consultado, no modificado.
+ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff, líneas 1945-1948: solo registra adición de TC-06/TC-07.
+Informe individual F6-003 e informe de fase 6 ausentes del árbol/historial consultado.
+Pruebas ejecutadas: inspección estática de casos, payloads, efectos secundarios, locks, RBAC, dispatcher, logs, dependencias, scripts, tree e historial.
+Pruebas no ejecutadas: suite, Apps Script, Sheets, Drive, navegador, HTTP, concurrencia, fallos inyectados, reintentos, persistencia y respaldos; se evitó ejecutar código conectado a producción.
+Archivos modificados: nuevo informe F6-003; Auditoria.txt; MapaDependencias.md; AUDITORIA_COMPLETADAS_PLAN.md; Contexto_personal.txt.
+Archivos no modificados: código, JS, HTML, tests, completadas.md, Pendientes.md, ChangesLogs.txt, metodología, README y rama base.
+Última tarea auditada: TAREA-F6-003 (NO CUMPLE). Tarea en curso: ninguna.
+Siguiente tarea: TAREA-F6-004 - Reestructurar la arquitectura en microservicios independientes.
+Próxima acción: buscar informe individual F6-004 e historial; comprobar si existe auditoría de fase y ChangesLogs; revisar alcance en completadas.md/Pendientes.md; verificar contratos, despliegues, enrutamiento, SERVICE_REGISTRY, fallback SERVICE_URLS, aislamiento y comunicación interservicio; contrastar cada requisito con código y pruebas, sin modificarlo durante la auditoría.
+HEAD de partida verificado: e1de4306ab4ddeb7de91494f96c17e695f5e8b69. Commit de cierre: el commit que contiene este checkpoint; SHA confirmado externamente tras publicar.
+Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesión cerrada.
+===============================================================================

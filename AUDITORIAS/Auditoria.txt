@@ -7756,3 +7756,58 @@ ARCHIVOS DOCUMENTALES:
 - No se implementó código ni se modificaron datos productivos.
 - Siguiente tarea: TAREA-F6-003 (marcada [X] en completadas.md).
 ===============================================================================
+
+
+===============================================================================
+AUDITORÍA C1.220 - TAREA-F6-003 - 2026-11-07
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+HEAD auditado: e1de4306ab4ddeb7de91494f96c17e695f5e8b69
+Checkpoint inicial: C1.219
+Sesión: IMA-AUDIT-20261107-1953Z
+Informe individual: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-003.md
+Dictamen: NO CUMPLE. TAREA-F6-003 aparece [X] en completadas.md, pero la suite no satisface RF1-RF7 ni CA-016..CA-022.
+
+FUENTES:
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, línea 2548; requisitos RF1-RF7 y CA-016..CA-022.
+- Pendientes.md blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c: 1782094 caracteres, 20182 líneas. Lectura convencional 0 caracteres; blob íntegro consultado y no contiene TAREA-F6-003/F6-003. No modificado.
+- ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff, líneas 1945-1948: único cambio F6-003 registrado, añadir TC-06 y TC-07.
+- Informe individual F6-003 e informe AUDITORIA_FASE_6_EXPEDIENTE_CICLO_VIDA.md ausentes del árbol e historial consultado.
+- METODOLOGIA_DESARROLLO.md SHA cf796728bb384a32537392df2f9c72a339fa03ee; reglas 15-17 de commit único, checkpoint y publicación.
+
+CÓDIGO Y PRUEBAS:
+- backend/academic-service/Code.gs SHA df87a2eea9f0ef79d0b966d03fd5bbe432003df5: SPREADSHEET_ID línea 5; ROLE_PERMISSIONS 168; PUBLIC_ACTIONS 265; validateRolePermission 524; dispatcher suite 892; runStudentLifecycleRegressionSuite línea 3964 (TC-01..TC-07); runConcurrencyAndConsistencySuite 3296; validateApiContractsTestSuite aprox. 3900; runCurricularAreaServiceTests 4147; findDuplicateStudents 10107; mergeStudentFiles 10282; getStudentGuardians 10553; uploadStudentDocument 10693; checkEnrollmentCapacity 11147; createStudentEnrollment 11271; getStudentFile 2510; reconcileStudentLifecycleState 12199.
+- backend/user-service/Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f.
+- backend/accounting-service/Code.gs SHA 38b979d41596b85e888b4a7060b37bbac0840a28.
+- backend/developer-service/Code.gs SHA 8aa4bac67cfe5c8c54da51a0784a56fef633e412; registro ACADEMIC declara runStudentLifecycleRegressionSuite.
+- tests/regression/academic-grading-suite.js SHA a22cb3ef376fe09e65c1b17c2f4f5125290bfba6, 412 líneas, 0 referencias F6-003 ni runStudentLifecycleRegressionSuite.
+- tests/regression/modular-dashboard-suite.js SHA 0495e1d526a872c33310935a003a83d924d34683, no cubre ciclo de vida.
+- Árbol completo 985 entradas; solo dos scripts en tests/regression; no package.json, runner Jest/Vitest/Playwright/Cypress ni workflow CI identificado.
+
+HALLAZGOS:
+1. H1 CRÍTICO/P0: suite conectada al SPREADSHEET_ID productivo; TC-07 puede insertar matrícula y cada ejecución registra LogsSistema; no hay fixtures/teardown ni guardia anti-producción.
+2. H2 CRÍTICO/P0: TC-07 es secuencial, usa skipLock:true, acepta success/error y no verifica filas/idempotencia.
+3. H3 ALTO/P1: TC-04 envía nombre/dni, pero findDuplicateStudents espera nombres/apellidos/identificacion.
+4. H4 ALTO/P1: TC-01/03 solo inspeccionan matriz en memoria.
+5. H5 ALTO/P1: TC-02/05 verifican forma/tipos, no reglas/persistencia.
+6. H6 ALTO/P1: TC-06 no compara snapshots de historial.
+7. H7 ALTO/P1: cobertura de expediente, fusión, tutores, documentos, movimientos, permisos, Drive y respaldos ausente.
+8. H8 ALTO/P1: sin fallos de integración/reintentos; suite puede devolver status success con pruebas fallidas.
+9. H9 MEDIO/P2: reporte sin SKIP/NOT_RUN ni expected/actual/entrada/evidencia.
+10. H10 MEDIO/P2: no runner/CI específico de F6-003; dependencias de suite de contratos/concurrencia/áreas curriculares no realizan pruebas conductuales suficientes.
+
+TAREAS LOCALES:
+F6-003-A01..A09: aislamiento TEST; corregir TC-01..TC-07; concurrencia/idempotencia real; expediente/fusión/tutores/documentos; matrícula y movimientos; autorización directa; fallos/reintentos; reporte PASS/FAIL/SKIP; runner/CI. Detalle y criterios en informe individual.
+
+PRUEBAS:
+- Ejecutadas: inspección estática de casos, payloads, efectos secundarios, locks, dispatcher, RBAC, logs, dependencias, scripts, árbol Git, SHAs, ChangesLogs, metodología, historial de informes y blob Pendientes.
+- No ejecutadas: suite, Apps Script, Sheets, Drive, navegador, HTTP, concurrencia, fallos inyectados, reintentos, persistencia y respaldos.
+- Motivo: suite conectada al spreadsheet configurado para producción y TC-07 puede escribir matrícula. No se modificaron datos productivos.
+
+ARCHIVOS DOCUMENTALES:
+- Nuevo: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-003.md.
+- Actualizados: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- Sin cambios: backend, JS, HTML, tests, completadas.md, Pendientes.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README y rama base.
+- No se implementó código ni se modificaron datos productivos.
+- Siguiente tarea: TAREA-F6-004, marcada [X] en completadas.md.
+===============================================================================
