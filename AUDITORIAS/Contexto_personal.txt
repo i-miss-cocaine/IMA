@@ -6684,3 +6684,32 @@ CHECKPOINT C1.199 — AUDITORÍA DESDE CERO TAREA-F5-005
 - Regla aplicada: informe existente => verificar y normalizar en el mismo; informe ausente => auditoría desde cero con tareas ejecutables. Registrar hallazgos en Auditoria.txt y MapaDependencias.md.
 - Publicación: un solo commit consolidado, árbol completo, rutas exactas, un padre igual al HEAD anterior, expected_sha y verificación posterior.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.200 — AUDITORÍA TÉCNICA TAREA-F5-006
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto: AUDITORIAS/Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- HEAD de partida: 5b2747201c2dd542b85cf84ec6786d4b9f6a0248; tree SHA: 45ac6391db467ba0bc33fe836ad4a9994bdf36bd; entradas: 968; truncated=false.
+- Rama base protegida: NG_beta_0.0.0.1, SHA 44d9891132332e692dbe2ba8602b41f50a508a59; no modificada.
+- Corrección de continuidad: se restauró la rama de trabajo al commit que contiene C1.199, descartando de la línea activa las auditorías posteriores inválidas. La actualización del ref se hizo con expected_sha ca21cc8057bb72a3f8593e060b264f6db4d0ad36.
+- ID operativo de sesión/chat: IMA-AUDIT-20261107-0238Z (identificador operativo, no ID nativo de ChatGPT).
+- Checkpoint anterior válido: C1.199 — TAREA-F5-005.
+- Tarea: TAREA-F5-006 — gestión documental de aspirantes antes de matrícula.
+- Informe específico ausente en árbol e historial consultado; creado desde cero en AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-006.md.
+- Fuente de completadas: completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, líneas 1986-2021; marca [X] Completada y once criterios [x].
+- Pendientes: blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c; 1.803.672 bytes, 1.782.094 caracteres, 20.182 líneas, sin U+FFFD. No contiene TAREA-F5-006/F5-006; se reconciliaron TASK-038, TASK-134, TASK-135, TASK-140, TASK-142, TASK-144, TASK-145, TASK-146 y TASK-153.
+- Dictamen técnico: NO CUMPLE.
+- Evidencia inspeccionada: backend/academic-service/Code.gs SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc, funciones y rangos documentados en informe; js/secretary.js SHA 08a81266957b4c18cc25f8ba6749eac30a8f2c2c; dashboard-secretaria.html SHA fa0d8c23aace24a6acab2d4956398a7f5e1309b8; admision.html SHA 45b84c80d22d2e8dab75852e65847bae6425db44; js/student.js SHA e2888cea60322e49a40b89adadb8010489605dcc; suites SHA 3433b707edd4a2f35c68368a3172932adc2a3b32 / 0495e1d526a872c33310935a003a83d924d34683.
+- Hallazgos: carga aspirante inexistente; MIME cliente sin Magic Bytes; catálogo fijo; estados inconsistentes; compensación/versionado no atómicos; consulta/revisión sin pertenencia por recurso; enlaces Drive directos y proxy no despachado; falta sustitución familiar; migración puede fallar silenciosamente; bloqueo de conversión omite faltantes/estados/vencidos y admite override por payload; alertas familiares/directivas incompletas; updateDocumentStatus sin bitácora; suites sin pruebas documentales.
+- Tareas derivadas: F5-006-A01 carga pre-matrícula; ampliación TASK-038 validación binaria; F5-006-A02 catálogo; F5-006-A03 estados; ampliación TASK-135 versionado/compensación; ampliación TASK-142/TASK-153 acceso; ampliación AUD-NG-232/TASK-512 y AUD-NG-233/TASK-513 conversión; ampliación TASK-146/AUD-NG-145 bitácora; ampliación AUD-NG-161 pruebas; F5-006-A04 alertas. No crear IDs globales duplicados.
+- Pruebas ejecutadas: inspección estática/manual, búsqueda dirigida, comparación de criterios y reconciliación documental.
+- No ejecutadas: Apps Script, Drive real, HTTP, navegador, usuarios/roles reales, concurrencia, fallos inyectados y suites automatizadas.
+- Archivos modificados en esta iteración: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-006.md (nuevo); AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: backend/academic-service/Code.gs, js/secretary.js, dashboard-secretaria.html, admision.html, js/student.js, tests, completadas.md, Pendientes.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md y rama base.
+- Bloqueos: no se ejecutaron servicios reales ni pruebas de navegador; se requiere fase de desarrollo separada para implementar las tareas derivadas.
+- Siguiente tarea: TAREA-F5-007 — módulo de entrevistas y evaluaciones de admisión; comprobar informe e historial.
+- Publicación: un único commit consolidado; padre 5b2747201c2dd542b85cf84ec6786d4b9f6a0248; expected_sha obligatorio; verificar commit, tree, rutas y rama base después de publicar.
+================================================================

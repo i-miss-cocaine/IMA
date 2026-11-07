@@ -1994,3 +1994,35 @@ Relaciones:
 - `setupAdvancedTableFilters` (ui-common.js 2129) y `renderUIProgressSkeleton` (5147) existen, pero no tienen callsite en la consola.
 
 **Tareas existentes:** AUD-NG-001 (token); TAREA-AD-03 (ABAC); AUD-NG-234/TASK-514 (transiciones/concurrencia); AUD-NG-235 (XSS); AUD-NG-145 (notas/PII); AUD-NG-006 (idempotencia); AUD-NG-161 (pruebas); T-UX-19 (accesibilidad); AUD-NG-233/TASK-513 (guardas de documentos/capacidad). No crear IDs nuevos.
+
+
+## C1.200 — TAREA-F5-006: gestión documental de aspirantes antes de matrícula
+
+**Informe:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-006.md.  
+**HEAD auditado:** 5b2747201c2dd542b85cf84ec6786d4b9f6a0248.  
+**Dictamen:** NO CUMPLE.  
+**Fuente de requisitos:** completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, líneas 1986-2021.
+
+### Backend documental
+- uploadStudentDocument (Code.gs 10572-10707) acepta solicitudId/expedienteId, comprueba 10 MB y 0 bytes, crea Drive file y registra DocumentosEstudiante. Confía en MIME de data URL o asigna PDF por defecto; no valida Magic Bytes ni extensión; permite WEBP.
+- getStudentDocuments (10708-10785) filtra por IDs sin validar pertenencia; si faltan ambos IDs devuelve todos los documentos; devuelve driveFileId y driveUrl.
+- updateDocumentStatus (10836-10854) cambia estado por documentoId sin validación de transición, pertenencia ni log estructurado.
+- getPendingDocumentsReport (10855-10922) usa cuatro requisitos fijos, no año/grado y no es invocado por los consumidores inspeccionados.
+- checkAndNotifyExpiringStudentDocuments (10923-10985) envía alertas de vencimiento, pero no sustituye un panel de pendientes/rechazados para familia y Dirección.
+
+### Interfaz y permisos
+- admision.html updateDocumentRequirementsList (519-538) presenta listas estáticas por grado; no contiene file input/carga.
+- js/student.js no tiene referencias a uploadStudentDocument/getStudentDocuments/getSecureDocumentStream.
+- js/secretary.js loadAdmissionApplicantDocuments (297-337) consulta y muestra documentos; updateApplicantDocumentStatusAction (339-356) ofrece solo Aceptado/Rechazado. El enlace usa driveUrl directo.
+- ROLE_PERMISSIONS concede uploadStudentDocument a perfiles administrativos; Estudiante/Alumno no tiene ese permiso.
+- getSecureDocumentStream (Code.gs 2485-2508) no tiene case en doPost; assertRecordOwnership (2399-2413) confía en role/IDs del payload y autoriza cualquier rol no vacío que no sea estudiante con ID distinto.
+
+### Conversión y consistencia
+- convertAdmissionToStudent (2156-2392) actualiza expedienteId en documentos asociados a solicitudId, sin duplicar el archivo físico, pero silencia errores de migración y continúa tras marcar Convertida.
+- El bloqueo revisa solo estados Pendiente/Rechazado; no comprueba requisitos faltantes, EnRevision, Requiere_Sustitucion ni vencimiento. allowIncompleteOverride se acepta desde payload.
+- uploadStudentDocument intenta versionado, pero silencia error al escribir historial y puede reemplazar el registro vigente sin versión histórica persistida.
+
+### Reconciliación de tareas
+TASK-038 (Magic Bytes); TASK-134/TASK-144 (SHA-256/deduplicación/integridad); TASK-135 (custodia/versionado); TASK-140 (sensibilidad); TASK-142 (streaming autenticado); TASK-146 (bitácora forense); TASK-153 (ABAC); AUD-NG-232/TASK-512 (recuperación de conversión); AUD-NG-233/TASK-513 (bloqueo fail-closed); AUD-NG-145 (logs); AUD-NG-161 (pruebas); TASK-118 (IDs). No se crean IDs globales nuevos.
+
+**Pruebas:** inspección estática/manual. No se ejecutaron runtime, Drive, HTTP, concurrencia ni suites.

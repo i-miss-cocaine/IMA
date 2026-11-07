@@ -7078,3 +7078,50 @@ AUD-NG-001; TAREA-AD-03; AUD-NG-234/TASK-514; AUD-NG-235; AUD-NG-145; AUD-NG-006
 EVIDENCIA HISTÓRICA: completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676 líneas 1952-1980; ChangesLogs.txt SHA d57cf4bd861b5c3720e60cf83241ed804ff645d9 líneas 1793-1803. Informe F5-005 ausente de árbol/historial y sin registro en Auditoria.txt raíz/acento.
 PRUEBAS: inspección estática/manual. No se ejecutaron HTTP, Apps Script, navegador, concurrencia, XSS dinámico ni suites.
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-07
+CHECKPOINT C1.200 — AUDITORÍA TÉCNICA TAREA-F5-006
+SESIÓN: IMA-AUDIT-20261107-0238Z
+INFORME: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-006.md
+DICTAMEN: NO CUMPLE
+
+FUENTES:
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, líneas 1986-2021; marcada [X] Completada y once criterios [x].
+- Pendientes.md blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c; lectura directa íntegra. No contiene TAREA-F5-006; sí contiene TASK-038, TASK-134, TASK-135, TASK-140, TASK-142, TASK-144, TASK-145, TASK-146 y TASK-153.
+- ChangesLogs.txt SHA d57cf4bd861b5c3720e60cf83241ed804ff645d9; declaraciones históricas contrastadas con código.
+
+EVIDENCIA:
+- ACADEMIC Code.gs SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc: uploadStudentDocument 10572-10707; getStudentDocuments 10708-10785; updateDocumentStatus 10836-10854; getPendingDocumentsReport 10855-10922; checkAndNotifyExpiringStudentDocuments 10923-10985; convertAdmissionToStudent 2156-2392; getSecureDocumentStream 2485-2508; assertRecordOwnership 2399-2413.
+- js/secretary.js SHA 08a81266957b4c18cc25f8ba6749eac30a8f2c2c: loadAdmissionApplicantDocuments 297-337; updateApplicantDocumentStatusAction 339-356.
+- dashboard-secretaria.html SHA fa0d8c23aace24a6acab2d4956398a7f5e1309b8; admision.html SHA 45b84c80d22d2e8dab75852e65847bae6425db44; js/student.js SHA e2888cea60322e49a40b89adadb8010489605dcc.
+- Suites SHA 3433b707edd4a2f35c68368a3172932adc2a3b32 y 0495e1d526a872c33310935a003a83d924d34683.
+
+HALLAZGOS:
+1. No hay interfaz/callsite de carga documental para aspirantes; Student/Alumno no tiene permiso uploadStudentDocument.
+2. MIME confiado a data URL; sin Magic Bytes ni comprobación extensión/contenido; WEBP permitido aunque F5-006 limita PDF/JPG/PNG.
+3. Catálogo de requisitos estático por grado, no por año; no define fechas ni parámetros por requisito.
+4. Estados inconsistentes (EnRevision/En_Revision) y updateDocumentStatus acepta cualquier estado.
+5. Fallos de Sheets/historial pueden dejar archivo Drive huérfano o sobrescribir sin conservar versión.
+6. getStudentDocuments/updateDocumentStatus no validan propiedad; respuesta expone driveUrl/fileId; UI usa enlace directo; proxy no está despachado y su ownership confía en payload.
+7. No hay flujo completo de sustitución desde el aspirante.
+8. Conversión migra referencias sin duplicar binario, pero captura error y continúa; solicitud se marca Convertida antes de confirmar migración.
+9. Conversión bloquea solo Pendiente/Rechazado; no bloquea documentos ausentes, EnRevision, Requiere_Sustitucion ni vencidos; allowIncompleteOverride procede del payload.
+10. Alertas de vencimiento no integran panel familiar/Dirección ni alertan rechazados.
+11. updateDocumentStatus no genera bitácora; actor viene de payload.userId.
+12. Suites consultadas no contienen pruebas específicas de carga, consulta o revisión documental.
+
+RECONCILIACIÓN:
+TASK-038; TASK-134; TASK-135; TASK-140; TASK-142; TASK-144; TASK-145; TASK-146; TASK-153; AUD-NG-232/TASK-512; AUD-NG-233/TASK-513; AUD-NG-145; AUD-NG-161; TASK-118. No crear IDs globales duplicados.
+
+TAREAS DERIVADAS:
+F5-006-A01 carga real pre-matrícula; ampliación TASK-038 validación binaria; F5-006-A02 catálogo anual/grado; F5-006-A03 máquina de estados; ampliación TASK-135 versionado/compensación; ampliación TASK-142/TASK-153 autorización y proxy; ampliación AUD-NG-232/233 migración y bloqueo; ampliación TASK-146/AUD-NG-145 bitácora; ampliación AUD-NG-161 pruebas; F5-006-A04 alertas familiares/directivas. Detalle y criterios en el informe.
+
+PRUEBAS:
+Inspección estática/manual y búsqueda dirigida. No se ejecutaron Apps Script, HTTP, Drive, navegador, concurrencia, fallos inyectados ni suites.
+
+ARCHIVOS DOCUMENTALES: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-006.md (nuevo), AUDITORIAS/Auditoria.txt, AUDITORIAS/MapaDependencias.md, AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md y AUDITORIAS/Contexto_personal.txt.
+SIN CAMBIOS: código, pruebas, completadas.md, Pendientes.md, ChangesLogs.txt, metodología y rama base.
+SIGUIENTE: TAREA-F5-007 — módulo de entrevistas y evaluaciones de admisión.
+===============================================================================

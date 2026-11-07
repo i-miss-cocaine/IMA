@@ -1121,3 +1121,16 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Pruebas:** inspección estática/manual; no se ejecutaron HTTP, Apps Script, navegador, concurrencia, XSS dinámico ni suites.
 - **Progreso:** 91/183 identificadores del conjunto histórico; sin nuevos IDs.
 - **Siguiente tarea:** TAREA-F5-006 — gestión documental de aspirantes antes de la matrícula. Verificar informe existente antes de auditar.
+
+
+## C1.200. TAREA-F5-006 — gestión documental de aspirantes antes de matrícula (2026-11-07)
+
+- **Dictamen técnico:** NO CUMPLE. La carga backend acepta solicitudId/expedienteId y limita tamaño/0 bytes, pero no existe interfaz/callsite de carga pre-matrícula; Student/Alumno no tiene permiso de carga; MIME se confía al cliente sin Magic Bytes; el catálogo es estático; estados no están normalizados; fallos pueden dejar archivos huérfanos; acceso por documento no verifica pertenencia y la UI usa driveUrl; el proxy no está despachado; la conversión ignora documentos faltantes/EnRevision/Requiere_Sustitucion/vencidos y silencia fallos de migración; faltan alertas y bitácora completa.
+- **Informe creado desde cero:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-006.md; ausencia confirmada en árbol e historial.
+- **Fuentes:** completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, líneas 1986-2021; Pendientes.md blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c (lectura íntegra); ChangesLogs.txt SHA d57cf4bd861b5c3720e60cf83241ed804ff645d9.
+- **Reconciliación:** TASK-038, TASK-134, TASK-135, TASK-140, TASK-142, TASK-144, TASK-145, TASK-146, TASK-153, AUD-NG-232/TASK-512, AUD-NG-233/TASK-513, AUD-NG-145, AUD-NG-161 y TASK-118. No crear IDs globales duplicados.
+- **Tareas derivadas:** cuatro acciones locales F5-006-A01/A02/A03/A04 y ampliaciones de los IDs existentes. Detalle y criterios de cierre en el informe.
+- **Pruebas:** inspección estática/manual de Code.gs, secretary.js, student.js, admision.html, dashboard-secretaria.html y suites. No se ejecutaron Apps Script, HTTP, Drive, navegador, concurrencia, fallos inyectados ni suites.
+- **Archivos documentales:** informe F5-006 nuevo, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md y Contexto_personal.txt.
+- **Sin cambios:** código, pruebas, completadas.md, Pendientes.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md y rama base.
+- **Siguiente tarea oficial:** TAREA-F5-007 — módulo de entrevistas y evaluaciones de admisión; verificar informe e historial antes de iniciar.
