@@ -2943,3 +2943,38 @@ No se crean IDs duplicados; todas las tareas siguen Pendientes.
 
 ### Límites
 Inspección estática/manual. No se ejecutaron Apps Script runtime, benchmark, carga, concurrencia real, HTTP, OAuth, navegador, deployments, fallos inyectados, restore productivo, Drive/Sheets productivas ni E2E. Sin cambios en código/datos productivos.
+
+
+## C1.233 - TAREA-F7-IMP-01: validación integral de horarios y asignaciones
+
+**Informe:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-01.md.  
+**Dictamen:** NO CUMPLE; marca [X] histórica preservada. **HEAD auditado:** eadc2c57ea7905cf34d14d9c745df4a5ced50c4c.
+
+### Dependencias inspeccionadas
+- backend/academic-service/Code.gs: getOrCreateSheet, getUnifiedInstitutionalCalendar, getAcademicCalendar, createCalendarEvent, getTeacherTeachingLoad, createClassSchedule, checkScheduleConflict, validateRolePermission, PUBLIC_ACTIONS y runAcademicPlanningRegressionSuite.
+- js/teacher.js: listener schedule-builder-form, alta de horario y flujo de excepción.
+- teacher-dashboard.html: ausencia del formulario y campos referenciados por el controlador.
+- js/api.js: fetchApi y enriquecimiento de payload.
+- tests/regression/academic-grading-suite.js: ausencia de casos funcionales de F7-IMP-01.
+
+### Relaciones y hallazgos
+- UI: js/teacher.js espera schedule-builder-form y sch-*; el HTML auditado no contiene esos IDs, por lo que el listener opcional no se conecta.
+- API/RBAC: createClassSchedule no es PUBLIC_ACTION; validateRolePermission exige token y establece _verifiedRole; fetchApi solo añade requesterUserId/requesterRole; el controlador no envía token. Relación con AUD-NG-001.
+- Motor: createClassSchedule omite fechaEspecifica/anoId/período; checkScheduleConflict solo dispone de validación de calendario cuando recibe fechaEspecifica. getTeacherTeachingLoad agrega registros de varios años y estados salvo Inactivo.
+- Excepciones: el atajo de excepcionJustificacion inserta primero en ExcepcionesHorarios y retorna sin evaluar las demás reglas; el rol consultado es authRole/userRole, no _verifiedRole. La escritura del horario es posterior y no hay rollback conjunto.
+- Calendario: inicializador de 9 columnas, writer/lector principal de 13 campos y consumidor unificado con índices antiguos; se amplía AUD-NG-168.
+- Pruebas: TC-F7-01 comprueba solo tipo objeto; no hay aserciones conductuales para CA-F7-01..08.
+
+### Criterios
+CA-F7-01/02/07/08 NO CUMPLE; CA-F7-03/04/05/06 PARCIAL.
+
+### Tareas ejecutables derivadas
+- TASK-515: conectar formulario y controlador en teacher-dashboard.html/js/teacher.js.
+- TASK-516: integrar identidad y rol verificado en la ruta privada y excepciones; amplía AUD-NG-001.
+- TASK-517: normalizar calendario, fecha efectiva, año y período; amplía AUD-NG-168.
+- TASK-518: hacer las excepciones acotadas, autorizadas y atómicas.
+- TASK-519: crear pruebas conductuales reproducibles para los ocho criterios.
+Todas Pendientes. No se crean duplicados.
+
+### Límites
+Inspección estática/manual. No se ejecutaron Apps Script, HTTP/OAuth, navegador, Sheets/Drive productivas, concurrencia, rollback ni E2E. Sin cambios en código o datos productivos.

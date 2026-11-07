@@ -8024,3 +8024,37 @@ Auditar TAREA-F6-015 y TAREA-F6-040. Buscar informes individuales e historial en
 - **Restricciones:** no modificar código ni datos productivos durante auditoría; no alterar marcas históricas.
 - **Punto de reanudación:** abrir completadas.md después de F6-040, identificar siguiente ID; consultar contexto/informe/ChangesLogs y blob Pendientes; inspeccionar dispatchers y consumidores del siguiente requisito, guardar SHAs, auditar criterios y documentar sin implementar.
 ===============================================================================
+
+
+===============================================================================
+## C1.233 - Auditoría TAREA-F7-IMP-01
+
+- **ID de sesión operativo:** IMA-AUDIT-20261107-2144Z-01 (no es ID nativo de ChatGPT).
+- **Estado de cierre:** auditoría documental completada; publicación del commit único y verificación posterior pendientes.
+- **Checkpoint inicial:** C1.232. **Checkpoint de cierre:** C1.233.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Archivo de contexto:** AUDITORIAS/Contexto_personal.txt.
+- **Rama base:** NG_beta_0.0.0.1; HEAD verificado 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **HEAD de partida verificado:** eadc2c57ea7905cf34d14d9c745df4a5ced50c4c; árbol de partida 03cfcb4e70ba065bf6ca13e1e61b9e3f86754421; compare base/trabajo 300 ahead, 0 behind.
+- **Última tarea auditada:** TAREA-F7-IMP-01; dictamen NO CUMPLE; marca [X] histórica preservada.
+- **Tarea en curso al cierre:** ninguna.
+- **Siguiente tarea exacta:** TAREA-F7-IMP-02 (matriz visual de planificación y disponibilidad).
+- **Lote:** Fase 7, planificación académica, horarios y recursos.
+
+### Evidencia reproducible y respaldos
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676; TAREA-F7-IMP-01 en línea aproximada 3861; CA-F7-01..CA-F7-08.
+- Informe previo AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-01.md: no existía en la rama de trabajo; auditado directamente desde completadas.md.
+- ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff; registro de cambios del 2026-10-26 para excepciones/horarios, sin constituir evidencia de aceptación.
+- ACADEMIC Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5; js/teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; teacher-dashboard.html cbb9e6a272a7d8ad33f99727303305d950533e71; js/api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; tests academic a22cb3ef376fe09e65c1b17c2f4f5125290bfba6.
+- Pendientes.md: lectura convencional 0 caracteres; blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c recuperado desde la misma referencia del archivo; 1.803.672 bytes, 1.782.094 caracteres, 20.182 líneas, sin U+FFFD. Inventario: 695 encabezados con ID/695 IDs distintos en encabezados; 749 IDs distintos entre tokens bracketed (incluye referencias), 511 TASK, 190 AUD-NG, 10 TAREA, 24 F31, 10 F28, 4 otros; máximo TASK-511/AUD-NG-231. No contiene F7-IMP-01 ni TASK-515..519. Estados globales completado/pendiente no contabilizados por formato mixto. No se modificó.
+- Registros: AUD-NG-236 nuevo; AUD-NG-001 y AUD-NG-168 ampliados. Tareas TASK-515..TASK-519 nuevas, todas Pendientes; se comprobó que no existían en Auditoria.txt, MapaDependencias.md, Plan, Contexto, completadas.md ni blob histórico de Pendientes.md.
+- Hallazgos: formulario ausente en teacher-dashboard; fetchApi no transmite token requerido por createClassSchedule; authRole no deriva de _verifiedRole; excepción anticipada omite controles y puede dejar registro huérfano; fecha/año/período no se propagan; esquemas de calendario divergentes; suite TC-F7-01 solo verifica objeto no nulo.
+- Criterios: CA-F7-01/02/07/08 NO CUMPLE; CA-F7-03/04/05/06 PARCIAL.
+- **Pruebas ejecutadas:** inspección estática/manual de funciones, payloads, dispatcher, RBAC, formulario, esquema de calendario, carga docente, excepciones, suite, historial y SHAs.
+- **No ejecutadas:** Apps Script runtime, HTTP/OAuth, navegador, Sheets/Drive productivas, concurrencia real, fallos inyectados, rollback ni E2E.
+- **Archivos nuevos:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-01.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Archivos no modificados:** backend/academic-service/Code.gs; js/teacher.js; teacher-dashboard.html; js/api.js; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; README; manifest.json; rama base.
+- **Punto de reanudación:** abrir completadas.md en TAREA-F7-IMP-02; buscar informe e historial; inspeccionar matriz visual y sus fuentes de horarios/disponibilidad, permisos, filtros, estados, exportación y comportamiento responsive; auditar criterios sin implementar.
+===============================================================================

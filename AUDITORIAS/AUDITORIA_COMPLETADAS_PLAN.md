@@ -1662,3 +1662,19 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **Siguiente tarea:** ninguna en esta sesión; la siguiente se determina por el orden de completadas.md después de F6-040, sin saltar registros.
 - **Commit de cierre:** el commit único que contiene este checkpoint y todos los informes/documentos.
 - **Punto de reanudación:** verificar HEAD/árbol/compare del commit de cierre; abrir completadas.md después de F6-040 y seleccionar la siguiente tarea cronológica; localizar informe/historial y revisar Pendientes.md antes de auditar.
+
+
+## C1.233 - Resultado de auditoría TAREA-F7-IMP-01 (2026-11-07)
+
+- **Dictamen:** NO CUMPLE; la marca [X] histórica en completadas.md se conserva.
+- **Informe individual:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-01.md; no existía previamente, se auditó directamente el alcance maestro.
+- **Hallazgo nuevo:** AUD-NG-236. Se amplían AUD-NG-001 (token/identidad verificada) y AUD-NG-168 (modelo de horarios/calendario).
+- **Evidencia principal:** teacher-dashboard.html no contiene schedule-builder-form ni campos sch-* referenciados por js/teacher.js; createClassSchedule no está en PUBLIC_ACTIONS, el dispatcher exige token y fetchApi no lo transmite; checkScheduleConflict usa una excepción anticipada que omite todas las validaciones y registra antes de persistir el horario; fechaEspecifica/año/período no se propagan; esquema de calendario divergente; TC-F7-01 solo comprueba objeto no nulo.
+- **Criterios:** CA-F7-01/02/07/08 NO CUMPLE; CA-F7-03/04/05/06 PARCIAL.
+- **Tareas derivadas:** TASK-515..TASK-519, todas Pendientes y registradas en el informe; no se modifica Pendientes.md ni completadas.md.
+- **Pruebas ejecutadas:** inspección estática/manual de código, payloads, dispatcher, RBAC, HTML/JS, esquema, suite, historial y SHAs.
+- **No ejecutadas:** Apps Script runtime, HTTP/OAuth, navegador, llamadas a Sheets/Drive productivas, concurrencia, fallos inyectados, rollback ni E2E.
+- **Archivos nuevos:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-01.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Archivos sin cambios:** backend/academic-service/Code.gs; js/teacher.js; teacher-dashboard.html; js/api.js; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; README; manifest.json; rama base.
+- **Siguiente tarea cronológica:** TAREA-F7-IMP-02, Implementar una matriz visual de planificación y disponibilidad.

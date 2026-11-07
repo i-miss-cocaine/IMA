@@ -8415,3 +8415,31 @@ RECONCILIACIÓN:
 - Se conservan marcas [X] históricas; no se modifican completadas.md ni Pendientes.md.
 PRUEBAS/LÍMITES: inspección estática/manual. No se ejecutaron runtime Apps Script, benchmark, carga, concurrencia real, HTTP, OAuth, navegador, despliegues, fallos inyectados, restauración productiva, Drive/Sheets productivas ni E2E. Sin cambios de código o datos productivos.
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-07
+[AUD-NG-236] TAREA-F7-IMP-01 - VALIDACIÓN INTEGRAL DE HORARIOS Y ASIGNACIONES
+SEVERIDAD: CRÍTICO/P0 Y ALTO/P1
+DICTAMEN: NO CUMPLE (marca [X] histórica conservada).
+EVIDENCIA:
+- backend/academic-service/Code.gs SHA df87a2eea9f0ef79d0b966d03fd5bbe432003df5: createClassSchedule (6900) no recibe/transmite fechaEspecifica/anoId/período a checkScheduleConflict (7493); el validador tiene rama de calendario que queda sin entrada desde esta ruta.
+- checkScheduleConflict procesa excepcionJustificacion antes del resto de controles, registra ExcepcionesHorarios y retorna hasConflict=false; omite carga, calendario, disponibilidad, capacidad, mantenimiento y solapamientos. createClassSchedule escribe el horario después en otra operación, sin rollback de excepción huérfana.
+- validateRolePermission (524) exige token para acciones privadas y solo establece _verifiedRole; createClassSchedule lee payload.authRole. PUBLIC_ACTIONS (265) no incluye createClassSchedule.
+- js/api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9: fetchApi (11, 46-57) añade requesterUserId/requesterRole, pero no token de sesión. El controlador tampoco envía token ni authRole. Se amplía AUD-NG-001.
+- js/teacher.js SHA c475fce5afcd28fca23e7b64398ad32b17773746: listener schedule-builder-form (699), flujo de alta/excepción (737+); teacher-dashboard.html SHA cbb9e6a272a7d8ad33f99727303305d950533e71 no contiene el formulario ni campos referenciados.
+- runAcademicPlanningRegressionSuite (14109), TC-F7-01 solo comprueba que checkScheduleConflict devuelve un objeto; no valida un conflicto real. tests/regression/academic-grading-suite.js SHA a22cb3ef376fe09e65c1b17c2f4f5125290bfba6 no contiene escenarios F7-IMP-01.
+- Esquema CalendarioAcademico divergente: inicializador de 9 columnas (getOrCreateSheet:84), writer/lector de 13 campos (createCalendarEvent:6651/getAcademicCalendar:6616), consumidor alterno getUnifiedInstitutionalCalendar:5008 conserva índices anteriores. checkScheduleConflict lee el layout de 13 campos; la brecha directa es que el flujo de guardado no le pasa fechaEspecifica.
+- Controles parciales: fórmula de intersección estricta detecta solapamiento exacto/parcial y acepta adyacencia con HH:mm canónico; excludeHorarioId y lastUpdated existen en backend. No hay pruebas conductuales.
+CRITERIOS: CA-F7-01 NO CUMPLE; CA-F7-02 NO CUMPLE; CA-F7-03/04/05/06 PARCIAL; CA-F7-07/08 NO CUMPLE.
+TAREAS/RECONCILIACIÓN:
+- Hallazgo nuevo AUD-NG-236.
+- Ampliar AUD-NG-001 (token/identidad verificada) y AUD-NG-168 (modelo y períodos de horarios).
+- Tareas derivadas TASK-515..TASK-519, todas Pendientes; se verificó que los IDs no existen en Auditoria.txt, MapaDependencias.md, Plan, Contexto, completadas.md ni blob histórico de Pendientes.md.
+- TASK-515: conectar formulario real y listener.
+- TASK-516: aplicar token/rol verificado al flujo de horario y excepción (amplía AUD-NG-001).
+- TASK-517: unificar calendario, fecha efectiva y período (amplía AUD-NG-168).
+- TASK-518: limitar excepciones y persistirlas atómicamente.
+- TASK-519: regresión conductual para CA-F7-01..08.
+PRUEBAS/LÍMITES: inspección estática/manual; no ejecutados Apps Script runtime, HTTP/OAuth, navegador, Sheets/Drive productivas, concurrencia, fallos inyectados, rollback ni E2E. Sin cambios de código, tests, HTML, datos productivos o despliegues.
+===============================================================================
