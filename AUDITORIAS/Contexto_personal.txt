@@ -6460,3 +6460,33 @@ CHECKPOINT C1.191 — NORMALIZACIÓN DE TAREA-F4-P3-01
 - Regla de publicación: un único commit consolidado, árbol Git nuevo basado en el árbol completo de HEAD verificado, exactamente dos rutas, un padre igual al HEAD de partida y actualización de ref con expected_sha. No crear commits intermedios ni por archivo.
 - Siguiente tarea oficial: TAREA-F4-P3-02 — optimizar los informes de auditoría y el diagnóstico de incidencias. El informe ya existe y deberá leerse íntegramente, reconciliando AUD-NG-145/AUD-NG-161 sin duplicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.192 — NORMALIZACIÓN DE TAREAS DERIVADAS DE TAREA-F4-P3-02
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo autorizada: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1; HEAD verificado: 44d9891132332e692dbe2ba8602b41f50a508a59. No se realizó ninguna escritura en la rama base.
+- HEAD de partida verificado: 18a5ff93ee3b394ed212090f255fc5842c14e0fb.
+- Árbol de partida verificado: e3554b9fd4900c454db66522a80a3a2e7947e1f1.
+- ID operativo de sesión/chat: IMA-AUDIT-20261107-0041Z (identificador operativo, no ID nativo de ChatGPT).
+- Checkpoint inicial de esta sesión: C1.192; checkpoint de cierre: C1.192.
+- Tarea normalizada: TAREA-F4-P3-02 — optimizar los informes de auditoría y el diagnóstico de incidencias.
+- Informe existente: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F4-P3-02.md; SHA anterior d25221b3ef8610f9739abc8c70c9f88685f5a982. El archivo existe en la rama actual; no se reconstruyó ni sustituyó.
+- Dictamen preservado: NO CUMPLE. La lectura de BitacoraEventos usa índices incompatibles; el lector busca BitacoraTraceability mientras el escritor usa BitacoraTrazabilidad; la paginación se aplica después de leer/ordenar todo; el dashboard Developer sigue conectado a getStructuredLogs con parámetros incompatibles; no hay pruebas específicas.
+- Regla metodológica aplicada: se leyó METODOLOGIA_DESARROLLO.md (SHA cf796728bb384a32537392df2f9c72a339fa03ee), §§3.4 y 3.11. Todo hallazgo accionable se convierte en tarea ejecutable dentro del mismo informe. No se trasladan tareas a un registro externo.
+- Regla de consulta de registros: al existir el informe a auditar, las tareas se desarrollan directamente desde sus hallazgos; Pendientes.md y completadas.md no se usan como mecanismo para suplir el bloque. No se modificaron dichos archivos.
+- Tareas normalizadas sin IDs nuevos: AUD-NG-145 (DTO/esquemas, BitacoraTrazabilidad, paginación de origen, filtros, integración Developer, sanitización y autorización) y AUD-NG-161 (fixtures aislados, pruebas de contrato, paginación, filtros, UI, seguridad, volumen y no regresión).
+- Reconciliación: hallazgos 3.1-3.4 del informe se asignan a AUD-NG-145; hallazgo 3.5 y la verificación conductual de 3.1-3.4 se asignan a AUD-NG-161. No se crean IDs nuevos ni se duplican causas.
+- Informe actualizado: sección obligatoria «Tareas ejecutables derivadas de los hallazgos», con severidad, objetivo, acciones, archivos/módulos, dependencias, alcance, criterios de aceptación, prioridad y estado para ambas tareas; estado Pendiente. No se implementó código ni pruebas.
+- Evidencia técnica contrastada: USER Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; js/developer.js SHA 6fa4c4bd9be580c974b1fbede4f0cf79485dc331; academic-grading-suite.js SHA 3433b707edd4a2f35c68368a3172932adc2a3b32; modular-dashboard-suite.js SHA 0495e1d526a872c33310935a003a83d924d34683. Estos SHAs coinciden con los citados por el informe; las brechas documentadas permanecen.
+- Reglas consultadas: METODOLOGIA_DESARROLLO.md §§3.4/3.11 y control de commit/checkpoint de Contexto_personal.txt.
+- Archivos previstos para el único commit: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F4-P3-02.md y AUDITORIAS/Contexto_personal.txt.
+- Archivos preservados: Pendientes.md, completadas.md, ChangesLogs.txt, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, METODOLOGIA_DESARROLLO.md, código fuente, pruebas y rama base.
+- Pruebas ejecutadas: lectura íntegra del informe P3-02; inspección dirigida de los escritores/lectores y dashboard; búsqueda dirigida de pruebas; cotejo de SHA; lectura de metodología; verificación de HEAD/árbol de partida y rama base.
+- Pruebas no ejecutadas: Apps Script runtime, consultas HTTP, navegador, lectura de hojas productivas, mediciones de volumen, pruebas automatizadas y despliegues. La iteración es documental; no implementa AUD-NG-145 ni AUD-NG-161.
+- Progreso histórico preservado: 88/183 identificadores auditados; 95 pendientes. La normalización no añade identificadores.
+- Siguiente tarea oficial: TAREA-F4-P3-03 — establecer un sistema de detección y reconciliación de inconsistencias de identidad. Continuar con su informe existente y desarrollar sus tareas desde los hallazgos.
+- Regla de publicación: un solo commit consolidado; árbol Git nuevo sobre el árbol completo verificado; exactamente dos rutas; un padre igual al HEAD de partida; actualizar ref con expected_sha; verificar commit, árbol, rutas y rama base. El SHA final se confirma externamente.
+================================================================
