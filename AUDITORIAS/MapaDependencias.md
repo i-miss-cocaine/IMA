@@ -2261,3 +2261,32 @@ TAREA-F5-013 NO CUMPLE. Subtareas locales F5-013-A01..A10 pendientes. Hallazgos 
 
 ### Dictamen
 TAREA-F5-015 NO CUMPLE. Hallazgos H1-H12 y nueve subtareas locales pendientes en AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-015.md.
+
+
+## TAREA-F5-016 - accesibilidad WCAG 2.2 AA y adaptación móvil de admisiones (C1.212)
+
+### Flujo de interfaz y stepper
+- admision.html: stepper step-node-1..4 (71-97); form-step-1..4 (102-294). La especificación de completadas.md exige seis pasos; faltan requisitos documentales y confirmación/comprobante como pasos independientes.
+- goToStep (453-509) valida solo el paso actual si avanza, enfoca el primer control del destino, establece aria-current después de navegar y calcula progressPct para cuatro pasos. Los nodos no se marcan con error/incompleto; la barra carece de role=progressbar y valores ARIA.
+- updateSummaryCard (511-517) presenta cinco datos al entrar al paso 4. Los controles conservan valores al ocultar/mostrar sus secciones.
+- handleAdmissionSubmit (539-585) deshabilita el botón y muestra spinner durante fetch; el estado se restablece en finally.
+
+### Validación, semántica y lector de pantalla
+- validateStep (414-450) solo implementa validación personalizada para pasos 1 y 2. No hay validación personalizada del paso 3. Los spans err-* no se vinculan con aria-describedby y los controles no reciben aria-invalid; el primer error no recibe foco.
+- El stepper es un div genérico con aria-label; la barra no anuncia avance. aria-current no se inicializa en la carga. No hay región aria-live para cambios de paso/errores.
+- El modal modal-confirm-admission se abre/cierra mediante clases (647-655). El helper puede añadir role=dialog/aria-modal tras goToStep, pero no define nombre accesible, foco inicial, confinamiento ni retorno al disparador.
+- js/ui-common.js/auditAndFixAccessibility (5248-5300) inspecciona botones/enlaces role=button, ciertos diálogos y campos de modal-student-file; no verifica contraste, labels/errores, stepper, progreso, aria-live ni conformidad WCAG. admision.html solo lo llama dentro de goToStep (505-508), no al render inicial ni desde switchTab.
+
+### Contraste y responsividad
+- admision.html usa text-gray-400 y text-red-500 en texto pequeño. Con paleta Tailwind predeterminada: #9ca3af sobre blanco ≈2.54:1; #ef4444 sobre blanco ≈3.76:1. Ambos no alcanzan 4.5:1 para texto normal.
+- Hay viewport meta, grids responsive y breakpoints globales en css/style.css; body usa overflow-x:hidden (67-78), que puede ocultar overflow sin corregir la causa. No se ejecutaron viewports 320px, orientación ni zoom.
+- css/style.css ofrece :focus-visible y prefers-reduced-motion; existe prefers-contrast:high, pero la vista no demuestra el contraste efectivo de todos sus textos/estados ni el requisito TASK-258 de prefers-contrast:more.
+
+### Pruebas y dependencias
+- tests/regression/academic-grading-suite.js y modular-dashboard-suite.js no contienen casos F5-016 ni pruebas conductuales del formulario.
+- AUD-NG-211 ya cubre el helper incompleto, errores sin asociación y falta de live announcer; ampliarlo con el caso de admisiones, sin nuevo AUD-NG.
+- TASK-258 cubre accesibilidad transversal; TASK-484 cubre pruebas conductuales; TASK-492 campos; TASK-493 modal compartido; TASK-130 ayudas; AUD-NG-181 Escape/retorno de foco; T-UX-20 y TASK-494 adaptación móvil/overlays. No duplicar sus alcances.
+- Acciones locales F5-016-A01..A06: stepper de seis pasos; validación y estado de error; teclado/anuncios/modal; contraste y auditoría efectiva; pruebas responsive desde 320px; pruebas conductuales. Detalle y criterios verificables en AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-016.md.
+
+### Dictamen
+TAREA-F5-016 NO CUMPLE. La navegación anterior, resumen y estado de carga están implementados estáticamente; el stepper, validación, semántica, contraste, gestión de foco, auditoría WCAG y pruebas no satisfacen el alcance completo.

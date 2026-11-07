@@ -29,7 +29,7 @@ Esta regla aplica a CUALQUIER archivo del repositorio IMA, sin excepción por ti
 ---
 
 
-ÚLTIMA ACTUALIZACIÓN: 2026-11-04
+ÚLTIMA ACTUALIZACIÓN: 2026-11-07
 DOCUMENTO: Contexto_personal.txt
 PROPÓSITO: Permitir que el agente desarrollador retome el trabajo sin perder las reglas, restricciones ni el estado real de ejecución.
 
@@ -38,15 +38,15 @@ PROPÓSITO: Permitir que el agente desarrollador retome el trabajo sin perder la
 1.1 Repositorio IMA (repositorio donde se almacena este contexto)
 
 - Repositorio: i-miss-cocaine/IMA.
-- Rama de trabajo autorizada para este repositorio: NG_beta.
-- Rama NG_beta actualizada y verificada hasta el commit:
+- Rama de trabajo autorizada ACTUAL para este repositorio: NG_beta_0.0.0.1_work.
+- Referencia HISTÓRICA de la rama NG_beta (no es la rama de trabajo actual), actualizada y verificada hasta el commit:
   3c3746f1e1552c593c31d6cb0ac1d3870a17fe29
 - PR existente: #1.
 - Rama de origen del PR: NG_beta.
 - Rama base del PR: main.
 - El PR permanece abierto. No se ha realizado ningún merge.
 - La rama main y las demás ramas no deben modificarse.
-- Este archivo se crea en NG_beta por solicitud expresa del usuario. Su presencia aquí no autoriza a ejecutar tareas de GPSpedia en el repositorio IMA.
+- Este archivo se creó originalmente en NG_beta por solicitud expresa del usuario. La referencia es histórica; la rama de trabajo IMA vigente es NG_beta_0.0.0.1_work. Su presencia aquí no autoriza a ejecutar tareas de GPSpedia en el repositorio IMA.
 
 Último trabajo ejecutado en IMA:
 - Se recuperaron 49 registros históricos de tareas que aparecían marcados como completados en una versión anterior de New_Generation/Pendientes.md.
@@ -7047,4 +7047,39 @@ CHECKPOINT C1.211 - TAREA-F5-015 AUDITADA
 - Commit de cierre: el commit que contiene este checkpoint. Se verificará externamente después de publicar; no se añadirá un segundo commit para escribir su SHA.
 - Última tarea auditada: TAREA-F5-015. Tarea en curso: ninguna. Siguiente tarea exacta: TAREA-F5-016 - accesibilidad WCAG 2.2 AA y adaptación móvil de admisiones; comprobar primero AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-016.md y su historial, y si falta, auditar desde cero.
 - Próxima acción concreta: revisar la entrada F5-016 en completadas.md y ChangesLogs.txt, localizar su informe/historial, y auditar admision.html, CSS, JS y pruebas frente a WCAG 2.2 AA y adaptación móvil.
+================================================================
+
+
+================================================================
+CHECKPOINT C1.212 - AUDITORÍA TAREA-F5-016
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto exacto: AUDITORIAS/Contexto_personal.txt. No crear Contexto_personal.md; la metodología prohíbe cambiar la extensión o crear un contexto alternativo.
+- Corrección de rama: la rama de trabajo actual autorizada es NG_beta_0.0.0.1_work; la rama base protegida es NG_beta_0.0.0.1. La mención inicial a NG_beta y PR #1 se conserva como referencia histórica, no como rama de trabajo vigente.
+- Último checkpoint que el usuario designó como válido: C1.210, HEAD 8ab2fdf7e1825f04a977ff9ac93f52bcb41ae641, árbol 15b91e7c081d502a237db4def3ec9b8572ea5553.
+- HEAD real de NG_beta_0.0.0.1_work al inicio de esta iteración: 70350a196fe3d944dba0e1a23d8e02e29fe8e7a5; árbol 81b852d4a0acb833fb2bfcf198ada01184ac5cea. El commit existente rotulado C1.211 se conserva en el historial, pero no se adopta como checkpoint de referencia por instrucción del usuario. No se hizo reset ni force-push.
+- HEAD de NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59. Comparación previa: 279 commits adelante, 0 detrás. La rama base no se modifica.
+- ID operativo de sesión: IMA-AUDIT-20261107-1708Z. Checkpoint inicial C1.210; checkpoint de cierre C1.212; estado al publicar: sesión cerrada. Identificador operativo, no ID nativo de ChatGPT.
+- Tarea auditada: TAREA-F5-016 - accesibilidad WCAG 2.2 AA y adaptación móvil de admisiones.
+- Fuente: completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, líneas 2321-2351; 11 requisitos/6 criterios, marcada [X]. ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff, líneas 1902-1904.
+- Informe individual AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-016.md: ausente en árbol e historial de la rama; creado desde cero. El informe de fase citado y HALLAZGOS-F5-P3-01 no se encontraron en las fuentes actuales.
+- Dictamen: NO CUMPLE. Hallazgos H1-H8; tareas locales F5-016-A01..A06, todas Pendientes.
+- H1 P1: stepper de cuatro pasos, faltan seis pasos y dos etapas diferenciadas.
+- H2 P1: barra/nodos sin semántica accesible de progreso; estado inicial aria-current no definido; no se refleja error/incompleto.
+- H3 P1: validateStep solo cubre pasos 1/2; errores sin aria-describedby/aria-invalid ni foco; paso 3 sin validación personalizada.
+- H4 P1: text-gray-400 sobre blanco ≈2.54:1 y text-red-500 ≈3.76:1 para texto pequeño; inferiores a 4.5:1.
+- H5 P1: auditAndFixAccessibility solo trata botones/diálogos y modal ajeno; no audita contraste/relaciones/progreso; solo se llama en goToStep, no en carga inicial.
+- H6 P1: modal de confirmación sin nombre accesible, foco inicial, confinamiento ni retorno fiable.
+- H7 P2: adaptación a 320px no verificada; overflow-x:hidden puede ocultar overflow.
+- H8 P1: suites sin pruebas conductuales F5-016.
+- Reconciliación: ampliar AUD-NG-211 y TASK-258; ampliar TASK-484; coordinar TASK-492, TASK-493, TASK-130, AUD-NG-181, T-UX-19/T-UX-20 y TASK-494. No crear IDs globales duplicados.
+- Pendientes.md: lectura convencional 0 caracteres; blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c, íntegro, 1.782.094 caracteres/20.182 líneas/sin U+FFFD; sin F5-016 directo; TASK-258 y TASK-484 siguen [ ] Pendiente. No se modificó.
+- Evidencia: admision.html 45b84c80d22d2e8dab75852e65847bae6425db44; js/ui-common.js 986938b8a311a41ed4cb3d135b66b6aaea4bed67; css/style.css f1ff84312ce70949a58eaa099b2aad0ff0a59cb6; academic-grading-suite.js a22cb3ef376fe09e65c1b17c2f4f5125290bfba6; modular-dashboard-suite.js 0495e1d526a872c33310935a003a83d924d34683.
+- Pruebas ejecutadas: inspección estática/manual de 11 requisitos/6 criterios, HTML/JS/CSS y suites; cálculo de contraste; árbol e historial; comparación de SHA C1.210/HEAD; lectura íntegra del blob.
+- No ejecutadas: navegador, Tab/Shift+Tab/Enter/Escape, NVDA/JAWS/VoiceOver, viewports 320px+, orientación/zoom, auditoría dinámica ni suites automatizadas.
+- Archivos documentales modificados: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-016.md (nuevo); AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: admision.html; js/ui-common.js; css/style.css; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; AUDITORIAS/README.md; rama base.
+- Proceso: auditoría/documentación exclusivamente; no se implementaron tareas derivadas. Un único commit consolidado contiene los cinco archivos documentales y este checkpoint. El SHA de cierre se confirma consultando el HEAD después de publicar; no se añade un segundo commit.
+- Última tarea auditada: TAREA-F5-016. Tarea en curso: ninguna. Siguiente tarea exacta: TAREA-F5-017 - detección y gestión de duplicados, validación y calidad de datos de aspirantes; comprobar primero informe individual e historial.
+- Próxima acción reproducible: abrir completadas.md líneas 2355-2379; verificar AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-017.md y su historial en NG_beta_0.0.0.1_work; si falta, auditar backend/academic-service/Code.gs/findDuplicateStudents/resolveAdmissionDuplicate y sus callsites/UI/tests desde cero.
 ================================================================

@@ -7425,3 +7425,30 @@ AUDITORÍA TÉCNICA TAREA-F5-015 - C1.211 (IMA-AUDIT-20261107-1627Z)
 - Sin cambios: código, pruebas, completadas.md, Pendientes.md, ChangesLogs.txt, metodología y rama base.
 - Próxima tarea: TAREA-F5-016 - accesibilidad WCAG 2.2 AA y adaptación móvil de admisiones; verificar informe individual e historial antes de auditar.
 ===============================================================================
+
+
+===============================================================================
+AUDITORÍA TÉCNICA TAREA-F5-016 - C1.212 (IMA-AUDIT-20261107-1708Z)
+===============================================================================
+- Dictamen: NO CUMPLE. Informe individual creado desde cero: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-016.md.
+- Fuente: completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, líneas 2321-2351; 11 requisitos/6 criterios, marcada [X]. ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff, líneas 1902-1904.
+- Continuidad: último checkpoint autorizado por el usuario C1.210 (HEAD 8ab2fdf7e1825f04a977ff9ac93f52bcb41ae641; árbol 15b91e7c081d502a237db4def3ec9b8572ea5553). HEAD real de la rama de trabajo al iniciar: 70350a196fe3d944dba0e1a23d8e02e29fe8e7a5; el commit existente rotulado C1.211 se preserva, pero no se adopta como checkpoint de referencia. Rama base NG_beta_0.0.0.1 HEAD 44d9891132332e692dbe2ba8602b41f50a508a59; comparación 279 ahead/0 behind. Código auditado conserva los mismos SHA entre C1.210 y HEAD.
+- H1 P1: el formulario implementa cuatro pasos en vez de seis; faltan pasos diferenciados de requisitos documentales y confirmación/comprobante.
+- H2 P1: stepper/barra sin semántica de progreso; aria-current no se establece en render inicial y no hay estado de paso incompleto/error.
+- H3 P1: validateStep solo cubre pasos 1/2; no marca el nodo, no enlaza mensajes err-* con aria-describedby/aria-invalid y no enfoca el primer campo inválido; paso 3 depende de required nativo aun cuando puede estar oculto.
+- H4 P1: texto pequeño text-gray-400 (#9ca3af) sobre blanco ≈2.54:1 y text-red-500 (#ef4444) sobre blanco ≈3.76:1; ambos inferiores a 4.5:1 para texto normal.
+- H5 P1: auditAndFixAccessibility solo revisa botones/diálogos y un modal distinto; no mide contraste ni relaciones de campos/progreso/ARIA live. La única llamada desde admision.html ocurre en goToStep; no en render inicial ni switchTab.
+- H6 P1: modal de confirmación no tiene nombre accesible ni gestión completa de foco; show/close solo alternan clases, sin foco inicial, confinamiento ni retorno fiable al disparador.
+- H7 P2: layout responsive parcial, sin prueba a 320px; overflow-x:hidden puede ocultar desbordamientos.
+- H8 P1: las dos suites de regresión no contienen F5-016 ni casos conductuales del formulario.
+- Reconciliación: ampliar AUD-NG-211 y TASK-258 (helper, contraste, semántica y foco); ampliar TASK-484 (pruebas conductuales); coordinar TASK-492, TASK-493, TASK-130, AUD-NG-181, T-UX-19/T-UX-20 y TASK-494. No crear IDs globales duplicados.
+- Tareas locales F5-016-A01..A06, todas Pendientes: stepper de seis pasos/progreso semántico; validación y estado de error; teclado/anuncios/modal; contraste y auditoría real; responsividad 320px; pruebas conductuales.
+- Pendientes.md: lectura convencional 0 caracteres; blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c, 1.782.094 caracteres/20.182 líneas/sin U+FFFD; no contiene F5-016; TASK-258 y TASK-484 siguen [ ] Pendiente. No se modificó.
+- Pruebas ejecutadas: inspección estática/manual de requisitos, HTML/JS/CSS/suites; comparación de SHA entre C1.210 y HEAD; árbol e historial; lectura del blob; cálculo de ratios de contraste.
+- No ejecutadas: navegador, teclado real, lectores de pantalla, viewports 320px+, zoom/orientación, auditoría dinámica, suites automatizadas, Apps Script/HTTP.
+- Archivos documentales modificados: informe F5-016 nuevo, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md y Contexto_personal.txt.
+- Sin modificar: código, pruebas, completadas.md, Pendientes.md, ChangesLogs.txt, metodología, README de auditorías y rama base.
+- Corrección de contexto: la rama actual de trabajo IMA es NG_beta_0.0.0.1_work; la base protegida es NG_beta_0.0.0.1. La referencia antigua a NG_beta/PR #1 queda identificada como histórica.
+- Cierre: un único commit consolidado incluye los cinco documentos y este checkpoint; no se modifica la rama base ni se reescribe el historial.
+- Siguiente tarea: TAREA-F5-017 - detección y gestión de duplicados, validación y calidad de datos de aspirantes; verificar primero su informe individual e historial.
+===============================================================================

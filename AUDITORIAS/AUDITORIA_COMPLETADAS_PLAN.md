@@ -1275,3 +1275,19 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Archivos documentales:** informe F5-015 nuevo, Auditoria.txt, MapaDependencias.md, este plan y Contexto_personal.txt.
 - **Sin cambios:** backend/*; js/*; HTML; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; rama base.
 - **Siguiente tarea:** TAREA-F5-016 - accesibilidad WCAG 2.2 AA y adaptación móvil de admisiones; verificar primero informe individual e historial.
+
+
+## C1.212 - TAREA-F5-016: accesibilidad WCAG 2.2 AA y adaptación móvil de admisiones
+
+- **Estado administrativo:** completadas.md [X], 11 requisitos/6 criterios [x]; **dictamen técnico: NO CUMPLE**.
+- **Informe individual:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-016.md creado desde cero; no existía en el árbol ni en el historial de NG_beta_0.0.0.1_work.
+- **Hallazgos principales:** stepper de cuatro pasos en vez de seis; progreso sin semántica ARIA; nodos sin estado de error; validación solo en pasos 1/2; mensajes sin aria-describedby/aria-invalid ni foco; texto pequeño de bajo contraste; helper WCAG parcial y sin ejecución inicial; modal sin ciclo de foco; responsividad 320px no verificada; suites sin casos F5-016.
+- **Reconciliación:** ampliar AUD-NG-211/TASK-258 (accesibilidad), TASK-484 (pruebas), coordinar TASK-492, TASK-493, TASK-130, AUD-NG-181, T-UX-19/T-UX-20 y TASK-494. Sin IDs globales duplicados.
+- **Pendientes.md:** blob íntegro SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c; 1.782.094 caracteres, 20.182 líneas, sin U+FFFD; sin F5-016 directo; TASK-258 y TASK-484 continúan [ ] Pendiente.
+- **Tareas locales:** F5-016-A01..A06, todas Pendientes; detalle, alcance y criterios en el informe individual.
+- **Evidencia:** admision.html SHA 45b84c80d22d2e8dab75852e65847bae6425db44; js/ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67; css/style.css SHA f1ff84312ce70949a58eaa099b2aad0ff0a59cb6; academic-grading-suite.js SHA a22cb3ef376fe09e65c1b17c2f4f5125290bfba6; modular-dashboard-suite.js SHA 0495e1d526a872c33310935a003a83d924d34683.
+- **Ramas:** C1.210 es el último checkpoint designado por el usuario (HEAD 8ab2fdf7e1825f04a977ff9ac93f52bcb41ae641). HEAD real de NG_beta_0.0.0.1_work al iniciar: 70350a196fe3d944dba0e1a23d8e02e29fe8e7a5; el commit existente C1.211 se conserva como antecedente Git, no se adopta como checkpoint de referencia. Rama base NG_beta_0.0.0.1 permanece en 44d9891132332e692dbe2ba8602b41f50a508a59. Comparación: 279 ahead/0 behind.
+- **Pruebas:** inspección estática/manual, matriz 11/6, contraste de colores, árbol/historial, comparación de SHA y lectura íntegra del blob. No ejecutados navegador, teclado, lectores de pantalla, 320px/zoom/orientación, auditoría dinámica ni suites.
+- **Archivos documentales:** informe F5-016 nuevo; Auditoria.txt; MapaDependencias.md; este plan; Contexto_personal.txt.
+- **Sin cambios:** admision.html; js/ui-common.js; css/style.css; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; metodología; README de auditorías; rama base.
+- **Siguiente tarea:** TAREA-F5-017 - detección y gestión de duplicados, validación y calidad de datos de aspirantes; comprobar primero informe individual e historial.
