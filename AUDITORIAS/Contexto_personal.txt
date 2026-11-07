@@ -7083,3 +7083,43 @@ CHECKPOINT C1.212 - AUDITORÍA TAREA-F5-016
 - Última tarea auditada: TAREA-F5-016. Tarea en curso: ninguna. Siguiente tarea exacta: TAREA-F5-017 - detección y gestión de duplicados, validación y calidad de datos de aspirantes; comprobar primero informe individual e historial.
 - Próxima acción reproducible: abrir completadas.md líneas 2355-2379; verificar AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-017.md y su historial en NG_beta_0.0.0.1_work; si falta, auditar backend/academic-service/Code.gs/findDuplicateStudents/resolveAdmissionDuplicate y sus callsites/UI/tests desde cero.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.213 - AUDITORÍA TAREA-F5-017
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto exacto: AUDITORIAS/Contexto_personal.txt. Entrada acumulativa; no se cambia extensión ni se crea archivo alternativo.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- Último checkpoint designado expresamente por el usuario: C1.210, HEAD 8ab2fdf7e1825f04a977ff9ac93f52bcb41ae641, árbol 15b91e7c081d502a237db4def3ec9b8572ea5553. No se adopta C1.211 como checkpoint de referencia ni se reescribe historial.
+- Checkpoint de inicio de esta sesión: C1.212.
+- HEAD real de NG_beta_0.0.0.1_work al inicio: d72e39580df79369b45b418a4773eda25fc36679; árbol 1e5c70b8fb865aed7592fb3f0ca4298d7453ff91.
+- HEAD de NG_beta_0.0.0.1 al inicio: 44d9891132332e692dbe2ba8602b41f50a508a59. Comparación: 280 commits adelante y 0 detrás. La rama base permanece intacta.
+- ID operativo de sesión: IMA-AUDIT-20261107-1725Z. Checkpoint inicial C1.212; checkpoint de cierre C1.213; estado al publicar: sesión cerrada. Identificador operativo, no ID nativo de ChatGPT.
+- Tarea auditada: TAREA-F5-017 - detección y gestión de duplicados, validación y calidad de datos de aspirantes.
+- Fuente: completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, líneas 2355-2379; nueve requisitos/cinco criterios, todos marcados [x], estado [X]. ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff, líneas 1906-1914.
+- Informe individual AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-017.md: ausente en árbol e historial; creado desde cero. El informe de fase citado no está en el árbol; HALLAZGOS-F5-P0-01 no figura como hallazgo individual en Auditoria.txt.
+- Dictamen: NO CUMPLE. Hallazgos H1-H10; siete tareas locales F5-017-A01..A07, todas Pendientes.
+- H1 P1: createAdmissionRequest/findDuplicateStudents no validan formato server-side de DNI/pasaporte/teléfono/email/fecha.
+- H2 P2: normalizeString solo minúsculas/NFD/trim; no elimina puntuación ni colapsa espacios internos.
+- H3 P1: findDuplicateStudents compara Usuarios[0] con ExpedientesEstudiantes[1] (PersonaID) y fecha con e[7] (EstadoExpediente) en vez de e[3].
+- H4 P1: coincidencia media usa email O teléfono sin nombres similares; alta/exacta en expedientes no fiable; createAdmissionRequest bloquea solo DNI textual en solicitudes del mismo año y no revisa expedientes.
+- H5 P1: convertAdmissionToStudent puede reutilizar expediente mediante coincidencia de identificación dentro de Observaciones sin revisión manual.
+- H6 P1: acción pública createAdmissionRequest devuelve ID de solicitud previa y refleja el nombre recibido en el payload; candidates devuelve email completo y panel interpola datos en innerHTML sin escape.
+- H7 P1: dashboard admite Secretaria/Desarrollador sin permisos backend equivalentes; resolveAdmissionDuplicate usa authUserId/authRole no verificados.
+- H8 P1: writer de resolución agrega ocho columnas en orden incompatible con HistorialCambiosEntidad de nueve columnas y suprime errores; ampliar AUD-NG-224/TASK-504 y AUD-NG-145.
+- H9 P2: no hay endpoint/UI de corrección de datos con valor anterior/nuevo y trazabilidad.
+- H10 P1: TC-04 usa contrato incorrecto; las suites externas no cubren F5-017.
+- Reconciliación: AUD-NG-224/TASK-504 para esquema/actor/fallos de bitácora; AUD-NG-145 para PII; AUD-NG-161 para pruebas; coordinar F5-007-A05 y F5-012 H8. TASK-113 es importación de Fase 35, no duplicado del flujo de aspirantes.
+- Pendientes.md: lectura convencional 0 caracteres; blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c íntegro, 1.782.094 caracteres/20.182 líneas/sin U+FFFD; sin F5-017 directo; AUD-NG-145 y AUD-NG-224/TASK-504 relacionados. No se modificó.
+- Evidencia y SHA: ACADEMIC Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5; secretary.js 08a81266957b4c18cc25f8ba6749eac30a8f2c2c; dashboard-secretaria.html fa0d8c23aace24a6acab2d4956398a7f5e1309b8; academic-grading-suite.js a22cb3ef376fe09e65c1b17c2f4f5125290bfba6; modular-dashboard-suite.js 0495e1d526a872c33310935a003a83d924d34683; completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676; ChangesLogs.txt 5b5cff1926b73a05d1b92087a7bf4b2db75326ff.
+- Inspección exacta: Code.gs normalizeString (79-82), ROLE_PERMISSIONS (168-260), PUBLIC_ACTIONS (265), validateRolePermission (524-583), doPost/dispatcher (671-977), createAdmissionRequest (984-1100), recordEntityChangeLog (1568-1595), TC-04 (aprox. 4008), findDuplicateStudents (10107-10195), resolveAdmissionDuplicate (10218-10281), convertAdmissionToStudent (2156-2380); secretary.js (197, 1228-1355); dashboard-secretaria.html (222-237); suites completas.
+- Pruebas ejecutadas: inspección estática/manual, lectura del blob histórico, árbol e historial de ruta, comparación HEAD/base, revisión de permisos/contratos y suites.
+- No ejecutadas: Apps Script runtime, HTTP, Sheets productivo, pruebas por rol, navegador/XSS dinámico, corrección de datos, concurrencia ni suites automatizadas.
+- Archivos documentales modificados: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-017.md (nuevo); AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: backend/*; js/*; dashboard-secretaria.html; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; AUDITORIAS/README.md; rama base.
+- Proceso: auditoría/documentación exclusivamente; no se implementaron tareas derivadas ni se cambió completadas.md/Pendientes.md. Un único commit consolidado contiene los cinco documentos y este checkpoint. El SHA final se confirma externamente después de publicar; no se añade un segundo commit para escribir su propio SHA.
+- Última tarea auditada: TAREA-F5-017. Tarea en curso: ninguna. Siguiente tarea exacta: TAREA-F5-018 - experiencia multiestudiante y resumen familiar consolidado.
+- Próxima acción concreta: consultar AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-018.md y su historial en NG_beta_0.0.0.1_work; leer los requisitos de F5-018 en completadas.md y ChangesLogs.txt; recuperar Pendientes.md desde el blob conocido si la lectura convencional devuelve 0; auditar getGuardianStudents/getFamilyConsolidatedSummary y su UI, permisos, privacidad y pruebas.
+================================================================

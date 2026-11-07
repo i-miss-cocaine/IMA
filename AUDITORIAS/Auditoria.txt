@@ -7452,3 +7452,32 @@ AUDITORÍA TÉCNICA TAREA-F5-016 - C1.212 (IMA-AUDIT-20261107-1708Z)
 - Cierre: un único commit consolidado incluye los cinco documentos y este checkpoint; no se modifica la rama base ni se reescribe el historial.
 - Siguiente tarea: TAREA-F5-017 - detección y gestión de duplicados, validación y calidad de datos de aspirantes; verificar primero su informe individual e historial.
 ===============================================================================
+
+
+===============================================================================
+AUDITORÍA TÉCNICA TAREA-F5-017 - C1.213 (IMA-AUDIT-20261107-1725Z)
+===============================================================================
+- Dictamen: NO CUMPLE. Informe individual creado desde cero: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-017.md.
+- Fuente: completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, líneas 2355-2379; nueve requisitos/cinco criterios, marcada [X]. ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff, líneas 1906-1914.
+- Informe individual e historial de la ruta no encontrados en NG_beta_0.0.0.1_work. El informe de fase citado no está en el árbol y HALLAZGOS-F5-P0-01 no figura como hallazgo individual en Auditoria.txt.
+- Continuidad: último checkpoint designado expresamente por el usuario C1.210 (HEAD 8ab2fdf7e1825f04a977ff9ac93f52bcb41ae641). HEAD real de partida C1.212: d72e39580df79369b45b418a4773eda25fc36679; árbol 1e5c70b8fb865aed7592fb3f0ca4298d7453ff91. Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59; comparación 280 ahead/0 behind.
+- H1 P1: createAdmissionRequest y findDuplicateStudents no validan formatos de DNI/pasaporte/teléfono/email/fecha de nacimiento en servidor.
+- H2 P2: normalizeString elimina diacríticos y espacios externos, pero no caracteres especiales ni espacios internos redundantes.
+- H3 P1: findDuplicateStudents asocia Usuarios[0] con ExpedientesEstudiantes[1] aunque ese campo es PersonaID; la fecha de nacimiento se compara con e[7] (EstadoExpediente) en vez de e[3].
+- H4 P1: coincidencia media se activa por email O teléfono, sin ambos ni nombres similares; createAdmissionRequest solo bloquea solicitudes del mismo año por DNI textual y no consulta expedientes.
+- H5 P1: convertAdmissionToStudent puede reutilizar un expediente por includes(identificacion) en Observaciones sin resolución manual de Secretaría.
+- H6 P1: PUBLIC_ACTIONS incluye createAdmissionRequest y el error de duplicado devuelve el ID de otra solicitud y refleja el nombre enviado por el solicitante (no recuperado del registro existente); findDuplicateStudents retorna email íntegro y la UI inserta datos almacenados en innerHTML sin escape.
+- H7 P1: dashboard permite Secretaria/Desarrollador, pero permisos backend no permiten resolver a Secretaria ni buscar/resolver a Desarrollador; resolveAdmissionDuplicate usa authUserId/authRole del payload en vez de claims verificados.
+- H8 P1: resolución escribe ocho columnas con orden distinto al esquema de nueve columnas de HistorialCambiosEntidad y silencia errores; ampliar AUD-NG-224/TASK-504 y AUD-NG-145.
+- H9 P2: no existe flujo/endpoint de corrección de datos de solicitud con historial anterior/nuevo.
+- H10 P1: TC-04 usa {nombre,dni} y espera coincidencias, mientras el handler usa nombres/apellidos/identificacion y devuelve candidates; suites externas sin F5-017.
+- Reconciliación: ampliar AUD-NG-224/TASK-504 (esquema, actor y errores de bitácora), AUD-NG-145 (PII) y AUD-NG-161 (pruebas); coordinar F5-007-A05 y F5-012 H8. TASK-113 es importación Fase 35, no duplicado del flujo de aspirantes.
+- Tareas locales F5-017-A01..A07, todas Pendientes; detalle y criterios en el informe individual.
+- Pendientes.md: lectura convencional 0 caracteres; blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c, 1.782.094 caracteres/20.182 líneas/sin U+FFFD; sin F5-017 directo; AUD-NG-145 y AUD-NG-224/TASK-504 relacionados.
+- Pruebas ejecutadas: inspección estática/manual de requisitos, backend, esquema, roles, dispatcher, conversión, UI, TC-04 y suites; búsqueda árbol/historial; comparación ramas; lectura íntegra del blob.
+- No ejecutadas: Apps Script, HTTP, Sheets productivo, navegador/XSS, pruebas por rol, concurrencia, corrección de datos ni suites automatizadas.
+- Archivos documentales modificados: informe F5-017 nuevo; Auditoria.txt; MapaDependencias.md; AUDITORIA_COMPLETADAS_PLAN.md; Contexto_personal.txt.
+- Sin modificar: backend/*; js/*; dashboard-secretaria.html; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; AUDITORIAS/README.md; rama base.
+- Proceso: auditoría/documentación exclusivamente; no se implementaron las tareas derivadas ni se cambió el estado [X] de completadas.md. Un único commit consolidado incluye los cinco documentos y este checkpoint. El SHA de cierre se confirmará consultando el HEAD después de publicar.
+- Última tarea auditada: TAREA-F5-017. Tarea en curso: ninguna. Siguiente tarea exacta: TAREA-F5-018 - experiencia multiestudiante y resumen familiar consolidado; verificar primero informe individual e historial.
+===============================================================================

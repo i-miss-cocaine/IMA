@@ -2290,3 +2290,31 @@ TAREA-F5-015 NO CUMPLE. Hallazgos H1-H12 y nueve subtareas locales pendientes en
 
 ### Dictamen
 TAREA-F5-016 NO CUMPLE. La navegación anterior, resumen y estado de carga están implementados estáticamente; el stepper, validación, semántica, contraste, gestión de foco, auditoría WCAG y pruebas no satisfacen el alcance completo.
+
+
+## TAREA-F5-017 - detección de duplicados, validación y calidad de datos de aspirantes (C1.213)
+
+### Flujo de detección
+- dashboard-secretaria.html (222-237) -> modal de detalle -> secretary.js/openAdmissionDetailModal (197) -> checkAdmissionDuplicates(solicitudId).
+- secretary.js/checkAdmissionDuplicates (1228-1315) -> ACADEMIC/findDuplicateStudents -> Code.gs (10107-10195) -> SolicitudesAdmision, ExpedientesEstudiantes y Usuarios.
+- findDuplicateStudents: el join de Usuarios[0] con ExpedientesEstudiantes[1] trata PersonaID como UserId; el esquema declara FechaNacimiento en índice 3, pero el comparador usa índice 7 (EstadoExpediente). La coincidencia alta contra expedientes no es fiable.
+- Clasificación media: el handler usa email coincidente O teléfono coincidente, sin comprobar nombres similares ni exigir ambos datos. La comparación telefónica usa sufijo de ocho dígitos y no es simétrica.
+- normalizeString (Code.gs:79-82) quita diacríticos y espacios externos, pero no puntuación/caracteres especiales ni espacios internos redundantes. createAdmissionRequest (984-1100) solo valida presencia de nombres/apellidos/grado; no valida formatos de identidad, email, teléfono ni fecha.
+- createAdmissionRequest está en PUBLIC_ACTIONS (265); el bloqueo compara DNI textual únicamente entre solicitudes activas del mismo año lectivo y no consulta ExpedientesEstudiantes. El mensaje de error incluye el ID de la solicitud existente y refleja el nombre enviado en el payload (no lee el nombre desde la fila duplicada).
+- convertAdmissionToStudent (2156-2380, aprox. 2240-2255) puede seleccionar un expediente por coincidencia de identificación dentro de Observaciones y reutilizarlo sin resolución manual previa.
+
+### Resolución, permisos y privacidad
+- ROLE_PERMISSIONS (168-260): findDuplicateStudents está permitido a Director/Subdirector/Secretaría/Secretaria/Administrador; resolveAdmissionDuplicate no está concedido a Secretaria sin tilde. Desarrollador tampoco tiene los endpoints, aunque dashboard-secretaria.html lo admite en su guard de entrada.
+- resolveAdmissionDuplicate (10218-10281) valida solicitud, tipo de resolución y motivo mínimo, pero lee authUserId/authRole del payload en vez de _verifiedUserId/_verifiedRole; el flujo de UI no envía esos campos.
+- candidates devuelve email sin enmascarar aunque el panel no lo presenta. secretary.js interpola nombreCompleto, código, DNI y motivo dentro de innerHTML sin escape contextual.
+- El panel ofrece consulta y resolución manual, pero la discrepancia de roles puede hacer que algunos usuarios vean acciones que el servidor rechaza.
+
+### Bitácora, corrección y pruebas
+- resolveAdmissionDuplicate escribe ocho valores en HistorialCambiosEntidad con orden distinto al escritor canónico ACADEMIC de nueve columnas (recordEntityChangeLog, 1568-1595); catch vacío y logStructuredEvent silencian fallos. Reconciliar con AUD-NG-224/TASK-504 y AUD-NG-145; no duplicar.
+- No se encontró endpoint ni UI para corregir datos de SolicitudesAdmision con historial de valor anterior/nuevo.
+- TC-04-DUPLICATE_SEARCH_INTEGRITY (aprox. Code.gs:4008) pasa {nombre,dni} y espera coincidencias, pero findDuplicateStudents consume nombres/apellidos/identificacion y devuelve candidates; el caso no valida el contrato real.
+- tests/regression/academic-grading-suite.js y modular-dashboard-suite.js no contienen pruebas específicas de F5-017. Reconciliar con AUD-NG-161 y coordinar F5-007-A05/F5-012 H8 para salida segura.
+- Acciones locales: F5-017-A01 validación/normalización; A02 detección y bloqueo exacto; A03 revisión manual y conversión; A04 privacidad/permisos/renderizado; A05 bitácora con actor verificado; A06 corrección trazable; A07 pruebas conductuales. Detalle y criterios en AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-017.md.
+
+### Dictamen
+TAREA-F5-017 NO CUMPLE. La búsqueda, panel y decisiones manuales existen parcialmente; los defectos de validación, relación/índices, niveles de coincidencia, vinculación automática, privacidad, autorización, bitácora y pruebas impiden aceptar la tarea.

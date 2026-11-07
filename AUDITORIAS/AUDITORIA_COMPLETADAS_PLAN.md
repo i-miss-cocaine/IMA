@@ -1291,3 +1291,19 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Archivos documentales:** informe F5-016 nuevo; Auditoria.txt; MapaDependencias.md; este plan; Contexto_personal.txt.
 - **Sin cambios:** admision.html; js/ui-common.js; css/style.css; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; metodología; README de auditorías; rama base.
 - **Siguiente tarea:** TAREA-F5-017 - detección y gestión de duplicados, validación y calidad de datos de aspirantes; comprobar primero informe individual e historial.
+
+
+## C1.213 - TAREA-F5-017: detección de duplicados, validación y calidad de datos de aspirantes
+
+- **Estado administrativo:** completadas.md [X], nueve requisitos/cinco criterios [x]; **dictamen técnico: NO CUMPLE**.
+- **Informe individual:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-017.md creado desde cero; la ruta no existía en árbol ni historial de NG_beta_0.0.0.1_work.
+- **Hallazgos principales:** falta de validación server-side; normalización incompleta; join PersonaID/UserId incorrecto y fecha de nacimiento leída desde EstadoExpediente; clasificación media por email O teléfono; bloqueo de DNI limitado a solicitudes del mismo año; conversión con vinculación automática por texto en Observaciones; exposición pública del ID de solicitud duplicada junto con el nombre reflejado desde el payload; PII y innerHTML sin escape; discrepancia de roles y actor de auditoría falsificable; esquema de bitácora incompatible; ausencia de corrección trazable; TC-04 con contrato incorrecto y suites sin cobertura.
+- **Reconciliación:** ampliar AUD-NG-224/TASK-504 (esquema/actor/fallos de bitácora), AUD-NG-145 (PII) y AUD-NG-161 (pruebas); coordinar F5-007-A05 y F5-012 H8. TASK-113 corresponde a importación Fase 35, no duplica el flujo de admisión. Sin IDs globales duplicados.
+- **Pendientes.md:** blob íntegro SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c; 1.782.094 caracteres, 20.182 líneas, sin U+FFFD; sin entrada directa F5-017; AUD-NG-145 y AUD-NG-224/TASK-504 relacionados.
+- **Tareas locales:** F5-017-A01..A07, todas Pendientes; detalle y criterios verificables en el informe individual.
+- **Evidencia:** ACADEMIC Code.gs SHA df87a2eea9f0ef79d0b966d03fd5bbe432003df5; secretary.js SHA 08a81266957b4c18cc25f8ba6749eac30a8f2c2c; dashboard-secretaria.html SHA fa0d8c23aace24a6acab2d4956398a7f5e1309b8; suites SHA a22cb3ef376fe09e65c1b17c2f4f5125290bfba6 y 0495e1d526a872c33310935a003a83d924d34683; completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676; ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff.
+- **Ramas:** último checkpoint designado expresamente por el usuario C1.210 (HEAD 8ab2fdf7e1825f04a977ff9ac93f52bcb41ae641); HEAD real de partida C1.212 d72e39580df79369b45b418a4773eda25fc36679; base NG_beta_0.0.0.1 permanece en 44d9891132332e692dbe2ba8602b41f50a508a59; 280 ahead/0 behind.
+- **Pruebas:** inspección estática/manual de requisitos, handlers, esquema, roles, dispatcher, conversión, UI, TC-04 y suites; árbol/historial, lectura íntegra del blob y comparación de ramas. No ejecutados Apps Script, HTTP, Sheets productivo, navegador/XSS, pruebas por rol, concurrencia ni suites automatizadas.
+- **Archivos documentales:** informe F5-017 nuevo; Auditoria.txt; MapaDependencias.md; este plan; Contexto_personal.txt.
+- **Sin cambios:** backend/*; js/*; dashboard-secretaria.html; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; metodología; README de auditorías; rama base.
+- **Siguiente tarea:** TAREA-F5-018 - experiencia multiestudiante y resumen familiar consolidado; comprobar informe individual e historial antes de auditar.
