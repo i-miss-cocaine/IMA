@@ -7187,3 +7187,31 @@ CHECKPOINT C1.215 - AUDITORÍA TAREA-F5-018
 - Archivos no modificados: backend/*; js/*; student-dashboard.html; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; AUDITORIAS/README.md; rama base.
 - Próxima acción concreta: verificar que la rama contiene el commit C1.215 y que la base sigue en 44d9891132332e692dbe2ba8602b41f50a508a59; después abrir completadas.md en TAREA-F5-019, comprobar si existe informe e historial, y auditar métricas, filtros, exportación, permisos y pruebas.
 ======================================================================
+
+
+======================================================================
+CHECKPOINT C1.216 - AUDITORÍA TAREA-F5-019
+======================================================================
+- Sesión operativa: IMA-AUDIT-20261107-1844Z; checkpoint inicial C1.215; checkpoint de cierre C1.216; fecha 2026-11-07. Identificador operativo, no ID nativo de ChatGPT.
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto exacto: AUDITORIAS/Contexto_personal.txt (append-only; no crear archivo alternativo ni cambiar extensión).
+- Rama de trabajo: NG_beta_0.0.0.1_work. Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: 3d9b1fefc3f78630cea73272bad04ab4a392502a; árbol: cea8bd314a917eec982b2b264e7ff315049423b4.
+- HEAD de rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59. Comparación: 283 commits adelante y 0 detrás. La rama base no se modifica.
+- Último checkpoint de cierre válido: C1.215, TAREA-F5-018. HEAD de inicio es el commit que contiene C1.215.
+- Tarea auditada: TAREA-F5-019 - Implementar herramientas de seguimiento operativo y análisis de admisiones. Marcada [X] en completadas.md, siete requisitos/cinco criterios.
+- Informe individual AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-019.md: ausente en árbol e historial de NG_beta_0.0.0.1_work; creado desde cero.
+- Dictamen: NO CUMPLE. Hallazgos H1-H10: fetchApi no transmite token y el endpoint protegido rechaza la llamada; conversión usa denominador total de solicitudes; esquema no contiene fecha de decisión/actualización y promedio queda 0; faltan filtros periodo/nivel/departamento/grado; estancamiento usa antigüedad y no documentos/citas/última actividad; interpolación de datos persistidos en innerHTML; motivo usa Observaciones genéricas y no analiza abandono; CSV sin escape/neutralización y no hay PDF; lectura completa no acotada y getOrCreateSheet puede crear hoja; sin pruebas específicas.
+- Reconciliación: ampliar AUD-NG-001 (token); AUD-NG-235 y AUD-NG-145 (XSS/PII); TASK-237 (CSV anti-inyección/PDF); AUD-NG-161 (pruebas); coordinar TAREA-F5-020 (rendimiento). No crear IDs globales duplicados.
+- Tareas locales F5-019-A01..A07, todas Pendientes. No se implementó ninguna.
+- Fuente administrativa: completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, líneas 2414-2437; ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff, líneas 1925-1932.
+- Pendientes.md: lectura convencional 0 caracteres; blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c, 1.782.094 caracteres, 20.182 líneas, cero U+FFFD. No hay F5-019 directo; se localizaron AUD-NG-001, TASK-237, AUD-NG-145 y AUD-NG-161.
+- Evidencia SHA: ACADEMIC Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5; dashboard-direccion.html fefaa3bf7884288aef563cfb8aaf244e6cea8b7c; js/teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; js/api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; js/auth.js 8444dd085a3186106d2db7005b61ef934d3c22d8; academic-grading-suite.js a22cb3ef376fe09e65c1b17c2f4f5125290bfba6; modular-dashboard-suite.js 0495e1d526a872c33310935a003a83d924d34683.
+- Pruebas ejecutadas: inspección manual de requisitos, permisos, PUBLIC_ACTIONS, dispatcher, token, flujo login/API, esquema y writers, métricas, filtros, DOM, CSV, suites, árbol/historial, SHAs y blob Pendientes.
+- Pruebas no ejecutadas: Apps Script runtime, HTTP, Spreadsheet productivo, navegador/XSS, Excel/LibreOffice, PDF, benchmarks/pruebas de carga y suites automatizadas.
+- Archivos documentales modificados: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-019.md (nuevo); AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: backend/academic-service/Code.gs; dashboard-direccion.html; js/teacher.js; js/api.js; js/auth.js; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; AUDITORIAS/README.md; rama base.
+- Commit de cierre: el único commit que contiene este checkpoint y los otros cuatro documentos; su SHA se confirma externamente después de publicar. No se añade un segundo commit para autorreferenciarlo.
+- Última tarea completamente auditada: TAREA-F5-019. Tarea en curso: ninguna al cierre. Siguiente tarea exacta: TAREA-F5-020 - optimizar consultas, sincronización y capacidad de respuesta del proceso de admisión.
+- Próxima acción concreta: verificar HEAD tras publicar C1.216 y que NG_beta_0.0.0.1 siga en 44d9891132332e692dbe2ba8602b41f50a508a59; luego comprobar informe/historial de F5-020 y auditar paginación, caché, invalidación, concurrencia, rate limiting, límites y pruebas.
+======================================================================

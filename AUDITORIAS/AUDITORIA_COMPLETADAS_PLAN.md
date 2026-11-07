@@ -1344,3 +1344,22 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Archivos documentales modificados:** informe F5-018 nuevo; Auditoria.txt; MapaDependencias.md; AUDITORIA_COMPLETADAS_PLAN.md; Contexto_personal.txt.
 - **Sin cambios:** backend/*; js/*; HTML; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; AUDITORIAS/README.md; rama base.
 - **Siguiente tarea:** TAREA-F5-019 - herramientas de seguimiento operativo y análisis de admisiones. Comprobar informe individual e historial antes de auditar; contrastar filtros, métricas, conversiones, exportaciones CSV/PDF, permisos, sanitización y pruebas.
+
+
+## C1.216 — TAREA-F5-019: herramientas de seguimiento operativo y análisis de admisiones
+
+- **Sesión:** IMA-AUDIT-20261107-1844Z.
+- **Checkpoint de inicio:** C1.215; HEAD 3d9b1fefc3f78630cea73272bad04ab4a392502a; árbol cea8bd314a917eec982b2b264e7ff315049423b4.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work. **Rama base:** NG_beta_0.0.0.1, HEAD 44d9891132332e692dbe2ba8602b41f50a508a59. Comparación previa 283 ahead / 0 behind.
+- **Requisito administrativo:** completadas.md [X], líneas 2414-2437; siete requisitos/cinco criterios [x]. ChangesLogs.txt líneas 1925-1932.
+- **Informe individual:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-019.md ausente en árbol e historial; creado desde cero.
+- **Origen citado:** el informe AUDITORIA_FASE_5_ADMISIONES_PORTAL_FAMILIAS.md no aparece en el árbol; no se localizó marcador literal HALLAZGOS-F5-P3-01 en Auditoria.txt.
+- **Dictamen técnico:** NO CUMPLE. H1-H10: llamada sin token rechazada por validateRolePermission; tasa de conversión con denominador incorrecto; fecha de decisión/actualización ausente y promedio 0; filtros por periodo/nivel/departamento/grado ausentes; contador de estancamiento no consulta documentos/citas/última actividad; interpolación DOM sin escape; motivos genéricos/PII y abandono no analizado; exportación solo CSV y vulnerable a CSV Injection; lectura no acotada/posible creación de hoja; pruebas F5-019 inexistentes.
+- **Reconciliación:** AUD-NG-001 (token); AUD-NG-235/AUD-NG-145 (XSS/PII); TASK-237 (exportación anti-inyección y PDF); AUD-NG-161 (pruebas); coordinar TAREA-F5-020 (rendimiento). Sin nuevos IDs globales.
+- **Tareas locales:** F5-019-A01..A07, todas Pendientes. Detalle y criterios en el informe individual.
+- **Evidencia SHA:** ACADEMIC Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5; dashboard-direccion.html fefaa3bf7884288aef563cfb8aaf244e6cea8b7c; js/teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; js/api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; js/auth.js 8444dd085a3186106d2db7005b61ef934d3c22d8; tests a22cb3ef376fe09e65c1b17c2f4f5125290bfba6 / 0495e1d526a872c33310935a003a83d924d34683.
+- **Pruebas ejecutadas:** inspección manual de router, roles, token, esquema, writers, métricas, filtros, DOM, CSV, suites, árbol/historial y blob Pendientes.
+- **No ejecutadas:** Apps Script, HTTP, Spreadsheet productivo, navegador/XSS, Excel/LibreOffice, PDF, pruebas de carga ni suites automatizadas.
+- **Archivos documentales:** informe F5-019 nuevo; Auditoria.txt; MapaDependencias.md; AUDITORIA_COMPLETADAS_PLAN.md; Contexto_personal.txt.
+- **Sin cambios:** backend/*; js/*; HTML; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; AUDITORIAS/README.md; rama base.
+- **Siguiente tarea:** TAREA-F5-020 - optimizar consultas, sincronización y capacidad de respuesta del proceso de admisión; verificar primero informe e historial, después paginación, caché, invalidación, concurrencia, rate limiting, límites y pruebas.

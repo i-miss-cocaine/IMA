@@ -2373,3 +2373,29 @@ TAREA-F5-017 NO CUMPLE. La búsqueda, panel y decisiones manuales existen parcia
 - Ampliar F5-012-A01/A06/A07/A08; F5-009-A03/A04/A05/A08; F5-013-A01/A03/A04/A08/A09/A10.
 - Ampliar AUD-NG-036 (relación), AUD-NG-222/TASK-502 (ABAC fail-closed), AUD-NG-133 (idempotencia de pagos), AUD-NG-145 (PII/trazabilidad) y AUD-NG-161 (pruebas de concurrencia). No crear IDs globales paralelos.
 - Dictamen F5-018: NO CUMPLE. Cinco tareas locales Pendientes; detalle y criterios en AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-018.md.
+
+
+## C1.216 — TAREA-F5-019: analítica y seguimiento operativo de admisiones
+
+### Ruta de ejecución y autenticación
+- dashboard-direccion.html (botón #btn-admission-analytics, línea 36; modal #modal-admission-analytics, líneas 82-171; enlace DOMContentLoaded, líneas 173+) -> js/teacher.js/openAdmissionAnalyticsModal (6-12) -> loadAdmissionAnalyticsData (14-101) -> fetchApi("ACADEMIC", "getAdmissionAnalyticsReport", {anolectivo}) -> js/api.js/fetchApi (11-181) -> POST al microservicio ACADEMIC.
+- js/auth.js login handler (146-159) persiste currentUser sin sessionToken; js/api.js (46-57) agrega requesterUserId/requesterRole pero no token. El request F5-019 no incluye token explícito.
+- ACADEMIC doPost (671+; case getAdmissionAnalyticsReport en 859) -> validateRolePermission (524+) -> verifySessionToken. getAdmissionAnalyticsReport no está en PUBLIC_ACTIONS (265); ROLE_PERMISSIONS (168+) lo concede a Director y Administrador wildcard. Sin token la consulta se rechaza antes del handler. Ampliar AUD-NG-001.
+
+### Datos y métricas
+- ACADEMIC/getOrCreateSheet (84+) inicializa SolicitudesAdmision; esquema (119): SolicitudID, FechaSolicitud, AnoLectivo, GradoSolicitado, NombresAspirante, ApellidosAspirante, Identificacion, FechaNacimiento, NombreResponsable, TelefonoContacto, EmailContacto, EstadoSolicitud, CanalIngreso, Observaciones, ExpedienteID. No incluye FechaActualizacion ni FechaDecision.
+- ACADEMIC/createAdmissionRequest (984-1110) persiste los quince campos; updateAdmissionStatus (1928+) cambia EstadoSolicitud y Observaciones sin fecha de decisión/actividad en la fila.
+- ACADEMIC/getAdmissionRequests (1113-1159) filtra estado/año/grado y mapea solicitudes; getAdmissionAnalyticsReport (11693-11817) lee toda la hoja y aplica solo anolectivo.
+- getAdmissionAnalyticsReport calcula tasaConversionPct = Convertida / totalSolicitudes; debe usar cohorte admitida (Admitida + Convertida) o historial de decisiones. idxFechaMod busca FechaActualizacion/FechaModificacion, pero el esquema default no tiene ninguno; atencionCount queda en cero y el promedio es 0. solicitudesEstancadas usa antigüedad desde FechaSolicitud para Recibida/En_Revision; no consulta documentos, citas ni última actividad.
+- El embudo se agrupa solo por GradoSolicitado; no hay dimensión nivel. El UI solo ofrece años 2025/2026; no hay filtros por periodo, nivel, departamento ni grado.
+
+### DOM y exportación
+- js/teacher.js 60-90 arma statusGrid/funnelBody/rejectionsList con innerHTML e interpola datos de SolicitudesAdmision (grado, nombre, solicitudId, observaciones). Riesgo de XSS almacenado; ampliar AUD-NG-235 y AUD-NG-145.
+- Motivos de rechazo: idxMotivo prioriza Observaciones sobre MotivoRechazo; el esquema predeterminado contiene Observaciones. Solo devuelve Rechazada; no analiza Retirada/abandono y devuelve nombre/ID completos.
+- Exportación: getAdmissionAnalyticsReport concatena g.grado en CSV entre comillas sin escape de comillas ni neutralización de prefijos =,+,-,@. UI añade BOM UTF-8 y descarga CSV; no implementa PDF. Ampliar TASK-237.
+
+### Coste y pruebas
+- getAdmissionAnalyticsReport ejecuta getDataRange().getValues() y recorre todas las solicitudes en cada llamada; no usa paginación/caché ni mide latencia. getOrCreateSheet puede crear la hoja y encabezados si falta SolicitudesAdmision. No hay evidencia de benchmark ni prueba de solo lectura.
+- tests/regression/academic-grading-suite.js y modular-dashboard-suite.js no contienen F5-019/getAdmissionAnalyticsReport. Ampliar AUD-NG-161.
+- Dependencias: createAdmissionRequest, updateAdmissionStatus, getAdmissionRequests, getStudentDocuments, getAdmissionInterviews, SolicitudesAdmision, fetchApi, verifySessionToken, ROLE_PERMISSIONS.
+- Dictamen: NO CUMPLE. Informe individual: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-019.md. Tareas locales F5-019-A01..A07; reconciliar AUD-NG-001, AUD-NG-235, AUD-NG-145, TASK-237, AUD-NG-161 y TAREA-F5-020. No crear IDs globales duplicados.
