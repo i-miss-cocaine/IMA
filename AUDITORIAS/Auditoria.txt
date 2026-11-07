@@ -8164,3 +8164,61 @@ ARCHIVOS:
 SIGUIENTE TAREA:
 TAREA-F6-010 y su registro ampliado TAREA-F6-035: administración segura de logs y comandos operativos. Buscar informes individuales e historial; verificar filtros multi-servicio, resolución persistente, purga/retención protegida, cola asíncrona, cancelación, idempotencia y permisos específicos por comando.
 ===============================================================================
+
+
+===============================================================================
+AUDITORÍA C1.227 - TAREA-F6-010 Y TAREA-F6-035 - 2026-11-07
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: d28540e54020f7a7a0faee89db8e8466cd562d8d
+Checkpoint inicial: C1.226
+Sesión: IMA-AUDIT-20261107-2240Z
+Informes: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-010.md y AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-035.md
+Dictamen: NO CUMPLE en ambas tareas.
+
+FUENTES:
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676: F6-010 [X], líneas 2781-2804; F6-035 [X], líneas 3694-3722.
+- Pendientes.md blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c: 1.803.672 bytes, 1.782.094 caracteres, 20.182 líneas, sin U+FFFD; no contiene F6-010/F6-035. No se modificó.
+- ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff: F6-010 líneas 1983-1987.
+- Ambos informes individuales no existían; se crean.
+- F6-035 amplía F6-010 con CA-096..102/CA-159; un único bloque canónico de tareas.
+
+HALLAZGOS:
+1. H1 P0: getCentralizedLogs devuelve dos sampleLogs y resolveLogId no persiste resolución.
+2. H2 P0: purgeStructuredLogs borra todas las filas de LogsSistema sin fecha, confirmación, backup ni protección de auditoría; ignora políticas de retención.
+3. H3 P1: catálogo ALLOWED_OPERATIONAL_COMMANDS cerrado, pero executeOperationalCommand no ejecuta handlers, ignora parameters y siempre devuelve éxito.
+4. H4 P0: no existe cola asíncrona, cancelación, estados ni reanudación; runSystemMaintenance no existe aunque el dashboard lo invoca.
+5. H5 P0: ejecutor sin idempotencia; permisos generales por rol, no por comando; authRole fallback sigue vigente.
+6. H6 P1: ejecutedBy/payload y correlationId no se guardan en historial; no hay auditoría persistente de comandos.
+7. H7 P1: dashboard sin resolución/archivo/purga confirmada ni consola de cola.
+
+REGISTROS EXISTENTES AMPLIADOS, SIN NUEVOS IDS GLOBALES:
+- AUD-NG-145: consulta/filtros/logs simulados y resolución.
+- AUD-NG-082: fallback authRole.
+- AUD-NG-086: trazabilidad.
+- AUD-NG-083: correlationId/HMAC.
+- No se crean IDs AUD-NG nuevos ni tareas locales duplicadas.
+- TAREA-F6-035 se trata como expansión de F6-010 y referencia el mismo bloque canónico.
+
+TAREAS DERIVADAS CANÓNICAS:
+- F6-010-A01 P1: consulta real y resolución persistente de logs multi-servicio.
+- F6-010-A02 P0: retención segura y auditoría inmutable.
+- F6-010-A03 P1: handlers reales para catálogo cerrado.
+- F6-010-A04 P1: cola durable, estados, cancelación y reanudación.
+- F6-010-A05 P0: idempotencia y permisos por comando.
+- F6-010-A06 P1: dashboard y pruebas de seguridad/retención.
+Todas pendientes; F6-035 referencia el mismo bloque.
+
+PRUEBAS:
+- Ejecutadas: inspección estática/manual de filtros, logs, purga, retención, dispatcher de comandos, permisos y dashboard.
+- No ejecutadas: purgas, cambios de políticas, mantenimiento, comandos ni pruebas productivas.
+- No se modificaron datos productivos.
+
+ARCHIVOS:
+- Nuevos: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-010.md; AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-035.md.
+- Actualizados: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- Sin cambios: backend, js, HTML, tests, completadas.md, Pendientes.md, ChangesLogs.txt, metodología, README y rama base.
+
+SIGUIENTE TAREA:
+TAREA-F6-011 y su registro ampliado TAREA-F6-036: respaldos independientes y recuperación por área. Buscar informes individuales e historial; comprobar copia aislada de cada servicio, checksum, catálogo, retención/rotación, preview de impacto, confirmación destructiva, restauración aislada y reconciliación referencial.
+===============================================================================

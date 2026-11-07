@@ -1547,3 +1547,18 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **Archivos actualizados:** Auditoria.txt; MapaDependencias.md; AUDITORIA_COMPLETADAS_PLAN.md; Contexto_personal.txt.
 - **Archivos sin cambios:** backend, js, HTML, tests, completadas.md, Pendientes.md, ChangesLogs.txt, metodología, README y rama base.
 - **Siguiente tarea:** TAREA-F6-010 y TAREA-F6-035, administración segura de logs y comandos operativos.
+
+
+## C1.227 - Resultado de auditoría TAREA-F6-010 y TAREA-F6-035
+
+- **Dictamen:** NO CUMPLE en ambas; ambas aparecen [X] en completadas.md y conservan ese estado histórico.
+- **Relación:** TAREA-F6-035 amplía F6-010 con CA-096..102/CA-159. Se crean informes por ID, pero comparten un único bloque canónico F6-010-A01..A06.
+- **Evidencia crítica:** getCentralizedLogs usa muestras y no persiste resolución; purgeStructuredLogs borra todos los logs; las políticas no protegen la purga directa; executeOperationalCommand simula éxito; no hay cola/cancelación/idempotencia ni permisos específicos; runSystemMaintenance no existe.
+- **Aspecto que sí cumple:** el catálogo ALLOWED_OPERATIONAL_COMMANDS bloquea comandos fuera de la lista y no permite ejecución de código libre.
+- **Registros existentes ampliados:** AUD-NG-145, AUD-NG-082, AUD-NG-086 y AUD-NG-083. No se crean IDs globales duplicados.
+- **Tareas canónicas:** F6-010-A01..A06 pendientes (logs reales, retención segura, handlers, cola, idempotencia/permisos, dashboard/pruebas).
+- **Pruebas:** inspección estática/manual; no se ejecutaron purgas, cambios de políticas, mantenimiento, comandos ni pruebas productivas.
+- **Archivos nuevos:** informes individuales F6-010 y F6-035.
+- **Archivos actualizados:** Auditoria.txt; MapaDependencias.md; AUDITORIA_COMPLETADAS_PLAN.md; Contexto_personal.txt.
+- **Archivos sin cambios:** backend, js, HTML, tests, completadas.md, Pendientes.md, ChangesLogs.txt, metodología, README y rama base.
+- **Siguiente tarea:** TAREA-F6-011 y TAREA-F6-036, respaldos independientes y recuperación por área.

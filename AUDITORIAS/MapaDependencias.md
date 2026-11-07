@@ -2746,3 +2746,34 @@ Inspección estática/manual. No se ejecutaron llamadas interservicio, pruebas H
 
 ### Estado de pruebas
 Inspección estática/manual. No se ejecutaron HTTP, Apps Script runtime, cuotas reales, Drive/Sheets productivas, E2E ni pruebas de indisponibilidad.
+
+
+## C1.227 - TAREA-F6-010 / TAREA-F6-035: administración segura de logs y comandos
+
+**Informes:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-010.md y AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-035.md  
+**Dictamen:** NO CUMPLE en ambas. **HEAD inicial:** d28540e54020f7a7a0faee89db8e8466cd562d8d.
+
+### Logs y retención
+- backend/developer-service/Code.gs SHA 8aa4bac67cfe5c8c54da51a0784a56fef633e412:
+  - getCentralizedLogs:2363-2385 devuelve dos sampleLogs y resolveLogId solo simula resolución.
+  - executeOperationalCommand:2388-2415 valida allowlist, pero no ejecuta handlers ni persiste resultados.
+- backend/user-service/Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f:
+  - purgeStructuredLogs:7967-7990 elimina todas las filas de LogsSistema sin corte/confirmación/protección.
+  - getRetentionPolicies/saveRetentionPolicy/executeDataRetentionPolicyCheck:2120-2270; el motor purga BitacoraEventos de forma parcial y contabiliza archivo legal sin archivarlo; purgeStructuredLogs ignora las políticas.
+  - runSystemMaintenance no existe aunque js/api.js y js/developer.js lo invocan.
+- js/developer.js SHA 6fa4c4bd9be580c974b1fbede4f0cf79485dc331: consulta USER/getStructuredLogs; no tiene resolución persistente ni cola de comandos.
+- developer-dashboard.html SHA 2b69f1bf7ffbbe4902e81de14d6315cedb035a1e: filtros y botón de mantenimiento, sin confirmación de purga ni estados de cola.
+
+### Hallazgos y tareas
+- H1 P0: logs centrales simulados y resolución no persistente.
+- H2 P0: purga total de LogsSistema, sin protección ni confirmación.
+- H3 P1: catálogo cerrado, pero handlers simulados.
+- H4 P0: no existe cola, cancelación, estados ni runSystemMaintenance.
+- H5 P0: no hay idempotencia ni permisos por comando.
+- H6 P1: no hay auditoría persistente de ejecución.
+- H7 P1: dashboard incompleto.
+- Se amplían AUD-NG-145, AUD-NG-082, AUD-NG-086 y AUD-NG-083; no se crean IDs globales duplicados.
+- Tareas canónicas F6-010-A01..A06 pendientes; F6-035 referencia el mismo bloque.
+
+### Estado de pruebas
+Inspección estática/manual. No se ejecutaron purgas, cambios de políticas, mantenimiento, comandos ni pruebas productivas.

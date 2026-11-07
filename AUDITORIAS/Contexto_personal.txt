@@ -7718,3 +7718,56 @@ ARCHIVOS MODIFICADOS:
 SIGUIENTE ACCIÓN:
 Auditar TAREA-F6-010 y su registro ampliado TAREA-F6-035: administración segura de logs y comandos operativos. Buscar informes individuales e historial; verificar filtros multi-servicio, resolución persistente, purga/retención protegida, cola asíncrona, cancelación, idempotencia y permisos específicos por comando.
 ===============================================================================
+
+
+===============================================================================
+CHECKPOINT C1.227 - SESIÓN IMA-AUDIT-20261107-2240Z
+Fecha: 2026-11-07
+Estado: sesión cerrada
+Checkpoint inicial: C1.226
+Checkpoint de cierre: C1.227
+Tareas auditadas: TAREA-F6-010 y TAREA-F6-035 (mismo módulo y alcance ampliado).
+Contexto: ambas tareas estaban marcadas [X] y carecían de informe individual. Se verificaron consulta/resolución de logs, retención, purga, inmutabilidad, catálogo de comandos, handlers, cola asíncrona, cancelación, idempotencia, permisos, auditoría y dashboard. Dictamen NO CUMPLE en ambas.
+
+REPOSITORIO Y RAMAS:
+- Repositorio: i-miss-cocaine/IMA.
+- Rama base NG_beta_0.0.0.1; no modificada.
+- Rama de trabajo NG_beta_0.0.0.1_work.
+- HEAD inicial verificado: d28540e54020f7a7a0faee89db8e8466cd562d8d (C1.226).
+- Comparación anterior con la rama base: 294 commits ahead, 0 behind.
+- Checkpoint previo: C1.226, commit audit(C1.226): audit F6-009 and F6-034 observability.
+
+FUENTES:
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676: TAREA-F6-010 [X], líneas 2781-2804; TAREA-F6-035 [X], líneas 3694-3722.
+- Pendientes.md blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c: 1.803.672 bytes, 1.782.094 caracteres, 20.182 líneas, sin U+FFFD; no contiene F6-010/F6-035 y no se modificó.
+- ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff: F6-010 líneas 1983-1987.
+- Ambos informes individuales no existían; se crean.
+- F6-035 amplía criterios; un solo bloque de tareas canónico para evitar duplicados.
+
+HALLAZGOS:
+- H1 P0: getCentralizedLogs devuelve muestras y resolveLogId no persiste.
+- H2 P0: purgeStructuredLogs borra todo LogsSistema, sin corte/confirmación/backup y sin respetar retención; las políticas no protegen logs inmutables.
+- H3 P1: allowlist segura, pero executeOperationalCommand no ejecuta handlers y siempre devuelve éxito.
+- H4 P0: no hay cola asíncrona, cancelación, estados ni reanudación; runSystemMaintenance no existe.
+- H5 P0: comandos sin idempotencia y permisos por comando; fallback authRole.
+- H6 P1: actor/parámetros/correlationId no se guardan en historial.
+- H7 P1: dashboard sin resolución/purga confirmada/cola.
+
+REGISTROS EXISTENTES:
+- AUD-NG-145, AUD-NG-082, AUD-NG-086 y AUD-NG-083. Se amplían, no se duplican.
+- Tareas canónicas F6-010-A01..A06 pendientes; F6-035 referencia el mismo bloque.
+
+PRUEBAS:
+- Ejecutadas: inspección estática/manual de filtros, logs, purga, retención, dispatcher de comandos, permisos y dashboard.
+- No ejecutadas: purgas, cambios de políticas, mantenimiento, comandos ni pruebas productivas.
+- No se modificaron datos productivos.
+
+ARCHIVOS MODIFICADOS:
+- Nuevos: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-010.md; AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-035.md.
+- Actualizados: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- Sin cambios: backend, js, HTML, tests, completadas.md, Pendientes.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README y rama base.
+- No se modificó código ni datos productivos.
+
+SIGUIENTE ACCIÓN:
+Auditar TAREA-F6-011 y su registro ampliado TAREA-F6-036: respaldos independientes y recuperación por área. Buscar informes individuales e historial; comprobar copia aislada por servicio, checksum, catálogo, retención/rotación, preview de impacto, confirmación destructiva, restauración aislada y reconciliación referencial.
+===============================================================================
