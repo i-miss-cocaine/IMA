@@ -6554,3 +6554,31 @@ CHECKPOINT C1.194 — NORMALIZACIÓN DE TAREAS DERIVADAS DE TAREA-F5-001
 - Regla de publicación: un solo commit consolidado; árbol Git nuevo sobre el árbol completo verificado; exactamente dos rutas; un padre igual al HEAD de partida; actualizar ref con expected_sha; verificar commit, árbol, rutas, compare y rama base. El SHA final se confirma externamente.
 ================================================================
 
+================================================================
+CHECKPOINT C1.195 — AUDITORÍA DESDE CERO DE TAREA-F5-002
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo autorizada: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1; HEAD verificado al inicio: 44d9891132332e692dbe2ba8602b41f50a508a59. No se realizó escritura en la rama base.
+- HEAD de partida verificado: 5a0b306f2d2c16f65634b138bfe49a49d62df7a5.
+- Árbol de partida: 18586ec4bc178591f6f83944896e7e433fd23060; árbol recursivo completo: 964 entradas, truncated=false.
+- ID operativo de sesión/chat: IMA-AUDIT-20261107-0123Z (identificador operativo, no ID nativo de ChatGPT).
+- Checkpoint inicial: C1.194; checkpoint de cierre previsto: C1.195.
+- Tarea procesada: TAREA-F5-002 — implementar una máquina de estados y reglas de transición para las solicitudes.
+- Verificación de informe: no existe AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-002.md en el árbol de la rama. La consulta de historial Git para esa ruta devolvió lista vacía. La fuente histórica AUDITORIA_FASE_5_ADMISIONES_PORTAL_FAMILIAS.md tampoco existe en el árbol ni en el historial de la ruta consultada.
+- Antecedentes reconstruidos desde completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676 líneas 1862-1900 y ChangesLogs.txt SHA d57cf4bd861b5c3720e60cf83241ed804ff645d9 líneas 1550-1562. El registro histórico marca la tarea [X], pero la auditoría actual no toma esa marca como evidencia de cumplimiento.
+- Metodología consultada: METODOLOGIA_DESARROLLO.md SHA cf796728bb384a32537392df2f9c72a339fa03ee, bloqueo de inicio/cierre y §3.4. Pendientes.md queda expresamente fuera del flujo operativo y no se consultó ni utilizó. completadas.md se usó solo para reconstruir criterios históricos, no como registro operativo de tareas.
+- Evidencia principal: backend/academic-service/Code.gs SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc: validateRolePermission 524-583; doPost 671-690/dispatcher 847-860; idempotencia 279-318; matriz 1556-1568; updateAdmissionStatus 1928-2059; reopenAdmissionRequest 2061-2105; getAdmissionEvaluations 1724-1747; getStudentDocuments 10708-10785.
+- Evidencia de pruebas: tests/regression/academic-grading-suite.js SHA 3433b707edd4a2f35c68368a3172932adc2a3b32 y tests/regression/modular-dashboard-suite.js SHA 0495e1d526a872c33310935a003a83d924d34683; búsqueda dirigida no encontró pruebas de TAREA-F5-002, updateAdmissionStatus, reopenAdmissionRequest ni ALLOWED_ADMISSION_STATE_TRANSITIONS.
+- Evidencia de trazabilidad: AUDITORIAS/MapaDependencias.md SHA 4f68d56f910c6a4e87c20ecac82daeb3a615bcaa, líneas 1723-1727, documenta esquemas incompatibles y fallos de historial silenciados.
+- Dictamen: NO CUMPLE. La reapertura omite la máquina de estados, acepta destino arbitrario y no usa lock; el endpoint ordinario permite Reabierta a roles operativos; isInternalCall/skipLock permite omitir el lock desde payload; las mutaciones de estado no guardan resultado idempotente; la auditoría puede fallar sin impedir éxito; las guardas documentales/evaluativas permiten avance con respuestas vacías y no acreditan requisitos completos.
+- Tareas formalizadas: nueva AUD-NG-234/TASK-514; ampliaciones de AUD-NG-006 (idempotencia), AUD-NG-145 (trazabilidad), AUD-NG-233/TASK-513 (guardas documentales/evaluativas) y AUD-NG-161 (pruebas conductuales). No se reutilizan ni duplican AUD-NG-179, AUD-NG-232/TASK-512.
+- Archivos previstos para el único commit: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-002.md y AUDITORIAS/Contexto_personal.txt.
+- Pruebas ejecutadas: inspección estática/manual; cotejo de SHA; búsqueda de informe y ruta histórica; lectura de criterios de completadas.md y ChangesLogs; verificación de metodología, HEAD, árbol completo y rama base.
+- Pruebas no ejecutadas: Apps Script runtime, HTTP/deployments, Google Sheets/CacheService/Drive productivos, roles reales, concurrencia, fallos inyectados, pruebas de idempotencia, suites automatizadas, navegador/UI y despliegues.
+- Archivos no modificados: código fuente, pruebas, Auditoria.txt, MapaDependencias.md, ChangesLogs.txt, completadas.md, Pendientes.md, plan de auditoría, metodología y rama base.
+- Progreso histórico al inicio: 90/183 identificadores auditados y 93 pendientes. Se incorpora el nuevo ID AUD-NG-234/TASK-514; no se altera retrospectivamente el conteo histórico en este checkpoint.
+- Siguiente tarea oficial: TAREA-F5-003 — implementar identificadores únicos, control de concurrencia e idempotencia en admisiones. Antes de trabajarla, verificar si existe su informe y seguir la regla de informe existente/auditoría desde cero.
+- Regla de procedimiento: si existe el informe, verificar sus hallazgos contra evidencia actual y normalizar las tareas ejecutables dentro de ese mismo archivo; si no existe, auditar desde cero y crear informe con bloque de tareas. Consultar antecedentes históricos solo después de confirmar ausencia/omisión, respetando METODOLOGIA_DESARROLLO.md §3.4 y la exclusión de Pendientes.md.
+- Regla de publicación: un solo commit consolidado; árbol Git nuevo basado en el árbol completo verificado; exactamente dos rutas; un padre igual al HEAD de partida; actualizar ref con expected_sha; verificar commit, árbol, rutas, compare, ref y rama base. El SHA final se confirma externamente.
+================================================================
