@@ -30,7 +30,7 @@ Todos los siguientes archivos se inspeccionaron en el HEAD auditado:
 
 | Archivo | SHA | Ubicación relevante |
 |---|---|---|
-| `backend/academic-service/Code.gs` | `daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc` | `validateRolePermission` 524-583; `doPost` 671-690 y dispatcher 847-860; idempotencia 279-318; matriz 1556-1568; `updateAdmissionStatus` 1928-2059; `reopenAdmissionRequest` 2061-2105; documentos 10708-10785; evaluaciones 1724-1747. |
+| `backend/academic-service/Code.gs` | `daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc` | `validateRolePermission` 524-583; `doPost` 671-690, dispatcher 847-860 y guardado global de idempotencia 967-968; idempotencia 279-318; matriz 1556-1568; `updateAdmissionStatus` 1928-2059; `reopenAdmissionRequest` 2061-2105; documentos 10708-10785; evaluaciones 1724-1747. |
 | `tests/regression/academic-grading-suite.js` | `3433b707edd4a2f35c68368a3172932adc2a3b32` | Búsqueda dirigida de admisiones, TAREA-F5-002, máquina de estados, transiciones y reapertura. |
 | `tests/regression/modular-dashboard-suite.js` | `0495e1d526a872c33310935a003a83d924d34683` | Búsqueda dirigida de admisiones, estados y reapertura. |
 | `AUDITORIAS/MapaDependencias.md` | `4f68d56f910c6a4e87c20ecac82daeb3a615bcaa` | Líneas 1723-1727: incompatibilidad de esquema y fallos silenciados en HistorialCambiosEntidad; sección C1.96, líneas 1917-1921: dependencias F5-001. |
@@ -64,10 +64,12 @@ En `doPost` (675-677), el servicio elimina `payload.skipLock` solo cuando `paylo
 
 La función normal sí falla cuando no obtiene el bloqueo, pero el bypass anterior permite saltarse esa protección. Dos cambios concurrentes pueden leer el mismo estado y sobrescribirse. El bloqueo no debe depender de flags declarados por el cliente.
 
-### H4. La idempotencia no se completa para las mutaciones de estado
+### H4. La idempotencia de las mutaciones de estado es solo de caché y carece de reserva atómica
 **Clasificación: ALTO / P1 — ampliación de AUD-NG-006**
 
-`doPost` consulta `checkAndRegisterIdempotencyKey` antes del dispatcher (684-689), y existe `saveIdempotentResult` (306-318). Sin embargo, `updateAdmissionStatus` y `reopenAdmissionRequest` no guardan el resultado mediante `saveIdempotentResult`; la consulta inicial por sí sola no reserva ni persiste la clave. Un reintento no puede recuperar de forma garantizada el resultado de la primera operación ni detectar la reutilización incompatible de la misma clave en estas mutaciones. El retorno `isAlreadyInState` de `updateAdmissionStatus` no sustituye una garantía de idempotencia por operación ni cubre la reapertura.
+**Corrección de alcance:** el middleware global de `doPost` consulta `checkAndRegisterIdempotencyKey` antes del dispatcher (684-689) y, después de ejecutar la acción, llama a `saveIdempotentResult` para toda acción no `get` cuyo resultado sea `success` (967-968). Por tanto, `updateAdmissionStatus` y `reopenAdmissionRequest` sí reciben comprobación y guardado de resultado cuando se invocan por el endpoint; la afirmación anterior de que esas rutas no guardaban resultado era incompleta. `createAdmissionRequest` también realiza una comprobación/guardado local adicional.
+
+La brecha real persiste: `checkAndRegisterIdempotencyKey` (279-304) solo consulta `CacheService`; no reserva la clave ni crea un estado `InProgress`. El guardado se realiza después de los efectos de negocio, usa caché con TTL de 21.600 segundos y `saveIdempotentResult` silencia fallos de `cache.put` (306-318). El chequeo ocurre antes de adquirir el lock, por lo que solicitudes simultáneas con la misma clave pueden superar ambas la lectura inicial. No existe persistencia durable demostrada en `TablaIdempotencia`, ni código de conflicto estable `IDEMPOTENCY_CONFLICT`; la incompatibilidad se comunica mediante un `Error` genérico. La idempotencia no es durable ni atómica frente a concurrencia, pérdida/evicción de caché o fallo de persistencia.
 
 ### H5. El historial de transición no es una condición durable de éxito
 **Clasificación: ALTO / P1 — ampliación de AUD-NG-145**

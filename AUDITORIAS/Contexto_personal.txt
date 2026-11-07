@@ -6605,3 +6605,30 @@ CHECKPOINT C1.196 — CIERRE DEL REGISTRO DE TAREA-F5-002
 - Regla: informe existente => verificar y normalizar en ese mismo archivo; informe ausente => auditoría desde cero e informe con tareas ejecutables. Registrar cada hallazgo en Auditoria.txt y MapaDependencias.md.
 - Publicación: un commit consolidado, un padre igual al HEAD de partida, expected_sha y verificación posterior.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.197 — AUDITORÍA DESDE CERO TAREA-F5-003 Y CORRECCIÓN F5-002
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- HEAD de partida: f70b684b18f341e7d59e876ec53218422c345e05; árbol de partida: 69a525b23ae5232e28bdf603d3abd3b052c4c0d0; árbol recursivo completo: 965, truncated=false.
+- Rama base protegida NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59; no se realizó escritura.
+- ID operativo de sesión/chat: IMA-AUDIT-20261107-0140Z (no es ID nativo de ChatGPT).
+- Tarea auditada: TAREA-F5-003 — implementar identificadores únicos, control de concurrencia e idempotencia en admisiones.
+- Informe específico: no existía AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-003.md en árbol ni historial Git consultado; tampoco se encontró AUDITORIA_FASE_5_ADMISIONES_PORTAL_FAMILIAS.md en árbol/historial. Se realizó auditoría desde cero.
+- Antecedentes: completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676 líneas 1893-1901 marca tarea [X]; ChangesLogs.txt SHA d57cf4bd861b5c3720e60cf83241ed804ff645d9 líneas 1534-1546 declara implementación y registro histórico. La marca no demuestra cumplimiento actual.
+- Evidencia de código: ACADEMIC Code.gs SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; suites SHA 3433b707edd4a2f35c68368a3172932adc2a3b32 y 0495e1d526a872c33310935a003a83d924d34683.
+- Dictamen F5-003: NO CUMPLE. El generador permite skipLock y prepara la hoja antes del lock; createAdmissionRequest permite bypass desde payload público; duplicidad no comprueba email; idempotencia global es cache-only (TTL 21600), sin reserva atómica/durabilidad; registerStudentEnrollment persiste MAT-Date.now() sin lock propio; conversión descarta el ID MAT secuencial; faltan pruebas conductuales; logs no enmascaran PII de los datos de admisión.
+- Tareas existentes ampliadas: TASK-118, AUD-NG-006, AUD-NG-234/TASK-514, AUD-NG-129, AUD-NG-145 y AUD-NG-161. Coordinación con AUD-NG-232/TASK-512. No se crearon IDs nuevos.
+- Corrección de F5-002: se comprobó doPost líneas 967-968, que guarda globalmente resultado de acciones no-get exitosas. El H4 original afirmaba erróneamente que updateAdmissionStatus/reopenAdmissionRequest no guardaban resultado. Se corrigió el informe F5-002, nuevo SHA b1809a57c8ff285b3e1abe983a7a1fd207e54186; la brecha real es ausencia de reserva atómica/durabilidad y chequeo previo al lock.
+- Archivos del commit: informe F5-003 nuevo; informe F5-002 corregido; Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md y Contexto_personal.txt.
+- Archivos no modificados: código, pruebas, completadas.md, ChangesLogs.txt, Pendientes.md, metodología, rama base y Auditoría.txt acentuado.
+- Pruebas ejecutadas: HEAD/ref/base, árbol completo; búsqueda de informe en árbol/historial y de fuente histórica; inspección manual de funciones y callsites; lectura de criterios históricos; revisión de test suites; corrección cruzada de H4.
+- No ejecutadas: suites automatizadas, Apps Script, HTTP concurrente, CacheService/Sheets productivos, fallos inyectados, despliegue ni lectura de datos productivos.
+- Progreso histórico: 91/183 identificadores auditados; 92 restantes. No se crean IDs nuevos.
+- Dictamen funcional: F5-003 NO CUMPLE. La auditoría documental no resuelve la implementación.
+- Siguiente tarea oficial: TAREA-F5-004 — construir el formulario público de admisión y conectarlo con el backend; verificar informe e historial antes de iniciar.
+- Regla: informe existente => verificar hallazgos y normalizar tareas en el mismo archivo; informe ausente => auditoría desde cero y creación de informe con tareas. Registrar hallazgos en Auditoria.txt y MapaDependencias.md. No utilizar Pendientes.md.
+- Publicación: un solo commit consolidado, árbol nuevo sobre árbol completo verificado, rutas exactas, un padre igual al HEAD de partida, update_ref con expected_sha y verificación posterior.
+================================================================

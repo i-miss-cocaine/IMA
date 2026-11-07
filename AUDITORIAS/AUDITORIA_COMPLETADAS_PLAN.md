@@ -1089,3 +1089,14 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - Hallazgos registrados: AUD-NG-234/TASK-514 (reapertura, matriz y bypass de lock), AUD-NG-006 (idempotencia), AUD-NG-145 (historial/correlationId), AUD-NG-233/TASK-513 (guardas de etapa) y AUD-NG-161 (pruebas).
 - Dictamen NO CUMPLE. No se modificó código ni pruebas; la implementación permanece pendiente.
 - Siguiente tarea indicada por el checkpoint previo: TAREA-F5-003 — implementar identificadores únicos, control de concurrencia e idempotencia en admisiones. El informe debe buscarse en árbol e historial antes de iniciar; si no existe, auditar desde cero y generar informe con tareas ejecutables.
+
+
+## C1.197. TAREA-F5-003 — IDs, concurrencia e idempotencia en admisiones (2026-11-07)
+
+- **Dictamen:** NO CUMPLE. El generador institucional acepta skipLock y crea/inicializa SecuenciasIDs antes del lock; createAdmissionRequest permite omitir el lock mediante skipLock/isInternalCall desde el payload público; la detección de duplicados no utiliza email; la idempotencia global de doPost solo usa CacheService TTL 21.600, sin reserva atómica ni persistencia durable; registerStudentEnrollment persiste MAT-Date.now() y no tiene lock propio; el ID MAT secuencial generado por conversión se descarta; faltan pruebas conductuales.
+- **Reconciliación:** ampliar TASK-118, AUD-NG-006, AUD-NG-234/TASK-514, AUD-NG-129, AUD-NG-145 y AUD-NG-161; coordinar AUD-NG-232/TASK-512. No crear identificadores nuevos.
+- **Informe creado desde cero:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-003.md; no existía en árbol ni historial. La marca histórica [X] en completadas.md y ChangesLogs no prueba cumplimiento actual.
+- **Corrección cruzada:** se rectificó H4 de F5-002: doPost sí guarda resultados exitosos globalmente (967-968), pero solo en caché y sin reserva atómica/durabilidad. Informe F5-002 actualizado a SHA b1809a57c8ff285b3e1abe983a7a1fd207e54186.
+- **Pruebas:** inspección estática/manual; no se ejecutaron suites, Apps Script, HTTP concurrente, datos productivos ni fallos inyectados.
+- **Progreso:** 91/183 identificadores auditados; 92 restantes.
+- **Siguiente tarea:** TAREA-F5-004 — construir el formulario público de admisión y conectarlo con el backend. Verificar primero informe existente.

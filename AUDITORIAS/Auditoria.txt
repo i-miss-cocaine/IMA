@@ -6962,3 +6962,44 @@ DEPENDENCIAS: TASK-514; AUD-NG-006; AUD-NG-145; AUD-NG-233/TASK-513; AUD-NG-161.
 REGISTRO CRUZADO: MapaDependencias.md, sección C1.196; informe F5-002, §§3-6.
 PRUEBAS: inspección estática y búsqueda dirigida. No se ejecutaron suites automatizadas, Apps Script runtime, HTTP, concurrencia, fallos inyectados ni datos productivos.
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-07
+CHECKPOINT C1.197 — AUDITORÍA DESDE CERO TAREA-F5-003
+SESIÓN: IMA-AUDIT-20261107-0140Z
+INFORME: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-003.md
+DICTAMEN: NO CUMPLE
+
+ARCHIVO: backend/academic-service/Code.gs
+SHA: daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc
+MÓDULOS/LÍNEAS:
+- sanitizePayloadForLog 29-49; logStructuredEvent 52-77.
+- ROLE_PERMISSIONS 165-235; PUBLIC_ACTIONS 265.
+- idempotencia 268-318.
+- validateRolePermission 524-583; doPost 671-690, dispatcher 847-860, guardado global 967-974.
+- createAdmissionRequest 983-1110; generateInstitutionalId 2107-2153.
+- convertAdmissionToStudent 2156-2392; registerStudentEnrollment 12670-12730.
+- llamadas del generador: saveAdmissionDraft 1461, scheduleAdmissionInterview 1622, saveAdmissionEvaluation 1701, addToWaitlist 1786, uploadStudentDocument 10682.
+
+HALLAZGOS:
+1. TASK-118: generateInstitutionalId acepta skipLock; inicializa SecuenciasIDs antes del lock y permite read-modify-write sin lock. No valida esquema ni reconcilia el contador con IDs ya existentes. Varias rutas de admisión llaman skipLock:true sin lock exterior.
+2. TASK-118 / AUD-NG-234-TASK-514: createAdmissionRequest omite tryLock cuando skipLock truthy. doPost elimina el flag solo si isInternalCall no es truthy; createAdmissionRequest es PUBLIC_ACTION y ambos flags son datos de payload. Se puede eludir el lock de creación.
+3. TASK-118: duplicate check compara identificación o nombre normalizado+fecha nacimiento, pero cleanEmail no participa; no cubre el factor email del responsable.
+4. AUD-NG-006: idempotencia global doPost consulta antes de la operación y guarda después del éxito; helper usa CacheService TTL 21600, no reserva clave, no persiste TablaIdempotencia, cache.put puede fallar silenciosamente, no hay IDEMPOTENCY_CONFLICT. Peticiones simultáneas pueden superar la comprobación previa al lock; createAdmissionRequest no revalida bajo lock.
+5. AUD-NG-129 / TASK-118: convertAdmissionToStudent genera MAT secuencial pero registerStudentEnrollment descarta ese valor y persiste MAT-Date.now(). registerStudentEnrollment no tiene lock propio; chequeo usuario/período y escritura pueden competir. Cargos usan timestamp+aleatorio.
+6. TASK-118: IDs ADM/EXP no incorporan año como criterio histórico; hay fallbacks constantes si falta generatedId.
+7. TASK-118 / AUD-NG-232-TASK-512: no hay compensación del contador SecuenciasIDs si falla la persistencia posterior; conversión multihoja mantiene recuperación en TASK-512.
+8. AUD-NG-145: catch de doPost entrega e.postData completo al logger; sanitizador no enmascara DNI/nombre/email/teléfono y no analiza JSON serializado. Mensaje de duplicidad incluye nombre.
+9. AUD-NG-161: suites regression examinadas no contienen pruebas conductuales de createAdmissionRequest/generateInstitutionalId/registerStudentEnrollment, colisión, concurrencia ni reintentos.
+
+IMPACTO: IDs duplicados o fuera de formato; solicitudes/matrículas duplicadas; resultados no recuperables tras reintento; omisión de lock desde petición pública; registros parciales; PII en bitácoras.
+RECONCILIACIÓN: TASK-118, AUD-NG-006, AUD-NG-234/TASK-514, AUD-NG-129, AUD-NG-145, AUD-NG-161 y AUD-NG-232/TASK-512. No crear IDs nuevos.
+EVIDENCIA HISTÓRICA: completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676 líneas 1893-1901; ChangesLogs.txt SHA d57cf4bd861b5c3720e60cf83241ed804ff645d9 líneas 1534-1546; informe F5-002 corregido SHA b1809a57c8ff285b3e1abe983a7a1fd207e54186.
+PRUEBAS: inspección estática/manual y búsqueda dirigida; no se ejecutaron suites, Apps Script, HTTP concurrente, CacheService/Sheets productivos, fallos inyectados ni despliegue.
+===============================================================================
+
+===============================================================================
+CORRECCIÓN C1.197 — PRECISIÓN DEL HALLAZGO H4 DE TAREA-F5-002
+El middleware doPost (líneas 967-968) sí llama saveIdempotentResult para toda acción no-get exitosa. La afirmación de que updateAdmissionStatus/reopenAdmissionRequest no guardaban resultados era incorrecta/incompleta. Se corrigió AUDITORIA_COMPLETADAS_TAREA-F5-002.md (nuevo SHA b1809a57c8ff285b3e1abe983a7a1fd207e54186). El defecto real es idempotencia solo de caché, sin reserva atómica, sin persistencia durable y con comprobación anterior al lock. La nota C1.196 se conserva como antecedente y queda rectificada por este complemento.
+===============================================================================

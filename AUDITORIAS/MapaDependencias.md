@@ -1937,3 +1937,21 @@ Relaciones:
 - `reopenAdmissionRequest` (2061-2105): ruta privilegiada sin validación del origen/destino ni lock.
 
 **Tareas vinculadas:** AUD-NG-234/TASK-514 (transiciones y reapertura); AUD-NG-006 (idempotencia durable); AUD-NG-145 (historial/correlationId); AUD-NG-233/TASK-513 (guardas fail-closed); AUD-NG-161 (pruebas conductuales). Coordinar con AUD-NG-232/TASK-512 y AUD-NG-179 sin duplicar sus alcances.
+
+
+## C1.197 — TAREA-F5-003: identificadores, concurrencia e idempotencia en admisiones
+
+**Informe:** `AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-003.md`.  
+**Código:** ACADEMIC `Code.gs`, SHA `daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc`.
+
+- `createAdmissionRequest` (983-1110): verifica cache antes de lock; skipLock proviene del payload; detecta duplicados por identificación o nombre+fecha, no por email; genera ADM sin año; guarda caché tras append.
+- `generateInstitutionalId` (2107-2153): SecuenciasIDs se inicializa antes del lock; `skipLock` permite read-modify-write sin exclusión; no reconcilia contador con IDs existentes.
+- `doPost` (671-690, 967-974): PUBLIC_ACTIONS incluye createAdmissionRequest; conserva skipLock si isInternalCall truthy; consulta idempotencia antes de dispatcher y guarda después de éxito. Esto no es reserva atómica.
+- `convertAdmissionToStudent` (2156-2392): lock exterior obligatorio; genera MAT secuencial, pero el valor no se pasa a registerStudentEnrollment.
+- `registerStudentEnrollment` (12670-12730): no adquiere lock propio; genera MAT con Date.now y cargos con timestamp+aleatorio.
+- `sanitizePayloadForLog` (29-49) solo enmascara claves de credenciales; `doPost` catch entrega postData completo y el mensaje de duplicidad puede contener nombre.
+
+**Reconciliación:** TASK-118 (generador/IDs); AUD-NG-006 (reserva/idempotencia durable); AUD-NG-234/TASK-514 (locks no eludibles); AUD-NG-129 (matrícula/cargos); AUD-NG-145 (PII/correlationId); AUD-NG-161 (pruebas); AUD-NG-232/TASK-512 (recuperación de conversión). No crear ID nuevo.
+
+### Corrección cruzada C1.197 de F5-002
+`doPost` guarda globalmente el resultado exitoso de acciones no-get (967-968). Por ello, updateAdmissionStatus/reopenAdmissionRequest sí reciben saveIdempotentResult cuando se llaman por endpoint. El problema real es que el helper solo usa CacheService, no reserva clave, el chequeo ocurre antes del lock y la caché expira/falla. Se corrigió el informe F5-002; SHA actualizado: `b1809a57c8ff285b3e1abe983a7a1fd207e54186`.
