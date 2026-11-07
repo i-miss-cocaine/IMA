@@ -52,7 +52,7 @@ runCurricularAreaServiceTests construye cuatro resultados PASS constantes y acti
 | CA-152 relaciones de coordinación con periodos | No cumple | no se almacenan esos IDs. |
 | CA-153 roles adicionales sin heredar privilegios | No cumple | el token usa un solo rol y no existe intersección por ámbito. |
 
-## 4. Tareas derivadas
+## 4. Tareas ejecutables derivadas de los hallazgos
 Se reutiliza el bloque canónico F6-006-A01..A06 de AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-006.md:
 1. F6-006-A01: catálogo curricular único, configurable y con IDs canónicos.
 2. F6-006-A02: despliegue real y aislamiento por instancia.

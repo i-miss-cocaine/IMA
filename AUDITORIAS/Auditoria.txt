@@ -8281,3 +8281,39 @@ ARCHIVOS MODIFICADOS:
 SIGUIENTE TAREA:
 Auditar TAREA-F6-012 y su registro ampliado TAREA-F6-037: seguridad, aislamiento y gestión centralizada de permisos. Buscar informes individuales e historial; verificar identidad única, roles múltiples, RBAC/ABAC, autorización server-side por servicio, IDOR, revocación, scopes, auditoría y pruebas directas de backend.
 ===============================================================================
+
+
+===============================================================================
+AMPLIACIÓN DE AUDITORÍA - IMA-AUDIT-20261107-2055Z-01 - TAREA-F6-012 / TAREA-F6-037
+Fecha: 2026-11-07 | Rama: NG_beta_0.0.0.1_work | HEAD inicial: 813feb3285747cd73ed6f159e9125559ec45ce0e
+Informes: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-012.md y AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-037.md
+
+DICTAMEN: NO CUMPLE en ambas tareas. Las marcas [X] de completadas.md se conservan como histórico.
+
+HALLAZGOS:
+- H1 CRÍTICO/P0 - DEVELOPER Code.gs:27, 41-51, 115-175: doPost acepta authRole del payload si falta token; Administrador tiene wildcard. verifySessionToken no exige exp ni consulta revocación/estado. El fallback de AUTH_TOKEN_SECRET deriva de SPREADSHEET_ID constante.
+- H2 CRÍTICO/P0 - TASK Code.gs:85-89, 209-267, 368-420, 613-690, 1177-1203; EXAM Code.gs:75-78, 191-244, 345-400, 609-632, 1057-1103: getStudentTasks/getAllTasks/getStudentExams/getAllExams están en PUBLIC_ACTIONS; sin token, los handlers aceptan userId/grado/seccion del payload o listan datos globales.
+- H3 CRÍTICO/P0 - USER Code.gs:922-928, 2456-2474, 2318-2333: logoutUser es público y permite que userId/sessionId del payload lleguen a revokeUserSession sin demostrar pertenencia.
+- H4 CRÍTICO/P0 - EXAM Code.gs:79-105, 191-206, 1105-1170: getExamResult está permitido a estudiantes, busca por entregaExamenId y devuelve respuestas correctas/calificación sin comprobar propietario.
+- H5 CRÍTICO/P0 - USER Code.gs:1065-1083, 2479-2535; js/auth.js:146-159, 227-239; js/api.js:11-48: el backend emite sessionToken, auth.js no lo persiste y fetchApi no lo envía.
+- H6 ALTO/P1 - USER Code.gs:1065-1083, 1663-1705, 9117-9251, 9767-9807; DEVELOPER Code.gs:2585-2596: token con un único rol; manageUserMultiRolePermissions solo devuelve roles/áreas; scopes no se integran transversalmente ni se acredita unicidad Persona-Cuenta.
+- H7 CRÍTICO/P0 - ACADEMIC Code.gs:465-523; ACCOUNTING:418-433; TASK:209-224; EXAM:191-206: ABAC limitado a campos presentes; catches permisivos en ACADEMIC; scopes no se aplican en cada operación.
+- H8 CRÍTICO/P0 - USER Code.gs:1934-1978, 2318-2333; ACADEMIC Code.gs:3702-3740; DEVELOPER Code.gs:115-143: revocación/matriz usan cachés por proyecto; savePermissionMatrix invalida solo USER; purgeSecurityCaches elimina revoked_session_; DEVELOPER no consulta revocación.
+- H9 ALTO/P1 - DEVELOPER Code.gs:2388-2414: executeOperationalCommand aplica allowlist pero no permiso por comando/ámbito/recurso; actor en varias rutas USER puede venir de authRole/actor del payload.
+- H10 ALTO/P1 - tests: no se hallaron suites dedicadas a seguridad/auth/IDOR; academic-grading-suite.js (SHA a22cb3ef376fe09e65c1b17c2f4f5125290bfba6) y modular-dashboard-suite.js (SHA 0495e1d526a872c33310935a003a83d924d34683) no incluyen escenarios F6-012/F6-037.
+
+REGISTROS EXISTENTES AMPLIADOS, SIN NUEVOS IDS GLOBALES:
+AUD-NG-001, AUD-NG-002, AUD-NG-086, AUD-NG-145, AUD-NG-221/TASK-501, AUD-NG-222/TASK-502 y AUD-NG-225/TASK-505.
+
+TAREAS LOCALES CANÓNICAS:
+F6-012-A01..A07, todas Pendientes: autenticación DEVELOPER/secreto; cierre de endpoints públicos/IDOR; transporte de sesión; identidad única/multirol persistente; RBAC/ABAC fail-closed; revocación distribuida por servicio; permisos por comando, auditoría y pruebas directas. F6-037 amplía esos mismos IDs con CA-113..CA-120 y CA-161..CA-165. No se crean IDs duplicados.
+
+PRUEBAS:
+- Ejecutadas: inspección manual función por función de los bloques citados, dispatchers, matrices, claims, scopes, logout/revocación, UI, suites, SHAs, árbol Git y blob Pendientes.md.
+- No ejecutadas: Apps Script runtime, HTTP, navegador, explotación activa, Sheets/Drive productivos, concurrencia multiusuario, revocación entre deployments ni suites automatizadas.
+
+NUEVOS INFORMES: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-012.md; AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-037.md.
+INFORMES NORMALIZADOS: F6-030, F6-031, F6-032, F6-033, F6-034, F6-035 y F6-036.
+ARCHIVOS ACTUALIZADOS: Auditoria.txt; MapaDependencias.md; AUDITORIA_COMPLETADAS_PLAN.md; Contexto_personal.txt.
+SIN CAMBIOS: backend, js, HTML, tests, completadas.md, Pendientes.md, ChangesLogs.txt, metodología, README y rama base.
+===============================================================================

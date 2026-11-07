@@ -45,7 +45,7 @@ No hay una comprobación común que detecte endpoint faltante, incompatibilidad 
 | CA-095 diagnóstico no altera/bloquea operaciones | Parcial | mayormente lecturas, pero no se probó bajo fallos. |
 | CA-158 detecta endpoints/contratos/dependencias faltantes | No cumple | no existe mapa ni verificación común. |
 
-## 4. Tareas derivadas
+## 4. Tareas ejecutables derivadas de los hallazgos
 Se reutiliza el bloque canónico F6-009-A01..A06 de AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-009.md:
 1. F6-009-A01: contrato común de salud para todos los servicios.
 2. F6-009-A02: monitor y dashboard de disponibilidad.

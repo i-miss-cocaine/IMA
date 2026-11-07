@@ -47,7 +47,7 @@ Los servicios operativos se invocan directamente por SERVICE_URLS; no se identif
 | CA-156 roles relacionados con áreas/servicios | No cumple | ámbitos no integrados a enforcement. |
 | CA-157 cambios auditados y validados | Parcial | historial de estado parcial, actor no verificado y permisos no versionados. |
 
-## 4. Tareas derivadas
+## 4. Tareas ejecutables derivadas de los hallazgos
 Se reutiliza el bloque canónico F6-008-A01..A06 de AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-008.md:
 1. F6-008-A01: completar registro central y ciclo de vida.
 2. F6-008-A02: integrar contrato común correlationId/HMAC/idempotencia.

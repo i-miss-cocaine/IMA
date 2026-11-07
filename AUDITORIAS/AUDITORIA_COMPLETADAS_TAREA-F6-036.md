@@ -52,7 +52,7 @@ developer-dashboard.html solo ofrece USER y ACADEMIC. js/api.js llama acciones U
 | CA-112 procedimiento documentado | No cumple | no se encontró runbook reproducible. |
 | CA-160 conservar relaciones usuarios/roles/áreas/documentos | No cumple | reconciliación limitada a dos hojas y no bloqueante. |
 
-## 4. Tareas derivadas
+## 4. Tareas ejecutables derivadas de los hallazgos
 
 Se reutiliza el bloque canónico F6-011-A01..A06 de AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-011.md:
 1. F6-011-A01: SHA-256 real y manifiesto verificable.

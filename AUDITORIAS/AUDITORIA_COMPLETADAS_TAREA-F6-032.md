@@ -50,7 +50,7 @@ No existe una máquina de estados completa. deployAcademicMicroserviceInstance s
 | CA-079 auditoría de solicitante/fecha/resultado | Parcial | requestedBy/authRole vienen del payload y la fila se sobrescribe. |
 | CA-154 coordinaciones/asignaciones iniciales | No cumple | responsibilities sin uso; coordinationType/areaId solo aparecen en log. |
 
-## 4. Tareas derivadas
+## 4. Tareas ejecutables derivadas de los hallazgos
 Se reutiliza el bloque canónico F6-007-A01..A06 de AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-007.md:
 1. F6-007-A01: aprovisionamiento real de proyectos y deployments.
 2. F6-007-A02: máquina de estados, fallos, reanudación y rollback.

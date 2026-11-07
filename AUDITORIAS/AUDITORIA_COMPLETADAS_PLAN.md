@@ -1576,3 +1576,20 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **Archivos actualizados:** Auditoria.txt; MapaDependencias.md; AUDITORIA_COMPLETADAS_PLAN.md; Contexto_personal.txt.
 - **Archivos sin cambios:** backend, js, HTML, tests, completadas.md, Pendientes.md, ChangesLogs.txt, metodología, README y rama base.
 - **Siguiente tarea:** TAREA-F6-012 y TAREA-F6-037, seguridad, aislamiento y gestión centralizada de permisos.
+
+
+## C1.229 - Resultado de auditoría TAREA-F6-012 y TAREA-F6-037
+
+- **Sesión:** IMA-AUDIT-20261107-2055Z-01; checkpoint inicial C1.228.
+- **Dictamen:** NO CUMPLE en ambas; las marcas [X] en completadas.md se conservan como histórico.
+- **Relación:** F6-037 amplía F6-012 con CA-113..CA-120 y CA-161..CA-165; un bloque canónico F6-012-A01..A07.
+- **Evidencia crítica:** authRole spoof en DEVELOPER; consultas TASK/EXAM públicas; logoutUser permite revocar IDs ajenos; getExamResult sin ownership; auth.js descarta token y api.js no lo transmite; multirol sin persistencia; ABAC fail-open; revocación/matriz no se propagan; permisos por comando insuficientes; no hay pruebas de seguridad específicas.
+- **Registros existentes ampliados:** AUD-NG-001, AUD-NG-002, AUD-NG-086, AUD-NG-145, AUD-NG-221, AUD-NG-222 y AUD-NG-225. No se crean IDs globales duplicados.
+- **Tareas canónicas:** F6-012-A01..A07 pendientes; F6-037 amplía esos mismos IDs, sin duplicarlos.
+- **Normalización:** se corrigió el título de la sección de tareas derivadas en F6-030..F6-036 al encabezado canónico; se conservaron IDs y referencias a los bloques primarios.
+- **Pruebas:** inspección manual y revisión de SHAs/árbol/blob; no se ejecutaron Apps Script, HTTP, navegador, datos productivos, concurrencia ni suites automatizadas.
+- **Informes nuevos:** F6-012 y F6-037.
+- **Informes normalizados:** F6-030..F6-036.
+- **Archivos actualizados:** Auditoria.txt; MapaDependencias.md; AUDITORIA_COMPLETADAS_PLAN.md; Contexto_personal.txt.
+- **Archivos sin cambios:** backend, js, HTML, tests, completadas.md, Pendientes.md, ChangesLogs.txt, metodología, README y rama base.
+- **Siguiente tarea:** TAREA-F6-013 y TAREA-F6-038, despliegues versionados, migraciones y reversión controlada.

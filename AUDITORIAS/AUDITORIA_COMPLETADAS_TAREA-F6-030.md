@@ -63,7 +63,7 @@ La estructura de ejecución es un único servicio contable y un único dispatche
 | CA-149 | No cumple | La autorización contable no evalúa roles/subáreas activas independientes. |
 | CA-150 | No cumple | Pagos/facturas no registran el contexto de autorización verificado. |
 
-## 4. Tareas derivadas de los hallazgos
+## 4. Tareas ejecutables derivadas de los hallazgos
 Se reutiliza el bloque canónico F6-005-A01..A06 de AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-005.md:
 1. F6-005-A01: reparar sintaxis y creación de cargos.
 2. F6-005-A02: integrar transacción cargo/pago/factura/recibo.

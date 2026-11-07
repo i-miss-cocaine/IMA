@@ -41,7 +41,7 @@ El permiso es general por rol Desarrollador, no específico por comando. execute
 | CA-102 repetición idempotente | No cumple | ejecutor no usa idempotencyKey. |
 | CA-159 permisos específicos por comando | No cumple | permiso general de rol. |
 
-## 4. Tareas derivadas
+## 4. Tareas ejecutables derivadas de los hallazgos
 Se reutiliza el bloque canónico F6-010-A01..A06 de AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-010.md:
 1. F6-010-A01: consulta real y resolución persistente de logs.
 2. F6-010-A02: retención segura y separación de auditorías protegidas.

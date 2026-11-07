@@ -2819,3 +2819,32 @@ Inspección estática/manual. No se ejecutaron purgas, cambios de políticas, ma
 
 ### Estado de pruebas
 Inspección estática/manual. No se ejecutaron Apps Script runtime, HTTP, triggers, Drive/Sheets productivas, restauraciones, concurrencia, E2E ni simulación aislada.
+
+
+## Auditoría F6-012 / F6-037 - Seguridad, aislamiento y permisos (2026-11-07)
+
+**Sesión:** IMA-AUDIT-20261107-2055Z-01 | **HEAD inspeccionado:** 813feb3285747cd73ed6f159e9125559ec45ce0e | **Dictamen:** NO CUMPLE.
+
+### Identidad y sesión
+- USER generateSessionToken (1065-1083) emite un solo claim role; loginUser (2479-2535) usa Usuarios[6]. auth.js (146-159, 227-239) omite sessionToken y api.js (11-48) no lo transmite.
+- USER PUBLIC_ACTIONS (922-928) contiene logoutUser; logoutUser (2456-2474) acepta userId/sessionId del payload y llama revokeUserSession (2318-2333), que escribe marcadores sin verificar propiedad.
+- DEVELOPER doPost (145-175) acepta authRole sin token; ROLE_PERMISSIONS (27) da wildcard a Administrador. verifySessionToken (115-143) no exige exp ni comprueba revocación/estado. getAuthTokenSecret (41-51) tiene fallback derivado de constante versionada.
+- DEVELOPER manageUserMultiRolePermissions (2585-2596) solo devuelve roles/áreas recibidos, sin persistencia ni enforcement.
+
+### Microservicios e IDOR
+- TASK PUBLIC_ACTIONS (85-89) contiene getStudentTasks/getAllTasks; getStudentTasks (613-690) acepta userId/grado/seccion de payload sin claim; getAllTasks (1177-1203) lista globalmente.
+- EXAM PUBLIC_ACTIONS (75-78) contiene getStudentExams/getAllExams; getStudentExams (1057-1103) depende de identidad/curso del payload; getAllExams (609-632) lista globalmente.
+- EXAM getExamResult (1105-1170) recupera por entregaExamenId y devuelve respuestas correctas/calificación sin ownership check; el rol Estudiante tiene permiso estático.
+- ACADEMIC validateContextualAccess (465-523) aplica scopes solo si llegan scopeType/requestedValue; catches vacíos permiten continuar. Coordinador solo se verifica si llega areaId. ACCOUNTING/TASK/EXAM comprueban campos de identidad limitados y no scopes universales.
+
+### Multirol, ámbitos, revocación y comandos
+- USER assignRoleScope (9117-9181) guarda ámbitos, no múltiples roles efectivos; no valida roleId contra CatalogoRolesInternos. getUserScopeConfig/validateRoleScopeAccess (9183-9251) no son guard transversal; getInternalRoleAssignments (9767-9807) no integra claims.
+- USER createPerson/linkPersonAccount (1663-1705) no demuestra restricción de unicidad Persona-Cuenta.
+- USER revokeUserSession (2318-2333) y savePermissionMatrix (1934-1978) invalidan cachés solo en USER. Otros servicios tienen CacheService de script propio. ACADEMIC purgeSecurityCaches (3702-3740) elimina revoked_session_ al recibir sessionId. DEVELOPER no verifica revocación.
+- DEVELOPER executeOperationalCommand (2388-2414) valida allowlist pero no permiso por comando/ámbito/recurso; respuesta sintética. USER tiene logger que enmascara claves sensibles en payload, pero la atribución de actor no deriva siempre de claims.
+
+### Pruebas y reconciliación
+- Suites: academic-grading-suite.js SHA a22cb3ef376fe09e65c1b17c2f4f5125290bfba6 y modular-dashboard-suite.js SHA 0495e1d526a872c33310935a003a83d924d34683; no incluyen escenarios auth/IDOR/RBAC/ABAC/revocación/F6-012/F6-037.
+- No se encontraron archivos dedicados a seguridad/auth/permissions/IDOR en tests.
+- Registros ampliados: AUD-NG-001, AUD-NG-002, AUD-NG-086, AUD-NG-145, AUD-NG-221/TASK-501, AUD-NG-222/TASK-502 y AUD-NG-225/TASK-505.
+- Tareas canónicas: F6-012-A01..A07; F6-037 amplía los mismos IDs con CA-113..CA-120 y CA-161..CA-165. Ver informe F6-012.
