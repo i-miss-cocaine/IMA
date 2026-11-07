@@ -1490,3 +1490,17 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **Archivos actualizados:** Auditoria.txt; MapaDependencias.md; AUDITORIA_COMPLETADAS_PLAN.md; Contexto_personal.txt.
 - **Archivos sin cambios:** backend, js, HTML, tests, completadas.md, Pendientes.md, ChangesLogs.txt, metodología, README y rama base.
 - **Siguiente tarea:** TAREA-F6-006 - Crear una plantilla de microservicio académico reutilizable para múltiples áreas. Buscar informe individual e historial antes de auditar código.
+
+
+## C1.223 - Resultado de auditoría TAREA-F6-006 y TAREA-F6-031
+
+- **Dictamen:** NO CUMPLE en ambas tareas; ambas aparecen [X] en completadas.md y conservan ese estado histórico.
+- **Relación:** TAREA-F6-031 repite el título de F6-006 y amplía criterios CA-061..070/CA-151..153. Se crean informes por ID, pero comparten un único bloque canónico F6-006-A01..A06.
+- **Evidencia crítica:** catálogo backend de siete áreas hardcodeadas frente a doce áreas frontend; despliegue de metadatos con PASS/Activo constante y Spreadsheet compartido; tareas/exámenes sin relaciones completas por IDs; consultas TASK/EXAM en PUBLIC_ACTIONS; coordinación sin enforcement; pruebas simuladas.
+- **Registros existentes ampliados:** AUD-NG-002, AUD-NG-011, AUD-NG-158, AUD-NG-164, AUD-NG-149, AUD-NG-165, AUD-NG-167, AUD-NG-168 y AUD-NG-124. No se crean IDs globales duplicados.
+- **Tareas canónicas:** F6-006-A01..A06 pendientes (catálogo/IDs, despliegue aislado, relaciones/historial, ABAC, seguridad TASK/EXAM, E2E).
+- **Pruebas:** inspección estática/manual; no se ejecutaron runtime, despliegues, datos productivos, concurrencia ni E2E.
+- **Archivos nuevos:** informes individuales F6-006 y F6-031.
+- **Archivos actualizados:** Auditoria.txt; MapaDependencias.md; AUDITORIA_COMPLETADAS_PLAN.md; Contexto_personal.txt.
+- **Archivos sin cambios:** backend, js, HTML, tests, completadas.md, Pendientes.md, ChangesLogs.txt, metodología, README y rama base.
+- **Siguiente tarea:** TAREA-F6-007 y TAREA-F6-032, despliegue configurable de nuevos microservicios académicos.

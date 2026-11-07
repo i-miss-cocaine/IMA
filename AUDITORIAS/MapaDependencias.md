@@ -2598,3 +2598,42 @@ TAREA-F5-017 NO CUMPLE. La búsqueda, panel y decisiones manuales existen parcia
 
 ### Estado de pruebas
 Inspección estática/manual. No se ejecutaron Apps Script, HTTP, Drive/Sheets productivos, facturación SAR, pruebas multirol, concurrencia ni E2E.
+
+
+## C1.223 - TAREA-F6-006 / TAREA-F6-031: plantilla académica multiárea
+
+**Informes:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-006.md y AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-031.md  
+**Dictamen:** NO CUMPLE en ambas. **HEAD inicial:** 4271c00e2eeb47143a91ebeaca5e45ea0421972b.
+
+### Catálogo, configuración e instancias
+- academic-service Code.gs SHA df87a2eea9f0ef79d0b966d03fd5bbe432003df5:
+  - getAcademicAreaTemplateCatalog:4281-4320 define siete defaultAreas con nombres/IDs/códigos hardcodeados; serviceUrl vacío y tools [].
+  - registerCurricularAreaExtension:4080-4146 permite extensiones, pero sin unicidad/versionado suficiente.
+  - runCurricularAreaServiceTests:4147-4202 devuelve cuatro PASS constantes y activa el área.
+  - deployAcademicMicroserviceInstance:4494-4575 solo registra metadatos; scriptId/driveFolderId vacíos permitidos, spreadsheetId usa el ID compartido, connectivityCheck PASS constante, Estado Activo.
+  - getAcademicAreaCoordinationScope:4321-4355 puede devolver todas las coordinaciones si no se filtra; scope solo área/tipo/fechas.
+  - createSubjectCatalogItem:6011-6065 usa ASIG-Date.now y areaAcademica texto libre.
+  - createAcademicOffer:6180-6235 usa OFE-Date.now, grado/sección como texto y no enlaza areaId/instanceId.
+  - assignTeacherToAcademicArea:14180-14315 actualiza asignación activa in-place y scope sin materia/grado/sección/periodo.
+- js/config.js SHA 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc contiene doce áreas y ocho departamentos; no coincide con el seed backend de siete.
+- js/api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9 usa SERVICE_URLS estáticos; no enruta por areaId/instanceId.
+
+### Tareas, exámenes y autorización
+- backend/task-service/Code.gs SHA 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe: getStudentTasks/getAllTasks son PUBLIC_ACTIONS; getStudentTasks acepta userId/grado/sección del payload; getAllTasks no exige profesorId.
+- backend/exam-service/Code.gs SHA 1d93296628fae31f680004f637897e2b1314a64c: getStudentExams/getAllExams son PUBLIC_ACTIONS; filtros individuales del cliente; getAllExams no exige profesorId.
+- ACADEMIC/TASK/EXAM comparten el mismo SPREADSHEET_ID; no se observa aislamiento por área/instancia.
+- AUD-NG-002, AUD-NG-011, AUD-NG-158, AUD-NG-164, AUD-NG-149, AUD-NG-165, AUD-NG-167, AUD-NG-168 y AUD-NG-124 se amplían; no se crean IDs globales duplicados.
+
+### Hallazgos y tareas
+- H1 P1: catálogo hardcodeado y divergente.
+- H2 P0: despliegue de metadatos, sin proyectos/recursos reales.
+- H3 P1: relaciones incompletas e historial mutable.
+- H4 P0: consultas públicas TASK/EXAM y falta de aislamiento.
+- H5 P1: coordinación sin enforcement por ámbito.
+- H6 P1: frontend/backend sin routing por instancia.
+- H7 P1: pruebas PASS simuladas.
+- H8 P1: falta de E2E.
+- Tareas canónicas F6-006-A01..A06 pendientes; F6-031 referencia el mismo bloque.
+
+### Estado de pruebas
+Inspección estática/manual. No se ejecutaron Apps Script, HTTP, despliegues, Drive/Sheets productivas, matrículas reales, concurrencia ni E2E.

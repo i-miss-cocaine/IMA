@@ -7499,3 +7499,57 @@ ARCHIVOS MODIFICADOS:
 SIGUIENTE ACCIÓN:
 Auditar TAREA-F6-006 - Crear una plantilla de microservicio académico reutilizable para múltiples áreas. Buscar primero informe individual e historial; revisar parametrización de siete áreas, IDs inmutables, coordinaciones, almacenamiento aislado y pruebas; no implementar durante la auditoría.
 ===============================================================================
+
+
+===============================================================================
+CHECKPOINT C1.223 - SESIÓN IMA-AUDIT-20261107-2045Z
+Fecha: 2026-11-07
+Estado: sesión cerrada
+Checkpoint inicial: C1.222
+Checkpoint de cierre: C1.223
+Tareas auditadas: TAREA-F6-006 y TAREA-F6-031 (mismo título y alcance ampliado).
+Contexto: ambas tareas estaban marcadas [X] y carecían de informe individual. Se verificaron el catálogo de áreas, configuración frontend/backend, asignaturas/ofertas, relaciones por IDs, coordinación, roles, consultas de tareas/exámenes, despliegue de instancias y pruebas declaradas. Dictamen NO CUMPLE en ambas.
+
+REPOSITORIO Y RAMAS:
+- Repositorio: i-miss-cocaine/IMA.
+- Rama base NG_beta_0.0.0.1; no modificada.
+- Rama de trabajo NG_beta_0.0.0.1_work.
+- HEAD inicial verificado: 4271c00e2eeb47143a91ebeaca5e45ea0421972b (C1.222).
+- Comparación anterior con la rama base: 290 commits ahead, 0 behind.
+- Checkpoint previo: C1.222, commit audit(C1.222): audit F6-005 and F6-030 finance services.
+
+FUENTES:
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676: TAREA-F6-006 [X], líneas 2658-2696; TAREA-F6-031 [X], líneas 3517-3588.
+- Pendientes.md blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c: 1.803.672 bytes, 1.782.094 caracteres, 20.182 líneas, sin U+FFFD; no contiene F6-006/F6-031 y no se modificó.
+- ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff: F6-006 líneas 1967-1970.
+- Ambos informes individuales no existían; se crean.
+- F6-031 repite el título y amplía requisitos; un único bloque de tareas canónico para evitar duplicados.
+
+HALLAZGOS:
+- H1 P1: getAcademicAreaTemplateCatalog contiene siete áreas/IDs/nombres hardcodeados; js/config.js declara doce áreas y ocho departamentos.
+- H2 P0: deployAcademicMicroserviceInstance registra metadatos; scriptId/driveFolderId opcionales vacíos; Spreadsheet compartido por fallback; connectivityCheck PASS y Estado Activo constantes; no crea recursos ni endpoint.
+- H3 P1: ofertas/tareas/exámenes sin relaciones completas por areaId/instanceId/offerId/assignmentId/periodId; grados/secciones texto; IDs Date.now; asignaciones y catálogos in-place sin historial.
+- H4 P0: getStudentTasks/getAllTasks y getStudentExams/getAllExams están en PUBLIC_ACTIONS; bypass de sesión; userId/grado/sección del payload; AUD-NG-002 sigue vigente.
+- H5 P1: coordinación solo área/tipo/fechas, devuelve todo sin filtros y no se aplica a consultas.
+- H6 P1: frontend usa SERVICE_URLS estáticos y ACADEMIC/TASK/EXAM comparten Spreadsheet.
+- H7 P1: runCurricularAreaServiceTests devuelve PASS constante y activa áreas.
+- H8 P1: falta E2E de áreas, roles, despliegue, historial y aislamiento.
+
+REGISTROS EXISTENTES:
+- AUD-NG-002, AUD-NG-011, AUD-NG-158, AUD-NG-164, AUD-NG-149, AUD-NG-165, AUD-NG-167, AUD-NG-168 y AUD-NG-124. Se amplían, no se duplican.
+- Tareas canónicas F6-006-A01..A06 pendientes; F6-031 referencia el mismo bloque.
+
+PRUEBAS:
+- Ejecutadas: inspección estática/manual de catálogo, IDs, roles, ámbitos, dispatchers, tareas, exámenes, frontend, despliegue e historial.
+- No ejecutadas: Apps Script runtime, HTTP, despliegues, Drive/Sheets productivas, matrícula real, multirol, concurrencia ni E2E.
+- No se modificaron datos productivos.
+
+ARCHIVOS MODIFICADOS:
+- Nuevos: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-006.md; AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-031.md.
+- Actualizados: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- Sin cambios: backend, js, HTML, tests, completadas.md, Pendientes.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README y rama base.
+- No se modificó código ni datos productivos.
+
+SIGUIENTE ACCIÓN:
+Auditar TAREA-F6-007 y su registro ampliado TAREA-F6-032: despliegue configurable de nuevos microservicios académicos. Buscar informes individuales e historial; comprobar creación real de proyectos/versiones, almacenamiento aislado, URLs, permisos, idempotencia, rollback y pruebas de conectividad antes de dictaminar.
+===============================================================================

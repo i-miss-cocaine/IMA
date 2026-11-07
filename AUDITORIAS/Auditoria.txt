@@ -7919,3 +7919,65 @@ ARCHIVOS:
 SIGUIENTE TAREA:
 TAREA-F6-006 - Crear una plantilla de microservicio académico reutilizable para múltiples áreas. Buscar primero informe individual e historial; auditar configuración de siete áreas, IDs inmutables, coordinaciones, almacenamiento aislado y pruebas sin implementar durante la auditoría.
 ===============================================================================
+
+
+===============================================================================
+AUDITORÍA C1.223 - TAREA-F6-006 Y TAREA-F6-031 - 2026-11-07
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: 4271c00e2eeb47143a91ebeaca5e45ea0421972b
+Checkpoint inicial: C1.222
+Sesión: IMA-AUDIT-20261107-2045Z
+Informes: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-006.md y AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-031.md
+Dictamen: NO CUMPLE en ambas tareas.
+
+FUENTES:
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676: F6-006 [X], líneas 2658-2696; F6-031 [X], líneas 3517-3588.
+- Pendientes.md blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c: 1.803.672 bytes, 1.782.094 caracteres, 20.182 líneas, sin U+FFFD; no contiene F6-006/F6-031. No se modificó.
+- ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff: F6-006 líneas 1967-1970.
+- Ambos informes individuales no existían; se crearon.
+- F6-031 repite el título de F6-006 y amplía criterios; se auditaron ambos con la misma evidencia y un único bloque canónico de tareas.
+
+HALLAZGOS:
+1. H1 ALTO/P1: getAcademicAreaTemplateCatalog contiene siete áreas/IDs/nombres hardcodeados; js/config.js declara doce áreas y ocho departamentos; no existe catálogo canónico sincronizado.
+2. H2 CRÍTICO/P0: deployAcademicMicroserviceInstance solo registra metadatos; scriptId/driveFolderId opcionales vacíos; spreadsheetId cae al ID compartido; connectivityCheck PASS y Estado Activo son constantes; no crea proyectos, bases, carpetas ni endpoints.
+3. H3 ALTO/P1: ofertas/tareas/exámenes no conservan relaciones completas por areaId/instanceId/offerId/assignmentId/periodId; grados/secciones y materias se mezclan con texto; IDs Date.now sin unicidad; asignaciones/catálogos se actualizan in-place sin historial.
+4. H4 CRÍTICO/P0: getStudentTasks/getAllTasks y getStudentExams/getAllExams están en PUBLIC_ACTIONS; bypass de sesión; consultas individuales aceptan userId/grado/sección del payload; consultas generales no exigen profesorId. AUD-NG-002 confirmado vigente.
+5. H5 ALTO/P1: ámbito de coordinación solo área/tipo/fechas, se puede consultar sin filtros, no deriva userId del token y no se aplica a ofertas/tareas/exámenes.
+6. H6 ALTO/P1: js/api.js usa SERVICE_URLS estáticos; ACADEMIC/TASK/EXAM comparten SPREADSHEET_ID; no hay routing por instancia ni almacenamiento por área.
+7. H7 ALTO/P1: runCurricularAreaServiceTests devuelve PASS constante y activa áreas sin ejecutar pruebas; deploy también fija estado Activo.
+8. H8 ALTO/P1: no se ejecutaron pruebas E2E de siete áreas, permisos, historial, despliegue, concurrencia ni fallos selectivos.
+
+REGISTROS EXISTENTES AMPLIADOS, SIN NUEVOS IDS GLOBALES:
+- AUD-NG-002 (consultas públicas TASK/EXAM).
+- AUD-NG-011 (instancias y aislamiento).
+- AUD-NG-158 (ABAC docente/coordinación).
+- AUD-NG-164 (catálogo curricular).
+- AUD-NG-149 (estructura de tareas).
+- AUD-NG-165 (privacidad de comentarios/versiones).
+- AUD-NG-167 (calificaciones), AUD-NG-168 (ofertas), AUD-NG-124 (propiedad/historial).
+- TAREA-F6-031 se trata como expansión de F6-006; ambos informes referencian un solo bloque de tareas canónico.
+- No se crean IDs AUD-NG ni tareas locales duplicadas.
+
+TAREAS DERIVADAS CANÓNICAS:
+- F6-006-A01 P1: catálogo curricular único, configurable y con IDs canónicos.
+- F6-006-A02 P0: despliegue real y aislamiento por instancia.
+- F6-006-A03 P1: relaciones académicas por IDs inmutables e historial.
+- F6-006-A04 P0: ABAC de docentes, estudiantes y coordinadores.
+- F6-006-A05 P0: retirar consultas públicas sensibles y aislar TASK/EXAM.
+- F6-006-A06 P1: pruebas E2E de las siete áreas y aislamiento.
+Todas pendientes; F6-031 referencia el mismo bloque, no lo duplica.
+
+PRUEBAS:
+- Ejecutadas: inspección estática/manual de catálogo, IDs, roles, ámbitos, dispatchers, tareas, exámenes, frontend, despliegue y backlog.
+- No ejecutadas: Apps Script runtime, llamadas HTTP, despliegues, Drive/Sheets productivas, matrícula real, pruebas multirol, concurrencia ni E2E.
+- No se modificaron datos productivos.
+
+ARCHIVOS:
+- Nuevos: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-006.md; AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-031.md.
+- Actualizados: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- Sin cambios: backend, js, HTML, tests, completadas.md, Pendientes.md, ChangesLogs.txt, metodología, README y rama base.
+
+SIGUIENTE TAREA:
+TAREA-F6-007 y su registro ampliado TAREA-F6-032: despliegue configurable de nuevos microservicios académicos. Buscar informes individuales e historial; comprobar creación real de proyectos/versiones, almacenamiento aislado, URLs, permisos, idempotencia, rollback y pruebas de conectividad antes de dictaminar.
+===============================================================================
