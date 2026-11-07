@@ -8443,3 +8443,32 @@ TAREAS/RECONCILIACIÓN:
 - TASK-519: regresión conductual para CA-F7-01..08.
 PRUEBAS/LÍMITES: inspección estática/manual; no ejecutados Apps Script runtime, HTTP/OAuth, navegador, Sheets/Drive productivas, concurrencia, fallos inyectados, rollback ni E2E. Sin cambios de código, tests, HTML, datos productivos o despliegues.
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-07
+[AUD-NG-237] TAREA-F7-IMP-02 - MATRIZ VISUAL DE PLANIFICACIÓN Y DISPONIBILIDAD
+SEVERIDAD: ALTO/P1 (con brechas críticas de integración/datos)
+DICTAMEN: NO CUMPLE (marca [X] histórica conservada).
+EVIDENCIA:
+- js/teacher.js SHA c475fce5afcd28fca23e7b64398ad32b17773746: renderSchedulePlanningMatrix (592) busca schedules-table-body/schedule-count-badge; filterScheduleMatrix (660); loadMasterSchedules (668) retorna si falta schedules-table-body y consulta getClassSchedules solo con docenteUserId: currentUser.userId.
+- teacher-dashboard.html SHA cbb9e6a272a7d8ad33f99727303305d950533e71: 1.475 líneas; no contiene schedules-table-body, schedule-count-badge, sch-matrix-mode/status/search ni el formulario de horarios. La matriz no se monta.
+- renderSchedulePlanningMatrix solo ordena institucional/docente/sección/aula; no implementa asignatura/recurso. Solo filtra estado y búsqueda textual; no año/período/jornada/sede/grado/sección combinados. Solo muestra Borrador vs Publicado, una acción Eliminar; no detalle completo, intervalos disponibles ni recursos simultáneos.
+- backend/academic-service/Code.gs SHA df87a2eea9f0ef79d0b966d03fd5bbe432003df5: createClassSchedule escribe Estado en r[7] y UltimaModificacion en r[8]; getClassSchedules (6718) interpreta r[7] como grado, r[8] como sección y r[9] como estado, y filtra Cancelado en r[9]/r[10]. El DTO no representa los estados reales y puede mostrar borradores/inactivos como Activo. Se amplía AUD-NG-168.
+- getPlanningQualityAndOccupancyReport (3525) ignora filtro anoLectivo, calcula horas semanales agregadas, fija 40h por aula y puede sumar Cancelado en ocupación. getClassroomResources (7694) retorna inventario/mantenimiento, no intervalos libres. getTeacherAssignments (6225) no filtra por año/período.
+- getClassSchedules usa CacheService por 600s; createClassSchedule/deleteClassSchedule/publishClassSchedules no llaman invalidateScheduleCache. loadMasterSchedules usa forceScheduleCacheBypass sin setter en js/teacher.js. El invalidator (13814) elimina claves fijas que no corresponden a todas las combinaciones de cacheKey.
+- renderSchedulePlanningMatrix genera todas las filas con innerHTML; getClassSchedules lee getDataRange completo; no hay paginación/virtualización. CSV de ocupación separado, no exporta la vista filtrada.
+- Tests: academic-grading-suite SHA a22cb3ef376fe09e65c1b17c2f4f5125290bfba6 y modular-dashboard-suite SHA 0495e1d526a872c33310935a003a83d924d34683 no contienen casos F7-IMP-02/matriz.
+CRITERIOS: CA-F7-09/10/11/12/13/16 NO CUMPLE; CA-F7-14/15 PARCIAL.
+RECONCILIACIÓN:
+- Hallazgo nuevo AUD-NG-237.
+- Ampliar AUD-NG-168 (modelo/DTO y filtros temporales), AUD-NG-169 (integración UI/acciones/accesibilidad) y AUD-NG-001 (token/identidad para consultas y acciones privadas).
+- Tareas derivadas TASK-520..TASK-525, todas Pendientes; IDs verificados como no existentes en Auditoria.txt, MapaDependencias.md, Plan, Contexto, completadas.md ni blob histórico de Pendientes.md.
+- TASK-520: montar matriz y controles reales en dashboard.
+- TASK-521: corregir esquema/DTO HorariosClase.
+- TASK-522: disponibilidad por intervalos y filtros temporales/organizativos.
+- TASK-523: aplicar ámbitos y permisos a vistas/acciones.
+- TASK-524: invalidación coherente de caché tras mutaciones.
+- TASK-525: regresión funcional, permisos, volumen, responsive y exportación.
+PRUEBAS/LÍMITES: inspección estática/manual; no ejecutados navegador, Apps Script runtime, HTTP/OAuth, Sheets/Drive productivas, carga, responsive real, permisos E2E ni exportación real. Sin cambios de código, tests, HTML, datos productivos o despliegues.
+===============================================================================

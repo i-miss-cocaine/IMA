@@ -2978,3 +2978,40 @@ Todas Pendientes. No se crean duplicados.
 
 ### Límites
 Inspección estática/manual. No se ejecutaron Apps Script, HTTP/OAuth, navegador, Sheets/Drive productivas, concurrencia, rollback ni E2E. Sin cambios en código o datos productivos.
+
+
+## C1.234 - TAREA-F7-IMP-02: matriz visual de planificación y disponibilidad
+
+**Informe:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-02.md.  
+**Dictamen:** NO CUMPLE; marca [X] histórica preservada. **HEAD auditado:** d13b3d902d973c4263dc6cbad479863b1dd48513.
+
+### Dependencias inspeccionadas
+- js/teacher.js: renderSchedulePlanningMatrix (592), filterScheduleMatrix (660), loadMasterSchedules (668), deleteScheduleBlock y llamadas de recarga tras mutaciones.
+- teacher-dashboard.html: no contiene contenedor ni filtros de matriz referenciados por el controlador.
+- backend/academic-service/Code.gs: getPlanningQualityAndOccupancyReport, getTeacherAssignments, getClassSchedules, getClassroomResources, getTeacherTeachingLoad, invalidateScheduleCache, createClassSchedule, deleteClassSchedule y publishClassSchedules.
+- js/api.js: fetchApi; autenticación de consultas privadas relacionada con AUD-NG-001.
+- tests/regression: no hay pruebas de la matriz.
+
+### Relaciones y hallazgos
+- La vista no se monta: faltan schedules-table-body, schedule-count-badge y sch-matrix-* en teacher-dashboard.html; loadMasterSchedules retorna antes de llamar API.
+- Solo cuatro perspectivas (institucional/docente/sección/aula), solo estado/búsqueda, sin año/período/jornada/sede/grado/sección combinados; carga solo currentUser.userId.
+- getClassSchedules interpreta r[7]/r[8]/r[9] como grado/sección/estado cuando la escritura almacena Estado en r[7] y UltimaModificacion en r[8]; estados cancelados/inactivos no se representan correctamente. Se amplía AUD-NG-168.
+- getPlanningQualityAndOccupancyReport no filtra anoLectivo, agrega horas y usa 40h fijas por aula; getClassroomResources no calcula intervalos de recursos.
+- CacheService 600s sin invalidación desde create/delete/publish; el bypass de cliente no tiene setter. El invalidator usa claves incompletas.
+- La UI distingue Borrador/Publicado y solo muestra acción Eliminar; no detalle, recurso, disponibilidad, impresión ni exportación de vista.
+- No hay tests F7-IMP-02; las suites no cubren filtros, estado, permisos, cache, grandes volúmenes ni responsive.
+
+### Criterios
+CA-F7-09/10/11/12/13/16 NO CUMPLE; CA-F7-14/15 PARCIAL.
+
+### Tareas ejecutables derivadas
+- TASK-520: integrar matriz y seis perspectivas en dashboard.
+- TASK-521: normalizar esquema y DTO de horarios (amplía AUD-NG-168).
+- TASK-522: disponibilidad por intervalos y filtros temporales/organizativos.
+- TASK-523: permisos y ámbitos de vistas/acciones (amplía AUD-NG-001/AUD-NG-169).
+- TASK-524: invalidar caché tras todas las mutaciones.
+- TASK-525: pruebas funcionales, permisos, volumen, responsive y exportación.
+Todas Pendientes. No se crean IDs duplicados.
+
+### Límites
+Inspección estática/manual. No se ejecutaron navegador, Apps Script, HTTP/OAuth, Sheets/Drive productivas, carga, responsive real, permisos E2E ni exportación real. Sin cambios en código o datos productivos.

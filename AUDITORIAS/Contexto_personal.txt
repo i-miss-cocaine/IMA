@@ -8058,3 +8058,37 @@ Auditar TAREA-F6-015 y TAREA-F6-040. Buscar informes individuales e historial en
 - **Archivos no modificados:** backend/academic-service/Code.gs; js/teacher.js; teacher-dashboard.html; js/api.js; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; README; manifest.json; rama base.
 - **Punto de reanudación:** abrir completadas.md en TAREA-F7-IMP-02; buscar informe e historial; inspeccionar matriz visual y sus fuentes de horarios/disponibilidad, permisos, filtros, estados, exportación y comportamiento responsive; auditar criterios sin implementar.
 ===============================================================================
+
+
+===============================================================================
+## C1.234 - Auditoría TAREA-F7-IMP-02
+
+- **ID de sesión operativo:** IMA-AUDIT-20261107-2151Z-01 (no es ID nativo de ChatGPT).
+- **Estado de cierre:** auditoría documental completada; publicación del commit único y verificación posterior pendientes.
+- **Checkpoint inicial:** C1.233. **Checkpoint de cierre:** C1.234.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Archivo de contexto:** AUDITORIAS/Contexto_personal.txt.
+- **Rama base:** NG_beta_0.0.0.1; HEAD verificado 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **HEAD de partida verificado:** d13b3d902d973c4263dc6cbad479863b1dd48513; árbol de partida e767504d3819a30f0001e76646f3e13e61b98888; compare base/trabajo 301 ahead, 0 behind.
+- **Última tarea auditada:** TAREA-F7-IMP-02; dictamen NO CUMPLE; marca [X] histórica preservada.
+- **Tarea en curso al cierre:** ninguna.
+- **Siguiente tarea exacta:** TAREA-F7-IMP-03 (herramienta de resolución asistida de conflictos).
+- **Lote:** Fase 7, planificación académica, horarios y recursos.
+
+### Evidencia reproducible y respaldos
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676; TAREA-F7-IMP-02 en línea aproximada 3903; CA-F7-09..CA-F7-16.
+- Informe previo AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-02.md: no existía; se auditó directamente desde completadas.md.
+- ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff; registra la creación histórica de la matriz, pero la vista actual no contiene los elementos requeridos.
+- ACADEMIC Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5; js/teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; teacher-dashboard.html cbb9e6a272a7d8ad33f99727303305d950533e71; js/api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; tests academic a22cb3ef376fe09e65c1b17c2f4f5125290bfba6; tests modular 0495e1d526a872c33310935a003a83d924d34683.
+- Pendientes.md: SHA/blob sin cambios 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c; lectura convencional 0 caracteres; inventario de continuidad preservado en C1.233.
+- Registros: AUD-NG-237 nuevo; AUD-NG-168/AUD-NG-169/AUD-NG-001 ampliados. Tareas TASK-520..TASK-525 nuevas, todas Pendientes; IDs comprobados ausentes en Auditoria.txt, MapaDependencias.md, Plan, Contexto y completadas.md, y no están en el blob de Pendientes (máximo TASK-511).
+- Hallazgos: DOM de matriz ausente; loadMasterSchedules retorna sin consultar API; cuatro perspectivas y dos filtros; DTO HorariosClase interpreta columnas incorrectas; ocupación sin año/intervalo y 40h fijas; cache stale por invalidación ausente/incompleta; sin detalle, recursos simultáneos, exportación integrada ni pruebas.
+- Criterios: CA-F7-09/10/11/12/13/16 NO CUMPLE; CA-F7-14/15 PARCIAL.
+- **Pruebas ejecutadas:** inspección estática/manual de DOM, JS, DTO, filtros, estados, ocupación, recursos, asignaciones, caché, mutaciones, RBAC, suites, historial y SHAs.
+- **No ejecutadas:** navegador, Apps Script runtime, HTTP/OAuth, Sheets/Drive productivas, carga, responsive real, permisos E2E ni exportación real.
+- **Archivos nuevos:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-02.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Archivos no modificados:** backend/academic-service/Code.gs; js/teacher.js; teacher-dashboard.html; js/api.js; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; README; manifest.json; rama base.
+- **Punto de reanudación:** abrir completadas.md en TAREA-F7-IMP-03; localizar informe/historial; inspeccionar getScheduleConflictResolutionAlternatives, modal, alternativas, validación, confirmación, persistencia, rollback y permisos; auditar sin implementar.
+===============================================================================
