@@ -2524,3 +2524,34 @@ TAREA-F5-017 NO CUMPLE. La búsqueda, panel y decisiones manuales existen parcia
 
 ### Tareas derivadas
 - F6-003-A01..A09 pendientes: entorno aislado; corregir pruebas existentes; concurrencia/idempotencia; expediente/fusión/tutores/documentos; matrículas/movimientos; autorización directa; fallos/reintentos; reporte completo; runner/CI.
+
+
+## C1.221 - TAREA-F6-004: reestructuración en microservicios independientes
+
+**Informe:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-004.md  
+**Dictamen:** NO CUMPLE. **HEAD inicial:** 18d42543774e7c289126cb2f06f9145e20d5d841.
+
+### Configuración y almacenamiento
+- js/config.js SHA 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc, líneas 224-345: SERVICE_URLS contiene URLs marcadoras para ACCOUNTING/DEVELOPER; SERVICE_REGISTRY usa IDs de Spreadsheet/Drive ficticios, healthStatus ACTIVE y versión v8.4.0 para todos.
+- backend/user-service/Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; backend/academic-service/Code.gs SHA df87a2eea9f0ef79d0b966d03fd5bbe432003df5; backend/accounting-service/Code.gs SHA 38b979d41596b85e888b4a7060b37bbac0840a28; backend/task-service/Code.gs SHA 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe; backend/exam-service/Code.gs SHA 1d93296628fae31f680004f637897e2b1314a64c: los cinco declaran el mismo SPREADSHEET_ID 1txfudU4TR4AhVtvFgGRT5Wtmwjl78hK4bfR4XbRwwww.
+- backend/developer-service/Code.gs SHA 8aa4bac67cfe5c8c54da51a0784a56fef633e412: SPREADSHEET_ID es 1DEVELOPER-CONTROL-PLANE-SPREADSHEET-ID, marcador.
+- TASK-046 ya documenta resolver parcial y fuente compartida; ampliar TASK-046/F23-Task02, no duplicar.
+
+### Registro y contratos
+- getCentralServiceRegistry:2415-2470; registerServiceInstance:2473-2527; no se exige projectId ni endpoint y el registro por defecto carece de endpoint real.
+- validateServiceConfigDependencies:2286-2305; Boolean(spreadsheetId || true) y Boolean(driveFolderId || true) siempre son true.
+- getCentralConfigAndContractCatalog:2262-2285 solo enumera actions/version; validateMonolithDecompositionContracts:1799-1885 acepta validContracts desde payload sin comparar dispatchers.
+- getServiceVersionChangelog:2308-2322 devuelve v8.4.0/v2.1 para cualquier serviceId.
+- TASK-047/F23-Task10 y AUD-NG-078..082 se amplían; sin nuevo ID global.
+
+### API, autenticación y salud
+- js/api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9: fetchApi:11-24 usa SERVICE_URLS; checkAllMicroservicesHealth:240-250 solo incluye USER/ACADEMIC/TASK/EXAM; fallback get*:145-205 puede retornar status success con isFallback.
+- ChangesLogs.txt:1949-1951 afirma resolución dinámica vía SERVICE_REGISTRY, pero el código no lo hace.
+- developer-service doPost:145-175 confía authRole sin token (AUD-NG-082); HMAC helpers no integrados (AUD-NG-083); fallback de secreto determinista (AUD-NG-084); autorización interservicio incompleta (AUD-NG-086).
+- getServiceHealthDiagnostics:2599-2618 devuelve PASS/HEALTHY sin probar conectividad ni permisos. auditServiceBackendIsolationAndDriveSecurity:1353-1382 declara aislamientos hardcodeados.
+- runFullArchitectureIntegrationAndPerformanceSuite:2132-2206 y runModularAndDynamicDashboardsRegressionSuite:2040-2114 solo verifican catálogos/diagnóstico local, no deployments reales.
+
+### Tareas derivadas
+- F6-004-A01..A06 pendientes; ver informe individual.
+- Se amplían TASK-046, TASK-047, TASK-048, F23-Task02/07/10, AUD-NG-082..086, AUD-NG-174, TAREA-F6-009 y TAREA-F6-003-A09. No duplicar IDs globales.
+- No se ejecutaron llamadas HTTP, Apps Script, pruebas multi-cuenta ni pruebas contra datos productivos.

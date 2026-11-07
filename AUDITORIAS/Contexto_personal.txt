@@ -7398,3 +7398,51 @@ ARCHIVOS MODIFICADOS:
 SIGUIENTE ACCIÓN:
 Auditar TAREA-F6-004 - Reestructurar la arquitectura en microservicios independientes. Buscar informe individual e historial; localizar informe de fase y ChangesLogs; revisar requisitos; inspeccionar SERVICE_REGISTRY, SERVICE_URLS, resolución dinámica de endpoints, contratos, despliegues, autenticación interservicio, aislamiento de datos y pruebas; no implementar durante la auditoría.
 ===============================================================================
+
+
+===============================================================================
+CHECKPOINT C1.221 - SESIÓN IMA-AUDIT-20261107-2000Z
+Fecha: 2026-11-07
+Estado: sesión cerrada
+Checkpoint inicial: C1.220
+Checkpoint de cierre: C1.221
+Tarea realizada: TAREA-F6-004 - Reestructurar la arquitectura en microservicios independientes.
+Contexto: auditoría de una tarea marcada [X] en completadas.md. Se verificó el código de configuración, los seis servicios, los dispatchers, el registro central, el protocolo de autenticación, los validadores y las suites arquitectónicas. Dictamen NO CUMPLE.
+
+REPOSITORIO Y RAMAS:
+- Repositorio: i-miss-cocaine/IMA.
+- Rama base NG_beta_0.0.0.1; HEAD base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Rama de trabajo NG_beta_0.0.0.1_work; HEAD inicial verificado: 18d42543774e7c289126cb2f06f9145e20d5d841.
+- Comparación al inicio: 288 commits ahead, 0 behind. La rama base no se modifica.
+- Checkpoint C1.220: commit e1de4306ab4ddeb7de91494f96c17e695f5e8b69; árbol previo c7a7367d1ba053e5a3938c0450e2fa11eb53f09b.
+- El HEAD C1.220 añadió cinco documentos de auditoría; se preservaron sus blobs y se construyó el nuevo árbol sobre el árbol base verificado.
+
+AUDITORÍA:
+- Última tarea auditada: TAREA-F6-004.
+- Estado histórico: [X] en completadas.md, sin modificar.
+- Dictamen: NO CUMPLE.
+- Informe nuevo: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-004.md.
+- H1 CRÍTICO/P0: USER, ACADEMIC, ACCOUNTING, TASK y EXAM comparten SPREADSHEET_ID; DEVELOPER usa ID placeholder.
+- H2 CRÍTICO/P0: SERVICE_REGISTRY contiene recursos ficticios, endpoints marcadores, estados ACTIVE y versiones estáticas; registerServiceInstance no exige projectId ni endpoint; validadores siempre PASS.
+- H3 ALTO/P1: fetchApi usa SERVICE_URLS, no SERVICE_REGISTRY, contradiciendo ChangesLogs.
+- H4 ALTO/P1: catálogo de contratos incompleto; validador acepta contratos suministrados por payload sin comprobar dispatchers.
+- H5 CRÍTICO/P0: authRole sin token en DEVELOPER; helpers HMAC no conectados; secreto fallback determinista; ampliar AUD-NG-082..086.
+- H6 ALTO/P1: diagnósticos y suites arquitectónicas no verifican deployments reales.
+- H7 ALTO/P1: fallback de lecturas puede reportar success con datos vacíos ante fallo de red.
+- Tareas locales F6-004-A01..A06 pendientes; ver informe individual.
+- Registros existentes ampliados: TASK-046/F23-Task02; TASK-047/F23-Task10; TASK-048/F23-Task07; AUD-NG-082..086; AUD-NG-174; TAREA-F6-009; TAREA-F6-003-A09. No se crearon IDs globales duplicados.
+- Pendientes.md se leyó desde el blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c: 1.803.672 bytes, 1.782.094 caracteres, 20.182 líneas, sin U+FFFD; no se modificó.
+- Informe individual F6-004 y auditoría de fase 6 declarada no están en el árbol actual. Fase 23 sí existe y registra F23-Task02/07/10 como pendientes de ampliación.
+- Se verificó que informes F6-001, F6-002 y F6-003 ya tienen bloque de tareas derivadas.
+- Pruebas ejecutadas: inspección estática/manual de config, recursos, endpoints, dispatchers, auth, contratos, validadores, suites, backlog, historial y SHAs.
+- Pruebas no ejecutadas: Apps Script, HTTP, deployments, permisos Drive, pruebas multi-cuenta, concurrencia y E2E; no hay entorno aislado acreditado y no se ejecutó código conectado a producción.
+
+ARCHIVOS MODIFICADOS:
+- Nuevo: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-004.md.
+- Actualizados: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- Sin cambios: backend, JS, HTML, tests, completadas.md, Pendientes.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README y rama base.
+- No se implementó código ni se modificaron datos productivos.
+
+SIGUIENTE ACCIÓN:
+Auditar TAREA-F6-005 - Crear los microservicios administrativos y financieros con separación por responsabilidades. Buscar primero informe individual e historial; revisar recursos/Drive, límites de responsabilidad, catálogos y pruebas, sin implementar durante la auditoría.
+===============================================================================

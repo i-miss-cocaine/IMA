@@ -7811,3 +7811,55 @@ ARCHIVOS DOCUMENTALES:
 - No se implementó código ni se modificaron datos productivos.
 - Siguiente tarea: TAREA-F6-004, marcada [X] en completadas.md.
 ===============================================================================
+
+
+===============================================================================
+AUDITORÍA C1.221 - TAREA-F6-004 - 2026-11-07
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: 18d42543774e7c289126cb2f06f9145e20d5d841
+Checkpoint inicial: C1.220
+Sesión: IMA-AUDIT-20261107-2000Z
+Informe individual: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-004.md
+Dictamen: NO CUMPLE. TAREA-F6-004 figura [X] en completadas.md, pero no cumple todos los requisitos/criterios.
+
+FUENTES Y CONTINUIDAD:
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, líneas 2581-2618; revisados R1-R11 y CA-023..CA-030.
+- Pendientes.md recuperado directamente del blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c: 1.803.672 bytes, 1.782.094 caracteres, 20.182 líneas, sin U+FFFD. Lectura ordinaria 0 caracteres; el blob está íntegro. No se modificó.
+- Pendientes contiene TASK-046/047/048 [X] y ampliaciones C1.29/C1.31 que documentan router parcial, Spreadsheet compartido, SERVICE_REGISTRY con IDs de ejemplo y helpers HMAC sin integrar.
+- AUDITORIA_FASE_23_MOTOR_INSTITUCIONAL_FLUJOS_TRABAJO.md SHA 388e8978beb37be64135adf6973e430cb3bb83e8: F23-Task02, F23-Task10 y F23-Task07 permanecen pendientes de ampliación.
+- Informe individual F6-004 y AUDITORIA_FASE_6_EXPEDIENTE_CICLO_VIDA.md ausentes del árbol actual.
+- ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff, líneas 1949-1951, afirma resolución dinámica en fetchApi; el código actual usa SERVICE_URLS sin consultar SERVICE_REGISTRY.
+- Informes F6-001, F6-002 y F6-003 ya contienen bloque de tareas derivadas; se verificó su normalización y no se modificaron.
+
+HALLAZGOS:
+1. H1 CRÍTICO/P0: USER, ACADEMIC, ACCOUNTING, TASK y EXAM comparten SPREADSHEET_ID; DEVELOPER usa un ID marcador. No hay aislamiento de persistencia acreditado.
+2. H2 CRÍTICO/P0: SERVICE_REGISTRY contiene IDs de recursos ficticios, estados ACTIVE y versiones estáticas; ACCOUNTING/DEVELOPER tienen URLs marcadoras; registerServiceInstance no exige endpoint ni proyecto Apps Script; validateServiceConfigDependencies siempre marca PASS.
+3. H3 ALTO/P1: fetchApi no usa SERVICE_REGISTRY ni getServiceDescriptor, contradiciendo ChangesLogs.
+4. H4 ALTO/P1: catálogo de contratos solo enumera actions/version; validateMonolithDecompositionContracts acepta validContracts del payload y no comprueba dispatchers reales.
+5. H5 CRÍTICO/P0: doPost de DEVELOPER confía authRole sin token (AUD-NG-082); helpers HMAC no están conectados (AUD-NG-083); secreto fallback determinista (AUD-NG-084); autorización/versión de sobre incompleta (AUD-NG-086).
+6. H6 ALTO/P1: diagnósticos devuelven PASS/HEALTHY estático; las suites arquitectónicas prueban existencia de catálogos, no conectividad, aislamiento o tolerancia real.
+7. H7 ALTO/P1: fetchApi puede devolver status success/data[] ante fallos de lectura; checkAllMicroservicesHealth omite ACCOUNTING y DEVELOPER.
+
+TAREAS DERIVADAS:
+- F6-004-A01: ampliar TASK-046/F23-Task02; aislamiento de fuentes por servicio y resolver universal integrado.
+- F6-004-A02: ampliar TASK-047/F23-Task10 y AUD-NG-078..082; registro verificable con projectId, endpoint, recursos y permisos reales.
+- F6-004-A03: ampliar TASK-048/F23-Task07 y AUD-NG-083..086; autenticación HMAC real, secretos rotables y autorización emisor/receptor/acción.
+- F6-004-A04: integrar SERVICE_REGISTRY con fetchApi y contratos versionados; ampliar AUD-NG-174.
+- F6-004-A05: diagnósticos reales de los seis servicios y validación honesta; ampliar TAREA-F6-009.
+- F6-004-A06: pruebas E2E de compatibilidad, aislamiento y tolerancia; dependencia TAREA-F6-003-A09.
+- Todas pendientes; no se crean IDs globales AUD-NG duplicados.
+
+PRUEBAS:
+- Ejecutadas: inspección estática/manual de configuración, recursos, registry, dispatchers, autenticación, validadores, suites, logs, backlog y auditoría Fase 23.
+- No ejecutadas: Apps Script, HTTP, deployments, cuentas Google, permisos Drive, concurrencia ni pruebas E2E; no hay entorno aislado acreditado y no se ejecutó código conectado a producción.
+
+ARCHIVOS:
+- Nuevo: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-004.md.
+- Actualizados: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- Sin cambios: código, JS, HTML, tests, completadas.md, Pendientes.md, ChangesLogs.txt, metodología, README y rama base.
+- No se modificaron datos productivos.
+
+SIGUIENTE TAREA:
+TAREA-F6-005 - Crear los microservicios administrativos y financieros con separación por responsabilidades. Buscar primero informe individual e historial; revisar recursos/Drive, límites de responsabilidad, catálogos y pruebas, sin implementar durante la auditoría.
+===============================================================================

@@ -1463,3 +1463,16 @@ Próxima acción: buscar informe individual F6-004 e historial; comprobar si exi
 HEAD de partida verificado: e1de4306ab4ddeb7de91494f96c17e695f5e8b69. Commit de cierre: el commit que contiene este checkpoint; SHA confirmado externamente tras publicar.
 Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesión cerrada.
 ===============================================================================
+
+
+## C1.221 - Resultado de auditoría TAREA-F6-004
+
+- **Dictamen:** NO CUMPLE. TAREA-F6-004 permanece [X] como estado histórico en completadas.md; no se modifica el registro maestro.
+- **Evidencia:** cinco servicios de negocio comparten SPREADSHEET_ID; DEVELOPER usa ID placeholder; SERVICE_REGISTRY tiene recursos/endpoints marcadores; fetchApi no consulta SERVICE_REGISTRY; catálogo/validadores de contratos no verifican dispatchers; autenticación HMAC no integrada; diagnósticos y suites arquitectónicas devuelven PASS sin probar deployments.
+- **Registros consultados:** completadas.md líneas 2581-2618; Pendientes.md blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c; ChangesLogs.txt líneas 1949-1951; AUDITORIA_FASE_23_MOTOR_INSTITUCIONAL_FLUJOS_TRABAJO.md.
+- **Hallazgos existentes ampliados:** TASK-046/F23-Task02; TASK-047/F23-Task10; TASK-048/F23-Task07; AUD-NG-082..086; AUD-NG-174; TAREA-F6-009; TAREA-F6-003-A09. No se crean IDs globales duplicados.
+- **Tareas locales:** F6-004-A01..A06 pendientes; aislamiento de datos, catálogo de servicios, autenticación interservicio, descubrimiento/contratos, diagnósticos y pruebas E2E.
+- **Pruebas:** inspección estática/manual ejecutada. No se ejecutaron Apps Script, HTTP, despliegues, pruebas multi-cuenta, Drive ni pruebas E2E; no hay entorno aislado acreditado.
+- **Archivos nuevos/actualizados:** informe individual F6-004; Auditoria.txt; MapaDependencias.md; AUDITORIA_COMPLETADAS_PLAN.md; Contexto_personal.txt.
+- **Archivos sin cambios:** código, JS, HTML, tests, completadas.md, Pendientes.md, ChangesLogs.txt, metodología, README y rama base.
+- **Siguiente tarea:** TAREA-F6-005 - Crear los microservicios administrativos y financieros con separación por responsabilidades. Buscar informe individual e historial antes de auditar código.
