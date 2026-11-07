@@ -1111,3 +1111,13 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Pruebas:** inspección estática/manual; no se ejecutaron navegador, HTTP, XSS dinámico, rate-limit, Apps Script, lector de pantalla ni pruebas móviles.
 - **Progreso:** 91/183 del conjunto histórico; AUD-NG-235 se incorpora como hallazgo nuevo y debe reconciliarse en el conteo global.
 - **Siguiente tarea:** TAREA-F5-005 — consola administrativa de revisión y decisión de admisiones. Verificar informe existente antes de auditar.
+
+
+## C1.199. TAREA-F5-005 — consola administrativa de revisión y decisión (2026-11-07)
+
+- **Dictamen:** NO CUMPLE. La consola existe con tabla, métricas, filtros básicos y modal integral, pero fetchApi no transmite sessionToken (AUD-NG-001); getAdmissionRequests no aplica ámbito departamental (TAREA-AD-03); no hay paginación conectada ni filtros por fecha/documentos; falta asignación de revisor y nota interna confidencial; los botones se calculan por estado, no por rol; Reabierta usa ruta ordinaria; la conversión no navega al expediente; hay innerHTML inseguro en paneles.
+- **Informe creado desde cero:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-005.md; no existía en árbol ni historial.
+- **Reconciliación:** AUD-NG-001, TAREA-AD-03, AUD-NG-234/TASK-514, AUD-NG-235, AUD-NG-145, AUD-NG-006, AUD-NG-161, T-UX-19 y AUD-NG-233/TASK-513. No crear IDs nuevos.
+- **Pruebas:** inspección estática/manual; no se ejecutaron HTTP, Apps Script, navegador, concurrencia, XSS dinámico ni suites.
+- **Progreso:** 91/183 identificadores del conjunto histórico; sin nuevos IDs.
+- **Siguiente tarea:** TAREA-F5-006 — gestión documental de aspirantes antes de la matrícula. Verificar informe existente antes de auditar.

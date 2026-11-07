@@ -1974,3 +1974,23 @@ Relaciones:
 
 **Nuevo hallazgo AUD-NG-235:** acceso público inseguro a borradores/seguimiento, exposición de PII y XSS.  
 **Tareas existentes:** AUD-NG-006 (reintentos/idempotencia); TASK-118 (IDs); AUD-NG-145 (PII/logs); AUD-NG-161 (pruebas); T-UX-19 (WCAG); T-UX-20 (responsive); AUD-NG-036 (relación/identidad). No crear IDs duplicados.
+
+
+## C1.199 — TAREA-F5-005: consola administrativa de admisiones
+
+**Informe:** `AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-005.md`.  
+**Código:** `dashboard-secretaria.html` SHA `fa0d8c23aace24a6acab2d4956398a7f5e1309b8`; `js/secretary.js` SHA `08a81266957b4c18cc25f8ba6749eac30a8f2c2c`; ACADEMIC `Code.gs` SHA `daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc`.
+
+- `loadAdmissionRequestsList` (secretary.js 1-25) llama `getAdmissionRequests` sin token ni parámetros de página.
+- `getAdmissionRequests` (Code.gs 1113-1159) soporta page/pageSize, pero sin page devuelve todos los registros y no aplica departamento.
+- `filterAdmissionRequestsLocal` (58-137) filtra año/grado/estado/texto, no fecha ni requisitos pendientes.
+- `validateContextualAccess` (465-523) exige scopeType+requestedValue en payload; el listado envía `{}` y las mutaciones tampoco incluyen ámbito. Reabrir TAREA-AD-03.
+- `js/auth.js` (138-159) omite sessionToken de currentUser; `js/api.js` (47-50) solo añade requesterUserId/requesterRole. AUD-NG-001.
+- `openAdmissionDetailModal` (137-246) crea transiciones solo por estado; Reabierta llama updateAdmissionStatus, no reopenAdmissionRequest. AUD-NG-234/TASK-514.
+- `updateAdmissionStatus` (2014-2044) guarda justificación en observaciones y la incluye en notificación a familia; no es nota interna confidencial.
+- `convertAdmissionToStudentAction` (277-296) muestra IDs en alert y recarga lista, sin navegar al expediente.
+- `filterAdmissionRequestsLocal`, `openAdmissionDetailModal`, documentos, entrevistas y evaluaciones insertan datos en innerHTML; extender AUD-NG-235.
+- Modal invoca documentos, entrevistas, evaluaciones, lista de espera, tutores, capacidad, notificaciones, audit trail y duplicados.
+- `setupAdvancedTableFilters` (ui-common.js 2129) y `renderUIProgressSkeleton` (5147) existen, pero no tienen callsite en la consola.
+
+**Tareas existentes:** AUD-NG-001 (token); TAREA-AD-03 (ABAC); AUD-NG-234/TASK-514 (transiciones/concurrencia); AUD-NG-235 (XSS); AUD-NG-145 (notas/PII); AUD-NG-006 (idempotencia); AUD-NG-161 (pruebas); T-UX-19 (accesibilidad); AUD-NG-233/TASK-513 (guardas de documentos/capacidad). No crear IDs nuevos.

@@ -7041,3 +7041,40 @@ RECONCILIACIÓN: AUD-NG-235 nuevo; ampliar AUD-NG-006, TASK-118, AUD-NG-145, AUD
 EVIDENCIA HISTÓRICA: completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676 líneas 1920-1944; ChangesLogs.txt SHA d57cf4bd861b5c3720e60cf83241ed804ff645d9 líneas 1783-1791. Informe F5-004 no existe en árbol ni historial; Auditoria.txt raíz histórica y Auditoría.txt acentuada no registran F5-004.
 PRUEBAS: inspección estática/manual y búsqueda dirigida. No se ejecutaron navegador, HTTP, XSS dinámico, rate-limit, Apps Script, lector de pantalla, teclado, pruebas móviles ni datos productivos.
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-07
+CHECKPOINT C1.199 — AUDITORÍA DESDE CERO TAREA-F5-005
+SESIÓN: IMA-AUDIT-20261107-0205Z
+INFORME: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-005.md
+DICTAMEN: NO CUMPLE
+
+ARCHIVOS:
+- dashboard-secretaria.html SHA fa0d8c23aace24a6acab2d4956398a7f5e1309b8.
+- js/secretary.js SHA 08a81266957b4c18cc25f8ba6749eac30a8f2c2c.
+- ACADEMIC Code.gs SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc.
+- js/api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; js/auth.js SHA 8444dd085a3186106d2db7005b61ef934d3c22d8.
+- ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67.
+- dashboard-direccion.html SHA fefaa3bf7884288aef563cfb8aaf244e6cea8b7c; teacher-dashboard.html SHA cbb9e6a272a7d8ad33f99727303305d950533e71.
+- tests SHA 3433b707edd4a2f35c68368a3172932adc2a3b32 / 0495e1d526a872c33310935a003a83d924d34683.
+
+HALLAZGOS:
+1. AUD-NG-001: js/auth.js no conserva sessionToken y js/api.js no lo transmite. loadAdmissionRequestsList y todas las acciones protegidas llaman fetchApi sin token; validateRolePermission requiere token.
+2. TAREA-AD-03: validateContextualAccess solo aplica si payload contiene scopeType y requestedValue. getAdmissionRequests recibe {} y mutaciones tampoco envían ámbito; consulta devuelve solicitudes de todos los departamentos y PII.
+3. F5-005: getAdmissionRequests soporta page/pageSize, pero UI no envía page; obtiene todos los registros. Filtros solo año/grado/estado/texto; sin fecha ni requisitos pendientes. setupAdvancedTableFilters/renderUIProgressSkeleton existen, no se invocan.
+4. F5-005: no hay asignación de revisor; justificación/observación única se guarda en observaciones y se incluye en notificación a familia, por lo que no es nota interna confidencial.
+5. AUD-NG-234/TASK-514: UI genera botones solo por estado, no por rol; Reabierta llama updateAdmissionStatus y no reopenAdmissionRequest; lock skipLock sigue siendo bypass. Sin expectedState/version para detectar conflicto concurrente.
+6. F5-005: conversión muestra IDs en alert, cierra modal y recarga lista; no navega al expediente.
+7. AUD-NG-235: innerHTML en tabla, modal, documentos, entrevistas y evaluaciones interpola datos de aspirantes/archivos sin escape contextual; ampliar hallazgo existente.
+8. F5-005: RBAC local de página permite Desarrollador y excluye Subdirector; backend no concede acciones de admisión a Desarrollador y sí concede lectura/actualización a Subdirector.
+9. AUD-NG-161: suites examinadas no tienen pruebas específicas de la consola.
+
+COMPONENTES PARCIALES PRESENTES:
+Modal invoca documentos, entrevistas, evaluaciones, lista de espera, tutores, capacidad, notificaciones, bitácora y duplicados. Rechazo/retirada requieren justificación de 10 caracteres y la UI actualiza/reload solo cuando backend devuelve success. Estos elementos no compensan los bloqueos anteriores.
+
+RECONCILIACIÓN:
+AUD-NG-001; TAREA-AD-03; AUD-NG-234/TASK-514; AUD-NG-235; AUD-NG-145; AUD-NG-006; AUD-NG-161; T-UX-19; AUD-NG-233/TASK-513. No se crea ID nuevo.
+EVIDENCIA HISTÓRICA: completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676 líneas 1952-1980; ChangesLogs.txt SHA d57cf4bd861b5c3720e60cf83241ed804ff645d9 líneas 1793-1803. Informe F5-005 ausente de árbol/historial y sin registro en Auditoria.txt raíz/acento.
+PRUEBAS: inspección estática/manual. No se ejecutaron HTTP, Apps Script, navegador, concurrencia, XSS dinámico ni suites.
+===============================================================================
