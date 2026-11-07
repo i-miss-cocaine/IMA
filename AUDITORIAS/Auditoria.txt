@@ -6923,3 +6923,42 @@ SESIÓN: IMA-AUDIT-20261106-1954Z
 - No se crearon tareas nuevas ni se alteraron sus estados o contenidos técnicos.
 - Motivo: ambos hallazgos ya son registros/tareas oficiales en la bitácora; el bloque debe exponer el ID directamente para trazabilidad.
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-07
+CHECKPOINT C1.196 — REGISTRO OBLIGATORIO DE HALLAZGOS TAREA-F5-002
+SESIÓN: IMA-AUDIT-20261107-0132Z
+REPOSITORIO: i-miss-cocaine/IMA
+RAMA: NG_beta_0.0.0.1_work
+HEAD DE PARTIDA: 75c4b3af613126f4ba1781ec5eacdb9e2befbbfe
+INFORME: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-002.md
+INFORME SHA: e96e9ccc3f8ce56ba58709e57654707a2029b4dd
+DICTAMEN: NO CUMPLE
+
+ARCHIVO AUDITADO: backend/academic-service/Code.gs
+SHA: daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc
+MÓDULO: solicitudes de admisión / máquina de estados.
+FUNCIONES/SECTORES:
+- validateRolePermission, líneas 524-583.
+- doPost, líneas 671-690; dispatcher 847-860.
+- checkAndRegisterIdempotencyKey / saveIdempotentResult, líneas 279-318.
+- ALLOWED_ADMISSION_STATE_TRANSITIONS, líneas 1556-1568.
+- updateAdmissionStatus, líneas 1928-2059.
+- reopenAdmissionRequest, líneas 2061-2105.
+- getAdmissionEvaluations, líneas 1724-1747.
+- getStudentDocuments, líneas 10708-10785.
+
+HALLAZGOS:
+1. AUD-NG-234 / TASK-514 (CRÍTICO/P0): reopenAdmissionRequest no valida estado de origen, permite nuevoEstado arbitrario, no usa la matriz ni lock; updateAdmissionStatus permite Reabierta a roles operativos ordinarios. La reapertura privilegiada es eludible.
+2. AUD-NG-234 / TASK-514 (ALTO/P1): doPost elimina skipLock solo cuando isInternalCall no es truthy; no se acredita que esa marca provenga del servidor. updateAdmissionStatus puede omitir LockService por flags de payload.
+3. AUD-NG-006 (ALTO/P1): updateAdmissionStatus/reopenAdmissionRequest no invocan saveIdempotentResult; la comprobación inicial de clave no garantiza reserva ni resultado durable reproducible.
+4. AUD-NG-145 (ALTO/P1): estado/observaciones se escriben antes del historial; recordEntityChangeLog silencia fallos y no se pasa correlationId, por lo que puede confirmarse una transición sin trazabilidad durable.
+5. AUD-NG-233 / TASK-513 (ALTO/P1): guardas documentales/evaluativas no acreditan catálogo completo ni fallan cerradas ante respuestas vacías/incompletas.
+6. AUD-NG-161 (ALTO/P1): suites regression examinadas no prueban matriz, roles, reapertura, lock, idempotencia, historial ni concurrencia.
+
+IMPACTO: transición a estado arbitrario, bypass de rol/lock, reintentos con efectos duplicados, pérdida de trazabilidad y avance de etapa sin requisitos acreditados.
+DEPENDENCIAS: TASK-514; AUD-NG-006; AUD-NG-145; AUD-NG-233/TASK-513; AUD-NG-161. No duplicar AUD-NG-232/TASK-512 ni AUD-NG-179.
+REGISTRO CRUZADO: MapaDependencias.md, sección C1.196; informe F5-002, §§3-6.
+PRUEBAS: inspección estática y búsqueda dirigida. No se ejecutaron suites automatizadas, Apps Script runtime, HTTP, concurrencia, fallos inyectados ni datos productivos.
+===============================================================================

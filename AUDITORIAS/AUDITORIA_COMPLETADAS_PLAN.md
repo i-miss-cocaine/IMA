@@ -1081,3 +1081,11 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Pruebas:** inspección estática; no se ejecutó Apps Script, correo/token, fallos inyectados ni datos productivos.
 - **Progreso:** 90/183 identificadores auditados; 93 restantes.
 - **Siguiente tarea oficial:** TAREA-F5-002 — Implementar una máquina de estados y reglas de transición para las solicitudes.
+
+
+## C1.196. Registro documental de TAREA-F5-002 (2026-11-07)
+
+- Se completó el registro obligatorio en Auditoria.txt y la trazabilidad en MapaDependencias.md del informe F5-002 (SHA e96e9ccc3f8ce56ba58709e57654707a2029b4dd).
+- Hallazgos registrados: AUD-NG-234/TASK-514 (reapertura, matriz y bypass de lock), AUD-NG-006 (idempotencia), AUD-NG-145 (historial/correlationId), AUD-NG-233/TASK-513 (guardas de etapa) y AUD-NG-161 (pruebas).
+- Dictamen NO CUMPLE. No se modificó código ni pruebas; la implementación permanece pendiente.
+- Siguiente tarea indicada por el checkpoint previo: TAREA-F5-003 — implementar identificadores únicos, control de concurrencia e idempotencia en admisiones. El informe debe buscarse en árbol e historial antes de iniciar; si no existe, auditar desde cero y generar informe con tareas ejecutables.

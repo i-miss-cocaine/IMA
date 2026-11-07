@@ -1923,3 +1923,17 @@ Relaciones:
 - Monto de matrícula fallback 1500; registerStudentEnrollment expuesta a Contador y otros roles sin check de cupos, y writes de matrícula/cargos separados; AUD-NG-129.
 - Sin pruebas específicas de conversión/recuperación/overrides/tutor/capacidad; AUD-NG-161. checkEnrollmentCapacity lock timeout AUD-NG-179.
 - Evidencia ACADEMIC daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; USER 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ACCOUNTING 38b979d41596b85e888b4a7060b37bbac0840a28; tests 3433b707edd4a2f35c68368a3172932adc2a3b32/0495e1d526a872c33310935a003a83d924d34683.
+
+
+## C1.196 — Trazabilidad de máquina de estados e idempotencia de admisiones
+
+**Informe fuente:** `AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-002.md`, SHA `e96e9ccc3f8ce56ba58709e57654707a2029b4dd`.  
+**Fuente técnica:** `backend/academic-service/Code.gs`, SHA `daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc`.
+
+- `checkAndRegisterIdempotencyKey` y `saveIdempotentResult` (279-318): el middleware consulta clave y existe helper de persistencia, pero updateAdmissionStatus/reopenAdmissionRequest no guardan resultado durable.
+- `validateRolePermission` (524-583) y `doPost` (671-690): revisar privilegio de reapertura y procedencia server-side de isInternalCall/skipLock.
+- `ALLOWED_ADMISSION_STATE_TRANSITIONS` (1556-1568): matriz declarada; no es aplicada de forma uniforme por los handlers.
+- `updateAdmissionStatus` (1928-2059): ruta ordinaria que permite Reabierta y puede omitir lock por skipLock.
+- `reopenAdmissionRequest` (2061-2105): ruta privilegiada sin validación del origen/destino ni lock.
+
+**Tareas vinculadas:** AUD-NG-234/TASK-514 (transiciones y reapertura); AUD-NG-006 (idempotencia durable); AUD-NG-145 (historial/correlationId); AUD-NG-233/TASK-513 (guardas fail-closed); AUD-NG-161 (pruebas conductuales). Coordinar con AUD-NG-232/TASK-512 y AUD-NG-179 sin duplicar sus alcances.

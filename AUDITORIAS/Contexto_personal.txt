@@ -6582,3 +6582,26 @@ CHECKPOINT C1.195 — AUDITORÍA DESDE CERO DE TAREA-F5-002
 - Regla de procedimiento: si existe el informe, verificar sus hallazgos contra evidencia actual y normalizar las tareas ejecutables dentro de ese mismo archivo; si no existe, auditar desde cero y crear informe con bloque de tareas. Consultar antecedentes históricos solo después de confirmar ausencia/omisión, respetando METODOLOGIA_DESARROLLO.md §3.4 y la exclusión de Pendientes.md.
 - Regla de publicación: un solo commit consolidado; árbol Git nuevo basado en el árbol completo verificado; exactamente dos rutas; un padre igual al HEAD de partida; actualizar ref con expected_sha; verificar commit, árbol, rutas, compare, ref y rama base. El SHA final se confirma externamente.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.196 — CIERRE DEL REGISTRO DE TAREA-F5-002
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama autorizada: NG_beta_0.0.0.1_work.
+- HEAD de partida: 75c4b3af613126f4ba1781ec5eacdb9e2befbbfe; árbol de partida: 73377635940db3b7ab32dbf6a07153b1512968e3; árbol recursivo verificado: 965 entradas, truncated=false.
+- Rama base protegida NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59; sin escrituras.
+- ID operativo de sesión/chat: IMA-AUDIT-20261107-0132Z (no es ID nativo de ChatGPT).
+- Se confirmó C1.195 publicado en 75c4b3af613126f4ba1781ec5eacdb9e2befbbfe, padre 5a0b306f2d2c16f65634b138bfe49a49d62df7a5; creó el informe F5-002 y actualizó Contexto_personal.txt, pero no Auditoria.txt/MapaDependencias.md.
+- Informe preservado: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-002.md SHA e96e9ccc3f8ce56ba58709e57654707a2029b4dd.
+- Se completa el registro obligatorio de hallazgos en Auditoria.txt y trazabilidad en MapaDependencias.md; se resume en AUDITORIA_COMPLETADAS_PLAN.md.
+- Hallazgos: AUD-NG-234/TASK-514, AUD-NG-006, AUD-NG-145, AUD-NG-233/TASK-513 y AUD-NG-161. No duplicar AUD-NG-232/TASK-512 ni AUD-NG-179.
+- Pruebas realizadas: verificación de HEAD/ref y rama base; árbol recursivo completo; revisión de commit C1.195/diff; lectura del informe y metodología; cotejo de funciones y líneas; confirmación de ausencia de informe F5-003 en árbol actual (sin ruta F5-003 hallada).
+- No ejecutadas: suites automatizadas, Apps Script runtime, HTTP, concurrencia, fallos inyectados, pruebas de datos productivos ni despliegue.
+- Archivos de este commit: Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md y Contexto_personal.txt.
+- Código, pruebas, informe F5-002, Pendientes.md, completadas.md, ChangesLogs.txt, metodología y rama base no se modifican.
+- Dictamen F5-002: NO CUMPLE; documentación ahora registrada, implementación sigue pendiente.
+- Próxima tarea: TAREA-F5-003 — implementar identificadores únicos, control de concurrencia e idempotencia en admisiones. Confirmar título/alcance y buscar su informe e historial antes de auditar.
+- Regla: informe existente => verificar y normalizar en ese mismo archivo; informe ausente => auditoría desde cero e informe con tareas ejecutables. Registrar cada hallazgo en Auditoria.txt y MapaDependencias.md.
+- Publicación: un commit consolidado, un padre igual al HEAD de partida, expected_sha y verificación posterior.
+================================================================
