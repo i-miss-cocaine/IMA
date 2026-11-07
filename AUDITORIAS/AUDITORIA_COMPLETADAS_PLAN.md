@@ -1710,3 +1710,19 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
 - **Archivos sin cambios:** backend/academic-service/Code.gs; js/teacher.js; teacher-dashboard.html; js/api.js; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; README; manifest.json; rama base.
 - **Siguiente tarea cronológica:** TAREA-F7-IMP-04, Incorporar planificación masiva y optimización de horarios.
+
+
+## C1.236 - Resultado de auditoría TAREA-F7-IMP-04 (2026-11-07)
+
+- **Dictamen:** NO CUMPLE; la marca [X] histórica en completadas.md se conserva.
+- **Informe individual:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-04.md; no existía previamente, se auditó directamente el alcance maestro.
+- **Hallazgo nuevo:** AUD-NG-239. Se amplían AUD-NG-236, AUD-NG-237, AUD-NG-238, AUD-NG-168 y AUD-NG-001.
+- **Evidencia principal:** generateAutoSchedules escribe Borrador en HorariosClase antes de guardar la ficha de escenario; el detalle guardado son logs, no asignaciones recuperables; el generador es first-fit con parámetros ignorados y sin preferencias/bloqueos; publishClassSchedules no filtra por escenario y publica todos los borradores si no recibe filtros; publicación secuencial sin rollback; UI ausente y respuesta de resumen mal mapeada.
+- **Criterios:** CA-F7-24/26/28/29/30 NO CUMPLE; CA-F7-25/27/31 PARCIAL.
+- **Tareas derivadas:** TASK-532..TASK-537, todas Pendientes y registradas en el informe; no se modifica Pendientes.md ni completadas.md.
+- **Pruebas ejecutadas:** inspección estática/manual de generador, escenario, preview, publicación, UI, autenticación, restricciones, locking y suites.
+- **No ejecutadas:** Apps Script runtime, HTTP/OAuth, navegador, Sheets/Drive productivas, generación masiva, concurrencia, fallos inyectados, rollback ni E2E.
+- **Archivos nuevos:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-04.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Archivos sin cambios:** backend/academic-service/Code.gs; js/teacher.js; teacher-dashboard.html; js/api.js; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; README; manifest.json; rama base.
+- **Siguiente tarea cronológica:** TAREA-F7-IMP-05, Ampliar el control de carga laboral y las preferencias docentes.

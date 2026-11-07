@@ -8502,3 +8502,34 @@ RECONCILIACIÓN:
 - TASK-531: pruebas conductuales CA-F7-17..23.
 PRUEBAS/LÍMITES: inspección estática/manual; no ejecutados navegador, Apps Script runtime, HTTP/OAuth, Sheets/Drive productivas, concurrencia, cambios simultáneos, rollback ni E2E. Sin cambios de código, tests, HTML, datos productivos o despliegues.
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-07
+[AUD-NG-239] TAREA-F7-IMP-04 - PLANIFICACIÓN MASIVA Y OPTIMIZACIÓN DE HORARIOS
+SEVERIDAD: ALTO/P1 CON BRECHAS CRÍTICAS DE INTEGRIDAD
+DICTAMEN: NO CUMPLE (marca [X] histórica conservada).
+EVIDENCIA:
+- backend/academic-service/Code.gs SHA df87a2eea9f0ef79d0b966d03fd5bbe432003df5: generateAutoSchedules (6335) agrega cada propuesta directamente en HorariosClase como Borrador; solo después guarda ficha ESC-... en EscenariosHorarios. No hay escenarioId en las filas de horario.
+- saveScheduleScenario (6459) guarda contadores y detallesJSON que contiene logs, no asignaciones estructuradas; getScheduleScenarios (6472) devuelve metadatos sin detalles; no existe applyScheduleScenario/resumeScheduleScenario.
+- Generador first-fit: primer docente, primera aula activa y bloques prefijados; una asignación por oferta. unidadMin/startHourStr se declaran pero no se usan. No hay preferencias, pesos, frecuencia, asignaciones bloqueadas ni motor de optimización.
+- Pendientes solo reciben log genérico "debido a restricciones". No se comparan carga docente ni uso de recursos antes/después.
+- previewPublishImpact (3351) solo cuenta borradores/docentes/aulas/conflictos; no se vincula a escenarioId.
+- publishClassSchedules (7008) no acepta escenarioId; si no recibe ofertaIds/anoLectivo selecciona todos los borradores. Si recibe anoLectivo lo compara con r[1] (OfertaID); filas generadas no guardan año.
+- Publicación cambia filas con setValue en bucle, sin rollback; snapshot VersionesHorarios puede fallar y se devuelve éxito. LockService evita concurrencia durante publish pero no es transacción.
+- js/teacher.js SHA c475fce5afcd28fca23e7b64398ad32b17773746: btn-open-auto-scheduler (321) y openScheduleScenarioModal (1862) sin botón/llamada real en HTML; el resumen lee programadas/pendientes, pero backend devuelve bloquesBorradorCreados/ofertasPendientes.
+- teacher-dashboard.html SHA cbb9e6a272a7d8ad33f99727303305d950533e71 no contiene btn-open-auto-scheduler ni controles/modal de escenario/preview/publicación. generateAutoSchedules y publishClassSchedules son acciones privadas; fetchApi no transmite token (AUD-NG-001).
+- tests/regression/academic-grading-suite.js SHA a22cb3ef376fe09e65c1b17c2f4f5125290bfba6 no contiene casos F7-IMP-04/CA-F7-24..31.
+CRITERIOS: CA-F7-24/26/28/29/30 NO CUMPLE; CA-F7-25/27/31 PARCIAL.
+RECONCILIACIÓN:
+- Hallazgo nuevo AUD-NG-239.
+- Ampliar AUD-NG-236 (motor/rollback), AUD-NG-237 (UI matriz), AUD-NG-238 (resolución), AUD-NG-168 (modelo/estados/año) y AUD-NG-001 (autenticación).
+- Tareas derivadas TASK-532..TASK-537, todas Pendientes; IDs verificados ausentes en Auditoria.txt, MapaDependencias.md, Plan, Contexto, completadas.md y blob histórico de Pendientes.md.
+- TASK-532: aislar escenario y persistir asignaciones recuperables.
+- TASK-533: optimizador con restricciones/preferencias/bloqueos.
+- TASK-534: explicar pendientes y comparar impacto antes/después.
+- TASK-535: publicación exclusiva del escenario confirmado.
+- TASK-536: generación/publicación atómica, idempotencia y rollback.
+- TASK-537: conectar UI/autenticación y regresión del ciclo completo.
+PRUEBAS/LÍMITES: inspección estática/manual; no ejecutados Apps Script runtime, HTTP/OAuth, navegador, Sheets/Drive productivas, generación masiva, concurrencia, fallos inyectados, rollback ni E2E. Sin cambios de código, tests, HTML, datos productivos o despliegues.
+===============================================================================

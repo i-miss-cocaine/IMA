@@ -3052,3 +3052,40 @@ Todas Pendientes. No se crean IDs duplicados.
 
 ### Límites
 Inspección estática/manual. No se ejecutaron navegador, Apps Script, HTTP/OAuth, Sheets/Drive productivas, concurrencia, cambios simultáneos, rollback ni E2E. Sin cambios de código o datos productivos.
+
+
+## C1.236 - TAREA-F7-IMP-04: planificación masiva y optimización de horarios
+
+**Informe:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-04.md.  
+**Dictamen:** NO CUMPLE; marca [X] histórica preservada. **HEAD auditado:** ee2861653d31e185bd934bc1e1f063ab225e0bbf.
+
+### Dependencias inspeccionadas
+- backend/academic-service/Code.gs: generateAutoSchedules (6335), saveScheduleScenario (6459), getScheduleScenarios (6472), previewPublishImpact (3351), publishClassSchedules (7008), checkScheduleConflict (7493).
+- js/teacher.js: listener btn-open-auto-scheduler (321), preview/publicación (~1005), openScheduleScenarioModal (1862).
+- teacher-dashboard.html: ausencia de botón, modal y controles de escenario/publicación.
+- js/api.js: autenticación privada relacionada con AUD-NG-001.
+- tests/regression: ausencia de pruebas F7-IMP-04.
+
+### Relaciones y hallazgos
+- generateAutoSchedules escribe propuestas directamente en HorariosClase como Borrador; después guarda solo un registro resumen en EscenariosHorarios. No vincula bloques a escenarioId ni permite reanudar datos estructurados.
+- saveScheduleScenario almacena logs en detallesJSON; getScheduleScenarios devuelve solo metadatos; no hay apply/resume scenario.
+- Generador first-fit con primer docente/aula y bloques fijos; duración/hora inicial recibidas no se usan; sin preferencias ni asignaciones bloqueadas.
+- Pendientes genéricas, sin explicar restricciones; preview solo cuenta borradores/docentes/aulas/conflictos, no compara carga ni uso antes/después.
+- publishClassSchedules no filtra por escenarioId; sin filtros publica todos los borradores. año se compara con OfertaID y las filas no guardan año.
+- Publicación secuencial sin rollback; generación sin lock/idempotencia; error intermedio deja borradores parciales.
+- UI de escenario/preview ausente en HTML; el resumen JS espera propiedades distintas a las que devuelve el backend; acciones privadas sin token.
+
+### Criterios
+CA-F7-24/26/28/29/30 NO CUMPLE; CA-F7-25/27/31 PARCIAL.
+
+### Tareas ejecutables derivadas
+- TASK-532: aislar escenarios y persistir propuestas recuperables.
+- TASK-533: optimizador con restricciones obligatorias, preferencias y bloqueos.
+- TASK-534: causas de pendientes y comparación antes/después.
+- TASK-535: publicación solo del escenario confirmado.
+- TASK-536: atomicidad, rollback, idempotencia y concurrencia.
+- TASK-537: UI, autenticación y pruebas del ciclo completo.
+Todas Pendientes. No se crean IDs duplicados.
+
+### Límites
+Inspección estática/manual. No se ejecutaron Apps Script, HTTP/OAuth, navegador, Sheets/Drive productivas, generación masiva, concurrencia, fallos inyectados, rollback ni E2E. Sin cambios en código o datos productivos.
