@@ -6490,3 +6490,33 @@ CHECKPOINT C1.192 — NORMALIZACIÓN DE TAREAS DERIVADAS DE TAREA-F4-P3-02
 - Siguiente tarea oficial: TAREA-F4-P3-03 — establecer un sistema de detección y reconciliación de inconsistencias de identidad. Continuar con su informe existente y desarrollar sus tareas desde los hallazgos.
 - Regla de publicación: un solo commit consolidado; árbol Git nuevo sobre el árbol completo verificado; exactamente dos rutas; un padre igual al HEAD de partida; actualizar ref con expected_sha; verificar commit, árbol, rutas y rama base. El SHA final se confirma externamente.
 ================================================================
+
+================================================================
+CHECKPOINT C1.193 — NORMALIZACIÓN DE TAREAS DERIVADAS DE TAREA-F4-P3-03
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo autorizada: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1; HEAD verificado antes de publicar: 44d9891132332e692dbe2ba8602b41f50a508a59. No se realizó ninguna escritura en la rama base.
+- HEAD de partida verificado: 96714645fa1f8581a4fd3181f4e6aef96b4f4936.
+- Árbol de partida verificado: 5b5c35a72d275795d295f03b2958eaef6ebafeaf; árbol recursivo completo: 964 entradas, truncated=false.
+- Padre del HEAD de partida: 18a5ff93ee3b394ed212090f255fc5842c14e0fb.
+- ID operativo de sesión/chat: IMA-AUDIT-20261107-0046Z (identificador operativo, no ID nativo de ChatGPT).
+- Checkpoint inicial de esta sesión: C1.192; checkpoint de cierre: C1.193.
+- Tarea normalizada: TAREA-F4-P3-03 — establecer un sistema de detección y reconciliación de inconsistencias de identidad.
+- Informe existente: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F4-P3-03.md; SHA de partida 7842ba37c7bbc547befff594a30dc8ee43b39ffd. El archivo existe en la rama actual; se conserva su contenido y dictamen, sin reconstruir ni sustituir la auditoría.
+- Dictamen preservado: NO CUMPLE. autoFix puede desactivar/revocar registros en masa si Usuarios falta o está vacía; cualquier valor truthy activa mutaciones; no hay lock, prevalidación, rollback ni auditoría por registro; la revocación directa no invalida caché; la validación de adscripciones no comprueba departamento/cargo.
+- Evidencia actual cotejada: backend/user-service/Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; función auditAndReconcileIdentityInconsistencies líneas 4151-4235; manageDepartmentPositions líneas 2810-2895; revokeSecurityDelegation líneas 2276-2315; createSecurityDelegation líneas 1746-1810; router registra auditAndReconcileIdentityInconsistencies. Los SHA actuales coinciden con el informe.
+- Pruebas examinadas: tests/regression/academic-grading-suite.js SHA 3433b707edd4a2f35c68368a3172932adc2a3b32 y tests/regression/modular-dashboard-suite.js SHA 0495e1d526a872c33310935a003a83d924d34683; no contienen pruebas conductuales específicas de autoFix/reconciliación, según la búsqueda dirigida y el informe previo.
+- Reconciliación histórica: AUDITORIAS/MapaDependencias.md SHA 4f68d56f910c6a4e87c20ecac82daeb3a615bcaa, sección C1.92 líneas 1907-1914, ya registra AUD-NG-231/TASK-511, la ampliación AUD-NG-219 y AUD-NG-161. ChangesLogs.txt SHA d57cf4bd861b5c3720e60cf83241ed804ff645d9 conserva la afirmación histórica de implementación; no se toma como evidencia de seguridad/corrección real. Auditoria.txt ya contiene el registro C1.92.
+- Tareas formalizadas dentro del mismo informe: AUD-NG-231/TASK-511 (fail-safe, booleano estricto, prevalidación, lock, recuperación, auditoría individual y validación referencial); ampliación AUD-NG-219/TASK-498 (ruta de dominio de revocación e invalidación de caché); ampliación AUD-NG-161 (fixtures y pruebas conductuales/seguridad/concurrencia/fallos).
+- Tareas nuevas creadas en esta normalización: ninguna; se formaliza la tarea nueva ya registrada históricamente y se amplían dos identificadores existentes, sin duplicar.
+- Metodología consultada: METODOLOGIA_DESARROLLO.md §§3.4, 3.9, 3.11 y bloqueo de inicio/cierre. El informe existente se desarrolla en su propio bloque de tareas. Pendientes.md no se consultó ni utilizó.
+- Pruebas ejecutadas: lectura del informe existente; inspección manual dirigida de funciones y rutas citadas; verificación de permisos/router; comparación de SHA; consulta de MapaDependencias/ChangesLogs y registro histórico; verificación de HEAD, padre, árbol completo y rama base.
+- Pruebas no ejecutadas: suites automatizadas, Apps Script runtime, mutaciones de hojas, autoFix real, concurrencia real, fallos inyectados, CacheService productivo, pruebas HTTP/navegador y despliegues. Esta iteración es documental.
+- Archivos modificados previstos para el único commit: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F4-P3-03.md y AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Auditoria.txt, MapaDependencias.md, ChangesLogs.txt, Pendientes.md, completadas.md, plan de auditoría, metodología y rama base.
+- Progreso histórico preservado: 89/183 identificadores auditados; 94 pendientes. Esta normalización no añade identificadores.
+- Siguiente tarea oficial: TAREA-F5-001 — corregir la conversión de aspirantes y garantizar la integridad del expediente. Su informe existente debe desarrollarse conforme a la regla de tareas ejecutables en el mismo informe.
+- Regla de publicación: un solo commit consolidado; árbol Git nuevo basado en el árbol completo verificado; exactamente dos rutas; un padre igual al HEAD de partida; actualizar ref con expected_sha; verificar commit, árbol, rutas, compare y rama base. El SHA final se confirma externamente.
+================================================================
+
