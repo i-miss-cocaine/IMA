@@ -2706,3 +2706,43 @@ Inspección estática/manual. No se ejecutaron Apps Script API, OAuth, creación
 
 ### Estado de pruebas
 Inspección estática/manual. No se ejecutaron llamadas interservicio, pruebas HTTP, caída del control plane, OAuth, idempotencia ni E2E.
+
+
+## C1.226 - TAREA-F6-009 / TAREA-F6-034: salud, diagnóstico, métricas y errores
+
+**Informes:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-009.md y AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-034.md  
+**Dictamen:** NO CUMPLE en ambas. **HEAD inicial:** d44b7131773aac442a74e66549563a408122850a.
+
+### Salud y cobertura
+- USER/ACADEMIC/ACCOUNTING tienen ping, pero devuelven dbConnected:true constante.
+- TASK/EXAM no tienen ping; DEVELOPER tampoco.
+- Solo ACADEMIC/DEVELOPER exponen getServiceHealthDiagnostics; DEVELOPER devuelve PASS constante y ACADEMIC fija connectivity/permissions y solo comprueba Spreadsheet y Drive root.
+- USER/getServiceHealthReport usa LogsSistema, versiones fijas y errores acumulados.
+- checkAllMicroservicesHealth cubre USER/ACADEMIC/TASK/EXAM; TASK/EXAM carecen de ping y ACCOUNTING/DEVELOPER no se monitorizan.
+- js/teacher.js incluye ACCOUNTING, pero TASK/EXAM no responden ping y DEVELOPER se omite.
+- fetchApi usa 60s fijos; options.timeout=6000 no se aplica.
+
+### Métricas y logs
+- USER/getOperationalCapacityMetrics agrega BitacoraTrazabilidad sin cobertura automática de cada solicitud; no mide todas las cuotas/GAS.
+- ACADEMIC capacityUsagePct=15.5 fijo; TASK hace consulta puntual de Drive; EXAM mide filas/lectura.
+- USER/ACADEMIC/ACCOUNTING tienen logger estructurado; TASK/EXAM no presentan el mismo logger.
+- recordStructuredLog no existe en dispatcher USER aunque js/api.js lo llama.
+- getStructuredLogs devuelve DTO inglés y filtros severity/startDate/endDate; UI envía severidad/servicio/limit y espera campos españoles.
+- sanitizePayloadForLog solo oculta algunas claves de credenciales; no PII/finanzas ni message.
+- developer.js muestra fallbackLogs; getCentralizedLogs devuelve sampleLogs y resolveLogId no persiste.
+- No hay mapa común de endpoints/contratos/dependencias.
+
+### Hallazgos y tareas
+- H1 P0: contrato de salud ausente en todos los servicios.
+- H2 P1: diagnósticos parciales o PASS constantes.
+- H3 P1: monitor incompleto y timeout no aplicado.
+- H4 P1: métricas incompletas y valores fijos.
+- H5 P0: logs estructurados no uniformes.
+- H6 P0: sanitización insuficiente.
+- H7 P1: DTO/filtros rotos y datos simulados.
+- H8 P1: falta mapa de dependencias y diagnóstico de causa.
+- Se amplían AUD-NG-144, AUD-NG-145, AUD-NG-163, AUD-NG-086, AUD-NG-083, AUD-NG-007 y AUD-NG-084; no se crean IDs globales duplicados.
+- Tareas canónicas F6-009-A01..A06 pendientes; F6-034 referencia el mismo bloque.
+
+### Estado de pruebas
+Inspección estática/manual. No se ejecutaron HTTP, Apps Script runtime, cuotas reales, Drive/Sheets productivas, E2E ni pruebas de indisponibilidad.
