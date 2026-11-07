@@ -2120,3 +2120,13 @@ TASK-038 (Magic Bytes); TASK-134/TASK-144 (SHA-256/deduplicación/integridad); T
 - Dependencias: ampliar TASK-477/AUD-NG-179 (timeout LockService), AUD-NG-234/TASK-514 (bypass/atomicidad), AUD-NG-145 (bitácora), AUD-NG-161 (pruebas); coordinar TAREA-F5-008 (lista de espera), F5-011 (notificaciones) y F5-012 (portal familiar).
 - Dictamen: F5-010 NO CUMPLE. Informe AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-010.md.
 - Subtareas locales F5-010-A01..A08: esquema; conteo por sección; atomicidad; ciclo de reserva; override firmado; reporte/UI; bitácora/reconciliación; pruebas.
+
+
+### TAREA-F5-010-A01 (C1.205) - Adaptador de esquema OfertaAcademica
+
+- `getAcademicOfferColumnMap(sheet, ensureOptionalColumns)` identifica OfertaID/AnoID/SedeID/Grado/Seccion/AsignaturaID/PlanID/Modalidad/CapacidadMax/Estado/CodigoClase por encabezado y conserva lectura de hojas legacy de siete columnas.
+- `createAcademicOffer` escribe por mapa, valida capacidad y estado, agrega solo columnas opcionales faltantes y versiona la caché.
+- Lectores actualizados: `getAcademicOffers`, `getCoordinatorOverview`, `generateAutoSchedules`, `getStudentSchedule`, `checkEnrollmentCapacity`, `getEnrollmentCapacityReport`, `getSectionCapacityAnalyticsReport`.
+- Suite estática ampliada en `tests/regression/academic-grading-suite.js`. Prueba local mock del adaptador: 12 aserciones PASS; no equivale a persistencia real de Apps Script/Sheets.
+- Backup inmutable del archivo anterior: blob Git SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc. Nuevo blob Code.gs: df87a2eea9f0ef79d0b966d03fd5bbe432003df5.
+- Estado A01: En ejecución, pendiente round-trip real y revisión externa.

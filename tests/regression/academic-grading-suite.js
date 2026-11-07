@@ -34,6 +34,14 @@ assert(academicCode.includes("calculateUnifiedAcademicGrade") && academicCode.in
 assert(academicCode.includes("previewAcademicGradeCalculation"), "backend/academic-service/Code.gs contiene previewAcademicGradeCalculation");
 assert(academicCode.includes("auditAcademicGradesIntegrity") && academicCode.includes("[F9-Task04]"), "backend/academic-service/Code.gs contiene auditAcademicGradesIntegrity [F9-Task04]");
 
+// [TAREA-F5-010-A01] Contratos estáticos del esquema de OfertaAcademica y compatibilidad de lectores.
+assert(academicCode.includes("function getAcademicOfferColumnMap") && academicCode.includes("Esquema OfertaAcademica incompatible"), "OfertaAcademica resuelve columnas por encabezado y rechaza esquemas incompletos");
+assert(academicCode.includes("newRow[columns.capacidadMax] = parsedCapacity") && academicCode.includes("newRow[columns.estado] = offerState"), "createAcademicOffer persiste capacidad máxima y estado en sus columnas identificadas");
+assert(academicCode.includes("function getAcademicOfferValue") && academicCode.includes("function isAcademicOfferActive"), "Lectores comparten acceso por mapa y normalización de estado activo");
+assert(academicCode.includes("offers_v2_") && academicCode.includes("cache.remove(`offers_v2_"), "Caché de ofertas versionada e invalidada al crear");
+assert(academicCode.includes("getAcademicOfferValue(r, offerColumns, \"grado\"") && academicCode.includes("getAcademicOfferValue(r, offerColumns, \"capacidadMax\""), "Reportes y validación de capacidad leen los campos canónicos por encabezado");
+assert(academicCode.includes("getAcademicOfferValue(offer, offerColumns, \"asignaturaId\""), "Consulta de horario del estudiante resuelve asignatura desde el esquema canónico");
+
 // 4. Verificación de Cierre de Período, Aprobación y Rectificaciones (F9-Task05, F9-Task06)
 const examCode = fs.readFileSync(path.join(__dirname, '../../backend/exam-service/Code.gs'), 'utf8');
 assert(examCode.includes("submitGradebookForReview") && examCode.includes("reviewPeriodGradebook"), "backend/exam-service/Code.gs contiene submitGradebookForReview y reviewPeriodGradebook [F9-Task05]");

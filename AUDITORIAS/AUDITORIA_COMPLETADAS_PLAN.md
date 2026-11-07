@@ -1187,3 +1187,12 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Archivos documentales:** informe F5-010 nuevo; Auditoria.txt; MapaDependencias.md; AUDITORIA_COMPLETADAS_PLAN.md; Contexto_personal.txt.
 - **Sin cambios:** código, pruebas, completadas.md, Pendientes.md, ChangesLogs.txt, metodología y rama base.
 - **Continuidad:** C1.203 (F5-009) es el checkpoint previo. C1.204 cierra la auditoría F5-010. Siguiente paso: ejecutar F5-010-A01..A08 según dependencias y metodología; no pasar a F5-011 hasta completar las tareas derivadas o documentar bloqueo.
+
+
+## C1.205 - Desarrollo TAREA-F5-010-A01: esquema de OfertaAcademica
+
+- **Estado:** implementación preparada, no marcada como completada; falta persistencia real y Code Review.
+- **Cambios:** adaptador de columnas por encabezado; compatibilidad de lectura legacy; escritura alineada con esquema de 11 campos; capacidad máxima y estado validados; lectores de ofertas, coordinación, horarios, capacidad y analítica actualizados; caché versionada.
+- **Pruebas:** mock local del adaptador, 12 aserciones PASS; revisión estática del diff. No ejecutados suite Node completa, Apps Script ni Google Sheets real.
+- **Archivos:** backend/academic-service/Code.gs; tests/regression/academic-grading-suite.js; informe F5-010; MapaDependencias.md; ChangesLogs.txt; Contexto_personal.txt.
+- **Siguiente:** terminar verificación funcional de A01; después F5-010-A02 (conteo por sección). No iniciar F5-011.

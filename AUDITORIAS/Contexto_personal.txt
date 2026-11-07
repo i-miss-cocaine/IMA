@@ -6834,3 +6834,27 @@ CHECKPOINT C1.204 — AUDITORÍA DESDE CERO TAREA-F5-010
 - Commit de cierre: se confirmará después de publicar y verificar.
 - Próxima acción: iniciar implementación de F5-010-A01..A08 conforme a dependencias; no iniciar F5-011 hasta resolverlas o registrar bloqueo.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.205 — TAREA-F5-010-A01: ESQUEMA DE OFERTAS
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto: AUDITORIAS/Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- HEAD de partida: c72d4e83ca828d844b1063cea9a0565e433b04bb; árbol de partida: 3ee23067d42abc0fce22aae80a8ea56d8dc5e990.
+- Rama base protegida NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59; sin escritura.
+- ID operativo de sesión/chat: IMA-AUDIT-20261107-0325Z.
+- Checkpoint anterior: C1.204 (auditoría F5-010 NO CUMPLE). Checkpoint actual: C1.205.
+- Tarea en curso: F5-010-A01 - Unificar esquema y escritura de OfertaAcademica. Estado: implementación preparada; pendiente verificación real y revisión externa; no marcada completada.
+- Archivo original inspeccionado/respaldo Git inmutable: backend/academic-service/Code.gs SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc. Se conservó el blob de origen. No fue posible crear copia temporal local mediante el entorno disponible; el SHA Git original sirve como respaldo exacto.
+- Cambios en Code.gs: helper getAcademicOfferColumnMap/getAcademicOfferValue/isAcademicOfferActive; createAcademicOffer y getAcademicOffers alineados con columnas; lectores actualizados en getCoordinatorOverview, generateAutoSchedules, getStudentSchedule, checkEnrollmentCapacity, getEnrollmentCapacityReport y getSectionCapacityAnalyticsReport; clave cache v2.
+- Blob nuevo de Code.gs: df87a2eea9f0ef79d0b966d03fd5bbe432003df5.
+- Pruebas: harness temporal de Node con mock de hoja, 12 aserciones PASS (esquema canónico, lectura legacy, columnas opcionales, round-trip de campos y rechazo de esquema inválido). Aserciones estáticas agregadas a academic-grading-suite.js; la suite completa no se ejecutó. No se ejecutaron Apps Script, Google Sheets productivo, navegador ni persistencia real.
+- Limitación: la prueba mock valida la lógica del adaptador copiada al harness, no sustituye ejecución del código desplegado ni prueba real de Sheets. No declarar A01 completada hasta disponer de esa evidencia y Code Review.
+- Hallazgos relacionados: H2/H8 de AUDITORIA_COMPLETADAS_TAREA-F5-010.md. Dependencias A02/A06.
+- Archivos modificados en esta iteración: backend/academic-service/Code.gs; tests/regression/academic-grading-suite.js; ChangesLogs.txt; AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-010.md; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: Pendientes.md; completadas.md; Auditoria.txt; rama base.
+- Método: una sola iteración/commit consolidado; checkpoint incluido antes de publicar. Fase 5 queda parcialmente bloqueada por falta de runtime/hoja de integración real.
+- Siguiente acción concreta: obtener/usar entorno autorizado de Apps Script/Sheets para crear oferta de prueba, leerla tras recarga y confirmar columnas/capacidad/estado; luego Code Review y continuar F5-010-A02 (conteo por sección).
+================================================================

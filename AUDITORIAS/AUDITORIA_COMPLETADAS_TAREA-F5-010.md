@@ -95,16 +95,87 @@ Las suites inspeccionadas no contienen pruebas de capacidad por año/grado/secci
 
 ## 6. Tareas ejecutables derivadas de los hallazgos
 
-Subtareas locales de F5-010; no crear IDs globales duplicados. Mantener referencias a `TASK-477 / AUD-NG-179`, `AUD-NG-161`, `AUD-NG-145`, `AUD-NG-234 / TASK-514` y las dependencias de listas de espera F5-008.
+Las tareas se mantienen dentro de este informe. No crear IDs globales duplicados. Cada ficha identifica hallazgo, severidad, alcance, dependencias, archivos, criterios, prioridad y estado.
 
-- [ ] **F5-010-A01 - Unificar esquema y escritura de OfertaAcademica.** Alinear `createAcademicOffer`, encabezados y lectores; persistir capacidad máxima/estado por año, grado y sección; rechazar configuraciones incompletas y eliminar fallback silencioso de capacidad/estado. Aceptación: round-trip de creación/lectura conserva todos los campos.
-- [ ] **F5-010-A02 - Corregir cálculo dimensional de ocupación.** Asociar cada solicitud/reserva a una sección inequívoca; filtrar año, grado y sección; definir qué ocurre si una admisión aún no tiene sección; no descontar reservas de otras secciones. Aceptación: casos A/B del mismo grado producen conteos independientes.
-- [ ] **F5-010-A03 - Hacer atómica la operación de cupo.** Definir una única capa de reserva/matrícula con LockService obligatorio; abortar ante timeout; eliminar bypass de cliente `skipLock/isInternalCall`; integrar registerStudentEnrollment, createStudentEnrollment, conversión, renovación, traslado y lista de espera. Ampliar TASK-477/AUD-NG-179 y AUD-NG-234/TASK-514.
-- [ ] **F5-010-A04 - Implementar ciclo de vida durable de reservas.** Distinguir plaza ofrecida, aceptada, Admitida, expirada, cancelada, rechazada y convertida; persistir fecha de decisión/expiración y liberar/promover de forma idempotente; decidir días hábiles y timezone. Aceptación: cada transición cambia el estado y libera/consume exactamente un cupo.
-- [ ] **F5-010-A05 - Proteger autorización de sobrecupo.** Exigir identidad verificada, rol de Dirección, firma/autorización verificable, motivo y correlación; no aceptar booleano del cliente como prueba. Auditar actor y decisión. Aceptación: intento sin firma/rol falla cerrado.
-- [ ] **F5-010-A06 - Exponer reporte consolidado seguro.** Añadir dispatch/RBAC al reporte, snapshot consistente y filtros por año/grado/sección; conectar la UI a la sección real y distinguir error, sección no configurada y cupo cero. Aceptación: reporte coincide con datos canónicos y no usa fallback engañoso.
-- [ ] **F5-010-A07 - Bitácora y reconciliación de cupos.** Registrar reserva, aceptación, expiración, cancelación, rechazo, conversión, liberación y override con actor/fecha/causa; crear comprobación de invariantes y mecanismo de reconciliación no destructivo. Ampliar AUD-NG-145.
-- [ ] **F5-010-A08 - Suite de regresión aislada.** Añadir fixtures/mocks para límites, secciones, locks/timeouts, concurrencia, conversión, expiración, rutas legacy, IDOR/RBAC y overrides; nunca leer/escribir hojas productivas. Ampliar AUD-NG-161.
+### F5-010-A01 - Unificar esquema y escritura de OfertaAcademica
+- **Hallazgos:** H2 (CRÍTICO/P0), H8 (ALTO/P1).
+- **Objetivo/acción:** usar un mapa de columnas derivado de encabezados; alinear creación, consulta, reporte, horario y capacidad; persistir capacidad máxima y estado sin desplazar columnas.
+- **Archivos/módulos:** `backend/academic-service/Code.gs`; `tests/regression/academic-grading-suite.js`; `AUDITORIAS/MapaDependencias.md`.
+- **Dependencias:** ninguna; habilita A02 y A06.
+- **Alcance:** compatibilidad de lectura con el esquema legacy de siete columnas; agregar columnas opcionales faltantes solo al crear ofertas; no reordenar ni sobrescribir datos existentes; validar capacidad entera positiva y estado permitido; versionar caché.
+- **Criterios verificables:** (1) una oferta nueva conserva exactamente ID/año/sede/grado/sección/asignatura/plan/modalidad/capacidad/estado/código; (2) lectura devuelve los mismos valores; (3) encabezados legacy se leen sin confundir grado, sección o estado; (4) esquema incompleto falla explícitamente; (5) lectores de coordinación, horarios, matrícula y analítica usan el mismo mapa.
+- **Prioridad:** P0.
+- **Estado:** **En ejecución** (código preparado; pendiente verificación de persistencia real y revisión externa).
+
+### F5-010-A02 - Corregir cálculo dimensional de ocupación
+- **Hallazgos:** H3 (CRÍTICO/P0), H6 (ALTO/P1).
+- **Objetivo/acción:** asociar cada reserva a una sección inequívoca y calcular confirmados/reservados por año, grado y sección, sin mezclar grupos.
+- **Archivos/módulos:** `backend/academic-service/Code.gs`; UI de Secretaría cuando corresponda.
+- **Dependencias:** A01; modelo de reservas F5-008.
+- **Alcance:** definir la fuente de sección para solicitudes sin sección; filtrar las matrículas y reservas con la misma clave académica; impedir defaults silenciosos que trasladen reservas entre secciones.
+- **Criterios verificables:** dos secciones del mismo grado tienen conteos independientes; una reserva sin sección se rechaza o queda en estado no asignado sin descontar cupo; los conteos coinciden con fixtures de matrícula y admisión.
+- **Prioridad:** P0.
+- **Estado:** Pendiente.
+
+### F5-010-A03 - Hacer atómica la operación de cupo
+- **Hallazgos:** H1 (CRÍTICO/P0), H5 (CRÍTICO/P0), H6 (ALTO/P1).
+- **Objetivo/acción:** centralizar reserva y matrícula bajo un único bloqueo obligatorio; abortar si no se obtiene; retirar bypass controlables por cliente.
+- **Archivos/módulos:** `backend/academic-service/Code.gs`; ampliar `TASK-477 / AUD-NG-179` y `AUD-NG-234 / TASK-514`.
+- **Dependencias:** A01 y A02; rutas de admisión, conversión, renovación, traslado y lista de espera.
+- **Alcance:** proteger el ciclo completo lectura-validación-escritura; integrar rutas legacy y nuevas; no aceptar `skipLock` o `isInternalCall` del cliente como autorización interna.
+- **Criterios verificables:** timeout produce error sin escritura; dos peticiones por el último cupo producen un único ganador; todas las rutas de alta aplican el mismo control; reintentos no duplican matrícula.
+- **Prioridad:** P0.
+- **Estado:** Pendiente; ampliar ID existente TASK-477, no crear duplicado.
+
+### F5-010-A04 - Implementar ciclo de vida durable de reservas
+- **Hallazgos:** H4 (ALTO/P1), H6 (ALTO/P1).
+- **Objetivo/acción:** persistir ofrecida, aceptada, Admitida, expirada, cancelada, rechazada y convertida con fecha, motivo y liberación idempotente.
+- **Archivos/módulos:** `backend/academic-service/Code.gs`; integración con lista de espera F5-008 y notificaciones F5-011.
+- **Dependencias:** A02 y A03.
+- **Alcance:** definir expiración en días hábiles o naturales y zona horaria; registrar transiciones; liberar y promover siguiente aspirante sin doble conteo.
+- **Criterios verificables:** cada transición deja estado y evento persistidos; una reserva expirada deja de ocupar cupo una sola vez; cancelación/rechazo libera inmediatamente; conversión transforma reserva en matrícula sin doble descuento.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+
+### F5-010-A05 - Proteger autorización de sobrecupo
+- **Hallazgos:** H7 (CRÍTICO/P0).
+- **Objetivo/acción:** sustituir el booleano cliente-controlable por autorización verificable de Dirección, con actor, firma/credencial institucional, motivo y correlación.
+- **Archivos/módulos:** `backend/academic-service/Code.gs`; servicio de identidad/firma si aplica.
+- **Dependencias:** A03 y contratos de identidad institucional.
+- **Alcance:** fail-closed ante ausencia de autorización; no confiar en `forceCapacityOverride` aislado ni en constante global como firma; registrar autorización verificable.
+- **Criterios verificables:** usuario sin rol o sin firma válida no puede exceder cupo; autorización válida queda vinculada a la operación y su auditoría.
+- **Prioridad:** P0.
+- **Estado:** Pendiente.
+
+### F5-010-A06 - Exponer reporte consolidado seguro
+- **Hallazgos:** H3 (CRÍTICO/P0), H8 (ALTO/P1).
+- **Objetivo/acción:** registrar dispatch/RBAC para el reporte, consultar snapshot consistente y conectar la UI con año/grado/sección reales.
+- **Archivos/módulos:** `backend/academic-service/Code.gs`, `js/secretary.js`, `dashboard-secretaria.html`.
+- **Dependencias:** A01-A03.
+- **Alcance:** distinguir sección inexistente, cerrada y cupo cero; reportar capacidad, matrículas activas, reservas vigentes, expiradas y libres.
+- **Criterios verificables:** endpoint accesible solo a roles autorizados; cifras reconciliadas con datos canónicos; la UI muestra la sección seleccionada y errores sin inventar capacidad.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+
+### F5-010-A07 - Bitácora y reconciliación de cupos
+- **Hallazgos:** H4 (ALTO/P1), H7 (CRÍTICO/P0).
+- **Objetivo/acción:** registrar reserva, aceptación, expiración, cancelación, rechazo, conversión, liberación y override con actor/fecha/causa.
+- **Archivos/módulos:** `backend/academic-service/Code.gs`; ampliar `AUD-NG-145`.
+- **Dependencias:** A03-A05.
+- **Alcance:** bitácora append-only y proceso de reconciliación no destructivo entre solicitudes, reservas y matrículas.
+- **Criterios verificables:** cada cambio de ocupación tiene un evento correlacionado; la reconciliación detecta duplicados, huérfanos y diferencias sin modificar datos automáticamente.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+
+### F5-010-A08 - Suite de regresión aislada
+- **Hallazgos:** H1-H8 (CRÍTICO/P0 y ALTO/P1).
+- **Objetivo/acción:** cubrir esquema, capacidad, reservas, expiración, concurrencia, conversión, permisos y reportes sin tocar hojas productivas.
+- **Archivos/módulos:** `tests/regression/academic-grading-suite.js` y/o suite dedicada de capacidad; ampliar `AUD-NG-161`.
+- **Dependencias:** A01-A07.
+- **Alcance:** mocks/fixtures aislados de Sheets, LockService, CacheService y reloj; pruebas de estados y fallos.
+- **Criterios verificables:** casos de límite, sección A/B, último cupo concurrente, timeout, expiración, cancelación, conversión sin doble conteo, override no autorizado y reporte reconciliado.
+- **Prioridad:** P1.
+- **Estado:** Pendiente; ampliar ID existente AUD-NG-161.
 
 ## 7. Pruebas y limitaciones
 

@@ -6057,10 +6057,81 @@ function createStudyPlan(payload) {
   return { status: "success", message: "Plan de estudio registrado.", data: { planId } };
 }
 
+// [TAREA-F5-010-A01] Adaptador de esquema para OfertaAcademica (mantiene compatibilidad con encabezados legacy).
+function getAcademicOfferColumnMap(sheet, ensureOptionalColumns) {
+  if (!sheet) throw new Error("La hoja OfertaAcademica no está disponible.");
+
+  const canonicalHeaders = ["OfertaID", "AnoID", "SedeID", "Grado", "Seccion", "AsignaturaID", "PlanID", "Modalidad", "CapacidadMax", "Estado", "CodigoClase"];
+  const optionalHeaders = {
+    sedeId: "SedeID",
+    modalidad: "Modalidad",
+    capacidadMax: "CapacidadMax",
+    codigoClase: "CodigoClase"
+  };
+  if (sheet.getLastRow() === 0) sheet.appendRow(canonicalHeaders);
+
+  let lastColumn = sheet.getLastColumn();
+  if (lastColumn === 0) {
+    sheet.getRange(1, 1, 1, canonicalHeaders.length).setValues([canonicalHeaders]);
+    lastColumn = canonicalHeaders.length;
+  }
+
+  const headers = sheet.getRange(1, 1, 1, lastColumn).getValues()[0];
+  const normalizeHeader = value => String(value || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const aliases = {
+    ofertaId: ["ofertaid"],
+    anoId: ["anoid", "anolectivo", "ano"],
+    sedeId: ["sedeid", "sede"],
+    grado: ["grado"],
+    seccion: ["seccion"],
+    asignaturaId: ["asignaturaid", "asignatura"],
+    planId: ["planid"],
+    modalidad: ["modalidad"],
+    capacidadMax: ["capacidadmax", "capacidadmaxima", "cupomaximo"],
+    estado: ["estado", "estadooferta"],
+    codigoClase: ["codigoclase", "codigoseccion"]
+  };
+  const map = {};
+  Object.keys(aliases).forEach(key => {
+    map[key] = headers.findIndex(header => aliases[key].indexOf(normalizeHeader(header)) !== -1);
+  });
+
+  const required = ["ofertaId", "anoId", "grado", "seccion", "asignaturaId", "planId", "estado"];
+  const missingRequired = required.filter(key => map[key] < 0);
+  if (missingRequired.length) {
+    throw new Error("Esquema OfertaAcademica incompatible. Faltan columnas obligatorias: " + missingRequired.join(", "));
+  }
+
+  if (ensureOptionalColumns) {
+    Object.keys(optionalHeaders).forEach(key => {
+      if (map[key] < 0) {
+        const nextColumn = sheet.getLastColumn() + 1;
+        sheet.getRange(1, nextColumn).setValue(optionalHeaders[key]);
+        map[key] = nextColumn - 1;
+      }
+    });
+  }
+
+  return map;
+}
+
+function getAcademicOfferValue(row, columnMap, key, fallback) {
+  const index = columnMap && columnMap[key];
+  if (index === undefined || index < 0 || index >= row.length || row[index] === "" || row[index] === null || row[index] === undefined) {
+    return fallback;
+  }
+  return row[index];
+}
+
+function isAcademicOfferActive(state) {
+  const normalizedState = String(state || "").trim().toLowerCase();
+  return normalizedState === "activa" || normalizedState === "activo";
+}
+
 // [TAREA-F5-020] [Fase 5: Optimización de Admisiones] - Caché selectiva de catálogos estáticos (10 min TTL) e invalidación
 function getAcademicOffers(payload) {
   const { anoId, grado, seccion } = payload || {};
-  const cacheKey = `offers_${anoId || 'ALL'}_${grado || 'ALL'}_${seccion || 'ALL'}`;
+  const cacheKey = `offers_v2_${anoId || 'ALL'}_${grado || 'ALL'}_${seccion || 'ALL'}`;
 
   try {
     const cache = CacheService.getScriptCache();
@@ -6072,23 +6143,31 @@ function getAcademicOffers(payload) {
 
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = getOrCreateSheet(ss, "OfertaAcademica");
+  const columns = getAcademicOfferColumnMap(sheet, false);
   const data = sheet.getDataRange().getValues();
   if (data.length <= 1) return { status: "success", data: [] };
 
   const offers = data.slice(1).filter(r => {
-    if (anoId && String(r[1]).trim() !== String(anoId).trim()) return false;
-    if (grado && normalizeString(r[2]) !== normalizeString(grado)) return false;
-    if (seccion && String(r[3]).trim() !== String(seccion).trim()) return false;
+    if (anoId && String(getAcademicOfferValue(r, columns, "anoId", "")).trim() !== String(anoId).trim()) return false;
+    if (grado && normalizeString(getAcademicOfferValue(r, columns, "grado", "")) !== normalizeString(grado)) return false;
+    if (seccion && String(getAcademicOfferValue(r, columns, "seccion", "")).trim() !== String(seccion).trim()) return false;
     return true;
-  }).map(r => ({
-    ofertaId: r[0],
-    anoId: r[1],
-    grado: r[2],
-    seccion: r[3],
-    asignaturaId: r[4],
-    planId: r[5],
-    estado: r[6] || "Activa"
-  }));
+  }).map(r => {
+    const rawCapacity = Number(getAcademicOfferValue(r, columns, "capacidadMax", 35));
+    return {
+      ofertaId: getAcademicOfferValue(r, columns, "ofertaId", ""),
+      anoId: getAcademicOfferValue(r, columns, "anoId", ""),
+      sedeId: getAcademicOfferValue(r, columns, "sedeId", ""),
+      grado: getAcademicOfferValue(r, columns, "grado", ""),
+      seccion: getAcademicOfferValue(r, columns, "seccion", ""),
+      asignaturaId: getAcademicOfferValue(r, columns, "asignaturaId", ""),
+      planId: getAcademicOfferValue(r, columns, "planId", ""),
+      modalidad: getAcademicOfferValue(r, columns, "modalidad", ""),
+      capacidadMax: Number.isInteger(rawCapacity) && rawCapacity >= 0 ? rawCapacity : 35,
+      estado: getAcademicOfferValue(r, columns, "estado", "Activa") || "Activa",
+      codigoClase: getAcademicOfferValue(r, columns, "codigoClase", "")
+    };
+  });
 
   try {
     const cache = CacheService.getScriptCache();
@@ -6099,26 +6178,48 @@ function getAcademicOffers(payload) {
 }
 
 function createAcademicOffer(payload) {
-  const { anoId, grado, seccion, asignaturaId, planId } = payload || {};
+  const { anoId, sedeId, grado, seccion, asignaturaId, planId, modalidad, capacidadMax, estado, codigoClase } = payload || {};
   if (!grado || !asignaturaId) throw new Error("Grado y Asignatura son requeridos.");
+
+  const parsedCapacity = capacidadMax === undefined || capacidadMax === null || capacidadMax === "" ? 35 : Number(capacidadMax);
+  if (!Number.isInteger(parsedCapacity) || parsedCapacity < 1) {
+    throw new Error("La capacidad máxima debe ser un número entero mayor que cero.");
+  }
+
+  const offerState = String(estado || "Activa").trim();
+  if (["Activa", "Inactiva", "Cerrada"].indexOf(offerState) === -1) {
+    throw new Error("El estado de la oferta debe ser Activa, Inactiva o Cerrada.");
+  }
 
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = getOrCreateSheet(ss, "OfertaAcademica");
-  if (sheet.getLastRow() === 0) {
-    sheet.appendRow(["OfertaID", "AnoID", "Grado", "Seccion", "AsignaturaID", "PlanID", "Estado"]);
-  }
-
+  const columns = getAcademicOfferColumnMap(sheet, true);
+  const newRow = new Array(sheet.getLastColumn()).fill("");
   const ofertaId = "OFE-" + Date.now();
-  sheet.appendRow([ofertaId, anoId || "ANO-CURRENT", grado, seccion || "A", asignaturaId, planId || "PLAN-DEFAULT", "Activa"]);
 
-  // Invalidación de caché de ofertas académicas
+  newRow[columns.ofertaId] = ofertaId;
+  newRow[columns.anoId] = anoId || "ANO-CURRENT";
+  newRow[columns.sedeId] = sedeId || "";
+  newRow[columns.grado] = String(grado).trim();
+  newRow[columns.seccion] = String(seccion || "A").trim();
+  newRow[columns.asignaturaId] = String(asignaturaId).trim();
+  newRow[columns.planId] = planId || "PLAN-DEFAULT";
+  newRow[columns.modalidad] = modalidad || "Presencial";
+  newRow[columns.capacidadMax] = parsedCapacity;
+  newRow[columns.estado] = offerState;
+  newRow[columns.codigoClase] = codigoClase || "";
+
+  sheet.appendRow(newRow);
+
   try {
     const cache = CacheService.getScriptCache();
+    cache.remove(`offers_v2_${anoId || 'ALL'}_${grado || 'ALL'}_${seccion || 'ALL'}`);
+    cache.remove("offers_v2_ALL_ALL_ALL");
     cache.remove(`offers_${anoId || 'ALL'}_${grado || 'ALL'}_${seccion || 'ALL'}`);
     cache.remove("offers_ALL_ALL_ALL");
   } catch (_) {}
 
-  return { status: "success", message: "Oferta académica registrada.", data: { ofertaId } };
+  return { status: "success", message: "Oferta académica registrada.", data: { ofertaId, capacidadMax: parsedCapacity, estado: offerState } };
 }
 
 function getTeacherAssignments(payload) {
@@ -6200,10 +6301,20 @@ function assignTeacherToSection(payload) {
 function getCoordinatorOverview(payload) {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const offerSheet = getOrCreateSheet(ss, "OfertaAcademica");
+  const offerColumns = getAcademicOfferColumnMap(offerSheet, false);
   const asigSheet = getOrCreateSheet(ss, "AsignacionesDocentes");
   const horSheet = getOrCreateSheet(ss, "HorariosClase");
 
-  const offers = offerSheet.getDataRange().getValues().slice(1).map(r => ({ ofertaId: r[0], anoLectivo: r[1], grado: r[2], seccion: r[3], asignaturaId: r[4] }));
+  const offers = offerSheet.getDataRange().getValues().slice(1).map(r => ({
+    ofertaId: getAcademicOfferValue(r, offerColumns, "ofertaId", ""),
+    anoLectivo: getAcademicOfferValue(r, offerColumns, "anoId", ""),
+    sedeId: getAcademicOfferValue(r, offerColumns, "sedeId", ""),
+    grado: getAcademicOfferValue(r, offerColumns, "grado", ""),
+    seccion: getAcademicOfferValue(r, offerColumns, "seccion", ""),
+    asignaturaId: getAcademicOfferValue(r, offerColumns, "asignaturaId", ""),
+    capacidadMax: getAcademicOfferValue(r, offerColumns, "capacidadMax", 35),
+    estado: getAcademicOfferValue(r, offerColumns, "estado", "Activa")
+  }));
   const assignments = asigSheet.getDataRange().getValues().slice(1).map(r => ({ asignacionId: r[0], ofertaId: r[1], docenteUserId: r[2], rolDocente: r[3], seccionKey: r[8] }));
   const schedules = horSheet.getDataRange().getValues().slice(1).map(r => ({ horarioId: r[0], ofertaId: r[1], diaSemana: r[2], horaInicio: r[3], horaFin: r[4], aulaCodigo: r[5], docenteUserId: r[6], estado: r[7] }));
 
@@ -6231,6 +6342,7 @@ function generateAutoSchedules(payload) {
 
   // Cargar ofertas académicas y asignaciones
   const offSheet = getOrCreateSheet(ss, "OfertaAcademica");
+  const offerColumns = getAcademicOfferColumnMap(offSheet, false);
   const offRows = offSheet.getDataRange().getValues().slice(1);
 
   const asigSheet = getOrCreateSheet(ss, "AsignacionesDocentes");
@@ -6240,7 +6352,11 @@ function generateAutoSchedules(payload) {
   const aulaRows = aulaSheet.getDataRange().getValues().slice(1).filter(a => a[6] !== "Inactivo");
 
   // Filtrar ofertas del año lectivo
-  let targetOffers = offRows.filter(r => r[7] !== "Inactivo" && String(r[1]).includes(String(targetAno)));
+  let targetOffers = offRows.filter(r => {
+    const offerYear = String(getAcademicOfferValue(r, offerColumns, "anoId", ""));
+    const offerState = String(getAcademicOfferValue(r, offerColumns, "estado", "Activa")).trim();
+    return offerYear.includes(String(targetAno)) && isAcademicOfferActive(offerState);
+  });
   if (Array.isArray(ofertasIds) && ofertasIds.length > 0) {
     targetOffers = targetOffers.filter(r => ofertasIds.includes(String(r[0]).trim()));
   }
@@ -6270,8 +6386,8 @@ function generateAutoSchedules(payload) {
   const scheduleSheet = getOrCreateSheet(ss, "HorariosClase");
 
   targetOffers.forEach(off => {
-    const ofertaId = off[0];
-    const asignaturaNombre = off[3];
+    const ofertaId = getAcademicOfferValue(off, offerColumns, "ofertaId", "");
+    const asignaturaNombre = getAcademicOfferValue(off, offerColumns, "asignaturaId", "Asignatura General");
 
     // Buscar docente asignado
     const asig = asigRows.find(a => String(a[1]).trim() === String(ofertaId).trim() && a[6] !== "Inactivo");
@@ -7886,19 +8002,24 @@ function getStudentSchedule(payload) {
   }
 
   const horRows = getOrCreateSheet(ss, "HorariosClase").getDataRange().getValues().slice(1);
-  const offerRows = getOrCreateSheet(ss, "OfertaAcademica").getDataRange().getValues().slice(1);
+  const offerSheet = getOrCreateSheet(ss, "OfertaAcademica");
+  const offerColumns = getAcademicOfferColumnMap(offerSheet, false);
+  const offerRows = offerSheet.getDataRange().getValues().slice(1);
   const asigRows = getOrCreateSheet(ss, "CatalogoAsignaturas").getDataRange().getValues().slice(1);
   const teacherAsigRows = getOrCreateSheet(ss, "AsignacionesDocentes").getDataRange().getValues().slice(1);
   const userRows = ss.getSheetByName("Usuarios") ? ss.getSheetByName("Usuarios").getDataRange().getValues().slice(1) : [];
 
   // Filtrar ofertas que coincidan con grado y sección
   const activeOffers = offerRows.filter(r => {
-    return (!targetGrado || normalizeString(r[2]) === normalizeString(targetGrado)) &&
-           (!targetSeccion || normalizeString(r[3]) === normalizeString(targetSeccion)) &&
-           r[6] !== "Inactiva";
+    const rowGrado = getAcademicOfferValue(r, offerColumns, "grado", "");
+    const rowSeccion = getAcademicOfferValue(r, offerColumns, "seccion", "");
+    const rowEstado = String(getAcademicOfferValue(r, offerColumns, "estado", "Activa")).trim();
+    return (!targetGrado || normalizeString(rowGrado) === normalizeString(targetGrado)) &&
+           (!targetSeccion || normalizeString(rowSeccion) === normalizeString(targetSeccion)) &&
+           isAcademicOfferActive(rowEstado);
   });
 
-  const offerIds = activeOffers.map(o => String(o[0]).trim());
+  const offerIds = activeOffers.map(o => String(getAcademicOfferValue(o, offerColumns, "ofertaId", "")).trim());
 
   // Filtrar bloques de horario activos para las ofertas seleccionadas
   const studentSchedules = horRows.filter(r => {
@@ -7906,8 +8027,8 @@ function getStudentSchedule(payload) {
     if (offerIds.length > 0) return offerIds.indexOf(String(r[1]).trim()) !== -1;
     return false;
   }).map(r => {
-    const offer = activeOffers.find(o => String(o[0]).trim() === String(r[1]).trim());
-    const asigId = offer ? offer[4] : "";
+    const offer = activeOffers.find(o => String(getAcademicOfferValue(o, offerColumns, "ofertaId", "")).trim() === String(r[1]).trim());
+    const asigId = offer ? getAcademicOfferValue(offer, offerColumns, "asignaturaId", "") : "";
     const catalogItem = asigRows.find(a => String(a[0]).trim() === String(asigId).trim());
     const asignaturaNombre = catalogItem ? catalogItem[1] : (asigId || "Asignatura General");
 
@@ -7930,8 +8051,8 @@ function getStudentSchedule(payload) {
       docenteNombre: docenteNombre,
       esSustituto: Boolean(subMatch),
       asignaturaNombre: asignaturaNombre,
-      grado: offer ? offer[2] : targetGrado,
-      seccion: offer ? offer[3] : targetSeccion,
+      grado: offer ? getAcademicOfferValue(offer, offerColumns, "grado", targetGrado) : targetGrado,
+      seccion: offer ? getAcademicOfferValue(offer, offerColumns, "seccion", targetSeccion) : targetSeccion,
       estado: r[7]
     };
   });
@@ -11039,12 +11160,19 @@ function checkEnrollmentCapacity(payload) {
     const targetSeccion = seccion || "A";
 
     // 1. Consultar capacidad máxima y estado de sección en OfertaAcademica si existe
-    const offerRows = getOrCreateSheet(ss, "OfertaAcademica").getDataRange().getValues().slice(1);
-    const offer = offerRows.find(r => String(r[1]).trim() === String(targetAno).trim() && normalizeString(r[3]) === normalizeString(grado) && normalizeString(r[4]) === normalizeString(targetSeccion));
+    const offerSheet = getOrCreateSheet(ss, "OfertaAcademica");
+    const offerColumns = getAcademicOfferColumnMap(offerSheet, false);
+    const offerRows = offerSheet.getDataRange().getValues().slice(1);
+    const offer = offerRows.find(r =>
+      String(getAcademicOfferValue(r, offerColumns, "anoId", "")).trim() === String(targetAno).trim() &&
+      normalizeString(getAcademicOfferValue(r, offerColumns, "grado", "")) === normalizeString(grado) &&
+      normalizeString(getAcademicOfferValue(r, offerColumns, "seccion", "")) === normalizeString(targetSeccion)
+    );
 
-    const maxCapacity = offer ? parseInt(offer[8] || 35, 10) : 35;
-    const offerState = offer ? String(offer[9] || "Activa").trim() : "Activa";
-    const isSectionOpen = offerState !== "Cerrada" && offerState !== "Inactiva";
+    const rawCapacity = Number(getAcademicOfferValue(offer || [], offerColumns, "capacidadMax", 35));
+    const maxCapacity = Number.isInteger(rawCapacity) && rawCapacity >= 0 ? rawCapacity : 35;
+    const offerState = offer ? String(getAcademicOfferValue(offer, offerColumns, "estado", "Activa") || "Activa").trim() : "Activa";
+    const isSectionOpen = isAcademicOfferActive(offerState);
 
     // 2. Consultar inscritos confirmados en Matriculas
     const matRows = getOrCreateSheet(ss, "Matriculas").getDataRange().getValues().slice(1);
@@ -11120,12 +11248,14 @@ function getEnrollmentCapacityReport(payload) {
   const targetAno = anolectivo || "2026";
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
 
-  const offerRows = getOrCreateSheet(ss, "OfertaAcademica").getDataRange().getValues().slice(1);
-  const targetOffers = offerRows.filter(r => String(r[1]).trim() === String(targetAno).trim());
+  const offerSheet = getOrCreateSheet(ss, "OfertaAcademica");
+  const offerColumns = getAcademicOfferColumnMap(offerSheet, false);
+  const offerRows = offerSheet.getDataRange().getValues().slice(1);
+  const targetOffers = offerRows.filter(r => String(getAcademicOfferValue(r, offerColumns, "anoId", "")).trim() === String(targetAno).trim());
 
   const reports = targetOffers.map(r => {
-    const g = String(r[3] || "").trim();
-    const sec = String(r[4] || "A").trim();
+    const g = String(getAcademicOfferValue(r, offerColumns, "grado", "") || "").trim();
+    const sec = String(getAcademicOfferValue(r, offerColumns, "seccion", "A") || "A").trim();
     return checkEnrollmentCapacity({ anolectivo: targetAno, grado: g, seccion: sec, skipLock: true });
   });
 
@@ -13550,15 +13680,17 @@ function getSectionCapacityAnalyticsReport(payload) {
     var sheetOferta = ss.getSheetByName("OfertaAcademica");
     var ofertas = [];
     if (sheetOferta) {
+      var offerColumns = getAcademicOfferColumnMap(sheetOferta, false);
       var dataOf = sheetOferta.getDataRange().getValues();
       for (var o = 1; o < dataOf.length; o++) {
         var rO = dataOf[o];
-        var grO = (rO[1] || "").toString().trim();
-        var secO = (rO[2] || "").toString().trim();
-        var cupoAdmin = parseInt(rO[8] || 35, 10);
-        var estadoO = (rO[9] || "Activo").toString().trim();
+        var grO = String(getAcademicOfferValue(rO, offerColumns, "grado", "") || "").trim();
+        var secO = String(getAcademicOfferValue(rO, offerColumns, "seccion", "") || "").trim();
+        var rawCapacity = Number(getAcademicOfferValue(rO, offerColumns, "capacidadMax", 35));
+        var cupoAdmin = Number.isInteger(rawCapacity) && rawCapacity >= 0 ? rawCapacity : 35;
+        var estadoO = String(getAcademicOfferValue(rO, offerColumns, "estado", "Activa") || "Activa").trim();
 
-        if (grO && secO && estadoO === "Activo") {
+        if (grO && secO && isAcademicOfferActive(estadoO)) {
           ofertas.push({
             grado: grO,
             seccion: secO,

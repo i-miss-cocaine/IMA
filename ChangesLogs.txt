@@ -4427,3 +4427,30 @@ DESCRIPCIÓN DE MODIFICACIONES:
 4. En Pendientes.md:
    - Marcadas las tareas [TASK-048] y [TASK-049] como completadas [X].
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-07
+TAREA: TAREA-F5-010-A01 - Unificar esquema y escritura de OfertaAcademica
+RAMA: NG_beta_0.0.0.1_work
+ARCHIVOS MODIFICADOS:
+- backend/academic-service/Code.gs
+- tests/regression/academic-grading-suite.js
+- AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-010.md
+- AUDITORIAS/MapaDependencias.md
+- AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md
+- AUDITORIAS/Contexto_personal.txt
+DESCRIPCIÓN:
+1. En backend/academic-service/Code.gs:
+   - Se añadió getAcademicOfferColumnMap para resolver columnas por encabezado y conservar compatibilidad de lectura con hojas legacy de siete columnas.
+   - La escritura agrega únicamente encabezados opcionales ausentes y construye filas mediante índices identificados; valida capacidad entera positiva y estado Activa/Inactiva/Cerrada.
+   - getAcademicOffers, getCoordinatorOverview, generateAutoSchedules, getStudentSchedule, checkEnrollmentCapacity, getEnrollmentCapacityReport y getSectionCapacityAnalyticsReport consumen el mapa compartido.
+   - Se corrigió el filtro de estado activo para aceptar Activa/Activo y se versionó la clave de caché de ofertas.
+2. En tests/regression/academic-grading-suite.js:
+   - Se agregaron aserciones estáticas para el mapa de columnas, persistencia de capacidad/estado, compatibilidad de lectores y caché.
+3. Verificación:
+   - Prueba local aislada del adaptador con mock de hoja: 12 aserciones PASS para esquema canónico, lectura legacy, extensión de columnas opcionales, mapeo de ida/vuelta y rechazo de esquema inválido. El harness fue temporal y no se agregó al repositorio.
+   - Revisión estática del diff y de los lectores modificados.
+   - No ejecutados Node suite completo del repositorio, Apps Script, Google Sheets productivo, navegador ni persistencia real. El round-trip contra hoja real queda pendiente de entorno de integración.
+ESTADO: implementación A01 en curso; no declarar completada hasta verificación funcional y Code Review.
+===============================================================================
