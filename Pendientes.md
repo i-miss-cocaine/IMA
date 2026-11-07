@@ -2390,7 +2390,18 @@ REGLA RECTORA INNEGOCIABLE DEL BACKLOG:
   - [X] Registrar una nueva partición sin tener que modificar cada consumidor.
   - [X] Comprobar la compatibilidad de esquemas entre particiones.
   - [X] Verificar que las referencias históricas no cambian al registrar nuevas fuentes.
+- **Ampliación C1.29 / FASE2-01:** USER, ACCOUNTING, ACADEMIC, TASK y EXAM mantienen el mismo `SPREADSHEET_ID` literal. `resolveSpreadsheetSource` solo está definido en USER/ACCOUNTING/ACADEMIC y cada uno tiene una única llamada adicional; TASK y EXAM no lo implementan. En USER/ACCOUNTING/ACADEMIC la mayoría de accesos siguen usando `SpreadsheetApp.openById(SPREADSHEET_ID)` (más de 150 referencias por servicio). El `SERVICE_REGISTRY.resources.spreadsheetId` del frontend contiene IDs de ejemplo que no corresponden al ID operativo. No se acredita partición física ni resolución universal por servicio/dominio.
+- **Criterios adicionales:** Cada servicio debe resolver su fuente autorizada por catálogo, dominio, cuenta y contexto; los accesos directos fijos deben migrarse o justificarse. Probar aislamiento de lecturas/escrituras entre USER, ACADEMIC, TASK, EXAM y ACCOUNTING con fuentes distintas; no aceptar IDs placeholder ni fallback a la hoja compartida.
 - **Estado:** [X] Completada
+
+
+**Ampliación C1.31 / FASE2-03 - Auditoría de resolución y catálogo académico (2026-11-05):**
+- En `backend/academic-service/Code.gs`, `registerSpreadsheetSource` (líneas 11453-11496) exige dominio, año y spreadsheetId, pero la clave de actualización solo considera dominio+año. Aunque recibe `departamento` y `servicio`, no los persiste; tampoco registra área de responsabilidad, tipo de información ni cuenta propietaria. `schemaVersion` se almacena sin comprobar compatibilidad. No valida que el Spreadsheet exista, esté disponible o sea accesible por el servicio. Las actualizaciones sobrescriben la fila y no conservan historial de fuentes.
+- `resolveSpreadsheetSource` (líneas 11499-11538) ignora departamento y servicio, resuelve únicamente por dominio+año y devuelve `status:"success"` con `resolved:false` y el `SPREADSHEET_ID` principal cuando no encuentra una partición. Esto puede dirigir una consulta al archivo equivocado y contradice el requisito de no realizar fallback silencioso.
+- `getSpreadsheetCatalog` (líneas 11541-11566) devuelve todas las filas sin distinguir fuentes activas/inactivas ni aplicar un filtro contextual.
+- El helper académico `getOrCreateSheet` (líneas 85-150) no inicializa encabezados para `CatalogoSpreadsheets`. En una instalación donde la hoja no exista, la primera alta puede quedar en la fila 1 y luego ser excluida por los `.slice(1)` usados por el resolver y el catálogo.
+- Se confirma el resultado C1.29: el resolver continúa sin integración general en las operaciones de negocio; la mayoría de accesos académicos siguen abriendo el `SPREADSHEET_ID` fijo. No duplicar AUD-NG-083, AUD-NG-084 ni AUD-NG-086; conservar estos requisitos y esta evidencia como ampliación de TASK-046.
+- **Criterios adicionales:** almacenar y resolver la clave compuesta completa (dominio, departamento, área, año, tipo de información, cuenta y servicio); inicializar esquema explícito; validar ID, permisos y versión; rechazar fuentes inexistentes/incompatibles; eliminar fallback implícito o exigir una fuente predeterminada configurada y autorizada; conservar historial; integrar el resolver en los consumidores de lectura/escritura; probar aislamiento con archivos distintos.
 
 ---
 ---
@@ -2479,6 +2490,7 @@ REGLA RECTORA INNEGOCIABLE DEL BACKLOG:
   - [X] Rechazar intento de ejecutar una operación no autorizada.
   - [X] Inspeccionar el frontend para comprobar que no contiene secretos ni claves de servicio.
   - [X] Verificar que los errores no exponen claves ni tokens en texto plano.
+- **Nota de auditoría C1.29 / FASE2-01:** Aunque los criterios de esta tarea figuran [X], el código revisado no demuestra comunicación autenticada entre despliegues. `createInterServiceEnvelope`/`verifyInterServiceEnvelope` aparecen como definiciones aisladas, no como llamadas; los doPost de los servicios despachan tras validación de usuario/rol sin verificar sobres interservicio. La ruta USER→TASK envía JSON sin sobre HMAC. Los follow-ups pendientes son AUD-NG-083, AUD-NG-084 y AUD-NG-086; no considerar acreditados los checks de integración, rotación y revocación hasta pruebas E2E entre proyectos independientes.
 - **Estado:** [X] Completada
 
 ---
@@ -3242,6 +3254,8 @@ REGLA RECTORA INNEGOCIABLE DEL BACKLOG:
   - [ ] Comprobar que un cliente con una versión antigua no puede sobrescribir silenciosamente una configuración nueva.
   - [ ] Verificar que la invalidación de caché no elimina datos de negocio ajenos a la configuración.
   - [ ] Comprobar que las cachés de los servicios dependientes se actualizan correctamente.
+- **Ampliación C1.26 / FASE2-T19:** `js/config.js` declara `CACHE_POLICIES`, pero no se observa su consumo en `fetchApi` ni en `PersistenceManager`. Los TTL declarados (roles 21600 s, catálogos 43200 s y permisos de sesión 3600 s) no corresponden al comportamiento observado: no hay escritura de `user_role_`, el estado de cuenta usa 60 s y la matriz dinámica usa 600 s globales. `manageInstitutionalDataCache(FLUSH_GLOBAL)` solo registra un evento y no purga claves; `INVALIDATE_USER` ignora el booleano de `invalidateUserRoleCache` y devuelve éxito aunque la purga falle. La ruta `purgeSecurityCaches` está autorizada y enrutada, pero no existe una definición local en el único `Code.gs` del servicio. No se observó enlace de invalidación/versionado desde `saveSystemConfiguration`. En frontend, `PersistenceManager` conserva `updated_at` pero no aplica TTL ni expone estado de obsolescencia.
+- **Criterios adicionales:** La política central debe reflejar los TTL y ámbitos realmente aplicados, ser consumida por backend y frontend y definir invalidación por clave/ámbito. Las operaciones de purga deben eliminar las claves pertinentes y devolver error si no se completan; no deben afirmar éxito por registrar un evento. Probar dos sesiones, cambios globales/departamentales/personales, fuente no disponible, caché local vencida y recuperación de conexión; los datos locales deben marcarse como obsoletos y no presentarse como confirmados.
 - **Estado:** [ ] Pendiente
 
 ---
@@ -3433,6 +3447,8 @@ REGLA RECTORA INNEGOCIABLE DEL BACKLOG:
   - [ ] La restauración de un borrador no altera de forma automática los registros oficiales en la base de datos hasta que el usuario envíe formalmente el formulario.
   - [ ] Se verifica el comportamiento correcto en escenarios de pestañas múltiples y sesiones concurrentes.
   - [ ] Se mantiene total compatibilidad retroactiva con los formularios que ya invocan `auditAndFixAccessibility`.
+- **Ampliación C1.27 / T-UX-26:** Incluir la clave global `INSTITUTIONAL_RECENT_ACTIVITY_LOG_V1` de `js/ui-common.js` en el aislamiento multiusuario. Actualmente `recordRecentActivity` y `getRecentActivity` leen/escriben la misma clave de `localStorage` sin `authUserId` ni `institucionId`; cambiar de cuenta en el mismo navegador puede mostrar actividad de la sesión anterior. La segregación debe basarse en identificadores internos autenticados, no en el rol o nombre visible, y el cierre/cambio de sesión debe aplicar la política de conservación/purga correspondiente.
+- **Criterios adicionales:** Probar dos usuarios y dos instituciones en el mismo navegador, pestañas concurrentes, logout, expiración y cambio de cuenta; confirmar que no se comparten títulos, descripciones, IDs ni destinos de actividad.
 - **Estado:** [ ] Pendiente
 
 ---
@@ -5335,6 +5351,25 @@ REGLA RECTORA INNEGOCIABLE DEL BACKLOG:
   - [ ] Las solicitudes concurrentes se serializan mediante `LockService` garantizando números estrictamente distintos.
   - [ ] La tabla `SecuenciasIDs` mantiene actualizado el `UltimoNumero` y fecha para cada tipo de entidad.
 - **Dependencias:** Sistema base de persistencia y LockService.
+
+- **Ampliación C1.32 / FASE2-04 (2026-11-05):** `generateSchoolDocument` asigna `docId = "DOC-EM-" + year + "-" + now.getTime()` (línea 15083), sin UUID ni comprobación persistente de unicidad. No se observa integración de un generador institucional canónico en este flujo. `getOrCreateSheet` define ocho encabezados para `DocumentosEscolaresEmitidos`, mientras el emisor escribe quince campos y el verificador lee hasta el índice 14; los campos de Drive, fecha, versión, correlativo y hash quedan sin encabezado al crear la hoja.
+- **Relaciones de identidad:** `targetEntityId` / `estudianteUserId` y `solicitanteUserId` se aceptan desde payload; si falta el sujeto se asigna `GENERICO`, y si falta el solicitante se reutiliza `targetId`. No se valida la entidad objetivo ni se deriva el actor de `_verifiedUserId`. Separar clave interna inmutable, código visible, titular del documento y actor autenticado.
+- **Correlativos:** `nextCorrelativoNum` toma el máximo de la columna 13 de todas las emisiones sin filtrar el año, aunque el código presenta el folio como `YYYY-######`. La numeración anual debe consultar únicamente la serie/año/ámbito configurados.
+- **Reconciliación FASE2-T05:** `generateInstitutionalId` sigue duplicada en User y Academic; Academic admite `skipLock` desde payload y Accounting no integra el generador para docId. TASK-118 debe cubrir la migración de Accounting y eliminar bypasses.
+- **Criterios adicionales:** ID documental estable y único separado del correlativo público; actor derivado de sesión verificada; titular y referencias validados en servidor; esquema de quince columnas con encabezados alineados; secuencias anuales/por ámbito verificadas; integración real del motor canónico. Conservar IDs históricos y relaciones durante la migración.
+
+
+- **Ampliación C1.40 / FASE2-T05 (2026-11-05):**
+  1. **Generador duplicado y ámbito del lock:** generateInstitutionalId permanece implementado por separado en USER (1706-1743) y ACADEMIC (2107-2154). Ambos leen/escriben SecuenciasIDs, pero cada servicio usa su propio LockService.getScriptLock(); no se acredita exclusión mutua entre deployments independientes que comparten la hoja.
+  2. **Bypass y llamadas sin bloqueo:** ACADEMIC permite conservar skipLock si el payload incluye isInternalCall=true (doPost 675-676), aunque la bandera no se deriva de una envoltura interservicio firmada en ese punto. saveAdmissionDraft, scheduleAdmissionInterview, saveAdmissionEvaluation, addToWaitlist y uploadStudentDocument llaman al generador con skipLock=true sin lock exterior visible. Reconciliar el bypass con AUD-NG-161.
+  3. **Identidad de personas/cuentas:** USER createPerson (1663-1687) usa PER- + Date.now() y no valida duplicados; linkPersonAccount (1690-1704) no comprueba que personaId exista en Personas ni que el vínculo sea único. registerUser (2393-2452) genera USR-, pero la comprobación de email y el append no están dentro de una misma sección crítica.
+  4. **Relaciones académicas:** convertAdmissionToStudent (2156-2380) genera PersonaID y UserId y los usa en ExpedientesEstudiantes/Matriculas, pero el flujo inspeccionado no crea ni valida los registros maestros Personas/Usuarios correspondientes. Si el generador no devuelve generatedId, usa constantes fijas EXP-000001, STU-000001, PER-000001, USR-000001, REL-000001, INV-000001, MAT-000001 y MOV-000001; createAdmissionRequest también contempla ADM-000001. Estos fallbacks no reservan ni validan unicidad. La detección de expediente duplicado compara el PersonaID recién generado o busca la identificación mediante includes en la columna Observaciones, no en un campo de identidad dedicado. registerStudentEnrollment persiste matrícula/cargos sin verificar la existencia de UserId en Usuarios.
+  5. **Validador y auditoría incompletos:** generateInstitutionalUUID usa Math.random() y no persiste ni comprueba colisiones; validateInstitutionalIdentifier devuelve isValidFormat=true para cualquier valor no vacío; auditInstitutionalIdentifierCollisions solo inspecciona cuatro tablas y la primera columna.
+  6. **ACCOUNTING y CUV:** se confirma que docId sigue usando timestamp, el correlativo no filtra año, el fallback CUV no revalida unicidad y la verificación pública expone campos internos. Mantener TASK-351, AUD-NG-059 y AUD-NG-061; no duplicar.
+- **Reconciliación:** TASK-118 es la tarea principal para el generador canónico y las claves internas. AUD-NG-161 conserva bypass/concurrencia; TASK-351 y AUD-NG-059/AUD-NG-061 conservan CUV, integridad binaria y certificado.
+- **Criterios adicionales de aceptación:** un único contrato/generador autoritativo para los servicios; exclusión mutua real entre todos los escritores de SecuenciasIDs; ninguna ruta externa puede omitir lock; todos los IDs críticos se generan sin fallback timestamp/aleatorio no auditado; PersonaID/UserId/ExpedienteID y referencias documentales se validan contra registros maestros antes de persistir; la auditoría de colisiones cubre todas las entidades críticas y referencias, y la fusión conserva relaciones e historial.
+
+- **Ampliación C1.88 / TAREA-F4-P2-04:** En USER, `generateInstitutionalId` (1706-1743) crea `SecuenciasIDs` y escribe encabezados antes de adquirir `LockService.getScriptLock()`; la inicialización inicial no queda protegida. Además, `createSecurityDelegation` mantiene un ScriptLock y llama a `generateInstitutionalId` (que adquiere otro ScriptLock); `manageAccountState` mantiene un ScriptLock y llama a `recordEntityChangeLog`, que a su vez llama al generador. Se identifica una posible adquisición anidada del mismo recurso de bloqueo; su efecto (reentrada/timeout) requiere prueba en Apps Script runtime y no se declara como fallo reproducido. Se revalida también que `registerUser` consulta duplicidad de email antes del lock del generador y hace append después, fuera de una sección crítica única; ya estaba incluido en C1.40. No duplicar TASK-118.
 - **Estado:** [ ] Pendiente
 
 ---
@@ -8848,6 +8883,13 @@ REGLA RECTORA INNEGOCIABLE DEL BACKLOG:
   - [ ] Completar una tarea y verificar su retiro de la bandeja de pendientes.
   - [ ] Aplicar filtros simultáneos y verificar ordenamiento.
   - [ ] Verificar que una misma actividad no aparece duplicada.
+
+- **Ampliación C1.57 / T-UX-16 (2026-11-06):**
+  - **AUD-NG-205 (ALTO/P1):** integrar `window.consolidatePendingApprovalsAndNotifications` con datos reales. En `js/ui-common.js:2081-2114` solo transforma un array; no consulta ni consolida fuentes. No hay referencias directas al helper en `js/api.js`, `js/student.js`, `js/teacher.js`, `js/secretary.js` ni `js/accounting.js`. El backend no contiene `getUserWorkInbox`; `getDepartmentalWorkInbox` solo devuelve solicitudes departamentales. Coordinar con TASK-318 sin duplicar SLA.
+  - **AUD-NG-204 (CRÍTICO/P0):** aplicar autorización por registro y departamento en servidor. No confiar en userId, departamento o authRole enviados por el navegador. `markNotificationAsRead` no verifica el propietario y `getDepartmentalWorkInbox` incluye todas las solicitudes si el payload indica direccion/administrador. Reconciliar con AUD-NG-036 (relación legal de tutor) y AUD-NG-024 (identidad del revisor).
+  - El contrato debe distinguir notificación informativa, tarea accionable y aprobación pendiente; incluir fuente, registro relacionado, estado, fecha, vencimiento, prioridad, responsable, ámbito y acción disponible. Los contadores deben derivarse del mismo conjunto autorizado.
+  - **Criterios adicionales:** usuario A no consulta ni altera elementos de B; Secretaría no obtiene solicitudes de Dirección cambiando el parámetro; cada rol ve solo actividades autorizadas; los enlaces revalidan permisos; tareas completadas salen de pendientes sin perder historial; una actividad duplicada por varias fuentes aparece una sola vez con clave estable.
+
 - **Estado:** [ ] Pendiente
 
 ---
@@ -9065,6 +9107,14 @@ REGLA RECTORA INNEGOCIABLE DEL BACKLOG:
   - [ ] Simular un error de envío y comprobar que se encola para reintento.
   - [ ] Comprobar que no se envían notificaciones duplicadas ante reintentos.
   - [ ] Verificar que los destinatarios no reciben información ajena a sus permisos de acceso.
+
+- **Ampliación C1.57 / T-UX-16 (2026-11-06):**
+  - **AUD-NG-203 (ALTO/P1):** `getUnifiedNotifications` (backend/user-service/Code.gs:4033-4072) usa `categoria`, `leido` y `userId` sin declararlos; `getUserNotifications` delega directamente en esta función. Con filas existentes la consulta puede fallar por ReferenceError. Además, getOrCreateSheet define 9 columnas (línea 892), createUserNotification escribe 9 (5007-5030) y sendMultiChannelNotification escribe 12 con orden distinto (4818-4885); el lector interpreta mal las filas multicanal.
+  - **AUD-NG-206 (ALTO/P1):** centralizar deduplicación para todos los productores. sendMultiChannelNotification busca la clave y luego hace append sin reserva atómica; llamadas concurrentes pueden duplicar. createUserNotification no acepta ni persiste clave. Coordinar con TASK-045.
+  - Definir esquema versionado con ID estable, destinatario, tipo, origen, entidad relacionada, título, mensaje, categoría, prioridad, fecha, leído/fecha de lectura, enlace, acción requerida, estado de entrega y clave de deduplicación. Migrar o leer de forma compatible las filas históricas de 9/12 columnas.
+  - Validar enlaces y contenido según TASK-475; no incluir notas internas ni interpretar una notificación como decisión de workflow.
+  - **Criterios adicionales:** consultas con y sin filtros funcionan; contadores coinciden con filas autorizadas; los campos se leen correctamente en ambos formatos; dos creaciones concurrentes con la misma clave producen un evento; cada aviso contiene origen, fecha, contexto y destino.
+
 - **Estado:** [ ] Pendiente
 
 ---
@@ -9272,6 +9322,8 @@ REGLA RECTORA INNEGOCIABLE DEL BACKLOG:
   - [ ] Los errores por cuotas se registran y presentan de manera controlada al usuario.
   - [ ] Se registran tiempos de respuesta y cantidades procesadas en los eventos de auditoría.
   - [ ] Las pruebas comparativas demuestran una mejora medible en tiempos de respuesta frente a las consultas originales.
+- **Ampliación C1.26 / FASE2-T19:** Las operaciones de caché observadas no registran métricas de hit/miss, edad de entrada, invalidaciones, bytes almacenados ni latencia comparativa. Los mensajes de consola de `fetchApi` no constituyen telemetría de rendimiento ni permiten comparar consumo de cuotas.
+- **Criterios adicionales:** Instrumentar métricas por servicio/clave/política sin registrar datos sensibles; ejecutar comparativas con caché fría, caliente y desactivada, midiendo latencia, lecturas/escrituras de Spreadsheet, consumo de cuotas, tamaño y consistencia tras mutaciones. Incorporar las métricas a los informes operativos.
 - **Estado:** [ ] Pendiente
 
 ---
@@ -10017,6 +10069,8 @@ REGLA RECTORA INNEGOCIABLE DEL BACKLOG:
   - [ ] Las operaciones que superan sus umbrales generan eventos de advertencia en observabilidad.
   - [ ] La telemetría no almacena credenciales, tokens ni datos personales sensibles.
   - [ ] El volumen de registros de telemetría se mantiene acotado mediante políticas de retención.
+- **Ampliación C1.28 / T-UX-27:** Extender la telemetría al rendimiento percibido en cliente: duración de operaciones UI frecuentes (omnibox, apertura de paneles, filtros, tablas, modales y formularios), tiempo hasta primer contenido y tiempo hasta datos confirmados. Correlacionar cuando sea posible con servicio/acción backend, sin almacenar PII ni valores de formularios. Actualmente solo se mide latencia de ping en checkMicroserviceHealth; no hay medición general de acciones del usuario.
+- **Criterios adicionales:** Instrumentar una muestra representativa de operaciones en escritorio y móvil; reportar mediana/p90/p95, errores, cancelaciones y frescura del dato. Comparar antes/después de cambios y establecer umbrales verificables por operación.
 - **Estado:** [ ] Pendiente
 
 ---
@@ -10215,6 +10269,7 @@ REGLA RECTORA INNEGOCIABLE DEL BACKLOG:
   - [ ] Los modales confinan el foco correctamente y devuelven el foco al cerrarse.
   - [ ] Las operaciones críticas pueden completarse íntegramente utilizando exclusivamente el teclado y lectores de pantalla (NVDA/JAWS/VoiceOver).
 - **Estado:** [ ] Pendiente
+- **Ampliación de evidencia C1.44 / T-UX-02 (2026-11-05):** **AUD-NG-181** documenta que el manejador Escape de `js/ui-common.js:87-143` cierra solo los IDs incluidos en la lista fija o elementos que coincidan con `[role="dialog"]`, `.modal` o `[data-modal]`; no detecta todos los overlays `.fixed.inset-0`. Casos confirmados fuera de ambos selectores: `index.html:391` (`news-detail-modal`, abierto por `js/index-ui.js:868-895`), `dashboard-direccion.html:421` (`modal-role-responsibility-config`, abierto por `js/secretary.js:462-465`) y `dashboard-direccion.html:442` (`modal-academic-analytics`, abierto por `js/secretary.js:808-813`). Escape no cierra esos diálogos; el visor de noticias conserva además `document.body.style.overflow='hidden'` hasta su cierre propio. La restauración depende de una única variable global `lastActiveElementBeforeModal`; solo hay seis puntos de captura en ui-common.js (157, 1630, 4938, 5315, 5469 y 5618), mientras otros abridores como openDocumentReader (2628), openContextualHelpModal (3086), openReportIssueModal (3748), openMyTicketsModal (3889), openAdminTicketsModal (4074), openAnalyticsChartModal (4604) y openMobileHamburgerDrawer (aprox. 4755) no capturan el activador. El listener oculta simultáneamente todos los diálogos detectados, sin pila/topmost; en modales anidados puede enfocar un activador que queda dentro de un contenedor también oculto. Además, setupCommonUI registra el listener dentro de su función (92) y se ejecuta automáticamente en ui-common.js:3490, pero vuelve a invocarse desde js/index-ui.js:11 y desde los inicializadores DOMContentLoaded de teacher-dashboard.html:1469 y student-dashboard.html:401; no hay guard de registro único, por lo que se acumulan manejadores keydown en esas páginas. runUXSuiteTests (1861-1867) solo comprueba que trackModalFocus exista, no simula Escape ni valida cierre/restauración y puede producir un falso PASS. **Reconciliar con TASK-258**, que ya exige Escape universal, retorno exacto del foco, confinamiento de foco y navegación por teclado; no duplicar el alcance de accesibilidad general de AUD-NG-169.
 
 ---
 ---
@@ -11785,6 +11840,13 @@ REGLA RECTORA INNEGOCIABLE DEL BACKLOG:
   - [ ] Comprobar que la agrupación de avisos informativos no retrasa las alertas críticas o citaciones urgentes.
   - [ ] Abrir el enlace de notificación con un usuario no autorizado y comprobar que el acceso es denegado.
 - **Dependencias:** F34-Task02 (bandeja de salida), F34-Task05 (asignaciones), centro de notificaciones multicanal.
+
+- **Ampliación C1.57 / T-UX-16 (2026-11-06):**
+  - Reconciliar BandejaNotificaciones: cabecera inicial y createUserNotification usan 9 columnas; sendMultiChannelNotification agrega 12 con orden distinto; retryFailedNotificationsQueue lee columnas 10/11 y no interpreta de forma fiable filas antiguas.
+  - getNotificationPreferences (backend/user-service/Code.gs:4973-4988) devuelve valores fijos y no consulta ni persiste preferencias por usuario. La hoja creada se denomina PreferenciasNotificacion (singular), mientras esta tarea menciona PreferenciasNotificaciones (plural); definir nombre canónico.
+  - La deduplicación actual es lectura seguida de escritura sin reserva atómica y no cubre createUserNotification. La cola debe controlar intentos, backoff, estado final y concurrencia conservando ID/clave de evento.
+  - **Criterios adicionales:** migración de filas de 9/12 columnas; preferencias leídas/guardadas por identidad autenticada; reintentos acotados sin reenviar entregados; deduplicación concurrente; estado de entrega separado de leído/no leído.
+
 - **Estado:** [ ] Pendiente
 
 ---
@@ -11863,6 +11925,12 @@ REGLA RECTORA INNEGOCIABLE DEL BACKLOG:
   - [ ] Suspender una solicitud por requerimiento de subsanación detiene correctamente el cómputo del SLA.
   - [ ] La Dirección puede consultar métricas consolidadas de tiempos de respuesta por departamento.
 - **Dependencias:** F34-Task05 (asignaciones estructuradas), sistema de notificaciones y permisos.
+
+- **Ampliación C1.57 / T-UX-16 (2026-11-06):**
+  - **AUD-NG-204 (CRÍTICO/P0):** getDepartmentalWorkInbox (backend/user-service/Code.gs:3916-3939) recibe departamento/authRole del payload; si departamento normalizado es direccion o administrador incluye todas las filas. RBAC acredita permiso de acción, pero no restringe registros a la unidad efectiva del usuario.
+  - getUserWorkInbox, declarado como componente de esta tarea, no existe en la versión inspeccionada de backend/user-service/Code.gs. TASK-221 debe consolidar tareas y aprobaciones; TASK-318 debe aportar asignaciones personales, solicitudes departamentales pendientes de toma, historial y métricas SLA.
+  - **Criterios adicionales:** cambiar el departamento del payload no amplía resultados; identidad/departamento se derivan de sesión y asignación vigente; las tareas personales y departamentales se distinguen; la bandeja unificada consume solo fuentes autorizadas.
+
 - **Estado:** [ ] Pendiente
 
 ---
@@ -12865,6 +12933,12 @@ REGLA RECTORA INNEGOCIABLE DEL BACKLOG:
   - [ ] Modificar el PDF manteniendo el CUV devuelve alerta de hash discrepante.
   - [ ] Documentos anulados reflejan claramente su condición de no vigencia.
 - **Dependencias:** F40-Task06, F40-Task10.
+
+- **Ampliación C1.32 / FASE2-04 (2026-11-05):** `verifySchoolDocumentByCUV` está incluido en `PUBLIC_ACTIONS` (línea 218), por lo que `validateRolePermission` lo autoriza sin token. El handler (15151-15235) devuelve públicamente `datosJSON`, `targetEntityId`, `solicitanteUserId`, `driveFileId`, `driveUrl`, observaciones y hash; cuando hay firmas también expone `firmanteId`, `tokenVerificacion`, `ipOrigen` y `signatureHash`. La consulta debe revelar solo un resumen probatorio mínimo, no el expediente ni datos personales/internos.
+- **Estados:** al encontrar un CUV, el handler devuelve `status:"success"` sin comprobar `estadoDoc`; no distingue documento vigente, revocado, anulado o sustituido. No declarar válido un documento no vigente.
+- **Revaluación de prioridad:** la exposición no autenticada de datos personales y metadatos de firmas puede tener impacto crítico; revisar la prioridad P1 de TASK-351 para tratamiento P0 antes de publicar el portal.
+- **Criterios adicionales:** respuesta pública con campos permitidos explícitos (tipo documental, emisor, fecha y estado); nunca devolver `datosJSON`, IDs internos, URL/ID de Drive, tokens, IP ni metadatos de firmas; validar estado y unicidad del CUV; probar consultas anónimas, documentos vigentes/anulados/revocados, campos sensibles y códigos duplicados. Hash binario sigue en AUD-NG-059 y pruebas de colisión/concurrencia en AUD-NG-161; no duplicar.
+
 - **Estado:** [ ] Pendiente
 
 ---
@@ -14333,6 +14407,8 @@ REGLA RECTORA INNEGOCIABLE DEL BACKLOG:
   - [ ] Simular límites de ejecución de 6 minutos y comprobar que los trabajos extensos se fraccionan de forma reanudable.
   - [ ] Comparar métricas de consumo de celdas y tiempo de ejecución antes y después de la optimización.
   - [ ] Verificar que el uso de caché no genera inconsistencias en estados de decisiones críticas.
+- **Ampliación C1.26 / FASE2-T19:** La regla de utilizar `CacheService` solo para datos que admiten consistencia eventual debe aplicarse expresamente a decisiones de autorización, estado de cuenta, delegaciones, permisos y datos financieros. Las cachés de seguridad requieren identidad, TTL acotado e invalidación verificable; los fallos de la fuente de verdad deben distinguirse de la ausencia legítima de datos. La caché local IndexedDB debe exponer antigüedad y estado de sincronización, no presentar contenido vencido como confirmado.
+- **Criterios adicionales:** Ninguna decisión crítica puede conceder permisos basándose en una entrada vencida ni en un fallback estático tras fallo de fuente. Los datos personales y respuestas idempotentes deben permanecer aislados por usuario. Las pruebas deben cubrir fuente caída, caché caliente/fría, expiración, mutación e identidad cruzada.
 - **Estado:** [ ] Pendiente
 
 ---
@@ -14530,6 +14606,7 @@ REGLA RECTORA INNEGOCIABLE DEL BACKLOG:
   - [ ] Los responsables autorizados pueden reconocer y cerrar formalmente la alerta.
   - [ ] El historial de alertas conserva todos los cambios de estado y notas de revisión.
   - [ ] Las alertas académicas preexistentes siguen funcionando correctamente sin regresiones.
+- **Ampliación de evidencia (C1.42 / FASE2-T07, 2026-11-05):** `calculateLateFeesForAccount` (backend/accounting-service/Code.gs:1223-1278) calcula recargos a partir de `RecargosMoras` y devuelve un resumen en la respuesta; no persiste una alerta, no crea evento y no registra entrega a responsables. La automatización de alertas financieras por mora debe integrarse con el alcance de esta tarea, sin confundir el cálculo de recargo con el despacho de una alerta.
 - **Estado:** [ ] Pendiente
 
 ---
@@ -15389,7 +15466,16 @@ REGLA RECTORA INNEGOCIABLE DEL BACKLOG:
   - [ ] Comprobar que las preferencias personales no alteran cálculos financieros, fechas almacenadas ni permisos de acceso.
   - [ ] Intentar modificar una preferencia no permitida mediante petición directa y comprobar que el servidor la rechaza.
   - [ ] Verificar que las preferencias visuales y de notificación existentes continúan funcionando sin regresiones.
+- **Ampliación de evidencia (C1.42 / FASE2-T07, 2026-11-05):** `getNotificationPreferences` (backend/user-service/Code.gs:4973-4984) devuelve valores fijos. `getUserSettings`/`saveUserSettings` sí consultan y persisten `PreferenciasNotificacion` (aprox. 7645-7715), pero `sendMultiChannelNotification` (4818-4935) no consulta esas preferencias ni aplica el parámetro `canal`. Debe definirse y probarse la precedencia entre preferencias opcionales y comunicaciones institucionales obligatorias, sin permitir que una preferencia personal suprima acciones críticas.
 - **Estado:** [ ] Pendiente
+
+- **Ampliación C1.68 / T-UX-25 (2026-11-06):**
+  - **AUD-NG-216 (MEDIO/P2):** la interfaz de configuración presenta preferencias de usuario y opciones por rol, pero el contrato de persistencia no las implementa de extremo a extremo.
+  - js/ui-common.js: loadUserSettingsInModal (1674-1700) llama getUserSettings; saveDashboardSettingsModal (2439-2498) solo recoge categorías de notificaciones, canal y frecuencia. No recoge ni persiste los controles creados por renderRoleSettingsInModal (2214+); dichos controles vuelven a valores hardcodeados cada vez que se renderiza el modal. No existe acción de restablecer preferencias individuales a valores institucionales.
+  - backend/user-service/Code.gs: getUserSettings/saveUserSettings (7649-7735 aprox.) leen/escriben únicamente PreferenciasNotificacion (categorías, inAppEnabled, canal y frecuencia); devuelven uiTheme: light por defecto, pero no lo recuperan ni lo guardan, y no implementan preferencias de idioma, formato de fecha, paleta personal o disposición de widgets en PreferenciasUsuario.
+  - ROLE_PERMISSIONS autoriza getUserSettings/saveUserSettings a Administrador, Desarrollador y Director, pero no a Profesor, Estudiante, Secretaría, Contador, Empleado, Coordinador ni demás roles que ven la pestaña personal. Además, fetchApi todavía no adjunta el token requerido (AUD-NG-001); resolver solo el token no resolverá la matriz de permisos.
+  - **Criterios adicionales:** (1) separar explícitamente preferencias personales, departamentales e institucionales; (2) persistir por identidad verificada y recuperar al iniciar sesión; (3) implementar herencia de defaults institucionales y restablecimiento individual; (4) persistir solo opciones de rol permitidas y validar en servidor; (5) aplicar idioma/formato/tema/layout de widgets al panel y restaurarlos entre sesiones/dispositivos; (6) permitir a cada rol acceder a sus preferencias personales sin otorgar permisos de administración; (7) no alterar políticas institucionales obligatorias ni datos/valores de negocio.
+  - **Relaciones y límites:** AUD-NG-001 cubre propagación del token; AUD-NG-202/TASK-429 cubre vistas guardadas de tablas (filtros, orden, aislamiento y ámbito); TASK-422 conserva la administración jerárquica de preferencias personales; TASK-430 cubre el sistema visual general. No crear tarea paralela para preferencias.
 
 ---
 ## FASE 27 — PLATAFORMA TÉCNICA, CONTINUIDAD Y RECUPERACIÓN
@@ -15595,6 +15681,16 @@ REGLA RECTORA INNEGOCIABLE DEL BACKLOG:
   - [ ] Las tablas con más de 1,000 registros cambian de página y filtran en menos de 100ms sin congelar la interfaz.
   - [ ] En pantallas móviles, las tablas se transforman en tarjetas legibles con acciones accesibles.
   - [ ] La exportación de datos a hojas de cálculo respeta los filtros aplicados y no trunca filas.
+- **Ampliación C1.28 / T-UX-27:** Integrar `renderUIProgressSkeleton` en las vistas dinámicas que realmente cargan datos; actualmente solo existe su definición en `js/ui-common.js` y no se encontraron llamadas en los 24 archivos JS ni en los dashboards HTML principales revisados. Evitar que el esqueleto sustituya el estado de error, vacío o datos cacheados obsoletos.
+- **Criterios adicionales:** Aplicar debounce a filtros/búsquedas que disparan consultas y deduplicar únicamente lecturas idempotentes concurrentes con la misma clave normalizada (servicio, acción, usuario/contexto y payload); no fusionar mutaciones ni consultas de usuarios distintos. Probar cancelación/race conditions y que la respuesta antigua no sobrescriba resultados nuevos. Mantener skeleton accesible con aria-busy/estado de carga y retirarlo en éxito, vacío y error.
+
+- **Ampliación C1.55 / T-UX-15 (2026-11-06):**
+  - **AUD-NG-201 (ALTO/P1):** completar e integrar el motor común de filtros. La implementación vigente de `setupAdvancedTableFilters` no usa `filterFields` como allowlist; aplica únicamente coincidencia de subcadena normalizada sobre datos locales; no implementa ordenamiento; no produce por sí misma controles/etiquetas visibles para retirar filtros; no está integrada con el contrato de paginación. Además, `setFilter` elimina valores falsy (incluido `0` y `false`) y `item[field] || ''` impide filtrar correctamente esos valores. Requisitos: validar campos permitidos, soportar tipos/operadores definidos por el módulo, combinar filtros con semántica explícita, mostrar filtros activos y permitir retirarlos individualmente/limpiar, aplicar orden estable y reiniciar la página al cambiar criterios. Integrar el resultado con paginación local/remota sin descargar conjuntos completos cuando el servidor pueda filtrar.
+  - **AUD-NG-202 (MEDIO/P2):** completar la persistencia de vistas de tablas. `saveView/loadSavedView` guarda únicamente filtros en `localStorage` bajo `saved_views_{containerId}`, sin aislar por usuario/rol/ámbito; no distingue vistas personales de compartidas, ni ofrece operaciones completas para listar, renombrar, duplicar, eliminar o compartir. Tampoco conserva orden, tamaño/página, búsqueda u otras preferencias relevantes. Requisitos: definir alcance personal/compartido explícito, aislar por identidad y permisos efectivos, validar destinatarios/ámbito en servidor cuando haya compartición, conservar la configuración acordada y permitir restaurar la vista institucional predeterminada. No reutilizar este mecanismo como sustituto de TASK-249, que sigue limitado a reportes institucionales.
+  - **Contrato de paginación y navegación:** la integración debe aceptar filtros y ordenamiento como parte del estado de consulta; el callback remoto actual solo recibe `targetPage` y `pageSize`. La preservación al entrar/salir de detalle se coordina con TASK-486, sin duplicar su implementación de snapshots.
+  - **Límites y no duplicación:** FASE2-T10 y TAREA-04 son antecedentes históricos; AUDITORÍA FASE2-07 ya detectó la falta de consumidores de `renderPaginatedTable` y amplió TASK-429. Se conserva ese hallazgo sin crear duplicado. TASK-453 continúa cubriendo el motor de filtros específico de bandejas documentales; TASK-249 cubre reportes; TASK-486 cubre navegación/restauración.
+  - **Criterios de aceptación adicionales:** (1) filtros por texto, número cero, booleanos, fechas y campos no permitidos producen resultados verificables; (2) combinar y retirar filtros actualiza filas, contador y página; (3) ordenar ascendente/descendente conserva orden estable entre páginas; (4) cambio de página remota conserva filtros/orden y transmite criterios al servidor; (5) errores/cargas/vacíos tienen estados diferenciados y reintento; (6) vista personal de un usuario no aparece en otra sesión/identidad; (7) compartir/revocar una vista no amplía permisos ni ámbito de datos del destinatario; (8) restaurar vista predeterminada recupera criterios originales; (9) pruebas de navegación detalle/atrás se coordinan con TASK-486.
+
 - **Estado:** [ ] Pendiente
 
 ---
@@ -15631,6 +15727,13 @@ REGLA RECTORA INNEGOCIABLE DEL BACKLOG:
   - [ ] Los contrastes de color cumplen estrictamente las pautas WCAG 2.2 AA en temas claro y oscuro.
   - [ ] La navegación móvil mantiene la misma seriedad y pulcritud institucional que la versión de escritorio.
 - **Estado:** [ ] Pendiente
+
+- **Ampliación C1.67 / T-UX-24 (2026-11-06):**
+  - **AUD-NG-215 (MEDIO/P2):** concretar el contrato visual de acciones y estados. La hoja css/style.css define .btn-ima, .btn-ima-primary, .btn-ima-cancel, .btn-ima-danger y .btn-ima-ghost, pero una muestra de 12 vistas encuentra uso de btn-ima-* solo en Estudiante y Docente; los demás paneles construyen botones principalmente con clases Tailwind locales. No se garantiza jerarquía equivalente entre acciones principales/secundarias/destructivas.
+  - En css/style.css existen tokens semánticos --color-success, --color-warning, --color-danger y --color-info, pero no se encontraron componentes/clases reutilizables de alertas/estados de éxito, error, advertencia, carga o ausencia de datos (por ejemplo .alert-ima, .status-badge, .btn-loading, .empty-state). js/ui-common.js mezcla alert(), Swal.fire() y HTML/Tailwind construido localmente.
+  - En renderMyTicketsList (js/ui-common.js, 3918-3923) y renderAdminTicketsUI (4121-4126), el mismo estado “Información recibida” usa variantes distintas (purple-50/text-purple-700/border-purple-200 frente a purple-100/text-purple-800/border-purple-300/font-bold); “Se necesita información” también difiere por animate-pulse. Extraer un mapa semántico compartido de estados, sin cambiar las transiciones de negocio.
+  - **Criterios adicionales:** (1) definir variantes compartidas primary, secondary, destructive y quiet, incluidos disabled/loading; (2) definir patrones compartidos para success/error/warning/info/loading/empty con texto, icono y semántica accesible, no solo color; (3) migrar botones equivalentes de las vistas principales al contrato común; (4) unificar el mapa de estados de tickets y otros consumidores; (5) probar consistencia visual y contraste en temas institucionales claro/oscuro; (6) coordinar TASK-492 (estados de campos), TASK-493 (modal detalle), TASK-494 (overlays) y TASK-495 (indicador de conectividad), sin absorber sus alcances.
+  - **Límites:** TASK-430 mantiene el sistema visual institucional general; TASK-492 mantiene el contrato de campos de formulario; TASK-493 el modal compartido; TASK-494 capas responsivas; TASK-495 significado de estados de conectividad. Esta ampliación concreta acciones/estados transversales de T-UX-24 y no crea una tarea duplicada.
 
 ---
 ## FASE 29 — MIGRACIÓN, VALIDACIÓN Y TRANSICIÓN OPERATIVA
@@ -16879,28 +16982,31 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 ### [AUD-NG-001] Corregir la integración del token de sesión entre login y llamadas API
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-001
 - **Severidad/Clasificación:** Crítico
-- **Archivos Involucrados:** js/auth.js, js/api.js, backend/user-service/Code.gs, backend/task-service/Code.gs, backend/exam-service/Code.gs
+- **Archivos Involucrados:** js/auth.js, js/api.js, backend/user-service/Code.gs, backend/academic-service/Code.gs, backend/accounting-service/Code.gs, backend/task-service/Code.gs, backend/exam-service/Code.gs
 - **Dependencias Expuestas:** loginUser, currentUser, fetchApi, generateSessionToken, verifySessionToken
 - **Descripción del Alcance:** Conservar el token devuelto por loginUser en la sesión de usuario y transmitirlo en todas las llamadas protegidas. Definir un contrato único de token entre frontend y servicios y evitar que las operaciones protegidas dependan de credenciales que el cliente no conserva.
 - **Criterios de Aceptación:** El inicio de sesión almacena la credencial; fetchApi la envía sin permitir que el payload sobrescriba identidad verificada; una operación protegida válida funciona y una llamada sin token es rechazada.
+- **Ampliación C1.86 / TAREA-F4-P2-02:** USER/loginUser devuelve el token en `result.sessionToken` y `result.data.sessionToken`; sin embargo, js/auth.js (138-160) construye y persiste `currentUser` sin copiar `result.data.sessionToken`. js/api.js (40-57) solo añade `requesterUserId` y `requesterRole`; no transmite `sessionToken` en el cuerpo. Se confirma que el defecto de persistencia/transmisión sigue presente. No crear hallazgo duplicado.
 - **Estado:** [ ] Pendiente
 
-### [AUD-NG-002] Eliminar consultas sensibles de las listas de acciones públicas y aplicar autorización contextual
+### [AUD-NG-002] Eliminar operaciones sensibles de las listas de acciones públicas y aplicar autorización contextual
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-002
 - **Severidad/Clasificación:** Crítico
-- **Archivos Involucrados:** backend/task-service/Code.gs, backend/exam-service/Code.gs
-- **Dependencias Expuestas:** PUBLIC_ACTIONS, validateRolePermission, getStudentTasks, getAllTasks, getAllStudentProjects, getDriveStorageQuotaMetricsReport, getStudentExams, getAllExams
-- **Descripción del Alcance:** Retirar de PUBLIC_ACTIONS las consultas que contienen datos institucionales o personales. Obtener el usuario objetivo exclusivamente de claims verificados y comprobar permisos de rol, relación familiar, grupo y ámbito antes de devolver registros.
-- **Criterios de Aceptación:** Las consultas sensibles sin token fallan; manipular userId, grado o sección no permite consultar registros ajenos; cada rol solo obtiene los datos autorizados y los intentos indebidos quedan auditados.
+- **Archivos Involucrados:** backend/academic-service/Code.gs, backend/task-service/Code.gs, backend/exam-service/Code.gs
+- **Dependencias Expuestas:** PUBLIC_ACTIONS, validateRolePermission, getStudentTasks, getAllTasks, getAllStudentProjects, getDriveStorageQuotaMetricsReport, getStudentExams, getAllExams, saveAdmissionDraft, getAdmissionDraft
+- **Descripción del Alcance:** Retirar de PUBLIC_ACTIONS las operaciones que acceden o modifican datos institucionales o personales. Obtener el usuario objetivo exclusivamente de claims verificados. Comprobar permisos de rol, relación familiar, grupo, ámbito y propiedad del borrador antes de devolver o modificar registros. Las rutas públicas de admisión deben usar una capacidad opaca de alta entropía vinculada al borrador, no el correo como prueba de identidad. La revocación de sesiones de USER se mantiene en AUD-NG-159.
+- **Criterios de Aceptación:** Las consultas y escrituras sensibles sin token/capacidad válida fallan; manipular userId, grado o sección no permite consultar registros ajenos; los borradores no pueden leerse ni sobrescribirse con solo conocer emailResponsable; cada rol obtiene solo los datos autorizados y los intentos indebidos quedan auditados.
+- **Ampliación C1.72:** ACADEMIC conserva saveAdmissionDraft/getAdmissionDraft en PUBLIC_ACTIONS; ambos seleccionan por draftKey o emailResponsable y getAdmissionDraft devuelve draftData sin demostrar propiedad. USER logoutUser/revokeUserSession ya está cubierto por AUD-NG-159 y TAREA-F4-P0-03; no forma parte de AUD-NG-002. Esta precisión corrige la clasificación duplicada de C1.72.
 - **Estado:** [ ] Pendiente
 
 ### [AUD-NG-003] Exigir expiración válida y obligatoria en todos los tokens de sesión
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-003
 - **Severidad/Clasificación:** Crítico
-- **Archivos Involucrados:** backend/user-service/Code.gs, backend/task-service/Code.gs, backend/exam-service/Code.gs
+- **Archivos Involucrados:** backend/user-service/Code.gs, backend/academic-service/Code.gs, backend/accounting-service/Code.gs, backend/task-service/Code.gs, backend/exam-service/Code.gs
 - **Dependencias Expuestas:** generateSessionToken, verifySessionToken, claims.exp
 - **Descripción del Alcance:** Rechazar tokens sin exp, con exp no numérico, vencido o con estructura de claims incompleta. Aplicar la misma validación en todos los servicios que aceptan tokens.
 - **Criterios de Aceptación:** Tokens sin expiración, con expiración inválida o vencida son rechazados en todos los microservicios; los tokens válidos emitidos por loginUser siguen funcionando.
+- **Ampliación C1.72:** La misma condición if (claims.exp && now > claims.exp) está presente en verifySessionToken de ACADEMIC y ACCOUNTING, además de USER, TASK y EXAM. El archivo de la tarea se amplía para cubrir los cinco servicios.
 - **Estado:** [ ] Pendiente
 
 ### [AUD-NG-004] Sustituir la derivación predecible del secreto HMAC por configuración segura
@@ -16916,9 +17022,16 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-005
 - **Severidad/Clasificación:** Alto
 - **Archivos Involucrados:** backend/user-service/Code.gs, backend/task-service/Code.gs, backend/exam-service/Code.gs, backend/academic-service/Code.gs, backend/accounting-service/Code.gs
-- **Dependencias Expuestas:** Usuarios, CacheService, acct_state_*, revokeUserSession, invalidateUserRoleCache, manageInstitutionalDataCache
-- **Descripción del Alcance:** Centralizar o coordinar la invalidación de cachés de estado de cuenta y sesiones para que una suspensión o desvinculación se aplique en todos los servicios sin esperar a la expiración de caché.
-- **Criterios de Aceptación:** Tras desactivar una cuenta, todos los servicios rechazan nuevas solicitudes en la siguiente operación; las pruebas cubren caché caliente y fría, revocación de sesión y fallos parciales.
+- **Dependencias Expuestas:** Usuarios, CacheService, acct_state_*, revoked_user_*, revoked_session_*, revokeUserSession, invalidateUserRoleCache, purgeSecurityCaches, dispatchSecurityEvent, manageInstitutionalDataCache
+- **Descripción del Alcance:** Centralizar o coordinar la invalidación de cachés de estado de cuenta y sesiones para que una suspensión, desvinculación o revocación se aplique en todos los servicios sin esperar a la expiración de caché. La invalidación debe ser verificable y no debe limpiar accidentalmente una marca de revocación.
+- **Criterios de Aceptación:** Tras desactivar una cuenta, todos los servicios rechazan nuevas solicitudes en la siguiente operación; las pruebas cubren caché caliente y fría, revocación de sesión y fallos parciales; cada servicio confirma la aplicación del evento antes de reportar propagación exitosa.
+- **Ampliación C1.26 / FASE2-T19:** En USER, verifySessionToken conserva acct_state_<userId> durante 60 segundos. manageAccountState cambia la hoja pero no invoca directamente invalidateUserRoleCache; el único archivo del proyecto USER no contiene una definición local de dispatchSecurityEvent, aunque la llama después de escribir el estado. loginUser bloquea la cuenta tras cinco intentos fallidos y registerUser(forceUpdate) puede reactivarla sin purgar acct_state. invalidateUserRoleCache elimina user_role_ (sin escritura identificada en el archivo) y acct_state_. La invalidación debe ejecutarse y verificarse en todos los cambios de estado, incluidos bloqueos automáticos y reactivaciones; no debe declararse éxito si falla.
+- **Ampliación C1.74:** revokeUserSession escribe revoked_user_/revoked_session_ solo en el ScriptCache de USER. ACADEMIC, ACCOUNTING, EXAM y TASK consultan sus propios ScriptCache y tienen purgeSecurityCaches, pero la rama sessionId elimina revoked_session_<id> en vez de establecerlo; para SESSION_REVOKED sin accountState tampoco se crea revoked_user_. En USER, doPost referencia dispatchSecurityEvent, processSecurityEventQueue, getSecurityEventsQueue y purgeSecurityCaches sin definiciones locales encontradas en el código versionado; manageAccountState llama dispatchSecurityEvent después de modificar la hoja y no invalida directamente la caché. manageInstitutionalDataCache(FLUSH_GLOBAL) solo registra/loguea la purga y no elimina las claves globales. No se demuestra propagación efectiva entre servicios.
+- **Criterios adicionales:** Con caché caliente y fría, probar suspensión, bloqueo por fuerza bruta, desactivación, reactivación y revocación en USER, TASK, EXAM, ACADEMIC y ACCOUNTING. Confirmar rechazo en la siguiente operación o documentar un límite de propagación verificable; simular fallos parciales de invalidación y comprobar que el resultado no se reporta como propagado. La revocación por sessionId debe escribir la marca que leen los validadores, nunca eliminarla.
+- **Ampliación C1.75:** loginUser (2479-2554) incrementa el contador de fallos en Usuarios, columna 12, y al llegar a cinco escribe directamente "Bloqueada" en columna 11 (2542-2545). Esta transición automática no pasa por manageAccountState (2342-2386), no invoca invalidateUserRoleCache ni el dispatcher de seguridad y no confirma propagación de acct_state_ a los demás servicios. Se mantiene dentro del alcance de este hallazgo; no crear duplicado por el bloqueo automático.
+- **Ampliación C1.83 / TAREA-F4-P1-08:** El alcance debe incluir también backend/developer-service/Code.gs. DEVELOPER verifica firma/expiración, pero no consulta revoked_user_, revoked_session_ ni estado vigente; no tiene consumidor ni purgador de eventos de seguridad. En USER, doPost enruta dispatchSecurityEvent/processSecurityEventQueue/getSecurityEventsQueue/purgeSecurityCaches sin definiciones locales. manageAccountState persiste Usuarios!K antes de llamar dispatchSecurityEvent; la referencia ausente genera error posterior a la mutación y doPost responde error sin rollback. revokeUserSession sigue escribiendo solo en ScriptCache USER; loginUser aplica bloqueo automático sin despacho. ACADEMIC/ACCOUNTING/TASK/EXAM implementan purgadores locales, pero eliminan revoked_session_<id> en vez de establecer la marca que consultan sus validadores; SESSION_REVOKED sin accountState tampoco crea revoked_user_. manageInstitutionalDataCache(FLUSH_GLOBAL) registra el pedido, no purga claves.
+- **Criterios adicionales:** incorporar todos los consumidores backend, incluido DEVELOPER; cada cambio de estado, revocación de sesión/bloqueo y cambio de privilegios debe generar evento durable, idempotente y correlacionado; ningún productor informa propagación completa sin acuse verificable de cada consumidor; fallos parciales deben quedar recuperables sin ocultar la mutación ya persistida; los reintentos no deben eliminar marcas de revocación ni repetir efectos. Probar suspensión, bloqueo automático, reactivación, revocación por userId/sessionId y cambios de rol en caché caliente/fría, caída de un consumidor, reintento y recuperación. La cola genérica de notificaciones permanece en AUD-NG-176/TASK-474.
+- **Ampliación C1.86 / TAREA-F4-P2-02:** `generateSessionToken` (1065-1080) emite tokens con expiración de 24 horas; `revokeUserSession` (2318-2330) escribe `revoked_user_*` y `revoked_session_*` con TTL de 21.600 segundos (6 horas). Si la marca expira y la cuenta sigue Activa, el token firmado puede conservar vigencia hasta completar sus 24 horas. Además, `loginUser` (2479-2547) solo rechaza Suspendida/Desactivada/Bloqueada y permite emitir token para Pendiente/InvitacionEnviada; `verifySessionToken` (1083-1140) exige estado vigente exactamente Activa, por lo que el login puede responder éxito y la siguiente llamada protegida rechazar el mismo token. `manageAccountState` (2342-2386) persiste Usuarios!K antes de llamar a `dispatchSecurityEvent`; el único archivo versionado en backend/user-service es Code.gs y no contiene definición local del dispatcher. La referencia ausente provoca error posterior a la escritura, sin rollback. Se amplía el hallazgo existente; no crear ID nuevo.
 - **Estado:** [ ] Pendiente
 
 ### [AUD-NG-006] Incorporar idempotencia por operación en reintentos del cliente API
@@ -16928,6 +17041,10 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Dependencias Expuestas:** fetchApi, contratos de acciones, claves de idempotencia, persistencia
 - **Descripción del Alcance:** Clasificar acciones por semántica de lectura/escritura y enviar una clave idempotente estable para cada operación de escritura reintentable. El servidor debe reservar la clave atómicamente y devolver el resultado original ante duplicados.
 - **Criterios de Aceptación:** Simular pérdida de respuesta después de persistir una escritura y comprobar que el reintento no duplica datos, pagos, documentos ni movimientos.
+
+- **Ampliación C1.33 / FASE2-05 (2026-11-05):** En `js/api.js`, `fetchApi` (11-205) no genera ni agrega `idempotencyKey`/`idempotencyToken`; ante fallos de red reintenta la misma acción y payload hasta dos veces. En Accounting y Academic, `checkAndRegisterIdempotencyKey` solo consulta `CacheService.getScriptCache()`; no reserva una clave pendiente ni adquiere un lock antes de ejecutar. `saveIdempotentResult` escribe el resultado después de que la operación termina exitosamente y lo conserva 21600 segundos (6 horas). Dos solicitudes simultáneas pueden observar cache miss y ejecutar ambas; una escritura parcial que termina en error tampoco guarda resultado y el reintento puede repetirla.
+- **Criterios adicionales:** generar una clave estable por mutación antes del primer intento; reservarla atómicamente con estado en curso; persistir resultado/estado de forma recuperable y con retención definida; asociar operación, actor verificado e institución; resolver reintentos concurrentes y respuestas perdidas sin duplicar efectos; probar expiración/evicción de caché y fallos después de persistencia. FASE2-T02 marcada completada no acredita estos criterios.
+
 - **Estado:** [ ] Pendiente
 
 ### [AUD-NG-007] Aplicar el timeout configurado por llamada en fetchApi
@@ -16937,6 +17054,8 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Dependencias Expuestas:** fetchApi, checkMicroserviceHealth, checkAllMicroservicesHealth
 - **Descripción del Alcance:** Usar options.timeout cuando se configure y definir un valor predeterminado cuando no se suministre. Limpiar el temporizador en todos los caminos de éxito, error y reintento.
 - **Criterios de Aceptación:** Una llamada con timeout de 6000 ms aborta dentro del margen definido; las llamadas sin opción conservan el límite predeterminado; los reintentos no dejan temporizadores activos.
+- **Ampliación C1.28 / T-UX-27:** Se confirma en `js/api.js` que `checkMicroserviceHealth` llama a `fetchApi(..., { timeout: 6000 })`, pero `fetchApi` ignora `options.timeout` y programa siempre 60000 ms. El parámetro no limita la solicitud; la medición de latencia del health check puede tardar hasta 60 s en vez de 6 s.
+- **Criterios adicionales:** Probar timeout de 6000 ms con servidor lento, abort real, limpieza de temporizador, reintentos y fallback; documentar el límite efectivo en cada intento y no reportar el health check como dentro del umbral si excedió el timeout solicitado.
 - **Estado:** [ ] Pendiente
 
 ### [AUD-NG-008] Diferenciar fallos de red de respuestas legítimas vacías
@@ -16965,6 +17084,14 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Descripción del Alcance:** Documentar por archivo las funciones, parámetros, retornos, consumidores, variables, constantes, clases, eventos y dependencias entrantes/salientes. Vincular componentes con tareas y pruebas.
 - **Criterios de Aceptación:** El mapa permite rastrear un elemento hasta sus consumidores y pruebas; cada módulo central cuenta con su inventario y contratos.
 - **Estado:** [ ] Pendiente
+- **Ampliación de alcance derivada de TAREA-02 (auditoría 2026-11-05):** además del inventario técnico por archivo, consolidar en el mismo registro maestro los requisitos funcionales, técnicos, de seguridad, rendimiento y mantenimiento, con identificadores estables para requisitos y subcapacidades. Cada registro debe relacionar fase/función, tipo y origen del requisito, componente, dependencias, criterios de aceptación, pruebas reproducibles, evidencias, estado funcional y de verificación, prioridad, tarea de resolución y cambios/versiones que puedan afectar su cumplimiento.
+- **Criterios adicionales de aceptación:**
+  - Distinguir requisitos originales, capacidades existentes, defectos, funcionalidades incompletas, propuestas nuevas y elementos no verificables.
+  - Detectar requisitos sin implementación o evidencia, pruebas sin requisito asociado y componentes sin responsable o documentación suficiente.
+  - Relacionar frontend, servicios, tablas, permisos, archivos e integraciones, incluyendo las áreas curriculares y servicios especializados.
+  - Mantener trazabilidad de cambios entre requisito, componente, dependencia, prueba y tarea de resolución; identificar el impacto potencial de cada cambio.
+  - Calcular cobertura sobre elementos identificables y evidencias ejecutadas; los bloqueos y elementos no probados no se contabilizan como éxitos.
+
 
 ### [AUD-NG-011] Demostrar o completar el aislamiento de microservicios por área curricular
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-011
@@ -17081,6 +17208,9 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Dependencias Expuestas:** processWorkflowDecision, validateRolePermission, SolicitudesTramites, RevisionesDecisionesTramite
 - **Descripción del Alcance:** Tomar el revisor exclusivamente de _verifiedUserId; validar rol y asignación contra la definición y etapa de cada workflow; impedir decisiones fuera del ámbito asignado.
 - **Criterios de Aceptación:** revisorId manipulado no altera el autor; un usuario no asignado no puede aprobar/rechazar; cada decisión queda vinculada a identidad y etapa autorizadas.
+
+- **Ampliación de evidencia C1.57 / T-UX-16 (2026-11-06):** processWorkflowDecision (backend/user-service/Code.gs:6757-6818) calcula callerId como revisorId || payload._verifiedUserId || "Revisor"; un revisorId enviado por el cliente prevalece sobre la identidad verificada. La autorización debe comprobarse contra _verifiedUserId y asignación persistida. Se mantiene AUD-NG-024.
+
 - **Estado:** [ ] Pendiente
 
 ### [AUD-NG-025] Hacer atómica la reserva de claves de idempotencia
@@ -17180,6 +17310,9 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Dependencias Expuestas:** getAuthorizationRequests, submitAuthorizationRequest, respondToAuthorizationRequest, submitAnnouncementReceiptConfirmation, RelacionesFamiliares, _verifiedUserId, _verifiedRole
 - **Descripción del Alcance:** Obtener tutor y usuario que responde exclusivamente de la sesión verificada. Comprobar en RelacionesFamiliares la relación legal vigente con el estudiante para consultar, crear y responder solicitudes. Impedir tutorUserId arbitrario o TODOS como sustituto de una relación autorizada. Registrar confirmaciones con identidad autenticada y metadatos generados en servidor, sin confiar en userId o ipMetadata del cliente.
 - **Criterios de Aceptación:** Un tutor no consulta solicitudes de otro cambiando tutorUserId; no crea solicitudes para estudiantes sin relación autorizada; destinatarios colectivos requieren regla institucional verificable; confirmaciones se atribuyen al usuario autenticado y sus metadatos no son falsificables; se conservan controles de vencimiento y duplicidad.
+
+- **Ampliación de evidencia C1.57 / T-UX-16 (2026-11-06):** getAuthorizationRequests (backend/user-service/Code.gs:6036-6098) permite eludir el filtro para roles no staff: descarta una fila solo si tutorId no es TODOS, tutorId no coincide con callerId y tutorUserId no coincide con callerId. Como tutorUserId procede del payload, el usuario puede enviar su propio ID y hacer falsa la condición para solicitudes de otros tutores. Derivar tutor exclusivamente de _verifiedUserId y validar relación legal vigente; no usar TODOS como autorización implícita. Se mantiene AUD-NG-036.
+
 - **Estado:** [ ] Pendiente
 
 ### [AUD-NG-037] Garantizar autorización de visibilidad y prevención atómica de traslapes en el calendario institucional
@@ -17207,6 +17340,7 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Dependencias Expuestas:** evaluateAndDispatchEarlyWarningAlerts, getEarlyWarningAlerts, calificaciones, tareas, períodos lectivos, configuración de umbrales, notificaciones institucionales, _verifiedUserId, _verifiedRole
 - **Descripción del Alcance:** Consultar calificaciones, materias reprobadas y tareas pendientes desde fuentes académicas persistidas para el año lectivo solicitado. Eliminar la dependencia de mockFailingSubjects y mockMissingTasks enviados por el cliente. Leer umbrales de configuración institucional versionada. Implementar envío real de notificaciones o registrar resultado verificable por destinatario. Aplicar autorización por identidad y ámbito al consultar alertas.
 - **Criterios de Aceptación:** Las alertas usan datos persistidos y filtrados por anolectivo; datos simulados del cliente no alteran resultados; umbrales son trazables a configuración vigente; cada destinatario tiene constancia de envío o fallo y no se declara notificado sin entrega; usuarios no consultan estudiantes fuera de su ámbito; se conserva deduplicación y se prueban períodos, umbrales y reintentos.
+- **Ampliación de evidencia (C1.42 / FASE2-T07, 2026-11-05):** `evaluateAndDispatchEarlyWarningAlerts` (backend/academic-service/Code.gs:9264-9535) extrae `anolectivo` pero no lo usa para filtrar `RegistrosAsistencia` ni matrículas; el período se conserva como etiqueta y parte de la clave, no como filtro de fuente. `mockFailingSubjects` y `mockMissingTasks` siguen aceptándose desde el payload. `configureAutomationRules` (backend/user-service/Code.gs:6551-6604) escribe `ReglasAutomatizacionAlertas`, pero el evaluador académico no consume esa hoja; `notificadoA` es una cadena fija, no una constancia por destinatario, y la clave de deduplicación no incluye el año lectivo. Mantener este alcance en esta tarea existente, sin crear un hallazgo duplicado.
 - **Estado:** [ ] Pendiente
 
 
@@ -17507,6 +17641,8 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Dependencias Expuestas:** CacheService, checkAndRegisterIdempotencyKey, saveIdempotentResult y doPost.
 - **Descripción del Alcance:** Crear un registro durable de claves, usuario, acción, firma del payload, estado de operación, resultado y fecha de expiración/retención. Mantener CacheService solo como optimización, no como fuente de verdad. Definir política de retención, recuperación y manejo de resultados grandes o fallos de almacenamiento.
 - **Criterios de Aceptación:** La misma clave recupera el resultado tras expirar/evictar caché y tras reinicio del servicio; claves con payload distinto se rechazan; los errores al guardar la clave no permiten reportar una operación como protegida; la retención se aplica según política auditable.
+- **Ampliación C1.26 / FASE2-T19:** La ruta `createInstitutionalServiceRequest` utiliza `COMM_REQ_<idempotencyKey>` durante 600 segundos y devuelve el resultado cacheado sin comparar el usuario verificado, la acción ni una firma del payload. La clave no contiene identidad y `CacheService.getScriptCache()` es compartida por el proyecto; reutilizar la misma clave desde otra cuenta puede devolver la solicitud y los datos del primer solicitante. El registro durable y la protección idempotente deben abarcar esta ruta, no solo `IDEM_USER_<action>_<token>`.
+- **Criterios adicionales:** Reutilizar una clave desde otro usuario nunca devuelve el resultado ajeno; misma identidad y payload idéntico devuelve el resultado idempotente; payload o identidad distintos se rechazan. Las claves, firmas y registros persistentes deben incluir la identidad verificada y conservar el aislamiento entre servicios/acciones.
 - **Estado:** [ ] Pendiente
 
 ### [AUD-NG-071] Reservar claves idempotentes de forma atómica antes de ejecutar operaciones
@@ -17638,6 +17774,8 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Dependencias Expuestas:** createInterServiceEnvelope, verifyInterServiceEnvelope, doPost, UrlFetchApp/fetch y endpoints interservicio.
 - **Descripción del Alcance:** Definir un punto único de creación y verificación de sobres e integrarlo en todas las llamadas entre servicios. Los endpoints que admitan tráfico interservicio deben exigir el sobre validado antes del despacho; las llamadas de salida deben firmar el payload y enviar el sobre completo.
 - **Criterios de Aceptación:** Toda llamada entre servicios pasa por el protocolo; los endpoints rechazan sobres ausentes o inválidos; las llamadas internas existentes quedan migradas; la prueba de integración acredita comunicación entre despliegues separados.
+- **Ampliación C1.29 / FASE2-01:** En USER, ACCOUNTING, ACADEMIC y DEVELOPER, `createInterServiceEnvelope` y `verifyInterServiceEnvelope` solo aparecen como definiciones, sin consumidores. Los doPost de USER, ACCOUNTING, ACADEMIC, TASK, EXAM y DEVELOPER no llaman a `verifyInterServiceEnvelope` antes del despacho. La única salida server-to-server observada, `delegateToTaskService`, envía `{action,payload}` JSON plano por UrlFetchApp.fetch, sin sobre firmado.
+- **Criterios adicionales:** Migrar la ruta USER→TASK y todas las llamadas interservicio a un helper común; exigir sobre válido en el receptor antes del despacho; comprobar con dos deployments/proyectos reales que una llamada sin firma, con firma alterada o destino incorrecto se rechaza.
 - **Estado:** [ ] Pendiente
 
 ### [AUD-NG-084] Implementar gestión segura de secretos por servicio con rotación y revocación
@@ -17647,6 +17785,8 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Dependencias Expuestas:** getAuthTokenSecret, AUTH_TOKEN_SECRET, SPREADSHEET_ID, customSecret y catálogo de credenciales.
 - **Descripción del Alcance:** Eliminar secretos derivados de identificadores públicos/configurables. Generar secretos aleatorios de alta entropía y gestionar claves por emisor/receptor con versión, vigencia, rotación solapada, revocación individual y auditoría de uso. No exponer secretos al frontend ni registrarlos en logs.
 - **Criterios de Aceptación:** La ausencia de una clave configurada produce error seguro, no un fallback predecible; cada par de servicios utiliza credenciales administrables; la rotación permite transición controlada; revocar un servicio no invalida a los demás.
+- **Ampliación C1.29 / FASE2-01:** `getAuthTokenSecret` cae a SHA-256 de `SPREADSHEET_ID + "_MASTER_AUTH_HMAC_SECRET"` cuando falta `AUTH_TOKEN_SECRET`. El mismo `SPREADSHEET_ID` está hardcodeado en USER, ACCOUNTING, ACADEMIC, TASK y EXAM; por tanto el fallback es predecible desde un identificador presente en el código y no separa servicios. No se acredita rotación/versión de claves ni revocación selectiva en el tráfico real.
+- **Criterios adicionales:** Eliminar fallback determinista; requerir secretos aleatorios provisionados por servicio/emisor-receptor en PropertiesService, con versión, rotación solapada y revocación. La ausencia de secreto debe fallar de forma cerrada; probar que revocar una relación no invalida otras.
 - **Estado:** [ ] Pendiente
 
 ### [AUD-NG-085] Corregir el orden y la atomicidad de la protección anti-replay
@@ -17665,6 +17805,8 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Dependencias Expuestas:** verifyInterServiceEnvelope, CatalogoServicios, permisosConcedidos, sourceService, targetService, action y versión del protocolo.
 - **Descripción del Alcance:** Separar autenticación de autorización. Comprobar que el emisor está registrado, activo y posee permiso explícito para la acción solicitada sobre el receptor; validar contrato y esquema por versión, con respuestas y errores normalizados.
 - **Criterios de Aceptación:** Un servicio desconocido/inactivo es rechazado; una acción no autorizada se bloquea aunque el HMAC sea correcto; los payloads incompatibles se rechazan; se puede revocar un permiso por acción sin afectar otras relaciones.
+- **Ampliación C1.29 / FASE2-01:** `verifyInterServiceEnvelope` solo comprueba campos, target, ventana temporal, anti-replay y HMAC; no valida que `sourceService` esté registrado/activo, ni permiso explícito por emisor-receptor-acción, ni versión/esquema de contrato. Además registra `requestId` en CacheService antes de verificar la firma, permitiendo que un paquete no autenticado consuma una clave de replay. `auditInterServiceCalls` devuelve siempre `auditLogs: []`; `auditServiceBackendIsolationAndDriveSecurity` devuelve flags hardcodeadas; la suite de arquitectura ejecuta funciones locales/mock y no prueba llamadas entre servicios.
+- **Criterios adicionales:** Validar emisor, receptor, acción y versión/esquema contra catálogo confiable antes de ejecutar; verificar HMAC antes de reservar el nonce anti-replay; auditar tráfico real con correlationId. Las pruebas deben incluir emisor desconocido/inactivo, acción no autorizada, contrato incompatible, firma válida pero permiso insuficiente, replay y dos proyectos separados.
 - **Estado:** [ ] Pendiente
 
 ### [AUD-NG-087] Verificar la continuidad real de la cadena y rechazar hashes ausentes
@@ -17841,8 +17983,9 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Severidad/Clasificación:** Alto
 - **Archivos Involucrados:** backend/academic-service/Code.gs; js/student.js
 - **Dependencias Expuestas:** ROLE_PERMISSIONS, saveToAcademicHistory, getAcademicHistory, fetchAcademicHistory.
-- **Descripción del Alcance:** saveToAcademicHistory crea IDs hist-XXXX en la primera columna y profesorId en la octava, sin studentId. getAcademicHistory compara verifiedUserId con r[0]. Además, getAcademicHistory está permitido para Alumno, pero no para Estudiante, aunque el dashboard estudiantil invoca la acción.
-- **Criterios de Aceptación:** Definir si el historial es de asignaciones por grupo o individual; alinear esquema, filtro y permisos; la lectura usa una columna de identidad real o un alcance institucional validado; los roles estudiantiles previstos pueden consultar únicamente su historial.
+- **Descripción del Alcance:** saveToAcademicHistory crea IDs hist-XXXX en la primera columna y profesorId en la octava, sin studentId. getAcademicHistory compara verifiedUserId con r[0]. Además, getAcademicHistory está permitido para Alumno, pero no para Estudiante, aunque el dashboard estudiantil invoca la acción. La función también permite que Padre/Tutor/Responsable y Profesor consulten usando estudianteId, grado y sección del payload; validateContextualAccess en ACADEMIC solo restringe Estudiante/Alumno y no valida vínculo familiar ni asignación docente. Si se omiten los filtros, el historial puede quedar sin acotar.
+- **Criterios de Aceptación:** Definir si el historial es de asignaciones por grupo o individual; alinear esquema, filtro y permisos; la lectura usa una columna de identidad real o un alcance institucional validado; Estudiante/Alumno solo consultan su historial; Padre/Tutor/Responsable solo consultan estudiantes vinculados activamente; Profesor solo consulta estudiantes de sus asignaciones activas; omitir o manipular estudianteId/grado/sección nunca amplía el acceso.
+- **Ampliación C1.73:** Se confirma que getAcademicHistory solo fuerza verifiedUserId para Estudiante/Alumno. La matriz permite la acción a Padre/Tutor/Responsable y Profesor, pero el control contextual académico no comprueba sus relaciones/ámbitos. Se amplía este hallazgo existente; no se crea ID duplicado.
 - **Estado:** [ ] Pendiente
 
 ### [AUD-NG-106] Vincular el grado y la sección consultados con la identidad estudiantil verificada
@@ -17879,5 +18022,2160 @@ Las siguientes tareas se anexan sin alterar el histórico ni los estados de las 
 - **Dependencias Expuestas:** Persistencia granular, RBAC/ABAC, historial, IndexedDB y navegación.
 - **Descripción del Alcance:** Las dos suites existentes no contienen pruebas conductuales para UNIF-001, FIX-001, HIST-001, AUTH-001, PROF-001 o NAV-001, ni ejercitan getAcademicConfig, updateAcademicConfig o getAcademicHistory para validar sus contratos.
 - **Criterios de Aceptación:** Las pruebas cubren conservación entre parciales/unidades, aislamiento de profesor y estudiante, lectura del historial por roles, aislamiento de caché por usuario y navegación con una o varias secciones; fallan ante los defectos registrados.
+- **Estado:** [ ] Pendiente
+
+
+
+### [AUD-NG-110] Garantizar la liberación del bloqueo de carga ante fallos de caché
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-110 (LOOP-001).
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** `js/student.js`; `js/persistence.js`; pruebas de regresión del dashboard estudiantil.
+- **Dependencias Expuestas:** `fetchAllActivities`, `isFetchingActivities`, `PersistenceManager.get`, `PersistenceManager.init`, IndexedDB y evento `academic-scope-updated`.
+- **Descripción del Alcance:** El bloqueo `isFetchingActivities` se activa antes de consultar la caché, pero la llamada `await PersistenceManager.get(cacheKeyDashboard)` está fuera del bloque `try/finally`. Si la inicialización de IndexedDB o la consulta rechaza la promesa, la función sale antes de ejecutar el `finally` y deja el bloqueo activado. Reorganizar el flujo para que toda operación posterior a la activación del bloqueo quede protegida por una liberación garantizada; ante un fallo de caché, permitir continuar con la carga remota o mostrar un error recuperable sin dejar el dashboard bloqueado. No duplicar ni sustituir el alcance de AUD-NG-104, que aborda el nombre inválido del almacén IndexedDB.
+- **Criterios de Aceptación:** Una excepción/rechazo simulado en `PersistenceManager.get` o `init` no deja `isFetchingActivities` en `true`; una llamada posterior a `fetchAllActivities` puede ejecutarse; no se produce rechazo no controlado; el camino normal conserva el renderizado desde caché y la sincronización remota; las pruebas cubren éxito, caché ausente y error de IndexedDB.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-111] Validar el esquema de las hojas académicas existentes sin pérdida de datos
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-111 (DB-001).
+- **Severidad/Clasificación:** Medio
+- **Archivos Involucrados:** `backend/academic-service/Code.gs`; pruebas de regresión del esquema académico.
+- **Dependencias Expuestas:** `getOrCreateSheet`, `ConfiguracionAcademica`, `HistorialAcademico`, `updateAcademicConfig`, `saveToAcademicHistory` y SpreadsheetApp.
+- **Descripción del Alcance:** `getOrCreateSheet` crea los encabezados de nueve columnas para `ConfiguracionAcademica` y ocho para `HistorialAcademico` únicamente cuando la hoja no existe. Si la hoja ya existe, no valida nombres, orden ni cantidad de columnas y las funciones consumidoras asumen índices fijos. Implementar una comprobación explícita del esquema existente y un procedimiento de migración no destructivo o un error controlado cuando detecte incompatibilidades. Preservar íntegramente los registros existentes y mantener el almacenamiento granular por fila, sin serializar arreglos JSON en celdas.
+- **Criterios de Aceptación:** Hojas nuevas y existentes válidas conservan exactamente los encabezados y orden esperados (9/8 columnas); una hoja con encabezados incompatibles no se modifica silenciosamente ni provoca escrituras desplazadas; toda migración conserva y contabiliza los registros; las pruebas verifican esquema correcto, esquema heredado, filas adicionales y ausencia de pérdida de datos/serialización JSON.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-112] Verificar CORS real del endpoint académico vigente
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-112 (CORS-001).
+- **Severidad/Clasificación:** Medio
+- **Archivos Involucrados:** `js/api.js`; `js/config.js`; pruebas de integración del endpoint ACADEMIC.
+- **Dependencias Expuestas:** `fetchApi`, `SERVICE_URLS`, `syncAcademicScope`, endpoint `ACADEMIC/getAcademicConfig` y despliegue de Google Apps Script.
+- **Descripción del Alcance:** El encabezado `Content-Type: text/plain` está implementado, pero no se encontró evidencia de una prueba de integración desde el origen web real. Además, la ruta histórica `USER/getAcademicConfig` fue sustituida por `ACADEMIC/getAcademicConfig` tras la modularización del servicio académico. Verificar el flujo vigente desde el navegador contra el despliegue de prueba y documentar el resultado sin modificar datos productivos.
+- **Criterios de Aceptación:** Una petición POST desde el origen autorizado usa `text/plain`, no requiere preflight OPTIONS por encabezados no simples, llega al endpoint ACADEMIC vigente, recibe JSON válido y no produce `TypeError: Failed to fetch`; la prueba utiliza datos de lectura y no modifica la hoja productiva; el resultado y el despliegue probado quedan identificados.
+- **Estado:** [ ] Pendiente
+
+
+### [AUD-NG-113] Completar la clave Upsert de configuración académica con el parcial
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-113 (CONF-001).
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** `backend/academic-service/Code.gs`; pruebas de regresión de configuración académica.
+- **Dependencias Expuestas:** `updateAcademicConfig`, `ConfiguracionAcademica`, `hierarchicalAssignments`, `finalConfigMap`, `saveToAcademicHistory`.
+- **Descripción del Alcance:** El Upsert actual busca `oldRow` por profesor, grado, sección, asignatura y tema, pero no incluye el parcial; la clave de `finalConfigMap` tampoco incluye el parcial. Al configurar el mismo contexto en otro parcial puede reutilizarse y sobrescribirse una fila de un periodo distinto. Incorporar el parcial normalizado a la clave de búsqueda y de persistencia, y conservar las filas del mismo profesor que pertenezcan a otros parciales al reconstruir la hoja. Mantener Parcial y Unidad como campos independientes.
+- **Criterios de Aceptación:** Dos parciales con el mismo grado/sección/asignatura/tema/profesor generan dos contextos diferenciados; actualizar un parcial modifica exclusivamente su fila; no se pierden filas de otros parciales ni se crean duplicados al repetir la operación; pruebas cubren ruta jerárquica y ruta de producto cartesiano.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-114] Implementar el ciclo de vida de fechas de ConfiguracionAcademica
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-114 (DATE-001).
+- **Severidad/Clasificación:** Medio
+- **Archivos Involucrados:** `backend/academic-service/Code.gs`; pruebas de regresión de periodos académicos.
+- **Dependencias Expuestas:** `updateAcademicConfig`, `ConfiguracionAcademica.Fecha`, `ParcialActual`, `currentMonth`, `PeriodosAcademicos`.
+- **Descripción del Alcance:** La ruta heredada asigna únicamente el nombre del mes actual a la columna Fecha y no actualiza la fecha del parcial anterior con un intervalo de inicio y fin. Implementar el ciclo requerido: al crear un parcial, registrar el mes de inicio; al configurar el siguiente, cerrar el periodo anterior con su intervalo (mes inicial - mes final), sin alterar registros de otros docentes ni perder la fecha inicial. Evaluar explícitamente la interoperabilidad con la tabla PeriodosAcademicos existente para evitar dos fuentes de verdad.
+- **Criterios de Aceptación:** El primer registro conserva su mes de inicio; al pasar al siguiente parcial, el anterior obtiene el intervalo esperado y el nuevo registra el mes actual; la operación es idempotente y no cambia otros contextos; pruebas cubren cambio secuencial de parciales, repetición y periodos con datos heredados.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-115] Aplicar el parcial vigente en todos los niveles de navegación docente
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-115 (NAV-002).
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** `js/teacher.js`; `backend/academic-service/Code.gs`; pruebas de regresión de navegación docente.
+- **Dependencias Expuestas:** `renderGrados`, `renderSecciones`, `renderAsignaturas`, `window.GLOBAL_SCOPE`, `GranularConfig`, `getAcademicConfig`.
+- **Descripción del Alcance:** `renderGrados` usa `GLOBAL_SCOPE.GradoActual`, que el backend construye con filas de todos los parciales del profesor; `renderSecciones` filtra GranularConfig solo por grado. Aplicar el parcial activo también al conjunto de grados y secciones, derivando ambos desde registros de `GranularConfig` cuyo `parcial` coincida con `GLOBAL_SCOPE.ParcialActual`. Mantener el filtro actual de asignaturas por parcial, grado y sección.
+- **Criterios de Aceptación:** Con dos parciales que contengan grados/secciones diferentes, la navegación del docente muestra únicamente grados, secciones y asignaturas del parcial activo; cambiar el parcial actualiza los tres niveles; no se recuperan elementos históricos como fallback; pruebas cubren datos multi-parcial.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-116] Definir y verificar la semántica temporal de HistorialAcademico
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-116 (POST-001).
+- **Severidad/Clasificación:** Observación
+- **Archivos Involucrados:** `backend/academic-service/Code.gs`; `AUDITORIA_COMPLETADAS_LEGACY_PLAN.md`; pruebas de transición de parcial.
+- **Dependencias Expuestas:** `saveToAcademicHistory`, `HistorialAcademico.Fecha`, `ConfiguracionAcademica.Fecha`, `PeriodosAcademicos`.
+- **Descripción del Alcance:** La implementación actual guarda en HistorialAcademico el mes de registro como instantánea y no modifica las filas históricas al configurar un parcial posterior. La tarea histórica solicitó confirmar si esa hoja debe representar un hito (snapshot) o un intervalo. Formalizar la decisión funcional antes de alterar datos históricos y contrastarla con el modelo PeriodosAcademicos; no inferir ni cambiar la semántica sin aprobación.
+- **Criterios de Aceptación:** Existe una decisión documentada y aprobada sobre snapshot o intervalo; una prueba en entorno controlado realiza una transición real entre parciales y demuestra el comportamiento esperado; no se reescriben registros históricos productivos durante la validación.
+- **Estado:** [ ] Pendiente
+
+
+### [AUD-NG-117] Inspeccionar el libro de referencia y conciliar sus datos con el modelo académico
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-117 (REQ-EXP-002).
+- **Severidad/Clasificación:** Medio
+- **Archivos Involucrados:** `backend/Spreadsheet/AREA DE INFORMATICA IMA.xlsx`; `backend/academic-service/Code.gs`; `backend/user-service/Code.gs`.
+- **Dependencias Expuestas:** `ConfiguracionAcademica`, `HistorialAcademico`, `Tareas`, `Entregas`, claves primarias, índices y relaciones entre entidades.
+- **Descripción del Alcance:** El libro XLSX de referencia está versionado en el repositorio, pero su contenido binario no pudo inspeccionarse con el conector GitHub disponible; tampoco se accedió al Spreadsheet operativo. Realizar la revisión manual del libro y contrastar las hojas, encabezados, tipos, claves, relaciones y registros con el modelo vigente de los microservicios. Documentar discrepancias sin modificar datos productivos.
+- **Criterios de Aceptación:** Se registra inventario de hojas y columnas, claves primarias/foráneas o claves lógicas, duplicados y relaciones; se compara el libro de referencia con el esquema vigente 9/8 y los modelos Tareas/Entregas; se adjunta evidencia reproducible y se identifican divergencias; no se borran ni migran registros sin autorización.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-118] Completar navegación jerárquica con secciones dinámicas y salto automático
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-118 (REQ-EXP-003).
+- **Severidad/Clasificación:** Medio
+- **Archivos Involucrados:** `js/teacher.js`; `teacher-dashboard.html`; pruebas de regresión de navegación académica.
+- **Dependencias Expuestas:** `initAssignmentBuilder`, `window.GLOBAL_SCOPE`, `GranularConfig`, `renderGrados`, `renderSecciones`, `renderAsignaturas`, `pushNav` y `renderCurrentLevel`.
+- **Descripción del Alcance:** El constructor de asignaciones presenta secciones fijas A/B/C en lugar de derivarlas de la configuración académica vigente. La navegación observada agrega el nivel Secciones mediante pushNav y no se encontró una condición que omita automáticamente ese nivel cuando el grado tiene una sola sección. Derivar las secciones del contexto configurado y permitir el salto directo a Asignaturas cuando solo exista una sección autorizada, conservando el contexto grado/sección en el estado e historial de navegación.
+- **Criterios de Aceptación:** Los grados con una sección pasan directamente a Asignaturas con la sección correcta; los grados con varias secciones muestran el selector; el constructor solo ofrece secciones realmente configuradas para el grado/parcial; atrás/adelante del navegador restaura el contexto; pruebas cubren cero, una y varias secciones.
+- **Estado:** [ ] Pendiente
+
+
+### [AUD-NG-119] Aislar el cierre de año al docente autenticado y sus entregas
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-119 (REQ-EXP-005).
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** `backend/task-service/Code.gs`; `js/teacher.js`.
+- **Dependencias Expuestas:** `closeAcademicYear`, `validateRolePermission`, `validateContextualAccess`, `ROLE_PERMISSIONS`, `Tareas`, `Entregas`, `ConfiguracionAcademica` y DriveApp.
+- **Descripción del Alcance:** La acción `closeAcademicYear` está permitida al rol Profesor y recibe `profesorId` desde el payload sin vincularlo a `_verifiedUserId`. Además, el bucle de Entregas elimina todas las filas, sin filtrar por las tareas del profesor. Vincular el cierre granular a la identidad verificada y resolver el propietario de cada entrega mediante su tarea antes de borrar filas o archivos. El cierre global debe quedar reservado a roles administrativos autorizados.
+- **Criterios de Aceptación:** Un profesor solo puede cerrar su propio ámbito; no puede enviar el ID de otro docente; el cierre de un docente no elimina entregas, archivos, tareas ni configuración de terceros; solo roles administrativos pueden ejecutar el cierre global; una prueba con dos docentes demuestra aislamiento completo.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-120] Implementar respaldo real y cierre completo de tareas y exámenes
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-120 (REQ-EXP-005).
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** `backend/task-service/Code.gs`; `backend/exam-service/Code.gs`; `teacher-dashboard.html`; `js/teacher.js`.
+- **Dependencias Expuestas:** `closeAcademicYear`, `generateAcademicArchiveZip`, `Examenes`, `PreguntasExamen`, `EntregasExamen`, `Tareas`, `Entregas`, DriveApp y `Log_Cierres`.
+- **Descripción del Alcance:** La interfaz ofrece formatos ZIP/RAR/7Z y anuncia un respaldo, pero `closeAcademicYear` solo genera un identificador ficticio `BACKUP-` y registra el formato; no crea un archivo. La acción `generateAcademicArchiveZip` aparece en el enrutador pero no existe una función en el microservicio. El cierre elimina Tareas, Entregas y configuración, pero no Examenes, PreguntasExamen ni EntregasExamen. Completar el respaldo antes de la purga, definir formatos realmente soportados y sincronizar el alcance de limpieza con la interfaz. No borrar referencias de entrega si el movimiento del archivo a papelera falla.
+- **Criterios de Aceptación:** El respaldo existe y puede verificarse antes de borrar datos; incluye manifiesto y conteos de tareas, entregas, exámenes y archivos; los formatos ofrecidos funcionan o se limitan a los soportados; el cierre limpia todos los módulos acordados; los errores de Drive producen resultado parcial y preservan referencias; el log registra el ID real del respaldo y resultados verificables.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-121] Aplicar en servidor la penalización del 50% por entrega tardía
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-121 (REQ-EXP-004).
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** `backend/task-service/Code.gs`; `js/teacher.js`; pruebas de calificación.
+- **Dependencias Expuestas:** `submitAssignment`, `gradeSubmission`, `EntregadaTarde`, `fechaLimite` y cálculo de calificación.
+- **Descripción del Alcance:** `submitAssignment` identifica una entrega posterior a `fechaLimite` y cambia su estado a `EntregadaTarde`, pero no aplica el factor del 50%. `gradeSubmission` guarda directamente la calificación enviada por el cliente, sin cálculo ni validación server-side. Implementar la regla en servidor y conservar nota base y nota final para evitar manipulación desde el navegador o aplicación doble.
+- **Criterios de Aceptación:** Una entrega a tiempo conserva el 100% de la nota base; una entrega tardía recibe exactamente el 50%; re-calificar no vuelve a reducir la nota; el servidor calcula el resultado independientemente del cliente; pruebas cubren límite horario, zona horaria y reintentos.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-122] Aplicar ámbito docente en todas las operaciones de asistencia
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-122 (REQ-EXP-004).
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** `backend/academic-service/Code.gs`; pruebas de seguridad de asistencia.
+- **Dependencias Expuestas:** `openAttendanceSession`, `saveClassAttendance`, `bulkApplyAttendanceStatus`, `getClassAttendance`, `saveDailyAttendance`, `getDailyAttendance`, `getBatchAttendanceRecords`, `validateContextualAccess` y `validateAcademicResponsibilityAndScopeAccess`.
+- **Descripción del Alcance:** Las acciones de asistencia están permitidas al rol Profesor, pero las funciones reciben grado, sección, sesión y userIds desde el payload sin comprobar que correspondan a asignaciones del docente autenticado. `getDailyAttendance` ignora grado/sección y devuelve todas las filas del día; `getClassAttendance` filtra solo por sesionId y devuelve todo si se omite. Implementar autorización contextual server-side con `_verifiedUserId` y asignaciones docentes para lecturas y escrituras.
+- **Criterios de Aceptación:** Un docente solo consulta y modifica sesiones, estudiantes, grados, secciones y asignaturas de su asignación vigente; los filtros se aplican en servidor; se rechazan sesiones ajenas y userIds fuera del grupo; Dirección/Administrador conservan el alcance institucional; pruebas negativas con dos docentes y grupos distintos.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-123] Restringir la consulta de asistencia de padres y tutores a sus representados
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-123 (REQ-EXP-004).
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** `backend/academic-service/Code.gs`; módulo de relaciones familiares.
+- **Dependencias Expuestas:** `getDailyAttendance`, `getClassAttendance`, `getStudentAttendanceSummary`, `ROLE_PERMISSIONS`, `validateContextualAccess` y `RelacionesFamiliares`.
+- **Descripción del Alcance:** Los roles Padre, Tutor y Responsable tienen permisos para consultar asistencia. `getDailyAttendance` devuelve todos los registros de una fecha, `getClassAttendance` puede devolver todos los registros si no se envía sesionId y `getStudentAttendanceSummary` acepta cualquier userId. La validación contextual restringe al propio estudiante, pero no comprueba la relación familiar de estos roles. Validar cada consulta contra los vínculos activos del titular y denegar consultas institucionales amplias.
+- **Criterios de Aceptación:** Un padre/tutor solo puede consultar los estudiantes vinculados y vigentes; no puede consultar otro userId ni la asistencia completa de una fecha/grupo; estudiantes solo ven su propia información; pruebas cruzadas con dos familias.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-124] Validar propiedad y conservar historial de rectificaciones de calificaciones
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-124 (REQ-EXP-004).
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** `backend/task-service/Code.gs`; `backend/exam-service/Code.gs`; pruebas de calificaciones.
+- **Dependencias Expuestas:** `getTeacherActivity`, `getTeacherExamActivity`, `gradeSubmission`, `gradeExamSubmission`, `EntregasVersiones`, `EntregasExamen` y `_verifiedUserId`.
+- **Descripción del Alcance:** Los endpoints de calificación reciben entregaId y actualizan nota/estado/comentario directamente, sin comprobar que el examen o tarea pertenezca al docente autenticado ni conservar el valor anterior de la calificación. La tabla EntregasVersiones conserva versiones de entregas, pero no las rectificaciones de nota; EntregasExamen tampoco registra historial de cambios de calificación. Vincular la operación al docente propietario y añadir historial append-only de cambios.
+- **Criterios de Aceptación:** Un docente no puede calificar entregas de otro docente; cada rectificación conserva valor anterior/nuevo, actor, fecha y motivo; las consultas de actividad usan identidad verificada y ámbito asignado; pruebas cubren cambio de nota y acceso cruzado.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-125] Preservar historial inmutable de correcciones de asistencia
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-125 (REQ-EXP-004).
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** `backend/academic-service/Code.gs`; pruebas de asistencia.
+- **Dependencias Expuestas:** `saveClassAttendance`, `saveDailyAttendance`, `RegistrosAsistencia`, actor autenticado y registro de auditoría.
+- **Descripción del Alcance:** Las funciones de guardado actualizan en sitio los campos de asistencia de una sesión/estudiante y reemplazan la marca temporal; no conservan el estado anterior ni registran quién realizó la corrección. Añadir un historial append-only antes de modificar una fila existente, sin impedir correcciones autorizadas.
+- **Criterios de Aceptación:** Cada corrección conserva estado/observación/justificación anterior y nuevo, actor, fecha y motivo; la fila actual refleja el último estado; los registros de auditoría no se editan ni borran; pruebas cubren múltiples correcciones y concurrencia.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-126] Unificar el orden de actividades por fecha límite en la vista expandida
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-126 (REQ-EXP-006).
+- **Severidad/Clasificación:** Bajo
+- **Archivos Involucrados:** `js/student.js`; pruebas de interfaz del dashboard estudiantil.
+- **Dependencias Expuestas:** `renderSubjectNavigation`, `expandSubject`, `pendingActivities` y `renderActivitiesIntoContainer`.
+- **Descripción del Alcance:** El resumen de la tarjeta ordena pendientes por fecha límite ascendente (próxima entrega primero), pero la vista expandida vuelve a ordenar todas las actividades en descendente, colocando fechas más lejanas antes que las próximas. Mantener un criterio único de prioridad en ambas vistas y ubicar fechas ausentes al final.
+- **Criterios de Aceptación:** Tarjeta y vista expandida muestran las actividades pendientes en el mismo orden ascendente por vencimiento; las actividades sin fecha quedan al final; empates tienen orden estable; pruebas con fechas pasadas, próximas, futuras y nulas.
+- **Estado:** [ ] Pendiente
+
+
+### [AUD-NG-127] Eliminar secretos HMAC predecibles y exigir configuración segura
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-127 (REQ-EXP-008).
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** `backend/user-service/Code.gs`; `backend/accounting-service/Code.gs`; configuración de Script Properties de todos los microservicios que validan tokens.
+- **Dependencias Expuestas:** `getAuthTokenSecret`, `SECRET_KEY`, `generateSessionToken`, `verifySessionToken`, `requestPasswordRecovery`, `resetPassword`, `DEBUG_MODE`.
+- **Descripción del Alcance:** El secreto de sesión `AUTH_TOKEN_SECRET` se deriva, si falta, de `SPREADSHEET_ID` y una cadena pública fija; el ID está incluido en el código versionado. El mismo fallback está presente en ACCOUNTING. Los tokens de recuperación de USER usan además un secreto fallback literal conocido. Ambos servicios tienen DEBUG_MODE habilitado. Reemplazar ambos fallbacks por secretos criptográficamente aleatorios provisionados fuera del repositorio y hacer que el servicio falle cerrado si faltan. Rotar tokens existentes y revisar el modo DEBUG en despliegue productivo.
+- **Criterios de Aceptación:** No hay secretos fallback en código; ausencia de Script Properties impide emitir/verificar tokens y devuelve error seguro; claves con entropía adecuada y rotación documentada; tokens firmados con la clave anterior quedan invalidados tras la rotación; DEBUG_MODE está desactivado en producción; pruebas demuestran que no se pueden falsificar sesiones ni recuperación de contraseña con valores públicos.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-128] Eliminar bypass RBAC y vincular tickets a la identidad verificada
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-128 (REQ-EXP-008).
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** `backend/user-service/Code.gs`; pruebas de autorización.
+- **Dependencias Expuestas:** `validateRolePermission`, `validateContextualAccess`, `getProblemTickets`, `submitProblemTicket`, `replyProblemTicket`, `getAutomationRules`, `_verifiedUserId`.
+- **Descripción del Alcance:** La lista de acciones permitidas incondicionalmente en `validateRolePermission` omite la matriz RBAC y la validación contextual. Dentro de esa lista, `getProblemTickets` filtra por `payload.userId` y si falta devuelve todos los tickets; `replyProblemTicket` permite responder a cualquier ticket si no se envía userId; `submitProblemTicket` acepta un userId de cliente; `getAutomationRules` no realiza control de rol. Sustituir el bypass por permisos explícitos y usar exclusivamente `_verifiedUserId` para acciones personales.
+- **Criterios de Aceptación:** Cada acción está asignada a roles explícitos; ausencia o falsificación de userId no amplía el acceso; usuario solo consulta/responde sus tickets; ticket de otro usuario requiere rol autorizado; solo Administrador/Desarrollador/Director acceden a reglas de automatización; las acciones no autorizadas devuelven `AUTH_PERMISSION_DENIED`; pruebas de IDOR y acceso cruzado.
+- **Estado:** [ ] Pendiente
+
+
+### [AUD-NG-129] Unificar matrícula y rematrícula con cargos financieros por periodo
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-129 (REQ-EXP-009).
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** `backend/academic-service/Code.gs`; `backend/accounting-service/Code.gs`; `js/secretary.js`.
+- **Dependencias Expuestas:** `convertAdmissionToStudent`, `registerStudentEnrollment`, `createStudentEnrollment`, `renewStudentEnrollment`, `Matriculas`, `CargosEstudiante`.
+- **Descripción del Alcance:** Existen dos flujos distintos: la conversión de admisión llama a `registerStudentEnrollment` y genera cargos, mientras `createStudentEnrollment`/`renewStudentEnrollment` crea la matrícula con bloqueo e idempotencia pero no genera ni vincula el cargo del periodo. El control de duplicados del flujo antiguo usa estudiante+concepto, sin periodo como clave explícita. Unificar los flujos y asociar cada matrícula con sus cargos del mismo periodo lectivo.
+- **Criterios de Aceptación:** Matrícula inicial y rematrícula generan una sola matrícula por estudiante/periodo y los cargos correspondientes; clave única por estudiante+periodo+concepto; las operaciones repetidas son idempotentes; becas, descuentos y exoneraciones se aplican según vigencia; historial por periodo permanece consultable; pruebas de reintento y concurrencia.
+
+- **Ampliación C1.33 / FASE2-05 (2026-11-05):** `registerStudentEnrollment` (Academic, 12670) no adquiere LockService ni reserva una clave idempotente. Primero actualiza/añade la fila de `Matriculas` y después añade cargos a `CargosEstudiante` mediante escrituras separadas, sin rollback ni estado recuperable si falla una escritura intermedia. `existingCargos` se lee una sola vez antes del bucle y no se actualiza tras cada alta, por lo que conceptos repetidos en el mismo payload pueden superar la deduplicación local. La ruta nueva `createStudentEnrollment` sí bloquea, pero admite `skipLock`; doPost solo lo elimina cuando `isInternalCall` es falso y no acredita que esa bandera provenga de una llamada interna autenticada.
+- **Criterios adicionales:** unificar ambas rutas en una operación atómica o con saga/reanudación explícita; bloquear la lectura-verificación-escritura de matrícula y cargos; reservar clave idempotente por estudiante+periodo+concepto; evitar duplicados dentro del mismo lote; no aceptar banderas de omisión de lock desde payload externo; reconciliar fallos parciales sin duplicar matrícula ni cargos.
+
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-130] Respetar permisos financieros y aplicar beneficios por periodo sin mutar consultas
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-130 (REQ-EXP-009).
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** `backend/academic-service/Code.gs`; `backend/accounting-service/Code.gs`; `js/student.js`; `student-dashboard.html`.
+- **Dependencias Expuestas:** `getStudentEnrollmentHistory`, `getStudentAccountStatement`, `applyApprovedScholarshipsToCharges`, `tienePermisoFinanciero`, `tab-financial`.
+- **Descripción del Alcance:** `getStudentEnrollmentHistory` devuelve cargos al estudiante sin validar `tienePermisoFinanciero`, y el dashboard muestra el saldo pendiente en el badge sin comprobar el permiso. `getStudentAccountStatement` aplica becas/descuentos modificando cargos durante una consulta de lectura; la función de aplicación no restringe los cargos al periodo de vigencia de la solicitud. Separar lectura y escritura, aplicar permisos financieros en servidor y limitar beneficios a cargos elegibles del periodo correspondiente.
+- **Criterios de Aceptación:** Sin permiso financiero, el estudiante conserva acceso académico, pero no recibe saldos/cargos/comprobantes por UI ni API; las consultas no modifican hojas; los beneficios se aplican solo por una acción autorizada, al periodo/conceptos elegibles, con registro de quién/cuándo; pruebas de permiso habilitado/deshabilitado y periodos anteriores.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-131] Configurar y verificar el endpoint real del microservicio ACCOUNTING
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-131 (REQ-EXP-010 a REQ-EXP-012).
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** `js/config.js`; `js/api.js`; configuración de despliegue Apps Script; `backend/accounting-service/Code.gs`.
+- **Dependencias Expuestas:** `SERVICE_URLS.ACCOUNTING`, `SERVICE_REGISTRY.ACCOUNTING.endpointUrl`, `fetchApi`, health check.
+- **Descripción del Alcance:** La URL configurada para ACCOUNTING contiene el identificador placeholder `AKfycbzAccountingSvc`, y el registro marca el servicio como ACTIVE. No se observó una URL de despliegue real ni una página que cargue `js/accounting.js`. Configurar el deployment real, validar el endpoint desde el cliente y no declarar ACTIVE un servicio no comprobado.
+- **Criterios de Aceptación:** URL real de Apps Script configurada en SERVICE_URLS y SERVICE_REGISTRY; health check autenticado exitoso; fetchApi resuelve acciones del servicio; no quedan placeholders en configuración activa; prueba de integración que confirma lectura y escritura en el Spreadsheet esperado.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-132] Corregir el motor de cargos mensuales y su deduplicación por periodo
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-132 (REQ-EXP-010).
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** `backend/accounting-service/Code.gs`; pruebas de generación de cargos.
+- **Dependencias Expuestas:** `previewBatchMonthlyCharges`, `generateBatchMonthlyCharges`, `Matriculas`, `CargosEstudiante`, tarifas y conceptos.
+- **Descripción del Alcance:** El preview interpreta columnas de `Matriculas` con índices que no corresponden al esquema escrito por `registerStudentEnrollment`/`createStudentEnrollment` (grado, sección, periodo, tipo, estado, beca y observaciones). Además, la deduplicación añade claves genéricas estudiante+concepto y estudiante+mes+año, bloqueando periodos futuros o conceptos distintos del mismo mes. Cuando no encuentra tarifa, aplica un monto fijo de 1200 en vez de reportar falta de configuración. Corregir el mapeo por encabezados y usar una única clave estudiante+concepto+mes+año; no inventar tarifas.
+- **Criterios de Aceptación:** El preview usa campos correctos; puede generar el mismo concepto para meses distintos y varios conceptos para un mismo mes; no duplica el mismo concepto/periodo; tarifa faltante produce error/pendiente sin cargo; pruebas con varios grados, secciones, años y conceptos.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-133] Asegurar integridad e idempotencia atómica de pagos y abonos
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-133 (REQ-EXP-010).
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** `backend/accounting-service/Code.gs`.
+- **Dependencias Expuestas:** `recordStudentPayment`, `checkAndRegisterIdempotencyKey`, `saveIdempotentResult`, `CargosEstudiante`, `PagosAbonos`.
+- **Descripción del Alcance:** `recordStudentPayment` no verifica que cargoId pertenezca al userId pagador, permite abonos superiores al saldo y no usa bloqueo transaccional propio. La idempotencia consulta CacheService y guarda el resultado después de ejecutar, sin reservar atómicamente la clave. El fallback de referencia `SIN-REF` puede convertir pagos distintos sin referencia en falsos duplicados. Validar propiedad y saldo, y hacer la reserva idempotente atómica.
+- **Criterios de Aceptación:** El cargo pertenece al estudiante pagador; no se acepta sobrepago salvo que se registre explícitamente como crédito; cada pago tiene clave única no reutilizable; reintentos/concurrencia no duplican pagos; referencias vacías no colisionan; se conserva trazabilidad de pagos parciales, reversos y ajustes; pruebas concurrentes y de pago cruzado.
+
+- **Ampliación C1.33 / FASE2-05 (2026-11-05):** Se confirma en `recordStudentPayment` (Accounting, 3891) que el flujo no adquiere LockService. La clave es opcional (`idempotencyKey || tokenTransaccion || referencia`); si no se proporciona, se omite la búsqueda de duplicados y se persiste igualmente. La búsqueda previa en `PagosAbonos` y el `appendRow` no forman una sección crítica, por lo que dos solicitudes simultáneas pueden superar la comprobación y registrar dos abonos. El wrapper de doPost tampoco resuelve la carrera: consulta CacheService antes del handler y guarda el resultado después.
+- **Pruebas adicionales:** dos pagos simultáneos con la misma clave y sin clave; reintento tras respuesta perdida; error después de appendRow; cargo ajeno; sobrepago; referencias vacías y repetidas. Debe comprobarse un solo efecto observable en `PagosAbonos` y el estado/saldo del cargo.
+
+- **Estado:** [ ] Pendiente
+
+
+### [AUD-NG-134] Conectar el portal financiero estudiantil y generar recibos PDF correlativos
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-134 (REQ-EXP-011).
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** `student-dashboard.html`; `js/student.js`; `js/accounting.js`; `backend/accounting-service/Code.gs`; `js/config.js`.
+- **Dependencias Expuestas:** `tab-financial`, `voucher-modal`, `uploadPaymentVoucher`, `generatePaymentReceiptPDF`, `PagosAbonos`, `ComprobantesPago`.
+- **Descripción del Alcance:** El portal contiene pestaña financiera y modal de comprobante, pero `student.js` solo conecta las pestañas de actividades/progreso y no registra handlers para `tab-financial` ni `voucher-modal`; `js/accounting.js` no se carga en las páginas actuales. El backend sube comprobantes, pero comparte los archivos con ANYONE_WITH_LINK. `generatePaymentReceiptPDF` devuelve un objeto JSON, no un archivo PDF; el recibo usa un número aleatorio de seis dígitos, no correlativo.
+- **Criterios de Aceptación:** El estudiante consulta cargos/vencimientos, sube comprobantes desde el portal y descarga un PDF real; los archivos de comprobantes permanecen privados y se sirven solo tras autorización; el recibo tiene correlativo secuencial único con bloqueo; la UI maneja estados de revisión/aprobación/rechazo; pruebas end-to-end.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-135] Endurecer CAI, rango y correlativo de facturación fiscal hondureña
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-135 (REQ-EXP-012).
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** `backend/accounting-service/Code.gs`.
+- **Dependencias Expuestas:** `configureSARAuthorizedCAI`, `createFiscalInvoice`, `AutorizacionesCAI`, `FacturasFiscales`, `PagosAbonos`.
+- **Descripción del Alcance:** `configureSARAuthorizedCAI` registra rangos sin validar formato, inicio/fin, solapamientos o vencimiento. `createFiscalInvoice` acepta CAI inactivo si el cliente lo especifica, permite sobrescribir rangos/fecha/numeroFactura desde payload, no exige que el número coincida con el siguiente correlativo ni comprueba unicidad; tampoco verifica que reciboCajaId corresponda a un pago confirmado y no facturado. La tasa ISV también puede venir del cliente. La separación de hojas entre recibos internos y FacturasFiscales sí existe, pero el control fiscal debe ser autoritativo en servidor.
+- **Criterios de Aceptación:** Solo se emite con CAI activo y vigente; rango autorizado proviene de la hoja y no del payload; el correlativo siguiente se genera en servidor y queda dentro del rango; no se permiten duplicados ni saltos no autorizados; el pago asociado existe, está confirmado y no tiene factura previa; tasas tributarias provienen de política configurada; pruebas de expiración, rango agotado, CAI inactivo y concurrencia.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-136] Restringir estados de cuenta, comprobantes, recibos y facturas a la familia autorizada
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-136 (REQ-EXP-011/012).
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** `backend/accounting-service/Code.gs`, `backend/academic-service/Code.gs`; módulo de relaciones familiares.
+- **Dependencias Expuestas:** `validateContextualAccess`, `getStudentAccountStatement`, `getPaymentVouchers`, `generatePaymentReceiptPDF`, `getFiscalInvoices`, `uploadPaymentVoucher`, `getStudentEnrollmentHistory`, `RelacionesFamiliares`.
+- **Descripción del Alcance:** Padre/Tutor/Responsable tienen permisos para consultar estados de cuenta, comprobantes, recibos y facturas, pero en ACCOUNTING validateContextualAccess solo restringe al Estudiante cuando se envía userId; no verifica vínculos familiares. getFiscalInvoices devuelve todas las facturas si no hay filtros y permite buscar cualquier facturaId; generatePaymentReceiptPDF busca cualquier reciboId/pagoId; getPaymentVouchers puede devolver todos los comprobantes si el familiar no envía userId. Además, ACADEMIC permite getStudentEnrollmentHistory a Padre/Tutor/Responsable; la función acepta userId del payload y solo lo sustituye para Estudiante/Alumno, mientras validateContextualAccess no valida relación familiar.
+- **Criterios de Aceptación:** Estudiante solo accede a su cuenta/recibos/facturas/matrícula; Padre/Tutor/Responsable solo a hijos o representados vinculados activamente y con los permisos financieros aplicables; los identificadores de recibo/factura/matrícula no permiten IDOR; consultas sin filtros no devuelven información global; pruebas cruzadas entre familias y estudiantes.
+- **Ampliación C1.73:** getStudentEnrollmentHistory (ACADEMIC) devuelve matrículas y cargos del userId indicado; los roles Padre/Tutor/Responsable están autorizados, pero no existe comprobación de vínculo familiar en el validador académico. Se incorpora al alcance de aislamiento financiero/familiar ya existente.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-137] Unificar el nombre institucional en recibos y documentos financieros
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-137 (REQ-EXP-007).
+- **Severidad/Clasificación:** Bajo
+- **Archivos Involucrados:** `backend/accounting-service/Code.gs`; configuración central de marca y plantillas documentales.
+- **Dependencias Expuestas:** `generatePaymentReceiptPDF`, datos de institución, `manifest.json` y marca New Generation.
+- **Descripción del Alcance:** Los encabezados de las páginas principales usan New Generation Bilingual School and Institute, pero los datos de recibo generados por el backend declaran `New Generation Christian Academy`. Centralizar el nombre oficial y consumirlo desde todos los documentos y vistas.
+- **Criterios de Aceptación:** Recibos, facturas y documentos institucionales usan exactamente la marca oficial configurada; no quedan nombres alternativos o anteriores en los documentos generados; prueba de renderizado.
+- **Estado:** [ ] Pendiente
+
+
+### [AUD-NG-138] Corregir cierres de caja y conciliación bancaria por sesión/cuenta
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-138 (REQ-EXP-013).
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** `backend/accounting-service/Code.gs`.
+- **Dependencias Expuestas:** `recordCashBankMovement`, `closeCashSession`, `getCashBankSummary`, `performBankReconciliation`, `MovimientosCajaBancos`, `CierresCaja`.
+- **Descripción del Alcance:** `closeCashSession` suma todos los movimientos con estado Registrado sin filtrar por sesión/fecha ni distinguir efectivo de banco y no marca movimientos como cerrados; cierres posteriores vuelven a sumar movimientos históricos. `performBankReconciliation` concilia por referencia e importe sin cuenta, fecha ni estado de conciliación y no evita reutilizar una partida. `recordCashBankMovement` no usa bloqueo ni clave única.
+- **Criterios de Aceptación:** Apertura/cierre con identificador y periodo; arqueo solo de movimientos de efectivo de la sesión; movimientos cerrados no vuelven a entrar en otro cierre; conciliación por cuenta, fecha, importe y referencia con estado único; bloqueo/idempotencia; pruebas de cierres consecutivos y partidas duplicadas.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-139] Impedir bypass de autorización en cuentas por pagar y three-way match
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-139 (REQ-EXP-013).
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** `backend/accounting-service/Code.gs`.
+- **Dependencias Expuestas:** `recordAccountsPayableExpense`, `verifyThreeWayMatch`, `recordPurchaseReceipt`, `modifyPurchaseOrderAmount`, `generatePurchaseOrderPDF`.
+- **Descripción del Alcance:** `verifyThreeWayMatch` utiliza `authRole` del payload para autorizar diferencias; `recordAccountsPayableExpense` acepta `bypassConciliacion` sin validar autorización de servidor y deja aprobada una obligación si no se envía orden/partidas. No se verifica factura duplicada por proveedor. `generatePurchaseOrderPDF` devuelve una URL fija de dominio sin crear un archivo PDF real.
+- **Criterios de Aceptación:** Usar exclusivamente `_verifiedRole`; el bypass requiere permiso explícito y motivo auditado; compras con orden exigen recepción y factura coincidentes; gastos sin orden usan flujo de aprobación independiente; factura de proveedor única; PDF real con URL verificada; pruebas de rol falsificado y bypass.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-140] Vincular autoservicio, asistencia y recibos de nómina a la identidad verificada
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-140 (REQ-EXP-014).
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** `backend/accounting-service/Code.gs`.
+- **Dependencias Expuestas:** `getEmployeeSelfServicePortal`, `recordStaffCheckIn`, `getStaffAttendanceLogs`, `generatePayrollReceiptPDF`, `_verifiedUserId`, `_verifiedRole`.
+- **Descripción del Alcance:** El autoservicio confía en `authRole` y `authUserId` del cliente; el registro de asistencia acepta `empleadoId` y horario esperado desde payload; el empleado puede consultar logs sin indicar empleadoId y obtener registros globales; la generación de recibo acepta empleadoId arbitrario y devuelve una URL de PDF no generada.
+- **Criterios de Aceptación:** Empleado usa siempre `_verifiedUserId`; el horario esperado proviene de contrato/horario autorizado; solo RRHH/roles autorizados registran asistencia de terceros; el empleado solo consulta su asistencia/boleta; PDF real y privado; pruebas IDOR y suplantación.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-141] Actualizar cálculo de nómina a parámetros legales hondureños vigentes y versionados
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-141 (REQ-EXP-014).
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** `backend/accounting-service/Code.gs`; tabla de políticas de nómina.
+- **Dependencias Expuestas:** `calculatePayrollPeriod`, deducciones IHSS/RAP/ISR, horas extras y aportaciones patronales.
+- **Descripción del Alcance:** El cálculo usa IHSS trabajador 3.5%, patrono 7.2% y techo L 10,317.38; el último comunicado oficial IHSS revisado establece para 2025 5% trabajador, 8.7% patrono y techo L 11,903.13. El ISR usa tramos anteriores a la tabla progresiva SAR 2026. RAP se calcula con un techo fijo 10,317.38 sin distinguir los techos publicados por RAP y no se encontró el aporte patronal del 4% al Fondo de Reserva Laboral creado por Decreto 47-2024. Las horas extras se multiplican por 1.25 sin diferenciar jornada diurna/nocturna/feriado.
+- **Criterios de Aceptación:** Tasas y techos configurables/versionados por ejercicio, régimen y tipo de empresa; actualizar tabla ISR SAR 2026; IHSS/RAP/Reserva Laboral conforme a normativa vigente y excepciones aplicables; reglas diferenciadas de horas extras; trazabilidad de fuente/fecha de cada política; pruebas unitarias con casos oficiales y validación por responsable contable/legal.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-142] Hacer transaccionales y auditables los movimientos de inventario, requisiciones y mantenimiento
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-142 (REQ-EXP-015).
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** `backend/accounting-service/Code.gs`.
+- **Dependencias Expuestas:** `recordInventoryMovement`, `transferInventoryStock`, `confirmTransferReceipt`, `deliverMaterialRequisition`, `reconcilePhysicalCount`, `manageMaintenanceOrder`, `registerAssetDisposal`, `manageAssetItem`.
+- **Descripción del Alcance:** `confirmTransferReceipt` acepta cantidad recibida superior a la despachada e infla stock. `deliverMaterialRequisition` entrega solicitudes sin exigir estado aprobado, no usa lock y descuenta desde el nombre del departamento como si fuera almacén. `reconcilePhysicalCount` no bloquea ni impide repetir una conciliación, por lo que vuelve a aplicar ajustes. `manageMaintenanceOrder` puede descontar repuestos otra vez al actualizar una orden ya completada. `recordInventoryMovement` trata tipos desconocidos como ajuste absoluto de stock. La baja de activos carece de idempotencia/lock y el catálogo permite sobrescribir custodio/estado sin historial.
+- **Criterios de Aceptación:** Recepción no supera cantidad despachada y discrepancias requieren motivo; requisición solo se entrega tras aprobación y desde almacén válido; conteo conciliado una sola vez bajo lock; repuestos se descuentan una sola vez por orden; tipos de movimiento whitelist; bajas idempotentes y autorizadas; cambios patrimoniales conservan historial; pruebas de doble ejecución y stock negativo/inflado.
+- **Estado:** [ ] Pendiente
+
+
+### [AUD-NG-143] Corregir contrato de noticias, audiencia, vigencia y permisos de Secretaría
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-143 (REQ-EXP-016).
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** `backend/user-service/Code.gs`; `js/teacher.js`; `js/index-ui.js`; `teacher-dashboard.html`.
+- **Dependencias Expuestas:** `getNews`, `createNews`, `updateNewsStatus`, `nav-news`, `renderNewsHTML`, `fetchNewsManagement`.
+- **Descripción del Alcance:** Hay dos declaraciones de `getNews`; la posterior devuelve `noticias`, mientras la UI espera `data`. El frontend compara estado `Activo` y campo `fechaExpiracion`, pero el backend usa `Activa` y `fechaFin`. El formulario solo envía título/categoría/imagen/contenido, por lo que la audiencia queda Todos/Todas y no hay fecha de expiración. La consulta pública no filtra audiencia si no recibe grado/sección. Además, el backend usa rol `Secretaría` y el control de teacher.js compara `Secretaria`.
+- **Criterios de Aceptación:** Un único contrato DTO; UI y backend comparten nombres de campos/estados; formulario captura audiencia, grado, sección y vigencia; consulta pública solo devuelve comunicados públicos, consulta autenticada filtra por audiencia; solo roles autorizados publican/gestionan; pruebas por audiencia, expiración y rol con/sin acento.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-144] Completar health checks ping-pong para todos los microservicios reales
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-144 (REQ-EXP-017).
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** `js/api.js`; `js/developer.js`; `backend/user-service/Code.gs`; `backend/academic-service/Code.gs`; `backend/task-service/Code.gs`; `backend/exam-service/Code.gs`; `backend/developer-service/Code.gs`; `backend/accounting-service/Code.gs`; `js/config.js`.
+- **Dependencias Expuestas:** `checkMicroserviceHealth`, `checkAllMicroservicesHealth`, acción `ping`, `getServiceHealthDiagnostics`, `SERVICE_URLS`.
+- **Descripción del Alcance:** El monitor mide round-trip para USER/ACADEMIC/TASK/EXAM, pero TASK y EXAM no implementan la acción ping; DEVELOPER tampoco y su getServiceHealthDiagnostics devuelve PASS fijo sin probar conectividad/permisos; ACCOUNTING sí tiene ping pero se omite del monitor y su URL está placeholder. La lista de servicios monitorizados no refleja la arquitectura actual de seis servicios.
+- **Criterios de Aceptación:** Cada microservicio expone ping autenticado con timestamp y prueba real de acceso a su dependencia crítica; monitor dinámico incluye todos los servicios registrados; latencia y fallback distinguidos; no se muestran PASS simulados; endpoint placeholder se marca como no desplegado; pruebas online/offline/timeout por servicio.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-145] Conectar bitácora central real, filtros y sanitización de datos sensibles
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-145 (REQ-EXP-018).
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** `backend/user-service/Code.gs`; `backend/academic-service/Code.gs`; `backend/developer-service/Code.gs`; `js/developer.js`; `js/api.js`.
+- **Dependencias Expuestas:** `logStructuredEvent`, `sanitizePayloadForLog`, `getStructuredLogs`, `getCentralizedLogs`, `renderStructuredLogsTable`.
+- **Descripción del Alcance:** El backend USER devuelve campos ingleses (service/functionName/severity/errorCode/message/payload/userRole), pero developer.js espera campos españoles; la UI envía severidad/servicio/limit y el backend solo lee severity/startDate/endDate, por lo que los filtros no funcionan. La sanitización solo enmascara credenciales, no PII/RTN/cuentas/datos financieros. developer-service.getCentralizedLogs devuelve dos logs de muestra hardcodeados y marcar resuelto solo responde éxito sin persistir. La UI usa fallback con registros ficticios.
+- **Criterios de Aceptación:** DTO único y filtros por servicio/severidad/fecha/límite funcionales; logs centrales leídos de fuente persistente; marcar resuelto persiste auditoría sin alterar evento original; sanitización de PII y datos financieros definida por esquema; sin registros ficticios como fallback; pruebas de filtros, campos y sanitización.
+- **Ampliación C1.84 / TAREA-F4-P1-09:** La vista \`openSecurityAndComplianceDashboardModal\` (js/ui-common.js 5616-5760) construye filas mediante \`innerHTML\` e interpola directamente \`evt.eventId\`, \`evt.eventType\`, \`evt.userId\`, \`evt.module\`, \`evt.action\`, \`evt.details\` y \`err.message\`, sin escape contextual visible. Debido al desajuste de columnas ya documentado, \`evt.module\` puede recibir el JSON de \`eventData\` de \`registerAndDispatchEvent\`; si contiene marcado, el navegador podría interpretarlo como HTML. No se ejecutó prueba XSS en navegador. Se amplía AUD-NG-145 por renderizado seguro de datos de bitácora; no crear un hallazgo de logs duplicado.
+- **Ampliación C1.89 / TAREA-F4-P2-05:** La política de privacidad publica AUDIT_LOGS por 180 días (politica-de-privacidad.html:55) y la de uso repite 6 meses (politica-de-uso.html:62), pero el valor por defecto del motor USER es 365 días (2129-2131). La ejecución sigue leyendo fecha/severidad de columnas incompatibles con BitacoraEventos y purgeStructuredLogs elimina todas las filas de LogsSistema sin antigüedad ni preservación (7967-7989). Se revalida el desajuste documental y operativo; no crear duplicado.
+- **Ampliación C1.91 / TAREA-F4-P3-02:** `getPaginatedAuditLogReport` (USER 4243-4364) lee BitacoraEventos y asigna row[1] a fecha, row[2] a eventType, row[3] a userId y row[9] a correlationId; el escritor `registerAndDispatchEvent` (4618-4690) guarda en esos índices TipoEvento, ServicioOrigen, RequestIDOrigen y ErrorDetalle. La fecha se parsea desde TipoEvento, por lo que los registros reales no superan el filtro temporal. La consulta de trazabilidad busca `BitacoraTraceability`, mientras `recordTraceabilityLog` escribe `BitacoraTrazabilidad`. Ambas fuentes se cargan completas y se ordenan antes de aplicar slice, por lo que la paginación no reduce lectura/memoria. El dashboard Developer sigue llamando `getStructuredLogs` (developer.js:211), no al endpoint paginado; envía severidad/servicio/limit, mientras el backend espera severity/startDate/endDate, ignora servicio y devuelve fijo hasta 500. Se amplía el hallazgo de bitácora central; no crear duplicado.
+- **Estado:** [ ] Pendiente
+
+
+- **Ampliación de evidencia C1.43 / FASE2-T08 (2026-11-05):** La brecha de observabilidad también incluye conservación y consulta real de trazabilidad. En USER, logStructuredEvent (326-350) usa sanitizePayloadForLog (50-67), que solo enmascara claves de credenciales y no sanea PII, RTN, correos, teléfonos, identificadores personales ni datos financieros; message/errorDetails quedan fuera de esa sanitización. getStructuredLogs (353-392) filtra únicamente severidad y fechas, no servicio/acción/correlationId, carga toda la hoja y devuelve hasta 500 filas sin paginación, incluyendo payload. recordTraceabilityLog (4548-4573) persiste errorDetails sin sanitización; getTraceabilityCorrelationLogs (4575-4616) solo filtra correlationId/estado/servicio, carece de filtros por acción/periodo y paginación segura, y devuelve el detalle sin redacción.
+- **Ampliación de evidencia C1.43 / FASE2-T08 (2026-11-05):** getPaginatedAuditLogReport (4243-4364) consulta BitacoraTraceability, pero recordTraceabilityLog escribe en BitacoraTrazabilidad. Además, interpreta BitacoraEventos con un DTO distinto al que registra registerAndDispatchEvent: row[1] se trata como fecha aunque contiene TipoEvento; row[2] se trata como tipo/severidad aunque contiene ServicioOrigen; row[9] se trata como correlationId aunque contiene ErrorDetalle. La consulta no reconstruye los eventos reales.
+- **Ampliación de evidencia C1.43 / FASE2-T08 (2026-11-05):** getRetentionPolicies (2120+) define AUDIT_LOGS con 365 días, pero executeDataRetentionPolicyCheck (2203-2254) intenta purgar solo BitacoraEventos y obtiene la fecha de row[0]/row[1] y severidad de row[2], incompatibles con el esquema vigente. No aplica la política a LogsSistema ni BitacoraTrazabilidad. purgeStructuredLogs (7967-7990), en cambio, elimina todas las filas de LogsSistema sin aplicar antigüedad, preservación legal ni política por categoría. Incorporar retención efectiva, trazable y específica por fuente; no borrar indiscriminadamente.
+
+- **Ampliación C1.75 / TAREA-F4-P0-04:** loginUser (2479-2554) emite LOGIN_FAILED/LOGIN_SUCCESS y logoutUser emite LOGOUT_SUCCESS mediante logStructuredEvent (327-352), que persiste en LogsSistema, no en BitacoraEventos ni BitacoraTrazabilidad. getSecurityAndComplianceDashboardData (4453-4545) calcula failedLoginsCount/successfulLoginsCount leyendo BitacoraEventos (4458-4507), por lo que no consume los eventos de login guardados en LogsSistema. loginUser no invoca recordTraceabilityLog (4548-4573); esta función escribe en BitacoraTrazabilidad, mientras getPaginatedAuditLogReport usa el nombre BitacoraTraceability y un DTO incompatible con registerAndDispatchEvent (AUD-NG-145 ya cubre el desajuste de esquema y nombre). La rama de credenciales ausentes (2481) retorna sin evento. logStructuredEvent captura y suprime errores de escritura (348-351), permitiendo que el flujo continúe sin constancia durable. El payload de login incluye identifier y userId (2502, 2540, 2552); sanitizePayloadForLog solo enmascara claves de credenciales, no estos identificadores. Se amplía este hallazgo existente; no crear otro hallazgo de bitácora.
+- **Ampliación C1.77 / TAREA-F4-P1-02:** En BitacoraEventos, registerAndDispatchEvent usa EventID en row[0], TipoEvento en row[1] y ServicioOrigen en row[2]. executeDataRetentionPolicyCheck (USER 2218-2237) evalúa new Date(row[0] || row[1]) y row[2] como severidad; row[0] contiene EventID no vacío y row[2] no es severidad. La política AUDIT_LOGS no purga las filas esperadas. Se mantiene dentro de AUD-NG-145.
+### [AUD-NG-146] Completar respaldo seguro: SHA-256 real, validación previa, restauración y retención
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-146 (REQ-EXP-019).
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** `backend/academic-service/Code.gs`; `backend/user-service/Code.gs`; `js/teacher.js`; `js/developer.js`; `js/api.js`.
+- **Dependencias Expuestas:** `createSystemBackup`, `listSystemBackups`, `verifyBackupIntegrity`, `restoreSystemBackup`, `previewBackupRestoreImpact`, `getBackupsList`, `createSpreadsheetBackup`, `restoreSpreadsheetBackup`.
+- **Descripción del Alcance:** createSystemBackup usa computeSimpleHash (hash de 32 bits, no SHA-256). verifyBackupIntegrity considera válido cualquier checksum no vacío por la condición `storedChecksum === computedChecksum || Boolean(storedChecksum)`. restoreSystemBackup no llama a verifyBackupIntegrity y requiere `confirmed` + `confirmCode`, mientras teacher.js envía `confirmationCode` y omite `confirmed`, por lo que la restauración UI falla. No se encontraron triggers programados ni política de retención. El panel developer.js llama acciones USER no encontradas y presenta un respaldo ficticio como fallback.
+- **Criterios de Aceptación:** SHA-256 criptográfico; comparación estricta y validación de estructura/enlaces antes de restaurar; restore exige token de confirmación de un solo uso generado en servidor y dos pasos UI; bloqueo durante restauración y reconciliación post-restore; creación programada con triggers reales; retención configurable con borrado seguro; UI consume acciones reales sin mocks; pruebas de checksum corrupto, restore, schedule y retención.
+- **Ampliación C1.77 / TAREA-F4-P1-02:** executeDataRetentionPolicyCheck (USER 2120-2273) no procesa USER_SESSIONS y para STUDENT_EXPEDIENTS/FINANCIAL_RECORDS solo incrementa itemsArchived una vez por política, sin localizar, mover ni archivar registros. saveRetentionPolicy acepta días negativos/no numéricos y categorías arbitrarias; PRESERVE_LEGAL no tiene rama ejecutora. No hay ScriptApp.newTrigger/timeBased en USER, ACADEMIC ni ACCOUNTING ni invocaciones del motor desde esos servicios. Se amplía AUD-NG-146 para el motor de retención/archivo operativo, sin duplicar TASK-151/152 ni AUD-NG-145.
+- **Ampliación C1.89 / TAREA-F4-P2-05:** La política de privacidad promete USER_SESSIONS por 30 días, pero el default es 90 (USER 2130-2131) y executeDataRetentionPolicyCheck no contiene rama para USER_SESSIONS. La política promete conservación permanente de STUDENT_EXPEDIENTS y FINANCIAL_RECORDS, mientras los defaults son 3650/2555 días (10/7 años) con ARCHIVE y el ejecutor solo incrementa itemsArchived sin mover datos (2132-2133, 2254-2257). No hay triggers time-based en USER/ACADEMIC/ACCOUNTING. El contenido real de la hoja PoliticasRetencionDatos no está disponible en el repositorio; se documentan los defaults de código, no se afirma el valor de producción. Se amplía AUD-NG-146/TASK-499.
+- **Estado:** [ ] Pendiente
+
+
+### [AUD-NG-147] Completar el módulo de guías de estudio con CRUD real, filtros de audiencia y control de acceso
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-147 (REQ-DOC-001).
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** teacher-dashboard.html; js/teacher.js; student-dashboard.html; js/student.js; js/api.js; backend/academic-service/Code.gs; backend/task-service/Code.gs.
+- **Dependencias Expuestas:** saveStudyGuide, getStudyGuides, toggleStudyGuideStatus, createOrUpdateStudyGuide, getStudyMaterials, createStudyMaterial, deleteStudyMaterial, MaterialesEducativos, PUBLIC_ACTIONS, validateRolePermission.
+- **Descripción del Alcance:** Conectar el formulario de guías del docente y la vista dedicada del estudiante con operaciones backend existentes y verificables. Implementar creación, publicación, consulta, edición/sustitución y desactivación de guías con persistencia. Cada guía debe almacenar y filtrar por asignatura, grado, sección y parcial, y mostrarse únicamente a alumnos autorizados para ese ámbito. El acceso de lectura debe exigir autenticación y autorización de servidor; no debe depender de filtros enviados por el cliente. Implementar carga o asociación documental con validación de MIME para PDF, DOCX, TXT, XLSX y PPTX, y sanitización del contenido y de los enlaces antes de persistir/renderizar. Corregir el contrato entre js/api.js y el router del microservicio responsable; eliminar el uso de rutas públicas que expongan materiales fuera de su audiencia.
+- **Criterios de Aceptación:** El docente autorizado puede crear, consultar, editar/sustituir y desactivar una guía; los cambios persisten tras recargar. El backend valida el rol y la asignación del docente, y filtra por asignatura/grado/sección/parcial. Un estudiante solo consulta guías de su ámbito; solicitudes sin sesión o con IDs manipulados son rechazadas. Solo se aceptan los MIME permitidos. Contenido y URL no ejecutan HTML/JavaScript no confiable. Pruebas de CRUD, permisos, aislamiento por ámbito, MIME inválido, sanitización y persistencia.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-148] Implementar gestión persistente de contenido de clases y presentaciones vinculadas por tema
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-148 (REQ-DOC-002).
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** teacher-dashboard.html; js/teacher.js; student-dashboard.html; js/student.js; js/config.js; js/data.js; js/api.js; backend/academic-service/Code.gs; backend/task-service/Code.gs.
+- **Dependencias Expuestas:** PRESENTATION_INDEX, GLOBAL_SCOPE.TemaActual, getAcademicConfig, createStudyMaterial, getStudyMaterials, Google Drive, editor enriquecido, asociación de tareas y recursos complementarios.
+- **Descripción del Alcance:** Implementar un registro persistente de contenido de clases organizado por tema y contexto académico. Cada registro debe incluir título, descripción, fecha de clase, contenido de editor enriquecido, asignatura, grado, sección, parcial/unidad, presentación adjunta en Google Drive, documentos complementarios y tareas asociadas. Permitir crear, editar, publicar, sustituir y consultar el material desde la interfaz docente y visualizarlo para los alumnos autorizados. Sustituir el índice estático como fuente de verdad por relaciones persistidas y cargar los registros desde el backend después de recargar la página.
+- **Criterios de Aceptación:** El docente puede crear y editar contenido asociado a un tema y clase concretos; los adjuntos se almacenan en Drive y conservan su metadato/relación; las tareas y documentos complementarios quedan vinculados al tema; la vista estudiantil muestra solo recursos autorizados; las asociaciones sobreviven a recarga y cambios de sesión. Pruebas de CRUD, adjuntos, asociaciones, filtros y persistencia.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-149] Completar la creación polimórfica de tareas y validar contenido y fecha límite en servidor
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-149 (REQ-DOC-003).
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** teacher-dashboard.html; js/teacher.js; backend/task-service/Code.gs; js/student.js.
+- **Dependencias Expuestas:** create-assignment-form, Quill, createTask, uploadFile, archivoUrl, fechaLimite, tipoRecurso, hoja Tareas.
+- **Descripción del Alcance:** Implementar las tres modalidades de creación requeridas: A) editor de texto enriquecido; B) documento adjunto con validación de MIME y metadatos; C) ejercicios a desarrollar con su estructura e instrucciones. Definir y persistir un discriminador de modalidad que permita al estudiante visualizar cada tipo correctamente. Añadir validación de servidor para impedir el guardado si falta título, contenido válido (texto enriquecido no vacío, archivo válido o estructura de ejercicios completa, según modalidad) o fecha límite. La validación no debe depender de atributos HTML ni del comportamiento del cliente.
+- **Criterios de Aceptación:** Las tres modalidades pueden crearse y consultarse tras recargar; el backend rechaza payloads sin título, sin contenido válido o sin fecha límite; rechaza modalidad desconocida o adjuntos con MIME no autorizado; las instrucciones/archivos se almacenan y se muestran correctamente en el dashboard estudiantil. Pruebas de cada modalidad, payload vacío directo, fecha límite ausente, MIME inválido y persistencia.
+- **Estado:** [ ] Pendiente
+
+
+### [AUD-NG-150] Reforzar la separación entre guías informativas y tareas evaluables en el servidor
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-150 (REQ-DOC-004).
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** js/teacher.js; js/student.js; backend/task-service/Code.gs; teacher-dashboard.html.
+- **Dependencias Expuestas:** tipoRecurso, getStudentTasks, getActivityHtml, createTask, submitAssignment, gradeSubmission, archivoUrl, MaterialesEducativos, hoja Tareas, hoja Entregas.
+- **Descripción del Alcance:** Mantener una clasificación inequívoca de tarea evaluable, ejercicios, guía de estudio y material de apoyo. El backend debe impedir crear entregas, borradores, calificaciones o penalizaciones sobre tipos informativos. El DTO estudiantil debe incluir los metadatos de archivo necesarios para mostrar/descargar la guía y separar los recursos informativos de la cola de tareas evaluables. El formulario docente debe ofrecer los tipos admitidos y persistir el discriminador sin depender de payloads arbitrarios.
+- **Criterios de Aceptación:** Una guía/material de apoyo se consulta y descarga, pero submitAssignment/saveSubmissionDraft/gradeSubmission rechazan operaciones evaluables para ese tipo. Las tareas y ejercicios evaluables conservan su flujo normal. getStudentTasks devuelve los campos requeridos por el renderer. Pruebas directas de endpoints para cada tipo y verificación de ausencia de entregas/notas/penalizaciones para guías.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-151] Calcular y validar la fecha límite a partir de la fecha impartida
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-151 (REQ-DOC-005).
+- **Severidad/Clasificación:** Medio
+- **Archivos Involucrados:** teacher-dashboard.html; js/teacher.js; backend/task-service/Code.gs.
+- **Dependencias Expuestas:** create-task-class-date, create-task-due-date, fechaClase, fechaLimite, createTask, updateTask, hoja Tareas.
+- **Descripción del Alcance:** Implementar la sugerencia de fecha límite como el día calendario siguiente a fechaClase, permitir modificación manual y persistir fechaClase junto a fechaLimite. Validar en servidor que ambas fechas sean válidas y que fechaLimite no sea anterior a fechaClase, tanto al crear como al editar una tarea.
+- **Criterios de Aceptación:** Al seleccionar fechaClase, el formulario propone el día siguiente; el docente puede modificarlo; el servidor rechaza fecha límite anterior o fecha inválida; fechaClase y fechaLimite sobreviven a recarga. Pruebas de mismo día, día siguiente, cambio manual, fin de mes/año y fechas pasadas.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-152] Corregir el contrato de disponibilidad y bloquear entregas antes de la hora habilitada
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-152 (REQ-DOC-006).
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** teacher-dashboard.html; js/teacher.js; js/student.js; backend/task-service/Code.gs; js/config.js; js/developer.js.
+- **Dependencias Expuestas:** horaDisponible, fechaDisponible, createTask, getStudentTasks, getActivityHtml, submitAssignment, saveSubmissionDraft, estado de tarea, fechaLimite.
+- **Descripción del Alcance:** Definir un contrato único de disponibilidad como fecha/hora completa con zona horaria explícita. Convertir el input del docente al campo persistido esperado y devolver exactamente el mismo nombre/formato en getStudentTasks. El cliente debe ocultar/deshabilitar la entrega antes de la disponibilidad, pero el backend también debe rechazar cualquier entrega final anticipada, sin confundir disponibilidad con fecha límite. Completar los estados de programación/publicación/disponibilidad/vencimiento/cierre y su transición controlada.
+- **Criterios de Aceptación:** La fecha/hora configurada se persiste y se devuelve sin pérdida de zona horaria; la UI y backend usan el mismo contrato; submitAssignment rechaza entregas antes de la disponibilidad aun con llamada directa; la fecha límite sigue calculando tardanza de forma independiente; los estados reflejan correctamente programación, disponibilidad, entrega, vencimiento y cierre. Pruebas en límites exactos, antes/después, zona horaria y bypass del cliente.
+- **Estado:** [ ] Pendiente
+
+
+### [AUD-NG-153] Completar las tarjetas estudiantiles con tema, recursos y estados coherentes
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-153 (REQ-DOC-007).
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** student-dashboard.html; js/student.js; backend/task-service/Code.gs; js/api.js.
+- **Dependencias Expuestas:** renderSubjectNavigation, getActivityHtml, getStudentTasks, getStudyMaterials, tipoRecurso, tema, parcial, fechaLimite, archivoUrl.
+- **Descripción del Alcance:** Completar el DTO de actividades con tema y metadatos de recursos; integrar en las tarjetas por asignatura las guías/materiales y tareas evaluables del parcial correspondiente. Excluir guías informativas de contadores de pendientes, prioridades, estados de vencimiento y penalizaciones. Mostrar por tarjeta título, asignatura, tema, parcial, fechas y estado inequívoco (pendiente, entregada, vencida), conservando la expansión por materia y el aislamiento académico.
+- **Criterios de Aceptación:** Las tarjetas contienen todos los campos requeridos; guías y tareas aparecen diferenciadas y solo las tareas evaluables se cuentan como pendientes/vencidas; el enlace de descarga de guía funciona; filtros por parcial/asignatura/grado/sección siguen siendo correctos. Pruebas de guía sin entrega, tarea pendiente, tarea entregada, tarea vencida y cambio de parcial.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-154] Implementar la jerarquía documental docente y normalización canónica de carpetas Drive
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-154 (REQ-DOC-008).
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** backend/task-service/Code.gs; backend/academic-service/Code.gs; js/student.js; js/ui-common.js.
+- **Dependencias Expuestas:** DRIVE_FOLDER_ID, getOrCreateFolder, uploadFile, initiateResumableUpload, uploadChunk, reconstructFileParts, uploadResumableFile, DriveApp.
+- **Descripción del Alcance:** Implementar el árbol Área/New Generation/Docentes/Asignaturas/[Nombre]/[Año]/Parcial I..IV/[Tipo]. Normalizar y sanitizar los nombres antes de buscar/crear carpetas para evitar duplicados por diferencias de mayúsculas, acentos o espacios. Aplicar el mismo destino a cargas normales y reanudables; completar el despacho y permisos de las acciones de carga; reconstruir y mover el archivo final al destino canónico y devolver el Drive fileId real, no una sessionKey.
+- **Criterios de Aceptación:** Todos los tipos de archivo permitidos terminan en la carpeta correspondiente a su asignatura/año/parcial/tipo; variaciones triviales reutilizan la misma carpeta; las cargas grandes funcionan de principio a fin; la respuesta contiene Drive fileId/fileUrl válidos; no quedan archivos finales en carpetas temporales. Pruebas de ruta, duplicados, cargas pequeñas/grandes, reanudación y reemplazo.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-155] Completar y asegurar el registro de metadatos para todas las cargas documentales
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-155 (REQ-DOC-009).
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** backend/task-service/Code.gs; backend/academic-service/Code.gs; js/student.js; js/ui-common.js.
+- **Dependencias Expuestas:** MetadatosArchivos, logFileMetadata, uploadFile, initiateResumableUpload, reconstructFileParts, Drive ID, ruta Drive, MIME, tamaño, metadatos académicos.
+- **Descripción del Alcance:** Registrar por cada archivo lógico un único registro completo con ID, título, nombre original, nombre físico, tipo de recurso, asignatura, grado, sección, parcial, año lectivo, tema, tarea, profesor, fechas, estado, Drive ID, ruta jerárquica, MIME y tamaño. Diferenciar nombre original y físico, obtener año lectivo/tema/tipo del contexto real, registrar el destino canónico y conectar el logger a todas las rutas de carga, incluida la reanudable. Los errores de metadatos deben generar un resultado controlado y trazable, no quedar ocultos.
+- **Criterios de Aceptación:** Cada archivo final tiene un registro único y completo; los fragmentos temporales no generan registros duplicados como si fueran documentos independientes; la ruta guardada corresponde a la carpeta Drive real; la carga no se confirma sin metadatos consistentes o sin una cola de reintento verificable. Pruebas de uploadFile, carga reanudable, reemplazo, metadatos faltantes y persistencia.
+- **Estado:** [ ] Pendiente
+
+
+### [AUD-NG-156] Implementar configuración administrativa de hora de publicación e intervalo post-clase
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-156 (REQ-DOC-010).
+- **Severidad/Clasificación:** Medio
+- **Archivos Involucrados:** developer-dashboard.html; js/developer.js; js/api.js; backend/academic-service/Code.gs; js/config.js; backend/task-service/Code.gs.
+- **Dependencias Expuestas:** horaPublicacion, intervaloPostClase, ConfiguracionAcademica, updateAcademicConfig, getAcademicConfig, AUD-NG-152.
+- **Descripción del Alcance:** Añadir al panel de desarrollador controles administrativos para configurar la hora de publicación y el intervalo post-clase, con validación de formato, unidad y rango. Persistir estos valores en configuración institucional, devolverlos desde el backend y hacerlos disponibles al flujo de programación de tareas. Esta tarea implementa la fuente administrativa de configuración; AUD-NG-152 implementa el contrato de disponibilidad y su enforcement en tareas.
+- **Criterios de Aceptación:** El administrador puede consultar/actualizar los valores; los cambios persisten tras recargar y se aplican a nuevas programaciones; usuarios no autorizados no pueden modificarlos; la hora y el intervalo tienen zona horaria/unidad explícitas; pruebas de permisos, límites y propagación a TASK.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-157] Corregir el cálculo integral de desempeño y representar ausencia de datos sin valores ficticios
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-157 (REQ-DOC-011).
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:** js/student.js; js/api.js; backend/academic-service/Code.gs; backend/task-service/Code.gs.
+- **Dependencias Expuestas:** allActivitiesData, renderStudentProgress, compositeProgress, academicPerformance, deliveryRate, punctualityRate, getStudentAttendanceSummary, ICR, GP, Mastery, proyectos, AUD-NG-121.
+- **Descripción del Alcance:** Definir un modelo analítico que integre notas por asignatura, tareas, proyectos y exámenes, utilizando la penalización tardía implementada por AUD-NG-121 sin volver a aplicarla. Separar el índice de asistencia del desempeño académico. Representar calificaciones pendientes, asignaturas sin evaluación y ausencia de registros de asistencia como no disponibles, no como cero ni 100%. Corregir el cálculo de progreso sin actividades y definir métricas ICR/GP/Mastery independientes, documentadas y no redundantes.
+- **Criterios de Aceptación:** Los proyectos se incluyen en el conjunto analítico; una actividad sin nota no reduce el promedio a cero; sin actividades no se genera un porcentaje compuesto ficticio; sin registros de asistencia se muestra "Sin registros"/N/A; la asistencia permanece separada; ICR, GP y Mastery tienen fórmulas y fuentes independientes; pruebas con datos completos, parciales y ausentes.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-158] Aplicar autorización contextual a escrituras docentes y conservar historial de fechas límite
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-158 (REQ-DOC-012).
+- **Severidad/Clasificación:** Crítico
+- **Archivos Involucrados:** backend/task-service/Code.gs; backend/academic-service/Code.gs; js/api.js; pruebas de seguridad académica.
+- **Dependencias Expuestas:** validateRolePermission, validateContextualAccess, getDynamicPermissionsForRole, createTask, updateTask, createStudyMaterial, AsignacionesDocentes, _verifiedUserId, fechaLimite, historial de tareas.
+- **Descripción del Alcance:** Aplicar ABAC server-side a todas las escrituras docentes. Derivar profesorId/autorId exclusivamente de la sesión verificada y comprobar que asignatura, grado y sección pertenecen a asignaciones vigentes del docente. Verificar propiedad/ámbito antes de editar o eliminar una tarea/material. Añadir historial append-only de cambios de fecha límite con valor anterior/nuevo, actor verificado, timestamp y motivo. Coordinar con AUD-NG-001/AUD-NG-004 para token y secreto, y con TASK-085/TASK-142 para privacidad documental, sin duplicar esos alcances.
+- **Criterios de Aceptación:** Un profesor no puede crear, editar ni eliminar tareas/materiales fuera de sus asignaciones aunque manipule el payload; el servidor deriva identidad y ámbito de claims verificados; updateTask rechaza tareas de otro profesor; cada cambio de fecha límite conserva historial inmutable con actor/fecha/motivo; pruebas negativas con dos docentes y dos secciones, modificación de IDs y múltiples cambios de fecha.
+- **Estado:** [ ] Pendiente
+
+
+### [AUD-NG-159] Proteger logoutUser y revocación de sesiones contra revocación arbitraria de cuentas
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-159 (auditoría de completadas.md, TAREA-01).
+- **Severidad/Clasificación:** Crítico (P0).
+- **Archivos Involucrados:** backend/user-service/Code.gs; js/auth.js; js/api.js; js/ui-common.js.
+- **Dependencias Expuestas:** PUBLIC_ACTIONS, validateRolePermission, logoutUser, revokeUserSession, verifySessionToken, generateSessionToken, loginUser, CacheService, handleLogout, handleSessionExpired, fetchApi.
+- **Descripción del Alcance:** Eliminar el bypass de autenticación para logoutUser. Exigir un token de sesión válido y derivar userId/sessionId exclusivamente de sus claims verificados. El cierre ordinario debe revocar únicamente la sesión actual. Las revocaciones globales por userId deben quedar restringidas a una operación administrativa protegida, con motivo, actor verificado y auditoría. La interfaz debe invocar el cierre remoto antes de eliminar el estado local; no basta con borrar localStorage/sessionStorage.
+- **Criterios de Aceptación:**
+  - Una llamada sin token o con token inválido no puede revocar ninguna sesión.
+  - Un usuario solo puede cerrar la sesión identificada por sus propios claims; manipular userId/sessionId en el payload no cambia el objetivo.
+  - Una revocación global requiere rol/permiso administrativo explícito y deja actor, objetivo, motivo y timestamp auditables.
+  - Un usuario puede autenticarse de nuevo después de una revocación de sesión ordinaria; el cierre de una sesión no bloquea tokens nuevos.
+  - La UI llama logoutUser con la credencial vigente, espera respuesta y limpia el estado local; los errores de sesión revocada/expirada activan el manejador de cierre local.
+  - Pruebas negativas: llamada anónima con userId ajeno, sessionId ajeno, token inválido más userId, token válido con IDs manipulados y revocación administrativa autorizada.
+- **Relaciones:** AUD-NG-001 (propagación del token), AUD-NG-005 (revocación coherente entre servicios), TAREA-01, FASE2-T01 y TAREA-F4-P0-03.
+- **Ampliación C1.74:** handleLogout en ui-common.js solo borra claves locales y redirige; no llama a logoutUser. handleSessionExpired también limpia estado local, pero api.js no invoca ese manejador al recibir AUTH_PERMISSION_DENIED ni un código específico de sesión revocada. auth.js no conserva sessionToken y api.js no lo transmite, según AUD-NG-001. La revocación backend sigue además limitada al ScriptCache USER, según AUD-NG-005.
+- **Ampliación C1.86 / TAREA-F4-P2-02:** Se revalidó que `logoutUser` sigue incluido en `PUBLIC_ACTIONS` (USER 922-925) y acepta `userId/sessionId` del payload; si el token se proporciona, los claims solo rellenan los identificadores que falten, no sustituyen identificadores manipulados. `handleLogout` (ui-common.js 225-235) elimina datos locales y redirige sin llamar a logoutUser. Se confirma el alcance previamente registrado; no crear duplicado.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-160] Revalidar el rol vigente o invalidar tokens después de cambios de privilegios
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-160 (auditoría de completadas.md, FASE2-T01).
+- **Severidad/Clasificación:** Alto (P1).
+- **Archivos Involucrados:** backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; backend/task-service/Code.gs; backend/exam-service/Code.gs.
+- **Dependencias Expuestas:** generateSessionToken, verifySessionToken, claims.role, Usuarios, CacheService, dispatchSecurityEvent, revocación de sesiones.
+- **Descripción del Alcance:** Garantizar que los cambios de rol o privilegios se apliquen a sesiones ya emitidas. Revalidar el rol/versión vigente desde una fuente autoritativa en cada servicio, o invalidar coordinadamente las sesiones activas cuando cambie el rol. No depender únicamente del claim role emitido al iniciar sesión.
+- **Criterios de Aceptación:**
+  - Un usuario degradado no conserva permisos del rol anterior mediante un token todavía vigente.
+  - Los cambios de rol, asignación o revocación de privilegios se propagan a USER, ACADEMIC, ACCOUNTING, TASK y EXAM dentro del plazo documentado.
+  - Los tokens antiguos se rechazan tras el cambio; los nuevos tokens reflejan el rol vigente.
+  - Las cachés de rol/estado usan claves por usuario y versión y se invalidan coordinadamente.
+  - Pruebas con token emitido antes del cambio, rol degradado/promovido, caché caliente/fría y llamadas directas a cada microservicio.
+- **Relaciones:** AUD-NG-003 (vigencia de token), AUD-NG-005 (revocación y coherencia de estado), AUD-NG-159 (logout no autorizado), FASE2-T01 y TAREA-F4-P0-03.
+- **Ampliación C1.26 / FASE2-T19:** La matriz dinámica se guarda bajo dynamic_permissions_matrix global durante 600 segundos y se invalida desde savePermissionMatrix; si la lectura de la fuente falla con caché fría, getDynamicPermissionsForRole devuelve null y validateRolePermission recurre a ROLE_PERMISSIONS, sin distinguir ausencia legítima de reglas de un error de fuente. Esto puede reactivar un permiso estático que la matriz dinámica había denegado. Además, active_delegations_<userId> conserva delegaciones durante 300 segundos; crear y revocar las invalida, pero la expiración automática registrada por getSecurityDelegations no purga la clave y hasActiveDelegationForAction no revalida las fechas al consumir una entrada caliente.
+- **Ampliación C1.74:** verifySessionToken acepta el claim role firmado sin contrastarlo con el rol vigente de Usuarios ni una versión de privilegios. getDynamicPermissionsForRole usa dynamic_permissions_matrix con TTL 600 en los cinco servicios. savePermissionMatrix invalida la caché del proyecto USER, pero no las cachés independientes de los otros servicios. Sus purgeSecurityCaches intentan eliminar perm_matrix_<role> y dynamic_perms_<role>, claves distintas de dynamic_permissions_matrix; por tanto, no purgan la matriz que realmente se consume. La falta de dispatcher de seguridad queda registrada también en AUD-NG-005.
+- **Criterios adicionales:** Distinguir explícitamente matriz inexistente de fuente no disponible y fallar de forma segura ante error de lectura; probar denegaciones dinámicas con caché fría, caliente y caída de Spreadsheet. En delegaciones, expirar la entrada al llegar la fecha límite (TTL limitado por el tiempo restante) o comprobar vigencia en cada hit; probar caducidad y revocación con caché caliente. Verificar también el cambio de rol en tokens ya emitidos y la invalidación efectiva de dynamic_permissions_matrix en cada microservicio.
+- **Ampliación C1.76 / TAREA-F4-P1-01:** USER:createSecurityDelegation (1746-1800) y revokeSecurityDelegation (2276-2315) solo eliminan active_delegations_<userId> del ScriptCache USER. ACADEMIC (hasActiveDelegationForAction 624-669) y ACCOUNTING (525-570) mantienen cachés independientes de 300 segundos y no reciben invalidación al crear/revocar; una delegación nueva puede tardar en aplicarse y una revocada puede seguir autorizando hasta que expire el TTL. getSecurityDelegations (1803-1859) cambia el estado a Expirada al consultar, pero no invalida cachés; las entradas cacheadas no conservan fechas y hasActiveDelegationForAction no revalida vigencia en cada hit. Se amplía el alcance existente, sin crear hallazgo duplicado.
+- **Ampliación C1.83 / TAREA-F4-P1-08:** Los cinco validadores consultan dynamic_permissions_matrix (TTL 600 s), pero los cuatro purgadores remotos eliminan perm_matrix_<role>/dynamic_perms_<role>, claves que no coinciden con la consumida. Los validadores de delegaciones consultan active_delegations_<userId>, mientras los purgadores eliminan delegations_<userId>. savePermissionMatrix elimina dynamic_permissions_matrix solo en USER y revokeSecurityDelegation elimina active_delegations_<id> solo en USER. Por tanto, la purga remota no invalida las entradas reales y las modificaciones pueden seguir usando permisos/delegaciones obsoletos en otros servicios.
+- **Criterios adicionales:** definir un contrato único de claves/versión de caché; propagar o versionar invalidaciones en USER, ACADEMIC, ACCOUNTING, TASK y EXAM; incluir cambios de matriz, rol, delegación, estado y sesión. Verificar con pruebas de clave exacta y lecturas caliente/fría que la siguiente autorización usa la versión vigente; un error de purga debe quedar como fallo recuperable, no como éxito.
+- **Estado:** [ ] Pendiente
+
+- **Ampliación C1.78 / TAREA-F4-P1-03:** Los cinco getDynamicPermissionsForRole leen solo rol, accion y permitido; ignoran modulo/ambito. savePermissionMatrix actualiza por rol+accion, por lo que reglas diferenciadas colisionan. Se registra la dimensión de la matriz en AUD-NG-221; este hallazgo conserva solo caché/fallback e invalidación.
+
+### [AUD-NG-161] Sustituir la suite de concurrencia por pruebas reales de idempotencia y recuperación de reintentos
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-161 (auditoría de completadas.md, FASE2-T02).
+- **Severidad/Clasificación:** Alto (P1; integridad de pruebas y verificación transaccional).
+- **Archivos Involucrados:** backend/accounting-service/Code.gs; backend/academic-service/Code.gs; js/api.js; tests/regression/ y/o nueva suite de integración aislada.
+- **Dependencias Expuestas:** runCriticalProcessConcurrencySuite; fetchApi; checkAndRegisterIdempotencyKey; saveIdempotentResult; LockService; CacheService; PagosAbonos; TransaccionesCobro; DocumentosEscolaresEmitidos; Matriculas; procesos de planilla.
+- **Descripción del Alcance:** Reemplazar las comprobaciones nominales de runCriticalProcessConcurrencySuite por pruebas conductuales que ejecuten operaciones reales en un entorno aislado. La suite actual solo adquiere un lock, cuenta filas y marca PASSED sin verificar invariantes; además consulta TransaccionesCobro, mientras recordStudentPayment escribe en PagosAbonos. Implementar casos que comprueben contención concurrente, pérdida de respuesta después de persistir, reintento con la misma clave, rechazo de una clave reutilizada con payload incompatible, recuperación de una operación no ejecutada y reconocimiento de una operación ya completada. Cubrir pagos, emisión documental/CUV, matrículas y planillas. No duplicar la implementación de claves estables y reserva atómica del cliente/backend (AUD-NG-006) ni la corrección transaccional específica de pagos (AUD-NG-133); esta tarea se limita a que las pruebas realmente detecten sus incumplimientos.
+- **Criterios de Aceptación:**
+  - Ningún caso obtiene PASSED por contar filas o adquirir un lock sin validar el resultado de negocio.
+  - La prueba de pagos inspecciona PagosAbonos y comprueba unicidad de la clave/operación y ausencia de doble efecto.
+  - La prueba de CUV compara los códigos emitidos y falla ante duplicados.
+  - Dos solicitudes concurrentes con la misma clave producen un solo efecto observable.
+  - Una respuesta perdida seguida de reintento devuelve/reconoce el resultado original sin crear otra entidad.
+  - Una clave reutilizada con contenido incompatible se rechaza.
+  - Se cubren matrículas y planillas, además de pagos y documentos.
+  - Los fallos de validación, autorización, persistencia y caché producen resultados de prueba diferenciados; la suite no informa éxito si un caso no se ejecutó.
+  - Las pruebas utilizan fixtures/datos aislados y no alteran registros productivos.
+- **Relaciones:** AUD-NG-006 (idempotencia por operación en fetchApi); AUD-NG-133 (idempotencia atómica de pagos); FASE2-T02.
+
+- **Ampliación C1.33 / FASE2-05 (2026-11-05):** Además de `runCriticalProcessConcurrencySuite` (Accounting, 10505-10550), `runConcurrencyAndConsistencySuite` (Academic, 3296-3320) solo invoca una vez `withConcurrencyLock` con una función que devuelve `executed:true`; no inicia dos operaciones concurrentes ni verifica persistencia/invariantes. La suite devuelve `status:"success"` aunque `todasPruebasPasaron` sea falso. `withConcurrencyLock` solo tiene esa llamada desde la propia suite, no está integrado como ejecutor de operaciones reales.
+- **Alcance adicional:** comprobar que `LockService.getScriptLock()` en proyectos Apps Script separados no se interprete como bloqueo distribuido entre Accounting y Academic; verificar operaciones que escriben recursos compartidos mediante un mecanismo común o una estrategia de consistencia explícita. Probar `createStudentEnrollment` con `skipLock` e `isInternalCall:true`, además de la ruta legacy `registerStudentEnrollment` sin lock y fallos entre escrituras. Mantener las relaciones con AUD-NG-006, AUD-NG-129 y AUD-NG-133 sin duplicarlas.
+
+- **Ampliación C1.88 / TAREA-F4-P2-04:** La búsqueda en los dos archivos bajo tests/regression no encontró casos para `createSecurityDelegation`, `revokeSecurityDelegation`, `updateUserProfile` o `manageAccountState`. La suite académica solo contiene aserciones de locks para otras operaciones (p. ej. lotes contables/workflow); la suite modular no aporta casos de estas funciones. Se mantiene el alcance de pruebas de concurrencia reales/aisladas de AUD-NG-161; no crear duplicado.
+- **Ampliación C1.90 / TAREA-F4-P3-01:** No se encontraron pruebas para `generatePrivilegeAndAccountAuditReport`, su programación, persistencia/entrega ni su conteo de delegaciones. Los dos archivos tests/regression revisados no contienen referencias a esta función. Se revalida la brecha de pruebas conductuales bajo AUD-NG-161; no crear duplicado.
+- **Ampliación C1.91 / TAREA-F4-P3-02:** No se encontraron pruebas para `getPaginatedAuditLogReport`, mapeo de columnas, nombre de hoja de trazabilidad, filtros, paginación, límite de lectura ni integración con el dashboard Developer. Los dos archivos tests/regression revisados no contienen referencias a la función. Se revalida la brecha de pruebas de auditoría; no crear duplicado.
+- **Ampliación C1.92 / TAREA-F4-P3-03:** No se encontraron pruebas específicas para `auditAndReconcileIdentityInconsistencies`, `autoFix`, ausencia/hoja Usuarios vacía, fallos parciales, invalidación de caché, lock ni auditoría por registro. Se revalida la falta de pruebas conductuales de reconciliación bajo AUD-NG-161.
+- **Estado:** [ ] Pendiente
+
+
+### [AUD-NG-162] Integrar la expiración de sesión con el cliente API y mostrar aviso en login
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-162 (auditoría de completadas.md, T-UX-01).
+- **Severidad/Clasificación:** Alto (P1; autenticación, autorización y experiencia de sesión).
+- **Archivos Involucrados:** js/api.js; js/ui-common.js; js/auth.js; login.html; backend/user-service/Code.gs; pruebas UX/regresión.
+- **Dependencias Expuestas:** fetchApi; handleSessionExpired; setupCommonUI; sessionToken; currentUser; usuario_actual; usuario_sesion; getUserVerifiedRole; verifySessionToken; doPost; AUTH_PERMISSION_DENIED; login.html?session_expired=; runUXSuiteTests / UX-01.
+- **Descripción del Alcance:** Completar el flujo extremo a extremo de expiración y rechazo de autenticación. Actualmente ui-common.js define handleSessionExpired y elimina claves de sesión/redirige al login, pero fetchApi no invoca el manejador. login.html y auth.js no interpretan el parámetro session_expired ni muestran aviso. El backend utiliza AUTH_PERMISSION_DENIED tanto para tokens ausentes/inválidos como para denegaciones ordinarias de rol. Definir un contrato inequívoco que distinga autenticación inválida, expirada o revocada de autorización insuficiente; conectar fetchApi con el manejador únicamente para los primeros casos; conservar la sesión cuando el usuario simplemente carezca de permiso; y presentar en login un aviso informativo y seguro. La inicialización de setupCommonUI debe garantizar que el manejador esté disponible antes de que fetchApi lo necesite, sin introducir dependencias de orden frágiles.
+- **Criterios de Aceptación:**
+  - El backend devuelve un código/estado diferenciable para token ausente, inválido, expirado o revocado, distinto de una denegación ordinaria de rol/permisos.
+  - fetchApi identifica el error de autenticación y llama a handleSessionExpired una sola vez, evitando ciclos de redirección o múltiples notificaciones.
+  - La expiración elimina las claves de sesión pertinentes de localStorage y sessionStorage y redirige al login con un motivo controlado y codificado.
+  - login.html interpreta session_expired y muestra un aviso claro sin reflejar texto arbitrario del query string ni introducir XSS.
+  - Una respuesta de permiso insuficiente no elimina credenciales, no cierra la sesión y no redirige al login.
+  - El comportamiento funciona aunque las llamadas API se produzcan durante la inicialización; la disponibilidad del manejador no depende de un orden accidental de scripts.
+  - Las pruebas conductuales cubren token ausente, inválido, expirado, revocado, permiso insuficiente, limpieza de ambos almacenamientos, redirección, banner y ausencia de doble ejecución.
+  - La suite UX-01 falla cuando cualquier parte del flujo extremo a extremo está desconectada; no basta con comprobar typeof handleSessionExpired.
+- **Relaciones:** AUD-NG-001 (propagación del token); AUD-NG-003 (vigencia del token backend); AUD-NG-005 (coherencia de revocación); AUD-NG-159 (protección de logout/revocación); AUD-NG-160 (vigencia del rol firmado). Esta tarea se limita al contrato de errores y a la integración UX de expiración, sin duplicar la corrección de esos mecanismos.
+- **Estado:** [ ] Pendiente
+
+
+---
+
+### [AUD-NG-163] (DUPLICADO, CONSERVADO PARA TRAZABILIDAD) Instrumentar cuotas, capacidad operativa y reanudación segura de trabajos masivos
+- **Origen del Hallazgo:** Auditoría de completadas.md / TAREA-03 (supervisión operativa y prevención de agotamiento de cuotas).
+- **Severidad/Clasificación:** Alto (P1; disponibilidad, continuidad operativa y consumo de recursos).
+- **Archivos Involucrados:** `backend/user-service/Code.gs`; `backend/academic-service/Code.gs`; `backend/accounting-service/Code.gs`; `backend/task-service/Code.gs`; `backend/exam-service/Code.gs`; `js/api.js`; `js/persistence.js`; pruebas de integración/carga.
+- **Dependencias Expuestas:** `getOperationalCapacityMetrics`, `getServiceHealthReport`, `getStorageQuotaMetricsReport`, `getDriveStorageQuotaMetricsReport`, `getGradingPerformanceAndPersistenceMetrics`, `fetchApi`, `LockService`, `CacheService`, `BitacoraTrazabilidad`, `LogsSistema` y procesos masivos.
+- **Descripción del Alcance:** Instrumentar de forma consistente el consumo de recursos por servicio y operación. Registrar, cuando la plataforma lo permita, tiempos, volúmenes, errores, reintentos y métricas de uso/umbral de Apps Script, Sheets, Drive, notificaciones y servicios externos. Diferenciar límites diarios, por ejecución, por usuario y de concurrencia; cuando una cuota no sea consultable en tiempo real, documentar explícitamente la limitación y usar indicadores observables sin presentar estimaciones como valores reales. Clasificar errores temporales, permanentes, de cuota, autorización y validación. Implementar umbrales configurables y alertas preventivas deduplicadas para administradores. Incorporar checkpoints persistentes y reanudación segura de trabajos masivos desde el último resultado confirmado, junto con límites de concurrencia y cesión de ejecución para procesos extensos. No duplicar la implementación de idempotencia/reintentos (AUD-NG-006/AUD-NG-069), health checks (AUD-NG-144), bitácora central (AUD-NG-145), ni pruebas de concurrencia/recuperación (AUD-NG-161).
+- **Criterios de Aceptación:**
+  - Las métricas distinguen servicio, operación, periodo, resultado y tipo de error sin depender de contadores exclusivamente locales al navegador.
+  - Los indicadores de cuota se basan en datos reales disponibles o se identifican explícitamente como estimaciones; no se usan porcentajes constantes.
+  - Los errores de cuota se distinguen de errores de permisos, validación, red y lógica.
+  - Los umbrales generan alertas preventivas verificables y no duplicadas a los administradores autorizados.
+  - Los trabajos masivos registran progreso y último elemento confirmado; reanudarlos no duplica ni pierde operaciones.
+  - Los límites de concurrencia y duración están documentados y se aplican a procesos críticos.
+  - Las pruebas aisladas cubren umbral, clasificación, alerta, agotamiento simulado, fallo parcial, reanudación, duplicación y concurrencia.
+- **Estado:** [DUPLICADA] No ejecutar independientemente; consolidada en tareas preexistentes.
+
+
+Nota de reconciliación (2026-11-05): AUD-NG-163 se solapa con TASK-064 (cuotas/capacidad/alertas), AUD-NG-144/AUD-NG-145 (health checks/bitácora), AUD-NG-006/AUD-NG-069/AUD-NG-133/AUD-NG-161 (reintentos/idempotencia/pruebas) y TASK-154/TASK-227/TASK-265 (checkpoints/reanudación). Se conserva el rastro, pero no debe ejecutarse como tarea independiente.
+
+
+---
+
+## Ampliación de criterios existentes derivada de TAREA-05 (2026-11-05)
+
+No se crea un AUD-NG nuevo. Se añaden estas precisiones a las tareas existentes, sin borrar ni reemplazar sus registros:
+
+- AUD-NG-075/076/077: comprobar selección y aislamiento por departamento, servicio, dominio, ciclo, tipo de dato y cuenta propietaria; impedir fallback no autorizado al Spreadsheet principal.
+- AUD-NG-078: registrar por servicio cuenta propietaria, identidad administradora, identidad de despliegue y principal de ejecución, proyecto/deployment/version, endpoint, recursos y permisos efectivos. Añadir sustitución del administrador, transferencia/recuperación de propiedad y renovación/revocación de autorizaciones. Evaluar y documentar Google Workspace, Shared Drives y delegación. No aceptar como despliegue una fila de catálogo con PASS fijo; exigir comprobación real. Incorporar un departamento mediante configuración/plantilla sin duplicar backend ni editar listas dispersas.
+- AUD-NG-080/081/082: actor verificado en cambios de propietario/administrador y pruebas de continuidad multicuenta, revocación y recuperación.
+- AUD-NG-083/084/085/086: tráfico interservicio real, secretos independientes por servicio, anti-replay correcto y autorización por emisor/receptor/acción/versión.
+- AUD-NG-131/AUD-NG-144: URLs reales, versiones coherentes y estado operativo comprobado; ningún placeholder puede figurar como ACTIVE.
+- TASK-064: atribuir consumo de cuotas a la identidad y servicio reales.
+
+Hallazgo nuevo: ninguno. Las brechas de TAREA-05 se vinculan a tareas preexistentes.
+
+
+---
+
+## Ampliación de criterios existentes derivada de TAREA-06 (2026-11-05)
+
+No se crea un AUD-NG nuevo. Las brechas se vinculan a tareas ya existentes y se precisan sus criterios:
+
+- AUD-NG-154: ampliar los archivos cubiertos a backend/accounting-service/Code.gs y backend/user-service/Code.gs, además de TASK/ACADEMIC. Normalizar nombres (case, acentos y espacios), usar IDs estables y rutas canónicas; verificar que tryLock se adquirió antes de continuar. Considerar que ScriptLock solo coordina ejecuciones del mismo proyecto y definir un mecanismo seguro cuando varios deployments comparten el mismo padre de Drive. Incluir todas las estructuras departamentales, no solo la docente.
+- AUD-NG-155: verificar que toda carga (normal y reanudable) conserva el Drive fileId real, ruta, metadatos y relación con expediente/registro; detectar archivos huérfanos y fallos de persistencia.
+- AUD-NG-058/TASK-143: incluir también las rutas del servicio TASK que comparten carpetas con ANYONE_WITH_LINK; auditar archivos y carpetas existentes, permisos heredados y accesibilidad anónima, y confirmar la revocación efectiva de enlaces no autorizados.
+- TASK-139/TASK-140/TASK-295/TASK-346: aplicar permisos por operación, categoría/sensibilidad, rol, departamento y relación con expediente; evaluar herencia y revocar accesos residuales.
+- TASK-345: detectar archivos/carpetas inexistentes, movidos, inaccesibles, huérfanos y referencias rotas.
+- TASK-149/TASK-150/TASK-456: definir archivado, traslado, conservación y eliminación con autorización, retención y trazabilidad.
+- Las rutas de USER/ACCOUNTING que sustituyen PARENT_FOLDER_ID ausente o inválido por DriveApp.getRootFolder() deben generar error/alerta observable o usar una política de fallback explícita y autorizada; no crear silenciosamente en la raíz de la cuenta ejecutora.
+
+Hallazgo nuevo: ninguno. La cobertura se mantiene en tareas preexistentes.
+
+
+---
+
+## Ampliación de criterios existentes derivada de TAREA-07 (2026-11-05)
+
+No se crea un AUD-NG nuevo. Las brechas se asignan a tareas ya existentes:
+
+- AUD-NG-146: exigir SHA-256 real y comparación estricta (rechazar checksum vacío o distinto); verifyBackupIntegrity debe ejecutarse dentro de restoreSystemBackup antes de cualquier escritura. Validar esquema, alcance y relaciones; corregir el contrato UI/backend de confirmación; exigir copia previa del estado vivo, token contextual de un solo uso, registro de resultado, programación real y retención de backups.
+- TASK-151: incluir inventario y copia recuperable de archivos binarios, manifiesto, hashes SHA-256 por archivo y por respaldo, versiones, relaciones con expedientes y controles de acceso/retención.
+- TASK-152: restaurar datos y binarios, verificar hashes antes/después, evitar sobrescribir archivos/registros posteriores sin autorización y validar referencias/permisos tras recuperar.
+- TASK-087/TASK-251: dry-run con diferencias por registro/ID/dependencia y restauración granular por hoja/entidad; crear respaldo del estado actual antes de restaurar y abortar si falla.
+- TASK-079: medir RPO/RTO reales desde la última copia íntegra hasta la validación post-restauración.
+- TASK-149/TASK-150: aplicar retención real a documentos/expedientes, legal hold y disposición con doble autorización; no incrementar contadores como sustituto de archivar.
+- TASK-064: cuotas y crecimiento por identidad/servicio, umbrales y alertas preventivas.
+- TASK-345: conciliación periódica de archivos físicos, registros y referencias Drive.
+- Documentar la ubicación institucional de backups (incluida evaluación de Shared Drives), propietario, ACL, retención, restauración y continuidad; no depender silenciosamente de la raíz de la cuenta ejecutora.
+
+Hallazgo nuevo: ninguno. Las brechas de TAREA-07 se vinculan a tareas preexistentes.
+
+
+### [AUD-NG-164] Completar catálogo curricular maestro y relaciones de asignaturas/planes/ofertas
+- Severidad: Alto (P1).
+- Alcance: consolidar áreas y departamentos; definir asignaturas con ID/código único, área, departamento, programa, grado, idioma, carga horaria, créditos, prerrequisitos y obligatoriedad; versionar planes y validar ofertas; conservar historia y propagar cambios a formularios/reportes.
+- Criterios: fuente única sincronizada cliente/backend; departamentos sin catálogos paralelos; referencias válidas; soporte de modelos hondureños/bilingües; desactivación sin pérdida histórica; pruebas de integridad y múltiples grados.
+- Relacionadas: TASK-005, AUD-NG-011, AUD-NG-018, AUD-NG-093, AUD-NG-108, AUD-NG-111, AUD-NG-113, AUD-NG-115, AUD-NG-117 y TASK-153.
+- Estado: [ ] Pendiente
+
+
+## Ampliación TAREA-09 / AUD-NG-011 (2026-11-05)
+Exigir proyectos y deployments reales por área, endpoints y fuentes verificadas, routing desde js/api.js, pruebas de conectividad/RBAC/integridad realmente ejecutadas y persistencia/validación de areaId en tareas y exámenes. No aceptar PASS constantes ni registros de catálogo como prueba de despliegue. Relacionar con AUD-NG-078/079/083/084/086/131/144 y AUD-NG-164. Recomendar revaluar severidad de AUD-NG-011 a Alto (P1). No crear hallazgo duplicado.
+
+
+---
+
+## Ampliación de criterios existentes derivada de TAREA-10 (2026-11-05)
+
+- **AUD-NG-149:** incorporar asignaciones individuales/grupales/recurrentes; persistir y versionar el ciclo de vida de la tarea; emitir comprobante con token almacenado y verificable; usar clave idempotente para evitar entregas/versiones duplicadas. Validar modalidad y alcance al crear.
+- **AUD-NG-121:** aplicar en servidor el límite de intentos configurado y las reglas de reentrega, además de la penalización tardía; el comentario actual sobre límites no constituye una validación.
+- **AUD-NG-152:** completar transiciones publicable/programada, abierta, vencida y cerrada, separando apertura, fecha límite y cierre.
+- **AUD-NG-124:** preservar historial de rúbricas, revisiones parciales, criterios y cambios de evaluación; no sobrescribir silenciosamente el progreso.
+- **AUD-NG-158:** derivar autor/profesor de claims verificados en comentarios y devoluciones; comprobar propiedad de la tarea y asignación docente.
+- **AUD-NG-002:** mantener protegidas las consultas sensibles de tareas y entregas, sin bypass por PUBLIC_ACTIONS.
+
+### [AUD-NG-165] Proteger la privacidad y el acceso contextual a comentarios y versiones de entregas
+- **Origen:** Auditoría de completadas.md / TAREA-10.
+- **Severidad:** Alto (P1; privacidad de entregas y retroalimentación).
+- **Archivos:** backend/task-service/Code.gs; js/student.js; js/teacher.js; student-dashboard.html; teacher-dashboard.html.
+- **Dependencias:** ROLE_PERMISSIONS, validateContextualAccess, getSubmissionComments, addSubmissionComment, getSubmissionVersions, returnSubmissionForRevision, deleteSubmission, EntregasVersiones, ComentariosEntregas, _verifiedUserId.
+- **Problema:** getSubmissionComments devuelve también registros esPrivado=true a cualquier rol que tenga permiso de consulta (incluidos estudiante, padre, tutor y responsable) y no valida propiedad/relación con el expediente. getSubmissionVersions permite consultar por entregaId sin comprobar que la entrega pertenezca al usuario o al ámbito docente. addSubmissionComment confía en autorId, rolAutor y esPrivado recibidos del cliente. returnSubmissionForRevision usa profesorId del payload para identificar al autor. deleteSubmission elimina la fila principal y el archivo, pero no elimina ni marca de forma coherente las versiones/comentarios relacionados.
+- **Criterios de aceptación:** comentarios privados solo visibles para docentes asignados y roles expresamente autorizados; estudiantes y responsables solo reciben comentarios públicos de entregas propias/vinculadas; versiones filtradas por propietario o asignación docente aun cuando se consulte por entregaId; autor y rol derivados del token verificado; el cliente no puede elevar esPrivado ni suplantar docentes; devoluciones verifican propiedad de la tarea; borrado lógico conserva trazabilidad y referencias; pruebas negativas con dos estudiantes, dos docentes y responsables no vinculados.
+- **Tareas relacionadas (no duplicadas):** AUD-NG-002 (consultas públicas), AUD-NG-124 (propiedad/calificaciones), AUD-NG-158 (ABAC de escrituras docentes).
+- **Estado:** [ ] Pendiente
+
+Hallazgo nuevo: AUD-NG-165. Los demás vacíos de TAREA-10 amplían tareas existentes.
+
+
+---
+
+## Ampliación de criterios derivada de TAREA-11 (2026-11-05)
+
+- **AUD-NG-121:** hacer cumplir en backend fecha de apertura/cierre, duración y máximo de intentos por estudiante; rechazar entregas fuera de ventana o después del máximo permitido y no confiar en temporizadores del cliente.
+- **AUD-NG-124:** incorporar corrección manual por pregunta abierta, puntuación parcial, rúbricas/criterios y guardado del progreso de revisión con historial.
+- **AUD-NG-006:** aplicar clave idempotente y reserva atómica a submitExam; una repetición tras timeout debe recuperar la entrega existente y no crear otra.
+- **AUD-NG-011:** persistir areaId/ámbito curricular en exámenes y reactivos; validar asignación/área y resolver el servicio autorizado.
+- **AUD-NG-002:** validar propiedad antes de consultar resultados por entregaExamenId y controlar el momento/rol de exposición de respuestas correctas.
+- **AUD-NG-158:** limitar gestión/consulta de bancos y exámenes al ámbito curricular y asignaciones verificadas del docente.
+
+### [AUD-NG-166] Completar el modelo verificable de reactivos y la integridad del motor de exámenes
+- **Origen:** Auditoría de completadas.md / TAREA-11.
+- **Severidad:** Alto (P1).
+- **Archivos:** backend/exam-service/Code.gs; js/exam.js; js/quizpro.js; exam.html; results.html.
+- **Problema:** el banco carece de validación de esquema/referencias; createExam no persiste todos los campos declarados de Examenes/PreguntasExamen; no conserva vínculo/versionado de reactivos reutilizados; faltan modalidades exigidas; no existe snapshot inmutable para exámenes ya realizados; la analítica psicométrica requerida no está implementada de forma verificable.
+- **Criterios:** validar tipos, opciones, respuestas, puntos y referencias curriculares en servidor; persistir área/tema/dificultad/etiquetas/objetivos/criterios; relación estable/versionada con BancoPreguntas; soportar las nueve modalidades (incluidos adjuntos); conservar snapshot de reactivos aplicados; ofrecer analítica psicométrica reproducible por pregunta/tema/asignatura/grupo.
+- **Tareas relacionadas (no duplicadas):** AUD-NG-121 (fechas/duración/intentos), AUD-NG-124 (rúbricas/revisión parcial), AUD-NG-006 (idempotencia), AUD-NG-011 (área/routing), AUD-NG-002 (propiedad/consultas), AUD-NG-158 (ámbito docente).
+- **Estado:** [ ] Pendiente
+
+Hallazgo nuevo: AUD-NG-166. Progreso de auditoría: 17/183; 166 pendientes. Siguiente tarea: TAREA-12.
+
+
+---
+
+## Ampliación de criterios derivada de TAREA-12 (2026-11-05)
+
+- **AUD-NG-002:** getStudentAcademicReport debe derivar el estudiante de claims verificados o comprobar relación familiar; no debe exponer registros no publicados ni ignorar el ámbito/periodo autorizado.
+- **AUD-NG-158:** incluir todas las operaciones de calificación institucional, rúbricas, competencias, recuperación, cierre, revisión, reapertura y rectificación en ABAC server-side; actor/autoridad deben derivarse de claims, no de campos libres del payload.
+- **AUD-NG-124:** conservar su alcance original de historial/propiedad de calificaciones de entregas; no absorber el libro académico consolidado, que se registra en AUD-NG-167.
+
+### [AUD-NG-167] Unificar la integridad del libro de calificaciones y el ciclo institucional de evaluación
+- **Origen:** Auditoría de completadas.md / TAREA-12.
+- **Severidad:** Alto (P1).
+- **Archivos:** backend/academic-service/Code.gs; backend/exam-service/Code.gs; js/teacher.js; js/student.js; teacher-dashboard.html.
+- **Problema:** calificaciones identificadas solo por evaluacionId+userId; consultas sin filtro completo por periodo/asignatura; ponderaciones duplicadas/hardcodeadas; cálculo unificado con validaciones insuficientes; rúbricas/competencias sin esquema ni integración UI; cierre/publicación y rectificación sin transición/autoridad contextual verificable; recuperación CAT-GLOBAL; boletines desconectados de la fuente consolidada y equivalencia SACE no acreditada.
+- **Criterios:** clave contextual estable; validar configuración de ponderaciones y notas; cálculo server-side único con pendientes distintos de cero; rúbricas analíticas y competencias vinculadas a catálogos; revisión/publicación/cierre/rectificación con permisos y transiciones verificadas; recuperación asociada a calificación real; boletines oficiales desde notas consolidadas y compatibilidad SACE demostrable.
+- **Tareas relacionadas (no duplicadas):** AUD-NG-002 (propiedad y consulta), AUD-NG-158 (ABAC docente), AUD-NG-124 (historial de calificaciones de entregas, no del libro consolidado).
+- **Estado:** [ ] Pendiente
+
+Hallazgo nuevo: AUD-NG-167. Progreso de auditoría: 18/183; 165 pendientes. Siguiente tarea: TAREA-13.
+
+
+---
+
+## Ampliación de criterios derivada de TAREA-13 (2026-11-05)
+
+- **AUD-NG-164:** usar OfertaAcademica como fuente canónica de ofertas; eliminar la divergencia de lectura con OfertasAcademicas y conservar IDs estables en área/asignatura/plan/oferta.
+- **AUD-NG-158:** incorporar ABAC a asignación, consulta y baja de docentes por área/oferta/grado/sección/periodo; derivar actor de claims verificados para sustituciones, preferencias, horarios y excepciones; validar asignaciones vigentes antes de leer o modificar.
+
+### [AUD-NG-168] Unificar el modelo de asignaciones docentes, carga horaria y planificación de horarios
+- **Origen:** Auditoría de completadas.md / TAREA-13.
+- **Severidad:** Alto (P1).
+- **Archivos:** backend/academic-service/Code.gs; js/teacher.js; teacher-dashboard.html.
+- **Problema:** las funciones de ofertas usan OfertaAcademica mientras la planificación departamental usa OfertasAcademicas; HorariosClase se escribe con una estructura que getClassSchedules interpreta con índices distintos; sustituciones consultan columnas equivocadas y usan estados Activa/Activo inconsistentes; carga, conflictos y ocupación ignoran año/periodo o incluyen estados no vigentes; asignación por área no está integrada en la interfaz; el mapa departamental representa un único docente por oferta.
+- **Criterios:** fuente canónica de ofertas; relación docente-área-asignatura-oferta-grupo-año/periodo; asignaciones compartidas y sustituciones con vigencia; esquema único de horarios; filtros por año/periodo y estado; detección de conflictos verificable; carga calculada solo con bloques vigentes; reportes departamentales/vacantes basados en relaciones canónicas.
+- **Tareas relacionadas (no duplicadas):** AUD-NG-164 (catálogo curricular y ofertas), AUD-NG-158 (ABAC docente y actor verificado).
+- **Estado:** [ ] Pendiente
+
+Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Siguiente tarea: TAREA-14.
+
+
+---
+
+## Ampliación de criterios derivada de TAREA-14 (2026-11-05)
+
+- **AUD-NG-126:** el defecto de orden tarjeta/vista expandida sigue presente; mantener el criterio de vencimiento ascendente y fechas nulas al final.
+- **AUD-NG-158:** la UI docente debe construir grado/sección/asignatura/alumno desde asignaciones vigentes del docente; el backend debe validar esos ámbitos contra claims verificados y no confiar en profesorId del payload.
+- **TASK-065:** conectar queueOfflineAction a las mutaciones académicas; implementar sendApiRequest/transport real para syncOfflineQueue, estados de fallo/reintento, y resolución efectiva de conflictos en IndexedDB. No mostrar “Conflicto Resuelto” si la elección no se aplicó.
+- **TASK-129/TASK-130:** coordinar sus componentes de ayuda contextual y formularios con el cumplimiento WCAG 2.2 AA de student-dashboard.html y teacher-dashboard.html; las mejoras de tooltips/help-text no sustituyen la accesibilidad semántica/teclado de controles principales.
+
+### [AUD-NG-169] Integrar la bandeja docente y asegurar accesibilidad funcional en los paneles académicos
+- **Origen:** Auditoría de completadas.md / TAREA-14.
+- **Severidad:** Medio (P2).
+- **Archivos:** student-dashboard.html; teacher-dashboard.html; js/student.js; js/teacher.js; js/ui-common.js.
+- **Problema:** fetchEntregasRecientes no está conectado a un contenedor ni se invoca; consulta solo tareas y ordena por fecha de entrega, no por prioridad/vencimiento. Los filtros docentes usan configuración global en vez de asignaciones verificadas. Tarjetas y filas clicables carecen de semántica/teclado; falta anuncio accesible de estados. Formulario adaptativo solo cubre parcialmente Crédito Extra, no área curricular/modalidades. El modo offline no mantiene la vista cacheada al fallar la red y la resolución de conflictos no aplica ninguna acción.
+- **Criterios:** bandeja visible para tareas/exámenes con prioridad/filtros de ámbito; navegación semántica y teclado; etiquetas/estados y aria-live; formularios adaptados por tipo y área; conservar caché y mostrar estado real de sincronización; validación WCAG 2.2 AA y pruebas táctiles/lectores de pantalla.
+- **Tareas relacionadas (no duplicadas):** AUD-NG-126 (orden), AUD-NG-158 (ABAC docente), TASK-065 (cola/reintentos), TASK-129/TASK-130 (ayudas contextuales).
+- **Estado:** [ ] Pendiente
+
+Hallazgo nuevo: AUD-NG-169. Progreso de auditoría: 20/183; 163 pendientes. Siguiente tarea: TAREA-15.
+
+
+================================================================
+ADENDA DE AUDITORÍA TAREA-15 (2026-11-05)
+================================================================
+
+### Ampliación de AUD-NG-131 y AUD-NG-144 - Versiones y salud de despliegues
+- El mapa serviceVersions de getServiceHealthReport devuelve 1.0.0 fijo para USER/ACADEMIC/TASK/EXAM/ACCOUNTING y omite DEVELOPER; los encabezados reales de USER/ACADEMIC/ACCOUNTING indican v8.2.0/v8.4.0/v8.0.0.
+- Registrar versión, deployment ID/SHA y fecha de despliegue realmente activos; no confundir versión de código fuente con deployment publicado.
+- checkAllMicroservicesHealth omite ACCOUNTING y DEVELOPER, incluye TASK/EXAM sin acción ping; los ping existentes devuelven dbConnected:true constante. Verificar dependencia real y cubrir todos los servicios registrados.
+- fetchApi ignora options.timeout y fija 60 segundos, por lo que el timeout de 6 segundos del health check no se cumple.
+
+### Ampliación de AUD-NG-145 - Bitácora, PII y trazabilidad
+- LogsSistema no almacena requestId/correlationId y fetchApi no los genera/propaga; integrar identificadores por petición y correlación entre frontend y microservicios.
+- sanitizePayloadForLog solo enmascara credenciales; ampliar sanitización por esquema para PII, RTN, teléfonos, correos, cuentas y datos financieros. getStructuredLogs devuelve el payload almacenado.
+- Conectar getServiceHealthReport al panel institucional y corregir el contrato de campos/filtros; el panel actual lee getServiceHealthMetrics, función no definida en los scripts, y cae a métricas cero.
+
+### Ampliación de AUD-NG-083 - Protocolo interservicio
+- createInterServiceEnvelope/verifyInterServiceEnvelope están declaradas, pero no se encontraron call sites reales en los servicios inspeccionados. Integrar el sobre firmado en el tráfico real y propagar requestId/correlationId hasta logs y respuesta.
+
+### Ampliación de TASK-064 - Capacidad, cuotas y alertas
+- getOperationalCapacityMetrics depende de BitacoraTrazabilidad y solo refleja operaciones registradas; instrumentar de forma transversal sin asumir que una bitácora parcial representa todo el tráfico.
+- getServiceHealthReport usa un umbral fijo errorsCount > 50, sin ventana temporal ni alerta; getOperationalCapacityMetrics usa umbrales fijos (>10% y >5 errores de cuota).
+- El panel no consume métricas válidas y no demuestra alertas preventivas deduplicadas. Medir cuotas/latencia por servicio y acción, declarar explícitamente valores estimados y activar alertas configurables.
+- No duplicar AUD-NG-163, que permanece marcado DUPLICADA y consolidado en AUD-NG-131/144/145, TASK-064 y AUD-NG-161.
+
+### Reconciliación TAREA-15
+No crear AUD-NG-170. Las brechas detectadas quedan vinculadas a AUD-NG-131, AUD-NG-144, AUD-NG-145, AUD-NG-083, TASK-064 y AUD-NG-161. AUD-NG-163 no debe ejecutarse independientemente.
+
+================================================================
+
+
+================================================================
+AMPLIACIÓN DE TAREAS EXISTENTES DERIVADA DE TAREA-16 (2026-11-05)
+================================================================
+
+No se crea un AUD-NG nuevo. Se amplían tareas existentes sin borrar ni reemplazar sus registros.
+
+### AUD-NG-006 - Idempotencia por operación y reintentos
+- La reserva de clave debe ser atómica respecto a ejecución y persistencia; consultar CacheService y guardar el resultado después no impide que dos solicitudes concurrentes procesen la misma operación.
+- La clave debe ser estable por operación, acción y actor verificado; una respuesta perdida debe recuperar el resultado persistido sin repetir efectos.
+- No aceptar skipLock por una bandera isInternalCall suministrada por el cliente. La procedencia interna debe verificarse en servidor.
+- Probar clave incompatible, respuesta perdida, caché expirada, reintento concurrente y ausencia de clave.
+
+### AUD-NG-133 - Integridad e idempotencia atómica de pagos
+- recordStudentPayment no tiene bloqueo propio. La búsqueda previa en PagosAbonos y appendRow no forman una sección crítica.
+- Si no hay idempotencyKey/tokenTransaccion/referencia, se omite la comprobación de duplicado y aun así se persiste el pago.
+- El helper genérico de doPost consulta CacheService antes y guarda resultado después; no reserva la clave atómicamente.
+- Probar pagos concurrentes, propiedad del cargo, saldo, clave vacía, reintento tras persistencia y un solo efecto observable.
+
+### AUD-NG-161 - Suite conductual de concurrencia, idempotencia y recuperación
+- Reemplazar runCriticalProcessConcurrencySuite: adquirir un lock una vez y contar filas no prueba concurrencia ni unicidad. recordStudentPayment escribe PagosAbonos, no TransaccionesCobro.
+- Comparar todos los CUV/correlativos emitidos y fallar ante duplicados; cubrir el fallback posterior a 100 intentos.
+- Ejecutar solicitudes simultáneas y comprobar contención, exclusión, consistencia y ausencia de duplicados.
+- Incluir createStudentEnrollment y registerStudentEnrollment; probar las rutas legacy sin lock.
+- Incluir submitAssignment: concurrencia, versionNum, Entregas/EntregasVersiones y fallo entre escrituras.
+- Incluir submitExam: doble envío, timeout posterior a persistencia y reintento.
+- Incluir planillas y demás operaciones enumeradas en AUD-NG-161.
+- Comprobar que skipLock/isInternalCall no pueda activarse desde payload externo para evadir el bloqueo.
+- Incorporar estrés HTTP controlado y registrar latencia, throughput, errores, reintentos e integridad antes/después.
+- Probar caché caliente/fría alternando cuentas y roles, permisos/revocación y purga parcial; demostrar ausencia de datos cruzados.
+- Usar fixtures/hojas y cuentas aisladas con limpieza verificable; no escribir datos institucionales reales.
+- No devolver éxito global si un caso no se ejecutó o si el resultado se deduce de contar filas/presencia de funciones.
+
+### AUD-NG-009 - Pruebas funcionales reproducibles
+- No aceptar includes() o presencia textual como evidencia de integridad transaccional, concurrencia, aislamiento o recuperación. Las pruebas deben invocar servicios y verificar efectos observables.
+
+Hallazgo nuevo: ninguno. Progreso: 22/183 identificadores únicos; 161 pendientes. Siguiente tarea: TAREA-17.
+================================================================
+
+
+================================================================
+AMPLIACIÓN DE TAREAS EXISTENTES DERIVADA DE TAREA-17 (2026-11-05)
+================================================================
+
+No se crea un AUD-NG nuevo: los defectos de analítica, filtros, series, exportación, fuente académica y permisos se cubren ampliando tareas ya registradas. No se modifica completadas.md ni se cambia el estado de tareas marcadas completadas sin su flujo de revisión.
+
+### TASK-050 - Catálogo institucional de informes
+- Registrar la analítica académica de TAREA-17 como informe propio, con fuente, dimensiones, filtros, formato y roles permitidos. Distinguir distribución de calificaciones, tendencia por parcial, comparativa homogénea y estudiantes en riesgo.
+- Verificar que REP-ACAD-01 y REP-ACAD-02 tengan generadores distintos y coherentes con sus definiciones; no enrutar todo informe category=ACADEMICA a un mismo reporte.
+- No anunciar formatos/roles/filtros que el generador no implementa.
+
+### TASK-051 - Diccionario semántico centralizado
+- La función getCurricularAnalyticsReport no consulta un diccionario semántico ni una definición versionada; sus etiquetas area/asignatura/grado/programa/periodo se devuelven sin filtrar datos.
+- Registrar indicadores académicos con fuente y fórmula verificables: promedio publicado, distribución por bandas, aprobación/reprobación y riesgo académico.
+- Declarar dimensiones válidas y relaciones de unión: EvaluacionID, UserID, matrícula, oferta/asignatura, área, programa, idioma de enseñanza, grado, sección, año lectivo y período.
+- Reconciliar la inconsistencia actual: el encabezado TASK-051 está marcado [X], pero su campo Estado interno dice [ ] Pendiente. No cambiar el estado automáticamente ni borrar el registro; resolverlo mediante revisión explícita.
+
+### TASK-052 - Filtros y dimensiones
+- Incorporar programa e idioma de enseñanza como dimensiones cuando existan en el modelo curricular; mantener área, asignatura, grado, sección, año lectivo y período/parcial.
+- Aplicar los filtros en backend a los registros relacionados, no limitarse a devolver los parámetros como etiquetas. Rechazar combinaciones incompatibles y filtros sin relación válida.
+- Los informes deben usar el mismo universo de estudiantes y período al comparar grado, sección, programa o idioma. No mezclar años lectivos ni períodos distintos.
+
+### TASK-054 - Validación y regresión de informes e indicadores
+- Añadir pruebas conductuales de getCurricularAnalyticsReport: fuente correcta, filtros combinados, agrupación por dimensiones, distribución, promedios, tendencias por parcial y comparación de resultados contra cálculos de referencia.
+- Comprobar que borradores, notas no publicadas y evaluaciones pendientes no entren en promedios oficiales; distinguirlos de entregas ausentes y de calificaciones válidas iguales a cero.
+- Probar el contrato de CalificacionesEstudiantes (ID, EvaluacionID, UserID, NotaObtenida, PuntajePonderado, EsBorrador, EsPublicada, Observaciones, FechaRegistro) contra cada consumidor. Ningún informe puede interpretar EsPublicada como nota ni EvaluationID como nombre de alumno.
+- Comprobar que REP-ACAD-01 aplica anoLectivo/grado/seccion/periodo, que no devuelve alumnos ficticios cuando no hay datos y que REP-ACAD-02 genera el informe de riesgo que declara.
+- Probar roles Director, Coordinador, Profesor y Subdirector; acceso autorizado al informe y rechazo 403 fuera del ámbito. La UI no debe llamar una acción que RBAC rechaza.
+- Verificar exportación frente a la misma consulta tabular, filtros, totales, período y metadatos; no aceptar includes() como prueba.
+- Reprobar F11-Task08 con datos reales aislados: materias reprobadas y tareas pendientes deben salir de registros persistidos, no de mockFailingSubjects/mockMissingTasks del payload.
+
+### TASK-235 - Motor de tendencias históricas
+- Incluir series académicas por parcial, año lectivo, área, asignatura, grado, sección, programa e idioma cuando la dimensión sea válida.
+- Comparar solo períodos equivalentes; marcar períodos incompletos y no convertir ausencia de datos en cero.
+- Los promedios por área/programa deben usar la definición y versión del indicador vigente para cada período y coincidir con el informe individual.
+
+### TASK-237 - Exportación universal CSV/XLSX
+- Incorporar exportación del informe analítico académico real para Dirección y Coordinación, con los mismos filtros/dimensiones que la consulta en pantalla.
+- Exportar datos fuente/agrupaciones y metadatos de período, filtros, fecha de generación y usuario/rol; comprobar igualdad entre pantalla y archivo.
+- No reutilizar como analítica la exportación docente que suma tareas/exámenes ni aceptar un archivo con extensión/formato no coincidente.
+
+### AUD-NG-167 - Fuente única e integridad de calificaciones
+- La analítica debe consumir calificaciones de la fuente canónica y unir EvaluacionID/UserID con los metadatos académicos correctos. No inferir nombre, grado o sección desde columnas de CalificacionesEstudiantes que contienen EvaluationID, UserID y NotaObtenida.
+- Mantener exclusión de borradores/no publicadas y reglas de promedio publicadas; no convertir entregas o notas pendientes en cero.
+
+### AUD-NG-158 - Autorización por ámbito académico
+- getCurricularAnalyticsReport está permitido en ROLE_PERMISSIONS para Administrador/Director, pero no para Coordinador ni Profesor, aunque el controlador esté en js/teacher.js. Definir los roles requeridos y validar alcance institucional/curricular en servidor.
+- Los filtros por grado, sección, programa, idioma y asignatura nunca deben ampliar el ámbito de datos autorizado.
+
+### F11-Task08 - Alertas tempranas (marcada completada)
+- Sustituir mockFailingSubjects y mockMissingTasks por consultas reales de calificaciones publicadas y entregas de tareas.
+- Filtrar asistencia, matrículas, notas y tareas por anolectivo y periodo; la clave de deduplicación debe incluir el año lectivo para no suprimir alertas de ciclos distintos.
+- No presentar NotificadoA como notificación enviada: integrar un canal verificable y registrar resultado/reintento; mantener la creación de caso de seguimiento cuando corresponda.
+- Probar umbrales, exclusiones, deduplicación, cierre/reactivación y consistencia con el reporte de riesgo.
+
+Hallazgo nuevo: ninguno; se amplían tareas existentes. Progreso de auditoría: 23/183 identificadores únicos; 160 pendientes. Siguiente tarea: TAREA-18.
+================================================================
+
+
+================================================================
+HALLAZGO TAREA-18 - RECURSOS REUTILIZABLES Y PROYECTOS INTERDISCIPLINARIOS (2026-11-05)
+================================================================
+
+### [AUD-NG-171] Completar catálogo reutilizable, versionado y relaciones de proyectos interdisciplinarios
+- Severidad: Medio (P2).
+- Origen: Auditoría TAREA-18 de completadas.md; archivos backend/academic-service/Code.gs, js/teacher.js y teacher-dashboard.html.
+- Problema: el backend solo registra filas básicas en RecursosEducativosReutilizables y ProyectosInterdisciplinarios. Los proyectos guardan departamentos como texto, no enlazan RecursoID ni versiones; el año lectivo está fijado en 2026. El campo Version es texto suministrado por el cliente, sin historial ni linaje; manageReusableResource siempre hace appendRow incluso cuando recibe recursoId, por lo que no actualiza ni evita duplicados. El controlador docente busca un modal ausente en teacher-dashboard.html. No se demuestra integración de recursos con actividades publicadas ni preservación de la versión histórica usada.
+- Alcance: catálogo con referencias curriculares canónicas (área, asignatura, grado, tema, idioma); filtros efectivos; versionado append-only con relación padre/hija, autor verificado, fecha y estado; proyectos interdisciplinarios con departamentos/áreas por ID, año lectivo, líder verificado y relación explícita a múltiples recursos/versiones; permisos por recurso/proyecto; UI operativa en teacher-dashboard; prevención de duplicados y pruebas de integridad/historial.
+- Criterios: un recurso se localiza por todas sus dimensiones; proyecto enlaza varios recursos de varias áreas; cada cambio genera nueva versión sin alterar referencias de actividades históricas; reutilización no duplica archivos Drive ni rompe ACL; autoría y permisos derivan de claims verificados; no existen IDs duplicados ni proyectos huérfanos; pruebas cubren dos áreas, dos docentes, versiones y periodos históricos.
+- Relacionadas: AUD-NG-164 (catálogo curricular maestro), AUD-NG-158 (ABAC y actor verificado), TASK-296 (XSS, validación de enlaces y privacidad de Drive).
+- Estado: [ ] Pendiente
+
+### Ampliación de AUD-NG-164 - Catálogo curricular maestro
+- RecursosEducativosReutilizables debe referenciar IDs canónicos de área/asignatura/grado/programa/idioma; no almacenar nombres libres como relaciones definitivas.
+- Validar referencias activas y compatibilidad curricular antes de registrar o versionar un recurso; preservar las etiquetas históricas al desactivar o versionar un catálogo.
+
+### Ampliación de AUD-NG-158 - ABAC y autoría
+- getReusableResourceCatalog/manageReusableResource están permitidas para Profesor, pero no implementan autorización por área, autor, departamento ni recurso; el catálogo devuelve todos los recursos activos si no se envían filtros.
+- Derivar autorId/liderProyectoId del usuario verificado; la UI envía currentUser.nombre y el backend acepta autorId del payload.
+- Verificar acceso al recurso/proyecto antes de listar, modificar, versionar o reutilizar; definir permisos de Coordinación para proyectos compartidos entre departamentos.
+
+### Ampliación de TASK-296 - XSS y enlaces de archivos
+- El catálogo docente inserta titulo, area, asignatura, tema, version y urlDrive directamente en innerHTML; manageReusableResource acepta esos valores desde payload. Aplicar escape de salida por contexto y sanitización de contenido.
+- Validar urlDrive con allowlist de dominios/esquemas HTTPS y comprobar ID/ACL del archivo Drive; rechazar javascript:, data:, URLs externas no permitidas y enlaces sin permiso.
+- Añadir rel="noopener noreferrer" a enlaces target=_blank y pruebas de XSS almacenado usando título/tema/URL maliciosos.
+
+Nota de secuencia: TAREA-15 registró que no debía crearse AUD-NG-170 porque sus brechas ya estaban cubiertas por tareas previas. Ese ID permanece sin asignar. AUD-NG-171 corresponde a un hallazgo nuevo y distinto de TAREA-18.
+
+Progreso de auditoría: 24/183 identificadores únicos; 159 pendientes. Siguiente tarea: TAREA-19.
+================================================================
+
+
+================================================================
+HALLAZGO TAREA-19 - MIGRACIÓN CURRICULAR SIN PÉRDIDA DE DATOS (2026-11-05)
+================================================================
+
+### [AUD-NG-172] Implementar migración curricular transaccional con prevalidación y rollback verificable
+- Severidad: Alto (P1).
+- Origen: Auditoría TAREA-19 de completadas.md; backend/academic-service/Code.gs, js/teacher.js y teacher-dashboard.html.
+- Problema: getCurricularEquivalences ignora PlanesEstudio/PlanAsignaturas y asigna cada asignatura a sí misma como MapeadoExacto, sin comparar plan origen/destino ni revisión. executeCurricularMigration no utiliza equivalenciasMap, no modifica registros, no detecta duplicados/huérfanos, no compara antes/después y aun así devuelve success en modo REAL. No existe rollback curricular ni snapshot de las tablas/boletines afectados. El controlador UI no tiene modal en teacher-dashboard.html.
+- Alcance: consultar planes y relaciones reales; generar mapeos exactos/probables/ambiguos/no encontrados con revisión manual; prevalidar IDs/códigos, relaciones huérfanas, duplicados, matrículas, calificaciones y boletines; producir informe y snapshot verificable antes de cualquier escritura; ejecutar cambios aprobados de forma idempotente y con registro de migración; comparar antes/después; revertir al estado exacto con conservación de operaciones posteriores; UI de administración con confirmación y permisos server-side.
+- Criterios: ninguna equivalencia ambigua se aplica automáticamente; todo registro queda vinculado al destino o explícitamente pendiente; los códigos de estudiante, notas históricas y boletines emitidos permanecen íntegros; duplicados/huérfanos se detectan antes de ejecutar; el reporte contiene totales, diferencias y checksum; modo REAL no puede responder éxito si no aplicó cambios; rollback restaura el snapshot y conserva delta posterior; pruebas con fixtures cubren migración, interrupción y reversión.
+- Relacionadas: AUD-NG-164 (catálogo y planes), AUD-NG-167 (calificaciones históricas), TASK-078 (rollback general y delta post-corte), AUD-NG-158 (RBAC/actor verificado).
+- Estado: [ ] Pendiente
+
+### Ampliación de AUD-NG-164 - Catálogo y planes curriculares
+- Usar PlanesEstudio y PlanAsignaturas como fuente de pertenencia de asignaturas a cada plan. No inferir equivalencia por identidad global de AsignaturaID ni mapear todas las filas del catálogo al mismo plan.
+- Persistir equivalencias entre planOrigenId/planDestinoId con estado de revisión, responsable, fecha y evidencia.
+
+### Ampliación de AUD-NG-167 - Integridad de calificaciones y boletines históricos
+- La migración debe preservar las claves contextuales de calificación, notas publicadas, estados, historial de rectificaciones y boletines/documentos emitidos. Validar referencias a estudiante, evaluación, asignatura, grado, sección, año y periodo antes/después.
+- Comparar conteos y checksums de registros históricos; ninguna nota o documento oficial puede reescribirse silenciosamente.
+
+### Ampliación de TASK-078 - Rollback y delta
+- Aplicar los principios de snapshot previo, exportación delta posterior al corte, orden causal, autorización y acta de reversión a las migraciones curriculares. TASK-078 sigue cubriendo rollback operativo general; AUD-NG-172 define el flujo específico de mapeo y migración curricular.
+
+### Ampliación de AUD-NG-158 - Autorización de migración
+- getCurricularEquivalences/executeCurricularMigration aparecen en permisos de Director/Admin, pero el controlador está en js/teacher.js. Mantener ejecución exclusivamente en roles autorizados, derivar actor de sesión verificada y bloquear cualquier intento de ejecutar migración desde Profesor/Coordinador sin permiso explícito.
+
+### Ampliación de TASK-296 - Salida segura del panel de migración
+- Escapar nombre/código de asignatura al renderizar equivalencias en el panel y validar los datos mostrados para evitar inyección HTML almacenada desde el catálogo curricular.
+
+Hallazgo nuevo: AUD-NG-172. Progreso de auditoría: 25/183 identificadores únicos; 158 pendientes. Siguiente tarea: TAREA-20.
+================================================================
+
+
+================================================================
+AMPLIACIÓN DE TAREAS EXISTENTES DERIVADA DE TAREA-20 (2026-11-05)
+================================================================
+
+No se crea AUD-NG nuevo. Se amplían tareas pendientes existentes, sin borrar ni reescribir sus registros originales.
+
+### AUD-NG-011 - Aislamiento y despliegue real de microservicios por área
+- El registro de AreasCurricularesExtensiones y de InstanciasMicroserviciosAcademicos no constituye despliegue. Exigir evidencia del proyecto Apps Script, deploymentId/URL real, fuente de datos, identidad de ejecución, ACL y endpoint accesible.
+- deployAcademicMicroserviceInstance no puede escribir estado Activo ni diagnostics.connectivityCheck=PASS por defecto. Debe verificar la instancia real y mantener estados separados y coherentes entre área y deployment; no puede registrar la instancia Activo y dejar el área Inactivo_PendientePruebas.
+- runCurricularAreaServiceTests debe ejecutar conectividad, autenticación/RBAC, esquema, aislamiento, integridad y regresión contra el servicio/área concretos. Prohibido devolver PASS constantes o activar por resultados simulados.
+- toggleCurricularAreaStatus no puede saltarse la puerta de pruebas. La activación requiere evidencia vigente de suite exitosa y deployment verificado; las rutas de despliegue y activación deben compartir la misma política.
+- El enrutador debe resolver el servicio de área por catálogo versionado y endpoint verificado; el flujo actual fetchApi solo consulta SERVICE_URLS[service].
+- La desactivación debe sincronizar el estado del área, instancias, endpoints, permisos, asignaciones y coordinaciones; no dejar deployments activos huérfanos.
+
+### AUD-NG-164 - Catálogo curricular maestro y relaciones
+- Consolidar CURRICULAR_AREAS_CATALOG, CURRICULAR_SPECIALIZED_SERVICES, ACADEMIC_DEPARTMENTS_CATALOG, AreasCurricularesExtensiones y el catálogo institucional en una fuente canónica sincronizada. Resolver IDs divergentes (AREA-01…AREA-12 frente a AREA-MATH/AREA-COMUNICATION, etc.) y códigos repetidos/ausentes.
+- Validar unicidad de areaId, código, serviceKey y pertenencia a departamento; validar formatos y referencias de serviceUrl/herramientas. No aceptar campos críticos opcionales sin estado explícito de configuración incompleta.
+- La actualización de un areaId existente no debe sobrescribir silenciosamente URL, herramientas, departamento, estado o metadatos. Incorporar versión, historial de cambios y previsualización de diferencias.
+- Los catálogos y consultas deben distinguir Activo, Inactivo_PendientePruebas e Inactivo. No convertir estado vacío automáticamente en Activo ni exponer áreas desactivadas como habilitadas.
+- La baja lógica debe preservar referencias históricas consultables, pero impedir nuevas asignaciones/operaciones y registrar qué dependencias permanecen asociadas.
+
+### AUD-NG-158 - Autorización contextual de asignaciones docentes
+- assignTeacherToAcademicArea debe validar en servidor la existencia y estado Activo del areaId antes de crear/reactivar una asignación.
+- getAcademicAreaCoordinationScope y las decisiones ABAC deben excluir áreas inactivas para operaciones vigentes, manteniendo las referencias históricas en consultas de auditoría autorizadas.
+- Desactivar un área debe impedir nuevas asignaciones y coordinaciones y definir la transición de las existentes con actor, motivo y vigencia; no borrar su historial.
+- Probar intentos con areaId inexistente/inactivo, coordinador fuera de ámbito, docente asignado a área desactivada y usuario sin permiso.
+
+Hallazgo nuevo: ninguno; las brechas se corresponden con AUD-NG-011, AUD-NG-164 y AUD-NG-158. Progreso: 26/183 identificadores únicos auditados; 157 pendientes. Siguiente tarea: FASE2-T17.
+================================================================
+
+
+================================================================
+AMPLIACIÓN DE TAREAS EXISTENTES DERIVADA DE FASE2-T17 (2026-11-05)
+================================================================
+
+No se crea AUD-NG nuevo. Las brechas se vinculan a tareas existentes.
+
+### TASK-062 - Versionado e invalidación reactiva de configuraciones
+- Unificar SERVICE_VERSIONS, SERVICE_REGISTRY, getSharedConfigVersion, getSharedConfigurationsCatalog y getServiceHealthReport en una fuente autoritativa. Resolver la divergencia entre 1.0.0, v8.4.0 y las versiones indicadas en comentarios/endpoints; incluir DEVELOPER o rechazar servicios no registrados.
+- Sustituir el comparador que ignora patch por comparación SemVer estricta (major/minor/patch y política explícita de prerelease); rechazar versiones malformadas y serviceName desconocidos. Ejemplo de regresión obligatoria: servicio 1.0.0 debe ser incompatible con minVersion 1.0.1.
+- Incorporar handshake de versión en fetchApi: enviar versión del cliente/contrato, consultar versión autoritativa y bloquear acciones incompatibles antes de operar. No continuar silenciosamente ante endpoint sin versión, servicio desconocido o catálogo indisponible.
+- getSharedConfigurationsCatalog debe consultar un catálogo persistente de contratos/configuraciones con id, versión, vigencia, consumidores, versión mínima, compatibilidad, estado deprecado, dependencias y política de migración; legacyVersionSupport no puede ser una bandera sin adaptadores/pruebas.
+- getSystemConfigurations debe exponer versión, timestamp y actor verificados. saveSystemConfiguration no debe fijar versión 1.0 ni sobrescribir sin historial: incrementar versión, conservar valor anterior, registrar actor/fecha/ámbito y devolver configVersion nueva.
+- Agregar control de concurrencia/optimistic locking: dos ediciones sobre la misma versión no deben sobrescribirse; una versión obsoleta debe recibir conflicto y no escribir.
+- Al guardar configuración, invalidar realmente caché en servidor y notificar a consumidores afectados. manageInstitutionalDataCache(FLUSH_GLOBAL) no puede limitarse a registrar un evento; debe purgar las entradas correspondientes y reportar el resultado real.
+- Validar versión vigente en operaciones críticas; definir qué cambios requieren recarga completa y cuáles actualización selectiva. Los fallos de sincronización no pueden reportarse como éxito.
+- Implementar rollback real por versión/snapshot, con previsualización, autorización, auditoría y conservación de historial; el texto rollbackProcedure no basta.
+- Pruebas con cliente actual/obsoleto, major/minor/patch, versiones inválidas, servicio desconocido, servicio nuevo, dos ediciones concurrentes, caché caliente/fría, caída de red, propagación por ámbito, restauración y compatibilidad de registros históricos.
+
+### AUD-NG-077 - Disponibilidad, permisos, esquema e historial de fuentes
+- Comparar schemaVersion registrado con el contrato de hojas/columnas que requiere cada consumidor antes de activar o resolver una fuente. Rechazar versiones incompatibles; no asumir 1.0 cuando la versión falta sin política explícita.
+- registerSpreadsheetSource no debe sobrescribir schemaVersion ni otros metadatos sin historial inmutable, actor verificado, timestamp y validación de compatibilidad. Conservar la versión previa y exigir migración/rollback cuando cambie el esquema.
+- resolveSpreadsheetSource debe comprobar el contrato antes de devolver spreadsheetId; no basta con retornar schemaVersion como dato informativo.
+- Probar fuente antigua, futura, inválida, ausente, migrada y con historial de versiones; confirmar que datos históricos siguen siendo interpretables.
+
+### AUD-NG-078 - Metadatos y permisos verificados de servicios
+- La versión declarada en SERVICE_REGISTRY debe corresponder a la versión real del deployment y del contrato servido. No usar v8.4.0/1.0.0 como etiquetas estáticas sin evidencia del endpoint.
+- Registrar contractVersion, serviceVersion, deploymentId, fecha de vigencia y compatibilidad mínima por servicio; validar coherencia antes de activar y al cambiar endpoint/deployment.
+- El catálogo central debe detectar versiones desconocidas, incompatibles o deprecadas y bloquear su activación o informar el estado real; no asumir compatibilidad por fallback 1.0.0.
+
+Hallazgo nuevo: ninguno; las brechas se corresponden con TASK-062, AUD-NG-077 y AUD-NG-078. Progreso: 27/183 identificadores únicos auditados; 156 pendientes. Siguiente tarea: FASE2-T18.
+================================================================
+
+
+================================================================
+AMPLIACIÓN DE TAREAS EXISTENTES DERIVADA DE FASE2-T18 (2026-11-05)
+================================================================
+
+No se crea AUD-NG nuevo. Las deficiencias del tablero y de sus fuentes de datos se asignan a tareas pendientes existentes.
+
+### AUD-NG-144 - Health checks reales y cobertura completa de servicios
+- openInstitutionalHealthDashboardModal no puede consumir getServiceHealthMetrics sin definición/contrato disponible ni convertir su fallback de ceros en estado OPERATIVO/SALUDABLE. Debe distinguir NO MEDIDO, SIN TELEMETRÍA, ONLINE, DEGRADADO y OFFLINE.
+- Conectar el tablero institucional a checkAllMicroservicesHealth y a las métricas backend verificadas. No presentar la hora local del render como última medición; mostrar timestamp y antigüedad de cada fuente.
+- Corregir la cobertura: USER/ACADEMIC ping actual responde dbConnected=true fijo; TASK/EXAM no implementan ping; ACCOUNTING sí tiene ping pero está excluido; DEVELOPER delega a doGet/controlPlaneConnected=true sin comprobar dependencias. El inventario monitorizado debe derivarse de SERVICE_REGISTRY y cada servicio debe exponer un ping real con comprobación de dependencia crítica.
+- En getServiceHealthDiagnostics, no dejar connectivity/permissions como PASS por defecto; cada check debe ejecutarse realmente y su resultado debe afectar el estado final. Revisar la exposición pública del diagnóstico: no publicar información operativa interna sin política de acceso.
+- js/developer.js debe clasificar state=Degradado aunque status sea success; no puede mostrar ONLINE/100% Operativo si la latencia rebasa el umbral o faltan servicios del inventario.
+- El estado global debe degradarse cuando una dependencia crítica, servicio esencial o cola de eventos esté fallida/pendiente; la falta de telemetría no equivale a disponibilidad.
+- Pruebas por servicio: ping válido, acción inexistente, endpoint no desplegado, timeout, respuesta lenta, error de dependencia, fallo de Spreadsheet/Drive y ausencia de telemetría. Incluir ACCOUNTING y DEVELOPER.
+
+### AUD-NG-145 - Bitácora central, filtros y sanitización
+- getTraceabilityCorrelationLogs debe admitir filtros por intervalo temporal y tipo/severidad de incidencia, además de servicio/estado/correlationId; mantener paginación y límites seguros.
+- recordTraceabilityLog no debe persistir errorDetails sin sanitización por esquema. getTraceabilityCorrelationLogs no debe devolver PII, credenciales, RTN, cuentas ni datos financieros en bruto; conservar detalle técnico seguro y correlación.
+- Integrar los eventos/mediciones al tablero con DTO consistente. Distinguir origen y destino para identificar la dependencia que causa degradación.
+
+### AUD-NG-007 - Timeout configurable en fetchApi
+- checkMicroserviceHealth pasa timeout:6000, pero fetchApi mantiene 60000 ms fijo. Aplicar options.timeout, abortar dentro del margen configurado y limpiar temporizadores en éxito/error/reintento. El monitor debe mostrar TIMEOUT como estado distinto de offline/servicio sin ping.
+
+### AUD-NG-008 - Diferenciar indisponibilidad de respuestas vacías/fallback
+- El fallback de openInstitutionalHealthDashboardModal no puede convertirse en métricas cero confirmadas ni estado saludable. La UI debe mostrar SIN TELEMETRÍA/ERROR DE CONSULTA y mantener visible el último dato válido con su antigüedad, claramente identificado como obsoleto.
+- No usar status success con colecciones vacías o métricas predeterminadas para concluir que un servicio está operativo.
+
+### TASK-064 - Observabilidad preventiva, métricas y tablero de capacidad
+- Integrar getOperationalCapacityMetrics con el panel. Adaptar el DTO: backend entrega capacidadEstado/resumenGeneral/desgloseServicios y la UI espera totalCalls/successCalls/failedCalls/quotaErrors/serviceMetrics. No mantener dos contratos incompatibles.
+- getOperationalCapacityMetrics debe filtrar por ventana temporal y servicio/acción, identificar origen/destino y registrar frescura real. No devolver OPTIMO si no existen eventos o si los datos exceden la antigüedad permitida; devolver NO_MEDIDO/SIN_DATOS.
+- Medir disponibilidad, latencia, tasa de error, cuotas, reintentos, procesos pendientes y fallidos de BitacoraEventos, trabajos bloqueados y dependencias. Las métricas deben provenir de telemetría real, no de métricasClient confiadas al navegador.
+- Integrar timestamp del último evento medido, período de cálculo, fuente de datos y cobertura de instrumentación. La hora de consulta no sustituye la frescura del dato.
+- Configurar umbrales por servicio/acción y alertas deduplicadas; no usar únicamente umbrales fijos (>10%, >5 cuotas o >50 errores acumulados).
+- La suite INT-04 debe validar el DTO real de getOperationalCapacityMetrics (hoy espera capacidadOperativa, propiedad inexistente) y fallar de forma visible si no se ejecuta/si falla; no devolver éxito global sin considerar casos fallidos.
+- El tablero debe incluir filtros por servicio, periodo y tipo de incidencia; atribución de dependencia; detalle técnico saneado y enlace a diagnóstico/recuperación.
+- Estado global no puede ser saludable con servicios esenciales sin medir, colas críticas pendientes, eventos fallidos permanentes o dependencias críticas degradadas.
+
+AUD-NG-163 permanece DUPLICADA y consolidada; no reabrirla como tarea independiente. Progreso: 28/183 identificadores únicos auditados; 155 pendientes. Siguiente tarea: FASE2-T19.
+================================================================
+
+
+### [AUD-NG-173] Integrar y completar la vista de actividad reciente contextual
+- **Origen del Hallazgo:** Auditoría de tareas completadas, T-UX-26; evidencia en `js/ui-common.js` y `ChangesLogs.txt` (octubre de 2026).
+- **Severidad/Clasificación:** Medio (P2; integración funcional, navegación y privacidad de actividad).
+- **Archivos Involucrados:** `js/ui-common.js`, paneles de control por rol, módulos que generan actividad, pruebas de regresión; relacionado con TASK-067 y TASK-221.
+- **Problema Detectado:** T-UX-26 implementó `recordRecentActivity`, `getRecentActivity` y `renderContextualRecentActivity`, pero la auditoría no encontró llamadas a esas funciones ni integración del renderizador en los paneles principales revisados (Dirección, Coordinación, Secretaría, Contabilidad, Docente, Estudiante y Desarrollador). Por tanto, el bloque de código existe, pero no se demuestra una vista visible ni un flujo real de registro. El almacenamiento utiliza una clave global de localStorage sin identidad de usuario/institución; el filtrado solo por rol no aísla cuentas. La navegación solo llama a `switchActiveView`; no se demuestra que `targetId` abra o restaure el registro concreto. El renderizado concatena `title` y `description` en `innerHTML` sin escape contextual.
+- **Alcance y requisitos:**
+  1. Integrar el panel en los dashboards pertinentes por rol y conectar eventos reales de módulos, sin inventar actividad ni registrar datos sensibles.
+  2. Asegurar aislamiento por `authUserId` e `institucionId`, coordinado con TASK-067; las reglas de visibilidad deben basarse en permisos vigentes, no solo en valores de rol almacenados localmente.
+  3. Distinguir claramente entradas informativas de tareas pendientes y enlazar las tareas accionables con la bandeja institucional TASK-221, evitando duplicar su fuente de verdad.
+  4. Hacer que el destino valide la existencia y autorización del registro; el `targetId` debe ser consumido por el módulo destino para abrir el elemento concreto, o mostrar una alternativa clara si ya no está disponible.
+  5. Insertar títulos/descripciones como texto seguro (por ejemplo, `textContent`/nodos DOM) y validar timestamps, límites y estructura de cada entrada.
+  6. Definir retención, límite y limpieza de actividad, incluyendo cambio de cuenta, cierre de sesión y datos obsoletos.
+  7. Añadir pruebas automatizadas y de navegador para registrar, filtrar, ordenar, renderizar, navegar, cambiar de usuario y manejar destinos inexistentes.
+- **Criterios de aceptación:**
+  - La vista aparece en cada dashboard que corresponda y muestra solo actividad real y autorizada.
+  - El registro de actividad está conectado a eventos reales; el feed no permanece vacío por falta de productores.
+  - Dos usuarios/instituciones que compartan navegador no pueden ver ni sobrescribir actividad ajena.
+  - Los elementos informativos y pendientes se distinguen y los pendientes remiten a la fuente de verdad.
+  - Abrir un elemento navega al registro exacto autorizado; un registro eliminado o inaccesible se maneja sin error ni fuga.
+  - Contenido de texto malicioso no se interpreta como HTML ejecutable.
+  - Las pruebas cubren orden temporal, roles, permisos, cambio de cuenta y navegación.
+- **Estado:** [ ] Pendiente
+
+
+### [AUD-NG-174] Normalizar contratos API y manejo de errores entre cliente y microservicios
+- **Origen del Hallazgo:** Auditoría de tareas completadas FASE2-02; contraste con FASE2-T03 y ChangesLogs.txt.
+- **Severidad/Clasificación:** Alto (P1; consistencia operativa y detección fiable de fallos).
+- **Archivos Involucrados:** `js/api.js`, `backend/academic-service/Code.gs`, `backend/accounting-service/Code.gs`, pruebas de contrato/regresión.
+- **Dependencias Expuestas:** `fetchApi`, `textResponse`, `validateApiContractsTestSuite`, `ContentService.MimeType.TEXT`, `isFallback`.
+- **Problema Detectado:** Academic/Accounting solo normalizan status/timestamp y un código genérico; fetchApi no valida un esquema común, acepta respuestas heterogéneas y devuelve éxito vacío con isFallback para algunas lecturas. La suite de Academic permite que status:error cuente como PASS y no prueba el transporte real; Accounting no tiene suite equivalente. Los errores de doPost exponen error.message y el toast de autorización inserta parsed.message mediante innerHTML.
+- **Alcance y requisitos:**
+  1. Definir envelope común versionado para éxito/error con status, data, error.code, mensaje público seguro, timestamp y correlationId/requestId.
+  2. Normalizar excepciones internas a códigos estables sin filtrar stack, identificadores sensibles ni detalles de infraestructura.
+  3. Validar el esquema en fetchApi; distinguir resultado vacío legítimo, error de negocio, HTTP, transporte, timeout, HTML y JSON inválido.
+  4. No devolver status:success para fallos de lectura; conservar un indicador de fallback inequívoco y exigir que los consumidores lo manejen.
+  5. Unificar MIME/serialización y documentar compatibilidad para Academic y Accounting.
+  6. Renderizar mensajes de error como texto seguro, no mediante concatenación en innerHTML.
+  7. Sustituir validateApiContractsTestSuite por pruebas que no acepten errores como éxito y que incluyan Accounting y llamadas reales a endpoints.
+- **Criterios de aceptación:**
+  - Todos los endpoints cubiertos responden con envelope versionado y esquema verificable.
+  - Un error interno conserva código público estable y no filtra error.message sensible.
+  - Una lectura vacía válida se distingue de servicio no disponible o JSON inválido.
+  - El cliente rechaza respuestas incompatibles y los consumidores no presentan fallbacks como datos confirmados.
+  - Las pruebas cubren éxito, vacío, error de negocio, autorización, excepción, HTTP no exitoso, HTML, JSON inválido, timeout y Accounting.
+  - La suite solo marca PASS cuando se cumplen los resultados esperados, no por la mera presencia de claves en una respuesta error.
+  - Los mensajes dinámicos no se interpretan como HTML.
+- **Ampliación derivada de FASE2-T03:**
+  1. Inventariar todas las operaciones expuestas por USER, ACADEMIC y ACCOUNTING y sus consumidores reales; documentar propósito, parámetros, tipos, campos obligatorios, restricciones, respuesta, errores, autenticación/autorización, efectos secundarios y semántica de repetición/idempotencia.
+  2. Definir una política explícita de versionado y compatibilidad de contratos que contemple campos nuevos, campos opcionales, deprecaciones y cambios incompatibles, con pruebas que detecten regresiones antes del despliegue.
+- **Criterios de aceptación adicionales:**
+  - El catálogo cubre todas las acciones públicas de los tres servicios y enlaza cada operación con sus consumidores reales.
+  - Las solicitudes inválidas se rechazan en el servidor según tipos, campos y rangos documentados.
+  - Los cambios compatibles mantienen consumidores existentes; los incompatibles se versionan o se rechazan por pruebas de contrato.
+- **Estado:** [ ] Pendiente
+
+
+### [AUD-NG-175] Corregir el contrato, la sincronización y la validación de los catálogos institucionales
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-175 (FASE2-03 y revisión de la implementación posterior FASE2-T04).
+- **Severidad/Clasificación:** Alto (integridad y consistencia de catálogos institucionales).
+- **Archivos Involucrados:** `js/config.js`; `backend/academic-service/Code.gs`; `backend/user-service/Code.gs`; `tests/regression/modular-dashboard-suite.js`.
+- **Dependencias Expuestas:** `fetchInstitutionalCatalog`, `registerNewCurricularAreaServiceConfig`, `getInstitutionalCatalog`, `getSubjectCatalog`, `createSubjectCatalogItem`, `validateCatalogReference`, `CatalogoAsignaturas`, `AreasCurricularesExtensiones`, `CACHE_POLICIES`, `SERVICE_VERSIONS`, `getSharedConfigVersion`, `getSharedConfigurationsCatalog`, `fetchApi`.
+- **Descripción del Alcance:** Establecer un contrato versionado y coherente para consultar y sincronizar los catálogos institucionales. Corregir el mapeo del estado de asignaturas, filtrar registros inactivos en consultas y validaciones, sincronizar tanto áreas curriculares como asignaturas y evitar que errores de transporte o respuestas inválidas se presenten como consultas exitosas con datos estáticos. La configuración local podrá utilizarse como caché/fallback únicamente si queda identificada como tal y no sustituye silenciosamente la fuente de verdad. La incorporación o actualización de áreas debe conservar el estado y actualizar los metadatos existentes sin reactivar registros deshabilitados.
+- **Evidencia C1.31:** `getInstitutionalCatalog` (líneas 3824-3883) mapea `CatalogoAsignaturas` con `estado: r[4]`, aunque el encabezado creado por `getOrCreateSheet` define `CargaHorariaRef` en el índice 4 y `Estado` en el índice 5. También devuelve filas sin filtrar por estado. `validateCatalogReference` (líneas 3885-3915) acepta referencias sin comprobar que el registro esté activo. En `js/config.js`, `fetchInstitutionalCatalog` (líneas 806-835) devuelve `status:"success"` con el catálogo estático si falta `fetchApi`, la respuesta no tiene el formato esperado o la petición falla; solo sincroniza `areasCurriculares` y no actualiza el catálogo de asignaturas. `registerNewCurricularAreaServiceConfig` (líneas 938-965) no sincroniza cambios de metadatos de áreas ya existentes ni filtra áreas inactivas.
+- **Criterios de Aceptación:** el campo Estado se obtiene de la columna correcta; áreas/asignaturas inactivas no aparecen como activas ni validan referencias; la respuesta mantiene un esquema y versión explícitos; el cliente sincroniza ambos catálogos; un fallo de red o contrato no se presenta como éxito de la fuente de verdad; los fallbacks se marcan explícitamente como datos locales/no autoritativos; actualizar o desactivar un área se refleja sin duplicados ni reactivación involuntaria; pruebas cubren registros activos/inactivos, referencia inválida, catálogo vacío, respuesta malformada y fallo de transporte.
+- **Ampliación C1.37 / FASE2-T04 (fuente de verdad institucional):**
+  1. Definir un inventario de catálogos y configuraciones con propietario, fuente autoritativa, lectores, escritores, ámbito (global/institucional/académico/departamental/técnico), esquema, identificador estable y política de conservación. Distinguir constantes técnicas legítimas del cliente de datos y reglas de negocio institucionales.
+  2. Evitar que js/config.js sea una segunda fuente editable/autoritaria de capacidades, módulos, responsabilidades, áreas y departamentos. Las copias locales solo podrán ser caché explícita o valores técnicos no institucionales; todos los consumidores deben recibir el mismo contrato y los mismos identificadores.
+  3. Corregir el contrato de getInstitutionalCatalog: respuestas uniformes y versionadas para cada catalogType, estado desde la columna real, filtros por estado y ámbito, y metadatos necesarios (incluido departamento cuando aplique). El tipo ALL debe poder validarse sin asumir que data es un array.
+  4. Integrar validateCatalogReference en las operaciones de escritura que aceptan referencias (incluidas asignaturas, áreas y relaciones académicas); validar existencia, tipo, estado activo, ámbito y compatibilidad en servidor. No basta con exponer el validador como acción independiente.
+  5. Corregir fetchInstitutionalCatalog para sincronizar áreas y asignaturas, actualizar metadatos de elementos existentes y respetar desactivaciones. Los errores de red, contrato, ausencia de fetchApi o respuesta incompleta deben permanecer como error/fallback identificado, nunca como success autoritativo.
+  6. Preservar IDs y referencias históricas al renombrar/desactivar entidades; conservar historial de cambios o snapshots cuando la modificación de metadatos/estado pueda cambiar la interpretación de registros antiguos.
+  7. Exigir configuraciones institucionales obligatorias y devolver errores identificables cuando falten; no sustituir silenciosamente referencias requeridas por General, IDs inventados, defaults globales o catálogos locales obsoletos.
+  8. Permitir filtrado y resolución por departamento, nivel educativo y contexto cuando la regla sea contextual; no descartar departmentId ni mezclar configuraciones académicas con constantes técnicas.
+  9. Reutilizar la política de versionado e invalidación ya registrada en TASK-062 (FASE2-T17/T19); no duplicar esa tarea. Reutilizar TASK-046 y AUD-NG-083/AUD-NG-084/AUD-NG-086 para el enrutamiento de fuentes; AUD-NG-158 para el estado de áreas y referencias inactivas.
+- **Criterios adicionales de aceptación:**
+  - Cada catálogo/configuración compartida tiene fuente, propietario, ámbito, esquema y consumidores documentados.
+  - Dos módulos consultan la misma definición vigente y reciben el mismo identificador/estado.
+  - La validación se ejecuta dentro de las escrituras backend; un ID inexistente, inactivo, de otro tipo o fuera del ámbito se rechaza.
+  - Cambios de nombre conservan ID; desactivaciones no eliminan ni reescriben el significado histórico.
+  - Los catálogos locales se marcan como caché/fallback no autoritativo y jamás permiten persistir una referencia sin revalidación del servidor.
+  - Los defaults solo se aplican a campos opcionales; la falta de configuración obligatoria produce error identificable.
+  - Las pruebas cubren tipos CURRICULAR_AREAS/SUBJECTS/ALL, estado activo/inactivo, ID/código, cambio de nombre, ámbito departamental, respuesta vacía/malformada, caché obsoleta y fallo de transporte.
+- **Evidencia C1.37:** js/config.js conserva CAPACITIES_CATALOG, MODULES_CATALOG, RESPONSIBILITIES_CATALOG, CURRICULAR_AREAS_CATALOG y ACADEMIC_DEPARTMENTS_CATALOG como listas locales; fetchInstitutionalCatalog solo sincroniza áreas y devuelve status success con catálogo estático ante ausencia de API, respuesta inválida o error de transporte. registerNewCurricularAreaServiceConfig solo agrega si el ID no existe, no actualiza metadatos ni estado. En Academic, getInstitutionalCatalog (líneas 3824-3883) mapea asignaturas con estado:r[4], aunque el esquema define CargaHorariaRef en índice 4 y Estado en índice 5; no filtra inactivos y el tipo ALL devuelve un objeto mientras los tipos específicos devuelven arrays. validateCatalogReference (3885-3915) solo valida cuando data es array, no comprueba estado y no se invoca desde las escrituras de creación de asignaturas/áreas ni otras operaciones académicas; para ALL falla por la forma del objeto. getSubjectCatalog repite el índice de estado incorrecto. registerCurricularAreaExtension (4084-4145) sobrescribe metadatos/estado de una fila existente y fija Inactivo_PendientePruebas; el endpoint de catálogo omite departmentId. createSubjectCatalogItem genera ASIG- + timestamp y acepta areaAcademica || General. En User, getSharedConfigurationsCatalog (185-200) publica versiones estáticas, no un catálogo persistente de catálogos institucionales. La política de caché/versionado ya está ampliada en TASK-062; no se duplica aquí.
+- **Estado:** [ ] Pendiente
+
+### [TASK-474] Reconstruir el motor de eventos intermodulares con persistencia durable, despacho y recuperación verificables
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-176; auditoría FASE2-06 y requisitos de FASE2-T07
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:**
+  - backend/user-service/Code.gs
+  - backend/academic-service/Code.gs
+  - backend/accounting-service/Code.gs
+  - backend/task-service/Code.gs
+  - backend/exam-service/Code.gs
+  - tests/regression/user-event-engine-suite.js
+- **Dependencias Expuestas:** doPost, validateRolePermission, ROLE_PERMISSIONS, BitacoraEventos, sendMultiChannelNotification, retryFailedEventsQueue, productores de eventos interdepartamentales, contratos HMAC y AUD-NG-006/AUD-NG-161.
+- **Descripción del Alcance:**
+  1. Definir un contrato versionado de eventos con tipos permitidos, servicio emisor autenticado, destinatarios, datos validados, eventId, originRequestId, correlationId y causationId.
+  2. Persistir primero el evento en una bandeja durable con estado PENDIENTE y reserva atómica de la clave de idempotencia; no ejecutar efectos secundarios antes de asegurar la persistencia.
+  3. Evitar duplicados por combinación de servicio emisor, tipo de evento y referencia de operación, incluyendo estados pendientes, en ejecución, procesados y fallidos.
+  4. Integrar los productores reales de Academic, Accounting, Task, Exam y User con el contrato autenticado, identificando qué operaciones generan eventos y qué efectos secundarios corresponden.
+  5. Implementar consumidores que reclamen cada evento de forma exclusiva, registren transiciones de estado y separen el resultado de la operación principal del estado de entrega de cada canal.
+  6. Aplicar maxRetries configurable, nextAttemptAt, espera progresiva, límite de intentos, estado terminal y recuperación de eventos atascados.
+  7. Preservar la idempotencia de cada efecto secundario durante reintentos y recuperación; no reconstruir notificaciones sin una clave estable derivada del evento.
+  8. Definir la distribución real para destinatarios individuales y globales, evitando tratar GLOBAL como una cuenta de usuario.
+  9. Prevenir ciclos y recursión mediante causationId, límites de profundidad y reglas de orden por entidad cuando sean necesarias.
+  10. Registrar errores sanitizados, correlación, intentos y resultados sin exponer información sensible.
+- **Criterios de Aceptación:**
+  - Un evento se encuentra persistido antes de ejecutar cualquier efecto secundario.
+  - Dos solicitudes simultáneas con la misma identidad de evento producen una sola ejecución lógica.
+  - Los productores autorizados publican eventos mediante autenticación interservicio y contrato validado.
+  - Los estados pendiente, en ejecución, procesado, reintentable y fallo permanente representan el resultado real.
+  - Los reintentos respetan maxRetries y nextAttemptAt, y no duplican efectos ya completados.
+  - Los destinatarios GLOBAL se expanden a una audiencia definida y verificable, no a un usuario literal.
+  - Un fallo de notificación secundaria no revierte ni falsea el estado de la operación principal.
+  - Las pruebas usan fixtures/almacenamiento aislado y verifican persistencia, concurrencia, pérdida de respuesta, fallos parciales, recuperación, orden y ausencia de duplicados.
+  - Ejecutar la suite no procesa colas ni envía comunicaciones de producción.
+  - Las métricas distinguen eventos pendientes, atascados, procesados y fallidos por tipo y servicio.
+- **Ampliación de evidencia (C1.42 / FASE2-T07, 2026-11-05):** `retryFailedNotificationsQueue` (backend/user-service/Code.gs:4761-4817) reintenta todos los registros `Pendiente_Reintento` sin contador persistente, `maxRetries`, `nextAttemptAt` ni retroceso progresivo. Además, `registerAndDispatchEvent` puede marcar el evento `PROCESADO` cuando `sendMultiChannelNotification` devuelve `status: success` aunque `estadoEntrega` sea `Pendiente_Reintento`. La política debe coordinar la cola secundaria por canal y separar el estado del evento del resultado de entrega de cada destinatario.
+- **Estado:** [ ] Pendiente
+
+---
+
+### [TASK-475] Proteger secretos de proveedores y sanear el contenido de notificaciones multicanal
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-177; auditoría FASE2-06 y revisión de la configuración posterior de canales
+- **Severidad/Clasificación:** Alto
+- **Archivos Involucrados:**
+  - backend/user-service/Code.gs
+  - tests/regression/user-notification-security-suite.js
+- **Dependencias Expuestas:** CanalesProveedoresConfig, configureNotificationChannel, getNotificationChannelConfigs, sendMultiChannelNotification, MailApp, ROLE_PERMISSIONS y almacenamiento de secretos.
+- **Descripción del Alcance:**
+  1. Eliminar la persistencia de credenciales en texto claro dentro de configuracionJSON y sustituirla por referencias a secretos protegidos o cifrado real con gestión de claves fuera de la hoja.
+  2. No utilizar marcadores constantes como HASH_CONFIG_PROTECTED para representar cifrado o protección inexistente.
+  3. Hacer que getNotificationChannelConfigs devuelva únicamente metadatos y configuraciones no sensibles; los secretos nunca deben incluirse en respuestas API.
+  4. Aplicar control de acceso por operación y ámbito a la consulta y modificación de canales, sin permitir que roles de lectura obtengan credenciales.
+  5. Escapar HTML en titulo, mensaje y demás campos insertados en plantillas de correo.
+  6. Validar enlaceAccion mediante una política explícita de protocolos y destinos permitidos antes de insertarlo en href.
+  7. Evitar que credenciales, tokens, direcciones y datos personales innecesarios aparezcan en bitácoras y errores.
+  8. Mantener pruebas que comprueben que secretos y contenido HTML no confiable no se exponen ni alteran la plantilla.
+- **Criterios de Aceptación:**
+  - La hoja de configuración no almacena credenciales en texto claro.
+  - Las respuestas de consulta nunca contienen secretos, tokens ni referencias internas que permitan recuperarlos.
+  - Las operaciones de configuración y lectura aplican permisos mínimos.
+  - Las cadenas con etiquetas HTML, atributos, scripts o entidades no alteran la estructura del correo.
+  - Los enlaces no permitidos se rechazan antes de generar o enviar el correo.
+  - Los logs y errores no incluyen credenciales ni datos sensibles completos.
+  - Las pruebas de seguridad usan datos sintéticos y verifican tanto las respuestas como los valores persistidos.
+- **Estado:** [ ] Pendiente
+
+---
+
+### [TASK-476] [AUD-NG-178] Establecer criterios reproducibles de escalabilidad y un plan de evolución del almacenamiento transaccional
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-178; auditoría FASE2-07 (C1.35) y requisitos de FASE2-T12.
+- **Prioridad:** P2
+- **Severidad/Clasificación:** Medio (escalabilidad, integridad y continuidad de datos).
+- **Archivos Involucrados:** backend/academic-service/Code.gs; backend/accounting-service/Code.gs; tests/regression/; documentación de arquitectura y operación.
+- **Dependencias Expuestas:** evaluateTransactionalStorageMigrationNeed, Google Sheets, operaciones multi-entidad, identificadores institucionales, relaciones académicas/contables, permisos, respaldos, sincronización y reconciliación.
+- **Descripción del Alcance:**
+  1. Inventariar entidades, volúmenes, operaciones críticas y transacciones lógicas que abarcan varias hojas o servicios; identificar relaciones, invariantes y límites de consistencia.
+  2. Definir y recopilar métricas reproducibles por servicio, acción y operación: volumen de filas/entidades, tamaño real, lecturas/escrituras, latencia y percentiles, errores, cuotas, concurrencia, crecimiento histórico y coste de procesamiento.
+  3. Establecer una línea base con escenarios representativos y documentar entorno, volumen, datos sintéticos, procedimiento, repeticiones y resultados.
+  4. Definir umbrales de alerta y criterios de decisión derivados de carga esperada, límites oficiales, tendencias y objetivos de servicio; no utilizar únicamente constantes arbitrarias.
+  5. Comparar alternativas (optimización de Sheets, lotes, particionamiento y almacenamiento transaccional adecuado) según transacciones, integridad referencial, concurrencia, consultas, costes, operación, seguridad y recuperación.
+  6. Diseñar migración gradual solo con evidencia suficiente, identificando fuente de verdad, lectura/escritura, sincronización, corte, validación de paridad y reversión.
+  7. Preservar IDs, relaciones, historial, auditoría, permisos, referencias a archivos y trazabilidad.
+  8. Incorporar pruebas aisladas de carga, concurrencia, consistencia, reconciliación, recuperación y reversión con datos sintéticos; no operar sobre hojas productivas desde las suites.
+  9. Documentar responsables, métricas, criterios de activación, fases, riesgos y condiciones para detener o revertir.
+- **Criterios de Aceptación:**
+  - Las mediciones son repetibles y comparables con una línea base explícita.
+  - Los umbrales se justifican con límites documentados, carga prevista y evidencia, no solo con valores fijos.
+  - La recomendación compara alternativas y cuantifica riesgos, costes y beneficios.
+  - No se propone ni ejecuta migración por superar un único umbral arbitrario.
+  - El plan conserva IDs, relaciones, historial, permisos, integridad y trazabilidad.
+  - Existen pruebas sintéticas de consistencia, concurrencia, sincronización, corte y reversión.
+  - La suite no lee ni modifica datos productivos para medir capacidad.
+- **Estado:** [ ] Pendiente
+
+
+---
+### [TASK-477] [AUD-NG-179] Evitar el éxito parcial cuando no se adquiere LockService en capacidad y presupuesto
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-179 (auditoría FASE2-T06, 2026-11-05).
+- **Prioridad:** P1 (Alta).
+- **Severidad/Clasificación:** Alto (consistencia de cupos, presupuesto y control de concurrencia).
+- **Archivos Involucrados:**
+  - backend/academic-service/Code.gs (checkEnrollmentCapacity, doPost y pruebas de concurrencia).
+  - backend/accounting-service/Code.gs (recordAccountsPayableExpense y pruebas de presupuesto).
+  - tests/regression/ y/o suite de integración aislada.
+- **Dependencias Expuestas:** LockService, OfertaAcademica, Matriculas, SolicitudesAdmision, CuentasPorPagarGastos, PresupuestosInstitucionales, checkEnrollmentCapacity, recordAccountsPayableExpense, AUD-NG-161 y AUD-NG-049.
+- **Descripción del Alcance:**
+  1. Definir explícitamente si checkEnrollmentCapacity exige un snapshot protegido por lock o si ofrece una consulta deliberadamente no bloqueante. Si el lock es obligatorio y tryLock falla, devolver un error controlado; si la consulta es no bloqueante, eliminar la falsa garantía de protección y documentar la consistencia del snapshot.
+  2. En recordAccountsPayableExpense, impedir que la obligación se confirme como exitosa si no se actualizó el compromiso/ejecución presupuestaria requerido. Adquirir el lock antes de las escrituras irreversibles o persistir un estado pendiente durable con identificador de operación y mecanismo de reconciliación/reanudación.
+  3. Distinguir timeout, fila presupuestaria inexistente, fallo de lectura y fallo de escritura. No convertir ninguno de esos casos en success con ejecucionPresupuestaria null cuando la operación exige actualización presupuestaria.
+  4. Liberar el lock únicamente cuando haya sido adquirido y mantener la liberación en finally para éxito y error.
+  5. Mantener la protección de las rutas externas frente a skipLock/isInternalCall según TASK-118 y AUD-NG-161; no confiar en banderas aportadas por el cliente.
+- **Criterios de Aceptación:**
+  - Un timeout de lock no produce una respuesta que represente una operación protegida como exitosa.
+  - La creación de una obligación y su afectación presupuestaria quedan confirmadas conjuntamente o en un estado pendiente verificable y recuperable.
+  - Una obligación no puede quedar aprobada con el presupuesto sin actualizar y sin señal de reconciliación.
+  - Los errores de contención, validación, persistencia y ausencia de configuración se distinguen.
+  - Las pruebas aisladas fuerzan contención y fallo de escritura y verifican que no exista éxito parcial silencioso.
+  - Ninguna prueba escribe en hojas productivas.
+- **Relaciones:** AUD-NG-161 (pruebas conductuales), AUD-NG-049 (atomicidad de pagos de proveedor), TASK-118 (política de locks y bypasses).
+- **Estado:** [ ] Pendiente
+
+---
+### [TASK-478] [AUD-NG-180] Hacer idempotente y recuperable la recepción de compras y sus movimientos de inventario
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-180 (auditoría FASE2-T06, 2026-11-05).
+- **Prioridad:** P1 (Alta).
+- **Severidad/Clasificación:** Alto (integridad de inventario, recepción y recuperación de operaciones).
+- **Archivos Involucrados:**
+  - backend/accounting-service/Code.gs (recordPurchaseReceipt, recordInventoryMovement, getPurchaseReceipts).
+  - tests/regression/ y/o suite de integración aislada.
+- **Dependencias Expuestas:** OrdenesCompra, RecepcionesCompra, InventariosKardex, recordPurchaseReceipt, recordInventoryMovement, LockService, idempotencia, estado de operación y AUD-NG-161.
+- **Descripción del Alcance:**
+  1. Asignar a cada recepción una clave estable de operación y reservarla atómicamente antes de ejecutar movimientos de inventario. Vincular la clave con la orden, el payload normalizado y el resultado persistido; rechazar su reutilización con datos incompatibles.
+  2. Asociar cada movimiento de InventariosKardex con el identificador de la recepción/operación para que un reintento pueda reconocer movimientos ya aplicados sin volver a incrementar existencias.
+  3. Persistir estados de operación (por ejemplo, Pendiente, EnProceso, Aplicada, RequiereRecuperacion y Fallida) o un mecanismo equivalente que permita conocer qué escrituras se confirmaron.
+  4. Definir un orden de persistencia y una estrategia de recuperación o compensación para fallos entre movimientos de inventario, actualización de OrdenesCompra y creación de RecepcionesCompra. No devolver success hasta que todas las invariantes estén confirmadas.
+  5. Definir el comportamiento de adquisición de locks anidados entre recordPurchaseReceipt y recordInventoryMovement; evitar re-adquirir el mismo lock dentro de una sección crítica o demostrar su comportamiento con pruebas de runtime aisladas.
+  6. Mantener el acumulado de cantidades conformes/no conformes y el estado de la orden coherentes al reanudar una recepción ya iniciada.
+- **Criterios de Aceptación:**
+  - Repetir la misma recepción con la misma clave produce un único efecto observable en inventario y una sola recepción lógica.
+  - La misma clave con payload diferente se rechaza.
+  - Una interrupción después de cualquier movimiento parcial deja un estado detectable y reanudable sin duplicar existencias.
+  - EstadoOrden, RecepcionesCompra e InventariosKardex pueden reconciliarse mediante el ID de operación.
+  - No se devuelve éxito si quedan movimientos o escrituras requeridas sin confirmar.
+  - Las pruebas incluyen concurrencia, pérdida de respuesta, fallo después de cada escritura y reintento; utilizan fixtures aislados y no alteran datos productivos.
+  - El comportamiento de LockService anidado queda probado o eliminado por diseño.
+- **Relaciones:** AUD-NG-161 (pruebas de concurrencia/recuperación), AUD-NG-023 (suites que no ejercitan los módulos reales), TASK-012 (recepción de compras marcada completada).
+- **Estado:** [ ] Pendiente
+
+
+---
+
+### [TASK-479] [AUD-NG-182] [P1] Corregir el ciclo de vida y la detección real de cambios no guardados
+- **Origen del Hallazgo:** Auditoria.txt (AUD-NG-182).
+- **Severidad/Clasificación:** Alto.
+- **Archivos Involucrados:** `js/ui-common.js`.
+- **Dependencias Expuestas:** `window.setupUnsavedChangesProtection`, `window.runUXSuiteTests` / UX-03, eventos DOM `input/change/submit/reset`, `MutationObserver`, `window.beforeunload`, formularios y flujos de guardado de los paneles consumidores.
+- **Descripción del Alcance:**
+  1. Capturar una línea base del estado inicial de los controles compatibles y determinar el estado modificado comparando valores actuales contra esa línea base, de modo que revertir un campo a su valor inicial quite el estado dirty.
+  2. Mantener la advertencia activa durante intentos de guardado cancelados, rechazados o fallidos. La limpieza del estado debe realizarse únicamente mediante una confirmación explícita posterior al guardado exitoso (o una operación equivalente documentada), nunca por el mero evento submit.
+  3. No limpiar el estado dirty cuando un evento reset haya sido cancelado; tras un reset efectivo, actualizar la línea base y confirmar el estado limpio.
+  4. Gestionar controles agregados y retirados dinámicamente, incluidos formularios descendientes insertados después de la inicialización; documentar el contrato para contenteditable y controles personalizados, o incorporarlos de forma verificable.
+  5. Implementar un ciclo de vida explícito de registro/desregistro: evitar listeners beforeunload duplicados, retirar los listeners propios y desconectar MutationObserver al desmontar/reinicializar la protección. Una instancia retirada no debe seguir bloqueando navegación.
+  6. Preservar compatibilidad con la interfaz pública existente (`markClean`, `markDirty`, `isDirty`, `resetProtection`) o documentar y migrar de forma controlada todos sus consumidores.
+  7. Ampliar UX-03 con pruebas conductuales aisladas para modificación/reversión, submit exitoso/cancelado/fallido, reset cancelado/efectivo, controles y formularios dinámicos, beforeunload, múltiples instancias y teardown. No considerar como PASS la sola existencia de la función.
+- **Criterios de Aceptación:**
+  - Modificar un control hace que la protección indique dirty y abandonar la página solicita confirmación nativa del navegador.
+  - Restaurar todos los controles a sus valores iniciales devuelve el estado a clean y no genera advertencia.
+  - Un submit cancelado o un guardado fallido conserva dirty y la advertencia; solo el guardado confirmado limpia el estado.
+  - Un reset cancelado conserva el estado anterior; un reset efectivo restablece el baseline y deja el formulario limpio.
+  - Los controles y subformularios añadidos dinámicamente reciben seguimiento completo; los retirados dejan de influir en el estado.
+  - Al desmontar la protección se retiran sus listeners/observadores y una instancia antigua no puede disparar advertencias.
+  - Varias instancias activas no duplican listeners globales ni interfieren entre sí.
+  - UX-03 verifica los comportamientos anteriores y diferencia PASS, FAIL, BLOCKED y NOT RUN; las pruebas no operan sobre formularios/datos productivos.
+- **Estado:** [ ] Pendiente.
+
+
+---
+
+### [TASK-480] [AUD-NG-183] [P1] Integrar y corregir el indicador de frescura y su ciclo de actualización
+- **Origen del Hallazgo:** Auditoria.txt (AUD-NG-183).
+- **Severidad/Clasificación:** Alto.
+- **Archivos Involucrados:** `js/ui-common.js`, `dashboard-direccion.html`, `dashboard-secretaria.html` y las vistas que deban mostrar la frescura de sus datos.
+- **Dependencias Expuestas:** `window.renderDataFreshnessBadge`, `window.openUserManagementAdministrationModal`, `window.openSecurityAndComplianceDashboardModal`, `runUXSuiteTests` / UX-04, timestamps reales de sincronización y operaciones de actualización de cada vista.
+- **Descripción del Alcance:**
+  1. Cerrar correctamente `renderDataFreshnessBadge` antes de declarar otros helpers globales; garantizar que los dos modales administrativos se registren al cargar `ui-common.js`, sin depender de invocar el indicador.
+  2. Integrar el badge en las vistas de lista/paneles pertinentes y pasar la fecha/hora de la última actualización confirmada por la fuente real de datos; no usar la hora de renderizado como sustituto.
+  3. Definir tratamiento explícito para timestamp ausente, inválido o futuro. Mostrar “Sin dato”/estado equivalente cuando no exista una actualización verificable, sin fingir frescura ni mostrar `Invalid Date`.
+  4. Modelar estados distinguibles de actualizado, desactualizado, pendiente y error, con umbral de antigüedad documentado y mensajes accesibles.
+  5. Definir contrato inequívoco para actualización manual: el botón debe estar deshabilitado/oculto si no existe callback; el callback debe confirmar éxito explícitamente y devolver timestamp válido; solo el éxito confirmado renueva la marca. Manejar excepciones, rechazos y callbacks sin respuesta para retirar el spinner y conservar el timestamp previo.
+  6. Conectar el callback con la operación real de recarga/sincronización de cada vista integrada, evitando marcar éxito antes de completar la operación.
+  7. Verificar que los botones de gestión de usuarios y seguridad de Dirección, y gestión de usuarios de Secretaría, abran sus modales después de la carga normal de la página.
+  8. Ampliar UX-04 con pruebas conductuales para inserción en DOM, timestamp reciente/antiguo/ausente/inválido, estados, callback ausente, éxito confirmado, fallo, excepción, timeout y registro global de los dos helpers. Las pruebas deben ser aisladas y no sincronizar datos productivos.
+- **Criterios de Aceptación:**
+  - El indicador aparece en las vistas configuradas y refleja el timestamp de una actualización real confirmada.
+  - La falta de timestamp no se presenta como “Hace un momento”; los valores inválidos/futuros se muestran de forma segura.
+  - Los estados actualizado, desactualizado, pendiente y error son distinguibles.
+  - Sin callback no aparece una acción manual engañosa; con callback, solo una confirmación explícita de éxito actualiza la hora.
+  - Un fallo, rechazo, excepción o ausencia de respuesta no renueva el timestamp y siempre libera el indicador de carga.
+  - Los dos helpers administrativos existen en `window` desde la carga normal de `ui-common.js`; los botones de Dirección y Secretaría funcionan sin invocar previamente el badge.
+  - UX-04 comprueba comportamiento e integración, no solo `typeof`.
+- **Ampliación C1.87 / TAREA-F4-P2-03:** Revalidado en la rama de trabajo: `renderDataFreshnessBadge` sigue abarcando las declaraciones de `openUserManagementAdministrationModal` y `openSecurityAndComplianceDashboardModal`; no se encontraron llamadas a `renderDataFreshnessBadge` en dashboard-direccion.html ni dashboard-secretaria.html. Ambos botones comprueban `typeof` y omiten la acción cuando el helper aún no está registrado. Se mantiene íntegro el alcance existente de TASK-480; no crear duplicado.
+- **Estado:** [ ] Pendiente.
+
+---
+
+### [TASK-481] Aplicar autorización contextual por entidad en la búsqueda Omnibox
+- **Origen del Hallazgo:** AUD-NG-184 (T-UX-06, exposición de noticias y trámites), AUD-NG-195 (T-UX-14, alcance institucional excesivo en expedientes y usuarios) y AUD-NG-196 (T-UX-14, filtros incompletos y consultas vacías).
+- **Severidad/Clasificación:** Alto / P1.
+- **Archivos Involucrados:** `backend/user-service/Code.gs`.
+- **Dependencias Expuestas:** `searchGlobalOmnibox`, `validateRolePermission`, `getUserVerifiedRole`, `validateContextualAccess`, `getNews`, `getAdministrativeRequests`, hojas `ExpedientesEstudiantes`, `Matriculas`, `Usuarios`, `NoticiasPortal` y `SolicitudesTramites`, claims verificados, grado, sección y departamento.
+- **Descripción del Alcance:**
+  1. Definir y aplicar en servidor la política de acceso por entidad y tipo de registro; no conceder acceso global a noticias, trámites, expedientes o usuarios por el solo hecho de tener una sesión válida o pertenecer a una lista general de roles.
+  2. Para solicitudes, limitar los resultados al titular/estudiante vinculado o al personal con permiso departamental explícito. Obtener el usuario efectivo de los claims verificados; ignorar IDs de propietario enviados libremente por el cliente.
+  3. Para noticias, excluir registros retirados/inactivos/fuera de vigencia y aplicar GradoAudiencia/SeccionAudiencia al contexto verificado del usuario.
+  4. Para expedientes y usuarios, comprobar el ámbito académico, institucional o departamental concreto del solicitante. Profesor, Coordinador, Consejeros, Contador y RecursosHumanos no deben recibir automáticamente todos los expedientes/usuarios por figurar en una allowlist; verificar grupos, secciones, responsabilidades y permisos efectivos antes de devolver cada registro. El enmascaramiento de DNI no sustituye el control de acceso.
+  5. Corregir el contrato de filtros: incluir `filterSeccion` en la detección de filtros válidos; aplicar cada filtro únicamente a entidades con ese atributo y no devolver colecciones completas de noticias/trámites cuando la consulta esté vacía y exista otro filtro. Una combinación de filtros nunca debe ampliar el conjunto autorizado.
+  6. Gestionar consultas vacías, parciales y filtros incompletos con una política explícita por entidad. No utilizar `indexOf("")` como coincidencia general para registros que no cumplen los filtros aplicables.
+  7. Mantener las restricciones de acceso al combinar varias entidades y al ordenar/limitar resultados; la paginación o el límite global no debe permitir recuperar registros que no superaron la autorización.
+- **Criterios de Aceptación:**
+  - Un estudiante solo obtiene sus solicitudes y expedientes; un tutor/responsable solo los de estudiantes vinculados mediante una relación verificada y vigente.
+  - Personal docente, coordinación, consejería, contabilidad y RR. HH. solo obtiene los registros incluidos en su ámbito y permisos efectivos; manipular grado, sección, departamento o IDs no amplía el alcance.
+  - Personal administrativo conserva únicamente el acceso global expresamente autorizado para su función.
+  - Noticias fuera de vigencia, retiradas o dirigidas a otra audiencia no aparecen en resultados.
+  - Un usuario no puede consultar solicitudes ajenas cambiando parámetros, enviando filtros vacíos o combinando filtros parciales.
+  - Una consulta vacía con `filterSeccion` u otro filtro produce el comportamiento definido para esa entidad; nunca devuelve noticias/trámites sin filtrar ni omite silenciosamente un filtro válido.
+  - Los filtros de grado/sección/año/estado no se aplican a entidades que carecen de esos campos como si fueran filtros universales; el contrato declara y respeta su ámbito.
+  - Pruebas negativas cubren IDs manipulados, filtros ausentes, vacíos, parciales y combinados, roles con distintos ámbitos y sesión inválida/expirada.
+- **Estado:** [ ] Pendiente.
+
+### [TASK-482] Renderizar resultados del Omnibox mediante salida segura por contexto
+- **Origen del Hallazgo:** AUD-NG-185 en Auditoria.txt (T-UX-06, renderizado de resultados).
+- **Severidad/Clasificación:** Alto / P1.
+- **Archivos Involucrados:** `js/ui-common.js`; revisar el contrato de salida de `backend/user-service/Code.gs`.
+- **Dependencias Expuestas:** `executeOmniboxSearch`, `handleOmniboxResultClick`, `#omnibox-results-container`, respuesta `searchGlobalOmnibox`, campos title/category/subtitle/icon/type/id y descripciones persistidas en `SolicitudesTramites`.
+- **Descripción del Alcance:**
+  1. Eliminar la concatenación de datos no confiables en `innerHTML` y atributos `onclick`.
+  2. Construir el resultado con APIs DOM, `textContent` y `addEventListener`; si se conserva una plantilla HTML, aplicar escape específico para cada contexto.
+  3. Validar `type` contra una allowlist y transportar el ID como dato, no como código ejecutable.
+  4. Tratar también de forma segura la consulta reflejada en el mensaje de cero resultados.
+  5. Mantener el estilo, la insignia de coincidencia exacta y el comportamiento de navegación sin introducir interpretación de marcado.
+- **Criterios de Aceptación:**
+  - Una descripción de trámite que contenga etiquetas HTML, atributos de evento, comillas o secuencias de cierre se muestra como texto inerte.
+  - Ningún campo recibido del backend puede crear nodos ejecutables ni modificar atributos/eventos del contenedor.
+  - Los identificadores y tipos malformados son rechazados o no generan manejadores ejecutables.
+  - La navegación válida continúa funcionando mediante listeners registrados de forma segura.
+  - Pruebas de regresión verifican XSS almacenado y manipulación de atributos en título, subtítulo, categoría, icono, tipo, ID y consulta vacía.
+- **Estado:** [ ] Pendiente.
+
+---
+
+### [TASK-483] Completar el menú lateral responsivo y específico por rol en todos los dashboards
+- **Origen del Hallazgo:** AUD-NG-186 en Auditoria.txt (T-UX-09; reconciliación con T-UX-13 y T-UX-20). Ampliación de evidencia: AUD-NG-194 (T-UX-13, disparador móvil oculto y estado activo/semántica incompletos).
+- **Severidad/Clasificación:** Medio / P2.
+- **Archivos Involucrados:** `js/ui-common.js`, `css/style.css`, dashboards HTML.
+- **Dependencias Expuestas:** `initRoleNavigationMenu`, `openMobileHamburgerDrawer`, `toggleRoleMenuAccordionSection`, `#main-header`, navegación desktop, `#desktop-sidebar-container`, `#btn-desktop-sidebar-toggle`, roles institucionales y rutas de dashboards.
+- **Descripción del Alcance:**
+  1. Sustituir el drawer genérico por una estructura de navegación derivada de la matriz de roles/rutas autorizadas. Separar enlaces comunes, opciones exclusivas por rol y acciones inmediatas.
+  2. Incluir rutas reales para cada dashboard y rol (incluidos Coordinación, Dirección, Secretaría y Desarrollador cuando corresponda); no mostrar secciones completas de otros roles como menú común.
+  3. Implementar una navegación desktop real con su contenedor y control de colapso, o eliminar los controles muertos si la arquitectura elegida es otra.
+  4. Integrar la navegación móvil en los dashboards que usan encabezados alternativos o layouts dinámicos, sin depender exclusivamente de `#main-header`.
+  5. Implementar apertura/cierre y acordeones con transición verificable, cierre por fondo/enlace y respeto a `prefers-reduced-motion`.
+  6. Mantener estado accesible con `aria-expanded`, `aria-controls`, foco y navegación por teclado/táctil.
+  7. Insertar el disparador móvil en un contenedor visible en el viewport objetivo. No anidar un botón `md:hidden` dentro de un `nav.hidden.md:flex` ni depender de un selector ausente.
+  8. Representar las acciones inmediatas (por ejemplo, abrir un modal de gráficas) con controles de acción, no con enlaces `javascript:void(0)`.
+  9. Identificar la ruta activa visual y semánticamente (por ejemplo, `aria-current="page"`) y mantener sincronizado el estado de los acordeones.
+- **Criterios de Aceptación:**
+  - Cada rol solo ve las rutas que le corresponden y dispone de acceso a su dashboard principal.
+  - Coordinación, Dirección, Secretaría y Desarrollador no quedan sin su ruta principal en el menú cuando este sea aplicable.
+  - El menú desktop existe y su control colapsa/expande el contenedor real; no hay listeners asociados a IDs inexistentes.
+  - El drawer se puede abrir, cerrar y recorrer en los dashboards aplicables, incluidos los layouts alternativos definidos en alcance.
+  - En cada dashboard móvil aplicable, el disparador es visible y operable; el estilo de su padre no lo oculta y el botón no queda invisible en escritorio por una combinación contradictoria de clases.
+  - El panel y los acordeones muestran una transición real; con movimiento reducido, la animación se desactiva sin impedir la interacción.
+  - Los controles anuncian su estado expandido/contraído, la ruta activa se anuncia semánticamente y el foco se gestiona al abrir/cerrar.
+  - Las acciones inmediatas son botones y las rutas de navegación son enlaces con destinos válidos.
+  - Pruebas por rol y viewport verifican rutas visibles, rutas reales, ausencia de opciones ajenas y operación con teclado/táctil.
+- **Estado:** [ ] Pendiente.
+
+---
+
+### [TASK-484] Implementar pruebas conductuales automatizadas para las nueve capacidades UX
+- **Origen del Hallazgo:** AUD-NG-187 en Auditoria.txt (T-UX-10, suite UX-01 a UX-09).
+- **Severidad/Clasificación:** Alto / P1 (falsa evidencia de cumplimiento y regresiones no detectadas).
+- **Archivos Involucrados:** `js/ui-common.js`, `js/student.js`, `js/teacher.js`, `js/accounting.js`, dashboards HTML y `tests/regression/`.
+- **Dependencias Expuestas:** `runUXSuiteTests`, `handleSessionExpired`, `trackModalFocus`, `setupUnsavedChangesProtection`, `renderDataFreshnessBadge`, `normalizeSearchString`, Omnibox, eventos `online/offline`, `openReportIssueModal`, `submitProblemReportForm`, `openMobileHamburgerDrawer`, API `fetchApi`, permisos y rutas.
+- **Descripción del Alcance:**
+  1. Sustituir las comprobaciones de presencia (`typeof`) por pruebas que invoquen el comportamiento real y verifiquen efectos observables. Mantener los nueve identificadores UX-01 a UX-09 y asociar cada uno con casos reproducibles.
+  2. Implementar la suite en el entorno de pruebas existente (por ejemplo, un módulo dedicado bajo `tests/regression/`) con DOM/ventana simulados o navegador aislado, dependencias controladas, datos sintéticos, limpieza de listeners/estado y sin llamadas ni escrituras productivas.
+  3. UX-01: probar token ausente, inválido, expirado/revocado y permiso insuficiente; verificar limpieza de sesión, redirección/aviso y que una denegación ordinaria no cierre la sesión. Reutilizar el contrato de AUD-NG-162, sin duplicar su corrección.
+  4. UX-02: disparar Escape con cada tipo de modal/overlay cubierto, verificar cierre correcto, foco devuelto al disparador y que no se cierren vistas ajenas. Relacionar AUD-NG-181.
+  5. UX-03: modificar/restaurar controles, cancelar navegación, guardar con éxito/fallo, resetear y agregar/eliminar campos dinámicos; comprobar cuándo existe realmente estado dirty. Relacionar TASK-479.
+  6. UX-04: probar timestamps válidos, ausentes, futuros e inválidos; estados actualizado/desactualizado/pendiente/error y callback de actualización; una operación fallida no debe renovar la hora. Relacionar TASK-480.
+  7. UX-05: probar mayúsculas, tildes, ñ, puntuación, espacios, cadenas vacías/nulas y equivalencia real en filtros/búsqueda; comprobar también que términos distintos no produzcan coincidencias falsas.
+  8. UX-06: probar apertura por Ctrl+K/Cmd+K, foco, resultados válidos, sin coincidencias, permiso insuficiente, error de servicio, navegación y payloads malformados. Reutilizar TASK-481/TASK-482 y las ampliaciones T-UX-14.
+  9. UX-07: simular eventos offline/online y comprobar el texto/estado visible del indicador y su actualización; no considerar suficiente que `navigator.onLine` exista. Reconciliar T-UX-22.
+  10. UX-08: probar validación de campos, envío válido, confirmación de ticket real simulada, error funcional, rechazo de red, reactivación del botón y conservación de datos al fallar. Reconciliar T-UX-23.
+  11. UX-09: probar navegación por rol y viewport (escritorio/móvil), enlaces/rutas permitidos, acordeones, apertura/cierre y ausencia de rutas ajenas. Relacionar TASK-483 y T-UX-13/T-UX-20.
+  12. Ejecutar los casos sobre fixtures representativos de Estudiante, Docente, Dirección, Recursos Humanos y Contabilidad; incluir diferencias de carga/DOM y scripts entre dashboards.
+  13. El reporte debe distinguir `PASS`, `FAIL`, `SKIPPED` y `BLOCKED`, mostrar caso, resultado esperado/obtenido y error; un caso no ejecutado o bloqueado nunca cuenta como aprobado. Documentar un comando reproducible e integrarlo al mecanismo de regresión/CI disponible.
+- **Criterios de Aceptación:**
+  - Los nueve grupos UX-01 a UX-09 tienen casos conductuales identificables y ejecutables; ninguno se considera aprobado por la sola existencia de una función, archivo o elemento.
+  - Cada grupo contiene escenarios positivos, negativos y de límite pertinentes; las aserciones comprueban estado DOM, eventos, navegación, payloads o respuestas esperadas.
+  - UX-01 diferencia expiración/revocación de permiso insuficiente y prueba limpieza/redirección/aviso sin expulsión indebida.
+  - UX-02 demuestra cierre por Escape y restauración correcta del foco en overlays representativos.
+  - UX-03 demuestra dirty/clean real, navegación cancelada y guardado fallido/exitoso.
+  - UX-04 demuestra timestamp efectivo y que el fallo de actualización no modifica la frescura.
+  - UX-05 demuestra equivalencia de búsqueda y ausencia de falsos positivos.
+  - UX-06 prueba éxito, vacío, autorización denegada, error de servicio y navegación sin ejecutar datos arbitrarios.
+  - UX-07 demuestra cambios visibles al disparar offline/online, no solo soporte de la propiedad del navegador.
+  - UX-08 demuestra validación, confirmación de recepción y recuperación ante fallo sin pérdida de campos.
+  - UX-09 demuestra rutas y controles correctos en los cinco contextos/roles y en ambos viewports.
+  - Las pruebas utilizan datos sintéticos y mocks controlados; no llaman servicios productivos ni generan tickets, cambios académicos o escrituras reales.
+  - El resumen informa por separado aprobadas, fallidas, omitidas y bloqueadas; los errores de configuración/entorno no se convierten en PASS.
+  - Existe una instrucción reproducible para ejecutar la suite y evidencia de su ejecución en el flujo de regresión/CI disponible.
+  - Las pruebas se limpian tras cada caso y pueden repetirse sin depender del orden ni dejar listeners, timers, DOM o almacenamiento contaminado.
+- **Relaciones y límites:** AUD-NG-009 (principio general de pruebas conductuales) es relacionado, pero esta tarea se limita a la suite UX-01..UX-09 de T-UX-10. AUD-NG-162, AUD-NG-181, TASK-479, TASK-480, TASK-481, TASK-482 y TASK-483 mantienen sus causas funcionales propias; TASK-484 debe probarlas y no reemplazarlas ni duplicarlas.
+- **Estado:** [ ] Pendiente.
+
+---
+
+### [TASK-485] Activar un enrutador contextual único con soporte de historial y rutas directas
+- **Origen del Hallazgo:** AUD-NG-188 en Auditoria.txt (T-UX-11, navegación contextual).
+- **Severidad/Clasificación:** Alto / P1.
+- **Archivos Involucrados:** `js/ui-common.js`, `js/teacher.js`, dashboards HTML y módulos de navegación relacionados.
+- **Dependencias Expuestas:** `switchActiveView`, `initNoLoopHistoryManager`, `handlePopState`, `window.navigateTo`, `pushNav`, `popNav`, `syncNavWithState`, `history.pushState`, `history.replaceState`, `popstate`, URL/hash, sesión y permisos efectivos.
+- **Descripción del Alcance:**
+  1. Definir un contrato único de rutas/estados para vistas, secciones de dashboard, navegación jerárquica y overlays; evitar gestores paralelos que no procesen los mismos tipos de estado.
+  2. Garantizar que el consumidor de estados `{view, params}` se inicialice una sola vez antes de aceptar navegación. Actualmente `initNoLoopHistoryManager` está definido, pero no se encontró una invocación en los módulos y páginas inspeccionados.
+  3. Resolver la ruta inicial desde URL/hash al cargar o recargar, además de procesar `popstate`; no depender de que el usuario haya llegado desde otra vista.
+  4. Validar rutas contra un registro de vistas existentes y contra el rol/permisos efectivos. Una ruta inexistente o no autorizada debe mostrar una salida comprensible y no dejar la interfaz en estado ambiguo.
+  5. Unificar o integrar explícitamente la navegación propia de `js/teacher.js` (`navigateTo`, `pushNav`, `popNav`, `syncNavWithState`) con el contrato compartido, sin romper el historial de modales ni crear ciclos de pushState/popstate.
+  6. Integrar las páginas de Dirección, RH, Contabilidad, Estudiante, Docente y los demás dashboards cubiertos por el contrato.
+  7. Reutilizar la diferenciación entre sesión vencida/revocada y permiso insuficiente de AUD-NG-162; la navegación no debe confirmar ni simular una operación guardada ante expiración.
+- **Criterios de Aceptación:**
+  - La inicialización del gestor es explícita, idempotente y ocurre en todos los dashboards que lo requieren.
+  - Abrir una vista y pulsar atrás/adelante restaura la vista correcta; no se ignoran los estados `view` ni se producen bucles de historial.
+  - Una URL directa con ruta/hash válido abre la vista correspondiente tras carga y recarga, sin navegación previa.
+  - Un hash/ruta inexistente o no autorizado produce una vista de error/retorno controlado; nunca un retorno silencioso que mantenga contenido incorrecto.
+  - Los estados de modal, sección, vista y navegación jerárquica no se pisan ni cierran vistas ajenas.
+  - Los paneles de Estudiante, Docente, Dirección, RH y Contabilidad usan el contrato común o un adaptador documentado que garantiza el mismo comportamiento.
+  - Una sesión expirada durante una operación no muestra confirmación de guardado; los errores de permiso conservan la sesión válida.
+  - Pruebas reproducibles cubren carga directa, recarga, atrás/adelante, ruta inválida, acceso denegado, sesión vencida y coexistencia con modales.
+- **Relaciones y límites:** AUD-NG-162 cubre el contrato de expiración; T-UX-13/TASK-483 cubren menú/rutas visibles por rol. TASK-485 se limita al enrutamiento y ciclo de vida del historial, sin duplicar esas correcciones.
+- **Estado:** [ ] Pendiente.
+
+### [TASK-486] Preservar y restaurar el estado real de listas y vistas de detalle al navegar
+- **Origen del Hallazgo:** AUD-NG-189 en Auditoria.txt (T-UX-11, conservación de contexto).
+- **Severidad/Clasificación:** Alto / P1.
+- **Archivos Involucrados:** `js/ui-common.js`, `js/teacher.js`, `js/student.js`, `js/accounting.js` y dashboards HTML.
+- **Dependencias Expuestas:** `VIEW_STATES_CACHE`, `switchActiveView`, `stateParams`, `history.state`, filtros, búsqueda, ordenamiento, paginación, selección, scroll, vistas de detalle y `navStack`.
+- **Descripción del Alcance:**
+  1. Capturar el estado de la vista que se abandona (filtros, consulta, orden, página, pestaña, selección y scroll cuando aplique) antes de cambiar de destino.
+  2. Corregir el contrato de `switchActiveView`: actualmente asigna al caché de la vista saliente el `stateParams` recibido para el destino y, al volver, solo restaura scroll; no consume `cached.params`.
+  3. Restaurar el snapshot al volver desde detalle o mediante atrás/adelante, sin reconstruir la lista con valores por defecto ni ejecutar consultas innecesarias.
+  4. Mantener el estado al abrir una vista de detalle desde una URL directa y al regresar; el flujo no debe depender de una navegación previa.
+  5. Integrar el stack jerárquico de Docente y los estados de listas de Estudiante, Contabilidad, Dirección y RH con el contrato común, o documentar adaptadores con equivalencia comprobable.
+  6. Aislar los snapshots por usuario, rol y vista; evitar persistir datos personales sensibles en URL o almacenamiento no apropiado.
+- **Criterios de Aceptación:**
+  - Desde una lista filtrada y paginada, abrir un registro y regresar conserva exactamente filtros, búsqueda, orden, página, selección y scroll que correspondan.
+  - El snapshot guardado pertenece a la vista saliente y no contiene parámetros del destino.
+  - Al restaurar, se consumen los parámetros almacenados y el contenido coincide con el estado visual.
+  - Abrir un registro directamente y volver conduce a una lista/ubicación de retorno válida o a un fallback explícito.
+  - Los estados de un usuario/rol no se reutilizan para otro usuario/rol.
+  - Pruebas reproducibles cubren cambios de filtros, página, orden, detalle, recarga, atrás/adelante y datos ausentes.
+- **Relaciones y límites:** TASK-485 proporciona el enrutador/historial; TASK-486 implementa snapshot/restauración del contexto de vistas. T-UX-15 cubre filtros/paginación como funcionalidad propia, pero no sustituye la preservación de su estado durante navegación.
+- **Estado:** [ ] Pendiente.
+
+
+---
+
+### [TASK-487] Integrar indicadores operativos reales en los paneles de Estudiante, Docente y Contabilidad
+- **Origen del Hallazgo:** AUD-NG-190 en Auditoria.txt (T-UX-12; consolidación y calidad de los resúmenes por rol).
+- **Severidad/Clasificación:** Alto / P1.
+- **Archivos Involucrados:** `js/student.js`, `student-dashboard.html`, `js/teacher.js`, `teacher-dashboard.html`, `js/accounting.js`, `dashboard-contabilidad.html` y los servicios backend que suministran las métricas académicas, de tareas y financieras.
+- **Dependencias Expuestas:** `consolidateStudentDashboardSummary`, `consolidateTeacherDashboardSummary`, `consolidateAccountingDashboardSummary`, `renderResumenModule`, datos de actividades/entregas, asignaciones docentes, estudiantes, ingresos, egresos, cuentas pendientes y contexto de usuario/período.
+- **Descripción del Alcance:**
+  1. Integrar los tres consolidadores con sus dashboards y fuentes de datos autorizadas. Actualmente cada helper solo aparece declarado en su módulo; no se encontró consumidor que lo invoque ni elementos del HTML que presenten sus resultados.
+  2. Estudiante: construir el resumen desde el modelo real de actividades. El módulo procesa entregas mediante `actividad.entrega.estado`, mientras el helper cuenta pendientes con `!actividad.entregado`; alinear el contrato y diferenciar tareas de exámenes para que el total no mezcle categorías ni clasifique como pendientes actividades ya entregadas/revisadas.
+  3. Docente: obtener y consolidar clases/asignaciones vigentes, estudiantes y entregas que realmente requieren revisión; enlazar cada indicador con la lista o acción correspondiente y respetar las asignaciones del docente autenticado.
+  4. Contabilidad: sustituir el contenido estático de `renderResumenModule` por indicadores alimentados por servicios financieros reales. Integrar el helper contable con las respuestas efectivas de ingresos, egresos, saldo y facturas/cuentas pendientes, sin asumir nombres de campos que el backend no entregue.
+  5. Separar visual y semánticamente indicadores de resumen, avisos, tareas que requieren atención y listas operativas; evitar duplicar en las tarjetas los registros completos de las tablas.
+  6. Distinguir explícitamente valor cero, dato no disponible, carga pendiente y error. No convertir objetos ausentes, respuestas incompletas ni fallos de servicio en métricas de cero.
+  7. Aplicar contexto de usuario, rol, asignación académica, período lectivo/financiero y frescura de los datos; no reutilizar resultados de otro usuario ni de otro período.
+  8. Proporcionar accesos directos funcionales a las tareas prioritarias y verificar que cada destino y acción esté autorizado en servidor.
+- **Criterios de Aceptación:**
+  - Los tres helpers se invocan desde los flujos reales de sus dashboards y sus resultados se muestran en componentes visibles.
+  - El resumen estudiantil distingue tareas, exámenes, pendientes y entregas según los estados reales del modelo; no depende de una propiedad inexistente o desactualizada.
+  - El resumen docente coincide con las clases, estudiantes y entregas que corresponden al docente autenticado y al período activo.
+  - El resumen contable presenta importes y pendientes reconciliables con las respuestas del servicio financiero; no conserva el placeholder textual como panel principal.
+  - Una respuesta vacía válida muestra cero solo cuando el servicio confirma que no existen registros; un error o dato ausente se representa como no disponible.
+  - Los accesos directos conducen a registros/operaciones reales y no a controles decorativos o vistas sin acción.
+  - Pruebas reproducibles cubren usuario sin asignaciones, período sin registros, respuestas parciales, error de servicio, datos obsoletos y valores positivos/cero.
+- **Relaciones y límites:** T-UX-16 cubre el centro de notificaciones y la diferenciación de avisos/tareas/aprobaciones; TAREA-04 cubre optimización de paneles analíticos y tablas extensas. Se reutilizan sus contratos sin duplicar su alcance. TASK-487 se limita a integrar y hacer correctos los resúmenes de Estudiante, Docente y Contabilidad.
+- **Estado:** [ ] Pendiente.
+
+---
+
+### [TASK-488] Completar los indicadores y accesos operativos de Dirección, Coordinación y dashboards dinámicos por rol
+- **Origen del Hallazgo:** AUD-NG-191 en Auditoria.txt (T-UX-12; paneles departamentales y configuración dinámica de responsabilidades).
+- **Severidad/Clasificación:** Alto / P1.
+- **Archivos Involucrados:** `dashboard-direccion.html`, `dashboard-coordinacion.html`, `js/secretary.js`, `js/ui-common.js`, `app/html/dashboards/dynamic-dashboard.html`, `backend/accounting-service/Code.gs`, `backend/academic-service/Code.gs` y `backend/user-service/Code.gs`.
+- **Dependencias Expuestas:** `#pending-approvals-count`, `#approvals-list-container`, `getDiscountScholarshipRequests`, `initCoordinatorDashboard`, `loadCoordinatorDashboardData`, `getCoordinatorOverview`, estados de jornalizaciones/sílabos, `loadDynamicDashboard`, `getUserDynamicDashboardConfig`, catálogo de roles, responsabilidades, módulos y rutas autorizadas.
+- **Descripción del Alcance:**
+  1. Dirección: conectar el contador y la bandeja de aprobaciones con las solicitudes reales de becas/descuentos y sus estados. El HTML conserva el valor inicial cero y el mensaje estático de ausencia de solicitudes; no se encontró consumidor frontend para esos dos elementos. Existe el servicio `getDiscountScholarshipRequests`, que devuelve `solicitudes`, y debe evaluarse/reutilizarse con el contrato y permisos efectivos.
+  2. Coordinación: reemplazar el valor fijo `0 Pendientes` y el mensaje `Todas las jornalizaciones y sílabos están al día` por un cálculo respaldado por estados reales. `getCoordinatorOverview` actualmente devuelve ofertas, asignaciones y horarios, pero no incluye estados de sílabos/jornalizaciones.
+  3. Dashboard dinámico: hacer que la configuración presentada corresponda a las responsabilidades y módulos realmente configurados para el rol. La implementación actual utiliza un mapa fijo de seis roles y asigna `mod_mis_clases`/`mod_mis_horarios` como fallback genérico para cualquier rol no incluido.
+  4. Convertir cada acceso `Acceder` del dashboard dinámico en un control navegable y autorizado hacia una ruta/módulo real. Actualmente se representa como un `span` visual sin enlace ni manejador de navegación.
+  5. Reconciliar los identificadores y alias de roles con los valores realmente persistidos; no asumir que roles con/sin tildes, alias o nombres históricos son equivalentes sin normalización explícita.
+  6. Diferenciar cero real, ausencia de datos, carga y error en todos los indicadores; no declarar que no existen pendientes cuando la fuente no se consulta o no contiene el dato.
+  7. Mantener los accesos y datos limitados por rol, responsabilidad, ámbito departamental y permisos de servidor; la previsualización administrativa no debe conceder permisos ni mostrar datos reales ajenos.
+- **Criterios de Aceptación:**
+  - Dirección muestra el número y detalle de aprobaciones reales; el contador coincide con la bandeja y los cambios de estado se reflejan tras actualizar.
+  - La bandeja no presenta un mensaje estático de ausencia de solicitudes cuando existen registros pendientes, ni confunde error de consulta con una lista vacía.
+  - Coordinación calcula pendientes de sílabos/jornalizaciones a partir de estados consultados; no fija el contador en cero ni declara cumplimiento total sin evidencia.
+  - El dashboard dinámico contempla todos los roles que deban utilizarlo y no asigna módulos docentes por defecto a roles no reconocidos.
+  - Cada módulo mostrado dispone de una ruta real y un acceso funcional autorizado; no quedan tarjetas meramente decorativas.
+  - Los módulos y datos visibles coinciden con las responsabilidades activas del usuario y con la configuración vigente del servidor.
+  - Pruebas reproducibles cubren cada rol soportado, rol desconocido/inactivo, permisos insuficientes, cero registros, pendientes existentes y errores de servicio.
+- **Relaciones y límites:** F8-Task12 (antes TAREA-AD-07) es una ampliación administrativa relacionada, pero su consola de roles no sustituye la implementación de los paneles ni demuestra que los módulos configurados se conviertan en accesos reales. T-UX-13/TASK-483 trata la navegación lateral; T-UX-16 trata notificaciones y aprobaciones. No duplicar sus alcances.
+- **Estado:** [ ] Pendiente.
+
+---
+
+### [TASK-489] Corregir el contrato de datos entre el panel de Recursos Humanos y las solicitudes de vacaciones
+- **Origen del Hallazgo:** AUD-NG-192 en Auditoria.txt (T-UX-12; integridad de indicadores y listas de RR. HH.).
+- **Severidad/Clasificación:** Alto / P1.
+- **Archivos Involucrados:** `dashboard-recursos-humanos.html`, `backend/accounting-service/Code.gs` y, si se centraliza el contrato, `js/api.js` o el adaptador de datos correspondiente.
+- **Dependencias Expuestas:** `loadHRDashboardData`, acción `getLeaveVacationRequests`, wrapper `getVacationRequests`, campos `solicitudes`, `data`, `tipo`, `tipoSolicitud`, `expedienteId`, `userId` y estados de solicitud.
+- **Descripción del Alcance:**
+  1. Unificar el contrato de respuesta de `getLeaveVacationRequests` y su consumidor. El backend devuelve `{status, solicitudes}`, mientras el dashboard valida `resLeaves.data`; por ello la lista y el contador no se actualizan con la respuesta real.
+  2. Alinear los campos representados: el backend entrega `tipo` y `expedienteId`, mientras el HTML intenta leer `tipoSolicitud` y `userId`. No mostrar identificadores o textos genéricos como si fueran el nombre del empleado.
+  3. Alinear los estados de negocio. La creación registra `PendienteAprobacion`, pero el contador compara únicamente con `Pendiente`; normalizar o mapear estados de forma explícita y conservar el estado original para trazabilidad.
+  4. Representar estados vacíos, error, carga y respuesta incompleta por separado; no dejar el cero inicial como si fuera un recuento confirmado.
+  5. Mantener la consulta de RR. HH. y la vista de autoservicio de empleados con contratos distintos y permisos adecuados; no solucionar el problema ampliando exposición de solicitudes de terceros.
+- **Criterios de Aceptación:**
+  - La lista de vacaciones procesa el arreglo que realmente devuelve el backend y muestra los campos correctos.
+  - Las solicitudes en estado pendiente de aprobación se cuentan correctamente, independientemente de la etiqueta interna usada por el backend, mediante un mapeo documentado.
+  - Solicitudes aprobadas/rechazadas no se cuentan como pendientes y se presentan con su estado correcto.
+  - Una respuesta vacía válida muestra cero; un error, ausencia de campo o respuesta malformada muestra un estado de error/no disponible.
+  - Pruebas reproducibles cubren solicitudes pendientes, aprobadas, rechazadas, arreglo vacío, campos incompletos y fallo de servicio.
+- **Relaciones y límites:** T-UX-12 requiere que los indicadores reflejen datos reales y distingan valores no disponibles de cero. TASK-489 corrige exclusivamente el contrato del panel de RR. HH.; la autorización y aislamiento entre empleados se registra por separado en TASK-490.
+- **Estado:** [ ] Pendiente.
+
+---
+
+### [TASK-490] Aislar en servidor los expedientes y solicitudes laborales de cada empleado
+- **Origen del Hallazgo:** AUD-NG-193 en Auditoria.txt (T-UX-12; permisos efectivos y confidencialidad del panel de RR. HH.).
+- **Severidad/Clasificación:** Alto / P1 (exposición de información laboral entre usuarios autenticados).
+- **Archivos Involucrados:** `backend/accounting-service/Code.gs` y pruebas de regresión del servicio de Contabilidad/RR. HH.
+- **Dependencias Expuestas:** `ROLE_PERMISSIONS.Empleado`, `validateRolePermission`, `validateContextualAccess`, `_verifiedUserId`, `getEmployeeRecords`, `getLeaveVacationRequests`, `getVacationRequests`, `ExpedientesLaborales` y `SolicitudesVacaciones`.
+- **Descripción del Alcance:**
+  1. Aplicar aislamiento ABAC en servidor para las consultas de autoservicio laboral. Actualmente el rol `Empleado` tiene permiso para `getEmployeeRecords` y `getLeaveVacationRequests`, pero `validateContextualAccess` solo aplica aislamiento contextual específico a Estudiante/Alumno.
+  2. En `getEmployeeRecords`, vincular la consulta del empleado autenticado con `_verifiedUserId` y resolver su propio expediente en servidor. No permitir que el cliente obtenga todos los expedientes omitiendo filtros ni que consulte otro `userId` o `expedienteId`.
+  3. En `getVacationRequests` (invocado por `getLeaveVacationRequests`), limitar al empleado autenticado a sus propias solicitudes. No confiar en `expedienteId` aportado por el cliente como prueba de titularidad.
+  4. Mantener la consulta global únicamente para los roles administrativos autorizados (por ejemplo, RecursosHumanos) y validar explícitamente la capacidad requerida antes de devolver información de terceros.
+  5. Revisar los campos de salida para no exponer observaciones, motivos u otros datos laborales ajenos a quien consulta; devolver únicamente los datos necesarios para cada vista.
+  6. Registrar y rechazar intentos de manipular IDs de otros empleados sin revelar si el expediente o solicitud existe.
+- **Criterios de Aceptación:**
+  - Un empleado autenticado sin filtros solo obtiene su expediente y sus propias solicitudes; nunca recibe la colección completa.
+  - Cambiar `userId`, `expedienteId` o identificadores de solicitud en el payload no permite leer datos de otro empleado.
+  - Recursos Humanos conserva el acceso global que corresponda a su función y los demás roles solo acceden mediante permisos explícitos.
+  - Las comprobaciones se realizan en el backend con identidad verificada; ocultar controles en el frontend no cuenta como autorización.
+  - Pruebas de regresión cubren empleado A consultando empleado B, filtros ausentes, IDs manipulados, usuario sin expediente, rol RR. HH. autorizado y rol no autorizado.
+  - Las pruebas no utilizan ni exponen datos personales productivos.
+- **Relaciones y límites:** T-UX-12 exige que los servicios respeten los permisos efectivos. TASK-489 corrige el contrato de presentación de solicitudes; TASK-490 corrige la autorización y el aislamiento de datos. No ampliar permisos de RR. HH. ni duplicar las tareas generales de RBAC ya registradas.
+- **Estado:** [ ] Pendiente.
+
+
+---
+
+### [TASK-491] Completar la navegación y la resiliencia funcional del Omnibox
+- **Origen del Hallazgo:** AUD-NG-197, AUD-NG-198, AUD-NG-199 y AUD-NG-200 (T-UX-14, navegación de resultados, atajo contextual, priorización multi-entidad y control de solicitudes asíncronas).
+- **Severidad/Clasificación:** Alto / P1 para la navegación incompleta; Medio / P2 para atajos, priorización y resiliencia.
+- **Archivos Involucrados:** `js/ui-common.js`; revisar contratos/rutas de `backend/user-service/Code.gs`, módulos de destino y `tests/regression/`.
+- **Dependencias Expuestas:** `openGlobalOmniboxModal`, `closeGlobalOmniboxModal`, `executeOmniboxSearch`, `handleOmniboxResultClick`, listener global `keydown`, `fetchApi`, `searchGlobalOmnibox`, tipos `student_file`, `user`, `news`, `request`, rutas de dashboards/módulos y contenedor `#omnibox-results-container`.
+- **Descripción del Alcance:**
+  1. Mantener Ctrl+K/Cmd+K sin interceptar escritura ni atajos legítimos cuando el foco esté en input, textarea, select, elementos contenteditable, composición IME u otro contexto editable. Evitar aperturas repetidas por key-repeat y no cancelar eventos ajenos al Omnibox.
+  2. Definir un mapa explícito y validado de tipo de resultado a destino real. Los tipos `news` y `request` deben abrir el registro correcto por su identificador y contexto; no basta con cerrar el modal y mostrar un toast. El tipo `user` no debe tratarse automáticamente como expediente estudiantil si su naturaleza/destino es distinto.
+  3. Mantener la navegación segura para resultados válidos y rechazar tipos o destinos desconocidos sin presentar una navegación ficticia. Reutilizar la salida segura y la validación de datos exigidas por TASK-482.
+  4. Aplicar una estrategia global de relevancia y límites por entidad antes del corte final. Los expedientes no deben ocupar todos los primeros 20 lugares e impedir que usuarios, noticias o trámites pertinentes aparezcan; preservar coincidencias exactas y criterios de orden definidos.
+  5. Evitar que una respuesta de una consulta anterior sobrescriba los resultados de una consulta más reciente. Usar cancelación o identificador de solicitud/consulta y actualizar el DOM únicamente con la respuesta vigente.
+  6. Si `fetchApi` no existe, falla la configuración o la solicitud no puede iniciarse, sustituir el indicador de carga por un estado de error recuperable y liberar el estado de espera. No dejar el Omnibox indefinidamente en “Buscando resultados”.
+  7. Incorporar pruebas conductuales reproducibles para atajos en campos editables, navegación de cada tipo, orden y límite multi-entidad, respuestas fuera de orden, ausencia de `fetchApi`, error de red y recuperación. Reconciliar con TASK-484 para no duplicar el framework general de pruebas UX.
+- **Criterios de Aceptación:**
+  - Ctrl+K/Cmd+K abre el Omnibox desde contextos no editables y no roba la escritura ni interrumpe composición/edición dentro de controles.
+  - Cada tipo de resultado permitido abre el módulo y registro correctos; noticias y trámites no se limitan a un mensaje informativo.
+  - Los tipos no reconocidos no ejecutan navegación arbitraria ni anuncian éxito.
+  - Una búsqueda multi-entidad relevante conserva representación de las entidades autorizadas; el límite global no excluye sistemáticamente categorías por el volumen de expedientes.
+  - Al escribir consultas consecutivas, solo la respuesta correspondiente a la última consulta modifica los resultados visibles.
+  - La ausencia de `fetchApi`, un fallo de red o una respuesta inválida producen un estado visible de error y permiten volver a intentar.
+  - Los casos positivos, negativos y de concurrencia quedan cubiertos por pruebas conductuales; los casos no ejecutados no cuentan como aprobados.
+- **Relaciones y límites:** TASK-481 resuelve autorización/alcance de datos; TASK-482 resuelve XSS y salida segura; TASK-484 define pruebas conductuales UX-01..UX-09. TASK-491 cubre navegación y resiliencia del consumidor Omnibox sin duplicar esos alcances.
+- **Estado:** [ ] Pendiente.
+
+
+---
+### [TASK-492] [T-UX-18 / AUD-NG-208] [P2] Normalizar los campos y estados visuales de formularios compartidos
+- **Origen del Hallazgo:** Auditoria.txt (AUD-NG-208), auditoría T-UX-18, C1.61.
+- **Severidad/Clasificación:** Medio / P2 (inconsistencia visual y funcional entre formularios equivalentes).
+- **Archivos Involucrados:**
+  - `js/ui-common.js` (contrato/helper compartido de campo, si corresponde).
+  - `css/style.css` (tokens y estilos comunes de campo/estado).
+  - Formularios consumidores en `student-dashboard.html`, `teacher-dashboard.html`, `js/accounting.js`, `dashboard-recursos-humanos.html`, `dashboard-secretaria.html` y demás vistas equivalentes que se identifiquen en el inventario.
+- **Dependencias Expuestas:** tokens CSS institucionales; controles HTML `label/input/select/textarea`; atributos `required/disabled/readonly`; estados de validación; T-UX-19 (semántica accesible); TASK-130 (ayudas contextuales); TASK-307 (reglas de validación de negocio); TASK-430 (sistema de diseño institucional).
+- **Descripción del Alcance:**
+  1. Definir un contrato común de presentación para etiquetas, controles y mensajes de validación de campos, sin trasladar al frontend reglas de negocio que pertenecen al backend.
+  2. Unificar estados visuales default, focus, required/optional, disabled/readonly, invalid/error y valid/success para input, select y textarea, respetando el tipo nativo y la validación HTML.
+  3. Proporcionar un patrón consistente para texto de ayuda y mensajes de error; no sustituir etiquetas por placeholders ni duplicar el catálogo de ayudas de TASK-130.
+  4. Migrar formularios equivalentes de los paneles principales a las clases/contrato común y retirar divergencias locales solo cuando no alteren la lógica ni el diseño funcional del módulo.
+  5. Coordinar las asociaciones label/control y error/control con los requisitos semánticos de T-UX-19, sin considerar el estilo visual como sustituto de accesibilidad.
+  6. Mantener compatibilidad con temas institucionales y diseño responsivo.
+- **Criterios de Aceptación:**
+  - Campos equivalentes en Estudiante, Docente, Contabilidad, RR. HH. y Secretaría comparten las mismas reglas de espaciado, tipografía, bordes y estados.
+  - Los estados inválido/error y válido/éxito son distinguibles y consistentes; el mensaje no depende de alertas improvisadas ni de placeholders.
+  - Campos requeridos, opcionales, deshabilitados y solo lectura se diferencian de forma uniforme sin cambiar sus reglas de negocio.
+  - La validación HTML existente sigue funcionando y los errores de backend se presentan con el patrón común.
+  - Las pruebas reproducibles cubren input/select/textarea, required, disabled, readonly, invalid, mensajes, teclado y viewports representativos.
+  - Las pruebas no modifican datos productivos ni debilitan las validaciones del backend.
+- **Relaciones y límites:** TASK-130 cubre ayudas permanentes y descripciones; TASK-307 cubre motor/reglas de validación de formularios institucionales; TASK-430 cubre sistema visual general; T-UX-19 cubre etiquetas y asociación semántica. TASK-492 se limita al contrato visual/funcional compartido de campos en los formularios generales; no duplica esas tareas.
+- **Estado:** [ ] Pendiente.
+
+
+---
+### [TASK-493] [T-UX-18 / AUD-NG-209] [P1] Completar e integrar de forma segura el modal compartido de detalle
+- **Origen del Hallazgo:** Auditoria.txt (AUD-NG-209), auditoría T-UX-18, C1.61.
+- **Severidad/Clasificación:** Alto / P1 (componente de detalle incompleto y riesgo de inyección al renderizar datos no confiables).
+- **Archivos Involucrados:**
+  - `js/ui-common.js` (`renderSharedDetailViewModal`, `trackModalFocus` y consumidores de vistas de detalle).
+  - `css/style.css` (estados visuales del modal compartido cuando corresponda).
+  - Vistas/listados consumidores y `tests/regression/`.
+- **Dependencias Expuestas:** `window.renderSharedDetailViewModal(config)`; `window.trackModalFocus`; `modalId/title/subtitle/badgeText/badgeColor/fields`; callbacks de acciones; identificador estable del registro; modal `role=dialog`; navegación y contexto de listas; T-UX-19; TASK-482; TASK-484; TASK-486.
+- **Descripción del Alcance:**
+  1. Definir y documentar un contrato de configuración validado que incluya los campos de detalle y una colección explícita de acciones permitidas, con etiqueta, estado y callback que reciba el ID/dato del registro correcto.
+  2. Reemplazar la concatenación de valores de configuración no confiables en `innerHTML` y handlers inline por construcción DOM segura (`textContent`, atributos controlados y `addEventListener`) o escape específico y probado por contexto. Validar `modalId` y restringir colores/variantes a una allowlist.
+  3. No ejecutar IDs, títulos, valores, colores ni datos del backend como código/atributos; las operaciones sensibles deben seguir verificando autorización en servidor.
+  4. Implementar cierre coherente por botón, fondo y Escape, foco inicial/retorno del foco y ciclo de vida sin listeners duplicados. Coordinar la semántica completa de teclado/diálogo con T-UX-19.
+  5. Integrar el componente en flujos reales de detalle de al menos dos módulos con datos sintéticos y acciones ligadas a IDs estables; coordinar el snapshot/restauración de la lista con TASK-486.
+  6. Incorporar estados de contenido vacío y error cuando la consulta de detalle sea parte del contrato del consumidor; no presentar un detalle vacío como registro válido.
+- **Criterios de Aceptación:**
+  - Títulos, subtítulos, etiquetas y valores que contengan HTML, comillas, atributos de evento o secuencias de cierre se muestran como texto inerte.
+  - Valores de `badgeColor` y `modalId` no pueden alterar clases, atributos ni handlers fuera de las opciones permitidas.
+  - Cada acción recibe el identificador del registro que originó el modal; dos registros abiertos sucesivamente no comparten accidentalmente callbacks ni IDs.
+  - El modal abre, cierra por botón/fondo/Escape y devuelve el foco al disparador; no acumula listeners ni deja overlays activos.
+  - Al navegar desde un listado a detalle y regresar, la restauración del estado se delega al contrato de TASK-486 sin sobrescribir filtros/página de la vista saliente.
+  - Pruebas de regresión reproducibles cubren payloads malformados, XSS, acciones con IDs diferentes, doble apertura, cierre y foco. Usan DOM/fixtures controlados y no mutan datos productivos.
+- **Relaciones y límites:** TASK-482 cubre salida segura del Omnibox; TASK-486 cubre snapshots/restauración de listas; T-UX-19 cubre accesibilidad general; TASK-484 cubre el framework de pruebas UX. TASK-493 se limita al modal compartido de detalle y su integración; no duplica esos alcances.
+- **Estado:** [ ] Pendiente.
+
+---
+### [TASK-494] [T-UX-20 / AUD-NG-212 / AUD-NG-213] [P2] Normalizar la adaptación responsiva y la jerarquía de capas de modales y overlays móviles
+- **Origen del Hallazgo:** Auditoría de T-UX-20, C1.63; Auditoria.txt (AUD-NG-212 y AUD-NG-213).
+- **Severidad/Clasificación:** Medio / P2 (controles de diálogos parcialmente cubiertos por navegación fija y contenido de formularios que puede exceder el viewport).
+- **Archivos Involucrados:**
+  - css/style.css (jerarquía z-index, barra inferior móvil y reglas compartidas de overlays).
+  - js/ui-common.js (ciclo de apertura/cierre de overlays y coordinación de capas, si corresponde).
+  - index.html, student-dashboard.html y demás vistas que contengan modales extensos.
+  - tests/regression/ (pruebas reproducibles de viewport y stacking).
+- **Dependencias Expuestas:** .mobile-bottom-nav; profile-modal; voucher-modal; submission-modal; news-detail-modal; overlays fixed/inset; z-index; max-height; overflow-y; safe-area-inset; TASK-258 (foco y accesibilidad); TASK-483 (drawer); TASK-493 (modal compartido de detalle); TASK-484 (pruebas UX).
+- **Descripción del Alcance:**
+  1. Definir una jerarquía común y verificable entre navegación fija inferior, drawer y diálogos. Mientras un modal esté abierto, la barra inferior no debe quedar visualmente por encima del overlay ni interceptar los clics/taps de sus controles; ocultarla/inertizarla o situar el diálogo en una capa superior mediante un contrato consistente.
+  2. Adaptar los modales con formularios largos (incluidos los de perfil y comprobantes) al alto útil del viewport móvil. Aplicar altura máxima apropiada, desplazamiento vertical dentro del contenido del diálogo y mantener accesibles el título, cierre y acciones principales.
+  3. Evitar que el desplazamiento del documento de fondo sustituya al desplazamiento interno del modal. Considerar áreas seguras del dispositivo y cambios de viewport/orientación sin dejar controles detrás de barras fijas.
+  4. Aplicar las reglas a las vistas que usan los modales compartidos y los modales declarados directamente en HTML, sin alterar los contratos funcionales, validaciones o permisos de cada módulo.
+  5. Coordinar la gestión de foco y cierre con TASK-258/TASK-493; esta tarea se limita a dimensiones, scroll, capas y operabilidad responsiva, no sustituye la accesibilidad semántica ni la seguridad del modal compartido.
+  6. Añadir pruebas de regresión aisladas con fixtures sintéticos para stacking, apertura/cierre, scroll interno y visibilidad de acciones en viewports móviles y orientación horizontal.
+- **Criterios de Aceptación:**
+  - Ninguna barra inferior, drawer u otro control flotante cubre ni intercepta acciones de un modal abierto.
+  - Los modales extensos permanecen dentro del viewport útil y permiten recorrer todo su contenido sin que el botón de guardar/cancelar o el control de cierre quede inaccesible.
+  - El scroll se produce dentro del contenido del modal y no deja el fondo desplazándose de forma independiente.
+  - No hay desbordamiento horizontal crítico ni recorte vertical de contenido en viewports representativos de 320x568, 360x640 y 390x844, tanto en retrato como en paisaje.
+  - La jerarquía de capas se conserva al abrir overlays anidados y al cerrar el superior; no quedan barras o overlays huérfanos.
+  - Las pruebas verifican el estado DOM/estilos y la interacción táctil/teclado con datos sintéticos, sin escrituras productivas.
+  - Las pruebas distinguen PASS, FAIL, SKIPPED y BLOCKED; un viewport no ejecutado no se cuenta como aprobado.
+- **Relaciones y límites:** TASK-483 cubre el menú/drawer por rol; TASK-429 cubre tablas y modo móvil; TASK-492 cubre campos; TASK-493 cubre seguridad, acciones e integración del modal compartido de detalle; TASK-258 cubre foco y accesibilidad; TASK-484 cubre pruebas UX-01..09. TASK-494 se limita a la adaptación física/visual y jerarquía de capas de modales/overlays móviles, sin duplicar esas tareas.
+- **Estado:** [ ] Pendiente.
+
+---
+### [TASK-495] [AUD-NG-214] [P2] Separar el estado de conectividad del dispositivo, disponibilidad de servicios y presencia de usuario
+- **Origen del Hallazgo:** Auditoría de T-UX-22, C1.65; ampliación de UX-07 en AUD-NG-187/TASK-484.
+- **Prioridad:** P2.
+- **Severidad/Clasificación:** Medio (el indicador presenta conectividad de red como estabilidad general del servicio).
+- **Archivos Involucrados:**
+  - js/ui-common.js (updateOnlineBadge y #online-status-badge).
+  - js/api.js (consumo del resultado de health checks verificados, coordinado con AUD-NG-144).
+  - Vistas que cargan ui-common.js y contextos donde se muestre el indicador.
+  - tests/regression/ (integración con UX-07 de TASK-484).
+- **Dependencias Expuestas:** navigator.onLine; eventos window online/offline; window.updateOnlineBadge; window.checkMicroserviceHealth; window.checkAllMicroservicesHealth; SERVICE_REGISTRY; AUD-NG-144 (health checks reales de servicios); TASK-484 (pruebas UX-01..09); #online-status-badge.
+- **Descripción del Alcance:**
+  1. Diferenciar explícitamente conectividad del navegador/dispositivo de disponibilidad real de Internet y de cada servicio backend. navigator.onLine y los eventos online/offline solo representan el estado de red que expone el navegador; no deben presentarse por sí solos como prueba de que USER/ACADEMIC/TASK/EXAM u otros servicios responden.
+  2. Cambiar etiquetas ambiguas como “Conexión Estable” por estados que describan exactamente lo medido (por ejemplo, “Red disponible” / “Sin conexión de red”). Mantener la disponibilidad del backend como una dimensión independiente.
+  3. Consumir únicamente resultados reales de health check autenticado para mostrar disponibilidad/degradación/indisponibilidad de servicios. Si no hay medición, mostrar “Estado del servicio no verificado” o equivalente; nunca inferir disponibilidad desde navigator.onLine ni desde fallback/success simulado. La cobertura completa de microservicios se delega a AUD-NG-144, sin duplicarla.
+  4. Diferenciar estado local de conectividad de estados de cola (pendiente/en proceso/sincronizado/error). No afirmar “Modo Local” como capacidad operativa completa si el contexto no garantiza que las operaciones offline estén habilitadas y preservadas.
+  5. No representar presencia de usuario a partir de conectividad. Solo mostrar presencia si existe una señal explícita, vigente y autorizada (por ejemplo, heartbeat/sesión gestionada en servidor); si no existe, omitir esa dimensión.
+  6. Actualizar los estados en eventos online/offline y tras resultados de health check; evitar timers obsoletos que oculten una notificación de estado más reciente. Mantener el indicador discreto y coordinar capas/posición con TASK-494.
+  7. Integrar UX-07 con pruebas conductuales de pérdida/recuperación de red, respuesta y fallo del servicio, estado desconocido y ausencia de presencia. Reutilizar TASK-484; no crear una suite paralela.
+- **Criterios de Aceptación:**
+  - El indicador de red no afirma que el backend esté estable cuando solo navigator.onLine es true.
+  - La disponibilidad de servicio se presenta como disponible/degradada/no disponible/no verificada, basada en health check real y timestamp de medición.
+  - Los eventos offline/online actualizan la dimensión de red sin marcar automáticamente el backend como saludable ni sincronizar datos como completados.
+  - Los estados de cola offline y el resultado de la sincronización permanecen separados del estado de conectividad.
+  - No se muestra presencia de usuario sin una señal explícita, vigente y autorizada.
+  - UX-07 prueba eventos offline/online y estados visibles; pruebas de servicio usan respuestas sintéticas aisladas, sin llamadas ni escrituras productivas.
+  - El indicador mantiene presentación discreta y no tapa controles prioritarios; la jerarquía de overlays se coordina con TASK-494.
+- **Relaciones y límites:** AUD-NG-144 cubre la implementación/cobertura de health checks reales de microservicios; TASK-484 cubre la infraestructura y pruebas conductuales UX-07; TASK-494 cubre capas/controles flotantes; las tareas de cola offline cubren persistencia, reintentos e idempotencia. TASK-495 se limita al significado, separación e integración visual de los estados; no duplica health checks ni motor de sincronización.
+- **Estado:** [ ] Pendiente.
+
+
+### [AUD-NG-217] Restringir perfiles, vínculos familiares y trámites al ámbito docente autenticado
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-217 (TAREA-F4-P0-02, C1.73).
+- **Severidad/Clasificación:** Crítico · P0 · Seguridad · IDOR · Protección de datos personales.
+- **Archivos Involucrados:** backend/user-service/Code.gs.
+- **Dependencias Expuestas:** ROLE_PERMISSIONS["Profesor"], validateContextualAccess, getUserInfo, getGuardianStudents, getAdministrativeRequests, submitAdministrativeRequest, getMyAssignedSections, getMyTeachingAssignments, AsignacionesDocentes, RelacionesFamiliares.
+- **Descripción del Alcance:** El rol Profesor tiene permiso para getUserInfo, getGuardianStudents, getAdministrativeRequests y submitAdministrativeRequest. validateContextualAccess en USER solo aplica controles específicos a Estudiante/Alumno y Padre/Tutor/Responsable; no valida asignaciones docentes. Los handlers aceptan userId, targetUserId o userIdResponsable del payload sin comprobar que el estudiante pertenezca a las secciones/asignaturas activas del profesor. Esto permite consultar perfiles (correo, teléfono, personaId), obtener estudiantes vinculados a cualquier tutor y leer/crear trámites en nombre de usuarios ajenos.
+- **Criterios de Aceptación:** El servidor deriva el ámbito del profesor desde asignaciones activas; getUserInfo solo devuelve perfiles dentro del ámbito autorizado; getGuardianStudents solo permite consultar tutores de estudiantes asignados; getAdministrativeRequests solo devuelve solicitudes propias o de estudiantes asignados; submitAdministrativeRequest deriva el solicitante desde claims y valida el estudiante objetivo; manipular IDs no amplía el acceso; se prueban casos de profesor asignado/no asignado, otro profesor, otro tutor y otro estudiante.
+- **Estado:** [ ] Pendiente
+
+### [TASK-496] [TAREA-F4-P0-02] [P0] Restringir perfiles, tutores y trámites al ámbito docente autenticado
+- **Prioridad:** P0 (Crítica).
+- **Componentes Afectados:** backend/user-service/Code.gs; hojas AsignacionesDocentes y RelacionesFamiliares.
+- **Origen del Hallazgo:** AUD-NG-217 / TAREA-F4-P0-02.
+- **Dependencias Principales:** validateContextualAccess, ROLE_PERMISSIONS, getUserInfo, getGuardianStudents, getAdministrativeRequests, submitAdministrativeRequest, asignaciones activas de profesor.
+- **Problema Detectado:** Los handlers autorizados para Profesor confían en identificadores de usuario/tutor/estudiante enviados por el cliente y no limitan la consulta/escritura a estudiantes asignados al docente.
+- **Requisitos de Corrección:** Derivar el profesor desde claims verificados; recuperar asignaciones activas y matrículas vigentes; restringir perfiles, vínculos de tutores y trámites al ámbito docente; derivar el solicitante de trámites desde el token; rechazar IDs ajenos y registrar intentos.
+- **Criterios de Aceptación:** No se puede consultar el perfil ni tutor de un estudiante fuera del ámbito asignado; no se pueden leer ni crear trámites en nombre de otro usuario; pruebas negativas de IDOR con IDs válidos de otro estudiante, otro tutor y otro profesor; roles administrativos mantienen solo los permisos explícitos que correspondan.
+- **Estado:** [ ] Pendiente
+
+
+### [AUD-NG-218] Hacer atómico y limitar por origen el control de intentos de autenticación
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-218 (TAREA-F4-P0-04, C1.75).
+- **Severidad/Clasificación:** Crítico (P0) · Seguridad · Autenticación · Fuerza bruta y denegación de servicio.
+- **Archivos Involucrados:** backend/user-service/Code.gs.
+- **Dependencias Expuestas:** loginUser, Usuarios (columnas 11-13), LockService, contador de intentos fallidos, estado Bloqueada, ALLOWED_ACCOUNT_STATE_TRANSITIONS.
+- **Descripción del Alcance:** loginUser lee el contador de fallos y después lo incrementa/escribe sin exclusión mutua ni operación atómica. Solicitudes concurrentes pueden leer el mismo valor y sobrescribir incrementos, debilitando el umbral de bloqueo. La protección se limita a cinco contraseñas incorrectas para una cuenta existente; no hay ventana temporal, espera progresiva ni limitación de frecuencia por origen confiable. Un tercero puede provocar el bloqueo persistente de una cuenta conocida con cinco intentos y el endpoint no aplica una política de desbloqueo temporal. Las solicitudes con credenciales ausentes y los identificadores inexistentes tampoco consumen un límite por origen.
+- **Criterios de Aceptación:**
+  - El incremento y la evaluación del contador son atómicos bajo concurrencia; no se pierden intentos simultáneos.
+  - Se aplica una política configurable por cuenta y ventana temporal, con espera progresiva o bloqueo temporal y recuperación segura.
+  - Se limita también el volumen de solicitudes por origen solo cuando exista una señal obtenida de forma confiable en servidor; no confiar en IP, fingerprint o deviceId arbitrarios del payload.
+  - Las respuestas externas no permiten enumerar cuentas ni distinguir contraseña incorrecta, cuenta bloqueada o identificador inexistente.
+  - Las solicitudes incompletas, identificadores inexistentes y cuentas bloqueadas quedan sujetas a límites contra abuso sin filtrar información sensible.
+  - El bloqueo automático actualiza e invalida el estado de cuenta mediante el flujo coordinado de AUD-NG-005.
+  - Pruebas aisladas cubren umbral, ventana, recuperación, concurrencia, solicitudes paralelas, cuenta inexistente, credenciales ausentes, cuenta bloqueada y resistencia a denegación de servicio por bloqueo inducido.
+- **Relaciones y límites:** AUD-NG-145 conserva el alcance de bitácoras, sanitización y trazabilidad; AUD-NG-005 conserva la propagación/invalidez del estado Bloqueada; AUD-NG-159 conserva la protección de logout/revocación. AUD-NG-218 se limita a atomicidad, rate limiting y política antiabuso; no duplica esas tareas.
+- **Estado:** [ ] Pendiente
+
+### [TASK-497] [TAREA-F4-P0-04] [P0] Aplicar control atómico y límites antiabuso al inicio de sesión
+- **Prioridad:** P0 (Crítica).
+- **Componentes Afectados:** backend/user-service/Code.gs; almacenamiento de intentos de autenticación; configuración institucional de seguridad.
+- **Origen del Hallazgo:** AUD-NG-218 / TAREA-F4-P0-04.
+- **Dependencias Principales:** loginUser, LockService, contador de fallos por cuenta, estado Bloqueada, ALLOWED_ACCOUNT_STATE_TRANSITIONS y AUD-NG-005.
+- **Problema Detectado:** El contador de intentos se actualiza sin exclusión mutua; no existe límite temporal ni por origen confiable. Cinco intentos pueden bloquear de forma persistente una cuenta y las solicitudes concurrentes pueden sobrescribir incrementos.
+- **Requisitos de Corrección:** Hacer atómico el read-modify-write del contador; definir ventanas, umbrales, espera progresiva y recuperación; limitar solicitudes por origen solo con metadatos confiables del servidor; impedir enumeración y bloqueo abusivo de cuentas; coordinar el cambio de estado con invalidación verificable.
+- **Criterios de Aceptación:** Las pruebas concurrentes demuestran que no se pierden incrementos; el límite se aplica a intentos secuenciales y paralelos; la política temporal permite recuperación controlada; un atacante no puede bloquear indefinidamente cuentas ajenas sin controles adicionales; las respuestas mantienen un mensaje genérico; el estado de cuenta se propaga conforme a AUD-NG-005.
+- **Estado:** [ ] Pendiente
+
+
+### [AUD-NG-219] Restringir el alcance, la autoridad y la trazabilidad de las delegaciones de seguridad
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-219 (TAREA-F4-P1-01, C1.76).
+- **Severidad/Clasificación:** Alto (P1) · Seguridad · Escalada de privilegios · ABAC.
+- **Archivos Involucrados:** backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; js/ui-common.js.
+- **Dependencias Expuestas:** createSecurityDelegation, getSecurityDelegations, revokeSecurityDelegation, hasActiveDelegationForAction, validateRolePermission, ROLE_PERMISSIONS, dynamic_permissions_matrix, DelegacionesSeguridad, campo ambito y accionesAutorizadas.
+- **Descripción del Alcance:** createSecurityDelegation valida campos obligatorios y rango temporal, pero no limita acciones delegables ni comprueba que el delegante tenga autoridad efectiva para conceder cada acción. Permite acciones arbitrarias y el comodín "*". El campo ambito se guarda en DelegacionesSeguridad, pero los tres hasActiveDelegationForAction (USER/ACADEMIC/ACCOUNTING) no lo leen ni lo aplican: autorizan por acción, sin comprobar recurso, alumno, departamento u otro ámbito. validateRolePermission consulta la delegación incluso después de que la matriz dinámica devuelve false, de modo que una delegación puede sobreponerse a una denegación explícita. Si una delegación concede createSecurityDelegation, el delegado puede crear otra; el handler usa el usuario ejecutor como nuevo delegante y no conserva la cadena/origen delegado. En js/ui-common.js no se encontraron llamadas a createSecurityDelegation, getSecurityDelegations ni revokeSecurityDelegation: el modal de usuarios solo cambia estado de cuenta y el panel de seguridad muestra un contador, sin flujo para crear, listar o revocar delegaciones.
+- **Criterios de Aceptación:**
+  - Validar que el delegante pueda conceder cada acción solicitada y que el delegado exista, esté activo y tenga la identidad vigente.
+  - Definir lista permitida de acciones delegables; bloquear comodines y acciones administrativas críticas salvo política explícita con aprobación reforzada.
+  - Aplicar ambito en cada microservicio y en el handler del recurso; una delegación de una acción no debe autorizar recursos fuera del ámbito concedido.
+  - Definir si una delegación puede sobreponerse a una denegación de matriz; la excepción debe ser explícita, acotada y auditable, nunca implícita.
+  - Impedir delegación en cadena/circular no autorizada, especialmente la delegación de createSecurityDelegation y revokeSecurityDelegation.
+  - Conservar en cada operación titular original, ejecutor real, delegaciónId y cadena autorizada; no sustituir al delegante original por un delegado intermedio.
+  - Incorporar en js/ui-common.js flujos funcionales de creación, consulta y revocación con acciones, ámbito, fechas, motivo, estado y confirmación.
+  - Distinguir delegaciones programadas, activas, expiradas y revocadas en la consulta y la interfaz.
+  - Probar acciones permitidas/denegadas, wildcard, ámbito de estudiante/departamento, delegación en cadena, usuario inactivo, inicio futuro, expiración, revocación y ejecución en USER/ACADEMIC/ACCOUNTING.
+- **Relaciones y límites:** AUD-NG-160 cubre vigencia de roles, TTL e invalidación de cachés de seguridad; AUD-NG-217 cubre IDOR/ámbito docente; TAREA-F4-P1-04 y sus hallazgos cubren el marco RBAC/ABAC general. TASK-228/TASK-282/TASK-311 tratan delegaciones de workflows/responsabilidades, no este motor de permisos de seguridad. AUD-NG-219 se limita a autoridad, alcance, cadenas y UI de delegaciones de seguridad.
+- **Ampliación C1.84 / TAREA-F4-P1-09:** \`getSecurityAndComplianceDashboardData\` (USER 4454-4538) llama \`getSecurityDelegations({ statusFilter: "ACTIVA" })\` sin reenviar \`sessionToken\` ni otro token. \`getSecurityDelegations\` (1803-1859) invoca \`getUserVerifiedRole(payload)\`, que devuelve \`NO_ACCESS\` sin token, y obtiene \`callerId\` de \`payload._verifiedUserId\`; además, su contrato lee \`estado\`, no \`statusFilter\`. Para un Director la llamada interna no tiene identidad verificada y la consulta no devuelve delegaciones, por lo que \`activeDelegationsCount\` queda en cero aunque existan registros. Se aclara la observación C1.76 sobre el filtro: el defecto actual más inmediato es la pérdida del contexto autenticado; la discrepancia de nombre del filtro persiste. La corrección del motor y de su UI de ciclo de vida sigue en AUD-NG-219/TASK-498; este registro solo cubre la consulta/indicador del panel.
+- **Ampliación C1.87 / TAREA-F4-P2-03:** Revalidado: el modal administrativo solo renderiza directorio y acción de cambio de estado; no invoca `createSecurityDelegation`, `getSecurityDelegations` ni `revokeSecurityDelegation`, ni ofrece flujos para crear/listar/revocar delegaciones. Se mantiene dentro del alcance de AUD-NG-219/TASK-498; no duplicar.
+- **Ampliación C1.88 / TAREA-F4-P2-04:** Revalidado en USER: `revokeSecurityDelegation` (2276-2314) no adquiere LockService para leer-validar-escribir la revocación; `getSecurityDelegations` (1803-1859) modifica estado a Expirada mediante setValue durante una consulta sin candado. Estas rutas no se coordinan con el lock que sí usa `createSecurityDelegation`, por lo que las transiciones concurrentes pueden competir. Se amplía el hallazgo de ciclo de vida de delegaciones; no crear ID duplicado.
+- **Ampliación C1.90 / TAREA-F4-P3-01:** `generatePrivilegeAndAccountAuditReport` (USER 4415-4440) consulta delegaciones mediante `getSecurityDelegations({statusFilter:"ACTIVA"})`. El handler espera `estado`, no `statusFilter`; además, la llamada interna descarta el payload autenticado y no pasa sessionToken/_verifiedUserId. `getUserVerifiedRole` devuelve NO_ACCESS y el filtro de titular/delegado elimina todas las filas, por lo que `delegacionesSeguridadVigentes` resulta 0. Se amplía el defecto de consulta/estado de delegaciones; no duplicar.
+- **Ampliación C1.92 / TAREA-F4-P3-03:** `auditAndReconcileIdentityInconsistencies` (USER 4151-4235) revoca delegaciones huérfanas escribiendo directamente `DelegacionesSeguridad!H`, sin invocar `revokeSecurityDelegation`, sin eliminar `active_delegations_<delegadoId>` y sin adquirir lock. La caché de autorización puede seguir reflejando la delegación hasta expirar; la operación también puede competir con creación/revocación. Se amplía el hallazgo de ciclo de vida de delegaciones, sin ID duplicado.
+- **Estado:** [ ] Pendiente
+
+### [TASK-498] [TAREA-F4-P1-01] [P1] Aplicar límites de autoridad y ámbito al motor de delegaciones
+- **Prioridad:** P1 (Alta).
+- **Componentes Afectados:** backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; js/ui-common.js; hoja DelegacionesSeguridad.
+- **Origen del Hallazgo:** AUD-NG-219 / TAREA-F4-P1-01.
+- **Dependencias Principales:** createSecurityDelegation, getSecurityDelegations, revokeSecurityDelegation, hasActiveDelegationForAction, validateRolePermission, ROLE_PERMISSIONS, dynamic_permissions_matrix y AUD-NG-160.
+- **Problema Detectado:** Las delegaciones se conceden por acción sin aplicar el campo ambito; se aceptan acciones arbitrarias/comodín y no se verifica que el delegante pueda concederlas. Una delegación puede sobreponerse a una denegación dinámica y permitir delegación en cadena. La UI incluida en el alcance no permite crear, consultar ni revocar delegaciones.
+- **Requisitos de Corrección:** Validar autoridad y usuario destino; restringir acciones delegables; aplicar ámbito de recurso en todos los servicios; impedir cadenas/ciclos no autorizados; conservar titular y ejecutor; completar el flujo UI de alta/consulta/revocación y estados.
+- **Criterios de Aceptación:** No se autorizan recursos fuera del ámbito; un delegante no concede privilegios superiores a su autoridad; comodines y acciones sensibles requieren política explícita; la denegación dinámica no se omite de forma implícita; se bloquean cadenas no autorizadas; las operaciones quedan trazadas con titular/ejecutor/delegación; UI permite gestionar el ciclo de vida; pruebas conductuales cubren USER, ACADEMIC y ACCOUNTING.
+- **Estado:** [ ] Pendiente
+
+
+### [TASK-499] [TAREA-F4-P1-02] [P1] Implementar ejecución real y programada de políticas de retención y archivo
+- **Prioridad:** P1 (Alta).
+- **Componentes Afectados:** backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; PoliticasRetencionDatos y repositorios de expedientes/finanzas.
+- **Origen del Hallazgo:** AUD-NG-146 / TAREA-F4-P1-02.
+- **Dependencias Principales:** getRetentionPolicies, saveRetentionPolicy, executeDataRetentionPolicyCheck, USER_SESSIONS, STUDENT_EXPEDIENTS, FINANCIAL_RECORDS, AUD-NG-145, TASK-456 y TASK-398.
+- **Problema Detectado:** El motor solo existe en USER y no tiene trigger. USER_SESSIONS no se procesa; STUDENT_EXPEDIENTS/FINANCIAL_RECORDS solo incrementan itemsArchived sin archivar registros. Las políticas admiten días inválidos/categorías arbitrarias y PRESERVE_LEGAL no se ejecuta.
+- **Requisitos de Corrección:** Validar categorías y días positivos; implementar acciones efectivas por categoría; archivar con relaciones, metadatos, permisos de solo lectura y trazabilidad; aplicar legal hold; separar logs (AUD-NG-145) y respaldos (TASK-151/152); programar ejecuciones reales con lotes reanudables, exclusión mutua y reporte verificable.
+- **Criterios de Aceptación:** Cada categoría tiene prueba de selección, elegibilidad, archivo/retención, legal hold y consulta histórica; itemsArchived coincide con registros efectivamente archivados; ejecuciones programadas quedan registradas; fallos parciales se reanudan sin duplicar ni perder relaciones; no se eliminan registros contables/académicos requeridos.
+- **Relaciones y límites:** AUD-NG-145 cubre retención de bitácoras; AUD-NG-146 se amplía a este motor operativo; TASK-456 cubre conservación/disposición documental en Drive; TASK-398 cubre archivo de trámites.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-220] Anonimizar cuentas inactivas sin conservar identificadores ni vulnerar preservación legal
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-220 (TAREA-F4-P1-02, C1.77).
+- **Severidad/Clasificación:** Alto (P1) · Privacidad · Datos personales.
+- **Archivos Involucrados:** backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs.
+- **Dependencias Expuestas:** executeDataRetentionPolicyCheck (2238-2253), Usuarios, personaId, lastAccess, failedAttempts, preservacionLegal y relaciones académicas/financieras.
+- **Descripción del Alcance:** INACTIVE_USERS usa uRows[j][12] como último acceso, pero si está vacío usa uRows[j][11], el contador de intentos fallidos; al convertir ese número en fecha puede tratar una cuenta sin último acceso como antigua desde 1970. Solo cambia nombre, correo y teléfono; el correo incluye userId original y conserva userId, personaId, hash de contraseña y otros atributos. No actualiza relaciones de ACADEMIC/ACCOUNTING ni comprueba preservacionLegal antes de anonimizar.
+- **Criterios de Aceptación:**
+  - Usar fecha válida de último acceso/creación; nunca usar failedAttempts como fecha. Sin fecha confiable, enviar a revisión.
+  - Comprobar preservación legal por registro antes de anonimizar.
+  - Transformar irreversiblemente identificadores directos e indirectos; no conservar userId/personaId/email reversibles en campos operativos.
+  - Mantener integridad referencial mediante pseudónimos estables no reversibles o correspondencia separada, cifrada y restringida cuando sea legalmente necesaria.
+  - Coordinar relaciones USER/ACADEMIC/ACCOUNTING; invalidar sesiones/tokens y cachés cuando corresponda.
+  - Registrar actor, política, registros afectados y resultado sin volcar PII.
+  - Probar cuentas sin último acceso, fechas inválidas, legal hold, reidentificación, relaciones y fallos parciales.
+- **Relaciones y límites:** TASK-081 cubre conjuntos de prueba, no producción; AUD-NG-145 cubre logs; AUD-NG-146/TASK-499 cubren política/archivo.
+- **Ampliación C1.89 / TAREA-F4-P2-05:** La política publica anonimización tras 730 días, coincidente con el default INACTIVE_USERS (USER 2134), pero la ejecución usa `uRows[j][12] || uRows[j][11]` como fecha (2244-2246). loginUser escribe el contador de intentos fallidos en columna 12 y último acceso en columna 13 (2507-2508, 2537-2538); por tanto, si no hay último acceso, el contador numérico se convierte en fecha y puede clasificar la cuenta como antigua desde 1970. La anonimización solo cambia nombre/correo/teléfono (2247-2249), preservando userId/personaId/hash y relaciones. Revalidado; no crear duplicado.
+- **Estado:** [ ] Pendiente
+
+### [TASK-500] [TAREA-F4-P1-02] [P1] Corregir anonimización de cuentas inactivas y preservar integridad relacional
+- **Prioridad:** P1 (Alta).
+- **Componentes Afectados:** backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; Usuarios y relaciones de expedientes/finanzas.
+- **Origen del Hallazgo:** AUD-NG-220 / TAREA-F4-P1-02.
+- **Dependencias Principales:** executeDataRetentionPolicyCheck, Usuarios, lastAccess, failedAttempts, personaId, preservacionLegal y AUD-NG-145.
+- **Problema Detectado:** Si no hay fecha de último acceso, el código usa el contador de intentos fallidos como timestamp. Solo sustituye nombre, correo y teléfono; conserva identificadores y relaciones y no respeta preservacionLegal.
+- **Requisitos de Corrección:** Corregir fecha, detener anonimización sin fecha confiable, aplicar legal hold, transformar identificadores directos/indirectos, mantener integridad referencial en servicios académicos/contables e invalidar sesiones/cachés.
+- **Criterios de Aceptación:** Cuentas sin fecha no se anonimizan por error; registros bajo preservación legal se excluyen; no hay reidentificación desde campos operativos; relaciones consistentes y operaciones auditadas.
+- **Estado:** [ ] Pendiente
+
+### [AUD-NG-221] Aplicar módulo/ámbito y proteger la matriz dinámica
+- **Origen:** Auditoria.txt / TAREA-F4-P1-03 / C1.78.
+- **Severidad:** Alto (P1).
+- **Archivos:** USER, ACADEMIC, ACCOUNTING, TASK, EXAM; ui-common.js; dashboards.
+- **Dependencias:** MatrizPermisosRoles, getDynamicPermissionsForRole, getPermissionMatrix, savePermissionMatrix, validateRolePermission.
+- **Descripción:** La hoja almacena rol, modulo, accion, permitido y ambito, pero los cinco helpers autorizan solo por rol+acción. savePermissionMatrix también hace upsert por rol+acción, así que reglas del mismo rol/acción para distintos módulos o ámbitos colisionan. No hay interfaz de matriz en ui-common.js ni en los dashboards revisados. savePermissionMatrix no impone una guardia interna de rol; si la matriz concede esa acción a un perfil no administrativo, ese perfil puede modificar permisos de todos.
+- **Criterios:** clave rol+módulo+acción+ámbito; validación de catálogos y reglas no ambiguas; guardia de servidor administrativa para editar; cambios atómicos/versionados/auditados; UI de consulta y edición; pruebas diferenciadas en los cinco servicios.
+- **Relaciones:** AUD-NG-160 cubre caché/fallback; TASK-139 permisos documentales; AUD-NG-094 catálogo de informes; TAREA-F4-P1-04 RBAC/ABAC general.
+- **Ampliación C1.87 / TAREA-F4-P2-03:** Revalidado: aunque el encabezado del modal menciona permisos efectivos, la tabla solo muestra ID, nombre/email, rol y estado; no consulta ni presenta permisos efectivos ni ofrece edición de la matriz. Se mantiene dentro del alcance de AUD-NG-221/TASK-501; no duplicar.
+- **Estado:** [ ] Pendiente
+
+### [TASK-501] [TAREA-F4-P1-03] [P1] Completar matriz dinámica por rol, módulo, acción y ámbito
+- **Problema:** Se ignoran módulo/ámbito, el upsert colisiona por rol+acción y no existe UI; el editor no tiene guardia interna de rol.
+- **Corrección:** aplicar dimensiones en cinco servicios, validar catálogos, restringir editor, implementar UI y versionar/auditar cambios.
+- **Aceptación:** reglas del mismo rol/acción con módulos/ámbitos distintos funcionan; perfiles no autorizados no editan; pruebas positivas/negativas pasan en USER/ACADEMIC/ACCOUNTING/TASK/EXAM.
+- **Estado:** [ ] Pendiente
+
+
+### [AUD-NG-222] Establecer autorización contextual ABAC común y fail-closed en los cinco microservicios
+- **Origen del Hallazgo:** Auditoria.txt / TAREA-F4-P1-04, checkpoint C1.79.
+- **Severidad/Clasificación:** Alto (P1) · Seguridad · Autorización contextual · RBAC/ABAC.
+- **Archivos Involucrados:** backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; backend/task-service/Code.gs; backend/exam-service/Code.gs.
+- **Dependencias Expuestas:** validateContextualAccess, validateRolePermission, validateRoleScopeAccess, getGuardianStudents, getAcademicAreaCoordinationScope, AsignacionesAmbitosRoles, AsignacionesDocentes, RelacionesFamiliares.
+- **Descripción del Alcance:** Los cinco servicios implementan validadores contextuales divergentes. ACADEMIC omite el control cuando faltan scopeType/requestedValue, no deniega cuando la hoja de ámbitos no está disponible y captura errores sin denegar; la comprobación de Coordinador compara areaId pero no aplica ambitoSupervision. ACCOUNTING/TASK/EXAM no aplican controles familiares, docentes ni de ámbito en su validador contextual. USER no integra validateRoleScopeAccess como política común y carece de verificación docente en validateContextualAccess.
+- **Reconciliación:** AUD-NG-105/106/108/128/130/136/217 y AUD-NG-002 conservan los hallazgos de exposición específicos; AUD-NG-160 y AUD-NG-221 conservan cachés y matriz. AUD-NG-222 se limita a la ausencia sistémica de una política común y a los caminos fail-open.
+- **Ampliación C1.89 / TAREA-F4-P2-05:** La política de privacidad (línea 50) y la de uso (línea 62) afirman controles RBAC/ABAC rigurosos; la implementación sigue con validadores contextuales divergentes y rutas fail-open descritas en AUD-NG-222. Se revalida el desajuste entre afirmación documental y enforcement efectivo; no crear duplicado.
+- **Estado:** [ ] Pendiente
+
+### [TASK-502] [TAREA-F4-P1-04] [P1] Centralizar autorización contextual RBAC/ABAC con denegación fail-closed
+- **Prioridad:** P1 (Alta).
+- **Componentes Afectados:** backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; backend/task-service/Code.gs; backend/exam-service/Code.gs.
+- **Origen del Hallazgo:** AUD-NG-222 / TAREA-F4-P1-04.
+- **Problema Detectado:** No existe motor común para validar el contexto del recurso. Las implementaciones locales difieren; hay controles opcionales por campos del payload, excepciones silenciadas y servicios que no validan vínculos familiares, asignaciones docentes ni ámbitos.
+- **Requisitos de Corrección:** Derivar identidad desde claims verificados; definir contrato contextual común por acción/recurso; validar relaciones familiares activas, asignaciones docentes, áreas y ámbitos institucionales; no confiar en IDs/contexto de autorización del cliente; denegar si falta un contexto requerido o falla la fuente de autorización; aplicar la política antes del handler en los cinco servicios; mantener excepciones administrativas explícitas y auditadas.
+- **Criterios de Aceptación:** Pruebas positivas/negativas para estudiante propio/ajeno, familiar vinculado/no vinculado, docente asignado/no asignado, coordinador dentro/fuera de ámbito, ausencia de campos, hoja ausente/vacía y error de lectura; mismos resultados de política en los cinco servicios; no se habilita acceso por payload incompleto ni por error de consulta; sin regresiones en permisos administrativos y delegaciones autorizadas.
+- **Relaciones y límites:** AUD-NG-105/106/108/128/130/136/217 y AUD-NG-002 mantienen hallazgos concretos; AUD-NG-160 cubre rol/cachés; AUD-NG-221 cubre dimensiones de matriz. No duplicar esas superficies.
+- **Estado:** [ ] Pendiente
+
+
+### [AUD-NG-223] Implementar panel ARCO y ejecución efectiva de derechos sobre datos personales
+- **Origen del Hallazgo:** Auditoria.txt / TAREA-F4-P1-05, checkpoint C1.80.
+- **Severidad/Clasificación:** Alto (P1) · Privacidad · Gobierno de datos · Derechos ARCO.
+- **Archivos Involucrados:** backend/user-service/Code.gs; js/ui-common.js; dashboards institucionales; politica-de-privacidad.html.
+- **Dependencias Expuestas:** submitPrivacyRightsRequest, getPrivacyRightsRequests, updatePrivacyRightsRequestStatus, SolicitudesDerechosPrivacidad, identidad verificada, representación legal, legal hold y operaciones de datos.
+- **Descripción del Alcance:** El backend solo registra solicitudes y actualiza estados. No se encontró panel ARCO ni ejecución de acceso/exportación, rectificación, eliminación u oposición. El modelo vincula la solicitud únicamente al callerId y no identifica titular representado, evidencia, plazo, decisión motivada ni resultado ejecutado. La política anuncia un módulo institucional que no aparece en la UI revisada.
+- **Reconciliación:** AUD-NG-145/146 y TASK-499/TASK-500 cubren bitácoras/retención/anonimización; AUD-NG-222/TASK-502 cubre ABAC transversal. No duplicar esos alcances.
+- **Ampliación C1.89 / TAREA-F4-P2-05:** La política de privacidad (63-68) anuncia un módulo institucional para acceso, rectificación, cancelación/exportación y oposición. En el árbol solo existe politica-de-privacidad.html como archivo con "privacidad"; USER registra solicitudes en SolicitudesDerechosPrivacidad y permite cambiar su estado (1986-2117), pero no hay panel UI ni ejecución del derecho. Se revalida AUD-NG-223/TASK-503; no crear duplicado.
+- **Estado:** [ ] Pendiente
+
+### [TASK-503] [TAREA-F4-P1-05] [P1] Implementar panel y flujo end-to-end de derechos ARCO
+- **Prioridad:** P1 (Alta).
+- **Componentes Afectados:** backend/user-service/Code.gs; js/ui-common.js; dashboards institucionales; politica-de-privacidad.html.
+- **Origen del Hallazgo:** AUD-NG-223 / TAREA-F4-P1-05.
+- **Problema Detectado:** Se persiste la solicitud, pero no se ejecuta el derecho ni existe interfaz de titular/administrador. No se modela la representación de menores ni la evidencia y plazo de tramitación.
+- **Requisitos de Corrección:** Crear panel para titulares y administradores; distinguir titular y representante autorizado; verificar identidad/vínculo; registrar alcance, evidencia, responsable y plazo; definir transiciones controladas; ejecutar acceso/exportación, rectificación, eliminación con legal hold y oposición/restricción; registrar decisión y evidencia sin exponer PII; sincronizar la política publicada con las funciones realmente disponibles.
+- **Criterios de Aceptación:** Cada tipo de derecho tiene flujo de solicitud, validación, decisión, ejecución y cierre; los tutores solo actúan sobre titulares representados y verificados; no se elimina información bajo conservación legal; solicitudes completadas tienen evidencia de resultado; los usuarios solo consultan sus solicitudes; el panel administrativo filtra y tramita con permisos; pruebas positivas/negativas cubren identidad, representación, legal hold, estados y fallos parciales.
+- **Relaciones y límites:** AUD-NG-145/146 y TASK-499/TASK-500 cubren logs/retención/anonimización; AUD-NG-222/TASK-502 cubre autorización contextual; no duplicar.
+- **Estado:** [ ] Pendiente
+
+
+### [AUD-NG-224] Unificar el historial de cambios de entidades y garantizar integridad/versionado verificable
+- **Origen del Hallazgo:** Auditoria.txt / TAREA-F4-P1-06, checkpoint C1.81.
+- **Severidad/Clasificación:** Alto (P1) · Auditoría · Integridad · Trazabilidad.
+- **Archivos Involucrados:** backend/user-service/Code.gs; backend/academic-service/Code.gs; js/secretary.js; HistorialCambiosEntidad.
+- **Dependencias Expuestas:** recordEntityChangeLog, getEntityAuditHistory, getAcademicPlanningAuditLogs, HistorialCambiosEntidad, BitacoraEventos, BitacoraTrazabilidad, ROLE_PERMISSIONS.
+- **Descripción del Alcance:** USER y ACADEMIC escriben la hoja HistorialCambiosEntidad con órdenes de columnas incompatibles; ACADEMIC además tiene escritores directos de ocho columnas. Los lectores interpretan posiciones distintas y la interfaz de Secretaría no reconstruye el historial de admisiones. Los helpers silencian fallos de persistencia y el historial general no tiene número de versión, cadena criptográfica ni verificador de integridad. La lectura carece de paginación segura y su permiso estático no está concedido a Secretaría/Director. USER deja email/teléfono en snapshots y ACADEMIC no sanitiza.
+- **Reconciliación:** AUD-NG-145 mantiene la sanitización de bitácoras/eventos, el desajuste BitacoraTraceability/BitacoraTrazabilidad, DTO e instrumentación; se amplía a la sanitización de HistorialCambiosEntidad. TASK-049 cubre exclusivamente la cadena de decisiones de workflow. No duplicar esos alcances.
+- **Criterios de Aceptación:**
+  - Definir un esquema canónico versionado para todas las escrituras/lecturas de HistorialCambiosEntidad y migrar/normalizar filas históricas sin perder datos.
+  - Sustituir los escritores duplicados y appendRow ad hoc por un único contrato de persistencia con actor verificado, entityType/entityId, acción, snapshots, fecha y correlationId/requestId.
+  - Garantizar que los fallos de auditoría se registren y se propaguen o queden en una cola/outbox recuperable; no declarar exitosa una mutación crítica si se pierde su evidencia obligatoria.
+  - Incorporar versión secuencial y mecanismo verificable de integridad/tamper-evidence para el historial genérico; permitir verificar la cadena y registrar correcciones sin reescribir eventos anteriores.
+  - Aplicar redacción coherente de credenciales y PII en USER/ACADEMIC, conservando solo datos mínimos necesarios.
+  - Aplicar autorización por rol y ámbito en consultas; conceder explícitamente solo los roles autorizados; exigir entityType/entityId válidos y límite máximo con cursor de paginación.
+  - Alinear getEntityAuditHistory, getAcademicPlanningAuditLogs y js/secretary.js con el mismo DTO y esquema; escapar todos los valores mostrados en UI.
+  - Probar filas de cada formato histórico, migración, escrituras concurrentes, fallo de hoja, alteración de hash, permisos positivos/negativos, PII y consulta/paginación en USER/ACADEMIC/UI.
+- **Relaciones y límites:** AUD-NG-145 conserva LogsSistema, BitacoraEventos, BitacoraTrazabilidad y sanitización; TASK-049 conserva RevisionesDecisionesTramite. No duplicar AUD-NG-224 con esos alcances específicos.
+- **Estado:** [ ] Pendiente
+
+### [TASK-504] [TAREA-F4-P1-06] [P1] Unificar historial de entidades y auditoría de versiones con integridad verificable
+- **Prioridad:** P1 (Alta).
+- **Componentes Afectados:** backend/user-service/Code.gs; backend/academic-service/Code.gs; js/secretary.js; HistorialCambiosEntidad.
+- **Origen del Hallazgo:** AUD-NG-224 / TAREA-F4-P1-06.
+- **Problema Detectado:** USER y ACADEMIC escriben el mismo historial con esquemas distintos; existen filas directas de ocho columnas, los lectores/UI no comparten DTO, los errores de escritura se silencian y no hay integridad/versionado criptográfico general.
+- **Requisitos de Corrección:** establecer esquema canónico y migración; centralizar escritura; usar actor/correlationId verificados; eliminar escritores ad hoc; versionar y verificar integridad; manejar fallos de persistencia; sanitizar PII; restringir consultas y paginar; alinear UI.
+- **Criterios de Aceptación:** Todas las operaciones auditadas generan filas interpretables por todos los lectores; la migración conserva registros; una alteración se detecta; las fallas no quedan silenciosas; el actor es verificable; roles/ámbitos y paginación se aplican; la UI muestra correctamente el historial de admisión; las pruebas positivas/negativas y de concurrencia pasan.
+- **Relaciones y límites:** AUD-NG-145 mantiene bitácoras/eventos y redacción de PII; TASK-049 mantiene la cadena de workflow. No duplicar.
+- **Estado:** [ ] Pendiente
+
+
+### [AUD-NG-225] [P1] Integridad referencial y vigencia efectiva de responsabilidades institucionales
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-225; auditoría TAREA-F4-P1-07 (C1.82).
+- **Severidad/Clasificación:** Alto (P1) - Integridad de asignaciones, gobierno de roles internos y vigencia temporal.
+- **Archivos Involucrados:** backend/user-service/Code.gs; dashboard-recursos-humanos.html; js/ui-common.js; tests/regression/academic-grading-suite.js.
+- **Dependencias Expuestas:** CatalogoRolesInternos, AsignacionesAmbitosRoles, assignRoleScope, getUserScopeConfig, getInternalRoleAssignments, getUserDynamicDashboardConfig, ROLE_PERMISSIONS, MatrizPermisosRoles, TASK-004, AUD-NG-221, AUD-NG-222, AUD-NG-145, AUD-NG-224.
+- **Descripción del Alcance:** Vincular cada asignación institucional a un rol interno existente y activo del catálogo; definir una clave de unicidad que incluya usuario, rol y ámbito; impedir que actualizaciones sobrescriban atributos no enviados; validar formato, orden y vigencia de fechas; aplicar fechaInicio y fechaFin uniformemente en consultas; validar suplente y su período; conservar historial al modificar/revocar; generar identificadores/códigos únicos bajo concurrencia; incorporar una consola de RRHH para crear/editar/desactivar responsabilidades y asignarlas/consultarlas por empleado, departamento, área y vigencia. Corregir la lectura de Rol en getUserDynamicDashboardConfig para utilizar el campo real de Usuarios y hacer que las tarjetas tengan una ruta de acceso funcional. Mantener separada la responsabilidad institucional de ROLE_PERMISSIONS; no conceder privilegios globales por asignación.
+- **Criterios de Aceptación:** Toda asignación referencia un rol existente y activo; no hay IDs vacíos/inexistentes; múltiples responsabilidades compatibles no colisionan; las modificaciones conservan atributos o generan nueva versión; fechas inválidas y suplencias fuera de vigencia se rechazan; las consultas distinguen asignaciones vigentes e históricas; códigos únicos bajo concurrencia; consola HR funcional y autorizada; la responsabilidad institucional no concede permisos globales; pruebas cubren FK, duplicados, concurrencia, vigencias, suplencias, revocación, UI y separación de permisos.
+- **Estado:** [ ] Pendiente
+
+### [TASK-505] [TAREA-F4-P1-07] [P1] Cerrar la integridad y el ciclo de vida de roles internos y asignaciones institucionales
+- **Origen del Hallazgo:** AUD-NG-225.
+- **Severidad/Clasificación:** Alto (P1).
+- **Archivos Involucrados:** backend/user-service/Code.gs; dashboard-recursos-humanos.html; js/ui-common.js; tests/regression/academic-grading-suite.js.
+- **Dependencias Expuestas:** CatalogoRolesInternos, AsignacionesAmbitosRoles, assignRoleScope, getUserScopeConfig, getInternalRoleAssignments, getUserDynamicDashboardConfig, ROLE_PERMISSIONS, MatrizPermisosRoles.
+- **Descripción del Alcance:** Completar el vínculo entre catálogo y asignaciones, la unicidad y actualización no destructiva, la validación temporal de vigencias/suplencias y la consulta histórica. Implementar la consola de gestión de responsabilidades en RRHH y conectar sus operaciones al backend autenticado. Corregir el origen del rol que consume el dashboard dinámico y conectar las tarjetas a destinos reales, sin convertir responsabilidades organizativas en permisos globales.
+- **Criterios de Aceptación:** Se cumplen los criterios de AUD-NG-225; roles internos gestionados/asignados desde UI; fechas futuras/vencidas correctas; historial preservado; suite comprueba comportamiento y no solo presencia de funciones.
+- **Estado:** [ ] Pendiente
+
+
+
+### [AUD-NG-226] [P1] Integridad referencial y atomicidad en departamentos, cargos y adscripciones
+- **Origen del Hallazgo:** Auditoria.txt / AUD-NG-226; auditoría TAREA-F4-P1-07 (C1.82).
+- **Severidad/Clasificación:** Alto (P1) - Integridad estructural, persistencia y consistencia de asignaciones.
+- **Archivos Involucrados:** backend/user-service/Code.gs; backend/academic-service/Code.gs; dashboard-recursos-humanos.html; tests/regression/academic-grading-suite.js.
+- **Dependencias Expuestas:** CatalogoDepartamentos, CatalogoCargos, HistorialAdscripciones, DepartamentosAcademicos, Usuarios, manageDepartmentPositions, getUserInstitutionalAffiliations, assignDepartmentHead, generateInstitutionalId, TASK-171, TASK-365, TASK-006, AUD-NG-017, AUD-NG-145, AUD-NG-221, AUD-NG-222, AUD-NG-224.
+- **Descripción del Alcance:** Asegurar unicidad de IDs y códigos, validación de jefaturas/usuarios/departamentos/cargos existentes y activos, y consistencia entre catálogos administrativos y académicos mediante una relación explícita o separación documentada. Rediseñar ASSIGN_USER para validar todo antes de cerrar la adscripción vigente y ejecutar cierre/alta bajo un mecanismo de concurrencia que impida estados parciales o múltiples adscripciones activas. Incorporar operaciones controladas de edición/desactivación conservando historial y consultas paginadas. Conectar la administración con la consola HR autenticada.
+- **Criterios de Aceptación:** No se aceptan IDs duplicados ni referencias a entidades inexistentes/inactivas; IDs del cliente se validan; la generación no usa timestamps como sustituto de unicidad; fallos dejan activa la adscripción anterior; concurrencia no crea más de una activa; consultas aplican permisos/ámbito/paginación; la relación de catálogos se define; consola HR usa datos de catálogo; pruebas cubren FK, duplicados, cuenta inactiva, falla de generación, concurrencia y recuperación. TASK-171 conserva prevención de ciclos y TASK-365 el organigrama visual.
+- **Estado:** [ ] Pendiente
+
+### [TASK-506] [TAREA-F4-P1-07] [P1] Garantizar integridad y atomicidad en departamentos, cargos y adscripciones
+- **Origen del Hallazgo:** AUD-NG-226.
+- **Severidad/Clasificación:** Alto (P1).
+- **Archivos Involucrados:** backend/user-service/Code.gs; backend/academic-service/Code.gs; dashboard-recursos-humanos.html; tests/regression/academic-grading-suite.js.
+- **Dependencias Expuestas:** CatalogoDepartamentos, CatalogoCargos, HistorialAdscripciones, DepartamentosAcademicos, Usuarios, manageDepartmentPositions, assignDepartmentHead, generateInstitutionalId.
+- **Descripción del Alcance:** Cerrar validaciones referenciales, unicidad, consistencia intercatálogo y atomicidad de las operaciones de departamento, cargo y adscripción; conectar flujos a la consola HR con consultas paginadas y auditoría.
+- **Criterios de Aceptación:** Se cumplen los criterios de AUD-NG-226; ningún fallo parcial cierra la asignación anterior; no se generan IDs duplicados ni referencias huérfanas; UI y pruebas verifican comportamiento real.
+- **Estado:** [ ] Pendiente
+
+
+
+### [AUD-NG-227] [P1] Corregir la integración, los filtros y la fidelidad de indicadores del panel de seguridad
+- **Origen del Hallazgo:** Auditoria.txt / TAREA-F4-P1-09, checkpoint C1.84.
+- **Severidad/Clasificación:** Alto (P1) · Observabilidad · Gobierno de seguridad · Integridad de indicadores.
+- **Archivos Involucrados:** js/ui-common.js; dashboard-direccion.html; backend/user-service/Code.gs.
+- **Dependencias Expuestas:** openSecurityAndComplianceDashboardModal, getSecurityAndComplianceDashboardData, generatePrivilegeAndAccountAuditReport, getPaginatedAuditLogReport, getOperationalCapacityMetrics, getSecurityDelegations, ROLE_PERMISSIONS, BitacoraEventos, LogsSistema, BitacoraTrazabilidad.
+- **Descripción del Alcance:** El panel solo consume getSecurityAndComplianceDashboardData y presenta cuatro contadores y una tabla limitada a 200 eventos. Las tarjetas de intentos fallidos, inicios exitosos y sesiones revocadas se incrementan fuera de las condiciones de fecha, usuario y tipo; por tanto, los filtros aplicados a la tabla no afectan los indicadores. La consulta de delegaciones pierde el contexto de autenticación y utiliza statusFilter en lugar de estado, por lo que el contador no representa las delegaciones activas. El backend devuelve activeDelegations y healthReport, pero la UI no los muestra. La UI tampoco consume generatePrivilegeAndAccountAuditReport ni getPaginatedAuditLogReport, de modo que la revisión de privilegios/cuentas y la consulta paginada de auditoría no forman parte del panel operativo. No existe paginación visible para la tabla que corta a 200 registros.
+- **Reconciliación:** AUD-NG-145 mantiene el origen, esquema, DTO, trazabilidad, sanitización y renderizado seguro de bitácoras; AUD-NG-219/TASK-498 mantiene autoridad, ámbito y ciclo de vida de delegaciones; AUD-NG-160 mantiene vigencia e invalidación de cachés. AUD-NG-227 se limita a la composición del panel, consistencia de sus métricas, filtros, presentación e integración de reportes/indicadores; no duplica la reparación de fuentes de logs ni el motor de delegaciones.
+- **Criterios de Aceptación:**
+  - Los indicadores y la tabla deben compartir filtros y una definición explícita de período; distinguir métricas globales de métricas filtradas y mostrar el ámbito temporal de cada valor.
+  - El contador de delegaciones debe consultar únicamente registros en estado Activa con identidad/contexto verificado; un fallo de consulta debe mostrarse como dato no disponible, nunca como cero válido.
+  - La interfaz debe presentar los datos de salud devueltos por el backend y el estado de disponibilidad/frescura de cada fuente, sin convertir errores o datos ausentes en indicadores verdes o cero.
+  - Integrar la revisión de privilegios/cuentas y el informe paginado de auditoría con controles, estados de carga/error/vacío y navegación de páginas; no duplicar ni reemplazar los contratos de datos cubiertos por AUD-NG-145.
+  - La tabla debe permitir recorrer todos los resultados, no truncar silenciosamente la consulta a 200 eventos; el total y la página actual deben ser explícitos.
+  - Renderizar los campos de bitácora y los mensajes de error con escape contextual o nodos/textContent; no interpolar datos externos directamente en innerHTML.
+  - Mantener autorización de servidor por rol/ámbito y ocultar o deshabilitar controles no disponibles para el rol; no confiar en la visibilidad del botón como control de acceso.
+  - Probar filtros de fecha/usuario/tipo, métricas concordantes, más de 200 eventos, delegaciones activas/vencidas/revocadas, identidad ausente, fallos de fuente, permisos positivos/negativos, renderizado de contenido HTML y estados de carga/error/vacío.
+- **Relaciones y límites:** AUD-NG-145 es responsable de la calidad y contrato de las bitácoras; AUD-NG-219/TASK-498 es responsable del motor/gestión de delegaciones; AUD-NG-160 es responsable de la vigencia de privilegios y cachés. No duplicar esos alcances.
+- **Estado:** [ ] Pendiente
+
+### [TASK-507] [TAREA-F4-P1-09] [P1] Completar el panel institucional de seguridad, auditoría y cumplimiento
+- **Prioridad:** P1 (Alta).
+- **Componentes Afectados:** js/ui-common.js; dashboard-direccion.html; backend/user-service/Code.gs.
+- **Origen del Hallazgo:** AUD-NG-227.
+- **Dependencias Principales:** getSecurityAndComplianceDashboardData, generatePrivilegeAndAccountAuditReport, getPaginatedAuditLogReport, getOperationalCapacityMetrics, getSecurityDelegations, AUD-NG-145, AUD-NG-219 y AUD-NG-160.
+- **Problema Detectado:** Los filtros solo afectan la tabla, los contadores se calculan sobre todos los registros, la tabla se limita a 200 elementos, la consulta de delegaciones pierde el contexto autenticado, y los reportes de privilegios/auditoría y la salud operativa no se integran en la interfaz.
+- **Requisitos de Corrección:** Completar la composición del panel y la presentación de datos; unificar filtros y métricas; integrar paginación y reportes existentes; mostrar salud y disponibilidad de fuentes; consultar delegaciones con contexto verificado; escapar datos renderizados. Corregir por separado los contratos de bitácora y el motor de delegaciones conforme a AUD-NG-145 y AUD-NG-219.
+- **Criterios de Aceptación:** Las métricas corresponden al filtro visible; todos los eventos pueden recorrerse por páginas; delegaciones activas se cuentan con identidad verificada; los informes de privilegios/cuentas y auditoría son accesibles desde el panel; salud y errores se representan sin falsos ceros; no hay inyección HTML al renderizar registros; las pruebas de permisos, filtros, paginación, estados y seguridad pasan.
+- **Relaciones y límites:** No reemplaza AUD-NG-145 (fuente, esquema, DTO, PII y trazabilidad), AUD-NG-219/TASK-498 (autoridad/ámbito/gestión de delegaciones) ni AUD-NG-160 (cachés). Se limita a la integración y presentación del panel.
+- **Estado:** [ ] Pendiente
+
+
+---
+
+## C1.87 — Revisión de TAREA-F4-P2-03
+
+### [AUD-NG-228] Corregir el contrato de API y los datos del directorio administrativo de usuarios
+- **Origen del Hallazgo:** C1.87 / TAREA-F4-P2-03.
+- **Severidad/Clasificación:** Medio (P2) · Integración frontend/backend · Administración.
+- **Archivos Involucrados:** js/ui-common.js; js/api.js; js/config.js; backend/user-service/Code.gs; dashboard-direccion.html; dashboard-secretaria.html.
+- **Dependencias Expuestas:** window.openUserManagementAdministrationModal, fetchApi(service, action, payload), SERVICE_URLS, getStudents, manageAccountState, Usuarios, estadoCuenta, filtros de directorio.
+- **Descripción del Alcance:** El modal llama `fetchApi("getStudents", payload, "USER")` y `fetchApi("manageAccountState", payload, "USER")`, aunque la firma es `fetchApi(service, action, payload)` y SERVICE_URLS solo contiene claves de microservicio como USER/ACADEMIC/TASK. El helper busca `SERVICE_URLS.getStudents` o `SERVICE_URLS.manageAccountState`, no encuentra URL y devuelve error de configuración antes de enviar la petición. Además, getStudents ignora payload, devuelve únicamente userId/nombre/numeroLista de cuentas con rol Estudiante y excluye Desactivada; no devuelve email/rol/estadoCuenta ni aplica búsqueda por nombre/email/ID o filtro de estado. La UI espera esos campos y muestra valores por defecto (Estudiante/Activa), por lo que el estado real queda falseado y no puede administrar personal ni cuentas desactivadas. El modal interpola nombre/ID en innerHTML sin escape contextual; el nombre procede de Usuarios y debe renderizarse como texto inerte.
+- **Criterios de Aceptación:**
+  - Las llamadas respetan el contrato `fetchApi("USER", "getStudents", payload)` y `fetchApi("USER", "manageAccountState", payload)`, y una prueba confirma que la URL elegida es SERVICE_URLS.USER.
+  - El endpoint del directorio devuelve únicamente campos autorizados y suficientes (ID, nombre, correo/rol/estado cuando corresponda), aplica filtros declarados y permite paginación o límites explícitos.
+  - El directorio cubre el universo de cuentas que la administración está autorizada a gestionar, incluidos estados desactivados cuando el permiso de consulta lo permita; no confunde ausencia de campo con estado Activa.
+  - La acción de cambio de estado presenta el estado real y verifica la respuesta del servidor antes de actualizar la fila.
+  - Los valores de usuario se insertan mediante textContent/DOM seguro o escape contextual; pruebas con nombres/IDs maliciosos no generan nodos ni atributos ejecutables.
+  - Pruebas conductuales cubren carga, URL/acción, filtros, respuesta vacía, errores, roles autorizados/denegados, cambios de estado y persistencia.
+- **Relaciones y límites:** TASK-480/AUD-NG-183 conserva el registro global del modal (anidamiento dentro del renderer); AUD-NG-001 conserva la persistencia/transmisión del sessionToken; AUD-NG-219/TASK-498 conserva los flujos de delegación; AUD-NG-221/TASK-501 conserva la matriz de permisos. AUD-NG-228 se limita al contrato de carga/actualización y al DTO del directorio; no duplica esos alcances.
+- **Estado:** [ ] Pendiente
+
+### [TASK-508] [AUD-NG-228] Corregir contrato de carga y actualización del directorio administrativo
+- **Origen:** C1.87 / TAREA-F4-P2-03.
+- **Severidad:** Medio (P2).
+- **Archivos:** js/ui-common.js; js/api.js; js/config.js; backend/user-service/Code.gs; dashboards de Dirección y Secretaría.
+- **Descripción:** Corregir el orden de parámetros de fetchApi en el modal, alinear el DTO de getStudents con los campos y filtros que presenta la interfaz, mostrar el estado real de cada cuenta y proteger el renderizado de valores de usuario.
+- **Criterios:** llamada al microservicio USER verificada; filtros por texto/estado efectivos; directorio con campos reales y universo autorizado; cambios de estado con confirmación y refresco; salida DOM segura; pruebas conductuales positivas y negativas.
+- **Relaciones:** TASK-480/AUD-NG-183, AUD-NG-001, AUD-NG-219/TASK-498 y AUD-NG-221/TASK-501.
+- **Estado:** [ ] Pendiente
+
+
+
+---
+
+## C1.88 — Revisión de TAREA-F4-P2-04
+
+### [AUD-NG-229] Serializar las actualizaciones concurrentes de perfiles de usuario
+- **Origen del Hallazgo:** C1.88 / TAREA-F4-P2-04.
+- **Severidad/Clasificación:** Medio (P2) · Integridad de datos · Concurrencia.
+- **Archivos Involucrados:** backend/user-service/Code.gs.
+- **Dependencias Expuestas:** updateUserProfile, hoja Usuarios, getDataRange, setValues, recordEntityChangeLog, LockService.
+- **Descripción del Alcance:** `updateUserProfile` (2654-2695) lee la fila completa de Usuarios, crea una copia local, modifica campos parciales y escribe toda la fila con setValues sin adquirir LockService ni verificar versión/estado previo. Dos actualizaciones concurrentes sobre campos distintos del mismo usuario pueden leer la misma fila inicial y la última escritura sobrescribir cambios de la primera (lost update). El registro de auditoría se ejecuta después de la escritura y no convierte la operación en atómica.
+- **Criterios de Aceptación:**
+  - El read-modify-write de perfil se serializa con un lock adecuado o usa control de versión/compare-and-set que detecte conflictos.
+  - Dos actualizaciones concurrentes de campos distintos no pierden datos; conflictos sobre el mismo campo se resuelven con política explícita.
+  - La actualización, la invalidación de caché y el registro de cambios tienen resultado coherente y verificable; no se declara éxito si la persistencia o la auditoría requerida falla.
+  - El lock se libera en finally y el tiempo de espera produce un error controlado; las escrituras de Sheets se confirman antes de liberar cuando corresponda.
+  - Pruebas aisladas reproducen dos actualizaciones paralelas sobre la misma cuenta y verifican todos los campos finales y la trazabilidad.
+- **Relaciones y límites:** TASK-118 conserva secuencias/duplicidad de email y el generador; AUD-NG-161 conserva la suite conductual de concurrencia; AUD-NG-218 conserva el contador de intentos de login; AUD-NG-219 conserva las transiciones de delegaciones. AUD-NG-229 se limita a la actualización concurrente de perfil; no duplica esos alcances.
+- **Estado:** [ ] Pendiente
+
+### [TASK-509] [AUD-NG-229] Hacer atómica la actualización de perfiles de usuario
+- **Origen:** C1.88 / TAREA-F4-P2-04.
+- **Prioridad:** P2 (Media).
+- **Componentes:** backend/user-service/Code.gs; hoja Usuarios; LockService; historial de cambios.
+- **Problema:** updateUserProfile hace read-modify-write de una fila completa sin exclusión mutua ni control de versión, permitiendo pérdida de cambios concurrentes.
+- **Requisitos:** serializar o versionar la actualización; coordinar persistencia, auditoría e invalidación de caché; manejar timeout/conflicto; probar concurrencia real en datos aislados.
+- **Relaciones:** TASK-118, AUD-NG-161, AUD-NG-218, AUD-NG-219.
+- **Estado:** [ ] Pendiente
+
+
+
+---
+
+## C1.90 — Revisión de TAREA-F4-P3-01
+
+### [AUD-NG-230] Automatizar, persistir y verificar la revisión periódica de privilegios y cuentas
+- **Origen del Hallazgo:** C1.90 / TAREA-F4-P3-01.
+- **Severidad/Clasificación:** Medio (P2) · Seguridad · Gobierno de privilegios · Observabilidad.
+- **Archivos Involucrados:** backend/user-service/Code.gs; configuración de Apps Script/activadores; eventual panel o canal de entrega.
+- **Dependencias Expuestas:** generatePrivilegeAndAccountAuditReport, ScriptApp.newTrigger, getSecurityDelegations, ROLE_PERMISSIONS, LogsSistema, reportes de privilegios.
+- **Descripción del Alcance:** La función genera un objeto y lo devuelve a quien invoca el endpoint, pero no existe activador temporal, invocación desde UI ni persistencia/entrega del informe. Por tanto, no hay evidencia de una revisión periódica automatizada. Además, el resumen consulta delegaciones con `getSecurityDelegations({statusFilter:"ACTIVA"})`, omite el contexto de autenticación y usa un nombre de filtro que el handler no reconoce; el conteo de delegaciones vigentes queda en cero. El evento de log no equivale a conservar el informe ni a demostrar que un responsable revisó los resultados.
+- **Criterios de Aceptación:**
+  - Definir frecuencia, propietario, zona horaria y activador temporal real; documentar instalación, recuperación y prevención de ejecuciones duplicadas.
+  - Persistir cada informe con timestamp, periodo cubierto, versión de política, métricas, detalle permitido, identificador de ejecución y resultado; retenerlo conforme a política.
+  - Entregar el informe a responsables autorizados o exponerlo en un panel protegido; registrar recepción, revisión, decisión y acciones correctivas.
+  - Consultar delegaciones con contexto autenticado verificado y filtro `estado:"Activa"`; contar únicamente delegaciones vigentes al momento del corte.
+  - Manejar errores parciales sin emitir un reporte de éxito incompleto; registrar estado de ejecución y permitir reintento seguro.
+  - Pruebas cubren permisos, cuentas privilegiadas, cuentas sin login, cuentas >90 días, delegaciones Activa/Revocada/Expirada, ejecución duplicada, fallo de envío y persistencia.
+- **Relaciones y límites:** AUD-NG-160 cubre vigencia/invalidación de roles; AUD-NG-161 cubre pruebas reales de concurrencia/automatización; AUD-NG-219 cubre autoridad/consulta de delegaciones; AUD-NG-220 cubre la fecha y anonimización de cuentas inactivas. AUD-NG-230 se limita a la periodicidad, evidencia y consistencia del reporte.
+- **Estado:** [ ] Pendiente
+
+### [TASK-510] [AUD-NG-230] Programar y entregar la revisión periódica de privilegios y cuentas
+- **Origen:** C1.90 / TAREA-F4-P3-01.
+- **Prioridad:** P2 (Media).
+- **Componentes:** backend/user-service/Code.gs; activadores Apps Script; repositorio de informes; panel/notificación administrativa.
+- **Problema:** La función solo devuelve un objeto bajo invocación manual; no hay trigger, persistencia, entrega ni evidencia de revisión. El conteo de delegaciones vigentes es incorrecto por llamada interna sin contexto y filtro statusFilter incompatible.
+- **Requisitos:** activador real; reporte versionado/persistido; destinatarios autorizados; estado de revisión; consulta de delegaciones con identidad verificada y estado correcto; manejo de fallos y reintentos idempotentes.
+- **Criterios:** ejecución programada verificable; informe recuperable; conteo correcto de delegaciones activas; evidencia de revisión y acciones; pruebas de autorización, periodicidad, fallos y duplicados.
+- **Relaciones:** AUD-NG-160, AUD-NG-161, AUD-NG-219, AUD-NG-220.
+- **Estado:** [ ] Pendiente
+
+
+
+---
+
+## C1.92 — Revisión de TAREA-F4-P3-03
+
+### [AUD-NG-231] Hacer fail-safe y trazable la auto-reconciliación de identidades
+- **Origen del Hallazgo:** C1.92 / TAREA-F4-P3-03.
+- **Severidad/Clasificación:** Alta (P1) · Integridad de datos · Operación destructiva · Seguridad.
+- **Archivos Involucrados:** backend/user-service/Code.gs.
+- **Dependencias Expuestas:** auditAndReconcileIdentityInconsistencies, Usuarios, DelegacionesSeguridad, HistorialAdscripciones, CacheService, LockService, logStructuredEvent.
+- **Descripción del Alcance:** El escáner construye validUserIds como conjunto vacío si la hoja Usuarios no existe o contiene solo encabezados. Si se invoca con autoFix truthy, cada delegación/adscripción activa se clasifica como huérfana y se cambia a Revocada/Inactiva; no hay precondición que aborte por fuente maestra ausente/vacía. La condición usa `if (autoFix)`, por lo que la cadena `"false"` también activa mutaciones. Las escrituras se ejecutan sin LockService, sin prevalidación completa ni rollback; se registra solo un resumen (issuesCount/fixedCount), no el ID/estado anterior/nuevo de cada fila. La revocación directa no invalida la caché `active_delegations_<delegadoId>`. Además, la detección de adscripciones solo valida que userId exista; no comprueba que deptId/cargoId existan o estén activos.
+- **Criterios de Aceptación:**
+  - Abortar sin mutaciones si Usuarios no existe, no tiene esquema válido, está vacío o el número de identidades válidas cae bajo una condición de seguridad definida.
+  - Ejecutar en modo diagnóstico por defecto; aplicar cambios únicamente cuando `autoFix === true` (booleano estricto), nunca por strings u otros valores truthy.
+  - Adquirir una sección crítica o usar versión/compare-and-set para evitar reconciliar sobre snapshots obsoletos; liberar lock en finally.
+  - Prevalidar todos los candidatos antes de modificar; si una escritura falla, devolver resultado parcial explícito y permitir recuperación sin ocultar cambios previos.
+  - Para delegaciones, aplicar la revocación por una ruta de dominio que invalide caché y registre motivo/actor/fecha; para adscripciones, registrar actor, motivo y fecha de cierre.
+  - Guardar evidencia por registro (ID, referencia, estado anterior, estado nuevo, motivo, actor, timestamp y resultado), además del resumen.
+  - Validar userId, delegante/delegado, deptId y cargoId contra sus catálogos/estados; no limitarse a la existencia del usuario.
+  - Pruebas aisladas cubren hoja Usuarios ausente/vacía, encabezado solo, autoFix false/"false"/true, un registro huérfano, error en mitad del lote, concurrencia, caché activa y auditoría por registro.
+- **Relaciones y límites:** AUD-NG-219 cubre ciclo de vida/cache de delegaciones; AUD-NG-161 cubre pruebas conductuales; AUD-NG-229 cubre read-modify-write de perfiles; AUD-NG-005 cubre propagación de estado de cuenta. AUD-NG-231 se limita a seguridad y atomicidad del proceso de reconciliación.
+- **Estado:** [ ] Pendiente
+
+### [TASK-511] [AUD-NG-231] Hacer segura y auditable la auto-reconciliación de identidad
+- **Origen:** C1.92 / TAREA-F4-P3-03.
+- **Prioridad:** P1 (Alta).
+- **Componente:** backend/user-service/Code.gs.
+- **Problema:** autoFix puede revocar/desactivar en masa si Usuarios falta/está vacío; valores truthy como "false" activan cambios; no hay lock, rollback ni auditoría individual; no se invalida la caché de delegaciones.
+- **Requisitos:** precondiciones fail-safe; dry-run por defecto; booleano estricto; lock/versionado; prevalidación y recuperación de fallos parciales; invalidación de caché; evidencia por registro; validación de catálogo de departamentos/cargos.
+- **Pruebas:** fuente maestra ausente/vacía; dry-run; autoFix estricto; concurrencia; fallo parcial; caché; delegaciones y adscripciones huérfanas.
+- **Relaciones:** AUD-NG-219, AUD-NG-161, AUD-NG-229, AUD-NG-005.
 - **Estado:** [ ] Pendiente
 

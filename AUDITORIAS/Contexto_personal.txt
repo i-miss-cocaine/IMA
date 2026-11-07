@@ -6349,3 +6349,27 @@ CHECKPOINT C1.188 — NORMALIZACIÓN DE TAREAS DEL INFORME TAREA-F4-P2-04
 - Última tarea normalizada: TAREA-F4-P2-04. Siguiente tarea oficial: TAREA-F4-P2-05 — consolidación de documentación institucional de privacidad y tratamiento de datos; revisar informe y fuentes actuales sin duplicar AUD-NG-145, AUD-NG-146/TASK-499, AUD-NG-220/TASK-500, AUD-NG-222/TASK-502 y AUD-NG-223/TASK-503.
 - Regla de publicación: un único commit consolidado con exactamente el informe y Contexto_personal.txt; verificar SHA, padre, árbol, archivos modificados, estadísticas y HEAD posterior. No escribir en la rama base.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.189 — RECUPERACIÓN ÍNTEGRA DE PENDIENTES.MD
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1; HEAD verificado: 44d9891132332e692dbe2ba8602b41f50a508a59. Sin escrituras en la rama base.
+- HEAD de partida: e81d9a49ad082616e76cfb34eabb422946a6c4e2; árbol de partida: 46cd2c08963bd99f20aa1bdb5390f7cf37c01b95.
+- ID operativo de sesión/chat: IMA-AUDIT-20261107-0012Z (identificador operativo; no es ID nativo de ChatGPT).
+- Solicitud: recuperar Pendientes.md desde el historial una versión completamente legible, con tamaño de 1,6 MB o más.
+- Investigación del historial de Pendientes.md en la rama:
+  - Commit C1.92: 2e174350d9c06fa062ee8cb7e67beeeeb698366b, fecha 2026-11-06 17:05:13Z. Blob: 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c. Tamaño Git tree: 1.803.672 bytes; contenido recuperado: 1,782,094 caracteres; 20.182 líneas; encabezado integral correcto; termina con salto de línea; cero caracteres U+FFFD.
+  - Commit posterior 0258db1ba89c06725a8c0cdbced33795aad7a3fe (17:41:42Z): blob 8867ecf1f58f768cac8fa5ddaa7b50bb68e57158, tamaño 30.744 bytes; no satisface el umbral.
+  - Commit posterior 1767694c6f8a89621671dd2bf82449e346140ba1 (19:25:07Z): blob ef47d232db3ed46317dc14f22b1cdf8f938e8405, tamaño 1.443.391 bytes; no satisface el umbral de 1.600.000 bytes.
+  - C1.92 es la versión histórica más reciente encontrada en el historial consultado que supera el umbral solicitado. La versión recuperada se extrajo directamente de su blob histórico, no de una respuesta parcial de fetch_file.
+- Estado antes de restaurar: Pendientes.md tenía blob ef47d232db3ed46317dc14f22b1cdf8f938e8405, tamaño 1.443.391 bytes.
+- Acción: restaurar el contenido íntegro del blob histórico C1.92 en la ruta raíz Pendientes.md, preservando exactamente el contenido histórico. Registrar este checkpoint en Contexto_personal.txt.
+- Integridad de origen: contenido descargado desde el blob 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c; encabezado esperado, 20.182 líneas, newline final y sin caracteres de reemplazo. El tamaño Git del blob histórico es 1.803.672 bytes (superior a 1,6 MB).
+- Archivos previstos en el commit: Pendientes.md y AUDITORIAS/Contexto_personal.txt.
+- Sin cambios previstos en código fuente, pruebas, informes de auditoría anteriores, Auditoria.txt, MapaDependencias.md, ChangesLogs.txt, completadas.md ni rama base.
+- Pruebas runtime: no aplican a esta restauración documental. Se verificará SHA del blob, tamaño del árbol, padre, árbol, archivos y estadísticas del commit, y HEAD posterior.
+- Siguiente paso: continuar desde la tarea que corresponda al último checkpoint C1.188, sin inferir que la restauración altera los dictámenes de auditoría.
+================================================================
