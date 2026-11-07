@@ -3165,3 +3165,45 @@ Todas Pendientes. No se duplican TASK-538..544 ni la tarea de concurrencia TAREA
 
 ### Límites
 Inspección estática/manual. No se ejecutaron Apps Script runtime, HTTP/OAuth, navegador, Sheets/Drive productivas, concurrencia real, rollback ni E2E. Sin cambios de código o datos productivos.
+
+
+## C1.239 - TAREA-F7-IMP-07: programación de evaluaciones y prevención de sobrecargas
+
+**Informe:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-07.md.  
+**Dictamen:** NO CUMPLE; marca [X] histórica preservada. **HEAD auditado:** eacd5cdc8b8c8c078516f2acb98d17b9f9e1c980.
+
+### Dependencias inspeccionadas
+- backend/exam-service/Code.gs: getOrCreateSheet (26), PUBLIC_ACTIONS/ROLE_PERMISSIONS (75-101), validateRolePermission (207-251), doPost (345-408), createExam (506), updateExam (555), deleteExam (578), getAllExams (609), checkExamSchedulingConflict (875), simulateExamReschedule (910), submitExam (996), getStudentExams (1057), getExamResult (1106), gradeExamSubmission (1236), saveGradebookGrades (1533), saveStudentRecovery (1722).
+- backend/academic-service/Code.gs: getOrCreateSheet (84-155), ROLE_PERMISSIONS (168-265), getAcademicCalendar (6616), createCalendarEvent (6651), getScheduleCalendarConflicts (6876), checkScheduleConflict (7493), getAcademicRules (8164), saveAcademicRule (8181).
+- teacher-dashboard.html: sección de exámenes (179-205), formulario (286-323); no contiene modal/form de simulación.
+- js/teacher.js: controlador openExamScheduleValidationModal (1757), gestión (3286-3354), edición (3441-3476), alta createExamForm.onsubmit (4764-4800).
+- js/api.js: fetchApi (11-60), sin propagación de token de sesión.
+- tests/regression/academic-grading-suite.js y backend/developer-service/Code.gs: sin pruebas/referencias a F7-IMP-07.
+
+### Relaciones de datos y flujo
+- teacher-dashboard.html#create-exam-form -> js/teacher.js#createExamForm.onsubmit -> fetchApi(EXAM, createExam) -> backend/exam-service/Code.gs#doPost/createExam -> hoja Examenes.
+- Examenes -> getAllExams/getStudentExams -> vistas docente/estudiante; fecha expuesta como fechaLimite, no como fecha de aplicación independiente.
+- checkExamSchedulingConflict y simulateExamReschedule son rutas separadas; no se invocan desde createExam/updateExam y la simulación no tiene operación de confirmación.
+- EntregasExamen referencia ExamenID; CalificacionesEstudiantes y RecuperacionesEstudiante guardan EvaluacionID; deleteExam solo comprueba EntregasExamen.
+- CalendarioAcademico: esquema declarado de 9 columnas; writer/readers esperan 13 o índices desplazados. EXAM no consume la validación de días no lectivos.
+- ReglasAcademicas tiene getAcademicRules/saveAcademicRule genéricos, pero el motor EXAM no consulta configuración institucional.
+- fetchApi añade requesterUserId/requesterRole; validateRolePermission de EXAM requiere sessionToken/authToken/token.
+
+### Hallazgos y criterios
+- AUD-NG-242 nuevo; amplía AUD-NG-001, AUD-NG-236, AUD-NG-237 y AUD-NG-238.
+- Creación/edición sin prevalidación; límite 2 rígido; agrupación de sección/grado defectuosa; sin intervalo de separación ni tipo evaluativo; sin docente/aula/recurso; fecha límite confundida con fecha de aplicación; calendario no lectivo con contrato/índices incorrectos; modal ausente; simulación sin confirmación; API sin token; regresión insuficiente.
+- CA-F7-45/46/49/50 NO CUMPLE; CA-F7-47/48 PARCIAL.
+
+### Tareas ejecutables derivadas
+- TASK-552: normalizar modelo de programación y reglas institucionales.
+- TASK-553: motor configurable de carga, coincidencia, separación y afectados.
+- TASK-554: corregir contrato CalendarioAcademico e integrar días no lectivos.
+- TASK-555: detectar conflictos de docentes, aulas y recursos.
+- TASK-556: simulación/confirmación segura, idempotente y con preservación histórica.
+- TASK-557: interfaz docente de programación y simulación.
+- TASK-558: autenticación y permisos del flujo privado EXAM.
+- TASK-559: regresión conductual CA-F7-45..50.
+Todas Pendientes. Se conectan con AUD-NG-001/236/237/238 y TASK-545..TASK-551; no duplican TASK-515..TASK-537 ni TASK-545..TASK-551.
+
+### Límites
+Inspección estática/manual. No se ejecutaron Apps Script runtime, HTTP/OAuth, navegador, Sheets/Drive productivas, persistencia, concurrencia, rollback ni E2E. No se modificó código ni datos productivos.

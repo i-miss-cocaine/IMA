@@ -1760,3 +1760,22 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **Archivos sin cambios:** backend/academic-service/Code.gs; teacher-dashboard.html; js/teacher.js; js/api.js; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; README; manifest.json; rama base.
 - **Siguiente tarea cronológica:** TAREA-F7-IMP-07, “Fortalecer la programación de evaluaciones y la prevención de sobrecargas”.
 ===============================================================================
+
+
+===============================================================================
+## C1.239 - Auditoría TAREA-F7-IMP-07
+- **Sesión operativa:** IMA-AUDIT-20261107-2258Z-01.
+- **Checkpoint inicial:** C1.238. **Checkpoint de cierre:** C1.239.
+- **Tarea auditada:** TAREA-F7-IMP-07, “Fortalecer la programación de evaluaciones y la prevención de sobrecargas”.
+- **Dictamen:** NO CUMPLE; la marca [X] histórica se conserva.
+- **Informe:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-07.md.
+- **Hallazgo nuevo:** AUD-NG-242; se amplían AUD-NG-001, AUD-NG-236, AUD-NG-237 y AUD-NG-238.
+- **Criterios:** CA-F7-45/46/49/50 NO CUMPLE; CA-F7-47/48 PARCIAL.
+- **Tareas derivadas:** TASK-552..TASK-559, todas Pendientes y registradas en el informe individual.
+- **Pruebas ejecutadas:** inspección estática/manual de esquema, dispatcher, RBAC, motor de conflictos, calendario, reglas, creación/edición/simulación, resultados históricos, UI, API, suite, historial y SHAs.
+- **No ejecutadas:** Apps Script runtime, HTTP/OAuth, navegador, Sheets/Drive productivas, persistencia, concurrencia, rollback ni E2E.
+- **Archivos nuevos:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-07.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Archivos sin cambios:** backend/exam-service/Code.gs; backend/academic-service/Code.gs; backend/developer-service/Code.gs; teacher-dashboard.html; js/teacher.js; js/api.js; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; rama base.
+- **Siguiente tarea cronológica:** TAREA-F7-IMP-08, “Ampliar las excepciones del calendario y la gestión de sesiones”.
+===============================================================================

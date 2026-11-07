@@ -8585,3 +8585,36 @@ RECONCILIACIÓN:
 - Todas las tareas nuevas están Pendientes; no se duplican TASK-538..544 ni el alcance de concurrencia de TAREA-F7-IMP-15.
 PRUEBAS/LÍMITES: inspección estática/manual. No ejecutados Apps Script runtime, HTTP/OAuth, navegador, Sheets/Drive productivas, concurrencia real, rollback ni E2E. Sin cambios de código, pruebas, HTML o datos productivos.
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-07
+[AUD-NG-242] TAREA-F7-IMP-07 - PROGRAMACIÓN DE EVALUACIONES Y PREVENCIÓN DE SOBRECARGAS
+SEVERIDAD: CRÍTICO/P0 Y ALTO/P1.
+DICTAMEN: NO CUMPLE (marca [X] histórica conservada).
+EVIDENCIA:
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, TAREA-F7-IMP-07 en línea 4093, CA-F7-45..50; informe individual ausente. Pendientes.md recuperado por blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c: 1.803.672 bytes, 1.782.094 caracteres, 20.182 líneas, sin U+FFFD; no contiene TAREA-F7-IMP-07, CA-F7-45..50 ni TASK-552..559. El blob actual coincide con el SHA indicado; no se restaura ni modifica.
+- backend/exam-service/Code.gs SHA 1d93296628fae31f680004f637897e2b1314a64c: esquema Examenes (26-40) carece de fecha efectiva/hora, año/período, grupo/oferta, tipo de evaluación, aula y recursos. createExam (506) no valida antes de insertar; updateExam (555) cambia fechaLimite directamente; updateExamStatus (541) activa sin comprobar conflictos. checkExamSchedulingConflict (875) usa fechaLimite, aplica Number(maxExamenesPorDia)||2, compara sección o grado por separado y no contempla intervalo de separación/configuración. simulateExamReschedule (910) fuerza límite 2 y solo devuelve vista previa; no hay acción de confirmación.
+- createExam (506), updateExam (555), checkExamSchedulingConflict (875) y simulateExamReschedule (910) son acciones privadas. validateRolePermission (207-227) exige token; js/api.js no transmite sessionToken/authToken/token (AUD-NG-001).
+- backend/academic-service/Code.gs SHA df87a2eea9f0ef79d0b966d03fd5bbe432003df5: CalendarioAcademico se inicializa con 9 columnas (113), pero createCalendarEvent (6651) escribe 13 y getAcademicCalendar (6616), getScheduleCalendarConflicts (6876) y checkScheduleConflict (7525) leen índices incompatibles. El servicio EXAM no consulta calendario para vacaciones/suspensiones/no lectivos.
+- js/teacher.js SHA c475fce5afcd28fca23e7b64398ad32b17773746: openExamScheduleValidationModal (1757) espera modal/form/nodos inexistentes; el flujo createExamForm.onsubmit (4764-4800) llama createExam sin prevalidación; edición (3441-3476) llama updateExam directamente.
+- teacher-dashboard.html SHA cbb9e6a272a7d8ad33f99727303305d950533e71: formulario de examen (286-323) solo muestra campos básicos y fecha límite; no contiene modal-exam-schedule-validation, form-exam-reschedule-simulation ni invocador.
+- js/api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9: fetchApi (38-58) solo añade requesterUserId/requesterRole.
+- tests/regression/academic-grading-suite.js SHA a22cb3ef376fe09e65c1b17c2f4f5125290bfba6 y backend/developer-service/Code.gs SHA 8aa4bac67cfe5c8c54da51a0784a56fef633e412: sin referencias a TAREA-F7-IMP-07, CA-F7-45..50 ni las dos funciones de conflicto/simulación.
+- deleteExam (578-607) solo comprueba EntregasExamen antes de borrar; no comprueba CalificacionesEstudiantes ni RecuperacionesEstudiante. updateExam mantiene ExamenID, por lo que se clasifica CA-F7-47/48 como PARCIAL, no como pérdida universal demostrada.
+- ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff, entrada 2026-10-26 líneas aproximadas 2310-2319 afirma botón/modal HTML ya integrado; el HTML actual no contiene esos nodos.
+CRITERIOS: CA-F7-45/46/49/50 NO CUMPLE; CA-F7-47/48 PARCIAL.
+RECONCILIACIÓN:
+- Hallazgo nuevo AUD-NG-242.
+- Ampliar AUD-NG-001 (token), AUD-NG-236 (motor de conflictos/calendario), AUD-NG-237 (UI docente) y AUD-NG-238 (simulación/confirmación).
+- TASK-552: modelo de programación y configuración institucional de evaluaciones.
+- TASK-553: motor configurable de carga, coincidencia y separación.
+- TASK-554: contrato CalendarioAcademico e integración de días no lectivos.
+- TASK-555: conflictos de docentes, aulas y recursos.
+- TASK-556: simulación/confirmación segura, sin pérdida de historial.
+- TASK-557: interfaz docente real y conectada.
+- TASK-558: autenticación y permisos del flujo EXAM.
+- TASK-559: regresión conductual CA-F7-45..50.
+- Todas las tareas nuevas están Pendientes; no duplican TASK-515..TASK-537 ni TASK-545..TASK-551.
+PRUEBAS/LÍMITES: inspección estática/manual. No ejecutados Apps Script runtime, HTTP/OAuth, navegador, Sheets/Drive productivas, persistencia, concurrencia, rollback ni E2E. Sin cambios de código, tests, HTML, datos productivos o despliegues.
+===============================================================================
