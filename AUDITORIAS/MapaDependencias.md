@@ -2668,3 +2668,41 @@ Inspección estática/manual. No se ejecutaron Apps Script, HTTP, despliegues, D
 
 ### Estado de pruebas
 Inspección estática/manual. No se ejecutaron Apps Script API, OAuth, creación de proyectos, deployments, Drive/Sheets productivas, concurrencia ni E2E.
+
+
+## C1.225 - TAREA-F6-008 / TAREA-F6-033: plano de control central y registro de servicios
+
+**Informes:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-008.md y AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-033.md  
+**Dictamen:** NO CUMPLE en ambas. **HEAD inicial:** df861afda6dea6b063a8b2702e466a0b838ea0ae.
+
+### Registro central
+- backend/developer-service/Code.gs SHA 8aa4bac67cfe5c8c54da51a0784a56fef633e412:
+  - getCentralServiceRegistry:2415-2472 devuelve seis servicios hardcodeados Activos si el catálogo está vacío o falla; defaults comparten Spreadsheet y omiten endpoint/Drive/dependencias/lastContact.
+  - registerServiceInstance:2473-2530 permite endpoint vacío, Spreadsheet compartido y permisos ["*"] por defecto.
+  - updateServiceStatus:2531-2574 guarda historial, pero solo una columna state y updatedBy del payload.
+  - auditInterServiceCalls:2575-2584 retorna auditLogs vacío.
+  - manageUserMultiRolePermissions:2585-2600 devuelve roles/áreas recibidos sin persistir.
+  - executeOperationalCommand:2387-2415 usa allowlist, pero devuelve resultado sintético.
+- backend/user-service/Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f: recordTraceabilityLog:4548-4615 persiste una fila, pero no se invoca automáticamente.
+- backend/academic-service/Code.gs SHA df87a2eea9f0ef79d0b966d03fd5bbe432003df5: validateApiContractsTestSuite:3915-3985 prueba funciones locales y permite status:error como PASS.
+- js/api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9: timeout 60s, dos reintentos, SERVICE_URLS estáticos; sin correlationId/idempotencyKey.
+- developer-dashboard.html SHA 2b69f1bf7ffbbe4902e81de14d6315cedb035a1e y js/developer.js SHA 6fa4c4bd9be580c974b1fbede4f0cf79485dc331 no contienen UI/handlers del registro.
+
+### Contrato y dependencias
+- createInterServiceEnvelope/verifyInterServiceEnvelope existen en developer/user/academic, pero no hay llamadas desde fetchApi/doPost.
+- Servicios operativos usan SERVICE_URLS directos; no se identificó dependencia obligatoria de getCentralServiceRegistry.
+- AUD-NG-078, 082, 083, 084, 086, 007 y 158 se amplían; no se crean IDs globales duplicados.
+
+### Hallazgos y tareas
+- H1 P1: registro central incompleto y falsos Activos.
+- H2 P0: correlationId/HMAC no integrados.
+- H3 P1: retries sin idempotencia.
+- H4 P0: multirol no persistido ni aplicado.
+- H5 P1: dashboard sin administración del registro.
+- H6 P1: trazabilidad y pruebas de contrato no verifican interoperabilidad.
+- H7 P2: comandos allowlist seguros pero simulados.
+- H8 P1: independencia arquitectónica sin prueba de caída.
+- Tareas canónicas F6-008-A01..A06 pendientes; F6-033 referencia el mismo bloque.
+
+### Estado de pruebas
+Inspección estática/manual. No se ejecutaron llamadas interservicio, pruebas HTTP, caída del control plane, OAuth, idempotencia ni E2E.

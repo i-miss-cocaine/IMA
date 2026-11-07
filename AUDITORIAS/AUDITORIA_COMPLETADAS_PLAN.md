@@ -1518,3 +1518,18 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **Archivos actualizados:** Auditoria.txt; MapaDependencias.md; AUDITORIA_COMPLETADAS_PLAN.md; Contexto_personal.txt.
 - **Archivos sin cambios:** backend, js, HTML, tests, completadas.md, Pendientes.md, ChangesLogs.txt, metodología, README y rama base.
 - **Siguiente tarea:** TAREA-F6-008 y TAREA-F6-033, plano de control central y registro de servicios.
+
+
+## C1.225 - Resultado de auditoría TAREA-F6-008 y TAREA-F6-033
+
+- **Dictamen:** NO CUMPLE en ambas; ambas aparecen [X] en completadas.md y conservan ese estado histórico.
+- **Relación:** TAREA-F6-033 repite el título de F6-008 y amplía criterios CA-080..087/CA-155..157. Se crean informes por ID, pero comparten un único bloque canónico F6-008-A01..A06.
+- **Evidencia crítica:** registro central hardcodeado con servicios activos por defecto, permisos wildcard y recursos incompletos; correlationId/HMAC no integrados; auditInterServiceCalls vacío; trazabilidad no automática; multirol solo echo; dashboard sin UI; pruebas que aceptan status:error como PASS.
+- **Aspectos parciales:** URLs operativas directas no dependen del control plane; comandos usan allowlist y no ejecutan código arbitrario, aunque la ejecución es simulada.
+- **Registros existentes ampliados:** AUD-NG-078, AUD-NG-082, AUD-NG-083, AUD-NG-084, AUD-NG-086, AUD-NG-007 y AUD-NG-158. No se crean IDs globales duplicados.
+- **Tareas canónicas:** F6-008-A01..A06 pendientes (registro/ciclo de vida, contrato común, trazabilidad, multirol, dashboard/independencia, comandos y pruebas).
+- **Pruebas:** inspección estática/manual; no se ejecutaron llamadas interservicio, HTTP, caída del control plane, OAuth, idempotencia ni E2E.
+- **Archivos nuevos:** informes individuales F6-008 y F6-033.
+- **Archivos actualizados:** Auditoria.txt; MapaDependencias.md; AUDITORIA_COMPLETADAS_PLAN.md; Contexto_personal.txt.
+- **Archivos sin cambios:** backend, js, HTML, tests, completadas.md, Pendientes.md, ChangesLogs.txt, metodología, README y rama base.
+- **Siguiente tarea:** TAREA-F6-009 y TAREA-F6-034, salud, diagnóstico, tráfico y errores en todos los microservicios.

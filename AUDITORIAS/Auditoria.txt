@@ -8040,3 +8040,65 @@ ARCHIVOS:
 SIGUIENTE TAREA:
 TAREA-F6-008 y su registro ampliado TAREA-F6-033: plano de control central y registro de servicios. Buscar informes individuales e historial; verificar registro real de endpoints/recursos, correlationId, timeouts/retries, tolerancia a caída del control plane, multirol y prohibición de ejecución arbitraria.
 ===============================================================================
+
+
+===============================================================================
+AUDITORÍA C1.225 - TAREA-F6-008 Y TAREA-F6-033 - 2026-11-07
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: df861afda6dea6b063a8b2702e466a0b838ea0ae
+Checkpoint inicial: C1.224
+Sesión: IMA-AUDIT-20261107-2140Z
+Informes: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-008.md y AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-033.md
+Dictamen: NO CUMPLE en ambas tareas.
+
+FUENTES:
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676: F6-008 [X], líneas 2712-2747; F6-033 [X], líneas 3609-3655.
+- Pendientes.md blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c: 1.803.672 bytes, 1.782.094 caracteres, 20.182 líneas, sin U+FFFD; no contiene F6-008/F6-033. No se modificó.
+- ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff: F6-008 líneas 1975-1979.
+- Ambos informes individuales no existían; se crean.
+- F6-033 repite el título de F6-008 y amplía criterios; se auditaron ambos con la misma evidencia y un único bloque canónico de tareas.
+
+HALLAZGOS:
+1. H1 P1: getCentralServiceRegistry devuelve seis defaults hardcodeados Activos cuando la hoja está vacía/falla; faltan endpoints, Drive, dependencias y lastContact; registerServiceInstance acepta endpoint vacío, Spreadsheet compartido y wildcard por defecto.
+2. H2 P0: correlationId/HMAC no integrados en fetchApi/doPost; auditInterServiceCalls devuelve auditLogs vacío; recordTraceabilityLog no se invoca automáticamente.
+3. H3 P1: fetchApi tiene timeout 60s y dos retries, pero no idempotencyKey; una escritura puede duplicarse tras perderse la respuesta.
+4. H4 P0: manageUserMultiRolePermissions solo devuelve payload; JWT contiene un role; assignRoleScope no está integrado; developer-service conserva fallback authRole (AUD-NG-082).
+5. H5 P1: dashboard sin UI del registro central.
+6. H6 P1: pruebas de contratos locales; status:error cuenta como PASS; no validan interoperabilidad real.
+7. H7 P2: catálogo de comandos cerrado sin eval/Function, pero executeOperationalCommand devuelve éxito simulado.
+8. H8 P1: servicios operativos usan SERVICE_URLS directos, no dependen del control plane; falta prueba real de caída.
+
+REGISTROS EXISTENTES AMPLIADOS, SIN NUEVOS IDS GLOBALES:
+- AUD-NG-078: registro central incompleto/wildcard.
+- AUD-NG-082: fallback authRole.
+- AUD-NG-083: HMAC no integrado.
+- AUD-NG-084: falsos positivos en pruebas de contratos.
+- AUD-NG-086: trazabilidad no integrada.
+- AUD-NG-007: timeout/reintentos.
+- AUD-NG-158: multirol/ámbitos.
+- TAREA-F6-033 se trata como expansión de F6-008; ambos informes referencian un único bloque canónico.
+- No se crean nuevos IDs AUD-NG ni tareas locales duplicadas.
+
+TAREAS DERIVADAS CANÓNICAS:
+- F6-008-A01 P1: completar registro central y ciclo de vida.
+- F6-008-A02 P0: contrato común correlationId/HMAC/idempotencia.
+- F6-008-A03 P1: trazabilidad interservicio persistente.
+- F6-008-A04 P0: multirol y responsabilidades con validación backend.
+- F6-008-A05 P1: dashboard y pruebas de independencia.
+- F6-008-A06 P1: comandos reales y pruebas de contrato.
+Todas pendientes; F6-033 referencia el mismo bloque.
+
+PRUEBAS:
+- Ejecutadas: inspección estática/manual de registro, dispatchers, roles, envelopes, trazabilidad, API client, dashboard y tests de contrato.
+- No ejecutadas: llamadas interservicio, pruebas HTTP, caída del control plane, OAuth, pruebas de idempotencia ni E2E.
+- No se modificaron datos productivos.
+
+ARCHIVOS:
+- Nuevos: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-008.md; AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-033.md.
+- Actualizados: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- Sin cambios: backend, js, HTML, tests, completadas.md, Pendientes.md, ChangesLogs.txt, metodología, README y rama base.
+
+SIGUIENTE TAREA:
+TAREA-F6-009 y su registro ampliado TAREA-F6-034: salud, diagnóstico, tráfico y errores en todos los microservicios. Buscar informes individuales e historial; comprobar endpoints reales de salud, pruebas de dependencias, métricas medidas, sanitización de logs, correlationId y dashboard sin exponer datos sensibles.
+===============================================================================

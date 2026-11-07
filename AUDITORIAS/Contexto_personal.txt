@@ -7610,3 +7610,57 @@ ARCHIVOS MODIFICADOS:
 SIGUIENTE ACCIÓN:
 Auditar TAREA-F6-008 y su registro ampliado TAREA-F6-033: plano de control central y registro de servicios. Buscar informes individuales e historial; revisar catálogo de servicios/endpoints/recursos, correlationId, timeouts/retries, tolerancia a caída del control plane, multirol y prevención de ejecución arbitraria.
 ===============================================================================
+
+
+===============================================================================
+CHECKPOINT C1.225 - SESIÓN IMA-AUDIT-20261107-2140Z
+Fecha: 2026-11-07
+Estado: sesión cerrada
+Checkpoint inicial: C1.224
+Checkpoint de cierre: C1.225
+Tareas auditadas: TAREA-F6-008 y TAREA-F6-033 (mismo título y alcance ampliado).
+Contexto: ambas tareas estaban marcadas [X] y carecían de informe individual. Se verificaron registro central, ciclo de vida, permisos, correlationId/HMAC, reintentos, idempotencia, trazabilidad, multirol, dashboard, comandos y pruebas de contratos. Dictamen NO CUMPLE en ambas.
+
+REPOSITORIO Y RAMAS:
+- Repositorio: i-miss-cocaine/IMA.
+- Rama base NG_beta_0.0.0.1; no modificada.
+- Rama de trabajo NG_beta_0.0.0.1_work.
+- HEAD inicial verificado: df861afda6dea6b063a8b2702e466a0b838ea0ae (C1.224).
+- Comparación anterior con la rama base: 292 commits ahead, 0 behind.
+- Checkpoint previo: C1.224, commit audit(C1.224): audit F6-007 and F6-032 deployment.
+
+FUENTES:
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676: TAREA-F6-008 [X], líneas 2712-2747; TAREA-F6-033 [X], líneas 3609-3655.
+- Pendientes.md blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c: 1.803.672 bytes, 1.782.094 caracteres, 20.182 líneas, sin U+FFFD; no contiene F6-008/F6-033 y no se modificó.
+- ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff: F6-008 líneas 1975-1979.
+- Ambos informes individuales no existían; se crean.
+- F6-033 repite título y amplía criterios; un solo bloque de tareas canónico para evitar duplicados.
+
+HALLAZGOS:
+- H1 P1: registro central devuelve seis defaults Activos, sin endpoint/Drive/dependencias/lastContact; permisos wildcard por defecto y Spreadsheet compartido.
+- H2 P0: correlationId/HMAC no integrados; auditInterServiceCalls retorna auditLogs vacío; recordTraceabilityLog no se invoca automáticamente.
+- H3 P1: fetchApi tiene timeout y retries, pero no idempotencyKey; una escritura puede duplicarse si se pierde la respuesta.
+- H4 P0: manageUserMultiRolePermissions solo devuelve payload; token de un role; scopes no integrados; fallback authRole.
+- H5 P1: dashboard sin UI del registro central.
+- H6 P1: validateApiContractsTestSuite prueba funciones locales y permite status:error como PASS.
+- H7 P2: allowlist de comandos sin código arbitrario, pero handler devuelve éxito simulado.
+- H8 P1: rutas operativas directas no dependen del control plane; falta prueba de caída.
+
+REGISTROS EXISTENTES:
+- AUD-NG-078, AUD-NG-082, AUD-NG-083, AUD-NG-084, AUD-NG-086, AUD-NG-007 y AUD-NG-158. Se amplían, no se duplican.
+- Tareas canónicas F6-008-A01..A06 pendientes; F6-033 referencia el mismo bloque.
+
+PRUEBAS:
+- Ejecutadas: inspección estática/manual de registro, dispatchers, roles, envelopes, trazabilidad, API client, dashboard y tests de contrato.
+- No ejecutadas: llamadas interservicio, HTTP, caída del control plane, OAuth, idempotencia ni E2E.
+- No se modificaron datos productivos.
+
+ARCHIVOS MODIFICADOS:
+- Nuevos: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-008.md; AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-033.md.
+- Actualizados: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- Sin cambios: backend, js, HTML, tests, completadas.md, Pendientes.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README y rama base.
+- No se modificó código ni datos productivos.
+
+SIGUIENTE ACCIÓN:
+Auditar TAREA-F6-009 y su registro ampliado TAREA-F6-034: salud, diagnóstico, tráfico y errores en todos los microservicios. Buscar informes individuales e historial; comprobar endpoints reales de salud, pruebas de dependencias, métricas medidas, sanitización de logs, correlationId y dashboard sin exponer datos sensibles.
+===============================================================================
