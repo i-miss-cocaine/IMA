@@ -6233,3 +6233,62 @@ CHECKPOINT C1.186 — NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME TAREA-F4-P
 - Última tarea normalizada: TAREA-F4-P2-02. Siguiente tarea oficial: TAREA-F4-P2-03 — interfaz administrativa de usuarios, permisos y delegaciones; revisar el informe íntegro y reconciliar AUD-NG-228/TASK-508, TASK-480/AUD-NG-183, AUD-NG-219/TASK-498 y AUD-NG-221/TASK-501 sin duplicar IDs.
 - Regla de publicación: un único commit consolidado con exactamente el informe y Contexto_personal.txt; verificar SHA, padre, árbol, archivos modificados, estadísticas y HEAD posterior. No escribir en la rama base.
 ================================================================
+
+
+================================================================
+REGLA ESPECÍFICA DE CONTINUIDAD DOCUMENTAL — AUDITORÍA IMA
+================================================================
+Alcance limitado a esta auditoría del repositorio i-miss-cocaine/IMA; no constituye una regla general para otros proyectos o conversaciones.
+
+Si un archivo de auditoría requerido no existe en la rama de trabajo actual:
+1. Buscar primero sus menciones, rutas, referencias, IDs y contenido relacionado en Auditoria.txt, los demás informes de auditoría y ChangesLogs.txt/changelog; cotejar también el plan, el mapa de dependencias y Contexto_personal.txt cuando corresponda.
+2. Buscar después el archivo en el historial de commits de la rama de trabajo actual y en sus ancestros relevantes.
+3. Si se encuentra una versión histórica, recuperarla desde el commit identificado y verificar ruta, contenido y SHA antes de continuar.
+4. Solo si no se encuentra tras esas verificaciones, realizar la auditoría relacionada desde cero, consultando como mínimo Pendientes.md y completadas.md, además de las fuentes técnicas, changelog y registros pertinentes.
+5. No declarar inexistencia ni recrear un informe antes de completar estos pasos. No duplicar IDs existentes y preservar dictámenes históricos.
+
+Esta regla se aplica únicamente al flujo de auditoría IMA. En C1.187 el informe TAREA-F4-P2-03 sí existe en la rama actual, por lo que no se requirió recuperación histórica ni reconstrucción desde cero.
+================================================================
+
+
+================================================================
+CHECKPOINT C1.187 — NORMALIZACIÓN DE TAREAS DEL INFORME TAREA-F4-P2-03
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo autorizada: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1; HEAD verificado: 44d9891132332e692dbe2ba8602b41f50a508a59. No se realizó ninguna escritura sobre la rama base.
+- HEAD de partida verificado: daf40c810e15e881939b6455044aac37e5e055ee (C1.186).
+- Árbol de partida: 866f717d7190313bb8d3ae6d634567d87f993fb5.
+- Padre de C1.186: ad3005eea57879867caca53527764423b158facb.
+- ID operativo de sesión/chat: IMA-AUDIT-20261106-2359Z (inicio de esta iteración; identificador operativo, no ID nativo de ChatGPT).
+- Checkpoint inicial de esta iteración: C1.186.
+- Tarea documental general: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F4-P2-03.md — experiencia administrativa de gestión de usuarios, permisos y delegaciones.
+- Dictamen original preservado: NO CUMPLE. La auditoría funcional ya estaba registrada en C1.87; esta iteración normaliza su tarea ejecutable sin alterar el dictamen.
+- Regla de recuperación aplicada: el informe P2-03 existe en la rama actual (SHA previo 9b6d71b2c47f50ed354123c6b3e59fb50d30935e); no se reconstruyó ni se recuperó desde historial. La regla específica de continuidad documental queda registrada arriba.
+- Fuentes consultadas:
+  - Informe P2-03 previo: SHA 9b6d71b2c47f50ed354123c6b3e59fb50d30935e.
+  - Contexto_personal.txt previo: SHA 28bab1a7287f616665a2dd59b70a25516d37481e.
+  - Auditoria.txt: SHA 284b7a94b51c8ed99dbfcf734694bc5361f9f111.
+  - MapaDependencias.md: SHA 4f68d56f910c6a4e87c20ecac82daeb3a615bcaa.
+  - AUDITORIA_COMPLETADAS_PLAN.md: SHA a374b91e5e45c0b8d5fd9db939735e6ed434c6cb.
+  - ChangesLogs.txt: SHA d57cf4bd861b5c3720e60cf83241ed804ff645d9.
+  - completadas.md: SHA f57f1aef832e81e44fc4f7ec36a852d50e464676; TAREA-F4-P2-03 figura [X], severidad Medio.
+  - Pendientes.md: SHA ef47d232db3ed46317dc14f22b1cdf8f938e8405; archivo vacío en la rama actual.
+  - Fuentes técnicas cotejadas y SHAs actuales: ui-common.js 986938b8a311a41ed4cb3d135b66b6aaea4bed67; api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; config.js 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc; USER Code.gs 12079dd410aa6d8afbce55a4bc62a79dea605f9f; dashboard-direccion.html fefaa3bf7884288aef563cfb8aaf244e6cea8b7c; dashboard-secretaria.html fa0d8c23aace24a6acab2d4956398a7f5e1309b8; academic-grading-suite.js 3433b707edd4a2f35c68368a3172932adc2a3b32; modular-dashboard-suite.js 0495e1d526a872c33310935a003a83d924d34683.
+- Reconciliación de identificadores:
+  - TASK-480/AUD-NG-183 conserva el anidamiento/registro global del modal.
+  - AUD-NG-001 conserva el transporte del token.
+  - AUD-NG-219/TASK-498 conserva delegaciones.
+  - AUD-NG-221/TASK-501 conserva matriz y permisos efectivos.
+  - AUD-NG-228/TASK-508 ya existía en Auditoria.txt, MapaDependencias.md y el plan; se formaliza su bloque ejecutable en el informe sin crear ID nuevo.
+  - No se halló un bloque detallado previo de AUD-NG-228/TASK-508 en los documentos consultados. No se duplican los IDs ni los alcances anteriores.
+- Evidencia central revalidada: fetchApi(service, action, payload) en api.js 11-24; llamadas invertidas en ui-common.js 5555 y 5590; DTO incompleto de USER/getStudents en Code.gs 2556-2558; interpolación de datos del directorio en innerHTML en ui-common.js 5571-5581. Los SHA actuales coinciden con los consignados en C1.87.
+- Archivos modificados en esta iteración: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F4-P2-03.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README, hojas productivas y rama base.
+- Pruebas ejecutadas: lectura íntegra del informe P2-03; lectura y cotejo de Auditoria.txt, MapaDependencias.md, plan, Contexto_personal.txt, completadas.md, Pendientes.md y ChangesLogs.txt en los apartados pertinentes; verificación de ausencia de bloque detallado AUD-NG-228/TASK-508; comprobación de SHA de los ocho archivos técnicos citados; revisión de la firma fetchApi, las llamadas del modal y getStudents; comprobación de HEAD y árbol antes del cambio.
+- Pruebas no ejecutadas: navegador/DOM, Apps Script runtime, HTTP, Sheets productivo, filtros reales, cambio de estado, roles reales, delegaciones, matriz de permisos, XSS y suites automatizadas. Esta iteración es documental y no implementa TASK-508.
+- Límite: no se declara resuelto el directorio ni explotado el riesgo XSS. Se conserva NO CUMPLE y el progreso histórico 84/183 identificadores auditados; 99 pendientes. La normalización no incrementa el conteo de auditorías.
+- Última tarea normalizada: TAREA-F4-P2-03. Siguiente tarea oficial: TAREA-F4-P2-04 — optimizar la concurrencia y consistencia de las operaciones de identidad; reconciliar AUD-NG-229/TASK-509, AUD-NG-219/TASK-498, TASK-118, AUD-NG-161 y AUD-NG-218 sin duplicar.
+- Regla de publicación: un único commit consolidado con exactamente el informe y Contexto_personal.txt; verificar SHA, padre, árbol, archivos modificados, estadísticas y HEAD posterior. No escribir en la rama base.
+================================================================

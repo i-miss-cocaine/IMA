@@ -89,3 +89,35 @@ El modal concatena `u.userId` y `u.nombre` dentro de una cadena asignada a `tbod
 - **Archivos documentales previstos para C1.87:** Auditoria.txt, Pendientes.md, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt y este informe.
 - **Archivos preservados:** código fuente, pruebas, completadas.md, ChangesLogs.txt y METODOLOGIA_DESARROLLO.md.
 - **Commit de cierre:** el commit que contiene este checkpoint; SHA final se verifica después de publicar.
+
+
+## Tareas ejecutables derivadas de los hallazgos
+
+### [AUD-NG-228 / TASK-508] Corregir el contrato de llamadas y el DTO/filtros del directorio administrativo
+
+- **Hallazgo de origen:** secciones 3.2, 3.3 y 3.5; registro preexistente AUD-NG-228/TASK-508 en `AUDITORIAS/Auditoria.txt` y `AUDITORIAS/MapaDependencias.md`. El modal invoca `fetchApi("getStudents", payload, "USER")` y `fetchApi("manageAccountState", payload, "USER")`, aunque la firma real es `fetchApi(service, action, payload)`. El endpoint USER/getStudents ignora el payload y solo devuelve userId, nombre y numeroLista para estudiantes no desactivados; no entrega email, rol ni estadoCuenta y no aplica búsqueda/filtro. La UI espera esos campos y muestra valores por defecto que pueden ocultar el estado real. El renderizado concatena datos del directorio en innerHTML sin escape contextual visible.
+- **Clasificación:** la tarea madre TAREA-F4-P2-03 figura con severidad Medio en completadas.md. El registro resumido de AUD-NG-228 no asigna una severidad independiente; no se inventa una clasificación adicional.
+- **Objetivo:** hacer que el directorio administrativo invoque correctamente el servicio USER, reciba un contrato de datos consistente para las cuentas que debe administrar, aplique los filtros declarados y renderice datos no confiables de forma segura.
+- **Acción ejecutable:**
+  1. Corregir las llamadas del modal para respetar la firma existente: `fetchApi("USER", "getStudents", payload)` y `fetchApi("USER", "manageAccountState", payload)`. Mantener la firma pública y el orden de argumentos de fetchApi; no cambiar el helper ni introducir un alias de servicio que oculte el error.
+  2. Definir y documentar el DTO de respuesta del directorio. Como mínimo, incluir `userId`, `nombre`, `email`, `rol` y `estadoCuenta`; conservar `numeroLista` solo si existe un consumidor que lo necesite. No devolver contraseñas, tokens ni secretos.
+  3. Ajustar USER/getStudents para procesar el payload validado y devolver el universo de cuentas que corresponde al directorio administrativo, sin limitarlo silenciosamente al rol Estudiante ni excluir estados que la interfaz debe poder consultar y gestionar.
+  4. Implementar búsqueda por los campos que anuncia la interfaz (identificador, nombre y correo) y filtro por estado real. Un filtro equivalente a “Todos” no debe excluir cuentas; los estados específicos deben aplicarse de forma consistente con el catálogo institucional.
+  5. Hacer que la interfaz consuma el DTO canónico y muestre los valores reales. No sustituir un estado ausente por “Activa” ni un rol ausente por “Estudiante”, porque esos defaults pueden representar incorrectamente la cuenta.
+  6. Sustituir la interpolación de nombre, correo, identificador, estado y mensajes de error dentro de HTML por creación segura de nodos y asignación mediante textContent/propiedades DOM. No considerar demostrado un XSS hasta ejecutar pruebas de navegador; el criterio es preventivo y verificable.
+  7. Mantener la autorización del backend y las validaciones existentes para el cambio de estado. La corrección del contrato no debe convertir los datos requesterUserId/requesterRole en prueba de identidad ni abrir acciones públicas.
+  8. Añadir pruebas aisladas del contrato de fetchApi y del endpoint: servicio/acción correctos, búsqueda por ID/nombre/correo, filtro por estado, distintos roles/estados, campos ausentes y renderizado de valores con caracteres HTML. Distinguir PASS, FAIL, SKIP y NOT RUN.
+- **Archivos/módulos afectados:** `js/ui-common.js`; `backend/user-service/Code.gs`; pruebas de regresión del directorio. `js/api.js` y `js/config.js` son referencias del contrato vigente y solo deben modificarse si una prueba demuestra un defecto propio del helper o del registro SERVICE_URLS.
+- **Dependencias y límites:** TASK-480/AUD-NG-183 conserva el registro global y disponibilidad del modal; AUD-NG-001 conserva el transporte del token de sesión; AUD-NG-219/TASK-498 conserva el motor y ciclo de vida de delegaciones; AUD-NG-221/TASK-501 conserva la matriz y los permisos efectivos. AUD-NG-228/TASK-508 no absorbe ni duplica esos alcances. Tampoco sustituye la auditoría de acciones públicas ni la autorización del logout.
+- **Criterios de aceptación:**
+  1. Las dos llamadas del modal usan USER como servicio y la acción como segundo argumento; la petición alcanza el endpoint previsto y no retorna el fallback de “servicio no encontrado”.
+  2. USER/getStudents devuelve el DTO documentado con identificador, nombre, correo, rol y estado reales para las cuentas incluidas en el directorio.
+  3. La búsqueda por identificador, nombre y correo y el filtro de estado producen resultados correctos; la opción “Todos” no omite cuentas por rol o estado.
+  4. La interfaz no inventa valores por defecto que alteren la interpretación de rol o estado.
+  5. Los datos provenientes de Sheets y los mensajes de error se insertan sin interpretar contenido no confiable como HTML.
+  6. El cambio de estado continúa sujeto a autorización de servidor; la corrección no introduce una ruta pública ni confía en identidad declarada por el cliente.
+  7. Las pruebas aisladas cubren resultados positivos, negativos, filtros vacíos, estados distintos y datos con caracteres HTML; no se afirma cobertura runtime si no se ejecutó.
+- **Prioridad:** no asignada en las fuentes consultadas.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente. Adjuntar commit de implementación, pruebas del contrato UI/API, resultados de búsqueda/filtro y evidencia de renderizado seguro.
+
