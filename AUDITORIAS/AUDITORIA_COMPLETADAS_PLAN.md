@@ -1175,3 +1175,15 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - Archivos: informe F5-009 nuevo; Auditoria.txt; MapaDependencias.md; AUDITORIA_COMPLETADAS_PLAN.md; Contexto_personal.txt.
 - Sin cambios: código, pruebas, completadas.md, Pendientes.md, ChangesLogs.txt, metodología y rama base.
 - Continuidad: C1.202 inicio; C1.203 cierre; sesión IMA-AUDIT-20261107-0325Z cerrada. Siguiente tarea exacta: TAREA-F5-010 - integrar plazas, reservas y matrículas en control de capacidad. Verificar informe/historial antes de auditar.
+
+
+## C1.204 - TAREA-F5-010: control consistente de capacidad, reservas y matrículas
+
+- **Dictamen:** NO CUMPLE. La oferta académica se escribe con columnas incompatibles con su esquema canónico; reservas se cuentan por grado y no por sección; el timeout del lock se ignora; rutas legacy de matrícula omiten capacidad/lock; expiración no persiste ni audita; override no autentica firma/rol de Dirección; reporte no está expuesto; suites sin cobertura específica.
+- **Informe creado desde cero:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-010.md. Se comprobó ausencia en árbol e historial.
+- **Fuente:** completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676 (12 requisitos/9 criterios, marcado [X]); Pendientes.md blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c leído íntegro. Relación directa TASK-477/AUD-NG-179; sin entrada directa F5-010.
+- **Subtareas locales:** F5-010-A01..A08; detalle y criterios en el informe. Ampliar TASK-477/AUD-NG-179, AUD-NG-234/TASK-514, AUD-NG-145 y AUD-NG-161; coordinar F5-008/F5-011/F5-012. No crear IDs globales duplicados.
+- **Pruebas:** inspección estática/manual de backend, RBAC, dispatch, esquema, UI, callsites y suites; lectura de backlog por blob. No ejecutados Apps Script, HTTP, Sheets productivo, navegador, concurrencia real, firma digital ni suites automatizadas.
+- **Archivos documentales:** informe F5-010 nuevo; Auditoria.txt; MapaDependencias.md; AUDITORIA_COMPLETADAS_PLAN.md; Contexto_personal.txt.
+- **Sin cambios:** código, pruebas, completadas.md, Pendientes.md, ChangesLogs.txt, metodología y rama base.
+- **Continuidad:** C1.203 (F5-009) es el checkpoint previo. C1.204 cierra la auditoría F5-010. Siguiente paso: ejecutar F5-010-A01..A08 según dependencias y metodología; no pasar a F5-011 hasta completar las tareas derivadas o documentar bloqueo.

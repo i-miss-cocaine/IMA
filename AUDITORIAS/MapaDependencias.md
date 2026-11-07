@@ -2107,3 +2107,16 @@ TASK-038 (Magic Bytes); TASK-134/TASK-144 (SHA-256/deduplicación/integridad); T
 - Ampliar sin duplicar: AUD-NG-001/036/105/123/136/145/161/232/TASK-512/233/TASK-513/234/TASK-514. Coordinar TAREA-F5-011 y F5-012.
 - Dictamen: F5-009 NO CUMPLE. Informe AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-009.md.
 - Subtareas: F5-009-A01 modelo canónico; A02 invitación segura/atómica; A03 autorización transversal; A04 permisos granulares; A05 administración UI/RBAC; A06 interfaz/entrega; A07 trazabilidad; A08 pruebas.
+
+
+## Fase 5 - Capacidad, reservas y matrículas (TAREA-F5-010, C1.204)
+
+- OfertaAcademica: esquema canónico de 11 columnas; createAcademicOffer escribe 7 valores con índices incompatibles y no persiste CapacidadMax.
+- Capacidad: checkEnrollmentCapacity no aborta si tryLock falla; reservas Admitida se filtran por año/grado, no sección; fallback de sección/capacidad abierto.
+- Rutas: registerStudentEnrollment no usa lock ni checkEnrollmentCapacity; createStudentEnrollment acepta skipLock/isInternalCall; conversión/estado/lista de espera dependen de control incompleto.
+- Reservas: expiración solo excluye del conteo, no persiste estado ni evento; falta historial completo de reserva/liberación.
+- Sobrecupo: forceCapacityOverride booleano no verifica identidad/rol/firma de Dirección; evento de log no prueba autorización.
+- Reporte: getEnrollmentCapacityReport existe pero no tiene dispatch/RBAC; UI consulta año/grado y omite sección.
+- Dependencias: ampliar TASK-477/AUD-NG-179 (timeout LockService), AUD-NG-234/TASK-514 (bypass/atomicidad), AUD-NG-145 (bitácora), AUD-NG-161 (pruebas); coordinar TAREA-F5-008 (lista de espera), F5-011 (notificaciones) y F5-012 (portal familiar).
+- Dictamen: F5-010 NO CUMPLE. Informe AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-010.md.
+- Subtareas locales F5-010-A01..A08: esquema; conteo por sección; atomicidad; ciclo de reserva; override firmado; reporte/UI; bitácora/reconciliación; pruebas.
