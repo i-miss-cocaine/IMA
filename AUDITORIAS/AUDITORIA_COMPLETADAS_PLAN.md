@@ -1327,3 +1327,20 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Archivos documentales modificados:** informe individual F5-017, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md y Contexto_personal.txt.
 - **Archivos no modificados:** backend/academic-service/Code.gs; js/secretary.js; dashboard-secretaria.html; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; AUDITORIAS/README.md; rama base.
 - **Siguiente tarea:** TAREA-F5-018 - experiencia multiestudiante y resumen familiar consolidado; verificar primero informe individual e historial.
+
+
+## C1.215 - TAREA-F5-018: experiencia multiestudiante y resumen familiar consolidado
+
+- **Sesión:** IMA-AUDIT-20261107-1821Z; checkpoint inicial C1.214; checkpoint de cierre C1.215.
+- **Rama:** NG_beta_0.0.0.1_work; HEAD de partida d8919e1dd48b7cb4ab9997db9b26d1d52885cc54; árbol 7404a6d3ad0d7da3c42220f46bd3c8f99dd590ae. Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59; 282 ahead/0 behind.
+- **Fuente:** completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, líneas 2383-2412; nueve requisitos/cinco criterios [x]. ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff, líneas 1916-1924. Pendientes.md blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c; sin F5-018 directo.
+- **Informe:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-018.md creado desde cero; ruta ausente en árbol e historial.
+- **Dictamen:** NO CUMPLE. H1-H12: portal familiar inaccesible/DOM ausente; llamadas sin token y permisos estáticos ausentes; cambio de hijo reemplaza identidad autenticada; cache stores dinámicos inválidos; resumen usa índices contables erróneos y falsea solvencia; resumen no distingue estados ni integra datos académicos; permisos por relación fallan abiertos; endpoint de pago no valida actor/vínculos/permisos/montos; pago conjunto no se aplica al libro de cada hijo y no es atómico; revocación no refresca UI; XSS por interpolación sin escape; suites sin cobertura.
+- **Tareas locales:** F5-018-A01..A05, todas Pendientes. Detalle y criterios en el informe individual.
+- **Reconciliación:** F5-012-A01/A06/A07/A08; F5-009-A03/A04/A05/A08; F5-013-A01/A03/A04/A08/A09/A10; AUD-NG-036; AUD-NG-133; AUD-NG-145; AUD-NG-161; AUD-NG-222/TASK-502. Sin IDs globales duplicados.
+- **Evidencia SHA:** USER Code.gs 12079dd410aa6d8afbce55a4bc62a79dea605f9; ACCOUNTING Code.gs 38b979d41596b85e888b4a7060b37bbac0840a28; student.js e2888cea60322e49a40b89adadb8010489605dcc; persistence.js 94ac26feb4f7f31f1f3f2a238e164d23be565d94; api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; student-dashboard.html 6379ea0ed39d71b89747a0280bb925fdf12202c1; suites a22cb3ef376fe09e65c1b17c2f4f5125290bfba6 y 0495e1d526a872c33310935a003a83d924d34683.
+- **Pruebas ejecutadas:** inspección manual focalizada de requisitos, roles, tokens, dispatcher, vínculos, resumen, esquemas contables, pagos, selector, caché, API, HTML, suites, SHAs, árbol/historial y blob Pendientes.
+- **No ejecutadas:** Apps Script, HTTP, Sheets/Drive productivo, navegador/XSS dinámico, concurrencia ni suites automatizadas.
+- **Archivos documentales modificados:** informe F5-018 nuevo; Auditoria.txt; MapaDependencias.md; AUDITORIA_COMPLETADAS_PLAN.md; Contexto_personal.txt.
+- **Sin cambios:** backend/*; js/*; HTML; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; AUDITORIAS/README.md; rama base.
+- **Siguiente tarea:** TAREA-F5-019 - herramientas de seguimiento operativo y análisis de admisiones. Comprobar informe individual e historial antes de auditar; contrastar filtros, métricas, conversiones, exportaciones CSV/PDF, permisos, sanitización y pruebas.

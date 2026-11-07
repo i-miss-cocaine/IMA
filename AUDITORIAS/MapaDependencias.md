@@ -2343,3 +2343,33 @@ TAREA-F5-017 NO CUMPLE. La búsqueda, panel y decisiones manuales existen parcia
 - Tareas locales F5-017-A01..A07: validación/normalización; matching/bloqueo; revisión manual y destino válido; privacidad/RBAC/render seguro; actor y bitácora; corrección trazable; pruebas conductuales/TC-04. Todas Pendientes; detalles en `AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-017.md`.
 - Dependencias transversales: AUD-NG-145 (PII/logs), AUD-NG-224/TASK-504 (historial canónico) y AUD-NG-161 (concurrencia/idempotencia de pruebas).
 - Dictamen: TAREA-F5-017 NO CUMPLE.
+
+
+## TAREA-F5-018 - Experiencia multiestudiante y resumen familiar (C1.215)
+
+### Contexto y rutas
+- `student-dashboard.html` (SHA 6379ea0ed39d71b89747a0280bb925fdf12202c1) no contiene `family-student-switcher-container`, `family-student-switcher`, `family-consolidated-summary-container` ni `family-applicant-tracking-container`.
+- `js/student.js` (SHA e2888cea60322e49a40b89adadb8010489605dcc): guard de rol 25-31; initFamilyStudentSwitcher 184-250; renderFamilyConsolidatedSummary 408-510; openJointPaymentModal/submitJointFamilyPaymentForm 512-657; llamada init 745. El guard solo permite Estudiante/Alumno. El selector sustituye currentUser y localStorage por el DTO del hijo, sin token.
+- `js/api.js` (SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9) fetchApi 11-65 solo añade requesterUserId/requesterRole; no añade sessionToken. USER/getUserVerifiedRole exige sessionToken/authToken/token.
+- USER ROLE_PERMISSIONS 926-982 no autoriza getFamilyConsolidatedSummary ni submitJointFamilyPayment a Padre/Tutor/Responsable; dispatcher sí contiene los casos 1431-1432. USER/getFamilyConsolidatedSummary 3629-3704 llama getGuardianStudents sin token.
+- USER/getGuardianStudents 3480-3578; getOrCreateSheet/RelacionesFamiliares 874 define ocho columnas, updateFamilyLinkPermissions 3463-3478 escribe columna 9, y getGuardianStudents lee r[8] con fallback de todos los permisos true.
+- USER/revokeFamilyLink 3442-3461 actualiza la hoja, pero el selector solo consulta al cargar; no hay refresco/invalidez de estado en la UI.
+
+### Integración financiera
+- ACCOUNTING `CargosEstudiante` (SHA 38b979d41596b85e888b4a7060b37bbac0840a28, línea 131): CargoID, Fecha, UserId, Concepto, MontoBase, Descuento, MontoFinal, Estado, FechaVencimiento, Observaciones, ClaveUnicaDedupe, BatchId. USER/getFamilyConsolidatedSummary 3664-3668 compara c[1] con UserId, c[6] con Estado y suma c[4]; índices incompatibles. Omite Parcial y no concilia pagos confirmados.
+- ACCOUNTING `ComprobantesPago` (línea 134): ComprobanteID, Fecha, UserId, Alumno, CargoID, MontoReportado, MetodoPago, Referencia, ComprobanteUrl, Estado, Observaciones.
+- USER/submitJointFamilyPayment 3705-3757 escribe un comprobante a nombre de userIdResponsable y filas en DistribucionPagosConjuntos; no valida propiedad, relación, permiso, cargo ni montos; no exige lock/idempotencia. El resumen no consume DistribucionPagosConjuntos.
+- ACCOUNTING/reviewPaymentVoucher 4183-4210 pasa row[2], row[4] y row[5] a recordStudentPayment; para un pago conjunto aplica el total al responsable y al cargo genérico CARGO-CONJUNTO, no a cada hijo.
+- USER/getFamilyConsolidatedSummary no agrega calificaciones/tareas/asistencia/avisos; tareasPendientesCount siempre 0. La UI convierte datos ausentes/errores RBAC en ausencia de estudiantes o importes cero.
+
+### Persistencia y seguridad de interfaz
+- `js/persistence.js` (SHA 94ac26feb4f7f31f1f3f2a238e164d23be565d94): STORES 10-12 declara nombres fijos; get(store,key) 77-93 recibe el store en primer argumento.
+- `js/student.js`: fetchAllActivities 1165-1352 y caché perfil 2671-2700 pasan nombres dinámicos cache_estudiante_dashboard_<userId>/cache_estudiante_profile_<userId> como store, no como key. La primera lectura de dashboard queda fuera del try/finally.
+- Selector, resumen y modal de pago interpolan nombres/IDs en innerHTML/atributos sin escape contextual.
+- Tests disponibles: academic-grading-suite.js SHA a22cb3ef376fe09e65c1b17c2f4f5125290bfba6 y modular-dashboard-suite.js SHA 0495e1d526a872c33310935a003a83d924d34683; sin cobertura F5-018.
+
+### Dependencias/tareas sin duplicación
+- F5-018-A01..A05: contexto multiestudiante; resumen/estados; permisos/revocación; pago conjunto; pruebas.
+- Ampliar F5-012-A01/A06/A07/A08; F5-009-A03/A04/A05/A08; F5-013-A01/A03/A04/A08/A09/A10.
+- Ampliar AUD-NG-036 (relación), AUD-NG-222/TASK-502 (ABAC fail-closed), AUD-NG-133 (idempotencia de pagos), AUD-NG-145 (PII/trazabilidad) y AUD-NG-161 (pruebas de concurrencia). No crear IDs globales paralelos.
+- Dictamen F5-018: NO CUMPLE. Cinco tareas locales Pendientes; detalle y criterios en AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-018.md.

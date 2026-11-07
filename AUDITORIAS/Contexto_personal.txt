@@ -7154,3 +7154,36 @@ CHECKPOINT C1.214 - AUDITORÍA TAREA-F5-017
 - Proceso: auditoría/documentación únicamente; no se implementaron tareas derivadas. Un único commit consolidado incluirá los cinco documentos y este checkpoint.
 - Siguiente tarea exacta: TAREA-F5-018 - experiencia multiestudiante y resumen familiar consolidado; comprobar primero AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-018.md y su historial. Si falta, auditar desde cero.
 ======================================================================
+
+
+======================================================================
+CHECKPOINT C1.215 - AUDITORÍA TAREA-F5-018
+======================================================================
+- Sesión operativa: IMA-AUDIT-20261107-1821Z; inicio C1.214; cierre C1.215; hora UTC de cierre al preparar la publicación: 2026-11-07T18:21:16Z. Estado de sesión: cerrada al confirmar el commit único que contiene este checkpoint.
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto exacto: AUDITORIAS/Contexto_personal.txt (append-only; no crear archivo alternativo ni cambiar extensión).
+- Rama de trabajo: NG_beta_0.0.0.1_work. Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: d8919e1dd48b7cb4ab9997db9b26d1d52885cc54; árbol: 7404a6d3ad0d7da3c42220f46bd3c8f99dd590ae. HEAD de base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59. Divergencia: 282 commits adelante / 0 detrás. La rama base no se modifica.
+- Commit de cierre: el commit único que contiene este checkpoint y los otros cuatro documentos; su SHA se confirma externamente consultando la rama después de publicar, no se autorreferencia dentro de este archivo.
+- Última tarea auditada/completada: TAREA-F5-018 (auditoría documental cerrada; dictamen NO CUMPLE). Última tarea funcional ejecutada: ninguna; no se implementó código.
+- Tarea en curso: ninguna al cierre de esta iteración. Siguiente tarea exacta: TAREA-F5-019 - herramientas de seguimiento operativo y análisis de admisiones.
+- Fuente y estado: completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, líneas 2383-2412; nueve requisitos/cinco criterios [x], estado [X]. ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff, líneas 1916-1924. Pendientes.md blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c; no hay entrada directa F5-018, sí dependencias AUD-NG-036, AUD-NG-222/TASK-502, AUD-NG-133 y AUD-NG-161.
+- Informe individual: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-018.md; ruta ausente en árbol e historial, creado en esta iteración.
+- Dictamen: NO CUMPLE. Hallazgos H1-H12: portal familiar inaccesible/DOM ausente; llamadas sin token y acciones sin permiso estático; selector sobrescribe identidad autenticada; caché usa stores dinámicos inexistentes y puede dejar flag bloqueado; resumen financiero usa índices de columnas incorrectos y omite Parcial; estados y datos académicos incompletos; permisos de relación fallan abiertos; endpoint de pago sin validación de actor/vínculo/permiso/montos; pago conjunto no se aplica a libros de cada hijo y no es atómico; revocación no refresca UI; interpolación HTML sin escape; suites sin cobertura F5-018.
+- Tareas locales: F5-018-A01..A05, todas Pendientes. Reconciliar F5-012-A01/A06/A07/A08; F5-009-A03/A04/A05/A08; F5-013-A01/A03/A04/A08/A09/A10; AUD-NG-036; AUD-NG-133; AUD-NG-145; AUD-NG-161; AUD-NG-222/TASK-502. No crear IDs globales duplicados.
+- Archivos y rangos inspeccionados:
+  - completadas.md 2383-2412; ChangesLogs.txt 1916-1924.
+  - backend/user-service/Code.gs: esquema RelacionesFamiliares 874; ROLE_PERMISSIONS 926-982; getUserVerifiedRole 1146-1161; validateContextualAccess 1213-1248; validateRolePermission 1253-1295; dispatcher 1351-1435; getDynamicPermissionsForRole 1863-1895; revokeFamilyLink 3442-3461; updateFamilyLinkPermissions 3463-3478; getGuardianStudents 3480-3578; getFamilyConsolidatedSummary 3629-3704; submitJointFamilyPayment 3705-3757.
+  - backend/accounting-service/Code.gs: esquemas CargosEstudiante/ComprobantesPago 131-134; recordStudentPayment 3891+; reviewPaymentVoucher 4183-4210.
+  - js/student.js: guard 25-31; selector 184-250; resumen 408-510; pago conjunto 512-657; invocación 745; fetchAllActivities 1165-1352; perfil/cache 2671-2700.
+  - js/persistence.js: STORES 10-12; get 77-93. js/api.js fetchApi 11-65.
+  - student-dashboard.html estructura 117+ y scripts 392+; los cuatro IDs familiares no aparecen.
+  - tests/regression/academic-grading-suite.js y modular-dashboard-suite.js: archivos completos, sin referencias F5-018.
+  - Informes de dependencia F5-009/F5-012/F5-013; Auditoria.txt; MapaDependencias.md; plan; README; metodología; blob histórico Pendientes.md.
+- SHA de respaldo: USER Code.gs 12079dd410aa6d8afbce55a4bc62a79dea605f9; ACCOUNTING Code.gs 38b979d41596b85e888b4a7060b37bbac0840a28; student.js e2888cea60322e49a40b89adadb8010489605dcc; persistence.js 94ac26feb4f7f31f1f3f2a238e164d23be565d94; api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; student-dashboard.html 6379ea0ed39d71b89747a0280bb925fdf12202c1; suites a22cb3ef376fe09e65c1b17c2f4f5125290bfba6 / 0495e1d526a872c33310935a003a83d924d34683.
+- Pruebas ejecutadas: inspección manual focalizada de contratos, roles, tokens, dispatcher, vínculos, resumen, esquema contable, pagos, UI, caché, API, HTML, suites, árbol/historial, SHAs y blob histórico.
+- Pruebas no ejecutadas: Apps Script runtime, HTTP, Sheets/Drive productivo, navegador/XSS dinámico, concurrencia, inyección de fallos ni suites automatizadas.
+- Archivos documentales modificados: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-018.md (nuevo); AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: backend/*; js/*; student-dashboard.html; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; AUDITORIAS/README.md; rama base.
+- Próxima acción concreta: verificar que la rama contiene el commit C1.215 y que la base sigue en 44d9891132332e692dbe2ba8602b41f50a508a59; después abrir completadas.md en TAREA-F5-019, comprobar si existe informe e historial, y auditar métricas, filtros, exportación, permisos y pruebas.
+======================================================================

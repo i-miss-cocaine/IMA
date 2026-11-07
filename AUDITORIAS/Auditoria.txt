@@ -7502,3 +7502,37 @@ C1.214 - AUDITORÍA TAREA-F5-017: DETECCIÓN Y GESTIÓN DE DUPLICADOS
 - Código, tests, completadas.md, Pendientes.md, ChangesLogs.txt y rama base: sin modificaciones.
 - Siguiente tarea: TAREA-F5-018 - experiencia multiestudiante y resumen familiar consolidado; comprobar primero su informe individual e historial.
 ======================================================================
+
+
+===============================================================================
+AUDITORÍA TAREA-F5-018 - EXPERIENCIA MULTIESTUDIANTE Y RESUMEN FAMILIAR
+Fecha: 2026-11-07
+Rama: NG_beta_0.0.0.1_work
+Checkpoint de referencia: C1.214 / HEAD d8919e1dd48b7cb4ab9997db9b26d1d52885cc54
+Sesión: IMA-AUDIT-20261107-1821Z
+Informe: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-018.md
+
+Fuente: completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, líneas 2383-2412 (nueve requisitos/cinco criterios [x], estado [X]); ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff, líneas 1916-1924. Informe de fase citado por la tarea no está en el árbol. Pendientes.md blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c: sin F5-018 directo; dependencias AUD-NG-036, AUD-NG-222/TASK-502, AUD-NG-133 y AUD-NG-161.
+
+HALLAZGOS:
+- H1 CRÍTICO/P0: student-dashboard solo permite Estudiante/Alumno y no contiene nodos DOM familiares; el portal familiar no tiene ruta de ejecución.
+- H2 CRÍTICO/P0: llamadas familiares no propagan sessionToken; ROLE_PERMISSIONS de Padre/Tutor/Responsable no autoriza getFamilyConsolidatedSummary ni submitJointFamilyPayment; la llamada anidada a getGuardianStudents también omite token.
+- H3 CRÍTICO/P0: el selector reemplaza currentUser/localStorage por el DTO del hijo y pierde la identidad/token del tutor.
+- H4 ALTO/P1: claves dinámicas de caché se usan como nombres de stores inexistentes; get de fetchAllActivities ocurre antes del try/finally y puede dejar isFetchingActivities bloqueado.
+- H5 CRÍTICO/P0: getFamilyConsolidatedSummary usa c[1] como UserId, c[6] como Estado y c[4] como monto; el esquema CargosEstudiante define UserId[2], MontoFinal[6], Estado[7]. Puede devolver saldo 0/solvencia falsa; omite estado Parcial.
+- H6 ALTO/P1: no agrega datos académicos (tareasPendientesCount fijo en 0), y confunde errores RBAC/datos ausentes con ausencia de estudiantes o saldos cero.
+- H7 CRÍTICO/P0: RelacionesFamiliares tiene esquema de ocho columnas, pero permisos se escriben/leen en la novena; ausencia/JSON inválido cae a todos los permisos true; GRANULAR_FAMILY_PERMISSIONS_ENABLED no está declarada.
+- H8 CRÍTICO/P0: submitJointFamilyPayment no valida actor, vínculo activo, permiso financiero por hijo, propiedad del cargo ni montos finitos/positivos; la UI no filtra hijos sin permiso.
+- H9 CRÍTICO/P0: el comprobante conjunto se registra a nombre del responsable; DistribucionPagosConjuntos no se integra al resumen/libro de cada hijo; reviewPaymentVoucher aplica el total a row[2]/row[4] genérico. No hay lock ni idempotencia obligatoria; existe riesgo de escritura parcial/duplicada.
+- H10 ALTO/P1: revokeFamilyLink no actualiza el selector/totales ya cargados; selector consulta solo al inicializar.
+- H11 ALTO/P1: nombre/IDs de estudiantes se interpolan sin escape contextual en innerHTML y atributos inline.
+- H12 ALTO/P1: las dos suites de regresión existentes no contienen cobertura F5-018.
+
+Dictamen: TAREA-F5-018 NO CUMPLE. Tareas locales F5-018-A01..A05, todas Pendientes. Reconciliar sin duplicar: F5-009-A03/A04/A05/A08; F5-012-A01/A06/A07/A08; F5-013-A01/A03/A04/A08/A09/A10; AUD-NG-036; AUD-NG-133; AUD-NG-145; AUD-NG-161; AUD-NG-222/TASK-502.
+
+Evidencia SHA: USER Code.gs 12079dd410aa6d8afbce55a4bc62a79dea605f9; ACCOUNTING Code.gs 38b979d41596b85e888b4a7060b37bbac0840a28; student.js e2888cea60322e49a40b89adadb8010489605dcc; persistence.js 94ac26feb4f7f31f1f3f2a238e164d23be565d94; api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; student-dashboard.html 6379ea0ed39d71b89747a0280bb925fdf12202c1; academic-grading-suite.js a22cb3ef376fe09e65c1b17c2f4f5125290bfba6; modular-dashboard-suite.js 0495e1d526a872c33310935a003a83d924d34683.
+
+Pruebas ejecutadas: inspección manual focalizada de requisitos, roles, tokens, dispatcher, vínculos, resumen, esquemas contables, pagos, selector, caché, API, HTML, suites, SHAs, árbol/historial y blob Pendientes. No ejecutadas: Apps Script, HTTP, Sheets/Drive productivo, navegador/XSS dinámico, concurrencia ni suites automatizadas.
+
+Archivos documentales modificados: informe F5-018 nuevo; Auditoria.txt; MapaDependencias.md; AUDITORIA_COMPLETADAS_PLAN.md; Contexto_personal.txt. Código, tests, completadas.md, Pendientes.md, ChangesLogs.txt, metodología, README y rama base sin cambios.
+===============================================================================
