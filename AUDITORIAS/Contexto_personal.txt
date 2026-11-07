@@ -6713,3 +6713,33 @@ CHECKPOINT C1.200 — AUDITORÍA TÉCNICA TAREA-F5-006
 - Siguiente tarea: TAREA-F5-007 — módulo de entrevistas y evaluaciones de admisión; comprobar informe e historial.
 - Publicación: un único commit consolidado; padre 5b2747201c2dd542b85cf84ec6786d4b9f6a0248; expected_sha obligatorio; verificar commit, tree, rutas y rama base después de publicar.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.201 — AUDITORÍA DESDE CERO TAREA-F5-007
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto: AUDITORIAS/Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- HEAD de partida verificado: f481f6950f9d8e9ff51322ce158a4b5e7741db58; árbol: b10f868d3bc30a95e5f72d1d1f2c24b8167e880c; árbol recursivo: 969 entradas, truncated=false.
+- Rama base protegida NG_beta: 44d9891132332e692dbe2ba8602b41f50a508a59; no modificada.
+- ID operativo de sesión/chat: IMA-AUDIT-20261107-0255Z (no es ID nativo de ChatGPT).
+- Checkpoint de inicio: C1.200. Estado de sesión: abierta; este es el checkpoint de cierre de la iteración documental de F5-007 y punto de inicio para la siguiente conversación.
+- Última tarea completada: auditoría técnica TAREA-F5-007; dictamen NO CUMPLE.
+- Tarea en curso: ninguna; auditoría documental F5-007 preparada para publicación en un único commit consolidado.
+- Siguiente tarea: TAREA-F5-008 — listas de espera con orden de prelación y asignación controlada de plazas. Abrir primero completadas.md y buscar informe/historial de la tarea en la rama actual.
+- Informe F5-007: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-007.md, nuevo porque no existía en el árbol ni en el historial consultado. Tampoco se encontró AUDITORIA_TAREA-F5-007.md ni AUDITORIA_FASE_5_ADMISIONES_PORTAL_FAMILIAS.md.
+- Requisitos: completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, líneas 2022-2055; la fuente contiene 14 puntos de alcance y 10 criterios de aceptación (no once). La tarea aparece [X] Completada, pero el código no satisface el contrato.
+- Pendientes.md: lectura convencional devolvió 0 caracteres. Recuperado el blob actual de la misma rama/HEAD por Git Blob API: SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c; 1.782.094 caracteres; 20.182 líneas; sin U+FFFD; tamaño registrado 1.803.672 bytes. No contiene TAREA-F5-007. No se restauró ni modificó porque el blob actual se recuperó íntegramente; no se consultó rama base ni otra rama para restaurarlo.
+- Hallazgos H1-H11: H1 sessionToken ausente en auth.js/api.js (AUD-NG-001); H2 solicitud/grupos no validados; H3 estados/reprogramación/cancelación/notificaciones incompletos; H4 conflicto/IDs sin lock (AUD-NG-234/TASK-514); H5 sin ABAC por evaluador (TAREA-AD-03/AUD-NG-153); H6 rúbrica/escala UI incompletas; H7 política por grado ausente y guardia fail-open (AUD-NG-233/TASK-513); H8 sin excepción firmada; H9 bitácora sin actor confiable y outcome sin evento (AUD-NG-145); H10 innerHTML inseguro (AUD-NG-235); H11 suites sin pruebas específicas (AUD-NG-161).
+- Tareas derivadas locales: F5-007-A01 programación/estados/concurrencia; A02 ABAC por evaluador y sesión; A03 política por grado/bloqueo fail-closed; A04 rúbricas/escala/excepciones; A05 bitácora/renderizado seguro; A06 pruebas de regresión. Sin IDs globales nuevos.
+- Archivos/rangos inspeccionados: Code.gs SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc (esquemas 148-150; RBAC 168-224; autorización 465-583; dispatch 847-852; endpoints 1594-1747; guardia Admitida 1996-2003; ID generator 2107-2145); secretary.js SHA 08a81266957b4c18cc25f8ba6749eac30a8f2c2c (137-180, 359-453, 1459-1518); dashboard-secretaria.html SHA fa0d8c23aace24a6acab2d4956398a7f5e1309b8 (268-296); api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9 (11-65); auth.js SHA 8444dd085a3186106d2db7005b61ef934d3c22d8 (130-165); tests SHA 3433b707edd4a2f35c68368a3172932adc2a3b32 y 0495e1d526a872c33310935a003a83d924d34683.
+- Pruebas ejecutadas: inspección estática/manual de código, llamadas, RBAC, token, renderizado y suites; verificación de HEAD, rama base y árbol; búsqueda de informes en árbol/historial; recuperación directa del blob Pendientes.md.
+- Pruebas no ejecutadas: Apps Script runtime, HTTP, Sheets productivo, navegador, evaluadores reales, concurrencia, notificaciones, firma digital, XSS dinámico y suites automatizadas.
+- Archivos que se modifican en esta iteración: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-007.md (nuevo); AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: backend/academic-service/Code.gs; js/secretary.js; dashboard-secretaria.html; js/api.js; js/auth.js; tests; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; rama base.
+- Método: se respetó separación de Auditoría/Desarrollo/Verificación; no se modificó código ni pruebas. La auditoría es estática/manual; los comportamientos runtime quedan pendientes.
+- Publicación: exactamente un commit consolidado, padre f481f6950f9d8e9ff51322ce158a4b5e7741db58, sobre árbol base completo b10f868d3bc30a95e5f72d1d1f2c24b8167e880c; actualizar ref con expected_sha f481f6950f9d8e9ff51322ce158a4b5e7741db58; después consultar HEAD/árbol/archivos y verificar rama base sin cambios. Si el commit único no se puede publicar, detenerse sin commits parciales.
+- Commit de cierre: el commit que contiene este checkpoint; SHA a confirmar externamente después de publicar.
+- Próxima acción concreta: revisar diff total de los cinco archivos documentales, crear un único commit y verificar el HEAD; después iniciar búsqueda de informe/historial de TAREA-F5-008.
+================================================================

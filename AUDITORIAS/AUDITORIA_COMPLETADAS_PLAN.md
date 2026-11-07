@@ -1134,3 +1134,15 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Archivos documentales:** informe F5-006 nuevo, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md y Contexto_personal.txt.
 - **Sin cambios:** código, pruebas, completadas.md, Pendientes.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md y rama base.
 - **Siguiente tarea oficial:** TAREA-F5-007 — módulo de entrevistas y evaluaciones de admisión; verificar informe e historial antes de iniciar.
+
+
+## C1.201. TAREA-F5-007 — módulo de entrevistas y evaluaciones de admisión (2026-11-07)
+
+- **Dictamen:** NO CUMPLE. Existen hojas, cinco endpoints y paneles, pero el módulo no transmite sessionToken (AUD-NG-001), no valida solicitud/grupos, carece de reprogramación/cancelación/notificaciones y permite estados arbitrarios; el conflicto de agenda no está protegido por lock y el generador se llama skipLock=true; no hay ABAC por evaluador; la UI no transmite rúbrica ni escala cualitativa; no existe política de evaluaciones obligatorias por grado y la guardia Admitida falla abierto si faltan filas; no hay excepción firmada; el log no identifica actor confiable y recordInterviewOutcome no audita; renderizado innerHTML vulnerable; no hay pruebas específicas.
+- **Informe creado desde cero:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-007.md; ausencia comprobada en árbol e historial de la rama de trabajo.
+- **Fuentes:** completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, líneas 2022-2055; Pendientes.md blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c recuperado directamente (1.782.094 caracteres/20.182 líneas, sin U+FFFD); ChangesLogs.txt SHA d57cf4bd861b5c3720e60cf83241ed804ff645d9, líneas 1814-1822.
+- **Tareas derivadas:** F5-007-A01 a F5-007-A06. Ampliar AUD-NG-001, AUD-NG-234/TASK-514, AUD-NG-145, AUD-NG-235, AUD-NG-161; coordinar TAREA-AD-03/AUD-NG-153 y AUD-NG-233/TASK-513. Sin nuevos IDs globales.
+- **Pruebas:** inspección estática/manual de Code.gs, secretary.js, dashboard-secretaria.html, api.js, auth.js y suites. No se ejecutaron Apps Script, HTTP, hojas productivas, navegador, concurrencia, notificaciones, firma digital, XSS dinámico ni suites automatizadas.
+- **Archivos documentales:** informe F5-007 nuevo, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md y Contexto_personal.txt.
+- **Sin cambios:** código, pruebas, completadas.md, Pendientes.md, ChangesLogs.txt, metodología y rama base.
+- **Continuidad:** C1.200 se conserva como punto de partida; F5-007 queda auditada y NO CUMPLE. Siguiente tarea: TAREA-F5-008 — listas de espera con orden de prelación y asignación controlada de plazas. Buscar primero informe e historial.

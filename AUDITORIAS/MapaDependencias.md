@@ -2026,3 +2026,37 @@ Relaciones:
 TASK-038 (Magic Bytes); TASK-134/TASK-144 (SHA-256/deduplicación/integridad); TASK-135 (custodia/versionado); TASK-140 (sensibilidad); TASK-142 (streaming autenticado); TASK-146 (bitácora forense); TASK-153 (ABAC); AUD-NG-232/TASK-512 (recuperación de conversión); AUD-NG-233/TASK-513 (bloqueo fail-closed); AUD-NG-145 (logs); AUD-NG-161 (pruebas); TASK-118 (IDs). No se crean IDs globales nuevos.
 
 **Pruebas:** inspección estática/manual. No se ejecutaron runtime, Drive, HTTP, concurrencia ni suites.
+
+
+## TAREA-F5-007 — entrevistas y evaluaciones de admisión (C1.201)
+
+**Informe:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-007.md.  
+**HEAD auditado:** f481f6950f9d8e9ff51322ce158a4b5e7741db58.  
+**Código:** ACADEMIC Code.gs SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; secretary.js SHA 08a81266957b4c18cc25f8ba6749eac30a8f2c2c; dashboard-secretaria.html SHA fa0d8c23aace24a6acab2d4956398a7f5e1309b8.
+
+### Flujo y dependencias
+- dashboard-secretaria.html (268-296) -> modal de expediente -> secretary.js/openAdmissionDetailModal (176-180) -> loadAdmissionInterviews/loadAdmissionEvaluations.
+- secretary.js (367, 419-420, 446, 1466, 1505) -> fetchApi -> ACADEMIC endpoints getAdmissionInterviews, scheduleAdmissionInterview, recordInterviewOutcome, getAdmissionEvaluations y saveAdmissionEvaluation.
+- ACADEMIC doPost (847-852) -> endpoints Code.gs 1594-1747.
+- getOrCreateSheet (148-150) -> EntrevistasAdmision y EvaluacionesAdmision; ambas enlazan solicitudId con SolicitudesAdmision por referencia textual, sin validación referencial al programar/guardar.
+- scheduleAdmissionInterview -> EntrevistasAdmision; consulta conflictos por evaluador/fecha y appendRow. No adquiere LockService; genera ID con skipLock=true (1622; generador 2107-2145).
+- getAdmissionInterviews -> filtro opcional por solicitudId/evaluadorUserId del payload; sin comparación con _verifiedUserId.
+- recordInterviewOutcome -> cambia estado/observaciones en fila existente; sin máquina de estados, lock, evento de auditoría ni verificación de evaluador asignado.
+- saveAdmissionEvaluation -> appendRow en EvaluacionesAdmision; captura _verifiedUserId como evaluador, pero no verifica asignación ni valida rúbrica/escala/dictamen.
+- getAdmissionEvaluations -> filtra solo por solicitudId; devuelve todos los evaluadores de esa solicitud.
+- updateAdmissionStatus (1996-2003) -> consulta evaluaciones existentes y bloquea Pendiente/Reprobado; no verifica faltantes del catálogo obligatorio por grado.
+- js/api.js/auth.js -> sessionToken no se conserva ni transmite; ampliar AUD-NG-001.
+- Renderizadores secretary.js (369-390; 1468-1483) -> innerHTML con campos persistidos sin escape; ampliar AUD-NG-235.
+
+### Hallazgos y controles relacionados
+- AUD-NG-001: autenticación de las cinco acciones protegidas.
+- AUD-NG-234/TASK-514: lock, conflicto concurrente, estados y transiciones.
+- AUD-NG-145: actor verificado y registro inmutable de cada cambio.
+- AUD-NG-235: XSS por interpolación en innerHTML.
+- AUD-NG-161: ausencia de pruebas conductuales.
+- TAREA-AD-03/AUD-NG-153: aislamiento por asignación/ámbito del evaluador.
+- AUD-NG-233/TASK-513: guardia fail-closed ante evaluaciones obligatorias ausentes.
+
+**Resultado:** existen las tablas, cinco endpoints y paneles de consulta, pero no hay grupos, reprogramación/cancelación/notificaciones, autorización por evaluador, políticas por grado, excepción firmada ni bitácora completa. El bloqueo de admisión falla abierto cuando no existe fila de evaluación requerida. Dictamen NO CUMPLE.
+
+**Tareas derivadas:** F5-007-A01 programación/estados/concurrencia; A02 ABAC por evaluador y sesión; A03 políticas por grado y bloqueo fail-closed; A04 rúbricas/escala/excepciones; A05 bitácora y renderizado seguro; A06 pruebas. Ver criterios de aceptación en el informe.
