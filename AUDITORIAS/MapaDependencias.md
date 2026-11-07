@@ -2318,3 +2318,28 @@ TAREA-F5-016 NO CUMPLE. La navegación anterior, resumen y estado de carga está
 
 ### Dictamen
 TAREA-F5-017 NO CUMPLE. La búsqueda, panel y decisiones manuales existen parcialmente; los defectos de validación, relación/índices, niveles de coincidencia, vinculación automática, privacidad, autorización, bitácora y pruebas impiden aceptar la tarea.
+
+
+## TAREA-F5-017 - Detección de duplicados, validación y calidad de datos (C1.214)
+
+### Contrato y flujo backend
+- `createAdmissionRequest` (backend/academic-service/Code.gs:984-1100) se expone en `PUBLIC_ACTIONS` (265). Valida presencia de nombres/apellidos/grado, compara solicitudes del mismo año y escribe en `SolicitudesAdmision`; no llama a `findDuplicateStudents` ni consulta `ExpedientesEstudiantes`.
+- `normalizeString` (79-82) es dependencia transversal: minúsculas + NFD/eliminación de diacríticos + trim; no normaliza puntuación ni espacios internos.
+- Esquema definido para `ExpedientesEstudiantes`: [ExpedienteID, PersonaID, CodigoInstitucional, FechaNacimiento, Nacionalidad, DireccionResidencia, FotografiaUrl, EstadoExpediente, FechaCreacion, FechaActualizacion, Observaciones]. `findDuplicateStudents` (10107-10217) cruza `Usuarios[0]` con `ExpedientesEstudiantes[1]` (PersonaID), y lee fecha de nacimiento desde índice 7 (EstadoExpediente) en vez del índice 3.
+- `findDuplicateStudents` lee `SolicitudesAdmision`, `ExpedientesEstudiantes` y `Usuarios`; clasifica exacta/alta/media y devuelve `candidates`. Coincidencia media usa email O teléfono, no ambos más similitud nominal. Solo excluye Rechazada/Retirada, por lo que estados no activos como Convertida pueden seguir apareciendo.
+- `resolveAdmissionDuplicate` (10218-10281) actualiza estado/observaciones/ExpedienteID y registra historial. No valida destino referencial, actor confiable ni lock/idempotencia; su append de historial no usa el contrato canónico.
+- `convertAdmissionToStudent` (2156-2380) crea/recupera expediente; busca coincidencia por `Observaciones.includes(identificacion)` y reutiliza ese expediente sin resolución explícita. Esta ruta conecta admisión, expediente, tutor, matrícula y documentos.
+- `recordEntityChangeLog` (1568-1595) establece el contrato académico de nueve columnas para `HistorialCambiosEntidad`; el escritor ad hoc de resolución añade ocho columnas con orden incompatible. Relación global existente: AUD-NG-224/TASK-504.
+
+### Seguridad y UI
+- RBAC: `validateRolePermission` (524-583) valida token y puede aplicar `getDynamicPermissionsForRole`; `ROLE_PERMISSIONS` diferencia `Secretaría` y `Secretaria`. El estado de la matriz dinámica productiva no se inspeccionó.
+- `js/secretary.js` (1228-1355) llama endpoints y renderiza candidatos; campos de nombres, IDs, identificación y motivo se interpolan en `innerHTML` sin escape contextual. `dashboard-secretaria.html` (222-237) contiene el panel; su guard de roles permite también Desarrollador, cuya autorización estática no concede estas acciones.
+- `createAdmissionRequest` público devuelve ID de una solicitud preexistente al detectar duplicado; `findDuplicateStudents` devuelve email completo a roles autenticados autorizados, dato que la UI no necesita.
+- `checkAdmissionDuplicates` contiene el renderizado; ChangesLogs menciona `renderAdmissionDuplicatesSection`, función no localizada.
+
+### Pruebas y tareas
+- `TC-04-DUPLICATE_SEARCH_INTEGRITY` (Code.gs: aprox. 4008) envía `{nombre,dni}` y espera `coincidencias`, incompatible con el contrato `{nombres,apellidos,identificacion}` / `candidates`.
+- `tests/regression/academic-grading-suite.js` y `modular-dashboard-suite.js` no contienen referencias a F5-017 ni a sus endpoints.
+- Tareas locales F5-017-A01..A07: validación/normalización; matching/bloqueo; revisión manual y destino válido; privacidad/RBAC/render seguro; actor y bitácora; corrección trazable; pruebas conductuales/TC-04. Todas Pendientes; detalles en `AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-017.md`.
+- Dependencias transversales: AUD-NG-145 (PII/logs), AUD-NG-224/TASK-504 (historial canónico) y AUD-NG-161 (concurrencia/idempotencia de pruebas).
+- Dictamen: TAREA-F5-017 NO CUMPLE.

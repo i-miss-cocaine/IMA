@@ -1307,3 +1307,23 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Archivos documentales:** informe F5-017 nuevo; Auditoria.txt; MapaDependencias.md; este plan; Contexto_personal.txt.
 - **Sin cambios:** backend/*; js/*; dashboard-secretaria.html; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; metodología; README de auditorías; rama base.
 - **Siguiente tarea:** TAREA-F5-018 - experiencia multiestudiante y resumen familiar consolidado; comprobar informe individual e historial antes de auditar.
+
+
+## C1.214 - TAREA-F5-017: detección de duplicados, validación y calidad de datos
+
+- **Sesión:** IMA-AUDIT-20261107-1744Z.
+- **Checkpoint válido de inicio:** C1.212, commit d72e39580df79369b45b418a4773eda25fc36679, árbol 1e5c70b8fb865aed7592fb3f0ca4298d7453ff91.
+- **C1.213:** no se acepta como checkpoint válido por instrucción del usuario. El HEAD de rama antes de publicar era 5307832d34e767dbda5052cc6d0c7295c48565c0; su commit modifica documentación, no código. Los SHA del código y suites inspeccionados son idénticos a C1.212. Se conserva historial, sin reset ni force-push.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work. **Rama base protegida:** NG_beta_0.0.0.1, HEAD 44d9891132332e692dbe2ba8602b41f50a508a59. Comparación previa: 281 ahead / 0 behind.
+- **Requisito administrativo:** completadas.md [X], nueve requisitos y cinco criterios [x]. La marca no prueba cumplimiento.
+- **Informe individual:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-017.md. Ausente en C1.212; su versión provisional C1.213 se volvió a auditar y se sustituye por esta revisión C1.214.
+- **Dictamen técnico:** NO CUMPLE. Hallazgos H1-H11: validación de formato ausente; normalización incompleta; join PersonaID/UserId e índice FechaNacimiento incorrectos; matching medio por OR y bloqueo DNI solo mismo año; vinculación automática y destino no validado; respuesta pública enumera solicitud y UI con XSS potencial; discrepancia de permisos estáticos y actor falsificable; bitácora incompatible y silenciosa; corrección sin historial; TC-04 roto/sin cobertura; resolución sin lock/idempotencia.
+- **Reconciliación:** ampliar AUD-NG-145, AUD-NG-224/TASK-504 y AUD-NG-161. TASK-113 es importación Fase 35 y no duplica el flujo de admisión. Sin nuevos IDs globales duplicados.
+- **Pendientes.md:** blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c; lectura íntegra 1.782.094 caracteres / 20.182 líneas / sin U+FFFD; sin tarea directa F5-017.
+- **Tareas locales:** F5-017-A01..A07, todas Pendientes y documentadas en el informe individual.
+- **Evidencia:** Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5; secretary.js 08a81266957b4c18cc25f8ba6749eac30a8f2c2c; dashboard-secretaria.html fa0d8c23aace24a6acab2d4956398a7f5e1309b8; suites a22cb3ef376fe09e65c1b17c2f4f5125290bfba6 / 0495e1d526a872c33310935a003a83d924d34683.
+- **Pruebas ejecutadas:** inspección estática/manual, revisión de handlers/RBAC/dispatcher/UI/esquemas/conversión/TC-04/suites, árbol e historial, SHA y blob Pendientes.
+- **No ejecutadas:** Apps Script, Sheets productivo, HTTP, matriz dinámica productiva, navegador/XSS, pruebas por rol, concurrencia y suites.
+- **Archivos documentales modificados:** informe individual F5-017, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md y Contexto_personal.txt.
+- **Archivos no modificados:** backend/academic-service/Code.gs; js/secretary.js; dashboard-secretaria.html; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; AUDITORIAS/README.md; rama base.
+- **Siguiente tarea:** TAREA-F5-018 - experiencia multiestudiante y resumen familiar consolidado; verificar primero informe individual e historial.

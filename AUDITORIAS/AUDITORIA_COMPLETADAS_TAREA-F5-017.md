@@ -1,31 +1,34 @@
 # AUDITORÍA TÉCNICA - TAREA-F5-017: detección de duplicados, validación y calidad de datos de aspirantes
 
-- Repositorio: i-miss-cocaine/IMA
-- Rama auditada: NG_beta_0.0.0.1_work
-- Último checkpoint designado expresamente por el usuario: C1.210 (HEAD 8ab2fdf7e1825f04a977ff9ac93f52bcb41ae641; árbol 15b91e7c081d502a237db4def3ec9b8572ea5553).
-- Checkpoint de inicio de esta iteración: C1.212.
-- HEAD real de la rama al iniciar: d72e39580df79369b45b418a4773eda25fc36679; árbol 1e5c70b8fb865aed7592fb3f0ca4298d7453ff91.
-- Rama base protegida: NG_beta_0.0.0.1.
-- HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59.
-- Comparación de ramas al inicio: 280 commits adelante y 0 detrás.
-- Checkpoint de cierre: C1.213.
-- Sesión operativa: IMA-AUDIT-20261107-1725Z (identificador operativo de auditoría, no ID nativo de ChatGPT).
-- Fecha: 2026-11-07.
-- Dictamen técnico: **NO CUMPLE**.
+- **Repositorio:** i-miss-cocaine/IMA
+- **Rama auditada:** NG_beta_0.0.0.1_work
+- **Último checkpoint válido indicado expresamente por el usuario para esta iteración:** C1.212 (HEAD d72e39580df79369b45b418a4773eda25fc36679; árbol 1e5c70b8fb865aed7592fb3f0ca4298d7453ff91).
+- **Checkpoint de inicio:** C1.212.
+- **HEAD real de la rama antes de publicar esta reauditoría:** 5307832d34e767dbda5052cc6d0c7295c48565c0 (commit rotulado C1.213; no se acepta como checkpoint válido).
+- **Árbol de la rama antes de publicar:** 8e3e5b6fcbbc84d7f8bbf3e2377ce732cb1e5c6b.
+- **Rama base protegida:** NG_beta_0.0.0.1.
+- **HEAD de rama base verificado:** 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Comparación previa a publicación:** 281 commits adelante y 0 detrás.
+- **Checkpoint de cierre preparado:** C1.214.
+- **Sesión operativa:** IMA-AUDIT-20261107-1744Z (identificador operativo, no ID nativo de ChatGPT).
+- **Fecha:** 2026-11-07.
+- **Dictamen técnico:** **NO CUMPLE**.
 
 ## 1. Búsqueda documental, fuente y continuidad
 
-Se consultó el árbol recursivo completo de NG_beta_0.0.0.1_work (979 entradas, no truncado). La ruta AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-017.md no existe. La consulta del historial de commits de esa ruta devolvió una lista vacía. En consecuencia, la auditoría se realizó desde cero y este informe se crea por primera vez.
+En el árbol de C1.212 (1e5c70b8fb865aed7592fb3f0ca4298d7453ff91) no existía la ruta `AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-017.md`. El historial consultado muestra que la ruta apareció por primera vez en el commit C1.213 (5307832d34e767dbda5052cc6d0c7295c48565c0). El usuario indicó expresamente que los checkpoints posteriores a C1.212 no son válidos; por tanto, C1.213 no se adopta como checkpoint ni como autoridad de dictamen. Su contenido se volvió a contrastar de manera independiente contra los requisitos y el código, y este informe sustituye el documento provisional conservando el historial Git.
 
-**Fuente de requisitos:** completadas.md, SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, líneas 2355-2379. TAREA-F5-017 contiene nueve requisitos y cinco criterios de aceptación, todos marcados [x], con estado administrativo [X] Completada. Esa marca se conserva como registro histórico y no se considera evidencia de cumplimiento técnico.
+**Fuente de requisitos:** `completadas.md`, SHA `f57f1aef832e81e44fc4f7ec36a852d50e464676`, líneas 2355-2379. TAREA-F5-017 contiene nueve requisitos y cinco criterios de aceptación, todos marcados [x], con estado administrativo [X] Completada. La marca se conserva sin modificar y no acredita cumplimiento técnico.
 
-**Origen citado por la tarea:** Auditoria.txt (HALLAZGOS F5: HALLAZGOS-F5-P0-01) y AUDITORIA_FASE_5_ADMISIONES_PORTAL_FAMILIAS.md (Subcapacidades 5.1 y 5.6, Brecha P0-01). El identificador HALLAZGOS-F5-P0-01 no está registrado como hallazgo individual en la bitácora vigente; la mención recuperada en la auditoría previa F5-012 indica que no se localizó. El informe de fase citado tampoco aparece en el árbol de la rama. La procedencia original no puede verificarse con los documentos actuales.
+**Origen citado por la tarea:** `Auditoria.txt` (HALLAZGOS F5: HALLAZGOS-F5-P0-01) y `AUDITORIA_FASE_5_ADMISIONES_PORTAL_FAMILIAS.md` (Subcapacidades 5.1 y 5.6, Brecha P0-01). El identificador citado no aparece como hallazgo individual verificable en la bitácora vigente y el informe de fase citado no está en el árbol inspeccionado. La procedencia original del hallazgo no puede verificarse con los documentos disponibles.
 
-**ChangesLogs.txt:** SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff, líneas 1906-1914. Declara la extensión de findDuplicateStudents, clasificación exacta/alta/media, enmascaramiento de DNI, creación de resolveAdmissionDuplicate, registro en HistorialCambiosEntidad y panel de Secretaría. Estas declaraciones se contrastaron contra los handlers, esquema, permisos, interfaz y pruebas actuales. El registro menciona renderAdmissionDuplicatesSection, pero no se encontró una función con ese nombre en js/secretary.js; el renderizado está incorporado dentro de checkAdmissionDuplicates.
+**ChangesLogs.txt:** SHA `5b5cff1926b73a05d1b92087a7bf4b2db75326ff`, líneas 1906-1914. Declara la comparación de solicitudes/expedientes, clasificación exacta/alta/media, enmascaramiento de DNI, endpoint de resolución, auditoría y panel de Secretaría. La inspección confirmó diferencias entre esas declaraciones y la implementación. También se menciona `renderAdmissionDuplicatesSection`, pero no existe esa función en `js/secretary.js`; el renderizado está dentro de `checkAdmissionDuplicates`.
 
-**Pendientes.md:** la lectura convencional de la ruta devuelve 0 caracteres. Se recuperó el blob histórico SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c, con 1.782.094 caracteres, 20.182 líneas y sin U+FFFD. No contiene una entrada directa F5-017, findDuplicateStudents ni resolveAdmissionDuplicate. Se encontraron AUD-NG-145 (bitácoras y PII) y AUD-NG-224/TASK-504 (esquema, actor verificado, escritores ad hoc y errores de persistencia), todos como trabajo pendiente y directamente relacionados con partes de esta auditoría. TASK-113 aborda duplicados en importaciones de datos de otra fase y otro flujo; no sustituye la detección de aspirantes y no se duplica.
+**Pendientes.md:** la lectura ordinaria de la ruta devolvió 0 caracteres. Se recuperó directamente el blob histórico SHA `631b4c2dbf0e86d5704b63625382d73ccb8ceb3c`: 1.782.094 caracteres, 20.182 líneas y sin U+FFFD. No contiene una entrada directa F5-017 ni referencias a `findDuplicateStudents`/`resolveAdmissionDuplicate`. Sí contiene AUD-NG-145 (sanitización/PII), AUD-NG-224/TASK-504 (esquema, actor verificado, escritores ad hoc y fallos de persistencia) y AUD-NG-161 (pruebas reales de concurrencia/idempotencia), relacionados con hallazgos de esta auditoría. TASK-113 corresponde a duplicados en importaciones de otra fase y no sustituye este flujo.
 
-**Continuidad de rama:** se verificaron NG_beta_0.0.0.1_work en d72e39580df79369b45b418a4773eda25fc36679 y NG_beta_0.0.0.1 en 44d9891132332e692dbe2ba8602b41f50a508a59. La rama de trabajo está 280 commits adelante y 0 detrás. C1.210 sigue siendo el último checkpoint que el usuario designó expresamente como referencia válida. El commit C1.211 no se adopta como checkpoint de referencia; C1.212 es el HEAD publicado de partida de esta iteración. No se realizó reset, force-push ni modificación de la rama base.
+**Continuidad de rama:** C1.212 es el punto de referencia válido por instrucción expresa del usuario. El HEAD previo a esta publicación es C1.213, pero ese checkpoint no se adopta. El commit C1.213 contiene cambios documentales; los SHA de `backend/academic-service/Code.gs`, `js/secretary.js`, `dashboard-secretaria.html`, las suites, `completadas.md` y `ChangesLogs.txt` coinciden con C1.212. Por ello el código auditado es exactamente el código del árbol C1.212. No se hace reset ni force-push; se conserva el historial. La rama base protegida permanece en `44d9891132332e692dbe2ba8602b41f50a508a59`.
+
+
 
 ## 2. Evidencia técnica y respaldos
 
@@ -38,10 +41,11 @@ Se consultó el árbol recursivo completo de NG_beta_0.0.0.1_work (979 entradas,
 | dashboard-secretaria.html | fa0d8c23aace24a6acab2d4956398a7f5e1309b8 | Panel de duplicados en modal de detalle (222-237); control de acceso del dashboard revisado en inicialización. |
 | tests/regression/academic-grading-suite.js | a22cb3ef376fe09e65c1b17c2f4f5125290bfba6 | Archivo completo; no contiene pruebas F5-017 ni llamadas a los endpoints de admisión. |
 | tests/regression/modular-dashboard-suite.js | 0495e1d526a872c33310935a003a83d924d34683 | Archivo completo; no contiene pruebas F5-017 ni llamadas a los endpoints de admisión. |
-| AUDITORIAS/Auditoria.txt | c0799cd63cdf5dae5d2ac3bc688fcabda4c421c8 | Antecedentes F5-012 y C1.212; no existe una entrada de auditoría individual F5-017 ni el hallazgo de origen citado. |
-| AUDITORIAS/MapaDependencias.md | f986dc3c1509c0f1a6a479fdd5cb753c2ae1a49e | Registro de ACADEMIC/HistorialCambiosEntidad y AUD-NG-224/TASK-504; antecedentes de admisiones y trazabilidad. |
-| AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md | 455b40679eb587d21cfee71a814395eaa8ce4940 | Continuidad hasta C1.212. |
-| AUDITORIAS/Contexto_personal.txt | e9cd043ea18cd24cb99db34095532d8d4be7b240 | Reglas de inicio/cierre y checkpoints C1.211/C1.212. |
+| AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-017.md | 70d88def7e9c3789c473aa7b22482fe5a97eb63c (provisional C1.213) | Informe provisional reexaminado y sustituido por esta versión C1.214; su creación inicial no acredita el checkpoint C1.213. |
+| AUDITORIAS/Auditoria.txt | c0799cd63cdf5dae5d2ac3bc688fcabda4c421c8 (C1.212); 4aa7992941e8a9426e605d59818b59060a5c6c00 (prepublicación) | Antecedentes F5-012 y C1.212; no existe una entrada de auditoría individual F5-017 ni el hallazgo de origen citado. |
+| AUDITORIAS/MapaDependencias.md | f986dc3c1509c0f1a6a479fdd5cb753c2ae1a49e (C1.212); 4b0ccceccab51a88808798c1ea1931fb1e3533ad (prepublicación) | Registro de ACADEMIC/HistorialCambiosEntidad y AUD-NG-224/TASK-504; antecedentes de admisiones y trazabilidad. |
+| AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md | 455b40679eb587d21cfee71a814395eaa8ce4940 (C1.212); f6b1aefdf4e1b068cbe6bfc3d63386f96381aa9f (prepublicación) | Continuidad hasta C1.213; se corrige mediante C1.214 sin aceptar C1.213 como checkpoint válido. |
+| AUDITORIAS/Contexto_personal.txt | e9cd043ea18cd24cb99db34095532d8d4be7b240 (C1.212); bf74ac20f79c1f7beef903f37c761f820be203c2 (prepublicación) | Reglas de inicio/cierre y checkpoints previos; la instrucción actual del usuario fija C1.212 como referencia válida. |
 | METODOLOGIA_DESARROLLO.md | cf796728bb384a32537392df2f9c72a339fa03ee | Reglas de auditoría manual, tareas derivadas, commit único, checkpoint acumulativo y publicación controlada. |
 | AUDITORIAS/README.md | 2f649c6ffc39ec7cdd242e85cb71b4344fd69e34 | Convención de informe y sección obligatoria de tareas derivadas. |
 | Pendientes.md (blob histórico) | 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c | Lectura íntegra recuperada: 1.782.094 caracteres/20.182 líneas/sin U+FFFD; sin entrada directa F5-017; AUD-NG-145 y AUD-NG-224/TASK-504 relacionados. |
@@ -90,25 +94,25 @@ Se consultó el árbol recursivo completo de NG_beta_0.0.0.1_work (979 entradas,
 - **Evidencia:** findDuplicateStudents marca coincidencia media si coincide email O teléfono; no exige email y teléfono conjuntamente ni nombres similares. El teléfono usa normPhone.endsWith(rPhone.slice(-8)), lo que permite coincidencias parciales y asimétricas. createAdmissionRequest (984-1100) bloquea solo una solicitud activa del mismo año, compara DNI con igualdad textual y no busca ExpedientesEstudiantes ni reutiliza la detección del endpoint.
 - **Impacto:** se producen falsos positivos por datos de contacto compartidos y falsos negativos por diferencias de formato, año lectivo o existencia previa de un expediente. El bloqueo exacto solicitado no cubre ambos repositorios de personas.
 
-### H5 - La conversión puede vincular automáticamente una solicitud a un expediente sin revisión manual
+### H5 - La conversión puede vincular automáticamente una solicitud a un expediente sin revisión manual y la resolución acepta destinos no verificados
 - **Severidad:** Alta / P1.
-- **Evidencia:** convertAdmissionToStudent (aprox. 2240-2255) busca dupExp comparando PersonaID generado o si Observaciones (índice 10) contiene la identificación entrante; si encuentra una fila, asigna finalExpId = dupExp[0] y continúa con la conversión. No exige una resolución previa de Secretaría ni verifica una relación estructurada de identidad.
-- **Impacto:** un texto coincidente dentro de observaciones puede provocar una vinculación automática. La revisión manual que ofrece resolveAdmissionDuplicate puede eludirse por el flujo de conversión.
+- **Evidencia:** `convertAdmissionToStudent` (2156-2380) busca `dupExp` comparando PersonaID generado o si `ExpedientesEstudiantes[10]` (Observaciones) contiene la identificación entrante mediante `includes()`; si encuentra una fila, asigna `finalExpId = dupExp[0]` y continúa la conversión. No exige una resolución previa de Secretaría ni una relación estructurada de identidad. En `resolveAdmissionDuplicate` (10218-10281), la opción `VincularExistente` solo comprueba que `expedienteDestinoId` no esté vacío; no consulta que exista, esté activo ni corresponda al candidato que Secretaría revisó.
+- **Impacto:** una coincidencia parcial en texto libre puede vincular una solicitud a un expediente incorrecto. Además, el endpoint permite registrar un destino arbitrario sin validación referencial. La revisión manual del panel puede eludirse durante la conversión.
 
-### H6 - La respuesta pública de duplicidad revela datos de una solicitud y el panel inserta valores no confiables como HTML
+### H6 - La respuesta pública de duplicidad revela la existencia e ID de otra solicitud y el panel inserta datos no confiables como HTML
 - **Severidad:** Alta / P1.
-- **Evidencia:** PUBLIC_ACTIONS (265) incluye createAdmissionRequest; al detectar una solicitud existente, createAdmissionRequest devuelve un error con duplicate[0] y el nombre completo recibido en el payload (no lo recupera de la fila duplicada); aun así confirma la existencia y revela el ID de un tercero. El endpoint findDuplicateStudents retorna email completo en los objetos candidates (10107-10195), aunque secretary.js no lo necesita para renderizar. secretary.js (1242-1315) interpola nombreCompleto, codigoInstitucional/id, identificacion y coincidencia directamente en innerHTML. Los nombres y observaciones proceden de datos almacenados y pueden contener contenido no confiable.
-- **Impacto:** enumeración de existencia/identificador y nombre de aspirantes a través de una acción pública; exposición innecesaria de correo al cliente administrativo y riesgo de XSS almacenado en el panel si un campo persistido contiene marcado/JavaScript. No se ejecutó una prueba XSS dinámica.
+- **Evidencia:** `PUBLIC_ACTIONS` (265) incluye `createAdmissionRequest`; al detectar una solicitud previa, el error devuelve `duplicate[0]` (ID de seguimiento del registro existente) y el nombre recibido en el payload actual. No devuelve el nombre de la fila duplicada, pero confirma públicamente que existe una solicitud y revela su identificador. `findDuplicateStudents` retorna también email íntegro en `candidates`, aunque el panel no lo necesita; ese endpoint sí está sujeto a RBAC. En `js/secretary.js` (1228-1355) se interpolan `c.nombreCompleto`, `c.codigoInstitucional/id`, `c.identificacion`, `c.coincidencia` y nombres del aspirante directamente en `innerHTML`, sin escape contextual. Esos valores proceden de solicitudes almacenadas y pueden ser controlados desde el formulario público.
+- **Impacto:** la acción pública permite enumerar la existencia de una solicitud y su ID. La interpolación no escapada crea un sink de XSS almacenado en el dashboard privilegiado si un aspirante introduce marcado/JavaScript. No se ejecutó una prueba dinámica de explotación; el hallazgo se basa en el flujo fuente-sink estático. El email completo en la respuesta administrativa constituye exposición innecesaria de PII y debe minimizarse, pero no se afirma que ese endpoint sea público.
 
-### H7 - Los permisos visibles no coinciden con los permisos efectivos del servidor y el actor de resolución es manipulable
+### H7 - Los permisos visibles no coinciden con la matriz estática y el actor de resolución no se deriva de claims verificados
 - **Severidad:** Alta / P1.
-- **Evidencia:** dashboard-secretaria.html permite los roles Secretaría, Secretaria, Director, Administrador y Desarrollador. ROLE_PERMISSIONS permite findDuplicateStudents a Secretaria, pero no resolveAdmissionDuplicate; Desarrollador no tiene permiso estático para ninguno de los dos. El servidor sí añade _verifiedUserId y _verifiedRole durante validateRolePermission (524-583), pero resolveAdmissionDuplicate (10218-10281) lee authUserId/authRole del payload. El flujo UI no envía esos campos, por lo que la auditoría usa el fallback genérico; un llamante directo puede falsificarlos.
-- **Impacto:** el panel puede ofrecer acciones que el backend rechazará para determinados roles y la identidad registrada no acredita al actor real que tomó la decisión.
+- **Evidencia:** `dashboard-secretaria.html` permite entrar a roles Secretaría, Secretaria, Director, Administrador y Desarrollador. En `ROLE_PERMISSIONS`, el rol `Secretaria` incluye `findDuplicateStudents` pero no `resolveAdmissionDuplicate`; `Secretaría` sí incluye ambas; `Desarrollador` no tiene permisos estáticos para estas acciones. El backend puede aplicar una matriz dinámica antes de la estática (`getDynamicPermissionsForRole`), pero su configuración productiva no fue consultada; por ello la discrepancia estática es comprobada y el permiso efectivo de esos roles queda pendiente de prueba. `validateRolePermission` (524-583) agrega `_verifiedUserId` y `_verifiedRole`, pero `resolveAdmissionDuplicate` (10218-10281) lee `authUserId/authRole` del payload. La UI no envía esos campos; el flujo normal termina registrando un actor genérico, mientras un llamante directo podría falsificarlos.
+- **Impacto:** la UI puede mostrar acciones que la matriz estática no autoriza y el registro de decisión no acredita al usuario autenticado. La autorización dinámica debe verificarse antes de afirmar qué rol concreto es rechazado en producción.
 
 ### H8 - La bitácora de resolución usa un esquema incompatible y no garantiza el registro
 - **Severidad:** Alta / P1.
-- **Evidencia:** recordEntityChangeLog en ACADEMIC (1568-1595) usa nueve columnas: HistorialID, Fecha, EntidadTipo, EntidadID, Accion, ValorAnteriorJSON, ValorNuevoJSON, UsuarioResponsable y CorrelationID. resolveAdmissionDuplicate (10218-10281) escribe directamente ocho valores con otro orden y captura cualquier error con catch vacío. logStructuredEvent también suprime errores de escritura. El MapaDependencias ya documenta este escritor directo y la incompatibilidad bajo AUD-NG-224/TASK-504.
-- **Impacto:** el evento no es interpretable por los lectores de historial existentes y el endpoint puede retornar success aunque el registro durable falle. No se crea un hallazgo global duplicado: ampliar AUD-NG-224/TASK-504 y coordinar AUD-NG-145.
+- **Evidencia:** `recordEntityChangeLog` en ACADEMIC (1568-1595) usa nueve columnas: HistorialID, Fecha, EntidadTipo, EntidadID, Accion, ValorAnteriorJSON, ValorNuevoJSON, UsuarioResponsable y CorrelationID. `resolveAdmissionDuplicate` escribe directamente ocho valores en un orden distinto: ID, tipo, solicitud, acción, resolución, actor, fecha y motivo. La fila no se ajusta al contrato del escritor/lector canónico. Además, el append se envuelve en `catch (_){ }`; `logStructuredEvent` también captura y silencia fallos.
+- **Impacto:** los lectores no pueden interpretar consistentemente el evento y el endpoint puede devolver `success` aunque la evidencia durable falle. Se amplía AUD-NG-224/TASK-504; no se crea un hallazgo global duplicado.
 
 ### H9 - No existe un flujo verificable para corregir datos de una solicitud conservando su versión original
 - **Severidad:** Media / P2.
@@ -117,30 +121,31 @@ Se consultó el árbol recursivo completo de NG_beta_0.0.0.1_work (979 entradas,
 
 ### H10 - La prueba interna de duplicados usa un contrato incompatible y no hay cobertura conductual F5-017
 - **Severidad:** Alta / P1.
-- **Evidencia:** el caso TC-04-DUPLICATE_SEARCH_INTEGRITY (aprox. línea 4008 de Code.gs) invoca findDuplicateStudents con {nombre, dni} y espera dupRes.coincidencias. El handler recibe nombres, apellidos e identificacion y retorna candidates; el caso no valida el contrato real y fallaría si se ejecuta. tests/regression/academic-grading-suite.js y modular-dashboard-suite.js no contienen F5-017 ni pruebas de los endpoints o panel. No se encontró una suite dedicada de admisiones.
-- **Impacto:** la prueba declarada no demuestra la detección; no existen casos reproducibles para formatos, coincidencias exactas/altas/medias, privacidad, permisos, resolución manual, auditoría ni regresión de conversión.
+- **Evidencia:** el caso `TC-04-DUPLICATE_SEARCH_INTEGRITY` (aprox. línea 4008 de Code.gs) invoca `findDuplicateStudents` con `{nombre, dni}` y espera `dupRes.coincidencias`. El handler recibe `nombres, apellidos, identificacion` y retorna `candidates`; el caso no valida el contrato real y fallaría si se ejecuta. `tests/regression/academic-grading-suite.js` y `modular-dashboard-suite.js` no contienen F5-017 ni referencias a los endpoints/panel de duplicados. No se encontró suite dedicada de admisiones.
+- **Impacto:** la prueba declarada no demuestra la detección y no hay regresión reproducible para formatos, coincidencias, privacidad, roles, resolución, auditoría ni conversión.
+
+### H11 - La resolución carece de exclusión mutua e idempotencia propia
+- **Severidad:** Alta / P1.
+- **Evidencia:** `resolveAdmissionDuplicate` lee la hoja, localiza una fila y escribe estado, ExpedienteID, observaciones y bitácora en operaciones separadas sin adquirir `LockService` ni comprobar una clave de idempotencia. La llamada desde `js/secretary.js` no envía `idempotencyToken`/`idempotencyKey`; el control global de idempotencia de `doPost` no se activa sin token.
+- **Impacto:** dos resoluciones concurrentes pueden leer el mismo estado y sobrescribir decisiones/destinos, o dejar estado y bitácora discordantes tras un fallo parcial. La verificación dinámica de concurrencia no fue ejecutada.
 
 ## 5. Reconciliación de hallazgos y dependencias
 
-- **AUD-NG-224 / TASK-504:** ya cubren la unificación de HistorialCambiosEntidad, el orden de columnas, los escritores ad hoc de ocho columnas, el actor/correlationId verificados, la integridad y el manejo explícito de fallos. Ampliar el caso concreto de resolveAdmissionDuplicate y su falso éxito ante fallo de bitácora; no crear otro AUD-NG/TASK para el mismo esquema.
-- **AUD-NG-145:** conserva sanitización de PII y bitácoras estructuradas. Coordinar la reducción de datos sensibles de candidates y la consistencia de actor/rol; no duplicar el alcance transversal de logs.
-- **AUD-NG-161:** conserva la brecha transversal de pruebas de regresión; ampliar la cobertura con casos de admisión y duplicidad, sin crear un framework global duplicado.
-- **F5-007-A05:** coordinar el renderizado seguro de datos del panel de Secretaría, ya que su alcance cubre salida segura de vistas de admisión. La nueva subtarea local se limita al panel de duplicados.
-- **F5-012 H8 / controles de UI:** conservar el hallazgo previo de interpolación de datos personales en vistas familiares; el panel de duplicados es un sink adicional y debe corregirse con la misma política de salida segura.
-- **TASK-113:** trata detección de duplicados en importaciones de datos de Fase 35; no sustituye el matching de aspirantes ni se modifica.
-- No se crean IDs globales nuevos ni se duplican AUD-NG-224, TASK-504, AUD-NG-145 o AUD-NG-161.
+- **AUD-NG-224 / TASK-504:** ya cubren el esquema canónico de `HistorialCambiosEntidad`, escritores ad hoc, actor/correlationId verificados, integridad y manejo explícito de fallos. Ampliar con la resolución de duplicados y su falso éxito ante fallo de bitácora; no crear otro ID global para el mismo defecto.
+- **AUD-NG-145:** conserva la sanitización de PII/bitácoras. Coordinar la minimización de `candidates` y la salida segura de datos de admisión; no duplicar el alcance transversal de registros.
+- **AUD-NG-161:** conserva pruebas conductuales reales de concurrencia/idempotencia. Ampliar sus escenarios cuando se corrija la resolución sin lock/idempotencia; la cobertura funcional específica F5-017 queda en F5-017-A07.
+- **TASK-113:** aborda duplicados en importaciones de datos de Fase 35; no sustituye la detección de aspirantes ni se modifica.
+- **Tareas locales nuevas:** F5-017-A01..A07, definidas al final de este informe. No se crean IDs globales duplicados.
 
 ## 6. Pruebas y límites de verificación
 
-**Ejecutado:** inspección estática/manual de los nueve requisitos y cinco criterios; lectura de los handlers, campos y esquemas, roles, dispatcher, conversión, UI y panel; inspección del caso TC-04; revisión de las dos suites de regresión; búsqueda de árbol e historial del informe; comparación de rama de trabajo/base; lectura íntegra del blob Pendientes.md; revisión de bitácora, mapa, plan, metodología y contexto.
+**Ejecutado:** inspección manual de los nueve requisitos y cinco criterios; revisión de `normalizeString`, `createAdmissionRequest`, `findDuplicateStudents`, `resolveAdmissionDuplicate`, `convertAdmissionToStudent`, esquema de `ExpedientesEstudiantes`, RBAC estático, precedencia de permisos dinámicos, dispatcher, escritura de `HistorialCambiosEntidad`, panel y llamadas de UI; contraste de `ChangesLogs.txt`; inspección de TC-04 y de ambas suites; búsqueda del árbol/historial del informe en C1.212/C1.213; recuperación íntegra del blob Pendientes.md; revisión de dependencias AUD-NG-145, AUD-NG-224/TASK-504 y AUD-NG-161. Los SHA del código auditado coinciden con el árbol C1.212.
 
-**No ejecutado:** Apps Script runtime; llamadas HTTP; lectura/escritura de Google Sheets productivo; pruebas con registros reales o sintéticos aislados; concurrencia; navegador; prueba XSS; sesión con cada rol; validación de formularios en vivo; suites automatizadas; auditoría de ACL productiva. No se afirma que los criterios dinámicos hayan pasado.
+**No ejecutado:** Apps Script runtime, HTTP, Google Sheets productivo, matriz dinámica de permisos productiva, navegador/XSS, pruebas por rol, concurrencia, formularios en vivo y suites automatizadas. No se afirma que los criterios dinámicos hayan pasado ni que el XSS haya sido explotado.
 
 ## 7. Dictamen
 
-**TAREA-F5-017: NO CUMPLE.** La implementación contiene una base útil (búsqueda de coincidencias, clasificación parcial, panel de Secretaría y opciones de resolución manual), pero no garantiza validación de formato, comparación correcta contra expedientes existentes, clasificación media conforme a la especificación, bloqueo completo de DNI duplicado, prohibición de vinculación automática, privacidad, permisos consistentes, atribución verificable ni trazabilidad de correcciones. La marca [X] en completadas.md se conserva sin modificación como dato administrativo, no como aprobación técnica.
-
----
+**TAREA-F5-017: NO CUMPLE.** La implementación contiene una base parcial (consulta de coincidencias, panel de Secretaría y opciones manuales), pero falla validación de formato, normalización completa, join contra expedientes, niveles de coincidencia, bloqueo de DNI en ambos repositorios, control de vinculación manual, privacidad de la respuesta pública, salida segura del panel, consistencia de permisos, atribución verificable, persistencia de bitácora, corrección trazable y resolución concurrente. La marca [X] en `completadas.md` permanece como dato administrativo, no como aprobación técnica.
 
 ## 8. Tareas ejecutables derivadas de los hallazgos
 
@@ -173,10 +178,10 @@ Se consultó el árbol recursivo completo de NG_beta_0.0.0.1_work (979 entradas,
 - **Evidencia de cierre:** fixtures aislados de solicitudes/expedientes con claves distintas PersonaID/UserId y matriz de coincidencias exactas/altas/medias, incluida concurrencia de alta.
 
 ### F5-017-A03 - Exigir revisión manual antes de vincular o reutilizar un expediente
-- **Hallazgo de origen:** H5.
+- **Hallazgo de origen:** H5 y H11.
 - **Severidad:** Alta / P1.
 - **Objetivo:** impedir que una conversión cree o vincule relaciones de identidad basadas en coincidencias heurísticas sin autorización explícita.
-- **Acción concreta:** retirar la vinculación automática basada en includes() sobre Observaciones; exigir resolución previa y persistida de Secretaría para AprobarNuevo/VincularExistente/RechazarDuplicado; validar que el expediente destino exista, esté habilitado y corresponda al candidato revisado; impedir doble resolución y cambios concurrentes; registrar la decisión antes de convertir.
+- **Acción concreta:** retirar la vinculación automática basada en includes() sobre Observaciones; exigir resolución previa y persistida de Secretaría para AprobarNuevo/VincularExistente/RechazarDuplicado; validar que el expediente destino exista, esté habilitado y corresponda al candidato revisado; serializar la decisión con LockService o control de versión; hacer idempotente la operación; registrar la decisión antes de convertir.
 - **Archivos/módulos:** backend/academic-service/Code.gs (convertAdmissionToStudent, resolveAdmissionDuplicate); js/secretary.js; dashboard-secretaria.html.
 - **Dependencias/riesgos:** máquina de estados de admisión, conversión, matrículas y relaciones familiares; una corrección debe preservar la idempotencia sin reusar expedientes por coincidencias de texto.
 - **Alcance:** vínculo entre solicitud y expediente durante revisión y conversión; no sustituye el procedimiento general F6 de fusión de expedientes.
@@ -225,7 +230,7 @@ Se consultó el árbol recursivo completo de NG_beta_0.0.0.1_work (979 entradas,
 - **Evidencia de cierre:** pruebas de permisos, validación, transición de estados, historial y preservación de valores previos.
 
 ### F5-017-A07 - Crear pruebas conductuales de admisión y reparar TC-04
-- **Hallazgo de origen:** H1-H8 y H10.
+- **Hallazgo de origen:** H1-H11.
 - **Severidad:** Alta / P1.
 - **Objetivo:** demostrar la detección, privacidad, resolución manual, atribución y conversión mediante pruebas repetibles y aisladas.
 - **Acción concreta:** corregir TC-04 para usar nombres/apellidos/identificacion y candidates; sustituir cualquier dependencia de hojas productivas por fixtures aislados; incorporar pruebas de formato, normalización, coincidencia exacta/alta/media, expediente PersonaID/UserId, bloqueo de duplicados, privacidad, roles, resolución, conversión, auditoría y XSS; integrar la suite al flujo de regresión institucional.

@@ -7481,3 +7481,24 @@ AUDITORÍA TÉCNICA TAREA-F5-017 - C1.213 (IMA-AUDIT-20261107-1725Z)
 - Proceso: auditoría/documentación exclusivamente; no se implementaron las tareas derivadas ni se cambió el estado [X] de completadas.md. Un único commit consolidado incluye los cinco documentos y este checkpoint. El SHA de cierre se confirmará consultando el HEAD después de publicar.
 - Última tarea auditada: TAREA-F5-017. Tarea en curso: ninguna. Siguiente tarea exacta: TAREA-F5-018 - experiencia multiestudiante y resumen familiar consolidado; verificar primero informe individual e historial.
 ===============================================================================
+
+
+======================================================================
+C1.214 - AUDITORÍA TAREA-F5-017: DETECCIÓN Y GESTIÓN DE DUPLICADOS
+======================================================================
+- Sesión: IMA-AUDIT-20261107-1744Z.
+- Referencia válida: C1.212 / d72e39580df79369b45b418a4773eda25fc36679.
+- Rama de trabajo: NG_beta_0.0.0.1_work. Rama base protegida: NG_beta_0.0.0.1.
+- C1.213 / 5307832d34e767dbda5052cc6d0c7295c48565c0 no se acepta como checkpoint válido. Sus cambios son documentales; los SHA de código auditado permanecen idénticos a C1.212. Se conserva historial Git, sin reset/force-push.
+- Fuente: completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, líneas 2355-2379; nueve requisitos y cinco criterios [x], estado administrativo [X].
+- Pendientes.md recuperado desde blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c: 1.782.094 caracteres, 20.182 líneas, sin U+FFFD; sin tarea F5-017 directa; referencias relacionadas AUD-NG-145, AUD-NG-224/TASK-504 y AUD-NG-161.
+- Hallazgos H1-H11: validación de identidad/contacto ausente; normalización incompleta; relación PersonaID/UserId e índice de nacimiento erróneos; coincidencia media por email O teléfono y bloqueo DNI limitado al mismo año; conversión con vinculación heurística y destino no validado; respuesta pública revela existencia/ID y UI contiene sinks innerHTML no escapados; permisos estáticos desalineados con roles visibles y actor falsificable; escritura de bitácora incompatible y silenciosa; no hay corrección trazable; TC-04 tiene contrato roto y suites sin cobertura; resolución sin lock/idempotencia.
+- Dictamen: TAREA-F5-017 NO CUMPLE.
+- Tareas ejecutables locales: F5-017-A01..A07, todas Pendientes en el informe individual. Ampliar por referencia AUD-NG-145, AUD-NG-224/TASK-504 y AUD-NG-161; no duplicar IDs globales.
+- Evidencia de código: Code.gs SHA df87a2eea9f0ef79d0b966d03fd5bbe432003df5; secretary.js SHA 08a81266957b4c18cc25f8ba6749eac30a8f2c2c; dashboard-secretaria.html SHA fa0d8c23aace24a6acab2d4956398a7f5e1309b8; academic-grading-suite.js SHA a22cb3ef376fe09e65c1b17c2f4f5125290bfba6; modular-dashboard-suite.js SHA 0495e1d526a872c33310935a003a83d924d34683.
+- Pruebas realizadas: inspección estática/manual de handlers, roles, schema, dispatcher, UI, conversión, TC-04 y suites; revisión documental, árbol/historial, SHA y blob histórico.
+- No ejecutadas: Apps Script, Sheets productivo, HTTP, navegador/XSS, roles dinámicos, concurrencia ni suites automatizadas.
+- Archivos documentales de esta iteración: informe individual F5-017, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md y Contexto_personal.txt.
+- Código, tests, completadas.md, Pendientes.md, ChangesLogs.txt y rama base: sin modificaciones.
+- Siguiente tarea: TAREA-F5-018 - experiencia multiestudiante y resumen familiar consolidado; comprobar primero su informe individual e historial.
+======================================================================
