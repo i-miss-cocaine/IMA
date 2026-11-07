@@ -7293,3 +7293,55 @@ ARCHIVOS MODIFICADOS:
 SIGUIENTE ACCIÓN:
 Auditar TAREA-F6-002 - Robustecer las operaciones del ciclo de vida y prevenir estados de matrícula incompatibles. Primero buscar informe individual e historial; localizar informe de fase 6 y ChangesLogs; leer requisitos/criterios; luego inspeccionar changeStudentSection, recordStudentTransfer, recordStudentWithdrawal, processStudentReentry, renewStudentEnrollment, Matriculas, ExpedientesEstudiantes y LockService. No implementar durante auditoría.
 ===============================================================================
+
+
+===============================================================================
+CHECKPOINT C1.219 - SESIÓN IMA-AUDIT-20261107-1943Z
+Fecha: 2026-11-07
+Estado: sesión cerrada
+Checkpoint inicial: C1.218
+Checkpoint de cierre: C1.219
+Hora UTC de cierre registrada: 2026-11-07T20:04:00Z
+
+REPOSITORIO Y RAMAS:
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto: AUDITORIAS/Contexto_personal.txt.
+- Rama base NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Rama de trabajo NG_beta_0.0.0.1_work @ 8c492238f99f7902c7468b06676aab819f9eab35; árbol fef688a80199fcba7b620cea2c5bfaad4dbffccc.
+- HEAD de partida y rama base se verificaron antes de preparar el cierre. La rama base no se modifica.
+- Comparación en C1.218: 285 commits ahead, 0 behind.
+
+AUDITORÍA:
+- Última tarea auditada: TAREA-F6-002 - Robustecer las operaciones del ciclo de vida y prevenir estados de matrícula incompatibles.
+- Estado histórico en completadas.md: [X], sin modificar.
+- Dictamen: NO CUMPLE.
+- Informe nuevo: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-002.md.
+- H1 CRÍTICO/P0: escrituras parciales entre expediente, matrícula y movimiento; reingreso modifica expediente antes de crear matrícula.
+- H2 ALTO/P1: matriz de estados omitida por endpoints; precondiciones incompletas de expediente, matrícula y periodo.
+- H3 ALTO/P1: traslado solicitado se marca como trasladado/completado.
+- H4 ALTO/P1: retiro temporal y definitivo comparten la misma transición operativa.
+- H5 ALTO/P1: promoción ignora anoLectivoCerrado y no consulta resultados.
+- H6 ALTO/P1: graduación sin validar requisitos configurados.
+- H7 ALTO/P1: idempotencia opcional en caché de seis horas, sin reserva atómica; movimientos duplicables.
+- H8 ALTO/P1: conciliación sin lock y limitada a estados terminales con matrícula activa.
+- H9 MEDIO/P2: no hay fechaRegistro explícita en la fila de movimiento.
+- H10 MEDIO/P2: UI declarada sin llamadas a los endpoints; pruebas insuficientes para CA-008..CA-015.
+- Tareas locales F6-002-A01..A10 pendientes; ver informe individual. TAREA-F6-003 es dependencia de suite general, sin duplicar ID.
+- Código principal: backend/academic-service/Code.gs SHA df87a2eea9f0ef79d0b966d03fd5bbe432003df5; ALLOWED_STUDENT_LIFECYCLE_TRANSITIONS 1546-1553; idempotencia 279-318; getStudentFile 2510-2614; suite 3965-4081; capacidad 11147-11243; matrícula 11271-11395; cambio sección 11403-11480; traslado 11819-11885; retiro 11888-11954; reingreso 11957-12019; promoción 12022-12082; graduación 12085-12154; estado 12157-12196; conciliación 12199-12248.
+- UI: dashboard-secretaria.html SHA fa0d8c23aace24a6acab2d4956398a7f5e1309b8; js/secretary.js 08a81266957b4c18cc25f8ba6749eac30a8f2c2c; teacher-dashboard.html cbb9e6a272a7d8ad33f99727303305d950533e71; js/teacher.js c475fce5afcd28fca23e7b64398ad32b17773746.
+- Tests: academic-grading-suite.js SHA a22cb3ef376fe09e65c1b17c2f4f5125290bfba6; modular-dashboard-suite.js SHA 0495e1d526a872c33310935a003a83d924d34683.
+- Pendientes.md blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c, 1.803.672 bytes, 1.782.094 caracteres, 20.182 líneas, sin U+FFFD; lectura convencional 0 caracteres. Consultado por instrucción expresa; no modificado.
+- AUDITORIA_FASE_6_EXPEDIENTE_CICLO_VIDA.md e informe individual F6-002 ausentes del árbol/historial de la rama de trabajo.
+- Pruebas ejecutadas: inspección manual dirigida de requisitos, funciones, estado, locks, idempotencia, dispatcher, acceso histórico, UI, suites, historial de informe y blob Pendientes.
+- Pruebas no ejecutadas: Apps Script, navegador, Sheets productivo, HTTP, concurrencia real, fallos simulados, recuperación y configuración institucional de graduación.
+- No se accedió ni modificó datos productivos.
+
+ARCHIVOS MODIFICADOS:
+- Nuevo: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-002.md.
+- Actualizados: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- Sin cambios: backend, JS, HTML, tests, completadas.md, Pendientes.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README y rama base.
+- No se implementó código.
+
+SIGUIENTE ACCIÓN:
+Auditar TAREA-F6-003 - Establecer una batería automatizada de regresión para el ciclo de vida del estudiante. Buscar primero informe individual e historial; después revisar el alcance completo, los casos de prueba, fixtures, concurrencia, fallos simulados, persistencia y cobertura de todos los flujos. No ejecutar pruebas que escriban en datos productivos.
+===============================================================================

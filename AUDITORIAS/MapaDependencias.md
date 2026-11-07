@@ -2460,3 +2460,38 @@ TAREA-F5-017 NO CUMPLE. La búsqueda, panel y decisiones manuales existen parcia
 - Runtime/browser/Apps Script y matriz productiva no ejecutados.
 - Tareas locales F6-001-A01..A06 pendientes.
 - Código, tests, completadas.md, Pendientes.md y ChangesLogs.txt sin cambios.
+
+
+## C1.219 - TAREA-F6-002: ciclo de vida y consistencia de matrículas
+
+**Informe:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-002.md  
+**Dictamen:** NO CUMPLE. **HEAD auditado:** 8c492238f99f7902c7468b06676aab819f9eab35.
+
+### Backend ACADEMIC
+- backend/academic-service/Code.gs SHA df87a2eea9f0ef79d0b966d03fd5bbe432003df5.
+- ALLOWED_STUDENT_LIFECYCLE_TRANSITIONS:1546-1553; updateStudentLifecycleStatus:12157-12196 aplica matriz, pero transfer/withdrawal/reentry/promotion/graduation la omiten.
+- checkAndRegisterIdempotencyKey/saveIdempotentResult:279-318; token opcional, caché 6h, sin reserva atómica previa.
+- checkEnrollmentCapacity:11147-11243; tryLock fallido no detiene lectura.
+- createStudentEnrollment:11271-11351; valida duplicado estudiante/año, pero permite matrícula sin expediente y no valida periodo destino.
+- renewStudentEnrollment:11381-11395.
+- changeStudentSection:11403-11480; bloquea terminales seleccionados, pero no Inactivo/Suspendido; muta fila de matrícula antes de anexar movimiento.
+- recordStudentTransfer:11819-11885; marca Trasladado aun con estadoTramite Solicitado; no exige matrícula/expediente existente.
+- recordStudentWithdrawal:11888-11954; Temporal/Definitivo reciben misma transición.
+- processStudentReentry:11957-12019; expediente Activo antes de crear matrícula; movimientos repetibles.
+- processStudentPromotion:12022-12082; anoLectivoCerrado no utilizado; no consulta resultados; no comprueba status de createStudentEnrollment.
+- processStudentGraduation:12085-12154; no verifica requisitos configurados; actualiza matrículas activas de todos los años.
+- reconcileStudentLifecycleState:12199-12248; sin lock y solo corrige terminales con matrículas activas.
+
+### UI y acceso histórico
+- js/secretary.js SHA 08a81266957b4c18cc25f8ba6749eac30a8f2c2c; dashboard-secretaria.html fa0d8c23aace24a6acab2d4956398a7f5e1309b8: no se encontraron llamadas/controles de las operaciones de ciclo de vida declaradas.
+- js/teacher.js SHA c475fce5afcd28fca23e7b64398ad32b17773746; teacher-dashboard.html cbb9e6a272a7d8ad33f99727303305d950533e71: no se encontraron llamadas a los endpoints de ciclo de vida.
+- getStudentFile:2510-2614 devuelve expediente, matrículas y movimientos sin excluir estado Graduado; acceso histórico parece conservarse estáticamente.
+
+### Pruebas
+- runStudentLifecycleRegressionSuite:3965-4081; TC-07 solo acepta success/error y no mide duplicados ni concurrencia; TC-06 valida forma de respuesta, no inmutabilidad.
+- tests/regression/academic-grading-suite.js SHA a22cb3ef376fe09e65c1b17c2f4f5125290bfba6 y modular-dashboard-suite.js SHA 0495e1d526a872c33310935a003a83d924d34683: sin casos F6-002.
+- No se ejecutaron Apps Script, navegador, Google Sheets, concurrencia ni fallos simulados.
+
+### Tareas derivadas
+- F6-002-A01..A10 pendientes; ver informe individual.
+- TAREA-F6-003 queda como dependencia de suite general; no se duplica ID.

@@ -1405,3 +1405,31 @@ Próxima acción: buscar informe individual F6-002 e historial; localizar inform
 HEAD de partida verificado: ae5dea9f7d342df58a5db393e66691d8249f892e. Commit de cierre: el commit que contiene este checkpoint; SHA confirmado externamente tras publicar.
 Hora UTC de cierre: 2026-11-07T19:16:22Z. Sesión cerrada.
 ===============================================================================
+
+
+===============================================================================
+CHECKPOINT C1.219 - 2026-11-07 - AUDITORÍA TAREA-F6-002
+Sesión: IMA-AUDIT-20261107-1943Z | checkpoint inicial C1.218 | cierre C1.219
+Repositorio: i-miss-cocaine/IMA
+Rama base: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+Rama trabajo: NG_beta_0.0.0.1_work @ 8c492238f99f7902c7468b06676aab819f9eab35
+Árbol inicial: fef688a80199fcba7b620cea2c5bfaad4dbffccc. Comparación al checkpoint C1.218: 285 ahead, 0 behind.
+Informe nuevo: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-002.md
+Dictamen: NO CUMPLE; TAREA-F6-002 permanece [X] histórico en completadas.md, sin alterar el registro maestro.
+Hallazgos H1-H10: escrituras parciales sin rollback; matriz de estados omitida por endpoints; validaciones de expediente/matrícula/periodo incompletas; traslado solicitado se marca completado; retiro temporal/definitivo indistintos; promoción no usa periodo cerrado; graduación sin requisitos; idempotencia opcional/cache 6h y sin reserva concurrente; conciliación limitada; fechaRegistro no explícita; UI/pruebas incompletas.
+Tareas locales: F6-002-A01..A10 pendientes. TAREA-F6-003 se mantiene como dependencia para la suite general.
+Código auditado: backend/academic-service/Code.gs SHA df87a2eea9f0ef79d0b966d03fd5bbe432003df5; líneas clave: 1546-1553, 279-318, 2510-2614, 3965-4081, 11147-11243, 11271-11395, 11403-11480, 11819-12248.
+UI SHAs: dashboard-secretaria.html fa0d8c23aace24a6acab2d4956398a7f5e1309b8; secretary.js 08a81266957b4c18cc25f8ba6749eac30a8f2c2c; teacher-dashboard.html cbb9e6a272a7d8ad33f99727303305d950533e71; teacher.js c475fce5afcd28fca23e7b64398ad32b17773746.
+Tests SHAs: academic-grading-suite.js a22cb3ef376fe09e65c1b17c2f4f5125290bfba6; modular-dashboard-suite.js 0495e1d526a872c33310935a003a83d924d34683.
+Pendientes.md: blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c, 1.803.672 bytes, 1.782.094 caracteres, 20.182 líneas, sin U+FFFD; lectura convencional 0 caracteres. Consultado, no modificado.
+Informe de fase AUDITORIA_FASE_6_EXPEDIENTE_CICLO_VIDA.md: ausente del árbol e historial de rama; informe individual F6-002 no existía.
+Pruebas ejecutadas: inspección manual dirigida de requisitos, funciones, dispatcher, estado, idempotencia, locks, movimientos, UI, suites, blob Pendientes e historial de ruta.
+Pruebas no ejecutadas: Apps Script, navegador, Google Sheets productivo, HTTP, concurrencia real, fallos simulados, recuperación y configuración de graduación.
+Archivos modificados: informe F6-002 nuevo; Auditoria.txt; MapaDependencias.md; AUDITORIA_COMPLETADAS_PLAN.md; Contexto_personal.txt.
+Archivos no modificados: código, JS, HTML, tests, completadas.md, Pendientes.md, ChangesLogs.txt, metodología, README y rama base.
+Última tarea auditada: TAREA-F6-002 (NO CUMPLE). Tarea en curso: ninguna.
+Siguiente tarea: TAREA-F6-003 - Establecer una batería automatizada de regresión para el ciclo de vida del estudiante (completadas.md inmediatamente después de F6-002).
+Próxima acción: buscar informe individual F6-003 e historial; revisar alcance de la suite; inspeccionar pruebas en backend/academic-service/Code.gs y tests/regression; comprobar cada flujo, fixture, concurrencia, fallos y persistencia, sin ejecutar sobre datos productivos.
+HEAD de partida verificado: 8c492238f99f7902c7468b06676aab819f9eab35. Commit de cierre: el commit que contiene este checkpoint; SHA confirmado externamente tras publicar.
+Hora UTC de cierre: 2026-11-07T20:04:00Z. Sesión cerrada.
+===============================================================================

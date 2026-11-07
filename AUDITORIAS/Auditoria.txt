@@ -7708,3 +7708,51 @@ ARCHIVOS DOCUMENTALES:
 - Sin cambios: código, tests, completadas.md, Pendientes.md, ChangesLogs.txt, metodología, README y rama base.
 - Siguiente tarea: TAREA-F6-002 (marcada [X] en completadas.md).
 ===============================================================================
+
+
+===============================================================================
+AUDITORÍA C1.219 - TAREA-F6-002 - 2026-11-07
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+HEAD auditado: 8c492238f99f7902c7468b06676aab819f9eab35
+Checkpoint inicial: C1.218
+Sesión: IMA-AUDIT-20261107-1943Z
+Informe individual: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-002.md
+Dictamen: NO CUMPLE. TAREA-F6-002 aparece [X] en completadas.md, pero no cumple todos sus requisitos/criterios.
+
+FUENTES:
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, líneas 2505-2538; se revisaron R1-R12 y CA-008..CA-015.
+- Pendientes.md recuperado desde blob Git SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c: 1.803.672 bytes, 1.782.094 caracteres, 20.182 líneas, sin U+FFFD. Lectura convencional 0 caracteres; no contiene TAREA-F6-002/F6-Task02 ni funciones de ciclo de vida consultadas. No modificado.
+- ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff registra cambio en changeStudentSection, pero su afirmación sobre rechazo de Inactivo no coincide con el código actual.
+- AUDITORIA_FASE_6_EXPEDIENTE_CICLO_VIDA.md no está en árbol ni historial de la rama de trabajo; informe individual F6-002 no existía.
+- Código auditado: backend/academic-service/Code.gs SHA df87a2eea9f0ef79d0b966d03fd5bbe432003df5.
+- UI: dashboard-secretaria.html fa0d8c23aace24a6acab2d4956398a7f5e1309b8; js/secretary.js 08a81266957b4c18cc25f8ba6749eac30a8f2c2c; teacher-dashboard.html cbb9e6a272a7d8ad33f99727303305d950533e71; js/teacher.js c475fce5afcd28fca23e7b64398ad32b17773746.
+- Tests: academic-grading-suite.js a22cb3ef376fe09e65c1b17c2f4f5125290bfba6; modular-dashboard-suite.js 0495e1d526a872c33310935a003a83d924d34683.
+
+HALLAZGOS:
+1. H1 CRÍTICO/P0: escrituras parciales entre expediente, matrícula y movimiento; reingreso actualiza expediente antes de crear matrícula, sin rollback/journal.
+2. H2 ALTO/P1: matriz de estados aplicada solo por updateStudentLifecycleStatus; otros endpoints omiten transiciones, expediente/periodo/matrícula origen.
+3. H3 ALTO/P1: traslado solicitado marca expediente y matrícula como Trasladado.
+4. H4 ALTO/P1: retiro temporal y definitivo tienen misma transición operativa.
+5. H5 ALTO/P1: promoción no consulta anoLectivoCerrado ni resultados; puede registrar movimiento aunque matrícula falle.
+6. H6 ALTO/P1: graduación no comprueba requisitos configurados y actualiza todas las matrículas activas sin filtrar periodo.
+7. H7 ALTO/P1: idempotencia opcional en CacheService 6h, sin reserva atómica; operaciones/movimientos duplicables.
+8. H8 ALTO/P1: reconcileStudentLifecycleState no usa lock y solo repara un subconjunto de estados terminales.
+9. H9 MEDIO/P2: movimientos no guardan fechaRegistro explícita separada de fechaEfectiva.
+10. H10 MEDIO/P2: UI declarada no invoca endpoints de ciclo de vida y pruebas no cubren CA-008..CA-015.
+
+TAREAS LOCALES:
+F6-002-A01..A10: matriz/precondiciones; traslado solicitado/completado; retiro temporal/definitivo; reingreso atómico; promoción/repitencia; graduación; idempotencia/concurrencia; fechas efectivas/registro; integración UI; pruebas conductuales. Detalle y criterios verificables en informe individual.
+TAREA-F6-003 se mantiene como dependencia de suite general, sin duplicar ID global.
+
+PRUEBAS:
+- Ejecutadas: inspección manual dirigida de código, UI, dispatcher, idempotencia, conciliación, acceso histórico, suites, blob Pendientes, historial de informe fase y SHAs.
+- No ejecutadas: Apps Script, navegador, Google Sheets productivo, HTTP, concurrencia real, fallos simulados, recuperación ni validación de configuración institucional de graduación.
+
+ARCHIVOS DOCUMENTALES:
+- Nuevo: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-002.md.
+- Actualizados: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- Sin cambios: backend, JS, HTML, tests, completadas.md, Pendientes.md, ChangesLogs.txt, metodología, README y rama base.
+- No se implementó código ni se modificaron datos productivos.
+- Siguiente tarea: TAREA-F6-003 (marcada [X] en completadas.md).
+===============================================================================
