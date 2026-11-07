@@ -1260,3 +1260,18 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Archivos documentales:** informe F5-014 nuevo, Auditoria.txt, MapaDependencias.md, este plan y Contexto_personal.txt.
 - **Sin cambios:** código, pruebas, completadas.md, Pendientes.md, ChangesLogs.txt, metodología y rama base.
 - **Siguiente tarea:** TAREA-F5-015 - guardado automático de borradores y recuperación de solicitudes; comprobar informe individual e historial antes de auditar.
+
+
+## C1.211 - TAREA-F5-015: guardado automático de borradores y recuperación de solicitudes
+
+- **Estado administrativo:** completadas.md [X], 10 requisitos/6 criterios [x]; **dictamen técnico: NO CUMPLE**.
+- **Informe individual:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-015.md creado desde cero; ruta NOT_FOUND e historial de commits vacío en NG_beta_0.0.0.1_work. El informe de fase citado y HALLAZGOS-F5-P2-02 no se recuperaron en árbol/historial ni en Auditoria.txt vigente.
+- **Hallazgos principales:** cloud get no conectado al formulario; localStorage con escritura retrasada, fallback compartido y PII en texto claro; recuperación elige la primera clave; PUBLIC_ACTIONS permite leer/escribir sin token/propiedad; indicador afirma éxito sin comprobar status; reintentos genéricos sin cola/reconexión; falta guardado manual/fecha visible; upsert sin lock/versionado; local no se elimina al enviar; restauración incompleta; pruebas específicas ausentes.
+- **Reconciliación:** ampliar AUD-NG-002 (seguridad y propiedad de borradores) y AUD-NG-161 (pruebas); coordinar T-UX-03/T-UX-17/T-UX-10 y F5-012-A07. Sin IDs globales duplicados.
+- **Pendientes.md:** blob íntegro SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c; 1.782.094 caracteres, 20.182 líneas, sin U+FFFD; AUD-NG-002 continúa [ ] Pendiente.
+- **Tareas locales:** F5-015-A01..A09, todas Pendientes; detalle y criterios verificables en el informe individual.
+- **Evidencia:** ACADEMIC Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5; admision.html 45b84c80d22d2e8dab75852e65847bae6425db44; js/api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; js/ui-common.js 986938b8a311a41ed4cb3d135b66b6aaea4bed67; js/student.js e2888cea60322e49a40b89adadb8010489605dcc; suites a22cb3ef376fe09e65c1b17c2f4f5125290bfba6 y 0495e1d526a872c33310935a003a83d924d34683.
+- **Pruebas:** inspección estática/manual, árbol Git recursivo no truncado, historial de rutas, revisión de handlers/RBAC/dispatch/UI/API/suites y lectura íntegra del blob. No ejecutados Apps Script, HTTP, Sheets productivo, navegador, offline/reconexión, concurrencia ni suites automatizadas.
+- **Archivos documentales:** informe F5-015 nuevo, Auditoria.txt, MapaDependencias.md, este plan y Contexto_personal.txt.
+- **Sin cambios:** backend/*; js/*; HTML; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; rama base.
+- **Siguiente tarea:** TAREA-F5-016 - accesibilidad WCAG 2.2 AA y adaptación móvil de admisiones; verificar primero informe individual e historial.

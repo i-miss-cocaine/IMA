@@ -2232,3 +2232,32 @@ TAREA-F5-013 NO CUMPLE. Subtareas locales F5-013-A01..A10 pendientes. Hallazgos 
 - F5-013-A09 cubre trazabilidad/contabilidad financiera.
 - TASK-474/TASK-475 mantienen outbox/notificaciones y plantillas/PII; no sustituyen el registro de auditoría.
 - AUD-NG-145 y AUD-NG-161 conservan sus causas transversales; AUD-NG-222/TASK-502 mantiene el motor ABAC.
+
+
+## TAREA-F5-015 - guardado automático de borradores y recuperación de solicitudes (C1.211)
+
+### Persistencia y recuperación
+- admision.html/triggerAdmissionAutoSave (683-715) usa debounce de 3 s y solo entonces escribe localStorage; no cumple copia local inmediata ni debounce requerido de 5 s para sincronización.
+- admision.html/restoreAdmissionDraftOnLoad (717-739) toma keys[0], no consulta ACADEMIC/getAdmissionDraft y no vincula el borrador a identidad autenticada. No hay recuperación nube en la interfaz.
+- El fallback draft_local es común; las claves incluyen email o DNI; el formulario serializado incluye datos personales y no hay limpieza/expiración del prefijo.
+- El helper setupUnsavedChangesProtection existe en ui-common.js, pero admision.html no lo inicializa.
+
+### Seguridad y API
+- ACADEMIC PUBLIC_ACTIONS (265) contiene saveAdmissionDraft/getAdmissionDraft; validateRolePermission (524-525) retorna autorizado antes de verificar token.
+- saveAdmissionDraft (1433-1479) y getAdmissionDraft (1482-1506) confían en draftKey/emailResponsable; el lector devuelve draftData íntegro y el escritor puede actualizar una fila sin probar titularidad.
+- AUD-NG-002 ya cubre la retirada de estas operaciones de PUBLIC_ACTIONS, la identidad por claims y la propiedad/capacidad opaca. Ampliar por referencia; no crear ID global duplicado.
+
+### Sincronización, concurrencia y ciclo de vida
+- js/api.js/fetchApi (11-181) reintenta hasta dos veces determinados errores de red, pero no mantiene cola durable ni reintenta al recuperar conexión. Devuelve JSON status:error como resultado ordinario.
+- admision.html marca “Borrador guardado en nube” sin comprobar res.status.
+- ACADEMIC/saveAdmissionDraft lee/encuentra y actualiza o appendRow sin LockService ni versión; dos altas simultáneas pueden duplicar y las ediciones concurrentes pueden sobrescribirse.
+- ACADEMIC/createAdmissionRequest marca Consumido el borrador remoto (1090-1101); el submit del HTML no elimina la copia local. La restauración posterior puede revivir datos ya enviados.
+- La UI no presenta guardado manual ni fecha/hora; la restauración solo asigna input.value para valores truthy y no restaura checked en checkbox/radio.
+
+### Pruebas y acciones
+- academic-grading-suite.js y modular-dashboard-suite.js no contienen F5-015 ni tests de save/get/BorradoresAdmision.
+- Acciones locales: F5-015-A01 recuperación cloud autorizada; A02 persistencia inmediata/debounce; A03 privacidad y aislamiento local; A04 cola/reintentos y respuesta veraz; A05 guardado manual/indicador; A06 upsert atómico/conflictos; A07 limpieza del ciclo de vida; A08 serialización/restauración; A09 pruebas conductuales.
+- Reconciliar seguridad con AUD-NG-002, pruebas con AUD-NG-161 y protección de formularios con T-UX-03/T-UX-17/T-UX-10. No duplicar IDs globales.
+
+### Dictamen
+TAREA-F5-015 NO CUMPLE. Hallazgos H1-H12 y nueve subtareas locales pendientes en AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-015.md.
