@@ -1726,3 +1726,18 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
 - **Archivos sin cambios:** backend/academic-service/Code.gs; js/teacher.js; teacher-dashboard.html; js/api.js; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; README; manifest.json; rama base.
 - **Siguiente tarea cronológica:** TAREA-F7-IMP-05, Ampliar el control de carga laboral y las preferencias docentes.
+
+
+## C1.237 - Resultado de auditoría TAREA-F7-IMP-05 (2026-11-07)
+- **Dictamen:** NO CUMPLE; la marca [X] histórica en completadas.md se conserva.
+- **Informe individual:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-05.md; no existía previamente, se auditó directamente el alcance maestro.
+- **Hallazgo nuevo:** AUD-NG-240. Se amplían AUD-NG-001 (token/identidad), AUD-NG-236 (cálculo de carga) y AUD-NG-239 (preferencias del optimizador).
+- **Evidencia principal:** límite por defecto 40h sin política efectiva; anoId ignorado y estados no vigentes sumados; sin frecuencia, descansos, límites diarios ni actividades adicionales; preferencias reducidas a jornada fija y no integradas al optimizador; modal sin botón HTML; acción privada sin token desde fetchApi; posible exclusión del primer registro si HorariosLaborales se crea sin cabecera; TC-F7-02 solo valida objeto.
+- **Criterios:** CA-F7-32/34/37/38 NO CUMPLE; CA-F7-33/35/36 PARCIAL.
+- **Tareas derivadas:** TASK-538..TASK-544, todas Pendientes y registradas en el informe; no se modifica Pendientes.md ni completadas.md.
+- **Pruebas ejecutadas:** inspección estática/manual de backend, RBAC, dispatcher, API, JS, HTML, modelo de datos, suite, historial y SHAs.
+- **No ejecutadas:** Apps Script runtime, HTTP/OAuth, navegador, Sheets/Drive productivas, cálculos con contratos reales, concurrencia, fallos de escritura, rollback ni E2E.
+- **Archivos nuevos:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-05.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Archivos sin cambios:** backend/academic-service/Code.gs; js/teacher.js; teacher-dashboard.html; js/api.js; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; README; manifest.json; rama base.
+- **Siguiente tarea cronológica:** TAREA-F7-IMP-06, Ampliar la gestión de disponibilidad, equipamiento y capacidad de espacios.

@@ -8160,3 +8160,35 @@ Auditar TAREA-F6-015 y TAREA-F6-040. Buscar informes individuales e historial en
 - **Archivos no modificados:** backend/academic-service/Code.gs; js/teacher.js; teacher-dashboard.html; js/api.js; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; README; manifest.json; rama base.
 - **Punto de reanudación:** abrir completadas.md en TAREA-F7-IMP-05; localizar informe/historial; auditar límites de carga por contrato/jornada/política, frecuencia, descansos, preferencias, cálculos y pruebas sin implementar.
 ===============================================================================
+
+
+===============================================================================
+## C1.237 - Auditoría TAREA-F7-IMP-05
+- **ID de sesión operativo:** IMA-AUDIT-20261107-2224Z-01 (no es ID nativo de ChatGPT).
+- **Estado de cierre:** auditoría documental completada; commit único y verificación posterior de GitHub en curso.
+- **Checkpoint inicial:** C1.236. **Checkpoint de cierre:** C1.237.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Archivo de contexto:** AUDITORIAS/Contexto_personal.txt.
+- **Rama base:** NG_beta_0.0.0.1; HEAD verificado 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **HEAD de partida verificado:** 125d58d2b7bc2e3745926d5946a825a326fa4638; árbol bc7d5ff715284c046a685afa08488d96be158e7c; compare base/trabajo 304 ahead, 0 behind.
+- **Última tarea auditada:** TAREA-F7-IMP-05; dictamen NO CUMPLE; marca [X] histórica preservada.
+- **Tarea en curso al cierre:** ninguna.
+- **Siguiente tarea exacta:** TAREA-F7-IMP-06 (disponibilidad, equipamiento y capacidad de espacios).
+- **Lote:** Fase 7, planificación académica, horarios y recursos.
+
+### Evidencia y respaldos
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676; TAREA-F7-IMP-05; CA-F7-32..CA-F7-38.
+- Informe previo AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-05.md y archivo de origen AUDITORIA_FASE_7_PLANIFICACION_HORARIOS_RECURSOS.md: no existen en la rama; se auditó directamente completadas.md.
+- ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff; la entrada histórica del 2026-10-26 describe UI ya ausente en el estado actual.
+- ACADEMIC Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5; js/teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; teacher-dashboard.html cbb9e6a272a7d8ad33f99727303305d950533e71; js/api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; tests academic a22cb3ef376fe09e65c1b17c2f4f5125290bfba6.
+- Auditoria.txt fb5d0874a40b581817a19ba4281b89908041a39d; MapaDependencias.md d3dcc8ce284231851981dcc8966b983771398ce9; AUDITORIA_COMPLETADAS_PLAN.md 588c1eba6729122fec232b338364ff80a547d776.
+- No se consultó Pendientes.md por exclusión expresa de METODOLOGIA_DESARROLLO.md, sección 3.4.
+- Nuevo hallazgo AUD-NG-240; ampliados AUD-NG-001/236/239. Tareas TASK-538..TASK-544 nuevas, verificadas ausentes en Auditoria.txt, MapaDependencias.md, Plan y Contexto.
+- **Pruebas ejecutadas:** inspección estática/manual de funciones, dispatcher, RBAC, API, JS, DOM HTML, modelo de datos, suite, historial y SHAs.
+- **No ejecutadas:** Apps Script runtime, HTTP/OAuth, navegador, Sheets/Drive productivas, cálculos con contratos reales, concurrencia, fallos de escritura, rollback ni E2E.
+- **Archivos nuevos:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-05.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Archivos sin cambios:** backend/academic-service/Code.gs; js/teacher.js; teacher-dashboard.html; js/api.js; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; README; manifest.json; rama base.
+- **Punto de reanudación:** abrir completadas.md en TAREA-F7-IMP-06; buscar informe/historial; auditar disponibilidad de espacios, equipamiento, mantenimiento, capacidad, reservas, impacto en clases futuras, recursos alternativos, estados e integración con checkScheduleConflict, sin implementar.
+===============================================================================

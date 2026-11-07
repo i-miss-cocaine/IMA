@@ -8533,3 +8533,25 @@ RECONCILIACIÓN:
 - TASK-537: conectar UI/autenticación y regresión del ciclo completo.
 PRUEBAS/LÍMITES: inspección estática/manual; no ejecutados Apps Script runtime, HTTP/OAuth, navegador, Sheets/Drive productivas, generación masiva, concurrencia, fallos inyectados, rollback ni E2E. Sin cambios de código, tests, HTML, datos productivos o despliegues.
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-07
+[AUD-NG-240] TAREA-F7-IMP-05 - CONTROL DE CARGA LABORAL Y PREFERENCIAS DOCENTES
+SEVERIDAD: CRÍTICO/P0 Y ALTO/P1
+DICTAMEN: NO CUMPLE (marca [X] histórica conservada).
+EVIDENCIA:
+- backend/academic-service/Code.gs SHA df87a2eea9f0ef79d0b966d03fd5bbe432003df5: getTeacherTeachingLoad (6773) recibe anoId pero no lo usa; suma horarios del docente salvo estado Inactivo, por lo que incluye borradores/otros estados y años/períodos; el límite cae a 40h cuando no hay configuración.
+- saveTeacherWorkLoadPreferences (6842) persiste maxHorasSemanales || 40; solo gestiona horaEntrada, horaSalida y días laborales, sin contrato, jornada, responsabilidades adicionales ni preferencias por franja. Actualiza celdas separadas sin lock/rollback/versionado.
+- getOrCreateSheet (84) no inicializa cabecera para HorariosLaborales; si crea hoja nueva, saveTeacherWorkLoadPreferences inserta el primer docente en fila 1, pero getTeacherTeachingLoad usa slice(1) y lo excluye.
+- ROLE_PERMISSIONS (158+) permite saveTeacherWorkLoadPreferences a Administrador/Director, no al rol Profesor; PUBLIC_ACTIONS no incluye la acción. validateRolePermission requiere token. js/api.js fetchApi (11,46-57) y el controlador no transmiten token; se amplía AUD-NG-001.
+- js/teacher.js SHA c475fce5afcd28fca23e7b64398ad32b17773746: openTeacherWorkLoadPreferencesModal (1830) solo solicita límite, entrada/salida y fija lunes-viernes; no consulta getTeacherTeachingLoad ni preferencias.
+- teacher-dashboard.html SHA cbb9e6a272a7d8ad33f99727303305d950533e71 no contiene botón “Preferencias Carga”, referencia al modal ni formulario; contradice la entrada histórica de ChangesLogs del 2026-10-26.
+- runAcademicPlanningRegressionSuite TC-F7-02 (Code.gs:14135) solo comprueba que el resultado sea un objeto; no valida valores. tests/regression/academic-grading-suite.js SHA a22cb3ef376fe09e65c1b17c2f4f5125290bfba6 no contiene casos CA-F7-32..38.
+CRITERIOS: CA-F7-32/34/37/38 NO CUMPLE; CA-F7-33/35/36 PARCIAL.
+RECONCILIACIÓN:
+- Hallazgo nuevo AUD-NG-240.
+- Ampliar AUD-NG-001 (token/identidad), AUD-NG-236 (cálculo de carga/validación temporal) y AUD-NG-239 (preferencias ausentes en optimizador).
+- Tareas derivadas TASK-538..TASK-544, todas Pendientes y registradas en el informe individual; no se modifica Pendientes.md ni completadas.md.
+PRUEBAS/LÍMITES: inspección estática/manual. No ejecutados Apps Script runtime, HTTP/OAuth, navegador, Sheets/Drive productivas, cálculos con contratos reales, concurrencia, fallos de escritura, rollback ni E2E. Sin cambios de código, tests, HTML o datos productivos.
+===============================================================================

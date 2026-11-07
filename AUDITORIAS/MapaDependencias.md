@@ -3089,3 +3089,41 @@ Todas Pendientes. No se crean IDs duplicados.
 
 ### Límites
 Inspección estática/manual. No se ejecutaron Apps Script, HTTP/OAuth, navegador, Sheets/Drive productivas, generación masiva, concurrencia, fallos inyectados, rollback ni E2E. Sin cambios en código o datos productivos.
+
+
+## C1.237 - TAREA-F7-IMP-05: control de carga laboral y preferencias docentes
+
+**Informe:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-05.md.  
+**Dictamen:** NO CUMPLE; marca [X] histórica preservada. **HEAD auditado:** 125d58d2b7bc2e3745926d5946a825a326fa4638.
+
+### Dependencias inspeccionadas
+- backend/academic-service/Code.gs: getOrCreateSheet (84), ROLE_PERMISSIONS (158+), PUBLIC_ACTIONS, doPost (800+), getTeacherTeachingLoad (6773), saveTeacherWorkLoadPreferences (6842), checkScheduleConflict (7493), runAcademicPlanningRegressionSuite (14109).
+- js/teacher.js: openTeacherWorkLoadPreferencesModal (1830) y solicitud saveTeacherWorkLoadPreferences (1842).
+- teacher-dashboard.html: ausencia del botón/control/formulario para el modal.
+- js/api.js: fetchApi y enriquecimiento del payload; brecha relacionada con AUD-NG-001.
+- tests/regression/academic-grading-suite.js: TC-F7-02 solo valida tipo objeto; sin escenarios CA-F7-32..38.
+
+### Relaciones y hallazgos
+- Política: getTeacherTeachingLoad y saveTeacherWorkLoadPreferences aplican 40h por defecto; no hay resolución por contrato/jornada ni estado explícito “sin política”.
+- Cálculo: anoId se recibe pero no se aplica; se cuentan filas salvo Inactivo, incluyendo borradores/otros estados y períodos mezclados.
+- Reglas laborales: no se modelan frecuencia, límites diarios, sesiones consecutivas, descansos ni actividades adicionales.
+- Preferencias: solo se guardan hora de entrada/salida y días fijos lunes-viernes; no son preferencias flexibles ni se consumen por generateAutoSchedules. Se amplía AUD-NG-239.
+- Integración: el modal JS no tiene botón/trigger HTML; el guardado es privado y fetchApi/controlador no envían token. Se amplía AUD-NG-001.
+- Datos: HorariosLaborales carece de inicializador de cabecera; si se crea vacía, la primera fila insertada puede ser descartada por slice(1). Escrituras parciales sin lock/rollback/versionado.
+- Pruebas: TC-F7-02 es estructural, sin aserciones de cálculo; no hay regresión F7-IMP-05.
+
+### Criterios
+CA-F7-32/34/37/38 NO CUMPLE; CA-F7-33/35/36 PARCIAL.
+
+### Tareas ejecutables derivadas
+- TASK-538: políticas de carga por contrato/jornada, sin valores arbitrarios.
+- TASK-539: cálculo lectivo por período, estado y frecuencia.
+- TASK-540: límites diarios, consecutividad, descansos y actividades adicionales.
+- TASK-541: preferencias docentes autorizadas e integración con optimizador.
+- TASK-542: UI, API autenticada y permisos por ámbito.
+- TASK-543: explicación de excesos, política/versiones y actualización de la vista.
+- TASK-544: regresión conductual CA-F7-32..38.
+Todas Pendientes. AUD-NG-240 nuevo; AUD-NG-001/236/239 ampliados.
+
+### Límites
+Inspección estática/manual. No se ejecutaron Apps Script runtime, HTTP/OAuth, navegador, Sheets/Drive productivas, cálculos con contratos reales, concurrencia, fallos de escritura, rollback ni E2E. Sin cambios en código o datos productivos.
