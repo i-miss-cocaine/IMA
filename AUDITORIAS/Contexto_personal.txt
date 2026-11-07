@@ -6292,3 +6292,14 @@ CHECKPOINT C1.187 — NORMALIZACIÓN DE TAREAS DEL INFORME TAREA-F4-P2-03
 - Última tarea normalizada: TAREA-F4-P2-03. Siguiente tarea oficial: TAREA-F4-P2-04 — optimizar la concurrencia y consistencia de las operaciones de identidad; reconciliar AUD-NG-229/TASK-509, AUD-NG-219/TASK-498, TASK-118, AUD-NG-161 y AUD-NG-218 sin duplicar.
 - Regla de publicación: un único commit consolidado con exactamente el informe y Contexto_personal.txt; verificar SHA, padre, árbol, archivos modificados, estadísticas y HEAD posterior. No escribir en la rama base.
 ================================================================
+
+
+================================================================
+ERRATA DOCUMENTAL POSTERIOR A C1.187 — PENDIENTES.MD
+================================================================
+La anotación de C1.187 que describió Pendientes.md como vacío fue incorrecta: fetch_file devolvió contenido vacío por limitación de lectura de un archivo grande. La inspección mediante fetch_blob verificó que el blob actual SHA ef47d232db3ed46317dc14f22b1cdf8f938e8405 contiene 1.425.933 caracteres. El blob histórico SHA 83e885f4b8f860aba200ed5ae739b794c7c02dc8 contiene 1.764.184 caracteres.
+- Histórico: AUD-NG-161 (17 coincidencias), AUD-NG-218 (4), AUD-NG-219 (13), TASK-118 (5), AUD-NG-228 (3) y TASK-508 (1).
+- Actual: TASK-118 (1); no aparecen AUD-NG-161, AUD-NG-218, AUD-NG-219, AUD-NG-228, TASK-508, AUD-NG-229 ni TASK-509.
+- No se concluye que los hallazgos hayan desaparecido del repositorio: se conservan en Auditoria.txt, MapaDependencias.md, plan/contexto e informes. No se modifica ni restaura Pendientes.md.
+- Esta errata preserva el registro original y corrige su interpretación sin cambiar el dictamen de P2-03.
+================================================================

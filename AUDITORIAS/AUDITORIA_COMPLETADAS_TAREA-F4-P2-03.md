@@ -121,3 +121,12 @@ El modal concatena `u.userId` y `u.nombre` dentro de una cadena asignada a `tbod
 - **Estado:** Pendiente.
 - **Evidencia de cierre:** pendiente. Adjuntar commit de implementación, pruebas del contrato UI/API, resultados de búsqueda/filtro y evidencia de renderizado seguro.
 
+
+
+## Aclaración documental posterior a C1.187 — contenido real de Pendientes.md
+
+La lectura inicial mediante fetch_file devolvió contenido vacío para Pendientes.md por el tamaño de la respuesta; esa salida no demostraba que el archivo estuviera vacío. La inspección directa de los blobs confirma:
+- Versión histórica citada en el informe P2-04, blob SHA `83e885f4b8f860aba200ed5ae739b794c7c02dc8`: 1.764.184 caracteres. Contiene AUD-NG-161, AUD-NG-218, AUD-NG-219 y TASK-118, además de AUD-NG-228/TASK-508.
+- Versión actual de la rama, blob SHA `ef47d232db3ed46317dc14f22b1cdf8f938e8405`: 1.425.933 caracteres. Contiene TASK-118, pero no contiene las cadenas AUD-NG-161, AUD-NG-218, AUD-NG-219, AUD-NG-228, TASK-508, AUD-NG-229 ni TASK-509.
+- La ausencia de esos IDs en el backlog actual no demuestra su eliminación del repositorio: permanecen documentados en Auditoria.txt, MapaDependencias.md, el plan y/o los informes correspondientes. No se restaura ni modifica Pendientes.md en esta errata.
+- Esta aclaración sustituye únicamente la observación de C1.187 que describió Pendientes.md como vacío. No cambia el dictamen NO CUMPLE ni los hallazgos de TAREA-F4-P2-03.
