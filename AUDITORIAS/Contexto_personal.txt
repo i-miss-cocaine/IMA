@@ -6632,3 +6632,29 @@ CHECKPOINT C1.197 — AUDITORÍA DESDE CERO TAREA-F5-003 Y CORRECCIÓN F5-002
 - Regla: informe existente => verificar hallazgos y normalizar tareas en el mismo archivo; informe ausente => auditoría desde cero y creación de informe con tareas. Registrar hallazgos en Auditoria.txt y MapaDependencias.md. No utilizar Pendientes.md.
 - Publicación: un solo commit consolidado, árbol nuevo sobre árbol completo verificado, rutas exactas, un padre igual al HEAD de partida, update_ref con expected_sha y verificación posterior.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.198 — AUDITORÍA DESDE CERO TAREA-F5-004
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama: NG_beta_0.0.0.1_work.
+- HEAD de partida: 52faca33ad74a8de9fd25b5357957468d4c3e096; árbol: 44de50370c4d31c7f1f7b079739165391eb6f9b8; entradas: 966; truncated=false.
+- Rama base protegida: 44d9891132332e692dbe2ba8602b41f50a508a59; sin escritura.
+- ID operativo de sesión/chat: IMA-AUDIT-20261107-0155Z (no es ID nativo de ChatGPT).
+- Tarea: TAREA-F5-004 — formulario público de admisión y conexión backend.
+- Informe específico no existía en árbol ni historial; AUDITORIA_FASE_5_ADMISIONES_PORTAL_FAMILIAS.md tampoco se encontró en árbol/historial consultado. Se creó informe desde cero.
+- Dictamen: NO CUMPLE.
+- Evidencia clave: admision.html SHA 45b84c80d22d2e8dab75852e65847bae6425db44; student.js e2888cea60322e49a40b89adadb8010489605dcc; api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; ui-common.js 986938b8a311a41ed4cb3d135b66b6aaea4bed67; ACADEMIC Code.gs daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; index.html cd742047cdc4948259dd721119429b04f78330ca; login.html 3b2e1e8d12a90552ac7b7d584294463a3e8e8f15.
+- Hallazgos: borradores públicos recuperables por email/DNI; autosave local/cloud antes de consentimiento; seguimiento por código secuencial o DNI devuelve nombres y expedienteId; innerHTML no escapado en resultados; getAcademicOffers no público y hardcoded a 2026; parentesco/consentimiento omitidos del payload y backend; validación server-side incompleta; error de red puede parecer “no encontrado”; falta enlace desde index/login; WCAG parcial y móvil no probado.
+- Nuevo AUD-NG-235 (no existía en Auditoria.txt, MapaDependencias.md, completadas.md ni ChangesLogs.txt): confidencialidad de endpoints públicos de admisión y salida HTML segura.
+- Reconciliación: AUD-NG-006, TASK-118, AUD-NG-145, AUD-NG-161, T-UX-19, T-UX-20 y AUD-NG-036.
+- Pruebas ejecutadas: lectura manual de página/handlers, API/RBAC, draft/status/offers, políticas, navegación y suites; búsqueda de informe en árbol/historial.
+- No ejecutadas: suites automatizadas, navegador, HTTP, XSS dinámico, rate limit, Apps Script, lector de pantalla, teclado, viewport móvil, pruebas de consentimiento ni datos productivos.
+- Archivos del commit: informe F5-004 nuevo, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md y Contexto_personal.txt.
+- No modificados: código, pruebas, completadas.md, ChangesLogs.txt, Pendientes.md, metodología y rama base.
+- Conteo histórico: 91/183 del conjunto original; AUD-NG-235 es nuevo y requiere reconciliación del denominador.
+- Siguiente tarea: TAREA-F5-005 — consola administrativa de revisión y decisión de admisiones; verificar informe/historial antes de empezar.
+- Regla aplicada: informe existente => verificar y normalizar en el mismo; informe ausente => auditoría desde cero e informe con tareas. Registrar hallazgos en Auditoria.txt y MapaDependencias.md.
+- Publicación: un commit consolidado, árbol nuevo completo, rutas exactas, padre igual a HEAD anterior, expected_sha y verificación posterior.
+================================================================

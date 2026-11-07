@@ -1955,3 +1955,22 @@ Relaciones:
 
 ### Corrección cruzada C1.197 de F5-002
 `doPost` guarda globalmente el resultado exitoso de acciones no-get (967-968). Por ello, updateAdmissionStatus/reopenAdmissionRequest sí reciben saveIdempotentResult cuando se llaman por endpoint. El problema real es que el helper solo usa CacheService, no reserva clave, el chequeo ocurre antes del lock y la caché expira/falla. Se corrigió el informe F5-002; SHA actualizado: `b1809a57c8ff285b3e1abe983a7a1fd207e54186`.
+
+
+## C1.198 — TAREA-F5-004: portal público de admisión
+
+**Informe:** `AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-004.md`.  
+**Archivos principales:** `admision.html` SHA 45b84c80d22d2e8dab75852e65847bae6425db44; `js/student.js` SHA e2888cea60322e49a40b89adadb8010489605dcc; `js/api.js` SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; ACADEMIC `Code.gs` SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc.
+
+- `PUBLIC_ACTIONS` (265) incluye saveAdmissionDraft/getAdmissionDraft/getPublicAdmissionStatus.
+- `saveAdmissionDraft` (1433) recibe JSON de formulario; `getAdmissionDraft` (1482) devuelve draftData íntegro con lookup por email/draftKey sin verificar titular.
+- `getPublicAdmissionStatus` (1510-1543) acepta código o DNI, devuelve nombres y expedienteId; no hay segundo factor ni rate limit en la función.
+- `admision.html` autosave (671-715) persiste en localStorage y en backend antes de consentimiento (paso 4, 261-274).
+- `fetchAcademicOffers` (741-758) llama getAcademicOffers para año 2026 fijo; la acción no está en PUBLIC_ACTIONS; no actualiza al cambiar año y no filtra ofertas activas. El selector solo conserva grado, no ofertaId/sección.
+- `handleAdmissionSubmit` (541-580) omite parentesco y consentimiento en payload; `submitPublicAdmissionRequest` (student.js 3148-3184) tampoco los incluye y no es el handler usado por la página.
+- `handleTrackStatus` (598-640) y `fetchAcademicOffers` (741-753) usan innerHTML con datos no escapados.
+- `createAdmissionRequest` (984-1110) no repite validaciones completas en servidor.
+- `index.html` y `login.html` no contienen enlace directo a admision.html, pese al changelog.
+
+**Nuevo hallazgo AUD-NG-235:** acceso público inseguro a borradores/seguimiento, exposición de PII y XSS.  
+**Tareas existentes:** AUD-NG-006 (reintentos/idempotencia); TASK-118 (IDs); AUD-NG-145 (PII/logs); AUD-NG-161 (pruebas); T-UX-19 (WCAG); T-UX-20 (responsive); AUD-NG-036 (relación/identidad). No crear IDs duplicados.

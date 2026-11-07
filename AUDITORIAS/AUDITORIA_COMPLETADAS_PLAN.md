@@ -1100,3 +1100,14 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Pruebas:** inspección estática/manual; no se ejecutaron suites, Apps Script, HTTP concurrente, datos productivos ni fallos inyectados.
 - **Progreso:** 91/183 identificadores auditados; 92 restantes.
 - **Siguiente tarea:** TAREA-F5-004 — construir el formulario público de admisión y conectarlo con el backend. Verificar primero informe existente.
+
+
+## C1.198. TAREA-F5-004 — formulario público de admisión (2026-11-07)
+
+- **Dictamen:** NO CUMPLE. Existe admision.html con cuatro pasos, validaciones cliente, consentimiento ARCO, consulta y modal; sin embargo, los borradores se sincronizan antes del consentimiento y pueden recuperarse públicamente por email/DNI; el seguimiento público acepta código o DNI y devuelve nombres/expedienteId; renderizado innerHTML permite XSS; getAcademicOffers no es público y se consulta con año fijo; parentesco/consentimiento no se envían; backend no valida todos los campos ni oferta; index/login carecen de enlace; accesibilidad parcial.
+- **Informe:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-004.md, creado desde cero tras verificar ausencia en árbol/historial.
+- **Nuevo hallazgo:** AUD-NG-235 (confidencialidad de endpoints públicos de admisión y salida HTML segura).
+- **Reconciliación:** ampliar AUD-NG-006, TASK-118, AUD-NG-145, AUD-NG-161, T-UX-19/T-UX-20 y coordinar AUD-NG-036.
+- **Pruebas:** inspección estática/manual; no se ejecutaron navegador, HTTP, XSS dinámico, rate-limit, Apps Script, lector de pantalla ni pruebas móviles.
+- **Progreso:** 91/183 del conjunto histórico; AUD-NG-235 se incorpora como hallazgo nuevo y debe reconciliarse en el conteo global.
+- **Siguiente tarea:** TAREA-F5-005 — consola administrativa de revisión y decisión de admisiones. Verificar informe existente antes de auditar.

@@ -7003,3 +7003,41 @@ PRUEBAS: inspección estática/manual y búsqueda dirigida; no se ejecutaron sui
 CORRECCIÓN C1.197 — PRECISIÓN DEL HALLAZGO H4 DE TAREA-F5-002
 El middleware doPost (líneas 967-968) sí llama saveIdempotentResult para toda acción no-get exitosa. La afirmación de que updateAdmissionStatus/reopenAdmissionRequest no guardaban resultados era incorrecta/incompleta. Se corrigió AUDITORIA_COMPLETADAS_TAREA-F5-002.md (nuevo SHA b1809a57c8ff285b3e1abe983a7a1fd207e54186). El defecto real es idempotencia solo de caché, sin reserva atómica, sin persistencia durable y con comprobación anterior al lock. La nota C1.196 se conserva como antecedente y queda rectificada por este complemento.
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-07
+CHECKPOINT C1.198 — AUDITORÍA DESDE CERO TAREA-F5-004
+SESIÓN: IMA-AUDIT-20261107-0155Z
+INFORME: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-004.md
+DICTAMEN: NO CUMPLE
+
+ARCHIVOS:
+- admision.html SHA 45b84c80d22d2e8dab75852e65847bae6425db44.
+- js/student.js SHA e2888cea60322e49a40b89adadb8010489605dcc.
+- js/api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9.
+- js/auth.js SHA 8444dd085a3186106d2db7005b61ef934d3c22d8.
+- js/ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67.
+- index.html SHA cd742047cdc4948259dd721119429b04f78330ca; login.html SHA 3b2e1e8d12a90552ac7b7d584294463a3e8e8f15.
+- backend/academic-service/Code.gs SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc.
+- politica-de-privacidad.html SHA 8854bae3021e1cdde288709e3fa411b3d6da20c7.
+
+HALLAZGOS:
+1. AUD-NG-235 (CRÍTICO/P0): saveAdmissionDraft/getAdmissionDraft son PUBLIC_ACTIONS. El formulario sincroniza el JSON completo a BorradoresAdmision y localStorage antes del consentimiento ARCO; getAdmissionDraft devuelve draftData completo con solo email/DNI como clave, sin verificación de titular.
+2. AUD-NG-235 (CRÍTICO/P0): getPublicAdmissionStatus acepta código secuencial o DNI indistintamente, sin segundo factor/rate limit, y devuelve nombres y expedienteId. Exposición y enumeración de aspirantes.
+3. AUD-NG-235 (CRÍTICO/P0): handleTrackStatus y fetchAcademicOffers interpolan datos controlables en innerHTML sin escape, permitiendo XSS reflejado/almacenado.
+4. F5-004 (CRÍTICO/P0): getAcademicOffers no es PUBLIC_ACTION; fetchAcademicOffers llama con año 2026 fijo, no reacciona a cambio de año y no filtra estado activo. No se selecciona ofertaId/sección.
+5. F5-004 (ALTO/P1): requisitos documentales son listas hardcoded por grado; no catálogo de oferta/programa.
+6. F5-004 (ALTO/P1): parentescoResponsable y consentimientoArco no se incluyen en payload ni se persisten; el autosave empieza antes del consentimiento.
+7. F5-004 (CRÍTICO/P0): backend createAdmissionRequest no valida server-side DNI, fecha, teléfono, email, responsable, consentimiento ni oferta activa; las validaciones cliente pueden omitirse.
+8. F5-004 (ALTO/P1): errores de servidor usan alert genérico; duplicate error puede revelar nombre; los errores de campo no se asocian con aria-describedby/aria-invalid/aria-live.
+9. F5-004 (MEDIO/P1): fallback de fetchApi para getPublicAdmissionStatus puede interpretarse como solicitud no encontrada ante error de red.
+10. F5-004 (MEDIO/P2): index.html y login.html no contienen enlace admision.html, a pesar del changelog.
+11. T-UX-19 (ALTO/P1): modal sin nombre/foco atrapado, errores sin asociación, pestañas sin estado ARIA; helper solo agrega role=dialog/aria-modal, no la trampa de foco descrita.
+12. T-UX-20 (MEDIO/P2): clases responsivas presentes, pero no se ejecutaron pruebas en móvil/zoom.
+
+NUEVO HALLAZGO: AUD-NG-235 — confidencialidad de endpoints públicos de admisión y salida HTML segura.
+RECONCILIACIÓN: AUD-NG-235 nuevo; ampliar AUD-NG-006, TASK-118, AUD-NG-145, AUD-NG-161, T-UX-19/T-UX-20 y coordinar AUD-NG-036. No duplicar F5-003.
+EVIDENCIA HISTÓRICA: completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676 líneas 1920-1944; ChangesLogs.txt SHA d57cf4bd861b5c3720e60cf83241ed804ff645d9 líneas 1783-1791. Informe F5-004 no existe en árbol ni historial; Auditoria.txt raíz histórica y Auditoría.txt acentuada no registran F5-004.
+PRUEBAS: inspección estática/manual y búsqueda dirigida. No se ejecutaron navegador, HTTP, XSS dinámico, rate-limit, Apps Script, lector de pantalla, teclado, pruebas móviles ni datos productivos.
+===============================================================================
