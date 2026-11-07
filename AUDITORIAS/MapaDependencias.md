@@ -2151,3 +2151,24 @@ TASK-038 (Magic Bytes); TASK-134/TASK-144 (SHA-256/deduplicación/integridad); T
 - Flujo adicional H10: USER/`sendMultiChannelNotification` guarda `targetUser/targetEmail` en `BandejaNotificaciones`; USER/`getAdmissionNotificationLogs` devuelve `usuarioDestino/emailDestino`; `js/secretary.js` los interpola en `container.innerHTML` sin escape en el destino (1384) y estado (1386). Riesgo estático de XSS almacenado.
 - Tarea derivada local F5-011-A10: renderizado seguro del historial de notificaciones en Secretaría; ampliar AUD-NG-177/TASK-475 y AUD-NG-145. Criterios en el informe individual.
 - Dictamen F5-011 revalidado: NO CUMPLE. A01-A10 permanecen pendientes; no se modificó código ni pruebas.
+
+
+## C1.208 - TAREA-F5-012: seguimiento de aspirantes en Portal Familiar
+
+### Rutas y contratos inspeccionados
+- `student-dashboard.html` SHA 6379ea0ed39d71b89747a0280bb925fdf12202c1: contiene el dashboard de Estudiante, pero no declara los nodos `family-student-switcher-container`, `family-student-switcher`, `family-applicant-tracking-container` ni `family-consolidated-summary-container`.
+- `js/student.js` SHA e2888cea60322e49a40b89adadb8010489605dcc: DOMContentLoaded limita student-dashboard a Estudiante/Alumno (27-35); `initFamilyStudentSwitcher` (184-250) exige nodos inexistentes, llama USER/getGuardianStudents y USER/getGuardianApplicants, y transforma errores a `{data:[]}`; invocación en 745. `renderApplicantTrackingPanel` (252-350) consulta lista familiar y luego usa ACADEMIC/getPublicAdmissionStatus como fallback público.
+- USER `getGuardianApplicants` SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f, 3583-3622: actor verificado para Padre/Tutor/Responsable; filtra por email y por subcadena de UID en nombreResponsable; devuelve campos personales y observaciones sin clasificación pública. No consulta relación familiar activa.
+- ACADEMIC `PUBLIC_ACTIONS` (265) permite getPublicAdmissionStatus/getAdmissionDraft sin token. getPublicAdmissionStatus (1510-1545) acepta código/DNI y devuelve nombre/estado/expedienteId. getAdmissionDraft (1482-1508) selecciona por emailResponsable/draftKey y devuelve draftData.
+- ACADEMIC `validateContextualAccess` (465-523) no incluye solicitudId/expedienteId en targetStudentId; `getStudentDocuments` (10829-10890) filtra por IDs arbitrarios y devuelve Drive URLs/IDs; roles familiares tienen permiso estático para getStudentDocuments, pero no para uploadStudentDocument/getAdmissionInterviews.
+- ACADEMIC `getAdmissionInterviews` (1645-1667) no tiene llamada desde js/student.js; no hay lectura familiar scoped de entrevistas/evaluaciones.
+- USER `getFamilyConsolidatedSummary` (3629-3695) suma cargos por userId de estudiantes vinculados; ACCOUNTING `getAdmissionFinancialStatus` SHA 38b979d41596b85e888b4a7060b37bbac0840a28, 2339-2397 filtra por solicitudId. Ambos usan CargosEstudiante sin discriminador explícito; se considera separación parcial, no fuga probada.
+- Suites revisadas: academic-grading-suite.js SHA a22cb3ef376fe09e65c1b17c2f4f5125290bfba6; modular-dashboard-suite.js SHA 0495e1d526a872c33310935a003a83d924d34683; sin pruebas F5-012.
+### Dependencias existentes (sin duplicar)
+- F5-009-A01/A03/A06/A08; AUD-NG-036 y AUD-NG-222 para vínculo/ABAC.
+- AUD-NG-002 para PUBLIC_ACTIONS y borradores; AUD-NG-145 para bitácora/PII; AUD-NG-161 para pruebas.
+- F5-006-A01/A03, TASK-140/TASK-142/TASK-146/TASK-153 para documentos y acceso.
+- F5-007-A02/A05 para entrevistas, autorización y renderizado.
+- F5-008-A04/A05 para consulta y respuesta familiar a ofertas; esta cobertura no se duplica.
+### Dictamen
+TAREA-F5-012 NO CUMPLE. Subtareas locales F5-012-A01..A08 pendientes. Hallazgos H1-H11 y matriz detallada en AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-012.md.

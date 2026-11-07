@@ -6911,3 +6911,30 @@ CHECKPOINT C1.207 - REVALIDACIÓN AUDITORÍA TAREA-F5-011
 - Método: auditoría/documentación exclusivamente; un solo commit consolidado; checkpoint incluido antes de publicar. No implementación.
 - Próxima tarea exacta: TAREA-F5-012 - seguimiento de aspirantes en el portal familiar. Comprobar primero informe individual e historial; auditar código solo después de confirmar la fuente de tarea.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.208 - AUDITORÍA TAREA-F5-012
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto exacto: AUDITORIAS/Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: edde10f41e00ea2d266a508605b8454606caa378.
+- Árbol de partida verificado: a72f9b7719477a3ed8d45012773586bcd683de16.
+- HEAD de rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59; comparación antes de cambios: rama de trabajo 275 commits adelante, 0 detrás. La rama base permanece sin escritura.
+- ID operativo de sesión: IMA-AUDIT-20261107-1444Z (ID de auditoría, no ID nativo de ChatGPT). Checkpoint inicial: C1.207. Checkpoint de cierre: C1.208. Estado de sesión al publicar: cerrada. Fecha/hora de auditoría UTC: 2026-11-07T14:58:44.160Z.
+- Tarea completada en esta iteración: TAREA-F5-012 - seguimiento de aspirantes en el Portal Familiar. Contexto: tarea marcada [X] en completadas.md, con 13 puntos/8 criterios; no había informe individual, por lo que se realizó auditoría desde cero y se creó el archivo individual con hallazgos y tareas derivadas.
+- Fuente: completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, líneas 2197-2232. ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff, líneas 1868-1878. METODOLOGIA_DESARROLLO.md SHA cf796728bb384a32537392df2f9c72a339fa03ee. Informe individual anterior inexistente; informe de fase citado e HALLAZGOS-F5-P0-01 no disponibles.
+- Conflicto de instrucciones resuelto: metodología §3.4 dice no consultar Pendientes.md; instrucción específica vigente del usuario exige consultar Pendientes.md/completadas.md y tiene prioridad para esta tarea. Se leyó Pendientes.md desde su blob, sin modificarlo.
+- Pendientes.md: lectura ordinaria 0 caracteres; blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c íntegro: 1.782.094 caracteres, 20.182 líneas, sin U+FFFD. Inventario de encabezados: 693 IDs únicos (509 TASK, 184 AUD-NG), sin duplicados; último ID TASK-511; no existe entrada directa TAREA-F5-012.
+- Hallazgos H1-H11: H1 P0 interfaz/guard de rol; H2 P0 relación familiar no verificada y PII excesiva; H3 P0 IDOR documental por solicitudId/expedienteId; H4 P1 fallback público getPublicAdmissionStatus; H5 P0 getAdmissionDraft público por email; H6 P1 falta de documentos/entrevistas/comunicaciones; H7 P1 estados/errores/conversión incompletos; H8 P1 riesgo XSS estático en innerHTML; H9 P2 separación financiera parcial; H10 P1 ausencia de pruebas; H11 P2 origen histórico no verificable.
+- Dictamen: TAREA-F5-012 NO CUMPLE. Subtareas locales F5-012-A01..A08; todas Pendientes. Reconciliación: AUD-NG-002/036/145/161/222; TASK-140/142/146/153; F5-006-A01/A03; F5-007-A02/A05; F5-008-A04/A05; F5-009-A01/A03/A06/A08. Sin IDs globales nuevos.
+- Archivos y secciones inspeccionadas: student-dashboard.html 115-145 y carga de scripts; js/student.js 27-35, 180-350 y 745; backend/user-service/Code.gs 926-1015, 3583-3695; backend/academic-service/Code.gs 240-270, 265, 465-523, 671-900, 1482-1545, 1645-1667, 10829-10890; backend/accounting-service/Code.gs 2339-2397; tests/regression/academic-grading-suite.js y modular-dashboard-suite.js completos en búsqueda de casos F5-012; ChangesLogs.txt 1868-1878; completadas.md 2197-2232; Pendientes.md blob completo; informes F5-006/007/008/009/011.
+- SHA de respaldo: student-dashboard.html 6379ea0ed39d71b89747a0280bb925fdf12202c; js/student.js e2888cea60322e49a40b89adadb8010489605dcc; USER Code.gs 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ACADEMIC Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5; ACCOUNTING Code.gs 38b979d41596b85e888b4a7060b37bbac0840a28; academic-grading-suite.js a22cb3ef376fe09e65c1b17c2f4f5125290bfba6; modular-dashboard-suite.js 0495e1d526a872c33310935a003a83d924d34683; completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676; Pendientes.md 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c.
+- Pruebas ejecutadas: inspección estática/manual de flujos, funciones, permisos, datos devueltos y dependencias; búsqueda documental/historial; lectura de blob íntegro; verificación de HEAD/base. No ejecutadas: Apps Script runtime, HTTP, Sheets/Drive productivos, navegador, pruebas con familias reales, upload/download, correo, triggers, concurrencia, XSS dinámico ni suites automatizadas.
+- Archivos documentales modificados: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-012.md; AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: backend/*; js/*; student-dashboard.html; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; rama base.
+- Commit de cierre: el commit único que contiene este checkpoint. HEAD de cierre se confirmará externamente tras publicar; no se incluirá su propio SHA dentro de este archivo.
+- Próxima tarea exacta: TAREA-F5-013 - integración de cobros, pagos y becas de admisión. Abrir completadas.md en la entrada F5-013; buscar primero AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-013.md y su historial; si falta, auditar desde cero.
+================================================================

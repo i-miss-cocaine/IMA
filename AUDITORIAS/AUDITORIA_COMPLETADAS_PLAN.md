@@ -1220,3 +1220,15 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Pruebas:** inspección estática/manual; no ejecutados navegador, XSS dinámico, Apps Script, HTTP, MailApp, Sheets productivo, triggers ni suites automatizadas.
 - **Archivos:** informe F5-011, Auditoria.txt, MapaDependencias.md, este plan y Contexto_personal.txt. Sin cambios en código, pruebas, completadas.md, Pendientes.md, ChangesLogs.txt, metodología o rama base.
 - **Siguiente tarea:** TAREA-F5-012 - seguimiento de aspirantes en el portal familiar; verificar informe e historial antes de iniciar.
+
+
+## C1.208 - TAREA-F5-012: seguimiento de aspirantes en el Portal Familiar
+
+- **Estado administrativo:** completadas.md [X], 13 requisitos/8 criterios [x]; **dictamen técnico: NO CUMPLE**.
+- **Informe individual:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-012.md creado desde cero; no existía en árbol ni historial. El informe de fase citado y HALLAZGOS-F5-P0-01 no se pudieron recuperar.
+- **Hallazgos principales:** interfaz familiar ausente y guard de rol incompatible; getGuardianApplicants no valida relación activa y devuelve PII; getStudentDocuments permite IDOR por solicitudId/expedienteId; fallback público getPublicAdmissionStatus; getAdmissionDraft público por email; ausencia de documentos/entrevistas/borradores/ofertas en UI; timeline/errores/conversión incompletos; innerHTML sin escape; pruebas específicas ausentes.
+- **Reconciliación:** AUD-NG-002/036/145/161/222; TASK-140/142/146/153; F5-006-A01/A03; F5-007-A02/A05; F5-008-A04/A05; F5-009-A01/A03/A06/A08. Sin IDs globales duplicados. Ocho subtareas locales F5-012-A01..A08.
+- **Pendientes.md:** blob íntegro SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c; 1.782.094 caracteres, 20.182 líneas, sin U+FFFD; inventario 693 IDs únicos (509 TASK, 184 AUD-NG), sin F5-012 directo.
+- **Pruebas:** inspección estática/manual, lectura de blob y verificación árbol/historial. No se ejecutaron Apps Script, HTTP, Sheets/Drive productivos, navegador, cuentas reales, XSS dinámico ni suites.
+- **Archivos modificados:** informe F5-012, Auditoria.txt, MapaDependencias.md, este plan y Contexto_personal.txt. Sin cambios en código, pruebas, completadas.md, Pendientes.md, ChangesLogs.txt, metodología ni rama base.
+- **Siguiente tarea:** TAREA-F5-013 - integración de cobros, pagos y becas de admisión; comprobar informe individual/historial antes de iniciar.

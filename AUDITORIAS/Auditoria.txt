@@ -7317,3 +7317,29 @@ REVALIDACIÓN C1.207 - TAREA-F5-011 / H10
 - Pruebas ejecutadas: lectura de fuentes, blob, historial/ref y revisión estática manual. No ejecutadas: navegador/XSS dinámico, Apps Script, HTTP, MailApp, Sheets productivo, triggers, concurrencia ni suites automatizadas.
 - Siguiente tarea: TAREA-F5-012 - seguimiento de aspirantes en el portal familiar; comprobar informe individual e historial antes de auditar.
 ================================================================
+
+
+================================================================
+AUDITORÍA C1.208 - TAREA-F5-012 / SEGUIMIENTO DE ASPIRANTES EN PORTAL FAMILIAR
+================================================================
+- Dictamen: NO CUMPLE. Informe individual creado desde cero: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-012.md.
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, líneas 2197-2232: [X] Completada, 13 puntos/8 criterios [x]. El código no respalda esas marcas.
+- Informe de fase AUDITORIA_FASE_5_ADMISIONES_PORTAL_FAMILIAS.md ausente del árbol/historial; HALLAZGOS-F5-P0-01 no aparece en Auditoria.txt. ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff, líneas 1868-1878, declara implementación que no se encuentra en el HTML vigente.
+- H1 P0: student-dashboard.html SHA 6379ea0ed39d71b89747a0280bb925fdf12202c1 carece de family-student-switcher-container, family-student-switcher, family-applicant-tracking-container y family-consolidated-summary-container. js/student.js SHA e2888cea60322e49a40b89adadb8010489605dcc restringe la página a Estudiante/Alumno (27-35), pero getGuardianApplicants se concede a Padre/Tutor/Responsable (USER Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f, ROLE_PERMISSIONS 926+). El selector retorna si no encuentra los nodos (184-189); llamada en 745.
+- H2 P0: USER getGuardianApplicants (3583-3622) filtra por correo o includes(uid) sobre nombreResponsable; no verifica RelacionesFamiliares/invitación aceptada/relación activa y devuelve identificación, fechaNacimiento, teléfono, correo, observaciones y expedienteId. Reconfirma F5-009 H11/A03; ampliar AUD-NG-036/AUD-NG-222.
+- H3 P0: ACADEMIC getStudentDocuments (10829-10890) está permitido a roles familiares; validateContextualAccess (465-523) no valida solicitudId/expedienteId. Sin filtros devuelve todas las filas y expone driveFileId/driveUrl/historial. Ampliar F5-006-A01/A03, TASK-142/TASK-153, TASK-140/TASK-146 y AUD-NG-222.
+- H4 P1: js/student.js renderApplicantTrackingPanel (252-350) usa getPublicAdmissionStatus como fallback cuando el ID no está en la lista familiar; ACADEMIC PUBLIC_ACTIONS (265), endpoint 1510-1545, acepta código/DNI sin sesión y devuelve expedienteId. Ampliar AUD-NG-002/F5-008-A04.
+- H5 P0: getAdmissionDraft (ACADEMIC 1482-1508) está en PUBLIC_ACTIONS y devuelve draftData seleccionando por draftKey o emailResponsable sin prueba de propiedad. Ya cubierto por AUD-NG-002; no duplicar.
+- H6 P1: no se invocan getStudentDocuments/uploadStudentDocument/getAdmissionInterviews/getAdmissionEvaluations; roles familiares carecen de permisos de carga/entrevistas y no hay panel de citas/documentos/solicitudes adicionales. Coordinar F5-006 y F5-007.
+- H7 P1: timeline estática solo por estado; getGuardianApplicants no excluye Convertida; catch de ambas consultas transforma errores en data vacía; no distingue falta de permisos/servidor/sin registros.
+- H8 P1: innerHTML interpola nombres/código/grado/año/estado y errores sin escape contextual en selector/panel. Riesgo estático condicionado; no se ejecutó XSS de navegador. Coordinar F5-007-A05/AUD-NG-145 y la tarea UI existente de XSS.
+- H9 P2: lectores financieros filtran por userId de estudiante versus solicitudId, lo que separa consultas; ambos usan CargosEstudiante sin discriminador explícito y no hay prueba E2E. PARCIAL; no se afirma contaminación real.
+- H10 P1: tests/regression/academic-grading-suite.js SHA a22cb3ef376fe09e65c1b17c2f4f5125290bfba6 y modular-dashboard-suite.js SHA 0495e1d526a872c33310935a003a83d924d34683 no contienen casos de F5-012/endpoints/IDOR/drafts/documentos.
+- H11 P2: trazabilidad de origen incompleta; informe de fase y HALLAZGOS-F5-P0-01 no disponibles.
+- Pendientes.md: lectura ordinaria 0 caracteres; blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c íntegro (1782094 caracteres/1 líneas/sin U+FFFD); inventario 693 IDs únicos (509 TASK/184 AUD-NG), sin duplicados. No hay tarea directa F5-012; dependencias existentes AUD-NG-002/036/145/161/222 y TASK-140/142/146/153.
+- Subtareas locales F5-012-A01..A08, todas Pendientes. Oferta/lista de espera cubierta por F5-008-A04/A05; no crear duplicado global.
+- Pruebas ejecutadas: inspección estática/manual y verificación documental/historial/blob. No ejecutadas: Apps Script, HTTP, Sheets/Drive productivos, navegador, cuentas reales, carga/descarga, correo, triggers, concurrencia, XSS dinámico ni suites.
+- Archivos documentales de esta iteración: informe F5-012, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt.
+- Sin modificar: backend/*, js/*, student-dashboard.html, tests/*, completadas.md, Pendientes.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, rama base.
+- Próxima tarea: TAREA-F5-013 - integración de cobros, pagos y becas de admisión. Verificar primero informe individual e historial.
+================================================================
