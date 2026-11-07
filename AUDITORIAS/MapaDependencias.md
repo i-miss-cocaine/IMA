@@ -2097,3 +2097,13 @@ TASK-038 (Magic Bytes); TASK-134/TASK-144 (SHA-256/deduplicación/integridad); T
 **Resultado:** la tabla/endpoints existen, pero la posición no usa prelación, las ofertas no reservan vacantes, no hay lock ni expiración, rechazo no avanza al siguiente, familia no puede consultar/responder y la bitácora no conserva todos los movimientos. Dictamen NO CUMPLE.
 
 **Tareas derivadas:** F5-008-A01 elegibilidad y prelación; A02 reserva atómica/capacidad; A03 estados/expiración/promoción; A04 consulta/respuesta familiar; A05 notificaciones/trazabilidad; A06 vista administrativa; A07 pruebas. Ver criterios en el informe.
+
+
+## Fase 5 - Vinculación familiar y permisos por tutor (TAREA-F5-009, C1.203)
+
+- USER: createLinkInvitation/acceptLinkInvitation -> InvitacionesVinculacion/RelacionesFamiliares; validateContextualAccess llama getGuardianStudents sin sessionToken; revokeFamilyLink/updateFamilyLinkPermissions; getGuardianApplicants filtra por email/substring.
+- ACADEMIC: validateContextualAccess no valida relación familiar; getStudentFile/getStudentDocuments/getStudentAttendanceSummary/getStudentTimeline no verifican vínculo por recurso; validador aislado usa tablas legacy; convertAdmissionToStudent/saveStudentGuardian mantienen rutas sin aceptación.
+- Datos: RelacionesFamiliares/RelacionesEstudianteTutor/RelacionesTutores/TutoresEstudiantes no forman fuente canónica; encabezados no coinciden con columnas escritas.
+- Ampliar sin duplicar: AUD-NG-001/036/105/123/136/145/161/232/TASK-512/233/TASK-513/234/TASK-514. Coordinar TAREA-F5-011 y F5-012.
+- Dictamen: F5-009 NO CUMPLE. Informe AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-009.md.
+- Subtareas: F5-009-A01 modelo canónico; A02 invitación segura/atómica; A03 autorización transversal; A04 permisos granulares; A05 administración UI/RBAC; A06 interfaz/entrega; A07 trazabilidad; A08 pruebas.

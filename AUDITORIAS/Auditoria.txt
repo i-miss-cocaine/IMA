@@ -7226,3 +7226,29 @@ ARCHIVOS DOCUMENTALES: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-008.md (nuevo),
 SIN CAMBIOS: código, pruebas, completadas.md, Pendientes.md, ChangesLogs.txt, metodología y rama base.
 SIGUIENTE: TAREA-F5-009 - vinculación familiar y permisos granulares por tutor.
 ===============================================================================
+
+
+===============================================================================
+AUDITORÍA TÉCNICA TAREA-F5-009 — VINCULACIÓN FAMILIAR Y PERMISOS GRANULARES
+Checkpoint C1.203 | Sesión IMA-AUDIT-20261107-0325Z | Rama NG_beta_0.0.0.1_work
+Informe: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-009.md | Dictamen: NO CUMPLE
+Fuentes: completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676 líneas 2090-2128; ChangesLogs.txt SHA d57cf4bd861b5c3720e60cf83241ed804ff645d9 líneas 1834-1841; Pendientes.md blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c.
+HALLAZGOS-F5-P0-02 no aparece en Auditoria.txt; el informe de fase citado no existe en árbol/historial.
+H1 CRÍTICO/P0: ACADEMIC no valida relación familiar en getStudentFile/getStudentDocuments/getStudentAttendanceSummary/getStudentTimeline; ampliar AUD-NG-105/123/136.
+H2 CRÍTICO/P0: conversión y saveStudentGuardian crean vínculos sin aceptación; ampliar AUD-NG-232/TASK-512 y AUD-NG-233/TASK-513.
+H3 CRÍTICO/P0: email de aceptación opcional y cliente-controlado; Estudiante/Alumno pueden aceptar; ampliar AUD-NG-001/232.
+H4 ALTO/P1: invitación solo con solicitudId pierde vínculo porque aceptación ignora row[8]; coordinar F5-012/AUD-NG-232.
+H5 ALTO/P1: consumo/deduplicación no atómicos; ampliar AUD-NG-234/TASK-514 y AUD-NG-161.
+H6 ALTO/P1: no hay revocación de invitación pendiente; coordinar AUD-NG-232/TASK-512 y AUD-NG-145.
+H7 CRÍTICO/P0: flag granular no definido y enforcement solo financiero; ampliar AUD-NG-105/123/136.
+H8 ALTO/P1: updateFamilyLinkPermissions sin validación/log y RBAC/UI incompletos; ampliar AUD-NG-036/145/161.
+H9 ALTO/P1: encabezados 8 columnas frente a escrituras 9/10 y tablas de relación divergentes; ampliar AUD-NG-105/136/232.
+H10 ALTO/P1: validateContextualAccess USER no reenvía sessionToken y omite vínculo si falta targetStudentId; ampliar AUD-NG-001/036.
+H11 ALTO/P1: getGuardianApplicants no exige vínculo verificado; ampliar F5-012/AUD-NG-036.
+H12 ALTO/P1: sin interfaz familiar visible de aceptación ni entrega acreditada en conversión; coordinar F5-011/F5-012.
+H13 ALTO/P1: bitácora parcial para permisos/expiración/conversión; ampliar AUD-NG-145.
+H14 ALTO/P1: suites sin pruebas familiares/concurrencia/IDOR; ampliar AUD-NG-161.
+TAREAS DERIVADAS LOCALES: F5-009-A01 modelo canónico; A02 invitación segura/atómica; A03 autorización transversal; A04 permisos granulares; A05 administración UI/RBAC; A06 interfaz/entrega; A07 trazabilidad; A08 pruebas. Detalle en el informe.
+Evidencia: USER Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ACADEMIC Code.gs SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc; secretary.js SHA 08a81266957b4c18cc25f8ba6749eac30a8f2c2c; student.js SHA e2888cea60322e49a40b89adadb8010489605dcc; suites SHA 3433b707edd4a2f35c68368a3172932adc2a3b32 y 0495e1d526a872c33310935a003a83d924d34683.
+Pruebas: inspección estática/manual y búsqueda de callsites. No ejecutados Apps Script, HTTP, Sheets/Drive productivo, navegador, correo/push, concurrencia real ni suites automatizadas.
+===============================================================================

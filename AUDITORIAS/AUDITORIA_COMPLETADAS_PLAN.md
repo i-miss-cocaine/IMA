@@ -1160,3 +1160,18 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Archivos documentales:** informe F5-008 nuevo, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md y Contexto_personal.txt.
 - **Sin cambios:** código, pruebas, completadas.md, Pendientes.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md y rama base.
 - **Continuidad:** C1.201 queda como checkpoint de inicio; F5-008 auditada NO CUMPLE. Siguiente tarea: TAREA-F5-009 - vinculación familiar y permisos granulares por tutor. Verificar informe/historial antes de iniciar.
+
+
+## C1.203 - TAREA-F5-009: vinculación familiar y permisos granulares por tutor
+
+- Informe nuevo desde cero: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-009.md; no existía en árbol/historial, ni el informe de fase citado.
+- Fuente: completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676 líneas 2090-2128; [X] Completada, 15 puntos/10 criterios. ChangesLogs.txt SHA d57cf4bd861b5c3720e60cf83241ed804ff645d9 líneas 1834-1841.
+- Dictamen NO CUMPLE. HALLAZGOS-F5-P0-02 no aparece en Auditoria.txt.
+- Pendientes.md blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c consultado; sin F5-009 directo; dependencias AUD-NG-036/105/123/136/001/145/161/232/233/234.
+- Hallazgos: ACADEMIC sin aislamiento familiar en endpoints de expediente/documentos/asistencia/historial; conversión/saveStudentGuardian crean vínculos sin aceptación; email de aceptación opcional/client-controlled; invitación por solicitud sola pierde expediente; consumo no atómico; no hay revocación de invitación pendiente; flag granular no definido y enforcement solo financiero; RBAC/UI incompletos; esquemas/tablas divergentes; validación USER anidada sin token; getGuardianApplicants no exige vínculo; UI de aceptación/entrega no encontrada; bitácora parcial; suites sin pruebas.
+- Ampliar IDs existentes: AUD-NG-001/036/105/123/136/145/161/232/TASK-512/233/TASK-513/234/TASK-514. Coordinar F5-011/F5-012. Sin IDs globales nuevos.
+- Tareas derivadas locales F5-009-A01..A08 en informe.
+- Pruebas ejecutadas: inspección estática/manual, callsites, RBAC, esquemas, conversión, UI, suites, historial y blob Pendientes. No ejecutados Apps Script, HTTP, Sheets/Drive productivo, navegador, familias reales, correo/push, concurrencia ni suites automatizadas.
+- Archivos: informe F5-009 nuevo; Auditoria.txt; MapaDependencias.md; AUDITORIA_COMPLETADAS_PLAN.md; Contexto_personal.txt.
+- Sin cambios: código, pruebas, completadas.md, Pendientes.md, ChangesLogs.txt, metodología y rama base.
+- Continuidad: C1.202 inicio; C1.203 cierre; sesión IMA-AUDIT-20261107-0325Z cerrada. Siguiente tarea exacta: TAREA-F5-010 - integrar plazas, reservas y matrículas en control de capacidad. Verificar informe/historial antes de auditar.
