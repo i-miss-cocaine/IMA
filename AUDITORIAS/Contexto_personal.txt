@@ -6520,3 +6520,37 @@ CHECKPOINT C1.193 — NORMALIZACIÓN DE TAREAS DERIVADAS DE TAREA-F4-P3-03
 - Regla de publicación: un solo commit consolidado; árbol Git nuevo basado en el árbol completo verificado; exactamente dos rutas; un padre igual al HEAD de partida; actualizar ref con expected_sha; verificar commit, árbol, rutas, compare y rama base. El SHA final se confirma externamente.
 ================================================================
 
+================================================================
+CHECKPOINT C1.194 — NORMALIZACIÓN DE TAREAS DERIVADAS DE TAREA-F5-001
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo autorizada: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1; HEAD verificado antes de publicar: 44d9891132332e692dbe2ba8602b41f50a508a59. No se realizó ninguna escritura en la rama base.
+- HEAD de partida verificado: 756ab516a5fe7c1923f7e7469d141485ad748036.
+- Árbol de partida: cf3412d5b8cace014de3d1075bb557573ed2fd9b; árbol recursivo completo verificado en el checkpoint anterior: 964 entradas, truncated=false.
+- ID operativo de sesión/chat: IMA-AUDIT-20261107-0050Z (identificador operativo, no ID nativo de ChatGPT).
+- Checkpoint inicial de esta iteración: C1.193; checkpoint de cierre: C1.194.
+- Tarea procesada: TAREA-F5-001 — conversión de aspirantes y garantía de integridad del expediente.
+- Informe existente: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-001.md; SHA de partida 29fbb10d0e92ac835a156a09298f4d727cca2653. Existe en HEAD; se conservó su auditoría original y se añadió la sección 8 con normalización de tareas ejecutables.
+- Dictamen preservado: NO CUMPLE. Vínculo familiar Verificada por email sin token; estado Convertida antes de completar todas las etapas; no hay recuperación/rollback; overrides del payload por truthiness; documentos ausentes pasan; oferta inexistente asume capacidad 35/Activa; timeout de lock ignorado; fallback monetario 1500; Persona/Usuario no creados/validados; IDs fijos/timestamp/aleatorios; matrícula/cargos sin atomicidad; no hay pruebas conductuales específicas.
+- Evidencia actual verificada:
+  - ACADEMIC backend/academic-service/Code.gs SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc: createAdmissionRequest 984-1098; convertAdmissionToStudent 2156-2385; checkEnrollmentCapacity 11026-11115; getStudentDocuments 10708-10795; registerStudentEnrollment 12670-12755; ROLE_PERMISSIONS 165-235.
+  - USER backend/user-service/Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f: createLinkInvitation/acceptLinkInvitation 3334-3425; getGuardianStudents 3470-3555.
+  - ACCOUNTING backend/accounting-service/Code.gs SHA 38b979d41596b85e888b4a7060b37bbac0840a28; el flujo de conversión no invoca el servicio ACCOUNTING.
+  - tests/regression/academic-grading-suite.js SHA 3433b707edd4a2f35c68368a3172932adc2a3b32; búsqueda literal de convertAdmissionToStudent, TASK-512/513, overrides, invitaciones, capacidad y matrícula no devolvió coincidencias.
+  - tests/regression/modular-dashboard-suite.js SHA 0495e1d526a872c33310935a003a83d924d34683; el informe existente y la inspección dirigida no acreditan pruebas conductuales específicas de conversión.
+  - AUDITORIAS/MapaDependencias.md SHA 4f68d56f910c6a4e87c20ecac82daeb3a615bcaa, líneas 996-1024 y 1917-1925, confirma referencias Persona/Usuario sin entidad maestra, ruta multihoja, registerStudentEnrollment sin lock y conciliación histórica.
+  - AUDITORIAS/Auditoria.txt SHA 284b7a94b51c8ed99dbfcf734694bc5361f9f111; AUDITORIA_COMPLETADAS_PLAN.md SHA a374b91e5e45c0b8d5fd9db939735e6ed434c6cb; AUDITORIA_COMPLETADAS_FASE2-T05.md SHA 00764246a821d251c3d9072bdc55efd35fbc6b82; AUDITORIA_COMPLETADAS_FASE2-T06.md SHA bf82f5518210a78c7e694682a915cc52c14db60b.
+- Tareas ya existentes en el informe, conservadas: TASK-512/AUD-NG-232 para recuperación multi-etapa; TASK-513/AUD-NG-233 para documentos/capacidad/overrides.
+- Ampliaciones formalizadas en el mismo informe: AUD-NG-036 (identidad y vínculo familiar verificado); AUD-NG-129 (matrícula/cargos/monto institucional); TASK-118 (entidades maestras y IDs); AUD-NG-161 (pruebas conductuales); AUD-NG-179/TASK-477 (timeout de lock fail-closed).
+- Reconciliación de duplicados: no se crearon identificadores nuevos. Los defectos se asignan a IDs existentes y TASK-512/TASK-513 ya registrados; no se duplican CUV/certificados TASK-351/AUD-NG-059/AUD-NG-061, pagos AUD-NG-133 ni otras tareas de recuperación.
+- Metodología consultada: METODOLOGIA_DESARROLLO.md, incluido bloqueo de inicio/cierre y §3.4; cada hallazgo accionable se formalizó en el informe. Pendientes.md no se consultó ni utilizó, conforme a la regla metodológica vigente.
+- Pruebas ejecutadas: inspección estática/manual de los bloques y rutas citadas; lectura del informe F5-001; verificación de hashes; búsqueda literal dirigida en la suite académica; lectura de los registros históricos pertinentes; verificación de HEAD/rama base y checkpoint previo.
+- Pruebas no ejecutadas: suites automatizadas; Apps Script runtime; pruebas de token/email; conversiones reales; fallos inyectados; concurrencia; lectura/escritura de hojas productivas; CacheService/Drive real; HTTP/navegador y despliegue.
+- Archivos previstos para el único commit: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-001.md y AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Auditoria.txt, MapaDependencias.md, ChangesLogs.txt, Pendientes.md, completadas.md, plan, metodología y rama base.
+- Progreso histórico preservado: 90/183 identificadores auditados; 93 pendientes. No se crean IDs nuevos en esta normalización.
+- Siguiente tarea oficial: TAREA-F5-002 — implementar una máquina de estados y reglas de transición para las solicitudes. Su informe debe verificarse antes de decidir si procede normalización o auditoría desde cero.
+- Regla de publicación: un solo commit consolidado; árbol Git nuevo sobre el árbol completo verificado; exactamente dos rutas; un padre igual al HEAD de partida; actualizar ref con expected_sha; verificar commit, árbol, rutas, compare y rama base. El SHA final se confirma externamente.
+================================================================
+
