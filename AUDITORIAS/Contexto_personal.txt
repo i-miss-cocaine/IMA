@@ -6303,3 +6303,49 @@ La anotación de C1.187 que describió Pendientes.md como vacío fue incorrecta:
 - No se concluye que los hallazgos hayan desaparecido del repositorio: se conservan en Auditoria.txt, MapaDependencias.md, plan/contexto e informes. No se modifica ni restaura Pendientes.md.
 - Esta errata preserva el registro original y corrige su interpretación sin cambiar el dictamen de P2-03.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.188 — NORMALIZACIÓN DE TAREAS DEL INFORME TAREA-F4-P2-04
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Rama de trabajo autorizada: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1; HEAD verificado: 44d9891132332e692dbe2ba8602b41f50a508a59. No se realizó ninguna escritura sobre la rama base.
+- HEAD de partida verificado: 5a2e6b2d0e2c13ea60bff73ccab1a8f1510657b6 (errata posterior a C1.187).
+- Árbol de partida: be7e59e3ce1adeeac40c8c8220355457e0dfa4ef.
+- Padre del commit de errata: 6837292b30a73bb0334b7259dd286fb4e0d5896a.
+- ID operativo de sesión/chat: IMA-AUDIT-20261106-2359Z (misma sesión operativa iniciada en esta conversación; identificador operativo, no ID nativo de ChatGPT).
+- Checkpoint inicial: C1.187, con errata documental posterior sobre Pendientes.md.
+- Tarea documental general: TASK-DOC-C1.112-01, en curso.
+- Informe normalizado: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F4-P2-04.md — concurrencia y consistencia de operaciones de identidad.
+- Dictamen original preservado: NO CUMPLE. La auditoría funcional ya estaba registrada en C1.88; esta iteración formaliza la tarea ejecutable sin alterar el dictamen.
+- Verificación de existencia: el informe P2-04 existe en la rama actual (SHA previo 56e76639fa5dc8da0dc427c260a00f2e2289c441); no fue necesario recuperarlo ni reconstruirlo desde cero.
+- Reconciliación sin duplicar IDs:
+  - AUD-NG-229/TASK-509: hallazgo nuevo ya registrado en Auditoria.txt, MapaDependencias.md y el plan; se desarrolla el bloque ejecutable en este informe. No se crea ID nuevo.
+  - AUD-NG-219/TASK-498: mantiene revocación y expiración de delegaciones sin coordinación; no se absorbe en TASK-509.
+  - TASK-118: mantiene generador institucional, inicialización de secuencias, bypasses y posibles adquisiciones anidadas; no se duplica.
+  - AUD-NG-161: mantiene pruebas conductuales reales de concurrencia/idempotencia; TASK-509 depende de esa cobertura, no la reemplaza.
+  - AUD-NG-218: mantiene atomicidad y política antiabuso del contador de login; queda fuera del alcance de perfil.
+- Reconciliación de Pendientes.md:
+  - Snapshot histórico citado en C1.88: blob SHA 83e885f4b8f860aba200ed5ae739b794c7c02dc8, 1.764.184 caracteres; contiene AUD-NG-161, AUD-NG-218, AUD-NG-219 y TASK-118.
+  - Snapshot actual de la rama: blob SHA ef47d232db3ed46317dc14f22b1cdf8f938e8405, 1.425.933 caracteres; contiene TASK-118, pero no las cadenas AUD-NG-161, AUD-NG-218, AUD-NG-219, AUD-NG-229 ni TASK-509.
+  - Los IDs continúan documentados en Auditoria.txt, MapaDependencias.md y el plan/contexto según corresponda. No se restaura ni modifica Pendientes.md.
+- Evidencia cotejada:
+  - Informe P2-04 previo: SHA 56e76639fa5dc8da0dc427c260a00f2e2289c441.
+  - Auditoria.txt: SHA 284b7a94b51c8ed99dbfcf734694bc5361f9f111.
+  - MapaDependencias.md: SHA 4f68d56f910c6a4e87c20ecac82daeb3a615bcaa.
+  - AUDITORIA_COMPLETADAS_PLAN.md: SHA a374b91e5e45c0b8d5fd9db939735e6ed434c6cb.
+  - Contexto_personal.txt antes del cambio: SHA 8d1546a2257a9a7966abcf9825c63e0fae860f0c.
+  - completadas.md: SHA f57f1aef832e81e44fc4f7ec36a852d50e464676; P2-04 figura [X], severidad Medio.
+  - ChangesLogs.txt: SHA d57cf4bd861b5c3720e60cf83241ed804ff645d9; declara locks en las cuatro funciones.
+  - USER Code.gs: SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; updateUserProfile 2654-2695.
+  - academic-grading-suite.js: SHA 3433b707edd4a2f35c68368a3172932adc2a3b32.
+  - modular-dashboard-suite.js: SHA 0495e1d526a872c33310935a003a83d924d34683.
+- Archivos modificados en esta iteración: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F4-P2-04.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: código fuente, pruebas, Pendientes.md, completadas.md, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README, hojas productivas y rama base.
+- Pruebas ejecutadas: lectura íntegra del informe P2-04; inspección de updateUserProfile 2654-2695; cotejo de los cuatro métodos de lock y de las llamadas anidadas descritas en C1.88; búsqueda dirigida en las dos suites; cotejo de AUD-NG-229/TASK-509 en Auditoria.txt, MapaDependencias.md y plan; lectura de los bloques históricos de AUD-NG-161, AUD-NG-218, AUD-NG-219 y TASK-118 en Pendientes.md mediante sus blobs; comparación con el blob actual; verificación de HEAD/árbol antes del cambio.
+- Pruebas no ejecutadas: Apps Script runtime, concurrencia real, LockService real, reentrada/timeout, errores de SpreadsheetApp, carreras entre actualización/revocación/expiración, escritura simultánea de perfiles ni suites automatizadas. Esta iteración es documental y no implementa TASK-509.
+- Límite: no se declara corregida la concurrencia ni probado un lost update ejecutado. Se conserva NO CUMPLE y el progreso histórico 85/183 identificadores auditados; 98 pendientes. La normalización no incrementa el conteo.
+- Última tarea normalizada: TAREA-F4-P2-04. Siguiente tarea oficial: TAREA-F4-P2-05 — consolidación de documentación institucional de privacidad y tratamiento de datos; revisar informe y fuentes actuales sin duplicar AUD-NG-145, AUD-NG-146/TASK-499, AUD-NG-220/TASK-500, AUD-NG-222/TASK-502 y AUD-NG-223/TASK-503.
+- Regla de publicación: un único commit consolidado con exactamente el informe y Contexto_personal.txt; verificar SHA, padre, árbol, archivos modificados, estadísticas y HEAD posterior. No escribir en la rama base.
+================================================================

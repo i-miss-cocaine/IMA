@@ -82,3 +82,38 @@ El contador de login sin lock permanece bajo AUD-NG-218. La búsqueda dirigida n
 - **Archivos documentales previstos para C1.88:** Auditoria.txt, Pendientes.md, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt y este informe.
 - **Archivos preservados:** código fuente, pruebas, completadas.md, ChangesLogs.txt y METODOLOGIA_DESARROLLO.md.
 - **Commit de cierre:** el commit que contiene este checkpoint; SHA final se verifica después de publicar.
+
+
+## Tareas ejecutables derivadas de los hallazgos
+
+### [AUD-NG-229 / TASK-509] Serializar la actualización de perfiles y evitar la pérdida de cambios concurrentes
+
+- **Hallazgo de origen:** sección 4.1 y registro preexistente AUD-NG-229/TASK-509 en `AUDITORIAS/Auditoria.txt` y `AUDITORIAS/MapaDependencias.md`. `updateUserProfile` (USER 2654-2695) lee la fila completa de Usuarios, modifica una copia y vuelve a escribirla con `setValues` sin adquirir lock ni comprobar una versión. Dos solicitudes concurrentes pueden leer la misma versión inicial y la última escritura sobrescribir los cambios de la primera.
+- **Clasificación:** la tarea madre TAREA-F4-P2-04 figura con severidad Medio en completadas.md. El registro resumido de AUD-NG-229 no asigna severidad ni prioridad propias; no se inventa una clasificación adicional.
+- **Objetivo:** garantizar que las actualizaciones concurrentes del perfil se serialicen o detecten conflictos de versión, evitando que una escritura de fila completa sobrescriba cambios independientes ya persistidos.
+- **Acción ejecutable:**
+  1. Definir el contrato de actualización de perfil y la lista de campos mutables. Validar los tipos y valores permitidos antes de iniciar la sección crítica; derivar la identidad del actor de la sesión verificada y conservar las comprobaciones de autorización existentes.
+  2. Implementar una estrategia explícita de concurrencia para la fila objetivo: adquisición de un lock común a todos los escritores del mismo proyecto USER antes de leer el estado vigente y mantenerlo hasta completar la escritura, o control optimista mediante versión/revisión persistente con comparación y rechazo de versiones obsoletas.
+  3. Volver a leer la fila dentro de la sección crítica y aplicar únicamente los campos autorizados de la petición sobre esa versión vigente. Evitar reescribir valores obsoletos de columnas no modificadas por la solicitud.
+  4. Si se utiliza LockService, responder con error explícito cuando no se obtenga el lock dentro del tiempo configurado; no continuar sin protección ni devolver éxito. Liberar el lock en finally y solo cuando haya sido adquirido.
+  5. Definir el límite del mecanismo: ScriptLock coordina ejecuciones del mismo proyecto de Apps Script, pero no debe presentarse como lock distribuido entre proyectos distintos que compartan la hoja Usuarios. Identificar otros escritores de esa hoja y, si cruzan proyectos, establecer una versión/autoridad común o mecanismo de coordinación compartido.
+  6. Coordinar la bitácora y la invalidación de caché con la sección crítica sin introducir una adquisición anidada del mismo ScriptLock. El generador de IDs y los locks anidados ya pertenecen a TASK-118; usar un helper interno con propiedad de lock explícita o un mecanismo recuperable que no vuelva a adquirir el lock retenido.
+  7. Definir el comportamiento ante errores de lectura, validación, escritura, bitácora e invalidación: distinguir qué operación quedó persistida, evitar respuestas de éxito engañosas y dejar trazabilidad recuperable sin exponer datos sensibles.
+  8. Añadir pruebas conductuales aisladas con dos o más actualizaciones paralelas del mismo usuario, cambios en campos distintos, conflicto sobre el mismo campo, timeout de lock, error de escritura y recuperación. Las pruebas deben verificar el estado final de la fila, no limitarse a comprobar que se llamó LockService.
+- **Archivos/módulos afectados:** `backend/user-service/Code.gs` (`updateUserProfile`, mecanismo de lock/versionado, registro de cambios y purga de caché); pruebas aisladas de concurrencia para USER.
+- **Dependencias y límites:** AUD-NG-161 conserva la suite de pruebas conductuales reales; TASK-118 conserva el generador institucional, la inicialización de SecuenciasIDs, los bypasses y las posibles adquisiciones anidadas; AUD-NG-219/TASK-498 conserva la coordinación de revocación/expiración de delegaciones; AUD-NG-218 conserva el contador y la política antiabuso de login. Esta tarea se limita al read-modify-write de updateUserProfile y no absorbe los otros alcances.
+- **Criterios de aceptación:**
+  1. Dos actualizaciones simultáneas de campos distintos del mismo usuario no pierden cambios; ambas se conservan o una recibe un conflicto explícito y recuperable según el contrato definido.
+  2. Dos actualizaciones simultáneas del mismo campo siguen una política determinista de conflicto y nunca producen una respuesta de éxito para una escritura descartada silenciosamente.
+  3. La fila se lee después de obtener el lock o se verifica una versión vigente antes de escribir; no se persiste una copia obsoleta sin detectar el conflicto.
+  4. Un timeout o fallo al adquirir el lock aborta la escritura y devuelve un resultado explícito; el lock se libera en finally cuando corresponde.
+  5. Los escritores del mismo proyecto USER usan el mecanismo común; cualquier escritor de otro proyecto se coordina mediante una estrategia compartida y no se considera protegido por el ScriptLock local.
+  6. La bitácora y la purga de caché no introducen deadlock/reentrada por adquisición anidada; las operaciones parciales quedan identificadas y recuperables.
+  7. Las pruebas paralelas y de fallo usan fixtures aislados, verifican valores persistidos y distinguen PASS, FAIL, SKIP y NOT RUN. No se ejecutan contra hojas productivas.
+- **Prioridad:** no asignada en las fuentes del hallazgo.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente. Adjuntar commit de implementación, pruebas concurrentes reproducibles, evidencia de conflicto/timeout y verificación del contrato de lock con el registro de cambios.
+
+## Aclaración documental sobre Pendientes.md y la reconciliación de IDs
+
+La versión histórica de `Pendientes.md` citada por el informe C1.88 (blob SHA `83e885f4b8f860aba200ed5ae739b794c7c02dc8`) fue inspeccionada directamente: contiene 1.764.184 caracteres y bloques detallados para AUD-NG-161, AUD-NG-218, AUD-NG-219 y TASK-118. La versión actual de la rama (blob SHA `ef47d232db3ed46317dc14f22b1cdf8f938e8405`) contiene 1.425.933 caracteres; conserva TASK-118, pero no contiene esas tres cadenas AUD-NG ni AUD-NG-229/TASK-509. La diferencia entre snapshots no demuestra que esos hallazgos hayan desaparecido del repositorio: permanecen registrados en Auditoria.txt, MapaDependencias.md, el plan y los informes correspondientes. No se restaura ni modifica Pendientes.md en esta iteración.
