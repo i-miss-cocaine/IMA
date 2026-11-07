@@ -7173,3 +7173,56 @@ ARCHIVOS DOCUMENTALES: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-007.md (nuevo),
 SIN CAMBIOS: código, pruebas, completadas.md, Pendientes.md, ChangesLogs.txt, metodología y rama base.
 SIGUIENTE: TAREA-F5-008 — listas de espera con orden de prelación y asignación controlada de plazas.
 ===============================================================================
+
+
+===============================================================================
+AUDITORÍA TAREA-F5-008 - LISTAS DE ESPERA Y PRELACIÓN
+Sesión: IMA-AUDIT-20261107-0313Z | Checkpoint: C1.202 | HEAD auditado: 81f3c565fadc9114372cb993bb00c51082e8b56f
+DICTAMEN: NO CUMPLE
+===============================================================================
+
+FUENTES:
+- No existe informe AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-008.md ni AUDITORIAS/AUDITORIA_TAREA-F5-008.md en el árbol ni en historial.
+- AUDITORIA_FASE_5_ADMISIONES_PORTAL_FAMILIAS.md tampoco aparece en el árbol/historial consultado.
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, líneas 2057-2089: [X] Completada; 12 puntos de alcance y 10 criterios [x].
+- ChangesLogs.txt SHA d57cf4bd861b5c3720e60cf83241ed804ff645d9, líneas 1824-1833, declara tabla, endpoints y UI.
+- HALLAZGOS-F5-P1-01, citado como origen, no está en Auditoria.txt actual. Se registra fuente histórica no recuperada.
+- Pendientes.md: lectura ordinaria vacía; blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c recuperado directamente: 1.782.094 caracteres/20.182 líneas, sin U+FFFD; línea 5364 advierte skipLock=true en addToWaitlist sin lock exterior visible. Sin TAREA-F5-008 directa; archivo no modificado.
+
+EVIDENCIA:
+- ACADEMIC Code.gs SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc: esquema 152-153; roles 168-260; token/RBAC 524-590; skipLock doPost 675-700; dispatch 853-857; logStructuredEvent 52-77; endpoints 1750-1925; updateAdmissionStatus 1928-2050; generateInstitutionalId 2107-2148; checkEnrollmentCapacity 11025-11114.
+- secretary.js SHA 08a81266957b4c18cc25f8ba6749eac30a8f2c2c: expediente 176-188; waitlist 1521-1638.
+- dashboard-secretaria.html SHA fa0d8c23aace24a6acab2d4956398a7f5e1309b8: panel 253-266.
+- api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; auth.js SHA 8444dd085a3186106d2db7005b61ef934d3c22d8: sessionToken no se conserva/transmite; ampliar AUD-NG-001.
+- USER Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f: permisos familiares y sendMultiChannelNotification 4818-4893.
+- student.js SHA e2888cea60322e49a40b89adadb8010489605dcc: selector 179-223; panel familiar 264-345, no muestra posición ni acciones de oferta.
+- student-dashboard.html SHA 6379ea0ed39d71b89747a0280bb925fdf12202c1.
+- tests academic-grading-suite.js SHA 3433b707edd4a2f35c68368a3172932adc2a3b32; modular-dashboard-suite.js SHA 0495e1d526a872c33310935a003a83d924d34683: sin pruebas waitlist.
+
+HALLAZGOS:
+H1 CRÍTICO/P0 - fetchApi no transmite sessionToken; endpoints protegidos bloquean; ampliar AUD-NG-001.
+H2 ALTO/P1 - addToWaitlist no valida estado elegible; criterios vienen del cliente y no se verifican; puntajes fijos.
+H3 ALTO/P1 - posición por conteo, no por puntaje/fecha; se duplican posiciones y no se recalculan.
+H4 ALTO/P1 - reorderWaitlist cambia una sola fila; no valida grupo/rango/unicidad ni registra actor confiable.
+H5 CRÍTICO/P0 - offerWaitlistSlot no identifica ni verifica una vacante real; no consulta capacidad; ampliar TAREA-F5-010/AUD-NG-179.
+H6 CRÍTICO/P0 - add/offer/respond sin lock; ID generado con skipLock=true; ampliar AUD-NG-234/TASK-514.
+H7 CRÍTICO/P0 - no hay máquina de estados completa, expiración automática, sincronización de retiradas ni liberación/promoción del siguiente.
+H8 ALTO/P1 - aceptación marca Oferta_Aceptada antes de updateAdmissionStatus; fallo deja estados contradictorios.
+H9 CRÍTICO/P0 - roles familiares sin getWaitlist/respondToWaitlistSlot; panel no muestra posición ni aceptar/rechazar; ampliar TAREA-F5-012.
+H10 ALTO/P1 - no hay vista global con filtros de año/grado/disponibilidad; UI consulta todo y filtra en cliente.
+H11 ALTO/P1 - oferta/respuesta no notifican; respond no genera log; logs carecen actorUserId e historial append-only; ampliar TAREA-F5-011/AUD-NG-145.
+H12 ALTO/P1 - suites no tienen pruebas de lista de espera; ampliar AUD-NG-161.
+
+RECONCILIACIÓN:
+AUD-NG-001; AUD-NG-179; AUD-NG-234/TASK-514; AUD-NG-145; AUD-NG-161; AUD-NG-233/TASK-513; TAREA-F5-010; TAREA-F5-011; TAREA-F5-012. No crear IDs globales duplicados.
+
+TAREAS DERIVADAS:
+F5-008-A01 elegibilidad/configuración/orden de prelación; A02 reserva atómica y capacidad; A03 estados/expiración/promoción; A04 consulta/respuesta familiar IDOR; A05 notificaciones y trazabilidad; A06 vista administrativa/filtros; A07 pruebas. Criterios completos en AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-008.md.
+
+PRUEBAS:
+Inspección estática/manual. No se ejecutaron Apps Script, HTTP, Sheets productivo, navegador, concurrencia real, triggers, correo, cola de reintentos ni suites automatizadas.
+
+ARCHIVOS DOCUMENTALES: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-008.md (nuevo), AUDITORIAS/Auditoria.txt, AUDITORIAS/MapaDependencias.md, AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md y AUDITORIAS/Contexto_personal.txt.
+SIN CAMBIOS: código, pruebas, completadas.md, Pendientes.md, ChangesLogs.txt, metodología y rama base.
+SIGUIENTE: TAREA-F5-009 - vinculación familiar y permisos granulares por tutor.
+===============================================================================

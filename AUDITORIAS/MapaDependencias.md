@@ -2060,3 +2060,40 @@ TASK-038 (Magic Bytes); TASK-134/TASK-144 (SHA-256/deduplicación/integridad); T
 **Resultado:** existen las tablas, cinco endpoints y paneles de consulta, pero no hay grupos, reprogramación/cancelación/notificaciones, autorización por evaluador, políticas por grado, excepción firmada ni bitácora completa. El bloqueo de admisión falla abierto cuando no existe fila de evaluación requerida. Dictamen NO CUMPLE.
 
 **Tareas derivadas:** F5-007-A01 programación/estados/concurrencia; A02 ABAC por evaluador y sesión; A03 políticas por grado y bloqueo fail-closed; A04 rúbricas/escala/excepciones; A05 bitácora y renderizado seguro; A06 pruebas. Ver criterios de aceptación en el informe.
+
+
+## C1.202 - TAREA-F5-008: listas de espera y prelación
+
+**Informe:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-008.md.  
+**HEAD auditado:** 81f3c565fadc9114372cb993bb00c51082e8b56f.  
+**Dictamen:** NO CUMPLE.  
+**Fuente de requisitos:** completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, líneas 2057-2089 (12 requisitos, 10 criterios).
+
+### Flujo de datos y dependencias
+- dashboard-secretaria.html (253-266) -> modal de solicitud -> secretary.js/openAdmissionDetailModal (176-188) -> loadAdmissionWaitlistStatus(solicitudId).
+- secretary.js 1521-1562 -> ACADEMIC/getWaitlist({}) -> backend/academic-service/Code.gs 1813-1847 -> ListaEsperaAdmision + SolicitudesAdmision; backend devuelve aspiranteNombre e identificacion de cada registro, cliente filtra por solicitudId.
+- secretary.js 1564-1592 -> addToWaitlist -> Code.gs 1750-1811 -> SolicitudesAdmision + ListaEsperaAdmision + SecuenciasIDs. Puntaje fijo por criterios del payload; posición por conteo de filas En_Espera; escribe En_Espera directamente.
+- secretary.js 1594-1612 -> offerWaitlistSlot -> Code.gs 1876-1899 -> actualiza EstadoOferta y FechaExpiracionOferta; no consulta OfertaAcademica/checkEnrollmentCapacity ni identifica VacanteID.
+- secretary.js 1614-1638 -> reorderWaitlist -> Code.gs 1849-1874 -> cambia solo una posición y justificación; no reindexa grupo.
+- ACADEMIC/respondToWaitlistSlot (1901-1925) -> cambia estado; si Aceptar llama updateAdmissionStatus(Admitida) después de escribir Oferta_Aceptada. No hay lock/rollback; rechazo no libera ni promueve.
+- getOrCreateSheet (152-153) crea ListaEsperaAdmision con 12 columnas; no incluye OfertaID/VacanteID, actor de cambios ni historial append-only.
+- ACADEMIC ROLE_PERMISSIONS (168-260): Director/Secretaría/Secretaria/Administrador tienen operaciones; Padre/Tutor/Responsable no tienen getWaitlist ni respondToWaitlistSlot.
+- validateRolePermission (524-544) exige token; js/api.js/auth.js no lo conservan/transmiten, ampliar AUD-NG-001.
+- checkEnrollmentCapacity (11025-11114) cuenta Matriculas y Solicitudes Admitida, no Plaza_Ofrecida; tryLock false no aborta, ampliar AUD-NG-179/TAREA-F5-010.
+- generateInstitutionalId (2107-2148) permite skipLock; addToWaitlist lo llama skipLock=true, ampliar AUD-NG-234/TASK-514.
+- USER/sendMultiChannelNotification (4818-4893) existe, pero no se invoca desde oferta/rechazo/expiración waitlist; ampliar TAREA-F5-011.
+- student.js 264-345 muestra estado/cronología En_Espera, no posición ni botones de oferta/respuesta; ampliar TAREA-F5-012.
+
+### Hallazgos y controles relacionados
+- AUD-NG-001: propagación de sessionToken.
+- AUD-NG-179 y TAREA-F5-010: lock timeout y capacidad/cupos.
+- AUD-NG-234/TASK-514: skipLock, exclusión mutua y transiciones.
+- AUD-NG-145: actorUserId e historial durable de movimientos.
+- AUD-NG-161: pruebas de regresión.
+- AUD-NG-233/TASK-513: política fail-closed de cupos.
+- TAREA-F5-011: notificaciones de oferta/liberación.
+- TAREA-F5-012: posición/aceptación/rechazo familiar y aislamiento IDOR.
+
+**Resultado:** la tabla/endpoints existen, pero la posición no usa prelación, las ofertas no reservan vacantes, no hay lock ni expiración, rechazo no avanza al siguiente, familia no puede consultar/responder y la bitácora no conserva todos los movimientos. Dictamen NO CUMPLE.
+
+**Tareas derivadas:** F5-008-A01 elegibilidad y prelación; A02 reserva atómica/capacidad; A03 estados/expiración/promoción; A04 consulta/respuesta familiar; A05 notificaciones/trazabilidad; A06 vista administrativa; A07 pruebas. Ver criterios en el informe.

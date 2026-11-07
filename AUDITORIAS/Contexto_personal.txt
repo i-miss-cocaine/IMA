@@ -6743,3 +6743,35 @@ CHECKPOINT C1.201 — AUDITORÍA DESDE CERO TAREA-F5-007
 - Commit de cierre: el commit que contiene este checkpoint; SHA a confirmar externamente después de publicar.
 - Próxima acción concreta: revisar diff total de los cinco archivos documentales, crear un único commit y verificar el HEAD; después iniciar búsqueda de informe/historial de TAREA-F5-008.
 ================================================================
+
+
+================================================================
+CHECKPOINT C1.202 - AUDITORÍA DESDE CERO TAREA-F5-008
+================================================================
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto: AUDITORIAS/Contexto_personal.txt.
+- Rama de trabajo: NG_beta_0.0.0.1_work.
+- HEAD de partida verificado: 81f3c565fadc9114372cb993bb00c51082e8b56f; árbol: 38f88c9ce610472ea58c568b06a9a16876435e1f; árbol recursivo: 970 entradas, truncated=false.
+- Rama base protegida: NG_beta_0.0.0.1, SHA 44d9891132332e692dbe2ba8602b41f50a508a59; no modificada.
+- ID operativo de sesión/chat: IMA-AUDIT-20261107-0313Z (identificador operativo, no ID nativo de ChatGPT).
+- Checkpoint inicial de esta sesión: C1.201. Checkpoint de cierre: C1.202. Estado de sesión: cerrada después de publicar y verificar el commit único.
+- Última tarea terminada: auditoría técnica TAREA-F5-008; dictamen NO CUMPLE.
+- Tarea en curso: ninguna; informe, bitácoras, mapa, plan y checkpoint preparados para publicación consolidada.
+- Siguiente tarea exacta: TAREA-F5-009 - vinculación familiar y permisos granulares por tutor. Antes de auditar, comprobar su informe específico en árbol e historial de la rama actual.
+- Informe F5-008: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-008.md, nuevo porque no existía en el árbol ni en historial consultado. Tampoco se encontró AUDITORIA_FASE_5_ADMISIONES_PORTAL_FAMILIAS.md en raíz ni en AUDITORIAS/.
+- Fuente de requisitos: completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, líneas 2057-2089; [X] Completada; 12 puntos de alcance y 10 criterios [x]. ChangesLogs.txt SHA d57cf4bd861b5c3720e60cf83241ed804ff645d9, líneas 1824-1833.
+- HALLAZGOS-F5-P1-01, citado como origen, no aparece en Auditoria.txt actual. No se inventó el contenido del hallazgo original.
+- Pendientes.md: lectura ordinaria devuelve 0 caracteres; blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c recuperado directamente: 1.782.094 caracteres, 20.182 líneas, sin U+FFFD, 1.803.672 bytes según checkpoint previo. No contiene TAREA-F5-008; línea 5364 advierte skipLock=true en addToWaitlist sin lock exterior visible. No se modificó/restauró porque el blob actual está íntegro.
+- Hallazgos H1-H12: H1 sessionToken no transmitido (AUD-NG-001); H2 elegibilidad/criterios de prioridad no verificados; H3 posición no usa puntaje/fecha y puede duplicarse; H4 reorder cambia una fila sin recalcular; H5 oferta no identifica/valida vacante (TAREA-F5-010/AUD-NG-179); H6 operaciones no atómicas/sin lock y skipLock=true (AUD-NG-234/TASK-514); H7 sin expiración/liberación/promoción siguiente; H8 aceptación no transaccional; H9 familia sin getWaitlist/respond y portal sin posición (TAREA-F5-012); H10 UI sin cola global/filtros; H11 sin notificaciones completas ni historial durable (TAREA-F5-011/AUD-NG-145); H12 suites sin pruebas específicas (AUD-NG-161).
+- Tareas derivadas locales: F5-008-A01 elegibilidad/configuración/prelación; A02 reserva atómica/capacidad; A03 máquina de estados/expiración/promoción; A04 consulta/respuesta familiar IDOR; A05 notificaciones/trazabilidad; A06 vista administrativa/filtros; A07 pruebas. Sin IDs globales nuevos.
+- Reconciliación: ampliar AUD-NG-001, AUD-NG-179, AUD-NG-234/TASK-514, AUD-NG-145, AUD-NG-161 y AUD-NG-233/TASK-513; coordinar TAREA-F5-010, F5-011 y F5-012.
+- Evidencia inspeccionada: Code.gs ACADEMIC SHA daf1883ec0b8d4f0ff2bc673af8a4e8c5bbd03fc (esquema 152-153; RBAC 168-260; token/RBAC 524-590; skipLock doPost 675-700; dispatch 853-857; endpoints 1750-1925; updateAdmissionStatus 1928-2050; ID generator 2107-2148; capacidad 11025-11114); secretary.js SHA 08a81266957b4c18cc25f8ba6749eac30a8f2c2c (176-188, 1521-1638); dashboard-secretaria.html SHA fa0d8c23aace24a6acab2d4956398a7f5e1309b8 (253-266); api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; auth.js SHA 8444dd085a3186106d2db7005b61ef934d3c22d8; USER Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f (permisos familiares y sendMultiChannelNotification 4818-4893); student.js SHA e2888cea60322e49a40b89adadb8010489605dcc (179-223, 264-345); student-dashboard.html SHA 6379ea0ed39d71b89747a0280bb925fdf12202c1; suites SHA 3433b707edd4a2f35c68368a3172932adc2a3b32 y 0495e1d526a872c33310935a003a83d924d34683.
+- Pruebas ejecutadas: inspección estática/manual de código y dependencias; verificación de RBAC/token, hojas, flujo de oferta/respuesta, capacidad, notificaciones, UI familiar/admin y suites; búsqueda del informe en árbol/historial; recuperación directa del blob Pendientes.md; verificación de HEAD/árbol/base.
+- Pruebas no ejecutadas: Apps Script runtime, HTTP, Google Sheets productivo, navegador, familias reales, concurrencia, triggers, correo/cola, suites automatizadas.
+- Archivos modificados en esta iteración: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-008.md (nuevo); AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: backend/academic-service/Code.gs; backend/user-service/Code.gs; js/secretary.js; dashboard-secretaria.html; js/api.js; js/auth.js; js/student.js; student-dashboard.html; tests; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; rama base.
+- Método: fase Auditoría solamente; no se modificó código ni pruebas. SHA originales conservados como respaldo inmutable. No se ejecutaron validaciones automáticas.
+- Publicación: un único commit consolidado, padre 81f3c565fadc9114372cb993bb00c51082e8b56f, sobre árbol completo 38f88c9ce610472ea58c568b06a9a16876435e1f; expected_sha 81f3c565fadc9114372cb993bb00c51082e8b56f; verificar HEAD, árbol, cinco rutas documentales y rama base después de publicar. Si falla la publicación, detenerse sin commits parciales.
+- Commit de cierre: el commit que contiene este checkpoint; SHA a confirmar externamente después de publicar.
+- Próxima acción: crear un único commit documental y verificar HEAD/árbol/archivos; después iniciar búsqueda de informe/historial de TAREA-F5-009.
+================================================================

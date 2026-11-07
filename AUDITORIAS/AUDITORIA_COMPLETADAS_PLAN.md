@@ -1146,3 +1146,17 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Archivos documentales:** informe F5-007 nuevo, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md y Contexto_personal.txt.
 - **Sin cambios:** código, pruebas, completadas.md, Pendientes.md, ChangesLogs.txt, metodología y rama base.
 - **Continuidad:** C1.200 se conserva como punto de partida; F5-007 queda auditada y NO CUMPLE. Siguiente tarea: TAREA-F5-008 — listas de espera con orden de prelación y asignación controlada de plazas. Buscar primero informe e historial.
+
+
+## C1.202. TAREA-F5-008 - listas de espera con prelación y asignación controlada (2026-11-07)
+
+- **Dictamen:** NO CUMPLE. La tabla y endpoints existen, pero addToWaitlist no valida estado ni criterios; el puntaje es hardcodeado y no determina posición; el reordenamiento cambia una fila; las ofertas no identifican ni comprueban vacante; no hay lock, expiración, promoción del siguiente ni notificaciones de oferta/rechazo; aceptación no es atómica; familias no tienen endpoint/posición/respuesta; no existe historial completo ni pruebas específicas.
+- **Informe creado desde cero:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-008.md; ausencia comprobada en árbol e historial para las rutas específicas y el informe de fase.
+- **Fuente:** completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, líneas 2057-2089; tarea marcada [X], con 12 puntos de alcance y 10 criterios [x]. ChangesLogs.txt SHA d57cf4bd861b5c3720e60cf83241ed804ff645d9, líneas 1824-1833.
+- **Pendientes.md:** lectura ordinaria vacía; blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c recuperado directamente (1.782.094 caracteres, 20.182 líneas, sin U+FFFD); línea 5364 advierte skipLock=true en addToWaitlist; no hay entrada directa TAREA-F5-008. No se modifica.
+- **Reconciliación:** AUD-NG-001; AUD-NG-179; AUD-NG-234/TASK-514; AUD-NG-145; AUD-NG-161; AUD-NG-233/TASK-513; TAREA-F5-010 (capacidad); TAREA-F5-011 (notificaciones); TAREA-F5-012 (portal familiar). Sin IDs globales nuevos.
+- **Tareas derivadas locales:** F5-008-A01 elegibilidad/prelación; A02 reserva atómica; A03 estados/expiración/promoción; A04 consulta/respuesta familiar; A05 notificaciones/trazabilidad; A06 vista administrativa; A07 pruebas. Criterios detallados en el informe.
+- **Pruebas:** inspección estática/manual de ACADEMIC, USER, UI administrativa, portal familiar, api/auth y suites; verificación de árbol, historial e integridad del blob Pendientes. No se ejecutaron Apps Script, HTTP, Sheets productivo, navegador, concurrencia real, triggers, correo ni suites automatizadas.
+- **Archivos documentales:** informe F5-008 nuevo, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md y Contexto_personal.txt.
+- **Sin cambios:** código, pruebas, completadas.md, Pendientes.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md y rama base.
+- **Continuidad:** C1.201 queda como checkpoint de inicio; F5-008 auditada NO CUMPLE. Siguiente tarea: TAREA-F5-009 - vinculación familiar y permisos granulares por tutor. Verificar informe/historial antes de iniciar.
