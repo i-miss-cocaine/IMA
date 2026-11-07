@@ -1694,3 +1694,19 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
 - **Archivos sin cambios:** backend/academic-service/Code.gs; js/teacher.js; teacher-dashboard.html; js/api.js; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; README; manifest.json; rama base.
 - **Siguiente tarea cronológica:** TAREA-F7-IMP-03, Desarrollar una herramienta de resolución asistida de conflictos.
+
+
+## C1.235 - Resultado de auditoría TAREA-F7-IMP-03 (2026-11-07)
+
+- **Dictamen:** NO CUMPLE; la marca [X] histórica en completadas.md se conserva.
+- **Informe individual:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-03.md; no existía previamente, se auditó directamente el alcance maestro.
+- **Hallazgo nuevo:** AUD-NG-238. Se amplían AUD-NG-236, AUD-NG-237, AUD-NG-168 y AUD-NG-001.
+- **Evidencia principal:** getScheduleConflictResolutionAlternatives solo propone aulas y ocho bloques fijos; modal ausente en teacher-dashboard; ruta privada sin token; applyConflictAlternative crea un nuevo horario sin modificar el original; vista previa puede sembrar aulas; sin comparación de impacto ni rollback.
+- **Criterios:** CA-F7-17/21/22 NO CUMPLE; CA-F7-18/19/20/23 PARCIAL.
+- **Tareas derivadas:** TASK-526..TASK-531, todas Pendientes y registradas en el informe; no se modifica Pendientes.md ni completadas.md.
+- **Pruebas ejecutadas:** inspección estática/manual de generador, validación, UI, modal, aplicación, autenticación, catálogo de aulas, dispatcher y suites.
+- **No ejecutadas:** navegador, Apps Script runtime, HTTP/OAuth, Sheets/Drive productivas, concurrencia, cambios simultáneos, rollback ni E2E.
+- **Archivos nuevos:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-03.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Archivos sin cambios:** backend/academic-service/Code.gs; js/teacher.js; teacher-dashboard.html; js/api.js; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; README; manifest.json; rama base.
+- **Siguiente tarea cronológica:** TAREA-F7-IMP-04, Incorporar planificación masiva y optimización de horarios.

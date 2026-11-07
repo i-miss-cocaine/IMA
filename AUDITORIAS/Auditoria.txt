@@ -8472,3 +8472,33 @@ RECONCILIACIÓN:
 - TASK-525: regresión funcional, permisos, volumen, responsive y exportación.
 PRUEBAS/LÍMITES: inspección estática/manual; no ejecutados navegador, Apps Script runtime, HTTP/OAuth, Sheets/Drive productivas, carga, responsive real, permisos E2E ni exportación real. Sin cambios de código, tests, HTML, datos productivos o despliegues.
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-07
+[AUD-NG-238] TAREA-F7-IMP-03 - RESOLUCIÓN ASISTIDA DE CONFLICTOS
+SEVERIDAD: ALTO/P1 CON BRECHAS CRÍTICAS
+DICTAMEN: NO CUMPLE (marca [X] histórica conservada).
+EVIDENCIA:
+- backend/academic-service/Code.gs SHA df87a2eea9f0ef79d0b966d03fd5bbe432003df5: getScheduleConflictResolutionAlternatives (8085) solo genera alternativas de aula y ocho bloques horarios prefijados del mismo día; no propone sustitutos, recursos, cambio de día ni reprogramación, no agrupa conflictos ni identifica todos los registros participantes.
+- Cada candidato se filtra con checkScheduleConflict (7493), que no recibe fecha efectiva/año/período/recursos y conserva limitaciones de AUD-NG-236/AUD-NG-168; no se explica por qué se descartan opciones.
+- getClassroomResources (7694) puede sembrar seis aulas en SedesAulas cuando no hay registros; getScheduleConflictResolutionAlternatives la invoca durante la consulta, por lo que la vista previa puede modificar el catálogo.
+- teacher-dashboard.html SHA cbb9e6a272a7d8ad33f99727303305d950533e71 no contiene modal-schedule-conflict-resolution ni conflict-resolution-content. openAssistedConflictResolutionModal (js/teacher.js SHA c475fce5afcd28fca23e7b64398ad32b17773746: ~800) retorna sin mostrar nada si faltan.
+- getScheduleConflictResolutionAlternatives no es PUBLIC_ACTION; fetchApi no transmite token (AUD-NG-001). La consulta privada no alcanza el backend por la ruta normal.
+- applyConflictAlternative (js/teacher.js:1886) llama createClassSchedule sin horarioId/lastUpdated; createClassSchedule agrega nuevo HOR-... y deja activo el horario original. No resuelve el conflicto que se pretendía corregir.
+- El botón Aplicar ejecuta la mutación directamente; no se presenta comparación de consecuencias ni se registra un evento de resolución con actor, conflicto original y cambios antes/después. La bitácora solo registra SCHEDULE_SAVED.
+- createClassSchedule vuelve a invocar checkScheduleConflict, revalidación parcial, pero no cubre el contexto completo ni la versión del horario original. No hay rollback/transacción ni pruebas de fallos parciales.
+- tests/regression/academic-grading-suite.js SHA a22cb3ef376fe09e65c1b17c2f4f5125290bfba6 no contiene escenarios F7-IMP-03/CA-F7-17..23.
+CRITERIOS: CA-F7-17/21/22 NO CUMPLE; CA-F7-18/19/20/23 PARCIAL.
+RECONCILIACIÓN:
+- Hallazgo nuevo AUD-NG-238.
+- Ampliar AUD-NG-236 (motor/validación/atomicidad), AUD-NG-237 (UI de planificación), AUD-NG-168 (modelo/periodos) y AUD-NG-001 (sesión/acciones privadas).
+- Tareas derivadas TASK-526..TASK-531, todas Pendientes; IDs verificados ausentes en Auditoria.txt, MapaDependencias.md, Plan, Contexto, completadas.md y blob de Pendientes.md.
+- TASK-526: integrar modal y rutas autenticadas.
+- TASK-527: ampliar agrupación y generación/validación de candidatos.
+- TASK-528: vista previa comparativa sin escrituras.
+- TASK-529: aplicar sobre registros originales seleccionados.
+- TASK-530: atomicidad, rollback, idempotencia y trazabilidad.
+- TASK-531: pruebas conductuales CA-F7-17..23.
+PRUEBAS/LÍMITES: inspección estática/manual; no ejecutados navegador, Apps Script runtime, HTTP/OAuth, Sheets/Drive productivas, concurrencia, cambios simultáneos, rollback ni E2E. Sin cambios de código, tests, HTML, datos productivos o despliegues.
+===============================================================================

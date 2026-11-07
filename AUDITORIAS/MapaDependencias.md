@@ -3015,3 +3015,40 @@ Todas Pendientes. No se crean IDs duplicados.
 
 ### Límites
 Inspección estática/manual. No se ejecutaron navegador, Apps Script, HTTP/OAuth, Sheets/Drive productivas, carga, responsive real, permisos E2E ni exportación real. Sin cambios en código o datos productivos.
+
+
+## C1.235 - TAREA-F7-IMP-03: resolución asistida de conflictos
+
+**Informe:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-03.md.  
+**Dictamen:** NO CUMPLE; marca [X] histórica preservada. **HEAD auditado:** 7fb4669d48e9e745e9cbe1d406f1602c9cc13d65.
+
+### Dependencias inspeccionadas
+- backend/academic-service/Code.gs: checkScheduleConflict (7493), createClassSchedule (6900), getClassroomResources (7694), getScheduleConflictResolutionAlternatives (8085), dispatcher y PUBLIC_ACTIONS.
+- js/teacher.js: openAssistedConflictResolutionModal (~800), botones de alternativas y applyConflictAlternative (1886).
+- teacher-dashboard.html: ausencia de modal-schedule-conflict-resolution/conflict-resolution-content.
+- js/api.js: fetchApi; autenticación privada relacionada con AUD-NG-001.
+- tests/regression: ausencia de escenarios F7-IMP-03.
+
+### Relaciones y hallazgos
+- El generador solo propone aulas distintas y ocho bloques horarios fijos del mismo día; no propone sustitutos, recursos, cambio de día ni reprogramación, tampoco agrupa todos los registros participantes.
+- Cada candidato se evalúa con checkScheduleConflict sin fecha/año/período/recursos; hereda las brechas de AUD-NG-236/AUD-NG-168.
+- El modal no existe en teacher-dashboard; el controlador retorna silenciosamente si faltan modal o contenedor.
+- getScheduleConflictResolutionAlternatives es privada y fetchApi no transmite token; relación con AUD-NG-001.
+- getClassroomResources puede crear seis aulas predeterminadas durante la consulta; la previsualización no es completamente de solo lectura.
+- applyConflictAlternative invoca createClassSchedule sin horarioId/lastUpdated; crea un nuevo bloque y deja vigente el original.
+- No se comparan consecuencias, no hay confirmación contextual ni log específico de resolución. Revalidación al guardar es parcial; no hay rollback ni pruebas.
+ 
+### Criterios
+CA-F7-17/21/22 NO CUMPLE; CA-F7-18/19/20/23 PARCIAL.
+
+### Tareas ejecutables derivadas
+- TASK-526: integrar modal y rutas autenticadas.
+- TASK-527: agrupación de conflictos y generación de candidatos completos.
+- TASK-528: vista previa comparativa de solo lectura.
+- TASK-529: aplicar cambios sobre registros originales seleccionados.
+- TASK-530: atomicidad, rollback, idempotencia y bitácora de resolución.
+- TASK-531: regresión conductual para CA-F7-17..23.
+Todas Pendientes. No se crean IDs duplicados.
+
+### Límites
+Inspección estática/manual. No se ejecutaron navegador, Apps Script, HTTP/OAuth, Sheets/Drive productivas, concurrencia, cambios simultáneos, rollback ni E2E. Sin cambios de código o datos productivos.
