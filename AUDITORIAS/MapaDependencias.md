@@ -2172,3 +2172,23 @@ TASK-038 (Magic Bytes); TASK-134/TASK-144 (SHA-256/deduplicación/integridad); T
 - F5-008-A04/A05 para consulta y respuesta familiar a ofertas; esta cobertura no se duplica.
 ### Dictamen
 TAREA-F5-012 NO CUMPLE. Subtareas locales F5-012-A01..A08 pendientes. Hallazgos H1-H11 y matriz detallada en AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-012.md.
+
+
+## Fase 5 - Integración financiera de admisiones (TAREA-F5-013, C1.209)
+
+### Rutas y contratos inspeccionados
+- ACCOUNTING `getAdmissionFinancialStatus` (2339-2397) consulta `CargosEstudiante` y `ComprobantesPago` por solicitudId; no verifica relación familiar. ROLE_PERMISSIONS (198-210) permite la acción a Padre/Tutor/Responsable.
+- ACCOUNTING `createAdmissionCharge` (2398-2420, 2760-2780) permite monto/concepto/descuento del payload; usa columna UserId para solicitudId y columna FechaVencimiento para repetirlo; deduplicación no atómica. El permiso también se concede a roles familiares.
+- ACCOUNTING `uploadPaymentVoucher`/`reviewPaymentVoucher` (4100-4220) es genérico; la revisión cambia estado antes de registrar pago. `recordStudentPayment` (3891-3965) no es un flujo transaccional específico de admisión.
+- USER `submitJointFamilyPayment` (3700-3765) crea comprobante de pago conjunto para estudiantes; no acepta solicitudId. `submitFamilyScholarshipApplication` (3767-3810) escribe `BecasYDescuentosFamiliares`; ACCOUNTING aplica descuentos desde `SolicitudesDescuentoBeca`.
+- USER `getFamilyConsolidatedSummary` (3629-3705) agrega estudiantes vinculados, no aspirantes. UI `loadApplicantFinancialStatus` (js/student.js 340-390) muestra consulta individual; no hay formulario de pago/beca asociado al aspirante.
+- ACADEMIC `convertAdmissionToStudent` (2157-2382) crea expediente y matrícula/cargo inicial, pero no migra pagos, comprobantes ni becas de admisión.
+- `tests/regression/academic-grading-suite.js` y `modular-dashboard-suite.js` no contienen cobertura F5-013.
+### Dependencias existentes (sin duplicar)
+- TASK-001/F15-Task01: ampliar configuración/clasificación de conceptos con conceptos de admisión.
+- TASK-002/F15-Task02: ampliar atomicidad/idempotencia y convivencia de cargos de admisión y matrícula.
+- TASK-003/F15-Task03: ampliar reversión/regularización de pagos de admisión.
+- AUD-NG-036/AUD-NG-222 para vínculo/ABAC; AUD-NG-145 para trazabilidad financiera; AUD-NG-161 para pruebas.
+- Coordinar F5-012-A01/A02/A03/A07. No crear IDs globales duplicados.
+### Dictamen
+TAREA-F5-013 NO CUMPLE. Subtareas locales F5-013-A01..A10 pendientes. Hallazgos H1-H11 y matriz de 14 requisitos/8 criterios en AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-013.md.

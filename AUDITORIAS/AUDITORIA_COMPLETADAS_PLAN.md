@@ -1232,3 +1232,17 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Pruebas:** inspección estática/manual, lectura de blob y verificación árbol/historial. No se ejecutaron Apps Script, HTTP, Sheets/Drive productivos, navegador, cuentas reales, XSS dinámico ni suites.
 - **Archivos modificados:** informe F5-012, Auditoria.txt, MapaDependencias.md, este plan y Contexto_personal.txt. Sin cambios en código, pruebas, completadas.md, Pendientes.md, ChangesLogs.txt, metodología ni rama base.
 - **Siguiente tarea:** TAREA-F5-013 - integración de cobros, pagos y becas de admisión; comprobar informe individual/historial antes de iniciar.
+
+
+## C1.209 - TAREA-F5-013: integración de cobros, pagos y becas de admisión
+
+- **Estado administrativo:** completadas.md [X], 14 requisitos/8 criterios [x]; **dictamen técnico: NO CUMPLE**.
+- **Informe individual:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-013.md creado desde cero; la ruta no existía en la rama consultada y las búsquedas de contenido/historial no devolvieron informe.
+- **Hallazgos principales:** autorización de objeto ausente para consultas/cargos familiares; esquema de cargos sin SolicitudID/tipo de entidad y conceptos hardcodeados; idempotencia check-then-append; comprobantes/pagos no integrados con solicitud; estados/gate incompletos; becas familiares desconectadas del motor contable; conversión sin migración de historial; resumen familiar sin aspirantes; trazabilidad/contabilidad parcial; suites sin cobertura.
+- **Reconciliación:** ampliar TASK-001/F15-Task01, TASK-002/F15-Task02, TASK-003/F15-Task03, AUD-NG-036/145/161/222 y coordinar F5-012-A01/A02/A03/A07. Sin IDs globales duplicados.
+- **Pendientes.md:** blob íntegro SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c; 1.782.094 caracteres, 20.182 líneas, sin U+FFFD; 509 TASK y 184 AUD-NG únicos, último TASK-511/AUD-NG-231, sin F5-013 directo.
+- **Tareas locales:** F5-013-A01..A10, todas Pendientes. Detalle y criterios en el informe individual.
+- **Pruebas:** inspección estática/manual de backend, RBAC, dispatch, esquema, pagos, comprobantes, becas, conversión, UI y suites; lectura de blob y verificación de ramas. No ejecutados Apps Script, HTTP, Sheets/Drive productivos, navegador, comprobantes reales, concurrencia ni suites automatizadas.
+- **Archivos modificados:** informe F5-013 nuevo; Auditoria.txt; MapaDependencias.md; este plan; Contexto_personal.txt.
+- **Sin cambios:** backend/*; js/*; HTML; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; rama base.
+- **Siguiente tarea:** TAREA-F5-014 - trazabilidad de admisiones y notificaciones de auditoría; verificar primero informe individual e historial.

@@ -7343,3 +7343,29 @@ AUDITORÍA C1.208 - TAREA-F5-012 / SEGUIMIENTO DE ASPIRANTES EN PORTAL FAMILIAR
 - Sin modificar: backend/*, js/*, student-dashboard.html, tests/*, completadas.md, Pendientes.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, rama base.
 - Próxima tarea: TAREA-F5-013 - integración de cobros, pagos y becas de admisión. Verificar primero informe individual e historial.
 ================================================================
+
+
+================================================================
+TAREA-F5-013 - INTEGRACIÓN DE COBROS, PAGOS Y BECAS DE ADMISIÓN
+================================================================
+- Fuente: completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676; 14 requisitos/8 criterios, marcada [X]. Informe individual no encontrado en la ruta consultada ni en búsquedas de contenido/historial; creado desde cero.
+- Dictamen: NO CUMPLE.
+- H1 P0: ROLE_PERMISSIONS ACCOUNTING permite a Padre/Tutor/Responsable consultar cualquier solicitudId y crearAdmissionCharge; no hay autorización de objeto/relación familiar. Riesgo IDOR e integridad financiera.
+- H2 P0: createAdmissionCharge usa CargosEstudiante con esquema canónico UserId/FechaVencimiento; coloca solicitudId en ambas columnas sin SolicitudID/tipo de entidad; monto por defecto 500, sin configuración de conceptos, nivel, vencimiento ni exención.
+- H3 P0: deduplicación check-then-append sin LockService ni clave persistente atómica; el token opcional de caché del dispatcher no garantiza concurrencia ni idempotencia durable.
+- H4 P0: upload/review de comprobantes es genérico; no valida vínculo a solicitud ni opera transaccionalmente. submitJointFamilyPayment solo distribuye cargos de estudiantes matriculados y no acepta solicitudId.
+- H5 P1: getAdmissionFinancialStatus solo computa Pendiente/Vencido; no normaliza En_Revision/Exento/Anulado/Rechazado ni garantiza bloqueo por rechazo.
+- H6 P1: USER submitFamilyScholarshipApplication escribe BecasYDescuentosFamiliares; ACCOUNTING aplica desde SolicitudesDescuentoBeca. No hay enlace entre ambos ni aprobación de Dirección verificada.
+- H7 P1: convertAdmissionToStudent crea matrícula/cargo inicial, pero no migra cargos/pagos/comprobantes/becas de admisión.
+- H8 P1: getFamilyConsolidatedSummary solo incluye estudiantes; UI de aspirantes consulta un estado individual, sin desglose consolidado de solicitantes.
+- H9 P1: logStructuredEvent parcial; no se acredita asiento contable de admisión ni ciclo transaccional/correlationId; revisión de comprobante cambia estado antes de registrar pago.
+- H10 P1: suites academic-grading-suite.js y modular-dashboard-suite.js sin casos F5-013.
+- H11 P2: origen documental citado por la tarea no recuperado; ChangesLogs no sustituye informe de auditoría.
+- Pendientes.md blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c: 1.782.094 caracteres, 20.182 líneas, sin U+FFFD; 509 TASK y 184 AUD-NG únicos; último TASK-511/AUD-NG-231; sin entrada directa F5-013.
+- Tareas locales F5-013-A01..A10: autorización por solicitud; esquema/configuración de conceptos; idempotencia atómica; comprobantes y revisión; estados/gate; becas/exenciones; migración; resumen familiar/UI; trazabilidad/contabilidad; pruebas. Todas Pendientes.
+- Reconciliar/ampliar TASK-001/F15-Task01, TASK-002/F15-Task02, TASK-003/F15-Task03, AUD-NG-036/145/161/222 y F5-012-A01/A02/A03/A07. No duplicar IDs globales.
+- Evidencia: ACCOUNTING Code.gs SHA 38b979d41596b85e888b4a7060b37bbac0840a28; USER Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ACADEMIC Code.gs SHA df87a2eea9f0ef79d0b966d03fd5bbe432003df5; js/student.js SHA e2888cea60322e49a40b89adadb8010489605dcc; student-dashboard.html SHA 6379ea0ed39d71b89747a0280bb925fdf12202c1; config.js SHA 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc; suites SHA a22cb3ef376fe09e65c1b17c2f4f5125290bfba6 y 0495e1d526a872c33310935a003a83d924d34683.
+- Pruebas: inspección manual/estática de funciones, esquemas, dispatch, RBAC, UI, conversión, hojas y suites; lectura del blob completo; verificación HEAD/base. No ejecutados Apps Script, HTTP, Sheets/Drive productivos, navegador, comprobantes reales, concurrencia ni suites.
+- Sin cambios en código, pruebas, completadas.md, Pendientes.md, ChangesLogs.txt, metodología o rama base.
+- Próxima tarea: TAREA-F5-014 - trazabilidad de admisiones y notificaciones de auditoría; verificar informe individual e historial antes de auditar.
+================================================================
