@@ -7603,3 +7603,68 @@ ARCHIVOS DOCUMENTALES DE LA ITERACIÓN:
 SIGUIENTE TAREA:
 TAREA-F5-020 — optimizar consultas, sincronización y capacidad de respuesta del proceso de admisión. Verificar informe e historial antes de auditar paginación, caché, invalidación, concurrencia, rate limiting, límites y pruebas.
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-07
+CHECKPOINT C1.217 — TAREA-F5-020: OPTIMIZACIÓN DE CONSULTAS, SINCRONIZACIÓN Y CAPACIDAD DE RESPUESTA DE ADMISIONES
+SESIÓN: IMA-AUDIT-20261107-1900Z
+REPOSITORIO: i-miss-cocaine/IMA
+RAMA: NG_beta_0.0.0.1_work
+HEAD DE PARTIDA: a858781cb4e2ee2e32e7e2d294a9c49473b68f28
+ÁRBOL DE PARTIDA: e94ffec04ed7743dc515498e5d8adefdf3fa407c
+RAMA BASE: NG_beta_0.0.0.1
+HEAD BASE: 44d9891132332e692dbe2ba8602b41f50a508a59
+DIVERGENCIA PREVIA: 284 ahead / 0 behind
+DICTAMEN: NO CUMPLE
+
+FUENTES:
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, líneas 2438-2465; TAREA-F5-020 [X], siete requisitos/cinco criterios [x].
+- ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff, líneas 1934-1941; declara paginación, caché de ofertas e invalidación parcial.
+- Informe individual AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-020.md ausente en árbol e historial; creado desde cero.
+- La tarea cita AUDITORIA_FASE_5_ADMISIONES_PORTAL_FAMILIAS.md, ausente del árbol actual. No se localizó bloque primario HALLAZGOS-F5-P3-01 en Auditoria.txt; la aparición literal está dentro de la nota de C1.216 que indica que el marcador original no fue localizado.
+- Metodología SHA cf796728bb384a32537392df2f9c72a339fa03ee y README SHA 2f649c6ffc39ec7cdd242e85cb71b4344fd69e34: Pendientes.md está fuera del flujo operativo y no se consulta/modifica.
+
+RESPALDOS:
+- ACADEMIC Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5.
+- USER Code.gs 12079dd410aa6d8afbce55a4bc62a79dea605f9f.
+- js/api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9.
+- js/secretary.js 08a81266957b4c18cc25f8ba6749eac30a8f2c2c.
+- js/student.js e2888cea60322e49a40b89adadb8010489605dcc.
+- tests academic-grading-suite.js a22cb3ef376fe09e65c1b17c2f4f5125290bfba6; modular-dashboard-suite.js 0495e1d526a872c33310935a003a83d924d34683.
+
+HALLAZGOS:
+1. H1 ALTO/P1: js/secretary.js llama getAdmissionRequests con {}. El backend pagina solo si page está definido y fetchAll no es true; el flujo real devuelve todas las solicitudes y filtra localmente.
+2. H2 ALTO/P1: getAdmissionRequests lee getDataRange completo y filtra antes del slice; page/pageSize no tienen validación de rango ni máximo.
+3. H3 MEDIO/P2: getAcademicOffers es el único catálogo de F5-020 con caché 600s demostrado; no se implementa caché equivalente para grados/requisitos. manageInstitutionalDataCache reporta CATALOGS_TTL=43200s y FLUSH_GLOBAL solo registra evento.
+4. H4 ALTO/P1: createAcademicOffer invalida solo clave exacta y global, no todas las combinaciones filtradas. updateAdmissionStatus y revokeFamilyLink no llaman invalidación. purgeSecurityCaches solo purga claves de seguridad, no offers_v2.
+5. H5 MEDIO/P2: Promise.all en student.js 184-215 sí cumple paralelismo de dos llamadas; getGuardianStudents lee completas ExpedientesEstudiantes/Usuarios/RelacionesFamiliares y getGuardianApplicants Usuarios/SolicitudesAdmision, sin paginación/caché. El objetivo 1.5s no se acredita.
+6. H6 ALTO/P1: ACADEMIC doPost 671-700 y USER doPost 1351-1375 parsean el cuerpo sin límite de tamaño ni rate limiting de aplicación; fetchApi tampoco limita el payload.
+7. H7 MEDIO/P2: solo getAdmissionRequests registra advertencia >2000ms; endpoints familiares no se instrumentan. fetchApi fija timeout 60s e ignora options.timeout.
+8. H8 ALTO/P1: no hay suite conductual F5-020 ni pruebas de estrés/integridad; la única comprobación relacionada con caché en academic-grading-suite es textual.
+
+TAREAS LOCALES:
+- F5-020-A01 conectar paginación con UI de Secretaría.
+- F5-020-A02 optimizar y acotar lecturas paginadas y familiares.
+- F5-020-A03 completar caché de catálogos y corregir gestor de políticas.
+- F5-020-A04 centralizar invalidación ante mutaciones.
+- F5-020-A05 límites de payload y rate limiting.
+- F5-020-A06 observabilidad de latencia y timeout configurable.
+- F5-020-A07 pruebas conductuales y de estrés.
+Todas Pendientes; no se implementaron.
+
+PRUEBAS:
+- Ejecutadas: inspección manual de requisitos, backend, UI, fetchApi, cachés, invalidaciones, doPost, portal familiar, suites, árbol/historial y SHAs.
+- No ejecutadas: Apps Script, HTTP, datos productivos, benchmarks, percentiles, estrés, concurrencia, rate limiting, payloads máximos ni suites automatizadas.
+- Código, pruebas, completadas.md y ChangesLogs.txt sin modificaciones.
+
+ARCHIVOS DOCUMENTALES DE LA ITERACIÓN:
+- AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-020.md (nuevo).
+- AUDITORIAS/Auditoria.txt.
+- AUDITORIAS/MapaDependencias.md.
+- AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md.
+- AUDITORIAS/Contexto_personal.txt.
+
+SIGUIENTE TAREA:
+TAREA-F5-021. Verificar entrada en completadas.md, informe individual e historial de ruta, y ChangesLogs.txt antes de definir alcance.
+===============================================================================

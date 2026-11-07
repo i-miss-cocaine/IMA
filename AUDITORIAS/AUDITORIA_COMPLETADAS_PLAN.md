@@ -1363,3 +1363,20 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Archivos documentales:** informe F5-019 nuevo; Auditoria.txt; MapaDependencias.md; AUDITORIA_COMPLETADAS_PLAN.md; Contexto_personal.txt.
 - **Sin cambios:** backend/*; js/*; HTML; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; AUDITORIAS/README.md; rama base.
 - **Siguiente tarea:** TAREA-F5-020 - optimizar consultas, sincronización y capacidad de respuesta del proceso de admisión; verificar primero informe e historial, después paginación, caché, invalidación, concurrencia, rate limiting, límites y pruebas.
+
+
+## C1.217 — TAREA-F5-020: optimización de consultas, sincronización y capacidad de respuesta
+
+- **Sesión:** IMA-AUDIT-20261107-1900Z; inicio C1.216; cierre C1.217.
+- **Rama:** NG_beta_0.0.0.1_work; HEAD de partida a858781cb4e2ee2e32e7e2d294a9c49473b68f28; árbol e94ffec04ed7743dc515498e5d8adefdf3fa407c. Base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59; 284 ahead/0 behind.
+- **Fuente administrativa:** completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, líneas 2438-2465; siete requisitos/cinco criterios [x], estado [X]. ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff, líneas 1934-1941.
+- **Informe individual:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-020.md ausente en árbol e historial; creado desde cero.
+- **Origen citado:** AUDITORIA_FASE_5_ADMISIONES_PORTAL_FAMILIAS.md no está en árbol; no se localizó bloque primario HALLAZGOS-F5-P3-01 en Auditoria.txt. El identificador aparece en una nota anterior que informa su ausencia.
+- **Dictamen:** NO CUMPLE. H1-H8: Secretaría no solicita page/pageSize y recibe todo; backend lee toda la hoja antes de paginar y no valida límites; caché solo ofertas y gestor declara TTL 12h/FLUSH_GLOBAL ficticio; invalidación parcial y desconectada de updateAdmissionStatus/revokeFamilyLink; portal familiar lee hojas completas aunque usa Promise.all; ausencia de límites de payload/rate limiting; monitoreo parcial y timeout configurable ignorado; no hay pruebas de estrés conductuales.
+- **Tareas locales:** F5-020-A01..A07, todas Pendientes; detalle y criterios en informe individual.
+- **Archivos inspeccionados/SHA:** ACADEMIC Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5; USER Code.gs 12079dd410aa6d8afbce55a4bc62a79dea605f9f; js/api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; js/secretary.js 08a81266957b4c18cc25f8ba6749eac30a8f2c2c; js/student.js e2888cea60322e49a40b89adadb8010489605dcc; suites a22cb3ef376fe09e65c1b17c2f4f5125290bfba6 / 0495e1d526a872c33310935a003a83d924d34683.
+- **Pruebas ejecutadas:** inspección manual de handlers, paginación, cache keys/TTL, invalidación, rutas de mutación, endpoints familiares, fetchApi, consumidores, doPost y suites; verificación de árbol, historial y SHA.
+- **No ejecutadas:** Apps Script, HTTP, Sheets productivo, benchmarks/percentiles, estrés, concurrencia, payload límite, rate limiting ni suites automatizadas.
+- **Sin cambios:** código, tests, completadas.md, ChangesLogs.txt, metodología, README y rama base.
+- **Archivos documentales:** informe F5-020 nuevo; Auditoria.txt; MapaDependencias.md; AUDITORIA_COMPLETADAS_PLAN.md; Contexto_personal.txt.
+- **Siguiente tarea:** TAREA-F5-021; verificar su entrada en completadas.md, informe individual e historial y ChangesLogs.txt antes de definir alcance.

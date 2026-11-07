@@ -7215,3 +7215,31 @@ CHECKPOINT C1.216 - AUDITORÍA TAREA-F5-019
 - Última tarea completamente auditada: TAREA-F5-019. Tarea en curso: ninguna al cierre. Siguiente tarea exacta: TAREA-F5-020 - optimizar consultas, sincronización y capacidad de respuesta del proceso de admisión.
 - Próxima acción concreta: verificar HEAD tras publicar C1.216 y que NG_beta_0.0.0.1 siga en 44d9891132332e692dbe2ba8602b41f50a508a59; luego comprobar informe/historial de F5-020 y auditar paginación, caché, invalidación, concurrencia, rate limiting, límites y pruebas.
 ======================================================================
+
+
+======================================================================
+CHECKPOINT C1.217 - AUDITORÍA TAREA-F5-020
+======================================================================
+- Sesión operativa: IMA-AUDIT-20261107-1900Z; checkpoint inicial C1.216; checkpoint de cierre C1.217; fecha 2026-11-07. Identificador operativo, no ID nativo de ChatGPT.
+- Repositorio: i-miss-cocaine/IMA.
+- Archivo de contexto exacto: AUDITORIAS/Contexto_personal.txt (append-only; no crear archivo alternativo ni cambiar extensión).
+- Rama de trabajo: NG_beta_0.0.0.1_work. Rama base protegida: NG_beta_0.0.0.1.
+- HEAD de partida verificado: a858781cb4e2ee2e32e7e2d294a9c49473b68f28; árbol e94ffec04ed7743dc515498e5d8adefdf3fa407c.
+- HEAD de rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59. Comparación: 284 commits adelante y 0 detrás. La rama base no se modifica.
+- Último checkpoint válido de inicio: C1.216, cierre de TAREA-F5-019. Tarea en curso en esta sesión: TAREA-F5-020. Checkpoint de cierre: C1.217.
+- Tarea auditada: TAREA-F5-020 - Optimizar las consultas, la sincronización y la capacidad de respuesta del proceso de admisión. Marcada [X] en completadas.md; cinco criterios [x].
+- Informe individual AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-020.md: ausente en árbol e historial de NG_beta_0.0.0.1_work; creado desde cero.
+- Dictamen: NO CUMPLE. H1-H8: UI de Secretaría no envía page/pageSize y recibe todo; backend lee rango completo antes de slice y no valida tamaño de página; caché solo getAcademicOffers 600s y no otros catálogos; manageInstitutionalDataCache declara 12h y FLUSH_GLOBAL solo registra; invalidación de createAcademicOffer parcial y no se llama desde updateAdmissionStatus/revokeFamilyLink; portal familiar lee hojas completas aunque Promise.all sí está presente; doPost no limita payload ni frecuencia; monitoreo >2s solo getAdmissionRequests y fetchApi ignora options.timeout; no hay pruebas de estrés/integridad.
+- Tareas locales F5-020-A01..A07, todas Pendientes. No se implementó ninguna.
+- Fuente: completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, líneas 2438-2465; ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff, líneas 1934-1941.
+- Informe de fase citado AUDITORIA_FASE_5_ADMISIONES_PORTAL_FAMILIAS.md no está en árbol. No se localizó bloque original HALLAZGOS-F5-P3-01 en Auditoria.txt; la coincidencia literal está en una nota posterior que declara que no fue localizado.
+- Pendientes.md no se consultó ni modificó conforme a METODOLOGIA_DESARROLLO.md y AUDITORIAS/README.md vigentes.
+- Evidencia SHA: ACADEMIC Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5; USER Code.gs 12079dd410aa6d8afbce55a4bc62a79dea605f9f; api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; secretary.js 08a81266957b4c18cc25f8ba6749eac30a8f2c2c; student.js e2888cea60322e49a40b89adadb8010489605dcc; academic-grading-suite.js a22cb3ef376fe09e65c1b17c2f4f5125290bfba6; modular-dashboard-suite.js 0495e1d526a872c33310935a003a83d924d34683.
+- Pruebas ejecutadas: inspección manual de requisitos, paginación, consumidores, cache keys/TTL, invalidación, cambios de estado, revocación, portal familiar, doPost, fetchApi, timeout, suites, árbol e historial.
+- Pruebas no ejecutadas: Apps Script runtime, HTTP, Sheets productivo, benchmarks, percentiles, estrés, concurrencia, payloads excesivos, rate limiting ni suites automatizadas.
+- Archivos documentales modificados: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-020.md (nuevo); AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- Archivos no modificados: backend/academic-service/Code.gs; backend/user-service/Code.gs; js/api.js; js/secretary.js; js/student.js; tests/*; completadas.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; AUDITORIAS/README.md; rama base.
+- Proceso: auditoría/documentación exclusivamente; no se implementó código. Un único commit consolidado contiene este checkpoint y los otros cuatro documentos; su SHA se confirma externamente tras publicar y no se autorreferencia.
+- Última tarea completamente auditada: TAREA-F5-020. Tarea en curso: ninguna al cierre. Siguiente tarea exacta: TAREA-F5-021.
+- Próxima acción concreta: verificar que NG_beta_0.0.0.1_work contiene el commit C1.217 y que la base permanece en 44d9891132332e692dbe2ba8602b41f50a508a59; luego leer la entrada F5-021 de completadas.md, buscar informe individual e historial de ruta y contrastar ChangesLogs.txt antes de iniciar su auditoría.
+======================================================================

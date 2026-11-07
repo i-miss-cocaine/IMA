@@ -2399,3 +2399,31 @@ TAREA-F5-017 NO CUMPLE. La búsqueda, panel y decisiones manuales existen parcia
 - tests/regression/academic-grading-suite.js y modular-dashboard-suite.js no contienen F5-019/getAdmissionAnalyticsReport. Ampliar AUD-NG-161.
 - Dependencias: createAdmissionRequest, updateAdmissionStatus, getAdmissionRequests, getStudentDocuments, getAdmissionInterviews, SolicitudesAdmision, fetchApi, verifySessionToken, ROLE_PERMISSIONS.
 - Dictamen: NO CUMPLE. Informe individual: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-019.md. Tareas locales F5-019-A01..A07; reconciliar AUD-NG-001, AUD-NG-235, AUD-NG-145, TASK-237, AUD-NG-161 y TAREA-F5-020. No crear IDs globales duplicados.
+
+
+## C1.217 — TAREA-F5-020: optimización de consultas, sincronización y capacidad de respuesta
+
+### Admisiones: lectura y paginación
+- ACADEMIC getAdmissionRequests (Code.gs SHA df87a2eea9f0ef79d0b966d03fd5bbe432003df5, líneas 1113-1175): desestructura estado/anolectivo/grado/solicitudId/page/pageSize/fetchAll; ejecuta getOrCreateSheet("SolicitudesAdmision").getDataRange().getValues().slice(1); filtra toda la colección; aplica slice solo si !fetchAll y page !== undefined; no valida page/pageSize ni limita pageSize.
+- SECRETARY js/secretary.js (SHA 08a81266957b4c18cc25f8ba6749eac30a8f2c2c, líneas 8-25): loadAdmissionRequestsList llama fetchApi('ACADEMIC','getAdmissionRequests',{}) sin page/pageSize; conserva todas las solicitudes en window.allAdmissionRequests y filtra localmente.
+- ACADEMIC updateAdmissionStatus (Code.gs:1928-2050): LockService, valida transiciones, actualiza EstadoSolicitud y Observaciones, registra historial y notificación; no llama invalidación de caché.
+
+### Catálogo y caché
+- ACADEMIC getAcademicOffers (Code.gs:6132-6177): CacheService ScriptCache con clave offers_v2_{anoId}_{grado}_{seccion}, TTL 600s; si hay cache devuelve _cached:true; al crear se invalida clave exacta y global, además de legacy keys.
+- createAcademicOffer (Code.gs:6180-6218): agrega fila OfertaAcademica y elimina solo clave de filtro exacta y clave global. No invalida combinaciones parciales de filtros (año sin grado, año+grado sin sección, etc.).
+- ACADEMIC purgeSecurityCaches (Code.gs:3702-3745): elimina user_role_, acct_state_, delegations_, perm_matrix_, dynamic_perms_ y revoked_session_; no elimina offers_v2 ni claves de catálogo.
+- USER manageInstitutionalDataCache (Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f, líneas 146-185): INVALIDATE_USER llama invalidateUserRoleCache; FLUSH_GLOBAL solo registra CACHE_FLUSHED y devuelve success; cachePolicies declara CATALOGS_TTL 43200s (12h), FINANCIAL_TTL 0s. No es gestor funcional de caché de catálogos con TTL de 10 minutos.
+
+### Portal familiar y seguridad de entrada
+- USER getGuardianStudents (Code.gs:3480-3580): lee getDataRange de ExpedientesEstudiantes, Usuarios y RelacionesFamiliares y filtra/mapea en memoria.
+- USER getGuardianApplicants (Code.gs:3583-3627): lee Usuarios y SolicitudesAdmision completos antes de filtrar por responsable.
+- USER revokeFamilyLink (Code.gs:3442-3462): actualiza estado y observaciones y registra evento; no llama purgeSecurityCaches.
+- student.js (SHA e2888cea60322e49a40b89adadb8010489605dcc, líneas 184-215): Promise.all para getGuardianStudents y getGuardianApplicants; el paralelismo existe, pero no reduce las lecturas completas del backend.
+- ACADEMIC doPost (Code.gs:671-700) y USER doPost (Code.gs:1351-1375): comprueban cuerpo presente y parsean JSON; no aplican máximo de bytes ni rate limiting de aplicación antes del despacho.
+- js/api.js (SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9, líneas 11-190): timeout fijo 60.000 ms; no consume options.timeout aunque checkMicroserviceHealth lo proporciona.
+
+### Observabilidad y pruebas
+- ACADEMIC getAdmissionRequests registra LATENCY_THRESHOLD_EXCEEDED si duración >2.000 ms. No se observó instrumentación equivalente para USER/getGuardianStudents o USER/getGuardianApplicants.
+- tests/regression/academic-grading-suite.js (SHA a22cb3ef376fe09e65c1b17c2f4f5125290bfba6) incluye assert textual de offers_v2_ y cache.remove, no prueba comportamiento; modular-dashboard-suite.js (SHA 0495e1d526a872c33310935a003a83d924d34683) no tiene F5-020.
+- Dictamen: NO CUMPLE. Informe: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-020.md. Tareas locales F5-020-A01..A07; sin IDs globales duplicados.
+- Dependencias: SolicitudesAdmision, OfertaAcademica, ExpedientesEstudiantes, Usuarios, RelacionesFamiliares, CacheService, LockService, logStructuredEvent, fetchApi, loadAdmissionRequestsList, initFamilyStudentSwitcher, getAdmissionRequests, getAcademicOffers, updateAdmissionStatus, revokeFamilyLink y purgeSecurityCaches.
