@@ -2848,3 +2848,39 @@ Inspección estática/manual. No se ejecutaron Apps Script runtime, HTTP, trigge
 - No se encontraron archivos dedicados a seguridad/auth/permissions/IDOR en tests.
 - Registros ampliados: AUD-NG-001, AUD-NG-002, AUD-NG-086, AUD-NG-145, AUD-NG-221/TASK-501, AUD-NG-222/TASK-502 y AUD-NG-225/TASK-505.
 - Tareas canónicas: F6-012-A01..A07; F6-037 amplía los mismos IDs con CA-113..CA-120 y CA-161..CA-165. Ver informe F6-012.
+
+
+## Versionado, migraciones y rollback - auditoría C1.230 (2026-11-07)
+
+**Tareas:** F6-013 y ampliación F6-038. **Dictamen:** NO CUMPLE. **HEAD inspeccionado:** 27ad5d7e6f6b1f3c8bcf774cb6c93a7eea5fc2c9. **Sesión:** IMA-AUDIT-20261107-2111Z-01.
+
+### Plano de control DEVELOPER
+- ROLE_PERMISSIONS/doPost:23-207 expone acciones getServiceVersionChangelog, executeServiceVersionRollback y migrateSpreadsheetSchema, pero su presencia en dispatcher no demuestra su operación.
+- recordProvisioningHistory:1286-1302 genera un objeto de historial en memoria; no persiste.
+- provisionRoleSpreadsheet:1304-1348 genera un ID sintético 1SP_* y no crea un Spreadsheet real.
+- migrateSpreadsheetSchema:1430-1474 solo inserta hojas inexistentes; no valida versión/headers, no lleva ledger, omite error de openById y puede devolver success sin cambios.
+- validateMonolithDecompositionContracts:1799-1885 acepta contratos aportados en payload.
+- validateStagedMigrationProgress:1967-2037 declara rollbackProcedureReady=true sin comprobarlo y marca etapas por respuestas superficiales.
+- runModularAndDynamicDashboardsRegressionSuite:2040-2114 y runFullArchitectureIntegrationAndPerformanceSuite:2132-2206 no despliegan servicios ni prueban migraciones/rollback reales.
+- getCentralConfigAndContractCatalog:2262-2285 solo lista acciones y asigna v8.4.0 estático a todos.
+- validateServiceConfigDependencies:2286-2305 fuerza PASS mediante expresiones Boolean(... || true).
+- getServiceVersionChangelog:2308-2322 devuelve v8.4.0/v2.1 y v8.3.0/v2.0 para cualquier serviceId.
+- executeServiceVersionRollback:2325-2350 solo valida campos y confirmación; devuelve codeRestored/schemaRestored/dataIntegrityVerified=true sin ejecutar restauración.
+- getCentralServiceRegistry:2415-2477 devuelve defaults v8.4.0/Activo y fallback success; registerServiceInstance:2479-2527 acepta endpoint vacío, Spreadsheet compartido y wildcard; updateServiceStatus:2531-2585 solo registra cambio de estado.
+
+### Servicios y datos
+- Versiones de cabecera: USER Code.gs:1-4 v8.2.0; ACADEMIC:1-4 v8.4.0; ACCOUNTING:1-4 v8.0.0; DEVELOPER:1-4 v8.4.0; TASK/EXAM sin versión declarada. Los doGet de servicios no exponen versión de código/esquema/configuración.
+- js/config.js:213-242 contiene instrucciones manuales y SERVICE_URLS; 245-315 declara todos los servicios v8.4.0/ACTIVE con recursos ficticios. js/api.js:11-48 resuelve por SERVICE_URLS y no hace handshake de versión.
+- ACADEMIC deployAcademicMicroserviceInstance:4494-4560 solo guarda metadatos; scriptId/driveFolderId opcionales, Spreadsheet compartido, PASS y Activo constantes. getAcademicMicroserviceDeployments:4650-4680 solo lee el registro.
+- ACADEMIC executeCurricularMigration:3130-3165 no usa equivalenciasMap ni modifica datos; devuelve success en modo real con modificacionesEfectuadas=0.
+- ACADEMIC reconcileRestoredDataIntegrity:12463-12512 solo revisa CalificacionesEstudiantes e HistorialAcademico, fija reconciliacionCompletada=true y no se invoca desde restoreSystemBackup. verifyBackupIntegrity:12347-12395 acepta cualquier checksum no vacío. F6-011-A01/A04 ya cubren el arreglo del checksum y la reconciliación referencial; se mantienen como dependencias de rollback/migración.
+- ACADEMIC validateApiContractsTestSuite:3915-3958 solo prueba cuatro acciones locales y cuenta status:error como PASS.
+- ACCOUNTING evaluateTransactionalStorageMigrationNeed:10304-10350 solo recomienda migración según métricas; no ejecuta migración.
+- developer-dashboard.html y js/developer.js no contienen UI/handlers de changelog, versionado, migración ni rollback.
+
+### Dependencias, documentos y pruebas
+- docs/architecture/staged-migration-procedure.md SHA 2b46af3095596fcd7a9744e4cc500b50b38a34f0 describe un procedimiento manual que llama al rollback, no una implementación ejecutable.
+- docs/architecture/spreadsheets-schema.md SHA 0c8d5c4c2976d4b64949c693e66395896ce16246 está fechado 2025-05-24 y documenta estructuras, no migraciones/versiones operativas.
+- manifest.json SHA 0caa5febfbd7fdbb88e9d174fa6623fb7daebb4e es PWA. No hay appsscript.json, .clasp.json ni workflows CI/CD en el árbol.
+- tests/regression contiene solo academic-grading-suite.js SHA a22cb3ef376fe09e65c1b17c2f4f5125290bfba6 y modular-dashboard-suite.js SHA 0495e1d526a872c33310935a003a83d924d34683; no cubren F6-013/F6-038.
+- Se amplían AUD-NG-011/077/078/081/174. Las tareas locales canónicas F6-013-A01..A07 están en el informe F6-013; F6-038 las referencia y amplía criterios.

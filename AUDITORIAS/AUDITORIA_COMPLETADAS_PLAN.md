@@ -1593,3 +1593,20 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **Archivos actualizados:** Auditoria.txt; MapaDependencias.md; AUDITORIA_COMPLETADAS_PLAN.md; Contexto_personal.txt.
 - **Archivos sin cambios:** backend, js, HTML, tests, completadas.md, Pendientes.md, ChangesLogs.txt, metodología, README y rama base.
 - **Siguiente tarea:** TAREA-F6-013 y TAREA-F6-038, despliegues versionados, migraciones y reversión controlada.
+
+
+## C1.230 - Resultado de auditoría TAREA-F6-013 y TAREA-F6-038
+
+- **Sesión:** IMA-AUDIT-20261107-2111Z-01; checkpoint inicial C1.229.
+- **Dictamen:** NO CUMPLE en ambas; las marcas [X] de completadas.md se conservan como histórico.
+- **Relación:** F6-038 amplía F6-013 con CA-121..CA-128 y CA-166..CA-167; un bloque canónico F6-013-A01..A07.
+- **Evidencia crítica:** versiones de servicio divergentes/no expuestas; changelog y catálogo estáticos; migración puede informar success sin abrir el Spreadsheet y no tiene ledger; rollback devuelve flags sin restaurar; deployAcademicMicroserviceInstance solo registra metadatos y marca PASS/Activo; pruebas no verifican despliegue ni migración; migrador curricular no aplica equivalencias ni modifica datos; reconcileRestoredDataIntegrity solo examina dos hojas y no se invoca desde restoreSystemBackup; verifyBackupIntegrity acepta checksum no coincidente si no está vacío; no existe auditoría de impacto previa.
+- **Fuentes:** completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676 líneas 2856-2880 y 3774-3798; ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff líneas 2002-2005 y 2185-2189.
+- **Pendientes.md:** lectura ordinaria 0 caracteres; blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c recuperado y validado (1.803.672 bytes, 1.782.094 caracteres, 20.182 líneas, sin U+FFFD); no contiene F6-013/F6-038. Sin modificación.
+- **Registros existentes ampliados:** AUD-NG-011, AUD-NG-077, AUD-NG-078, AUD-NG-081 y AUD-NG-174. No se crean IDs globales duplicados.
+- **Tareas canónicas:** F6-013-A01..A07 pendientes; F6-038 amplía los mismos IDs.
+- **Pruebas:** inspección manual de funciones, versiones, catálogo, migración, rollback, deployment, contratos, suites, dashboard y documentos; no se ejecutaron Apps Script, OAuth, HTTP, despliegues, migraciones, rollback, concurrencia, Drive/Sheets productivas ni E2E.
+- **Informes nuevos:** F6-013 y F6-038.
+- **Archivos actualizados:** Auditoria.txt; MapaDependencias.md; AUDITORIA_COMPLETADAS_PLAN.md; Contexto_personal.txt.
+- **Archivos sin cambios:** backend, js, HTML, tests, completadas.md, Pendientes.md, ChangesLogs.txt, metodología, README, manifest.json y rama base.
+- **Siguiente tarea:** TAREA-F6-014 y TAREA-F6-039, centralización de configuración y dependencias sin centralizar todos los datos.

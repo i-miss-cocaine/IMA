@@ -8317,3 +8317,53 @@ INFORMES NORMALIZADOS: F6-030, F6-031, F6-032, F6-033, F6-034, F6-035 y F6-036.
 ARCHIVOS ACTUALIZADOS: Auditoria.txt; MapaDependencias.md; AUDITORIA_COMPLETADAS_PLAN.md; Contexto_personal.txt.
 SIN CAMBIOS: backend, js, HTML, tests, completadas.md, Pendientes.md, ChangesLogs.txt, metodología, README y rama base.
 ===============================================================================
+
+
+===============================================================================
+AUDITORÍA C1.230 - TAREA-F6-013 Y TAREA-F6-038 - 2026-11-07
+Sesión: IMA-AUDIT-20261107-2111Z-01
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: 27ad5d7e6f6b1f3c8bcf774cb6c93a7eea5fc2c9
+Checkpoint inicial: C1.229
+Dictamen: NO CUMPLE en ambas tareas. Las marcas [X] de completadas.md se preservan como histórico.
+
+FUENTES Y ESTADO:
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676: F6-013 líneas 2856-2880; F6-038 líneas 3774-3798.
+- ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff: F6-013 líneas 2002-2005; F6-038 líneas 2185-2189. El registro declara versionado/rollback verificados, pero el código no ejecuta esas operaciones.
+- Pendientes.md lectura ordinaria: 0 caracteres. Blob de la rama de trabajo SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c recuperado: 1.803.672 bytes, 1.782.094 caracteres, 20.182 líneas, 0 U+FFFD. F6-013/F6-038 no aparecen. No se modificó.
+- Informes individuales F6-013/F6-038 ausentes en árbol e historial de la rama; se crean.
+- F6-038 amplía F6-013; se comparte un bloque canónico F6-013-A01..A07.
+- Dependencias existentes: F6-007-A01/A02/A05/A06; AUD-NG-011/077/078/081/174. No se crean IDs globales duplicados.
+
+HALLAZGOS:
+- H1 CRÍTICO/P0: no existe versión efectiva por servicio para código/esquema/configuración. USER v8.2.0, ACADEMIC v8.4.0, ACCOUNTING v8.0.0, DEVELOPER v8.4.0; TASK/EXAM sin versión. Registry y catálogo declaran v8.4.0 para todos. doGet no expone versión.
+- H2 ALTO/P1: getServiceVersionChangelog devuelve versiones fijas y no consulta serviceId/deployment; el catálogo de contratos no define schemas ni compatibilidad por operación.
+- H3 CRÍTICO/P0: migrateSpreadsheetSchema solo inserta hojas inexistentes; absorbe fallo de apertura y puede devolver success; no valida esquema, ledger, versión origen/destino ni datos. recordProvisioningHistory no persiste.
+- H4 CRÍTICO/P0: executeServiceVersionRollback no restaura código/esquema/datos; solo devuelve flags true tras validar texto de confirmación. rollbackProcedureReady es constante true.
+- H5 CRÍTICO/P0: deployAcademicMicroserviceInstance solo escribe metadatos, acepta scriptId/Drive vacíos, usa Spreadsheet compartido, fija PASS/Activo y no crea deployment. registerServiceInstance admite endpoint vacío y wildcard.
+- H6 ALTO/P1: validateServiceConfigDependencies siempre PASS; staged migration y suites aceptan catálogos/diagnósticos superficiales; validateApiContractsTestSuite cuenta status:error como PASS.
+- H7 CRÍTICO/P0: executeCurricularMigration ignora equivalenciasMap, no modifica datos y devuelve success en modo real. reconcileRestoredDataIntegrity solo inspecciona CalificacionesEstudiantes e HistorialAcademico, deja reconciliacionCompletada=true y no se invoca desde restoreSystemBackup; verifyBackupIntegrity acepta cualquier checksum no vacío. Los defectos de checksum/reconciliación ya están en F6-011-A01/A04 y se amplían como dependencia del rollback, sin duplicar tareas. No se preservan roles ni referencias entre servicios.
+- H8 ALTO/P1: no hay auditoría de impacto predespliegue, handshake de versión, UI de changelog/rollback ni pipeline CI/CD/manifest Apps Script.
+
+REGISTROS EXISTENTES AMPLIADOS:
+- AUD-NG-011: despliegue/aislamiento real por servicio.
+- AUD-NG-077: schemaVersion, compatibilidad, disponibilidad e historial de fuentes.
+- AUD-NG-078: proyecto/deployment, versión de contrato y metadatos verificados.
+- AUD-NG-081: pruebas funcionales aisladas y multicuenta.
+- AUD-NG-174: contrato API versionado, compatibilidad y errores.
+No se crean IDs AUD-NG duplicados.
+
+TAREAS CANÓNICAS:
+F6-013-A01..A07, todas Pendientes: registro de versiones de código/esquema/configuración; contratos API versionados; motor de migración de esquema idempotente; migración de datos y preservación referencial; auditoría de impacto previa; rollback real; despliegue aislado y pruebas post-despliegue. F6-038 amplía estos mismos IDs con CA-121..CA-128 y CA-166..CA-167, sin duplicarlos. Los informes especifican alcance y aceptación.
+
+PRUEBAS:
+- Ejecutadas: inspección manual de los bloques y funciones citados; comparación de versiones en backend/config/registry; revisión de migración, rollback, despliegue, contratos, suites, dashboard, documentos, árbol, SHAs e historial.
+- No ejecutadas: Apps Script runtime/API, OAuth, despliegues, HTTP, navegador, cambios de esquema, migraciones, snapshots, rollback, concurrencia, Drive/Sheets productivas ni suites E2E.
+- No se modificó código ni datos productivos.
+
+ARCHIVOS:
+- Nuevos: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-013.md; AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-038.md.
+- Actualizados: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- Sin cambios: backend/*, js/*, HTML, tests/*, completadas.md, Pendientes.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md, README, manifest.json y rama base.
+- Siguiente auditoría: TAREA-F6-014 y TAREA-F6-039, centralización de configuración y dependencias sin centralizar todos los datos.
+===============================================================================
