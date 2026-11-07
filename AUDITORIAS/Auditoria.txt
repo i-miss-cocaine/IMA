@@ -7369,3 +7369,31 @@ TAREA-F5-013 - INTEGRACIÓN DE COBROS, PAGOS Y BECAS DE ADMISIÓN
 - Sin cambios en código, pruebas, completadas.md, Pendientes.md, ChangesLogs.txt, metodología o rama base.
 - Próxima tarea: TAREA-F5-014 - trazabilidad de admisiones y notificaciones de auditoría; verificar informe individual e historial antes de auditar.
 ================================================================
+
+
+===============================================================================
+AUDITORÍA TÉCNICA TAREA-F5-014 - C1.210 (IMA-AUDIT-20261107-1537Z)
+===============================================================================
+- Dictamen: NO CUMPLE. Informe individual creado desde cero: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-014.md.
+- Fuente: completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, líneas 2260-2289; 12 requisitos/7 criterios, marcada [X]. Informe individual e historial de la ruta no encontrados. ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff, líneas 1878-1891.
+- Rama: NG_beta_0.0.0.1_work HEAD de partida 94529f5af626bd0c3f5e1fb784cead61d727f40f; árbol f33f779c8f71ec46645f51b6f1e78ab78c366ea2. Rama base NG_beta_0.0.0.1 HEAD 44d9891132332e692dbe2ba8602b41f50a508a59; compare 277 ahead / 0 behind.
+- H1 P0: esquema incompatible de HistorialCambiosEntidad entre USER y ACADEMIC. Ambos usan el mismo SPREADSHEET_ID; el escritor académico desplaza fecha/entidad/ID/actor respecto del lector USER, por lo que getEntityAuditHistory no encuentra los eventos de admisión.
+- H2 P0: cobertura de diff incompleta. Creación y conversión registran LogsSistema, no HistorialCambiosEntidad; uploadStudentDocument solo log estructurado; updateDocumentStatus, consulta y descarga documental sin auditoría homogénea.
+- H3 P1: recordTraceabilityLog solo está declarado/despachado en USER; no se localizaron productores automáticos desde ACADEMIC/ACCOUNTING/TASK/EXAM. fetchApi no genera correlationId; status/reopen no propagan uno compartido.
+- H4 P1: los logs carecen de IP/sesión y actor uniforme; se aceptan fallbacks de actorId/adminId y authRole del payload.
+- H5 P1: sanitizadores no cubren DNI/PII; ACADEMIC recordEntityChangeLog no sanitiza y exportaciones devuelven valores sin política general de seudonimización.
+- H6 P1: appendRow no acredita inmutabilidad; no hay protección de hojas/rangos ni cadena hash verificable. ACL productiva no verificable.
+- H7 P1: getStudentDocuments/getSecureDocumentStream no registran acceso/descarga de documentos de menores.
+- H8 P1: getEntityAuditHistory no está en ROLE_PERMISSIONS estática de Secretaría/Dirección; una MatrizPermisosRoles externa podría habilitarlo, no verificable.
+- H9 P1: getEntityAuditHistory solo acepta limit y lee toda la hoja; getPaginatedAuditLogReport no pagina HistorialCambiosEntidad; UI pide 15 registros.
+- H10 P1: logger captura y silencia fallos de persistencia; algunos status:error retornados directamente no generan evento de fallo.
+- H11 P1: loadAdmissionAuditTrail inserta ejecutadoPor sin escape y fallback de accion/JSON sin escape; no existe window.escapeHtml en los scripts cargados por dashboard-secretaria.html.
+- H12 P1: academic-grading-suite.js y modular-dashboard-suite.js no contienen F5-014 ni pruebas conductuales de auditoría/correlación.
+- Dependencias: ampliar AUD-NG-145 (logs/PII/DTO), AUD-NG-161 (pruebas), AUD-NG-222/TASK-502 (ABAC); coordinar F5-011-A07/A10, F5-012-A07 y F5-013-A09. TASK-474/TASK-475 conservan sus alcances de notificaciones. No crear IDs globales duplicados.
+- Tareas locales F5-014-A01..A11, todas Pendientes: esquema canónico; cobertura de eventos; correlación end-to-end; identidad/IP/sesión; sanitización PII; inmutabilidad; auditoría documental; RBAC/paginación; fallos de logger; UI segura; pruebas conductuales. Detalle y criterios en el informe.
+- Pendientes.md: lectura convencional 0 caracteres; blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c, íntegro y validado en C1.209 (1.782.094 caracteres/20.182 líneas, sin U+FFFD); no se modificó ni restauró.
+- Pruebas: inspección estática/manual, consulta de árbol Git recursivo no truncado, búsqueda de ruta/historial, lectura de requisitos y comparación de SHAs. No ejecutados Apps Script, HTTP, Sheets/Drive productivos, ACL, navegador/XSS dinámico, descargas, concurrencia ni suites.
+- Archivos documentales modificados: informe F5-014 nuevo, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md y Contexto_personal.txt.
+- Sin cambios: backend/*, js/*, HTML, tests/*, completadas.md, Pendientes.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md y rama base.
+- Próxima tarea: TAREA-F5-015 - guardado automático de borradores y recuperación de solicitudes; verificar informe individual e historial antes de auditar.
+===============================================================================

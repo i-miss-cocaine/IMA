@@ -1246,3 +1246,17 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Archivos modificados:** informe F5-013 nuevo; Auditoria.txt; MapaDependencias.md; este plan; Contexto_personal.txt.
 - **Sin cambios:** backend/*; js/*; HTML; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; rama base.
 - **Siguiente tarea:** TAREA-F5-014 - trazabilidad de admisiones y notificaciones de auditoría; verificar primero informe individual e historial.
+
+
+## C1.210 - TAREA-F5-014: trazabilidad de admisiones y notificaciones de auditoría
+
+- **Estado administrativo:** completadas.md [X], 12 requisitos/7 criterios [x]; **dictamen técnico: NO CUMPLE**.
+- **Informe individual:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-014.md creado desde cero; ruta NOT_FOUND e historial de commits vacío en NG_beta_0.0.0.1_work.
+- **Hallazgos críticos:** esquema incompatible entre escritores USER/ACADEMIC sobre la misma hoja; diff no generado para creación/conversión/documentos; BitacoraTraceability sin productores automáticos; correlationId no propagado; IP/sesión/actor insuficientes; sanitización no cubre DNI/PII; falta de inmutabilidad verificable; accesos/descargas de menores no registrados; permiso estático de consulta ausente para Secretaría/Dirección; historial no paginado; fallos del logger silenciados; UI con interpolación sin escape; suites sin pruebas F5-014.
+- **Reconciliación:** ampliar AUD-NG-145, AUD-NG-161 y AUD-NG-222/TASK-502; coordinar F5-011-A07/A10, F5-012-A07, F5-013-A09 y TASK-474/TASK-475. No crear IDs globales duplicados.
+- **Tareas locales:** F5-014-A01..A11, todas Pendientes; detalle, alcance y criterios verificables en el informe individual.
+- **Evidencia:** ACADEMIC Code.gs SHA df87a2eea9f0ef79d0b966d03fd5bbe432003df5; USER Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ACCOUNTING Code.gs SHA 38b979d41596b85e888b4a7060b37bbac0840a28; TASK Code.gs SHA 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe; EXAM Code.gs SHA 1d93296628fae31f680004f637897e2b1314a64c; js/api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; js/secretary.js SHA 08a81266957b4c18cc25f8ba6749eac30a8f2c2c; dashboard-secretaria.html SHA fa0d8c23aace24a6acab2d4956398a7f5e1309b8; suites SHA a22cb3ef376fe09e65c1b17c2f4f5125290bfba6 y 0495e1d526a872c33310935a003a83d924d34683.
+- **Pruebas:** inspección estática/manual, revisión de esquemas/callsites/RBAC/dispatch/UI, árbol Git recursivo no truncado, búsqueda de ruta e historial. No ejecutados Apps Script, HTTP, Sheets/Drive productivos, ACL, navegador/XSS, descargas, concurrencia ni suites.
+- **Archivos documentales:** informe F5-014 nuevo, Auditoria.txt, MapaDependencias.md, este plan y Contexto_personal.txt.
+- **Sin cambios:** código, pruebas, completadas.md, Pendientes.md, ChangesLogs.txt, metodología y rama base.
+- **Siguiente tarea:** TAREA-F5-015 - guardado automático de borradores y recuperación de solicitudes; comprobar informe individual e historial antes de auditar.

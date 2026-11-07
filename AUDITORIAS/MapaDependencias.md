@@ -2192,3 +2192,43 @@ TAREA-F5-012 NO CUMPLE. Subtareas locales F5-012-A01..A08 pendientes. Hallazgos 
 - Coordinar F5-012-A01/A02/A03/A07. No crear IDs globales duplicados.
 ### Dictamen
 TAREA-F5-013 NO CUMPLE. Subtareas locales F5-013-A01..A10 pendientes. Hallazgos H1-H11 y matriz de 14 requisitos/8 criterios en AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-013.md.
+
+
+## TAREA-F5-014 - trazabilidad de admisiones y notificaciones de auditoría (C1.210)
+
+### Ruta de escritura y lectura de HistorialCambiosEntidad
+- ACADEMIC/createAdmissionRequest -> LogsSistema (ADMISSION_CREATED); no llama recordEntityChangeLog.
+- ACADEMIC/updateAdmissionStatus -> recordEntityChangeLog + logStructuredEvent; ACADEMIC/reopenAdmissionRequest -> ambos.
+- ACADEMIC/convertAdmissionToStudent -> LogsSistema (ADMISSION_CONVERTED); no llama recordEntityChangeLog.
+- ACADEMIC/uploadStudentDocument -> LogsSistema (DOCUMENT_UPLOADED); updateDocumentStatus/getStudentDocuments/getSecureDocumentStream no generan evento de auditoría de acceso.
+- USER/recordEntityChangeLog (2715-2744) y USER/getEntityAuditHistory (2745-2795) esperan columnas [cambioId, entityType, entityId, accion, valoresAnteriores, valoresNuevos, ejecutadoPor, fechaCambio, correlationId].
+- ACADEMIC/recordEntityChangeLog (1568-1595) escribe [HistorialID, Fecha, EntidadTipo, EntidadID, Accion, ValorAnteriorJSON, ValorNuevoJSON, UsuarioResponsable, CorrelationID]. USER/ACADEMIC comparten SPREADSHEET_ID; el lector interpreta las columnas académicas desplazadas y no encuentra solicitudId.
+- Acción correctiva local: F5-014-A01. Unificar esquema y migrar sin perder filas.
+
+### Correlación y bitácora distribuida
+- USER/recordTraceabilityLog (4548-4573) -> BitacoraTraceability; USER/getTraceabilityCorrelationLogs (4575-4615) consulta por correlationId/estado/servicio.
+- El endpoint está en dispatcher, pero no se localizaron productores automáticos en ACADEMIC, ACCOUNTING, TASK o EXAM.
+- js/api.js/fetchApi (1-181) no crea ni propaga correlationId.
+- ACADEMIC status/reopen llaman recordEntityChangeLog sin correlationId compartido; el helper genera un CORR local.
+- Acciones: F5-014-A03/A04; ampliar AUD-NG-145 y coordinar AUD-NG-083.
+
+### Privacidad, integridad y consulta
+- USER/sanitizeValueForAudit (2698-2713) y ACADEMIC/ACCOUNTING sanitizePayloadForLog solo cubren claves de credenciales; no DNI/identificación, email, teléfono o fecha de nacimiento.
+- ACADEMIC recordEntityChangeLog no llama sanitizador.
+- HistorialCambiosEntidad y BitacoraTraceability usan appendRow, sin protección de hoja/rango ni cadena hash verificable; ACL productiva no inspeccionada.
+- USER/getEntityAuditHistory no está en ROLE_PERMISSIONS estática de Secretaría/Dirección; MatrizPermisosRoles externa puede modificar el resultado.
+- getEntityAuditHistory usa limit, sin page/cursor; getPaginatedAuditLogReport solo lee BitacoraEventos/BitacoraTraceability, no HistorialCambiosEntidad.
+- Acciones: F5-014-A05/A06/A08/A09; ampliar AUD-NG-145 y AUD-NG-222/TASK-502.
+
+### UI y pruebas
+- dashboard-secretaria.html carga config.js, persistence.js, api.js, ui-common.js y secretary.js. Ninguno define window.escapeHtml.
+- secretary.js/loadAdmissionAuditTrail (1187-1225) interpola ejecutadoPor sin escape y deja fallback sin escape para accion/valoresNuevos.
+- Las suites academic-grading-suite.js y modular-dashboard-suite.js no contienen F5-014 ni pruebas de esquema, diff, PII, RBAC, paginación, correlación, inmutabilidad o acceso documental.
+- Acciones: F5-014-A10/A11; ampliar AUD-NG-161 y coordinar F5-011-A10/AUD-NG-145.
+
+### Reconciliación
+- F5-011-A07 (trazabilidad append-only) y F5-011-A10 (XSS del historial de notificaciones) se amplían por referencia, sin duplicar sus objetivos.
+- F5-012-A07 cubre semántica del timeline y errores del Portal Familiar.
+- F5-013-A09 cubre trazabilidad/contabilidad financiera.
+- TASK-474/TASK-475 mantienen outbox/notificaciones y plantillas/PII; no sustituyen el registro de auditoría.
+- AUD-NG-145 y AUD-NG-161 conservan sus causas transversales; AUD-NG-222/TASK-502 mantiene el motor ABAC.
