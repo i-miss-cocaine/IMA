@@ -1380,3 +1380,28 @@ Estas reglas son condición de inicio y cierre para todo trabajo de esta auditor
 - **Sin cambios:** código, tests, completadas.md, ChangesLogs.txt, metodología, README y rama base.
 - **Archivos documentales:** informe F5-020 nuevo; Auditoria.txt; MapaDependencias.md; AUDITORIA_COMPLETADAS_PLAN.md; Contexto_personal.txt.
 - **Siguiente tarea:** TAREA-F5-021; verificar su entrada en completadas.md, informe individual e historial y ChangesLogs.txt antes de definir alcance.
+
+
+===============================================================================
+CHECKPOINT C1.218 - 2026-11-07 - AUDITORÍA TAREA-F6-001
+Sesión: IMA-AUDIT-20261107-1911Z | checkpoint inicial C1.217 | cierre C1.218
+Repositorio: i-miss-cocaine/IMA
+Rama base: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+Rama trabajo: NG_beta_0.0.0.1_work @ ae5dea9f7d342df58a5db393e66691d8249f892e
+Comparación: 285 commits ahead, 0 behind; merge-base = HEAD base.
+Informe nuevo: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-001.md
+Dictamen: NO CUMPLE; F6-001 permanece [X] históricamente en completadas.md, sin modificar el registro maestro.
+Hallazgos H1-H6: modal/tab no localizado; RoleCapabilities divergente de permisos por acción; token no propagado (amplía AUD-NG-001); contratos UI/API incompatibles; sesión no revalidada; suites sin pruebas F6-001.
+Tareas locales: F6-001-A01..A06 pendientes. Se amplían AUD-NG-001, AUD-NG-160 y AUD-NG-221/TASK-501; contratos dependen de F5-017/F6-019.
+Archivos inspeccionados y SHAs: teacher-dashboard.html cbb9e6a272a7d8ad33f99727303305d950533e71; teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; auth.js 8444dd085a3186106d2db7005b61ef934d3c22d8; api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; ui-common.js 986938b8a311a41ed4cb3d135b66b6aaea4bed67; ACADEMIC Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5; suites a22cb3ef376fe09e65c1b17c2f4f5125290bfba6 / 0495e1d526a872c33310935a003a83d924d34683.
+Pendientes.md: consultado desde blob íntegro SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c (1.803.672 bytes, 1.782.094 caracteres, 20.182 líneas, sin U+FFFD); no modificado.
+Pruebas ejecutadas: inspección manual de requisitos, HTML, UI, auth, ROLE_PERMISSIONS, matriz dinámica, dispatcher, contratos, suites, árbol/historial/SHAs.
+Pruebas no ejecutadas: Apps Script, HTTP, navegador, MatrizPermisosRoles/delegaciones productivas, llamadas por rol, móvil/escritorio y suites automatizadas.
+Archivos modificados: informe F6-001 nuevo; Auditoria.txt; MapaDependencias.md; AUDITORIA_COMPLETADAS_PLAN.md; Contexto_personal.txt.
+Archivos no modificados: código, tests, completadas.md, Pendientes.md, ChangesLogs.txt, metodología, README y rama base.
+Última tarea auditada: TAREA-F6-001 (NO CUMPLE). Tarea en curso: ninguna.
+Siguiente tarea: TAREA-F6-002 - Robustecer las operaciones del ciclo de vida y prevenir estados de matrícula incompatibles (completadas.md:2505-2538).
+Próxima acción: buscar informe individual F6-002 e historial; localizar informe de fase 6 y ChangesLogs; revisar criterios; inspeccionar changeStudentSection, recordStudentTransfer, recordStudentWithdrawal, processStudentReentry, renewStudentEnrollment, Matriculas, ExpedientesEstudiantes y LockService.
+HEAD de partida verificado: ae5dea9f7d342df58a5db393e66691d8249f892e. Commit de cierre: el commit que contiene este checkpoint; SHA confirmado externamente tras publicar.
+Hora UTC de cierre: 2026-11-07T19:16:22Z. Sesión cerrada.
+===============================================================================

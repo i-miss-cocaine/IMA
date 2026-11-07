@@ -2427,3 +2427,36 @@ TAREA-F5-017 NO CUMPLE. La búsqueda, panel y decisiones manuales existen parcia
 - tests/regression/academic-grading-suite.js (SHA a22cb3ef376fe09e65c1b17c2f4f5125290bfba6) incluye assert textual de offers_v2_ y cache.remove, no prueba comportamiento; modular-dashboard-suite.js (SHA 0495e1d526a872c33310935a003a83d924d34683) no tiene F5-020.
 - Dictamen: NO CUMPLE. Informe: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F5-020.md. Tareas locales F5-020-A01..A07; sin IDs globales duplicados.
 - Dependencias: SolicitudesAdmision, OfertaAcademica, ExpedientesEstudiantes, Usuarios, RelacionesFamiliares, CacheService, LockService, logStructuredEvent, fetchApi, loadAdmissionRequestsList, initFamilyStudentSwitcher, getAdmissionRequests, getAcademicOffers, updateAdmissionStatus, revokeFamilyLink y purgeSecurityCaches.
+
+
+## C1.218 - TAREA-F6-001: permisos de controles de expedientes duplicados
+
+**Informe:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-001.md  
+**Dictamen:** NO CUMPLE. **HEAD auditado:** ae5dea9f7d342df58a5db393e66691d8249f892e.
+
+### Ruta frontend
+- teacher-dashboard.html (SHA cbb9e6a272a7d8ad33f99727303305d950533e71, líneas 1464-1466) carga ui-common.js y teacher.js, pero no declara #modal-student-file ni #tab-stfile-duplicates.
+- js/teacher.js (SHA c475fce5afcd28fca23e7b64398ad32b17773746, líneas 7877-7880): openStudentFileModal retorna si falta el modal.
+- js/teacher.js:135-145: RoleCapabilities es allowlist local; currentUser se captura una vez.
+- js/teacher.js:7922-7935: gate visual; :7999-8020 switchStudentFileTab sin autorización.
+- js/teacher.js:8295-8350: handlers scan/merge sin revalidación individual.
+- js/auth.js (SHA 8444dd085a3186106d2db7005b61ef934d3c22d8, líneas 146-157) descarta sessionToken; js/api.js (SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9, líneas 39-58) no lo transmite.
+
+### Ruta backend
+- backend/academic-service/Code.gs (SHA df87a2eea9f0ef79d0b966d03fd5bbe432003df5, líneas 168-243): ROLE_PERMISSIONS; Administrador *, Director detección+fusión, Secretaria/Subdirector detección sin fusión, Coordinador/Desarrollador/Profesor sin ambas acciones en matriz estática.
+- Code.gs:524-620: validateRolePermission/getDynamicPermissionsForRole; matriz dinámica y delegaciones pueden cambiar permisos, pero la UI no las consulta y la hoja productiva no se verificó.
+- Code.gs:671-681 y 866-867: doPost valida antes de despachar findDuplicateStudents/mergeStudentFiles.
+- Code.gs:10107-10208: findDuplicateStudents recibe nombres/apellidos y devuelve candidates con id/coincidencia.
+- Code.gs:10282-10330: mergeStudentFiles exige targetExpedienteId/sourceExpedienteId.
+
+### Contratos y autenticación
+- js/teacher.js:8304-8325 espera res.data/studentId/userId/motivoCoincidencia; backend entrega candidates/id/coincidencia/nivelCoincidencia.
+- js/teacher.js:8336-8339 envía targetStudentId/sourceStudentId; backend exige targetExpedienteId/sourceExpedienteId.
+- USER loginUser emite sessionToken; auth.js lo omite y api.js no lo transmite. Se amplía AUD-NG-001.
+- Se amplían AUD-NG-160 y AUD-NG-221/TASK-501; contratos coordinados con TAREA-F5-017 y TAREA-F6-019.
+
+### Pruebas y estado
+- academic-grading-suite.js SHA a22cb3ef376fe09e65c1b17c2f4f5125290bfba6 y modular-dashboard-suite.js SHA 0495e1d526a872c33310935a003a83d924d34683: sin pruebas específicas F6-001.
+- Runtime/browser/Apps Script y matriz productiva no ejecutados.
+- Tareas locales F6-001-A01..A06 pendientes.
+- Código, tests, completadas.md, Pendientes.md y ChangesLogs.txt sin cambios.

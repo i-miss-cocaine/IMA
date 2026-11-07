@@ -7668,3 +7668,43 @@ ARCHIVOS DOCUMENTALES DE LA ITERACIÓN:
 SIGUIENTE TAREA:
 TAREA-F5-021. Verificar entrada en completadas.md, informe individual e historial de ruta, y ChangesLogs.txt antes de definir alcance.
 ===============================================================================
+
+
+===============================================================================
+AUDITORÍA C1.218 - TAREA-F6-001 - 2026-11-07
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+HEAD de partida: ae5dea9f7d342df58a5db393e66691d8249f892e
+HEAD base: 44d9891132332e692dbe2ba8602b41f50a508a59
+Sesión: IMA-AUDIT-20261107-1911Z (inicio C1.217; cierre C1.218)
+Informe individual: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-001.md
+Dictamen: NO CUMPLE. TAREA-F6-001 figura [X] en completadas.md, pero sus criterios no quedan acreditados.
+
+FUENTES:
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, líneas 2474-2504.
+- Pendientes.md recuperado desde blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c; 1.803.672 bytes, 1.782.094 caracteres, 20.182 líneas, sin U+FFFD. Consultado por instrucción expresa; no modificado.
+- No se localizó informe individual F6-001 ni el informe de fase AUDITORIA_FASE_6_EXPEDIENTE_CICLO_VIDA.md en árbol/historial consultado.
+- ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff: sin entrada F6-001.
+
+HALLAZGOS:
+1. H1 ALTO/P1: teacher-dashboard.html no define #modal-student-file ni #tab-stfile-duplicates; openStudentFileModal retorna si falta el modal (js/teacher.js:7877-7880).
+2. H2 ALTO/P1: RoleCapabilities local concede una capacidad unificada a Secretaría/Subdirección/Coordinación/Desarrollo; ROLE_PERMISSIONS diferencia detección y fusión, y la UI no consulta la matriz dinámica.
+3. H3 CRÍTICO/P0: token emitido por loginUser se descarta en auth.js y api.js no lo transmite; ACADEMIC validateRolePermission exige token. Se amplía AUD-NG-001, sin ID global duplicado.
+4. H4 ALTO/P1: UI espera res.data/studentId/userId/motivoCoincidencia; backend devuelve candidates/id/coincidencia. UI envía targetStudentId/sourceStudentId y backend exige targetExpedienteId/sourceExpedienteId.
+5. H5 MEDIO/P2: currentUser se captura una vez; tab switch y handlers no revalidan permiso.
+6. H6 MEDIO/P2: suites inspeccionadas no contienen pruebas específicas F6-001.
+
+TAREAS LOCALES:
+- F6-001-A01..A06: sincronizar permisos por acción; revalidar sesión; proteger pestaña/handlers; restaurar DOM; alinear contratos API; añadir pruebas conductuales. Detalle y criterios en informe individual.
+- Se amplían AUD-NG-001, AUD-NG-160 y AUD-NG-221/TASK-501; contratos coordinados con TAREA-F5-017 y TAREA-F6-019. Sin IDs globales duplicados.
+
+PRUEBAS:
+- Ejecutadas: inspección manual de requisitos, UI, auth, matrices, dispatcher, contratos, HTML, suites, árbol/historial/SHAs.
+- No ejecutadas: Apps Script, HTTP, MatrizPermisosRoles/delegaciones productivas, navegador, pruebas por rol, móvil/escritorio ni suites automatizadas.
+
+ARCHIVOS DOCUMENTALES:
+- Nuevo: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-001.md.
+- Actualizados: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- Sin cambios: código, tests, completadas.md, Pendientes.md, ChangesLogs.txt, metodología, README y rama base.
+- Siguiente tarea: TAREA-F6-002 (marcada [X] en completadas.md).
+===============================================================================
