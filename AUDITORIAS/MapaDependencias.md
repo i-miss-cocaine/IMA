@@ -2911,3 +2911,35 @@ Inspección estática/manual. No se ejecutaron Apps Script runtime, HTTP, trigge
 - No se modificó código, configuración, tests, completadas.md, Pendientes.md, ChangesLogs.txt ni rama base.
 - Pruebas estáticas/manuales ejecutadas; Apps Script, HTTP, OAuth, navegador, Drive/Sheets productivas y E2E no ejecutadas.
 
+
+
+## C1.232 - TAREA-F6-015 / TAREA-F6-040: rendimiento, capacidad, resiliencia y recuperación
+
+**Informes:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-015.md y AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-040.md.  
+**Dictamen:** ambas NO CUMPLEN; marcas [X] históricas preservadas. **HEAD auditado:** 585a6a797c781fbbb1b22cca8a52a6fa07e02ae9.
+
+### Evidencia
+- DEVELOPER runFullArchitectureIntegrationAndPerformanceSuite: cinco casos secuenciales; no genera carga ni concurrencia, y su duración total no es benchmark reproducible.
+- PERF-03 invoca getServiceHealthDiagnostics, cuyos checks connectivity/spreadsheetAccess/permissions son PASS constantes y healthStatus HEALTHY; no se inyecta fallo.
+- ACADEMIC runConcurrencyAndConsistencySuite solo adquiere y libera un ScriptLock; no crea contención real.
+- USER getOperationalCapacityMetrics lee BitacoraTrazabilidad completa y calcula promedios/tasas; no percentiles, throughput ni cuotas efectivas.
+- ACADEMIC getPaginatedAcademicHistory lee getDataRange().getValues() completo antes de filtrar/paginar.
+- ACADEMIC verifyBackupIntegrity acepta cualquier checksum no vacío; restoreSystemBackup no demuestra transacción/rollback; reconcileRestoredDataIntegrity solo revisa CalificacionesEstudiantes e HistorialAcademico y conserva success aun con hallazgos.
+- js/api.js fetchApi reintenta POST sin clave idempotente estable. ACCOUNTING tiene dedupe/locks puntuales, no garantía uniforme ni prueba de carrera/respuesta perdida.
+- Tests regression no cubren F6-015/F6-040, carga, fallos, recuperación, multirol E2E ni regresión post-migración.
+
+### Criterios
+- F6-015 CA-074/075/077 NO CUMPLE; CA-076 PARCIAL.
+- F6-040 CA-136/137/140/141/142/143/144/170/171/172/173 NO CUMPLE; CA-138/139 PARCIAL.
+
+### Tareas existentes ampliadas
+- F6-003-A01..A09: entorno aislado, pruebas conductuales, carga/concurrencia/idempotencia, flujos multi-servicio, fallos/reintentos, runner y reporte reproducible.
+- F6-009-A03/A06: telemetría real, percentiles, throughput, cuotas, límites y pruebas de degradación/fallos.
+- F6-011-A01..A06: integridad criptográfica, restore aislado/transaccional, reconciliación bloqueante, capacidad/retención y runbook.
+- F6-013-A05/A07: evaluación de impacto y regresión post-despliegue/migración.
+- F6-012-A01..A07: identidad única y permisos multirol efectivos.
+- AUD-NG-006/133/161: idempotencia atómica frente a reintentos y concurrencia.
+No se crean IDs duplicados; todas las tareas siguen Pendientes.
+
+### Límites
+Inspección estática/manual. No se ejecutaron Apps Script runtime, benchmark, carga, concurrencia real, HTTP, OAuth, navegador, deployments, fallos inyectados, restore productivo, Drive/Sheets productivas ni E2E. Sin cambios en código/datos productivos.

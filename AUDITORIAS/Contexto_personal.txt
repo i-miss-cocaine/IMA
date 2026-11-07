@@ -7989,3 +7989,38 @@ Abrir completadas.md en TAREA-F6-014 y TAREA-F6-039; localizar informes e histor
 ### Punto de reanudación
 Auditar TAREA-F6-015 y TAREA-F6-040. Buscar informes individuales e historial en la rama de trabajo; si falta un informe, omitir la creación de ese informe previo y auditar directamente el alcance de completadas.md. Revisar las rutas de carga, concurrencia, cuotas GAS/Sheets/Drive, recuperación, degradación, aislamiento de pruebas y evidencia de rendimiento. No implementar durante la auditoría.
 ===============================================================================
+
+
+===============================================================================
+## C1.232 - Auditoría TAREA-F6-015 y TAREA-F6-040
+
+- **ID de sesión operativo:** IMA-AUDIT-20261107-2134Z-01 (no es ID nativo de ChatGPT).
+- **Estado:** sesión cerrada tras publicar el commit único.
+- **Checkpoint inicial:** C1.231.
+- **Checkpoint de cierre:** C1.232.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Archivo de contexto:** AUDITORIAS/Contexto_personal.txt.
+- **Rama base:** NG_beta_0.0.0.1; HEAD verificado 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **HEAD de partida verificado:** 585a6a797c781fbbb1b22cca8a52a6fa07e02ae9; árbol a135fedf043aaff16f735df6a4c2b3f975041eec.
+- **Comparación inicial:** 299 commits adelante, 0 atrás; rama base intacta.
+- **Últimas tareas auditadas:** F6-015 y F6-040; ambas NO CUMPLEN; marcas [X] históricas preservadas.
+- **Tarea en curso:** ninguna al cerrar.
+- **Siguiente elemento:** seleccionar la siguiente tarea cronológica posterior a F6-040 en completadas.md; localizar informe e historial, consultar Pendientes.md y contrastar implementación.
+- **Lote:** Fase 6, rendimiento, capacidad, resiliencia y recuperación.
+
+### Evidencia reproducible
+- Informes individuales F6-015/F6-040 no existían; se crearon después de auditar directamente sus requisitos.
+- Funciones principales: DEVELOPER runFullArchitectureIntegrationAndPerformanceSuite (~91194), getServiceHealthDiagnostics (~113601); ACADEMIC getPaginatedAcademicHistory (~169191), withConcurrencyLock/runConcurrencyAndConsistencySuite (~171177), verifyBackupIntegrity (~545669), restoreSystemBackup (~548240), reconcileRestoredDataIntegrity (~551117); USER getOperationalCapacityMetrics (~197505); ACCOUNTING generateBatchMonthlyCharges (~135505), recordStudentPayment (~177205); TASK getOrCreateFolder (~56638); api.js fetchApi.
+- Hallazgos: suite sin carga real; salud sintética; lock test no concurrente; métricas incompletas; paginación lee rango completo; checksum débil y restore/reconciliación incompletos; reintentos POST sin idempotency key estable; tests sin F6-015/F6-040; multirol y regresión post-migración no verificados.
+- Criterios: F6-015 CA-074/075/077 NO CUMPLE y CA-076 PARCIAL; F6-040 CA-136/137/140..144/170..173 NO CUMPLE, CA-138/139 PARCIAL.
+- Tareas canónicas ampliadas: F6-003-A01..A09; F6-009-A03/A06; F6-011-A01..A06; F6-013-A05/A07; F6-012-A01..A07; AUD-NG-006/133/161. No crear IDs duplicados.
+- SHAs de respaldo: DEVELOPER 8aa4bac67cfe5c8c54da51a0784a56fef633e412; ACADEMIC df87a2eea9f0ef79d0b966d03fd5bbe432003df5; USER 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ACCOUNTING 38b979d41596b85e8884b7060b37bbac0840a28; TASK 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe; EXAM 1d93296628fae31f680004f637897e2b1314a64c; api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; config.js 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc; auth.js 8444dd085a3186106d2db7005b61ef934d3c22d8; tests a22cb3ef376fe09e65c1b17c2f4f5125290bfba6 y 0495e1d526a872c33310935a003a83d924d34683.
+- **Pruebas ejecutadas:** inspección estática/manual, árbol recursivo completo y no truncado, referencias e historial.
+- **No ejecutadas:** Apps Script runtime, benchmark, carga, concurrencia real, HTTP, OAuth, navegador, deployments, fallos inyectados, restore productivo, Drive/Sheets productivas y E2E.
+- **Archivos nuevos:** informes individuales F6-015 y F6-040.
+- **Archivos actualizados:** Auditoria.txt; MapaDependencias.md; AUDITORIA_COMPLETADAS_PLAN.md; Contexto_personal.txt.
+- **Archivos sin cambios:** código, JS, HTML, tests, completadas.md, Pendientes.md, ChangesLogs.txt, metodología, README, manifest y rama base.
+- **Restricciones:** no modificar código ni datos productivos durante auditoría; no alterar marcas históricas.
+- **Punto de reanudación:** abrir completadas.md después de F6-040, identificar siguiente ID; consultar contexto/informe/ChangesLogs y blob Pendientes; inspeccionar dispatchers y consumidores del siguiente requisito, guardar SHAs, auditar criterios y documentar sin implementar.
+===============================================================================

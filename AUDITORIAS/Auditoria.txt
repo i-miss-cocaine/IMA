@@ -8389,3 +8389,29 @@ RECONCILIACIÓN:
 - Se conserva [X] histórica en completadas.md. Pendientes.md se consultó desde el blob íntegro SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c y no se modificó.
 PRUEBAS/LÍMITES: inspección estática/manual. No se ejecutaron Apps Script, OAuth, HTTP, deployments, browser, Drive/Sheets productivas, concurrencia ni E2E. Sin cambios de código o datos productivos.
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-07
+AUDITORÍA DE CONTINUIDAD - TAREA-F6-015 Y TAREA-F6-040: RENDIMIENTO, CAPACIDAD, RESILIENCIA Y RECUPERACIÓN
+ARCHIVOS AUDITADOS: backend/developer-service/Code.gs; backend/academic-service/Code.gs; backend/user-service/Code.gs; backend/accounting-service/Code.gs; backend/task-service/Code.gs; backend/exam-service/Code.gs; js/api.js; js/config.js; js/auth.js; developer-dashboard.html; js/developer.js; tests/regression/*
+RESULTADO:
+- F6-015: NO CUMPLE. F6-040: NO CUMPLE (alcance ampliado).
+- runFullArchitectureIntegrationAndPerformanceSuite ejecuta cinco llamadas secuenciales, no carga/concurrencia ni medición de rendimiento reproducible.
+- PERF-03 solo consulta getServiceHealthDiagnostics; esta devuelve PASS/HEALTHY constantes y no simula caída de servicio, Drive o Sheets.
+- runConcurrencyAndConsistencySuite adquiere/libera un ScriptLock una vez; no prueba contención ni escrituras simultáneas.
+- getOperationalCapacityMetrics calcula promedios/tasa de error desde BitacoraTrazabilidad; no obtiene percentiles, throughput ni cuotas efectivas GAS/Sheets/Drive.
+- getPaginatedAcademicHistory carga getDataRange().getValues() completo antes de filtrar/paginar.
+- verifyBackupIntegrity acepta checksum no vacío aunque no coincida; restoreSystemBackup no acredita rollback transaccional; reconcileRestoredDataIntegrity solo revisa dos hojas y devuelve success aun con inconsistencias.
+- fetchApi reintenta POST hasta dos veces sin clave idempotente estable; deduplicación/locks en contabilidad son puntuales y no acreditan garantía uniforme.
+- Suites regression existentes no contienen escenarios F6-015/F6-040 ni ejecutan carga, fallos inyectados, recuperación o E2E.
+- Multirol se comprueba con usuario sintético y una llamada; no se verifica identidad institucional única, aislamiento efectivo ni continuidad de dashboards tras migración.
+CRITERIOS:
+- F6-015 CA-074, CA-075, CA-077: NO CUMPLE; CA-076: PARCIAL.
+- F6-040 CA-136, CA-137, CA-140..CA-144, CA-170..CA-173: NO CUMPLE; CA-138 y CA-139: PARCIAL.
+RECONCILIACIÓN:
+- Ampliar F6-003-A01..A09, F6-009-A03/A06, F6-011-A01..A06, F6-013-A05/A07 y F6-012-A01..A07; AUD-NG-006/133/161 existentes. No crear IDs globales duplicados.
+- F6-040 comparte el bloque canónico de tareas con F6-015.
+- Se conservan marcas [X] históricas; no se modifican completadas.md ni Pendientes.md.
+PRUEBAS/LÍMITES: inspección estática/manual. No se ejecutaron runtime Apps Script, benchmark, carga, concurrencia real, HTTP, OAuth, navegador, despliegues, fallos inyectados, restauración productiva, Drive/Sheets productivas ni E2E. Sin cambios de código o datos productivos.
+===============================================================================
