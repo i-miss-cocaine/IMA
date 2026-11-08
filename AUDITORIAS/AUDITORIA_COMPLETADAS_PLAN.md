@@ -1911,3 +1911,29 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **Archivos sin cambios:** backend, HTML, JS, tests, completadas.md, Pendientes.md, ChangesLogs.txt y METODOLOGIA_DESARROLLO.md.
 - **Siguiente tarea exacta:** TAREA-F7-IMP-14, publicación y control de cambios masivos; CA-F7-87..92.
 ===============================================================================
+
+
+===============================================================================
+## TAREA-F7-IMP-14 - Auditoría de publicación y control de cambios masivos (C1.246)
+
+- **Fecha:** 2026-11-08.
+- **Dictamen:** NO CUMPLE; se conserva [X] histórico en completadas.md.
+- **Criterios:** CA-F7-87 NO CUMPLE; CA-F7-88 PARCIAL; CA-F7-89 PARCIAL; CA-F7-90 NO CUMPLE; CA-F7-91 NO CUMPLE; CA-F7-92 NO CUMPLE.
+- **Hallazgo nuevo:** AUD-NG-249 (ALTO/P1), relacionado con AUD-NG-245..248 y TAREA-F7-IMP-15.
+- **Informe:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-14.md.
+- **Integridad:** completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, línea 4346, marca [X]. Pendientes.md lectura ordinaria 0 caracteres; blob 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c recuperado: 1.782.094 caracteres, 20.182 líneas, 0 U+FFFD, 511 TASK únicos TASK-001..TASK-511; no contiene IMP-14. Informe individual y fuente de origen no existen.
+- **Evidencia:** borradores pueden leerse como Activo; preview no produce delta; la UI no está en HTML; confirmación no envía IDs ni token; backend publica todos los borradores si no hay filtros; revalidación parcial; escrituras secuenciales sin rollback; instantánea de versión best-effort; no se llama historial de cambios ni dispatcher de notificaciones; el actor no se deriva explícitamente de _verifiedUserId; pruebas específicas ausentes.
+- **Puntos inspeccionados:** ROLE_PERMISSIONS 168-260; validateRolePermission 524-583; doPost 671-975; recordEntityChangeLog 1568-1595; previewPublishImpact 3351-3400; getClassSchedules 6718-6764; publishClassSchedules 7007-7116; getScheduleVersions 7119-7142; compareScheduleVersions 7144-7221; checkScheduleConflict 7493-7691; runAcademicPlanningRegressionSuite 14109-14173; js/teacher.js 992-1076; teacher-dashboard.html completo; USER dispatchScheduleChangeNotifications 8858-8894; ChangesLogs 2394-2404.
+- **SHAs de respaldo:** academic Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5; teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; teacher-dashboard.html cbb9e6a272a7d8ad33f99727303305d950533e71; USER Code.gs 12079dd410aa6d8afbce55a4bc62a79dea605f9f; academic-grading-suite.js a22cb3ef376fe09e65c1b17c2f4f5125290bfba6; modular-dashboard-suite.js 0495e1d526a872c33310935a003a83d924d34683; completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676; Pendientes.md 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c; ChangesLogs.txt 5b5cff1926b73a05d1b92087a7bf4b2db75326ff; metodología cf796728bb384a32537392df2f9c72a339fa03ee.
+- **Tareas derivadas:** TASK-603 y TASK-604 nuevas; TAREA-F7-IMP-15 ampliada para atomicidad de publicación; TASK-577..583, TASK-585/TASK-591, TASK-598, TASK-601, TASK-602 y TASK-567 ampliadas según informe.
+- **Pruebas ejecutadas:** inspección estática/manual de código, flujos, permisos, UI, historial, notificaciones, suites, registros y Git.
+- **No ejecutadas:** Apps Script runtime, HTTP/OAuth, DOM/navegador, Sheets productivas, publicación real, fallo inducido, concurrencia, notificaciones, Node ni E2E.
+- **Archivos nuevos:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-14.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Archivos sin cambios:** backend/academic-service/Code.gs; backend/user-service/Code.gs; js/teacher.js; teacher-dashboard.html; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; rama base.
+- **Última tarea completamente auditada:** TAREA-F7-IMP-14.
+- **Tarea en curso:** ninguna.
+- **Siguiente tarea exacta:** TAREA-F7-IMP-15, concurrencia y protección de operaciones críticas; CA-F7-93..98. Auditar requisitos y estado real, e integrar hallazgos de atomicidad de importación/publicación masiva.
+- **HEAD de partida:** 348c9d139314233dc1482e99707ef965ed07d027; rama NG_beta_0.0.0.1_work idéntica a ese commit. Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59, 313 commits detrás de la rama de trabajo y 0 adelante respecto de la base.
+- **Próxima acción concreta:** verificar el commit único C1.246, confirmar los cinco documentos de auditoría, verificar HEAD de la rama y volver a comparar la rama base.
+===============================================================================

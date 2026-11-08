@@ -3396,3 +3396,28 @@ Inspección estática/manual. No se ejecutaron Apps Script runtime, HTTP/OAuth, 
 - AUD-NG-248 (ALTO/P1), relacionado con AUD-NG-247, TAREA-F7-IMP-15 y TAREA-F7-IMP-01/02.
 - Tareas derivadas: TASK-597 contrato/validación; TASK-598 conflictos intra-lote; TASK-599 duplicados/operaciones; TAREA-F7-IMP-15 ampliada para rollback; TASK-600 round-trip; TASK-601 UI; TASK-602 pruebas.
 - Detalle y aceptación: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-13.md.
+
+
+## Publicación y control de cambios masivos (TAREA-F7-IMP-14 / AUD-NG-249)
+
+### Estados y previsualización
+- getClassSchedules (Code.gs:6718-6764) lee estado desde r[9] || "Activo" y no excluye Borrador en r[7]; el contrato de createClassSchedule coloca Estado en r[7]. Borradores pueden aparecer vigentes. Relación: AUD-NG-246/247, TASK-585 y TASK-591.
+- previewPublishImpact (3351-3400) solo cuenta borradores, docentes, aulas y conflictos; no compara contra VersionesHorarios ni produce deltas nuevos/modificados/cancelados, ni detalle por grupo/sección/asignatura/recurso.
+- getScheduleVersions/compareScheduleVersions (7119-7221) existen en backend, pero la UI de versiones no está presente en teacher-dashboard.html.
+
+### Alcance, validación y persistencia
+- openPublishImpactPreviewModal (js/teacher.js:992-1076) confirma con payload {modo, notificarCambios}; no transmite IDs, año/ofertas, versión ni token de preview.
+- publishClassSchedules (Code.gs:7007-7116) filtra por ofertaIds o anoLectivo si se reciben; si faltan ambos publica todos los Borrador. No almacena ni filtra por propietario. Los borradores añadidos después del preview también pueden entrar.
+- Revalida bajo LockService con checkScheduleConflict (7493-7691) y detiene conflictos detectados; excluye solo Inactivo y el bloque de restricciones curriculares silencia excepciones. Se relaciona con TASK-598/AUD-NG-248.
+- Cambia estados con setValue por fila, sin rollback, staging ni ID de operación. La instantánea VersionesHorarios se intenta después; fallo se registra como WARN y la respuesta puede seguir siendo success. TAREA-F7-IMP-15 debe cubrir atomicidad y recuperación de publicación.
+- publishClassSchedules no llama recordEntityChangeLog/HistorialCambiosEntidad; publisher procede de payload.authUserId y no se deriva explícitamente de _verifiedUserId.
+
+### UI, permisos, notificaciones y pruebas
+- teacher-dashboard.html (1-1475) no contiene modal-publish-impact-preview ni botón/invocador; js/teacher.js define la función pero no tiene llamada externa. Tampoco existe modal de consulta de versiones.
+- ROLE_PERMISSIONS estático: previewPublishImpact para Administrador/Director; publishClassSchedules también en Subdirector/Secretaría/Secretaria/Profesor, sin permiso estático equivalente para preview. Matriz dinámica no inspeccionada.
+- No existe llamada desde ACADEMIC a USER dispatchScheduleChangeNotifications/sendMultiChannelNotification. El UI anuncia notificaciones multicanal que no se producen en este flujo. Relación: TASK-577..TASK-583/AUD-NG-245.
+- runAcademicPlanningRegressionSuite TC-F7-01..07 y suites regression no cubren CA-F7-87..92. TASK-602 se amplía.
+- AUD-NG-249 (ALTO/P1), relacionado con AUD-NG-245..248 y TAREA-F7-IMP-15.
+- Nuevas tareas: TASK-603 (diff real de impacto); TASK-604 (lote de publicación inmutable, propiedad/alcance y actor verificado).
+- Ampliaciones: TASK-577..583, TASK-585/TASK-591, TASK-598, TASK-601, TASK-602, TASK-567 y TAREA-F7-IMP-15.
+- Detalle y criterios verificables: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-14.md.

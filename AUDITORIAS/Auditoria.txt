@@ -8810,3 +8810,41 @@ ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md;
 CÓDIGO, UI, PRUEBAS, completadas.md, Pendientes.md y ChangesLogs.txt: SIN CAMBIOS.
 SIGUIENTE TAREA: TAREA-F7-IMP-14 (CA-F7-87..92).
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-08
+AUDITORÍA FUNCIONAL Y TÉCNICA - TAREA-F7-IMP-14: PUBLICACIÓN Y CONTROL DE CAMBIOS MASIVOS
+DICTAMEN: NO CUMPLE (marca histórica [X] preservada en completadas.md).
+HALLAZGO NUEVO: AUD-NG-249 (ALTO/P1).
+CRITERIOS:
+- CA-F7-87 NO CUMPLE: getClassSchedules ignora el estado canónico r[7] y usa r[9] || "Activo"; un borrador puede aparecer como vigente.
+- CA-F7-88 PARCIAL: previewPublishImpact muestra conteos de borradores/docentes/aulas/conflictos, pero no deltas de altas, modificaciones, cancelaciones ni detalle de afectados.
+- CA-F7-89 PARCIAL: publishClassSchedules revalida con checkScheduleConflict bajo lock y bloquea conflictos detectados; estados no normalizados y excepciones de validación curricular silenciadas dejan cobertura incompleta.
+- CA-F7-90 NO CUMPLE: la UI no envía IDs ni token de preview; sin filtros, el backend publica todos los borradores, incluidos los añadidos después de revisar o de otros usuarios.
+- CA-F7-91 NO CUMPLE: setValue fila a fila sin rollback/estado por lote; falla de snapshot se captura y aun así se devuelve éxito.
+- CA-F7-92 NO CUMPLE: no hay llamada desde publicación a dispatchScheduleChangeNotifications/sendMultiChannelNotification; el texto UI promete notificaciones que no se ejecutan.
+EVIDENCIA:
+- backend/academic-service/Code.gs: ROLE_PERMISSIONS 168-260; validateRolePermission 524-583; doPost/dispatcher 671-975 (preview 821, publish 823); recordEntityChangeLog 1568-1595; previewPublishImpact 3351-3400; getClassSchedules 6718-6764; publishClassSchedules 7007-7116; getScheduleVersions 7119-7142; compareScheduleVersions 7144-7221; checkScheduleConflict 7493-7691; runAcademicPlanningRegressionSuite 14109-14173.
+- js/teacher.js openPublishImpactPreviewModal 992-1076: previsualización agregada, confirmación genérica; payload de publicación solo modo/notificarCambios, sin IDs ni token.
+- teacher-dashboard.html (1-1475): no contiene modal-publish-impact-preview, IDs de resumen/detalle/confirmación ni invocador openPublishImpactPreviewModal; tampoco modal-schedule-versions ni openScheduleVersionsModal.
+- backend/user-service/Code.gs dispatchScheduleChangeNotifications 8858-8894 existe, pero no tiene llamada desde backend académico. Conteo de llamadas en Code.gs académico: 0.
+- publishClassSchedules no llama recordEntityChangeLog ni escribe HistorialCambiosEntidad; la instantánea VersionesHorarios es best-effort y el catch no revierte ni cambia status success.
+- ROLE_PERMISSIONS estático permite preview a Administrador/Director; perfiles con publishClassSchedules como Subdirector/Secretaría/Secretaria/Profesor no tienen previewPublishImpact en sus listas estáticas. Matriz dinámica productiva no inspeccionada.
+- tests/regression/academic-grading-suite.js (1-412), modular-dashboard-suite.js (1-61) y runAcademicPlanningRegressionSuite TC-F7-01..07 no cubren CA-F7-87..92.
+DOCUMENTACIÓN:
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, línea 4346: TAREA-F7-IMP-14 [X].
+- Pendientes.md lectura ordinaria: 0 caracteres; blob 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c recuperado: 1.782.094 caracteres, 20.182 líneas, 0 U+FFFD, 511 TASK únicos TASK-001..TASK-511; no contiene TAREA-F7-IMP-14. No se modifica.
+- Informe individual y fuente AUDITORIA_FASE_7_PLANIFICACION_HORARIOS_RECURSOS.md: 404; se realiza la auditoría desde cero.
+- ChangesLogs.txt líneas 2394-2404 declara botón/modal y controlador integrados; HTML vigente no los contiene.
+TAREAS DERIVADAS:
+- Nuevas: TASK-603 (diff de impacto real) y TASK-604 (lote inmutable/actor autorizado).
+- Ampliar TAREA-F7-IMP-15 para atomicidad y recuperación de publicación.
+- Ampliar TASK-577..TASK-583 (notificación/outbox/destinatarios/historial/deduplicación/estados/UI/pruebas); TASK-585/TASK-591 (estado canónico y visibilidad); TASK-598 (revalidación completa); TASK-601 (UI conectada); TASK-602 (regresión CA-F7-87..92); TASK-567 (actor verificado).
+RELACIONES: AUD-NG-245, AUD-NG-246, AUD-NG-247, AUD-NG-248, TAREA-F7-IMP-15 y TAREA-F7-IMP-01/02.
+PRUEBAS/LÍMITES: inspección estática manual y verificación Git; no ejecutados Apps Script runtime, HTTP/OAuth, DOM/navegador, Sheets productivas, publicación real, fallo inducido, concurrencia, notificaciones, Node ni E2E.
+ARCHIVOS NUEVOS: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-14.md.
+ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+CÓDIGO, UI, PRUEBAS, completadas.md, Pendientes.md, ChangesLogs.txt y rama base: SIN CAMBIOS.
+SIGUIENTE TAREA: TAREA-F7-IMP-15 (CA-F7-93..98).
+===============================================================================

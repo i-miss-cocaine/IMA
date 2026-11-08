@@ -8483,3 +8483,36 @@ Auditar TAREA-F6-015 y TAREA-F6-040. Buscar informes individuales e historial en
 - **Siguiente tarea exacta:** TAREA-F7-IMP-14, fortalecer publicación y control de cambios masivos; CA-F7-87..92. Verificar informe individual/fuente y, si falta el informe, auditar directamente contra completadas.md y código vigente.
 - **Próxima acción concreta:** verificar HEAD de NG_beta_0.0.0.1_work tras el commit, confirmar los cinco documentos de esta iteración y comparar NG_beta_0.0.0.1 para asegurar que la rama base no cambió.
 ===============================================================================
+
+
+===============================================================================
+## C1.246 - Checkpoint de cierre: auditoría TAREA-F7-IMP-14 (2026-11-08)
+
+- **ID de sesión operativo:** IMA-AUDIT-20261108-0430Z (identificador documental, no ID nativo de ChatGPT).
+- **Checkpoint inicial:** C1.245. **Checkpoint de cierre:** C1.246.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Archivo de contexto:** AUDITORIAS/Contexto_personal.txt.
+- **Rama de trabajo autorizada:** NG_beta_0.0.0.1_work.
+- **Rama base protegida:** NG_beta_0.0.0.1.
+- **HEAD de partida verificado:** 348c9d139314233dc1482e99707ef965ed07d027; la comparación entre ese commit y la referencia de rama NG_beta_0.0.0.1_work devolvió identical (0 adelante, 0 detrás).
+- **HEAD base verificado:** 44d9891132332e692dbe2ba8602b41f50a508a59; la rama de trabajo está 313 commits adelante y 0 detrás.
+- **Base de árbol usada para construir el nuevo árbol Git:** 8490dbd9e01cf354b8876ef7f8183146e8085d53 (árbol del checkpoint C1.244). Para conservar exactamente C1.245 se reaplicaron los blobs de sus cinco archivos documentales modificados: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-13.md, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md y Contexto_personal.txt. El commit C1.245 se verificó como HEAD de rama antes de construir.
+- **Último checkpoint válido de inicio:** C1.245.
+- **Tarea auditada:** TAREA-F7-IMP-14, marca histórica [X], dictamen NO CUMPLE.
+- **Criterios:** CA-F7-87 NO CUMPLE; CA-F7-88 PARCIAL; CA-F7-89 PARCIAL; CA-F7-90 NO CUMPLE; CA-F7-91 NO CUMPLE; CA-F7-92 NO CUMPLE.
+- **Hallazgo nuevo:** AUD-NG-249 (ALTO/P1), relacionado con AUD-NG-245, AUD-NG-246, AUD-NG-247, AUD-NG-248 y TAREA-F7-IMP-15.
+- **Tareas derivadas:** TASK-603 y TASK-604 nuevas; TAREA-F7-IMP-15 ampliada para atomicidad de publicación; TASK-577..583, TASK-585/TASK-591, TASK-598, TASK-601, TASK-602 y TASK-567 ampliadas.
+- **Integridad documental:** completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, línea 4346, marca [X]. Pendientes.md lectura convencional 0 caracteres; blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c recuperado con 1.782.094 caracteres, 20.182 líneas, 0 U+FFFD, 511 TASK únicos (TASK-001..TASK-511), sin TAREA-F7-IMP-14. Informe individual y origen AUDITORIA_FASE_7_PLANIFICACION_HORARIOS_RECURSOS.md no existen; se realiza auditoría desde cero. ChangesLogs.txt líneas 2394-2404 contradice el HTML actual respecto del modal.
+- **Puntos inspeccionados:** backend/academic-service/Code.gs ROLE_PERMISSIONS (168-260), validateRolePermission (524-583), doPost/dispatcher (671-975), recordEntityChangeLog (1568-1595), previewPublishImpact (3351-3400), getClassSchedules (6718-6764), publishClassSchedules (7007-7116), getScheduleVersions (7119-7142), compareScheduleVersions (7144-7221), checkScheduleConflict (7493-7691), runAcademicPlanningRegressionSuite (14109-14173); js/teacher.js (992-1076); teacher-dashboard.html completo (1-1475); backend/user-service/Code.gs dispatchScheduleChangeNotifications (8858-8894); tests/regression/academic-grading-suite.js y modular-dashboard-suite.js; completadas.md, Pendientes.md por blob, ChangesLogs.txt, informes IMP-10..13 y registros de auditoría.
+- **Evidencia:** borradores pueden aparecer como Activo; preview no compara versiones ni identifica altas/modificaciones/cancelaciones; HTML no tiene modal/invocador; confirmación no pasa IDs/token y backend publica todos los borradores sin filtro; no se separan borradores de otros usuarios; revalidación parcial por estados inconsistentes y excepciones curriculares silenciadas; escrituras secuenciales sin rollback ni estado de lote; snapshot best-effort; publisher usa payload.authUserId y no _verifiedUserId; no hay llamada de notificaciones ni escritura HistorialCambiosEntidad desde publish; suite sin CA-F7-87..92.
+- **SHAs de respaldo:** academic Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5; teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; teacher-dashboard.html cbb9e6a272a7d8ad33f99727303305d950533e71; USER Code.gs 12079dd410aa6d8afbce55a4bc62a79dea605f9f; academic-grading-suite.js a22cb3ef376fe09e65c1b17c2f4f5125290bfba6; modular-dashboard-suite.js 0495e1d526a872c33310935a003a83d924d34683; completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676; Pendientes.md 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c; ChangesLogs.txt 5b5cff1926b73a05d1b92087a7bf4b2db75326ff; METODOLOGIA_DESARROLLO.md cf796728bb384a32537392df2f9c72a339fa03ee.
+- **Pruebas ejecutadas:** inspección estática/manual, verificación de SHAs, rama y comparaciones Git, recuperación del blob de pendientes.
+- **No ejecutadas:** Apps Script runtime, HTTP/OAuth, DOM/navegador real, Sheets productivas, publicación real, fallo inducido, concurrencia, notificaciones, Node ni E2E.
+- **Archivos nuevos:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-14.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Archivos sin cambios:** backend/academic-service/Code.gs; backend/user-service/Code.gs; js/teacher.js; teacher-dashboard.html; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; rama base.
+- **Última tarea completamente auditada:** TAREA-F7-IMP-14.
+- **Tarea en curso:** ninguna al cierre.
+- **Siguiente tarea exacta:** TAREA-F7-IMP-15, concurrencia y protección de operaciones críticas; CA-F7-93..98. Debe auditarse desde sus requisitos completos y código vigente, incorporando la atomicidad de importación/publicación masiva sin duplicar IDs.
+- **Próxima acción concreta:** verificar el commit único que contiene C1.246 y los cinco documentos; confirmar HEAD de NG_beta_0.0.0.1_work y comparar NG_beta_0.0.0.1 para confirmar que la base permanece intacta.
+===============================================================================
