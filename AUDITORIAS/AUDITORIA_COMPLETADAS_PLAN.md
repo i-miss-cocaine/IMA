@@ -2106,3 +2106,16 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **SHAs:** teacher-dashboard cbb9e6a272a7d8ad33f99727303305d950533e71; student-dashboard 6379ea0ed39d71b89747a0280bb925fdf12202c1; teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; student.js e2888cea60322e49a40b89adadb8010489605dcc; style.css f1ff84312ce70949a58eaa099b2aad0ff0a59cb6; Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5.
 - **Pruebas:** inspección manual/estática y Git/blob. No ejecutados navegador, impresión/PDF, CSV real, Apps Script, Sheets productivas, HTTP/OAuth, roles/matrículas reales, Node ni E2E.
 - **Siguiente tarea exacta:** TAREA-F7-IMP-24, preferencias de calendario y personalización de vistas.
+
+
+---
+
+## Corrección C1.258 — Auditoría IMP-22
+- **AUD-NG-265:** invalidado. Code.gs:249 es ROLE_PERMISSIONS["Profesor"]; PUBLIC_ACTIONS está en línea 265 y no incluye las acciones de plantillas.
+- **TASK-622:** retirada/no ejecutable; no reutilizar.
+- **AUD-NG-266..269:** permanecen conforme a sus evidencias.
+
+## Ampliación C1.258 — Auditoría IMP-23
+- **CA-F7-140:** se añade evidencia de que Estudiante/Alumno tienen permiso getClassSchedules y el backend permite filtros omitidos, devolviendo el conjunto no excluido por cancelación. La validación contextual no impone automáticamente el ámbito sobre esa consulta.
+- **Reconciliación:** ampliar AUD-NG-246/TASK-586 y TASK-626/TASK-627; no crear un hallazgo duplicado.
+- **Continuidad:** C1.254 es el último checkpoint válido indicado por el usuario. C1.255 no se reconoce como válido; C1.256/C1.257 se conservan como registros históricos.

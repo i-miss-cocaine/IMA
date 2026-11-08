@@ -225,3 +225,18 @@ Criterios auditados:
 - **Archivos de auditoría actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
 - **Archivos sin cambios:** backend/academic-service/Code.gs; js/teacher.js; teacher-dashboard.html; tests/regression/academic-grading-suite.js; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; rama base.
 - **Siguiente tarea exacta:** TAREA-F7-IMP-23, herramientas de impresión y distribución de horarios.
+
+
+---
+
+## Fe de erratas C1.258 — Corrección de AUD-NG-265 y TASK-622
+
+La revisión del blob exacto de backend/academic-service/Code.gs (SHA df87a2eea9f0ef79d0b966d03fd5bbe432003df5) corrige la lectura de la auditoría IMP-22:
+
+- La línea 249 pertenece a ROLE_PERMISSIONS["Profesor"] e incluye saveScheduleTemplate, getScheduleTemplates y applyScheduleTemplate como acciones permitidas para ese rol.
+- PUBLIC_ACTIONS está declarado en la línea 265 y contiene únicamente ping, createAdmissionRequest, getPublicAdmissionStatus, saveAdmissionDraft, getAdmissionDraft y getServiceHealthDiagnostics. Ninguna de las tres acciones de plantillas aparece en PUBLIC_ACTIONS.
+- validateRolePermission solo omite autenticación para acciones incluidas realmente en PUBLIC_ACTIONS. Las acciones de plantillas requieren token de sesión válido y pasan por RBAC.
+
+**Corrección:** no existe evidencia de que las tres acciones de plantillas sean públicas ni de que permitan invocación anónima. AUD-NG-265 queda invalidado y TASK-622 queda retirada/no ejecutable; no debe implementarse ni reutilizarse su ID. AUD-NG-266, AUD-NG-267, AUD-NG-268 y AUD-NG-269 permanecen sujetos a sus respectivas evidencias.
+
+Esta fe de erratas es acumulativa y prevalece sobre la afirmación incorrecta del informe original; no elimina el registro histórico.

@@ -3,12 +3,12 @@
 
 - **Fecha:** 2026-11-08.
 - **Sesión operativa:** IMA-AUDIT-20261108-1935Z-01 (identificador documental, no ID nativo de ChatGPT).
-- **Checkpoint inicial:** C1.255.
+- **Checkpoint inicial válido:** C1.254. C1.255 no se reconoce como válido por instrucción expresa del usuario; los commits posteriores se inspeccionan como estado de rama, no como checkpoint de continuidad.
 - **Repositorio:** i-miss-cocaine/IMA.
 - **Rama auditada:** NG_beta_0.0.0.1_work.
 - **HEAD de partida verificado:** f79551dc9a6e37e033ebc24c5ef287b1ae750320.
-- **Tree SHA de partida reconstruido:** 27b254427ecfbde4b9e6aff09c2fd4ed8437b0c9 (árbol base de C1.255 reconstruido aplicando las cinco rutas exactas de su diff sobre el tree de C1.254).
-- **Rama base protegida:** NG_beta_0.0.0.1, HEAD 44d9891132332e692dbe2ba8602b41f50a508a59; comparación: 324 commits adelante, 0 detrás.
+- **Tree SHA de partida reconstruido:** 27b254427ecfbde4b9e6aff09c2fd4ed8437b0c9 (árbol del HEAD de partida, descendiente de C1.254; contiene el commit rotulado C1.255, cuyo checkpoint no se reconoce como válido).
+- **Rama base protegida:** NG_beta_0.0.0.1, HEAD 44d9891132332e692dbe2ba8602b41f50a508a59; comparación: 326 commits adelante, 0 detrás.
 - **Estado en completadas.md:** [X] histórico; no equivale a certificación funcional.
 - **Prioridad declarada:** P3.
 - **Dictamen:** **NO CUMPLE**.
@@ -44,7 +44,7 @@ Criterios auditados:
 
 ## 2. Procedimiento y fuentes
 
-1. Verificar repositorio, rama, HEAD, árbol reconstruido, checkpoint C1.255 y rama base.
+1. Verificar repositorio, rama, HEAD, árbol reconstruido, checkpoint válido C1.254, el commit posterior rotulado C1.255 y la rama base.
 2. Consultar completadas.md, Pendientes.md, ChangesLogs.txt, el informe individual esperado y la fuente de Fase 7.
 3. Recuperar Pendientes.md directamente desde el blob cuando la lectura ordinaria devuelva cero caracteres.
 4. Inspeccionar manualmente los controladores de impresión, las vistas HTML completas, el CSS de impresión, los consumidores de horarios, el endpoint CSV y los contratos de lectura backend.
@@ -238,3 +238,13 @@ Criterios auditados:
 - **Archivos de auditoría actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
 - **Archivos sin cambios:** teacher-dashboard.html; student-dashboard.html; js/teacher.js; js/student.js; css/style.css; backend/academic-service/Code.gs; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; rama base.
 - **Siguiente tarea exacta:** TAREA-F7-IMP-24, preferencias de calendario y personalización de vistas.
+
+
+---
+
+## Fe de erratas C1.258 — Continuidad válida y ampliación de CA-F7-140
+
+- **Continuidad:** el checkpoint inicial válido es C1.254, conforme a la corrección expresa del usuario. C1.255 no es válido. El HEAD f79551dc9a6e37e033ebc24c5ef287b1ae750320 usado para la inspección era un descendiente de C1.254 que contenía el commit rotulado C1.255; se inspeccionó como estado de código, no se aceptó como checkpoint. Los registros C1.256 y C1.257 se conservan como commits/documentación histórica, pero su campo de checkpoint inicial no sustituye C1.254.
+- **Rama base:** la comparación verificada de NG_beta_0.0.0.1_work con NG_beta_0.0.0.1 devuelve 326 commits adelante y 0 detrás; se corrige el dato anterior de 324.
+- **Ampliación de CA-F7-140:** además de la debilidad ya citada en getStudentSchedule, ROLE_PERMISSIONS (Code.gs:261) permite getClassSchedules a Estudiante y Alumno. getClassSchedules (6718-6764) acepta filtros opcionales y, si no se envían, puede devolver todos los registros no excluidos por su filtro de cancelación. validateContextualAccess (465-523) no restringe docenteUserId/ofertaId/grado/sección/aula salvo que el cliente aporte scopeType y requestedValue; getClassSchedules no los envía por sí mismo. Por tanto, un estudiante autenticado puede invocar la acción permitida sin filtros y recibir horarios fuera de su matrícula/ámbito. Esto amplía AUD-NG-246/TASK-586 y debe cubrirse en TASK-626/TASK-627; no se crea un hallazgo duplicado.
+- **Dictamen:** CA-F7-140 permanece NO CUMPLE. Los hallazgos AUD-NG-270..273 y las tareas TASK-626..629 se mantienen; esta corrección no altera su alcance.

@@ -9149,3 +9149,17 @@ ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md;
 SIN CAMBIOS: código/UI/pruebas; completadas.md; Pendientes.md; ChangesLogs.txt; metodología; rama base.
 SIGUIENTE: TAREA-F7-IMP-24, preferencias de calendario y personalización de vistas.
 ===============================================================================
+
+
+===============================================================================
+FE DE ERRATAS C1.258 — IMP-22
+- Code.gs:249 pertenece a ROLE_PERMISSIONS["Profesor"]; PUBLIC_ACTIONS inicia en Code.gs:265 y no contiene saveScheduleTemplate, getScheduleTemplates ni applyScheduleTemplate.
+- AUD-NG-265 se invalida por lectura incorrecta; TASK-622 queda retirada/no ejecutable. No reutilizar el ID. AUD-NG-266..269 permanecen.
+===============================================================================
+
+AMPLIACIÓN C1.258 — IMP-23 / CA-F7-140
+- ROLE_PERMISSIONS (Code.gs:261) permite getClassSchedules a Estudiante y Alumno.
+- getClassSchedules (6718-6764) acepta filtros opcionales y puede devolver todos los horarios si no recibe filtros; validateContextualAccess (465-523) no vincula por defecto docenteUserId/ofertaId/grado/sección/aula con la identidad verificada.
+- Este acceso amplía AUD-NG-246/TASK-586 y las tareas TASK-626/TASK-627; no crear un hallazgo duplicado.
+- Continuidad: C1.254 es el último checkpoint válido. C1.255 no se reconoce como válido. C1.256/C1.257 quedan como registros históricos y no sustituyen el punto de continuidad.
+===============================================================================

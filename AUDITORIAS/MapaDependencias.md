@@ -3628,3 +3628,16 @@ Inspección estática/manual. No se ejecutaron Apps Script runtime, HTTP/OAuth, 
 - TASK-627: integrar impresión estudiante con área imprimible y matrícula/ámbito verificados en servidor.
 - TASK-628: generar snapshot con metadatos reales de período, filtros, fecha y versión/estado; preservar documentos generados y no etiquetar borradores como oficiales.
 - TASK-629: completar paginación, saltos, encabezados/pies y legibilidad multipágina.
+
+
+---
+
+## Fe de erratas C1.258 — TAREA-F7-IMP-22
+- Code.gs:249 es ROLE_PERMISSIONS["Profesor"]; PUBLIC_ACTIONS se declara en línea 265 y no contiene acciones de plantillas.
+- AUD-NG-265 queda invalidado; TASK-622 queda retirada/no ejecutable. No reutilizar el ID.
+
+## Ampliación C1.258 — TAREA-F7-IMP-23 / CA-F7-140
+- ROLE_PERMISSIONS permite getClassSchedules a Estudiante y Alumno (Code.gs:261).
+- getClassSchedules acepta filtros opcionales y puede retornar todos los horarios cuando se omiten; validateContextualAccess no ata los filtros a la identidad verificada si el payload no incluye scopeType/requestedValue.
+- Ampliar AUD-NG-246/TASK-586 y TASK-626/TASK-627. No duplicar el hallazgo de ámbito.
+- El último checkpoint válido de continuidad es C1.254; C1.255 no es válido. Los registros C1.256/C1.257 se conservan como historia, no como punto inicial de continuidad.
