@@ -8386,3 +8386,33 @@ Auditar TAREA-F6-015 y TAREA-F6-040. Buscar informes individuales e historial en
 - **Hora UTC de cierre:** se toma del timestamp GitHub del commit de cierre.
 - **Estado de sesión:** sesión cerrada tras publicar y verificar el commit único.
 - **Próxima acción concreta:** abrir completadas.md en TAREA-F7-IMP-11; verificar informe individual y origen; auditar CA-F7-69..74 en backend, API, UI docente/estudiante/secretaría y pruebas.
+
+
+===============================================================================
+## C1.243 - Checkpoint de cierre: auditoría TAREA-F7-IMP-11 (2026-11-08)
+
+- **ID de sesión operativo:** IMA-AUDIT-20261108-0044Z (no es ID nativo de ChatGPT).
+- **Checkpoint inicial:** C1.242. **Checkpoint de cierre:** C1.243.
+- **Estado:** documentación de auditoría preparada; pendiente publicación y verificación del commit único.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Archivo de contexto:** AUDITORIAS/Contexto_personal.txt.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **Rama base protegida:** NG_beta_0.0.0.1.
+- **HEAD de partida:** 0c75acd298e7b94dcb80cdbe53d0d5a6699f9ef6.
+- **Árbol de partida:** 0ae6e653a50572a16acdf46b5ccc0d2e434388db.
+- **HEAD base verificado:** 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Último elemento completado:** TAREA-F7-IMP-10, C1.242, commit 0c75acd298e7b94dcb80cdbe53d0d5a6699f9ef6.
+- **Elemento auditado:** TAREA-F7-IMP-11; dictamen NO CUMPLE; marca [X] preservada.
+- **Siguiente tarea:** TAREA-F7-IMP-12 (CA-F7-75..80).
+- **Hallazgo:** AUD-NG-246; relaciones AUD-NG-001, AUD-NG-236, AUD-NG-237, AUD-NG-243, AUD-NG-244 y AUD-NG-245.
+- **Tareas derivadas:** TASK-584..TASK-589, todas Pendientes; TASK-567 ampliada para credenciales/identidad verificada de consultas de horarios.
+- **Puntos inspeccionados:** HorariosClase schema (Code.gs:114); ROLE_PERMISSIONS (168-263); validateContextualAccess (465-521); validateRolePermission (524-583); router (671-810); getClassSchedules (6718-6770); createClassSchedule (6900-6990); deleteClassSchedule (6992-7005); publishClassSchedules (7008-7117); getStudentSchedule (7985-8082); invalidateScheduleCache (13813-13833); runAcademicPlanningRegressionSuite (14108-14173); teacher.js (589-682, 699-780, 1908); student.js (184-260, 884-954); secretary.js; api.js (39-58, 142-190); tres HTML de portal y suites.
+- **Evidencia:** nodos DOM ausentes en teacher/student; Secretaría sin consumidor; contrato HorariosClase 8/9/11 columnas; borradores pueden mostrarse como activos; caché 600s con invalidador incompatible; freshnessToken no es revisión de fuente y no se usa; respuestas tardías no se descartan; fetchApi no transmite token y transforma fallos GET en success/data[]; no hay verificación de relación familiar/ámbito docente.
+- **SHAs respaldados:** backend/academic-service/Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5; js/teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; js/student.js e2888cea60322e49a40b89adadb8010489605dcc; js/secretary.js 08a81266957b4c18cc25f8ba6749eac30a8f2c2c; js/api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; teacher-dashboard.html cbb9e6a272a7d8ad33f99727303305d950533e71; student-dashboard.html 6379ea0ed39d71b89747a0280bb925fdf12202c1; dashboard-secretaria.html fa0d8c23aace24a6acab2d4956398a7f5e1309b8; academic-grading-suite.js a22cb3ef376fe09e65c1b17c2f4f5125290bfba6; modular-dashboard-suite.js 0495e1d526a872c33310935a003a83d924d34683; completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676; ChangesLogs.txt 5b5cff1926b73a05d1b92087a7bf4b2db75326ff; metodología cf796728bb384a32537392df2f9c72a339fa03ee.
+- **Pruebas ejecutadas:** inspección estática/manual focalizada y verificación Git.
+- **No ejecutadas:** Apps Script runtime, HTTP/OAuth, navegador/DOM real, CacheService, Sheets productivas, concurrencia E2E, pruebas históricas ni suites Node.
+- **Archivos nuevos:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-11.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Archivos sin cambios:** código, UI, pruebas, completadas.md, ChangesLogs.txt, Pendientes.md, metodología y rama base.
+- **Próxima acción concreta:** verificar publicación de los cinco documentos en un único commit; después abrir completadas.md en TAREA-F7-IMP-12, verificar informe individual y origen, y auditar cálculos, filtros, permisos y exportaciones. 
+===============================================================================

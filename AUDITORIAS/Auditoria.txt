@@ -8716,3 +8716,34 @@ ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md;
 ARCHIVOS DE CÓDIGO, UI, PRUEBAS, completadas.md, Pendientes.md y ChangesLogs.txt: SIN CAMBIOS.
 SIGUIENTE TAREA: TAREA-F7-IMP-11 (CA-F7-69..74).
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-08
+AUDITORÍA FUNCIONAL Y TÉCNICA - TAREA-F7-IMP-11: COHERENCIA Y ACTUALIZACIÓN DE PORTALES
+DICTAMEN: NO CUMPLE (se conserva [X] histórico en completadas.md).
+HALLAZGO NUEVO: AUD-NG-246.
+CRITERIOS:
+- CA-F7-69 NO CUMPLE: faltan nodos DOM en teacher-dashboard.html y student-dashboard.html; controladores retornan sin renderizar; fetchApi no envía token y no se invalida caché tras create/delete/publish.
+- CA-F7-70 PARCIAL: fetchApi convierte fallos GET de red en success/data[]; listado docente puede presentar error como horario vacío.
+- CA-F7-71 NO CUMPLE: freshnessToken es generado por consulta e ignorado; no hay control de orden de respuestas; caché 600s sin invalidación coherente.
+- CA-F7-72 NO CUMPLE: no se verifica relación activa de Padre/Tutor/Responsable; estudiante puede indicar grado/sección arbitrarios; getClassSchedules no restringe docente/oferta al ámbito verificado.
+- CA-F7-73 NO CUMPLE: getStudentSchedule incluye Borrador; getClassSchedules interpreta columnas incompatibles y no filtra estados canónicos.
+- CA-F7-74 PARCIAL: writes de horario inspeccionados no mutan directamente asistencia/evaluación, pero no hay prueba conductual de preservación histórica.
+EVIDENCIA:
+- HorariosClase se declara con 8 columnas (Code.gs:114); createClassSchedule escribe 9 valores (6933-6959), otras rutas históricas usan 11; getClassSchedules (6718-6770) interpreta r[7]/r[8]/r[9] como grado/sección/estado.
+- getStudentSchedule (7985-8082) solo excluye Inactivo y permite Borrador.
+- teacher-dashboard.html carga teacher.js pero carece de schedules-table-body, schedule-builder-form, btn-load-schedules-list y sch-matrix-mode; student-dashboard.html carga student.js pero carece de student-schedule-container, btn-refresh-student-schedule y family-student-switcher-container.
+- dashboard-secretaria.html y js/secretary.js no contienen consumidor/vista de horarios.
+- getClassSchedules cachea 600s con clave de seis segmentos; invalidateScheduleCache usa patrones de cuatro y no se invoca desde create/delete/publish.
+- getStudentSchedule genera lastSyncTime/freshnessToken por consulta; UI no compara versión ni descarta respuestas tardías.
+- validateRolePermission exige token; fetchApi (39-58) no lo transmite. validateContextualAccess no verifica vínculo familiar ni ámbito docente/oferta/grado/sección.
+- fetchApi (142-190) convierte fallos de red GET en success/data[]; runAcademicPlanningRegressionSuite (14108-14173) solo cubre TC-F7-01..07; suites de regresión sin CA-F7-69..74.
+TAREAS DERIVADAS: TASK-584..TASK-589, definidas en AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-11.md. TASK-567 existente ampliada para token/identidad verificada.
+RELACIONES: AUD-NG-001, AUD-NG-236, AUD-NG-237, AUD-NG-243, AUD-NG-244, AUD-NG-245.
+PRUEBAS/LÍMITES: inspección estática manual y verificación Git; no ejecutados Apps Script runtime, HTTP/OAuth, navegador, CacheService, Sheets productivas, concurrencia E2E ni suites Node.
+ARCHIVOS NUEVOS: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-11.md.
+ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+CÓDIGO, UI, PRUEBAS, completadas.md, ChangesLogs.txt y Pendientes.md: SIN CAMBIOS.
+SIGUIENTE TAREA: TAREA-F7-IMP-12 (CA-F7-75..80).
+===============================================================================

@@ -1843,3 +1843,31 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **Commit de cierre:** un único commit con los cinco documentos; su SHA se confirma consultando HEAD tras publicar, sin autorreferencia dentro del checkpoint.
 - **Siguiente tarea exacta:** TAREA-F7-IMP-11, Fortalecer la coherencia y actualización de los portales relacionados; CA-F7-69..74.
 ===============================================================================
+
+
+===============================================================================
+## C1.243 - Auditoría TAREA-F7-IMP-11 (2026-11-08)
+
+- **ID de sesión operativo:** IMA-AUDIT-20261108-0044Z.
+- **Checkpoint inicial:** C1.242. **Checkpoint de cierre:** C1.243.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **Rama base:** NG_beta_0.0.0.1.
+- **HEAD de partida:** 0c75acd298e7b94dcb80cdbe53d0d5a6699f9ef6; árbol 0ae6e653a50572a16acdf46b5ccc0d2e434388db.
+- **HEAD base:** 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Tarea:** TAREA-F7-IMP-11; NO CUMPLE; marca [X] preservada.
+- **Criterios:** CA-F7-69 NO CUMPLE; CA-F7-70 PARCIAL; CA-F7-71 NO CUMPLE; CA-F7-72 NO CUMPLE; CA-F7-73 NO CUMPLE; CA-F7-74 PARCIAL.
+- **Informe individual:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-11.md, nuevo.
+- **Origen citado:** AUDITORIA_FASE_7_PLANIFICACION_HORARIOS_RECURSOS.md ausente en raíz y AUDITORIAS; se omite, no la auditoría.
+- **Hallazgo:** AUD-NG-246, relacionado con AUD-NG-001, AUD-NG-236, AUD-NG-237, AUD-NG-243, AUD-NG-244 y AUD-NG-245.
+- **Tareas derivadas:** TASK-584..TASK-589, Pendientes; TASK-567 ampliada para token e identidad verificada.
+- **Evidencia:** DOM de horarios ausente en portales Docente/Estudiante; contrato HorariosClase 8/9/11 columnas incompatible; getStudentSchedule incluye Borrador; caché de 600s con invalidador incompatible y sin llamadas desde create/delete/publish; freshnessToken no consumido y respuestas tardías no descartadas; fetchApi no transmite token y convierte fallos GET en success/data[]; relación familiar y ámbito docente no validados; suites sin CA-F7-69..74.
+- **SHAs de código/UI/pruebas:** backend/academic-service/Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5; js/teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; js/student.js e2888cea60322e49a40b89adadb8010489605dcc; js/secretary.js 08a81266957b4c18cc25f8ba6749eac30a8f2c2c; js/api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; teacher-dashboard.html cbb9e6a272a7d8ad33f99727303305d950533e71; student-dashboard.html 6379ea0ed39d71b89747a0280bb925fdf12202c1; dashboard-secretaria.html fa0d8c23aace24a6acab2d4956398a7f5e1309b8; academic-grading-suite.js a22cb3ef376fe09e65c1b17c2f4f5125290bfba6; modular-dashboard-suite.js 0495e1d526a872c33310935a003a83d924d34683.
+- **SHAs de registros:** completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676; ChangesLogs.txt 5b5cff1926b73a05d1b92087a7bf4b2db75326ff; metodología cf796728bb384a32537392df2f9c72a339fa03ee; Auditoria.txt previo 95c93a323e6edcea6e172b44ab6fb7222e8f3c6e; MapaDependencias.md previo a6397dfc8b14b8cfe83e1d590ab45737b27b911c; plan previo b5d3edbdbff7be16041108b769423ab1a8f36111; Contexto previo 277cf064af91bec9aa364494b8fd65d0aa72e559.
+- **Pruebas ejecutadas:** inspección estática manual focalizada y verificación Git.
+- **No ejecutadas:** Apps Script runtime, HTTP/OAuth, navegador/DOM real, CacheService, Sheets productivas, concurrencia E2E, pruebas históricas ni suites Node.
+- **Archivos nuevos:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-11.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Archivos sin cambios:** código, UI, pruebas, completadas.md, ChangesLogs.txt, Pendientes.md, metodología y rama base.
+- **Siguiente tarea:** TAREA-F7-IMP-12 (CA-F7-75..80), reportes de carga docente, ocupación y calidad de planificación.
+===============================================================================

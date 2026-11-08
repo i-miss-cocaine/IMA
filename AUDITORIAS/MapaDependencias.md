@@ -3306,3 +3306,39 @@ Inspección estática/manual. No se ejecutaron Apps Script runtime, HTTP/OAuth, 
 - TASK-582: integrar historial en UI y restringir consultas por ámbito.
 - TASK-583: regresión conductual CA-F7-63..68.
 - TASK-567 ampliada: token y actor verificado en consultas de historial de notificaciones.
+
+
+## Sincronización multiportal de horarios (TAREA-F7-IMP-11 / AUD-NG-246)
+
+### Interfaz y consumidores
+- teacher-dashboard.html carga js/teacher.js pero carece de schedules-table-body, schedule-builder-form, btn-load-schedules-list y sch-matrix-mode; loadMasterSchedules (664-682) retorna sin contenedor.
+- student-dashboard.html carga js/student.js pero carece de student-schedule-container, btn-refresh-student-schedule y family-student-switcher-container; fetchAndRenderStudentSchedule (884-954) e initFamilyStudentSwitcher (184-260) retornan sin nodos.
+- dashboard-secretaria.html carga js/secretary.js, pero no existe consumidor de getClassSchedules/getStudentSchedule. Se deja como brecha de alcance a definir.
+- Los portales Docente y Estudiante sí cargan js/api.js.
+
+### Contrato y estados
+- HorariosClase se declara con 8 columnas; createClassSchedule agrega 9 valores y otras rutas heredadas 11. getClassSchedules interpreta r[7]/r[8]/r[9] como grado/sección/estado; para filas canónicas son Estado/UltimaModificacion/undefined.
+- getStudentSchedule filtra solo Inactivo y puede devolver Borrador. getClassSchedules filtra Cancelado en índices 9/10 y no filtra estados canónicos.
+- La fuente del horario estudiantil relaciona OfertaAcademica -> OfertaID -> HorariosClase; la fila debe estar publicada y activa.
+
+### Caché y concurrencia
+- getClassSchedules genera clave schedules_<año>_<grado>_<sección>_<docente>_<oferta>_<aula> y TTL 600 segundos.
+- invalidateScheduleCache elimina patrones de cuatro segmentos que no coinciden con la clave de seis; createClassSchedule/deleteClassSchedule/publishClassSchedules no la invocan.
+- getStudentSchedule genera lastSyncTime/freshnessToken por hora de consulta; UI no compara token ni descarta respuestas tardías.
+- fetchApi transforma errores de red GET en success/data[].
+
+### Seguridad
+- validateRolePermission exige token; fetchApi no envía sessionToken/authToken/token.
+- validateContextualAccess solo restringe userId propio para Estudiante/Alumno. No verifica vínculo activo de Padre/Tutor/Responsable ni ámbito docente/oferta/grado/sección.
+- TASK-567/AUD-NG-001 se amplía para credenciales; TASK-586 cubre autorización contextual.
+
+### Hallazgo y tareas
+- AUD-NG-246 nuevo; relacionado con AUD-NG-001, AUD-NG-236, AUD-NG-237, AUD-NG-243, AUD-NG-244 y AUD-NG-245.
+- CA-F7-69 NO CUMPLE; CA-F7-70 PARCIAL; CA-F7-71 NO CUMPLE; CA-F7-72 NO CUMPLE; CA-F7-73 NO CUMPLE; CA-F7-74 PARCIAL.
+- TASK-584: conectar nodos y controles de horario.
+- TASK-585: unificar esquema y filtros de estado.
+- TASK-586: autorización contextual; TASK-567 se amplía para token.
+- TASK-587: invalidación, revisión persistente y descarte de respuestas obsoletas.
+- TASK-588: separar error, vacío y obsoleto.
+- TASK-589: regresión conductual CA-F7-69..74.
+- Todas Pendientes; criterios completos en el informe individual.
