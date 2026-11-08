@@ -2165,3 +2165,17 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **Evidencia:** USER 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ACADEMIC df87a2eea9f0ef79d0b966d03fd5bbe432003df5; TASK 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe; completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676; Pendientes.md blob 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c.
 - **Pruebas:** inspección manual/estática; no ejecutados HTTP, Apps Script, cuentas reales, Script Properties, Drive ni Sheets productivos.
 - **Siguiente tarea cronológica:** F8-Task02, auditar los archivos existentes y elaborar inventario de dependencias.
+
+
+---
+
+## F8-Task02 / TAREA-MOD-01 — Inventario y dependencias (C1.262)
+
+- **Dictamen:** NO CUMPLE; se conserva la marca histórica [X] en completadas.md.
+- **Criterios:** CA-MOD-101 NO CUMPLE; CA-MOD-102 PARCIAL.
+- **Hallazgos:** AUD-NG-281 inventario parcial; AUD-NG-282 mapa/rutas sin cobertura integral; AUD-NG-283 falta de evidencia de duplicaciones/globales/ciclos.
+- **Tareas ejecutables derivadas:** TASK-637 inventario completo; TASK-638 trazabilidad de dependencias y contratos; TASK-639 revisión manual de duplicaciones, globales, ciclos y acoplamientos.
+- **Evidencia:** árbol Git 974 archivos; repository-inventory.md 40 líneas; routing-and-paths.md 28 líneas; modular-dashboard-suite.js 61 líneas; MapaDependencias.md 3.757 líneas. Los documentos existentes no demuestran cobertura de todos los archivos.
+- **Pendientes.md:** lectura convencional 0 caracteres; blob actual 676a3f798715f0cdd7d4bc75768472545b8465ee recuperado (1.786.011 caracteres, 20.224 líneas, 0 U+FFFD, 515 IDs TASK numéricos únicos TASK-001..TASK-636); blob histórico 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c también recuperado. Se conserva el blob actual del HEAD; no se restauró el histórico ni se modificó el archivo.
+- **Pruebas:** inspección manual/documental y Git. No ejecutados Node, navegador, HTTP, Apps Script ni E2E.
+- **Siguiente tarea exacta:** F8-Task03, actualizar y verificar las rutas y dependencias después de reorganizar el repositorio.

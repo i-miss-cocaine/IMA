@@ -3754,3 +3754,29 @@ Inspección estática/manual. No se ejecutaron Apps Script runtime, HTTP/OAuth, 
 
 ### Límites
 Inspección estática/manual y Git/blob; no se ejecutaron requests HTTP, Apps Script, Script Properties, cuentas reales ni recursos productivos. No se puede confirmar desde el repositorio si AUTH_TOKEN_SECRET está configurado en cada deployment.
+
+
+---
+
+## F8-Task02 / TAREA-MOD-01 — Inventario y dependencias del repositorio (C1.262)
+
+### Evidencia estructural
+- Árbol Git de `NG_beta_0.0.0.1_work`: 974 archivos versionados; 100 HTML, 1 HTM, 24 JS, 6 CSS, 6 GS, 27 JSON, 359 PNG, 125 JPG y 65 PDF.
+- `docs/architecture/repository-inventory.md` (40 líneas) enumera solo un subconjunto de páginas, módulos JS, servicios y recursos.
+- Rutas existentes omitidas como elementos concretos del inventario: `III_BTP_A/dw_II/DOM.html` y `II_BTP_A/Informatica_Aplicada_I/estilos.css`.
+- `docs/architecture/routing-and-paths.md` declara que todos los HTML cargan scripts/CSS sin 404, pero no adjunta matriz de rutas ni evidencia por archivo.
+- `tests/regression/modular-dashboard-suite.js` (61 líneas) comprueba un conjunto fijo de archivos y cadenas; no acredita cobertura de todos los HTML/recursos ni ausencia de ciclos/globales.
+
+### Hallazgos
+- AUD-NG-281: inventario incompleto (ALTO/P1).
+- AUD-NG-282: mapa y afirmaciones de rutas sin cobertura integral verificable (ALTO/P1).
+- AUD-NG-283: falta de evidencia de análisis integral de duplicaciones, globales y ciclos (MEDIO/P2; no implica que se haya confirmado un ciclo).
+
+### Tareas ejecutables derivadas
+- TASK-637 (P1): completar el inventario de todos los archivos versionados.
+- TASK-638 (P1): trazar dependencias estáticas/dinámicas y contratos por archivo.
+- TASK-639 (P2): revisar manualmente duplicaciones, símbolos globales, ciclos y acoplamientos.
+
+### Punto de entrada y límites
+- Existe `index.html` en la raíz; `index.htm` no existe. No se renombró ni modificó el punto de entrada.
+- Dictamen: CA-MOD-101 NO CUMPLE; CA-MOD-102 PARCIAL. La auditoría no declara descartados duplicados/ciclos; TASK-639 queda pendiente.

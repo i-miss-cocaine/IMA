@@ -9280,3 +9280,30 @@ ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md;
 SIN CAMBIOS: backend, frontend, tests, completadas.md, ChangesLogs.txt, metodología y rama base.
 SIGUIENTE: F8-Task02, inventario de archivos y dependencias.
 ===============================================================================
+
+
+===============================================================================
+F8-Task02 / TAREA-MOD-01 — Auditoría del inventario y dependencias (2026-11-08)
+DICTAMEN: NO CUMPLE.
+CA-MOD-101: NO CUMPLE. CA-MOD-102: PARCIAL.
+HALLAZGOS:
+- AUD-NG-281 ALTO/P1: inventario incompleto; 974 archivos en el árbol Git frente a un documento de inventario parcial.
+- AUD-NG-282 ALTO/P1: mapa y afirmaciones de rutas sin cobertura verificable para todos los archivos y dependencias.
+- AUD-NG-283 MEDIO/P2: no hay evidencia integral sobre duplicaciones, símbolos globales, ciclos y acoplamientos.
+TAREAS EJECUTABLES DERIVADAS:
+- TASK-637 (P1): inventario exhaustivo de todos los archivos versionados.
+- TASK-638 (P1): mapa de dependencias estáticas/dinámicas y contratos por archivo.
+- TASK-639 (P2): revisión manual de funciones duplicadas, símbolos globales, ciclos y acoplamientos.
+EVIDENCIA:
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, líneas 4790-4812.
+- repository-inventory.md SHA eeed10fd8da0db3cd119c5a9778e9cb8b2233808; routing-and-paths.md SHA c64e6a952c1ce12a47cb00a2d324f39cd6581a47.
+- MapaDependencias.md SHA bf37951d3ce94e82120d4c2250fcb5c1e3a55ef5; modular-dashboard-suite.js SHA 0495e1d526a872c33310935a003a83d924d34683.
+- Árbol Git: 974 blobs; 100 HTML, 24 JS, 6 CSS, 6 GS, 27 JSON, 359 PNG, 125 JPG y 65 PDF.
+- Pendientes.md lectura convencional: 0 caracteres. Blob actual recuperado: 676a3f798715f0cdd7d4bc75768472545b8465ee, 1.786.011 caracteres, 20.224 líneas, 0 U+FFFD, 515 IDs TASK numéricos únicos TASK-001..TASK-636. Blob histórico 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c también recuperado; el blob actual de HEAD tiene prioridad. No se restauró una versión antigua ni se modificó Pendientes.md.
+PRUEBAS/LÍMITES:
+- Inspección documental y del árbol Git; no ejecutados Node, navegador, HTTP, Apps Script, E2E ni servicios productivos.
+- No se modificó código ni la rama base.
+ARCHIVO NUEVO: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK02.md.
+ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+SIGUIENTE: F8-Task03, rutas y dependencias después de reorganización.
+===============================================================================
