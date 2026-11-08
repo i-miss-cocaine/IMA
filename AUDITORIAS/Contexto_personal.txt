@@ -8416,3 +8416,36 @@ Auditar TAREA-F6-015 y TAREA-F6-040. Buscar informes individuales e historial en
 - **Archivos sin cambios:** código, UI, pruebas, completadas.md, ChangesLogs.txt, Pendientes.md, metodología y rama base.
 - **Próxima acción concreta:** verificar publicación de los cinco documentos en un único commit; después abrir completadas.md en TAREA-F7-IMP-12, verificar informe individual y origen, y auditar cálculos, filtros, permisos y exportaciones. 
 ===============================================================================
+
+
+===============================================================================
+## C1.244 - Checkpoint de cierre: auditoría TAREA-F7-IMP-12 (2026-11-08)
+
+- **ID de sesión operativo:** IMA-AUDIT-20261108-0054Z (identificador documental, no ID nativo de ChatGPT).
+- **Checkpoint inicial:** C1.243. **Checkpoint de cierre:** C1.244.
+- **Estado de sesión:** cerrada tras publicar y verificar el commit único que contiene este checkpoint.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Archivo de contexto:** AUDITORIAS/Contexto_personal.txt.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **Rama base protegida:** NG_beta_0.0.0.1.
+- **HEAD de partida verificado:** e28ff4a5529d4194702f2b796b67d19ee7b61a60.
+- **Árbol de partida verificado:** e6f48e68dd995326d01d4600a055f84fe529fc93 (1.020 entradas, no truncado).
+- **HEAD de rama base verificado:** 44d9891132332e692dbe2ba8602b41f50a508a59; la rama de trabajo estaba 311 commits adelante y 0 detrás.
+- **Último checkpoint válido de inicio:** C1.243, auditoría TAREA-F7-IMP-11.
+- **Elemento auditado:** TAREA-F7-IMP-12; dictamen NO CUMPLE; marca [X] preservada.
+- **Criterios:** CA-F7-75..80, todos NO CUMPLE.
+- **Hallazgo nuevo:** AUD-NG-247; relaciones AUD-NG-001, AUD-NG-244, AUD-NG-245 y AUD-NG-246.
+- **Tareas derivadas:** TASK-590..TASK-596; todas quedan especificadas con archivos, dependencias y aceptación en AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-12.md.
+- **Integridad documental:** completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676 marca TAREA-F7-IMP-12 [X]. El origen AUDITORIA_FASE_7_PLANIFICACION_HORARIOS_RECURSOS.md y el informe individual previo no existen. Pendientes.md tiene SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c en el árbol, aunque fetch_file ordinario devuelve 0 caracteres; fetch_blob por SHA devuelve 1.782.094 caracteres, 20.182 líneas, cero U+FFFD y 509 TASK únicos (TASK-001..TASK-511). La ruta ya apunta a ese blob, no se restaura ni altera.
+- **Puntos inspeccionados:** Code.gs ROLE_PERMISSIONS (168-263), validateContextualAccess (465-521), validateRolePermission (524-583), doPost (671-810), getTeachingHoursSummary (2798-2857), getCurricularAnalyticsReport (2927-2986), getPlanningQualityAndOccupancyReport (3525-3596), getTeacherTeachingLoad (6773-6837), runAcademicPlanningRegressionSuite (14108-14173); js/teacher.js openPlanningQualityReportModal (1079-1139); teacher-dashboard.html (1-1475); tests/regression/academic-grading-suite.js; completadas.md; Pendientes.md por blob; ChangesLogs.txt (2377-2378); informe individual/origen ausentes.
+- **Evidencia:** carga por período no implementada; anoId/anoLectivo no filtran; estados Borrador/Cancelado contaminan carga/ocupación; ocupación usa aulas*40h y no disponibilidad efectiva/unión de intervalos; filtros curriculares se reflejan como etiquetas pero no se aplican; getTeachingHoursSummary puede devolver sesiones de todos los docentes si no se pasa docenteUserId; endpoints de carga no vinculan ese ID con identidad verificada; reporte de calidad no está autorizado a Profesor; UI HTML no contiene modal/nodos/invocador; suite solo prueba que getTeacherTeachingLoad devuelva un objeto.
+- **SHAs de respaldo:** Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5; js/teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; teacher-dashboard.html cbb9e6a272a7d8ad33f99727303305d950533e71; academic-grading-suite.js a22cb3ef376fe09e65c1b17c2f4f5125290bfba6; completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676; Pendientes.md 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c; ChangesLogs.txt 5b5cff1926b73a05d1b92087a7bf4b2db75326ff; metodología cf796728bb384a32537392df2f9c72a339fa03ee.
+- **Pruebas ejecutadas:** inspección estática/manual y verificación Git de rama, HEAD, árbol, blobs, SHAs y ausencia de informe/origen.
+- **No ejecutadas:** Apps Script runtime, HTTP/OAuth, navegador/DOM real, Sheets productivas, exportación descargada, concurrencia, E2E ni suite Node.
+- **Archivos nuevos:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-12.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Archivos sin cambios:** backend/academic-service/Code.gs; js/teacher.js; teacher-dashboard.html; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; rama base.
+- **Commit de cierre:** el commit único que contiene este checkpoint; SHA confirmado externamente consultando HEAD después de publicar, sin autorreferencia dentro del archivo.
+- **Próxima tarea exacta:** TAREA-F7-IMP-13, incorporar importación, exportación y validación masiva de horarios; CA-F7-81..86. Abrir completadas.md en esa tarea, verificar informe individual/origen y auditar contratos CSV/JSON, validación, previsualización, duplicados, atomicidad, permisos y pruebas.
+- **Próxima acción concreta:** verificar el HEAD de NG_beta_0.0.0.1_work tras el commit, comprobar que incluya exactamente los cinco documentos de esta iteración y volver a comparar NG_beta_0.0.0.1 para confirmar que la rama base no cambió.
+===============================================================================

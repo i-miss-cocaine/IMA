@@ -8747,3 +8747,32 @@ ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md;
 CÓDIGO, UI, PRUEBAS, completadas.md, ChangesLogs.txt y Pendientes.md: SIN CAMBIOS.
 SIGUIENTE TAREA: TAREA-F7-IMP-12 (CA-F7-75..80).
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-08
+AUDITORÍA FUNCIONAL Y TÉCNICA - TAREA-F7-IMP-12: REPORTES DE CARGA DOCENTE, OCUPACIÓN Y CALIDAD
+DICTAMEN: NO CUMPLE (se conserva [X] histórico en completadas.md).
+HALLAZGO NUEVO: AUD-NG-247.
+CRITERIOS:
+- CA-F7-75 NO CUMPLE: getTeacherTeachingLoad ignora anoId, incluye Borrador/Cancelado y no calcula totales por período; getTeachingHoursSummary solo cuenta sesiones.
+- CA-F7-76 NO CUMPLE: Cancelado se contabiliza aparte, pero permanece en totalBloques y ocupación; estados sin semántica coherente por indicador.
+- CA-F7-77 NO CUMPLE: denominador fijo de 40 horas por aula; no usa disponibilidad efectiva ni evita doble conteo de intervalos solapados.
+- CA-F7-78 NO CUMPLE: anoLectivo no filtra; getCurricularAnalyticsReport devuelve filtros como etiquetas sin aplicarlos; faltan filtros combinados.
+- CA-F7-79 NO CUMPLE: reporte de calidad no permitido a Profesor; consultas de carga aceptan docenteUserId sin restricción contextual suficiente.
+- CA-F7-80 NO CUMPLE: teacher-dashboard.html carece de modal/nodos/control; CSV solo contiene ocupación de aulas y no cubre el reporte completo.
+EVIDENCIA:
+- Code.gs: getTeachingHoursSummary (2798-2857), getCurricularAnalyticsReport (2927-2986), getPlanningQualityAndOccupancyReport (3525-3596), getTeacherTeachingLoad (6773-6837).
+- ROLE_PERMISSIONS (168-263): Profesor tiene getTeachingHoursSummary/getTeacherTeachingLoad, pero no getPlanningQualityAndOccupancyReport ni getCurricularAnalyticsReport; Director/Administrador sí tienen el reporte de calidad.
+- validateContextualAccess (465-521) no vincula docenteUserId con _verifiedUserId para Profesor; getTeachingHoursSummary permite omitir docenteUserId y devuelve todas las sesiones.
+- js/teacher.js openPlanningQualityReportModal (1079-1139) busca IDs inexistentes; teacher-dashboard.html (1-1475) no contiene modal-planning-quality-report, tbl-planning-quality-body ni btn-export-planning-quality-csv.
+- runAcademicPlanningRegressionSuite (14108-14173) solo contiene TC-F7-01..07; TC-F7-02 comprueba únicamente que getTeacherTeachingLoad devuelve un objeto, sin validar sus cálculos.
+- ChangesLogs.txt (2377-2378) documenta la implementación parcial, pero no prueba la conexión HTML ni el cumplimiento actual.
+TAREAS DERIVADAS: TASK-590..TASK-596, detalladas en AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-12.md.
+RELACIONES: AUD-NG-001, AUD-NG-244, AUD-NG-245 y AUD-NG-246.
+PRUEBAS/LÍMITES: inspección estática manual y verificación Git; no ejecutados Apps Script runtime, HTTP/OAuth, navegador/DOM, Sheets productivas, exportación descargada, concurrencia, E2E ni suite Node.
+ARCHIVOS NUEVOS: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-12.md.
+ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+CÓDIGO, UI, PRUEBAS, completadas.md, Pendientes.md y ChangesLogs.txt: SIN CAMBIOS.
+SIGUIENTE TAREA: TAREA-F7-IMP-13 (CA-F7-81..86).
+===============================================================================

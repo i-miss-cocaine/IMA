@@ -1871,3 +1871,23 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **Archivos sin cambios:** código, UI, pruebas, completadas.md, ChangesLogs.txt, Pendientes.md, metodología y rama base.
 - **Siguiente tarea:** TAREA-F7-IMP-12 (CA-F7-75..80), reportes de carga docente, ocupación y calidad de planificación.
 ===============================================================================
+
+
+===============================================================================
+## TAREA-F7-IMP-12 - Auditoría de reportes de carga docente, ocupación y calidad (C1.244)
+
+- **Fecha:** 2026-11-08.
+- **Dictamen:** NO CUMPLE; se preserva [X] histórico en completadas.md.
+- **Hallazgo:** AUD-NG-247 (ALTO/P1), relacionado con AUD-NG-001, AUD-NG-244, AUD-NG-245 y AUD-NG-246.
+- **Criterios:** CA-F7-75..80, todos NO CUMPLE.
+- **Informe:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-12.md.
+- **Integridad:** completadas.md confirma tarea [X]. Pendientes.md se leyó por blob 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c, 1.782.094 caracteres y 20.182 líneas; la ruta de la rama ya referencia ese mismo blob, por lo que no se restaura ni modifica. El origen AUDITORIA_FASE_7_PLANIFICACION_HORARIOS_RECURSOS.md y el informe individual anterior no existían.
+- **Evidencia principal:** getTeachingHoursSummary cuenta sesiones sin agrupar horas por período; getTeacherTeachingLoad ignora anoId e incluye Borrador/Cancelado; getCurricularAnalyticsReport no aplica filtros; getPlanningQualityAndOccupancyReport no filtra año, usa 40 h fijas por aula e incluye cancelados/borradores en ocupación; ROLE_PERMISSIONS no habilita el reporte de calidad para Profesor; los endpoints de carga no verifican docenteUserId contra identidad; el modal JS no tiene nodos HTML ni invocador.
+- **Tareas derivadas:** TASK-590..TASK-596, descritas con objetivo, archivos, dependencias y aceptación en el informe individual.
+- **Código/UI/pruebas sin cambios:** Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5; js/teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; teacher-dashboard.html cbb9e6a272a7d8ad33f99727303305d950533e71; academic-grading-suite.js a22cb3ef376fe09e65c1b17c2f4f5125290bfba6.
+- **Pruebas:** inspección estática manual y comparación Git. No ejecutados Apps Script runtime, HTTP/OAuth, DOM/navegador, Sheets productivas, exportación descargada, concurrencia, E2E ni Node.
+- **Archivos nuevos:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-12.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Archivos sin cambios:** código, UI, pruebas, completadas.md, Pendientes.md, ChangesLogs.txt y METODOLOGIA_DESARROLLO.md.
+- **Siguiente tarea exacta:** TAREA-F7-IMP-13, importación, exportación y validación masiva de horarios; CA-F7-81..86.
+===============================================================================

@@ -3342,3 +3342,31 @@ Inspección estática/manual. No se ejecutaron Apps Script runtime, HTTP/OAuth, 
 - TASK-588: separar error, vacío y obsoleto.
 - TASK-589: regresión conductual CA-F7-69..74.
 - Todas Pendientes; criterios completos en el informe individual.
+
+
+## Reportes de carga docente, ocupación y calidad de planificación (TAREA-F7-IMP-12 / AUD-NG-247)
+
+### Funciones y datos fuente
+- getTeachingHoursSummary (Code.gs:2798-2857) cuenta sesiones impartidas/canceladas/reprogramadas; no calcula carga planificada por día/semana/período/año.
+- getTeacherTeachingLoad (Code.gs:6773-6837) suma bloques del docente, ignora anoId y excluye solo Inactivo; incluye Borrador/Cancelado.
+- getCurricularAnalyticsReport (Code.gs:2927-2986) devuelve promedios de CalificacionesEstudiantes; area/asignatura/grado/programa/periodo no filtran los datos.
+- getPlanningQualityAndOccupancyReport (Code.gs:3525-3596) no filtra anoLectivo; usa aulas activas * 40 horas como capacidad; incluye cancelados/borradores en ocupación; no calcula unión de intervalos ni disponibilidad efectiva.
+- El reporte no integra huecos, conflictos pendientes, asignaciones para revisión ni evaluaciones/actividades por sección/período.
+
+### Seguridad e interfaz
+- ROLE_PERMISSIONS: Profesor puede getTeachingHoursSummary/getTeacherTeachingLoad, pero no getPlanningQualityAndOccupancyReport ni getCurricularAnalyticsReport; Director/Administrador sí tienen el reporte de calidad.
+- validateContextualAccess no ata docenteUserId a _verifiedUserId para Profesor. getTeachingHoursSummary sin docenteUserId devuelve sesiones de todos los docentes.
+- js/teacher.js define openPlanningQualityReportModal (1079-1139), pero teacher-dashboard.html no contiene modal-planning-quality-report, tbl-planning-quality-body, btn-open-planning-quality-report ni btn-export-planning-quality-csv. No existe invocador DOM.
+
+### Hallazgo, criterios y tareas derivadas
+- AUD-NG-247 (ALTO/P1), relacionado con AUD-NG-001, AUD-NG-244, AUD-NG-245 y AUD-NG-246.
+- CA-F7-75, CA-F7-76, CA-F7-77, CA-F7-78, CA-F7-79 y CA-F7-80: NO CUMPLE.
+- TASK-590: carga docente planificada/ejecutada por día, semana, período y año.
+- TASK-591: estados canónicos y separación de vigentes, borradores, cancelados e históricos.
+- TASK-592: ocupación real por intervalos efectivos y disponibilidad configurada.
+- TASK-593: filtros combinados y métricas de calidad/actividades por ámbito.
+- TASK-594: autorización contextual por identidad, rol, asignaciones y delegaciones.
+- TASK-595: conectar reporte completo en el portal docente.
+- TASK-596: regresión conductual y consistencia de exportaciones CA-F7-75..80.
+- Detalle de dependencias, archivos y aceptación: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-12.md.
+- Pendientes.md se conserva; el blob íntegro de la ruta se verificó por SHA y la lectura ordinaria vacía fue un problema de lectura, no ausencia del objeto.
