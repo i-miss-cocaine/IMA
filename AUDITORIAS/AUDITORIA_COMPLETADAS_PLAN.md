@@ -1891,3 +1891,23 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **Archivos sin cambios:** código, UI, pruebas, completadas.md, Pendientes.md, ChangesLogs.txt y METODOLOGIA_DESARROLLO.md.
 - **Siguiente tarea exacta:** TAREA-F7-IMP-13, importación, exportación y validación masiva de horarios; CA-F7-81..86.
 ===============================================================================
+
+
+===============================================================================
+## TAREA-F7-IMP-13 - Auditoría de importación/exportación masiva de horarios (C1.245)
+
+- **Fecha:** 2026-11-08.
+- **Dictamen:** NO CUMPLE; se conserva [X] histórico en completadas.md.
+- **Hallazgo:** AUD-NG-248 (ALTO/P1), relacionado con AUD-NG-247, TAREA-F7-IMP-15 y TAREA-F7-IMP-01/02.
+- **Criterios:** CA-F7-81 NO CUMPLE; CA-F7-82 NO CUMPLE; CA-F7-83 CUMPLE PARCIAL; CA-F7-84 NO CUMPLE; CA-F7-85 NO CUMPLE; CA-F7-86 NO CUMPLE.
+- **Informe:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-13.md.
+- **Integridad:** completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676 marca tarea [X]. Pendientes.md recuperado por blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c (1.782.094 caracteres, 20.182 líneas, sin U+FFFD) no contiene la tarea; la ruta ya apunta al mismo blob. Informe individual y documento fuente no existían.
+- **Evidencia:** exportBulkClassSchedules no filtra año, CSV solo ocho columnas y sin escape completo; importBulkClassSchedules valida mínimos, defaults ocultos, no comprueba referencias, no detecta conflictos entre filas del lote y actualiza duplicados automáticamente; LockService sin rollback; getClassSchedules interpreta otro contrato de columnas; modal y controles ausentes en HTML; pruebas no cubren CA-F7-81..86.
+- **Tareas derivadas:** TASK-597..TASK-602, más ampliación explícita de TAREA-F7-IMP-15 para atomicidad. Objetivo, archivos, dependencias y aceptación están en el informe individual.
+- **Código/UI/pruebas sin cambios:** Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5; teacher-dashboard.html cbb9e6a272a7d8ad33f99727303305d950533e71; js/teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; academic-grading-suite.js a22cb3ef376fe09e65c1b17c2f4f5125290bfba6; modular-dashboard-suite.js 0495e1d526a872c33310935a003a83d924d34683.
+- **Pruebas:** inspección estática manual y verificación Git. No ejecutados Apps Script runtime, HTTP/OAuth, DOM/navegador, Sheets productivas, import/export real, fallo inducido, concurrencia, Node ni E2E.
+- **Archivos nuevos:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-13.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Archivos sin cambios:** backend, HTML, JS, tests, completadas.md, Pendientes.md, ChangesLogs.txt y METODOLOGIA_DESARROLLO.md.
+- **Siguiente tarea exacta:** TAREA-F7-IMP-14, publicación y control de cambios masivos; CA-F7-87..92.
+===============================================================================

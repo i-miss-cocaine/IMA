@@ -8776,3 +8776,37 @@ ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md;
 CÓDIGO, UI, PRUEBAS, completadas.md, Pendientes.md y ChangesLogs.txt: SIN CAMBIOS.
 SIGUIENTE TAREA: TAREA-F7-IMP-13 (CA-F7-81..86).
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-08
+AUDITORÍA FUNCIONAL Y TÉCNICA - TAREA-F7-IMP-13: IMPORTACIÓN, EXPORTACIÓN Y VALIDACIÓN MASIVA DE HORARIOS
+DICTAMEN: NO CUMPLE (marca histórica [X] preservada en completadas.md).
+HALLAZGO NUEVO: AUD-NG-248 (ALTO/P1).
+CRITERIOS:
+- CA-F7-81 NO CUMPLE: solo valida arreglo no vacío y día/hora requeridos; faltan esquema, tipos, cabecera, formato HH:MM, rango y referencias académicas.
+- CA-F7-82 NO CUMPLE: detecta conflictos contra datos persistidos, no entre filas del mismo lote; Borrador/Cancelado también participan como conflictos.
+- CA-F7-83 CUMPLE PARCIAL: previsualizar retorna antes de escribir HorariosClase; UI desconectada y getOrCreateSheet puede crear auxiliares.
+- CA-F7-84 NO CUMPLE: upsert automático de IDs existentes, sin elegir crear/actualizar/omitir; no detecta duplicados internos al lote.
+- CA-F7-85 NO CUMPLE: LockService protege concurrencia, pero escrituras fila a fila carecen de rollback; un fallo intermedio deja cambios anteriores persistidos.
+- CA-F7-86 NO CUMPLE: CSV no escapa comillas/comas correctamente; no hay descarga JSON; se omite UltimaModificacion y el esquema no coincide con getClassSchedules.
+EVIDENCIA:
+- Code.gs exportBulkClassSchedules (3403-3427), importBulkClassSchedules (3430-3517), ROLE_PERMISSIONS (168-260), getDynamicPermissionsForRole (593-637), doPost/dispatcher (674-975; acciones 819-820), getClassSchedules (6718-6764), createClassSchedule (6900-6985), getTeacherTeachingLoad (6773-6837), checkScheduleConflict (7493-7700).
+- Importación etiqueta el método como [TAREA-F7-IMP-15], aunque el alcance es IMP-13.
+- checkScheduleConflict revisa filas persistidas y no incorpora filas candidatas del mismo archivo; omite solo Inactivo; invoca getTeacherTeachingLoad que no separa Borrador/Cancelado.
+- createClassSchedule escribe nueve columnas (Estado en índice 7, UltimaModificacion en índice 8); import/export usan ocho; getClassSchedules lee grado/sección/estado desde índices 7/8/9, contrato incompatible.
+- js/teacher.js openBulkScheduleImportExportModal (864-989) define el flujo; teacher-dashboard.html (1-1475) no contiene modal, controles ni invocador.
+- tests/regression/academic-grading-suite.js (1-412), modular-dashboard-suite.js (1-61) y runAcademicPlanningRegressionSuite (14080-14173) no cubren import/export masivo.
+- ChangesLogs.txt (2381-2390) declara botón/modal presentes y validación estructural; el HTML actual carece de ellos y el código no implementa la validación descrita.
+DOCUMENTACIÓN:
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, líneas 4307-4345: TAREA-F7-IMP-13 [X].
+- Pendientes.md: blob 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c; 1.782.094 caracteres, 20.182 líneas, sin U+FFFD; no contiene TAREA-F7-IMP-13. La ruta ya referencia ese blob.
+- Informe individual y documento fuente AUDITORIA_FASE_7_PLANIFICACION_HORARIOS_RECURSOS.md no existen; se crea el informe actual.
+TAREAS DERIVADAS: TASK-597..TASK-602; TAREA-F7-IMP-15 se amplía para atomicidad de importación. Detalle en AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-13.md.
+RELACIONES: AUD-NG-247; TAREA-F7-IMP-15; TAREA-F7-IMP-01/02.
+PRUEBAS/LÍMITES: inspección estática manual y Git; no ejecutados Apps Script runtime, HTTP/OAuth, navegador/DOM, Sheets productivas, import/export real, fallo inducido, concurrencia, Node ni E2E.
+ARCHIVOS NUEVOS: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-13.md.
+ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+CÓDIGO, UI, PRUEBAS, completadas.md, Pendientes.md y ChangesLogs.txt: SIN CAMBIOS.
+SIGUIENTE TAREA: TAREA-F7-IMP-14 (CA-F7-87..92).
+===============================================================================

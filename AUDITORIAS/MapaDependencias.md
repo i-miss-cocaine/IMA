@@ -3370,3 +3370,29 @@ Inspección estática/manual. No se ejecutaron Apps Script runtime, HTTP/OAuth, 
 - TASK-596: regresión conductual y consistencia de exportaciones CA-F7-75..80.
 - Detalle de dependencias, archivos y aceptación: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-12.md.
 - Pendientes.md se conserva; el blob íntegro de la ruta se verificó por SHA y la lectura ordinaria vacía fue un problema de lectura, no ausencia del objeto.
+
+
+## Importación/exportación masiva de horarios (TAREA-F7-IMP-13 / AUD-NG-248)
+
+### Flujo y contratos
+- exportBulkClassSchedules (Code.gs:3403-3427): exporta CSV de ocho columnas, no filtra anoLectivo, no escapa comillas internas y omite UltimaModificacion. Devuelve schedules como JSON en la respuesta, pero la UI no descarga JSON.
+- importBulkClassSchedules (Code.gs:3430-3517): requiere array no vacío; valida solo día/hora requeridos; aplica defaults a oferta, aula, ID y estado; no valida catálogos/referencias ni formato de horas.
+- Contrato no unificado: createClassSchedule escribe Estado en índice 7 y UltimaModificacion en 8; import/export también usan Estado en 7 y solo ocho columnas; getClassSchedules (6718-6764) interpreta índices 7/8/9 como grado/sección/estado.
+- checkScheduleConflict (7493-7700) revisa la hoja persistida, no el lote candidato; solo excluye Inactivo, y por eso Borrador/Cancelado participan. Invoca getTeacherTeachingLoad, relacionado con AUD-NG-247.
+
+### Duplicados, atomicidad y registro
+- existingMap no se actualiza al iterar filas entrantes; no detecta IDs repetidos dentro del mismo lote.
+- Duplicados existentes se reportan pero permanecen en validos; se actualizan automáticamente. No hay operación explícita crear/actualizar/omitir.
+- LockService.tryLock(15000) protege concurrencia, pero las escrituras se realizan mediante setValues/appendRow por fila sin rollback.
+- La rama previsualizar retorna antes de escribir HorariosClase; la confirmación vuelve a ejecutar el endpoint y valida otra vez.
+- Éxito registra BULK_SCHEDULE_IMPORTED; fallo cae en UNHANDLED_EXCEPTION genérico de doPost, sin estado de lote/fila ni reconciliación.
+
+### Interfaz, permisos y pruebas
+- js/teacher.js openBulkScheduleImportExportModal (864-989) define exportación CSV, parseo CSV/JSON, preview y confirmación.
+- teacher-dashboard.html no contiene modal-bulk-schedule-import-export, btn-export-bulk-schedules-csv, btn-preview-bulk-schedule, btn-confirm-bulk-schedule-import, input-bulk-schedule-file ni bulk-import-result-box. No contiene invocador de openBulkScheduleImportExportModal.
+- Parser CSV usa split(',') y elimina comillas; no maneja RFC 4180/campos quoted con coma o newline; no valida cabeceras.
+- ROLE_PERMISSIONS estático: Administrador "*" y Director import/export; dynamic permission matrix puede sobrescribir, su configuración productiva no fue consultada.
+- runAcademicPlanningRegressionSuite TC-F7-01..07 no cubre import/export; los dos archivos tests/regression tampoco.
+- AUD-NG-248 (ALTO/P1), relacionado con AUD-NG-247, TAREA-F7-IMP-15 y TAREA-F7-IMP-01/02.
+- Tareas derivadas: TASK-597 contrato/validación; TASK-598 conflictos intra-lote; TASK-599 duplicados/operaciones; TAREA-F7-IMP-15 ampliada para rollback; TASK-600 round-trip; TASK-601 UI; TASK-602 pruebas.
+- Detalle y aceptación: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-13.md.
