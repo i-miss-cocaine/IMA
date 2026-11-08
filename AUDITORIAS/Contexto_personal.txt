@@ -8268,3 +8268,42 @@ Auditar TAREA-F6-015 y TAREA-F6-040. Buscar informes individuales e historial en
 - **Commit de cierre:** el único commit que contiene este checkpoint; su SHA se verifica después de publicar y se informa externamente, sin autorreferenciarlo dentro del checkpoint.
 - **Punto de reanudación:** abrir completadas.md en TAREA-F7-IMP-08; comprobar si existe AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-08.md; auditar CA-F7-51..56 sobre excepciones de sesiones recurrentes, cancelación/reprogramación individual, liberación de recursos, historial, no duplicación y fecha efectiva en calendarios; revisar createSessionException y los contratos de CalendarioAcademico/HorariosClase; no implementar durante la auditoría.
 ===============================================================================
+
+===============================================================================
+## C1.240 - Auditoría TAREA-F7-IMP-08
+
+- **ID de sesión operativo:** IMA-AUDIT-20261108-0012Z-01 (identificador documental, no ID nativo de ChatGPT).
+- **Estado de sesión:** auditoría documental completada; commit único y verificación posterior pendientes al preparar este checkpoint.
+- **Checkpoint inicial:** C1.239. **Checkpoint de cierre:** C1.240.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Archivo de contexto:** AUDITORIAS/Contexto_personal.txt.
+- **Rama base protegida:** NG_beta_0.0.0.1; HEAD verificado 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **HEAD de partida verificado:** 7500762b480a9a6c36c6afefde706954cb5d6146, commit C1.239 `audit: verify F7-IMP-07 evaluation scheduling and overload controls (C1.239)`. Al inicio: 307 commits adelante y 0 atrás de la rama base.
+- **Árbol de partida:** cbdfe9564cc69e956579328456629cf3f35ff0ab.
+- **Última tarea auditada:** TAREA-F7-IMP-08; dictamen NO CUMPLE; marca [X] histórica preservada.
+- **Tarea en curso al cierre:** ninguna.
+- **Siguiente tarea exacta:** TAREA-F7-IMP-09, desarrollar versiones de horarios, comparación y restauración controlada.
+- **Lote:** Fase 7, planificación académica, horarios y recursos.
+
+### Evidencia y respaldos
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676; TAREA-F7-IMP-08 [X], CA-F7-51..56. Se preserva el archivo y su estado histórico.
+- Informe individual previo AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-08.md: ausente; creado en esta iteración.
+- Pendientes.md: lectura ordinaria vacía; blob Git directo SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c recuperado: 1.803.672 bytes, 1.782.094 caracteres, 20.182 líneas, sin U+FFFD. SHA coincide con la referencia. Se consultó por instrucción expresa; no se modifica ni restaura.
+- backend/academic-service/Code.gs SHA df87a2eea9f0ef79d0b966d03fd5bbe432003df5; teacher-dashboard.html SHA cbb9e6a272a7d8ad33f99727303305d950533e71; js/teacher.js SHA c475fce5afcd28fca23e7b64398ad32b17773746; js/api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; tests/regression/academic-grading-suite.js SHA a22cb3ef376fe09e65c1b17c2f4f5125290bfba6; ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff.
+- Auditoria.txt SHA previo ba4972138dd96ada8d85a8aecd40f61c805e00f6; MapaDependencias.md SHA previo 979a1e2526f1a964a27a12197ae89dac45922e50; AUDITORIA_COMPLETADAS_PLAN.md SHA previo e876ffbcdba3ff28a5cb6f3f48a67bdaeb126e25; Contexto_personal.txt SHA previo b0bd7c62fcb4d15b09c7cdd0579493b3b3e6108f.
+- Hallazgo nuevo AUD-NG-243; se amplían AUD-NG-001 (autenticación/roles), AUD-NG-236 (calendario y conflictos), AUD-NG-237 (UI docente) y AUD-NG-238 (resolución/reprogramación). TASK-560..TASK-568 verificados ausentes antes de asignar en Auditoria.txt, MapaDependencias.md, Plan, Contexto, completadas.md y blob de Pendientes.md.
+- **Puntos inspeccionados:** getOrCreateSheet (84-155), ROLE_PERMISSIONS (168-265), dispatcher (796-826), rescheduleCancelledSession (2615-2689), createSessionException (2692-2725), getPendingSessionRecoveries (2728-2756), recordClassSessionOutcome (2759-2795), getTeachingHoursSummary (2798+), getAcademicCalendar (6616-6644), createCalendarEvent (6651-6715), getClassSchedules (6718-6770), createClassSchedule (6900-6990), deleteClassSchedule (6992-7005), checkScheduleConflict (7493-7585+), getIndividualCalendar (7925-7983), getStudentSchedule (7986-8082); js/teacher.js 1707-1754; js/api.js 11-60; teacher-dashboard.html búsqueda integral; suite regression y ChangesLogs.
+- **Qué se buscaba:** validar excepciones individuales/series, impacto en recurrencia, calendario efectivo, recursos, historial, deduplicación, autenticación y experiencia docente.
+- **Hallazgos principales:** falta esquema de ExcepcionesSesiones; excepción almacenada pero no aplicada; ausencia de operación de serie; recuperación no persiste horas/aula ni vínculo formal; calendarios/horarios ignoran excepciones; filtros de fecha ausentes y contrato student schedule inconsistente; recursos no se liberan/reservan; falta idempotencia; modal y formulario HTML ausentes pese a ChangesLogs; token ausente y RBAC parcial; suite sin pruebas específicas.
+- **Criterios:** CA-F7-51/52/53/55/56 NO CUMPLE; CA-F7-54 PARCIAL.
+- **Tareas derivadas:** TASK-560..TASK-568; todas Pendientes, con criterios de aceptación en el informe individual.
+- **Pruebas ejecutadas:** inspección estática/manual, comparación de contratos e índices, flujos de datos, RBAC, dispatcher, referencias DOM/JS, cobertura de suite, ChangesLogs, SHA Git y comparación de ramas.
+- **No ejecutadas:** Apps Script runtime, HTTP/OAuth, navegador, Sheets/Drive productivas, concurrencia real, fallos inyectados, rollback y E2E. No se ejecutó suite Node por falta de entorno aislado verificado.
+- **Archivos nuevos:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-08.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Archivos sin cambios:** backend/academic-service/Code.gs; teacher-dashboard.html; js/teacher.js; js/api.js; tests/*; ChangesLogs.txt; completadas.md; Pendientes.md; METODOLOGIA_DESARROLLO.md; README; manifest.json; rama base.
+- **Bloqueos:** ninguno para auditoría documental; falta validación de runtime y ejecución de TASK-560..TASK-568 por el rol de desarrollo.
+- **Commit de cierre:** un único commit con los cinco documentos; SHA final se verificará consultando HEAD después de publicar, sin autorreferenciarlo en el checkpoint.
+- **Punto de reanudación:** abrir completadas.md en TAREA-F7-IMP-09; comprobar informe individual/historial; auditar versiones, diff, restauración, atomicidad y alcance de publicación; no implementar durante auditoría.
+===============================================================================

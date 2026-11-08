@@ -3207,3 +3207,35 @@ Todas Pendientes. Se conectan con AUD-NG-001/236/237/238 y TASK-545..TASK-551; n
 
 ### Límites
 Inspección estática/manual. No se ejecutaron Apps Script runtime, HTTP/OAuth, navegador, Sheets/Drive productivas, persistencia, concurrencia, rollback ni E2E. No se modificó código ni datos productivos.
+
+## C1.240 - TAREA-F7-IMP-08: excepciones del calendario y gestión de sesiones
+
+**Informe:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-08.md.  
+**Dictamen:** NO CUMPLE; marca [X] histórica preservada. **HEAD auditado:** 7500762b480a9a6c36c6afefde706954cb5d6146.
+
+### Dependencias inspeccionadas
+- backend/academic-service/Code.gs: getOrCreateSheet (84-155), ROLE_PERMISSIONS (168-265), dispatcher (796-826), rescheduleCancelledSession (2615-2689), createSessionException (2692-2725), getPendingSessionRecoveries (2728-2756), recordClassSessionOutcome (2759-2795), getTeachingHoursSummary (2798+), getAcademicCalendar (6616-6644), createCalendarEvent (6651-6715), getClassSchedules (6718-6770), checkScheduleConflict (7493-7585+), getIndividualCalendar (7925-7983), getStudentSchedule (7986-8082).
+- teacher-dashboard.html SHA cbb9e6a272a7d8ad33f99727303305d950533e71: modal/formulario/invocador de excepción ausentes.
+- js/teacher.js SHA c475fce5afcd28fca23e7b64398ad32b17773746: openSessionExceptionModal (1707-1754), depende de nodos inexistentes.
+- js/api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9: fetchApi (11-60), no transmite token; relación con AUD-NG-001.
+- tests/regression/academic-grading-suite.js SHA a22cb3ef376fe09e65c1b17c2f4f5125290bfba6: sin cobertura de CA-F7-51..56.
+- ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff: entrada histórica declara UI implementada, pero el HTML actual no contiene los nodos.
+
+### Relaciones y hallazgos
+- HorariosClase (regla recurrente) -> createSessionException -> ExcepcionesSesiones: la función solo inserta una fila; no hay esquema/cabecera, consulta, validación de ocurrencia ni proyección sobre horarios.
+- SesionesClaseImpartidas -> rescheduleCancelledSession: actualiza la fila original y agrega REC, pero omite hora/aula en la fila de recuperación y no registra vínculo relacional con el original.
+- getClassSchedules/getStudentSchedule/getIndividualCalendar/getAcademicCalendar no consumen ExcepcionesSesiones; getIndividualCalendar tampoco aplica filtros de fechas y espera res.data aunque getStudentSchedule devuelve schedules.
+- Cancelación/reprogramación no libera ni reserva recursos; no hay idempotencia ni clave lógica de ocurrencia.
+- El controlador UI carece de nodos HTML; la ruta privada no transporta token y RBAC restringe createSessionException a Administrador/Director.
+- CalendarioAcademico conserva divergencia de esquema ya vinculada a AUD-NG-236; las lecturas de horarios presentan índices divergentes relacionados con AUD-NG-237/AUD-NG-168.
+
+### Hallazgos y criterios
+- AUD-NG-243 nuevo; amplía AUD-NG-001, AUD-NG-236, AUD-NG-237 y AUD-NG-238.
+- CA-F7-51/52/53/55/56 NO CUMPLE; CA-F7-54 PARCIAL.
+- El código existente registra parcialmente una excepción y una recuperación, pero no realiza el ciclo completo sobre una ocurrencia recurrente ni actualiza calendario/recursos.
+
+### Tareas ejecutables derivadas
+Las tareas completas TASK-560..TASK-568, con hallazgo, severidad, módulos, dependencias, alcance y criterios verificables, se encuentran exclusivamente en el informe individual. Todas Pendientes; no se duplican TASK-515..TASK-559.
+
+### Límites
+Inspección estática/manual. No se ejecutaron Apps Script runtime, HTTP/OAuth, navegador, Sheets/Drive productivas, concurrencia real, rollback ni E2E. Sin cambios de código o datos productivos.

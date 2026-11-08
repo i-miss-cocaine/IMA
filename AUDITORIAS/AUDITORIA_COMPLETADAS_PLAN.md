@@ -1779,3 +1779,18 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **Archivos sin cambios:** backend/exam-service/Code.gs; backend/academic-service/Code.gs; backend/developer-service/Code.gs; teacher-dashboard.html; js/teacher.js; js/api.js; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; rama base.
 - **Siguiente tarea cronológica:** TAREA-F7-IMP-08, “Ampliar las excepciones del calendario y la gestión de sesiones”.
 ===============================================================================
+
+## C1.240 - Auditoría TAREA-F7-IMP-08 (2026-11-08)
+- **Dictamen:** NO CUMPLE; la marca [X] histórica en completadas.md se conserva.
+- **Informe individual:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-08.md; no existía previamente.
+- **Hallazgo nuevo:** AUD-NG-243. Se amplían AUD-NG-001, AUD-NG-236, AUD-NG-237 y AUD-NG-238.
+- **Evidencia principal:** createSessionException solo inserta una fila en ExcepcionesSesiones sin esquema, validación, aplicación a la ocurrencia o deduplicación; rescheduleCancelledSession no persiste aula/horas ni vínculo formal de origen; lectores de calendario/horario no consumen excepciones; recursos no se liberan; UI HTML ausente; token no transmitido y permisos restrictivos; suite sin CA-F7-51..56.
+- **Criterios:** CA-F7-51/52/53/55/56 NO CUMPLE; CA-F7-54 PARCIAL.
+- **Tareas derivadas:** TASK-560..TASK-568, todas Pendientes y registradas en el informe individual.
+- **Pruebas ejecutadas:** inspección estática/manual de esquema, funciones de sesión, calendario, horarios, conflictos, RBAC, dispatcher, API, UI, suite, historial y SHAs.
+- **No ejecutadas:** Apps Script runtime, HTTP/OAuth, navegador, Sheets/Drive productivas, concurrencia, rollback ni E2E.
+- **Archivos nuevos:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-08.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Archivos sin cambios:** backend/academic-service/Code.gs; teacher-dashboard.html; js/teacher.js; js/api.js; tests/*; ChangesLogs.txt; completadas.md; Pendientes.md; METODOLOGIA_DESARROLLO.md; README; manifest.json; rama base.
+- **Siguiente tarea cronológica:** TAREA-F7-IMP-09, desarrollar versiones de horarios, comparación y restauración controlada.
+===============================================================================
