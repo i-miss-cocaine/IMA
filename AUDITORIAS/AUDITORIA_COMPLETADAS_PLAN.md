@@ -2006,3 +2006,25 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - Última tarea auditada: TAREA-F7-IMP-17.
 - Siguiente tarea exacta: TAREA-F7-IMP-18, restricciones curriculares y dependencias entre asignaturas. Buscar informe individual/fuente; si faltan, auditar directamente los requisitos completos de completadas.md.
 ===============================================================================
+
+
+===============================================================================
+## TAREA-F7-IMP-18 - Auditoría de restricciones curriculares y dependencias entre asignaturas (C1.250)
+
+- **Fecha:** 2026-11-08; sesión IMA-AUDIT-20261108-1814Z.
+- **Checkpoint inicial:** C1.249; HEAD auditado ae26055ea27c87adfeb473a45e31bff8d5da43b1.
+- **Dictamen:** NO CUMPLE; se conserva [X] histórico en completadas.md, líneas 4487-4521.
+- **Criterios:** CA-F7-112 NO CUMPLE; CA-F7-113 NO CUMPLE; CA-F7-114 PARCIAL; CA-F7-115 NO CUMPLE; CA-F7-116 PARCIAL.
+- **Fuentes:** informe individual y fuente de fase no existen; auditoría directa desde completadas.md. ChangesLogs.txt 2471-2495 contiene afirmaciones no corroboradas por HTML/motor actuales.
+- **Hallazgos:** AUD-NG-254 y AUD-NG-255 nuevos ALTO/P1; ampliar AUD-NG-001, AUD-NG-168, AUD-NG-236, AUD-NG-239, AUD-NG-246, AUD-NG-248 y AUD-NG-250.
+- **Evidencia:** motor curricular dentro de if(aulaCodigo), payload sin asignatura/grado/sección, índices de HorariosClase incompatibles, conflictos no declarado y errores silenciados; solo dos tipos de regla; esquema sin año/período/tipo de actividad; CRUD append-only sin historial/preview/lock; actor cliente-controlado; UI ausente; fetchApi sin token; suite solo comprueba estructura.
+- **Tareas derivadas:** nuevas TASK-613 (modelo/ciclo de vida), TASK-614 (motor e integración) y TASK-615 (UI conectada). Ampliar TASK-516, TASK-519, TASK-533, TASK-567, TASK-598, TASK-605 y TASK-606.
+- **Archivos inspeccionados:** Code.gs (84-155, 168-265, 465-585, 671-830, 4816-4880, 6335-6458, 6900-7120, 7493-7693, 13509-13650, 14000-14173); js/api.js (1-100); js/teacher.js (1512-1595); teacher-dashboard.html completo; academic-grading-suite.js (412 líneas); ChangesLogs 2471-2495; completadas 4487-4521; informes IMP-01/04; Pendientes blob.
+- **SHAs:** Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5; api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; teacher-dashboard cbb9e6a272a7d8ad33f99727303305d950533e71; academic-grading-suite a22cb3ef376fe09e65c1b17c2f4f5125290bfba6; completadas f57f1aef832e81e44fc4f7ec36a852d50e464676; Pendientes 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c; ChangesLogs 5b5cff1926b73a05d1b92087a7bf4b2db75326ff; metodología cf796728bb384a32537392df2f9c72a339fa03ee.
+- **Pruebas:** inspección estática/manual, recuperación del blob y verificación Git. No ejecutados Apps Script runtime, HTTP/OAuth, DOM/navegador, Sheets productivas, generación/publicación real, concurrencia, rollback, Node ni E2E.
+- **Nuevo:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-18.md.
+- **Actualizados:** Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md y Contexto_personal.txt.
+- **Sin cambios:** código, UI, pruebas, completadas.md, Pendientes.md, ChangesLogs.txt, metodología y rama base.
+- **Última tarea auditada:** TAREA-F7-IMP-18.
+- **Siguiente tarea exacta:** TAREA-F7-IMP-19, control de capacidad y distribución de estudiantes por sección (CA-F7-117..121).
+===============================================================================

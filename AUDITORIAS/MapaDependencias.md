@@ -3482,3 +3482,18 @@ Inspección estática/manual. No se ejecutaron Apps Script runtime, HTTP/OAuth, 
 - Suite no cubre CA-F7-106..111. TASK-612.
 - Ampliar TASK-554/562, TASK-545/546/549, TASK-555, TASK-567; coordinar TASK-563.
 - Detalle: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-17.md.
+
+
+## Restricciones curriculares y dependencias entre asignaturas (TAREA-F7-IMP-18 / AUD-NG-254/255)
+
+- Almacenamiento: RestriccionesCurriculares con columnas RestriccionID, TipoRestriccion, AsignaturaOrigenID, AsignaturaDestinoID, Ambito, Grado, Seccion, Regimen, Estado, FechaRegistro y UsuarioRegistro. No contiene AnoID, PeriodoID, PlanID, TipoActividad ni recursos vinculados.
+- CRUD: getCurricularConstraints (Code.gs:13509-13560) devuelve todos los registros e ignora anoId; saveCurricularConstraint (13562-13650) valida campos mínimos/pares y siempre appendRow. No hay actualización, desactivación, historial de cambios ni preview.
+- Motor: checkScheduleConflict (7493-7693) lee RestriccionesCurriculares solo dentro de if(aulaCodigo). Toma la asignatura de params.asignaturaId/materia/asignatura, pero createClassSchedule, generateAutoSchedules y publishClassSchedules pasan OfertaID y no resuelven AsignaturaID/grado/sección. El lector usa rowH[1] como asignatura, rowH[7]/[8] como grado/sección y [9]/[10] como estado, incompatibles con el esquema estándar de HorariosClase.
+- Defecto de salida: conflictos.push se ejecuta sin declarar conflictos en su ámbito; catch registra el error y continúa. El arreglo nunca se devuelve y el resultado final es hasConflict:false. No es una validación bloqueante.
+- Tipos: solo hay ramas para CoRequisitoSimultaneo y ExclusividadHoraria. MallaCurricularDist almacena RequiereBloqueConsecutivo, pero el motor no lo consulta; tampoco se observan implementaciones para secuencia temporal, compartir recursos o separación obligatoria.
+- Alcance/permisos: solo se comparan Ambito=Seccion/Grado; ámbitos no reconocidos no filtran. ROLE_PERMISSIONS permite get/save a Profesor. validateContextualAccess solo comprueba ámbito con scopeType/requestedValue, que la UI no envía. UsuarioRegistro procede de payload.userId/usuario, no de _verifiedUserId.
+- Interfaz: js/teacher.js (1512-1595) define handlers; teacher-dashboard.html no contiene botón, modal, formulario ni IDs curr-constraint-*. fetchApi (js/api.js:1-100) no transmite token y los endpoints son privados. AUD-NG-246/AUD-NG-001.
+- Pruebas: TC-F7-03 comprueba solo status y forma de array; tests/regression/academic-grading-suite.js no contiene casos curriculares ni CA-F7-112..116.
+- Hallazgos: AUD-NG-254 (motor no efectivo) y AUD-NG-255 (modelo/ámbito/ciclo de vida); ampliar AUD-NG-001, AUD-NG-168, AUD-NG-236, AUD-NG-239, AUD-NG-246, AUD-NG-248 y AUD-NG-250.
+- Tareas: TASK-613 modelo/ciclo de vida; TASK-614 motor integrado; TASK-615 UI conectada. Ampliar TASK-516, TASK-519, TASK-533, TASK-567, TASK-598, TASK-605 y TASK-606.
+- Detalle, criterios CA-F7-112..116 y tareas ejecutables: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-18.md.
