@@ -3711,3 +3711,46 @@ Inspección estática/manual. No se ejecutaron Apps Script runtime, HTTP/OAuth, 
 - AUD-NG-236/TASK-554: contratos entre módulos.
 - AUD-NG-253/TASK-610: ciclo de vida de horarios.
 - AUD-NG-246/TASK-562: consistencia de proyecciones.
+
+
+---
+
+## F8-Task01 / TAREA-AD-06 — autorización efectiva en USER, ACADEMIC y TASK (2026-11-08)
+
+### Dictamen y evidencia actual
+- F8-Task01 figura [X] en completadas.md, pero CA-AD-114 y CA-AD-115 NO CUMPLEN. Informe individual no existía; se auditó directamente.
+- USER Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f: PUBLIC_ACTIONS 922-924; validateRolePermission 1253-1295; getAutomationRules 6584-6605; verifySessionToken 1083-1143; revokeUserSession 2318-2333; savePermissionMatrix 1934-1978.
+- ACADEMIC Code.gs SHA df87a2eea9f0ef79d0b966d03fd5bbe432003df5: PUBLIC_ACTIONS 265; validateContextualAccess 465-521; validateRolePermission 524-583; verifySessionToken 401-459; purgeSecurityCaches 3702-3745.
+- TASK Code.gs SHA 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe: PUBLIC_ACTIONS 85-90; validateRolePermission 225-280; getStudentTasks 613-690; getTeacherActivity 1119-1168; getAllTasks 1177-1203; listProjects 1296-1335; loadProject 1371-1404; getAllStudentProjects 1407-1450; getVirtualClassrooms 1476-1505; getPosts 1526-1560; getStudyMaterials 1632-1663; purgeSecurityCaches 1919-1959.
+
+### Exposiciones confirmadas
+- TASK PUBLIC_ACTIONS omite autenticación para consultas de tareas, proyectos, aulas, posts y materiales. getAllTasks devuelve todo si se omite profesorId; getAllStudentProjects enumera fileIds y datos de estudiantes; loadProject usa DriveApp.getFileById(fileId) como fallback sin validar propiedad.
+- TASK getPosts toma authRole del payload para habilitar borradores; un rol de cliente falsificado altera el resultado.
+- TASK getTeacherActivity permite omitir o manipular profesorId; no lo liga a _verifiedUserId.
+- USER validateRolePermission tiene allowlist autenticada que evita RBAC/contexto; getAutomationRules no aplica guardia interna y devuelve todas las reglas.
+- ACADEMIC validateRolePermission omite RBAC/contexto para getSchoolYearConfigs, getAcademicJornadas, getCurricularDistribution, getInstitutionalActivities, getExtracurricularActivities y getUnifiedInstitutionalCalendar.
+- USER/ACADEMIC validadores ABAC condicionan el scope a campos opcionales del payload; ausencia de hoja/datos o excepción puede dejar continuar. TASK solo restringe studentId/userId si llega.
+- verifySessionToken no exige exp/userId y no revalida el rol actual; AUTH_TOKEN_SECRET tiene fallback determinista desde SPREADSHEET_ID.
+- USER revoca en su ScriptCache; no se verificó fan-out. ACADEMIC/TASK purgadores remotos borran revoked_session_ y claves de caché que no coinciden con las consumidas.
+- TASK registra denegaciones solo con Logger.log; no existe bitácora estructurada equivalente. tests/regression contiene solo dos suites, sin pruebas auth/IDOR/RBAC/ABAC.
+
+### Hallazgo nuevo
+- AUD-NG-280 ALTO/P1: getAutomationRules queda autorizado a cualquier sesión válida por allowlist de USER y no valida rol dentro del handler.
+
+### Reconciliación, sin duplicar IDs
+- AUD-NG-002 se amplía con las rutas públicas TASK y el uso de authRole/client fileId.
+- AUD-NG-217/TASK-496 y AUD-NG-222/TASK-502 se amplían con el ámbito docente de TASK y los scopes opcionales/fail-open.
+- AUD-NG-003/AUD-NG-004: claims obligatorios y secreto HMAC.
+- AUD-NG-005/AUD-NG-160: propagación de revocación, cambio de rol y cachés.
+- AUD-NG-145: persistencia de intentos rechazados y escaladas.
+- AUD-NG-159: logoutUser público con userId/sessionId de cliente.
+- AUD-NG-221/TASK-501: matriz dinámica ignora módulo/ámbito.
+
+### Tareas ejecutables derivadas
+- TASK-636 (P0): retirar acciones sensibles de bypasses públicos/allowlists; vincular identidad/rol a claims; validar propiedad de tareas, profesor, aula, borradores y archivos; restringir getAutomationRules.
+- TASK-496 (P0), TASK-501 (P1) y TASK-502 (P1) siguen pendientes y se amplían; no crear duplicados.
+- AUD-NG-003/004/005/145/159/160 mantienen sus alcances de expiración, secreto, revocación, bitácora, logout y rol vigente.
+- TASK-633, TASK-634 y TASK-635 derivados de IMP-25 se incorporan al backlog.
+
+### Límites
+Inspección estática/manual y Git/blob; no se ejecutaron requests HTTP, Apps Script, Script Properties, cuentas reales ni recursos productivos. No se puede confirmar desde el repositorio si AUTH_TOKEN_SECRET está configurado en cada deployment.

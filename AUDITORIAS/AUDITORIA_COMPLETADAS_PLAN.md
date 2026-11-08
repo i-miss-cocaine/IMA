@@ -2150,3 +2150,18 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **Documentación:** informe individual IMP-25 y plan de Fase 7 no localizados; auditoría ejecutada desde completadas.md. Pendientes.md blob 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c recuperado íntegro; no se modificó.
 - **Pruebas:** inspección manual/estática y Git/blob. No ejecutados Apps Script, Node, API, Sheets productivo, concurrencia real, navegador ni E2E.
 - **Siguiente tarea exacta:** F8-Task01, centralizar y verificar autorización efectiva de cada operación.
+
+
+---
+
+## F8-Task01 / TAREA-AD-06 — autorización efectiva (C1.261)
+
+- **Dictamen:** NO CUMPLE; se conserva [X] histórica.
+- **Criterios:** CA-AD-114 NO CUMPLE; CA-AD-115 NO CUMPLE.
+- **Hallazgo nuevo:** AUD-NG-280 (USER getAutomationRules autorizado a cualquier sesión válida por allowlist y sin guardia interna).
+- **Ampliaciones:** AUD-NG-002 (acciones públicas TASK); AUD-NG-003/004 (claims/secretos); AUD-NG-005/160 (revocación, rol y cachés); AUD-NG-145 (bitácora); AUD-NG-159 (logout); AUD-NG-217/TASK-496 y AUD-NG-222/TASK-502 (ámbito/ABAC); AUD-NG-221/TASK-501 (matriz).
+- **Tarea nueva:** TASK-636, cerrar bypasses públicos/allowlists y validar identidad/propiedad de tareas, proyectos, posts y archivos.
+- **Tareas previas:** TASK-496, TASK-501 y TASK-502 siguen pendientes y se amplían; TASK-633..635 de IMP-25 se agregan a Pendientes.md.
+- **Evidencia:** USER 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ACADEMIC df87a2eea9f0ef79d0b966d03fd5bbe432003df5; TASK 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe; completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676; Pendientes.md blob 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c.
+- **Pruebas:** inspección manual/estática; no ejecutados HTTP, Apps Script, cuentas reales, Script Properties, Drive ni Sheets productivos.
+- **Siguiente tarea cronológica:** F8-Task02, auditar los archivos existentes y elaborar inventario de dependencias.

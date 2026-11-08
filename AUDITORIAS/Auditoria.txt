@@ -9239,3 +9239,44 @@ ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md;
 SIN CAMBIOS: código, pruebas, completadas.md, Pendientes.md, ChangesLogs.txt, metodología y rama base.
 SIGUIENTE: F8-Task01, autorización efectiva de operaciones.
 ===============================================================================
+
+
+===============================================================================
+AUDITORÍA F8-Task01 / TAREA-AD-06 — 2026-11-08
+DICTAMEN: NO CUMPLE. La marca [X] de completadas.md se conserva como histórica.
+CA-AD-114: NO CUMPLE. CA-AD-115: NO CUMPLE.
+
+HALLAZGO NUEVO:
+- AUD-NG-280 ALTO/P1: USER validateRolePermission autoriza getAutomationRules a cualquier sesión válida; el handler no revalida rol y devuelve todas las reglas de automatización.
+
+AMPLIACIONES SIN DUPLICACIÓN:
+- AUD-NG-002: TASK PUBLIC_ACTIONS incluye getAllTasks, getStudentTasks, listProjects, loadProject, getAllStudentProjects, getVirtualClassrooms, getPosts y getStudyMaterials. getPosts confía en payload.authRole para incluir borradores; loadProject usa DriveApp.getFileById(fileId) sin validar propiedad; getAllStudentProjects enumera metadatos/fileIds de proyectos.
+- AUD-NG-217/TASK-496 y AUD-NG-222/TASK-502: validateContextualAccess no liga profesorId a claims, permite scopes opcionales y falla abierto; getTeacherActivity puede consultar todas las entregas si profesorId se omite.
+- AUD-NG-003/AUD-NG-004: verifySessionToken no exige exp/userId y getAuthTokenSecret mantiene fallback determinista derivado de SPREADSHEET_ID.
+- AUD-NG-005/AUD-NG-160: revocación solo en ScriptCache USER; no propagación verificable; purgadores ACADEMIC/TASK eliminan claves equivocadas y revoked_session; matriz dinámica se invalida solo en USER.
+- AUD-NG-145: TASK registra denegaciones solo con Logger.log; no hay bitácora estructurada persistente equivalente.
+- AUD-NG-159: logoutUser sigue público y confía en userId/sessionId del payload.
+- AUD-NG-221/TASK-501: getDynamicPermissionsForRole ignora dimensiones módulo/ámbito y cachea 600s.
+
+TAREAS EJECUTABLES DERIVADAS:
+- TASK-636 (P0): retirar acciones sensibles de bypasses públicos/allowlists; proteger operaciones de tareas/proyectos; derivar identidad y rol de claims; validar propiedad de archivos, profesor, alumno, aula y borradores; restringir getAutomationRules.
+- TASK-496, TASK-501 y TASK-502 siguen pendientes y se amplían; no duplicar.
+- AUD-NG-003/004/005/145/159/160 mantienen sus tareas de expiración, secreto, revocación, bitácora y rol vigente.
+- Se incorporan a Pendientes.md TASK-633..635 derivados de IMP-25, junto con TASK-636.
+
+EVIDENCIA:
+- USER Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f: PUBLIC_ACTIONS 922-924; validateRolePermission 1253-1295; getAutomationRules 6584-6605; savePermissionMatrix 1934-1978; revokeUserSession 2318-2333.
+- ACADEMIC Code.gs SHA df87a2eea9f0ef79d0b966d03fd5bbe432003df5: PUBLIC_ACTIONS 265; validateContextualAccess 465-521; validateRolePermission 524-583; verifySessionToken 401-459; purgeSecurityCaches 3702-3745.
+- TASK Code.gs SHA 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe: PUBLIC_ACTIONS 85-90; validateRolePermission 225-280; getStudentTasks 613-690; getTeacherActivity 1119-1168; getAllTasks 1177-1203; listProjects 1296-1335; loadProject 1371-1404; getAllStudentProjects 1407-1450; getVirtualClassrooms 1476-1505; getPosts 1526-1560; getStudyMaterials 1632-1663; purgeSecurityCaches 1919-1959.
+- Tests: tests/regression solo contiene academic-grading-suite.js y modular-dashboard-suite.js; sin suite auth/IDOR/F8-Task01.
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676; Pendientes.md blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c.
+
+PRUEBAS/LÍMITES:
+- Inspección estática/manual y verificación documental/Git.
+- No se ejecutaron HTTP, Apps Script, cuentas reales, Script Properties, Drive ni Sheets productivos. No se afirma que el fallback HMAC esté activo; sí que el código lo permite.
+
+ARCHIVO NUEVO: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-AD-06.md.
+ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt; Pendientes.md.
+SIN CAMBIOS: backend, frontend, tests, completadas.md, ChangesLogs.txt, metodología y rama base.
+SIGUIENTE: F8-Task02, inventario de archivos y dependencias.
+===============================================================================
