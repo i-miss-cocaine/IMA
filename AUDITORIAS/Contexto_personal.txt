@@ -8307,3 +8307,45 @@ Auditar TAREA-F6-015 y TAREA-F6-040. Buscar informes individuales e historial en
 - **Commit de cierre:** un único commit con los cinco documentos; SHA final se verificará consultando HEAD después de publicar, sin autorreferenciarlo en el checkpoint.
 - **Punto de reanudación:** abrir completadas.md en TAREA-F7-IMP-09; comprobar informe individual/historial; auditar versiones, diff, restauración, atomicidad y alcance de publicación; no implementar durante auditoría.
 ===============================================================================
+
+===============================================================================
+## C1.241 - Auditoría TAREA-F7-IMP-09
+
+- **ID de sesión:** IMA-AUDIT-20261108-0018Z (identificador operativo, no ID nativo de ChatGPT).
+- **Estado:** sesión cerrada tras publicación y verificación.
+- **Checkpoint inicial de esta sesión:** C1.240. **Checkpoint de cierre:** C1.241.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Archivo de contexto:** AUDITORIAS/Contexto_personal.txt.
+- **Rama base protegida:** NG_beta_0.0.0.1; HEAD verificado 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **HEAD de partida verificado:** c5adab367178ac3bb0a7b1393b61e4b15c5b12a5, commit C1.240 `audit: verify F7-IMP-08 session exceptions and calendar integration (C1.240)`.
+- **Árbol de partida:** se consultó por GitHub al preparar el commit de cierre.
+- **Última tarea auditada:** TAREA-F7-IMP-09; dictamen NO CUMPLE; marca [X] histórica preservada.
+- **Tarea en curso al cierre:** ninguna.
+- **Siguiente tarea exacta:** TAREA-F7-IMP-10, fortalecer las notificaciones y la trazabilidad de cambios académicos.
+- **Lote:** Fase 7, planificación académica, horarios y recursos.
+
+### Evidencia y respaldos
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676; TAREA-F7-IMP-09 marcada [X], CA-F7-57..62. No se modifica.
+- Informe individual AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-09.md: no existía; creado en esta iteración.
+- Origen AUDITORIA_FASE_7_PLANIFICACION_HORARIOS_RECURSOS.md: ausente tanto en raíz como en AUDITORIAS; se omite ese documento, no la auditoría de la tarea.
+- Pendientes.md: lectura ordinaria vacía; blob Git SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c recuperado por continuidad previa: 1.782.094 caracteres; no contiene TAREA-F7-IMP-09 ni TASK-569..TASK-576. No se modifica ni se usa como fuente operativa.
+- backend/academic-service/Code.gs SHA df87a2eea9f0ef79d0b966d03fd5bbe432003df5; teacher-dashboard.html SHA cbb9e6a272a7d8ad33f99727303305d950533e71; js/teacher.js SHA c475fce5afcd28fca23e7b64398ad32b17773746; js/api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; tests/regression/academic-grading-suite.js SHA a22cb3ef376fe09e65c1b17c2f4f5125290bfba6; backend/developer-service/Code.gs SHA 8aa4bac67cfe5c8c54da51a0784a56fef633e412; ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff; METODOLOGIA_DESARROLLO.md SHA cf796728bb384a32537392df2f9c72a339fa03ee.
+- Auditoria.txt SHA previo 542b0885bc06ca5bf6c04203e65005cab3b2516f; MapaDependencias.md SHA previo a0435ef6d561679844dcfa7eb4c5d7b05b34754e; AUDITORIA_COMPLETADAS_PLAN.md SHA previo 8e002c7132f8f28a80c39af439686e3bb7a4dbc0; Contexto_personal.txt SHA previo c4ba0e4a7008b2390ec7e5f9c3314f47a089fecd.
+- Hallazgo nuevo AUD-NG-244; relaciones con AUD-NG-001 (token/identidad), AUD-NG-236 (conflictos), AUD-NG-237 (UI), AUD-NG-243 (integridad histórica). TASK-569..576 verificados ausentes antes de asignar en Auditoria.txt, MapaDependencias.md, Plan, Contexto, completadas.md, ChangesLogs.txt y blob consultado de Pendientes.md. TASK-567 existente se amplía, sin duplicarlo.
+- **Funciones/rangos inspeccionados:** getOrCreateSheet (84-155), ROLE_PERMISSIONS (168-265), verifySessionToken (401-460 aprox.), validateRolePermission (524-585 aprox.), doPost (671+), createClassSchedule (6900-6990), deleteClassSchedule (6992-7005), publishClassSchedules (7008-7117), getScheduleVersions (7119-7144), compareScheduleVersions (7145-7223), restoreScheduleVersion (7224-7305 aprox.), checkScheduleConflict (7493-7585+), runConcurrencyAndConsistencySuite (3296+), runAcademicPlanningRegressionSuite (14109+); teacher.js (1598-1688); api.js (11-60); teacher-dashboard.html completo; tests/regression/academic-grading-suite.js completo; developer-service Code.gs completo; ChangesLogs entrada TAREA-F7-IMP-09 aprox. línea 2343.
+- **Qué se buscaba:** versiones históricas completas, autor/fecha/motivo, diff entre dos versiones, aislamiento de borradores, publicación, restauración autorizada, conflictos, preservación de cambios posteriores y trazabilidad.
+- **Hallazgos principales:** hoja VersionesHorarios sin cabecera y primera versión descartada por lectores; snapshots no acotados correctamente a año/oferta; fallo al guardar snapshot no bloquea publicación; borrador sobreescribe fila activa; modificaciones/desactivaciones activas no versionan; diff UI muestra solo contadores; UI HTML ausente; compare acepta silenciosamente ID B inexistente/JSON corrupto como vacío; restore no tiene lock/OCC, sobrescribe datos posteriores coincidentes, no actualiza timestamp y snapshot de resultado incompleto; bitácora sin detalle por campo; fetchApi no transmite token exigido por RBAC; suites no cubren F7-IMP-09.
+- **Criterios:** CA-F7-57 PARCIAL; CA-F7-58 NO CUMPLE; CA-F7-59 PARCIAL; CA-F7-60 PARCIAL; CA-F7-61 NO CUMPLE; CA-F7-62 PARCIAL.
+- **Tareas derivadas:** TASK-569..TASK-576, todas Pendientes, descritas con aceptación en informe individual. TASK-567 ampliada para token y actor verificado de endpoints de versiones.
+- **Pruebas ejecutadas:** inspección estática/manual de funciones, flujos, esquemas, referencias DOM/API, roles, registros históricos, suites, SHAs y rama.
+- **No ejecutadas:** Apps Script runtime, HTTP/OAuth, navegador, Sheets/Drive productivas, concurrencia real, restauración con datos, rollback, E2E y suite Node.
+- **Archivos nuevos:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-09.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Archivos sin cambios:** backend/academic-service/Code.gs; teacher-dashboard.html; js/teacher.js; js/api.js; tests/*; backend/developer-service/Code.gs; ChangesLogs.txt; completadas.md; Pendientes.md; METODOLOGIA_DESARROLLO.md; rama base.
+- **Bloqueos:** ninguno para auditoría documental; faltan las tareas correctivas y un entorno aislado para validar runtime.
+- **Commit de cierre:** el único commit que contiene este checkpoint y los documentos de auditoría; su SHA se consulta después de publicar y se informa externamente, sin autorreferenciarlo.
+- **Punto de reanudación:** abrir completadas.md en TAREA-F7-IMP-10; comprobar informe individual y origen; auditar user-service y academic-service, notificaciones, destinatarios, deduplicación, estados de entrega, reintentos, aislamiento de fallos, permisos, datos sensibles y trazabilidad; no implementar durante auditoría.
+- **Hora UTC de cierre:** se registra en el timestamp del commit final de GitHub.
+- **Estado final:** sesión cerrada.
+===============================================================================

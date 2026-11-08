@@ -1794,3 +1794,19 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **Archivos sin cambios:** backend/academic-service/Code.gs; teacher-dashboard.html; js/teacher.js; js/api.js; tests/*; ChangesLogs.txt; completadas.md; Pendientes.md; METODOLOGIA_DESARROLLO.md; README; manifest.json; rama base.
 - **Siguiente tarea cronológica:** TAREA-F7-IMP-09, desarrollar versiones de horarios, comparación y restauración controlada.
 ===============================================================================
+
+## C1.241 - Auditoría TAREA-F7-IMP-09 (2026-11-08)
+- **Dictamen:** NO CUMPLE; se conserva la marca [X] histórica.
+- **Informe individual:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-09.md; ausente antes de la auditoría, creado en esta iteración.
+- **Origen citado:** AUDITORIA_FASE_7_PLANIFICACION_HORARIOS_RECURSOS.md no existe ni en raíz ni en AUDITORIAS; se omite ese documento ausente y se audita la tarea contra completadas.md, ChangesLogs y código.
+- **Hallazgo nuevo:** AUD-NG-244; relacionado con AUD-NG-001, AUD-NG-236, AUD-NG-237 y AUD-NG-243.
+- **Criterios:** CA-F7-57 PARCIAL; CA-F7-58 NO CUMPLE; CA-F7-59 PARCIAL; CA-F7-60 PARCIAL; CA-F7-61 NO CUMPLE; CA-F7-62 PARCIAL.
+- **Evidencia principal:** VersionesHorarios sin cabecera, primera versión no visible, snapshots sin filtro completo por año/oferta y errores de snapshot no bloquean publicación; borrador modifica fila publicada; cambios activos/desactivaciones no se versionan; diff UI solo muestra contadores; modal/botón HTML ausentes; restore sin lock/OCC ni conciliación, sobrescribe cambios posteriores y snapshot resultante incompleto; fetchApi no envía token y validador exige token; suite sin pruebas específicas.
+- **Tareas derivadas:** TASK-569..TASK-576, todas Pendientes, detalladas en el informe individual. TASK-567 existente se amplía para autenticación y actor verificado en endpoints de versiones.
+- **Pruebas ejecutadas:** inspección estática/manual de esquema, escrituras, snapshots, diff, restore, conflictos, RBAC, token, dispatcher, API, HTML/JS, ChangesLogs y suites; comparación de SHAs y estado Git.
+- **No ejecutadas:** Apps Script runtime, HTTP/OAuth, navegador, Sheets/Drive productivas, concurrencia real, restauración con datos, rollback, E2E y suite Node.
+- **Archivos nuevos:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-09.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Archivos sin cambios:** backend/academic-service/Code.gs; teacher-dashboard.html; js/teacher.js; js/api.js; tests/*; backend/developer-service/Code.gs; ChangesLogs.txt; completadas.md; Pendientes.md; METODOLOGIA_DESARROLLO.md; rama base.
+- **Siguiente tarea cronológica:** TAREA-F7-IMP-10, fortalecer notificaciones y trazabilidad de cambios académicos.
+===============================================================================

@@ -3239,3 +3239,38 @@ Las tareas completas TASK-560..TASK-568, con hallazgo, severidad, módulos, depe
 
 ### Límites
 Inspección estática/manual. No se ejecutaron Apps Script runtime, HTTP/OAuth, navegador, Sheets/Drive productivas, concurrencia real, rollback ni E2E. Sin cambios de código o datos productivos.
+
+## C1.241 - TAREA-F7-IMP-09: versiones de horarios, comparación y restauración
+
+**Informe:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-09.md.  
+**Dictamen:** NO CUMPLE; marca [X] histórica preservada. **HEAD auditado:** c5adab367178ac3bb0a7b1393b61e4b15c5b12a5.
+
+### Dependencias inspeccionadas
+- backend/academic-service/Code.gs: getOrCreateSheet (84-155), ROLE_PERMISSIONS (168-265), verifySessionToken (401-460 aprox.), validateRolePermission (524-585 aprox.), doPost (671+), createClassSchedule (6900-6990), deleteClassSchedule (6992-7005), publishClassSchedules (7008-7117), getScheduleVersions (7119-7144), compareScheduleVersions (7145-7223), restoreScheduleVersion (7224-7305 aprox.), checkScheduleConflict (7493-7585+), runConcurrencyAndConsistencySuite (3296+), runAcademicPlanningRegressionSuite (14109+).
+- teacher-dashboard.html SHA cbb9e6a272a7d8ad33f99727303305d950533e71: no contiene btn-schedule-versions, modal-schedule-versions ni schedule-versions-list-container.
+- js/teacher.js SHA c475fce5afcd28fca23e7b64398ad32b17773746: openScheduleVersionsModal y acciones diff/restauración (1598-1688); compara versión seleccionada contra vigente y muestra solo contadores.
+- js/api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9: fetchApi (11-60), no envía token de sesión.
+- tests/regression/academic-grading-suite.js SHA a22cb3ef376fe09e65c1b17c2f4f5125290bfba6 y backend/developer-service/Code.gs SHA 8aa4bac67cfe5c8c54da51a0784a56fef633e412: sin cobertura de F7-IMP-09.
+- ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff, entrada alrededor de línea 2343: afirma UI integrada; la estructura HTML está ausente.
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676: tarea marcada [X], criterios CA-F7-57..62. Informe individual y auditoría de origen no existen; el informe individual se crea.
+
+### Relaciones y hallazgos
+- createClassSchedule -> HorariosClase: borradores y activos comparten fila/identificador; edición como borrador puede modificar el horario publicado.
+- publishClassSchedules -> VersionesHorarios: snapshot post-publicación, hoja sin cabecera, primera versión descartada por lectores; captura activos de distintos años y fallo de snapshot no impide respuesta success.
+- createClassSchedule/deleteClassSchedule: modificaciones activas y desactivaciones no registran versiones.
+- getScheduleVersions -> VersionesHorarios: lectura con slice(1), primera versión invisible.
+- compareScheduleVersions -> VersionesHorarios/HorariosClase: diff backend parcial; ID B inválido y JSON corrupto se tratan como estado vacío; UI no expone detalles ni comparación entre dos snapshots históricos.
+- restoreScheduleVersion -> checkScheduleConflict -> HorariosClase: no hay lock/OCC; sobrescribe IDs coincidentes, no concilia cambios posteriores, no actualiza timestamp y guarda snapshot incompleto del resultado.
+- js/teacher.js -> fetchApi -> doPost/validateRolePermission: la UI no envía token, por lo que el servidor rechaza acciones privadas; identidad de auditoría usa authUserId de payload o fallback, no claims verificados.
+- runAcademicPlanningRegressionSuite y runConcurrencyAndConsistencySuite no cubren versionado/restauración.
+
+### Hallazgos y criterios
+- AUD-NG-244 nuevo; relacionado con AUD-NG-001, AUD-NG-236, AUD-NG-237 y AUD-NG-243.
+- CA-F7-57 PARCIAL; CA-F7-58 NO CUMPLE; CA-F7-59 PARCIAL; CA-F7-60 PARCIAL; CA-F7-61 NO CUMPLE; CA-F7-62 PARCIAL.
+- La implementación contiene funciones de backend, pero no un control de versiones completo ni una interfaz conectada y segura.
+
+### Tareas ejecutables derivadas
+TASK-569..TASK-576 se detallan en el informe individual con hallazgo, severidad, módulos, dependencias, alcance y criterios verificables. Todas Pendientes. TASK-567 existente se amplía para token y actor verificado; no se duplica.
+
+### Límites
+Inspección estática/manual. No se ejecutaron Apps Script runtime, HTTP/OAuth, navegador, Sheets/Drive productivas, concurrencia real, restauración con datos, rollback, E2E ni suite Node. No se modificó código, UI, pruebas ni datos productivos.
