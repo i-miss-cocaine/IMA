@@ -9527,3 +9527,33 @@ ARCHIVO NUEVO: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK09.md.
 ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
 SIGUIENTE: F8-Task10 — dashboard de coordinador académico como implementación de referencia.
 ===============================================================================
+
+
+===============================================================================
+F8-Task10 / TAREA-AD-04 — Dashboard de coordinador académico (2026-11-08)
+DICTAMEN: NO CUMPLE. CA-AD-109 NO CUMPLE; CA-AD-110 NO CUMPLE; CA-AD-111 NO CUMPLE (trazabilidad parcial).
+HALLAZGOS:
+- AUD-NG-316 ALTO/P1: getCoordinatorOverview devuelve ofertas, asignaciones y horarios globales; no filtra identidad/ámbito. payload vacío evita activar el control contextual de área. Relacionado con AUD-NG-312/AUD-NG-314.
+- AUD-NG-317 ALTO/P1: dashboard con filtros no conectados, métricas placeholder (jornalizaciones/sílabos = 0), secciones = offers.length, horarios sin uso y módulos faltantes. Amplía AUD-NG-191/TASK-488.
+- AUD-NG-318 ALTO/P1: CoordinacionesArea/DocentesAreasAcademicas se modelan por areaId; no hay contrato tipado para nivel/departamento/carrera. Amplía AUD-NG-225/TASK-505, AUD-NG-309/TASK-663 y AUD-NG-314/TASK-668.
+- AUD-NG-319 ALTO/P1: reviewPedagogicalPlanning sí registra versión/decisión/observación/actor/rol/fecha, pero no está integrado al dashboard ni verifica ámbito del revisor; getPlanningReviewHistory no limita por ámbito; authorizedBy en asignación de área puede venir del payload. Amplía AUD-NG-145/AUD-NG-224/TASK-664.
+TAREAS EJECUTABLES DERIVADAS:
+- TASK-670 completar el dashboard de coordinación como referencia funcional con datos reales, filtros, módulos y flujo de revisión.
+- Ampliar TASK-488 (dashboard dinámico), TASK-505 (consola y asignaciones), TASK-501/TASK-666 (RBAC/ABAC), TASK-636 (token/identidad), TASK-663/TASK-667 (relaciones), TASK-668 (jerarquía/vigencia), TASK-664 (trazabilidad) y TASK-665 (regresión).
+EVIDENCIA:
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, F8-Task10 líneas 4995–5017 [X].
+- Pendientes.md blob 676a3f798715f0cdd7d4bc75768472545b8465ee recuperado: 1.786.011 caracteres, 20.224 líneas, 0 U+FFFD, 515 TASK IDs únicos hasta TASK-636; lectura convencional 0 caracteres. No contiene F8-Task10 ni TASK-670. No se modificó.
+- dashboard-coordinacion.html SHA 08de8e4eb150ee9f6aad536ca08e8f76f2e0e896, 162 líneas; interfaz 30, 40–61, 74–141, scripts 151–160.
+- secretary.js SHA 08a81266957b4c18cc25f8ba6749eac30a8f2c2c, initCoordinatorDashboard/loadCoordinatorDashboardData 517–583.
+- teacher.js SHA c475fce5afcd28fca23e7b64398ad32b17773746, capacidades/navegación 133–220; no implementa el controlador de coordinación ni es cargado por la página.
+- ACADEMIC Code.gs SHA df87a2eea9f0ef79d0b966d03fd5bbe432003df5: ROLE_PERMISSIONS 222–223; validateContextualAccess 465–522; dispatcher 741; catálogo/ámbitos 4280–4355; planificación y revisión 5445–5840; getCoordinatorOverview 6301–6332; assignTeacherToAcademicArea 14186–14315.
+- Auditoria.txt SHA c2ca338c093f012f98c854494a3833dac832dba5: AUD-NG-191, 225 y 221 ya existen; se amplían, no se duplican.
+- Pendientes recuperado desde el blob de HEAD; plan SHA 2bbd0f5503a29fdd603a628f73be67af15145012; mapa SHA 69cf44762f1d79e632faae42b069375da3b25f99; metodología SHA cf796728bb384a32537392df2f9c72a339fa03ee.
+PRUEBAS/LÍMITES:
+- Inspección manual de interfaz, controlador, permisos, dispatcher, overview, asignaciones, planificación, revisiones e historial.
+- No ejecutados Node, Apps Script, HTTP, navegador, hojas productivas, pruebas de permisos dinámicos, multiusuario ni E2E.
+- No se modificó código ni datos productivos; completadas.md y Pendientes.md sin cambios.
+ARCHIVO NUEVO: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK10.md.
+ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+SIGUIENTE: F8-Task11 — integrar dashboards dinámicos con módulos y servicios existentes.
+===============================================================================

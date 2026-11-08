@@ -3982,3 +3982,34 @@ Inspección estática/manual y Git/blob; no se ejecutaron requests HTTP, Apps Sc
 - CA-AD-107: NO CUMPLE.
 - CA-AD-108: NO CUMPLE.
 - No se ejecutaron pruebas runtime ni se modificó código fuente.
+
+
+---
+
+## F8-Task10 / TAREA-AD-04 — Dashboard de coordinador académico (C1.270)
+
+### Componentes y dependencias inspeccionados
+- dashboard-coordinacion.html SHA 08de8e4eb150ee9f6aad536ca08e8f76f2e0e896: ámbito general estático, filtros de nivel/departamento sin evidencia de conexión, cuatro métricas y dos listas; carga secretary.js, no teacher.js.
+- js/secretary.js SHA 08a81266957b4c18cc25f8ba6749eac30a8f2c2c: initCoordinatorDashboard/loadCoordinatorDashboardData 517–583; invoca getCoordinatorOverview con payload vacío, fija pendientes a cero, interpreta offers.length como secciones y no utiliza horarios ni filtros.
+- js/teacher.js SHA c475fce5afcd28fca23e7b64398ad32b17773746: capacidades y navegación 133–220; no contiene initCoordinatorDashboard.
+- ACADEMIC Code.gs SHA df87a2eea9f0ef79d0b966d03fd5bbe432003df5:
+  - ROLE_PERMISSIONS 222–223; getCoordinatorOverview no está en la lista estática de Coordinador, aunque existe en dispatcher 741. Una concesión dinámica de MatrizPermisosRoles no pudo verificarse.
+  - validateContextualAccess 465–522: el control de área solo se ejecuta si payload.areaId está presente.
+  - getAcademicAreaTemplateCatalog/getAcademicAreaCoordinationScope 4280–4355: modelo por areaId y AmbitoJSON; no contrato tipado nivel/departamento/carrera ni evaluación de vigencia.
+  - savePedagogicalPlanning/getPedagogicalPlannings/submitPlanningForReview/reviewPedagogicalPlanning/getPlanningReviewHistory 5445–5840.
+  - getCoordinatorOverview 6301–6332: retorna todas las ofertas, asignaciones y horarios sin filtrar por ámbito.
+  - assignTeacherToAcademicArea 14186–14315: registra actor desde authorizedBy de payload o Sistema.
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676: F8-Task10 [X], líneas 4995–5017.
+- Pendientes.md blob 676a3f798715f0cdd7d4bc75768472545b8465ee: recuperado (1.786.011 caracteres, 20.224 líneas, 0 U+FFFD, 515 IDs hasta TASK-636); lectura normal 0 caracteres; sin F8-Task10 ni TASK-670.
+- Reconciliación histórica: AUD-NG-191/TASK-488 (dashboard estático); AUD-NG-225/TASK-505 (catálogo/asignaciones no integrados); AUD-NG-221/TASK-501 (matriz rol/acción); AUD-NG-312/TASK-666 y AUD-NG-314/TASK-668 (ABAC y vigencia); AUD-NG-145/AUD-NG-224/TASK-664 (auditoría y trazabilidad).
+
+### Hallazgos y tareas derivadas
+- AUD-NG-316 ALTO/P1: overview global sin filtro por ámbito → TASK-670 y ampliación TASK-501/TASK-666/TASK-668.
+- AUD-NG-317 ALTO/P1: indicadores falsos/placeholder y módulos ausentes → TASK-670; ampliar TASK-488.
+- AUD-NG-318 ALTO/P1: asignación centrada en areaId, no nivel/departamento/carrera → ampliar TASK-505/TASK-663/TASK-667/TASK-668.
+- AUD-NG-319 ALTO/P1: trazabilidad parcial, revisión no integrada y actor no verificado en asignación → TASK-670; ampliar TASK-664/TASK-665.
+
+### Dictamen
+- CA-AD-109: NO CUMPLE.
+- CA-AD-110: NO CUMPLE.
+- CA-AD-111: NO CUMPLE (hay registro parcial en reviewPedagogicalPlanning, insuficiente para todo el flujo requerido).

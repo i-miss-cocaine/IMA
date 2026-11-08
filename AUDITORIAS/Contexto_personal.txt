@@ -9214,3 +9214,36 @@ Auditar TAREA-F6-015 y TAREA-F6-040. Buscar informes individuales e historial en
 - **Próxima acción reproducible:** verificar si existe AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK10.md; si falta, auditar dashboard-coordinacion.html, js/secretary.js, js/teacher.js y backend/academic-service/Code.gs contra CA-AD-109/110/111, incluyendo ámbitos efectivos, coordinación por nivel/departamento/carrera, aprobaciones y trazabilidad.
 - **Commit de cierre:** se confirmará consultando HEAD después de publicar el commit único.
 ===============================================================================
+
+
+===============================================================================
+## C1.270 — Checkpoint de cierre: auditoría F8-Task10 / TAREA-AD-04 (2026-11-08)
+
+- **ID de sesión operativo:** IMA-AUDIT-20261108-2212Z-01 (documental; no ID nativo de ChatGPT).
+- **Checkpoint inicial:** C1.269. **Checkpoint de cierre:** C1.270.
+- **Hora UTC de cierre:** 2026-11-08 22:18Z aprox.; **estado:** sesión cerrada.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Archivo de contexto:** AUDITORIAS/Contexto_personal.txt.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **HEAD de partida verificado:** fcfbb67d90774c561a24b7b1af0b045d9d1ecf02; árbol Git ab2ca5b38b5c326098e3939573eda73b4550899f.
+- **Rama base protegida:** NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59; comparación inicial: 338 commits adelante, 0 detrás. La rama base no se modificó.
+- **Último checkpoint completado:** C1.269 — auditoría F8-Task09.
+- **Tarea realizada:** F8-Task10 / TAREA-AD-04, marcada [X] en completadas.md líneas 4995–5017. No existía AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK10.md; auditoría ejecutada directamente.
+- **Dictamen:** NO CUMPLE. CA-AD-109 NO CUMPLE; CA-AD-110 NO CUMPLE; CA-AD-111 NO CUMPLE (trazabilidad parcial).
+- **Hallazgos:** AUD-NG-316 ALTO/P1 overview global sin filtro por ámbito; AUD-NG-317 ALTO/P1 indicadores placeholders y módulos incompletos; AUD-NG-318 ALTO/P1 modelo de coordinaciones limitado a areaId; AUD-NG-319 ALTO/P1 trazabilidad parcial y flujo de revisión no integrado.
+- **Tarea nueva derivada:** TASK-670, descrita en AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK10.md.
+- **Tareas existentes ampliadas:** TASK-488, TASK-505, TASK-501, TASK-636, TASK-663, TASK-664, TASK-665, TASK-666, TASK-667 y TASK-668; no se duplican causas ya cubiertas.
+- **Fuentes:** completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676; dashboard-coordinacion.html 08de8e4eb150ee9f6aad536ca08e8f76f2e0e896; secretary.js 08a81266957b4c18cc25f8ba6749eac30a8f2c2c; teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; ACADEMIC Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5; Pendientes.md blob 676a3f798715f0cdd7d4bc75768472545b8465ee; metodología cf796728bb384a32537392df2f9c72a339fa03ee; Auditoria.txt c2ca338c093f012f98c854494a3833dac832dba5; plan 2bbd0f5503a29fdd603a628f73be67af15145012; mapa 69cf44762f1d79e632faae42b069375da3b25f99.
+- **Pendientes.md — recuperación:** lectura convencional 0 caracteres; blob actual de HEAD 676a3f798715f0cdd7d4bc75768472545b8465ee recuperado: 1.807.629 bytes (dato del blob previamente verificado), 1.786.011 caracteres, 20.224 líneas, 0 U+FFFD, 515 TASK IDs únicos, máximo TASK-636. No contiene F8-Task10 ni TASK-670. No se restauró ni modificó.
+- **Puntos inspeccionados:** completadas.md 4995–5017; dashboard-coordinacion.html completo (162 líneas); secretary.js 517–583; teacher.js 133–220; ACADEMIC Code.gs 222–223, 465–522, dispatcher 741, 4280–4355, 5445–5840, 6301–6332 y 14186–14315; Auditoria.txt para AUD-NG-191/225/221 y máximo AUD-NG-315; MapaDependencias, plan, metodología y checkpoints previos.
+- **Propósito:** verificar indicadores reales, filtros y ámbito dinámico, creación de coordinadores por nivel/departamento/carrera y trazabilidad de aprobaciones/revisiones.
+- **Pruebas ejecutadas:** inspección manual de archivos y funciones, recuperación/verificación del blob Pendientes.md, comparación de ramas, revisión de permisos estáticos/dinámicos y búsqueda de informe individual.
+- **No ejecutadas:** Node, Apps Script runtime, HTTP, navegador/DOM, hojas productivas, verificación de MatrizPermisosRoles, pruebas multiusuario/multirrol, aprobaciones reales ni E2E.
+- **Limitaciones:** no hay acceso al despliegue Apps Script ni a hojas productivas; no se puede comprobar concesión dinámica ni asignaciones reales. Código fuente sin modificaciones.
+- **Archivos nuevos:** AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK10.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Sin cambios:** dashboard-coordinacion.html; js/secretary.js; js/teacher.js; backend/academic-service/Code.gs; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md y rama base.
+- **Siguiente tarea exacta:** F8-Task11 — integrar dashboards dinámicos con módulos y servicios existentes.
+- **Próxima acción reproducible:** verificar existencia de AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK11.md; si falta, auditar js/api.js, js/config.js y backend USER/ACADEMIC/TASK/EXAM/ACCOUNTING contra CA-AD-112/113, comprobando contratos, reutilización, aislamiento de errores y trazabilidad.
+- **Commit de cierre:** el commit único que contiene este checkpoint; SHA final se confirma consultando HEAD después de publicar.
+===============================================================================

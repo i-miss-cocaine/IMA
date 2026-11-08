@@ -2286,3 +2286,20 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **Código fuente:** sin modificaciones; rama base intacta.
 - **Siguiente tarea exacta:** F8-Task10 — dashboard de coordinador académico como implementación de referencia.
 - **Próxima acción:** verificar si existe AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK10.md; si falta, auditar dashboard-coordinacion.html, js/secretary.js, js/teacher.js y backend/academic-service/Code.gs para CA-AD-109/110/111.
+
+
+---
+
+## F8-Task10 / TAREA-AD-04 — Dashboard de coordinador académico (C1.270)
+
+- **Dictamen:** NO CUMPLE; se conserva [X] histórica en completadas.md.
+- **Criterios:** CA-AD-109 NO CUMPLE; CA-AD-110 NO CUMPLE; CA-AD-111 NO CUMPLE (trazabilidad parcial).
+- **Hallazgos:** AUD-NG-316 overview global sin filtro de ámbito; AUD-NG-317 métricas placeholder y módulos/filtros incompletos; AUD-NG-318 modelo de coordinación basado en areaId sin dimensiones tipadas para nivel/departamento/carrera; AUD-NG-319 trazabilidad parcial y revisión no integrada al dashboard.
+- **Tarea nueva:** TASK-670 completar dashboard de coordinación con datos reales, filtros, módulos y flujo de revisión.
+- **Tareas existentes ampliadas:** TASK-488, TASK-505, TASK-501, TASK-636, TASK-663, TASK-664, TASK-665, TASK-666, TASK-667 y TASK-668. No se duplican RBAC, tokens, relaciones, vigencia, trazabilidad ni pruebas.
+- **Evidencia:** completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676 líneas 4995–5017; dashboard-coordinacion.html 08de8e4eb150ee9f6aad536ca08e8f76f2e0e896; secretary.js 08a81266957b4c18cc25f8ba6749eac30a8f2c2c; teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; ACADEMIC Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5.
+- **Pendientes.md:** blob actual 676a3f798715f0cdd7d4bc75768472545b8465ee recuperado: 1.786.011 caracteres, 20.224 líneas, 0 U+FFFD, 515 IDs únicos hasta TASK-636. No contiene TASK-670 ni F8-Task10. Se conserva sin cambios.
+- **Pruebas:** inspección manual de UI, controlador, RBAC, dispatcher, overview, asignaciones, revisión e historial; no ejecutados Node, Apps Script, HTTP, navegador, hojas productivas, pruebas dinámicas de permisos ni E2E.
+- **Código fuente:** sin modificaciones; rama base intacta.
+- **Siguiente tarea exacta:** F8-Task11 — integrar dashboards dinámicos con los módulos y servicios existentes.
+- **Próxima acción:** verificar si existe AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK11.md; si falta, auditar js/api.js, js/config.js y los servicios USER/ACADEMIC/TASK/EXAM/ACCOUNTING contra CA-AD-112/113.
