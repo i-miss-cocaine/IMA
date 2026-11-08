@@ -3956,3 +3956,29 @@ Inspección estática/manual y Git/blob; no se ejecutaron requests HTTP, Apps Sc
 - CA-AD-104: NO CUMPLE.
 - CA-AD-105: NO CUMPLE.
 - CA-AD-106: NO CUMPLE.
+
+
+---
+
+## F8-Task09 / TAREA-AD-03 — Gestión del ámbito de actuación de los roles (C1.269)
+
+### Componentes y relaciones inspeccionados
+- USER Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f: validateContextualAccess 1213–1251 no aplica ámbitos a roles generales; assignRoleScope 9116–9181 escribe 12 valores con 8 encabezados y actualiza por userId+scopeType; getUserScopeConfig 9183–9220 ignora roleId y vigencia; validateRoleScopeAccess 9222–9252 no se integra como guard transversal.
+- ACADEMIC Code.gs SHA df87a2eea9f0ef79d0b966d03fd5bbe432003df5: validateContextualAccess 465–522 solo valida scopeType+requestedValue opcionales y absorbe errores; validateAcademicResponsibilityAndScopeAccess 13244–13420 es una acción independiente, confía en userId/role de payload y no protege transversalmente las operaciones.
+- ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67: 5790–5820; filterDataByScope permite registros sin atributo de ámbito y validateUserScopeContext depende de configuración cliente.
+- api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9: 45–59 no propaga token de sesión; dependencia TASK-636.
+- tests/regression/modular-dashboard-suite.js SHA 0495e1d526a872c33310935a003a83d924d34683: 1–61, pruebas estáticas sin casos de aislamiento contextual.
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676: F8-Task09, líneas 4970–4990 [X].
+- Pendientes.md: blob actual 676a3f798715f0cdd7d4bc75768472545b8465ee (1.786.011 caracteres, 20.224 líneas, 515 IDs únicos, máximo TASK-636); blob histórico 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c (1.782.094 caracteres, 20.182 líneas, 511 IDs únicos, máximo TASK-511). Ambos recuperados desde commits alcanzables de la rama; no se restauró la versión histórica.
+
+### Hallazgos y tareas derivadas
+- AUD-NG-312 CRÍTICO/P0: enforcement backend opcional/fail-open → TASK-666; ampliar TASK-501 y TASK-636.
+- AUD-NG-313 CRÍTICO/P0: esquema y upsert colisionan entre roles → TASK-667; ampliar TASK-663/TASK-664.
+- AUD-NG-314 ALTO/P1: falta resolver rol, vigencia y jerarquía → TASK-668; ampliar TASK-663.
+- AUD-NG-315 ALTO/P1: filtro frontend admite atributo ausente → TASK-669; ampliar TASK-665.
+- TASK-665 incorpora pruebas de alcance, fechas, jerarquía, roles múltiples, omisiones y fallos de fuente de autorización.
+
+### Dictamen
+- CA-AD-107: NO CUMPLE.
+- CA-AD-108: NO CUMPLE.
+- No se ejecutaron pruebas runtime ni se modificó código fuente.

@@ -2269,3 +2269,20 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **Código fuente:** sin modificaciones; rama base intacta.
 - **Siguiente tarea exacta:** F8-Task09 — gestión del ámbito de actuación de los roles.
 - **Próxima acción:** verificar informe F8-Task09; si falta, auditar USER Code.gs, ACADEMIC Code.gs, ui-common.js y las asignaciones para ámbitos por responsabilidad, jerarquías académicas, vigencia, aislamiento en lectura/escritura y denegación por defecto.
+
+
+---
+
+## F8-Task09 / TAREA-AD-03 — Gestión del ámbito de actuación de los roles (C1.269)
+
+- **Dictamen:** NO CUMPLE; se conserva [X] histórica en completadas.md.
+- **Criterios:** CA-AD-107 NO CUMPLE; CA-AD-108 NO CUMPLE.
+- **Hallazgos:** AUD-NG-312 enforcement backend opcional/fail-open; AUD-NG-313 esquema de asignaciones inconsistente y colisiones userId+scopeType; AUD-NG-314 ausencia de resolución por rol, vigencia y jerarquía; AUD-NG-315 filtro frontend permite registros sin atributo de ámbito.
+- **Tareas nuevas:** TASK-666 enforcement contextual backend; TASK-667 esquema/clave de asignaciones; TASK-668 resolución jerárquica y temporal; TASK-669 filtros frontend fail-closed.
+- **Tareas existentes ampliadas:** TASK-501 autorización por módulo/acción/ámbito; TASK-636 token e identidad verificada; TASK-663 relaciones rol/responsabilidad/ámbito; TASK-664 auditoría de asignaciones; TASK-665 regresión funcional.
+- **Evidencia:** completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676 líneas 4970–4990; USER Code.gs 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ACADEMIC Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5; ui-common.js 986938b8a311a41ed4cb3d135b66b6aaea4bed67; api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9.
+- **Pendientes.md:** blob actual 676a3f798715f0cdd7d4bc75768472545b8465ee recuperado íntegro: 1.786.011 caracteres, 20.224 líneas, 515 IDs TASK-NNN únicos hasta TASK-636. Blob histórico solicitado 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c recuperado: 1.782.094 caracteres, 20.182 líneas, 511 IDs hasta TASK-511. Se conserva el blob actual de HEAD; no se restaura la versión histórica anterior.
+- **Pruebas:** inspección manual de código y contratos, dispatcher, filtros, asignaciones, historial de blobs y ramas. No ejecutados Node, Apps Script, HTTP, browser, Sheets productivo ni E2E.
+- **Código fuente:** sin modificaciones; rama base intacta.
+- **Siguiente tarea exacta:** F8-Task10 — dashboard de coordinador académico como implementación de referencia.
+- **Próxima acción:** verificar si existe AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK10.md; si falta, auditar dashboard-coordinacion.html, js/secretary.js, js/teacher.js y backend/academic-service/Code.gs para CA-AD-109/110/111.

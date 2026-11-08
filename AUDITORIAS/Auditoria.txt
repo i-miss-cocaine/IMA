@@ -9494,3 +9494,36 @@ PRUEBAS/LÍMITES:
 ARCHIVOS: nuevo AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK08.md; actualizados Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md y Contexto_personal.txt.
 SIGUIENTE: F8-Task09 — gestión del ámbito de actuación de los roles.
 ===============================================================================
+
+
+===============================================================================
+F8-Task09 / TAREA-AD-03 — Gestión del ámbito de actuación de los roles (2026-11-08)
+DICTAMEN: NO CUMPLE. CA-AD-107 NO CUMPLE; CA-AD-108 NO CUMPLE.
+HALLAZGOS:
+- AUD-NG-312 CRÍTICO/P0: el enforcement de ámbito no es obligatorio ni fail-closed. USER valida principalmente estudiantes/tutores; ACADEMIC solo comprueba si el cliente envía scopeType+requestedValue y absorbe errores. Ausencia de hoja/asignación o parámetros no deniega.
+- AUD-NG-313 CRÍTICO/P0: AsignacionesAmbitosRoles declara 8 columnas e inserta 12; upsert por userId+scopeType colisiona entre roles; actualización no conserva roleId, fechas ni suplencias.
+- AUD-NG-314 ALTO/P1: lectura/validación ignora roleId, responsabilidad, fechas y jerarquías; userId de payload prevalece sobre identidad verificada; el validador académico no exige vigencia.
+- AUD-NG-315 ALTO/P1: filterDataByScope permite registros cuyo atributo de ámbito falta; la validación frontend no es autoridad.
+TAREAS EJECUTABLES DERIVADAS:
+- TASK-666 enforcement backend fail-closed para todas las lecturas, búsquedas, listas y mutaciones.
+- TASK-667 esquema normalizado y clave independiente usuario/rol/responsabilidad/ámbito.
+- TASK-668 resolución jerárquica y vigencia temporal de asignaciones.
+- TASK-669 filtros frontend fail-closed y basados en ámbitos efectivos.
+- Ampliar TASK-501, TASK-636, TASK-663, TASK-664 y TASK-665; no duplicar tareas de RBAC, token, relaciones, auditoría y regresión.
+EVIDENCIA:
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, F8-Task09 líneas 4970–4990 [X].
+- USER Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f: validateContextualAccess 1213–1251; assignRoleScope 9116–9181; getUserScopeConfig 9183–9220; validateRoleScopeAccess 9222–9252; dispatcher 1565–1572.
+- ACADEMIC Code.gs SHA df87a2eea9f0ef79d0b966d03fd5bbe432003df5: validateContextualAccess 465–522; validateRolePermission 524+; dispatcher 723; validateAcademicResponsibilityAndScopeAccess 13244–13420.
+- ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67: filterDataByScope y validateUserScopeContext 5790–5820.
+- api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9: 45–59 no propaga token de sesión; ampliar TASK-636.
+- tests/regression/modular-dashboard-suite.js SHA 0495e1d526a872c33310935a003a83d924d34683: 61 líneas; pruebas estáticas, sin regresión de ámbitos.
+- Pendientes.md lectura convencional 0 caracteres; blob actual 676a3f798715f0cdd7d4bc75768472545b8465ee recuperado (1.786.011 caracteres, 20.224 líneas, 0 U+FFFD, 515 IDs únicos, máximo TASK-636). Blob histórico solicitado 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c recuperado desde commit alcanzable 6ee8aa685011b86ce92e425c335cbc8500c1326e (1.782.094 caracteres, 20.182 líneas, 0 U+FFFD, 511 IDs, máximo TASK-511). Se conserva la versión actual más reciente; no se restaura la histórica.
+- HEAD de partida e5dc3f6eafd3a723072ed75373f82bc411e791e6; árbol 9313c34141767c79a3f79c711a1d9230dca51959. Base NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59; 337 adelante, 0 detrás.
+PRUEBAS/LÍMITES:
+- Inspección manual de funciones, dispatchers, validación, filtros, contratos, historial y blobs.
+- No ejecutados Node, Apps Script, HTTP, browser, Sheets productivo, IDOR runtime ni E2E.
+- No se modificó código ni datos productivos; no se modificaron completadas.md ni Pendientes.md.
+ARCHIVO NUEVO: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK09.md.
+ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+SIGUIENTE: F8-Task10 — dashboard de coordinador académico como implementación de referencia.
+===============================================================================
