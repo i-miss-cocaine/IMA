@@ -2320,3 +2320,20 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **Código fuente:** sin modificaciones; rama base intacta.
 - **Siguiente tarea exacta:** F8-Task12 — consola administrativa para configurar dashboards y responsabilidades.
 - **Próxima acción:** verificar informe individual F8-Task12; si falta, auditar dashboard-direccion.html, dashboard-secretaria.html, js/secretary.js y USER Code.gs contra CA-AD-116/117.
+
+
+---
+
+## F8-Task12 / TAREA-AD-07 — Consola administrativa de roles, responsabilidades y dashboards (C1.272)
+
+- **Dictamen:** NO CUMPLE; se conserva [X] histórica en completadas.md.
+- **Criterios:** CA-AD-116 NO CUMPLE; CA-AD-117 NO CUMPLE.
+- **Hallazgos:** AUD-NG-325 consola de solo lectura sin CRUD; AUD-NG-326 falta de previsualización aislada; AUD-NG-327 validación server-side insuficiente de módulos/capacidades/estado; AUD-NG-328 actualización destructiva sin versionado ni rollback.
+- **Reconciliación:** AUD-NG-309, AUD-NG-311, AUD-NG-313 y AUD-NG-321 se reconfirman; no se duplican.
+- **Tareas nuevas:** ninguna. Las causas ya están cubiertas por TASK-505 (consola/ciclo de vida), TASK-661 (catálogo/fallback), TASK-662 (integridad/validación), TASK-663 (relaciones), TASK-664 (trazabilidad/versiones), TASK-667/TASK-668 (ámbitos), TASK-665 (regresión), TASK-501/TASK-666 (autorización), TASK-636 (identidad) y TASK-488 (dashboards).
+- **Evidencia:** completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676 líneas 5046–5067; dashboard-direccion.html fefaa3bf7884288aef563cfb8aaf244e6cea8b7c; dashboard-secretaria.html fa0d8c23aace24a6acab2d4956398a7f5e1309b8; secretary.js 08a81266957b4c18cc25f8ba6749eac30a8f2c2c; USER Code.gs 12079dd410aa6d8afbce55a4bc62a79dea605f9f.
+- **Pendientes.md:** lectura convencional 0; blob actual 676a3f798715f0cdd7d4bc75768472545b8465ee recuperado íntegro (1.807.629 bytes, 1.786.011 caracteres, 20.224 líneas, 0 U+FFFD, 515 IDs únicos, máximo TASK-636); blob histórico solicitado 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c recuperado (1.803.672 bytes, 1.782.094 caracteres, 20.182 líneas, 0 U+FFFD, 511 IDs únicos, máximo TASK-511). Se conserva la versión actual posterior.
+- **Pruebas:** inspección manual de UI, controlador, dispatcher, validación, persistencia, ámbitos, catálogo, trazabilidad y blobs. No ejecutados Node, Apps Script, HTTP, navegador, Sheets productivo, preview real, rollback ni E2E.
+- **Código fuente:** sin modificaciones; completadas.md y Pendientes.md sin cambios; rama base intacta.
+- **Siguiente tarea exacta:** F8-Task13 — estructura modular de carpetas.
+- **Próxima acción:** verificar si existe AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK13.md; si falta, auditar docs/architecture/folder-structure.md y backend/developer-service/Code.gs contra CA-MOD-103/104, incluyendo index.htm en raíz, recursos, clasp/despliegue y exposición de archivos sensibles.

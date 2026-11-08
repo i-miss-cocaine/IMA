@@ -4042,3 +4042,34 @@ Inspección estática/manual y Git/blob; no se ejecutaron requests HTTP, Apps Sc
 ### Dictamen
 - CA-AD-112: NO CUMPLE.
 - CA-AD-113: NO CUMPLE.
+
+
+---
+
+## F8-Task12 / TAREA-AD-07 — Consola administrativa de roles y responsabilidades (C1.272)
+
+### Componentes y dependencias inspeccionados
+- dashboard-direccion.html SHA fefaa3bf7884288aef563cfb8aaf244e6cea8b7c: botón btn-role-config-admin 45–55; modal-role-responsibility-config 420–439, con contenedor vacío de carga y sin formulario/preview.
+- dashboard-secretaria.html SHA fa0d8c23aace24a6acab2d4956398a7f5e1309b8: encabezado 28–40 y scripts/modales; no contiene botón ni modal de configuración de roles.
+- js/secretary.js SHA 08a81266957b4c18cc25f8ba6749eac30a8f2c2c: listener y controlador 455–515; obtiene catálogos y presenta listas, no ejecuta mutaciones ni vista previa.
+- USER Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f:
+  - getCentralCapabilitiesCatalog y getInstitutionalResponsibilitiesCatalog 8850–9032; el segundo devuelve tres defaults activos si no hay responsabilidades activas.
+  - saveInstitutionalResponsibility 9034–9114: valida solo nombre; acepta módulos/capacidades vacíos o arbitrarios y estado no restringido; al editar reemplaza la misma fila.
+  - assignRoleScope 9116–9160: operación separada; upsert no incluye roleId en la clave userId+scopeType.
+  - getUserDynamicDashboardConfig 9254–9300 mantiene módulos hardcodeados por rol.
+  - doPost/validateRolePermission 1351–1373 valida autorización antes del dispatcher; la validación de negocio de configuración sigue incompleta.
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676: F8-Task12 [X], líneas 5046–5067.
+- Pendientes.md blob actual 676a3f798715f0cdd7d4bc75768472545b8465ee: 1.786.011 caracteres, 20.224 líneas, 515 IDs únicos hasta TASK-636; blob histórico 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c: 1.782.094 caracteres, 20.182 líneas, 511 IDs únicos. Lectura convencional 0; se conserva el blob actual.
+- Reconciliación: AUD-NG-309/TASK-663 (relación rol-responsabilidad); AUD-NG-311/TASK-661 (fallback de defaults); AUD-NG-313/TASK-667 (colisión de ámbitos); AUD-NG-321/TASK-662/TASK-663 (contratos no consumidos).
+
+### Hallazgos y tareas derivadas
+- AUD-NG-325 ALTO/P1: UI solo lectura, sin CRUD ni asignación; amplía TASK-505/TASK-663/TASK-665.
+- AUD-NG-326 ALTO/P1: falta vista previa aislada; amplía TASK-505/TASK-488/TASK-665.
+- AUD-NG-327 ALTO/P1: validación server-side insuficiente antes de guardar como Activa; amplía TASK-662/TASK-661/TASK-665.
+- AUD-NG-328 ALTO/P1: edición destructiva, sin versionado/rollback; amplía TASK-505/TASK-661/TASK-664/TASK-665.
+- No se crean TASK-NNN nuevos; se amplían TASK-505, TASK-661, TASK-662, TASK-663, TASK-664, TASK-667, TASK-668, TASK-665, TASK-501, TASK-666, TASK-636 y TASK-488.
+
+### Dictamen
+- CA-AD-116: NO CUMPLE.
+- CA-AD-117: NO CUMPLE.
+- No se ejecutaron pruebas runtime ni se modificó código fuente.

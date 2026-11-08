@@ -9592,3 +9592,35 @@ ARCHIVO NUEVO: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK11.md.
 ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
 SIGUIENTE: F8-Task12 — consola administrativa para configurar dashboards y responsabilidades.
 ===============================================================================
+
+
+===============================================================================
+F8-Task12 / TAREA-AD-07 — Consola administrativa de roles y responsabilidades (C1.272)
+DICTAMEN: NO CUMPLE. CA-AD-116 NO CUMPLE; CA-AD-117 NO CUMPLE.
+HALLAZGOS:
+- AUD-NG-325 ALTO/P1: consola UI solo consulta catálogos; no existe CRUD de roles/responsabilidades ni controles de módulos/capacidades/ámbitos. El dashboard de Secretaría no expone el modal. Amplía TASK-505/TASK-663/TASK-665.
+- AUD-NG-326 ALTO/P1: no existe previsualización aislada del dashboard ni renderer de prueba. Amplía TASK-505/TASK-488/TASK-665.
+- AUD-NG-327 ALTO/P1: saveInstitutionalResponsibility exige solo name; admite módulos/capacidades vacíos o arbitrarios y estado no validado, con default Activa. No rechaza configuraciones inválidas antes de persistir. Amplía TASK-662/TASK-661/TASK-665.
+- AUD-NG-328 ALTO/P1: la edición sobrescribe la fila existente; el log conserva solo el nombre anterior; no hay versionado ni rollback. El fallback de catálogo no restaura la última configuración válida. Amplía TASK-505/TASK-661/TASK-664/TASK-665.
+RECONCILIACIÓN:
+- AUD-NG-309/AUD-NG-313/AUD-NG-311/AUD-NG-321 se reconfirman; se amplían TASK-663/TASK-667/TASK-661/TASK-662, sin duplicar tareas.
+TAREAS EJECUTABLES DERIVADAS:
+- No se crean TASK-NNN nuevos. Se amplían TASK-505 (CRUD/preview/versiones/rollback), TASK-661 (catálogo y fallback), TASK-662 (validación server-side), TASK-663 (relaciones persistentes), TASK-664 (snapshots/trazabilidad), TASK-667/TASK-668 (ámbitos), TASK-665 (pruebas), TASK-501/TASK-666 (autorización), TASK-636 (identidad) y TASK-488 (dashboard dinámico).
+EVIDENCIA:
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, F8-Task12 líneas 5046–5067 [X].
+- Pendientes.md blob actual 676a3f798715f0cdd7d4bc75768472545b8465ee: 1.807.629 bytes, 1.786.011 caracteres, 20.224 líneas, 0 U+FFFD, 515 TASK IDs únicos, máximo TASK-636; lectura ordinaria 0 caracteres.
+- Blob histórico solicitado 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c: 1.803.672 bytes, 1.782.094 caracteres, 20.182 líneas, 0 U+FFFD, 511 TASK IDs únicos, máximo TASK-511. Se conserva el actual posterior; no se restaura el histórico.
+- dashboard-direccion.html SHA fefaa3bf7884288aef563cfb8aaf244e6cea8b7c: botón 45–55; modal 420–439.
+- dashboard-secretaria.html SHA fa0d8c23aace24a6acab2d4956398a7f5e1309b8: encabezado 28–40; sin botón/modal de configuración de roles.
+- secretary.js SHA 08a81266957b4c18cc25f8ba6749eac30a8f2c2c: controlador F8-Task12 455–515; solo consultas de catálogo y renderizado de listas.
+- USER Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f: catálogo 8970–9032; saveInstitutionalResponsibility 9034–9114; assignRoleScope 9116–9160; getUserDynamicDashboardConfig 9254–9300; doPost 1351–1373.
+- Auditoria.txt SHA c45bef96e425eb8b6a72552b014a44456a282fae; máximo anterior AUD-NG-324.
+- MapaDependencias.md SHA f9c9010d038251eb2e82403125d62aeb3e555e59; plan SHA d32a060e68ae1c8ce556b0018ca374950ea6a5ba; contexto SHA cbd1eb2839e99829a173625524be62f002239132; metodología SHA cf796728bb384a32537392df2f9c72a339fa03ee.
+PRUEBAS/LÍMITES:
+- Inspección manual de HTML, controlador, catálogos, persistencia, validación, asignaciones, dispatcher y relaciones con auditorías previas.
+- No ejecutados Node, Apps Script, HTTP, navegador, Sheets productivo, previsualización real, rollback ni E2E.
+- Código fuente sin cambios; completadas.md y Pendientes.md sin cambios; rama base intacta.
+ARCHIVO NUEVO: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK12.md.
+ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+SIGUIENTE: F8-Task13 — estructura modular de carpetas; verificar informe individual y, si falta, auditar directamente.
+===============================================================================

@@ -9279,3 +9279,34 @@ Auditar TAREA-F6-015 y TAREA-F6-040. Buscar informes individuales e historial en
 - **Próxima acción reproducible:** verificar si existe AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK12.md; si falta, auditar dashboard-direccion.html, dashboard-secretaria.html, js/secretary.js y backend/user-service/Code.gs contra CA-AD-116/117, comprobando CRUD de roles/responsabilidades/ámbitos, preview sin permisos reales, validación server-side antes de activar, conservación histórica y recuperación de configuración válida.
 - **Commit de cierre:** se confirmará consultando HEAD después de publicar.
 ===============================================================================
+
+
+===============================================================================
+## C1.272 — Checkpoint de cierre: auditoría F8-Task12 / TAREA-AD-07 (2026-11-08)
+
+- **ID de sesión operativo:** IMA-AUDIT-20261108-2320Z-01 (identificador documental; no ID nativo de ChatGPT).
+- **Checkpoint inicial:** C1.271. **Checkpoint de cierre:** C1.272.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Archivo de contexto:** AUDITORIAS/Contexto_personal.txt.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **HEAD de partida verificado:** 551f8868e51b8a99cf0d98d8f57a0180fd6063ef. La comparación 551f8868... vs NG_beta_0.0.0.1_work devolvió identical.
+- **Árbol de partida reconstruido:** se parte del árbol C1.271 e36c564325b147c2ad00af0fe0de1ae719213c05 y se reaplican los cinco blobs del único commit posterior a C1.271 (informe F8-Task11, plan, Auditoria.txt, contexto y mapa); el SHA del árbol reconstruido se registra al crear el árbol del commit único.
+- **Rama base protegida indicada por C1.271:** NG_beta_0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59; comparación actual 340 commits adelante, 0 detrás. Sin cambios en la rama base.
+- **Último checkpoint completado:** C1.271 — auditoría F8-Task11.
+- **Tarea realizada:** F8-Task12 / TAREA-AD-07, marcada [X] en completadas.md líneas 5046–5067. No existía AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK12.md; auditoría ejecutada directamente.
+- **Dictamen:** NO CUMPLE. CA-AD-116 NO CUMPLE; CA-AD-117 NO CUMPLE.
+- **Hallazgos:** AUD-NG-325 ALTO/P1 consola solo lectura sin CRUD; AUD-NG-326 ALTO/P1 ausencia de preview aislado; AUD-NG-327 ALTO/P1 validación server-side insuficiente; AUD-NG-328 ALTO/P1 sobrescritura destructiva sin versionado ni rollback.
+- **Tareas nuevas derivadas:** ninguna; se amplían TASK-505, TASK-661, TASK-662, TASK-663, TASK-664, TASK-667, TASK-668, TASK-665, TASK-501, TASK-666, TASK-636 y TASK-488. No se duplican AUD-NG-309/311/313/321.
+- **Fuentes:** completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676; dashboard-direccion.html fefaa3bf7884288aef563cfb8aaf244e6cea8b7c; dashboard-secretaria.html fa0d8c23aace24a6acab2d4956398a7f5e1309b8; secretary.js 08a81266957b4c18cc25f8ba6749eac30a8f2c2c; USER Code.gs 12079dd410aa6d8afbce55a4bc62a79dea605f9f; Auditoria.txt c45bef96e425eb8b6a72552b014a44456a282fae; MapaDependencias.md f9c9010d038251eb2e82403125d62aeb3e555e59; plan d32a060e68ae1c8ce556b0018ca374950ea6a5ba; contexto cbd1eb2839e99829a173625524be62f002239132; metodología cf796728bb384a32537392df2f9c72a339fa03ee.
+- **Pendientes.md — recuperación:** lectura convencional 0 caracteres. Blob actual de HEAD 676a3f798715f0cdd7d4bc75768472545b8465ee: 1.807.629 bytes, 1.786.011 caracteres, 20.224 líneas, 0 U+FFFD, 515 TASK IDs únicos, máximo TASK-636. Blob histórico solicitado 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c: 1.803.672 bytes, 1.782.094 caracteres, 20.182 líneas, 0 U+FFFD, 511 TASK IDs únicos, máximo TASK-511. Se conserva el blob actual posterior y no se restaura la versión histórica.
+- **Puntos inspeccionados:** completadas.md 5046–5067; dashboard-direccion.html 45–55 y 420–439; dashboard-secretaria.html 28–40 y scripts/modales; secretary.js 455–515; USER Code.gs 8970–9160, 9254–9300 y doPost/dispatcher 1351–1373 y rutas de responsabilidades; informes F8-Task08..11; plan, mapa, auditoría y metodología.
+- **Pruebas ejecutadas:** inspección manual de HTML, controlador, catálogos, persistencia, validación, asignaciones, autenticación, dispatcher, historial y blobs; comparación de ramas y verificación de existencia del informe individual.
+- **No ejecutadas:** Node, Apps Script runtime, HTTP, navegador/DOM, hojas productivas, preview real, rollback runtime ni E2E.
+- **Limitaciones:** no hay acceso a deployments Apps Script ni hojas productivas; no se certifican estados de datos externos. La revisión es estática/manual.
+- **Archivos nuevos:** AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK12.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Sin cambios:** dashboard-direccion.html; dashboard-secretaria.html; js/secretary.js; backend/user-service/Code.gs; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; código fuente y rama base.
+- **Siguiente tarea exacta:** F8-Task13 — definir y aplicar una estructura modular de carpetas, marcada [X] en completadas.md líneas 5071–5093.
+- **Próxima acción reproducible:** verificar si existe AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK13.md; si falta, auditar docs/architecture/folder-structure.md y backend/developer-service/Code.gs contra CA-MOD-103/104, comprobando estructura real, index.htm en raíz, rutas de recursos, clasp/despliegue y exposición de archivos sensibles.
+- **Commit de cierre:** se confirmará consultando HEAD después de publicar el único commit que contiene este informe y el checkpoint.
+===============================================================================
