@@ -9657,3 +9657,33 @@ ARCHIVO NUEVO: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK13.md.
 ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
 SIGUIENTE: F8-Task14 — modularizar archivos grandes sin eliminar ni duplicar funciones; comprobar informe individual y, si falta, auditar directamente.
 ===============================================================================
+
+
+===============================================================================
+F8-Task14 / TAREA-MOD-03 — Descomposición de archivos monolíticos (C1.274)
+DICTAMEN: NO CUMPLE. CA-MOD-105 PARCIAL/NO ACREDITADO; CA-MOD-106 NO ACREDITADO.
+HALLAZGOS:
+- AUD-NG-333 ALTO/P1: developer-service Code.gs continúa como monolito de 2.901 líneas; el plan no incluye este archivo en la matriz de módulos ni define destinos/adaptadores. Deriva TASK-676.
+- AUD-NG-334 ALTO/P1: validateMonolithDecompositionContracts no analiza fuentes/firmas; valida contra catálogo estático y cuenta ping repetido entre servicios como colisión global. Deriva TASK-677.
+- AUD-NG-335 ALTO/P1: la suite solo comprueba presencia textual del validador; no lo ejecuta ni prueba contratos, firmas o colisiones. Deriva TASK-677 y amplía TASK-665.
+TAREAS EJECUTABLES DERIVADAS:
+- TASK-676 P1: descomponer developer-service Code.gs por responsabilidad funcional, preservar contratos públicos con wrappers/adaptadores y actualizar el plan/inventario.
+- TASK-677 P1: verificar contratos/firmas y colisiones desde fuentes reales con namespace por servicio; ejecutar pruebas conductuales de compatibilidad y duplicados.
+RECONCILIACIÓN:
+- TASK-665 se amplía con pruebas de comportamiento; TASK-662 con contratos sincronizados a dispatchers reales; TASK-636 mantiene identidad/autorización; TASK-671/672 y TASK-673/674/675 conservan alcances propios, sin duplicarlos.
+EVIDENCIA:
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, F8-Task14 [X], líneas 5097–5117.
+- Pendientes.md blob actual 676a3f798715f0cdd7d4bc75768472545b8465ee, 1.786.011 caracteres, 20.224 líneas, 515 TASK IDs únicos, máximo TASK-636.
+- monolith-decomposition-plan.md SHA 388eda1feee9826f7be85665e56b35a566b8a5be, 21 líneas.
+- backend/developer-service/Code.gs SHA 8aa4bac67cfe5c8c54da51a0784a56fef633e412, 125.944 caracteres, 2.901 líneas.
+- tests/regression/modular-dashboard-suite.js SHA 0495e1d526a872c33310935a003a83d924d34683; suite inspeccionada 1–60.
+- Auditoria.txt SHA 782af5f003d78a4b91cbe9f5f7bf7a6ae2c4fbf4; máximo anterior AUD-NG-332.
+PRUEBAS/LÍMITES:
+- Inspección manual del plan, fuente, catálogo de contratos, validador y suite.
+- No ejecutados Node, Apps Script, HTTP, namespace productivo, consumidores reales ni E2E.
+- No se afirma una colisión real en producción; el validador no puede probar ausencia y produce falsos positivos entre servicios.
+- Código fuente, completadas.md y Pendientes.md sin cambios; rama base intacta.
+ARCHIVO NUEVO: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK14.md.
+ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+SIGUIENTE: F8-Task15 — actualizar mapa de dependencias y documentación arquitectónica; verificar informe y, si falta, auditar directamente.
+===============================================================================

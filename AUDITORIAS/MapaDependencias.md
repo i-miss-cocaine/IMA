@@ -4105,3 +4105,28 @@ Inspección estática/manual y Git/blob; no se ejecutaron requests HTTP, Apps Sc
 
 ### Dictamen
 La estructura backend/tests/docs existe, pero el frontend continúa mayoritariamente en raíz/js/css/imagenes. El validador usa un manifiesto estático y defaults que producen falsos positivos. No hay configuración clasp ni exclusión verificable. No se ejecutaron pruebas runtime ni se modificó código fuente.
+
+
+---
+
+## F8-Task14 / TAREA-MOD-03 — Descomposición de archivos monolíticos (C1.274)
+
+### Fuentes y componentes inspeccionados
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676: F8-Task14 [X], líneas 5097–5117.
+- monolith-decomposition-plan.md SHA 388eda1feee9826f7be85665e56b35a566b8a5be, 21 líneas: enumera js/ui-common.js, secretary.js, teacher.js, student.js y academic-service Code.gs; omite backend/developer-service/Code.gs y no define módulos destino ni adaptadores.
+- backend/developer-service/Code.gs SHA 8aa4bac67cfe5c8c54da51a0784a56fef633e412: 125.944 caracteres, 2.901 líneas; permanece como unidad con transporte/autenticación, registro, comandos, logs, contratos, validación, regresión y diagnóstico.
+- validateMonolithDecompositionContracts, líneas 1798–1893: obtiene acciones del catálogo estático; activeGlobalFunctions solo se alimenta desde payload; no analiza fuentes ni firmas; seenInBatch usa solo el nombre de acción y cuenta repetición entre servicios como duplicado.
+- getCentralConfigAndContractCatalog, líneas 2261–2283: declara ping en USER, ACADEMIC, TASK, EXAM, ACCOUNTING y DEVELOPER.
+- tests/regression/modular-dashboard-suite.js SHA 0495e1d526a872c33310935a003a83d924d34683, líneas 38–50: comprueba presencia de la cadena validateMonolithDecompositionContracts, no su ejecución ni comportamiento.
+- Pendientes.md blob 676a3f798715f0cdd7d4bc75768472545b8465ee: 1.786.011 caracteres, 20.224 líneas, 515 IDs TASK únicos, máximo TASK-636; no contiene TASK-676/677.
+
+### Hallazgos y tareas derivadas
+- AUD-NG-333 ALTO/P1: no hay descomposición física del archivo objetivo y el plan omite developer-service. CA-MOD-105 parcial/no acreditado. TASK-676.
+- AUD-NG-334 ALTO/P1: validador no inspecciona funciones/firmas y cuenta nombres repetidos entre servicios como colisiones globales. TASK-677.
+- AUD-NG-335 ALTO/P1: suite solo verifica presencia textual, no compatibilidad ni duplicados reales. TASK-677/TASK-665.
+- Tareas nuevas: TASK-676 (descomposición funcional con wrappers/adaptadores); TASK-677 (validador real de contratos/firmas y colisiones por namespace).
+- Tareas existentes ampliadas: TASK-665, TASK-662 y TASK-636; no duplicar TASK-671/672 ni TASK-673/674/675.
+- CA-MOD-105: PARCIAL/NO ACREDITADO. CA-MOD-106: NO ACREDITADO. No se certifica que existan duplicados reales en producción; el validador no demuestra su ausencia.
+
+### Dictamen
+La descomposición no está demostrada. El archivo developer-service sigue siendo monolítico y el validador es autorreferencial y confunde acciones de servicios separados. No se ejecutaron pruebas runtime ni se modificó código fuente.

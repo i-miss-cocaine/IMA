@@ -2356,3 +2356,21 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **Código fuente:** sin modificaciones; completadas.md y Pendientes.md sin cambios; rama base intacta.
 - **Siguiente tarea exacta:** F8-Task14 — modularizar archivos grandes sin eliminar ni duplicar funciones, marcada [X] en completadas.md desde línea 5097.
 - **Próxima acción:** verificar si existe AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK14.md; si falta, auditar docs/architecture/monolith-decomposition-plan.md y backend/developer-service/Code.gs contra CA-MOD-105/106, comprobando contratos públicos, duplicados, colisiones, consumidores y compatibilidad.
+
+
+---
+
+## F8-Task14 / TAREA-MOD-03 — Descomposición de archivos monolíticos (C1.274)
+
+- **Dictamen:** NO CUMPLE.
+- **Criterios:** CA-MOD-105 PARCIAL/NO ACREDITADO; CA-MOD-106 NO ACREDITADO.
+- **Hallazgos:** AUD-NG-333 archivo developer-service sigue monolítico y plan omite el archivo; AUD-NG-334 validador no analiza fuentes/firmas y confunde acciones repetidas entre servicios; AUD-NG-335 suite solo comprueba presencia textual.
+- **Tareas nuevas:** TASK-676 descomponer developer-service Code.gs por responsabilidad con adaptadores compatibles; TASK-677 implementar verificación real de funciones/firmas/colisiones por namespace y pruebas conductuales.
+- **Tareas existentes ampliadas:** TASK-665 (pruebas), TASK-662 (contratos alineados a dispatchers reales), TASK-636 (identidad/autorización).
+- **No duplicar:** TASK-671/TASK-672 cubren adaptadores ejecutables y aislamiento de fallos; TASK-673/TASK-674/TASK-675 cubren migración de carpetas, validador de árbol y despliegue.
+- **Pendientes.md:** blob actual 676a3f798715f0cdd7d4bc75768472545b8465ee recuperado íntegro (1.786.011 caracteres, 20.224 líneas, 515 IDs únicos, máximo TASK-636); sin cambios.
+- **Evidencia:** monolith-decomposition-plan.md 388eda1feee9826f7be85665e56b35a566b8a5be; developer-service Code.gs 8aa4bac67cfe5c8c54da51a0784a56fef633e412 (2.901 líneas); suite 0495e1d526a872c33310935a003a83d924d34683; completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676.
+- **Pruebas:** inspección manual del plan, archivo fuente, catálogo de acciones, validador y suite; no ejecutados Node, Apps Script, HTTP, namespace productivo ni E2E.
+- **Código fuente:** sin modificaciones; completadas.md y Pendientes.md sin cambios; rama base intacta.
+- **Siguiente tarea exacta:** F8-Task15 — actualizar el mapa de dependencias y la documentación arquitectónica, marcada [X] en completadas.md desde línea 5121.
+- **Próxima acción:** verificar si existe AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK15.md; si falta, auditar repository-inventory.md, routing-and-paths.md, staged-migration-procedure.md, MapaDependencias.md y developer-service Code.gs contra la correspondencia con el árbol real, rutas, dependencias y contratos.

@@ -9340,3 +9340,33 @@ Auditar TAREA-F6-015 y TAREA-F6-040. Buscar informes individuales e historial en
 - **Próxima acción reproducible:** verificar si existe AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK14.md; si falta, auditar docs/architecture/monolith-decomposition-plan.md y backend/developer-service/Code.gs contra CA-MOD-105/106, comprobando contratos públicos, duplicados/colisiones, consumidores y compatibilidad.
 - **Commit de cierre:** se confirmará consultando HEAD después de publicar el único commit que contiene este informe y el checkpoint.
 ===============================================================================
+
+
+===============================================================================
+## C1.274 — Checkpoint de cierre: auditoría F8-Task14 / TAREA-MOD-03 (2026-11-08)
+
+- **ID de sesión operativo:** IMA-AUDIT-20261108-2330Z-03 (identificador documental; no ID nativo de ChatGPT).
+- **Checkpoint inicial:** C1.273. **Checkpoint de cierre:** C1.274.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **HEAD de partida verificado:** ce8e64defbe9f99293f370cead7db445b535721b.
+- **Árbol de partida:** 875169913d4160f196c5cbfe60cc70fc8404e947.
+- **Rama base protegida indicada en C1.271:** NG_beta_0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59; comparación 342 commits adelante, 0 detrás. Sin cambios en rama base.
+- **Tarea realizada:** F8-Task14 / TAREA-MOD-03, marcada [X] en completadas.md líneas 5097–5117. No existía AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK14.md; auditoría ejecutada directamente.
+- **Dictamen:** NO CUMPLE. CA-MOD-105 PARCIAL/NO ACREDITADO; CA-MOD-106 NO ACREDITADO.
+- **Hallazgos:** AUD-NG-333 ALTO/P1 archivo developer-service sigue monolítico y plan lo omite; AUD-NG-334 ALTO/P1 validador no inspecciona funciones/firmas y cuenta falsos duplicados entre servicios; AUD-NG-335 ALTO/P1 suite solo comprueba presencia textual.
+- **Tareas nuevas:** TASK-676 (descomposición funcional de developer-service con wrappers/adaptadores); TASK-677 (validación real de contratos, firmas y colisiones por namespace).
+- **Tareas existentes ampliadas:** TASK-665, TASK-662 y TASK-636. TASK-671/672 y TASK-673/674/675 conservan sus alcances.
+- **Fuentes:** completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676; monolith-decomposition-plan.md 388eda1feee9826f7be85665e56b35a566b8a5be; developer-service Code.gs 8aa4bac67cfe5c8c54da51a0784a56fef633e412; tests/regression/modular-dashboard-suite.js 0495e1d526a872c33310935a003a83d924d34683; Auditoria.txt 782af5f003d78a4b91cbe9f5f7bf7a6ae2c4fbf4; MapaDependencias.md cc9969f76b286d8fe3ee084bcce760bb8380f3d1; plan 03ea6a7e98cff337da0c0baf9a7a1ede825d6eac; contexto f88465d1c6d8e6f112e0cefec43f65c0a9f7d6ae.
+- **Pendientes.md:** blob actual 676a3f798715f0cdd7d4bc75768472545b8465ee recuperado íntegro: 1.786.011 caracteres, 20.224 líneas, 515 TASK IDs únicos, máximo TASK-636; no se modificó.
+- **Puntos inspeccionados:** completadas.md 5097–5117; monolith-decomposition-plan.md 1–21; developer-service Code.gs 1–100, 1747–1895 y 2261–2283; tests/regression/modular-dashboard-suite.js 1–60; inventario y plan de arquitectura.
+- **Pruebas ejecutadas:** inspección manual del plan, archivo fuente, catálogo de acciones, validador y suite.
+- **No ejecutadas:** Node, Apps Script runtime, HTTP, namespace productivo, consumidores reales ni E2E.
+- **Limitaciones:** no se afirma una colisión real concreta en producción; el validador no puede probar su ausencia y clasifica incorrectamente acciones repetidas entre servicios.
+- **Archivos nuevos:** AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK14.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Sin cambios:** docs/architecture/monolith-decomposition-plan.md; backend/developer-service/Code.gs; tests/regression/modular-dashboard-suite.js; completadas.md; Pendientes.md; código fuente y rama base.
+- **Siguiente tarea exacta:** F8-Task15 — actualizar el mapa de dependencias y la documentación arquitectónica, marcada [X] en completadas.md desde línea 5121.
+- **Próxima acción reproducible:** verificar si existe AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK15.md; si falta, auditar docs/architecture/repository-inventory.md, routing-and-paths.md, staged-migration-procedure.md, AUDITORIAS/MapaDependencias.md y backend/developer-service/Code.gs contra integridad, exactitud, rutas, dependencias, contratos y árbol real.
+- **Commit de cierre:** se confirmará consultando HEAD después de publicar el único commit que contiene este informe y el checkpoint.
+===============================================================================
