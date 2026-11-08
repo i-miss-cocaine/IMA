@@ -2179,3 +2179,17 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **Pendientes.md:** lectura convencional 0 caracteres; blob actual 676a3f798715f0cdd7d4bc75768472545b8465ee recuperado (1.786.011 caracteres, 20.224 líneas, 0 U+FFFD, 515 IDs TASK numéricos únicos TASK-001..TASK-636); blob histórico 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c también recuperado. Se conserva el blob actual del HEAD; no se restauró el histórico ni se modificó el archivo.
 - **Pruebas:** inspección manual/documental y Git. No ejecutados Node, navegador, HTTP, Apps Script ni E2E.
 - **Siguiente tarea exacta:** F8-Task03, actualizar y verificar las rutas y dependencias después de reorganizar el repositorio.
+
+
+---
+
+## F8-Task03 / TAREA-MOD-04 — Rutas y dependencias (C1.263)
+
+- **Dictamen:** NO CUMPLE; se conserva la marca histórica [X] en completadas.md.
+- **Criterios:** CA-MOD-107 NO CUMPLE; CA-MOD-108 NO CUMPLE.
+- **Hallazgos:** AUD-NG-284 referencias a CSS/iconos inexistentes; AUD-NG-285 precache PWA con ruta CSS inexistente; AUD-NG-286 JSON de migración ausentes; AUD-NG-287 catálogo de rutas incompleto; AUD-NG-288 falta de evidencia de validación en producción.
+- **Tareas ejecutables derivadas:** TASK-640 recursos de páginas auxiliares; TASK-641 precache del Service Worker; TASK-642 JSON del flujo de migración; TASK-643 catálogo/rutas; TASK-644 verificación manual de producción.
+- **Evidencia:** developer-dashboard.html:9, pseudocode.html:10–11, sw.js:11/26, teacher.js:2831/2883, config.js:734–746, routing-and-paths.md:1–28, modular-dashboard-suite.js:1–61.
+- **Pendientes.md:** lectura ordinaria 0 caracteres; blob actual del HEAD 676a3f798715f0cdd7d4bc75768472545b8465ee recuperado íntegro (1.786.011 caracteres, 20.224 líneas, 0 U+FFFD). No contiene F8-Task03/TAREA-MOD-04/TASK-640..644. No se restauró ni modificó.
+- **Pruebas:** inspección manual de referencias y destinos en árbol Git. No ejecutados navegador, HTTP, consola, Service Worker runtime, GAS, migración real, Node ni suite completa.
+- **Siguiente tarea exacta:** F8-Task04, suite de regresión para modularización y dashboards dinámicos; CA-MOD-110/111.

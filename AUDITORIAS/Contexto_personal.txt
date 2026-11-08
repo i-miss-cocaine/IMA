@@ -8997,3 +8997,34 @@ Auditar TAREA-F6-015 y TAREA-F6-040. Buscar informes individuales e historial en
 - **Próxima acción:** comprobar si existe informe individual F8-Task03; si falta, auditar directamente completadas.md, las rutas de HTML/JS/CSS/assets y los contratos backend, contrastándolos con CA-MOD-107/108.
 - **Commit de cierre:** el commit único que contiene este checkpoint; SHA final se confirmará consultando HEAD después de publicar.
 ===============================================================================
+
+
+===============================================================================
+## C1.263 — Checkpoint de cierre: auditoría F8-Task03 / TAREA-MOD-04 (2026-11-08)
+
+- **ID de sesión operativo:** IMA-AUDIT-20261108-2123Z-01 (identificador documental, no ID nativo de ChatGPT).
+- **Checkpoint inicial de esta sesión:** C1.262, último checkpoint válido indicado y verificado por el usuario.
+- **Checkpoint de cierre:** C1.263.
+- **Estado:** sesión cerrada después de publicar un único commit con informe, bitácora, mapa, plan y checkpoint.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Archivo de contexto:** AUDITORIAS/Contexto_personal.txt.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **HEAD de partida verificado:** 268beddf3573bd9293d4563c3b0bc289a5d1badf; Tree SHA 268beddf3573bd9293d4563c3b0bc289a5d1badf.
+- **Rama base protegida:** NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59; permanece sin cambios.
+- **Tarea realizada:** F8-Task03 / TAREA-MOD-04, marcada [X] en completadas.md, línea 4814; informe individual no encontrado; auditoría realizada directamente.
+- **Dictamen:** NO CUMPLE. CA-MOD-107 NO CUMPLE; CA-MOD-108 NO CUMPLE.
+- **Hallazgos:** AUD-NG-284 referencias a css/custom.css e IMA-Logo.png inexistentes (MEDIO); AUD-NG-285 css/styles.css ausente en precache de sw.js, posible fallo de instalación (ALTO); AUD-NG-286 migrated_questions.json y migration_stats.json ausentes (ALTO); AUD-NG-287 catálogo y documentación de rutas sin cobertura integral (MEDIO); AUD-NG-288 ausencia de evidencia HTTP/consola/producción (ALTO).
+- **Tareas derivadas:** TASK-640, TASK-641, TASK-642, TASK-643 y TASK-644, descritas íntegramente en el informe nuevo.
+- **Fuentes:** completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676; Pendientes.md blob SHA 676a3f798715f0cdd7d4bc75768472545b8465ee; developer-dashboard.html SHA 2b69f1bf7ffbbe4902e81de14d6315cedb035a1e; pseudocode.html SHA 9b882d70755dc89b000390990852a03407c6973a; sw.js SHA b031e9d0fdee0686f9bda54ba13b751122de827b; teacher.js SHA c475fce5afcd28fca23e7b64398ad32b17773746; teacher-dashboard.html SHA cbb9e6a272a7d8ad33f99727303305d950533e71; config.js SHA 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc; routing-and-paths.md SHA c64e6a952c1ce12a47cb00a2d324f39cd6581a47; modular-dashboard-suite.js SHA 0495e1d526a872c33310935a003a83d924d34683; metodología SHA cf796728bb384a32537392df2f9c72a339fa03ee.
+- **Pendientes.md:** fetch_file convencional devolvió 0 caracteres; blob del HEAD recuperado: 1.786.011 caracteres, 20.224 líneas, 0 U+FFFD. No contiene F8-Task03, TAREA-MOD-04 ni TASK-640..644. Se conservó el blob actual, sin restaurar una versión histórica ni modificar el archivo.
+- **Puntos inspeccionados:** completadas.md línea 4814 y bloque F8-Task03; routing-and-paths.md 1–28; config.js 734–746; developer-dashboard.html 1–15; pseudocode.html 1–25; sw.js 1–72; teacher.js 2824–2890; teacher-dashboard.html botón btn-migrate-questions y scripts; css/style.css; manifest.json; suite modular-dashboard-suite.js 1–61; árbol Git para confirmar existencia/ausencia de destinos.
+- **Pruebas ejecutadas:** inspección manual de las referencias y consulta del árbol Git/SHAs para confirmar rutas exactas; verificación de rama y HEAD.
+- **No ejecutadas:** navegador, HTTP real, consola de producción, instalación/activación PWA en runtime, endpoints GAS, migración real, Node ni suite completa. No se declara observación de 404 real ni ejecución de consola.
+- **Archivos nuevos:** AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK03.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Sin cambios:** código fuente, HTML, JS, CSS, Service Worker, manifest, pruebas, completadas.md, Pendientes.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md y rama base.
+- **Última tarea auditada:** F8-Task03 / TAREA-MOD-04. **Tarea en curso al cierre:** ninguna.
+- **Siguiente tarea exacta:** F8-Task04 — crear y ejecutar pruebas de regresión para la modularización y dashboards dinámicos, CA-MOD-110/111.
+- **Próxima acción:** comprobar si existe informe individual F8-Task04; si falta, auditar directamente completadas.md, tests/regression/modular-dashboard-suite.js y backend/developer-service/Code.gs; verificar cobertura real de autenticación, navegación, dashboards, roles/ámbitos, seguridad, flujos académicos, carga de scripts/assets y endpoints. No ejecutar pruebas contra datos productivos sin aislamiento autorizado.
+- **Commit de cierre:** el commit único que contiene este checkpoint; SHA final se confirmará consultando HEAD después de publicar.
+===============================================================================

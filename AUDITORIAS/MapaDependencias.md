@@ -3780,3 +3780,31 @@ Inspección estática/manual y Git/blob; no se ejecutaron requests HTTP, Apps Sc
 ### Punto de entrada y límites
 - Existe `index.html` en la raíz; `index.htm` no existe. No se renombró ni modificó el punto de entrada.
 - Dictamen: CA-MOD-101 NO CUMPLE; CA-MOD-102 PARCIAL. La auditoría no declara descartados duplicados/ciclos; TASK-639 queda pendiente.
+
+
+---
+
+## F8-Task03 / TAREA-MOD-04 — Auditoría de rutas y dependencias (C1.263)
+
+### Rutas/recursos con destino ausente
+- `developer-dashboard.html:9` → `css/custom.css` (no existe en árbol).
+- `pseudocode.html:10–11` → `IMA-Logo.png` (no existe en raíz ni como `imagenes/IMA-Logo.png`).
+- `sw.js:11` → `./css/styles.css` (no existe; existe `css/style.css`). `cache.addAll(ASSETS)` en línea 26 consume la lista completa.
+- `js/teacher.js:2831` → `migrated_questions.json`; línea 2883 → `migration_stats.json`. Ambos faltan en la raíz del árbol. El botón de migración está en `teacher-dashboard.html`.
+
+### Mapa y documentación
+- `js/config.js:734–746`: MODULE_ROUTING_DICTIONARY define diez rutas de home/login/dashboards; no representa todas las páginas y destinos existentes.
+- `docs/architecture/routing-and-paths.md:25–28`: afirma ausencia de 404 en todos los HTML sin aportar evidencia HTTP/consola por página.
+- `tests/regression/modular-dashboard-suite.js:1–61`: comprueba existencia de archivos y presencia de cadenas/funciones, no resolución real de todas las rutas ni instalación del Service Worker.
+
+### Hallazgos y tareas ejecutables derivadas
+- AUD-NG-284 (MEDIO): referencias a CSS/iconos inexistentes → TASK-640.
+- AUD-NG-285 (ALTO): precache PWA con ruta CSS inexistente → TASK-641.
+- AUD-NG-286 (ALTO): JSON del flujo de migración ausentes → TASK-642.
+- AUD-NG-287 (MEDIO): diccionario/documentación de rutas sin cobertura integral → TASK-643.
+- AUD-NG-288 (ALTO): falta evidencia de verificación de producción → TASK-644.
+
+### Dictamen
+- CA-MOD-107: NO CUMPLE.
+- CA-MOD-108: NO CUMPLE.
+- No se declaran respuestas HTTP 404 observadas ni pruebas runtime ejecutadas; las rutas se verificaron contra el árbol Git y los criterios de producción permanecen sin evidencia.

@@ -9307,3 +9307,34 @@ ARCHIVO NUEVO: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK02.md.
 ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
 SIGUIENTE: F8-Task03, rutas y dependencias después de reorganización.
 ===============================================================================
+
+
+===============================================================================
+F8-Task03 / TAREA-MOD-04 — Auditoría de rutas y dependencias (2026-11-08)
+DICTAMEN: NO CUMPLE. CA-MOD-107 NO CUMPLE; CA-MOD-108 NO CUMPLE.
+HALLAZGOS:
+- AUD-NG-284 MEDIO: developer-dashboard.html:9 solicita css/custom.css inexistente; pseudocode.html:10-11 solicita IMA-Logo.png inexistente.
+- AUD-NG-285 ALTO: sw.js:11 precarga css/styles.css inexistente y cache.addAll(ASSETS) en línea 26 puede impedir instalar el Service Worker.
+- AUD-NG-286 ALTO: js/teacher.js:2831 y 2883 solicita migrated_questions.json y migration_stats.json, ambos ausentes del árbol.
+- AUD-NG-287 MEDIO: MODULE_ROUTING_DICTIONARY de js/config.js:734-746 no es cobertura completa de páginas y rutas; routing-and-paths.md no aporta trazabilidad por archivo.
+- AUD-NG-288 ALTO: no existe evidencia HTTP/consola/producción para sostener la afirmación de ausencia de 404 y resolución dinámica.
+TAREAS EJECUTABLES DERIVADAS:
+- TASK-640: corregir referencias a CSS e iconos de páginas auxiliares.
+- TASK-641: reparar y verificar precache e instalación del Service Worker.
+- TASK-642: resolver los JSON del flujo de migración y asegurar consistencia de resultados.
+- TASK-643: completar trazabilidad del catálogo de rutas y navegación.
+- TASK-644: verificación manual de todas las rutas y módulos en producción, con evidencia.
+EVIDENCIA:
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, F8-Task03 línea 4814, marcada [X].
+- Pendientes.md lectura ordinaria 0 caracteres; blob actual del HEAD recuperado: SHA 676a3f798715f0cdd7d4bc75768472545b8465ee, 1.786.011 caracteres, 20.224 líneas, 0 U+FFFD. No contiene F8-Task03/TAREA-MOD-04/TASK-640..644. No se restauró ni modificó.
+- developer-dashboard.html SHA 2b69f1bf7ffbbe4902e81de14d6315cedb035a1e; pseudocode.html SHA 9b882d70755dc89b000390990852a03407c6973a; sw.js SHA b031e9d0fdee0686f9bda54ba13b751122de827b.
+- teacher.js SHA c475fce5afcd28fca23e7b64398ad32b17773746; teacher-dashboard.html SHA cbb9e6a272a7d8ad33f99727303305d950533e71.
+- config.js SHA 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc; routing-and-paths.md SHA c64e6a952c1ce12a47cb00a2d324f39cd6581a47; suite SHA 0495e1d526a872c33310935a003a83d924d34683.
+PRUEBAS/LÍMITES:
+- Inspección manual de las referencias y destinos exactos contra el árbol Git.
+- No ejecutados navegador, HTTP, consola de producción, Service Worker en runtime, APIs GAS, migración real, Node ni suite completa.
+- No se modificó código ni rama base; esta iteración es exclusivamente auditoría/documentación.
+ARCHIVO NUEVO: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK03.md.
+ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+SIGUIENTE: F8-Task04, suite de regresión para modularización y dashboards dinámicos (CA-MOD-110/111).
+===============================================================================
