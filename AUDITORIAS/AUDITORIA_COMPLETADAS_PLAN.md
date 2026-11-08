@@ -2076,3 +2076,18 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **Evidencia:** Code.gs 52-77, 1568-1590, 6900-7005, 7008-7116, 7224-7314, 7317-7395, 7841-7869, 13837-13890, 14150-14151; teacher.js 1390-1432; teacher-dashboard.html completo; api.js 39-57; ChangesLogs 2547-2568; completadas 4592-4619.
 - **Pruebas:** inspección manual/estática y verificación Git/blob. No ejecutados Apps Script, Sheets productivas, HTTP/OAuth, DOM/navegador, XSS, roles reales, notificaciones, concurrencia, Node ni E2E.
 - **Siguiente tarea:** TAREA-F7-IMP-22, plantillas y reutilización controlada de horarios.
+
+
+---
+
+## TAREA-F7-IMP-22 — Auditoría de plantillas y reutilización controlada (C1.255)
+
+- **Dictamen:** NO CUMPLE; la marca [X] de completadas.md no acredita cumplimiento.
+- **Criterios:** CA-F7-133 CUMPLE; CA-F7-134 NO CUMPLE; CA-F7-135 NO CUMPLE; CA-F7-136 CUMPLE; CA-F7-137 NO CUMPLE.
+- **Hallazgos:** AUD-NG-265 nuevo CRÍTICO/P0 (tres acciones de plantillas públicas y sin token); AUD-NG-266 nuevo ALTO/P1 (esquema/captura de origen); AUD-NG-267 nuevo ALTO/P1 (conflictos y referencias no bloqueados); AUD-NG-268 nuevo MEDIO/P2 (UI, selección, preview y ajustes ausentes); AUD-NG-269 nuevo MEDIO/P2 (sin trazabilidad y sin pruebas conductuales).
+- **Tareas ejecutables derivadas:** TASK-622 seguridad de acciones; TASK-623 esquema y componentes seleccionables; TASK-624 validación/preview/confirmación; TASK-625 UI y pruebas conductuales.
+- **Ampliaciones:** AUD-NG-168/AUD-NG-236/AUD-NG-241 para esquema y motor de conflictos; AUD-NG-261/TASK-620 para evento de aplicación; AUD-NG-224/TASK-504 y AUD-NG-145 para historial/bitácora; AUD-NG-161 para coordinación de pruebas.
+- **Evidencia:** Code.gs 249, 524-543, 671-681, 6718-6770, 6900-6990, 7493-7691, 13895-14100, 14109-14165; teacher.js 1297-1368; teacher-dashboard.html completo; ChangesLogs 2586 y siguientes; completadas.md 4625-4664.
+- **Pruebas:** inspección manual/estática y verificación Git/blob. No ejecutados Apps Script, Sheets productivas, HTTP/OAuth, requests anónimas reales, DOM/navegador, roles reales, concurrencia, Node ni E2E.
+- **Documentación:** informe individual IMP-22 y fuente de Fase 7 no existen; auditoría ejecutada directamente desde completadas.md. Pendientes.md lectura ordinaria 0 caracteres; blob 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c recuperado íntegramente (1.782.094 caracteres, 20.182 líneas, 0 U+FFFD, 511 TASK únicos TASK-001..TASK-511); ya está en la rama y no requiere restauración.
+- **Siguiente tarea exacta:** TAREA-F7-IMP-23, herramientas de impresión y distribución de horarios.

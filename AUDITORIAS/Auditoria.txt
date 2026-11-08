@@ -9067,3 +9067,42 @@ ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md;
 SIN CAMBIOS: backend/academic-service/Code.gs; backend/user-service/Code.gs; js/teacher.js; js/api.js; teacher-dashboard.html; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; rama base.
 SIGUIENTE: TAREA-F7-IMP-22, plantillas y reutilización controlada de horarios.
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-08
+AUDITORÍA FUNCIONAL Y TÉCNICA - TAREA-F7-IMP-22: PLANTILLAS Y REUTILIZACIÓN CONTROLADA DE HORARIOS
+DICTAMEN: NO CUMPLE (marca histórica [X] preservada en completadas.md).
+CRITERIOS: CA-F7-133 CUMPLE; CA-F7-134 NO CUMPLE; CA-F7-135 NO CUMPLE; CA-F7-136 CUMPLE; CA-F7-137 NO CUMPLE.
+HALLAZGOS:
+- AUD-NG-265 NUEVO (CRÍTICO/P0): saveScheduleTemplate, getScheduleTemplates y applyScheduleTemplate están en PUBLIC_ACTIONS (Code.gs:249); validateRolePermission retorna autorizado antes de verificar token (524-543). doPost despacha las tres acciones. Una petición anónima puede consultar plantillas y ejecutar escrituras en PlantillasHorarios/HorariosClase; el autor también puede falsificarse desde payload.
+- AUD-NG-266 NUEVO (ALTO/P1): saveScheduleTemplate (13895-13960) interpreta rowH[7]/[8] como grado y rowH[8]/[9] como sección, pero createClassSchedule (6900-6990) escribe Estado en [7] y UltimaModificacion en [8]. Puede guardar cero bloques como éxito. applyScheduleTemplate (14000-14099) escribe un esquema de once columnas con materia en la posición de OfertaID; ampliar AUD-NG-168/AUD-NG-236/AUD-NG-241, sin duplicar el defecto general de esquema.
+- AUD-NG-267 NUEVO (ALTO/P1): applyScheduleTemplate omite ofertaId y período destino en checkScheduleConflict; el validador no consume grado/sección/materia. Registra conflictos en memoria, pero no aborta la escritura; detalles consulta confCheck.conflictos aunque el motor devuelve reason. No valida referencias faltantes.
+- AUD-NG-268 NUEVO (MEDIO/P2): teacher.js define controladores, pero teacher-dashboard.html no contiene botón, modal, formulario ni contenedor; el handler envía previsualizar:false y solo solicita grado/sección. No hay selección de componentes, preview, ajuste ni resolución de referencias.
+- AUD-NG-269 NUEVO (MEDIO/P2): applyScheduleTemplate no registra origen, actor verificado, destino ni correlationId; TC-F7-06 solo verifica status success y arreglo, sin pruebas de guardar/aplicar/preview/CA-F7-133..137.
+AMPLIACIONES SIN DUPLICACIÓN:
+- AUD-NG-168/AUD-NG-236/AUD-NG-241: esquema de HorariosClase, mapeo y contrato de conflicto/oferta.
+- AUD-NG-261/TASK-620: evento de aplicación de plantilla, origen, destino, actor verificado, resultado y correlationId.
+- AUD-NG-224/TASK-504 y AUD-NG-145: historial/bitácora general y lectores, sin duplicar sus causas raíz.
+- AUD-NG-161: coordinación de pruebas transversales.
+TAREAS EJECUTABLES DERIVADAS DE LOS HALLAZGOS:
+- TASK-622 (nueva, CRÍTICO/P0): retirar las tres acciones de PUBLIC_ACTIONS, exigir sesión/token y autorización contextual en servidor, derivar actor/rol de claims verificados y probar solicitudes anónimas/roles permitidos-denegados.
+- TASK-623 (nueva, ALTO/P1): normalizar HorariosClase/PlantillasHorarios, resolver período/oferta fuente, corregir extracción, permitir selección de componentes, excluir docentes/aulas por defecto y evitar plantillas vacías exitosas.
+- TASK-624 (nueva, ALTO/P1): validar referencias y disponibilidad en destino, pasar claves canónicas al motor, bloquear escritura con conflictos, mostrar preview, permitir ajustes y confirmar solo borradores.
+- TASK-625 (nueva, MEDIO/P2): integrar botón/modal/formulario/lista en HTML, conectar controladores, mostrar preview/errores, y añadir pruebas conductuales de guardado, inmutabilidad, aplicación, autorización y no-publicación.
+- Ampliar TASK-620/AUD-NG-261 para evento durable de aplicación de plantilla; ampliar TASK-504/AUD-NG-224 y AUD-NG-145 para historial/bitácora; ampliar AUD-NG-168/236/241 para esquema y validación.
+EVIDENCIA:
+- completadas.md 4625-4664; ChangesLogs.txt 2586 y siguientes.
+- Code.gs 249, 524-543, 671-681, 6718-6770, 6900-6990, 7493-7691, 13895-14100, 14109-14165.
+- teacher.js 1297-1368; teacher-dashboard.html completo (sin IDs de plantilla); tests/regression/academic-grading-suite.js completo (sin casos de plantilla).
+DOCUMENTACIÓN:
+- Informe individual IMP-22 y AUDITORIA_FASE_7_PLANIFICACION_HORARIOS_RECURSOS.md no existen; auditoría ejecutada directamente desde completadas.md.
+- Pendientes.md: lectura ordinaria 0 caracteres; blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c recuperado: 1.782.094 caracteres, 20.182 líneas, 0 U+FFFD, 511 TASK únicos TASK-001..TASK-511; el blob ya está en la rama, no requiere restauración ni transferencia.
+- ChangesLogs.txt afirma que se implementaron modal, botón y previsualización; teacher-dashboard.html actual no contiene los nodos declarados y promptApplyScheduleTemplate fuerza previsualizar:false.
+SHAs: Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5; teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; teacher-dashboard.html cbb9e6a272a7d8ad33f99727303305d950533e71; academic-grading-suite.js a22cb3ef376fe09e65c1b17c2f4f5125290bfba6; completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676; Pendientes.md 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c; METODOLOGIA_DESARROLLO.md cf796728bb384a32537392df2f9c72a339fa03ee; Contexto_personal.txt 70d80ed0db2b3f5ae91b3643b9ea6b2551e1a5be.
+PRUEBAS/LÍMITES: inspección manual/estática y verificación Git/blob. No ejecutados Apps Script runtime, Sheets productivas, HTTP/OAuth, solicitudes anónimas reales, DOM/navegador, roles reales, concurrencia, Node ni E2E.
+ARCHIVO NUEVO: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-22.md.
+ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+SIN CAMBIOS: backend/academic-service/Code.gs; js/teacher.js; teacher-dashboard.html; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; rama base.
+SIGUIENTE: TAREA-F7-IMP-23, herramientas de impresión y distribución de horarios.
+===============================================================================

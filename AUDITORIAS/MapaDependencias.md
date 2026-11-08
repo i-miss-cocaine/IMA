@@ -3566,3 +3566,35 @@ Inspección estática/manual. No se ejecutaron Apps Script runtime, HTTP/OAuth, 
 - TASK-620: conectar el ciclo de vida de horarios y recursos con historial durable, actor verificado, snapshots, correlationId, estados, conflictos, errores y notificaciones.
 - TASK-621: completar consola, filtros, autenticación/RBAC, paginación, renderizado seguro, read-only y pruebas conductuales CA-F7-128..132.
 - Ampliar TASK-504 y AUD-NG-224 para el esquema/lector de planificación; ampliar AUD-NG-145 para las fuentes y correlación; coordinar AUD-NG-161 para regresión.
+
+
+---
+
+## TAREA-F7-IMP-22 — Plantillas y reutilización controlada de horarios (C1.255)
+
+### Dependencias y flujo inspeccionado
+- PUBLIC_ACTIONS (Code.gs:249) incluye saveScheduleTemplate, getScheduleTemplates y applyScheduleTemplate. validateRolePermission (524-543) concede estas acciones antes de verificar token.
+- doPost (671-681 y dispatcher) conecta las tres acciones a sus funciones de escritura/consulta.
+- createClassSchedule (6900-6990) escribe HorariosClase con Estado en row[7] y UltimaModificacion en row[8].
+- getClassSchedules (6718-6770) interpreta columnas de grado/sección/estado bajo otro contrato.
+- saveScheduleTemplate (13895-13960) intenta extraer grado/sección desde row[7..9], lo que no coincide con el escritor ordinario.
+- getScheduleTemplates (13961-13999) expone estructura JSON, creador y metadatos de plantillas.
+- applyScheduleTemplate (14000-14099) invoca checkScheduleConflict sin ofertaId; no bloquea la escritura cuando conflictos no está vacío y agrega filas con un esquema de once columnas.
+- checkScheduleConflict (7493-7691) usa ofertaId y recursos; no consume grado/sección/materia.
+- teacher.js (1297-1368) contiene controladores huérfanos; teacher-dashboard.html completo no tiene modal, formulario, botón ni contenedor de plantillas.
+- TC-F7-06 (runAcademicPlanningRegressionSuite, 14109-14165) solo comprueba éxito y arreglo; no verifica guardar/aplicar/preview ni CA-F7-133..137.
+
+### Hallazgos y reconciliación
+- AUD-NG-265: bypass de autenticación para consulta y mutación de plantillas; CRÍTICO/P0.
+- AUD-NG-266: extracción y escritura incompatibles con HorariosClase; ALTO/P1; ampliar AUD-NG-168/AUD-NG-236/AUD-NG-241.
+- AUD-NG-267: referencias y conflictos del destino no validados/bloqueados; ALTO/P1; ampliar AUD-NG-236.
+- AUD-NG-268: UI de plantillas ausente, sin selección, preview ni ajuste; MEDIO/P2.
+- AUD-NG-269: aplicación sin evento durable ni pruebas conductuales; MEDIO/P2; ampliar AUD-NG-261/TASK-620, AUD-NG-224/TASK-504 y AUD-NG-145.
+- TASK-234/TASK-252/TASK-429 mantienen sus alcances de rendimiento, telemetría y paginación general; no sustituyen el flujo funcional de plantillas.
+
+### Tareas ejecutables derivadas de los hallazgos
+- TASK-622: cerrar el bypass público, exigir token y autorización contextual para guardar/listar/aplicar plantillas.
+- TASK-623: normalizar el esquema, corregir la captura de origen y permitir selección explícita de componentes reutilizables.
+- TASK-624: validar referencias y disponibilidad del período destino, bloquear conflictos y aplicar mediante preview/ajuste/confirmación.
+- TASK-625: integrar UI real y pruebas conductuales de todo el ciclo de vida de plantillas.
+- Ampliar TASK-620 para evento de aplicación con plantillaId, actor, destino, resultado y correlationId; ampliar TASK-504/AUD-NG-224 y AUD-NG-145 para historial/bitácora; ampliar AUD-NG-168/236/241 para esquema y motor de conflictos.
