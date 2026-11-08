@@ -8743,3 +8743,23 @@ Auditar TAREA-F6-015 y TAREA-F6-040. Buscar informes individuales e historial en
 - **Próxima acción:** buscar AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-22.md y AUDITORIA_FASE_7_PLANIFICACION_HORARIOS_RECURSOS.md; si faltan, auditar directamente los requisitos completos de TAREA-F7-IMP-22 en completadas.md.
 - **Commit de cierre:** el único commit que contiene este checkpoint; SHA confirmado externamente después de publicar.
 ===============================================================================
+
+
+===============================================================================
+## C1.254 - Checkpoint de corrección documental posterior a TAREA-F7-IMP-21 (2026-11-08)
+
+- **ID de sesión operativo:** IMA-AUDIT-20261108-1900Z (ID documental, no ID nativo de ChatGPT).
+- **Estado:** cerrada. **Checkpoint inicial:** C1.253. **Checkpoint de cierre:** C1.254.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work. **Rama base protegida:** NG_beta_0.0.0.1.
+- **HEAD de partida verificado:** fdef134ac0481810c94acfcc213421b640092fba.
+- **HEAD de rama base verificado:** 44d9891132332e692dbe2ba8602b41f50a508a59; no cambia.
+- **Motivo:** corrección editorial del cierre de AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-21.md. Se detectó que la línea de tareas ampliadas mencionaba TASK-161, que pertenece a F15-Task08 de contabilidad y no corresponde a AUD-NG-161. Se reemplazó por la referencia correcta AUD-NG-161, limitada a pruebas conductuales de bitácoras; su alcance de idempotencia/concurrencia no se incorpora a planificación.
+- **Tarea auditada:** TAREA-F7-IMP-21, dictamen NO CUMPLE; no se reabrió ni alteró el análisis técnico.
+- **Archivo corregido:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-21.md.
+- **Archivo actualizado:** AUDITORIAS/Contexto_personal.txt (este checkpoint).
+- **Sin cambios:** código, UI, pruebas, Pendientes.md, completadas.md, ChangesLogs.txt, metodología, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md y rama base.
+- **Siguiente tarea exacta:** TAREA-F7-IMP-22, auditoría de plantillas y reutilización controlada de horarios.
+- **Próxima acción:** buscar el informe individual IMP-22 y la fuente de Fase 7; si faltan, auditar directamente el bloque de TAREA-F7-IMP-22 en completadas.md.
+- **Commit de cierre:** el único commit que contiene esta corrección y C1.254; SHA confirmado externamente.
+===============================================================================

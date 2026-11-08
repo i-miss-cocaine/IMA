@@ -191,7 +191,7 @@ Criterios auditados:
 - **Hallazgos nuevos:** AUD-NG-261, AUD-NG-262, AUD-NG-263 y AUD-NG-264 (MEDIO/P2).
 - **Hallazgos ampliados:** AUD-NG-224 y AUD-NG-145.
 - **Tareas nuevas:** TASK-620 y TASK-621.
-- **Tareas ampliadas:** TASK-504 y TASK-161 (coordinación de pruebas; ID correcto: TASK-161).
+- **Tareas ampliadas:** TASK-504. Coordinar AUD-NG-161 únicamente para los criterios de pruebas conductuales de bitácoras, sin trasladar su alcance específico de idempotencia/concurrencia.
 - **Archivo nuevo:** `AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-21.md`.
 - **Archivos actualizados:** `AUDITORIAS/Auditoria.txt`, `AUDITORIAS/MapaDependencias.md`, `AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md`, `AUDITORIAS/Contexto_personal.txt`.
 - **Siguiente tarea:** TAREA-F7-IMP-22, plantillas y reutilización controlada de horarios.
