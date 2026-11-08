@@ -9150,3 +9150,35 @@ Auditar TAREA-F6-015 y TAREA-F6-040. Buscar informes individuales e historial en
 - **Próxima acción reproducible:** verificar si existe AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK08.md; si falta, auditar directamente la persistencia, validación, consumo y coherencia del catálogo central en backend USER, config.js, servicios consumidores y pruebas.
 - **Commit de cierre:** el commit único que contiene este checkpoint; SHA final se confirma consultando HEAD después de publicar.
 ===============================================================================
+
+
+===============================================================================
+## C1.268 — Checkpoint de cierre: auditoría F8-Task08 / TAREA-AD-02 (2026-11-08)
+
+- **ID de sesión operativo:** IMA-AUDIT-20261108-2205Z-01 (documental; no ID nativo de ChatGPT).
+- **Checkpoint inicial:** C1.267. **Checkpoint de cierre:** C1.268.
+- **Estado:** sesión cerrada después de publicar un único commit con informe, bitácora, mapa, plan y checkpoint.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Archivo de contexto:** AUDITORIAS/Contexto_personal.txt.
+- **Rama:** NG_beta_0.0.0.1_work.
+- **HEAD de partida:** 2c49d44decbdabda0a528133c173e28a50898306; árbol 2ab8904e869344951115da9644874e650561c903.
+- **Rama base protegida:** NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59; comparación inicial 336 commits adelante, 0 detrás; rama base sin cambios.
+- **Tarea auditada:** F8-Task08 / TAREA-AD-02, [X] en completadas.md líneas 4945–4966; informe individual no encontrado; auditoría directa.
+- **Dictamen:** NO CUMPLE. CA-AD-104, CA-AD-105 y CA-AD-106 NO CUMPLEN.
+- **Hallazgos:** AUD-NG-307 catálogo duplicado; AUD-NG-308 referencias huérfanas/validación ausente; AUD-NG-309 no hay relaciones persistentes rol-responsabilidad-capacidad-módulo-ámbito; AUD-NG-310 trazabilidad incompleta; AUD-NG-311 fallback activo de responsabilidades al no haber filas activas.
+- **Tareas derivadas:** TASK-661 a TASK-665, descritas en informe individual.
+- **Dependencias existentes:** TASK-488, TASK-501, TASK-505 y TASK-636; sin duplicar sus alcances.
+- **Fuentes:** completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676; Pendientes.md blob 676a3f798715f0cdd7d4bc75768472545b8465ee (1.786.011 caracteres, 20.224 líneas, 0 U+FFFD); config.js 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc; USER Code.gs 12079dd410aa6d8afbce55a4bc62a79dea605f9f; DEVELOPER Code.gs 8aa4bac67cfe5c8c54da51a0784a56fef633e412; modular-dashboard-suite.js 0495e1d526a872c33310935a003a83d924d34683; metodología cf796728bb384a32537392df2f9c72a339fa03ee.
+- **Pendientes.md:** lectura normal 0 caracteres; blob actual recuperado desde árbol Git, no se restauró versión histórica; TASK-488/501/505/636 existentes y TASK-661..665 nuevos; no se modificó el archivo.
+- **Puntos inspeccionados:** completadas.md 4945–4966; config.js 1–72 y aprox. 755–803; USER Code.gs 8928–9114, 9116–9180, 9631–9808 y RBAC; DEVELOPER Code.gs 24–40, 2224–2283, 2584–2596 y pruebas de dashboards; tests/regression/modular-dashboard-suite.js 1–61; catálogo, asignaciones, contratos, logs y dependencias.
+- **Pruebas ejecutadas:** inspección manual, revisión de árbol, recuperación del blob Pendientes.md, verificación de IDs, ausencia del informe y comparación de ramas.
+- **No ejecutadas:** Node, Apps Script, HTTP, navegador/DOM, hojas productivas, pruebas multirol reales, revocación ni E2E.
+- **Limitaciones:** sin acceso al despliegue Apps Script ni a hojas productivas; no se certifica configuración o datos externos no versionados. Código fuente sin cambios.
+- **Archivos nuevos:** AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK08.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Sin cambios:** js/config.js; backend/user-service/Code.gs; backend/developer-service/Code.gs; js/api.js; js/ui-common.js; tests/regression/modular-dashboard-suite.js; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md y rama base.
+- **Última tarea auditada:** F8-Task08. **Tarea en curso al cierre:** ninguna.
+- **Siguiente tarea exacta:** F8-Task09 — gestión del ámbito de actuación de los roles.
+- **Próxima acción reproducible:** verificar si existe AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK09.md; si falta, auditar directamente USER Code.gs, ACADEMIC Code.gs, ui-common.js y asignaciones; validar ámbito por responsabilidad, jerarquías, vigencia, lectura/escritura y denegación por defecto.
+- **Commit de cierre:** SHA final confirmado consultando HEAD después de publicar.
+===============================================================================

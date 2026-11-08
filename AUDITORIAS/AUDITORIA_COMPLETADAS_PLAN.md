@@ -2252,3 +2252,20 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **Código fuente:** sin modificaciones; rama base intacta.
 - **Siguiente tarea exacta:** F8-Task08 — catálogo central de responsabilidades, capacidades y módulos.
 - **Próxima acción:** verificar existencia de informe F8-Task08; si falta, auditar directamente la persistencia y consumo del catálogo central, validación de módulos/capacidades y coherencia entre configuración, roles y servicios.
+
+
+---
+
+## F8-Task08 / TAREA-AD-02 — Catálogo central de responsabilidades, capacidades y módulos (C1.268)
+
+- **Dictamen:** NO CUMPLE; se conserva [X] histórica en completadas.md.
+- **Criterios:** CA-AD-104 NO CUMPLE; CA-AD-105 NO CUMPLE; CA-AD-106 NO CUMPLE.
+- **Hallazgos:** AUD-NG-307 catálogos duplicados estáticos; AUD-NG-308 moduleId huérfanos y contratos incompletos/sin validación; AUD-NG-309 ausencia de relación persistente rol-responsabilidad-capacidad-módulo-ámbito y multirol que solo refleja payload; AUD-NG-310 trazabilidad incompleta; AUD-NG-311 fallback de defaults activos cuando no hay responsabilidades activas.
+- **Tareas derivadas:** TASK-661 catálogo único persistente; TASK-662 integridad referencial/contratos; TASK-663 relaciones muchos-a-muchos y permisos/ámbitos independientes; TASK-664 auditoría completa; TASK-665 regresión funcional.
+- **Dependencias existentes:** TASK-488, TASK-501, TASK-505 y TASK-636; se conservan sin duplicar.
+- **Evidencia:** completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676 líneas 4945–4966; config.js 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc; USER Code.gs 12079dd410aa6d8afbce55a4bc62a79dea605f9f; DEVELOPER Code.gs 8aa4bac67cfe5c8c54da51a0784a56fef633e412; modular-dashboard-suite.js 0495e1d526a872c33310935a003a83d924d34683.
+- **Pendientes.md:** blob actual 676a3f798715f0cdd7d4bc75768472545b8465ee recuperado íntegro (1.786.011 caracteres, 20.224 líneas, 0 U+FFFD); TASK-488/501/505/636 existentes; TASK-661..665 no existentes; no se modificó.
+- **Pruebas:** inspección manual de código, contratos, asignaciones, trazabilidad y pruebas; no ejecutados Node, Apps Script, HTTP, navegador, Sheets productivo ni E2E.
+- **Código fuente:** sin modificaciones; rama base intacta.
+- **Siguiente tarea exacta:** F8-Task09 — gestión del ámbito de actuación de los roles.
+- **Próxima acción:** verificar informe F8-Task09; si falta, auditar USER Code.gs, ACADEMIC Code.gs, ui-common.js y las asignaciones para ámbitos por responsabilidad, jerarquías académicas, vigencia, aislamiento en lectura/escritura y denegación por defecto.

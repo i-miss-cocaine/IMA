@@ -9466,3 +9466,31 @@ ARCHIVO NUEVO: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK07.md.
 ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
 SIGUIENTE: F8-Task08 — catálogo central de responsabilidades, capacidades y módulos.
 ===============================================================================
+
+
+===============================================================================
+F8-Task08 / TAREA-AD-02 — Catálogo central de responsabilidades, capacidades y módulos (2026-11-08)
+DICTAMEN: NO CUMPLE. CA-AD-104 NO CUMPLE; CA-AD-105 NO CUMPLE; CA-AD-106 NO CUMPLE.
+HALLAZGOS NUEVOS:
+- AUD-NG-307 ALTO/P1: catálogo de capacidades y módulos duplicado como arreglos estáticos en config.js, USER y DEVELOPER; no hay fuente persistente única.
+- AUD-NG-308 ALTO/P1: cuatro moduleId huérfanos en RESP_CONSULTA_ESTUDIANTIL; solo seis de trece módulos tienen contrato; saveInstitutionalResponsibility no valida IDs ni estado de referencias.
+- AUD-NG-309 CRÍTICO/P0: no hay relación persistente rol-responsabilidad-capacidad-módulo-ámbito; manageUserMultiRolePermissions solo refleja payload y devuelve success sin persistir.
+- AUD-NG-310 ALTO/P1: snapshot anterior de responsabilidad conserva solo nombre; activar/desactivar rol interno no genera evento; función multirol no audita.
+- AUD-NG-311 ALTO/P1: catálogo de responsabilidades devuelve tres defaults activos cuando no hay filas activas, incluso si fueron desactivadas.
+TAREAS DERIVADAS: TASK-661 catálogo maestro persistente; TASK-662 integridad referencial y contratos; TASK-663 relaciones independientes rol/responsabilidad/capacidad/módulo/ámbito; TASK-664 historial íntegro; TASK-665 regresión funcional.
+DEPENDENCIAS EXISTENTES: TASK-488, TASK-501, TASK-505 y TASK-636 se mantienen sin duplicar sus alcances.
+EVIDENCIA:
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, líneas 4945–4966 [X].
+- Pendientes.md blob actual SHA 676a3f798715f0cdd7d4bc75768472545b8465ee, 1.786.011 caracteres, 20.224 líneas, 0 U+FFFD; IDs TASK-488/501/505/636 presentes; TASK-661..665 no presentes; máximo TASK-636.
+- config.js SHA 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc, catálogos líneas 1–72 y contratos aprox. 755–803.
+- USER Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f, catálogos 8928–9114, asignaciones/ámbitos 9116–9180, roles/asignaciones 9631–9808.
+- DEVELOPER Code.gs SHA 8aa4bac67cfe5c8c54da51a0784a56fef633e412, catálogo 2224–2259, contrato 2262–2283, multirol 2584–2596.
+- modular-dashboard-suite.js SHA 0495e1d526a872c33310935a003a83d924d34683, 61 líneas; prueba estática de cadenas/archivos.
+- No existe AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK08.md en el árbol.
+PRUEBAS/LÍMITES:
+- Inspección manual de código, contratos, persistencia, asignaciones, logs y tests; comparación de ramas y recuperación del blob.
+- No se ejecutaron Node, Apps Script, HTTP, navegador, Sheets productivo ni E2E.
+- Sin código fuente modificado; sin cambios a completadas.md, Pendientes.md, ChangesLogs.txt ni rama base.
+ARCHIVOS: nuevo AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK08.md; actualizados Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md y Contexto_personal.txt.
+SIGUIENTE: F8-Task09 — gestión del ámbito de actuación de los roles.
+===============================================================================

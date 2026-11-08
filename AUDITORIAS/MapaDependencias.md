@@ -3928,3 +3928,31 @@ Inspección estática/manual y Git/blob; no se ejecutaron requests HTTP, Apps Sc
 - CA-AD-102: NO CUMPLE.
 - CA-AD-103: NO CUMPLE.
 - No se ejecutaron pruebas runtime ni se modificó código fuente.
+
+
+---
+
+## F8-Task08 / TAREA-AD-02 — Catálogo central (C1.268)
+
+### Dependencias inspeccionadas
+- js/config.js SHA 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc: catálogos estáticos de capacidades, módulos y responsabilidades (1–72); contratos dinámicos (aprox. 755–803).
+- backend/user-service/Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f: getCentralCapabilitiesCatalog (8928–8966), getInstitutionalResponsibilitiesCatalog (8968–9032), saveInstitutionalResponsibility (9034–9114), assignRoleScope (9116–9180), manageInternalRoleCatalog/getInternalRoleCatalog/getInternalRoleAssignments (9631–9808).
+- backend/developer-service/Code.gs SHA 8aa4bac67cfe5c8c54da51a0784a56fef633e412: getCentralCapabilitiesCatalog (2224–2259), getCentralConfigAndContractCatalog (2262–2283), manageUserMultiRolePermissions (2584–2596).
+- tests/regression/modular-dashboard-suite.js SHA 0495e1d526a872c33310935a003a83d924d34683: 1–61; aserciones estáticas.
+- USER/DEVELOPER duplican ocho capacidades y trece módulos; config.js vuelve a declarar los catálogos; la lista de responsabilidades del cliente tiene cinco entradas y el fallback backend tres.
+- RESP_CONSULTA_ESTUDIANTIL referencia cuatro moduleId no definidos en MODULES_CATALOG; el mapa DYNAMIC_DASHBOARD_MODULE_CONTRACTS tiene seis contratos frente a trece módulos catalogados.
+- La persistencia actual guarda módulos/capacidades como JSON dentro de cada fila de ResponsabilidadesInstitucionales, sin validación de referencias ni tablas de relaciones efectivas.
+- manageUserMultiRolePermissions devuelve roles/áreas recibidos sin escritura; assignRoleScope no enlaza responsibilityId/capacities y upsert usa userId+scopeType.
+- Historial anterior de saveInstitutionalResponsibility solo incluye name; rama activar/desactivar de manageInternalRoleCatalog actualiza estado y fecha, sin evento de auditoría.
+- getInstitutionalResponsibilitiesCatalog devuelve tres defaults activos cuando no encuentra filas activas.
+### Hallazgos y tareas
+- AUD-NG-307 catálogo duplicado → TASK-661.
+- AUD-NG-308 referencias huérfanas y validación ausente → TASK-662.
+- AUD-NG-309 falta de relaciones persistentes e independencia de permisos → TASK-663.
+- AUD-NG-310 trazabilidad parcial → TASK-664.
+- AUD-NG-311 fallback de responsabilidades tras desactivación total → TASK-661/TASK-662; no crear tarea separada.
+- Dependencias: TASK-488, TASK-501, TASK-505 y TASK-636.
+### Dictamen
+- CA-AD-104: NO CUMPLE.
+- CA-AD-105: NO CUMPLE.
+- CA-AD-106: NO CUMPLE.
