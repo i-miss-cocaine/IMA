@@ -9338,3 +9338,38 @@ ARCHIVO NUEVO: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK03.md.
 ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
 SIGUIENTE: F8-Task04, suite de regresión para modularización y dashboards dinámicos (CA-MOD-110/111).
 ===============================================================================
+
+
+===============================================================================
+F8-Task04 / TAREA-MOD-06 — Auditoría de regresión modular (2026-11-08)
+DICTAMEN: NO CUMPLE. CA-MOD-110 NO CUMPLE; CA-MOD-111 NO CUMPLE.
+HALLAZGOS:
+- AUD-NG-289 CRÍTICO: developer-service/Code.gs:24,145-174 confía en payload.authRole sin token; Administrador tiene comodín.
+- AUD-NG-290 ALTO: verifySessionToken DEVELOPER:115-142 no verifica revocación ni estado de cuenta; USER sí lo hace:1083-1143.
+- AUD-NG-291 ALTO: REG-01 solo comprueba secreto; REG-03 rechaza token de tres segmentos y no prueba doPost/RBAC/IDOR/scopes/revocaciones.
+- AUD-NG-292 ALTO: dashboard y ámbitos se reducen a catálogo fijo; no se ejercita configuración de espacios ni enforcement.
+- AUD-NG-293 ALTO: REG-04 usa diagnóstico con PASS constantes, no procesos académicos.
+- AUD-NG-294 MEDIO: suite Node es estática; ../../MapaDependencias.md no existe en raíz, el mapa está en AUDITORIAS/.
+- AUD-NG-295 MEDIO: suite backend devuelve status success incluso si allPassed=false.
+- AUD-NG-296 ALTO: no hay evidencia de ejecución Node/Apps Script/HTTP/browser/E2E ni workflows.
+TAREAS DERIVADAS:
+- TASK-645 eliminar confianza en roles enviados por cliente.
+- TASK-646 alinear verificación de sesión con revocaciones y estado de cuenta.
+- TASK-647 pruebas efectivas RBAC/IDOR/scopes.
+- TASK-648 regresión funcional de procesos académicos.
+- TASK-649 pruebas de dashboards/navegación/recursos/endpoints.
+- TASK-650 corregir y fortalecer suite Node.
+- TASK-651 propagar correctamente el estado global de suite.
+EVIDENCIA:
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, F8-Task04 línea 4837 [X].
+- Pendientes.md blob SHA 676a3f798715f0cdd7d4bc75768472545b8465ee: 1.786.011 caracteres, 20.224 líneas, 0 U+FFFD, 515 IDs TASK-NNN únicos hasta TASK-636; no contiene F8-Task04/CA-MOD-110/111.
+- tests SHA 0495e1d526a872c33310935a003a83d924d34683; developer Code.gs SHA 8aa4bac67cfe5c8c54da51a0784a56fef633e412; user Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; auth.js SHA 8444dd085a3186106d2db7005b61ef934d3c22d8.
+- Árbol Git: MapaDependencias.md raíz ausente; AUDITORIAS/MapaDependencias.md presente; .github/workflows sin archivos.
+PRUEBAS/LÍMITES:
+- Inspección manual de suite Node y bloques críticos de autenticación, doPost, suite backend, ámbitos y diagnóstico; contraste de verificador USER.
+- No ejecutados Node, Apps Script, HTTP, navegador, IDOR runtime, revocaciones runtime, procesos académicos, endpoints desplegados ni E2E.
+- No se afirma ejecución del runner ni ataque en producción. Código fuente sin cambios; completadas.md, Pendientes.md y ChangesLogs.txt sin cambios; rama base intacta.
+ARCHIVO NUEVO: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK04.md.
+ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+SIGUIENTE: F8-Task05, reorganización por etapas verificables (CA-MOD-112/113).
+===============================================================================

@@ -2193,3 +2193,17 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **Pendientes.md:** lectura ordinaria 0 caracteres; blob actual del HEAD 676a3f798715f0cdd7d4bc75768472545b8465ee recuperado íntegro (1.786.011 caracteres, 20.224 líneas, 0 U+FFFD). No contiene F8-Task03/TAREA-MOD-04/TASK-640..644. No se restauró ni modificó.
 - **Pruebas:** inspección manual de referencias y destinos en árbol Git. No ejecutados navegador, HTTP, consola, Service Worker runtime, GAS, migración real, Node ni suite completa.
 - **Siguiente tarea exacta:** F8-Task04, suite de regresión para modularización y dashboards dinámicos; CA-MOD-110/111.
+
+
+---
+
+## F8-Task04 / TAREA-MOD-06 — Regresión modular y dashboards (C1.264)
+
+- **Dictamen:** NO CUMPLE; se conserva [X] histórica en completadas.md.
+- **Criterios:** CA-MOD-110 NO CUMPLE; CA-MOD-111 NO CUMPLE.
+- **Hallazgos:** AUD-NG-289 bypass RBAC por payload.authRole; AUD-NG-290 verificador sin revocación/estado de cuenta; AUD-NG-291 tests de seguridad superficiales; AUD-NG-292 sin pruebas reales de dashboards/scopes; AUD-NG-293 diagnóstico sustituye procesos académicos; AUD-NG-294 ruta del mapa incorrecta y suite estática; AUD-NG-295 status success incondicional; AUD-NG-296 sin evidencia runtime.
+- **Tareas derivadas:** TASK-645 a TASK-651, definidas en el informe individual.
+- **Evidencia:** suite Node:1–61; developer Code.gs:24,115–174,1638–1728,2040–2100,2599–2615; user Code.gs:1083–1143; raíz sin MapaDependencias.md y AUDITORIAS/MapaDependencias.md presente.
+- **Pendientes.md:** lectura convencional 0 caracteres; blob SHA 676a3f798715f0cdd7d4bc75768472545b8465ee, 1.786.011 caracteres, 20.224 líneas, 0 U+FFFD, 515 IDs TASK-NNN únicos hasta TASK-636; no contiene F8-Task04/CA-MOD-110/111; no restaurado ni modificado.
+- **Pruebas:** inspección manual y contraste de SHA/rutas. No ejecutados Node, Apps Script, HTTP, browser, E2E ni pruebas de datos.
+- **Siguiente tarea:** F8-Task05, reorganización mediante etapas verificables, CA-MOD-112/113.

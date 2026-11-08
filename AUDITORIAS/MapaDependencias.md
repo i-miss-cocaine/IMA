@@ -3808,3 +3808,34 @@ Inspección estática/manual y Git/blob; no se ejecutaron requests HTTP, Apps Sc
 - CA-MOD-107: NO CUMPLE.
 - CA-MOD-108: NO CUMPLE.
 - No se declaran respuestas HTTP 404 observadas ni pruebas runtime ejecutadas; las rutas se verificaron contra el árbol Git y los criterios de producción permanecen sin evidencia.
+
+
+---
+
+## F8-Task04 / TAREA-MOD-06 — Regresión modular y dashboards (C1.264)
+
+### Dependencias y flujo inspeccionados
+- `tests/regression/modular-dashboard-suite.js` (61 líneas): fs/path; ocho rutas, cadenas en config y nombres de funciones. No invoca la suite backend. `../../MapaDependencias.md` apunta a raíz y no existe; mapa real: `AUDITORIAS/MapaDependencias.md`.
+- `backend/developer-service/Code.gs:24`: ROLE_PERMISSIONS, Administrador -> comodín.
+- `backend/developer-service/Code.gs:115–142`: verifySessionToken sin revocación de usuario/sesión ni estado de cuenta.
+- `backend/developer-service/Code.gs:145–174`: doPost acepta payload.authRole si no hay token y autoriza con ROLE_PERMISSIONS.
+- `backend/developer-service/Code.gs:1638–1728`: configuración de espacios admite payload.spaceConfig y solo compara DIRECT_UNCONTROLLED_WRITE.
+- `backend/developer-service/Code.gs:2040–2100`: cinco pruebas REG-01..REG-05; no prueban login, navegación, RBAC, IDOR, revocación, scopes ni procesos académicos.
+- `backend/developer-service/Code.gs:2599–2615`: getServiceHealthDiagnostics retorna PASS constante.
+- `backend/user-service/Code.gs:1083–1143`: sí comprueba revoked_user_, revoked_session_ y estado de cuenta.
+- `js/api.js` y `js/auth.js`: dependencias frontend revisadas como contexto; no se prueban browser/DOM.
+
+### Hallazgos y tareas derivadas
+- AUD-NG-289 CRÍTICO: bypass RBAC por authRole → TASK-645.
+- AUD-NG-290 ALTO: sesiones revocadas/inactivas aceptadas en DEVELOPER → TASK-646.
+- AUD-NG-291 ALTO: no hay pruebas efectivas RBAC/IDOR/scopes/revocaciones → TASK-647.
+- AUD-NG-292 ALTO: dashboard/ámbitos solo validan catálogo → TASK-647 y TASK-649.
+- AUD-NG-293 ALTO: diagnóstico genérico en lugar de procesos académicos → TASK-648.
+- AUD-NG-294 MEDIO: suite Node estática y ruta del mapa incorrecta → TASK-650.
+- AUD-NG-295 MEDIO: status success incondicional → TASK-651.
+- AUD-NG-296 ALTO: sin evidencia de ejecución integral → TASK-648 y TASK-649.
+
+### Dictamen
+- CA-MOD-110: NO CUMPLE.
+- CA-MOD-111: NO CUMPLE.
+- No se ejecutó Node/Apps Script/browser/HTTP; la ruta incorrecta se comprobó contra el árbol Git. El bypass se identificó por inspección, no por ataque en producción.

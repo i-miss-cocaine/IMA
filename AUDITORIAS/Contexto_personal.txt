@@ -9028,3 +9028,31 @@ Auditar TAREA-F6-015 y TAREA-F6-040. Buscar informes individuales e historial en
 - **Próxima acción:** comprobar si existe informe individual F8-Task04; si falta, auditar directamente completadas.md, tests/regression/modular-dashboard-suite.js y backend/developer-service/Code.gs; verificar cobertura real de autenticación, navegación, dashboards, roles/ámbitos, seguridad, flujos académicos, carga de scripts/assets y endpoints. No ejecutar pruebas contra datos productivos sin aislamiento autorizado.
 - **Commit de cierre:** el commit único que contiene este checkpoint; SHA final se confirmará consultando HEAD después de publicar.
 ===============================================================================
+
+
+===============================================================================
+## C1.264 — Checkpoint de cierre: auditoría F8-Task04 / TAREA-MOD-06 (2026-11-08)
+
+- **ID de sesión operativo:** IMA-AUDIT-20261108-2129Z-01 (documental; no ID nativo de ChatGPT).
+- **Checkpoint inicial:** C1.263. **Checkpoint de cierre:** C1.264.
+- **Estado:** sesión cerrada tras publicar un único commit con informe, bitácora, mapa, plan y checkpoint.
+- **Repositorio:** i-miss-cocaine/IMA. **Archivo de contexto:** AUDITORIAS/Contexto_personal.txt.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work. **HEAD de partida y árbol:** fdd017bbef4bcc045f1fbfab5c1696e9da93376d.
+- **Rama base protegida:** NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios.
+- **Tarea auditada:** F8-Task04 / TAREA-MOD-06, marcada [X] en completadas.md línea 4837; informe individual no encontrado; auditoría directa.
+- **Dictamen:** NO CUMPLE. CA-MOD-110 NO CUMPLE; CA-MOD-111 NO CUMPLE.
+- **Hallazgos:** AUD-NG-289 CRÍTICO: payload.authRole suplanta Administrador; AUD-NG-290 ALTO: verificador DEVELOPER no comprueba revocación/estado de cuenta; AUD-NG-291 ALTO: no prueba RBAC/IDOR/scopes/revocaciones; AUD-NG-292 ALTO: dashboard/ámbitos solo validan catálogo; AUD-NG-293 ALTO: diagnóstico estático reemplaza procesos académicos; AUD-NG-294 MEDIO: suite Node estática y ruta incorrecta del mapa; AUD-NG-295 MEDIO: status success incondicional; AUD-NG-296 ALTO: falta evidencia runtime.
+- **Tareas derivadas:** TASK-645 a TASK-651, descritas íntegramente en el informe.
+- **Fuentes:** completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676; Pendientes.md blob 676a3f798715f0cdd7d4bc75768472545b8465ee; suite 0495e1d526a872c33310935a003a83d924d34683; DEVELOPER 8aa4bac67cfe5c8c54da51a0784a56fef633e412; USER 12079dd410aa6d8afbce55a4bc62a79dea605f9f; api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; auth.js 8444dd085a3186106d2db7005b61ef934d3c22d8; contexto 5ce1c169f45eba11e3caf76046acc7ef315d7d63; metodología cf796728bb384a32537392df2f9c72a339fa03ee.
+- **Pendientes.md:** lectura convencional 0 caracteres; blob actual recuperado: 1.786.011 caracteres, 20.224 líneas, 0 U+FFFD, 515 IDs TASK-NNN únicos hasta TASK-636. No contiene F8-Task04/CA-MOD-110/111. Se preservó sin restaurar ni modificar.
+- **Puntos inspeccionados:** completadas.md 4837; suite Node completa 1–61; DEVELOPER Code.gs 1–190,115–142,145–174,1638–1728,2040–2100,2599–2615; USER Code.gs 910–1010,1083–1155 y doPost; js/api.js y js/auth.js completos; árbol Git, contexto, metodología y plan.
+- **Pruebas ejecutadas:** inspección manual, comparación de verificadores y comprobación de rutas/SHAs. No se ejecutó el runner.
+- **No ejecutadas:** Node, Apps Script, HTTP, navegador/DOM, tokens runtime, revocaciones runtime, IDOR, scopes, procesos académicos, endpoints desplegados, E2E ni Sheets productivo.
+- **Archivos nuevos:** AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK04.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Sin cambios:** código fuente, tests, completadas.md, Pendientes.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md y rama base.
+- **Última tarea auditada:** F8-Task04. **Tarea en curso al cierre:** ninguna.
+- **Siguiente tarea exacta:** F8-Task05 — reorganización por etapas verificables, CA-MOD-112/113.
+- **Próxima acción:** comprobar si existe informe F8-Task05; si falta, auditar completadas.md, docs/architecture/staged-migration-procedure.md y backend/developer-service/Code.gs; verificar línea base, aislamiento de etapas, rollback real y trazabilidad.
+- **Commit de cierre:** el commit que contiene este checkpoint; SHA final se confirma tras publicar.
+===============================================================================
