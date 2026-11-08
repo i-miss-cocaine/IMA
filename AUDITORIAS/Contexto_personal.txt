@@ -8682,3 +8682,33 @@ Auditar TAREA-F6-015 y TAREA-F6-040. Buscar informes individuales e historial en
 - **Commit de cierre:** se confirmará consultando HEAD después de publicar este único commit; no se incluye su SHA en este checkpoint.
 
 ===============================================================================
+
+
+===============================================================================
+## C1.252 - Checkpoint de cierre: auditoría TAREA-F7-IMP-20 (2026-11-08)
+
+- **ID de sesión operativo:** IMA-AUDIT-20261108-1842Z (ID documental, no ID nativo de ChatGPT).
+- **Checkpoint inicial:** C1.251. **Checkpoint de cierre:** C1.252.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work. **Rama base protegida:** NG_beta_0.0.0.1.
+- **HEAD de partida verificado:** cf9484585ee3cb658c01b90c9c545379957d4f8f (commit C1.251; mensaje audit: F7-IMP-19 section capacity).
+- **Tree SHA de partida:** 4530f2a6da161b6f0a787e57f3aa81a85a545915.
+- **HEAD de rama base:** 44d9891132332e692dbe2ba8602b41f50a508a59; comparación inicial: 320 commits adelante, 0 detrás. La rama base permanece intacta.
+- **Tarea realizada:** TAREA-F7-IMP-20, [X] histórica en completadas.md; auditoría independiente, dictamen NO CUMPLE.
+- **Criterios:** CA-F7-122 NO CUMPLE; CA-F7-123 NO CUMPLE; CA-F7-124 PARCIAL; CA-F7-125 NO CUMPLE; CA-F7-126 NO CUMPLE; CA-F7-127 NO CUMPLE.
+- **Fuentes:** informe individual y AUDITORIA_FASE_7_PLANIFICACION_HORARIOS_RECURSOS.md no existen; se auditó directamente el bloque de completadas.md.
+- **Hallazgos:** AUD-NG-257, 258, 259 y 260 nuevos (MEDIO/P2).
+- **Tareas derivadas:** TASK-617 (consulta de planificación filtrada/paginada); TASK-618 (caché e invalidación); TASK-619 (telemetría y benchmarks). Ampliar TASK-234, TASK-252 y TASK-429.
+- **Pendientes.md:** lectura ordinaria 0 caracteres; blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c recuperado directamente: 1.782.094 caracteres, 20.182 líneas, 0 U+FFFD. El SHA de la ruta en el HEAD de trabajo es el mismo; ya está en la rama y no se restaura ni transfiere. No se modificó.
+- **Puntos inspeccionados:** completadas.md bloque TAREA-F7-IMP-20; metodología 3.8, 3.9, 3.11-3.18, 15 y 16; AUDITORIAS/Contexto_personal.txt; Code.gs 3525-3595, 6718-6770, 7694-7749, 7986-8082, 6900-7116, 13814-13833, 14109-14165; teacher.js 664-682, 2528-2548; student.js 884-955; academic-grading-suite.js completo (412 líneas); TASK-234, TASK-252 y TASK-429 de Pendientes.md; informe IMP-19 y registros acumulativos.
+- **SHAs de respaldo:** Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5; teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; student.js e2888cea60322e49a40b89adadb8010489605dcc; academic-grading-suite.js a22cb3ef376fe09e65c1b17c2f4f5125290bfba6; completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676; Pendientes.md 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c; METODOLOGIA_DESARROLLO.md cf796728bb384a32537392df2f9c72a339fa03ee; contexto previo 2a0fb35e88cbc123a2bd35aeb0aaacd1a145af9b.
+- **Pruebas ejecutadas:** inspección manual/estática; revisión de rutas de consulta, consumidores, filtros, claves/invalidación y suite; recuperación y verificación del blob; comparación de ramas.
+- **No ejecutadas:** Apps Script runtime, Google Sheets productivas, navegador/DOM, HTTP/OAuth, mediciones de latencia, pruebas de carga, CacheService real, concurrencia, cuotas reales, Node ni E2E.
+- **Archivos nuevos:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-20.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Sin cambios:** backend/academic-service/Code.gs; js/teacher.js; js/student.js; tests/*; teacher-dashboard.html; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; rama base.
+- **Última tarea auditada:** TAREA-F7-IMP-20. **Tarea en curso:** ninguna al cierre.
+- **Siguiente tarea exacta:** TAREA-F7-IMP-21, auditoría operativa y trazabilidad de la planificación.
+- **Próxima acción:** buscar AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-21.md y el documento de origen; si faltan, auditar directamente los requisitos completos de TAREA-F7-IMP-21 en completadas.md.
+- **Commit de cierre:** el commit único que contiene este checkpoint; su SHA se confirma externamente después de actualizar la rama.
+===============================================================================

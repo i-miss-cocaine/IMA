@@ -3512,3 +3512,28 @@ Inspección estática/manual. No se ejecutaron Apps Script runtime, HTTP/OAuth, 
 - **Regresión:** TC-F7-04 solo exige status success y arreglo reportes; tests/regression/academic-grading-suite.js no contiene casos de capacidad por sección. Ampliar TASK-551.
 - **Tareas:** TASK-616 revalidación posterior a mutaciones; ampliar TASK-548 (cálculo canónico), TASK-549 (alternativas compatibles), TASK-550 (UI), TASK-551 (CA-F7-117..121), TASK-513/514 (override/concurrencia).
 - **Dictamen:** CA-F7-117..121 NO CUMPLE. Detalle y tareas ejecutables: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-19.md.
+
+
+---
+
+## TAREA-F7-IMP-20 — Rendimiento y escalabilidad de consultas de planificación (C1.252)
+
+### Funciones y dependencias inspeccionadas
+- `backend/academic-service/Code.gs:getClassSchedules` (6718-6770): lee HorariosClase completo; CacheService con clave por año/grado/sección/docente/oferta/aula y TTL 600 s; filtros aplicados en memoria; el año no restringe filas. Consumidor: `js/teacher.js:loadMasterSchedules` (664-682).
+- `backend/academic-service/Code.gs:getStudentSchedule` (7986-8082): consulta HorariosClase, OfertaAcademica, CatalogoAsignaturas, AsignacionesDocentes y Usuarios completas; Matriculas completa cuando no llegan grado/sección. Consumidor: `js/student.js:fetchAndRenderStudentSchedule` (884-955); el parámetro bypassCache no es consumido.
+- `backend/academic-service/Code.gs:getClassroomResources` (7694-7749): lee SedesAulas/MantenimientoAulas completas y vuelve a filtrar mantenimientos por cada aula. Consumidor: `js/teacher.js:loadClassroomResourcesTable` (2528-2548).
+- `invalidateScheduleCache` (13814-13833): patrones eliminados no corresponden a la clave real de seis dimensiones. No se invoca desde createClassSchedule, deleteClassSchedule ni publishClassSchedules.
+- Informes: getPlanningQualityAndOccupancyReport (3525-3595) y getSectionCapacityAnalyticsReport (13657-13810) leen hojas completas; el primero no aplica anoLectivo a HorariosClase.
+- Suite interna runAcademicPlanningRegressionSuite (14109-14165): TC-F7-01..07 no miden rendimiento, paginación o caché.
+
+### Hallazgos y relaciones
+- AUD-NG-257: lectura completa y filtrado en memoria; complejidad adicional por recorrido de mantenimientos por aula. Relacionado con AUD-NG-168/236/241 y TASK-234.
+- AUD-NG-258: invalidación de caché con claves incompatibles y sin invocación en mutaciones ordinarias. Relacionado con TASK-234.
+- AUD-NG-259: ausencia de paginación, límites y rangos temporales. Relacionado con TASK-234/TASK-429.
+- AUD-NG-260: ausencia de métricas y pruebas comparativas. Relacionado con TASK-234/TASK-252.
+
+### Tareas ejecutables derivadas
+- TASK-617: filtros de origen, lectura selectiva, intervalo temporal y paginación para consultas de planificación.
+- TASK-618: contrato de caché e invalidación automática después de escrituras.
+- TASK-619: telemetría, pruebas de volumen y comparativas de rendimiento antes/después.
+- Ampliar TASK-234, TASK-252 y TASK-429; mantener separación respecto de las correcciones de esquema/semántica ya asignadas a AUD-NG-168/236/241.

@@ -2050,3 +2050,16 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **Última tarea auditada:** TAREA-F7-IMP-19.
 - **Siguiente tarea exacta:** TAREA-F7-IMP-20, rendimiento y escalabilidad de consultas de planificación (CA-F7-122..127).
 ===============================================================================
+
+
+---
+
+## TAREA-F7-IMP-20 — Auditoría de rendimiento y escalabilidad de consultas (C1.252)
+
+- **Dictamen:** NO CUMPLE. La consulta de horarios y recursos lee rangos completos y filtra después; la vista semanal no limita la lectura por año/período/intervalo; no existe paginación; la invalidación de caché no coincide con las claves reales ni se invoca en las mutaciones ordinarias; no hay benchmarks ni telemetría de endpoints.
+- **Criterios:** CA-F7-122 NO CUMPLE; CA-F7-123 NO CUMPLE; CA-F7-124 PARCIAL (TTL 600 s limita la obsolescencia, pero no hay invalidación inmediata fiable); CA-F7-125 NO CUMPLE; CA-F7-126 NO CUMPLE; CA-F7-127 NO CUMPLE.
+- **Hallazgos:** AUD-NG-257..260 nuevos (MEDIO/P2).
+- **Tareas derivadas:** TASK-617 consultas de planificación filtradas/paginadas; TASK-618 invalidación de caché después de mutaciones; TASK-619 telemetría y benchmarks. Ampliar TASK-234, TASK-252 y TASK-429.
+- **Evidencia:** Code.gs 3525-3595, 6718-6770, 7694-7749, 7986-8082, 6900-7116, 13814-13833, 14109-14165; teacher.js 664-682/2528-2548; student.js 884-955; suite regression 412 líneas.
+- **Pruebas:** inspección manual/estática y verificación Git/blob. No ejecutados Apps Script, Sheets productivas, navegador, mediciones de latencia, carga, CacheService real, cuotas, Node ni E2E.
+- **Siguiente tarea:** TAREA-F7-IMP-21, auditoría operativa y trazabilidad de la planificación.
