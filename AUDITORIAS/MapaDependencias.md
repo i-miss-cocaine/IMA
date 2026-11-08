@@ -3537,3 +3537,32 @@ Inspección estática/manual. No se ejecutaron Apps Script runtime, HTTP/OAuth, 
 - TASK-618: contrato de caché e invalidación automática después de escrituras.
 - TASK-619: telemetría, pruebas de volumen y comparativas de rendimiento antes/después.
 - Ampliar TASK-234, TASK-252 y TASK-429; mantener separación respecto de las correcciones de esquema/semántica ya asignadas a AUD-NG-168/236/241.
+
+
+---
+
+## TAREA-F7-IMP-21 — Auditoría operativa y trazabilidad de planificación (C1.253)
+
+### Dependencias y flujo inspeccionado
+- `backend/academic-service/Code.gs:logStructuredEvent` (52-77) -> `LogsSistema`; el catch suprime fallos de escritura.
+- `recordEntityChangeLog` (1568-1590) -> `HistorialCambiosEntidad` con nueve columnas. Sus llamadas actuales están en admisión/ciclo de vida, no en las mutaciones de horarios auditadas.
+- Mutaciones: `createClassSchedule` (6900-6990), `deleteClassSchedule` (6992-7005), `publishClassSchedules` (7008-7116), `restoreScheduleVersion` (7224-7314), `copyClassSchedules` (7317-7395), `applyScheduleTemplate` (14000-14100), recursos/mantenimiento (7752-7838).
+- `getAcademicPlanningAuditLogs` (13837-13890) lee solo HistorialCambiosEntidad; interpreta row[1] como entityType cuando el escritor ACADEMIC lo coloca en row[2]. No consume LogsSistema ni BitacoraTraceability/BitacoraTrazabilidad.
+- `getAcademicAuditLogs` (7841-7869) es otro endpoint y consulta BitacoraAuditoriaEstructurada; no sustituye al lector de planificación.
+- RBAC: getAcademicPlanningAuditLogs aparece en Profesor y Administrador wildcard; Director/Secretaría tienen getAcademicAuditLogs, no el endpoint de planificación. PUBLIC_ACTIONS no lo declara público; validateRolePermission exige token.
+- `js/api.js:fetchApi` (39-57) solo añade requesterUserId/requesterRole; no envía token. `js/teacher.js` llama el endpoint con {}.
+- UI: teacher.js 1390-1432 contiene controlador/loader; teacher-dashboard.html completo no tiene botón, modal ni contenedor. ChangesLogs 2547-2568 afirma lo contrario.
+- Regresión: TC-F7-07 (14150-14151) solo valida status success y arreglo; una lista vacía puede pasar.
+
+### Hallazgos y reconciliación
+- AUD-NG-261: cobertura incompleta de eventos operativos, fallos, conflictos, notificaciones y correlación. Extiende AUD-NG-224/TASK-504 y AUD-NG-145.
+- AUD-NG-262: consola no presente en HTML y filtros ausentes; extender TASK-504 y crear TASK-621 para UI de planificación.
+- AUD-NG-263: token no propagado y roles no alineados; incluir en TASK-621/TASK-504.
+- AUD-NG-264: TC-F7-07 es prueba de humo; coordinar AUD-NG-161 y TASK-621.
+- AUD-NG-224 ya contiene el esquema incompatible de HistorialCambiosEntidad, el actor/correlationId, integridad y UI; no crear duplicado.
+- AUD-NG-145 ya contiene los problemas generales de LogsSistema, BitacoraEventos, BitacoraTraceability/BitacoraTrazabilidad, DTO, sanitización y productores; no crear duplicado.
+
+### Tareas ejecutables derivadas
+- TASK-620: conectar el ciclo de vida de horarios y recursos con historial durable, actor verificado, snapshots, correlationId, estados, conflictos, errores y notificaciones.
+- TASK-621: completar consola, filtros, autenticación/RBAC, paginación, renderizado seguro, read-only y pruebas conductuales CA-F7-128..132.
+- Ampliar TASK-504 y AUD-NG-224 para el esquema/lector de planificación; ampliar AUD-NG-145 para las fuentes y correlación; coordinar AUD-NG-161 para regresión.

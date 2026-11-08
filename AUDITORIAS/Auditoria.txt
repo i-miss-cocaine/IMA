@@ -9033,3 +9033,37 @@ ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md;
 SIN CAMBIOS: backend/academic-service/Code.gs; js/teacher.js; js/student.js; tests/*; teacher-dashboard.html; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; rama base.
 SIGUIENTE: TAREA-F7-IMP-21, auditoría operativa y trazabilidad de la planificación (verificar informe individual y fuente; si faltan, auditar directamente el bloque de completadas.md).
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-08
+AUDITORÍA FUNCIONAL Y TÉCNICA - TAREA-F7-IMP-21: AUDITORÍA OPERATIVA Y TRAZABILIDAD DE PLANIFICACIÓN
+DICTAMEN: NO CUMPLE (marca histórica [X] preservada en completadas.md).
+CRITERIOS: CA-F7-128 NO CUMPLE; CA-F7-129 NO CUMPLE; CA-F7-130 NO CUMPLE; CA-F7-131 NO CUMPLE; CA-F7-132 PARCIAL.
+HALLAZGOS:
+- AUD-NG-261 NUEVO (MEDIO/P2): las mutaciones de planificación no generan historial durable y correlacionado uniforme. createClassSchedule/copyClassSchedules/publishClassSchedules/restoreScheduleVersion registran solo logStructuredEvent en LogsSistema; deleteClassSchedule no registra evento; applyScheduleTemplate tampoco; conflictos de publicación retornan sin persistir; notificaciones fallidas quedan en LogsSistema y el lector no consulta esa fuente. El actor de algunas operaciones usa authUserId/authRole del payload en vez de _verifiedUserId/_verifiedRole. No hay correlationId común solicitud-resultado-error-notificación.
+- AUD-NG-262 NUEVO (MEDIO/P2): el controlador existe en js/teacher.js 1390-1432, pero teacher-dashboard.html no contiene botón, modal ni contenedor; el loader retorna si falta el contenedor. No hay filtros UI y el llamado envía {}. ChangesLogs.txt 2547-2568 afirma que el botón/modal se implementaron, pero el HTML vigente no contiene sus IDs.
+- AUD-NG-263 NUEVO (MEDIO/P2): getAcademicPlanningAuditLogs no es público y requiere token; js/api.js no inyecta sessionToken/authToken y el loader llama sin token. RBAC concede la acción a Profesor y Administrador wildcard, pero no a Director/Secretaría, cuyos roles incluyen getAcademicAuditLogs (endpoint distinto).
+- AUD-NG-264 NUEVO (MEDIO/P2): TC-F7-07 solo valida status success y que logs sea arreglo. getAcademicPlanningAuditLogs puede devolver success con [] cuando no hay filas/esquema compatible; no prueba operación, actor, correlación, filtros, permisos, conflictos, notificaciones ni read-only.
+AMPLIACIONES SIN DUPLICACIÓN:
+- AUD-NG-224/TASK-504: getAcademicPlanningAuditLogs interpreta columnas incompatibles con recordEntityChangeLog de ACADEMIC; el entityType está en row[2], pero el lector lo busca en row[1]. Añadir la vista de planificación y sus consumidores al contrato canónico, permisos, paginación y renderizado seguro.
+- AUD-NG-145: logStructuredEvent escribe LogsSistema y suprime fallos; el endpoint de planificación no integra LogsSistema ni BitacoraTraceability/BitacoraTrazabilidad. Mantener defectos generales de fuentes, DTO, sanitización y correlación en AUD-NG-145.
+- AUD-NG-161: coordinar pruebas de regresión/integración sin duplicar la batería específica de CA-F7-128..132.
+TAREAS EJECUTABLES DERIVADAS:
+- TASK-620 (nueva): conectar ciclo de vida de horarios/recursos con historial durable, actor verificado, snapshots, correlationId, resultados, errores, conflictos y notificaciones.
+- TASK-621 (nueva): completar consola de auditoría, botón/modal, filtros, token/RBAC, paginación, renderizado seguro, read-only y pruebas conductuales.
+- Ampliar TASK-504 (AUD-NG-224) para el esquema y lector de planificación; ampliar AUD-NG-145 para las fuentes LogsSistema/Bitacora y correlación; coordinar AUD-NG-161 para pruebas.
+EVIDENCIA:
+- Code.gs 52-77 logStructuredEvent; 84-155 getOrCreateSheet; 168-253 ROLE_PERMISSIONS; 524-543 validateRolePermission; 671-681 doPost; 1568-1590 recordEntityChangeLog; 6900-7005 create/delete; 7008-7116 publish; 7224-7314 restore; 7317-7395 copy; 7752-7838 recursos/mantenimiento; 7841-7869 getAcademicAuditLogs; 13837-13890 getAcademicPlanningAuditLogs; 14000-14100 applyScheduleTemplate; 14150-14151 TC-F7-07.
+- teacher.js 1390-1432; teacher-dashboard.html completo; js/api.js 39-57; ChangesLogs.txt 2547-2568; completadas.md 4592-4619.
+DOCUMENTACIÓN:
+- Informe individual IMP-21 y AUDITORIA_FASE_7_PLANIFICACION_HORARIOS_RECURSOS.md no existen; auditoría ejecutada directamente desde completadas.md.
+- Pendientes.md ordinario 0 caracteres; blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c recuperado: 1.782.094 caracteres, 20.182 líneas, cero U+FFFD; mismo SHA en la ruta de rama, sin restauración.
+- ChangesLogs histórico afirma modal/botón implementados; la versión vigente de teacher-dashboard.html no los contiene.
+SHAs: Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5; teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; teacher-dashboard.html cbb9e6a272a7d8ad33f99727303305d950533e71; api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; user-service Code.gs 12079dd410aa6d8afbce55a4bc62a79dea605f9f; academic-grading-suite.js a22cb3ef376fe09e65c1b17c2f4f5125290bfba6; completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676; Pendientes.md 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c; ChangesLogs.txt 5b5cff1926b73a05d1b92087a7bf4b2db75326ff; METODOLOGIA_DESARROLLO.md cf796728bb384a32537392df2f9c72a339fa03ee.
+PRUEBAS/LÍMITES: inspección manual/estática y verificación Git/blob. No ejecutados Apps Script runtime, Sheets productivas, HTTP/OAuth, DOM/navegador, XSS, roles reales, notificaciones, concurrencia, Node ni E2E.
+ARCHIVO NUEVO: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-21.md.
+ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+SIN CAMBIOS: backend/academic-service/Code.gs; backend/user-service/Code.gs; js/teacher.js; js/api.js; teacher-dashboard.html; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; rama base.
+SIGUIENTE: TAREA-F7-IMP-22, plantillas y reutilización controlada de horarios.
+===============================================================================

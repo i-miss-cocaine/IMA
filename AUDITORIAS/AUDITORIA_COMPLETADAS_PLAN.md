@@ -2063,3 +2063,16 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **Evidencia:** Code.gs 3525-3595, 6718-6770, 7694-7749, 7986-8082, 6900-7116, 13814-13833, 14109-14165; teacher.js 664-682/2528-2548; student.js 884-955; suite regression 412 líneas.
 - **Pruebas:** inspección manual/estática y verificación Git/blob. No ejecutados Apps Script, Sheets productivas, navegador, mediciones de latencia, carga, CacheService real, cuotas, Node ni E2E.
 - **Siguiente tarea:** TAREA-F7-IMP-21, auditoría operativa y trazabilidad de la planificación.
+
+
+---
+
+## TAREA-F7-IMP-21 — Auditoría operativa y trazabilidad de planificación (C1.253)
+
+- **Dictamen:** NO CUMPLE. No existe una ruta durable y uniforme de eventos de planificación; la vista lee una fuente distinta de la que reciben las mutaciones y el mapeo de HistorialCambiosEntidad es incompatible. El controlador JS existe, pero falta botón/modal/contenedor en teacher-dashboard.html; no hay filtros; la llamada no envía token y RBAC no alinea roles; TC-F7-07 acepta una lista vacía.
+- **Criterios:** CA-F7-128 NO CUMPLE; CA-F7-129 NO CUMPLE; CA-F7-130 NO CUMPLE; CA-F7-131 NO CUMPLE; CA-F7-132 PARCIAL.
+- **Hallazgos:** AUD-NG-261..264 nuevos (MEDIO/P2); ampliar AUD-NG-224 y AUD-NG-145.
+- **Tareas derivadas:** TASK-620 historial durable de planificación; TASK-621 consola, filtros, autenticación y pruebas. Ampliar TASK-504 y coordinar AUD-NG-161.
+- **Evidencia:** Code.gs 52-77, 1568-1590, 6900-7005, 7008-7116, 7224-7314, 7317-7395, 7841-7869, 13837-13890, 14150-14151; teacher.js 1390-1432; teacher-dashboard.html completo; api.js 39-57; ChangesLogs 2547-2568; completadas 4592-4619.
+- **Pruebas:** inspección manual/estática y verificación Git/blob. No ejecutados Apps Script, Sheets productivas, HTTP/OAuth, DOM/navegador, XSS, roles reales, notificaciones, concurrencia, Node ni E2E.
+- **Siguiente tarea:** TAREA-F7-IMP-22, plantillas y reutilización controlada de horarios.

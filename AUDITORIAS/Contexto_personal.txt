@@ -8712,3 +8712,34 @@ Auditar TAREA-F6-015 y TAREA-F6-040. Buscar informes individuales e historial en
 - **Próxima acción:** buscar AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-21.md y el documento de origen; si faltan, auditar directamente los requisitos completos de TAREA-F7-IMP-21 en completadas.md.
 - **Commit de cierre:** el commit único que contiene este checkpoint; su SHA se confirma externamente después de actualizar la rama.
 ===============================================================================
+
+
+===============================================================================
+## C1.253 - Checkpoint de cierre: auditoría TAREA-F7-IMP-21 (2026-11-08)
+
+- **ID de sesión operativo:** IMA-AUDIT-20261108-1852Z (ID documental, no ID nativo de ChatGPT).
+- **Estado de sesión:** cerrada. **Checkpoint inicial:** C1.252. **Checkpoint de cierre:** C1.253.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Archivo de contexto:** AUDITORIAS/Contexto_personal.txt.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work. **Rama base protegida:** NG_beta_0.0.0.1.
+- **HEAD de partida verificado:** 503ff832d0fe6f0696b15a6a730a3395babf0a57. **Tree SHA de partida:** 8cd954646e001af95f9e8f568d5e4111b6bf8344.
+- **HEAD de rama base verificado:** 44d9891132332e692dbe2ba8602b41f50a508a59; comparación de inicio: 321 commits adelante, 0 detrás. La rama base permanece intacta.
+- **Tarea realizada:** TAREA-F7-IMP-21, [X] histórica en completadas.md, auditoría independiente, dictamen NO CUMPLE.
+- **Criterios:** CA-F7-128 NO CUMPLE; CA-F7-129 NO CUMPLE; CA-F7-130 NO CUMPLE; CA-F7-131 NO CUMPLE; CA-F7-132 PARCIAL.
+- **Fuentes:** informe individual IMP-21 y AUDITORIA_FASE_7_PLANIFICACION_HORARIOS_RECURSOS.md no existen; se auditó directamente completadas.md líneas 4592-4619.
+- **Hallazgos nuevos:** AUD-NG-261 (eventos operativos incompletos), AUD-NG-262 (UI inexistente), AUD-NG-263 (RBAC/token incompatibles), AUD-NG-264 (TC-F7-07 falso positivo), todos MEDIO/P2.
+- **Ampliaciones:** AUD-NG-224/TASK-504 (esquema, lector, UI y autorización de historial); AUD-NG-145 (fuentes LogsSistema/bitácora, correlación y fallos); coordinación AUD-NG-161 para pruebas.
+- **Tareas derivadas:** TASK-620 (historial durable/correlacionado de planificación) y TASK-621 (consola, filtros, RBAC, token, renderizado seguro y pruebas conductuales).
+- **Pendientes.md:** lectura ordinaria 0 caracteres; blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c recuperado directamente: 1.782.094 caracteres, 20.182 líneas, 0 U+FFFD. La ruta en HEAD de trabajo apunta al mismo SHA; no se restaura ni transfiere. Consultado por instrucción explícita de la tarea; no se modifica.
+- **Puntos inspeccionados:** completadas.md 4592-4619; ChangesLogs.txt 2547-2568; Code.gs 52-77, 84-155, 168-253, 524-543, 671-681, 1568-1590, 6900-7005, 7008-7116, 7224-7314, 7317-7395, 7752-7838, 7841-7869, 13837-13890, 14150-14151; teacher.js 1390-1432; teacher-dashboard.html completo; api.js 39-57; user-service Code.gs 2715-2788 y 4242-4369; tests/regression/academic-grading-suite.js; AUD-NG-224/TASK-504 y AUD-NG-145; metodología y checkpoint C1.252.
+- **SHAs de respaldo:** Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5; teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; teacher-dashboard.html cbb9e6a272a7d8ad33f99727303305d950533e71; api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; user-service Code.gs 12079dd410aa6d8afbce55a4bc62a79dea605f9f; academic-grading-suite.js a22cb3ef376fe09e65c1b17c2f4f5125290bfba6; completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676; Pendientes.md 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c; ChangesLogs.txt 5b5cff1926b73a05d1b92087a7bf4b2db75326ff; METODOLOGIA_DESARROLLO.md cf796728bb384a32537392df2f9c72a339fa03ee; AUDITORIAS/Auditoria.txt c4288848fc15909523719459daa97d4df06f2736; MapaDependencias.md f00a2ecf00ebf74d41b49906d66c85d7e11013ff; AUDITORIA_COMPLETADAS_PLAN.md 4851a768ec467febe32715726169ba531e316df5.
+- **Pruebas ejecutadas:** inspección manual de escritores/lectores y consumidores; revisión de esquemas, roles, token, filtros, HTML y TC-F7-07; recuperación de blob y verificación Git.
+- **No ejecutadas:** Apps Script runtime, Sheets productivas, HTTP/OAuth real, DOM/navegador, pruebas XSS, roles reales, notificaciones, concurrencia, Node ni E2E.
+- **Archivo nuevo:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-21.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Sin cambios:** backend/academic-service/Code.gs; backend/user-service/Code.gs; js/teacher.js; js/api.js; teacher-dashboard.html; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; rama base.
+- **Última tarea auditada:** TAREA-F7-IMP-21. **Tarea en curso:** ninguna al cierre.
+- **Siguiente tarea exacta:** TAREA-F7-IMP-22, ampliar la planificación mediante plantillas y reutilización controlada de horarios.
+- **Próxima acción:** buscar AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-22.md y AUDITORIA_FASE_7_PLANIFICACION_HORARIOS_RECURSOS.md; si faltan, auditar directamente los requisitos completos de TAREA-F7-IMP-22 en completadas.md.
+- **Commit de cierre:** el único commit que contiene este checkpoint; SHA confirmado externamente después de publicar.
+===============================================================================
