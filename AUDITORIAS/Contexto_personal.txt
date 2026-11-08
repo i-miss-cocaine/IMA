@@ -8905,3 +8905,35 @@ Auditar TAREA-F6-015 y TAREA-F6-040. Buscar informes individuales e historial en
 - **Próxima acción:** buscar AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-25.md y la fuente de Fase 7; si faltan, auditar directamente el bloque completo de TAREA-F7-IMP-25 en completadas.md.
 - **Commit de cierre:** el único commit que contiene este checkpoint; SHA final se confirmará externamente consultando HEAD.
 ===============================================================================
+
+
+===============================================================================
+## C1.260 — Checkpoint de cierre: auditoría TAREA-F7-IMP-25 (2026-11-08)
+
+- **ID de sesión operativo:** IMA-AUDIT-20261108-2032Z-01 (identificador documental, no ID nativo de ChatGPT).
+- **Estado:** preparado para cierre mediante un único commit con informe, registros de auditoría y checkpoint.
+- **Último checkpoint válido de continuidad designado por el usuario:** C1.254. C1.255 no se adopta como válido.
+- **Checkpoint de cierre propuesto:** C1.260.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Archivo de contexto:** AUDITORIAS/Contexto_personal.txt.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **HEAD de partida verificado:** fe8b1d5c6c475f40129ef287356775193007b58e; Tree SHA 063d1cfdd77d99aa91daefb3fb0e1ccd862b67af.
+- **Rama base protegida:** NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59; comparación verificada: 328 commits adelante, 0 detrás. No se modifica.
+- **Tarea auditada:** TAREA-F7-IMP-25, marcada [X] histórica en completadas.md; dictamen NO CUMPLE.
+- **Criterios:** CA-F7-148..153 NO CUMPLE; CA-F7-154 PARCIAL.
+- **Hallazgos nuevos:** AUD-NG-277 (aserciones superficiales), AUD-NG-278 (pruebas con Spreadsheet institucional/sin aislamiento), AUD-NG-279 (sin concurrencia real ni integración).
+- **Tareas derivadas:** TASK-633, TASK-634 y TASK-635.
+- **Hallazgos ampliados:** AUD-NG-161/TASK-612; AUD-NG-252/TASK-611; AUD-NG-236/TASK-554; AUD-NG-253/TASK-610; AUD-NG-246/TASK-562.
+- **Fuentes:** completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, líneas 4726-4755; informe individual IMP-25 y plan de Fase 7 no existen; Pendientes.md blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c recuperado directamente.
+- **Puntos inspeccionados:** ACADEMIC Code.gs getOrCreateSheet 84-88; logStructuredEvent 52-77; withConcurrencyLock/runConcurrencyAndConsistencySuite 3278-3327; getTeacherSubstitutions 6570-6610; getTeacherTeachingLoad 6773-6840; checkScheduleConflict 7493-7720; getCurricularConstraints 13509-13550; getAcademicPlanningAuditLogs 13837-13870; runAcademicPlanningRegressionSuite 14109-14173; DEVELOPER Code.gs completo (2.901 líneas); academic-grading-suite.js completo (412 líneas); ChangesLogs; metodología; plan; mapa; Auditoria.txt.
+- **SHAs de respaldo:** ACADEMIC df87a2eea9f0ef79d0b966d03fd5bbe432003df5; DEVELOPER 8aa4bac67cfe5c8c54da51a0784a56fef633e412; tests a22cb3ef376fe09e65c1b17c2f4f5125290bfba6; completadas f57f1aef832e81e44fc4f7ec36a852d50e464676; Pendientes 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c; ChangesLogs 5b5cff1926b73a05d1b92087a7bf4b2db75326ff; metodología cf796728bb384a32537392df2f9c72a339fa03ee.
+- **Pruebas ejecutadas:** inspección manual/estática de las funciones y suites; verificación de permisos declarados; recuperación del blob; verificación de rama/HEAD/tree y comparación con base.
+- **No ejecutadas:** Apps Script, Node, HTTP/API, Sheets productivo, concurrencia real, navegador/DOM, integración real ni E2E. La suite no se ejecutó por riesgo de escritura en el Spreadsheet institucional.
+- **Archivo nuevo:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-25.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Sin cambios:** backend/código, JS, HTML, CSS, tests, completadas.md, Pendientes.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md y rama base.
+- **Última tarea auditada:** TAREA-F7-IMP-25. **Tarea en curso:** ninguna al cierre.
+- **Siguiente tarea exacta:** F8-Task01, «Centralizar y verificar la autorización efectiva de cada operación».
+- **Próxima acción:** buscar informe individual de F8-Task01 y auditarlo directamente si falta.
+- **Commit de cierre:** se confirmará externamente consultando HEAD después de publicar el único commit.
+===============================================================================

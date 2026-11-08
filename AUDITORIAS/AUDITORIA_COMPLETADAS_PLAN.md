@@ -2135,3 +2135,18 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **Documentación:** informe individual IMP-24 y fuente Fase 7 no existen; auditoría ejecutada desde completadas.md. Pendientes.md blob 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c: 1.782.094 caracteres, 20.182 líneas, 0 U+FFFD, 511 TASK únicos; no contiene IMP-24 ni TASK-630..632; blob íntegro presente y no modificado.
 - **Pruebas:** inspección manual/estática y verificación Git/blob. No ejecutados navegador, Apps Script, HTTP/OAuth, datos productivos, cuentas reales, móvil, Node ni E2E.
 - **Siguiente tarea exacta:** TAREA-F7-IMP-25, batería automatizada de regresión, integración y calidad de planificación.
+
+
+---
+
+## TAREA-F7-IMP-25 — Auditoría de pruebas automatizadas de planificación (C1.260)
+
+- **Dictamen:** NO CUMPLE; se conserva la marca [X] histórica.
+- **Criterios:** CA-F7-148..153 NO CUMPLE; CA-F7-154 PARCIAL.
+- **Hallazgos:** AUD-NG-277 aserciones superficiales; AUD-NG-278 pruebas conectadas al Spreadsheet institucional y sin aislamiento; AUD-NG-279 ausencia de concurrencia real e integración.
+- **Tareas ejecutables derivadas:** TASK-633 aislamiento del entorno; TASK-634 cobertura conductual de planificación; TASK-635 concurrencia/integración/E2E y reporte.
+- **Ampliaciones:** AUD-NG-161/TASK-612 pruebas; AUD-NG-252/TASK-611 permisos; AUD-NG-236/TASK-554 contratos; AUD-NG-253/TASK-610 ciclo de vida; AUD-NG-246/TASK-562 consistencia.
+- **Evidencia:** Code.gs 52-88/3278-3327/6570-6610/6773-6840/7493-7720/13509-13550/13837-13870/14109-14173; developer Code.gs; academic-grading-suite.js; completadas.md 4726-4755.
+- **Documentación:** informe individual IMP-25 y plan de Fase 7 no localizados; auditoría ejecutada desde completadas.md. Pendientes.md blob 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c recuperado íntegro; no se modificó.
+- **Pruebas:** inspección manual/estática y Git/blob. No ejecutados Apps Script, Node, API, Sheets productivo, concurrencia real, navegador ni E2E.
+- **Siguiente tarea exacta:** F8-Task01, centralizar y verificar autorización efectiva de cada operación.

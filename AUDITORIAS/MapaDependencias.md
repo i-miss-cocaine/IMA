@@ -3681,3 +3681,33 @@ Inspección estática/manual. No se ejecutaron Apps Script runtime, HTTP/OAuth, 
 - AUD-NG-243/TASK-561 y AUD-NG-253/TASK-610: excepciones/ciclo de vida.
 - AUD-NG-246/TASK-562: filtros temporales y refresh.
 - AUD-NG-161/TASK-612: regresión.
+
+
+---
+
+## Auditoría TAREA-F7-IMP-25 — pruebas automatizadas de planificación (2026-11-08)
+
+### Evidencia
+- ACADEMIC Code.gs SHA df87a2eea9f0ef79d0b966d03fd5bbe432003df5: runAcademicPlanningRegressionSuite 14109-14173 contiene siete casos TC-F7-01..07 con comprobaciones de forma/estructura; checkScheduleConflict 7493-7720 y getTeacherTeachingLoad 6773-6840 no se validan por resultados esperados.
+- runConcurrencyAndConsistencySuite 3296-3327 solo realiza una adquisición/liberación de ScriptLock; no crea contención ni prueba publicación concurrente.
+- getOrCreateSheet 84-88 y logStructuredEvent 52-77 crean hojas/agregan filas en el Spreadsheet configurado; el runner llama funciones que consultan/crean hojas y no dispone de fixtures aislados.
+- getCurricularConstraints 13509-13522 crea RestriccionesCurriculares si falta; getTeacherSubstitutions 6570-6575 y getTeacherTeachingLoad 6777-6786 usan getOrCreateSheet.
+- DEVELOPER Code.gs SHA 8aa4bac67cfe5c8c54da51a0784a56fef633e412 sin suite F7 específica. academic-grading-suite.js SHA a22cb3ef376fe09e65c1b17c2f4f5125290bfba6, 412 líneas, sin TC-F7 ni IMP-25.
+
+### Hallazgos y criterios
+- AUD-NG-277 ALTO/P1: aserciones superficiales; no prueban resultados de negocio ni CA-F7-148..153.
+- AUD-NG-278 ALTO/P1: suite acoplada al Spreadsheet institucional; riesgo de crear hojas/filas y contaminación de datos.
+- AUD-NG-279 ALTO/P1: sin concurrencia real, integración entre módulos ni separación unit/integration/E2E.
+- CA-F7-148..153 NO CUMPLE; CA-F7-154 PARCIAL.
+
+### Tareas ejecutables derivadas
+- TASK-633: aislar suite con Spreadsheet/repositorios de prueba, fixtures y teardown; bloquear el uso de datos productivos.
+- TASK-634: cubrir conductualmente cada regla de planificación, permisos, errores, rollback, notificaciones y vistas.
+- TASK-635: concurrencia controlada, integración/E2E y reporte reproducible con resultados parciales.
+
+### Dependencias existentes ampliadas
+- AUD-NG-161/TASK-612: estrategia y cobertura de regresión.
+- AUD-NG-252/TASK-611: autorización y ámbito.
+- AUD-NG-236/TASK-554: contratos entre módulos.
+- AUD-NG-253/TASK-610: ciclo de vida de horarios.
+- AUD-NG-246/TASK-562: consistencia de proyecciones.

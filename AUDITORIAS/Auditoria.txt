@@ -9200,3 +9200,42 @@ ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md;
 SIN CAMBIOS: código/UI/tests; completadas.md; Pendientes.md; ChangesLogs.txt; metodología; rama base.
 SIGUIENTE: TAREA-F7-IMP-25, batería automatizada de regresión, integración y calidad de planificación.
 ===============================================================================
+
+
+===============================================================================
+AUDITORÍA TAREA-F7-IMP-25 — 2026-11-08
+DICTAMEN: NO CUMPLE. La marca [X] de completadas.md se conserva como histórica.
+CRITERIOS: CA-F7-148..153 NO CUMPLE; CA-F7-154 PARCIAL.
+
+HALLAZGOS NUEVOS:
+- AUD-NG-277 ALTO/P1: TC-F7-01..07 son smoke checks superficiales; no verifican resultados funcionales ni cubren los requisitos críticos.
+- AUD-NG-278 ALTO/P1: la suite usa el Spreadsheet institucional; getOrCreateSheet/getCurricularConstraints y logStructuredEvent pueden crear hojas o agregar filas. No hay fixtures aislados ni teardown.
+- AUD-NG-279 ALTO/P1: runConcurrencyAndConsistencySuite solo adquiere/libera un lock en una llamada secuencial; faltan carreras reales e integración con asistencia/portales.
+
+AMPLIACIONES SIN DUPLICACIÓN:
+- AUD-NG-161/TASK-612: cobertura conductual, repetibilidad y resultados parciales.
+- AUD-NG-252/TASK-611: pruebas negativas de autorización/ámbito.
+- AUD-NG-236/TASK-554: contratos y consistencia de integración.
+- AUD-NG-253/TASK-610: ciclo de vida de publicación/cancelación/notificaciones.
+- AUD-NG-246/TASK-562: consistencia de consultas/proyecciones.
+
+TAREAS EJECUTABLES DERIVADAS:
+- TASK-633 (ALTO/P1): aislar pruebas con repositorio/Spreadsheet de pruebas, fixtures, setup/teardown y bloqueo de SPREADSHEET_ID productivo.
+- TASK-634 (ALTO/P1): pruebas conductuales trazadas a CA-F7-148..153 para conflictos, disponibilidad, carga, excepciones, evaluaciones, sustituciones, publicación/cancelación, permisos, notificaciones, asistencia y portales.
+- TASK-635 (ALTO/P1): pruebas concurrentes e integración/E2E con reporte runId y estados PASS/FAIL/BLOCKED.
+
+EVIDENCIA:
+- Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5: getOrCreateSheet 84-88; logStructuredEvent 52-77; withConcurrencyLock/runConcurrencyAndConsistencySuite 3278-3327; getTeacherSubstitutions 6570-6610; getTeacherTeachingLoad 6773-6840; checkScheduleConflict 7493-7720; getCurricularConstraints 13509-13550; getAcademicPlanningAuditLogs 13837-13870; runAcademicPlanningRegressionSuite 14109-14173.
+- Developer Code.gs 8aa4bac67cfe5c8c54da51a0784a56fef633e412; academic-grading-suite.js a22cb3ef376fe09e65c1b17c2f4f5125290bfba6 (412 líneas, sin referencias F7/TC-F7/IMP-25).
+- completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676; Pendientes.md blob 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c; ChangesLogs 5b5cff1926b73a05d1b92087a7bf4b2db75326ff.
+- Informe individual IMP-25 y plan AUDITORIA_FASE_7_PLANIFICACION_HORARIOS_RECURSOS.md no existían; se auditó directamente completadas.md.
+
+PRUEBAS/LÍMITES:
+- Inspección manual/estática y verificación Git/blob.
+- No ejecutados Apps Script, Node, API, navegador, Sheets productivo, concurrencia real ni E2E. La suite no se ejecutó por el riesgo de escribir en el Spreadsheet institucional.
+
+ARCHIVO NUEVO: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-25.md.
+ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+SIN CAMBIOS: código, pruebas, completadas.md, Pendientes.md, ChangesLogs.txt, metodología y rama base.
+SIGUIENTE: F8-Task01, autorización efectiva de operaciones.
+===============================================================================
