@@ -8926,3 +8926,25 @@ ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md;
 CÓDIGO, UI, PRUEBAS, completadas.md, Pendientes.md, ChangesLogs.txt y rama base: SIN CAMBIOS.
 SIGUIENTE TAREA: TAREA-F7-IMP-17 (eventos y actividades con participantes y recursos; CA-F7-106..111).
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-08
+AUDITORÍA FUNCIONAL Y TÉCNICA - TAREA-F7-IMP-17: EVENTOS, PARTICIPANTES Y RECURSOS
+DICTAMEN: NO CUMPLE (marca [X] histórica preservada).
+CRITERIOS: CA-F7-106 PARCIAL; CA-F7-107 CUMPLE; CA-F7-108/109/110/111 NO CUMPLE.
+HALLAZGOS:
+- AUD-NG-236 AMPLIADO: CalendarioAcademico inicializa 9 columnas con SedeID; writer/reader usan 13 sin SedeID; getOrCreateSheet ya crea cabecera, por lo que if getLastRow()===0 no corrige esquema.
+- AUD-NG-241 AMPLIADO: createCalendarEvent usa estado r[6] (registrador), inicio r[3] (fecha fin), fin r[4] (motivo); saveClassroomMaintenance escribe estado r[5], inicio r[2], fin r[3]; slice(1) descarta primera fila sin cabecera. No verifica conflictos integrales.
+- AUD-NG-001 AMPLIADO: fetchApi no transmite token; createCalendarEvent es privado y validateRolePermission exige token.
+- AUD-NG-245 AMPLIADO: no se invoca dispatcher de eventos.
+- AUD-NG-252 NUEVO ALTO/P1: visibilidadRol del cliente; omitirlo devuelve todos y Director/Administrador elimina filtro; responsableUserId cliente-controlado; grupos texto libre.
+- AUD-NG-253 NUEVO ALTO/P1: solo create/get; faltan update/cancel/recurrencia/liberación/historial.
+TAREAS DERIVADAS: nuevas TASK-610 ciclo de vida/historial; TASK-611 privacidad/participantes/actor; TASK-612 regresión CA-F7-106..111. Ampliar TASK-554/562, TASK-545/546/549, TASK-555, TASK-567 y TASK-577..583; coordinar TASK-563.
+DOCUMENTACIÓN: completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, tarea [X] línea 4451; Pendientes.md blob 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c recuperado (1.782.094 caracteres, 20.182 líneas, 0 U+FFFD), consultado sin modificar; informe individual y fuente 404.
+EVIDENCIA: Code.gs 105/113, 168-265, 465-585, 671-735, 6616-6715, 7493-7693, 7694-7834, 7925-7983; js/api.js 11-60; js/secretary.js 589-650; dashboards; teacher UI; suite sin casos; ChangesLogs 2445-2468.
+ARCHIVO NUEVO: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-17.md.
+ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; MapaDependencias.md; AUDITORIA_COMPLETADAS_PLAN.md; Contexto_personal.txt.
+SIN CAMBIOS: código, JS, HTML, tests, completadas.md, Pendientes.md, ChangesLogs.txt, metodología y rama base.
+SIGUIENTE: TAREA-F7-IMP-18, restricciones curriculares y dependencias entre asignaturas.
+===============================================================================

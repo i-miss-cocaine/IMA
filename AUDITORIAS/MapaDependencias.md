@@ -3468,3 +3468,16 @@ Inspección estática/manual. No se ejecutaron Apps Script runtime, HTTP/OAuth, 
 - TASK-607 ciclo de vida y resolución efectiva por fecha; TASK-608 planificación y aplicación multibloque; TASK-609 autorización y atribución verificable.
 - Ampliar TASK-584 (UI), TASK-585 (contrato/estados), TASK-586 (ABAC), TASK-567 (actor), TASK-577..583 (notificaciones), TASK-587 (caché), TASK-591 (carga/estado), TASK-598 (conflictos), TASK-602 (CA-F7-99..105), TASK-605/606 (lock/versiones), TASK-173 (jornada/turnos/ausencias).
 - Detalle y aceptación verificable: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-16.md.
+
+
+## TAREA-F7-IMP-17 - Eventos institucionales, participantes y recursos
+- CalendarioAcademico: inicializador 9 columnas; writer/reader 13 columnas sin SedeID. Ampliar AUD-NG-236/TASK-554.
+- MantenimientoAulas: saveClassroomMaintenance escribe inicio r[2], fin r[3], motivo r[4], estado r[5], actor r[6]; createCalendarEvent usa r[6] como estado y r[3]/r[4] como fechas; slice(1) descarta primera fila. Ampliar AUD-NG-241/TASK-545/546.
+- recursos/grupos son texto libre, sin IDs/relaciones verificables.
+- js/secretary.js envía responsableUserId como nombre o ID del cliente. dashboard-secretaria tiene botón/modal; dashboard-direccion tiene modal sin botón.
+- js/api.js fetchApi no envía token; validateRolePermission exige token. Ampliar AUD-NG-001/TASK-567.
+- getAcademicCalendar confía en visibilidadRol del cliente; omitirlo devuelve todos, Director/Administrador evita filtro; no filtra participantes. Nuevo AUD-NG-252/TASK-611.
+- Sin update/cancel/delete, recurrencia, liberación, diff ni dispatcher. Nuevo AUD-NG-253/TASK-610; ampliar AUD-NG-245/TASK-577..583.
+- Suite no cubre TAREA-F7-IMP-17. TASK-612.
+- Ampliar TASK-554/562, TASK-545/546/549, TASK-555, TASK-567; coordinar TASK-563.
+- Detalle: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-17.md.
