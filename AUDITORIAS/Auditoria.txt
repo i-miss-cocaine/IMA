@@ -9140,7 +9140,7 @@ EVIDENCIA:
 - Code.gs getClassSchedules 6718-6770, exportBulkClassSchedules 3403-3427, getStudentSchedule 7986-8070.
 DOCUMENTACIÓN:
 - Informe individual IMP-23 y AUDITORIA_FASE_7_PLANIFICACION_HORARIOS_RECURSOS.md no existen; se auditó directamente completadas.md.
-- Pendientes.md lectura ordinaria 0; blob 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c recuperado: 1782094 caracteres, 1 líneas, 0 U+FFFD, 511 TASK únicos; no contiene TAREA-F7-IMP-23 ni TASK-626..629. El blob íntegro ya está asociado a la ruta de rama; no se restauró ni modificó.
+- Pendientes.md lectura ordinaria 0; blob 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c recuperado: 1782094 caracteres, 20182 líneas, 0 U+FFFD, 511 TASK únicos; no contiene TAREA-F7-IMP-23 ni TASK-626..629. El blob íntegro ya está asociado a la ruta de rama; no se restauró ni modificó.
 - ChangesLogs histórico declara botones/modal presentes, pero los HTML actuales no contienen los nodos.
 SHAs: teacher-dashboard.html cbb9e6a272a7d8ad33f99727303305d950533e71; student-dashboard.html 6379ea0ed39d71b89747a0280bb925fdf12202c1; teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; student.js e2888cea60322e49a40b89adadb8010489605dcc; style.css f1ff84312ce70949a58eaa099b2aad0ff0a59cb6; Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5; completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676; Pendientes.md 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c; ChangesLogs.txt 5b5cff1926b73a05d1b92087a7bf4b2db75326ff; metodologia cf796728bb384a32537392df2f9c72a339fa03ee.
 PRUEBAS/LÍMITES: inspección manual/estática y verificación Git/blob. No ejecutados navegador, diálogo de impresión, PDF/CSV real, Apps Script, Sheets productivas, HTTP/OAuth, roles/matrículas reales, paginación multipágina, Node ni E2E.
