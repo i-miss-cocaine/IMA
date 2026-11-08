@@ -9687,3 +9687,33 @@ ARCHIVO NUEVO: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK14.md.
 ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
 SIGUIENTE: F8-Task15 — actualizar mapa de dependencias y documentación arquitectónica; verificar informe y, si falta, auditar directamente.
 ===============================================================================
+
+
+===============================================================================
+F8-Task15 / TAREA-MOD-05 — Mapa de dependencias y documentación arquitectónica (C1.275)
+DICTAMEN: NO CUMPLE. CA-MOD-109 NO CUMPLE.
+HALLAZGOS:
+- AUD-NG-336 ALTO/P1: inventario, rutas, esquema de datos y mapa no representan el grafo completo de dependencias directas/indirectas ni sus consumidores/fuentes de datos. TASK-678.
+- AUD-NG-337 ALTO/P1: getArchitectureAndDependencyMapReport usa rutas y orden estáticos; mapValid solo depende de lista no vacía; el orden no coincide con index.html. Reconfirma AUD-NG-330/AUD-NG-324; amplía TASK-674/TASK-665.
+- AUD-NG-338 MEDIO/P2: no existe proceso reproducible de build ni reglas de incorporación de nuevos archivos; staged-migration solo enumera etapas. Reconfirma AUD-NG-331 y amplía TASK-675/TASK-665.
+TAREAS EJECUTABLES DERIVADAS:
+- TASK-678 P1: crear mapa arquitectónico canónico, completo y verificable con páginas, scripts, CSS, servicios, endpoints, contratos, fuentes de datos y orden de carga por página.
+RECONCILIACIÓN:
+- TASK-674 valida rutas contra árbol real; TASK-675 documenta build/deploy y alta de archivos; TASK-665 valida inventario/rutas/dependencias; TASK-677 aporta firmas/contratos reales; TASK-662 mantiene catálogo sincronizado con dispatchers.
+- AUD-NG-324 (ruta raíz del mapa), AUD-NG-330 (manifiesto estático) y AUD-NG-331 (despliegue/exclusión) se amplían sin duplicar.
+EVIDENCIA:
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, F8-Task15 [X], líneas 5121–5140.
+- Pendientes.md blob 676a3f798715f0cdd7d4bc75768472545b8465ee: 1.786.011 caracteres, 20.224 líneas, 515 TASK IDs únicos, máximo TASK-636.
+- repository-inventory.md SHA eeed10fd8da0db3cd119c5a9778e9cb8b2233808; routing-and-paths.md c64e6a952c1ce12a47cb00a2d324f39cd6581a47; staged-migration-procedure.md 2b46af3095596fcd7a9744e4cc500b50b38a34f0; spreadsheets-schema.md 0c8d5c4c2976d4b64949c693e66395896ce16246.
+- AUDITORIAS/MapaDependencias.md SHA 17564f9af34f77c0bb30cbf9461300c46dacdd03; MapaDependencias.md raíz no existe.
+- developer-service Code.gs SHA 8aa4bac67cfe5c8c54da51a0784a56fef633e412: generador 1747–1795; catálogo de contratos 2261–2283.
+- index.html SHA cd742047cdc4948259dd721119429b04f78330ca; carga scripts 427–433 en orden config/persistence/api/games-adapter/ui-common/data/index-ui.
+- Rutas de build no encontradas: package.json, Makefile, vite.config.js, webpack.config.js, scripts/build.js, .clasp.json, .claspignore, appsscript.json.
+PRUEBAS/LÍMITES:
+- Inspección manual y comparación de rutas/orden de carga.
+- No ejecutados Node, HTTP, navegador, GitHub Pages, Apps Script, build ni clasp.
+- Código fuente, completadas.md y Pendientes.md sin cambios; rama base intacta.
+ARCHIVO NUEVO: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK15.md.
+ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+SIGUIENTE: F8-Task16 — independencia funcional y comunicación entre roles; verificar informe y, si falta, auditar directamente.
+===============================================================================

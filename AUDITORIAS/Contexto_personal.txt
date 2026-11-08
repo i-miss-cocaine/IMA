@@ -9370,3 +9370,33 @@ Auditar TAREA-F6-015 y TAREA-F6-040. Buscar informes individuales e historial en
 - **Próxima acción reproducible:** verificar si existe AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK15.md; si falta, auditar docs/architecture/repository-inventory.md, routing-and-paths.md, staged-migration-procedure.md, AUDITORIAS/MapaDependencias.md y backend/developer-service/Code.gs contra integridad, exactitud, rutas, dependencias, contratos y árbol real.
 - **Commit de cierre:** se confirmará consultando HEAD después de publicar el único commit que contiene este informe y el checkpoint.
 ===============================================================================
+
+
+===============================================================================
+## C1.275 — Checkpoint de cierre: auditoría F8-Task15 / TAREA-MOD-05 (2026-11-08)
+
+- **ID de sesión operativo:** IMA-AUDIT-20261108-2330Z-04 (identificador documental; no ID nativo de ChatGPT).
+- **Checkpoint inicial:** C1.274. **Checkpoint de cierre:** C1.275.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **HEAD de partida verificado:** 570c458563c06e33d65e843d840b73357d7cf119.
+- **Árbol de partida:** e928bb0c76f789559cab4270c059788c2e9ba0f6.
+- **Rama base protegida indicada en C1.271:** NG_beta_0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59; comparación 343 commits adelante, 0 detrás. Sin cambios en rama base.
+- **Tarea realizada:** F8-Task15 / TAREA-MOD-05, marcada [X] en completadas.md líneas 5121–5140. No existía AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK15.md; auditoría ejecutada directamente.
+- **Dictamen:** NO CUMPLE. CA-MOD-109 NO CUMPLE.
+- **Hallazgos:** AUD-NG-336 ALTO/P1 documentación incompleta de dependencias/datos; AUD-NG-337 ALTO/P1 generador de mapa estático y orden de inicialización incorrecto/incompleto; AUD-NG-338 MEDIO/P2 ausencia de build/alta de archivos reproducibles.
+- **Tarea nueva:** TASK-678 — mapa arquitectónico canónico, completo y verificable.
+- **Tareas existentes ampliadas:** TASK-674, TASK-675, TASK-665, TASK-677 y TASK-662. AUD-NG-324/330/331 se reconfirman sin duplicar.
+- **Fuentes:** completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676; repository-inventory.md eeed10fd8da0db3cd119c5a9778e9cb8b2233808; routing-and-paths.md c64e6a952c1ce12a47cb00a2d324f39cd6581a47; staged-migration-procedure.md 2b46af3095596fcd7a9744e4cc500b50b38a34f0; spreadsheets-schema.md 0c8d5c4c2976d4b64949c693e66395896ce16246; AUDITORIAS/MapaDependencias.md 17564f9af34f77c0bb30cbf9461300c46dacdd03; developer-service Code.gs 8aa4bac67cfe5c8c54da51a0784a56fef633e412; index.html cd742047cdc4948259dd721119429b04f78330ca.
+- **Pendientes.md:** blob actual 676a3f798715f0cdd7d4bc75768472545b8465ee recuperado íntegro: 1.786.011 caracteres, 20.224 líneas, 515 TASK IDs únicos, máximo TASK-636; no se modificó.
+- **Puntos inspeccionados:** completadas.md 5121–5140; inventario, routing, staged migration, spreadsheet schema, mapa, generador de dependencias, catálogo de contratos y orden de carga de index.html; módulos JS existentes.
+- **Pruebas ejecutadas:** inspección manual de documentos, rutas y secuencia de carga; comprobación de rutas de mapa/build y metadatos del repositorio.
+- **No ejecutadas:** Node, HTTP, navegador, GitHub Pages, Apps Script, build, clasp ni consultas a hojas productivas.
+- **Limitaciones:** no se certifican HTTP 404 ni el comportamiento de deployment; la documentación afirma esos estados sin evidencia runtime.
+- **Archivos nuevos:** AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK15.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Sin cambios:** docs/architecture/repository-inventory.md; routing-and-paths.md; staged-migration-procedure.md; spreadsheets-schema.md; backend/developer-service/Code.gs; index.html; js/config.js; js/persistence.js; js/api.js; js/games-adapter.js; js/ui-common.js; js/data.js; js/index-ui.js; completadas.md; Pendientes.md; código fuente y rama base.
+- **Siguiente tarea exacta:** F8-Task16 — independencia funcional y comunicación entre roles, marcada [X] en completadas.md desde línea 5144.
+- **Próxima acción reproducible:** verificar si existe AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK16.md; si falta, auditar backend/developer-service/Code.gs, backend/user-service/Code.gs y backend/academic-service/Code.gs contra fuentes maestras, hojas funcionales por rol, vistas/proyecciones, contratos de comunicación y copias inconsistentes.
+- **Commit de cierre:** se confirmará consultando HEAD después de publicar el único commit que contiene este informe y el checkpoint.
+===============================================================================

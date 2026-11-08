@@ -4130,3 +4130,34 @@ La estructura backend/tests/docs existe, pero el frontend continúa mayoritariam
 
 ### Dictamen
 La descomposición no está demostrada. El archivo developer-service sigue siendo monolítico y el validador es autorreferencial y confunde acciones de servicios separados. No se ejecutaron pruebas runtime ni se modificó código fuente.
+
+
+---
+
+## F8-Task15 / TAREA-MOD-05 — Mapa de dependencias y documentación arquitectónica (C1.275)
+
+### Documentación y dependencias inspeccionadas
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676: F8-Task15 [X], líneas 5121–5140.
+- repository-inventory.md SHA eeed10fd8da0db3cd119c5a9778e9cb8b2233808: enumera páginas, algunos JS, servicios, CSS/assets; omite persistence.js, games-adapter.js, data.js, index-ui.js, presentation-engine.js y security-minigames.js.
+- routing-and-paths.md SHA c64e6a952c1ce12a47cb00a2d324f39cd6581a47: rutas y assets parciales; no detalla orden por página, llamadas/consumidores ni fuentes de datos.
+- staged-migration-procedure.md SHA 2b46af3095596fcd7a9744e4cc500b50b38a34f0: cinco etapas y rollback; no define comandos de build ni checklist para nuevos archivos.
+- spreadsheets-schema.md SHA 0c8d5c4c2976d4b64949c693e66395896ce16246: fecha documental 2025-05-24; describe tablas/columnas, no su relación con consumidores.
+- AUDITORIAS/MapaDependencias.md SHA 17564f9af34f77c0bb30cbf9461300c46dacdd03: encabezado v7.6.1, relaciones parciales y bitácora histórica mezcladas; no es un grafo completo vigente.
+- No existe MapaDependencias.md en raíz; el único archivo está en AUDITORIAS/. tests y developer-service esperan la ruta raíz (AUD-NG-324).
+- developer-service Code.gs SHA 8aa4bac67cfe5c8c54da51a0784a56fef633e412:
+  - getArchitectureAndDependencyMapReport 1747–1795 devuelve rutas hardcodeadas y un initializationOrder estático; mapValid solo exige lista no vacía.
+  - getCentralConfigAndContractCatalog 2261–2283 declara acciones por servicio, no un grafo de dependencias ni firmas.
+- index.html SHA cd742047cdc4948259dd721119429b04f78330ca: carga config.js, persistence.js, api.js, games-adapter.js, ui-common.js, data.js e index-ui.js (427–433); el orden estático del reporte omite varios y no es específico por página.
+- js/config.js 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc; persistence.js 94ac26feb4f7f31f1f3f2a238e164d23be565d94; api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; games-adapter.js 4f43a67aa98a14e8d381c29ac585bf5952013a85; ui-common.js 986938b8a311a41ed4cb3d135b66b6aaea4bed67; data.js 6b3d5d654f56af320a8bf2acd6a4b77c0c6fd713; index-ui.js c637535e8cc84f02aa18631bc964ff7ef545722e.
+- No existen package.json, Makefile, Vite/Webpack config, scripts/build.js, .clasp.json, .claspignore ni appsscript.json.
+
+### Hallazgos y tareas derivadas
+- AUD-NG-336 ALTO/P1: documentación incompleta de dependencias, consumidores y fuentes de datos. TASK-678.
+- AUD-NG-337 ALTO/P1: generador estático y trivial; no representa el árbol ni orden real. Reconfirma AUD-NG-330/AUD-NG-324; amplía TASK-674/TASK-665.
+- AUD-NG-338 MEDIO/P2: build y alta de nuevos archivos no reproducibles/documentados. Reconfirma AUD-NG-331; amplía TASK-675/TASK-665.
+- Tarea nueva: TASK-678 — mapa arquitectónico canónico, completo y verificable.
+- Tareas existentes ampliadas: TASK-674 (rutas reales), TASK-675 (build/deploy/alta de archivos), TASK-665 (validación), TASK-677 (firmas/contratos), TASK-662 (catálogo/dispatchers).
+- CA-MOD-109: NO CUMPLE.
+
+### Dictamen
+La documentación contiene inventarios y rutas parciales, pero no representa con exactitud el grafo real ni los consumidores de datos. El generador devuelve un manifiesto estático y el proceso de build/incorporación no es reproducible. No se ejecutaron pruebas runtime ni se modificó código fuente.

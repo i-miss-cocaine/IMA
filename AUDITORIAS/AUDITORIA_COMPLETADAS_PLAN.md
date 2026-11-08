@@ -2374,3 +2374,20 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **Código fuente:** sin modificaciones; completadas.md y Pendientes.md sin cambios; rama base intacta.
 - **Siguiente tarea exacta:** F8-Task15 — actualizar el mapa de dependencias y la documentación arquitectónica, marcada [X] en completadas.md desde línea 5121.
 - **Próxima acción:** verificar si existe AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK15.md; si falta, auditar repository-inventory.md, routing-and-paths.md, staged-migration-procedure.md, MapaDependencias.md y developer-service Code.gs contra la correspondencia con el árbol real, rutas, dependencias y contratos.
+
+
+---
+
+## F8-Task15 / TAREA-MOD-05 — Mapa de dependencias y documentación arquitectónica (C1.275)
+
+- **Dictamen:** NO CUMPLE; CA-MOD-109 NO CUMPLE.
+- **Hallazgos:** AUD-NG-336 documentación sin grafo completo de dependencias/datos; AUD-NG-337 generador de mapa estático con orden de carga incorrecto/incompleto; AUD-NG-338 ausencia de build y reglas de incorporación reproducibles.
+- **Tarea nueva:** TASK-678 — construir mapa arquitectónico canónico y verificable con relaciones HTML/JS/CSS, servicios, endpoints, contratos, fuentes de datos y orden por página.
+- **Tareas existentes ampliadas:** TASK-674 (verificación de rutas reales), TASK-675 (build/deploy y alta de archivos), TASK-665 (pruebas de consistencia), TASK-677 (contratos/firmas) y TASK-662 (contratos de servicios).
+- **No duplicar:** AUD-NG-324 (ruta raíz del mapa), AUD-NG-330 (manifiesto estático) y AUD-NG-331 (configuración de despliegue/exclusión) se reconfirman y amplían.
+- **Pendientes.md:** blob actual 676a3f798715f0cdd7d4bc75768472545b8465ee recuperado íntegro (1.786.011 caracteres, 20.224 líneas, 515 IDs únicos, máximo TASK-636); sin cambios.
+- **Evidencia:** repository-inventory.md eeed10fd8da0db3cd119c5a9778e9cb8b2233808; routing-and-paths.md c64e6a952c1ce12a47cb00a2d324f39cd6581a47; staged-migration-procedure.md 2b46af3095596fcd7a9744e4cc500b50b38a34f0; spreadsheets-schema.md 0c8d5c4c2976d4b64949c693e66395896ce16246; MapaDependencias.md en AUDITORIAS/ 17564f9af34f77c0bb30cbf9461300c46dacdd03; developer-service Code.gs 8aa4bac67cfe5c8c54da51a0784a56fef633e412; index.html cd742047cdc4948259dd721119429b04f78330ca.
+- **Pruebas:** inspección manual y comparación de orden de carga; no ejecutados Node, HTTP, navegador, GitHub Pages, Apps Script, build ni clasp.
+- **Código fuente:** sin modificaciones; completadas.md y Pendientes.md sin cambios; rama base intacta.
+- **Siguiente tarea exacta:** F8-Task16 — implementar independencia funcional y comunicación entre roles, marcada [X] en completadas.md desde línea 5144.
+- **Próxima acción:** verificar si existe AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK16.md; si falta, auditar developer-service, user-service y academic-service contra separación de fuentes maestras, hojas funcionales, vistas/proyecciones, contratos de comunicación y ausencia de copias inconsistentes.
