@@ -3641,3 +3641,43 @@ Inspección estática/manual. No se ejecutaron Apps Script runtime, HTTP/OAuth, 
 - getClassSchedules acepta filtros opcionales y puede retornar todos los horarios cuando se omiten; validateContextualAccess no ata los filtros a la identidad verificada si el payload no incluye scopeType/requestedValue.
 - Ampliar AUD-NG-246/TASK-586 y TASK-626/TASK-627. No duplicar el hallazgo de ámbito.
 - El último checkpoint válido de continuidad es C1.254; C1.255 no es válido. Los registros C1.256/C1.257 se conservan como historia, no como punto inicial de continuidad.
+
+
+## Preferencias de calendario y personalización de vistas (TAREA-F7-IMP-24 / AUD-NG-274..276)
+
+### UI y consumidores
+- teacher-dashboard.html (1475 líneas) no contiene .cal-cat-checkbox, data-category, contenedor, leyenda, navegación ni detalle; las dos coincidencias de calendar son iconos no relacionados.
+- student-dashboard.html (412 líneas) no contiene calendario ni controles.
+- js/teacher.js 1221-1250 y js/student.js 844-875 solo definen toggles/reset; no existe consumidor de getAcademicCalendar/getUnifiedInstitutionalCalendar en módulos JS.
+- No hay vista día/semana/período, filtros por asignatura/sección/estado, detalle ni composición responsive.
+
+### Preferencias y eventos críticos
+- calendar_view_prefs y student_cal_view_prefs son claves globales por portal/origen; no incluyen identidad autenticada. Cuentas distintas en el mismo navegador comparten preferencias.
+- No hay hidratación inicial ni reaplicación tras render/refresh. Los reset handlers dependen de checkboxes ausentes.
+- Los toggles ocultan cualquier data-category; no hay allowlist ni protección de cancelaciones/cambios críticos.
+
+### Contratos, visibilidad y datos
+- getAcademicCalendar (Code.gs 6616-6644) filtra solo anoId y visibilidadRol recibido del cliente; omitir visibilidad no filtra y Director/Administrador permite todo.
+- getUnifiedInstitutionalCalendar (5008-5065; doPost 839) autoriza cualquier sesión válida por bypass de validateRolePermission 545-550; no aplica visibilidad/ámbito. Su lectura de CalendarioAcademico usa índices anteriores al contrato de 13 columnas (AUD-NG-236/TASK-554).
+- getIndividualCalendar (7925-7983) acepta fechaInicio/fechaFin pero no los aplica; getUnifiedInstitutionalCalendar no integra clases/evaluaciones y asigna fecha actual a actividades extracurriculares.
+- fetchApi (js/api.js 11-60) no transmite token; ampliar AUD-NG-001/TASK-567.
+- Ciclo de vida/refresh incompleto; ampliar AUD-NG-253/TASK-610 y TASK-562.
+
+### Hallazgos y criterios
+- AUD-NG-274 ALTO/P1: falta calendario integrado, controles, datos y navegación en ambos portales.
+- AUD-NG-275 MEDIO/P2: preferencias compartidas por navegador y no rehidratadas.
+- AUD-NG-276 ALTO/P1: categorías críticas ocultables sin protección.
+- CA-F7-143 PARCIAL; CA-F7-144/145/146/147 NO CUMPLE.
+
+### Tareas ejecutables derivadas
+- TASK-630: integrar calendario en portales docente/estudiante, DTO, categorías, filtros, detalles, navegación, ámbito y móvil.
+- TASK-631: preferencias por usuario, hidratación/reaplicación/reset y protección de eventos críticos.
+- TASK-632: regresión CA-F7-143..147 para filtros, RBAC, preferencias, eventos críticos, refresh y móvil.
+
+### Dependencias existentes ampliadas
+- AUD-NG-252/TASK-611: autorización/visibilidad de lecturas.
+- AUD-NG-236/TASK-554: contrato y mapeo.
+- AUD-NG-001/TASK-567: token en fetchApi.
+- AUD-NG-243/TASK-561 y AUD-NG-253/TASK-610: excepciones/ciclo de vida.
+- AUD-NG-246/TASK-562: filtros temporales y refresh.
+- AUD-NG-161/TASK-612: regresión.

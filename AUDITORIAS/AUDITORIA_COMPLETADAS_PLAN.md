@@ -2119,3 +2119,19 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **CA-F7-140:** se añade evidencia de que Estudiante/Alumno tienen permiso getClassSchedules y el backend permite filtros omitidos, devolviendo el conjunto no excluido por cancelación. La validación contextual no impone automáticamente el ámbito sobre esa consulta.
 - **Reconciliación:** ampliar AUD-NG-246/TASK-586 y TASK-626/TASK-627; no crear un hallazgo duplicado.
 - **Continuidad:** C1.254 es el último checkpoint válido indicado por el usuario. C1.255 no se reconoce como válido; C1.256/C1.257 se conservan como registros históricos.
+
+
+---
+
+## TAREA-F7-IMP-24 — Auditoría de preferencias de calendario y personalización de vistas (C1.259)
+
+- **Dictamen:** NO CUMPLE; se conserva la marca histórica [X].
+- **Criterios:** CA-F7-143 PARCIAL; CA-F7-144/145/146/147 NO CUMPLE.
+- **Hallazgos:** AUD-NG-274 (calendario/UI ausentes); AUD-NG-275 (preferencias compartidas/no rehidratadas); AUD-NG-276 (categorías críticas ocultables).
+- **Tareas ejecutables derivadas:** TASK-630 calendario integrado; TASK-631 preferencias por usuario y protección de eventos críticos; TASK-632 regresión conductual CA-F7-143..147.
+- **Ampliaciones:** AUD-NG-252/TASK-611 visibilidad; AUD-NG-236/TASK-554 contrato; AUD-NG-001/TASK-567 token; AUD-NG-243/TASK-561 y AUD-NG-253/TASK-610 excepciones/ciclo de vida; AUD-NG-246/TASK-562 proyección/refresh; AUD-NG-161/TASK-612 pruebas.
+- **Evidencia:** teacher-dashboard.html 1-1475; student-dashboard.html 1-412; teacher.js 1221-1250; student.js 844-875; api.js 11-60; Code.gs 524-590/839/5008-5065/6616-6644/7925-7983/14109-14165; ChangesLogs 2623-2647; completadas.md 4692-4715.
+- **SHAs:** teacher-dashboard cbb9e6a272a7d8ad33f99727303305d950533e71; student-dashboard 6379ea0ed39d71b89747a0280bb925fdf12202c1; teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; student.js e2888cea60322e49a40b89adadb8010489605dcc; Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5; api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; suite a22cb3ef376fe09e65c1b17c2f4f5125290bfba6.
+- **Documentación:** informe individual IMP-24 y fuente Fase 7 no existen; auditoría ejecutada desde completadas.md. Pendientes.md blob 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c: 1.782.094 caracteres, 20.182 líneas, 0 U+FFFD, 511 TASK únicos; no contiene IMP-24 ni TASK-630..632; blob íntegro presente y no modificado.
+- **Pruebas:** inspección manual/estática y verificación Git/blob. No ejecutados navegador, Apps Script, HTTP/OAuth, datos productivos, cuentas reales, móvil, Node ni E2E.
+- **Siguiente tarea exacta:** TAREA-F7-IMP-25, batería automatizada de regresión, integración y calidad de planificación.
