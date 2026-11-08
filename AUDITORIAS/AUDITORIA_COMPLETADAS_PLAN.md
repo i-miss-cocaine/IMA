@@ -1937,3 +1937,26 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **HEAD de partida:** 348c9d139314233dc1482e99707ef965ed07d027; rama NG_beta_0.0.0.1_work idéntica a ese commit. Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59, 313 commits detrás de la rama de trabajo y 0 adelante respecto de la base.
 - **Próxima acción concreta:** verificar el commit único C1.246, confirmar los cinco documentos de auditoría, verificar HEAD de la rama y volver a comparar la rama base.
 ===============================================================================
+
+
+===============================================================================
+## TAREA-F7-IMP-15 - Auditoría de concurrencia y operaciones críticas (C1.247)
+
+- **Fecha:** 2026-11-08.
+- **Dictamen:** NO CUMPLE; se conserva [X] histórico en completadas.md.
+- **Criterios:** CA-F7-93 NO CUMPLE; CA-F7-94 NO CUMPLE; CA-F7-95 NO CUMPLE; CA-F7-96 PARCIAL; CA-F7-97 NO CUMPLE; CA-F7-98 NO CUMPLE.
+- **Hallazgo nuevo:** AUD-NG-250 (ALTO/P1), relacionado con AUD-NG-247..249 y TAREA-F7-IMP-15.
+- **Informe:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-15.md.
+- **Integridad:** completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, líneas 4382 en adelante, marca [X]. Pendientes.md blob 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c recuperado íntegramente: 1.782.094 caracteres, 20.182 líneas, 0 U+FFFD, 511 TASK únicos TASK-001..TASK-511; no contiene IMP-15. Informe individual y fuente declarada no existen; se audita directamente desde completadas.md.
+- **Evidencia:** cobertura parcial de ScriptLock; varias rutas de escritura no comparten bloqueo; lastUpdated opcional y no integrado en UI; operaciones multi-registro sin rollback; suite de concurrencia no simula carreras reales.
+- **Tareas derivadas:** TASK-605 y TASK-606 nuevas; TAREA-F7-IMP-15 ampliada para atomicidad de restore/copy/generate/template/maintenance; TASK-602 ampliada para CA-F7-93..98; TASK-587/TASK-591/TASK-598 ampliadas.
+- **Archivos inspeccionados:** backend/academic-service/Code.gs (3277-3325, 3430-3525, 6335-6458, 6718-6875, 6900-7118, 7224-7693, 7752-7836, 14000-14173); js/teacher.js (738-782, 2654-2675); tests/regression/academic-grading-suite.js; tests/regression/modular-dashboard-suite.js; completadas.md; Pendientes.md por blob; informes IMP-13/14; plan, Auditoria.txt y MapaDependencias.md.
+- **SHAs de respaldo:** Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5; teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; academic-grading-suite.js a22cb3ef376fe09e65c1b17c2f4f5125290bfba6; modular-dashboard-suite.js 0495e1d526a872c33310935a003a83d924d34683; completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676; Pendientes.md 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c.
+- **Pruebas:** inspección estática/manual y verificaciones Git. No ejecutados Apps Script runtime, concurrencia real, fallo inducido, Node, navegador, E2E ni Sheets productivas.
+- **Archivos nuevos:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-15.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Archivos sin cambios:** backend, JS, HTML, tests, completadas.md, Pendientes.md, ChangesLogs.txt, metodología y rama base.
+- **Última tarea completamente auditada:** TAREA-F7-IMP-15.
+- **Tarea en curso:** ninguna al cierre.
+- **Siguiente tarea exacta:** TAREA-F7-IMP-16, sustituciones y reasignación de clases afectadas. Buscar informe individual/origen; si falta, auditar directamente los requisitos completos de completadas.md y el código vigente.
+===============================================================================

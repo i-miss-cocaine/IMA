@@ -8516,3 +8516,38 @@ Auditar TAREA-F6-015 y TAREA-F6-040. Buscar informes individuales e historial en
 - **Siguiente tarea exacta:** TAREA-F7-IMP-15, concurrencia y protección de operaciones críticas; CA-F7-93..98. Debe auditarse desde sus requisitos completos y código vigente, incorporando la atomicidad de importación/publicación masiva sin duplicar IDs.
 - **Próxima acción concreta:** verificar el commit único que contiene C1.246 y los cinco documentos; confirmar HEAD de NG_beta_0.0.0.1_work y comparar NG_beta_0.0.0.1 para confirmar que la base permanece intacta.
 ===============================================================================
+
+
+===============================================================================
+## C1.247 - Checkpoint de cierre: auditoría TAREA-F7-IMP-15 (2026-11-08)
+
+- **ID de sesión operativo:** IMA-AUDIT-20261108-1016CST (identificador documental, no ID nativo de ChatGPT).
+- **Checkpoint inicial:** C1.246. **Checkpoint de cierre:** C1.247.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Archivo de contexto:** AUDITORIAS/Contexto_personal.txt.
+- **Rama de trabajo autorizada:** NG_beta_0.0.0.1_work.
+- **Rama base protegida:** NG_beta_0.0.0.1.
+- **HEAD de partida verificado:** f63f3c8aee5596d55f2a56eb332f261c12c4ed6e (commit C1.246).
+- **HEAD de rama base verificado:** 44d9891132332e692dbe2ba8602b41f50a508a59. Comparación previa: rama de trabajo 314 commits adelante y 0 detrás; la rama base no se modifica.
+- **Base de árbol para construir el commit:** 8490dbd9e01cf354b8876ef7f8183146e8085d53 (árbol de C1.244). Para conservar C1.245 y C1.246 se reaplican los seis blobs vigentes de los seis paths documentales acumulados: AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md, AUDITORIAS/Auditoria.txt, AUDITORIAS/MapaDependencias.md, AUDITORIAS/Contexto_personal.txt, AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-13.md y AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-14.md. Los diffs de C1.245 y C1.246 confirman que cada commit modificó exactamente cinco paths: cuatro documentos acumulativos y un informe individual nuevo por commit. Se agrega además el nuevo informe IMP-15.
+- **Último checkpoint válido de inicio:** C1.246.
+- **Tarea realizada:** TAREA-F7-IMP-15, marcada [X] en completadas.md; dictamen técnico NO CUMPLE.
+- **Criterios:** CA-F7-93 NO CUMPLE; CA-F7-94 NO CUMPLE; CA-F7-95 NO CUMPLE; CA-F7-96 PARCIAL; CA-F7-97 NO CUMPLE; CA-F7-98 NO CUMPLE.
+- **Hallazgo nuevo:** AUD-NG-250 (ALTO/P1), cobertura incompleta de bloqueos, versionado optimista no conectado, operaciones multi-registro sin recuperación uniforme y ausencia de pruebas reales de concurrencia.
+- **Tareas derivadas:** TASK-605 y TASK-606 nuevas; TAREA-F7-IMP-15 ampliada para restore/copy/generate/template/maintenance además de import/publish; TASK-602 ampliada para CA-F7-93..98; TASK-587/TASK-591/TASK-598 ampliadas sin duplicar IDs.
+- **Integridad documental:** completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, líneas 4382 en adelante, marca [X]. Pendientes.md blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c recuperado: 1.782.094 caracteres, 20.182 líneas, cero U+FFFD, 511 IDs TASK únicos TASK-001..TASK-511; no contiene TAREA-F7-IMP-15 y coincide con el SHA de la ruta. La lectura convencional devuelve 0 caracteres; no se restaura porque el blob completo ya está presente. Informe individual y fuente declarada: 404.
+- **Puntos inspeccionados:** backend/academic-service/Code.gs: withConcurrencyLock/runConcurrencyAndConsistencySuite (3277-3325), importBulkClassSchedules (3430-3525), generateAutoSchedules (6335-6458), getClassSchedules (6718-6768), getTeacherTeachingLoad (6773-6841), saveTeacherWorkLoadPreferences (6842-6875), createClassSchedule (6900-6991), deleteClassSchedule (6992-7007), publishClassSchedules (7008-7118), restoreScheduleVersion (7224-7317), copyClassSchedules (7317-7492), checkScheduleConflict (7493-7693), saveClassroomResource (7752-7796), saveClassroomMaintenance (7797-7836), applyScheduleTemplate (14000-14080), runAcademicPlanningRegressionSuite (14080-14173), doPost (671-975); js/teacher.js (738-782, 2654-2675); suites regression; completadas.md; Pendientes.md por blob; informes IMP-13/14; plan, Auditoria.txt y MapaDependencias.md.
+- **Evidencia:** solo una parte de los escritores usa ScriptLock; lastUpdated no se devuelve ni se envía desde UI; varias rutas pueden intercalarse con creación/publicación; import/publish/restore/copy/generate/maintenance hacen escrituras secuenciales sin rollback; pruebas solo verifican lock unitario o estructura de respuestas; errores sin clasificación uniforme.
+- **SHAs de respaldo:** Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5; teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; academic-grading-suite.js a22cb3ef376fe09e65c1b17c2f4f5125290bfba6; modular-dashboard-suite.js 0495e1d526a872c33310935a003a83d924d34683; completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676; Pendientes.md 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c; metodología cf796728bb384a32537392df2f9c72a339fa03ee.
+- **Pruebas ejecutadas:** inspección estática/manual de los flujos y funciones enumerados; recuperación y validación del blob; verificación de rama, HEAD, diffs y SHAs.
+- **No ejecutadas:** Apps Script runtime, dos sesiones concurrentes, fallo inducido de Sheets, Node, navegador/DOM, E2E ni datos productivos.
+- **Archivos nuevos:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-15.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Archivos sin cambios:** backend/academic-service/Code.gs; js/teacher.js; teacher-dashboard.html; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; rama base.
+- **Última tarea completamente auditada:** TAREA-F7-IMP-15.
+- **Tarea en curso:** ninguna al cierre.
+- **Siguiente tarea exacta:** TAREA-F7-IMP-16, gestión de sustituciones y reasignación de clases afectadas.
+- **Próxima acción concreta:** buscar `AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-16.md` y la fuente declarada; si no existen, leer el bloque completo de TAREA-F7-IMP-16 en completadas.md y auditar sus requisitos directamente contra el código de NG_beta_0.0.0.1_work.
+- **Commit de cierre:** el commit único que contiene C1.247 y los cuatro documentos actualizados más el informe nuevo; su SHA se confirma consultando el HEAD de NG_beta_0.0.0.1_work después de publicar. No se escribe dentro de este mismo checkpoint para evitar autorreferencia.
+
+===============================================================================

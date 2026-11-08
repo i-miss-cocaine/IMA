@@ -8848,3 +8848,40 @@ ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md;
 CÓDIGO, UI, PRUEBAS, completadas.md, Pendientes.md, ChangesLogs.txt y rama base: SIN CAMBIOS.
 SIGUIENTE TAREA: TAREA-F7-IMP-15 (CA-F7-93..98).
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-08
+AUDITORÍA FUNCIONAL Y TÉCNICA - TAREA-F7-IMP-15: CONTROL DE CONCURRENCIA Y PROTECCIÓN DE OPERACIONES CRÍTICAS
+DICTAMEN: NO CUMPLE (marca histórica [X] preservada en completadas.md).
+HALLAZGO NUEVO: AUD-NG-250 (ALTO/P1).
+CRITERIOS:
+- CA-F7-93 NO CUMPLE: el bloqueo no cubre todos los escritores; deleteClassSchedule, generateAutoSchedules, copyClassSchedules, restoreScheduleVersion, applyScheduleTemplate y saveTeacherWorkLoadPreferences no comparten LockService con create/publish/import.
+- CA-F7-94 NO CUMPLE: lastUpdated es opcional; getClassSchedules no lo devuelve y js/teacher.js no lo envía.
+- CA-F7-95 NO CUMPLE: no existe versión esperada obligatoria; saveClassroomResource y otras rutas sobrescriben sin compare-and-set.
+- CA-F7-96 PARCIAL: algunos mensajes identifican horarioId/razón, pero faltan códigos uniformes y trazabilidad por entidad; doPost registra excepciones genéricas y no registra resultados status:error devueltos directamente.
+- CA-F7-97 NO CUMPLE: importación, publicación, restauración, copia, generación y mantenimiento realizan escrituras secuenciales sin rollback/reconciliación uniforme.
+- CA-F7-98 NO CUMPLE: runConcurrencyAndConsistencySuite solo comprueba adquisición/liberación de un lock; no simula dos escritores ni fallos de persistencia.
+EVIDENCIA:
+- backend/academic-service/Code.gs: withConcurrencyLock 3277-3291; runConcurrencyAndConsistencySuite 3293-3325; importBulkClassSchedules 3430-3525; generateAutoSchedules 6335-6458; getClassSchedules 6718-6768; getTeacherTeachingLoad 6773-6841; saveTeacherWorkLoadPreferences 6842-6875; createClassSchedule 6900-6991; deleteClassSchedule 6992-7007; publishClassSchedules 7008-7118; restoreScheduleVersion 7224-7317; copyClassSchedules 7317-7492; checkScheduleConflict 7493-7693; saveClassroomResource 7752-7796; saveClassroomMaintenance 7797-7836; applyScheduleTemplate 14000-14080; runAcademicPlanningRegressionSuite 14080-14173; doPost 671-975.
+- js/teacher.js: createClassSchedule 738-747 y 769-782 omite horarioId/lastUpdated; saveClassroomResource 2654-2675 omite versión.
+- getClassSchedules no devuelve timestamp/revisión; createClassSchedule solo compara existingRow[8] cuando lastUpdated fue suministrado.
+- saveClassroomMaintenance escribe MantenimientoAulas y después SedesAulas; falla de la segunda operación deja estados divergentes.
+- import/publish/restauración/copia/generación hacen múltiples escrituras sin transacción/rollback.
+- runConcurrencyAndConsistencySuite solo prueba callback con lock; suites regression no contienen casos de CA-F7-93..98.
+DOCUMENTACIÓN:
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, líneas 4382 en adelante: TAREA-F7-IMP-15 [X], requisitos completos.
+- Pendientes.md lectura convencional 0 caracteres; blob recuperado 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c: 1.782.094 caracteres, 20.182 líneas, 0 U+FFFD, 511 TASK únicos TASK-001..TASK-511; no contiene TAREA-F7-IMP-15. El blob coincide con el SHA de la ruta y no requiere restauración.
+- Informe individual AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-15.md y fuente AUDITORIA_FASE_7_PLANIFICACION_HORARIOS_RECURSOS.md: 404; se realiza auditoría desde cero.
+TAREAS EJECUTABLES DERIVADAS:
+- Nuevas: TASK-605 (unificar exclusión mutua de todas las mutaciones) y TASK-606 (versionado optimista obligatorio).
+- Ampliar TAREA-F7-IMP-15 para atomicidad/recuperación de restauración, copia, generación, plantillas y mantenimiento, además de importación y publicación.
+- Ampliar TASK-602 para pruebas CA-F7-93..98; TASK-587 para invalidación/frescura; TASK-591 para estados/carga; TASK-598 para conflictos de candidatos de lote.
+- No duplicar atomicidad, pruebas, invalidación ni semántica de estados ya cubiertas.
+RELACIONES: AUD-NG-247, AUD-NG-248, AUD-NG-249, TASK-587, TASK-591, TASK-598, TASK-602, TAREA-F7-IMP-15.
+PRUEBAS/LÍMITES: inspección estática/manual y verificación Git; no ejecutados Apps Script runtime, concurrencia real, Google Sheets productivas, fallo inducido, Node, navegador ni E2E.
+ARCHIVOS NUEVOS: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-15.md.
+ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+CÓDIGO, UI, PRUEBAS, completadas.md, Pendientes.md, ChangesLogs.txt y rama base: SIN CAMBIOS.
+SIGUIENTE TAREA: TAREA-F7-IMP-16 (sustituciones y reasignación de clases afectadas).
+===============================================================================

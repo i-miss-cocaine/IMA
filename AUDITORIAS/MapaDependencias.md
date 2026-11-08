@@ -3421,3 +3421,24 @@ Inspección estática/manual. No se ejecutaron Apps Script runtime, HTTP/OAuth, 
 - Nuevas tareas: TASK-603 (diff real de impacto); TASK-604 (lote de publicación inmutable, propiedad/alcance y actor verificado).
 - Ampliaciones: TASK-577..583, TASK-585/TASK-591, TASK-598, TASK-601, TASK-602, TASK-567 y TAREA-F7-IMP-15.
 - Detalle y criterios verificables: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-14.md.
+
+
+## Control de concurrencia y operaciones críticas (TAREA-F7-IMP-15 / AUD-NG-250)
+
+### Mapa de escritores y bloqueos
+- createClassSchedule (6900-6991), importBulkClassSchedules (3430-3525), publishClassSchedules (7008-7118), saveClassroomResource (7752-7796) y saveClassroomMaintenance (7797-7836) adquieren ScriptLock.
+- deleteClassSchedule (6992-7007), generateAutoSchedules (6335-6458), copyClassSchedules (7317-7492), restoreScheduleVersion (7224-7317), applyScheduleTemplate (14000-14080) y saveTeacherWorkLoadPreferences (6842-6875) no comparten ese bloqueo.
+- checkScheduleConflict (7493-7693) no bloquea por sí mismo; su seguridad depende del llamador. withConcurrencyLock (3277-3291) existe, pero no se aplica uniformemente a los escritores de planificación.
+- getClassSchedules (6718-6768) no devuelve lastUpdated/revisión. createClassSchedule compara existingRow[8] únicamente si el cliente envía lastUpdated; js/teacher.js (738-747, 769-782) no lo envía.
+- saveClassroomResource actualiza campos individuales sin versión esperada. saveClassroomMaintenance escribe MantenimientoAulas y SedesAulas en pasos separados sin rollback.
+- publish/import/restore/copy/generate/template aplican escrituras múltiples secuenciales; no existe transacción/rollback/reconciliación uniforme.
+
+### Dependencias, estado y errores
+- createClassSchedule y publishClassSchedules validan disponibilidad dentro de ScriptLock, pero escritores sin lock pueden modificar los mismos datos durante esas operaciones.
+- getTeacherTeachingLoad (6773-6841) excluye solo Inactivo; Borrador/Cancelado pueden afectar la carga. Relación: AUD-NG-247/TASK-591.
+- runConcurrencyAndConsistencySuite (3293-3325) prueba solo adquisición/liberación; runAcademicPlanningRegressionSuite (14080-14173) TC-F7-01..07 no cubre CA-F7-93..98.
+- doPost registra excepciones como UNHANDLED_EXCEPTION, pero no clasifica de forma uniforme conflictos de planificación, versiones obsoletas, lock timeout y fallos parciales.
+- AUD-NG-250 (ALTO/P1), relacionado con AUD-NG-247..249 y TAREA-F7-IMP-15.
+- Nuevas tareas: TASK-605 (cobertura uniforme de bloqueo) y TASK-606 (versionado optimista obligatorio).
+- Ampliaciones: TAREA-F7-IMP-15 (atomicidad/restauración/copia/generación/mantenimiento); TASK-602 (regresión CA-F7-93..98); TASK-587 (invalidación/frescura); TASK-591 (estado/carga); TASK-598 (conflictos dentro del lote).
+- Detalle y aceptación verificable: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-15.md.
