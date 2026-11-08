@@ -9624,3 +9624,36 @@ ARCHIVO NUEVO: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK12.md.
 ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
 SIGUIENTE: F8-Task13 — estructura modular de carpetas; verificar informe individual y, si falta, auditar directamente.
 ===============================================================================
+
+
+===============================================================================
+F8-Task13 / TAREA-MOD-02 — Estructura modular de carpetas (C1.273)
+DICTAMEN: NO CUMPLE. CA-MOD-103 NO CUMPLE; CA-MOD-104 PARCIAL/NO ACREDITADO.
+HALLAZGOS:
+- AUD-NG-329 ALTO/P1: migración frontend incompleta; páginas, JS, CSS y assets siguen en raíz/js/css/imagenes; faltan archivos esperados app/js, app/css y app/assets. Deriva TASK-673.
+- AUD-NG-330 ALTO/P1: validateModularFolderStructure compara un manifiesto estático, agrega index.htm por defecto y asume publicExposingRisk=false; puede certificar una estructura inexistente. Deriva TASK-674.
+- AUD-NG-331 MEDIO/P2: repositorio público sin .clasp.json, .claspignore, appsscript.json ni .gitignore; no se acredita despliegue ni exclusión de secretos. No se confirmó una filtración concreta. Deriva TASK-675.
+- AUD-NG-332 MEDIO/P2: la tarea exige index.htm, pero existe index.html; la documentación permite ambos. Requiere reconciliar contrato y probar el hosting. Deriva TASK-673/TASK-674.
+TAREAS EJECUTABLES DERIVADAS:
+- TASK-673 P1: completar migración física a app/html, app/js, app/css y app/assets, actualizar rutas/documentación y definir el nombre canónico del punto de entrada.
+- TASK-674 P1: verificar el árbol real y el punto de entrada; eliminar falsos positivos por manifiesto/defaults; integrar pruebas negativas y gate de Stage 3.
+- TASK-675 P2: configurar despliegue clasp o alternativa, exclusión de archivos sensibles y verificación de paquete.
+RECONCILIACIÓN:
+- TASK-665 amplía pruebas de estructura/rutas/despliegue; TASK-488 actualiza rutas de dashboards; TASK-636 conserva protección de identidad y secretos. AUD-NG-324 sigue cubriendo la ruta incorrecta del mapa en la suite; no duplicar.
+EVIDENCIA:
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, F8-Task13 [X], líneas 5071–5093.
+- Pendientes.md blob actual 676a3f798715f0cdd7d4bc75768472545b8465ee: 1.786.011 caracteres, 20.224 líneas, 515 IDs TASK únicos, máximo TASK-636; blob íntegro recuperado desde Git.
+- folder-structure.md SHA ca44aea0abaf80bab58adb4b7bf51935f404bf96; developer-service Code.gs SHA 8aa4bac67cfe5c8c54da51a0784a56fef633e412.
+- index.html SHA cd742047cdc4948259dd721119429b04f78330ca; dynamic-dashboard.html SHA 765a45e5666c24c430e841cb70c3d71d03cf9074.
+- tests/regression/modular-dashboard-suite.js SHA 0495e1d526a872c33310935a003a83d924d34683; README SHA 1d76341a6a286ebd0115e319f77b8c33b727dbba; inventory SHA eeed10fd8da0db3cd119c5a9778e9cb8b2233808; routing SHA c64e6a952c1ce12a47cb00a2d324f39cd6581a47.
+- Rutas ausentes confirmadas: index.htm; app/js/ui-common.js; app/css/style.css; app/assets/logo.png; app/html/dashboard-coordinacion.html; app/html/dashboard-direccion.html; .clasp.json; .claspignore; appsscript.json; .gitignore.
+- Rutas existentes: index.html, app/html/dashboards/dynamic-dashboard.html, backend/developer-service/Code.gs, tests/regression/modular-dashboard-suite.js; repo public.
+PRUEBAS/LÍMITES:
+- Inspección estática/manual de estructura, referencias, documentación, validador y pruebas.
+- No ejecutados Node, Apps Script, clasp, HTTP, GitHub Pages, navegador ni escaneo completo de secretos.
+- No se confirmó filtración concreta; no hay control de exclusión verificable.
+- Código fuente, completadas.md y Pendientes.md sin cambios; rama base intacta.
+ARCHIVO NUEVO: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK13.md.
+ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+SIGUIENTE: F8-Task14 — modularizar archivos grandes sin eliminar ni duplicar funciones; comprobar informe individual y, si falta, auditar directamente.
+===============================================================================

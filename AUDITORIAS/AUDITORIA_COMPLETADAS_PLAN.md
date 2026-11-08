@@ -2337,3 +2337,22 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **Código fuente:** sin modificaciones; completadas.md y Pendientes.md sin cambios; rama base intacta.
 - **Siguiente tarea exacta:** F8-Task13 — estructura modular de carpetas.
 - **Próxima acción:** verificar si existe AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK13.md; si falta, auditar docs/architecture/folder-structure.md y backend/developer-service/Code.gs contra CA-MOD-103/104, incluyendo index.htm en raíz, recursos, clasp/despliegue y exposición de archivos sensibles.
+
+
+---
+
+## F8-Task13 / TAREA-MOD-02 — Estructura modular de carpetas (C1.273)
+
+- **Dictamen:** NO CUMPLE.
+- **Criterios:** CA-MOD-103 NO CUMPLE; CA-MOD-104 PARCIAL/NO ACREDITADO.
+- **Hallazgos:** AUD-NG-329 migración física frontend incompleta; AUD-NG-330 validador de estructura con falsos positivos; AUD-NG-331 ausencia de configuración de despliegue/exclusión verificable; AUD-NG-332 divergencia index.htm/index.html.
+- **Tareas nuevas:** TASK-673 migrar páginas, scripts, estilos y assets a app/ y reconciliar el punto de entrada; TASK-674 verificar el árbol Git real y corregir el gate Stage 3; TASK-675 configurar despliegue reproducible y exclusión de secretos.
+- **Tareas existentes ampliadas:** TASK-665 (pruebas de estructura/rutas/despliegue), TASK-488 (rutas reales de dashboards) y TASK-636 (protección de identidad/secretos).
+- **No duplicar:** AUD-NG-324 ya registra la ruta incorrecta de MapaDependencias.md en la suite.
+- **Pendientes.md:** blob actual 676a3f798715f0cdd7d4bc75768472545b8465ee recuperado íntegro (1.786.011 caracteres, 20.224 líneas, 515 IDs únicos, máximo TASK-636); sin cambios. TASK-671/672 se mantienen en el informe F8-Task11 y no se recrean.
+- **Evidencia:** folder-structure.md ca44aea0abaf80bab58adb4b7bf51935f404bf96; developer-service Code.gs 8aa4bac67cfe5c8c54da51a0784a56fef633e412; index.html cd742047cdc4948259dd721119429b04f78330ca; dynamic-dashboard.html 765a45e5666c24c430e841cb70c3d71d03cf9074; suite 0495e1d526a872c33310935a003a83d924d34683; README 1d76341a6a286ebd0115e319f77b8c33b727dbba; inventory eeed10fd8da0db3cd119c5a9778e9cb8b2233808; routing c64e6a952c1ce12a47cb00a2d324f39cd6581a47.
+- **Rutas no encontradas:** index.htm; app/js/ui-common.js; app/css/style.css; app/assets/logo.png; app/html/dashboard-coordinacion.html; app/html/dashboard-direccion.html; .clasp.json; .claspignore; appsscript.json; .gitignore.
+- **Pruebas:** inspección manual; no ejecutados Node, Apps Script, clasp, HTTP, GitHub Pages, navegador ni escaneo completo de secretos.
+- **Código fuente:** sin modificaciones; completadas.md y Pendientes.md sin cambios; rama base intacta.
+- **Siguiente tarea exacta:** F8-Task14 — modularizar archivos grandes sin eliminar ni duplicar funciones, marcada [X] en completadas.md desde línea 5097.
+- **Próxima acción:** verificar si existe AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK14.md; si falta, auditar docs/architecture/monolith-decomposition-plan.md y backend/developer-service/Code.gs contra CA-MOD-105/106, comprobando contratos públicos, duplicados, colisiones, consumidores y compatibilidad.

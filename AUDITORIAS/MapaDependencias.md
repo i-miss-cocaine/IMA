@@ -4073,3 +4073,35 @@ Inspección estática/manual y Git/blob; no se ejecutaron requests HTTP, Apps Sc
 - CA-AD-116: NO CUMPLE.
 - CA-AD-117: NO CUMPLE.
 - No se ejecutaron pruebas runtime ni se modificó código fuente.
+
+
+---
+
+## F8-Task13 / TAREA-MOD-02 — Estructura modular de carpetas (C1.273)
+
+### Estructura y dependencias comprobadas
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676: F8-Task13 [X], líneas 5071–5093.
+- folder-structure.md SHA ca44aea0abaf80bab58adb4b7bf51935f404bf96: declara app/html, app/js, app/css, app/assets, backend, tests y docs; nota que la estructura es recomendada, no obligatoria.
+- app/html/dashboards/dynamic-dashboard.html SHA 765a45e5666c24c430e841cb70c3d71d03cf9074: único dashboard modular inspeccionado; sigue cargando ../../../css, ../../../imagenes y ../../../js.
+- Archivos core aún en raíz: index.html cd742047cdc4948259dd721119429b04f78330ca; js/config.js 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc; css/style.css f1ff84312ce70949a58eaa099b2aad0ff0a59cb6; dashboards HTML raíz, incluyendo dashboard-coordinacion.html 08de8e4eb150ee9f6aad536ca08e8f76f2e0e896.
+- No existen app/js/ui-common.js, app/css/style.css, app/assets/logo.png, app/html/dashboard-coordinacion.html ni app/html/dashboard-direccion.html.
+- README.md SHA 1d76341a6a286ebd0115e319f77b8c33b727dbba, repository-inventory.md SHA eeed10fd8da0db3cd119c5a9778e9cb8b2233808 y routing-and-paths.md SHA c64e6a952c1ce12a47cb00a2d324f39cd6581a47 siguen documentando root/js/css/imagenes.
+- index.htm no existe; index.html existe en raíz. El HTML referencia CSS/JS/assets en rutas raíz.
+- No existen .clasp.json, .claspignore, appsscript.json ni .gitignore en la raíz. El repo tiene visibilidad public.
+- developer-service Code.gs SHA 8aa4bac67cfe5c8c54da51a0784a56fef633e412:
+  - getArchitectureAndDependencyMapReport 1747–1795 devuelve una lista de rutas estática.
+  - validateModularFolderStructure 1895–1964 compara subcadenas contra esa lista, agrega index.htm/index.html en rootFiles por defecto y establece publicExposingRisk=false por defecto.
+  - validateStagedMigrationProgress 1966–1999 usa esa respuesta para marcar STAGE-3-FOLDER-STRUCTURE.
+- tests/regression/modular-dashboard-suite.js SHA 0495e1d526a872c33310935a003a83d924d34683, líneas 22–50, comprueba presencia parcial y cadenas; no valida app/js, app/css, app/assets, index.htm, clasp o secretos.
+
+### Hallazgos y tareas derivadas
+- AUD-NG-329 ALTO/P1: migración física frontend incompleta. CA-MOD-103 NO CUMPLE. TASK-673.
+- AUD-NG-330 ALTO/P1: validador programático falso positivo por manifiesto/defaults; Stage 3 puede aprobar sin árbol real. TASK-674.
+- AUD-NG-331 MEDIO/P2: despliegue y exclusión de secretos sin configuración verificable en repo público; no se confirmó secreto filtrado. TASK-675.
+- AUD-NG-332 MEDIO/P2: index.htm ausente, index.html presente; contradicción entre criterio y documento. CA-MOD-104 PARCIAL/NO ACREDITADO.
+- CA-MOD-103: NO CUMPLE. CA-MOD-104: PARCIAL/NO ACREDITADO.
+- Tareas derivadas: TASK-673 (migración frontend y punto de entrada), TASK-674 (verificación real y regresión), TASK-675 (despliegue y exclusión de secretos).
+- Reconciliación: TASK-665, TASK-488 y TASK-636 se amplían; AUD-NG-324 no se duplica.
+
+### Dictamen
+La estructura backend/tests/docs existe, pero el frontend continúa mayoritariamente en raíz/js/css/imagenes. El validador usa un manifiesto estático y defaults que producen falsos positivos. No hay configuración clasp ni exclusión verificable. No se ejecutaron pruebas runtime ni se modificó código fuente.
