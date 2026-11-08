@@ -2091,3 +2091,18 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **Pruebas:** inspección manual/estática y verificación Git/blob. No ejecutados Apps Script, Sheets productivas, HTTP/OAuth, requests anónimas reales, DOM/navegador, roles reales, concurrencia, Node ni E2E.
 - **Documentación:** informe individual IMP-22 y fuente de Fase 7 no existen; auditoría ejecutada directamente desde completadas.md. Pendientes.md lectura ordinaria 0 caracteres; blob 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c recuperado íntegramente (1.782.094 caracteres, 20.182 líneas, 0 U+FFFD, 511 TASK únicos TASK-001..TASK-511); ya está en la rama y no requiere restauración.
 - **Siguiente tarea exacta:** TAREA-F7-IMP-23, herramientas de impresión y distribución de horarios.
+
+
+---
+
+## TAREA-F7-IMP-23 — Auditoría de impresión y distribución de horarios (C1.256)
+
+- **Dictamen:** NO CUMPLE; se conserva la marca histórica [X].
+- **Criterios:** CA-F7-138 NO CUMPLE; CA-F7-139 NO CUMPLE; CA-F7-140 NO CUMPLE; CA-F7-141 NO CUMPLE; CA-F7-142 NO VERIFICABLE.
+- **Hallazgos:** AUD-NG-270..273 nuevos: impresión docente desconectada; estado/período falsos; impresión estudiante sin área imprimible; paginación insuficiente.
+- **Tareas ejecutables derivadas:** TASK-626 UI/filtros/preview docente; TASK-627 impresión estudiante y ámbito de matrícula; TASK-628 snapshot con versión y metadatos reales; TASK-629 paginación multipágina.
+- **Ampliaciones:** AUD-NG-246/TASK-584..589 para DOM y ámbito; AUD-NG-247 para filtros; AUD-NG-248/TASK-597..602 para exportación CSV/JSON; AUD-NG-161 para pruebas conductuales.
+- **Evidencia:** teacher-dashboard.html 1-1475; student-dashboard.html 1-412; teacher.js 592-682/1251-1294; student.js 874-955; style.css 946-971; Code.gs 3403-3427/6718-6770/7986-8070; ChangesLogs registro IMP-23; completadas.md 4658-4688.
+- **SHAs:** teacher-dashboard cbb9e6a272a7d8ad33f99727303305d950533e71; student-dashboard 6379ea0ed39d71b89747a0280bb925fdf12202c1; teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; student.js e2888cea60322e49a40b89adadb8010489605dcc; style.css f1ff84312ce70949a58eaa099b2aad0ff0a59cb6; Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5.
+- **Pruebas:** inspección manual/estática y Git/blob. No ejecutados navegador, impresión/PDF, CSV real, Apps Script, Sheets productivas, HTTP/OAuth, roles/matrículas reales, Node ni E2E.
+- **Siguiente tarea exacta:** TAREA-F7-IMP-24, preferencias de calendario y personalización de vistas.

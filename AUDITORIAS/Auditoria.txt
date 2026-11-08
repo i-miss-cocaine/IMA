@@ -9106,3 +9106,46 @@ ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md;
 SIN CAMBIOS: backend/academic-service/Code.gs; js/teacher.js; teacher-dashboard.html; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; rama base.
 SIGUIENTE: TAREA-F7-IMP-23, herramientas de impresión y distribución de horarios.
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-08
+AUDITORÍA FUNCIONAL Y TÉCNICA - TAREA-F7-IMP-23: IMPRESIÓN Y DISTRIBUCIÓN DE HORARIOS
+DICTAMEN: NO CUMPLE (marca histórica [X] preservada en completadas.md).
+CRITERIOS:
+- CA-F7-138 NO CUMPLE: faltan filtros/selección y flujo de impresión; el CSV existente ignora anoLectivo y está desconectado de la UI (AUD-NG-248).
+- CA-F7-139 NO CUMPLE: la ruta estudiante imprime sin área visible; la docente no tiene preview conectado y no hay paginación real.
+- CA-F7-140 NO CUMPLE: getStudentSchedule consume userId/grado/seccion del cliente sin validar la matrícula/ámbito; ampliar AUD-NG-246, sin duplicar la causa raíz.
+- CA-F7-141 NO CUMPLE: el controlador docente fija período 2026 y etiqueta toda salida como DOCUMENTO OFICIAL PUBLICADO.
+- CA-F7-142 NO VERIFICABLE: no existe ruta funcional conectada ni snapshot/versionado que pueda probarse.
+HALLAZGOS NUEVOS:
+- AUD-NG-270 ALTO/P1: teacher-dashboard.html carece de botón/modal/preview/containers; openPrintScheduleModal/executePrintSchedule quedan huérfanos y fallback imprime página completa bajo CSS que oculta todo salvo .printable-schedule-area.
+- AUD-NG-271 ALTO/P1: executePrintSchedule fija estado “DOCUMENTO OFICIAL PUBLICADO” y período 2026; no deriva estado/versión/período ni filtra el dataset seleccionado.
+- AUD-NG-272 ALTO/P1: executeStudentPrintSchedule solo llama window.print(); student-dashboard.html carece de modal/área de horario y el CSS oculta todo salvo .printable-schedule-area que el controlador no crea.
+- AUD-NG-273 MEDIO/P2: @media print solo define A4 landscape/visibilidad; no gestiona saltos, filas, encabezados/pies repetidos ni numeración real (docente fija Página 1 de 1).
+AMPLIACIONES SIN DUPLICACIÓN:
+- AUD-NG-246/TASK-584..589: DOM de horario, identidad, matrícula y ámbito; ampliar al flujo de impresión.
+- AUD-NG-247: filtros de período y alcance en la selección imprimible.
+- AUD-NG-248/TASK-597..TASK-602: reutilizar exportación CSV/JSON existente; no duplicar contrato, filtros, UI ni pruebas de exportación masiva.
+- AUD-NG-161: coordinar pruebas conductuales de impresión y permisos.
+TAREAS EJECUTABLES DERIVADAS DE LOS HALLAZGOS:
+- TASK-626 (nueva, ALTO/P1): integrar UI docente de impresión, filtros por docente/sección/aula/período/fechas, preview y datos autorizados.
+- TASK-627 (nueva, ALTO/P1): integrar impresión estudiante con área imprimible y matrícula/ámbito verificados en servidor.
+- TASK-628 (nueva, ALTO/P1): generar snapshot con período, filtros, fecha, versión/estado real y preservación inmutable; nunca presentar borradores como oficiales.
+- TASK-629 (nueva, MEDIO/P2): completar paginación, saltos, encabezados/pies y legibilidad multipágina.
+EVIDENCIA:
+- completadas.md 4658-4688; ChangesLogs.txt registro TAREA-F7-IMP-23 (2025-05-24).
+- teacher-dashboard.html completo (1-1475), student-dashboard.html completo (1-412); ambos carecen de IDs de impresión/horario.
+- teacher.js 592-682 y 1251-1294; student.js 874-955; css/style.css 946-971.
+- Code.gs getClassSchedules 6718-6770, exportBulkClassSchedules 3403-3427, getStudentSchedule 7986-8070.
+DOCUMENTACIÓN:
+- Informe individual IMP-23 y AUDITORIA_FASE_7_PLANIFICACION_HORARIOS_RECURSOS.md no existen; se auditó directamente completadas.md.
+- Pendientes.md lectura ordinaria 0; blob 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c recuperado: 1782094 caracteres, 1 líneas, 0 U+FFFD, 511 TASK únicos; no contiene TAREA-F7-IMP-23 ni TASK-626..629. El blob íntegro ya está asociado a la ruta de rama; no se restauró ni modificó.
+- ChangesLogs histórico declara botones/modal presentes, pero los HTML actuales no contienen los nodos.
+SHAs: teacher-dashboard.html cbb9e6a272a7d8ad33f99727303305d950533e71; student-dashboard.html 6379ea0ed39d71b89747a0280bb925fdf12202c1; teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; student.js e2888cea60322e49a40b89adadb8010489605dcc; style.css f1ff84312ce70949a58eaa099b2aad0ff0a59cb6; Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5; completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676; Pendientes.md 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c; ChangesLogs.txt 5b5cff1926b73a05d1b92087a7bf4b2db75326ff; metodologia cf796728bb384a32537392df2f9c72a339fa03ee.
+PRUEBAS/LÍMITES: inspección manual/estática y verificación Git/blob. No ejecutados navegador, diálogo de impresión, PDF/CSV real, Apps Script, Sheets productivas, HTTP/OAuth, roles/matrículas reales, paginación multipágina, Node ni E2E.
+ARCHIVO NUEVO: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-23.md.
+ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+SIN CAMBIOS: código/UI/pruebas; completadas.md; Pendientes.md; ChangesLogs.txt; metodología; rama base.
+SIGUIENTE: TAREA-F7-IMP-24, preferencias de calendario y personalización de vistas.
+===============================================================================

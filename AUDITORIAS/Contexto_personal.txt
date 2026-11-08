@@ -8794,3 +8794,34 @@ Auditar TAREA-F6-015 y TAREA-F6-040. Buscar informes individuales e historial en
 - **Próxima acción:** buscar AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-23.md y la fuente de Fase 7; si faltan, auditar directamente el bloque completo de TAREA-F7-IMP-23 en completadas.md.
 - **Commit de cierre:** este checkpoint se publicará junto con los demás archivos en un único commit; SHA final se confirmará externamente consultando HEAD.
 ===============================================================================
+
+
+===============================================================================
+## C1.256 - Checkpoint de cierre: auditoría TAREA-F7-IMP-23 (2026-11-08)
+
+- **ID de sesión operativo:** IMA-AUDIT-20261108-1935Z-01 (identificador documental, no ID nativo de ChatGPT).
+- **Estado:** preparado para cierre en un único commit. **Checkpoint inicial:** C1.255. **Checkpoint de cierre:** C1.256.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Archivo de contexto:** AUDITORIAS/Contexto_personal.txt.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work. **Rama base protegida:** NG_beta_0.0.0.1.
+- **HEAD de partida verificado:** f79551dc9a6e37e033ebc24c5ef287b1ae750320. **Tree SHA reconstruido:** 27b254427ecfbde4b9e6aff09c2fd4ed8437b0c9, derivado del árbol de C1.254 más las cinco rutas exactas modificadas por C1.255.
+- **HEAD de rama base verificado:** 44d9891132332e692dbe2ba8602b41f50a508a59; comparación: 324 commits adelante, 0 detrás. Rama base sin cambios.
+- **Tarea realizada:** TAREA-F7-IMP-23, [X] histórica en completadas.md; auditoría independiente, dictamen NO CUMPLE.
+- **Criterios:** CA-F7-138 NO CUMPLE; CA-F7-139 NO CUMPLE; CA-F7-140 NO CUMPLE; CA-F7-141 NO CUMPLE; CA-F7-142 NO VERIFICABLE.
+- **Hallazgos nuevos:** AUD-NG-270 (flujo docente desconectado); AUD-NG-271 (estado/período falsos); AUD-NG-272 (impresión estudiante sin área imprimible); AUD-NG-273 (paginación insuficiente).
+- **Ampliaciones:** AUD-NG-246/TASK-584..589 para DOM/ámbito; AUD-NG-247 para filtros; AUD-NG-248/TASK-597..602 para exportación; AUD-NG-161 para pruebas.
+- **Tareas derivadas:** TASK-626, TASK-627, TASK-628 y TASK-629.
+- **Fuentes:** completadas.md líneas 4658-4688; informe individual IMP-23 y fuente AUDITORIA_FASE_7_PLANIFICACION_HORARIOS_RECURSOS.md no existen; se auditó directamente el bloque completo de completadas.md. ChangesLogs.txt registra implementación en 2025, contradicha por HTML vigente.
+- **Pendientes.md:** lectura convencional 0 caracteres; blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c recuperado directamente. 1782094 caracteres, 1 líneas, 0 U+FFFD, 511 TASK únicos; no contiene TAREA-F7-IMP-23 ni TASK-626..629. El blob ya está asociado a la ruta de la rama; no requiere restauración/transferencia adicional. No se modificó.
+- **Puntos inspeccionados:** teacher-dashboard.html completo (1-1475); student-dashboard.html completo (1-412); teacher.js 592-682, 864-989 y 1251-1294; student.js 874-955; style.css 946-971; Code.gs 3403-3427, 6718-6770 y 7986-8070; ChangesLogs registro IMP-23; AUD-NG-246/247/248; metodología; plan; auditoría y mapa.
+- **SHAs de respaldo:** teacher-dashboard.html cbb9e6a272a7d8ad33f99727303305d950533e71; student-dashboard.html 6379ea0ed39d71b89747a0280bb925fdf12202c1; teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; student.js e2888cea60322e49a40b89adadb8010489605dcc; style.css f1ff84312ce70949a58eaa099b2aad0ff0a59cb6; Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5; completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676; Pendientes.md 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c; ChangesLogs.txt 5b5cff1926b73a05d1b92087a7bf4b2db75326ff; METODOLOGIA_DESARROLLO.md cf796728bb384a32537392df2f9c72a339fa03ee; AUDITORIAS/Auditoria.txt b77305edcf292b6d62bbd1296b03d207ca42c644; MapaDependencias.md 480f888883406179c3f804f5921010f5b0a746a9; AUDITORIA_COMPLETADAS_PLAN.md afbcd6bc582c47c2670049089ede37bab2630634; Contexto_personal.txt b725409e7ce667183b100b9f0f5337e7c928ef7d.
+- **Pruebas ejecutadas:** inspección manual de rutas HTML/JS/CSS/backend, contraste con logs y auditorías previas, recuperación/verificación del blob, comparación de ramas y reconstrucción reproducible del árbol base.
+- **No ejecutadas:** navegador/DOM, diálogo de impresión, PDF/CSV real, Apps Script runtime, Sheets productivas, HTTP/OAuth, pruebas de roles/matrículas reales, paginación multipágina, Node ni E2E.
+- **Archivo nuevo:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-23.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Sin cambios:** teacher-dashboard.html; student-dashboard.html; js/teacher.js; js/student.js; css/style.css; backend/academic-service/Code.gs; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; rama base.
+- **Última tarea auditada:** TAREA-F7-IMP-23. **Tarea en curso:** ninguna al cierre.
+- **Siguiente tarea exacta:** TAREA-F7-IMP-24, preferencias de calendario y personalización de vistas.
+- **Próxima acción:** buscar AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-24.md y la fuente de Fase 7; si faltan, auditar directamente el bloque completo de TAREA-F7-IMP-24 en completadas.md.
+- **Commit de cierre:** el único commit que contiene este checkpoint; SHA final se confirmará externamente consultando HEAD.
+===============================================================================

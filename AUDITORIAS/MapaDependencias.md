@@ -3598,3 +3598,33 @@ Inspección estática/manual. No se ejecutaron Apps Script runtime, HTTP/OAuth, 
 - TASK-624: validar referencias y disponibilidad del período destino, bloquear conflictos y aplicar mediante preview/ajuste/confirmación.
 - TASK-625: integrar UI real y pruebas conductuales de todo el ciclo de vida de plantillas.
 - Ampliar TASK-620 para evento de aplicación con plantillaId, actor, destino, resultado y correlationId; ampliar TASK-504/AUD-NG-224 y AUD-NG-145 para historial/bitácora; ampliar AUD-NG-168/236/241 para esquema y motor de conflictos.
+
+
+---
+
+## TAREA-F7-IMP-23 — Impresión y distribución de horarios (C1.256)
+
+### Dependencias y flujo inspeccionado
+- teacher-dashboard.html (1-1475) no contiene modal-print-schedule, print-schedule-preview-area, schedule-matrix-container ni schedules-table-body.
+- student-dashboard.html (1-412) no contiene modal-student-print-schedule ni student-schedule-container.
+- teacher.js (1251-1294) define openPrintScheduleModal/executePrintSchedule; el controlador fija “DOCUMENTO OFICIAL PUBLICADO” y período 2026, copia un nodo ausente y cae a window.print().
+- student.js (874-882) define el controlador de impresión, pero solo llama window.print(); no crea .printable-schedule-area.
+- style.css (946-971) oculta body * y muestra únicamente .printable-schedule-area; la ruta estudiante no crea ese nodo y la ruta docente no lo crea cuando falta previewContainer.
+- Code.gs getStudentSchedule (7986-8070) usa grado/sección del payload si ambos vienen; AUD-NG-246 ya registra falta de validación de matrícula/ámbito.
+- Code.gs exportBulkClassSchedules (3403-3427) ignora anoLectivo en el filtro y exporta DocenteUserId; los defectos de exportación masiva ya están en AUD-NG-248/TASK-597..602.
+
+### Hallazgos y reconciliación
+- AUD-NG-270: flujo de impresión docente desconectado de HTML/preview; ALTO/P1.
+- AUD-NG-271: metadatos docente falsos (estado publicado y período 2026 constantes); ALTO/P1.
+- AUD-NG-272: impresión estudiante sin área imprimible; ALTO/P1.
+- AUD-NG-273: paginación insuficiente y numeración fija; MEDIO/P2.
+- AUD-NG-246/TASK-584..589: ampliar nodos y ámbito autorizado al flujo de impresión; no duplicar el defecto de identidad/matrícula.
+- AUD-NG-247: ampliar filtros de período/alcance para documentos imprimibles.
+- AUD-NG-248/TASK-597..602: reutilizar tareas existentes para CSV/JSON y filtros; no crear duplicados.
+- AUD-NG-161: coordinar pruebas de impresión, permisos y datos restringidos.
+
+### Tareas ejecutables derivadas de los hallazgos
+- TASK-626: integrar UI docente, filtros por docente/sección/aula/período/fechas y preview con dataset autorizado.
+- TASK-627: integrar impresión estudiante con área imprimible y matrícula/ámbito verificados en servidor.
+- TASK-628: generar snapshot con metadatos reales de período, filtros, fecha y versión/estado; preservar documentos generados y no etiquetar borradores como oficiales.
+- TASK-629: completar paginación, saltos, encabezados/pies y legibilidad multipágina.
