@@ -2207,3 +2207,17 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **Pendientes.md:** lectura convencional 0 caracteres; blob SHA 676a3f798715f0cdd7d4bc75768472545b8465ee, 1.786.011 caracteres, 20.224 líneas, 0 U+FFFD, 515 IDs TASK-NNN únicos hasta TASK-636; no contiene F8-Task04/CA-MOD-110/111; no restaurado ni modificado.
 - **Pruebas:** inspección manual y contraste de SHA/rutas. No ejecutados Node, Apps Script, HTTP, browser, E2E ni pruebas de datos.
 - **Siguiente tarea:** F8-Task05, reorganización mediante etapas verificables, CA-MOD-112/113.
+
+
+---
+
+## F8-Task05 / TAREA-MOD-07 — Reorganización por etapas verificables (C1.265)
+
+- **Dictamen:** NO CUMPLE; se conserva la marca histórica [X] en completadas.md.
+- **Criterios:** CA-MOD-112 NO CUMPLE; CA-MOD-113 NO CUMPLE.
+- **Hallazgos:** AUD-NG-297 baseline/tag/checksums no demostrados; AUD-NG-298 verificador de etapas con catálogos estáticos; AUD-NG-299 rollback simulado; AUD-NG-300 omisión de etapa de módulos compartidos y ausencia de trazabilidad por hito.
+- **Tareas ejecutables derivadas:** TASK-652 baseline verificable; TASK-653 verificación real y secuencial de etapas; TASK-654 rollback efectivo; TASK-655 etapa de módulos compartidos y trazabilidad. TASK-650/TASK-651 se amplían para integrar pruebas y resultados por etapa, sin duplicarlos.
+- **Evidencia:** completadas.md línea 4860 [X]; staged-migration-procedure.md SHA 2b46af3095596fcd7a9744e4cc500b50b38a34f0; Developer Code.gs SHA 8aa4bac67cfe5c8c54da51a0784a56fef633e412; modular-dashboard-suite.js SHA 0495e1d526a872c33310935a003a83d924d34683; ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff.
+- **Pendientes.md:** lectura convencional 0 caracteres; blob actual 676a3f798715f0cdd7d4bc75768472545b8465ee recuperado íntegro (1,786,011 caracteres, 20,224 líneas, 0 U+FFFD). Blob histórico 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c recuperado (1,782,094 caracteres). El blob actual permanece en la rama y no se restauró una versión anterior.
+- **Pruebas:** inspección manual de procedimiento, validadores, rollback, suite Node y bitácora; verificación Git y de referencia de baseline. No ejecutados Node, Apps Script, HTTP, browser, migración, rollback ni pruebas productivas.
+- **Siguiente tarea:** consultar el siguiente elemento del orden vigente de completadas.md; buscar informe individual y auditar directamente si falta.

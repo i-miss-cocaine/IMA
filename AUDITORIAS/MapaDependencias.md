@@ -3839,3 +3839,29 @@ Inspección estática/manual y Git/blob; no se ejecutaron requests HTTP, Apps Sc
 - CA-MOD-110: NO CUMPLE.
 - CA-MOD-111: NO CUMPLE.
 - No se ejecutó Node/Apps Script/browser/HTTP; la ruta incorrecta se comprobó contra el árbol Git. El bypass se identificó por inspección, no por ataque en producción.
+
+
+---
+
+## F8-Task05 / TAREA-MOD-07 — Reorganización por etapas verificables (C1.265)
+
+### Componentes y flujo inspeccionados
+- docs/architecture/staged-migration-procedure.md: cinco etapas declaradas; no incluye etapa separada de módulos compartidos.
+- backend/developer-service/Code.gs:1748–1796 getArchitectureAndDependencyMapReport usa una lista predeterminada de documentos y mapValid depende de que no esté vacía.
+- backend/developer-service/Code.gs:1896–1964 validateModularFolderStructure compara cadenas de rutas con manifiesto; no consulta el árbol Git real.
+- backend/developer-service/Code.gs:1967–2037 validateStagedMigrationProgress mapea el registro de servicios, catálogo documental, estructura declarativa, contratos y suite a estados de etapa.
+- backend/developer-service/Code.gs:2325–2349 executeServiceVersionRollback valida parámetros/confirmación y devuelve flags de restauración true sin ejecutar operaciones de restauración.
+- backend/developer-service/Code.gs:2415–2469 getCentralServiceRegistry retorna servicios predeterminados también ante hoja vacía o excepción.
+- tests/regression/modular-dashboard-suite.js: aserciones estáticas de existencia de documento y presencia de nombre de función; no ejecuta migración/rollback.
+- ChangesLogs.txt: entrada F8-Task05 del 2026-10-28 registra creación del documento, función y aserciones, no evidencia de ejecución.
+
+### Hallazgos y tareas derivadas
+- AUD-NG-297 ALTO: baseline/tag/checksums no verificados → TASK-652.
+- AUD-NG-298 ALTO: verificación de etapas basada en catálogos/manifest estáticos → TASK-653.
+- AUD-NG-299 CRÍTICO: rollback declarativo sin restauración → TASK-654.
+- AUD-NG-300 ALTO: falta etapa de módulos compartidos y trazabilidad por hito → TASK-655 (ampliar TASK-650/TASK-651).
+
+### Dictamen
+- CA-MOD-112: NO CUMPLE.
+- CA-MOD-113: NO CUMPLE.
+- Referencia v8.4.0-baseline no encontrada; no se ejecutaron migración ni rollback; no se afirma verificación de producción.

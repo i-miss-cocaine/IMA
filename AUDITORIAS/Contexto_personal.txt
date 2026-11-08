@@ -9056,3 +9056,34 @@ Auditar TAREA-F6-015 y TAREA-F6-040. Buscar informes individuales e historial en
 - **Próxima acción:** comprobar si existe informe F8-Task05; si falta, auditar completadas.md, docs/architecture/staged-migration-procedure.md y backend/developer-service/Code.gs; verificar línea base, aislamiento de etapas, rollback real y trazabilidad.
 - **Commit de cierre:** el commit que contiene este checkpoint; SHA final se confirma tras publicar.
 ===============================================================================
+
+ 
+===============================================================================
+## C1.265 — Checkpoint de cierre: auditoría F8-Task05 / TAREA-MOD-07 (2026-11-08)
+
+- **ID de sesión operativo:** IMA-AUDIT-20261108-2149Z-01 (identificador documental, no ID nativo de ChatGPT).
+- **Checkpoint inicial de esta sesión:** C1.264, designado expresamente por el usuario.
+- **Checkpoint de cierre:** C1.265.
+- **Estado:** sesión cerrada después de publicar un único commit con informe, bitácora, mapa, plan y checkpoint.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Archivo de contexto:** AUDITORIAS/Contexto_personal.txt.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **HEAD de partida verificado:** e146e2a09feaf9dd6ea9a972c3613e70982551ea; árbol Git 19cdca2f142579578c2e4e10a65ee21b978817d8.
+- **Rama base protegida:** NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59; comparación de inicio: 333 commits adelante, 0 detrás. Sin cambios en rama base.
+- **Tarea realizada:** F8-Task05 / TAREA-MOD-07, marcada [X] en completadas.md línea 4860; informe individual inexistente; auditoría directa.
+- **Dictamen:** NO CUMPLE. CA-MOD-112 NO CUMPLE; CA-MOD-113 NO CUMPLE.
+- **Hallazgos:** AUD-NG-297 ALTO: baseline/tag/checksums no demostrados; AUD-NG-298 ALTO: verificador de etapas usa catálogos/manifiestos estáticos; AUD-NG-299 CRÍTICO: rollback devuelve éxito sin restaurar; AUD-NG-300 ALTO: falta etapa de módulos compartidos y trazabilidad por hito.
+- **Tareas derivadas:** TASK-652, TASK-653, TASK-654 y TASK-655, descritas íntegramente en el informe; TASK-650/TASK-651 se amplían sin duplicarse.
+- **Fuentes:** completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676; Pendientes.md actual blob 676a3f798715f0cdd7d4bc75768472545b8465ee; blob histórico solicitado 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c; procedimiento 2b46af3095596fcd7a9744e4cc500b50b38a34f0; Developer Code.gs 8aa4bac67cfe5c8c54da51a0784a56fef633e412; suite 0495e1d526a872c33310935a003a83d924d34683; ChangesLogs 5b5cff1926b73a05d1b92087a7bf4b2db75326ff; metodología cf796728bb384a32537392df2f9c72a339fa03ee.
+- **Pendientes.md:** fetch_file UTF-8/base64 devolvió 0 caracteres; fetch_blob recuperó 1786011 caracteres, 20224 líneas, 0 U+FFFD. El blob histórico de 1.782.094 caracteres también se recuperó. La versión actual está presente en la rama; no se restauró la histórica ni se modificó el archivo.
+- **Puntos inspeccionados:** completadas.md línea 4860; procedimiento completo; Developer Code.gs:145–219,1748–1796,1896–2037,2040–2129,2262–2349,2415–2469; modular-dashboard-suite.js completo; ChangesLogs F8-Task05 del 2026-10-28; repository-inventory.md; referencias Git de ambas ramas y tag v8.4.0-baseline.
+- **Pruebas ejecutadas:** inspección manual de fuentes y funciones; recuperación de blobs; consulta de referencia de baseline; comparación de ramas y verificación de HEAD/tree.
+- **No ejecutadas:** Node, Apps Script, HTTP, navegador/DOM, migración real, rollback, despliegues, Google Sheets/Drive productivos ni E2E.
+- **Archivos nuevos:** AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK05.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Sin cambios:** código backend/frontend, tests, completadas.md, Pendientes.md, ChangesLogs.txt, METODOLOGIA_DESARROLLO.md y rama base.
+- **Última tarea auditada:** F8-Task05 / TAREA-MOD-07. **Tarea en curso al cierre:** ninguna.
+- **Siguiente tarea exacta:** consultar el siguiente elemento vigente en completadas.md y verificar si existe informe individual; si falta, auditarlo directamente.
+- **Próxima acción:** abrir completadas.md después del bloque F8-Task05, seleccionar la siguiente tarea cronológica y contrastar su alcance/certificación con el código y las pruebas reales.
+- **Commit de cierre:** el commit único que contiene este checkpoint; SHA final se confirmará consultando HEAD después de publicar.
+===============================================================================
