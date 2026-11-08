@@ -3497,3 +3497,18 @@ Inspección estática/manual. No se ejecutaron Apps Script runtime, HTTP/OAuth, 
 - Hallazgos: AUD-NG-254 (motor no efectivo) y AUD-NG-255 (modelo/ámbito/ciclo de vida); ampliar AUD-NG-001, AUD-NG-168, AUD-NG-236, AUD-NG-239, AUD-NG-246, AUD-NG-248 y AUD-NG-250.
 - Tareas: TASK-613 modelo/ciclo de vida; TASK-614 motor integrado; TASK-615 UI conectada. Ampliar TASK-516, TASK-519, TASK-533, TASK-567, TASK-598, TASK-605 y TASK-606.
 - Detalle, criterios CA-F7-112..116 y tareas ejecutables: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-18.md.
+
+
+## Capacidad y distribución de estudiantes por sección (TAREA-F7-IMP-19 / AUD-NG-256)
+
+- **Esquemas canónicos:** Matriculas (Code.gs:94) = MatriculaID, Fecha, UserId, Alumno, Grado, Seccion, Periodo, Tipo, Estado...; SedesAulas (105) = SedeID, NombreSede, AulaCodigo, NombreAula, Capacidad, TipoEspacio, Estado; HorariosClase (114) = HorarioID, OfertaID, DiaSemana, HoraInicio, HoraFin, AulaCodigo, DocenteUserId, Estado. createClassSchedule añade UltimaModificacion como novena columna.
+- **Reporte defectuoso:** getSectionCapacityAnalyticsReport (13657-13810) lee Matriculas con [4]/[5]/[2]/[3] como año/estado/grado/sección; no filtra ofertas por AnoID; lee SedesAulas [1]/[3] como código/capacidad; lee HorariosClase [7]/[8]/[9] como grado/sección/estado y no hace join OfertaID -> OfertaAcademica. Defaults 35/30 y status success ocultan datos ausentes.
+- **Validador:** checkScheduleConflict (7493-7691) cuenta matrícula comparando m[5] o m[0] contra OfertaID; no filtra año/grado/sección/estado y acepta estudiantesCount enviado por cliente. La lectura física de SedesAulas [2]/[4] es correcta, pero no se ejecuta si el conteo es 0/incorrecto.
+- **Publicación:** createClassSchedule (6900-6990) pasa estudiantesCount del payload; publishClassSchedules (7008-7116) llama al validador sin conteo. La publicación no comprueba estado/AnoID de OfertaAcademica; el filtro anoLectivo usa substring sobre OfertaID.
+- **Cupo administrativo:** checkEnrollmentCapacity (11147-11243) sí filtra Matriculas por Periodo/Grado/Seccion/Estado, pero usa capacidad 35 por defecto si no hay oferta/capacidad; reservas se agrupan por año/grado, no sección. createAcademicOffer (6180-6223) también aplica 35 cuando no se proporciona CapacidadMax.
+- **Mutaciones:** createStudentEnrollment (11270-11351) y changeStudentSection (11403-11480) validan solo cupo administrativo y no revalidan aula/horario existentes. Reingreso/promoción reutilizan createStudentEnrollment; retiro/traslado cambian estado sin recalcular impacto. Nuevo AUD-NG-256.
+- **Override:** forceCapacityOverride truthy evita checkEnrollmentCapacity en alta/cambio de sección, sin autorización específica adicional en las funciones. Ampliar AUD-NG-233/TASK-513 y AUD-NG-234/TASK-514.
+- **UI/API:** js/teacher.js (1434-1495) define handlers y fija año 2026; teacher-dashboard.html no contiene botón, modal ni contenedor; fetchApi (js/api.js:11-60) no transmite token. Ampliar AUD-NG-246/AUD-NG-001.
+- **Regresión:** TC-F7-04 solo exige status success y arreglo reportes; tests/regression/academic-grading-suite.js no contiene casos de capacidad por sección. Ampliar TASK-551.
+- **Tareas:** TASK-616 revalidación posterior a mutaciones; ampliar TASK-548 (cálculo canónico), TASK-549 (alternativas compatibles), TASK-550 (UI), TASK-551 (CA-F7-117..121), TASK-513/514 (override/concurrencia).
+- **Dictamen:** CA-F7-117..121 NO CUMPLE. Detalle y tareas ejecutables: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-19.md.

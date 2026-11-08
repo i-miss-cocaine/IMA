@@ -2028,3 +2028,25 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **Última tarea auditada:** TAREA-F7-IMP-18.
 - **Siguiente tarea exacta:** TAREA-F7-IMP-19, control de capacidad y distribución de estudiantes por sección (CA-F7-117..121).
 ===============================================================================
+
+
+===============================================================================
+## TAREA-F7-IMP-19 - Auditoría de capacidad y distribución de estudiantes por sección (C1.251)
+
+- **Fecha:** 2026-11-08; sesión IMA-AUDIT-20261108-1830Z.
+- **Checkpoint inicial:** C1.250; HEAD auditado 980d7670c58c330dffcc5fa09079f9f6d72aba8b.
+- **Dictamen:** NO CUMPLE; se conserva [X] histórico en completadas.md, líneas 4525-4554.
+- **Criterios:** CA-F7-117 NO CUMPLE; CA-F7-118 NO CUMPLE; CA-F7-119 NO CUMPLE; CA-F7-120 NO CUMPLE; CA-F7-121 NO CUMPLE.
+- **Fuentes:** informe individual y fuente de fase no existen; auditoría directa desde completadas.md. ChangesLogs 2498-2521 afirma botón/modal presentes, no corroborados por el HTML actual.
+- **Hallazgos:** AUD-NG-256 nuevo ALTO/P1 por ausencia de revalidación tras mutaciones; ampliar AUD-NG-241, AUD-NG-236, AUD-NG-233/TASK-513, AUD-NG-234/TASK-514, AUD-NG-246 y AUD-NG-001.
+- **Evidencia:** índices incorrectos en Matriculas/SedesAulas/HorariosClase; no join OfertaID; sin filtro de año/período; count de checkScheduleConflict compara Seccion/MatriculaID con OfertaID; estudiantesCount cliente-controlado; publish invoca validador sin conteo; altas/cambios no revalidan horarios; override truthy omite cupo; defaults 35/30; UI ausente; API sin token; TC-F7-04 estructural.
+- **Tareas derivadas:** nueva TASK-616 (revalidación después de mutaciones); ampliar TASK-548/549/550/551 y TASK-513/514.
+- **Archivos inspeccionados:** Code.gs (84-115, 168-265, 6061-6129, 6180-6223, 6900-6990, 7008-7116, 7493-7691, 11147-11243, 11270-11377, 11403-11480, 11819-11885, 13657-13810, 14109-14155); js/teacher.js 1434-1495; js/api.js 11-60; teacher-dashboard.html completo; academic-grading-suite.js 412 líneas; ChangesLogs 2498-2521; completadas 4525-4554; informes IMP-01/04/06/18.
+- **SHAs:** Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5; teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; teacher-dashboard cbb9e6a272a7d8ad33f99727303305d950533e71; api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; academic-grading-suite a22cb3ef376fe09e65c1b17c2f4f5125290bfba6; completadas f57f1aef832e81e44fc4f7ec36a852d50e464676; Pendientes 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c; ChangesLogs 5b5cff1926b73a05d1b92087a7bf4b2db75326ff; metodología cf796728bb384a32537392df2f9c72a339fa03ee.
+- **Pruebas:** inspección estática/manual y verificación Git. No ejecutados Apps Script runtime, HTTP/OAuth, DOM/navegador, Sheets productivas, altas/cambios reales, publicación, concurrencia, rollback, Node ni E2E.
+- **Nuevo:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-19.md.
+- **Actualizados:** Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md y Contexto_personal.txt.
+- **Sin cambios:** código, UI, pruebas, completadas.md, Pendientes.md, ChangesLogs.txt, metodología y rama base.
+- **Última tarea auditada:** TAREA-F7-IMP-19.
+- **Siguiente tarea exacta:** TAREA-F7-IMP-20, rendimiento y escalabilidad de consultas de planificación (CA-F7-122..127).
+===============================================================================

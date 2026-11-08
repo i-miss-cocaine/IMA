@@ -8978,3 +8978,27 @@ ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md;
 SIN CAMBIOS: código, UI, pruebas, completadas.md, Pendientes.md, ChangesLogs.txt, metodología y rama base.
 SIGUIENTE: TAREA-F7-IMP-19 (capacidad y distribución de estudiantes por sección; CA-F7-117..121).
 ===============================================================================
+===============================================================================
+FECHA: 2026-11-08
+AUDITORÍA FUNCIONAL Y TÉCNICA - TAREA-F7-IMP-19: CAPACIDAD Y DISTRIBUCIÓN DE ESTUDIANTES POR SECCIÓN
+DICTAMEN: NO CUMPLE (se conserva [X] histórica en completadas.md, líneas 4525-4554).
+CRITERIOS: CA-F7-117 NO CUMPLE; CA-F7-118 NO CUMPLE; CA-F7-119 NO CUMPLE; CA-F7-120 NO CUMPLE; CA-F7-121 NO CUMPLE.
+HALLAZGOS:
+- AUD-NG-241 AMPLIADO: getSectionCapacityAnalyticsReport interpreta Matriculas con índices incorrectos (rM[4] como año, [5] como estado, [2] como grado, [3] como sección); no filtra OfertaAcademica por AnoID; interpreta SedesAulas [1]/[3] como código/capacidad (deben [2]/[4]); interpreta HorariosClase [7]/[8]/[9] como grado/sección/estado sin resolver OfertaID. Devuelve métricas falsas y aulas alternativas incorrectas.
+- AUD-NG-236 AMPLIADO: checkScheduleConflict compara m[5] o m[0] con OfertaID; no deriva matrícula por año/grado/sección; createClassSchedule admite estudiantesCount del cliente; publishClassSchedules invoca el validador sin conteo y no valida oferta activa/período.
+- AUD-NG-256 NUEVO ALTO/P1: createStudentEnrollment/changeStudentSection y demás mutaciones de matrícula no revalidan horarios/aulas ya asignados; el cambio de matrícula puede dejar una sección sobre el aforo físico sin alerta ni resolución.
+- AUD-NG-233/TASK-513 AMPLIADO: forceCapacityOverride truthy en payload omite la validación de cupo sin autorización específica verificada ni motivo/bitácora obligatorios. AUD-NG-234/TASK-514 relacionado con operaciones críticas.
+- AUD-NG-246/AUD-NG-001 AMPLIADOS: js/teacher.js define handlers, pero teacher-dashboard.html carece de botón/modal/contenedor; fetchApi no transmite token para la acción privada.
+- TASK-551 AMPLIADO: TC-F7-04 solo verifica status success y forma de array; no hay pruebas conductuales para CA-F7-117..121.
+TAREAS DERIVADAS:
+- Nueva TASK-616: revalidar horarios afectados después de alta, cambio de sección, reingreso, promoción, retiro y traslado.
+- Ampliar TASK-548 cálculo canónico y join; TASK-549 alternativas compatibles; TASK-550 UI real; TASK-551 regresión CA-F7-117..121; TASK-513/514 override/concurrencia.
+DOCUMENTACIÓN: completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, tarea [X] líneas 4525-4554. Pendientes.md lectura convencional 0 caracteres; blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c verificado previamente: 1.782.094 caracteres, 20.182 líneas, 0 U+FFFD, 511 TASK únicos TASK-001..TASK-511; no contiene IMP-19 ni TASK-616. Informe individual y fuente de fase no existen.
+EVIDENCIA: Code.gs 84-115, 168-265, 6061-6129, 6180-6223, 6900-6990, 7008-7116, 7493-7691, 11147-11243, 11270-11377, 11403-11480, 11819-11885, 13657-13810, 14109-14155; js/teacher.js 1434-1495; js/api.js 11-60; teacher-dashboard.html completo; suite regression 412 líneas; ChangesLogs 2498-2521; informe IMP-06 TASK-548..551; IMP-01/04/18.
+SHAs: Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5; teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; teacher-dashboard cbb9e6a272a7d8ad33f99727303305d950533e71; api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; academic-grading-suite a22cb3ef376fe09e65c1b17c2f4f5125290bfba6; completadas f57f1aef832e81e44fc4f7ec36a852d50e464676; Pendientes 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c; ChangesLogs 5b5cff1926b73a05d1b92087a7bf4b2db75326ff; metodología cf796728bb384a32537392df2f9c72a339fa03ee.
+PRUEBAS/LÍMITES: inspección estática/manual y verificación Git. No ejecutados Apps Script runtime, HTTP/OAuth, DOM/navegador, Sheets productivas, altas/cambios reales, publicación real, concurrencia, rollback, Node ni E2E.
+ARCHIVO NUEVO: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-19.md.
+ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+SIN CAMBIOS: código, UI, pruebas, completadas.md, Pendientes.md, ChangesLogs.txt, metodología y rama base.
+SIGUIENTE: TAREA-F7-IMP-20 (rendimiento y escalabilidad de consultas de planificación; CA-F7-122..127).
+===============================================================================
