@@ -8587,24 +8587,35 @@ Auditar TAREA-F6-015 y TAREA-F6-040. Buscar informes individuales e historial en
 ===============================================================================
 
 
+
 ===============================================================================
 ## C1.249 - Checkpoint de cierre: auditoría TAREA-F7-IMP-17 (2026-11-08)
-- ID sesión: IMA-AUDIT-20261108-1633Z (ID documental, no ID nativo de ChatGPT). Estado: cerrada.
-- Checkpoint inicial C1.248; cierre C1.249.
-- Repositorio i-miss-cocaine/IMA; rama NG_beta_0.0.0.1_work; base NG_beta_0.0.0.1.
-- HEAD inicial 7a3650c6e44c52ae4932adb43c738b0e00dd061a. HEAD base 44d9891132332e692dbe2ba8602b41f50a508a59; 316 adelante, 0 detrás. Base intacta.
-- Tarea TAREA-F7-IMP-17 [X]; dictamen NO CUMPLE. Criterios: CA-F7-106 PARCIAL; CA-F7-107 CUMPLE; CA-F7-108/109/110/111 NO CUMPLE.
-- Hallazgos: AUD-NG-236/241/001/245 ampliados; AUD-NG-252/253 nuevos.
-- Tareas: TASK-610 ciclo de vida/historial; TASK-611 privacidad/participantes/actor verificado; TASK-612 regresión; ampliar TASK-554/562, TASK-545/546/549, TASK-555, TASK-567, TASK-577..583.
-- Informe/fuente individual y declarada 404; auditoría directa desde completadas.md.
-- Pendientes.md lectura ordinaria 0; blob 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c recuperado: 1.782.094 caracteres, 20.182 líneas, 0 U+FFFD; consultado sin modificar; TASK-610..612 no aparecen. Metodología 3.4 ubica tareas derivadas en informes AUDITORIAS.
-- Inspección: Code.gs 84-155, 168-265, 465-585, 671-735, 6616-6715, 7493-7693, 7694-7834, 7925-7983; js/api.js 11-60; js/secretary.js 589-650; dashboard-secretaria 54/313-340/349-430; dashboard-direccion 206-284; teacher.js/teacher-dashboard completos; suite 412 líneas; ChangesLogs 2445-2468; antecedentes IMP-01/06/08/15.
-- Evidencia: CalendarioAcademico 9/13 columnas; mantenimiento leído con índices erróneos y slice(1) descarta primera fila; sin conflictos integrales; recursos/grupos texto; visibilidad client-controlled; actor cliente-controlado; fetchApi no envía token; sin update/cancel/recurrencia/historial/dispatcher; dashboard-direccion sin trigger; suite sin casos.
-- SHAs: Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5; api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; secretary.js 08a81266957b4c18cc25f8ba6749eac30a8f2c2c; dashboard-secretaria fa0d8c23aace24a6acab2d4956398a7f5e1309b8; dashboard-direccion fefaa3bf7884288aef563cfb8aaf244e6cea8b7c; teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; teacher-dashboard cbb9e6a272a7d8ad33f99727303305d950533e71; suite a22cb3ef376fe09e65c1b17c2f4f5125290bfba6; ChangesLogs 5b5cff1926b73a05d1b92087a7bf4b2db75326ff; completadas f57f1aef832e81e44fc4f7ec36a852d50e464676; Pendientes 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c; metodología cf796728bb384a32537392df2f9c72a339fa03ee.
-- Pruebas ejecutadas: inspección estática/manual y verificación Git. No ejecutadas: Apps Script runtime, HTTP/OAuth real, DOM, Sheets productivas, concurrencia, rollback, notificaciones reales, Node, E2E.
-- Nuevo: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-17.md.
-- Actualizados: Auditoria.txt; MapaDependencias.md; AUDITORIA_COMPLETADAS_PLAN.md; Contexto_personal.txt.
-- Sin cambios: código, JS, HTML, tests, completadas, Pendientes, ChangesLogs, metodología, rama base.
-- Un solo commit final incluirá los cinco documentos; después se verifica HEAD.
-- Siguiente tarea: TAREA-F7-IMP-18, restricciones curriculares y dependencias entre asignaturas. Buscar informe/fuente; si faltan, auditar bloque completo de completadas.md.
+
+- **ID de sesión operativo:** IMA-AUDIT-20261108-1748Z (ID documental, no ID nativo de ChatGPT).
+- **Checkpoint inicial válido:** C1.248. **Checkpoint de cierre:** C1.249, reemplazo del registro documental C1.249 inválido anterior.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **Rama base protegida:** NG_beta_0.0.0.1.
+- **Snapshot válido de inicio:** 7a3650c6e44c52ae4932adb43c738b0e00dd061a (HEAD que cerró C1.248).
+- **HEAD de rama al iniciar esta reejecución:** 0b29a46d5947db5ddb25a06ec0f1bcbe3b44672f, commit documental C1.249 anterior descartado. Los archivos de código/UI/pruebas comparados contra 7a3650 conservan los mismos SHA; el contenido de auditoría se reconstruye desde los cuatro documentos del snapshot C1.248.
+- **HEAD de rama base:** 44d9891132332e692dbe2ba8602b41f50a508a59. Comparación al inicio: 317 commits adelante, 0 detrás. La rama base permanece intacta.
+- **Tarea realizada:** TAREA-F7-IMP-17, marcada [X] en completadas.md, línea 4451. Auditoría independiente desde C1.248; dictamen NO CUMPLE.
+- **Criterios:** CA-F7-106 PARCIAL; CA-F7-107 CUMPLE; CA-F7-108, CA-F7-109, CA-F7-110 y CA-F7-111 NO CUMPLE.
+- **Hallazgos:** AUD-NG-236/241/001/245 ampliados; AUD-NG-252 y AUD-NG-253 nuevos (ALTO/P1).
+- **Tareas derivadas:** TASK-610 ciclo de vida/historial; TASK-611 privacidad, participantes y actor verificado; TASK-612 regresión conductual CA-F7-106..111. Ampliar TASK-554/562, TASK-545/546/549, TASK-555, TASK-567, TASK-577..583; coordinar TASK-563.
+- **Integridad documental:** completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676; tarea [X] línea 4451. Pendientes.md se recuperó directamente del blob Git SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c: 1.782.094 caracteres, 20.182 líneas, 0 U+FFFD, 511 IDs únicos TASK-001..TASK-511; no contiene TAREA-F7-IMP-17 ni TASK-610..612. No se modifica ni restaura porque el blob íntegro coincide con el SHA declarado. Informe individual y fuente declarada no existían en el snapshot C1.248.
+- **Puntos inspeccionados:** METODOLOGIA_DESARROLLO.md (bloqueo de inicio/cierre, 3.4, 3.11-3.18); completadas.md (4425-4485); backend/academic-service/Code.gs (84-155, 168-265, 465-585, 671-830, 6616-6715, 7488-7693, 7694-7835, 7925-7983); js/api.js (1-100); js/secretary.js (589-650); dashboard-secretaria.html (45-62, 305-435); dashboard-direccion.html (195-300); teacher-dashboard.html completo; js/teacher.js completo; tests/regression/academic-grading-suite.js (412 líneas); ChangesLogs.txt (2440-2480); Auditoria.txt, MapaDependencias.md, plan y antecedentes IMP-01/06/08/15.
+- **Evidencia principal:** CalendarioAcademico inicializa 9 columnas con SedeID, writer/reader usan 13 sin SedeID; getOrCreateSheet crea cabecera y el condicional posterior no migra; índices de MantenimientoAulas no coinciden y slice(1) puede descartar el primer registro; no se validan solapamientos de eventos/clases/aulas/recursos/capacidad; recursos y grupos son texto libre; visibilidad y responsable provienen del payload; getAcademicCalendar no aplica aislamiento por participante y si se omite visibilidad devuelve todos; fetchApi no transmite token requerido por la ruta privada; no hay endpoints de edición/cancelación, recurrencia, liberación, historial ni dispatcher; dashboard-direccion no tiene botón invocador; suite externa no cubre criterios de la tarea.
+- **SHAs de respaldo:** Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5; api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; secretary.js 08a81266957b4c18cc25f8ba6749eac30a8f2c2c; dashboard-secretaria fa0d8c23aace24a6acab2d4956398a7f5e1309b8; dashboard-direccion fefaa3bf7884288aef563cfb8aaf244e6cea8b7c; teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; teacher-dashboard cbb9e6a272a7d8ad33f99727303305d950533e71; academic-grading-suite a22cb3ef376fe09e65c1b17c2f4f5125290bfba6; completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676; Pendientes.md 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c; ChangesLogs.txt 5b5cff1926b73a05d1b92087a7bf4b2db75326ff; metodología cf796728bb384a32537392df2f9c72a339fa03ee.
+- **Pruebas ejecutadas:** inspección estática/manual; lectura y verificación del blob de Pendientes; verificación de ramas, HEAD, SHAs y comparación base.
+- **No ejecutadas:** Apps Script runtime, HTTP/OAuth real, DOM/navegador, Sheets productivas, concurrencia, fallo inducido, rollback, notificaciones reales, Node ni E2E.
+- **Archivos nuevos:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-17.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Archivos sin cambios:** backend/academic-service/Code.gs; js/api.js; js/secretary.js; dashboard-secretaria.html; dashboard-direccion.html; teacher-dashboard.html; js/teacher.js; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; rama base.
+- **Última tarea completamente auditada:** TAREA-F7-IMP-17.
+- **Tarea en curso:** ninguna al cierre.
+- **Siguiente tarea exacta:** TAREA-F7-IMP-18, restricciones curriculares y dependencias entre asignaturas.
+- **Próxima acción concreta:** buscar informe individual y fuente declarada; si faltan, leer los requisitos completos de TAREA-F7-IMP-18 en completadas.md y auditar directamente el código de la rama de trabajo.
+- **Commit de cierre:** se confirmará externamente consultando HEAD de NG_beta_0.0.0.1_work después de publicar este único commit; el SHA no se incluye en este checkpoint para evitar autorreferencia.
+
 ===============================================================================

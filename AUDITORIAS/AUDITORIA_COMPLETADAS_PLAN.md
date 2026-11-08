@@ -1985,19 +1985,24 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 ===============================================================================
 
 
+
 ===============================================================================
 ## TAREA-F7-IMP-17 - Auditoría de eventos, participantes y recursos (C1.249)
-- Fecha: 2026-11-08. Dictamen: NO CUMPLE; se conserva [X] histórico.
+
+- Fecha: 2026-11-08; sesión IMA-AUDIT-20261108-1748Z.
+- Checkpoint inicial válido C1.248; se descarta el C1.249 documental previo y se reemplaza por esta auditoría revalidada.
+- Dictamen: NO CUMPLE; se conserva [X] histórico en completadas.md.
 - Criterios: CA-F7-106 PARCIAL; CA-F7-107 CUMPLE; CA-F7-108/109/110/111 NO CUMPLE.
-- Hallazgos: AUD-NG-236/241/001/245 ampliados; AUD-NG-252/253 nuevos.
+- Hallazgos: AUD-NG-236/241/001/245 ampliados; AUD-NG-252/253 nuevos (ALTO/P1).
 - Informe: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-17.md.
-- Integridad: completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, [X] línea 4451; Pendientes blob 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c (1.782.094 caracteres, 20.182 líneas, 0 U+FFFD), consultado sin modificar. Informe/fuente 404.
-- Evidencia: CalendarioAcademico 9/13 columnas; mantenimiento con índices erróneos y primera fila descartada; sin conflictos integrales; recursos/grupos texto libre; visibilidad cliente-controlada; actor cliente-controlado; fetchApi sin token; faltan update/cancel/recurrencia/historial/notificaciones; dashboard-direccion sin trigger; suite sin pruebas.
-- Tareas: TASK-610 ciclo de vida/historial; TASK-611 privacidad/participantes/actor; TASK-612 regresión CA-F7-106..111; ampliar TASK-554/562, TASK-545/546/549, TASK-555, TASK-567 y TASK-577..583.
-- Archivos inspeccionados: Code.gs; api.js; secretary.js; dashboards; teacher.js/teacher-dashboard; academic-grading-suite; ChangesLogs; completadas/Pendientes; metodología/contexto/plan/mapa e informes IMP-01/06/08/15.
-- Pruebas: inspección estática/manual; no Apps Script runtime, HTTP/OAuth, navegador, Sheets productivas, concurrencia, rollback, notificaciones reales, Node ni E2E.
+- Integridad: completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, tarea [X] línea 4451. Pendientes.md blob 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c recuperado (1.782.094 caracteres, 20.182 líneas, 0 U+FFFD, 511 TASK únicos TASK-001..TASK-511); no contiene IMP-17 ni TASK-610..612. Informe individual y fuente declarada no existían en C1.248.
+- Evidencia: esquema CalendarioAcademico 9/13; índices incorrectos/primera fila descartada en MantenimientoAulas; falta de conflicto integral; recursos/grupos texto libre; visibilidad/actor cliente-controlados; fetchApi sin token; faltan update/cancel/recurrencia/liberación/historial/dispatcher; dashboard-direccion sin trigger; suite sin casos.
+- Tareas: nuevas TASK-610 ciclo de vida/historial, TASK-611 privacidad/participantes/actor verificado, TASK-612 regresión CA-F7-106..111; ampliar TASK-554/562, TASK-545/546/549, TASK-555, TASK-567 y TASK-577..583; coordinar TASK-563.
+- SHAs de código/UI/pruebas: Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5; api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; secretary.js 08a81266957b4c18cc25f8ba6749eac30a8f2c2c; dashboards fa0d8c23aace24a6acab2d4956398a7f5e1309b8/fefaa3bf7884288aef563cfb8aaf244e6cea8b7c; teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; teacher-dashboard cbb9e6a272a7d8ad33f99727303305d950533e71; suite a22cb3ef376fe09e65c1b17c2f4f5125290bfba6.
+- Pruebas: inspección estática/manual y verificación Git; no ejecutados runtime Apps Script, HTTP/OAuth, navegador, Sheets productivas, concurrencia, rollback, notificaciones reales, Node ni E2E.
 - Nuevo: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-17.md.
 - Actualizados: Auditoria.txt; MapaDependencias.md; AUDITORIA_COMPLETADAS_PLAN.md; Contexto_personal.txt.
 - Sin cambios: código, JS, HTML, pruebas, completadas.md, Pendientes.md, ChangesLogs.txt, metodología y rama base.
-- Siguiente: TAREA-F7-IMP-18, restricciones curriculares y dependencias entre asignaturas.
+- Última tarea auditada: TAREA-F7-IMP-17.
+- Siguiente tarea exacta: TAREA-F7-IMP-18, restricciones curriculares y dependencias entre asignaturas. Buscar informe individual/fuente; si faltan, auditar directamente los requisitos completos de completadas.md.
 ===============================================================================

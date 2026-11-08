@@ -2,9 +2,9 @@
 ## Gestión de eventos y actividades con participantes y recursos
 
 - Fecha: 2026-11-08.
-- Sesión operativa: IMA-AUDIT-20261108-1633Z (ID documental, no ID nativo de ChatGPT).
-- Checkpoint inicial C1.248; cierre C1.249.
-- Repositorio i-miss-cocaine/IMA; rama NG_beta_0.0.0.1_work; HEAD inicial 7a3650c6e44c52ae4932adb43c738b0e00dd061a.
+- Sesión operativa: IMA-AUDIT-20261108-1748Z (ID documental, no ID nativo de ChatGPT).
+- Checkpoint inicial válido: C1.248; cierre de esta iteración: C1.249 (reemplaza el registro C1.249 anterior, inválido).
+- Repositorio i-miss-cocaine/IMA; rama NG_beta_0.0.0.1_work; snapshot auditado C1.248: 7a3650c6e44c52ae4932adb43c738b0e00dd061a. HEAD de rama al iniciar: 0b29a46d5947db5ddb25a06ec0f1bcbe3b44672f (contenía el cierre documental C1.249 descartado); los ocho archivos de código/UI/pruebas comparados conservan exactamente los SHA del snapshot C1.248. HEAD base: 44d9891132332e692dbe2ba8602b41f50a508a59; 317 adelante, 0 detrás.
 - TAREA-F7-IMP-17 marcada [X] en completadas.md, línea 4451.
 - **Dictamen: NO CUMPLE. Severidad global ALTA/P1.**
 - Criterios: CA-F7-106 PARCIAL; CA-F7-107 CUMPLE; CA-F7-108/109/110/111 NO CUMPLE.
@@ -20,8 +20,8 @@ Inspección estática/manual; sin cambios de código ni escrituras productivas.
 ## 2. Integridad documental
 
 - completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676; tarea [X]. La marca histórica no acredita comportamiento.
-- Informe individual y fuente AUDITORIA_FASE_7_PLANIFICACION_HORARIOS_RECURSOS.md: 404; auditoría directa desde completadas.md.
-- Lectura ordinaria de Pendientes.md: 0 caracteres. Blob 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c recuperado: 1.782.094 caracteres, 20.182 líneas, cero U+FFFD. Consultado por instrucción expresa del usuario, sin modificar. No contiene TAREA-F7-IMP-17 ni TASK-610..612.
+- En el snapshot C1.248, el informe individual y la fuente AUDITORIA_FASE_7_PLANIFICACION_HORARIOS_RECURSOS.md no existían (404); se ejecutó la auditoría desde cero contra completadas.md. El informe que aparece en el HEAD posterior fue parte del cierre inválido descartado y se volvió a contrastar contra código sin confiar en ese dictamen.
+- Pendientes.md: lectura ordinaria 0 caracteres; recuperación directa Git blob 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c: 1.782.094 caracteres, 20.182 líneas, cero U+FFFD, 511 TASK únicos TASK-001..TASK-511. No contiene TAREA-F7-IMP-17 ni TASK-610..612. Consultado por prioridad expresa de la tarea; no se modificó ni restauró porque el blob íntegro coincide con el SHA declarado.
 - Metodología 3.4 sitúa tareas derivadas en informes AUDITORIAS y excluye Pendientes.md del flujo operativo.
 - Antecedentes: AUD-NG-236 (esquema calendario), AUD-NG-241 (aulas/recursos/mantenimiento), AUD-NG-243 (excepciones de sesiones), AUD-NG-001 (token fetchApi), AUD-NG-245 (notificaciones). Se amplían, no se duplican.
 
@@ -93,43 +93,57 @@ academic-grading-suite.js no contiene referencias a endpoints/criterios. No hay 
 ### Nuevas
 
 #### [TASK-610] Completar ciclo de vida e historial de eventos institucionales
-- Hallazgo: AUD-NG-253. Severidad/prioridad: ALTO/P1.
-- Objetivo: crear, consultar, editar, reprogramar, cancelar y gestionar recurrencias sin perder historial ni dejar reservas huérfanas.
-- Acción: contrato canónico/migración; endpoints update/cancel; estados/transiciones; series/ocurrencias; liberar recursos al cancelar; revalidar al reprogramar; diff con actor/fecha/motivo; listado/controles UI; propagar cambios a calendarios/notificaciones.
-- Archivos: Code.gs; js/secretary.js; dashboard-secretaria.html; dashboard-direccion.html; consumidores.
-- Dependencias: AUD-NG-236/241/243/245; TASK-554/562/545/546/555/563/577..583.
-- Aceptación: CRUD/transiciones válidas; IDs de serie/ocurrencia; cancelación libera solo reservas vinculadas; reprogramación valida antes de confirmar; rollback/reconciliación; historial inmutable; vista actualizada; notificaciones deduplicadas.
-- Estado: Pendiente.
+- **Hallazgo de origen:** AUD-NG-253, apartados 3.4 y 4-6; complementa AUD-NG-236/241/245.
+- **Severidad:** Alto.
+- **Objetivo:** gestionar el ciclo de vida completo de eventos y actividades sin dejar reservas huérfanas ni perder trazabilidad.
+- **Acción ejecutable:** definir contrato canónico; implementar edición, reprogramación, cancelación y recurrencia; definir estados/transiciones; vincular reservas a evento/ocurrencia; liberar únicamente recursos asociados al cancelar; revalidar disponibilidad antes de confirmar cambios; registrar diff, actor verificado, fecha y motivo; propagar cambios al calendario y al dispatcher.
+- **Archivos/módulos afectados:** backend/academic-service/Code.gs; js/secretary.js; dashboard-secretaria.html; dashboard-direccion.html; consumidores de calendario y notificaciones.
+- **Dependencias y riesgos:** AUD-NG-236/241/245; TASK-554/562/545/546/555/563/577..583. Riesgo de liberar reservas ajenas si no se vinculan por ID y ocurrencia.
+- **Alcance:** eventos institucionales y extracurriculares; no sustituye el ciclo de vida de excepciones de sesiones de clase cubierto por AUD-NG-243/TASK-561.
+- **Criterios de aceptación:** altas/ediciones/cancelaciones con transiciones válidas; series y ocurrencias identificables; cancelación libera solo reservas vinculadas; reprogramación valida antes de confirmar; historial inmutable; calendario y notificaciones se actualizan de forma deduplicada; recuperación ante fallo sin estado parcial.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** Pendiente; completar con commit, pruebas de ciclo de vida/rollback y revisión independiente.
 
-#### [TASK-611] Aplicar autorización contextual y privacidad por evento/grupo/participante
-- Hallazgo: AUD-NG-252. Severidad/prioridad: ALTO/P1.
-- Objetivo: cada usuario consulta solo eventos visibles por rol/ámbito; autoría desde sesión validada.
-- Acción: eliminar visibilidadRol como autoridad del cliente; usar _verifiedRole/_verifiedUserId; filtrar visibilidad/destinatarios; relaciones de participantes por IDs; derivar responsable desde claims; permisos por acción/ámbito en create/get/update/cancel.
-- Archivos: Code.gs, ROLE_PERMISSIONS, validateRolePermission/validateContextualAccess, js/api.js, js/secretary.js y pruebas.
-- Dependencias: AUD-NG-001/252; TASK-567/554.
-- Aceptación: alterar payload no revela eventos; omitir filtro no amplía acceso; actor coincide con claims; participantes solo consultan eventos propios; consultas globales limitadas a roles autorizados; pruebas positivas/negativas.
-- Estado: Pendiente.
+#### [TASK-611] Aplicar autorización contextual y privacidad por evento, grupo y participante
+- **Hallazgo de origen:** AUD-NG-252, apartados 3.5 y 4-6; complementa AUD-NG-001.
+- **Severidad:** Alto.
+- **Objetivo:** asegurar que cada usuario consulte y gestione exclusivamente eventos permitidos por rol, ámbito, sede, grupo y relación de participante.
+- **Acción ejecutable:** eliminar visibilidadRol como autoridad del cliente; derivar usuario/rol desde _verifiedUserId/_verifiedRole; definir permisos por acción y ámbito; modelar participantes/grupos mediante IDs; filtrar en servidor; atribuir responsable desde sesión validada; proteger alta, consulta, edición y cancelación.
+- **Archivos/módulos afectados:** backend/academic-service/Code.gs (ROLE_PERMISSIONS, validateRolePermission, validateContextualAccess y endpoints de eventos); js/api.js; js/secretary.js; dashboards administrativos; tests/regression.
+- **Dependencias y riesgos:** AUD-NG-001/252; TASK-567 y TASK-554. Riesgo de exposición de eventos privados y falsificación de autoría si se confía en payloads.
+- **Alcance:** autorización de eventos institucionales y recursos; no duplicar el sistema transversal de autenticación ni el motor de permisos existente.
+- **Criterios de aceptación:** manipular payload no amplía acceso; omitir visibilidad no devuelve eventos globales; actor coincide con claims verificados; participantes solo consultan eventos de su ámbito; acceso global limitado a roles autorizados; pruebas negativas por rol/ámbito.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** Pendiente; completar con commit, pruebas RBAC/ABAC y revisión independiente.
 
-#### [TASK-612] Añadir regresión conductual integral de CA-F7-106..111
-- Hallazgos: AUD-NG-236/241/252/253. Severidad/prioridad: ALTO/P1.
-- Objetivo: probar reservas, privacidad, calendario, cancelación e historial.
-- Acción: pruebas aisladas de contrato/migración; solapamiento aula/recursos; primer registro mantenimiento; evento informativo sin recursos; fechas; recurrencia; edición/cancelación/liberación; visibilidad/participantes; actor verificado; notificaciones; idempotencia/rollback.
-- Archivos: tests/regression/academic-grading-suite.js; backend/developer-service/Code.gs si la suite se expone desde el servicio.
-- Dependencias: TASK-545/546/554/555/562/567/577..583/610/611.
-- Aceptación: casos positivos/negativos por CA; defectos de índices/esquema reproducidos; sin Sheets productivas; repetición sin efectos colaterales; resultados identificables.
-- Estado: Pendiente.
+#### [TASK-612] Añadir regresión conductual integral para CA-F7-106..111
+- **Hallazgo de origen:** AUD-NG-236/241/252/253, apartados 3-7.
+- **Severidad:** Alto.
+- **Objetivo:** demostrar con pruebas reproducibles la integridad de reservas, privacidad, propagación, cancelación e historial.
+- **Acción ejecutable:** crear casos aislados para migración de esquema; primera fila de mantenimiento; solapamientos de aulas/recursos/horarios; evento informativo sin recursos; recurrencia; edición/cancelación/liberación; privacidad de participantes; actor verificado; notificaciones; idempotencia y recuperación ante fallo.
+- **Archivos/módulos afectados:** tests/regression/academic-grading-suite.js; backend/academic-service/Code.gs; backend/developer-service/Code.gs si se expone la suite.
+- **Dependencias y riesgos:** TASK-545/546/549/554/555/562/567/577..583/610/611. Las pruebas no deben depender de hojas productivas ni limitarse a buscar cadenas.
+- **Alcance:** pruebas de contrato y comportamiento de los doce requisitos y seis criterios de TAREA-F7-IMP-17.
+- **Criterios de aceptación:** casos positivos y negativos trazados a CA-F7-106..111; defectos de índices/esquema reproducidos; aislamiento de datos; cancelación libera solo reservas propias; resultados repetibles; ejecución sin efectos colaterales productivos.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** Pendiente; completar con resultados de ejecución, commit y revisión independiente.
 
 ### Existentes ampliadas
-- TASK-554: migración no destructiva del contrato CalendarioAcademico, incluidos sede, recursos y participantes.
-- TASK-562: proyección por fecha/estado/visibilidad/participantes y refresco tras cambios.
-- TASK-545: esquemas SedesAulas/MantenimientoAulas, cabeceras, primera fila e índices.
-- TASK-546: vigencia completa y transiciones de mantenimiento.
-- TASK-549: catálogo de recursos con IDs/cantidades/compatibilidad, no texto libre.
-- TASK-555: conflictos entre eventos, horarios, aulas, capacidad/equipos e intervalos.
-- TASK-567: token/permisos de endpoints privados; actor/rol desde claims.
-- TASK-577..583/AUD-NG-245: notificaciones de alta/cambio/cancelación y destinatarios/deduplicación.
-- TASK-563: mantener alcance de liberar recursos de ocurrencias de clase; coordinar reservas sin duplicar.
-Control: no duplicar contrato calendario (TASK-554), mantenimiento/recursos (545/546/549), conflictos (555), autenticación (AUD-NG-001/567) ni dispatcher (245/577..583). TASK-610 cubre eventos institucionales; TASK-561/AUD-NG-243 cubren excepciones de sesiones.
+- **TASK-554:** migración no destructiva del contrato CalendarioAcademico, incluidos sede, recursos y participantes.
+- **TASK-562:** proyección por fecha/estado/visibilidad/participantes y refresco tras cambios.
+- **TASK-545:** esquemas SedesAulas/MantenimientoAulas, cabeceras, primera fila e índices.
+- **TASK-546:** vigencia completa y transiciones de mantenimiento.
+- **TASK-549:** catálogo de recursos con IDs/cantidades/compatibilidad, no texto libre.
+- **TASK-555:** conflictos entre eventos, horarios, aulas, capacidad/equipos e intervalos.
+- **TASK-567:** token/permisos de endpoints privados; actor/rol desde claims.
+- **TASK-577..583 / AUD-NG-245:** notificaciones de alta/cambio/cancelación y destinatarios/deduplicación.
+- **TASK-563:** coordinar liberación de reservas sin duplicar el alcance de ocurrencias de clase.
+
+**Control de duplicidad:** no crear otro contrato de calendario (TASK-554), mantenimiento/recursos (TASK-545/546/549), motor de conflictos (TASK-555), autenticación (AUD-NG-001/TASK-567) ni dispatcher (AUD-NG-245/TASK-577..583). TASK-610 cubre eventos institucionales; TASK-561/AUD-NG-243 cubren excepciones de sesiones.
+ 
 
 ## 8. Pruebas y límites
 - Ejecutadas: inspección estática/manual de requisitos, esquemas, índices, RBAC, API, formularios, páginas, pruebas, ChangesLogs, antecedentes y SHAs.
@@ -140,7 +154,7 @@ Control: no duplicar contrato calendario (TASK-554), mantenimiento/recursos (545
 ## 9. SHAs y archivos
 - Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5; js/api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; js/secretary.js 08a81266957b4c18cc25f8ba6749eac30a8f2c2c; dashboard-secretaria.html fa0d8c23aace24a6acab2d4956398a7f5e1309b8; dashboard-direccion.html fefaa3bf7884288aef563cfb8aaf244e6cea8b7c; js/teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; teacher-dashboard.html cbb9e6a272a7d8ad33f99727303305d950533e71; academic-grading-suite.js a22cb3ef376fe09e65c1b17c2f4f5125290bfba6; ChangesLogs.txt 5b5cff1926b73a05d1b92087a7bf4b2db75326ff.
 - completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676; Pendientes blob 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c; metodología cf796728bb384a32537392df2f9c72a339fa03ee.
-- Contexto previo 8f1ab2e04dddcdf5d405daf76ec65845cf90b117; plan 25d6a0093301ff91d303bfa7f9692be5d0975dc9; Auditoria.txt cab93361f7c69335d4f913b6a4f020874c7dde0e; MapaDependencias.md 529e0334410d2ba169c052cfd1a9d10c05115bb0.
+- Contexto C1.248 8f1ab2e04dddcdf5d405daf76ec65845cf90b117; plan C1.248 25d6a0093301ff91d303bfa7f9692be5d0975dc9; Auditoria.txt C1.248 cab93361f7c69335d4f913b6a4f020874c7dde0e; MapaDependencias.md C1.248 529e0334410d2ba169c052cfd1a9d10c05115bb0.
 - Antecedentes IMP-01 1743620a58cdc813f093bfb14db4651681481591; IMP-06 2d353d7cc700e31af9cf776f6da55b90f5d9e2e5; IMP-08 9e2a0526433f8db56214856da563d6fa10f9e420; IMP-15 08fd8a623a689e344c23ecd3cb625e0ac5cabf9c.
 - Nuevo: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-17.md.
 - Actualizados: Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt.
@@ -148,3 +162,6 @@ Control: no duplicar contrato calendario (TASK-554), mantenimiento/recursos (545
 
 ## 10. Continuidad
 Última tarea auditada: TAREA-F7-IMP-17, NO CUMPLE. Siguiente: TAREA-F7-IMP-18, restricciones curriculares y dependencias entre asignaturas.
+
+## 11. Reconciliación del checkpoint
+El C1.249 anterior no se considera válido ni se conserva su contenido documental. Esta auditoría vuelve a partir del contenido de C1.248, revalida los SHA de código/UI/pruebas y reemplaza el cierre anterior. No se modificó código, datos productivos, completadas.md, Pendientes.md, ChangesLogs.txt ni METODOLOGIA_DESARROLLO.md.
