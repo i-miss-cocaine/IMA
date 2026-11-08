@@ -3901,3 +3901,30 @@ Inspección estática/manual y Git/blob; no se ejecutaron requests HTTP, Apps Sc
 - CA-F8-011: NO CUMPLE.
 - CA-F8-012: NO CUMPLE.
 - No se ejecutaron triggers, Drive API, carga real ni pruebas de producción; no se modificó código ni se tocaron archivos Drive productivos.
+
+
+---
+
+## F8-Task07 / TAREA-AD-01 — Dashboards dinámicos por roles configurables (C1.267)
+
+### Componentes y relaciones inspeccionados
+- `app/html/dashboards/dynamic-dashboard.html` SHA 765a45e5666c24c430e841cb70c3d71d03cf9074: 50 líneas; estructura, grid y scripts; sin UI de alta/edición de roles ni rutas de módulos.
+- `js/ui-common.js` SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67: 5810–5872; loadDynamicDashboard solo consulta por userId y pinta tarjetas; “Acceder” es span sin destino.
+- `backend/user-service/Code.gs` SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f: 1146–1162 token obligatorio; 1253–1295 RBAC; 1863–1898 matriz rol+acción; 8968–9180 catálogos/responsabilidades/asignaciones; 9253–9304 dashboard de seis roles con fallback docente; 9631–9808 roles internos/asignaciones.
+- `js/config.js` SHA 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc: catálogos estáticos de capacidades, módulos y responsabilidades; contratos/rutas.
+- `js/api.js` SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9: 45–59 propaga requesterUserId/requesterRole, no token de sesión.
+- `tests/regression/modular-dashboard-suite.js` SHA 0495e1d526a872c33310935a003a83d924d34683: 61 líneas, aserciones de presencia y cadenas, sin pruebas de comportamiento.
+- Pendientes.md blob actual recuperado: 676a3f798715f0cdd7d4bc75768472545b8465ee, 1.786.011 caracteres, 20.224 líneas, 0 U+FFFD.
+
+### Hallazgos y tareas derivadas
+- AUD-NG-191 ALTO: mapa rígido, fallback de Profesor y accesos decorativos → ampliar TASK-488.
+- AUD-NG-225 ALTO: falta de UI de gestión integrada y dashboard desconectado de responsabilidades/asignaciones → ampliar TASK-505.
+- AUD-NG-221 ALTO: matriz no aplica módulo/ámbito → ampliar TASK-501.
+- AUD-NG-003 / TASK-636: falta propagación de token en la consulta dinámica → ampliar TASK-636.
+- No se crean IDs nuevos para evitar duplicar causas ya registradas.
+
+### Dictamen
+- CA-AD-101: NO CUMPLE.
+- CA-AD-102: NO CUMPLE.
+- CA-AD-103: NO CUMPLE.
+- No se ejecutaron pruebas runtime ni se modificó código fuente.

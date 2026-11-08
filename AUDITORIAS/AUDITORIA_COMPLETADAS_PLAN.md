@@ -2236,3 +2236,19 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **Pendientes.md:** blob actual 676a3f798715f0cdd7d4bc75768472545b8465ee, 1.786.011 caracteres, 20.224 líneas, 0 U+FFFD; máximo TASK-636; no contiene F8-Task06 ni TASK-656..660. El blob actual sigue en el árbol de la rama y no se modificó.
 - **Limitaciones:** no se encontró appsscript.json ni fuente AUDITORIA_FASE_8_AULA_VIRTUAL_APRENDIZAJE.md; no se puede verificar configuración externa de triggers/Drive Advanced Service. No se ejecutaron Apps Script, Drive real, alertas, cargas, Node, navegador ni E2E.
 - **Siguiente tarea exacta:** F8-Task07, arquitectura de dashboards dinámicos para roles configurables; CA-AD-101/102/103. El informe individual no se encontró en el árbol y deberá buscarse de nuevo al iniciar.
+
+
+---
+
+## F8-Task07 / TAREA-AD-01 — Arquitectura de dashboards dinámicos (C1.267)
+
+- **Dictamen:** NO CUMPLE; se conserva la marca histórica [X] en completadas.md.
+- **Criterios:** CA-AD-101 NO CUMPLE; CA-AD-102 NO CUMPLE; CA-AD-103 NO CUMPLE.
+- **Hallazgos reconciliados:** AUD-NG-191 confirmado (mapa fijo, fallback de Profesor y tarjetas sin navegación); AUD-NG-225 confirmado (endpoints de roles sin UI integrada y dashboard no consume responsabilidades/asignaciones); AUD-NG-221 confirmado como dependencia (matriz solo rol+acción); AUD-NG-003/TASK-636 ampliado (token no propagado a consulta del dashboard).
+- **Tareas derivadas/ampliadas:** TASK-488 composición dinámica y navegación autorizada; TASK-505 consola administrativa/ciclo de vida y asignaciones; TASK-501 permisos por módulo/ámbito; TASK-636 token e identidad verificada. No se crean IDs duplicados.
+- **Evidencia:** completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676 líneas 4915–4943; dynamic-dashboard.html 765a45e5666c24c430e841cb70c3d71d03cf9074; ui-common.js 986938b8a311a41ed4cb3d135b66b6aaea4bed67; USER Code.gs 12079dd410aa6d8afbce55a4bc62a79dea605f9f; config.js 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc; api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; suite 0495e1d526a872c33310935a003a83d924d34683.
+- **Pendientes.md:** lectura convencional 0 caracteres; blob actual 676a3f798715f0cdd7d4bc75768472545b8465ee recuperado íntegro (1.786.011 caracteres, 20.224 líneas, 0 U+FFFD); tareas TASK-488/501/505/636 ya existen; no se modificó.
+- **Pruebas:** inspección manual y contraste de rutas, funciones, autenticación, matriz, catálogo y tareas relacionadas. No ejecutados Node, Apps Script, HTTP, navegador, hojas productivas ni E2E.
+- **Código fuente:** sin modificaciones; rama base intacta.
+- **Siguiente tarea exacta:** F8-Task08 — catálogo central de responsabilidades, capacidades y módulos.
+- **Próxima acción:** verificar existencia de informe F8-Task08; si falta, auditar directamente la persistencia y consumo del catálogo central, validación de módulos/capacidades y coherencia entre configuración, roles y servicios.

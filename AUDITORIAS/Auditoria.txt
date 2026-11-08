@@ -9435,3 +9435,34 @@ ARCHIVO NUEVO: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK06.md.
 ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
 SIGUIENTE: F8-Task07 — dashboards dinámicos para roles configurables (CA-AD-101/102/103).
 ===============================================================================
+
+
+===============================================================================
+F8-Task07 / TAREA-AD-01 — Arquitectura de dashboards dinámicos (2026-11-08)
+DICTAMEN: NO CUMPLE. CA-AD-101 NO CUMPLE; CA-AD-102 NO CUMPLE; CA-AD-103 NO CUMPLE.
+HALLAZGOS RECONCILIADOS (sin duplicar IDs):
+- AUD-NG-191 ALTO/P1 confirmado: USER getUserDynamicDashboardConfig usa mapa fijo de seis roles y asigna módulos de Profesor a roles desconocidos; ui-common.js muestra tarjetas con “Acceder” como span sin ruta/handler. Ampliar TASK-488.
+- AUD-NG-225 ALTO/P1 confirmado: endpoints de catálogo/roles no tienen UI consumidora encontrada en los frontends revisados; dashboard no consume responsabilidades ni asignaciones. Ampliar TASK-505.
+- AUD-NG-221 ALTO/P1 confirmado como dependencia: matriz dinámica evalúa solo rol+acción e ignora módulo/ámbito. Ampliar TASK-501.
+- AUD-NG-003 / TASK-636 ampliado: api.js no propaga sessionToken/authToken/token; USER getUserVerifiedRole exige token y la acción no es pública. Probar autorización del dashboard y derivar identidad desde claims.
+EVIDENCIA:
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, F8-Task07 líneas 4915–4943 [X].
+- Pendientes.md blob SHA 676a3f798715f0cdd7d4bc75768472545b8465ee: 1.786.011 caracteres, 20.224 líneas, 0 U+FFFD; tareas existentes TASK-488, TASK-501, TASK-505 y TASK-636. No se modificó.
+- dynamic-dashboard.html SHA 765a45e5666c24c430e841cb70c3d71d03cf9074; ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67; USER Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f; config.js SHA 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc; api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9.
+- modular-dashboard-suite.js SHA 0495e1d526a872c33310935a003a83d924d34683: 61 líneas; prueba presencia de archivos/cadenas, no comportamiento de roles, scopes ni dashboard.
+- Auditoria.txt SHA previo d6a0fd9e43623436d5ffb6ecbe1f25ded0d99717; AUD-NG-191 y AUD-NG-225 ya documentan causas relacionadas.
+- Árbol Git: no existe AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK07.md.
+PRUEBAS/LÍMITES:
+- Inspección manual de los componentes, dispatcher, autenticación, RBAC, catálogos, scopes y tareas previas.
+- No ejecutados Node, Apps Script, navegador/DOM, HTTP, hojas productivas, tokens runtime, pruebas multirol ni E2E.
+- No se modificó código ni se alteraron registros productivos.
+TAREAS EJECUTABLES DERIVADAS:
+- Ampliar TASK-488: resolver módulos por responsabilidades/asignaciones activas y permisos efectivos; eliminar fallback de Profesor; enlazar cada tarjeta a destino real autorizado; probar roles desconocidos/inactivos y errores.
+- Ampliar TASK-505: implementar UI administrativa autenticada; validar relación roleId-catálogo; ciclo de vida, vigencias, múltiples responsabilidades y scopes; integrar dashboard.
+- Ampliar TASK-501: autorización por rol+módulo+acción+ámbito, fail-closed y caché coherente.
+- Ampliar TASK-636: propagar token, derivar identidad/rol de claims y probar acceso propio/ajeno a getUserDynamicDashboardConfig.
+- No se crean nuevos IDs porque las causas están cubiertas por tareas existentes.
+ARCHIVO NUEVO: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK07.md.
+ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+SIGUIENTE: F8-Task08 — catálogo central de responsabilidades, capacidades y módulos.
+===============================================================================

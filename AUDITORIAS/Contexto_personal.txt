@@ -9120,3 +9120,33 @@ Auditar TAREA-F6-015 y TAREA-F6-040. Buscar informes individuales e historial en
 - **Próxima acción reproducible:** verificar si existe AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK07.md; si falta, abrir completadas.md desde F8-Task07 y auditar app/html/dashboards/dynamic-dashboard.html, js/ui-common.js y backend/user-service/Code.gs, revisando alta de roles, composición de módulos, permisos efectivos y denegación por defecto.
 - **Commit de cierre:** el commit único que contiene este checkpoint; SHA final se confirma consultando HEAD después de publicar.
 ===============================================================================
+
+
+===============================================================================
+## C1.267 — Checkpoint de cierre: auditoría F8-Task07 / TAREA-AD-01 (2026-11-08)
+
+- **ID de sesión operativo:** IMA-AUDIT-20261108-2201Z-01 (documental; no ID nativo de ChatGPT).
+- **Checkpoint inicial:** C1.266. **Checkpoint de cierre:** C1.267.
+- **Estado:** sesión cerrada después de publicar un único commit con informe, bitácora, mapa, plan y checkpoint.
+- **Repositorio:** i-miss-cocaine/IMA. **Archivo de contexto:** AUDITORIAS/Contexto_personal.txt.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **HEAD de partida verificado:** 212d346f059f51e187cf75794e8bfd873c4f75c5; árbol af398dd0d15d44531837ada86f5d196d4101c22b.
+- **Rama base protegida:** NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59; comparación de inicio: 335 commits adelante, 0 detrás; sin cambios en rama base.
+- **Tarea auditada:** F8-Task07 / TAREA-AD-01, marcada [X] en completadas.md líneas 4915–4943; informe individual no encontrado; auditoría directa.
+- **Dictamen:** NO CUMPLE. CA-AD-101, CA-AD-102 y CA-AD-103 NO CUMPLEN.
+- **Hallazgos reconciliados:** AUD-NG-191 (mapa rígido, fallback docente y tarjetas sin navegación); AUD-NG-225 (catálogo/roles sin UI integrada y desconectados del dashboard); AUD-NG-221 (matriz ignora módulo/ámbito); AUD-NG-003/TASK-636 (token no propagado a consulta dinámica).
+- **Tareas derivadas/ampliadas:** TASK-488, TASK-505, TASK-501 y TASK-636; no se crean IDs nuevos porque las causas ya tienen tareas pendientes.
+- **Fuentes:** completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676; Pendientes.md 676a3f798715f0cdd7d4bc75768472545b8465ee; dynamic-dashboard.html 765a45e5666c24c430e841cb70c3d71d03cf9074; ui-common.js 986938b8a311a41ed4cb3d135b66b6aaea4bed67; USER Code.gs 12079dd410aa6d8afbce55a4bc62a79dea605f9f; config.js 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc; api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; suite 0495e1d526a872c33310935a003a83d924d34683; metodología cf796728bb384a32537392df2f9c72a339fa03ee.
+- **Pendientes.md:** lectura convencional 0 caracteres; blob actual recuperado: 1.786.011 caracteres, 20.224 líneas, 0 U+FFFD. Se verificaron TASK-488, TASK-501, TASK-505 y TASK-636; no se restauró ni modificó.
+- **Puntos inspeccionados:** completadas.md 4915–4943; dynamic-dashboard.html completo (1–50); ui-common.js 5810–5872 y búsqueda de consumidores de roles; USER Code.gs 922–982, 1146–1162, 1253–1295, 1351–1585, 1863–1983, 8968–9180, 9253–9304 y 9631–9808; config.js catálogo/contratos; api.js 45–59; modular-dashboard-suite.js completo; tareas relacionadas y hallazgos AUD-NG-191/221/225.
+- **Pruebas ejecutadas:** inspección manual de código/documentación, árbol Git, recuperación del blob Pendientes.md, comprobación de ausencia del informe y comparación de ramas.
+- **No ejecutadas:** Node, Apps Script runtime, HTTP, navegador/DOM, pruebas de tokens reales, pruebas multiusuario/multiroles, permisos por módulo/ámbito, hojas productivas ni E2E.
+- **Limitaciones:** sin acceso a despliegue Apps Script ni datos operativos de hojas; no se certifica estado productivo de catálogos/asignaciones. No se modificó código.
+- **Archivos nuevos:** AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK07.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Sin cambios:** app/html/dashboards/dynamic-dashboard.html; js/ui-common.js; backend/user-service/Code.gs; js/config.js; js/api.js; tests/regression/modular-dashboard-suite.js; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md y rama base.
+- **Última tarea auditada:** F8-Task07. **Tarea en curso al cierre:** ninguna.
+- **Siguiente tarea exacta:** F8-Task08 — catálogo central de responsabilidades, capacidades y módulos.
+- **Próxima acción reproducible:** verificar si existe AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK08.md; si falta, auditar directamente la persistencia, validación, consumo y coherencia del catálogo central en backend USER, config.js, servicios consumidores y pruebas.
+- **Commit de cierre:** el commit único que contiene este checkpoint; SHA final se confirma consultando HEAD después de publicar.
+===============================================================================
