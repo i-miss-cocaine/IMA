@@ -4481,7 +4481,7 @@ CHECKPOINT C1.125 - NORMALIZACIÓN DEL BLOQUE DE TAREAS DEL INFORME DE FASE 22
 - Informe normalizado en esta iteración: AUDITORIAS/AUDITORIA_FASE_22_GESTION_DOCUMENTAL_FORMULARIOS_FIRMA_ELECTRONICA.md.
 - SHA del informe antes de modificar: ece5b0680fbc84b87ac8f60ca2fe0d44b6a8eacc.
 - SHA del contexto antes de modificar: d9e62d91ea5198d3d72491bb9816ae1026f21544.
-- Inspección documental: informe completo (26,870 caracteres; 231 líneas), secciones A-I, capacidades F22-01..F22-40, pruebas PT-22-01..PT-22-53, brechas G y plan H.
+- Inspección documental: informe completo (26,870 caracteres; 2320.182 líneas), secciones A-I, capacidades F22-01..F22-40, pruebas PT-22-01..PT-22-53, brechas G y plan H.
 - Fuentes cruzadas: Auditoria.txt (blob 284b7a94b51c8ed99dbfcf734694bc5361f9f111), TASK-038..TASK-042, AUD-NG-027, AUD-NG-055..AUD-NG-065, TASK-351, TASK-118 y AUD-NG-161; metodología §3.4 y AUDITORIAS/README.md.
 - Tareas originales preservadas: F22-Task01..F22-Task10 con prioridades P0/P1/P2/P0 Calidad.
 - Reconciliación histórica: TASK-038..TASK-041 corresponden a F22-Task01..04; TASK-042 etiqueta la suite como F22-Task13, mientras el informe la denomina F22-Task10. Se conservan los IDs originales y se documenta el alias sin renombrar.
@@ -7797,7 +7797,7 @@ REPOSITORIO Y RAMAS:
 FUENTES Y RESPALDOS:
 - completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676: F6-011 [X], líneas 2798-2820; F6-036 [X], líneas 3705-3732.
 - Pendientes.md en HEAD devuelve 0 caracteres por lectura convencional; blob actual SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c recuperado íntegro: 1.803.672 bytes, 1.782.094 caracteres, 20.182 líneas, sin U+FFFD. AUD-NG-146 [ ] Pendiente. No se modificó.
-- ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff: F6-011 líneas 1993-1997; F6-036 líneas 2174-2177.
+- ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff: F6-0120.182 líneas 1993-1997; F6-036 líneas 2174-2177.
 - No existían informes individuales F6-011/F6-036; se crean.
 - AUD-NG-146 está vigente; se amplía sin duplicar ID.
 
@@ -8549,5 +8549,39 @@ Auditar TAREA-F6-015 y TAREA-F6-040. Buscar informes individuales e historial en
 - **Siguiente tarea exacta:** TAREA-F7-IMP-16, gestión de sustituciones y reasignación de clases afectadas.
 - **Próxima acción concreta:** buscar `AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-16.md` y la fuente declarada; si no existen, leer el bloque completo de TAREA-F7-IMP-16 en completadas.md y auditar sus requisitos directamente contra el código de NG_beta_0.0.0.1_work.
 - **Commit de cierre:** el commit único que contiene C1.247 y los cuatro documentos actualizados más el informe nuevo; su SHA se confirma consultando el HEAD de NG_beta_0.0.0.1_work después de publicar. No se escribe dentro de este mismo checkpoint para evitar autorreferencia.
+
+===============================================================================
+
+
+===============================================================================
+## C1.248 - Checkpoint de cierre: auditoría TAREA-F7-IMP-16 (2026-11-08)
+
+- **ID de sesión operativo:** IMA-AUDIT-20261108-1023CST (identificador documental, no ID nativo de ChatGPT).
+- **Checkpoint inicial:** C1.247. **Checkpoint de cierre:** C1.248.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Archivo de contexto:** AUDITORIAS/Contexto_personal.txt.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **Rama base protegida:** NG_beta_0.0.0.1.
+- **HEAD de partida verificado:** a6d256858dfbf1c952811640b590d3c1c61431bd (C1.247).
+- **HEAD de rama base verificado:** 44d9891132332e692dbe2ba8602b41f50a508a59; comparación antes de la iteración: 315 commits adelante, 0 detrás. La rama base no se modifica.
+- **Árbol base para el commit:** a5ca1949627085580fa5097969f4a89be143e756 (árbol publicado por C1.247).
+- **Tarea realizada:** TAREA-F7-IMP-16, marcada [X] en completadas.md; dictamen técnico NO CUMPLE.
+- **Criterios:** CA-F7-99 NO CUMPLE; CA-F7-100 PARCIAL; CA-F7-101 NO CUMPLE; CA-F7-102 NO CUMPLE; CA-F7-103 NO CUMPLE; CA-F7-104 NO CUMPLE; CA-F7-105 NO CUMPLE.
+- **Hallazgos:** AUD-NG-168 ampliado por índices/esquema/estados de sustituciones; AUD-NG-251 nuevo (ALTO/P1) por autorización contextual/actor/bypass; AUD-NG-245 ampliado por notificaciones ausentes; AUD-NG-246 ampliado por DOM y resolución de vistas; AUD-NG-250 ampliado por ausencia de LockService en createTeacherSubstitution.
+- **Tareas derivadas:** TASK-607 (ciclo de vida y resolución efectiva por fecha), TASK-608 (preview/aplicación multibloque), TASK-609 (autorización contextual y actor verificado); ampliar TASK-584/585/586/567, TASK-577..583, TASK-587, TASK-591, TASK-598, TASK-602, TASK-605/606 y TASK-173.
+- **Integridad documental:** completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676; TAREA-F7-IMP-16 [X] en línea 4414. Pendientes.md blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c recuperado íntegramente: 1782094 caracteres, 20.182 líneas, cero U+FFFD; TASK-173 existe, TAREA-F7-IMP-16 no aparece. Informe individual y fuente declarada 404.
+- **Puntos inspeccionados:** backend/academic-service/Code.gs: esquema (110-120); RBAC/contexto/router (168-260, 465-583, 671-755); asignaciones/resumen (6228-6347); createTeacherSubstitution/getTeacherSubstitutions (6501-6616); getTeacherTeachingLoad (6773-6841); checkScheduleConflict (7493-7693); syncAcademicScheduleIntegrity (7879-7924); getIndividualCalendar (7925-7980); getStudentSchedule (7986-8085); runAcademicPlanningRegressionSuite (14080-14173); js/teacher.js (1908-1944, 2077-2157); teacher-dashboard.html (1-1475); academic-grading-suite.js (línea 102); ChangesLogs.txt F11-Task12; completadas/Pendientes y documentos de auditoría.
+- **Evidencia principal:** índice r[8] inexistente usado como estado en HorariosClase; campos de día/hora desplazados; conflictCheck.message frente a reason; estado Activa/Temporal/Activo incompatible; vencimiento solo en DTO y sin filtro de inicio; un solo ofertaId y conteo en lugar de vínculo por bloque; titular no se sobrescribe pero no hay historial relacional; modal/botón/campos ausentes; no se invocan notificaciones; Profesor puede crear/consultar, autoría del payload y forzar conflictos sin guardia de servidor; prueba externa estática y TC-F7-05 con propiedad errónea.
+- **SHAs de respaldo:** Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5; teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; teacher-dashboard.html cbb9e6a272a7d8ad33f99727303305d950533e71; academic-grading-suite.js a22cb3ef376fe09e65c1b17c2f4f5125290bfba6; completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676; Pendientes.md 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c; ChangesLogs.txt 5b5cff1926b73a05d1b92087a7bf4b2db75326ff; metodología cf796728bb384a32537392df2f9c72a339fa03ee.
+- **Pruebas ejecutadas:** inspección estática/manual y verificación Git de archivos, ramas y SHAs.
+- **No ejecutadas:** Apps Script runtime, HTTP/OAuth, navegador/DOM, Sheets productivas, sustituciones reales, concurrencia, fallos inducidos, notificaciones reales, Node y E2E.
+- **Archivos nuevos:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-16.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Archivos sin cambios:** backend/academic-service/Code.gs; js/teacher.js; teacher-dashboard.html; tests/*; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md; rama base.
+- **Última tarea completamente auditada:** TAREA-F7-IMP-16.
+- **Tarea en curso:** ninguna al cierre.
+- **Siguiente tarea exacta:** TAREA-F7-IMP-17, gestión de eventos y actividades con participantes y recursos (CA-F7-106..111).
+- **Próxima acción concreta:** buscar `AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-17.md` y `AUDITORIA_FASE_7_PLANIFICACION_HORARIOS_RECURSOS.md`; si faltan, leer el bloque completo de TAREA-F7-IMP-17 en completadas.md y auditar el código vigente de NG_beta_0.0.0.1_work.
+- **Commit de cierre:** el SHA final será el HEAD de NG_beta_0.0.0.1_work confirmado por consulta GitHub después de publicar este checkpoint; un único commit consolidará los cuatro documentos acumulativos y el informe individual nuevo.
 
 ===============================================================================

@@ -1589,7 +1589,7 @@ CLASIFICACIÓN: INCIDENTE DOCUMENTAL CORREGIDO
 ARCHIVOS / LÍNEAS:
 - Pendientes.md: versión histórica restaurada desde el blob 2f3c2e066f362a8a4651e690c4be75d82bfe0ca6.
 DESCRIPCIÓN:
-La inspección inicial informó erróneamente que Pendientes.md estaba vacío. La actualización posterior reemplazó el documento original por una lista reducida de 11 tareas, eliminando 16,871 líneas del contenido previo. El historial Git permitió recuperar el blob original íntegro, con 1,307,832 caracteres y 16,872 líneas. La restauración se publicó en NG_beta mediante el commit 5ed45d3e0b492f863a21e410b54753cad6a2647b. El SHA del blob restaurado coincide con el blob histórico, por lo que el contenido recuperado es idéntico al original.
+La inspección inicial informó erróneamente que Pendientes.md estaba vacío. La actualización posterior reemplazó el documento original por una lista reducida de 11 tareas, eliminando 16,8720.182 líneas del contenido previo. El historial Git permitió recuperar el blob original íntegro, con 1,307,832 caracteres y 16,872 líneas. La restauración se publicó en NG_beta mediante el commit 5ed45d3e0b492f863a21e410b54753cad6a2647b. El SHA del blob restaurado coincide con el blob histórico, por lo que el contenido recuperado es idéntico al original.
 IMPACTO:
 La sobrescritura temporal del archivo se corrigió mediante restauración exacta. No debe volver a afirmarse que Pendientes.md estaba vacío ni incorporarse nuevas tareas reemplazando el contenido existente.
 DEPENDENCIAS:
@@ -7338,7 +7338,7 @@ AUDITORÍA C1.208 - TAREA-F5-012 / SEGUIMIENTO DE ASPIRANTES EN PORTAL FAMILIAR
 - H9 P2: lectores financieros filtran por userId de estudiante versus solicitudId, lo que separa consultas; ambos usan CargosEstudiante sin discriminador explícito y no hay prueba E2E. PARCIAL; no se afirma contaminación real.
 - H10 P1: tests/regression/academic-grading-suite.js SHA a22cb3ef376fe09e65c1b17c2f4f5125290bfba6 y modular-dashboard-suite.js SHA 0495e1d526a872c33310935a003a83d924d34683 no contienen casos de F5-012/endpoints/IDOR/drafts/documentos.
 - H11 P2: trazabilidad de origen incompleta; informe de fase y HALLAZGOS-F5-P0-01 no disponibles.
-- Pendientes.md: lectura ordinaria 0 caracteres; blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c íntegro (1782094 caracteres/1 líneas/sin U+FFFD); inventario 693 IDs únicos (509 TASK/184 AUD-NG), sin duplicados. No hay tarea directa F5-012; dependencias existentes AUD-NG-002/036/145/161/222 y TASK-140/142/146/153.
+- Pendientes.md: lectura ordinaria 0 caracteres; blob SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c íntegro (1782094 caracteres/20.182 líneas/sin U+FFFD); inventario 693 IDs únicos (509 TASK/184 AUD-NG), sin duplicados. No hay tarea directa F5-012; dependencias existentes AUD-NG-002/036/145/161/222 y TASK-140/142/146/153.
 - Subtareas locales F5-012-A01..A08, todas Pendientes. Oferta/lista de espera cubierta por F5-008-A04/A05; no crear duplicado global.
 - Pruebas ejecutadas: inspección estática/manual y verificación documental/historial/blob. No ejecutadas: Apps Script, HTTP, Sheets/Drive productivos, navegador, cuentas reales, carga/descarga, correo, triggers, concurrencia, XSS dinámico ni suites.
 - Archivos documentales de esta iteración: informe F5-012, Auditoria.txt, MapaDependencias.md, AUDITORIA_COMPLETADAS_PLAN.md, Contexto_personal.txt.
@@ -8239,7 +8239,7 @@ Dictamen: NO CUMPLE en ambas tareas.
 FUENTES:
 - completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676: F6-011 [X], líneas 2798-2820; F6-036 [X], líneas 3705-3732.
 - Pendientes.md: lectura convencional devolvió 0 caracteres; blob del HEAD actual SHA 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c recuperado íntegro: 1.803.672 bytes, 1.782.094 caracteres, 20.182 líneas, sin U+FFFD. AUD-NG-146 permanece [ ] Pendiente. No se modificó.
-- ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff: F6-011 líneas 1993-1997; F6-036 líneas 2174-2177. Las afirmaciones de SHA-256/aislamiento no coinciden con el código.
+- ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff: F6-0120.182 líneas 1993-1997; F6-036 líneas 2174-2177. Las afirmaciones de SHA-256/aislamiento no coinciden con el código.
 - No existían informes individuales F6-011/F6-036; se crean.
 - Rama base NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59; rama de trabajo 295 commits adelante, 0 detrás. Base intacta.
 
@@ -8884,4 +8884,45 @@ ARCHIVOS NUEVOS: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-15.md.
 ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
 CÓDIGO, UI, PRUEBAS, completadas.md, Pendientes.md, ChangesLogs.txt y rama base: SIN CAMBIOS.
 SIGUIENTE TAREA: TAREA-F7-IMP-16 (sustituciones y reasignación de clases afectadas).
+===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-08
+AUDITORÍA FUNCIONAL Y TÉCNICA - TAREA-F7-IMP-16: SUSTITUCIONES Y REASIGNACIÓN DE CLASES AFECTADAS
+DICTAMEN: NO CUMPLE (marca histórica [X] preservada en completadas.md).
+HALLAZGOS:
+- AUD-NG-168 AMPLIADO (ALTO/P1): createTeacherSubstitution usa r[8] como estado aunque HorariosClase tiene ocho columnas; pasa r[3]/r[4]/r[5]/r[6] como día/inicio/fin/año, aunque son hora inicio/hora fin/aula/docente; no pasa aulaCodigo/ofertaId; lee conflictCheck.message aunque checkScheduleConflict devuelve reason. Estado Activa no coincide con Temporal en consumidores ni Activo en resumen. Columna 8 de AsignacionesDocentes tiene contratos Motivo/SeccionKey incompatibles.
+- AUD-NG-251 NUEVO (ALTO/P1): Profesor tiene permiso estático para create/get; no hay scopeType/requestedValue en el payload para limitar oferta; getTeacherSubstitutions devuelve todos si no se filtra; autorizadoPor es texto de payload; forzarSustitucion omite conflictos sin autorización elevada.
+- AUD-NG-245 AMPLIADO: alta/cancelación/vencimiento no llama dispatcher de notificaciones.
+- AUD-NG-246 AMPLIADO: DOM/modal de sustitución ausente y consultas no resuelven docente efectivo por intervalo.
+- AUD-NG-250 AMPLIADO: createTeacherSubstitution no adquiere LockService para la escritura.
+CRITERIOS:
+- CA-F7-99 NO CUMPLE: fecha de inicio/fin no gobierna consumidores.
+- CA-F7-100 PARCIAL: la fila titular no se sobrescribe, pero no existe vínculo histórico por bloque/período.
+- CA-F7-101 NO CUMPLE: índices incorrectos y ausencia de comprobación de compatibilidad académica/horaria real.
+- CA-F7-102 NO CUMPLE: no hay preview multibloque; reason se lee desde message; force sin guardia server-side.
+- CA-F7-103 NO CUMPLE: HTML sin modal/botón y estado Activa/Temporal/Activo divergente.
+- CA-F7-104 NO CUMPLE: no se invocan dispatchers ni se resuelven destinatarios.
+- CA-F7-105 NO CUMPLE: vencimiento solo calculado en DTO; no se asegura el retorno al titular por fecha.
+EVIDENCIA:
+- Code.gs 110-120: HorariosClase tiene índices 0..7; AsignacionesDocentes 0..8.
+- Code.gs 6501-6568 createTeacherSubstitution; 6570-6616 getTeacherSubstitutions; 6305-6347 getCoordinatorOverview; 6773-6841 getTeacherTeachingLoad; 7493-7693 checkScheduleConflict; 7879-7924 syncAcademicScheduleIntegrity; 7925-7980 getIndividualCalendar; 7986-8085 getStudentSchedule; 524-583 validación contextual/RBAC; doPost 671-755.
+- js/teacher.js 1908-1944 invocador; 2077-2157 modal/controlador; teacher-dashboard.html 1-1475 sin IDs de modal/botón/campos.
+- tests/regression/academic-grading-suite.js línea 102 solo aserción estática de presencia F11-Task12; Code.gs TC-F7-05 espera tc5.sustituciones pero getTeacherSubstitutions devuelve data e ignora anoId.
+- ChangesLogs.txt F11-Task12 afirma vencimiento automático; el código solo lo calcula en respuesta y no lo persiste ni alimenta consumidores.
+DOCUMENTACIÓN:
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676; TAREA-F7-IMP-16 [X] en línea 4414; doce requisitos y CA-F7-99..105 inspeccionados.
+- Pendientes.md blob 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c: 1782094 caracteres, 20.182 líneas, 0 U+FFFD; lectura ordinaria 0. TASK-173 existe y cubre colisiones laborales/académicas/sustituciones/ausencias. No aparece TAREA-F7-IMP-16.
+- Informe individual AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-16.md y documento fuente AUDITORIA_FASE_7_PLANIFICACION_HORARIOS_RECURSOS.md: 404; se audita directamente desde completadas.md.
+TAREAS EJECUTABLES DERIVADAS:
+- Nuevas: TASK-607 (ciclo de vida y resolución efectiva por fecha); TASK-608 (preview y aplicación multibloque); TASK-609 (autorización contextual, actor verificado y control de bypass).
+- Ampliar TASK-584/585/586/567; TASK-577..583; TASK-587; TASK-591; TASK-598; TASK-602; TASK-605; TASK-606; TASK-173.
+- No duplicar motor de conflictos, notificaciones, autenticación, locks/atomicidad ni contrato de estado: ampliar TASK-173/TASK-598, TASK-577..583, TASK-567/TASK-586, TASK-605/TAREA-F7-IMP-15 y TASK-585/TASK-591/AUD-NG-168.
+RELACIONES: AUD-NG-158, AUD-NG-168, AUD-NG-245, AUD-NG-246, AUD-NG-247, AUD-NG-250, AUD-NG-251; TASK-173, TASK-567, TASK-577..583, TASK-584..589, TASK-591, TASK-598, TASK-602, TASK-605..609.
+PRUEBAS/LÍMITES: inspección estática/manual y verificación Git; no ejecutados Apps Script runtime, HTTP/OAuth, navegador, Sheets productivas, concurrencia real, fallos inducidos, notificaciones reales, Node ni E2E.
+ARCHIVOS NUEVOS: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-16.md.
+ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+CÓDIGO, UI, PRUEBAS, completadas.md, Pendientes.md, ChangesLogs.txt y rama base: SIN CAMBIOS.
+SIGUIENTE TAREA: TAREA-F7-IMP-17 (eventos y actividades con participantes y recursos; CA-F7-106..111).
 ===============================================================================

@@ -3442,3 +3442,29 @@ Inspección estática/manual. No se ejecutaron Apps Script runtime, HTTP/OAuth, 
 - Nuevas tareas: TASK-605 (cobertura uniforme de bloqueo) y TASK-606 (versionado optimista obligatorio).
 - Ampliaciones: TAREA-F7-IMP-15 (atomicidad/restauración/copia/generación/mantenimiento); TASK-602 (regresión CA-F7-93..98); TASK-587 (invalidación/frescura); TASK-591 (estado/carga); TASK-598 (conflictos dentro del lote).
 - Detalle y aceptación verificable: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-15.md.
+
+
+## Sustituciones docentes y reasignación de bloques (TAREA-F7-IMP-16)
+
+### Modelo y esquema
+- `HorariosClase` se declara con ocho columnas: HorarioID, OfertaID, DiaSemana, HoraInicio, HoraFin, AulaCodigo, DocenteUserId, Estado (índices 0..7). `createTeacherSubstitution` (6501-6568) usa r[8] como estado y desplaza los índices al invocar `checkScheduleConflict`; debe utilizar r[2]/r[3]/r[4], r[5] como aula y r[7] como estado.
+- `AsignacionesDocentes` se inicializa con Motivo en índice 8, pero `assignTeacherToClass` puede inicializar SeccionKey en el mismo índice. Normalizar contrato/DTO.
+- createTeacherSubstitution escribe Estado=Activa; getStudentSchedule/getIndividualCalendar/syncAcademicScheduleIntegrity esperan Temporal; getCoordinatorOverview espera Activo. Se requiere resolver un estado canónico.
+- getTeacherSubstitutions (6570-6616) devuelve data, no sustituciones; calcula Vencida solo en respuesta, no filtra fecha de inicio ni persiste expiración.
+
+### Flujo y consumidores
+- createTeacherSubstitution acepta un único ofertaId/sustitutoUserId y devuelve solo clasesAfectadasCount; no vincula cada HorarioID ni permite preview/aplicación multibloque.
+- getStudentSchedule (7986-8085) selecciona la primera sustitución Temporal por oferta sin fecha de vigencia; getIndividualCalendar (7925-7980) lista Temporal sin resolver período; syncAcademicScheduleIntegrity (7879-7924) ignora Activa.
+- js/teacher.js (1908-1944, 2077-2157) busca botón/modal/campos ausentes en teacher-dashboard.html; si no encuentra oferta, intenta crear una oferta general como efecto lateral; motivo del prompt no se transmite.
+- No hay llamada a dispatcher de notificaciones ni consumidor de getTeacherSubstitutions/historial en la UI.
+- ROLE_PERMISSIONS permite create/get a Profesor; getTeacherSubstitutions sin filtros devuelve todas las sustituciones; autorizadoPor/forzarSustitucion proceden del payload sin guardia de autorización elevada.
+
+### Hallazgos y dependencias
+- AUD-NG-168 ampliado: índices/estados/esquema de sustituciones y conflictos.
+- AUD-NG-251 nuevo: autorización contextual, actor y bypass no confiables.
+- AUD-NG-245 ampliado: notificaciones de alta/cancelación/vencimiento.
+- AUD-NG-246 ampliado: DOM y resolución del docente efectivo por período.
+- AUD-NG-250 ampliado: bloqueo/atomicidad para mutaciones de sustitución.
+- TASK-607 ciclo de vida y resolución efectiva por fecha; TASK-608 planificación y aplicación multibloque; TASK-609 autorización y atribución verificable.
+- Ampliar TASK-584 (UI), TASK-585 (contrato/estados), TASK-586 (ABAC), TASK-567 (actor), TASK-577..583 (notificaciones), TASK-587 (caché), TASK-591 (carga/estado), TASK-598 (conflictos), TASK-602 (CA-F7-99..105), TASK-605/606 (lock/versiones), TASK-173 (jornada/turnos/ausencias).
+- Detalle y aceptación verificable: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-16.md.

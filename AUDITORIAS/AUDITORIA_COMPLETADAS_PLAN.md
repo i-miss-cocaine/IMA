@@ -1960,3 +1960,26 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **Tarea en curso:** ninguna al cierre.
 - **Siguiente tarea exacta:** TAREA-F7-IMP-16, sustituciones y reasignación de clases afectadas. Buscar informe individual/origen; si falta, auditar directamente los requisitos completos de completadas.md y el código vigente.
 ===============================================================================
+
+
+===============================================================================
+## TAREA-F7-IMP-16 - Auditoría de sustituciones y reasignación de clases (C1.248)
+
+- **Fecha:** 2026-11-08.
+- **Dictamen:** NO CUMPLE; se conserva [X] histórico en completadas.md.
+- **Criterios:** CA-F7-99 NO CUMPLE; CA-F7-100 PARCIAL; CA-F7-101 NO CUMPLE; CA-F7-102 NO CUMPLE; CA-F7-103 NO CUMPLE; CA-F7-104 NO CUMPLE; CA-F7-105 NO CUMPLE.
+- **Hallazgos:** AUD-NG-168 ampliado; AUD-NG-251 nuevo (ALTO/P1); AUD-NG-245, AUD-NG-246 y AUD-NG-250 ampliados.
+- **Informe:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-16.md.
+- **Integridad:** completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, TAREA-F7-IMP-16 [X] en línea 4414. Pendientes.md blob 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c recuperado (1782094 caracteres, 20.182 líneas, 0 U+FFFD); incluye TASK-173, no TAREA-F7-IMP-16. Informe individual y documento fuente no existen.
+- **Evidencia:** HorariosClase tiene ocho columnas y createTeacherSubstitution usa r[8] como estado y pasa columnas desplazadas al motor; estado Activa no coincide con Temporal/Activo de los consumidores; vencimiento solo se calcula en DTO; no hay mapeo ni aplicación multibloque; el HTML carece del modal/botón; no se llaman notificaciones; el rol Profesor puede crear/consultar y forzar desde payload; el autor se toma del cliente; TC-F7-05 usa propiedad de respuesta incorrecta y la suite externa solo verifica presencia textual.
+- **Tareas derivadas:** nuevas TASK-607 (ciclo de vida por fecha), TASK-608 (preview y aplicación multibloque), TASK-609 (autorización/actor/bypass); ampliar TASK-584/585/586/567, TASK-577..583, TASK-587, TASK-591, TASK-598, TASK-602, TASK-605/606 y TASK-173.
+- **Archivos inspeccionados:** backend/academic-service/Code.gs (110-120, 168-260, 465-583, 671-755, 6228-6347, 6501-6616, 6773-6841, 7493-7693, 7879-8085, 14080-14173); js/teacher.js (1908-1944, 2077-2157); teacher-dashboard.html completo; tests/regression/academic-grading-suite.js línea 102; ChangesLogs.txt F11-Task12; completadas.md; Pendientes.md blob; informes IMP-10/11/13/15; plan, Auditoria.txt y MapaDependencias.md.
+- **SHAs de respaldo:** Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5; teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; teacher-dashboard.html cbb9e6a272a7d8ad33f99727303305d950533e71; academic-grading-suite.js a22cb3ef376fe09e65c1b17c2f4f5125290bfba6; completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676; Pendientes.md 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c; ChangesLogs.txt 5b5cff1926b73a05d1b92087a7bf4b2db75326ff; metodología cf796728bb384a32537392df2f9c72a339fa03ee.
+- **Pruebas:** inspección estática/manual y verificación Git. No ejecutados Apps Script runtime, HTTP/OAuth, DOM real, Sheets productivas, concurrencia, fallos inducidos, notificaciones reales, Node ni E2E.
+- **Archivos nuevos:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-16.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Sin cambios:** código, UI, pruebas, completadas.md, Pendientes.md, ChangesLogs.txt, metodología y rama base.
+- **Última tarea completamente auditada:** TAREA-F7-IMP-16.
+- **Tarea en curso:** ninguna al cierre.
+- **Siguiente tarea exacta:** TAREA-F7-IMP-17, gestión de eventos y actividades con participantes y recursos (CA-F7-106..111). Buscar informe y fuente; si faltan, auditar directamente los requisitos completos de completadas.md.
+===============================================================================
