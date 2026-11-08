@@ -3274,3 +3274,35 @@ TASK-569..TASK-576 se detallan en el informe individual con hallazgo, severidad,
 
 ### Límites
 Inspección estática/manual. No se ejecutaron Apps Script runtime, HTTP/OAuth, navegador, Sheets/Drive productivas, concurrencia real, restauración con datos, rollback, E2E ni suite Node. No se modificó código, UI, pruebas ni datos productivos.
+
+
+## Notificaciones y trazabilidad de cambios académicos (TAREA-F7-IMP-10 / AUD-NG-245)
+
+### Flujo académico y eventos
+- backend/academic-service/Code.gs: createClassSchedule (6900-6990) persiste el horario y escribe directamente en BandejaNotificaciones; no invoca el dispatcher USER.
+- deleteClassSchedule (6992-7005) y publishClassSchedules (7008+) no generan notificación académica ni un registro detallado por cambio.
+- backend/user-service/Code.gs: dispatchScheduleChangeNotifications (8858-8896) se enruta desde doPost, pero no tiene invocación desde el flujo académico; solo considera docenteUserId y no resuelve oferta/matrícula/familias.
+- El dispatcher debe depender de un evento durable posterior a la confirmación académica, con snapshot anterior/nuevo, actor verificado, motivo y correlationId.
+
+### Persistencia y trazabilidad
+- USER y ACADEMIC comparten SPREADSHEET_ID.
+- USER getOrCreateSheet inicializa BandejaNotificaciones con 9 columnas; sendMultiChannelNotification escribe 12. El helper ACADEMIC no inicializa cabecera para esa hoja. La consulta de logs usa data.slice(1), por lo que una primera fila de datos sin cabecera puede perderse.
+- BitacoraNotificaciones no existe en el código inspeccionado. El almacenamiento efectivo es BandejaNotificaciones.
+- USER y ACADEMIC implementan recordEntityChangeLog con órdenes incompatibles para las columnas de HistorialCambiosEntidad, pese a compartir la misma hoja. Los cambios de horario no invocan ese registro.
+- sendMultiChannelNotification usa comprobación de duplicado por lectura+append sin lock; retryFailedNotificationsQueue carece de lock, contador de intentos y backoff; estado Entregado no se sustenta en recibo verificable.
+
+### Seguridad e interfaz
+- ROLE_PERMISSIONS de USER permite consulta/despacho a Director, pero Secretaría carece de getScheduleChangeNotificationLogs/dispatchScheduleChangeNotifications.
+- js/secretary.js define loadScheduleChangeNotificationLogs sin invocador; dashboard-secretaria.html solo carga el script, sin control visible conectado.
+- js/api.js fetchApi no envía token de sesión; ampliar TASK-567/AUD-NG-001, no duplicar autenticación.
+- Historial debe filtrar por evento, oferta, rol y relaciones; minimizar destinatarios/correos y contenido visible.
+
+### Tareas derivadas
+- TASK-577: conectar eventos de cambios académicos a outbox durable.
+- TASK-578: resolver destinatarios y aplicar privacidad por audiencia.
+- TASK-579: unificar esquemas de BandejaNotificaciones, BitacoraNotificaciones e HistorialCambiosEntidad.
+- TASK-580: deduplicación atómica y cola de reintentos segura.
+- TASK-581: estados de notificación basados en evidencia y preferencias de canal.
+- TASK-582: integrar historial en UI y restringir consultas por ámbito.
+- TASK-583: regresión conductual CA-F7-63..68.
+- TASK-567 ampliada: token y actor verificado en consultas de historial de notificaciones.

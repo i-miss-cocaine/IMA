@@ -8685,3 +8685,34 @@ RECONCILIACIÓN:
 - TASK-567 existente se amplía para token y actor verificado de getScheduleVersions/compareScheduleVersions/restoreScheduleVersion; no se crea tarea duplicada de autenticación.
 PRUEBAS/LÍMITES: inspección estática/manual. No ejecutados Apps Script runtime, HTTP/OAuth, navegador, Sheets/Drive productivas, concurrencia real, restauración con datos, rollback, E2E ni suite Node. Sin cambios de código, pruebas, UI, datos productivos, completadas.md, Pendientes.md o ChangesLogs.
 ===============================================================================
+
+
+===============================================================================
+FECHA: 2026-11-08
+AUDITORÍA FUNCIONAL Y TÉCNICA - TAREA-F7-IMP-10: NOTIFICACIONES Y TRAZABILIDAD DE CAMBIOS ACADÉMICOS
+DICTAMEN: NO CUMPLE (se conserva [X] histórico en completadas.md).
+HALLAZGO NUEVO: AUD-NG-245.
+CRITERIOS:
+- CA-F7-63 NO CUMPLE: dispatcher desconectado del ciclo académico; solo aviso directo al docente desde createClassSchedule.
+- CA-F7-64 PARCIAL: el error de escritura se captura y no revierte el horario, pero no existe outbox durable recuperable.
+- CA-F7-65 NO CUMPLE: deduplicación sin lock, clave no única por evento y reintentos susceptibles de duplicar.
+- CA-F7-66 PARCIAL: hay registros/consulta, pero esquema compartido inconsistente y falta correlación evento-destinatario-resultado.
+- CA-F7-67 NO CUMPLE: se asigna Entregado sin confirmación de entrega real; estados no diferenciados.
+- CA-F7-68 NO CUMPLE: no hay resolución de destinatarios por relaciones/permisos ni minimización de información.
+EVIDENCIA:
+- backend/academic-service/Code.gs: createClassSchedule (6900-6990) escribe fila directa en BandejaNotificaciones; deleteClassSchedule (6992-7005) y publishClassSchedules (7008+) no notifican ni llaman recordEntityChangeLog.
+- backend/user-service/Code.gs: dispatchScheduleChangeNotifications (8858-8896) solo considera docenteUserId; no tiene invocación desde el flujo académico. getScheduleChangeNotificationLogs (8897+) consulta BandejaNotificaciones.
+- sendMultiChannelNotification (4818+) escribe 12 columnas; getOrCreateSheet inicializa BandejaNotificaciones con 9 columnas. Los servicios comparten SPREADSHEET_ID; el helper académico no inicializa cabecera de esa hoja y puede dejar la primera notificación en fila 1, que luego data.slice(1) omite.
+- No existe BitacoraNotificaciones. HistorialCambiosEntidad tiene dos esquemas incompatibles en USER/ACADEMIC y las funciones de horario no registran cambios en esa hoja.
+- La clave de deduplicación se comprueba mediante lectura+append sin lock; retryFailedNotificationsQueue no registra intentos ni aplica backoff/lock y solo reintenta correo.
+- Entregado se asigna por ausencia de excepción de MailApp o por simple escritura interna; no hay confirmación de proveedor/lectura.
+- Secretaría no tiene permiso USER para getScheduleChangeNotificationLogs ni dispatchScheduleChangeNotifications; el controlador JS no tiene invocador en dashboard-secretaria.html. fetchApi no transmite token (se amplía TASK-567/AUD-NG-001).
+- Suites no contienen pruebas de CA-F7-63..68.
+TAREAS DERIVADAS: TASK-577..TASK-583; TASK-567 existente ampliada. Detalle y criterios en AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-10.md.
+RELACIONES: AUD-NG-001, AUD-NG-236, AUD-NG-237, AUD-NG-243, AUD-NG-244.
+PRUEBAS: inspección estática/manual y verificación Git. No ejecutados Apps Script runtime, MailApp real, HTTP/OAuth, navegador, concurrencia real, fallos inyectados ni E2E.
+ARCHIVOS NUEVOS: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-10.md.
+ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+ARCHIVOS DE CÓDIGO, UI, PRUEBAS, completadas.md, Pendientes.md y ChangesLogs.txt: SIN CAMBIOS.
+SIGUIENTE TAREA: TAREA-F7-IMP-11 (CA-F7-69..74).
+===============================================================================

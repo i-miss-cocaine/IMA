@@ -1810,3 +1810,36 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **Archivos sin cambios:** backend/academic-service/Code.gs; teacher-dashboard.html; js/teacher.js; js/api.js; tests/*; backend/developer-service/Code.gs; ChangesLogs.txt; completadas.md; Pendientes.md; METODOLOGIA_DESARROLLO.md; rama base.
 - **Siguiente tarea cronológica:** TAREA-F7-IMP-10, fortalecer notificaciones y trazabilidad de cambios académicos.
 ===============================================================================
+
+
+===============================================================================
+## C1.242 - Auditoría TAREA-F7-IMP-10 (2026-11-08)
+
+- **ID de sesión operativo:** IMA-AUDIT-20261108-0037Z (identificador documental, no ID nativo de ChatGPT).
+- **Checkpoint inicial:** C1.241. **Checkpoint de cierre:** C1.242.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **Rama base protegida:** NG_beta_0.0.0.1.
+- **HEAD de partida:** f1f55f3b3bc89cc15d32ae3d9eac3fddc1511a21.
+- **Árbol de partida:** 2650bc4d921a3de611a691e6f72a8c7c49d7933b.
+- **HEAD base:** 44d9891132332e692dbe2ba8602b41f50a508a59; 309 commits adelante y 0 detrás al inicio.
+- **Tarea auditada:** TAREA-F7-IMP-10; dictamen NO CUMPLE; marca [X] histórica preservada.
+- **Criterios:** CA-F7-63 NO CUMPLE; CA-F7-64 PARCIAL; CA-F7-65 NO CUMPLE; CA-F7-66 PARCIAL; CA-F7-67 NO CUMPLE; CA-F7-68 NO CUMPLE.
+- **Informe individual:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-10.md, ausente antes de esta iteración; creado.
+- **Documento de origen citado:** AUDITORIA_FASE_7_PLANIFICACION_HORARIOS_RECURSOS.md ausente tanto en raíz como en AUDITORIAS; se omite ese documento, no la auditoría.
+- **Hallazgo nuevo:** AUD-NG-245; relacionado con AUD-NG-001, AUD-NG-236, AUD-NG-237, AUD-NG-243 y AUD-NG-244.
+- **Tareas derivadas:** TASK-577..TASK-583; todas Pendientes y definidas con alcance/aceptación en el informe individual. TASK-567 existente se amplía para token/identidad verificada de la consulta de historial.
+- **Evidencia principal:** dispatcher USER no conectado al ciclo académico; createClassSchedule registra solo docente mediante fila directa y marca Entregado; cancelación/publicación no notifican; recipients incompletos; clave no única por evento y deduplicación no atómica; reintentos sin lock/backoff/contador; BandejaNotificaciones tiene contrato de 9 columnas en helper USER frente a 12 en escritura; helper ACADEMIC no define cabecera y puede dejar la primera notificación en fila 1; BitacoraNotificaciones no existe; HistorialCambiosEntidad usa esquemas incompatibles en ambos servicios; no se registran cambios de horario en ese historial; Secretaría no tiene permisos de consulta/despacho y la UI no invoca el controlador; fetchApi no transmite token; pruebas específicas ausentes.
+- **Respaldos documentales previos:** completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676; Pendientes.md blob 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c (1.782.094 caracteres, 20.182 líneas); metodología cf796728bb384a32537392df2f9c72a339fa03ee; ChangesLogs.txt 5b5cff1926b73a05d1b92087a7bf4b2db75326ff.
+- **Respaldos de código/UI/pruebas:** backend/user-service/Code.gs 12079dd410aa6d8afbce55a4bc62a79dea605f9f; backend/academic-service/Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5; js/secretary.js 08a81266957b4c18cc25f8ba6749eac30a8f2c2c; js/teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; js/api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; js/config.js 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc; dashboard-secretaria.html fa0d8c23aace24a6acab2d4956398a7f5e1309b8; teacher-dashboard.html cbb9e6a272a7d8ad33f99727303305d950533e71; academic-grading-suite.js a22cb3ef376fe09e65c1b17c2f4f5125290bfba6; modular-dashboard-suite.js 0495e1d526a872c33310935a003a83d924d34683.
+- **Respaldos de auditoría antes de esta iteración:** Auditoria.txt bfc4ca52cd7770985b944bd3175fc055c53e5f9d; MapaDependencias.md 8bb80346b689c734ec258cb826cc71ac0b124f51; AUDITORIA_COMPLETADAS_PLAN.md 6340c06f2a2abd1b76c50ff72cc44da6d5e81855; Contexto_personal.txt 42afdc03b02af03e25b420a349b395fbb82a7b74.
+- **Puntos inspeccionados:** USER getOrCreateSheet (línea 889), ROLE_PERMISSIONS (926+), getUserVerifiedRole (1146), validateRolePermission (1253), doPost (1351), recordEntityChangeLog (2715), retryFailedNotificationsQueue (4761), sendMultiChannelNotification (4818), dispatchScheduleChangeNotifications (8858), getScheduleChangeNotificationLogs (8897); ACADEMIC ROLE_PERMISSIONS (168+), validateRolePermission (524), doPost (671), recordEntityChangeLog (1568), createClassSchedule (6900), deleteClassSchedule (6992), publishClassSchedules (7008+); js/api.js fetchApi (línea 11); js/secretary.js historial (1075); dashboard-secretaria.html script (317); teacher.js/teacher-dashboard.html sin referencias; pruebas academic-grading-suite.js (77) y modular-dashboard-suite.js.
+- **Pruebas ejecutadas:** inspección estática/manual de contratos, roles, autenticación, flujos, hojas compartidas, historial, UI, API, ChangeLogs, suites y SHAs; comparación Git.
+- **No ejecutadas:** Apps Script runtime, MailApp/proveedor real, HTTP/OAuth, navegador, Sheets productivas, concurrencia real, fallos inyectados, reintentos E2E ni suite Node.
+- **Archivos nuevos:** AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-10.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Archivos sin cambios:** backend/user-service/Code.gs; backend/academic-service/Code.gs; js/secretary.js; js/teacher.js; js/api.js; js/config.js; dashboard-secretaria.html; teacher-dashboard.html; tests/*; ChangesLogs.txt; completadas.md; Pendientes.md; METODOLOGIA_DESARROLLO.md; rama base.
+- **Bloqueos:** ninguno para auditoría documental; faltan ejecución dinámica y validación de proveedores/canales en entorno aislado.
+- **Commit de cierre:** un único commit con los cinco documentos; su SHA se confirma consultando HEAD tras publicar, sin autorreferencia dentro del checkpoint.
+- **Siguiente tarea exacta:** TAREA-F7-IMP-11, Fortalecer la coherencia y actualización de los portales relacionados; CA-F7-69..74.
+===============================================================================
