@@ -9402,3 +9402,36 @@ ARCHIVO NUEVO: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK05.md.
 ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
 SIGUIENTE: revisar el orden vigente de completadas.md y auditar la siguiente tarea sin informe individual.
 ===============================================================================
+
+
+===============================================================================
+F8-Task06 / TAREA-F8-MANT-01 — Auditoría de cuotas y almacenamiento Drive (2026-11-08)
+DICTAMEN: NO CUMPLE. CA-F8-010 NO CUMPLE; CA-F8-011 NO CUMPLE; CA-F8-012 NO CUMPLE.
+HALLAZGOS:
+- AUD-NG-301 ALTO/P1: medición no autoritativa; 15 GiB por defecto, fallback de solo 100 archivos y fallo de API que puede producir status success/NORMAL falso.
+- AUD-NG-302 ALTO/P1: endpoint bajo demanda; no se encontró trigger periódico versionado, historial de muestras ni tendencia.
+- AUD-NG-303 ALTO/P1: umbrales 80/90/95 codificados; no se entregan alertas administrativas ni se persisten eventos por estado.
+- AUD-NG-304 CRÍTICO/P0: uploadChunk puede marcar COMPLETED y devolver success sin archivo reconstruido; se limpia la sesión anterior sin validar la nueva; submitAssignment falla abierto y no verifica fileId.
+- AUD-NG-305 ALTO/P1: cargas parciales y temporales pueden quedar huérfanos; no hay reconciliación periódica ni catálogo integral de ubicaciones.
+- AUD-NG-306 MEDIO/P2: getDriveStorageQuotaMetricsReport está en PUBLIC_ACTIONS; ampliar TASK-636, sin duplicar tarea.
+TAREAS EJECUTABLES DERIVADAS:
+- TASK-656 medición autoritativa de cuota y comportamiento fail-closed.
+- TASK-657 supervisión periódica, persistencia de muestras y tendencia.
+- TASK-658 umbrales configurables, notificación administrativa y eventos auditables.
+- TASK-659 finalización transaccional de cargas/entregas, validación de archivo y conservación de versión anterior.
+- TASK-660 inventario de ubicaciones y limpieza controlada de temporales huérfanos.
+- Ampliación de TASK-636: restringir endpoint de métricas a administradores y probar allowlist.
+EVIDENCIA:
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, F8-Task06 línea 4888 [X].
+- Pendientes.md blob SHA 676a3f798715f0cdd7d4bc75768472545b8465ee: 1.786.011 caracteres, 20.224 líneas, 0 U+FFFD; no contiene F8-Task06 ni TASK-656..660; máximo TASK-636.
+- Task Code.gs SHA 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe; student.js SHA e2888cea60322e49a40b89adadb8010489605dcc; teacher.js SHA c475fce5afcd28fca23e7b64398ad32b17773746; api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9.
+- ChangesLogs.txt SHA 5b5cff1926b73a05d1b92087a7bf4b2db75326ff: el registro de líneas 2673–2680 documenta la creación del backlog, no evidencia de implementación/validación de F8-MANT-01.
+- No se encontró informe individual F8-Task06 ni documento fuente AUDITORIA_FASE_8_AULA_VIRTUAL_APRENDIZAJE.md en el árbol.
+PRUEBAS/LÍMITES:
+- Inspección manual de código, frontend, rutas, documentos, árbol Git y blob histórico.
+- No ejecutados Apps Script runtime, Drive API real, triggers, notificaciones, simulación de cuota, cargas, Sheets, navegador, Node ni E2E.
+- No se tocó Drive productivo ni se modificó código.
+ARCHIVO NUEVO: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK06.md.
+ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+SIGUIENTE: F8-Task07 — dashboards dinámicos para roles configurables (CA-AD-101/102/103).
+===============================================================================

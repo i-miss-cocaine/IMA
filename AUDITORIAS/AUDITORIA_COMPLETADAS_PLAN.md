@@ -2221,3 +2221,18 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **Pendientes.md:** lectura convencional 0 caracteres; blob actual 676a3f798715f0cdd7d4bc75768472545b8465ee recuperado íntegro (1,786,011 caracteres, 20,224 líneas, 0 U+FFFD). Blob histórico 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c recuperado (1,782,094 caracteres). El blob actual permanece en la rama y no se restauró una versión anterior.
 - **Pruebas:** inspección manual de procedimiento, validadores, rollback, suite Node y bitácora; verificación Git y de referencia de baseline. No ejecutados Node, Apps Script, HTTP, browser, migración, rollback ni pruebas productivas.
 - **Siguiente tarea:** consultar el siguiente elemento del orden vigente de completadas.md; buscar informe individual y auditar directamente si falta.
+
+
+---
+
+## F8-Task06 / TAREA-F8-MANT-01 — Supervisión preventiva de Drive (C1.266)
+
+- **Dictamen:** NO CUMPLE; se conserva [X] histórica en completadas.md.
+- **Criterios:** CA-F8-010 NO CUMPLE; CA-F8-011 NO CUMPLE; CA-F8-012 NO CUMPLE.
+- **Hallazgos:** AUD-NG-301 métricas de cuota no confiables/fail-open; AUD-NG-302 ausencia de supervisión periódica e histórico; AUD-NG-303 umbrales codificados y sin alertas/eventos persistentes; AUD-NG-304 finalización reanudable puede devolver success sin archivo final y eliminar versión anterior; AUD-NG-305 temporales/partes huérfanas; AUD-NG-306 endpoint público de métricas.
+- **Tareas derivadas:** TASK-656 cuota autoritativa; TASK-657 trigger/histórico/tendencia; TASK-658 umbrales configurables/alertas/eventos; TASK-659 carga y entrega transaccionales; TASK-660 inventario y limpieza segura de temporales.
+- **Ampliación:** TASK-636 (F8-Task01) debe restringir getDriveStorageQuotaMetricsReport a administradores; no duplicar tarea de seguridad.
+- **Evidencia:** completadas.md línea 4888 [X]; task-service Code.gs SHA 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe; student.js e2888cea60322e49a40b89adadb8010489605dcc; teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; ChangesLogs.txt 5b5cff1926b73a05d1b92087a7bf4b2db75326ff.
+- **Pendientes.md:** blob actual 676a3f798715f0cdd7d4bc75768472545b8465ee, 1.786.011 caracteres, 20.224 líneas, 0 U+FFFD; máximo TASK-636; no contiene F8-Task06 ni TASK-656..660. El blob actual sigue en el árbol de la rama y no se modificó.
+- **Limitaciones:** no se encontró appsscript.json ni fuente AUDITORIA_FASE_8_AULA_VIRTUAL_APRENDIZAJE.md; no se puede verificar configuración externa de triggers/Drive Advanced Service. No se ejecutaron Apps Script, Drive real, alertas, cargas, Node, navegador ni E2E.
+- **Siguiente tarea exacta:** F8-Task07, arquitectura de dashboards dinámicos para roles configurables; CA-AD-101/102/103. El informe individual no se encontró en el árbol y deberá buscarse de nuevo al iniciar.

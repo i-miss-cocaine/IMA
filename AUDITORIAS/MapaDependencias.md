@@ -3865,3 +3865,39 @@ Inspección estática/manual y Git/blob; no se ejecutaron requests HTTP, Apps Sc
 - CA-MOD-112: NO CUMPLE.
 - CA-MOD-113: NO CUMPLE.
 - Referencia v8.4.0-baseline no encontrada; no se ejecutaron migración ni rollback; no se afirma verificación de producción.
+
+
+---
+
+## F8-Task06 / TAREA-F8-MANT-01 — Cuotas y almacenamiento Drive (C1.266)
+
+### Componentes y relaciones inspeccionados
+- backend/task-service/Code.gs:5–6 define SPREADSHEET_ID y DRIVE_FOLDER_ID.
+- backend/task-service/Code.gs:29–62 logFileMetadata registra fileId/URL en MetadatosArchivos; RutaDrive recibe URL, no ruta verificable.
+- backend/task-service/Code.gs:704–789 uploadFile crea archivos bajo DRIVE_FOLDER_ID/grado/sección/alumno/parcial/asignatura/tarea.
+- backend/task-service/Code.gs:795–889 contiene la carga fragmentada antigua y su reconstrucción.
+- backend/task-service/Code.gs:892–998 submitAssignment y saveSubmissionDraft registran entregas/versiones; guard de cuota solo en 99.5% y fail-open en error; no valida el archivo final.
+- backend/task-service/Code.gs:1231–1247 getStudentFolder; 1249–1293 saveProject/Proyectos_PSeInt.
+- backend/task-service/Code.gs:1455–1472 getOrCreateFolder.
+- backend/task-service/Code.gs:1665–1695 createStudyMaterial registra URL/driveId sin validar archivo; teacher.js:1978–1987 puede enviar URL genérica.
+- backend/task-service/Code.gs:1819–1916 initiateResumableUpload crea .temp_resumable_uploads.
+- backend/task-service/Code.gs:1967–2060 uploadChunk efectiva; marca COMPLETED y devuelve success sin comprobar error de reconstructFileParts.
+- backend/task-service/Code.gs:2062–2118 progreso/cancelación; 2120–2185 reconstrucción.
+- backend/task-service/Code.gs:2299–2363 getDriveStorageQuotaMetricsReport; PUBLIC_ACTIONS:85–89 incluye la acción.
+- js/student.js:2355–2410 carga segmentada; 2500–2585 confirma entrega según status success.
+- js/teacher.js:1978–1994 publica material; js/api.js no contiene llamada específica al reporte de cuota.
+- Árbol Git: 978 archivos; no appsscript.json ni documento AUDITORIA_FASE_8_AULA_VIRTUAL_APRENDIZAJE.md.
+
+### Hallazgos y tareas derivadas
+- AUD-NG-301 ALTO: métricas inexactas/fail-open → TASK-656.
+- AUD-NG-302 ALTO: sin trigger periódico, histórico ni tendencia → TASK-657.
+- AUD-NG-303 ALTO: umbrales hard-coded y sin alertas/eventos persistentes → TASK-658.
+- AUD-NG-304 CRÍTICO: carga reanudable reporta éxito sin reconstrucción; posible pérdida de sesión anterior → TASK-659.
+- AUD-NG-305 ALTO: temporales y partes huérfanas sin reconciliación → TASK-660.
+- AUD-NG-306 MEDIO: endpoint público de métricas → ampliar TASK-636.
+
+### Dictamen
+- CA-F8-010: NO CUMPLE.
+- CA-F8-011: NO CUMPLE.
+- CA-F8-012: NO CUMPLE.
+- No se ejecutaron triggers, Drive API, carga real ni pruebas de producción; no se modificó código ni se tocaron archivos Drive productivos.

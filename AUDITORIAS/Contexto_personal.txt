@@ -9087,3 +9087,36 @@ Auditar TAREA-F6-015 y TAREA-F6-040. Buscar informes individuales e historial en
 - **Próxima acción:** abrir completadas.md después del bloque F8-Task05, seleccionar la siguiente tarea cronológica y contrastar su alcance/certificación con el código y las pruebas reales.
 - **Commit de cierre:** el commit único que contiene este checkpoint; SHA final se confirmará consultando HEAD después de publicar.
 ===============================================================================
+
+ 
+===============================================================================
+## C1.266 — Checkpoint de cierre: auditoría F8-Task06 / TAREA-F8-MANT-01 (2026-11-08)
+
+- **ID de sesión operativo:** IMA-AUDIT-20261108-2154Z-01 (documental; no ID nativo de ChatGPT).
+- **Checkpoint inicial de esta sesión:** C1.265.
+- **Checkpoint de cierre:** C1.266.
+- **Estado:** sesión cerrada después de publicar un único commit con informe, bitácora, mapa, plan y checkpoint.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Archivo de contexto:** AUDITORIAS/Contexto_personal.txt.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **HEAD de partida verificado:** 3a321c0cb406a70bfdfe11349b41adfa21b88ce9; árbol Git 19cb9730013531f829da0b0df7acc717d33b8620.
+- **Rama base protegida:** NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59; comparación: 334 commits adelante, 0 detrás; rama base sin cambios.
+- **Tarea realizada:** F8-Task06 / TAREA-F8-MANT-01, marcada [X] en completadas.md línea 4888; informe individual no encontrado; auditoría realizada directamente.
+- **Dictamen:** NO CUMPLE. CA-F8-010 NO CUMPLE; CA-F8-011 NO CUMPLE; CA-F8-012 NO CUMPLE.
+- **Hallazgos:** AUD-NG-301 métricas inexactas/fail-open; AUD-NG-302 sin monitorización periódica ni tendencia; AUD-NG-303 umbrales no configurables y sin alertas/eventos persistentes; AUD-NG-304 carga reanudable puede reportar éxito sin archivo final y eliminar versión anterior; AUD-NG-305 partes/sesiones huérfanas; AUD-NG-306 endpoint público de métricas.
+- **Tareas derivadas:** TASK-656 a TASK-660; ampliar TASK-636 sin duplicar tarea de seguridad.
+- **Fuentes:** completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676; Pendientes.md blob 676a3f798715f0cdd7d4bc75768472545b8465ee; task-service Code.gs 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe; student.js e2888cea60322e49a40b89adadb8010489605dcc; teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; ChangesLogs 5b5cff1926b73a05d1b92087a7bf4b2db75326ff; metodología cf796728bb384a32537392df2f9c72a339fa03ee; plan previo ac3ba6451bbfdfc5e306502b2cbaf709e8ecb83e.
+- **Pendientes.md:** blob del HEAD actual recuperado: 1.786.011 caracteres, 20.224 líneas, 0 U+FFFD; no contiene F8-Task06/F8-MANT-01/TASK-656..660; máximo TASK-636. No se restauró ni modificó.
+- **Puntos inspeccionados:** completadas.md línea 4888; task-service Code.gs:5–6,29–62,85–89,225,368–444,704–889,892–998,1231–1293,1455–1472,1665–1695,1819–1916,1967–2185,2299–2363; student.js:2355–2410 y 2500–2585; teacher.js:1978–1994; js/api.js; ChangesLogs:2673–2680; árbol Git 978 archivos.
+- **Propósito:** comprobar identificación y monitoreo de ubicaciones Drive, cuota y tendencia, umbrales/alertas administrativas, integridad de carga y prevención de huérfanos.
+- **Pruebas ejecutadas:** inspección manual, consulta de informe individual, revisión de árbol Git, recuperación/búsqueda del blob Pendientes.md, comparación de ramas y referencias.
+- **No ejecutadas:** Apps Script runtime, Drive API real, triggers externos, simulación de cuota, notificaciones, carga/reconstrucción, persistencia en Sheets, Node, navegador, E2E ni pruebas productivas.
+- **Limitaciones:** no se encontró appsscript.json ni AUDITORIA_FASE_8_AULA_VIRTUAL_APRENDIZAJE.md; no se puede verificar la configuración de despliegue/triggers externos. No se tocó Drive productivo.
+- **Archivos nuevos:** AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK06.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Sin cambios:** backend/task-service/Code.gs; js/student.js; js/teacher.js; js/api.js; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md y rama base.
+- **Última tarea auditada:** F8-Task06. **Tarea en curso al cierre:** ninguna.
+- **Siguiente tarea exacta:** F8-Task07 — dashboards dinámicos para roles configurables, CA-AD-101/102/103.
+- **Próxima acción reproducible:** verificar si existe AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK07.md; si falta, abrir completadas.md desde F8-Task07 y auditar app/html/dashboards/dynamic-dashboard.html, js/ui-common.js y backend/user-service/Code.gs, revisando alta de roles, composición de módulos, permisos efectivos y denegación por defecto.
+- **Commit de cierre:** el commit único que contiene este checkpoint; SHA final se confirma consultando HEAD después de publicar.
+===============================================================================
