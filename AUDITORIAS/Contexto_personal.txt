@@ -9247,3 +9247,35 @@ Auditar TAREA-F6-015 y TAREA-F6-040. Buscar informes individuales e historial en
 - **Próxima acción reproducible:** verificar existencia de AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK11.md; si falta, auditar js/api.js, js/config.js y backend USER/ACADEMIC/TASK/EXAM/ACCOUNTING contra CA-AD-112/113, comprobando contratos, reutilización, aislamiento de errores y trazabilidad.
 - **Commit de cierre:** el commit único que contiene este checkpoint; SHA final se confirma consultando HEAD después de publicar.
 ===============================================================================
+
+
+===============================================================================
+## C1.271 — Checkpoint de cierre: auditoría F8-Task11 / TAREA-AD-05 (2026-11-08)
+
+- **ID de sesión operativo:** IMA-AUDIT-20261108-2226Z-01 (identificador documental; no ID nativo de ChatGPT).
+- **Checkpoint inicial:** C1.270. **Checkpoint de cierre:** C1.271.
+- **Hora UTC de cierre:** 2026-11-08 22:26Z aprox.; **estado:** sesión cerrada.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Archivo de contexto:** AUDITORIAS/Contexto_personal.txt.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **HEAD de partida verificado:** 2cb78e71ec1f1f4281e4402bf28abfcfb288cbc7; árbol Git e36c564325b147c2ad00af0fe0de1ae719213c05.
+- **Rama base protegida:** NG_beta_0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59; comparación: 339 commits adelante, 0 detrás. La rama base no se modificó.
+- **Último checkpoint completado:** C1.270 — auditoría F8-Task10.
+- **Tarea realizada:** F8-Task11 / TAREA-AD-05, marcada [X] en completadas.md líneas 5021–5042. No existía AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK11.md; auditoría ejecutada directamente.
+- **Dictamen:** NO CUMPLE. CA-AD-112 NO CUMPLE; CA-AD-113 NO CUMPLE.
+- **Hallazgos:** AUD-NG-320 ALTO/P1 token no propagado; AUD-NG-321 ALTO/P1 contratos sin executor, incompletos y acción mal asignada; AUD-NG-322 ALTO/P1 no hay aislamiento y fallback enmascara errores; AUD-NG-323 MEDIO/P2 endpoint ACCOUNTING sin evidencia y health check incompleto; AUD-NG-324 ALTO/P1 suites estáticas no prueban integración real.
+- **Tareas nuevas derivadas:** TASK-671 (adaptadores ejecutables/contratos completos) y TASK-672 (aislamiento de fallos y logging técnico), descritas en AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK11.md.
+- **Tareas existentes ampliadas:** TASK-636, TASK-501, TASK-666, TASK-662, TASK-663, TASK-665, TASK-488 y TASK-670; no se duplican identidad, RBAC/ABAC, catálogo, relaciones, pruebas ni dashboards.
+- **Fuentes:** completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676; api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; config.js 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc; ui-common.js 986938b8a311a41ed4cb3d135b66b6aaea4bed67; dynamic-dashboard.html 765a45e5666c24c430e841cb70c3d71d03cf9074; USER 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ACADEMIC df87a2eea9f0ef79d0b966d03fd5bbe432003df5; TASK 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe; EXAM 1d93296628fae31f680004f637897e2b1314a64c; ACCOUNTING 38b979d41596b85e888b4a7060b37bbac0840a28; developer 8aa4bac67cfe5c8c54da51a0784a56fef633e412; tests 0495e1d526a872c33310935a003a83d924d34683.
+- **Pendientes.md — recuperación:** lectura convencional 0 caracteres; árbol actual de HEAD e36c564325b147c2ad00af0fe0de1ae719213c05 apunta al blob 676a3f798715f0cdd7d4bc75768472545b8465ee. Commit alcanzable a9de4074fcc83241516633526201e288509265b5 contiene el mismo blob. Contenido íntegro recuperado: 1.807.629 bytes, 1.786.011 caracteres, 20.224 líneas, 0 U+FFFD, 515 TASK IDs únicos, máximo TASK-636. Estados no cuantificados por formato no uniforme. No se restauró ni modificó.
+- **Puntos inspeccionados:** completadas.md 5021–5042; api.js 11–199 y 207–250; config.js 13–27, 224–315 y 747–803; dynamic-dashboard.html 42–58; ui-common.js 5818–5871; USER Code.gs PUBLIC_ACTIONS, token, validateRolePermission, dispatcher y getUserDynamicDashboardConfig 9254–9300; dispatchers de ACADEMIC/TASK/EXAM/ACCOUNTING; developer-service REG-01..05; tests/regression suite.
+- **Pruebas ejecutadas:** inspección estática/manual, inventario de módulos/contratos, verificación de dispatchers y funciones, búsqueda de consumidores del contrato, recuperación y validación del blob Pendientes.md, comparación de ramas y ausencia del informe individual.
+- **No ejecutadas:** Node, Apps Script runtime, HTTP/ping, navegador/DOM, pruebas con tokens/cuentas reales, hojas productivas, deployment ACCOUNTING ni E2E.
+- **Limitaciones:** no hay acceso a deployment Apps Script ni hojas productivas; no se puede confirmar estado externo de ACCOUNTING. Código fuente sin modificaciones.
+- **Archivo nuevo:** AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK11.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+- **Sin cambios:** js/api.js; js/config.js; js/ui-common.js; app/html/dashboards/dynamic-dashboard.html; backend USER/ACADEMIC/TASK/EXAM/ACCOUNTING; developer-service; tests; completadas.md; Pendientes.md; ChangesLogs.txt; METODOLOGIA_DESARROLLO.md y rama base.
+- **Siguiente tarea exacta:** F8-Task12 — crear una interfaz administrativa para configurar dashboards y responsabilidades.
+- **Próxima acción reproducible:** verificar si existe AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK12.md; si falta, auditar dashboard-direccion.html, dashboard-secretaria.html, js/secretary.js y backend/user-service/Code.gs contra CA-AD-116/117, comprobando CRUD de roles/responsabilidades/ámbitos, preview sin permisos reales, validación server-side antes de activar, conservación histórica y recuperación de configuración válida.
+- **Commit de cierre:** se confirmará consultando HEAD después de publicar.
+===============================================================================

@@ -4013,3 +4013,32 @@ Inspección estática/manual y Git/blob; no se ejecutaron requests HTTP, Apps Sc
 - CA-AD-109: NO CUMPLE.
 - CA-AD-110: NO CUMPLE.
 - CA-AD-111: NO CUMPLE (hay registro parcial en reviewPedagogicalPlanning, insuficiente para todo el flujo requerido).
+
+
+---
+
+## F8-Task11 / TAREA-AD-05 — Integración de dashboards dinámicos (C1.271)
+
+### Componentes y dependencias inspeccionados
+- js/api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9: fetchApi 11–199 añade requesterUserId/requesterRole desde localStorage pero no propaga token; el fallback 142–198 convierte errores de consultas get en status success/data[]; checkAllMicroservicesHealth 245–250 omite ACCOUNTING.
+- js/config.js SHA 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc: 13 módulos (13–27), endpoints/registro (224–315), 6 contratos (747–803).
+- app/html/dashboards/dynamic-dashboard.html SHA 765a45e5666c24c430e841cb70c3d71d03cf9074: carga config/persistence/api/ui-common; no incluye executor de módulos.
+- js/ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67: loadDynamicDashboard 5818–5871 obtiene una configuración global y renderiza tarjetas sin acciones, navegación o ejecución de contratos.
+- USER Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f: PUBLIC_ACTIONS 922 aprox.; getUserVerifiedRole 1145–1158 requiere token; validateRolePermission 1253–1295; getUserDynamicDashboardConfig 9254–9300 usa userId de payload y módulos hardcodeados por rol.
+- ACADEMIC Code.gs SHA df87a2eea9f0ef79d0b966d03fd5bbe432003df5; TASK Code.gs SHA 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe; EXAM Code.gs SHA 1d93296628fae31f680004f637897e2b1314a64c; ACCOUNTING Code.gs SHA 38b979d41596b85e888b4a7060b37bbac0840a28: comparación de acciones del contrato contra dispatchers.
+- developer-service Code.gs SHA 8aa4bac67cfe5c8c54da51a0784a56fef633e412: suite REG-01..05 2040–2100 aprox.; REG-05 solo verifica objeto contracts.
+- tests/regression/modular-dashboard-suite.js SHA 0495e1d526a872c33310935a003a83d924d34683: presencia de archivos/cadenas, sin prueba conductual; aserción de MapaDependencias apunta a raíz, pero archivo está en AUDITORIAS/.
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676: F8-Task11 [X], líneas 5021–5042.
+- Pendientes.md blob SHA 676a3f798715f0cdd7d4bc75768472545b8465ee: 1.786.011 caracteres, 20.224 líneas, 0 U+FFFD, 515 IDs únicos hasta TASK-636; lectura normal 0 caracteres.
+- Dependencias previas: AUD-NG-191/TASK-488; AUD-NG-221/TASK-501; AUD-NG-307..311/TASK-661..665; AUD-NG-312/TASK-666; AUD-NG-316..319/TASK-670.
+
+### Hallazgos y tareas derivadas
+- AUD-NG-320 ALTO/P1: token no propagado por fetchApi; endpoint protegido no recibe credencial → ampliar TASK-636/TASK-501/TASK-666.
+- AUD-NG-321 ALTO/P1: 6 contratos para 13 módulos, no executor, tarjetas inertes, acción EXAM incorrecta → TASK-671; ampliar TASK-488/TASK-662/TASK-663/TASK-670.
+- AUD-NG-322 ALTO/P1: sin aislamiento por módulo; fallback de get aparenta éxito vacío y errores no se persisten → TASK-672; ampliar TASK-665/TASK-664/TASK-488/TASK-670.
+- AUD-NG-323 MEDIO/P2: URL ACCOUNTING con apariencia de placeholder y health check agregado la omite → ampliar TASK-662/TASK-665.
+- AUD-NG-324 ALTO/P1: pruebas validan metadatos, no ejecución; ruta de mapa en test incorrecta → ampliar TASK-665/TASK-662.
+
+### Dictamen
+- CA-AD-112: NO CUMPLE.
+- CA-AD-113: NO CUMPLE.

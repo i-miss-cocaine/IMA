@@ -2303,3 +2303,20 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **Código fuente:** sin modificaciones; rama base intacta.
 - **Siguiente tarea exacta:** F8-Task11 — integrar dashboards dinámicos con los módulos y servicios existentes.
 - **Próxima acción:** verificar si existe AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK11.md; si falta, auditar js/api.js, js/config.js y los servicios USER/ACADEMIC/TASK/EXAM/ACCOUNTING contra CA-AD-112/113.
+
+
+---
+
+## F8-Task11 / TAREA-AD-05 — Integración de dashboards dinámicos (C1.271)
+
+- **Dictamen:** NO CUMPLE; se conserva [X] histórica en completadas.md.
+- **Criterios:** CA-AD-112 NO CUMPLE; CA-AD-113 NO CUMPLE.
+- **Hallazgos:** AUD-NG-320 token no propagado por fetchApi; AUD-NG-321 contratos incompletos/no consumidos y tarjetas inertes; AUD-NG-322 ausencia de aislamiento por módulo y fallback que enmascara errores; AUD-NG-323 endpoint ACCOUNTING sin evidencia de deployment y health check incompleto; AUD-NG-324 suites estáticas que no prueban comportamiento.
+- **Tareas nuevas:** TASK-671 adaptadores ejecutables y contratos completos; TASK-672 aislamiento de fallos y logging técnico.
+- **Tareas existentes ampliadas:** TASK-636, TASK-501, TASK-666, TASK-662, TASK-663, TASK-665, TASK-488 y TASK-670. No duplicar token, RBAC/ABAC, integridad de catálogo, relaciones, pruebas o dashboards.
+- **Evidencia:** completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676 líneas 5021–5042; api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; config.js 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc; ui-common.js 986938b8a311a41ed4cb3d135b66b6aaea4bed67; dynamic-dashboard.html 765a45e5666c24c430e841cb70c3d71d03cf9074; USER 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ACADEMIC df87a2eea9f0ef79d0b966d03fd5bbe432003df5; TASK 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe; EXAM 1d93296628fae31f680004f637897e2b1314a64c; ACCOUNTING 38b979d41596b85e888b4a7060b37bbac0840a28.
+- **Pendientes.md:** blob actual recuperado 676a3f798715f0cdd7d4bc75768472545b8465ee (1.786.011 caracteres, 20.224 líneas, 0 U+FFFD, 515 IDs únicos, máximo TASK-636); lectura convencional 0 caracteres. No se modificó.
+- **Pruebas:** inspección manual y comparación de contratos/dispatchers; no ejecutados Node, Apps Script, HTTP, navegador, hojas productivas, deployment ni E2E.
+- **Código fuente:** sin modificaciones; rama base intacta.
+- **Siguiente tarea exacta:** F8-Task12 — consola administrativa para configurar dashboards y responsabilidades.
+- **Próxima acción:** verificar informe individual F8-Task12; si falta, auditar dashboard-direccion.html, dashboard-secretaria.html, js/secretary.js y USER Code.gs contra CA-AD-116/117.

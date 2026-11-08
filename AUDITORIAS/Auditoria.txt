@@ -9557,3 +9557,38 @@ ARCHIVO NUEVO: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK10.md.
 ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
 SIGUIENTE: F8-Task11 — integrar dashboards dinámicos con módulos y servicios existentes.
 ===============================================================================
+
+
+===============================================================================
+F8-Task11 / TAREA-AD-05 — Integración de dashboards dinámicos con servicios (2026-11-08)
+DICTAMEN: NO CUMPLE. CA-AD-112 NO CUMPLE; CA-AD-113 NO CUMPLE.
+HALLAZGOS:
+- AUD-NG-320 ALTO/P1: fetchApi no propaga sessionToken/authToken/token; USER exige token firmado y getUserDynamicDashboardConfig no es público. La consulta inicial del dashboard no satisface autenticación. Amplía TASK-636 y TASK-501/TASK-666.
+- AUD-NG-321 ALTO/P1: DYNAMIC_DASHBOARD_MODULE_CONTRACTS tiene 6 contratos para 13 módulos; no hay executor/adapter consumidor; tarjetas sin acción; EXAM/gradeSubmission apunta a operación inexistente en EXAM (sí existe en TASK). Amplía TASK-488/TASK-662/TASK-663/TASK-670.
+- AUD-NG-322 ALTO/P1: no existe aislamiento por módulo; carga global única; fetchApi convierte errores de consultas get en status success/data[]; no hay logging persistente de contexto. Amplía TASK-665/TASK-664/TASK-488/TASK-670.
+- AUD-NG-323 MEDIO/P2: SERVICE_URLS.ACCOUNTING tiene valor con apariencia de placeholder y checkAllMicroservicesHealth excluye ACCOUNTING; deployment externo no fue probado. Amplía TASK-662/TASK-665.
+- AUD-NG-324 ALTO/P1: suites comprueban presencia de metadatos, no comportamiento; REG-05 valida solo existencia de contracts y el test Node busca MapaDependencias.md en ruta raíz inexistente. Amplía TASK-665/TASK-662.
+TAREAS EJECUTABLES DERIVADAS:
+- TASK-671 implementar adaptadores ejecutables/contratos completos, validar dispatchers y endpoints, conectar acciones/navegación y reutilizar operaciones existentes.
+- TASK-672 aislar fallos por módulo, eliminar falsos éxitos vacíos, registrar errores técnicos, incluir ACCOUNTING en health check y pruebas conductuales.
+- Ampliar TASK-636 (token e identidad verificada), TASK-501/TASK-666 (autorización por módulo/acción/ámbito), TASK-662 (integridad de contratos/configuración), TASK-663 (responsabilidades-módulos), TASK-665 (regresión), TASK-488 (dashboards dinámicos) y TASK-670 (dashboard de coordinación).
+EVIDENCIA:
+- completadas.md SHA f57f1aef832e81e44fc4f7ec36a852d50e464676, F8-Task11 [X], líneas 5021–5042.
+- Pendientes.md blob actual e histórico 676a3f798715f0cdd7d4bc75768472545b8465ee, recuperado desde HEAD y commit alcanzable a9de4074fcc83241516633526201e288509265b5: 1.807.629 bytes, 1.786.011 caracteres, 20.224 líneas, 0 U+FFFD, 515 IDs TASK únicos, máximo TASK-636; lectura ordinaria 0 caracteres.
+- api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9: fetchApi 11–199, checkAllMicroservicesHealth 245–250.
+- config.js SHA 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc: MODULES_CATALOG 13–27, SERVICE_URLS 224–242, SERVICE_REGISTRY 245–315, contratos 747–803.
+- ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67: loadDynamicDashboard 5818–5871.
+- dynamic-dashboard.html SHA 765a45e5666c24c430e841cb70c3d71d03cf9074: scripts y grid 42–58.
+- USER Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f: PUBLIC_ACTIONS 922 aprox.; getUserVerifiedRole 1145–1158; validateRolePermission 1253–1295; doPost 1351+ y getUserDynamicDashboardConfig dispatcher 1553; handler 9254–9300.
+- ACADEMIC Code.gs SHA df87a2eea9f0ef79d0b966d03fd5bbe432003df5; TASK Code.gs SHA 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe; EXAM Code.gs SHA 1d93296628fae31f680004f637897e2b1314a64c; ACCOUNTING Code.gs SHA 38b979d41596b85e888b4a7060b37bbac0840a28; developer Code.gs SHA 8aa4bac67cfe5c8c54da51a0784a56fef633e412.
+- tests/regression/modular-dashboard-suite.js SHA 0495e1d526a872c33310935a003a83d924d34683; MapaDependencias.md existe bajo AUDITORIAS/ y no en raíz.
+- Auditoria.txt SHA ab30ff9b5ab8a5be2dcf81f10984b36eed766c4b; último hallazgo previo AUD-NG-319.
+- Plan SHA 485a78d14a78e6dd606ba45e6d64763f99e0664f; mapa SHA 43ca2f9950c88951c5069ea935f04c193cdc7ee1; contexto SHA aa6f63b8726dfd01485554e0a497450771823ea7; metodología SHA cf796728bb384a32537392df2f9c72a339fa03ee.
+PRUEBAS/LÍMITES:
+- Inspección estática de funciones, contratos, dispatchers, identidad, errores, módulos, rutas y suites; comparación de módulos/contratos y recuperación blob.
+- No ejecutados Node, Apps Script, HTTP, navegador, cuentas reales, deployment ACCOUNTING ni E2E.
+- No se modificó código ni datos productivos; completadas.md y Pendientes.md sin cambios.
+ARCHIVO NUEVO: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK11.md.
+ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
+SIGUIENTE: F8-Task12 — consola administrativa para configurar dashboards y responsabilidades.
+===============================================================================
