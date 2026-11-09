@@ -15818,15 +15818,20 @@ function resolveTransportAccessScope_(payload, ss) {
     const routeRows = transportRows_(ss, "TransporteRutas");
     const tripRows = transportRows_(ss, "TransporteViajes");
     const assignedRouteIds = [];
+    const assignedTrips = [];
     tripRows.forEach(function(trip) {
       const tripState = String(trip[9] || "").trim().toLowerCase();
       const assignedDriver = String(trip[3] || "").trim();
       const assignedMonitor = String(trip[4] || "").trim();
       const routeId = String(trip[1] || "").trim();
       if (routeId && activeStates.indexOf(tripState) !== -1 &&
-          (assignedDriver === userId || assignedMonitor === userId) &&
-          assignedRouteIds.indexOf(routeId) === -1) {
-        assignedRouteIds.push(routeId);
+          (assignedDriver === userId || assignedMonitor === userId)) {
+        if (assignedRouteIds.indexOf(routeId) === -1) assignedRouteIds.push(routeId);
+        assignedTrips.push({
+          viajeId: String(trip[0] || "").trim(),
+          rutaId: routeId,
+          jornada: String(trip[6] || "").trim().toLowerCase()
+        });
       }
     });
     const activeRouteIds = routeRows.filter(function(route) {
@@ -15835,7 +15840,10 @@ function resolveTransportAccessScope_(payload, ss) {
       return routeId && ["activo", "activa", "active"].indexOf(routeState) !== -1 &&
         assignedRouteIds.indexOf(routeId) !== -1;
     }).map(function(route) { return String(route[0]).trim(); });
-    return { authorized: true, management: false, role: role, userId: userId, studentIds: null, routeIds: activeRouteIds };
+    const activeAssignedTrips = assignedTrips.filter(function(trip) {
+      return activeRouteIds.indexOf(trip.rutaId) !== -1 && trip.viajeId;
+    });
+    return { authorized: true, management: false, role: role, userId: userId, studentIds: null, routeIds: activeRouteIds, tripAssignments: activeAssignedTrips };
   }
 
   return { authorized: true, management: false, role: role, userId: userId, studentIds: [], routeIds: [] };
@@ -16103,6 +16111,28 @@ function getTransportAssignments(payload) {
     }
     if (requestedRouteId) {
       rows = rows.filter(function(row) { return String(row[1] || "").trim() === requestedRouteId; });
+    }
+    if (scope.tripAssignments && scope.tripAssignments.length > 0) {
+      const requestedTripId = String(payload && payload.viajeId || "").trim();
+      const assignedTrips = scope.tripAssignments.filter(function(trip) {
+        return !requestedTripId || trip.viajeId === requestedTripId;
+      });
+      if (requestedTripId && assignedTrips.length === 0) {
+        transportAuditDenied_("getTransportAssignments", payload, scope, { viajeId: requestedTripId });
+        return { status: "error", code: "UNAUTHORIZED_ACCESS_ATTEMPT", asignaciones: [], total: 0 };
+      }
+      const tripKeys = assignedTrips.map(function(trip) { return trip.rutaId + "|" + trip.jornada; });
+      const uniqueTripKeys = tripKeys.filter(function(key, index) { return tripKeys.indexOf(key) === index; });
+      if (!requestedTripId && uniqueTripKeys.length !== assignedTrips.length) {
+        return { status: "error", code: "TRIP_ID_REQUIRED", asignaciones: [], total: 0 };
+      }
+      rows = rows.filter(function(row) {
+        const routeId = String(row[1] || "").trim();
+        const jornada = String(row[7] || "").trim().toLowerCase();
+        return assignedTrips.some(function(trip) {
+          return trip.rutaId === routeId && trip.jornada && trip.jornada === jornada;
+        });
+      });
     }
   } else {
     if (requestedStudentId) rows = rows.filter(function(row) { return String(row[2] || "").trim() === requestedStudentId; });
