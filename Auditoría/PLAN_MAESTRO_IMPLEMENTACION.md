@@ -2086,3 +2086,8 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - Los snapshots de compensación ahora codifican Date con marcador tipado y los reconstruyen como Date; evita degradar celdas de fecha a strings en rollback.
 - El harness Node extrae los helpers reales de USER/ACADEMIC; cubre insert, retry idempotente, conflicto, compensación insert y UPDATE con restauración de Date.
 - Nuevo CI pendiente; no servicios vivos ni beta.
+
+
+## 10.29 Corrección del harness real — C1.345
+- Se elimina el uso de copias duplicadas de helpers en runMigrationWriterFixture y se pasan los fuentes reales USER/ACADEMIC para extraer constantes y funciones writer.
+- Los fixtures cubren insert, retry, conflicto, compensación insert, update y restauración de Date tipado. Código de producción sin cambios; CI pendiente.

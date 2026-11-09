@@ -431,3 +431,17 @@ Checkpoint anterior: C1.343
 Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.344.
 Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.344.
 ===============================================================================
+
+
+===============================================================================
+## C1.345 — Corrección del harness: ejecutar writers reales USER/ACADEMIC
+ID: C1.345
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.344
+- Revisión post-commit detectó que las llamadas runMigrationWriterFixture todavía suministraban copias serializadas de helpers, aunque el harness ya estaba preparado para extraer funciones del servicio.
+- Se cambian las invocaciones para pasar directamente el código real cargado de USER y ACADEMIC; el test extrae constantes y funciones writer reales con parser balanceado.
+- Los casos cubren inserción, reintento idempotente, conflicto de clave, compensación de inserción, actualización y restauración del tipo Date.
+- No se modifica código de producción. CI nuevo pendiente; no anticipar PASS.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.345.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.345.
+===============================================================================

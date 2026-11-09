@@ -444,3 +444,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-09] C1.344 — CI 42713049025 success para identity mapping y TASK-030 transport. Se corrige conservación de Date en snapshots de compensación y el harness pasa a extraer writers reales de USER/ACADEMIC; pruebas amplían UPDATE/restore Date. Nuevo CI pendiente. Checkpoint Parte_0003 C1.344.
+
+
+[2026-11-09] C1.345 — se corrigen llamadas del harness para ejecutar helpers reales USER/ACADEMIC en vez de copias serializadas. Pruebas de insert/idempotencia/conflicto/compensación/update/Date. Sin cambios de producción; CI pendiente. Checkpoint Parte_0003 C1.345.

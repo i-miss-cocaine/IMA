@@ -3,11 +3,11 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.344**
+- Último checkpoint: **C1.345**
 - Última sesión: `IMA-GOV-20261109-2201Z-01`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.344: **40732**
+- Caracteres del archivo activo tras C1.345: **41787**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 
@@ -134,3 +134,5 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.343 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | Aserciones de URL alineadas con route.urlProperty; fixtures HMAC ya superados | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.343 | 419 | C1.342 | Este commit; SHA verificado tras publicación |
 
 | C1.344 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | TASK-068 — snapshots Date tipados y pruebas sobre writers reales | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.344 | 434 | C1.343 | Este commit; SHA verificado tras publicación |
+
+| C1.345 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | Harness enlazado a writers reales USER/ACADEMIC; pruebas UPDATE/Date | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.345 | 448 | C1.344 | Este commit; SHA verificado tras publicación |
