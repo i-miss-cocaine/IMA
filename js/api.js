@@ -360,3 +360,27 @@ window.recordStudentAttendance = function(payload) {
 window.getStudentAttendanceSummary = function(payload) {
     return window.fetchApi('ACADEMIC', 'getStudentAttendanceSummary', payload || {});
 };
+
+/**
+ * TASK-068: wrappers de correspondencia de identidades.
+ * Las validaciones de sesión, rol e institución se ejecutan en el backend.
+ */
+window.registerLegacyIdentifierMapping = function(payload) {
+    return window.fetchApi('USER', 'registerLegacyIdentifierMapping', payload || {});
+};
+window.resolveInternalIdFromLegacy = function(payload) {
+    return window.fetchApi('USER', 'resolveInternalIdFromLegacy', payload || {});
+};
+window.resolveLegacyIdFromInternal = function(payload) {
+    return window.fetchApi('USER', 'resolveLegacyIdFromInternal', payload || {});
+};
+window.resolveUserByLegacyId = function(payload) {
+    return window.fetchApi('USER', 'resolveUserByLegacyId', payload || {});
+};
+window.reviewLegacyIdentifierMapping = function(payload) {
+    return window.fetchApi('USER', 'reviewLegacyIdentifierMapping', payload || {});
+};
+window.getIdentityDecisionHistory = function(payload) {
+    return window.fetchApi('USER', 'getIdentityDecisionHistory', payload || {});
+};
+

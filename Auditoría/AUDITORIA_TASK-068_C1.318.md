@@ -93,3 +93,10 @@ Las lecturas fueron completas (92.668, 429.611 y 713.779 caracteres). El histori
 - `IMA_INSTITUTION_ID` debe configurarse en Script Properties de ambos proyectos Apps Script con el identificador institucional canónico acordado.
 - No se encontró contrato verificable de persistencia por `destinoModulo`; por seguridad no se escriben hojas destino supuestas. AUD-NG-378 permanece abierto.
 - No se ejecutó Apps Script, Sheets real, pruebas de dos fuentes ni concurrencia. TASK-068 sigue En ejecución.
+
+
+## 11. Seguimiento C1.320 — caché y API cliente
+- IndexedDB v5 incorpora identity_mapping_cache y helpers para lectura, alta confirmada y limpieza institucional.
+- js/api.js expone seis wrappers para el contrato User-Service.
+- El test estático se amplía para compilar los dos JS cliente y verificar store, regla confirmed-only y wrappers.
+- Sin pruebas de navegador/IndexedDB runtime, Apps Script ni Sheets. AUD-NG-378 sigue abierto; TASK-068 En ejecución.

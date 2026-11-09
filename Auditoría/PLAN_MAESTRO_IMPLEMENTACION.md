@@ -1969,3 +1969,9 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - Requiere configurar IMA_INSTITUTION_ID en ambos proyectos Apps Script; no se acepta valor desde cliente.
 - AUD-NG-377 y AUD-NG-379 parcialmente atendidos; AUD-NG-378 abierto por falta de escritor destino. TASK-068 permanece En ejecución.
 - Test estático y workflow CI Node 24 añadidos; runtime Apps Script, Sheets aislado y dos fuentes siguen pendientes.
+
+
+## Seguimiento TASK-068 — C1.320
+- IndexedDB v5 añade identity_mapping_cache como caché no autoritativa, aislada por institución/origen/tipo/ID legado; únicamente admite correspondencias confirmadas por backend.
+- js/api.js incorpora seis wrappers para las acciones de correspondencia del User-Service.
+- Test estático amplía compilación de JS cliente y assertions del contrato. Runtime de navegador, integración UI, Apps Script/Sheets y persistencia destino continúan pendientes. TASK-068 En ejecución.

@@ -1508,3 +1508,39 @@ No se crean tareas derivadas ni segundo informe; expediente único Auditoría/AU
 Ejecutar workflow identity-mapping-contract; corregir cualquier fallo; auditar contratos de destino por módulo y diseñar escritores idempotentes sin asumir nombres de hojas. Configurar IMA_INSTITUTION_ID en proyectos aislados autorizados y ejecutar pruebas con fixtures de al menos dos fuentes. No desplegar ni usar producción.
 Commit de cierre: confirmar externamente tras publicación.
 ===============================================================================
+
+===============================================================================
+## C1.320 — TASK-068: caché IndexedDB y API cliente
+ID: C1.320
+Sesión: IMA-EXEC-20261109-1650Z-01
+Fecha: 2026-11-09 UTC
+Checkpoint anterior: C1.319
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+HEAD de partida: 9535253798a54e4add1f673a4196e0922526b58d
+Tarea: TASK-068 — En ejecución; no completada.
+
+### Respaldo Git histórico previo a edición
+- js/persistence.js blob: 94ac26feb4f7f31f1f3f2a238e164d23be565d94
+- js/api.js blob: d0190f86060f109129a1d59a779cb5dbf82f8ab9
+- tests/security/identity-mapping-contract.test.js blob: f4cdaf070778512984a6d7d7aca2f85bfcf85c3d
+- Recuperación: `git show 9535253798a54e4add1f673a4196e0922526b58d:<ruta>`; verificar el SHA blob indicado antes de usar el archivo.
+- Los tres archivos se recuperaron completos desde el HEAD publicado antes de editarlos. No se afirmó haber creado copia local.
+
+### Cambios preparados para este checkpoint
+- IndexedDB pasa de versión 4 a 5 y añade el store identity_mapping_cache mediante el onupgradeneeded existente; no se eliminan stores anteriores.
+- La caché usa clave compuesta institución/origen/tipo/ID legado y solo acepta respuestas status=success, confirmed=true e internalId no vacío. No guarda mapeos pendientes o probables. El servidor sigue siendo la fuente de verdad.
+- Se añaden helpers para leer, guardar y limpiar caché, con borrado filtrado por institución.
+- js/api.js añade wrappers para registrar, resolver en ambas direcciones, resolver usuario, revisar mapeo y consultar historial. Autorización y ámbito continúan siendo responsabilidad del backend.
+- El test estático amplía la compilación sintáctica de persistence.js y api.js y añade assertions para el store, regla confirmed-only y seis wrappers.
+
+### Evidencia y límites
+- El workflow identity-mapping-contract del commit C1.319 terminó completed/success (run 42665677368). Acredita únicamente el contrato estático previo; no valida los cambios C1.320.
+- Los cambios C1.320 aún requieren CI posterior a publicación y pruebas runtime IndexedDB (upgrade desde v4, datos previos, concurrencia de pestañas, cache miss, rechazo de no confirmadas y aislamiento institucional).
+- No hay integración UI demostrada ni Apps Script/Sheets aislado. Accounting import sigue fail-closed con DESTINATION_WRITER_NOT_CONFIGURED; AUD-NG-378 permanece abierto.
+- No se configuró IMA_INSTITUTION_ID ni se accedió a producción. No se declara migración funcional.
+- TASK-068 sigue En ejecución.
+
+### Siguiente acción
+Publicar cambios solo en NG_beta_0.0.0.1_work; verificar CI para el nuevo SHA; corregir fallos. Después inspeccionar contratos de persistencia destino reales, resolver hallazgos de lectura que crean hojas, validación de destino, sanitización de bitácora y hash de origen; preparar entorno aislado para pruebas. No desplegar ni usar producción.
+===============================================================================

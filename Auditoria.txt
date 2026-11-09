@@ -428,3 +428,6 @@ Sesión: IMA-EXEC-20261109-1108Z-01; HEAD de partida: 32b8f5884dd24dbeaf1a3bf028
 - AUD-NG-378: abierto. Accounting-Service resuelve IDs confirmados pero falla cerrado al no existir escritor destino específico; no se considera migración implementada.
 - AUD-NG-379: parcialmente atendido mediante bitácora append-only y vinculación de cuenta con control de destino; falta prueba runtime/compensación.
 - Evidencia técnica y límites en el anexo §10 de Auditoría/AUDITORIA_TASK-068_C1.318.md. No se crea auditoría duplicada.
+
+
+[2026-11-09] IMA-EXEC-20261109-1650Z-01 — C1.320: IndexedDB v5 añade caché no autoritativa de correspondencias confirmadas; js/api.js expone seis wrappers cliente; contrato estático amplía compilación y assertions. Sin runtime ni migración destino. TASK-068 sigue En ejecución.

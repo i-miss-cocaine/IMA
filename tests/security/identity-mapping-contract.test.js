@@ -15,4 +15,16 @@ const box={};vm.runInNewContext(pure[0]+"\nthis.key=identityCompositeKey_;",box)
 assert.notEqual(box.key("SACE","estudiante","X","I1"),box.key("LEGACY","estudiante","X","I1"));
 assert.notEqual(box.key("SACE","estudiante","X","I1"),box.key("SACE","usuario","X","I1"));
 assert.notEqual(box.key("SACE","estudiante","X","I1"),box.key("SACE","estudiante","X","I2"));
+
+assert.ok(persistence.includes("DB_VERSION: 5"));
+assert.ok(persistence.includes("'identity_mapping_cache'"));
+assert.ok(persistence.includes("IDENTITY_CACHE_ONLY_CONFIRMED_MAPPINGS"));
+assert.ok(persistence.includes("clearIdentityMappingCache"));
+assert.ok(api.includes("window.registerLegacyIdentifierMapping"));
+assert.ok(api.includes("window.resolveInternalIdFromLegacy"));
+assert.ok(api.includes("window.resolveLegacyIdFromInternal"));
+assert.ok(api.includes("window.resolveUserByLegacyId"));
+assert.ok(api.includes("window.reviewLegacyIdentifierMapping"));
+assert.ok(api.includes("window.getIdentityDecisionHistory"));
+
 console.log("TASK-068 identity mapping contract: syntax and static assertions passed.");

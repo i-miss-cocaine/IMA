@@ -335,3 +335,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Accounting-Service incorpora resolver y bloquea importación sin escritor destino explícito.
 - Se añaden test estático de sintaxis/contrato y workflow CI Node 24.
 - AUD-NG-377/379 parcialmente atendidos; AUD-NG-378 abierto. TASK-068 no se marca completada.
+
+
+[2026-11-09] C1.320 — TASK-068: IndexedDB v5 identity_mapping_cache (solo mapeos confirmados), seis wrappers cliente y test estático ampliado. Runtime pendiente; importación destino sigue fail-closed; tarea en ejecución.

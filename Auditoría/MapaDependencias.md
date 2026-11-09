@@ -4906,3 +4906,9 @@ Alcance estático satisfecho; sin cambios de código. Hallazgos AUD-NG-374..376 
 - User-Service expone registerLegacyIdentifierMapping, resolveInternalIdFromLegacy, resolveLegacyIdFromInternal, resolveUserByLegacyId, reviewLegacyIdentifierMapping y getIdentityDecisionHistory. Resolución solo CONFIRMADA y ámbito IMA_INSTITUTION_ID.
 - Accounting-Service resuelve referencias confirmadas; importDataWithColumnMapping se bloquea con DESTINATION_WRITER_NOT_CONFIGURED porque no existe contrato de escritura destino verificado.
 - Requiere configurar IMA_INSTITUTION_ID idéntico en ambos Apps Script. IndexedDB no es fuente de verdad. Runtime y pruebas de dos fuentes pendientes.
+
+
+## TASK-068 — C1.320, cliente de correspondencias
+- IndexedDB v5 incorpora identity_mapping_cache; clave compuesta institucional/origen/tipo/ID legado y persistencia exclusiva de mapeos confirmados.
+- js/api.js expone wrappers de alta, resoluciones, revisión e historial. El cliente no concede permisos ni convierte la caché en fuente de verdad.
+- Pendiente verificar upgrade real, aislamiento y runtime; importación destino continúa bloqueada de forma segura.

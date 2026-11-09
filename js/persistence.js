@@ -6,8 +6,8 @@
 
 window.PersistenceManager = {
     DB_NAME: 'IMA_Persistence_DB',
-    DB_VERSION: 4,
-    STORES: ['news', 'academic_stats', 'rankings', 'user_profile', 'local_progress', 'cache_estudiante_dashboard', 'cache_profesor_data', 'cache_teacher_projects', 'cache_teacher_logros', 'cache_teacher_reports', 'cache_estudiante_profile', 'cache_estudiante_tasks', 'cache_estudiante_exams'],
+    DB_VERSION: 5,
+    STORES: ['news', 'academic_stats', 'rankings', 'user_profile', 'local_progress', 'cache_estudiante_dashboard', 'cache_profesor_data', 'cache_teacher_projects', 'cache_teacher_logros', 'cache_teacher_reports', 'cache_estudiante_profile', 'cache_estudiante_tasks', 'cache_estudiante_exams', 'identity_mapping_cache'],
     _db: null,
 
     /**
@@ -41,6 +41,49 @@ window.PersistenceManager = {
                 console.error("[Persistence] Error opening IndexedDB:", event.target.error);
                 reject(event.target.error);
             };
+        });
+    },
+
+
+    /**
+     * Caché local no autoritativa. El backend sigue siendo la fuente de verdad.
+     * Solo se persisten correspondencias confirmadas por el servidor.
+     */
+    getIdentityMappingCache: function(institutionId, sourceSystem, entityType, legacyId) {
+        var key = JSON.stringify([String(institutionId || ''), String(sourceSystem || ''), String(entityType || '').toLowerCase(), String(legacyId || '')]);
+        return this.get('identity_mapping_cache', key);
+    },
+
+    setIdentityMappingCache: function(mapping) {
+        if (!mapping || !mapping.institutionId || !mapping.sourceSystem || !mapping.entityType || !mapping.legacyId) {
+            return Promise.reject(new Error('IDENTITY_CACHE_KEY_REQUIRED'));
+        }
+        if (mapping.status !== 'success' || mapping.confirmed !== true || !mapping.internalId) {
+            return Promise.reject(new Error('IDENTITY_CACHE_ONLY_CONFIRMED_MAPPINGS'));
+        }
+        var key = JSON.stringify([String(mapping.institutionId), String(mapping.sourceSystem), String(mapping.entityType).toLowerCase(), String(mapping.legacyId)]);
+        var safeRecord = {
+            institutionId: String(mapping.institutionId),
+            sourceSystem: String(mapping.sourceSystem),
+            entityType: String(mapping.entityType).toLowerCase(),
+            legacyId: String(mapping.legacyId),
+            internalId: String(mapping.internalId),
+            status: 'CONFIRMADA',
+            confirmed: true,
+            updatedAt: Date.now()
+        };
+        return this.set('identity_mapping_cache', safeRecord, key);
+    },
+
+    clearIdentityMappingCache: function(institutionId) {
+        var self = this;
+        return this.getAll('identity_mapping_cache').then(function(records) {
+            var removals = records.filter(function(record) {
+                return !institutionId || String(record.data && record.data.institutionId) === String(institutionId);
+            }).map(function(record) {
+                return self.delete('identity_mapping_cache', record.id);
+            });
+            return Promise.all(removals).then(function() { return removals.length; });
         });
     },
 
