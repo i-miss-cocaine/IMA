@@ -357,3 +357,34 @@ Checkpoint anterior: C1.339
 Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.340.
 Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.340.
 ===============================================================================
+
+
+
+===============================================================================
+## C1.341 — TASK-068: transporte interservicio autenticado y orquestación de importación
+ID: C1.341
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.340
+Baseline lógico: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD físico previo: 023d7c2afabc383d41b12eab69058a47614f76d2
+
+### Implementación
+- ACCOUNTING enruta por tipo de entidad al owner USER o ACADEMIC; requiere URLs HTTPS en Script Properties IMA_USER_SERVICE_URL / IMA_ACADEMIC_SERVICE_URL y secreto compartido IMA_MIGRATION_HMAC_SECRET (mínimo 32 caracteres). No existe secreto fallback ni hardcode.
+- Las solicitudes write/compensate se firman con el sobre HMAC-SHA256 existente, destino explícito, timestamp de 5 minutos, requestId y protección anti-replay.
+- USER y ACADEMIC validan firma/destino/origen ACCOUNTING antes de invocar funciones privadas de escritura o compensación. No se agrega acción pública RBAC para estos writers.
+- importDataWithColumnMapping resuelve solo correspondencias confirmadas, mapea columnas destino→origen, calcula clave idempotente por contenido y orquesta escrituras por servicio propietario.
+- Si una fila falla, compensa en orden inverso las escrituras ya aplicadas y deja registro en AuditoriaMigraciones; si una compensación falla, registra estado compensation_required.
+
+### Pruebas locales
+- Se agregan fixtures Node con HMAC real SHA-256 para firma, validación de destino, origen permitido, alteración de payload y anti-replay en USER y ACADEMIC.
+- El contrato incluye sintaxis de los tres servicios y conserva pruebas de writers/idempotencia/compensación.
+- No se ejecutaron UrlFetchApp real, Apps Script, Sheets reales, deployment, HTTP ni pruebas beta.
+
+### Estado
+- TASK-068 sigue En ejecución hasta ampliar cobertura local de orquestación/rollback de lote y validar los mapeos con fixtures de dos fuentes.
+- BETA-FUNC-008 sigue Pendiente beta para HTTP real, dos servicios desplegados y dos fuentes reales/sintéticas aisladas.
+- Próxima iteración: pruebas locales integrales de importDataWithColumnMapping con mocks UrlFetchApp/SpreadsheetApp y conciliación de referencias.
+
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.341.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.341.
+===============================================================================

@@ -699,10 +699,23 @@ function hasActiveDelegationForAction(userId, action) {
   return null;
 }
 
+
+function handleTrustedMigrationEnvelope_(envelope){
+ const secret=String(PropertiesService.getScriptProperties().getProperty("IMA_MIGRATION_HMAC_SECRET")||"");
+ if(secret.length<32)throw new Error("MIGRATION_TRANSPORT_SECRET_REQUIRED");
+ const verified=verifyInterServiceEnvelope(envelope,"ACADEMIC",secret);
+ if(verified.sourceService!=="ACCOUNTING")throw new Error("MIGRATION_SOURCE_NOT_ALLOWED");
+ if(verified.action==="writeMigratedEntity")return applyTrustedMigrationWrite_(verified.payload);
+ if(verified.action==="compensateMigratedEntity")return compensateTrustedMigrationWrite_(verified.payload);
+ throw new Error("MIGRATION_ACTION_NOT_ALLOWED");
+}
+
 function doPost(e) {
   try {
     if (!e || !e.postData || !e.postData.contents) return textResponse({ status: "error", message: "No se recibieron datos." });
-    const { action, payload } = JSON.parse(e.postData.contents);
+    const request = JSON.parse(e.postData.contents);
+    if (request && request.sourceService) return textResponse(handleTrustedMigrationEnvelope_(request));
+    const { action, payload } = request;
     if (payload && payload.skipLock && !payload.isInternalCall) {
       delete payload.skipLock;
     }

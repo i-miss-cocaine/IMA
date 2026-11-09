@@ -2061,3 +2061,11 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 ## 10.24 Corrección de fixture TASK-068 — C1.340
 - El run 42712140456 falló porque el mock insertSheet incluía un encabezado antes de que el helper lo inicializara; el writer no fue el origen del fallo.
 - El mock ahora representa una hoja nueva vacía. Producción sin cambios; nuevo CI pendiente.
+
+
+## 10.25 TASK-068 — iteración C1.341: transporte autenticado y orquestación
+- ACCOUNTING enruta por entidad al owner USER/ACADEMIC mediante URLs HTTPS configuradas; secreto IMA_MIGRATION_HMAC_SECRET obligatorio (>=32 caracteres), sin fallback.
+- Sobre HMAC-SHA256 con target/source binding, timestamp 5 min y anti-replay; dispatch interno privado de write/compensate.
+- importDataWithColumnMapping resuelve correspondencia confirmada, mapea campos destino→origen, idempotencia por contenido y compensación inversa del lote.
+- Pruebas Node locales de firma, alteración, origen, destino y replay. CI pendiente; no HTTP real/deployment/beta.
+- TASK-068 continúa En ejecución; BETA-FUNC-008 Pendiente beta. Siguiente: tests locales integrales del orquestador con UrlFetchApp/SpreadsheetApp mocks.

@@ -15379,21 +15379,43 @@ function resolveCrossReferenceIdentifier(payload) {
 }
 // [REQ-EXP-010] [Fase 1: Registro y Expediente de Estudiantes] - Service backend endpoint (importDataWithColumnMapping) para la importación masiva de expedientes desde archivos CSV y XLSX.
 // [TASK-068] Resolver identidad no equivale a persistir entidad destino.
-function importDataWithColumnMapping(payload) {
- const {nombreArchivo,destinoModulo,columnaMapeo,filasData,creadoPor,sistemaOrigen,tipoEntidad}=payload||{};
- if(!Array.isArray(filasData)||!filasData.length) throw new Error("filasData vacías.");
- if(!sistemaOrigen||!tipoEntidad||!destinoModulo) throw new Error("MIGRATION_CONTRACT_REQUIRED: sistemaOrigen, tipoEntidad y destinoModulo son obligatorios.");
- const ss=SpreadsheetApp.openById(SPREADSHEET_ID), audit=getOrCreateSheet(ss,"AuditoriaMigraciones"), runId="MIG-"+Utilities.getUuid(), mapping=columnaMapeo||{};
- let resolved=0; const errors=[];
- filasData.forEach((row,i)=>{try{
-   const key=mapping.identificador||Object.keys(row||{})[0], value=row&&row[key];
-   if(value===null||value===undefined||String(value).trim()===""){errors.push({fila:i+1,error:"IDENTIFIER_MISSING"});return;}
-   const result=resolveCrossReferenceIdentifier({sistemaOrigen:sistemaOrigen,tipoEntidad:tipoEntidad,idOriginalLegado:value});
-   if(result.status!=="success"){errors.push({fila:i+1,error:result.code||result.status});return;} resolved++;
- }catch(err){errors.push({fila:i+1,error:err.message});}});
- const status="blocked_no_destination_writer";
- audit.appendRow([runId,nombreArchivo||"importacion",destinoModulo,filasData.length,0,filasData.length,JSON.stringify(mapping),JSON.stringify(errors.slice(0,20)),status,creadoPor||"SISTEMA"]);
- return {status:"error",code:"DESTINATION_WRITER_NOT_CONFIGURED",ejecucionId:runId,totalFilas:filasData.length,identidadesResueltas:resolved,filasPendientes:filasData.length,errores:errors.slice(0,20),estado:status,message:"No se escribió ninguna entidad: falta un escritor de destino explícito. No se declara la migración exitosa."};
+
+
+const MIGRATION_OWNER_SCHEMAS_={
+ persona:{service:"USER",urlProperty:"IMA_USER_SERVICE_URL",sheet:"Personas",headers:["PersonaID","Nombres","Apellidos","Identificacion","EmailContacto","TelefonoContacto","EstadoPersona","FechaCreacion","FechaActualizacion","Observaciones"]},
+ estudiante:{service:"ACADEMIC",urlProperty:"IMA_ACADEMIC_SERVICE_URL",sheet:"ExpedientesEstudiantes",headers:["ExpedienteID","PersonaID","CodigoInstitucional","FechaNacimiento","Nacionalidad","DireccionResidencia","FotografiaUrl","EstadoExpediente","FechaCreacion","FechaActualizacion","Observaciones"]},
+ responsable:{service:"ACADEMIC",urlProperty:"IMA_ACADEMIC_SERVICE_URL",sheet:"ResponsablesTutores",headers:["ResponsableID","PersonaID","Nombres","Apellidos","Identificacion","Telefono","Email","Direccion","Ocupacion","Estado"]},
+ asignatura:{service:"ACADEMIC",urlProperty:"IMA_ACADEMIC_SERVICE_URL",sheet:"CatalogoAsignaturas",headers:["AsignaturaID","NombreOficial","Codigo","AreaAcademica","CargaHorariaRef","Estado"]},
+ matricula:{service:"ACADEMIC",urlProperty:"IMA_ACADEMIC_SERVICE_URL",sheet:"Matriculas",headers:["MatriculaID","Fecha","UserId","Alumno","Grado","Seccion","Periodo","Tipo","Estado","BecaDescuento","Observaciones"]},
+ documento:{service:"ACADEMIC",urlProperty:"IMA_ACADEMIC_SERVICE_URL",sheet:"DocumentosEstudiante",headers:["DocumentoID","ExpedienteID","SolicitudID","TipoDocumento","NombreArchivo","DriveFileId","DriveUrl","FechaRecepcion","FechaVencimiento","EstadoRevision","SubidoPor","ValidadoPor","Observaciones"]}
+};
+function migrationStableJson_(v){if(Array.isArray(v))return "["+v.map(migrationStableJson_).join(",")+"]";if(v&&typeof v==="object"&&!(v instanceof Date))return "{"+Object.keys(v).sort().map(k=>JSON.stringify(k)+":"+migrationStableJson_(v[k])).join(",")+"}";return JSON.stringify(v instanceof Date?v.toISOString():v);}
+function migrationHash_(value){const bytes=Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,String(value),Utilities.Charset.UTF_8);return bytes.map(b=>("0"+(b&255).toString(16)).slice(-2)).join("");}
+function mapMigrationRowToTarget_(row,mapping,schema){if(!row||typeof row!=="object"||Array.isArray(row))throw new Error("MIGRATION_ROW_INVALID");const fields=mapping&&mapping.campos&&typeof mapping.campos==="object"?mapping.campos:{},out={};schema.headers.slice(1).forEach(target=>{const source=fields[target]||target;if(Object.prototype.hasOwnProperty.call(row,source))out[target]=row[source];});if(!Object.keys(out).length)throw new Error("MIGRATION_FIELD_MAPPING_EMPTY");return out;}
+function sendMigrationOwnerRequest_(entityType,action,payload){const route=MIGRATION_OWNER_SCHEMAS_[String(entityType||"").toLowerCase()];if(!route)throw new Error("MIGRATION_ENTITY_NOT_OWNED");const props=PropertiesService.getScriptProperties(),url=String(props.getProperty(route.urlProperty)||"").trim(),secret=String(props.getProperty("IMA_MIGRATION_HMAC_SECRET")||"");if(!url||url.indexOf("https://")!==0||secret.length<32)throw new Error("MIGRATION_TRANSPORT_CONFIGURATION_REQUIRED");const envelope=createInterServiceEnvelope("ACCOUNTING",route.service,action,payload,secret);const response=UrlFetchApp.fetch(url,{method:"post",contentType:"application/json",payload:JSON.stringify(envelope),muteHttpExceptions:true});const code=response.getResponseCode();if(code<200||code>=300)throw new Error("MIGRATION_OWNER_HTTP_ERROR: "+code);let result;try{result=JSON.parse(response.getContentText());}catch(e){throw new Error("MIGRATION_OWNER_RESPONSE_INVALID");}if(!result||result.status!=="success")throw new Error("MIGRATION_OWNER_REJECTED: "+String(result&&result.code||"UNKNOWN"));return result;}
+function rollbackMigrationOwnerWrites_(writes){const errors=[];for(let i=writes.length-1;i>=0;i--){try{sendMigrationOwnerRequest_(writes[i].tipoEntidad,"compensateMigratedEntity",{idempotencyKey:writes[i].idempotencyKey,correlationId:writes[i].correlationId});}catch(e){errors.push({tipoEntidad:writes[i].tipoEntidad,idempotencyKey:writes[i].idempotencyKey,error:e.message});}}return errors;}
+
+function importDataWithColumnMapping(payload){
+ const p=payload||{},nombreArchivo=p.nombreArchivo,destinoModulo=String(p.destinoModulo||"").trim(),mapping=p.columnaMapeo||{},rows=p.filasData,source=String(p.sistemaOrigen||"").trim(),type=String(p.tipoEntidad||"").trim().toLowerCase(),createdBy=p.creadoPor||"SISTEMA";
+ if(!Array.isArray(rows)||!rows.length)throw new Error("filasData vacías.");
+ if(!source||!type||!destinoModulo)throw new Error("MIGRATION_CONTRACT_REQUIRED: sistemaOrigen, tipoEntidad y destinoModulo son obligatorios.");
+ const schema=MIGRATION_OWNER_SCHEMAS_[type];if(!schema)throw new Error("MIGRATION_ENTITY_NOT_OWNED: "+type);
+ if([schema.service,schema.sheet].indexOf(destinoModulo.toUpperCase())===-1&&destinoModulo!==schema.sheet)throw new Error("MIGRATION_DESTINATION_MISMATCH");
+ const ss=SpreadsheetApp.openById(SPREADSHEET_ID),audit=getOrCreateSheet(ss,"AuditoriaMigraciones"),runId="MIG-"+Utilities.getUuid(),applied=[],errors=[];
+ rows.forEach((row,i)=>{try{
+  const identifierField=String(mapping.identificador||Object.keys(row||{})[0]||""),legacy=row&&row[identifierField];if(legacy===null||legacy===undefined||String(legacy).trim()==="")throw new Error("IDENTIFIER_MISSING");
+  const identity=resolveCrossReferenceIdentifier({sistemaOrigen:source,tipoEntidad:type,idOriginalLegado:legacy});if(identity.status!=="success")throw new Error(identity.code||identity.status);
+  const data=mapMigrationRowToTarget_(row,mapping,schema),fingerprint=migrationStableJson_({source:source,type:type,legacy:String(legacy),idNuevoPlataforma:identity.idNuevoPlataforma,datos:data}),idempotencyKey="MIG-"+migrationHash_(fingerprint);
+  const writePayload={tipoEntidad:type,idNuevoPlataforma:identity.idNuevoPlataforma,datos:data,idempotencyKey:idempotencyKey,correlationId:runId};
+  sendMigrationOwnerRequest_(type,"writeMigratedEntity",writePayload);applied.push({tipoEntidad:type,idempotencyKey:idempotencyKey,correlationId:runId});
+ }catch(e){errors.push({fila:i+1,error:String(e&&e.message||e)});}});
+ let compensationErrors=[];
+ if(errors.length)compensationErrors=rollbackMigrationOwnerWrites_(applied);
+ const status=errors.length?(compensationErrors.length?"compensation_required":(applied.length?"rolled_back":"failed_validation")):"completed";
+ const finalErrors=errors.concat(compensationErrors.map(x=>({fila:null,error:"COMPENSATION_FAILED",detalle:x})));
+ try{audit.appendRow([runId,nombreArchivo||"importacion",destinoModulo,rows.length,errors.length?0:applied.length,finalErrors.length,JSON.stringify(mapping),JSON.stringify(finalErrors.slice(0,20)),status,createdBy]);}
+ catch(auditError){if(!errors.length){compensationErrors=rollbackMigrationOwnerWrites_(applied);throw new Error(compensationErrors.length?"MIGRATION_AUDIT_FAILED_COMPENSATION_REQUIRED":"MIGRATION_AUDIT_FAILED_BATCH_COMPENSATED");}throw auditError;}
+ return{status:errors.length?"error":"success",code:errors.length?(compensationErrors.length?"MIGRATION_COMPENSATION_REQUIRED":"MIGRATION_BATCH_ROLLED_BACK"):undefined,ejecucionId:runId,totalFilas:rows.length,identidadesResueltas:applied.length,registrosEscritos:errors.length?0:applied.length,filasPendientes:errors.length?rows.length:0,errores:finalErrors.slice(0,20),estado:status,message:errors.length?"El lote no se confirmó; las escrituras aplicadas se compensaron o quedaron identificadas para compensación.":"Importación completada con correspondencia confirmada y writers del servicio propietario."};
 }
 
 function getMigrationLogs(payload) {

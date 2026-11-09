@@ -1374,10 +1374,23 @@ function saveIdempotentResult(action, payload, result) {
   }
 }
 
+
+function handleTrustedMigrationEnvelope_(envelope){
+ const secret=String(PropertiesService.getScriptProperties().getProperty("IMA_MIGRATION_HMAC_SECRET")||"");
+ if(secret.length<32)throw new Error("MIGRATION_TRANSPORT_SECRET_REQUIRED");
+ const verified=verifyInterServiceEnvelope(envelope,"USER",secret);
+ if(verified.sourceService!=="ACCOUNTING")throw new Error("MIGRATION_SOURCE_NOT_ALLOWED");
+ if(verified.action==="writeMigratedEntity")return applyTrustedMigrationWrite_(verified.payload);
+ if(verified.action==="compensateMigratedEntity")return compensateTrustedMigrationWrite_(verified.payload);
+ throw new Error("MIGRATION_ACTION_NOT_ALLOWED");
+}
+
 function doPost(e) {
   try {
     if (!e || !e.postData || !e.postData.contents) return textResponse({ status: "error", message: "No se recibieron datos." });
-    const { action, payload } = JSON.parse(e.postData.contents);
+    const request = JSON.parse(e.postData.contents);
+    if (request && request.sourceService) return textResponse(handleTrustedMigrationEnvelope_(request));
+    const { action, payload } = request;
     const authCheck = validateRolePermission(action, payload);
     if (!authCheck.authorized) {
       logStructuredEvent("USER", action, "WARN", "AUTH_PERMISSION_DENIED", `Acceso denegado a acción ${action} para rol ${authCheck.role}`, payload, authCheck.role);

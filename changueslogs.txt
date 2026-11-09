@@ -432,3 +432,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-09] C1.340 — CI 42712140456 detectó doble encabezado en el mock de hoja nueva del contrato TASK-068; se corrige insertSheet para devolver hoja vacía. Sin cambios de producción; nuevo CI pendiente. Checkpoint Parte_0003 C1.340.
+
+
+[2026-11-09] C1.341 — TASK-068: transporte ACCOUNTING→USER/ACADEMIC con HMAC-SHA256, secreto obligatorio en Script Properties, URLs HTTPS, expiración/anti-replay y orquestación de importDataWithColumnMapping con compensación inversa. Pruebas Node locales agregadas; CI pendiente. Sin HTTP real ni beta. Checkpoint Parte_0003 C1.341.

@@ -3,11 +3,11 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.340**
+- Último checkpoint: **C1.341**
 - Última sesión: `IMA-GOV-20261109-2201Z-01`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.340: **35195**
+- Caracteres del archivo activo tras C1.341: **37606**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 
@@ -126,3 +126,5 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.339 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | TASK-068 — writers idempotentes por servicio propietario | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.339 | 346 | C1.316 (último válido) | Este commit; SHA verificado tras publicación |
 
 | C1.340 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | TASK-068 — corregir mock de hoja vacía; CI 42712140456 falló por doble encabezado en fixture | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.340 | 360 | C1.339 | Este commit; SHA verificado tras publicación |
+
+| C1.341 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | TASK-068 — transporte HMAC y orquestación de importación multi-servicio | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.341 | 391 | C1.340 | Este commit; SHA verificado tras publicación |
