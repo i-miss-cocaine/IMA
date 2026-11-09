@@ -18,7 +18,9 @@ function extractFunction(name, nextName) {
 const helperSource =
   extractFunction("transportRows_", "resolveTransportAccessScope_") +
   extractFunction("resolveTransportAccessScope_", "transportAuditDenied_") +
-  extractFunction("getTransportRouteIdsForScope_", "getTransportRoutes");
+  extractFunction("getTransportRouteIdsForScope_", "getTransportRoutes") +
+  extractFunction("getTransportRoutes", "assignStudentTransport") +
+  extractFunction("getTransportAssignments", "getOrCreateActiveTrip");
 
 function makeSheet(rows) {
   return { getDataRange: () => ({ getValues: () => rows }) };
@@ -130,6 +132,75 @@ vm.runInNewContext(
 );
 const parentRouteIds = context.routeIds(makeSpreadsheet(data), parent);
 assert.deepEqual(Array.from(parentRouteIds), ["RUT-01"]);
+
+
+function runEndpoint(name, payload, spreadsheetData) {
+  const events = [];
+  const context = {
+    SPREADSHEET_ID: "isolated",
+    SpreadsheetApp: { openById: () => makeSpreadsheet(spreadsheetData) },
+    logStructuredEvent: (...args) => events.push(args),
+    getOrCreateTransportVehiclesCatalog: () => {}
+  };
+  vm.runInNewContext(
+    helperSource +
+      "\\nthis.getTransportRoutes = getTransportRoutes; this.getTransportAssignments = getTransportAssignments;",
+    context
+  );
+  return { result: context[name](payload), events };
+}
+
+const parentAssignments = runEndpoint("getTransportAssignments", {
+  _verifiedRole: "Padre",
+  _verifiedUserId: "PARENT-01",
+  authRole: "Administrador",
+  authUserId: "ROOT"
+}, data);
+assert.equal(parentAssignments.result.total, 2);
+assert.ok(parentAssignments.result.asignaciones.every(x => x.estudianteUserId === "STU-01"));
+
+const studentAssignments = runEndpoint("getTransportAssignments", {
+  _verifiedRole: "Estudiante",
+  _verifiedUserId: "STU-01"
+}, data);
+assert.equal(studentAssignments.result.total, 2);
+assert.ok(studentAssignments.result.asignaciones.every(x => x.estudianteUserId === "STU-01"));
+
+const parentIdorAttempt = runEndpoint("getTransportAssignments", {
+  _verifiedRole: "Padre",
+  _verifiedUserId: "PARENT-01",
+  estudianteUserId: "STU-02"
+}, data);
+assert.equal(parentIdorAttempt.result.code, "UNAUTHORIZED_ACCESS_ATTEMPT");
+assert.ok(parentIdorAttempt.events.some(x => x[3] === "UNAUTHORIZED_ACCESS_ATTEMPT"));
+
+const driverAssignments = runEndpoint("getTransportAssignments", {
+  _verifiedRole: "Conductor",
+  _verifiedUserId: "DRIVER-1"
+}, data);
+assert.equal(driverAssignments.result.total, 1);
+assert.equal(driverAssignments.result.asignaciones[0].rutaId, "RUT-01");
+
+const parentRoutes = runEndpoint("getTransportRoutes", {
+  _verifiedRole: "Padre",
+  _verifiedUserId: "PARENT-01"
+}, data);
+assert.equal(parentRoutes.result.rutas.length, 1);
+assert.equal(parentRoutes.result.rutas[0].rutaId, "RUT-01");
+
+const foreignRouteAttempt = runEndpoint("getTransportRoutes", {
+  _verifiedRole: "Padre",
+  _verifiedUserId: "PARENT-01",
+  rutaId: "RUT-02"
+}, data);
+assert.equal(foreignRouteAttempt.result.code, "UNAUTHORIZED_ACCESS_ATTEMPT");
+assert.ok(foreignRouteAttempt.events.some(x => x[3] === "UNAUTHORIZED_ACCESS_ATTEMPT"));
+
+const noClaimsAssignments = runEndpoint("getTransportAssignments", {
+  authRole: "Administrador",
+  authUserId: "ROOT"
+}, data);
+assert.equal(noClaimsAssignments.result.code, "VERIFIED_IDENTITY_REQUIRED");
 
 assert.ok(source.includes('case "getTransportAssignments": result = getTransportAssignments(payload);'));
 assert.ok(source.includes('case "getTransportRoutes": result = getTransportRoutes(payload);'));
