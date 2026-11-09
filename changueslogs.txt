@@ -388,3 +388,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Último commit modificador acreditado: C1.316 / 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a. La anotación SHA de C1.317 no coincide con el blob que resuelve el HEAD; discrepancia registrada sin reescribir historia.
 - METODOLOGIA_DESARROLLO.md §21.5 separa pruebas locales obligatorias de pruebas remotas diferidas a beta; beta_test.txt es el registro maestro.
 - Commit de normativa: ad1e0a86f1bbd9da89bdaf10e43ae82aab90bd53. Checkpoint C1.329 en Parte_0003.
+
+
+[2026-11-09] IMA-GOV-20261109-2201Z-01 — C1.330 / pruebas beta específicas
+- beta_test.txt incorpora BETA-FUNC-007 (TASK-636: backup/restore/recuperación aislada) y BETA-FUNC-008 (TASK-068: interservicio/importación idempotente/compensación).
+- Ambos casos quedan Pendiente beta; no se ejecutaron ni se declaran PASS y no bloquean implementación por ausencia de deployment.
+- Checkpoint C1.330: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice Auditoría/INDICE_CHECKPOINTS.md.

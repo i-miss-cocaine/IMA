@@ -101,3 +101,38 @@ Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003
 Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.329.
 Commit de cierre: el commit que contiene este checkpoint; SHA verificado tras publicar.
 ===============================================================================
+
+
+===============================================================================
+## C1.330 — Casos beta específicos para TASK-636 y TASK-068
+ID: C1.330
+Sesión: IMA-GOV-20261109-2201Z-01
+Fecha: 2026-11-09 UTC
+Checkpoint anterior: C1.329
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+HEAD de partida: 562821129a243a90bc4dbfdd04573ebcb58ae826
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios)
+
+### Registro de pruebas diferidas
+- Se agregan BETA-FUNC-007 para TASK-636/AUD-NG-369: respaldo, restauración, integridad de hojas/activos, interrupciones y recuperación durable en Apps Script/Sheets/Drive beta aislados.
+- Se agrega BETA-FUNC-008 para TASK-068/AUD-NG-378: transporte interservicio autenticado, writer por entidad, dos fuentes, reimportación idempotente, relaciones, journal y compensación.
+- Ambos casos quedan Pendiente beta. Requieren servicios desplegados y fixtures aislados; no bloquean la finalización de implementación por falta de deployment. Los defectos locales de código/contratos sí deben corregirse antes del cierre.
+- No se ejecutó ningún caso beta ni se declaró PASS.
+
+### Archivos modificados
+beta_test.txt; Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; Auditoría/INDICE_CHECKPOINTS.md; changueslogs.txt; Auditoria.txt.
+
+### Pruebas y verificaciones
+- Ejecutadas: unicidad de IDs BETA-FUNC-007/008; revisión de precondiciones, resultados esperados y estado Pendiente beta; verificación de límite de tamaño de Parte_0003.
+- No ejecutadas: deployments, HTTP real, Apps Script, Sheets/Drive, restauración, importación real ni E2E.
+
+### Estado y siguiente acción
+- BETA-FUNC-007 y BETA-FUNC-008 quedan registrados para ejecución en beta.
+- TASK-636 y TASK-068 no cambian de estado en este checkpoint. Deben reauditarse bajo METODOLOGIA_DESARROLLO.md §21.5 para separar brechas de implementación de pruebas remotas diferidas.
+- Siguiente acción: reauditar TASK-068/AUD-NG-378 y continuar implementación local elegible; después aplicar el mismo criterio a TASK-636/AUD-NG-369.
+
+Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.330.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.330.
+Commit de cierre: el commit que contiene este checkpoint; SHA verificado tras publicar.
+===============================================================================

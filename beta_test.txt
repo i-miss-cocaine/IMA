@@ -121,3 +121,10 @@ Todos quedan Pendientes; ejecutar después de implementar las tareas, en beta/st
 
 ## 8. Casos pendientes de desglosar por tarea
 Cada tarea que tenga aceptación funcional dependiente de un servicio desplegado debe añadir aquí uno o más casos BETA-FUNC-###, vinculados al ID original y sin duplicar tareas del backlog. No marcar PASS hasta ejecutar realmente el escenario en beta aislada.
+
+
+### BETA-FUNC-007 — Respaldo, restauración y recuperación Task-Service (TASK-636 / AUD-NG-369, P0)
+Área TASK; Administrador/Desarrollador. Precondición: TASK-636 implementada y proyecto Apps Script beta aislado con Spreadsheet/Drive fixtures sintéticos, deployment autorizado y respaldo inicial. Pasos: crear y verificar respaldo; restaurar sobre fixture; comparar SHA-256, filas, IDs, referencias y permisos; forzar interrupción controlada durante copia de activos, mapeo, escritura y limpieza del journal; reanudar recuperación y repetir operación. Esperado: restauración íntegra, sin duplicados ni pérdida de referencias, journal durable recuperable, Log_Cierres append-only y fallos sin falso success. Estado: Pendiente beta; no bloquea cierre de implementación por falta de deployment. Evidencia saneada sin datos reales. Derivación: TASK-636.
+
+### BETA-FUNC-008 — Correspondencia e importación interservicio idempotente (TASK-068 / AUD-NG-378, P0)
+Áreas ACCOUNTING/USER/ACADEMIC; Administrador/Secretaría. Precondición: TASK-068 implementada y deployments beta aislados, institución sintética, secreto HMAC configurado fuera de Git y dos fuentes de datos sintéticas. Pasos: importar ambas fuentes; validar firma, origen/destino, institución, actor, timestamp y replay; resolver correspondencias; repetir la importación; provocar conflicto y fallo parcial para verificar journal/compensación; comprobar relaciones y persistencia por servicio propietario. Esperado: solo envelopes autorizados, identidad consistente, importación idempotente, sin duplicados ni escrituras parciales, conflictos auditables y compensación verificable. Estado: Pendiente beta; no bloquea cierre de implementación por falta de deployment. Evidencia saneada sin secretos. Derivación: TASK-068.
