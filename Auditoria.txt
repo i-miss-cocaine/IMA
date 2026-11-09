@@ -582,3 +582,8 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 ## C1.356 — TASK-068 auditoría de correspondencias
 - CI C1.355 run 42715614599: completed/success.
 - Se integra escaneo de integridad de CorrespondenciaIdentificadores en auditAndReconcileIdentityInconsistencies; anomalías quedan para revisión humana, sin auto-fusión/corrección. CI C1.356 pendiente.
+
+
+## C1.357 — TASK-068 empleado y curso
+- CI C1.356 run 42715880749: completed/success.
+- Se agregan entidades empleado/curso con sus esquemas reales ACCOUNTING y writer local idempotente con compensación. Pruebas locales añadidas; CI pendiente.

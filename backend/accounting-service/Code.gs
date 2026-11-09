@@ -15387,12 +15387,71 @@ const MIGRATION_OWNER_SCHEMAS_={
  responsable:{service:"ACADEMIC",urlProperty:"IMA_ACADEMIC_SERVICE_URL",sheet:"ResponsablesTutores",headers:["ResponsableID","PersonaID","Nombres","Apellidos","Identificacion","Telefono","Email","Direccion","Ocupacion","Estado"]},
  asignatura:{service:"ACADEMIC",urlProperty:"IMA_ACADEMIC_SERVICE_URL",sheet:"CatalogoAsignaturas",headers:["AsignaturaID","NombreOficial","Codigo","AreaAcademica","CargaHorariaRef","Estado"]},
  matricula:{service:"ACADEMIC",urlProperty:"IMA_ACADEMIC_SERVICE_URL",sheet:"Matriculas",headers:["MatriculaID","Fecha","UserId","Alumno","Grado","Seccion","Periodo","Tipo","Estado","BecaDescuento","Observaciones"]},
- documento:{service:"ACADEMIC",urlProperty:"IMA_ACADEMIC_SERVICE_URL",sheet:"DocumentosEstudiante",headers:["DocumentoID","ExpedienteID","SolicitudID","TipoDocumento","NombreArchivo","DriveFileId","DriveUrl","FechaRecepcion","FechaVencimiento","EstadoRevision","SubidoPor","ValidadoPor","Observaciones"]}
+ documento:{service:"ACADEMIC",urlProperty:"IMA_ACADEMIC_SERVICE_URL",sheet:"DocumentosEstudiante",headers:["DocumentoID","ExpedienteID","SolicitudID","TipoDocumento","NombreArchivo","DriveFileId","DriveUrl","FechaRecepcion","FechaVencimiento","EstadoRevision","SubidoPor","ValidadoPor","Observaciones"]},empleado:{service:"ACCOUNTING",urlProperty:"",sheet:"ExpedientesLaborales",headers:["ExpedienteID","PersonaId","UserId","Puesto","Departamento","CentroCosto","FechaIngreso","FechaSalida","EstadoLaboral","Observaciones"]},curso:{service:"ACCOUNTING",urlProperty:"",sheet:"CatalogoCursosCapacitacion",headers:["CursoID","NombreCurso","Categoria","ProveedorResponsable","Modalidad","DuracionHoras","Requisitos","DirigidoA","Estado","CreadoPor","FechaCreacion","UltimaModificacion"]}
 };
 function migrationStableJson_(v){if(Array.isArray(v))return "["+v.map(migrationStableJson_).join(",")+"]";if(v&&typeof v==="object"&&!(v instanceof Date))return "{"+Object.keys(v).sort().map(k=>JSON.stringify(k)+":"+migrationStableJson_(v[k])).join(",")+"}";return JSON.stringify(v instanceof Date?v.toISOString():v);}
 function migrationHash_(value){const bytes=Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,String(value),Utilities.Charset.UTF_8);return bytes.map(b=>("0"+(b&255).toString(16)).slice(-2)).join("");}
 function mapMigrationRowToTarget_(row,mapping,schema){if(!row||typeof row!=="object"||Array.isArray(row))throw new Error("MIGRATION_ROW_INVALID");const fields=mapping&&mapping.campos&&typeof mapping.campos==="object"?mapping.campos:{},out={};schema.headers.slice(1).forEach(target=>{const source=fields[target]||target;if(Object.prototype.hasOwnProperty.call(row,source))out[target]=row[source];});if(!Object.keys(out).length)throw new Error("MIGRATION_FIELD_MAPPING_EMPTY");return out;}
-function sendMigrationOwnerRequest_(entityType,action,payload){const route=MIGRATION_OWNER_SCHEMAS_[String(entityType||"").toLowerCase()];if(!route)throw new Error("MIGRATION_ENTITY_NOT_OWNED");const props=PropertiesService.getScriptProperties(),url=String(props.getProperty(route.urlProperty)||"").trim(),secret=String(props.getProperty("IMA_MIGRATION_HMAC_SECRET")||"");if(!url||url.indexOf("https://")!==0||secret.length<32)throw new Error("MIGRATION_TRANSPORT_CONFIGURATION_REQUIRED");const envelope=createInterServiceEnvelope("ACCOUNTING",route.service,action,payload,secret);const response=UrlFetchApp.fetch(url,{method:"post",contentType:"application/json",payload:JSON.stringify(envelope),muteHttpExceptions:true});const code=response.getResponseCode();if(code<200||code>=300)throw new Error("MIGRATION_OWNER_HTTP_ERROR: "+code);let result;try{result=JSON.parse(response.getContentText());}catch(e){throw new Error("MIGRATION_OWNER_RESPONSE_INVALID");}if(!result||result.status!=="success")throw new Error("MIGRATION_OWNER_REJECTED: "+String(result&&result.code||"UNKNOWN"));return result;}
+const ACCOUNTING_MIGRATION_WRITER_SCHEMAS_={
+ empleado:{sheet:"ExpedientesLaborales",headers:["ExpedienteID","PersonaId","UserId","Puesto","Departamento","CentroCosto","FechaIngreso","FechaSalida","EstadoLaboral","Observaciones"]},
+ curso:{sheet:"CatalogoCursosCapacitacion",headers:["CursoID","NombreCurso","Categoria","ProveedorResponsable","Modalidad","DuracionHoras","Requisitos","DirigidoA","Estado","CreadoPor","FechaCreacion","UltimaModificacion"]}
+};
+const ACCOUNTING_MIGRATION_JOURNAL_HEADERS_=["IdempotencyKey","TipoEntidad","IdNuevoPlataforma","PayloadJSON","Estado","Accion","FilaAnteriorJSON","FilaNuevaJSON","Fecha","CorrelationId"];
+function accountingMigrationStableJson_(v){
+ if(v instanceof Date)return JSON.stringify({__IMA_DATE__:v.toISOString()});
+ if(Array.isArray(v))return "["+v.map(accountingMigrationStableJson_).join(",")+"]";
+ if(v&&typeof v==="object")return "{"+Object.keys(v).sort().map(k=>JSON.stringify(k)+":"+accountingMigrationStableJson_(v[k])).join(",")+"}";
+ return JSON.stringify(v);
+}
+function accountingMigrationSafeCell_(v){if(typeof v==="string"&&/^[=+@-]/.test(v))return "'"+v;return v;}
+function accountingMigrationEncodeSnapshot_(row){return row===null?null:row.map(v=>v instanceof Date?{__IMA_DATE__:v.toISOString()}:v);}
+function accountingMigrationDecodeSnapshot_(row){return row===null?null:row.map(v=>v&&typeof v==="object"&&v.__IMA_DATE__?new Date(v.__IMA_DATE__):v);}
+function ensureAccountingMigrationSheet_(ss,name,headers){
+ let sheet=ss.getSheetByName(name);if(!sheet)sheet=ss.insertSheet(name);
+ if(sheet.getLastRow()===0)sheet.appendRow(headers);
+ const actual=sheet.getRange(1,1,1,headers.length).getValues()[0].map(String);
+ if(JSON.stringify(actual)!==JSON.stringify(headers))throw new Error("ACCOUNTING_MIGRATION_SCHEMA_MISMATCH: "+name);
+ return sheet;
+}
+function applyAccountingMigrationWrite_(p){
+ p=p||{};const type=String(p.tipoEntidad||"").trim().toLowerCase(),id=String(p.idNuevoPlataforma||"").trim(),key=String(p.idempotencyKey||"").trim(),schema=ACCOUNTING_MIGRATION_WRITER_SCHEMAS_[type],data=p.datos;
+ if(!schema||!id||!key||!data||typeof data!=="object"||Array.isArray(data))throw new Error("ACCOUNTING_MIGRATION_WRITE_CONTRACT_INVALID");
+ const allowed=schema.headers.slice(1),canonical={};
+ Object.keys(data).forEach(f=>{if(allowed.indexOf(f)===-1)throw new Error("ACCOUNTING_MIGRATION_FIELD_NOT_ALLOWED: "+f);if(data[f]&&typeof data[f]==="object"&&!(data[f] instanceof Date))throw new Error("ACCOUNTING_MIGRATION_CELL_TYPE_INVALID: "+f);canonical[f]=data[f];});
+ const payloadJSON=accountingMigrationStableJson_({tipoEntidad:type,idNuevoPlataforma:id,datos:canonical}),lock=LockService.getScriptLock();lock.waitLock(10000);
+ try{
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),target=ensureAccountingMigrationSheet_(ss,schema.sheet,schema.headers),journal=ensureAccountingMigrationSheet_(ss,"MigracionEscriturasAccounting",ACCOUNTING_MIGRATION_JOURNAL_HEADERS_),jr=journal.getDataRange().getValues();
+  for(let j=1;j<jr.length;j++)if(String(jr[j][0])===key){if(String(jr[j][3])!==payloadJSON)throw new Error("ACCOUNTING_MIGRATION_IDEMPOTENCY_CONFLICT");if(String(jr[j][4])==="APPLIED")return{status:"success",idempotent:true,idNuevoPlataforma:id,accion:jr[j][5]};if(String(jr[j][4])==="COMPENSATED")throw new Error("ACCOUNTING_MIGRATION_ALREADY_COMPENSATED");}
+  const rows=target.getDataRange().getValues();let n=-1;for(let i=1;i<rows.length;i++)if(String(rows[i][0]).trim()===id){n=i+1;break;}
+  const before=n>0?rows[n-1].slice():null,after=before?before.slice():schema.headers.map(()=> "");after[0]=accountingMigrationSafeCell_(id);
+  Object.keys(canonical).forEach(f=>{after[schema.headers.indexOf(f)]=accountingMigrationSafeCell_(canonical[f]);});
+  if(n>0)target.getRange(n,1,1,schema.headers.length).setValues([after]);else target.appendRow(after);
+  const action=n>0?"UPDATE":"INSERT";
+  try{journal.appendRow([key,type,id,payloadJSON,"APPLIED",action,JSON.stringify(accountingMigrationEncodeSnapshot_(before)),JSON.stringify(accountingMigrationEncodeSnapshot_(after)),new Date(),String(p.correlationId||"")]);}
+  catch(e){if(action==="INSERT")target.deleteRow(target.getLastRow());else target.getRange(n,1,1,schema.headers.length).setValues([before]);throw e;}
+  return{status:"success",idempotent:false,idNuevoPlataforma:id,accion:action};
+ }finally{lock.releaseLock();}
+}
+function compensateAccountingMigrationWrite_(p){
+ const key=String(p&&p.idempotencyKey||"").trim();if(!key)throw new Error("ACCOUNTING_MIGRATION_IDEMPOTENCY_KEY_REQUIRED");
+ const lock=LockService.getScriptLock();lock.waitLock(10000);
+ try{
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),journal=ensureAccountingMigrationSheet_(ss,"MigracionEscriturasAccounting",ACCOUNTING_MIGRATION_JOURNAL_HEADERS_),entries=journal.getDataRange().getValues();let ix=-1;
+  for(let i=1;i<entries.length;i++)if(String(entries[i][0])===key){ix=i+1;break;}
+  if(ix<0)throw new Error("ACCOUNTING_MIGRATION_JOURNAL_NOT_FOUND");
+  const e=entries[ix-1];if(String(e[4])==="COMPENSATED")return{status:"success",compensated:true,idempotent:true};if(String(e[4])!=="APPLIED")throw new Error("ACCOUNTING_MIGRATION_JOURNAL_STATE_INVALID");
+  const schema=ACCOUNTING_MIGRATION_WRITER_SCHEMAS_[String(e[1])];if(!schema)throw new Error("ACCOUNTING_MIGRATION_ENTITY_NOT_OWNED");
+  const target=ensureAccountingMigrationSheet_(ss,schema.sheet,schema.headers),rows=target.getDataRange().getValues();let n=-1;
+  for(let i=1;i<rows.length;i++)if(String(rows[i][0]).trim()===String(e[2])){n=i+1;break;}
+  const expected=accountingMigrationDecodeSnapshot_(JSON.parse(String(e[7])));
+  if(n<0||accountingMigrationStableJson_(rows[n-1])!==accountingMigrationStableJson_(expected))throw new Error("ACCOUNTING_MIGRATION_COMPENSATION_CONFLICT");
+  const before=e[6]?accountingMigrationDecodeSnapshot_(JSON.parse(String(e[6]))):null;
+  if(String(e[5])==="INSERT")target.deleteRow(n);else if(before)target.getRange(n,1,1,schema.headers.length).setValues([before]);else throw new Error("ACCOUNTING_MIGRATION_SNAPSHOT_MISSING");
+  journal.getRange(ix,5).setValue("COMPENSATED");return{status:"success",compensated:true,idempotent:false};
+ }finally{lock.releaseLock();}
+}
+
+function sendMigrationOwnerRequest_(entityType,action,payload){const route=MIGRATION_OWNER_SCHEMAS_[String(entityType||"").toLowerCase()];if(!route)throw new Error("MIGRATION_ENTITY_NOT_OWNED");if(route.service==="ACCOUNTING"){if(action==="writeMigratedEntity")return applyAccountingMigrationWrite_(payload);if(action==="compensateMigratedEntity")return compensateAccountingMigrationWrite_(payload);throw new Error("ACCOUNTING_MIGRATION_ACTION_NOT_ALLOWED");}const props=PropertiesService.getScriptProperties(),url=String(props.getProperty(route.urlProperty)||"").trim(),secret=String(props.getProperty("IMA_MIGRATION_HMAC_SECRET")||"");if(!url||url.indexOf("https://")!==0||secret.length<32)throw new Error("MIGRATION_TRANSPORT_CONFIGURATION_REQUIRED");const envelope=createInterServiceEnvelope("ACCOUNTING",route.service,action,payload,secret);const response=UrlFetchApp.fetch(url,{method:"post",contentType:"application/json",payload:JSON.stringify(envelope),muteHttpExceptions:true});const code=response.getResponseCode();if(code<200||code>=300)throw new Error("MIGRATION_OWNER_HTTP_ERROR: "+code);let result;try{result=JSON.parse(response.getContentText());}catch(e){throw new Error("MIGRATION_OWNER_RESPONSE_INVALID");}if(!result||result.status!=="success")throw new Error("MIGRATION_OWNER_REJECTED: "+String(result&&result.code||"UNKNOWN"));return result;}
 function rollbackMigrationOwnerWrites_(writes){const errors=[];for(let i=writes.length-1;i>=0;i--){try{sendMigrationOwnerRequest_(writes[i].tipoEntidad,"compensateMigratedEntity",{idempotencyKey:writes[i].idempotencyKey,correlationId:writes[i].correlationId});}catch(e){errors.push({tipoEntidad:writes[i].tipoEntidad,idempotencyKey:writes[i].idempotencyKey,error:e.message});}}return errors;}
 
 function importDataWithColumnMapping(payload){

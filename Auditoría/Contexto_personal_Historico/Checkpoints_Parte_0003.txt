@@ -612,3 +612,19 @@ Checkpoint anterior: C1.355
 Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.356.
 Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.356.
 ===============================================================================
+
+
+===============================================================================
+## C1.357 — TASK-068: soporte de tipos empleado y curso con propietario ACCOUNTING
+ID: C1.357
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.356
+- CI C1.356 run 42715880749: completed/success; auditoría de correspondencias pasa.
+- Revisión de tipos del requisito detectó que empleado y curso estaban mencionados como entidades admitidas, pero no existían en los registros de destino ni en MIGRATION_OWNER_SCHEMAS_. Se verificaron los esquemas existentes del servicio ACCOUNTING: ExpedientesLaborales y CatalogoCursosCapacitacion.
+- Se agregan los dos tipos a IDENTITY_TARGET_SCHEMAS_ y a la UI. El importador los enruta al propietario ACCOUNTING mediante writer local (sin HTTP de loopback), journal separado, upsert por ID, idempotencia por contenido, snapshots tipados, compensación con precondición y protección contra fórmulas.
+- Se agregan fixtures locales para inserción, reintento, conflicto de idempotencia, protección de fórmulas y compensación en ambos tipos.
+- No se modifica el transporte USER/ACADEMIC; las pruebas HMAC siguen aplicando a esos propietarios. CI C1.357 pendiente.
+- TASK-068 sigue En ejecución; BETA-FUNC-008 continúa Pendiente beta.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.357.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.357.
+===============================================================================

@@ -29,7 +29,9 @@ const canonicalSchemas=[
   ['["ResponsableID", "PersonaID", "Nombres", "Apellidos", "Identificacion", "Telefono", "Email", "Direccion", "Ocupacion", "Estado"]',academic],
   ['["AsignaturaID", "NombreOficial", "Codigo", "AreaAcademica", "CargaHorariaRef", "Estado"]',academic],
   ['["MatriculaID", "Fecha", "UserId", "Alumno", "Grado", "Seccion", "Periodo", "Tipo", "Estado", "BecaDescuento", "Observaciones"]',academic],
-  ['["DocumentoID", "ExpedienteID", "SolicitudID", "TipoDocumento", "NombreArchivo", "DriveFileId", "DriveUrl", "FechaRecepcion", "FechaVencimiento", "EstadoRevision", "SubidoPor", "ValidadoPor", "Observaciones"]',academic]
+  ['["DocumentoID", "ExpedienteID", "SolicitudID", "TipoDocumento", "NombreArchivo", "DriveFileId", "DriveUrl", "FechaRecepcion", "FechaVencimiento", "EstadoRevision", "SubidoPor", "ValidadoPor", "Observaciones"]',academic],
+  ['["ExpedienteID", "PersonaId", "UserId", "Puesto", "Departamento", "CentroCosto", "FechaIngreso", "FechaSalida", "EstadoLaboral", "Observaciones"]',accounting],
+  ['["CursoID", "NombreCurso", "Categoria", "ProveedorResponsable", "Modalidad", "DuracionHoras", "Requisitos", "DirigidoA", "Estado", "CreadoPor", "FechaCreacion", "UltimaModificacion"]',accounting]
 ];
 canonicalSchemas.forEach(([schema,source])=>assert.ok(source.includes(schema),"canonical destination schema "+schema));
 const targetStart=user.indexOf("const IDENTITY_TARGET_SCHEMAS_ = {");
@@ -297,3 +299,24 @@ assert.ok(!identityAuditIssues.some(x=>x.id==="MAP-PENDING"&&x.type==="ORPHAN_CO
 assert.ok(identityAuditIssues.every(x=>x.status==="PENDIENTE_REVISION"));
 assert.ok(user.includes("const identityMappingIssues = auditIdentityMappingConsistency_(ss);"));
 assert.ok(user.includes("inconsistenciasIdentidad: identityMappingIssues"));
+
+
+function runAccountingMigrationWriterFixture(source,entity){
+ const schemaStart=source.indexOf("const ACCOUNTING_MIGRATION_WRITER_SCHEMAS_"),firstFn=source.indexOf("function accountingMigrationStableJson_",schemaStart);
+ assert.ok(schemaStart>=0&&firstFn>schemaStart,"accounting migration writer schema "+entity);
+ const constants=source.slice(schemaStart,firstFn),names=["accountingMigrationStableJson_","accountingMigrationSafeCell_","accountingMigrationEncodeSnapshot_","accountingMigrationDecodeSnapshot_","ensureAccountingMigrationSheet_","applyAccountingMigrationWrite_","compensateAccountingMigrationWrite_"];
+ const code=constants+names.map(n=>extractBalancedFunction(source,n)).join(String.fromCharCode(10))+"this.apply=applyAccountingMigrationWrite_;this.compensate=compensateAccountingMigrationWrite_;this.schemas=ACCOUNTING_MIGRATION_WRITER_SCHEMAS_;";
+ const sheets={},ss={getSheetByName:n=>sheets[n]||null,insertSheet:n=>sheets[n]=makeMigrationSheet([])};
+ const ctx={SPREADSHEET_ID:"LOCAL",SpreadsheetApp:{openById:()=>ss},LockService:{getScriptLock:()=>({waitLock:()=>{},releaseLock:()=>{}})},Date,JSON,String,Object,Array,Error};
+ vm.runInNewContext(code,ctx);const schema=ctx.schemas[entity],data={};
+ schema.headers.slice(1).forEach((h,i)=>data[h]=/^Fecha/.test(h)?new Date("2026-02-03T04:05:06.000Z"):"v"+i);
+ data[schema.headers[1]]="=1+1";
+ const input={tipoEntidad:entity,idNuevoPlataforma:"OWNER-1",idempotencyKey:"ACC-MIG-1",datos:data};
+ assert.equal(ctx.apply(input).accion,"INSERT");const target=sheets[schema.sheet];assert.equal(ctx.apply(input).idempotent,true);
+ assert.equal(target.rows.length,2);assert.equal(target.rows[1][1],"'=1+1");
+ assert.throws(()=>ctx.apply(Object.assign({},input,{datos:Object.assign({},data,{[schema.headers[1]]:"different"})})),/IDEMPOTENCY_CONFLICT/);
+ assert.equal(ctx.compensate({idempotencyKey:"ACC-MIG-1"}).compensated,true);assert.equal(target.rows.length,1);
+}
+runAccountingMigrationWriterFixture(accounting,"empleado");
+runAccountingMigrationWriterFixture(accounting,"curso");
+assert.ok(accounting.includes('if(route.service==="ACCOUNTING")'));

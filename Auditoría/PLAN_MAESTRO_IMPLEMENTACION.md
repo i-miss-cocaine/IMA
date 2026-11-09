@@ -2151,3 +2151,9 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - auditAndReconcileIdentityInconsistencies integra escaneo de esquema, claves compuestas duplicadas, filas incompletas y destinos inexistentes en mapeos confirmados.
 - Incidencias se exponen en inconsistenciasIdentidad con estado PENDIENTE_REVISION; autoFix no altera mapeos.
 - Fixtures locales prueban duplicado, destino huérfano, fila incompleta y que pendientes no se confunden con confirmados. C1.355 CI run 42715614599: success; C1.356 CI pendiente.
+
+
+## 10.41 TASK-068 — C1.357: ampliar entidades admitidas empleado/curso
+- Se confirman esquemas propietarios existentes en ACCOUNTING: ExpedientesLaborales y CatalogoCursosCapacitacion.
+- Se habilitan ambos en el catálogo de destino de identidad, UI de Secretaría e importador; ACCOUNTING usa writer local con journal, upsert, idempotencia y compensación, sin transporte HTTP consigo mismo.
+- Se agregan fixtures locales para ambos tipos; CI C1.356 run 42715880749: success; CI C1.357 pendiente.
