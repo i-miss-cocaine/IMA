@@ -346,3 +346,18 @@ TASK-636 — ITERACIÓN C1.306 / TASK-SERVICE
 - Sin IDs nuevos: mantener TASK-496/AUD-NG-217, TASK-501/AUD-NG-221, TASK-502/AUD-NG-222 y TASK-685/AUD-NG-373 en sus ámbitos existentes.
 - Pendiente dentro de TASK-636: mutaciones de tareas/aulas/posts/materiales, archivos temporales, respaldo/restauración, excepciones públicas ACADEMIC y pruebas por rol.
 ===============================================================================
+
+
+===============================================================================
+TASK-636 — ITERACIÓN C1.307 / MUTACIONES TASK-SERVICE
+===============================================================================
+- Estado: En ejecución; no Completada.
+- Mutaciones de tareas/aulas/posts/materiales protegidas por claims, propietario y asignación docente activa en AsignacionesDocentes.
+- Verificaciones estáticas ejecutadas; pruebas runtime y por rol pendientes.
+- Pendiente: archivos no entregados/sesiones de carga, excepciones públicas ACADEMIC y backup/restore para cierre académico.
+
+### Tareas derivadas de los hallazgos de la auditoría
+- No crear IDs duplicados. Continuar AUD-NG-002/AUD-NG-306 y AUD-NG-368..371 dentro de TASK-636.
+- AUD-NG-369 permanece abierto hasta demostrar backup/restore; AUD-NG-370 hasta cerrar archivos temporales/no entregados.
+- AUD-NG-373 continúa en TASK-685.
+===============================================================================

@@ -660,3 +660,98 @@ Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt �
 Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.306.
 Commit de cierre: el commit que contiene este checkpoint; SHA verificado tras publicación.
 ===============================================================================
+
+
+===============================================================================
+CHECKPOINT C1.307 — Protección de mutaciones de Task-Service y asignaciones docentes
+===============================================================================
+ID: C1.307
+Sesión: IMA-EXEC-20261109-1455Z-01
+Checkpoint anterior: C1.306
+Repositorio: i-miss-cocaine/IMA
+Rama autorizada: NG_beta_0.0.0.1_work
+HEAD de partida verificado: 7c43d5389d8d806ff81628a962af3ce4f792d118
+Tree SHA de partida: 44b2501c7130688a993137cac9ae381f8c04d6cb
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+Tarea: TASK-636
+Fase: PM-01 — Identidad, seguridad y gobierno de acceso
+Prioridad: P0
+Requisito original: pendientes/Otros/Pendientes.md, blob e9637ecc6f88b2aa0aec75909538e072509bf507 (recuperación íntegra registrada en C1.305).
+
+### Continuidad y alcance
+- Se continuó desde C1.306; no se repitió la auditoría anterior ni se modificó la rama base.
+- Se confirmó mediante revisión focalizada que el dispatcher de Task-Service inyecta _verifiedUserId/_verifiedRole tras verificar el token HMAC y validar el permiso de la acción.
+- Se detectó que createTask/updateTask/deleteTask, mutaciones de aulas/posts/materiales y varios flujos de archivo aún confiaban en IDs/autores/ámbitos enviados por el cliente. Se trabajó solo sobre los mutadores de tareas, aulas, posts y materiales incluidos en esta iteración.
+- Se reconciliaron AulasVirtuales[OfertaID/ProfesorID] y AsignacionesDocentes[OfertaID/DocenteUserId/Estado/FechaInicio/FechaFin].
+
+### Implementación preparada
+Archivo: backend/task-service/Code.gs
+Blob SHA nuevo: 2df5dbdd08cc41fe400ac489d24eaac399418f56
+- Helpers de autorización por rol administrativo, asignación docente activa y pertenencia a aula/tarea.
+- getTaskServiceAuthorizedClassrooms filtra aulas de profesores usando asignaciones activas, fecha de vigencia, OfertaID y ProfesorID de AulasVirtuales.
+- createTask deriva el propietario del profesor autenticado y exige aula coincidente (grado/sección/asignatura) y asignación vigente; la tarea de crédito extra comprueba la propiedad de la tarea original.
+- updateTask/deleteTask exigen propiedad de la tarea para docentes y asignación vigente; los cambios de ámbito se vuelven a validar contra un aula asignada.
+- createVirtualClassroom valida la asignación vigente a la oferta y genera identificador UUID; impide duplicación de oferta/grado/sección/asignatura.
+- createPost deriva AutorID de claims; docentes solo publican en aulas asignadas y no en General.
+- updatePost/deletePost validan autor propietario y aula asignada; administración mantiene su alcance autorizado.
+- createStudyMaterial deriva AutorID de claims; docentes solo publican en aulas asignadas y no en General.
+- deleteStudyMaterial valida autor propietario y aula asignada.
+- No se cambió PUBLIC_ACTIONS (continúa vacío) ni se añadieron excepciones públicas.
+
+### Verificaciones realmente ejecutadas
+- Balance de llaves del blob: correcto (0 neto).
+- PUBLIC_ACTIONS vacío.
+- Helper AsignacionesDocentes presente y verificación de estado Activo/fechas de vigencia.
+- Filtrado de aulas docente por oferta asignada y ProfesorID.
+- create/update/delete de tareas ligados a claims y propiedad/asignación.
+- create/update/delete de posts ligados a claims y autor.
+- create/delete de materiales ligados a claims y autor.
+- create de aula requiere asignación docente.
+- No ejecutadas: Node/V8 runtime, Apps Script, Sheets/Drive reales, HTTP, navegador, pruebas de rol, E2E o Code Review dinámico. Las verificaciones anteriores son estáticas; no equivalen a PASS funcional.
+- El código de esta iteración no incluye todavía los controles pendientes de uploadFile/submitAssignment/deleteFile y sesiones temporales; tampoco se completó el flujo de backup/restore de closeAcademicYear.
+- No se verificó que todos los registros históricos de AulasVirtuales tengan OfertaID y una asignación activa correlacionada. El nuevo comportamiento falla cerrado cuando falta la relación; requiere validar datos reales/fixtures antes de certificar.
+
+### Hallazgos y tareas derivadas
+- AUD-NG-002/AUD-NG-306: mutaciones TASK protegidas en código para el alcance indicado; pruebas por rol pendientes.
+- AUD-NG-368: preview se conserva corregido desde C1.306; pruebas pendientes.
+- AUD-NG-369: sigue abierto; closeAcademicYear bloqueado con BACKUP_REQUIRED.
+- AUD-NG-370: sigue parcialmente abierto; archivos temporales/no entregados y sesiones de carga requieren protección/validación focalizada.
+- AUD-NG-371: consultas de actividad docente protegidas en código; pruebas pendientes.
+- AUD-NG-373 sigue en TASK-685, fuera de este alcance.
+- No se crean IDs nuevos ni se duplican hallazgos. TASK-636 sigue EN EJECUCIÓN, NO COMPLETADA.
+
+### Archivos de esta iteración
+Modificado:
+1. backend/task-service/Code.gs
+
+Registros que se actualizan en el mismo commit:
+2. Auditoría/AUDITORIA_TASK-636_C1.305.md
+3. Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt
+4. Auditoría/INDICE_CHECKPOINTS.md
+5. Auditoria.txt
+6. tareas_auditoria.txt
+7. changueslogs.txt
+8. Auditoría/MapaDependencias.md
+9. Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+
+Archivos revisados sin modificación:
+- Auditoría/Contexto_personal.txt
+- METODOLOGIA_DESARROLLO.md
+- pendientes/Otros/Pendientes.md (lectura convencional devuelve 0 caracteres; requisito recuperado desde blob dentro de la rama de trabajo, sin escribirlo)
+- backend/academic-service/Code.gs (excepciones públicas y validateRolePermission revisados; su corrección queda como siguiente bloque)
+- backend/user-service/Code.gs
+- js/api.js, js/auth.js
+
+### Siguiente acción exacta
+Continuar TASK-636, auditoría focalizada de archivos no entregados y cargas:
+1. backend/task-service/Code.gs — uploadFile, submitAssignment, saveSubmissionDraft, deleteFile, deleteSubmission, uploadChunk (hay dos definiciones), initiateResumableUpload, getUploadProgress, cancelUploadSession, finishChunkedUpload, reconstructFileParts.
+2. Verificar metadatos de MetadatosArchivos, Entregas, EntregasVersiones y SesionesCargaResumible; no asumir que una fila identifica propietario si el esquema no lo registra.
+3. Revisar frontend js/student.js y cualquier consumidor de los flujos antiguos antes de cambiar contratos.
+4. Después revisar PUBLIC_ACTIONS de backend/academic-service/Code.gs: ping, createAdmissionRequest, getPublicAdmissionStatus, saveAdmissionDraft, getAdmissionDraft y getServiceHealthDiagnostics; mantener solo capacidades públicas documentadas de alta entropía y sin fuga de PII.
+5. Diseñar e implementar respaldo/restauración verificables para closeAcademicYear; no habilitar borrados antes de verificar restore en entorno aislado.
+6. Pruebas de contrato y revisión interna estática; runtime Apps Script/E2E siguen pendientes si no hay entorno de prueba autorizado.
+
+Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.307.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.307.
+Commit de cierre: el commit único que contiene este checkpoint; SHA confirmado tras publicación.
+===============================================================================

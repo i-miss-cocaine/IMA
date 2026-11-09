@@ -236,3 +236,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - getDriveStorageQuotaMetricsReport restringido a Administrador/Desarrollador.
 - closeAcademicYear bloqueado preventivamente con BACKUP_REQUIRED; no se ejecutan borrados sin backup/restore verificable.
 - TASK-636 sigue En ejecución; runtime y pruebas E2E pendientes.
+
+
+[2026-11-09] IMA-EXEC-20261109-1455Z-01 — TASK-636 / C1.307
+- Task-Service: autorización de mutaciones de tareas, aulas, posts y materiales ligada a claims, propietario y asignaciones docentes vigentes.
+- C1.307: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.307; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.307.
+- Sin runtime ni pruebas por rol. Archivos temporales/no entregados, ACADEMIC público y backup/restore siguen pendientes.

@@ -441,82 +441,34 @@ function doPost(e) {
 
 // [TAREA-10] [Fase 1 - Sistema de Tareas y Entregas] - Sistema ampliado de asignaciones, entregas multimodales, revisiones, versiones y retroalimentación.
 function createTask(payload) {
-  const { tipo, titulo, descripcion, parcial, asignatura, gradoAsignado, seccionAsignada, fechaLimite, tareaOriginalId, profesorId, puntaje, archivoUrl, fechaDisponible, tipoRecurso } = payload || {};
-  const tareaId = "TSK-" + new Date().getTime();
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const tareasSheet = getSheetOrThrow(ss, "Tareas");
-  // Columnas: 0:tareaId, 1:tipo, 2:titulo, 3:descripcion, 4:parcial, 5:asignatura, 6:grado, 7:seccion, 8:fecha, 9:originalId, 10:profesorId, 11:estado, 12:puntaje, 13:archivoUrl, 14:fechaDisponible, 15:tipoRecurso
-  tareasSheet.appendRow([
-    tareaId,
-    tipo || 'Tarea',
-    titulo,
-    descripcion,
-    parcial,
-    asignatura,
-    gradoAsignado,
-    seccionAsignada,
-    fechaLimite,
-    tareaOriginalId || '',
-    profesorId || '',
-    'Activa',
-    puntaje || 100,
-    archivoUrl || '',
-    fechaDisponible || '',
-    tipoRecurso || 'Tarea'
-  ]);
-  return { status: "success", message: "Tarea creada.", data: { tareaId } };
+ const role=payload&&payload._verifiedRole,uid=payload&&payload._verifiedUserId;if(!uid||(role!=="Profesor"&&!isTaskServiceAdministrativeRole(role)))throw new Error("Acceso denegado.");
+ const {tipo,titulo,descripcion,parcial,asignatura,gradoAsignado,seccionAsignada,fechaLimite,tareaOriginalId,puntaje,archivoUrl,fechaDisponible,tipoRecurso}=payload||{};
+ if(!titulo||!gradoAsignado||!asignatura)throw new Error("Título, grado y asignatura obligatorios.");let owner=String(uid).trim();
+ if(role==="Profesor"){const classes=getSheetOrThrow(SpreadsheetApp.openById(SPREADSHEET_ID),"AulasVirtuales").getDataRange().getValues().slice(1);
+  const c=classes.find(r=>String(r[7]||"Activa")!=="Desactivada"&&normalizeString(r[3])===normalizeString(gradoAsignado)&&(!r[4]||normalizeString(r[4])===normalizeString(seccionAsignada||""))&&normalizeString(r[5])===normalizeString(asignatura)&&String(r[6]||"").trim()===owner);
+  if(!c)throw new Error("No existe aula asignada para el ámbito de la tarea.");assertTaskServiceTeacherAssignedToOffer(owner,c[1]);
+ }else if(payload.profesorId)owner=String(payload.profesorId).trim();
+ if(tareaOriginalId){const orig=getSheetOrThrow(SpreadsheetApp.openById(SPREADSHEET_ID),"Tareas").getDataRange().getValues().slice(1).find(r=>String(r[0]).trim()===String(tareaOriginalId).trim());if(!orig)throw new Error("Tarea original no encontrada.");if(role==="Profesor")assertTaskServiceTeacherCanManageTask(payload,orig);}
+ const id="TSK-"+Utilities.getUuid();getSheetOrThrow(SpreadsheetApp.openById(SPREADSHEET_ID),"Tareas").appendRow([id,tipo||"Tarea",titulo,descripcion||"",parcial||"",asignatura,gradoAsignado,seccionAsignada||"",fechaLimite||"",tareaOriginalId||"",owner,"Activa",puntaje===undefined?100:puntaje,archivoUrl||"",fechaDisponible||"",tipoRecurso||"Tarea"]);
+ return {status:"success",message:"Tarea creada.",data:{tareaId:id}};
 }
-
 function updateTask(payload) {
-  const { tareaId, titulo, descripcion, fechaLimite, parcial, asignatura, gradoAsignado, seccionAsignada, puntaje, archivoUrl } = payload;
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getSheetOrThrow(ss, "Tareas");
-  const data = sheet.getDataRange().getValues();
-  const rowIndex = data.findIndex(r => r[0] === tareaId);
-
-  if (rowIndex === -1) throw new Error("Tarea no encontrada.");
-
-  const taskRow = data[rowIndex];
-  if (titulo !== undefined) taskRow[2] = titulo;
-  if (descripcion !== undefined) taskRow[3] = descripcion;
-  if (parcial !== undefined) taskRow[4] = parcial;
-  if (asignatura !== undefined) taskRow[5] = asignatura;
-  if (gradoAsignado !== undefined) taskRow[6] = gradoAsignado;
-  if (seccionAsignada !== undefined) taskRow[7] = seccionAsignada;
-  if (fechaLimite !== undefined) taskRow[8] = fechaLimite;
-  if (puntaje !== undefined) taskRow[12] = puntaje;
-  if (archivoUrl !== undefined) taskRow[13] = archivoUrl;
-
-  sheet.getRange(rowIndex + 1, 1, 1, taskRow.length).setValues([taskRow]);
-
-  return { status: "success", message: "Tarea actualizada." };
+ const uid=payload&&payload._verifiedUserId,tareaId=payload&&payload.tareaId;if(!uid||!tareaId)throw new Error("Identidad y tarea requeridas.");
+ const sh=getSheetOrThrow(SpreadsheetApp.openById(SPREADSHEET_ID),"Tareas"),data=sh.getDataRange().getValues(),i=data.findIndex(r=>String(r[0]).trim()===String(tareaId).trim());if(i<1)throw new Error("Tarea no encontrada.");
+ const row=data[i];assertTaskServiceTeacherCanManageTask(payload,row);
+ if(payload._verifiedRole==="Profesor"&&["gradoAsignado","seccionAsignada","asignatura"].some(k=>payload[k]!==undefined)){
+  const g=payload.gradoAsignado===undefined?row[6]:payload.gradoAsignado,sec=payload.seccionAsignada===undefined?row[7]:payload.seccionAsignada,sub=payload.asignatura===undefined?row[5]:payload.asignatura;
+  const c=getSheetOrThrow(SpreadsheetApp.openById(SPREADSHEET_ID),"AulasVirtuales").getDataRange().getValues().slice(1).find(r=>String(r[7]||"Activa")!=="Desactivada"&&normalizeString(r[3])===normalizeString(g)&&(!r[4]||normalizeString(r[4])===normalizeString(sec))&&normalizeString(r[5])===normalizeString(sub)&&String(r[6]||"").trim()===String(uid).trim());
+  if(!c)throw new Error("El nuevo ámbito no pertenece a una asignación docente.");assertTaskServiceTeacherAssignedToOffer(uid,c[1]);
+ }
+ [["titulo",2],["descripcion",3],["parcial",4],["asignatura",5],["gradoAsignado",6],["seccionAsignada",7],["fechaLimite",8],["puntaje",12],["archivoUrl",13]].forEach(([k,col])=>{if(payload[k]!==undefined)row[col]=payload[k];});
+ sh.getRange(i+1,1,1,row.length).setValues([row]);return {status:"success",message:"Tarea actualizada."};
 }
-
 function deleteTask(payload) {
-  const { tareaId } = payload;
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const tareasSheet = getSheetOrThrow(ss, "Tareas");
-  const entregasSheet = getSheetOrThrow(ss, "Entregas");
-
-  const tareasData = tareasSheet.getDataRange().getValues();
-  const rowIndex = tareasData.findIndex(r => r[0] === tareaId);
-  if (rowIndex === -1) throw new Error("Tarea no encontrada.");
-
-  const entregasData = entregasSheet.getDataRange().getValues();
-  const hasSubmissions = entregasData.some(r => r[1] === tareaId);
-
-  if (hasSubmissions) {
-    // Marcar como inactiva
-    tareasSheet.getRange(rowIndex + 1, 12).setValue("Inactiva");
-    return { status: "success", message: "Tarea marcada como inactiva (existen entregas)." };
-  } else {
-    // Eliminar fila
-    tareasSheet.deleteRow(rowIndex + 1);
-    return { status: "success", message: "Tarea eliminada." };
-  }
+ const id=payload&&payload.tareaId;if(!id)throw new Error("tareaId requerido.");const ss=SpreadsheetApp.openById(SPREADSHEET_ID),sh=getSheetOrThrow(ss,"Tareas"),data=sh.getDataRange().getValues(),i=data.findIndex(r=>String(r[0]).trim()===String(id).trim());if(i<1)throw new Error("Tarea no encontrada.");
+ assertTaskServiceTeacherCanManageTask(payload,data[i]);const has=getSheetOrThrow(ss,"Entregas").getDataRange().getValues().slice(1).some(r=>String(r[1]).trim()===String(id).trim());
+ if(has){sh.getRange(i+1,12).setValue("Inactiva");return {status:"success",message:"Tarea marcada como inactiva (existen entregas)."};}sh.deleteRow(i+1);return {status:"success",message:"Tarea eliminada."};
 }
-
-// [REQ-EXP-005] [Requerimientos de Expansión y Desarrollo] - Procedimiento de cierre de año escolar y eliminación física de entregas en Drive.
 function closeAcademicYear(payload) {
   const role = payload && payload._verifiedRole;
   const actorId = payload && payload._verifiedUserId;
@@ -566,23 +518,43 @@ function getTaskServiceGuardianStudentIds(guardianUserId) {
   return Array.from(new Set(ids));
 }
 
-function getTaskServiceAuthorizedClassrooms(payload) {
-  const role = payload && payload._verifiedRole, actorId = payload && payload._verifiedUserId;
-  if (!actorId) throw new Error("Identidad verificada requerida para consultar aulas.");
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const rows = getSheetOrThrow(ss,"AulasVirtuales").getDataRange().getValues().slice(1)
-    .filter(row => String(row[7] || "Activa") !== "Desactivada");
-  if (["Administrador","Desarrollador","Dirección","Secretaría"].indexOf(role) !== -1) return rows;
-  if (role === "Profesor") return rows.filter(row => String(row[6] || "").trim() === String(actorId).trim());
-  let profiles = [];
-  if (role === "Estudiante" || role === "Alumno") profiles = [getTaskServiceUserProfile(actorId)];
-  else if (["Padre","Tutor","Responsable"].indexOf(role) !== -1) profiles = getTaskServiceGuardianStudentIds(actorId).map(getTaskServiceUserProfile);
-  return rows.filter(row => profiles.some(profile =>
-    normalizeString(row[3]) === normalizeString(profile.grado) &&
-    (!row[4] || normalizeString(row[4]) === normalizeString(profile.seccion))
-  ));
+function isTaskServiceAdministrativeRole(role) { return ["Administrador","Desarrollador","Dirección","Secretaría"].indexOf(role)!==-1; }
+function assertTaskServiceTeacherAssignedToOffer(userId,offerId) {
+ if(!userId||!offerId)throw new Error("Oferta académica no verificable.");
+ const sh=SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName("AsignacionesDocentes");if(!sh)throw new Error("No existe AsignacionesDocentes; acceso denegado.");
+ const now=Date.now(),rows=sh.getDataRange().getValues().slice(1);
+ if(!rows.some(r=>String(r[1]).trim()===String(offerId).trim()&&String(r[2]).trim()===String(userId).trim()&&String(r[6]||"Activo").toLowerCase()==="activo"&&(!r[4]||new Date(r[4]).getTime()<=now)&&(!r[5]||new Date(r[5]).getTime()>=now)))throw new Error("Acceso denegado: no existe asignación docente activa para la oferta.");
+ return true;
+}
+function getTaskServiceClassroomById(id) {
+ if(!id||String(id).trim()==="General")return null;
+ return getSheetOrThrow(SpreadsheetApp.openById(SPREADSHEET_ID),"AulasVirtuales").getDataRange().getValues().slice(1).find(r=>String(r[0]).trim()===String(id).trim())||null;
+}
+function assertTaskServiceClassroomAccess(payload,id) {
+ const role=payload&&payload._verifiedRole,uid=payload&&payload._verifiedUserId;if(!uid)throw new Error("Identidad verificada requerida.");
+ if(isTaskServiceAdministrativeRole(role)){if(id&&id!=="General"&&!getTaskServiceClassroomById(id))throw new Error("Aula no encontrada.");return null;}
+ if(role!=="Profesor")throw new Error("Acceso denegado.");
+ const row=getTaskServiceClassroomById(id);if(!row||String(row[7]||"Activa")==="Desactivada")throw new Error("Aula no válida o inactiva.");
+ assertTaskServiceTeacherAssignedToOffer(uid,row[1]);if(String(row[6]||"").trim()!==String(uid).trim())throw new Error("El aula no está asignada al docente autenticado.");return row;
+}
+function assertTaskServiceTeacherCanManageTask(payload,row) {
+ const role=payload&&payload._verifiedRole,uid=payload&&payload._verifiedUserId;if(!uid)throw new Error("Identidad verificada requerida.");if(isTaskServiceAdministrativeRole(role))return true;
+ if(role!=="Profesor"||String(row[10]||"").trim()!==String(uid).trim())throw new Error("Acceso denegado: la tarea no pertenece al docente.");
+ const classes=getSheetOrThrow(SpreadsheetApp.openById(SPREADSHEET_ID),"AulasVirtuales").getDataRange().getValues().slice(1);
+ const c=classes.find(r=>String(r[7]||"Activa")!=="Desactivada"&&normalizeString(r[3])===normalizeString(row[6])&&(!r[4]||normalizeString(r[4])===normalizeString(row[7]))&&normalizeString(r[5])===normalizeString(row[5])&&String(r[6]||"").trim()===String(uid).trim());
+ if(!c)throw new Error("La tarea no coincide con un aula del docente.");assertTaskServiceTeacherAssignedToOffer(uid,c[1]);return true;
 }
 
+function getTaskServiceAuthorizedClassrooms(payload) {
+ const role=payload&&payload._verifiedRole,uid=payload&&payload._verifiedUserId;if(!uid)throw new Error("Identidad verificada requerida.");
+ const ss=SpreadsheetApp.openById(SPREADSHEET_ID),rows=getSheetOrThrow(ss,"AulasVirtuales").getDataRange().getValues().slice(1).filter(r=>String(r[7]||"Activa")!=="Desactivada");
+ if(isTaskServiceAdministrativeRole(role))return rows;
+ if(role==="Profesor"){const sh=ss.getSheetByName("AsignacionesDocentes");if(!sh)return [];const now=Date.now(),as=sh.getDataRange().getValues().slice(1);
+  const offers=new Set(as.filter(r=>String(r[2]).trim()===String(uid).trim()&&String(r[6]||"Activo").toLowerCase()==="activo"&&(!r[4]||new Date(r[4]).getTime()<=now)&&(!r[5]||new Date(r[5]).getTime()>=now)).map(r=>String(r[1]||"").trim()));
+  return rows.filter(r=>r[1]&&offers.has(String(r[1]).trim())&&String(r[6]||"").trim()===String(uid).trim());}
+ let profiles=[];if(role==="Estudiante"||role==="Alumno")profiles=[getTaskServiceUserProfile(uid)];else if(["Padre","Tutor","Responsable"].includes(role))profiles=getTaskServiceGuardianStudentIds(uid).map(getTaskServiceUserProfile);
+ return rows.filter(r=>profiles.some(p=>normalizeString(r[3])===normalizeString(p.grado)&&(!r[4]||normalizeString(r[4])===normalizeString(p.seccion))));
+}
 function getStudentTasks(payload) {
   const role = payload && payload._verifiedRole, actorId = payload && payload._verifiedUserId;
   if (!actorId) throw new Error("Acceso denegado: se requiere identidad verificada.");
@@ -1360,24 +1332,13 @@ function getVirtualClassrooms(payload) {
   return { status:"success", data:filtered };
 }
 function createVirtualClassroom(payload) {
-  const { ofertaId, nombreClase, grado, seccion, asignatura, profesorId, anioLectivo, periodo } = payload || {};
-  if (!grado || !asignatura) throw new Error("Grado y Asignatura son obligatorios para crear el aula.");
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "AulasVirtuales");
-  if (sheet.getLastRow() === 0) {
-    sheet.appendRow(["AulaID", "OfertaID", "NombreClase", "Grado", "Seccion", "Asignatura", "ProfesorID", "Estado", "AnioLectivo", "Periodo", "CreadoEn"]);
-  }
-
-  const aulaId = "AULA-" + Date.now();
-  const nombre = nombreClase || `${asignatura} - ${grado} ${seccion || 'A'}`;
-  const now = new Date();
-
-  sheet.appendRow([aulaId, ofertaId || "", nombre, grado, seccion || "A", asignatura, profesorId || "", "Activa", anioLectivo || now.getFullYear(), periodo || "I parcial", now]);
-
-  return { status: "success", message: "Aula virtual creada exitosamente.", data: { aulaId, nombreClase: nombre } };
+ const role=payload&&payload._verifiedRole,uid=payload&&payload._verifiedUserId,{ofertaId,nombreClase,grado,seccion,asignatura,anioLectivo,periodo}=payload||{};
+ if(!uid||(role!=="Profesor"&&!isTaskServiceAdministrativeRole(role)))throw new Error("Acceso denegado.");if(!ofertaId||!grado||!asignatura)throw new Error("Oferta, grado y asignatura obligatorios.");
+ let teacher=String(uid).trim();if(role==="Profesor")assertTaskServiceTeacherAssignedToOffer(teacher,ofertaId);else if(payload.profesorId)teacher=String(payload.profesorId).trim();
+ const sh=getOrCreateSheet(SpreadsheetApp.openById(SPREADSHEET_ID),"AulasVirtuales");if(sh.getLastRow()===0)sh.appendRow(["AulaID","OfertaID","NombreClase","Grado","Seccion","Asignatura","ProfesorID","Estado","AnioLectivo","Periodo","CreadoEn"]);
+ const dup=sh.getDataRange().getValues().slice(1).some(r=>String(r[1]).trim()===String(ofertaId).trim()&&normalizeString(r[3])===normalizeString(grado)&&normalizeString(r[4])===normalizeString(seccion||"A")&&normalizeString(r[5])===normalizeString(asignatura));if(dup)throw new Error("Aula duplicada para oferta y ámbito.");
+ const id="AULA-"+Utilities.getUuid(),now=new Date(),name=nombreClase||`${asignatura} - ${grado} ${seccion||"A"}`;sh.appendRow([id,ofertaId,name,grado,seccion||"A",asignatura,teacher,"Activa",anioLectivo||now.getFullYear(),periodo||"I parcial",now]);return {status:"success",message:"Aula virtual creada.",data:{aulaId:id,nombreClase:name}};
 }
-
 function getPosts(payload) {
   const role = payload && payload._verifiedRole;
   const isTeacherOrAdmin = ["Profesor","Administrador","Desarrollador","Dirección","Secretaría"].indexOf(role) !== -1;
@@ -1407,74 +1368,25 @@ function getPosts(payload) {
   return { status:"success", data:posts };
 }
 function createPost(payload) {
-  const { aulaId, titulo, contenido, categoria, autorId, esFijado, esBorrador, fechaProgramada, adjuntos, audiencia } = payload || {};
-  if (!titulo || !contenido) throw new Error("Título y Contenido son obligatorios para publicar.");
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "PublicacionesAnuncios");
-  if (sheet.getLastRow() === 0) {
-    sheet.appendRow(["ID", "AulaID", "Titulo", "Contenido", "Categoria", "AutorID", "EsFijado", "EsBorrador", "FechaProgramada", "FechaPublicacion", "AdjuntosJSON", "Audiencia", "Estado"]);
-  }
-
-  const postId = "POST-" + Date.now();
-  const now = new Date();
-  const adjJSON = JSON.stringify(adjuntos || []);
-
-  sheet.appendRow([
-    postId,
-    aulaId || "General",
-    titulo,
-    contenido,
-    categoria || "Anuncio",
-    autorId || "Profesor",
-    esFijado || false,
-    esBorrador || false,
-    fechaProgramada || "",
-    now,
-    adjJSON,
-    audiencia || "Todos",
-    "Publicado"
-  ]);
-
-  return { status: "success", message: "Publicación creada con éxito.", data: { postId } };
+ const role=payload&&payload._verifiedRole,uid=payload&&payload._verifiedUserId,{aulaId,titulo,contenido,categoria,esFijado,esBorrador,fechaProgramada,adjuntos,audiencia}=payload||{},classId=aulaId||"General";
+ if(!uid||!titulo||!contenido)throw new Error("Identidad, título y contenido obligatorios.");if(role==="Profesor")assertTaskServiceClassroomAccess(payload,classId);else if(!isTaskServiceAdministrativeRole(role))throw new Error("Acceso denegado.");
+ if(classId==="General"&&!isTaskServiceAdministrativeRole(role))throw new Error("Solo administración puede publicar en General.");
+ const sh=getOrCreateSheet(SpreadsheetApp.openById(SPREADSHEET_ID),"PublicacionesAnuncios");if(sh.getLastRow()===0)sh.appendRow(["ID","AulaID","Titulo","Contenido","Categoria","AutorID","EsFijado","EsBorrador","FechaProgramada","FechaPublicacion","AdjuntosJSON","Audiencia","Estado"]);
+ const id="POST-"+Utilities.getUuid(),now=new Date();sh.appendRow([id,classId,titulo,contenido,categoria||"Anuncio",uid,!!esFijado,!!esBorrador,fechaProgramada||"",now,JSON.stringify(adjuntos||[]),audiencia||"Todos",esBorrador?"Borrador":"Publicado"]);return {status:"success",message:"Publicación creada.",data:{postId:id}};
 }
-
 function updatePost(payload) {
-  const { postId, titulo, contenido, categoria, esFijado, esBorrador, adjuntos } = payload || {};
-  if (!postId) throw new Error("postId es requerido.");
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "PublicacionesAnuncios");
-  const data = sheet.getDataRange().getValues();
-  const idx = data.findIndex(r => String(r[0]).trim() === String(postId).trim());
-  if (idx === -1) throw new Error("Publicación no encontrada.");
-
-  const row = data[idx];
-  if (titulo !== undefined) row[2] = titulo;
-  if (contenido !== undefined) row[3] = contenido;
-  if (categoria !== undefined) row[4] = categoria;
-  if (esFijado !== undefined) row[6] = esFijado;
-  if (esBorrador !== undefined) row[7] = esBorrador;
-  if (adjuntos !== undefined) row[10] = JSON.stringify(adjuntos);
-
-  sheet.getRange(idx + 1, 1, 1, row.length).setValues([row]);
-  return { status: "success", message: "Publicación actualizada." };
+ const role=payload&&payload._verifiedRole,uid=payload&&payload._verifiedUserId,id=payload&&payload.postId;if(!uid||!id)throw new Error("Identidad y postId requeridos.");
+ const sh=getOrCreateSheet(SpreadsheetApp.openById(SPREADSHEET_ID),"PublicacionesAnuncios"),data=sh.getDataRange().getValues(),i=data.findIndex(r=>String(r[0]).trim()===String(id).trim());if(i<1)throw new Error("Publicación no encontrada.");const row=data[i];
+ if(!isTaskServiceAdministrativeRole(role)){if(role!=="Profesor"||String(row[5]).trim()!==String(uid).trim())throw new Error("La publicación no pertenece al docente.");assertTaskServiceClassroomAccess(payload,row[1]);}
+ [["titulo",2],["contenido",3],["categoria",4]].forEach(([k,col])=>{if(payload[k]!==undefined)row[col]=payload[k];});if(payload.esFijado!==undefined)row[6]=!!payload.esFijado;if(payload.esBorrador!==undefined){row[7]=!!payload.esBorrador;row[12]=payload.esBorrador?"Borrador":"Publicado";}if(payload.adjuntos!==undefined)row[10]=JSON.stringify(payload.adjuntos);
+ sh.getRange(i+1,1,1,row.length).setValues([row]);return {status:"success",message:"Publicación actualizada."};
 }
-
 function deletePost(payload) {
-  const { postId } = payload || {};
-  if (!postId) throw new Error("postId es requerido.");
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "PublicacionesAnuncios");
-  const data = sheet.getDataRange().getValues();
-  const idx = data.findIndex(r => String(r[0]).trim() === String(postId).trim());
-  if (idx === -1) throw new Error("Publicación no encontrada.");
-
-  sheet.getRange(idx + 1, 13).setValue("Eliminado");
-  return { status: "success", message: "Publicación eliminada." };
+ const role=payload&&payload._verifiedRole,uid=payload&&payload._verifiedUserId,id=payload&&payload.postId;if(!uid||!id)throw new Error("Identidad y postId requeridos.");
+ const sh=getOrCreateSheet(SpreadsheetApp.openById(SPREADSHEET_ID),"PublicacionesAnuncios"),data=sh.getDataRange().getValues(),i=data.findIndex(r=>String(r[0]).trim()===String(id).trim());if(i<1)throw new Error("Publicación no encontrada.");const row=data[i];
+ if(!isTaskServiceAdministrativeRole(role)){if(role!=="Profesor"||String(row[5]).trim()!==String(uid).trim())throw new Error("La publicación no pertenece al docente.");assertTaskServiceClassroomAccess(payload,row[1]);}
+ sh.getRange(i+1,13).setValue("Eliminado");return {status:"success",message:"Publicación eliminada."};
 }
-
 function getStudyMaterials(payload) {
   const role = payload && payload._verifiedRole;
   const allowedRows = getTaskServiceAuthorizedClassrooms(payload);
@@ -1501,51 +1413,18 @@ function getStudyMaterials(payload) {
   return { status:"success", data:materials };
 }
 function createStudyMaterial(payload) {
-  const { aulaId, titulo, descripcion, tipoRecurso, parcial, unidad, tema, archivoUrl, driveId, autorId } = payload || {};
-  if (!titulo || !archivoUrl) throw new Error("Título y URL de archivo son obligatorios.");
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "MaterialesEducativos");
-  if (sheet.getLastRow() === 0) {
-    sheet.appendRow(["ID", "AulaID", "Titulo", "Descripcion", "TipoRecurso", "Parcial", "Unidad", "Tema", "ArchivoUrl", "DriveId", "AutorID", "FechaPublicacion", "Estado"]);
-  }
-
-  const matId = "MAT-" + Date.now();
-  const now = new Date();
-
-  sheet.appendRow([
-    matId,
-    aulaId || "General",
-    titulo,
-    descripcion || "",
-    tipoRecurso || "Documento",
-    parcial || "I parcial",
-    unidad || "Unidad 1",
-    tema || "Tema General",
-    archivoUrl,
-    driveId || "",
-    autorId || "Profesor",
-    now,
-    "Activo"
-  ]);
-
-  return { status: "success", message: "Material educativo publicado.", data: { materialId: matId } };
+ const role=payload&&payload._verifiedRole,uid=payload&&payload._verifiedUserId,{aulaId,titulo,descripcion,tipoRecurso,parcial,unidad,tema,archivoUrl,driveId}=payload||{},classId=aulaId||"General";
+ if(!uid||!titulo||!archivoUrl)throw new Error("Identidad, título y archivo obligatorios.");if(role==="Profesor")assertTaskServiceClassroomAccess(payload,classId);else if(!isTaskServiceAdministrativeRole(role))throw new Error("Acceso denegado.");
+ if(classId==="General"&&!isTaskServiceAdministrativeRole(role))throw new Error("Solo administración puede publicar materiales generales.");if(driveId){const file=DriveApp.getFileById(extractTaskServiceFileId(driveId));if(file.isTrashed())throw new Error("Archivo eliminado.");}
+ const sh=getOrCreateSheet(SpreadsheetApp.openById(SPREADSHEET_ID),"MaterialesEducativos");if(sh.getLastRow()===0)sh.appendRow(["ID","AulaID","Titulo","Descripcion","TipoRecurso","Parcial","Unidad","Tema","ArchivoUrl","DriveId","AutorID","FechaPublicacion","Estado"]);
+ const id="MAT-"+Utilities.getUuid(),now=new Date();sh.appendRow([id,classId,titulo,descripcion||"",tipoRecurso||"Documento",parcial||"I parcial",unidad||"Unidad 1",tema||"Tema General",archivoUrl,driveId||"",uid,now,"Activo"]);return {status:"success",message:"Material educativo publicado.",data:{materialId:id}};
 }
-
 function deleteStudyMaterial(payload) {
-  const { materialId } = payload || {};
-  if (!materialId) throw new Error("materialId es requerido.");
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "MaterialesEducativos");
-  const data = sheet.getDataRange().getValues();
-  const idx = data.findIndex(r => String(r[0]).trim() === String(materialId).trim());
-  if (idx === -1) throw new Error("Material no encontrado.");
-
-  sheet.getRange(idx + 1, 13).setValue("Eliminado");
-  return { status: "success", message: "Material educativo eliminado." };
+ const role=payload&&payload._verifiedRole,uid=payload&&payload._verifiedUserId,id=payload&&payload.materialId;if(!uid||!id)throw new Error("Identidad y materialId requeridos.");
+ const sh=getOrCreateSheet(SpreadsheetApp.openById(SPREADSHEET_ID),"MaterialesEducativos"),data=sh.getDataRange().getValues(),i=data.findIndex(r=>String(r[0]).trim()===String(id).trim());if(i<1)throw new Error("Material no encontrado.");const row=data[i];
+ if(!isTaskServiceAdministrativeRole(role)){if(role!=="Profesor"||String(row[10]).trim()!==String(uid).trim())throw new Error("El material no pertenece al docente.");assertTaskServiceClassroomAccess(payload,row[1]);}
+ sh.getRange(i+1,13).setValue("Eliminado");return {status:"success",message:"Material eliminado."};
 }
-
 function returnSubmissionForRevision(payload) {
   const { entregaId, comentario, profesorId } = payload || {};
   if (!entregaId) throw new Error("entregaId es requerido.");

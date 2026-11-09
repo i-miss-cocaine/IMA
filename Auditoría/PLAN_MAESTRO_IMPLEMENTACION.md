@@ -1858,3 +1858,11 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - El blob actual e histórico alcanzable desde la rama autorizada tiene SHA `e9637ecc6f88b2aa0aec75909538e072509bf507` y tamaño 1.647.413 bytes, pero la lectura UTF-8/base64 y los rangos solicitados devuelven 0 caracteres. El historial por ruta dentro de la rama no ofrece un blob alternativo.
 - No se inicia TASK-636 con extractos ni se modifica el backlog. Se requiere recuperar y validar íntegramente el contenido antes de continuar con la auditoría del objetivo, conforme a la regla F del contexto personal.
 - Checkpoint C1.304: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.304.
+
+
+## 10.5 Seguimiento de ejecución del Plan Maestro — C1.307
+- TASK-636 — PM-01/P0 — En ejecución. C1.307 protege mutaciones de tareas, aulas, publicaciones y materiales de Task-Service con claims, propietario y asignación docente vigente.
+- Se concilia AulasVirtuales con AsignacionesDocentes mediante OfertaID, docente, estado y vigencia. Las aulas de docentes se filtran con ambas fuentes.
+- Verificación estática completada; no se ejecutaron pruebas runtime ni por rol.
+- Pendiente dentro de TASK-636: archivos no entregados/sesiones de carga, excepciones públicas de ACADEMIC, respaldo/restauración verificables y pruebas técnicas aplicables.
+- Checkpoint C1.307: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.307; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.307.

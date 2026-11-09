@@ -4806,3 +4806,11 @@ Alcance estático satisfecho; sin cambios de código. Hallazgos AUD-NG-374..376 
 - closeAcademicYear falla de forma cerrada con BACKUP_REQUIRED; AUD-NG-369 permanece abierto hasta implementar respaldo/restauración real.
 - Pendiente: mutaciones de recursos, reconciliar AsignacionesDocentes, archivos no entregados, ACADEMIC público y pruebas por rol.
 - Informe principal: Auditoría/AUDITORIA_TASK-636_C1.305.md; checkpoint C1.306 en Checkpoints_Parte_0002.txt.
+
+
+## TASK-636 — C1.307: mutaciones Task-Service y asignaciones docentes
+- Mutaciones de tareas, aulas, posts y materiales ligadas a claims/propietario; docentes deben tener asignación activa por OfertaID en AsignacionesDocentes y correspondencia con AulasVirtuales.
+- Se bloquea publicación docente en General; autor/propietario se deriva del actor verificado.
+- Evidencia: blob Task-Service 2df5dbdd08cc41fe400ac489d24eaac399418f56; verificaciones estáticas de llaves, claims, propietario y asignaciones.
+- No ejecutadas: runtime Apps Script, Sheets/Drive, HTTP, pruebas por rol ni E2E.
+- Pendiente: archivos no entregados/sesiones, ACADEMIC PUBLIC_ACTIONS y backup/restore. TASK-636 sigue En ejecución.

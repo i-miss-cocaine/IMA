@@ -310,3 +310,9 @@ Sesión: IMA-EXEC-20261109-1108Z-01; HEAD de partida: 32b8f5884dd24dbeaf1a3bf028
 - Métricas globales de Drive restringidas a roles administrativos. closeAcademicYear bloqueado con BACKUP_REQUIRED: no ejecuta borrados sin backup/restore verificable.
 - Verificaciones estáticas realizadas; no hubo runtime Apps Script ni pruebas E2E. AUD-NG-369 sigue abierto; otros hallazgos corregidos en código, pendientes de pruebas.
 - TASK-636 sigue EN EJECUCIÓN. Informe principal actualizado: Auditoría/AUDITORIA_TASK-636_C1.305.md; checkpoint C1.306.
+
+
+[Seguimiento C1.307 — IMA-EXEC-20261109-1455Z-01]
+- TASK-636 / PM-01: mutaciones de tareas, aulas, posts y materiales de Task-Service ligadas a claims, propietario y asignación docente activa (AsignacionesDocentes + AulasVirtuales).
+- Verificación estática únicamente; no se ejecutó Apps Script ni pruebas por rol. Siguen abiertos AUD-NG-369 (backup/restore) y AUD-NG-370 (archivos temporales/no entregados).
+- Checkpoint C1.307: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.307; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.307.
