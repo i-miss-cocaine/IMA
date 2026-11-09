@@ -1953,3 +1953,11 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - La integración real sigue bloqueada por ausencia de proyecto Apps Script/deployment autorizado y fixtures aislados de Spreadsheet/Drive. No se ejecutan restauraciones destructivas en producción.
 - closeAcademicYear continúa BACKUP_REQUIRED; AUD-NG-369 abierto. Próximo paso: habilitar entorno aislado autorizado y ejecutar create/verify/restore con interrupciones controladas y comprobación de integridad.
 - Checkpoint C1.317: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.317; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.317.
+
+
+## 10.16 Seguimiento de ejecución del Plan Maestro — C1.318
+- PM-00 cerrado; TASK-068 seleccionada en PM-01 por P0, orden local 1 y dependencia declarada ninguna. Requisito: pendientes/Dirección/Pendientes.md — TASK-068.
+- TASK-636 sigue En ejecución por bloqueo externo; no es dependencia declarada de TASK-068 y no se modifica.
+- Auditoría preimplementación concluida en expediente único Auditoría/AUDITORIA_TASK-068_C1.318.md.
+- AUD-NG-377/378/379 pertenecen a TASK-068; no se crean tareas derivadas.
+- TASK-068 pasa a En ejecución, no Completada. Implementación pendiente: fuente central, resolvers, revisión humana, bitácora append-only, importación idempotente y pruebas aisladas.

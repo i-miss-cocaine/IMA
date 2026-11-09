@@ -4889,3 +4889,12 @@ Alcance estático satisfecho; sin cambios de código. Hallazgos AUD-NG-374..376 
 - Runs 42659818881 y 42659961195: completed/success; el segundo ejecuta Node 24 con actions v7 y elimina la advertencia de deprecación observada en el primer run.
 - Dependencia pendiente para certificación: proyecto Apps Script aislado, Spreadsheet de prueba y árbol Drive de prueba con credenciales/deployment autorizados. No existen appsscript.json ni .clasp.json en el repo.
 - No se deben ejecutar cierres/restores destructivos sobre datos reales. AUD-NG-369 abierto; closeAcademicYear sigue BACKUP_REQUIRED.
+
+
+## C1.318 — TASK-068 / correspondencia central de identidades
+- HEAD 5adf18921f8dd59e05e7f5af6210c48370273af7; PM-01/P0/orden local 1; requisito pendientes/Dirección/Pendientes.md — TASK-068.
+- User-Service findPersonMatches compara identificación/email/nombre; createPerson y linkPersonAccount no conservan IDs legados ni historial de decisiones.
+- Accounting-Service importDataWithColumnMapping (15360–15414) solo valida identificador, cuenta filas y registra AuditoriaMigraciones; no persiste entidades ni usa correspondencias.
+- Ausentes: hoja CorrespondenciaIdentificadores, resolvers bidireccionales, resolveUserByLegacyId, resolveCrossReferenceIdentifier y pruebas específicas.
+- IndexedDB v4 no contiene store de correspondencias; no debe ser fuente de verdad.
+- Hallazgos AUD-NG-377/378/379 dentro de TASK-068; no se crean tareas derivadas. Expediente único Auditoría/AUDITORIA_TASK-068_C1.318.md.

@@ -1401,3 +1401,61 @@ Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002
 Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.317.
 Commit de cierre: este commit consolidado; SHA se confirma consultando el HEAD de GitHub tras publicar.
 ===============================================================================
+
+
+===============================================================================
+## C1.318 — TASK-068: auditoría preimplementación y selección PM-01
+ID: C1.318
+Sesión: IMA-EXEC-20261109-1650Z-01
+Fecha: 2026-11-09 UTC
+Checkpoint anterior: C1.317
+Repositorio: i-miss-cocaine/IMA
+Rama de trabajo: NG_beta_0.0.0.1_work
+HEAD de partida: 5adf18921f8dd59e05e7f5af6210c48370273af7
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+Tarea activa: TASK-068 — PM-01/P0 — En ejecución
+Tarea previa no cerrada: TASK-636 — PM-01/P0 — En ejecución, bloqueo de integración Apps Script aislada.
+
+### Continuidad y selección
+- HEAD de trabajo verificado 5adf18921f8dd59e05e7f5af6210c48370273af7; base 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios fuera de rama autorizada.
+- Sesión IMA-EXEC-20261109-1650Z-01 y checkpoint C1.317 conservados.
+- PM-00 cerrado según backlogs/evidencia C1.301; TASK-637/638/639 completadas. TASK-068 se elige por P0, orden local 1, dependencia declarada ninguna y rol de base para tareas consumidoras.
+- TASK-636 no es dependencia declarada de TASK-068; permanece abierta por falta de entorno Apps Script aislado. No se modifica su guard/código.
+- Requisito íntegro leído: pendientes/Dirección/Pendientes.md — TASK-068.
+
+### Auditoría y hallazgos
+- Expediente principal único Auditoría/AUDITORIA_TASK-068_C1.318.md; no existía informe previo en el tree auditado.
+- Inspección de User-Service, Accounting-Service, IndexedDB, API, suite de regresión y MapaDependencias.
+- AUD-NG-377 CRÍTICO/P0: ausencia de CorrespondenciaIdentificadores y resolvers bidireccionales.
+- AUD-NG-378 CRÍTICO/P0: importDataWithColumnMapping solo cuenta filas/registra auditoría; no persiste entidades ni aplica correspondencias/idempotencia.
+- AUD-NG-379 ALTO/P1: linkPersonAccount cambia PersonaID sin historial append-only.
+- Hallazgos dentro de TASK-068; no se crean tareas derivadas ni auditorías duplicadas.
+- TASK-068 pasa de Pendiente a En ejecución; no se declara completada.
+
+### SHA de respaldo Git
+- backend/user-service/Code.gs: ac3fe79e26cc9855272409e7169d68e77f53bbab.
+- backend/accounting-service/Code.gs: 38b979d41596b85e888b4a7060b37bbac0840a28.
+- js/persistence.js: 94ac26feb4f7f31f1f3f2a238e164d23be565d94.
+- js/api.js: d0190f86060f109129a1d59a779cb5dbf82f8ab9.
+- tests/regression/academic-grading-suite.js: a22cb3ef376fe09e65c1b17c2f4f5125290bfba6.
+- Auditoría/MapaDependencias.md: cbd7e9b5632aebdd127e0dfb5bb86c7cc22d75db.
+- Tree recursivo 1.098 entradas, truncated=false.
+
+### Archivos modificados
+Auditoría/AUDITORIA_TASK-068_C1.318.md (nuevo); Auditoría/MapaDependencias.md; Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; Auditoria.txt; pendientes/Dirección/Pendientes.md; changueslogs.txt; Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt; Auditoría/INDICE_CHECKPOINTS.md.
+
+### Archivos revisados sin modificación
+METODOLOGIA_DESARROLLO.md; Auditoría/Contexto_personal.txt; Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; Auditoría/MapaDependencias.md; Auditoría/INDICE_CHECKPOINTS.md; Auditoria.txt; tareas_auditoria.txt; changueslogs.txt; backend/user-service/Code.gs; backend/accounting-service/Code.gs; js/persistence.js; js/api.js; tests/regression/academic-grading-suite.js; tree Git completo.
+
+### Pruebas y límites
+- Ejecutadas: verificación HEAD/base; lectura íntegra del requisito; inspección estática de dispatchers/permisos/helpers/funciones de identidad/importación/stores/pruebas; búsqueda de resolvers y hoja; ausencia de expediente duplicado; tree no truncado.
+- No ejecutadas: Node, IndexedDB real, Apps Script runtime, Sheets, HTTP, importación real de dos fuentes, reimportación, concurrencia, pruebas por rol y E2E.
+- No se modificó código ni se usaron datos productivos.
+
+### Siguiente acción exacta
+Implementar contrato persistente CorrespondenciaIdentificadores, unicidad compuesta y lock; resolvers bidireccionales; estados de revisión y bitácora append-only; autorización Secretaría/Administrador; pruebas de homónimos, referencias múltiples, conflictos e idempotencia. Después integrar importación real en Accounting-Service. Antes de editar código, cumplir respaldo local íntegro por archivo y verificar mecanismo de publicación; no usar producción.
+
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.318.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.318.
+Commit de cierre: confirmar externamente tras publicar.
+===============================================================================

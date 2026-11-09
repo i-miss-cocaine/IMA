@@ -405,3 +405,19 @@ Sesión: IMA-EXEC-20261109-1108Z-01; HEAD de partida: 32b8f5884dd24dbeaf1a3bf028
 - No se registra hallazgo nuevo ni se crea auditoría duplicada. TASK-636 continúa En ejecución; AUD-NG-369 abierto.
 - Bloqueo vigente: falta proyecto Apps Script/deployment y fixtures aislados de Sheets/Drive autorizados. closeAcademicYear permanece BACKUP_REQUIRED.
 - Checkpoint: C1.317; ubicación Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.317; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.317.
+
+
+## AUD-NG-377 — CRÍTICO/P0 — TASK-068 — Ausencia de correspondencia central
+- Evidencia: User-Service SHA ac3fe79e26cc9855272409e7169d68e77f53bbab y Accounting-Service SHA 38b979d41596b85e888b4a7060b37bbac0840a28; no existe hoja CorrespondenciaIdentificadores ni resolvers bidireccionales.
+- Impacto: IDs legados no se vinculan persistentemente a IDs internos; riesgo de duplicación y referencias inconsistentes.
+- Acción: fuente central con unicidad compuesta, resolución bidireccional y referencias múltiples. Estado abierto dentro de TASK-068; expediente Auditoría/AUDITORIA_TASK-068_C1.318.md.
+
+## AUD-NG-378 — CRÍTICO/P0 — TASK-068 — Importador sin persistencia idempotente
+- Evidencia: Accounting-Service importDataWithColumnMapping líneas 15360–15414 solo cuenta filas y registra AuditoriaMigraciones.
+- Impacto: no acredita migración ni reimportación sin duplicados.
+- Acción: integrar resolver y persistencia de destino bajo contrato explícito; fallar cerrado si no existe destino válido. Estado abierto dentro de TASK-068.
+
+## AUD-NG-379 — ALTO/P1 — TASK-068 — Vinculación sin historial de decisión
+- Evidencia: User-Service linkPersonAccount líneas 1712–1726 actualiza PersonaID sin bitácora append-only.
+- Impacto: trazabilidad incompleta de homologación.
+- Acción: conservar historial auditable de actor, motivo, identidad externa y decisión. Estado abierto dentro de TASK-068.

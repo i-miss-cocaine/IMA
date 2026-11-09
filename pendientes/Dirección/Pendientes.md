@@ -345,7 +345,7 @@
   - [ ] Las decisiones de vinculación pueden consultarse y auditarse en bitácora.
   - [ ] Las relaciones académicas, familiares y administrativas permanecen asociadas al identificador interno correcto.
   - [ ] Se demuestra la resolución de identidades provenientes de, al menos, dos fuentes diferentes.
-- **Estado:** [ ] Pendiente
+- **Estado:** En ejecución (C1.318; auditoría preimplementación concluida; implementación pendiente).
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 3638-3673; clave TASK-073; asignación única: Dirección -->
 
