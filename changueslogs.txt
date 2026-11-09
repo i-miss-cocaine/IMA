@@ -435,3 +435,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-09] C1.341 — TASK-068: transporte ACCOUNTING→USER/ACADEMIC con HMAC-SHA256, secreto obligatorio en Script Properties, URLs HTTPS, expiración/anti-replay y orquestación de importDataWithColumnMapping con compensación inversa. Pruebas Node locales agregadas; CI pendiente. Sin HTTP real ni beta. Checkpoint Parte_0003 C1.341.
+
+
+[2026-11-09] C1.342 — CI 42712755670 se detuvo en aserción estática heredada que exigía DESTINATION_WRITER_NOT_CONFIGURED; se actualiza para verificar la nueva ruta de transporte/rollback y la eliminación del bloqueo anterior. Sin cambios de producción; nuevo CI pendiente. Checkpoint Parte_0003 C1.342.

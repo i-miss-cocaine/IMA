@@ -388,3 +388,17 @@ HEAD físico previo: 023d7c2afabc383d41b12eab69058a47614f76d2
 Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.341.
 Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.341.
 ===============================================================================
+
+
+===============================================================================
+## C1.342 — Corrección del contrato estático tras integrar writers y transporte
+ID: C1.342
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.341
+- CI run 42712755670 falló antes de ejecutar los nuevos fixtures HMAC porque el contrato heredado aún exigía el literal DESTINATION_WRITER_NOT_CONFIGURED.
+- La expectativa se actualiza: confirma que la ruta antigua de no-writer ya no existe y que se requieren configuración de transporte, rollback de lote y el nuevo sender autenticado.
+- No se modifica la implementación de producción; se alinea el test con el contrato nuevo.
+- CI posterior debe ejecutar HMAC, origen/destino, manipulación de payload y anti-replay antes de continuar.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.342.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.342.
+===============================================================================

@@ -58,7 +58,9 @@ assert.ok(user.includes("identityTextCell_(String(e.motivo || \"\").slice(0, 200
 assert.ok(user.includes("identityHash_(sourceRecord)"));
 assert.ok(user.includes("IDENTITY_MAPPING_CONFLICT"));assert.ok(user.includes('String(found[0][9])!=="CONFIRMADA"'));
 assert.ok(user.includes("fusionAutomaticaPermitida: false"));assert.ok(accounting.includes("function resolveCrossReferenceIdentifier("));
-assert.ok(accounting.includes("DESTINATION_WRITER_NOT_CONFIGURED"));assert.ok(method.includes("3.14.1 Respaldo alternativo verificable mediante el historial Git"));
+assert.ok(!accounting.includes("DESTINATION_WRITER_NOT_CONFIGURED"),"legacy no-writer blocker must be removed after owner transport implementation");
+assert.ok(accounting.includes("MIGRATION_TRANSPORT_CONFIGURATION_REQUIRED"));
+assert.ok(accounting.includes("MIGRATION_BATCH_ROLLED_BACK"));assert.ok(method.includes("3.14.1 Respaldo alternativo verificable mediante el historial Git"));
 const pure=user.match(/function identityCompositeKey_\([\s\S]*?\n\}/);assert.ok(pure);
 const box={};vm.runInNewContext(pure[0]+"\nthis.key=identityCompositeKey_;",box);
 assert.notEqual(box.key("SACE","estudiante","X","I1"),box.key("LEGACY","estudiante","X","I1"));

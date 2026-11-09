@@ -2069,3 +2069,8 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - importDataWithColumnMapping resuelve correspondencia confirmada, mapea campos destino→origen, idempotencia por contenido y compensación inversa del lote.
 - Pruebas Node locales de firma, alteración, origen, destino y replay. CI pendiente; no HTTP real/deployment/beta.
 - TASK-068 continúa En ejecución; BETA-FUNC-008 Pendiente beta. Siguiente: tests locales integrales del orquestador con UrlFetchApp/SpreadsheetApp mocks.
+
+
+## 10.26 Corrección de contrato heredado — C1.342
+- El run 42712755670 falló antes de los nuevos casos HMAC por una aserción que todavía exigía DESTINATION_WRITER_NOT_CONFIGURED.
+- Se reemplaza por verificaciones de ausencia del bloqueo antiguo, configuración obligatoria del transporte y rollback de lote. Código de producción sin cambios; CI nuevo pendiente.
