@@ -162,3 +162,12 @@ Sesión: IMA-EXEC-20261109-1108Z-01; HEAD de partida: 32b8f5884dd24dbeaf1a3bf028
 - Dependencia: TASK-638 bloqueada hasta cierre verificado.
 - Tarea derivada: ampliación TASK-637 en tareas_auditoria.txt, sin ID duplicado.
 - Ubicación: informe C1.294; checkpoint Parte_0002, sección C1.294; índice fila C1.294.
+
+
+## Seguimiento C1.295 — AUD-NG-362 / TASK-637
+- HEAD de partida `00ffac159929fd65f1fc3a65e72509838df0cbde`; tree recursivo no truncado: 1.020 blobs.
+- Reconciliación posterior a C1.294: inventario previo 1.013 rutas; siete omitidas (cinco informes TASK-638 C1.289-C1.293, informe TASK-637 C1.294 y checkpoint Parte_0002); doce filas con SHA/tamaño desactualizados; cero obsoletas.
+- Corrección: inventario regenerado desde tree Git, incluyendo el informe C1.295; resumen por área, SHA, tamaños y autorreferencia SELF recalculados.
+- Resultado: 1.021/1.021 rutas únicas; cero omisiones, duplicados, obsoletos o metadatos desactualizados; `index.html` sin cambios.
+- AUD-NG-362 se cierra con TASK-637; TASK-638 permanece congelada hasta verificar commit A y auditarla.
+- Informe `Auditoría/AUDITORIA_TASK-637_C1.295.md`; checkpoint C1.295, sesión IMA-AUDIT-20261109-1152Z, `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt`; índice `Auditoría/INDICE_CHECKPOINTS.md` fila C1.295.

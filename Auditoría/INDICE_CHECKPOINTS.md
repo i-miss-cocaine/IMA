@@ -3,11 +3,11 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.294**
-- Última sesión: `IMA-AUDIT-20261109-1140Z`
+- Último checkpoint: **C1.295**
+- Última sesión: `IMA-AUDIT-20261109-1152Z`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.294: **estimado, validar blob final**
+- Caracteres del archivo activo tras C1.295: **22029**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 
@@ -26,7 +26,7 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 
 | C1.292 | IMA-EXEC-20261109-0430Z-01 | Publicado | TASK-638 / PM-00 — inventario JS y dependencias runtime | Auditoría/Contexto_personal.txt — sección C1.292 | 1842–1892 | C1.291 | 32b8f5884dd24dbeaf1a3bf028eb7635ada592df |
 | C1.293 | IMA-EXEC-20261109-1108Z-01 | Publicado | TASK-638 / PM-00 — CSS/GS/JSON y contratos | Auditoría/Contexto_personal.txt — sección C1.293 | 1895–1943 | C1.292 | fd73830144a9822369e4402076685928171908d6 |
-| C1.294 | IMA-AUDIT-20261109-1140Z | Publicado en este commit | TASK-637 reauditoría / PM-00.3 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.294 | 55–128 | C1.293 | Este commit; SHA a verificar externamente |
+| C1.294 | IMA-AUDIT-20261109-1140Z | Publicado | TASK-637 reauditoría / PM-00.3 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.294 | 55–128 | C1.293 | `00ffac159929fd65f1fc3a65e72509838df0cbde` |
 
 ## Reglas de mantenimiento
 1. Agregar una fila por cada checkpoint, sin borrar ni reutilizar IDs.
@@ -35,3 +35,5 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 4. Auditoria.txt y changueslogs.txt deben apuntar a esta tabla mediante el ID exacto.
 5. Los checkpoints anteriores a la adopción del índice son legado histórico; no inventar ubicaciones ni rangos retrospectivos. Indexarlos solo cuando puedan verificarse.
 
+
+| C1.295 | IMA-AUDIT-20261109-1152Z | Publicado en este commit | TASK-637 corrección / PM-00.3 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.295 | 131–172 | C1.294 | Este commit; SHA a verificar externamente |

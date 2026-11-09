@@ -126,3 +126,46 @@ C1.294; sesión IMA-AUDIT-20261109-1140Z; anterior C1.293; abierta. Fase metodol
 HEAD partida fd73830144a9822369e4402076685928171908d6; rama base NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59.
 Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt, sección C1.294; índice fila C1.294.
 Commit de cierre: el commit que contiene este checkpoint; SHA a verificar externamente.
+
+===============================================================================
+## C1.295 — Corrección y cierre TASK-637 (commit A)
+Sesión: IMA-AUDIT-20261109-1152Z; checkpoint inicial C1.294; sesión abierta. Fecha: 2026-11-09 UTC.
+Repositorio: i-miss-cocaine/IMA. Rama de trabajo: NG_beta_0.0.0.1_work. Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59.
+HEAD de partida verificado: 00ffac159929fd65f1fc3a65e72509838df0cbde.
+Fase metodológica: 0, 2, 3, 4, 5, 6 y 7. Fase PM: PM-00.3.
+Tarea anterior corregida: TASK-637 — inventario integral. AUD-NG-362 ampliado y cerrado.
+Tarea objetivo congelada: TASK-638; no se implementa ni se mezcla en commit A.
+
+### Auditoría y hallazgo
+Requisito completo: pendientes/Contabilidad/Pendientes.md, TASK-637. Exige una fila única por blob versionado con ruta, tipo, tamaño, SHA, área, propósito y condición; sin omisiones/invenciones; no alterar fuentes ni renombrar index.html.
+HEAD C1.294: tree recursivo no truncado con 1.020 blobs. Inventario anterior: 1.013 rutas únicas; siete omitidas (cinco informes TASK-638 C1.289-C1.293, informe C1.294 y Checkpoints_Parte_0002.txt) y doce filas con SHA/tamaño desactualizados. AUD-NG-362 conserva el mismo ID.
+
+### Implementación y validación
+Inventario regenerado desde el tree Git; se añadió el informe C1.295 y se incorporaron las siete rutas omitidas. Todas las filas se actualizaron con el SHA/tamaño del blob preparado; el resumen por área se recalculó. Resultado final: 1.021 blobs y 1.021 rutas únicas; cero omisiones, duplicados, rutas obsoletas o desajustes. SELF registra tamaño UTF-8 exacto; SHA externo verificado tras publicar. index.html conserva SHA cd742047cdc4948259dd721119429b04f78330ca.
+Autoauditoría y Code Review documental aprobados. No se modificó código, servicios, rutas ni recursos.
+
+### Respaldos Git previos
+Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — blob 86bdf00a6df9d125d8cfa9fb1a7d1f54a0d1a823
+Auditoría/INDICE_CHECKPOINTS.md — blob a4c61fbcf0f5f9de0c2c616fc879d6f839fce345
+Auditoria.txt — blob 43e115d4760f2b070028a176f28926b45290b603
+tareas_auditoria.txt — blob f0d8248d17d700d97c09130f66b8628b4fea7030
+changueslogs.txt — blob 244fd7a59274e6750658403a0cb289fb56a3fa16
+pendientes/Contabilidad/Pendientes.md — blob 5146c80c538ac9c6be39bb53e35a323ab92df47a
+Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md — blob d85e347e27d5d4e3f39a546120f5da53175eb8ab
+docs/architecture/repository-inventory.md — blob d5fdf1a621481d453a7a5779d2b82615901716b3
+
+### Archivos
+Modificados: docs/architecture/repository-inventory.md; Auditoría/AUDITORIA_TASK-637_C1.295.md (nuevo); Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt; Auditoría/INDICE_CHECKPOINTS.md; Auditoria.txt; tareas_auditoria.txt; changueslogs.txt; pendientes/Contabilidad/Pendientes.md; Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md.
+Revisados sin modificación: METODOLOGIA_DESARROLLO.md; Auditoría/MapaDependencias.md; index.html; otros backlogs; informes C1.283/C1.287/C1.294.
+
+### Pruebas
+Ejecutadas: continuidad HEAD/rama/base; tree recursivo; conteo/unicidad; reconciliación completa de rutas/SHA/tamaños; resumen de áreas; SELF/tamaño; preservación de index.html; copia normativa A-H íntegra.
+No ejecutadas: Node, navegador, HTTP, Apps Script, Drive, Sheets, integración, regresión y E2E; no aplican al alcance documental.
+
+### Estado y siguiente acción
+TASK-637: Completada; AUD-NG-362 cerrado. TASK-638 sigue congelada en este commit A. Tras verificar este commit, reanudar la auditoría preimplementación TASK-638 desde pendientes/Contabilidad/Pendientes.md y el punto pendiente C1.293 del MapaDependencias; seguir cada acción frontend → dispatcher → handler → autorización contextual → persistencia, servicios TASK/EXAM/ACADEMIC y configuración de secretos/deployments. No modificar código durante auditoría.
+
+### Ubicación exacta
+Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.295; parte 0002. Índice: Auditoría/INDICE_CHECKPOINTS.md, fila C1.295.
+Commit A de cierre: el commit que contiene este checkpoint; SHA a verificar externamente.
+===============================================================================

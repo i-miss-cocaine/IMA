@@ -3033,11 +3033,11 @@
 ---
 
 <!-- ID: TASK-637 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK02.md -->
-### [ ] [TASK-637] Completar el inventario integral de archivos
+### [X] [TASK-637] Completar el inventario integral de archivos
 - **Referencia:** AUD-NG-281.
 - **Severidad:** ALTO.
 - **Prioridad:** P1.
-- **Estado:** En ejecución (reabierta por AUD-NG-362; conciliación integral pendiente).
+- **Estado:** Completada (C1.295; inventario integral reconciliado, autoauditoría y Code Review documental aprobados).
 - **Objetivo y acción:** generar y mantener un inventario exhaustivo de los 974 archivos versionados, con ruta exacta, tipo, tamaño, SHA, área funcional, propósito y condición de uso; reconciliarlo con el árbol Git vigente y contemplar contenido académico, assets, datos, documentación, pruebas, configuración y backend.
 - **Archivos/módulos afectados:** `docs/architecture/repository-inventory.md`, `AUDITORIAS/MapaDependencias.md`, árbol completo del repositorio.
 - **Dependencias:** árbol Git de la rama de trabajo, documentación vigente, punto de entrada `index.html`.
@@ -3062,6 +3062,12 @@
 - Acción: regenerar desde tree final, incluir cinco informes y corregir once filas; reconciliar artefactos del commit correctivo.
 - Criterios: 100 % blobs, una ruta por fila, cero omisiones/obsoletos, SHA/tamaños exactos, SELF verificado, tree no truncado, index.html intacto, autoauditoría y Code Review.
 - TASK-638 queda bloqueada hasta cierre verificado.
+
+- **Cierre C1.295 / AUD-NG-362:** inventario reconciliado con 1.021 blobs del tree final; 1.021 rutas únicas, cero omisiones, rutas obsoletas o SHA/tamaños desactualizados. Se incorporan los informes C1.289-C1.294, el checkpoint Parte_0002 y el informe C1.295.
+- **Verificaciones internas:** tipo, tamaño UTF-8 en bytes y SHA de cada blob; autorreferencia SELF con tamaño exacto y SHA externo; resumen por área recalculado; `index.html` conserva SHA `cd742047cdc4948259dd721119429b04f78330ca`.
+- **Code Review:** aprobado para el alcance documental; no se modificaron archivos de código, rutas, servicios ni `index.html`.
+- **Pruebas beta:** no aplican al cierre documental; escenarios funcionales permanecen en su catálogo y no se declaran ejecutados.
+- **Dependencia:** TASK-638 se reanudará después de verificar este commit A y completar su auditoría preimplementación; no se mezcla en este commit.
 <!-- ID: TASK-638 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK02.md -->
 ### [ ] [TASK-638] Trazar dependencias estáticas y dinámicas de extremo a extremo
 - **Referencia:** AUD-NG-282.

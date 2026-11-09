@@ -198,3 +198,12 @@ El propósito de este documento es llevar el registro de las tareas derivadas de
 - Alcance: inventario documental; no modificar código ni renombrar index.html.
 - Criterios: 100 % blobs, una fila por ruta, cero omisiones/obsoletos, SHA/tamaños exactos, SELF exacto, tree no truncado, index.html intacto, autoauditoría y Code Review.
 - Estado/evidencia: corrección pendiente; AUD-NG-362 abierto.
+
+
+## Cierre C1.295 — TASK-637 / AUD-NG-362 (mismo ID, sin duplicación)
+- Estado: Completada; implementación documental y controles internos satisfechos.
+- Informe: `Auditoría/AUDITORIA_TASK-637_C1.295.md`.
+- Evidencia: HEAD de partida `00ffac159929fd65f1fc3a65e72509838df0cbde`; tree recursivo no truncado de 1.020 blobs; inventario final 1.021/1.021 rutas (incluye el nuevo informe C1.295), únicas, SHA/tamaños exactos, cero omisiones/obsoletos y SELF verificado externamente.
+- `index.html` conserva SHA `cd742047cdc4948259dd721119429b04f78330ca`.
+- Autoauditoría y Code Review documental: aprobados. No se ejecutaron pruebas runtime/beta.
+- TASK-638: congelada hasta verificación del commit A; siguiente acción, auditoría preimplementación completa según metodología 19.3.

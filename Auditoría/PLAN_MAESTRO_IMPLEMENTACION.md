@@ -1798,3 +1798,9 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - TASK-638 Bloqueada por TASK-637; evidencia parcial C1.289-C1.293 conservada.
 - Siguiente paso: corregir inventario desde tree completo, validar rutas/metadatos/SELF, autoauditoría y Code Review; luego reanudar TASK-638.
 - BETA-FUNC-001..006 registradas Pendientes para TASK-685..690; ejecución futura en beta aislada.
+
+
+## Seguimiento operativo — C1.295 / commit A de corrección
+- **TASK-637:** Completada. AUD-NG-362 cerrado tras reconciliar el inventario con el tree final: 1.021 blobs/rutas únicas; cero omisiones, duplicados, obsoletos o metadatos desactualizados; SELF con tamaño exacto y SHA externo; `index.html` intacto. Informe: `Auditoría/AUDITORIA_TASK-637_C1.295.md`.
+- **TASK-638:** congelada durante commit A. Tras verificar su HEAD/árbol, reanudar la auditoría preimplementación desde `pendientes/Contabilidad/Pendientes.md` y el punto pendiente C1.293 del MapaDependencias; no implementar hasta cerrar auditoría y dependencias.
+- Checkpoint: C1.295, sesión IMA-AUDIT-20261109-1152Z, `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt`; índice fila C1.295.

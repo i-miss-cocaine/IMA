@@ -139,3 +139,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - BETA-FUNC-001..006 registradas Pendientes para TASK-685..690; sin pruebas beta ejecutadas.
 - Sin cambios de código ni modificación del inventario en esta auditoría.
 - Checkpoint C1.294: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.294; índice fila C1.294.
+
+
+[2026-11-09] IMA-AUDIT-20261109-1152Z — C1.295 / corrección commit A TASK-637
+- HEAD de partida 00ffac159929fd65f1fc3a65e72509838df0cbde; rama NG_beta_0.0.0.1_work; base NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59.
+- AUD-NG-362 ampliado: 1.020 blobs vs 1.013 rutas; siete omitidas y doce filas con SHA/tamaño desactualizados.
+- Inventario regenerado y reconciliado a 1.021/1.021 rutas únicas; cero omisiones/obsoletos/duplicados/desajustes; `index.html` intacto.
+- TASK-637 Completada tras autoauditoría y Code Review documental. TASK-638 congelada hasta verificación del commit A.
+- Informe `Auditoría/AUDITORIA_TASK-637_C1.295.md`; checkpoint C1.295, `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt`; índice fila C1.295.
