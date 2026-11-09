@@ -1,6 +1,6 @@
 # Backlog consolidado — Secretaria
 
-**Estado de esta migración:** todas las tareas se consideran pendientes. Las marcas históricas de completado se han retirado en este destino; esto no constituye verificación de implementación.
+**Estado operativo del Plan Maestro (reinicio global):** todas las tareas de este backlog quedan en estado `Pendiente` al inicio de la ejecución. Ninguna tarea se considera `Completada`; marcas, etiquetas o declaraciones históricas de cierre son únicamente antecedentes y no acreditan estado vigente. Una tarea solo podrá cambiar de estado tras su implementación y verificación conforme al Plan Maestro.
 
 **Fuentes integradas:** informes de auditoría de `AUDITORIAS/`, `Pendientes.md`, `completadas.md` y los archivos departamentales preexistentes. Los registros con el mismo identificador se reúnen en una sola tarea.
 

@@ -47,3 +47,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se prohíben terceros commits, mezcla de alcances y uso de la excepción para eludir límites técnicos o dividir tareas.
 - Auditoría/Contexto_personal.txt: se anexa checkpoint C1.284; se conserva el historial íntegro.
 - Rama: NG_beta_0.0.0.1_work; HEAD de partida: 9f2f4f1c4da7cd9f896d56e5d20e1cce5ff6f90e; rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+[2026-11-09] IMA-GOV-20261109-0322Z-01 — Reinicio global de estados y recuperación legible del contexto
+- Se establece que las 1.346 tareas del Plan Maestro inician en estado Pendiente; ninguna se considera completada al inicio de esta ejecución.
+- Se retira la marca [X] y el estado operativo de cierre de TASK-637; el requisito debe auditarse e implementarse nuevamente antes de habilitar TASK-638.
+- Se alinean los siete backlogs departamentales y la sección 10.1 del Plan Maestro. Las menciones históricas en auditorías, checkpoints y entradas previas se preservan como antecedentes, no como estado vigente.
+- Se recupera el contexto personal desde el blob íntegro y se divide su historial en partes consecutivas para permitir lectura sin perder contenido; el archivo principal queda como punto de entrada legible.
+- Rama: NG_beta_0.0.0.1_work; HEAD de partida: d3e00ce665e980e7766b2e84dca077f124899194; rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59.

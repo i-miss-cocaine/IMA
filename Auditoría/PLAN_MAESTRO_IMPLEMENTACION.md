@@ -5,6 +5,7 @@
 **Repositorio:** `i-miss-cocaine/IMA`  
 **Rama de trabajo:** `NG_beta_0.0.0.1_work`  
 **Estado:** plan rector de secuenciación; ninguna tarea se declara implementada por aparecer aquí.  
+**Línea base operativa C1.285:** las 1.346 tareas de los siete backlogs están en `Pendiente`; no existe ninguna tarea del Plan Maestro con estado operativo `Completada`. Los registros históricos de la sección 10 se conservan como evidencia histórica y quedan subordinados al reinicio de estados de la sección 10.1.  
 **Checkpoint de origen:** C1.277 (consolidación del backlog).  
 **Checkpoint de planificación:** C1.278.
 
@@ -1724,17 +1725,26 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 
 ## 10. Registro de ejecución y estados (aditivo)
 
-### TASK-637 — Completada | PM-00.3 | IMA-EXEC-20261109-0217Z-01
+### TASK-637 — Pendiente (estado histórico revocado para esta ejecución) | PM-00.3 | IMA-EXEC-20261109-0217Z-01
 - Requisito: `pendientes/Contabilidad/Pendientes.md`.
 - Evidencia: `docs/architecture/repository-inventory.md` (41f8e122eb7171c9f59a0552c9ad13ac4c90f9b0); tree `b0042a7edd424ebf8efab7bcd1aace3641f08b23` en HEAD de partida `39c3d62136a23f58b284d2fee2291698fd114a42`.
 - Resultado: 999 de 999 blobs versionados inventariados; rutas únicas; SHA, tamaño, tipo, área, propósito y condición de uso documentados.
 - Code Review documental: aprobado; `index.html` conserva SHA `cd742047cdc4948259dd721119429b04f78330ca`.
-- Dependencia siguiente: TASK-638 requiere TASK-637 completada y verificada; TASK-639 requiere TASK-637 y TASK-638.
+- Dependencia siguiente: TASK-638 requiere que TASK-637 sea implementada y verificada en la ejecución vigente; ese prerrequisito no se considera satisfecho tras el reinicio. TASK-639 requiere TASK-637 y TASK-638 verificadas.
 - Siguiente acción: auditar el cierre de TASK-637 y después auditar TASK-638 en `pendientes/Contabilidad/Pendientes.md`.
 
 
 ### TASK-637 — Reauditoría C1.283
-- Estado final: Completada tras corregir AUD-NG-347.
+- Estado operativo actual: Pendiente. La reauditoría y sus evidencias se conservan como antecedentes, no como cierre de la ejecución vigente.
 - Inventario: 1.002 rutas únicas (1.001 blobs del HEAD C1.282 más el informe de seguimiento C1.283).
 - Evidencia: tree de partida `e052e8781270a0a23aedd2d90177b601d8df063a`; informe `Auditoría/AUDITORIA_TASK-637_C1.283.md` blob `af96fa04c573dbacdb6c3637aeed35dea9462cad`.
 - La autorreferencia del SHA del inventario se verifica externamente en el commit de cierre.
+
+## 10.1 Reinicio global de estados — C1.285
+
+- **Alcance:** los 1.346 IDs registrados en la sección 9 y distribuidos en los siete backlogs departamentales.
+- **Estado operativo inicial:** `Pendiente` para todas las tareas, sin excepciones. Ninguna tarea del Plan Maestro se considera `Completada` al inicio de esta ejecución.
+- **Corrección explícita:** TASK-637 vuelve a `Pendiente`; su marca de selección `[X]` y sus etiquetas operativas de cierre se retiraron de `pendientes/Contabilidad/Pendientes.md`. TASK-638 permanece `Pendiente` y su dependencia respecto de TASK-637 no está satisfecha.
+- **Historial:** los checkpoints, informes y entradas históricas que describen cierres anteriores no se eliminan ni se reescriben. Son evidencia de lo que se registró entonces, pero no determinan el estado operativo actual ni sustituyen una nueva implementación y verificación.
+- **Regla de transición:** una tarea solo podrá pasar a `En ejecución` cuando sea elegible por dependencias y solo podrá pasar a `Completada` tras implementar todos sus requisitos, ejecutar las pruebas aplicables, superar autoauditoría y Code Review y registrar evidencia verificable en el checkpoint correspondiente.
+- **Fuente de verdad:** estado vigente en el backlog departamental, reconciliado con esta sección. Ante cualquier contradicción con un checkpoint histórico, prevalece este reinicio C1.285 para la ejecución del Plan Maestro.

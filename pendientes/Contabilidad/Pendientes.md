@@ -1,6 +1,6 @@
 # Backlog consolidado — Contabilidad
 
-**Estado de esta migración:** todas las tareas se consideran pendientes. Las marcas históricas de completado se han retirado en este destino; esto no constituye verificación de implementación.
+**Estado operativo del Plan Maestro (reinicio global):** todas las tareas de este backlog quedan en estado `Pendiente` al inicio de la ejecución. Ninguna tarea se considera `Completada`; marcas, etiquetas o declaraciones históricas de cierre son únicamente antecedentes y no acreditan estado vigente. Una tarea solo podrá cambiar de estado tras su implementación y verificación conforme al Plan Maestro.
 
 **Fuentes integradas:** informes de auditoría de `AUDITORIAS/`, `Pendientes.md`, `completadas.md` y los archivos departamentales preexistentes. Los registros con el mismo identificador se reúnen en una sola tarea.
 
@@ -3033,11 +3033,11 @@
 ---
 
 <!-- ID: TASK-637 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK02.md -->
-### [X] [TASK-637] Completar el inventario integral de archivos
+### [ ] [TASK-637] Completar el inventario integral de archivos
 - **Referencia:** AUD-NG-281.
 - **Severidad:** ALTO.
 - **Prioridad:** P1.
-- **Estado:** Completada.
+- **Estado:** Pendiente.
 - **Objetivo y acción:** generar y mantener un inventario exhaustivo de los 974 archivos versionados, con ruta exacta, tipo, tamaño, SHA, área funcional, propósito y condición de uso; reconciliarlo con el árbol Git vigente y contemplar contenido académico, assets, datos, documentación, pruebas, configuración y backend.
 - **Archivos/módulos afectados:** `docs/architecture/repository-inventory.md`, `AUDITORIAS/MapaDependencias.md`, árbol completo del repositorio.
 - **Dependencias:** árbol Git de la rama de trabajo, documentación vigente, punto de entrada `index.html`.
@@ -3049,7 +3049,7 @@
 - **Evidencia de cierre:** inventario `docs/architecture/repository-inventory.md`, blob SHA `41f8e122eb7171c9f59a0552c9ad13ac4c90f9b0`; Git tree `b0042a7edd424ebf8efab7bcd1aace3641f08b23`; 999 rutas únicas con tamaño y SHA.
 - **Pruebas:** 999/999 rutas; unicidad; tamaño/SHA; clasificación; punto de entrada `index.html` sin cambios.
 - **Seguimiento C1.283 / AUD-NG-347:** la reauditoría posterior detectó dos informes creados en el commit anterior que no estaban en el snapshot de 999. Se amplía la cobertura a 1.002 rutas, incluyendo el informe de seguimiento C1.283.
-- **Estado tras reauditoría:** Completada.
+- **Estado operativo tras el reinicio global:** Pendiente; la reauditoría histórica se conserva como antecedente y no acredita cierre del Plan Maestro.
 - **Evidencia adicional:** tree C1.282 `e052e8781270a0a23aedd2d90177b601d8df063a`; informe `Auditoría/AUDITORIA_TASK-637_C1.283.md` blob `af96fa04c573dbacdb6c3637aeed35dea9462cad`.
 ---
 
