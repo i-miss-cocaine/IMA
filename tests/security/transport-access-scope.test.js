@@ -16,7 +16,10 @@ function extractFunction(name, nextName) {
 }
 
 const helperSource =
-  extractFunction("transportRows_", "resolveTransportAccessScope_") +
+  extractFunction("transportRows_", "transportDateBoundary_") +
+  extractFunction("transportDateBoundary_", "transportRelationshipIsCurrent_") +
+  extractFunction("transportRelationshipIsCurrent_", "transportEmployeeIdsForUser_") +
+  extractFunction("transportEmployeeIdsForUser_", "resolveTransportAccessScope_") +
   extractFunction("resolveTransportAccessScope_", "transportAuditDenied_") +
   extractFunction("transportAuditDenied_", "getTransportRouteIdsForScope_") +
   extractFunction("getTransportRouteIdsForScope_", "getTransportRoutes") +
@@ -48,6 +51,8 @@ const data = {
     ["UserId", "Nombre", "Grado", "Seccion", "Email", "PasswordHash", "Rol", "Telefono", "NumeroLista", "PersonaID", "EstadoCuenta"],
     ["PARENT-01", "Parent One", "", "", "", "", "Padre", "", "", "", "Activa"],
     ["PARENT-99", "Parent Missing Link", "", "", "", "", "Padre", "", "", "", "Activa"],
+    ["PARENT-03", "Parent Future Link", "", "", "", "", "Padre", "", "", "", "Activa"],
+    ["PARENT-04", "Parent Expired Link", "", "", "", "", "Padre", "", "", "", "Activa"],
     ["STU-01", "Student One", "", "", "", "", "Estudiante", "", "", "", "Activa"],
     ["STU-02", "Student Two", "", "", "", "", "Estudiante", "", "", "", "Activa"],
     ["DRIVER-1", "Driver One", "", "", "", "", "Conductor", "", "", "", "Activa"],
@@ -61,11 +66,20 @@ const data = {
     ["EXP-01", "STU-01"],
     ["EXP-02", "STU-02"]
   ],
+  ExpedientesLaborales: [
+    ["ExpedienteID", "PersonaID", "UserId", "Puesto", "Departamento", "CentroCosto", "FechaIngreso", "FechaSalida", "Estado", "Observaciones"],
+    ["EMP-DRIVER-1", "PERS-D1", "DRIVER-1", "Conductor", "Transporte", "General", "2024-01-01", "", "active", ""],
+    ["EMP-DRIVER-2", "PERS-D2", "DRIVER-2", "Conductor", "Transporte", "General", "2024-01-01", "", "active", ""],
+    ["EMP-MONITOR-1", "PERS-M1", "MONITOR-1", "Monitor", "Transporte", "General", "2024-01-01", "", "active", ""],
+    ["EMP-MONITOR-2", "PERS-M2", "MONITOR-2", "Monitor", "Transporte", "General", "2024-01-01", "", "active", ""]
+  ],
   RelacionesFamiliares: [
-    ["RelacionID", "ExpedienteID", "ResponsableUserId", "Parentesco", "Estado"],
-    ["REL-1", "EXP-01", "PARENT-01", "Madre", "Verificada"],
-    ["REL-2", "EXP-02", "PARENT-02", "Padre", "Activa"],
-    ["REL-3", "EXP-02", "PARENT-01", "Padre", "Rechazada"]
+    ["RelacionID", "ExpedienteID", "ResponsableUserId", "Parentesco", "Estado", "FechaInicio", "FechaFin", "Observaciones", "PermisosJSON"],
+    ["REL-1", "EXP-01", "PARENT-01", "Madre", "Verificada", "2026-11-08", "2026-11-10", "", "{}"],
+    ["REL-2", "EXP-02", "PARENT-02", "Padre", "Activa", "2026-11-08", "2026-11-10", "", "{}"],
+    ["REL-3", "EXP-02", "PARENT-01", "Padre", "Rechazada", "2026-11-08", "2026-11-10", "", "{}"],
+    ["REL-4", "EXP-02", "PARENT-03", "Madre", "Activa", "2026-11-10", "", "", "{}"],
+    ["REL-5", "EXP-02", "PARENT-04", "Padre", "Activa", "2026-11-01", "2026-11-08", "", "{}"]
   ],
   TransporteAsignaciones: [
     ["ID", "RutaID", "EstudianteUserId", "Parada", "Horario", "Estado", "Fecha", "Jornada"],
@@ -76,15 +90,15 @@ const data = {
   ],
   TransporteRutas: [
     ["RutaID", "Nombre", "Unidad", "Conductor", "Capacidad", "Paradas", "Estado"],
-    ["RUT-01", "Ruta uno", "BUS-1", "DRIVER-1", 20, "[]", "active"],
-    ["RUT-02", "Ruta dos", "BUS-2", "DRIVER-2", 20, "[]", "active"],
-    ["RUT-03", "Ruta tres", "BUS-3", "DRIVER-1", 20, "[]", "inactive"]
+    ["RUT-01", "Ruta uno", "BUS-1", "EMP-DRIVER-1", 20, "[]", "active"],
+    ["RUT-02", "Ruta dos", "BUS-2", "EMP-DRIVER-2", 20, "[]", "active"],
+    ["RUT-03", "Ruta tres", "BUS-3", "EMP-DRIVER-1", 20, "[]", "inactive"]
   ],
   TransporteViajes: [
     ["ViajeID", "RutaID", "Unidad", "Conductor", "Monitor", "Fecha", "Jornada", "Inicio", "Fin", "Estado"],
-    ["TRIP-1", "RUT-01", "BUS-1", "DRIVER-1", "MONITOR-1", "2026-11-09", "Matutina", "06:00", "", "EnCurso"],
-    ["TRIP-2", "RUT-02", "BUS-2", "DRIVER-2", "MONITOR-2", "2026-11-09", "Matutina", "06:00", "", "CerradoNormal"],
-    ["TRIP-3", "RUT-03", "BUS-3", "DRIVER-1", "MONITOR-1", "2026-11-09", "Matutina", "06:00", "", "EnCurso"]
+    ["TRIP-1", "RUT-01", "BUS-1", "EMP-DRIVER-1", "EMP-MONITOR-1", "2026-11-09", "Matutina", "06:00", "", "EnCurso"],
+    ["TRIP-2", "RUT-02", "BUS-2", "EMP-DRIVER-2", "EMP-MONITOR-2", "2026-11-09", "Matutina", "06:00", "", "CerradoNormal"],
+    ["TRIP-3", "RUT-03", "BUS-3", "EMP-DRIVER-1", "EMP-MONITOR-1", "2026-11-09", "Matutina", "06:00", "", "EnCurso"]
   ]
 };
 
@@ -105,6 +119,18 @@ const noFamilyLink = runScope({
   _verifiedUserId: "PARENT-99"
 }, data);
 assert.deepEqual(Array.from(noFamilyLink.studentIds), []);
+
+const futureFamilyLink = runScope({
+  _verifiedRole: "Padre",
+  _verifiedUserId: "PARENT-03"
+}, data);
+assert.deepEqual(Array.from(futureFamilyLink.studentIds), []);
+
+const expiredFamilyLink = runScope({
+  _verifiedRole: "Padre",
+  _verifiedUserId: "PARENT-04"
+}, data);
+assert.deepEqual(Array.from(expiredFamilyLink.studentIds), []);
 const roleChangedData = Object.assign({}, data, {
   Usuarios: data.Usuarios.map(row => row[0] === "PARENT-01" ? row.map((value, index) => index === 6 ? "Estudiante" : value) : row)
 });
@@ -158,12 +184,25 @@ const driver = runScope({
   _verifiedUserId: "DRIVER-1"
 }, data);
 assert.deepEqual(Array.from(driver.routeIds), ["RUT-01"]);
+assert.deepEqual(Array.from(driver.employeeIds), ["EMP-DRIVER-1"]);
 
 const monitor = runScope({
   _verifiedRole: "Monitor",
   _verifiedUserId: "MONITOR-1"
 }, data);
 assert.deepEqual(Array.from(monitor.routeIds), ["RUT-01"]);
+assert.deepEqual(Array.from(monitor.employeeIds), ["EMP-MONITOR-1"]);
+
+const inactiveEmploymentData = Object.assign({}, data, {
+  ExpedientesLaborales: data.ExpedientesLaborales.map(row =>
+    row[2] === "DRIVER-1" ? row.map((value, index) => index === 8 ? "terminated" : value) : row
+  )
+});
+const inactiveDriver = runScope({
+  _verifiedRole: "Conductor",
+  _verifiedUserId: "DRIVER-1"
+}, inactiveEmploymentData);
+assert.deepEqual(Array.from(inactiveDriver.routeIds), []);
 
 const revokedDriverAssignmentData = Object.assign({}, data, {
   TransporteViajes: [

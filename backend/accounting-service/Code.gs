@@ -15757,6 +15757,41 @@ function transportRows_(ss, sheetName) {
   return values.length > 1 ? values.slice(1) : [];
 }
 
+function transportDateBoundary_(value, endOfDay) {
+  if (!value) return null;
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value.trim())) {
+    const parts = value.trim().split("-").map(Number);
+    return new Date(parts[0], parts[1] - 1, parts[2], endOfDay ? 23 : 0, endOfDay ? 59 : 0, endOfDay ? 59 : 0, endOfDay ? 999 : 0).getTime();
+  }
+  const date = new Date(value);
+  if (endOfDay && date.getHours() === 0 && date.getMinutes() === 0 && date.getSeconds() === 0 && date.getMilliseconds() === 0) {
+    date.setHours(23, 59, 59, 999);
+  }
+  return date.getTime();
+}
+
+function transportRelationshipIsCurrent_(row) {
+  const now = Date.now();
+  const startValue = row && row[5];
+  const endValue = row && row[6];
+  const startTime = transportDateBoundary_(startValue, false);
+  const endTime = transportDateBoundary_(endValue, true);
+  if (startValue && !isFinite(startTime)) return false;
+  if (endValue && !isFinite(endTime)) return false;
+  return (!startValue || startTime <= now) && (!endValue || endTime >= now);
+}
+
+function transportEmployeeIdsForUser_(ss, userId) {
+  const activeStates = ["active", "activo", "activa"];
+  return transportRows_(ss, "ExpedientesLaborales").filter(function(row) {
+    const employeeUserId = String(row[2] || "").trim();
+    const employmentState = String(row[8] || "").trim().toLowerCase();
+    return employeeUserId === String(userId || "").trim() && activeStates.indexOf(employmentState) !== -1;
+  }).map(function(row) {
+    return String(row[0] || "").trim();
+  }).filter(Boolean);
+}
+
 function resolveTransportAccessScope_(payload, ss) {
   const role = String(payload && payload._verifiedRole || "").trim();
   const userId = String(payload && payload._verifiedUserId || "").trim();
@@ -15802,7 +15837,8 @@ function resolveTransportAccessScope_(payload, ss) {
     const familyRows = transportRows_(ss, "RelacionesFamiliares");
     let linkedExpedientes = familyRows.filter(function(row) {
       return String(row[2] || "").trim() === userId &&
-        validStates.indexOf(String(row[4] || "").trim().toLowerCase()) !== -1;
+        validStates.indexOf(String(row[4] || "").trim().toLowerCase()) !== -1 &&
+        transportRelationshipIsCurrent_(row);
     }).map(function(row) { return String(row[1] || "").trim(); }).filter(Boolean);
 
     // El legado solo se consulta si la hoja canónica no existe; una relación revocada no se reactiva por fallback.
@@ -15827,6 +15863,7 @@ function resolveTransportAccessScope_(payload, ss) {
     const activeStates = ["activo", "activa", "iniciado", "encurso", "en curso", "enruta", "en ruta", "entransito", "en tránsito"];
     const routeRows = transportRows_(ss, "TransporteRutas");
     const tripRows = transportRows_(ss, "TransporteViajes");
+    const employeeIds = transportEmployeeIdsForUser_(ss, userId);
     const assignedRouteIds = [];
     const assignedTrips = [];
     tripRows.forEach(function(trip) {
@@ -15835,7 +15872,7 @@ function resolveTransportAccessScope_(payload, ss) {
       const assignedMonitor = String(trip[4] || "").trim();
       const routeId = String(trip[1] || "").trim();
       if (routeId && activeStates.indexOf(tripState) !== -1 &&
-          (assignedDriver === userId || assignedMonitor === userId)) {
+          (employeeIds.indexOf(assignedDriver) !== -1 || employeeIds.indexOf(assignedMonitor) !== -1)) {
         if (assignedRouteIds.indexOf(routeId) === -1) assignedRouteIds.push(routeId);
         assignedTrips.push({
           viajeId: String(trip[0] || "").trim(),
@@ -15853,7 +15890,7 @@ function resolveTransportAccessScope_(payload, ss) {
     const activeAssignedTrips = assignedTrips.filter(function(trip) {
       return activeRouteIds.indexOf(trip.rutaId) !== -1 && trip.viajeId;
     });
-    return { authorized: true, management: false, role: role, userId: userId, studentIds: null, routeIds: activeRouteIds, tripAssignments: activeAssignedTrips };
+    return { authorized: true, management: false, role: role, userId: userId, studentIds: null, employeeIds: employeeIds, routeIds: activeRouteIds, tripAssignments: activeAssignedTrips };
   }
 
   return { authorized: true, management: false, role: role, userId: userId, studentIds: [], routeIds: [] };
@@ -16419,8 +16456,9 @@ function getTripPassengerManifest(payload) {
       return { status: "error", code: "UNAUTHORIZED_ACCESS_ATTEMPT", manifiestoPasajeros: [] };
     }
     if (scope.routeIds) {
-      const assignedToTrip = String(targetTrip[3] || "").trim() === scope.userId ||
-        String(targetTrip[4] || "").trim() === scope.userId;
+      const employeeIds = scope.employeeIds || [];
+      const assignedToTrip = employeeIds.indexOf(String(targetTrip[3] || "").trim()) !== -1 ||
+        employeeIds.indexOf(String(targetTrip[4] || "").trim()) !== -1;
       if (!assignedToTrip || scope.routeIds.indexOf(effectiveRouteId) === -1) {
         transportAuditDenied_("getTripPassengerManifest", payload, scope, { viajeId: targetTripId, rutaId: effectiveRouteId });
         return { status: "error", code: "UNAUTHORIZED_ACCESS_ATTEMPT", manifiestoPasajeros: [] };
