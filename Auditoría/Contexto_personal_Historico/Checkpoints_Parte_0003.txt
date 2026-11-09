@@ -523,3 +523,21 @@ HEAD previo: 831a99d957bc157c94792e64f5722b66d2fef233
 Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.350.
 Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.350.
 ===============================================================================
+
+
+===============================================================================
+## C1.351 — TASK-068: pruebas locales de referencias múltiples, relaciones y caché
+ID: C1.351
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.350
+Baseline lógico válido: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD previo: 0d9c54c751564b6d430ac7517aa93f782bcc7f29
+- CI C1.350 run 42714860009: completed/success; contrato ampliado parsea js/secretary.js y verifica controles, handlers y wrappers UI/API.
+- Se agregan pruebas ejecutables con funciones reales para resolución directa y reversa: dos fuentes confirmadas apuntan al mismo ID interno; las pendientes y de otra institución no se devuelven como referencias confirmadas.
+- Se agrega fixture de relaciones: la búsqueda de candidatos obtiene responsable mediante relación familiar activa e historial de matrícula por PersonaID→Usuario→Matrícula, sin mutar filas relacionales.
+- Se agrega prueba de caché IndexedDB: solo se persisten correspondencias confirmadas, claves incluyen institución/fuente/tipo/ID legado y limpieza queda acotada a institución.
+- Estas pruebas son locales y no usan IndexedDB/Sheets/Apps Script reales; no se declara prueba de deployment. CI C1.351 pendiente.
+- TASK-068 permanece En ejecución hasta revisión final de la UI y criterios completos; BETA-FUNC-008 sigue Pendiente beta.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.351.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.351.
+===============================================================================

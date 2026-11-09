@@ -2117,3 +2117,10 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - Se incorpora a dashboard-secretaria.html una consola para buscar candidatos, registrar referencias legadas, confirmar/rechazar con motivo, consultar historial y vincular cuenta↔Persona.
 - Se agregan wrappers API y handlers; datos de servidor renderizados con textContent. Autorización definitiva en backend.
 - Workflow local incluye secretary.js y verifica controles/handlers/wrappers. TASK-068 sigue En ejecución hasta validar caché IndexedDB, relaciones y múltiples referencias con funciones reales; transporte real sigue en BETA-FUNC-008.
+
+
+## 10.35 TASK-068 — C1.351: pruebas locales de criterios de aceptación restantes
+- Resolución directa y reversa prueba dos fuentes confirmadas para un mismo ID interno; excluye referencias pendientes y de otra institución.
+- Búsqueda de candidatos prueba la relación familiar activa y el recorrido PersonaID→Usuario→Matrícula, sin mutar esas relaciones.
+- IndexedDB cache prueba aislamiento por institución, normalización de tipo y rechazo de mappings no confirmados.
+- C1.350 CI run 42714860009: success. C1.351 CI pendiente.

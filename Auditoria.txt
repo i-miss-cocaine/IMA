@@ -554,3 +554,8 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - CI C1.349 run 42714376588: completed/success.
 - Se agrega consola UI de búsqueda, registro, revisión humana, historial y vínculo cuenta-Persona; wrappers API y contrato local ampliados. CI C1.350 pendiente.
 - TASK-068 no se declara completada; faltan verificaciones locales de caché, relaciones y referencias múltiples.
+
+
+## C1.351 — TASK-068 pruebas locales adicionales
+- CI C1.350 run 42714860009: completed/success.
+- Añadidas pruebas locales con funciones reales de correspondencia bidireccional/múltiples fuentes, integridad de relaciones y caché IndexedDB confirmada-only. CI C1.351 pendiente.

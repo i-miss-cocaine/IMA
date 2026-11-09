@@ -183,3 +183,62 @@ assert.ok(user.includes('request && request.sourceService'));
 assert.ok(academic.includes('request && request.sourceService'));
 console.log("TASK-068 HMAC transport: signature, target binding, source allowlist and replay protection passed.");
 console.log("TASK-068 identity mapping contract: syntax, schemas, destination validation and conservative identity classification passed.");
+
+
+// TASK-068 local acceptance: multiple confirmed source references resolve to one canonical ID.
+const mappingRows=[headers,
+ ["MAP-1","SACE","estudiante","RNE-1","EXP-1","INST-1","h1",new Date(),"1","CONFIRMADA","ID_EXACTO","NO_CALIBRADA","ADMIN"],
+ ["MAP-2","LEGACY_A","estudiante","A-77","EXP-1","INST-1","h2",new Date(),"1","CONFIRMADA","ID_EXACTO","NO_CALIBRADA","ADMIN"],
+ ["MAP-3","LEGACY_B","estudiante","B-55","EXP-1","INST-1","h3",new Date(),"1","PENDIENTE_REVISION","SIN_CONFIRMAR","NO_CALIBRADA","ADMIN"],
+ ["MAP-4","SACE","estudiante","RNE-OTHER","EXP-2","INST-2","h4",new Date(),"1","CONFIRMADA","ID_EXACTO","NO_CALIBRADA","ADMIN"]];
+const mappingSheet={getDataRange:function(){return{getValues:function(){return mappingRows;}};}};
+const mappingContext={requireIdentityManager_:function(){return{actorId:"ADMIN",role:"Administrador"};},getIdentityInstitutionId_:function(){return"INST-1";},getIdentityMappingSheet_:function(){return mappingSheet;},identityCompositeKey_:function(s,t,l,i){return JSON.stringify([String(s).trim(),String(t).trim().toLowerCase(),String(l).trim(),String(i).trim()]);}};
+vm.runInNewContext(["resolveInternalIdFromLegacy","resolveLegacyIdFromInternal"].map(n=>extractBalancedFunction(user,n)).join(String.fromCharCode(10))+"this.resolve=resolveInternalIdFromLegacy;this.reverse=resolveLegacyIdFromInternal;",mappingContext);
+assert.equal(mappingContext.resolve({sistemaOrigen:"SACE",tipoEntidad:"estudiante",idOriginalLegado:"RNE-1"}).idNuevoPlataforma,"EXP-1");
+assert.equal(mappingContext.resolve({sistemaOrigen:"LEGACY_A",tipoEntidad:"estudiante",idOriginalLegado:"A-77"}).idNuevoPlataforma,"EXP-1");
+const refs=mappingContext.reverse({tipoEntidad:"estudiante",idNuevoPlataforma:"EXP-1"});
+assert.equal(refs.referencias.length,2,"two confirmed source systems map to the same internal ID");
+assert.deepEqual(refs.referencias.map(x=>x.sistemaOrigen).sort(),["LEGACY_A","SACE"]);
+assert.ok(!refs.referencias.some(x=>x.sistemaOrigen==="LEGACY_B"),"pending reference is not returned as confirmed");
+assert.ok(!refs.referencias.some(x=>x.institucionId==="INST-2"),"cross-institution reference is excluded");
+
+// TASK-068 relationship regression: candidate discovery reads family and enrollment links by canonical IDs.
+const tables={
+ "Personas":[["PersonaID","Nombres","Apellidos","Identificacion","EmailContacto","TelefonoContacto","EstadoPersona"],["PER-1","Ana","Perez","0801-1990-12345","ana@example.test","","Activa"]],
+ "ExpedientesEstudiantes":[["ExpedienteID","PersonaID","CodigoInstitucional","FechaNacimiento"],["EXP-1","PER-1","ALU-01","2010-05-10"]],
+ "Responsables":[["ResponsableID","PersonaID","Nombres","Apellidos","Identificacion"],["RES-1","PER-2","Luis","Perez","0801-1970-99999"]],
+ "RelacionesFamiliares":[["RelacionID","PersonaID","ResponsableID","Tipo","Estado","FechaInicio","FechaFin"],["REL-1","PER-1","RES-1","Tutor","Verificada","",""]],
+ "Usuarios":[["UserId","Nombre","Grado","Seccion","Email","PasswordHash","Rol","Telefono","NumeroLista","PersonaID"],["USR-1","Ana","","","ana@example.test","","Estudiante","","1","PER-1"]],
+ "Matriculas":[["MatriculaID","Fecha","UserId"],["MAT-1","2026-01-01","USR-1"]]
+};
+const ssFixture={getSheetByName:function(n){return tables[n]?{getDataRange:function(){return{getValues:function(){return tables[n].map(r=>r.slice());}};}}:null;}};
+const findContext={requireIdentityManager_:function(){return true;},SpreadsheetApp:{openById:function(){return ssFixture;}},getOrCreateSheet:function(_ss,n){return ssFixture.getSheetByName(n);},normalizeString:function(x){return String(x||"").toLowerCase().trim();}};
+const findNames=["identityDateKey_","identityClassifyCandidate_","identityReadOptionalRows_","findPersonMatches"];
+vm.runInNewContext(findNames.map(n=>extractBalancedFunction(user,n)).join(String.fromCharCode(10))+"this.find=findPersonMatches;",findContext);
+const relationSnapshot=JSON.stringify(tables.RelacionesFamiliares),enrollmentSnapshot=JSON.stringify(tables.Matriculas);
+const found=findContext.find({nombres:"Ana",apellidos:"Perez",responsableIdentificacion:"0801-1970-99999",matriculaId:"MAT-1"});
+assert.equal(found.matches.length,1);
+assert.equal(found.matches[0].personaId,"PER-1");
+assert.equal(found.matches[0].evidencia.responsableCoincidente,true);
+assert.equal(found.matches[0].evidencia.historialMatriculaCoincidente,true);
+assert.equal(JSON.stringify(tables.RelacionesFamiliares),relationSnapshot,"candidate search must not mutate family relations");
+assert.equal(JSON.stringify(tables.Matriculas),enrollmentSnapshot,"candidate search must not mutate enrollment links");
+
+// TASK-068 IndexedDB cache contract: only confirmed, institution-scoped mappings may be cached.
+const persistenceContext={window:{},Promise:Promise,Date:Date,console:console};
+vm.runInNewContext(persistence,persistenceContext);
+const pm=persistenceContext.window.PersistenceManager,cacheOps=[];
+pm.set=function(store,data,key){cacheOps.push({op:"set",store:store,data:data,key:key});return Promise.resolve({id:key,data:data});};
+pm.get=function(store,key){cacheOps.push({op:"get",store:store,key:key});return Promise.resolve({id:key});};
+pm.getAll=function(){return Promise.resolve([{id:"a",data:{institutionId:"INST-1"}},{id:"b",data:{institutionId:"INST-2"}}]);};
+pm.delete=function(store,key){cacheOps.push({op:"delete",store:store,key:key});return Promise.resolve();};
+(async function(){
+ const saved=await pm.setIdentityMappingCache({institutionId:"INST-1",sourceSystem:"SACE",entityType:"Estudiante",legacyId:"RNE-1",status:"success",confirmed:true,internalId:"EXP-1"});
+ assert.equal(saved.id,JSON.stringify(["INST-1","SACE","estudiante","RNE-1"]));
+ assert.equal(saved.data.status,"CONFIRMADA");
+ assert.equal((await pm.getIdentityMappingCache("INST-1","SACE","ESTUDIANTE","RNE-1")).id,saved.id);
+ await assert.rejects(pm.setIdentityMappingCache({institutionId:"INST-1",sourceSystem:"SACE",entityType:"estudiante",legacyId:"PENDING",status:"pending_review",confirmed:false,internalId:"EXP-2"}),/IDENTITY_CACHE_ONLY_CONFIRMED_MAPPINGS/);
+ assert.equal(await pm.clearIdentityMappingCache("INST-1"),1);
+ assert.ok(cacheOps.some(x=>x.op==="delete"&&x.key==="a"));
+ console.log("TASK-068 local acceptance: multiple source references, relationship integrity and confirmed-only IndexedDB cache passed.");
+})().catch(function(error){console.error(error);process.exitCode=1;});
