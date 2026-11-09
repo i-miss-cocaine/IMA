@@ -1613,3 +1613,46 @@ Tarea: TASK-068 — En ejecución; no completada.
 ### Límites
 La comprobación es estática sobre esquemas versionados. No acredita que las hojas existan o conserven esos encabezados en la instancia real, ni que el ID de una fila sea semánticamente correcto. Falta Apps Script/Sheets aislado, pruebas de identidad multi-fuente y escritor idempotente de importación. AUD-NG-378 sigue abierto; TASK-068 En ejecución.
 ===============================================================================
+
+### Publicación y CI — C1.322
+- Commit: 6e4a9349913b004d84129979bcb91548c0264c9e.
+- Workflow identity-mapping-contract: run 42668165457 completed/success.
+
+
+===============================================================================
+## C1.323 — TASK-068: auditoría estática de escritores de destino
+ID: C1.323
+Sesión: IMA-EXEC-20261109-1650Z-01
+Fecha: 2026-11-09 UTC
+Checkpoint anterior: C1.322
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+HEAD de partida: 6e4a9349913b004d84129979bcb91548c0264c9e
+Tarea: TASK-068 — En ejecución; no completada.
+
+### Respaldo Git histórico previo a edición documental
+- Checkpoints_Parte_0002.txt blob: 833d01a3d1aa542628346dd832babe3aebd3abfe
+- INDICE_CHECKPOINTS.md blob: d7534dd160a683b6fc782d434711be33aa90741d
+- PLAN_MAESTRO_IMPLEMENTACION.md blob: 7ee6bacfda25397a688b1b8e756814082ddd987e
+- MapaDependencias.md blob: e13994d4bf4241e0f5c090b4b767e448ff738abe
+- AUDITORIA_TASK-068_C1.318.md blob: 0e5919120ad8538573fd86e5b5e5ffb976be381b
+- Auditoria.txt blob: b7d9df7d88a9a2fc40ba024dbfd2d872fba9f381
+- changueslogs.txt blob: 3713247a8ee1932add90dd14caa7a6a7dd75bd08
+- Recuperación desde HEAD: `git show 6e4a9349913b004d84129979bcb91548c0264c9e:<ruta>`; verificar cada SHA blob esperado. Los archivos fueron leídos completos antes de editar.
+
+### Contratos de destino examinados
+- USER, ACADEMIC y ACCOUNTING tienen el mismo SPREADSHEET_ID versionado. No obstante, el importador genérico está en ACCOUNTING y los escritores de dominio están en ACADEMIC/USER.
+- ACCOUNTING no contiene llamadas UrlFetchApp.fetch; hay helpers de envelope HMAC pero no transporte interservicio operativo observado. Por tanto, no existe ruta verificable para delegar la escritura a los handlers de dominio.
+- ACADEMIC convertAdmissionToStudent exige solicitud de admisión existente, estado Admitida, validación documental, capacidad y vincula expediente/persona/relaciones/invitaciones. No es un escritor genérico de importación.
+- ACADEMIC createStudentEnrollment exige userId, grado y sección, comprueba expediente/capacidad y duplicidad activa por año. No crea por sí solo el expediente/persona.
+- ACADEMIC registerStudentEnrollment actualiza/crea matrícula y cargos por userId/período; no constituye escritor general de estudiante y no tiene ScriptLock en su implementación observada.
+- ACCOUNTING importDataWithColumnMapping solo resuelve identidad, registra auditoría de bloqueo y devuelve DESTINATION_WRITER_NOT_CONFIGURED. No persiste entidades.
+- La igualdad estática del Spreadsheet ID no autoriza a omitir invariantes de dominio ni garantiza deployment/Script Properties/runtime.
+
+### Dictamen
+No se identifica un escritor de destino genérico y verificable que preserve las relaciones académicas, familiares y administrativas y que sea idempotente para las fuentes de TASK-068. No se habilita escritura directa ni se reutilizan flujos de admisión/matrícula fuera de su contrato. Se mantiene fail-closed. AUD-NG-378 permanece abierto.
+No se crea tarea derivada ni segundo informe; se amplía el expediente único Auditoría/AUDITORIA_TASK-068_C1.318.md.
+
+### Próxima acción
+Diseñar contrato explícito de importación por entidad, con validación de schema, clave de idempotencia, precondiciones de dominio, escritura transaccional/compensación y relaciones; luego implementar solo destinos autorizados y probar fixtures aislados de dos fuentes. Configurar IMA_INSTITUTION_ID en Apps Script aislado y ejecutar pruebas runtime. No desplegar ni usar producción.
+===============================================================================

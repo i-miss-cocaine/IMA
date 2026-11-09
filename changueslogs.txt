@@ -344,3 +344,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-09] C1.322 — TASK-068: validador de destino ampliado a siete tipos con esquemas versionados; empleado/curso sin contrato canónico siguen bloqueados. Runtime y persistencia de importación pendientes.
+
+
+[2026-11-09] C1.323 — TASK-068: auditoría estática de contratos destino; sin writer genérico verificable ni transporte interservicio activo en ACCOUNTING. Se conserva bloqueo seguro de importación; se requiere contrato por entidad.

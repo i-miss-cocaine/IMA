@@ -113,3 +113,9 @@ Las lecturas fueron completas (92.668, 429.611 y 713.779 caracteres). El histori
 - Se verificó estáticamente el SPREADSHEET_ID común de USER y ACADEMIC y los encabezados canónicos de las siete hojas que habilitan la validación de destino.
 - Se amplía identityTargetExists_ a persona, usuario/cuenta, estudiante, responsable, asignatura, matrícula y documento; empleado/curso quedan sin confirmación hasta hallar contrato verificable.
 - Sin pruebas de Sheets real. No se crea escritor de importación por inferencia; AUD-NG-378 sigue abierto.
+
+
+## 14. Seguimiento C1.323 — dictamen de escritor de destino
+- Auditoría estática de ACCOUNTING/ACADEMIC: no hay transporte interservicio activo en ACCOUNTING; los writers existentes son workflows de admisión/matrícula con precondiciones y efectos colaterales.
+- No se encontró un writer genérico que preserve todas las relaciones e idempotencia requeridas. La escritura directa sería riesgosa; el importador permanece fail-closed.
+- AUD-NG-378 abierto. Se requiere contrato explícito por entidad, con clave idempotente, invariantes, transacción/compensación y pruebas aisladas.

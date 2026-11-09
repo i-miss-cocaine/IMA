@@ -4923,3 +4923,9 @@ Alcance estático satisfecho; sin cambios de código. Hallazgos AUD-NG-374..376 
 ## TASK-068 — C1.322, destinos permitidos para revisión
 - Validadores versionados: Personas.PersonaID, Usuarios.UserId, ExpedientesEstudiantes.ExpedienteID, ResponsablesTutores.ResponsableID, CatalogoAsignaturas.AsignaturaID, Matriculas.MatriculaID y DocumentosEstudiante.DocumentoID.
 - Empleado/curso/otros fallan cerrado hasta identificar contratos reales. USER/ACADEMIC comparten SPREADSHEET_ID en código versionado; instancia real no probada.
+
+
+## TASK-068 — C1.323: límite de integración
+- ACCOUNTING no contiene UrlFetchApp.fetch; no se acredita delegación hacia handlers ACADEMIC/USER.
+- convertAdmissionToStudent y createStudentEnrollment conservan invariantes de dominio y no satisfacen contrato genérico de importación. registerStudentEnrollment no tiene lock observado y tampoco crea expediente/persona.
+- No se habilita writer por inferencia; mantener DESTINATION_WRITER_NOT_CONFIGURED hasta definir contrato explícito por entidad.

@@ -1988,3 +1988,9 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - Validación de destinos ampliada a persona, usuario/cuenta, estudiante, responsable, asignatura, matrícula y documento, usando hojas/columnas observadas en USER/ACADEMIC y el mismo SPREADSHEET_ID versionado.
 - Empleado, curso y otros tipos no tienen aún un esquema canónico probado; la confirmación se bloquea para ellos.
 - La verificación es estática; runtime y writer de importación permanecen pendientes. TASK-068 En ejecución.
+
+
+## Seguimiento TASK-068 — C1.323: escritores destino
+- Se verificó que ACCOUNTING carece de UrlFetchApp.fetch operativo; los helpers HMAC no prueban transporte interservicio.
+- Los handlers ACADEMIC de admisión y matrícula tienen precondiciones y efectos secundarios específicos, no son escritores genéricos intercambiables.
+- No se habilita persistencia directa sin contrato de entidad, idempotencia, relaciones y compensación. Importación sigue fail-closed; AUD-NG-378 abierto.
