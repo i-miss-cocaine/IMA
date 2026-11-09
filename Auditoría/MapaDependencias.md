@@ -4797,3 +4797,12 @@ Se registran como contratos compartidos con propietario por proyecto: normalizeS
 
 ### Dictamen TASK-639
 Alcance estático satisfecho; sin cambios de código. Hallazgos AUD-NG-374..376 derivados a TASK-691..693. No se ejecutaron pruebas runtime, navegador, Apps Script, HTTP ni E2E.
+
+
+## TASK-636 — avance Task-Service C1.306 (PM-01/P0)
+- Estado: En ejecución; no Completada.
+- Task-Service PUBLIC_ACTIONS vacío; consultas de tareas/actividad derivan profesorId/estudianteId de claims; proyectos propios, aulas por perfil/vínculo, publicaciones/materiales por contexto, preview y deleteFile con propiedad.
+- getDriveStorageQuotaMetricsReport limitado a Administrador/Desarrollador.
+- closeAcademicYear falla de forma cerrada con BACKUP_REQUIRED; AUD-NG-369 permanece abierto hasta implementar respaldo/restauración real.
+- Pendiente: mutaciones de recursos, reconciliar AsignacionesDocentes, archivos no entregados, ACADEMIC público y pruebas por rol.
+- Informe principal: Auditoría/AUDITORIA_TASK-636_C1.305.md; checkpoint C1.306 en Checkpoints_Parte_0002.txt.

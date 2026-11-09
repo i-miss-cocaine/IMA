@@ -332,3 +332,17 @@ TASK-636 — ESTADO DE EJECUCIÓN Y TAREAS DERIVADAS / C1.305
 - TASK-502 / AUD-NG-222: RBAC/ABAC y denegación cerrada.
 - TASK-685 / AUD-NG-373: EXAM, fuera de TASK-636.
 ===============================================================================
+
+
+===============================================================================
+TASK-636 — ITERACIÓN C1.306 / TASK-SERVICE
+===============================================================================
+- Estado operativo: En ejecución; no Completada.
+- PUBLIC_ACTIONS vacío; consultas y recursos TASK ligados a claims, perfil real, propiedad y contexto de aulas.
+- Preview valida token/propiedad; deleteFile restringido a entregas propias; métricas Drive solo para Administrador/Desarrollador.
+- closeAcademicYear bloqueado hasta contar con respaldo restaurable verificado (AUD-NG-369 sigue abierto).
+
+### Tareas derivadas de los hallazgos de la auditoría
+- Sin IDs nuevos: mantener TASK-496/AUD-NG-217, TASK-501/AUD-NG-221, TASK-502/AUD-NG-222 y TASK-685/AUD-NG-373 en sus ámbitos existentes.
+- Pendiente dentro de TASK-636: mutaciones de tareas/aulas/posts/materiales, archivos temporales, respaldo/restauración, excepciones públicas ACADEMIC y pruebas por rol.
+===============================================================================

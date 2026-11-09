@@ -82,11 +82,7 @@ function doOptions(e) {
   return ContentService.createTextOutput("");
 }
 
-const PUBLIC_ACTIONS = [
-  "getStudentTasks",
-    "getDriveStorageQuotaMetricsReport",
-    "getAllTasks", "listProjects", "loadProject", "getAllStudentProjects", "getVirtualClassrooms", "getPosts", "getStudyMaterials"
-];
+const PUBLIC_ACTIONS = [];
 
 const ROLE_PERMISSIONS = {
   "Administrador": ["*",
@@ -522,85 +518,15 @@ function deleteTask(payload) {
 
 // [REQ-EXP-005] [Requerimientos de Expansión y Desarrollo] - Procedimiento de cierre de año escolar y eliminación física de entregas en Drive.
 function closeAcademicYear(payload) {
-  const { profesorId, format } = payload;
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-
-  const tareasSheet = getSheetOrThrow(ss, "Tareas");
-  const entregasSheet = getSheetOrThrow(ss, "Entregas");
-  const configSheet = ss.getSheetByName("ConfiguracionAcademica");
-  const logSheet = getOrCreateSheet(ss, "Log_Cierres");
-
-  const timestamp = new Date();
-  const backupId = "BACKUP-" + timestamp.getTime();
-
-  // REQ: Eliminación Física de Archivos en Google Drive (Fase 5)
-  // Obtenemos todas las entregas para identificar archivos/carpetas a eliminar
-  const entregasData = entregasSheet.getDataRange().getValues();
-  const headersEntregas = entregasData[0];
-  const fileIdIdx = headersEntregas.indexOf("fileUrl"); // Fallback a 4 si no se encuentra
-  const actualFileIdIdx = fileIdIdx !== -1 ? fileIdIdx : 4;
-  const entregaUserIdIdx = 2; // Columna C
-
-  let filesDeletedCount = 0;
-
-  // 1. Limpiar Entregas y Archivos en Drive
-  for (let i = entregasData.length - 1; i >= 1; i--) {
-    const row = entregasData[i];
-    const fileId = row[actualFileIdIdx];
-
-    // Si es un cierre por profesor, deberíamos validar que la entrega pertenezca a sus tareas.
-    // Para cumplir con la Fase 5 (Reset completo), operamos sobre todas si no hay profesorId
-    // o sobre las que correspondan al contexto si es granular.
-    if (fileId) {
-      try {
-        // Puede ser un ID de archivo o de carpeta (mimeType folder)
-        const file = DriveApp.getFileById(fileId);
-        file.setTrashed(true);
-        filesDeletedCount++;
-      } catch (e) {
-        try {
-          const folder = DriveApp.getFolderById(fileId);
-          folder.setTrashed(true);
-          filesDeletedCount++;
-        } catch (e2) {
-          logDebug(`No se pudo eliminar recurso ${fileId}: ${e2.message}`);
-        }
-      }
-    }
-    entregasSheet.deleteRow(i + 1);
+  const role = payload && payload._verifiedRole;
+  const actorId = payload && payload._verifiedUserId;
+  if (!actorId || ["Administrador", "Desarrollador"].indexOf(role) === -1) {
+    return { status:"error", code:"AUTH_PERMISSION_DENIED", message:"El cierre global requiere identidad administrativa verificada." };
   }
-
-  // 2. Limpiar Tareas
-  const tareasValues = tareasSheet.getDataRange().getValues();
-  for (let i = tareasValues.length - 1; i >= 1; i--) {
-    if (!profesorId || tareasValues[i][10] == profesorId) {
-      tareasSheet.deleteRow(i + 1);
-    }
-  }
-
-  // 3. Restablecer Configuración Académica (Fase 5)
-  if (configSheet && configSheet.getLastRow() > 1) {
-    if (!profesorId) {
-      configSheet.deleteRows(2, configSheet.getLastRow() - 1);
-    } else {
-      const configData = configSheet.getDataRange().getValues();
-      for (let i = configData.length - 1; i >= 1; i--) {
-        if (configData[i][8] == profesorId) { // profesorId en columna I
-          configSheet.deleteRow(i + 1);
-        }
-      }
-    }
-  }
-
-  logSheet.appendRow([timestamp, profesorId || "Admin", backupId, format, `Cierre exitoso. ${filesDeletedCount} archivos eliminados físicamente.`]);
-
-  return {
-    status: "success",
-    message: `Año escolar finalizado correctamente. Se eliminaron registros y ${filesDeletedCount} archivos de Drive.`,
-    backupId
-  };
+  // Fail-closed: el flujo antiguo borraba entregas/archivos sin respaldo real restaurable.
+  // No se ejecuta ninguna eliminación hasta implementar y verificar el procedimiento de backup/restore.
+  return { status:"error", code:"BACKUP_REQUIRED", message:"Cierre bloqueado: no existe un respaldo íntegro, restaurable y verificado para esta operación." };
 }
-
 function getOrCreateSheet(ss, name) {
   let sheet = ss.getSheetByName(name);
   if (!sheet) {
@@ -610,91 +536,99 @@ function getOrCreateSheet(ss, name) {
 }
 
 // [TAREA-F4-P0-02] [Fase 4: Protección IDOR y ABAC] - Aislamiento estricto de tareas por estudiante
-function getStudentTasks(payload) {
-  const userRole = (payload && payload._verifiedRole) || "Estudiante";
-  let targetUserId = payload && payload.userId;
-
-  if ((userRole === "Estudiante" || userRole === "Alumno") && payload && payload._verifiedUserId) {
-    targetUserId = payload._verifiedUserId;
-  }
-  if (!targetUserId) targetUserId = payload && payload._verifiedUserId;
-
-  const { grado, seccion } = payload || {};
-  const userId = targetUserId;
+function extractTaskServiceFileId(value) {
+  const raw = String(value || "").trim();
+  const match = raw.match(/[?&]id=([^&]+)/) || raw.match(/\/d\/([^/?]+)/);
+  return match ? decodeURIComponent(match[1]) : raw;
+}
+function getTaskServiceUserProfile(userId) {
+  if (!userId) throw new Error("Identidad de usuario requerida.");
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const tareasSheet = getSheetOrThrow(ss, "Tareas");
-  const entregasSheet = getSheetOrThrow(ss, "Entregas");
-  const tasksData = tareasSheet.getDataRange().getValues().slice(1);
-  const entregasData = entregasSheet.getDataRange().getValues().slice(1);
+  const row = getSheetOrThrow(ss, "Usuarios").getDataRange().getValues().slice(1)
+    .find(item => String(item[0]).trim() === String(userId).trim());
+  if (!row) throw new Error("No se encontró el perfil del usuario autenticado.");
+  return { userId: row[0], nombre: row[1] || "", grado: row[2] || "", seccion: row[3] || "" };
+}
+function getTaskServiceGuardianStudentIds(guardianUserId) {
+  if (!guardianUserId) return [];
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID), ids = [], expMap = {};
+  const expSheet = ss.getSheetByName("ExpedientesEstudiantes");
+  if (expSheet) expSheet.getDataRange().getValues().slice(1).forEach(row => { if (row[0]) expMap[String(row[0]).trim()] = String(row[1] || row[0]).trim(); });
+  const relationSheet = ss.getSheetByName("RelacionesFamiliares");
+  if (relationSheet) relationSheet.getDataRange().getValues().slice(1).forEach(row => {
+    if (String(row[2] || "").trim() !== String(guardianUserId).trim()) return;
+    if (["Verificada", "Activa", "Aprobada"].indexOf(String(row[4] || "").trim()) === -1) return;
+    let permissions = {}; try { permissions = typeof row[8] === "string" ? JSON.parse(row[8] || "{}") : (row[8] || {}); } catch (_) {}
+    if (permissions.permisoAcademico === false) return;
+    const expedienteId = String(row[1] || "").trim(), studentId = expMap[expedienteId] || expedienteId;
+    if (studentId) ids.push(studentId);
+  });
+  return Array.from(new Set(ids));
+}
 
+function getTaskServiceAuthorizedClassrooms(payload) {
+  const role = payload && payload._verifiedRole, actorId = payload && payload._verifiedUserId;
+  if (!actorId) throw new Error("Identidad verificada requerida para consultar aulas.");
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const rows = getSheetOrThrow(ss,"AulasVirtuales").getDataRange().getValues().slice(1)
+    .filter(row => String(row[7] || "Activa") !== "Desactivada");
+  if (["Administrador","Desarrollador","Dirección","Secretaría"].indexOf(role) !== -1) return rows;
+  if (role === "Profesor") return rows.filter(row => String(row[6] || "").trim() === String(actorId).trim());
+  let profiles = [];
+  if (role === "Estudiante" || role === "Alumno") profiles = [getTaskServiceUserProfile(actorId)];
+  else if (["Padre","Tutor","Responsable"].indexOf(role) !== -1) profiles = getTaskServiceGuardianStudentIds(actorId).map(getTaskServiceUserProfile);
+  return rows.filter(row => profiles.some(profile =>
+    normalizeString(row[3]) === normalizeString(profile.grado) &&
+    (!row[4] || normalizeString(row[4]) === normalizeString(profile.seccion))
+  ));
+}
+
+function getStudentTasks(payload) {
+  const role = payload && payload._verifiedRole, actorId = payload && payload._verifiedUserId;
+  if (!actorId) throw new Error("Acceso denegado: se requiere identidad verificada.");
+  let targetUserId = String(actorId).trim(), profile = getTaskServiceUserProfile(actorId);
+  if (["Padre", "Tutor", "Responsable"].indexOf(role) !== -1) {
+    targetUserId = String((payload.studentId || payload.estudianteId || payload.userId || "")).trim();
+    if (!targetUserId || getTaskServiceGuardianStudentIds(actorId).indexOf(targetUserId) === -1) throw new Error("Acceso denegado: estudiante no vinculado o sin permiso académico.");
+    profile = getTaskServiceUserProfile(targetUserId);
+  } else if (role === "Profesor" || ["Administrador", "Desarrollador", "Dirección", "Secretaría"].indexOf(role) !== -1) {
+    targetUserId = String((payload.studentId || payload.estudianteId || payload.userId || "")).trim();
+    if (!targetUserId) throw new Error("Se requiere estudiante objetivo.");
+    profile = getTaskServiceUserProfile(targetUserId);
+  } else if (role !== "Estudiante" && role !== "Alumno") throw new Error("Rol no autorizado.");
+  const grado = profile.grado, seccion = profile.seccion, userId = targetUserId;
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const tasksData = getSheetOrThrow(ss, "Tareas").getDataRange().getValues().slice(1);
+  const entregasData = getSheetOrThrow(ss, "Entregas").getDataRange().getValues().slice(1);
   const seenOriginalTasksForEC = new Set();
   const studentTasks = tasksData.filter(task => {
-    // task[6] es gradoAsignado, task[7] es seccionAsignada
-    const matchGrado = (task[6] || "").toString().trim().toLowerCase() === (grado || "").toString().trim().toLowerCase();
-    // Si seccionAsignada está vacío, aplica a todas las secciones del grado.
-    // Si tiene valor, el estudiante debe estar en esa lista (A, B, etc).
-    const matchSeccion = !task[7] || task[7].trim() === "" || isInTeacherList(seccion, task[7]);
-
-    if (!matchGrado || !matchSeccion) return false;
-
-    if (task[1] === 'Credito Extra') {
-      const originalTaskId = (task[9] || "").toString().trim();
-      if (!originalTaskId || seenOriginalTasksForEC.has(originalTaskId)) return false;
-
-      const entregaOriginal = entregasData.find(e => e[1] === originalTaskId && e[2] === userId);
-      if (!entregaOriginal) return false;
-
-      const estadoEntrega = (entregaOriginal[6] || "").toString().trim().toLowerCase();
-      // (A-X) Soportar nuevos estados de rechazo
-      const isRejected = (estadoEntrega === 'rechazada' || estadoEntrega === 'revisada_rechazada' || estadoEntrega === 'tarea incompleta');
-
-      if (isRejected) {
-        seenOriginalTasksForEC.add(originalTaskId);
-        return true;
-      }
-      return false;
+    if (role === "Profesor" && String(task[10] || "").trim() !== String(actorId).trim()) return false;
+    if (normalizeString(task[6]) !== normalizeString(grado)) return false;
+    if (task[7] && String(task[7]).trim() && !isInTeacherList(seccion, task[7])) return false;
+    if (task[1] === "Credito Extra") {
+      const originalId = String(task[9] || "").trim();
+      if (!originalId || seenOriginalTasksForEC.has(originalId)) return false;
+      const original = entregasData.find(row => String(row[1]).trim() === originalId && String(row[2]).trim() === userId);
+      const state = String(original && original[6] || "").trim().toLowerCase();
+      const rejected = ["rechazada", "revisada_rechazada", "tarea incompleta"].indexOf(state) !== -1;
+      if (rejected) seenOriginalTasksForEC.add(originalId);
+      return rejected;
     }
     return true;
   }).map(task => {
-    // Buscar la última entrega (la más reciente)
-    const matchingSubmissions = entregasData.filter(e => e[1] === task[0] && e[2] === userId);
-    const entrega = matchingSubmissions.length > 0 ? matchingSubmissions[matchingSubmissions.length - 1] : null;
-
+    const matching = entregasData.filter(row => String(row[1]).trim() === String(task[0]).trim() && String(row[2]).trim() === userId);
+    const entrega = matching.length ? matching[matching.length - 1] : null;
     let fechaLimite = task[8] ? new Date(task[8]).toISOString() : null;
-
-    // Si es Credito Extra, forzamos que la fecha coincida con la de la tarea rechazada
-    if (task[1] === 'Credito Extra') {
-      const originalTaskId = (task[9] || "").toString().trim();
-      const originalTask = tasksData.find(t => t[0] === originalTaskId);
-      if (originalTask && originalTask[8]) {
-        fechaLimite = new Date(originalTask[8]).toISOString();
-      }
+    if (task[1] === "Credito Extra") {
+      const original = tasksData.find(row => String(row[0]).trim() === String(task[9] || "").trim());
+      if (original && original[8]) fechaLimite = new Date(original[8]).toISOString();
     }
-
-    return {
-      tareaId: task[0],
-      tipo: task[1],
-      titulo: task[2],
-      descripcion: task[3],
-      parcial: task[4],
-      grado: task[6],
-      seccion: task[7],
-      asignatura: task[5],
-      fechaLimite: fechaLimite,
-      fechaDisponible: task[14] ? new Date(task[14]).toISOString() : null,
-      tipoRecurso: task[15] || task[1] || 'Tarea',
-      profesorId: task[10],
-      entrega: entrega ? {
-        entregaId: entrega[0],
-        calificacion: entrega[5],
-        estado: entrega[6],
-        comentario: entrega[7],
-        fileId: entrega[4],
-        mimeType: entrega[8]
-      } : null
-    };
+    return { tareaId:task[0],tipo:task[1],titulo:task[2],descripcion:task[3],parcial:task[4],grado:task[6],seccion:task[7],
+      asignatura:task[5],fechaLimite:fechaLimite,fechaDisponible:task[14]?new Date(task[14]).toISOString():null,
+      tipoRecurso:task[15]||task[1]||"Tarea",profesorId:task[10],
+      entrega:entrega?{entregaId:entrega[0],calificacion:entrega[5],estado:entrega[6],comentario:entrega[7],fileId:entrega[4],mimeType:entrega[8]}:null };
   });
-  return { status: "success", data: studentTasks.reverse() };
+  return { status:"success", data:studentTasks.reverse() };
 }
 
 /**
@@ -1047,20 +981,16 @@ function gradeSubmissionWithRubric(payload) {
  * Elimina un archivo de Drive (lo mueve a la papelera) (A-30).
  */
 function deleteFile(payload) {
-  const { fileId } = payload;
-  if (!fileId) throw new Error("ID de archivo no proporcionado.");
-
-  try {
-    const file = DriveApp.getFileById(fileId);
-    file.setTrashed(true);
-    return { status: "success", message: "Archivo eliminado." };
-  } catch (e) {
-    logDebug("Error al eliminar archivo:", { fileId, error: e.message });
-    // No lanzamos error para que la UX no se rompa si el archivo ya no existe
-    return { status: "success", message: "Archivo no encontrado o ya eliminado." };
-  }
+  const actorId = payload && payload._verifiedUserId, role = payload && payload._verifiedRole;
+  const fileId = extractTaskServiceFileId(payload && payload.fileId);
+  if (!actorId || !fileId || (role !== "Estudiante" && role !== "Alumno")) throw new Error("Acceso denegado: se requiere identidad de estudiante.");
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const deliveries = getSheetOrThrow(ss, "Entregas").getDataRange().getValues().slice(1);
+  const owned = deliveries.some(row => extractTaskServiceFileId(row[4]) === fileId && String(row[2]).trim() === String(actorId).trim());
+  if (!owned) throw new Error("Acceso denegado: el archivo no está vinculado a una entrega propia.");
+  DriveApp.getFileById(fileId).setTrashed(true);
+  return { status:"success", message:"Archivo eliminado." };
 }
-
 function gradeSubmission(payload) {
   const { entregaId, calificacion, estado, comentario } = payload;
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -1117,7 +1047,11 @@ function deleteSubmission(payload) {
 }
 
 function getTeacherActivity(payload) {
-  const { profesorId, grado, seccion } = payload || {};
+  const role = payload && payload._verifiedRole, actorId = payload && payload._verifiedUserId;
+  const isAdmin = ["Administrador", "Desarrollador", "Dirección", "Secretaría"].indexOf(role) !== -1;
+  if (!actorId || (!isAdmin && role !== "Profesor")) throw new Error("Identidad docente/administrativa verificada requerida.");
+  const profesorId = isAdmin ? String((payload && payload.profesorId) || "").trim() : String(actorId).trim();
+  const grado = isAdmin ? payload.grado : "", seccion = isAdmin ? payload.seccion : "";
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const usuariosSheet = getSheetOrThrow(ss, "Usuarios");
   const tareasSheet = getSheetOrThrow(ss, "Tareas");
@@ -1139,7 +1073,8 @@ function getTeacherActivity(payload) {
 
     // SI LA TAREA NO EXISTE O NO PERTENECE AL PROFESOR -> DESCARTAR
     if (!tarea) return null;
-    if (profesorId && tarea[10] && tarea[10] != profesorId) return null;
+    if (!isAdmin && String(tarea[10] || "").trim() !== profesorId) return null;
+    if (isAdmin && profesorId && String(tarea[10] || "").trim() !== profesorId) return null;
 
     const usuario = usuariosData.find(u => u[0] == entrega[2]);
 
@@ -1175,13 +1110,17 @@ function getTeacherActivity(payload) {
 }
 
 function getAllTasks(payload) {
-  const { profesorId } = payload || {};
+  const role = payload && payload._verifiedRole, actorId = payload && payload._verifiedUserId;
+  const isAdmin = ["Administrador", "Desarrollador", "Dirección", "Secretaría"].indexOf(role) !== -1;
+  if (!actorId || (!isAdmin && role !== "Profesor")) throw new Error("Identidad docente/administrativa verificada requerida.");
+  const profesorId = isAdmin ? String((payload && payload.profesorId) || "").trim() : String(actorId).trim();
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const tareasSheet = getSheetOrThrow(ss, "Tareas");
   const data = tareasSheet.getDataRange().getValues().slice(1);
 
   const filtered = data.filter(r => {
-    if (profesorId && r[10] && r[10] !== profesorId) return false;
+    if (!isAdmin && String(r[10] || "").trim() !== profesorId) return false;
+    if (isAdmin && profesorId && String(r[10] || "").trim() !== profesorId) return false;
     return true;
   });
 
@@ -1247,7 +1186,10 @@ function getStudentFolder(userId) {
 }
 
 function saveProject(payload) {
-  const { userId, fileName, code, editor } = payload;
+  const userId = payload && payload._verifiedUserId;
+  const role = payload && payload._verifiedRole;
+  const fileName = payload && payload.fileName, code = payload && payload.code, editor = payload && payload.editor;
+  if (!userId || (role !== "Estudiante" && role !== "Alumno")) throw new Error("Acceso denegado: se requiere el estudiante autenticado.");
   if (!userId || !fileName) throw new Error("ID de usuario y nombre de archivo requeridos.");
 
   const alumnoFolder = getStudentFolder(userId);
@@ -1294,8 +1236,9 @@ function saveProject(payload) {
 }
 
 function listProjects(payload) {
-  const { userId } = payload;
-  if (!userId) throw new Error("ID de usuario requerido.");
+  const userId = payload && payload._verifiedUserId;
+  const role = payload && payload._verifiedRole;
+  if (!userId || (role !== "Estudiante" && role !== "Alumno")) throw new Error("Acceso denegado: solo el estudiante autenticado puede listar sus proyectos.");
 
   const result = [];
   try {
@@ -1316,21 +1259,8 @@ function listProjects(payload) {
       }
     });
   } catch (e) {
-    logDebug("Error al listar proyectos desde hoja:", e.message);
-    // Fallback a Drive si la hoja falla
-    const alumnoFolder = getStudentFolder(userId);
-    const projectsFolder = getOrCreateFolder(alumnoFolder, "Proyectos_PSeInt");
-    const files = projectsFolder.getFiles();
-    while (files.hasNext()) {
-      const file = files.next();
-      if (file.getName().toLowerCase().endsWith(".psc")) {
-        result.push({
-          name: file.getName(),
-          id: file.getId(),
-          lastUpdated: file.getLastUpdated().toISOString()
-        });
-      }
-    }
+    logDebug("Error al listar proyectos desde hoja; se deniega sin fallback de Drive:", e.message);
+    throw new Error("No se pudo verificar la propiedad de los proyectos. La consulta fue bloqueada.");
   }
 
   result.sort((a, b) => a.name.localeCompare(b.name));
@@ -1338,7 +1268,9 @@ function listProjects(payload) {
 }
 
 function deleteProject(payload) {
-  const { fileId, userId, fileName } = payload;
+  const fileId = payload && payload.fileId, fileName = payload && payload.fileName;
+  const userId = payload && payload._verifiedUserId, role = payload && payload._verifiedRole;
+  if (!userId || (role !== "Estudiante" && role !== "Alumno")) throw new Error("Acceso denegado: solo el estudiante autenticado puede eliminar sus proyectos.");
   if (!fileId && !fileName) throw new Error("Identificador de proyecto requerido.");
 
   try {
@@ -1349,106 +1281,46 @@ function deleteProject(payload) {
     // Buscar por fileId (en URL) o por NombreArchivo (si fileId es el nombre)
     const rowIndex = data.findIndex(r => (r[0] == userId && (r[1] == fileName || r[1] == fileId || (r[2] || "").indexOf(fileId) !== -1)));
 
-    if (rowIndex !== -1) {
-      pseudocodeSheet.deleteRow(rowIndex + 1);
+    if (rowIndex === -1) throw new Error("Acceso denegado: el proyecto no pertenece al estudiante autenticado.");
+    const storedFileId = extractTaskServiceFileId(data[rowIndex][2] || "");
+    pseudocodeSheet.deleteRow(rowIndex + 1);
+    if (storedFileId) {
+      try { DriveApp.getFileById(storedFileId).setTrashed(true); } catch (driveError) { logDebug("No se pudo eliminar el archivo del proyecto:", driveError.message); }
     }
   } catch (e) {
     logDebug("Error al eliminar de la hoja:", e.message);
   }
 
-  // Intentar eliminar de Drive
-  try {
-    const file = DriveApp.getFileById(fileId);
-    file.setTrashed(true);
-  } catch (e) {
-    logDebug("Error al eliminar de Drive:", e.message);
-    // Si no es un ID válido o no se encuentra, procedemos (podría ser solo registro en hoja)
-  }
+  // La eliminación de Drive se hace únicamente con el ID recuperado de la fila propia verificada.
 
   return { status: "success", message: "Proyecto eliminado." };
 }
 
 function loadProject(payload) {
-  const { fileId, userId } = payload; // Ahora podemos recibir userId para buscar en hoja
-  if (!fileId) throw new Error("Identificador de proyecto requerido.");
-
-  try {
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    const pseudocodeSheet = getSheetOrThrow(ss, "pseudocode");
-    const data = pseudocodeSheet.getDataRange().getValues();
-
-    // Buscar por fileId (en URL) o por NombreArchivo (si fileId es el nombre)
-    const rowIndex = data.findIndex(r => (r[0] == userId && (r[1] == fileId || (r[2] || "").indexOf(fileId) !== -1)));
-
-    if (rowIndex !== -1) {
-      return {
-        status: "success",
-        data: {
-          name: data[rowIndex][1],
-          code: data[rowIndex][3] // Columna D: codigo
-        }
-      };
-    }
-  } catch (e) {
-    logDebug("Error al cargar desde hoja, intentando Drive:", e.message);
-  }
-
-  // Fallback a Drive si no se encuentra en la hoja o falla
-  const file = DriveApp.getFileById(fileId);
-  return {
-    status: "success",
-    data: {
-      name: file.getName(),
-      code: file.getBlob().getDataAsString()
-    }
-  };
+  const userId = payload && payload._verifiedUserId;
+  const role = payload && payload._verifiedRole;
+  const fileId = payload && payload.fileId;
+  if (!userId || (role !== "Estudiante" && role !== "Alumno") || !fileId) throw new Error("Acceso denegado: se requiere identidad del propietario y proyecto.");
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const data = getSheetOrThrow(ss, "pseudocode").getDataRange().getValues();
+  const row = data.slice(1).find(item => String(item[0]).trim() === String(userId).trim() &&
+    (String(item[1]) === String(fileId) || extractTaskServiceFileId(item[2]) === extractTaskServiceFileId(fileId)));
+  if (!row) throw new Error("Acceso denegado: el proyecto no pertenece al estudiante autenticado.");
+  return { status:"success", data:{ name:row[1], code:row[3] } };
 }
-
 function getAllStudentProjects(payload) {
-  const { grado, seccion } = payload;
-  const rootFolder = DriveApp.getFolderById(DRIVE_FOLDER_ID);
-
-  const projects = [];
-
-  // Optimización: Usar búsqueda de archivos con filtro de nombre y ubicación
-  // Buscamos archivos .psc que estén dentro de carpetas llamadas "Proyectos_PSeInt"
-  // Para filtrar por grado/sección, aún necesitamos navegar un poco, pero podemos ser más eficientes.
-
-  const query = "title contains '.psc' and trashed = false";
-  // Folder.searchFiles es recursivo y mucho más eficiente
-  const files = rootFolder.searchFiles(query);
-
-  while (files.hasNext()) {
-    const file = files.next();
-    const parents = file.getParents();
-    if (!parents.hasNext()) continue;
-
-    const parentFolder = parents.next();
-    if (parentFolder.getName() !== "Proyectos_PSeInt") continue;
-
-    const alumnoFolder = parentFolder.getParents().next();
-    const seccionFolder = alumnoFolder.getParents().next();
-    const gradoFolder = seccionFolder.getParents().next();
-
-    const gName = gradoFolder.getName();
-    const sName = seccionFolder.getName();
-
-    // Aplicar filtros de grado y sección si se proporcionan
-    if (grado && gName !== grado) continue;
-    if (seccion && sName !== seccion) continue;
-
-    projects.push({
-      alumnoNombre: alumnoFolder.getName(),
-      grado: gName,
-      seccion: sName,
-      projectName: file.getName(),
-      fileId: file.getId(),
-      lastUpdated: file.getLastUpdated().toISOString()
-    });
-  }
-
-  projects.sort((a, b) => new Date(b.lastUpdated) - new Date(a.lastUpdated));
-  return { status: "success", data: projects };
+  const role = payload && payload._verifiedRole, userId = payload && payload._verifiedUserId;
+  if (!userId || (role !== "Estudiante" && role !== "Alumno")) throw new Error("Solo el estudiante autenticado puede consultar sus proyectos.");
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const rows = getSheetOrThrow(ss, "pseudocode").getDataRange().getValues().slice(1);
+  const projects = rows.filter(row => String(row[0]).trim() === String(userId).trim()).map(row => {
+    const fileId = extractTaskServiceFileId(row[2] || "");
+    let lastUpdated = null;
+    try { if (fileId) lastUpdated = DriveApp.getFileById(fileId).getLastUpdated().toISOString(); } catch (_) {}
+    return { alumnoNombre:getTaskServiceUserProfile(userId).nombre, projectName:row[1], fileId:fileId, lastUpdated:lastUpdated };
+  });
+  projects.sort((a,b)=>new Date(b.lastUpdated||0)-new Date(a.lastUpdated||0));
+  return { status:"success", data:projects };
 }
 
 // [TAREA-06] [Fase 1 - Gestión Documental] - Módulo institucional de gestión de carpetas, identificadores estables y permisos documentales.
@@ -1474,36 +1346,19 @@ function getOrCreateFolder(parentFolder, folderName) {
 // --- FUNCIONES AULA VIRTUAL Y CONTENIDOS (FASE 5) ---
 
 function getVirtualClassrooms(payload) {
-  const { grado, seccion, profesorId, userId, rol } = payload || {};
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "AulasVirtuales");
-  const data = sheet.getDataRange().getValues();
-  if (data.length <= 1) return { status: "success", data: [] };
-
-  const rows = data.slice(1);
-  const classrooms = rows.filter(r => {
-    if (r[7] === "Desactivada") return false;
-    if (profesorId && r[6] && String(r[6]).trim() !== String(profesorId).trim()) return false;
-    if (grado && normalizeString(r[3]) !== normalizeString(grado)) return false;
-    if (seccion && r[4] && normalizeString(r[4]) !== normalizeString(seccion)) return false;
+  const role = payload && payload._verifiedRole;
+  const rows = getTaskServiceAuthorizedClassrooms(payload);
+  const isAdmin = ["Administrador","Desarrollador","Dirección","Secretaría"].indexOf(role) !== -1;
+  const filtered = rows.filter(row => {
+    if (isAdmin && payload.grado && normalizeString(row[3]) !== normalizeString(payload.grado)) return false;
+    if (isAdmin && payload.seccion && row[4] && normalizeString(row[4]) !== normalizeString(payload.seccion)) return false;
     return true;
-  }).map(r => ({
-    aulaId: r[0],
-    ofertaId: r[1],
-    nombreClase: r[2],
-    grado: r[3],
-    seccion: r[4],
-    asignatura: r[5],
-    profesorId: r[6],
-    estado: r[7] || "Activa",
-    anioLectivo: r[8],
-    periodo: r[9],
-    creadoEn: r[10] ? new Date(r[10]).toISOString() : null
+  }).map(row => ({
+    aulaId:row[0],ofertaId:row[1],nombreClase:row[2],grado:row[3],seccion:row[4],asignatura:row[5],
+    profesorId:row[6],estado:row[7]||"Activa",anioLectivo:row[8],periodo:row[9],creadoEn:row[10]?new Date(row[10]).toISOString():null
   }));
-
-  return { status: "success", data: classrooms };
+  return { status:"success", data:filtered };
 }
-
 function createVirtualClassroom(payload) {
   const { ofertaId, nombreClase, grado, seccion, asignatura, profesorId, anioLectivo, periodo } = payload || {};
   if (!grado || !asignatura) throw new Error("Grado y Asignatura son obligatorios para crear el aula.");
@@ -1524,42 +1379,33 @@ function createVirtualClassroom(payload) {
 }
 
 function getPosts(payload) {
-  const { aulaId, grado, seccion, asignatura, includeDrafts, authRole } = payload || {};
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "PublicacionesAnuncios");
-  const data = sheet.getDataRange().getValues();
-  if (data.length <= 1) return { status: "success", data: [] };
-
-  const isTeacherOrAdmin = (authRole === "Profesor" || authRole === "Administrador" || authRole === "Dirección" || authRole === "Secretaría");
-  const now = new Date().getTime();
-  const posts = data.slice(1).filter(r => {
-    if (r[12] === "Eliminado") return false;
-    if (aulaId && String(r[1]).trim() !== String(aulaId).trim()) return false;
-    if (r[7] === true && (!includeDrafts || !isTeacherOrAdmin)) return false; // EsBorrador
-    if (r[8] && new Date(r[8]).getTime() > now && !isTeacherOrAdmin) return false; // FechaProgramada no alcanzada
+  const role = payload && payload._verifiedRole;
+  const isTeacherOrAdmin = ["Profesor","Administrador","Desarrollador","Dirección","Secretaría"].indexOf(role) !== -1;
+  const allowedRows = getTaskServiceAuthorizedClassrooms(payload);
+  const allowedIds = new Set(allowedRows.map(row => String(row[0]).trim()));
+  const { aulaId, asignatura, includeDrafts } = payload || {};
+  const data = getOrCreateSheet(SpreadsheetApp.openById(SPREADSHEET_ID),"PublicacionesAnuncios").getDataRange().getValues();
+  if (data.length <= 1) return { status:"success", data:[] };
+  const now = Date.now();
+  const posts = data.slice(1).filter(row => {
+    if (row[12] === "Eliminado") return false;
+    const classId = String(row[1] || "").trim();
+    if (classId !== "General" && !allowedIds.has(classId)) return false;
+    if (aulaId && classId !== String(aulaId).trim()) return false;
+    if (row[7] === true && (!includeDrafts || !isTeacherOrAdmin)) return false;
+    if (!isTeacherOrAdmin && (row[7] === true || row[12] !== "Publicado")) return false;
+    if (row[8] && new Date(row[8]).getTime() > now && !isTeacherOrAdmin) return false;
+    if (!isTeacherOrAdmin && !isTaskServiceAudienceAllowed(row[11],role)) return false;
+    if (asignatura && String(row[4] || "") !== String(asignatura)) return false;
     return true;
-  }).map(r => ({
-    postId: r[0],
-    aulaId: r[1],
-    titulo: r[2],
-    contenido: r[3],
-    categoria: r[4] || "Anuncio",
-    autorId: r[5],
-    esFijado: r[6] === true || String(r[6]).toLowerCase() === "true",
-    esBorrador: r[7] === true || String(r[7]).toLowerCase() === "true",
-    fechaProgramada: r[8] ? new Date(r[8]).toISOString() : null,
-    fechaPublicacion: r[9] ? new Date(r[9]).toISOString() : null,
-    adjuntos: r[10] ? (typeof r[10] === 'string' ? JSON.parse(r[10]) : r[10]) : [],
-    audiencia: r[11] || "Todos",
-    estado: r[12] || "Publicado"
-  })).sort((a, b) => {
-    if (a.esFijado !== b.esFijado) return a.esFijado ? -1 : 1;
-    return new Date(b.fechaPublicacion) - new Date(a.fechaPublicacion);
-  });
-
-  return { status: "success", data: posts };
+  }).map(row => ({
+    postId:row[0],aulaId:row[1],titulo:row[2],contenido:row[3],categoria:row[4]||"Anuncio",autorId:row[5],
+    esFijado:row[6]===true||String(row[6]).toLowerCase()==="true",esBorrador:row[7]===true||String(row[7]).toLowerCase()==="true",
+    fechaProgramada:row[8]?new Date(row[8]).toISOString():null,fechaPublicacion:row[9]?new Date(row[9]).toISOString():null,
+    adjuntos:row[10]?(typeof row[10]==="string"?JSON.parse(row[10]):row[10]):[],audiencia:row[11]||"Todos",estado:row[12]||"Publicado"
+  })).sort((a,b)=>a.esFijado!==b.esFijado?(a.esFijado?-1:1):new Date(b.fechaPublicacion||0)-new Date(a.fechaPublicacion||0));
+  return { status:"success", data:posts };
 }
-
 function createPost(payload) {
   const { aulaId, titulo, contenido, categoria, autorId, esFijado, esBorrador, fechaProgramada, adjuntos, audiencia } = payload || {};
   if (!titulo || !contenido) throw new Error("Título y Contenido son obligatorios para publicar.");
@@ -1630,38 +1476,30 @@ function deletePost(payload) {
 }
 
 function getStudyMaterials(payload) {
-  const { aulaId, parcial, unidad, tema, asignatura, grado } = payload || {};
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "MaterialesEducativos");
-  const data = sheet.getDataRange().getValues();
-  if (data.length <= 1) return { status: "success", data: [] };
-
-  const materials = data.slice(1).filter(r => {
-    if (r[12] === "Eliminado") return false;
-    if (aulaId && String(r[1]).trim() !== String(aulaId).trim()) return false;
-    if (parcial && normalizeString(r[5]) !== normalizeString(parcial)) return false;
-    if (unidad && normalizeString(r[6]) !== normalizeString(unidad)) return false;
-    if (tema && normalizeString(r[7]) !== normalizeString(tema)) return false;
+  const role = payload && payload._verifiedRole;
+  const allowedRows = getTaskServiceAuthorizedClassrooms(payload);
+  const allowedIds = new Set(allowedRows.map(row => String(row[0]).trim()));
+  const isStaff = ["Profesor","Administrador","Desarrollador","Dirección","Secretaría"].indexOf(role) !== -1;
+  const { aulaId, parcial, unidad, tema } = payload || {};
+  const data = getOrCreateSheet(SpreadsheetApp.openById(SPREADSHEET_ID),"MaterialesEducativos").getDataRange().getValues();
+  if (data.length <= 1) return { status:"success", data:[] };
+  const materials = data.slice(1).filter(row => {
+    if (row[12] === "Eliminado") return false;
+    const classId = String(row[1] || "").trim();
+    if (classId !== "General" && !allowedIds.has(classId)) return false;
+    if (aulaId && classId !== String(aulaId).trim()) return false;
+    if (!isStaff && ["Activo","Publicado"].indexOf(String(row[12] || "Activo")) === -1) return false;
+    if (parcial && normalizeString(row[5]) !== normalizeString(parcial)) return false;
+    if (unidad && normalizeString(row[6]) !== normalizeString(unidad)) return false;
+    if (tema && normalizeString(row[7]) !== normalizeString(tema)) return false;
     return true;
-  }).map(r => ({
-    materialId: r[0],
-    aulaId: r[1],
-    titulo: r[2],
-    descripcion: r[3],
-    tipoRecurso: r[4] || "Documento",
-    parcial: r[5],
-    unidad: r[6],
-    tema: r[7],
-    archivoUrl: r[8],
-    driveId: r[9],
-    autorId: r[10],
-    fechaPublicacion: r[11] ? new Date(r[11]).toISOString() : null,
-    estado: r[12] || "Activo"
+  }).map(row => ({
+    materialId:row[0],aulaId:row[1],titulo:row[2],descripcion:row[3],tipoRecurso:row[4]||"Documento",
+    parcial:row[5],unidad:row[6],tema:row[7],archivoUrl:row[8],driveId:row[9],autorId:row[10],
+    fechaPublicacion:row[11]?new Date(row[11]).toISOString():null,estado:row[12]||"Activo"
   }));
-
-  return { status: "success", data: materials };
+  return { status:"success", data:materials };
 }
-
 function createStudyMaterial(payload) {
   const { aulaId, titulo, descripcion, tipoRecurso, parcial, unidad, tema, archivoUrl, driveId, autorId } = payload || {};
   if (!titulo || !archivoUrl) throw new Error("Título y URL de archivo son obligatorios.");
@@ -2298,6 +2136,10 @@ function getMultiPartFolderFiles(payload) {
 // [TAREA-F8-MANT-01] [Fase 8: Aula Virtual y Gestión Avanzada del Aprendizaje] - Monitoreo preventivo de cuotas y disponibilidad de almacenamiento en Google Drive
 function getDriveStorageQuotaMetricsReport(payload) {
   try {
+    const role = payload && payload._verifiedRole;
+    if (["Administrador", "Desarrollador"].indexOf(role) === -1) {
+      return { status:"error", code:"AUTH_PERMISSION_DENIED", message:"Solo administradores pueden consultar métricas globales de Drive." };
+    }
     var bytesUsed = 0;
     var bytesTotal = 15 * 1024 * 1024 * 1024;
     try {
@@ -2366,45 +2208,27 @@ function getDriveStorageQuotaMetricsReport(payload) {
 // [F8-Task24] [F10-Task13] [TAREA-F8-OPT-01] [Fase 8: Aula Virtual y Gestión Avanzada del Aprendizaje] - Obtener URL segura de previsualización de documentos PDF adjuntos en entregas con verificación RBAC
 function getSubmissionDocumentPreviewUrl(payload) {
   try {
-    if (!payload || !payload.fileId) {
-      return { status: "error", message: "fileId es requerido para previsualizar documento." };
-    }
-
-    // Validar token de sesión y autorización del usuario
-    var sessionCheck = verifySessionToken(payload.sessionToken || payload.token);
-    if (!sessionCheck || !sessionCheck.valid) {
-      return { status: "error", message: "Acceso denegado: Sesión no válida o expirada para previsualizar este documento." };
-    }
-
-    var fileId = payload.fileId.toString().trim();
-    var driveFile = DriveApp.getFileById(fileId);
-    if (!driveFile) {
-      return { status: "error", message: "El archivo especificado no existe o fue eliminado." };
-    }
-
-    var mimeType = driveFile.getMimeType();
-    var fileName = driveFile.getName();
-    var fileSize = driveFile.getSize();
-    var isPdf = (mimeType === "application/pdf") || fileName.toLowerCase().endsWith(".pdf");
-
-    var previewUrl = "https://drive.google.com/file/d/" + fileId + "/preview";
-    var downloadUrl = "https://drive.google.com/uc?export=download&id=" + fileId;
-
-    return {
-      status: "success",
-      fileId: fileId,
-      fileName: fileName,
-      fileSizeMb: (fileSize / (1024 * 1024)).toFixed(2),
-      mimeType: mimeType,
-      isPdf: isPdf,
-      previewUrl: previewUrl,
-      downloadUrl: downloadUrl
-    };
+    if (!payload || !payload.fileId) return { status:"error", message:"fileId es requerido." };
+    const claims = verifySessionToken(payload.sessionToken || payload.authToken || payload.token);
+    if (!claims || !claims.userId || !claims.role) return { status:"error", code:"AUTH_PERMISSION_DENIED", message:"Sesión no válida o expirada." };
+    const fileId = extractTaskServiceFileId(payload.fileId);
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const deliveries = getSheetOrThrow(ss,"Entregas").getDataRange().getValues().slice(1);
+    const delivery = deliveries.find(row => extractTaskServiceFileId(row[4]) === fileId);
+    if (!delivery) return { status:"error", code:"AUTH_PERMISSION_DENIED", message:"Archivo no vinculado a una entrega institucional." };
+    const role = String(claims.role), actorId = String(claims.userId).trim();
+    const taskRow = getSheetOrThrow(ss,"Tareas").getDataRange().getValues().slice(1).find(row => String(row[0]).trim() === String(delivery[1]).trim());
+    let allowed = ["Administrador","Desarrollador","Dirección","Secretaría"].indexOf(role) !== -1;
+    if (role === "Estudiante" || role === "Alumno") allowed = String(delivery[2]).trim() === actorId;
+    if (role === "Profesor") allowed = !!taskRow && String(taskRow[10] || "").trim() === actorId;
+    if (["Padre","Tutor","Responsable"].indexOf(role) !== -1) allowed = getTaskServiceGuardianStudentIds(actorId).indexOf(String(delivery[2]).trim()) !== -1;
+    if (!allowed) return { status:"error", code:"AUTH_PERMISSION_DENIED", message:"No tiene autorización sobre el documento solicitado." };
+    const file = DriveApp.getFileById(fileId), mimeType = file.getMimeType(), fileName = file.getName(), fileSize = file.getSize();
+    return { status:"success",fileId:fileId,fileName:fileName,fileSizeMb:(fileSize/(1024*1024)).toFixed(2),mimeType:mimeType,
+      isPdf:mimeType==="application/pdf"||fileName.toLowerCase().endsWith(".pdf"),
+      previewUrl:"https://drive.google.com/file/d/"+fileId+"/preview",downloadUrl:"https://drive.google.com/uc?export=download&id="+fileId };
   } catch (error) {
-    Logger.log("Error en getSubmissionDocumentPreviewUrl: " + error.message);
-    return {
-      status: "error",
-      message: "Error al generar URL de previsualización de documento: " + error.message
-    };
+    Logger.log("Error en getSubmissionDocumentPreviewUrl: "+error.message);
+    return { status:"error",message:"Error al generar URL de previsualización: "+error.message };
   }
 }

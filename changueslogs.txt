@@ -229,3 +229,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - USER: tickets usan identidad verificada y control de propiedad; getAutomationRules exige rol administrativo; noticias y comunicados filtran audiencia/estado/vigencia desde perfil verificado.
 - TASK-636 permanece En ejecución; siguen pendientes las protecciones de Task-Service, excepciones públicas ACADEMIC y pruebas runtime.
 - Informe: Auditoría/AUDITORIA_TASK-636_C1.305.md; checkpoint: Checkpoints_Parte_0002.txt — sección C1.305.
+
+
+[2026-11-09] IMA-EXEC-20261109-1450Z-01 — TASK-636 / C1.306
+- Task-Service: PUBLIC_ACTIONS vacío; consultas de tareas y actividad docente derivan identidad de claims; proyectos, aulas, posts/materiales, preview y deleteFile con controles de propiedad/contexto.
+- getDriveStorageQuotaMetricsReport restringido a Administrador/Desarrollador.
+- closeAcademicYear bloqueado preventivamente con BACKUP_REQUIRED; no se ejecutan borrados sin backup/restore verificable.
+- TASK-636 sigue En ejecución; runtime y pruebas E2E pendientes.

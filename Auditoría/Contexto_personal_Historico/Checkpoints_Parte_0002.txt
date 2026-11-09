@@ -597,3 +597,66 @@ Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt �
 Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.305.
 Commit de cierre: el commit que contiene este checkpoint; SHA verificado tras publicación.
 ===============================================================================
+
+
+
+===============================================================================
+CHECKPOINT C1.306 — Protección de consultas, proyectos y recursos de Task-Service
+===============================================================================
+ID: C1.306
+Sesión: IMA-EXEC-20261109-1450Z-01
+Checkpoint anterior: C1.305
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+HEAD de partida: 2621b1482c8a1b606b6a5840ac9400d8fd527de4
+Tree SHA de partida: 0b4df4254d85769811302b9660b47ceb4a6ffa57
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+
+### Implementación
+- backend/task-service/Code.gs actualizado (blob 68e585c8abb865e05a0151c91907f5d8b9e7a5b3).
+- PUBLIC_ACTIONS queda vacío; consultas TASK requieren sesión y RBAC.
+- getStudentTasks usa claims, perfil real y vínculo familiar verificado.
+- getAllTasks/getTeacherActivity derivan profesorId de claims.
+- getAllStudentProjects/saveProject/listProjects/deleteProject/loadProject ligados al estudiante autenticado; sin fallback de Drive para listar/cargar proyectos.
+- Aulas, publicaciones y materiales filtrados por contexto de usuario; posts ya no confían en authRole del cliente.
+- Preview valida claims y propiedad de entrega/tarea.
+- deleteFile solo elimina archivos asociados a entregas propias.
+- Métricas globales Drive restringidas a Administrador/Desarrollador.
+- closeAcademicYear queda bloqueado con BACKUP_REQUIRED; no se borra ningún dato hasta disponer de backup/restore restaurable verificado.
+
+### Estado
+- AUD-NG-001/002 y AUD-NG-306: correcciones de código en Task-Service; faltan rutas públicas ACADEMIC y pruebas.
+- AUD-NG-368/370/371: correcciones de código parciales, pendientes de pruebas.
+- AUD-NG-369: sigue abierto porque el mecanismo de backup/restore aún no existe; borrado bloqueado preventivamente.
+- AUD-NG-373: sigue asignado a TASK-685, fuera de este alcance.
+- TASK-636 permanece En ejecución, no Completada.
+
+### Verificaciones
+- Ejecutadas sobre el blob: balance de llaves, PUBLIC_ACTIONS vacío, presencia de claims, propiedad de proyectos/entregas, filtro de aulas/posts/materiales, preview sin bandera .valid, cierre fail-closed y guardia de métricas Drive.
+- No ejecutadas: runtime Apps Script, Sheets/Drive reales, HTTP, navegador, E2E ni pruebas por rol.
+- No se declaran como satisfactorias pruebas no ejecutadas.
+
+### Archivos de esta iteración
+1. backend/task-service/Code.gs
+2. Auditoría/AUDITORIA_TASK-636_C1.305.md
+3. Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt
+4. Auditoría/INDICE_CHECKPOINTS.md
+5. Auditoria.txt
+6. tareas_auditoria.txt
+7. changueslogs.txt
+8. Auditoría/MapaDependencias.md
+
+### Tareas derivadas y relaciones
+- No se crean IDs duplicados.
+- TASK-496/AUD-NG-217: validación contextual y ámbito docente.
+- TASK-501/AUD-NG-221: matriz dinámica.
+- TASK-502/AUD-NG-222: RBAC/ABAC común.
+- TASK-685/AUD-NG-373: EXAM, fuera de TASK-636.
+
+### Siguiente acción exacta
+Continuar TASK-636: revisar y proteger create/update/delete de tareas, aulas, publicaciones y materiales con propietario/claims; reconciliar asignaciones docentes con AsignacionesDocentes; definir el flujo de archivos subidos no entregados; implementar respaldo y restauración verificables para closeAcademicYear; después proteger las excepciones públicas de Academic-Service y ejecutar pruebas runtime por rol.
+
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.306.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.306.
+Commit de cierre: el commit que contiene este checkpoint; SHA verificado tras publicación.
+===============================================================================
