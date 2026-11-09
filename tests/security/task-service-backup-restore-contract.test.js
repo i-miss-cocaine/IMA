@@ -1,6 +1,8 @@
 // Contract-level static checks for the Task-Service academic-year backup protocol.
 // These checks do not replace Apps Script / Sheets / Drive isolated integration tests.
 const assert = require("assert");
+const vm = require("node:vm");
+const crypto = require("node:crypto");
 const fs = require("fs");
 const path = require("path");
 const source = fs.readFileSync(path.resolve(__dirname, "../../backend/task-service/Code.gs"), "utf8");
@@ -44,4 +46,63 @@ assert(source.includes("RESTORE_STATE_NAME_MISMATCH"), "reused Drive IDs must ma
 assert(source.includes("mappedHash !== node.sha256"), "reused restored files are hash-verified before metadata mutation");
 assert(source.includes("RESTORE_FAILED_ROLLED_BACK") && source.includes("ROLLBACK_INCOMPLETE"), "restore reports rollback outcome");
 assert(source.includes("taskServiceVerifyAppendOnlyBackupLog_"), "Log_Cierres is preserved as append-only");
-console.log("Task-Service backup/restore static contract checks passed.");
+
+function extractFunction(name) {
+  const start = source.indexOf("function " + name + "(");
+  assert.ok(start >= 0, "function exists: " + name);
+  const end = source.indexOf("\\n}", start);
+  assert.ok(end > start, "function body is extractable: " + name);
+  return source.slice(start, end + 2);
+}
+
+// Parse the complete Apps Script source with the local Node parser.
+new vm.Script(source, { filename: "backend/task-service/Code.gs" });
+
+// Exercise deterministic helpers with isolated local mocks; no Google service is called.
+const digestContext = {
+  Utilities: {
+    DigestAlgorithm: { SHA_256: "SHA-256" },
+    Charset: { UTF_8: "UTF-8" },
+    computeDigest: function (_algorithm, value) {
+      const bytes = Buffer.isBuffer(value) ? value : Buffer.from(String(value), "utf8");
+      return Array.from(crypto.createHash("sha256").update(bytes).digest()).map(b => b > 127 ? b - 256 : b);
+    }
+  }
+};
+vm.runInNewContext(extractFunction("taskServiceBackupSha256_") + "\\nthis.hash = taskServiceBackupSha256_;", digestContext);
+assert.equal(digestContext.hash("abc", false), crypto.createHash("sha256").update("abc").digest("hex"));
+assert.equal(digestContext.hash(Buffer.from([0, 1, 2, 255]), true), crypto.createHash("sha256").update(Buffer.from([0, 1, 2, 255])).digest("hex"));
+
+const snapshotContext = {};
+vm.runInNewContext(
+  extractFunction("taskServiceBackupEncodeValue_") + "\\n" +
+  extractFunction("taskServiceBackupSnapshotSheet_") + "\\nthis.snapshot = taskServiceBackupSnapshotSheet_;",
+  snapshotContext
+);
+const snapDate = new Date("2026-01-02T03:04:05.000Z");
+const mockSheet = {
+  getName: () => "Tareas",
+  getLastRow: () => 2,
+  getLastColumn: () => 2,
+  getRange: () => ({
+    getValues: () => [[snapDate, 7], ["TSK-1", "Activa"]],
+    getFormulas: () => [["", ""], ["", ""]]
+  })
+};
+const snapshot = JSON.parse(JSON.stringify(snapshotContext.snapshot(mockSheet)));
+assert.equal(snapshot.name, "Tareas");
+assert.equal(snapshot.rows, 2);
+assert.equal(snapshot.columns, 2);
+assert.deepEqual(snapshot.values[0][0], { __taskServiceBackupType: "Date", value: "2026-01-02T03:04:05.000Z" });
+assert.equal(snapshot.values[1][0], "TSK-1");
+assert.equal(snapshot.formulas.length, 2);
+
+const emptySnapshot = JSON.parse(JSON.stringify(snapshotContext.snapshot({
+  getName: () => "Entregas",
+  getLastRow: () => 0,
+  getLastColumn: () => 0
+})));
+assert.deepEqual(emptySnapshot, { name: "Entregas", rows: 0, columns: 0, values: [], formulas: [] });
+
+console.log("Task-Service backup/restore contract: static guards, Node syntax, SHA-256 and local snapshot fixtures passed.");
+

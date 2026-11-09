@@ -136,3 +136,47 @@ Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003
 Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.330.
 Commit de cierre: el commit que contiene este checkpoint; SHA verificado tras publicar.
 ===============================================================================
+
+
+===============================================================================
+## C1.331 — Corrección de rumbo y reauditoría de TASK-636
+ID: C1.331
+Sesión: IMA-GOV-20261109-2201Z-01
+Fecha: 2026-11-09 UTC
+Checkpoint anterior válido: C1.316
+Baseline lógico: 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD físico conservado antes de publicar: acc9d02a1982533d694488d89a4ac8165a3f0bb7
+Rama: NG_beta_0.0.0.1_work
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+Tarea auditada: TASK-636 / PM-01 / P0 — AUD-NG-369
+
+### Corrección de rumbo / disrupción
+- C1.316 queda como último checkpoint válido para continuidad lógica. C1.317–C1.330 no gobiernan selección, estados ni evidencia; no se borran, revierten ni reescriben sus commits/cambios físicos.
+- Se conserva el HEAD físico como padre para no reescribir historia. Se revalidará el código existente desde los requisitos; los dictámenes posteriores no se aceptan sin nueva evidencia.
+- Se aplica METODOLOGIA_DESARROLLO.md §21.5: pruebas locales obligatorias; deployment/servicios vivos/Sheets/Drive reales se registran en beta_test.txt y no bloquean implementación por ausencia de entorno.
+
+### Auditoría focalizada TASK-636
+- C1.316 identifica TASK-636 activa PM-01/P0 y conserva contrato Node CI exitoso (runs 42659818881 y 42659961195; segundo Node 24/actions v7).
+- El protocolo Task-Service incluye SHA-256, snapshots de hojas, verificación de activos y permisos Drive, lock, journal durable, recuperación explícita y marcadores deterministas. closeAcademicYear permanece fail-closed con BACKUP_REQUIRED.
+- Se amplía el contrato local para parsear Code.gs completo y ejercitar SHA-256 texto/bytes y snapshots con fixtures; el workflow Node se ejecutará tras publicar. No anticipar PASS.
+- La ausencia de deployment Apps Script y fixtures Sheets/Drive se difiere a BETA-FUNC-007 (Pendiente beta); no bloquea por sí sola.
+- TASK-636 sigue En ejecución porque permanecen alcances de seguridad AUD-NG-001/002/306/368/370/371 por revalidar; no se declara cierre global.
+
+### Siguiente tarea seleccionada
+- TASK-068 — PM-01/P0, orden local 1; requisito pendientes/Dirección/Pendientes.md; dependencias declaradas: ninguna.
+- No depende de TASK-636. El siguiente commit se reserva para la implementación/revalidación de TASK-068.
+
+### Archivos de este checkpoint
+- tests/security/task-service-backup-restore-contract.test.js
+- Auditoría/AUDITORIA_TASK-636_C1.331.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+
+Pruebas: Node syntax + SHA-256 + snapshots locales agregados; ejecución CI pendiente de observar tras publicación. No Apps Script/Sheets/Drive/HTTP/E2E.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.331.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.331.
+Commit de cierre: este commit; SHA verificado tras publicación.
+===============================================================================

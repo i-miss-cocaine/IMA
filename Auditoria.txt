@@ -490,3 +490,13 @@ pendientes/Otros/Pendientes.md no está vacío ni corrupto: fetch_file devuelve 
 
 [2026-11-09] C1.330 — Registro de pruebas beta diferidas
 Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-NG-378) a beta_test.txt. Son escenarios de integración/despliegue para beta aislada, permanecen Pendiente beta y no bloquean el cierre de implementación. No se ejecutaron.
+
+
+===============================================================================
+## C1.331 — Corrección de rumbo y auditoría focalizada TASK-636
+- Se reconoce C1.316 (31262d5ccbfc46a5f87a5d0fc9c363b177283d9a) como último checkpoint válido para continuidad lógica. C1.317–C1.330 se conservan físicamente pero no gobiernan estados ni evidencia.
+- TASK-636 sigue En ejecución; AUD-NG-369: la integración Apps Script/Sheets/Drive pasa a BETA-FUNC-007, Pendiente beta. No es bloqueo por falta de deployment.
+- Se amplía el contrato Node local con parseo de Code.gs y pruebas de SHA-256/snapshots mediante fixtures. CI pendiente tras publicación.
+- La tarea mantiene alcances de seguridad AUD-NG-001/002/306/368/370/371 por revalidar. Siguiente tarea elegible: TASK-068 (PM-01/P0, orden local 1, sin dependencias declaradas).
+- Checkpoint: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.331; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.331.
+===============================================================================

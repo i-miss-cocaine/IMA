@@ -394,3 +394,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - beta_test.txt incorpora BETA-FUNC-007 (TASK-636: backup/restore/recuperación aislada) y BETA-FUNC-008 (TASK-068: interservicio/importación idempotente/compensación).
 - Ambos casos quedan Pendiente beta; no se ejecutaron ni se declaran PASS y no bloquean implementación por ausencia de deployment.
 - Checkpoint C1.330: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice Auditoría/INDICE_CHECKPOINTS.md.
+
+
+[2026-11-09] C1.331 — Corrección de rumbo y reauditoría TASK-636
+- C1.316 se establece como último checkpoint válido lógico; C1.317–C1.330 se preservan físicamente, sin usarse como evidencia o estado operativo.
+- TASK-636 continúa En ejecución por alcances de seguridad locales pendientes de revalidación; AUD-NG-369 se traslada a BETA-FUNC-007 como prueba de integración no bloqueante.
+- Se amplía el contrato local Node con parseo de Code.gs y pruebas de SHA-256/snapshot. CI pendiente de observación.
+- Siguiente tarea elegida: TASK-068, PM-01/P0, orden local 1, sin dependencias declaradas.
+- Sesión IMA-GOV-20261109-2201Z-01; checkpoint Parte_0003 C1.331; índice Auditoría/INDICE_CHECKPOINTS.md.

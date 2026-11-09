@@ -2003,3 +2003,10 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - No se selecciona tarea alternativa ni se salta de fase hasta recuperar y leer íntegramente los requisitos P0 de Otros y volver a aplicar §6.1. No se crean IDs duplicados.
 - Sin cambios de código ni nuevas pruebas en esta iteración. Requisito TASK-068: pendientes/Dirección/Pendientes.md, líneas 301–345; fila correspondiente de §9.
 - Siguiente acción: recuperar los archivos desde el HEAD C1.328, verificar sus blob SHA y reevaluar la cola PM-01; reanudar TASK-068 cuando se acrediten los prerequisitos externos seguros.
+
+
+## 10.18 Corrección de rumbo — C1.331 / continuidad desde C1.316
+- Baseline lógico válido: C1.316, commit 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a. Los registros C1.317–C1.330 no gobiernan estados, selección ni evidencia; se preservan commits y código sin reset ni revert.
+- La nueva normativa §21.5 aplica: pruebas locales ejecutables deben completarse; deployment, Apps Script/Sheets/Drive reales y HTTP/E2E vivos se difieren a beta_test.txt y no bloquean por sí solos el cierre de implementación.
+- TASK-636 permanece En ejecución; AUD-NG-369 tiene su integración remota diferida a BETA-FUNC-007. Continúan pendientes de revalidación local los alcances AUD-NG-001/002/306/368/370/371; no se declara la tarea completada.
+- Siguiente tarea PM-01 seleccionada: TASK-068, P0, orden local 1, dependencia declarada ninguna; se ejecutará en el commit siguiente tras auditoría/revalidación independiente.
