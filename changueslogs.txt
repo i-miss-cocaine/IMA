@@ -216,3 +216,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se incorpora la fila C1.302 omitida por una coincidencia de formato no exacta en el cambio anterior y se corrige la referencia SHA de C1.301.
 - No se reabre ni repite TASK-639; no se modifica código ni el expediente principal.
 - Checkpoint C1.303: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.303, líneas 454–490; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.303.
+
+
+[2026-11-09] IMA-BLOCK-20261109-1350Z-01 — C1.304 / bloqueo de lectura TASK-636
+- TASK-636 (PM-01/P0) se identifica como candidata, pero no se inicia: el requisito original pendientes/Otros/Pendientes.md devuelve 0 caracteres por UTF-8, base64 y rangos; blob SHA e9637ecc6f88b2aa0aec75909538e072509bf507, 1.647.413 bytes.
+- Historial consultado solo en la rama autorizada; commit 4cda8611c4d3c4aece4c7d80922cc4c14c920f5a conserva el mismo blob. No se modificó ni restauró el archivo.
+- Checkpoint C1.304: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.304, líneas 493–542; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.304.

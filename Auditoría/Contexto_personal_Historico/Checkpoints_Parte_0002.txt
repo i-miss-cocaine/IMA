@@ -487,3 +487,55 @@ Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002
 Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.303.
 Commit de cierre: el commit que contiene este checkpoint; SHA verificado externamente tras publicación.
 ===============================================================================
+
+
+===============================================================================
+CHECKPOINT C1.304 — Bloqueo de lectura del requisito original TASK-636
+===============================================================================
+ID: C1.304
+Sesión: IMA-BLOCK-20261109-1350Z-01
+Checkpoint anterior: C1.303
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+HEAD de partida: f4d8088d51af2840686fb9ca4ed11261b8535569
+Rama base: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+
+### Selección PM-01
+- Candidata siguiente: TASK-636 — P0 — «Cerrar bypasses de autorización y proteger tareas, proyectos y archivos».
+- Fase: PM-01.
+- Ruta exacta del requisito original indicada por el Plan Maestro §9: pendientes/Otros/Pendientes.md.
+- La tarea tiene antecedentes y ampliaciones AUD-NG-001/002, AUD-NG-364/365 y AUD-NG-369..373; esos antecedentes no sustituyen la lectura íntegra del requisito original.
+
+### Bloqueo técnico de recuperación
+- HEAD/tree consultado: f4d8088d51af2840686fb9ca4ed11261b8535569, exclusivamente en NG_beta_0.0.0.1_work.
+- Blob del archivo actual: e9637ecc6f88b2aa0aec75909538e072509bf507.
+- Tamaño Git: 1.647.413 bytes.
+- Lectura convencional fetch_file UTF-8: 0 caracteres.
+- Lectura fetch_file base64: 0 caracteres.
+- Rangos probados: líneas 1–80, 10.000–10.100, 18.000–18.100, 19.500–20.500 y 20.000–20.100; todos devolvieron 0 caracteres.
+- Historial consultado dentro de la rama de trabajo: la API de commits por ruta devuelve el commit 4cda8611c4d3c4aece4c7d80922cc4c14c920f5a; su árbol conserva el mismo blob SHA e9637ecc6f88b2aa0aec75909538e072509bf507 y el mismo tamaño. No se encontró una versión histórica alternativa en la rama.
+- No se sobrescribió, recreó, dividió ni restauró el archivo. No se usó la rama base ni otra rama como fuente.
+- La integridad del objeto Git queda identificada por SHA/tamaño, pero el contenido íntegro, líneas, encabezados y requisito TASK-636 no pudieron validarse textualmente.
+
+### Decisión
+No iniciar TASK-636 ni sustituir su requisito original por extractos de Auditoria.txt, MapaDependencias.md o memorias parciales. La selección PM-01 queda bloqueada hasta disponer de una lectura íntegra verificable del backlog o de un mecanismo de lectura por rangos que devuelva contenido. No cambiar el estado de TASK-636 ni declarar elegible otra tarea sin completar el análisis topológico y de prioridad.
+
+### Archivos modificados
+1. Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt (este checkpoint).
+2. Auditoría/INDICE_CHECKPOINTS.md.
+3. Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md.
+4. Auditoria.txt (incidencia documental/técnica de recuperación).
+5. changueslogs.txt.
+
+### Pruebas y cambios
+- Ejecutadas: verificación de rama/HEAD/base; consulta del árbol Git y blob; lectura UTF-8/base64 y rangos; consulta de historial por ruta dentro de la rama autorizada.
+- No ejecutadas: auditoría/implementación de TASK-636, pruebas de producto o modificaciones de código.
+- Código y backlogs: sin cambios.
+
+### Siguiente acción exacta
+Recuperar el contenido completo de pendientes/Otros/Pendientes.md (blob e9637ecc6f88b2aa0aec75909538e072509bf507) desde la rama NG_beta_0.0.0.1_work, preservando el blob original; validar caracteres, líneas, encabezados, IDs y requisito TASK-636. Solo después leer íntegramente el requisito, auditarlo con evidencia vigente y verificar dependencias según Plan Maestro §6.1 y METODOLOGIA_DESARROLLO.md §19.6.
+
+Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.304.
+Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.304.
+Commit de cierre: el commit que contiene este checkpoint; SHA verificado externamente tras publicación.
+===============================================================================

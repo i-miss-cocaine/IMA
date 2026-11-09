@@ -1851,3 +1851,10 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - Tareas derivadas: TASK-691, TASK-692 y TASK-693, añadidas a pendientes/Dirección/Pendientes.md y tareas_auditoria.txt. Se asignan a PM-02 y conservan sus dependencias de seguridad PM-01.
 - El grafo estático interservicio observado es USER → TASK; no se encontró ciclo. Los ciclos dinámicos/runtime, deployments y pruebas E2E permanecen no verificados/no ejecutados.
 - Con TASK-637, TASK-638 y TASK-639 cerradas, PM-00 concluye. Siguiente fase: PM-01; seleccionar tarea concreta con §6.1, prioridad/riesgo y dependencias verificadas. No saltar a PM-02 mientras PM-01 tenga tareas elegibles.
+
+
+## Bloqueo de selección PM-01 — C1.304
+- Candidata prioritaria: TASK-636 (P0), requisito original en `pendientes/Otros/Pendientes.md`.
+- El blob actual e histórico alcanzable desde la rama autorizada tiene SHA `e9637ecc6f88b2aa0aec75909538e072509bf507` y tamaño 1.647.413 bytes, pero la lectura UTF-8/base64 y los rangos solicitados devuelven 0 caracteres. El historial por ruta dentro de la rama no ofrece un blob alternativo.
+- No se inicia TASK-636 con extractos ni se modifica el backlog. Se requiere recuperar y validar íntegramente el contenido antes de continuar con la auditoría del objetivo, conforme a la regla F del contexto personal.
+- Checkpoint C1.304: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.304.
