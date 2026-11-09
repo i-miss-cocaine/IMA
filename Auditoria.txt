@@ -464,3 +464,13 @@ Sesión: IMA-EXEC-20261109-1108Z-01; HEAD de partida: 32b8f5884dd24dbeaf1a3bf028
 - Causa raíz: extracción del bloque con regex sobreescapada. C1.326 reemplaza la regex por delimitadores `indexOf` y `slice`, y separa el código VM con `String.fromCharCode(10)`.
 - AUD-NG-381 sigue abierto hasta resultado CI satisfactorio. TASK-068 conserva el mismo ID; no se crea tarea derivada ni expediente nuevo.
 - Checkpoint C1.326; sesión IMA-EXEC-20261109-1802Z-01; Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.326; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.326.
+
+
+## Seguimiento C1.327 — TASK-068 / AUD-NG-378
+- **CI:** run 42672774951, job 129349656231, Node 24, completed/success; el log confirma sintaxis, esquemas canónicos y casos aislados de validación. AUD-NG-381 (defecto del harness) queda resuelto.
+- **Bloqueo del writer:** ACCOUNTING carece de UrlFetchApp.fetch y de lectura de USER_SERVICE_URL/IMA_INTERSERVICE_HMAC_SECRET; USER doPost no enruta ni verifica envelopes interservicio. Los helpers HMAC existentes no constituyen transporte operativo.
+- **Seguridad:** el fallback de getAuthTokenSecret deriva de SPREADSHEET_ID y una constante; no es un secreto dedicado apto para un nuevo canal. Se requiere secreto aleatorio en Script Properties, nunca en Git.
+- **Entorno:** no hay appsscript.json/.clasp.json ni fixtures aislados en el árbol. Estado de deployments y Script Properties remotas no verificable. No se habilita escritura cruzada: ScriptLock de proyectos independientes no es compartido y puede haber carreras sobre la misma hoja.
+- **Recuperación/prerrequisitos:** disponer de deployments de prueba USER/ACADEMIC, URL de endpoint USER, secreto interservicio dedicado configurado en Script Properties, IMA_INSTITUTION_ID aislado, endpoint que valide origen/destino/firma/replay/actor, contrato de writer por entidad y fixtures de dos fuentes con compensación verificable.
+- AUD-NG-378 permanece abierto dentro de TASK-068; importador sigue `DESTINATION_WRITER_NOT_CONFIGURED`. No se crea tarea derivada.
+- Checkpoint C1.327; sesión IMA-EXEC-20261109-1802Z-01; ubicación `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt`; índice `Auditoría/INDICE_CHECKPOINTS.md` — fila C1.327.

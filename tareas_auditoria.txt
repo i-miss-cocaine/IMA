@@ -456,3 +456,14 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - No se modifica código de producción. Criterio de cierre pendiente: workflow del commit C1.326 completed/success y ejecución de todos los casos de esquema.
 - TASK-068 sigue En ejecución; AUD-NG-378 continúa abierto y el importador permanece fail-closed.
 ===============================================================================
+
+
+===============================================================================
+## Seguimiento de TASK-068 — C1.327 / AUD-NG-378
+- **Evidencia de prueba:** workflow Identity mapping contract run 42672774951, job 129349656231, Node 24, completed/success. El contrato confirmó sintaxis, esquemas canónicos y casos aislados de validación de destinos. AUD-NG-381 queda resuelto.
+- **Bloqueo pendiente:** no existe transporte interservicio operativo entre ACCOUNTING y USER/ACADEMIC. ACCOUNTING no usa UrlFetchApp.fetch ni USER_SERVICE_URL; USER doPost no acepta/verifica envelope; los helpers HMAC no son invocados por una ruta interservicio.
+- **Requisito de seguridad:** no usar el fallback determinista de getAuthTokenSecret como secreto interservicio. Se requiere IMA_INTERSERVICE_HMAC_SECRET aleatorio en Script Properties de proyectos de prueba, además de USER_SERVICE_URL e IMA_INSTITUTION_ID.
+- **Entorno:** no hay appsscript.json/.clasp.json ni Spreadsheet fixtures aislados en el repositorio; deployments/Script Properties remotas no son accesibles/verificables. No se escriben datos compartidos ni se simula éxito.
+- **Criterios para desbloqueo:** endpoint autenticado con verificación de firma, destino, origen, timestamp, replay y actor; writer por entidad propiedad del servicio correspondiente; clave idempotente estable; validación de relaciones; journal/compensación; pruebas de dos fuentes y reimportación en fixture aislado.
+- **Estado:** TASK-068 En ejecución; AUD-NG-378 abierto. No crear tarea duplicada ni cambiar el alcance original.
+===============================================================================

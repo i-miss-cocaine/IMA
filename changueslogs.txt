@@ -367,3 +367,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Runs 42672140762 y 42672511038 fallaron por SyntaxError en el extractor regex del harness, antes de ejecutar los casos. Se reemplaza regex por indexOf/slice y separador VM por String.fromCharCode(10); producción sin cambios.
 - AUD-NG-381 permanece abierto hasta CI satisfactorio; AUD-NG-378 abierto; importador sigue DESTINATION_WRITER_NOT_CONFIGURED.
 - Checkpoint C1.326; Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.326; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.326.
+
+
+[2026-11-09] IMA-EXEC-20261109-1802Z-01 — TASK-068 / PM-01 / C1.327
+- CI identity mapping contract run 42672774951, job 129349656231, Node 24, completed/success; AUD-NG-381 resuelto. C1.324/C1.325 fallidos quedan en historial.
+- AUD-NG-378 sigue abierto: ACCOUNTING no tiene transporte saliente ni USER_SERVICE_URL; USER no verifica envelopes interservicio; se requiere secreto dedicado en Script Properties, deployment aislado y writer por servicio propietario.
+- No se escribe en hojas compartidas ni se inventa configuración. TASK-068 En ejecución; importador mantiene DESTINATION_WRITER_NOT_CONFIGURED.
+- Checkpoint C1.327; Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.327; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.327.

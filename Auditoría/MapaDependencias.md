@@ -4929,3 +4929,12 @@ Alcance estático satisfecho; sin cambios de código. Hallazgos AUD-NG-374..376 
 - ACCOUNTING no contiene UrlFetchApp.fetch; no se acredita delegación hacia handlers ACADEMIC/USER.
 - convertAdmissionToStudent y createStudentEnrollment conservan invariantes de dominio y no satisfacen contrato genérico de importación. registerStudentEnrollment no tiene lock observado y tampoco crea expediente/persona.
 - No se habilita writer por inferencia; mantener DESTINATION_WRITER_NOT_CONFIGURED hasta definir contrato explícito por entidad.
+
+
+## C1.327 — Dependencias de transporte para TASK-068
+- `ACCOUNTING.importDataWithColumnMapping` requiere un adaptador de importación autenticado hacia el servicio propietario de cada entidad; no hay transporte saliente implementado en ACCOUNTING (`UrlFetchApp.fetch` ausente).
+- Dependencia propuesta aún no habilitada: ACCOUNTING → USER para correspondencia/persona/cuenta; los destinos académicos requieren endpoint y contrato de escritura en ACADEMIC. No se presume que la propiedad esté delegada ni se escriben hojas de otro servicio.
+- USER `doPost` actualmente enruta `{action,payload}` con `validateRolePermission`; no consume `verifyInterServiceEnvelope`. Los helpers HMAC no representan por sí solos un endpoint autenticado.
+- Configuración requerida fuera de Git: `USER_SERVICE_URL` en ACCOUNTING; secreto aleatorio `IMA_INTERSERVICE_HMAC_SECRET` en Script Properties de los servicios participantes; `IMA_INSTITUTION_ID` en los proyectos aislados; deployments de prueba y Spreadsheet fixtures.
+- El fallback de `getAuthTokenSecret` basado en ID de spreadsheet + constante no se acepta como secreto de servicio. Los locks de proyectos independientes no coordinan escrituras concurrentes sobre una hoja compartida.
+- Hasta aprobar este contrato, la importación permanece fail-closed y `DESTINATION_WRITER_NOT_CONFIGURED`; AUD-NG-378 abierto. C1.327 documenta dependencia/configuración, no cambia el grafo de dependencias de tareas PM.

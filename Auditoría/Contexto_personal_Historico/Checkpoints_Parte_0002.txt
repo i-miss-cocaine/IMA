@@ -1822,3 +1822,51 @@ Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002
 Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.326.
 Commit de cierre: este commit; SHA se verificará externamente tras publicación.
 ===============================================================================
+
+
+===============================================================================
+## C1.327 — TASK-068 / PM-01 — CI validado y bloqueo del transporte interservicio
+ID de sesión: IMA-EXEC-20261109-1802Z-01
+Fecha: 2026-11-09 UTC
+Checkpoint anterior: C1.326
+Repositorio: i-miss-cocaine/IMA
+Rama de trabajo: NG_beta_0.0.0.1_work
+HEAD de partida: 3ddfffa14bb8817513366c8b907a6d2a318dc34e
+Rama base: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios)
+Tarea: TASK-068 — En ejecución; no completada.
+Fase PM: PM-01; prioridad P0; orden local 1.
+
+### Continuidad y pruebas
+- Se verificó el resultado terminal del workflow `Identity mapping contract`: run 42672774951, job 129349656231, Node v24.22.2, completed/success. El log confirma: `TASK-068 identity mapping contract: syntax, canonical schemas, and isolated destination-validation cases passed.`
+- AUD-NG-381 queda resuelto como defecto del harness de pruebas. Los runs 42672140762 y 42672511038 fallidos se conservan como historial; no se cuentan como pruebas satisfactorias.
+- AUD-NG-380 queda corregido en código y respaldado por el contrato estático/aislado. No se declara integración Apps Script real.
+
+### Auditoría de bloqueo de AUD-NG-378
+- ACCOUNTING `doPost` y USER `doPost` reciben `{action,payload}` y aplican `validateRolePermission`; USER no enruta ni verifica un envelope interservicio. `verifyInterServiceEnvelope` está definido pero no conectado a un endpoint de importación.
+- ACCOUNTING no contiene `UrlFetchApp.fetch`, ni lee `USER_SERVICE_URL` ni `IMA_INTERSERVICE_HMAC_SECRET`. USER tampoco lee `IMA_INTERSERVICE_HMAC_SECRET`.
+- `getAuthTokenSecret` deriva un fallback determinista de `SPREADSHEET_ID + "_MASTER_AUTH_HMAC_SECRET"`; no es aceptable como secreto dedicado para un canal interservicio nuevo. El estado real de Script Properties no es accesible desde GitHub y no se presume configurado.
+- Árbol Git recursivo del HEAD C1.326: no hay `appsscript.json` ni `.clasp.json`; el único `manifest.json` localizado no es configuración Apps Script. No hay fixture aislado/deployment versionado; deployments y propiedades remotas no verificables.
+- Escritura directa desde ACCOUNTING en hojas compartidas no es segura: los ScriptLock de proyectos Apps Script distintos no coordinan concurrencia. La escritura cruzada puede dejar filas de entidad, mapeos y relaciones parcialmente confirmados.
+- Los handlers ACADEMIC de admisión/matrícula mantienen precondiciones y efectos secundarios de dominio; no se reutilizan como writers genéricos.
+
+### Decisión y recuperación
+- AUD-NG-378 continúa abierto dentro de TASK-068; no se crea un nuevo ID de auditoría/tarea. Se conserva `DESTINATION_WRITER_NOT_CONFIGURED` y no se escribe ninguna entidad.
+- Prerrequisitos para reanudar: deployment de prueba USER y ACADEMIC; URL de endpoint USER y acción explícita; secreto aleatorio `IMA_INTERSERVICE_HMAC_SECRET` en Script Properties de cada servicio participante; `IMA_INSTITUTION_ID` aislado; verificación de origen/destino/firma/timestamp/replay/actor; writer por entidad con propietario único; clave idempotente; relaciones; journal y compensación; fixtures aislados para dos fuentes y reimportación.
+- No solicitar ni almacenar secretos en Git/chat. La configuración se realiza en Script Properties del entorno aislado y solo se comparte la URL no secreta del deployment de prueba.
+
+### Archivos modificados
+- `Auditoría/AUDITORIA_TASK-068_C1.318.md`; `Auditoria.txt`; `tareas_auditoria.txt`; `Auditoría/MapaDependencias.md`.
+- `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt`; `Auditoría/INDICE_CHECKPOINTS.md`; `changueslogs.txt`.
+- Revisados pero no modificados: `backend/accounting-service/Code.gs`, `backend/user-service/Code.gs`, `backend/academic-service/Code.gs`, `pendientes/Dirección/Pendientes.md`, `Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md`, `METODOLOGIA_DESARROLLO.md`.
+- Sin cambios de código en esta iteración; rama base y demás ramas intactas.
+
+### Estado y siguiente acción exacta
+- TASK-068 permanece En ejecución. Correspondencia central, resolvers, revisión humana, bitácora y validación de esquema tienen implementación parcial/estática; importación idempotente de destino, relaciones y prueba real de dos fuentes siguen pendientes.
+- Bloqueo operativo: faltan deployment/endpoint de prueba y configuración segura externa; no se inventan URLs ni secretos y no se accede a datos productivos.
+- Reanudar cuando estén disponibles los prerequisitos anteriores: diseñar y aprobar el contrato por entidad; implementar el endpoint interservicio autenticado y el writer del servicio propietario; ejecutar reimportación/dos fuentes/compensación en Spreadsheet aislado.
+- Requisito original: `pendientes/Dirección/Pendientes.md`, TASK-068, líneas 301–345; registro maestro Plan Maestro §9, fila TASK-068; PM-01/P0/orden local 1, dependencia declarada ninguna.
+
+Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.327.
+Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.327.
+Commit de cierre: este commit; SHA se verificará externamente tras publicación.
+===============================================================================
