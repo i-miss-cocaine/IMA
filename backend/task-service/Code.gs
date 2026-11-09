@@ -379,6 +379,9 @@ function doPost(e) {
       case "getAllStudentProjects": response = getAllStudentProjects(payload); break;
       case "generateAcademicArchiveZip": response = generateAcademicArchiveZip(payload); break;
       case "closeAcademicYear": response = closeAcademicYear(payload); break;
+      case "createTaskServiceAcademicYearBackup": response = createTaskServiceAcademicYearBackup(payload); break;
+      case "verifyTaskServiceAcademicYearBackup": response = verifyTaskServiceAcademicYearBackup(payload); break;
+      case "restoreTaskServiceAcademicYearBackup": response = restoreTaskServiceAcademicYearBackup(payload); break;
       case "getVirtualClassrooms": response = getVirtualClassrooms(payload); break;
       case "createVirtualClassroom": response = createVirtualClassroom(payload); break;
       case "getPosts": response = getPosts(payload); break;
@@ -448,9 +451,384 @@ function closeAcademicYear(payload) {
   if (!actorId || ["Administrador", "Desarrollador"].indexOf(role) === -1) {
     return { status:"error", code:"AUTH_PERMISSION_DENIED", message:"El cierre global requiere identidad administrativa verificada." };
   }
-  // Fail-closed: el flujo antiguo borraba entregas/archivos sin respaldo real restaurable.
-  // No se ejecuta ninguna eliminación hasta implementar y verificar el procedimiento de backup/restore.
-  return { status:"error", code:"BACKUP_REQUIRED", message:"Cierre bloqueado: no existe un respaldo íntegro, restaurable y verificado para esta operación." };
+  // Fail-closed deliberado: la rutina dedicada existe, pero no se habilita el borrado
+  // hasta certificar backup/restore/rollback en un entorno Apps Script/Sheets/Drive aislado.
+  return { status:"error", code:"BACKUP_REQUIRED", message:"Cierre bloqueado: el protocolo dedicado requiere certificación de restauración y rollback en entorno aislado." };
+}
+
+const TASK_SERVICE_BACKUP_SCHEMA_VERSION = 1;
+const TASK_SERVICE_BACKUP_PREFIX = "IMA_TASK_SERVICE_ACADEMIC_BACKUP_";
+const TASK_SERVICE_BACKUP_SHEETS = ["Tareas", "Entregas", "ConfiguracionAcademica", "Log_Cierres", "EntregasVersiones", "MetadatosArchivos"];
+
+function assertTaskServiceBackupAdministrator_(payload) {
+  const role = payload && payload._verifiedRole;
+  const actorId = String(payload && payload._verifiedUserId || "").trim();
+  if (!actorId || ["Administrador", "Desarrollador"].indexOf(role) === -1) {
+    throw new Error("AUTH_PERMISSION_DENIED: operación de backup/restore exclusiva de Administrador o Desarrollador.");
+  }
+  return { actorId: actorId, role: role };
+}
+
+function taskServiceBackupSha256_(value, isBytes) {
+  const bytes = isBytes ? value : String(value);
+  const digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, bytes, isBytes ? undefined : Utilities.Charset.UTF_8);
+  return digest.map(function (b) { return ("0" + ((b + 256) % 256).toString(16)).slice(-2); }).join("");
+}
+
+function taskServiceBackupEncodeValue_(value) {
+  if (value instanceof Date) return { __taskServiceBackupType: "Date", value: value.toISOString() };
+  return value;
+}
+
+function taskServiceBackupDecodeValue_(value) {
+  if (value && typeof value === "object" && value.__taskServiceBackupType === "Date") return new Date(value.value);
+  return value;
+}
+
+function taskServiceBackupSnapshotSheet_(sheet) {
+  const rowCount = sheet.getLastRow(), columnCount = sheet.getLastColumn();
+  if (!rowCount || !columnCount) return { name: sheet.getName(), rows: 0, columns: 0, values: [], formulas: [] };
+  const range = sheet.getRange(1, 1, rowCount, columnCount);
+  const values = range.getValues().map(function (row) { return row.map(taskServiceBackupEncodeValue_); });
+  return { name: sheet.getName(), rows: rowCount, columns: columnCount, values: values, formulas: range.getFormulas() };
+}
+
+function taskServiceBackupParentId_(item) {
+  const parents = item.getParents();
+  return parents.hasNext() ? parents.next().getId() : DriveApp.getRootFolder().getId();
+}
+
+function taskServiceBackupCaptureAsset_(originalId, backupParent, visited) {
+  const id = String(originalId || "").trim();
+  if (!id) throw new Error("Referencia Drive vacía durante el respaldo.");
+  if (visited[id]) return visited[id];
+
+  let file = null;
+  try { file = DriveApp.getFileById(id); } catch (_) {}
+  if (file) {
+    if (file.isTrashed()) throw new Error("Activo Drive referenciado ya está en papelera: " + id);
+    const copy = file.makeCopy(file.getName(), backupParent);
+    const originalHash = taskServiceBackupSha256_(file.getBlob().getBytes(), true);
+    const copyHash = taskServiceBackupSha256_(copy.getBlob().getBytes(), true);
+    if (originalHash !== copyHash || Number(file.getSize()) !== Number(copy.getSize())) {
+      try { copy.setTrashed(true); } catch (_) {}
+      throw new Error("La copia del activo Drive no coincide con el original: " + id);
+    }
+    const node = { kind: "file", originalId: id, backupId: copy.getId(), name: file.getName(), mimeType: file.getMimeType(),
+      sizeBytes: file.getSize(), sha256: originalHash, parentId: taskServiceBackupParentId_(file) };
+    visited[id] = node;
+    return node;
+  }
+
+  let folder = null;
+  try { folder = DriveApp.getFolderById(id); } catch (_) {}
+  if (!folder || folder.isTrashed()) throw new Error("Activo Drive inexistente o en papelera: " + id);
+  const backupFolder = backupParent.createFolder(folder.getName());
+  const folderNode = { kind: "folder", originalId: id, backupId: backupFolder.getId(), name: folder.getName(),
+    parentId: taskServiceBackupParentId_(folder), children: [] };
+  visited[id] = folderNode;
+  const files = folder.getFiles();
+  while (files.hasNext()) folderNode.children.push(taskServiceBackupCaptureAsset_(files.next().getId(), backupFolder, visited));
+  const folders = folder.getFolders();
+  while (folders.hasNext()) folderNode.children.push(taskServiceBackupCaptureAsset_(folders.next().getId(), backupFolder, visited));
+  return folderNode;
+}
+
+function taskServiceBackupCollectReferencedAssets_(ss, backupAssetsFolder) {
+  const references = [], seen = {};
+  const deliveries = getSheetOrThrow(ss, "Entregas").getDataRange().getValues();
+  if (deliveries.length > 1) {
+    const headers = deliveries[0].map(function (v) { return String(v || "").trim(); });
+    const fileIndex = headers.indexOf("fileUrl") >= 0 ? headers.indexOf("fileUrl") : 4;
+    for (let i = 1; i < deliveries.length; i++) {
+      const id = extractTaskServiceFileId(deliveries[i][fileIndex]);
+      if (id && !seen[id]) { seen[id] = true; references.push(id); }
+    }
+  }
+  const versionsSheet = ss.getSheetByName("EntregasVersiones");
+  if (versionsSheet) {
+    const versions = versionsSheet.getDataRange().getValues();
+    if (versions.length > 1) {
+      const headers = versions[0].map(function (v) { return String(v || "").trim(); });
+      const fileIndex = headers.indexOf("FileID") >= 0 ? headers.indexOf("FileID") : 6;
+      const urlIndex = headers.indexOf("ArchivoUrl") >= 0 ? headers.indexOf("ArchivoUrl") : 5;
+      for (let i = 1; i < versions.length; i++) {
+        [versions[i][fileIndex], versions[i][urlIndex]].forEach(function (value) {
+          const id = extractTaskServiceFileId(value);
+          if (id && !seen[id]) { seen[id] = true; references.push(id); }
+        });
+      }
+    }
+  }
+  const visited = {}, assets = [];
+  references.forEach(function (id) {
+    const node = taskServiceBackupCaptureAsset_(id, backupAssetsFolder, visited);
+    if (assets.indexOf(node) === -1) assets.push(node);
+  });
+  return assets;
+}
+
+function taskServiceCreateAcademicYearBackup_(actor) {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  ["Tareas", "Entregas", "ConfiguracionAcademica"].forEach(function (name) { getSheetOrThrow(ss, name); });
+  const backupId = Utilities.getUuid();
+  const root = DriveApp.getRootFolder().createFolder(TASK_SERVICE_BACKUP_PREFIX + backupId);
+  try {
+    const assetsFolder = root.createFolder("assets");
+    const sheets = [];
+    TASK_SERVICE_BACKUP_SHEETS.forEach(function (name) {
+      const sheet = ss.getSheetByName(name);
+      if (sheet) sheets.push(taskServiceBackupSnapshotSheet_(sheet));
+    });
+    const assets = taskServiceBackupCollectReferencedAssets_(ss, assetsFolder);
+    const manifest = {
+      schemaVersion: TASK_SERVICE_BACKUP_SCHEMA_VERSION,
+      backupId: backupId,
+      createdAt: new Date().toISOString(),
+      spreadsheetId: SPREADSHEET_ID,
+      actor: { userId: actor.actorId, role: actor.role },
+      scope: ["Tareas", "Entregas", "ConfiguracionAcademica", "Log_Cierres", "EntregasVersiones", "MetadatosArchivos", "DriveAssetsReferencedByEntregas"],
+      sheets: sheets,
+      assets: assets,
+      assetsFolderId: assetsFolder.getId()
+    };
+    manifest.checksumSha256 = taskServiceBackupSha256_(JSON.stringify(manifest), false);
+    const manifestFile = root.createFile(TASK_SERVICE_BACKUP_PREFIX + backupId + ".json", JSON.stringify(manifest), MimeType.PLAIN_TEXT);
+    return { status: "success", backupId: backupId, manifestFileId: manifestFile.getId(), folderId: root.getId(),
+      checksumSha256: manifest.checksumSha256, sheetCount: sheets.length, assetCount: Object.keys(assets.reduce(function (out, node) {
+        function count(n) { out[n.originalId] = true; (n.children || []).forEach(count); }
+        count(node); return out;
+      }, {})).length };
+  } catch (error) {
+    try { root.setTrashed(true); } catch (_) {}
+    throw new Error("TASK_SERVICE_BACKUP_FAILED: " + error.message);
+  }
+}
+
+function taskServiceReadAcademicYearBackup_(manifestFileId) {
+  if (!manifestFileId) throw new Error("manifestFileId es requerido.");
+  const file = DriveApp.getFileById(String(manifestFileId));
+  if (file.isTrashed() || file.getName().indexOf(TASK_SERVICE_BACKUP_PREFIX) !== 0) throw new Error("Archivo de respaldo no válido.");
+  const manifest = JSON.parse(file.getBlob().getDataAsString());
+  if (!manifest || manifest.schemaVersion !== TASK_SERVICE_BACKUP_SCHEMA_VERSION || manifest.spreadsheetId !== SPREADSHEET_ID ||
+      !manifest.sheets || !manifest.assets || !manifest.checksumSha256) throw new Error("Manifiesto de respaldo incompleto o incompatible.");
+  const checksum = manifest.checksumSha256;
+  delete manifest.checksumSha256;
+  const computed = taskServiceBackupSha256_(JSON.stringify(manifest), false);
+  manifest.checksumSha256 = checksum;
+  if (checksum !== computed) throw new Error("SHA-256 del manifiesto no coincide.");
+  const required = ["Tareas", "Entregas", "ConfiguracionAcademica"];
+  required.forEach(function (name) {
+    if (!manifest.sheets.some(function (sheet) { return sheet.name === name; })) throw new Error("Falta hoja obligatoria en respaldo: " + name);
+  });
+  return manifest;
+}
+
+function taskServiceVerifyBackupAsset_(node) {
+  if (node.kind === "file") {
+    const file = DriveApp.getFileById(node.backupId);
+    if (file.isTrashed() || Number(file.getSize()) !== Number(node.sizeBytes)) throw new Error("Copia de activo ausente, en papelera o con tamaño distinto: " + node.originalId);
+    const actual = taskServiceBackupSha256_(file.getBlob().getBytes(), true);
+    if (actual !== node.sha256) throw new Error("SHA-256 de activo no coincide: " + node.originalId);
+    return 1;
+  }
+  if (node.kind !== "folder") throw new Error("Tipo de activo no reconocido.");
+  const folder = DriveApp.getFolderById(node.backupId);
+  if (folder.isTrashed()) throw new Error("Carpeta de respaldo en papelera: " + node.originalId);
+  return (node.children || []).reduce(function (sum, child) { return sum + taskServiceVerifyBackupAsset_(child); }, 1);
+}
+
+function taskServiceVerifyAcademicYearBackup_(manifestFileId) {
+  const manifest = taskServiceReadAcademicYearBackup_(manifestFileId);
+  const assetCount = manifest.assets.reduce(function (sum, node) { return sum + taskServiceVerifyBackupAsset_(node); }, 0);
+  return { status: "success", isValid: true, backupId: manifest.backupId, checksumSha256: manifest.checksumSha256,
+    sheetCount: manifest.sheets.length, assetCount: assetCount, verifiedAt: new Date().toISOString() };
+}
+
+function taskServiceRestoreAsset_(node, parentFolder, idMap, journal) {
+  if (node.kind === "folder") {
+    let folder = null;
+    try { folder = DriveApp.getFolderById(node.originalId); } catch (_) {}
+    if (!folder) {
+      folder = parentFolder.createFolder(node.name);
+      journal.push({ kind: "createdFolder", id: folder.getId() });
+    } else if (folder.isTrashed()) {
+      folder.setTrashed(false);
+      journal.push({ kind: "untrashedFolder", id: folder.getId() });
+    }
+    idMap[node.originalId] = folder.getId();
+    (node.children || []).forEach(function (child) { taskServiceRestoreAsset_(child, folder, idMap, journal); });
+    return;
+  }
+  if (node.kind !== "file") throw new Error("Tipo de activo no reconocido durante restauración.");
+  const backupFile = DriveApp.getFileById(node.backupId);
+  let original = null;
+  try { original = DriveApp.getFileById(node.originalId); } catch (_) {}
+  if (original && original.isTrashed()) {
+    original.setTrashed(false);
+    journal.push({ kind: "untrashedFile", id: original.getId() });
+  }
+  if (original) {
+    const originalHash = taskServiceBackupSha256_(original.getBlob().getBytes(), true);
+    if (originalHash === node.sha256 && Number(original.getSize()) === Number(node.sizeBytes)) {
+      idMap[node.originalId] = original.getId();
+      return;
+    }
+  }
+  const restored = backupFile.makeCopy(node.name, parentFolder);
+  journal.push({ kind: "createdFile", id: restored.getId() });
+  const restoredHash = taskServiceBackupSha256_(restored.getBlob().getBytes(), true);
+  if (restoredHash !== node.sha256 || Number(restored.getSize()) !== Number(node.sizeBytes)) {
+    throw new Error("La copia restaurada no coincide con el manifiesto: " + node.originalId);
+  }
+  idMap[node.originalId] = restored.getId();
+}
+
+function taskServiceRewriteBackupReferences_(snapshot, idMap) {
+  const values = snapshot.values || [];
+  const headers = values.length ? values[0].map(function (v) { return String(v || "").trim(); }) : [];
+  function rewriteCell(value) {
+    if (typeof value !== "string") return value;
+    Object.keys(idMap).forEach(function (oldId) { if (value.indexOf(oldId) !== -1) value = value.split(oldId).join(idMap[oldId]); });
+    return value;
+  }
+  if (snapshot.name === "Entregas") {
+    const index = headers.indexOf("fileUrl") >= 0 ? headers.indexOf("fileUrl") : 4;
+    for (let i = 1; i < values.length; i++) values[i][index] = rewriteCell(values[i][index]);
+  } else if (snapshot.name === "EntregasVersiones") {
+    const fileIndex = headers.indexOf("FileID") >= 0 ? headers.indexOf("FileID") : 6;
+    const urlIndex = headers.indexOf("ArchivoUrl") >= 0 ? headers.indexOf("ArchivoUrl") : 5;
+    for (let i = 1; i < values.length; i++) {
+      values[i][fileIndex] = rewriteCell(values[i][fileIndex]);
+      values[i][urlIndex] = rewriteCell(values[i][urlIndex]);
+    }
+  } else if (snapshot.name === "MetadatosArchivos") {
+    const idIndex = headers.indexOf("DriveId") >= 0 ? headers.indexOf("DriveId") : 15;
+    const urlIndex = headers.indexOf("RutaDrive") >= 0 ? headers.indexOf("RutaDrive") : 16;
+    for (let i = 1; i < values.length; i++) {
+      values[i][idIndex] = rewriteCell(values[i][idIndex]);
+      values[i][urlIndex] = rewriteCell(values[i][urlIndex]);
+    }
+  }
+}
+
+function taskServiceRestoreSheetSnapshot_(ss, snapshot) {
+  let sheet = ss.getSheetByName(snapshot.name);
+  if (!sheet) sheet = ss.insertSheet(snapshot.name);
+  sheet.clearContents();
+  if (!snapshot.rows || !snapshot.columns) return sheet;
+  if (sheet.getMaxRows() < snapshot.rows) sheet.insertRowsAfter(sheet.getMaxRows(), snapshot.rows - sheet.getMaxRows());
+  if (sheet.getMaxColumns() < snapshot.columns) sheet.insertColumnsAfter(sheet.getMaxColumns(), snapshot.columns - sheet.getMaxColumns());
+  const values = snapshot.values.map(function (row) { return row.map(taskServiceBackupDecodeValue_); });
+  const range = sheet.getRange(1, 1, snapshot.rows, snapshot.columns);
+  range.setValues(values);
+  if (snapshot.formulas && snapshot.formulas.length) range.setFormulas(snapshot.formulas);
+  return sheet;
+}
+
+function taskServiceVerifyRestoredSheet_(sheet, expected) {
+  const actual = taskServiceBackupSnapshotSheet_(sheet);
+  if (actual.rows !== expected.rows || actual.columns !== expected.columns) return false;
+  for (let r = 0; r < expected.rows; r++) {
+    for (let c = 0; c < expected.columns; c++) {
+      const formula = expected.formulas && expected.formulas[r] ? expected.formulas[r][c] : "";
+      const actualFormula = actual.formulas && actual.formulas[r] ? actual.formulas[r][c] : "";
+      if (String(formula || "") !== String(actualFormula || "")) return false;
+      if (!formula && JSON.stringify(actual.values[r][c]) !== JSON.stringify(expected.values[r][c])) return false;
+    }
+  }
+  return true;
+}
+
+function taskServiceRestoreAcademicYearBackup_(manifestFileId, actor) {
+  const manifest = taskServiceReadAcademicYearBackup_(manifestFileId);
+  taskServiceVerifyAcademicYearBackup_(manifestFileId);
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID), before = {}, createdSheets = [], journal = [], idMap = {};
+  manifest.sheets.forEach(function (snapshot) {
+    const existing = ss.getSheetByName(snapshot.name);
+    before[snapshot.name] = existing ? taskServiceBackupSnapshotSheet_(existing) : null;
+  });
+  try {
+    manifest.assets.forEach(function (node) {
+      let parent = null;
+      try { parent = DriveApp.getFolderById(node.parentId); } catch (_) {}
+      if (!parent || parent.isTrashed()) parent = DriveApp.getRootFolder();
+      taskServiceRestoreAsset_(node, parent, idMap, journal);
+    });
+    const expected = manifest.sheets.map(function (snapshot) {
+      const copy = JSON.parse(JSON.stringify(snapshot));
+      taskServiceRestoreSheetSnapshot_(ss, copy);
+      taskServiceRewriteBackupReferences_(copy, idMap);
+      taskServiceRestoreSheetSnapshot_(ss, copy);
+      return copy;
+    });
+    expected.forEach(function (snapshot) {
+      const restored = ss.getSheetByName(snapshot.name);
+      if (!restored || !taskServiceVerifyRestoredSheet_(restored, snapshot)) throw new Error("Verificación post-restauración fallida en hoja " + snapshot.name);
+    });
+    manifest.assets.forEach(function (node) {
+      function verifyRestored(n) {
+        const id = idMap[n.originalId] || n.originalId;
+        if (n.kind === "file") {
+          const file = DriveApp.getFileById(id);
+          if (file.isTrashed() || taskServiceBackupSha256_(file.getBlob().getBytes(), true) !== n.sha256) throw new Error("Activo restaurado no verificable: " + n.originalId);
+        } else {
+          const folder = DriveApp.getFolderById(id);
+          if (folder.isTrashed()) throw new Error("Carpeta restaurada no verificable: " + n.originalId);
+          (n.children || []).forEach(verifyRestored);
+        }
+      }
+      verifyRestored(node);
+    });
+    return { status: "success", backupId: manifest.backupId, restoredSheets: expected.length,
+      restoredAssets: journal.length, idMap: idMap, actorId: actor.actorId, restoredAt: new Date().toISOString() };
+  } catch (error) {
+    let rollbackErrors = [];
+    Object.keys(before).reverse().forEach(function (name) {
+      try {
+        if (before[name]) taskServiceRestoreSheetSnapshot_(ss, before[name]);
+        else {
+          const sheet = ss.getSheetByName(name);
+          if (sheet) ss.deleteSheet(sheet);
+        }
+      } catch (rollbackError) { rollbackErrors.push("sheet " + name + ": " + rollbackError.message); }
+    });
+    journal.slice().reverse().forEach(function (entry) {
+      try {
+        if (entry.kind === "createdFile") DriveApp.getFileById(entry.id).setTrashed(true);
+        else if (entry.kind === "createdFolder") DriveApp.getFolderById(entry.id).setTrashed(true);
+        else if (entry.kind === "untrashedFile") DriveApp.getFileById(entry.id).setTrashed(true);
+        else if (entry.kind === "untrashedFolder") DriveApp.getFolderById(entry.id).setTrashed(true);
+      } catch (rollbackError) { rollbackErrors.push(entry.kind + " " + entry.id + ": " + rollbackError.message); }
+    });
+    if (rollbackErrors.length) throw new Error("RESTORE_FAILED_ROLLBACK_INCOMPLETE: " + error.message + " | " + rollbackErrors.join("; "));
+    throw new Error("RESTORE_FAILED_ROLLED_BACK: " + error.message);
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function createTaskServiceAcademicYearBackup(payload) {
+  const actor = assertTaskServiceBackupAdministrator_(payload);
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try { return taskServiceCreateAcademicYearBackup_(actor); }
+  finally { lock.releaseLock(); }
+}
+
+function verifyTaskServiceAcademicYearBackup(payload) {
+  assertTaskServiceBackupAdministrator_(payload);
+  return taskServiceVerifyAcademicYearBackup_(payload && payload.manifestFileId);
+}
+
+function restoreTaskServiceAcademicYearBackup(payload) {
+  const actor = assertTaskServiceBackupAdministrator_(payload);
+  if (!payload || payload.confirmed !== true || payload.confirmCode !== "RESTORE-TASK-SERVICE-BACKUP") {
+    throw new Error("RESTORE_CONFIRMATION_REQUIRED: se requiere confirmed=true y confirmCode RESTORE-TASK-SERVICE-BACKUP.");
+  }
+  return taskServiceRestoreAcademicYearBackup_(payload.manifestFileId, actor);
 }
 function getOrCreateSheet(ss, name) {
   let sheet = ss.getSheetByName(name);
