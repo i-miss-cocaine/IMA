@@ -16088,12 +16088,16 @@ function getTransportAssignments(payload) {
       }
       rows = rows.filter(function(row) { return scope.studentIds.indexOf(String(row[2] || "").trim()) !== -1; });
     }
-    if (scope.routeIds) {
-      if (requestedRouteId && scope.routeIds.indexOf(requestedRouteId) === -1) {
-        transportAuditDenied_("getTransportAssignments", payload, scope, { rutaId: requestedRouteId });
-        return { status: "error", code: "UNAUTHORIZED_ACCESS_ATTEMPT", asignaciones: [], total: 0 };
-      }
-      rows = rows.filter(function(row) { return scope.routeIds.indexOf(String(row[1] || "").trim()) !== -1; });
+    const allowedRouteIds = getTransportRouteIdsForScope_(ss, scope);
+    if (requestedRouteId && allowedRouteIds.indexOf(requestedRouteId) === -1) {
+      transportAuditDenied_("getTransportAssignments", payload, scope, { rutaId: requestedRouteId });
+      return { status: "error", code: "UNAUTHORIZED_ACCESS_ATTEMPT", asignaciones: [], total: 0 };
+    }
+    if (allowedRouteIds) {
+      rows = rows.filter(function(row) { return allowedRouteIds.indexOf(String(row[1] || "").trim()) !== -1; });
+    }
+    if (requestedRouteId) {
+      rows = rows.filter(function(row) { return String(row[1] || "").trim() === requestedRouteId; });
     }
   } else {
     if (requestedStudentId) rows = rows.filter(function(row) { return String(row[2] || "").trim() === requestedStudentId; });
