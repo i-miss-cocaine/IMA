@@ -182,3 +182,20 @@ Sesión: IMA-EXEC-20261109-1108Z-01; HEAD de partida: 32b8f5884dd24dbeaf1a3bf028
 - Acción: ampliar TASK-678 existente; inventariar callsites, acciones, dispatchers, handlers, autorización y persistencia; no duplicar ID.
 - Estado: hallazgo abierto; auditoría TASK-638 continúa En ejecución.
 - Checkpoint: C1.296, sesión `IMA-AUDIT-20261109-1152Z`, `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt`; índice fila C1.296.
+
+
+## AUD-NG-364 — ALTO/P1 — Acceso cruzado e impersonación en tickets USER (C1.297)
+- Origen: auditoría TASK-638; informe `Auditoría/AUDITORIA_TASK-638_C1.297.md`.
+- HEAD/rama: `5bf51a6b0c12fd62edc42385c55976789d00a423` / `NG_beta_0.0.0.1_work`.
+- Evidencia: USER Code.gs submitProblemTicket:400+, getProblemTickets:470+, replyProblemTicket:603+; validateRolePermission:1253-1261 habilita bypass autenticado de RBAC/contexto para esas acciones.
+- Impacto: getProblemTickets devuelve todos los tickets si falta userId; replyProblemTicket permite responder a ticket ajeno si falta userId; submitProblemTicket registra el autor desde datos del cliente.
+- Causa: identidad/propiedad basada en campos opcionales y manipulables del payload, sin derivación obligatoria desde claims.
+- Acción: ampliar TASK-636 existente; exigir identidad verificada y comprobación fail-closed de propiedad en lectura, escritura y respuesta.
+- Estado: abierto; no se modificó código ni se ejecutaron pruebas runtime.
+
+## AUD-NG-365 — MEDIO/P2 — Filtros de audiencia y vigencia manipulables en consultas públicas USER (C1.297)
+- Origen: auditoría TASK-638; informe `Auditoría/AUDITORIA_TASK-638_C1.297.md`.
+- Evidencia: USER PUBLIC_ACTIONS:922-924 permite getNews/getInstitutionalAnnouncements sin token; getNews:3116-3152 acepta includeInactive/grado/seccion; getInstitutionalAnnouncements:3817-3845 filtra por rol/audiencia del cliente.
+- Impacto: un llamante anónimo puede solicitar noticias inactivas/fuera de vigencia o comunicados de otra audiencia. No se inspeccionaron registros reales en Sheets; se confirma la capacidad estructural.
+- Acción: ampliar TASK-636; clasificar contenido público, derivar audiencia de claims o limitar el DTO a contenido público.
+- Estado: abierto; sin pruebas HTTP ni acceso a datos productivos.

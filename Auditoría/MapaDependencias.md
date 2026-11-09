@@ -343,7 +343,7 @@
 - `manifest.json` define `name`, `short_name`, `start_url`, `display` e iconos del recurso `new-generation-logo.png`.
 
 ### Autenticación y RBAC
-- `js/api.js` incorpora `sessionToken` en las peticiones a los microservicios.
+- Corrección C1.297: `js/auth.js` recibe `sessionToken` de USER/loginUser pero no lo conserva en `currentUser`; `js/api.js` fetchApi solo añade requesterUserId/requesterRole y no transmite token. AUD-NG-001 sigue abierto.
 - `backend/user-service/Code.gs` / `doPost` -> `validateRolePermission` -> `getUserVerifiedRole` -> `verifySessionToken` -> `getAuthTokenSecret`; el rol y userId verificados se colocan en `payload._verifiedRole` y `payload._verifiedUserId`.
 - `validateRolePermission` -> `validateContextualAccess` -> `getGuardianStudents` para restricciones de estudiante y vínculo familiar; un allowlist de acciones especiales retorna antes de esta validación.
 - `generateSessionToken` y `verifySessionToken` firman/verifican con HMAC-SHA256; el fallback de `getAuthTokenSecret` deriva una clave de SPREADSHEET_ID.
@@ -4400,4 +4400,41 @@ Evidencia: 211 callsites informados en C1.293 frente a 262 en los 21 JS y al men
 
 ### 7. Límites y siguiente bloque
 La inspección es estática. No se ejecutaron llamadas HTTP, Apps Script, Drive, Sheets, navegador, pruebas multi-cuenta ni E2E; no se verificaron deployments ni Script Properties. La matriz por acción debe completarse con la relación individual handler → helpers → hoja/archivo persistido para cada callsite, incluidos los consumidores dinámicos, y con evidencia de los destinos desplegados. TASK-638 permanece En ejecución.
+===============================================================================
+
+
+===============================================================================
+## C1.297 — Trazabilidad USER/ACADEMIC, identidad y acciones públicas
+
+### Identidad y sesión
+- `js/auth.js:138-160` recibe USER/loginUser y construye currentUser sin conservar sessionToken.
+- `js/api.js:39-58` solo agrega requesterUserId/requesterRole; el body JSON no incluye sessionToken/authToken/token.
+- USER `validateRolePermission:1253-1261` verifica rol autenticado antes del bypass de acciones especiales; ACADEMIC `validateRolePermission:524+` requiere token para acciones no públicas.
+- **Corrección de mapa:** la afirmación general «js/api.js incorpora sessionToken» es incorrecta para el HEAD C1.296. AUD-NG-001 sigue abierto y se amplía; no afirmar propagación efectiva.
+
+### USER — tickets
+- `PUBLIC_ACTIONS:922-924` incluye nueve acciones públicas. La lista de bypass autenticado en `validateRolePermission:1259-1261` incluye submitProblemTicket/getProblemTickets/replyProblemTicket y evita RBAC/contexto después de verificar sesión.
+- `submitProblemTicket:400+` persiste userId/nombre/rol del payload, no claims.
+- `getProblemTickets:470+` filtra por currentUserId solo si está presente; omitir userId permite obtener todos los tickets (las notas internas se filtran para no administradores).
+- `replyProblemTicket:603+` comprueba propiedad solo si currentUserId existe; omitirlo permite responder a ticket ajeno. El autor también se toma del payload.
+- Consumidores: `js/ui-common.js:3806-3823` crear; `3901-3911` listar; `3985-4003` responder; `4096` panel administrativo con payload vacío.
+- **AUD-NG-364 ALTO/P1:** controles de propietario fail-open e impersonación en tickets. Ampliar TASK-636 existente; no crear ID de tarea duplicado.
+
+### USER — contenido público
+- `PUBLIC_ACTIONS` permite getNews y getInstitutionalAnnouncements sin token.
+- `getNews:3116-3152` acepta includeInactive/grado/seccion del cliente; includeInactive omite estado/vigencia.
+- `getInstitutionalAnnouncements:3817-3845` filtra por rol/audiencia aportados por el cliente, sin identidad verificada.
+- **AUD-NG-365 MEDIO/P2:** filtros públicos de audiencia/vigencia manipulables; la sensibilidad de datos reales no se verificó. Ampliar TASK-636.
+
+### ACADEMIC — rutas públicas y hallazgos previos
+- `PUBLIC_ACTIONS:265`: ping, createAdmissionRequest, getPublicAdmissionStatus, saveAdmissionDraft, getAdmissionDraft y getServiceHealthDiagnostics.
+- `js/student.js:278,3179,3189` consume seguimiento público y creación/consulta de admisión.
+- saveAdmissionDraft/getAdmissionDraft siguen cubiertos por AUD-NG-002/AUD-NG-357; getPublicAdmissionStatus por F5-004/AUD-NG-002; no duplicar.
+- getServiceHealthDiagnostics fija connectivity/permissions en PASS y solo prueba Drive con fullCheck; conservar AUD-NG-323.
+
+### Reconciliación
+- AUD-NG-001 ampliado; AUD-NG-280 conservado para getAutomationRules; AUD-NG-002/AUD-NG-357 y AUD-NG-323 sin duplicar.
+- AUD-NG-364 y AUD-NG-365 nuevos.
+- TASK-636 (backlog Otros) se amplía con tickets y filtros públicos; TASK-678 se amplía con trazabilidad por acción/claims.
+- TASK-638 sigue En ejecución. No se modificó código ni se probaron HTTP, Apps Script, Drive, Sheets, navegador o deployments.
 ===============================================================================

@@ -155,3 +155,13 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se verifican 6 dispatchers/handlers ausentes, 4 wrappers sin dispatcher, PUBLIC_ACTIONS, rutas y persistencia; hallazgos existentes AUD-NG-356..361 y AUD-NG-002/082..086/174/323 conservados.
 - AUD-NG-363 MEDIO/P2; TASK-678 ampliada sin duplicar ID. TASK-638 continúa En ejecución; no se modificó código.
 - Informe `Auditoría/AUDITORIA_TASK-638_C1.296.md`; checkpoint C1.296, `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt`; índice fila C1.296.
+
+
+[2026-11-09] IMA-AUDIT-20261109-1152Z — C1.297 / TASK-638 auditoría USER y ACADEMIC
+- HEAD de partida `5bf51a6b0c12fd62edc42385c55976789d00a423`; rama `NG_beta_0.0.0.1_work`; base `NG_beta_0.0.0.1` @ `44d9891132332e692dbe2ba8602b41f50a508a59`.
+- Auditoría previa TASK-637 confirmada; no se reabre.
+- AUD-NG-001 ampliado: auth.js no conserva sessionToken y api.js no lo transmite.
+- AUD-NG-364 ALTO/P1: controles fail-open/impersonación en tickets USER.
+- AUD-NG-365 MEDIO/P2: filtros públicos de audiencia/vigencia manipulables en USER.
+- TASK-636 y TASK-678 ampliadas sin crear IDs de tarea duplicados; TASK-638 sigue En ejecución; no se modificó código.
+- Informe `Auditoría/AUDITORIA_TASK-638_C1.297.md`; checkpoint C1.297, sesión IMA-AUDIT-20261109-1152Z, `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt`; índice fila C1.297.

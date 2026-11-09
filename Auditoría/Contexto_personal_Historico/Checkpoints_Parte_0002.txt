@@ -207,3 +207,30 @@ TASK-638 permanece En ejecución; no se modificó código. Abrir Auditoría/Mapa
 Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.296; parte 0002. Índice: Auditoría/INDICE_CHECKPOINTS.md, fila C1.296.
 Commit B de cierre: el commit que contiene este checkpoint; SHA a verificar externamente.
 ===============================================================================
+
+
+===============================================================================
+## C1.297 — TASK-638: trazabilidad USER/ACADEMIC, identidad y acciones públicas
+
+- **ID de sesión operativo:** IMA-AUDIT-20261109-1152Z (sesión abierta; checkpoint inicial C1.294).
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **Rama base protegida:** NG_beta_0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59; comparación: 369 adelante, 0 detrás; sin cambios.
+- **HEAD de partida verificado:** 5bf51a6b0c12fd62edc42385c55976789d00a423.
+- **Tree de partida:** ca33a4e8bcf0127e3b16c49954375a5b0ebadb20; tree recursivo 1.022 blobs, no truncado.
+- **Última tarea anterior:** TASK-637; requisito en pendientes/Contabilidad/Pendientes.md; informe C1.295; commit 0edce6ae2721b1d839ef259dad7ea77962fe8ab3. Auditoría del requisito, informe y commit: cierre documental satisfecho; no reabrir.
+- **Tarea en curso:** TASK-638, PM-00, fase metodológica 0/2. Estado En ejecución.
+- **Requisito íntegro:** pendientes/Contabilidad/Pendientes.md, sección TASK-638. Dependencia TASK-637 satisfecha.
+- **Fuentes leídas:** C1.296, C1.295, Plan Maestro, metodología 15–19, requisito TASK-638, MapaDependencias, seis Code.gs y JS relevantes de auth/tickets/admisión; auditoría y backlog de tareas derivadas.
+- **Hallazgos:** AUD-NG-001 ampliado (sessionToken no conservado/transmitido); AUD-NG-364 ALTO/P1 (ticket owner checks fail-open/impersonación); AUD-NG-365 MEDIO/P2 (audiencia/vigencia en consultas públicas USER manipulable). AUD-NG-280 y AUD-NG-002/AUD-NG-357/AUD-NG-323 se conservan sin duplicar.
+- **Tareas derivadas:** TASK-636 existente ampliada; TASK-678 existente ampliada. No se crean IDs de tarea duplicados.
+- **Recuperación de archivo:** fetch_file devolvió 0 caracteres para pendientes/Otros/Pendientes.md por tamaño. Se recuperó el blob vigente e9637ecc6f88b2aa0aec75909538e072509bf507 con fetch_blob: 1.627.709 caracteres, 1.647.413 bytes UTF-8, 16.484 líneas, 0 U+FFFD, 366 IDs TASK únicos (máximo TASK-682), 481 encabezados de tarea y 651 estados Pendiente/1 En ejecución en el conteo simple. No se restauró blob histórico ni se modificó el backlog; el contenido actual está íntegro.
+- **Archivos modificados:** informe C1.297 nuevo; MapaDependencias.md; Auditoria.txt; tareas_auditoria.txt; changueslogs.txt; Checkpoints_Parte_0002.txt; INDICE_CHECKPOINTS.md; repository-inventory.md.
+- **Archivos revisados sin modificación:** pendientes/Contabilidad/Pendientes.md; pendientes/Otros/Pendientes.md; metodología; contexto normativo; Plan Maestro; js/auth.js; js/api.js; js/ui-common.js; js/student.js; js/index-ui.js; backend USER y ACADEMIC Code.gs.
+- **Código fuente:** sin cambios; no se alteraron endpoints, contratos, rutas ni datos.
+- **Pruebas ejecutadas:** revisión estática, comparación Git, lectura de blobs y validación de identidad/acciones por código.
+- **No ejecutadas:** Node, navegador, HTTP, Apps Script runtime, Drive, Sheets, multiusuario, regresión, integración/E2E; deployments y Script Properties no verificados.
+- **Siguiente acción exacta:** continuar matriz por callsite de USER/ACADEMIC y recorrer helpers/persistencia/errores; completar HTML inline y trazas TASK/EXAM; mantener TASK-638 En ejecución.
+- **Ubicación:** Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.297; parte 0002. Índice: Auditoría/INDICE_CHECKPOINTS.md, fila C1.297.
+- **Commit de cierre:** el commit que contiene este checkpoint; SHA se verificará externamente.
+===============================================================================

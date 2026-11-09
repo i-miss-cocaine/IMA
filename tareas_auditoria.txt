@@ -221,3 +221,19 @@ El propósito de este documento es llevar el registro de las tareas derivadas de
 - **Alcance/exclusiones:** auditoría y documentación; no cambiar rutas, endpoints, contratos, código ni datos durante TASK-638.
 - **Criterios:** todos los callsites identificados con caller exacto; cobertura por servicio/acción; dispatcher/handler existente o ausencia explícita; permiso público/claims/contexto; persistencia/Drive y helpers; distinción caller real/wrapper huérfano; despliegue no marcado como verificado sin evidencia.
 - **Estado/evidencia de cierre:** abierto; matriz parcial C1.296, no acredita cierre de TASK-638.
+
+
+===============================================================================
+## TASK-678 — Ampliación C1.297 / TASK-638
+- **Origen:** AUD-NG-363, AUD-NG-364 y AUD-NG-365; informe `Auditoría/AUDITORIA_TASK-638_C1.297.md`.
+- **Evidencia:** USER/auth.js:138-160 no conserva sessionToken; USER/api.js:39-58 no lo transmite; USER Code.gs:1253-1261 define bypass autenticado; tickets:400+,470+,603+; acciones públicas:922-924; getNews:3116-3152; getInstitutionalAnnouncements:3817-3845. ACADEMIC PUBLIC_ACTIONS:265 y handlers de admisión/diagnóstico.
+- **Acción:** añadir a la matriz por callsite la fuente de identidad, presencia/ausencia de token, clasificación pública, bypass, filtros controlados por cliente, claims/contexto, handler, helpers y persistencia.
+- **Alcance:** solo auditoría/documentación; no modificar código ni endpoints durante TASK-638.
+- **Estado:** TASK-678 ampliada; TASK-638 sigue En ejecución.
+
+===============================================================================
+## Ampliación de TASK-636 (ID existente; backlog `pendientes/Otros/Pendientes.md`)
+- **Hallazgos:** AUD-NG-364 y AUD-NG-365; relacionados con AUD-NG-001, AUD-NG-002 y AUD-NG-280.
+- **Acciones añadidas:** proteger submitProblemTicket/getProblemTickets/replyProblemTicket con identidad derivada de claims y comprobación de propietario obligatoria; no permitir que userId ausente omita el control; restringir creación de tickets para que autor/rol sean claims verificados; revisar getNews/getInstitutionalAnnouncements para que audiencia, grado, sección, estado y vigencia no dependan de filtros arbitrarios del cliente.
+- **Criterios:** ausencia o mismatch de userId produce denegación; un usuario solo lee/responde sus tickets; la atribución de autor no puede falsificarse; usuarios anónimos no consultan contenido restringido ni noticias inactivas; pruebas negativas y positivas por rol.
+- **No se crea un ID nuevo:** la ampliación se integra en TASK-636, que ya cubre bypasses, claims y propiedad de recursos.
