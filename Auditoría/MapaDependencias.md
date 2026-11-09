@@ -4217,3 +4217,37 @@ Los espacios funcionales y el aprovisionamiento se simulan; el aislamiento no se
 
 ### Límites
 La pasada es parcial: no se inspeccionaron todos los HTML/HTM, JS, CSS, GS, JSON ni recursos; no se ejecutaron Node, navegador, HTTP, Apps Script, Drive o E2E. No se declaran rutas funcionales, ciclos ni duplicados sin evidencia. TASK-638 sigue En ejecución.
+
+
+---
+
+## C1.290 — TASK-638: páginas de aplicación, portales y dependencias de juegos
+
+**Cobertura de esta pasada:** 26 páginas HTML/HTM; informe `Auditoría/AUDITORIA_TASK-638_C1.290.md`; HEAD de partida `57643c473df081aa57cdd8e5def542281f500000`.
+
+### Páginas y cadenas trazadas
+- Admisión (`admision.html` SHA `45b84c80d22d2e8dab75852e65847bae6425db44`): ui-common/data/config/persistence/api/student; ACADEMIC createAdmissionRequest, saveAdmissionDraft, getAcademicOffers y helper getPublicAdmissionStatus.
+- Dashboards: Cafetería `12f8c828dd1f8f2c3be34e14d8c9478944c64d04` y Tienda `60fb5c399b527f7d3a6e764332d8496e17643d5c` cargan config/api/ui-common sin controlador ni llamadas API explícitas en HTML; queda como estado por confirmar. Contabilidad `b7653b3bff71829f0f67cf47cb894413c56a444a` carga accounting.js; Coordinación `08de8e4eb150ee9f6aad536ca08e8f76f2e0e896` carga secretary.js e invoca initCoordinatorDashboard; Dirección `fefaa3bf7884288aef563cfb8aaf244e6cea8b7c` carga secretary.js/teacher.js; Secretaría `fa0d8c23aace24a6acab2d4956398a7f5e1309b8` carga persistence/api/ui-common/secretary; RRHH `406bedbae5a5bb3b5c03e4ea7aaa95ed68aea8ee` tiene controlador inline y 25 llamadas ACCOUNTING.
+- Consola de desarrollador `developer-dashboard.html` SHA `2b69f1bf7ffbbe4902e81de14d6315cedb035a1e`: config/api/developer.js; USER getStructuredLogs.
+- Evaluación: exam.html `ca6a7e880c0c63e4d7fe18991612560734a39dcd` → exam.js → EXAM getExamQuestions/submitExam y USER recordAnalytics; results.html `a8dc15e9aec091eb3d6490b9b073ace48fcc72c5` → results.js → EXAM getExamResult.
+- Identidad: login.html `3b2e1e8d12a90552ac7b7d584294463a3e8e8f15` y register.html `e4ed1b11ac434a2e5badcd73363b10fa1438a6ff` cargan auth.js → USER loginUser/registerUser; forgot-password.html `23076c8ef1d90edf43da2c57e9829125aca908d3` → USER requestPasswordRecovery; reset-password.html `bf3a0554747611e518ba1eed9ca012a0f2a1de72` → USER resetPassword.
+- Políticas: privacidad `8854bae3021e1cdde288709e3fa411b3d6da20c7` y financiera `bb75dc6b72098b825a18025781346b4252fe33cf` → ACCOUNTING getPolicyAcceptances/recordPolicyAcceptance; uso `ca252904e9f7ad7301d1793ed07585a92a4c060f` → ACCOUNTING getPolicyAcceptances y USER acceptLegalDocument.
+- Pseudocode `9b882d70755dc89b000390990852a03407c6973a` → USER getStudents y TASK saveProject/listProjects/loadProject/deleteProject; identidad local en localStorage.
+- Portales: student-dashboard `6379ea0ed39d71b89747a0280bb925fdf12202c1` → student.js y librerías PDF/Chart; teacher-dashboard `cbb9e6a272a7d8ad33f99727303305d950533e71` → teacher.js, SheetJS, Quill y Chart.
+- Interactivo `56df0513897983217a1a5b6883e5fdafcfd4e4ed`: JS inline sin llamadas fetchApi identificadas en esta pasada.
+
+### Cargador dinámico de juegos
+- `js/index-ui.js` SHA `c637535e8cc84f02aa18631bc964ff7ef545722e`: triageGameLaunch líneas 358–398; loadGame líneas 400–453; loaders Periféricos/WebMaster líneas 455–456.
+- Flujo observado: fetch(htmlPath) → respuesta.text() → overlay.innerHTML → append explícito de `js/security-minigames.js` → append de controlador JS → initFn.
+- `js/data.js` SHA `6b3d5d654f56af320a8bf2acd6a4b77c0c6fd713` registra actividades por acciones load-peripherals-game, load-webmaster-quiz y load-dexterity-game, y ruta directa de QuizPro.
+- Los fragmentos `juegos/perifericos.html` y `juegos/webmaster_quiz.html` no son páginas autónomas en este flujo; rutas relativas se resuelven respecto del documento anfitrión y el script de seguridad lo agrega el cargador. Las sospechas iniciales de rutas rotas se descartan.
+
+### Hallazgo
+- **AUD-NG-351 MEDIO/P2:** `developer-dashboard.html:9` referencia `css/custom.css`; el árbol recursivo de 1.080 entradas no contiene esa ruta ni otro archivo custom.css. Sí existen `css/style.css` y `js/developer.js`. Impacto: hoja local declarada no resoluble; no se afirma que toda la consola carezca de estilos.
+- Ampliar TASK-674 (detección de rutas ausentes con contexto anfitrión) y TASK-678 (matriz canónica). No crear tareas duplicadas.
+
+### Huecos y límites
+- Cafetería/Tienda: placeholders y ausencia de controlador/API explícito en HTML; no se declara defecto sin confirmar el diseño esperado.
+- ACCOUNTING en RRHH y políticas permanece sujeto a AUD-NG-323; no se acredita deployment operativo.
+- 26/101 páginas inspeccionadas; quedan 75 HTML/HTM y la traza exhaustiva de JS/CSS/GS/JSON/assets.
+- No se ejecutaron Node, navegador, HTTP, Apps Script, Drive, Sheets ni E2E. TASK-638 sigue En ejecución.

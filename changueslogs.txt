@@ -89,3 +89,13 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - TASK-638 queda En ejecución. Sin cambios de código, rutas ni contratos; sin pruebas runtime.
 - Archivos: informe C1.289, MapaDependencias.md, Auditoria.txt, tareas_auditoria.txt, backlog Contabilidad, contexto, índice, Plan Maestro y este changelog.
 - Checkpoint C1.289; ubicación Auditoría/Contexto_personal.txt — sección C1.289, líneas 1676–1736; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.289.
+
+
+[2026-11-09] IMA-EXEC-20261109-0413Z-01 — C1.290 / TASK-638 (PM-00)
+- Verificado HEAD inicial 57643c473df081aa57cdd8e5def542281f500000.
+- Inspección estática de 26 páginas HTML/HTM y cadenas de auth, dashboards, políticas, exámenes, resultados y juegos.
+- AUD-NG-351 MEDIO/P2: developer-dashboard.html referencia css/custom.css inexistente; ampliar TASK-674/TASK-678.
+- Rutas de fragmentos de juegos evaluadas en su contexto de inyección; falsos positivos descartados.
+- TASK-638 sigue En ejecución, cobertura 26/101 páginas; no cambios de código/rutas/contratos ni pruebas runtime.
+- Archivos: informe C1.290, mapa, Auditoria.txt, tareas_auditoria.txt, contexto, índice, Plan Maestro y changelog.
+- Checkpoint C1.290 en Auditoría/Contexto_personal.txt — sección C1.290, líneas 1740–1788; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.290.

@@ -1763,3 +1763,10 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - **Evidencia:** informe `Auditoría/AUDITORIA_TASK-638_C1.289.md`; mapa `Auditoría/MapaDependencias.md`, sección C1.289; hallazgo AUD-NG-350 y ampliación de TASK-678 en `tareas_auditoria.txt`.
 - **Estado de aceptación:** parcial. El inventario de 1.013 blobs coincide con el tree, pero no existe aún traza individual completa de todas las dependencias por archivo ni contratos dinámicos exhaustivos.
 - **Siguiente acción:** continuar inspección manual de HTML/HTM por grupos y trazar recursos, scripts, llamadas API, handlers y persistencia. No iniciar cambios de rutas o contratos hasta cerrar auditoría.
+
+
+## Seguimiento operativo — C1.290
+- **TASK-638:** En ejecución; 26 de 101 HTML/HTM inspeccionados. Matriz parcial y dependencias de autenticación, dashboards, políticas, evaluación y juegos registradas en `Auditoría/MapaDependencias.md`.
+- **Hallazgo:** AUD-NG-351 MEDIO/P2 — `developer-dashboard.html:9` declara `css/custom.css` que no existe en el tree. Ampliar TASK-674 y TASK-678.
+- **Corrección de gobernanza:** índice C1.289 reparado; fila reubicada dentro de tabla y SHA actualizado.
+- **Siguiente paso:** completar las 75 páginas restantes y luego el grafo de JS/CSS/GS/JSON, acciones, dispatchers, handlers, permisos y persistencia. Sin cambios de código/rutas antes de cerrar el mapa.

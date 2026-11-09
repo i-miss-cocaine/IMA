@@ -1731,5 +1731,57 @@ Continuar auditoría manual por grupos de los 100 HTML y 1 HTM: extraer y verifi
 
 Ubicación exacta: Auditoría/Contexto_personal.txt — sección C1.289; rango de líneas calculado y registrado en Auditoría/INDICE_CHECKPOINTS.md.
 Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.289.
-Commit de cierre: este commit consolidado; SHA a confirmar consultando el HEAD tras publicación.
+Commit de cierre C1.289: `57643c473df081aa57cdd8e5def542281f500000`.
+===============================================================================
+
+
+===============================================================================
+## C1.290 — TASK-638 — Auditoría de páginas de aplicación y portales (grupo 2)
+ID de sesión: IMA-EXEC-20261109-0413Z-01
+Fecha: 2026-11-09 UTC
+Estado: auditoría preimplementación parcial; TASK-638 continúa En ejecución.
+Checkpoint anterior: C1.289.
+Repositorio: i-miss-cocaine/IMA.
+Rama autorizada: NG_beta_0.0.0.1_work.
+HEAD de partida: 57643c473df081aa57cdd8e5def542281f500000.
+Fase PM: PM-00 — inventario, triage y resolución de dependencias.
+Tarea: TASK-638 — Trazar dependencias estáticas y dinámicas de extremo a extremo.
+
+### Continuidad y corrección documental
+- HEAD coincide con el cierre publicado C1.289; se conserva el árbol de trabajo autorizado.
+- Se corrigió el índice central: la fila C1.289 estaba fuera de la tabla, después de las reglas; ahora está dentro de la tabla con SHA de commit 57643c473df081aa57cdd8e5def542281f500000.
+- Contexto activo previo: 162.775 caracteres / 1.736 líneas. Después de C1.290: menos de 180.000 caracteres; no requiere rotación.
+
+### Trabajo realizado
+- Inspeccionadas 26 páginas: admision, 8 dashboards, exam, autenticación, tres políticas, pseudocode, results, student/teacher dashboards, interactivo y cuatro páginas/fragmentos de juegos.
+- Trazas API relevantes: ACADEMIC para admisión; USER para auth, logs y aceptación legal; TASK para proyectos de pseudocode; EXAM para exámenes/resultados; ACCOUNTING para RRHH y políticas.
+- Trazado del cargador de juegos en js/index-ui.js: fetch(htmlPath) → innerHTML en overlay → append explícito security-minigames.js → append del controlador → invocación initFn. Se descartaron falsos positivos de rutas relativas de los fragmentos Periféricos/WebMaster por su contexto de inyección.
+- AUD-NG-351 MEDIO/P2: developer-dashboard.html línea 9 declara css/custom.css, ausente en el árbol. Se amplían TASK-674 y TASK-678.
+- Cafetería/Tienda carecen de controlador/API explícito en sus HTML; se deja como hueco de trazabilidad por confirmar, no como defecto probado.
+- TASK-638 permanece En ejecución. No se modificó código, rutas ni contratos.
+
+### Archivos modificados
+1. Auditoría/AUDITORIA_TASK-638_C1.290.md (nuevo).
+2. Auditoría/MapaDependencias.md (matriz y trazas de 26 páginas, hallazgo AUD-NG-351).
+3. Auditoria.txt (registro de AUD-NG-351).
+4. tareas_auditoria.txt (ampliación TASK-674/TASK-678, sin duplicar IDs).
+5. Auditoría/Contexto_personal.txt (corrección de SHA C1.289 y este checkpoint).
+6. Auditoría/INDICE_CHECKPOINTS.md (fila C1.289 reparada; fila C1.290 dentro de tabla).
+7. Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md (seguimiento C1.290).
+8. changueslogs.txt (entrada C1.290).
+
+### Fuentes inspeccionadas sin modificar
+26 páginas HTML/HTM listadas en el informe; js/index-ui.js, js/data.js, js/developer.js, js/auth.js, js/exam.js, js/results.js y js/ui-common.js. El informe registra SHAs y dependencias por página.
+
+### Pruebas y límites
+- Ejecutadas: verificación HEAD; tree Git recursivo (1.080 entradas, no truncado); comprobación de existencia de css/custom.css; lectura estática de páginas, scripts y referencias; conciliación de fragmentos de juegos con index-ui.js.
+- No ejecutadas: Node, navegador, HTTP, Apps Script, Drive, Sheets ni E2E.
+- Cobertura incompleta: 26/101 HTML/HTM inspeccionados; quedan 75 páginas y la matriz exhaustiva de JS/CSS/GS/JSON/assets.
+
+### Siguiente acción exacta
+Continuar con las páginas HTML/HTM restantes por grupos, registrar cada SHA y resolver referencias relativas según contexto standalone o fragmento. Después, trazar todos los JS/CSS/GS/JSON y cada acción API hasta dispatcher, handler, permisos y persistencia. No modificar código ni rutas hasta cerrar auditoría.
+
+Ubicación exacta: Auditoría/Contexto_personal.txt — sección C1.290; rango calculado y registrado en Auditoría/INDICE_CHECKPOINTS.md.
+Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.290.
+Commit de cierre: este commit consolidado; SHA verificado externamente tras publicación.
 ===============================================================================

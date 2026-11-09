@@ -100,3 +100,14 @@ Sesión: IMA-EXEC-20261109-0407Z-01; HEAD auditado: 0afe7fd3a9b9df974afc557063d4
 - Reconciliación: ampliar TASK-678 existente; referencias a AUD-NG-321/TASK-671 (contratos incompletos), AUD-NG-322 (fallback de fetchApi) y AUD-NG-323 (endpoint ACCOUNTING); no duplicar IDs.
 - Dictamen: TASK-638 continúa En ejecución; criterios de trazabilidad por archivo y contratos completos aún NO CUMPLEN. No se modificó código ni rutas. No se ejecutaron pruebas runtime.
 - Informe: Auditoría/AUDITORIA_TASK-638_C1.289.md. Checkpoint C1.289; sesión IMA-EXEC-20261109-0407Z-01; ubicación Auditoría/Contexto_personal.txt — sección C1.289; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.289.
+
+
+===============================================================================
+## TASK-638 / C1.290 — Segundo grupo de páginas y AUD-NG-351
+Sesión: IMA-EXEC-20261109-0413Z-01; HEAD de partida: 57643c473df081aa57cdd8e5def542281f500000.
+- Se inspeccionaron 26 HTML/HTM con SHAs, scripts, estilos, formularios, navegación y llamadas API documentadas en Auditoría/AUDITORIA_TASK-638_C1.290.md.
+- Se trazó index-ui.js:358–456; carga de fragmentos por fetch → innerHTML → append de security-minigames.js y controlador; se descartaron falsos positivos de rutas relativas en fragmentos.
+- AUD-NG-351 MEDIO/P2: developer-dashboard.html:9 referencia css/custom.css, ausente del tree completo de 1.080 entradas. Se amplían TASK-674 y TASK-678.
+- Cafetería/Tienda carecen de controlador/API explícito en el HTML; queda como hueco a confirmar, no defecto probado. ACCOUNTING para RRHH/políticas enlaza con AUD-NG-323.
+- TASK-638 permanece En ejecución; cobertura 26/101 páginas. No se modificó código, rutas ni contratos. Sin pruebas runtime.
+- Informe: Auditoría/AUDITORIA_TASK-638_C1.290.md. Checkpoint C1.290, sesión IMA-EXEC-20261109-0413Z-01; ubicación Auditoría/Contexto_personal.txt, sección C1.290; índice Auditoría/INDICE_CHECKPOINTS.md, fila C1.290.

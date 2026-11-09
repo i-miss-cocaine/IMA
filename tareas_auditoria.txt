@@ -94,3 +94,13 @@ El propósito de este documento es llevar el registro de las tareas derivadas de
 - **Criterios de aceptación:** cobertura de todas las dependencias explícitas del inventario; origen/destino exactos; rutas relativas y sensibilidad a mayúsculas verificadas; referencias dinámicas clasificadas y sustentadas; cada acción API ligada a dispatcher/handler; consumidores y proveedores identificados; endpoints no comprobados no se declaran operativos; diff y revisión documental aprobados.
 - **Estado:** En ejecución como ampliación de TASK-678; matriz parcial en C1.289.
 - **Evidencia:** informe C1.289 y sección homónima de `Auditoría/MapaDependencias.md`; faltan los grupos de HTML/HTM restantes y la traza exhaustiva de JS/CSS/GS/JSON/recursos.
+
+
+===============================================================================
+## TASK-674 / TASK-678 — Ampliación por AUD-NG-351 / C1.290
+- **Hallazgo:** AUD-NG-351 MEDIO/P2; informe `Auditoría/AUDITORIA_TASK-638_C1.290.md`.
+- **Evidencia:** `developer-dashboard.html` línea 9 referencia `css/custom.css`; tree recursivo de 1.080 entradas no contiene `css/custom.css` ni archivo `custom.css`. `js/developer.js` sí existe.
+- **TASK-674:** ampliar validación para resolver cada ruta local desde su contexto real (página standalone o fragmento inyectado), detectar destinos ausentes y sensibilidad a mayúsculas/minúsculas.
+- **TASK-678:** agregar matriz de 26 páginas y traza de juegos por index-ui.js:358–456; registrar la hoja ausente y los huecos no confirmados de Cafetería/Tienda.
+- **Criterios verificables:** toda ruta local explícita tiene destino existente o excepción documentada; fragmentos resuelven rutas con el documento anfitrión real; ausencia no se confunde con referencia de fragmento; prueba estática no certifica ejecución.
+- No se crean IDs nuevos ni duplicados. Estado: ampliación documentada; auditoría global pendiente.
