@@ -15764,6 +15764,15 @@ function resolveTransportAccessScope_(payload, ss) {
     return { authorized: false, reason: "VERIFIED_IDENTITY_REQUIRED", role: role, userId: userId, studentIds: [], routeIds: [] };
   }
 
+  // No confiar en roles cacheados dentro de un token de 24 horas: comprobar el rol vigente por petición.
+  const currentUser = transportRows_(ss, "Usuarios").find(function(row) {
+    return String(row[0] || "").trim() === userId;
+  });
+  const currentRole = String(currentUser && currentUser[6] || "").trim();
+  if (!currentUser || !currentRole || currentRole !== role) {
+    return { authorized: false, reason: "ROLE_CHANGED_OR_USER_NOT_FOUND", role: role, userId: userId, studentIds: [], routeIds: [] };
+  }
+
   const managementRoles = ["Administrador", "Director", "Subdirector"];
   if (managementRoles.indexOf(role) !== -1) {
     return { authorized: true, management: true, role: role, userId: userId, studentIds: null, routeIds: null };
