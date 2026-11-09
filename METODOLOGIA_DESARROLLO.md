@@ -1024,3 +1024,38 @@ Se considera incidente de continuidad cualquiera de estos casos: archivo vacío/
 
 Una tarea no verificada no puede servir como prerrequisito satisfecho. Ninguna tarea dependiente puede iniciarse mientras la anterior esté incompleta, corrupta, sin auditar o con criterios de aceptación pendientes. La secuencia normal es: checkpoint verificado → auditoría de la tarea anterior → registro de hallazgos → tareas derivadas en `tareas_auditoria.txt` → auditoría de la tarea objetivo → respaldo → implementación → autoauditoría → Code Review → commit único con checkpoint. Si la auditoría de la tarea anterior activa todas las condiciones de 19.2.1, la secuencia excepcional es: auditoría anterior → corrección aislada → pruebas/Code Review → commit A + checkpoint A → verificación de A → auditoría objetivo → implementación → pruebas/Code Review → commit B + checkpoint B.
 
+
+
+# 20. CONTROL DEL CRECIMIENTO, ROTACIÓN Y TRAZABILIDAD DE CHECKPOINTS
+
+## 20.1 Límite y medición
+1. Cada archivo activo de checkpoints tiene un máximo estricto de 180.000 caracteres Unicode, contando espacios y saltos de línea sobre el contenido UTF-8 decodificado.
+2. Antes de cada anexado, calcular caracteres_actuales + caracteres_nueva_entrada. Si el resultado es mayor que 180.000, la entrada no se anexa al archivo actual y debe abrirse la siguiente parte secuencial.
+3. Si un archivo ya excede el límite, queda cerrado inmediatamente para nuevas escrituras. No se trunca ni se divide retroactivamente; se conserva íntegro y se documenta la anomalía.
+
+## 20.2 Rotación sin pérdida histórica
+1. Auditoría/Contexto_personal.txt es el primer archivo histórico y punto de entrada. Las nuevas partes se crean bajo Auditoría/Contexto_personal_Historico/ con el patrón Checkpoints_Parte_0002.txt, Checkpoints_Parte_0003.txt, etc. No reutilizar nombres.
+2. Los archivos existentes Parte_01.txt a Parte_07.txt son fragmentos de recuperación del contexto original y no forman parte de la numeración nueva.
+3. Cada archivo nuevo inicia con el bloque normativo A–G íntegro y vigente de Auditoría/Contexto_personal.txt, más identificación del proyecto y referencias a esta metodología. No se copia el historial previo: se preserva en su archivo original.
+4. La rotación y la entrada que la provoca se publican juntas en el único commit consolidado de la iteración. El archivo anterior queda cerrado; no se mueve, resume ni reescribe contenido histórico.
+
+## 20.3 Índice y localización obligatoria
+1. Mantener Auditoría/INDICE_CHECKPOINTS.md como registro central, con una fila por checkpoint: ID, sesión, estado, tarea/fase, ruta exacta, sección/parte, rango de líneas, checkpoint anterior y commit de cierre/publicación.
+2. El índice identifica explícitamente el último checkpoint y el archivo activo. No depender de búsquedas manuales en múltiples partes.
+3. Cada checkpoint incorpora: ID; sesión; checkpoint anterior; ruta exacta; nombre de parte; encabezado de sección; rango de líneas cuando pueda calcularse; y referencia a la fila del índice.
+4. Auditoria.txt y changueslogs.txt deben incluir ID de checkpoint, sesión, ruta y referencia a la fila del índice. No duplicarán el cuerpo del checkpoint.
+5. La referencia de rango de líneas se calcula sobre el archivo final preparado y se actualiza en el índice antes de crear el commit. Si no es posible obtener un rango estable, registrar el encabezado exacto y la razón.
+
+## 20.4 Verificación y cierre
+1. Antes de escribir, verificar rama/HEAD, SHA del blob, tamaño actual y tamaño proyectado. No modificar archivos históricos ni efectuar escrituras parciales.
+2. Al rotar, comprobar que la copia normativa A–G del nuevo archivo coincide íntegramente con el bloque vigente de contexto personal; registrar su SHA o una verificación equivalente.
+3. Verificar después del commit: HEAD, árbol, rutas, tamaño de cada parte, continuidad de IDs, referencias del índice y rama base intacta.
+4. Si el bloque normativo original no puede recuperarse íntegramente, o no se puede verificar la integridad del archivo/índice, detener la rotación sin publicar cambios parciales.
+
+## 20.5 Convención de referencia cruzada
+Formato mínimo obligatorio en Auditoria.txt y changueslogs.txt:
+- Checkpoint: C1.xxx.
+- Sesión: ID operativo completo.
+- Ubicación: ruta exacta + encabezado/parte.
+- Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.xxx.
+- Commit: SHA confirmado tras publicación; dentro del checkpoint se indica «el commit que contiene este checkpoint».

@@ -44,3 +44,13 @@ HEAD de partida: c3a8e40f2341d9831984799ac0563e17ceefd96e
 - Acción: reabrir TASK-637 y ampliar el inventario a 1.002 rutas, incluyendo el informe de seguimiento C1.283.
 - Resolución: inventario regenerado desde el tree C1.282 más el informe C1.283; la verificación post-commit confirma el tree final.
 - Tarea derivada: extensión de TASK-637 conservando su ID; no se crea un ID nuevo.
+
+
+===============================================================================
+## REGISTRO DE GOBIERNO — C1.286 — CONTROL DE CRECIMIENTO Y TRAZABILIDAD DE CHECKPOINTS
+Fecha: 2026-11-09
+ID de sesión: IMA-GOV-20261109-0339Z-01
+Hallazgo/decisión: se formaliza un límite de 180.000 caracteres por archivo activo de checkpoints, rotación preventiva, réplica íntegra de las reglas normativas A–G en cada nueva parte e índice central obligatorio.
+Acción: se añade la sección 20 a METODOLOGIA_DESARROLLO.md y la regla G al bloque prioritario de Auditoría/Contexto_personal.txt.
+Ubicación del checkpoint: Auditoría/Contexto_personal.txt — sección C1.286, líneas 1547–1587.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.286.

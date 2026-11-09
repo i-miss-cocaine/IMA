@@ -26,6 +26,18 @@ F. **RECUPERACIÓN HISTÓRICA OBLIGATORIA CUANDO UN ARCHIVO DEVUELVA CERO CARACT
 
 Esta regla aplica a CUALQUIER archivo del repositorio IMA, sin excepción por tipo, extensión, ubicación o propósito: código fuente, documentación, configuraciones, datos, pruebas, recursos, archivos binarios y cualquier otro artefacto versionado. El hecho de que una herramienta devuelva 0 caracteres no permite clasificar el archivo como vacío. Si el archivo no es texto o la lectura textual no es compatible con su formato, la recuperación y validación deben hacerse sobre el objeto Git y sus bytes (incluidos tamaño y SHA); no se debe forzar una interpretación textual. El inventario de tareas/IDs se exige cuando el archivo contenga registros de tareas; para los demás archivos se registra expresamente «no aplica» y se inventarían las propiedades pertinentes al tipo de archivo.
 
+G. **CONTROL DE CRECIMIENTO, ROTACIÓN Y LOCALIZACIÓN DE CHECKPOINTS (OBLIGATORIO):**
+   1. El tamaño máximo de cada archivo activo de checkpoints será de **180.000 caracteres Unicode**, medidos sobre el contenido UTF-8 decodificado e incluyendo espacios y saltos de línea. Antes de anexar cualquier entrada, calcular el tamaño resultante. Si la adición excedería el límite, no escribir en ese archivo: crear el siguiente archivo secuencial de checkpoints.
+   2. La rotación es preventiva: el archivo nuevo debe quedar por debajo del límite desde su creación. Nunca truncar, borrar, resumir, mover ni reescribir checkpoints anteriores. El archivo que alcanzó el límite queda cerrado para nuevas entradas y permanece íntegro.
+   3. Cada archivo nuevo debe iniciar con una copia íntegra y vigente de este bloque normativo A–G del contexto personal (incluidas restricciones, precedencia, commits, checkpoints, recuperación y rotación), seguida de la identificación del repositorio/proyecto y referencias a la metodología vigente. No copiar todo el historial anterior: conservarlo en su archivo original. La copia normativa se considera una instantánea; cualquier cambio futuro de reglas debe propagarse a los nuevos archivos.
+   4. Convención de nombres: mantener Auditoría/Contexto_personal.txt como primer archivo histórico y punto de entrada; los archivos rotados se crearán como Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt, ..._0003.txt, etc., incrementando secuencialmente y sin reutilizar nombres. Los archivos Parte_01.txt a Parte_07.txt existentes son fragmentos de recuperación del contexto original y no se renombrarán ni se considerarán partes de esta nueva serie.
+   5. Mantener Auditoría/INDICE_CHECKPOINTS.md como índice permanente: una fila por checkpoint con ID, sesión, estado, archivo/ruta, ubicación (sección o líneas), tarea/fase y commit de cierre o estado de publicación. El índice debe señalar el último checkpoint y el archivo activo. No depender de buscar manualmente el último ID en todos los archivos.
+   6. Todo checkpoint debe declarar Ubicación exacta del checkpoint: ruta del archivo, identificador de parte, encabezado/sección y rango de líneas cuando sea posible; además debe incluir ID del checkpoint anterior y referencia al índice central. Si el rango final de líneas solo puede confirmarse tras escribir, calcularlo y registrarlo en el índice dentro del mismo cambio preparado.
+   7. Auditoria.txt y changueslogs.txt deben registrar el ID del checkpoint relacionado, ID de sesión, ruta exacta y referencia a la fila/entrada del índice. No duplicar el texto íntegro del checkpoint en esos registros; mantener evidencia local y referencias cruzadas.
+   8. Al rotar, preparar en una sola iteración el nuevo archivo con el bloque normativo completo, el checkpoint que provocó la rotación, la actualización del índice, la referencia de continuidad desde el archivo anterior y los cambios relacionados en auditoría/changelog. Publicar todo en el commit consolidado habitual; nunca crear un commit separado solo para rotar.
+   9. Antes de cada escritura comprobar tamaño actual, tamaño proyectado, SHA del blob, HEAD y espacio disponible respecto al límite. Si el archivo actual ya supera 180.000 caracteres, no anexar nada: preservar y cerrar ese archivo, crear la siguiente parte y documentar la anomalía. Si la fuente normativa no puede recuperarse íntegramente, detener la rotación hasta restaurarla de forma verificable.
+
+
 ---
 
 
@@ -1527,4 +1539,49 @@ CHECKPOINT C1.35 - AUDITORÍA FASE2-07 (2026-11-05)
 - **Commit de cierre:** commit único consolidado; SHA final se confirmará consultando el HEAD después de publicar.
 - **Siguiente tarea exacta:** TASK-637 — Completar el inventario integral de archivos; pendientes/Contabilidad/Pendientes.md. Estado operativo: Pendiente. Debe auditarse y ejecutarse nuevamente antes de considerar elegible TASK-638.
 - **Próxima acción reproducible:** verificar HEAD y este checkpoint; abrir el requisito completo TASK-637; auditar el inventario y su evidencia contra el árbol actual; no iniciar TASK-638 hasta que TASK-637 sea implementada y verificada en esta nueva ejecución.
+===============================================================================
+
+
+===============================================================================
+## C1.286 — Gobierno del crecimiento y trazabilidad de checkpoints (2026-11-09)
+ID de sesión: IMA-GOV-20261109-0339Z-01
+Estado de sesión: cerrada; cambio documental de gobierno.
+Checkpoint inicial/anterior: C1.285.
+Checkpoint de cierre: C1.286.
+Repositorio: i-miss-cocaine/IMA.
+Rama de trabajo: NG_beta_0.0.0.1_work.
+Rama base protegida: NG_beta_0.0.0.1.
+HEAD de partida verificado: 4cda8611c4d3c4aece4c7d80922cc4c14c920f5a.
+HEAD de rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59.
+Fase del Plan Maestro: PM-00 — gobierno documental previo a TASK-637.
+Tarea de producto: ninguna; no se inició implementación.
+Objetivo: establecer límite de crecimiento, rotación segura, bloque normativo replicable y trazabilidad central de checkpoints.
+Decisiones:
+- Límite máximo: 180.000 caracteres por archivo de checkpoints.
+- Rotación preventiva si la siguiente entrada excede el límite; los archivos previos quedan íntegros y cerrados.
+- Convención de rotación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_NNNN.txt.
+- Cada parte nueva comienza con copia íntegra de las reglas normativas A–G del contexto personal y referencia a METODOLOGIA_DESARROLLO.md.
+- Índice permanente: Auditoría/INDICE_CHECKPOINTS.md.
+- Checkpoint con ubicación exacta, parte, sección/rango de líneas, checkpoint anterior e índice.
+- Auditoria.txt y changueslogs.txt referencian ID, sesión, ruta e índice sin duplicar el checkpoint.
+Archivos modificados:
+- Auditoría/Contexto_personal.txt
+- METODOLOGIA_DESARROLLO.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/INDICE_CHECKPOINTS.md (nuevo)
+Ubicación exacta de este checkpoint:
+- Archivo: Auditoría/Contexto_personal.txt
+- Parte: archivo principal / parte inicial de la serie de checkpoints.
+- Sección: C1.286 — Gobierno del crecimiento y trazabilidad de checkpoints.
+- Rango de líneas: 1547–1587.
+Checkpoint anterior: C1.285 — Auditoría/Contexto_personal.txt, sección C1.285.
+Índice central: Auditoría/INDICE_CHECKPOINTS.md, fila C1.286.
+Cambios de metodología: nueva sección 20, control de tamaño, rotación, contenido normativo, índice y referencias cruzadas.
+Pruebas realizadas: verificación de HEAD y rama base; lectura de contexto/metodología/auditoría/changelog; comprobación del tamaño inicial del contexto (142.292 caracteres), inferior al límite de 180.000; verificación de que los archivos históricos Parte_01.txt a Parte_07.txt existen y no se renombrarán.
+Pruebas no ejecutadas: pruebas de aplicación, backend, navegador y E2E; no aplican a esta modificación documental.
+Archivos no modificados: código de producto, backlogs departamentales y Plan Maestro.
+Commit de cierre: el commit único que contiene este checkpoint; SHA a confirmar consultando HEAD después de publicar.
+Estado: regla documentada; el archivo principal permanece activo porque el tamaño proyectado sigue por debajo de 180.000 caracteres.
+Siguiente acción: cuando el usuario autorice continuar, verificar HEAD y el índice; iniciar TASK-637 desde cero conforme al Plan Maestro.
 ===============================================================================

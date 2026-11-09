@@ -54,3 +54,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se alinean los siete backlogs departamentales y la sección 10.1 del Plan Maestro. Las menciones históricas en auditorías, checkpoints y entradas previas se preservan como antecedentes, no como estado vigente.
 - Se recupera el contexto personal desde el blob íntegro y se divide su historial en partes consecutivas para permitir lectura sin perder contenido; el archivo principal queda como punto de entrada legible.
 - Rama: NG_beta_0.0.0.1_work; HEAD de partida: d3e00ce665e980e7766b2e84dca077f124899194; rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+
+[2026-11-09] IMA-GOV-20261109-0339Z-01 — C1.286: control de crecimiento y trazabilidad de checkpoints
+- Regla: máximo 180.000 caracteres por archivo activo; rotación preventiva sin alterar partes históricas.
+- Cada nueva parte replica íntegramente el bloque normativo A–G del contexto personal; el historial permanece en su archivo original.
+- Índice central: Auditoría/INDICE_CHECKPOINTS.md; cada checkpoint y cada registro incluye ubicación y referencia cruzada.
+- Checkpoint: C1.286; ubicación: Auditoría/Contexto_personal.txt — sección C1.286, líneas 1547–1587; índice: Auditoría/INDICE_CHECKPOINTS.md, fila C1.286.
+- Sesión: IMA-GOV-20261109-0339Z-01. Rama: NG_beta_0.0.0.1_work. HEAD de partida: 4cda8611c4d3c4aece4c7d80922cc4c14c920f5a.
