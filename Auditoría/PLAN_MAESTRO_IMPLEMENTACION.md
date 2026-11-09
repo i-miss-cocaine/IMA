@@ -2099,3 +2099,9 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 
 ## 10.31 Ajuste del fixture writer real — C1.347
 - El run 42713587990 detectó referencia target no inicializada en el mock. Se obtiene la hoja tras la primera escritura del writer real; producción sin cambios. CI pendiente.
+
+
+## 10.32 TASK-068 — orquestación local de importación C1.348
+- CI 42713722818: success (identity mapping + TASK-030 transport scope).
+- Se agregan fixtures Node con fuentes LEGACY_A/LEGACY_B que resuelven al mismo ID interno, reintento, idempotencia, rollback inverso, compensación fallida y validación de destino/correspondencia pendiente.
+- Se extrae y ejecuta código real del orquestador ACCOUNTING; sin UrlFetchApp ni servicios vivos. CI del nuevo contrato pendiente; BETA-FUNC-008 sigue Pendiente beta.

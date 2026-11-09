@@ -123,6 +123,46 @@ console.log("TASK-068 migration writers: upsert idempotency, payload conflict an
 function extractBalancedFunction(source,name){const start=source.indexOf("function "+name+"(");assert.ok(start>=0,"function "+name+" exists");const open=source.indexOf("{",start);let depth=0,quote=null,escaped=false,line=false,block=false;for(let i=open;i<source.length;i++){const ch=source[i],next=source[i+1];if(line){if(ch==="\n")line=false;continue;}if(block){if(ch==="*"&&next==="/"){block=false;i++;}continue;}if(quote){if(escaped){escaped=false;continue;}if(ch==="\\"){escaped=true;continue;}if(ch===quote)quote=null;continue;}if(ch==="/"&&next==="/"){line=true;i++;continue;}if(ch==="/"&&next==="*"){block=true;i++;continue;}if(ch==="'"||ch==='"'||ch==="\x60"){quote=ch;continue;}if(ch==="{")depth++;else if(ch==="}"&&--depth===0)return source.slice(start,i+1);}throw new Error("unbalanced "+name);}
 function runMigrationEnvelopeFixture(source,target){const secret="local-fixture-secret-0123456789-abcdef",cache=new Map(),calls=[];const names=["computeHmacSignature","createInterServiceEnvelope","verifyInterServiceEnvelope","handleTrustedMigrationEnvelope_"];const code=names.map(n=>extractBalancedFunction(source,n)).join(String.fromCharCode(10));const ctx={Utilities:{MacAlgorithm:{HMAC_SHA_256:"HMAC_SHA_256"},computeHmacSignature:(alg,msg,key)=>Array.from(crypto.createHmac("sha256",key).update(msg).digest()).map(b=>b>127?b-256:b)},CacheService:{getScriptCache:()=>({get:k=>cache.get(k)||null,put:(k,v)=>cache.set(k,v)})},PropertiesService:{getScriptProperties:()=>({getProperty:()=>secret})},applyTrustedMigrationWrite_:p=>{calls.push(p);return{status:"success",written:true};},compensateTrustedMigrationWrite_:p=>{calls.push(p);return{status:"success",compensated:true};},Date,Math,JSON,String,Object,Array,Error};vm.runInNewContext(code,ctx);const payload={tipoEntidad:"persona",idNuevoPlataforma:"PER-1",idempotencyKey:"MIG-1",datos:{Nombres:"Ana"}};const envelope=ctx.createInterServiceEnvelope("ACCOUNTING",target,"writeMigratedEntity",payload,secret);assert.equal(ctx.handleTrustedMigrationEnvelope_(envelope).written,true);assert.equal(calls.length,1);assert.throws(()=>ctx.handleTrustedMigrationEnvelope_(envelope),/REPLAY_DETECTED/);const wrongSource=ctx.createInterServiceEnvelope("UNTRUSTED",target,"writeMigratedEntity",payload,secret);assert.throws(()=>ctx.handleTrustedMigrationEnvelope_(wrongSource),/MIGRATION_SOURCE_NOT_ALLOWED/);const tampered=ctx.createInterServiceEnvelope("ACCOUNTING",target,"writeMigratedEntity",payload,secret);tampered.payload.idNuevoPlataforma="PER-TAMPERED";assert.throws(()=>ctx.handleTrustedMigrationEnvelope_(tampered),/INVALID_INTERSERVICE_SIGNATURE/);}
 
+
+function makeMigrationOrchestrationFixture(options){
+ options=options||{};const calls=[],auditRows=[],state={writes:0,uuid:0};
+ const audit={appendRow:row=>auditRows.push(row)},ss={};
+ const ctx={
+  SPREADSHEET_ID:"LOCAL",
+  SpreadsheetApp:{openById:()=>ss},
+  getOrCreateSheet:()=>audit,
+  Utilities:{DigestAlgorithm:{SHA_256:"SHA-256"},Charset:{UTF_8:"UTF-8"},getUuid:()=> "RUN-"+(++state.uuid),computeDigest:(alg,value)=>Array.from(crypto.createHash("sha256").update(String(value)).digest()).map(b=>b>127?b-256:b)},
+  resolveCrossReferenceIdentifier:p=>p.idOriginalLegado==="PENDING"?{status:"pending_review",code:"IDENTITY_REVIEW_REQUIRED"}:{status:"success",idMapeo:"MAP-"+p.idOriginalLegado,idNuevoPlataforma:"PER-SHARED"},
+  sendMigrationOwnerRequest_:(entity,action,payload)=>{calls.push({entity,action,payload});if(action==="writeMigratedEntity"){state.writes++;if(options.failWriteAt===state.writes)throw new Error("MOCK_OWNER_WRITE_FAILED");return{status:"success"};}if(action==="compensateMigratedEntity"){if(options.failCompensation)throw new Error("MOCK_COMPENSATION_FAILED");return{status:"success",compensated:true};}throw new Error("unexpected action");},
+  Date,JSON,String,Object,Array,Error
+ };
+ const start=accounting.indexOf("const MIGRATION_OWNER_SCHEMAS_"),first=accounting.indexOf("function migrationStableJson_",start);
+ const constants=accounting.slice(start,first),names=["migrationStableJson_","migrationHash_","mapMigrationRowToTarget_","rollbackMigrationOwnerWrites_","importDataWithColumnMapping"];
+ const code=constants+names.map(n=>extractBalancedFunction(accounting,n)).join(String.fromCharCode(10));
+ vm.runInNewContext(code,ctx);
+ return{ctx,calls,auditRows,state};
+}
+function runMigrationOrchestrationTests(source){
+ const fixture=makeMigrationOrchestrationFixture(),payload=(system,legacy)=>({nombreArchivo:"fixture.csv",destinoModulo:"USER",columnaMapeo:{identificador:"legacy",campos:{Nombres:"Nombres",Apellidos:"Apellidos",Identificacion:"DNI"}},filasData:[{legacy:legacy,Nombres:"Ana",Apellidos:"Perez",DNI:"0801-1990-12345"}],creadoPor:"TEST",sistemaOrigen:system,tipoEntidad:"persona"});
+ const a=fixture.ctx.importDataWithColumnMapping(payload("LEGACY_A","A-01"));const b=fixture.ctx.importDataWithColumnMapping(payload("LEGACY_B","B-99"));
+ assert.equal(a.status,"success");assert.equal(b.status,"success");
+ const writes=fixture.calls.filter(x=>x.action==="writeMigratedEntity");assert.equal(writes.length,2);
+ assert.equal(writes[0].payload.idNuevoPlataforma,"PER-SHARED");assert.equal(writes[1].payload.idNuevoPlataforma,"PER-SHARED");
+ assert.notEqual(writes[0].payload.idempotencyKey,writes[1].payload.idempotencyKey,"different source IDs retain distinct idempotency keys");
+ const retry=fixture.ctx.importDataWithColumnMapping(payload("LEGACY_A","A-01"));assert.equal(retry.status,"success");
+ assert.equal(fixture.calls.filter(x=>x.action==="writeMigratedEntity")[2].payload.idempotencyKey,writes[0].payload.idempotencyKey);
+ const rollback=makeMigrationOrchestrationFixture({failWriteAt:2});
+ const batch=Object.assign(payload("LEGACY_A","A-01"),{filasData:[{legacy:"A-01",Nombres:"Ana"},{legacy:"A-02",Nombres:"Luis"}]});
+ const rolled=rollback.ctx.importDataWithColumnMapping(batch);assert.equal(rolled.code,"MIGRATION_BATCH_ROLLED_BACK");assert.equal(rolled.estado,"rolled_back");
+ assert.equal(rollback.calls.filter(x=>x.action==="compensateMigratedEntity").length,1);
+ const failedComp=makeMigrationOrchestrationFixture({failWriteAt:2,failCompensation:true});
+ const compResult=failedComp.ctx.importDataWithColumnMapping(batch);assert.equal(compResult.code,"MIGRATION_COMPENSATION_REQUIRED");assert.equal(compResult.estado,"compensation_required");
+ const pending=makeMigrationOrchestrationFixture();const pendingResult=pending.ctx.importDataWithColumnMapping(payload("LEGACY_A","PENDING"));
+ assert.equal(pendingResult.estado,"failed_validation");assert.equal(pending.calls.length,0);
+ assert.throws(()=>fixture.ctx.importDataWithColumnMapping(Object.assign(payload("LEGACY_A","A-01"),{destinoModulo:"ACADEMIC"})),/MIGRATION_DESTINATION_MISMATCH/);
+}
+
+runMigrationOrchestrationTests(accounting);
 runMigrationEnvelopeFixture(user,"USER");
 runMigrationEnvelopeFixture(academic,"ACADEMIC");
 assert.ok(accounting.includes('getProperty("IMA_MIGRATION_HMAC_SECRET")'));

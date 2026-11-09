@@ -472,3 +472,18 @@ Checkpoint anterior: C1.346
 Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.347.
 Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.347.
 ===============================================================================
+
+
+===============================================================================
+## C1.348 — TASK-068: pruebas locales de orquestación y compensación multi-fila
+ID: C1.348
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.347
+- CI run 42713722818: completed/success; contrato de identidad y TASK-030 transport access scope pasaron.
+- Se agregan mocks locales del importador ACCOUNTING: dos fuentes legadas que convergen al mismo ID interno, claves idempotentes por fuente/contenido, reintento, rollback inverso cuando falla una escritura, fallo de compensación y rechazo de correspondencia pendiente/destino incorrecto.
+- Los tests extraen migrationStableJson_, migrationHash_, mapMigrationRowToTarget_, rollbackMigrationOwnerWrites_ e importDataWithColumnMapping del código real de ACCOUNTING.
+- No se invoca UrlFetchApp ni Apps Script/Sheets reales; transporte vivo permanece beta.
+- CI nuevo pendiente; TASK-068 sigue En ejecución.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.348.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.348.
+===============================================================================
