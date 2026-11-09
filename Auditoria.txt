@@ -1,1 +1,32 @@
 El propósito de este documento es registrar todos los hallazgos encontrados durante la etapa de auditoría pre implementación del repositorio.
+
+
+===============================================================================
+## SESIÓN DE EJECUCIÓN PM-00 — 2026-11-09 UTC
+ID de sesión: IMA-EXEC-20261109-0217Z-01
+HEAD auditado: 39c3d62136a23f58b284d2fee2291698fd114a42
+
+### AUD-NG-343 — MEDIO/P2 — Duplicación de registro histórico
+- Origen: auditoría de seguimiento PLAN-IMA-004 / checkpoint C1.281.
+- Evidencia: `changueslogs.txt` contiene dos entradas consecutivas para PLAN-IMA-004 con el mismo objeto de cambio y HEAD de partida.
+- Impacto: ambigüedad en el historial append-only; no se elimina ni modifica ninguna entrada anterior.
+- Tarea derivada: TASK-683, registrada en `tareas_auditoria.txt`; no bloquea TASK-637.
+
+### AUD-NG-344 — MEDIO/P2 — Conteo objetivo desactualizado
+- Origen: auditoría TASK-637; requisito original en `pendientes/Contabilidad/Pendientes.md`.
+- Evidencia: Git tree `b0042a7edd424ebf8efab7bcd1aace3641f08b23` (truncated=false) contiene 999 blobs únicos; el requisito conserva la cifra histórica 974.
+- Acción: extensión de TASK-637 para cubrir los 999 archivos reales; se preserva la cifra original como antecedente.
+
+### AUD-NG-345 — ALTO/P1 — Inventario existente incompleto
+- Evidencia: `docs/architecture/repository-inventory.md` tenía 40 líneas y 3.089 caracteres; no registraba el catálogo completo, tamaños ni SHA por archivo.
+- Evidencia adicional: `index.html` referencia `js/persistence.js`, `js/games-adapter.js`, `js/data.js` y `js/index-ui.js`, omitidos del inventario previo.
+- Resolución: inventario integral de 999 filas, blob SHA `41f8e122eb7171c9f59a0552c9ad13ac4c90f9b0`.
+
+### AUD-NG-346 — MEDIO/P2 — Ruta documental obsoleta
+- Evidencia: el requisito de TASK-637 referencia `AUDITORIAS/MapaDependencias.md`; la ruta real vigente es `Auditoría/MapaDependencias.md`.
+- Acción: se añade aclaración aditiva al bloque TASK-637; no se mueve ni renombra el mapa.
+
+### Dictamen de ejecución
+- PLAN-IMA-004: cumplimiento parcial por AUD-NG-343; TASK-683 queda pendiente y no bloquea TASK-637.
+- TASK-637: completada tras inventario, verificación de 999 rutas y Code Review documental.
+- TASK-638 y TASK-639 permanecen sin ejecutar; TASK-638 depende de TASK-637.

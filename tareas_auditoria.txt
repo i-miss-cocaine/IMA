@@ -1,1 +1,32 @@
 El propósito de este documento es llevar el registro de las tareas derivadas de los hallazgos identificados durante la auditoría pre implementación.
+
+
+===============================================================================
+## TASK-637 — Ficha de trazabilidad y extensión por auditoría
+- **ID:** TASK-637 (ID existente; no se crea duplicado).
+- **Informe/hallazgo de origen:** `Auditoría/AUDITORIA_COMPLETADAS_F8-TASK02.md`, AUD-NG-281; ampliación actual AUD-NG-344, AUD-NG-345 y AUD-NG-346.
+- **Requisito original:** `pendientes/Contabilidad/Pendientes.md`.
+- **Severidad/prioridad:** ALTO / P1.
+- **Objetivo:** inventariar íntegramente los archivos versionados y preservar trazabilidad del snapshot.
+- **Acción ejecutada:** generar catálogo desde Git tree completo con ruta, tipo, tamaño, SHA, área, propósito y condición de uso; ajustar cobertura a 999 blobs actuales; aclarar ruta canónica del mapa.
+- **Archivos afectados:** `docs/architecture/repository-inventory.md`; `pendientes/Contabilidad/Pendientes.md`; `Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md`.
+- **Dependencias:** Git tree completo, documentación vigente e `index.html`; satisfechas.
+- **Alcance/exclusiones:** documentación e inventario; sin mover archivos ni modificar código fuente ni punto de entrada.
+- **Criterios de aceptación:** 999 rutas únicas; 999 tamaños y SHA; tipo/área/propósito/condición documentados; árbol no truncado; sin rutas inventadas; `index.html` sin cambios.
+- **Estado:** Completada.
+- **Evidencia de cierre:** tree `b0042a7edd424ebf8efab7bcd1aace3641f08b23`; inventario blob `41f8e122eb7171c9f59a0552c9ad13ac4c90f9b0`; HEAD de partida `39c3d62136a23f58b284d2fee2291698fd114a42`; verificación estructural 999/999.
+
+===============================================================================
+## TASK-683 — Desambiguar duplicación histórica de PLAN-IMA-004
+- **ID:** TASK-683 (nuevo; comprobado sin colisión en el plan, los siete backlogs y el mapa de dependencias).
+- **Informe/hallazgo de origen:** `Auditoría/AUDITORIA_PLAN-IMA-004_C1.282.md`, AUD-NG-343.
+- **Requisito original:** `METODOLOGIA_DESARROLLO.md`, sección 3.2; `changueslogs.txt` (registro append-only).
+- **Severidad/prioridad:** MEDIO / P2.
+- **Objetivo:** desambiguar las dos entradas repetidas de PLAN-IMA-004 sin borrar ni sobrescribir historial.
+- **Acción ejecutable:** agregar una nota correctiva al final de `changueslogs.txt` que identifique ambas entradas, explique que describen el mismo cambio y señale la referencia canónica; conservar intactas las dos entradas.
+- **Archivos afectados:** `changueslogs.txt`; informe de auditoría de origen.
+- **Dependencias:** ninguna.
+- **Alcance/exclusiones:** solo trazabilidad documental; no editar entradas anteriores, no reescribir commits, no modificar código.
+- **Criterios de aceptación:** nota añadida al final; ambas entradas históricas permanecen byte por byte; referencia canónica identificada; diff y SHA verificados.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pendiente.

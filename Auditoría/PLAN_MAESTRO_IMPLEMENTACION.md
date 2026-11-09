@@ -1719,3 +1719,15 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 
 - **1.0 (2026-11-09):** inventario de 1.346 IDs únicos; clasificación inicial por fase y subflujo; grafo de capas; orden de trabajo por dependencias e integración; anexo de trazabilidad de cada ID. Se mantienen 35 registros en PM-00 para triage manual antes de ejecución.
 - **Ajuste de control de calidad 1.0.1:** AUD-NG-110 se reclasifica de PM-09 a PM-08 porque su título trata de recuperación de bloqueo de carga/caché y no de cutover. Los conteos se actualizan manteniendo los 1.346 IDs.
+
+---
+
+## 10. Registro de ejecución y estados (aditivo)
+
+### TASK-637 — Completada | PM-00.3 | IMA-EXEC-20261109-0217Z-01
+- Requisito: `pendientes/Contabilidad/Pendientes.md`.
+- Evidencia: `docs/architecture/repository-inventory.md` (41f8e122eb7171c9f59a0552c9ad13ac4c90f9b0); tree `b0042a7edd424ebf8efab7bcd1aace3641f08b23` en HEAD de partida `39c3d62136a23f58b284d2fee2291698fd114a42`.
+- Resultado: 999 de 999 blobs versionados inventariados; rutas únicas; SHA, tamaño, tipo, área, propósito y condición de uso documentados.
+- Code Review documental: aprobado; `index.html` conserva SHA `cd742047cdc4948259dd721119429b04f78330ca`.
+- Dependencia siguiente: TASK-638 requiere TASK-637 completada y verificada; TASK-639 requiere TASK-637 y TASK-638.
+- Siguiente acción: auditar el cierre de TASK-637 y después auditar TASK-638 en `pendientes/Contabilidad/Pendientes.md`.

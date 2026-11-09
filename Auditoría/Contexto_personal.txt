@@ -9601,3 +9601,35 @@ Auditar TAREA-F6-015 y TAREA-F6-040. Buscar informes individuales e historial en
 - **Cierre de continuidad:** el checkpoint C1.280 indicaba sesión abierta; la revisión de HEAD, árbol, archivos y este checkpoint cierra documentalmente esa continuidad, sin alterar su contenido histórico.
 - **Commit de cierre:** el commit único que contiene este checkpoint; SHA final se verificará consultando HEAD tras publicar.
 ===============================================================================
+
+
+===============================================================================
+## C1.282 — Primera ejecución del Plan Maestro: auditoría previa y TASK-637 (2026-11-09)
+
+- **ID de sesión operativo:** IMA-EXEC-20261109-0217Z-01 (identificador documental; no ID nativo de ChatGPT).
+- **Estado de sesión:** preparada para cierre tras publicar y verificar el commit consolidado.
+- **Checkpoint inicial:** C1.281. **Checkpoint de cierre:** C1.282.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **HEAD de partida verificado:** 39c3d62136a23f58b284d2fee2291698fd114a42.
+- **Rama base protegida:** NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios durante esta iteración.
+- **Fase metodológica:** Fases 0–7; continuidad, auditoría, planificación, respaldo, ejecución documental, validación, Code Review y cierre.
+- **Fase del Plan Maestro:** PM-00 — Inventario, triage y resolución de dependencias.
+- **Etapa:** PM-00.3 — Inventario integral y preparación de dependencias.
+- **Tarea anterior auditada:** PLAN-IMA-004; cumplimiento parcial por AUD-NG-343 (entrada duplicada en changueslogs.txt).
+- **Tarea ejecutada:** TASK-637 — Completar el inventario integral de archivos.
+- **Estado final TASK-637:** Completada; 999/999 archivos del Git tree inventariados.
+- **Git tree de partida:** b0042a7edd424ebf8efab7bcd1aace3641f08b23; 999 blobs únicos, árbol no truncado.
+- **Evidencia principal:** docs/architecture/repository-inventory.md; blob SHA 41f8e122eb7171c9f59a0552c9ad13ac4c90f9b0.
+- **Informes:** Auditoría/AUDITORIA_PLAN-IMA-004_C1.282.md (9cb67788d0e5434add1ab43362e6c02bf15731ff); Auditoría/AUDITORIA_TASK-637_C1.282.md (c41cd73177f3aca1f702c8452800f5259ed72ab2).
+- **Hallazgos:** AUD-NG-343 (duplicación changelog, P2); AUD-NG-344 (conteo 974 obsoleto frente a 999, P2); AUD-NG-345 (inventario previo parcial, P1); AUD-NG-346 (ruta obsoleta, P2).
+- **Tareas derivadas:** TASK-683 pendiente para desambiguar la duplicación histórica sin editar/eliminar entradas; TASK-637 ampliada conservando su ID y completada.
+- **Dependencias:** TASK-637 no tenía prerrequisitos de producto por ID; árbol, documentación e index.html verificados. TASK-638 depende de TASK-637; TASK-639 depende de TASK-637 y TASK-638.
+- **Archivos modificados:** docs/architecture/repository-inventory.md; pendientes/Contabilidad/Pendientes.md; Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; Auditoría/AUDITORIA_PLAN-IMA-004_C1.282.md; Auditoría/AUDITORIA_TASK-637_C1.282.md; Auditoria.txt; tareas_auditoria.txt; changueslogs.txt; Auditoría/Contexto_personal.txt.
+- **Archivos revisados sin modificación:** METODOLOGIA_DESARROLLO.md; Auditoría/MapaDependencias.md; Auditoría/AUDITORIA_COMPLETADAS_F8-TASK02.md; README.md; index.html; docs/architecture/routing-and-paths.md; docs/architecture/folder-structure.md; los otros seis backlogs departamentales.
+- **Pruebas ejecutadas:** conteo de 999 blobs; unicidad de rutas; correspondencia 999/999 entre árbol e inventario; tamaño/SHA; clasificación; verificación de 1.346 IDs únicos y rutas de origen del Plan; conservación de SHA de index.html; Code Review documental.
+- **Pruebas no ejecutadas:** runtime Apps Script, navegador, HTTP y E2E; no aplican al alcance de inventario documental.
+- **Commit de cierre:** el commit único que contiene este checkpoint; SHA final se confirma externamente después de actualizar la rama.
+- **Siguiente tarea exacta:** TASK-638 — Trazar dependencias estáticas y dinámicas de extremo a extremo; `pendientes/Contabilidad/Pendientes.md`.
+- **Próxima acción reproducible:** auditar primero el cierre de TASK-637 y después abrir el requisito completo de TASK-638; verificar que todas sus dependencias de TASK-637 están satisfechas antes de ejecutar.
+===============================================================================

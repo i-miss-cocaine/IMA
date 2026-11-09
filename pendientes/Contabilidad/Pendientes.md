@@ -3033,17 +3033,21 @@
 ---
 
 <!-- ID: TASK-637 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK02.md -->
-### [ ] [TASK-637] Completar el inventario integral de archivos
+### [X] [TASK-637] Completar el inventario integral de archivos
 - **Referencia:** AUD-NG-281.
 - **Severidad:** ALTO.
 - **Prioridad:** P1.
-- **Estado:** Pendiente.
+- **Estado:** Completada.
 - **Objetivo y acción:** generar y mantener un inventario exhaustivo de los 974 archivos versionados, con ruta exacta, tipo, tamaño, SHA, área funcional, propósito y condición de uso; reconciliarlo con el árbol Git vigente y contemplar contenido académico, assets, datos, documentación, pruebas, configuración y backend.
 - **Archivos/módulos afectados:** `docs/architecture/repository-inventory.md`, `AUDITORIAS/MapaDependencias.md`, árbol completo del repositorio.
 - **Dependencias:** árbol Git de la rama de trabajo, documentación vigente, punto de entrada `index.html`.
 - **Criterios de aceptación:** 100 % de las rutas versionadas presentes una sola vez; ningún archivo omitido o inventado; clasificación verificable; diferencias de árbol registradas; no renombrar el punto de entrada.
 - **Alcance:** documentación e inventario, sin mover ni alterar archivos fuente.
 
+- **Ampliación por auditoría AUD-NG-344:** el requisito original conserva la cifra histórica de 974; el árbol Git del HEAD auditado contiene 999 blobs versionados. La cobertura se ajusta a los 999 archivos reales, sin borrar el dato original.
+- **Aclaración de ruta AUD-NG-346:** la ubicación vigente del mapa es `Auditoría/MapaDependencias.md`; la referencia histórica `AUDITORIAS/MapaDependencias.md` no debe usarse como ruta activa.
+- **Evidencia de cierre:** inventario `docs/architecture/repository-inventory.md`, blob SHA `41f8e122eb7171c9f59a0552c9ad13ac4c90f9b0`; Git tree `b0042a7edd424ebf8efab7bcd1aace3641f08b23`; 999 rutas únicas con tamaño y SHA.
+- **Pruebas:** 999/999 rutas; unicidad; tamaño/SHA; clasificación; punto de entrada `index.html` sin cambios.
 ---
 
 <!-- ID: TASK-638 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK02.md -->
