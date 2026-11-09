@@ -1,8 +1,8 @@
-name: Identity mapping contract
+name: Identity mapping and transport security contracts
 on:
   push:
     branches: [NG_beta_0.0.0.1_work]
-    paths: ['backend/user-service/Code.gs','backend/accounting-service/Code.gs','tests/security/identity-mapping-contract.test.js','METODOLOGIA_DESARROLLO.md','.github/workflows/identity-mapping-contract.yml']
+    paths: ['backend/user-service/Code.gs','backend/accounting-service/Code.gs','tests/security/identity-mapping-contract.test.js','tests/security/transport-access-scope.test.js','METODOLOGIA_DESARROLLO.md','.github/workflows/identity-mapping-contract.yml']
   pull_request:
     branches: [NG_beta_0.0.0.1]
   workflow_dispatch:
@@ -18,3 +18,5 @@ jobs:
           node-version: '24'
       - name: Verify TASK-068 identity mapping contract
         run: node tests/security/identity-mapping-contract.test.js
+      - name: Verify TASK-030 transport access scope
+        run: node tests/security/transport-access-scope.test.js
