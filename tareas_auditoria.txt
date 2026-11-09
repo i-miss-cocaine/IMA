@@ -435,3 +435,15 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - **Estado:** TASK-636 En ejecución; AUD-NG-369 abierto; closeAcademicYear BACKUP_REQUIRED.
 - **Checkpoint:** C1.316; sesión IMA-EXEC-20261109-1650Z-01; Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.316; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.316.
 ===============================================================================
+
+
+===============================================================================
+## Ampliación de TASK-068 — AUD-NG-381 (C1.325)
+- **ID conservado:** TASK-068; no crear tarea duplicada.
+- **Origen:** `Auditoría/AUDITORIA_TASK-068_C1.318.md`, seguimiento C1.325; hallazgo AUD-NG-381 MEDIO/P2.
+- **Objetivo/acción:** reparar los escapes de la regex de extracción de `IDENTITY_TARGET_SCHEMAS_` y del separador de línea usado por el test VM, sin alterar código de producción.
+- **Archivo afectado:** `tests/security/identity-mapping-contract.test.js`.
+- **Dependencias/riesgos:** depende del contrato de validación implementado en C1.324; no añade dependencias de producto.
+- **Criterios:** extracción del bloque de esquemas exitosa; VM recibe el fragmento con salto de línea real; todos los casos aislados se ejecutan; CI del commit termina completed/success.
+- **Estado:** harness corregido en C1.325; CI pendiente. TASK-068 continúa En ejecución por AUD-NG-378 y requisitos restantes.
+===============================================================================

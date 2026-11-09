@@ -449,3 +449,11 @@ Sesión: IMA-EXEC-20261109-1108Z-01; HEAD de partida: 32b8f5884dd24dbeaf1a3bf028
 - **Resolución C1.324:** se incorpora `IDENTITY_TARGET_SCHEMAS_` con siete esquemas canónicos y aliases usuario/user/cuenta; validación completa, solo lectura y fail-closed. Prueba aislada Node añadida para esquemas válidos/inválidos y destinos ausentes/no soportados; resultado CI se registra tras ejecución.
 - **Expediente único:** `Auditoría/AUDITORIA_TASK-068_C1.318.md`; no se crea informe completo nuevo ni tarea derivada.
 - Checkpoint C1.324; sesión IMA-EXEC-20261109-1802Z-01; ubicación `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt`; índice `Auditoría/INDICE_CHECKPOINTS.md` — fila C1.324.
+
+
+## AUD-NG-381 — MEDIO/P2 — TASK-068 — harness de pruebas con escapes inválidos
+- **Evidencia:** revisión del test publicado en C1.324, `tests/security/identity-mapping-contract.test.js`: la regex de extracción del registro de esquemas y el separador de línea del fragmento VM quedaron doblemente escapados, impidiendo extraer/evaluar el bloque de prueba.
+- **Impacto:** la cobertura aislada añadida en C1.324 no podía ejecutarse de forma válida; no afecta por sí mismo al código de producción, pero invalida la evidencia de test.
+- **Acción/tarea:** corregir el harness dentro de TASK-068 existente, sin ID de tarea derivado duplicado.
+- **Resolución C1.325:** se normalizan escapes de regex y salto de línea; el resultado CI posterior se registra cuando esté disponible.
+- Checkpoint C1.325; sesión IMA-EXEC-20261109-1802Z-01; ubicación `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt`; índice `Auditoría/INDICE_CHECKPOINTS.md` — fila C1.325.

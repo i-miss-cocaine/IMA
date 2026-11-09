@@ -129,3 +129,10 @@ Las lecturas fueron completas (92.668, 429.611 y 713.779 caracteres). El histori
 - **Archivos:** `backend/user-service/Code.gs`, `tests/security/identity-mapping-contract.test.js`, este expediente y registros de checkpoint. MapaDependencias no se modifica: no cambian las dependencias ni el grafo entre módulos.
 - **Estado:** AUD-NG-380 corregido en código; CI pendiente de resultado posterior al commit. AUD-NG-378 sigue abierto: no hay escritor de destino ni importación real. TASK-068 permanece En ejecución.
 - **Limitación:** no hay runtime Apps Script/Sheets aislado ni configuración verificada de `IMA_INSTITUTION_ID`; no se ejecutaron pruebas reales de persistencia, dos fuentes, concurrencia ni navegador.
+
+
+## Seguimiento C1.325 — AUD-NG-381: corrección del harness de pruebas C1.324
+- Revisión focalizada del commit C1.324: el código de producción mantiene la validación completa de esquemas, pero el nuevo test contenía escapes dobles en la expresión regular de extracción y en el separador de código pasado a VM; el bloque de prueba no podía ejecutarse correctamente.
+- Se corrige únicamente el harness: regex con clases `[\\s\\S]` y separador de línea `\n` válidos en el propio archivo JavaScript. Se conserva la cobertura dinámica de esquemas válidos/incompatibles, aliases, hoja ausente, ID vacío y tipo no soportado.
+- No se altera código de producción ni el alcance funcional. El run C1.324 `42672140762` permanecía queued al iniciar esta revisión; no se declara resultado. El nuevo CI del commit C1.325 debe confirmar la ejecución.
+- Expediente principal único: este informe; AUD-NG-381 se registra en Auditoria.txt y se vincula a TASK-068 existente, sin crear tarea duplicada.

@@ -1714,3 +1714,57 @@ Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002
 Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.324.
 Commit de cierre: este commit; SHA se verificará externamente tras publicación.
 ===============================================================================
+
+
+===============================================================================
+## C1.325 — TASK-068 / PM-01 — corrección del harness de validación de esquemas
+ID de sesión: IMA-EXEC-20261109-1802Z-01
+Fecha: 2026-11-09 UTC
+Checkpoint anterior: C1.324
+Repositorio: i-miss-cocaine/IMA
+Rama de trabajo: NG_beta_0.0.0.1_work
+HEAD de partida: 8bc3e1a6b84d4bb362a78c6375c2872b7b751f87
+Rama base: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios)
+Tarea: TASK-068 — En ejecución; no completada.
+Fase PM: PM-01; prioridad P0; orden local 1.
+
+### Auditoría focalizada de continuidad
+- Se revisó el commit C1.324 y el test añadido, sin repetir la auditoría de producto ni el expediente original.
+- Se detectó AUD-NG-381 MEDIO/P2: regex y separador de línea del harness quedaron doblemente escapados, por lo que la extracción/evaluación del fragmento VM no era ejecutable.
+- El código de producción de C1.324 no se modifica: su validación de encabezado completo permanece intacta.
+
+### Corrección
+- Se corrigen los escapes de la expresión regular a `[\\s\\S]` y el separador de código VM a `\n` válidos en el archivo JavaScript.
+- Se conserva toda la cobertura de esquemas canónicos, aliases, hoja ausente, ID vacío, tipo no soportado y columna incompatible.
+- Se registra AUD-NG-381 en el expediente principal y Auditoria.txt, y se amplía TASK-068 existente en tareas_auditoria.txt. No se crea informe duplicado ni tarea derivada.
+
+### Respaldo Git histórico
+- HEAD de partida: 8bc3e1a6b84d4bb362a78c6375c2872b7b751f87; commit alcanzable en la rama autorizada.
+- Test original: blob `842abb4ee47825e2281a9e4315e14704a203528e`.
+- Expediente original: blob `f3330860125267a8d34fc33378c418eaa88152e1`.
+- Auditoria.txt original: blob `274a3943a59134ca8c1f37d13d4df7beae18f8f5`.
+- tareas_auditoria.txt original: blob `d713613c3b20cca4f191c29a385efce066efd24a`.
+- Checkpoints_Parte_0002 original: blob `b6a5818734437e1310a03dd93b33a1e621b89a53`, tamaño previo 156832 caracteres; lectura íntegra.
+- Índice original: blob `468f655a2ae7443fff975391ae1e41416af28f87`.
+- changueslogs original: blob `669308aafee19b4b2ed84d4aa4073797fa5a0bab`.
+- Recuperación: `git show 8bc3e1a6b84d4bb362a78c6375c2872b7b751f87:<ruta>`; hash Git esperado registrado arriba.
+
+### Pruebas y límites
+- Revisión estática del harness: escapes dobles eliminados y patrones esperados presentes.
+- Run de C1.324: GitHub Actions run 42672140762 estaba queued al iniciar; no se declara PASS ni FAIL sin resultado terminal.
+- Node local no ejecutado. El workflow del commit C1.325 debe validar el test completo.
+- Apps Script/Sheets real, dos fuentes, reimportación, concurrencia, relaciones, navegador y E2E siguen pendientes por falta de entorno aislado/deployment. AUD-NG-378 permanece abierto; el importador continúa fail-closed.
+- TASK-068 sigue En ejecución.
+
+### Archivos modificados
+- `tests/security/identity-mapping-contract.test.js`.
+- `Auditoría/AUDITORIA_TASK-068_C1.318.md`; `Auditoria.txt`; `tareas_auditoria.txt`; `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt`; `Auditoría/INDICE_CHECKPOINTS.md`; `changueslogs.txt`.
+- Código de producción sin cambios en esta iteración; rama base y demás ramas sin cambios.
+
+### Siguiente acción exacta
+Verificar el resultado terminal del workflow `Identity mapping contract` para el commit C1.325. Si pasa, reanudar TASK-068 en el diseño del contrato de escritura por entidad dentro de `backend/accounting-service/Code.gs::importDataWithColumnMapping`; mantener fail-closed hasta definir precondiciones, clave idempotente, relaciones y compensación, y preparar fixtures aislados de dos fuentes.
+
+Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.325.
+Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.325.
+Commit de cierre: este commit; SHA se verificará externamente tras publicación.
+===============================================================================

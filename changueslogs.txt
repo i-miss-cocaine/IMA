@@ -354,3 +354,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se amplía el contrato Node con casos aislados de esquemas válidos/incompatibles, hoja ausente, ID vacío y tipo no soportado; CI queda pendiente de resultado tras publicación.
 - No se habilita writer ni escritura destino; AUD-NG-378 permanece abierto y el importador sigue DESTINATION_WRITER_NOT_CONFIGURED.
 - TASK-068 continúa En ejecución. Checkpoint C1.324; ubicación Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.324; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.324.
+
+
+[2026-11-09] IMA-EXEC-20261109-1802Z-01 — TASK-068 / PM-01 / C1.325
+- Se corrige el harness del contrato de identidad: regex de extracción y separador de línea VM quedan con escapes válidos; el código de producción de C1.324 no cambia.
+- AUD-NG-381 MEDIO/P2 queda registrado y vinculado a TASK-068 existente, sin tarea duplicada. Run C1.324 42672140762 estaba queued; CI C1.325 pendiente.
+- TASK-068 En ejecución; AUD-NG-378 abierto; importador sigue DESTINATION_WRITER_NOT_CONFIGURED.
+- Checkpoint C1.325; Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.325; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.325.
