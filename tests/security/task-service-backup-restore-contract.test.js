@@ -50,9 +50,29 @@ assert(source.includes("taskServiceVerifyAppendOnlyBackupLog_"), "Log_Cierres is
 function extractFunction(name) {
   const start = source.indexOf("function " + name + "(");
   assert.ok(start >= 0, "function exists: " + name);
-  const end = source.indexOf(String.fromCharCode(10) + "}", start);
-  assert.ok(end > start, "function body is extractable: " + name);
-  return source.slice(start, end + 2);
+  const open = source.indexOf("{", start);
+  assert.ok(open > start, "function opening brace exists: " + name);
+  let depth = 0, quote = null, escaped = false, lineComment = false, blockComment = false;
+  for (let i = open; i < source.length; i++) {
+    const ch = source[i], next = source[i + 1];
+    if (lineComment) { if (ch === "\n") lineComment = false; continue; }
+    if (blockComment) { if (ch === "*" && next === "/") { blockComment = false; i++; } continue; }
+    if (quote) {
+      if (escaped) { escaped = false; continue; }
+      if (ch === "\\") { escaped = true; continue; }
+      if (ch === quote) quote = null;
+      continue;
+    }
+    if (ch === "/" && next === "/") { lineComment = true; i++; continue; }
+    if (ch === "/" && next === "*") { blockComment = true; i++; continue; }
+    if (ch === "'" || ch === '"' || ch === "`") { quote = ch; continue; }
+    if (ch === "{") depth++;
+    else if (ch === "}") {
+      depth--;
+      if (depth === 0) return source.slice(start, i + 1);
+    }
+  }
+  throw new Error("function body is not balanced: " + name);
 }
 
 // Parse the complete Apps Script source with the local Node parser.

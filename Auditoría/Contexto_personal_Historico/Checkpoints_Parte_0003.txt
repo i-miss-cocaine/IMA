@@ -195,3 +195,17 @@ Motivo: revisión inmediata del contrato local antes de iniciar la siguiente tar
 Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.332.
 Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.332.
 ===============================================================================
+
+
+===============================================================================
+## C1.333 — Extractor balanceado para pruebas locales TASK-636
+ID: C1.333
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.332
+- CI run 42708635543 (commit C1.331) falló en el extractor del helper SHA-256: el cierre de función no estaba siendo localizado por el patrón de salto de línea.
+- Se sustituye el extractor frágil por un recorrido balanceado de llaves que ignora strings y comentarios; el código de producción permanece intacto.
+- CI run 42708759124 (commit C1.332) se encontraba en ejecución al preparar esta corrección; se registrará su resultado observado por separado.
+- No se declara PASS. Se debe observar el nuevo workflow antes de continuar a TASK-068.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.333.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.333.
+===============================================================================

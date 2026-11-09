@@ -505,3 +505,8 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 ## C1.332 — Corrección de harness TASK-636
 - Corregidos los separadores de línea del extractor Node/VM con String.fromCharCode(10); producción sin cambios. CI pendiente de resultado.
 - Checkpoint C1.332; sesión IMA-GOV-20261109-2201Z-01; Parte_0003; índice actualizado.
+
+
+## C1.333 — Corrección del extractor local TASK-636
+- CI run 42708635543 falló en el extractor de helpers del test, no en producción. Se corrige con conteo balanceado de llaves y se espera nueva ejecución CI.
+- Checkpoint C1.333; sesión IMA-GOV-20261109-2201Z-01; Parte_0003; índice actualizado.

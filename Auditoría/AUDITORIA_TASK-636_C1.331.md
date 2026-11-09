@@ -61,3 +61,9 @@ No se ejecutaron Apps Script runtime, Sheets/Drive reales, deployment, HTTP, E2E
 - Se detectó que el extractor de funciones y los separadores VM estaban codificados como secuencia literal \\n, por lo que los nuevos casos locales no eran ejecutables correctamente.
 - Se corrige mediante String.fromCharCode(10). No cambia el código de producción ni el dictamen funcional.
 - La ejecución CI posterior a publicación determinará PASS/FAIL; hasta entonces el test no se declara aprobado.
+
+
+## Revisión focalizada C1.333 — extractor balanceado
+- CI run 42708635543 falló en el extractor del helper, antes de ejecutar los casos unitarios. Se registró el fallo; no es defecto del código de producto.
+- Se reemplaza el patrón de cierre por conteo balanceado de llaves, ignorando strings y comentarios. Producción sin cambios.
+- Se requiere observar el run del commit C1.333 antes de aceptar los nuevos casos locales como PASS.

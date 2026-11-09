@@ -2015,3 +2015,8 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 ## 10.19 Corrección focalizada — C1.332 / harness TASK-636
 - Se corrige el extractor de funciones y separadores VM del contrato Node local para usar String.fromCharCode(10); no se modifica código de producto.
 - CI debe ejecutarse tras publicar y su resultado se registra antes de continuar con la siguiente tarea.
+
+
+## 10.20 Corrección del harness — C1.333
+- El run 42708635543 falló en el extractor de helpers del contrato Node, antes de ejecutar pruebas locales. Se reemplaza por conteo balanceado de llaves, sin cambios de producto.
+- No iniciar la tarea siguiente hasta observar resultado CI del contrato corregido.
