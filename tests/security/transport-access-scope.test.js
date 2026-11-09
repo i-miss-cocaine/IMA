@@ -56,10 +56,10 @@ const data = {
     ["REL-3", "EXP-02", "PARENT-01", "Padre", "Rechazada"]
   ],
   TransporteAsignaciones: [
-    ["ID", "RutaID", "EstudianteUserId", "Parada", "Horario", "Estado"],
-    ["AS-1", "RUT-01", "STU-01", "Parada A", "06:30", "Activa"],
-    ["AS-2", "RUT-02", "STU-02", "Parada B", "06:40", "Activa"],
-    ["AS-3", "RUT-03", "STU-01", "Parada C", "06:50", "Inactiva"]
+    ["ID", "RutaID", "EstudianteUserId", "Parada", "Horario", "Estado", "Fecha", "Jornada"],
+    ["AS-1", "RUT-01", "STU-01", "Parada A", "06:30", "Activa", "2026-11-09", "Matutina"],
+    ["AS-2", "RUT-02", "STU-02", "Parada B", "06:40", "Activa", "2026-11-09", "Matutina"],
+    ["AS-3", "RUT-03", "STU-01", "Parada C", "06:50", "Inactiva", "2026-11-09", "Matutina"]
   ],
   TransporteRutas: [
     ["RutaID", "Nombre", "Unidad", "Conductor", "Capacidad", "Paradas", "Estado"],
