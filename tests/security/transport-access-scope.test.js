@@ -157,14 +157,14 @@ const parentAssignments = runEndpoint("getTransportAssignments", {
   authRole: "Administrador",
   authUserId: "ROOT"
 }, data);
-assert.equal(parentAssignments.result.total, 2);
+assert.equal(parentAssignments.result.total, 1);
 assert.ok(parentAssignments.result.asignaciones.every(x => x.estudianteUserId === "STU-01"));
 
 const studentAssignments = runEndpoint("getTransportAssignments", {
   _verifiedRole: "Estudiante",
   _verifiedUserId: "STU-01"
 }, data);
-assert.equal(studentAssignments.result.total, 2);
+assert.equal(studentAssignments.result.total, 1);
 assert.ok(studentAssignments.result.asignaciones.every(x => x.estudianteUserId === "STU-01"));
 
 const parentIdorAttempt = runEndpoint("getTransportAssignments", {
@@ -174,6 +174,15 @@ const parentIdorAttempt = runEndpoint("getTransportAssignments", {
 }, data);
 assert.equal(parentIdorAttempt.result.code, "UNAUTHORIZED_ACCESS_ATTEMPT");
 assert.ok(parentIdorAttempt.events.some(x => x[3] === "UNAUTHORIZED_ACCESS_ATTEMPT"));
+
+const parentForeignRouteAttempt = runEndpoint("getTransportAssignments", {
+  _verifiedRole: "Padre",
+  _verifiedUserId: "PARENT-01",
+  rutaId: "RUT-02"
+}, data);
+assert.equal(parentForeignRouteAttempt.result.code, "UNAUTHORIZED_ACCESS_ATTEMPT");
+assert.ok(parentForeignRouteAttempt.events.some(x => x[3] === "UNAUTHORIZED_ACCESS_ATTEMPT"));
+
 
 const driverAssignments = runEndpoint("getTransportAssignments", {
   _verifiedRole: "Conductor",
