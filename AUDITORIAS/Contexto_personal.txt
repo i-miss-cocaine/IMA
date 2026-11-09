@@ -9489,3 +9489,29 @@ Auditar TAREA-F6-015 y TAREA-F6-040. Buscar informes individuales e historial en
 - **Commit de cierre:** el commit único que contiene este checkpoint y los dos documentos relacionados; SHA final se confirmará externamente consultando HEAD después de publicar.
 ===============================================================================
 
+
+===============================================================================
+## C1.279 — Revisión de control de calidad del Plan Maestro (2026-11-09)
+
+- **ID de sesión operativo:** IMA-PLAN-20261109-0126Z-01 (misma sesión documental que C1.278; no ID nativo de ChatGPT).
+- **Estado de sesión:** cerrada al publicar el commit que contiene este checkpoint.
+- **Checkpoint inicial de sesión:** C1.277. **Checkpoint anterior:** C1.278. **Checkpoint de cierre:** C1.279.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **HEAD de partida verificado:** 42ed4950d2235640440ba7b5d6b9315829786a25.
+- **Fase metodológica:** Fase 2 — planificación de implementación / control del plan.
+- **Fase del Plan Maestro:** PM-00 — inventario y triage.
+- **Etapa:** revisión de consistencia de asignaciones de fase y conteos.
+- **ID de tarea:** PLAN-IMA-002 (actividad operativa de QA del plan; no es ID del backlog de producto).
+- **Comentario/contexto:** durante la validación del anexo se detectó que AUD-NG-110 («Garantizar la liberación del bloqueo de carga ante fallos de caché») había sido clasificada por coincidencia textual con la palabra «liberación» en PM-09. Su objetivo corresponde a recuperación/resiliencia, no a transición productiva. Se corrige a PM-08.
+- **Cambio realizado:** AUD-NG-110 pasa de PM-09 a PM-08. Conteos corregidos: PM-08 = 130; PM-09 = 3; PM-00 a PM-07 permanecen sin cambios. La suma sigue siendo 1.346.
+- **Validación:** el anexo contiene 1.346 filas, 1.346 IDs únicos y cero duplicados; la clasificación corregida conserva la suma global. Los tres registros restantes en PM-09 son tareas de cutover/retiro de legado.
+- **Archivos modificados en esta iteración:** `AUDITORIAS/PLAN_MAESTRO_IMPLEMENTACION.md`; `AUDITORIAS/Contexto_personal.txt`.
+- **Archivos sin cambios:** `METODOLOGIA_DESARROLLO.md`; los siete backlogs departamentales; `Pendientes.md`; `completadas.md`; código fuente; rama base.
+- **Pruebas ejecutadas:** comparación de la fila de AUD-NG-110; verificación de conteos PM-08/PM-09; verificación de unicidad y cantidad de filas del anexo.
+- **No ejecutadas:** pruebas de código/runtime/E2E; esta iteración solo corrige clasificación documental.
+- **Siguiente tarea:** PLAN-IMA-003 / PM-00.3 — triage manual de los 35 registros PM-00, empezando por TASK-637, TASK-638 y TASK-639.
+- **Próxima acción reproducible:** revisar el inventario de archivos y mapa de dependencias frente al árbol Git; confirmar si TASK-637/638/639 ya están implementadas y cuáles son los vacíos reales; resolver encabezados y ampliaciones antes de iniciar PM-01.
+- **Commit de cierre:** el commit único que contiene este checkpoint y la corrección del plan; SHA final se confirmará consultando HEAD después de publicar.
+===============================================================================
+

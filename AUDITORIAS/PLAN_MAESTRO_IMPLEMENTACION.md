@@ -91,8 +91,8 @@ Se identificaron **39 familias/series de identificadores**, **830 registros con 
 | PM-05 — Servicios funcionales por área institucional | 323 |
 | PM-06 — Documentos, formularios, firmas y trámites | 286 |
 | PM-07 — Portales, experiencia, paneles y analítica | 147 |
-| PM-08 — Pruebas integrales, resiliencia y observabilidad | 129 |
-| PM-09 — Piloto, cutover y retiro controlado de legado | 4 |
+| PM-08 — Pruebas integrales, resiliencia y observabilidad | 130 |
+| PM-09 — Piloto, cutover y retiro controlado de legado | 3 |
 
 ### 2.3 Distribución por departamento y fase
 
@@ -104,7 +104,7 @@ Se identificaron **39 familias/series de identificadores**, **830 registros con 
 | Docente | 2 | 10 | 2 | 3 | 8 | 75 | 14 | 8 | 7 | 0 | 129 |
 | Estudiante | 0 | 0 | 0 | 0 | 0 | 1 | 2 | 4 | 0 | 0 | 7 |
 | Padre | 0 | 2 | 0 | 2 | 0 | 8 | 1 | 0 | 0 | 0 | 13 |
-| Otros | 28 | 85 | 71 | 49 | 63 | 87 | 109 | 90 | 90 | 2 | 674 |
+| Otros | 28 | 85 | 71 | 49 | 63 | 87 | 109 | 90 | 91 | 1 | 674 |
 
 **PM-00:** 35 registros requieren triage manual. Incluye encabezados de agrupación sin requisitos propios, ampliaciones que deben incorporarse a la tarea madre y tareas con dependencia/área insuficientemente definida. No se implementan como unidades independientes hasta resolver su relación.
 
@@ -1693,9 +1693,10 @@ Cada fila conserva el ID original y enlaza al archivo departamental. La fase es 
 | TASK-458 | Secretaría | PM-08 | Calidad y resiliencia | P2 | 23 | F40-Task04, F40-Task06, F40-Task02. | [P2] Incorporar marcas de agua dinámicas y control de copias visualizadas (F40-20) |
 | TASK-077 | Dirección | PM-09 | Corte, piloto y liberación | P0 | 21 | [F29-Task06], [F29-Task10], [F29-Task11], [F29-Task13], [F29-Task14], [F29-Task22]. | [P0] Protocolo Técnico de Corte Temporal y Transición Operativa (Cutover) |
 | TASK-080 | Dirección | PM-09 | Corte, piloto y liberación | P0 | 24 | [F29-Task07], [F29-Task13], [F29-Task21], [F29-Task22], [F29-Task23]. | [P0] Protocolo de Retiro Formal (Decommissioning) y Archivo Histórico de Sistemas Legados |
-| AUD-NG-110 | Otros | PM-09 | Corte, piloto y liberación | No explícita | — | `fetchAllActivities`, `isFetchingActivities`, `PersistenceManager.get`, `PersistenceManager.init`, IndexedDB y evento `academic-scope-updated`. | Garantizar la liberación del bloqueo de carga ante fallos de caché |
+| AUD-NG-110 | Otros | PM-08 | Calidad y resiliencia | No explícita | — | `fetchAllActivities`, `isFetchingActivities`, `PersistenceManager.get`, `PersistenceManager.init`, IndexedDB y evento `academic-scope-updated`. | Garantizar la liberación del bloqueo de carga ante fallos de caché |
 | F29-TASK08 | Otros | PM-09 | Corte, piloto y liberación | P1 | — | No declaradas en el bloque extraído | Ejecutar cutover controlado con congelamiento y sincronización delta |
 
 ## 10. Historial de versiones
 
 - **1.0 (2026-11-09):** inventario de 1.346 IDs únicos; clasificación inicial por fase y subflujo; grafo de capas; orden de trabajo por dependencias e integración; anexo de trazabilidad de cada ID. Se mantienen 35 registros en PM-00 para triage manual antes de ejecución.
+- **Ajuste de control de calidad 1.0.1:** AUD-NG-110 se reclasifica de PM-09 a PM-08 porque su título trata de recuperación de bloqueo de carga/caché y no de cutover. Los conteos se actualizan manteniendo los 1.346 IDs.
