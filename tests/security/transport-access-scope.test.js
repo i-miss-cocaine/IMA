@@ -71,7 +71,8 @@ const data = {
     ["ID", "RutaID", "EstudianteUserId", "Parada", "Horario", "Estado", "Fecha", "Jornada"],
     ["AS-1", "RUT-01", "STU-01", "Parada A", "06:30", "Activa", "2026-11-09", "Matutina"],
     ["AS-2", "RUT-02", "STU-02", "Parada B", "06:40", "Activa", "2026-11-09", "Matutina"],
-    ["AS-3", "RUT-03", "STU-01", "Parada C", "06:50", "Inactiva", "2026-11-09", "Matutina"]
+    ["AS-3", "RUT-03", "STU-01", "Parada C", "06:50", "Inactiva", "2026-11-09", "Matutina"],
+    ["AS-4", "RUT-01", "STU-02", "Parada D", "06:55", "Inactiva", "2026-11-09", "Matutina"]
   ],
   TransporteRutas: [
     ["RutaID", "Nombre", "Unidad", "Conductor", "Capacidad", "Paradas", "Estado"],
@@ -266,6 +267,7 @@ const driverAssignments = runEndpoint("getTransportAssignments", {
 }, data);
 assert.equal(driverAssignments.result.total, 1);
 assert.equal(driverAssignments.result.asignaciones[0].rutaId, "RUT-01");
+assert.deepEqual(Array.from(driverAssignments.result.asignaciones.map(x => x.estudianteUserId)), ["STU-01"]);
 
 const driverRoutes = runEndpoint("getTransportRoutes", {
   _verifiedRole: "Conductor",
