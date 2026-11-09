@@ -29,7 +29,7 @@ Esta regla aplica a CUALQUIER archivo del repositorio IMA, sin excepción por ti
 G. **CONTROL DE CRECIMIENTO, ROTACIÓN Y LOCALIZACIÓN DE CHECKPOINTS (OBLIGATORIO):**
    1. El tamaño máximo de cada archivo activo de checkpoints será de **180.000 caracteres Unicode**, medidos sobre el contenido UTF-8 decodificado e incluyendo espacios y saltos de línea. Antes de anexar cualquier entrada, calcular el tamaño resultante. Si la adición excedería el límite, no escribir en ese archivo: crear el siguiente archivo secuencial de checkpoints.
    2. La rotación es preventiva: el archivo nuevo debe quedar por debajo del límite desde su creación. Nunca truncar, borrar, resumir, mover ni reescribir checkpoints anteriores. El archivo que alcanzó el límite queda cerrado para nuevas entradas y permanece íntegro.
-   3. Cada archivo nuevo debe iniciar con una copia íntegra y vigente de este bloque normativo A–H del contexto personal (incluidas restricciones, precedencia, commits, checkpoints, recuperación y rotación), seguida de la identificación del repositorio/proyecto y referencias a la metodología vigente. No copiar todo el historial anterior: conservarlo en su archivo original. La copia normativa se considera una instantánea; cualquier cambio futuro de reglas debe propagarse a los nuevos archivos.
+   3. Cada archivo nuevo debe iniciar con una copia íntegra y vigente de este bloque normativo A–I del contexto personal (incluidas restricciones, precedencia, commits, checkpoints, recuperación y rotación), seguida de la identificación del repositorio/proyecto y referencias a la metodología vigente. No copiar todo el historial anterior: conservarlo en su archivo original. La copia normativa se considera una instantánea; cualquier cambio futuro de reglas debe propagarse a los nuevos archivos.
    4. Convención de nombres: mantener Auditoría/Contexto_personal.txt como primer archivo histórico y punto de entrada; los archivos rotados se crearán como Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt, ..._0003.txt, etc., incrementando secuencialmente y sin reutilizar nombres. Los archivos Parte_01.txt a Parte_07.txt existentes son fragmentos de recuperación del contexto original y no se renombrarán ni se considerarán partes de esta nueva serie.
    5. Mantener Auditoría/INDICE_CHECKPOINTS.md como índice permanente: una fila por checkpoint con ID, sesión, estado, archivo/ruta, ubicación (sección o líneas), tarea/fase y commit de cierre o estado de publicación. El índice debe señalar el último checkpoint y el archivo activo. No depender de buscar manualmente el último ID en todos los archivos.
    6. Todo checkpoint debe declarar Ubicación exacta del checkpoint: ruta del archivo, identificador de parte, encabezado/sección y rango de líneas cuando sea posible; además debe incluir ID del checkpoint anterior y referencia al índice central. Si el rango final de líneas solo puede confirmarse tras escribir, calcularlo y registrarlo en el índice dentro del mismo cambio preparado.
@@ -45,6 +45,8 @@ H. **ESTADO DE IMPLEMENTACIÓN Y PRUEBAS FUNCIONALES BETA (OBLIGATORIO PARA IMA)
    5. La plataforma no queda certificada para piloto/cutover por el simple hecho de que las tareas estén Completadas. La salida beta tiene sus propios criterios conforme a la sección 21 de `METODOLOGIA_DESARROLLO.md`.
 
 
+
+I. **AUDITORÍA ÚNICA Y CONTROL DE RECURSIVIDAD (OBLIGATORIO):** antes de iniciar, consulta el expediente e informes existentes y aplica §19.6 de METODOLOGIA_DESARROLLO.md. Mantén un expediente principal por tarea; no crees informes completos duplicados. Verifica correcciones de forma focalizada y regístralas en el expediente existente. Repite una auditoría completa solo por cambios sustanciales, requisitos modificados, dependencias que invaliden conclusiones, evidencia nueva contradictoria o cobertura original incompleta; justifica el alcance. Clasifica hallazgos como defecto de implementación, defecto relacionado, defecto documental o incidencia metodológica. No conviertas automáticamente defectos documentales/metodológicos en auditorías recursivas. Está prohibido auditar una auditoría cuyo único objeto sea revisar otro informe; usa una lista de comprobación documental y corrige directamente. Si no hay evidencia nueva ni criterio pendiente, continúa con la siguiente acción/tarea elegible.
 # CONTINUIDAD IMA — PARTE ROTATIVA DE CHECKPOINTS
 Repositorio: i-miss-cocaine/IMA. Rama: NG_beta_0.0.0.1_work. Rama base protegida: NG_beta_0.0.0.1.
 Metodología: METODOLOGIA_DESARROLLO.md, secciones 15–21.
@@ -293,4 +295,49 @@ Commit B de cierre: el commit que contiene este checkpoint; SHA a verificar exte
 - **Siguiente tarea tras cerrar TASK-638:** TASK-639 — Verificar duplicaciones, símbolos globales y ciclos; requisito en pendientes/Secretaria/Pendientes.md; depende de TASK-637 y TASK-638 verificadas.
 - **Ubicación exacta:** Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.299; índice Auditoría/INDICE_CHECKPOINTS.md, fila C1.299.
 - **Commit de cierre:** el commit que contiene este checkpoint; SHA se verifica externamente.
+===============================================================================
+
+
+===============================================================================
+## C1.300 — Actualización normativa: auditoría única y prompt reciclable
+ID de sesión: IMA-GOV-20261109-1255Z-01
+Fecha: 2026-11-09 UTC
+Repositorio: i-miss-cocaine/IMA
+Rama autorizada: NG_beta_0.0.0.1_work
+HEAD de partida verificado: 9e21a060922bc4c7d96d06c0098a48d643b32276
+Rama base: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59 (solo lectura)
+Checkpoint anterior: C1.299
+Tipo de iteración: actualización de gobernanza documental; no corresponde a una tarea de producto ni altera el orden PM.
+
+### Cambios normativos
+- Se añade METODOLOGIA_DESARROLLO.md §19.6: expediente principal único por tarea, comprobación de vigencia, distinción entre auditoría de implementación/verificación focalizada/control documental/incidencia metodológica, reauditoría completa excepcional justificada, clasificación de hallazgos, prohibición de auditoría recursiva, puerta de salida y ficha de trazabilidad.
+- Se incorpora la misma regla como apartado I del bloque prioritario de Auditoría/Contexto_personal.txt y del archivo activo de checkpoints. Las referencias de rotación se actualizan de A–H a A–I para que futuras partes copien la regla nueva.
+- Se añade la referencia operativa en Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md §10.4. No se alteran los requisitos ni las dependencias del Plan Maestro.
+
+### Estado del proyecto
+- TASK-638 permanece En ejecución dentro de PM-00. Este cambio normativo no la audita, no la cierra y no habilita TASK-639 ni PM-01.
+- Se conserva el expediente e informes C1.289–C1.299; no se repitió ninguna auditoría funcional en esta iteración.
+- Próxima continuación: retomar TASK-638 desde el punto C1.299/MapaDependencias, aplicando §19.6 para reutilizar evidencia vigente y evitar duplicados. Resolver las brechas de cobertura pendientes antes de cerrar la tarea.
+
+### Archivos modificados
+1. METODOLOGIA_DESARROLLO.md.
+2. Auditoría/Contexto_personal.txt.
+3. Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt.
+4. Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md.
+5. Auditoría/INDICE_CHECKPOINTS.md.
+6. changueslogs.txt.
+
+### Archivos revisados sin modificación
+Auditoria.txt; tareas_auditoria.txt; Auditoría/MapaDependencias.md; Auditoría/AUDITORIA_TASK-638_C1.299.md; backlogs departamentales. No se reabrieron hallazgos ni se crearon tareas derivadas.
+
+### Pruebas y verificaciones
+- Ejecutadas: rama/HEAD de trabajo; SHA de documentos fuente; SHA de rama base; sincronización del bloque normativo A–I; ubicación de §19.6 y §10.4; límite de 180.000 caracteres para Auditoría/Contexto_personal.txt; revisión de cambios documentales.
+- No ejecutadas: pruebas de código, Node, navegador, HTTP, Apps Script, Drive, Sheets, integración o E2E; no aplican a esta actualización normativa.
+- Código fuente: sin modificaciones.
+
+### Siguiente acción reproducible
+Abrir Auditoría/MapaDependencias.md en la sección C1.299 y continuar TASK-638 con el cruce de acciones aún no cubiertas hacia dispatcher, handler, autorización contextual, persistencia y despliegue. Antes de repetir cualquier tramo, consultar los informes y aplicar §19.6; no crear un segundo informe completo si la evidencia sigue vigente.
+
+Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.300; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.300.
+Commit de cierre: el commit que contiene este checkpoint; SHA se verificará externamente.
 ===============================================================================

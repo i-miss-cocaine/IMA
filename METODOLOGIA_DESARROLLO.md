@@ -1027,6 +1027,22 @@ Una implementación no terminada, no auditada internamente, corrupta o sin Code 
 
 
 
+
+## 19.6 Protocolo de auditoría única, trazabilidad y control de recursividad
+
+**Objetivo:** evitar auditorías duplicadas, ciclos de revisión de informes y demoras que no aportan evidencia nueva. Aplica a todas las tareas y fases del Plan Maestro.
+
+1. **Expediente principal único por tarea:** antes de crear un informe, consultar el registro de auditoría, el índice de informes y los hallazgos existentes. La primera auditoría completa establece el expediente principal. Las verificaciones posteriores se agregan como revisiones fechadas en ese expediente o registro vinculado; no se crea otro informe completo por rutina.
+2. **Comprobar vigencia:** registrar SHA/commit auditado, alcance, criterios cubiertos, limitaciones y hallazgos abiertos. Reutilizar la evidencia mientras no existan cambios posteriores que invaliden sus conclusiones. No repetir trabajo ya demostrado y vigente.
+3. **Distinguir actividades:** (a) auditoría de implementación frente a requisitos; (b) verificación focalizada de un hallazgo corregido; (c) control documental del informe/registro; y (d) incidencia metodológica. Una errata, formato, referencia rota o ajuste de checkpoint se corrige documentalmente; no reabre por sí solo la auditoría funcional.
+4. **Verificación focalizada:** al corregir un hallazgo, comprobar el comportamiento, requisito, componente y dependencias afectados, además de regresiones justificadas. Registrar evidencia, resultado, SHA y estado en el expediente principal. No repetir secciones no afectadas que continúen vigentes.
+5. **Reauditoría completa excepcional:** solo cuando haya cambios sustanciales de código/arquitectura; requisitos modificados; dependencia que invalide conclusiones; evidencia nueva contradictoria; o auditoría original incompleta/sin criterios obligatorios. Declarar motivo, evidencia nueva, alcance y relación con el expediente anterior. Si el cambio es parcial, limitar la revisión a ese alcance.
+6. **Clasificación sin recursividad:** clasificar hallazgos como defecto de implementación dentro de la tarea, defecto relacionado que requiere tarea derivada, defecto documental o incidencia metodológica. Solo los defectos accionables de producto generan/actualizan tareas ejecutables. Buscar duplicados y ampliar el ID existente cuando corresponda. Las incidencias metodológicas actualizan normas/contexto; no generan automáticamente auditorías sobre auditorías.
+7. **Prohibición de auditoría recursiva:** no iniciar una auditoría cuyo único objeto sea auditar el informe anterior, revisar la redacción/formato de otra auditoría o auditar el cumplimiento formal de otra auditoría. Resolver esos controles mediante una lista de comprobación documental acotada y corrección directa del registro. Una revisión de calidad no crea otra cadena de auditorías.
+8. **Puerta de salida:** una auditoría termina cuando su alcance está evaluado y sus limitaciones y hallazgos están registrados/clasificados. No mantener una tarea en auditoría por observaciones documentales/metodológicas que no impidan determinar el cumplimiento de la implementación. Hallazgos independientes solo bloquean cuando exista dependencia técnica o de seguridad demostrable.
+9. **Ficha mínima:** tarea; expediente principal; SHA/commit auditado; fecha; alcance y criterios cubiertos; hallazgos abiertos/cerrados; verificaciones focalizadas con evidencia; motivo de cualquier reauditoría completa; estado y siguiente acción. Antes de iniciar, consultar esta ficha y declarar qué trabajo vigente no debe repetirse.
+10. **Decisión obligatoria:** si no existe evidencia nueva, cambio relevante, criterio pendiente ni cobertura incompleta, no repetir la auditoría: continuar con el hallazgo pendiente, la siguiente tarea elegible o la implementación correspondiente según el Plan Maestro.
+
 # 20. CONTROL DEL CRECIMIENTO, ROTACIÓN Y TRAZABILIDAD DE CHECKPOINTS
 
 ## 20.1 Límite y medición
@@ -1037,7 +1053,7 @@ Una implementación no terminada, no auditada internamente, corrupta o sin Code 
 ## 20.2 Rotación sin pérdida histórica
 1. Auditoría/Contexto_personal.txt es el primer archivo histórico y punto de entrada. Las nuevas partes se crean bajo Auditoría/Contexto_personal_Historico/ con el patrón Checkpoints_Parte_0002.txt, Checkpoints_Parte_0003.txt, etc. No reutilizar nombres.
 2. Los archivos existentes Parte_01.txt a Parte_07.txt son fragmentos de recuperación del contexto original y no forman parte de la numeración nueva.
-3. Cada archivo nuevo inicia con el bloque normativo A–H íntegro y vigente de Auditoría/Contexto_personal.txt, más identificación del proyecto y referencias a esta metodología. No se copia el historial previo: se preserva en su archivo original.
+3. Cada archivo nuevo inicia con el bloque normativo A–I íntegro y vigente de Auditoría/Contexto_personal.txt, más identificación del proyecto y referencias a esta metodología. No se copia el historial previo: se preserva en su archivo original.
 4. La rotación y la entrada que la provoca se publican juntas en el único commit consolidado de la iteración. El archivo anterior queda cerrado; no se mueve, resume ni reescribe contenido histórico.
 
 ## 20.3 Índice y localización obligatoria

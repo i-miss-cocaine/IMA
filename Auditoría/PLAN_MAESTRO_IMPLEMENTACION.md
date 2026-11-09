@@ -1831,3 +1831,9 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - AUD-NG-369 es CRÍTICO/P0: closeAcademicYear está permitido a Profesor y elimina todas las Entregas/recursos Drive sin filtro por profesor ni backup real. Se registra para resolver en PM-01 antes de habilitar el flujo destructivo; no se ejecuta durante esta auditoría.
 - TASK-639 permanece no elegible hasta cerrar y verificar TASK-638. No avanzar a PM-01 mientras la puerta PM-00 siga abierta.
 - HEAD de partida: `7520d0b8471d8bb508fe808191a5d55bb2b126bd`; rama base `NG_beta_0.0.0.1` @ `44d9891132332e692dbe2ba8602b41f50a508a59`.
+
+
+## 10.4 Norma de continuidad de auditorías — C1.300
+- Se incorpora el protocolo de auditoría única y control de recursividad de METODOLOGIA_DESARROLLO.md §19.6.
+- Cada tarea conserva un expediente principal; las correcciones se verifican de forma focalizada. Las reauditorías completas requieren causa y evidencia nueva; se prohíbe auditar informes de auditoría en cadena.
+- El contexto operativo incorpora la misma regla como apartado I del bloque normativo A–I. No cambia el orden PM ni el estado de TASK-638.

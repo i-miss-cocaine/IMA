@@ -184,3 +184,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - TASK-638 sigue En ejecución; código sin cambios; pruebas runtime no ejecutadas.
 - Informe Auditoría/AUDITORIA_TASK-638_C1.299.md; checkpoint C1.299; índice central fila C1.299.
 - Sesión IMA-AUDIT-20261109-1232Z-01; ubicación Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.299; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.299.
+
+
+[2026-11-09] IMA-GOV-20261109-1255Z-01 — C1.300 / norma de auditoría única y control de recursividad
+- HEAD de partida verificado: 9e21a060922bc4c7d96d06c0098a48d643b32276; rama NG_beta_0.0.0.1_work; base NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios).
+- Se incorpora METODOLOGIA_DESARROLLO.md §19.6 y el apartado I del bloque normativo A–I en Contexto_personal.txt y Checkpoints_Parte_0002.txt; se actualiza la referencia en el Plan Maestro §10.4.
+- Se establece expediente principal único por tarea, verificaciones focalizadas, reauditoría completa solo con justificación/evidencia nueva y prohibición de auditorías recursivas.
+- TASK-638 permanece En ejecución; no se modificó código ni se repitieron auditorías funcionales.
+- Checkpoint C1.300: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.300; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.300.
