@@ -289,3 +289,29 @@ El propósito de este documento es llevar el registro de las tareas derivadas de
 - No se crean IDs nuevos. No se implementan correcciones PM-01/PM-02 dentro de TASK-638.
 - TASK-639 queda como siguiente tarea elegible tras verificación de TASK-637 y cierre documental TASK-638.
 ===============================================================================
+
+
+===============================================================================
+TAREAS DERIVADAS DE TASK-639 — C1.302
+===============================================================================
+
+TASK-691 — Consolidar redefiniciones globales en microservicios
+- Origen: AUD-NG-374 (MEDIO/P2).
+- Fase: PM-02.
+- Requisitos: pendientes/Dirección/Pendientes.md — TASK-691.
+- Dependencias: controles PM-01 relacionados con TASK-636/TASK-685; preservar las validaciones de las últimas versiones.
+- Estado: Pendiente.
+
+TASK-692 — Establecer propiedad única de handlers globales en dashboards
+- Origen: AUD-NG-375 (MEDIO/P2).
+- Fase: PM-02.
+- Requisitos: pendientes/Dirección/Pendientes.md — TASK-692.
+- Dependencias: contratos y modularización de UI; no cambiar el orden de carga como workaround.
+- Estado: Pendiente.
+
+TASK-693 — Formalizar contratos de helpers compartidos y guardas estáticas
+- Origen: AUD-NG-376 (MEDIO/P2).
+- Fase: PM-02.
+- Requisitos: pendientes/Dirección/Pendientes.md — TASK-693.
+- Dependencias: TASK-691 y TASK-692; contratos de identidad/sesión PM-01.
+- Estado: Pendiente.

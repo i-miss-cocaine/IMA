@@ -4756,3 +4756,44 @@ Las hojas literales se extraen de la función handler; «helper/dinámica» sign
 - **Dictamen:** se satisface el alcance de documentación y trazabilidad estática de TASK-638. Puede pasar a Completada como tarea de inventario/documentación; ello no cierra TASK-636/685/687/688, no corrige defectos de producto y no certifica despliegues ni pruebas runtime/beta.
 - Pruebas ejecutadas: lectura estática de callsites, dispatchers, handlers, helpers, hojas/Drive, rutas, wrappers, árbol e inventario; verificación de SHA de los servicios/controladores indicados. No ejecutadas: Node, navegador, HTTP, Apps Script, Drive/Sheets productivos, pruebas multiusuario, integración/E2E y verificación de deployments/Script Properties.
 ===============================================================================
+
+
+## C1.302 — Propiedad de símbolos, redefiniciones y ciclos (TASK-639)
+
+### Cobertura
+Se inspeccionaron estáticamente los 24 archivos JS y los 6 Code.gs del inventario C1.301. El inventario de dependencias de HTML/script y los dispatchers de C1.301 se reutilizan como evidencia vigente; no se repitió TASK-638.
+
+### Frontend — símbolos compartidos y propietarios
+| Símbolo | Propietarios observados | Consumidor/colisión | Resultado |
+|---|---|---|---|
+| openClassroomManagerModal | js/secretary.js:657; js/teacher.js:2521 | ambos módulos asignan window.*; dashboards con ambos scripts quedan con la última asignación | colisión confirmada |
+| openAcademicLoadPlanningModal | js/secretary.js:766; js/teacher.js:2436 | dashboards Secretaría/Dirección | colisión confirmada |
+| refreshAcademicPlanningData | js/secretary.js:774; js/teacher.js:2455 | dashboard-secretaria.html:540; dashboard-direccion.html:397 | colisión confirmada |
+| openAcademicAnalyticsModal | js/secretary.js:808; js/teacher.js:2279 | consumidor HTML directo no localizado en dashboards muestreados | colisión confirmada; consumidor adicional no verificado |
+| GamesAdapter | fallback js/config.js; implementación js/games-adapter.js | index.html carga config antes del adaptador principal | fallback intencional, no hallazgo |
+
+### Backend — redefiniciones globales confirmadas
+| Servicio/archivo | Símbolo | Líneas | Consumidor |
+|---|---|---:|---|
+| TASK | normalizeString | 9, 1209 | handlers TASK |
+| TASK | uploadChunk | 795, 1967 | doPost:394 |
+| ACCOUNTING | manageTransportRoute | 15699, 16744 | doPost:775 |
+| USER | getIdempotencyPayloadSignature | 209, 1299 | checkAndRegisterIdempotencyKey / doPost |
+| USER | getNews | 3116, 5574 | doPost:1408 |
+| USER | getInstitutionalAnnouncements | 3817, 5684 | doPost:1435 |
+| USER | createInstitutionalAnnouncement | 3848, 5784 | doPost:1436 |
+| USER | submitAnnouncementReceiptConfirmation | 3873, 5901 | doPost:1437 |
+| USER | getAnnouncementReadReport | 3895, 5934 | doPost:1438 |
+
+No se cuentan como colisiones globales parseSafeDate y recordTest, porque las declaraciones detectadas están anidadas en funciones/suites distintas.
+
+### Helpers repetidos entre servicios aislados
+Se registran como contratos compartidos con propietario por proyecto: normalizeString, getOrCreateSheet, logStructuredEvent, computeHmacSignature, getAuthTokenSecret, verifySessionToken, validateContextualAccess, validateRolePermission, getDynamicPermissionsForRole, hasActiveDelegationForAction, getIdempotencyPayloadSignature, checkAndRegisterIdempotencyKey, saveIdempotentResult, createInterServiceEnvelope y verifyInterServiceEnvelope. No hay colisión de runtime entre deployments independientes; existe riesgo de deriva contractual. Hallazgo AUD-NG-376 / TASK-693.
+
+### Grafo interservicio y ciclos
+- Frontend: js/api.js consume SERVICE_URLS/SERVICE_REGISTRY de js/config.js; los dashboards usan scripts clásicos y dependen del orden de carga.
+- Backend: única llamada UrlFetchApp.fetch detectada en USER, delegateToTaskService (línea 7955), hacia TASK. No se encontraron llamadas inversas TASK → USER ni otras llamadas UrlFetchApp.fetch en los otros cinco servicios inspeccionados.
+- Grafo estático observado: USER → TASK; no hay ciclo en este grafo. Los ciclos dinámicos/runtime quedan no verificables.
+
+### Dictamen TASK-639
+Alcance estático satisfecho; sin cambios de código. Hallazgos AUD-NG-374..376 derivados a TASK-691..693. No se ejecutaron pruebas runtime, navegador, Apps Script, HTTP ni E2E.

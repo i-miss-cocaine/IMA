@@ -392,3 +392,59 @@ TASK-639 — Verificar duplicaciones, símbolos globales y ciclos. Requisito: pe
 Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.301; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.301.
 Commit de cierre: el commit que contiene este checkpoint; SHA se verifica externamente.
 ===============================================================================
+
+
+===============================================================================
+CHECKPOINT C1.302 — TASK-639 / PM-00
+===============================================================================
+ID: C1.302
+Sesión: IMA-AUDIT-20261109-1339Z-01
+Checkpoint anterior: C1.301
+Repositorio: i-miss-cocaine/IMA
+Rama autorizada: NG_beta_0.0.0.1_work
+HEAD auditado/de partida: aa5a85f9eaedec5f89963a15cd32e8ed5e6e45e6
+Rama base: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios)
+Tarea: TASK-639 — Verificar duplicaciones, símbolos globales y ciclos.
+Fase: PM-00.
+Requisito original: pendientes/Secretaria/Pendientes.md — ID TASK-639.
+Expediente de origen: Auditoría/AUDITORIA_COMPLETADAS_F8-TASK02.md — AUD-NG-283.
+Expediente principal de esta tarea: Auditoría/AUDITORIA_TASK-639_C1.302.md.
+
+### Resultado
+- Inspección estática de 24 archivos JS y 6 servicios Apps Script inventariados.
+- Confirmadas redefiniciones globales en TASK, ACCOUNTING y USER (AUD-NG-374).
+- Confirmadas cuatro colisiones de handlers globales entre secretary.js y teacher.js (AUD-NG-375), especialmente por el orden de carga en dashboard-direccion.html.
+- Registrados helpers/contratos repetidos entre proyectos de microservicio aislados (AUD-NG-376), sin confundirlos con colisiones de runtime.
+- Grafo estático interservicio: USER → TASK; no se observó ciclo. Los ciclos dinámicos/runtime no fueron ejecutados y quedan expresamente no verificables.
+- TASK-639 cumple su alcance de auditoría estática y pasa a Completada. Se derivan TASK-691, TASK-692 y TASK-693 para PM-02.
+
+### Archivos modificados en esta iteración
+1. Auditoría/AUDITORIA_TASK-639_C1.302.md (nuevo expediente principal).
+2. Auditoria.txt (AUD-NG-374..376).
+3. tareas_auditoria.txt (TASK-691..693).
+4. pendientes/Secretaria/Pendientes.md (cierre de TASK-639).
+5. pendientes/Dirección/Pendientes.md (tareas derivadas).
+6. Auditoría/MapaDependencias.md (matriz de símbolos, propietarios, colisiones y grafo C1.302).
+7. Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md (cierre PM-00 y seguimiento C1.302).
+8. Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt (este checkpoint).
+9. Auditoría/INDICE_CHECKPOINTS.md (fila C1.302 y estado actual).
+10. changueslogs.txt (entrada C1.302).
+
+### Archivos fuente revisados sin modificación
+Los 24 JS y 6 GS inventariados; especialmente backend/user-service/Code.gs, backend/task-service/Code.gs, backend/accounting-service/Code.gs, js/secretary.js, js/teacher.js, js/config.js, js/games-adapter.js, dashboard-direccion.html y dashboard-secretaria.html.
+No se modificó código fuente, configuración, endpoints, deployments ni datos productivos.
+
+### Pruebas ejecutadas y pendientes
+- Ejecutadas: análisis estático de declaraciones, duplicados, asignaciones window.*, dispatchers, orden de scripts y llamadas interservicio.
+- Pendientes/no ejecutadas: suites de regresión, Node, navegador, lint/runtime, Apps Script, HTTP, contratos desplegados, integración/E2E, multiusuario, deployments y Script Properties.
+
+### Limitaciones
+La evidencia es estática y corresponde al HEAD indicado. No certifica el comportamiento efectivo de deployments ni descarta ciclos dinámicos dependientes de eventos, callbacks, configuración externa o datos productivos.
+
+### Siguiente acción exacta
+Iniciar selección de la primera tarea PM-01 pendiente, aplicando Plan Maestro §6.1: filtrar por fase/estado, leer requisito original completo desde la ruta exacta de §9, verificar dependencias contra evidencia y código, consultar expediente previo bajo METODOLOGIA_DESARROLLO.md §19.6 y registrar el ID elegido antes de auditar/implementar.
+
+Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.302.
+Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.302.
+Commit de cierre: el commit que contiene este checkpoint; SHA verificado externamente tras publicación.
+===============================================================================

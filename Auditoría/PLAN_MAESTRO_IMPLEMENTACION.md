@@ -1843,3 +1843,11 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - TASK-638 — Completada / PM-00. Se cierra el inventario estático de dependencias y contratos con la matriz C1.301 en Auditoría/MapaDependencias.md. Se conserva la trazabilidad C1.289–C1.299 sin duplicar informes; los hallazgos se vinculan a TASK-636, TASK-685, TASK-687 y TASK-688.
 - Cobertura documentada: 1.024 blobs del tree; 101 HTML/HTM; 24 JS; 6 CSS; 6 Apps Script; 27 JSON; 287 llamadas literales (262 JS + 25 HTML); cinco dispatchers y 745 casos. Los estados de deployments/Script Properties y las pruebas runtime permanecen explícitamente No verificados/No ejecutados; ninguna ruta se declara operativa por mera configuración.
 - Siguiente tarea elegible: TASK-639 — Verificar duplicaciones, símbolos globales y ciclos; requisito en pendientes/Secretaria/Pendientes.md; dependencias TASK-637 y TASK-638 satisfechas documentalmente. Aplicar metodología §19.6 y reutilizar el inventario existente.
+
+
+## Seguimiento operativo — C1.302
+- TASK-639 — Completada / PM-00. Auditoría estática de 24 JS y 6 Code.gs; se documentan propietarios, consumidores, redefiniciones, acoplamientos y límites del análisis de ciclos en Auditoría/AUDITORIA_TASK-639_C1.302.md y Auditoría/MapaDependencias.md §C1.302.
+- Hallazgos nuevos: AUD-NG-374 (redefiniciones globales backend), AUD-NG-375 (colisión de handlers frontend) y AUD-NG-376 (deriva potencial de helpers/contratos entre microservicios aislados).
+- Tareas derivadas: TASK-691, TASK-692 y TASK-693, añadidas a pendientes/Dirección/Pendientes.md y tareas_auditoria.txt. Se asignan a PM-02 y conservan sus dependencias de seguridad PM-01.
+- El grafo estático interservicio observado es USER → TASK; no se encontró ciclo. Los ciclos dinámicos/runtime, deployments y pruebas E2E permanecen no verificados/no ejecutados.
+- Con TASK-637, TASK-638 y TASK-639 cerradas, PM-00 concluye. Siguiente fase: PM-01; seleccionar tarea concreta con §6.1, prioridad/riesgo y dependencias verificadas. No saltar a PM-02 mientras PM-01 tenga tareas elegibles.

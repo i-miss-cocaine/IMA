@@ -5862,16 +5862,16 @@ No se crea AUD-NG nuevo. Se amplían tareas pendientes existentes, sin borrar ni
 
 ---
 
-<!-- ID: TASK-639 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK02.md -->
-### [ ] [TASK-639] Verificar duplicaciones, símbolos globales y ciclos
-- **Referencia:** AUD-NG-283.
+<!-- ID: TASK-639 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK02.md; Auditoría/AUDITORIA_TASK-639_C1.302.md -->
+### [x] [TASK-639] Verificar duplicaciones, símbolos globales y ciclos
+- **Referencia:** AUD-NG-283; resultados C1.302: AUD-NG-374..376.
 - **Severidad:** MEDIO.
 - **Prioridad:** P2.
-- **Estado:** Pendiente.
-- **Objetivo y acción:** realizar inspección manual función por función y módulo por módulo sobre los archivos inventariados; documentar propietarios de símbolos globales, redefiniciones, acoplamientos, ciclos y contratos compartidos.
-- **Archivos/módulos afectados:** archivos fuente identificados por TASK-637 y mapa de TASK-638.
-- **Dependencias:** TASK-637 y TASK-638.
-- **Criterios de aceptación:** cada símbolo compartido tiene propietario y consumidores; duplicados/ciclos confirmados o descartados con evidencia y referencias exactas; los casos no verificables quedan explícitos; no se modifica código durante la fase de auditoría.
+- **Estado:** Completada.
+- **Resultado:** inspección estática de 24 archivos JS y 6 servicios Apps Script; propietarios, redefiniciones, consumidores, acoplamientos y grafo interservicio documentados con referencias exactas. Ciclos estáticos no observados; ciclos runtime no verificables.
+- **Expediente principal:** Auditoría/AUDITORIA_TASK-639_C1.302.md.
+- **Tareas derivadas:** TASK-691, TASK-692 y TASK-693 en pendientes/Dirección/Pendientes.md.
+- **Criterios de aceptación:** satisfechos para el alcance estático; no se modificó código durante la auditoría.
 
 ---
 

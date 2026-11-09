@@ -258,3 +258,25 @@ Sesión: IMA-EXEC-20261109-1108Z-01; HEAD de partida: 32b8f5884dd24dbeaf1a3bf028
 - Impacto: un Profesor puede enviar authRole=Secretaría/Administrador para eludir el cierre y modificar notas.
 - Acción: ampliar TASK-636 y TASK-685; usar exclusivamente claims verificados y flujo autorizado de reapertura/rectificación.
 - Estado: abierto; sin prueba HTTP/runtime.
+
+
+## AUD-NG-374 — MEDIO/P2 — Redefiniciones globales en microservicios (C1.302)
+- Origen: TASK-639; expediente Auditoría/AUDITORIA_TASK-639_C1.302.md.
+- Evidencia: TASK normalizeString:9/1209 y uploadChunk:795/1967; ACCOUNTING manageTransportRoute:15699/16744; USER getIdempotencyPayloadSignature:209/1299, getNews:3116/5574, getInstitutionalAnnouncements:3817/5684, createInstitutionalAnnouncement:3848/5784, submitAnnouncementReceiptConfirmation:3873/5901 y getAnnouncementReadReport:3895/5934.
+- Impacto: la última declaración global desplaza la anterior; quedan implementaciones legadas y contratos divergentes difíciles de mantener.
+- Acción: TASK-691; reconciliar comportamiento y conservar validaciones vigentes antes de eliminar duplicados.
+- Estado: abierto; evidencia estática, sin runtime.
+
+## AUD-NG-375 — MEDIO/P2 — Colisión de handlers globales entre Secretaría y Docente (C1.302)
+- Origen: TASK-639; expediente Auditoría/AUDITORIA_TASK-639_C1.302.md.
+- Evidencia: openClassroomManagerModal, openAcademicLoadPlanningModal, refreshAcademicPlanningData y openAcademicAnalyticsModal se asignan en js/secretary.js y js/teacher.js; dashboard-direccion.html carga ambos en ese orden.
+- Impacto: el segundo módulo sobrescribe las funciones globales del primero; el comportamiento depende del orden de scripts y del rol/página.
+- Acción: TASK-692; declarar propietario único y separar handlers compartidos/específicos.
+- Estado: abierto; estático, sin navegador.
+
+## AUD-NG-376 — MEDIO/P2 — Contratos de helpers duplicados entre microservicios independientes (C1.302)
+- Origen: TASK-639; expediente Auditoría/AUDITORIA_TASK-639_C1.302.md.
+- Evidencia: se repiten helpers de autorización, sesión/HMAC, idempotencia, persistencia y normalización entre Code.gs de USER, ACADEMIC, TASK, EXAM, ACCOUNTING y DEVELOPER. Los proyectos están aislados; no es colisión de runtime.
+- Impacto: deriva de comportamiento/seguridad y ausencia de una fuente contractual versionada común.
+- Acción: TASK-693; formalizar contratos compartidos y agregar guardas estáticas de duplicación/ciclos.
+- Estado: abierto; sin verificación de deployments.

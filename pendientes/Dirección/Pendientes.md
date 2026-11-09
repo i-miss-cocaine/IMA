@@ -4775,3 +4775,44 @@
 - **Acción:** eliminar IMA-PORTAL-DEVELOPMENT-KEY-UNSECURE como fallback; requerir secreto aleatorio externo al repositorio y fallar cerrado si falta; rotar clave e invalidar tokens previos; introducir JTI/uso único y revocación.
 - **Criterios:** sin secreto no se emiten ni aceptan tokens; token alterado/falsificado/expirado/reutilizado se rechaza; un token válido solo cambia la contraseña una vez; no se filtran secretos en logs/frontend.
 - **Estado:** Pendiente.
+
+
+===============================================================================
+TAREAS DERIVADAS — AUDITORÍA TASK-639 / C1.302
+===============================================================================
+
+<!-- ID: TASK-691 | Fuentes: AUD-NG-374 / Auditoría/AUDITORIA_TASK-639_C1.302.md -->
+### [ ] [TASK-691] Consolidar redefiniciones globales en microservicios
+- **Hallazgo:** AUD-NG-374, MEDIO/P2.
+- **Fase PM:** PM-02 — Arquitectura, datos, contratos y persistencia.
+- **Archivos:** backend/task-service/Code.gs; backend/accounting-service/Code.gs; backend/user-service/Code.gs.
+- **Objetivo:** eliminar definiciones globales desplazadas y conservar un único contrato/implementación por símbolo.
+- **Acción:** reconciliar normalizeString, uploadChunk, manageTransportRoute, getIdempotencyPayloadSignature, getNews, getInstitutionalAnnouncements, createInstitutionalAnnouncement, submitAnnouncementReceiptConfirmation y getAnnouncementReadReport; conservar los comportamientos y validaciones más completos, y actualizar dispatchers/callers solo si el contrato lo requiere.
+- **Dependencias:** verificar previamente los controles de identidad/autorización relacionados con TASK-636 y TASK-685; no retirar validaciones vigentes.
+- **Criterios:** una sola definición global por símbolo; consumidores y contrato documentados; pruebas de regresión para cargas segmentadas, rutas, noticias, comunicados e idempotencia.
+- **Estado:** Pendiente.
+
+---
+
+<!-- ID: TASK-692 | Fuentes: AUD-NG-375 / Auditoría/AUDITORIA_TASK-639_C1.302.md -->
+### [ ] [TASK-692] Establecer propiedad única de handlers globales en dashboards
+- **Hallazgo:** AUD-NG-375, MEDIO/P2.
+- **Fase PM:** PM-02 — Arquitectura, datos, contratos y persistencia.
+- **Archivos:** js/secretary.js; js/teacher.js; js/ui-common.js; dashboard-direccion.html; dashboard-secretaria.html y dashboards consumidores.
+- **Objetivo:** eliminar colisiones de símbolos globales y la dependencia accidental del orden de carga.
+- **Acción:** asignar propietario por handler; separar funciones compartidas de las específicas por rol; consolidar contrato común y revisar cada consumidor.
+- **Criterios:** cada símbolo global tiene propietario único; Secretaría, Docente y Dirección invocan el handler correcto; pruebas por dashboard confirman ausencia de sobrescrituras.
+- **Estado:** Pendiente.
+
+---
+
+<!-- ID: TASK-693 | Fuentes: AUD-NG-376 / Auditoría/AUDITORIA_TASK-639_C1.302.md -->
+### [ ] [TASK-693] Formalizar contratos de helpers compartidos y guardas estáticas
+- **Hallazgo:** AUD-NG-376, MEDIO/P2.
+- **Fase PM:** PM-02 — Arquitectura, datos, contratos y persistencia.
+- **Archivos:** backend/*/Code.gs; pruebas/reglas de arquitectura.
+- **Objetivo:** evitar deriva entre helpers compartidos de servicios independientes y detectar regresiones de estructura.
+- **Acción:** versionar contratos para autorización, sesión/HMAC, idempotencia, normalización y persistencia; incorporar análisis estático de redefiniciones globales y ciclos interservicio.
+- **Dependencias:** TASK-691 y TASK-692; contratos de identidad/sesión PM-01.
+- **Criterios:** propietario y versión contractual por servicio; divergencias intencionales documentadas; guardas distinguen duplicados del mismo ámbito, funciones locales y proyectos aislados; ciclos reales detectados con evidencia.
+- **Estado:** Pendiente.
