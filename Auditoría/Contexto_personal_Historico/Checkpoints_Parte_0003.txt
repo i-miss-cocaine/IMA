@@ -1,0 +1,103 @@
+CONTEXTO PERSONAL Y CONTINUIDAD DEL AGENTE DESARROLLADOR
+================================================================
+
+# GATE PRIORITARIO IMA: COMMITS CONSOLIDADOS Y CHECKPOINTS OBLIGATORIOS
+
+**LECTURA Y CUMPLIMIENTO OBLIGATORIOS ANTES DE CUALQUIER TRABAJO EN IMA.** Estas reglas son controles de entrada y salida, no sugerencias. Si alguna no puede cumplirse, se detiene el trabajo sin continuar ni publicar cambios parciales.
+
+A. **COMMIT ÚNICO:** por cada iteración de trabajo se prepara y verifica el conjunto completo de cambios de todos los archivos relacionados y se publica exactamente un commit final. Nunca crear commits por archivo, documento, carpeta, subtarea o avance intermedio. Esta instrucción prevalece sobre cualquier texto anterior ambiguo de «un commit por tarea», «commits modulares», «lotes» o «subdividir por cuota». Solo separar en más de un commit si el usuario lo autoriza expresamente. Si el commit único no es posible, detenerse sin commits parciales.
+
+B. **CHECKPOINT OBLIGATORIO:** antes de pausar, terminar una sesión/iteración, transferir el trabajo, cerrar un sublote o detenerse por un bloqueo, agregar un checkpoint acumulativo al archivo de contexto real existente. No borrar, reescribir ni resumir checkpoints anteriores. No se permite terminar la iteración dejando el checkpoint para después.
+
+C. **PUERTA DE INICIO:** antes de modificar cualquier archivo, leer el contexto completo, la metodología completa, el plan vigente y el último checkpoint; verificar repositorio, rama de trabajo, rama base y HEAD de ambas ramas. Si no existe checkpoint fiable o hay contradicción de instrucciones, investigar y detenerse hasta resolverla.
+
+D. **PUERTA DE CIERRE:** el checkpoint debe incluir estado exacto de tarea/lote, último elemento terminado, elemento en curso, siguiente acción concreta, archivo/función/sección/rango exacto, evidencia y SHA de respaldo, pruebas realmente ejecutadas/no ejecutadas, archivos modificados/no modificados, limitaciones, rama y HEAD de partida. Tras publicar el único commit, verificar el HEAD de la rama y la integridad del commit; no crear un segundo commit solo para añadir el SHA que el propio commit no puede contener. El SHA final se confirma consultando el HEAD de GitHub y se comunica en el reporte de cierre.
+
+E. **VERIFICACIÓN:** antes del único commit revisar el diff total y confirmar que todos los cambios relacionados estén incluidos, que no existan cambios ajenos, que el historial previo se conserve y que la rama base permanezca intacta. Después comprobar que el commit incluye el checkpoint y todos los archivos de la iteración.
+
+Estas reglas son específicas y prioritarias para IMA. No modifican ni autorizan alterar las instrucciones de otros repositorios/proyectos. En caso de contradicción, prevalece esta adenda IMA más reciente y la instrucción expresa del usuario.
+
+F. **RECUPERACIÓN HISTÓRICA OBLIGATORIA CUANDO UN ARCHIVO DEVUELVA CERO CARACTERES:** una respuesta de lectura con contenido vacío (0 caracteres), incluso si Git informa que el archivo existe y tiene un blob SHA, NO demuestra que el archivo esté vacío, eliminado, corrupto ni que carezca de historial. Está prohibido sobrescribirlo, recrearlo o sustituirlo por una versión legacy antes de recuperar y verificar su contenido.
+   1. Confirmar repositorio, rama de trabajo autorizada y HEAD actual. La búsqueda de historial, commits, árboles y blobs para recuperar el archivo se limita exclusivamente a esa rama de trabajo y a sus commits alcanzables. No usar la rama base, otras ramas, ramas remotas ajenas ni copias legacy como fuente de restauración. Una copia legacy puede utilizarse únicamente como referencia comparativa si el alcance lo permite.
+   2. Consultar el historial del archivo dentro de la rama de trabajo, identificar el blob más reciente cuyo contenido completo pueda recuperarse y contrastar también el blob del HEAD actual. Si el blob actual puede recuperarse íntegramente, tiene prioridad; si no, seleccionar el commit histórico más reciente de esa misma rama que conserve una versión íntegra y estructuralmente válida. No elegir una versión solo por tamaño o fecha.
+   3. Verificar el contenido recuperado: SHA del blob, tamaño/caracteres, líneas, estructura inicial y final, encabezados, identificadores y estados. Para registros de tareas, inventariar los identificadores reales por categoría (sin contar marcadores o plantillas como tareas), total de tareas únicas, último identificador y, cuando corresponda, tareas completadas y pendientes. Comparar con el registro legacy solo para demostrar diferencias, nunca para reemplazar el historial de trabajo.
+   4. Preservar el blob y el commit de origen como respaldo inmutable. Antes de restaurar, reconciliar cambios posteriores, tareas nuevas, duplicados y estados; revisar el diff completo. La restauración solo se ejecuta si está autorizada y puede hacerse sin pérdida histórica, siguiendo el commit único por iteración. Si no se puede recuperar o validar íntegramente, detenerse y documentar el bloqueo; no escribir sobre el archivo.
+   5. **Inventario obligatorio en el checkpoint:** registrar ruta, rama, HEAD consultado, commit y blob SHA seleccionados, motivo de selección, resultado de la lectura convencional (0 caracteres), caracteres/tamaño y líneas recuperadas, cantidad de tareas por categoría, total de identificadores únicos de tarea, identificador máximo/último, estados completados/pendientes cuando se puedan contar de forma fiable, comparación con legacy y validaciones realizadas/no realizadas. No declarar «recuperado íntegramente» sin esa evidencia.
+
+Esta regla aplica a CUALQUIER archivo del repositorio IMA, sin excepción por tipo, extensión, ubicación o propósito: código fuente, documentación, configuraciones, datos, pruebas, recursos, archivos binarios y cualquier otro artefacto versionado. El hecho de que una herramienta devuelva 0 caracteres no permite clasificar el archivo como vacío. Si el archivo no es texto o la lectura textual no es compatible con su formato, la recuperación y validación deben hacerse sobre el objeto Git y sus bytes (incluidos tamaño y SHA); no se debe forzar una interpretación textual. El inventario de tareas/IDs se exige cuando el archivo contenga registros de tareas; para los demás archivos se registra expresamente «no aplica» y se inventarían las propiedades pertinentes al tipo de archivo.
+
+G. **CONTROL DE CRECIMIENTO, ROTACIÓN Y LOCALIZACIÓN DE CHECKPOINTS (OBLIGATORIO):**
+   1. El tamaño máximo de cada archivo activo de checkpoints será de **180.000 caracteres Unicode**, medidos sobre el contenido UTF-8 decodificado e incluyendo espacios y saltos de línea. Antes de anexar cualquier entrada, calcular el tamaño resultante. Si la adición excedería el límite, no escribir en ese archivo: crear el siguiente archivo secuencial de checkpoints.
+   2. La rotación es preventiva: el archivo nuevo debe quedar por debajo del límite desde su creación. Nunca truncar, borrar, resumir, mover ni reescribir checkpoints anteriores. El archivo que alcanzó el límite queda cerrado para nuevas entradas y permanece íntegro.
+   3. Cada archivo nuevo debe iniciar con una copia íntegra y vigente de este bloque normativo A–I del contexto personal (incluidas restricciones, precedencia, commits, checkpoints, recuperación y rotación), seguida de la identificación del repositorio/proyecto y referencias a la metodología vigente. No copiar todo el historial anterior: conservarlo en su archivo original. La copia normativa se considera una instantánea; cualquier cambio futuro de reglas debe propagarse a los nuevos archivos.
+   4. Convención de nombres: mantener Auditoría/Contexto_personal.txt como primer archivo histórico y punto de entrada; los archivos rotados se crearán como Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt, ..._0003.txt, etc., incrementando secuencialmente y sin reutilizar nombres. Los archivos Parte_01.txt a Parte_07.txt existentes son fragmentos de recuperación del contexto original y no se renombrarán ni se considerarán partes de esta nueva serie.
+   5. Mantener Auditoría/INDICE_CHECKPOINTS.md como índice permanente: una fila por checkpoint con ID, sesión, estado, archivo/ruta, ubicación (sección o líneas), tarea/fase y commit de cierre o estado de publicación. El índice debe señalar el último checkpoint y el archivo activo. No depender de buscar manualmente el último ID en todos los archivos.
+   6. Todo checkpoint debe declarar Ubicación exacta del checkpoint: ruta del archivo, identificador de parte, encabezado/sección y rango de líneas cuando sea posible; además debe incluir ID del checkpoint anterior y referencia al índice central. Si el rango final de líneas solo puede confirmarse tras escribir, calcularlo y registrarlo en el índice dentro del mismo cambio preparado.
+   7. Auditoria.txt y changueslogs.txt deben registrar el ID del checkpoint relacionado, ID de sesión, ruta exacta y referencia a la fila/entrada del índice. No duplicar el texto íntegro del checkpoint en esos registros; mantener evidencia local y referencias cruzadas.
+   8. Al rotar, preparar en una sola iteración el nuevo archivo con el bloque normativo completo, el checkpoint que provocó la rotación, la actualización del índice, la referencia de continuidad desde el archivo anterior y los cambios relacionados en auditoría/changelog. Publicar todo en el commit consolidado habitual; nunca crear un commit separado solo para rotar.
+   9. Antes de cada escritura comprobar tamaño actual, tamaño proyectado, SHA del blob, HEAD y espacio disponible respecto al límite. Si el archivo actual ya supera 180.000 caracteres, no anexar nada: preservar y cerrar ese archivo, crear la siguiente parte y documentar la anomalía. Si la fuente normativa no puede recuperarse íntegramente, detener la rotación hasta restaurarla de forma verificable.
+
+H. **ESTADO DE IMPLEMENTACIÓN Y PRUEBAS FUNCIONALES BETA (OBLIGATORIO PARA IMA):**
+   1. **Completada** describe que todos los requisitos de implementación de la tarea terminaron; exige verificaciones técnicas internas aplicables, autoauditoría, Code Review interno aprobado, evidencia y actualización del backlog/Plan Maestro. No requiere aprobación adicional del usuario.
+   2. No confundir cierre de implementación con certificación funcional integral. Las pruebas E2E, regresión transversal, seguridad por roles, integración y escenarios de plataforma se ejecutan en beta y se registran en `docs/testing/PRUEBAS_FUNCIONALES_BETA.md`.
+   3. Las pruebas técnicas/unitarias/contratos y controles acotados al cambio se ejecutan durante implementación cuando apliquen. Las pruebas integrales se difieren a beta. No afirmar que una prueba no ejecutada pasó.
+   4. Una tarea puede estar Completada mientras sus escenarios beta están Pendientes. Un defecto beta que demuestre incumplimiento de un requisito de implementación puede reabrirla con evidencia; la ausencia de pruebas beta no.
+   5. La plataforma no queda certificada para piloto/cutover por el simple hecho de que las tareas estén Completadas. La salida beta tiene sus propios criterios conforme a la sección 21 de `METODOLOGIA_DESARROLLO.md`.
+
+
+
+I. **AUDITORÍA ÚNICA Y CONTROL DE RECURSIVIDAD (OBLIGATORIO):** antes de iniciar, consulta el expediente e informes existentes y aplica §19.6 de METODOLOGIA_DESARROLLO.md. Mantén un expediente principal por tarea; no crees informes completos duplicados. Verifica correcciones de forma focalizada y regístralas en el expediente existente. Repite una auditoría completa solo por cambios sustanciales, requisitos modificados, dependencias que invaliden conclusiones, evidencia nueva contradictoria o cobertura original incompleta; justifica el alcance. Clasifica hallazgos como defecto de implementación, defecto relacionado, defecto documental o incidencia metodológica. No conviertas automáticamente defectos documentales/metodológicos en auditorías recursivas. Está prohibido auditar una auditoría cuyo único objeto sea revisar otro informe; usa una lista de comprobación documental y corrige directamente. Si no hay evidencia nueva ni criterio pendiente, continúa con la siguiente acción/tarea elegible.
+
+# CONTINUIDAD IMA — PARTE ROTATIVA DE CHECKPOINTS
+Repositorio: i-miss-cocaine/IMA. Rama: NG_beta_0.0.0.1_work. Rama base protegida: NG_beta_0.0.0.1.
+Metodología: METODOLOGIA_DESARROLLO.md, secciones 15–21.
+Archivo anterior: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt (cerrado íntegro; 181.776 caracteres proyectados, no se anexó C1.329).
+Índice central: Auditoría/INDICE_CHECKPOINTS.md.
+SHA del bloque normativo A–I copiado íntegramente: a434b8ac19bd40646e81c0a911c525e3cea9920f.
+
+
+
+===============================================================================
+## C1.329 — Recuperación íntegra del backlog y nueva norma de pruebas beta
+ID: C1.329
+Sesión: IMA-GOV-20261109-2154Z-01
+Fecha: 2026-11-09 UTC
+Checkpoint anterior: C1.328
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+HEAD de partida: ad1e0a86f1bbd9da89bdaf10e43ae82aab90bd53
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios)
+
+### Recuperación histórica de pendientes/Otros/Pendientes.md
+- C1.304 registró HEAD f4d8088d51af2840686fb9ca4ed11261b8535569, blob e9637ecc6f88b2aa0aec75909538e072509bf507 (1.647.413 bytes) y lectura convencional de 0 caracteres. El historial por ruta identificó 4cda8611c4d3c4aece4c7d80922cc4c14c920f5a conservando ese blob.
+- El último commit que modificó la ruta acreditado en los checkpoints es C1.316: 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a. En ese commit, la ruta resuelve al blob 35cbd51f1e0b2f91f18b46c94d38223338d5ccdf. fetch_file devuelve 0 caracteres; fetch_blob recupera el contenido completo.
+- C1.317 anotó el blob 6323f01fc2335df264dfb54d2558bb8ad505a4d8, discrepante con el blob real resuelto por la ruta en HEAD 31262d5. Se conserva el registro histórico y se documenta la discrepancia.
+- C1.328 y el HEAD 431fdff7c695f0507a96e533b391cb69ff9fdb62 conservan el blob 35cbd51f1e0b2f91f18b46c94d38223338d5ccdf. Los 25 commits posteriores a C1.328 no modificaron esta ruta.
+- Blob actual recuperado: 1.629.561 caracteres y 16.492 líneas; 366 IDs únicos TASK-###, máximo TASK-682; 305 encabezados con ID TASK (255 checkbox abierto, 0 checkbox completado, 50 sin checkbox). Estos conteos de encabezado no sustituyen la lectura de estados del cuerpo.
+- TASK-636 y sus seguimientos hasta C1.316 están íntegros. No se sobrescribe ni recrea el backlog.
+
+### Nueva normativa de pruebas
+- METODOLOGIA_DESARROLLO.md §21.2 y §21.5: ninguna prueba funcional o de despliegue que dependa de servicios desplegados, infraestructura remota o datos reales bloquea el cierre de implementación.
+- Antes del cierre se ejecutan todas las pruebas locales aplicables: sintaxis, lint, revisión estática, imports, tipos/esquemas, contratos, unitarias, lógica, mocks/fixtures locales, seguridad local, regresión y Code Review. Los defectos locales reproducibles deben corregirse.
+- Las pruebas que requieren deployment, HTTP real, servicios vivos, Drive/Sheets reales, E2E desplegado, carga/concurrencia remota o configuración externa se registran como Pendiente beta en beta_test.txt; no se marcan PASS antes de ejecutarlas.
+- beta_test.txt queda como registro maestro. docs/testing/PRUEBAS_FUNCIONALES_BETA.md se conserva como referencia histórica.
+- Commit de normativa: ad1e0a86f1bbd9da89bdaf10e43ae82aab90bd53. No se modificó código de producto ni se declaró tarea completada.
+
+### Archivos modificados
+Iteración normativa: METODOLOGIA_DESARROLLO.md; beta_test.txt (nuevo); docs/testing/PRUEBAS_FUNCIONALES_BETA.md (aviso histórico).
+Cierre de trazabilidad: este checkpoint y Auditoría/INDICE_CHECKPOINTS.md, changueslogs.txt, Auditoria.txt.
+
+### Pruebas y verificaciones
+- Ejecutadas: recuperación de blobs e9637ecc..., 6323f01... y 35cbd51...; comparación de contenido C1.304/C1.316/C1.328; lectura íntegra del backlog; consulta del commit C1.316 y de sus archivos; validación del §21.5, beta_test.txt y aviso histórico; HEAD/base.
+- No ejecutadas: pruebas de aplicación, deployments, HTTP, Apps Script, Sheets/Drive, E2E ni pruebas funcionales beta. No hubo cambios de código de producto.
+
+### Estado y siguiente acción
+- La lectura íntegra del backlog queda resuelta mediante Git Blob; fetch_file sigue devolviendo 0 caracteres por el tamaño del archivo.
+- La discrepancia SHA de C1.317 queda identificada, no corregida retroactivamente.
+- TASK-068/AUD-NG-378 requiere auditoría focalizada para separar brechas de implementación (writer/transporte/código ausente) de pruebas remotas ahora diferidas a beta. No marcar Completada ni conservar un bloqueo basado exclusivamente en falta de deployment.
+- Siguiente acción: reconciliar la continuidad de los 25 commits posteriores a C1.328; reauditar TASK-068 bajo §21.5 y continuar implementación local elegible; registrar pruebas remotas en beta_test.txt.
+
+Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.329.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.329.
+Commit de cierre: el commit que contiene este checkpoint; SHA verificado tras publicar.
+===============================================================================

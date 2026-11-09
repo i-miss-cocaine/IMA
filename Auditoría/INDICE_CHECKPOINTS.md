@@ -3,12 +3,12 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.328**
+- Último checkpoint: **C1.329**
 - Última sesión: `IMA-EXEC-20261109-1909Z-01`
-- Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt`
+- Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.328: **176668**
-- Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt`
+- Caracteres del archivo activo tras C1.329: **17269**
+- Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 
 ## Registro de checkpoints
@@ -27,6 +27,8 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.292 | IMA-EXEC-20261109-0430Z-01 | Publicado | TASK-638 / PM-00 — inventario JS y dependencias runtime | Auditoría/Contexto_personal.txt — sección C1.292 | 1842–1892 | C1.291 | 32b8f5884dd24dbeaf1a3bf028eb7635ada592df |
 | C1.293 | IMA-EXEC-20261109-1108Z-01 | Publicado | TASK-638 / PM-00 — CSS/GS/JSON y contratos | Auditoría/Contexto_personal.txt — sección C1.293 | 1895–1943 | C1.292 | fd73830144a9822369e4402076685928171908d6 |
 | C1.294 | IMA-AUDIT-20261109-1140Z | Publicado | TASK-637 reauditoría / PM-00.3 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.294 | 55–128 | C1.293 | `00ffac159929fd65f1fc3a65e72509838df0cbde` |
+
+- SHA del bloque normativo A–I de Parte_0003: `a434b8ac19bd40646e81c0a911c525e3cea9920f`.
 
 ## Reglas de mantenimiento
 1. Agregar una fila por cada checkpoint, sin borrar ni reutilizar IDs.
@@ -100,3 +102,5 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.327 | IMA-EXEC-20261109-1802Z-01 | Preparado para commit único | TASK-068 / PM-01 — CI aprobado; AUD-NG-378 bloqueado por transporte/configuración externa | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.327 | 1828–1872 | C1.326 | Este commit; SHA verificado externamente tras publicación |
 
 | C1.328 | IMA-EXEC-20261109-1909Z-01 | Preparado para commit único | TASK-068 / PM-01 — bloqueo AUD-NG-378 y recuperación del backlog de requisitos | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.328 | 1875–1936 | C1.327 | Este commit; SHA verificado tras publicación |
+
+| C1.329 | IMA-GOV-20261109-2154Z-01 | Publicado en este commit | Recuperación íntegra del backlog y norma de pruebas beta | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.329 | 46–104 | C1.328 | Este commit; SHA verificado tras publicación |

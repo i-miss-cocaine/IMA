@@ -482,3 +482,7 @@ Sesión: IMA-EXEC-20261109-1108Z-01; HEAD de partida: 32b8f5884dd24dbeaf1a3bf028
 - No se habilitan escrituras cruzadas ni se almacenan secretos. No hubo cambios de código ni pruebas nuevas.
 - La selección PM-01 queda pendiente de recuperar los requisitos P0 de Otros desde Git; blob SHA y comandos exactos están en C1.328. No se crea otra auditoría/tarea.
 - Checkpoint C1.328; sesión IMA-EXEC-20261109-1909Z-01; Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.328; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.328.
+
+
+[2026-11-09] C1.329 — Recuperación documental y norma de pruebas
+pendientes/Otros/Pendientes.md no está vacío ni corrupto: fetch_file devuelve 0 por tamaño, pero el blob 35cbd51f1e0b2f91f18b46c94d38223338d5ccdf se recuperó íntegramente (1.629.561 caracteres; 16.492 líneas). Se identificó C1.316/31262d5 como último commit modificador acreditado y discrepancia con el SHA consignado en C1.317. Se actualizó METODOLOGIA_DESARROLLO.md §21.5 y se creó beta_test.txt como registro maestro de pruebas remotas diferidas. Sin cambios de código de producto ni cierre de tareas.
