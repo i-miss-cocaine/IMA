@@ -1875,3 +1875,13 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - Verificación estática completada; no se ejecutaron runtime ni pruebas por rol. AUD-NG-370 parcialmente abierto; AUD-NG-369 abierto y closeAcademicYear bloqueado.
 - Siguiente subalcance: excepciones públicas ACADEMIC con tokens opacos y mínima exposición de PII; después backup/restore aislado verificable.
 - Checkpoint C1.308: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.308; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.308.
+
+## 10.7 Seguimiento de ejecución del Plan Maestro — C1.309
+- TASK-636 — PM-01/P0 — En ejecución. ACADEMIC protege seguimiento y borradores mediante bearer tokens opacos y hash SHA-256; la respuesta pública se minimiza y la creación de solicitudes siempre adquiere LockService.
+- getServiceHealthDiagnostics queda restringido a Administrador/Desarrollador con claims; el cliente no puede usar skipLock.
+- deleteFile bloquea archivos presentes en Entregas o EntregasVersiones; AUD-NG-370 sigue abierto por metadatos históricos sin propietario y pruebas dinámicas.
+- AUD-NG-357 sigue parcialmente abierto por solicitudes/borradores históricos sin hash; no se infiere identidad desde email/DNI/IDs secuenciales.
+- El panel de seguimiento mediante capacidad pública no consulta datos financieros.
+- AUD-NG-369 sigue abierto; closeAcademicYear permanece fail-closed con BACKUP_REQUIRED hasta demostrar backup/restore aislado.
+- Runtime Apps Script, Sheets/Drive, HTTP, navegador, E2E y pruebas por rol no ejecutadas.
+- Checkpoint C1.309: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.309; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.309.

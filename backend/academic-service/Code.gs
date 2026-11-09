@@ -116,8 +116,8 @@ function getOrCreateSheet(ss, name) {
 
     // Nuevas Tablas Fase 4 - Expedientes, Admisiones y Matrículas
     if (name === "ExpedientesEstudiantes") sheet.appendRow(["ExpedienteID", "PersonaID", "CodigoInstitucional", "FechaNacimiento", "Nacionalidad", "DireccionResidencia", "FotografiaUrl", "EstadoExpediente", "FechaCreacion", "FechaActualizacion", "Observaciones"]);
-    if (name === "SolicitudesAdmision") sheet.appendRow(["SolicitudID", "FechaSolicitud", "AnoLectivo", "GradoSolicitado", "NombresAspirante", "ApellidosAspirante", "Identificacion", "FechaNacimiento", "NombreResponsable", "TelefonoContacto", "EmailContacto", "EstadoSolicitud", "CanalIngreso", "Observaciones", "ExpedienteID"]);
-    if (name === "BorradoresAdmision") sheet.appendRow(["BorradorID", "IdentificadorUsuario", "EmailResponsable", "DatosDraftJSON", "FechaCreacion", "FechaActualizacion", "Estado"]);
+    if (name === "SolicitudesAdmision") sheet.appendRow(["SolicitudID", "FechaSolicitud", "AnoLectivo", "GradoSolicitado", "NombresAspirante", "ApellidosAspirante", "Identificacion", "FechaNacimiento", "NombreResponsable", "TelefonoContacto", "EmailContacto", "EstadoSolicitud", "CanalIngreso", "Observaciones", "ExpedienteID", "PublicAccessTokenHash"]);
+    if (name === "BorradoresAdmision") sheet.appendRow(["BorradorID", "IdentificadorUsuario", "EmailResponsable", "DatosDraftJSON", "FechaCreacion", "FechaActualizacion", "Estado", "AccessTokenHash"]);
     if (name === "ResponsablesTutores") sheet.appendRow(["ResponsableID", "PersonaID", "Nombres", "Apellidos", "Identificacion", "Telefono", "Email", "Direccion", "Ocupacion", "Estado"]);
     if (name === "RelacionesEstudianteTutor") sheet.appendRow(["RelacionID", "ExpedienteID", "ResponsableID", "TipoParentesco", "EsRepresentanteLegal", "EsContactoEmergencia", "EsResponsableFinanciero", "AutorizadoPickUp", "AccesoPortal", "Estado", "Observaciones"]);
     if (name === "DocumentosEstudiante") sheet.appendRow(["DocumentoID", "ExpedienteID", "SolicitudID", "TipoDocumento", "NombreArchivo", "DriveFileId", "DriveUrl", "FechaRecepcion", "FechaVencimiento", "EstadoRevision", "SubidoPor", "ValidadoPor", "Observaciones"]);
@@ -220,7 +220,7 @@ const ROLE_PERMISSIONS = {
     "openAttendanceSession", "saveClassAttendance", "getBatchAttendanceRecords", "getClassAttendance", "saveDailyAttendance", "getDailyAttendance", "submitAttendanceJustification", "reviewAttendanceJustification", "recordEarlyDeparture", "getAttendanceIncidents", "saveAttendanceIncident", "getAttendanceFollowupCases", "saveAttendanceFollowupCase", "addCaseFollowUpNote", "getStudentAttendanceSummary", "generateConsolidatedAttendanceAndCoexistenceReport", "validateStudentWelfareAccess"
   ],
   "Coordinador": ["getAcademicConfig", "getAcademicHistory", "getAsignaturasActivas", "getAcademicYears", "getAcademicOffers", "getSubjectCatalog", "getStudyPlans", "getTeacherAssignments", "getClassSchedules", "getStudentFile", "getAcademicAreaTemplateCatalog", "assignTeacherToAcademicArea", "getTeachersByAcademicArea", "getAcademicAreasByTeacher", "removeTeacherFromAcademicArea", "getAcademicAreaCoordinationScope", "getBatchAttendanceRecords", "generateConsolidatedAttendanceAndCoexistenceReport", "evaluateAndDispatchEarlyWarningAlerts", "getEarlyWarningAlerts", "savePedagogicalPlanning", "getPedagogicalPlannings", "submitPlanningForReview", "reviewPedagogicalPlanning", "getPlanningReviewHistory", "saveSupervisionRubric", "getSupervisionRubrics"],
-  "Desarrollador": ["getAcademicConfig", "getAcademicHistory", "getAcademicAreaTemplateCatalog", "assignTeacherToAcademicArea", "getTeachersByAcademicArea", "getAcademicAreasByTeacher", "removeTeacherFromAcademicArea", "getAcademicAreaCoordinationScope", "deployAcademicMicroserviceInstance", "getAcademicMicroserviceDeployments", "configureAcademicLevelsAndDynamicStorage"],
+  "Desarrollador": ["getAcademicConfig", "getAcademicHistory", "getAcademicAreaTemplateCatalog", "assignTeacherToAcademicArea", "getTeachersByAcademicArea", "getAcademicAreasByTeacher", "removeTeacherFromAcademicArea", "getAcademicAreaCoordinationScope", "deployAcademicMicroserviceInstance", "getAcademicMicroserviceDeployments", "configureAcademicLevelsAndDynamicStorage", "getServiceHealthDiagnostics"],
   "Contador": ["getAcademicConfig", "registerStudentEnrollment", "getStudentEnrollmentHistory", "getAcademicYears", "getAcademicOffers", "getStudentFile", "getStudentEnrollments"],
   "Consejeros": ["getAcademicConfig", "getAcademicYears", "getAcademicCalendar", "getClassSchedules", "getStudentSchedule", "getStudentFile", "getStudentTimeline", "getStudentGuardians", "getAttendanceIncidents", "saveAttendanceIncident", "updateAttendanceIncidentStatus", "getAttendanceFollowupCases", "saveAttendanceFollowupCase", "addCaseFollowUpNote", "addCaseCommitment", "updateCaseCommitmentStatus", "scheduleCounselingAppointment", "recordCounselingSessionAct", "referCounselingCase", "saveGuidanceFollowupPlan", "saveVocationalRecommendation", "validateEvidenceFileAndPermissions", "getStudentAttendanceSummary", "validateStudentWelfareAccess", "scheduleGuidanceAppointment", "getGuidanceAppointments", "updateGuidanceAppointmentStatus", "evaluateAndDispatchEarlyWarningAlerts", "getEarlyWarningAlerts"],
   "Orientacion": ["getAcademicConfig", "getAcademicYears", "getAcademicCalendar", "getClassSchedules", "getStudentSchedule", "getStudentFile", "getStudentTimeline", "getStudentGuardians", "getAttendanceIncidents", "saveAttendanceIncident", "updateAttendanceIncidentStatus", "getAttendanceFollowupCases", "saveAttendanceFollowupCase", "addCaseFollowUpNote", "addCaseCommitment", "updateCaseCommitmentStatus", "saveGuidanceFollowupPlan", "saveVocationalRecommendation", "validateEvidenceFileAndPermissions", "getStudentAttendanceSummary", "validateStudentWelfareAccess", "scheduleGuidanceAppointment", "getGuidanceAppointments", "updateGuidanceAppointmentStatus", "evaluateAndDispatchEarlyWarningAlerts", "getEarlyWarningAlerts"],
@@ -262,7 +262,29 @@ const ROLE_PERMISSIONS = {
   "Alumno": ["getAcademicConfig", "getAcademicHistory", "getAsignaturasActivas", "getWhatsAppLink", "getStudentEnrollmentHistory", "getAcademicYears", "getAcademicPeriods", "getAcademicOffers", "getAcademicCalendar", "getClassSchedules", "getStudentSchedule", "getStudentFile", "getStudentTimeline", "getStudentDocuments", "getStudentEnrollments", "submitAttendanceJustification", "getStudentAttendanceSummary", "getAttendanceIncidents", "generateStudentReportCard", "validateAcademicResponsibilityAndScopeAccess"]
 };
 
-const PUBLIC_ACTIONS = ["ping", "createAdmissionRequest", "getPublicAdmissionStatus", "saveAdmissionDraft", "getAdmissionDraft", "getServiceHealthDiagnostics"];
+const PUBLIC_ACTIONS = ["ping", "createAdmissionRequest", "getPublicAdmissionStatus", "saveAdmissionDraft", "getAdmissionDraft"];
+
+// Capacidades públicas de admisión: el secreto se entrega una sola vez y solo se conserva su hash.
+function generateOpaqueAdmissionAccessToken() {
+  return (Utilities.getUuid() + Utilities.getUuid()).replace(/-/g, "").toLowerCase();
+}
+function isValidOpaqueAdmissionAccessToken(token) {
+  return typeof token === "string" && /^[a-f0-9]{64}$/i.test(token);
+}
+function hashOpaqueAdmissionAccessToken(token) {
+  if (!isValidOpaqueAdmissionAccessToken(token)) throw new Error("Credencial pública inválida.");
+  const digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, token, Utilities.Charset.UTF_8);
+  return digest.map(b => ("0" + (b & 0xFF).toString(16)).slice(-2)).join("");
+}
+function ensureAdmissionTokenColumn(sheet, headerName) {
+  const lastColumn = Math.max(sheet.getLastColumn(), 1);
+  const headers = sheet.getRange(1, 1, 1, lastColumn).getValues()[0].map(value => String(value || "").trim());
+  const existingIndex = headers.indexOf(headerName);
+  if (existingIndex !== -1) return existingIndex + 1;
+  const newColumn = lastColumn + 1;
+  sheet.getRange(1, newColumn).setValue(headerName);
+  return newColumn;
+}
 
 // [FASE2-T02] [Fase 2 - Idempotencia de Operaciones] - Mecanismo de verificación de claves de idempotencia, caché de resultados y prevención de duplicación por reintentos HTTP.
 function getIdempotencyPayloadSignature(payload) {
@@ -982,9 +1004,12 @@ function doPost(e) {
 
 // [TAREA-F5-003] [Fase 5: Admisiones y Matrícula] - Creación atómica de solicitudes con generador de IDs secuencial, candado LockService, detección de duplicados e idempotencia
 function createAdmissionRequest(payload) {
-  const { anolectivo, gradoSolicitado, nombresAspirante, apellidosAspirante, identificacion, fechaNacimiento, nombreResponsable, telefonoContacto, emailContacto, observaciones, canalIngreso, skipLock } = payload || {};
+  const { anolectivo, gradoSolicitado, nombresAspirante, apellidosAspirante, identificacion, fechaNacimiento, nombreResponsable, telefonoContacto, emailContacto, observaciones, canalIngreso, draftAccessToken } = payload || {};
   if (!nombresAspirante || !apellidosAspirante || !gradoSolicitado) {
     throw new Error("Nombres del aspirante, apellidos y grado solicitado son obligatorios.");
+  }
+  if (draftAccessToken && !isValidOpaqueAdmissionAccessToken(String(draftAccessToken).trim())) {
+    throw new Error("La credencial del borrador no es válida.");
   }
 
   // Verificación de clave de idempotencia
@@ -994,15 +1019,14 @@ function createAdmissionRequest(payload) {
   let hasLock = false;
   const lock = LockService.getScriptLock();
   try {
-    if (!skipLock) {
-      hasLock = lock.tryLock(10000);
-      if (!hasLock) {
-        throw new Error("Servicio ocupado procesando solicitudes de admisión en paralelo. Por favor reintente en unos segundos.");
-      }
+    hasLock = lock.tryLock(10000);
+    if (!hasLock) {
+      throw new Error("Servicio ocupado procesando solicitudes de admisión en paralelo. Por favor reintente en unos segundos.");
     }
 
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const sheet = getOrCreateSheet(ss, "SolicitudesAdmision");
+    const publicTokenColumn = ensureAdmissionTokenColumn(sheet, "PublicAccessTokenHash");
     const data = sheet.getDataRange().getValues();
 
     const targetAno = String(anolectivo || "2026").trim();
@@ -1038,6 +1062,8 @@ function createAdmissionRequest(payload) {
     const now = new Date();
     const solicitudId = (idGen && idGen.generatedId) ? idGen.generatedId : ("ADM-000001");
 
+    const publicAccessToken = generateOpaqueAdmissionAccessToken();
+    const publicAccessTokenHash = hashOpaqueAdmissionAccessToken(publicAccessToken);
     const newRow = [
       solicitudId,
       now,
@@ -1055,6 +1081,8 @@ function createAdmissionRequest(payload) {
       observaciones || "",
       "" // ExpedienteID inicialmente vacío
     ];
+    while (newRow.length < publicTokenColumn - 1) newRow.push("");
+    newRow[publicTokenColumn - 1] = publicAccessTokenHash;
 
     sheet.appendRow(newRow);
     SpreadsheetApp.flush();
@@ -1062,13 +1090,14 @@ function createAdmissionRequest(payload) {
     const result = {
       status: "success",
       solicitudId: solicitudId,
+      publicAccessToken: publicAccessToken,
       anolectivo: targetAno,
       gradoSolicitado: gradoSolicitado,
       message: `Solicitud de admisión ${solicitudId} registrada exitosamente.`
     };
 
     saveIdempotentResult("createAdmissionRequest", payload, result);
-    logStructuredEvent("ACADEMIC", "createAdmissionRequest", "INFO", "ADMISSION_CREATED", `Solicitud de admisión ${solicitudId} registrada para ${nombresAspirante} ${apellidosAspirante}`, { solicitudId, gradoSolicitado, targetAno }, payload && payload.authRole);
+    logStructuredEvent("ACADEMIC", "createAdmissionRequest", "INFO", "ADMISSION_CREATED", `Solicitud de admisión ${solicitudId} registrada para ${nombresAspirante} ${apellidosAspirante}`, { solicitudId, gradoSolicitado, targetAno }, "Public");
 
     // [TAREA-F5-011] Disparar notificación automática de recepción de solicitud
     try {
@@ -1077,7 +1106,7 @@ function createAdmissionRequest(payload) {
           userId: emailContacto || "INVITADO",
           emailRecipient: emailContacto,
           titulo: "Solicitud de Admisión Recibida",
-          mensaje: `Estimado(a) ${nombreResponsable || 'Responsable'}, hemos recibido exitosamente la solicitud de admisión de ${nombresAspirante} ${apellidosAspirante} para ${gradoSolicitado} (${targetAno}). Su código de seguimiento es: ${solicitudId}.`,
+          mensaje: `Estimado(a) ${nombreResponsable || 'Responsable'}, hemos recibido la solicitud de admisión de ${nombresAspirante} ${apellidosAspirante} para ${gradoSolicitado} (${targetAno}). Código interno: ${solicitudId}. Guarde esta credencial privada para consultar el estado: ${publicAccessToken}. No la comparta.`,
           tipo: "ADMISSION_REQUEST_RECEIVED",
           categoria: "Admisiones",
           deduplicationKey: `NOTIF_RECV_${solicitudId}`
@@ -1087,18 +1116,22 @@ function createAdmissionRequest(payload) {
       logStructuredEvent("ACADEMIC", "createAdmissionRequest", "WARN", "NOTIF_DISPATCH_FAILED", `Fallo no bloqueante de notificación: ${notifErr.message}`, { solicitudId });
     }
 
-    // [TAREA-F5-015] Purgar borrador al enviar la solicitud formalmente
-    try {
-      const draftKey = (emailContacto || identificacion || "").toLowerCase().trim();
-      if (draftKey) {
+    // Consumir únicamente el borrador cuya capacidad privada fue presentada por el solicitante.
+    if (draftAccessToken) {
+      try {
         const draftSheet = getOrCreateSheet(ss, "BorradoresAdmision");
+        const draftTokenColumn = ensureAdmissionTokenColumn(draftSheet, "AccessTokenHash");
+        const draftHash = hashOpaqueAdmissionAccessToken(String(draftAccessToken).trim());
         const dData = draftSheet.getDataRange().getValues();
-        const dIdx = dData.findIndex(r => String(r[1] || "").toLowerCase().trim() === draftKey || String(r[2] || "").toLowerCase().trim() === draftKey);
-        if (dIdx !== -1) {
-          draftSheet.getRange(dIdx + 1, 7).setValue("Consumido");
-        }
+        const dIdx = dData.findIndex((row, index) => index > 0 &&
+          String(row[draftTokenColumn - 1] || "") === draftHash &&
+          String(row[6] || "").trim() === "Borrador");
+        if (dIdx !== -1) draftSheet.getRange(dIdx + 1, 7).setValue("Consumido");
+      } catch (draftError) {
+        logStructuredEvent("ACADEMIC", "createAdmissionRequest", "WARN", "DRAFT_CONSUME_FAILED",
+          "No se pudo consumir el borrador presentado; la solicitud formal ya fue registrada.", { solicitudId });
       }
-    } catch (_) {}
+    }
 
     return result;
 
@@ -1431,115 +1464,76 @@ function getStudentFileSummary(payload) {
 
 // [TAREA-F5-015] [Fase 5: Admisiones y Portal de Familias] - Guardado y recuperación híbrida de borradores de admisión
 function saveAdmissionDraft(payload) {
-  const { draftKey, draftDataJSON, emailResponsable } = payload || {};
-  if (!draftDataJSON) throw new Error("draftDataJSON es requerido.");
-
+  const draftDataJSON = payload && payload.draftDataJSON;
+  const emailResponsable = String(payload && payload.emailResponsable || "").trim().toLowerCase();
+  if (draftDataJSON === undefined || draftDataJSON === null || draftDataJSON === "") throw new Error("draftDataJSON es requerido.");
+  const serializedDraft = typeof draftDataJSON === "string" ? draftDataJSON : JSON.stringify(draftDataJSON);
+  if (!serializedDraft || serializedDraft.length > 100000) throw new Error("El borrador está vacío o supera el tamaño permitido.");
+  try { JSON.parse(serializedDraft); } catch (_) { throw new Error("draftDataJSON debe contener JSON válido."); }
+  const suppliedToken = String(payload && payload.draftAccessToken || "").trim();
+  if (suppliedToken && !isValidOpaqueAdmissionAccessToken(suppliedToken)) throw new Error("La credencial del borrador no es válida.");
+  const accessToken = suppliedToken || generateOpaqueAdmissionAccessToken();
+  const accessTokenHash = hashOpaqueAdmissionAccessToken(accessToken);
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = getOrCreateSheet(ss, "BorradoresAdmision");
+  const tokenColumn = ensureAdmissionTokenColumn(sheet, "AccessTokenHash");
   const data = sheet.getDataRange().getValues();
-
-  const userKey = (draftKey || emailResponsable || "ANONIMO").toLowerCase().trim();
+  let rowIndex = -1;
+  if (suppliedToken) {
+    rowIndex = data.findIndex((row, index) => index > 0 && String(row[tokenColumn - 1] || "") === accessTokenHash && String(row[6] || "").trim() === "Borrador");
+    if (rowIndex === -1) throw new Error("Borrador no encontrado o credencial revocada.");
+  }
   const now = new Date();
-
-  let idx = -1;
-  if (userKey !== "anonimo") {
-    idx = data.findIndex(r => String(r[1] || "").toLowerCase().trim() === userKey || String(r[2] || "").toLowerCase().trim() === userKey);
+  let draftId;
+  if (rowIndex !== -1) {
+    draftId = data[rowIndex][0];
+    sheet.getRange(rowIndex + 1, 4).setValue(serializedDraft);
+    sheet.getRange(rowIndex + 1, 6).setValue(now);
+    sheet.getRange(rowIndex + 1, 7).setValue("Borrador");
+    if (emailResponsable) sheet.getRange(rowIndex + 1, 3).setValue(emailResponsable);
+  } else {
+    const idGen = generateInstitutionalId({ entityType: "BorradorAdmision", prefix: "DFT-", skipLock: false });
+    draftId = (idGen && idGen.generatedId) ? idGen.generatedId : ("DFT-" + Utilities.getUuid());
+    const newRow = [draftId, "", emailResponsable, serializedDraft, now, now, "Borrador"];
+    while (newRow.length < tokenColumn - 1) newRow.push("");
+    newRow[tokenColumn - 1] = accessTokenHash;
+    sheet.appendRow(newRow);
   }
-
-  if (idx !== -1) {
-    sheet.getRange(idx + 1, 4).setValue(draftDataJSON);
-    sheet.getRange(idx + 1, 6).setValue(now);
-    sheet.getRange(idx + 1, 7).setValue("Borrador");
-    return {
-      status: "success",
-      borradorId: data[idx][0],
-      fechaActualizacion: now.toISOString(),
-      message: "Borrador de admisión actualizado en la nube."
-    };
-  }
-
-  const idGen = generateInstitutionalId({ entityType: "BorradorAdmision", prefix: "DFT-", skipLock: true });
-  const draftId = (idGen && idGen.generatedId) ? idGen.generatedId : ("DFT-" + Date.now());
-
-  sheet.appendRow([
-    draftId,
-    userKey,
-    emailResponsable || "",
-    draftDataJSON,
-    now,
-    now,
-    "Borrador"
-  ]);
-
-  return {
-    status: "success",
-    borradorId: draftId,
-    fechaActualizacion: now.toISOString(),
-    message: "Borrador de admisión guardado en la nube."
-  };
+  return { status: "success", borradorId: draftId, draftAccessToken: accessToken, fechaActualizacion: now.toISOString(),
+    message: "Borrador de admisión guardado. Conserve su credencial privada para recuperarlo." };
 }
 
 function getAdmissionDraft(payload) {
-  const { draftKey, emailResponsable } = payload || {};
-  const userKey = (draftKey || emailResponsable || "").toLowerCase().trim();
-  if (!userKey) throw new Error("draftKey o emailResponsable es requerido.");
-
+  const accessToken = String(payload && payload.draftAccessToken || "").trim();
+  if (!isValidOpaqueAdmissionAccessToken(accessToken)) throw new Error("Se requiere una credencial privada válida para recuperar el borrador.");
+  const accessTokenHash = hashOpaqueAdmissionAccessToken(accessToken);
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = getOrCreateSheet(ss, "BorradoresAdmision");
+  const tokenColumn = ensureAdmissionTokenColumn(sheet, "AccessTokenHash");
   const data = sheet.getDataRange().getValues().slice(1);
-
-  const found = data.find(r => (String(r[1] || "").toLowerCase().trim() === userKey || String(r[2] || "").toLowerCase().trim() === userKey) && String(r[6]).trim() === "Borrador");
-
-  if (!found) {
-    return { status: "success", found: false, message: "No se encontró ningún borrador activo." };
-  }
-
-  let draftObj = {};
-  try { draftObj = JSON.parse(found[3]); } catch (_) {}
-
-  return {
-    status: "success",
-    found: true,
-    borradorId: found[0],
-    fechaActualizacion: found[5] ? new Date(found[5]).toISOString() : "",
-    draftData: draftObj
-  };
+  const found = data.find(row => String(row[tokenColumn - 1] || "") === accessTokenHash && String(row[6] || "").trim() === "Borrador");
+  if (!found) return { status: "success", found: false, message: "No se encontró un borrador activo para esa credencial." };
+  let draftObj;
+  try { draftObj = JSON.parse(found[3]); } catch (_) { throw new Error("El borrador almacenado no contiene JSON válido."); }
+  return { status: "success", found: true, borradorId: found[0], fechaActualizacion: found[5] ? new Date(found[5]).toISOString() : "", draftData: draftObj };
 }
 
-// [TAREA-F5-004] [Fase 5: Admisiones y Matrícula] - Endpoint seguro de consulta pública de estado de admisión sanitizando PII de terceros
+// [TAREA-F5-004] El estado público solo se consulta con una capacidad aleatoria de alta entropía.
+// DNI, correo y el identificador secuencial de la solicitud no son credenciales de acceso.
 function getPublicAdmissionStatus(payload) {
-  const { searchKey } = payload || {};
-  if (!searchKey) throw new Error("Parámetro obligatorio ausente: searchKey (código de seguimiento o DNI).");
-
-  const cleanSearch = String(searchKey).trim().toLowerCase();
-  const cleanDigits = String(searchKey).replace(/[^0-9]/g, '');
-
+  const accessToken = String(payload && payload.accessToken || "").trim();
+  if (!isValidOpaqueAdmissionAccessToken(accessToken)) throw new Error("Se requiere una credencial privada válida para consultar el estado de admisión.");
+  const accessTokenHash = hashOpaqueAdmissionAccessToken(accessToken);
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const rows = getOrCreateSheet(ss, "SolicitudesAdmision").getDataRange().getValues().slice(1);
-
-  const match = rows.find(r => {
-    const sId = String(r[0] || "").trim().toLowerCase();
-    const rIdent = String(r[6] || "").replace(/[^0-9]/g, '');
-    return sId === cleanSearch || (cleanDigits && rIdent && cleanDigits === rIdent);
-  });
-
-  if (!match) {
-    return { status: "success", found: false, message: "No se encontró ninguna solicitud de admisión para el criterio ingresado." };
-  }
-
-  // Sanitizar respuesta pública para evitar fuga de PII de terceros
-  const sanitizedRequest = {
-    solicitudId: match[0],
-    fechaSolicitud: match[1],
-    anolectivo: match[2],
-    gradoSolicitado: match[3],
-    nombresAspirante: match[4],
-    apellidosAspirante: match[5],
-    estadoSolicitud: match[11],
-    expedienteId: match[14]
-  };
-
-  return { status: "success", found: true, request: sanitizedRequest };
+  const sheet = getOrCreateSheet(ss, "SolicitudesAdmision");
+  const tokenColumn = ensureAdmissionTokenColumn(sheet, "PublicAccessTokenHash");
+  const rows = sheet.getDataRange().getValues().slice(1);
+  const match = rows.find(row => String(row[tokenColumn - 1] || "") === accessTokenHash);
+  if (!match) return { status: "success", found: false, message: "No se encontró una solicitud para esa credencial." };
+  return { status: "success", found: true, request: {
+    solicitudId: match[0], fechaSolicitud: match[1], anolectivo: match[2],
+    gradoSolicitado: match[3], estadoSolicitud: match[11]
+  } };
 }
 
 // [TAREA-F6-002] [Fase 6: Expediente Institucional y Ciclo de Vida] - Máquina de estados y matriz de transición del expediente del estudiante
@@ -4449,6 +4443,9 @@ function reconcileDocumentStorageIntegrity(payload) {
 
 // [TAREA-F6-009] [TAREA-F6-034] [Fase 6: Observabilidad y Mantenimiento Preventivo] - Módulo de salud, diagnóstico, métricas de tráfico y sanitización de registros de errores conforme al contrato común
 function getServiceHealthDiagnostics(payload) {
+  const role = payload && payload._verifiedRole;
+  const actorId = payload && payload._verifiedUserId;
+  if (!actorId || ["Administrador", "Desarrollador"].indexOf(role) === -1) throw new Error("Diagnóstico restringido a personal administrativo/desarrollador autenticado.");
   const { fullCheck } = payload || {};
   const startTime = Date.now();
   const checks = {
@@ -4477,7 +4474,7 @@ function getServiceHealthDiagnostics(payload) {
   const isHealthy = checks.connectivity === "PASS" && checks.spreadsheetAccess === "PASS" && (!fullCheck || checks.driveAccess === "PASS");
   const latency = Date.now() - startTime;
 
-  logStructuredEvent("SERVICE", "getServiceHealthDiagnostics", "INFO", "HEALTH_CHECK", `Diagnóstico de salud ejecutado. Estado: ${isHealthy ? 'HEALTHY' : 'DEGRADED'}`, { checks, latencyMs: latency }, payload && payload.authRole);
+  logStructuredEvent("SERVICE", "getServiceHealthDiagnostics", "INFO", "HEALTH_CHECK", `Diagnóstico de salud ejecutado. Estado: ${isHealthy ? 'HEALTHY' : 'DEGRADED'}`, { checks, latencyMs: latency }, role);
 
   return {
     status: "success",

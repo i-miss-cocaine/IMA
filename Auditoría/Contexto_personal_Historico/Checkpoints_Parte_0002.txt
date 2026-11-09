@@ -839,3 +839,79 @@ Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002
 Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.308.
 Commit de cierre: el commit único que contiene este checkpoint; SHA confirmado tras publicación.
 ===============================================================================
+
+===============================================================================
+## C1.309 — TASK-636 / PM-01 — capacidades públicas ACADEMIC y protección de archivos
+ID: C1.309
+Sesión: IMA-EXEC-20261109-1533Z-01 (cerrada al publicar este checkpoint)
+Checkpoint anterior: C1.308
+Repositorio: i-miss-cocaine/IMA
+Rama autorizada: NG_beta_0.0.0.1_work
+HEAD de partida: 9f5f15952c30cb1207904fd53d5a1de6e1248139
+Tree SHA de partida: 892db44e28fe598c02adb648d2540c46c5267787
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+Tarea: TASK-636 — Cerrar bypasses de autorización y proteger tareas, proyectos y archivos
+Fase PM: PM-01 — Identidad, seguridad y gobierno de acceso
+Prioridad: P0
+Requisito original: pendientes/Otros/Pendientes.md — líneas 3223–3249; blob e9637ecc6f88b2aa0aec75909538e072509bf507.
+
+### Recuperación y validación del requisito original (regla F)
+- Lectura convencional del backlog: 0 caracteres; no se sobrescribió ni sustituyó.
+- Recuperación directa del blob del HEAD autorizado: SHA e9637ecc6f88b2aa0aec75909538e072509bf507; 1.627.709 caracteres; 16.484 líneas; inicio "# Backlog consolidado — Otros"; final vacío tras el último bloque.
+- Historial de la misma rama: último commit que modifica la ruta 4cda8611c4d3c4aece4c7d80922cc4c14c920f5a; el HEAD es descendiente (24 adelante, 0 detrás) y conserva el mismo blob.
+- Inventario: 674 IDs únicos de registro; categorías/prefijos: AUD 110; TASK 255; TAREA 79; F8 24; FASE2 19; T 19; F40 15; F23 11; F21 10; F30 10; F32 10; F24 9; F19 8; F29 8; F31 8; F20 7; F38 7; F41 7; F35 6; F25 5; F27 5; F28 5; F37 5; F22 4; F26 4; F16 4; F10 3; F34 2; F9 2; F33 1; F11 1; F17 1; F18 1; F39 5; AUDIT 4. Familia TASK: 255; máximo TASK-682. El backlog declara reinicio operativo a Pendiente; TASK-636 se actualiza a En ejecución y conserva [ ].
+- Requisito TASK-636 leído íntegramente en líneas 3223–3249; prioridad P0; claims verificados, clasificación de rutas públicas, propiedad de recursos/archivos y capacidades opacas de alta entropía.
+- Se actualiza únicamente el bloque TASK-636; se preservan sus requisitos originales.
+
+### Auditoría de continuidad C1.308 y hallazgos
+- C1.308 es el último checkpoint previo; HEAD de partida 9f5f15952c30cb1207904fd53d5a1de6e1248139; rama base 44d9891132332e692dbe2ba8602b41f50a508a59.
+- AUD-NG-370 ampliado: deleteFile verificaba metadatos de propiedad, pero no referencias en Entregas/EntregasVersiones; podía borrar un archivo ya entregado.
+- AUD-NG-357 ampliado: borradores por email/draftKey; estado por DNI/ID secuencial devolvía PII; createAdmissionRequest confiaba en skipLock; getServiceHealthDiagnostics figuraba como acción pública.
+- Se reutiliza Auditoría/AUDITORIA_TASK-636_C1.305.md; no se crea informe completo duplicado.
+
+### Implementación C1.309
+1. backend/academic-service/Code.gs:
+   - PUBLIC_ACTIONS deja fuera getServiceHealthDiagnostics.
+   - Seguimiento y borradores usan tokens opacos derivados de dos UUID; se valida formato y solo se persiste hash SHA-256.
+   - SolicitudesAdmision añade PublicAccessTokenHash al final; BorradoresAdmision añade AccessTokenHash al final.
+   - getPublicAdmissionStatus exige accessToken y devuelve solo solicitud, fecha, año, grado y estado; no acepta DNI/ID secuencial ni devuelve nombres/expediente.
+   - saveAdmissionDraft/getAdmissionDraft exigen draftAccessToken; email no es credencial. Filas históricas sin hash quedan fail-closed.
+   - createAdmissionRequest siempre toma LockService; skipLock del cliente no controla el candado. La capacidad se devuelve y se incluye en notificación; health diagnostics exige claims Administrador/Desarrollador.
+2. backend/task-service/Code.gs: deleteFile comprueba Entregas y EntregasVersiones antes de DriveApp.setTrashed; bloquea archivos vinculados a entregas/versiones.
+3. js/student.js: almacena la capacidad emitida en localStorage y envía accessToken; el panel público no consulta ni muestra datos financieros.
+4. Registros y backlog: estado TASK-636 actualizado a En ejecución; hallazgos existentes ampliados sin IDs nuevos.
+
+### Archivos modificados
+1. backend/academic-service/Code.gs
+2. backend/task-service/Code.gs
+3. js/student.js
+4. pendientes/Otros/Pendientes.md
+5. Auditoría/AUDITORIA_TASK-636_C1.305.md
+6. Auditoria.txt
+7. tareas_auditoria.txt
+8. Auditoría/MapaDependencias.md
+9. Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+10. changueslogs.txt
+11. Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt
+12. Auditoría/INDICE_CHECKPOINTS.md
+
+### Archivos revisados sin modificación
+- METODOLOGIA_DESARROLLO.md; Auditoría/Contexto_personal.txt; Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; Auditoría/MapaDependencias.md; Auditoría/INDICE_CHECKPOINTS.md; Auditoria.txt; tareas_auditoria.txt; changueslogs.txt; js/api.js; js/auth.js; js/ui-common.js; backend/user-service/Code.gs; backend/task-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; informes previos de TASK-636 y auditorías fuente de TASK-638.
+
+### Verificaciones y límites
+- Estáticas: token/hash en rutas públicas; PUBLIC_ACTIONS sin health diagnostics; createAdmissionRequest sin bypass skipLock del cliente; estado público sin DNI/PII; borradores por token; deleteFile comprueba Entregas y EntregasVersiones antes del borrado; frontend actualizado y finanzas ocultas en ruta pública; columnas append-only y backlog preservado.
+- No ejecutadas: parser/runtime Apps Script o Node, Sheets/Drive reales, HTTP, navegador, E2E, concurrencia, pruebas por rol ni migración histórica. No se declaran PASS funcionales.
+- Autoauditoría/Code Review estático: diff focalizado revisado; ninguna operación destructiva se habilita.
+- AUD-NG-357 y AUD-NG-370 parcialmente abiertos; AUD-NG-369 sigue abierto. closeAcademicYear permanece bloqueado con BACKUP_REQUIRED.
+- Registros históricos sin hash no se migran por inferencia de email/DNI; requieren proceso independiente y verificable.
+- TASK-636 continúa En ejecución; no se marca Completada.
+
+### Tareas derivadas de los hallazgos de la auditoría
+- No se crean IDs nuevos. AUD-NG-357 y AUD-NG-370 permanecen dentro de TASK-636; AUD-NG-369 continúa dentro de TASK-636.
+- TASK-496/AUD-NG-217, TASK-501/AUD-NG-221 y TASK-502/AUD-NG-222 conservan su ámbito transversal; TASK-685/AUD-NG-373 permanece fuera de TASK-636.
+- Siguiente acción exacta: diseñar e implementar backup/restore aislado, verificable y con rollback para closeAcademicYear en backend/task-service/Code.gs; mantenerlo fail-closed hasta prueba de restauración. Después reconciliar MetadatosArchivos históricos sin inferir propietarios.
+
+Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.309.
+Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.309.
+Commit de cierre: el commit único que contiene este checkpoint; SHA verificado externamente tras publicación.
+===============================================================================

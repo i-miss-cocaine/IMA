@@ -4822,3 +4822,14 @@ Alcance estático satisfecho; sin cambios de código. Hallazgos AUD-NG-374..376 
 - Sesiones de carga asociadas a usuario/tarea con SessionKey UUID, controles de propiedad, finalización idempotente y fileId real entregado al frontend.
 - Evidencia: Task-Service blob 07a7dc5720274622f17813104c037c7a63dda9c2; js/ui-common.js blob 68e9fe25b96b92735045bf3f699f9437494531d9; js/student.js blob b3bf2fac774d20f5eeb412e42f75452645080811.
 - Verificación estática únicamente. Registros históricos sin propietario, runtime y pruebas por rol pendientes. AUD-NG-370 parcial; AUD-NG-369 abierto; cierre académico sigue bloqueado.
+
+## TASK-636 — C1.309: capacidades públicas ACADEMIC y ciclo de vida de archivos
+- Academic-Service mantiene públicas solo ping, creación de solicitud y endpoints de seguimiento/borrador que validan capacidad opaca en cada handler.
+- PublicAccessTokenHash se añade al final de SolicitudesAdmision; AccessTokenHash al final de BorradoresAdmision. Se deriva un token de 64 hex de dos UUID y se persiste solo SHA-256.
+- getPublicAdmissionStatus ya no acepta DNI/ID secuencial y devuelve solicitud, fecha, año, grado y estado; no devuelve nombres ni expediente.
+- saveAdmissionDraft/getAdmissionDraft requieren draftAccessToken; emailResponsable es dato de contacto, no credencial. Las filas históricas sin hash no se migran por inferencia.
+- createAdmissionRequest siempre adquiere LockService; skipLock del payload no controla el candado. getServiceHealthDiagnostics exige claims Administrador/Desarrollador.
+- Task-Service deleteFile comprueba Entregas y EntregasVersiones antes de DriveApp.setTrashed.
+- Frontend no solicita ni muestra estado financiero cuando la consulta proviene de una capacidad pública.
+- Evidencia: backend/academic-service/Code.gs; backend/task-service/Code.gs; js/student.js.
+- TASK-636 En ejecución; AUD-NG-357/AUD-NG-370 parcialmente abiertos; AUD-NG-369 abierto. Runtime/Sheets/Drive/HTTP/navegador/pruebas por rol no ejecutadas.

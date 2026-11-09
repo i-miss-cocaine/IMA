@@ -251,3 +251,13 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Sesiones reanudables usan UUID, TareaID y propietario; el frontend recibe el fileId real. Se deshabilita finishChunkedUpload legacy.
 - Solo verificaciones estáticas; no runtime ni pruebas por rol. AUD-NG-370 parcial, AUD-NG-369 abierto.
 - Checkpoint C1.308: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.308.
+
+[2026-11-09] IMA-EXEC-20261109-1533Z-01 — TASK-636 / PM-01 / C1.309
+- Auditoría focalizada de C1.308: AUD-NG-370 ampliado; deleteFile bloquea archivos referenciados por Entregas o EntregasVersiones.
+- AUD-NG-357 ampliado: capacidades opacas para seguimiento/borradores; estado público sin DNI/ID secuencial; respuesta minimizada; LockService obligatorio; getServiceHealthDiagnostics ya no es público.
+- Se persisten hashes SHA-256 append-only; registros históricos no se migran por inferencia de correo/DNI.
+- Frontend guarda la capacidad privada emitida y no consulta/muestra estado financiero en la ruta de capacidad pública.
+- TASK-636 En ejecución; AUD-NG-357/AUD-NG-370 parcialmente abiertos; AUD-NG-369 abierto.
+- Solo verificaciones estáticas; runtime/HTTP/Drive/Sheets/E2E/pruebas por rol no ejecutadas.
+- Checkpoint C1.309: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.309; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.309.
+- Rama NG_beta_0.0.0.1_work; HEAD de partida 9f5f15952c30cb1207904fd53d5a1de6e1248139; commit único de cierre, SHA verificado externamente tras publicación.

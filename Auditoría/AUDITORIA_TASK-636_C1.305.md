@@ -117,3 +117,13 @@ No se crean IDs nuevos. Se mantienen TASK-636/AUD-NG-370, TASK-496/AUD-NG-217, T
 
 ### Siguiente acción exacta
 Endurecer las excepciones públicas de backend/academic-service/Code.gs mediante tokens opacos de alta entropía y minimizar los datos públicos; luego implementar y demostrar restauración aislada antes de habilitar closeAcademicYear.
+
+## Revisión focalizada C1.309 — continuidad C1.308 y protección de excepciones públicas
+- Sesión: IMA-EXEC-20261109-1533Z-01; checkpoint inicial C1.308; HEAD auditado 9f5f15952c30cb1207904fd53d5a1de6e1248139.
+- Revisión anterior: Task-Service uploadFile, submitAssignment, saveSubmissionDraft, deleteFile, deleteSubmission y sesiones reanudables; frontend js/student.js/js/ui-common.js.
+- AUD-NG-370 ampliado: deleteFile comprobaba propietario y metadato activo, pero no referencias en Entregas ni EntregasVersiones. Podía borrar un archivo ya usado en una entrega/versionado. Se corrige comprobando ambas hojas antes de DriveApp.setTrashed. Sigue abierto por metadatos históricos sin propietario, migración y pruebas dinámicas.
+- AUD-NG-357 ampliado: borradores por email/draftKey; estado de admisión por DNI/ID secuencial devolvía PII; createAdmissionRequest confiaba en skipLock; getServiceHealthDiagnostics era público. Se reutiliza el ID existente.
+- Correcciones: capacidades opacas derivadas de dos UUID, hash SHA-256 persistido; getPublicAdmissionStatus exige accessToken y devuelve datos mínimos; saveAdmissionDraft/getAdmissionDraft exigen draftAccessToken; LockService obligatorio; diagnóstico solo Administrador/Desarrollador verificados; frontend conserva token y no envía DNI/ID secuencial. El panel de seguimiento por token no invoca ni muestra estado financiero.
+- Compatibilidad: registros históricos sin hash no reciben token por inferencia de correo/DNI/ID. La ruta pública falla de forma cerrada; no se reemplaza el acceso autenticado de tutores.
+- Estado: TASK-636 En ejecución, no Completada. AUD-NG-357/AUD-NG-370 parcialmente abiertos; AUD-NG-369 abierto y closeAcademicYear sigue bloqueado con BACKUP_REQUIRED.
+- Verificación estática y Code Review focalizado. No ejecutados Apps Script runtime, Sheets/Drive reales, HTTP, navegador, E2E, concurrencia ni pruebas por rol.

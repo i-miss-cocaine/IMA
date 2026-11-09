@@ -274,9 +274,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 var req = applicants.find(function(a) { return String(a.solicitudId).trim() === String(solicitudId).trim(); });
 
                 if (!req) {
-                    // Intentar consulta por servicio público si no viene en lista de guardianes
-                    return fetchApi('ACADEMIC', 'getPublicAdmissionStatus', { searchKey: solicitudId }).then(function(pubRes) {
+                    // Fallback solo si este navegador conserva la capacidad privada emitida al crear la solicitud.
+                    return window.getPublicAdmissionStatus(solicitudId).then(function(pubRes) {
                         if (pubRes && pubRes.status === 'success' && pubRes.found && pubRes.request) {
+                            pubRes.request._publicCapabilityAccess = true;
                             return pubRes.request;
                         }
                         return null;
@@ -286,6 +287,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(function(req) {
                 if (req) {
+                    var applicantDisplayName = [req.nombresAspirante, req.apellidosAspirante].filter(Boolean).join(' ') || 'Aspirante';
                     var statusColors = {
                         "Recibida": "bg-blue-100 text-blue-800",
                         "En_Revision": "bg-yellow-100 text-yellow-800",
@@ -300,7 +302,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         '<div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-indigo-100 pb-4">' +
                             '<div>' +
                                 '<span class="inline-block px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-[10px] font-black uppercase tracking-widest mb-1">Trámite de Admisión</span>' +
-                                '<h3 class="text-xl font-black text-slate-900 uppercase tracking-tight">' + req.nombresAspirante + ' ' + req.apellidosAspirante + '</h3>' +
+                                '<h3 class="text-xl font-black text-slate-900 uppercase tracking-tight">' + window.escapeHtml(applicantDisplayName) + '</h3>' +
                                 '<p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Código: ' + req.solicitudId + ' | Grado: ' + req.gradoSolicitado + ' (' + req.anolectivo + ')</p>' +
                             '</div>' +
                             '<div>' +
@@ -324,6 +326,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                         (req.observaciones ? '<div class="p-3 bg-indigo-50/50 rounded-xl text-xs text-indigo-900 border border-indigo-100 mb-4"><strong>Observaciones de Admisión:</strong> ' + window.escapeHtml(req.observaciones) + '</div>' : '') +
 
+                        (req._publicCapabilityAccess ? '' :
                         '<!-- [TAREA-F5-013] Estado Financiero y Cobros de Admisión -->' +
                         '<div id="family-applicant-financial-container" class="mt-4 p-4 bg-slate-50 rounded-2xl border border-slate-200">' +
                             '<h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2 flex items-center gap-2">' +
@@ -332,10 +335,10 @@ document.addEventListener('DOMContentLoaded', function() {
                             '<div id="applicant-financial-status-content" class="text-xs text-slate-600">' +
                                 '<p class="text-slate-400"><i class="fas fa-circle-notch fa-spin mr-1"></i> Consultando estado de cobros de admisión...</p>' +
                             '</div>' +
-                        '</div>';
+                        '</div>');
 
                     cont.innerHTML = html;
-                    window.loadApplicantFinancialStatus(solicitudId);
+                    if (!req._publicCapabilityAccess) window.loadApplicantFinancialStatus(solicitudId);
                 } else {
                     cont.innerHTML = '<p class="text-red-500 text-xs">No se encontró la solicitud de admisión especificada.</p>';
                 }
@@ -3179,17 +3182,26 @@ window.submitPublicAdmissionRequest = async function(formData) {
 
     try {
         const res = await window.fetchApi('ACADEMIC', 'createAdmissionRequest', payload);
+        if (res && res.status === 'success' && res.publicAccessToken && res.solicitudId) {
+            try { localStorage.setItem('ima_admission_access_' + res.solicitudId, res.publicAccessToken); } catch (_) {}
+        }
         return res;
     } catch (err) {
         return { status: "error", message: "Error de red al procesar la solicitud de admisión: " + err.message };
     }
 };
 
-window.getPublicAdmissionStatus = async function(searchKey) {
-    if (!searchKey) return { status: "error", message: "Debe ingresar un código de seguimiento o número de DNI." };
+window.getPublicAdmissionStatus = async function(accessReference) {
+    if (!accessReference) return { status: "error", message: "Debe proporcionar la credencial privada de seguimiento." };
+    let accessToken = String(accessReference).trim();
+    if (!/^[a-f0-9]{64}$/i.test(accessToken)) {
+        try { accessToken = localStorage.getItem('ima_admission_access_' + accessToken) || ""; } catch (_) { accessToken = ""; }
+    }
+    if (!/^[a-f0-9]{64}$/i.test(accessToken)) {
+        return { status: "error", message: "No hay una credencial privada guardada para esa solicitud. Use el token recibido al registrarla." };
+    }
     try {
-        const res = await window.fetchApi('ACADEMIC', 'getPublicAdmissionStatus', { searchKey: searchKey });
-        return res;
+        return await window.fetchApi('ACADEMIC', 'getPublicAdmissionStatus', { accessToken: accessToken });
     } catch (err) {
         return { status: "error", message: "Error al consultar el estado de la admisión: " + err.message };
     }

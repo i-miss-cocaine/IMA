@@ -742,15 +742,29 @@ function gradeSubmissionWithRubric(payload) {
  * Elimina un archivo de Drive (lo mueve a la papelera) (A-30).
  */
 function deleteFile(payload) {
-  const actorId=payload&&payload._verifiedUserId,role=payload&&payload._verifiedRole,fileId=extractTaskServiceFileId(payload&&payload.fileId);
-  if(!actorId||!fileId||(role!=="Estudiante"&&role!=="Alumno"))throw new Error("Acceso denegado: se requiere identidad de estudiante.");
-  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=ensureTaskServiceFileMetadataSheet(ss),rows=sheet.getDataRange().getValues();
-  const idx=rows.findIndex((r,i)=>i>0&&String(r[15]||"").trim()===fileId&&String(r[19]||"").trim()===String(actorId).trim()&&String(r[14]||"").trim().toLowerCase()==="activo");
-  if(idx<1)throw new Error("Acceso denegado: archivo sin metadatos de propiedad verificables.");
+  const actorId = payload && payload._verifiedUserId;
+  const role = payload && payload._verifiedRole;
+  const fileId = extractTaskServiceFileId(payload && payload.fileId);
+  if (!actorId || !fileId || (role !== "Estudiante" && role !== "Alumno")) throw new Error("Acceso denegado: se requiere identidad de estudiante.");
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ensureTaskServiceFileMetadataSheet(ss);
+  const rows = sheet.getDataRange().getValues();
+  const idx = rows.findIndex((row, index) => index > 0 &&
+    String(row[15] || "").trim() === fileId &&
+    String(row[19] || "").trim() === String(actorId).trim() &&
+    String(row[14] || "").trim().toLowerCase() === "activo");
+  if (idx < 1) throw new Error("Acceso denegado: archivo sin metadatos de propiedad verificables.");
+  const deliveries = getSheetOrThrow(ss, "Entregas").getDataRange().getValues().slice(1);
+  const linkedToSubmission = deliveries.some(row => extractTaskServiceFileId(row[4]) === fileId);
+  const versionsSheet = ss.getSheetByName("EntregasVersiones");
+  const versions = versionsSheet ? versionsSheet.getDataRange().getValues().slice(1) : [];
+  const linkedToVersion = versions.some(row => extractTaskServiceFileId(row[6]) === fileId);
+  if (linkedToSubmission || linkedToVersion) throw new Error("No se puede eliminar: el archivo está vinculado a una entrega o versión académica.");
   DriveApp.getFileById(fileId).setTrashed(true);
-  sheet.getRange(idx+1,15).setValue("Eliminado");
-  return {status:"success",message:"Archivo propio eliminado."};
+  sheet.getRange(idx + 1, 15).setValue("Eliminado");
+  return { status: "success", message: "Archivo propio no entregado eliminado." };
 }
+
 function gradeSubmission(payload) {
   const { entregaId, calificacion, estado, comentario } = payload;
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);

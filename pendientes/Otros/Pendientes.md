@@ -3226,12 +3226,12 @@
 - **Tarea existente:** TASK-636, originada en F8-Task01, cierre de bypasses en allowlists públicas y validación de identidad/propiedad.
 - **Ampliación:** retirar getDriveStorageQuotaMetricsReport de PUBLIC_ACTIONS y exigir autorización administrativa explícita; añadir pruebas de acceso anónimo, estudiante, docente y administrador.
 - **No se crea un ID nuevo** para evitar duplicar el alcance de seguridad ya registrado.
-- **Estado:** Pendiente de integrar en TASK-636.
+- **Estado:** En ejecución; alcance integrado progresivamente en TASK-636.
 - **Origen:** AUD-NG-003 y F8-Task01/TASK-636.
 - **Componentes:** `js/api.js`, `js/ui-common.js`, `backend/user-service/Code.gs`.
 - **Acciones:** propagar el token de sesión sin confiar en requesterRole; obtener userId/rol de claims verificados; comprobar que el userId solicitado coincide con la identidad autenticada; autorizar la acción de configuración dinámica por política explícita.
 - **Aceptación adicional:** llamadas sin token, con token vencido, rol manipulado o userId ajeno se rechazan; usuarios autorizados pueden cargar su propio dashboard; errores de autenticación no se convierten en una lista genérica de módulos.
-- **Estado:** TASK-636 permanece [ ] Pendiente.
+- **Estado operativo:** TASK-636 permanece [ ] (En ejecución; no completada).
 - **Origen:** AUD-NG-002 ampliado y AUD-NG-280.
 - **Prioridad:** P0 (Crítica).
 - **Componentes:** backend/task-service/Code.gs; backend/user-service/Code.gs; backend/academic-service/Code.gs.
@@ -3241,7 +3241,9 @@
 - **Problema:** acciones sensibles se autorizan mediante PUBLIC_ACTIONS o listas tempranas sin RBAC/contexto; getPosts confía en authRole del payload; loadProject puede leer Drive por fileId sin propiedad; getAutomationRules no restringe el rol.
 - **Corrección:** clasificar acciones públicas; retirar consultas sensibles de PUBLIC_ACTIONS/allowlists; exigir token y permiso por acción; derivar userId/profesorId/rol desde claims; validar propiedad de archivos, tareas, aulas, borradores y entregas; restringir getAutomationRules; mantener solo excepciones públicas con capacidades opacas.
 - **Aceptación:** llamadas sin token a rutas sensibles se rechazan; authRole manipulado no cambia permisos; docente solo ve sus entregas; estudiante no lista proyectos ajenos; loadProject rechaza archivos ajenos; borradores no se exponen; getAutomationRules solo es accesible a roles autorizados; pruebas negativas por cada ruta.
-- **Estado:** [ ] Pendiente.
+- **Estado:** [ ] En ejecución.
+- **Seguimiento C1.309:** se corrige el borrado de archivos vinculados a Entregas/EntregasVersiones y se protegen excepciones públicas ACADEMIC con capacidades opacas. AUD-NG-357 y AUD-NG-370 permanecen parcialmente abiertos por migración histórica y pruebas dinámicas.
+- **Estado operativo consolidado:** En ejecución; no marcar [X] hasta completar backup/restore, migración y verificaciones internas exigibles.
 
 ===============================================================================
 

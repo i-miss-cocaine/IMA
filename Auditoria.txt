@@ -324,3 +324,19 @@ Sesión: IMA-EXEC-20261109-1108Z-01; HEAD de partida: 32b8f5884dd24dbeaf1a3bf028
 - Frontend usa el fileId real del ensamblado; flujo legacy uploadId/finishChunkedUpload deshabilitado.
 - Verificación estática únicamente. No runtime, Drive/Sheets, HTTP, navegador ni pruebas por rol. AUD-NG-370 parcialmente abierto; AUD-NG-369 sigue abierto y closeAcademicYear bloqueado.
 - Checkpoint C1.308: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.308; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.308.
+
+## Seguimiento C1.309 — ampliación de hallazgos existentes de TASK-636
+### AUD-NG-357 — ALTO/P1 — capacidades públicas de admisión y borradores
+- Evidencia: saveAdmissionDraft/getAdmissionDraft autorizaban por email/draftKey; getPublicAdmissionStatus aceptaba DNI/ID secuencial y devolvía expediente/nombres; createAdmissionRequest permitía skipLock del cliente; getServiceHealthDiagnostics era público.
+- Corrección: capacidades opacas y hash SHA-256; respuesta pública mínima; LockService obligatorio; diagnóstico restringido a claims Administrador/Desarrollador.
+- Registros históricos sin hash no se migran por inferencia. Estado parcialmente corregido; faltan pruebas dinámicas y migración/reconciliación. Se conserva TASK-636; no se crea ID nuevo.
+
+### AUD-NG-370 — ALTO/P1 — propiedad y ciclo de vida de archivos
+- Revisión C1.309: deleteFile debía comprobar referencias en Entregas y EntregasVersiones antes de borrar.
+- Corrección: ambas referencias se verifican antes de enviar el archivo a papelera.
+- Estado parcialmente corregido; siguen pendientes metadatos históricos y pruebas dinámicas. Se conserva TASK-636.
+
+### Checkpoint C1.309
+- Sesión: IMA-EXEC-20261109-1533Z-01.
+- Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.309.
+- Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.309.

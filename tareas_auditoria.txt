@@ -377,3 +377,21 @@ TASK-636 — ITERACIÓN C1.308 / ARCHIVOS Y SESIONES DE CARGA
 - AUD-NG-369 continúa abierto: backup/restore verificable pendiente; closeAcademicYear sigue bloqueado.
 - Excepciones públicas ACADEMIC pendientes dentro de TASK-636. No crear IDs duplicados; mantener TASK-496/AUD-NG-217, TASK-501/AUD-NG-221, TASK-502/AUD-NG-222 y TASK-685/AUD-NG-373 en sus ámbitos.
 ===============================================================================
+
+===============================================================================
+TASK-636 — ITERACIÓN C1.309 / ACADEMIC PÚBLICO Y PROTECCIÓN DE ENTREGAS
+===============================================================================
+- Estado: En ejecución; no Completada.
+- Auditoría focalizada C1.308: AUD-NG-370 ampliado porque deleteFile no comprobaba referencias a Entregas/EntregasVersiones; ahora bloquea el borrado.
+- AUD-NG-357 ampliado: borradores/seguimiento requieren capacidades opacas; getPublicAdmissionStatus no acepta DNI/ID secuencial; createAdmissionRequest no confía en skipLock; health diagnostics no es público.
+- Academic-Service: PublicAccessTokenHash y AccessTokenHash append-only; tokens aleatorios de dos UUID y hash SHA-256; respuesta pública mínima; borradores por draftAccessToken; lock obligatorio; diagnóstico restringido a claims verificados.
+- Frontend almacena la capacidad emitida; el panel de seguimiento por token no invoca ni muestra estado financiero.
+- Task-Service deleteFile rechaza archivos referenciados por Entregas o EntregasVersiones.
+- Solo verificación estática. No se ejecutaron runtime Apps Script, Sheets/Drive, HTTP, navegador, E2E, concurrencia ni pruebas por rol.
+- Registros históricos sin hash no se migran por inferencia de correo/DNI; acceso público fail-closed hasta reconciliación.
+- AUD-NG-357/AUD-NG-370 parcialmente abiertos; AUD-NG-369 abierto y closeAcademicYear bloqueado con BACKUP_REQUIRED.
+
+### Tareas derivadas de los hallazgos de la auditoría
+- No se crean IDs nuevos: AUD-NG-357/AUD-NG-370 permanecen en TASK-636.
+- AUD-NG-369 permanece en TASK-636; TASK-496/AUD-NG-217, TASK-501/AUD-NG-221, TASK-502/AUD-NG-222 y TASK-685/AUD-NG-373 conservan sus ámbitos.
+===============================================================================
