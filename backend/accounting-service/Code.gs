@@ -16110,7 +16110,7 @@ function getTransportAssignments(payload) {
       estado: row[5],
       fechaAsignacion: row[6] || "",
       jornada: row[7] || "Matutina",
-      diasSemana: row[8] || "[\\"Lun\\",\\"Mar\\",\\"Mie\\",\\"Jue\\",\\"Vie\\"]",
+      diasSemana: row[8] || JSON.stringify(["Lun", "Mar", "Mie", "Jue", "Vie"]),
       observaciones: row[9] || ""
     };
   });
