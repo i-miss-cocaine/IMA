@@ -1408,11 +1408,33 @@ function deleteFile(payload) {
   const deliveries = getSheetOrThrow(ss, "Entregas").getDataRange().getValues().slice(1);
   const linkedToSubmission = deliveries.some(row => extractTaskServiceFileId(row[4]) === fileId);
   const versionsSheet = ss.getSheetByName("EntregasVersiones");
-  const versions = versionsSheet ? versionsSheet.getDataRange().getValues().slice(1) : [];
-  const linkedToVersion = versions.some(row => extractTaskServiceFileId(row[6]) === fileId);
+  let linkedToVersion = false;
+  if (versionsSheet) {
+    const versionData = versionsSheet.getDataRange().getValues();
+    if (versionData.length > 1) {
+      const versionHeaders = versionData[0].map(value => String(value || "").trim());
+      const fileIndex = versionHeaders.indexOf("FileID") >= 0 ? versionHeaders.indexOf("FileID") : 6;
+      const urlIndex = versionHeaders.indexOf("ArchivoUrl") >= 0 ? versionHeaders.indexOf("ArchivoUrl") : 5;
+      linkedToVersion = versionData.slice(1).some(row =>
+        [row[fileIndex], row[urlIndex]].some(value => extractTaskServiceFileId(value) === fileId)
+      );
+    }
+  }
   if (linkedToSubmission || linkedToVersion) throw new Error("No se puede eliminar: el archivo está vinculado a una entrega o versión académica.");
-  DriveApp.getFileById(fileId).setTrashed(true);
-  sheet.getRange(idx + 1, 15).setValue("Eliminado");
+
+  const file = DriveApp.getFileById(fileId);
+  if (file.isTrashed()) throw new Error("No se puede eliminar: el archivo ya está en papelera.");
+  file.setTrashed(true);
+  try {
+    sheet.getRange(idx + 1, 15).setValue("Eliminado");
+  } catch (metadataError) {
+    try {
+      file.setTrashed(false);
+    } catch (rollbackError) {
+      throw new Error("DELETE_FILE_ROLLBACK_FAILED: " + metadataError.message + " | " + rollbackError.message);
+    }
+    throw new Error("DELETE_FILE_METADATA_UPDATE_FAILED: " + metadataError.message);
+  }
   return { status: "success", message: "Archivo propio no entregado eliminado." };
 }
 

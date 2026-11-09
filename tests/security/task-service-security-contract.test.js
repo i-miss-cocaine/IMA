@@ -47,3 +47,64 @@ vm.runInNewContext(extractFunction("reconcileLegacyTaskFileMetadata")+"this.run=
 assert.throws(()=>rollbackContext.run({_verifiedRole:"Administrador",_verifiedUserId:"ADMIN-1",apply:true}),/simulated audit failure/);
 assert.equal(rollbackRows[1][19],"","failed audit write rolls metadata ownership back");
 assert.equal(rollbackRows[1][11],"","failed audit write rolls task link back");
+
+
+function makeDeleteFileFixture(fileId, versionRows, failMetadataWrite) {
+  const rows = [metadataHeaders, metaRow("M-DELETE", fileId, "USR-DELETE")];
+  const metadata = makeSheet(rows);
+  if (failMetadataWrite) {
+    const originalGetRange = metadata.getRange;
+    metadata.getRange = function (row, col) {
+      if (row === 2 && col === 15) return { setValue: () => { throw new Error("simulated metadata write failure"); } };
+      return originalGetRange.apply(this, arguments);
+    };
+  }
+  const deliveries = makeSheet([["EntregaID","TareaID","UserID","Fecha","fileUrl"]]);
+  const versions = makeSheet(versionRows);
+  const sheets = { Entregas: deliveries, EntregasVersiones: versions };
+  const file = {
+    trashed: false,
+    isTrashed: function () { return this.trashed; },
+    setTrashed: function (value) { this.trashed = value; }
+  };
+  const ss = { getSheetByName: name => sheets[name] || null };
+  const context = {
+    SPREADSHEET_ID: "LOCAL",
+    SpreadsheetApp: { openById: () => ss },
+    ensureTaskServiceFileMetadataSheet: () => metadata,
+    getSheetOrThrow: (_ss, name) => { if (!sheets[name]) throw new Error("missing " + name); return sheets[name]; },
+    DriveApp: { getFileById: () => file }
+  };
+  vm.runInNewContext(
+    extractFunction("extractTaskServiceFileId") + String.fromCharCode(10) +
+    extractFunction("deleteFile") + String.fromCharCode(10) +
+    "this.run = deleteFile;",
+    context
+  );
+  return { run: context.run, file, rows };
+}
+const versionHeaders = ["ID","EntregaID","TareaID","UserID","VersionNum","ArchivoUrl","FileID"];
+const urlOnlyDelete = makeDeleteFileFixture("FILE-URL-ONLY", [
+  versionHeaders,
+  ["V1","E1","TASK-1","USR-DELETE",1,"https://drive.google.com/file/d/FILE-URL-ONLY/view",""]
+]);
+assert.throws(() => urlOnlyDelete.run({_verifiedRole:"Estudiante",_verifiedUserId:"USR-DELETE",fileId:"FILE-URL-ONLY"}), /vinculado a una entrega o versión/);
+assert.equal(urlOnlyDelete.file.trashed, false, "Archivo citado solo por ArchivoUrl no debe enviarse a papelera");
+
+const fileIdOnlyDelete = makeDeleteFileFixture("FILE-ID-ONLY", [
+  versionHeaders,
+  ["V2","E2","TASK-2","USR-DELETE",1,"","FILE-ID-ONLY"]
+]);
+assert.throws(() => fileIdOnlyDelete.run({_verifiedRole:"Estudiante",_verifiedUserId:"USR-DELETE",fileId:"FILE-ID-ONLY"}), /vinculado a una entrega o versión/);
+assert.equal(fileIdOnlyDelete.file.trashed, false, "Archivo citado por FileID no debe enviarse a papelera");
+
+const rollbackDelete = makeDeleteFileFixture("FILE-OWNED", [versionHeaders], true);
+assert.throws(() => rollbackDelete.run({_verifiedRole:"Estudiante",_verifiedUserId:"USR-DELETE",fileId:"FILE-OWNED"}), /DELETE_FILE_METADATA_UPDATE_FAILED/);
+assert.equal(rollbackDelete.file.trashed, false, "Fallos al actualizar metadatos deben compensar el borrado Drive");
+
+const successfulDelete = makeDeleteFileFixture("FILE-OWNED", [versionHeaders], false);
+assert.equal(successfulDelete.run({_verifiedRole:"Estudiante",_verifiedUserId:"USR-DELETE",fileId:"FILE-OWNED"}).status, "success");
+assert.equal(successfulDelete.file.trashed, true);
+assert.equal(successfulDelete.rows[1][14], "Eliminado");
+
+console.log("TASK-636 deleteFile local contract: FileID/ArchivoUrl reference guards and metadata rollback passed.");

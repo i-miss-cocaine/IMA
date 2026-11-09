@@ -210,3 +210,15 @@ Endurecer las excepciones públicas de backend/academic-service/Code.gs mediante
 - **Pendiente:** ejecución CI del contrato tras publicar este commit. No se declara PASS antes de consultar el run y sus logs.
 - **Beta diferida:** BETA-FUNC-010 cubre interrupción durante restauración y recuperación, repetición de recuperación, integridad de hojas/activos, referencias e idMap en Apps Script/Sheets/Drive aislados. No bloquea la implementación local por requerir servicios desplegados.
 - **Estado:** TASK-636 continúa En ejecución; AUD-NG-369 sigue abierto hasta resolver y verificar los demás criterios locales. `closeAcademicYear` permanece fail-closed con `BACKUP_REQUIRED`.
+
+
+## Revisión focalizada C1.367 — referencias de versiones y compensación de borrado
+
+- **Hallazgo existente:** AUD-NG-370. La revisión de `deleteFile` encontró que solo se comprobaba `EntregasVersiones.FileID` (columna índice 6). Una versión que conservara el ID únicamente en `ArchivoUrl` (índice 5) podía no ser reconocida y quedar expuesta a borrado.
+- **Corrección:** se resuelven los índices por encabezado `FileID`/`ArchivoUrl`, con fallback legado 6/5, y se comprueban ambas referencias mediante `extractTaskServiceFileId`. El handler rechaza archivos ya en papelera.
+- **Integridad:** si falla la actualización de Estado en `MetadatosArchivos` después de enviar el archivo a papelera, intenta restaurarlo. Si la compensación también falla, devuelve `DELETE_FILE_ROLLBACK_FAILED`; nunca reporta éxito.
+- **Pruebas locales añadidas:** fixtures Node con archivo referenciado solo por URL, solo por FileID, borrado permitido y fallo simulado de escritura de metadatos con compensación Drive.
+- **CI anterior C1.366:** security local contracts run 42723140739 completed/success; backup/restore contract run 42723140736 completed/success. Sus logs muestran ejecución Node 22.23.4 y aprobación de los contratos correspondientes.
+- **CI C1.367:** pendiente de ejecución tras publicar; no se declara PASS anticipadamente.
+- **Beta:** BETA-FUNC-011 cubre las referencias de versiones en un Drive/Sheets aislado. No bloquea implementación local.
+- **Estado:** AUD-NG-370 permanece en revalidación hasta CI C1.367. TASK-636 sigue En ejecución; no se crea un ID de hallazgo nuevo ni un informe paralelo.

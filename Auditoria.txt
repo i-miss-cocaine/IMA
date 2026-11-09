@@ -634,3 +634,12 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - Apps Script/Sheets/Drive e interrupciones forzadas se difieren a BETA-FUNC-010; no bloquean implementación local.
 - TASK-636 En ejecución; AUD-NG-369 abierto; closeAcademicYear BACKUP_REQUIRED.
 - Baseline lógico C1.316; C1.317–C1.365 preservados pero no aceptados como evidencia. Checkpoint C1.366: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.366; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.366.
+
+
+## C1.367 — IMA-EXEC-20261109-1739Z-01 — TASK-636 / PM-01 / AUD-NG-370
+- Se corrige deleteFile para comprobar FileID y ArchivoUrl en EntregasVersiones; la referencia URL-only ya no permite borrar el archivo.
+- Se añade compensación Drive si falla la escritura de Estado en MetadatosArchivos.
+- Fixtures Node locales para FileID-only, URL-only, borrado válido y rollback.
+- CI C1.366: runs 42723140739 y 42723140736 completed/success. CI C1.367 pendiente.
+- BETA-FUNC-011 registra verificación real con Drive/Sheets aislados; Pendiente beta y no bloqueante.
+- AUD-NG-370 en revalidación; TASK-636 En ejecución. Checkpoint C1.367: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice fila C1.367.

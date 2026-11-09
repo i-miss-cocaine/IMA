@@ -150,3 +150,12 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Pasos:** crear/verificar A; modificar fixture y crear/verificar B; iniciar restore de B e interrumpir tras persistir al menos una entrada del idMap; ejecutar recuperación de A; interrumpir la recuperación tras recrear un activo; reintentar recuperación; verificar hojas, fórmulas, archivos, hashes, permisos, parentId, referencias FileID/URL y Log_Cierres append-only.
 - **Resultado esperado:** journal conserva dos estados de progreso distintos; recovery nunca reutiliza el idMap del intento objetivo; reintentos no duplican activos; el estado final coincide con A y el journal solo se limpia tras verificación completa.
 - **Estado:** Pendiente beta. No bloquea el cierre de implementación local por depender de Apps Script/Sheets/Drive desplegados.
+
+
+## BETA-FUNC-011 — TASK-636 / AUD-NG-370 — protección de archivos referenciados por URL de versión
+- **Objetivo:** comprobar en Drive/Sheets aislados que deleteFile no envía a papelera archivos usados por versiones, incluso cuando la referencia está presente únicamente en ArchivoUrl y FileID está vacío.
+- **Precondiciones:** deployment Task-Service beta, Spreadsheet/Drive aislados y cuentas sintéticas de estudiante.
+- **Datos sintéticos:** archivo propio no entregado, archivo propio vinculado por FileID, archivo propio vinculado solo por ArchivoUrl y archivo ajeno.
+- **Pasos:** intentar borrar cada archivo; simular fallo de actualización de MetadatosArchivos; verificar estado Drive y metadatos después de la compensación.
+- **Resultado esperado:** FileID y ArchivoUrl bloquean el borrado; el archivo no cambia si está referenciado; borrado no referenciado actualiza metadatos; fallo de metadatos restaura el archivo o registra error crítico explícito.
+- **Estado:** Pendiente beta. No bloquea implementación local por requerir servicios desplegados.

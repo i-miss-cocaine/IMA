@@ -2212,3 +2212,11 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - Se añade fixture Node local para separación de estados y rechazo de fallback. CI pendiente de ejecución tras publicar.
 - BETA-FUNC-010 cubre interrupciones reales y repetibilidad con Apps Script/Sheets/Drive aislados; Pendiente beta, no bloqueante para implementación local.
 - TASK-636 permanece En ejecución; closeAcademicYear permanece BACKUP_REQUIRED.
+
+
+## 10.51 TASK-636 — C1.367: protección de archivos citados en ArchivoUrl
+- AUD-NG-370: deleteFile comprobaba FileID pero omitía ArchivoUrl en EntregasVersiones. Se corrige la búsqueda por ambos campos, con índices por encabezado y fallback legado 6/5.
+- Se compensa setTrashed(true) si falla la escritura de Estado en MetadatosArchivos; rollback fallido devuelve error crítico explícito.
+- Fixtures Node locales: referencia URL-only, FileID-only, borrado permitido y rollback por fallo de metadatos. CI C1.367 pendiente.
+- BETA-FUNC-011: validación Drive/Sheets aislados, Pendiente beta y no bloqueante.
+- AUD-NG-370 en revalidación; TASK-636 En ejecución.

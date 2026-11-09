@@ -473,3 +473,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - CI pendiente; BETA-FUNC-010 registra interrupciones reales en Apps Script/Sheets/Drive aislados como Pendiente beta.
 - TASK-636 En ejecución; AUD-NG-369 abierto; closeAcademicYear BACKUP_REQUIRED.
 - Baseline lógico C1.316. Checkpoint C1.366: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.366.
+
+
+[2026-11-09] IMA-EXEC-20261109-1739Z-01 — C1.367 / TASK-636 / AUD-NG-370
+- deleteFile ahora bloquea archivos referenciados tanto por FileID como por ArchivoUrl en EntregasVersiones.
+- Se compensa el borrado Drive si falla la actualización de Estado; fallo de rollback queda explícito.
+- Se agregan fixtures Node para URL-only, FileID-only, éxito y rollback. CI C1.367 pendiente.
+- BETA-FUNC-011 registra el escenario real aislado; Pendiente beta.
+- Checkpoint C1.367: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice fila C1.367.

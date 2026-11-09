@@ -813,3 +813,60 @@ Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt �
 Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.366.
 Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
 ===============================================================================
+
+===============================================================================
+## C1.367 — TASK-636 / AUD-NG-370 — protección de referencias URL en versiones
+ID: C1.367
+Sesión: IMA-EXEC-20261109-1739Z-01
+Fecha: 2026-11-09
+Checkpoint anterior válido: C1.366
+Baseline lógico: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD físico de partida: 39face118be5582ed175962ca755abc23551520c
+Rama: NG_beta_0.0.0.1_work
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+
+### Evidencia de C1.366
+- CI security local contracts run 42723140739: completed/success.
+- CI backup and restore contract run 42723140736: completed/success.
+- Logs: Node 22.23.4; el contrato de reconciliación histórica y el contrato backup/restore con selector de progreso independiente finalizaron correctamente.
+- C1.366 permanece válido como corrección de continuidad desde C1.316; commits C1.317–C1.365 siguen preservados pero invalidados como evidencia por instrucción del usuario.
+
+### Reauditoría AUD-NG-370
+- `deleteFile` verificaba la columna FileID de EntregasVersiones, pero no ArchivoUrl.
+- Una referencia válida almacenada únicamente en ArchivoUrl podía escapar del control y permitir mover a papelera un archivo versionado.
+- No se crea un hallazgo duplicado: se amplía AUD-NG-370 dentro del expediente AUDITORIA_TASK-636_C1.305.md.
+
+### Implementación
+- El handler resuelve FileID y ArchivoUrl mediante encabezados canónicos, con fallback 6/5 para esquemas históricos.
+- Comprueba ambos valores con extractTaskServiceFileId antes de borrar.
+- Rechaza archivos ya en papelera.
+- Si falla la actualización del estado de MetadatosArchivos tras setTrashed(true), intenta setTrashed(false); si falla la compensación, expone DELETE_FILE_ROLLBACK_FAILED.
+- Se agregan fixtures Node para referencia URL-only, FileID-only, borrado permitido y fallo de metadatos con rollback.
+
+### Archivos modificados
+- backend/task-service/Code.gs
+- tests/security/task-service-security-contract.test.js
+- Auditoría/AUDITORIA_TASK-636_C1.305.md
+- pendientes/Otros/Pendientes.md (seguimiento aditivo)
+- beta_test.txt (BETA-FUNC-011)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoria.txt
+- tareas_auditoria.txt
+- changueslogs.txt
+
+### Pruebas y estado
+- C1.366: ambos workflows locales aprobados (runs 42723140739 y 42723140736).
+- C1.367: contrato local actualizado; CI pendiente de ejecución tras publicar.
+- Drive/Sheets reales y despliegue: BETA-FUNC-011 Pendiente beta, no bloqueante para implementación local.
+- AUD-NG-370 permanece en revalidación hasta confirmar CI C1.367; TASK-636 sigue En ejecución.
+- No se ejecuta borrado en datos reales ni se habilita ninguna operación destructiva adicional.
+
+### Siguiente acción exacta
+Consultar los logs de CI C1.367. Si pasan, registrar la resolución local de este subalcance de AUD-NG-370 y continuar la reauditoría de AUD-NG-001/002/306/368/371 dentro del mismo expediente, sin duplicar informes.
+
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.367.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.367.
+Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
+===============================================================================

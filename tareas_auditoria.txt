@@ -496,3 +496,14 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - TASK-636 En ejecución; AUD-NG-369 abierto. No se habilita closeAcademicYear.
 - Baseline válido C1.316; checkpoints posteriores preservados pero invalidados como evidencia. C1.366: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice fila C1.366.
 ===============================================================================
+
+
+===============================================================================
+## Seguimiento TASK-636 — C1.367 / AUD-NG-370
+- Se amplía el control de deleteFile: compara referencias FileID y ArchivoUrl de EntregasVersiones; la referencia URL-only queda protegida.
+- Si falla la persistencia del estado de metadatos después de setTrashed(true), se intenta restaurar el archivo; fallo de compensación se informa explícitamente.
+- Se añaden fixtures Node para URL-only, FileID-only, borrado válido y rollback.
+- CI C1.366 runs 42723140739/42723140736: success. CI C1.367 pendiente.
+- BETA-FUNC-011 Pendiente beta, no bloqueante para implementación local.
+- AUD-NG-370 en revalidación; TASK-636 En ejecución.
+===============================================================================
