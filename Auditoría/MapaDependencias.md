@@ -4874,3 +4874,11 @@ Alcance estático satisfecho; sin cambios de código. Hallazgos AUD-NG-374..376 
 - recoverTaskServiceAcademicYearRestore requiere claims Administrador/Desarrollador y confirmación explícita confirmed=true con código RECOVER-TASK-SERVICE-RESTORE.
 - Se evita que una llamada administrativa accidental restaure el respaldo compensatorio sin confirmación adicional.
 - Verificación estática; ejecución Node/runtime y pruebas aisladas pendientes. closeAcademicYear continúa BACKUP_REQUIRED.
+
+
+## TASK-636 — C1.315: lock exclusivo y estado idempotente de restauración
+- recoverTaskServiceAcademicYearRestore adquiere ScriptLock antes de leer/escribir el journal; taskServiceRestoreAcademicYearBackup_ admite lockAlreadyHeld para evitar doble adquisición.
+- taskServiceCreateRestoreState_, taskServiceReadRestoreState_ y taskServicePersistRestoreState_ mantienen restoreId e idMap en un archivo Drive del respaldo compensatorio.
+- taskServiceRestoreMarkerName_ y taskServiceFindRestoreMarker_ localizan copias creadas antes de que el runtime se interrumpa; los activos mapeados se validan por hash/tamaño, padre y nombre antes de reutilizarse.
+- Dependencias de plataforma verificadas documentalmente: Drive File.setContent y Folder.getFilesByName/getFoldersByName. Apps Script runtime sigue pendiente.
+- Contrato estático ampliado; 42/42 comprobaciones equivalentes pasaron. AUD-NG-369 abierto y closeAcademicYear continúa BACKUP_REQUIRED.

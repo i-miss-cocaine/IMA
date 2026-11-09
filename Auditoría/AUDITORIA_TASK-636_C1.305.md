@@ -177,3 +177,15 @@ Endurecer las excepciones públicas de backend/academic-service/Code.gs mediante
 - Se añade confirmación explícita confirmed=true y confirmCode=RECOVER-TASK-SERVICE-RESTORE antes de ejecutar la recuperación; la operación normal de restore ya exigía su propio código de confirmación.
 - Se amplía el contrato estático para verificar este control.
 - Verificación estática de presencia del guard y del código de confirmación; el script Node y el runtime Apps Script no se ejecutaron. AUD-NG-369 permanece abierto y closeAcademicYear continúa BACKUP_REQUIRED.
+
+
+## Revisión focalizada C1.315 — recuperación serializada e idempotencia de activos Drive
+
+- Code Review detectó dos riesgos dentro de AUD-NG-369: recuperaciones administrativas concurrentes podían competir por el mismo journal; una interrupción tras crear copias Drive podía duplicarlas al reintentar porque el ID recreado solo existía en memoria.
+- Se serializa recoverTaskServiceAcademicYearRestore con LockService y el restaurador interno reutiliza el lock ya adquirido, evitando adquisición anidada. Se valida el estado del journal y se conserva RECOVERY_REQUIRED con error acotado cuando una recuperación falla.
+- Se añade un archivo de estado durable en Drive dentro del respaldo compensatorio, con restoreId e idMap. Los archivos/carpetas recreados usan marcadores deterministas hasta persistir su ID; al reintentar se localiza la copia existente, se valida hash/tamaño, nombre y carpeta padre y se reutiliza en lugar de duplicarla.
+- Los IDs recuperados se verifican antes de modificar nombre/permisos. Las búsquedas de marcadores rechazan duplicados ambiguos. Los detalles de rollback almacenados en ScriptProperties se limitan para evitar exceder el tamaño permitido por propiedad.
+- Se amplía tests/security/task-service-backup-restore-contract.test.js para cubrir estado durable, marcadores, lock exclusivo, recuperación reintentable, estados inválidos, validación de padre/nombre/hash y persistencia Drive.
+- Se ejecutaron 42 comprobaciones estáticas equivalentes en el runtime JavaScript de la sesión sobre los blobs preparados; 42/42 pasaron y los delimitadores del bloque modificado quedaron balanceados. No es ejecución del archivo Node.
+- Se verificó en documentación oficial de Apps Script que Drive File.setContent y Folder.getFilesByName/getFoldersByName existen; no se ejecutó Apps Script real.
+- Pendiente: Node, Apps Script runtime, Sheets/Drive aislados, interrupciones forzadas y repetibilidad real. AUD-NG-369 sigue abierto; closeAcademicYear permanece BACKUP_REQUIRED.

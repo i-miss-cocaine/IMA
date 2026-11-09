@@ -459,6 +459,8 @@ function closeAcademicYear(payload) {
 
 const TASK_SERVICE_BACKUP_SCHEMA_VERSION = 1;
 const TASK_SERVICE_RESTORE_JOURNAL_KEY = "TASK_SERVICE_ACADEMIC_YEAR_RESTORE_JOURNAL";
+const TASK_SERVICE_RESTORE_STATE_PREFIX = "IMA_TASK_SERVICE_RESTORE_STATE_";
+const TASK_SERVICE_RESTORE_MARKER_PREFIX = "__IMA_RESTORE__";
 const TASK_SERVICE_BACKUP_PREFIX = "IMA_TASK_SERVICE_ACADEMIC_BACKUP_";
 const TASK_SERVICE_BACKUP_SHEETS = ["Tareas", "Entregas", "ConfiguracionAcademica", "Log_Cierres", "EntregasVersiones", "MetadatosArchivos"];
 
@@ -672,26 +674,114 @@ function taskServiceVerifyAcademicYearBackup_(manifestFileId) {
     sheetCount: manifest.sheets.length, assetCount: assetCount, verifiedAt: new Date().toISOString() };
 }
 
-function taskServiceRestoreAsset_(node, parentFolder, idMap, journal) {
+function taskServiceCreateRestoreState_(backupFolderId) {
+  const restoreId = Utilities.getUuid();
+  const state = { version: 1, restoreId: restoreId, idMap: {} };
+  const file = DriveApp.getFolderById(backupFolderId).createFile(
+    TASK_SERVICE_RESTORE_STATE_PREFIX + restoreId + ".json", JSON.stringify(state), MimeType.PLAIN_TEXT);
+  return { restoreId: restoreId, fileId: file.getId() };
+}
+
+function taskServiceReadRestoreState_(fileId, restoreId) {
+  if (!fileId || !restoreId) throw new Error("RESTORE_STATE_MISSING: falta el estado durable de restauración.");
+  const file = DriveApp.getFileById(fileId);
+  if (file.isTrashed() || file.getName().indexOf(TASK_SERVICE_RESTORE_STATE_PREFIX) !== 0) {
+    throw new Error("RESTORE_STATE_INVALID: archivo de estado no válido.");
+  }
+  const state = JSON.parse(file.getBlob().getDataAsString());
+  if (!state || state.version !== 1 || state.restoreId !== restoreId || !state.idMap) {
+    throw new Error("RESTORE_STATE_INVALID: esquema o identificador no coincidente.");
+  }
+  return state;
+}
+
+function taskServicePersistRestoreState_(fileId, state) {
+  DriveApp.getFileById(fileId).setContent(JSON.stringify(state));
+}
+
+function taskServiceFindRestoreMarker_(parentFolder, kind, markerName) {
+  const iterator = kind === "folder" ? parentFolder.getFoldersByName(markerName) : parentFolder.getFilesByName(markerName);
+  if (!iterator.hasNext()) return null;
+  const item = iterator.next();
+  if (iterator.hasNext()) throw new Error("RESTORE_MARKER_AMBIGUOUS: existen copias duplicadas para " + markerName);
+  return item;
+}
+
+function taskServiceRestoreMarkerName_(restoreState, originalId) {
+  return TASK_SERVICE_RESTORE_MARKER_PREFIX + restoreState.restoreId + "_" + originalId;
+}
+
+function taskServiceRestoreAsset_(node, parentFolder, idMap, journal, restoreState, restoreStateFileId) {
+  const mappedId = restoreState.idMap[node.originalId];
   if (node.kind === "folder") {
     let folder = null;
-    try { folder = DriveApp.getFolderById(node.originalId); } catch (_) {}
-    if (!folder) {
-      folder = parentFolder.createFolder(node.name);
-      journal.push({ kind: "createdFolder", id: folder.getId() });
+    if (mappedId) {
+      folder = DriveApp.getFolderById(mappedId);
+      if (folder.isTrashed()) {
+        folder.setTrashed(false);
+        journal.push({ kind: "untrashedFolder", id: folder.getId() });
+      }
+      const folderParents = folder.getParents();
+      if (!folderParents.hasNext() || folderParents.next().getId() !== parentFolder.getId()) {
+        throw new Error("RESTORE_STATE_PARENT_MISMATCH: carpeta restaurada fuera de su padre esperado: " + node.originalId);
+      }
+      const markerName = taskServiceRestoreMarkerName_(restoreState, node.originalId);
+      if (folder.getName() !== node.name && folder.getName() !== markerName) {
+        throw new Error("RESTORE_STATE_NAME_MISMATCH: carpeta restaurada no coincide con su marcador: " + node.originalId);
+      }
+      folder.setName(node.name);
       taskServiceBackupApplySharing_(folder, node.sharing);
-    } else if (folder.isTrashed()) {
-      folder.setTrashed(false);
-      journal.push({ kind: "untrashedFolder", id: folder.getId() });
+    } else {
+      try { folder = DriveApp.getFolderById(node.originalId); } catch (_) {}
+      if (!folder) {
+        const markerName = taskServiceRestoreMarkerName_(restoreState, node.originalId);
+        folder = taskServiceFindRestoreMarker_(parentFolder, "folder", markerName);
+        if (!folder) {
+          folder = parentFolder.createFolder(markerName);
+          journal.push({ kind: "createdFolder", id: folder.getId() });
+        }
+        restoreState.idMap[node.originalId] = folder.getId();
+        taskServicePersistRestoreState_(restoreStateFileId, restoreState);
+        folder.setName(node.name);
+        taskServiceBackupApplySharing_(folder, node.sharing);
+      } else if (folder.isTrashed()) {
+        folder.setTrashed(false);
+        journal.push({ kind: "untrashedFolder", id: folder.getId() });
+      }
     }
     if (!taskServiceBackupVerifySharing_(folder, node.sharing)) throw new Error("Permisos de carpeta cambiaron desde el respaldo: " + node.originalId);
     idMap[node.originalId] = folder.getId();
-    (node.children || []).forEach(function (child) { taskServiceRestoreAsset_(child, folder, idMap, journal); });
+    (node.children || []).forEach(function (child) {
+      taskServiceRestoreAsset_(child, folder, idMap, journal, restoreState, restoreStateFileId);
+    });
     return;
   }
   if (node.kind !== "file") throw new Error("Tipo de activo no reconocido durante restauración.");
   const backupFile = DriveApp.getFileById(node.backupId);
   let original = null;
+  if (mappedId) {
+    original = DriveApp.getFileById(mappedId);
+    if (original.isTrashed()) {
+      original.setTrashed(false);
+      journal.push({ kind: "untrashedFile", id: original.getId() });
+    }
+    const mappedHash = taskServiceBackupSha256_(original.getBlob().getBytes(), true);
+    if (mappedHash !== node.sha256 || Number(original.getSize()) !== Number(node.sizeBytes)) {
+      throw new Error("Copia previamente restaurada no coincide con el manifiesto: " + node.originalId);
+    }
+    const fileParents = original.getParents();
+    if (!fileParents.hasNext() || fileParents.next().getId() !== parentFolder.getId()) {
+      throw new Error("RESTORE_STATE_PARENT_MISMATCH: archivo restaurado fuera de su padre esperado: " + node.originalId);
+    }
+    const markerName = taskServiceRestoreMarkerName_(restoreState, node.originalId);
+    if (original.getName() !== node.name && original.getName() !== markerName) {
+      throw new Error("RESTORE_STATE_NAME_MISMATCH: archivo restaurado no coincide con su marcador: " + node.originalId);
+    }
+    original.setName(node.name);
+    taskServiceBackupApplySharing_(original, node.sharing);
+    idMap[node.originalId] = original.getId();
+    return;
+  }
   try { original = DriveApp.getFileById(node.originalId); } catch (_) {}
   if (original && original.isTrashed()) {
     original.setTrashed(false);
@@ -705,11 +795,20 @@ function taskServiceRestoreAsset_(node, parentFolder, idMap, journal) {
       return;
     }
   }
-  const restored = backupFile.makeCopy(node.name, parentFolder);
-  journal.push({ kind: "createdFile", id: restored.getId() });
+  const markerName = taskServiceRestoreMarkerName_(restoreState, node.originalId);
+  let restored = taskServiceFindRestoreMarker_(parentFolder, "file", markerName);
+  if (!restored) {
+    restored = backupFile.makeCopy(markerName, parentFolder);
+    journal.push({ kind: "createdFile", id: restored.getId() });
+  }
+  restoreState.idMap[node.originalId] = restored.getId();
+  taskServicePersistRestoreState_(restoreStateFileId, restoreState);
+  restored.setName(node.name);
   taskServiceBackupApplySharing_(restored, node.sharing);
   const restoredHash = taskServiceBackupSha256_(restored.getBlob().getBytes(), true);
-  if (restoredHash !== node.sha256 || Number(restored.getSize()) !== Number(node.sizeBytes)) throw new Error("La copia restaurada no coincide con el manifiesto: " + node.originalId);
+  if (restoredHash !== node.sha256 || Number(restored.getSize()) !== Number(node.sizeBytes)) {
+    throw new Error("La copia restaurada no coincide con el manifiesto: " + node.originalId);
+  }
   idMap[node.originalId] = restored.getId();
 }
 
@@ -782,12 +881,12 @@ function taskServiceVerifyAppendOnlyBackupLog_(ss, snapshot) {
   }
   return true;
 }
-function taskServiceRestoreAcademicYearBackup_(manifestFileId, actor, skipDurableJournal) {
+function taskServiceRestoreAcademicYearBackup_(manifestFileId, actor, skipDurableJournal, lockAlreadyHeld, recoveryJournal) {
   const manifest = taskServiceReadAcademicYearBackup_(manifestFileId);
   taskServiceVerifyAcademicYearBackup_(manifestFileId);
   const lock = LockService.getScriptLock();
-  lock.waitLock(30000);
-  let ss = null, properties = null, durableJournal = null, rollbackManifestFileId = "";
+  if (!lockAlreadyHeld) lock.waitLock(30000);
+  let ss = null, properties = null, durableJournal = recoveryJournal || null, rollbackManifestFileId = "", restoreStateFileId = "", restoreState = null;
   const before = {}, journal = [], idMap = {};
   try {
     properties = PropertiesService.getScriptProperties();
@@ -797,10 +896,15 @@ function taskServiceRestoreAcademicYearBackup_(manifestFileId, actor, skipDurabl
       const safetyBackup = taskServiceCreateAcademicYearBackup_(actor);
       if (!safetyBackup || safetyBackup.status !== "success" || !safetyBackup.manifestFileId) throw new Error("No se pudo crear el respaldo compensatorio durable.");
       rollbackManifestFileId = safetyBackup.manifestFileId;
+      const stateRecord = taskServiceCreateRestoreState_(safetyBackup.folderId);
+      restoreStateFileId = stateRecord.fileId;
       durableJournal = { version: 1, state: "APPLYING", targetManifestFileId: manifestFileId,
-        rollbackManifestFileId: rollbackManifestFileId, actorId: actor.actorId, startedAt: new Date().toISOString() };
+        rollbackManifestFileId: rollbackManifestFileId, restoreId: stateRecord.restoreId,
+        restoreStateFileId: restoreStateFileId, actorId: actor.actorId, startedAt: new Date().toISOString() };
       properties.setProperty(TASK_SERVICE_RESTORE_JOURNAL_KEY, JSON.stringify(durableJournal));
     }
+    if (skipDurableJournal) restoreStateFileId = durableJournal && durableJournal.restoreStateFileId;
+    restoreState = taskServiceReadRestoreState_(restoreStateFileId, durableJournal && durableJournal.restoreId);
     ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     manifest.sheets.filter(function (s) { return s.name !== "Log_Cierres"; }).forEach(function (snapshot) {
       const existing = ss.getSheetByName(snapshot.name);
@@ -819,7 +923,7 @@ function taskServiceRestoreAcademicYearBackup_(manifestFileId, actor, skipDurabl
       let parent = idMap[node.parentId] ? DriveApp.getFolderById(idMap[node.parentId]) : null;
       if (!parent) { try { parent = DriveApp.getFolderById(node.parentId); } catch (_) {} }
       if (!parent || parent.isTrashed()) throw new Error("Carpeta padre original no disponible para restaurar activo: " + node.originalId);
-      taskServiceRestoreAsset_(node, parent, idMap, journal);
+      taskServiceRestoreAsset_(node, parent, idMap, journal, restoreState, restoreStateFileId);
     });
     const expected = manifest.sheets.filter(function (s) { return s.name !== "Log_Cierres"; }).map(function (snapshot) {
       const copy = JSON.parse(JSON.stringify(snapshot));
@@ -879,16 +983,25 @@ function taskServiceRestoreAcademicYearBackup_(manifestFileId, actor, skipDurabl
     if (rollbackErrors.length) {
       if (durableJournal && properties) {
         durableJournal.state = "RECOVERY_REQUIRED";
-        durableJournal.lastError = error.message;
-        durableJournal.rollbackErrors = rollbackErrors;
+        durableJournal.lastError = String(error.message || error).slice(0, 1200);
+        durableJournal.rollbackErrorCount = rollbackErrors.length;
+        durableJournal.rollbackErrors = rollbackErrors.slice(0, 10).map(function (item) { return String(item).slice(0, 400); });
         properties.setProperty(TASK_SERVICE_RESTORE_JOURNAL_KEY, JSON.stringify(durableJournal));
       }
       throw new Error("RESTORE_FAILED_ROLLBACK_INCOMPLETE: " + error.message + " | " + rollbackErrors.join("; "));
     }
-    if (durableJournal && properties) properties.deleteProperty(TASK_SERVICE_RESTORE_JOURNAL_KEY);
+    if (durableJournal && properties) {
+      if (skipDurableJournal) {
+        durableJournal.state = "RECOVERY_REQUIRED";
+        durableJournal.lastRecoveryError = String(error.message || error).slice(0, 1200);
+        properties.setProperty(TASK_SERVICE_RESTORE_JOURNAL_KEY, JSON.stringify(durableJournal));
+      } else {
+        properties.deleteProperty(TASK_SERVICE_RESTORE_JOURNAL_KEY);
+      }
+    }
     throw new Error("RESTORE_FAILED_ROLLED_BACK: " + error.message);
   } finally {
-    lock.releaseLock();
+    if (!lockAlreadyHeld) lock.releaseLock();
   }
 }
 
@@ -897,23 +1010,45 @@ function recoverTaskServiceAcademicYearRestore(payload) {
   if (!payload || payload.confirmed !== true || payload.confirmCode !== "RECOVER-TASK-SERVICE-RESTORE") {
     throw new Error("RECOVERY_CONFIRMATION_REQUIRED: se requiere confirmed=true y confirmCode RECOVER-TASK-SERVICE-RESTORE.");
   }
-  const properties = PropertiesService.getScriptProperties();
-  const raw = properties.getProperty(TASK_SERVICE_RESTORE_JOURNAL_KEY);
-  if (!raw) return { status: "success", recovered: false, message: "No existe una restauración interrumpida pendiente." };
-  const durableJournal = JSON.parse(raw);
-  if (durableJournal.version !== 1 || !durableJournal.rollbackManifestFileId) throw new Error("RECOVERY_JOURNAL_INVALID: no se puede determinar el respaldo compensatorio.");
-  if (durableJournal.state === "COMPLETED") {
-    properties.deleteProperty(TASK_SERVICE_RESTORE_JOURNAL_KEY);
-    return { status: "success", recovered: false, clearedCompletedJournal: true };
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    const properties = PropertiesService.getScriptProperties();
+    const raw = properties.getProperty(TASK_SERVICE_RESTORE_JOURNAL_KEY);
+    if (!raw) return { status: "success", recovered: false, message: "No existe una restauración interrumpida pendiente." };
+    const durableJournal = JSON.parse(raw);
+    if (durableJournal.version !== 1 || !durableJournal.rollbackManifestFileId || !durableJournal.restoreStateFileId || !durableJournal.restoreId) {
+      throw new Error("RECOVERY_JOURNAL_INVALID: no se puede determinar el respaldo compensatorio o su estado de progreso.");
+    }
+    if (durableJournal.state === "COMPLETED") {
+      properties.deleteProperty(TASK_SERVICE_RESTORE_JOURNAL_KEY);
+      return { status: "success", recovered: false, clearedCompletedJournal: true };
+    }
+    if (["APPLYING", "RECOVERY_REQUIRED", "RECOVERING"].indexOf(durableJournal.state) === -1) {
+      throw new Error("RECOVERY_JOURNAL_INVALID: estado de recuperación no reconocido.");
+    }
+    durableJournal.state = "RECOVERING";
+    durableJournal.recoveryActorId = actor.actorId;
+    durableJournal.recoveryStartedAt = new Date().toISOString();
+    properties.setProperty(TASK_SERVICE_RESTORE_JOURNAL_KEY, JSON.stringify(durableJournal));
+    try {
+      const result = taskServiceRestoreAcademicYearBackup_(durableJournal.rollbackManifestFileId, actor, true, true, durableJournal);
+      durableJournal.state = "COMPLETED";
+      durableJournal.completedAt = new Date().toISOString();
+      properties.setProperty(TASK_SERVICE_RESTORE_JOURNAL_KEY, JSON.stringify(durableJournal));
+      properties.deleteProperty(TASK_SERVICE_RESTORE_JOURNAL_KEY);
+      return { status: "success", recovered: true, originalTargetManifestFileId: durableJournal.targetManifestFileId,
+        rollbackManifestFileId: durableJournal.rollbackManifestFileId, recoveryResult: result };
+    } catch (recoveryError) {
+      durableJournal.state = "RECOVERY_REQUIRED";
+      durableJournal.lastRecoveryError = String(recoveryError.message || recoveryError).slice(0, 1200);
+      durableJournal.recoveryFailedAt = new Date().toISOString();
+      properties.setProperty(TASK_SERVICE_RESTORE_JOURNAL_KEY, JSON.stringify(durableJournal));
+      throw recoveryError;
+    }
+  } finally {
+    lock.releaseLock();
   }
-  durableJournal.state = "RECOVERING";
-  durableJournal.recoveryActorId = actor.actorId;
-  durableJournal.recoveryStartedAt = new Date().toISOString();
-  properties.setProperty(TASK_SERVICE_RESTORE_JOURNAL_KEY, JSON.stringify(durableJournal));
-  const result = taskServiceRestoreAcademicYearBackup_(durableJournal.rollbackManifestFileId, actor, true);
-  properties.deleteProperty(TASK_SERVICE_RESTORE_JOURNAL_KEY);
-  return { status: "success", recovered: true, originalTargetManifestFileId: durableJournal.targetManifestFileId,
-    rollbackManifestFileId: durableJournal.rollbackManifestFileId, recoveryResult: result };
 }
 
 function createTaskServiceAcademicYearBackup(payload) {

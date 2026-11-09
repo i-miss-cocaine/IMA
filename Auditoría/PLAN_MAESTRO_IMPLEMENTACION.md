@@ -1928,3 +1928,11 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - Se amplía el contrato estático. Node, Apps Script, Sheets/Drive aislados e interrupciones forzadas siguen pendientes.
 - closeAcademicYear permanece BACKUP_REQUIRED; AUD-NG-369 abierto.
 - Checkpoint C1.314: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.314; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.314.
+
+
+## 10.13 Seguimiento de ejecución del Plan Maestro — C1.315
+- TASK-636 — PM-01/P0 — En ejecución. C1.315 serializa la recuperación del journal y persiste progreso/idMap en un archivo Drive para hacer idempotente la recreación de activos ante interrupciones.
+- Se agregan marcadores deterministas, validación de hash/tamaño, nombre y carpeta padre, estados válidos del journal y conservación de RECOVERY_REQUIRED ante fallos.
+- Contrato estático equivalente: 42/42 comprobaciones pasaron en runtime JavaScript de la sesión; no es ejecución Node. Apps Script/Sheets/Drive aislados e interrupciones forzadas pendientes.
+- closeAcademicYear permanece BACKUP_REQUIRED; AUD-NG-369 abierto.
+- Checkpoint C1.315: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.315; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.315.

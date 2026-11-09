@@ -412,3 +412,15 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - No se crean IDs nuevos. Se mantiene AUD-NG-357 dentro de TASK-636.
 - AUD-NG-370 permanece parcialmente abierto; AUD-NG-369/backup-restore sigue pendiente y closeAcademicYear continúa bloqueado con BACKUP_REQUIRED.
 ===============================================================================
+
+
+===============================================================================
+## Seguimiento de TASK-636 — C1.315 / AUD-NG-369
+- **ID conservado:** TASK-636; no se crea tarea duplicada.
+- **Hallazgo focalizado:** la recuperación del journal no serializaba dos invocaciones concurrentes y no conservaba en forma durable el mapa de activos Drive recreados; una interrupción/reintento podía generar copias duplicadas.
+- **Corrección:** ScriptLock exclusivo durante lectura/actualización del journal y recuperación; estado de progreso separado en archivo Drive dentro del respaldo compensatorio; marcadores deterministas por operación/activo; validación de ID, hash, tamaño, nombre y carpeta padre antes de reutilizar; errores de recuperación conservan RECOVERY_REQUIRED.
+- **Archivos:** backend/task-service/Code.gs y tests/security/task-service-backup-restore-contract.test.js.
+- **Criterios pendientes:** Node y pruebas reales Apps Script/Sheets/Drive aisladas, interrupción forzada en fases de creación/mapeo/restauración y verificación de que no aparecen duplicados ni referencias rotas. closeAcademicYear permanece BACKUP_REQUIRED.
+- **Estado:** TASK-636 En ejecución; AUD-NG-369 abierto. No marcar Completada.
+- **Checkpoint:** C1.315; sesión IMA-EXEC-20261109-1650Z-01; Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.315; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.315.
+===============================================================================

@@ -297,3 +297,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-09] IMA-EXEC-20261109-1650Z-01 — TASK-636 / PM-01 / C1.314
 - Code Review añade confirmación explícita confirmed=true y RECOVER-TASK-SERVICE-RESTORE al handler de recuperación compensatoria.
 - Contrato estático ampliado; Node/runtime Apps Script y pruebas aisladas no ejecutados. AUD-NG-369 abierto; closeAcademicYear permanece BACKUP_REQUIRED.
+
+
+[2026-11-09] IMA-EXEC-20261109-1650Z-01 — TASK-636 / PM-01 / C1.315
+- Se serializa la recuperación del journal con ScriptLock y se agrega progreso durable en Drive con marcadores deterministas para impedir copias duplicadas tras interrupciones.
+- Se valida hash/tamaño, nombre y carpeta padre de activos reutilizados; estados inválidos se rechazan y los errores mantienen RECOVERY_REQUIRED.
+- Se amplía el contrato estático; 42/42 comprobaciones equivalentes pasaron. No se ejecutaron Node ni Apps Script/Sheets/Drive aislados.
+- TASK-636 En ejecución; AUD-NG-369 abierto; cierre académico BACKUP_REQUIRED.
+- Checkpoint C1.315: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.315.

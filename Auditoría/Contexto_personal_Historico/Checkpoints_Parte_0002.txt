@@ -1212,3 +1212,71 @@ Ejecutar el contrato Node en el runner del repositorio; después preparar un pro
 - Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.314.
 - Commit de cierre: este commit consolidado; SHA a verificar tras publicar.
 ===============================================================================
+
+
+===============================================================================
+## C1.315 — TASK-636 / PM-01 — recuperación serializada e idempotencia de activos Drive
+ID: C1.315
+Sesión: IMA-EXEC-20261109-1650Z-01
+Fecha: 2026-11-09 UTC
+Checkpoint anterior: C1.314
+Repositorio: i-miss-cocaine/IMA
+Rama de trabajo autorizada: NG_beta_0.0.0.1_work
+HEAD de partida verificado: d7f15ec8ae91df6a33d228750ecd859b42eaecd9
+Tree SHA de partida: dc95884e6917592123056339e8534f450eed8305
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+Tarea activa: TASK-636 — [P0] Cerrar bypasses de autorización y proteger tareas, proyectos y archivos
+Fase: PM-01 — Identidad, seguridad y gobierno de acceso
+Hallazgo existente: AUD-NG-369 — respaldo/restauración verificables antes del cierre académico.
+
+### Continuidad y selección
+- Se continúa desde C1.314 con el mismo ID de sesión; no se reinicia TASK-636 ni se repiten las implementaciones previas.
+- Plan Maestro §6.1: TASK-636 sigue siendo la tarea PM-01/P0 en ejecución; su requisito está en pendientes/Otros/Pendientes.md y la fila de planificación indica que no se declararon dependencias adicionales en el extracto. No se salta a PM-02 mientras esta tarea P0 conserve criterios abiertos.
+- Se aplica metodología §19.6: se reutiliza Auditoría/AUDITORIA_TASK-636_C1.305.md como expediente único; C1.315 es una revisión focalizada de AUD-NG-369, sin informe duplicado ni auditoría recursiva.
+
+### Recuperación y validación del requisito original (regla F)
+- Ruta: pendientes/Otros/Pendientes.md; fetch_file en HEAD devolvió 0 caracteres.
+- HEAD consultado: d7f15ec8ae91df6a33d228750ecd859b42eaecd9; tree: dc95884e6917592123056339e8534f450eed8305.
+- Blob vigente recuperado desde el árbol Git de ese HEAD: 6323f01fc2335df264dfb54d2558bb8ad505a4d8; tamaño Git: 1.648.454 bytes; contenido decodificado: 1.628.735 caracteres y 16.488 líneas. Último commit que tocó la ruta: a44c781ede6f3c9053970647274d04e541c0eb9e.
+- Bloque TASK-636: comienza en la línea 3224, 26 líneas; título P0. Se leyó íntegro: clasificación de acciones públicas, claims verificados, ownership, scopes, excepciones de capacidades opacas y criterios positivos/negativos para tareas, proyectos, aulas, publicaciones, materiales, archivos y cierre.
+- Inventario del backlog actual: 674 encabezados de tarea únicos; categorías AUD 110, F 188, TAREA 79, TASK 255, FASE 19, AUDIT 4 y T 19. Todos los 674 están sin marcar [X]. Último encabezado por orden de archivo: TASK-501; mayor ID por orden alfanumérico: TASK-682.
+- Comparación histórica no sustitutiva con Auditoría/legacy/Pendientes.md: blob 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c, 1.803.672 bytes, 1.782.094 caracteres, 20.182 líneas y 35 IDs únicos marcados históricamente como completados. Tras normalizar mayúsculas hay 3 IDs coincidentes (F10-TASK02, F10-TASK14, F10-TASK15), 32 exclusivos de legacy y 671 exclusivos del backlog actual. No se mezclan ni restauran estados legacy.
+- El blob e9637ecc6f88b2aa0aec75909538e072509bf507 citado en el seguimiento C1.299 es una versión histórica distinta; el árbol del HEAD actual identifica 6323f01fc2335df264dfb54d2558bb8ad505a4d8 como blob vigente. Se conserva la trazabilidad histórica y se registra esta actualización de fuente.
+
+### Hallazgo y corrección C1.315
+- Code Review detectó que dos recuperaciones administrativas concurrentes podían competir por el mismo journal y que una interrupción tras crear un activo Drive podía duplicarlo al repetir la recuperación, porque el ID recreado solo vivía en memoria.
+- recoverTaskServiceAcademicYearRestore ahora adquiere ScriptLock antes de leer/modificar el journal. taskServiceRestoreAcademicYearBackup_ acepta lockAlreadyHeld para reutilizar el lock sin adquisición anidada.
+- Antes de mutar, el restore normal crea un archivo de estado durable en la carpeta del respaldo compensatorio. El estado contiene restoreId e idMap; ScriptProperties conserva el identificador del archivo y los manifiestos.
+- Los activos recreados usan marcadores deterministas por restoreId + originalId. El ID nuevo se persiste antes de quitar el marcador; si el runtime se interrumpe antes de guardar el mapa, la siguiente recuperación localiza el marcador. Los reintentos reutilizan el activo en vez de crear otro.
+- Los activos mapeados se validan por hash/tamaño, nombre y carpeta padre antes de modificar metadatos/permisos. Los marcadores duplicados/ambiguos y estados desconocidos del journal se rechazan.
+- Una recuperación fallida conserva RECOVERY_REQUIRED y error acotado. Los detalles de rollback almacenados en ScriptProperties se limitan para evitar exceder el tamaño de una propiedad.
+- El contrato tests/security/task-service-backup-restore-contract.test.js incorpora comprobaciones de estado Drive, marcadores, lock, retry, estados válidos, parent/name/hash, iteradores Drive y setContent.
+
+### Verificaciones y límites
+- Comprobaciones equivalentes del contrato ejecutadas en el runtime JavaScript de la sesión: 42/42 pasaron sobre los blobs preparados. Delimitadores del bloque modificado balanceados.
+- No se ejecutó el archivo con Node; el repositorio no contiene workflows de GitHub Actions ni package.json/runner configurado. La existencia del binario Node local no se toma como ejecución del test porque los archivos del repo no estaban materializados en ese runtime.
+- Documentación oficial de Apps Script consultada: Drive File.setContent y Folder.getFilesByName/getFoldersByName están disponibles; esta verificación documental no equivale a ejecutar Apps Script.
+- No ejecutadas: Apps Script runtime/parser, proyecto aislado de Sheets/Drive, restauración repetible, interrupciones forzadas en cada fase, HTTP, navegador, E2E ni pruebas por rol.
+- AUD-NG-369 permanece abierto; TASK-636 sigue En ejecución. closeAcademicYear continúa BACKUP_REQUIRED y no se habilita borrado.
+
+### Archivos preparados para el commit único
+1. backend/task-service/Code.gs
+2. tests/security/task-service-backup-restore-contract.test.js
+3. pendientes/Otros/Pendientes.md
+4. tareas_auditoria.txt
+5. Auditoría/AUDITORIA_TASK-636_C1.305.md
+6. Auditoria.txt
+7. changueslogs.txt
+8. Auditoría/MapaDependencias.md
+9. Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+10. Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt
+11. Auditoría/INDICE_CHECKPOINTS.md
+
+### Estado y siguiente acción exacta
+- TASK-636: En ejecución; AUD-NG-369 abierto.
+- Siguiente acción: ejecutar el archivo de contrato con Node en un runner disponible; después preparar un proyecto Apps Script/Sheets/Drive aislado y probar backup/verify/restore, recuperación repetible tras interrupción abrupta en fases de creación/mapeo/restauración, integridad de referencias/IDs/permisos y Log_Cierres. Mantener closeAcademicYear bloqueado hasta evidencias operativas.
+- Requisito original: pendientes/Otros/Pendientes.md — TASK-636, línea inicial 3224 en el blob recuperado; expediente principal Auditoría/AUDITORIA_TASK-636_C1.305.md.
+- Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.315.
+- Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.315.
+- Commit de cierre: el commit único que contiene este checkpoint; SHA a verificar tras publicar.
+===============================================================================

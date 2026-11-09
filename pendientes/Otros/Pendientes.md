@@ -3247,6 +3247,8 @@
 - **Seguimiento C1.310:** el formulario público de admisión persiste y reutiliza draftAccessToken, adjunta la capacidad al envío final, muestra/copia el token de seguimiento y consulta solo datos mínimos; se elimina la dependencia de email/DNI/ID secuencial como credencial.
 - **Seguimiento C1.311:** se retira closeAcademicYear de Profesor y se deshabilita el botón docente; el endpoint sigue BACKUP_REQUIRED. El backup genérico ACADEMIC no es restaurable de forma demostrada; sigue pendiente protocolo dedicado y prueba aislada de hojas/activos Drive.
 
+- **Seguimiento C1.315:** se serializa la recuperación con ScriptLock y se persiste restoreId/idMap en un archivo de estado Drive dentro del respaldo compensatorio. Los marcadores deterministas permiten reanudar copias sin duplicarlas; se valida hash/tamaño, nombre y carpeta padre. Contrato estático equivalente 42/42; Node y Apps Script/Sheets/Drive aislados pendientes. TASK-636 sigue En ejecución; AUD-NG-369 abierto; closeAcademicYear permanece BACKUP_REQUIRED.
+
 ===============================================================================
 
 ---

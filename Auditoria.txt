@@ -379,3 +379,12 @@ Sesión: IMA-EXEC-20261109-1108Z-01; HEAD de partida: 32b8f5884dd24dbeaf1a3bf028
 
 - Se exige confirmed=true y el código RECOVER-TASK-SERVICE-RESTORE para iniciar la recuperación compensatoria; se mantiene el guard de Administrador/Desarrollador.
 - Se amplía el contrato estático para comprobar la confirmación explícita. Sin pruebas Node/runtime; AUD-NG-369 abierto y cierre académico bloqueado.
+
+
+## Seguimiento C1.315 — AUD-NG-369 / recuperación serializada e idempotente
+- Se corrige la carrera de recuperación mediante un único ScriptLock compartido, sin adquisición anidada.
+- Se incorpora estado durable de progreso en Drive y marcadores deterministas para reutilizar activos recreados tras una interrupción, validando hash/tamaño, nombre y carpeta padre.
+- Se amplía el contrato estático; 42/42 comprobaciones equivalentes en runtime JavaScript pasaron. No se ejecutó Node ni Apps Script/Sheets/Drive aislados.
+- TASK-636 sigue En ejecución; AUD-NG-369 abierto; closeAcademicYear permanece BACKUP_REQUIRED.
+- Recuperación del requisito original: fetch_file devolvió 0 caracteres, pero el árbol Git del HEAD d7f15ec8ae91df6a33d228750ecd859b42eaecd9 identifica blob 6323f01fc2335df264dfb54d2558bb8ad505a4d8 (1.648.454 bytes); se recuperó íntegramente. El blob e9637ecc6f88b2aa0aec75909538e072509bf507 citado en C1.299 corresponde a una versión histórica anterior, no al blob actual.
+- Checkpoint C1.315: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.315; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.315.
