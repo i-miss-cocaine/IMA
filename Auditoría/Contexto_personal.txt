@@ -9658,3 +9658,29 @@ Auditar TAREA-F6-015 y TAREA-F6-040. Buscar informes individuales e historial en
 - **Siguiente tarea exacta:** TASK-638 — Trazar dependencias estáticas y dinámicas de extremo a extremo; `pendientes/Contabilidad/Pendientes.md`.
 - **Próxima acción:** auditar el cierre final de TASK-637 y después abrir el requisito íntegro de TASK-638; verificar dependencia TASK-637 antes de avanzar.
 - **Commit de cierre:** el commit único que contiene este checkpoint; SHA final confirmado externamente después de publicar.
+
+
+===============================================================================
+## C1.284 — Regla excepcional de corrección de auditoría previa y commits A/B (2026-11-09)
+
+- **ID de sesión operativo:** IMA-GOV-20261109-0313Z-01.
+- **Estado:** cambio documental preparado para publicación y verificación.
+- **Checkpoint inicial:** C1.283. **Checkpoint de cierre:** C1.284.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **HEAD de partida verificado:** 9f2f4f1c4da7cd9f896d56e5d20e1cce5ff6f90e.
+- **Rama base protegida:** NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59; se conserva sin modificaciones.
+- **Fase metodológica:** gobierno del proceso; actualización de continuidad, auditoría previa y control de commits.
+- **Fase PM:** PM-00 — inventario, triage y dependencias.
+- **ID de tarea:** PLAN-IMA-005 (actividad operativa de metodología; no es ID de tarea de producto).
+- **Contexto:** el usuario solicitó un algoritmo de recuperación para archivos incompletos/corruptos y una regla expresa para resolver hallazgos detectados al auditar la tarea anterior antes de ejecutar la tarea actual, permitiendo dos commits únicamente en ese caso.
+- **Cambio realizado:** la metodología define la excepción 19.2.1. El flujo normal conserva un commit por iteración. Si la auditoría de la tarea anterior detecta un hallazgo accionable que exige corrección, se congela la tarea actual, se corrige exclusivamente la anterior y se publica el commit A con checkpoint A; se verifica A antes de iniciar la tarea actual; luego se ejecuta la tarea actual y se publica el commit B con checkpoint B.
+- **Límites:** exactamente dos commits; sin tercer commit; A no contiene cambios de la tarea actual; B toma A como ancestro; ambos checkpoints son independientes; no se activa por hallazgos de la tarea objetivo, mejoras opcionales ni bloqueos técnicos.
+- **Continuidad de producto:** última tarea de producto registrada: TASK-637, completada tras reauditoría C1.283. Siguiente tarea: TASK-638, aún pendiente de auditoría previa de TASK-637 y de su propio requisito; no se inició su implementación en esta sesión.
+- **Archivos modificados:** METODOLOGIA_DESARROLLO.md; changueslogs.txt; Auditoría/Contexto_personal.txt.
+- **Archivos revisados sin modificación:** Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; Auditoria.txt; tareas_auditoria.txt; pendientes/Contabilidad/Pendientes.md; informe AUDITORIA_TASK-637_C1.283.md.
+- **Verificaciones:** coherencia de reglas de commit único y excepción; secuencia de 19.2/19.2.1/19.5; límites de dos commits; conservación del historial del contexto y changelog; comprobación de rama y HEAD.
+- **Pruebas no ejecutadas:** pruebas de aplicación, Apps Script runtime, navegador, HTTP y E2E; no aplican a este cambio metodológico.
+- **Siguiente acción exacta:** iniciar nueva sesión desde C1.284; auditar el cierre de TASK-637 y, si no hay hallazgos accionables pendientes, auditar y ejecutar TASK-638 conforme al Plan Maestro.
+- **Commit de cierre:** se confirmará externamente consultando el HEAD de la rama después de publicar.
+===============================================================================
