@@ -2095,3 +2095,7 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 
 ## 10.30 Corrección de snapshots Date — C1.346
 - El run 42713422124 detectó que los helpers de serialización tipada no existían porque la inserción buscaba otra firma de migrationSafeCell_. Se incorporan ambos helpers en USER/ACADEMIC; CI pendiente.
+
+
+## 10.31 Ajuste del fixture writer real — C1.347
+- El run 42713587990 detectó referencia target no inicializada en el mock. Se obtiene la hoja tras la primera escritura del writer real; producción sin cambios. CI pendiente.

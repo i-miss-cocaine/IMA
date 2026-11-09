@@ -450,3 +450,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-09] C1.346 — CI 42713422124 detectó que los helpers migrationEncodeSnapshot_/migrationDecodeSnapshot_ no se habían insertado por mismatch de firma; se añaden en USER/ACADEMIC. Sin cambio de lógica de escritura/transporte; CI nuevo pendiente. Checkpoint Parte_0003 C1.346.
+
+
+[2026-11-09] C1.347 — CI 42713587990 detectó que el harness tomaba referencia de hoja destino antes de que el writer la creara. Se captura después de primera inserción; sin cambios de producción; CI pendiente. Checkpoint Parte_0003 C1.347.

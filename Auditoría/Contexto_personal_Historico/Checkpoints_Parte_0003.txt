@@ -459,3 +459,16 @@ Checkpoint anterior: C1.345
 Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.346.
 Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.346.
 ===============================================================================
+
+
+===============================================================================
+## C1.347 — Ajuste de inicialización del fixture de writer real
+ID: C1.347
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.346
+- CI run 42713587990 confirmó que el harness ya extrae las funciones reales, pero falló porque guardaba la referencia target antes de que applyTrustedMigrationWrite_ creara la hoja destino.
+- Se captura la hoja después de la primera inserción; el fixture mantiene el modelo de hoja vacía y la inicialización de encabezados por el writer.
+- No se modifica código de producción. Nuevo CI pendiente.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.347.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.347.
+===============================================================================

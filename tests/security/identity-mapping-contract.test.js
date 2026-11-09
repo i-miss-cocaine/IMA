@@ -104,10 +104,10 @@ function runMigrationWriterFixture(source,entity){
  const sheets={},ctx={SPREADSHEET_ID:"LOCAL",SpreadsheetApp:{openById:()=>ss},LockService:{getScriptLock:()=>({waitLock:()=>{},releaseLock:()=>{}})},Date,JSON,String,Object,Array,Error};
  const ss={getSheetByName:n=>sheets[n]||null,insertSheet:n=>sheets[n]=makeMigrationSheet(n==="MigracionEscrituras"?ctx.journalHeaders:ctx.schemas[entity].headers)};
  vm.runInNewContext(code,ctx);
- const schema=ctx.schemas[entity],target=sheets[schema.sheet],journal=sheets.MigracionEscrituras;
+ const schema=ctx.schemas[entity];
  const data={};schema.headers.slice(1).forEach((h,i)=>data[h]="v"+i);
  const input={tipoEntidad:entity,idNuevoPlataforma:"INT-001",idempotencyKey:"MIG-001",datos:data};
- assert.equal(ctx.apply(input).accion,"INSERT");assert.equal(ctx.apply(input).idempotent,true);assert.equal(target.rows.length,2);
+ assert.equal(ctx.apply(input).accion,"INSERT");const target=sheets[schema.sheet];assert.equal(ctx.apply(input).idempotent,true);assert.equal(target.rows.length,2);
  assert.throws(()=>ctx.apply(Object.assign({},input,{datos:Object.assign({},data,{[schema.headers[1]]:"different"})})),/MIGRATION_IDEMPOTENCY_CONFLICT/);
  assert.equal(ctx.compensate({idempotencyKey:"MIG-001"}).compensated,true);assert.equal(target.rows.length,1);assert.equal(ctx.compensate({idempotencyKey:"MIG-001"}).idempotent,true);
  const dateField=schema.headers.find(h=>/^Fecha/.test(h)),dateIndex=schema.headers.indexOf(dateField),oldRow=schema.headers.map(()=>"");oldRow[0]="INT-OLD";oldRow[1]="Original";oldRow[dateIndex]=new Date("2020-02-03T04:05:06.000Z");target.rows.push(oldRow);
