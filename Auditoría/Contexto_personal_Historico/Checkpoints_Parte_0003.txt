@@ -416,3 +416,18 @@ Checkpoint anterior: C1.342
 Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.343.
 Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.343.
 ===============================================================================
+
+
+===============================================================================
+## C1.344 — TASK-068: snapshots de compensación con tipos preservados
+ID: C1.344
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.343
+- CI run 42713049025: completed/success. Contrato de identidad y TASK-030 transport access scope pasaron; fixtures HMAC verificaron firma, origen, alteración de payload y anti-replay en USER y ACADEMIC.
+- Se detecta riesgo en snapshots: JSON.stringify convertía objetos Date de Sheets a texto ISO; la compensación podía restaurar el valor como string y alterar el tipo original.
+- Se agrega codificación/decodificación tipada de snapshots Date en USER y ACADEMIC.
+- Se corrige el harness para extraer y ejecutar las funciones writer reales de ambos servicios, no copias duplicadas en el test. Se amplían pruebas a UPDATE y restauración de Date.
+- CI nuevo pendiente. Sin Apps Script/Sheets reales, HTTP ni beta.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.344.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.344.
+===============================================================================

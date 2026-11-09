@@ -2079,3 +2079,10 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 ## 10.27 Ajuste de aserciones HMAC — C1.343
 - El run 42712911846 superó los casos funcionales locales de writer y HMAC, pero falló en aserciones que esperaban getProperty(URL) literal.
 - Se verifican los valores urlProperty del registro de rutas, que es la forma real de acceso en la implementación. Sin cambios de producción; CI nuevo pendiente.
+
+
+## 10.28 TASK-068 — integridad de snapshots y pruebas de writer real C1.344
+- CI 42713049025: success en contrato de identidad/HMAC y TASK-030 transport scope.
+- Los snapshots de compensación ahora codifican Date con marcador tipado y los reconstruyen como Date; evita degradar celdas de fecha a strings en rollback.
+- El harness Node extrae los helpers reales de USER/ACADEMIC; cubre insert, retry idempotente, conflicto, compensación insert y UPDATE con restauración de Date.
+- Nuevo CI pendiente; no servicios vivos ni beta.

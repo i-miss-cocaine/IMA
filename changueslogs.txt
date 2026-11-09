@@ -441,3 +441,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-09] C1.343 — CI 42712911846 superó fixtures de writer y HMAC (firma, origen, tamper y anti-replay), pero falló en aserciones literales de URL; se ajustan a route.urlProperty. Sin cambios de producción; nuevo CI pendiente. Checkpoint Parte_0003 C1.343.
+
+
+[2026-11-09] C1.344 — CI 42713049025 success para identity mapping y TASK-030 transport. Se corrige conservación de Date en snapshots de compensación y el harness pasa a extraer writers reales de USER/ACADEMIC; pruebas amplían UPDATE/restore Date. Nuevo CI pendiente. Checkpoint Parte_0003 C1.344.
