@@ -1032,3 +1032,74 @@ Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002
 Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.311.
 Commit de cierre: el commit único que contiene este checkpoint; SHA verificado externamente.
 ===============================================================================
+
+
+===============================================================================
+## C1.312 — TASK-636 / PM-01 — protocolo dedicado de backup/restore (implementación parcial)
+ID: C1.312
+Sesión: IMA-EXEC-20261109-1618Z-01
+Fecha: 2026-11-09 UTC
+Checkpoint anterior: C1.311
+Repositorio: i-miss-cocaine/IMA
+Rama autorizada: NG_beta_0.0.0.1_work
+HEAD de partida de esta consolidación: cad69a6476f58eaa50d39848a020d17c7db8a588
+Tree de partida: e5552e4ca8eb9b76c63bca92b73d3088b7517650
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+Tarea: TASK-636 — Cerrar bypasses de autorización y proteger tareas, proyectos y archivos
+Fase PM: PM-01 — Identidad, seguridad y gobierno de acceso
+Prioridad: P0
+Requisito original: pendientes/Otros/Pendientes.md — bloque TASK-636; blob verificado íntegramente en la rama (el fetch de archivo grande puede devolver contenido vacío; el blob actual C1.311 es recuperable y no se reconstruye).
+Hallazgo focalizado: AUD-NG-369 — cierre académico destructivo sin respaldo restaurable.
+
+### Continuidad, selección y auditoría única
+- C1.311 es el último checkpoint válido anterior; su commit fue padre del commit de código C1.312.
+- La rama base continúa en 44d9891132332e692dbe2ba8602b41f50a508a59; no se modificó.
+- PM-00 (TASK-637/638/639) permanece cerrado según sus checkpoints; no hay hallazgo nuevo que obligue a reabrir esas tareas.
+- TASK-636 sigue siendo la tarea PM-01/P0 en ejecución; no se selecciona otra tarea porque el alcance pendiente documentado en C1.311 pertenece a esta misma tarea.
+- Se reutiliza Auditoría/AUDITORIA_TASK-636_C1.305.md como expediente principal y se agrega revisión focalizada C1.312 conforme a metodología §19.6. No se crea informe completo duplicado.
+- Requisito original recuperado del blob Git; no se modifica ni se sustituye el backlog de Otros.
+
+### Implementación C1.312
+1. backend/task-service/Code.gs:
+   - Acciones administrativas para crear, verificar y restaurar el respaldo académico; cada handler exige claims verificados Administrador/Desarrollador.
+   - Manifiesto versionado con SHA-256 estricto y snapshots de Tareas, Entregas y ConfiguracionAcademica; incluye Log_Cierres, EntregasVersiones y MetadatosArchivos cuando existen.
+   - Log_Cierres se verifica como append-only y no se sobrescribe durante la restauración.
+   - Captura recursiva de activos Drive referenciados por Entregas/EntregasVersiones, con SHA-256, tamaño, MIME, jerarquía y permisos; activos públicos o no verificables bloquean el backup.
+   - Restauración con prevalidación, LockService, conservación de IDs íntegros, recreación y remapeo de IDs cuando es necesario, verificación de hojas/fórmulas/activos/permisos y rollback compensatorio ante errores capturados.
+   - closeAcademicYear continúa BACKUP_REQUIRED; no hay eliminación habilitada.
+2. tests/security/task-service-backup-restore-contract.test.js: nuevo contrato estático de invariantes del protocolo.
+
+### Auditoría, verificaciones y límites
+- Autoauditoría estática ejecutada sobre: guard administrativo de cada handler; acciones no públicas; SHA-256 estricto; alcance de hojas; verificación de activos y permisos; LockService; preservación append-only de Log_Cierres; rollback compensatorio; cierre fail-closed.
+- El script Node del nuevo contrato no se ejecutó. No se afirma que haya pasado.
+- No ejecutadas: parser/runtime Apps Script, Sheets/Drive reales, restauración aislada repetible, pruebas de rollback con interrupción, HTTP, navegador, E2E ni pruebas por rol.
+- Limitación abierta: el journal compensatorio vive en memoria; una terminación abrupta del runtime puede impedir rollback. Debe añadirse journal durable/recuperación y probarse antes de habilitar closeAcademicYear.
+- AUD-NG-369 permanece abierto; TASK-636 continúa En ejecución, no Completada.
+
+### Archivos modificados/revisados
+Modificados:
+1. backend/task-service/Code.gs
+2. tests/security/task-service-backup-restore-contract.test.js
+3. Auditoría/AUDITORIA_TASK-636_C1.305.md
+4. Auditoria.txt
+5. Auditoría/MapaDependencias.md
+6. Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+7. changueslogs.txt
+8. Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt
+9. Auditoría/INDICE_CHECKPOINTS.md
+
+Revisados sin modificación: METODOLOGIA_DESARROLLO.md; Auditoría/Contexto_personal.txt; Auditoría/MapaDependencias.md; Auditoría/INDICE_CHECKPOINTS.md; Auditoria.txt; tareas_auditoria.txt; changueslogs.txt; pendientes/Otros/Pendientes.md (blob recuperado); backend/academic-service/Code.gs; js/teacher.js; expediente principal TASK-636; auditorías fuente C1.299–C1.311.
+
+### Desviación de proceso y publicación
+- La operación update_file utilizada para incorporar el código generó automáticamente un commit de un solo archivo (cad69a6476f58eaa50d39848a020d17c7db8a588) antes de cerrar el expediente y checkpoint, contrario a la regla de commit único por iteración.
+- No se usa force-push, reset ni reescritura de historia. Esta consolidación registra la desviación y deja checkpoint verificable; el incidente de proceso no se oculta ni se considera una aprobación de la implementación.
+
+### Estado y siguiente acción exacta
+- TASK-636: En ejecución.
+- AUD-NG-369: abierto; implementación parcial.
+- Siguiente acción: diseñar e implementar journal durable de operaciones de restore/rollback con recuperación al reiniciar el runtime; ampliar el contrato de pruebas y ejecutar pruebas aisladas Apps Script/Sheets/Drive, incluida interrupción forzada, verificación de IDs/permisos y repetibilidad. Mantener closeAcademicYear bloqueado.
+- Requisitos originales: pendientes/Otros/Pendientes.md — bloque TASK-636; informe principal: Auditoría/AUDITORIA_TASK-636_C1.305.md.
+- Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.312.
+- Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.312.
+- Commit de cierre: este commit consolidado; SHA a verificar externamente después de publicar.
+===============================================================================

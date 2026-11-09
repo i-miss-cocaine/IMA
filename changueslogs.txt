@@ -278,3 +278,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Código histórico confirma borrado global de Entregas/recursos Drive y filtrado por profesorId para Tareas/ConfiguracionAcademica; backupId era sintético. El backup genérico ACADEMIC no cumple integridad/restauración/rollback.
 - No se habilita cierre destructivo. AUD-NG-369 abierto; TASK-636 En ejecución. Verificaciones estáticas; runtime/restauración real pendientes.
 - Checkpoint C1.311: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.311; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.311.
+
+
+[2026-11-09] IMA-EXEC-20261109-1618Z-01 — TASK-636 / PM-01 / C1.312
+- Task-Service incorpora handlers administrativos para backup, verificación SHA-256 y restauración de Tareas/Entregas/ConfiguracionAcademica y activos Drive relacionados.
+- Se preserva Log_Cierres como historial append-only; la restauración usa lock, verifica hojas/activos/permisos y aplica compensación ante errores capturados.
+- closeAcademicYear continúa bloqueado con BACKUP_REQUIRED; el rollback en memoria no cubre terminación abrupta y debe evolucionar a journal durable.
+- Se agrega contrato estático Node; no se ejecutó Node ni Apps Script/Sheets/Drive aislados. No se declaran pruebas funcionales.
+- TASK-636 En ejecución; AUD-NG-369 abierto. Desviación de commit previo al checkpoint registrada en C1.312.

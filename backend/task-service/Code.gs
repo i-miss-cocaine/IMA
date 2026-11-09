@@ -471,7 +471,9 @@ function assertTaskServiceBackupAdministrator_(payload) {
 
 function taskServiceBackupSha256_(value, isBytes) {
   const bytes = isBytes ? value : String(value);
-  const digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, bytes, isBytes ? undefined : Utilities.Charset.UTF_8);
+  const digest = isBytes
+    ? Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, bytes)
+    : Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, bytes, Utilities.Charset.UTF_8);
   return digest.map(function (b) { return ("0" + ((b + 256) % 256).toString(16)).slice(-2); }).join("");
 }
 
@@ -498,6 +500,29 @@ function taskServiceBackupParentId_(item) {
   return parents.hasNext() ? parents.next().getId() : DriveApp.getRootFolder().getId();
 }
 
+function taskServiceBackupCaptureSharing_(item) {
+  const access = String(item.getSharingAccess() || DriveApp.Access.PRIVATE);
+  const permission = String(item.getSharingPermission() || DriveApp.Permission.VIEW);
+  if (access === String(DriveApp.Access.ANYONE) || access === String(DriveApp.Access.ANYONE_WITH_LINK)) throw new Error("Activo Drive con acceso público no puede incorporarse al respaldo: " + item.getId());
+  const editors = item.getEditors().map(function (user) { return user.getEmail(); }).filter(Boolean).sort();
+  const viewers = item.getViewers().map(function (user) { return user.getEmail(); }).filter(Boolean).sort();
+  return { access: access, permission: permission, editors: editors, viewers: viewers };
+}
+function taskServiceBackupVerifySharing_(item, expected) {
+  const actual = taskServiceBackupCaptureSharing_(item);
+  return actual.access === expected.access && actual.permission === expected.permission &&
+    JSON.stringify(actual.editors) === JSON.stringify((expected.editors || []).slice().sort()) &&
+    JSON.stringify(actual.viewers) === JSON.stringify((expected.viewers || []).slice().sort());
+}
+function taskServiceBackupApplySharing_(item, sharing) {
+  if (!sharing) throw new Error("Manifiesto sin permisos de Drive.");
+  const access = DriveApp.Access[sharing.access], permission = DriveApp.Permission[sharing.permission];
+  if (!access || !permission) throw new Error("Permisos Drive no reconocidos en el manifiesto.");
+  item.setSharing(access, permission);
+  (sharing.editors || []).forEach(function (email) { item.addEditor(email); });
+  (sharing.viewers || []).forEach(function (email) { item.addViewer(email); });
+  if (!taskServiceBackupVerifySharing_(item, sharing)) throw new Error("Los permisos del activo restaurado no coinciden con el manifiesto.");
+}
 function taskServiceBackupCaptureAsset_(originalId, backupParent, visited) {
   const id = String(originalId || "").trim();
   if (!id) throw new Error("Referencia Drive vacía durante el respaldo.");
@@ -515,7 +540,7 @@ function taskServiceBackupCaptureAsset_(originalId, backupParent, visited) {
       throw new Error("La copia del activo Drive no coincide con el original: " + id);
     }
     const node = { kind: "file", originalId: id, backupId: copy.getId(), name: file.getName(), mimeType: file.getMimeType(),
-      sizeBytes: file.getSize(), sha256: originalHash, parentId: taskServiceBackupParentId_(file) };
+      sizeBytes: file.getSize(), sha256: originalHash, parentId: taskServiceBackupParentId_(file), sharing: taskServiceBackupCaptureSharing_(file) };
     visited[id] = node;
     return node;
   }
@@ -525,7 +550,7 @@ function taskServiceBackupCaptureAsset_(originalId, backupParent, visited) {
   if (!folder || folder.isTrashed()) throw new Error("Activo Drive inexistente o en papelera: " + id);
   const backupFolder = backupParent.createFolder(folder.getName());
   const folderNode = { kind: "folder", originalId: id, backupId: backupFolder.getId(), name: folder.getName(),
-    parentId: taskServiceBackupParentId_(folder), children: [] };
+    parentId: taskServiceBackupParentId_(folder), sharing: taskServiceBackupCaptureSharing_(folder), children: [] };
   visited[id] = folderNode;
   const files = folder.getFiles();
   while (files.hasNext()) folderNode.children.push(taskServiceBackupCaptureAsset_(files.next().getId(), backupFolder, visited));
@@ -652,10 +677,12 @@ function taskServiceRestoreAsset_(node, parentFolder, idMap, journal) {
     if (!folder) {
       folder = parentFolder.createFolder(node.name);
       journal.push({ kind: "createdFolder", id: folder.getId() });
+      taskServiceBackupApplySharing_(folder, node.sharing);
     } else if (folder.isTrashed()) {
       folder.setTrashed(false);
       journal.push({ kind: "untrashedFolder", id: folder.getId() });
     }
+    if (!taskServiceBackupVerifySharing_(folder, node.sharing)) throw new Error("Permisos de carpeta cambiaron desde el respaldo: " + node.originalId);
     idMap[node.originalId] = folder.getId();
     (node.children || []).forEach(function (child) { taskServiceRestoreAsset_(child, folder, idMap, journal); });
     return;
@@ -671,16 +698,16 @@ function taskServiceRestoreAsset_(node, parentFolder, idMap, journal) {
   if (original) {
     const originalHash = taskServiceBackupSha256_(original.getBlob().getBytes(), true);
     if (originalHash === node.sha256 && Number(original.getSize()) === Number(node.sizeBytes)) {
+      if (!taskServiceBackupVerifySharing_(original, node.sharing)) throw new Error("Permisos del archivo cambiaron desde el respaldo: " + node.originalId);
       idMap[node.originalId] = original.getId();
       return;
     }
   }
   const restored = backupFile.makeCopy(node.name, parentFolder);
   journal.push({ kind: "createdFile", id: restored.getId() });
+  taskServiceBackupApplySharing_(restored, node.sharing);
   const restoredHash = taskServiceBackupSha256_(restored.getBlob().getBytes(), true);
-  if (restoredHash !== node.sha256 || Number(restored.getSize()) !== Number(node.sizeBytes)) {
-    throw new Error("La copia restaurada no coincide con el manifiesto: " + node.originalId);
-  }
+  if (restoredHash !== node.sha256 || Number(restored.getSize()) !== Number(node.sizeBytes)) throw new Error("La copia restaurada no coincide con el manifiesto: " + node.originalId);
   idMap[node.originalId] = restored.getId();
 }
 
@@ -740,26 +767,49 @@ function taskServiceVerifyRestoredSheet_(sheet, expected) {
   return true;
 }
 
+function taskServiceVerifyAppendOnlyBackupLog_(ss, snapshot) {
+  const sheet = ss.getSheetByName(snapshot.name);
+  if (!sheet) return snapshot.rows === 0;
+  const actual = taskServiceBackupSnapshotSheet_(sheet);
+  if (actual.rows < snapshot.rows || actual.columns < snapshot.columns) return false;
+  for (let r = 0; r < snapshot.rows; r++) for (let c = 0; c < snapshot.columns; c++) {
+    const formula = snapshot.formulas && snapshot.formulas[r] ? snapshot.formulas[r][c] : "";
+    const actualFormula = actual.formulas && actual.formulas[r] ? actual.formulas[r][c] : "";
+    if (String(formula || "") !== String(actualFormula || "")) return false;
+    if (!formula && JSON.stringify(actual.values[r][c]) !== JSON.stringify(snapshot.values[r][c])) return false;
+  }
+  return true;
+}
 function taskServiceRestoreAcademicYearBackup_(manifestFileId, actor) {
   const manifest = taskServiceReadAcademicYearBackup_(manifestFileId);
   taskServiceVerifyAcademicYearBackup_(manifestFileId);
   const lock = LockService.getScriptLock();
   lock.waitLock(30000);
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID), before = {}, createdSheets = [], journal = [], idMap = {};
-  manifest.sheets.forEach(function (snapshot) {
-    const existing = ss.getSheetByName(snapshot.name);
-    before[snapshot.name] = existing ? taskServiceBackupSnapshotSheet_(existing) : null;
-  });
+  let ss = null;
+  const before = {}, journal = [], idMap = {};
   try {
-    manifest.assets.forEach(function (node) {
-      let parent = null;
-      try { parent = DriveApp.getFolderById(node.parentId); } catch (_) {}
-      if (!parent || parent.isTrashed()) parent = DriveApp.getRootFolder();
+    ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    manifest.sheets.filter(function (s) { return s.name !== "Log_Cierres"; }).forEach(function (snapshot) {
+      const existing = ss.getSheetByName(snapshot.name);
+      before[snapshot.name] = existing ? taskServiceBackupSnapshotSheet_(existing) : null;
+    });
+    const allAssets = {};
+    function indexAsset(node) { allAssets[node.originalId] = node; (node.children || []).forEach(indexAsset); }
+    manifest.assets.forEach(indexAsset);
+    function assetDepth(node, seen) {
+      seen = seen || {};
+      if (seen[node.originalId] || !allAssets[node.parentId]) return 0;
+      seen[node.originalId] = true;
+      return 1 + assetDepth(allAssets[node.parentId], seen);
+    }
+    manifest.assets.slice().sort(function (a, b) { return assetDepth(a) - assetDepth(b); }).forEach(function (node) {
+      let parent = idMap[node.parentId] ? DriveApp.getFolderById(idMap[node.parentId]) : null;
+      if (!parent) { try { parent = DriveApp.getFolderById(node.parentId); } catch (_) {} }
+      if (!parent || parent.isTrashed()) throw new Error("Carpeta padre original no disponible para restaurar activo: " + node.originalId);
       taskServiceRestoreAsset_(node, parent, idMap, journal);
     });
-    const expected = manifest.sheets.map(function (snapshot) {
+    const expected = manifest.sheets.filter(function (s) { return s.name !== "Log_Cierres"; }).map(function (snapshot) {
       const copy = JSON.parse(JSON.stringify(snapshot));
-      taskServiceRestoreSheetSnapshot_(ss, copy);
       taskServiceRewriteBackupReferences_(copy, idMap);
       taskServiceRestoreSheetSnapshot_(ss, copy);
       return copy;
@@ -768,6 +818,9 @@ function taskServiceRestoreAcademicYearBackup_(manifestFileId, actor) {
       const restored = ss.getSheetByName(snapshot.name);
       if (!restored || !taskServiceVerifyRestoredSheet_(restored, snapshot)) throw new Error("Verificación post-restauración fallida en hoja " + snapshot.name);
     });
+    const auditSnapshot = manifest.sheets.find(function (s) { return s.name === "Log_Cierres"; });
+    if (auditSnapshot && !taskServiceVerifyAppendOnlyBackupLog_(ss, auditSnapshot)) throw new Error("El registro Log_Cierres no conserva su historial previo.");
+
     manifest.assets.forEach(function (node) {
       function verifyRestored(n) {
         const id = idMap[n.originalId] || n.originalId;

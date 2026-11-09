@@ -1901,3 +1901,13 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - AUD-NG-369 sigue abierto. El backup genérico ACADEMIC no es evidencia válida de restauración; se requiere protocolo específico de Task-Service para Tareas, Entregas, ConfiguracionAcademica y activos Drive, con SHA-256 estricto, prevalidación, lock, rollback y verificación post-restore.
 - No se habilita el cierre ni se declara prueba funcional. Apps Script runtime, Sheets/Drive reales y restauración aislada siguen pendientes.
 - Checkpoint C1.311: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.311; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.311.
+
+
+## 10.10 Seguimiento de ejecución del Plan Maestro — C1.312
+
+- TASK-636 — PM-01/P0 — En ejecución. Se incorpora el protocolo dedicado Task-Service para crear, verificar y restaurar snapshots de Tareas, Entregas, ConfiguracionAcademica y activos Drive referenciados; se incluyen hojas relacionadas y Log_Cierres append-only.
+- El manifiesto y cada activo se verifican con SHA-256; la restauración usa LockService, remapea referencias/IDs y comprueba datos, fórmulas, activos y permisos. El rollback compensatorio es en memoria y no cubre terminación abrupta.
+- closeAcademicYear permanece BACKUP_REQUIRED. No se habilita borrado hasta journal durable y restauración/rollback real en entorno aislado.
+- AUD-NG-369 abierto; TASK-636 no completada. Script Node estático añadido pero no ejecutado; Apps Script, Sheets/Drive, HTTP, navegador y E2E no ejecutados.
+- Desviación registrada: commit de código cad69a6476f58eaa50d39848a020d17c7db8a588 se generó antes de la consolidación del checkpoint; no se reescribe historia.
+- Checkpoint C1.312: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.312; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.312.

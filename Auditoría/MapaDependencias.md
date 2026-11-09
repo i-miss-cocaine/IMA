@@ -4850,3 +4850,12 @@ Alcance estático satisfecho; sin cambios de código. Hallazgos AUD-NG-374..376 
 - Alcance histórico confirmado: Tareas, Entregas, ConfiguracionAcademica, Log_Cierres y activos Drive referenciados por Entregas. No se observó cierre de Examenes/PreguntasExamen/EntregasExamen.
 - Cierre sigue fail-closed. Próximo: protocolo dedicado con manifiesto SHA-256, prevalidación, lock, rollback y restauración verificada de hojas y activos Drive; no ejecutar sobre producción.
 - Checkpoint C1.311: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.311; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.311.
+
+
+## TASK-636 — C1.312: protocolo dedicado de respaldo/restauración
+
+- backend/task-service/Code.gs incorpora tres acciones administrativas para crear, verificar y restaurar el respaldo académico; el acceso se vuelve a restringir por claims de Administrador/Desarrollador en cada handler.
+- Las hojas incluidas son Tareas, Entregas y ConfiguracionAcademica; se capturan además Log_Cierres (solo verificación append-only), EntregasVersiones y MetadatosArchivos cuando existen.
+- Los activos Drive se capturan recursivamente desde Entregas/EntregasVersiones, incluyendo hash SHA-256, tamaño, jerarquía y permisos. La restauración remapea IDs cuando debe recrear archivos.
+- Prevalidación de manifiesto/activos, LockService, verificación post-restore y rollback compensatorio en memoria. La terminación abrupta aún no tiene recuperación durable.
+- closeAcademicYear permanece BACKUP_REQUIRED; no hay ruta de borrado habilitada. Runtime y restauración aislada pendientes.

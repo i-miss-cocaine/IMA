@@ -144,3 +144,19 @@ Endurecer las excepciones públicas de backend/academic-service/Code.gs mediante
 - Próximo: protocolo dedicado, aislado y restaurable para Tareas, Entregas, ConfiguracionAcademica y activos Drive. Mantener BACKUP_REQUIRED hasta prueba real de restauración/rollback.
 - Verificación estática únicamente; runtime Apps Script, Sheets/Drive reales, navegador, HTTP, E2E y pruebas por rol no ejecutados. AUD-NG-369 abierto; TASK-636 En ejecución.
 - Checkpoint C1.311: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.311; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.311.
+
+
+## Revisión focalizada C1.312 — protocolo dedicado de backup/restore para AUD-NG-369
+
+- Requisito rector: TASK-636, P0, PM-01; fuente original recuperada del blob pendientes/Otros/Pendientes.md. El alcance del cierre histórico incluye Tareas, Entregas, ConfiguracionAcademica, Log_Cierres y activos Drive referenciados por Entregas.
+- Auditoría única: se reutiliza este expediente principal. C1.311 ya había documentado el defecto del backup genérico ACADEMIC; no se crea otro informe completo ni se reauditan hallazgos no afectados.
+- Implementación C1.312: Task-Service incorpora handlers administrativos createTaskServiceAcademicYearBackup, verifyTaskServiceAcademicYearBackup y restoreTaskServiceAcademicYearBackup. Cada handler vuelve a comprobar claims de Administrador/Desarrollador; no se agregan acciones públicas.
+- El manifiesto versionado contiene snapshots de Tareas, Entregas y ConfiguracionAcademica; incluye Log_Cierres, EntregasVersiones y MetadatosArchivos cuando existen. Log_Cierres se verifica como historial append-only y no se sobrescribe durante una restauración.
+- Se respaldan recursivamente los archivos/carpetas Drive referenciados por Entregas y EntregasVersiones; se registra tamaño, SHA-256, jerarquía, MIME y permisos de acceso/editores/lectores. Los activos públicos o no verificables hacen fallar el respaldo.
+- La verificación recalcula SHA-256 del manifiesto y de cada archivo copiado; no acepta checksums vacíos ni sustitutos débiles. La restauración valida manifiesto y activos antes de mutar, usa LockService, conserva IDs originales cuando los activos siguen íntegros, recrea copias cuando faltan y actualiza referencias en las hojas. Verifica datos, fórmulas, activos y permisos después de restaurar.
+- Los errores capturados disparan rollback compensatorio de hojas y activos creados/destrashed, con resultado explícito RESTORE_FAILED_ROLLED_BACK o RESTORE_FAILED_ROLLBACK_INCOMPLETE. Limitación conocida: el journal de compensación es en memoria; una terminación abrupta del runtime puede impedir ejecutarlo. Se requiere journal durable y prueba de interrupción antes de considerar satisfecho el criterio de rollback.
+- closeAcademicYear permanece fail-closed con BACKUP_REQUIRED. No se habilita ningún borrado ni se declara el backup/restore certificado.
+- Se añade tests/security/task-service-backup-restore-contract.test.js como contrato estático. Se ejecutaron inspecciones estáticas de las invariantes del código; el script Node no se ejecutó en este entorno.
+- No ejecutadas: parser/runtime Apps Script, Sheets/Drive reales, restauración aislada repetible, rollback ante interrupción, HTTP, navegador, E2E ni pruebas por rol. No se declaran PASS dinámicos.
+- Desviación de publicación: la actualización inicial de backend/task-service/Code.gs mediante la operación de archivo produjo automáticamente el commit cad69a6476f58eaa50d39848a020d17c7db8a588 antes de completar el expediente y checkpoint. No se reescribe historia ni se usa force-push; esta consolidación deja registrada la desviación y el estado reproducible.
+- Estado: TASK-636 continúa En ejecución. AUD-NG-369 permanece abierto hasta journal durable, pruebas aisladas de restauración/rollback y revisión interna final.

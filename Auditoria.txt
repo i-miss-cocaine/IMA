@@ -355,3 +355,13 @@ Sesión: IMA-EXEC-20261109-1108Z-01; HEAD de partida: 32b8f5884dd24dbeaf1a3bf028
 - El backup genérico ACADEMIC no es restaurable de forma demostrada: hash 32-bit, bypass de checksum no vacío, restore sin lock/rollback y clear de hojas completas. No reutilizar.
 - Próximo: protocolo dedicado de backup/restore y verificación aislada de hojas y activos Drive. Verificaciones estáticas únicamente; runtime/Sheets/Drive/HTTP/navegador/E2E/roles pendientes.
 - Checkpoint C1.311; sesión IMA-EXEC-20261109-1605Z-01; ubicación Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.311; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.311.
+
+
+## Seguimiento C1.312 — AUD-NG-369 / protocolo dedicado Task-Service
+
+- Se implementan handlers administrativos para crear, verificar y restaurar respaldos dedicados de Task-Service; claims Administrador/Desarrollador verificados en cada entrada.
+- Manifiesto versionado con SHA-256 estricto; snapshots de Tareas, Entregas, ConfiguracionAcademica y hojas relacionadas; activos Drive referenciados con hashes, tamaño, jerarquía y permisos.
+- Restauración con prevalidación, LockService, actualización de IDs/referencias, verificación post-restore y compensación en memoria. Log_Cierres se conserva append-only.
+- closeAcademicYear continúa BACKUP_REQUIRED; no se ejecuta borrado.
+- El rollback aún no es durable ante terminación abrupta; AUD-NG-369 no se cierra. Runtime Apps Script, Sheets/Drive aislados, restauración repetible, pruebas de interrupción y E2E pendientes.
+- Se registra desviación de publicación: commit de código previo al checkpoint cad69a6476f58eaa50d39848a020d17c7db8a588; no se reescribe historia.
