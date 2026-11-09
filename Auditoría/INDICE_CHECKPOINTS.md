@@ -3,11 +3,11 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.312**
-- Última sesión: `IMA-EXEC-20261109-1618Z-01`
+- Último checkpoint: **C1.313**
+- Última sesión: `IMA-EXEC-20261109-1635Z-01`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.312: **104123**
+- Caracteres del archivo activo tras C1.313: **108128**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 
@@ -67,3 +67,5 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.311 | IMA-EXEC-20261109-1605Z-01 | Publicado en este commit | TASK-636 / PM-01 — bloqueo de cierre docente y auditoría backup/restore | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.311 | 981–1034 | C1.310 | Este commit; SHA verificado tras publicación |
 
 | C1.312 | IMA-EXEC-20261109-1618Z-01 | Publicado en este commit | TASK-636 / PM-01 — protocolo dedicado de backup/restore, cierre aún bloqueado | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.312 | 1036–1105 | C1.311 | Este commit; SHA verificado tras publicación |
+
+| C1.313 | IMA-EXEC-20261109-1635Z-01 | Publicado en este commit | TASK-636 / PM-01 — journal durable y recuperación de restore | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.313 | 1107–1162 | C1.312 | Este commit; SHA verificado tras publicación |

@@ -286,3 +286,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - closeAcademicYear continúa bloqueado con BACKUP_REQUIRED; el rollback en memoria no cubre terminación abrupta y debe evolucionar a journal durable.
 - Se agrega contrato estático Node; no se ejecutó Node ni Apps Script/Sheets/Drive aislados. No se declaran pruebas funcionales.
 - TASK-636 En ejecución; AUD-NG-369 abierto. Desviación de commit previo al checkpoint registrada en C1.312.
+
+
+[2026-11-09] IMA-EXEC-20261109-1635Z-01 — TASK-636 / PM-01 / C1.313
+- Cada restauración crea primero un respaldo compensatorio completo y persiste un journal durable en ScriptProperties.
+- Se agrega recoverTaskServiceAcademicYearRestore; una operación pendiente bloquea nuevas restauraciones y conserva el manifiesto de rollback hasta recuperación.
+- Contrato estático ampliado; no se ejecutaron Apps Script/Sheets/Drive ni interrupciones forzadas. AUD-NG-369 abierto y closeAcademicYear sigue BACKUP_REQUIRED.

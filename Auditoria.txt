@@ -365,3 +365,11 @@ Sesión: IMA-EXEC-20261109-1108Z-01; HEAD de partida: 32b8f5884dd24dbeaf1a3bf028
 - closeAcademicYear continúa BACKUP_REQUIRED; no se ejecuta borrado.
 - El rollback aún no es durable ante terminación abrupta; AUD-NG-369 no se cierra. Runtime Apps Script, Sheets/Drive aislados, restauración repetible, pruebas de interrupción y E2E pendientes.
 - Se registra desviación de publicación: commit de código previo al checkpoint cad69a6476f58eaa50d39848a020d17c7db8a588; no se reescribe historia.
+
+
+## Seguimiento C1.313 — AUD-NG-369 / recuperación durable
+
+- Se incorpora un respaldo compensatorio automático antes de cada restauración y un journal durable en ScriptProperties con manifiesto de rollback, objetivo y estado.
+- Una restauración nueva se bloquea mientras exista una operación interrumpida. El handler recoverTaskServiceAcademicYearRestore permite recuperar el estado previo desde el respaldo compensatorio; el journal se conserva si la recuperación falla.
+- El contrato estático incluye la comprobación del journal y el handler de recuperación.
+- No se ejecutaron interrupciones forzadas ni runtime Apps Script/Sheets/Drive aislados. AUD-NG-369 sigue abierto; closeAcademicYear continúa BACKUP_REQUIRED.

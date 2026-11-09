@@ -1911,3 +1911,12 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - AUD-NG-369 abierto; TASK-636 no completada. Script Node estático añadido pero no ejecutado; Apps Script, Sheets/Drive, HTTP, navegador y E2E no ejecutados.
 - Desviación registrada: commit de código cad69a6476f58eaa50d39848a020d17c7db8a588 se generó antes de la consolidación del checkpoint; no se reescribe historia.
 - Checkpoint C1.312: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.312; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.312.
+
+
+## 10.11 Seguimiento de ejecución del Plan Maestro — C1.313
+
+- TASK-636 — PM-01/P0 — En ejecución. Cada restauración Task-Service genera un respaldo compensatorio antes de mutar y persiste un journal durable en ScriptProperties.
+- El handler recoverTaskServiceAcademicYearRestore permite recuperar el estado previo tras una interrupción; el journal pendiente bloquea nuevas restauraciones y se conserva ante rollback incompleto.
+- El contrato estático verifica la presencia del journal y la ruta de recuperación. No se han ejecutado interrupciones forzadas ni pruebas Apps Script/Sheets/Drive aisladas.
+- closeAcademicYear continúa BACKUP_REQUIRED. AUD-NG-369 permanece abierto hasta pruebas dinámicas de restauración, recuperación y rollback.
+- Checkpoint C1.313: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.313; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.313.

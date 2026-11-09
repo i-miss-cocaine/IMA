@@ -4859,3 +4859,11 @@ Alcance estático satisfecho; sin cambios de código. Hallazgos AUD-NG-374..376 
 - Los activos Drive se capturan recursivamente desde Entregas/EntregasVersiones, incluyendo hash SHA-256, tamaño, jerarquía y permisos. La restauración remapea IDs cuando debe recrear archivos.
 - Prevalidación de manifiesto/activos, LockService, verificación post-restore y rollback compensatorio en memoria. La terminación abrupta aún no tiene recuperación durable.
 - closeAcademicYear permanece BACKUP_REQUIRED; no hay ruta de borrado habilitada. Runtime y restauración aislada pendientes.
+
+
+## TASK-636 — C1.313: recuperación durable de restauraciones interrumpidas
+
+- Task-Service genera un respaldo compensatorio antes de mutar y registra en ScriptProperties el manifiesto de rollback, el manifiesto objetivo y el estado de la operación.
+- El handler recoverTaskServiceAcademicYearRestore restaura el estado previo si el runtime se interrumpe; mientras exista un journal pendiente se bloquean nuevas restauraciones.
+- Los errores capturados mantienen el journal si la compensación no se completa. El journal se elimina tras finalización o recuperación satisfactoria.
+- Implementación estática; falta validar con interrupción forzada y entorno Apps Script/Sheets/Drive aislado. closeAcademicYear continúa BACKUP_REQUIRED.

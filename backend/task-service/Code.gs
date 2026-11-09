@@ -382,6 +382,7 @@ function doPost(e) {
       case "createTaskServiceAcademicYearBackup": response = createTaskServiceAcademicYearBackup(payload); break;
       case "verifyTaskServiceAcademicYearBackup": response = verifyTaskServiceAcademicYearBackup(payload); break;
       case "restoreTaskServiceAcademicYearBackup": response = restoreTaskServiceAcademicYearBackup(payload); break;
+      case "recoverTaskServiceAcademicYearRestore": response = recoverTaskServiceAcademicYearRestore(payload); break;
       case "getVirtualClassrooms": response = getVirtualClassrooms(payload); break;
       case "createVirtualClassroom": response = createVirtualClassroom(payload); break;
       case "getPosts": response = getPosts(payload); break;
@@ -457,6 +458,7 @@ function closeAcademicYear(payload) {
 }
 
 const TASK_SERVICE_BACKUP_SCHEMA_VERSION = 1;
+const TASK_SERVICE_RESTORE_JOURNAL_KEY = "TASK_SERVICE_ACADEMIC_YEAR_RESTORE_JOURNAL";
 const TASK_SERVICE_BACKUP_PREFIX = "IMA_TASK_SERVICE_ACADEMIC_BACKUP_";
 const TASK_SERVICE_BACKUP_SHEETS = ["Tareas", "Entregas", "ConfiguracionAcademica", "Log_Cierres", "EntregasVersiones", "MetadatosArchivos"];
 
@@ -780,14 +782,25 @@ function taskServiceVerifyAppendOnlyBackupLog_(ss, snapshot) {
   }
   return true;
 }
-function taskServiceRestoreAcademicYearBackup_(manifestFileId, actor) {
+function taskServiceRestoreAcademicYearBackup_(manifestFileId, actor, skipDurableJournal) {
   const manifest = taskServiceReadAcademicYearBackup_(manifestFileId);
   taskServiceVerifyAcademicYearBackup_(manifestFileId);
   const lock = LockService.getScriptLock();
   lock.waitLock(30000);
-  let ss = null;
+  let ss = null, properties = null, durableJournal = null, rollbackManifestFileId = "";
   const before = {}, journal = [], idMap = {};
   try {
+    properties = PropertiesService.getScriptProperties();
+    if (!skipDurableJournal) {
+      const existingJournal = properties.getProperty(TASK_SERVICE_RESTORE_JOURNAL_KEY);
+      if (existingJournal) throw new Error("RECOVERY_REQUIRED: existe una restauración interrumpida; ejecute recoverTaskServiceAcademicYearRestore antes de otra restauración.");
+      const safetyBackup = taskServiceCreateAcademicYearBackup_(actor);
+      if (!safetyBackup || safetyBackup.status !== "success" || !safetyBackup.manifestFileId) throw new Error("No se pudo crear el respaldo compensatorio durable.");
+      rollbackManifestFileId = safetyBackup.manifestFileId;
+      durableJournal = { version: 1, state: "APPLYING", targetManifestFileId: manifestFileId,
+        rollbackManifestFileId: rollbackManifestFileId, actorId: actor.actorId, startedAt: new Date().toISOString() };
+      properties.setProperty(TASK_SERVICE_RESTORE_JOURNAL_KEY, JSON.stringify(durableJournal));
+    }
     ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     manifest.sheets.filter(function (s) { return s.name !== "Log_Cierres"; }).forEach(function (snapshot) {
       const existing = ss.getSheetByName(snapshot.name);
@@ -835,8 +848,15 @@ function taskServiceRestoreAcademicYearBackup_(manifestFileId, actor) {
       }
       verifyRestored(node);
     });
+    if (durableJournal) {
+      durableJournal.state = "COMPLETED";
+      durableJournal.completedAt = new Date().toISOString();
+      properties.setProperty(TASK_SERVICE_RESTORE_JOURNAL_KEY, JSON.stringify(durableJournal));
+      properties.deleteProperty(TASK_SERVICE_RESTORE_JOURNAL_KEY);
+    }
     return { status: "success", backupId: manifest.backupId, restoredSheets: expected.length,
-      restoredAssets: journal.length, idMap: idMap, actorId: actor.actorId, restoredAt: new Date().toISOString() };
+      restoredAssets: journal.length, idMap: idMap, rollbackManifestFileId: rollbackManifestFileId,
+      actorId: actor.actorId, restoredAt: new Date().toISOString() };
   } catch (error) {
     let rollbackErrors = [];
     Object.keys(before).reverse().forEach(function (name) {
@@ -856,11 +876,41 @@ function taskServiceRestoreAcademicYearBackup_(manifestFileId, actor) {
         else if (entry.kind === "untrashedFolder") DriveApp.getFolderById(entry.id).setTrashed(true);
       } catch (rollbackError) { rollbackErrors.push(entry.kind + " " + entry.id + ": " + rollbackError.message); }
     });
-    if (rollbackErrors.length) throw new Error("RESTORE_FAILED_ROLLBACK_INCOMPLETE: " + error.message + " | " + rollbackErrors.join("; "));
+    if (rollbackErrors.length) {
+      if (durableJournal && properties) {
+        durableJournal.state = "RECOVERY_REQUIRED";
+        durableJournal.lastError = error.message;
+        durableJournal.rollbackErrors = rollbackErrors;
+        properties.setProperty(TASK_SERVICE_RESTORE_JOURNAL_KEY, JSON.stringify(durableJournal));
+      }
+      throw new Error("RESTORE_FAILED_ROLLBACK_INCOMPLETE: " + error.message + " | " + rollbackErrors.join("; "));
+    }
+    if (durableJournal && properties) properties.deleteProperty(TASK_SERVICE_RESTORE_JOURNAL_KEY);
     throw new Error("RESTORE_FAILED_ROLLED_BACK: " + error.message);
   } finally {
     lock.releaseLock();
   }
+}
+
+function recoverTaskServiceAcademicYearRestore(payload) {
+  const actor = assertTaskServiceBackupAdministrator_(payload);
+  const properties = PropertiesService.getScriptProperties();
+  const raw = properties.getProperty(TASK_SERVICE_RESTORE_JOURNAL_KEY);
+  if (!raw) return { status: "success", recovered: false, message: "No existe una restauración interrumpida pendiente." };
+  const durableJournal = JSON.parse(raw);
+  if (durableJournal.version !== 1 || !durableJournal.rollbackManifestFileId) throw new Error("RECOVERY_JOURNAL_INVALID: no se puede determinar el respaldo compensatorio.");
+  if (durableJournal.state === "COMPLETED") {
+    properties.deleteProperty(TASK_SERVICE_RESTORE_JOURNAL_KEY);
+    return { status: "success", recovered: false, clearedCompletedJournal: true };
+  }
+  durableJournal.state = "RECOVERING";
+  durableJournal.recoveryActorId = actor.actorId;
+  durableJournal.recoveryStartedAt = new Date().toISOString();
+  properties.setProperty(TASK_SERVICE_RESTORE_JOURNAL_KEY, JSON.stringify(durableJournal));
+  const result = taskServiceRestoreAcademicYearBackup_(durableJournal.rollbackManifestFileId, actor, true);
+  properties.deleteProperty(TASK_SERVICE_RESTORE_JOURNAL_KEY);
+  return { status: "success", recovered: true, originalTargetManifestFileId: durableJournal.targetManifestFileId,
+    rollbackManifestFileId: durableJournal.rollbackManifestFileId, recoveryResult: result };
 }
 
 function createTaskServiceAcademicYearBackup(payload) {

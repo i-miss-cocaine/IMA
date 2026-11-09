@@ -160,3 +160,12 @@ Endurecer las excepciones públicas de backend/academic-service/Code.gs mediante
 - No ejecutadas: parser/runtime Apps Script, Sheets/Drive reales, restauración aislada repetible, rollback ante interrupción, HTTP, navegador, E2E ni pruebas por rol. No se declaran PASS dinámicos.
 - Desviación de publicación: la actualización inicial de backend/task-service/Code.gs mediante la operación de archivo produjo automáticamente el commit cad69a6476f58eaa50d39848a020d17c7db8a588 antes de completar el expediente y checkpoint. No se reescribe historia ni se usa force-push; esta consolidación deja registrada la desviación y el estado reproducible.
 - Estado: TASK-636 continúa En ejecución. AUD-NG-369 permanece abierto hasta journal durable, pruebas aisladas de restauración/rollback y revisión interna final.
+
+
+## Revisión focalizada C1.313 — journal durable y recuperación de restauraciones interrumpidas
+
+- Se atiende la limitación identificada en C1.312: antes de restaurar, Task-Service genera un respaldo compensatorio completo y persiste en ScriptProperties el estado de la operación, el manifiesto objetivo y el manifiesto de rollback.
+- La restauración rechaza nuevas operaciones si existe un journal pendiente. Si la ejecución termina abruptamente, el handler administrativo recoverTaskServiceAcademicYearRestore usa el respaldo compensatorio para recuperar las hojas y activos anteriores; el journal solo se elimina tras una recuperación satisfactoria.
+- Una restauración normal registra estado COMPLETED antes de limpiar el journal. Los errores capturados intentan compensación inmediata; si esta queda incompleta, el journal durable permanece en estado RECOVERY_REQUIRED.
+- Se amplía el contrato estático para comprobar la presencia del journal durable y del handler de recuperación.
+- No se ha ejecutado una interrupción forzada real ni Apps Script/Sheets/Drive aislados; por tanto, el mecanismo está implementado estáticamente, pero no certificado operacionalmente. AUD-NG-369 permanece abierto y closeAcademicYear continúa BACKUP_REQUIRED.
