@@ -247,3 +247,32 @@ pm.delete=function(store,key){cacheOps.push({op:"delete",store:store,key:key});r
  assert.ok(cacheOps.some(x=>x.op==="delete"&&x.key==="a"));
  console.log("TASK-068 local acceptance: multiple source references, relationship integrity and confirmed-only IndexedDB cache passed.");
 })().catch(function(error){console.error(error);process.exitCode=1;});
+
+
+// TASK-068 account linking: server-side justification, verified manager, audit and relation preservation.
+const linkUsers=[["UserId","Nombre","Grado","Seccion","Email","PasswordHash","Rol","Telefono","NumeroLista","PersonaID"],["USR-1","Ana","","","","","Estudiante","","1","PER-OLD"]];
+const linkPeople=[["PersonaID","Nombres","Apellidos","Identificacion","EmailContacto","TelefonoContacto","EstadoPersona","FechaCreacion","FechaActualizacion","Observaciones"],["PER-NEW","Ana","Perez","","","","Activa","","",""]];
+const familyRows=[["RelacionID","PersonaID","ResponsableID","Tipo","Estado"],["REL-1","PER-OLD","PER-RESP","Tutor","Verificada"]];
+const familyBefore=JSON.stringify(familyRows),decisionRows=[];
+function linkSheet(rows){return{getDataRange:function(){return{getValues:function(){return rows.map(r=>r.slice());}};},getRange:function(row,col){return{setValue:function(value){rows[row-1][col-1]=value;}};}};}
+const linkUserSheet=linkSheet(linkUsers),linkPeopleSheet=linkSheet(linkPeople),decisionSheet={appendRow:function(row){decisionRows.push(row);}};
+const linkSS={};
+const linkContext={
+ requireIdentityManager_:function(){return{actorId:"ADMIN-1",role:"Administrador"};},
+ getIdentityInstitutionId_:function(){return"INST-1";},
+ LockService:{getScriptLock:function(){return{waitLock:function(){},releaseLock:function(){}};}},
+ SpreadsheetApp:{openById:function(){return linkSS;}},
+ getSheetOrThrow:function(_ss,name){if(name==="Usuarios")return linkUserSheet;if(name==="Personas")return linkPeopleSheet;throw new Error("unexpected sheet "+name);},
+ ensureIdentityDecisionSheet_:function(){return decisionSheet;},
+ appendIdentityDecisionAudit_:function(sheet,event){sheet.appendRow([event.decision,event.idOriginalLegado,event.idNuevoPlataformaAnterior,event.idNuevoPlataformaNuevo,event.motivo,event.actorId,event.institucionId]);},
+ identityTextCell_:function(value){return String(value==null?"":value);}
+};
+vm.runInNewContext(extractBalancedFunction(user,"linkPersonAccount")+"this.link=linkPersonAccount;",linkContext);
+assert.throws(()=>linkContext.link({userId:"USR-1",personaId:"PER-NEW",motivo:"corto"}),/mínimo 10 caracteres/);
+assert.equal(linkUsers[1][9],"PER-OLD","invalid reason cannot mutate account link");
+const linked=linkContext.link({userId:"USR-1",personaId:"PER-NEW",motivo:"Correspondencia verificada por Secretaría"});
+assert.equal(linked.status,"success");
+assert.equal(linkUsers[1][9],"PER-NEW");
+assert.equal(decisionRows.length,1,"link decision must be audited");
+assert.equal(decisionRows[0][4],"Correspondencia verificada por Secretaría");
+assert.equal(JSON.stringify(familyRows),familyBefore,"account linking must not rewrite family relationship IDs");

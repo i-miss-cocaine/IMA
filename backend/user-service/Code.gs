@@ -1928,14 +1928,15 @@ function createPerson(payload) {
 
 function linkPersonAccount(payload) {
   const actor=requireIdentityManager_(payload), institution=getIdentityInstitutionId_();
-  const {userId,personaId}=payload||{}; if(!userId||!personaId) throw new Error("userId y personaId requeridos.");
+  const {userId,personaId}=payload||{}, reason=String(payload && payload.motivo || "").trim();
+  if(!userId||!personaId||reason.length<10) throw new Error("userId, personaId y motivo (mínimo 10 caracteres) requeridos.");
   const lock=LockService.getScriptLock(); lock.waitLock(10000);
   try { const ss=SpreadsheetApp.openById(SPREADSHEET_ID), sheet=getSheetOrThrow(ss,"Usuarios"), rows=sheet.getDataRange().getValues();
     const index=rows.findIndex((r,i)=>i>0&&String(r[0]).trim()===String(userId).trim()); if(index<1) throw new Error("Cuenta de usuario no encontrada.");
     const people=getSheetOrThrow(ss,"Personas").getDataRange().getValues(); if(!people.some((r,i)=>i>0&&String(r[0]).trim()===String(personaId).trim())) throw new Error("IDENTITY_TARGET_NOT_FOUND: Persona inexistente.");
     const previous=String(rows[index][9]||"").trim(); if(previous===String(personaId).trim()) return {status:"success",idempotent:true};
     sheet.getRange(index+1,10).setValue(identityTextCell_(personaId));
-    try { appendIdentityDecisionAudit_(ensureIdentityDecisionSheet_(),{idMapeo:"",sistemaOrigen:"IMA",tipoEntidad:"usuario",idOriginalLegado:userId,idNuevoPlataformaAnterior:previous,idNuevoPlataformaNuevo:personaId,decision:"VINCULACION_CUENTA_PERSONA",motivo:String(payload.motivo||"Vinculación administrativa."),actorId:actor.actorId,actorRole:actor.role,institucionId:institution}); }
+    try { appendIdentityDecisionAudit_(ensureIdentityDecisionSheet_(),{idMapeo:"",sistemaOrigen:"IMA",tipoEntidad:"usuario",idOriginalLegado:userId,idNuevoPlataformaAnterior:previous,idNuevoPlataformaNuevo:personaId,decision:"VINCULACION_CUENTA_PERSONA",motivo:reason,actorId:actor.actorId,actorRole:actor.role,institucionId:institution}); }
     catch(err) { sheet.getRange(index+1,10).setValue(previous); throw err; }
     return {status:"success",message:"Cuenta vinculada con historial auditable."};
   } finally { lock.releaseLock(); }

@@ -568,3 +568,8 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 ## C1.353 — TASK-068 RBAC de UI
 - CI C1.352 run 42715176076: completed/success.
 - findPersonMatches y linkPersonAccount se agregan a IDENTITY_MANAGER_ACTIONS_ y se añade prueba positiva/negativa del dispatcher RBAC. CI C1.353 pendiente.
+
+
+## C1.354 — TASK-068 justificación de vínculo cuenta-Persona
+- CI C1.353 run 42715322689: completed/success.
+- Se endurece linkPersonAccount con motivo obligatorio >=10 caracteres en backend; test local de mutación, bitácora y conservación de relación familiar. CI C1.354 pendiente.

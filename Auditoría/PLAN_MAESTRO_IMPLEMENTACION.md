@@ -2135,3 +2135,9 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - Se agregan findPersonMatches y linkPersonAccount a IDENTITY_MANAGER_ACTIONS_; antes dependían de listas genéricas y podían denegarse antes de ejecutar requireIdentityManager_.
 - Se prueban permisos positivos para Secretaría/Administrador y negativos para Docente; guardas de sesión verificada siguen dentro de cada función.
 - C1.352 CI run 42715176076: success. C1.353 CI pendiente.
+
+
+## 10.38 TASK-068 — C1.354: vinculación auditable con justificación obligatoria
+- linkPersonAccount exige motivo de al menos 10 caracteres en backend, no solo en el formulario cliente, y registra la justificación recibida.
+- Prueba local ejecuta la función real con mocks: motivo corto no muta, vinculación registra auditoría y no altera relaciones familiares.
+- C1.353 CI run 42715322689: success. C1.354 CI pendiente.

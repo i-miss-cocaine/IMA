@@ -569,3 +569,18 @@ Checkpoint anterior: C1.352
 Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.353.
 Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.353.
 ===============================================================================
+
+
+===============================================================================
+## C1.354 — TASK-068: justificación obligatoria para vincular cuentas
+ID: C1.354
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.353
+- CI C1.353 run 42715322689: completed/success; RBAC explícito de findPersonMatches y linkPersonAccount aprobado para Secretaría/Administrador y denegado a Docente.
+- Reauditoría detectó que linkPersonAccount aceptaba motivo vacío o genérico desde backend, aunque la interfaz exigía justificación. La validación solo en cliente no era suficiente.
+- Se exige en servidor motivo de al menos 10 caracteres y se registra exactamente esa justificación en HistorialDecisionesIdentidad.
+- Se añade prueba local de linkPersonAccount real extraído: rechazo de motivo corto sin mutación, vinculación autorizada, bitácora y conservación de relación familiar.
+- CI C1.354 pendiente. TASK-068 sigue En ejecución; BETA-FUNC-008 Pendiente beta.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.354.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.354.
+===============================================================================
