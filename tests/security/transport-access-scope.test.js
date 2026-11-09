@@ -44,6 +44,18 @@ function runScope(payload, data) {
 }
 
 const data = {
+  Usuarios: [
+    ["UserId", "Nombre", "Grado", "Seccion", "Email", "PasswordHash", "Rol", "Telefono", "NumeroLista", "PersonaID", "EstadoCuenta"],
+    ["PARENT-01", "Parent One", "", "", "", "", "Padre", "", "", "", "Activa"],
+    ["PARENT-99", "Parent Missing Link", "", "", "", "", "Padre", "", "", "", "Activa"],
+    ["STU-01", "Student One", "", "", "", "", "Estudiante", "", "", "", "Activa"],
+    ["STU-02", "Student Two", "", "", "", "", "Estudiante", "", "", "", "Activa"],
+    ["DRIVER-1", "Driver One", "", "", "", "", "Conductor", "", "", "", "Activa"],
+    ["DRIVER-2", "Driver Two", "", "", "", "", "Conductor", "", "", "", "Activa"],
+    ["MONITOR-1", "Monitor One", "", "", "", "", "Monitor", "", "", "", "Activa"],
+    ["MONITOR-2", "Monitor Two", "", "", "", "", "Monitor", "", "", "", "Activa"],
+    ["DIRECTOR-1", "Director One", "", "", "", "", "Director", "", "", "", "Activa"]
+  ],
   ExpedientesEstudiantes: [
     ["ExpedienteID", "UserId"],
     ["EXP-01", "STU-01"],
@@ -92,6 +104,28 @@ const noFamilyLink = runScope({
   _verifiedUserId: "PARENT-99"
 }, data);
 assert.deepEqual(Array.from(noFamilyLink.studentIds), []);
+const roleChangedData = Object.assign({}, data, {
+  Usuarios: data.Usuarios.map(row => row[0] === "PARENT-01" ? row.map((value, index) => index === 6 ? "Estudiante" : value) : row)
+});
+const staleRole = runScope({
+  _verifiedRole: "Padre",
+  _verifiedUserId: "PARENT-01"
+}, roleChangedData);
+assert.equal(staleRole.authorized, false);
+assert.equal(staleRole.reason, "ROLE_CHANGED_OR_USER_NOT_FOUND");
+
+const revokedRelationshipData = Object.assign({}, data, {
+  RelacionesFamiliares: [
+    data.RelacionesFamiliares[0],
+    data.RelacionesFamiliares[1].map((value, index) => index === 4 ? "Revocada" : value)
+  ]
+});
+const revokedRelationship = runScope({
+  _verifiedRole: "Padre",
+  _verifiedUserId: "PARENT-01"
+}, revokedRelationshipData);
+assert.deepEqual(Array.from(revokedRelationship.studentIds), []);
+
 
 const student = runScope({
   authRole: "Administrador",
@@ -185,12 +219,28 @@ assert.equal(parentForeignRouteAttempt.result.code, "UNAUTHORIZED_ACCESS_ATTEMPT
 assert.ok(parentForeignRouteAttempt.events.some(x => x[3] === "UNAUTHORIZED_ACCESS_ATTEMPT"));
 
 
+const studentIdorAttempt = runEndpoint("getTransportAssignments", {
+  _verifiedRole: "Estudiante",
+  _verifiedUserId: "STU-01",
+  estudianteUserId: "STU-02"
+}, data);
+assert.equal(studentIdorAttempt.result.code, "UNAUTHORIZED_ACCESS_ATTEMPT");
+assert.ok(studentIdorAttempt.events.some(x => x[3] === "UNAUTHORIZED_ACCESS_ATTEMPT"));
+
 const driverAssignments = runEndpoint("getTransportAssignments", {
   _verifiedRole: "Conductor",
   _verifiedUserId: "DRIVER-1"
 }, data);
 assert.equal(driverAssignments.result.total, 1);
 assert.equal(driverAssignments.result.asignaciones[0].rutaId, "RUT-01");
+
+const driverRoutes = runEndpoint("getTransportRoutes", {
+  _verifiedRole: "Conductor",
+  _verifiedUserId: "DRIVER-1"
+}, data);
+assert.equal(driverRoutes.result.rutas.length, 1);
+assert.equal(driverRoutes.result.rutas[0].rutaId, "RUT-01");
+assert.equal(driverRoutes.result.rutas[0].conductorEmpleadoId, "");
 
 const parentRoutes = runEndpoint("getTransportRoutes", {
   _verifiedRole: "Padre",
