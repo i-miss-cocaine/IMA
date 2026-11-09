@@ -169,3 +169,11 @@ Endurecer las excepciones públicas de backend/academic-service/Code.gs mediante
 - Una restauración normal registra estado COMPLETED antes de limpiar el journal. Los errores capturados intentan compensación inmediata; si esta queda incompleta, el journal durable permanece en estado RECOVERY_REQUIRED.
 - Se amplía el contrato estático para comprobar la presencia del journal durable y del handler de recuperación.
 - No se ha ejecutado una interrupción forzada real ni Apps Script/Sheets/Drive aislados; por tanto, el mecanismo está implementado estáticamente, pero no certificado operacionalmente. AUD-NG-369 permanece abierto y closeAcademicYear continúa BACKUP_REQUIRED.
+
+
+## Revisión focalizada C1.314 — confirmación explícita de recuperación administrativa
+
+- Code Review detecta que recoverTaskServiceAcademicYearRestore, aunque restringido a Administrador/Desarrollador y condicionado a un journal durable, podía iniciar una restauración compensatoria sin un segundo gesto de confirmación.
+- Se añade confirmación explícita confirmed=true y confirmCode=RECOVER-TASK-SERVICE-RESTORE antes de ejecutar la recuperación; la operación normal de restore ya exigía su propio código de confirmación.
+- Se amplía el contrato estático para verificar este control.
+- Verificación estática de presencia del guard y del código de confirmación; el script Node y el runtime Apps Script no se ejecutaron. AUD-NG-369 permanece abierto y closeAcademicYear continúa BACKUP_REQUIRED.

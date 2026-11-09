@@ -373,3 +373,9 @@ Sesión: IMA-EXEC-20261109-1108Z-01; HEAD de partida: 32b8f5884dd24dbeaf1a3bf028
 - Una restauración nueva se bloquea mientras exista una operación interrumpida. El handler recoverTaskServiceAcademicYearRestore permite recuperar el estado previo desde el respaldo compensatorio; el journal se conserva si la recuperación falla.
 - El contrato estático incluye la comprobación del journal y el handler de recuperación.
 - No se ejecutaron interrupciones forzadas ni runtime Apps Script/Sheets/Drive aislados. AUD-NG-369 sigue abierto; closeAcademicYear continúa BACKUP_REQUIRED.
+
+
+## Seguimiento C1.314 — AUD-NG-369 / confirmación de recuperación
+
+- Se exige confirmed=true y el código RECOVER-TASK-SERVICE-RESTORE para iniciar la recuperación compensatoria; se mantiene el guard de Administrador/Desarrollador.
+- Se amplía el contrato estático para comprobar la confirmación explícita. Sin pruebas Node/runtime; AUD-NG-369 abierto y cierre académico bloqueado.

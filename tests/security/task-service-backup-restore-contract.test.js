@@ -27,6 +27,7 @@ assert(source.includes("taskServiceVerifyBackupAsset_"), "backup assets are veri
 assert(source.includes("lock.waitLock(30000)") && source.includes("lock.releaseLock()"), "restore uses script lock");
 assert(source.includes("PropertiesService.getScriptProperties()"), "restore journal is durable in script properties");
 assert(source.includes("RECOVERY_REQUIRED") && source.includes("rollbackManifestFileId"), "interrupted restore requires durable recovery");
+assert(source.includes("RECOVERY_CONFIRMATION_REQUIRED"), "manual recovery requires explicit confirmation");
 assert(source.includes("RESTORE_FAILED_ROLLED_BACK") && source.includes("ROLLBACK_INCOMPLETE"), "restore reports rollback outcome");
 assert(source.includes("taskServiceVerifyAppendOnlyBackupLog_"), "Log_Cierres is preserved as append-only");
 console.log("Task-Service backup/restore static contract checks passed.");

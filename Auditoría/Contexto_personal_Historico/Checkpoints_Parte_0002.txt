@@ -1160,3 +1160,55 @@ Hallazgo: AUD-NG-369 — cierre académico destructivo sin respaldo restaurable.
 - Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.313.
 - Commit de cierre: este commit consolidado; SHA a verificar tras publicar.
 ===============================================================================
+
+
+===============================================================================
+## C1.314 — TASK-636 / PM-01 — confirmación explícita para recuperación de restore
+ID: C1.314
+Sesión: IMA-EXEC-20261109-1650Z-01
+Fecha: 2026-11-09 UTC
+Checkpoint anterior: C1.313
+Repositorio: i-miss-cocaine/IMA
+Rama autorizada: NG_beta_0.0.0.1_work
+HEAD de partida: b8ee91c4bbe4c24dba5cb22b9f4e676a1436ec48
+Tree de partida: 4edc706dc07ef8d1a1fb295f456fd4c7cb411ccf
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+Tarea: TASK-636 — PM-01/P0
+Hallazgo: AUD-NG-369 — cierre académico destructivo sin respaldo restaurable.
+
+### Continuidad y revisión
+- Se continúa desde C1.313; no se reabre PM-00 ni se crea una auditoría paralela.
+- La rama base permanece intacta. La rama de trabajo autorizada es la única modificada.
+- Code Review focalizado detectó que la recuperación durable requería una confirmación explícita adicional para evitar restauraciones administrativas accidentales.
+
+### Corrección C1.314
+- recoverTaskServiceAcademicYearRestore conserva el guard de claims Administrador/Desarrollador.
+- Se exige confirmed=true y confirmCode=RECOVER-TASK-SERVICE-RESTORE antes de leer y aplicar el manifiesto compensatorio.
+- Se amplía tests/security/task-service-backup-restore-contract.test.js para verificar el guard de confirmación.
+- No se altera el estado de closeAcademicYear: continúa BACKUP_REQUIRED.
+
+### Verificación y límites
+- Inspección estática del handler, guard administrativo, confirmación, despacho y contrato actualizado.
+- No ejecutados: Node, parser/runtime Apps Script, Sheets/Drive aislados, interrupción forzada, restauración repetible, HTTP, navegador, E2E ni pruebas por rol.
+- AUD-NG-369 permanece abierto; TASK-636 continúa En ejecución.
+- La confirmación adicional reduce el riesgo de ejecución accidental, pero no sustituye la prueba operativa del journal durable.
+
+### Archivos modificados
+1. backend/task-service/Code.gs
+2. tests/security/task-service-backup-restore-contract.test.js
+3. Auditoría/AUDITORIA_TASK-636_C1.305.md
+4. Auditoria.txt
+5. changueslogs.txt
+6. Auditoría/MapaDependencias.md
+7. Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+8. Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt
+9. Auditoría/INDICE_CHECKPOINTS.md
+
+### Siguiente acción exacta
+Ejecutar el contrato Node en el runner del repositorio; después preparar un proyecto Apps Script/Sheets/Drive aislado y probar create/verify/restore, recuperación tras interrupción forzada, referencias, IDs, permisos y Log_Cierres. Mantener closeAcademicYear bloqueado hasta evidencias verificables.
+- Requisito original: pendientes/Otros/Pendientes.md — bloque TASK-636.
+- Expediente: Auditoría/AUDITORIA_TASK-636_C1.305.md.
+- Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.314.
+- Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.314.
+- Commit de cierre: este commit consolidado; SHA a verificar tras publicar.
+===============================================================================

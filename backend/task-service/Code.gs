@@ -894,6 +894,9 @@ function taskServiceRestoreAcademicYearBackup_(manifestFileId, actor, skipDurabl
 
 function recoverTaskServiceAcademicYearRestore(payload) {
   const actor = assertTaskServiceBackupAdministrator_(payload);
+  if (!payload || payload.confirmed !== true || payload.confirmCode !== "RECOVER-TASK-SERVICE-RESTORE") {
+    throw new Error("RECOVERY_CONFIRMATION_REQUIRED: se requiere confirmed=true y confirmCode RECOVER-TASK-SERVICE-RESTORE.");
+  }
   const properties = PropertiesService.getScriptProperties();
   const raw = properties.getProperty(TASK_SERVICE_RESTORE_JOURNAL_KEY);
   if (!raw) return { status: "success", recovered: false, message: "No existe una restauración interrumpida pendiente." };

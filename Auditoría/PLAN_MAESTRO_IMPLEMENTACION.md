@@ -1920,3 +1920,11 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - El contrato estático verifica la presencia del journal y la ruta de recuperación. No se han ejecutado interrupciones forzadas ni pruebas Apps Script/Sheets/Drive aisladas.
 - closeAcademicYear continúa BACKUP_REQUIRED. AUD-NG-369 permanece abierto hasta pruebas dinámicas de restauración, recuperación y rollback.
 - Checkpoint C1.313: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.313; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.313.
+
+
+## 10.12 Seguimiento de ejecución del Plan Maestro — C1.314
+
+- TASK-636 — PM-01/P0 — En ejecución. Code Review añade confirmación explícita al handler de recuperación del journal durable: claims Administrador/Desarrollador, confirmed=true y código RECOVER-TASK-SERVICE-RESTORE.
+- Se amplía el contrato estático. Node, Apps Script, Sheets/Drive aislados e interrupciones forzadas siguen pendientes.
+- closeAcademicYear permanece BACKUP_REQUIRED; AUD-NG-369 abierto.
+- Checkpoint C1.314: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.314; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.314.

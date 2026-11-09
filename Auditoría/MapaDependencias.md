@@ -4867,3 +4867,10 @@ Alcance estático satisfecho; sin cambios de código. Hallazgos AUD-NG-374..376 
 - El handler recoverTaskServiceAcademicYearRestore restaura el estado previo si el runtime se interrumpe; mientras exista un journal pendiente se bloquean nuevas restauraciones.
 - Los errores capturados mantienen el journal si la compensación no se completa. El journal se elimina tras finalización o recuperación satisfactoria.
 - Implementación estática; falta validar con interrupción forzada y entorno Apps Script/Sheets/Drive aislado. closeAcademicYear continúa BACKUP_REQUIRED.
+
+
+## TASK-636 — C1.314: confirmación explícita para recuperación
+
+- recoverTaskServiceAcademicYearRestore requiere claims Administrador/Desarrollador y confirmación explícita confirmed=true con código RECOVER-TASK-SERVICE-RESTORE.
+- Se evita que una llamada administrativa accidental restaure el respaldo compensatorio sin confirmación adicional.
+- Verificación estática; ejecución Node/runtime y pruebas aisladas pendientes. closeAcademicYear continúa BACKUP_REQUIRED.
