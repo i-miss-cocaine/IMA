@@ -26,5 +26,4 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --check backend/task-service/Code.gs
       - run: node tests/security/task-service-security-contract.test.js

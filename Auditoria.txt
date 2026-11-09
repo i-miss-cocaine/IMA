@@ -621,3 +621,8 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 
 ## C1.364 — TASK-636 AUD-NG-370
 - Se añade reconciliación histórica segura de MetadatosArchivos, dry-run y aplicación solo con vínculo exacto único; casos ambiguos/no vinculados quedan bloqueados. BETA-FUNC-009 pendiente beta.
+
+
+## C1.365 — TASK-636 AUD-NG-370
+- C1.364 backup/restore run 42718141463 success; security workflow run 42718142238 falló en el paso node --check por extensión .gs desconocida.
+- Se corrige harness a vm.Script y se agrega rollback local ante fallo de bitácora del backfill. CI nuevo pendiente.

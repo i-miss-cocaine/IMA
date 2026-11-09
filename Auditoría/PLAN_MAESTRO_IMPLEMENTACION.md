@@ -2198,3 +2198,9 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - Se incorpora reconciliación admin-only con dry-run predeterminado. Solo backfill de propietario/tarea/profesor cuando un FileId tiene una única relación exacta en Entregas o EntregasVersiones y la tarea existe.
 - Metadatos ambiguos o sin referencia verificable no se modifican. No se infiere propiedad desde carpeta/nombre ni se accede a Drive en esta función.
 - BETA-FUNC-009 registra pruebas reales de Drive/carga reanudable; Pendiente beta, no bloqueante.
+
+
+## 10.49 TASK-636 — C1.365: rollback de backfill y harness Node
+- La reconciliación de metadatos valida la bitácora y revierte owner/task/profesor si falla su escritura; fixture simula fallo de auditoría y exige rollback.
+- El workflow usa vm.Script para parsear Apps Script .gs; se elimina node --check incompatible con esa extensión.
+- C1.364 backup/restore CI run 42718141463: success; security workflow run 42718142238 falló en node --check, no alcanzó el test. C1.365 pendiente.

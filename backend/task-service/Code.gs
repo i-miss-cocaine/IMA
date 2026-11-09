@@ -2226,13 +2226,29 @@ function reconcileLegacyTaskFileMetadata(payload) {
     let migrated=0;
     if(apply && candidates.length){
       const audit=getOrCreateSheet(ss,"AuditoriaMigracionMetadatosArchivos");
-      if(audit.getLastRow()===0)audit.appendRow(["Fecha","FileId","TareaId","PropietarioUserId","ProfesorId","ActorUserId","Fuente"]);
+      const auditHeaders=["Fecha","FileId","TareaId","PropietarioUserId","ProfesorId","ActorUserId","Fuente"];
+      if(audit.getLastRow()===0)audit.appendRow(auditHeaders);
+      else {
+        const actual=audit.getRange(1,1,1,auditHeaders.length).getValues()[0].map(String);
+        if(JSON.stringify(actual)!==JSON.stringify(auditHeaders))throw new Error("TASK_FILE_METADATA_AUDIT_SCHEMA_MISMATCH");
+      }
       candidates.forEach(c=>{
-        metadata.getRange(c.row,12).setValue(c.taskId);
-        metadata.getRange(c.row,13).setValue(c.profesorId);
-        metadata.getRange(c.row,20).setValue(c.ownerUserId);
-        audit.appendRow([new Date(),c.fileId,c.taskId,c.ownerUserId,c.profesorId,actorId,"Entregas/EntregasVersiones"]);
-        migrated++;
+        const before=rows[c.row-1];
+        try {
+          metadata.getRange(c.row,12,1,2).setValues([[before[11],before[12]]]);
+          metadata.getRange(c.row,12,1,2).setValues([[c.taskId,c.profesorId]]);
+          metadata.getRange(c.row,20).setValue(c.ownerUserId);
+          audit.appendRow([new Date(),c.fileId,c.taskId,c.ownerUserId,c.profesorId,actorId,"Entregas/EntregasVersiones"]);
+          migrated++;
+        } catch(writeError) {
+          try {
+            metadata.getRange(c.row,12,1,2).setValues([[before[11],before[12]]]);
+            metadata.getRange(c.row,20).setValue(before[19]);
+          } catch(rollbackError) {
+            throw new Error("TASK_FILE_METADATA_RECONCILIATION_ROLLBACK_FAILED: "+rollbackError.message);
+          }
+          throw writeError;
+        }
       });
     }
     return {status:"success",dryRun:!apply,scanned:Math.max(0,rows.length-1),alreadyOwned:alreadyOwned,wouldMigrate:candidates.length,migrated:migrated,unresolved:unresolved,conflicts:conflicts};

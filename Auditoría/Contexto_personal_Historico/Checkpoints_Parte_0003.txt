@@ -741,3 +741,18 @@ Baseline lógico: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
 Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.364.
 Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.364.
 ===============================================================================
+
+
+===============================================================================
+## C1.365 — TASK-636: atomicidad de backfill y corrección del workflow local
+ID: C1.365
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.364
+- CI C1.364: workflow backup/restore run 42718141463 success; workflow security run 42718142238 falló antes del test porque Node no acepta extensión .gs en node --check.
+- Se sustituye node --check por vm.Script dentro del contrato Node para parsear Code.gs sin depender de extensión de Apps Script.
+- La reconciliación histórica ahora valida el esquema de bitácora y revierte los campos del registro si falla la persistencia de auditoría; se agrega prueba local de rollback.
+- No se cambia la regla: solo vínculo exacto único; ambiguos y huérfanos permanecen fail-closed.
+- CI C1.365 pendiente.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.365.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.365.
+===============================================================================
