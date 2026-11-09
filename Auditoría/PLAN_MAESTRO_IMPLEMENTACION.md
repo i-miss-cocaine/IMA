@@ -2236,3 +2236,9 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - Fixtures Node cubren string/boolean, authRole falsificado, aula ajena y fecha programada. CI pendiente.
 - BETA-FUNC-013: validación de tipos de datos reales en Sheets aislados; Pendiente beta y no bloqueante.
 - TASK-636 En ejecución.
+
+
+## 10.54 TASK-636 — C1.370: ajuste del contrato getPosts
+- Code Review identifica que el fixture esperaba bloquear publicaciones programadas futuras para Profesor; el alcance autorizado permite al docente revisarlas en su aula.
+- Se ajusta el test: Profesor recibe programadas; Estudiante no recibe borradores ni programadas; includeDrafts solo controla borradores.
+- Sin cambios en permisos ni código productivo. CI C1.370 pendiente.

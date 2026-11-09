@@ -247,3 +247,11 @@ Endurecer las excepciones públicas de backend/academic-service/Code.gs mediante
 - **CI C1.369:** pendiente tras publicar; no se declara PASS anticipadamente.
 - **Beta:** BETA-FUNC-013 cubre representación de booleanos y visibilidad de borradores en Sheets/Apps Script aislados; no bloquea implementación local.
 - **Estado:** AUD-NG-002 sigue en revalidación; TASK-636 permanece En ejecución.
+
+
+## C1.370 — ajuste del fixture de visibilidad de publicaciones programadas
+
+- Durante Code Review del contrato C1.369 se detectó que el fixture esperaba que Profesor no recibiera publicaciones con fecha programada futura. El comportamiento autorizado de getPosts permite al personal docente revisar publicaciones programadas en su aula; la restricción de fecha futura corresponde a usuarios no privilegiados.
+- Se ajustan únicamente las expectativas del fixture: Profesor sin includeDrafts ve publicaciones normales y programadas; con includeDrafts ve además borradores de su aula. Estudiante sigue sin ver borradores ni publicaciones futuras.
+- No cambia la implementación de autorización ni se amplía el acceso del estudiante. Se conserva el hallazgo AUD-NG-002 y el expediente único.
+- CI C1.369 queda pendiente; C1.370 ejecutará el contrato actualizado.

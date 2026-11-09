@@ -496,3 +496,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se agrega fixture Node de spoof de authRole, includeDrafts, aulas y fechas.
 - CI C1.369 pendiente; BETA-FUNC-013 registra validación real en Sheets aislados.
 - Checkpoint C1.369: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice fila C1.369.
+
+
+[2026-11-09] IMA-EXEC-20261109-1739Z-01 — C1.370 / TASK-636 / AUD-NG-002
+- Code Review ajusta el fixture de getPosts para permitir al Profesor autorizado revisar publicaciones programadas de su aula.
+- Estudiante sigue bloqueado para borradores y publicaciones futuras. Sin cambio de código productivo.
+- CI C1.370 pendiente. Checkpoint C1.370: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice fila C1.370.

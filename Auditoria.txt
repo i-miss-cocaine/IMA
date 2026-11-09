@@ -661,3 +661,10 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - CI C1.368 Task-Service security run 42724379224 y Identity mapping/transport run 42724379276: completed/success. C1.367 backup/restore run 42723635060: completed/success.
 - CI C1.369 pendiente. BETA-FUNC-013 Pendiente beta.
 - TASK-636 En ejecución. Checkpoint C1.369: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice fila C1.369.
+
+
+## C1.370 — IMA-EXEC-20261109-1739Z-01 — TASK-636 / AUD-NG-002 — ajuste de fixture
+- Se corrige la expectativa del test: el Profesor autorizado puede consultar publicaciones programadas futuras en su aula; la restricción de fecha futura se aplica a usuarios no privilegiados.
+- El fixture ahora verifica Profesor sin includeDrafts (publicadas + programadas), Profesor con includeDrafts (añade borradores) y Estudiante (solo publicadas vigentes).
+- No cambia el código de producción ni la autorización. CI C1.370 pendiente.
+- Checkpoint C1.370: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice fila C1.370.

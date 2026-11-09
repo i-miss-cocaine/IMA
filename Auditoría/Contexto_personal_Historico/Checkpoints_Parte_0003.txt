@@ -975,3 +975,44 @@ Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt �
 Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.369.
 Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
 ===============================================================================
+
+===============================================================================
+## C1.370 — TASK-636 / AUD-NG-002 — ajuste de expectativas del fixture getPosts
+ID: C1.370
+Sesión: IMA-EXEC-20261109-1739Z-01
+Fecha: 2026-11-09
+Checkpoint anterior válido: C1.369
+Baseline lógico: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD físico de partida: 56ea14bae876ea8effd8fde11c624db50aaf32d8
+Rama: NG_beta_0.0.0.1_work
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+
+### Code Review
+- El contrato C1.369 incluía una publicación programada futura P5 y esperaba que Profesor no la recibiera aunque el código permite al personal docente revisar programación futura de su propia aula.
+- Se corrigió el fixture para reflejar la política: Profesor ve P1/P5 sin includeDrafts y P1/P2/P3/P5 con includeDrafts; Estudiante sigue viendo únicamente P1.
+- No se modificó el código de producción ni se amplió el alcance de permisos. Se conserva AUD-NG-002 y el expediente único.
+
+### Archivos modificados
+- tests/security/task-service-security-contract.test.js
+- Auditoría/AUDITORIA_TASK-636_C1.305.md
+- pendientes/Otros/Pendientes.md (seguimiento aditivo)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoria.txt
+- tareas_auditoria.txt
+- changueslogs.txt
+
+### Pruebas y estado
+- C1.369: CI del contrato pendiente de resultado al preparar esta corrección.
+- C1.370: fixture actualizado; CI pendiente tras publicar.
+- No se declara PASS hasta leer logs del run actualizado.
+- TASK-636 permanece En ejecución; AUD-NG-002 en revalidación.
+
+### Siguiente acción exacta
+Consultar CI C1.370; si pasa, continuar auditoría local de los controles restantes de TASK-636 en el mismo expediente, sin crear informes duplicados.
+
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.370.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.370.
+Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
+===============================================================================

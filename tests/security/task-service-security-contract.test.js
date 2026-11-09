@@ -241,11 +241,11 @@ const teacherWithoutDrafts = postContext.run({
   _verifiedUserId: "PROF-1", _verifiedRole: "Profesor",
   includeDrafts: false, aulaId: "AULA-1"
 });
-assert.deepEqual(teacherWithoutDrafts.data.map(row => row.postId), ["P1"], "teacher sees no drafts unless explicitly requested");
+assert.deepEqual(teacherWithoutDrafts.data.map(row => row.postId).sort(), ["P1","P5"], "teacher sees no drafts unless requested but may inspect scheduled posts");
 const teacherWithDrafts = postContext.run({
   _verifiedUserId: "PROF-1", _verifiedRole: "Profesor",
   includeDrafts: true, aulaId: "AULA-1"
 });
-assert.deepEqual(teacherWithDrafts.data.map(row => row.postId).sort(), ["P1","P2","P3"], "teacher may see drafts only in authorized classroom when requested");
+assert.deepEqual(teacherWithDrafts.data.map(row => row.postId).sort(), ["P1","P2","P3","P5"], "teacher may see drafts only in authorized classroom when requested and scheduled posts");
 
 console.log("TASK-636 getPosts local contract: verified role, string/boolean draft guards and classroom scope passed.");

@@ -527,3 +527,11 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - CI C1.368 security run 42724379224 e identity run 42724379276: success; C1.367 backup/restore run 42723635060: success.
 - CI C1.369 pendiente; BETA-FUNC-013 Pendiente beta y no bloqueante.
 ===============================================================================
+
+
+===============================================================================
+## Seguimiento TASK-636 — C1.370 / Code Review getPosts
+- Ajustadas las expectativas del fixture para conservar el acceso docente a publicaciones programadas futuras de su aula.
+- Estudiante sigue sin acceso a borradores ni publicaciones futuras; el rol de cliente no interviene.
+- Sin cambios de código productivo. CI C1.370 pendiente.
+===============================================================================
