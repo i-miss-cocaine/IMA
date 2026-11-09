@@ -628,3 +628,16 @@ Checkpoint anterior: C1.356
 Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.357.
 Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.357.
 ===============================================================================
+
+
+===============================================================================
+## C1.358 — Corrección de aserción de esquema para curso
+ID: C1.358
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.357
+- CI run 42716327775 falló en una aserción estática que esperaba formato con espacios en el literal de esquema de CatalogoCursosCapacitacion; el esquema canónico del writer está declarado compacto y coincide en nombres/orden.
+- Se ajusta la aserción para comparar la representación exacta declarada por ACCOUNTING_MIGRATION_WRITER_SCHEMAS_. No se modifica código de producto.
+- Reejecutar CI para validar parseo, writers de empleado/curso, idempotencia, compensación y suite existente.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.358.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.358.
+===============================================================================

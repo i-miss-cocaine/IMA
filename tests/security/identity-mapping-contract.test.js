@@ -31,7 +31,7 @@ const canonicalSchemas=[
   ['["MatriculaID", "Fecha", "UserId", "Alumno", "Grado", "Seccion", "Periodo", "Tipo", "Estado", "BecaDescuento", "Observaciones"]',academic],
   ['["DocumentoID", "ExpedienteID", "SolicitudID", "TipoDocumento", "NombreArchivo", "DriveFileId", "DriveUrl", "FechaRecepcion", "FechaVencimiento", "EstadoRevision", "SubidoPor", "ValidadoPor", "Observaciones"]',academic],
   ['["ExpedienteID", "PersonaId", "UserId", "Puesto", "Departamento", "CentroCosto", "FechaIngreso", "FechaSalida", "EstadoLaboral", "Observaciones"]',accounting],
-  ['["CursoID", "NombreCurso", "Categoria", "ProveedorResponsable", "Modalidad", "DuracionHoras", "Requisitos", "DirigidoA", "Estado", "CreadoPor", "FechaCreacion", "UltimaModificacion"]',accounting]
+  ['["CursoID","NombreCurso","Categoria","ProveedorResponsable","Modalidad","DuracionHoras","Requisitos","DirigidoA","Estado","CreadoPor","FechaCreacion","UltimaModificacion"]',accounting]
 ];
 canonicalSchemas.forEach(([schema,source])=>assert.ok(source.includes(schema),"canonical destination schema "+schema));
 const targetStart=user.indexOf("const IDENTITY_TARGET_SCHEMAS_ = {");

@@ -2157,3 +2157,8 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - Se confirman esquemas propietarios existentes en ACCOUNTING: ExpedientesLaborales y CatalogoCursosCapacitacion.
 - Se habilitan ambos en el catálogo de destino de identidad, UI de Secretaría e importador; ACCOUNTING usa writer local con journal, upsert, idempotencia y compensación, sin transporte HTTP consigo mismo.
 - Se agregan fixtures locales para ambos tipos; CI C1.356 run 42715880749: success; CI C1.357 pendiente.
+
+
+## 10.42 Corrección de aserción del esquema curso — C1.358
+- CI C1.357 run 42716327775 falló en una aserción de formato (espacios) del esquema CatalogoCursosCapacitacion, no en el código de producto.
+- Se alinea la aserción con el literal canónico compacto de ACCOUNTING_MIGRATION_WRITER_SCHEMAS_; nuevo CI pendiente.

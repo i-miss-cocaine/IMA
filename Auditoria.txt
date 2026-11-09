@@ -587,3 +587,7 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 ## C1.357 — TASK-068 empleado y curso
 - CI C1.356 run 42715880749: completed/success.
 - Se agregan entidades empleado/curso con sus esquemas reales ACCOUNTING y writer local idempotente con compensación. Pruebas locales añadidas; CI pendiente.
+
+
+## C1.358 — Ajuste de test de esquema curso
+- CI C1.357 run 42716327775 falló en aserción estática de formato del esquema curso. Se ajusta el literal esperado; producción sin cambios; CI nuevo pendiente.
