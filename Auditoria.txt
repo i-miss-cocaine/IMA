@@ -440,3 +440,12 @@ Sesión: IMA-EXEC-20261109-1108Z-01; HEAD de partida: 32b8f5884dd24dbeaf1a3bf028
 
 
 [2026-11-09] IMA-EXEC-20261109-1650Z-01 — C1.323: auditoría estática de escritores; ACCOUNTING no tiene UrlFetchApp.fetch y los writers ACADEMIC encontrados no son genéricos. Se mantiene importación fail-closed; AUD-NG-378 abierto.
+
+
+## AUD-NG-380 — MEDIO/P2 — TASK-068 — validación incompleta del esquema de destino
+- **Evidencia:** HEAD de continuidad `07df2612b31b54d602deb4e694857983cb23e770`, `backend/user-service/Code.gs`, función `identityTargetExists_`: solo se comparaba la primera celda del encabezado destino antes de aceptar un ID interno.
+- **Impacto:** una tabla con columna primaria correcta y columnas restantes incompatibles podía ser aceptada como destino válido para confirmar una correspondencia.
+- **Acción/tarea:** ampliar TASK-068 (sin crear ID duplicado) para validar el encabezado completo contra el esquema canónico del tipo de entidad.
+- **Resolución C1.324:** se incorpora `IDENTITY_TARGET_SCHEMAS_` con siete esquemas canónicos y aliases usuario/user/cuenta; validación completa, solo lectura y fail-closed. Prueba aislada Node añadida para esquemas válidos/inválidos y destinos ausentes/no soportados; resultado CI se registra tras ejecución.
+- **Expediente único:** `Auditoría/AUDITORIA_TASK-068_C1.318.md`; no se crea informe completo nuevo ni tarea derivada.
+- Checkpoint C1.324; sesión IMA-EXEC-20261109-1802Z-01; ubicación `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt`; índice `Auditoría/INDICE_CHECKPOINTS.md` — fila C1.324.

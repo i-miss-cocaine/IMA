@@ -119,3 +119,13 @@ Las lecturas fueron completas (92.668, 429.611 y 713.779 caracteres). El histori
 - Auditoría estática de ACCOUNTING/ACADEMIC: no hay transporte interservicio activo en ACCOUNTING; los writers existentes son workflows de admisión/matrícula con precondiciones y efectos colaterales.
 - No se encontró un writer genérico que preserve todas las relaciones e idempotencia requeridas. La escritura directa sería riesgosa; el importador permanece fail-closed.
 - AUD-NG-378 abierto. Se requiere contrato explícito por entidad, con clave idempotente, invariantes, transacción/compensación y pruebas aisladas.
+
+
+## Seguimiento C1.324 — AUD-NG-380: validación completa del esquema destino
+- **Auditoría de continuidad:** revisión focalizada de la implementación publicada en C1.323 y de `identityTargetExists_`; se reutiliza el expediente principal `Auditoría/AUDITORIA_TASK-068_C1.318.md` conforme a §19.6, sin auditoría duplicada.
+- **Hallazgo AUD-NG-380 — MEDIO/P2:** la confirmación de una correspondencia solo comprobaba la primera celda del encabezado destino. Una hoja con la columna de ID correcta y el resto del esquema incompatible podía superar la validación.
+- **Resolución:** registro explícito de los siete esquemas destino verificados (Personas, Usuarios, ExpedientesEstudiantes, ResponsablesTutores, CatalogoAsignaturas, Matriculas y DocumentosEstudiante); aliases usuario/user/cuenta comparten esquema Usuarios. `identityTargetExists_` compara el encabezado completo y continúa siendo de solo lectura/fail-closed.
+- **Pruebas añadidas:** contrato Node extrae y ejecuta la función con hojas simuladas; cubre tipos/aliases, esquema válido, columna incompatible, hoja ausente, ID vacío y tipo no soportado. Se comprueba sincronización con encabezados canónicos USER/ACADEMIC.
+- **Archivos:** `backend/user-service/Code.gs`, `tests/security/identity-mapping-contract.test.js`, este expediente y registros de checkpoint. MapaDependencias no se modifica: no cambian las dependencias ni el grafo entre módulos.
+- **Estado:** AUD-NG-380 corregido en código; CI pendiente de resultado posterior al commit. AUD-NG-378 sigue abierto: no hay escritor de destino ni importación real. TASK-068 permanece En ejecución.
+- **Limitación:** no hay runtime Apps Script/Sheets aislado ni configuración verificada de `IMA_INSTITUTION_ID`; no se ejecutaron pruebas reales de persistencia, dos fuentes, concurrencia ni navegador.

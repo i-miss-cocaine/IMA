@@ -1686,17 +1686,27 @@ function ensureIdentityDecisionSheet_() {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   return validateIdentitySheetSchema_(getOrCreateSheet(ss, "HistorialDecisionesIdentidad"), IDENTITY_DECISION_HEADERS_, "IDENTITY_AUDIT_SCHEMA_MISMATCH");
 }
+const IDENTITY_TARGET_SCHEMAS_ = {
+  persona: { sheet: "Personas", headers: ["PersonaID", "Nombres", "Apellidos", "Identificacion", "EmailContacto", "TelefonoContacto", "EstadoPersona", "FechaCreacion", "FechaActualizacion", "Observaciones"] },
+  usuario: { sheet: "Usuarios", headers: ["UserId", "Nombre", "Grado", "Seccion", "Email", "PasswordHash", "Rol", "Telefono", "NumeroLista", "PersonaID", "EstadoCuenta", "FechaCreacion", "UltimoAcceso"] },
+  user: { sheet: "Usuarios", headers: ["UserId", "Nombre", "Grado", "Seccion", "Email", "PasswordHash", "Rol", "Telefono", "NumeroLista", "PersonaID", "EstadoCuenta", "FechaCreacion", "UltimoAcceso"] },
+  cuenta: { sheet: "Usuarios", headers: ["UserId", "Nombre", "Grado", "Seccion", "Email", "PasswordHash", "Rol", "Telefono", "NumeroLista", "PersonaID", "EstadoCuenta", "FechaCreacion", "UltimoAcceso"] },
+  estudiante: { sheet: "ExpedientesEstudiantes", headers: ["ExpedienteID", "PersonaID", "CodigoInstitucional", "FechaNacimiento", "Nacionalidad", "DireccionResidencia", "FotografiaUrl", "EstadoExpediente", "FechaCreacion", "FechaActualizacion", "Observaciones"] },
+  responsable: { sheet: "ResponsablesTutores", headers: ["ResponsableID", "PersonaID", "Nombres", "Apellidos", "Identificacion", "Telefono", "Email", "Direccion", "Ocupacion", "Estado"] },
+  asignatura: { sheet: "CatalogoAsignaturas", headers: ["AsignaturaID", "NombreOficial", "Codigo", "AreaAcademica", "CargaHorariaRef", "Estado"] },
+  matricula: { sheet: "Matriculas", headers: ["MatriculaID", "Fecha", "UserId", "Alumno", "Grado", "Seccion", "Periodo", "Tipo", "Estado", "BecaDescuento", "Observaciones"] },
+  documento: { sheet: "DocumentosEstudiante", headers: ["DocumentoID", "ExpedienteID", "SolicitudID", "TipoDocumento", "NombreArchivo", "DriveFileId", "DriveUrl", "FechaRecepcion", "FechaVencimiento", "EstadoRevision", "SubidoPor", "ValidadoPor", "Observaciones"] }
+};
 function identityTargetExists_(entityType, internalId) {
   const type = String(entityType || "").trim().toLowerCase();
   const id = String(internalId || "").trim();
   if (!id) return false;
-  const targets = { persona: ["Personas", "PersonaID"], usuario: ["Usuarios", "UserId"], user: ["Usuarios", "UserId"], cuenta: ["Usuarios", "UserId"], estudiante: ["ExpedientesEstudiantes", "ExpedienteID"], responsable: ["ResponsablesTutores", "ResponsableID"], asignatura: ["CatalogoAsignaturas", "AsignaturaID"], matricula: ["Matriculas", "MatriculaID"], documento: ["DocumentosEstudiante", "DocumentoID"] };
-  const target = targets[type];
+  const target = IDENTITY_TARGET_SCHEMAS_[type];
   if (!target) return false;
-  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(target[0]);
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(target.sheet);
   if (!sheet) return false;
-  const headers = sheet.getRange(1, 1, 1, 1).getValues()[0];
-  if (String(headers[0]) !== target[1]) return false;
+  const headers = sheet.getRange(1, 1, 1, target.headers.length).getValues()[0].map(String);
+  if (JSON.stringify(headers) !== JSON.stringify(target.headers)) return false;
   return sheet.getDataRange().getValues().slice(1).some(function(row) { return String(row[0]).trim() === id; });
 }
 function identityCompositeKey_(s, t, l, i) { return JSON.stringify([String(s).trim(), String(t).trim().toLowerCase(), String(l).trim(), String(i).trim()]); }

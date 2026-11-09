@@ -347,3 +347,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-09] C1.323 — TASK-068: auditoría estática de contratos destino; sin writer genérico verificable ni transporte interservicio activo en ACCOUNTING. Se conserva bloqueo seguro de importación; se requiere contrato por entidad.
+
+
+[2026-11-09] IMA-EXEC-20261109-1802Z-01 — TASK-068 / PM-01 / C1.324
+- Se corrige AUD-NG-380: identityTargetExists_ valida el encabezado completo de los siete esquemas destino verificados; aliases usuario/user/cuenta comparten el esquema Usuarios.
+- Se amplía el contrato Node con casos aislados de esquemas válidos/incompatibles, hoja ausente, ID vacío y tipo no soportado; CI queda pendiente de resultado tras publicación.
+- No se habilita writer ni escritura destino; AUD-NG-378 permanece abierto y el importador sigue DESTINATION_WRITER_NOT_CONFIGURED.
+- TASK-068 continúa En ejecución. Checkpoint C1.324; ubicación Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.324; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.324.

@@ -1656,3 +1656,61 @@ No se crea tarea derivada ni segundo informe; se amplía el expediente único Au
 ### Próxima acción
 Diseñar contrato explícito de importación por entidad, con validación de schema, clave de idempotencia, precondiciones de dominio, escritura transaccional/compensación y relaciones; luego implementar solo destinos autorizados y probar fixtures aislados de dos fuentes. Configurar IMA_INSTITUTION_ID en Apps Script aislado y ejecutar pruebas runtime. No desplegar ni usar producción.
 ===============================================================================
+
+
+===============================================================================
+## C1.324 — TASK-068 / PM-01 — validación integral del esquema destino
+ID de sesión: IMA-EXEC-20261109-1802Z-01
+Fecha: 2026-11-09 UTC
+Checkpoint anterior: C1.323
+Repositorio: i-miss-cocaine/IMA
+Rama de trabajo: NG_beta_0.0.0.1_work
+HEAD de partida: 07df2612b31b54d602deb4e694857983cb23e770
+Rama base: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios)
+Tarea: TASK-068 — En ejecución; no completada.
+Fase PM: PM-01; prioridad P0; orden local 1; dependencia declarada: ninguna.
+
+### Continuidad y selección
+- HEAD de trabajo coincide con C1.323; el commit es alcanzable y la rama base conserva su SHA.
+- Se revisó el requisito íntegro en `pendientes/Dirección/Pendientes.md`, la ficha PM-01/orden local 1 de la sección 9, dependencias, backlog, informe principal y estado real de implementación.
+- PM-00 permanece cerrado. TASK-068 sigue siendo la tarea P0/orden local 1 elegible; no se selecciona una tarea posterior porque esta continúa En ejecución.
+- Auditoría de continuidad focalizada: se reutiliza `Auditoría/AUDITORIA_TASK-068_C1.318.md`; no se repiten las auditorías C1.318–C1.323 ni se crea expediente duplicado.
+
+### Hallazgo y corrección
+- AUD-NG-380 MEDIO/P2: `identityTargetExists_` solo validaba la primera celda del encabezado destino.
+- Se añadió `IDENTITY_TARGET_SCHEMAS_` para Personas, Usuarios, ExpedientesEstudiantes, ResponsablesTutores, CatalogoAsignaturas, Matriculas y DocumentosEstudiante; aliases usuario/user/cuenta comparten Usuarios.
+- La función compara todos los encabezados antes de buscar el ID. Es de solo lectura: no crea hojas, no muta filas y rechaza tipos no soportados o esquemas incompatibles.
+- Se amplía el test de contrato para compilar ACADEMIC y ejecutar la función con hojas simuladas: cada tipo/alias, esquema válido, columna alterada, hoja ausente, ID vacío y entidad no soportada.
+- Se amplía el expediente principal y Auditoria.txt. No se crea tarea derivada ni ID duplicado; el estado del backlog permanece En ejecución.
+
+### Respaldo Git histórico previo a edición
+- HEAD de respaldo: 07df2612b31b54d602deb4e694857983cb23e770; commit publicado y alcanzable en la rama autorizada. Recuperación exacta: `git show 07df2612b31b54d602deb4e694857983cb23e770:<ruta>`; verificar el blob con `git hash-object`.
+- `backend/user-service/Code.gs`: blob `0b674212863f52dd7c2b7a26aaced8f2a7342355`.
+- `tests/security/identity-mapping-contract.test.js`: blob `dcb0e456a8e4f9432e8c6cf25d1a4006d8c2c95a`.
+- `Auditoría/AUDITORIA_TASK-068_C1.318.md`: blob `36930754cc06505acc15ca80884c9153eb4ffa9b`.
+- `Auditoria.txt`: blob `ed260b0961dbf4f883db51a24c224ace41ecfe32`.
+- `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt`: blob `fa22477b39145f34d7349f98574bbf050a685b04`; 151249 caracteres, lectura completa.
+- `Auditoría/INDICE_CHECKPOINTS.md`: blob `3ee3c7cbe8517d295dd0d555140eec2e728018db`.
+- `changueslogs.txt`: blob `7ccbbe72d699d0aa94151b77377f3b00b9cd5809`.
+
+### Verificación, revisión y límites
+- Diff funcional limitado a validación del esquema destino; no se altera importación, resolvers, RBAC ni persistencia de entidades.
+- Autoauditoría/Code Review focalizados: esquema completo, ausencia de creación de hojas y rechazo cerrado de esquemas/tipos no soportados.
+- Prueba Node/CI del nuevo test: pendiente de ejecución posterior a la publicación; no se declara PASS en este checkpoint.
+- No ejecutados: Apps Script runtime, Spreadsheet real, dos fuentes, reimportación, concurrencia, relaciones, navegador, HTTP y E2E. No hay deployment/fixture aislado ni configuración de `IMA_INSTITUTION_ID` verificada.
+- AUD-NG-378 sigue abierto: no existe writer destino verificable ni transporte interservicio activo. El importador conserva `DESTINATION_WRITER_NOT_CONFIGURED`; no se habilita escritura directa ni se usan flujos de admisión/matrícula como sustitutos.
+- TASK-068 permanece En ejecución. AUD-NG-380 corregido en código; falta CI y el trabajo de escritor por entidad, importación idempotente y pruebas aisladas de dos fuentes.
+
+### Archivos modificados
+- `backend/user-service/Code.gs`; `tests/security/identity-mapping-contract.test.js`.
+- `Auditoría/AUDITORIA_TASK-068_C1.318.md`; `Auditoria.txt`; `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt`; `Auditoría/INDICE_CHECKPOINTS.md`; `changueslogs.txt`.
+- Revisados pero no modificados: `pendientes/Dirección/Pendientes.md`, `tareas_auditoria.txt`, `Auditoría/MapaDependencias.md`, `backend/accounting-service/Code.gs`, `backend/academic-service/Code.gs`.
+- No modificados: rama base, configuración de despliegue, datos productivos y demás ramas.
+
+### Siguiente acción exacta
+Continuar TASK-068 desde el contrato de importación por entidad en `backend/accounting-service/Code.gs::importDataWithColumnMapping` y dependencias de dominio. No escribir entidades hasta disponer de contrato canónico por entidad con clave idempotente, precondiciones, relaciones y compensación. Preparar fixtures aislados y dos fuentes; verificar/configurar `IMA_INSTITUTION_ID` solo en proyectos Apps Script de prueba autorizados. Requisito rector: `pendientes/Dirección/Pendientes.md` — bloque TASK-068; criterios completos 1–5 y aceptación.
+
+Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.324.
+Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.324.
+Commit de cierre: este commit; SHA se verificará externamente tras publicación.
+===============================================================================
