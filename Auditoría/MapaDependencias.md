@@ -4312,3 +4312,37 @@ SERVICE_URLS declara USER, ACADEMIC, TASK, EXAM, ACCOUNTING y DEVELOPER. Se iden
 
 ### Tareas derivadas
 Ampliar TASK-674/TASK-678 con AUD-NG-354 y la matriz JS; ampliar TASK-678 con AUD-NG-355 y el contrato timeout. No crear IDs duplicados. La traza de acciones a dispatcher/handler/permisos/persistencia sigue pendiente.
+
+
+---
+
+## C1.293 — TASK-638: CSS, Apps Script, JSON y contratos
+**Cobertura:** CSS 6/6, GS 6/6 estructural, JSON 27/27 parseados; informe Auditoría/AUDITORIA_TASK-638_C1.293.md.
+
+### CSS y recursos
+- Se leyeron las seis hojas CSS. Las URLs absolutas /imagenes/fondo_xp.jpg y /imagenes/windows_logo.png resuelven a la raíz y existen. manifest.json usa imagenes/new-generation-logo.png, también existente.
+- Se mantiene AUD-NG-354: sw.js precarga css/styles.css, pero el recurso versionado es css/style.css; cache.addAll depende de esa ruta.
+- No se detectaron nuevos recursos locales ausentes en las hojas CSS revisadas.
+
+### Apps Script y acciones
+- Casos de dispatcher: USER 182; ACADEMIC 241; TASK 44; EXAM 38; ACCOUNTING 240; DEVELOPER 39.
+- 211 llamadas fetchApi literales de los controladores de cinco servicios coinciden con los casos de despacho encontrados. No se detectó llamada literal al servicio DEVELOPER desde los controladores.
+- js/developer.js invoca cuatro acciones que no existen en los dispatchers: USER:getBackupsList, USER:restoreSpreadsheetBackup, USER:runSystemMaintenance y ACADEMIC:exportSchoolYearArchive (AUD-NG-358).
+- USER despacha cuatro nombres sin handler declarado: purgeSecurityCaches, dispatchSecurityEvent, processSecurityEventQueue y getSecurityEventsQueue. ACADEMIC despacha generateInstitutionalReport sin handler; TASK despacha generateAcademicArchiveZip sin handler (AUD-NG-359).
+- USER:manageAccountState escribe el estado de cuenta antes de invocar dispatchSecurityEvent, que no está definido; el error posterior puede dejar persistencia con respuesta de error.
+- Cinco servicios comparten SPREADSHEET_ID literal; DEVELOPER conserva un ID placeholder. No se verificaron Script Properties ni deployments.
+- Se confirman antecedentes AUD-NG-082 (authRole cliente en DEVELOPER), AUD-NG-084 (fallback HMAC derivado de SPREADSHEET_ID) y AUD-NG-083 (delegateToTaskService envía JSON plano, sin sobre HMAC).
+- TASK conserva consultas sensibles en PUBLIC_ACTIONS; getStudentTasks usa userId del payload, loadProject hace fallback a DriveApp.getFileById sin comprobar propietario, getAllStudentProjects enumera nombres/fileIds y getPosts confía en authRole (ampliación AUD-NG-002).
+- EXAM publica getStudentExams/getAllExams antes de verificar token; getStudentExams devuelve calificación/comentario de la entrega usando userId del payload (AUD-NG-356).
+- ACADEMIC publica saveAdmissionDraft/getAdmissionDraft; la clave es email/identificación y permite leer o sobrescribir el borrador (AUD-NG-357).
+
+### JSON y QuizPro
+- Los 27 archivos JSON parsean correctamente: 24 bancos locales, questions-bank.json, manifest.json y test-results/.last-run.json.
+- Siete bancos locales están vacíos; QuizPro muestra alerta y recarga la página cuando no hay preguntas.
+- Diez bancos poblados suman 791 preguntas sin ID estable. config.js:872 y quizpro.js:678 generan un ID aleatorio; el mecanismo seen_questions/refuerzo y la analítica dependen de ese ID (AUD-NG-360).
+- questions-bank.json tiene 771 entradas sin ID, pero no se encontró referencia directa en los 21 JS ni en los documentos HTML revisados; queda clasificado como recurso legado/sin consumidor identificado.
+
+### Hallazgos y tareas derivadas
+- AUD-NG-356..361 y tareas TASK-685..TASK-690 se documentan en el informe C1.293 y tareas_auditoria.txt.
+- Ampliar AUD-NG-002, AUD-NG-082 y AUD-NG-084 existentes; no duplicar sus IDs.
+- TASK-638 continúa En ejecución: falta el análisis exhaustivo de handlers, autorización contextual y persistencia por acción, además de verificar deployments reales. No se ejecutaron pruebas runtime/E2E.

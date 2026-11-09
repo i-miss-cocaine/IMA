@@ -6285,3 +6285,15 @@ No se crea AUD-NG nuevo. Se amplían tareas pendientes existentes, sin borrar ni
   - [ ] Publicar una nueva versión del flujo y comprobar que las firmas de instancias previas permanecen válidas.
   - [ ] Verificar que la verificación criptográfica confirma la autenticidad de la firma registrada.
 - **Estado:** [ ] Pendiente
+
+
+---
+
+<!-- ID: TASK-686 | Fuentes: AUDITORIA_TASK-638_C1.293.md -->
+### [ ] [TASK-686] Proteger lectura y escritura de borradores de admisión
+- **Hallazgo:** AUD-NG-357, ALTO/P1.
+- **Objetivo:** evitar lectura o sobrescritura de borradores mediante email/identificación conocida.
+- **Archivos:** backend/academic-service/Code.gs, admision.html, BorradoresAdmision.
+- **Acción:** retirar la autorización basada solo en draftKey/email; usar capacidad aleatoria de alta entropía vinculada al borrador y con expiración; validar firma/propiedad en lectura y escritura; auditar revocación y cambios.
+- **Criterios:** conocer email/DNI no permite leer ni sobrescribir; solo una capacidad válida recupera/actualiza; capacidad expirada/revocada falla; no se exponen borradores ajenos; pruebas de concurrencia y reintentos.
+- **Estado:** Pendiente.

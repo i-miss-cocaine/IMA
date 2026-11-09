@@ -3,11 +3,11 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.292**
-- Última sesión: `IMA-EXEC-20261109-0430Z-01`
+- Último checkpoint: **C1.293**
+- Última sesión: `IMA-EXEC-20261109-1108Z-01`
 - Archivo activo: `Auditoría/Contexto_personal.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres proyectados del archivo activo tras C1.292: **174,203**
+- Caracteres proyectados del archivo activo tras C1.293: **177,832**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 
@@ -24,7 +24,8 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 
 | C1.291 | IMA-EXEC-20261109-0420Z-01 | Publicado | TASK-638 / PM-00 — cobertura HTML/HTM 101/101 | `Auditoría/Contexto_personal.txt` — sección C1.291 | 1790–1840 | C1.290 | `3694b763b78a1d400a4564dddcb6ebd3c0108ce9` |
 
-| C1.292 | IMA-EXEC-20261109-0430Z-01 | Publicado en este commit | TASK-638 / PM-00 — inventario JS y dependencias runtime | `Auditoría/Contexto_personal.txt` — sección C1.292 | 1842–1892 | C1.291 | Este commit; SHA verificado externamente |
+| C1.292 | IMA-EXEC-20261109-0430Z-01 | Publicado | TASK-638 / PM-00 — inventario JS y dependencias runtime | Auditoría/Contexto_personal.txt — sección C1.292 | 1842–1892 | C1.291 | 32b8f5884dd24dbeaf1a3bf028eb7635ada592df |
+| C1.293 | IMA-EXEC-20261109-1108Z-01 | Publicado en este commit | TASK-638 / PM-00 — CSS/GS/JSON y contratos | Auditoría/Contexto_personal.txt — sección C1.293 | 1895–1943 | C1.292 | Este commit; SHA verificado externamente |
 
 ## Reglas de mantenimiento
 1. Agregar una fila por cada checkpoint, sin borrar ni reutilizar IDs.

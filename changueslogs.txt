@@ -118,3 +118,15 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se corrige la dirección histórica de PresentationEngine/ui-common en el mapa.
 - TASK-638 sigue En ejecución; pendientes CSS/GS/JSON y recorrido API → dispatcher → handler → permisos → persistencia. Sin pruebas runtime.
 - Checkpoint C1.292 en Auditoría/Contexto_personal.txt, sección C1.292, líneas 1842–1892; índice Auditoría/INDICE_CHECKPOINTS.md, fila C1.292.
+
+
+[2026-11-09] IMA-EXEC-20261109-1108Z-01 — C1.293 / TASK-638 (PM-00)
+- Inspección estructural CSS 6/6, Apps Script 6/6 y JSON 27/27; 211 llamadas fetchApi literales de cinco servicios cruzadas con dispatchers.
+- AUD-NG-356: EXAM expone getStudentExams/getAllExams en PUBLIC_ACTIONS; el handler admite userId del payload y devuelve notas/comentarios.
+- AUD-NG-357: ACADEMIC expone lectura/escritura de borradores por email/identificación sin sesión.
+- AUD-NG-358/359: cuatro rutas activas del panel de desarrollador no tienen dispatcher; seis casos invocan handlers inexistentes y manageAccountState puede fallar después de persistir.
+- AUD-NG-360: siete bancos QuizPro vacíos y 791 preguntas sin ID estable.
+- AUD-NG-361: recuperación de contraseña usa fallback SECRET_KEY conocido si falta Script Property.
+- Se amplían AUD-NG-002, AUD-NG-082 y AUD-NG-084; se derivan TASK-685..690.
+- TASK-638 sigue En ejecución; sin cambios de código ni pruebas runtime.
+- Checkpoint C1.293 en Auditoría/Contexto_personal.txt; índice Auditoría/INDICE_CHECKPOINTS.md.

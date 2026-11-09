@@ -3270,6 +3270,7 @@
 - **Dependencias Expuestas:** doPost, ROLE_PERMISSIONS, authRole, verifySessionToken, registerServiceInstance y updateServiceStatus.
 - **Descripción del Alcance:** Eliminar el fallback que utiliza payload.authRole cuando no existe token. Resolver el rol exclusivamente a partir de una sesión firmada y vigente, y rechazar solicitudes sin credenciales verificables. Aplicar el mismo principio a todas las acciones del plano de control y registrar el actor autenticado.
 - **Criterios de Aceptación:** Un payload sin token se rechaza aunque declare Administrador; un token inválido/expirado se rechaza; el rol efectivo proviene de claims verificados; las acciones administrativas quedan cubiertas por pruebas RBAC negativas y positivas.
+- **Ampliación C1.293:** confirmado en DEVELOPER:145–180; si no llega token, doPost toma payload.authRole. ROLE_PERMISSIONS[Administrador] es ["*"], por lo que authRole=Administrador elude la sesión. No se verificó deployment activo.
 - **Estado:** [ ] Pendiente
 
 ### [AUD-NG-083] Integrar la verificación HMAC en el tráfico real de todos los microservicios
@@ -3289,6 +3290,8 @@
 - **Criterios de Aceptación:** La ausencia de una clave configurada produce error seguro, no un fallback predecible; cada par de servicios utiliza credenciales administrables; la rotación permite transición controlada; revocar un servicio no invalida a los demás.
 - **Ampliación C1.29 / FASE2-01:** `getAuthTokenSecret` cae a SHA-256 de `SPREADSHEET_ID + "_MASTER_AUTH_HMAC_SECRET"` cuando falta `AUTH_TOKEN_SECRET`. El mismo `SPREADSHEET_ID` está hardcodeado en USER, ACCOUNTING, ACADEMIC, TASK y EXAM; por tanto el fallback es predecible desde un identificador presente en el código y no separa servicios. No se acredita rotación/versión de claves ni revocación selectiva en el tráfico real.
 - **Criterios adicionales:** Eliminar fallback determinista; requerir secretos aleatorios provisionados por servicio/emisor-receptor en PropertiesService, con versión, rotación solapada y revocación. La ausencia de secreto debe fallar de forma cerrada; probar que revocar una relación no invalida otras.
+
+- **Ampliación C1.293 de AUD-NG-084:** el mismo fallback getAuthTokenSecret aparece también en DEVELOPER: se deriva del SPREADSHEET_ID placeholder y del literal _MASTER_AUTH_HMAC_SECRET cuando falta AUTH_TOKEN_SECRET. La presencia real de Script Properties no es observable desde esta auditoría; exigir fail-closed en los seis servicios.
 
 ### [AUD-NG-085] Corregir el orden y la atomicidad de la protección anti-replay
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-085 (TASK-048 / F23-Task05)
@@ -4738,3 +4741,37 @@
   - [ ] Verificar que los solicitantes no pueden visualizar observaciones internas marcadas como confidenciales.
   - [ ] Comprobar que la paginación no omite ni duplica eventos históricos.
 - **Estado:** [ ] Pendiente
+
+
+---
+
+<!-- ID: TASK-687 | Fuentes: AUDITORIA_TASK-638_C1.293.md -->
+### [ ] [TASK-687] Reparar los contratos API activos sin dispatcher
+- **Hallazgo:** AUD-NG-358, MEDIO/P2.
+- **Objetivo:** garantizar que las acciones del panel de desarrollador lleguen a un dispatcher y handler reales.
+- **Archivos:** js/api.js, js/developer.js, backend/user-service/Code.gs, backend/academic-service/Code.gs.
+- **Acción:** implementar o reenrutar USER:getBackupsList, USER:restoreSpreadsheetBackup, USER:runSystemMaintenance y ACADEMIC:exportSchoolYearArchive; revisar wrappers declarados sin consumidores antes de conservarlos.
+- **Criterios:** cada llamada activa tiene dispatcher, handler y permiso; la identidad se deriva de la sesión; no se muestra éxito ficticio; errores y respuestas quedan documentados y probados.
+- **Estado:** Pendiente.
+
+---
+
+<!-- ID: TASK-688 | Fuentes: AUDITORIA_TASK-638_C1.293.md -->
+### [ ] [TASK-688] Completar handlers referenciados por los dispatchers
+- **Hallazgo:** AUD-NG-359, ALTO/P1.
+- **Objetivo:** eliminar referencias a funciones inexistentes y evitar escrituras con respuesta de error ambigua.
+- **Archivos:** backend/user-service/Code.gs, backend/academic-service/Code.gs, backend/task-service/Code.gs.
+- **Acción:** implementar o retirar purgeSecurityCaches, dispatchSecurityEvent, processSecurityEventQueue, getSecurityEventsQueue, generateInstitutionalReport y generateAcademicArchiveZip; hacer atómica o reanudable la actualización de manageAccountState y su evento.
+- **Criterios:** ningún case llama un handler ausente; cada handler tiene permiso y persistencia definidos; un error no deja una escritura confirmada con respuesta fallida sin correlación; pruebas cubren fallos antes/después de persistir.
+- **Estado:** Pendiente.
+
+---
+
+<!-- ID: TASK-690 | Fuentes: AUDITORIA_TASK-638_C1.293.md -->
+### [ ] [TASK-690] Eliminar el secreto predecible del restablecimiento de contraseña
+- **Hallazgo:** AUD-NG-361, CRÍTICO/P0 condicionado a ausencia de Script Property.
+- **Objetivo:** impedir la falsificación de tokens de recuperación.
+- **Archivos:** backend/user-service/Code.gs, Script Properties, requestPasswordRecovery/resetPassword.
+- **Acción:** eliminar IMA-PORTAL-DEVELOPMENT-KEY-UNSECURE como fallback; requerir secreto aleatorio externo al repositorio y fallar cerrado si falta; rotar clave e invalidar tokens previos; introducir JTI/uso único y revocación.
+- **Criterios:** sin secreto no se emiten ni aceptan tokens; token alterado/falsificado/expirado/reutilizado se rechaza; un token válido solo cambia la contraseña una vez; no se filtran secretos en logs/frontend.
+- **Estado:** Pendiente.

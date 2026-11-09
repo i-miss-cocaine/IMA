@@ -1350,6 +1350,7 @@ HALLAZGO TAREA-18 - RECURSOS REUTILIZABLES Y PROYECTOS INTERDISCIPLINARIOS (2026
 - **AUD-NG-124:** preservar historial de rúbricas, revisiones parciales, criterios y cambios de evaluación; no sobrescribir silenciosamente el progreso.
 - **AUD-NG-158:** derivar autor/profesor de claims verificados en comentarios y devoluciones; comprobar propiedad de la tarea y asignación docente.
 - **AUD-NG-002:** mantener protegidas las consultas sensibles de tareas y entregas, sin bypass por PUBLIC_ACTIONS.
+  - **Ampliación C1.293:** TASK:85 incluye getStudentTasks, getAllTasks, loadProject, getAllStudentProjects y getPosts en PUBLIC_ACTIONS. La validación pública evita exigir token; getStudentTasks acepta userId del payload y devuelve estado/calificación/comentario/fileId; loadProject cae a DriveApp.getFileById sin comprobar propietario; getAllStudentProjects enumera alumnoNombre/fileId; getPosts confía en authRole del cliente para mostrar borradores. Reforzar identidad, propiedad y ámbito en servidor.
 
 ### [AUD-NG-165] Proteger la privacidad y el acceso contextual a comentarios y versiones de entregas
 - **Origen:** Auditoría de completadas.md / TAREA-10.
@@ -3349,3 +3350,26 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
   - [ ] Una sincronización interrumpida a la mitad puede reanudarse sin pérdida ni duplicación de registros.
   - [ ] Cerrar sesión limpia de forma segura el almacenamiento local para prevenir exposición de datos a terceros.
 - **Estado:** [ ] Pendiente
+
+
+---
+
+<!-- ID: TASK-685 | Fuentes: AUDITORIA_TASK-638_C1.293.md -->
+### [ ] [TASK-685] Proteger las consultas de evaluaciones por estudiante
+- **Hallazgo:** AUD-NG-356, ALTO/P1.
+- **Objetivo:** impedir lecturas anónimas o IDOR de exámenes, entregas, calificaciones y comentarios.
+- **Archivos:** backend/exam-service/Code.gs, js/student.js, js/teacher.js.
+- **Acción:** retirar getStudentExams/getAllExams de PUBLIC_ACTIONS salvo DTO público mínimo; exigir token vigente; derivar estudiante desde claims; verificar relación tutor/estudiante y asignación docente; no aceptar userId arbitrario.
+- **Criterios:** sin token se rechaza; cambiar userId no permite consultar otro expediente; tutores y docentes solo acceden a relaciones/ámbitos vigentes; pruebas negativas y positivas por rol.
+- **Estado:** Pendiente.
+
+---
+
+<!-- ID: TASK-689 | Fuentes: AUDITORIA_TASK-638_C1.293.md -->
+### [ ] [TASK-689] Estabilizar identificadores y disponibilidad de bancos QuizPro
+- **Hallazgo:** AUD-NG-360, MEDIO/P2.
+- **Objetivo:** conservar la identidad de cada pregunta y evitar niveles habilitados sin contenido.
+- **Archivos:** js/config.js, js/quizpro.js, js/Banco_Preguntas/.
+- **Acción:** asignar IDs estables y únicos a 791 preguntas; eliminar fallback aleatorio para datos persistidos; completar o deshabilitar explícitamente siete bancos vacíos; validar esquema antes de publicar.
+- **Criterios:** el ID se conserva entre cargas; seen_questions/refuerzo y analítica usan IDs estables; combinaciones habilitadas contienen preguntas válidas; un banco vacío no genera recarga en bucle.
+- **Estado:** Pendiente.

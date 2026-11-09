@@ -1889,3 +1889,54 @@ Ubicación exacta: Auditoría/Contexto_personal.txt — sección C1.292; rango c
 Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.292.
 Commit de cierre: este commit consolidado; SHA verificado externamente tras publicación.
 ===============================================================================
+
+
+===============================================================================
+## C1.293 — TASK-638: CSS, Apps Script, JSON y contratos
+Sesión: IMA-EXEC-20261109-1108Z-01.
+Repositorio: i-miss-cocaine/IMA.
+Rama autorizada: NG_beta_0.0.0.1_work.
+HEAD de partida: 32b8f5884dd24dbeaf1a3bf028eb7635ada592df.
+Tree de partida: c9f71078e20b8fc97bd68d6f47a5f06e41a9a2e0.
+Fase PM: PM-00 — inventario, triage y resolución de dependencias.
+Tarea: TASK-638 — Trazar dependencias estáticas y dinámicas de extremo a extremo.
+Estado: En ejecución; checkpoint parcial, no cierre de tarea.
+
+### Cobertura de esta iteración
+- CSS: 6/6 leídos; referencias locales contrastadas.
+- Apps Script: 6/6 revisados estructuralmente; dispatchers, permisos, secretos, persistencia y llamadas interservicio inventariados.
+- JSON: 27/27 parseados; 24 bancos QuizPro, un banco legado, manifest y metadatos.
+- 211 llamadas fetchApi literales de cinco servicios coinciden con casos de dispatcher; las rutas activas del panel de desarrollador y los handlers ausentes se reportan por separado.
+- No se completó aún el análisis exhaustivo de cada handler ni el grafo individual de persistencia.
+
+### Hallazgos y antecedentes
+- AUD-NG-356..361: exposición de evaluaciones, borradores de admisión, rutas API sin dispatcher, handlers inexistentes, bancos QuizPro sin ID estable/vacíos y fallback débil de recuperación de contraseña.
+- Se amplían AUD-NG-002 (bypass PUBLIC_ACTIONS en TASK), AUD-NG-082 (authRole en DEVELOPER) y AUD-NG-084 (fallback HMAC en los seis servicios).
+- Se confirman los antecedentes AUD-NG-083, AUD-NG-354 y AUD-NG-355.
+- TASK-685 a TASK-690 creadas como tareas derivadas; TASK-638 sigue abierta.
+
+### Archivos modificados
+1. Auditoría/AUDITORIA_TASK-638_C1.293.md (nuevo informe).
+2. Auditoria.txt (AUD-NG-356..361).
+3. tareas_auditoria.txt (ampliación TASK-678 y TASK-685..690).
+4. Auditoría/MapaDependencias.md (sección C1.293).
+5. Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md (seguimiento C1.293).
+6. changueslogs.txt (entrada C1.293).
+7. pendientes/Dirección/Pendientes.md (ampliaciones AUD-NG-082/084 y TASK-687/688/690).
+8. pendientes/Docente/Pendientes.md (ampliación AUD-NG-002 y TASK-685/689).
+9. pendientes/Secretaria/Pendientes.md (TASK-686).
+10. Auditoría/Contexto_personal.txt (este checkpoint).
+11. Auditoría/INDICE_CHECKPOINTS.md (fila C1.293).
+
+### Pruebas y límites
+- Ejecutadas: lectura estática de 6 CSS, 6 GS y 27 JSON; cruce de acciones literales y dispatchers; comparación de handlers declarados; contraste de assets del Service Worker y manifest; inspección de PUBLIC_ACTIONS, secretos y persistencia.
+- No ejecutadas: navegador, Node, suites de regresión, HTTP, Apps Script, Drive, Sheets ni E2E.
+- No se modificó código fuente, configuración, endpoints, deployments ni datos. No se verificó Script Properties ni disponibilidad de Web Apps.
+
+### Siguiente acción exacta
+Continuar TASK-638 con inspección exhaustiva handler por handler desde cada acción frontend hasta autorización contextual y hoja/archivo persistido; priorizar TASK/EXAM/ACADEMIC por las rutas públicas detectadas. Después verificar configuración y deployments con evidencia autorizada. No implementar correcciones dentro de PM-00 ni marcar TASK-638 completada hasta cerrar el grafo y sus dependencias.
+
+Ubicación exacta: Auditoría/Contexto_personal.txt — sección C1.293; el índice central registra el rango de líneas.
+Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.293.
+Commit de cierre: este commit consolidado; SHA se verifica externamente tras publicación.
+===============================================================================

@@ -134,3 +134,19 @@ Sesión: IMA-EXEC-20261109-0430Z-01; HEAD de partida: 3694b763b78a1d400a4564dddc
 - Se corrigió la dirección de dependencia de PresentationEngine en el mapa. Se verificó la estructura del banco JSON de QuizPro.
 - TASK-638 sigue En ejecución; falta inspección de CSS/GS/JSON y mapeo de acciones a dispatchers/handlers/permisos/persistencia. No pruebas runtime.
 - Informe: Auditoría/AUDITORIA_TASK-638_C1.292.md; checkpoint C1.292, ubicación Auditoría/Contexto_personal.txt — sección C1.292; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.292.
+
+
+===============================================================================
+## TASK-638 / C1.293 — CSS, Apps Script, JSON y cruce de contratos
+Sesión: IMA-EXEC-20261109-1108Z-01; HEAD de partida: 32b8f5884dd24dbeaf1a3bf028eb7635ada592df.
+- Cobertura estática: CSS 6/6, GS 6/6 estructural y JSON 27/27 parseados; TASK-638 permanece En ejecución.
+- AUD-NG-356 ALTO/P1: EXAM incluye getStudentExams/getAllExams en PUBLIC_ACTIONS; getStudentExams usa userId del payload y devuelve calificación/comentario sin sesión verificada.
+- AUD-NG-357 ALTO/P1: ACADEMIC expone saveAdmissionDraft/getAdmissionDraft sin token; clave basada en email/identificación permite consultar o sobrescribir borradores.
+- AUD-NG-358 MEDIO/P2: el panel de desarrollador llama getBackupsList, restoreSpreadsheetBackup, runSystemMaintenance y exportSchoolYearArchive, sin dispatcher en USER/ACADEMIC.
+- AUD-NG-359 ALTO/P1: USER despacha cuatro handlers inexistentes; ACADEMIC y TASK despachan uno cada uno. manageAccountState escribe antes de invocar dispatchSecurityEvent inexistente y puede devolver error tras persistir.
+- AUD-NG-360 MEDIO/P2: siete bancos QuizPro vacíos; diez bancos poblados contienen 791 preguntas sin identificador estable, y normalizeQuestion/transformBankQuestions generan IDs aleatorios.
+- AUD-NG-361 CRÍTICO/P0 condicionado a ausencia de Script Property: SECRET_KEY usa IMA-PORTAL-DEVELOPMENT-KEY-UNSECURE como fallback para firmar tokens públicos de recuperación de contraseña.
+- Se amplían los antecedentes AUD-NG-002, AUD-NG-082 y AUD-NG-084; no se duplican.
+- 211 llamadas fetchApi literales de los controladores revisados coinciden con casos de despacho en cinco servicios; las rutas de api.js y los handlers inexistentes se reportan aparte.
+- TASK-638 sigue En ejecución; falta inspección exhaustiva de handlers y traza de cada acción hasta persistencia/ámbito. Sin pruebas runtime.
+- Informe: Auditoría/AUDITORIA_TASK-638_C1.293.md; checkpoint C1.293 se anexa a Auditoría/Contexto_personal.txt.

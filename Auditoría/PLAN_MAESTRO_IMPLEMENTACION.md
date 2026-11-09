@@ -1783,3 +1783,11 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - **Hallazgos:** AUD-NG-354 (Service Worker precarga css/styles.css inexistente) y AUD-NG-355 (timeout 6000 solicitado, 60000 aplicado). TASK-674/TASK-678 ampliadas.
 - **Corrección de mapa:** presentation-engine.js no depende directamente de ui-common; la referencia opcional observable va de ui-common a PresentationEngine en popstate.
 - **Siguiente paso:** inspeccionar 6 CSS, 6 GS y 27 JSON; después mapear acciones frontend a dispatchers, handlers, permisos y persistencia.
+
+
+## Seguimiento operativo — C1.293
+- **TASK-638:** primera pasada estructural completada para CSS 6/6, Apps Script 6/6 y JSON 27/27. La tarea global permanece En ejecución.
+- **Contratos:** 211 llamadas fetchApi literales de cinco servicios coinciden con sus dispatchers; cuatro rutas activas del panel de desarrollador carecen de dispatcher. Se identifican además seis casos de despacho que invocan handlers no declarados.
+- **Seguridad:** se amplían AUD-NG-002, AUD-NG-082 y AUD-NG-084; se registran AUD-NG-356..361 para evaluación, borradores de admisión, rutas API, handlers, bancos QuizPro y secreto de recuperación.
+- **Persistencia:** cinco servicios comparten un mismo Spreadsheet ID literal; DEVELOPER mantiene placeholder. No se verificaron Script Properties ni deployments.
+- **Siguiente paso exacto:** profundizar handler por handler desde cada acción frontend hasta autorización contextual y cada hoja/archivo de persistencia; revisar los servicios públicos TASK/EXAM/ACADEMIC y confirmar la configuración de secretos/deployments con evidencia autorizada. Mantener TASK-638 En ejecución; no corregir código durante la auditoría PM-00.

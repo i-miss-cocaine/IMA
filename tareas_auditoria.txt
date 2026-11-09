@@ -124,3 +124,65 @@ El propósito de este documento es llevar el registro de las tareas derivadas de
 - **TASK-678:** integrar grafo de 24 JS, globals, servicios, persistencia, los dos hallazgos y la dirección correcta de PresentationEngine/ui-common.
 - **Criterios verificables:** todo asset de precarga existe y el install completa en prueba; los timeouts del llamador y transporte coinciden; el grafo identifica proveedor/consumidor y evidencia. No cerrar sin prueba runtime posterior.
 - No crear IDs duplicados; TASK-638 continúa En ejecución.
+
+
+===============================================================================
+## TASK-678 — Ampliación C1.293 / TASK-638
+- Se integra la primera pasada de CSS 6/6, GS 6/6 estructural y JSON 27/27.
+- Matriz de dispatchers: USER 182, ACADEMIC 241, TASK 44, EXAM 38, ACCOUNTING 240 y DEVELOPER 39 casos.
+- Se documentan AUD-NG-356..361 y las ampliaciones de AUD-NG-002, AUD-NG-082 y AUD-NG-084.
+- Se mantiene el alcance documental de TASK-678; no modificar código ni endpoints durante la auditoría. TASK-638 continúa En ejecución hasta completar el grafo handler → autorización contextual → persistencia y verificar deployments.
+
+===============================================================================
+## TASK-685 — Proteger consultas de evaluaciones por estudiante
+- **Hallazgo:** AUD-NG-356, ALTO/P1.
+- **Objetivo:** impedir consultas anónimas o por IDOR de exámenes, entregas, calificaciones y comentarios.
+- **Archivos:** backend/exam-service/Code.gs; js/student.js; js/teacher.js; contratos EXAM.
+- **Acción:** retirar getStudentExams/getAllExams de PUBLIC_ACTIONS salvo DTO público mínimo aprobado; exigir token válido; derivar estudiante de claims; verificar relación tutor/estudiante y ámbito docente; no aceptar userId libre del cliente.
+- **Criterios:** una petición sin token se rechaza; cambiar userId no permite consultar otro expediente; estudiantes/tutores solo acceden a relaciones vigentes; docentes solo a grupos asignados; las respuestas no filtran notas/comentarios de terceros; pruebas positivas y negativas por rol.
+- **Estado:** Pendiente.
+
+===============================================================================
+## TASK-686 — Proteger borradores del portal de admisión
+- **Hallazgo:** AUD-NG-357, ALTO/P1.
+- **Objetivo:** evitar lectura, sobrescritura o suplantación de borradores mediante email/identificación.
+- **Archivos:** backend/academic-service/Code.gs; admision.html; BorradoresAdmision.
+- **Acción:** eliminar la autorización basada únicamente en draftKey/email; generar secreto de recuperación/capacidad aleatoria, de alta entropía, vinculada al borrador y con expiración; validar firma/propiedad en lectura y escritura; limitar y auditar cambios; separar la clave pública de seguimiento del identificador interno.
+- **Criterios:** conocer un email/DNI no permite leer ni sobrescribir; solo el titular con capacidad válida recupera/actualiza; una capacidad revocada/expirada falla; las respuestas no exponen borradores ajenos; concurrencia y reintentos no duplican ni pisan borradores.
+- **Estado:** Pendiente.
+
+===============================================================================
+## TASK-687 — Reconciliar contratos API activos sin dispatcher
+- **Hallazgo:** AUD-NG-358, MEDIO/P2.
+- **Objetivo:** garantizar que cada wrapper usado por el panel de desarrollador llegue a una acción real y autorizada.
+- **Archivos:** js/api.js; js/developer.js; backend/user-service/Code.gs; backend/academic-service/Code.gs; SERVICE_URLS y contratos de servicio.
+- **Acción:** implementar y autorizar getBackupsList, restoreSpreadsheetBackup y runSystemMaintenance en USER, y exportSchoolYearArchive en el servicio propietario; o retirar/reenrutar wrappers si el contrato vigente está en otro servicio. Revisar también los wrappers declarados sin consumidor identificado antes de mantenerlos como API pública.
+- **Criterios:** cada wrapper activo coincide exactamente con dispatcher y handler; actor/rol se deriva de sesión; permisos mínimos; respuesta y errores documentados; panel de desarrollador muestra error real y no mocks como éxito; pruebas por acción y rol.
+- **Estado:** Pendiente.
+
+===============================================================================
+## TASK-688 — Completar handlers referenciados por dispatchers
+- **Hallazgo:** AUD-NG-359, ALTO/P1.
+- **Objetivo:** evitar ReferenceError y estados parcialmente persistidos en operaciones de seguridad/servicios.
+- **Archivos:** backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/task-service/Code.gs.
+- **Acción:** implementar o retirar coherentemente purgeSecurityCaches, dispatchSecurityEvent, processSecurityEventQueue, getSecurityEventsQueue, generateInstitutionalReport y generateAcademicArchiveZip; para manageAccountState, asegurar que la actualización y el evento sean atómicos o que el fallo de evento quede encolado/reanudable sin reportar falsamente un fallo total.
+- **Criterios:** ningún case apunta a handler inexistente; los handlers tienen autorización y persistencia definidas; los fallos no dejan estado cambiado con respuesta de error ambigua; eventos reintentables no se duplican; pruebas de error antes/después de persistencia.
+- **Estado:** Pendiente.
+
+===============================================================================
+## TASK-689 — Estabilizar identificadores y disponibilidad de bancos QuizPro
+- **Hallazgo:** AUD-NG-360, MEDIO/P2.
+- **Objetivo:** mantener identidad persistente de cada pregunta y evitar niveles sin contenido accidental.
+- **Archivos:** js/config.js; js/quizpro.js; js/Banco_Preguntas/**; fuentes editoriales de preguntas.
+- **Acción:** asignar identificador estable y único a las 791 preguntas sin ID; eliminar el fallback aleatorio para datos persistidos y rechazar/diagnosticar IDs ausentes; completar o marcar explícitamente como no habilitados los siete bancos vacíos; validar grado/asignatura/nivel y esquema antes de publicar.
+- **Criterios:** una pregunta conserva el mismo ID entre cargas; seen_questions y reinforcement sobreviven reinicios; analytics referencia IDs estables; cada combinación habilitada contiene preguntas válidas; los bancos vacíos no aparecen como nivel seleccionable o presentan alternativa aprobada sin recarga en bucle.
+- **Estado:** Pendiente.
+
+===============================================================================
+## TASK-690 — Eliminar secreto predecible en recuperación de contraseña
+- **Hallazgo:** AUD-NG-361, CRÍTICO/P0 condicionado a ausencia de Script Property.
+- **Objetivo:** impedir la fabricación de tokens de recuperación mediante una clave hardcodeada conocida.
+- **Archivos:** backend/user-service/Code.gs; Script Properties; flujo requestPasswordRecovery/resetPassword.
+- **Acción:** eliminar IMA-PORTAL-DEVELOPMENT-KEY-UNSECURE como fallback; exigir secreto aleatorio de alta entropía provisionado fuera del repositorio; fallar cerrado si falta; rotar la clave y revocar tokens emitidos con la anterior; añadir uso único/JTI y registro de revocación.
+- **Criterios:** secreto ausente impide emitir y aceptar tokens; no hay valor por defecto ni secreto en logs/frontend; token falsificado/alterado/reutilizado/expirado se rechaza; un token legítimo solo puede cambiar la contraseña una vez; pruebas de rotación y revocación.
+- **Estado:** Pendiente.
