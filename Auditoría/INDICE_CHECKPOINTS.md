@@ -7,7 +7,7 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 - Última sesión: `IMA-EXEC-20261109-1909Z-01`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.324: **156832**
+- Caracteres del archivo activo tras C1.328: **176668**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 
