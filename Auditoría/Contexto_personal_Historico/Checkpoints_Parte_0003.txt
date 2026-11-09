@@ -655,3 +655,16 @@ Checkpoint anterior: C1.358
 Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.359.
 Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.359.
 ===============================================================================
+
+
+===============================================================================
+## C1.360 — TASK-068: prueba integrada de registro, confirmación e historial
+ID: C1.360
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.359
+- CI C1.359 run 42716679171: completed/success; writers ACCOUNTING de empleado/curso pasan INSERT, UPDATE, idempotencia, conflicto, compensación y dispatch local.
+- Se agregan fixtures que ejecutan funciones reales de correspondencia: registro de dos fuentes hacia el mismo ID canónico, reintento idempotente, conflicto de destino, resolución pendiente antes de revisión, confirmación humana, resolución bidireccional y consulta de historial de decisiones.
+- CI C1.360 pendiente. TASK-068 continúa En ejecución hasta Code Review final y verificación de aceptación completa; BETA-FUNC-008 sigue Pendiente beta.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.360.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.360.
+===============================================================================

@@ -331,3 +331,42 @@ vm.runInNewContext(extractBalancedFunction(accounting,"sendMigrationOwnerRequest
 assert.equal(accountingRouteContext.send("empleado","writeMigratedEntity",{tipoEntidad:"empleado"}).written,"empleado");
 assert.equal(accountingRouteContext.send("curso","compensateMigratedEntity",{tipoEntidad:"curso"}).compensated,"curso");
 assert.throws(()=>accountingRouteContext.send("empleado","unknown",{}),/ACCOUNTING_MIGRATION_ACTION_NOT_ALLOWED/);
+
+
+// TASK-068 real mapping workflow: register is idempotent, conflicting targets fail, human decisions are auditable.
+const mappingDecisionHeaders=["decisionId","idMapeo","sistemaOrigen","tipoEntidad","idOriginalLegado","idNuevoPlataformaAnterior","idNuevoPlataformaNuevo","decision","motivo","actorUserId","actorRole","fechaDecision","institucionId"];
+function makeIdentitySheet(rows){return{getDataRange:function(){return{getValues:function(){return rows.map(r=>r.slice());}};},appendRow:function(row){rows.push(row.slice());},getLastRow:function(){return rows.length;},deleteRow:function(row){rows.splice(row-1,1);},getRange:function(row,col){return{setValue:function(value){rows[row-1][col-1]=value;}};}};}
+const mappingWorkflowRows=[headers],decisionWorkflowRows=[mappingDecisionHeaders];
+const mappingWorkflowSheet=makeIdentitySheet(mappingWorkflowRows),decisionWorkflowSheet=makeIdentitySheet(decisionWorkflowRows);
+let identityUuid=0;
+const mappingWorkflowContext={
+ requireIdentityManager_:function(){return{actorId:"ADMIN-1",role:"Administrador"};},
+ getIdentityInstitutionId_:function(){return"INST-1";},
+ ensureIdentityMappingSheet_:function(){return mappingWorkflowSheet;},
+ ensureIdentityDecisionSheet_:function(){return decisionWorkflowSheet;},
+ getIdentityMappingSheet_:function(){return mappingWorkflowSheet;},
+ getIdentityDecisionSheet_:function(){return decisionWorkflowSheet;},
+ identityCompositeKey_:function(s,t,l,i){return JSON.stringify([String(s).trim(),String(t).trim().toLowerCase(),String(l).trim(),String(i).trim()]);},
+ identityTextCell_:function(v){const x=String(v==null?"":v);return /^[=+@-]/.test(x)?"'"+x:x;},
+ identityHash_:function(v){return "HASH-"+String(v).length;},
+ identityTargetExists_:function(type,id){return type==="persona"&&["PER-1","PER-2"].indexOf(id)!==-1;},
+ appendIdentityDecisionAudit_:function(sheet,e){sheet.appendRow(["DEC-"+(decisionWorkflowRows.length),e.idMapeo||"",e.sistemaOrigen||"",e.tipoEntidad||"",e.idOriginalLegado||"",e.idNuevoPlataformaAnterior||"",e.idNuevoPlataformaNuevo||"",e.decision,e.motivo,e.actorId,e.actorRole,new Date(),e.institucionId]);},
+ Utilities:{getUuid:function(){return"UUID-"+(++identityUuid);}},
+ LockService:{getScriptLock:function(){return{waitLock:function(){},releaseLock:function(){}};}}
+};
+const mappingWorkflowFns=["registerLegacyIdentifierMapping","resolveInternalIdFromLegacy","resolveLegacyIdFromInternal","reviewLegacyIdentifierMapping","getIdentityDecisionHistory"];
+vm.runInNewContext(mappingWorkflowFns.map(n=>extractBalancedFunction(user,n)).join(String.fromCharCode(10))+"this.register=registerLegacyIdentifierMapping;this.resolve=resolveInternalIdFromLegacy;this.reverse=resolveLegacyIdFromInternal;this.review=reviewLegacyIdentifierMapping;this.history=getIdentityDecisionHistory;",mappingWorkflowContext);
+const sourceA=mappingWorkflowContext.register({sistemaOrigen:"SACE",tipoEntidad:"persona",idOriginalLegado:"RNE-100",idNuevoPlataforma:"PER-1"});
+const sourceB=mappingWorkflowContext.register({sistemaOrigen:"LEGACY_A",tipoEntidad:"persona",idOriginalLegado:"A-100",idNuevoPlataforma:"PER-1"});
+assert.equal(sourceA.estadoCorrespondencia,"PENDIENTE_REVISION");
+assert.equal(sourceB.estadoCorrespondencia,"PENDIENTE_REVISION");
+assert.equal(mappingWorkflowContext.register({sistemaOrigen:"SACE",tipoEntidad:"persona",idOriginalLegado:"RNE-100",idNuevoPlataforma:"PER-1"}).idempotent,true);
+assert.throws(()=>mappingWorkflowContext.register({sistemaOrigen:"SACE",tipoEntidad:"persona",idOriginalLegado:"RNE-100",idNuevoPlataforma:"PER-2"}),/IDENTITY_MAPPING_CONFLICT/);
+assert.equal(mappingWorkflowContext.resolve({sistemaOrigen:"SACE",tipoEntidad:"persona",idOriginalLegado:"RNE-100"}).status,"pending_review");
+mappingWorkflowContext.review({idMapeo:sourceA.idMapeo,decision:"CONFIRMAR",motivo:"Identidad verificada contra expediente institucional"});
+mappingWorkflowContext.review({idMapeo:sourceB.idMapeo,decision:"CONFIRMAR",motivo:"Segunda fuente conciliada por Secretaría"});
+assert.equal(mappingWorkflowContext.resolve({sistemaOrigen:"SACE",tipoEntidad:"persona",idOriginalLegado:"RNE-100"}).idNuevoPlataforma,"PER-1");
+assert.equal(mappingWorkflowContext.resolve({sistemaOrigen:"LEGACY_A",tipoEntidad:"persona",idOriginalLegado:"A-100"}).idNuevoPlataforma,"PER-1");
+const reverseWorkflow=mappingWorkflowContext.reverse({tipoEntidad:"persona",idNuevoPlataforma:"PER-1"});
+assert.equal(reverseWorkflow.referencias.length,2);
+assert.equal(mappingWorkflowContext.history({idMapeo:sourceA.idMapeo}).historial.length,2,"registration and human confirmation are auditable");

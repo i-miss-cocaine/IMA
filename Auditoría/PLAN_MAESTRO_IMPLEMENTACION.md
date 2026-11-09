@@ -2168,3 +2168,9 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - Se prueban UPDATE/compensación con restauración de Date tipado para empleado y curso, además de inserción/idempotencia/conflicto.
 - Se prueba sendMigrationOwnerRequest_ con rutas ACCOUNTING locales: write/compensate pasan al writer privado sin HTTP y las acciones no permitidas fallan cerrado.
 - C1.358 CI run 42716471988: success. C1.359 CI pendiente.
+
+
+## 10.44 TASK-068 — C1.360: prueba de flujo real de correspondencia
+- Fixtures locales ejecutan registerLegacyIdentifierMapping, resolveInternalIdFromLegacy, resolveLegacyIdFromInternal, reviewLegacyIdentifierMapping y getIdentityDecisionHistory.
+- Se prueba registro de dos fuentes al mismo ID canónico, reintento idempotente, conflicto de destino, bloqueo mientras está pendiente, confirmación humana y bitácora completa.
+- C1.359 CI run 42716679171: success. C1.360 CI pendiente.
