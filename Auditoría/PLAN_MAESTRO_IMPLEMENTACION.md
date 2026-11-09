@@ -2162,3 +2162,9 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 ## 10.42 Corrección de aserción del esquema curso — C1.358
 - CI C1.357 run 42716327775 falló en una aserción de formato (espacios) del esquema CatalogoCursosCapacitacion, no en el código de producto.
 - Se alinea la aserción con el literal canónico compacto de ACCOUNTING_MIGRATION_WRITER_SCHEMAS_; nuevo CI pendiente.
+
+
+## 10.43 TASK-068 — C1.359: ampliar pruebas de writer ACCOUNTING
+- Se prueban UPDATE/compensación con restauración de Date tipado para empleado y curso, además de inserción/idempotencia/conflicto.
+- Se prueba sendMigrationOwnerRequest_ con rutas ACCOUNTING locales: write/compensate pasan al writer privado sin HTTP y las acciones no permitidas fallan cerrado.
+- C1.358 CI run 42716471988: success. C1.359 CI pendiente.

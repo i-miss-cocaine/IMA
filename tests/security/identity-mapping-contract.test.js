@@ -316,7 +316,18 @@ function runAccountingMigrationWriterFixture(source,entity){
  assert.equal(target.rows.length,2);assert.equal(target.rows[1][1],"'=1+1");
  assert.throws(()=>ctx.apply(Object.assign({},input,{datos:Object.assign({},data,{[schema.headers[1]]:"different"})})),/IDEMPOTENCY_CONFLICT/);
  assert.equal(ctx.compensate({idempotencyKey:"ACC-MIG-1"}).compensated,true);assert.equal(target.rows.length,1);
+ const dateField=schema.headers.find(h=>/^Fecha/.test(h)),dateIndex=schema.headers.indexOf(dateField),oldRow=schema.headers.map(()=> "");
+ oldRow[0]="OWNER-OLD";oldRow[1]="Original";oldRow[dateIndex]=new Date("2020-04-05T06:07:08.000Z");target.rows.push(oldRow);
+ const update={tipoEntidad:entity,idNuevoPlataforma:"OWNER-OLD",idempotencyKey:"ACC-MIG-UPDATE",datos:{[schema.headers[1]]:"Updated"}};
+ assert.equal(ctx.apply(update).accion,"UPDATE");assert.equal(target.rows[1][1],"Updated");
+ assert.equal(ctx.compensate({idempotencyKey:"ACC-MIG-UPDATE"}).compensated,true);
+ assert.equal(target.rows[1][1],"Original");assert.ok(target.rows[1][dateIndex] instanceof Date,"accounting owner writer restores typed Date snapshot");
 }
 runAccountingMigrationWriterFixture(accounting,"empleado");
 runAccountingMigrationWriterFixture(accounting,"curso");
 assert.ok(accounting.includes('if(route.service==="ACCOUNTING")'));
+const accountingRouteContext={MIGRATION_OWNER_SCHEMAS_:{empleado:{service:"ACCOUNTING"},curso:{service:"ACCOUNTING"}},applyAccountingMigrationWrite_:p=>({status:"success",written:p.tipoEntidad}),compensateAccountingMigrationWrite_:p=>({status:"success",compensated:p.tipoEntidad})};
+vm.runInNewContext(extractBalancedFunction(accounting,"sendMigrationOwnerRequest_")+"this.send=sendMigrationOwnerRequest_;",accountingRouteContext);
+assert.equal(accountingRouteContext.send("empleado","writeMigratedEntity",{tipoEntidad:"empleado"}).written,"empleado");
+assert.equal(accountingRouteContext.send("curso","compensateMigratedEntity",{tipoEntidad:"curso"}).compensated,"curso");
+assert.throws(()=>accountingRouteContext.send("empleado","unknown",{}),/ACCOUNTING_MIGRATION_ACTION_NOT_ALLOWED/);

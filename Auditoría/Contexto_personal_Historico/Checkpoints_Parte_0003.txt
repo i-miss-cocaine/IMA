@@ -641,3 +641,17 @@ Checkpoint anterior: C1.357
 Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.358.
 Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.358.
 ===============================================================================
+
+
+===============================================================================
+## C1.359 — TASK-068: pruebas UPDATE/compensación y ruta local ACCOUNTING
+ID: C1.359
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.358
+- CI C1.358 run 42716471988: completed/success; esquemas employee/course, escritores y suite previa pasaron.
+- Se amplían fixtures de writers ACCOUNTING para probar UPDATE y compensación con restauración de Date tipado, además de INSERT/reintento/conflicto ya cubiertos.
+- Se ejecuta sendMigrationOwnerRequest_ real con rutas locales ACCOUNTING para empleado/curso, confirmando dispatch privado write/compensate sin UrlFetchApp y rechazo de acciones no permitidas.
+- CI C1.359 pendiente. TASK-068 sigue En ejecución hasta revisión final de alcance y Code Review. BETA-FUNC-008 sigue Pendiente beta.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.359.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.359.
+===============================================================================
