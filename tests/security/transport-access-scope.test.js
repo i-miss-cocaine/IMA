@@ -146,6 +146,21 @@ const monitor = runScope({
 }, data);
 assert.deepEqual(Array.from(monitor.routeIds), ["RUT-01"]);
 
+const revokedDriverAssignmentData = Object.assign({}, data, {
+  TransporteViajes: [
+    data.TransporteViajes[0],
+    data.TransporteViajes[1].map((value, index) => index === 9 ? "CerradoNormal" : value),
+    data.TransporteViajes[2],
+    data.TransporteViajes[3]
+  ]
+});
+const revokedDriverScope = runScope({
+  _verifiedRole: "Conductor",
+  _verifiedUserId: "DRIVER-1"
+}, revokedDriverAssignmentData);
+assert.deepEqual(Array.from(revokedDriverScope.routeIds), []);
+
+
 const missingVerifiedClaims = runScope({
   authRole: "Administrador",
   authUserId: "ROOT"
