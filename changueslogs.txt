@@ -210,3 +210,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - AUD-NG-374..376 registrados en Auditoria.txt; tareas derivadas TASK-691..693 registradas en tareas_auditoria.txt y pendientes/Dirección/Pendientes.md.
 - TASK-639 pasa a Completada en pendientes/Secretaria/Pendientes.md. No se modificó código; pruebas runtime/E2E no ejecutadas.
 - Checkpoint C1.302: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.302, líneas 398–451; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.302.
+
+
+[2026-11-09] IMA-DOCFIX-20261109-1344Z-01 — C1.303 / corrección documental de índice
+- Se incorpora la fila C1.302 omitida por una coincidencia de formato no exacta en el cambio anterior y se corrige la referencia SHA de C1.301.
+- No se reabre ni repite TASK-639; no se modifica código ni el expediente principal.
+- Checkpoint C1.303: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.303, líneas 454–490; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.303.

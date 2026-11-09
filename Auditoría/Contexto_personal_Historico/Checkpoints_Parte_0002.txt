@@ -448,3 +448,42 @@ Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002
 Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.302.
 Commit de cierre: el commit que contiene este checkpoint; SHA verificado externamente tras publicación.
 ===============================================================================
+
+
+===============================================================================
+CHECKPOINT C1.303 — Corrección documental del índice C1.302
+===============================================================================
+ID: C1.303
+Sesión: IMA-DOCFIX-20261109-1344Z-01
+Checkpoint anterior: C1.302
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+HEAD de partida: 9ddafd273ccda4aeeb13e04fdb03a053a7556848
+Motivo: el control posterior al commit C1.302 detectó que el índice central actualizó su encabezado «Último checkpoint», pero no incorporó la fila de C1.302 debido a una coincidencia de formato no exacta durante la preparación del cambio.
+
+### Corrección
+- Se añade la fila C1.302 con ruta, rango de líneas y commit verificados.
+- Se corrige la referencia de commit de C1.301 a aa5a85f9eaedec5f89963a15cd32e8ed5e6e45e6.
+- Se actualiza el encabezado del índice al último checkpoint C1.303.
+- No se repite ni reabre TASK-639; es una corrección directa de trazabilidad documental conforme a METODOLOGIA_DESARROLLO.md §19.6, puntos 3 y 7.
+- No se modifica código ni se altera el expediente de auditoría.
+
+### Archivos modificados
+1. Auditoría/INDICE_CHECKPOINTS.md.
+2. Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt (este checkpoint).
+3. changueslogs.txt.
+4. Auditoria.txt (referencia de checkpoint, sin nuevo hallazgo).
+
+### Verificaciones
+- HEAD previo C1.302: 9ddafd273ccda4aeeb13e04fdb03a053a7556848.
+- C1.302: sección previamente publicada en el archivo activo; rango de líneas 398–451.
+- El archivo activo permanece por debajo del límite de 180.000 caracteres.
+- No se ejecutaron pruebas de producto; no aplican a esta corrección documental.
+
+### Siguiente acción
+Continuar la selección PM-01 conforme al Plan Maestro §6.1. La siguiente candidata prioritaria identificada es TASK-636 (P0), requisito en pendientes/Otros/Pendientes.md; verificar el requisito original completo, las dependencias reales y la auditoría previa antes de comenzar.
+
+Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.303.
+Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.303.
+Commit de cierre: el commit que contiene este checkpoint; SHA verificado externamente tras publicación.
+===============================================================================
