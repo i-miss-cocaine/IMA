@@ -445,3 +445,17 @@ Checkpoint anterior: C1.344
 Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.345.
 Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.345.
 ===============================================================================
+
+
+===============================================================================
+## C1.346 — Completar helpers tipados de snapshots en USER/ACADEMIC
+ID: C1.346
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.345
+- CI run 42713422124 falló en extracción de migrationEncodeSnapshot_: el cambio C1.344 había actualizado las llamadas a codificación/decodificación, pero el patrón de inserción no coincidió con la firma real migrationSafeCell_(v), por lo que los helpers no habían quedado añadidos.
+- Se incorporan migrationEncodeSnapshot_ y migrationDecodeSnapshot_ en USER y ACADEMIC antes de migrationSafeCell_.
+- No se altera la lógica de escritura, transporte ni el resto de la orquestación; se completa el soporte requerido para snapshots Date.
+- CI nuevo pendiente; los writers no se declaran aprobados hasta que el harness real termine success.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.346.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.346.
+===============================================================================

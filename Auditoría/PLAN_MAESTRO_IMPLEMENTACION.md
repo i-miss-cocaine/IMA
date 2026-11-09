@@ -2091,3 +2091,7 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 ## 10.29 Corrección del harness real — C1.345
 - Se elimina el uso de copias duplicadas de helpers en runMigrationWriterFixture y se pasan los fuentes reales USER/ACADEMIC para extraer constantes y funciones writer.
 - Los fixtures cubren insert, retry, conflicto, compensación insert, update y restauración de Date tipado. Código de producción sin cambios; CI pendiente.
+
+
+## 10.30 Corrección de snapshots Date — C1.346
+- El run 42713422124 detectó que los helpers de serialización tipada no existían porque la inserción buscaba otra firma de migrationSafeCell_. Se incorporan ambos helpers en USER/ACADEMIC; CI pendiente.

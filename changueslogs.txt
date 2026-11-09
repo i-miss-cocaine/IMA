@@ -447,3 +447,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-09] C1.345 — se corrigen llamadas del harness para ejecutar helpers reales USER/ACADEMIC en vez de copias serializadas. Pruebas de insert/idempotencia/conflicto/compensación/update/Date. Sin cambios de producción; CI pendiente. Checkpoint Parte_0003 C1.345.
+
+
+[2026-11-09] C1.346 — CI 42713422124 detectó que los helpers migrationEncodeSnapshot_/migrationDecodeSnapshot_ no se habían insertado por mismatch de firma; se añaden en USER/ACADEMIC. Sin cambio de lógica de escritura/transporte; CI nuevo pendiente. Checkpoint Parte_0003 C1.346.
