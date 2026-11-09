@@ -9633,3 +9633,28 @@ Auditar TAREA-F6-015 y TAREA-F6-040. Buscar informes individuales e historial en
 - **Siguiente tarea exacta:** TASK-638 — Trazar dependencias estáticas y dinámicas de extremo a extremo; `pendientes/Contabilidad/Pendientes.md`.
 - **Próxima acción reproducible:** auditar primero el cierre de TASK-637 y después abrir el requisito completo de TASK-638; verificar que todas sus dependencias de TASK-637 están satisfechas antes de ejecutar.
 ===============================================================================
+
+
+===============================================================================
+## C1.283 — Reauditoría de TASK-637 y sincronización del inventario (2026-11-09)
+
+- **ID de sesión operativo:** IMA-EXEC-20261109-0217Z-02.
+- **Estado:** cerrada tras publicar y verificar el commit consolidado.
+- **Checkpoint inicial:** C1.282. **Checkpoint de cierre:** C1.283.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Rama:** NG_beta_0.0.0.1_work.
+- **HEAD de partida:** c3a8e40f2341d9831984799ac0563e17ceefd96e.
+- **Rama base protegida:** NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios.
+- **Fase metodológica:** continuidad y auditoría posterior; corrección documental, pruebas, Code Review y cierre.
+- **Fase PM:** PM-00.3.
+- **Tarea:** TASK-637 — reabierta para corregir AUD-NG-347 y completada tras ampliar inventario.
+- **Hallazgo:** el inventario de 999 filas correspondía al HEAD anterior, mientras que el commit C1.282 añadió dos informes y elevó el tree a 1.001 blobs.
+- **Corrección:** inventario ampliado a 1.002 rutas (1.001 blobs del HEAD C1.282 más el informe C1.283).
+- **Evidencia:** tree C1.282 e052e8781270a0a23aedd2d90177b601d8df063a; informe C1.283 af96fa04c573dbacdb6c3637aeed35dea9462cad; SHA final del inventario verificado externamente tras publicar.
+- **Archivos modificados:** docs/architecture/repository-inventory.md; pendientes/Contabilidad/Pendientes.md; Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; Auditoría/AUDITORIA_TASK-637_C1.283.md; Auditoria.txt; tareas_auditoria.txt; changueslogs.txt; Auditoría/Contexto_personal.txt.
+- **Archivos revisados sin modificación:** METODOLOGIA_DESARROLLO.md; Auditoría/MapaDependencias.md; informes C1.282; README.md; index.html; seis backlogs departamentales no objetivo.
+- **Pruebas:** árbol recursivo no truncado; 1.001 blobs del HEAD inicial; 1.002 rutas inventariadas; unicidad; SHA/tamaño; punto de entrada conservado.
+- **Pruebas no ejecutadas:** runtime Apps Script, navegador, HTTP y E2E; no aplican a inventario documental.
+- **Siguiente tarea exacta:** TASK-638 — Trazar dependencias estáticas y dinámicas de extremo a extremo; `pendientes/Contabilidad/Pendientes.md`.
+- **Próxima acción:** auditar el cierre final de TASK-637 y después abrir el requisito íntegro de TASK-638; verificar dependencia TASK-637 antes de avanzar.
+- **Commit de cierre:** el commit único que contiene este checkpoint; SHA final confirmado externamente después de publicar.

@@ -3048,6 +3048,9 @@
 - **Aclaración de ruta AUD-NG-346:** la ubicación vigente del mapa es `Auditoría/MapaDependencias.md`; la referencia histórica `AUDITORIAS/MapaDependencias.md` no debe usarse como ruta activa.
 - **Evidencia de cierre:** inventario `docs/architecture/repository-inventory.md`, blob SHA `41f8e122eb7171c9f59a0552c9ad13ac4c90f9b0`; Git tree `b0042a7edd424ebf8efab7bcd1aace3641f08b23`; 999 rutas únicas con tamaño y SHA.
 - **Pruebas:** 999/999 rutas; unicidad; tamaño/SHA; clasificación; punto de entrada `index.html` sin cambios.
+- **Seguimiento C1.283 / AUD-NG-347:** la reauditoría posterior detectó dos informes creados en el commit anterior que no estaban en el snapshot de 999. Se amplía la cobertura a 1.002 rutas, incluyendo el informe de seguimiento C1.283.
+- **Estado tras reauditoría:** Completada.
+- **Evidencia adicional:** tree C1.282 `e052e8781270a0a23aedd2d90177b601d8df063a`; informe `Auditoría/AUDITORIA_TASK-637_C1.283.md` blob `af96fa04c573dbacdb6c3637aeed35dea9462cad`.
 ---
 
 <!-- ID: TASK-638 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK02.md -->

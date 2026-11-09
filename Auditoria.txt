@@ -30,3 +30,17 @@ HEAD auditado: 39c3d62136a23f58b284d2fee2291698fd114a42
 - PLAN-IMA-004: cumplimiento parcial por AUD-NG-343; TASK-683 queda pendiente y no bloquea TASK-637.
 - TASK-637: completada tras inventario, verificación de 999 rutas y Code Review documental.
 - TASK-638 y TASK-639 permanecen sin ejecutar; TASK-638 depende de TASK-637.
+
+
+===============================================================================
+## REAUDITORÍA DE CONTINUIDAD — TASK-637 — C1.283
+ID de sesión: IMA-EXEC-20261109-0217Z-02
+HEAD de partida: c3a8e40f2341d9831984799ac0563e17ceefd96e
+
+### AUD-NG-347 — MEDIO/P2 — Inventario desactualizado tras agregar informes
+- Evidencia: el árbol C1.282 contiene 1.001 blobs; el inventario C1.282 contiene 999 filas.
+- Causa: dos informes nuevos se incorporaron al mismo commit que creó el inventario, después del snapshot de inventario.
+- Impacto: el inventario no reflejaba todos los paths del HEAD posterior.
+- Acción: reabrir TASK-637 y ampliar el inventario a 1.002 rutas, incluyendo el informe de seguimiento C1.283.
+- Resolución: inventario regenerado desde el tree C1.282 más el informe C1.283; la verificación post-commit confirma el tree final.
+- Tarea derivada: extensión de TASK-637 conservando su ID; no se crea un ID nuevo.

@@ -32,3 +32,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Backlog Contabilidad y Plan Maestro actualizados con estado Completada y evidencia.
 - Auditoria.txt y tareas_auditoria.txt actualizados; informes individuales PLAN-IMA-004 y TASK-637 añadidos.
 - Rama: NG_beta_0.0.0.1_work; HEAD de partida: 39c3d62136a23f58b284d2fee2291698fd114a42; rama base NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59 no modificada.
+
+
+[2026-11-09] IMA-EXEC-20261109-0217Z-02 — Reauditoría y ampliación del inventario TASK-637
+- La auditoría posterior C1.282 detectó que el inventario de 999 archivos no incluía dos informes creados en el mismo commit; AUD-NG-347.
+- Se amplía TASK-637 conservando su ID y se actualiza el snapshot a 1.002 rutas, incluyendo el informe C1.283.
+- Se preservan los registros y checkpoints anteriores; no se elimina ni sobrescribe historial.
+- Rama: NG_beta_0.0.0.1_work; HEAD de partida: c3a8e40f2341d9831984799ac0563e17ceefd96e; base NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59.

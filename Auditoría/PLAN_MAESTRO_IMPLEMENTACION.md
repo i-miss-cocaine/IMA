@@ -1731,3 +1731,10 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - Code Review documental: aprobado; `index.html` conserva SHA `cd742047cdc4948259dd721119429b04f78330ca`.
 - Dependencia siguiente: TASK-638 requiere TASK-637 completada y verificada; TASK-639 requiere TASK-637 y TASK-638.
 - Siguiente acción: auditar el cierre de TASK-637 y después auditar TASK-638 en `pendientes/Contabilidad/Pendientes.md`.
+
+
+### TASK-637 — Reauditoría C1.283
+- Estado final: Completada tras corregir AUD-NG-347.
+- Inventario: 1.002 rutas únicas (1.001 blobs del HEAD C1.282 más el informe de seguimiento C1.283).
+- Evidencia: tree de partida `e052e8781270a0a23aedd2d90177b601d8df063a`; informe `Auditoría/AUDITORIA_TASK-637_C1.283.md` blob `af96fa04c573dbacdb6c3637aeed35dea9462cad`.
+- La autorreferencia del SHA del inventario se verifica externamente en el commit de cierre.

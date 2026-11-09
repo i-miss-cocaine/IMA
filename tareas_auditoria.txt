@@ -30,3 +30,19 @@ El propósito de este documento es llevar el registro de las tareas derivadas de
 - **Criterios de aceptación:** nota añadida al final; ambas entradas históricas permanecen byte por byte; referencia canónica identificada; diff y SHA verificados.
 - **Estado:** Pendiente.
 - **Evidencia de cierre:** pendiente.
+
+
+===============================================================================
+## TASK-637 — Seguimiento de reauditoría C1.283
+- **ID:** TASK-637 (extensión del ID existente; no duplicar).
+- **Origen:** informe `Auditoría/AUDITORIA_TASK-637_C1.283.md`; hallazgo AUD-NG-347.
+- **Requisito:** `pendientes/Contabilidad/Pendientes.md`.
+- **Severidad/prioridad:** MEDIO / P2 como hallazgo de continuidad; tarea madre ALTO / P1.
+- **Objetivo:** mantener el inventario completo después de agregar informes y artefactos versionados durante la iteración.
+- **Acción:** incorporar el delta de dos informes C1.282 y el informe C1.283; regenerar snapshot con 1.002 rutas únicas.
+- **Archivos afectados:** `docs/architecture/repository-inventory.md`; backlog Contabilidad; Plan Maestro; bitácoras y checkpoint.
+- **Dependencias:** tree Git completo y blob del informe C1.283; satisfechas.
+- **Alcance/exclusiones:** inventario documental; no modificar código ni punto de entrada.
+- **Criterios de aceptación:** 1.002 rutas únicas; tamaño y SHA para cada entrada no autorreferencial; SHA del inventario verificado externamente; tree final no truncado.
+- **Estado:** Completada tras C1.283.
+- **Evidencia:** tree C1.282 `e052e8781270a0a23aedd2d90177b601d8df063a`; informe C1.283 blob `af96fa04c573dbacdb6c3637aeed35dea9462cad`.
