@@ -422,3 +422,7 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-09] C1.337 — TASK-636 CI run 42709000536 completed/success (parseo Node, SHA-256, snapshots locales); BETA-FUNC-007 sigue Pendiente beta. TASK-068 CI run 42709559046 detectó mismatch de formato en assertion; se ajusta fusionAutomaticaPermitida: false, nuevo CI pendiente. Checkpoint Parte_0003 C1.337.
+
+
+
+[2026-11-09] C1.338 — CI TASK-636 run 42709000536 completed/success (Node parse, SHA-256, snapshot fixtures); BETA-FUNC-007 Pendiente beta. CI TASK-068 run 42709680737 completed/success (identity mapping contract + TASK-030 transport scope). TASK-068 sigue En ejecución porque importDataWithColumnMapping no dispone de writer destino; AUD-NG-378 es brecha local de implementación. Checkpoint Parte_0003 C1.338.

@@ -85,3 +85,10 @@ No se ejecutaron Apps Script runtime, Sheets/Drive reales, deployment, HTTP, E2E
 - Pasaron parseo Node de backend/task-service/Code.gs, contrato estático, SHA-256 texto/bytes y snapshots locales con fixtures, incluida hoja vacía.
 - Los runs anteriores 42708635543, 42708759124 y 42708904660 fallaron durante la construcción del harness; quedaron corregidos en C1.334. El resultado aprobado es el run 42709000536.
 - AUD-NG-369 conserva BETA-FUNC-007 Pendiente beta; el éxito local no certifica Apps Script/Sheets/Drive real ni habilita closeAcademicYear.
+
+
+
+## Confirmación de continuidad C1.338
+- Se ratifica run 42709000536, commit e6fbc4561ddd11c2105ab728433ba5f914f375b8: completed/success. El contrato Task-Service ejecutó parseo Node de Code.gs, SHA-256 texto/bytes, snapshot con fecha/valores y hoja vacía.
+- Los fallos previos del harness se conservan en el historial; no se ocultan ni se consideran fallos de producción. El último run del contrato Task-Service es satisfactorio.
+- BETA-FUNC-007 sigue Pendiente beta; closeAcademicYear sigue BACKUP_REQUIRED hasta evidencia real en beta aislada.

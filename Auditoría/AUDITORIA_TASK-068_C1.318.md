@@ -179,3 +179,12 @@ Las lecturas fueron completas (92.668, 429.611 y 713.779 caracteres). El histori
 - CI run 42709559046 falló en una aserción estática heredada que busca el literal `fusionAutomaticaPermitida: false`; la implementación usaba el mismo valor sin el espacio requerido por el contrato.
 - Se normaliza el formato de la propiedad en el código de producción, sin cambiar su semántica: las coincidencias siguen prohibiendo fusión automática.
 - Nuevo CI requerido antes de aceptar PASS. TASK-068 permanece En ejecución.
+
+
+
+## Resultado CI — C1.338
+- Run 42709680737, commit 5fcbd34d3d8959571fc2f8eadbc27c55b8c87e70: completed/success.
+- Pasos aprobados: Verify TASK-068 identity mapping contract y Verify TASK-030 transport access scope.
+- El log confirma: `TASK-068 identity mapping contract: syntax, schemas, destination validation and conservative identity classification passed.`
+- La cobertura aprobada es local/contractual. No acredita persistencia del importador ni transporte HTTP real.
+- AUD-NG-378 permanece abierto por `DESTINATION_WRITER_NOT_CONFIGURED` y transporte interservicio sin completar. TASK-068 sigue En ejecución.

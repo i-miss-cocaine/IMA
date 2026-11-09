@@ -279,3 +279,28 @@ Checkpoint anterior: C1.336
 Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.337.
 Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.337.
 ===============================================================================
+
+
+
+===============================================================================
+## C1.338 — Resultados CI y cierre de iteración local TASK-068
+ID: C1.338
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.337
+Baseline lógico: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD físico previo: 5fcbd34d3d8959571fc2f8eadbc27c55b8c87e70
+
+### Resultados locales observados
+- TASK-636: run 42709000536, commit e6fbc4561ddd11c2105ab728433ba5f914f375b8 — completed/success. Parseo Node, contrato estático, SHA-256 texto/bytes y snapshot de hojas con fixtures; hoja vacía incluida.
+- TASK-068: run 42709680737, commit 5fcbd34d3d8959571fc2f8eadbc27c55b8c87e70 — completed/success. Pasaron contrato de identidad y transporte; syntax, canonical schemas, destination validation y clasificación conservadora.
+- Los fallos de harness anteriores quedan preservados en historial y fueron corregidos antes de los runs exitosos.
+
+### Dictamen
+- TASK-636 continúa En ejecución por los alcances de seguridad AUD-NG-001/002/306/368/370/371 que deben revalidarse; AUD-NG-369 tiene integración real diferida a BETA-FUNC-007. closeAcademicYear permanece BACKUP_REQUIRED.
+- TASK-068 continúa En ejecución. El importador sigue sin writer destino (`DESTINATION_WRITER_NOT_CONFIGURED`), por lo que persistencia y reimportación idempotente no están implementadas. AUD-NG-378 es brecha de implementación, no prueba beta.
+- BETA-FUNC-007 y BETA-FUNC-008 permanecen Pendiente beta; no se ejecutaron pruebas remotas ni se declararon PASS.
+- Siguiente bloque TASK-068: diseñar e implementar writer explícito por entidad en su servicio propietario, contrato idempotente y compensación local; después preparar transporte autenticado con secretos externos configurables sin hardcode.
+
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.338.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.338.
+===============================================================================

@@ -3,11 +3,11 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.337**
+- Último checkpoint: **C1.338**
 - Última sesión: `IMA-EXEC-20261109-1909Z-01`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.337: **29708**
+- Caracteres del archivo activo tras C1.338: **31698**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 
@@ -120,3 +120,5 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.336 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | TASK-068 — clasificación local conservadora de identidades | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.336 | 268 | C1.335 | Este commit; SHA verificado tras publicación |
 
 | C1.337 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | CI TASK-636 aprobado; ajuste de formato de contrato TASK-068 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.337 | 282 | C1.336 | Este commit; SHA verificado tras publicación |
+
+| C1.338 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | CI aprobado TASK-636 y TASK-068; writer de importación sigue como brecha local | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.338 | 307 | C1.337 | Este commit; SHA verificado tras publicación |

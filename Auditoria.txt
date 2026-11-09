@@ -535,3 +535,11 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - TASK-636: CI run 42709000536 completed/success; parseo Node, SHA-256 y snapshots locales aprobados. BETA-FUNC-007 sigue Pendiente beta.
 - TASK-068: CI 42709559046 falló en assertion de formato heredada; se ajusta el espacio del literal fusionAutomaticaPermitida: false. Nuevo CI pendiente.
 - Checkpoint C1.337; Parte_0003; índice actualizado.
+
+
+
+## C1.338 — Resultados CI y estado TASK-068
+- TASK-636 CI 42709000536 completed/success: parseo Node, SHA-256 y snapshots locales. BETA-FUNC-007 Pendiente beta; cierre académico sigue fail-closed.
+- TASK-068 CI 42709680737 completed/success: contrato de identidad, esquemas, destino y clasificación conservadora; contrato TASK-030 de transporte también success.
+- TASK-068 sigue En ejecución: importDataWithColumnMapping aún devuelve DESTINATION_WRITER_NOT_CONFIGURED. AUD-NG-378 es brecha de implementación, no beta.
+- Checkpoint C1.338; Parte_0003; índice actualizado.

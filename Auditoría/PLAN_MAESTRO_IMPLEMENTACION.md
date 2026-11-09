@@ -2041,3 +2041,11 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 ## 10.24 Verificación C1.337
 - TASK-636: run 42709000536 completed/success en contrato local Node, SHA-256 y snapshots. La certificación de integración queda Pendiente beta; closeAcademicYear permanece BACKUP_REQUIRED.
 - TASK-068: run 42709559046 falló por aserción de formato heredada sobre fusionAutomaticaPermitida; se normaliza el literal y se requiere nuevo CI. No se cambia la regla de no fusión automática.
+
+
+
+## 10.25 Resultados C1.338 — continuidad y estado de tareas
+- TASK-636: run 42709000536 completed/success para parseo Node, contrato, SHA-256 y snapshots locales. BETA-FUNC-007 sigue Pendiente beta; closeAcademicYear continúa BACKUP_REQUIRED.
+- TASK-068: run 42709680737 completed/success para contrato de identidad y transporte; la clasificación conservadora pasa sus pruebas locales.
+- TASK-068 no se completa: el importador todavía devuelve DESTINATION_WRITER_NOT_CONFIGURED y no persiste entidades ni reimportaciones idempotentes. AUD-NG-378 permanece como brecha de implementación.
+- Próxima iteración: writer explícito por entidad/servicio propietario, con pruebas locales de idempotencia y compensación antes de diferir la llamada HTTP real a beta.
