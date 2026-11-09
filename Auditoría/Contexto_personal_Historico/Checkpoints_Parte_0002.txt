@@ -234,3 +234,34 @@ Commit B de cierre: el commit que contiene este checkpoint; SHA a verificar exte
 - **Ubicación:** Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.297; parte 0002. Índice: Auditoría/INDICE_CHECKPOINTS.md, fila C1.297.
 - **Commit de cierre:** el commit que contiene este checkpoint; SHA se verificará externamente.
 ===============================================================================
+
+
+===============================================================================
+## C1.298 — TASK-638: traza TASK/EXAM y persistencia de categorías
+
+- **ID de sesión operativo:** IMA-AUDIT-20261109-1222Z-01; checkpoint inicial C1.297; estado de sesión: cerrada.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **Rama base protegida:** NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59; 370 commits adelante, 0 detrás; sin cambios.
+- **HEAD de partida verificado:** 103c02dc0ba31c0d3ceb2e5c5a39c1a747cc67f9.
+- **Tree de partida:** ef7ec3fd8ca0d24cc75aeb2e0f5777a8192f8345; 1.023 blobs; recursivo y no truncado.
+- **Checkpoint anterior:** C1.297; commit de cierre verificado 103c02dc0ba31c0d3ceb2e5c5a39c1a747cc67f9.
+- **Tarea auditada en la iteración anterior:** TASK-638, PM-00, fase metodológica 0/2, En ejecución. Se contrastaron requisito, informe C1.297, diff/commit y archivos; sigue abierta y no se marca Completada.
+- **Auditoría de continuidad:** commit C1.297 contiene los ocho archivos que declara el informe y no contiene código; inventario y tree coinciden en 1.023 blobs. TASK-637 sigue satisfecha como dependencia. C1.297 contiene una errata de nombre de rama base (NG_beta_0.0.1); el nombre correcto es NG_beta_0.0.0.1 y el SHA 44d9891132332e692dbe2ba8602b41f50a508a59 es correcto. Se aclara aquí sin alterar el registro histórico.
+- **Tarea en curso:** TASK-638 — Trazar dependencias estáticas y dinámicas de extremo a extremo; PM-00; estado En ejecución.
+- **Requisito original:** pendientes/Contabilidad/Pendientes.md, TASK-638; dependencia TASK-637 verificada. Criterios: mapa por archivo, origen/destino exactos, referencias relativas y sensibilidad a mayúsculas, endpoints/acciones/contratos, consumidores/proveedores y distinción entre evidencia e inferencia.
+- **Trabajo de esta iteración:** trazas estáticas de acciones públicas TASK y EXAM; relaciones de handlers, callsites, hojas y Drive; auditoría del bootstrap y consulta de categorías de evaluación.
+- **Hallazgos nuevos:** AUD-NG-366 MEDIO/P2 (getOrCreateSheet y getEvaluationCategories agregan encabezado duplicado en inicialización); AUD-NG-367 MEDIO/P2 (getEvaluationCategories recibe ambito pero no filtra por él). Ambos se sustentan en backend/exam-service/Code.gs; informe C1.298.
+- **Hallazgos existentes reconciliados:** AUD-NG-002/TASK-636 para rutas públicas TASK, payload y propiedad de proyectos; AUD-NG-356/TASK-685 para EXAM; AUD-NG-001 para propagación de token. No se crean IDs duplicados.
+- **Tareas derivadas:** ampliación de F9-TASK03 existente en pendientes/Docente/Pendientes.md; tareas_auditoria.txt registra origen, acciones, archivos, dependencias y criterios. La ampliación pertenece a PM-05 y no bloquea TASK-638 ni altera el orden PM-00.
+- **Archivos modificados:** Auditoria.txt; Auditoría/AUDITORIA_TASK-638_C1.298.md; Auditoría/MapaDependencias.md; tareas_auditoria.txt; changueslogs.txt; pendientes/Docente/Pendientes.md; Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt; Auditoría/INDICE_CHECKPOINTS.md; docs/architecture/repository-inventory.md.
+- **Archivos revisados sin modificación:** pendientes/Contabilidad/Pendientes.md; pendientes/Otros/Pendientes.md; METODOLOGIA_DESARROLLO.md; Auditoría/Contexto_personal.txt; Auditoría/AUDITORIA_TASK-638_C1.297.md; backend/task-service/Code.gs; backend/exam-service/Code.gs; js/student.js; js/teacher.js; js/api.js; index.html.
+- **Código de producto:** sin modificaciones.
+- **Pruebas ejecutadas:** verificación de rama/HEAD/base/tree; lectura del requisito TASK-638 y F9-TASK03; revisión estática de dispatchers, PUBLIC_ACTIONS, handlers, hojas, helpers y callsites seleccionados; auditoría de commit C1.297 y reconciliación de inventario.
+- **Pruebas no ejecutadas:** Node, navegador, HTTP, Apps Script runtime, Drive, Sheets, concurrencia real, multiusuario, regresión, integración y E2E; deployments y Script Properties no verificados.
+- **Estado:** TASK-638 continúa En ejecución; no cumple todavía su criterio global de cobertura exhaustiva por callsite/handler/persistencia y verificación de deployments. No iniciar TASK-639 ni PM-01.
+- **Siguiente acción reproducible:** continuar Auditoría/MapaDependencias.md, sección C1.298; tomar los callsites TASK/EXAM pendientes y completar acción → dispatcher → handler → helpers → claims/contexto → hoja/Drive → mutación/respuesta/error; después completar USER/ACADEMIC/ACCOUNTING y evidencia de deployments. No implementar correcciones de producto dentro de TASK-638.
+- **Siguiente tarea tras cerrar TASK-638:** TASK-639 — Verificar duplicaciones, símbolos globales y ciclos; pendientes/Secretaria/Pendientes.md; dependencias TASK-637 y TASK-638.
+- **Ubicación exacta:** Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.298; índice Auditoría/INDICE_CHECKPOINTS.md, fila C1.298.
+- **Commit de cierre:** el commit que contiene este checkpoint; SHA se verificará externamente.
+===============================================================================

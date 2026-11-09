@@ -138,6 +138,9 @@
   - Cambiar una configuración no modifica silenciosamente las calificaciones históricas.
   - Los resultados de la vista previa coinciden con los del cálculo definitivo.
   - Las escalas numéricas y cualitativas se representan correctamente en el libro de calificaciones y en los reportes.
+- **Ampliación C1.298 — AUD-NG-366/AUD-NG-367:** la inicialización de CategoriasEvaluacion no debe insertar un segundo encabezado cuando getOrCreateSheet ya creó la fila de encabezados; getEvaluationCategories debe respetar el ámbito solicitado o aplicar la regla explícita de categorías globales y específicas.
+- **Criterios de aceptación adicionales:** (1) una hoja inexistente o vacía queda con exactamente un encabezado y una sola serie de categorías predeterminadas; (2) llamadas repetidas y concurrentes no duplican encabezados ni categorías; (3) getEvaluationCategories filtra por ámbito y solo agrega categorías globales cuando el contrato lo permite; (4) pruebas cubren hoja inexistente, vacía, solo encabezado, poblada y concurrencia; (5) no hay regresión en libro de calificaciones ni modificación retroactiva de resultados históricos.
+- **Origen de ampliación:** `Auditoría/AUDITORIA_TASK-638_C1.298.md`; se conserva F9-TASK03 y su historial, sin crear ID duplicado.
 - **Estado:** Pendiente
 
 ---

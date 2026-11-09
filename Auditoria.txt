@@ -199,3 +199,19 @@ Sesión: IMA-EXEC-20261109-1108Z-01; HEAD de partida: 32b8f5884dd24dbeaf1a3bf028
 - Impacto: un llamante anónimo puede solicitar noticias inactivas/fuera de vigencia o comunicados de otra audiencia. No se inspeccionaron registros reales en Sheets; se confirma la capacidad estructural.
 - Acción: ampliar TASK-636; clasificar contenido público, derivar audiencia de claims o limitar el DTO a contenido público.
 - Estado: abierto; sin pruebas HTTP ni acceso a datos productivos.
+
+
+## AUD-NG-366 — MEDIO/P2 — Inicialización de categorías de evaluación duplica encabezado (C1.298)
+- Origen: auditoría TASK-638; informe `Auditoría/AUDITORIA_TASK-638_C1.298.md`.
+- HEAD/rama: `103c02dc0ba31c0d3ceb2e5c5a39c1a747cc67f9` / `NG_beta_0.0.0.1_work`.
+- Evidencia: EXAM `getOrCreateSheet` (línea 26+) crea `CategoriasEvaluacion` y agrega encabezado; `getEvaluationCategories` (1278–1292) agrega otra fila de encabezado cuando data.length <= 1.
+- Impacto: la fila duplicada se interpreta como categoría espuria en consultas posteriores; endpoint público.
+- Acción: ampliar F9-TASK03; inicialización idempotente y sin duplicación, con protección de concurrencia y pruebas.
+- Estado: abierto; sin ejecución de Apps Script ni acceso a Sheets productivo.
+
+## AUD-NG-367 — MEDIO/P2 — getEvaluationCategories ignora el ámbito solicitado (C1.298)
+- Origen: auditoría TASK-638; informe `Auditoría/AUDITORIA_TASK-638_C1.298.md`.
+- Evidencia: `getEvaluationCategories` recibe `ambito` (1278–1279) pero devuelve todas las filas de `CategoriasEvaluacion` sin aplicar filtro; el esquema incluye columna Ambito.
+- Impacto: la respuesta no discrimina el ámbito solicitado; no se verificó si existen registros de varios ámbitos en producción.
+- Acción: ampliar F9-TASK03; definir y aplicar contrato de filtrado por ámbito académico, preservando las categorías globales solo cuando corresponda.
+- Estado: abierto; sin prueba runtime ni inspección de datos productivos.

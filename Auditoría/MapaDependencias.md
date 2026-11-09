@@ -4438,3 +4438,41 @@ La inspección es estática. No se ejecutaron llamadas HTTP, Apps Script, Drive,
 - TASK-636 (backlog Otros) se amplía con tickets y filtros públicos; TASK-678 se amplía con trazabilidad por acción/claims.
 - TASK-638 sigue En ejecución. No se modificó código ni se probaron HTTP, Apps Script, Drive, Sheets, navegador o deployments.
 ===============================================================================
+
+
+===============================================================================
+## C1.298 — TASK-638: traza TASK/EXAM y persistencia de categorías
+
+### TASK — consumidores y persistencia
+| Acción | Origen / consumidor | Handler | Datos / dependencias | Estado de traza |
+|---|---|---|---|---|
+| getStudentTasks | js/student.js:1228 | TASK Code.gs:613 | Tareas, Entregas, isInTeacherList; payload userId/grado/seccion | Público; AUD-NG-002/TASK-636; trazado parcial |
+| getAllTasks | js/teacher.js:3015,3315,3627,4594 | TASK Code.gs:1177 | Tareas; filtro profesorId del cliente | Público; AUD-NG-002/TASK-636 |
+| listProjects | Sin caller JS localizado en la revisión citada | TASK Code.gs:1296 | pseudocode; fallback getStudentFolder/Drive | Protegido por token/contexto; AUD-NG-001 afecta token frontend |
+| loadProject | js/teacher.js:4870 | TASK Code.gs:1371 | pseudocode; fallback DriveApp.getFileById(fileId) | Público; sin comprobación de propietario en fallback; AUD-NG-002/TASK-636 |
+| getAllStudentProjects | js/teacher.js:4827 | TASK Code.gs:1407 | DriveApp, DRIVE_FOLDER_ID, carpetas grado/sección/alumno, fileId | Público; AUD-NG-002/TASK-636 |
+| getVirtualClassrooms | Matriz de consumidores previa TASK | TASK Code.gs:1476 | AulasVirtuales; filtros de cliente | Público; AUD-NG-002/TASK-636 |
+| getPosts | js/student.js:769; consumidores de publicaciones docentes | TASK Code.gs:1526 | PublicacionesAnuncios; authRole/includeDrafts del payload | Público; spoofing de authRole; AUD-NG-002/TASK-636 |
+| getStudyMaterials | js/student.js:807 | TASK Code.gs:1632 | MaterialesEducativos; archivoUrl/driveId | Público; AUD-NG-002/TASK-636 |
+
+PUBLIC_ACTIONS de TASK incluye nueve acciones. El dispatcher aplica validateRolePermission antes del switch, pero el bypass de PUBLIC_ACTIONS retorna autorizado sin token/claims/contexto. getDriveStorageQuotaMetricsReport conserva AUD-NG-003; no duplicar.
+
+### EXAM — consumidores y persistencia
+| Acción | Origen / consumidor | Handler | Datos / dependencias | Estado de traza |
+|---|---|---|---|---|
+| getAllExams | js/teacher.js:3016,3316,3628,4595 | EXAM Code.gs:609 | Examenes; profesorId opcional de cliente | Público; AUD-NG-356/TASK-685 |
+| getStudentExams | js/student.js:1241 | EXAM Code.gs:1057 | Examenes, EntregasExamen; devuelve nota/comentario | Público; userId de payload; AUD-NG-356/TASK-685 |
+| getEvaluationCategories | Sin caller JS directo localizado en la revisión | EXAM Code.gs:1278 | CategoriasEvaluacion; getOrCreateSheet | Público; hallazgos AUD-NG-366/367 |
+| getRubrics | Sin caller JS directo localizado en la revisión | EXAM Code.gs:1340 | RubricasEvaluacion; criterios JSON | Público; traza de consumidor pendiente |
+
+### AUD-NG-366 — MEDIO/P2 — Inicialización de categorías duplica encabezado
+- EXAM getOrCreateSheet (helper desde línea 26) crea CategoriasEvaluacion y agrega encabezado; getEvaluationCategories (1278–1292) vuelve a agregar encabezado cuando data.length <= 1.
+- La fila duplicada queda incluida en data.slice(1) y se presenta como categoría espuria. Endpoint en PUBLIC_ACTIONS.
+- Derivación: ampliar F9-TASK03; no crear ID duplicado.
+
+### AUD-NG-367 — MEDIO/P2 — El ámbito solicitado no se aplica
+- getEvaluationCategories recibe ambito, pero no lo usa; devuelve todas las filas de CategoriasEvaluacion aunque exista columna Ambito.
+- Derivación: ampliar F9-TASK03 para filtrar por ámbito y probar categorías globales/específicas.
+
+TASK-638 continúa En ejecución; el mapa es parcial y no declara cerrada la traza de todos los callsites.
+===============================================================================

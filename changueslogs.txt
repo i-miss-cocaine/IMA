@@ -165,3 +165,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - AUD-NG-365 MEDIO/P2: filtros públicos de audiencia/vigencia manipulables en USER.
 - TASK-636 y TASK-678 ampliadas sin crear IDs de tarea duplicados; TASK-638 sigue En ejecución; no se modificó código.
 - Informe `Auditoría/AUDITORIA_TASK-638_C1.297.md`; checkpoint C1.297, sesión IMA-AUDIT-20261109-1152Z, `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt`; índice fila C1.297.
+
+
+[2026-11-09] IMA-AUDIT-20261109-1222Z-01 — C1.298 / TASK-638 — traza TASK/EXAM y persistencia
+- Se verifican HEAD 103c02dc0ba31c0d3ceb2e5c5a39c1a747cc67f9, tree 1.023 blobs, rama autorizada y base NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59 (370 adelante, 0 detrás).
+- Se audita la iteración C1.297 y se continúa TASK-638 con trazas TASK/EXAM, consumidores, handlers, autorización y persistencia.
+- AUD-NG-366: inicialización de CategoriasEvaluacion duplica encabezado; AUD-NG-367: getEvaluationCategories ignora ambito. Ambos amplían F9-TASK03 existente, sin IDs de tarea duplicados.
+- TASK-638 sigue En ejecución; no se modificó código ni se ejecutaron pruebas runtime.
+- Informe: Auditoría/AUDITORIA_TASK-638_C1.298.md; checkpoint C1.298; índice central actualizado.
+- Sesión: IMA-AUDIT-20261109-1222Z-01; rama NG_beta_0.0.0.1_work; HEAD de partida: 103c02dc0ba31c0d3ceb2e5c5a39c1a747cc67f9.
