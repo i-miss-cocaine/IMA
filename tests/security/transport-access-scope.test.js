@@ -21,7 +21,8 @@ const helperSource =
   extractFunction("transportAuditDenied_", "getTransportRouteIdsForScope_") +
   extractFunction("getTransportRouteIdsForScope_", "getTransportRoutes") +
   extractFunction("getTransportRoutes", "assignStudentTransport") +
-  extractFunction("getTransportAssignments", "getOrCreateActiveTrip");
+  extractFunction("getTransportAssignments", "getOrCreateActiveTrip") +
+  extractFunction("getTripPassengerManifest", "getOrCreatePickupPersonsSheet");
 
 function makeSheet(rows) {
   return { getDataRange: () => ({ getValues: () => rows }) };
@@ -145,7 +146,7 @@ function runEndpoint(name, payload, spreadsheetData) {
   };
   vm.runInNewContext(
     helperSource +
-      "\nthis.getTransportRoutes = getTransportRoutes; this.getTransportAssignments = getTransportAssignments;",
+      "\nthis.getTransportRoutes = getTransportRoutes; this.getTransportAssignments = getTransportAssignments; this.getTripPassengerManifest = getTripPassengerManifest;",
     context
   );
   return { result: context[name](payload), events };
@@ -212,8 +213,38 @@ const noClaimsAssignments = runEndpoint("getTransportAssignments", {
 }, data);
 assert.equal(noClaimsAssignments.result.code, "VERIFIED_IDENTITY_REQUIRED");
 
+const parentManifest = runEndpoint("getTripPassengerManifest", {
+  _verifiedRole: "Padre",
+  _verifiedUserId: "PARENT-01",
+  viajeId: "TRIP-1"
+}, data);
+assert.equal(parentManifest.result.status, "success");
+assert.equal(parentManifest.result.manifiestoPasajeros.length, 1);
+assert.equal(parentManifest.result.manifiestoPasajeros[0].estudianteUserId, "STU-01");
+
+const driverManifest = runEndpoint("getTripPassengerManifest", {
+  _verifiedRole: "Conductor",
+  _verifiedUserId: "DRIVER-1",
+  viajeId: "TRIP-1"
+}, data);
+assert.equal(driverManifest.result.status, "success");
+assert.equal(driverManifest.result.manifiestoPasajeros.length, 1);
+
+const foreignDriverTrip = runEndpoint("getTripPassengerManifest", {
+  _verifiedRole: "Conductor",
+  _verifiedUserId: "DRIVER-1",
+  viajeId: "TRIP-2"
+}, data);
+assert.equal(foreignDriverTrip.result.code, "UNAUTHORIZED_ACCESS_ATTEMPT");
+assert.ok(foreignDriverTrip.events.some(x => x[3] === "UNAUTHORIZED_ACCESS_ATTEMPT"));
+
+
 assert.ok(source.includes('case "getTransportAssignments": result = getTransportAssignments(payload);'));
 assert.ok(source.includes('case "getTransportRoutes": result = getTransportRoutes(payload);'));
+
+assert.ok(source.includes('"Conductor": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"]'));
+assert.ok(source.includes('"Monitor": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"]'));
+
 assert.ok(source.includes('"UNAUTHORIZED_ACCESS_ATTEMPT"'));
 assert.ok(!source.includes('case "getTransportTripLiveLocation"'), "No live-GPS action is registered in this service; do not imply a protected endpoint exists.");
 
