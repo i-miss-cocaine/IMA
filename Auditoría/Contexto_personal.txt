@@ -9544,3 +9544,60 @@ Auditar TAREA-F6-015 y TAREA-F6-040. Buscar informes individuales e historial en
 - **Próxima acción reproducible:** buscar referencias activas a AUDITORIAS/, ChangesLogs.txt y ubicaciones anteriores de los tres registros; distinguir menciones históricas de instrucciones operativas vigentes y actualizar solo las instrucciones vigentes.
 - **Commit de cierre:** el commit único que contiene este checkpoint; SHA final se confirmará externamente consultando HEAD después de publicar.
 ===============================================================================
+
+
+===============================================================================
+## C1.281 — Verificación del Plan Maestro y protocolo de continuidad/recuperación (2026-11-09)
+
+- **ID de sesión operativo:** IMA-PLAN-RECOVERY-20261109-0205Z-01 (identificador documental; no ID nativo de ChatGPT).
+- **Estado de sesión:** abierta al preparar; se cierra con la publicación verificada de este commit.
+- **Checkpoint inicial:** C1.280. **Checkpoint de cierre:** C1.281.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **HEAD de partida verificado:** 2522203e4bac9984bbfa68100497065f9d42edcc.
+- **Fase metodológica:** continuidad, auditoría previa y gobierno documental.
+- **Fase PM:** PM-00 — inventario, triage y dependencias.
+- **Etapa:** verificación del plan rector y robustecimiento del flujo de ejecución.
+- **ID de tarea:** PLAN-IMA-004 (actividad operativa de planificación/metodología; no ID de tarea de producto).
+- **Contexto:** el usuario pidió comprobar que el plan señale orden, ID y ubicación de requisitos; establecer recuperación ante interrupción/corrupción con auditoría de la tarea anterior y registro de tareas derivadas; y crear un prompt reutilizable para ejecutar el plan.
+- **Verificación del plan:** se confirmaron 1.346 filas con IDs únicos distribuidas en PM-00 a PM-09, siete backlogs departamentales presentes y rutas concretas verificadas en el árbol Git. Antes del cambio, la tabla no mostraba la ruta exacta por fila y el algoritmo de orden dentro de fase no estaba suficientemente operacionalizado.
+- **Cambio al plan:** se añade «Orden PM» y «Ruta exacta de requisitos» a las 1.346 filas; se agrupan filas por PM-00 a PM-09; se define selección topológica por dependencias, con desempates por severidad, prioridad, orden local y estabilidad; se preservan los IDs y requisitos originales.
+- **Cambio a metodología:** se añade sección 19 con verificación del último checkpoint, auditoría obligatoria de la tarea anterior, auditoría de la tarea objetivo, conversión de hallazgos en tareas en `tareas_auditoria.txt`, protocolo de preservación/diagnóstico/restauración ante corrupción e interrupción, y reanudación segura.
+- **Criterio de preservación:** no se alteran los siete backlogs fuente ni los requisitos originales; se modifican solo el índice del plan y las normas; el checkpoint se anexa al final y changueslogs.txt recibe entrada nueva al final.
+- **Archivos modificados:** Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; METODOLOGIA_DESARROLLO.md; Auditoría/Contexto_personal.txt; changueslogs.txt.
+- **Archivos revisados sin modificación:** siete archivos pendientes departamentales; Auditoria.txt; tareas_auditoria.txt; estructura Auditoría/legacy/.
+- **Pruebas/verificaciones:** conteo de 1.346 filas; detección de los 10 valores de fase PM; verificación de existencia de las siete rutas de backlog; comprobación de columna de ruta exacta en cada fila; comprobación de ausencia de duplicación de sección 19; revisión de los cambios documentales y del árbol Git.
+- **No ejecutadas:** pruebas de código, Apps Script runtime, navegador, HTTP, despliegue y E2E; no aplican a la actualización documental.
+- **Siguiente tarea exacta:** PM-00.3 — triage de los 35 registros PM-00, empezando por TASK-637, TASK-638 y TASK-639; primero verificar checkpoint y auditar la última tarea ejecutada según el protocolo de sección 19.
+- **Próxima acción reproducible:** abrir `Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md`, filtrar PM-00; abrir la ruta indicada en cada fila (para TASK-637/638, `pendientes/Contabilidad/Pendientes.md`; para TASK-639, `pendientes/Secretaria/Pendientes.md`); contrastar requisitos, estado real del repositorio, `Auditoría/MapaDependencias.md` e inventario.
+- **Commit de cierre:** el commit único que contiene este checkpoint; SHA final se verificará consultando HEAD tras publicar.
+===============================================================================
+
+
+===============================================================================
+## C1.281 — Verificación del Plan Maestro y protocolo de continuidad/recuperación (2026-11-09)
+
+- **ID de sesión operativo:** IMA-PLAN-RECOVERY-20261109-0205Z-01 (identificador documental; no ID nativo de ChatGPT).
+- **Estado de sesión:** cerrada al publicar y verificar este commit.
+- **Checkpoint inicial:** C1.280. **Checkpoint de cierre:** C1.281.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **HEAD de partida verificado:** 2522203e4bac9984bbfa68100497065f9d42edcc.
+- **Fase metodológica:** continuidad, auditoría previa y gobierno documental.
+- **Fase PM:** PM-00 — inventario, triage y dependencias.
+- **Etapa:** verificación del plan rector y robustecimiento del flujo de ejecución.
+- **ID de tarea:** PLAN-IMA-004 (actividad operativa de planificación/metodología; no ID de tarea de producto).
+- **Contexto:** el usuario pidió comprobar que el plan señale orden, ID y ubicación de requisitos; establecer recuperación ante interrupción/corrupción con auditoría de la tarea anterior y registro de tareas derivadas; y crear un prompt reutilizable para ejecutar el plan.
+- **Verificación del plan:** se confirmaron 1.346 filas con IDs únicos distribuidas en PM-00 a PM-09, siete backlogs departamentales presentes y rutas concretas verificadas en el árbol Git. Antes del cambio, la tabla no mostraba la ruta exacta por fila y el algoritmo de orden dentro de fase no estaba suficientemente operacionalizado.
+- **Cambio al plan:** versión 1.1; se añade «Orden PM» y «Ruta exacta de requisitos» a las 1.346 filas; se agrupan filas por PM-00 a PM-09; se define selección topológica por dependencias, con desempates por severidad, prioridad, orden local y estabilidad; se preservan los IDs y requisitos originales.
+- **Cambio a metodología:** se añade sección 19 con verificación del último checkpoint, auditoría obligatoria de la tarea anterior, auditoría de la tarea objetivo, conversión de hallazgos en tareas en `tareas_auditoria.txt`, protocolo de preservación/diagnóstico/restauración ante corrupción e interrupción, y reanudación segura. Se eliminó la contradicción que permitía corregir durante la auditoría y se aclaró que el estado de tareas de producto se administra en los backlogs y el plan; `tareas_auditoria.txt` conserva las tareas derivadas de hallazgos.
+- **Criterio de preservación:** no se alteran los siete backlogs fuente ni los requisitos originales; se modifican solo el índice del plan y las normas; el checkpoint se anexa al final y changueslogs.txt recibe entrada nueva al final.
+- **Archivos modificados:** Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; METODOLOGIA_DESARROLLO.md; Auditoría/Contexto_personal.txt; changueslogs.txt.
+- **Archivos revisados sin modificación:** siete archivos pendientes departamentales; Auditoria.txt; tareas_auditoria.txt; estructura Auditoría/legacy/.
+- **Pruebas/verificaciones:** conteo de 1.346 filas; 1.346 IDs únicos; monotonicidad de PM-00 a PM-09; distribución de filas por departamento (Dirección 145, Secretaría 194, Contabilidad 184, Docente 129, Estudiante 7, Padre 13, Otros 674); verificación de existencia de las siete rutas de backlog; comprobación de columna de ruta exacta en cada fila; comprobación de sección 19 y consistencia entre registro de tareas derivadas y backlog de producto; revisión de cambios documentales y árbol Git.
+- **No ejecutadas:** pruebas de código, Apps Script runtime, navegador, HTTP, despliegue y E2E; no aplican a la actualización documental.
+- **Siguiente tarea exacta:** PM-00.3 — triage de los 35 registros PM-00, empezando por TASK-637, TASK-638 y TASK-639; primero verificar checkpoint y auditar la última tarea ejecutada según el protocolo de sección 19.
+- **Próxima acción reproducible:** abrir `Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md`, filtrar PM-00; abrir la ruta indicada en cada fila (para TASK-637/638, `pendientes/Contabilidad/Pendientes.md`; para TASK-639, `pendientes/Secretaria/Pendientes.md`); contrastar requisitos, estado real del repositorio, `Auditoría/MapaDependencias.md` e inventario.
+- **Cierre de continuidad:** el checkpoint C1.280 indicaba sesión abierta; la revisión de HEAD, árbol, archivos y este checkpoint cierra documentalmente esa continuidad, sin alterar su contenido histórico.
+- **Commit de cierre:** el commit único que contiene este checkpoint; SHA final se verificará consultando HEAD tras publicar.
+===============================================================================

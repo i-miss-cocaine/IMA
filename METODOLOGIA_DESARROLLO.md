@@ -637,11 +637,11 @@ El flujo de trabajo se ejecutará de forma lineal, síncrona y obligatoria. Viol
 ### FASE 1 — Registro Formal de Hallazgos
  * **Acción:** Toda anomalía, desviación estándar o vulnerabilidad observada debe asentarse de inmediato en Auditoria.txt.
  * **Manejo de Hallazgos Fuera de Alcance:** Si durante la inspección de la tarea asignada se detectan fallas críticas o desviaciones ajenas al objetivo actual, se procederá de la siguiente forma:
-   1. *Si es completamente seguro y directo:* Se resolverá en el mismo commit, registrando minuciosamente su justificación en changueslogs.txt.
-   2. *Si reviste complejidad o riesgo de regresión:* Queda estrictamente prohibido tocarlo. Se añadirá una tarea ejecutable en `tareas_auditoria.txt`, con referencia al informe y al hallazgo; el informe conservará el ID de tarea.
-   3. Todo auditoria se debe de asumir el rol de auditor definido en el apartado 3.5
+   1. Durante la auditoría está prohibido corregir, incluso si el ajuste parece simple. Toda anomalía se documenta y se convierte en tarea ejecutable en `tareas_auditoria.txt` cuando sea accionable.
+   2. La corrección se ejecutará después, como tarea seleccionada según el Plan Maestro, con su propio respaldo, alcance, pruebas y revisión. Solo se admite una excepción documental de bajo riesgo si el usuario la autoriza expresamente y queda delimitada.
+   3. Todo auditor debe asumir el rol y cumplir las reglas del apartado 3.5.
 ### FASE 2 — Planificación de Implementación
- * **Acción:** Se actualiza el estado operativo de la tarea en `tareas_auditoria.txt`, preservando el historial del estado anterior y vinculando la evidencia de avance. Se revisa que el alcance esté perfectamente delimitado y que se conozcan los impactos sobre el MapaDependencias.md.
+ * **Acción:** Se registran en `tareas_auditoria.txt` las tareas ejecutables derivadas de los hallazgos de la auditoría de la tarea objetivo o de la auditoría de continuidad de la tarea anterior. El estado de la tarea de producto seleccionada se actualiza en su backlog departamental y en el Plan Maestro; solo se actualiza también en `tareas_auditoria.txt` cuando esa tarea tenga origen en un hallazgo de auditoría. Se preserva el historial de estados y se delimitan alcance e impactos sobre `Auditoría/MapaDependencias.md`.
 ### FASE 3 — Respaldo Íntegro de Seguridad
  * **Acción:** Antes de modificar un solo bit, se creará una copia de seguridad exacta y manual del archivo o archivos a editar.
  * **Requisitos:** El respaldo conservará el nombre de origen y su contenido íntegro, y se almacenará localmente de forma temporal con el único fin de servir como pivote de comparación post-edición.
@@ -863,10 +863,10 @@ Las fases PM expresan el orden de producto y arquitectura. No sustituyen las och
 ## 18.4 Selección y ejecución de tareas
 
 1. Al iniciar una iteración se consulta el plan maestro y se selecciona la siguiente tarea ejecutable por ID.
-2. Se verifica el registro completo en el backlog departamental, el informe de auditoría de origen, la ficha correspondiente en `tareas_auditoria.txt` y el MapaDependencias.
+2. Se verifica el registro completo en el backlog departamental, el informe de auditoría de origen cuando exista, la ficha en `tareas_auditoria.txt` cuando la tarea derive de un hallazgo, y el MapaDependencias.
 3. Se realiza Fase 0 de auditoría manual de la tarea y de sus dependencias; si falta informe o evidencia, se realiza la auditoría antes de modificar.
 4. Se confirma que la tarea no duplica otra y que las ampliaciones se incorporan a su tarea madre sin perder criterios.
-5. Se registra la tarea en ejecución y se prepara el respaldo antes de editar.
+5. Se registra la tarea de producto como En ejecución en el backlog departamental y en el Plan Maestro; si además es una tarea derivada de auditoría, se refleja su estado en `tareas_auditoria.txt`. Se prepara el respaldo antes de editar.
 6. Se implementa únicamente el alcance y los criterios autorizados.
 7. Se completan autoauditoría, pruebas de comportamiento/persistencia, Code Review y cierre documental.
 8. Se actualiza el estado operativo del backlog y el plan con evidencia. Solo después de Code Review aprobado puede pasar a Completada.
@@ -916,4 +916,80 @@ Si no se pudo publicar o verificar un cambio, se declara explícitamente; no se 
 ## 18.7 Control de cambios del plan
 
 El plan maestro se actualiza de forma versionada y trazable cuando una auditoría confirme nuevas dependencias, cambios de arquitectura, tareas nuevas, ampliaciones o reordenamiento. Se conserva el historial de versiones y no se eliminan criterios del backlog. Toda modificación del orden debe incluir motivo técnico, IDs afectados, dependencias antes/después y evidencia. Los cambios del plan, de la metodología y del contexto que pertenezcan a una misma iteración se publican juntos en un único commit conforme a la sección 15.
+
+
+# 19. CONTINUIDAD, AUDITORÍA DE LA TAREA ANTERIOR Y RECUPERACIÓN DE INTERRUPCIONES
+
+Esta sección es obligatoria al iniciar cada tarea, al cambiar de agente/chat y después de cualquier interrupción, pérdida de contexto, archivo truncado, contenido ilegible o escritura incompleta. Complementa las fases 0–7; no las sustituye.
+
+## 19.1 Fase previa obligatoria: continuidad y verificación del último checkpoint
+
+Antes de editar cualquier archivo, el agente debe:
+
+1. Leer el último checkpoint de `Auditoría/Contexto_personal.txt` de principio a fin y registrar su ID, sesión, tarea anterior, estado declarado, fase PM, HEAD de partida, commit de cierre y siguiente acción exacta.
+2. Consultar la rama autorizada `NG_beta_0.0.0.1_work`, obtener su HEAD y árbol actuales y compararlos con el checkpoint. Verificar también que la rama base protegida no haya sido modificada por la iteración.
+3. Comprobar si el commit indicado existe, si es ancestro del HEAD actual y qué archivos contiene. No asumir que un checkpoint equivale a una publicación confirmada.
+4. Reconstruir el estado real de la tarea anterior: Pendiente, En ejecución, Bloqueada o Completada. Contrastar el backlog departamental, el plan maestro, `tareas_auditoria.txt`, el informe de auditoría, el diff/commit y las pruebas registradas.
+5. Si el HEAD, rama, commit, archivos o estado contradicen el checkpoint, detener el trabajo normal y entrar al protocolo de recuperación de 19.4. No iniciar la siguiente tarea hasta resolver o documentar formalmente el bloqueo.
+
+## 19.2 Auditoría de la tarea anterior antes de iniciar la siguiente
+
+En cada nueva iteración se auditará la tarea que el checkpoint identifica como la última ejecutada, incluso si fue declarada Completada:
+
+1. Recuperar el ID exacto de la tarea anterior y abrir su requisito íntegro en el archivo departamental indicado por `Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md`, sección 9. Consultar además el plan, sus dependencias, el informe de auditoría de origen cuando exista, la ficha de `tareas_auditoria.txt` si la tarea fue derivada de auditoría y el checkpoint de cierre.
+2. Verificar que los cambios reales del commit correspondan al alcance, archivos, criterios de aceptación y exclusiones del requisito. Comprobar comportamiento, persistencia, permisos, regresión, pruebas y Code Review exigibles.
+3. Si la tarea anterior estaba En ejecución o quedó interrumpida, identificar qué partes sí llegaron al HEAD publicado y cuáles quedaron sin aplicar. No dar por ejecutado ningún cambio que solo figure en notas o en el contexto del agente.
+4. Registrar los resultados de esta auditoría en un informe nuevo o en el informe de seguimiento que corresponda, sin sobrescribir evidencia anterior. Asentar los hallazgos en `Auditoria.txt`.
+5. La tarea anterior solo conserva el estado Completada si satisface todos los requisitos y existe evidencia verificable. Si hay incumplimientos, reabrirla o marcarla Bloqueada según corresponda; no avanzar a una tarea consumidora que dependa de ella.
+
+Si no existe tarea anterior (inicio real del proyecto), dejar constancia explícita de «sin tarea previa que auditar» y continuar con la auditoría preimplementación de la tarea seleccionada.
+
+## 19.3 Auditoría de la tarea que se va a ejecutar y conversión de hallazgos
+
+Después de auditar la tarea anterior:
+
+1. Seleccionar la siguiente tarea elegible aplicando el plan maestro y la sección 6.1.
+2. Abrir el requisito completo desde la ruta exacta de la sección 9; leer todos sus criterios, dependencias, exclusiones, orden local, evidencias y referencias. Consultar `Auditoría/MapaDependencias.md` y el código real relacionado.
+3. Ejecutar la Fase 0 de auditoría preimplementación sobre la tarea objetivo y sus dependencias. Si falta su informe, realizar la auditoría; nunca saltarla.
+4. Registrar los hallazgos y evidencias en `Auditoria.txt` y en el informe de auditoría correspondiente.
+5. En la **Fase 2**, convertir todo hallazgo accionable en una tarea ejecutable en `tareas_auditoria.txt`, siguiendo la sección 3.4 y 3.11. Incluir ID, ruta del requisito de origen, hallazgo, acción concreta, dependencias, criterios de aceptación y prioridad. El informe conserva referencias cruzadas por ID. La tarea de producto objetivo conserva su estado y trazabilidad en el backlog departamental y el Plan Maestro; `tareas_auditoria.txt` registra tareas derivadas de hallazgos y no duplica automáticamente todas las tareas de producto.
+6. Determinar si los hallazgos nuevos bloquean, amplían o anteceden a la tarea objetivo. Si generan una corrección necesaria para la tarea anterior o una dependencia obligatoria, ejecutar primero esa tarea derivada según el orden maestro; no continuar con la tarea objetivo hasta resolver el bloqueo.
+7. Solo cuando la tarea anterior esté validada, la tarea objetivo esté auditada, sus requisitos estén claros y sus dependencias estén satisfechas, continuar a respaldo, implementación y fases 3–7.
+
+Por tanto, la Fase 2 no es una aprobación informal ni una nota libre: es el paso obligatorio de convertir hallazgos de la auditoría previa en tareas rastreables antes de programar.
+
+## 19.4 Protocolo de recuperación ante interrupción, corrupción o trabajo parcial
+
+Se considera incidente de continuidad cualquiera de estos casos: archivo vacío/truncado/incompleto; formato o codificación alterados; contenido duplicado o parcialmente sobrescrito; checkpoint incompleto; agente interrumpido durante una escritura; commit/árbol preparado pero no publicado; discrepancia entre archivo, SHA, checkpoint y HEAD; o tarea marcada como completada sin evidencia.
+
+**A. Detención y preservación**
+1. Detener inmediatamente nuevas escrituras, formateos, renombrados, restauraciones automáticas y commits.
+2. No borrar, sobrescribir, truncar, regenerar ni «reparar» el archivo afectado a ciegas.
+3. Capturar ruta, tamaño, codificación, SHA/blob actual, HEAD, commit padre, fecha y mensaje/error disponible. Preservar una copia byte a byte fuera de la ruta afectada; no incluir secretos en el respaldo ni en el reporte.
+4. Registrar si la interrupción ocurrió antes de crear blob, al crear blob, al crear árbol, al crear commit, al actualizar la referencia o después de publicar. Un blob/árbol sin referencia no significa que la rama haya cambiado.
+
+**B. Determinación de la última versión íntegra**
+1. Comparar el archivo con el blob del HEAD verificado de la rama de trabajo.
+2. Si ese blob está dañado, inspeccionar el historial de commits y localizar el último blob conocido como íntegro, apoyándose en checkpoint, SHA de respaldo y evidencia de contenido completo.
+3. Comparar también respaldos temporales y commits previos; no asumir que «el commit anterior» es correcto sin validar contenido y criterios.
+4. Distinguir entre: (i) corrupción solo local/no publicada; (ii) objeto creado pero rama no actualizada; (iii) corrupción ya publicada en un commit; (iv) cambio concurrente de HEAD.
+5. Si no puede determinarse con certeza la versión íntegra, mantener el archivo en cuarentena lógica, marcar la tarea Bloqueada y solicitar revisión; no inventar contenido ni reconstruirlo a partir de fragmentos.
+
+**C. Restauración controlada**
+1. Restaurar únicamente desde un blob/commit cuya integridad y contenido hayan sido verificados contra el último checkpoint válido y el requisito original.
+2. Mantener evidencia del contenido corrupto y de la versión restaurada fuera del archivo activo; documentar ambos SHAs y el motivo de selección.
+3. Comparar el archivo restaurado byte a byte o mediante SHA con la fuente validada; comprobar codificación, delimitadores, estructura, número de registros y referencias internas.
+4. Si la restauración exige modificar contenido, reconstruir registros o conciliar cambios concurrentes, crear una tarea ejecutable en `tareas_auditoria.txt` y un informe de auditoría; no mezclar una reparación incierta con otra tarea funcional.
+5. No usar force push, reset destructivo, limpieza de archivos ni reescritura de historia para ocultar el incidente. Publicar la restauración en un commit consolidado, con checkpoint, control de concurrencia y verificación posterior.
+
+**D. Reanudación**
+1. Actualizar el checkpoint con incidente, estado, archivo/ruta, SHAs corrupto y válido, commit/HEAD, tareas afectadas, acciones ejecutadas y pendientes.
+2. Reauditar la tarea interrumpida desde su requisito completo; identificar cambios parciales, duplicados, efectos secundarios y pruebas faltantes.
+3. Registrar hallazgos en `Auditoria.txt` y tareas de corrección en `tareas_auditoria.txt`.
+4. Reanudar desde la primera acción no completada y demostrablemente segura; no repetir operaciones no idempotentes sin comprobar antes si su efecto ya ocurrió.
+5. Solo cerrar la tarea cuando pase nuevamente autoauditoría, pruebas, Code Review y actualización documental. La interrupción no convierte una tarea parcial en Completada.
+
+## 19.5 Regla de no propagación de errores
+
+Una tarea no verificada no puede servir como prerrequisito satisfecho. Ninguna tarea dependiente puede iniciarse mientras la anterior esté incompleta, corrupta, sin auditar o con criterios de aceptación pendientes. La secuencia es: checkpoint verificado → auditoría de la tarea anterior → registro de hallazgos → tareas derivadas en `tareas_auditoria.txt` → auditoría de la tarea objetivo → respaldo → implementación → autoauditoría → Code Review → cierre y checkpoint.
 

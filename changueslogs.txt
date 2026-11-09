@@ -8,3 +8,18 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Los informes conservan evidencia y referencias cruzadas por ID; no son el registro maestro de las tareas ni de su estado.
 - Se alinean las rutas de auditoría con Auditoría/ y los nombres de bitácora vigentes.
 - Rama: NG_beta_0.0.0.1_work. HEAD de partida: 560c940d64b7a46191a2ad2605035d9334008db7.
+
+
+[2026-11-09] PLAN-IMA-004 — Orden explícito del plan y recuperación de interrupciones
+- Se amplía la tabla de 1.346 tareas con orden PM y ruta exacta del backlog fuente por ID; se agrupan filas por fase.
+- Se formaliza selección topológica por dependencias y criterios de desempate.
+- METODOLOGIA_DESARROLLO.md incorpora sección 19: verificación de checkpoint, auditoría de tarea anterior y objetivo, registro de tareas derivadas y recuperación segura ante archivos corruptos/interrupciones.
+- Rama: NG_beta_0.0.0.1_work; HEAD de partida: 2522203e4bac9984bbfa68100497065f9d42edcc.
+
+
+[2026-11-09] PLAN-IMA-004 — Orden explícito del plan y recuperación de interrupciones
+- Se amplía la tabla de 1.346 tareas con orden PM y ruta exacta del backlog fuente por ID; se agrupan filas por fase.
+- Se formaliza selección topológica por dependencias y criterios de desempate.
+- METODOLOGIA_DESARROLLO.md incorpora sección 19: verificación de checkpoint, auditoría de tarea anterior y objetivo, registro de tareas derivadas y recuperación segura ante archivos corruptos/interrupciones.
+- Se elimina la excepción de corrección durante auditoría y se distingue el backlog de producto del registro de tareas derivadas de auditoría.
+- Rama: NG_beta_0.0.0.1_work; HEAD de partida: 2522203e4bac9984bbfa68100497065f9d42edcc.
