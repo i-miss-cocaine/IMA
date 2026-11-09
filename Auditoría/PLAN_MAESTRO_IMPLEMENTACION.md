@@ -2141,3 +2141,7 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - linkPersonAccount exige motivo de al menos 10 caracteres en backend, no solo en el formulario cliente, y registra la justificación recibida.
 - Prueba local ejecuta la función real con mocks: motivo corto no muta, vinculación registra auditoría y no altera relaciones familiares.
 - C1.353 CI run 42715322689: success. C1.354 CI pendiente.
+
+
+## 10.39 Corrección del fixture de vínculo — C1.355
+- CI run 42715475957 falló antes de ejecutar aserciones porque el contexto VM de linkPersonAccount no definía SPREADSHEET_ID. Se agrega al fixture; producción sin cambios. Nuevo CI pendiente.

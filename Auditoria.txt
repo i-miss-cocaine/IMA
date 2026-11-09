@@ -573,3 +573,7 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 ## C1.354 — TASK-068 justificación de vínculo cuenta-Persona
 - CI C1.353 run 42715322689: completed/success.
 - Se endurece linkPersonAccount con motivo obligatorio >=10 caracteres en backend; test local de mutación, bitácora y conservación de relación familiar. CI C1.354 pendiente.
+
+
+## C1.355 — Fixture linkPersonAccount
+- CI C1.354 run 42715475957 falló en harness por SPREADSHEET_ID ausente en VM. Se corrige sin modificar producción; reejecución CI pendiente.

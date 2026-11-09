@@ -584,3 +584,16 @@ Checkpoint anterior: C1.353
 Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.354.
 Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.354.
 ===============================================================================
+
+
+===============================================================================
+## C1.355 — Corrección del contexto VM en prueba de vínculo TASK-068
+ID: C1.355
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.354
+- CI run 42715475957 falló al ejecutar linkPersonAccount porque el contexto VM del fixture no definía SPREADSHEET_ID; el test no alcanzó la validación de motivo ni la escritura mock.
+- Se agrega SPREADSHEET_ID al contexto aislado. No se modifica producción.
+- Reejecutar CI y verificar el comportamiento de motivo obligatorio, auditoría y preservación de relaciones antes de validar C1.354.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.355.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.355.
+===============================================================================

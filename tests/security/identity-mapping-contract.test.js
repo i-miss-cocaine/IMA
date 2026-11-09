@@ -258,6 +258,7 @@ function linkSheet(rows){return{getDataRange:function(){return{getValues:functio
 const linkUserSheet=linkSheet(linkUsers),linkPeopleSheet=linkSheet(linkPeople),decisionSheet={appendRow:function(row){decisionRows.push(row);}};
 const linkSS={};
 const linkContext={
+ SPREADSHEET_ID:"LOCAL",
  requireIdentityManager_:function(){return{actorId:"ADMIN-1",role:"Administrador"};},
  getIdentityInstitutionId_:function(){return"INST-1";},
  LockService:{getScriptLock:function(){return{waitLock:function(){},releaseLock:function(){}};}},
