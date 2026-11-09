@@ -45,7 +45,7 @@ Toda modificación o adición de código/contenido debe ser capaz de responder c
 Cualquier cambio que carezca de traza documental será considerado inválido y revertido de inmediato.
 
 ## 1.3 Separación Obligatoria de Fases
-Las actividades del ciclo de vida de desarrollo son compartimentos lógicos estancos e independientes: Auditoría, Desarrollo, Verificación, Code Review y Aprobación. Ninguna fase puede omitirse, solaparse, alterarse o sustituir a otra bajo ningún concepto.
+Las actividades del ciclo de vida de desarrollo son compartimentos lógicos independientes: Auditoría, Desarrollo, Verificación interna, Code Review y cierre técnico. La aprobación mencionada en este documento es la aprobación interna de calidad/código, no una aprobación del usuario. La certificación funcional integral de la plataforma se gestiona separadamente en la fase de pruebas beta conforme a la sección 21. Ninguna fase puede omitirse, solaparse ni sustituirse.
 
 ## 1.4 Prohibición de Automatización de Auditoría
 La auditoría de archivos de código o de estructuras de contenido deberá realizarse de forma exclusiva mediante análisis manual. Queda terminantemente prohibido delegar la revisión en escáneres, scripts de inspección masiva o herramientas de validación automática. Toda inspección se ejecutará línea por línea, función por función, variable por variable y dependencia por dependencia.
@@ -113,7 +113,7 @@ El registro oficial, único y acumulativo de tareas ejecutables originadas por h
 
 Cada informe conserva la evidencia completa del hallazgo y debe incluir una referencia cruzada al ID de la tarea registrada en `tareas_auditoria.txt`. El informe no sustituye ni duplica el registro maestro. Si un hallazgo no requiere acción, se clasifica expresamente como observación no accionable y se justifica.
 
-Cada tarea del registro maestro debe contener como mínimo: ID único; fecha; ID y ruta del informe de origen; referencia exacta al hallazgo; severidad; objetivo; acción concreta y ejecutable; archivos/módulos afectados; dependencias y riesgos; alcance y exclusiones; criterios de aceptación verificables; prioridad; estado (Pendiente, En ejecución, Bloqueada o Completada); y evidencia de cierre cuando corresponda.
+Cada tarea del registro maestro debe contener como mínimo: ID único; fecha; ID y ruta del informe de origen; referencia exacta al hallazgo; severidad; objetivo; acción concreta y ejecutable; archivos/módulos afectados; dependencias y riesgos; alcance y exclusiones; criterios de aceptación verificables; prioridad; estado (Pendiente, En ejecución, Bloqueada o Completada); y evidencia de cierre cuando corresponda. «Completada» describe la implementación y sus controles internos; no significa que la funcionalidad haya superado la certificación funcional beta de toda la plataforma. Las pruebas beta se registran por separado en `docs/testing/PRUEBAS_FUNCIONALES_BETA.md`.
 
 El registro debe distinguir tareas nuevas, ampliaciones de tareas existentes y hallazgos ya cubiertos por otro ID. No se crean IDs duplicados: si el hallazgo amplía una tarea existente, se actualiza la tarea existente conservando su historial y agregando la nueva referencia. Cada entrada nueva se anexa al final; no se eliminan ni reescriben tareas históricas. Los cambios de estado se registran como nuevas entradas de seguimiento o mediante un mecanismo de historial que preserve el estado anterior.
 
@@ -571,7 +571,7 @@ Cada hallazgo accionable debe generar o ampliar una ficha de tarea en `tareas_au
 - **Criterios de aceptación:** [Condiciones medibles y verificables]
 - **Prioridad:** [P0 | P1 | P2 | P3]
 - **Estado:** [Pendiente | En ejecución | Bloqueada | Completada]
-- **Evidencia de cierre:** [Commit, pruebas y revisión; completar al cerrar]
+- **Evidencia de cierre:** [Commit, requisitos implementados, verificaciones internas, autoauditoría y Code Review; indicar pruebas funcionales beta pendientes cuando aplique]
 ```
 
 Los IDs deben ser únicos en el proyecto. Las tareas preexistentes se conservan y se amplían por referencia; no se generan IDs duplicados. `tareas_auditoria.txt` es la fuente de verdad de las tareas derivadas de auditoría y de su estado. El informe es la fuente de verdad de la evidencia del hallazgo.
@@ -654,11 +654,12 @@ El flujo de trabajo se ejecutará de forma lineal, síncrona y obligatoria. Viol
 ### FASE 5 — Autoauditoría Posterior (Desdoblamiento Crítico)
  * **Acción:** Finalizada la codificación, el operador se despoja del rol de desarrollador y asume nuevamente el rol de *Auditor Técnico*.
  * **Subfase 5.1 - Comparación Post-Edición (Diff Manual):** Se confronta de forma manual el archivo modificado contra la copia de respaldo generada en la Fase 3. Se deben aislar visualmente todas las líneas eliminadas, modificadas y los bloques sobrescritos. Si se detecta un solo cambio ajeno, accidental o cosmético no solicitado por la tarea, se **REVERTIRÁ** inmediatamente esa sección y se reiniciará la comparación.
- * **Subfase 5.2 - Verificación de Integridad Funcional y de Datos:** Se ejecutan pruebas manuales exhaustivas para certificar que la solución cumple el objetivo pedagógico o técnico. **Esta fase exige evidencia de comportamiento real, no solo visual.**
-   - **Validación de Persistencia (Cadena de Verdad):** Si la tarea involucra guardado de datos, el operador debe verificar manualmente en la base de datos (ej. Spreadsheet) que los registros se modificaron según lo esperado (correspondencia exacta de valores). **Se prohíbe dar por válida una persistencia basándose solo en el mensaje de éxito de la interfaz.**
-   - **Validación de Integridad de Registros:** Comprobar que no se generen registros duplicados, huérfanos o con valores inconsistentes tras la operación (ej. verificar que no existan filas redundantes en ConfiguracionAcademica).
-   - **Validación de Reconstrucción de Estado (F5 Test):** Tras realizar una persistencia exitosa, es OBLIGATORIO recargar la página (F5) y verificar que el sistema recupera el estado exacto (incluyendo selectores de parcial, unidad y visibilidad de componentes) desde el backend. Si el sistema vuelve a un estado inicial por defecto o "pierde" la configuración guardada, la tarea se considera FALLIDA.
-   - **Detección de Regresiones:** Asegurar que el sistema está completamente libre de regresiones o incrementos de latencia.
+ * **Subfase 5.2 - Verificación técnica interna de la implementación:** revisión del diff, rutas críticas, pruebas unitarias/componentes/contratos disponibles, tipos/esquemas, seguridad local, persistencia aislada y verificaciones técnicas reproducibles para detectar defectos del cambio. No equivale a certificar funcionalmente toda la plataforma.
+ * Las pruebas E2E, escenarios completos por rol y regresión transversal se consolidan en `docs/testing/PRUEBAS_FUNCIONALES_BETA.md` y se ejecutan cuando IMA entre formalmente en beta. No retrasar Completada por pruebas beta aún no iniciadas.
+   - **Verificación técnica de persistencia:** en entorno aislado, comprobar que la operación escribe y recupera el formato esperado, sin duplicados ni corrupción. No sustituye escenarios beta; no usar datos reales de producción.
+   - **Integridad técnica:** pruebas acotadas para comprobar que el cambio no introduce duplicados, huérfanos ni inconsistencias estructurales. Los recorridos completos y conciliaciones entre módulos se registran para beta.
+   - **Reconstrucción técnica de estado:** si la tarea modifica persistencia o estado de interfaz, realizar comprobación acotada de lectura/recarga cuando el entorno lo permita. Los recorridos completos de sesión y reconstrucción por perfil se planifican en beta.
+   - **Regresión del alcance:** comprobar que el cambio no rompe rutas directamente afectadas y ejecutar pruebas automatizadas disponibles. La certificación de regresión de todo el portal se difiere a beta.
    - **Prohibición de Supuestos:** Ningún cambio se considera correcto sin evidencia empírica de su efectividad funcional.
 ### FASE 6 — Revisión de Código Externa (Code Review)
  * **Acción:** El código y los registros son sometidos al escrutinio del *Revisor de Código*.
@@ -666,8 +667,8 @@ El flujo de trabajo se ejecutará de forma lineal, síncrona y obligatoria. Viol
    * Toda observación constructiva **REINICIA EL CICLO COMPLETO** desde la Fase 0 (Auditoría Inicial).
    * Deberá aplicarse el procedimiento completo nuevamente, inclusive si implica volver a alterar archivos que ya habían sido editados. No se admiten parches calientes ni correcciones parciales fuera del flujo.
 ### FASE 7 — Cierre Operativo y Limpieza
- * **Acción:** Una vez que el Code Review otorga la aprobación formal, se completan los registros conclusivos en changueslogs.txt y se actualiza el estado de la tarea en su informe de auditoría a Completada, anexando evidencia de cierre.
- * **Limpieza de Entorno:** Los archivos temporales de respaldo se eliminarán de forma definitiva únicamente **DESPUÉS** de la aprobación en Code Review. Asimismo, cualquier captura de pantalla, log volátil o ejecutable auxiliar generado para la verificación visual deberá ser purgado del directorio de forma obligatoria en el pre-commit.
+ * **Acción:** Cuando todos los requisitos de implementación estén satisfechos, la autoauditoría concluida y el Code Review interno aprobado, actualizar changueslogs.txt, checkpoint, informe, backlog y Plan Maestro a Completada con evidencia. No se requiere aprobación adicional del usuario ni ejecutar la campaña beta para cerrar la implementación. Registrar las pruebas beta pendientes en `docs/testing/PRUEBAS_FUNCIONALES_BETA.md`.
+ * **Limpieza de Entorno:** Los archivos temporales de respaldo se eliminarán de forma definitiva únicamente **DESPUÉS** del Code Review interno aprobado. Asimismo, cualquier captura de pantalla, log volátil o ejecutable auxiliar generado para la verificación visual deberá ser purgado del directorio de forma obligatoria en el pre-commit.
 # 5. CLASIFICACIÓN TÉCNICA DE HALLAZGOS
 Todo defecto, desviación o vulnerabilidad identificada en las Fases 0 o 5 debe ser catalogada obligatoriamente bajo la siguiente escala de severidad:
 | Clasificación | Impacto Operativo y Técnico | Acción Requerida |
@@ -869,7 +870,7 @@ Las fases PM expresan el orden de producto y arquitectura. No sustituyen las och
 5. Se registra la tarea de producto como En ejecución en el backlog departamental y en el Plan Maestro; si además es una tarea derivada de auditoría, se refleja su estado en `tareas_auditoria.txt`. Se prepara el respaldo antes de editar.
 6. Se implementa únicamente el alcance y los criterios autorizados.
 7. Se completan autoauditoría, pruebas de comportamiento/persistencia, Code Review y cierre documental.
-8. Se actualiza el estado operativo del backlog y el plan con evidencia. Solo después de Code Review aprobado puede pasar a Completada.
+8. La tarea pasa a Completada cuando todos sus requisitos de implementación estén desarrollados y verificados mediante controles internos, autoauditoría y Code Review aprobado. No se espera aprobación del usuario ni pruebas funcionales integrales beta. Las pruebas beta pendientes se registran en el plan beta.
 9. Si una dependencia falla, la tarea queda Bloqueada con referencia exacta al ID y evidencia. No se sustituye por un workaround ni se avanza a un módulo consumidor.
 10. Se pueden paralelizar áreas independientes únicamente cuando comparten contratos estables y no editan simultáneamente el mismo servicio, esquema, catálogo o fuente de verdad.
 
@@ -905,7 +906,7 @@ Cada reporte de avance o cierre en el chat debe incluir, sin omitir:
 2. ID de sesión.
 3. Fase metodológica y fase/etapa PM.
 4. ID de tarea y breve descripción del trabajo/contexto.
-5. Resultado y estado: completada, en curso o bloqueada; no declarar completada sin Code Review.
+5. Completada significa implementación terminada, autoauditoría y Code Review interno aprobados, con evidencia. Indicar por separado pruebas funcionales beta pendientes; no exigir aprobación del usuario.
 6. Archivos modificados y archivos revisados sin modificación.
 7. Pruebas ejecutadas, resultados y pruebas no ejecutadas.
 8. HEAD/commit de partida y commit de cierre verificado cuando se publique.
@@ -940,7 +941,7 @@ En cada nueva iteración se auditará la tarea que el checkpoint identifica como
 2. Verificar que los cambios reales del commit correspondan al alcance, archivos, criterios de aceptación y exclusiones del requisito. Comprobar comportamiento, persistencia, permisos, regresión, pruebas y Code Review exigibles.
 3. Si la tarea anterior estaba En ejecución o quedó interrumpida, identificar qué partes sí llegaron al HEAD publicado y cuáles quedaron sin aplicar. No dar por ejecutado ningún cambio que solo figure en notas o en el contexto del agente.
 4. Registrar los resultados de esta auditoría en un informe nuevo o en el informe de seguimiento que corresponda, sin sobrescribir evidencia anterior. Asentar los hallazgos en `Auditoria.txt`.
-5. La tarea anterior solo conserva el estado Completada si satisface todos los requisitos y existe evidencia verificable. Si hay incumplimientos, reabrirla o marcarla Bloqueada según corresponda; no avanzar a una tarea consumidora que dependa de ella.
+5. La tarea anterior conserva Completada si todos sus requisitos de implementación están satisfechos y existe evidencia de autoauditoría y Code Review interno. No se reabre únicamente porque las pruebas beta estén pendientes. Si se descubre un incumplimiento real de implementación, reabrirla o bloquearla; no avanzar si el defecto afecta prerrequisitos.
 
 Si no existe tarea anterior (inicio real del proyecto), dejar constancia explícita de «sin tarea previa que auditar» y continuar con la auditoría preimplementación de la tarea seleccionada.
 
@@ -963,7 +964,7 @@ Esta regla resuelve el caso en que la auditoría obligatoria de la tarea anterio
 5. **Verificar el commit A antes de continuar:** consultar el SHA real del commit y el HEAD de la rama; comprobar árbol, diff, archivos y checkpoint; confirmar que la rama base permanece intacta. Si falla cualquier verificación, detenerse y no iniciar la tarea actual. Registrar el bloqueo sin crear un tercer commit.
 6. **Reanudar la tarea actual desde el nuevo HEAD:** actualizar el punto de partida con el SHA verificado del commit A. Reauditar la corrección y confirmar que el hallazgo quedó resuelto y que las dependencias están satisfechas. Después realizar la auditoría preimplementación completa de la tarea objetivo y seguir las fases 0–7.
 7. **Segundo checkpoint y segundo commit (B):** anexar un segundo checkpoint, independiente y consecutivo, que identifique el commit A y su verificación, la tarea actual, sus requisitos, implementación, pruebas y Code Review. Publicar el segundo commit con todos los cambios de la tarea actual y sus artefactos. No incorporar correcciones pendientes de la tarea anterior que debieron quedar en A.
-8. **Verificar el commit B y cerrar:** comprobar SHA/HEAD, árbol, diff, ambos checkpoints, archivos y rama base. La tarea actual solo se declara Completada si supera sus propios criterios y Code Review. Reportar ambos SHAs y la relación causal A → B.
+8. **Verificar el commit B y cerrar:** comprobar SHA/HEAD, árbol, diff, ambos checkpoints, archivos y rama base. La tarea actual se declara Completada cuando sus requisitos de implementación, autoauditoría y Code Review interno estén satisfechos. Las pruebas beta pendientes se registran aparte y no son requisito para cerrar la implementación. Reportar ambos SHAs y la relación causal A → B.
 
 **Límites inviolables de la excepción:**
 - Se permiten exactamente dos commits: A para la corrección de la tarea anterior y B para la tarea actual. Nunca un tercero como parte de esta excepción.
@@ -1018,11 +1019,11 @@ Se considera incidente de continuidad cualquiera de estos casos: archivo vacío/
 2. Reauditar la tarea interrumpida desde su requisito completo; identificar cambios parciales, duplicados, efectos secundarios y pruebas faltantes.
 3. Registrar hallazgos en `Auditoria.txt` y tareas de corrección en `tareas_auditoria.txt`.
 4. Reanudar desde la primera acción no completada y demostrablemente segura; no repetir operaciones no idempotentes sin comprobar antes si su efecto ya ocurrió.
-5. Solo cerrar la tarea cuando pase nuevamente autoauditoría, pruebas, Code Review y actualización documental. La interrupción no convierte una tarea parcial en Completada.
+5. Solo cerrar la implementación cuando pase nuevamente autoauditoría, verificaciones técnicas internas aplicables, Code Review y actualización documental. Las pruebas beta pendientes se mantienen en el plan beta y no impiden cerrar una implementación terminada. La interrupción no convierte una tarea parcial en Completada.
 
 ## 19.5 Regla de no propagación de errores
 
-Una tarea no verificada no puede servir como prerrequisito satisfecho. Ninguna tarea dependiente puede iniciarse mientras la anterior esté incompleta, corrupta, sin auditar o con criterios de aceptación pendientes. La secuencia normal es: checkpoint verificado → auditoría de la tarea anterior → registro de hallazgos → tareas derivadas en `tareas_auditoria.txt` → auditoría de la tarea objetivo → respaldo → implementación → autoauditoría → Code Review → commit único con checkpoint. Si la auditoría de la tarea anterior activa todas las condiciones de 19.2.1, la secuencia excepcional es: auditoría anterior → corrección aislada → pruebas/Code Review → commit A + checkpoint A → verificación de A → auditoría objetivo → implementación → pruebas/Code Review → commit B + checkpoint B.
+Una implementación no terminada, no auditada internamente, corrupta o sin Code Review aprobado no puede servir como prerrequisito satisfecho. Una implementación Completada y verificada internamente sí puede satisfacer dependencias aunque las pruebas funcionales integrales estén pendientes de beta, salvo que la dependencia exija expresamente certificación funcional previa. La secuencia normal es: checkpoint verificado → auditoría anterior → hallazgos/tareas derivadas → auditoría objetivo → respaldo → implementación → verificaciones internas → autoauditoría → Code Review → estado Completada → commit único con checkpoint; las pruebas beta se administran por separado. Si la auditoría de la tarea anterior activa todas las condiciones de 19.2.1, la secuencia excepcional es: auditoría anterior → corrección aislada → pruebas/Code Review → commit A + checkpoint A → verificación de A → auditoría objetivo → implementación → pruebas/Code Review → commit B + checkpoint B.
 
 
 
@@ -1036,7 +1037,7 @@ Una tarea no verificada no puede servir como prerrequisito satisfecho. Ninguna t
 ## 20.2 Rotación sin pérdida histórica
 1. Auditoría/Contexto_personal.txt es el primer archivo histórico y punto de entrada. Las nuevas partes se crean bajo Auditoría/Contexto_personal_Historico/ con el patrón Checkpoints_Parte_0002.txt, Checkpoints_Parte_0003.txt, etc. No reutilizar nombres.
 2. Los archivos existentes Parte_01.txt a Parte_07.txt son fragmentos de recuperación del contexto original y no forman parte de la numeración nueva.
-3. Cada archivo nuevo inicia con el bloque normativo A–G íntegro y vigente de Auditoría/Contexto_personal.txt, más identificación del proyecto y referencias a esta metodología. No se copia el historial previo: se preserva en su archivo original.
+3. Cada archivo nuevo inicia con el bloque normativo A–H íntegro y vigente de Auditoría/Contexto_personal.txt, más identificación del proyecto y referencias a esta metodología. No se copia el historial previo: se preserva en su archivo original.
 4. La rotación y la entrada que la provoca se publican juntas en el único commit consolidado de la iteración. El archivo anterior queda cerrado; no se mueve, resume ni reescribe contenido histórico.
 
 ## 20.3 Índice y localización obligatoria
@@ -1048,7 +1049,7 @@ Una tarea no verificada no puede servir como prerrequisito satisfecho. Ninguna t
 
 ## 20.4 Verificación y cierre
 1. Antes de escribir, verificar rama/HEAD, SHA del blob, tamaño actual y tamaño proyectado. No modificar archivos históricos ni efectuar escrituras parciales.
-2. Al rotar, comprobar que la copia normativa A–G del nuevo archivo coincide íntegramente con el bloque vigente de contexto personal; registrar su SHA o una verificación equivalente.
+2. Al rotar, comprobar que la copia normativa A–H del nuevo archivo coincide íntegramente con el bloque vigente de contexto personal; registrar su SHA o una verificación equivalente.
 3. Verificar después del commit: HEAD, árbol, rutas, tamaño de cada parte, continuidad de IDs, referencias del índice y rama base intacta.
 4. Si el bloque normativo original no puede recuperarse íntegramente, o no se puede verificar la integridad del archivo/índice, detener la rotación sin publicar cambios parciales.
 
@@ -1059,3 +1060,44 @@ Formato mínimo obligatorio en Auditoria.txt y changueslogs.txt:
 - Ubicación: ruta exacta + encabezado/parte.
 - Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.xxx.
 - Commit: SHA confirmado tras publicación; dentro del checkpoint se indica «el commit que contiene este checkpoint».
+
+
+# 21. ESTADO DE IMPLEMENTACIÓN Y PLAN DE PRUEBAS FUNCIONALES BETA
+
+## 21.1 Significado normativo de «Completada»
+1. **Completada** describe exclusivamente la implementación de la tarea: todos los requisitos de su alcance están desarrollados, integrados y documentados.
+2. Para marcarla Completada deben realizarse autoauditoría, verificaciones técnicas internas aplicables y Code Review interno aprobado, sin defectos bloqueantes abiertos; debe existir evidencia y commit/checkpoint publicado.
+3. No se requiere aprobación del usuario, aceptación institucional ni ejecución previa de la campaña beta.
+4. No marcar Completada si faltan requisitos de implementación, hay cambios parciales, errores bloqueantes conocidos, Code Review pendiente/reprobado o evidencia insuficiente.
+5. Un hallazgo posterior que demuestre incumplimiento de implementación permite reabrir la tarea. La ausencia de pruebas beta por sí sola no.
+6. La certificación funcional beta tiene estado y evidencia separados; Completada no significa «aceptada en beta».
+
+## 21.2 Archivo maestro de pruebas beta
+El catálogo y registro maestro es `docs/testing/PRUEBAS_FUNCIONALES_BETA.md`. Se mantiene actualizado durante el desarrollo y se amplía/ejecuta cuando IMA entre formalmente en fase beta. Cada caso incluirá ID único, módulo/rol, requisito e ID de tarea, objetivo, prioridad, precondiciones, ambiente/build, datos sintéticos/anonimizados, pasos, resultado esperado/real, estado (Pendiente/PASS/FAIL/BLOCKED/No aplica), severidad, evidencia, fecha, responsable e incidencia/tarea derivada.
+
+## 21.3 Familias de pruebas a preparar para beta
+- Smoke, disponibilidad, login/logout y navegación crítica.
+- Flujos funcionales por rol: Dirección, Secretaría, Contabilidad, Docente, Estudiante, Padre y Otros; permisos positivos y negativos.
+- CRUD, reglas de negocio, validaciones, transiciones y estados inválidos.
+- Persistencia, reconstrucción tras recarga, integridad, unicidad, relaciones y conciliación.
+- Integración/API, contratos, autenticación interservicio, errores, timeouts, reintentos e idempotencia.
+- E2E interdepartamental y workflows de solicitud, aprobación, rechazo, subsanación y cierre.
+- Documentos, formularios, PDF, versiones, firmas, acuses, permisos y retención.
+- Notificaciones, eventos, destinatarios, deduplicación y recuperación.
+- Seguridad, privacidad, RBAC/ABAC, IDOR, aislamiento institucional y sesiones.
+- Concurrencia, consistencia, doble envío, conflictos y transacciones.
+- Migración/importación, conteos, hashes, huérfanos, conciliación y rollback.
+- Compatibilidad de navegadores/dispositivos, responsive, accesibilidad y usabilidad.
+- Rendimiento, carga, picos, cuotas y límites de Apps Script/servicios.
+- Resiliencia, fallos de red/servicio, respaldo, restauración y continuidad.
+- Regresión funcional transversal por módulos y roles.
+- Auditoría, trazabilidad, logs, métricas y alertas sin exponer datos sensibles.
+
+## 21.4 Reglas de ejecución y salida beta
+1. Ejecutar solo en beta/staging aislado con datos sintéticos o anonimizados; nunca pruebas destructivas en producción.
+2. Antes de iniciar, registrar build/commit, ambiente, módulos, roles, responsables, ventanas, respaldo, criterios de entrada/salida y navegadores/dispositivos objetivo.
+3. Priorizar seguridad, privacidad, integridad, persistencia y flujos institucionales críticos.
+4. Cada escenario no ejecutado permanece Pendiente; nunca inferir PASS por inspección de código o pruebas unitarias.
+5. Todo FAIL requiere pasos reproducibles, evidencia, severidad e incidencia/tarea correctiva. Bloquear salida beta ante defectos de seguridad, datos o procesos críticos.
+6. Las tareas implementadas pueden estar Completadas mientras los escenarios beta relacionados siguen Pendientes. Un defecto beta puede abrir una corrección sin falsificar el historial.
+7. La salida beta exige escenarios críticos ejecutados, cero P0 abiertos, tratamiento explícito de P1, regresión crítica, seguridad/integridad, respaldo/restauración y decisión documentada de continuar/corregir/detener. No equivale a que cada tarea individual esté Completada.

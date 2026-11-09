@@ -3033,11 +3033,11 @@
 ---
 
 <!-- ID: TASK-637 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK02.md -->
-### [ ] [TASK-637] Completar el inventario integral de archivos
+### [X] [TASK-637] Completar el inventario integral de archivos
 - **Referencia:** AUD-NG-281.
 - **Severidad:** ALTO.
 - **Prioridad:** P1.
-- **Estado:** En revisión (implementación validada; pendiente de revisión/aprobación del usuario).
+- **Estado:** Completada (implementación documental, verificaciones internas, autoauditoría y Code Review aprobados en C1.287).
 - **Objetivo y acción:** generar y mantener un inventario exhaustivo de los 974 archivos versionados, con ruta exacta, tipo, tamaño, SHA, área funcional, propósito y condición de uso; reconciliarlo con el árbol Git vigente y contemplar contenido académico, assets, datos, documentación, pruebas, configuración y backend.
 - **Archivos/módulos afectados:** `docs/architecture/repository-inventory.md`, `AUDITORIAS/MapaDependencias.md`, árbol completo del repositorio.
 - **Dependencias:** árbol Git de la rama de trabajo, documentación vigente, punto de entrada `index.html`.
@@ -3053,7 +3053,7 @@
 - **Evidencia adicional:** tree C1.282 `e052e8781270a0a23aedd2d90177b601d8df063a`; informe `Auditoría/AUDITORIA_TASK-637_C1.283.md` blob `af96fa04c573dbacdb6c3637aeed35dea9462cad`.
 - **Seguimiento C1.287 / AUD-NG-348:** el tree de partida `bdce474c52cfc4d85614dcdf6960189748f85ccc` contiene 1.010 blobs (no truncado); la tabla anterior tenía 1.001 filas, omitía 9 rutas y 12 metadatos estaban desactualizados. Se amplía TASK-637 sin duplicar el ID.
 - **Evidencia de implementación:** inventario actualizado a 1.011 rutas únicas, incluyendo el informe C1.287 creado en la misma iteración; tamaños y SHA contrastados con Git tree/blob, autorreferencia SELF con tamaño exacto. `index.html` conserva SHA `cd742047cdc4948259dd721119429b04f78330ca`.
-- **Estado al cierre C1.287:** implementación documental validada; permanece En revisión y no se marca [X] ni Completada hasta aprobación del usuario.
+- **Estado al cierre C1.287:** implementación documental validada; el estado Completada se confirma en C1.288 conforme a la definición normativa: cierre de implementación y controles internos, sin esperar aprobación del usuario ni certificación beta.
 
 ---
 
@@ -4932,3 +4932,5 @@
 - **Estado:** [ ] Pendiente
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 15664-15687; clave TASK-432; asignación única: Contabilidad -->
+
+- **Cierre operativo C1.288:** TASK-637 pasa a **Completada**. La implementación, autoauditoría, verificación de inventario y Code Review interno están documentados en C1.287. La campaña funcional beta del portal queda separada y se registrará en `docs/testing/PRUEBAS_FUNCIONALES_BETA.md`; no es condición pendiente de esta tarea documental.

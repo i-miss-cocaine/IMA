@@ -29,7 +29,7 @@ Esta regla aplica a CUALQUIER archivo del repositorio IMA, sin excepción por ti
 G. **CONTROL DE CRECIMIENTO, ROTACIÓN Y LOCALIZACIÓN DE CHECKPOINTS (OBLIGATORIO):**
    1. El tamaño máximo de cada archivo activo de checkpoints será de **180.000 caracteres Unicode**, medidos sobre el contenido UTF-8 decodificado e incluyendo espacios y saltos de línea. Antes de anexar cualquier entrada, calcular el tamaño resultante. Si la adición excedería el límite, no escribir en ese archivo: crear el siguiente archivo secuencial de checkpoints.
    2. La rotación es preventiva: el archivo nuevo debe quedar por debajo del límite desde su creación. Nunca truncar, borrar, resumir, mover ni reescribir checkpoints anteriores. El archivo que alcanzó el límite queda cerrado para nuevas entradas y permanece íntegro.
-   3. Cada archivo nuevo debe iniciar con una copia íntegra y vigente de este bloque normativo A–G del contexto personal (incluidas restricciones, precedencia, commits, checkpoints, recuperación y rotación), seguida de la identificación del repositorio/proyecto y referencias a la metodología vigente. No copiar todo el historial anterior: conservarlo en su archivo original. La copia normativa se considera una instantánea; cualquier cambio futuro de reglas debe propagarse a los nuevos archivos.
+   3. Cada archivo nuevo debe iniciar con una copia íntegra y vigente de este bloque normativo A–H del contexto personal (incluidas restricciones, precedencia, commits, checkpoints, recuperación y rotación), seguida de la identificación del repositorio/proyecto y referencias a la metodología vigente. No copiar todo el historial anterior: conservarlo en su archivo original. La copia normativa se considera una instantánea; cualquier cambio futuro de reglas debe propagarse a los nuevos archivos.
    4. Convención de nombres: mantener Auditoría/Contexto_personal.txt como primer archivo histórico y punto de entrada; los archivos rotados se crearán como Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt, ..._0003.txt, etc., incrementando secuencialmente y sin reutilizar nombres. Los archivos Parte_01.txt a Parte_07.txt existentes son fragmentos de recuperación del contexto original y no se renombrarán ni se considerarán partes de esta nueva serie.
    5. Mantener Auditoría/INDICE_CHECKPOINTS.md como índice permanente: una fila por checkpoint con ID, sesión, estado, archivo/ruta, ubicación (sección o líneas), tarea/fase y commit de cierre o estado de publicación. El índice debe señalar el último checkpoint y el archivo activo. No depender de buscar manualmente el último ID en todos los archivos.
    6. Todo checkpoint debe declarar Ubicación exacta del checkpoint: ruta del archivo, identificador de parte, encabezado/sección y rango de líneas cuando sea posible; además debe incluir ID del checkpoint anterior y referencia al índice central. Si el rango final de líneas solo puede confirmarse tras escribir, calcularlo y registrarlo en el índice dentro del mismo cambio preparado.
@@ -37,6 +37,12 @@ G. **CONTROL DE CRECIMIENTO, ROTACIÓN Y LOCALIZACIÓN DE CHECKPOINTS (OBLIGATOR
    8. Al rotar, preparar en una sola iteración el nuevo archivo con el bloque normativo completo, el checkpoint que provocó la rotación, la actualización del índice, la referencia de continuidad desde el archivo anterior y los cambios relacionados en auditoría/changelog. Publicar todo en el commit consolidado habitual; nunca crear un commit separado solo para rotar.
    9. Antes de cada escritura comprobar tamaño actual, tamaño proyectado, SHA del blob, HEAD y espacio disponible respecto al límite. Si el archivo actual ya supera 180.000 caracteres, no anexar nada: preservar y cerrar ese archivo, crear la siguiente parte y documentar la anomalía. Si la fuente normativa no puede recuperarse íntegramente, detener la rotación hasta restaurarla de forma verificable.
 
+H. **ESTADO DE IMPLEMENTACIÓN Y PRUEBAS FUNCIONALES BETA (OBLIGATORIO PARA IMA):**
+   1. **Completada** describe que todos los requisitos de implementación de la tarea terminaron; exige verificaciones técnicas internas aplicables, autoauditoría, Code Review interno aprobado, evidencia y actualización del backlog/Plan Maestro. No requiere aprobación adicional del usuario.
+   2. No confundir cierre de implementación con certificación funcional integral. Las pruebas E2E, regresión transversal, seguridad por roles, integración y escenarios de plataforma se ejecutan en beta y se registran en `docs/testing/PRUEBAS_FUNCIONALES_BETA.md`.
+   3. Las pruebas técnicas/unitarias/contratos y controles acotados al cambio se ejecutan durante implementación cuando apliquen. Las pruebas integrales se difieren a beta. No afirmar que una prueba no ejecutada pasó.
+   4. Una tarea puede estar Completada mientras sus escenarios beta están Pendientes. Un defecto beta que demuestre incumplimiento de un requisito de implementación puede reabrirla con evidencia; la ausencia de pruebas beta no.
+   5. La plataforma no queda certificada para piloto/cutover por el simple hecho de que las tareas estén Completadas. La salida beta tiene sus propios criterios conforme a la sección 21 de `METODOLOGIA_DESARROLLO.md`.
 
 ---
 
@@ -1560,7 +1566,7 @@ Decisiones:
 - Límite máximo: 180.000 caracteres por archivo de checkpoints.
 - Rotación preventiva si la siguiente entrada excede el límite; los archivos previos quedan íntegros y cerrados.
 - Convención de rotación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_NNNN.txt.
-- Cada parte nueva comienza con copia íntegra de las reglas normativas A–G del contexto personal y referencia a METODOLOGIA_DESARROLLO.md.
+- Cada parte nueva comienza con copia íntegra de las reglas normativas A–H del contexto personal y referencia a METODOLOGIA_DESARROLLO.md.
 - Índice permanente: Auditoría/INDICE_CHECKPOINTS.md.
 - Checkpoint con ubicación exacta, parte, sección/rango de líneas, checkpoint anterior e índice.
 - Auditoria.txt y changueslogs.txt referencian ID, sesión, ruta e índice sin duplicar el checkpoint.
@@ -1629,4 +1635,40 @@ Ubicación exacta del checkpoint: Auditoría/Contexto_personal.txt — sección 
 Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.287.
 Commit de cierre: el commit único que contiene este checkpoint; SHA confirmado externamente después de publicar.
 Siguiente acción reproducible: revisar/aprobar TASK-637; solo después de su cierre verificado seleccionar TASK-638 en pendientes/Contabilidad/Pendientes.md y auditarla antes de implementarla.
+===============================================================================
+
+
+===============================================================================
+## C1.288 — Separación de cierre de implementación y pruebas beta (2026-11-09)
+ID de sesión operativo: IMA-GOV-20261109-0355Z-01
+Estado: reglas actualizadas y publicadas; TASK-637 cerrada como implementación Completada.
+Checkpoint anterior: C1.287.
+Repositorio: i-miss-cocaine/IMA.
+Rama autorizada: NG_beta_0.0.0.1_work.
+HEAD de partida verificado: e255ee616e3d82394243e2d924ab7c52d17a17d1.
+Fase PM: PM-00 — gobierno documental y cierre de TASK-637.
+Fase metodológica: actualización normativa, verificación documental, Code Review y cierre.
+Objetivo: corregir la definición de Completada; separar controles internos de implementación de la certificación funcional beta; crear el catálogo maestro de pruebas beta.
+Decisión: Completada significa implementación de todos los requisitos terminada con verificaciones técnicas internas aplicables, autoauditoría y Code Review interno aprobado. No requiere aprobación del usuario ni esperar la campaña beta. Las pruebas integrales se registran y ejecutan posteriormente en beta.
+TASK-637: se actualiza a [X]/Completada en el backlog y a Completada en el Plan Maestro, sustentado por C1.287: 1.011/1.011 rutas, cero discrepancias SHA/tamaño, autorreferencia verificada, index.html intacto, autoauditoría y Code Review documental aprobado. Esto no declara certificación funcional beta.
+Nuevo documento: docs/testing/PRUEBAS_FUNCIONALES_BETA.md. Incluye precondiciones de ambiente, plantilla de caso, 16 familias de pruebas, grupos iniciales, severidades y criterios de salida. Beta no iniciada; no se registran PASS ficticios.
+Archivos modificados:
+- METODOLOGIA_DESARROLLO.md
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/Contexto_personal.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoria.txt
+- changueslogs.txt
+- pendientes/Contabilidad/Pendientes.md
+- docs/testing/PRUEBAS_FUNCIONALES_BETA.md
+- docs/architecture/repository-inventory.md
+- Auditoría/AUDITORIA_GOBIERNO_ESTADO_Y_BETA_C1.288.md
+Archivos revisados sin modificación: tareas_auditoria.txt, README.md, index.html y backlogs no relacionados.
+Pruebas ejecutadas: consistencia normativa entre metodología, plan, backlog y catálogo beta; reconciliación del inventario; no se afirma inicio de beta ni resultados PASS; tamaño de contexto y checkpoint; diff y commit; HEAD y rama base tras publicación.
+Pruebas no ejecutadas: funcionales beta, E2E de plataforma, seguridad integral, rendimiento, resiliencia y aceptación institucional; la fase beta no ha comenzado.
+Estado TASK-637: Completada — implementación documental e inspecciones internas aprobadas en C1.287. Escenarios beta generales permanecen Pendientes.
+Siguiente tarea: TASK-638 — Trazar dependencias estáticas y dinámicas de extremo a extremo; requisito en pendientes/Contabilidad/Pendientes.md. Auditar antes de implementar.
+Ubicación exacta: Auditoría/Contexto_personal.txt — sección C1.288; rango de líneas indicado en el índice central.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.288.
+Commit de cierre: el commit que contiene este checkpoint; SHA a confirmar tras publicar.
 ===============================================================================

@@ -80,3 +80,13 @@ Tree de partida: bdce474c52cfc4d85614dcdf6960189748f85ccc (1010 blobs; truncated
 ### Dictamen
 Inventario actualizado desde el árbol Git; 1.011 rutas en el snapshot que incorpora el informe C1.287. No se modifica código fuente ni `index.html`. Las pruebas de runtime no se ejecutaron.
 Checkpoint: C1.287; sesión: IMA-EXEC-20261109-0343Z-01; ubicación: Auditoría/Contexto_personal.txt — sección C1.287; índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.287.
+
+
+===============================================================================
+## C1.288 — Corrección normativa de cierre de implementación y plan beta
+Sesión: IMA-GOV-20261109-0355Z-01; HEAD de partida: e255ee616e3d82394243e2d924ab7c52d17a17d1.
+- Hallazgo: reglas mezclaban Completada de implementación con aprobación del usuario y pruebas funcionales integrales.
+- Corrección: Completada exige implementación completa, verificaciones técnicas internas, autoauditoría, Code Review interno y evidencia; no espera aprobación del usuario ni beta.
+- Se crea docs/testing/PRUEBAS_FUNCIONALES_BETA.md para 16 familias de escenarios y campaña futura. Beta no iniciada.
+- TASK-637 pasa a [X]/Completada por evidencia C1.287; no equivale a certificación beta.
+- Checkpoint C1.288; sesión IMA-GOV-20261109-0355Z-01; ubicación Auditoría/Contexto_personal.txt — sección C1.288; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.288.

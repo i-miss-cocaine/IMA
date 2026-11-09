@@ -71,3 +71,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Sin modificaciones de código fuente ni de index.html; TASK-637 queda en revisión del usuario.
 - Checkpoint: C1.287; sesión: IMA-EXEC-20261109-0343Z-01; ubicación: Auditoría/Contexto_personal.txt — sección C1.287; índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.287.
 - HEAD de partida: a77e9a6dc373a66e243d6287743139cea67e4c26; commit único de cierre: este commit; SHA confirmado tras publicación.
+
+
+[2026-11-09] IMA-GOV-20261109-0355Z-01 — Gobierno de estado de tareas y plan de pruebas beta
+- Se armoniza METODOLOGIA_DESARROLLO.md: Completada significa implementación cerrada con QA interno y Code Review; aprobación del usuario y certificación beta no son requisitos de cierre.
+- Se añade sección 21 y docs/testing/PRUEBAS_FUNCIONALES_BETA.md para la campaña funcional futura.
+- Se actualiza el Plan Maestro y el contexto IMA (regla H).
+- TASK-637 pasa a [X]/Completada con evidencia C1.287; la fase beta permanece no iniciada.
+- Inventario reconciliado con el tree final de este commit.
+- Checkpoint C1.288; sesión IMA-GOV-20261109-0355Z-01; ubicación Auditoría/Contexto_personal.txt — sección C1.288; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.288.

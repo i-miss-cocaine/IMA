@@ -3,11 +3,11 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.287**
-- Última sesión: `IMA-EXEC-20261109-0343Z-01`
+- Último checkpoint: **C1.288**
+- Última sesión: `IMA-GOV-20261109-0355Z-01`
 - Archivo activo: `Auditoría/Contexto_personal.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres proyectados del archivo activo tras C1.287: **153,226**
+- Caracteres proyectados del archivo activo tras C1.288: **157,746**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 
@@ -19,6 +19,8 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.286 | IMA-GOV-20261109-0339Z-01 | Publicado | Gobierno documental / PM-00 | `Auditoría/Contexto_personal.txt` — sección C1.286 | 1547–1587 | C1.285 | `a77e9a6dc373a66e243d6287743139cea67e4c26` |
 
 | C1.287 | IMA-EXEC-20261109-0343Z-01 | Publicado en este commit | TASK-637 / PM-00 | `Auditoría/Contexto_personal.txt` — sección C1.287 | 1590–1632 | C1.286 | Este commit; SHA verificado externamente en el reporte de cierre |
+
+| C1.288 | IMA-GOV-20261109-0355Z-01 | Preparado para publicación | Gobierno de estado / pruebas beta | `Auditoría/Contexto_personal.txt` — sección C1.288 | 1643–1674 | C1.287 | Este commit; SHA verificado externamente |
 
 ## Reglas de mantenimiento
 1. Agregar una fila por cada checkpoint, sin borrar ni reutilizar IDs.

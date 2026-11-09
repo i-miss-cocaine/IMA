@@ -353,7 +353,7 @@ La lista anterior es una secuencia de puertas y capas; la selección de la sigui
 ## 8. Criterios de avance y control del plan
 
 - Estado operativo permitido: Pendiente, En ejecución, Bloqueada, Completada.
-- «Completada» requiere implementación, pruebas de comportamiento, autoauditoría, Code Review aprobado, evidencia y actualización del registro.
+- «Completada» significa implementación de todos los requisitos de la tarea, verificaciones técnicas internas aplicables, autoauditoría, Code Review interno aprobado, evidencia y actualización del registro. No requiere aprobación del usuario ni certificación funcional beta. Las pruebas integrales beta se controlan separadamente en `docs/testing/PRUEBAS_FUNCIONALES_BETA.md`.
 - Una tarea bloqueada debe registrar ID del prerrequisito y evidencia del bloqueo; no se sustituye por un workaround.
 - El plan se actualiza de forma aditiva al resolver dependencias, descubrir nuevas tareas o cambiar el orden por evidencia. Nunca se borran requisitos originales.
 - La trazabilidad del cambio debe llegar desde el ID de tarea y hallazgo de origen hasta archivos, funciones, pruebas, commit y checkpoint.
@@ -1746,5 +1746,12 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - **Estado operativo inicial:** `Pendiente` para todas las tareas, sin excepciones. Ninguna tarea del Plan Maestro se considera `Completada` al inicio de esta ejecución.
 - **Corrección explícita:** TASK-637 vuelve a `Pendiente`; su marca de selección `[X]` y sus etiquetas operativas de cierre se retiraron de `pendientes/Contabilidad/Pendientes.md`. TASK-638 permanece `Pendiente` y su dependencia respecto de TASK-637 no está satisfecha.
 - **Historial:** los checkpoints, informes y entradas históricas que describen cierres anteriores no se eliminan ni se reescriben. Son evidencia de lo que se registró entonces, pero no determinan el estado operativo actual ni sustituyen una nueva implementación y verificación.
-- **Regla de transición:** una tarea solo podrá pasar a `En ejecución` cuando sea elegible por dependencias y solo podrá pasar a `Completada` tras implementar todos sus requisitos, ejecutar las pruebas aplicables, superar autoauditoría y Code Review y registrar evidencia verificable en el checkpoint correspondiente.
+- **Regla de transición:** una tarea solo podrá pasar a `En ejecución` cuando sea elegible por dependencias y podrá pasar a `Completada` cuando implemente todos sus requisitos, supere las verificaciones técnicas internas aplicables, la autoauditoría y el Code Review interno, y registre evidencia verificable en el checkpoint. No se espera aprobación del usuario ni pruebas funcionales beta para cerrar la implementación. Los resultados beta se registran en `docs/testing/PRUEBAS_FUNCIONALES_BETA.md`.
 - **Fuente de verdad:** estado vigente en el backlog departamental, reconciliado con esta sección. Ante cualquier contradicción con un checkpoint histórico, prevalece este reinicio C1.285 para la ejecución del Plan Maestro.
+
+
+### Aclaración operativa C1.288 — Estado de implementación frente a certificación beta (2026-11-09)
+- **Completada** describe el cierre de la implementación y sus controles internos; no equivale a certificación funcional integral, aceptación del usuario ni aprobación para cutover.
+- Las pruebas funcionales integrales se planifican y registran en `docs/testing/PRUEBAS_FUNCIONALES_BETA.md`; su ausencia no mantiene una tarea de implementación en revisión.
+- **TASK-637:** implementación documental, cobertura del inventario, autoauditoría y Code Review interno fueron verificados en C1.287. Su estado operativo se actualiza a **Completada**; no se afirma que el portal haya superado pruebas funcionales beta.
+- **Siguiente tarea elegible:** TASK-638; auditar sus requisitos originales antes de implementar.

@@ -1,17 +1,15 @@
 # Inventario integral del repositorio IMA
 
-**Tarea:** TASK-637 — Inventario integral de archivos (actualización C1.287).
-**Snapshot base:** HEAD `a77e9a6dc373a66e243d6287743139cea67e4c26`, tree `bdce474c52cfc4d85614dcdf6960189748f85ccc` (1.010 blobs, recursivo y no truncado), más el informe C1.287 incorporado en el commit actual.
-**Cobertura:** 1.011 rutas versionadas en el conjunto final del commit; cada ruta aparece una sola vez.
+**Tarea:** TASK-637 — Inventario integral de archivos (actualización C1.288).
+**Snapshot base:** HEAD `e255ee616e3d82394243e2d924ab7c52d17a17d1`, tree recursivo con 1.011 blobs; más los dos documentos C1.288.
+**Cobertura prevista:** 1.013 rutas versionadas en el conjunto final del commit; cada ruta aparece una sola vez.
 **Autorreferencia:** el SHA de este archivo se identifica como SELF y se verifica externamente en GitHub; el tamaño en bytes se calcula exactamente sobre el contenido final.
-**Clasificación:** área, propósito y condición se describen según ruta/tipo y evidencia disponible; los consumidores funcionales se trazan en TASK-638.
-**Integridad:** tamaños y SHA de todos los archivos distintos de este inventario proceden del Git tree/blob que formará el commit final.
+**Integridad:** tamaños y SHA de archivos distintos del inventario se obtienen de los blobs Git que forman el commit final.
 
 ## Resumen por área
-
 | Área | Archivos |
 |---|---:|
-| Auditoría / gobierno | 234 |
+| Auditoría / gobierno | 235 |
 | Auditoría / legado | 6 |
 | Backend / academic-service | 1 |
 | Backend / accounting-service | 1 |
@@ -36,40 +34,17 @@
 | Frontend / JavaScript | 47 |
 | Portal / páginas web | 27 |
 | Pruebas automatizadas | 2 |
+| Pruebas y calidad | 1 |
 | PWA / ciclo de vida | 1 |
 | Raíz / soporte del proyecto | 14 |
 | Recuperación | 2 |
 | Recursos gráficos / evidencia | 295 |
 | Resultados de pruebas | 1 |
 
-## Resumen por tipo
-
-| Tipo | Archivos |
-|---|---:|
-| Archivo HTM | 1 |
-| Archivo sin extensión | 1 |
-| CSS | 6 |
-| Excel XLS | 3 |
-| Excel XLSX | 1 |
-| Google Apps Script | 6 |
-| HTML | 100 |
-| Imagen GIF | 6 |
-| Imagen JPEG | 125 |
-| Imagen PNG | 359 |
-| Imagen WebP | 2 |
-| JavaScript | 24 |
-| JSON | 27 |
-| Markdown | 257 |
-| PDF | 65 |
-| SVG | 3 |
-| Texto | 19 |
-| Word DOCX | 6 |
-
 ## Inventario completo
-
 | Ruta exacta | Tipo | Tamaño (bytes) | Blob SHA | Área funcional | Propósito | Condición de uso |
 |---|---|---:|---|---|---|---|
-| `Auditoria.txt` | Texto | 5758 | `1b1994614bce9f701bbf5244c375bbc09e590450` | Raíz / soporte del proyecto | Registro o instrucciones de texto: Auditoria.txt. | Gobierno/evidencia; uso documental. |
+| `Auditoria.txt` | Texto | 6706 | `817053a50fcb2eb3ffcbf2eafbdb9f41e978160f` | Raíz / soporte del proyecto | Registro o instrucciones de texto: Auditoria.txt. | Gobierno/evidencia; uso documental. |
 | `Auditoría/AUDITORIA-FASE-11-COMUNICACION-BIENESTAR-SUPERVISION-FINANZAS.md` | Markdown | 39910 | `9999dd843c028b02b86f8ceb06645fd90f182286` | Auditoría / gobierno | Evidencia, informe o documento de gobierno del proyecto: AUDITORIA-FASE-11-COMUNICACION-BIENESTAR-SUPERVISION-FINANZAS.md. | Gobierno/evidencia; uso documental. |
 | `Auditoría/AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md` | Markdown | 42410 | `f0cdda638ceb2c2e0d60f8556527348f0ec347d1` | Auditoría / gobierno | Evidencia, informe o documento de gobierno del proyecto: AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md. | Gobierno/evidencia; uso documental. |
 | `Auditoría/AUDITORIA-FASE-28-ACCESIBILIDAD-MOVILIDAD-CONTINUIDAD.md` | Markdown | 25105 | `bb0517f8edae9b489d83eac16803683cb908c24e` | Auditoría / gobierno | Evidencia, informe o documento de gobierno del proyecto: AUDITORIA-FASE-28-ACCESIBILIDAD-MOVILIDAD-CONTINUIDAD.md. | Gobierno/evidencia; uso documental. |
@@ -272,6 +247,7 @@
 | `Auditoría/AUDITORIA_FASE_39_DIGITALIZACION_TRANSICION.md` | Markdown | 35098 | `6be5f986e204c8752780570424bb905a4f4675d3` | Auditoría / gobierno | Evidencia, informe o documento de gobierno del proyecto: AUDITORIA_FASE_39_DIGITALIZACION_TRANSICION.md. | Gobierno/evidencia; uso documental. |
 | `Auditoría/AUDITORIA_FASE_40_SEGURIDAD_DOCUMENTAL_TRAZABILIDAD_Y_CONSERVACION.md` | Markdown | 54335 | `bea1767b9bbdef12662ee556a164624af8df4d19` | Auditoría / gobierno | Evidencia, informe o documento de gobierno del proyecto: AUDITORIA_FASE_40_SEGURIDAD_DOCUMENTAL_TRAZABILIDAD_Y_CONSERVACION.md. | Gobierno/evidencia; uso documental. |
 | `Auditoría/AUDITORIA_FASE_41_PRUEBAS_INTEGRALES_DIGITALIZACION.md` | Markdown | 29568 | `7445988a8c20d77a66f4f9fb31ea36e84220a788` | Auditoría / gobierno | Evidencia, informe o documento de gobierno del proyecto: AUDITORIA_FASE_41_PRUEBAS_INTEGRALES_DIGITALIZACION.md. | Gobierno/evidencia; uso documental. |
+| `Auditoría/AUDITORIA_GOBIERNO_ESTADO_Y_BETA_C1.288.md` | Markdown | 2414 | `3f3a0780433a3a38362555a2c202cb66977106ac` | Auditoría / gobierno | Informe de cambio normativo C1.288 y evidencia de corrección de estado. | Gobierno/evidencia; documento de auditoría. |
 | `Auditoría/AUDITORIA_LOTE_A.md` | Markdown | 6915 | `25789794665477e35b595dcf2533e5ec59b8c519` | Auditoría / gobierno | Evidencia, informe o documento de gobierno del proyecto: AUDITORIA_LOTE_A.md. | Gobierno/evidencia; uso documental. |
 | `Auditoría/AUDITORIA_LOTE_B.md` | Markdown | 7005 | `241ae22e4353e99947f9d3d96ef2491a76671c8c` | Auditoría / gobierno | Evidencia, informe o documento de gobierno del proyecto: AUDITORIA_LOTE_B.md. | Gobierno/evidencia; uso documental. |
 | `Auditoría/AUDITORIA_LOTE_C.md` | Markdown | 6028 | `f4e97d87f42610687430872d62c7a938caa85090` | Auditoría / gobierno | Evidencia, informe o documento de gobierno del proyecto: AUDITORIA_LOTE_C.md. | Gobierno/evidencia; uso documental. |
@@ -292,7 +268,7 @@
 | `Auditoría/AUDITORIA_TASK-637_C1.283.md` | Markdown | 3056 | `af96fa04c573dbacdb6c3637aeed35dea9462cad` | Auditoría / gobierno | Evidencia, informe o documento de gobierno del proyecto: AUDITORIA_TASK-637_C1.283.md. | Gobierno/evidencia; uso documental. |
 | `Auditoría/AUDITORIA_TASK-637_C1.287.md` | Markdown | 7065 | `08ebbb1cbc9f013cac038e220bb3683e96b6c64b` | Auditoría / gobierno | Informe de auditoría, hallazgos y evidencia de implementación de TASK-637 C1.287. | Gobierno/evidencia; documento de auditoría. |
 | `Auditoría/Auditoría.txt` | Texto | 148273 | `e63c6cfcfaf05238d1a07a375ba65e16b83b9184` | Auditoría / gobierno | Evidencia, informe o documento de gobierno del proyecto: Auditoría.txt. | Gobierno/evidencia; uso documental. |
-| `Auditoría/Contexto_personal.txt` | Texto | 154954 | `f581b640f2c20b21a11f59461be64a567227a406` | Auditoría / gobierno | Evidencia, informe o documento de gobierno del proyecto: Contexto_personal.txt. | Gobierno/evidencia; uso documental. |
+| `Auditoría/Contexto_personal.txt` | Texto | 159544 | `e1d2cbecce5093c5e4b56bb34aa46589b0c411ea` | Auditoría / gobierno | Evidencia, informe o documento de gobierno del proyecto: Contexto_personal.txt. | Gobierno/evidencia; uso documental. |
 | `Auditoría/Contexto_personal_Historico/Parte_01.txt` | Texto | 151489 | `d32a246e5098eff03c5775f61092854cd86a241f` | Auditoría / gobierno | Fragmento histórico recuperado del contexto personal; conserva continuidad documental. | Gobierno/evidencia histórica; no es archivo activo de checkpoints. |
 | `Auditoría/Contexto_personal_Historico/Parte_02.txt` | Texto | 151427 | `94ecc866b2c24be48ca7a7dfe99f98507451bc59` | Auditoría / gobierno | Fragmento histórico recuperado del contexto personal; conserva continuidad documental. | Gobierno/evidencia histórica; no es archivo activo de checkpoints. |
 | `Auditoría/Contexto_personal_Historico/Parte_03.txt` | Texto | 151333 | `8532c3bdd8561192f5e77e1e656042fc8f25d066` | Auditoría / gobierno | Fragmento histórico recuperado del contexto personal; conserva continuidad documental. | Gobierno/evidencia histórica; no es archivo activo de checkpoints. |
@@ -300,9 +276,9 @@
 | `Auditoría/Contexto_personal_Historico/Parte_05.txt` | Texto | 151272 | `c90138a58aeb2e253c2c632f4d1e50689048319f` | Auditoría / gobierno | Fragmento histórico recuperado del contexto personal; conserva continuidad documental. | Gobierno/evidencia histórica; no es archivo activo de checkpoints. |
 | `Auditoría/Contexto_personal_Historico/Parte_06.txt` | Texto | 151433 | `a73a372e051ab4d66bf2bbc3c90d01eeed0eb26f` | Auditoría / gobierno | Fragmento histórico recuperado del contexto personal; conserva continuidad documental. | Gobierno/evidencia histórica; no es archivo activo de checkpoints. |
 | `Auditoría/Contexto_personal_Historico/Parte_07.txt` | Texto | 55177 | `d62fcbd97665efe1ee7808a96f7d5c123a9b63d5` | Auditoría / gobierno | Fragmento histórico recuperado del contexto personal; conserva continuidad documental. | Gobierno/evidencia histórica; no es archivo activo de checkpoints. |
-| `Auditoría/INDICE_CHECKPOINTS.md` | Markdown | 2056 | `a6175cf8ef1c1f4499ca2e6298b28d1d79302fe9` | Auditoría / gobierno | Índice central de checkpoints, sesiones, ubicaciones y commits. | Gobierno/evidencia; punto de localización de checkpoints. |
+| `Auditoría/INDICE_CHECKPOINTS.md` | Markdown | 2284 | `d5e5146e8a3ac5cec9f8a17cf4404c29c173b2ed` | Auditoría / gobierno | Índice central de checkpoints, sesiones, ubicaciones y commits. | Gobierno/evidencia; punto de localización de checkpoints. |
 | `Auditoría/MapaDependencias.md` | Markdown | 429013 | `aef3b8c2f7f8d85a83eeda938e80f25bffbb1b85` | Auditoría / gobierno | Evidencia, informe o documento de gobierno del proyecto: MapaDependencias.md. | Gobierno/evidencia; uso documental. |
-| `Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md` | Markdown | 395311 | `4c7f04c818e6a628140bc28623ff5bf5a9e64543` | Auditoría / gobierno | Evidencia, informe o documento de gobierno del proyecto: PLAN_MAESTRO_IMPLEMENTACION.md. | Gobierno/evidencia; uso documental. |
+| `Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md` | Markdown | 396557 | `57be7a0231d812a04da5cdc72f518d81df077fb5` | Auditoría / gobierno | Evidencia, informe o documento de gobierno del proyecto: PLAN_MAESTRO_IMPLEMENTACION.md. | Gobierno/evidencia; uso documental. |
 | `Auditoría/README.md` | Markdown | 1399 | `2f649c6ffc39ec7cdd242e85cb71b4344fd69e34` | Auditoría / gobierno | Evidencia, informe o documento de gobierno del proyecto: README.md. | Gobierno/evidencia; uso documental. |
 | `Auditoría/legacy/Auditoría_legacy.txt` | Texto | 1055120 | `1017b9996017331692b85a815e3464a6e11ee33a` | Auditoría / legado | Registro histórico de auditoría/pendientes: Auditoría_legacy.txt. | Histórico; no usar como fuente operativa sin validación. |
 | `Auditoría/legacy/Completadas_legacy.md` | Markdown | 33058 | `c9622ea9e03ec16dcecb12ae97b17b89ed204157` | Auditoría / legado | Registro histórico de auditoría/pendientes: Completadas_legacy.md. | Histórico; no usar como fuente operativa sin validación. |
@@ -648,7 +624,7 @@
 | `Informatica_I/texto_tablas.pdf` | PDF | 209685 | `e70136e191ef14de4101df2f7a929f9fec6da75d` | Contenido académico | Documento PDF de referencia: texto_tablas.pdf. | Versionado en Git; uso funcional específico no validado en esta tarea. |
 | `Instrucciones.txt` | Texto | 27734 | `4f1fbfd782ac0feb8819aaeb643edb9ccc7de53a` | Raíz / soporte del proyecto | Registro o instrucciones de texto: Instrucciones.txt. | Versionado en Git; uso funcional específico no validado en esta tarea. |
 | `MEMORIA_REGRESION.md` | Markdown | 2608 | `cbdf7c39ece72b69f751d26ed735c2a2caa51907` | Raíz / soporte del proyecto | Documento de referencia del proyecto: MEMORIA_REGRESION.md. | Versionado en Git; uso funcional específico no validado en esta tarea. |
-| `METODOLOGIA_DESARROLLO.md` | Markdown | 84521 | `8e32aa0dcd2eae3d61fa2b8810824d37ceaf0b3e` | Raíz / soporte del proyecto | Documento de referencia del proyecto: METODOLOGIA_DESARROLLO.md. | Versionado en Git; uso funcional específico no validado en esta tarea. |
+| `METODOLOGIA_DESARROLLO.md` | Markdown | 90513 | `62030811b00d9829d533cc5ff520b8106306db7f` | Raíz / soporte del proyecto | Documento de referencia del proyecto: METODOLOGIA_DESARROLLO.md. | Versionado en Git; uso funcional específico no validado en esta tarea. |
 | `Normas_Presentaciones.md` | Markdown | 17092 | `fd1e80a501801f632571b4cd06b4452040262c05` | Raíz / soporte del proyecto | Documento de referencia del proyecto: Normas_Presentaciones.md. | Versionado en Git; uso funcional específico no validado en esta tarea. |
 | `PROCEDIMIENTO_ESTIMACION_CONTEXTO_CHATGPT.md` | Markdown | 5351 | `18a18428155b1d1e30f1a9f085b876bafe2bdd4e` | Raíz / soporte del proyecto | Documento de referencia del proyecto: PROCEDIMIENTO_ESTIMACION_CONTEXTO_CHATGPT.md. | Versionado en Git; uso funcional específico no validado en esta tarea. |
 | `Portafolio/Silabos/Planes/Plan de Clases Diseño Web I Parcial I.docx` | Word DOCX | 72293 | `9795eee3527e52063ed252fe298692f454dfa271` | Contenido académico | Archivo de soporte identificado por ruta y nombre: Plan de Clases Diseño Web I Parcial I.docx. | Versionado en Git; uso funcional específico no validado en esta tarea. |
@@ -667,7 +643,7 @@
 | `backend/exam-service/Code.gs` | Google Apps Script | 82760 | `1d93296628fae31f680004f637897e2b1314a64c` | Backend / exam-service | Código de servidor del servicio exam-service: Code.gs. | Código versionado; uso runtime y consumidores se trazan en TASK-638. |
 | `backend/task-service/Code.gs` | Google Apps Script | 92027 | `1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe` | Backend / task-service | Código de servidor del servicio task-service: Code.gs. | Código versionado; uso runtime y consumidores se trazan en TASK-638. |
 | `backend/user-service/Code.gs` | Google Apps Script | 426549 | `12079dd410aa6d8afbce55a4bc62a79dea605f9f` | Backend / user-service | Código de servidor del servicio user-service: Code.gs. | Código versionado; uso runtime y consumidores se trazan en TASK-638. |
-| `changueslogs.txt` | Texto | 7279 | `be2dbeb30eec0afbb281726d31db2658ba27ff32` | Raíz / soporte del proyecto | Registro o instrucciones de texto: changueslogs.txt. | Gobierno/evidencia; uso documental. |
+| `changueslogs.txt` | Texto | 8059 | `2c15c589e71069a8628a37b524420dde23a42070` | Raíz / soporte del proyecto | Registro o instrucciones de texto: changueslogs.txt. | Gobierno/evidencia; uso documental. |
 | `css/style.css` | CSS | 26945 | `f1ff84312ce70949a58eaa099b2aad0ff0a59cb6` | Frontend / estilos | Reglas de presentación y estilos: style.css. | Código versionado; uso runtime y consumidores se trazan en TASK-638. |
 | `dashboard-cafeteria.html` | HTML | 5736 | `12f8c828dd1f8f2c3be34e14d8c9478944c64d04` | Portal / páginas web | Página o plantilla web del portal: dashboard-cafeteria.html. | Código versionado; uso runtime y consumidores se trazan en TASK-638. |
 | `dashboard-contabilidad.html` | HTML | 7787 | `b7653b3bff71829f0f67cf47cb894413c56a444a` | Portal / páginas web | Página o plantilla web del portal: dashboard-contabilidad.html. | Código versionado; uso runtime y consumidores se trazan en TASK-638. |
@@ -692,10 +668,11 @@
 | `docs/architecture/folder-structure.md` | Markdown | 2060 | `ca44aea0abaf80bab58adb4b7bf51935f404bf96` | Documentación técnica | Documentación técnica/arquitectónica: folder-structure.md. | Referencia documental; vigencia contrastada con el código. |
 | `docs/architecture/monolith-decomposition-plan.md` | Markdown | 1775 | `388eda1feee9826f7be85665e56b35a566b8a5be` | Documentación técnica | Documentación técnica/arquitectónica: monolith-decomposition-plan.md. | Referencia documental; vigencia contrastada con el código. |
 | `docs/architecture/phase-10-attendance-coexistence-spec.md` | Markdown | 2857 | `a9cc0f0612b2f09e85e643f5e389f206ca9f5993` | Documentación técnica | Documentación técnica/arquitectónica: phase-10-attendance-coexistence-spec.md. | Referencia documental; vigencia contrastada con el código. |
-| `docs/architecture/repository-inventory.md` | Markdown | 274419 | `SELF` | Documentación técnica | Inventario integral del repositorio IMA (autorreferencia). | Autorreferencia: SHA se verifica externamente; tamaño exacto registrado. |
+| `docs/architecture/repository-inventory.md` | Markdown | 274198 | `SELF` | Documentación técnica | Inventario integral del repositorio IMA (autorreferencia). | Autorreferencia: SHA se verifica externamente; tamaño exacto registrado. |
 | `docs/architecture/routing-and-paths.md` | Markdown | 1509 | `c64e6a952c1ce12a47cb00a2d324f39cd6581a47` | Documentación técnica | Documentación técnica/arquitectónica: routing-and-paths.md. | Referencia documental; vigencia contrastada con el código. |
 | `docs/architecture/spreadsheets-schema.md` | Markdown | 5954 | `0c8d5c4c2976d4b64949c693e66395896ce16246` | Documentación técnica | Documentación técnica/arquitectónica: spreadsheets-schema.md. | Referencia documental; vigencia contrastada con el código. |
 | `docs/architecture/staged-migration-procedure.md` | Markdown | 2258 | `2b46af3095596fcd7a9744e4cc500b50b38a34f0` | Documentación técnica | Documentación técnica/arquitectónica: staged-migration-procedure.md. | Referencia documental; vigencia contrastada con el código. |
+| `docs/testing/PRUEBAS_FUNCIONALES_BETA.md` | Markdown | 6790 | `c420e001474041b3f82005b3c1740379125d85ae` | Pruebas y calidad | Plan y registro maestro de pruebas funcionales de la futura fase beta. | Preparación; no iniciar ejecución hasta declarar beta. |
 | `documentos/DIAGNOSTICO_COMPATIBILIDAD.md` | Markdown | 1836 | `21a054aaefce57b5a00fa523bfcdd387c7e91718` | Documentación institucional | Documento institucional o técnico: DIAGNOSTICO_COMPATIBILIDAD.md. | Referencia documental; vigencia contrastada con el código. |
 | `documentos/Instrucciones.txt` | Texto | 27734 | `4f1fbfd782ac0feb8819aaeb643edb9ccc7de53a` | Documentación institucional | Documento institucional o técnico: Instrucciones.txt. | Referencia documental; vigencia contrastada con el código. |
 | `documentos/MEMORIA_REGRESION.md` | Markdown | 2608 | `cbdf7c39ece72b69f751d26ed735c2a2caa51907` | Documentación institucional | Documento institucional o técnico: MEMORIA_REGRESION.md. | Referencia documental; vigencia contrastada con el código. |
@@ -1056,7 +1033,7 @@
 | `login.html` | HTML | 11337 | `3b2e1e8d12a90552ac7b7d584294463a3e8e8f15` | Portal / páginas web | Página o plantilla web del portal: login.html. | Código versionado; uso runtime y consumidores se trazan en TASK-638. |
 | `manifest.json` | JSON | 555 | `0caa5febfbd7fdbb88e9d174fa6623fb7daebb4e` | Raíz / soporte del proyecto | Configuración o datos estructurados: manifest.json. | Versionado en Git; uso funcional específico no validado en esta tarea. |
 | `new-generation-logo.png` | Imagen PNG | 16207 | `5598016ca7dd93cadd38ddb3a68e40ff1c28d258` | Raíz / soporte del proyecto | Recurso gráfico o visual: new-generation-logo.png. | Versionado en Git; uso funcional específico no validado en esta tarea. |
-| `pendientes/Contabilidad/Pendientes.md` | Markdown | 438130 | `405dbded48cef0aae118e62fc66b593910f1fd3e` | Backlog / Contabilidad | Requisito o registro de trabajo del departamento Contabilidad. | Operativo; fuente de requisitos y estado de tareas. |
+| `pendientes/Contabilidad/Pendientes.md` | Markdown | 438610 | `84f1e83f8407370f5691daceb26cf1361b52e020` | Backlog / Contabilidad | Requisito o registro de trabajo del departamento Contabilidad. | Operativo; fuente de requisitos y estado de tareas. |
 | `pendientes/Dirección/Pendientes.md` | Markdown | 420581 | `28ba15ed8fe1e0c245825091e93fb3f2885cb0a4` | Backlog / Dirección | Requisito o registro de trabajo del departamento Dirección. | Operativo; fuente de requisitos y estado de tareas. |
 | `pendientes/Docente/Pendientes.md` | Markdown | 308751 | `831137594c4ec7cabad9ad997ca320c277e92b8b` | Backlog / Docente | Requisito o registro de trabajo del departamento Docente. | Operativo; fuente de requisitos y estado de tareas. |
 | `pendientes/Estudiante/Pendientes.md` | Markdown | 37464 | `9fa59c7181502427f0bbf95e46d590dc0631cf30` | Backlog / Estudiante | Requisito o registro de trabajo del departamento Estudiante. | Operativo; fuente de requisitos y estado de tareas. |
@@ -1082,9 +1059,8 @@
 | `verification_multistudent.png` | Imagen PNG | 127662 | `d3fc25a381fe7869593a90b99f26d548b52e0151` | Raíz / soporte del proyecto | Recurso gráfico o visual: verification_multistudent.png. | Versionado en Git; uso funcional específico no validado en esta tarea. |
 
 ## Validación
-- Rutas versionadas en el conjunto final: 1011; unicidad: 1011/1011.
-- Tree base: `bdce474c52cfc4d85614dcdf6960189748f85ccc`, 1.010 blobs, `truncated=false`; el informe C1.287 agrega un blob nuevo al commit.
-- Archivos distintos del inventario: 1010; cada ruta tiene tamaño y SHA exactos obtenidos del tree/blob.
-- Autorreferencia: tamaño exacto en bytes; SHA marcado SELF y verificado externamente en el commit final.
+- Rutas versionadas previstas: 1013; únicas: 1013.
+- Tree base: `e255ee616e3d82394243e2d924ab7c52d17a17d1`, 1.011 blobs, no truncado; se incorporan dos documentos C1.288.
+- Todos los tamaños y SHA de rutas distintas del inventario se contrastan contra el Git tree final.
+- Autorreferencia: tamaño exacto en bytes; SHA SELF verificado externamente.
 - `index.html` conserva SHA `cd742047cdc4948259dd721119429b04f78330ca`.
-- Sin cambios de código fuente, backend, HTML, CSS, JavaScript ni pruebas.
