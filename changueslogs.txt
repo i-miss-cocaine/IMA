@@ -414,3 +414,7 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-09] C1.335 — CI 42708904660 alcanzó snapshot y falló por Date creado en otro contexto VM; fixture corregido pasando snapshotContext explícitamente. Sin cambios de producto; nuevo CI pendiente. Checkpoint Parte_0003 C1.335.
+
+
+
+[2026-11-09] C1.336 — TASK-068: clasificación conservadora de candidatos por identificación/código, email, fecha, responsable e historial de matrícula; sin fusión automática. findPersonMatches restringida a Secretaría/Administrador verificados. Pruebas locales añadidas, CI pendiente. AUD-NG-378 sigue abierto por writer/transportes faltantes. Checkpoint Parte_0003 C1.336.

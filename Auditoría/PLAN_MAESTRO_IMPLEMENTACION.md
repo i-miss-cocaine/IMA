@@ -2028,3 +2028,10 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 
 ## 10.22 Corrección del fixture Date — C1.335
 - CI 42708904660 detectó que el fixture Date se creó en un contexto VM distinto al helper. Se corrige usando snapshotContext explícitamente; producción sin cambios. Esperar CI nuevo.
+
+
+
+## 10.23 TASK-068 — C1.336 / clasificación local de candidatos
+- Se revalida TASK-068 desde el requisito original. La importación sigue sin writer y no persiste entidades; AUD-NG-378 es brecha de implementación, no beta.
+- Se implementa clasificación conservadora con identificación/código institucional, email, fecha de nacimiento, responsable e historial de matrícula. No hay fusión automática y la revisión queda restringida a Secretaría/Administrador con sesión verificada.
+- Pruebas locales Node añadidas; esperar CI. TASK-068 En ejecución; siguiente bloque: contrato de writer por entidad propietaria y transporte interservicio autenticado.

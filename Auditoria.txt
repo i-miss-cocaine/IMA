@@ -520,3 +520,11 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 ## C1.335 — Corrección de contexto Date TASK-636
 - CI 42708904660 falló en fixture Date entre contextos VM; se corrige pasando snapshotContext a vm.runInNewContext. Producción sin cambios; CI nuevo pendiente.
 - Checkpoint C1.335; sesión IMA-GOV-20261109-2201Z-01; Parte_0003; índice actualizado.
+
+
+
+## C1.336 — TASK-068 / clasificación local de identidades
+- findPersonMatches incorpora identificación/código institucional, email, fecha de nacimiento, responsable e historial de matrícula; toda coincidencia requiere revisión humana y no permite fusión automática.
+- Pruebas locales añadidas; CI pendiente.
+- AUD-NG-378 sigue abierto por writer destino y transporte ausentes; brecha de implementación, no beta. TASK-068 En ejecución.
+- Checkpoint Parte_0003 C1.336; índice Auditoría/INDICE_CHECKPOINTS.md.

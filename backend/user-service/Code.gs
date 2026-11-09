@@ -1796,54 +1796,78 @@ function getIdentityDecisionHistory(payload) {
   return {status:"success",historial:history};
 }
 
-function findPersonMatches(payload) {
-  const { nombres, apellidos, identificacion, emailContacto } = payload || {};
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "Personas");
-  const data = sheet.getDataRange().getValues().slice(1);
-
-  const normIdent = normalizeString(identificacion);
-  const normEmail = normalizeString(emailContacto);
-  const normFullName = normalizeString(`${nombres || ''} ${apellidos || ''}`);
-
-  const matches = [];
-
-  data.forEach(r => {
-    const pId = r[0];
-    const pNombres = r[1];
-    const pApellidos = r[2];
-    const pIdent = r[3];
-    const pEmail = r[4];
-
-    let matchType = null;
-    if (normIdent && normalizeString(pIdent) === normIdent) {
-      matchType = "IDENTIFICACION_EXACTA";
-    } else if (normEmail && normalizeString(pEmail) === normEmail) {
-      matchType = "EMAIL_EXACTO";
-    } else if (normFullName && normalizeString(`${pNombres} ${pApellidos}`) === normFullName) {
-      matchType = "COINCIDENCIA_NOMBRE";
-    }
-
-    if (matchType) {
-      matches.push({
-        personaId: pId,
-        nombres: pNombres,
-        apellidos: pApellidos,
-        identificacion: pIdent,
-        emailContacto: pEmail,
-        estadoPersona: r[6],
-        tipoCoincidencia: matchType,
-        clasificacionIdentidad: matchType === "IDENTIFICACION_EXACTA" ? "COINCIDENCIA_EXACTA_PENDIENTE_CONFIRMACION" : (matchType === "EMAIL_EXACTO" ? "COINCIDENCIA_PROBABLE_PENDIENTE_REVISION" : "POSIBLE_DUPLICADO"),
-        nivelConfianza: "NO_CALIBRADA",
-        requiereRevisionHumana: true,
-        fusionAutomaticaPermitida: false
-      });
-    }
-  });
-
-  return { status: "success", matches: matches };
+function identityDateKey_(value) {
+  if (value === null || value === undefined || value === "") return "";
+  const date = value instanceof Date ? value : new Date(value);
+  return isNaN(date.getTime()) ? normalizeString(value) : date.toISOString().slice(0, 10);
 }
-
+function identityClassifyCandidate_(candidate, query) {
+  const c = candidate || {}, q = query || {};
+  const same = function (a, b) { return !!String(a || "").trim() && normalizeString(a) === normalizeString(b); };
+  const exactIdentification = same(c.identificacion, q.identificacion);
+  const exactInstitutionalCode = same(c.codigoInstitucional, q.codigoInstitucional);
+  const exactEmail = same(c.emailContacto, q.emailContacto);
+  const exactBirthDate = !!q.fechaNacimiento && identityDateKey_(c.fechaNacimiento) === identityDateKey_(q.fechaNacimiento);
+  const responsibleMatch = !!q.responsableIdentificacion && (c.responsibleIdentifications || []).some(function (id) { return same(id, q.responsableIdentificacion); });
+  const enrollmentMatch = !!q.matriculaId && (c.enrollmentIds || []).some(function (id) { return same(id, q.matriculaId); });
+  const exactName = !!q.fullName && same(c.fullName, q.fullName);
+  let matchType = null, classification = null;
+  if (exactIdentification) { matchType = "IDENTIFICACION_EXACTA"; classification = "COINCIDENCIA_EXACTA_PENDIENTE_CONFIRMACION"; }
+  else if (exactInstitutionalCode) { matchType = "CODIGO_INSTITUCIONAL_EXACTO"; classification = "COINCIDENCIA_EXACTA_PENDIENTE_CONFIRMACION"; }
+  else if ((exactBirthDate && responsibleMatch) || enrollmentMatch || exactEmail) {
+    matchType = exactBirthDate && responsibleMatch ? "FECHA_NACIMIENTO_RESPONSABLE" : (enrollmentMatch ? "HISTORIAL_MATRICULA" : "EMAIL_EXACTO");
+    classification = "COINCIDENCIA_PROBABLE_PENDIENTE_REVISION";
+  } else if (exactName || exactBirthDate || responsibleMatch) {
+    matchType = exactName ? "COINCIDENCIA_NOMBRE" : (exactBirthDate ? "FECHA_NACIMIENTO" : "RESPONSABLE_COMPARTIDO");
+    classification = "POSIBLE_DUPLICADO";
+  }
+  if (!matchType) return null;
+  return { tipoCoincidencia:matchType, clasificacionIdentidad:classification, nivelConfianza:"NO_CALIBRADA",
+    requiereRevisionHumana:true, fusionAutomaticaPermitida:false,
+    evidencia:{ identificacionExacta:exactIdentification, codigoInstitucionalExacto:exactInstitutionalCode,
+      emailExacto:exactEmail, fechaNacimientoCoincidente:exactBirthDate, responsableCoincidente:responsibleMatch,
+      historialMatriculaCoincidente:enrollmentMatch } };
+}
+function identityReadOptionalRows_(ss, sheetName) {
+  const sheet = ss.getSheetByName(sheetName);
+  return sheet ? sheet.getDataRange().getValues().slice(1) : [];
+}
+function findPersonMatches(payload) {
+  requireIdentityManager_(payload);
+  const query=payload||{}, ss=SpreadsheetApp.openById(SPREADSHEET_ID);
+  const people=getOrCreateSheet(ss,"Personas").getDataRange().getValues().slice(1);
+  const expedientes=identityReadOptionalRows_(ss,"ExpedientesEstudiantes");
+  const responsables=identityReadOptionalRows_(ss,"ResponsablesTutores");
+  const relations=identityReadOptionalRows_(ss,"RelacionesFamiliares");
+  const users=identityReadOptionalRows_(ss,"Usuarios");
+  const enrollments=identityReadOptionalRows_(ss,"Matriculas");
+  const queryName=normalizeString(`${query.nombres||""} ${query.apellidos||""}`).replace(/\s+/g," ").trim();
+  const now=Date.now();
+  const activeRelations=relations.filter(function(r){
+    const state=String(r[4]||"").trim(), from=r[5]?new Date(r[5]).getTime():0, to=r[6]?new Date(r[6]).getTime():Infinity;
+    return ["Verificada","Activa","Aprobada"].indexOf(state)!==-1&&(!from||from<=now)&&(!to||to>=now);
+  });
+  const matches=[];
+  people.forEach(function(r){
+    const personaId=String(r[0]||"").trim();
+    const expediente=expedientes.find(function(x){return String(x[1]||"").trim()===personaId;});
+    const responsibleIds=activeRelations.filter(function(x){return String(x[1]||"").trim()===personaId;}).map(function(x){return String(x[2]||"").trim();});
+    const responsibleIdentifications=responsables.filter(function(x){return responsibleIds.indexOf(String(x[1]||"").trim())!==-1;}).map(function(x){return x[4];});
+    const userIds=users.filter(function(x){return String(x[9]||"").trim()===personaId;}).map(function(x){return String(x[0]||"").trim();});
+    const enrollmentIds=enrollments.filter(function(x){return userIds.indexOf(String(x[2]||"").trim())!==-1;}).map(function(x){return x[0];});
+    const candidate={identificacion:r[3],emailContacto:r[4],fullName:normalizeString(`${r[1]||""} ${r[2]||""}`).replace(/\s+/g," ").trim(),
+      codigoInstitucional:expediente&&expediente[2],fechaNacimiento:expediente&&expediente[3],
+      responsibleIdentifications:responsibleIdentifications,enrollmentIds:enrollmentIds};
+    const match=identityClassifyCandidate_(candidate,{identificacion:query.identificacion,codigoInstitucional:query.codigoInstitucional,
+      emailContacto:query.emailContacto,fechaNacimiento:query.fechaNacimiento,responsableIdentificacion:query.responsableIdentificacion,
+      matriculaId:query.matriculaId,fullName:queryName});
+    if(match) matches.push({personaId:personaId,nombres:r[1],apellidos:r[2],identificacion:r[3],emailContacto:r[4],estadoPersona:r[6],
+      codigoInstitucional:candidate.codigoInstitucional||"",fechaNacimiento:candidate.fechaNacimiento||"",tipoCoincidencia:match.tipoCoincidencia,
+      clasificacionIdentidad:match.clasificacionIdentidad,nivelConfianza:match.nivelConfianza,requiereRevisionHumana:true,
+      fusionAutomaticaPermitida:false,evidencia:match.evidencia});
+  });
+  return {status:"success",matches:matches};
+}
 function createPerson(payload) {
   const { nombres, apellidos, identificacion, emailContacto, telefonoContacto, observaciones } = payload || {};
   if (!nombres || !apellidos) throw new Error("Nombres y apellidos son requeridos para crear una Persona.");

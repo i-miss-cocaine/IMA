@@ -235,3 +235,33 @@ Checkpoint anterior: C1.334
 Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.335.
 Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.335.
 ===============================================================================
+
+
+
+===============================================================================
+## C1.336 — TASK-068: clasificación local conservadora de identidades
+ID: C1.336
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.335
+Baseline lógico válido: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD físico previo: 38ca05028d31222b0002f3cf9cd625c3c3df17b9
+Tarea: TASK-068 / PM-01 / P0 / orden local 1
+
+### Reauditoría independiente
+- Requisito completo: pendientes/Dirección/Pendientes.md — TASK-068; dependencia declarada ninguna.
+- Se inspeccionan USER/ACCOUNTING y el contrato Node sin aceptar dictámenes C1.317–C1.330.
+- Brecha real: importDataWithColumnMapping no escribe entidad destino y devuelve DESTINATION_WRITER_NOT_CONFIGURED; no acredita persistencia ni reimportación idempotente. AUD-NG-378 permanece abierto por implementación ausente, no por falta de deployment.
+- Brecha local de detección: findPersonMatches no evaluaba fecha de nacimiento, responsable ni historial de matrícula.
+
+### Implementación de este commit
+- Se añade identityClassifyCandidate_ con clasificación exacta pendiente de confirmación, probable pendiente de revisión y posible duplicado; nunca permite fusión automática.
+- findPersonMatches integra ExpedientesEstudiantes, ResponsablesTutores, RelacionesFamiliares, Usuarios y Matriculas; exige Secretaría/Administrador con claims verificados.
+- Se añaden pruebas Node locales con fixtures para identificador exacto, fecha+responsable, historial de matrícula, homónimo y no coincidencia.
+
+### Estado
+- TASK-068 permanece En ejecución.
+- AUD-NG-378 abierto por writer y transporte aún ausentes; BETA-FUNC-008 sigue Pendiente beta solo para pruebas desplegadas/HTTP real/dos fuentes vivas.
+- No se ejecuta Apps Script/Sheets/Drive real ni HTTP. CI Node pendiente de observar.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.336.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.336.
+===============================================================================

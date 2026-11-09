@@ -161,3 +161,14 @@ Las lecturas fueron completas (92.668, 429.611 y 713.779 caracteres). El histori
 - No están acreditados deployments/endpoint de prueba USER/ACADEMIC, IMA_INTERSERVICE_HMAC_SECRET en Script Properties, IMA_INSTITUTION_ID aislado ni fixtures de Spreadsheet. No se escriben hojas compartidas ni se inventan secretos/URLs.
 - La cola PM-01 no se puede completar conforme a §6.1: el backlog Otros y su ruta de recuperación devuelven 0 caracteres por GitHub Contents API, aunque sus blobs existen. Se documenta recuperación con git show desde el HEAD de partida; no se crea un hallazgo ni tarea duplicados por esta limitación.
 - Se reutiliza este expediente único y TASK-068. No se audita el informe ni se crea un informe nuevo. Sin pruebas nuevas ni cambios de código.
+
+
+
+## Reauditoría independiente y avance local — C1.336
+- Línea base lógica C1.316; los registros posteriores no se aceptan como dictamen. El código presente se revalida desde el requisito original.
+- Requisito leído: `pendientes/Dirección/Pendientes.md`, TASK-068 (PM-01/P0, orden local 1, dependencias declaradas ninguna).
+- Brechas confirmadas: `importDataWithColumnMapping` termina con `DESTINATION_WRITER_NOT_CONFIGURED`, sin persistencia de entidades ni reimportación idempotente; `findPersonMatches` solo evaluaba identificación, email y nombre, sin fecha de nacimiento, responsable ni historial de matrícula.
+- Se amplía la clasificación conservadora de candidatos con identificador/código, email, fecha+responsable, matrícula e identidad nominal. Toda coincidencia requiere revisión humana; no se permite fusión automática. findPersonMatches queda restringida a Secretaría/Administrador con claims verificados.
+- Se añaden pruebas Node locales aisladas para coincidencia exacta, probable, historial, homónimo y no coincidencia. CI determinará el resultado.
+- AUD-NG-378 sigue abierto por writer propietario y transporte interservicio ausentes: brecha de implementación, no prueba beta. BETA-FUNC-008 cubre la verificación remota de flujos desplegados.
+- TASK-068 continúa En ejecución.

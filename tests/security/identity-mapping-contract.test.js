@@ -76,4 +76,21 @@ assert.ok(api.includes("window.resolveUserByLegacyId"));
 assert.ok(api.includes("window.reviewLegacyIdentifierMapping"));
 assert.ok(api.includes("window.getIdentityDecisionHistory"));
 
-console.log("TASK-068 identity mapping contract: syntax, canonical schemas, and isolated destination-validation cases passed.");
+
+const classifyStart=user.indexOf("function identityDateKey_(");
+const classifyEnd=user.indexOf("\nfunction identityReadOptionalRows_", classifyStart);
+assert.ok(classifyStart>=0&&classifyEnd>classifyStart,"identity candidate classifier is extractable");
+const classifySource=user.slice(classifyStart,classifyEnd);
+const classifyContext={normalizeString:function(value){return String(value||"").toLowerCase().trim();}};
+vm.runInNewContext(classifySource+String.fromCharCode(10)+"this.classify=identityClassifyCandidate_;",classifyContext);
+const candidate={identificacion:"0801-1990-12345",codigoInstitucional:"ALU-01",emailContacto:"ana@example.test",fullName:"ana perez",fechaNacimiento:"2010-05-10",responsibleIdentifications:["0801-1970-99999"],enrollmentIds:["MAT-01"]};
+const exact=classifyContext.classify(candidate,{identificacion:"0801-1990-12345"});
+assert.equal(exact.clasificacionIdentidad,"COINCIDENCIA_EXACTA_PENDIENTE_CONFIRMACION");
+assert.equal(exact.fusionAutomaticaPermitida,false);
+const probable=classifyContext.classify(candidate,{fechaNacimiento:"2010-05-10",responsableIdentificacion:"0801-1970-99999"});
+assert.equal(probable.clasificacionIdentidad,"COINCIDENCIA_PROBABLE_PENDIENTE_REVISION");
+assert.equal(classifyContext.classify(candidate,{matriculaId:"MAT-01"}).tipoCoincidencia,"HISTORIAL_MATRICULA");
+assert.equal(classifyContext.classify(candidate,{fullName:"Ana Perez"}).clasificacionIdentidad,"POSIBLE_DUPLICADO");
+assert.equal(classifyContext.classify(candidate,{fullName:"Luis Lopez"}),null);
+
+console.log("TASK-068 identity mapping contract: syntax, schemas, destination validation and conservative identity classification passed.");
