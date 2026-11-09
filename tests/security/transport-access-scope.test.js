@@ -145,7 +145,7 @@ function runEndpoint(name, payload, spreadsheetData) {
   };
   vm.runInNewContext(
     helperSource +
-      "\\nthis.getTransportRoutes = getTransportRoutes; this.getTransportAssignments = getTransportAssignments;",
+      "\nthis.getTransportRoutes = getTransportRoutes; this.getTransportAssignments = getTransportAssignments;",
     context
   );
   return { result: context[name](payload), events };
