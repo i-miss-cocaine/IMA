@@ -67,3 +67,8 @@ No se ejecutaron Apps Script runtime, Sheets/Drive reales, deployment, HTTP, E2E
 - CI run 42708635543 falló en el extractor del helper, antes de ejecutar los casos unitarios. Se registró el fallo; no es defecto del código de producto.
 - Se reemplaza el patrón de cierre por conteo balanceado de llaves, ignorando strings y comentarios. Producción sin cambios.
 - Se requiere observar el run del commit C1.333 antes de aceptar los nuevos casos locales como PASS.
+
+
+## Revisión focalizada C1.334 — fixture de fecha aislado
+- CI run 42708759124 superó la extracción balanceada y el parseo, pero falló porque el objeto Date del fixture provenía del contexto Node principal y no era instancia del Date del VM.
+- El fixture se crea dentro del contexto VM. No hay cambios en producción. Se requiere CI nuevo.

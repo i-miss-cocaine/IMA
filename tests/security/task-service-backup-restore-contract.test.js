@@ -99,7 +99,7 @@ vm.runInNewContext(
   extractFunction("taskServiceBackupSnapshotSheet_") + String.fromCharCode(10) + "this.snapshot = taskServiceBackupSnapshotSheet_;",
   snapshotContext
 );
-const snapDate = new Date("2026-01-02T03:04:05.000Z");
+const snapDate = vm.runInNewContext('new Date("2026-01-02T03:04:05.000Z")', snapshotContext);
 const mockSheet = {
   getName: () => "Tareas",
   getLastRow: () => 2,

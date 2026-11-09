@@ -510,3 +510,8 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 ## C1.333 — Corrección del extractor local TASK-636
 - CI run 42708635543 falló en el extractor de helpers del test, no en producción. Se corrige con conteo balanceado de llaves y se espera nueva ejecución CI.
 - Checkpoint C1.333; sesión IMA-GOV-20261109-2201Z-01; Parte_0003; índice actualizado.
+
+
+## C1.334 — Ajuste de fixture local TASK-636
+- CI 42708759124 falló en la comparación de Date entre contextos VM, no en código de producción. El fixture ahora se crea dentro del VM; CI nuevo pendiente.
+- Checkpoint C1.334; sesión IMA-GOV-20261109-2201Z-01; Parte_0003; índice actualizado.

@@ -408,3 +408,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-09] C1.333 — CI 42708635543 falló al extraer helper en el harness TASK-636; extractor sustituido por conteo balanceado de llaves. Código de producto sin cambios; nuevo CI pendiente. Checkpoint Parte_0003 C1.333.
+
+
+[2026-11-09] C1.334 — CI 42708759124 superó extractor y parseo; falló fixture Date por frontera entre contextos VM. Fecha de prueba creada dentro del VM; producción sin cambios; nuevo CI pendiente. Checkpoint Parte_0003 C1.334.

@@ -209,3 +209,16 @@ Checkpoint anterior: C1.332
 Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.333.
 Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.333.
 ===============================================================================
+
+
+===============================================================================
+## C1.334 — Fixture Date dentro del contexto VM de TASK-636
+ID: C1.334
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.333
+- CI run 42708759124 (C1.332) superó el extractor y parseo; falló la aserción de snapshot porque el fixture Date se creó fuera del VM y no satisfacía instanceof Date dentro del contexto aislado.
+- Se crea la fecha de prueba dentro del propio contexto VM; no se modifica producción ni el contrato de serialización.
+- Se requiere nueva ejecución CI para validar el contrato completo; no anticipar PASS.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.334.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.334.
+===============================================================================

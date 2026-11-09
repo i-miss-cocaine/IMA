@@ -2020,3 +2020,7 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 ## 10.20 Corrección del harness — C1.333
 - El run 42708635543 falló en el extractor de helpers del contrato Node, antes de ejecutar pruebas locales. Se reemplaza por conteo balanceado de llaves, sin cambios de producto.
 - No iniciar la tarea siguiente hasta observar resultado CI del contrato corregido.
+
+
+## 10.21 Corrección de fixture local — C1.334
+- El contrato Node superó extracción y parseo, pero el fixture Date externo no era instanceof Date dentro del VM. Se crea el Date en el contexto aislado; sin cambios de producto. Esperar CI nuevo.
