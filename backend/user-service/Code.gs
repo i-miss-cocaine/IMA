@@ -1662,7 +1662,7 @@ function doPost(e) {
 // ---------------------------------------------------------------------------
 
 const IDENTITY_MANAGER_ROLES_ = ["Administrador", "Secretaría"];
-const IDENTITY_MANAGER_ACTIONS_ = ["registerLegacyIdentifierMapping", "resolveInternalIdFromLegacy", "resolveLegacyIdFromInternal", "resolveUserByLegacyId", "reviewLegacyIdentifierMapping", "getIdentityDecisionHistory"];
+const IDENTITY_MANAGER_ACTIONS_ = ["registerLegacyIdentifierMapping", "resolveInternalIdFromLegacy", "resolveLegacyIdFromInternal", "resolveUserByLegacyId", "reviewLegacyIdentifierMapping", "getIdentityDecisionHistory", "findPersonMatches", "linkPersonAccount"];
 const IDENTITY_MAPPING_HEADERS_ = ["idMapeo", "sistemaOrigen", "tipoEntidad", "idOriginalLegado", "idNuevoPlataforma", "institucionId", "hashRegistroOrigen", "fechaMigracion", "versionMapeo", "estadoCorrespondencia", "metodoCoincidencia", "nivelConfianza", "migradoPor"];
 const IDENTITY_DECISION_HEADERS_ = ["decisionId", "idMapeo", "sistemaOrigen", "tipoEntidad", "idOriginalLegado", "idNuevoPlataformaAnterior", "idNuevoPlataformaNuevo", "decision", "motivo", "actorUserId", "actorRole", "fechaDecision", "institucionId"];
 function getIdentityInstitutionId_() {

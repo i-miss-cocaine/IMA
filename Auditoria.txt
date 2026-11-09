@@ -563,3 +563,8 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 
 ## C1.352 — Corrección del fixture de relaciones TASK-068
 - CI C1.351 run 42715045824 falló en el harness: SPREADSHEET_ID ausente y fixture no alineado con ResponsablesTutores/PersonaID. Se corrige sin cambios de producción; nuevo CI pendiente.
+
+
+## C1.353 — TASK-068 RBAC de UI
+- CI C1.352 run 42715176076: completed/success.
+- findPersonMatches y linkPersonAccount se agregan a IDENTITY_MANAGER_ACTIONS_ y se añade prueba positiva/negativa del dispatcher RBAC. CI C1.353 pendiente.

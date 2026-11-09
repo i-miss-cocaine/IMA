@@ -554,3 +554,18 @@ Checkpoint anterior: C1.351
 Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.352.
 Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.352.
 ===============================================================================
+
+
+===============================================================================
+## C1.353 — TASK-068: RBAC explícito para búsqueda y vinculación
+ID: C1.353
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.352
+- CI C1.352 run 42715176076: completed/success; resolución múltiple, relaciones y caché confirmada-only pasaron con fixtures locales.
+- Revisión de autorización de la nueva UI detectó que findPersonMatches y linkPersonAccount tenían guardas internas requireIdentityManager_, pero no estaban incluidas en IDENTITY_MANAGER_ACTIONS_. El dispatcher podía denegarlas antes de alcanzar esas guardas según ROLE_PERMISSIONS.
+- Se agregan ambas acciones a la lista RBAC explícita de Secretaría/Administrador y se incorpora prueba local de permisos positivos para ambos roles y negativa para Docente.
+- Las funciones mantienen su validación de sesión verificada dentro del servicio; el cambio no confía en el rol del cliente.
+- CI C1.353 pendiente. TASK-068 continúa En ejecución; BETA-FUNC-008 sigue Pendiente beta.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.353.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.353.
+===============================================================================

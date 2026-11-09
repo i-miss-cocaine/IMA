@@ -11,6 +11,11 @@ const headers=["idMapeo","sistemaOrigen","tipoEntidad","idOriginalLegado","idNue
 for(const h of headers) assert.ok(user.includes('"'+h+'"'),"header "+h);
 for(const fn of ["registerLegacyIdentifierMapping","resolveInternalIdFromLegacy","resolveLegacyIdFromInternal","resolveUserByLegacyId","reviewLegacyIdentifierMapping","getIdentityDecisionHistory"]) {assert.ok(user.includes("function "+fn+"("));assert.ok(user.includes('case "'+fn+'"'));}
 assert.ok(user.includes('const IDENTITY_MANAGER_ROLES_ = ["Administrador", "Secretaría"]'));
+assert.ok(user.includes('"findPersonMatches", "linkPersonAccount"'),"identity candidate search and account linking require manager-only RBAC");
+const permissionStart=user.indexOf("function validateRolePermission("),permissionEnd=user.indexOf("\n}",permissionStart);
+const permissionContext={PUBLIC_ACTIONS:[],IDENTITY_MANAGER_ACTIONS_:["findPersonMatches","linkPersonAccount"],IDENTITY_MANAGER_ROLES_:["Administrador","Secretaría"],getUserVerifiedRole:function(p){return p.role;},validateContextualAccess:()=>({authorized:false,reason:"test"}),ROLE_PERMISSIONS:{},logStructuredEvent:()=>{}};
+vm.runInNewContext(user.slice(permissionStart,permissionEnd+2)+"\nthis.validate=validateRolePermission;",permissionContext);
+["findPersonMatches","linkPersonAccount"].forEach(function(action){assert.equal(permissionContext.validate(action,{role:"Secretaría"}).authorized,true);assert.equal(permissionContext.validate(action,{role:"Administrador"}).authorized,true);assert.equal(permissionContext.validate(action,{role:"Docente"}).authorized,false);});
 assert.ok(user.includes('getProperty("IMA_INSTITUTION_ID")'));assert.ok(user.includes("LockService.getScriptLock()"));
 assert.ok(user.includes("function ensureIdentityMappingSheet_()"));
 assert.ok(user.includes("IDENTITY_MAPPING_NOT_INITIALIZED"));

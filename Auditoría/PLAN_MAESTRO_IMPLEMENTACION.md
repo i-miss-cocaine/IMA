@@ -2129,3 +2129,9 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 ## 10.36 Corrección del fixture de relaciones — C1.352
 - CI run 42715045824 falló porque el VM de findPersonMatches no tenía SPREADSHEET_ID; el fixture familiar además no reflejaba el vínculo por PersonaID en ResponsablesTutores.
 - Se corrigen solo las pruebas locales; código de producción sin cambios. Repetir CI antes de validar cobertura de relaciones.
+
+
+## 10.37 TASK-068 — C1.353: RBAC explícito para la consola de Secretaría
+- Se agregan findPersonMatches y linkPersonAccount a IDENTITY_MANAGER_ACTIONS_; antes dependían de listas genéricas y podían denegarse antes de ejecutar requireIdentityManager_.
+- Se prueban permisos positivos para Secretaría/Administrador y negativos para Docente; guardas de sesión verificada siguen dentro de cada función.
+- C1.352 CI run 42715176076: success. C1.353 CI pendiente.
