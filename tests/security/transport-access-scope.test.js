@@ -118,6 +118,10 @@ const revokedRelationshipData = Object.assign({}, data, {
   RelacionesFamiliares: [
     data.RelacionesFamiliares[0],
     data.RelacionesFamiliares[1].map((value, index) => index === 4 ? "Revocada" : value)
+  ],
+  RelacionesEstudianteTutor: [
+    ["RelacionID", "EstudianteID", "TutorUserId", "Parentesco", "", "", "", "", "", "Estado"],
+    ["LEGACY-REL", "EXP-02", "PARENT-01", "Madre", "", "", "", "", "", "Activa"]
   ]
 });
 const revokedRelationship = runScope({
@@ -125,6 +129,20 @@ const revokedRelationship = runScope({
   _verifiedUserId: "PARENT-01"
 }, revokedRelationshipData);
 assert.deepEqual(Array.from(revokedRelationship.studentIds), []);
+
+const legacyOnlyData = Object.assign({}, data, {
+  RelacionesEstudianteTutor: [
+    ["RelacionID", "EstudianteID", "TutorUserId", "Parentesco", "", "", "", "", "", "Estado"],
+    ["LEGACY-REL", "EXP-02", "PARENT-01", "Madre", "", "", "", "", "", "Activa"]
+  ]
+});
+delete legacyOnlyData.RelacionesFamiliares;
+const legacyFallback = runScope({
+  _verifiedRole: "Padre",
+  _verifiedUserId: "PARENT-01"
+}, legacyOnlyData);
+assert.ok(Array.from(legacyFallback.studentIds).includes("STU-02"));
+
 
 
 const student = runScope({
