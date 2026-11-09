@@ -2124,3 +2124,8 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - Búsqueda de candidatos prueba la relación familiar activa y el recorrido PersonaID→Usuario→Matrícula, sin mutar esas relaciones.
 - IndexedDB cache prueba aislamiento por institución, normalización de tipo y rechazo de mappings no confirmados.
 - C1.350 CI run 42714860009: success. C1.351 CI pendiente.
+
+
+## 10.36 Corrección del fixture de relaciones — C1.352
+- CI run 42715045824 falló porque el VM de findPersonMatches no tenía SPREADSHEET_ID; el fixture familiar además no reflejaba el vínculo por PersonaID en ResponsablesTutores.
+- Se corrigen solo las pruebas locales; código de producción sin cambios. Repetir CI antes de validar cobertura de relaciones.

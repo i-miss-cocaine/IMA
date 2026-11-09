@@ -559,3 +559,7 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 ## C1.351 — TASK-068 pruebas locales adicionales
 - CI C1.350 run 42714860009: completed/success.
 - Añadidas pruebas locales con funciones reales de correspondencia bidireccional/múltiples fuentes, integridad de relaciones y caché IndexedDB confirmada-only. CI C1.351 pendiente.
+
+
+## C1.352 — Corrección del fixture de relaciones TASK-068
+- CI C1.351 run 42715045824 falló en el harness: SPREADSHEET_ID ausente y fixture no alineado con ResponsablesTutores/PersonaID. Se corrige sin cambios de producción; nuevo CI pendiente.

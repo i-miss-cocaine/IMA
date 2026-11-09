@@ -541,3 +541,16 @@ HEAD previo: 0d9c54c751564b6d430ac7517aa93f782bcc7f29
 Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.351.
 Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.351.
 ===============================================================================
+
+
+===============================================================================
+## C1.352 — Corrección del fixture relacional TASK-068
+ID: C1.352
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.351
+- CI run 42715045824 falló en la nueva prueba de relaciones antes de alcanzar sus aserciones: el contexto VM no incluía SPREADSHEET_ID. La inspección también detectó nombres/llaves del fixture no alineados con el esquema real ResponsablesTutores y PersonaID.
+- Se corrige el contexto de prueba y se alinea la relación familiar para que su tercero referenciado sea PersonaID del responsable, tal como consume el código.
+- Sin cambios de producción. El contrato debe volver a ejecutarse y pasar todas las pruebas antes de validar C1.351.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.352.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.352.
+===============================================================================

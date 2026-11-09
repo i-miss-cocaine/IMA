@@ -206,13 +206,13 @@ assert.ok(!refs.referencias.some(x=>x.institucionId==="INST-2"),"cross-instituti
 const tables={
  "Personas":[["PersonaID","Nombres","Apellidos","Identificacion","EmailContacto","TelefonoContacto","EstadoPersona"],["PER-1","Ana","Perez","0801-1990-12345","ana@example.test","","Activa"]],
  "ExpedientesEstudiantes":[["ExpedienteID","PersonaID","CodigoInstitucional","FechaNacimiento"],["EXP-1","PER-1","ALU-01","2010-05-10"]],
- "Responsables":[["ResponsableID","PersonaID","Nombres","Apellidos","Identificacion"],["RES-1","PER-2","Luis","Perez","0801-1970-99999"]],
- "RelacionesFamiliares":[["RelacionID","PersonaID","ResponsableID","Tipo","Estado","FechaInicio","FechaFin"],["REL-1","PER-1","RES-1","Tutor","Verificada","",""]],
+ "ResponsablesTutores":[["ResponsableID","PersonaID","Nombres","Apellidos","Identificacion"],["RES-1","PER-2","Luis","Perez","0801-1970-99999"]],
+ "RelacionesFamiliares":[["RelacionID","PersonaID","ResponsableID","Tipo","Estado","FechaInicio","FechaFin"],["REL-1","PER-1","PER-2","Tutor","Verificada","",""]],
  "Usuarios":[["UserId","Nombre","Grado","Seccion","Email","PasswordHash","Rol","Telefono","NumeroLista","PersonaID"],["USR-1","Ana","","","ana@example.test","","Estudiante","","1","PER-1"]],
  "Matriculas":[["MatriculaID","Fecha","UserId"],["MAT-1","2026-01-01","USR-1"]]
 };
 const ssFixture={getSheetByName:function(n){return tables[n]?{getDataRange:function(){return{getValues:function(){return tables[n].map(r=>r.slice());}};}}:null;}};
-const findContext={requireIdentityManager_:function(){return true;},SpreadsheetApp:{openById:function(){return ssFixture;}},getOrCreateSheet:function(_ss,n){return ssFixture.getSheetByName(n);},normalizeString:function(x){return String(x||"").toLowerCase().trim();}};
+const findContext={SPREADSHEET_ID:"LOCAL",requireIdentityManager_:function(){return true;},SpreadsheetApp:{openById:function(){return ssFixture;}},getOrCreateSheet:function(_ss,n){return ssFixture.getSheetByName(n);},normalizeString:function(x){return String(x||"").toLowerCase().trim();}};
 const findNames=["identityDateKey_","identityClassifyCandidate_","identityReadOptionalRows_","findPersonMatches"];
 vm.runInNewContext(findNames.map(n=>extractBalancedFunction(user,n)).join(String.fromCharCode(10))+"this.find=findPersonMatches;",findContext);
 const relationSnapshot=JSON.stringify(tables.RelacionesFamiliares),enrollmentSnapshot=JSON.stringify(tables.Matriculas);
