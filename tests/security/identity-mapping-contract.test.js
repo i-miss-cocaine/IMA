@@ -1,7 +1,7 @@
 const assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path"),vm=require("node:vm");
 const root=path.resolve(__dirname,"../.."),up=path.join(root,"backend/user-service/Code.gs"),ap=path.join(root,"backend/accounting-service/Code.gs");
-const user=fs.readFileSync(up,"utf8"),accounting=fs.readFileSync(ap,"utf8"),method=fs.readFileSync(path.join(root,"METODOLOGIA_DESARROLLO.md"),"utf8");
-new vm.Script(user,{filename:up}); new vm.Script(accounting,{filename:ap});
+const user=fs.readFileSync(up,"utf8"),accounting=fs.readFileSync(ap,"utf8"),method=fs.readFileSync(path.join(root,"METODOLOGIA_DESARROLLO.md"),"utf8"),persistence=fs.readFileSync(path.join(root,"js/persistence.js"),"utf8"),api=fs.readFileSync(path.join(root,"js/api.js"),"utf8");
+new vm.Script(user,{filename:up}); new vm.Script(accounting,{filename:ap}); new vm.Script(persistence,{filename:"js/persistence.js"}); new vm.Script(api,{filename:"js/api.js"});
 const headers=["idMapeo","sistemaOrigen","tipoEntidad","idOriginalLegado","idNuevoPlataforma","institucionId","hashRegistroOrigen","fechaMigracion","versionMapeo","estadoCorrespondencia","metodoCoincidencia","nivelConfianza","migradoPor"];
 for(const h of headers) assert.ok(user.includes('"'+h+'"'),"header "+h);
 for(const fn of ["registerLegacyIdentifierMapping","resolveInternalIdFromLegacy","resolveLegacyIdFromInternal","resolveUserByLegacyId","reviewLegacyIdentifierMapping","getIdentityDecisionHistory"]) {assert.ok(user.includes("function "+fn+"("));assert.ok(user.includes('case "'+fn+'"'));}
