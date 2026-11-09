@@ -543,3 +543,8 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - TASK-068 CI 42709680737 completed/success: contrato de identidad, esquemas, destino y clasificación conservadora; contrato TASK-030 de transporte también success.
 - TASK-068 sigue En ejecución: importDataWithColumnMapping aún devuelve DESTINATION_WRITER_NOT_CONFIGURED. AUD-NG-378 es brecha de implementación, no beta.
 - Checkpoint C1.338; Parte_0003; índice actualizado.
+
+
+## C1.349 — Reauditoría TASK-068
+- CI run 42713903042: success en contrato de identidad y TASK-030 transport scope.
+- Se veta coincidencia de candidatos si identificación nacional, código institucional o fecha de nacimiento presentes en ambos lados difieren. Se agregan pruebas locales de homónimos. TASK-068 sigue En ejecución; revisar cache, referencias múltiples y relaciones.

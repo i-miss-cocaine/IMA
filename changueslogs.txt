@@ -456,3 +456,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-09] C1.348 — CI 42713722818 success. Se agregan mocks locales de importDataWithColumnMapping para dos fuentes hacia un mismo ID, retry idempotente, rollback inverso, compensación fallida y rechazo de mapeo pendiente/destino incorrecto. CI pendiente. Checkpoint Parte_0003 C1.348.
+
+
+[2026-11-09] C1.349 — TASK-068: veto de coincidencias con identificadores fuertes contradictorios; pruebas locales de homónimos añadidas; CI pendiente. Estado En ejecución. Checkpoint Parte_0003 C1.349.

@@ -1830,6 +1830,11 @@ function identityDateKey_(value) {
 function identityClassifyCandidate_(candidate, query) {
   const c = candidate || {}, q = query || {};
   const same = function (a, b) { return !!String(a || "").trim() && normalizeString(a) === normalizeString(b); };
+  const hasIdentificationConflict = !!String(c.identificacion || "").trim() && !!String(q.identificacion || "").trim() && !same(c.identificacion, q.identificacion);
+  const hasInstitutionalCodeConflict = !!String(c.codigoInstitucional || "").trim() && !!String(q.codigoInstitucional || "").trim() && !same(c.codigoInstitucional, q.codigoInstitucional);
+  const hasBirthDateConflict = !!c.fechaNacimiento && !!q.fechaNacimiento && identityDateKey_(c.fechaNacimiento) !== identityDateKey_(q.fechaNacimiento);
+  // Strong contradictory identifiers veto candidate matching: homonyms stay separate.
+  if (hasIdentificationConflict || hasInstitutionalCodeConflict || hasBirthDateConflict) return null;
   const exactIdentification = same(c.identificacion, q.identificacion);
   const exactInstitutionalCode = same(c.codigoInstitucional, q.codigoInstitucional);
   const exactEmail = same(c.emailContacto, q.emailContacto);

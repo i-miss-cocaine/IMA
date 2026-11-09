@@ -487,3 +487,19 @@ Checkpoint anterior: C1.347
 Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.348.
 Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.348.
 ===============================================================================
+
+
+===============================================================================
+## C1.349 — TASK-068: veto de coincidencias con identificadores fuertes contradictorios
+ID: C1.349
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.348
+Baseline lógico válido: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD previo: 4f05403e7da0f53a70e4973334b840212075a6f6
+- Reauditoría de TASK-068 detectó un caso de seguridad de identidad: el clasificador priorizaba una identificación exacta aunque la fecha de nacimiento o el código institucional aportaran evidencia fuerte contradictoria.
+- Se añade veto conservador cuando ambos lados proporcionan identificación nacional, código institucional o fecha de nacimiento y sus valores difieren. El candidato no se presenta como coincidencia; no hay fusión automática.
+- Se agregan pruebas locales para homónimos con identificación distinta, fecha de nacimiento distinta y conflicto combinado.
+- CI pendiente de observar tras publicar. TASK-068 continúa En ejecución hasta completar cobertura de criterios, relaciones y caché local. BETA-FUNC-008 sigue Pendiente beta.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.349.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.349.
+===============================================================================

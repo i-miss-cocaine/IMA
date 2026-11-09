@@ -94,6 +94,9 @@ assert.equal(probable.clasificacionIdentidad,"COINCIDENCIA_PROBABLE_PENDIENTE_RE
 assert.equal(classifyContext.classify(candidate,{matriculaId:"MAT-01"}).tipoCoincidencia,"HISTORIAL_MATRICULA");
 assert.equal(classifyContext.classify(candidate,{fullName:"Ana Perez"}).clasificacionIdentidad,"POSIBLE_DUPLICADO");
 assert.equal(classifyContext.classify(candidate,{fullName:"Luis Lopez"}),null);
+assert.equal(classifyContext.classify(candidate,{fullName:"Ana Perez",identificacion:"9999-9999-99999"}),null,"same-name homonym with a different national ID remains independent");
+assert.equal(classifyContext.classify(candidate,{fullName:"Ana Perez",fechaNacimiento:"2011-05-10"}),null,"same-name homonym with a different birth date remains independent");
+assert.equal(classifyContext.classify(candidate,{identificacion:"0801-1990-12345",fechaNacimiento:"2011-05-10"}),null,"conflicting strong identity evidence vetoes a match");
 
 
 function makeMigrationSheet(headers){const rows=[];return{rows,getRange:(r,c,n,m)=>({getValues:()=>rows.slice(r-1,r-1+n).map(x=>x.slice(c-1,c-1+m)),setValues:v=>v.forEach((x,i)=>rows[r-1+i]=x.slice()),setValue:v=>rows[r-1][c-1]=v}),getDataRange:()=>({getValues:()=>rows.map(x=>x.slice())}),appendRow:x=>rows.push(x.slice()),getLastRow:()=>rows.length,deleteRow:r=>rows.splice(r-1,1)};}

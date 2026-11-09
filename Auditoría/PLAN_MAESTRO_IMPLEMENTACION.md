@@ -2105,3 +2105,9 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - CI 42713722818: success (identity mapping + TASK-030 transport scope).
 - Se agregan fixtures Node con fuentes LEGACY_A/LEGACY_B que resuelven al mismo ID interno, reintento, idempotencia, rollback inverso, compensación fallida y validación de destino/correspondencia pendiente.
 - Se extrae y ejecuta código real del orquestador ACCOUNTING; sin UrlFetchApp ni servicios vivos. CI del nuevo contrato pendiente; BETA-FUNC-008 sigue Pendiente beta.
+
+
+## 10.33 TASK-068 — C1.349: separación conservadora de homónimos
+- Se detectó que el clasificador no vetaba coincidencias si identificación nacional, código institucional o fecha de nacimiento estaban presentes en ambos registros y diferían.
+- Se añade veto de evidencia fuerte contradictoria y pruebas locales de homónimos; no se permite fusión automática.
+- TASK-068 permanece En ejecución; pendiente cobertura local de cache IndexedDB, múltiples referencias confirmadas y relaciones. BETA-FUNC-008 continúa Pendiente beta.
