@@ -7,6 +7,12 @@ for(const h of headers) assert.ok(user.includes('"'+h+'"'),"header "+h);
 for(const fn of ["registerLegacyIdentifierMapping","resolveInternalIdFromLegacy","resolveLegacyIdFromInternal","resolveUserByLegacyId","reviewLegacyIdentifierMapping","getIdentityDecisionHistory"]) {assert.ok(user.includes("function "+fn+"("));assert.ok(user.includes('case "'+fn+'"'));}
 assert.ok(user.includes('const IDENTITY_MANAGER_ROLES_ = ["Administrador", "Secretaría"]'));
 assert.ok(user.includes('getProperty("IMA_INSTITUTION_ID")'));assert.ok(user.includes("LockService.getScriptLock()"));
+assert.ok(user.includes("function ensureIdentityMappingSheet_()"));
+assert.ok(user.includes("IDENTITY_MAPPING_NOT_INITIALIZED"));
+assert.ok(user.includes("function identityTargetExists_"));
+assert.ok(user.includes("IDENTITY_TARGET_NOT_FOUND_OR_UNSUPPORTED"));
+assert.ok(user.includes("identityTextCell_(String(e.motivo || \"\").slice(0, 2000))"));
+assert.ok(user.includes("identityHash_(sourceRecord)"));
 assert.ok(user.includes("IDENTITY_MAPPING_CONFLICT"));assert.ok(user.includes('String(found[0][9])!=="CONFIRMADA"'));
 assert.ok(user.includes("fusionAutomaticaPermitida: false"));assert.ok(accounting.includes("function resolveCrossReferenceIdentifier("));
 assert.ok(accounting.includes("DESTINATION_WRITER_NOT_CONFIGURED"));assert.ok(method.includes("3.14.1 Respaldo alternativo verificable mediante el historial Git"));

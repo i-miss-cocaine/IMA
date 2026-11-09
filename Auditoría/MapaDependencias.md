@@ -4912,3 +4912,9 @@ Alcance estático satisfecho; sin cambios de código. Hallazgos AUD-NG-374..376 
 - IndexedDB v5 incorpora identity_mapping_cache; clave compuesta institucional/origen/tipo/ID legado y persistencia exclusiva de mapeos confirmados.
 - js/api.js expone wrappers de alta, resoluciones, revisión e historial. El cliente no concede permisos ni convierte la caché en fuente de verdad.
 - Pendiente verificar upgrade real, aislamiento y runtime; importación destino continúa bloqueada de forma segura.
+
+
+## TASK-068 — C1.321, controles de lectura y confirmación
+- Resolución/lectura no crea hojas; creación separada para escritura bajo ScriptLock.
+- La revisión humana solo confirma persona/usuario cuando existe el ID en hoja y columna canónicas verificadas; tipos no soportados fallan cerrado.
+- Motivo de bitácora sanitizado y limitado; hash de origen calculado en backend. Pruebas runtime pendientes.

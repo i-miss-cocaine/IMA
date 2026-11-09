@@ -1541,6 +1541,42 @@ Tarea: TASK-068 — En ejecución; no completada.
 - No se configuró IMA_INSTITUTION_ID ni se accedió a producción. No se declara migración funcional.
 - TASK-068 sigue En ejecución.
 
+### Publicación y CI
+- Implementación C1.320 publicada en d2b721afbac78fb7a4deaf1e6846d5d22d5dcfed.
+- El primer run 42667035119 falló por variables persistence/api no declaradas en el test; corregido en 0b891a5baee0babd17b208c9914b61a5e4ac1b4d.
+- Run 42667176023 completed/success en el commit corregido.
+
 ### Siguiente acción
-Publicar cambios solo en NG_beta_0.0.0.1_work; verificar CI para el nuevo SHA; corregir fallos. Después inspeccionar contratos de persistencia destino reales, resolver hallazgos de lectura que crean hojas, validación de destino, sanitización de bitácora y hash de origen; preparar entorno aislado para pruebas. No desplegar ni usar producción.
+Revisar contratos reales de persistencia destino; corregir fallos de lectura que crean hojas, validación de destino, sanitización de bitácora y hash de origen; preparar entorno aislado para pruebas. No desplegar ni usar producción. Después inspeccionar contratos de persistencia destino reales, resolver hallazgos de lectura que crean hojas, validación de destino, sanitización de bitácora y hash de origen; preparar entorno aislado para pruebas. No desplegar ni usar producción.
+===============================================================================
+
+===============================================================================
+## C1.321 — TASK-068: lecturas no mutantes y validación de destino
+ID: C1.321
+Sesión: IMA-EXEC-20261109-1650Z-01
+Fecha: 2026-11-09 UTC
+Checkpoint anterior: C1.320
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+HEAD de partida: 0b891a5baee0babd17b208c9914b61a5e4ac1b4d
+Tarea: TASK-068 — En ejecución; no completada.
+
+### Respaldo Git histórico previo a edición
+- backend/user-service/Code.gs blob: 8849916521c1d29a4071bf2a091ba2bbd63007ff
+- tests/security/identity-mapping-contract.test.js blob: f5431208363a18a644a0ae59d861712de0c905fd
+- Recuperación exacta: `git show 0b891a5baee0babd17b208c9914b61a5e4ac1b4d:backend/user-service/Code.gs` y `git show 0b891a5baee0babd17b208c9914b61a5e4ac1b4d:tests/security/identity-mapping-contract.test.js`. Verificar cada SHA blob esperado.
+- Archivos leídos completos desde el HEAD publicado antes de editarlos.
+
+### Hallazgos corregidos en código
+- Las funciones de lectura getIdentityMappingSheet_ y getIdentityDecisionSheet_ ya no crean hojas; obtienen únicamente hojas existentes y fallan cerrado si falta el esquema.
+- Se separan ensureIdentityMappingSheet_ y ensureIdentityDecisionSheet_ para crear/verificar hojas solo desde operaciones de escritura protegidas por ScriptLock.
+- reviewLegacyIdentifierMapping ahora solo confirma destinos existentes con esquema verificado para tipos persona (Personas.PersonaID) y usuario/user (Usuarios.UserId). Los tipos sin validador explícito no se pueden confirmar; no se presume que existen.
+- appendIdentityDecisionAudit_ sanitiza motivo, actor y ámbito institucional como celdas de texto; limita motivo a 2.000 caracteres.
+- hashRegistroOrigen se calcula en servidor a partir del registro recibido; se ignora el hash arbitrario enviado por cliente.
+- Test estático amplía assertions para lecturas no mutantes, validación de destino, sanitización y hash interno.
+
+### Límites
+- La validación de destino soporta solo persona y usuario/user; otros tipos requieren contrato de destino específico antes de confirmar.
+- No se ejecutaron pruebas runtime Apps Script/Sheets, bloqueo, fórmula-injection en hoja real ni pruebas de reimportación.
+- Accounting import continúa fail-closed por falta de escritor destino; AUD-NG-378 sigue abierto. TASK-068 continúa En ejecución.
 ===============================================================================

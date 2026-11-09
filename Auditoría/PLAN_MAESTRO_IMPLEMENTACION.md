@@ -1975,3 +1975,10 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - IndexedDB v5 añade identity_mapping_cache como caché no autoritativa, aislada por institución/origen/tipo/ID legado; únicamente admite correspondencias confirmadas por backend.
 - js/api.js incorpora seis wrappers para las acciones de correspondencia del User-Service.
 - Test estático amplía compilación de JS cliente y assertions del contrato. Runtime de navegador, integración UI, Apps Script/Sheets y persistencia destino continúan pendientes. TASK-068 En ejecución.
+
+
+## Seguimiento TASK-068 — C1.321
+- Las lecturas de correspondencias e historial dejan de crear hojas; las operaciones de escritura inicializan/verifican hojas bajo ScriptLock.
+- Confirmación de destino fail-closed: solo tipos persona y usuario/user con IDs presentes en Personas.PersonaID o Usuarios.UserId. Otros tipos requieren validador específico.
+- Bitácora sanitiza motivo/actor/ámbito; motivo limitado a 2.000 caracteres. hashRegistroOrigen se calcula en backend y se ignora el hash enviado por cliente.
+- Sin pruebas runtime. Importador destino sigue bloqueado. TASK-068 En ejecución.

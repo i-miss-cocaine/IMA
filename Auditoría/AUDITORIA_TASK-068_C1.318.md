@@ -100,3 +100,10 @@ Las lecturas fueron completas (92.668, 429.611 y 713.779 caracteres). El histori
 - js/api.js expone seis wrappers para el contrato User-Service.
 - El test estático se amplía para compilar los dos JS cliente y verificar store, regla confirmed-only y wrappers.
 - Sin pruebas de navegador/IndexedDB runtime, Apps Script ni Sheets. AUD-NG-378 sigue abierto; TASK-068 En ejecución.
+
+
+## 12. Seguimiento C1.321 — endurecimiento de identidad
+- Se separan helpers de lectura no mutante y creación de hojas solo en rutas de escritura con lock.
+- reviewLegacyIdentifierMapping valida existencia del destino para persona/usuario; otros tipos se rechazan hasta contar con validador de módulo.
+- Se sanitiza texto libre de bitácora y se calcula hash de registro en backend.
+- Sin Apps Script/Sheets runtime; AUD-NG-378 permanece abierto y TASK-068 En ejecución.

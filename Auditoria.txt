@@ -431,3 +431,6 @@ Sesión: IMA-EXEC-20261109-1108Z-01; HEAD de partida: 32b8f5884dd24dbeaf1a3bf028
 
 
 [2026-11-09] IMA-EXEC-20261109-1650Z-01 — C1.320: IndexedDB v5 añade caché no autoritativa de correspondencias confirmadas; js/api.js expone seis wrappers cliente; contrato estático amplía compilación y assertions. Sin runtime ni migración destino. TASK-068 sigue En ejecución.
+
+
+[2026-11-09] IMA-EXEC-20261109-1650Z-01 — C1.321: lectura de identidad no mutante; creación solo en escritura bajo lock; confirmación de destinos existentes persona/usuario; sanitización de bitácora y hash interno. Sin runtime; TASK-068 sigue En ejecución.

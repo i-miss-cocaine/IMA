@@ -338,3 +338,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-09] C1.320 — TASK-068: IndexedDB v5 identity_mapping_cache (solo mapeos confirmados), seis wrappers cliente y test estático ampliado. Runtime pendiente; importación destino sigue fail-closed; tarea en ejecución.
+
+
+[2026-11-09] C1.321 — TASK-068: separación de lectura/escritura de hojas de identidad, validación fail-closed de destino persona/usuario, sanitización de motivo de bitácora y hash calculado en servidor. Runtime y escritor de importación pendientes.
