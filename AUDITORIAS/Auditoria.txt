@@ -9717,3 +9717,37 @@ ARCHIVO NUEVO: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK15.md.
 ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/MapaDependencias.md; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/Contexto_personal.txt.
 SIGUIENTE: F8-Task16 — independencia funcional y comunicación entre roles; verificar informe y, si falta, auditar directamente.
 ===============================================================================
+
+
+===============================================================================
+F8-Task16 / TAREA-ARQ-01 — Independencia funcional y comunicación entre roles (C1.276)
+DICTAMEN: NO CUMPLE. CA-ARQ-101 Y CA-ARQ-102 NO CUMPLEN.
+HALLAZGOS:
+- AUD-NG-339 CRÍTICO/P0: espacios funcionales y aprovisionamiento simulados; IDs sintéticos, registro/historial no persistidos y auditoría de aislamiento con falsos positivos. Amplía F8-Task19/20/22/23.
+- AUD-NG-340 ALTO/P1: escrituras cruzadas y atributos de identidad repetidos sin autoridad/sincronización. Amplía F8-Task16/23.
+- AUD-NG-341 ALTO/P1: sesión/RBAC representa un solo rol; asignaciones por userId+scopeType sobrescriben roles. TASK-682.
+- AUD-NG-342 CRÍTICO/P0: solicitudes inter-rol no persistidas y eventos sin entrega a servicios destinatarios. Amplía F8-Task21/23.
+TAREAS EJECUTABLES DERIVADAS:
+- TASK-679 P1: propiedad única de escritura/fuente de verdad por entidad maestra y sincronización Personas/Usuarios.
+- TASK-680 P0: aprovisionamiento real de espacios funcionales por rol, Drive, registro/historial persistentes y permisos efectivos.
+- TASK-681 P0: solicitudes persistentes y entrega de eventos interservicio con outbox, consumidores, confirmación, DLQ e idempotencia.
+- TASK-682 P1: múltiples roles simultáneos y ámbitos independientes por rol en token, RBAC y asignaciones.
+RECONCILIACIÓN:
+- F8-Task19/20/22: registro central, espacios por rol y aprovisionamiento.
+- F8-Task21: comunicaciones institucionales persistentes y transiciones trazables.
+- F8-Task23: propiedad de datos y prohibición de escrituras cruzadas.
+- F8-Task16: CA-ARQ-101/102; se rechaza su estado [X] por evidencia de código.
+FUENTES:
+- completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676, F8-Task16–23 líneas 5144–5343.
+- developer-service Code.gs 8aa4bac67cfe5c8c54da51a0784a56fef633e412.
+- user-service Code.gs 12079dd410aa6d8afbce55a4bc62a79dea605f9f.
+- academic-service Code.gs df87a2eea9f0ef79d0b966d03fd5bbe432003df5.
+- METODOLOGIA_DESARROLLO.md cf796728bb384a32537392df2f9c72a339fa03ee.
+- Pendientes.md blob 676a3f798715f0cdd7d4bc75768472545b8465ee consultado por instrucción expresa; sin cambios.
+PRUEBAS/LÍMITES:
+- Auditoría manual por función/bloque; no ejecutados Apps Script runtime, Drive/Sheets productivos, despliegue, concurrencia ni E2E.
+- No se modificó código fuente ni datos productivos.
+ARCHIVO NUEVO: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK16.md.
+ARCHIVOS ACTUALIZADOS: AUDITORIAS/Auditoria.txt; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/MapaDependencias.md; AUDITORIAS/Contexto_personal.txt.
+SIGUIENTE: F8-Task17 — identificadores estables y columnas comunes de control; informe individual ausente, auditar directamente.
+===============================================================================

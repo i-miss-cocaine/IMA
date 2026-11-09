@@ -4161,3 +4161,30 @@ La descomposición no está demostrada. El archivo developer-service sigue siend
 
 ### Dictamen
 La documentación contiene inventarios y rutas parciales, pero no representa con exactitud el grafo real ni los consumidores de datos. El generador devuelve un manifiesto estático y el proceso de build/incorporación no es reproducible. No se ejecutaron pruebas runtime ni se modificó código fuente.
+
+
+---
+
+## F8-Task16 / TAREA-ARQ-01 — Independencia funcional y comunicación entre roles (C1.276)
+
+### Resultado de auditoría del código
+- developer-service Code.gs SHA 8aa4bac67cfe5c8c54da51a0784a56fef633e412:
+  - getCentralSpreadsheetConfigRegistry (223–291) enumera tablas y lee RegistroSpreadsheets, pero el ID del control plane es placeholder y el fallback acepta registros del payload.
+  - provisionRoleSpreadsheet (1303–1348) genera IDs sintéticos y no crea recursos Drive ni persiste registro.
+  - recordProvisioningHistory (1286–1301) no escribe HistorialProvisionamiento.
+  - getRoleFunctionalSpaceConfig (1638–1670) informa un permiso declarativo; auditRoleIndependenceAndMasterDataIntegrity (1673–1745) puede informar éxito sin inspección real.
+- user-service Code.gs SHA 12079dd410aa6d8afbce55a4bc62a79dea605f9f:
+  - sesión/token usa role singular (1065–1080; 1146–1162); assignRoleScope (9117–9181) identifica por userId+scopeType e ignora roleId en la clave.
+  - createInstitutionalServiceRequest (9481–9536) y updateInstitutionalServiceRequestStatus (9538–9575) devuelven objetos sin persistir Solicitudes/HistorialSolicitudes.
+  - registerAndDispatchEvent (4618–4698) registra BitacoraEventos y notificaciones, pero no entrega a servicios destino; retryFailedEventsQueue (4700–4745) solo reintenta notificaciones.
+  - Personas y Usuarios contienen atributos personales repetidos; createPerson (1619–1687) y registerUser (2393–2452).
+- academic-service Code.gs SHA df87a2eea9f0ef79d0b966d03fd5bbe432003df5:
+  - comparte el mismo Spreadsheet ID que USER (línea 5 frente a user-service línea 6).
+  - convertAdmissionToStudent (2155–2385) modifica ExpedientesEstudiantes, Usuarios, RelacionesFamiliares, Matriculas y MovimientosEstudiante.
+  - registerStudentEnrollment (12800–12873) escribe directamente Matriculas/CargosEstudiante.
+- Hallazgos AUD-NG-339 a AUD-NG-342; CA-ARQ-101/102 NO CUMPLEN.
+- Tareas derivadas: TASK-679 propiedad única de escritura/fuente de verdad; TASK-680 aprovisionamiento real; TASK-681 comunicaciones persistentes/eventos entregables; TASK-682 multirol/ámbitos independientes.
+- Se amplían F8-Task19/20/21/22/23 sin duplicar sus IDs.
+
+### Dictamen
+Los espacios funcionales y el aprovisionamiento se simulan; el aislamiento no se hace cumplir. USER y ACADEMIC comparten el mismo archivo y realizan escrituras cruzadas; el modelo de sesión solo contiene un rol; solicitudes no se persisten y eventos no se entregan a otros servicios. No se ejecutaron pruebas runtime ni se modificó código.

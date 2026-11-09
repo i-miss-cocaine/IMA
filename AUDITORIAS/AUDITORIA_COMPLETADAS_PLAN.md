@@ -2391,3 +2391,18 @@ Hora UTC de cierre: la registra el timestamp GitHub del commit de cierre. Sesió
 - **Código fuente:** sin modificaciones; completadas.md y Pendientes.md sin cambios; rama base intacta.
 - **Siguiente tarea exacta:** F8-Task16 — implementar independencia funcional y comunicación entre roles, marcada [X] en completadas.md desde línea 5144.
 - **Próxima acción:** verificar si existe AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK16.md; si falta, auditar developer-service, user-service y academic-service contra separación de fuentes maestras, hojas funcionales, vistas/proyecciones, contratos de comunicación y ausencia de copias inconsistentes.
+
+
+---
+
+## F8-Task16 / TAREA-ARQ-01 — Independencia funcional y comunicación entre roles (C1.276)
+
+- **Dictamen:** NO CUMPLE; CA-ARQ-101 y CA-ARQ-102 NO CUMPLEN.
+- **Hallazgos:** AUD-NG-339 (aprovisionamiento simulado y auditoría de aislamiento no verificable); AUD-NG-340 (escrituras cruzadas/atributos de identidad repetidos); AUD-NG-341 (sesión/asignaciones no soportan roles simultáneos); AUD-NG-342 (solicitudes no persistidas y eventos sin entrega interservicio).
+- **Tareas nuevas:** TASK-679 (propiedad única de escritura/fuente de verdad); TASK-680 (aprovisionamiento real de espacios funcionales); TASK-681 (solicitudes persistentes y eventos interservicio); TASK-682 (roles simultáneos y ámbitos independientes).
+- **Tareas existentes ampliadas:** F8-Task19 (registro central), F8-Task20 (espacios por rol), F8-Task21 (comunicaciones), F8-Task22 (aprovisionamiento) y F8-Task23 (independencia entre servicios); F8-Task16 se reabre por CA-ARQ-101/102.
+- **Evidencia:** developer-service 8aa4bac67cfe5c8c54da51a0784a56fef633e412; user-service 12079dd410aa6d8afbce55a4bc62a79dea605f9f; academic-service df87a2eea9f0ef79d0b966d03fd5bbe432003df5; completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676 (5144–5343).
+- **Pruebas:** inspección manual; no ejecutados Apps Script runtime, Drive/Sheets productivos, despliegue, concurrencia ni E2E.
+- **Código fuente/datos productivos:** sin cambios. Pendientes.md consultado por instrucción expresa; sin modificaciones.
+- **Siguiente tarea exacta:** F8-Task17 — identificadores estables y columnas comunes de control, marcada [X] en completadas.md 5170–5193.
+- **Próxima acción:** comprobar si existe AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK17.md; no existe en la ruta consultada. Auditar directamente developer/user/academic/task/exam/accounting services y validar IDs/columnas reales en todas las tablas, no solo el catálogo estático.

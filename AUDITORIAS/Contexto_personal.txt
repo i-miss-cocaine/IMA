@@ -9400,3 +9400,31 @@ Auditar TAREA-F6-015 y TAREA-F6-040. Buscar informes individuales e historial en
 - **Próxima acción reproducible:** verificar si existe AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK16.md; si falta, auditar backend/developer-service/Code.gs, backend/user-service/Code.gs y backend/academic-service/Code.gs contra fuentes maestras, hojas funcionales por rol, vistas/proyecciones, contratos de comunicación y copias inconsistentes.
 - **Commit de cierre:** se confirmará consultando HEAD después de publicar el único commit que contiene este informe y el checkpoint.
 ===============================================================================
+
+
+===============================================================================
+## C1.276 — Checkpoint de cierre: auditoría F8-Task16 / TAREA-ARQ-01 (2026-11-09)
+
+- **ID de sesión operativo:** IMA-AUDIT-20261109-0010Z-05 (identificador documental; no ID nativo de ChatGPT).
+- **Checkpoint inicial:** C1.275. **Checkpoint de cierre:** C1.276.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **HEAD de partida:** 8c5b6ed11cd92e167792442582679daf28b69f7c.
+- **Rama base protegida:** NG_beta_0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59; comparación previa: 344 commits adelante, 0 detrás.
+- **Tarea realizada:** F8-Task16 / TAREA-ARQ-01, marcada [X] en completadas.md líneas 5144–5166. No existía AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK16.md; auditoría ejecutada directamente.
+- **Dictamen:** NO CUMPLE. CA-ARQ-101/102 NO CUMPLEN.
+- **Hallazgos:** AUD-NG-339 CRÍTICO/P0 aprovisionamiento simulado/auditoría de aislamiento con falsos positivos; AUD-NG-340 ALTO/P1 escrituras cruzadas y atributos repetidos sin autoridad; AUD-NG-341 ALTO/P1 sesión/asignaciones no soportan múltiples roles; AUD-NG-342 CRÍTICO/P0 solicitudes no persistidas/eventos sin entrega interservicio.
+- **Tareas nuevas:** TASK-679 propiedad única de escritura/fuente de verdad; TASK-680 aprovisionamiento real; TASK-681 solicitudes persistentes/eventos interservicio; TASK-682 roles simultáneos/ámbitos independientes.
+- **Tareas existentes ampliadas:** F8-Task19, F8-Task20, F8-Task21, F8-Task22 y F8-Task23; se rechaza el estado completado de F8-Task16 por evidencia técnica.
+- **Fuentes:** developer-service 8aa4bac67cfe5c8c54da51a0784a56fef633e412; user-service 12079dd410aa6d8afbce55a4bc62a79dea605f9f; academic-service df87a2eea9f0ef79d0b966d03fd5bbe432003df5; completadas.md f57f1aef832e81e44fc4f7ec36a852d50e464676; METODOLOGIA_DESARROLLO.md cf796728bb384a32537392df2f9c72a339fa03ee; Pendientes.md blob 676a3f798715f0cdd7d4bc75768472545b8465ee.
+- **Puntos inspeccionados:** developer-service 223–291, 1286–1301, 1303–1348, 1638–1745; user-service 1065–1080, 1146–1162, 1253–1279, 1619–1703, 2393–2452, 4618–4745, 9117–9181, 9443–9575, 9631–9803; academic-service 5–6, 84–140, 2155–2385, 12800–12873; completadas.md 5144–5343.
+- **Pruebas ejecutadas:** auditoría manual de funciones/bloques y comparación con criterios.
+- **No ejecutadas:** Apps Script runtime, Google Drive/Sheets productivos, despliegue, concurrencia ni E2E.
+- **Limitaciones:** no se inspeccionaron datos productivos; no se afirma que existan duplicados físicos de matrícula/expediente.
+- **Archivos nuevos:** AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK16.md.
+- **Archivos actualizados:** AUDITORIAS/Auditoria.txt; AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md; AUDITORIAS/MapaDependencias.md; AUDITORIAS/Contexto_personal.txt.
+- **Sin cambios:** backend/developer-service/Code.gs; backend/user-service/Code.gs; backend/academic-service/Code.gs; completadas.md; Pendientes.md; METODOLOGIA_DESARROLLO.md; datos productivos; rama base.
+- **Siguiente tarea:** F8-Task17 — identificadores estables y columnas comunes de control, marcada [X] en completadas.md líneas 5170–5193.
+- **Próxima acción:** comprobar si existe AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK17.md; no existe en la ruta consultada. Auditar directamente developer/user/academic/task/exam/accounting services y validar IDs/columnas reales en tablas concretas, no solo el catálogo estático.
+- **Commit de cierre:** se confirmará consultando HEAD después de publicar el único commit que contiene este informe y el checkpoint.
+===============================================================================
