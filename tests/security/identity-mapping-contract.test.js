@@ -255,6 +255,8 @@ pm.delete=function(store,key){cacheOps.push({op:"delete",store:store,key:key});r
 const linkUsers=[["UserId","Nombre","Grado","Seccion","Email","PasswordHash","Rol","Telefono","NumeroLista","PersonaID"],["USR-1","Ana","","","","","Estudiante","","1","PER-OLD"]];
 const linkPeople=[["PersonaID","Nombres","Apellidos","Identificacion","EmailContacto","TelefonoContacto","EstadoPersona","FechaCreacion","FechaActualizacion","Observaciones"],["PER-NEW","Ana","Perez","","","","Activa","","",""]];
 const familyRows=[["RelacionID","PersonaID","ResponsableID","Tipo","Estado"],["REL-1","PER-OLD","PER-RESP","Tutor","Verificada"]];
+const adminAffiliationRows=[["AdscripcionID","UserId","Departamento","Estado"],["ADS-1","USR-1","Secretaría","Activa"]];
+const adminAffiliationBefore=JSON.stringify(adminAffiliationRows);
 const familyBefore=JSON.stringify(familyRows),decisionRows=[];
 function linkSheet(rows){return{getDataRange:function(){return{getValues:function(){return rows.map(r=>r.slice());}};},getRange:function(row,col){return{setValue:function(value){rows[row-1][col-1]=value;}};}};}
 const linkUserSheet=linkSheet(linkUsers),linkPeopleSheet=linkSheet(linkPeople),decisionSheet={appendRow:function(row){decisionRows.push(row);}};
@@ -279,6 +281,7 @@ assert.equal(linkUsers[1][9],"PER-NEW");
 assert.equal(decisionRows.length,1,"link decision must be audited");
 assert.equal(decisionRows[0][4],"Correspondencia verificada por Secretaría");
 assert.equal(JSON.stringify(familyRows),familyBefore,"account linking must not rewrite family relationship IDs");
+assert.equal(JSON.stringify(adminAffiliationRows),adminAffiliationBefore,"account linking must preserve administrative affiliation references by stable UserId");
 
 
 // TASK-068 mapping reconciliation: duplicate composite keys and orphan confirmed targets are surfaced, never auto-fixed.
@@ -288,6 +291,7 @@ const mappingAuditRows=[headers,
  ["MAP-ORPHAN","LEGACY","estudiante","OLD-9","MISSING","INST-1","h3",new Date(),"1","CONFIRMADA","EXACTA","NO_CALIBRADA","ADMIN"],
  ["MAP-PENDING","LEGACY","estudiante","OLD-10","MISSING","INST-1","h4",new Date(),"1","PENDIENTE_REVISION","SIN_CONFIRMAR","NO_CALIBRADA","ADMIN"],
  ["MAP-BAD","","estudiante","OLD-11","EXISTS","INST-1","h5",new Date(),"1","PENDIENTE_REVISION","SIN_CONFIRMAR","NO_CALIBRADA","ADMIN"]];
+const mappingAuditBefore=JSON.stringify(mappingAuditRows);
 const mappingAuditSheet={getRange:function(){return{getValues:function(){return[mappingAuditRows[0]];}};},getDataRange:function(){return{getValues:function(){return mappingAuditRows.map(r=>r.slice());}};}};
 const mappingAuditContext={IDENTITY_MAPPING_HEADERS_:headers,identityCompositeKey_:function(s,t,l,i){return JSON.stringify([s,t,l,i]);},identityTargetExists_:function(type,id){return type==="estudiante"&&id==="EXISTS";}};
 vm.runInNewContext(extractBalancedFunction(user,"auditIdentityMappingConsistency_")+"this.audit=auditIdentityMappingConsistency_;",mappingAuditContext);
@@ -297,6 +301,7 @@ assert.ok(identityAuditIssues.some(x=>x.type==="ORPHAN_CONFIRMED_IDENTITY_MAPPIN
 assert.ok(identityAuditIssues.some(x=>x.type==="INCOMPLETE_IDENTITY_MAPPING"));
 assert.ok(!identityAuditIssues.some(x=>x.id==="MAP-PENDING"&&x.type==="ORPHAN_CONFIRMED_IDENTITY_MAPPING"));
 assert.ok(identityAuditIssues.every(x=>x.status==="PENDIENTE_REVISION"));
+assert.equal(JSON.stringify(mappingAuditRows),mappingAuditBefore,"integrity audit is read-only; no mapping is auto-fixed");
 assert.ok(user.includes("const identityMappingIssues = auditIdentityMappingConsistency_(ss);"));
 assert.ok(user.includes("inconsistenciasIdentidad: identityMappingIssues"));
 

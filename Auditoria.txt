@@ -606,3 +606,8 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 ## C1.361 — TASK-068 primer uso de esquemas
 - CI C1.360 run 42716865176: completed/success.
 - Corregida inicialización de hojas de correspondencia/decisiones y lectura no mutante de Personas; fixtures locales agregados. CI C1.361 pendiente.
+
+
+## C1.362 — TASK-068 cobertura relacional
+- CI C1.361 run 42717056863: completed/success.
+- Añadidas aserciones de preservación de adscripciones administrativas y lectura no mutante del escáner de correspondencias. CI C1.362 pendiente.

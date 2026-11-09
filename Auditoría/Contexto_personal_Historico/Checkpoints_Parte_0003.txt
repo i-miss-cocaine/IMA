@@ -682,3 +682,17 @@ Checkpoint anterior: C1.360
 Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.361.
 Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.361.
 ===============================================================================
+
+
+===============================================================================
+## C1.362 — TASK-068: verificación final de integridad relacional y auditoría no mutante
+ID: C1.362
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.361
+- CI C1.361 run 42717056863: completed/success; inicialización first-use de ambas hojas y búsqueda no mutante aprobadas.
+- Se amplían regresiones locales para verificar que vincular una cuenta conserva referencias administrativas por UserId además de relaciones familiares, y que el escaneo de correspondencias es estrictamente de solo lectura (no auto-fix de mapeos).
+- La suite ya cubre relaciones académicas por Matricula/UserId/PersonaID, familiares por PersonaID y administrativas por UserId.
+- CI C1.362 pendiente. No se ejecuta deployment ni servicios vivos.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.362.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.362.
+===============================================================================

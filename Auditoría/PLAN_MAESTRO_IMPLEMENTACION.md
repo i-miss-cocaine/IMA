@@ -2180,3 +2180,9 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - Se corrige primer uso: ensureIdentityMappingSheet_ y ensureIdentityDecisionSheet_ crean hojas y agregan encabezados canónicos si están vacías; no alteran hojas con esquema incompatible.
 - findPersonMatches lee Personas con getSheetOrThrow y no crea recursos en una operación de búsqueda.
 - CI C1.360 run 42716865176: success. Pruebas locales nuevas de inicialización first-use; CI C1.361 pendiente.
+
+
+## 10.46 TASK-068 — C1.362: cierre de cobertura relacional local
+- Se agrega regresión explícita para preservar afiliaciones administrativas por UserId al vincular cuenta-Persona y se verifica que la auditoría de correspondencias no modifica registros.
+- Cobertura relacional local incluye matrícula/Usuario/Persona, relación familiar/Persona y adscripción/UserId.
+- C1.361 CI run 42717056863: success. C1.362 CI pendiente.
