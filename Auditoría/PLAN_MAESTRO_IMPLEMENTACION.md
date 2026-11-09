@@ -2111,3 +2111,9 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - Se detectó que el clasificador no vetaba coincidencias si identificación nacional, código institucional o fecha de nacimiento estaban presentes en ambos registros y diferían.
 - Se añade veto de evidencia fuerte contradictoria y pruebas locales de homónimos; no se permite fusión automática.
 - TASK-068 permanece En ejecución; pendiente cobertura local de cache IndexedDB, múltiples referencias confirmadas y relaciones. BETA-FUNC-008 continúa Pendiente beta.
+
+
+## 10.34 TASK-068 — C1.350: interfaz administrativa de correspondencia
+- Se incorpora a dashboard-secretaria.html una consola para buscar candidatos, registrar referencias legadas, confirmar/rechazar con motivo, consultar historial y vincular cuenta↔Persona.
+- Se agregan wrappers API y handlers; datos de servidor renderizados con textContent. Autorización definitiva en backend.
+- Workflow local incluye secretary.js y verifica controles/handlers/wrappers. TASK-068 sigue En ejecución hasta validar caché IndexedDB, relaciones y múltiples referencias con funciones reales; transporte real sigue en BETA-FUNC-008.

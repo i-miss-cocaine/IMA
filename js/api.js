@@ -365,6 +365,8 @@ window.getStudentAttendanceSummary = function(payload) {
  * TASK-068: wrappers de correspondencia de identidades.
  * Las validaciones de sesión, rol e institución se ejecutan en el backend.
  */
+window.findPersonMatches = function(payload) { return window.fetchApi('USER', 'findPersonMatches', payload || {}); };
+window.linkPersonAccount = function(payload) { return window.fetchApi('USER', 'linkPersonAccount', payload || {}); };
 window.registerLegacyIdentifierMapping = function(payload) {
     return window.fetchApi('USER', 'registerLegacyIdentifierMapping', payload || {});
 };

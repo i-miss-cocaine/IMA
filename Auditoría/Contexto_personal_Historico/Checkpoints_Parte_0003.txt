@@ -503,3 +503,23 @@ HEAD previo: 4f05403e7da0f53a70e4973334b840212075a6f6
 Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.349.
 Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.349.
 ===============================================================================
+
+
+===============================================================================
+## C1.350 — TASK-068: interfaz de Secretaría para revisión de identidades
+ID: C1.350
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.349
+Baseline lógico válido: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD previo: 831a99d957bc157c94792e64f5722b66d2fef233
+- CI C1.349 run 42714376588: completed/success.
+- Se detectó que había endpoints y wrappers API, pero dashboard-secretaria.html no exponía interfaz de búsqueda, registro, revisión e historial.
+- Se agrega consola UI en Secretaría: búsqueda de candidatos, registro de referencia legada, confirmación/rechazo con motivo, consulta de historial y vinculación de cuenta a Persona.
+- Se agregan wrappers API findPersonMatches y linkPersonAccount. La UI limita visibilidad a Secretaría/Administrador; la autorización definitiva permanece en backend con sesión verificada, rol y ámbito institucional.
+- Resultados e historial se insertan mediante textContent, no como HTML no confiable.
+- Prueba local amplía contrato para parsear secretary.js y verificar controles, handlers y wrappers. Workflow amplía paths para incluir UI/API.
+- CI de C1.350 pendiente. Sin Apps Script, Sheets ni deployment real.
+- TASK-068 sigue En ejecución hasta validar localmente caché, relaciones y múltiples referencias mediante funciones reales; BETA-FUNC-008 sigue Pendiente beta.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.350.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.350.
+===============================================================================

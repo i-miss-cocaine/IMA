@@ -1,6 +1,11 @@
 const assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path"),vm=require("node:vm"),crypto=require("node:crypto");
 const root=path.resolve(__dirname,"../.."),up=path.join(root,"backend/user-service/Code.gs"),ap=path.join(root,"backend/accounting-service/Code.gs");
-const user=fs.readFileSync(up,"utf8"),accounting=fs.readFileSync(ap,"utf8"),academic=fs.readFileSync(path.join(root,"backend/academic-service/Code.gs"),"utf8"),method=fs.readFileSync(path.join(root,"METODOLOGIA_DESARROLLO.md"),"utf8"),persistence=fs.readFileSync(path.join(root,"js/persistence.js"),"utf8"),api=fs.readFileSync(path.join(root,"js/api.js"),"utf8");
+const user=fs.readFileSync(up,"utf8"),accounting=fs.readFileSync(ap,"utf8"),academic=fs.readFileSync(path.join(root,"backend/academic-service/Code.gs"),"utf8"),method=fs.readFileSync(path.join(root,"METODOLOGIA_DESARROLLO.md"),"utf8"),persistence=fs.readFileSync(path.join(root,"js/persistence.js"),"utf8"),api=fs.readFileSync(path.join(root,"js/api.js"),"utf8"),secretary=fs.readFileSync(path.join(root,"js/secretary.js"),"utf8"),dashboard=fs.readFileSync(path.join(root,"dashboard-secretaria.html"),"utf8");
+new vm.Script(secretary,{filename:"js/secretary.js"});
+assert.ok(api.includes("window.findPersonMatches"));assert.ok(api.includes("window.linkPersonAccount"));
+for(const id of ["modal-identity-mapping","form-identity-search","form-identity-register","btn-identity-confirm","btn-identity-reject","btn-identity-history","form-identity-link"])assert.ok(dashboard.includes('id="'+id+'"'),"UI control "+id);
+for(const fn of ["openIdentityMappingManager","handleIdentityMatchSearch","handleIdentityMappingRegister","handleIdentityMappingReview","loadIdentityDecisionHistory","handleIdentityAccountLink"])assert.ok(secretary.includes("window."+fn+" ="));
+assert.ok(dashboard.includes('role === "Secretaría"')&&dashboard.includes('role === "Administrador"'));
 new vm.Script(user,{filename:up}); new vm.Script(accounting,{filename:ap}); new vm.Script(academic,{filename:"backend/academic-service/Code.gs"}); new vm.Script(persistence,{filename:"js/persistence.js"}); new vm.Script(api,{filename:"js/api.js"});
 const headers=["idMapeo","sistemaOrigen","tipoEntidad","idOriginalLegado","idNuevoPlataforma","institucionId","hashRegistroOrigen","fechaMigracion","versionMapeo","estadoCorrespondencia","metodoCoincidencia","nivelConfianza","migradoPor"];
 for(const h of headers) assert.ok(user.includes('"'+h+'"'),"header "+h);

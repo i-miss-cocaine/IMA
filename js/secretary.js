@@ -1636,3 +1636,42 @@ window.reorderWaitlistAction = async function(esperaId) {
         alert("Error: " + err.message);
     }
 };
+
+
+// TASK-068: interfaz de búsqueda, revisión y vinculación de identidades.
+window.openIdentityMappingManager = function() { var m=document.getElementById("modal-identity-mapping"); if(m){m.classList.remove("hidden");m.classList.add("flex");} };
+window.closeIdentityMappingManager = function() { var m=document.getElementById("modal-identity-mapping"); if(m){m.classList.add("hidden");m.classList.remove("flex");} };
+window.handleIdentityMatchSearch = async function(event) {
+ if(event)event.preventDefault();var status=document.getElementById("identity-search-status"),results=document.getElementById("identity-match-results");
+ if(status)status.textContent="Consultando candidatos…";if(results)results.replaceChildren();
+ var val=function(id){return(document.getElementById(id)||{}).value||"";};
+ try {var r=await window.findPersonMatches({nombres:val("identity-search-nombres"),apellidos:val("identity-search-apellidos"),identificacion:val("identity-search-identificacion"),codigoInstitucional:val("identity-search-codigo"),emailContacto:val("identity-search-email"),fechaNacimiento:val("identity-search-fecha"),responsableIdentificacion:val("identity-search-responsable"),matriculaId:val("identity-search-matricula")});
+ if(!r||r.status!=="success"||!Array.isArray(r.matches))throw new Error((r&&r.message)||"No se pudieron consultar candidatos.");
+ if(status)status.textContent=r.matches.length?r.matches.length+" candidato(s). Toda coincidencia requiere revisión humana.":"No se encontraron candidatos.";
+ r.matches.forEach(function(x){var card=document.createElement("article");card.className="border rounded-xl p-3 bg-slate-50 space-y-1";var title=document.createElement("div");title.className="font-bold text-sm";title.textContent=String(x.nombres||"")+" "+String(x.apellidos||"");var detail=document.createElement("p");detail.className="text-xs text-slate-600";detail.textContent="PersonaID: "+String(x.personaId||"")+" · Identificación: "+String(x.identificacion||"No registrada")+" · "+String(x.clasificacionIdentidad||"");var caution=document.createElement("p");caution.className="text-[11px] text-amber-700";caution.textContent="Revisión obligatoria; fusión automática deshabilitada.";card.append(title,detail,caution);if(results)results.appendChild(card);});
+ }catch(e){if(status)status.textContent="Error: "+String(e.message||e);}
+};
+window.handleIdentityMappingRegister = async function(event) {
+ if(event)event.preventDefault();var status=document.getElementById("identity-review-status"),val=function(id){return(document.getElementById(id)||{}).value||"";};
+ try{var r=await window.registerLegacyIdentifierMapping({sistemaOrigen:val("identity-source-system"),tipoEntidad:val("identity-entity-type"),idOriginalLegado:val("identity-legacy-id"),idNuevoPlataforma:val("identity-internal-id")});
+ if(!r||r.status!=="success")throw new Error((r&&r.message)||"No se pudo registrar.");var f=document.getElementById("identity-map-id");if(f)f.value=r.idMapeo||"";if(status)status.textContent="Referencia registrada. Estado: "+String(r.estadoCorrespondencia||"Pendiente")+" · "+String(r.idMapeo||"");await window.loadIdentityDecisionHistory();
+ }catch(e){if(status)status.textContent="Error: "+String(e.message||e);}
+};
+window.handleIdentityMappingReview = async function(decision) {
+ var status=document.getElementById("identity-review-status"),id=(document.getElementById("identity-map-id")||{}).value||"",reason=(document.getElementById("identity-review-reason")||{}).value||"";
+ if(!id.trim()||!reason.trim()){if(status)status.textContent="Indique el ID de correspondencia y el motivo.";return;}
+ try{var r=await window.reviewLegacyIdentifierMapping({idMapeo:id.trim(),decision:decision,motivo:reason.trim()});if(!r||r.status!=="success")throw new Error((r&&r.message)||"Decisión no aplicada.");if(status)status.textContent="Decisión registrada: "+String(r.estadoCorrespondencia||decision);await window.loadIdentityDecisionHistory();}
+ catch(e){if(status)status.textContent="Error: "+String(e.message||e);}
+};
+window.loadIdentityDecisionHistory = async function() {
+ var status=document.getElementById("identity-review-status"),target=document.getElementById("identity-history-results"),id=(document.getElementById("identity-map-id")||{}).value||"";if(target)target.replaceChildren();
+ try{var r=await window.getIdentityDecisionHistory({idMapeo:id.trim()});if(!r||r.status!=="success"||!Array.isArray(r.historial))throw new Error((r&&r.message)||"No se pudo consultar el historial.");
+ r.historial.forEach(function(x){var row=document.createElement("div");row.className="border-b py-1";row.textContent=[x.decision,x.motivo,x.actorUserId,x.fechaDecision].map(function(y){return String(y||"");}).join(" · ");if(target)target.appendChild(row);});
+ if(status)status.textContent=r.historial.length+" decisión(es) en historial.";
+ }catch(e){if(status)status.textContent="Error: "+String(e.message||e);}
+};
+window.handleIdentityAccountLink = async function(event) {
+ if(event)event.preventDefault();var status=document.getElementById("identity-review-status"),val=function(id){return(document.getElementById(id)||{}).value||"";};
+ try{var r=await window.linkPersonAccount({userId:val("identity-link-user"),personaId:val("identity-link-person"),motivo:val("identity-link-reason")});if(!r||r.status!=="success")throw new Error((r&&r.message)||"No se pudo vincular.");if(status)status.textContent=r.message||"Cuenta vinculada con historial auditable.";}
+ catch(e){if(status)status.textContent="Error: "+String(e.message||e);}
+};
