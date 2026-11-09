@@ -1994,3 +1994,12 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - Se verificó que ACCOUNTING carece de UrlFetchApp.fetch operativo; los helpers HMAC no prueban transporte interservicio.
 - Los handlers ACADEMIC de admisión y matrícula tienen precondiciones y efectos secundarios específicos, no son escritores genéricos intercambiables.
 - No se habilita persistencia directa sin contrato de entidad, idempotencia, relaciones y compensación. Importación sigue fail-closed; AUD-NG-378 abierto.
+
+## Seguimiento TASK-068 — C1.328 / continuidad y bloqueo de selección
+- Sesión IMA-EXEC-20261109-1909Z-01; HEAD de partida 431fdff7c695f0507a96e533b391cb69ff9fdb62; rama base 44d9891132332e692dbe2ba8602b41f50a508a59 sin cambios; comparación: ahead 404, behind 0.
+- C1.327 coincide con el HEAD actual. Workflow Identity mapping contract run 42672774951/job 129349656231: completed/success; AUD-NG-381 resuelto.
+- TASK-068 pasa a Bloqueada por AUD-NG-378: faltan deployments USER/ACADEMIC de prueba, endpoint autenticado, secreto dedicado en Script Properties, IMA_INSTITUTION_ID aislado y Spreadsheet fixtures. No se habilita escritura cruzada ni se presume configuración remota.
+- La selección PM-01 no puede cerrarse de forma segura: TASK-006 depende de F16-TASK01/02 pendientes; TASK-153 no acredita sus dependencias de usuarios/roles/propiedad; F17-TASK02 es una ampliación reconciliada de TASK-008, no una tarea independiente. El backlog Otros requerido por §9 no se pudo leer vía API; blobs y recuperación por git show quedan registrados en C1.328.
+- No se selecciona tarea alternativa ni se salta de fase hasta recuperar y leer íntegramente los requisitos P0 de Otros y volver a aplicar §6.1. No se crean IDs duplicados.
+- Sin cambios de código ni nuevas pruebas en esta iteración. Requisito TASK-068: pendientes/Dirección/Pendientes.md, líneas 301–345; fila correspondiente de §9.
+- Siguiente acción: recuperar los archivos desde el HEAD C1.328, verificar sus blob SHA y reevaluar la cola PM-01; reanudar TASK-068 cuando se acrediten los prerequisitos externos seguros.

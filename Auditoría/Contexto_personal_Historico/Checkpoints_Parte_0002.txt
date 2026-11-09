@@ -1870,3 +1870,67 @@ Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002
 Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.327.
 Commit de cierre: este commit; SHA se verificará externamente tras publicación.
 ===============================================================================
+
+===============================================================================
+## C1.328 — TASK-068 / PM-01 — continuidad, bloqueo y recuperación de requisitos
+ID de sesión: IMA-EXEC-20261109-1909Z-01
+Fecha: 2026-11-09 UTC
+Checkpoint anterior: C1.327
+Repositorio: i-miss-cocaine/IMA
+Rama de trabajo exclusiva: NG_beta_0.0.0.1_work
+HEAD de partida verificado: 431fdff7c695f0507a96e533b391cb69ff9fdb62
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+Comparación de ramas: ahead 404; behind 0; status ahead.
+Tarea activa: TASK-068 — Bloqueada; no completada.
+Fase PM: PM-01; prioridad P0; orden local 1.
+
+### Continuidad y auditoría previa
+- El HEAD actual coincide exactamente con el commit de cierre C1.327. No existen commits posteriores en la rama de trabajo que justifiquen repetir su implementación.
+- La rama base conserva 44d9891132332e692dbe2ba8602b41f50a508a59; no se modifica ninguna otra rama.
+- Se verificó el workflow previo Identity mapping contract: run 42672774951, job 129349656231, completed/success. El log confirma sintaxis, esquemas canónicos y casos aislados de validación de destino.
+- AUD-NG-381 queda resuelto. AUD-NG-378 permanece abierto dentro del expediente y tarea existentes; no se crea otro informe ni ID de auditoría.
+- Revisión focalizada del estado TASK-068: sin cambios de código desde C1.327 y sin hallazgos nuevos que justifiquen repetir la auditoría. La importación continúa fail-closed con DESTINATION_WRITER_NOT_CONFIGURED.
+
+### Bloqueo operativo y recuperación
+- No están acreditados deployment de prueba USER/ACADEMIC, URL no secreta del endpoint USER, configuración de IMA_INTERSERVICE_HMAC_SECRET en Script Properties, IMA_INSTITUTION_ID aislado ni Spreadsheet fixtures de prueba. No se presume configuración remota.
+- No se habilita escritura directa entre proyectos Apps Script: los ScriptLock de proyectos distintos no coordinan exclusión mutua. No se almacenan secretos en Git ni en el chat.
+- El estado de TASK-068 cambia de En ejecución a Bloqueada por AUD-NG-378. La correspondencia, resolvers, revisión humana, bitácora y validación estática tienen avance; writer de destino, relaciones, reimportación y pruebas reales de dos fuentes siguen pendientes.
+
+### Selección PM-01 conforme a §§6.1 y 9
+- TASK-068 conserva prioridad P0 y orden local 1, pero su bloqueo no está resuelto.
+- TASK-006 no es elegible: sus dependencias F16-TASK01 y F16-TASK02 continúan Pendientes.
+- TASK-153 no acredita aún su dependencia de sistema de usuarios, departamentos, roles y propiedad documental; TASK-636 sigue En ejecución.
+- F17-TASK02 no se trata como tarea independiente: el propio backlog la reconcilia con TASK-008 y ordena ampliar esa tarea sin duplicar la integración.
+- Otros candidatos P0 de PM-01 apuntan a pendientes/Otros/Pendientes.md. El contenido no pudo leerse por la API (0 caracteres), y la ruta de recuperación también devolvió 0; sus blobs existen y quedan identificados abajo. Sin leer íntegramente esos requisitos no es válido declarar cuál es la siguiente tarea elegible según §6.1.
+- No se selecciona una tarea alternativa ni se salta de fase. No se crean tareas ni auditorías duplicadas. La selección se reanudará después de recuperar y verificar el backlog completo desde Git.
+
+### Recuperación exacta del backlog
+Recuperación de requisitos PM-01 (sin modificar el original):
+- `pendientes/Otros/Pendientes.md` en HEAD 431fdff7c695f0507a96e533b391cb69ff9fdb62: blob `35cbd51f1e0b2f91f18b46c94d38223338d5ccdf`; GitHub Contents API devolvió 0 caracteres.
+- `RECUPERACION/Pendientes_RECUPERADO.md` en el mismo HEAD: blob `ef47d232db3ed46317dc14f22b1cdf8f938e8405`; GitHub Contents API devolvió 0 caracteres.
+- Recuperar íntegramente desde el historial de la rama autorizada con: `git show 431fdff7c695f0507a96e533b391cb69ff9fdb62:pendientes/Otros/Pendientes.md > /tmp/Otros_Pendientes.md` y `git show 431fdff7c695f0507a96e533b391cb69ff9fdb62:RECUPERACION/Pendientes_RECUPERADO.md > /tmp/Pendientes_RECUPERADO.md`. Verificar con `git rev-parse 431fdff7c695f0507a96e533b391cb69ff9fdb62:pendientes/Otros/Pendientes.md` y `git rev-parse 431fdff7c695f0507a96e533b391cb69ff9fdb62:RECUPERACION/Pendientes_RECUPERADO.md` contra los SHA anteriores. No tratar el resultado de 0 caracteres como archivo vacío.
+
+### Archivos modificados
+- pendientes/Dirección/Pendientes.md: solo estado de TASK-068 actualizado a Bloqueada; criterios y requisitos originales intactos.
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md: seguimiento C1.328 y decisión de selección.
+- Auditoría/AUDITORIA_TASK-068_C1.318.md: seguimiento del mismo expediente; sin informe nuevo.
+- Auditoria.txt; tareas_auditoria.txt; changueslogs.txt: registro de continuidad y bloqueo.
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt; Auditoría/INDICE_CHECKPOINTS.md: checkpoint e índice.
+- Revisados sin modificación: METODOLOGIA_DESARROLLO.md; Auditoría/Contexto_personal.txt; Auditoría/MapaDependencias.md; Auditoría/INDICE_CHECKPOINTS.md antes de su actualización; los backlogs Dirección, Docente, Contabilidad y Secretaría; los servicios USER, ACCOUNTING y ACADEMIC.
+- Sin cambios de código. Sin cambios en rama base.
+
+### Pruebas y verificaciones
+- Ejecutadas: comparación de ramas; verificación de HEAD; consulta del resultado del job CI 42672774951; inspección estática focalizada de código y dependencias de los candidatos revisados.
+- No ejecutadas en esta sesión: nuevo workflow CI, Node tests, runtime Apps Script, HTTP, navegador, deployments externos, Script Properties, Spreadsheet fixture, reimportación ni compensación.
+- Pendientes para TASK-068: endpoint interservicio autenticado; firma/origen/destino/timestamp/replay/actor; writer por entidad; clave idempotente; relaciones; journal/compensación; fixture aislado de dos fuentes y reimportación.
+
+### Estado y siguiente acción exacta
+- TASK-068: Bloqueada; no completada. Hallazgo activo: AUD-NG-378.
+- Requisito original: pendientes/Dirección/Pendientes.md, TASK-068, líneas 301–345; Plan Maestro §9, fila TASK-068.
+- Siguiente acción: recuperar desde el HEAD indicado ambos archivos de requisitos PM-01, verificar sus blob SHA, leer íntegramente los requisitos de cada candidato y volver a ejecutar el algoritmo §6.1. En paralelo, desbloquear TASK-068 únicamente cuando estén disponibles los deployments de prueba y la configuración externa segura indicada.
+- No se declara ninguna prueba nueva como satisfactoria.
+
+Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.328.
+Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.328.
+Commit de cierre: pendiente de publicar; HEAD se verificará después del commit.
+===============================================================================

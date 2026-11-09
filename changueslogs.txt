@@ -374,3 +374,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - AUD-NG-378 sigue abierto: ACCOUNTING no tiene transporte saliente ni USER_SERVICE_URL; USER no verifica envelopes interservicio; se requiere secreto dedicado en Script Properties, deployment aislado y writer por servicio propietario.
 - No se escribe en hojas compartidas ni se inventa configuración. TASK-068 En ejecución; importador mantiene DESTINATION_WRITER_NOT_CONFIGURED.
 - Checkpoint C1.327; Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.327; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.327.
+
+[2026-11-09] IMA-EXEC-20261109-1909Z-01 — TASK-068 / PM-01 / C1.328
+- Continuidad: HEAD 431fdff7c695f0507a96e533b391cb69ff9fdb62 coincide con C1.327; base 44d9891132332e692dbe2ba8602b41f50a508a59 intacta; rama de trabajo ahead 404 / behind 0.
+- CI previo Identity mapping contract run 42672774951/job 129349656231 completed/success; AUD-NG-381 resuelto.
+- AUD-NG-378 continúa abierto por prerequisitos externos no acreditados; TASK-068 pasa a Bloqueada. Sin cambios de código ni pruebas nuevas.
+- No se selecciona tarea alternativa porque los requisitos P0 de Otros deben recuperarse y leerse íntegramente desde el historial Git antes de aplicar §6.1.
+- Checkpoint C1.328; Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt; índice Auditoría/INDICE_CHECKPOINTS.md.

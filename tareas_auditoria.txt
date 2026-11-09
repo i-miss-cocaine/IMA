@@ -467,3 +467,12 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - **Criterios para desbloqueo:** endpoint autenticado con verificación de firma, destino, origen, timestamp, replay y actor; writer por entidad propiedad del servicio correspondiente; clave idempotente estable; validación de relaciones; journal/compensación; pruebas de dos fuentes y reimportación en fixture aislado.
 - **Estado:** TASK-068 En ejecución; AUD-NG-378 abierto. No crear tarea duplicada ni cambiar el alcance original.
 ===============================================================================
+
+===============================================================================
+## Seguimiento de TASK-068 — C1.328 / AUD-NG-378
+- HEAD 431fdff7c695f0507a96e533b391cb69ff9fdb62; rama base 44d9891132332e692dbe2ba8602b41f50a508a59; ahead 404 / behind 0. C1.327 coincide con el HEAD de partida.
+- Workflow Identity mapping contract run 42672774951/job 129349656231 completed/success; AUD-NG-381 resuelto.
+- AUD-NG-378 permanece abierto: no se acredita deployment USER/ACADEMIC de prueba, endpoint autenticado, Script Properties dedicadas ni fixture aislado. TASK-068 se actualiza a Bloqueada.
+- El backlog P0 de Otros no es legible por GitHub Contents API (0 caracteres); se conserva recuperación exacta por Git desde el HEAD y sus blob SHA en C1.328. No se selecciona tarea alternativa con requisitos incompletos.
+- No se crean IDs ni auditorías duplicadas; no hay cambios de código ni pruebas nuevas.
+===============================================================================

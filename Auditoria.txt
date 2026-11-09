@@ -474,3 +474,11 @@ Sesión: IMA-EXEC-20261109-1108Z-01; HEAD de partida: 32b8f5884dd24dbeaf1a3bf028
 - **Recuperación/prerrequisitos:** disponer de deployments de prueba USER/ACADEMIC, URL de endpoint USER, secreto interservicio dedicado configurado en Script Properties, IMA_INSTITUTION_ID aislado, endpoint que valide origen/destino/firma/replay/actor, contrato de writer por entidad y fixtures de dos fuentes con compensación verificable.
 - AUD-NG-378 permanece abierto dentro de TASK-068; importador sigue `DESTINATION_WRITER_NOT_CONFIGURED`. No se crea tarea derivada.
 - Checkpoint C1.327; sesión IMA-EXEC-20261109-1802Z-01; ubicación `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt`; índice `Auditoría/INDICE_CHECKPOINTS.md` — fila C1.327.
+
+## Seguimiento C1.328 — TASK-068 / AUD-NG-378
+- Continuidad verificada: HEAD 431fdff7c695f0507a96e533b391cb69ff9fdb62, C1.327 coincide; rama base 44d9891132332e692dbe2ba8602b41f50a508a59 sin cambios; ahead 404 / behind 0.
+- CI previo confirmado: run 42672774951, job 129349656231, completed/success; AUD-NG-381 resuelto.
+- AUD-NG-378 sigue abierto por ausencia de deployment/endpoint interservicio de prueba y configuración externa segura. TASK-068 se registra Bloqueada, no completada.
+- No se habilitan escrituras cruzadas ni se almacenan secretos. No hubo cambios de código ni pruebas nuevas.
+- La selección PM-01 queda pendiente de recuperar los requisitos P0 de Otros desde Git; blob SHA y comandos exactos están en C1.328. No se crea otra auditoría/tarea.
+- Checkpoint C1.328; sesión IMA-EXEC-20261109-1909Z-01; Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.328; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.328.
