@@ -3,11 +3,11 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.331**
+- Último checkpoint: **C1.332**
 - Última sesión: `IMA-EXEC-20261109-1909Z-01`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.331: **22736**
+- Caracteres del archivo activo tras C1.332: **23797**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 
@@ -108,3 +108,5 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.330 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | Casos beta específicos TASK-636 y TASK-068 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.330 | 107–139 | C1.329 | Este commit; SHA verificado tras publicación |
 
 | C1.331 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | Corrección de rumbo / reauditoría TASK-636 — C1.316 como baseline lógico; pruebas locales y beta diferidas | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.331 | 2 | C1.316 (último válido) | Este commit; SHA verificado tras publicación |
+
+| C1.332 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | Corrección del harness local TASK-636; separadores VM deterministas | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.332 | 198 | C1.331 | Este commit; SHA verificado tras publicación |

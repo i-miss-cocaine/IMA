@@ -2010,3 +2010,8 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - La nueva normativa §21.5 aplica: pruebas locales ejecutables deben completarse; deployment, Apps Script/Sheets/Drive reales y HTTP/E2E vivos se difieren a beta_test.txt y no bloquean por sí solos el cierre de implementación.
 - TASK-636 permanece En ejecución; AUD-NG-369 tiene su integración remota diferida a BETA-FUNC-007. Continúan pendientes de revalidación local los alcances AUD-NG-001/002/306/368/370/371; no se declara la tarea completada.
 - Siguiente tarea PM-01 seleccionada: TASK-068, P0, orden local 1, dependencia declarada ninguna; se ejecutará en el commit siguiente tras auditoría/revalidación independiente.
+
+
+## 10.19 Corrección focalizada — C1.332 / harness TASK-636
+- Se corrige el extractor de funciones y separadores VM del contrato Node local para usar String.fromCharCode(10); no se modifica código de producto.
+- CI debe ejecutarse tras publicar y su resultado se registra antes de continuar con la siguiente tarea.

@@ -500,3 +500,8 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - La tarea mantiene alcances de seguridad AUD-NG-001/002/306/368/370/371 por revalidar. Siguiente tarea elegible: TASK-068 (PM-01/P0, orden local 1, sin dependencias declaradas).
 - Checkpoint: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.331; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.331.
 ===============================================================================
+
+
+## C1.332 — Corrección de harness TASK-636
+- Corregidos los separadores de línea del extractor Node/VM con String.fromCharCode(10); producción sin cambios. CI pendiente de resultado.
+- Checkpoint C1.332; sesión IMA-GOV-20261109-2201Z-01; Parte_0003; índice actualizado.

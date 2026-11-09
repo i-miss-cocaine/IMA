@@ -180,3 +180,18 @@ Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt �
 Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.331.
 Commit de cierre: este commit; SHA verificado tras publicación.
 ===============================================================================
+
+
+===============================================================================
+## C1.332 — Corrección del harness local de TASK-636
+ID: C1.332
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.331
+Motivo: revisión inmediata del contrato local antes de iniciar la siguiente tarea.
+- La inspección post-publicación detectó que el extractor de helpers y los separadores del VM buscaban la secuencia literal \\n en lugar de un salto de línea.
+- Se sustituye la dependencia de escapes por String.fromCharCode(10), manteniendo intacto el código de producto.
+- El test ahora puede extraer determinísticamente los helpers SHA-256/snapshot y parsear Code.gs completo. El resultado de CI se consultará tras publicar; no se anticipa PASS.
+- No se modifica el alcance ni el estado de TASK-636; BETA-FUNC-007 continúa Pendiente beta.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.332.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.332.
+===============================================================================

@@ -50,7 +50,7 @@ assert(source.includes("taskServiceVerifyAppendOnlyBackupLog_"), "Log_Cierres is
 function extractFunction(name) {
   const start = source.indexOf("function " + name + "(");
   assert.ok(start >= 0, "function exists: " + name);
-  const end = source.indexOf("\\n}", start);
+  const end = source.indexOf(String.fromCharCode(10) + "}", start);
   assert.ok(end > start, "function body is extractable: " + name);
   return source.slice(start, end + 2);
 }
@@ -69,14 +69,14 @@ const digestContext = {
     }
   }
 };
-vm.runInNewContext(extractFunction("taskServiceBackupSha256_") + "\\nthis.hash = taskServiceBackupSha256_;", digestContext);
+vm.runInNewContext(extractFunction("taskServiceBackupSha256_") + String.fromCharCode(10) + "this.hash = taskServiceBackupSha256_;", digestContext);
 assert.equal(digestContext.hash("abc", false), crypto.createHash("sha256").update("abc").digest("hex"));
 assert.equal(digestContext.hash(Buffer.from([0, 1, 2, 255]), true), crypto.createHash("sha256").update(Buffer.from([0, 1, 2, 255])).digest("hex"));
 
 const snapshotContext = {};
 vm.runInNewContext(
-  extractFunction("taskServiceBackupEncodeValue_") + "\\n" +
-  extractFunction("taskServiceBackupSnapshotSheet_") + "\\nthis.snapshot = taskServiceBackupSnapshotSheet_;",
+  extractFunction("taskServiceBackupEncodeValue_") + String.fromCharCode(10) +
+  extractFunction("taskServiceBackupSnapshotSheet_") + String.fromCharCode(10) + "this.snapshot = taskServiceBackupSnapshotSheet_;",
   snapshotContext
 );
 const snapDate = new Date("2026-01-02T03:04:05.000Z");

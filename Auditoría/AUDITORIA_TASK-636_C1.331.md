@@ -55,3 +55,9 @@ Se selecciona TASK-068 — PM-01/P0, orden local 1, requisito `pendientes/Direcc
 ## 6. Límites
 
 No se ejecutaron Apps Script runtime, Sheets/Drive reales, deployment, HTTP, E2E ni pruebas beta. No se usaron datos reales. No se declara completada TASK-636 ni PASS beta. La rama base protegida permanece intacta.
+
+
+## Revisión focalizada C1.332 — corrección del harness
+- Se detectó que el extractor de funciones y los separadores VM estaban codificados como secuencia literal \\n, por lo que los nuevos casos locales no eran ejecutables correctamente.
+- Se corrige mediante String.fromCharCode(10). No cambia el código de producción ni el dictamen funcional.
+- La ejecución CI posterior a publicación determinará PASS/FAIL; hasta entonces el test no se declara aprobado.

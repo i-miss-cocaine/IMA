@@ -402,3 +402,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se amplía el contrato local Node con parseo de Code.gs y pruebas de SHA-256/snapshot. CI pendiente de observación.
 - Siguiente tarea elegida: TASK-068, PM-01/P0, orden local 1, sin dependencias declaradas.
 - Sesión IMA-GOV-20261109-2201Z-01; checkpoint Parte_0003 C1.331; índice Auditoría/INDICE_CHECKPOINTS.md.
+
+
+[2026-11-09] C1.332 — corrección del harness local TASK-636; se reemplazan escapes literales por String.fromCharCode(10), sin cambios de producto. CI pendiente. Checkpoint Parte_0003 C1.332.
