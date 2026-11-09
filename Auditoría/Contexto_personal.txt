@@ -1837,3 +1837,55 @@ Ubicación exacta: Auditoría/Contexto_personal.txt — sección C1.291; rango c
 Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.291.
 Commit de cierre: este commit consolidado; SHA verificado externamente tras publicación.
 ===============================================================================
+
+
+===============================================================================
+## C1.292 — TASK-638 — Inventario JavaScript y dependencias de runtime (parcial)
+ID de sesión: IMA-EXEC-20261109-0430Z-01
+Fecha: 2026-11-09 UTC
+Estado: 24/24 archivos JS inspeccionados estáticamente; TASK-638 global continúa En ejecución.
+Checkpoint anterior: C1.291.
+Repositorio: i-miss-cocaine/IMA.
+Rama autorizada: NG_beta_0.0.0.1_work.
+HEAD de partida: 3694b763b78a1d400a4564dddcb6ebd3c0108ce9.
+Fase PM: PM-00 — inventario, triage y resolución de dependencias.
+Tarea: TASK-638 — Trazar dependencias estáticas y dinámicas de extremo a extremo.
+
+### Continuidad
+- Rama de trabajo verificada en 3694b763b78a1d400a4564dddcb6ebd3c0108ce9.
+- Rama base verificada en 44d9891132332e692dbe2ba8602b41f50a508a59.
+- No se reaudita TASK-637; prerrequisito cerrado en C1.288.
+- Contexto activo antes de anexar: 170.453 caracteres / 1.840 líneas. Después de C1.292 se mantiene bajo el límite de 180.000 caracteres; no requiere rotación.
+
+### Trabajo realizado
+- Inspeccionados los 24 archivos JS del tree: 21 scripts de aplicación, sw.js y dos suites de regresión.
+- No se detectaron import/export; los módulos se integran con globals y propiedades window.
+- Se trazaron las dependencias principales config → persistence → api → ui-common → index-ui, los controladores por departamento/rol, el adaptador de juegos, IndexedDB y el banco JSON de QuizPro.
+- AUD-NG-354 MEDIO/P2: sw.js:13 precarga css/styles.css inexistente mediante cache.addAll (línea 28); ui-common.js:19 registra el Service Worker.
+- AUD-NG-355 MEDIO/P2: health check pide timeout 6000 ms en api.js:209, pero fetchApi fija 60000 ms en api.js:36 y no consume options.timeout.
+- Se corrige la dirección documental: presentation-engine no depende de ui-common; ui-common consulta opcionalmente PresentationEngine en popstate. Sanitizador técnico definido en config.js.
+- SERVICE_URLS define seis servicios; llamadas frontend literales a cinco; DEVELOPER no tiene llamada literal detectada. ACCOUNTING/DEVELOPER siguen endpoints placeholder.
+- TASK-638 continúa En ejecución; falta el cruce exhaustivo de acciones con dispatchers, handlers, permisos y persistencia.
+
+### Archivos modificados
+1. Auditoría/AUDITORIA_TASK-638_C1.292.md (nuevo).
+2. Auditoría/MapaDependencias.md (inventario de 24 JS, grafo, corrección de dirección y hallazgos).
+3. Auditoria.txt (AUD-NG-354 y AUD-NG-355).
+4. tareas_auditoria.txt (ampliación TASK-674/TASK-678).
+5. Auditoría/Contexto_personal.txt (este checkpoint).
+6. Auditoría/INDICE_CHECKPOINTS.md (fila C1.292 y SHA C1.291).
+7. Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md (seguimiento C1.292).
+8. changueslogs.txt (entrada C1.292).
+
+### Pruebas y límites
+- Ejecutadas: verificación HEAD/rama; lectura estática de 24/24 JS; conteo de imports/exports; extracción de llamadas fetchApi; verificación de ASSETS del Service Worker contra el tree; comprobación de rutas del banco JSON; lectura de dependencias globales.
+- No ejecutadas: suites de regresión, Node, navegador, HTTP, Apps Script, Drive, Sheets ni E2E.
+- No se modificó código, configuración, endpoints ni contratos. No se acredita disponibilidad de servicios.
+
+### Siguiente acción exacta
+Inspeccionar 6 CSS, 6 GS y 27 JSON; después relacionar cada acción frontend con dispatcher, handler, permisos y persistencia. No cerrar TASK-638 antes de cerrar ese grafo.
+
+Ubicación exacta: Auditoría/Contexto_personal.txt — sección C1.292; rango calculado y registrado en Auditoría/INDICE_CHECKPOINTS.md.
+Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.292.
+Commit de cierre: este commit consolidado; SHA verificado externamente tras publicación.
+===============================================================================

@@ -114,3 +114,13 @@ El propósito de este documento es llevar el registro de las tareas derivadas de
 - **TASK-678:** documentar cobertura HTML/HTM 101/101 y los tres hallazgos de ruta AUD-NG-351/352/353 con SHA, línea, destino resuelto e impacto.
 - **Criterios de aceptación:** toda referencia local explícita tiene destino exacto o excepción contextual demostrada; rutas con diferencia de mayúsculas/minúsculas se reportan; los iconos PWA se verifican; las plantillas dinámicas no se clasifican como archivos estáticos sin resolver.
 - Sin nuevos IDs de tarea. TASK-638 continúa abierta hasta cerrar las capas JS/CSS/GS/JSON y contratos.
+
+
+===============================================================================
+## TASK-674 / TASK-678 — Ampliación por AUD-NG-354 y AUD-NG-355 / C1.292
+- **AUD-NG-354 MEDIO/P2:** `sw.js:13` incluye `./css/styles.css` en ASSETS; no existe; la ruta presente es `css/style.css`. `cache.addAll(ASSETS)` en instalación y el registro en `ui-common.js:19` hacen que la dependencia sea crítica para el Service Worker.
+- **AUD-NG-355 MEDIO/P2:** `checkMicroserviceHealth` pasa `timeout:6000` en `js/api.js:209`, pero `fetchApi` aborta fijo a 60.000 ms en línea 36 y no consume options.timeout.
+- **TASK-674:** extender análisis estático para validar lista ASSETS del Service Worker y todos los destinos cacheados.
+- **TASK-678:** integrar grafo de 24 JS, globals, servicios, persistencia, los dos hallazgos y la dirección correcta de PresentationEngine/ui-common.
+- **Criterios verificables:** todo asset de precarga existe y el install completa en prueba; los timeouts del llamador y transporte coinciden; el grafo identifica proveedor/consumidor y evidencia. No cerrar sin prueba runtime posterior.
+- No crear IDs duplicados; TASK-638 continúa En ejecución.

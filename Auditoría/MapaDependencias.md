@@ -4279,3 +4279,36 @@ La capa HTML/HTM queda revisada estáticamente al 100%; no equivale a la auditor
 
 ### Tareas derivadas
 Ampliar TASK-674 para validar rutas ausentes, extensiones/caso y contexto de fragmentos; ampliar TASK-678 para integrar cobertura 101/101 y AUD-NG-351/352/353. No crear IDs duplicados.
+
+
+---
+
+## C1.292 — TASK-638: inventario JavaScript y dependencias runtime
+
+**Cobertura:** 24/24 archivos JS del tree (21 scripts en js/, sw.js y dos suites tests/regression). Informe `Auditoría/AUDITORIA_TASK-638_C1.292.md`.
+
+### Integración global
+- No se detectaron declaraciones import/export. Los scripts clásicos exponen globals y propiedades window; el orden de carga y la existencia de globals son contratos implícitos.
+- Cadena común: config.js (SERVICE_URLS, SERVICE_REGISTRY, GLOBAL_SCOPE, sanitizarHTMLTecnico) → persistence.js (PersistenceManager/IndexedDB v4) → api.js (fetchApi) → ui-common.js (UI/sesión/historial/Service Worker) → index-ui.js (navegación/recursos/juegos).
+- Controladores: accounting.js (ACCOUNTING), secretary.js (ACADEMIC/USER), student.js (ACADEMIC/USER/ACCOUNTING/EXAM/TASK), teacher.js (ACADEMIC/ACCOUNTING/EXAM/TASK/USER), exam.js/results.js (EXAM y USER), auth.js/developer.js (USER), quizpro.js/games-adapter.js (USER).
+- Juegos periféricos, destreza y webmaster no llaman fetchApi directamente; consumen globals/DOM/almacenamiento local. QuizPro carga el banco JSON dinámicamente desde js/Banco_Preguntas según grado/asignatura/nivel; la estructura está presente en tree.
+
+### Service Worker
+- ui-common.js:19 registra ./sw.js.
+- sw.js:13 declara ./css/styles.css; tree solo contiene css/style.css.
+- sw.js:28 ejecuta cache.addAll(ASSETS), por lo que la referencia 404 impide completar la precarga/instalación.
+- **AUD-NG-354 MEDIO/P2:** ruta de caché CSS inexistente. Derivar TASK-674/TASK-678.
+
+### Contrato de timeout
+- api.js:209 checkMicroserviceHealth pasa {timeout:6000} a fetchApi.
+- api.js:36 fija abort a 60.000 ms; fetchApi no lee options.timeout.
+- **AUD-NG-355 MEDIO/P2:** timeout solicitado ignorado. Derivar TASK-678 y traza de contratos/monitoreo.
+
+### Corrección de mapa histórico
+La nota antigua que presenta presentation-engine.js como dependiente de ui-common.js para sanitización/seguridad no coincide con el fuente actual. presentation-engine implementa setupSecurity propio; ui-common consulta opcionalmente window.PresentationEngine.showSlide durante popstate. sanitizarHTMLTecnico está definido en config.js. Se registra la dirección correcta sin reescribir la historia previa.
+
+### Configuración de servicios
+SERVICE_URLS declara USER, ACADEMIC, TASK, EXAM, ACCOUNTING y DEVELOPER. Se identifican llamadas frontend literales a los primeros cinco; no se encontró llamada literal fetchApi dirigida a DEVELOPER. ACCOUNTING y DEVELOPER conservan endpoints placeholder, con ACCOUNTING ya relacionado a AUD-NG-323. No se acreditan deployments.
+
+### Tareas derivadas
+Ampliar TASK-674/TASK-678 con AUD-NG-354 y la matriz JS; ampliar TASK-678 con AUD-NG-355 y el contrato timeout. No crear IDs duplicados. La traza de acciones a dispatcher/handler/permisos/persistencia sigue pendiente.

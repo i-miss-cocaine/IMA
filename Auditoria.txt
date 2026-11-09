@@ -123,3 +123,14 @@ Sesión: IMA-EXEC-20261109-0420Z-01; HEAD de partida: 26aafb7cccc412d237c4cbd839
 - Rutas de fragmentos de juegos y variables interpoladas se clasifican según contexto; no se cuentan como fallos estáticos.
 - TASK-674/TASK-678 ampliadas; TASK-638 sigue En ejecución porque falta trazar JS/CSS/GS/JSON, endpoints y persistencia. Sin pruebas runtime.
 - Informe: Auditoría/AUDITORIA_TASK-638_C1.291.md; checkpoint C1.291, sesión IMA-EXEC-20261109-0420Z-01, ubicación Auditoría/Contexto_personal.txt — sección C1.291; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.291.
+
+
+===============================================================================
+## TASK-638 / C1.292 — Inventario JavaScript y hallazgos de dependencias
+Sesión: IMA-EXEC-20261109-0430Z-01; HEAD de partida: 3694b763b78a1d400a4564dddcb6ebd3c0108ce9.
+- Inspección estática de 24/24 archivos JS: 21 scripts de aplicación, sw.js y dos suites de regresión; sin import/export, integración por globals/window.
+- AUD-NG-354 MEDIO/P2: sw.js:13 referencia css/styles.css inexistente; cache.addAll se ejecuta en install (línea 28), registro desde ui-common.js:19.
+- AUD-NG-355 MEDIO/P2: checkMicroserviceHealth pasa timeout 6000 en api.js:209; fetchApi fija 60000 en api.js:36 y no lee options.timeout.
+- Se corrigió la dirección de dependencia de PresentationEngine en el mapa. Se verificó la estructura del banco JSON de QuizPro.
+- TASK-638 sigue En ejecución; falta inspección de CSS/GS/JSON y mapeo de acciones a dispatchers/handlers/permisos/persistencia. No pruebas runtime.
+- Informe: Auditoría/AUDITORIA_TASK-638_C1.292.md; checkpoint C1.292, ubicación Auditoría/Contexto_personal.txt — sección C1.292; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.292.

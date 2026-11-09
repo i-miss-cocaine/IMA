@@ -1776,3 +1776,10 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - **TASK-638:** cobertura estática HTML/HTM completada 101/101 (100 HTML y 1 HTM). La tarea global permanece En ejecución.
 - **Hallazgos:** AUD-NG-351 (css/custom.css ausente), AUD-NG-352 (extensión .png/.PNG) y AUD-NG-353 (IMA-Logo.png ausente). Ampliar TASK-674/TASK-678.
 - **Siguiente fase:** trazar los 24 JS, 6 CSS, 6 GS y 27 JSON; mapear globals, imports, eventos, API, dispatchers, handlers, permisos y persistencia. No cerrar TASK-638 con la sola cobertura HTML.
+
+
+## Seguimiento operativo — C1.292
+- **TASK-638:** 24/24 archivos JS inspeccionados estáticamente; integración basada en globals, PersistenceManager/IndexedDB y fetchApi central.
+- **Hallazgos:** AUD-NG-354 (Service Worker precarga css/styles.css inexistente) y AUD-NG-355 (timeout 6000 solicitado, 60000 aplicado). TASK-674/TASK-678 ampliadas.
+- **Corrección de mapa:** presentation-engine.js no depende directamente de ui-common; la referencia opcional observable va de ui-common a PresentationEngine en popstate.
+- **Siguiente paso:** inspeccionar 6 CSS, 6 GS y 27 JSON; después mapear acciones frontend a dispatchers, handlers, permisos y persistencia.

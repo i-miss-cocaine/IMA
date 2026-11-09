@@ -109,3 +109,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - TASK-674/TASK-678 ampliadas; no se crean IDs duplicados. TASK-638 sigue En ejecución; quedan capas JS/CSS/GS/JSON, recursos y contratos API.
 - Sin modificaciones de código/rutas ni pruebas runtime/E2E.
 - Checkpoint C1.291: Auditoría/Contexto_personal.txt, sección C1.291, líneas 1790–1840; índice Auditoría/INDICE_CHECKPOINTS.md, fila C1.291.
+
+
+[2026-11-09] IMA-EXEC-20261109-0430Z-01 — C1.292 / TASK-638 (PM-00)
+- Inventario estático 24/24 JS; no import/export, globals/window; se trazan fetchApi, PersistenceManager, banco JSON QuizPro y Service Worker.
+- AUD-NG-354: sw.js referencia css/styles.css inexistente en ASSETS; cache.addAll afecta instalación.
+- AUD-NG-355: api.js health check solicita 6000 ms, fetchApi aplica 60000 ms.
+- Se corrige la dirección histórica de PresentationEngine/ui-common en el mapa.
+- TASK-638 sigue En ejecución; pendientes CSS/GS/JSON y recorrido API → dispatcher → handler → permisos → persistencia. Sin pruebas runtime.
+- Checkpoint C1.292 en Auditoría/Contexto_personal.txt, sección C1.292, líneas 1842–1892; índice Auditoría/INDICE_CHECKPOINTS.md, fila C1.292.
