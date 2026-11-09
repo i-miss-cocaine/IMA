@@ -219,7 +219,7 @@ const tables={
  "Matriculas":[["MatriculaID","Fecha","UserId"],["MAT-1","2026-01-01","USR-1"]]
 };
 const ssFixture={getSheetByName:function(n){return tables[n]?{getDataRange:function(){return{getValues:function(){return tables[n].map(r=>r.slice());}};}}:null;}};
-const findContext={SPREADSHEET_ID:"LOCAL",requireIdentityManager_:function(){return true;},SpreadsheetApp:{openById:function(){return ssFixture;}},getOrCreateSheet:function(_ss,n){return ssFixture.getSheetByName(n);},normalizeString:function(x){return String(x||"").toLowerCase().trim();}};
+const findContext={SPREADSHEET_ID:"LOCAL",requireIdentityManager_:function(){return true;},SpreadsheetApp:{openById:function(){return ssFixture;}},getOrCreateSheet:function(_ss,n){return ssFixture.getSheetByName(n);},getSheetOrThrow:function(_ss,n){const sheet=ssFixture.getSheetByName(n);if(!sheet)throw new Error("missing sheet "+n);return sheet;},normalizeString:function(x){return String(x||"").toLowerCase().trim();}};
 const findNames=["identityDateKey_","identityClassifyCandidate_","identityReadOptionalRows_","findPersonMatches"];
 vm.runInNewContext(findNames.map(n=>extractBalancedFunction(user,n)).join(String.fromCharCode(10))+"this.find=findPersonMatches;",findContext);
 const relationSnapshot=JSON.stringify(tables.RelacionesFamiliares),enrollmentSnapshot=JSON.stringify(tables.Matriculas);
@@ -370,3 +370,15 @@ assert.equal(mappingWorkflowContext.resolve({sistemaOrigen:"LEGACY_A",tipoEntida
 const reverseWorkflow=mappingWorkflowContext.reverse({tipoEntidad:"persona",idNuevoPlataforma:"PER-1"});
 assert.equal(reverseWorkflow.referencias.length,2);
 assert.equal(mappingWorkflowContext.history({idMapeo:sourceA.idMapeo}).historial.length,2,"registration and human confirmation are auditable");
+
+
+// TASK-068 first-use schema initialization: identity mapping and decision sheets are created with canonical headers.
+function makeInitSheet(){const rows=[];return{rows,getLastRow:function(){return rows.length;},appendRow:function(row){rows.push(row.slice());},getRange:function(r,c,n,m){return{getValues:function(){return rows.slice(r-1,r-1+n).map(x=>x.slice(c-1,c-1+m));}};}};}
+const initializedSheets={};
+const initSS={getSheetByName:function(n){return initializedSheets[n]||null;},insertSheet:function(n){return initializedSheets[n]=makeInitSheet();}};
+const initContext={SPREADSHEET_ID:"LOCAL",SpreadsheetApp:{openById:function(){return initSS;}},IDENTITY_MAPPING_HEADERS_:headers,IDENTITY_DECISION_HEADERS_:mappingDecisionHeaders};
+const initFns=["validateIdentitySheetSchema_","ensureIdentityMappingSheet_","ensureIdentityDecisionSheet_"];
+vm.runInNewContext(initFns.map(n=>extractBalancedFunction(user,n)).join(String.fromCharCode(10))+"this.ensureMap=ensureIdentityMappingSheet_;this.ensureAudit=ensureIdentityDecisionSheet_;",initContext);
+assert.equal(initContext.ensureMap().rows[0].join("|"),headers.join("|"));
+assert.equal(initContext.ensureAudit().rows[0].join("|"),mappingDecisionHeaders.join("|"));
+assert.ok(user.includes('getSheetOrThrow(ss,"Personas")'),"candidate search must not create a missing Personas sheet");

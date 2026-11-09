@@ -2174,3 +2174,9 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - Fixtures locales ejecutan registerLegacyIdentifierMapping, resolveInternalIdFromLegacy, resolveLegacyIdFromInternal, reviewLegacyIdentifierMapping y getIdentityDecisionHistory.
 - Se prueba registro de dos fuentes al mismo ID canónico, reintento idempotente, conflicto de destino, bloqueo mientras está pendiente, confirmación humana y bitácora completa.
 - C1.359 CI run 42716679171: success. C1.360 CI pendiente.
+
+
+## 10.45 TASK-068 — C1.361: inicialización segura y búsqueda no mutante
+- Se corrige primer uso: ensureIdentityMappingSheet_ y ensureIdentityDecisionSheet_ crean hojas y agregan encabezados canónicos si están vacías; no alteran hojas con esquema incompatible.
+- findPersonMatches lee Personas con getSheetOrThrow y no crea recursos en una operación de búsqueda.
+- CI C1.360 run 42716865176: success. Pruebas locales nuevas de inicialización first-use; CI C1.361 pendiente.

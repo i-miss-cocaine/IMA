@@ -1694,11 +1694,17 @@ function getIdentityDecisionSheet_() {
 // Creación de hojas solo desde operaciones de escritura que ya poseen ScriptLock.
 function ensureIdentityMappingSheet_() {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  return validateIdentitySheetSchema_(getOrCreateSheet(ss, "CorrespondenciaIdentificadores"), IDENTITY_MAPPING_HEADERS_, "IDENTITY_SCHEMA_MISMATCH");
+  let sheet = ss.getSheetByName("CorrespondenciaIdentificadores");
+  if (!sheet) sheet = ss.insertSheet("CorrespondenciaIdentificadores");
+  if (sheet.getLastRow() === 0) sheet.appendRow(IDENTITY_MAPPING_HEADERS_);
+  return validateIdentitySheetSchema_(sheet, IDENTITY_MAPPING_HEADERS_, "IDENTITY_SCHEMA_MISMATCH");
 }
 function ensureIdentityDecisionSheet_() {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  return validateIdentitySheetSchema_(getOrCreateSheet(ss, "HistorialDecisionesIdentidad"), IDENTITY_DECISION_HEADERS_, "IDENTITY_AUDIT_SCHEMA_MISMATCH");
+  let sheet = ss.getSheetByName("HistorialDecisionesIdentidad");
+  if (!sheet) sheet = ss.insertSheet("HistorialDecisionesIdentidad");
+  if (sheet.getLastRow() === 0) sheet.appendRow(IDENTITY_DECISION_HEADERS_);
+  return validateIdentitySheetSchema_(sheet, IDENTITY_DECISION_HEADERS_, "IDENTITY_AUDIT_SCHEMA_MISMATCH");
 }
 const IDENTITY_TARGET_SCHEMAS_ = {
   persona: { sheet: "Personas", headers: ["PersonaID", "Nombres", "Apellidos", "Identificacion", "EmailContacto", "TelefonoContacto", "EstadoPersona", "FechaCreacion", "FechaActualizacion", "Observaciones"] },
@@ -1868,7 +1874,7 @@ function identityReadOptionalRows_(ss, sheetName) {
 function findPersonMatches(payload) {
   requireIdentityManager_(payload);
   const query=payload||{}, ss=SpreadsheetApp.openById(SPREADSHEET_ID);
-  const people=getOrCreateSheet(ss,"Personas").getDataRange().getValues().slice(1);
+  const people=getSheetOrThrow(ss,"Personas").getDataRange().getValues().slice(1);
   const expedientes=identityReadOptionalRows_(ss,"ExpedientesEstudiantes");
   const responsables=identityReadOptionalRows_(ss,"ResponsablesTutores");
   const relations=identityReadOptionalRows_(ss,"RelacionesFamiliares");

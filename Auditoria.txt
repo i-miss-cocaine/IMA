@@ -601,3 +601,8 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 ## C1.360 — TASK-068 flujo real de correspondencia
 - CI C1.359 run 42716679171: completed/success.
 - Se agrega prueba local de registro idempotente, conflicto, revisión humana, resolución bidireccional y consulta del historial con funciones reales. CI C1.360 pendiente.
+
+
+## C1.361 — TASK-068 primer uso de esquemas
+- CI C1.360 run 42716865176: completed/success.
+- Corregida inicialización de hojas de correspondencia/decisiones y lectura no mutante de Personas; fixtures locales agregados. CI C1.361 pendiente.

@@ -668,3 +668,17 @@ Checkpoint anterior: C1.359
 Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.360.
 Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.360.
 ===============================================================================
+
+
+===============================================================================
+## C1.361 — TASK-068: inicialización segura de esquemas en primer uso
+ID: C1.361
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.360
+- CI C1.360 run 42716865176: completed/success; registro idempotente, conflicto, confirmación humana, resolución bidireccional e historial pasaron.
+- Code Review detectó que ensureIdentityMappingSheet_ y ensureIdentityDecisionSheet_ usaban getOrCreateSheet sin agregar encabezados, por lo que el primer registro podía fallar si las hojas no existían. Ahora crean la hoja y escriben el esquema canónico solo cuando está vacía; esquemas incompatibles siguen fail-closed.
+- findPersonMatches deja de usar getOrCreateSheet para lectura de Personas; ahora exige la hoja existente con getSheetOrThrow y evita mutación accidental en búsqueda.
+- Se agregan pruebas locales de inicialización en primer uso y de lectura no mutante. CI C1.361 pendiente.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.361.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.361.
+===============================================================================

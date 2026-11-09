@@ -3,11 +3,11 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.360**
+- Último checkpoint: **C1.361**
 - Última sesión: `IMA-GOV-20261109-2201Z-01`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.360: **59423**
+- Caracteres del archivo activo tras C1.361: **60607**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 
@@ -166,3 +166,5 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.359 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | TASK-068 — UPDATE/compensación Date y dispatch local ACCOUNTING | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.359 | 658 | C1.358 | Este commit; SHA verificado tras publicación |
 
 | C1.360 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | TASK-068 — prueba real de registro, idempotencia, revisión, resolución e historial | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.360 | 671 | C1.359 | Este commit; SHA verificado tras publicación |
+
+| C1.361 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | TASK-068 — inicialización first-use de esquemas y búsqueda no mutante | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.361 | 685 | C1.360 | Este commit; SHA verificado tras publicación |
