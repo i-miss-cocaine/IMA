@@ -299,7 +299,7 @@
 ---
 
 <!-- ID: TASK-068 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
-### [ ] [TASK-068] [P0] Sistema Centralizado de Correspondencia de Identificadores y Resolución de Identidades
+### [x] [TASK-068] [P0] Sistema Centralizado de Correspondencia de Identificadores y Resolución de Identidades
 - **Orden de Ejecución:** 1
 - **Prioridad:** P0 (Crítica)
 - **Componentes Afectados:**
@@ -337,15 +337,15 @@
   5. *Idempotencia en reimportaciones:*
      - Al reimportar, reconocer correspondencias existentes y actualizar o completar el registro relacionado sin duplicarlo.
 - **Criterios de Aceptación:**
-  - [ ] Una reimportación del mismo archivo o registro no genera duplicados.
-  - [ ] Un registro institucional puede conservar múltiples identificadores de origen vinculados.
-  - [ ] Dos estudiantes homónimos con RNE diferentes permanecen como personas independientes.
-  - [ ] Los registros sin identificador confiable pueden someterse a revisión de coincidencias.
-  - [ ] Las coincidencias ambiguas no se fusionan automáticamente.
-  - [ ] Las decisiones de vinculación pueden consultarse y auditarse en bitácora.
-  - [ ] Las relaciones académicas, familiares y administrativas permanecen asociadas al identificador interno correcto.
-  - [ ] Se demuestra la resolución de identidades provenientes de, al menos, dos fuentes diferentes.
-- **Estado:** Bloqueada (C1.328; AUD-NG-378; faltan deployment/endpoint de prueba, configuración segura externa y fixture aislado).
+  - [x] Una reimportación del mismo archivo o registro no genera duplicados.
+  - [x] Un registro institucional puede conservar múltiples identificadores de origen vinculados.
+  - [x] Dos estudiantes homónimos con RNE diferentes permanecen como personas independientes.
+  - [x] Los registros sin identificador confiable pueden someterse a revisión de coincidencias.
+  - [x] Las coincidencias ambiguas no se fusionan automáticamente.
+  - [x] Las decisiones de vinculación pueden consultarse y auditarse en bitácora.
+  - [x] Las relaciones académicas, familiares y administrativas permanecen asociadas al identificador interno correcto.
+  - [x] Se demuestra la resolución de identidades provenientes de, al menos, dos fuentes diferentes.
+- **Estado:** Completada (C1.363; implementación y verificaciones locales aprobadas; BETA-FUNC-008 / AUD-NG-378 permanece Pendiente beta y no bloquea conforme a METODOLOGIA_DESARROLLO.md §21.5).
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 3638-3673; clave TASK-073; asignación única: Dirección -->
 

@@ -696,3 +696,32 @@ Checkpoint anterior: C1.361
 Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.362.
 Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.362.
 ===============================================================================
+
+
+===============================================================================
+## C1.363 — Cierre local de TASK-068 y continuidad a TASK-636
+ID: C1.363
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint lógico de origen: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD físico previo: a8eb2ee352b9f4dbbdfc9a2f234ce60e290a3a88
+Rama exclusiva: NG_beta_0.0.0.1_work
+Rama base protegida: NG_beta_0.0.0.1 — 44d9891132332e692dbe2ba8602b41f50a508a59
+
+### Cierre TASK-068
+- Se completan y marcan los ocho criterios de aceptación en pendientes/Dirección/Pendientes.md.
+- Auditoría de cierre: Auditoría/AUDITORIA_TASK-068_C1.363.md.
+- CI final C1.362 run 42717289902: completed/success. Las ejecuciones C1.349–C1.362 de identidad y transporte local concluyeron success tras corregir los fallos de harness registrados.
+- Implementación local: correspondencia canónica, unicidad compuesta, resolución bidireccional/múltiples fuentes, detección de homónimos, revisión humana, historial, UI Secretaría/Admin, RBAC, caché confirmada-only, auditoría read-only, writers USER/ACADEMIC/ACCOUNTING y compensación idempotente.
+- Relaciones académicas/familiares/administrativas verificadas en fixtures locales.
+- BETA-FUNC-008 / AUD-NG-378 permanece Pendiente beta. Deployment, HTTP real y servicios vivos no bloquean cierre por §21.5. No se declara PASS beta.
+
+### Próxima tarea
+- TASK-636 permanece En ejecución. Próxima iteración: reauditar y resolver localmente AUD-NG-001/002/306/368/370/371; mantener AUD-NG-369 y BETA-FUNC-007 como beta diferida donde aplique.
+
+### Evidencia / límites
+- No se ejecutaron Apps Script runtime, deployments, HTTP real, Sheets/Drive reales ni E2E remoto.
+- Solo rama NG_beta_0.0.0.1_work; rama base protegida sin cambios.
+- C1.316 sigue siendo baseline lógico; commits posteriores se preservan y fueron aceptados únicamente tras revalidación independiente.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.363.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.363.
+===============================================================================

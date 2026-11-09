@@ -476,3 +476,12 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - El backlog P0 de Otros no es legible por GitHub Contents API (0 caracteres); se conserva recuperación exacta por Git desde el HEAD y sus blob SHA en C1.328. No se selecciona tarea alternativa con requisitos incompletos.
 - No se crean IDs ni auditorías duplicadas; no hay cambios de código ni pruebas nuevas.
 ===============================================================================
+
+
+===============================================================================
+## C1.363 — Cierre TASK-068
+- Estado: Completada en implementación local; ocho criterios de aceptación verificados.
+- Evidencia: Auditoría/AUDITORIA_TASK-068_C1.363.md; CI final run 42717289902 completed/success.
+- AUD-NG-378/BETA-FUNC-008: Pendiente beta (deployment/HTTP/servicios vivos), no bloqueante por §21.5.
+- Próxima continuidad: TASK-636, auditoría local de AUD-NG-001/002/306/368/370/371.
+===============================================================================

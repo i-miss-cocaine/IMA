@@ -611,3 +611,9 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 ## C1.362 — TASK-068 cobertura relacional
 - CI C1.361 run 42717056863: completed/success.
 - Añadidas aserciones de preservación de adscripciones administrativas y lectura no mutante del escáner de correspondencias. CI C1.362 pendiente.
+
+
+## C1.363 — Cierre TASK-068
+- Ocho criterios de aceptación completados y documentados en Auditoría/AUDITORIA_TASK-068_C1.363.md.
+- CI final 42717289902: success. BETA-FUNC-008/AUD-NG-378 sigue Pendiente beta, no bloqueante por §21.5.
+- Próxima tarea: TASK-636, retomar auditoría local de AUD-NG-001/002/306/368/370/371.

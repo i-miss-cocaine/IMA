@@ -128,3 +128,7 @@ Cada tarea que tenga aceptación funcional dependiente de un servicio desplegado
 
 ### BETA-FUNC-008 — Correspondencia e importación interservicio idempotente (TASK-068 / AUD-NG-378, P0)
 Áreas ACCOUNTING/USER/ACADEMIC; Administrador/Secretaría. Precondición: TASK-068 implementada y deployments beta aislados, institución sintética, secreto HMAC configurado fuera de Git y dos fuentes de datos sintéticas. Pasos: importar ambas fuentes; validar firma, origen/destino, institución, actor, timestamp y replay; resolver correspondencias; repetir la importación; provocar conflicto y fallo parcial para verificar journal/compensación; comprobar relaciones y persistencia por servicio propietario. Esperado: solo envelopes autorizados, identidad consistente, importación idempotente, sin duplicados ni escrituras parciales, conflictos auditables y compensación verificable. Estado: Pendiente beta; no bloquea cierre de implementación por falta de deployment. Evidencia saneada sin secretos. Derivación: TASK-068.
+
+
+### Nota de cierre C1.363 — BETA-FUNC-008
+La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0.0.0.1_work). Este caso permanece Pendiente beta exclusivamente para certificar el transporte y la importación con servicios desplegados, dos fuentes sintéticas y entorno aislado. Su estado no bloquea el cierre de implementación conforme a METODOLOGIA_DESARROLLO.md §21.5.

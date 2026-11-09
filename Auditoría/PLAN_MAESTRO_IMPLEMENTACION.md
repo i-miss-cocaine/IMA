@@ -2186,3 +2186,9 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - Se agrega regresión explícita para preservar afiliaciones administrativas por UserId al vincular cuenta-Persona y se verifica que la auditoría de correspondencias no modifica registros.
 - Cobertura relacional local incluye matrícula/Usuario/Persona, relación familiar/Persona y adscripción/UserId.
 - C1.361 CI run 42717056863: success. C1.362 CI pendiente.
+
+
+## 10.47 Cierre TASK-068 — C1.363
+- TASK-068 se marca Completada tras cumplir los ocho criterios locales y CI C1.362 run 42717289902 success.
+- El transporte real con deployments y dos fuentes permanece en BETA-FUNC-008 / AUD-NG-378, Pendiente beta y no bloqueante por §21.5.
+- Próxima continuidad: TASK-636, reauditar y resolver AUD-NG-001/002/306/368/370/371 localmente; BETA-FUNC-007/AUD-NG-369 no bloquean por requerir entorno vivo.
