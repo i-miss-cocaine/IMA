@@ -15824,14 +15824,13 @@ function resolveTransportAccessScope_(payload, ss) {
         assignedRouteIds.push(routeId);
       }
     });
-    routeRows.forEach(function(route) {
+    const activeRouteIds = routeRows.filter(function(route) {
       const routeId = String(route[0] || "").trim();
       const routeState = String(route[6] || "").trim().toLowerCase();
-      if (routeId && String(route[3] || "").trim() === userId &&
-          ["activo", "activa", "active"].indexOf(routeState) !== -1 &&
-          assignedRouteIds.indexOf(routeId) !== -1) return;
-    });
-    return { authorized: true, management: false, role: role, userId: userId, studentIds: null, routeIds: assignedRouteIds };
+      return routeId && ["activo", "activa", "active"].indexOf(routeState) !== -1 &&
+        assignedRouteIds.indexOf(routeId) !== -1;
+    }).map(function(route) { return String(route[0]).trim(); });
+    return { authorized: true, management: false, role: role, userId: userId, studentIds: null, routeIds: activeRouteIds };
   }
 
   return { authorized: true, management: false, role: role, userId: userId, studentIds: [], routeIds: [] };
@@ -15871,13 +15870,13 @@ function getTransportRouteIdsForScope_(ss, scope) {
 
 function getTransportRoutes(payload) {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  getOrCreateTransportVehiclesCatalog(ss);
   const scope = resolveTransportAccessScope_(payload, ss);
   if (!scope.authorized) {
     transportAuditDenied_("getTransportRoutes", payload, scope, null);
     return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED", rutas: [] };
   }
 
+  if (scope.management) getOrCreateTransportVehiclesCatalog(ss);
   let rows = transportRows_(ss, "TransporteRutas");
   if (rows.length === 0 && scope.management) {
     const defaults = [
