@@ -4841,3 +4841,12 @@ Alcance estático satisfecho; sin cambios de código. Hallazgos AUD-NG-374..376 
 - handleTrackStatus usa getPublicAdmissionStatus con token y solo representa código interno, estado, grado/año y fecha; no representa PII ni estado financiero.
 - El endpoint getAdmissionDraft está protegido, pero no se encontró consumidor frontend; el formulario mantiene su recuperación local. No se afirma recuperación cloud UI.
 - Estado TASK-636 En ejecución; AUD-NG-357/AUD-NG-370 parcialmente abiertos; AUD-NG-369 abierto. Pruebas de navegador/runtime/HTTP/E2E no ejecutadas.
+
+
+## TASK-636 — C1.311: AUD-NG-369 y cierre académico fail-closed
+- Código histórico de Task-Service (commit 191ad227c481db62b759d544d8782e8f17c29f45; blob 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe): closeAcademicYear borraba globalmente Entregas y enviaba a papelera los activos Drive referenciados; Tareas/ConfiguracionAcademica se filtraban por profesorId cuando se suministraba y se borraban globalmente si faltaba. El backupId era sintético.
+- Código actual mantiene guard de claims Administrador/Desarrollador y BACKUP_REQUIRED. C1.311 detecta que ROLE_PERMISSIONS aún incluía Profesor y el botón js/teacher.js llamaba el cierre con profesorId; se retira el permiso y se deshabilita el botón.
+- Academic-Service createSystemBackup/verifyBackupIntegrity/restoreSystemBackup no satisface AUD-NG-369: checksum 32-bit con bypass Boolean(checksum), restore sin verificación previa/lock/rollback y clear de hojas completas. No reutilizar.
+- Alcance histórico confirmado: Tareas, Entregas, ConfiguracionAcademica, Log_Cierres y activos Drive referenciados por Entregas. No se observó cierre de Examenes/PreguntasExamen/EntregasExamen.
+- Cierre sigue fail-closed. Próximo: protocolo dedicado con manifiesto SHA-256, prevalidación, lock, rollback y restauración verificada de hojas y activos Drive; no ejecutar sobre producción.
+- Checkpoint C1.311: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.311; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.311.

@@ -1894,3 +1894,10 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - AUD-NG-357 permanece parcialmente abierto por registros históricos sin hash y pruebas dinámicas; AUD-NG-370 por metadatos históricos y runtime; AUD-NG-369 por backup/restore aislado.
 - No se ejecutaron Apps Script runtime, navegador, HTTP, Sheets/Drive ni E2E.
 - Checkpoint C1.310: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.310; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.310.
+
+
+## 10.9 Seguimiento de ejecución del Plan Maestro — C1.311
+- TASK-636 permanece En ejecución / PM-01 / P0. C1.311 retira closeAcademicYear de los permisos de Profesor y deshabilita el botón docente; el endpoint conserva BACKUP_REQUIRED y el guard administrativo.
+- AUD-NG-369 sigue abierto. El backup genérico ACADEMIC no es evidencia válida de restauración; se requiere protocolo específico de Task-Service para Tareas, Entregas, ConfiguracionAcademica y activos Drive, con SHA-256 estricto, prevalidación, lock, rollback y verificación post-restore.
+- No se habilita el cierre ni se declara prueba funcional. Apps Script runtime, Sheets/Drive reales y restauración aislada siguen pendientes.
+- Checkpoint C1.311: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.311; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.311.

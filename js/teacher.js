@@ -2906,27 +2906,13 @@ window.triggerRestoreSystemBackup = async function(fileId, fileName) {
 
     const btnCloseYear = document.getElementById('btn-close-year');
     if (btnCloseYear) {
-        btnCloseYear.onclick = async () => {
-            const format = document.getElementById('backup-format').value;
-            if (confirm(`¡ATENCIÓN! Vas a finalizar el año escolar.\n\nSe eliminarán tareas y entregas.\nSe archivará respaldo en formato ${format}.\n\n¿Deseas continuar?`)) {
-                btnCloseYear.disabled = true;
-                btnCloseYear.textContent = 'Procesando...';
-                try {
-                    const res = await fetchApi('TASK', 'closeAcademicYear', { profesorId: currentUser.userId, format });
-                    if (res.status === 'success') {
-                        alert(res.message);
-                        window.location.reload();
-                    } else {
-                        alert('Error: ' + res.message);
-                    }
-                } catch (e) {
-                    alert('Error de conexión.');
-                } finally {
-                    btnCloseYear.disabled = false;
-                    btnCloseYear.textContent = 'Ejecutar Cierre';
-                }
-            }
-        };
+        // Cierre global deshabilitado hasta implementar y verificar backup/restore real.
+        // No enviar profesorId: el cierre requiere autorización administrativa y no tiene aún
+        // un procedimiento restaurable validado.
+        btnCloseYear.disabled = true;
+        btnCloseYear.setAttribute('aria-disabled', 'true');
+        btnCloseYear.title = 'Cierre temporalmente bloqueado: respaldo y restauración verificables pendientes.';
+        btnCloseYear.textContent = 'Cierre temporalmente bloqueado';
     }
     navReportsOld.addEventListener('click', () => {
         window.navigateTo(sectionReportes, navReportsOld);

@@ -3245,6 +3245,7 @@
 - **Seguimiento C1.309:** se corrige el borrado de archivos vinculados a Entregas/EntregasVersiones y se protegen excepciones públicas ACADEMIC con capacidades opacas. AUD-NG-357 y AUD-NG-370 permanecen parcialmente abiertos por migración histórica y pruebas dinámicas.
 - **Estado operativo consolidado:** En ejecución; no marcar [X] hasta completar backup/restore, migración y verificaciones internas exigibles.
 - **Seguimiento C1.310:** el formulario público de admisión persiste y reutiliza draftAccessToken, adjunta la capacidad al envío final, muestra/copia el token de seguimiento y consulta solo datos mínimos; se elimina la dependencia de email/DNI/ID secuencial como credencial.
+- **Seguimiento C1.311:** se retira closeAcademicYear de Profesor y se deshabilita el botón docente; el endpoint sigue BACKUP_REQUIRED. El backup genérico ACADEMIC no es restaurable de forma demostrada; sigue pendiente protocolo dedicado y prueba aislada de hojas/activos Drive.
 
 ===============================================================================
 

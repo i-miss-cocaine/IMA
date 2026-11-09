@@ -135,3 +135,12 @@ Endurecer las excepciones públicas de backend/academic-service/Code.gs mediante
 - handleTrackStatus consulta mediante window.getPublicAdmissionStatus(token) y muestra solo código interno, estado, grado/año y fecha; se eliminan nombres, responsable, canal y observaciones de la respuesta pública.
 - El panel de seguimiento público no invoca el endpoint financiero. Las solicitudes autenticadas de tutores mantienen su panel financiero existente.
 - Estado: TASK-636 continúa En ejecución. No se ejecutaron navegador, Apps Script runtime ni pruebas E2E; verificación estática de contrato y referencias únicamente.
+
+
+## Revisión focalizada C1.311 — AUD-NG-369 / cierre académico
+- El cierre histórico borraba globalmente Entregas/recursos Drive; Tareas y ConfiguracionAcademica se filtraban por profesorId cuando se suministraba. backupId era sintético, sin respaldo real.
+- El código actual permanece fail-closed con BACKUP_REQUIRED. C1.311 retira closeAcademicYear de ROLE_PERMISSIONS.Profesor y deshabilita el botón de js/teacher.js; el endpoint conserva guard Administrador/Desarrollador.
+- El backup genérico ACADEMIC no satisface AUD-NG-369: hash 32-bit, bypass de checksum no vacío, restore sin verificación previa/lock/rollback y limpieza de hojas completas. No se reutiliza.
+- Próximo: protocolo dedicado, aislado y restaurable para Tareas, Entregas, ConfiguracionAcademica y activos Drive. Mantener BACKUP_REQUIRED hasta prueba real de restauración/rollback.
+- Verificación estática únicamente; runtime Apps Script, Sheets/Drive reales, navegador, HTTP, E2E y pruebas por rol no ejecutados. AUD-NG-369 abierto; TASK-636 En ejecución.
+- Checkpoint C1.311: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.311; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.311.

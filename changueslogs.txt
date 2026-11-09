@@ -271,3 +271,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Verificación estática únicamente; sin navegador, runtime Apps Script, HTTP, Sheets/Drive ni E2E.
 - Checkpoint C1.310: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.310; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.310.
 - Rama NG_beta_0.0.0.1_work; HEAD de partida 2336d184f88246ea3801362da57fdfd55684d1b6; commit único de cierre, SHA verificado externamente.
+
+
+[2026-11-09] IMA-EXEC-20261109-1605Z-01 — TASK-636 / PM-01 / C1.311
+- Se retira closeAcademicYear de ROLE_PERMISSIONS.Profesor y se deshabilita el botón docente; el endpoint permanece limitado a claims Administrador/Desarrollador y fail-closed con BACKUP_REQUIRED.
+- Código histórico confirma borrado global de Entregas/recursos Drive y filtrado por profesorId para Tareas/ConfiguracionAcademica; backupId era sintético. El backup genérico ACADEMIC no cumple integridad/restauración/rollback.
+- No se habilita cierre destructivo. AUD-NG-369 abierto; TASK-636 En ejecución. Verificaciones estáticas; runtime/restauración real pendientes.
+- Checkpoint C1.311: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.311; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.311.

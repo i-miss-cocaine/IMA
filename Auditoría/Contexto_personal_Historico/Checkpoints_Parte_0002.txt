@@ -976,3 +976,59 @@ Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002
 Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.310.
 Commit de cierre: el commit único que contiene este checkpoint; SHA verificado externamente tras publicación.
 ===============================================================================
+
+===============================================================================
+## C1.311 — TASK-636 / PM-01 — bloqueo coherente del cierre y auditoría backup/restore
+ID: C1.311
+Sesión: IMA-EXEC-20261109-1605Z-01 (cerrada al publicar este checkpoint)
+Checkpoint anterior: C1.310
+Repositorio: i-miss-cocaine/IMA
+Rama autorizada: NG_beta_0.0.0.1_work
+HEAD de partida: 831b9d6159d6aa4b5f190d0e4e3c1ad033fb67ef
+Tree SHA de partida: 280398fac34747b87336257ac0f0d3dc3df3e460
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+Tarea: TASK-636 — Cerrar bypasses de autorización y proteger tareas, proyectos y archivos
+Fase PM: PM-01 — Identidad, seguridad y gobierno de acceso
+Prioridad: P0
+Requisito original: pendientes/Otros/Pendientes.md, bloque TASK-636; blob del HEAD 831b9d6159d6aa4b5f190d0e4e3c1ad033fb67ef: 8ffa5fc6faebbdd150b18e008085bdbd516bf47c; bloque íntegro recuperado y leído.
+
+### Continuidad y auditoría
+- C1.310 es HEAD y su padre directo es C1.309; comparación: 1 commit, 10 archivos, sin divergencia.
+- Rama base intacta: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- TASK-636 sigue En ejecución. Se reutiliza Auditoría/AUDITORIA_TASK-636_C1.305.md; no se crea informe duplicado.
+
+### Auditoría focalizada AUD-NG-369
+- Código histórico en commit 191ad227c481db62b759d544d8782e8f17c29f45, blob 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe: closeAcademicYear borraba globalmente Entregas y enviaba a papelera sus recursos Drive; Tareas y ConfiguracionAcademica se filtraban por profesorId si se suministraba, o se borraban globalmente si faltaba. backupId era solo BACKUP-timestamp, sin respaldo ni restauración.
+- Código actual conserva guard de claims Administrador/Desarrollador y BACKUP_REQUIRED; no elimina datos.
+- Se detectó que ROLE_PERMISSIONS aún incluía closeAcademicYear para Profesor y js/teacher.js mantenía botón activo que enviaba profesorId/format. El endpoint lo rechazaba, pero la UI/allowlist no reflejaba el cierre administrativo y fail-closed.
+- Academic-Service backup genérico no satisface AUD-NG-369: hash 32-bit; verifyBackupIntegrity acepta cualquier checksum no vacío; restoreSystemBackup no exige verificación previa, lock ni rollback y limpia hojas completas. No reutilizar.
+- Alcance histórico observado: Tareas, Entregas, ConfiguracionAcademica, Log_Cierres y recursos Drive referenciados por Entregas. No se observó integración de Examenes/PreguntasExamen/EntregasExamen.
+
+### Correcciones C1.311
+1. backend/task-service/Code.gs: retirar closeAcademicYear de ROLE_PERMISSIONS.Profesor; permisos administrativos sujetos al guard de claims.
+2. js/teacher.js: deshabilitar botón docente, añadir aria-disabled y explicación; eliminar llamada frontend con profesorId/format.
+3. closeAcademicYear permanece fail-closed con BACKUP_REQUIRED. No se habilita ninguna eliminación.
+
+### Verificaciones y límites
+- Estáticas: permiso docente retirado; guard Administrador/Desarrollador y BACKUP_REQUIRED conservados; botón disabled/aria-disabled y sin llamada fetchApi al cierre; diff focalizado no toca datos/Drive.
+- No ejecutadas: Apps Script runtime/parser, Sheets/Drive reales, backup, restauración aislada, rollback, HTTP, navegador, E2E ni pruebas por rol.
+- No declarar PASS funcional. AUD-NG-369 sigue abierto.
+
+### Diseño requerido antes de habilitar
+- Protocolo dedicado Task-Service; no reutilizar restoreSystemBackup ACADEMIC.
+- Respaldo consistente de Tareas, Entregas, ConfiguracionAcademica y referencias/activos Drive, con manifiesto de alcance, actor verificado, esquema, conteos y SHA-256 estricto.
+- Prevalidación completa, LockService, compensación/rollback y verificación post-restauración de datos, relaciones y activos Drive/IDs/permisos.
+- Restauración aislada, repetible y con evidencia antes/después. Backup parcial, hash inválido, referencias rotas o rollback incompleto deben bloquear.
+- closeAcademicYear seguirá BACKUP_REQUIRED hasta prueba real de restauración en entorno Apps Script/Sheets/Drive aislado. No pruebas destructivas en producción.
+
+### Estado y siguiente acción
+- No se crea ID nuevo: AUD-NG-369 permanece dentro de TASK-636; AUD-NG-357/AUD-NG-370 conservan sus pendientes.
+- TASK-636 En ejecución; no marcar Completada.
+- Siguiente acción exacta: implementar backup/restore dedicado en backend/task-service/Code.gs para Tareas, Entregas, ConfiguracionAcademica y activos Drive; preparar pruebas aisladas y mantener BACKUP_REQUIRED hasta restauración verificada.
+- Código modificado: backend/task-service/Code.gs; js/teacher.js.
+- Seguimiento modificado: Auditoría/AUDITORIA_TASK-636_C1.305.md; Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt; Auditoría/INDICE_CHECKPOINTS.md; Auditoría/MapaDependencias.md; Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; Auditoria.txt; tareas_auditoria.txt; changueslogs.txt; pendientes/Otros/Pendientes.md.
+
+Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.311.
+Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.311.
+Commit de cierre: el commit único que contiene este checkpoint; SHA verificado externamente.
+===============================================================================

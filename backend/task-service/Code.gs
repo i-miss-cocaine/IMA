@@ -69,7 +69,7 @@ const ROLE_PERMISSIONS = {
     "getSubmissionDocumentPreviewUrl"],
   "Profesor": [
     "createTask", "updateTask", "deleteTask", "uploadFile", "gradeSubmission", "gradeSubmissionWithRubric", "deleteSubmission",
-    "getStudentTasks", "getAllTasks", "getTeacherActivity", "closeAcademicYear",
+    "getStudentTasks", "getAllTasks", "getTeacherActivity",
     "getVirtualClassrooms", "createVirtualClassroom", "getPosts", "createPost", "updatePost", "deletePost",
     "getStudyMaterials", "createStudyMaterial", "deleteStudyMaterial", "returnSubmissionForRevision",
     "getSubmissionComments", "addSubmissionComment", "getSubmissionVersions"

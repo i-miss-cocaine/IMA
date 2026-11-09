@@ -347,3 +347,11 @@ Sesión: IMA-EXEC-20261109-1108Z-01; HEAD de partida: 32b8f5884dd24dbeaf1a3bf028
 - El panel público no consulta estado financiero. No se crea nuevo ID: continúa AUD-NG-357/TASK-636.
 - Verificación estática; no se ejecutaron navegador, Apps Script, HTTP ni E2E.
 - Checkpoint C1.310: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.310; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.310.
+
+
+## Seguimiento C1.311 — AUD-NG-369 / cierre académico
+- Se retira closeAcademicYear de ROLE_PERMISSIONS.Profesor y se deshabilita el botón docente que enviaba profesorId; el endpoint solo admite claims Administrador/Desarrollador y sigue BACKUP_REQUIRED.
+- El cierre histórico borraba globalmente Entregas/recursos Drive y filtraba Tareas/ConfiguracionAcademica por profesorId; backupId era solo timestamp, sin respaldo real.
+- El backup genérico ACADEMIC no es restaurable de forma demostrada: hash 32-bit, bypass de checksum no vacío, restore sin lock/rollback y clear de hojas completas. No reutilizar.
+- Próximo: protocolo dedicado de backup/restore y verificación aislada de hojas y activos Drive. Verificaciones estáticas únicamente; runtime/Sheets/Drive/HTTP/navegador/E2E/roles pendientes.
+- Checkpoint C1.311; sesión IMA-EXEC-20261109-1605Z-01; ubicación Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.311; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.311.
