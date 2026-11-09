@@ -1,0 +1,1 @@
+El propósito de este documento es llevar el registro de las tareas derivadas de los hallazgos identificados durante la auditoría pre implementación.

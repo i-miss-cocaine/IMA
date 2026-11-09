@@ -1,0 +1,1 @@
+El propósito de este documento es registrar todos los hallazgos encontrados durante la etapa de auditoría pre implementación del repositorio.

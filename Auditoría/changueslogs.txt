@@ -1,0 +1,3 @@
+REGISTRO DE CAMBIOS DEL NUEVO PLAN DE IMPLEMENTACIÓN
+
+Este archivo es el registro oficial de cambios del nuevo plan de implementación. Es un documento permanente: no debe borrarse, editarse ni sobrescribirse ninguna entrada ya registrada. Cada nueva entrada debe agregarse exclusivamente al final del documento, conservando íntegro el historial anterior.
