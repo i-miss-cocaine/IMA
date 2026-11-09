@@ -1804,3 +1804,11 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - **TASK-637:** Completada. AUD-NG-362 cerrado tras reconciliar el inventario con el tree final: 1.021 blobs/rutas únicas; cero omisiones, duplicados, obsoletos o metadatos desactualizados; SELF con tamaño exacto y SHA externo; `index.html` intacto. Informe: `Auditoría/AUDITORIA_TASK-637_C1.295.md`.
 - **TASK-638:** congelada durante commit A. Tras verificar su HEAD/árbol, reanudar la auditoría preimplementación desde `pendientes/Contabilidad/Pendientes.md` y el punto pendiente C1.293 del MapaDependencias; no implementar hasta cerrar auditoría y dependencias.
 - Checkpoint: C1.295, sesión IMA-AUDIT-20261109-1152Z, `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt`; índice fila C1.295.
+
+
+## Seguimiento operativo — C1.296 / TASK-638
+- **TASK-637:** Completada y verificada en commit A `0edce6ae2721b1d839ef259dad7ea77962fe8ab3`; inventario integral reconciliado.
+- **TASK-638:** En ejecución; auditoría parcial C1.296. La cobertura HTML/HTM, JS, CSS, GS y JSON previa se conserva, pero resta la matriz individual handler → autorización → persistencia y la verificación de deployments.
+- **AUD-NG-363:** nuevo hallazgo MEDIO/P2 por cobertura de callsites incompleta; amplía TASK-678 existente sin ID duplicado.
+- **Siguiente acción:** completar matriz por cada uno de los al menos 287 callsites identificados, revisar helpers/hojas/Drive y contratos, verificar despliegues con evidencia autorizada; no implementar código durante la auditoría.
+- Checkpoint C1.296, sesión `IMA-AUDIT-20261109-1152Z`, `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt`; índice fila C1.296.

@@ -207,3 +207,17 @@ El propósito de este documento es llevar el registro de las tareas derivadas de
 - `index.html` conserva SHA `cd742047cdc4948259dd721119429b04f78330ca`.
 - Autoauditoría y Code Review documental: aprobados. No se ejecutaron pruebas runtime/beta.
 - TASK-638: congelada hasta verificación del commit A; siguiente acción, auditoría preimplementación completa según metodología 19.3.
+
+
+## TASK-678 — Ampliación por AUD-NG-363 / C1.296 (mismo ID)
+- **Estado:** En ejecución; ampliar el alcance de la matriz existente, sin crear ID duplicado.
+- **Origen:** `Auditoría/AUDITORIA_TASK-638_C1.296.md`, AUD-NG-363.
+- **Requisito original:** `pendientes/Contabilidad/Pendientes.md`, TASK-638; relación con TASK-678 derivada de AUD-NG-350.
+- **Evidencia:** C1.293 reportó 211 llamadas; reauditoría actual: 262 callsites JS en 24 archivos (21 bajo js/ y 3 auxiliares sin llamadas) y 25 llamadas inline en `dashboard-recursos-humanos.html` (al menos 287).
+- **Objetivo:** matriz integral de consumidores API y dependencias por archivo, con servicio/acción/caller, dispatcher, handler, autorización/contexto, helpers, hoja/archivo/Drive, mutación, contrato de respuesta y estado de verificación.
+- **Acción:** reconciliar todos los callsites; distinguir wrapper declarado de caller real; documentar 4 wrappers sin dispatcher y 6 dispatchers sin handler; ampliar la traza USER→TASK y endpoints placeholder.
+- **Archivos:** `Auditoría/MapaDependencias.md`, informe TASK-638, `tareas_auditoria.txt`; referencias a Code.gs y JS por SHA.
+- **Dependencias:** TASK-637 Completada; mantener referencias a AUD-NG-002/082/083/084/174/323/350/358/359/356..361 y TASK-685..690 sin duplicarlas.
+- **Alcance/exclusiones:** auditoría y documentación; no cambiar rutas, endpoints, contratos, código ni datos durante TASK-638.
+- **Criterios:** todos los callsites identificados con caller exacto; cobertura por servicio/acción; dispatcher/handler existente o ausencia explícita; permiso público/claims/contexto; persistencia/Drive y helpers; distinción caller real/wrapper huérfano; despliegue no marcado como verificado sin evidencia.
+- **Estado/evidencia de cierre:** abierto; matriz parcial C1.296, no acredita cierre de TASK-638.

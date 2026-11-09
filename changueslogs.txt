@@ -147,3 +147,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Inventario regenerado y reconciliado a 1.021/1.021 rutas únicas; cero omisiones/obsoletos/duplicados/desajustes; `index.html` intacto.
 - TASK-637 Completada tras autoauditoría y Code Review documental. TASK-638 congelada hasta verificación del commit A.
 - Informe `Auditoría/AUDITORIA_TASK-637_C1.295.md`; checkpoint C1.295, `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt`; índice fila C1.295.
+
+
+[2026-11-09] IMA-AUDIT-20261109-1152Z — C1.296 / TASK-638 continuación de auditoría
+- HEAD de partida B 0edce6ae2721b1d839ef259dad7ea77962fe8ab3; commit A C1.295 verificado 0edce6ae2721b1d839ef259dad7ea77962fe8ab3; base 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Revisión estática: 262 callsites en 24 JS (21 bajo js/ y 3 auxiliares sin llamadas) y 25 llamadas inline en dashboard-recursos-humanos.html; al menos 287.
+- Se verifican 6 dispatchers/handlers ausentes, 4 wrappers sin dispatcher, PUBLIC_ACTIONS, rutas y persistencia; hallazgos existentes AUD-NG-356..361 y AUD-NG-002/082..086/174/323 conservados.
+- AUD-NG-363 MEDIO/P2; TASK-678 ampliada sin duplicar ID. TASK-638 continúa En ejecución; no se modificó código.
+- Informe `Auditoría/AUDITORIA_TASK-638_C1.296.md`; checkpoint C1.296, `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt`; índice fila C1.296.

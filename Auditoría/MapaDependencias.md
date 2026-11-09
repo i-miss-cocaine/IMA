@@ -4346,3 +4346,58 @@ Ampliar TASK-674/TASK-678 con AUD-NG-354 y la matriz JS; ampliar TASK-678 con AU
 - AUD-NG-356..361 y tareas TASK-685..TASK-690 se documentan en el informe C1.293 y tareas_auditoria.txt.
 - Ampliar AUD-NG-002, AUD-NG-082 y AUD-NG-084 existentes; no duplicar sus IDs.
 - TASK-638 continúa En ejecución: falta el análisis exhaustivo de handlers, autorización contextual y persistencia por acción, además de verificar deployments reales. No se ejecutaron pruebas runtime/E2E.
+
+ 
+===============================================================================
+## C1.296 — TASK-638: contratos frontend/backend, autorización y persistencia (continuación)
+**HEAD auditado:** `0edce6ae2721b1d839ef259dad7ea77962fe8ab3`; rama `NG_beta_0.0.0.1_work`; tree de partida recursivo. **TASK-637:** Completada y verificada en commit A `0edce6ae2721b1d839ef259dad7ea77962fe8ab3`. **TASK-638:** En ejecución; no cerrar todavía.
+
+### 1. Universo frontend y reconciliación de cobertura
+- 24 archivos JavaScript del repositorio revisados (21 bajo js/, más sw.js y dos suites de regresión; estos tres adicionales no contienen llamadas fetchApi); **262 llamadas literales** a `fetchApi(service, action, ...)`.
+- Distribución JS: USER 70; ACADEMIC 120; TASK 23; EXAM 19; ACCOUNTING 30; DEVELOPER 0.
+- Además, `dashboard-recursos-humanos.html` (SHA `406bedbae5a5bb3b5c03e4ea7aaa95ed68aea8ee`) contiene **25 llamadas inline** a ACCOUNTING. Cobertura identificada: al menos **287 callsites** (262 JS + 25 HTML).
+- La cifra de 211 consignada en C1.293 no representa el universo completo; la diferencia frente al conjunto aquí identificado es 76 callsites. C1.293 no explicitó el denominador ni incorporó todos los consumidores auxiliares/inline.
+- Consumidores omitidos en el subtotal anterior: `js/api.js` (9 wrappers), `js/config.js` (2), `js/index-ui.js` (1), `js/ui-common.js` (19) y el panel HTML de Recursos Humanos (25). Se conserva la evidencia previa y se corrige aditivamente.
+
+### 2. Servicios, dispatchers y controladores
+| Servicio | Code.gs SHA | Casos doPost | PUBLIC_ACTIONS | Referencias a handler inexistente | Hojas literales | openById | DriveApp |
+|---|---|---:|---:|---:|---:|---:|---:|
+| USER | `12079dd410aa6d8afbce55a4bc62a79dea605f9f` | 182 | 9 | 4 | 20 | 160 | 6 |
+| ACADEMIC | `df87a2eea9f0ef79d0b966d03fd5bbe432003df5` | 241 | 6 | 1 | 25 | 221 | 13 |
+| TASK | `1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe` | 44 | 9 | 1 | 5 | 38 | 25 |
+| EXAM | `1d93296628fae31f680004f637897e2b1314a64c` | 38 | 4 | 0 | 3 | 42 | 0 |
+| ACCOUNTING | `38b979d41596b85e888b4a7060b37bbac0840a28` | 240 | 3 | 0 | 10 | 225 | 6 |
+| DEVELOPER | `8aa4bac67cfe5c8c54da51a0784a56fef633e412` | 39 | 0 | 0 | 3 | 10 | 0 |
+
+Las llamadas de escritura literales (appendRow/setValues/setValue) por servicio son: USER 134/19/97; ACADEMIC 178/20/203; TASK 20/6/15; EXAM 33/7/16; ACCOUNTING 184/45/314; DEVELOPER 4/0/1. Son conteos estáticos de ocurrencias, no pruebas de transacciones exitosas ni conteos de hojas completas.
+
+### 3. Autorización y exposición pública
+- USER, ACADEMIC, TASK, EXAM y ACCOUNTING ejecutan `validateRolePermission` antes del switch; el bypass de `PUBLIC_ACTIONS` retorna autorizado sin claims/contexto.
+- USER publica 9 acciones; ACADEMIC 6; TASK 9; EXAM 4; ACCOUNTING 3.
+- ACADEMIC incluye `saveAdmissionDraft` y `getAdmissionDraft` como públicas; ambas usan `BorradoresAdmision` y una clave basada en draftKey/email, sin vincular la operación a identidad verificada: AUD-NG-357.
+- TASK publica `getStudentTasks`, `loadProject`, `getAllStudentProjects`, entre otras. `getStudentTasks` usa userId del payload cuando no hay claims; `loadProject` tiene fallback a DriveApp.getFileById sin validar propietario: ampliar AUD-NG-002.
+- EXAM publica `getStudentExams` y `getAllExams`; `getStudentExams` lee `Examenes` y `EntregasExamen`, usando userId del payload si no hay claims y devolviendo calificación/comentario: AUD-NG-356.
+- USER mantiene como públicas acciones de registro/login/recuperación, ping, noticias/anuncios y paleta; las rutas sensibles de recuperación se relacionan con AUD-NG-361.
+- DEVELOPER no tiene PUBLIC_ACTIONS, pero `doPost` acepta `payload.authRole` cuando falta token; el rol Desarrollador dispone de wildcard. El helper de HMAC no corrige esta ruta de confianza: AUD-NG-082/083/084/086.
+
+### 4. Dispatchers y handlers incompletos
+- USER: `purgeSecurityCaches`, `dispatchSecurityEvent`, `processSecurityEventQueue`, `getSecurityEventsQueue` están en el switch, sin función declarada.
+- ACADEMIC: `generateInstitutionalReport` está en el switch, sin función declarada.
+- TASK: `generateAcademicArchiveZip` está en el switch, sin función declarada.
+- USER `manageAccountState` escribe el estado en `Usuarios` y registra el cambio antes de llamar `dispatchSecurityEvent`; el error posterior puede producir persistencia con respuesta de error. AUD-NG-359/TASK-688.
+- En `js/api.js` se declaran cuatro wrappers sin dispatcher: USER `getBackupsList`, `restoreSpreadsheetBackup`, `runSystemMaintenance`; ACADEMIC `exportSchoolYearArchive`. En `js/developer.js` se localizaron llamadas a `getBackupsList` y `exportSchoolYearArchive`; no se localizaron callers para los otros dos wrappers en `developer.js` ni en `developer-dashboard.html`. Mantener AUD-NG-358/TASK-687 y ajustar el alcance a caller real frente a wrapper huérfano.
+
+### 5. Enrutamiento y persistencia interservicio
+- USER `delegateToTaskService` (Code.gs:7946) envía JSON plano mediante UrlFetchApp a TASK_SERVICE_URL; no utiliza `createInterServiceEnvelope`. Ante excepción devuelve `status: success` con una sessionKey local, aunque la operación delegada no haya ocurrido. TASK no contiene `verifyInterServiceEnvelope`. Ampliar AUD-NG-083/AUD-NG-174; no crear ID duplicado.
+- `createInterServiceEnvelope`/`verifyInterServiceEnvelope` existen en USER pero no se consumen en la ruta de delegación auditada.
+- USER, ACADEMIC, TASK, EXAM y ACCOUNTING comparten el mismo literal SPREADSHEET_ID. DEVELOPER conserva `1DEVELOPER-CONTROL-PLANE-SPREADSHEET-ID`, marcador no sustituido. El aislamiento por servicio no se acredita por los nombres separados de los proyectos; el control de concurrencia Apps Script tampoco coordina deployments distintos.
+- `js/config.js`: USER/ACADEMIC/TASK/EXAM tienen URLs con forma de deployment; ACCOUNTING y DEVELOPER mantienen placeholders. ACCOUNTING acumula 55 llamadas identificadas (30 JS + 25 HTML); DEVELOPER no tiene llamadas fetchApi literales en los 21 JS revisados. No se verificaron deployments, Script Properties ni permisos de Drive.
+- El registro de DEVELOPER declara servicios Activos de forma hardcodeada; `getServiceHealthDiagnostics` y las suites de arquitectura no prueban conectividad real. Conservar las limitaciones ya registradas en AUD-NG-323 y AUD-NG-082..086.
+
+### 6. Hallazgo nuevo de cobertura documental
+**AUD-NG-363 — MEDIO/P2 — Conteo y matriz de consumidores API incompletos.**
+Evidencia: 211 callsites informados en C1.293 frente a 262 en los 21 JS y al menos 25 inline en dashboard-recursos-humanos.html. Impacto: el denominador incompleto deja consumidores y contratos fuera de la matriz. Causa: subtotal parcial sin enumeración de todos los archivos consumidores. Acción: ampliar TASK-678 existente, sin duplicar ID.
+
+### 7. Límites y siguiente bloque
+La inspección es estática. No se ejecutaron llamadas HTTP, Apps Script, Drive, Sheets, navegador, pruebas multi-cuenta ni E2E; no se verificaron deployments ni Script Properties. La matriz por acción debe completarse con la relación individual handler → helpers → hoja/archivo persistido para cada callsite, incluidos los consumidores dinámicos, y con evidencia de los destinos desplegados. TASK-638 permanece En ejecución.
+===============================================================================

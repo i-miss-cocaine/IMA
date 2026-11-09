@@ -3073,7 +3073,7 @@
 - **Referencia:** AUD-NG-282.
 - **Severidad:** ALTO.
 - **Prioridad:** P1.
-- **Estado:** Bloqueada por dependencia TASK-637 (AUD-NG-362); conserva evidencia parcial C1.289-C1.293.
+- **Estado:** En ejecución (TASK-637 verificada y Completada en commit A `0edce6ae2721b1d839ef259dad7ea77962fe8ab3`; auditoría de handlers, autorización contextual, persistencia y contratos en curso; C1.296).
 - **Objetivo y acción:** documentar por archivo las dependencias HTML `script/link`, CSS, imágenes, fuentes, imports, referencias dinámicas, rutas, endpoints, acciones backend, contratos y servicios externos; distinguir referencias comprobadas de inferidas y registrar consumidores/proveedores.
 - **Archivos/módulos afectados:** HTML, JS, CSS, JSON, GAS, configuración, documentación y recursos del repositorio; `AUDITORIAS/MapaDependencias.md`.
 - **Dependencias:** TASK-637, catálogo completo de archivos.

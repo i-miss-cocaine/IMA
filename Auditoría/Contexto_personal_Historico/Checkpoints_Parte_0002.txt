@@ -169,3 +169,41 @@ TASK-637: Completada; AUD-NG-362 cerrado. TASK-638 sigue congelada en este commi
 Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.295; parte 0002. Índice: Auditoría/INDICE_CHECKPOINTS.md, fila C1.295.
 Commit A de cierre: el commit que contiene este checkpoint; SHA a verificar externamente.
 ===============================================================================
+
+
+===============================================================================
+## C1.296 — TASK-638: contratos, autorización y persistencia (commit B)
+Sesión: IMA-AUDIT-20261109-1152Z; checkpoint inicial C1.294; commit A C1.295 verificado. Sesión abierta. Fecha: 2026-11-09 UTC.
+Repositorio: i-miss-cocaine/IMA. Rama: NG_beta_0.0.0.1_work. Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59.
+HEAD de partida B: 0edce6ae2721b1d839ef259dad7ea77962fe8ab3.
+Fase metodológica: 0 y 2. Fase PM: PM-00.
+TASK-637: Completada en commit A. TASK-638: En ejecución; auditoría parcial, no cumple todavía el criterio global.
+
+### Continuidad y requisito
+Commit A 0edce6ae2721b1d839ef259dad7ea77962fe8ab3 se verificó antes de iniciar esta tarea; TASK-637 quedó cerrada y su inventario 1.021/1.021. Requisito TASK-638: pendientes/Contabilidad/Pendientes.md; mapear dependencias estáticas/dinámicas por archivo, rutas, imports, servicios, acciones, contratos y consumidores/proveedores. No cambiar rutas ni contratos durante auditoría.
+
+### Evidencia de C1.296
+24 JS: 262 llamadas literales (21 bajo js/ y 3 auxiliares sin llamadas) fetchApi (USER 70, ACADEMIC 120, TASK 23, EXAM 19, ACCOUNTING 30, DEVELOPER 0). dashboard-recursos-humanos.html: 25 llamadas inline ACCOUNTING; al menos 287 callsites. El subtotal 211 de C1.293 no cubría el universo completo.
+Dispatchers doPost: USER 182, ACADEMIC 241, TASK 44, EXAM 38, ACCOUNTING 240, DEVELOPER 39. Referencias a handlers inexistentes: USER cuatro, ACADEMIC una, TASK una. Cuatro wrappers sin dispatcher: tres USER y uno ACADEMIC; dos callers localizados en developer.js, dos wrappers sin caller encontrado.
+Cinco servicios comparten el mismo literal SPREADSHEET_ID; DEVELOPER conserva marcador. ACCOUNTING/DEVELOPER tienen URLs placeholder. No se verificaron deployments ni propiedades.
+USER→TASK: JSON plano sin HMAC; fallback de excepción devuelve status success local. Ampliar AUD-NG-083/AUD-NG-174.
+AUD-NG-363 MEDIO/P2 creado; TASK-678 existente ampliada sin duplicar ID. Hallazgos AUD-NG-002/356..361/358/359 y AUD-NG-082..086/174/323 conservados.
+
+### Fuentes backend (SHA)
+USER 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ACADEMIC df87a2eea9f0ef79d0b966d03fd5bbe432003df5; TASK 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe; EXAM 1d93296628fae31f680004f637897e2b1314a64c; ACCOUNTING 38b979d41596b85e888b4a7060b37bbac0840a28; DEVELOPER 8aa4bac67cfe5c8c54da51a0784a56fef633e412.
+
+### Archivos
+Modificados: Auditoría/MapaDependencias.md; Auditoría/AUDITORIA_TASK-638_C1.296.md (nuevo); Auditoria.txt; tareas_auditoria.txt; changueslogs.txt; pendientes/Contabilidad/Pendientes.md; Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt; Auditoría/INDICE_CHECKPOINTS.md; docs/architecture/repository-inventory.md.
+Revisados sin modificación: METODOLOGIA_DESARROLLO.md; index.html; seis Code.gs; 21 JS; developer-dashboard.html; dashboard-recursos-humanos.html; informes C1.289-C1.293; demás backlogs.
+
+### Pruebas
+Ejecutadas: continuidad HEAD/rama/base; lectura requisito e informes previos; inspección estática de seis Code.gs y 21 JS; recuento de llamadas y dispatchers; búsqueda de handlers; revisión de PUBLIC_ACTIONS, wrappers, hojas, SpreadsheetApp, DriveApp y URLs.
+No ejecutadas: Node, navegador, HTTP, Apps Script, Drive, Sheets, multi-cuenta, regresión, integración y E2E; no se verificaron deployments/Script Properties.
+
+### Dictamen y siguiente acción
+TASK-638 permanece En ejecución; no se modificó código. Abrir Auditoría/MapaDependencias.md, sección C1.296; completar por cada callsite la relación servicio/acción → dispatcher → handler → helpers → claims/contexto → hoja/archivo/Drive → mutación/response; empezar por los 287 callsites identificados y priorizar rutas sin handler, públicas y cross-service. Verificar deployments con evidencia autorizada. No implementar durante auditoría.
+
+### Ubicación exacta
+Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.296; parte 0002. Índice: Auditoría/INDICE_CHECKPOINTS.md, fila C1.296.
+Commit B de cierre: el commit que contiene este checkpoint; SHA a verificar externamente.
+===============================================================================

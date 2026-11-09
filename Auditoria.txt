@@ -171,3 +171,14 @@ Sesión: IMA-EXEC-20261109-1108Z-01; HEAD de partida: 32b8f5884dd24dbeaf1a3bf028
 - Resultado: 1.021/1.021 rutas únicas; cero omisiones, duplicados, obsoletos o metadatos desactualizados; `index.html` sin cambios.
 - AUD-NG-362 se cierra con TASK-637; TASK-638 permanece congelada hasta verificar commit A y auditarla.
 - Informe `Auditoría/AUDITORIA_TASK-637_C1.295.md`; checkpoint C1.295, sesión IMA-AUDIT-20261109-1152Z, `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt`; índice `Auditoría/INDICE_CHECKPOINTS.md` fila C1.295.
+
+
+## AUD-NG-363 — MEDIO/P2 — Conteo y matriz de consumidores API incompletos (C1.296)
+- Origen: reauditoría TASK-638; informe `Auditoría/AUDITORIA_TASK-638_C1.296.md`.
+- HEAD/rama: `0edce6ae2721b1d839ef259dad7ea77962fe8ab3` / `NG_beta_0.0.0.1_work`.
+- Evidencia: C1.293 registra 211 llamadas; revisión actual identifica 262 callsites literales en 21 JS (USER 70, ACADEMIC 120, TASK 23, EXAM 19, ACCOUNTING 30, DEVELOPER 0) y 25 inline en `dashboard-recursos-humanos.html`; al menos 287.
+- Impacto: consumidores y contratos quedan fuera de la matriz si se usa el subtotal anterior como universo completo.
+- Causa: cobertura parcial de archivos auxiliares y llamadas inline, sin denominador explícito.
+- Acción: ampliar TASK-678 existente; inventariar callsites, acciones, dispatchers, handlers, autorización y persistencia; no duplicar ID.
+- Estado: hallazgo abierto; auditoría TASK-638 continúa En ejecución.
+- Checkpoint: C1.296, sesión `IMA-AUDIT-20261109-1152Z`, `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt`; índice fila C1.296.
