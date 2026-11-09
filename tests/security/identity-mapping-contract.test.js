@@ -277,3 +277,23 @@ assert.equal(linkUsers[1][9],"PER-NEW");
 assert.equal(decisionRows.length,1,"link decision must be audited");
 assert.equal(decisionRows[0][4],"Correspondencia verificada por Secretaría");
 assert.equal(JSON.stringify(familyRows),familyBefore,"account linking must not rewrite family relationship IDs");
+
+
+// TASK-068 mapping reconciliation: duplicate composite keys and orphan confirmed targets are surfaced, never auto-fixed.
+const mappingAuditRows=[headers,
+ ["MAP-OK","SACE","estudiante","RNE-OK","EXISTS","INST-1","h1",new Date(),"1","CONFIRMADA","EXACTA","NO_CALIBRADA","ADMIN"],
+ ["MAP-DUP","SACE","estudiante","RNE-OK","EXISTS","INST-1","h2",new Date(),"1","CONFIRMADA","EXACTA","NO_CALIBRADA","ADMIN"],
+ ["MAP-ORPHAN","LEGACY","estudiante","OLD-9","MISSING","INST-1","h3",new Date(),"1","CONFIRMADA","EXACTA","NO_CALIBRADA","ADMIN"],
+ ["MAP-PENDING","LEGACY","estudiante","OLD-10","MISSING","INST-1","h4",new Date(),"1","PENDIENTE_REVISION","SIN_CONFIRMAR","NO_CALIBRADA","ADMIN"],
+ ["MAP-BAD","","estudiante","OLD-11","EXISTS","INST-1","h5",new Date(),"1","PENDIENTE_REVISION","SIN_CONFIRMAR","NO_CALIBRADA","ADMIN"]];
+const mappingAuditSheet={getRange:function(){return{getValues:function(){return[mappingAuditRows[0]];}};},getDataRange:function(){return{getValues:function(){return mappingAuditRows.map(r=>r.slice());}};}};
+const mappingAuditContext={IDENTITY_MAPPING_HEADERS_:headers,identityCompositeKey_:function(s,t,l,i){return JSON.stringify([s,t,l,i]);},identityTargetExists_:function(type,id){return type==="estudiante"&&id==="EXISTS";}};
+vm.runInNewContext(extractBalancedFunction(user,"auditIdentityMappingConsistency_")+"this.audit=auditIdentityMappingConsistency_;",mappingAuditContext);
+const identityAuditIssues=mappingAuditContext.audit({getSheetByName:function(name){return name==="CorrespondenciaIdentificadores"?mappingAuditSheet:null;}});
+assert.ok(identityAuditIssues.some(x=>x.type==="DUPLICATE_IDENTITY_MAPPING_KEY"));
+assert.ok(identityAuditIssues.some(x=>x.type==="ORPHAN_CONFIRMED_IDENTITY_MAPPING"));
+assert.ok(identityAuditIssues.some(x=>x.type==="INCOMPLETE_IDENTITY_MAPPING"));
+assert.ok(!identityAuditIssues.some(x=>x.id==="MAP-PENDING"&&x.type==="ORPHAN_CONFIRMED_IDENTITY_MAPPING"));
+assert.ok(identityAuditIssues.every(x=>x.status==="PENDIENTE_REVISION"));
+assert.ok(user.includes("const identityMappingIssues = auditIdentityMappingConsistency_(ss);"));
+assert.ok(user.includes("inconsistenciasIdentidad: identityMappingIssues"));

@@ -577,3 +577,8 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 
 ## C1.355 — Fixture linkPersonAccount
 - CI C1.354 run 42715475957 falló en harness por SPREADSHEET_ID ausente en VM. Se corrige sin modificar producción; reejecución CI pendiente.
+
+
+## C1.356 — TASK-068 auditoría de correspondencias
+- CI C1.355 run 42715614599: completed/success.
+- Se integra escaneo de integridad de CorrespondenciaIdentificadores en auditAndReconcileIdentityInconsistencies; anomalías quedan para revisión humana, sin auto-fusión/corrección. CI C1.356 pendiente.

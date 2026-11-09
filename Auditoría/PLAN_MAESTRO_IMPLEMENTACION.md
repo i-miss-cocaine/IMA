@@ -2145,3 +2145,9 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 
 ## 10.39 Corrección del fixture de vínculo — C1.355
 - CI run 42715475957 falló antes de ejecutar aserciones porque el contexto VM de linkPersonAccount no definía SPREADSHEET_ID. Se agrega al fixture; producción sin cambios. Nuevo CI pendiente.
+
+
+## 10.40 TASK-068 — C1.356: auditoría de integridad de la tabla de correspondencias
+- auditAndReconcileIdentityInconsistencies integra escaneo de esquema, claves compuestas duplicadas, filas incompletas y destinos inexistentes en mapeos confirmados.
+- Incidencias se exponen en inconsistenciasIdentidad con estado PENDIENTE_REVISION; autoFix no altera mapeos.
+- Fixtures locales prueban duplicado, destino huérfano, fila incompleta y que pendientes no se confunden con confirmados. C1.355 CI run 42715614599: success; C1.356 CI pendiente.

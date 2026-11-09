@@ -597,3 +597,18 @@ Checkpoint anterior: C1.354
 Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.355.
 Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.355.
 ===============================================================================
+
+
+===============================================================================
+## C1.356 — TASK-068: auditoría de integridad de correspondencias
+ID: C1.356
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.355
+- CI C1.355 run 42715614599: completed/success; vínculo cuenta-Persona exige justificación server-side, escribe bitácora y conserva relaciones familiares en fixture local.
+- Se integra en auditAndReconcileIdentityInconsistencies el escaneo de CorrespondenciaIdentificadores: claves compuestas duplicadas, filas incompletas, esquema incompatible y destinos inexistentes para correspondencias CONFIRMADA.
+- Incidencias de identidad quedan PENDIENTE_REVISION; autoFix no modifica, fusiona ni elimina correspondencias. Se exponen separadas en inconsistenciasIdentidad.
+- Se añaden pruebas locales para duplicados, destino huérfano confirmado, fila incompleta y correspondencia pendiente no confirmada.
+- CI C1.356 pendiente. TASK-068 sigue En ejecución hasta revisión final de aceptación, cobertura y Code Review. BETA-FUNC-008 sigue Pendiente beta.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.356.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.356.
+===============================================================================

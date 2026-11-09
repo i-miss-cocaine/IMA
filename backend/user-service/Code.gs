@@ -4386,6 +4386,32 @@ function getOperationalCapacityMetrics(payload) {
 }
 
 // [TAREA-F4-P3-03] [Fase 4: Reconciliación de Identidad] - Detección y corrección de inconsistencias referenciales, delegaciones huérfanas y adscripciones obsoletas
+function auditIdentityMappingConsistency_(ss) {
+  const sheet = ss.getSheetByName("CorrespondenciaIdentificadores");
+  if (!sheet) return [];
+  const headers = sheet.getRange(1, 1, 1, IDENTITY_MAPPING_HEADERS_.length).getValues()[0].map(String);
+  if (JSON.stringify(headers) !== JSON.stringify(IDENTITY_MAPPING_HEADERS_)) {
+    return [{type:"IDENTITY_MAPPING_SCHEMA_MISMATCH",id:"CorrespondenciaIdentificadores",description:"El esquema de correspondencia no coincide con el contrato canónico.",status:"PENDIENTE_REVISION"}];
+  }
+  const rows = sheet.getDataRange().getValues(), seen = new Map(), issues = [];
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i], source = String(row[1] || "").trim(), type = String(row[2] || "").trim().toLowerCase();
+    const legacy = String(row[3] || "").trim(), target = String(row[4] || "").trim(), institution = String(row[5] || "").trim();
+    const state = String(row[9] || "").trim(), mapId = String(row[0] || "").trim();
+    if (!source || !type || !legacy || !institution) {
+      issues.push({type:"INCOMPLETE_IDENTITY_MAPPING",id:mapId||("ROW-"+(i+1)),description:"Correspondencia sin fuente, tipo, ID legado o institución.",status:"PENDIENTE_REVISION"});
+      continue;
+    }
+    const key = identityCompositeKey_(source,type,legacy,institution);
+    if (seen.has(key)) issues.push({type:"DUPLICATE_IDENTITY_MAPPING_KEY",id:mapId,description:"Clave compuesta duplicada; primera fila "+seen.get(key)+".",status:"PENDIENTE_REVISION"});
+    else seen.set(key,i+1);
+    if (state === "CONFIRMADA" && (!target || !identityTargetExists_(type,target))) {
+      issues.push({type:"ORPHAN_CONFIRMED_IDENTITY_MAPPING",id:mapId,description:"Correspondencia confirmada apunta a un destino inexistente o incompatible.",status:"PENDIENTE_REVISION"});
+    }
+  }
+  return issues;
+}
+
 function auditAndReconcileIdentityInconsistencies(payload) {
   const { autoFix } = payload || {};
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -4403,6 +4429,9 @@ function auditAndReconcileIdentityInconsistencies(payload) {
 
   let issuesFound = [];
   let fixedCount = 0;
+  // Mapping integrity is reported for human review; autoFix never merges or rewrites identities.
+  const identityMappingIssues = auditIdentityMappingConsistency_(ss);
+  issuesFound = issuesFound.concat(identityMappingIssues);
 
   const delSheet = ss.getSheetByName("DelegacionesSeguridad");
   if (delSheet) {
@@ -4473,6 +4502,7 @@ function auditAndReconcileIdentityInconsistencies(payload) {
       fechaEscaner: new Date().toISOString()
     },
     inconsistencias: issuesFound,
+    inconsistenciasIdentidad: identityMappingIssues,
     timestamp: new Date().toISOString()
   };
 }
