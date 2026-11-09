@@ -1337,3 +1337,67 @@ Hallazgo: AUD-NG-369 — respaldo/restauración verificables antes del cierre ac
 - Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.316.
 - Commit de cierre documental: este commit consolidado; SHA a verificar tras publicar.
 ===============================================================================
+
+
+
+===============================================================================
+## C1.317 — Continuidad verificada / TASK-636 — PM-01 — bloqueo de integración aislada
+ID: C1.317
+Sesión: IMA-EXEC-20261109-1650Z-01
+Fecha: 2026-11-09 UTC
+Checkpoint anterior: C1.316
+Repositorio: i-miss-cocaine/IMA
+Rama de trabajo autorizada: NG_beta_0.0.0.1_work
+HEAD de partida verificado: 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+Tarea activa: TASK-636 — PM-01/P0
+Hallazgo principal: AUD-NG-369 — backup/restore/rollback del cierre académico.
+
+### Continuidad y auditoría de la iteración anterior
+- Se conserva la sesión IMA-EXEC-20261109-1650Z-01; no se reinicia TASK-636 ni se crea un expediente de auditoría paralelo.
+- Se consultó el HEAD por referencia de rama: 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a. La rama base NG_beta_0.0.0.1 resuelve a 44d9891132332e692dbe2ba8602b41f50a508a59; compare_commits confirma identical, 0 ahead y 0 behind respecto al SHA protegido.
+- La rama de trabajo contiene cuatro commits posteriores al HEAD histórico d7f15ec8ae91df6a33d228750ecd859b42eaecd9; el último es este HEAD 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a, que corresponde al checkpoint C1.316.
+- Se comparó el checkpoint C1.316 con su commit real y se revisaron los archivos del alcance, el contrato y el workflow. No se detectó evidencia nueva que invalide la implementación estática ni se repitió la auditoría funcional.
+- Se confirmó en el índice que C1.316 es el último checkpoint publicado, en Checkpoints_Parte_0002.txt, líneas 1284–1339.
+- Se leyó íntegramente el bloque original TASK-636 recuperado del blob Git 6323f01fc2335df264dfb54d2558bb8ad505a4d8 (1.648.454 bytes; 1.628.735 caracteres decodificados). La lectura convencional del backlog devuelve 0 caracteres; se preserva el blob y no se sobrescribe el archivo. Ruta normativa: pendientes/Otros/Pendientes.md — TASK-636.
+- Se aplicó §19.6: expediente principal único Auditoría/AUDITORIA_TASK-636_C1.305.md; esta entrada es seguimiento de continuidad, no auditoría nueva. No se generaron hallazgos ni IDs derivados.
+
+### Verificación independiente de CI
+- Workflow: .github/workflows/task-service-backup-restore-contract.yml; rama restringida NG_beta_0.0.0.1_work; Node 24; actions/checkout@v7 y setup-node@v7.
+- Run 42659818881 / job 129308031004: completed/success; pasos de checkout, setup Node y ejecución del contrato concluidos success. Log confirma “Task-Service backup/restore static contract checks passed.” La ejecución inicial conservó advertencia de runtime Node20 en actions v4.
+- Run 42659961195 / job 129308545903: completed/success; todos los pasos, incluido “Execute backup and restore contract”, concluidos success. Log confirma “Task-Service backup/restore static contract checks passed.”; corresponde al workflow actualizado con Node24/actions v7.
+- La prueba es un contrato estático Node que lee el código fuente y comprueba invariantes estructurales. No es una ejecución de Google Apps Script ni una prueba de SpreadsheetApp/DriveApp reales.
+
+### Estado técnico observado
+- backend/task-service/Code.gs mantiene closeAcademicYear fail-closed: devuelve BACKUP_REQUIRED antes de cualquier borrado.
+- El protocolo dedicado contiene creación/verificación/restauración, manifiesto SHA-256, snapshots de hojas, preservación append-only de Log_Cierres, snapshots de activos Drive, LockService, journal durable y recuperación compensatoria serializada/idempotente.
+- El contrato tests/security/task-service-backup-restore-contract.test.js verifica presencia de handlers, guards, checksum, lock, journal, marcadores deterministas y preservación de Log_Cierres. No ejecuta los handlers con servicios Google simulados ni reales.
+- El requisito de integración permanece sin evidencia: no existe appsscript.json, .clasp.json, configuración de deployment, proyecto Apps Script ni fixture aislado de Spreadsheet/Drive en el repositorio. No hay credenciales/deployment autorizado para ejecutar el protocolo en un entorno Google aislado.
+- No se ejecutan operaciones destructivas sobre datos institucionales reales ni se simula una prueba real de interrupción.
+
+### Decisión de continuidad
+- TASK-636 permanece En ejecución; AUD-NG-369 permanece abierto. No se marca Completada.
+- El criterio de contrato estático Node queda verificado en CI. Los criterios de integración dinámica, restauración repetible, interrupción abrupta en fases de copia/mapeo/escritura/limpieza del journal, integridad de IDs/referencias/permisos y verificación de Log_Cierres permanecen pendientes por falta del entorno aislado autorizado.
+- closeAcademicYear continúa bloqueado por BACKUP_REQUIRED. No se altera este guard.
+- No se selecciona una tarea PM-01 distinta mientras TASK-636 sigue activa y el prerrequisito técnico de integración no está resuelto; no se saltan dependencias ni se inventa un entorno.
+- Siguiente acción exacta: proporcionar/configurar un proyecto Apps Script aislado y autorizado, con deployment de prueba, Spreadsheet fixture y árbol Drive fixture no productivos. Después ejecutar create → verify → restore; forzar interrupciones controladas en las fases de copia de activos, persistencia del mapa, escritura de hojas y limpieza del journal; repetir recuperación y comprobar ausencia de duplicados, integridad de IDs/referencias/permisos y append-only de Log_Cierres. Mantener el cierre académico bloqueado hasta entonces.
+
+### Archivos modificados en esta iteración
+1. Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — checkpoint C1.317.
+2. Auditoría/INDICE_CHECKPOINTS.md — último checkpoint, tamaño y fila C1.317.
+3. Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md — seguimiento 10.15.
+4. Auditoria.txt — referencia de continuidad y evidencia de bloqueo.
+5. changueslogs.txt — entrada acumulativa C1.317.
+
+### Archivos revisados sin modificación
+METODOLOGIA_DESARROLLO.md; Auditoría/Contexto_personal.txt; Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; Auditoría/MapaDependencias.md; Auditoría/INDICE_CHECKPOINTS.md; Auditoria.txt; tareas_auditoria.txt; changueslogs.txt; pendientes/Otros/Pendientes.md (blob recuperado); Auditoría/AUDITORIA_TASK-636_C1.305.md; backend/task-service/Code.gs; tests/security/task-service-backup-restore-contract.test.js; .github/workflows/task-service-backup-restore-contract.yml.
+
+### Pruebas ejecutadas y pendientes
+- Ejecutadas en esta iteración: lectura íntegra de los documentos rectores y checkpoint vigente; recuperación íntegra del blob del requisito; comparación HEAD de trabajo/base; inspección focalizada del diff C1.316; consulta de jobs y logs de ambos runs CI; revisión estática de guard, handlers y contrato; comprobación de tamaño del archivo activo de checkpoints.
+- CI Node: 2 runs previos verificados como completed/success; no se inició un run nuevo porque no hubo cambios de código/prueba.
+- Pendientes: Google Apps Script runtime/parser; integración real aislada de Sheets/Drive; restore repetible; interrupciones forzadas; verificación post-restore de permisos/IDs/referencias; pruebas de roles, HTTP, navegador y E2E.
+
+Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.317.
+Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.317.
+Commit de cierre: este commit consolidado; SHA se confirma consultando el HEAD de GitHub tras publicar.
+===============================================================================

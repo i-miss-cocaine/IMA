@@ -396,3 +396,12 @@ Sesión: IMA-EXEC-20261109-1108Z-01; HEAD de partida: 32b8f5884dd24dbeaf1a3bf028
 - No hay appsscript.json, .clasp.json ni configuración de despliegue/proyecto Apps Script en el árbol; las pruebas Sheets/Drive aisladas e interrupciones forzadas siguen bloqueadas por falta de runtime/fixture autorizado.
 - TASK-636 En ejecución; AUD-NG-369 abierto; closeAcademicYear BACKUP_REQUIRED.
 - Checkpoint C1.316: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.316.
+
+
+
+## Seguimiento de continuidad C1.317 — IMA-EXEC-20261109-1650Z-01
+- Rama: NG_beta_0.0.0.1_work; HEAD verificado 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a. Rama base NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59, sin cambios.
+- Se confirma C1.316 como checkpoint previo y se verifica la ejecución del contrato Node en CI (runs 42659818881 y 42659961195, completed/success).
+- No se registra hallazgo nuevo ni se crea auditoría duplicada. TASK-636 continúa En ejecución; AUD-NG-369 abierto.
+- Bloqueo vigente: falta proyecto Apps Script/deployment y fixtures aislados de Sheets/Drive autorizados. closeAcademicYear permanece BACKUP_REQUIRED.
+- Checkpoint: C1.317; ubicación Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.317; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.317.

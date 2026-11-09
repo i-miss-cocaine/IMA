@@ -1943,3 +1943,13 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - Runs 42659818881 y 42659961195: completed/success; run 42659961195 usa Node 24 y actions v7. El log confirma “Task-Service backup/restore static contract checks passed.”
 - No existen appsscript.json, .clasp.json ni proyecto/fixture Apps Script/Sheets/Drive aislado en el repositorio. La certificación dinámica sigue pendiente y no se habilita closeAcademicYear.
 - Checkpoint C1.316: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.316; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.316.
+
+
+
+## 10.15 Seguimiento de ejecución del Plan Maestro — C1.317
+- Se verifica HEAD de trabajo 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a y rama base protegida 44d9891132332e692dbe2ba8602b41f50a508a59; la base permanece idéntica.
+- Se mantiene TASK-636 — PM-01/P0 — En ejecución. No se repite la auditoría ni se crea informe paralelo; expediente principal AUDITORIA_TASK-636_C1.305.md y protocolo §19.6 aplicado.
+- El contrato estático Node permanece aprobado en los runs 42659818881 y 42659961195. El segundo usa Node24/actions v7 y todos sus pasos concluyeron success.
+- La integración real sigue bloqueada por ausencia de proyecto Apps Script/deployment autorizado y fixtures aislados de Spreadsheet/Drive. No se ejecutan restauraciones destructivas en producción.
+- closeAcademicYear continúa BACKUP_REQUIRED; AUD-NG-369 abierto. Próximo paso: habilitar entorno aislado autorizado y ejecutar create/verify/restore con interrupciones controladas y comprobación de integridad.
+- Checkpoint C1.317: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.317; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.317.

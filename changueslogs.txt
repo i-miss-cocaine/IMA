@@ -311,3 +311,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se agrega workflow Node para el contrato de backup/restore en la rama exclusiva de trabajo.
 - Run 42659818881: Node 22, completed/success. Run 42659961195: Node 24 con actions/checkout@v7 y setup-node@v7, completed/success; el log confirma el contrato aprobado.
 - El árbol no contiene appsscript.json/.clasp.json ni fixture Apps Script/Sheets/Drive; integración real e interrupciones forzadas pendientes. TASK-636 En ejecución; AUD-NG-369 abierto; cierre académico bloqueado.
+
+
+
+[2026-11-09] IMA-EXEC-20261109-1650Z-01 — TASK-636 / PM-01 / C1.317
+- Continuidad verificada: HEAD 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a en NG_beta_0.0.0.1_work; base 44d9891132332e692dbe2ba8602b41f50a508a59 sin cambios.
+- CI Node: runs 42659818881 y 42659961195 completed/success; ejecución del contrato estático confirmada en logs.
+- Se conserva TASK-636 En ejecución; AUD-NG-369 abierto. Integración Apps Script/Sheets/Drive aislada pendiente por falta de proyecto/deployment/fixtures autorizados; closeAcademicYear sigue BACKUP_REQUIRED.
+- Checkpoint C1.317: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.317; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.317.
