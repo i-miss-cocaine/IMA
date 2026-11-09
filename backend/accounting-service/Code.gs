@@ -212,7 +212,12 @@ const ROLE_PERMISSIONS = {
   "Profesor": ["getStaffPayrollReceipt", "submitVacationRequest", "getVacationRequests", "getInstitutionalPolicies", "recordPolicyAcceptance", "getPolicyAcceptances", "getLibraryBooks", "getLibraryLoans", "reserveLibraryBook", "getLibraryReservations", "getDigitalResources", "getTransportRoutes", "getSchoolDocumentTemplates", "generateSchoolDocument", "getIssuedSchoolDocuments", "verifySACETemplateCompatibility", "generateSACEReportFile", "fillAndExportSACETemplate", "validateSACETemplateFile", "getEmployeeSelfServicePortal"],
   "Asistente": ["getInstitutionalPolicies", "recordPolicyAcceptance", "getPolicyAcceptances", "getLibraryBooks", "getLibraryLoans", "getDigitalResources", "getSchoolDocumentTemplates"],
   "Estudiante": ["getStudentAccountStatement", "uploadPaymentVoucher", "getPaymentVouchers", "generatePaymentReceiptPDF", "getInstitutionalPolicies", "recordPolicyAcceptance", "getPolicyAcceptances", "getLibraryBooks", "getLibraryLoans", "reserveLibraryBook", "getLibraryReservations", "getDigitalResources", "getTransportRoutes", "getTransportAssignments", "getSchoolDocumentTemplates", "generateSchoolDocument", "getIssuedSchoolDocuments", "getStoreProducts", "createStoreOrder", "getStoreOrders", "getCafeteriaMenu", "createCafeteriaOrder", "getCafeteriaOrders", "getFamilyCreditAuthorizations", "processFamilyCreditPurchase"],
-  "Alumno": ["getStudentAccountStatement", "uploadPaymentVoucher", "getPaymentVouchers", "generatePaymentReceiptPDF", "getInstitutionalPolicies", "recordPolicyAcceptance", "getPolicyAcceptances", "getLibraryBooks", "getLibraryLoans", "reserveLibraryBook", "getLibraryReservations", "getDigitalResources", "getTransportRoutes", "getTransportAssignments", "getSchoolDocumentTemplates", "generateSchoolDocument", "getIssuedSchoolDocuments", "getStoreProducts", "createStoreOrder", "getStoreOrders", "getCafeteriaMenu", "createCafeteriaOrder", "getCafeteriaOrders", "getFamilyCreditAuthorizations", "processFamilyCreditPurchase"]
+  "Alumno": ["getStudentAccountStatement", "uploadPaymentVoucher", "getPaymentVouchers", "generatePaymentReceiptPDF", "getInstitutionalPolicies", "recordPolicyAcceptance", "getPolicyAcceptances", "getLibraryBooks", "getLibraryLoans", "reserveLibraryBook", "getLibraryReservations", "getDigitalResources", "getTransportRoutes", "getTransportAssignments", "getSchoolDocumentTemplates", "generateSchoolDocument", "getIssuedSchoolDocuments", "getStoreProducts", "createStoreOrder", "getStoreOrders", "getCafeteriaMenu", "createCafeteriaOrder", "getCafeteriaOrders", "getFamilyCreditAuthorizations", "processFamilyCreditPurchase"],
+  "Conductor": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"],
+  "Chofer": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"],
+  "Monitor": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"],
+  "Acompañante": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"],
+  "Acompanante": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"]
 };
 
 const PUBLIC_ACTIONS = ["ping", "getInstitutionalPolicies", "verifySchoolDocumentByCUV"];
@@ -16339,70 +16344,119 @@ function recordStudentAlighting(payload) {
 function getTripPassengerManifest(payload) {
   const { viajeId, rutaId } = payload || {};
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const scope = resolveTransportAccessScope_(payload, ss);
+  if (!scope.authorized) {
+    transportAuditDenied_("getTripPassengerManifest", payload, scope, null);
+    return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED", manifiestoPasajeros: [] };
+  }
+
   const now = new Date();
   const fechaHoyStr = now.toISOString().slice(0, 10);
+  const tripRows = transportRows_(ss, "TransporteViajes");
+  let targetTripId = String(viajeId || "").trim();
+  if (!targetTripId && scope.management && rutaId) {
+    targetTripId = String(getOrCreateActiveTrip(ss, rutaId, "Matutina", fechaHoyStr) || "").trim();
+  }
+  if (!targetTripId) {
+    return { status: "error", code: "TRIP_ID_REQUIRED", manifiestoPasajeros: [] };
+  }
 
-  const targetViajeId = viajeId || (rutaId ? getOrCreateActiveTrip(ss, rutaId, "Matutina", fechaHoyStr) : null);
-  if (!targetViajeId) throw new Error("viajeId o rutaId son requeridos para consultar el manifiesto.");
+  const targetTrip = tripRows.find(function(row) {
+    return String(row[0] || "").trim() === targetTripId;
+  });
+  if (!targetTrip) {
+    return { status: "error", code: "TRIP_NOT_FOUND", manifiestoPasajeros: [] };
+  }
 
-  const tripRows = getOrCreateSheet(ss, "TransporteViajes").getDataRange().getValues().slice(1);
-  const targetTrip = tripRows.find(r => String(r[0]).trim() === String(targetViajeId).trim());
+  const effectiveRouteId = String(targetTrip[1] || "").trim();
+  const tripState = String(targetTrip[9] || "").trim().toLowerCase();
+  const activeTripStates = ["activo", "activa", "iniciado", "encurso", "en curso", "enruta", "en ruta", "entransito", "en tránsito"];
+  if (!scope.management) {
+    if (activeTripStates.indexOf(tripState) === -1) {
+      transportAuditDenied_("getTripPassengerManifest", payload, scope, { viajeId: targetTripId, rutaId: effectiveRouteId });
+      return { status: "error", code: "UNAUTHORIZED_ACCESS_ATTEMPT", manifiestoPasajeros: [] };
+    }
+    if (scope.routeIds) {
+      const assignedToTrip = String(targetTrip[3] || "").trim() === scope.userId ||
+        String(targetTrip[4] || "").trim() === scope.userId;
+      if (!assignedToTrip || scope.routeIds.indexOf(effectiveRouteId) === -1) {
+        transportAuditDenied_("getTripPassengerManifest", payload, scope, { viajeId: targetTripId, rutaId: effectiveRouteId });
+        return { status: "error", code: "UNAUTHORIZED_ACCESS_ATTEMPT", manifiestoPasajeros: [] };
+      }
+    } else if (scope.studentIds) {
+      const ownActiveAssignment = transportRows_(ss, "TransporteAsignaciones").some(function(row) {
+        const state = String(row[5] || "").trim().toLowerCase();
+        return String(row[1] || "").trim() === effectiveRouteId &&
+          scope.studentIds.indexOf(String(row[2] || "").trim()) !== -1 &&
+          (state === "active" || state === "activa");
+      });
+      if (!ownActiveAssignment) {
+        transportAuditDenied_("getTripPassengerManifest", payload, scope, { viajeId: targetTripId, rutaId: effectiveRouteId });
+        return { status: "error", code: "UNAUTHORIZED_ACCESS_ATTEMPT", manifiestoPasajeros: [] };
+      }
+    } else {
+      transportAuditDenied_("getTripPassengerManifest", payload, scope, { viajeId: targetTripId, rutaId: effectiveRouteId });
+      return { status: "error", code: "UNAUTHORIZED_ACCESS_ATTEMPT", manifiestoPasajeros: [] };
+    }
+  } else if (rutaId && String(rutaId).trim() !== effectiveRouteId) {
+    return { status: "error", code: "ROUTE_TRIP_MISMATCH", manifiestoPasajeros: [] };
+  }
 
-  const effectiveRutaId = targetTrip ? String(targetTrip[1]).trim() : String(rutaId || "").trim();
+  const activeAssignmentStates = ["active", "activa"];
+  const allowedStudentIds = scope.management ? null : scope.studentIds;
+  const assignmentRows = transportRows_(ss, "TransporteAsignaciones");
+  const asignados = assignmentRows.filter(function(row) {
+    const state = String(row[5] || "").trim().toLowerCase();
+    const studentId = String(row[2] || "").trim();
+    return String(row[1] || "").trim() === effectiveRouteId &&
+      activeAssignmentStates.indexOf(state) !== -1 &&
+      (!allowedStudentIds || allowedStudentIds.indexOf(studentId) !== -1);
+  });
 
-  // Asignados a la ruta
-  const asgnRows = getOrCreateSheet(ss, "TransporteAsignaciones").getDataRange().getValues().slice(1);
-  const asignados = asgnRows.filter(r =>
-    String(r[1]).trim() === effectiveRutaId && String(r[5] || "").toLowerCase().trim() === "active"
-  );
-
-  // Asistencia del viaje
-  const asistRows = getOrCreateSheet(ss, "TransporteAsistenciaViajes").getDataRange().getValues().slice(1);
-  const asistencias = asistRows.filter(r => String(r[1]).trim() === String(targetViajeId).trim());
+  const attendanceRows = transportRows_(ss, "TransporteAsistenciaViajes");
+  const asistencias = attendanceRows.filter(function(row) {
+    return String(row[1] || "").trim() === targetTripId;
+  });
 
   let totalABordo = 0;
   let totalDescendidos = 0;
-
-  const pasajeros = asignados.map(a => {
-    const eId = String(a[2]).trim();
-    const asist = asistencias.find(ev => String(ev[2]).trim() === eId);
-
-    let estadoViaje = "ESPERANDO";
-    let horaAb = "";
-    let horaDesc = "";
-
-    if (asist) {
-      estadoViaje = asist[6];
-      horaAb = asist[4];
-      horaDesc = asist[5];
+  const pasajeros = asignados.map(function(assignment) {
+    const studentId = String(assignment[2] || "").trim();
+    const attendance = asistencias.find(function(event) {
+      return String(event[2] || "").trim() === studentId;
+    });
+    let tripStatus = "ESPERANDO";
+    let boardingTime = "";
+    let alightingTime = "";
+    if (attendance) {
+      tripStatus = attendance[6];
+      boardingTime = attendance[4];
+      alightingTime = attendance[5];
     }
-
-    if (estadoViaje === "A_BORDO") totalABordo++;
-    if (estadoViaje === "DESCENDIDO") totalDescendidos++;
-
+    if (tripStatus === "A_BORDO") totalABordo++;
+    if (tripStatus === "DESCENDIDO") totalDescendidos++;
     return {
-      estudianteUserId: eId,
-      paradaPlan: a[3],
-      horarioPlan: a[4],
-      estadoViaje: estadoViaje,
-      horaAbordaje: horaAb,
-      horaDescenso: horaDesc
+      estudianteUserId: studentId,
+      paradaPlan: assignment[3],
+      horarioPlan: assignment[4],
+      estadoViaje: tripStatus,
+      horaAbordaje: boardingTime,
+      horaDescenso: alightingTime
     };
   });
 
   return {
     status: "success",
-    viajeId: targetViajeId,
-    rutaId: effectiveRutaId,
+    viajeId: targetTripId,
+    rutaId: effectiveRouteId,
     totalAsignados: asignados.length,
-    totalABordo,
-    totalDescendidos,
+    totalABordo: totalABordo,
+    totalDescendidos: totalDescendidos,
     totalEsperando: asignados.length - (totalABordo + totalDescendidos),
     pasajerosABordo: totalABordo,
     manifiestoPasajeros: pasajeros
   };
 }
-
 // ---------------------------------------------------------------------------
 // 3. Personas Autorizadas y Entrega Segura de Menores [TASK-032] [F21-Task04]
 // ---------------------------------------------------------------------------
