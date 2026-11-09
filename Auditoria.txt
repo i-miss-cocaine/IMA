@@ -528,3 +528,10 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - Pruebas locales añadidas; CI pendiente.
 - AUD-NG-378 sigue abierto por writer destino y transporte ausentes; brecha de implementación, no beta. TASK-068 En ejecución.
 - Checkpoint Parte_0003 C1.336; índice Auditoría/INDICE_CHECKPOINTS.md.
+
+
+
+## C1.337 — CI local TASK-636 y ajuste de contrato TASK-068
+- TASK-636: CI run 42709000536 completed/success; parseo Node, SHA-256 y snapshots locales aprobados. BETA-FUNC-007 sigue Pendiente beta.
+- TASK-068: CI 42709559046 falló en assertion de formato heredada; se ajusta el espacio del literal fusionAutomaticaPermitida: false. Nuevo CI pendiente.
+- Checkpoint C1.337; Parte_0003; índice actualizado.

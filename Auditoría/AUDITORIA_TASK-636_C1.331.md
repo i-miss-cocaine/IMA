@@ -77,3 +77,11 @@ No se ejecutaron Apps Script runtime, Sheets/Drive reales, deployment, HTTP, E2E
 ## Revisión focalizada C1.335 — contexto Date del VM
 - CI run 42708904660 falló en la aserción de snapshot: el fixture Date se creó en un contexto VM distinto al usado por el helper.
 - Se pasa snapshotContext explícitamente al crear la fecha; producción sin cambios. Se requiere un nuevo CI exitoso.
+
+
+
+## Verificación CI posterior — C1.337
+- Run 42709000536, commit e6fbc4561ddd11c2105ab728433ba5f914f375b8: completed/success.
+- Pasaron parseo Node de backend/task-service/Code.gs, contrato estático, SHA-256 texto/bytes y snapshots locales con fixtures, incluida hoja vacía.
+- Los runs anteriores 42708635543, 42708759124 y 42708904660 fallaron durante la construcción del harness; quedaron corregidos en C1.334. El resultado aprobado es el run 42709000536.
+- AUD-NG-369 conserva BETA-FUNC-007 Pendiente beta; el éxito local no certifica Apps Script/Sheets/Drive real ni habilita closeAcademicYear.

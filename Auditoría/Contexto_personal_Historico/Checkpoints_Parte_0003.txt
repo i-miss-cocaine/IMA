@@ -265,3 +265,17 @@ Tarea: TASK-068 / PM-01 / P0 / orden local 1
 Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.336.
 Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.336.
 ===============================================================================
+
+
+
+===============================================================================
+## C1.337 — Ajuste de contrato y verificación CI de TASK-636
+ID: C1.337
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.336
+- Se confirma CI TASK-636 run 42709000536, commit e6fbc4561ddd11c2105ab728433ba5f914f375b8: completed/success. Pasaron parseo Node de Code.gs, contrato estático, SHA-256 texto/bytes, snapshots con fecha/valores y hoja vacía. AUD-NG-369 continúa diferido a BETA-FUNC-007; closeAcademicYear sigue BACKUP_REQUIRED.
+- CI TASK-068 run 42709559046, commit f99d56439d693504372f1d184055c5973ce41d2f: failure por una aserción estática preexistente de formato de propiedad; no se alcanzaron los nuevos casos de clasificación. Se ajusta el literal a fusionAutomaticaPermitida: false; nuevo CI pendiente.
+- No se altera la lógica de no fusión automática. TASK-068 sigue En ejecución y AUD-NG-378 abierto por writer/transportes ausentes.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.337.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.337.
+===============================================================================

@@ -418,3 +418,7 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-09] C1.336 — TASK-068: clasificación conservadora de candidatos por identificación/código, email, fecha, responsable e historial de matrícula; sin fusión automática. findPersonMatches restringida a Secretaría/Administrador verificados. Pruebas locales añadidas, CI pendiente. AUD-NG-378 sigue abierto por writer/transportes faltantes. Checkpoint Parte_0003 C1.336.
+
+
+
+[2026-11-09] C1.337 — TASK-636 CI run 42709000536 completed/success (parseo Node, SHA-256, snapshots locales); BETA-FUNC-007 sigue Pendiente beta. TASK-068 CI run 42709559046 detectó mismatch de formato en assertion; se ajusta fusionAutomaticaPermitida: false, nuevo CI pendiente. Checkpoint Parte_0003 C1.337.

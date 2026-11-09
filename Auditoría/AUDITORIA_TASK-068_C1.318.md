@@ -172,3 +172,10 @@ Las lecturas fueron completas (92.668, 429.611 y 713.779 caracteres). El histori
 - Se añaden pruebas Node locales aisladas para coincidencia exacta, probable, historial, homónimo y no coincidencia. CI determinará el resultado.
 - AUD-NG-378 sigue abierto por writer propietario y transporte interservicio ausentes: brecha de implementación, no prueba beta. BETA-FUNC-008 cubre la verificación remota de flujos desplegados.
 - TASK-068 continúa En ejecución.
+
+
+
+## Revisión C1.337 — corrección de contrato local
+- CI run 42709559046 falló en una aserción estática heredada que busca el literal `fusionAutomaticaPermitida: false`; la implementación usaba el mismo valor sin el espacio requerido por el contrato.
+- Se normaliza el formato de la propiedad en el código de producción, sin cambiar su semántica: las coincidencias siguen prohibiendo fusión automática.
+- Nuevo CI requerido antes de aceptar PASS. TASK-068 permanece En ejecución.

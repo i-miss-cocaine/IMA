@@ -1823,7 +1823,7 @@ function identityClassifyCandidate_(candidate, query) {
   }
   if (!matchType) return null;
   return { tipoCoincidencia:matchType, clasificacionIdentidad:classification, nivelConfianza:"NO_CALIBRADA",
-    requiereRevisionHumana:true, fusionAutomaticaPermitida:false,
+    requiereRevisionHumana:true, fusionAutomaticaPermitida: false,
     evidencia:{ identificacionExacta:exactIdentification, codigoInstitucionalExacto:exactInstitutionalCode,
       emailExacto:exactEmail, fechaNacimientoCoincidente:exactBirthDate, responsableCoincidente:responsibleMatch,
       historialMatriculaCoincidente:enrollmentMatch } };
@@ -1864,7 +1864,7 @@ function findPersonMatches(payload) {
     if(match) matches.push({personaId:personaId,nombres:r[1],apellidos:r[2],identificacion:r[3],emailContacto:r[4],estadoPersona:r[6],
       codigoInstitucional:candidate.codigoInstitucional||"",fechaNacimiento:candidate.fechaNacimiento||"",tipoCoincidencia:match.tipoCoincidencia,
       clasificacionIdentidad:match.clasificacionIdentidad,nivelConfianza:match.nivelConfianza,requiereRevisionHumana:true,
-      fusionAutomaticaPermitida:false,evidencia:match.evidencia});
+      fusionAutomaticaPermitida: false,evidencia:match.evidencia});
   });
   return {status:"success",matches:matches};
 }

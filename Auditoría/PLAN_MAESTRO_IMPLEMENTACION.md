@@ -2035,3 +2035,9 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - Se revalida TASK-068 desde el requisito original. La importación sigue sin writer y no persiste entidades; AUD-NG-378 es brecha de implementación, no beta.
 - Se implementa clasificación conservadora con identificación/código institucional, email, fecha de nacimiento, responsable e historial de matrícula. No hay fusión automática y la revisión queda restringida a Secretaría/Administrador con sesión verificada.
 - Pruebas locales Node añadidas; esperar CI. TASK-068 En ejecución; siguiente bloque: contrato de writer por entidad propietaria y transporte interservicio autenticado.
+
+
+
+## 10.24 Verificación C1.337
+- TASK-636: run 42709000536 completed/success en contrato local Node, SHA-256 y snapshots. La certificación de integración queda Pendiente beta; closeAcademicYear permanece BACKUP_REQUIRED.
+- TASK-068: run 42709559046 falló por aserción de formato heredada sobre fusionAutomaticaPermitida; se normaliza el literal y se requiere nuevo CI. No se cambia la regla de no fusión automática.
