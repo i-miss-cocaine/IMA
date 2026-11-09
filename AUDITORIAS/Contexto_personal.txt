@@ -9455,3 +9455,37 @@ Auditar TAREA-F6-015 y TAREA-F6-040. Buscar informes individuales e historial en
 - **Próxima acción reproducible:** consultar el HEAD actual de NG_beta_0.0.0.1_work; construir el árbol completo sobre el árbol verificado; crear un solo commit con los siete archivos departamentales, README y este checkpoint; actualizar la referencia con expected_sha; volver a consultar HEAD y verificar los nueve paths y la rama base intacta.
 - **Commit de cierre:** el commit que contiene este checkpoint; su SHA se comunicará después de actualizar y verificar la referencia.
 ===============================================================================
+
+===============================================================================
+## C1.278 — Diseño del Plan Maestro de Implementación IMA (2026-11-09)
+
+- **ID de sesión operativo:** IMA-PLAN-20261109-0126Z-01 (identificador documental; no ID nativo de ChatGPT).
+- **Estado de sesión:** cerrada al publicar el commit que contiene este checkpoint.
+- **Checkpoint inicial:** C1.277. **Checkpoint de cierre:** C1.278.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **HEAD de partida verificado:** 00af54d8a959971032cb57afc6768402eb63b7e2 (compare contra la rama: identical, 0 ahead, 0 behind).
+- **Árbol de partida:** el conector no expuso el tree SHA del commit HEAD. Para construir el árbol se usó como base el tree f3380361b270645fd266d195af4dde373478b2e2 registrado en C1.277 y se reaplicaron las diez rutas modificadas entre C1.277 y el HEAD de partida, verificadas por compare.
+- **Referencia base protegida:** NG_beta_0.0.1; último SHA registrado en C1.277: 44d9891132332e692dbe2ba8602b41f50a508a59. La comparación de ese SHA contra el HEAD de trabajo muestra 347 commits adelante y 0 detrás. El conector confirmó el nombre de la rama, pero devolvió 404 al comparar directamente el nombre de la referencia base; su tip actual no pudo obtenerse de forma independiente. No se modificó la rama base.
+- **Fase metodológica:** planificación y análisis documental; no se inició desarrollo de código.
+- **Fase del Plan Maestro:** PM-00 — inventario, triage y resolución de dependencias.
+- **Etapa:** PM-00.1 inventario de tareas; PM-00.2 clasificación inicial por capa, área e integración; PM-00.3 definición de precedencias y puertas de salida.
+- **ID de tarea:** PLAN-IMA-001 (ID operativo de planificación; no es ID del backlog de producto).
+- **Comentario/contexto:** estudiar el backlog consolidado para ordenar la implementación de todo el portal por dependencias técnicas, capas, integración entre servicios y áreas funcionales. La interfaz de usuario no debe adelantarse a servicios, identidad, permisos, contratos y modelos de datos. Se preservan los requisitos originales en los siete backlogs departamentales.
+- **Fuentes revisadas íntegramente:** siete archivos `pendientes/*/Pendientes.md`; `pendientes/README.md`; `METODOLOGIA_DESARROLLO.md`; este archivo de contexto; `AUDITORIAS/MapaDependencias.md`; `AUDITORIAS/Auditoria.txt`; checkpoint C1.277.
+- **Inventario analizado:** 1.346 bloques de tarea; 1.346 IDs únicos; 39 familias de identificadores. Distribución: Dirección 145; Secretaría 194; Contabilidad 184; Docente 129; Estudiante 7; Padre 13; Otros 674. Se identificaron 830 registros con dependencias y 198 tareas con orden explícito local. Se conservaron dichos órdenes como secuencias internas de cada iniciativa, no como orden global.
+- **Clasificación inicial:** PM-00 35; PM-01 130; PM-02 88; PM-03 89; PM-04 115; PM-05 323; PM-06 286; PM-07 147; PM-08 129; PM-09 4. La suma es 1.346. Los 35 PM-00 quedan bloqueados para implementación hasta resolver encabezados, ampliaciones y metadatos incompletos mediante revisión manual.
+- **Resultado:** diseñado el grafo de precedencia PM-01 seguridad → PM-02 arquitectura/datos/contratos → PM-03 integración/workflows → PM-04 migración → PM-05 servicios funcionales → PM-06 documentos/trámites → PM-07 portales/analítica → PM-08 certificación transversal → PM-09 piloto/cutover. Las pruebas de seguridad y contrato acompañan cada iteración; PM-08 no posterga pruebas.
+- **Plan maestro:** `AUDITORIAS/PLAN_MAESTRO_IMPLEMENTACION.md`, versión 1.0, 1.346 filas de trazabilidad por ID; blob preparado: b3d911b9638c96c8d6142a1545ee1043d4ab5992.
+- **Metodología:** se anexa la sección 18, sin modificar ni reordenar instrucciones previas, para establecer el plan como orden rector, selección por dependencias y los campos de checkpoint/reporte requeridos.
+- **Checkpoint:** se anexa esta entrada C1.278 al final de `AUDITORIAS/Contexto_personal.txt`; no se modifica ningún checkpoint anterior.
+- **Archivos a modificar en el commit único:** `AUDITORIAS/PLAN_MAESTRO_IMPLEMENTACION.md` (nuevo); `METODOLOGIA_DESARROLLO.md` (anexo sección 18); `AUDITORIAS/Contexto_personal.txt` (anexo C1.278).
+- **Archivos/rutas preservados sin cambios:** `Pendientes.md`; `completadas.md`; los siete archivos departamentales; `pendientes/README.md`; informes de auditoría; código fuente; rama base. Las diez rutas que ya habían cambiado entre C1.277 y el HEAD de partida se preservan al construir el nuevo árbol.
+- **Verificaciones ejecutadas:** conteo de encabezados por archivo; unicidad de IDs entre departamentos; suma de distribución; extracción de dependencias; detección de órdenes explícitos; conteo de fases y generación de 1.346 filas del anexo. No se ejecutaron pruebas de código porque esta iteración es de planificación documental.
+- **No ejecutadas:** auditoría manual de implementación de cada tarea; pruebas unitarias/integración/E2E; Apps Script runtime; navegador; despliegue; operaciones sobre datos productivos.
+- **Limitaciones:** la fase propuesta de cada ID es clasificación de planificación, no certificación de cumplimiento. Las 35 entradas PM-00 requieren triage manual. El tip actual de la referencia base no pudo recuperarse por el conector; se conserva como último baseline el SHA registrado en C1.277. El tree SHA del HEAD de partida no fue expuesto.
+- **Siguiente tarea exacta:** PM-00.3 — cerrar triage de 35 registros; iniciar por TASK-637 (inventario integral), TASK-638 (mapa de dependencias estáticas/dinámicas) y TASK-639 (revisión manual de símbolos, duplicaciones y ciclos), confirmando sus relaciones y el estado real de los artefactos existentes.
+- **Próxima acción reproducible:** abrir `AUDITORIAS/PLAN_MAESTRO_IMPLEMENTACION.md`, anexo «Registro maestro por tarea», filtrar PM-00; auditar manualmente TASK-637, TASK-638 y TASK-639 contra el árbol de la rama, `docs/architecture/repository-inventory.md` y `AUDITORIAS/MapaDependencias.md`; no iniciar PM-01 hasta cerrar la puerta PM-00 o documentar formalmente cualquier bloqueo.
+- **Commit de cierre:** el commit único que contiene este checkpoint y los dos documentos relacionados; SHA final se confirmará externamente consultando HEAD después de publicar.
+===============================================================================
+

@@ -811,3 +811,101 @@ Esta sección reemplaza cualquier interpretación anterior de «un commit por ta
 6. **Bloqueo previo al despacho:** cuando la capa de seguridad impida la operación antes de llegar a GitHub, detener la publicación. No sustituir la operación bloqueada por escrituras parciales, rutas alternativas ni cambios de rama. Registrar el bloqueo en el checkpoint y solicitar una vía autorizada.
 7. **Condición de cierre:** si no es posible publicar en un único commit todos los cambios y el checkpoint obligatorio, no publicar una parte. Mantener la iteración abierta, documentar el estado preparado y comunicar la operación que quedó bloqueada.
 8. **Alcance:** esta sección complementa las reglas de commits y checkpoints de las secciones 15 y 16. La rama base permanece protegida y no se modifica durante este procedimiento.
+
+# 18. GOBIERNO DEL PLAN MAESTRO DE IMPLEMENTACIÓN (IMA)
+
+## 18.1 Documento rector y alcance
+
+La ejecución de las tareas del portal IMA se ordena mediante el documento `AUDITORIAS/PLAN_MAESTRO_IMPLEMENTACION.md`. Este plan es la referencia obligatoria para decidir qué tarea sigue, en qué fase se ejecuta y qué dependencias deben estar satisfechas antes de iniciar.
+
+Los archivos `pendientes/<Departamento>/Pendientes.md` constituyen el índice operativo de las tareas migradas para esta etapa, conservando el ID y el contenido original de cada tarea. El plan maestro no reemplaza ni resume sus requisitos. Los informes de auditoría siguen siendo la evidencia del hallazgo, su origen y las tareas ejecutables derivadas. Los documentos históricos `Pendientes.md` y `completadas.md` no se reescriben como parte de la ejecución de este plan; solo se consultan para resolver trazabilidad histórica cuando sea necesario.
+
+Esta disposición concreta la instrucción del propietario del proyecto de ejecutar el backlog departamental consolidado. No autoriza a omitir las reglas de auditoría, respaldo, desarrollo, autoauditoría, Code Review, aprobación, trazabilidad ni commit consolidado contenidas en esta metodología.
+
+## 18.2 Precedencia para determinar el orden de trabajo
+
+El orden de implementación se determina obligatoriamente en este orden:
+
+1. Dependencias explícitas de la tarea y prerrequisitos técnicos demostrables.
+2. Capas de arquitectura y contratos compartidos requeridos por los módulos consumidores.
+3. Integraciones entre servicios, propiedad de datos y efectos transaccionales.
+4. Secuencia funcional del proceso institucional y área responsable.
+5. Severidad y prioridad registradas en el backlog.
+6. Capacidad de ejecución y posibilidad de aislar pruebas sin afectar otros módulos.
+
+Una etiqueta P0/P1 no permite saltar una dependencia. Los órdenes explícitos de una iniciativa se conservan como secuencia local y no se comparan automáticamente con órdenes de otra iniciativa. Ninguna tarea puede declararse lista para implementación si sus prerrequisitos están pendientes, no auditados o sin evidencia.
+
+## 18.3 Fases PM del plan maestro
+
+Se utilizan las fases PM-00 a PM-09 definidas en el plan rector:
+
+- **PM-00:** inventario, triage y resolución de dependencias.
+- **PM-01:** identidad, seguridad y gobierno de acceso.
+- **PM-02:** arquitectura, datos, contratos y persistencia.
+- **PM-03:** integración interservicio, eventos y workflows.
+- **PM-04:** migración, importación y preservación de datos.
+- **PM-05:** servicios funcionales por área institucional.
+- **PM-06:** documentos, formularios, firmas y trámites.
+- **PM-07:** portales, experiencia, paneles y analítica.
+- **PM-08:** pruebas integrales, resiliencia y observabilidad.
+- **PM-09:** piloto, cutover y retiro controlado de legado.
+
+Las fases PM expresan el orden de producto y arquitectura. No sustituyen las ocho fases metodológicas 0–7 descritas en la sección 4. Cada tarea del plan debe completar íntegramente el flujo metodológico 0–7. Las pruebas unitarias, de seguridad y de contrato se ejecutan desde cada iteración; PM-08 añade la certificación transversal, no posterga las pruebas.
+
+## 18.4 Selección y ejecución de tareas
+
+1. Al iniciar una iteración se consulta el plan maestro y se selecciona la siguiente tarea ejecutable por ID.
+2. Se verifica el registro completo en el backlog departamental, el informe de auditoría de origen, las tareas derivadas y el MapaDependencias.
+3. Se realiza Fase 0 de auditoría manual de la tarea y de sus dependencias; si falta informe o evidencia, se realiza la auditoría antes de modificar.
+4. Se confirma que la tarea no duplica otra y que las ampliaciones se incorporan a su tarea madre sin perder criterios.
+5. Se registra la tarea en ejecución y se prepara el respaldo antes de editar.
+6. Se implementa únicamente el alcance y los criterios autorizados.
+7. Se completan autoauditoría, pruebas de comportamiento/persistencia, Code Review y cierre documental.
+8. Se actualiza el estado operativo del backlog y el plan con evidencia. Solo después de Code Review aprobado puede pasar a Completada.
+9. Si una dependencia falla, la tarea queda Bloqueada con referencia exacta al ID y evidencia. No se sustituye por un workaround ni se avanza a un módulo consumidor.
+10. Se pueden paralelizar áreas independientes únicamente cuando comparten contratos estables y no editan simultáneamente el mismo servicio, esquema, catálogo o fuente de verdad.
+
+Los registros PM-00 identificados como encabezados, ampliaciones o tareas con metadatos incompletos no se implementan como tareas independientes. Primero se vinculan a la tarea madre, se completan sus requisitos o se reclasifican mediante evidencia.
+
+## 18.5 Campos obligatorios en cada checkpoint
+
+Todo checkpoint de IMA debe identificar expresamente el lugar de la ejecución tanto en la metodología como en el plan maestro. Además de los campos obligatorios de las secciones 16 y de `AUDITORIAS/Contexto_personal.txt`, incluir:
+
+- **ID de checkpoint:** consecutivo acumulativo C1.xxx.
+- **ID de sesión:** identificador operativo único de la conversación/iteración; no presentarlo como ID nativo de ChatGPT.
+- **Checkpoint inicial de sesión** y checkpoint de cierre, cuando corresponda.
+- **Fase metodológica:** Fase 0, 1, 2, 3, 4, 5, 6 o 7.
+- **Fase del plan maestro:** PM-00 a PM-09.
+- **Etapa/subetapa:** nombre preciso del bloque funcional o técnico dentro de la fase PM.
+- **ID de tarea:** ID exacto del backlog. Para una actividad de planificación que no sea tarea de producto se puede usar un ID operativo `PLAN-IMA-###`, identificado expresamente como tal y sin confundirlo con un ID del backlog.
+- **Comentario breve:** objetivo de la tarea, contexto institucional/técnico y motivo de su posición en el orden de trabajo.
+- **Estado:** Pendiente, En ejecución, Bloqueada o Completada; indicar el último elemento terminado, el elemento en curso y el siguiente ID.
+- **Dependencias:** IDs prerrequisito, estado y evidencia.
+- **Evidencia y SHAs:** fuentes, blobs, commit/HEAD de partida y resultados de validación.
+- **Archivos:** rutas modificadas y no modificadas, con alcance concreto.
+- **Pruebas:** ejecutadas, resultado y no ejecutadas/limitaciones.
+- **Rama y HEAD:** rama autorizada, HEAD verificado de partida, referencia base protegida y resultado de comparación.
+- **Próxima acción reproducible:** archivo, sección, función o rango que debe abrirse y qué criterio se debe comprobar.
+
+El checkpoint es acumulativo. Se agrega al final del archivo de contexto real sin borrar, reescribir, resumir ni reordenar entradas anteriores.
+
+## 18.6 Información obligatoria en cada respuesta del chat
+
+Cada reporte de avance o cierre en el chat debe incluir, sin omitir:
+
+1. ID del checkpoint y estado de sesión.
+2. ID de sesión.
+3. Fase metodológica y fase/etapa PM.
+4. ID de tarea y breve descripción del trabajo/contexto.
+5. Resultado y estado: completada, en curso o bloqueada; no declarar completada sin Code Review.
+6. Archivos modificados y archivos revisados sin modificación.
+7. Pruebas ejecutadas, resultados y pruebas no ejecutadas.
+8. HEAD/commit de partida y commit de cierre verificado cuando se publique.
+9. Dependencias pendientes, riesgos y siguiente tarea exacta.
+
+Si no se pudo publicar o verificar un cambio, se declara explícitamente; no se reporta como actualizado en GitHub.
+
+## 18.7 Control de cambios del plan
+
+El plan maestro se actualiza de forma versionada y trazable cuando una auditoría confirme nuevas dependencias, cambios de arquitectura, tareas nuevas, ampliaciones o reordenamiento. Se conserva el historial de versiones y no se eliminan criterios del backlog. Toda modificación del orden debe incluir motivo técnico, IDs afectados, dependencias antes/después y evidencia. Los cambios del plan, de la metodología y del contexto que pertenezcan a una misma iteración se publican juntos en un único commit conforme a la sección 15.
+
