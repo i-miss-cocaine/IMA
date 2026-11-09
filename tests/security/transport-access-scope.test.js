@@ -18,6 +18,7 @@ function extractFunction(name, nextName) {
 const helperSource =
   extractFunction("transportRows_", "resolveTransportAccessScope_") +
   extractFunction("resolveTransportAccessScope_", "transportAuditDenied_") +
+  extractFunction("transportAuditDenied_", "getTransportRouteIdsForScope_") +
   extractFunction("getTransportRouteIdsForScope_", "getTransportRoutes") +
   extractFunction("getTransportRoutes", "assignStudentTransport") +
   extractFunction("getTransportAssignments", "getOrCreateActiveTrip");
