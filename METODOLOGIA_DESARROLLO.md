@@ -1065,7 +1065,7 @@ Una implementación no terminada, no auditada internamente, corrupta o sin Code 
 
 ## 20.4 Verificación y cierre
 1. Antes de escribir, verificar rama/HEAD, SHA del blob, tamaño actual y tamaño proyectado. No modificar archivos históricos ni efectuar escrituras parciales.
-2. Al rotar, comprobar que la copia normativa A–H del nuevo archivo coincide íntegramente con el bloque vigente de contexto personal; registrar su SHA o una verificación equivalente.
+2. Al rotar, comprobar que la copia normativa A–I del nuevo archivo coincide íntegramente con el bloque vigente de contexto personal; registrar su SHA o una verificación equivalente.
 3. Verificar después del commit: HEAD, árbol, rutas, tamaño de cada parte, continuidad de IDs, referencias del índice y rama base intacta.
 4. Si el bloque normativo original no puede recuperarse íntegramente, o no se puede verificar la integridad del archivo/índice, detener la rotación sin publicar cambios parciales.
 

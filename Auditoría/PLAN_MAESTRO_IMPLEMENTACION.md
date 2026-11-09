@@ -1837,3 +1837,9 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - Se incorpora el protocolo de auditoría única y control de recursividad de METODOLOGIA_DESARROLLO.md §19.6.
 - Cada tarea conserva un expediente principal; las correcciones se verifican de forma focalizada. Las reauditorías completas requieren causa y evidencia nueva; se prohíbe auditar informes de auditoría en cadena.
 - El contexto operativo incorpora la misma regla como apartado I del bloque normativo A–I. No cambia el orden PM ni el estado de TASK-638.
+
+
+## Seguimiento operativo — C1.301
+- TASK-638 — Completada / PM-00. Se cierra el inventario estático de dependencias y contratos con la matriz C1.301 en Auditoría/MapaDependencias.md. Se conserva la trazabilidad C1.289–C1.299 sin duplicar informes; los hallazgos se vinculan a TASK-636, TASK-685, TASK-687 y TASK-688.
+- Cobertura documentada: 1.024 blobs del tree; 101 HTML/HTM; 24 JS; 6 CSS; 6 Apps Script; 27 JSON; 287 llamadas literales (262 JS + 25 HTML); cinco dispatchers y 745 casos. Los estados de deployments/Script Properties y las pruebas runtime permanecen explícitamente No verificados/No ejecutados; ninguna ruta se declara operativa por mera configuración.
+- Siguiente tarea elegible: TASK-639 — Verificar duplicaciones, símbolos globales y ciclos; requisito en pendientes/Secretaria/Pendientes.md; dependencias TASK-637 y TASK-638 satisfechas documentalmente. Aplicar metodología §19.6 y reutilizar el inventario existente.

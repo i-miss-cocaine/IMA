@@ -278,3 +278,14 @@ El propósito de este documento es llevar el registro de las tareas derivadas de
 - **Criterios verificables:** profesor solo accede/muta sus grupos/asignaturas/períodos; tutor solo consulta estudiantes vinculados; estudiante solo su expediente; IDs alterados/ámbitos omitidos o falsificados se deniegan; authRole del payload no supera permisos firmados; cierres y rectificaciones requieren autorización de servidor; pruebas negativas/positivas por rol y relación.
 - **Estado/evidencia:** ampliación registrada; TASK-685 conserva estado Pendiente. Sin cambios de código ni pruebas runtime en C1.299.
 ===============================================================================
+
+
+===============================================================================
+## Ampliación C1.301 — cierre documental TASK-638 y reconciliación de contratos
+- TASK-638: completada como tarea de inventario/documentación; evidencia principal: Auditoría/MapaDependencias.md, sección C1.301, más C1.289–C1.299 vigentes. No se modificó código ni se certificaron deployments.
+- Reconciliación: 262 callsites fetchApi literales en 24 archivos JS (USER 70, ACADEMIC 120, TASK 23, EXAM 19, ACCOUNTING 30) y 25 inline en dashboard-recursos-humanos.html; total 287. Dispatchers: TASK 44, EXAM 38, ACADEMIC 241, USER 182, ACCOUNTING 240.
+- AUD-NG-358 / TASK-687 (ampliación, mismo ID): se incorporan createSpreadsheetBackup (ruta dinámica USER/ACADEMIC), createOrUpdateStudyGuide, getStudyGuides, toggleStudyGuideStatus y recordStudentAttendance (ACADEMIC). exportSchoolYearArchive conserva caller activo. Distinguir wrappers activos de los que no tienen consumidor localizado.
+- AUD-NG-359 / TASK-688 (ampliación, mismo ID): USER carece de handlers locales para purgeSecurityCaches, dispatchSecurityEvent, processSecurityEventQueue y getSecurityEventsQueue; ACADEMIC para generateInstitutionalReport; TASK para generateAcademicArchiveZip. Los endpoints chunked de USER se delegan a TASK y no se clasifican como handlers faltantes.
+- No se crean IDs nuevos. No se implementan correcciones PM-01/PM-02 dentro de TASK-638.
+- TASK-639 queda como siguiente tarea elegible tras verificación de TASK-637 y cierre documental TASK-638.
+===============================================================================

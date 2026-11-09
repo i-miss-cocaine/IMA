@@ -4514,3 +4514,245 @@ TASK-638 continúa En ejecución; el mapa es parcial y no declara cerrada la tra
 - Ampliar TASK-685 existente con AUD-NG-371-EXAM/372/373: ABAC de docente/guardianes, protección de consultas y mutaciones, actor de claims y bypass de cierre. Sin ID nuevo.
 - TASK-638 sigue En ejecución; no se declara cerrada la matriz global.
 ===============================================================================
+
+
+===============================================================================
+## C1.301 — cierre de trazabilidad TASK-638: contratos, consumidores y persistencia
+
+### 1. Alcance, evidencia heredada y regla de no repetición
+- Se reutilizan sin repetir los inventarios verificados en C1.289–C1.293: 1.024 blobs del árbol; 101/101 HTML/HTM; 24/24 JavaScript; 6/6 CSS; 6/6 archivos Apps Script; 27/27 JSON; inventario de archivos reconciliado con el tree. No se reauditaron esas capas.
+- Se reutilizan C1.296–C1.299 para identidad, token, rutas públicas, TASK/EXAM, USER/ACADEMIC y hallazgos. Se amplía únicamente el tramo pendiente: consumidor → servicio → dispatcher → handler → hojas/Drive/cache/locks → respuesta; además wrappers dinámicos y endpoints.
+- Conteo reconciliado del snapshot: 262 llamadas fetchApi literales en 24 archivos JavaScript (USER 70, ACADEMIC 120, TASK 23, EXAM 19, ACCOUNTING 30) y 25 llamadas inline en dashboard-recursos-humanos.html (ACCOUNTING); total 287. Los casos repetidos por distintos consumidores se conservan como callsites separados. Los 5 servicios registran 745 cases en sus dispatchers (TASK 44, EXAM 38, ACADEMIC 241, USER 182, ACCOUNTING 240); conteo estructural, no prueba de disponibilidad.
+- Fuentes backend y SHA del snapshot: TASK 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe; EXAM 1d93296628fae31f680004f637897e2b1314a64c; ACADEMIC df87a2eea9f0ef79d0b966d03fd5bbe432003df5; USER 12079dd410aa6d8afbce55a4bc62a79dea605f9f; ACCOUNTING 38b979d41596b85e888b4a7060b37bbac0840a28.
+- Consumidores revisados en este complemento: js/student.js e2888cea60322e49a40b89adadb8010489605dcc; js/teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; js/accounting.js a79ead4a54ad6fdb2f1e9df4775491ff7191a0c7; js/secretary.js 08a81266957b4c18cc25f8ba6749eac30a8f2c2c. Las demás llamadas de auth.js, config.js, developer.js, exam.js, games-adapter.js, index-ui.js, quizpro.js, results.js y ui-common.js se reconcilian abajo.
+
+### 2. Matriz por acción: consumidores, dispatcher, handler y persistencia
+Las hojas literales se extraen de la función handler; «helper/dinámica» significa que la hoja/archivo se resuelve por helper, payload o configuración y no se presenta como literal comprobado. Los métodos de persistencia son observaciones estáticas, no pruebas de escritura real.
+### TASK
+| Acción | Consumidor/callsite | Dispatcher (línea) | Handler (línea) | Hojas literales | Persistencia/efectos observados |
+|---|---|---:|---|---|---|
+| `closeAcademicYear` | js/teacher.js:2915 | 412 | closeAcademicYear (524) | Tareas,Entregas,Log_Cierres | SpreadsheetApp,getSheetOrThrow,getSheetByName,getOrCreateSheet,getDataRange,DriveApp,setTrashed,deleteRow,appendRow |
+| `createPost` | js/teacher.js:1962 | 416 | createPost (1563) | PublicacionesAnuncios | SpreadsheetApp,getOrCreateSheet,appendRow |
+| `createStudyMaterial` | js/teacher.js:1978 | 420 | createStudyMaterial (1665) | MaterialesEducativos | SpreadsheetApp,getOrCreateSheet,appendRow |
+| `createTask` | js/teacher.js:4740 | 385 | createTask (447) | Tareas | SpreadsheetApp,getSheetOrThrow,appendRow |
+| `deleteFile` | js/student.js:2057<br>js/student.js:2504 | 396 | deleteFile (1049) | helper/dinámica | DriveApp,setTrashed |
+| `getAllStudentProjects` | js/teacher.js:4827 | 410 | getAllStudentProjects (1407) | helper/dinámica | DriveApp |
+| `getAllTasks` | js/teacher.js:3015<br>js/teacher.js:3315<br>js/teacher.js:3627<br>js/teacher.js:4594 | 402 | getAllTasks (1177) | Tareas | SpreadsheetApp,getSheetOrThrow,getDataRange |
+| `getPosts` | js/student.js:769 | 415 | getPosts (1526) | PublicacionesAnuncios | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getStudentTasks` | js/student.js:1228 | 392 | getStudentTasks (613) | Tareas,Entregas | SpreadsheetApp,getSheetOrThrow,getDataRange |
+| `getStudyMaterials` | js/student.js:807 | 419 | getStudyMaterials (1632) | MaterialesEducativos | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getSubmissionDocumentPreviewUrl` | js/teacher.js:1207 | 386 | getSubmissionDocumentPreviewUrl (2367) | helper/dinámica | DriveApp |
+| `getTeacherActivity` | js/teacher.js:3017<br>js/teacher.js:3525<br>js/teacher.js:3610<br>js/teacher.js:4596 | 401 | getTeacherActivity (1119) | Usuarios,Tareas,Entregas | SpreadsheetApp,getSheetOrThrow,getDataRange |
+| `loadProject` | js/teacher.js:4870 | 409 | loadProject (1371) | pseudocode | SpreadsheetApp,getSheetOrThrow,getDataRange,DriveApp |
+| `submitAssignment` | js/student.js:2572 | 397 | submitAssignment (892) | Entregas,EntregasVersiones,Tareas | SpreadsheetApp,getSheetOrThrow,getOrCreateSheet,appendRow,getDataRange,setValues |
+| `uploadFile` | js/student.js:2361<br>js/student.js:2388 | 393 | uploadFile (704) | Usuarios,Tareas | SpreadsheetApp,getSheetOrThrow,getDataRange,DriveApp,createFile |
+
+### EXAM
+| Acción | Consumidor/callsite | Dispatcher (línea) | Handler (línea) | Hojas literales | Persistencia/efectos observados |
+|---|---|---:|---|---|---|
+| `closePeriodGradebook` | js/teacher.js:5417 | 385 | closePeriodGradebook (1832) | CierresPeriodos | SpreadsheetApp,getOrCreateSheet,appendRow |
+| `createExam` | js/teacher.js:4789 | 361 | createExam (506) | Examenes,PreguntasExamen | SpreadsheetApp,getSheetOrThrow,appendRow,setValues |
+| `getAllExams` | js/teacher.js:3016<br>js/teacher.js:3316<br>js/teacher.js:3628<br>js/teacher.js:4595 | 365 | getAllExams (609) | Examenes | SpreadsheetApp,getSheetOrThrow,getDataRange |
+| `getExamGradeDistributionAnalytics` | js/teacher.js:4388 | 396 | getExamGradeDistributionAnalytics (733) | Examenes,EntregasExamen | SpreadsheetApp,getSheetOrThrow,getDataRange |
+| `getGradebookData` | js/teacher.js:5237 | 373 | getGradebookData (1458) | Usuarios,CalificacionesEstudiantes,RecuperacionesEstudiante,CierresPeriodos | SpreadsheetApp,getSheetOrThrow,getDataRange,getOrCreateSheet |
+| `getStudentAcademicReport` | js/student.js:2992 | 391 | getStudentAcademicReport (2043) | Matriculas,CalificacionesEstudiantes,RecuperacionesEstudiante | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getStudentExams` | js/student.js:1241 | 368 | getStudentExams (1057) | Examenes,EntregasExamen | SpreadsheetApp,getSheetOrThrow,getDataRange |
+| `getTeacherExamActivity` | js/teacher.js:3018<br>js/teacher.js:3618<br>js/teacher.js:4597 | 366 | getTeacherExamActivity (1176) | Usuarios,Examenes,EntregasExamen | SpreadsheetApp,getSheetOrThrow,getDataRange |
+| `saveGradebookGrades` | js/teacher.js:5385 | 374 | saveGradebookGrades (1533) | CierresPeriodos,CalificacionesEstudiantes | SpreadsheetApp,getOrCreateSheet,getDataRange,appendRow,setValues |
+| `saveStudentRecovery` | js/teacher.js:5343 | 383 | saveStudentRecovery (1722) | CierresPeriodos,RecuperacionesEstudiante | SpreadsheetApp,getOrCreateSheet,getDataRange,appendRow |
+| `simulateExamReschedule` | js/teacher.js:1778 | 395 | simulateExamReschedule (910) | Examenes | SpreadsheetApp,getSheetOrThrow,getDataRange |
+
+### ACADEMIC
+| Acción | Consumidor/callsite | Dispatcher (línea) | Handler (línea) | Hojas literales | Persistencia/efectos observados |
+|---|---|---:|---|---|---|
+| `addCaseFollowUpNote` | js/teacher.js:5855 | 925 | addCaseFollowUpNote (8649) | CasosSeguimiento | SpreadsheetApp,getOrCreateSheet,getDataRange,setValue |
+| `addToWaitlist` | js/secretary.js:1579 | 853 | addToWaitlist (1750) | SolicitudesAdmision,ListaEsperaAdmision | SpreadsheetApp,getOrCreateSheet,getDataRange,appendRow,setValue |
+| `applyScheduleTemplate` | js/teacher.js:1371 | 760 | applyScheduleTemplate (14000) | helper/dinámica | SpreadsheetApp,getSheetByName,getDataRange,insertSheet,appendRow |
+| `assignDepartmentHead` | js/teacher.js:2499 | 779 | assignDepartmentHead (7398) | DepartamentosAcademicos | SpreadsheetApp,getOrCreateSheet,appendRow,getDataRange,setValue |
+| `bulkApplyAttendanceStatus` | js/teacher.js:2066 | 913 | bulkApplyAttendanceStatus (8339) | RegistrosAsistencia | LockService,SpreadsheetApp,getOrCreateSheet,appendRow,getDataRange,setValues |
+| `checkEnrollmentCapacity` | js/secretary.js:1412 | 883 | checkEnrollmentCapacity (11147) | OfertaAcademica,Matriculas,SolicitudesAdmision | LockService,SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `compareScheduleVersions` | js/teacher.js:1661 | 816 | compareScheduleVersions (7145) | VersionesHorarios,HorariosClase | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `configureAcademicJornada` | js/teacher.js:7678 | 831 | configureAcademicJornada (4717) | JornadasAcademicas | SpreadsheetApp,getOrCreateSheet,getDataRange,setValue,appendRow |
+| `configureSchoolYear` | js/teacher.js:7586 | 829 | configureSchoolYear (2861) | AnosLectivos | SpreadsheetApp,getOrCreateSheet,getDataRange,setValue,appendRow |
+| `convertAdmissionToStudent` | js/secretary.js:283 | 861 | convertAdmissionToStudent (2156) | SolicitudesAdmision,ExpedientesEstudiantes,Usuarios,RelacionesFamiliares,InvitacionesVinculacion,DocumentosEstudiante,MovimientosEstudiante | LockService,SpreadsheetApp,getOrCreateSheet,getDataRange,appendRow,setValue |
+| `createAcademicOffer` | js/teacher.js:723<br>js/teacher.js:1928 | 740 | createAcademicOffer (6180) | OfertaAcademica | SpreadsheetApp,getOrCreateSheet,appendRow,CacheService |
+| `createAdmissionRequest` | js/student.js:3179 | 842 | createAdmissionRequest (984) | SolicitudesAdmision,BorradoresAdmision | LockService,SpreadsheetApp,getOrCreateSheet,getDataRange,appendRow,setValue |
+| `createCalendarEvent` | js/secretary.js:622 | 797 | createCalendarEvent (6651) | MantenimientoAulas,CalendarioAcademico | SpreadsheetApp,getOrCreateSheet,getDataRange,appendRow |
+| `createClassSchedule` | js/teacher.js:738<br>js/teacher.js:769<br>js/teacher.js:1888 | 799 | createClassSchedule (6900) | HorariosClase,BandejaNotificaciones | LockService,SpreadsheetApp,getOrCreateSheet,getDataRange,appendRow,setValues |
+| `createSessionException` | js/teacher.js:1728 | 814 | createSessionException (2692) | ExcepcionesSesiones | SpreadsheetApp,getOrCreateSheet,appendRow |
+| `createSystemBackup` | js/teacher.js:2769 | 706 | createSystemBackup (12274) | helper/dinámica | SpreadsheetApp,getDataRange,createFile |
+| `createTeacherSubstitution` | js/teacher.js:2114<br>js/teacher.js:2131 | 748 | createTeacherSubstitution (6501) | HorariosClase,AsignacionesDocentes | SpreadsheetApp,getOrCreateSheet,getDataRange,appendRow |
+| `createTeacherSupervision` | js/teacher.js:5933 | 949 | createTeacherSupervision (5078) | SupervisionesDocentes | SpreadsheetApp,getOrCreateSheet,appendRow |
+| `deleteClassSchedule` | js/teacher.js:687 | 800 | deleteClassSchedule (6992) | HorariosClase | SpreadsheetApp,getOrCreateSheet,getDataRange,setValue |
+| `executeCurricularMigration` | js/teacher.js:2248 | 784 | executeCurricularMigration (3130) | HistorialAcademico,CalificacionesEstudiantes | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `exportBulkClassSchedules` | js/teacher.js:874 | 819 | exportBulkClassSchedules (3403) | HorariosClase | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `findDuplicateStudents` | js/teacher.js:8304 | 866 | findDuplicateStudents (10107) | SolicitudesAdmision,ExpedientesEstudiantes | SpreadsheetApp,getOrCreateSheet,getDataRange,getSheetByName |
+| `generateAutoSchedules` | js/teacher.js:1870 | 743 | generateAutoSchedules (6335) | OfertaAcademica,AsignacionesDocentes,SedesAulas,HorariosClase | SpreadsheetApp,getOrCreateSheet,getDataRange,appendRow |
+| `generateMigrationReport` | js/teacher.js:2886 | 703 | generateMigrationReport (12793) | MigrationLogs | getOrCreateSheet,SpreadsheetApp,appendRow |
+| `getAcademicConfig` | js/teacher.js:368<br>js/teacher.js:3629 | 694 | getAcademicConfig (12518) | ConfiguracionAcademica | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getAcademicHistory` | js/student.js:1151 | 696 | getAcademicHistory (12718) | helper/dinámica | SpreadsheetApp,getSheetByName,getDataRange |
+| `getAcademicOffers` | js/teacher.js:716<br>js/teacher.js:1921 | 739 | getAcademicOffers (6132) | OfertaAcademica | CacheService,SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getAcademicPlanningAuditLogs` | js/teacher.js:1403 | 763 | getAcademicPlanningAuditLogs (13837) | HistorialCambiosEntidad | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getAdmissionAnalyticsReport` | js/teacher.js:18 | 859 | getAdmissionAnalyticsReport (11693) | SolicitudesAdmision | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getAdmissionEvaluations` | js/secretary.js:1466 | 852 | getAdmissionEvaluations (1724) | EvaluacionesAdmision | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getAdmissionInterviews` | js/secretary.js:367 | 849 | getAdmissionInterviews (1645) | EntrevistasAdmision | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getAdmissionRequests` | js/secretary.js:16 | 843 | getAdmissionRequests (1113) | SolicitudesAdmision | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getAttendanceFollowupCases` | js/teacher.js:5784 | 923 | getAttendanceFollowupCases (8815) | CasosSeguimiento | SpreadsheetApp,getSheetByName,getDataRange,getOrCreateSheet |
+| `getAttendanceIncidents` | js/teacher.js:5557 | 920 | getAttendanceIncidents (8695) | IncidenciasAsistencia | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getClassroomResources` | js/teacher.js:2534<br>js/secretary.js:670 | 801 | getClassroomResources (7694) | SedesAulas,MantenimientoAulas | SpreadsheetApp,getOrCreateSheet,getDataRange,appendRow |
+| `getClassSchedules` | js/teacher.js:672 | 798 | getClassSchedules (6718) | HorariosClase | CacheService,SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getCoordinatorOverview` | js/secretary.js:535 | 741 | getCoordinatorOverview (6301) | OfertaAcademica,AsignacionesDocentes,HorariosClase | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getCurricularAnalyticsReport` | js/teacher.js:2294<br>js/secretary.js:821 | 780 | getCurricularAnalyticsReport (2927) | CalificacionesEstudiantes | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getCurricularConstraints` | js/teacher.js:1525 | 773 | getCurricularConstraints (13509) | TipoRestriccion | SpreadsheetApp,getSheetByName,insertSheet,appendRow,getDataRange |
+| `getCurricularEquivalences` | js/teacher.js:2217 | 783 | getCurricularEquivalences (3093) | CatalogoAsignaturas | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getDailyAttendance` | js/teacher.js:5502 | 916 | getDailyAttendance (8526) | RegistrosAsistencia | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getDepartmentAcademicPlanning` | js/teacher.js:2461<br>js/secretary.js:780 | 750 | getDepartmentAcademicPlanning (7424) | DepartamentosAcademicos,OfertasAcademicas,AsignacionesDocentes | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getMergePreviewComparison` | js/secretary.js:912 | 868 | getMergePreviewComparison (10334) | helper/dinámica | — |
+| `getPlanningQualityAndOccupancyReport` | js/teacher.js:1088 | 818 | getPlanningQualityAndOccupancyReport (3525) | HorariosClase,SedesAulas | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getPublicAdmissionStatus` | js/student.js:278<br>js/student.js:3189 | 846 | getPublicAdmissionStatus (1510) | SolicitudesAdmision | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getReusableResourceCatalog` | js/teacher.js:2344 | 781 | getReusableResourceCatalog (2989) | RecursosEducativosReutilizables,ProyectosInterdisciplinarios | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getScheduleConflictResolutionAlternatives` | js/teacher.js:807 | 805 | getScheduleConflictResolutionAlternatives (8085) | helper/dinámica | SpreadsheetApp |
+| `getScheduleTemplates` | js/teacher.js:1309 | 754 | getScheduleTemplates (13961) | helper/dinámica | SpreadsheetApp,getSheetByName,getDataRange |
+| `getScheduleVersions` | js/teacher.js:1607 | 815 | getScheduleVersions (7119) | VersionesHorarios | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getSectionCapacityAnalyticsReport` | js/teacher.js:1447 | 770 | getSectionCapacityAnalyticsReport (13657) | helper/dinámica | SpreadsheetApp,getSheetByName,getDataRange |
+| `getStudentAttendanceSummary` | js/student.js:1051 | 940 | getStudentAttendanceSummary (9759) | RegistrosAsistencia | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getStudentDocuments` | js/teacher.js:8181<br>js/secretary.js:304 | 876 | getStudentDocuments (10829) | DocumentosEstudiante,HistorialVersionesDocumentos | SpreadsheetApp,getOrCreateSheet,getDataRange,DriveApp |
+| `getStudentEnrollmentHistory` | js/student.js:143 | 705 | getStudentEnrollmentHistory (12877) | Matriculas,CargosEstudiante | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getStudentFile` | js/teacher.js:7884 | 862 | getStudentFile (2510) | ExpedientesEstudiantes,Matriculas,RelacionesEstudianteTutor,ResponsablesTutores,DocumentosEstudiante,MovimientosEstudiante | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getStudentFileAdministrativeReports` | js/secretary.js:853<br>js/secretary.js:871 | 870 | getStudentFileAdministrativeReports (10431) | ExpedientesEstudiantes,Matriculas,MovimientosEstudiante,DocumentosEstudiante,HistorialCambiosEntidad | SpreadsheetApp,getOrCreateSheet,getDataRange,getSheetByName,appendRow |
+| `getStudentGuardians` | js/teacher.js:8078 | 872 | getStudentGuardians (10553) | RelacionesEstudianteTutor,ResponsablesTutores | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getStudentSchedule` | js/student.js:891 | 804 | getStudentSchedule (7986) | Matriculas,HorariosClase,OfertaAcademica,CatalogoAsignaturas,AsignacionesDocentes | SpreadsheetApp,getOrCreateSheet,getDataRange,getSheetByName |
+| `getStudentTimeline` | js/teacher.js:8267 | 865 | getStudentTimeline (9964) | HistorialCambiosEntidad,FusionesExpedientes | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getTeacherSupervisions` | js/teacher.js:5883 | 950 | getTeacherSupervisions (5108) | SupervisionesDocentes | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getWaitlist` | js/secretary.js:1528 | 854 | getWaitlist (1813) | ListaEsperaAdmision,SolicitudesAdmision | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getWhatsAppLink` | js/student.js:1566<br>js/student.js:2610<br>js/teacher.js:3945 | 700 | getWhatsAppLink (12768) | Clases | getOrCreateSheet,SpreadsheetApp,getDataRange |
+| `importBulkClassSchedules` | js/teacher.js:936<br>js/teacher.js:970 | 820 | importBulkClassSchedules (3430) | HorariosClase | LockService,SpreadsheetApp,getOrCreateSheet,getDataRange,setValues,appendRow |
+| `listSystemBackups` | js/teacher.js:2735 | 708 | listSystemBackups (12321) | helper/dinámica | — |
+| `manageReusableResource` | js/teacher.js:2403 | 782 | manageReusableResource (3046) | ProyectosInterdisciplinarios,RecursosEducativosReutilizables | SpreadsheetApp,getOrCreateSheet,appendRow |
+| `mergeStudentFiles` | js/teacher.js:8336 | 867 | mergeStudentFiles (10282) | ExpedientesEstudiantes,DocumentosEstudiante,MovimientosEstudiante,FusionesExpedientes | SpreadsheetApp,getOrCreateSheet,getDataRange,setValue,appendRow |
+| `offerWaitlistSlot` | js/secretary.js:1599 | 856 | offerWaitlistSlot (1876) | ListaEsperaAdmision | SpreadsheetApp,getOrCreateSheet,getDataRange,setValue |
+| `openAttendanceSession` | js/teacher.js:565 | 911 | openAttendanceSession (8206) | SesionesAsistencia | SpreadsheetApp,getOrCreateSheet,appendRow |
+| `previewBackupRestoreImpact` | js/teacher.js:2170 | 903 | previewBackupRestoreImpact (3174) | helper/dinámica | DriveApp,SpreadsheetApp,getSheetByName |
+| `previewPublishImpact` | js/teacher.js:1005 | 821 | previewPublishImpact (3351) | HorariosClase | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `publishClassSchedules` | js/teacher.js:1051 | 823 | publishClassSchedules (7008) | HorariosClase,VersionesHorarios | LockService,SpreadsheetApp,getOrCreateSheet,getDataRange,setValue,appendRow |
+| `recordInterviewOutcome` | js/secretary.js:439 | 850 | recordInterviewOutcome (1671) | EntrevistasAdmision | SpreadsheetApp,getOrCreateSheet,getDataRange,setValue |
+| `reorderWaitlist` | js/secretary.js:1625 | 855 | reorderWaitlist (1849) | ListaEsperaAdmision | SpreadsheetApp,getOrCreateSheet,getDataRange,setValue |
+| `restoreScheduleVersion` | js/teacher.js:1688 | 817 | restoreScheduleVersion (7224) | VersionesHorarios,HorariosClase | SpreadsheetApp,getOrCreateSheet,getDataRange,setValues,appendRow |
+| `restoreSystemBackup` | js/teacher.js:2793 | 710 | restoreSystemBackup (12406) | helper/dinámica | DriveApp,SpreadsheetApp,getSheetByName,insertSheet,getDataRange,setValues |
+| `saveAdmissionEvaluation` | js/secretary.js:1505 | 851 | saveAdmissionEvaluation (1691) | EvaluacionesAdmision | SpreadsheetApp,getOrCreateSheet,appendRow |
+| `saveAttendanceFollowupCase` | js/teacher.js:5834 | 924 | saveAttendanceFollowupCase (8881) | CasosSeguimiento | SpreadsheetApp,getOrCreateSheet,appendRow,getDataRange,setValue |
+| `saveAttendanceIncident` | js/teacher.js:5639 | 921 | saveAttendanceIncident (8719) | IncidenciasAsistencia | SpreadsheetApp,getOrCreateSheet,appendRow |
+| `saveClassroomMaintenance` | js/teacher.js:2605<br>js/secretary.js:740 | 803 | saveClassroomMaintenance (7797) | MantenimientoAulas,SedesAulas | LockService,SpreadsheetApp,getOrCreateSheet,appendRow,getDataRange,setValue |
+| `saveClassroomResource` | js/teacher.js:2654 | 802 | saveClassroomResource (7752) | SedesAulas | LockService,SpreadsheetApp,getOrCreateSheet,getDataRange,setValue,appendRow |
+| `saveCurricularConstraint` | js/teacher.js:1573 | 776 | saveCurricularConstraint (13562) | TipoRestriccion | SpreadsheetApp,getSheetByName,insertSheet,appendRow,getDataRange |
+| `saveDailyAttendance` | js/teacher.js:5607 | 915 | saveDailyAttendance (8452) | RegistrosAsistencia | LockService,SpreadsheetApp,getOrCreateSheet,appendRow,getDataRange,setValues |
+| `saveInstitutionalActivity` | js/teacher.js:7772 | 835 | saveInstitutionalActivity (4876) | ActividadesInstitucionales | SpreadsheetApp,getOrCreateSheet,appendRow |
+| `saveQuestion` | js/teacher.js:2866 | 702 | saveQuestion (12781) | BancoPreguntas | SpreadsheetApp,getOrCreateSheet,getDataRange,setValues,appendRow |
+| `saveScheduleTemplate` | js/teacher.js:1350 | 751 | saveScheduleTemplate (13895) | NombrePlantilla | SpreadsheetApp,getSheetByName,insertSheet,appendRow,getDataRange |
+| `saveStudentGuardian` | js/teacher.js:8150 | 873 | saveStudentGuardian (10589) | ResponsablesTutores,RelacionesEstudianteTutor | SpreadsheetApp,getOrCreateSheet,getDataRange,setValues,appendRow |
+| `saveSupervisionObservation` | js/teacher.js:5970 | 952 | saveSupervisionObservation (5297) | ObservacionesSupervision,SupervisionesDocentes | SpreadsheetApp,getOrCreateSheet,getDataRange,setValue,appendRow |
+| `saveTeacherWorkLoadPreferences` | js/teacher.js:1842 | 810 | saveTeacherWorkLoadPreferences (6842) | HorariosLaborales | SpreadsheetApp,getOrCreateSheet,getDataRange,setValue,appendRow |
+| `saveWhatsAppLink` | js/teacher.js:3968 | 699 | saveWhatsAppLink (12758) | Clases | SpreadsheetApp,getOrCreateSheet,getDataRange,setValue,appendRow |
+| `scheduleAdmissionInterview` | js/secretary.js:419 | 848 | scheduleAdmissionInterview (1595) | EntrevistasAdmision | SpreadsheetApp,getOrCreateSheet,getDataRange,appendRow |
+| `unlinkStudentGuardian` | js/teacher.js:8115 | 874 | unlinkStudentGuardian (10673) | RelacionesEstudianteTutor | SpreadsheetApp,getOrCreateSheet,getDataRange,setValue |
+| `unmergeStudentFiles` | js/secretary.js:952 | 869 | unmergeStudentFiles (10387) | ExpedientesEstudiantes,HistorialCambiosEntidad | SpreadsheetApp,getOrCreateSheet,getDataRange,setValue,appendRow |
+| `updateAcademicConfig` | js/teacher.js:531 | 695 | updateAcademicConfig (12534) | ConfiguracionAcademica | LockService,SpreadsheetApp,getOrCreateSheet,getDataRange,setValues |
+| `updateAdmissionStatus` | js/secretary.js:264 | 847 | updateAdmissionStatus (1928) | SolicitudesAdmision | LockService,SpreadsheetApp,getOrCreateSheet,getDataRange,setValue |
+| `updateDocumentStatus` | js/secretary.js:342 | 877 | updateDocumentStatus (10957) | DocumentosEstudiante | SpreadsheetApp,getOrCreateSheet,getDataRange,setValue |
+| `updateStudentFile` | js/teacher.js:8052 | 864 | updateStudentFile (9940) | ExpedientesEstudiantes | SpreadsheetApp,getOrCreateSheet,getDataRange,setValue |
+| `uploadStudentDocument` | js/teacher.js:8232 | 875 | uploadStudentDocument (10693) | DocumentosEstudiante,HistorialVersionesDocumentos | DriveApp,createFile,SpreadsheetApp,getOrCreateSheet,getDataRange,appendRow,setValue |
+
+### USER
+| Acción | Consumidor/callsite | Dispatcher (línea) | Handler (línea) | Hojas literales | Persistencia/efectos observados |
+|---|---|---:|---|---|---|
+| `createInstitutionalAnnouncement` | js/teacher.js:5712 | 1436 | createInstitutionalAnnouncement (3848) | ComunicadosInstitucionales | SpreadsheetApp,getOrCreateSheet,appendRow |
+| `createLinkInvitation` | js/secretary.js:1170 | 1423 | createLinkInvitation (3334) | InvitacionesVinculacion | SpreadsheetApp,getOrCreateSheet,appendRow |
+| `createNews` | js/teacher.js:5037 | 1409 | createNews (5645) | NoticiasPortal | getOrCreateSheet,SpreadsheetApp,appendRow |
+| `getAdministrativeRequests` | js/student.js:1007 | 1478 | getAdministrativeRequests (5036) | SolicitudesTramites | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getAdmissionNotificationLogs` | js/secretary.js:1365 | 1453 | getAdmissionNotificationLogs (4938) | BandejaNotificaciones | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getCentralCapabilitiesCatalog` | js/secretary.js:474 | 1556 | getCentralCapabilitiesCatalog (8928) | helper/dinámica | — |
+| `getEntityAuditHistory` | js/secretary.js:1194 | 1399 | getEntityAuditHistory (2745) | helper/dinámica | SpreadsheetApp,getSheetByName,getDataRange |
+| `getFamilyConsolidatedSummary` | js/student.js:414 | 1431 | getFamilyConsolidatedSummary (3629) | ComprobantesPago,CargosEstudiante | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getFormativeEvaluations` | js/student.js:1087 | 1416 | getFormativeEvaluations (3232) | EvaluacionesFormativas | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getGameStats` | js/teacher.js:4936 | 1403 | getGameStats (3009) | Logros,QuizProAnalytics,LearningProfile | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getGuardianApplicants` | js/student.js:191<br>js/student.js:271 | 1430 | getGuardianApplicants (3583) | Usuarios,SolicitudesAdmision | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getGuardianStudents` | js/student.js:190 | 1429 | getGuardianStudents (3480) | ExpedientesEstudiantes,Usuarios,RelacionesFamiliares,RelacionesEstudianteTutor | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getInstitutionalAnnouncements` | js/student.js:3055<br>js/teacher.js:5665 | 1435 | getInstitutionalAnnouncements (3817) | ComunicadosInstitucionales | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getInstitutionalResponsibilitiesCatalog` | js/secretary.js:475 | 1559 | getInstitutionalResponsibilitiesCatalog (8968) | ResponsabilidadesInstitucionales | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getLearningProfile` | js/student.js:2681<br>js/teacher.js:4078 | 1406 | getLearningProfile (3090) | LearningProfile | getOrCreateSheet,SpreadsheetApp,getDataRange |
+| `getNews` | js/teacher.js:4977 | 1408 | getNews (3116) | NoticiasPortal | getOrCreateSheet,SpreadsheetApp,getDataRange |
+| `getScheduleChangeNotificationLogs` | js/secretary.js:1078 | 1452 | getScheduleChangeNotificationLogs (8897) | BandejaNotificaciones | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getStudentGuardianConsolidatedList` | js/secretary.js:1103 | 1427 | getStudentGuardianConsolidatedList (8811) | RelacionesFamiliares,RestriccionesCustodiaLegal | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getStudentProcedureNotificationLogs` | js/secretary.js:975 | 1454 | getStudentProcedureNotificationLogs (4896) | helper/dinámica | SpreadsheetApp,getSheetByName,getDataRange |
+| `getStudentsByGradoSeccion` | js/teacher.js:3014<br>js/teacher.js:3232<br>js/teacher.js:4593<br>js/teacher.js:5501 | 1378 | getStudentsByGradoSeccion (2561) | Usuarios | getSheetOrThrow,SpreadsheetApp,getDataRange |
+| `getUserInfo` | js/student.js:1550 | 1379 | getUserInfo (2572) | Usuarios | getSheetOrThrow,SpreadsheetApp,getDataRange |
+| `registerLegalCustodyRestriction` | js/secretary.js:1145 | 1426 | registerLegalCustodyRestriction (8757) | RestriccionesCustodiaLegal,RelacionesFamiliares | SpreadsheetApp,getOrCreateSheet,appendRow,getDataRange,setValue |
+| `submitAdministrativeRequest` | js/student.js:987 | 1483 | submitAdministrativeRequest (5134) | SolicitudesTramites | SpreadsheetApp,getOrCreateSheet,appendRow |
+| `submitAnnouncementReceiptConfirmation` | js/student.js:3092 | 1437 | submitAnnouncementReceiptConfirmation (3873) | ConfirmacionesLecturaComunicados | SpreadsheetApp,getOrCreateSheet,appendRow |
+| `submitFamilyScholarshipApplication` | js/student.js:725 | 1434 | submitFamilyScholarshipApplication (3786) | BecasYDescuentosFamiliares | SpreadsheetApp,getOrCreateSheet,appendRow |
+| `submitJointFamilyPayment` | js/student.js:635 | 1432 | submitJointFamilyPayment (3705) | ComprobantesPago,DistribucionPagosConjuntos | SpreadsheetApp,getOrCreateSheet,appendRow |
+| `submitStudentAbsenceJustification` | js/student.js:963 | 1479 | submitStudentAbsenceJustification (5076) | SolicitudesTramites | SpreadsheetApp,getOrCreateSheet,appendRow |
+| `uploadNewsImage` | js/teacher.js:5020 | 1410 | uploadNewsImage (6642) | helper/dinámica | createFile,DriveApp |
+
+### ACCOUNTING
+| Acción | Consumidor/callsite | Dispatcher (línea) | Handler (línea) | Hojas literales | Persistencia/efectos observados |
+|---|---|---:|---|---|---|
+| `assignAssetCustody` | js/accounting.js:604 | 772 | assignAssetCustody (9885) | ActivosPatrimoniales,AsignacionesActivos | LockService,SpreadsheetApp,getOrCreateSheet,getDataRange,setValue,appendRow |
+| `confirmTransferReceipt` | js/accounting.js:2032 | 693 | confirmTransferReceipt (13286) | TransferenciasInventario | LockService,SpreadsheetApp,getOrCreateSheet,getDataRange,setValue |
+| `deliverMaterialRequisition` | js/accounting.js:472 | 697 | deliverMaterialRequisition (13503) | MaterialesSolicitudes | SpreadsheetApp,getOrCreateSheet,getDataRange,setValue |
+| `getAdmissionFinancialStatus` | js/student.js:353 | 639 | getAdmissionFinancialStatus (2339) | CargosEstudiante,ComprobantesPago | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getAssetDisposals` | js/accounting.js:811 | 704 | getAssetDisposals (13840) | BajasBienes | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getAssetItems` | js/accounting.js:537 | 771 | getAssetItems (9847) | ActivosPatrimoniales | SpreadsheetApp,getOrCreateSheet,getDataRange,setValues |
+| `getBibliographicWorks` | js/accounting.js:1422 | 759 | getBibliographicWorks (9063) | BibliotecaCatalogoObras,BibliotecaEjemplares | SpreadsheetApp,getOrCreateSheet,getDataRange,setValues |
+| `getDigitalResources` | js/accounting.js:1728 | 769 | getDigitalResources (9749) | RecursosDigitalesBiblioteca | SpreadsheetApp,getOrCreateSheet,getDataRange,setValues |
+| `getInventoryKardex` | js/accounting.js:188 | 675 | getInventoryKardex (6164) | InventariosKardex | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getInventoryTransfers` | js/accounting.js:1944 | 694 | getInventoryTransfers (13405) | TransferenciasInventario | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getLibraryIncidents` | js/accounting.js:1668 | 767 | getLibraryIncidents (9659) | BibliotecaIncidencias | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getLibraryLoans` | js/accounting.js:1534 | 763 | getLibraryLoans (9429) | BibliotecaPrestamos | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getLibraryReservations` | js/accounting.js:1610 | 765 | getLibraryReservations (9550) | BibliotecaReservas | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getMaintenanceOrders` | js/accounting.js:703 | 702 | getMaintenanceOrders (13758) | MantenimientoOrdenes | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getMaterialRequisitions` | js/accounting.js:425 | 696 | getMaterialRequisitions (13475) | MaterialesSolicitudes | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getOvertimeRequests` | js/teacher.js:7827 | 670 | getOvertimeRequests (13035) | AprobacionHorasExtras | SpreadsheetApp,getOrCreateSheet,getDataRange |
+| `getWarehouseLocations` | js/accounting.js:347 | 691 | getWarehouseLocations (13109) | AlmacenesUbicaciones | SpreadsheetApp,getOrCreateSheet,getDataRange,setValues |
+| `manageAssetItem` | js/accounting.js:591 | 770 | manageAssetItem (9793) | ActivosPatrimoniales | SpreadsheetApp,getOrCreateSheet,getDataRange,setValues,appendRow |
+| `manageLibraryBook` | js/accounting.js:1483 | 760 | manageLibraryBook (9150) | BibliotecaEjemplares,BibliotecaCatalogoObras | SpreadsheetApp,getOrCreateSheet,getDataRange,setValues,appendRow |
+| `manageMaintenanceOrder` | js/accounting.js:751 | 701 | manageMaintenanceOrder (13667) | MantenimientoOrdenes,TransporteVehiculos | SpreadsheetApp,getOrCreateSheet,getDataRange,setValue,appendRow |
+| `manageWarehouseLocation` | js/accounting.js:395 | 690 | manageWarehouseLocation (13072) | AlmacenesUbicaciones | SpreadsheetApp,getOrCreateSheet,getDataRange,setValue,appendRow |
+| `processLibraryLoan` | js/accounting.js:1496<br>js/accounting.js:1583 | 762 | processLibraryLoan (9296) | BibliotecaEjemplares,BibliotecaPrestamos | LockService,SpreadsheetApp,getOrCreateSheet,getDataRange,setValue,appendRow |
+| `recordInventoryMovement` | js/accounting.js:285 | 674 | recordInventoryMovement (6050) | InventariosKardex | LockService,SpreadsheetApp,getOrCreateSheet,getDataRange,appendRow |
+| `registerAssetDisposal` | js/accounting.js:861 | 703 | registerAssetDisposal (13790) | BajasBienes,ActivosPatrimoniales | SpreadsheetApp,getOrCreateSheet,appendRow,getDataRange,setValue |
+| `reserveLibraryBook` | js/accounting.js:1508 | 764 | reserveLibraryBook (9461) | BibliotecaEjemplares,BibliotecaReservas | LockService,SpreadsheetApp,getOrCreateSheet,getDataRange,appendRow |
+| `returnAssetCustody` | js/accounting.js:624 | 773 | returnAssetCustody (9961) | ActivosPatrimoniales,AsignacionesActivos | LockService,SpreadsheetApp,getOrCreateSheet,getDataRange,setValue |
+| `reviewOvertimeRequest` | js/teacher.js:7861 | 669 | reviewOvertimeRequest (12988) | AprobacionHorasExtras | SpreadsheetApp,getOrCreateSheet,getDataRange,setValue |
+| `transferInventoryStock` | js/accounting.js:2007 | 692 | transferInventoryStock (13140) | InventariosKardex,TransferenciasInventario | LockService,SpreadsheetApp,getOrCreateSheet,getDataRange,appendRow |
+
+### 3. Consumidores adicionales y llamadas no incluidas en los cuatro controladores principales
+- js/auth.js: USER getGameStats, mergeGuestData, loginUser, registerUser (dos callsites); js/config.js: ACADEMIC getAcademicConfig/getInstitutionalCatalog; js/developer.js: USER getStructuredLogs; js/exam.js: EXAM getExamQuestions/submitExam y USER recordAnalytics; js/games-adapter.js y js/quizpro.js: USER recordAnalytics/saveGameResult/getGlobalTop/getGameStats; js/index-ui.js: USER getNews; js/results.js: EXAM getExamResult.
+- js/ui-common.js SHA 986938b8a311a41ed4cb3d135b66b6aaea4bed67: 19 callsites; 18 USER (updateUserProfile, getUserSettings, getProviderIntegrations, sendChannelNotificationTest, saveUserSettings, saveVisualPaletteProposal, approveVisualPaletteProposal, getActiveVisualPalette, submitProblemTicket, getProblemTickets [dos], replyProblemTicket, updateTicketStatus [dos], acceptLegalDocument, searchGlobalOmnibox, getUserDynamicDashboardConfig) y 1 ACCOUNTING getPolicyAcceptances (línea 4301). Estos 19 callsites están incluidos en el total 262.
+- dashboard-recursos-humanos.html SHA 406bedbae5a5bb3b5c03e4ea7aaa95ed68aea8ee: 25 callsites ACCOUNTING; createEmployeeRecord:993; manageInterviewSchedule:1028; calculatePayrollPeriod:1062; managePerformancePeriod:1136; managePerformanceCriteria:1169; managePerformanceEvaluation:1212; manageTrainingCourse:1309; manageTrainingEnrollment:1348; manageProfessionalDevelopmentPlan:1386; manageLaborIncident:1476; manageDisciplinaryMeasure:1517; manageStaffingNeeds:1603; manageWorkShiftAndSubstitution:1687/1726; getPerformanceEvaluations:1848; getEmployeeTrainingHistory:1921; getLaborIncidentsHistory:1994; getStaffingNeedsPlanning:2049; getWorkShiftsAndSubstitutionsHistory:2101; getEmployeeSelfServicePortal:2160; runHRIntegrationAndRegressionTests:2250; verifyLaborAndTaxInformation:2297; getEmployeeRecords:2363; getEmployeeContractAlerts:2393; getLeaveVacationRequests:2400.
+
+### 4. Wrappers dinámicos, delegación y contratos sin ruta
+- js/api.js fetchApi(service, action, payload) es el transporte común; los parámetros service/action pueden ser dinámicos. checkAllMicroservicesHealth usa ping contra SERVICE_REGISTRY; logStructuredEvent usa service variable con action recordStructuredLog; createBackup elige USER o ACADEMIC y envía createSpreadsheetBackup.
+- Contratos de desarrollador activos: js/developer.js llama getBackupsList (api.js:299), createBackup/createSpreadsheetBackup (api.js:289–295), restoreSpreadsheetBackup (api.js:302–306), runSystemMaintenance (api.js:309–311) y exportSchoolYearArchive (api.js:334–341). Los dispatchers actuales no exponen esos nombres; ACADEMIC sí tiene createSystemBackup/listSystemBackups/restoreSystemBackup, pero no son alias demostrados de createSpreadsheetBackup/getBackupsList/restoreSpreadsheetBackup. No se declara equivalencia funcional.
+- Otros wrappers ACADEMIC sin dispatcher/handler comprobado: createOrUpdateStudyGuide, getStudyGuides, toggleStudyGuideStatus y recordStudentAttendance; no se encontraron consumidores directos en los controladores inspeccionados. getStudentAttendanceSummary sí tiene handler y dispatcher. exportSchoolYearArchive sí tiene consumidor en js/developer.js:523, pero carece de ruta ACADEMIC.
+- recordStructuredLog es un wrapper genérico sin dispatcher identificado y sin caller frontend activo localizado; queda catalogado como wrapper huérfano/no verificado, no como endpoint operativo.
+- USER recibe initiateResumableUpload, getUploadProgress, cancelUploadSession, readLegacyDocument y getMultiPartFolderFiles y los delega a TASK mediante delegateToTaskService. TASK dispone de handlers de carga/lectura; la delegación usa JSON plano por UrlFetchApp, no envelope firmado; TASK no verifica InterServiceEnvelope. Conservar AUD-NG-083/AUD-NG-174; no duplicar.
+- ACADEMIC getInstitutionalReportCatalog se despacha a getAcademicInstitutionalReportCatalog (handler existente). En cambio generateInstitutionalReport se despacha a una función inexistente en ACADEMIC; existe una función homónima en USER, pero no hay delegación documentada desde ACADEMIC.
+
+### 5. Dispatchers sin handler y hallazgos vinculados
+- AUD-NG-359 / TASK-688: USER despacha purgeSecurityCaches, dispatchSecurityEvent, processSecurityEventQueue y getSecurityEventsQueue sin definiciones locales; ACADEMIC despacha generateInstitutionalReport sin handler local; TASK despacha generateAcademicArchiveZip sin handler. En USER, dispatchSecurityEvent también es invocado por manageAccountState después de persistir, por lo que el fallo puede producir respuesta de error tras mutación. TASK-688 conserva ID y alcance, se amplía con la lista confirmada.
+- AUD-NG-358 / TASK-687: ampliar el contrato sin dispatcher para incluir createSpreadsheetBackup (USER/ACADEMIC), getBackupsList, restoreSpreadsheetBackup y runSystemMaintenance (USER), exportSchoolYearArchive, createOrUpdateStudyGuide, getStudyGuides, toggleStudyGuideStatus y recordStudentAttendance (ACADEMIC). Distinguir wrappers con consumidor activo de wrappers declarados sin consumidor; no implementar ni retirar durante TASK-638.
+- Hallazgos de autorización y persistencia AUD-NG-368..373 permanecen en TASK-636/TASK-685; esta matriz no los duplica ni intenta corregirlos. Se mantienen AUD-NG-356/357/358/359 y AUD-NG-001/002/083/174/323/354/355 según sus expedientes.
+
+### 6. Endpoints, configuración y evidencia externa
+- SERVICE_URLS declara URLs con forma de deployment para USER, ACADEMIC, TASK y EXAM; ACCOUNTING y DEVELOPER conservan valores placeholder. La configuración es evidencia de texto versionado, no prueba de deployment, autorización, Script Properties ni disponibilidad. DEVELOPER no tiene llamadas fetchApi literales detectadas.
+- USER, ACADEMIC y ACCOUNTING tienen respuesta ping inline en doPost; TASK/EXAM exponen doGet de salud, pero no se presume que el health-check genérico por POST sea equivalente para todos los servicios. El health check que omite ACCOUNTING permanece vinculado a AUD-NG-323.
+- No se accedió a consolas Apps Script, Script Properties, permisos Drive, despliegues ni datos productivos. No se declara funcional ningún endpoint por el mero hecho de existir URL/case/handler. El mapa etiqueta como «estático», «delegado», «sin dispatcher», «handler ausente», «placeholder» o «deployment no verificado» según corresponda.
+
+### 7. Dictamen TASK-638 frente a criterios originales
+- Cada clase de dependencia explícita solicitada (HTML script/link, CSS, recursos, JS, JSON, Apps Script, rutas, llamadas, contratos, consumidores/proveedores, persistencia y servicios externos) tiene inventario previo y/o matriz actualizada con origen y destino identificables.
+- Rutas dinámicas y wrappers se documentan con su destino exacto o se marcan expresamente sin dispatcher/no verificados; las referencias relativas y sensibles a mayúsculas se mantienen en las tablas de inventario C1.289–C1.293. Ninguna URL declarativa se presenta como deployment probado.
+- Hallazgos accionables se vinculan a tareas existentes TASK-636, TASK-685, TASK-687 y TASK-688; no se crearon IDs duplicados. Las anomalías documentales se registran como limitaciones, no como auditorías recursivas.
+- **Dictamen:** se satisface el alcance de documentación y trazabilidad estática de TASK-638. Puede pasar a Completada como tarea de inventario/documentación; ello no cierra TASK-636/685/687/688, no corrige defectos de producto y no certifica despliegues ni pruebas runtime/beta.
+- Pruebas ejecutadas: lectura estática de callsites, dispatchers, handlers, helpers, hojas/Drive, rutas, wrappers, árbol e inventario; verificación de SHA de los servicios/controladores indicados. No ejecutadas: Node, navegador, HTTP, Apps Script, Drive/Sheets productivos, pruebas multiusuario, integración/E2E y verificación de deployments/Script Properties.
+===============================================================================

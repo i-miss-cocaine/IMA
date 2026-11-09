@@ -3069,11 +3069,11 @@
 - **Pruebas beta:** no aplican al cierre documental; escenarios funcionales permanecen en su catálogo y no se declaran ejecutados.
 - **Dependencia:** TASK-638 se reanudará después de verificar este commit A y completar su auditoría preimplementación; no se mezcla en este commit.
 <!-- ID: TASK-638 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK02.md -->
-### [ ] [TASK-638] Trazar dependencias estáticas y dinámicas de extremo a extremo
+### [X] [TASK-638] Trazar dependencias estáticas y dinámicas de extremo a extremo
 - **Referencia:** AUD-NG-282.
 - **Severidad:** ALTO.
 - **Prioridad:** P1.
-- **Estado:** En ejecución (TASK-637 verificada y Completada en commit A `0edce6ae2721b1d839ef259dad7ea77962fe8ab3`; auditoría de handlers, autorización contextual, persistencia y contratos en curso; C1.296).
+- **Estado:** Completada (C1.301; matriz estática de dependencias, consumidores, dispatchers, handlers, persistencia y contratos documentada en Auditoría/MapaDependencias.md, sección C1.301; limitaciones de deployments y pruebas runtime declaradas).
 - **Objetivo y acción:** documentar por archivo las dependencias HTML `script/link`, CSS, imágenes, fuentes, imports, referencias dinámicas, rutas, endpoints, acciones backend, contratos y servicios externos; distinguir referencias comprobadas de inferidas y registrar consumidores/proveedores.
 - **Archivos/módulos afectados:** HTML, JS, CSS, JSON, GAS, configuración, documentación y recursos del repositorio; `AUDITORIAS/MapaDependencias.md`.
 - **Dependencias:** TASK-637, catálogo completo de archivos.

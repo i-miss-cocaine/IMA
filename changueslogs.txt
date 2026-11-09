@@ -192,3 +192,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se establece expediente principal único por tarea, verificaciones focalizadas, reauditoría completa solo con justificación/evidencia nueva y prohibición de auditorías recursivas.
 - TASK-638 permanece En ejecución; no se modificó código ni se repitieron auditorías funcionales.
 - Checkpoint C1.300: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.300; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.300.
+
+
+[2026-11-09] IMA-EXEC-20261109-1305Z-01 — C1.301 / TASK-638 completada
+- HEAD de partida: 650a3cccf1974afbc7d29f7d5d922a3f30bc1b1b; rama NG_beta_0.0.0.1_work; rama base NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59, sin cambios.
+- Matriz de dependencias/consumidores/dispatchers/handlers/persistencia y wrappers dinámicos ampliada en Auditoría/MapaDependencias.md §C1.301; expediente principal Auditoría/AUDITORIA_TASK-638_C1.299.md complementado, sin informe duplicado.
+- TASK-638 pasa a Completada en pendientes/Contabilidad/Pendientes.md y seguimiento del Plan Maestro. AUD-NG-358/TASK-687 y AUD-NG-359/TASK-688 se amplían conservando IDs.
+- Se corrige en METODOLOGIA_DESARROLLO.md §20.4 la referencia del bloque normativo A–H a A–I.
+- Checkpoint C1.301: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.301; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.301.
+- Próxima tarea elegible: TASK-639, pendientes/Secretaria/Pendientes.md.

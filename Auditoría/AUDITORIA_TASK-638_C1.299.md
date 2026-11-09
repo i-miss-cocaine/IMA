@@ -119,3 +119,22 @@
 Siguiente acción: continuar `Auditoría/MapaDependencias.md`, sección C1.299; completar las acciones TASK/EXAM restantes no cubiertas en la matriz, revisar las dependencias de helpers y respuestas, y continuar USER/ACADEMIC/ACCOUNTING hasta cerrar cada callsite → dispatcher → handler → claims/contexto → persistencia → respuesta/error. Después verificar endpoints/deployments con evidencia autorizada. No implementar correcciones durante PM-00.
 
 **Siguiente tarea tras cerrar TASK-638:** TASK-639 — Verificar duplicaciones, símbolos globales y ciclos; requisito en `pendientes/Secretaria/Pendientes.md`; depende de TASK-637 y TASK-638 verificadas.
+
+
+## 8. Ampliación C1.301 — cierre de la matriz estática de dependencias
+Se incorpora la matriz completa por acción en Auditoría/MapaDependencias.md, sección C1.301. Se reutiliza este expediente como informe principal conforme a METODOLOGIA_DESARROLLO.md §19.6; no se crea un segundo informe completo.
+
+### 8.1 Cobertura y contratos
+- Reconciliados 262 callsites literales fetchApi en 24 archivos JavaScript y 25 llamadas inline en dashboard-recursos-humanos.html (287 en total). Distribución JS: USER 70, ACADEMIC 120, TASK 23, EXAM 19 y ACCOUNTING 30.
+- Se vincula cada acción de los cinco servicios con su dispatcher, handler, consumidores y persistencia observada en Sheets/Drive/Cache/Lock; las resoluciones dinámicas y hojas no literales quedan identificadas como helpers/configuración.
+- Se documentan wrappers de api.js, delegación USER→TASK, contratos sin dispatcher, handlers ausentes y endpoints declarativos no verificados. La existencia de un URL o case no se considera prueba de deployment funcional.
+
+### 8.2 Ampliación de hallazgos existentes
+- AUD-NG-358 / TASK-687: ampliar con createSpreadsheetBackup (USER/ACADEMIC dinámico), createOrUpdateStudyGuide, getStudyGuides, toggleStudyGuideStatus y recordStudentAttendance en ACADEMIC, además de wrappers ya registrados. exportSchoolYearArchive tiene caller activo en developer.js. No se crea ID nuevo.
+- AUD-NG-359 / TASK-688: confirmar USER purgeSecurityCaches, dispatchSecurityEvent, processSecurityEventQueue y getSecurityEventsQueue sin handler local; ACADEMIC generateInstitutionalReport y TASK generateAcademicArchiveZip sin handler local. Los endpoints de carga reanudable en USER delegan a TASK y no se clasifican como ausentes.
+- Se mantienen AUD-NG-368..373 en TASK-636/TASK-685, sin duplicación.
+
+### 8.3 Dictamen de cierre
+La matriz satisface los criterios documentales originales de TASK-638: dependencias, consumidores/proveedores, dispatchers, handlers, persistencia, rutas estáticas/dinámicas y contratos tienen origen/destino identificable o estado explícito de no disponible/no verificado. TASK-638 pasa a Completada como inventario documental. Este cierre no implementa TASK-636/685/687/688, no certifica endpoints, no verifica deployments/Script Properties ni sustituye pruebas runtime/beta.
+
+Pruebas ejecutadas: inspección estática y reconciliación de callsites, dispatchers, handlers, helpers, hojas y rutas; verificación de SHA de servicios/controladores. No ejecutadas: Node, navegador, HTTP, Apps Script, Drive/Sheets productivos, integración, E2E ni pruebas multiusuario.

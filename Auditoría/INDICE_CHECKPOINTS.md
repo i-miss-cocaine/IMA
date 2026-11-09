@@ -3,12 +3,12 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.300**
-- Última sesión: `IMA-GOV-20261109-1255Z-01`
+- Último checkpoint: **C1.301**
+- Última sesión: `IMA-EXEC-20261109-1305Z-01`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.300: **44346**
-- Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt`
+- Caracteres del archivo activo tras C1.301: **48528**
+- Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 
 ## Registro de checkpoints
@@ -31,7 +31,7 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 ## Reglas de mantenimiento
 1. Agregar una fila por cada checkpoint, sin borrar ni reutilizar IDs.
 2. Actualizar «Último checkpoint» y «Archivo activo» en el mismo commit que incorpora el checkpoint.
-3. Al rotar, registrar la nueva parte, el SHA de su bloque normativo A–G y el rango exacto de líneas.
+3. Al rotar, registrar la nueva parte, el SHA de su bloque normativo A–I y el rango exacto de líneas.
 4. Auditoria.txt y changueslogs.txt deben apuntar a esta tabla mediante el ID exacto.
 5. Los checkpoints anteriores a la adopción del índice son legado histórico; no inventar ubicaciones ni rangos retrospectivos. Indexarlos solo cuando puedan verificarse.
 
@@ -44,4 +44,5 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.298 | IMA-AUDIT-20261109-1222Z-01 | Publicado en este commit | TASK-638 auditoría / PM-00 — TASK/EXAM | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.298 | 239–269 | C1.297 | Este commit; SHA a verificar externamente |
 
 | C1.299 | IMA-AUDIT-20261109-1232Z-01 | Publicado | TASK-638 auditoría / PM-00 — autorización contextual TASK/EXAM | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.299 | 270–298 | C1.298 | `9e21a060922bc4c7d96d06c0098a48d643b32276` |
-| C1.300 | IMA-GOV-20261109-1255Z-01 | Publicado en este commit | Gobernanza documental — auditoría única / IMA | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.300 | 302–344 | C1.299 | Este commit; SHA a verificar externamente |
+| C1.300 | IMA-GOV-20261109-1255Z-01 | Publicado | Gobernanza documental — auditoría única / IMA | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.300 | 302–344 | C1.299 | `650a3cccf1974afbc7d29f7d5d922a3f30bc1b1b` |
+| C1.301 | IMA-EXEC-20261109-1305Z-01 | Publicado en este commit | TASK-638 completada / PM-00 — matriz integral de dependencias | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.301 | 347–395 | C1.300 | Este commit; SHA a verificar externamente |

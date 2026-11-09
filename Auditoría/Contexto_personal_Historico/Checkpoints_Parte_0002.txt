@@ -341,3 +341,54 @@ Abrir Auditoría/MapaDependencias.md en la sección C1.299 y continuar TASK-638 
 Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.300; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.300.
 Commit de cierre: el commit que contiene este checkpoint; SHA se verificará externamente.
 ===============================================================================
+
+
+===============================================================================
+## C1.301 — TASK-638 completada: matriz integral de dependencias y contratos
+ID de sesión operativo: IMA-EXEC-20261109-1305Z-01
+Checkpoint inicial de sesión: C1.300
+Fecha: 2026-11-09 UTC
+Repositorio: i-miss-cocaine/IMA
+Rama de trabajo: NG_beta_0.0.0.1_work
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios)
+HEAD de partida verificado: 650a3cccf1974afbc7d29f7d5d922a3f30bc1b1b
+Fase metodológica: 0 — auditoría/inventario y cierre documental
+Fase PM: PM-00 — inventario, triage y resolución de dependencias
+Tarea: TASK-638 — Trazar dependencias estáticas y dinámicas de extremo a extremo
+Estado: Completada (alcance de inventario/documentación; no implica corrección de defectos ni certificación runtime)
+
+### Continuidad y aplicación de §19.6
+- Se verificó HEAD C1.300, la rama base y los SHAs de los documentos fuente. Se reutilizaron los expedientes C1.289–C1.299 y sus matrices; no se repitió el inventario HTML/JS/CSS/GS/JSON ya verificado.
+- Se mantuvo el expediente principal Auditoría/AUDITORIA_TASK-638_C1.299.md y se añadió el complemento C1.301; la matriz de acciones está en Auditoría/MapaDependencias.md §C1.301. No se creó informe de auditoría duplicado.
+
+### Resultado y evidencia
+- Cobertura consolidada: 1.024 blobs; 101 HTML/HTM; 24 JS; 6 CSS; 6 Apps Script; 27 JSON. Reconciliación de llamadas: 262 callsites JS (USER 70, ACADEMIC 120, TASK 23, EXAM 19, ACCOUNTING 30) +25 HTML inline (ACCOUNTING) =287.
+- Dispatchers estáticos: TASK 44, EXAM 38, ACADEMIC 241, USER 182, ACCOUNTING 240; matriz por acción con callsite, dispatcher, handler, hojas literales y primitivas de persistencia en MapaDependencias §C1.301.
+- Se documentan wrappers dinámicos, delegación USER→TASK, URL placeholders, despliegues no verificados y rutas/handlers ausentes. AUD-NG-358/TASK-687 y AUD-NG-359/TASK-688 ampliadas conservando IDs; AUD-NG-368..373 permanecen en TASK-636/TASK-685.
+- TASK-638 cumple sus criterios documentales y se marca Completada. TASK-639 queda como siguiente tarea elegible, dependiente de TASK-637/TASK-638.
+
+### Archivos modificados
+1. Auditoría/MapaDependencias.md.
+2. Auditoría/AUDITORIA_TASK-638_C1.299.md.
+3. pendientes/Contabilidad/Pendientes.md.
+4. Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md.
+5. METODOLOGIA_DESARROLLO.md (corrección de referencia normativa A–H → A–I en §20.4).
+6. tareas_auditoria.txt.
+7. Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt.
+8. Auditoría/INDICE_CHECKPOINTS.md.
+9. changueslogs.txt.
+
+### Archivos revisados sin modificación
+Auditoria.txt (AUD-NG-358/359 ya registrados; ampliación detallada queda en el expediente y tareas); backlogs restantes; backend TASK/EXAM/ACADEMIC/USER/ACCOUNTING; js/student.js, teacher.js, accounting.js, secretary.js, api.js; config.js y dashboard-recursos-humanos.html.
+
+### Pruebas y límites
+- Ejecutadas: verificación de rama/HEAD/base; SHAs de servicios/controladores; reconciliación estática de callsites/dispatchers/handlers; extracción de hojas y primitivas de persistencia; revisión de wrappers dinámicos y delegación; verificación de estados de rutas y placeholders.
+- No ejecutadas: Node, navegador, HTTP, Apps Script runtime, Drive/Sheets productivos, pruebas multiusuario, integración/E2E, ni verificación de deployments o Script Properties. No se modificó código.
+- Los endpoints no verificados se documentan como no verificados; no se declara operativa ninguna ruta por su URL o por existir un case/handler.
+
+### Siguiente tarea exacta
+TASK-639 — Verificar duplicaciones, símbolos globales y ciclos. Requisito: pendientes/Secretaria/Pendientes.md, ID TASK-639. Dependencias TASK-637 y TASK-638 satisfechas. Antes de auditar, consultar el informe/expediente que ya exista y aplicar §19.6 para evitar auditoría duplicada.
+
+Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.301; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.301.
+Commit de cierre: el commit que contiene este checkpoint; SHA se verifica externamente.
+===============================================================================
