@@ -1,3 +1,10 @@
 REGISTRO DE CAMBIOS DEL NUEVO PLAN DE IMPLEMENTACIÓN
 
 Este archivo es el registro oficial de cambios del nuevo plan de implementación. Es un documento permanente: no debe borrarse, editarse ni sobrescribirse ninguna entrada ya registrada. Cada nueva entrada debe agregarse exclusivamente al final del documento, conservando íntegro el historial anterior.
+
+
+[2026-11-09] PLAN-IMA-003 — Actualización de normas para tareas derivadas de auditoría
+- METODOLOGIA_DESARROLLO.md establece tareas_auditoria.txt (raíz) como registro maestro acumulativo de tareas ejecutables derivadas de hallazgos.
+- Los informes conservan evidencia y referencias cruzadas por ID; no son el registro maestro de las tareas ni de su estado.
+- Se alinean las rutas de auditoría con Auditoría/ y los nombres de bitácora vigentes.
+- Rama: NG_beta_0.0.0.1_work. HEAD de partida: 560c940d64b7a46191a2ad2605035d9334008db7.

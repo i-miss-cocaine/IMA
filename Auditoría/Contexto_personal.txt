@@ -9515,3 +9515,32 @@ Auditar TAREA-F6-015 y TAREA-F6-040. Buscar informes individuales e historial en
 - **Commit de cierre:** el commit único que contiene este checkpoint y la corrección del plan; SHA final se confirmará consultando HEAD después de publicar.
 ===============================================================================
 
+
+
+===============================================================================
+## C1.280 — Actualización de normas para tareas derivadas de auditoría (2026-11-09)
+
+- **ID de sesión operativo:** IMA-NORMS-20261109-0157Z-01 (identificador documental; no ID nativo de ChatGPT).
+- **Estado de sesión:** abierta al preparar este checkpoint; se cerrará al verificar el commit.
+- **Checkpoint inicial de sesión:** C1.279. **Checkpoint de cierre:** C1.280.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **HEAD de partida verificado:** 560c940d64b7a46191a2ad2605035d9334008db7.
+- **Rama base protegida:** no se modificó; su tip no se consultó en esta iteración documental.
+- **Fase metodológica:** actualización de normas / gobierno documental.
+- **Fase del Plan Maestro:** PM-00 — inventario, triage y resolución de dependencias.
+- **Etapa:** PM-00.0 — normalización de la gobernanza documental y trazabilidad de hallazgos.
+- **ID de tarea:** PLAN-IMA-003 (actividad operativa de metodología; no es ID del backlog de producto).
+- **Comentario/contexto:** el usuario indicó que Auditoria.txt, changueslogs.txt y tareas_auditoria.txt deben estar en la raíz; Pendientes.md y completadas.md permanecen en Auditoría/legacy/. Solicitó además que las normas establezcan que los hallazgos de auditoría se registren como tareas ejecutables en tareas_auditoria.txt.
+- **Fuentes revisadas:** METODOLOGIA_DESARROLLO.md (blob 87953370fb6735cd25386e3cc2dfcd9d8521dd0b); Auditoría/Contexto_personal.txt (blob 71ff2a3b9146a378b515431b1043889ba4318fe4; checkpoint final C1.279); Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md (blob 298d167fb1a6921d0b80a867bdb2239fe6dcd972); árbol Git de la rama en HEAD 560c940d64b7a46191a2ad2605035d9334008db7.
+- **Hallazgo normativo:** la metodología anterior indicaba que las tareas vivieran exclusivamente en cada informe y prohibía un registro maestro externo; además refería rutas/nombres anteriores (AUDITORIAS/, ChangesLogs.txt).
+- **Cambio realizado:** la sección 3.4 define tareas_auditoria.txt como registro maestro acumulativo en raíz; la sección 3.11 exige convertir todo hallazgo accionable en tarea ejecutable allí; los informes conservan evidencia y referencias cruzadas por ID; se actualizan el flujo de fases, el procedimiento de seguimiento y las rutas de auditoría a Auditoría/ y los nombres de bitácora vigentes.
+- **Criterio de preservación:** no se eliminan checkpoints anteriores; esta entrada se anexa al final. changueslogs.txt recibe una entrada nueva al final, sin modificar registros previos.
+- **Archivos modificados:** METODOLOGIA_DESARROLLO.md; Auditoría/Contexto_personal.txt; changueslogs.txt.
+- **Archivos revisados sin modificación:** Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; Auditoria.txt; tareas_auditoria.txt; estructura Auditoría/legacy/.
+- **Pruebas/verificaciones:** comprobación textual de ausencia de las prohibiciones antiguas sobre el registro maestro; verificación de referencias de rutas actualizadas; revisión del diff documental y del árbol resultante.
+- **No ejecutadas:** pruebas de código, runtime Apps Script, navegador, HTTP, despliegues, E2E; no aplican a este cambio normativo.
+- **Siguiente tarea exacta:** revisar referencias internas restantes a rutas/nombres legacy en README, informes y documentación del repositorio, sin modificar contenido histórico salvo actualización de referencias operativas necesarias.
+- **Próxima acción reproducible:** buscar referencias activas a AUDITORIAS/, ChangesLogs.txt y ubicaciones anteriores de los tres registros; distinguir menciones históricas de instrucciones operativas vigentes y actualizar solo las instrucciones vigentes.
+- **Commit de cierre:** el commit único que contiene este checkpoint; SHA final se confirmará externamente consultando HEAD después de publicar.
+===============================================================================

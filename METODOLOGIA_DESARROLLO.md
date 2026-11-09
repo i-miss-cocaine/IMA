@@ -84,33 +84,42 @@ Separación lógica entre auditor y desarrollador.
 
 ```
 [Raíz del Proyecto]
-├── ChangesLogs.txt
-└── AUDITORIAS/
+├── Auditoria.txt
+├── changueslogs.txt
+├── tareas_auditoria.txt
+├── METODOLOGIA_DESARROLLO.md
+├── pendientes/
+└── Auditoría/
     ├── Informes de auditoría
-    ├── Auditoria.txt
     ├── MapaDependencias.md
-    └── Contexto_personal.txt
+    ├── PLAN_MAESTRO_IMPLEMENTACION.md
+    ├── Contexto_personal.txt
+    └── legacy/
+        ├── Pendientes.md
+        └── completadas.md
 ```
 
 ### 3.1 Auditoria.txt
-Registro histórico y acumulativo que funge como bitácora de hallazgos, riesgos de regresión, incidencias detectadas y evidencia técnica indexada. **Queda estrictamente prohibido borrar, alterar o purgar información histórica de este archivo;** las nuevas auditorías se anexarán en la sección inferior manteniendo la cronología.
+Registro histórico y acumulativo ubicado en la raíz. Registra todos los hallazgos de la auditoría preimplementación, riesgos de regresión, incidencias y evidencia técnica indexada. **Está prohibido borrar, alterar, sobrescribir o purgar información histórica;** los nuevos hallazgos se anexan al final, conservando la cronología.
 
-### 3.2 ChangesLogs.txt
-Registro objetivo de las modificaciones aplicadas con éxito en el repositorio. Debe documentar con precisión quirúrgica el archivo modificado, las líneas exactas afectadas y la justificación técnica del cambio. Queda prohibido el uso de lenguaje subjetivo, asunciones de éxito o frases de cierre prematuras (ej. *"Bug solucionado definitivamente"*).
+### 3.2 changueslogs.txt
+Registro histórico y acumulativo ubicado en la raíz para documentar cambios aplicados al repositorio y al plan de implementación. Cada entrada identifica el cambio, archivos/rutas afectados, justificación y evidencia. Está prohibido borrar, editar o sobrescribir entradas existentes; cada registro nuevo se agrega exclusivamente al final.
 
 ### 3.3 MapaDependencias.md
-Inventario técnico y estructural que documenta de forma explícita las relaciones lógicas del sistema, incluyendo funciones, variables de estado, clases, constantes de configuración, rutas de importación y el mapa de enlaces entre los diferentes módulos y el canvas general del proyecto.
+Inventario técnico y estructural ubicado en `Auditoría/MapaDependencias.md`, que documenta relaciones lógicas, funciones, variables de estado, clases, constantes, rutas de importación y enlaces entre módulos.
 
-### 3.4 Registro de tareas derivadas de auditoría
-El registro oficial de tareas originadas por auditorías reside en cada informe de auditoría dentro de `AUDITORIAS/`. Cada informe debe incluir una sección obligatoria titulada **Tareas ejecutables derivadas de los hallazgos**. No se utilizará un archivo maestro externo para registrar estas tareas.
+### 3.4 Registro maestro de tareas derivadas de auditoría
+El registro oficial, único y acumulativo de tareas ejecutables originadas por hallazgos de auditoría es `tareas_auditoria.txt`, ubicado en la raíz del repositorio. **Todo hallazgo accionable debe convertirse en una tarea ejecutable y registrarse en este archivo.** No basta con describir una recomendación ni con dejarla únicamente dentro del informe.
 
-`Pendientes.md` queda fuera del flujo operativo de auditoría y desarrollo: no se recuperará, reconstruirá, actualizará ni utilizará para crear, consultar o administrar tareas. Su contenido histórico no constituye fuente de verdad para el estado de tareas.
+Cada informe conserva la evidencia completa del hallazgo y debe incluir una referencia cruzada al ID de la tarea registrada en `tareas_auditoria.txt`. El informe no sustituye ni duplica el registro maestro. Si un hallazgo no requiere acción, se clasifica expresamente como observación no accionable y se justifica.
 
-Cada tarea debe permanecer en el mismo informe que documenta el hallazgo que la origina y contener: ID único; referencia exacta al hallazgo; severidad; objetivo y acción concreta; archivos/módulos afectados; dependencias; alcance técnico; criterios de aceptación verificables; prioridad; estado (Pendiente, En ejecución, Bloqueada o Completada); y evidencia de cierre cuando corresponda.
+Cada tarea del registro maestro debe contener como mínimo: ID único; fecha; ID y ruta del informe de origen; referencia exacta al hallazgo; severidad; objetivo; acción concreta y ejecutable; archivos/módulos afectados; dependencias y riesgos; alcance y exclusiones; criterios de aceptación verificables; prioridad; estado (Pendiente, En ejecución, Bloqueada o Completada); y evidencia de cierre cuando corresponda.
 
-La sección de tareas debe distinguir tareas nuevas, tareas existentes ampliadas y tareas ya cubiertas por otro ID. No crear duplicados: cuando un hallazgo amplíe una tarea existente, referenciar el ID existente y describir la ampliación. Un informe sin hallazgos accionables debe indicarlo expresamente.
+El registro debe distinguir tareas nuevas, ampliaciones de tareas existentes y hallazgos ya cubiertos por otro ID. No se crean IDs duplicados: si el hallazgo amplía una tarea existente, se actualiza la tarea existente conservando su historial y agregando la nueva referencia. Cada entrada nueva se anexa al final; no se eliminan ni reescriben tareas históricas. Los cambios de estado se registran como nuevas entradas de seguimiento o mediante un mecanismo de historial que preserve el estado anterior.
 
-La ubicación oficial de todos los informes, planes, bitácoras, mapas y checkpoints propios de auditoría es el directorio `AUDITORIAS/`.
+Los archivos `Pendientes.md` y `completadas.md` ubicados en `Auditoría/legacy/` son históricos y no son el registro operativo vigente. Los backlogs departamentales bajo `pendientes/<Departamento>/Pendientes.md` son el índice operativo de implementación según el plan maestro; no reemplazan `tareas_auditoria.txt` como fuente de tareas originadas por auditorías.
+
+Los informes, mapas, planes y checkpoints de auditoría residen en `Auditoría/`; los tres registros maestros `Auditoria.txt`, `changueslogs.txt` y `tareas_auditoria.txt` residen en la raíz.
 
 ## 3.5 Rol de Auditor
 
@@ -230,7 +239,7 @@ Dependencias relacionadas.
 
 3.11 Conversión Obligatoria de Hallazgos en Tareas
 
-Todo hallazgo accionable deberá convertirse en una tarea ejecutable dentro de la sección obligatoria **Tareas ejecutables derivadas de los hallazgos** del mismo informe de auditoría que lo documenta. No podrán existir hallazgos accionables sin tarea asociada. La tarea deberá ser específica, verificable, tener objetivo y alcance claros, estar vinculada al hallazgo original y permitir implementación y validación independientes. Las tareas no se trasladarán a un registro maestro separado.
+Todo hallazgo accionable deberá convertirse, durante la etapa de auditoría, en una tarea ejecutable registrada en `tareas_auditoria.txt` en la raíz del repositorio. No podrán existir hallazgos accionables sin ID de tarea y sin registro en ese archivo. La tarea debe ser específica, verificable, implementable y validable de forma independiente; incluirá todos los campos obligatorios definidos en la sección 3.4. El informe de auditoría conservará la evidencia y añadirá la referencia cruzada al ID de la tarea, pero no será el registro maestro de tareas.
 
 ## 3.10 Proceso Oficial de Auditoría
 
@@ -544,12 +553,11 @@ Modificar estructuras existentes.
 
 La auditoría es exclusivamente una actividad de inspección, documentación y generación de hallazgos.
 
-Toda corrección deberá realizarse posteriormente mediante las tareas ejecutables registradas en el informe de auditoría correspondiente.
+Toda corrección deberá realizarse posteriormente mediante las tareas ejecutables registradas en `tareas_auditoria.txt`. El informe de auditoría deberá incluir una sección final de **Referencias a tareas derivadas**, donde se enumeren los IDs creados o ampliados en el registro maestro, sin duplicar sus fichas completas.
 
+#### Protocolo obligatorio de registro en tareas_auditoria.txt
 
-#### Protocolo obligatorio de registro de tareas en cada informe
-
-Cada archivo de auditoría deberá cerrar con la sección **Tareas ejecutables derivadas de los hallazgos**, usando esta estructura por tarea:
+Cada hallazgo accionable debe generar o ampliar una ficha de tarea en `tareas_auditoria.txt`, usando esta estructura:
 
 ```markdown
 ### [TASK-###] Título de la tarea
@@ -566,7 +574,7 @@ Cada archivo de auditoría deberá cerrar con la sección **Tareas ejecutables d
 - **Evidencia de cierre:** [Commit, pruebas y revisión; completar al cerrar]
 ```
 
-Los IDs deben ser únicos en el proyecto. Las tareas preexistentes se conservan y se amplían por referencia; no se generan IDs duplicados. El informe es la fuente de verdad del estado de sus tareas.
+Los IDs deben ser únicos en el proyecto. Las tareas preexistentes se conservan y se amplían por referencia; no se generan IDs duplicados. `tareas_auditoria.txt` es la fuente de verdad de las tareas derivadas de auditoría y de su estado. El informe es la fuente de verdad de la evidencia del hallazgo.
 ## CLASIFICACIÓN DE HALLAZGOS
 Todo hallazgo deberá clasificarse obligatoriamente.
 *Crítico
@@ -604,7 +612,7 @@ El flujo de trabajo se ejecutará de forma lineal, síncrona y obligatoria. Viol
   FASE 1: Registro Formal de Hallazgos
     │
     ▼
-  FASE 2: Conversión de hallazgos en tareas dentro del informe de auditoría
+  FASE 2: Conversión de hallazgos en tareas ejecutables en tareas_auditoria.txt
     │
     ▼
   FASE 3: Respaldo Íntegro de Seguridad
@@ -629,16 +637,16 @@ El flujo de trabajo se ejecutará de forma lineal, síncrona y obligatoria. Viol
 ### FASE 1 — Registro Formal de Hallazgos
  * **Acción:** Toda anomalía, desviación estándar o vulnerabilidad observada debe asentarse de inmediato en Auditoria.txt.
  * **Manejo de Hallazgos Fuera de Alcance:** Si durante la inspección de la tarea asignada se detectan fallas críticas o desviaciones ajenas al objetivo actual, se procederá de la siguiente forma:
-   1. *Si es completamente seguro y directo:* Se resolverá en el mismo commit, registrando minuciosamente su justificación en ChangesLogs.txt.
-   2. *Si reviste complejidad o riesgo de regresión:* Queda estrictamente prohibido tocarlo. Se añadirá una tarea ejecutable en la sección correspondiente del informe de auditoría que documenta el hallazgo, manteniendo la referencia cruzada en Auditoria.txt.
+   1. *Si es completamente seguro y directo:* Se resolverá en el mismo commit, registrando minuciosamente su justificación en changueslogs.txt.
+   2. *Si reviste complejidad o riesgo de regresión:* Queda estrictamente prohibido tocarlo. Se añadirá una tarea ejecutable en `tareas_auditoria.txt`, con referencia al informe y al hallazgo; el informe conservará el ID de tarea.
    3. Todo auditoria se debe de asumir el rol de auditor definido en el apartado 3.5
 ### FASE 2 — Planificación de Implementación
- * **Acción:** Se actualiza el estado de la tarea en la sección de tareas del informe de auditoría que la contiene. Se revisa que el alcance esté perfectamente delimitado y que se conozcan los impactos sobre el MapaDependencias.md.
+ * **Acción:** Se actualiza el estado operativo de la tarea en `tareas_auditoria.txt`, preservando el historial del estado anterior y vinculando la evidencia de avance. Se revisa que el alcance esté perfectamente delimitado y que se conozcan los impactos sobre el MapaDependencias.md.
 ### FASE 3 — Respaldo Íntegro de Seguridad
  * **Acción:** Antes de modificar un solo bit, se creará una copia de seguridad exacta y manual del archivo o archivos a editar.
  * **Requisitos:** El respaldo conservará el nombre de origen y su contenido íntegro, y se almacenará localmente de forma temporal con el único fin de servir como pivote de comparación post-edición.
 ### FASE 4 — Ejecución y Desarrollo Controlado
- * **Acción:** El operador adopta el rol de *Desarrollador*. Se procede a codificar e implementar **ÚNICAMENTE** lo explícitamente solicitado en los criterios de aceptación de la tarea registrada en el informe de auditoría correspondiente.
+ * **Acción:** El operador adopta el rol de *Desarrollador*. Se procede a codificar e implementar **ÚNICAMENTE** lo explícitamente solicitado en los criterios de aceptación de la tarea registrada en `tareas_auditoria.txt` y vinculada al informe de auditoría de origen.
  * **Restricciones:** Queda estrictamente **PROHIBIDO**:
    * Alterar estilos tipográficos, clases visuales o propiedades CSS no relacionadas con la tarea.
    * Modificar o alterar flujos lógicos existentes que funcionen de manera correcta.
@@ -658,7 +666,7 @@ El flujo de trabajo se ejecutará de forma lineal, síncrona y obligatoria. Viol
    * Toda observación constructiva **REINICIA EL CICLO COMPLETO** desde la Fase 0 (Auditoría Inicial).
    * Deberá aplicarse el procedimiento completo nuevamente, inclusive si implica volver a alterar archivos que ya habían sido editados. No se admiten parches calientes ni correcciones parciales fuera del flujo.
 ### FASE 7 — Cierre Operativo y Limpieza
- * **Acción:** Una vez que el Code Review otorga la aprobación formal, se completan los registros conclusivos en ChangesLogs.txt y se actualiza el estado de la tarea en su informe de auditoría a Completada, anexando evidencia de cierre.
+ * **Acción:** Una vez que el Code Review otorga la aprobación formal, se completan los registros conclusivos en changueslogs.txt y se actualiza el estado de la tarea en su informe de auditoría a Completada, anexando evidencia de cierre.
  * **Limpieza de Entorno:** Los archivos temporales de respaldo se eliminarán de forma definitiva únicamente **DESPUÉS** de la aprobación en Code Review. Asimismo, cualquier captura de pantalla, log volátil o ejecutable auxiliar generado para la verificación visual deberá ser purgado del directorio de forma obligatoria en el pre-commit.
 # 5. CLASIFICACIÓN TÉCNICA DE HALLAZGOS
 Todo defecto, desviación o vulnerabilidad identificada en las Fases 0 o 5 debe ser catalogada obligatoriamente bajo la siguiente escala de severidad:
@@ -775,7 +783,7 @@ EL INCUMPLIMIENTO DE CUALQUIER PASO DEL PRESENTE COMPENDIO INVALIDA EL PROCESO C
 # 15. CONTROL DE COMMITS CONSOLIDADOS (REGLA OBLIGATORIA)
 
 1. **Un solo commit por iteración completa:** cada iteración de trabajo debe quedar registrada en exactamente un commit final que agrupe todos los archivos modificados como consecuencia de esa iteración.
-2. **Agrupación completa:** antes de crear el commit se deben identificar, preparar y revisar todos los cambios relacionados, incluidos código, pruebas, ChangesLogs.txt, informes y checkpoints, respetando las restricciones particulares de cada archivo y fase.
+2. **Agrupación completa:** antes de crear el commit se deben identificar, preparar y revisar todos los cambios relacionados, incluidos código, pruebas, changueslogs.txt, informes y checkpoints, respetando las restricciones particulares de cada archivo y fase.
 3. **PROHIBIDOS los commits atómicos:** nunca crear commits independientes por archivo, documento, carpeta, subtarea o avance intermedio. No publicar un commit para «guardar» una parte mientras se sigue editando.
 4. **La organización por tareas/lotes no fragmenta la publicación:** pueden documentarse tareas y subtareas por separado, pero todos los cambios de la misma iteración se reúnen en un único commit. No crear un commit por cada tarea si forman parte de la misma iteración. Solo se permiten commits separados cuando el usuario lo autorice expresamente.
 5. **Cierre antes de confirmar:** revisar el diff completo; verificar que no falten archivos, que no se incluyan modificaciones ajenas y que se preserven todos los registros históricos. El checkpoint obligatorio debe estar incluido en ese mismo commit.
@@ -816,7 +824,7 @@ Esta sección reemplaza cualquier interpretación anterior de «un commit por ta
 
 ## 18.1 Documento rector y alcance
 
-La ejecución de las tareas del portal IMA se ordena mediante el documento `AUDITORIAS/PLAN_MAESTRO_IMPLEMENTACION.md`. Este plan es la referencia obligatoria para decidir qué tarea sigue, en qué fase se ejecuta y qué dependencias deben estar satisfechas antes de iniciar.
+La ejecución de las tareas del portal IMA se ordena mediante el documento `Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md`. Este plan es la referencia obligatoria para decidir qué tarea sigue, en qué fase se ejecuta y qué dependencias deben estar satisfechas antes de iniciar.
 
 Los archivos `pendientes/<Departamento>/Pendientes.md` constituyen el índice operativo de las tareas migradas para esta etapa, conservando el ID y el contenido original de cada tarea. El plan maestro no reemplaza ni resume sus requisitos. Los informes de auditoría siguen siendo la evidencia del hallazgo, su origen y las tareas ejecutables derivadas. Los documentos históricos `Pendientes.md` y `completadas.md` no se reescriben como parte de la ejecución de este plan; solo se consultan para resolver trazabilidad histórica cuando sea necesario.
 
@@ -855,7 +863,7 @@ Las fases PM expresan el orden de producto y arquitectura. No sustituyen las och
 ## 18.4 Selección y ejecución de tareas
 
 1. Al iniciar una iteración se consulta el plan maestro y se selecciona la siguiente tarea ejecutable por ID.
-2. Se verifica el registro completo en el backlog departamental, el informe de auditoría de origen, las tareas derivadas y el MapaDependencias.
+2. Se verifica el registro completo en el backlog departamental, el informe de auditoría de origen, la ficha correspondiente en `tareas_auditoria.txt` y el MapaDependencias.
 3. Se realiza Fase 0 de auditoría manual de la tarea y de sus dependencias; si falta informe o evidencia, se realiza la auditoría antes de modificar.
 4. Se confirma que la tarea no duplica otra y que las ampliaciones se incorporan a su tarea madre sin perder criterios.
 5. Se registra la tarea en ejecución y se prepara el respaldo antes de editar.
@@ -869,7 +877,7 @@ Los registros PM-00 identificados como encabezados, ampliaciones o tareas con me
 
 ## 18.5 Campos obligatorios en cada checkpoint
 
-Todo checkpoint de IMA debe identificar expresamente el lugar de la ejecución tanto en la metodología como en el plan maestro. Además de los campos obligatorios de las secciones 16 y de `AUDITORIAS/Contexto_personal.txt`, incluir:
+Todo checkpoint de IMA debe identificar expresamente el lugar de la ejecución tanto en la metodología como en el plan maestro. Además de los campos obligatorios de las secciones 16 y de `Auditoría/Contexto_personal.txt`, incluir:
 
 - **ID de checkpoint:** consecutivo acumulativo C1.xxx.
 - **ID de sesión:** identificador operativo único de la conversación/iteración; no presentarlo como ID nativo de ChatGPT.
