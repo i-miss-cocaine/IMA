@@ -62,3 +62,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Índice central: Auditoría/INDICE_CHECKPOINTS.md; cada checkpoint y cada registro incluye ubicación y referencia cruzada.
 - Checkpoint: C1.286; ubicación: Auditoría/Contexto_personal.txt — sección C1.286, líneas 1547–1587; índice: Auditoría/INDICE_CHECKPOINTS.md, fila C1.286.
 - Sesión: IMA-GOV-20261109-0339Z-01. Rama: NG_beta_0.0.0.1_work. HEAD de partida: 4cda8611c4d3c4aece4c7d80922cc4c14c920f5a.
+
+
+[2026-11-09] IMA-EXEC-20261109-0343Z-01 — PM-00 / TASK-637 — Inventario integral y trazabilidad C1.287
+- Auditoría: AUD-NG-348 detecta 9 rutas omitidas y 12 metadatos SHA/tamaño desactualizados; TASK-637 se amplía conservando su ID.
+- Inventario reconciliado con el Git tree de partida bdce474c52cfc4d85614dcdf6960189748f85ccc (1.010 blobs, no truncado) e incluye el informe C1.287; snapshot final: 1.011 rutas.
+- AUD-NG-349: se corrige el estado de publicación de C1.286; TASK-684 resuelta.
+- Sin modificaciones de código fuente ni de index.html; TASK-637 queda en revisión del usuario.
+- Checkpoint: C1.287; sesión: IMA-EXEC-20261109-0343Z-01; ubicación: Auditoría/Contexto_personal.txt — sección C1.287; índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.287.
+- HEAD de partida: a77e9a6dc373a66e243d6287743139cea67e4c26; commit único de cierre: este commit; SHA confirmado tras publicación.

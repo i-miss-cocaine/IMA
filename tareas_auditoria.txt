@@ -46,3 +46,35 @@ El propósito de este documento es llevar el registro de las tareas derivadas de
 - **Criterios de aceptación:** 1.002 rutas únicas; tamaño y SHA para cada entrada no autorreferencial; SHA del inventario verificado externamente; tree final no truncado.
 - **Estado:** Completada tras C1.283.
 - **Evidencia:** tree C1.282 `e052e8781270a0a23aedd2d90177b601d8df063a`; informe C1.283 blob `af96fa04c573dbacdb6c3637aeed35dea9462cad`.
+
+
+===============================================================================
+## TASK-637 — Extensión de auditoría e inventario C1.287
+- **ID:** TASK-637 (extensión del ID existente; no duplicar).
+- **Informe/hallazgo de origen:** `Auditoría/AUDITORIA_TASK-637_C1.287.md`, AUD-NG-348.
+- **Requisito original:** `pendientes/Contabilidad/Pendientes.md`, bloque TASK-637.
+- **Severidad/prioridad:** ALTO / P1.
+- **Objetivo:** mantener el inventario sincronizado con el HEAD real y todos los artefactos versionados.
+- **Acción ejecutable:** reconciliar el Git tree completo, actualizar tamaños/SHA, incorporar rutas omitidas y el informe generado en la iteración.
+- **Archivos afectados:** `docs/architecture/repository-inventory.md`; backlog Contabilidad; informe y registros de auditoría.
+- **Dependencias:** tree Git recursivo, documentación vigente e `index.html`; satisfechas.
+- **Alcance/exclusiones:** documentación e inventario; no mover ni alterar código fuente, no renombrar `index.html`, no adelantar TASK-638.
+- **Criterios de aceptación:** 1.011 rutas únicas; metadatos exactos para cada ruta no autorreferencial; tamaño exacto y SHA externo del inventario; tree no truncado; `index.html` intacto; sin rutas inventadas.
+- **Estado:** Implementación validada; pendiente de revisión/aprobación del usuario.
+- **Evidencia:** tree base `bdce474c52cfc4d85614dcdf6960189748f85ccc` con 1.010 blobs; informe C1.287 incluido en el commit; validación post-commit registrada en el reporte de cierre.
+
+===============================================================================
+## TASK-684 — Corregir estado de publicación del checkpoint C1.286
+- **ID:** TASK-684 (nuevo; ausencia comprobada en los siete backlogs, Plan Maestro y MapaDependencias).
+- **Informe/hallazgo de origen:** `Auditoría/AUDITORIA_TASK-637_C1.287.md`, AUD-NG-349.
+- **Requisito original:** `METODOLOGIA_DESARROLLO.md`, sección 20.3; `Auditoría/INDICE_CHECKPOINTS.md`.
+- **Severidad/prioridad:** MEDIO / P2.
+- **Objetivo:** reflejar el estado real de publicación de C1.286.
+- **Acción ejecutada:** actualizar la fila C1.286 a Publicado y registrar el SHA `a77e9a6dc373a66e243d6287743139cea67e4c26`; agregar C1.287 como último checkpoint.
+- **Archivos afectados:** `Auditoría/INDICE_CHECKPOINTS.md`.
+- **Dependencias:** HEAD verificado y commit C1.286; satisfechas.
+- **Alcance/exclusiones:** trazabilidad documental; no alterar el cuerpo histórico de C1.286 ni reescribir commits.
+- **Criterios de aceptación:** C1.286 figura como Publicado con SHA correcto; C1.287 figura como checkpoint actual con ubicación y sesión; historial anterior conservado.
+- **Estado:** Resuelta en C1.287.
+- **Evidencia:** índice actualizado y verificado en el commit de esta iteración.
+

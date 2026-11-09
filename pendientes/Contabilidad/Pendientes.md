@@ -3037,7 +3037,7 @@
 - **Referencia:** AUD-NG-281.
 - **Severidad:** ALTO.
 - **Prioridad:** P1.
-- **Estado:** Pendiente.
+- **Estado:** En revisión (implementación validada; pendiente de revisión/aprobación del usuario).
 - **Objetivo y acción:** generar y mantener un inventario exhaustivo de los 974 archivos versionados, con ruta exacta, tipo, tamaño, SHA, área funcional, propósito y condición de uso; reconciliarlo con el árbol Git vigente y contemplar contenido académico, assets, datos, documentación, pruebas, configuración y backend.
 - **Archivos/módulos afectados:** `docs/architecture/repository-inventory.md`, `AUDITORIAS/MapaDependencias.md`, árbol completo del repositorio.
 - **Dependencias:** árbol Git de la rama de trabajo, documentación vigente, punto de entrada `index.html`.
@@ -3051,6 +3051,10 @@
 - **Seguimiento C1.283 / AUD-NG-347:** la reauditoría posterior detectó dos informes creados en el commit anterior que no estaban en el snapshot de 999. Se amplía la cobertura a 1.002 rutas, incluyendo el informe de seguimiento C1.283.
 - **Estado operativo tras el reinicio global:** Pendiente; la reauditoría histórica se conserva como antecedente y no acredita cierre del Plan Maestro.
 - **Evidencia adicional:** tree C1.282 `e052e8781270a0a23aedd2d90177b601d8df063a`; informe `Auditoría/AUDITORIA_TASK-637_C1.283.md` blob `af96fa04c573dbacdb6c3637aeed35dea9462cad`.
+- **Seguimiento C1.287 / AUD-NG-348:** el tree de partida `bdce474c52cfc4d85614dcdf6960189748f85ccc` contiene 1.010 blobs (no truncado); la tabla anterior tenía 1.001 filas, omitía 9 rutas y 12 metadatos estaban desactualizados. Se amplía TASK-637 sin duplicar el ID.
+- **Evidencia de implementación:** inventario actualizado a 1.011 rutas únicas, incluyendo el informe C1.287 creado en la misma iteración; tamaños y SHA contrastados con Git tree/blob, autorreferencia SELF con tamaño exacto. `index.html` conserva SHA `cd742047cdc4948259dd721119429b04f78330ca`.
+- **Estado al cierre C1.287:** implementación documental validada; permanece En revisión y no se marca [X] ni Completada hasta aprobación del usuario.
+
 ---
 
 <!-- ID: TASK-638 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK02.md -->

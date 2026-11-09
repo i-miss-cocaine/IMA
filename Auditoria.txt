@@ -54,3 +54,29 @@ Hallazgo/decisión: se formaliza un límite de 180.000 caracteres por archivo ac
 Acción: se añade la sección 20 a METODOLOGIA_DESARROLLO.md y la regla G al bloque prioritario de Auditoría/Contexto_personal.txt.
 Ubicación del checkpoint: Auditoría/Contexto_personal.txt — sección C1.286, líneas 1547–1587.
 Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.286.
+
+
+===============================================================================
+## SESIÓN DE EJECUCIÓN PM-00 — TASK-637 / C1.287
+Fecha: 2026-11-09 UTC
+ID de sesión: IMA-EXEC-20261109-0343Z-01
+HEAD de partida: a77e9a6dc373a66e243d6287743139cea67e4c26
+Tree de partida: bdce474c52cfc4d85614dcdf6960189748f85ccc (1010 blobs; truncated=false)
+
+### AUD-NG-348 — ALTO/P1 — Inventario incompleto y metadatos desactualizados
+- Evidencia: inventario previo 1443b7bd2c6990ed7b057a4873d37afff54336c4, 1.001 filas; tree de partida con 1.010 blobs.
+- Nueve rutas omitidas de la tabla y doce archivos con SHA/tamaño desactualizados.
+- Impacto: no se acredita cobertura del 100 % del repositorio.
+- Acción: reabrir/extender TASK-637, conservando su ID; inventariar el tree final con el informe C1.287 incluido.
+
+### AUD-NG-349 — MEDIO/P2 — Estado de publicación incorrecto del checkpoint C1.286
+- Evidencia: el índice lo señalaba como preparado aunque el HEAD a77e9a6dc373a66e243d6287743139cea67e4c26 ya contenía el commit.
+- Acción: corregir la fila C1.286 y registrar TASK-684; resuelto en C1.287.
+
+### Tareas derivadas
+- TASK-637: extensión por AUD-NG-348; requisitos y criterios ampliados en `tareas_auditoria.txt`; permanece en revisión.
+- TASK-684: corrección de índice por AUD-NG-349; resuelta en esta iteración.
+
+### Dictamen
+Inventario actualizado desde el árbol Git; 1.011 rutas en el snapshot que incorpora el informe C1.287. No se modifica código fuente ni `index.html`. Las pruebas de runtime no se ejecutaron.
+Checkpoint: C1.287; sesión: IMA-EXEC-20261109-0343Z-01; ubicación: Auditoría/Contexto_personal.txt — sección C1.287; índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.287.

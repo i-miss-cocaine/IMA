@@ -1585,3 +1585,48 @@ Commit de cierre: el commit único que contiene este checkpoint; SHA a confirmar
 Estado: regla documentada; el archivo principal permanece activo porque el tamaño proyectado sigue por debajo de 180.000 caracteres.
 Siguiente acción: cuando el usuario autorice continuar, verificar HEAD y el índice; iniciar TASK-637 desde cero conforme al Plan Maestro.
 ===============================================================================
+
+
+===============================================================================
+## C1.287 — Auditoría e implementación inicial de TASK-637 (2026-11-09)
+ID de sesión operativo: IMA-EXEC-20261109-0343Z-01
+Estado de sesión: inventario actualizado y verificado; pendiente de revisión/aprobación del usuario.
+Checkpoint anterior: C1.286.
+Repositorio: i-miss-cocaine/IMA.
+Rama de trabajo: NG_beta_0.0.0.1_work.
+HEAD de partida verificado: a77e9a6dc373a66e243d6287743139cea67e4c26.
+Tree de partida: bdce474c52cfc4d85614dcdf6960189748f85ccc (recursivo, truncated=false).
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59; sin modificaciones.
+Fase del Plan Maestro: PM-00 — inventario, triage y resolución de dependencias.
+Fase metodológica: continuidad y verificación; auditoría preimplementación (Fase 0); registro de hallazgos y tareas (Fases 1–2); respaldo, implementación documental, pruebas, autoauditoría y Code Review (Fases 3–7).
+Tarea: TASK-637 — Completar el inventario integral de archivos.
+Requisito original: pendientes/Contabilidad/Pendientes.md, bloque TASK-637.
+Dependencias: árbol Git recursivo, documentación vigente e index.html; verificadas.
+Decisión de inicio: primera implementación del Plan Maestro; no existe tarea anterior que auditar, conforme a la instrucción expresa del usuario.
+Auditoría: el inventario previo tenía 1.001 filas y omitía 9 rutas del árbol; además, 12 archivos tenían tamaño/SHA desactualizados. El árbol de partida contiene 1.010 blobs y no está truncado. index.html conserva SHA cd742047cdc4948259dd721119429b04f78330ca.
+Hallazgos:
+- AUD-NG-348 ALTO/P1: inventario incompleto/desactualizado respecto al HEAD actual; reabrir/extender TASK-637 sin duplicar su ID.
+- AUD-NG-349 MEDIO/P2: el índice central mantenía C1.286 como «Preparado para publicación» aunque el commit a77e9a6dc373a66e243d6287743139cea67e4c26 ya lo contiene; se corrige la referencia a «Publicado».
+Tareas derivadas:
+- TASK-637: extensión por AUD-NG-348; inventariar 1.011 rutas del árbol final, actualizar metadatos y conservar la autorreferencia SELF con tamaño exacto.
+- TASK-684: corrección de trazabilidad de C1.286 por AUD-NG-349; resuelta en esta iteración mediante actualización del índice, sin alterar el checkpoint histórico.
+Implementación: se actualizó el inventario integral con metadatos tomados del Git tree y blob SHA verificados; se añadieron las rutas omitidas y el informe de esta iteración. No se modificó código fuente ni index.html.
+Archivos modificados:
+- docs/architecture/repository-inventory.md
+- Auditoría/AUDITORIA_TASK-637_C1.287.md (nuevo)
+- Auditoría/Contexto_personal.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoria.txt
+- tareas_auditoria.txt
+- changueslogs.txt
+- pendientes/Contabilidad/Pendientes.md
+Archivos revisados sin modificación: METODOLOGIA_DESARROLLO.md, Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md, Auditoría/MapaDependencias.md, README.md, index.html, auditorías C1.283 y el resto de los backlogs.
+Pruebas ejecutadas: árbol recursivo no truncado; conteo y unicidad de rutas; correspondencia ruta/tamaño/SHA; autorreferencia y tamaño exacto del inventario; comprobación de index.html; verificación del diff y del commit; verificación post-publicación de HEAD y rama base.
+Pruebas no ejecutadas: Node, navegador/DOM, HTTP, Apps Script, integración y E2E; no aplican a una tarea documental de inventario.
+Autoauditoría y Code Review: revisión estática de cobertura, metadatos, rutas, clasificación, historial append-only y ausencia de cambios de código; aprobación técnica limitada al alcance documental.
+Estado de TASK-637: implementación y validación documental realizadas; permanece En revisión y no se marca [X]/Completada hasta revisión/aprobación del usuario.
+Ubicación exacta del checkpoint: Auditoría/Contexto_personal.txt — sección C1.287, líneas 1590–1632.
+Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.287.
+Commit de cierre: el commit único que contiene este checkpoint; SHA confirmado externamente después de publicar.
+Siguiente acción reproducible: revisar/aprobar TASK-637; solo después de su cierre verificado seleccionar TASK-638 en pendientes/Contabilidad/Pendientes.md y auditarla antes de implementarla.
+===============================================================================
