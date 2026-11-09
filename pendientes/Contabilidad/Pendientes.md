@@ -3033,11 +3033,11 @@
 ---
 
 <!-- ID: TASK-637 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK02.md -->
-### [X] [TASK-637] Completar el inventario integral de archivos
+### [ ] [TASK-637] Completar el inventario integral de archivos
 - **Referencia:** AUD-NG-281.
 - **Severidad:** ALTO.
 - **Prioridad:** P1.
-- **Estado:** Completada (implementación documental, verificaciones internas, autoauditoría y Code Review aprobados en C1.287).
+- **Estado:** En ejecución (reabierta por AUD-NG-362; conciliación integral pendiente).
 - **Objetivo y acción:** generar y mantener un inventario exhaustivo de los 974 archivos versionados, con ruta exacta, tipo, tamaño, SHA, área funcional, propósito y condición de uso; reconciliarlo con el árbol Git vigente y contemplar contenido académico, assets, datos, documentación, pruebas, configuración y backend.
 - **Archivos/módulos afectados:** `docs/architecture/repository-inventory.md`, `AUDITORIAS/MapaDependencias.md`, árbol completo del repositorio.
 - **Dependencias:** árbol Git de la rama de trabajo, documentación vigente, punto de entrada `index.html`.
@@ -3057,12 +3057,17 @@
 
 ---
 
+
+- Reapertura C1.294: tree 1.018 blobs; inventario 1.013 rutas; cinco informes C1.289-C1.293 omitidos y once filas con SHA/tamaño desactualizados.
+- Acción: regenerar desde tree final, incluir cinco informes y corregir once filas; reconciliar artefactos del commit correctivo.
+- Criterios: 100 % blobs, una ruta por fila, cero omisiones/obsoletos, SHA/tamaños exactos, SELF verificado, tree no truncado, index.html intacto, autoauditoría y Code Review.
+- TASK-638 queda bloqueada hasta cierre verificado.
 <!-- ID: TASK-638 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK02.md -->
 ### [ ] [TASK-638] Trazar dependencias estáticas y dinámicas de extremo a extremo
 - **Referencia:** AUD-NG-282.
 - **Severidad:** ALTO.
 - **Prioridad:** P1.
-- **Estado:** En ejecución (auditoría preimplementación y trazado parcial C1.289).
+- **Estado:** Bloqueada por dependencia TASK-637 (AUD-NG-362); conserva evidencia parcial C1.289-C1.293.
 - **Objetivo y acción:** documentar por archivo las dependencias HTML `script/link`, CSS, imágenes, fuentes, imports, referencias dinámicas, rutas, endpoints, acciones backend, contratos y servicios externos; distinguir referencias comprobadas de inferidas y registrar consumidores/proveedores.
 - **Archivos/módulos afectados:** HTML, JS, CSS, JSON, GAS, configuración, documentación y recursos del repositorio; `AUDITORIAS/MapaDependencias.md`.
 - **Dependencias:** TASK-637, catálogo completo de archivos.

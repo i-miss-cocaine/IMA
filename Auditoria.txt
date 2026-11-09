@@ -150,3 +150,15 @@ Sesión: IMA-EXEC-20261109-1108Z-01; HEAD de partida: 32b8f5884dd24dbeaf1a3bf028
 - 211 llamadas fetchApi literales de los controladores revisados coinciden con casos de despacho en cinco servicios; las rutas de api.js y los handlers inexistentes se reportan aparte.
 - TASK-638 sigue En ejecución; falta inspección exhaustiva de handlers y traza de cada acción hasta persistencia/ámbito. Sin pruebas runtime.
 - Informe: Auditoría/AUDITORIA_TASK-638_C1.293.md; checkpoint C1.293 se anexa a Auditoría/Contexto_personal.txt.
+
+
+## AUD-NG-362 — MEDIO/P2 — Inventario integral incompleto y desactualizado
+- Fecha/checkpoint: 2026-11-09 / C1.294. Sesión: IMA-AUDIT-20261109-1140Z.
+- Origen: reauditoría TASK-637; informe Auditoría/AUDITORIA_TASK-637_C1.294.md.
+- Rama/HEAD: NG_beta_0.0.0.1_work @ fd73830144a9822369e4402076685928171908d6.
+- Evidencia: tree b8ab033fddd985c9397ab67e7d6c4bf48933385d, 1.018 blobs; inventario blob d5fdf1a621481d453a7a5779d2b82615901716b3, 1.013 rutas; cinco informes C1.289-C1.293 omitidos y once filas SHA/tamaño desactualizadas.
+- Impacto: no acredita cobertura integral ni metadatos vigentes.
+- Acción: reabrir TASK-637 con el mismo ID y reconciliar inventario contra tree final.
+- Dependencia: TASK-638 bloqueada hasta cierre verificado.
+- Tarea derivada: ampliación TASK-637 en tareas_auditoria.txt, sin ID duplicado.
+- Ubicación: informe C1.294; checkpoint Parte_0002, sección C1.294; índice fila C1.294.

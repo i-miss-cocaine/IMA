@@ -130,3 +130,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se amplían AUD-NG-002, AUD-NG-082 y AUD-NG-084; se derivan TASK-685..690.
 - TASK-638 sigue En ejecución; sin cambios de código ni pruebas runtime.
 - Checkpoint C1.293 en Auditoría/Contexto_personal.txt; índice Auditoría/INDICE_CHECKPOINTS.md.
+
+
+[2026-11-09] IMA-AUDIT-20261109-1140Z — C1.294 / TASK-637 reauditoría y bloqueo de TASK-638
+- HEAD fd73830144a9822369e4402076685928171908d6; base NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59; tree b8ab033fddd985c9397ab67e7d6c4bf48933385d.
+- AUD-NG-362 MEDIO/P2: 1.013 rutas frente a 1.018 blobs; cinco informes omitidos y once filas desactualizadas.
+- TASK-637 reabierta; TASK-638 bloqueada hasta corregir/verificar inventario.
+- BETA-FUNC-001..006 registradas Pendientes para TASK-685..690; sin pruebas beta ejecutadas.
+- Sin cambios de código ni modificación del inventario en esta auditoría.
+- Checkpoint C1.294: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.294; índice fila C1.294.

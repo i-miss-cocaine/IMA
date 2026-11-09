@@ -86,3 +86,25 @@ Salida beta: escenarios críticos ejecutados, cero P0 abiertos, tratamiento expl
 
 ## 8. Historial
 - C1.288 (2026-11-09): catálogo creado y separación entre cierre de implementación y certificación beta formalizada.
+
+
+## 9. Casos beta pendientes derivados de auditorías
+Todos quedan Pendientes; ejecutar después de implementar las tareas, en beta/staging aislado con datos sintéticos y build registrado. No se infiere PASS.
+
+### BETA-FUNC-001 — Evaluaciones por identidad (AUD-NG-356 / TASK-685, P0)
+Área EXAM; Estudiante, Padre/tutor y Docente. Precondición: TASK-685 implementada y relaciones sintéticas. Pasos: consulta sin token; alterar userId; probar tutor no vinculado/docente no asignado; repetir con relaciones autorizadas. Esperado: anónimos/no relacionados rechazados, identidad derivada de claims y datos mínimos autorizados. Estado Pendiente. Evidencia saneada. Derivación TASK-685.
+
+### BETA-FUNC-002 — Borradores de admisión (AUD-NG-357 / TASK-686, P0)
+Área ACADEMIC; Secretaría/solicitante. Precondición: TASK-686 implementada; capacidades sintéticas válidas, expiradas y revocadas. Pasos: recuperar con email solamente; alterar clave ajena; probar capacidades inválidas/expiradas/revocadas y válidas; concurrencia/reintentos. Esperado: email no autoriza; solo titular con capacidad válida accede; sin sobrescrituras/duplicados. Estado Pendiente. Evidencia con IDs sintéticos. Derivación TASK-686.
+
+### BETA-FUNC-003 — Contratos API desarrollador (AUD-NG-358 / TASK-687, P1)
+Área USER/ACADEMIC; Desarrollador/Administrador. Precondición: TASK-687 implementada; respaldos sintéticos. Pasos: ejecutar getBackupsList, restoreSpreadsheetBackup, runSystemMaintenance y exportSchoolYearArchive; repetir sin privilegios y provocar errores. Esperado: wrappers llegan a handlers reales; no autorizado rechazado; sin mocks como éxito. Estado Pendiente. Evidencia de requests/respuestas saneadas. Derivación TASK-687.
+
+### BETA-FUNC-004 — Handlers y atomicidad (AUD-NG-359 / TASK-688, P0)
+Área USER/ACADEMIC/TASK; administrador/usuarios autorizados. Precondición: TASK-688 implementada. Pasos: invocar acciones; inducir fallos antes/después de persistencia; repetir eventos; verificar manageAccountState/reintentos. Esperado: cero handlers inexistentes; estado/evento atómicos o recuperables; sin duplicación ni respuesta ambigua. Estado Pendiente. Evidencia antes/después. Derivación TASK-688.
+
+### BETA-FUNC-005 — QuizPro IDs y bancos vacíos (AUD-NG-360 / TASK-689, P1)
+Área QuizPro; Estudiante/Docente. Precondición: TASK-689 implementada; bancos sintéticos. Pasos: cargar pregunta repetidamente; reiniciar sesión; revisar historial/refuerzo/analítica; seleccionar bancos vacíos/deshabilitados. Esperado: ID constante, referencias persistentes, sin bucle de recarga y con alternativa/indisponibilidad explícita. Estado Pendiente. Evidencia IDs/conteos. Derivación TASK-689.
+
+### BETA-FUNC-006 — Recuperación y secretos (AUD-NG-361 / TASK-690, P0)
+Área USER; solicitante/administrador. Precondición: TASK-690 implementada; secreto protegido en beta. Pasos: configuración ausente; flujo legítimo; token falso/alterado/expirado/reutilizado; rotación y revocación. Esperado: falla cerrada sin secreto, sin fallback; tokens inválidos/revocados/reutilizados rechazados; token válido de un solo uso. Estado Pendiente. Evidencia saneada sin secretos/tokens. Derivación TASK-690.

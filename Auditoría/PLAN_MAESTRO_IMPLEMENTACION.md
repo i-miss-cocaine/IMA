@@ -1791,3 +1791,10 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - **Seguridad:** se amplían AUD-NG-002, AUD-NG-082 y AUD-NG-084; se registran AUD-NG-356..361 para evaluación, borradores de admisión, rutas API, handlers, bancos QuizPro y secreto de recuperación.
 - **Persistencia:** cinco servicios comparten un mismo Spreadsheet ID literal; DEVELOPER mantiene placeholder. No se verificaron Script Properties ni deployments.
 - **Siguiente paso exacto:** profundizar handler por handler desde cada acción frontend hasta autorización contextual y cada hoja/archivo de persistencia; revisar los servicios públicos TASK/EXAM/ACADEMIC y confirmar la configuración de secretos/deployments con evidencia autorizada. Mantener TASK-638 En ejecución; no corregir código durante la auditoría PM-00.
+
+
+## Seguimiento operativo — C1.294
+- TASK-637 reabierta / En ejecución por AUD-NG-362: inventario 1.013 rutas frente a 1.018 blobs; cinco informes C1.289-C1.293 omitidos y once filas SHA/tamaño desactualizadas.
+- TASK-638 Bloqueada por TASK-637; evidencia parcial C1.289-C1.293 conservada.
+- Siguiente paso: corregir inventario desde tree completo, validar rutas/metadatos/SELF, autoauditoría y Code Review; luego reanudar TASK-638.
+- BETA-FUNC-001..006 registradas Pendientes para TASK-685..690; ejecución futura en beta aislada.

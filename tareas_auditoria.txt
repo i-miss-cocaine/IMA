@@ -186,3 +186,15 @@ El propósito de este documento es llevar el registro de las tareas derivadas de
 - **Acción:** eliminar IMA-PORTAL-DEVELOPMENT-KEY-UNSECURE como fallback; exigir secreto aleatorio de alta entropía provisionado fuera del repositorio; fallar cerrado si falta; rotar la clave y revocar tokens emitidos con la anterior; añadir uso único/JTI y registro de revocación.
 - **Criterios:** secreto ausente impide emitir y aceptar tokens; no hay valor por defecto ni secreto en logs/frontend; token falsificado/alterado/reutilizado/expirado se rechaza; un token legítimo solo puede cambiar la contraseña una vez; pruebas de rotación y revocación.
 - **Estado:** Pendiente.
+
+
+## TASK-637 — Ampliación por AUD-NG-362 (C1.294; mismo ID)
+- Estado: Reabierta / En ejecución.
+- Origen: Auditoría/AUDITORIA_TASK-637_C1.294.md, AUD-NG-362.
+- Evidencia: HEAD fd73830144a9822369e4402076685928171908d6, tree b8ab033fddd985c9397ab67e7d6c4bf48933385d; 1.018 blobs vs 1.013 rutas; cinco omisiones y once filas SHA/tamaño desactualizadas.
+- Requisito: pendientes/Contabilidad/Pendientes.md, TASK-637.
+- Acción: regenerar inventario desde tree final; incluir cinco informes C1.289-C1.293; corregir once filas; conciliar artefactos del commit correctivo; verificar SELF y SHA.
+- Archivos: inventario, informe, backlog, Plan Maestro, Auditoria.txt, changueslogs, contexto e índice.
+- Alcance: inventario documental; no modificar código ni renombrar index.html.
+- Criterios: 100 % blobs, una fila por ruta, cero omisiones/obsoletos, SHA/tamaños exactos, SELF exacto, tree no truncado, index.html intacto, autoauditoría y Code Review.
+- Estado/evidencia: corrección pendiente; AUD-NG-362 abierto.
