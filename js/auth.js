@@ -147,6 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         userId: result.data.userId || result.data.id,
                         nombre: result.data.nombre,
                         email: result.data.email,
+                        sessionToken: result.data.sessionToken || result.sessionToken || null,
                         rol: result.data.rol || 'Estudiante',
                         grado: result.data.grado,
                         seccion: result.data.seccion,

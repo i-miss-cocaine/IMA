@@ -315,3 +315,20 @@ TASK-693 — Formalizar contratos de helpers compartidos y guardas estáticas
 - Requisitos: pendientes/Dirección/Pendientes.md — TASK-693.
 - Dependencias: TASK-691 y TASK-692; contratos de identidad/sesión PM-01.
 - Estado: Pendiente.
+
+
+===============================================================================
+TASK-636 — ESTADO DE EJECUCIÓN Y TAREAS DERIVADAS / C1.305
+===============================================================================
+- Estado operativo: En ejecución; no Completada.
+- Informe principal: Auditoría/AUDITORIA_TASK-636_C1.305.md.
+- Iteración C1.305: token en js/auth.js/js/api.js; identidad/propiedad de tickets; guardia de getAutomationRules; filtros verificados de noticias/comunicados.
+- Pendiente: Task-Service PUBLIC_ACTIONS, claims/propiedad de tareas/proyectos/archivos/aulas/posts/materiales, preview, respaldo restaurable para closeAcademicYear, excepciones públicas ACADEMIC y pruebas por rol.
+
+### Tareas derivadas de los hallazgos de la auditoría
+- No se crean IDs nuevos: se conservan TASK-636, TASK-496, TASK-501, TASK-502 y TASK-685 según su ámbito.
+- TASK-496 / AUD-NG-217: validación contextual y ámbito docente.
+- TASK-501 / AUD-NG-221: matriz dinámica de permisos.
+- TASK-502 / AUD-NG-222: RBAC/ABAC y denegación cerrada.
+- TASK-685 / AUD-NG-373: EXAM, fuera de TASK-636.
+===============================================================================

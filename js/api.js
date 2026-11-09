@@ -43,8 +43,18 @@ function fetchApi(service, action, payload, retryCount, options) {
         if (rawUser) currentUser = JSON.parse(rawUser);
     } catch (_) {}
 
-    var enrichedPayload = payload || {};
-    if (currentUser && typeof enrichedPayload === 'object' && !Array.isArray(enrichedPayload)) {
+    // Clonar el payload para no mutar objetos compartidos por los consumidores.
+    var enrichedPayload = payload && typeof payload === 'object' && !Array.isArray(payload)
+        ? Object.assign({}, payload)
+        : {};
+    if (currentUser && typeof enrichedPayload === 'object') {
+        // El token firmado es la única credencial de identidad; requester* se conserva
+        // solo por compatibilidad y nunca debe usarse como fuente de autorización.
+        if (currentUser.sessionToken &&
+            ['loginUser', 'registerUser', 'requestPasswordRecovery', 'resetPassword'].indexOf(action) === -1 &&
+            !enrichedPayload.sessionToken && !enrichedPayload.authToken && !enrichedPayload.token) {
+            enrichedPayload.sessionToken = currentUser.sessionToken;
+        }
         if (!enrichedPayload.requesterUserId) enrichedPayload.requesterUserId = currentUser.userId;
         if (!enrichedPayload.requesterRole) enrichedPayload.requesterRole = currentUser.rol;
     }

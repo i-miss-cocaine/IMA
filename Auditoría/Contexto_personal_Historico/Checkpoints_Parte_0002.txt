@@ -539,3 +539,61 @@ Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002
 Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.304.
 Commit de cierre: el commit que contiene este checkpoint; SHA verificado externamente tras publicación.
 ===============================================================================
+
+
+
+===============================================================================
+CHECKPOINT C1.305 — Implementación parcial de TASK-636 / PM-01
+===============================================================================
+ID: C1.305
+Sesión: IMA-EXEC-20261109-1435Z-01
+Checkpoint anterior: C1.304
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+HEAD de partida: 0bbe85a6e2c0afd4ed08637e3cbb08a41f2ba14f
+Tree SHA de partida: 71d0fd7792301cf8476671b39fe9793dae991652
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+
+### Continuidad y requisito
+- Recuperado íntegramente el blob original pendientes/Otros/Pendientes.md: e9637ecc6f88b2aa0aec75909538e072509bf507; 1.627.709 caracteres y 16.484 líneas.
+- Leído el bloque completo TASK-636, PM-01/P0. No se restauró ni sobrescribió el backlog.
+- Reutilizados los informes TAREA-AD-06, F8-TASK06 y F8-TASK07; no se duplican auditorías.
+
+### Resultado de la iteración
+- js/auth.js: persiste sessionToken firmado.
+- js/api.js: propaga token y clona payload; requesterUserId/requesterRole permanecen no confiables.
+- backend/user-service/Code.gs: tickets con identidad y propiedad verificadas; getAutomationRules restringido a roles administrativos; noticias/comunicados filtrados por audiencia y vigencia verificadas.
+- AUD-NG-280, AUD-NG-364 y AUD-NG-365: correcciones de código parciales, pendientes de pruebas.
+- Permanecen abiertos AUD-NG-001/002, AUD-NG-306, AUD-NG-368/369/370/371. AUD-NG-373 pertenece a TASK-685 y queda fuera.
+- TASK-636 sigue En ejecución; no marcar Completada.
+
+### Archivos modificados
+1. js/auth.js
+2. js/api.js
+3. backend/user-service/Code.gs
+4. Auditoría/AUDITORIA_TASK-636_C1.305.md
+5. Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt
+6. Auditoría/INDICE_CHECKPOINTS.md
+7. Auditoria.txt
+8. tareas_auditoria.txt
+9. changueslogs.txt
+
+### Pruebas y límites
+- Ejecutadas: sustituciones únicas, balance estático de llaves, checks estáticos de token/identidad/propiedad y filtros de audiencia.
+- No ejecutadas: Apps Script runtime, Sheets/Drive, navegador, HTTP, E2E ni pruebas con cuentas por rol.
+- No se declara protegida ninguna ruta pendiente de Task-Service/Academic-Service.
+
+### Tareas relacionadas y derivadas
+- TASK-496/AUD-NG-217: ámbito contextual y asignación docente.
+- TASK-501/AUD-NG-221: matriz dinámica.
+- TASK-502/AUD-NG-222: RBAC/ABAC común.
+- TASK-685/AUD-NG-373: EXAM, excluido de TASK-636.
+- No se crean IDs duplicados.
+
+### Siguiente acción exacta
+Continuar TASK-636 en backend/task-service/Code.gs: eliminar PUBLIC_ACTIONS sensibles, derivar identidad desde claims, comprobar propiedad de tareas/proyectos/archivos, filtrar aulas/posts/materiales, corregir preview y respaldar/restaurar closeAcademicYear antes de permitir borrados. Después proteger excepciones públicas ACADEMIC y ejecutar pruebas por rol.
+
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.305.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.305.
+Commit de cierre: el commit que contiene este checkpoint; SHA verificado tras publicación.
+===============================================================================

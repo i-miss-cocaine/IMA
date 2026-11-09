@@ -295,3 +295,10 @@ Sesión: IMA-EXEC-20261109-1108Z-01; HEAD de partida: 32b8f5884dd24dbeaf1a3bf028
 - Lectura convencional, base64 y rangos: 0 caracteres. El historial de la misma rama conserva el mismo blob; no hay alternativa recuperable identificada.
 - No se sobrescribe ni se sustituye el requisito. TASK-636 no se inicia hasta recuperar/validar el contenido íntegro.
 - Checkpoint C1.304: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.304; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.304.
+
+
+## TASK-636 — revalidación e implementación parcial C1.305
+- Se recuperó y leyó el requisito original del blob e9637ecc6f88b2aa0aec75909538e072509bf507; se reutilizaron los informes previos TAREA-AD-06, F8-TASK06 y F8-TASK07 sin duplicar auditorías.
+- Código modificado: js/auth.js, js/api.js y backend/user-service/Code.gs. Se persiste/propaga token firmado; tickets usan identidad y propiedad verificadas; getAutomationRules requiere rol administrativo; noticias y comunicados derivan audiencia/vigencia del perfil verificado.
+- AUD-NG-280, AUD-NG-364 y AUD-NG-365: correcciones parciales pendientes de pruebas. AUD-NG-001/002, AUD-NG-306, AUD-NG-368/369/370/371 siguen abiertos para Task-Service/Academic-Service. AUD-NG-373 permanece en TASK-685.
+- Dictamen TASK-636: EN EJECUCIÓN, NO COMPLETADA. Informe: Auditoría/AUDITORIA_TASK-636_C1.305.md. Checkpoint: C1.305, Checkpoints_Parte_0002.txt.

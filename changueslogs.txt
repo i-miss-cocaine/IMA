@@ -222,3 +222,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - TASK-636 (PM-01/P0) se identifica como candidata, pero no se inicia: el requisito original pendientes/Otros/Pendientes.md devuelve 0 caracteres por UTF-8, base64 y rangos; blob SHA e9637ecc6f88b2aa0aec75909538e072509bf507, 1.647.413 bytes.
 - Historial consultado solo en la rama autorizada; commit 4cda8611c4d3c4aece4c7d80922cc4c14c920f5a conserva el mismo blob. No se modificó ni restauró el archivo.
 - Checkpoint C1.304: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.304, líneas 493–542; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.304.
+
+
+[2026-11-09] IMA-EXEC-20261109-1435Z-01 — TASK-636 / C1.305
+- Se almacena y propaga sessionToken firmado desde el inicio de sesión; requesterRole/requesterUserId quedan como metadatos no confiables.
+- USER: tickets usan identidad verificada y control de propiedad; getAutomationRules exige rol administrativo; noticias y comunicados filtran audiencia/estado/vigencia desde perfil verificado.
+- TASK-636 permanece En ejecución; siguen pendientes las protecciones de Task-Service, excepciones públicas ACADEMIC y pruebas runtime.
+- Informe: Auditoría/AUDITORIA_TASK-636_C1.305.md; checkpoint: Checkpoints_Parte_0002.txt — sección C1.305.

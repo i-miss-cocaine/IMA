@@ -415,9 +415,17 @@ function submitProblemTicket(payload) {
     const msgsSheet = getOrCreateSheet(ss, "HistorialMensajesTickets");
 
     const ticketId = "TICK-" + Math.floor(100000 + Math.random() * 900000);
-    const userId = payload.userId || (payload.currentUser && payload.currentUser.userId) || "ANON";
-    const nombreUsuario = payload.nombreUsuario || (payload.currentUser && payload.currentUser.nombre) || "Usuario";
     const verifiedRole = getUserVerifiedRole(payload);
+    const userId = payload && payload._verifiedUserId;
+    if (verifiedRole === "NO_ACCESS" || !userId) {
+      return { status: "error", code: "AUTH_PERMISSION_DENIED", message: "Se requiere una sesión válida para registrar el ticket." };
+    }
+    const usersData = getOrCreateSheet(ss, "Usuarios").getDataRange().getValues();
+    const userRecord = usersData.slice(1).find(row => String(row[0]).trim() === String(userId).trim());
+    if (!userRecord) {
+      return { status: "error", code: "AUTH_PERMISSION_DENIED", message: "No se pudo verificar la identidad del autor del ticket." };
+    }
+    const nombreUsuario = String(userRecord[1] || "Usuario");
     const areaFuncion = payload.areaFuncion || "General";
     const seccionPagina = payload.seccionPagina || "";
     const versionGlobal = "1.0";
@@ -470,7 +478,10 @@ function submitProblemTicket(payload) {
 function getProblemTickets(payload) {
   try {
     const verifiedRole = getUserVerifiedRole(payload);
-    const currentUserId = payload.userId || (payload.currentUser && payload.currentUser.userId);
+    const currentUserId = payload && payload._verifiedUserId;
+    if (verifiedRole === "NO_ACCESS" || !currentUserId) {
+      return { status: "error", code: "AUTH_PERMISSION_DENIED", message: "Se requiere una identidad verificada para consultar tickets." };
+    }
     const isAdmin = ["Administrador", "Desarrollador", "Director"].indexOf(verifiedRole) !== -1;
 
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -508,7 +519,7 @@ function getProblemTickets(payload) {
       const r = rawTickets[i];
       const tUserId = String(r[1]).trim();
 
-      if (!isAdmin && currentUserId && tUserId !== String(currentUserId).trim()) {
+      if (!isAdmin && tUserId !== String(currentUserId).trim()) {
         continue;
       }
 
@@ -578,8 +589,13 @@ function updateTicketStatus(payload) {
     ticketsSheet.getRange(foundIndex, 11).setValue(nuevoEstado);
     ticketsSheet.getRange(foundIndex, 13).setValue(now);
 
-    const adminUserId = payload.userId || (payload.currentUser && payload.currentUser.userId) || "ADMIN";
-    const adminNombre = payload.nombreUsuario || (payload.currentUser && payload.currentUser.nombre) || "Administrador";
+    const adminUserId = payload && payload._verifiedUserId;
+    const usersData = getOrCreateSheet(ss, "Usuarios").getDataRange().getValues();
+    const adminRecord = usersData.slice(1).find(row => String(row[0]).trim() === String(adminUserId).trim());
+    if (!adminUserId || !adminRecord) {
+      return { status: "error", code: "AUTH_PERMISSION_DENIED", message: "No se pudo verificar la identidad del administrador." };
+    }
+    const adminNombre = String(adminRecord[1] || "Administrador");
 
     if (notaInterna && String(notaInterna).trim().length > 0) {
       const msgId = "MSG-" + Math.floor(100000 + Math.random() * 900000);
@@ -628,17 +644,23 @@ function replyProblemTicket(payload) {
       return { status: "error", code: "NOT_FOUND", message: "Ticket no encontrado." };
     }
 
-    const currentUserId = payload.userId || (payload.currentUser && payload.currentUser.userId);
+    const currentUserId = payload && payload._verifiedUserId;
+    if (verifiedRole === "NO_ACCESS" || !currentUserId) {
+      return { status: "error", code: "AUTH_PERMISSION_DENIED", message: "Se requiere una identidad verificada para responder tickets." };
+    }
     const isAdmin = ["Administrador", "Desarrollador", "Director"].indexOf(verifiedRole) !== -1;
     const ticketUserId = String(ticketRow[1]).trim();
 
-    if (!isAdmin && currentUserId && ticketUserId !== String(currentUserId).trim()) {
+    if (!isAdmin && ticketUserId !== String(currentUserId).trim()) {
       return { status: "error", code: "AUTH_PERMISSION_DENIED", message: "No tiene autorización para responder a este ticket." };
     }
 
     const now = new Date().toISOString();
     const msgId = "MSG-" + Math.floor(100000 + Math.random() * 900000);
-    const authorName = payload.nombreUsuario || (payload.currentUser && payload.currentUser.nombre) || "Usuario";
+    const usersData = getOrCreateSheet(ss, "Usuarios").getDataRange().getValues();
+    const actorRecord = usersData.slice(1).find(row => String(row[0]).trim() === String(currentUserId).trim());
+    if (!actorRecord) return { status: "error", code: "AUTH_PERMISSION_DENIED", message: "No se pudo verificar la identidad del autor." };
+    const authorName = String(actorRecord[1] || "Usuario");
 
     msgsSheet.appendRow([msgId, ticketId, currentUserId || "USER", authorName, verifiedRole, false, text, now]);
 
@@ -1256,7 +1278,7 @@ function validateRolePermission(action, payload) {
   if (userRole === "NO_ACCESS") {
     return { authorized: false, role: "Cuenta Inactiva/Bloqueada" };
   }
-  if (["submitProblemTicket", "getProblemTickets", "replyProblemTicket", "searchGlobalOmnibox", "configureAutomationRules", "getAutomationRules", "getNotificationAuditLogs", "getServiceHealthReport", "submitPrivacyRightsRequest", "getPrivacyRightsRequests"].indexOf(action) !== -1) {
+  if (["submitProblemTicket", "getProblemTickets", "replyProblemTicket", "searchGlobalOmnibox", "configureAutomationRules", "getNotificationAuditLogs", "getServiceHealthReport", "submitPrivacyRightsRequest", "getPrivacyRightsRequests"].indexOf(action) !== -1) {
     return { authorized: true, role: userRole };
   }
 
@@ -5571,77 +5593,76 @@ function updateAppointmentStatus(payload) {
 }
 
 // [F11-Task04] [P1] - Gestión de Noticias, Anuncios, Circulares y Comunicados con Vigencia
+function getVerifiedAudienceContexts(payload, verifiedRole) {
+  const userId = payload && payload._verifiedUserId;
+  if (!userId || !verifiedRole || verifiedRole === "NO_ACCESS") return [];
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const usersData = getOrCreateSheet(ss, "Usuarios").getDataRange().getValues().slice(1);
+  const current = usersData.find(row => String(row[0]).trim() === String(userId).trim());
+  if (!current) throw new Error("No se encontró el perfil de la identidad autenticada.");
+  const contexts = [{ grado: String(current[2] || ""), seccion: String(current[3] || "") }];
+  if (["Padre", "Tutor", "Responsable"].indexOf(verifiedRole) !== -1) {
+    const linked = getGuardianStudents({
+      sessionToken: payload.sessionToken || payload.authToken || payload.token
+    });
+    (linked.data || []).forEach(student => contexts.push({ grado: String(student.grado || ""), seccion: String(student.seccion || "") }));
+  }
+  return contexts;
+}
+
+function isVerifiedAudienceMatch(grado, seccion, contexts) {
+  const targetGrade = String(grado || "Todos").trim().toLowerCase();
+  const targetSection = String(seccion || "Todas").trim().toLowerCase();
+  if (targetGrade === "todos" && targetSection === "todas") return true;
+  return (contexts || []).some(context => {
+    const gradeMatch = targetGrade === "todos" || String(context.grado || "").trim().toLowerCase() === targetGrade;
+    const sectionMatch = targetSection === "todas" || String(context.seccion || "").trim().toLowerCase() === targetSection;
+    return gradeMatch && sectionMatch;
+  });
+}
+
 function getNews(payload) {
   try {
-    const { categoria, grado, seccion, estado } = payload || {};
+    const verifiedRole = getUserVerifiedRole(payload);
+    const isAnonymous = verifiedRole === "NO_ACCESS";
+    const isStaff = ["Administrador", "Desarrollador", "Director", "Subdirector", "Secretaría", "Secretaria"].indexOf(verifiedRole) !== -1;
+    const contexts = isAnonymous ? [] : getVerifiedAudienceContexts(payload, verifiedRole);
+    const categoria = payload && payload.categoria;
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const sheet = getOrCreateSheet(ss, "NoticiasPortal");
     const data = sheet.getDataRange().getValues();
-
     if (data.length <= 1) return { status: "success", noticias: [] };
-
-    const nowStr = new Date().toISOString().split('T')[0];
+    const nowStr = new Date().toISOString().split("T")[0];
     const noticias = [];
-
     for (let i = 1; i < data.length; i++) {
       const row = data[i];
-      const nId = row[0];
-      const fecha = row[1];
-      const hora = row[2];
-      const titulo = row[3];
-      const contenido = row[4];
-      const imgUrl = row[5];
       const cat = row[6] || "General";
-      const grAud = row[7] || "Todos";
-      const secAud = row[8] || "Todas";
-      const fInicio = row[9] ? String(row[9]).split('T')[0] : "";
-      const fFin = row[10] ? String(row[10]).split('T')[0] : "";
-      let st = row[11] || "Activa";
-
-      // Vigency evaluation
-      if (fFin && nowStr > fFin && st === "Activa") {
-        st = "Vencida";
-        sheet.getRange(i + 1, 12).setValue("Vencida");
-      }
-      if (fInicio && nowStr < fInicio && st === "Activa") {
-        st = "Programada";
-      }
-
-      if (estado && estado !== "Todas" && st !== estado) {
-        if (!payload || !payload.includeAll) continue;
-      } else if (!estado && st !== "Activa") {
-        // Default only active news
-        continue;
-      }
-
+      const gradoAudiencia = row[7] || "Todos";
+      const seccionAudiencia = row[8] || "Todas";
+      const fechaInicio = row[9] ? String(row[9]).split("T")[0] : "";
+      const fechaFin = row[10] ? String(row[10]).split("T")[0] : "";
+      const estadoActual = String(row[11] || "Activa");
+      const includeAll = isStaff && payload && payload.includeAll === true;
+      if (fechaInicio && nowStr < fechaInicio && !includeAll) continue;
+      if (fechaFin && nowStr > fechaFin && !includeAll) continue;
+      if (estadoActual !== "Activa" && !includeAll) continue;
+      if (isAnonymous && (String(gradoAudiencia).trim() !== "Todos" || String(seccionAudiencia).trim() !== "Todas" || estadoActual !== "Activa")) continue;
+      if (!isAnonymous && !isStaff && !isVerifiedAudienceMatch(gradoAudiencia, seccionAudiencia, contexts)) continue;
       if (categoria && categoria !== "Todas" && cat !== categoria) continue;
-      if (grado && grAud !== "Todos" && grAud !== grado) continue;
-      if (seccion && secAud !== "Todas" && secAud !== seccion) continue;
-
       noticias.push({
-        noticiaId: nId,
-        fecha,
-        hora,
-        titulo,
-        contenido,
-        imagenUrl: imgUrl,
-        categoria: cat,
-        gradoAudiencia: grAud,
-        seccionAudiencia: secAud,
-        fechaInicio: fInicio,
-        fechaFin: fFin,
-        estado: st
+        noticiaId: row[0], fecha: row[1], hora: row[2], titulo: row[3], contenido: row[4],
+        imagenUrl: row[5], categoria: cat, gradoAudiencia: gradoAudiencia,
+        seccionAudiencia: seccionAudiencia, fechaInicio: fechaInicio, fechaFin: fechaFin,
+        estado: estadoActual
       });
     }
-
     noticias.reverse();
     return { status: "success", noticias: noticias };
   } catch (error) {
-    logStructuredEvent("USER", "getNews", "ERROR", "GET_NEWS_FAILED", error.message, payload, payload && payload.authRole);
+    logStructuredEvent("USER", "getNews", "ERROR", "GET_NEWS_FAILED", error.message, payload, payload && payload._verifiedRole);
     return { status: "error", message: error.message };
   }
 }
-
 function createNews(payload) {
   const { titulo, contenido, imagenUrl, categoria, gradoAudiencia, seccionAudiencia, fechaInicio, fechaFin } = payload || {};
   if (!titulo || !contenido) throw new Error("Título y contenido requeridos.");
@@ -5683,104 +5704,78 @@ function updateNewsStatus(payload) {
 // [F11-Task04] [P1] - Gestor de Comunicados, Circulares y Anuncios Institucionales con Vigencia
 function getInstitutionalAnnouncements(payload) {
   try {
-    const verifiedRole = (typeof getUserVerifiedRole === "function" ? getUserVerifiedRole(payload) : null) || (payload && (payload._verifiedRole || payload.authRole)) || "NO_ACCESS";
+    const verifiedRole = getUserVerifiedRole(payload);
+    const isAnonymous = verifiedRole === "NO_ACCESS";
     const isStaff = ["Administrador", "Desarrollador", "Director", "Subdirector", "Secretaría", "Secretaria", "Coordinador", "RecursosHumanos"].indexOf(verifiedRole) !== -1;
-
-    const { categoria, estado, nivelUrgencia, grado, seccion, rol } = payload || {};
+    const contexts = isAnonymous ? [] : getVerifiedAudienceContexts(payload, verifiedRole);
+    const categoria = payload && payload.categoria;
+    const estado = payload && payload.estado;
+    const nivelUrgencia = payload && payload.nivelUrgencia;
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const sheet = getOrCreateSheet(ss, "ComunicadosInstitucionales");
     const data = sheet.getDataRange().getValues();
-
-    if (data.length <= 1) return { status: "success", comunicados: [] };
-
-    const nowISO = new Date().toISOString();
-    const nowDate = nowISO.split('T')[0];
+    if (data.length <= 1) return { status: "success", totalComunicados: 0, comunicados: [] };
+    const nowDate = new Date().toISOString().split("T")[0];
     const comunicados = [];
-
     for (let i = 1; i < data.length; i++) {
       const row = data[i];
-      const cId = String(row[0] || "");
-      const titulo = String(row[1] || "");
-      const contenido = String(row[2] || "");
-      const cat = String(row[3] || "Aviso");
-      const autorId = String(row[4] || "");
-      const audienciaRaw = row[5];
-      const requiereFirma = row[6] === true || String(row[6]).toUpperCase() === "SI" || String(row[6]).toLowerCase() === "true";
-      const fechaPub = row[7] ? new Date(row[7]).toISOString() : "";
-      let st = String(row[8] || "Publicado");
-      const fInicioVig = row[9] ? String(row[9]).split('T')[0] : (fechaPub ? fechaPub.split('T')[0] : "");
-      const fFinVig = row[10] ? String(row[10]).split('T')[0] : "";
+      const estadoActual = String(row[8] || "Publicado");
+      const fechaPublicacion = row[7] ? new Date(row[7]).toISOString() : "";
+      const fechaInicio = row[9] ? String(row[9]).split("T")[0] : (fechaPublicacion ? fechaPublicacion.split("T")[0] : "");
+      const fechaFin = row[10] ? String(row[10]).split("T")[0] : "";
+      const categoriaActual = String(row[3] || "Aviso");
       const urgencia = String(row[11] || "Ordinario");
-      const fechaCrea = row[12] ? new Date(row[12]).toISOString() : fechaPub;
+      let audiencia = {};
+      try { audiencia = typeof row[5] === "object" ? row[5] : JSON.parse(row[5] || "{}"); }
+      catch (_) { audiencia = { target: String(row[5] || "Todos") }; }
+      if (!audiencia || typeof audiencia !== "object") audiencia = { target: String(audiencia || "Todos") };
 
-      // Evaluar vigencia
-      if (fFinVig && nowDate > fFinVig && (st === "Publicado" || st === "Programado")) {
-        st = "Vencido";
-        sheet.getRange(i + 1, 9).setValue("Vencido");
-      } else if (fInicioVig && nowDate < fInicioVig && st === "Publicado") {
-        st = "Programado";
-      }
-
-      // Filtro de estado
-      if (!isStaff) {
-        // Usuarios generales sólo ven "Publicado" vigente
-        if (st !== "Publicado") continue;
-      } else if (estado && estado !== "Todos" && st !== estado) {
+      if (isAnonymous) {
+        const target = String(audiencia.target || "TodaLaComunidad").trim().toLowerCase().replace(/\s/g, "");
+        const isGeneral = !target || target === "todos" || target === "todalacomunidad";
+        const hasRestrictions = (audiencia.grado && audiencia.grado !== "Todos") ||
+          (audiencia.seccion && audiencia.seccion !== "Todas") ||
+          (Array.isArray(audiencia.roles) && audiencia.roles.some(role => String(role).toLowerCase() !== "todos"));
+        if (!isGeneral || hasRestrictions || estadoActual !== "Publicado") continue;
+      } else if (!isStaff) {
+        if (estadoActual !== "Publicado") continue;
+        const target = String(audiencia.target || "TodaLaComunidad").trim().toLowerCase().replace(/\s/g, "");
+        const roles = Array.isArray(audiencia.roles) ? audiencia.roles : [];
+        const roleMatch = !roles.length || roles.some(role => String(role).trim().toLowerCase() === "todos" || String(role).trim().toLowerCase() === String(verifiedRole).trim().toLowerCase());
+        const targetGeneral = !target || target === "todos" || target === "todalacomunidad";
+        const targetRoleMatch = targetGeneral || target === String(verifiedRole).trim().toLowerCase();
+        const gradeMatch = !audiencia.grado || audiencia.grado === "Todos" || contexts.some(context => String(context.grado).trim().toLowerCase() === String(audiencia.grado).trim().toLowerCase());
+        const sectionMatch = !audiencia.seccion || audiencia.seccion === "Todas" || contexts.some(context => String(context.seccion).trim().toLowerCase() === String(audiencia.seccion).trim().toLowerCase());
+        if (!roleMatch || !targetRoleMatch || !gradeMatch || !sectionMatch) continue;
+      } else if (estado && estado !== "Todos" && estado !== estadoActual) {
         continue;
       }
 
-      // Filtro por categoría
-      if (categoria && categoria !== "Todas" && cat !== categoria) continue;
-
-      // Filtro por urgencia
+      if (!isStaff && fechaInicio && nowDate < fechaInicio) continue;
+      if (!isStaff && fechaFin && nowDate > fechaFin) continue;
+      if (categoria && categoria !== "Todas" && categoriaActual !== categoria) continue;
       if (nivelUrgencia && nivelUrgencia !== "Todos" && urgencia !== nivelUrgencia) continue;
-
-      // Parsing de audiencia
-      let audienciaObj = {};
-      try {
-        audienciaObj = typeof audienciaRaw === "object" ? audienciaRaw : JSON.parse(audienciaRaw || "{}");
-      } catch (e) {
-        audienciaObj = { target: String(audienciaRaw || "Todos") };
-      }
-
-      // Filtros por grado, sección o rol
-      if (grado && audienciaObj.grado && audienciaObj.grado !== "Todos" && audienciaObj.grado !== grado) continue;
-      if (seccion && audienciaObj.seccion && audienciaObj.seccion !== "Todas" && audienciaObj.seccion !== seccion) continue;
-      if (rol && audienciaObj.roles && Array.isArray(audienciaObj.roles) && audienciaObj.roles.length > 0 && audienciaObj.roles.indexOf(rol) === -1 && audienciaObj.roles.indexOf("Todos") === -1) continue;
-
       comunicados.push({
-        comunicadoId: cId,
-        titulo: titulo,
-        contenido: contenido,
-        categoria: cat,
-        autorId: autorId,
-        audiencia: audienciaObj,
-        requiereFirma: requiereFirma,
-        fechaPublicacion: fechaPub,
-        estado: st,
-        fechaInicioVigencia: fInicioVig,
-        fechaFinVigencia: fFinVig,
-        nivelUrgencia: urgencia,
-        fechaCreacion: fechaCrea
+        comunicadoId: String(row[0] || ""), titulo: String(row[1] || ""), contenido: String(row[2] || ""),
+        categoria: categoriaActual, autorId: String(row[4] || ""), audiencia: audiencia,
+        requiereFirma: row[6] === true || String(row[6]).toUpperCase() === "SI" || String(row[6]).toLowerCase() === "true",
+        fechaPublicacion: fechaPublicacion, estado: estadoActual, fechaInicioVigencia: fechaInicio,
+        fechaFinVigencia: fechaFin, nivelUrgencia: urgencia,
+        fechaCreacion: row[12] ? new Date(row[12]).toISOString() : fechaPublicacion
       });
     }
-
-    // Ordenar priorizando Urgente/Critico primero y luego fecha más reciente
     comunicados.sort((a, b) => {
       const rankUrg = { "Critico": 3, "Urgente": 2, "Ordinario": 1 };
       const diffUrg = (rankUrg[b.nivelUrgencia] || 1) - (rankUrg[a.nivelUrgencia] || 1);
       if (diffUrg !== 0) return diffUrg;
       return new Date(b.fechaPublicacion || b.fechaCreacion || 0) - new Date(a.fechaPublicacion || a.fechaCreacion || 0);
     });
-
     return { status: "success", totalComunicados: comunicados.length, comunicados: comunicados };
   } catch (error) {
-    logStructuredEvent("USER", "getInstitutionalAnnouncements", "ERROR", "GET_ANNOUNCEMENTS_FAILED", error.message, payload, payload && payload.authRole);
+    logStructuredEvent("USER", "getInstitutionalAnnouncements", "ERROR", "GET_ANNOUNCEMENTS_FAILED", error.message, payload, payload && payload._verifiedRole);
     return { status: "error", message: error.message };
   }
 }
-
-// [F11-Task04] [P1] - Creación y Edición de Anuncios Institucionales con Vigencia
 function createInstitutionalAnnouncement(payload) {
   try {
     const verifiedRole = (typeof getUserVerifiedRole === "function" ? getUserVerifiedRole(payload) : null) || (payload && (payload._verifiedRole || payload.authRole)) || "NO_ACCESS";
@@ -6583,6 +6578,10 @@ function configureAutomationRules(payload) {
 
 function getAutomationRules(payload) {
   try {
+    const verifiedRole = getUserVerifiedRole(payload);
+    if (["Administrador", "Desarrollador", "Director"].indexOf(verifiedRole) === -1) {
+      return { status: "error", code: "AUTH_PERMISSION_DENIED", message: "Solo roles administrativos pueden consultar las reglas de automatización." };
+    }
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const sheet = getOrCreateSheet(ss, "ReglasAutomatizacionAlertas");
     const data = sheet.getDataRange().getValues();
