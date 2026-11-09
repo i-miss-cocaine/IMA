@@ -15939,14 +15939,14 @@ function getTransportRoutes(payload) {
       rutaId: routeId,
       nombreRuta: row[1],
       unidadCodigo: unitCode,
-      conductorEmpleadoId: row[3],
+      conductorEmpleadoId: scope.management ? row[3] : "",
       capacidad: capacity,
       capacidadPasajeros: capacity,
       cuposOcupados: occupied,
       cuposDisponibles: Math.max(0, capacity - occupied),
       paradasJSON: row[5],
       estado: row[6],
-      observaciones: row[7],
+      observaciones: scope.management ? row[7] : "",
       horaInicio: row[8] || "06:30",
       horaFin: row[9] || "07:30",
       jornada: row[10] || "Matutina"
@@ -16150,7 +16150,7 @@ function getTransportAssignments(payload) {
       fechaAsignacion: row[6] || "",
       jornada: row[7] || "Matutina",
       diasSemana: row[8] || JSON.stringify(["Lun", "Mar", "Mie", "Jue", "Vie"]),
-      observaciones: row[9] || ""
+      observaciones: scope.management ? (row[9] || "") : ""
     };
   });
   return { status: "success", asignaciones: mapped, total: mapped.length };
