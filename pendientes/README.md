@@ -1,57 +1,46 @@
-# Migración departamental del backlog histórico
+# Backlog departamental consolidado
 
-**Estado:** reconstruida desde la copia histórica íntegra; sustituye la distribución anterior basada en una instantánea incompleta.
-
-## Fuente y trazabilidad
-
-- Fuente: `RECUPERACION/Pendientes_RECUPERADO.md`
-- Rama y commit de origen: `NG_beta_0.0.0.1`, `44d9891132332e692dbe2ba8602b41f50a508a59`
-- Blob SHA-1: `ef47d232db3ed46317dc14f22b1cdf8f938e8405`
-- Tamaño Git: **1.443.391 bytes**
-- Líneas: **17.884**
-- Las **16.872 líneas** de `New_Generation:/Pendientes.md` coinciden exactamente con el prefijo de esta fuente.
+**Corte de migración:** 2026-11-09  
+**Estado:** etapa 1 consolidada. Las tareas de estos archivos quedan pendientes de ejecución y verificación.
 
 ## Inventario migrado
 
-- **33** tareas históricas completadas de F10/F11.
-- **432** bloques reales con identificador `TASK`.
-- **465** registros migrados en total, sin IDs duplicados.
-- Se excluyeron **41 encabezados estructurales** de prioridad o bloque; no son tareas.
-- `TASK-050` y `TASK-051` sí existen como tareas reales en la fuente y se conservan en Dirección.
-- Estados visibles en los encabezados de los 432 bloques `TASK`: 50 `[X]`, 108 `[ ]` y 274 sin casilla explícita. Los 33 registros históricos F10/F11 llevan `[X]`. No se infirió ni alteró ningún estado.
+Se consolidaron **1.346 tareas únicas** a partir de:
 
-## Distribución única por departamento
+- **219** archivos de informes, planes y bitácoras de `AUDITORIAS/`.
+- `Pendientes.md`: tareas con ID, marcadas y no marcadas como completadas, además de registros `AUD-NG` accionables.
+- `completadas.md`: todas las tareas identificadas.
+- Los seis archivos departamentales que ya existían en esta carpeta.
 
-| Departamento | Tareas |
-|---|---:|
-| Dirección | 86 |
-| Secretaria | 140 |
-| Contabilidad | 89 |
-| Docente | 30 |
-| Estudiante | 7 |
-| Otros | 113 |
-| **Total** | **465** |
+Los registros con el mismo identificador se reunieron en una sola tarea. Se conservaron las fuentes en comentarios HTML dentro de cada registro y se mantienen intactos los documentos originales.
 
-## Registros que no se duplican
+## Distribución
 
-- La fuente contiene **104 encabezados `AUD-NG`**. Se conservan íntegros en el archivo de recuperación, pero no se copian a los departamentos: las tareas derivadas de auditoría deben permanecer en el informe que contiene su hallazgo, conforme a la sección 3.4 de `METODOLOGIA_DESARROLLO.md` y `AUDITORIAS/README.md`.
-- Las tareas de auditoría posteriores registradas en informes oficiales continúan en esos informes; esta migración no crea un backlog paralelo.
+| Departamento / perfil | Archivo | Tareas |
+|---|---|---:|
+| Dirección | `Dirección/Pendientes.md` | 145 |
+| Secretaría | `Secretaria/Pendientes.md` | 194 |
+| Contabilidad | `Contabilidad/Pendientes.md` | 184 |
+| Docente | `Docente/Pendientes.md` | 129 |
+| Estudiante | `Estudiante/Pendientes.md` | 7 |
+| Padre | `Padre/Pendientes.md` | 13 |
+| Otros | `Otros/Pendientes.md` | 674 |
+| **Total** | | **1.346** |
 
-## Regla de clasificación
+## Reglas de esta migración
 
-Jerarquía de asignación única: **Dirección → Secretaria → Contabilidad → Docente → Estudiante → Otros**. La decisión se basa en la responsabilidad funcional principal, no únicamente en los archivos técnicos mencionados. Dirección concentra gobierno y supervisión institucional; Secretaria, expedientes, trámites y comunicaciones; Contabilidad, finanzas, planillas, compras y activos; Docente, enseñanza, evaluación y recursos académicos; Estudiante, experiencia y autoservicio estudiantil; Otros, infraestructura transversal y pruebas compartidas.
+1. Todas las tareas se presentan como pendientes, sin marca `[X]` ni estado de completado.
+2. Las tareas que comparten identificador se integran en un solo registro; no se mantienen como tareas separadas por aparecer en varias fuentes.
+3. Se eliminan líneas de requisitos textualmente idénticas tras normalizar espacios y capitalización.
+4. Se conservan los títulos originales alternativos y las formulaciones de requisitos que difieren; no se resumen, parafrasean ni descartan para forzar una deduplicación semántica no demostrada.
+5. Cada tarea conserva sus identificadores, alcance, requisitos, criterios, dependencias, archivos, prioridades y referencias de origen disponibles.
+6. La asignación se realiza por responsabilidad funcional principal. Se conserva la asignación previa cuando ya existía; las funciones dirigidas al portal/autoservicio familiar se agrupan en **Padre**; la infraestructura y las pruebas transversales se agrupan en **Otros**.
+7. Los informes originales de auditoría, `Pendientes.md` y `completadas.md` se mantienen sin modificación como fuentes históricas. El estado operativo de las tareas migradas se controla desde estos archivos departamentales.
 
-## Sustitución de la migración anterior
+## Alcance y excepción expresa
 
-La distribución anterior de 49 registros se generó desde `/Pendientes.md`, una instantánea de **30.744 bytes** (blob `8867ecf1f58f768cac8fa5ddaa7b50bb68e57158`), que no era la fuente histórica íntegra. Esa distribución queda **supersedida** y no se mezcla con esta migración. Su estado anterior permanece recuperable en el historial Git; los registros que no forman parte del blob histórico requerirán reconciliación independiente antes de incorporarse.
+Esta etapa ejecuta la instrucción específica de migrar también tareas marcadas como completadas desde `Pendientes.md` y todas las tareas de `completadas.md`. Para esta migración, esa instrucción específica prevalece sobre el flujo general descrito en la sección 3.4 de `METODOLOGIA_DESARROLLO.md`. No se está certificando que el código carezca de esas implementaciones; simplemente se reabren como pendientes para una revisión posterior.
 
-## Integridad
+## Control de calidad pendiente
 
-- Cada bloque se conserva textualmente desde `RECUPERACION/Pendientes_RECUPERADO.md`; los comentarios agregados solo documentan rango y departamento.
-- Cada registro aparece una sola vez.
-- La comparación exacta contra el blob fuente confirmó que los 465 bloques departamentales coinciden íntegramente con sus bloques originales.
-- Los 41 encabezados estructurales de prioridad/bloque se excluyeron; no son tareas ejecutables.
-- `TASK-050` y `TASK-051` son tareas reales de la fuente, no encabezados estructurales.
-- No se copiaron encabezados `AUD-NG` ni separadores de prioridad como si fueran tareas.
-- La fuente de recuperación, `/Pendientes.md`, `/pendiente_legacy.md`, informes de auditoría, código y pruebas no se modifican en esta iteración.
-- Los archivos departamentales son una distribución histórica; las nuevas tareas derivadas de auditoría se registran en sus informes oficiales.
+La migración automática consolidó IDs y duplicados textuales exactos. La revisión semántica de requisitos con redacciones distintas debe hacerse sin eliminar formulaciones hasta confirmar que expresan exactamente el mismo requisito. Ninguna tarea se considera implementada por el hecho de haber sido migrada.

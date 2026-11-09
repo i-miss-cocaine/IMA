@@ -1,18 +1,15 @@
-# Migración histórica de tareas: Estudiante
+# Backlog consolidado — Estudiante
 
-> Fuente íntegra: `RECUPERACION/Pendientes_RECUPERADO.md`  
-> Blob de origen: `ef47d232db3ed46317dc14f22b1cdf8f938e8405` (1.443.391 bytes; 17.884 líneas).  
-> Registros asignados a este departamento: **7**.  
-> Los bloques se reproducen sin reescritura; cada uno conserva encabezado, identificador, estado, descripción y criterios originales. Los comentarios indican su rango de origen.
+**Estado de esta migración:** todas las tareas se consideran pendientes. Las marcas históricas de completado se han retirado en este destino; esto no constituye verificación de implementación.
 
-**Criterio de asignación:** responsabilidad funcional principal. Si el alcance funcional es compartido, se aplica la jerarquía Dirección → Secretaria → Contabilidad → Docente → Estudiante → Otros. La infraestructura técnica transversal y las pruebas compartidas se asignan a Otros.
+**Fuentes integradas:** informes de auditoría de `AUDITORIAS/`, `Pendientes.md`, `completadas.md` y los archivos departamentales preexistentes. Los registros con el mismo identificador se reúnen en una sola tarea.
 
-**Alcance:** archivo histórico de migración. Las tareas `AUD-NG` derivadas de auditoría no se duplican aquí; permanecen en sus informes conforme a `METODOLOGIA_DESARROLLO.md`, sección 3.4.
+**Integridad:** se conservan los requisitos originales sin resumen ni paráfrasis. Se eliminan líneas exactamente repetidas tras normalizar espacios/capitalización. Los títulos alternativos se conservan como referencia. Las fuentes originales se mantienen sin alteración para trazabilidad.
 
-## Backlog histórico TASK
+---
 
-<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7975-8003; clave TASK-193; asignación única: Estudiante -->
-### [TASK-193] [ ] [F20-Task08] Portal OPAC de consulta y autoservicio para estudiantes y docentes
+<!-- ID: TASK-193 | Fuentes: Pendientes.md ; pendientes/Estudiante/Pendientes.md -->
+### [ ] [TASK-193] Portal OPAC de consulta y autoservicio para estudiantes y docentes
 - **Origen del Hallazgo:** `AUDITORIA_FASE_20_BIBLIOTECA_RECURSOS_EDUCATIVOS.md` / Sección E, Sección C (2.10) y Plan de Trabajo P1
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Experiencia de usuario estudiantil, fomento de la lectura escolar y autoservicio digital)
@@ -39,55 +36,32 @@
   - La interfaz se adapta limpiamente a dispositivos móviles y computadoras.
 - **Estado:** [ ] Pendiente
 
----
----
-
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 10034-10075; clave TASK-255; asignación única: Estudiante -->
-### [TASK-255] [F28-T02] [P1] Implementación Integral de PWA: Manifiesto, Instalación y Ciclo de Vida del Service Worker
-- **Tipo:** Ampliación de Infraestructura y Resiliencia Offline.
-- **Componentes Afectados:**
-  - `manifest.json` (nuevo archivo en raíz del proyecto)
-  - `sw.js` (Service Worker en raíz para control de ámbito `/`)
-  - Cabeceras HTML en vistas principales (`index.html`, `app/html/*.html`, dashboards)
-  - `js/ui-common.js` (registro del Service Worker y control de instalación)
-- **Subcapacidades Relacionadas:** M01, M02, O01, O03, R03.
-- **Estado de Partida:** Requiere mejoras (Existe IndexedDB para datos, pero falta PWA formal y Service Worker para recursos estáticos).
-- **Dependencias:** [F28-T01], arquitectura de recursos estáticos, IndexedDB, contexto HTTPS seguro.
-- **Problema Detectado y Riesgos:**
-  Actualmente, si un usuario pierde la conexión antes de cargar la plataforma en su navegador móvil, el navegador arroja la pantalla de error nativa ("Sin conexión a Internet") porque no existe un Service Worker que sirva los recursos estáticos (HTML, CSS, JS, fuentes e iconos). Asimismo, los usuarios móviles no disponen de una experiencia de instalación nativa (PWA instalable en pantalla de inicio con ventana propia e icono institucional).
-- **Requisitos Funcionales y Técnicos Convergentes:**
-  1. *Manifiesto de Aplicación Web (`manifest.json`):*
-     - Definir configuración completa: `name: "Plataforma Integral de Gestión Educativa"`, `short_name: "Gestión Educativa"`, `description: "Sistema institucional de gestión académica, administrativa y financiera"`.
-     - `start_url: "./index.html"`, `scope: "./"`, `display: "standalone"`, `orientation: "any"`.
-     - `theme_color: "#1e3a8a"` (azul institucional PowerSchool / Moodle), `background_color: "#f8fafc"`.
-     - Iconografía institucional adaptable (*maskable* y estándar): proveer iconos en resoluciones 192x192, 512x512 y SVG vectorial, utilizando recursos institucionales reales, sin iconos temporales o genéricos.
-     - Vincular `<link rel="manifest" href="manifest.json">` y meta tags de Apple Touch (`apple-touch-icon`, `mobile-web-app-capable`) en todos los archivos HTML.
-  2. *Registro y ciclo de vida del Service Worker (`sw.js`):*
-     - Registrar el Service Worker desde `ui-common.js` al iniciar la aplicación en contextos seguros (HTTPS o localhost).
-     - Capturar y manejar errores de registro de forma silenciosa sin interrumpir la experiencia de usuario.
-     - Controlar eventos `install` (precarga de shell estático), `activate` (limpieza atómica de cachés obsoletas `v1`, `v2`) y `message` (`skipWaiting`).
-     - Prevención de desincronización: Evitar que versiones incompatibles de HTML, CSS y JS se ejecuten simultáneamente; ante una nueva versión disponible, emitir un banner discreto: "Nueva versión institucional disponible. [Actualizar]".
-  3. *Estrategia de Caché Segmentada y Segura:*
-     - *Caché Estática Inmutable (`Cache-First`):* Hojas de estilo Tailwind compiladas, fuentes tipográficas, iconos FontAwesome, logotipo institucional e imágenes del layout.
-     - *Caché Dinámica de Interfaz (`Network-First` con Fallback a Caché):* Archivos HTML principales y JavaScript de lógica (`ui-common.js`, `api.js`, dashboards). Si falla la red, servir la última versión funcional en caché.
-     - *Pantalla de contingencia offline:* Si se solicita una ruta HTML que no está en caché y no hay conexión, servir `app/html/offline-fallback.html` informando el estado sin conexión y permitiendo acceso a las funciones locales disponibles en IndexedDB.
-     - *Exclusión estricta de caché de red:* Excluir tajantemente del `CacheStorage` las peticiones POST hacia Google Apps Script o endpoints de backend dinámicos, las cuales se gestionan única y exclusivamente a través de la cola persistente `sync_queue` de IndexedDB.
-  4. *Experiencia de Instalación y Detección de Modo Standalone:*
-     - Escuchar el evento `beforeinstallprompt`, almacenar el evento diferido y mostrar botón/opción accesible en el menú: "Instalar aplicación en dispositivo".
-     - Detectar cuando la aplicación ya se ejecuta en modo standalone (`display-mode: standalone` o `window.navigator.standalone === true`) para optimizar la interfaz (eliminar prompts redundantes, ajustar espaciados de notch/safe-areas en iOS y Android).
-- **Criterios de Aceptación:**
-  - [ ] El manifiesto web cumple las especificaciones W3C y pasa las validaciones de Lighthouse PWA.
-  - [ ] Los navegadores compatibles (Chrome, Edge, Safari iOS, Firefox Mobile) reconocen la plataforma como PWA instalable.
-  - [ ] Al abrir la aplicación en modo avión sin conexión previa de red, la interfaz principal y los dashboards cargan exitosamente desde la caché del Service Worker.
-  - [ ] Las actualizaciones de código en el servidor renuevan la caché sin dejar recursos huérfanos ni eliminar operaciones pendientes de IndexedDB.
-  - [ ] Se verifica el comportamiento en Android, iOS y navegadores de escritorio.
-- **Estado:** [ ] Pendiente
 
 ---
----
 
-<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 10176-10220; clave TASK-258; asignación única: Estudiante -->
-### [TASK-258] [F28-T05] [P1] Sistema Integral de Accesibilidad Visual, Foco Universal y Navegación por Teclado (WCAG 2.2 AA/AAA)
+<!-- ID: TASK-258 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_T-UX-02.md ; AUDITORIAS/AUDITORIA_COMPLETADAS_T-UX-19.md ; Pendientes.md ; pendientes/Estudiante/Pendientes.md -->
+### [ ] [TASK-258] [F28-T05] [P1] Sistema Integral de Accesibilidad Visual, Foco Universal y Navegación por Teclado (WCAG 2.2 AA/AAA)
+- **Hallazgo de origen:** AUD-NG-181; ampliación de TASK-258. No crear TASK-479 para este mismo alcance.
+- **Severidad:** Alto.
+- **Objetivo:** garantizar que cualquier modal/drawer se cierre correctamente y restaure el foco sin romper overlays anidados.
+- **Acción ejecutable:** sustituir la lista fija de IDs por un contrato genérico de overlays; cerrar solo el modal superior al pulsar Escape; mantener una pila de activadores; aplicar focus trap y devolver foco al activador visible; registrar listeners una sola vez y retirarlos al desmontar componentes.
+- **Archivos/módulos afectados:** js/ui-common.js y consumidores/plantillas HTML de modales y drawers.
+- **Dependencias y riesgos:** AUD-NG-169 para accesibilidad general; evitar cerrar todos los overlays o enfocar elementos dentro de padres ocultos.
+- **Alcance:** ciclo de vida de modal/drawer, foco y teclado.
+- **Criterios de aceptación:** todos los overlays declarados se cierran con Escape; en anidamiento se cierra solo el superior; foco permanece dentro del diálogo y vuelve al activador correcto; listeners no se duplican; pruebas DOM cubren overlays con/sin role, clase modal y data-modal.
+- **Prioridad:** P1.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas automatizadas de teclado, foco, anidamiento y desmontaje.
+- **Hallazgo de origen:** AUD-NG-210 (ALTO/P1); parte de AUD-NG-211 (ALTO/P1).
+- **Severidad:** Alta. **Objetivo:** permitir el uso de flujos principales mediante teclado y tecnologías de asistencia, con foco visible, orden lógico y controles con nombres accesibles.
+- **Acción ejecutable:** hacer que menús se abran y cierren por teclado y actualicen `aria-expanded`; incorporar skip links funcionales; impedir que el foco quede oculto bajo cabeceras fijas; verificar contraste de foco en temas y estados; completar preferencias `prefers-contrast: more` y movimiento reducido; ampliar auditoría de nombres accesibles a controles/enlaces/SVG; sustituir nombres genéricos por etiquetas específicas; asociar labels, ayudas y errores; crear live announcer persistente; completar foco inicial, confinamiento y retorno de foco en diálogos.
+- **Archivos/módulos:** `index.html`, `student-dashboard.html`, `teacher-dashboard.html`, demás vistas de panel; `css/style.css`; `js/ui-common.js` (`auditAndFixAccessibility`, `trackModalFocus`, diálogos y anuncios); componentes de menú y formularios.
+- **Dependencias/riesgos:** TASK-492 para contrato de campos; TASK-493 para modal compartido; TASK-130 para ayudas; AUD-NG-169 para barreras en paneles académicos; AUD-NG-181 para Escape/restauración de foco. Riesgo de regresiones de navegación y accesibilidad parcial por revisar solo controles nativos.
+- **Alcance:** navegación, foco, semántica y preferencias transversales; no duplicar las tareas especializadas de campos, modal o ayudas.
+- **Criterios de aceptación:** flujos principales completables con Tab/Shift+Tab/Enter/Escape; menús operables por teclado con estado ARIA actualizado; skip link visible al enfocarse y funcional; foco nunca oculto por cabecera; nombres accesibles específicos para controles e iconos; labels/errores relacionados semánticamente; live announcements operativos; diálogos con foco inicial, confinamiento y retorno; preferencias de contraste/movimiento respetadas; revisión WCAG 2.2 AA con evidencias por vista y rol.
+- **Prioridad:** P1. **Estado:** Pendiente de ejecución/revalidación.
+- **Evidencia de cierre:** pendiente; el informe documenta menús hover-only, skip link ausente en vistas revisadas, semántica incompleta y helper que no cubre SVG/nombres/diálogos de forma suficiente.
 - **Tipo:** Optimización Funcional y Cumplimiento Normativo.
 - **Componentes Afectados:**
   - `js/ui-common.js` (`auditAndFixAccessibility`, trampeo de foco en modales)
@@ -129,12 +103,14 @@
   - [ ] Los modales confinan el foco correctamente y devuelven el foco al cerrarse.
   - [ ] Las operaciones críticas pueden completarse íntegramente utilizando exclusivamente el teclado y lectores de pantalla (NVDA/JAWS/VoiceOver).
 - **Estado:** [ ] Pendiente
-
----
----
+- **Ampliación de evidencia C1.44 / T-UX-02 (2026-11-05):** **AUD-NG-181** documenta que el manejador Escape de `js/ui-common.js:87-143` cierra solo los IDs incluidos en la lista fija o elementos que coincidan con `[role="dialog"]`, `.modal` o `[data-modal]`; no detecta todos los overlays `.fixed.inset-0`. Casos confirmados fuera de ambos selectores: `index.html:391` (`news-detail-modal`, abierto por `js/index-ui.js:868-895`), `dashboard-direccion.html:421` (`modal-role-responsibility-config`, abierto por `js/secretary.js:462-465`) y `dashboard-direccion.html:442` (`modal-academic-analytics`, abierto por `js/secretary.js:808-813`). Escape no cierra esos diálogos; el visor de noticias conserva además `document.body.style.overflow='hidden'` hasta su cierre propio. La restauración depende de una única variable global `lastActiveElementBeforeModal`; solo hay seis puntos de captura en ui-common.js (157, 1630, 4938, 5315, 5469 y 5618), mientras otros abridores como openDocumentReader (2628), openContextualHelpModal (3086), openReportIssueModal (3748), openMyTicketsModal (3889), openAdminTicketsModal (4074), openAnalyticsChartModal (4604) y openMobileHamburgerDrawer (aprox. 4755) no capturan el activador. El listener oculta simultáneamente todos los diálogos detectados, sin pila/topmost; en modales anidados puede enfocar un activador que queda dentro de un contenedor también oculto. Además, setupCommonUI registra el listener dentro de su función (92) y se ejecuta automáticamente en ui-common.js:3490, pero vuelve a invocarse desde js/index-ui.js:11 y desde los inicializadores DOMContentLoaded de teacher-dashboard.html:1469 y student-dashboard.html:401; no hay guard de registro único, por lo que se acumulan manejadores keydown en esas páginas. runUXSuiteTests (1861-1867) solo comprueba que trackModalFocus exista, no simula Escape ni valida cierre/restauración y puede producir un falso PASS. **Reconciliar con TASK-258**, que ya exige Escape universal, retorno exacto del foco, confinamiento de foco y navegación por teclado; no duplicar el alcance de accesibilidad general de AUD-NG-169.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 12229-12258; clave TASK-330; asignación única: Estudiante -->
-### [TASK-330] [F38-Task06] [P1] Orientación automática de primera visita y aprendizaje progresivo por función
+
+---
+
+<!-- ID: TASK-330 | Fuentes: Pendientes.md ; pendientes/Estudiante/Pendientes.md -->
+### [ ] [TASK-330] [P1] Orientación automática de primera visita y aprendizaje progresivo por función
 - **Prioridad:** P1 (Alta / Importante)
 - **Orden de Ejecución:** 6 (Onboarding contextual y adopción progresiva)
 - **Componentes Afectados:**
@@ -162,11 +138,12 @@
 - **Dependencias:** F38-Task02, F38-Task05.
 - **Estado:** [ ] Pendiente
 
----
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 12259-12290; clave TASK-331; asignación única: Estudiante -->
+
 ---
 
-<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 12259-12290; clave TASK-331; asignación única: Estudiante -->
-### [TASK-331] [F38-Task07] [P1] Administración de preferencias, reconsulta y restablecimiento de guías
+<!-- ID: TASK-331 | Fuentes: Pendientes.md ; pendientes/Estudiante/Pendientes.md -->
+### [ ] [TASK-331] [P1] Administración de preferencias, reconsulta y restablecimiento de guías
 - **Prioridad:** P1 (Alta / Importante)
 - **Orden de Ejecución:** 7 (Gobernanza de preferencias y recuperación de tutoriales)
 - **Componentes Afectados:**
@@ -196,11 +173,33 @@
 - **Dependencias:** F38-Task05, F38-Task06.
 - **Estado:** [ ] Pendiente
 
----
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 15349-15394; clave TASK-422; asignación única: Estudiante -->
+
 ---
 
-<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 15349-15394; clave TASK-422; asignación única: Estudiante -->
-### [TASK-422] [F26-Task07] [P2] [Preferencias de Usuario - Ampliar la Administración de Preferencias Personales sin Permitir Conflictos Institucionales]
+<!-- ID: TASK-422 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_FASE2-T07.md ; AUDITORIAS/AUDITORIA_COMPLETADAS_T-UX-25.md ; Pendientes.md ; pendientes/Estudiante/Pendientes.md -->
+### [ ] [TASK-422] [P2] [Preferencias de Usuario - Ampliar la Administración de Preferencias Personales sin Permitir Conflictos Institucionales]
+- **Hallazgo de origen:** FASE2-T07, sección de preferencias.
+- **Severidad:** Medio.
+- **Objetivo:** hacer que las preferencias persistidas gobiernen categorías, canales y frecuencia de notificación.
+- **Acción ejecutable:** reemplazar valores fijos de getNotificationPreferences por la configuración del usuario; hacer que el despachador consulte preferencias y canales; definir excepciones para avisos institucionales obligatorios.
+- **Archivos/módulos afectados:** backend/user-service/Code.gs y despachador de notificaciones.
+- **Dependencias y riesgos:** TASK-474 y TASK-475.
+- **Alcance:** preferencias y jerarquía de configuración.
+- **Criterios de aceptación:** preferencias guardadas se aplican por usuario; avisos obligatorios siguen entregándose; cambios de preferencia se reflejan en el siguiente despacho.
+- **Prioridad:** P2.
+- **Estado:** Pendiente.
+- **Evidencia de cierre:** pruebas por categoría, canal y excepción.
+- **Tipo:** tarea existente ampliada; no crear tarea paralela.
+- **Hallazgo/severidad:** AUD-NG-216, MEDIO/P2; preferencias personales/por rol no se guardan/restauran, backend parcial y permisos incompletos.
+- **Objetivo:** preferencias persistentes separadas de defaults institucionales, con autorización y restablecimiento.
+- **Acción:** ampliar esquema versionado por usuario; persistir opciones soportadas (idioma, formato, tema y widgets definidos); enlazar controles de rol a carga/guardado o retirarlos; implementar reset a defaults; corregir permisos; resolver token mediante AUD-NG-001.
+- **Archivos:** js/ui-common.js, backend/user-service/Code.gs, ROLE_PERMISSIONS y ajustes de dashboards.
+- **Dependencias:** AUD-NG-001 (token), AUD-NG-202/TASK-429 (vistas guardadas), TASK-430 (sistema visual).
+- **Alcance:** preferencias personales, herencia institucional, controles por rol, persistencia y reset; no incluye vistas guardadas de tablas.
+- **Criterios:** preferencias sobreviven nuevo inicio/cambio de dispositivo; personales prevalecen sin alterar defaults institucionales; reset restaura defaults; cada control visible persiste o se identifica como no configurable; matriz de roles segura; identidad deriva del token; pruebas de persistencia/herencia/reset/roles.
+- **Prioridad:** P2. **Estado:** conservar el de TASK-422.
+- **Evidencia:** pendiente; no se probaron sesiones reales ni persistencia en Sheets.
 - **Componentes Afectados:**
   - `backend/user-service/Code.gs`
   - Hojas `PreferenciasNotificacion`, `ConfiguracionVisualGlobal`, `PreferenciasUsuario`
@@ -243,12 +242,68 @@
   - [ ] Comprobar que las preferencias personales no alteran cálculos financieros, fechas almacenadas ni permisos de acceso.
   - [ ] Intentar modificar una preferencia no permitida mediante petición directa y comprobar que el servidor la rechaza.
   - [ ] Verificar que las preferencias visuales y de notificación existentes continúan funcionando sin regresiones.
+- **Ampliación de evidencia (C1.42 / FASE2-T07, 2026-11-05):** `getNotificationPreferences` (backend/user-service/Code.gs:4973-4984) devuelve valores fijos. `getUserSettings`/`saveUserSettings` sí consultan y persisten `PreferenciasNotificacion` (aprox. 7645-7715), pero `sendMultiChannelNotification` (4818-4935) no consulta esas preferencias ni aplica el parámetro `canal`. Debe definirse y probarse la precedencia entre preferencias opcionales y comunicaciones institucionales obligatorias, sin permitir que una preferencia personal suprima acciones críticas.
 - **Estado:** [ ] Pendiente
+
+- **Ampliación C1.68 / T-UX-25 (2026-11-06):**
+  - **AUD-NG-216 (MEDIO/P2):** la interfaz de configuración presenta preferencias de usuario y opciones por rol, pero el contrato de persistencia no las implementa de extremo a extremo.
+  - js/ui-common.js: loadUserSettingsInModal (1674-1700) llama getUserSettings; saveDashboardSettingsModal (2439-2498) solo recoge categorías de notificaciones, canal y frecuencia. No recoge ni persiste los controles creados por renderRoleSettingsInModal (2214+); dichos controles vuelven a valores hardcodeados cada vez que se renderiza el modal. No existe acción de restablecer preferencias individuales a valores institucionales.
+  - backend/user-service/Code.gs: getUserSettings/saveUserSettings (7649-7735 aprox.) leen/escriben únicamente PreferenciasNotificacion (categorías, inAppEnabled, canal y frecuencia); devuelven uiTheme: light por defecto, pero no lo recuperan ni lo guardan, y no implementan preferencias de idioma, formato de fecha, paleta personal o disposición de widgets en PreferenciasUsuario.
+  - ROLE_PERMISSIONS autoriza getUserSettings/saveUserSettings a Administrador, Desarrollador y Director, pero no a Profesor, Estudiante, Secretaría, Contador, Empleado, Coordinador ni demás roles que ven la pestaña personal. Además, fetchApi todavía no adjunta el token requerido (AUD-NG-001); resolver solo el token no resolverá la matriz de permisos.
+  - **Criterios adicionales:** (1) separar explícitamente preferencias personales, departamentales e institucionales; (2) persistir por identidad verificada y recuperar al iniciar sesión; (3) implementar herencia de defaults institucionales y restablecimiento individual; (4) persistir solo opciones de rol permitidas y validar en servidor; (5) aplicar idioma/formato/tema/layout de widgets al panel y restaurarlos entre sesiones/dispositivos; (6) permitir a cada rol acceder a sus preferencias personales sin otorgar permisos de administración; (7) no alterar políticas institucionales obligatorias ni datos/valores de negocio.
+  - **Relaciones y límites:** AUD-NG-001 cubre propagación del token; AUD-NG-202/TASK-429 cubre vistas guardadas de tablas (filtros, orden, aislamiento y ámbito); TASK-422 conserva la administración jerárquica de preferencias personales; TASK-430 cubre el sistema visual general. No crear tarea paralela para preferencias.
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 15468-15501; clave TASK-426; asignación única: Estudiante -->
 
 ---
 
-<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 15468-15501; clave TASK-426; asignación única: Estudiante -->
-### [TASK-426] [F28-T06] [P2] Sistema de Preferencias Individuales de Visualización y Personalización de Accesibilidad
+<!-- ID: TASK-255 | Fuentes: Pendientes.md ; pendientes/Estudiante/Pendientes.md -->
+### [ ] [TASK-255] [F28-T02] [P1] Implementación Integral de PWA: Manifiesto, Instalación y Ciclo de Vida del Service Worker
+- **Tipo:** Ampliación de Infraestructura y Resiliencia Offline.
+- **Componentes Afectados:**
+  - `manifest.json` (nuevo archivo en raíz del proyecto)
+  - `sw.js` (Service Worker en raíz para control de ámbito `/`)
+  - Cabeceras HTML en vistas principales (`index.html`, `app/html/*.html`, dashboards)
+  - `js/ui-common.js` (registro del Service Worker y control de instalación)
+- **Subcapacidades Relacionadas:** M01, M02, O01, O03, R03.
+- **Estado de Partida:** Requiere mejoras (Existe IndexedDB para datos, pero falta PWA formal y Service Worker para recursos estáticos).
+- **Dependencias:** [F28-T01], arquitectura de recursos estáticos, IndexedDB, contexto HTTPS seguro.
+- **Problema Detectado y Riesgos:**
+  Actualmente, si un usuario pierde la conexión antes de cargar la plataforma en su navegador móvil, el navegador arroja la pantalla de error nativa ("Sin conexión a Internet") porque no existe un Service Worker que sirva los recursos estáticos (HTML, CSS, JS, fuentes e iconos). Asimismo, los usuarios móviles no disponen de una experiencia de instalación nativa (PWA instalable en pantalla de inicio con ventana propia e icono institucional).
+- **Requisitos Funcionales y Técnicos Convergentes:**
+  1. *Manifiesto de Aplicación Web (`manifest.json`):*
+     - Definir configuración completa: `name: "Plataforma Integral de Gestión Educativa"`, `short_name: "Gestión Educativa"`, `description: "Sistema institucional de gestión académica, administrativa y financiera"`.
+     - `start_url: "./index.html"`, `scope: "./"`, `display: "standalone"`, `orientation: "any"`.
+     - `theme_color: "#1e3a8a"` (azul institucional PowerSchool / Moodle), `background_color: "#f8fafc"`.
+     - Iconografía institucional adaptable (*maskable* y estándar): proveer iconos en resoluciones 192x192, 512x512 y SVG vectorial, utilizando recursos institucionales reales, sin iconos temporales o genéricos.
+     - Vincular `<link rel="manifest" href="manifest.json">` y meta tags de Apple Touch (`apple-touch-icon`, `mobile-web-app-capable`) en todos los archivos HTML.
+  2. *Registro y ciclo de vida del Service Worker (`sw.js`):*
+     - Registrar el Service Worker desde `ui-common.js` al iniciar la aplicación en contextos seguros (HTTPS o localhost).
+     - Capturar y manejar errores de registro de forma silenciosa sin interrumpir la experiencia de usuario.
+     - Controlar eventos `install` (precarga de shell estático), `activate` (limpieza atómica de cachés obsoletas `v1`, `v2`) y `message` (`skipWaiting`).
+     - Prevención de desincronización: Evitar que versiones incompatibles de HTML, CSS y JS se ejecuten simultáneamente; ante una nueva versión disponible, emitir un banner discreto: "Nueva versión institucional disponible. [Actualizar]".
+  3. *Estrategia de Caché Segmentada y Segura:*
+     - *Caché Estática Inmutable (`Cache-First`):* Hojas de estilo Tailwind compiladas, fuentes tipográficas, iconos FontAwesome, logotipo institucional e imágenes del layout.
+     - *Caché Dinámica de Interfaz (`Network-First` con Fallback a Caché):* Archivos HTML principales y JavaScript de lógica (`ui-common.js`, `api.js`, dashboards). Si falla la red, servir la última versión funcional en caché.
+     - *Pantalla de contingencia offline:* Si se solicita una ruta HTML que no está en caché y no hay conexión, servir `app/html/offline-fallback.html` informando el estado sin conexión y permitiendo acceso a las funciones locales disponibles en IndexedDB.
+     - *Exclusión estricta de caché de red:* Excluir tajantemente del `CacheStorage` las peticiones POST hacia Google Apps Script o endpoints de backend dinámicos, las cuales se gestionan única y exclusivamente a través de la cola persistente `sync_queue` de IndexedDB.
+  4. *Experiencia de Instalación y Detección de Modo Standalone:*
+     - Escuchar el evento `beforeinstallprompt`, almacenar el evento diferido y mostrar botón/opción accesible en el menú: "Instalar aplicación en dispositivo".
+     - Detectar cuando la aplicación ya se ejecuta en modo standalone (`display-mode: standalone` o `window.navigator.standalone === true`) para optimizar la interfaz (eliminar prompts redundantes, ajustar espaciados de notch/safe-areas en iOS y Android).
+- **Criterios de Aceptación:**
+  - [ ] El manifiesto web cumple las especificaciones W3C y pasa las validaciones de Lighthouse PWA.
+  - [ ] Los navegadores compatibles (Chrome, Edge, Safari iOS, Firefox Mobile) reconocen la plataforma como PWA instalable.
+  - [ ] Al abrir la aplicación en modo avión sin conexión previa de red, la interfaz principal y los dashboards cargan exitosamente desde la caché del Service Worker.
+  - [ ] Las actualizaciones de código en el servidor renuevan la caché sin dejar recursos huérfanos ni eliminar operaciones pendientes de IndexedDB.
+  - [ ] Se verifica el comportamiento en Android, iOS y navegadores de escritorio.
+- **Estado:** [ ] Pendiente
+
+<!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 10176-10220; clave TASK-258; asignación única: Estudiante -->
+
+---
+
+<!-- ID: TASK-426 | Fuentes: Pendientes.md ; pendientes/Estudiante/Pendientes.md -->
+### [ ] [TASK-426] [F28-T06] [P2] Sistema de Preferencias Individuales de Visualización y Personalización de Accesibilidad
 - **Tipo:** Optimización Funcional y Personalización.
 - **Componentes Afectados:**
   - `js/ui-common.js` (gestor de temas y preferencias de accesibilidad)
@@ -279,6 +334,3 @@
   - [ ] El escalado de fuentes no trunca textos ni solapa botones en ningún dashboard.
   - [ ] Las preferencias se conservan entre sesiones y se sincronizan en la nube para el usuario autenticado.
 - **Estado:** [ ] Pendiente
-
----
----

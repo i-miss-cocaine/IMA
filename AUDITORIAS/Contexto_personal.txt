@@ -9428,3 +9428,30 @@ Auditar TAREA-F6-015 y TAREA-F6-040. Buscar informes individuales e historial en
 - **Próxima acción:** comprobar si existe AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK17.md; no existe en la ruta consultada. Auditar directamente developer/user/academic/task/exam/accounting services y validar IDs/columnas reales en tablas concretas, no solo el catálogo estático.
 - **Commit de cierre:** se confirmará consultando HEAD después de publicar el único commit que contiene este informe y el checkpoint.
 ===============================================================================
+
+===============================================================================
+## C1.277 — Cierre de etapa 1: consolidación y migración del backlog departamental (2026-11-09)
+
+- **ID de sesión operativo:** IMA-MIG-20261109-0042Z-01 (identificador documental; no ID nativo de ChatGPT).
+- **Checkpoint inicial:** C1.276. **Checkpoint de cierre:** C1.277.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **HEAD de partida verificado:** ebc4b09825b12e70747a3b5b1b724e4bebc475b4.
+- **Árbol de partida:** f3380361b270645fd266d195af4dde373478b2e2.
+- **Rama base protegida:** NG_beta_0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59; la continuidad previa documentó 344 commits adelante y 0 detrás. La rama base no se modifica.
+- **Trabajo realizado:** ETAPA 1 — consolidación y migración de tareas de auditorías, Pendientes.md, completadas.md y archivos departamentales existentes.
+- **Fuentes consultadas:** 219 archivos de artefactos de AUDITORIAS (informes, planes y bitácoras; se excluyeron README, MapaDependencias y Contexto de la extracción de tareas); Pendientes.md blob 676a3f798715f0cdd7d4bc75768472545b8465ee; completadas.md blob f57f1aef832e81e44fc4f7ec36a852d50e464676; seis archivos departamentales preexistentes.
+- **Inventario de origen:** 604 bloques de tareas extraídos de auditorías; 568 bloques con ID de Pendientes.md; 184 registros AUD-NG adicionales de Pendientes.md; 244 tareas de completadas.md; 465 registros de los archivos departamentales anteriores. Total: 2.065 bloques/registros fuente.
+- **Resultado consolidado:** 1.346 IDs únicos en siete departamentos/perfiles. Dirección 145; Secretaria 194; Contabilidad 184; Docente 129; Estudiante 7; Padre 13; Otros 674.
+- **Criterio de consolidación:** IDs coincidentes se reúnen en una sola tarea; se eliminan líneas exactamente repetidas después de normalizar espacios y capitalización; se conservan títulos alternativos y formulaciones/requisitos que no son textualmente idénticos. No se resume ni parafrasea el alcance. Los estados históricos de completado se restablecen a pendiente en los destinos.
+- **Dictamen documental:** migración preparada; la marca [X] no se mantiene en los archivos departamentales. Esto no acredita ni niega la implementación en código.
+- **Instrucción específica del usuario:** para esta etapa se integran expresamente las tareas de Pendientes.md, incluidas las marcadas [X], y las de completadas.md, aunque la regla general de METODOLOGIA_DESARROLLO.md sección 3.4 y AUDITORIAS/README.md establezca otro flujo. Esta instrucción específica gobierna únicamente esta migración.
+- **Archivos a modificar en el commit único:** pendientes/Dirección/Pendientes.md; pendientes/Secretaria/Pendientes.md; pendientes/Contabilidad/Pendientes.md; pendientes/Docente/Pendientes.md; pendientes/Estudiante/Pendientes.md; pendientes/Padre/Pendientes.md (nuevo); pendientes/Otros/Pendientes.md; pendientes/README.md; AUDITORIAS/Contexto_personal.txt.
+- **Fuentes originales preservadas sin modificación:** Pendientes.md; completadas.md; informes y bitácoras de AUDITORIAS; archivos de código y pruebas; rama base.
+- **Verificaciones ejecutadas:** extracción por identificador; agrupación de IDs coincidentes; conteo total y distribución departamental; verificación de unicidad de IDs dentro de cada destino; verificación de ausencia de [X] y de estados explícitos «Completada» en los campos de estado de destino.
+- **Pruebas no ejecutadas:** pruebas funcionales, runtime Apps Script, navegador, HTTP, despliegues, hojas productivas y E2E; no corresponden a esta migración documental.
+- **Limitaciones:** la deduplicación automática elimina coincidencias textuales exactas; las formulaciones distintas se conservan para evitar omitir requisitos. Las fuentes originales permanecen como evidencia histórica. La revisión semántica final de equivalencia entre requisitos queda como control de calidad de la etapa.
+- **Siguiente elemento exacto:** verificación final del diff/árbol de los nueve archivos, confirmación de que los 1.346 IDs están presentes una sola vez y publicación de un único commit descendiente del HEAD de partida.
+- **Próxima acción reproducible:** consultar el HEAD actual de NG_beta_0.0.0.1_work; construir el árbol completo sobre el árbol verificado; crear un solo commit con los siete archivos departamentales, README y este checkpoint; actualizar la referencia con expected_sha; volver a consultar HEAD y verificar los nueve paths y la rama base intacta.
+- **Commit de cierre:** el commit que contiene este checkpoint; su SHA se comunicará después de actualizar y verificar la referencia.
+===============================================================================
