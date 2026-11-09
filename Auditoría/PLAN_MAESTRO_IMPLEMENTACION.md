@@ -1821,3 +1821,13 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - C1.298 amplía el mapa TASK/EXAM y registra AUD-NG-366/367; se amplía F9-TASK03 existente para PM-05. Esta ampliación no habilita adelantar PM-05 ni bloquea la continuación de TASK-638.
 - TASK-639 permanece no elegible hasta que TASK-638 esté cerrada y verificada. Se conserva el orden topológico de PM-00.
 - HEAD de partida verificado: `103c02dc0ba31c0d3ceb2e5c5a39c1a747cc67f9`; rama base `NG_beta_0.0.0.1` @ `44d9891132332e692dbe2ba8602b41f50a508a59`.
+
+
+## 10.3 Seguimiento de ejecución del Plan Maestro — C1.299
+
+- Sesión: `IMA-AUDIT-20261109-1232Z-01`; checkpoint C1.299 en `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt`.
+- PM-00 continúa activo; TASK-637 verificada; TASK-638 sigue En ejecución. C1.299 amplía la trazabilidad TASK/EXAM con cierres, Drive, actividad docente, preview, libro de calificaciones, recuperaciones y reportes.
+- AUD-NG-368..373 se registran. TASK-636 (PM-01/P0) y TASK-685 se amplían en `tareas_auditoria.txt`; no se generan IDs duplicados ni se adelanta su implementación.
+- AUD-NG-369 es CRÍTICO/P0: closeAcademicYear está permitido a Profesor y elimina todas las Entregas/recursos Drive sin filtro por profesor ni backup real. Se registra para resolver en PM-01 antes de habilitar el flujo destructivo; no se ejecuta durante esta auditoría.
+- TASK-639 permanece no elegible hasta cerrar y verificar TASK-638. No avanzar a PM-01 mientras la puerta PM-00 siga abierta.
+- HEAD de partida: `7520d0b8471d8bb508fe808191a5d55bb2b126bd`; rama base `NG_beta_0.0.0.1` @ `44d9891132332e692dbe2ba8602b41f50a508a59`.

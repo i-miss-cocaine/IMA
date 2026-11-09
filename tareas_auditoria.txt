@@ -253,3 +253,28 @@ El propósito de este documento es llevar el registro de las tareas derivadas de
 - **Criterios de aceptación:** una hoja inexistente crea exactamente un encabezado y una sola serie de valores predeterminados; hoja solo con encabezado no duplica filas; llamadas repetidas/concurrentes no duplican categorías; ámbito específico devuelve solo categorías aplicables más globales permitidas por contrato; pruebas cubren hoja inexistente, vacía, solo encabezado, poblada y concurrencia; no hay regresión en libro de calificaciones.
 - **Estado/evidencia:** ampliación registrada; Pendiente de ejecución dentro de F9-TASK03. No se ejecutaron pruebas runtime.
 ===============================================================================
+
+
+===============================================================================
+## Ampliación de TASK-636 — AUD-NG-368/369/370/371-TASK/373 (C1.299)
+- **ID conservado:** TASK-636; no crear ID duplicado.
+- **Backlog fuente:** `pendientes/Otros/Pendientes.md`; bloque original recuperado del blob SHA `e9637ecc6f88b2aa0aec75909538e072509bf507` (1.647.413 bytes). El archivo no está vacío ni corrupto; fetch_file devolvió vacío por limitación de lectura del archivo grande.
+- **Hallazgos:** AUD-NG-368 (preview token contract); AUD-NG-369 (cierre global destructivo); AUD-NG-370 (deleteFile IDOR); AUD-NG-371 (getTeacherActivity); AUD-NG-373 (rol spoofing EXAM, coordinado con TASK-685).
+- **Objetivo adicional:** vincular cada acción sensible TASK con identidad, propiedad de recursos y scope institucional verificados en servidor; impedir operaciones destructivas globales por un profesor.
+- **Acciones ejecutables:** (1) getSubmissionDocumentPreviewUrl debe recibir/validar credencial institucional y comprobar propiedad/ámbito del fileId; alinear el contrato de verifySessionToken con su consumidor sin usar propiedades inexistentes; (2) closeAcademicYear debe separar cierre granular del docente de reset global administrativo, derivar el actor/scope de claims y no borrar Entregas ni Drive de terceros; (3) exigir copia de seguridad real, íntegra, restaurable y verificada antes de borrar; registrar/conciliar rollback; (4) deleteFile debe verificar propietario y relación con tarea/entrega; (5) getTeacherActivity debe derivar profesorId de claims y limitar grados/secciones a asignaciones vigentes; (6) ignorar requesterRole/authRole del cliente como fuente de privilegio.
+- **Archivos afectados:** `backend/task-service/Code.gs`, `js/api.js`, `js/teacher.js`, `js/student.js`, pruebas de seguridad/Drive/entregas.
+- **Dependencias:** identidad y token institucional, RBAC/ABAC, ownership de archivos y backup/restore; PM-01. No ejecutar en PM-00.
+- **Criterios verificables:** profesor A no elimina ni consulta recursos de profesor B; Estudiante A no puede mandar a papelera fileId de B; closeAcademicYear granular elimina únicamente entregas/archivos vinculados a tareas del actor; un reset global exige rol administrativo y backup restaurable verificado; fallo de backup bloquea el borrado; preview con token válido funciona y token ausente/revocado falla; las pruebas negativas y positivas usan Drive/Sheets aislados.
+- **Estado/evidencia:** ampliación registrada; TASK-636 conserva su estado Pendiente. Sin cambios de código ni pruebas runtime en C1.299.
+
+===============================================================================
+## Ampliación de TASK-685 — AUD-NG-371-EXAM/372/373 (C1.299)
+- **ID conservado:** TASK-685; no crear ID duplicado.
+- **Hallazgos:** AUD-NG-371 en getTeacherExamActivity; AUD-NG-372 en getGradebookData, getStudentAcademicReport, getStudentRecoveries, saveStudentRecovery, saveGradebookGrades, closePeriodGradebook y getExamGradeDistributionAnalytics; AUD-NG-373 en saveGradebookGrades.
+- **Objetivo adicional:** aplicar aislamiento contextual en todas las lecturas y mutaciones de notas/exámenes; no confiar en identificadores ni roles enviados por el cliente.
+- **Acciones ejecutables:** derivar profesorId/actor de claims; comprobar asignación docente de grupo, asignatura y período; comprobar relación vigente de Padre/Tutor/Responsable con estudiante; forzar self-scope de Estudiante/Alumno; verificar pertenencia del examen a la asignación del profesor; proteger lecturas de recuperaciones/reportes y mutaciones de calificaciones, recuperaciones y cierres; usar rol verificado de claims en reglas de período cerrado y flujos explícitos de reapertura/rectificación.
+- **Archivos afectados:** `backend/exam-service/Code.gs`, `js/teacher.js`, `js/student.js`, pruebas de RBAC/ABAC y contratos EXAM.
+- **Dependencias:** sesión verificada, modelo de asignaciones docentes, relación tutor-estudiante y fuente de verdad de matrícula; PM-01/PM-02 según el grafo.
+- **Criterios verificables:** profesor solo accede/muta sus grupos/asignaturas/períodos; tutor solo consulta estudiantes vinculados; estudiante solo su expediente; IDs alterados/ámbitos omitidos o falsificados se deniegan; authRole del payload no supera permisos firmados; cierres y rectificaciones requieren autorización de servidor; pruebas negativas/positivas por rol y relación.
+- **Estado/evidencia:** ampliación registrada; TASK-685 conserva estado Pendiente. Sin cambios de código ni pruebas runtime en C1.299.
+===============================================================================

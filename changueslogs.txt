@@ -174,3 +174,13 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - TASK-638 sigue En ejecución; no se modificó código ni se ejecutaron pruebas runtime.
 - Informe: Auditoría/AUDITORIA_TASK-638_C1.298.md; checkpoint C1.298; índice central actualizado.
 - Sesión: IMA-AUDIT-20261109-1222Z-01; rama NG_beta_0.0.0.1_work; HEAD de partida: 103c02dc0ba31c0d3ceb2e5c5a39c1a747cc67f9.
+
+
+[2026-11-09] IMA-AUDIT-20261109-1232Z-01 — C1.299 / TASK-638 — autorización contextual y persistencia TASK/EXAM
+- HEAD de partida verificado: 7520d0b8471d8bb508fe808191a5d55bb2b126bd; tree 1.024 blobs; rama NG_beta_0.0.0.1_work; base NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59 (371 adelante, 0 detrás).
+- Se auditan acciones TASK/EXAM de cierre, eliminación de archivos, actividad docente, preview, libro de calificaciones, recuperaciones y reportes.
+- AUD-NG-368 MEDIO/P2; AUD-NG-369 CRÍTICO/P0; AUD-NG-370..373 ALTO/P1. Se amplían TASK-636 y TASK-685 existentes; no se generan IDs duplicados.
+- Se comprueba que pendientes/Otros/Pendientes.md no está vacío ni corrupto: blob e9637ecc6f88b2aa0aec75909538e072509bf507, tamaño 1.647.413 bytes; contenido íntegro recuperado por blob directo. No se modifica el backlog.
+- TASK-638 sigue En ejecución; código sin cambios; pruebas runtime no ejecutadas.
+- Informe Auditoría/AUDITORIA_TASK-638_C1.299.md; checkpoint C1.299; índice central fila C1.299.
+- Sesión IMA-AUDIT-20261109-1232Z-01; ubicación Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.299; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.299.

@@ -3,11 +3,11 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.298**
-- Última sesión: `IMA-AUDIT-20261109-1222Z-01`
+- Último checkpoint: **C1.299**
+- Última sesión: `IMA-AUDIT-20261109-1232Z-01`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.298: **34984**
+- Caracteres del archivo activo tras C1.299: **39796**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 
@@ -42,3 +42,5 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.297 | IMA-AUDIT-20261109-1152Z | Publicado | TASK-638 auditoría / PM-00 — USER/ACADEMIC | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.297 | 212–237 | C1.296 | `103c02dc0ba31c0d3ceb2e5c5a39c1a747cc67f9` |
 
 | C1.298 | IMA-AUDIT-20261109-1222Z-01 | Publicado en este commit | TASK-638 auditoría / PM-00 — TASK/EXAM | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.298 | 239–269 | C1.297 | Este commit; SHA a verificar externamente |
+
+| C1.299 | IMA-AUDIT-20261109-1232Z-01 | Publicado en este commit | TASK-638 auditoría / PM-00 — autorización contextual TASK/EXAM | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.299 | 270–298 | C1.298 | Este commit; SHA a verificar externamente |

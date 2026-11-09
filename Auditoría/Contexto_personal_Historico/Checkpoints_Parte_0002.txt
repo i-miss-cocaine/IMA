@@ -265,3 +265,32 @@ Commit B de cierre: el commit que contiene este checkpoint; SHA a verificar exte
 - **Ubicación exacta:** Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.298; índice Auditoría/INDICE_CHECKPOINTS.md, fila C1.298.
 - **Commit de cierre:** el commit que contiene este checkpoint; SHA se verificará externamente.
 ===============================================================================
+
+
+===============================================================================
+## C1.299 — TASK-638: autorización contextual y persistencia TASK/EXAM
+
+- **ID de sesión operativo:** IMA-AUDIT-20261109-1232Z-01; checkpoint inicial C1.298; estado final de sesión: cerrada.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **Rama base protegida:** NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59; 371 commits adelante, 0 detrás; sin cambios.
+- **HEAD de partida verificado:** 7520d0b8471d8bb508fe808191a5d55bb2b126bd.
+- **Tree de partida:** 3ed927303b3550f223cb96adc5f741be2825160b; 1.024 blobs; recursivo, no truncado.
+- **Checkpoint anterior:** C1.298; commit de cierre verificado 7520d0b8471d8bb508fe808191a5d55bb2b126bd.
+- **Tarea auditada de continuidad:** TASK-638, PM-00, En ejecución. Se contrastaron requisito, informe C1.298, commit y archivos; continúa abierta.
+- **Requisito original:** pendientes/Contabilidad/Pendientes.md, TASK-638. Documentar dependencias por archivo, endpoints, acciones, contratos, consumidores/proveedores y evidencia; no modificar rutas ni contratos durante auditoría.
+- **Revisión TASK-636:** backlog original `pendientes/Otros/Pendientes.md` recuperado desde blob SHA e9637ecc6f88b2aa0aec75909538e072509bf507 (1.647.413 bytes). El fetch_file devolvió cero caracteres por limitación de lectura del archivo grande; el blob directo devolvió el contenido completo. Archivo no vacío/no corrupto; no se restauró ni modificó.
+- **Fuentes auditadas:** TASK Code.gs SHA 1437756a3c3d3d97e06bc1ff21c8e2ca2b2dccbe; EXAM Code.gs SHA 1d93296628fae31f680004f637897e2b1314a64c; teacher.js c475fce5afcd28fca23e7b64398ad32b17773746; student.js e2888cea60322e49a40b89adadb8010489605dcc; api.js 6b24f666db30a811a8e9b38d466fc6001cf6dfa9.
+- **Hallazgos:** AUD-NG-368 MEDIO/P2 (preview exige claims.valid inexistente); AUD-NG-369 CRÍTICO/P0 (closeAcademicYear permite a Profesor borrar globalmente Entregas y archivos sin backup real); AUD-NG-370 ALTO/P1 (deleteFile no valida propietario); AUD-NG-371 ALTO/P1 (actividad docente TASK/EXAM filtra por profesorId opcional del cliente); AUD-NG-372 ALTO/P1 (EXAM sin scope docente/relación tutor-estudiante); AUD-NG-373 ALTO/P1 (saveGradebookGrades confía en authRole del payload).
+- **Tareas derivadas:** ampliar TASK-636 (PM-01/P0) con AUD-NG-368/369/370/371-TASK/373; ampliar TASK-685 con AUD-NG-371-EXAM/372/373. Se conservan IDs e historiales; sin duplicados. No implementar durante PM-00.
+- **Archivos modificados:** Auditoria.txt; Auditoría/AUDITORIA_TASK-638_C1.299.md; Auditoría/MapaDependencias.md; tareas_auditoria.txt; changueslogs.txt; Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt; Auditoría/INDICE_CHECKPOINTS.md; docs/architecture/repository-inventory.md.
+- **Archivos revisados sin modificación:** METODOLOGIA_DESARROLLO.md; pendientes/Contabilidad/Pendientes.md; pendientes/Otros/Pendientes.md (blob recuperado íntegro); backend/task-service/Code.gs; backend/exam-service/Code.gs; js/student.js; js/teacher.js; js/api.js; Auditoría/Contexto_personal.txt; Auditoría/AUDITORIA_TASK-638_C1.298.md.
+- **Código fuente:** sin modificaciones.
+- **Pruebas ejecutadas:** continuidad HEAD/rama/base/tree; lectura íntegra TASK-638 y TASK-636; auditoría del commit C1.298; inspección estática de dispatchers, permisos, claims, handlers, callsites y persistencia TASK/EXAM; cruce de token/rol/ámbito.
+- **Pruebas no ejecutadas:** Node, navegador, HTTP, Apps Script runtime, Drive, Sheets, cuentas/roles, concurrencia, regresión, integración y E2E; deployments/Script Properties no verificados; datos productivos no inspeccionados.
+- **Estado:** TASK-638 continúa En ejecución; no se cumple aún el cierre global de todos los callsites/handlers/dependencias ni verificación de deployments. No iniciar TASK-639 ni PM-01.
+- **Siguiente acción reproducible:** abrir Auditoría/MapaDependencias.md, sección C1.299; continuar acciones TASK/EXAM no cubiertas y completar USER/ACADEMIC/ACCOUNTING con cadena callsite → dispatcher → handler → helpers → claims/contexto → persistencia → respuesta/error; después verificar endpoints/deployments con evidencia autorizada. No implementar correcciones durante PM-00.
+- **Siguiente tarea tras cerrar TASK-638:** TASK-639 — Verificar duplicaciones, símbolos globales y ciclos; requisito en pendientes/Secretaria/Pendientes.md; depende de TASK-637 y TASK-638 verificadas.
+- **Ubicación exacta:** Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.299; índice Auditoría/INDICE_CHECKPOINTS.md, fila C1.299.
+- **Commit de cierre:** el commit que contiene este checkpoint; SHA se verifica externamente.
+===============================================================================

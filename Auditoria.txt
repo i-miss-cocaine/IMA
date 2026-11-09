@@ -215,3 +215,46 @@ Sesión: IMA-EXEC-20261109-1108Z-01; HEAD de partida: 32b8f5884dd24dbeaf1a3bf028
 - Impacto: la respuesta no discrimina el ámbito solicitado; no se verificó si existen registros de varios ámbitos en producción.
 - Acción: ampliar F9-TASK03; definir y aplicar contrato de filtrado por ámbito académico, preservando las categorías globales solo cuando corresponda.
 - Estado: abierto; sin prueba runtime ni inspección de datos productivos.
+
+
+## AUD-NG-368 — MEDIO/P2 — getSubmissionDocumentPreviewUrl rechaza tokens válidos (C1.299)
+- Origen: TASK-638; informe `Auditoría/AUDITORIA_TASK-638_C1.299.md`.
+- Evidencia: TASK verifySessionToken (línea 145) retorna claims sin propiedad valid; getSubmissionDocumentPreviewUrl (2367) exige sessionCheck.valid. Consumidor teacher.js:1207 envía solo fileId; api.js no inyecta token (AUD-NG-001/TASK-636, antecedente no duplicado).
+- Impacto: la previsualización falla aun cuando el token sea válido; sin prueba runtime.
+- Acción: ampliar TASK-636; unificar contrato de claims, propagación de token y propiedad del archivo.
+- Estado: abierto; sin cambios de código.
+
+## AUD-NG-369 — CRÍTICO/P0 — closeAcademicYear elimina todas las entregas y archivos sin respaldo real (C1.299)
+- Origen: TASK-638; informe `Auditoría/AUDITORIA_TASK-638_C1.299.md`.
+- Evidencia: TASK Code.gs:524; ROLE_PERMISSIONS permite Profesor; teacher.js:2915 envía profesorId. El bucle elimina todas las filas Entregas y manda a papelera sus recursos Drive sin filtrar por profesor/tarea. El filtro profesorId se aplica solo a Tareas/ConfiguracionAcademica. backupId se genera y registra, pero no se crea ni verifica backup.
+- Impacto: pérdida global de entregas y archivos de otros docentes por acción disponible a Profesor; no hay respaldo restaurable en el handler.
+- Acción: ampliar TASK-636; cierre granular por claims, reset global solo administrativo, backup verificable y rollback previo.
+- Estado: abierto; no se ejecutó la operación.
+
+## AUD-NG-370 — ALTO/P1 — deleteFile permite borrar archivos ajenos (C1.299)
+- Origen: TASK-638; informe `Auditoría/AUDITORIA_TASK-638_C1.299.md`.
+- Evidencia: TASK ROLE_PERMISSIONS permite deleteFile a Estudiante/Alumno; Code.gs:1049 acepta fileId y ejecuta setTrashed(true) sin propiedad; student.js:2057/2504 envía solo fileId.
+- Impacto: un estudiante puede intentar borrar recursos ajenos accesibles por el contexto de ejecución de Drive.
+- Acción: ampliar TASK-636; validar dueño y relación recurso/entrega en servidor.
+- Estado: abierto; sin prueba runtime.
+
+## AUD-NG-371 — ALTO/P1 — Consultas de actividad docente sin ámbito derivado de claims (C1.299)
+- Origen: TASK-638; informe `Auditoría/AUDITORIA_TASK-638_C1.299.md`.
+- Evidencia: TASK getTeacherActivity:1119 y EXAM getTeacherExamActivity:1176 filtran por profesorId solo si el cliente lo envía; validateContextualAccess no verifica asignación docente. Callers teacher.js TASK:3017/3525/3610/4596 y EXAM:3018/3618/4597.
+- Impacto: omitir o suplantar profesorId permite consultar actividad de otros docentes; exposición potencial de entregas, datos y notas.
+- Acción: ampliar TASK-636 (TASK) y TASK-685 (EXAM); derivar profesorId de claims y aplicar ABAC.
+- Estado: abierto; estático, sin datos productivos.
+
+## AUD-NG-372 — ALTO/P1 — Consultas y mutaciones EXAM sin scope de docente ni relación de tutoría (C1.299)
+- Origen: TASK-638; informe `Auditoría/AUDITORIA_TASK-638_C1.299.md`.
+- Evidencia: EXAM validateContextualAccess:191 solo limita self-ID de Estudiante/Alumno; getGradebookData:1458 ignora profesorId; getStudentAcademicReport:2043/getStudentRecoveries:1769 reciben userId libre; saveStudentRecovery:1722/saveGradebookGrades:1533/closePeriodGradebook:1832 aceptan IDs/contexto sin comprobar asignación; analytics:733 no valida dueño de examen.
+- Impacto: acceso o modificación fuera del ámbito académico autorizado; no se verificaron registros productivos.
+- Acción: ampliar TASK-685; ABAC de docentes/guardianes y autorización contextual servidor-side.
+- Estado: abierto; sin pruebas runtime.
+
+## AUD-NG-373 — ALTO/P1 — saveGradebookGrades confía en authRole del cliente para eludir cierre (C1.299)
+- Origen: TASK-638; informe `Auditoría/AUDITORIA_TASK-638_C1.299.md`.
+- Evidencia: EXAM saveGradebookGrades:1533 desestructura authRole del payload y lo usa para permitir escritura en período cerrado; Profesor puede invocar la acción; validateRolePermission coloca _verifiedRole pero el handler no lo usa.
+- Impacto: un Profesor puede enviar authRole=Secretaría/Administrador para eludir el cierre y modificar notas.
+- Acción: ampliar TASK-636 y TASK-685; usar exclusivamente claims verificados y flujo autorizado de reapertura/rectificación.
+- Estado: abierto; sin prueba HTTP/runtime.

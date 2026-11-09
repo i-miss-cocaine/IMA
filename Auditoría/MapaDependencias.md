@@ -4476,3 +4476,41 @@ PUBLIC_ACTIONS de TASK incluye nueve acciones. El dispatcher aplica validateRole
 
 TASK-638 continúa En ejecución; el mapa es parcial y no declara cerrada la traza de todos los callsites.
 ===============================================================================
+
+
+===============================================================================
+## C1.299 — TASK-638: autorización contextual y persistencia TASK/EXAM
+
+### TASK — operaciones, consumidores y persistencia
+| Acción | Consumidor | Handler | Persistencia / efecto | Control observado |
+|---|---|---|---|---|
+| closeAcademicYear | js/teacher.js:2915 | TASK Code.gs:524 | Entregas, Drive, Tareas, ConfiguracionAcademica, Log_Cierres | Profesor permitido; borra todas las Entregas/archivos aunque payload incluya profesorId; backupId no es respaldo creado. AUD-NG-369. |
+| deleteFile | js/student.js:2057,2504 | TASK Code.gs:1049 | DriveApp.getFileById().setTrashed(true) | Estudiante/Alumno permitidos; no valida propietario. AUD-NG-370. |
+| getTeacherActivity | js/teacher.js:3017,3525,3610,4596 | TASK Code.gs:1119 | Usuarios, Tareas, Entregas | profesorId opcional del payload; sin él devuelve todos; no verifica ámbito docente por claims. AUD-NG-371. |
+| getSubmissionDocumentPreviewUrl | js/teacher.js:1207 | TASK Code.gs:2367 | Drive metadatos, URL preview/download | Caller no envía token; handler espera claims.valid aunque verifySessionToken retorna claims sin valid. AUD-NG-368; token propagation se relaciona con AUD-NG-001/TASK-636. |
+
+### EXAM — libro de calificaciones y persistencia
+| Acción | Consumidor | Handler | Persistencia / efecto | Control observado |
+|---|---|---|---|---|
+| getTeacherExamActivity | js/teacher.js:3018,3618,4597 | EXAM Code.gs:1176 | Usuarios, Examenes, EntregasExamen | profesorId opcional del payload; sin él devuelve todos; no verifica asignación. AUD-NG-371. |
+| getGradebookData | js/teacher.js:5237 | EXAM Code.gs:1458 | Usuarios, CalificacionesEstudiantes, RecuperacionesEstudiante, CategoriasEvaluacion, CierresPeriodos | profesorId se recibe pero no se usa; devuelve estudiantes/notas de grado/sección arbitrarios. AUD-NG-372. |
+| saveGradebookGrades | js/teacher.js:5385 | EXAM Code.gs:1533 | CalificacionesEstudiantes | IDs de estudiantes y authRole del payload; sin scope docente; authRole controla bypass de cierre. AUD-NG-372/373. |
+| saveStudentRecovery | js/teacher.js:5343 | EXAM Code.gs:1722 | RecuperacionesEstudiante | userId/autorizadoPor del cliente; sin relación docente-estudiante. AUD-NG-372. |
+| closePeriodGradebook | js/teacher.js:5417 | EXAM Code.gs:1832 | CierresPeriodos y publishGradebookForContext | Profesor puede indicar cualquier grado/sección/asignatura/período. AUD-NG-372. |
+| getStudentAcademicReport | js/teacher.js:2992 | EXAM Code.gs:2043 | Matriculas, CalificacionesEstudiantes, RecuperacionesEstudiante, CategoriasEvaluacion | userId libre para Padre/Tutor/Responsable/Profesor; no valida vínculo/ámbito. AUD-NG-372. |
+| getStudentRecoveries | Sin caller directo localizado en esta pasada | EXAM Code.gs:1769 | RecuperacionesEstudiante | Roles Padre/Tutor/Responsable permitidos; userId opcional sin comprobar vínculo. AUD-NG-372. |
+| getExamGradeDistributionAnalytics | js/teacher.js:4388 | EXAM Code.gs:733 | Examenes, EntregasExamen | No verifica que examenId pertenezca al docente. AUD-NG-372. |
+
+### Hallazgos nuevos
+- AUD-NG-368 MEDIO/P2: preview handler espera `sessionCheck.valid`, pero verifySessionToken retorna claims; además el caller omite token, antecedente AUD-NG-001/TASK-636.
+- AUD-NG-369 CRÍTICO/P0: closeAcademicYear borra globalmente Entregas y archivos Drive aunque se envíe profesorId; el handler no crea el backup que aparenta registrar.
+- AUD-NG-370 ALTO/P1: deleteFile permite a Estudiante/Alumno mandar a papelera fileId sin validar propietario.
+- AUD-NG-371 ALTO/P1: getTeacherActivity/getTeacherExamActivity aplican profesorId solo si el cliente lo envía; sin ámbito derivado de claims.
+- AUD-NG-372 ALTO/P1: handlers EXAM carecen de scope docente y relación tutor-estudiante en consultas y mutaciones.
+- AUD-NG-373 ALTO/P1: saveGradebookGrades confía en authRole del payload para permitir escritura en período cerrado.
+
+### Tareas derivadas
+- Ampliar TASK-636 existente (PM-01/P0) con AUD-NG-368/369/370/371-TASK/373: token/claims, propiedad de archivos, ámbito docente, cierre granular y backup real verificable. Sin ID nuevo.
+- Ampliar TASK-685 existente con AUD-NG-371-EXAM/372/373: ABAC de docente/guardianes, protección de consultas y mutaciones, actor de claims y bypass de cierre. Sin ID nuevo.
+- TASK-638 sigue En ejecución; no se declara cerrada la matriz global.
+===============================================================================
