@@ -209,3 +209,43 @@ const adminNews = userContext.getNews({ sessionToken: "admin-valid", includeInac
 assert.deepEqual(adminNews.data.map(item => item.noticiaId).sort(), ["N-FUTURE","N-G6","N-G9","N-GEN","N-INACTIVE"], "only verified administrators may request inactive and all-audience news");
 const adminAnnouncements = userContext.getAnnouncements({ sessionToken: "admin-valid", rol: "Estudiante", audiencia: "Estudiante" });
 assert.deepEqual(adminAnnouncements.data.map(item => item.comunicadoId).sort(), ["COM-GEN","COM-SEC","COM-STU"], "verified administrators can inspect all published announcements but not drafts or future releases");
+
+// TASK-636: draft visibility must normalize boolean values and use verified role.
+
+const postFixtureRows = [
+  ["ID","AulaID","Titulo","Contenido","Categoria","AutorID","EsFijado","EsBorrador","FechaProgramada","FechaPublicacion","AdjuntosJSON","Audiencia","Estado"],
+  ["P1","AULA-1","Published","body","Anuncio","PROF-1",false,false,"",new Date("2026-11-08T12:00:00Z"),"[]","Todos","Publicado"],
+  ["P2","AULA-1","String draft","body","Anuncio","PROF-1",false,"true","",new Date("2026-11-08T12:00:00Z"),"[]","Todos","Publicado"],
+  ["P3","AULA-1","Boolean draft","body","Anuncio","PROF-1",false,true,"",new Date("2026-11-08T12:00:00Z"),"[]","Todos","Publicado"],
+  ["P4","AULA-2","Other classroom","body","Anuncio","PROF-2",false,false,"",new Date("2026-11-08T12:00:00Z"),"[]","Todos","Publicado"],
+  ["P5","AULA-1","Future","body","Anuncio","PROF-1",false,false,new Date("2099-01-01T12:00:00Z"),new Date("2026-11-08T12:00:00Z"),"[]","Todos","Publicado"]
+];
+const postSheet = { getDataRange: () => ({ getValues: () => postFixtureRows }) };
+const postSS = { getSheetByName: () => postSheet };
+const postContext = {
+  SPREADSHEET_ID: "LOCAL",
+  SpreadsheetApp: { openById: () => postSS },
+  getOrCreateSheet: () => postSheet,
+  getTaskServiceAuthorizedClassrooms: () => [["AULA-1"]],
+  isTaskServiceAudienceAllowed: (audience, role) => audience === "Todos" && role === "Estudiante"
+};
+const getPostsFunction = extractFunction("getPosts");
+assert.equal(getPostsFunction.includes("authRole"), false, "getPosts must not trust authRole from payload");
+vm.runInNewContext(getPostsFunction + String.fromCharCode(10) + "this.run = getPosts;", postContext);
+const studentPosts = postContext.run({
+  _verifiedUserId: "STU-1", _verifiedRole: "Estudiante",
+  authRole: "Administrador", includeDrafts: true, aulaId: "AULA-1"
+});
+assert.deepEqual(studentPosts.data.map(row => row.postId), ["P1"], "student cannot expose boolean or string drafts by spoofing authRole/includeDrafts");
+const teacherWithoutDrafts = postContext.run({
+  _verifiedUserId: "PROF-1", _verifiedRole: "Profesor",
+  includeDrafts: false, aulaId: "AULA-1"
+});
+assert.deepEqual(teacherWithoutDrafts.data.map(row => row.postId), ["P1"], "teacher sees no drafts unless explicitly requested");
+const teacherWithDrafts = postContext.run({
+  _verifiedUserId: "PROF-1", _verifiedRole: "Profesor",
+  includeDrafts: true, aulaId: "AULA-1"
+});
+assert.deepEqual(teacherWithDrafts.data.map(row => row.postId).sort(), ["P1","P2","P3"], "teacher may see drafts only in authorized classroom when requested");
+
+console.log("TASK-636 getPosts local contract: verified role, string/boolean draft guards and classroom scope passed.");

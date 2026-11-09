@@ -517,3 +517,13 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - CI C1.368 pendiente; BETA-FUNC-012 Pendiente beta y no bloqueante.
 - TASK-636 En ejecución; no se crea informe de auditoría paralelo.
 ===============================================================================
+
+
+===============================================================================
+## Seguimiento TASK-636 — C1.369 / AUD-NG-002
+- Se corrige el filtro de borradores de getPosts para reconocer boolean true y string "true".
+- Estudiantes no pueden ampliar permisos con authRole/includeDrafts; los docentes solo ven borradores con solicitud explícita y en aula autorizada.
+- Fixtures Node cubren tipo boolean/string, rol falsificado, aula ajena y fecha futura.
+- CI C1.368 security run 42724379224 e identity run 42724379276: success; C1.367 backup/restore run 42723635060: success.
+- CI C1.369 pendiente; BETA-FUNC-013 Pendiente beta y no bloqueante.
+===============================================================================

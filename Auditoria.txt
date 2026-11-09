@@ -652,3 +652,12 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - Se agregan fixtures locales para anónimo, Estudiante y Administrador; checks de token y capacidades opacas ACADEMIC.
 - CI C1.368 pendiente. BETA-FUNC-012 Pendiente beta, no bloqueante.
 - TASK-636 En ejecución. Checkpoint C1.368: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice fila C1.368.
+
+
+## C1.369 — IMA-EXEC-20261109-1739Z-01 — TASK-636 / PM-01 / AUD-NG-002
+- Se detecta que getPosts comprobaba EsBorrador únicamente como boolean true; el string "true" podía pasar para un Estudiante cuando Estado era Publicado.
+- Se normaliza boolean/string antes del filtro. El rol continúa derivándose de claims; includeDrafts solo habilita borradores para personal en aulas autorizadas.
+- Se agregan fixtures locales con spoof de authRole, boolean/string, aula ajena y fecha futura.
+- CI C1.368 Task-Service security run 42724379224 y Identity mapping/transport run 42724379276: completed/success. C1.367 backup/restore run 42723635060: completed/success.
+- CI C1.369 pendiente. BETA-FUNC-013 Pendiente beta.
+- TASK-636 En ejecución. Checkpoint C1.369: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice fila C1.369.

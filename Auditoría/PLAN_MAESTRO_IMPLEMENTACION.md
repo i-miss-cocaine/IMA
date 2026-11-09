@@ -2228,3 +2228,11 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - Se amplía contrato Node con fixtures de spoofing y publicación/fecha; workflow incluye USER-Service. CI pendiente.
 - BETA-FUNC-012: validación de servicios aislados, Pendiente beta y no bloqueante.
 - TASK-636 En ejecución.
+
+
+## 10.53 TASK-636 — C1.369: visibilidad segura de borradores en getPosts
+- AUD-NG-002: getPosts solo reconocía boolean true; los valores string "true" de Sheets podían pasar como publicaciones visibles.
+- Se normaliza el indicador de borrador; se mantiene rol derivado de claims y visibilidad docente sujeta a includeDrafts y aula autorizada.
+- Fixtures Node cubren string/boolean, authRole falsificado, aula ajena y fecha programada. CI pendiente.
+- BETA-FUNC-013: validación de tipos de datos reales en Sheets aislados; Pendiente beta y no bloqueante.
+- TASK-636 En ejecución.

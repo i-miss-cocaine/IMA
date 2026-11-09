@@ -1818,8 +1818,9 @@ function getPosts(payload) {
     const classId = String(row[1] || "").trim();
     if (classId !== "General" && !allowedIds.has(classId)) return false;
     if (aulaId && classId !== String(aulaId).trim()) return false;
-    if (row[7] === true && (!includeDrafts || !isTeacherOrAdmin)) return false;
-    if (!isTeacherOrAdmin && (row[7] === true || row[12] !== "Publicado")) return false;
+    const isDraft = row[7] === true || String(row[7] || "").trim().toLowerCase() === "true";
+    if (isDraft && (!includeDrafts || !isTeacherOrAdmin)) return false;
+    if (!isTeacherOrAdmin && (isDraft || row[12] !== "Publicado")) return false;
     if (row[8] && new Date(row[8]).getTime() > now && !isTeacherOrAdmin) return false;
     if (!isTeacherOrAdmin && !isTaskServiceAudienceAllowed(row[11],role)) return false;
     if (asignatura && String(row[4] || "") !== String(asignatura)) return false;

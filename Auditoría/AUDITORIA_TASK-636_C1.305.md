@@ -235,3 +235,15 @@ Endurecer las excepciones públicas de backend/academic-service/Code.gs mediante
 - **CI C1.368:** pendiente tras publicar; no se declara PASS anticipadamente.
 - **Beta:** BETA-FUNC-012 cubre contenido público/autenticado con Apps Script/Sheets aislados; no bloquea la implementación local.
 - **Estado:** TASK-636 sigue En ejecución. AUD-NG-365 se reabre por discrepancia del HEAD auditado; AUD-NG-002 continúa en revalidación. No se cierra el alcance global.
+
+
+## Revisión focalizada C1.369 — normalización de borradores en getPosts
+
+- **Hallazgo existente ampliado:** AUD-NG-002. El filtro de borradores en `getPosts` comprobaba únicamente el booleano `row[7] === true`. Si Sheets entregaba el valor como texto `"true"` y el estado era `Publicado`, un estudiante podía recibir el borrador; el campo `authRole` no era necesario para explotar la inconsistencia, pero el cliente también podía enviar `authRole: "Administrador"` sin que eso deba alterar permisos.
+- **Corrección:** se normaliza el indicador de borrador aceptando boolean true y string true antes de aplicar las reglas de visibilidad. El rol continúa derivándose de `_verifiedRole` verificado; el borrador solo se muestra a Profesor/Administración cuando `includeDrafts` está explícitamente habilitado y la clase pertenece al ámbito autorizado.
+- **Pruebas locales añadidas:** fixtures con borrador boolean true, string "true", publicación normal, aula ajena y fecha programada futura. Se verifica que un Estudiante no obtiene borradores aunque envíe `authRole: "Administrador"` y `includeDrafts: true`; el Profesor ve borradores únicamente al solicitarlos en su aula autorizada.
+- **CI C1.368:** Task-Service security local contracts run 42724379224 completed/success; log confirma contratos de metadatos, deleteFile y USER public news/announcements. Identity mapping/transport run 42724379276 completed/success.
+- **CI C1.367 backup/restore:** run 42723635060 completed/success.
+- **CI C1.369:** pendiente tras publicar; no se declara PASS anticipadamente.
+- **Beta:** BETA-FUNC-013 cubre representación de booleanos y visibilidad de borradores en Sheets/Apps Script aislados; no bloquea implementación local.
+- **Estado:** AUD-NG-002 sigue en revalidación; TASK-636 permanece En ejecución.

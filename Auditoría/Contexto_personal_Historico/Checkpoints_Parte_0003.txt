@@ -925,3 +925,53 @@ Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt �
 Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.368.
 Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
 ===============================================================================
+
+===============================================================================
+## C1.369 — TASK-636 / AUD-NG-002 — normalización de borradores en getPosts
+ID: C1.369
+Sesión: IMA-EXEC-20261109-1739Z-01
+Fecha: 2026-11-09
+Checkpoint anterior válido: C1.368
+Baseline lógico: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD físico de partida: 5ee3393137dbcb9d483904b5998ffd09fb5919e2
+Rama: NG_beta_0.0.0.1_work
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+
+### Auditoría
+- Se revalidó el criterio TASK-636: getPosts no debe exponer borradores mediante roles enviados por cliente.
+- AUD-NG-002 se amplía: el filtro solo reconocía row[7] === true. Si Google Sheets devolvía el valor como string "true" y Estado era Publicado, el registro podía pasar el filtro para estudiantes.
+- No se crea un ID duplicado; se mantiene AUD-NG-002 en el expediente único.
+
+### Implementación
+- getPosts normaliza EsBorrador como boolean true o string "true" antes de aplicar las reglas.
+- El rol se deriva exclusivamente de _verifiedRole; authRole del payload no participa.
+- Estudiantes no reciben borradores; Profesor/Administración solo pueden verlos con includeDrafts explícito y dentro de las aulas autorizadas.
+- Se agregan fixtures Node para boolean true, string "true", publicación normal, aula ajena y fecha futura.
+
+### Archivos modificados
+- backend/task-service/Code.gs
+- tests/security/task-service-security-contract.test.js
+- Auditoría/AUDITORIA_TASK-636_C1.305.md
+- pendientes/Otros/Pendientes.md (seguimiento aditivo)
+- beta_test.txt (BETA-FUNC-013)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoria.txt
+- tareas_auditoria.txt
+- changueslogs.txt
+
+### Pruebas y estado
+- C1.368: Task-Service security local contracts run 42724379224 completed/success; Identity mapping/transport run 42724379276 completed/success.
+- C1.367: backup/restore run 42723635060 completed/success.
+- C1.369: fixture local agregado; CI pendiente tras publicar.
+- BETA-FUNC-013: Pendiente beta, no bloqueante para implementación local.
+- TASK-636 En ejecución; AUD-NG-002 en revalidación. No se marca tarea como Completada.
+
+### Siguiente acción exacta
+Consultar CI C1.369 y continuar la reauditoría local de los criterios restantes AUD-NG-001/002/306/368/371, incluyendo autorización de aulas/tareas y el flujo de closeAcademicYear. Mantener el expediente único y no reutilizar como evidencia C1.317–C1.365.
+
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.369.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.369.
+Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
+===============================================================================

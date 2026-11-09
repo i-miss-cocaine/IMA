@@ -489,3 +489,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se amplía contrato Node y filtro de workflow para USER-Service. CI C1.368 pendiente.
 - BETA-FUNC-012 registra validación de servicios aislados; Pendiente beta.
 - Checkpoint C1.368: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice fila C1.368.
+
+
+[2026-11-09] IMA-EXEC-20261109-1739Z-01 — C1.369 / TASK-636 / AUD-NG-002
+- getPosts normaliza EsBorrador boolean/string y evita que borradores marcados como texto "true" se expongan a estudiantes.
+- Se agrega fixture Node de spoof de authRole, includeDrafts, aulas y fechas.
+- CI C1.369 pendiente; BETA-FUNC-013 registra validación real en Sheets aislados.
+- Checkpoint C1.369: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice fila C1.369.

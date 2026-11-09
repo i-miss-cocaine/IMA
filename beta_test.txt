@@ -168,3 +168,12 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Pasos:** consultar sin token manipulando grado/sección/includeInactive/rol/audiencia; consultar con token válido de Estudiante alterando los mismos campos; consultar como Administrador; comprobar contenido, estado, fecha y metadatos expuestos.
 - **Resultado esperado:** anónimo solo recibe contenido general publicado/activo y vigente; usuario recibe su audiencia derivada del perfil/claims; parámetros de cliente no amplían el ámbito; borradores y publicaciones futuras no se exponen; includeInactive solo opera para rol privilegiado verificado.
 - **Estado:** Pendiente beta. No bloquea implementación local por requerir servicios desplegados.
+
+
+## BETA-FUNC-013 — TASK-636 / AUD-NG-002 — visibilidad de borradores de publicaciones
+- **Objetivo:** verificar con Apps Script/Sheets aislados que borradores no se exponen a estudiantes y que el tipo de dato boolean/string no cambia el control.
+- **Precondiciones:** deployment Task-Service beta; hojas PublicacionesAnuncios y AulasVirtuales sintéticas; cuentas Estudiante y Profesor con aulas separadas.
+- **Datos:** publicaciones con EsBorrador boolean true, string "true", false; estados Publicado/Borrador; fechas programadas futuras; aula propia y ajena.
+- **Pasos:** consultar como estudiante enviando authRole Administrador e includeDrafts=true; consultar como profesor con includeDrafts false y true; repetir con ambos tipos de booleano y aula ajena.
+- **Resultado esperado:** estudiante nunca ve borradores; el rol enviado por cliente no altera autorización; profesor ve borradores solo con includeDrafts explícito y dentro de su aula asignada; fecha futura no se expone a estudiantes.
+- **Estado:** Pendiente beta. No bloquea implementación local.
