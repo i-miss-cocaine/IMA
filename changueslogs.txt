@@ -361,3 +361,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - AUD-NG-381 MEDIO/P2 queda registrado y vinculado a TASK-068 existente, sin tarea duplicada. Run C1.324 42672140762 estaba queued; CI C1.325 pendiente.
 - TASK-068 En ejecución; AUD-NG-378 abierto; importador sigue DESTINATION_WRITER_NOT_CONFIGURED.
 - Checkpoint C1.325; Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.325; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.325.
+
+
+[2026-11-09] IMA-EXEC-20261109-1802Z-01 — TASK-068 / PM-01 / C1.326
+- Runs 42672140762 y 42672511038 fallaron por SyntaxError en el extractor regex del harness, antes de ejecutar los casos. Se reemplaza regex por indexOf/slice y separador VM por String.fromCharCode(10); producción sin cambios.
+- AUD-NG-381 permanece abierto hasta CI satisfactorio; AUD-NG-378 abierto; importador sigue DESTINATION_WRITER_NOT_CONFIGURED.
+- Checkpoint C1.326; Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.326; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.326.

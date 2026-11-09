@@ -447,3 +447,12 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - **Criterios:** extracción del bloque de esquemas exitosa; VM recibe el fragmento con salto de línea real; todos los casos aislados se ejecutan; CI del commit termina completed/success.
 - **Estado:** harness corregido en C1.325; CI pendiente. TASK-068 continúa En ejecución por AUD-NG-378 y requisitos restantes.
 ===============================================================================
+
+
+===============================================================================
+## Seguimiento de TASK-068 — AUD-NG-381 / C1.326
+- Se documentan los fallos de los runs 42672140762 y 42672511038: SyntaxError en el harness de pruebas por escapes de regex, antes de ejecutar los casos aislados.
+- Causa raíz: extractor regex innecesariamente complejo. Acción C1.326: reemplazarlo por localización de inicio/fin con indexOf/slice y usar String.fromCharCode(10) para el fragmento VM.
+- No se modifica código de producción. Criterio de cierre pendiente: workflow del commit C1.326 completed/success y ejecución de todos los casos de esquema.
+- TASK-068 sigue En ejecución; AUD-NG-378 continúa abierto y el importador permanece fail-closed.
+===============================================================================

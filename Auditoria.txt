@@ -457,3 +457,10 @@ Sesión: IMA-EXEC-20261109-1108Z-01; HEAD de partida: 32b8f5884dd24dbeaf1a3bf028
 - **Acción/tarea:** corregir el harness dentro de TASK-068 existente, sin ID de tarea derivado duplicado.
 - **Resolución C1.325:** se normalizan escapes de regex y salto de línea; el resultado CI posterior se registra cuando esté disponible.
 - Checkpoint C1.325; sesión IMA-EXEC-20261109-1802Z-01; ubicación `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt`; índice `Auditoría/INDICE_CHECKPOINTS.md` — fila C1.325.
+
+
+## Seguimiento AUD-NG-381 — C1.326
+- Runs CI: `42672140762` (C1.324) y `42672511038` (C1.325) fallaron antes de ejecutar casos por SyntaxError en regex/escapes del harness. La revisión del log identifica errores de prueba, no un fallo demostrado del código de producción.
+- Causa raíz: extracción del bloque con regex sobreescapada. C1.326 reemplaza la regex por delimitadores `indexOf` y `slice`, y separa el código VM con `String.fromCharCode(10)`.
+- AUD-NG-381 sigue abierto hasta resultado CI satisfactorio. TASK-068 conserva el mismo ID; no se crea tarea derivada ni expediente nuevo.
+- Checkpoint C1.326; sesión IMA-EXEC-20261109-1802Z-01; Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.326; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.326.

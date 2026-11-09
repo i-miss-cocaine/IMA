@@ -1768,3 +1768,57 @@ Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002
 Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.325.
 Commit de cierre: este commit; SHA se verificará externamente tras publicación.
 ===============================================================================
+
+
+===============================================================================
+## C1.326 — TASK-068 / PM-01 — extractor determinista del test de esquemas
+ID de sesión: IMA-EXEC-20261109-1802Z-01
+Fecha: 2026-11-09 UTC
+Checkpoint anterior: C1.325
+Repositorio: i-miss-cocaine/IMA
+Rama de trabajo: NG_beta_0.0.0.1_work
+HEAD de partida: b28f839eda2dea30c27afabe93028191de876ac9
+Rama base: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios)
+Tarea: TASK-068 — En ejecución; no completada.
+Fase PM: PM-01; prioridad P0; orden local 1.
+
+### Continuidad y auditoría focalizada
+- HEAD coincide con el commit de cierre C1.325; la rama base permanece intacta.
+- Se consultaron los resultados reales de CI: run 42672140762 (C1.324) y run 42672511038 (C1.325) terminaron en failure por SyntaxError en la regex del test, antes de ejecutar los casos.
+- El defecto pertenece al harness de pruebas AUD-NG-381, no a un defecto demostrado en la validación de esquema de producción. No se repite auditoría funcional ni se crea expediente duplicado.
+
+### Corrección
+- Se elimina el extractor regex y se usa `indexOf` para localizar la constante, el inicio de la función y su cierre; `slice` obtiene el fragmento exacto.
+- La evaluación VM concatena `String.fromCharCode(10)`, evitando escapes de salto de línea en la cadena fuente.
+- Se mantienen los casos de prueba para todos los esquemas/aliases, encabezados válidos e incompatibles, hoja ausente, ID vacío y tipo no soportado.
+- No se modifica código de producción ni contratos públicos.
+
+### Respaldo Git histórico
+- HEAD de partida: b28f839eda2dea30c27afabe93028191de876ac9; commit publicado y alcanzable en la rama autorizada.
+- Test previo: blob `7022e7f4e535eb361700efcbbc1528c0b3bff93c`.
+- Expediente: blob `80d7d1c80e12bd317f05ca019f66b15eaf0da088`.
+- Auditoria.txt: blob `55fef21eb1a49fa91bc9e713c435d5c69db3293c`.
+- tareas_auditoria.txt: blob `032a04503031da101f93e79c293705b82daa6139`.
+- Checkpoints_Parte_0002: blob `67b27a00869f692334f3641d20a92efad595571f`, tamaño previo 160797 caracteres.
+- Índice: blob `f8744ac9110e2762cda6cb18f7bebdde833be1dd`.
+- changueslogs: blob `16a19f24d1ca6509f86a188a162c16bc8e9aca39`.
+- Recuperación: `git show b28f839eda2dea30c27afabe93028191de876ac9:<ruta>`; verificar con `git hash-object`.
+
+### Pruebas y límites
+- Revisión estática del extractor y de la cadena VM: no quedan referencias a targetSource[0] ni regex de extracción.
+- Runs C1.324/C1.325 fallidos; el resultado del nuevo run queda pendiente. No se declara test PASS.
+- No ejecutados: Apps Script runtime, Sheets real, dos fuentes, reimportación, concurrencia, relaciones, navegador, HTTP y E2E. AUD-NG-378 permanece abierto; importador fail-closed.
+- TASK-068 permanece En ejecución; AUD-NG-381 no se cierra hasta CI satisfactorio.
+
+### Archivos modificados
+- `tests/security/identity-mapping-contract.test.js`.
+- `Auditoría/AUDITORIA_TASK-068_C1.318.md`; `Auditoria.txt`; `tareas_auditoria.txt`; `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt`; `Auditoría/INDICE_CHECKPOINTS.md`; `changueslogs.txt`.
+- Código de producción sin cambios; rama base y demás ramas sin cambios.
+
+### Siguiente acción exacta
+Verificar el resultado terminal del workflow `Identity mapping contract` del commit C1.326. Si pasa, continuar TASK-068 en el contrato explícito de escritura por entidad dentro de `backend/accounting-service/Code.gs::importDataWithColumnMapping`; mantener fail-closed hasta definir clave idempotente, precondiciones, relaciones y compensación, y preparar fixtures aislados de dos fuentes.
+
+Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.326.
+Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.326.
+Commit de cierre: este commit; SHA se verificará externamente tras publicación.
+===============================================================================

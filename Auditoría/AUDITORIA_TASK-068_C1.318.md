@@ -136,3 +136,10 @@ Las lecturas fueron completas (92.668, 429.611 y 713.779 caracteres). El histori
 - Se corrige únicamente el harness: regex con clases `[\\s\\S]` y separador de línea `\n` válidos en el propio archivo JavaScript. Se conserva la cobertura dinámica de esquemas válidos/incompatibles, aliases, hoja ausente, ID vacío y tipo no soportado.
 - No se altera código de producción ni el alcance funcional. El run C1.324 `42672140762` permanecía queued al iniciar esta revisión; no se declara resultado. El nuevo CI del commit C1.325 debe confirmar la ejecución.
 - Expediente principal único: este informe; AUD-NG-381 se registra en Auditoria.txt y se vincula a TASK-068 existente, sin crear tarea duplicada.
+
+
+## Seguimiento C1.326 — resolución definitiva del extractor de pruebas AUD-NG-381
+- **Evidencia CI:** run C1.324 `42672140762` falló por regex de extracción mal escapada; run C1.325 `42672511038` falló por el paréntesis de función doblemente escapado. Ambos logs muestran SyntaxError antes de ejecutar los casos de validación.
+- **Causa raíz:** la expresión regular del harness era innecesariamente compleja y propensa a escapes defectuosos. El código de producción de C1.324 no presenta error reportado por estos runs.
+- **Corrección C1.326:** se elimina el regex y se extrae el bloque por índices de texto (`indexOf`/ `slice`), y el fragmento VM se separa mediante `String.fromCharCode(10)`. Se conserva la cobertura de casos sin modificar código de producción.
+- **Estado:** AUD-NG-381 permanece abierto hasta obtener CI completed/success; no se declara PASS. Reutiliza este expediente y TASK-068 existente; sin auditoría ni tarea duplicada.

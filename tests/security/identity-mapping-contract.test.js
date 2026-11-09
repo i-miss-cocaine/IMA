@@ -22,14 +22,17 @@ const canonicalSchemas=[
   ['["DocumentoID", "ExpedienteID", "SolicitudID", "TipoDocumento", "NombreArchivo", "DriveFileId", "DriveUrl", "FechaRecepcion", "FechaVencimiento", "EstadoRevision", "SubidoPor", "ValidadoPor", "Observaciones"]',academic]
 ];
 canonicalSchemas.forEach(([schema,source])=>assert.ok(source.includes(schema),"canonical destination schema "+schema));
-const targetSource=user.match(/const IDENTITY_TARGET_SCHEMAS_ = {[\s\S]*?\n};\nfunction identityTargetExists_\\([\s\S]*?\n}/);
-assert.ok(targetSource,"destination schema registry and validator are extractable");
+const targetStart=user.indexOf("const IDENTITY_TARGET_SCHEMAS_ = {");
+const targetFunctionStart=user.indexOf("function identityTargetExists_(",targetStart);
+const targetEnd=user.indexOf(String.fromCharCode(10)+"}",targetFunctionStart);
+assert.ok(targetStart>=0&&targetFunctionStart>targetStart&&targetEnd>targetFunctionStart,"destination schema registry and validator are extractable");
+const targetSource=user.slice(targetStart,targetEnd+2);
 let sheetByName={};
 const targetContext={
   SPREADSHEET_ID:"isolated-test",
   SpreadsheetApp:{openById:function(){return {getSheetByName:function(name){return sheetByName[name]||null;}};}}
 };
-vm.runInNewContext(targetSource[0]+"\nthis.schemas=IDENTITY_TARGET_SCHEMAS_;this.exists=identityTargetExists_;",targetContext);
+vm.runInNewContext(targetSource+String.fromCharCode(10)+"this.schemas=IDENTITY_TARGET_SCHEMAS_;this.exists=identityTargetExists_;",targetContext);
 function mockSheet(headers,id){
   const row=headers.map(()=> "");
   row[0]=id;
