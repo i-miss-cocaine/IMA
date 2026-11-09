@@ -198,3 +198,15 @@ Endurecer las excepciones públicas de backend/academic-service/Code.gs mediante
 - Segunda ejecución: run 42659961195, commit f5359a3668519b1c4a1bbad155f0d123fc09914d, completed/success; job “Run Node static contract” y paso “Execute backup and restore contract” concluyeron success. Log confirma “Task-Service backup/restore static contract checks passed.” sin advertencia de deprecación Node20.
 - Inspección del árbol Git: no existen appsscript.json ni .clasp.json, ni otra configuración de clasp/deployment; no hay proyecto de Apps Script ni entorno aislado de Sheets/Drive referenciado en el repositorio. No se puede ejecutar todavía el runtime de Google Apps Script ni pruebas destructivas/forzadas en un entorno aislado.
 - TASK-636 sigue En ejecución; AUD-NG-369 abierto; closeAcademicYear continúa BACKUP_REQUIRED hasta certificación de integración.
+
+
+## Revisión focalizada C1.366 — aislamiento del estado de recuperación compensatoria
+
+- **Baseline lógico:** C1.316, commit `31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`. Los checkpoints C1.317–C1.365 se preservan, pero no se aceptan como evidencia de continuidad ni de cierre por instrucción expresa del usuario.
+- **HEAD físico auditado para preparar la corrección:** `739b0e6dc11f5598abdcdc2837b63b4480746bc6`. La lógica y el contrato se vuelven a verificar independientemente.
+- **Hallazgo existente ampliado:** AUD-NG-369. El restaurador compensatorio reutilizaba `restoreStateFileId/restoreId` del intento original. El archivo de progreso contiene `idMap` de los activos restaurados hacia el estado objetivo; al restaurar el respaldo compensatorio, un mismo originalId podía apuntar a una copia con hash distinto y provocar el rechazo del rollback.
+- **Corrección:** la recuperación crea un archivo de progreso independiente dentro de la carpeta del manifiesto compensatorio y persiste `recoveryRestoreStateFileId`/`recoveryRestoreId` en el journal antes de iniciar. Los reintentos reutilizan exclusivamente ese estado; un journal parcial o sin estado de recuperación se rechaza sin fallback al mapa del intento original.
+- **Pruebas locales añadidas:** fixture Node del selector de progreso; comprueba separación de fileId/restoreId y rechazo fail-closed cuando falta el estado de recuperación. El contrato comprueba la persistencia del estado independiente y su ubicación junto al respaldo compensatorio.
+- **Pendiente:** ejecución CI del contrato tras publicar este commit. No se declara PASS antes de consultar el run y sus logs.
+- **Beta diferida:** BETA-FUNC-010 cubre interrupción durante restauración y recuperación, repetición de recuperación, integridad de hojas/activos, referencias e idMap en Apps Script/Sheets/Drive aislados. No bloquea la implementación local por requerir servicios desplegados.
+- **Estado:** TASK-636 continúa En ejecución; AUD-NG-369 sigue abierto hasta resolver y verificar los demás criterios locales. `closeAcademicYear` permanece fail-closed con `BACKUP_REQUIRED`.

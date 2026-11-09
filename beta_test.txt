@@ -141,3 +141,12 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - Pasos: ejecutar dry-run y aplicar reconciliación; verificar que solo los vínculos exactos y únicos completan ownerUserId; ejecutar carga directa y resumible; consultar progreso, ensamblar y reanudar; intentar borrar archivo propio no entregado, archivo ajeno y archivo entregado/versionado.
 - Resultado esperado: solo migraciones con una relación exacta y única se aplican; ambiguos/sin relación quedan sin propietario y reportados; carga crea metadatos de propietario; solo se elimina archivo propio no entregado; ajenos/entregados/versionados se bloquean.
 - Estado: Pendiente beta. No bloquea cierre de implementación por §21.5.
+
+
+## BETA-FUNC-010 — TASK-636 / AUD-NG-369 — recuperación compensatoria con estado independiente
+- **Objetivo:** comprobar que una interrupción durante la restauración objetivo y otra durante el rollback no mezclan los mapas de activos ni impiden recuperar el estado anterior.
+- **Precondiciones:** deployments de Task-Service y proyecto Apps Script de beta aislado; Spreadsheet y Drive de prueba sin datos institucionales reales; cuentas sintéticas Administrador/Desarrollador.
+- **Datos sintéticos:** respaldo A (estado inicial), respaldo B (estado objetivo con contenido de archivo distinto), hojas Tareas/Entregas/ConfiguracionAcademica y archivos Drive con hashes conocidos.
+- **Pasos:** crear/verificar A; modificar fixture y crear/verificar B; iniciar restore de B e interrumpir tras persistir al menos una entrada del idMap; ejecutar recuperación de A; interrumpir la recuperación tras recrear un activo; reintentar recuperación; verificar hojas, fórmulas, archivos, hashes, permisos, parentId, referencias FileID/URL y Log_Cierres append-only.
+- **Resultado esperado:** journal conserva dos estados de progreso distintos; recovery nunca reutiliza el idMap del intento objetivo; reintentos no duplican activos; el estado final coincide con A y el journal solo se limpia tras verificación completa.
+- **Estado:** Pendiente beta. No bloquea el cierre de implementación local por depender de Apps Script/Sheets/Drive desplegados.

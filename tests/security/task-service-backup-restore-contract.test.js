@@ -46,6 +46,12 @@ assert(source.includes("RESTORE_STATE_NAME_MISMATCH"), "reused Drive IDs must ma
 assert(source.includes("mappedHash !== node.sha256"), "reused restored files are hash-verified before metadata mutation");
 assert(source.includes("RESTORE_FAILED_ROLLED_BACK") && source.includes("ROLLBACK_INCOMPLETE"), "restore reports rollback outcome");
 assert(source.includes("taskServiceVerifyAppendOnlyBackupLog_"), "Log_Cierres is preserved as append-only");
+assert(source.includes("taskServiceGetRestoreProgress_(durableJournal, !!skipDurableJournal)"), "normal restore and compensating recovery select independent progress state");
+assert(source.includes("durableJournal.recoveryRestoreStateFileId = recoveryState.fileId"), "recovery persists a dedicated state file ID");
+assert(source.includes("durableJournal.recoveryRestoreId = recoveryState.restoreId"), "recovery persists a dedicated restore ID");
+assert(source.includes("taskServiceCreateRestoreState_(rollbackFolder.getId())"), "recovery state is stored alongside the rollback backup");
+assert(source.includes("!!durableJournal.recoveryRestoreStateFileId !== !!durableJournal.recoveryRestoreId"), "partial recovery state fails closed");
+
 
 function extractFunction(name) {
   const start = source.indexOf("function " + name + "(");
@@ -124,5 +130,36 @@ const emptySnapshot = JSON.parse(JSON.stringify(snapshotContext.snapshot({
 })));
 assert.deepEqual(emptySnapshot, { name: "Entregas", rows: 0, columns: 0, values: [], formulas: [] });
 
-console.log("Task-Service backup/restore contract: static guards, Node syntax, SHA-256 and local snapshot fixtures passed.");
+
+// Recovery must not reuse the forward restore's idMap: each state file carries
+// an independent restoreId and mapping, including when recovery is retried.
+const progressContext = {};
+vm.runInNewContext(
+  extractFunction("taskServiceGetRestoreProgress_") + String.fromCharCode(10) +
+  "this.resolveProgress = taskServiceGetRestoreProgress_;",
+  progressContext
+);
+const journalFixture = {
+  restoreStateFileId: "forward-state-file",
+  restoreId: "forward-restore-id",
+  recoveryRestoreStateFileId: "rollback-state-file",
+  recoveryRestoreId: "rollback-restore-id"
+};
+const forwardProgress = progressContext.resolveProgress(journalFixture, false);
+const recoveryProgress = progressContext.resolveProgress(journalFixture, true);
+assert.equal(forwardProgress.fileId, "forward-state-file");
+assert.equal(forwardProgress.restoreId, "forward-restore-id");
+assert.equal(recoveryProgress.fileId, "rollback-state-file");
+assert.equal(recoveryProgress.restoreId, "rollback-restore-id");
+assert.notEqual(forwardProgress.fileId, recoveryProgress.fileId);
+assert.notEqual(forwardProgress.restoreId, recoveryProgress.restoreId);
+let missingRecoveryStateRejected = false;
+try {
+  progressContext.resolveProgress({ restoreStateFileId: "forward-state-file", restoreId: "forward-restore-id" }, true);
+} catch (error) {
+  missingRecoveryStateRejected = /RESTORE_PROGRESS_MISSING/.test(String(error && error.message));
+}
+assert.equal(missingRecoveryStateRejected, true, "recovery must not silently fall back to forward progress");
+
+console.log("Task-Service backup/restore contract: static guards, Node syntax, SHA-256, snapshot fixtures and isolated recovery progress passed.");
 

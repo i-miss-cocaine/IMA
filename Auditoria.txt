@@ -626,3 +626,11 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 ## C1.365 — TASK-636 AUD-NG-370
 - C1.364 backup/restore run 42718141463 success; security workflow run 42718142238 falló en el paso node --check por extensión .gs desconocida.
 - Se corrige harness a vm.Script y se agrega rollback local ante fallo de bitácora del backfill. CI nuevo pendiente.
+
+
+## C1.366 — IMA-EXEC-20261109-1739Z-01 — TASK-636 / PM-01 / AUD-NG-369
+- Revisión focalizada del expediente único AUDITORIA_TASK-636_C1.305.md: se detecta reutilización del idMap del restore objetivo durante rollback compensatorio.
+- Se separan recoveryRestoreStateFileId/recoveryRestoreId y se añade fixture Node local; CI pendiente tras publicar.
+- Apps Script/Sheets/Drive e interrupciones forzadas se difieren a BETA-FUNC-010; no bloquean implementación local.
+- TASK-636 En ejecución; AUD-NG-369 abierto; closeAcademicYear BACKUP_REQUIRED.
+- Baseline lógico C1.316; C1.317–C1.365 preservados pero no aceptados como evidencia. Checkpoint C1.366: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.366; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.366.

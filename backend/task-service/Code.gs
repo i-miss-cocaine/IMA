@@ -882,6 +882,18 @@ function taskServiceVerifyAppendOnlyBackupLog_(ss, snapshot) {
   }
   return true;
 }
+function taskServiceGetRestoreProgress_(journal, isRecovery) {
+  if (!journal || typeof journal !== "object") {
+    throw new Error("RESTORE_PROGRESS_MISSING: falta el journal de restauración.");
+  }
+  const fileId = isRecovery ? journal.recoveryRestoreStateFileId : journal.restoreStateFileId;
+  const restoreId = isRecovery ? journal.recoveryRestoreId : journal.restoreId;
+  if (!fileId || !restoreId) {
+    throw new Error("RESTORE_PROGRESS_MISSING: falta el estado durable independiente de restauración.");
+  }
+  return { fileId: String(fileId), restoreId: String(restoreId) };
+}
+
 function taskServiceRestoreAcademicYearBackup_(manifestFileId, actor, skipDurableJournal, lockAlreadyHeld, recoveryJournal) {
   const manifest = taskServiceReadAcademicYearBackup_(manifestFileId);
   taskServiceVerifyAcademicYearBackup_(manifestFileId);
@@ -904,8 +916,9 @@ function taskServiceRestoreAcademicYearBackup_(manifestFileId, actor, skipDurabl
         restoreStateFileId: restoreStateFileId, actorId: actor.actorId, startedAt: new Date().toISOString() };
       properties.setProperty(TASK_SERVICE_RESTORE_JOURNAL_KEY, JSON.stringify(durableJournal));
     }
-    if (skipDurableJournal) restoreStateFileId = durableJournal && durableJournal.restoreStateFileId;
-    restoreState = taskServiceReadRestoreState_(restoreStateFileId, durableJournal && durableJournal.restoreId);
+    const restoreProgress = taskServiceGetRestoreProgress_(durableJournal, !!skipDurableJournal);
+    restoreStateFileId = restoreProgress.fileId;
+    restoreState = taskServiceReadRestoreState_(restoreProgress.fileId, restoreProgress.restoreId);
     ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     manifest.sheets.filter(function (s) { return s.name !== "Log_Cierres"; }).forEach(function (snapshot) {
       const existing = ss.getSheetByName(snapshot.name);
@@ -1020,6 +1033,24 @@ function recoverTaskServiceAcademicYearRestore(payload) {
     const durableJournal = JSON.parse(raw);
     if (durableJournal.version !== 1 || !durableJournal.rollbackManifestFileId || !durableJournal.restoreStateFileId || !durableJournal.restoreId) {
       throw new Error("RECOVERY_JOURNAL_INVALID: no se puede determinar el respaldo compensatorio o su estado de progreso.");
+    }
+    if (!!durableJournal.recoveryRestoreStateFileId !== !!durableJournal.recoveryRestoreId) {
+      throw new Error("RECOVERY_JOURNAL_INVALID: el estado de progreso de recuperación está incompleto.");
+    }
+    if (!durableJournal.recoveryRestoreStateFileId) {
+      const rollbackManifest = DriveApp.getFileById(durableJournal.rollbackManifestFileId);
+      if (rollbackManifest.isTrashed()) throw new Error("RECOVERY_JOURNAL_INVALID: el manifiesto compensatorio está en papelera.");
+      const parents = rollbackManifest.getParents();
+      if (!parents.hasNext()) throw new Error("RECOVERY_JOURNAL_INVALID: el manifiesto compensatorio no tiene carpeta contenedora.");
+      const rollbackFolder = parents.next();
+      if (rollbackFolder.isTrashed() || rollbackFolder.getName().indexOf(TASK_SERVICE_BACKUP_PREFIX) !== 0) {
+        throw new Error("RECOVERY_JOURNAL_INVALID: la carpeta compensatoria no pertenece al protocolo de respaldo.");
+      }
+      const recoveryState = taskServiceCreateRestoreState_(rollbackFolder.getId());
+      durableJournal.recoveryRestoreStateFileId = recoveryState.fileId;
+      durableJournal.recoveryRestoreId = recoveryState.restoreId;
+      durableJournal.recoveryStateCreatedAt = new Date().toISOString();
+      properties.setProperty(TASK_SERVICE_RESTORE_JOURNAL_KEY, JSON.stringify(durableJournal));
     }
     if (durableJournal.state === "COMPLETED") {
       properties.deleteProperty(TASK_SERVICE_RESTORE_JOURNAL_KEY);

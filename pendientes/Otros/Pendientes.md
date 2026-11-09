@@ -3251,6 +3251,8 @@
 
 - **Seguimiento C1.316:** el contrato estático Node se ejecuta en GitHub Actions; runs 42659818881 y 42659961195 completed/success, el segundo con Node 24/actions v7. No hay appsscript.json/.clasp.json ni fixture Apps Script/Sheets/Drive aislado; integración dinámica pendiente. TASK-636 En ejecución; AUD-NG-369 abierto; closeAcademicYear BACKUP_REQUIRED.
 
+- **Seguimiento C1.366:** AUD-NG-369 ampliado: el rollback reutilizaba el idMap del intento objetivo. La recuperación ahora mantiene recoveryRestoreStateFileId/recoveryRestoreId independientes, persistidos en el journal y reutilizados en reintentos; el estado parcial se rechaza fail-closed. Se agrega fixture Node local del selector de progreso. TASK-636 sigue En ejecución; BETA-FUNC-010 queda Pendiente beta para interrupciones reales en entorno aislado.
+
 ===============================================================================
 
 ---

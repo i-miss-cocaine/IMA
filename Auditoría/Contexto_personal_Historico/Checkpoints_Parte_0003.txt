@@ -756,3 +756,60 @@ Checkpoint anterior: C1.364
 Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.365.
 Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.365.
 ===============================================================================
+
+===============================================================================
+## C1.366 — TASK-636 / AUD-NG-369 — aislamiento del estado de recuperación compensatoria
+ID: C1.366
+Sesión: IMA-EXEC-20261109-1739Z-01
+Fecha: 2026-11-09
+Checkpoint anterior válido: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+Checkpoint físico previo preservado: C1.365
+Repositorio: i-miss-cocaine/IMA
+Rama de trabajo: NG_beta_0.0.0.1_work
+HEAD físico de partida: 739b0e6dc11f5598abdcdc2837b63b4480746bc6
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+
+### Corrección de continuidad
+- La comparación Git confirma 76 commits posteriores a C1.316, todos descendientes de C1.316; la rama base permanece intacta.
+- Por instrucción expresa del usuario, C1.316 es el único baseline lógico válido. C1.317–C1.365 se preservan en el historial, sin reset, rebase ni eliminación, pero no se aceptan como evidencia de continuidad, auditoría o cierre de tareas.
+- Se trabaja sobre el HEAD físico actual únicamente para preservar la rama y publicar un commit fast-forward; los criterios se revalidan independientemente contra los requisitos originales.
+
+### Auditoría y requisito
+- Tarea activa: TASK-636 — PM-01 — P0; expediente principal único: Auditoría/AUDITORIA_TASK-636_C1.305.md.
+- Requisito original: pendientes/Otros/Pendientes.md — bloque TASK-636. La lectura convencional devolvió 0 caracteres; se recuperó desde el árbol Git del commit C1.316: blob 35cbd51f1e0b2f91f18b46c94d38223338d5ccdf, tamaño 1.649.288 bytes, contenido decodificado 1.629.561 caracteres y 16.492 líneas. Inicio y final estructuralmente presentes; el identificador TASK-636 se localizó y su bloque completo fue leído. No se modificó el requisito original al recuperarlo.
+- Se consultó el expediente principal y se reutilizaron únicamente los hallazgos existentes. No se creó un informe de auditoría paralelo ni se auditó otro informe.
+- AUD-NG-369 se amplía: el rollback reutilizaba el archivo de progreso/idMap de la restauración objetivo. Un ID ya mapeado a una copia con hash del estado objetivo podía impedir la restauración compensatoria del contenido anterior.
+
+### Implementación de esta iteración
+- Se añade taskServiceGetRestoreProgress_ para seleccionar el progreso primario o el de recuperación sin fallback.
+- recoverTaskServiceAcademicYearRestore crea un estado independiente dentro de la carpeta del manifiesto compensatorio y persiste recoveryRestoreStateFileId/recoveryRestoreId en el journal antes de ejecutar el rollback.
+- Los reintentos reutilizan el estado de recuperación independiente; journal parcial o estado faltante se rechaza fail-closed.
+- Se amplía el contrato Node con fixture local que verifica separación de IDs/archivos y rechazo de fallback.
+
+### Archivos modificados
+- backend/task-service/Code.gs
+- tests/security/task-service-backup-restore-contract.test.js
+- Auditoría/AUDITORIA_TASK-636_C1.305.md (expediente existente; revisión focalizada)
+- pendientes/Otros/Pendientes.md (seguimiento aditivo de TASK-636; requisitos originales preservados)
+- beta_test.txt (BETA-FUNC-010)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoria.txt
+- tareas_auditoria.txt
+- changueslogs.txt
+
+### Pruebas y estado
+- Pruebas añadidas: fixture Node local del selector de progreso, comprobación de independencia de fileId/restoreId, rechazo de estado de recuperación ausente y contrato estático de persistencia.
+- Parseo Node del archivo .gs y contrato completo: pendiente de ejecución CI tras publicar. No se declara PASS anticipadamente.
+- Apps Script/Sheets/Drive reales, interrupciones forzadas, despliegue y E2E: Pendientes beta en BETA-FUNC-010; no bloquean implementación local por la regla no bloqueante solicitada por el usuario.
+- No se ejecutó cierre académico ni borrado; closeAcademicYear continúa BACKUP_REQUIRED.
+- Estado TASK-636: En ejecución; AUD-NG-369 abierto. No se marca Completada.
+
+### Siguiente acción exacta
+Continuar TASK-636 en el mismo expediente: revalidar localmente AUD-NG-001/002/306/368/370/371 contra código, consumidores y contratos del HEAD, sin reutilizar como evidencia los checkpoints invalidados. Corregir únicamente hallazgos de implementación demostrados; mantener pruebas de despliegue/servicios reales en beta_test.txt.
+
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.366.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.366.
+Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
+===============================================================================

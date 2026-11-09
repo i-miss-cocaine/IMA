@@ -485,3 +485,14 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - AUD-NG-378/BETA-FUNC-008: Pendiente beta (deployment/HTTP/servicios vivos), no bloqueante por §21.5.
 - Próxima continuidad: TASK-636, auditoría local de AUD-NG-001/002/306/368/370/371.
 ===============================================================================
+
+
+===============================================================================
+## Seguimiento TASK-636 — C1.366 / AUD-NG-369
+- Se detecta que la recuperación compensatoria reutilizaba el idMap del intento objetivo, lo que podía impedir restaurar un archivo cuyo contenido original difiere del objetivo.
+- Se introduce progreso independiente de rollback persistido en el journal y reanudable tras interrupción; el selector rechaza estado faltante sin fallback.
+- Se agrega fixture Node local de independencia de restoreId/fileId y rechazo fail-closed.
+- CI pendiente de ejecución; runtime Apps Script/Sheets/Drive e interrupciones reales pasan a BETA-FUNC-010, Pendiente beta y no bloqueante.
+- TASK-636 En ejecución; AUD-NG-369 abierto. No se habilita closeAcademicYear.
+- Baseline válido C1.316; checkpoints posteriores preservados pero invalidados como evidencia. C1.366: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice fila C1.366.
+===============================================================================

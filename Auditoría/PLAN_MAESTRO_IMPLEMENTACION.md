@@ -2204,3 +2204,11 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - La reconciliación de metadatos valida la bitácora y revierte owner/task/profesor si falla su escritura; fixture simula fallo de auditoría y exige rollback.
 - El workflow usa vm.Script para parsear Apps Script .gs; se elimina node --check incompatible con esa extensión.
 - C1.364 backup/restore CI run 42718141463: success; security workflow run 42718142238 falló en node --check, no alcanzó el test. C1.365 pendiente.
+
+
+## 10.50 TASK-636 — C1.366: aislamiento del progreso de recuperación compensatoria
+- Se amplía AUD-NG-369: el rollback no debe reutilizar el idMap de la restauración objetivo.
+- La recuperación crea y persiste recoveryRestoreStateFileId/recoveryRestoreId independientes dentro de la carpeta del respaldo compensatorio; los reintentos reutilizan ese estado y los journals parciales fallan cerrados.
+- Se añade fixture Node local para separación de estados y rechazo de fallback. CI pendiente de ejecución tras publicar.
+- BETA-FUNC-010 cubre interrupciones reales y repetibilidad con Apps Script/Sheets/Drive aislados; Pendiente beta, no bloqueante para implementación local.
+- TASK-636 permanece En ejecución; closeAcademicYear permanece BACKUP_REQUIRED.
