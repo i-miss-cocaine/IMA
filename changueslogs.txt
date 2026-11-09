@@ -98,4 +98,4 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Rutas de fragmentos de juegos evaluadas en su contexto de inyección; falsos positivos descartados.
 - TASK-638 sigue En ejecución, cobertura 26/101 páginas; no cambios de código/rutas/contratos ni pruebas runtime.
 - Archivos: informe C1.290, mapa, Auditoria.txt, tareas_auditoria.txt, contexto, índice, Plan Maestro y changelog.
-- Checkpoint C1.290 en Auditoría/Contexto_personal.txt — sección C1.290, líneas 1740–1788; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.290.
+- Checkpoint C1.290 en Auditoría/Contexto_personal.txt — sección C1.290, líneas 1738–1788; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.290.
