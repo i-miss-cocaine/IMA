@@ -4251,3 +4251,31 @@ La pasada es parcial: no se inspeccionaron todos los HTML/HTM, JS, CSS, GS, JSON
 - ACCOUNTING en RRHH y políticas permanece sujeto a AUD-NG-323; no se acredita deployment operativo.
 - 26/101 páginas inspeccionadas; quedan 75 HTML/HTM y la traza exhaustiva de JS/CSS/GS/JSON/assets.
 - No se ejecutaron Node, navegador, HTTP, Apps Script, Drive, Sheets ni E2E. TASK-638 sigue En ejecución.
+
+
+---
+
+## C1.291 — TASK-638: cobertura HTML/HTM completa
+
+**Cobertura:** 101/101 documentos (100 HTML y 1 HTM), todos versionados en el tree auditado. Se inspeccionaron y contrastaron las referencias locales de recursos, navegación, formularios y scripts contra el tree con resolución de rutas relativas desde el documento anfitrión. Informe: `Auditoría/AUDITORIA_TASK-638_C1.291.md`.
+
+### Distribución de cobertura
+- 28 páginas de aplicación/portales/dashboards/entrada y juegos (index.html, dynamic-dashboard y C1.289/C1.290).
+- 21 páginas III_BTP_A.
+- 8 páginas II_BTP_A/Informatica_Aplicada_I.
+- 10 páginas II_BTP_A/Ofimatica_I.
+- 14 páginas II_BTP_A/Programacion.
+- 7 páginas II_BTP_A/analisis_diseno.
+- 13 páginas Informatica_I.
+
+### Hallazgos confirmados de rutas
+- AUD-NG-351 MEDIO/P2: `developer-dashboard.html:9` referencia `css/custom.css`, inexistente en tree.
+- AUD-NG-352 MEDIO/P2: `II_BTP_A/Ofimatica_I/hojas_calculo.html:378` referencia `../../imagenes/ordenamiento-y-filtrado.png`; existe `imagenes/ordenamiento-y-filtrado.PNG`, extensión con caso distinto.
+- AUD-NG-353 MEDIO/P2: `pseudocode.html:10–11` referencia `IMA-Logo.png` para favicon y apple-touch-icon; archivo inexistente en raíz/tree.
+- Las expresiones de plantilla son dinámicas; no se evalúan como archivos estáticos. Los fragmentos `juegos/perifericos.html` y `juegos/webmaster_quiz.html` se cargan por index-ui.js y resuelven recursos con el documento anfitrión; sus falsos positivos relativos se descartan.
+
+### Estado de TASK-638
+La capa HTML/HTM queda revisada estáticamente al 100%; no equivale a la auditoría global completa. Quedan 24 JS, 6 CSS, 6 GS, 27 JSON, recursos independientes y trazabilidad exhaustiva de endpoints, dispatchers, handlers, permisos y persistencia. No se ejecutaron pruebas runtime ni E2E. TASK-638 sigue En ejecución.
+
+### Tareas derivadas
+Ampliar TASK-674 para validar rutas ausentes, extensiones/caso y contexto de fragmentos; ampliar TASK-678 para integrar cobertura 101/101 y AUD-NG-351/352/353. No crear IDs duplicados.

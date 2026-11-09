@@ -111,3 +111,15 @@ Sesión: IMA-EXEC-20261109-0413Z-01; HEAD de partida: 57643c473df081aa57cdd8e5de
 - Cafetería/Tienda carecen de controlador/API explícito en el HTML; queda como hueco a confirmar, no defecto probado. ACCOUNTING para RRHH/políticas enlaza con AUD-NG-323.
 - TASK-638 permanece En ejecución; cobertura 26/101 páginas. No se modificó código, rutas ni contratos. Sin pruebas runtime.
 - Informe: Auditoría/AUDITORIA_TASK-638_C1.290.md. Checkpoint C1.290, sesión IMA-EXEC-20261109-0413Z-01; ubicación Auditoría/Contexto_personal.txt, sección C1.290; índice Auditoría/INDICE_CHECKPOINTS.md, fila C1.290.
+
+
+===============================================================================
+## TASK-638 / C1.291 — Cobertura estática HTML/HTM 101/101
+Sesión: IMA-EXEC-20261109-0420Z-01; HEAD de partida: 26aafb7cccc412d237c4cbd8391cf773024ac00e.
+- Inspección estática completada de 101/101 documentos HTML/HTM versionados (100 HTML, 1 HTM) y referencias locales contrastadas contra el tree.
+- AUD-NG-352 MEDIO/P2: hojas_calculo.html:378 pide imagen .png; el destino disponible es .PNG.
+- AUD-NG-353 MEDIO/P2: pseudocode.html:10–11 pide IMA-Logo.png, inexistente.
+- AUD-NG-351 MEDIO/P2 se conserva: developer-dashboard.html:9 pide css/custom.css, inexistente.
+- Rutas de fragmentos de juegos y variables interpoladas se clasifican según contexto; no se cuentan como fallos estáticos.
+- TASK-674/TASK-678 ampliadas; TASK-638 sigue En ejecución porque falta trazar JS/CSS/GS/JSON, endpoints y persistencia. Sin pruebas runtime.
+- Informe: Auditoría/AUDITORIA_TASK-638_C1.291.md; checkpoint C1.291, sesión IMA-EXEC-20261109-0420Z-01, ubicación Auditoría/Contexto_personal.txt — sección C1.291; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.291.

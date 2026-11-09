@@ -1770,3 +1770,9 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - **Hallazgo:** AUD-NG-351 MEDIO/P2 — `developer-dashboard.html:9` declara `css/custom.css` que no existe en el tree. Ampliar TASK-674 y TASK-678.
 - **Corrección de gobernanza:** índice C1.289 reparado; fila reubicada dentro de tabla y SHA actualizado.
 - **Siguiente paso:** completar las 75 páginas restantes y luego el grafo de JS/CSS/GS/JSON, acciones, dispatchers, handlers, permisos y persistencia. Sin cambios de código/rutas antes de cerrar el mapa.
+
+
+## Seguimiento operativo — C1.291
+- **TASK-638:** cobertura estática HTML/HTM completada 101/101 (100 HTML y 1 HTM). La tarea global permanece En ejecución.
+- **Hallazgos:** AUD-NG-351 (css/custom.css ausente), AUD-NG-352 (extensión .png/.PNG) y AUD-NG-353 (IMA-Logo.png ausente). Ampliar TASK-674/TASK-678.
+- **Siguiente fase:** trazar los 24 JS, 6 CSS, 6 GS y 27 JSON; mapear globals, imports, eventos, API, dispatchers, handlers, permisos y persistencia. No cerrar TASK-638 con la sola cobertura HTML.

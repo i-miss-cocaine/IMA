@@ -104,3 +104,13 @@ El propósito de este documento es llevar el registro de las tareas derivadas de
 - **TASK-678:** agregar matriz de 26 páginas y traza de juegos por index-ui.js:358–456; registrar la hoja ausente y los huecos no confirmados de Cafetería/Tienda.
 - **Criterios verificables:** toda ruta local explícita tiene destino existente o excepción documentada; fragmentos resuelven rutas con el documento anfitrión real; ausencia no se confunde con referencia de fragmento; prueba estática no certifica ejecución.
 - No se crean IDs nuevos ni duplicados. Estado: ampliación documentada; auditoría global pendiente.
+
+
+===============================================================================
+## TASK-674 / TASK-678 — Ampliación por AUD-NG-352 y AUD-NG-353 / C1.291
+- **AUD-NG-352 MEDIO/P2:** `II_BTP_A/Ofimatica_I/hojas_calculo.html:378` apunta a `imagenes/ordenamiento-y-filtrado.png`; solo existe `imagenes/ordenamiento-y-filtrado.PNG` (y copia bajo Ofimatica_I/imagenes con la misma extensión en mayúsculas).
+- **AUD-NG-353 MEDIO/P2:** `pseudocode.html:10–11` declara `IMA-Logo.png` en raíz para favicon/apple-touch-icon; el destino no existe. No sustituir automáticamente por otro logo sin validar la identidad visual prevista.
+- **TASK-674:** agregar reglas de detección de diferencias de caso/extensión y destinos PWA ausentes, manteniendo resolución desde el documento anfitrión de fragmentos.
+- **TASK-678:** documentar cobertura HTML/HTM 101/101 y los tres hallazgos de ruta AUD-NG-351/352/353 con SHA, línea, destino resuelto e impacto.
+- **Criterios de aceptación:** toda referencia local explícita tiene destino exacto o excepción contextual demostrada; rutas con diferencia de mayúsculas/minúsculas se reportan; los iconos PWA se verifican; las plantillas dinámicas no se clasifican como archivos estáticos sin resolver.
+- Sin nuevos IDs de tarea. TASK-638 continúa abierta hasta cerrar las capas JS/CSS/GS/JSON y contratos.

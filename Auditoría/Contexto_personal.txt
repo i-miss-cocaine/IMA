@@ -1785,3 +1785,55 @@ Ubicación exacta: Auditoría/Contexto_personal.txt — sección C1.290; rango c
 Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.290.
 Commit de cierre: este commit consolidado; SHA verificado externamente tras publicación.
 ===============================================================================
+
+
+===============================================================================
+## C1.291 — TASK-638 — Cierre de revisión estática HTML/HTM (101/101)
+ID de sesión: IMA-EXEC-20261109-0420Z-01
+Fecha: 2026-11-09 UTC
+Estado: capa HTML/HTM inspeccionada al 100%; TASK-638 global continúa En ejecución.
+Checkpoint anterior: C1.290.
+Repositorio: i-miss-cocaine/IMA.
+Rama autorizada: NG_beta_0.0.0.1_work.
+HEAD de partida: 26aafb7cccc412d237c4cbd8391cf773024ac00e.
+Fase PM: PM-00 — inventario, triage y resolución de dependencias.
+Tarea: TASK-638 — Trazar dependencias estáticas y dinámicas de extremo a extremo.
+
+### Continuidad
+- Rama de trabajo verificada en 26aafb7cccc412d237c4cbd8391cf773024ac00e.
+- Rama base verificada en 44d9891132332e692dbe2ba8602b41f50a508a59.
+- No se reaudita TASK-637; su prerrequisito ya fue cerrado en C1.288.
+- Contexto activo antes de anexar: 166.821 caracteres / 1.788 líneas. Después de C1.291 se mantiene por debajo de 180.000 caracteres; no requiere rotación.
+
+### Trabajo realizado
+- Se completó la inspección estática de 101/101 documentos HTML/HTM versionados (100 HTML y 1 HTM), agrupados por áreas curriculares y páginas de aplicación.
+- Se contrastaron rutas locales extraídas de etiquetas de recursos, navegación y formularios contra el árbol Git, resolviendo rutas relativas desde el documento anfitrión.
+- Se confirmó AUD-NG-352 MEDIO/P2: hojas_calculo.html:378 usa .png, pero el archivo disponible en root es .PNG.
+- Se confirmó AUD-NG-353 MEDIO/P2: pseudocode.html:10–11 solicita IMA-Logo.png, ausente en el tree.
+- Se conserva AUD-NG-351 MEDIO/P2: developer-dashboard.html:9 solicita css/custom.css, ausente.
+- Se descartaron falsos positivos de rutas de fragmentos de juegos y expresiones de plantilla dinámica.
+- TASK-674 y TASK-678 se amplían; no se crean IDs duplicados.
+- TASK-638 sigue En ejecución: falta el grafo exhaustivo JS/CSS/GS/JSON/assets y el enlace completo de acciones a handlers y persistencia.
+
+### Archivos modificados
+1. Auditoría/AUDITORIA_TASK-638_C1.291.md (nuevo).
+2. Auditoría/MapaDependencias.md (matriz de cobertura HTML/HTM y tres hallazgos).
+3. Auditoria.txt (AUD-NG-352 y AUD-NG-353).
+4. tareas_auditoria.txt (ampliación TASK-674/TASK-678).
+5. Auditoría/Contexto_personal.txt (este checkpoint).
+6. Auditoría/INDICE_CHECKPOINTS.md (fila C1.291).
+7. Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md (seguimiento C1.291).
+8. changueslogs.txt (entrada C1.291).
+
+### Pruebas y límites
+- Ejecutadas: verificación de rama/HEAD; inspección estática de 101/101 HTML/HTM; resolución de rutas locales frente al tree Git; verificación exacta de los tres destinos faltantes/incompatibles; conciliación de fragmentos de juegos y expresiones dinámicas.
+- No ejecutadas: navegador, HTTP, Node, Apps Script, Drive, Sheets ni E2E.
+- No se modificó código fuente, rutas ni contratos. No se declara que las URLs externas/CDN estén disponibles ni que las llamadas API funcionen.
+
+### Siguiente acción exacta
+Auditar individualmente los 24 JS, 6 CSS, 6 GS y 27 JSON, además de recursos relacionados; registrar globals, imports, funciones, eventos, consumidores, endpoints y acciones. Trazar después frontend → URL → dispatcher → handler → permisos → persistencia. No cerrar TASK-638 hasta satisfacer la matriz completa.
+
+Ubicación exacta: Auditoría/Contexto_personal.txt — sección C1.291; rango calculado y registrado en Auditoría/INDICE_CHECKPOINTS.md.
+Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.291.
+Commit de cierre: este commit consolidado; SHA verificado externamente tras publicación.
+===============================================================================

@@ -99,3 +99,13 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - TASK-638 sigue En ejecución, cobertura 26/101 páginas; no cambios de código/rutas/contratos ni pruebas runtime.
 - Archivos: informe C1.290, mapa, Auditoria.txt, tareas_auditoria.txt, contexto, índice, Plan Maestro y changelog.
 - Checkpoint C1.290 en Auditoría/Contexto_personal.txt — sección C1.290, líneas 1738–1788; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.290.
+
+
+[2026-11-09] IMA-EXEC-20261109-0420Z-01 — C1.291 / TASK-638 (PM-00)
+- Cobertura estática completada 101/101 HTML/HTM (100 HTML, 1 HTM); referencias locales contrastadas contra tree.
+- AUD-NG-351: css/custom.css ausente en developer-dashboard.html.
+- AUD-NG-352: hojas_calculo.html referencia .png; recurso versionado solo como .PNG.
+- AUD-NG-353: pseudocode.html referencia IMA-Logo.png inexistente para favicon/apple-touch-icon.
+- TASK-674/TASK-678 ampliadas; no se crean IDs duplicados. TASK-638 sigue En ejecución; quedan capas JS/CSS/GS/JSON, recursos y contratos API.
+- Sin modificaciones de código/rutas ni pruebas runtime/E2E.
+- Checkpoint C1.291: Auditoría/Contexto_personal.txt, sección C1.291, líneas 1790–1840; índice Auditoría/INDICE_CHECKPOINTS.md, fila C1.291.
