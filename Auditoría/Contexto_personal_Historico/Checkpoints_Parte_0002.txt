@@ -1459,3 +1459,52 @@ Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt �
 Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.318.
 Commit de cierre: confirmar externamente tras publicar.
 ===============================================================================
+
+
+===============================================================================
+## C1.319 — TASK-068: respaldo Git alternativo e implementación parcial
+ID: C1.319
+Sesión: IMA-EXEC-20261109-1650Z-01
+Fecha: 2026-11-09 UTC
+Checkpoint anterior: C1.318
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+HEAD de partida verificado: ede1d05d833661b39407a09870879330cf60c3b4
+Commit padre: 5adf18921f8dd59e05e7f5af6210c48370273af7
+Árbol de partida: 8e4804cb6c240ddd69da2dd60542687037a5789a
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+Tarea: TASK-068 — PM-01/P0 — En ejecución; implementación parcial, no completada.
+
+### Regla de respaldo incorporada
+Se añadió METODOLOGIA_DESARROLLO.md §3.14.1: cuando no sea posible crear copia local, usar blob Git histórico publicado, completo, alcanzable y verificado. Registrar HEAD, padre, árbol, ruta, tamaño, codificación, blob SHA y comando exacto `git show <HEAD>:<ruta>`; verificar integridad y comparar después del cambio. Si no puede demostrarse recuperación íntegra, detener edición. Se ajustaron FASE 3 y §19.4 A.3. No se denomina respaldo local.
+
+### Respaldo Git histórico previo a la edición
+- METODOLOGIA_DESARROLLO.md — 92.668 caracteres; blob 640426b96d07cdccfe36b4a0c5f00715f22cda05; `git show ede1d05d833661b39407a09870879330cf60c3b4:METODOLOGIA_DESARROLLO.md`.
+- backend/user-service/Code.gs — 429.611 caracteres; blob ac3fe79e26cc9855272409e7169d68e77f53bbab; `git show ede1d05d833661b39407a09870879330cf60c3b4:backend/user-service/Code.gs`.
+- backend/accounting-service/Code.gs — 713.779 caracteres; blob 38b979d41596b85e888b4a7060b37bbac0840a28; `git show ede1d05d833661b39407a09870879330cf60c3b4:backend/accounting-service/Code.gs`.
+Los tres blobs se recuperaron íntegramente desde el HEAD publicado antes de editar. No se creó copia local porque no hay checkout local disponible.
+
+### Implementación parcial
+- User-Service: esquema de correspondencias de 13 columnas y bitácora append-only; unicidad lógica compuesta; lock; alta idempotente; resolvers en ambas direcciones solo CONFIRMADA; revisión humana con motivo; resolución de usuario legado; RBAC Secretaría/Administrador; institución desde IMA_INSTITUTION_ID; clasificación de coincidencias sin fusión automática; vinculación de cuenta con verificación de destino e historial.
+- Accounting-Service: resolver de referencias cruzadas con filtro institucional y estado confirmado. Importador fail-closed: registra `blocked_no_destination_writer` y retorna `DESTINATION_WRITER_NOT_CONFIGURED`; no simula éxito.
+- Se añadió test Node que compila ambos archivos GS y valida contrato/dispatch/RBAC/lock/clave compuesta/fail-closed, y workflow CI Node 24.
+
+### Archivos modificados
+METODOLOGIA_DESARROLLO.md; backend/user-service/Code.gs; backend/accounting-service/Code.gs; tests/security/identity-mapping-contract.test.js (nuevo); .github/workflows/identity-mapping-contract.yml (nuevo); Auditoría/AUDITORIA_TASK-068_C1.318.md (anexo al expediente único); Auditoría/MapaDependencias.md; Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; Auditoria.txt; changueslogs.txt; Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt; Auditoría/INDICE_CHECKPOINTS.md.
+Revisados sin cambio: requisito íntegro TASK-068 en pendientes/Dirección/Pendientes.md; Auditoría/Contexto_personal.txt; suite de regresión existente; dispatchers/RBAC y funciones de sesión; árbol Git recursivo.
+
+### Pruebas
+Preparadas: test Node de sintaxis/contrato y workflow CI Node 24. Pendiente ejecución por Actions tras publicar.
+No ejecutadas: Apps Script runtime, Spreadsheet real, configuración Script Properties, concurrencia LockService, pruebas funcionales con dos fuentes, reimportación real, relaciones académicas/familiares/administrativas, HTTP y E2E.
+No se accedió ni modificó datos productivos.
+
+### Hallazgos y estado
+AUD-NG-377 parcialmente atendido en código; falta configurar institución y probar en Spreadsheet aislado.
+AUD-NG-379 parcialmente atendido con bitácora y vinculación de cuenta; falta prueba runtime.
+AUD-NG-378 permanece abierto por falta de escritor destino específico.
+No se crean tareas derivadas ni segundo informe; expediente único Auditoría/AUDITORIA_TASK-068_C1.318.md. TASK-068 continúa En ejecución.
+
+### Siguiente acción exacta
+Ejecutar workflow identity-mapping-contract; corregir cualquier fallo; auditar contratos de destino por módulo y diseñar escritores idempotentes sin asumir nombres de hojas. Configurar IMA_INSTITUTION_ID en proyectos aislados autorizados y ejecutar pruebas con fixtures de al menos dos fuentes. No desplegar ni usar producción.
+Commit de cierre: confirmar externamente tras publicación.
+===============================================================================

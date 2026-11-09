@@ -4898,3 +4898,11 @@ Alcance estático satisfecho; sin cambios de código. Hallazgos AUD-NG-374..376 
 - Ausentes: hoja CorrespondenciaIdentificadores, resolvers bidireccionales, resolveUserByLegacyId, resolveCrossReferenceIdentifier y pruebas específicas.
 - IndexedDB v4 no contiene store de correspondencias; no debe ser fuente de verdad.
 - Hallazgos AUD-NG-377/378/379 dentro de TASK-068; no se crean tareas derivadas. Expediente único Auditoría/AUDITORIA_TASK-068_C1.318.md.
+
+
+## C1.319 — TASK-068: arquitectura implementada parcialmente
+- Fuente de verdad: CorrespondenciaIdentificadores en Spreadsheet maestro, 13 columnas; unicidad lógica por sistemaOrigen/tipoEntidad/idOriginalLegado/institucionId.
+- HistorialDecisionesIdentidad append-only; altas PENDIENTE_REVISION; solo Secretaría/Administrador con token verificado pueden confirmar/rechazar con motivo.
+- User-Service expone registerLegacyIdentifierMapping, resolveInternalIdFromLegacy, resolveLegacyIdFromInternal, resolveUserByLegacyId, reviewLegacyIdentifierMapping y getIdentityDecisionHistory. Resolución solo CONFIRMADA y ámbito IMA_INSTITUTION_ID.
+- Accounting-Service resuelve referencias confirmadas; importDataWithColumnMapping se bloquea con DESTINATION_WRITER_NOT_CONFIGURED porque no existe contrato de escritura destino verificado.
+- Requiere configurar IMA_INSTITUTION_ID idéntico en ambos Apps Script. IndexedDB no es fuente de verdad. Runtime y pruebas de dos fuentes pendientes.

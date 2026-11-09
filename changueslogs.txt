@@ -327,3 +327,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - AUD-NG-377/378/379 abiertos dentro de TASK-068; sin tareas derivadas.
 - TASK-068 En ejecución; sin cambios de código en esta iteración. Próximo: contrato persistente/resolvers y luego importación idempotente con pruebas aisladas.
 - TASK-636 continúa abierta y sin cambios.
+
+
+[2026-11-09] IMA-EXEC-20261109-1650Z-01 — TASK-068 / PM-01 / C1.319
+- Regla de respaldo alternativo Git histórico verificable (§3.14.1, FASE 3, §19.4 A.3); SHAs y comandos de recuperación registrados en checkpoint.
+- Implementación parcial de correspondencias centralizadas, bitácora append-only, lock, resolvers bidireccionales, revisión humana y RBAC.
+- Accounting-Service incorpora resolver y bloquea importación sin escritor destino explícito.
+- Se añaden test estático de sintaxis/contrato y workflow CI Node 24.
+- AUD-NG-377/379 parcialmente atendidos; AUD-NG-378 abierto. TASK-068 no se marca completada.

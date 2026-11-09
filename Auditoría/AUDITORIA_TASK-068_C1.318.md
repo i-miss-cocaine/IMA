@@ -70,3 +70,26 @@ TASK-068 no cumple actualmente los criterios. Auditoría preimplementación conc
 
 ## 9. Próxima acción
 Implementar contrato persistente/resolvers con lock, historial append-only, revisión humana y pruebas aisladas; luego integrar Accounting-Service. Antes de editar código, cumplir respaldo local íntegro y verificar mecanismo de publicación.
+
+
+---
+
+## 10. Implementación parcial y revisión interna — C1.319
+
+### Respaldo alternativo aplicado
+No se pudo crear copia local. Se aplicó §3.14.1 (respaldo Git histórico) antes de editar. HEAD de partida `ede1d05d833661b39407a09870879330cf60c3b4`; commit padre `5adf18921f8dd59e05e7f5af6210c48370273af7`; árbol de partida `8e4804cb6c240ddd69da2dd60542687037a5789a`. Blobs íntegros, publicados y recuperables:
+- `METODOLOGIA_DESARROLLO.md`: `640426b96d07cdccfe36b4a0c5f00715f22cda05`; `git show ede1d05d833661b39407a09870879330cf60c3b4:METODOLOGIA_DESARROLLO.md`.
+- `backend/user-service/Code.gs`: `ac3fe79e26cc9855272409e7169d68e77f53bbab`; `git show ede1d05d833661b39407a09870879330cf60c3b4:backend/user-service/Code.gs`.
+- `backend/accounting-service/Code.gs`: `38b979d41596b85e888b4a7060b37bbac0840a28`; `git show ede1d05d833661b39407a09870879330cf60c3b4:backend/accounting-service/Code.gs`.
+Las lecturas fueron completas (92.668, 429.611 y 713.779 caracteres). El historial publicado permite recuperar cada versión sin depender del archivo editado.
+
+### Cambios realizados
+- Se incorporó la regla de respaldo alternativo por historial Git en §3.14.1, FASE 3 y §19.4 A.3.
+- User-Service: hoja `CorrespondenciaIdentificadores` con 13 columnas; hoja `HistorialDecisionesIdentidad`; unicidad lógica compuesta por origen/tipo/ID legado/institución; alta idempotente bajo ScriptLock; resolvers bidireccionales que solo devuelven correspondencias confirmadas; revisión humana con motivo y bitácora append-only; resolución por ID legado; RBAC exclusivo para Secretaría y Administrador; clasificación de coincidencias sin calibración ficticia ni fusión automática; vinculación de cuenta con verificación de Persona y registro compensable.
+- La institución se obtiene de Script Properties `IMA_INSTITUTION_ID`; no se acepta del navegador.
+- Accounting-Service: `resolveCrossReferenceIdentifier` consulta el contrato compartido y solo acepta estado CONFIRMADA. El importador devuelve `DESTINATION_WRITER_NOT_CONFIGURED` y no declara éxito ni filas migradas sin un escritor de destino específico.
+
+### Límites y bloqueos
+- `IMA_INSTITUTION_ID` debe configurarse en Script Properties de ambos proyectos Apps Script con el identificador institucional canónico acordado.
+- No se encontró contrato verificable de persistencia por `destinoModulo`; por seguridad no se escriben hojas destino supuestas. AUD-NG-378 permanece abierto.
+- No se ejecutó Apps Script, Sheets real, pruebas de dos fuentes ni concurrencia. TASK-068 sigue En ejecución.

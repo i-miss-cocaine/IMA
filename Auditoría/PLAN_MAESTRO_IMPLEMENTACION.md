@@ -1961,3 +1961,11 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - Auditoría preimplementación concluida en expediente único Auditoría/AUDITORIA_TASK-068_C1.318.md.
 - AUD-NG-377/378/379 pertenecen a TASK-068; no se crean tareas derivadas.
 - TASK-068 pasa a En ejecución, no Completada. Implementación pendiente: fuente central, resolvers, revisión humana, bitácora append-only, importación idempotente y pruebas aisladas.
+
+
+## 10.17 Seguimiento TASK-068 — C1.319
+- Regla de respaldo Git histórico incorporada en metodología §3.14.1, FASE 3 y §19.4 A.3.
+- Implementación parcial: tabla de correspondencias/bitácora, alta idempotente con lock, resolvers bidireccionales, revisión humana y RBAC estricto; Accounting-Service incorpora resolver y bloquea importación sin escritor destino.
+- Requiere configurar IMA_INSTITUTION_ID en ambos proyectos Apps Script; no se acepta valor desde cliente.
+- AUD-NG-377 y AUD-NG-379 parcialmente atendidos; AUD-NG-378 abierto por falta de escritor destino. TASK-068 permanece En ejecución.
+- Test estático y workflow CI Node 24 añadidos; runtime Apps Script, Sheets aislado y dos fuentes siguen pendientes.

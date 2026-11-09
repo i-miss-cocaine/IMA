@@ -892,6 +892,8 @@ function getOrCreateSheet(ss, name) {
     if (name === "TicketsReporteProblemas") sheet.appendRow(["TicketID", "UserId", "NombreUsuario", "RolActivo", "AreaFuncion", "SeccionPagina", "VersionGlobal", "TipoApp", "Descripcion", "ResultadoEsperado", "Estado", "CreadoEn", "ActualizadoEn"]);
     if (name === "HistorialMensajesTickets") sheet.appendRow(["MensajeID", "TicketID", "AutorUserId", "AutorNombre", "TipoAutor", "EsNotaInterna", "Mensaje", "Timestamp"]);
     if (name === "Personas") sheet.appendRow(["PersonaID", "Nombres", "Apellidos", "Identificacion", "EmailContacto", "TelefonoContacto", "EstadoPersona", "FechaCreacion", "FechaActualizacion", "Observaciones"]);
+    if (name === "CorrespondenciaIdentificadores") sheet.appendRow(["idMapeo", "sistemaOrigen", "tipoEntidad", "idOriginalLegado", "idNuevoPlataforma", "institucionId", "hashRegistroOrigen", "fechaMigracion", "versionMapeo", "estadoCorrespondencia", "metodoCoincidencia", "nivelConfianza", "migradoPor"]);
+    if (name === "HistorialDecisionesIdentidad") sheet.appendRow(["decisionId", "idMapeo", "sistemaOrigen", "tipoEntidad", "idOriginalLegado", "idNuevoPlataformaAnterior", "idNuevoPlataformaNuevo", "decision", "motivo", "actorUserId", "actorRole", "fechaDecision", "institucionId"]);
     if (name === "Usuarios") sheet.appendRow(["UserId", "Nombre", "Grado", "Seccion", "Email", "PasswordHash", "Rol", "Telefono", "NumeroLista", "PersonaID", "EstadoCuenta", "FechaCreacion", "UltimoAcceso"]);
     if (name === "RelacionesFamiliares") sheet.appendRow(["RelacionID", "PersonaEstudianteID", "PersonaResponsableID", "TipoParentesco", "EstadoAutorizacion", "FechaInicio", "FechaFin", "Observaciones"]);
     if (name === "Logros") sheet.appendRow(["Fecha", "UserId", "Alumno", "Juego", "Asignatura", "Puntaje", "Nivel", "Grado", "XP"]);
@@ -1278,6 +1280,7 @@ function validateRolePermission(action, payload) {
   if (userRole === "NO_ACCESS") {
     return { authorized: false, role: "Cuenta Inactiva/Bloqueada" };
   }
+  if (IDENTITY_MANAGER_ACTIONS_.indexOf(action) !== -1) return { authorized: IDENTITY_MANAGER_ROLES_.indexOf(userRole) !== -1, role: userRole };
   if (["submitProblemTicket", "getProblemTickets", "replyProblemTicket", "searchGlobalOmnibox", "configureAutomationRules", "getNotificationAuditLogs", "getServiceHealthReport", "submitPrivacyRightsRequest", "getPrivacyRightsRequests"].indexOf(action) !== -1) {
     return { authorized: true, role: userRole };
   }
@@ -1402,6 +1405,12 @@ function doPost(e) {
       case "requestPasswordRecovery": result = requestPasswordRecovery(payload); break;
       case "resetPassword": result = resetPassword(payload); break;
       case "updateUserProfile": result = updateUserProfile(payload); break;
+      case "registerLegacyIdentifierMapping": result = registerLegacyIdentifierMapping(payload); break;
+      case "resolveInternalIdFromLegacy": result = resolveInternalIdFromLegacy(payload); break;
+      case "resolveLegacyIdFromInternal": result = resolveLegacyIdFromInternal(payload); break;
+      case "resolveUserByLegacyId": result = resolveUserByLegacyId(payload); break;
+      case "reviewLegacyIdentifierMapping": result = reviewLegacyIdentifierMapping(payload); break;
+      case "getIdentityDecisionHistory": result = getIdentityDecisionHistory(payload); break;
       case "findPersonMatches": result = findPersonMatches(payload); break;
       case "createPerson": result = createPerson(payload); break;
       case "linkPersonAccount": result = linkPersonAccount(payload); break;
@@ -1638,6 +1647,119 @@ function doPost(e) {
 // FASE 2: MODELO CENTRAL DE IDENTIDAD (PERSONAS & CUENTAS)
 // ---------------------------------------------------------------------------
 
+const IDENTITY_MANAGER_ROLES_ = ["Administrador", "Secretaría"];
+const IDENTITY_MANAGER_ACTIONS_ = ["registerLegacyIdentifierMapping", "resolveInternalIdFromLegacy", "resolveLegacyIdFromInternal", "resolveUserByLegacyId", "reviewLegacyIdentifierMapping", "getIdentityDecisionHistory"];
+const IDENTITY_MAPPING_HEADERS_ = ["idMapeo", "sistemaOrigen", "tipoEntidad", "idOriginalLegado", "idNuevoPlataforma", "institucionId", "hashRegistroOrigen", "fechaMigracion", "versionMapeo", "estadoCorrespondencia", "metodoCoincidencia", "nivelConfianza", "migradoPor"];
+const IDENTITY_DECISION_HEADERS_ = ["decisionId", "idMapeo", "sistemaOrigen", "tipoEntidad", "idOriginalLegado", "idNuevoPlataformaAnterior", "idNuevoPlataformaNuevo", "decision", "motivo", "actorUserId", "actorRole", "fechaDecision", "institucionId"];
+function getIdentityInstitutionId_() {
+  const id = String(PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID") || "").trim();
+  if (!id) throw new Error("IDENTITY_CONFIGURATION_REQUIRED: configure IMA_INSTITUTION_ID en Script Properties.");
+  return id;
+}
+function requireIdentityManager_(payload) {
+  const role = getUserVerifiedRole(payload), actorId = payload && payload._verifiedUserId;
+  if (IDENTITY_MANAGER_ROLES_.indexOf(role) === -1 || !actorId) throw new Error("AUTH_PERMISSION_DENIED: solo Secretaría o Administrador con sesión verificada.");
+  return { actorId: String(actorId), role: role };
+}
+function getIdentityMappingSheet_() {
+  const sheet = getOrCreateSheet(SpreadsheetApp.openById(SPREADSHEET_ID), "CorrespondenciaIdentificadores");
+  const h = sheet.getRange(1, 1, 1, IDENTITY_MAPPING_HEADERS_.length).getValues()[0].map(String);
+  if (JSON.stringify(h) !== JSON.stringify(IDENTITY_MAPPING_HEADERS_)) throw new Error("IDENTITY_SCHEMA_MISMATCH: cabecera incompatible; no se modificó.");
+  return sheet;
+}
+function getIdentityDecisionSheet_() {
+  const sheet = getOrCreateSheet(SpreadsheetApp.openById(SPREADSHEET_ID), "HistorialDecisionesIdentidad");
+  const h = sheet.getRange(1, 1, 1, IDENTITY_DECISION_HEADERS_.length).getValues()[0].map(String);
+  if (JSON.stringify(h) !== JSON.stringify(IDENTITY_DECISION_HEADERS_)) throw new Error("IDENTITY_AUDIT_SCHEMA_MISMATCH: cabecera incompatible; no se modificó.");
+  return sheet;
+}
+function identityCompositeKey_(s, t, l, i) { return JSON.stringify([String(s).trim(), String(t).trim().toLowerCase(), String(l).trim(), String(i).trim()]); }
+function identityTextCell_(v) { const s = String(v === null || v === undefined ? "" : v); return /^[=+@-]/.test(s) ? "'" + s : s; }
+function identityHash_(v) {
+  const d = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(v), Utilities.Charset.UTF_8);
+  return d.map(function(b) { return ("0" + (b & 255).toString(16)).slice(-2); }).join("");
+}
+function appendIdentityDecisionAudit_(sheet, e) {
+  sheet.appendRow([Utilities.getUuid(), e.idMapeo || "", e.sistemaOrigen || "", e.tipoEntidad || "",
+    identityTextCell_(e.idOriginalLegado || ""), identityTextCell_(e.idNuevoPlataformaAnterior || ""),
+    identityTextCell_(e.idNuevoPlataformaNuevo || ""), e.decision, e.motivo, e.actorId, e.actorRole, new Date(), e.institucionId]);
+}
+function registerLegacyIdentifierMapping(payload) {
+  const actor = requireIdentityManager_(payload), source = String(payload && payload.sistemaOrigen || "").trim();
+  const type = String(payload && payload.tipoEntidad || "").trim().toLowerCase(), legacy = String(payload && payload.idOriginalLegado || "").trim();
+  const target = String(payload && payload.idNuevoPlataforma || "").trim();
+  if (!source || !type || !legacy) throw new Error("sistemaOrigen, tipoEntidad e idOriginalLegado son obligatorios.");
+  const institution = getIdentityInstitutionId_(), lock = LockService.getScriptLock(); lock.waitLock(10000);
+  try {
+    const sheet = getIdentityMappingSheet_(), audit = getIdentityDecisionSheet_(), rows = sheet.getDataRange().getValues();
+    const key = identityCompositeKey_(source, type, legacy, institution);
+    for (let i = 1; i < rows.length; i++) {
+      const r = rows[i]; if (identityCompositeKey_(r[1], r[2], r[3], r[5]) !== key) continue;
+      const oldTarget = String(r[4] || "").trim();
+      if (oldTarget && target && oldTarget !== target) throw new Error("IDENTITY_MAPPING_CONFLICT: clave ya asociada a otro ID interno.");
+      if (!oldTarget && target && String(r[9]) === "PENDIENTE_REVISION") {
+        sheet.getRange(i + 1, 5).setValue(identityTextCell_(target));
+        try { appendIdentityDecisionAudit_(audit, { idMapeo:r[0], sistemaOrigen:source, tipoEntidad:type, idOriginalLegado:legacy, idNuevoPlataformaNuevo:target, decision:"COMPLETAR_DESTINO_PENDIENTE", motivo:"Se completó el destino sin confirmar la correspondencia.", actorId:actor.actorId, actorRole:actor.role, institucionId:institution }); }
+        catch (err) { sheet.getRange(i + 1, 5).setValue(oldTarget); throw err; }
+      }
+      return { status:"success", idMapeo:r[0], estadoCorrespondencia:r[9], idNuevoPlataforma:target || oldTarget, idempotent:true };
+    }
+    const sourceRecord = payload && payload.registroOrigen !== undefined ? JSON.stringify(payload.registroOrigen) : JSON.stringify({sistemaOrigen:source,tipoEntidad:type,idOriginalLegado:legacy});
+    const mapId = "MAP-" + Utilities.getUuid();
+    sheet.appendRow([mapId,identityTextCell_(source),identityTextCell_(type),identityTextCell_(legacy),identityTextCell_(target),identityTextCell_(institution),
+      String(payload && payload.hashRegistroOrigen || identityHash_(sourceRecord)),new Date(),"1","PENDIENTE_REVISION","SIN_CONFIRMAR","NO_CALIBRADA",actor.actorId]);
+    try { appendIdentityDecisionAudit_(audit,{idMapeo:mapId,sistemaOrigen:source,tipoEntidad:type,idOriginalLegado:legacy,idNuevoPlataformaNuevo:target,decision:"REGISTRADA_PENDIENTE",motivo:"Alta idempotente; requiere confirmación humana.",actorId:actor.actorId,actorRole:actor.role,institucionId:institution}); }
+    catch (err) { sheet.deleteRow(sheet.getLastRow()); throw err; }
+    return {status:"success",idMapeo:mapId,estadoCorrespondencia:"PENDIENTE_REVISION",idempotent:false};
+  } finally { lock.releaseLock(); }
+}
+function resolveInternalIdFromLegacy(payload) {
+  requireIdentityManager_(payload);
+  const s=String(payload && payload.sistemaOrigen || "").trim(), t=String(payload && payload.tipoEntidad || "").trim().toLowerCase(), l=String(payload && payload.idOriginalLegado || "").trim();
+  if(!s||!t||!l) throw new Error("sistemaOrigen, tipoEntidad e idOriginalLegado son obligatorios.");
+  const institution=getIdentityInstitutionId_(), rows=getIdentityMappingSheet_().getDataRange().getValues();
+  const key=identityCompositeKey_(s,t,l,institution), found=rows.slice(1).filter(r=>identityCompositeKey_(r[1],r[2],r[3],r[5])===key);
+  if(!found.length) return {status:"not_found",code:"IDENTITY_MAPPING_NOT_FOUND"};
+  if(found.length!==1) throw new Error("IDENTITY_UNIQUENESS_VIOLATION: clave compuesta duplicada.");
+  if(String(found[0][9])!=="CONFIRMADA") return {status:"pending_review",code:"IDENTITY_REVIEW_REQUIRED",estadoCorrespondencia:found[0][9],idMapeo:found[0][0]};
+  return {status:"success",idMapeo:found[0][0],idNuevoPlataforma:found[0][4],institucionId:institution};
+}
+function resolveLegacyIdFromInternal(payload) {
+  requireIdentityManager_(payload);
+  const t=String(payload && payload.tipoEntidad || "").trim().toLowerCase(), id=String(payload && payload.idNuevoPlataforma || "").trim(), s=String(payload && payload.sistemaOrigen || "").trim();
+  if(!t||!id) throw new Error("tipoEntidad e idNuevoPlataforma son obligatorios.");
+  const institution=getIdentityInstitutionId_(), rows=getIdentityMappingSheet_().getDataRange().getValues().slice(1);
+  const refs=rows.filter(r=>String(r[2]).toLowerCase()===t&&String(r[4])===id&&String(r[5])===institution&&String(r[9])==="CONFIRMADA"&&(!s||String(r[1])===s))
+    .map(r=>({idMapeo:r[0],sistemaOrigen:r[1],tipoEntidad:r[2],idOriginalLegado:r[3],idNuevoPlataforma:r[4],institucionId:r[5]}));
+  return {status:"success",referencias:refs};
+}
+function resolveUserByLegacyId(payload) { const p=Object.assign({},payload||{}); p.tipoEntidad=p.tipoEntidad||"usuario"; return resolveInternalIdFromLegacy(p); }
+function reviewLegacyIdentifierMapping(payload) {
+  const actor=requireIdentityManager_(payload), mapId=String(payload && payload.idMapeo || "").trim(), decision=String(payload && payload.decision || "").trim().toUpperCase(), reason=String(payload && payload.motivo || "").trim();
+  if(!mapId||["CONFIRMAR","RECHAZAR"].indexOf(decision)===-1||!reason) throw new Error("idMapeo, decision y motivo son obligatorios.");
+  const institution=getIdentityInstitutionId_(), lock=LockService.getScriptLock(); lock.waitLock(10000);
+  try {
+    const sheet=getIdentityMappingSheet_(), audit=getIdentityDecisionSheet_(), rows=sheet.getDataRange().getValues();
+    const index=rows.findIndex((r,i)=>i>0&&String(r[0])===mapId&&String(r[5])===institution);
+    if(index<1) throw new Error("IDENTITY_MAPPING_NOT_FOUND.");
+    const r=rows[index], next=decision==="CONFIRMAR"?"CONFIRMADA":"RECHAZADA";
+    if(next==="CONFIRMADA"&&!String(r[4]||"").trim()) throw new Error("IDENTITY_TARGET_REQUIRED.");
+    if(String(r[9])===next) return {status:"success",idMapeo:mapId,estadoCorrespondencia:next,idempotent:true};
+    if(String(r[9])!=="PENDIENTE_REVISION") throw new Error("IDENTITY_DECISION_CONFLICT: no se sobrescribe una decisión previa.");
+    sheet.getRange(index+1,10).setValue(next); sheet.getRange(index+1,11).setValue("REVISION_HUMANA"); sheet.getRange(index+1,12).setValue("CONFIRMACION_HUMANA");
+    try { appendIdentityDecisionAudit_(audit,{idMapeo:mapId,sistemaOrigen:r[1],tipoEntidad:r[2],idOriginalLegado:r[3],idNuevoPlataformaAnterior:r[4],idNuevoPlataformaNuevo:r[4],decision:next,motivo:reason,actorId:actor.actorId,actorRole:actor.role,institucionId:institution}); }
+    catch(err) { sheet.getRange(index+1,10).setValue(r[9]); sheet.getRange(index+1,11).setValue(r[10]); sheet.getRange(index+1,12).setValue(r[11]); throw err; }
+    return {status:"success",idMapeo:mapId,estadoCorrespondencia:next,idempotent:false};
+  } finally { lock.releaseLock(); }
+}
+function getIdentityDecisionHistory(payload) {
+  requireIdentityManager_(payload);
+  const institution=getIdentityInstitutionId_(), mapId=String(payload && payload.idMapeo || "").trim();
+  const history=getIdentityDecisionSheet_().getDataRange().getValues().slice(1).filter(r=>String(r[12])===institution&&(!mapId||String(r[1])===mapId))
+    .map(r=>({decisionId:r[0],idMapeo:r[1],sistemaOrigen:r[2],tipoEntidad:r[3],idOriginalLegado:r[4],idNuevoPlataformaAnterior:r[5],idNuevoPlataformaNuevo:r[6],decision:r[7],motivo:r[8],actorUserId:r[9],actorRole:r[10],fechaDecision:r[11]}));
+  return {status:"success",historial:history};
+}
+
 function findPersonMatches(payload) {
   const { nombres, apellidos, identificacion, emailContacto } = payload || {};
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -1674,7 +1796,11 @@ function findPersonMatches(payload) {
         identificacion: pIdent,
         emailContacto: pEmail,
         estadoPersona: r[6],
-        tipoCoincidencia: matchType
+        tipoCoincidencia: matchType,
+        clasificacionIdentidad: matchType === "IDENTIFICACION_EXACTA" ? "COINCIDENCIA_EXACTA_PENDIENTE_CONFIRMACION" : (matchType === "EMAIL_EXACTO" ? "COINCIDENCIA_PROBABLE_PENDIENTE_REVISION" : "POSIBLE_DUPLICADO"),
+        nivelConfianza: "NO_CALIBRADA",
+        requiereRevisionHumana: true,
+        fusionAutomaticaPermitida: false
       });
     }
   });
@@ -1710,21 +1836,19 @@ function createPerson(payload) {
 }
 
 function linkPersonAccount(payload) {
-  const { userId, personaId } = payload || {};
-  if (!userId || !personaId) throw new Error("userId y personaId requeridos.");
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getSheetOrThrow(ss, "Usuarios");
-  const data = sheet.getDataRange().getValues();
-
-  const idx = data.findIndex(r => String(r[0]).trim() === String(userId).trim());
-  if (idx === -1) throw new Error("Cuenta de usuario no encontrada.");
-
-  sheet.getRange(idx + 1, 10).setValue(personaId);
-
-  return { status: "success", message: `Cuenta ${userId} vinculada exitosamente a Persona ${personaId}.` };
+  const actor=requireIdentityManager_(payload), institution=getIdentityInstitutionId_();
+  const {userId,personaId}=payload||{}; if(!userId||!personaId) throw new Error("userId y personaId requeridos.");
+  const lock=LockService.getScriptLock(); lock.waitLock(10000);
+  try { const ss=SpreadsheetApp.openById(SPREADSHEET_ID), sheet=getSheetOrThrow(ss,"Usuarios"), rows=sheet.getDataRange().getValues();
+    const index=rows.findIndex((r,i)=>i>0&&String(r[0]).trim()===String(userId).trim()); if(index<1) throw new Error("Cuenta de usuario no encontrada.");
+    const people=getSheetOrThrow(ss,"Personas").getDataRange().getValues(); if(!people.some((r,i)=>i>0&&String(r[0]).trim()===String(personaId).trim())) throw new Error("IDENTITY_TARGET_NOT_FOUND: Persona inexistente.");
+    const previous=String(rows[index][9]||"").trim(); if(previous===String(personaId).trim()) return {status:"success",idempotent:true};
+    sheet.getRange(index+1,10).setValue(identityTextCell_(personaId));
+    try { appendIdentityDecisionAudit_(getIdentityDecisionSheet_(),{idMapeo:"",sistemaOrigen:"IMA",tipoEntidad:"usuario",idOriginalLegado:userId,idNuevoPlataformaAnterior:previous,idNuevoPlataformaNuevo:personaId,decision:"VINCULACION_CUENTA_PERSONA",motivo:String(payload.motivo||"Vinculación administrativa."),actorId:actor.actorId,actorRole:actor.role,institucionId:institution}); }
+    catch(err) { sheet.getRange(index+1,10).setValue(previous); throw err; }
+    return {status:"success",message:"Cuenta vinculada con historial auditable."};
+  } finally { lock.releaseLock(); }
 }
-
 function generateInstitutionalId(payload) {
   const { entityType, prefix } = payload || {};
   if (!entityType) throw new Error("entityType es requerido.");

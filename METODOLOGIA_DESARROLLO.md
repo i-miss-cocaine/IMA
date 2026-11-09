@@ -386,6 +386,19 @@ El archivo original no podrá ser modificado durante la etapa de auditoría.
 
 La copia de respaldo servirá como referencia para validar la integridad del proceso.
 
+### 3.14.1 Respaldo alternativo verificable mediante el historial Git
+
+Cuando el entorno o las herramientas disponibles impidan crear una copia local íntegra, se admite como respaldo alternativo el blob inmutable del archivo conservado en el historial Git del repositorio, siempre que se cumplan todos los controles siguientes antes de editar:
+
+1. Verificar y registrar el HEAD exacto de la rama de trabajo, la rama, el commit padre y el árbol de partida.
+2. Registrar la ruta exacta del archivo, su SHA de blob Git, tamaño y codificación observados. Recuperar el archivo completo desde ese HEAD y comprobar que la lectura no esté truncada ni incompleta.
+3. Confirmar que el commit que contiene el blob está publicado y es alcanzable desde el historial de la rama autorizada; un blob o árbol huérfano no constituye respaldo suficiente.
+4. Registrar el comando de recuperación exacto: `git show <HEAD_VERIFICADO>:<RUTA>`, junto con la verificación `git hash-object`/SHA esperada. La recuperación debe poder realizarse sin depender del archivo modificado.
+5. Para cada archivo, mantener el SHA original y el commit de respaldo en el checkpoint y en el registro de la tarea. Si la herramienta no permite verificar contenido íntegro o trazabilidad del blob, detener la edición de ese archivo.
+6. Después de editar, comparar el contenido publicado contra el blob de respaldo mediante diff y SHA. No sustituir el respaldo histórico, no reescribir historia y no considerar un commit de trabajo como respaldo de sí mismo.
+
+Este mecanismo es una alternativa de recuperación por control de versiones, no una copia local. Debe declararse expresamente como «respaldo Git histórico» y nunca como «respaldo local».
+
 
 ---
 
@@ -644,7 +657,7 @@ El flujo de trabajo se ejecutará de forma lineal, síncrona y obligatoria. Viol
  * **Acción:** Se registran en `tareas_auditoria.txt` las tareas ejecutables derivadas de los hallazgos de la auditoría de la tarea objetivo o de la auditoría de continuidad de la tarea anterior. El estado de la tarea de producto seleccionada se actualiza en su backlog departamental y en el Plan Maestro; solo se actualiza también en `tareas_auditoria.txt` cuando esa tarea tenga origen en un hallazgo de auditoría. Se preserva el historial de estados y se delimitan alcance e impactos sobre `Auditoría/MapaDependencias.md`.
 ### FASE 3 — Respaldo Íntegro de Seguridad
  * **Acción:** Antes de modificar un solo bit, se creará una copia de seguridad exacta y manual del archivo o archivos a editar.
- * **Requisitos:** El respaldo conservará el nombre de origen y su contenido íntegro, y se almacenará localmente de forma temporal con el único fin de servir como pivote de comparación post-edición.
+ * **Requisitos:** El respaldo conservará el nombre de origen y su contenido íntegro, y se almacenará localmente de forma temporal. Si no puede generarse localmente, se aplicará obligatoriamente el respaldo alternativo verificable de §3.14.1; no se permite editar sin uno de los dos mecanismos íntegros.
 ### FASE 4 — Ejecución y Desarrollo Controlado
  * **Acción:** El operador adopta el rol de *Desarrollador*. Se procede a codificar e implementar **ÚNICAMENTE** lo explícitamente solicitado en los criterios de aceptación de la tarea registrada en `tareas_auditoria.txt` y vinculada al informe de auditoría de origen.
  * **Restricciones:** Queda estrictamente **PROHIBIDO**:
@@ -997,7 +1010,7 @@ Se considera incidente de continuidad cualquiera de estos casos: archivo vacío/
 **A. Detención y preservación**
 1. Detener inmediatamente nuevas escrituras, formateos, renombrados, restauraciones automáticas y commits.
 2. No borrar, sobrescribir, truncar, regenerar ni «reparar» el archivo afectado a ciegas.
-3. Capturar ruta, tamaño, codificación, SHA/blob actual, HEAD, commit padre, fecha y mensaje/error disponible. Preservar una copia byte a byte fuera de la ruta afectada; no incluir secretos en el respaldo ni en el reporte.
+3. Capturar ruta, tamaño, codificación, SHA/blob actual, HEAD, commit padre, fecha y mensaje/error disponible. Preservar una copia byte a byte fuera de la ruta afectada; no incluir secretos en el respaldo ni en el reporte. Si no es técnicamente posible crearla localmente, aplicar §3.14.1 y registrar el blob original publicado, su SHA, commit alcanzable y comando exacto de recuperación. La imposibilidad de crear una copia local no bloquea por sí sola la edición cuando el respaldo Git histórico esté íntegro y verificado; la ausencia de ambos sí obliga a detenerse.
 4. Registrar si la interrupción ocurrió antes de crear blob, al crear blob, al crear árbol, al crear commit, al actualizar la referencia o después de publicar. Un blob/árbol sin referencia no significa que la rama haya cambiado.
 
 **B. Determinación de la última versión íntegra**

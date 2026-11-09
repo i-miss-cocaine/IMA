@@ -1,0 +1,20 @@
+name: Identity mapping contract
+on:
+  push:
+    branches: [NG_beta_0.0.0.1_work]
+    paths: ['backend/user-service/Code.gs','backend/accounting-service/Code.gs','tests/security/identity-mapping-contract.test.js','METODOLOGIA_DESARROLLO.md','.github/workflows/identity-mapping-contract.yml']
+  pull_request:
+    branches: [NG_beta_0.0.0.1]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  identity-mapping-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify TASK-068 identity mapping contract
+        run: node tests/security/identity-mapping-contract.test.js

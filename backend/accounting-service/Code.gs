@@ -15356,61 +15356,39 @@ function validateImportPreview(payload) {
   };
 }
 
+const ACCOUNTING_IDENTITY_MAPPING_HEADERS_=["idMapeo","sistemaOrigen","tipoEntidad","idOriginalLegado","idNuevoPlataforma","institucionId","hashRegistroOrigen","fechaMigracion","versionMapeo","estadoCorrespondencia","metodoCoincidencia","nivelConfianza","migradoPor"];
+function resolveCrossReferenceIdentifier(payload) {
+ const source=String(payload&&payload.sistemaOrigen||"").trim(), type=String(payload&&payload.tipoEntidad||"").trim().toLowerCase(), legacy=String(payload&&payload.idOriginalLegado||"").trim();
+ if(!source||!type||!legacy) throw new Error("sistemaOrigen, tipoEntidad e idOriginalLegado son obligatorios.");
+ const institution=String(PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID")||"").trim();
+ if(!institution) throw new Error("IDENTITY_CONFIGURATION_REQUIRED: configure IMA_INSTITUTION_ID.");
+ const sheet=SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName("CorrespondenciaIdentificadores");
+ if(!sheet) return {status:"not_found",code:"IDENTITY_MAPPING_NOT_INITIALIZED"};
+ const headers=sheet.getRange(1,1,1,ACCOUNTING_IDENTITY_MAPPING_HEADERS_.length).getValues()[0].map(String);
+ if(JSON.stringify(headers)!==JSON.stringify(ACCOUNTING_IDENTITY_MAPPING_HEADERS_)) throw new Error("IDENTITY_SCHEMA_MISMATCH.");
+ const key=JSON.stringify([source,type,legacy,institution]), rows=sheet.getDataRange().getValues().slice(1).filter(r=>JSON.stringify([String(r[1]).trim(),String(r[2]).trim().toLowerCase(),String(r[3]).trim(),String(r[5]).trim()])===key);
+ if(!rows.length) return {status:"not_found",code:"IDENTITY_MAPPING_NOT_FOUND"};
+ if(rows.length!==1) throw new Error("IDENTITY_UNIQUENESS_VIOLATION.");
+ if(String(rows[0][9])!=="CONFIRMADA") return {status:"pending_review",code:"IDENTITY_REVIEW_REQUIRED",estadoCorrespondencia:rows[0][9]};
+ return {status:"success",idMapeo:rows[0][0],idNuevoPlataforma:rows[0][4],institucionId:institution};
+}
 // [REQ-EXP-010] [Fase 1: Registro y Expediente de Estudiantes] - Service backend endpoint (importDataWithColumnMapping) para la importación masiva de expedientes desde archivos CSV y XLSX.
+// [TASK-068] Resolver identidad no equivale a persistir entidad destino.
 function importDataWithColumnMapping(payload) {
-  const { nombreArchivo, destinoModulo, columnaMapeo, filasData, creadoPor } = payload || {};
-  if (!Array.isArray(filasData) || filasData.length === 0) throw new Error("filasData vacías.");
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const auditSheet = getOrCreateSheet(ss, "AuditoriaMigraciones");
-  const now = new Date();
-  const ejecucionId = "MIG-" + now.getTime();
-
-  let exitosas = 0;
-  let fallidas = 0;
-  const errores = [];
-
-  const mapeo = columnaMapeo || {};
-
-  filasData.forEach((row, idx) => {
-    try {
-      const idKey = mapeo["identificador"] || Object.keys(row)[0];
-      const idVal = row[idKey];
-
-      if (!idVal || String(idVal).trim() === "") {
-        fallidas++;
-        errores.push({ fila: idx + 1, error: "Identificador ausente" });
-      } else {
-        exitosas++;
-      }
-    } catch (e) {
-      fallidas++;
-      errores.push({ fila: idx + 1, error: e.message });
-    }
-  });
-
-  auditSheet.appendRow([
-    ejecucionId,
-    nombreArchivo || "importacion.xlsx",
-    destinoModulo || "General",
-    filasData.length,
-    exitosas,
-    fallidas,
-    JSON.stringify(mapeo),
-    JSON.stringify(errores.slice(0, 20)),
-    fallidas === 0 ? "completed" : "completed_with_errors",
-    creadoPor || "SISTEMA"
-  ]);
-
-  return {
-    status: "success",
-    ejecucionId: ejecucionId,
-    totalFilas: filasData.length,
-    exitosas: exitosas,
-    fallidas: fallidas,
-    estado: fallidas === 0 ? "completed" : "completed_with_errors",
-    message: "Migración e importación procesada con preservación estricta de correspondencia de filas."
-  };
+ const {nombreArchivo,destinoModulo,columnaMapeo,filasData,creadoPor,sistemaOrigen,tipoEntidad}=payload||{};
+ if(!Array.isArray(filasData)||!filasData.length) throw new Error("filasData vacías.");
+ if(!sistemaOrigen||!tipoEntidad||!destinoModulo) throw new Error("MIGRATION_CONTRACT_REQUIRED: sistemaOrigen, tipoEntidad y destinoModulo son obligatorios.");
+ const ss=SpreadsheetApp.openById(SPREADSHEET_ID), audit=getOrCreateSheet(ss,"AuditoriaMigraciones"), runId="MIG-"+Utilities.getUuid(), mapping=columnaMapeo||{};
+ let resolved=0; const errors=[];
+ filasData.forEach((row,i)=>{try{
+   const key=mapping.identificador||Object.keys(row||{})[0], value=row&&row[key];
+   if(value===null||value===undefined||String(value).trim()===""){errors.push({fila:i+1,error:"IDENTIFIER_MISSING"});return;}
+   const result=resolveCrossReferenceIdentifier({sistemaOrigen:sistemaOrigen,tipoEntidad:tipoEntidad,idOriginalLegado:value});
+   if(result.status!=="success"){errors.push({fila:i+1,error:result.code||result.status});return;} resolved++;
+ }catch(err){errors.push({fila:i+1,error:err.message});}});
+ const status="blocked_no_destination_writer";
+ audit.appendRow([runId,nombreArchivo||"importacion",destinoModulo,filasData.length,0,filasData.length,JSON.stringify(mapping),JSON.stringify(errors.slice(0,20)),status,creadoPor||"SISTEMA"]);
+ return {status:"error",code:"DESTINATION_WRITER_NOT_CONFIGURED",ejecucionId:runId,totalFilas:filasData.length,identidadesResueltas:resolved,filasPendientes:filasData.length,errores:errors.slice(0,20),estado:status,message:"No se escribió ninguna entidad: falta un escritor de destino explícito. No se declara la migración exitosa."};
 }
 
 function getMigrationLogs(payload) {

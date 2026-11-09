@@ -421,3 +421,10 @@ Sesión: IMA-EXEC-20261109-1108Z-01; HEAD de partida: 32b8f5884dd24dbeaf1a3bf028
 - Evidencia: User-Service linkPersonAccount líneas 1712–1726 actualiza PersonaID sin bitácora append-only.
 - Impacto: trazabilidad incompleta de homologación.
 - Acción: conservar historial auditable de actor, motivo, identidad externa y decisión. Estado abierto dentro de TASK-068.
+
+
+## Seguimiento C1.319 — AUD-NG-377/378/379
+- AUD-NG-377: parcialmente atendido por contrato, alta idempotente y resolvers; falta configurar IMA_INSTITUTION_ID y probar en Spreadsheet aislado.
+- AUD-NG-378: abierto. Accounting-Service resuelve IDs confirmados pero falla cerrado al no existir escritor destino específico; no se considera migración implementada.
+- AUD-NG-379: parcialmente atendido mediante bitácora append-only y vinculación de cuenta con control de destino; falta prueba runtime/compensación.
+- Evidencia técnica y límites en el anexo §10 de Auditoría/AUDITORIA_TASK-068_C1.318.md. No se crea auditoría duplicada.
