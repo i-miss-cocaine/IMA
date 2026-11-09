@@ -15744,13 +15744,142 @@ function getOrCreateTransportVehiclesCatalog(ss) {
   return sheet;
 }
 
+// [TASK-030] Resolver el ámbito exclusivamente desde claims verificados y relaciones vigentes.
+function transportRows_(ss, sheetName) {
+  const sheet = ss.getSheetByName(sheetName);
+  if (!sheet) return [];
+  const values = sheet.getDataRange().getValues();
+  return values.length > 1 ? values.slice(1) : [];
+}
+
+function resolveTransportAccessScope_(payload, ss) {
+  const role = String(payload && payload._verifiedRole || "").trim();
+  const userId = String(payload && payload._verifiedUserId || "").trim();
+  if (!role || !userId) {
+    return { authorized: false, reason: "VERIFIED_IDENTITY_REQUIRED", role: role, userId: userId, studentIds: [], routeIds: [] };
+  }
+
+  const managementRoles = ["Administrador", "Director", "Subdirector"];
+  if (managementRoles.indexOf(role) !== -1) {
+    return { authorized: true, management: true, role: role, userId: userId, studentIds: null, routeIds: null };
+  }
+
+  const expRows = transportRows_(ss, "ExpedientesEstudiantes");
+  const expedienteToUser = {};
+  const userToExpediente = {};
+  expRows.forEach(function(row) {
+    const expedienteId = String(row[0] || "").trim();
+    const studentUserId = String(row[1] || "").trim();
+    if (expedienteId && studentUserId) {
+      expedienteToUser[expedienteId] = studentUserId;
+      userToExpediente[studentUserId] = expedienteId;
+    }
+  });
+
+  if (role === "Estudiante" || role === "Alumno") {
+    const ids = [userId];
+    if (userToExpediente[userId]) ids.push(userToExpediente[userId]);
+    return { authorized: true, management: false, role: role, userId: userId, studentIds: ids, routeIds: null };
+  }
+
+  if (["Padre", "Tutor", "Responsable"].indexOf(role) !== -1) {
+    const validStates = ["verificada", "activa", "aprobada"];
+    const familyRows = transportRows_(ss, "RelacionesFamiliares");
+    let linkedExpedientes = familyRows.filter(function(row) {
+      return String(row[2] || "").trim() === userId &&
+        validStates.indexOf(String(row[4] || "").trim().toLowerCase()) !== -1;
+    }).map(function(row) { return String(row[1] || "").trim(); }).filter(Boolean);
+
+    // Compatibilidad con el esquema legado únicamente si no hay vínculos canónicos vigentes.
+    if (linkedExpedientes.length === 0) {
+      const legacyRows = transportRows_(ss, "RelacionesEstudianteTutor");
+      linkedExpedientes = legacyRows.filter(function(row) {
+        return String(row[2] || "").trim() === userId &&
+          validStates.indexOf(String(row[9] || "").trim().toLowerCase()) !== -1;
+      }).map(function(row) { return String(row[1] || "").trim(); }).filter(Boolean);
+    }
+
+    const studentIds = [];
+    linkedExpedientes.forEach(function(expedienteId) {
+      if (studentIds.indexOf(expedienteId) === -1) studentIds.push(expedienteId);
+      const mappedUserId = expedienteToUser[expedienteId];
+      if (mappedUserId && studentIds.indexOf(mappedUserId) === -1) studentIds.push(mappedUserId);
+    });
+    return { authorized: true, management: false, role: role, userId: userId, studentIds: studentIds, routeIds: null };
+  }
+
+  if (["Conductor", "Chofer", "Monitor", "Acompanante", "Acompañante"].indexOf(role) !== -1) {
+    const activeStates = ["activo", "activa", "iniciado", "encurso", "en curso", "enruta", "en ruta", "entransito", "en tránsito"];
+    const routeRows = transportRows_(ss, "TransporteRutas");
+    const tripRows = transportRows_(ss, "TransporteViajes");
+    const assignedRouteIds = [];
+    tripRows.forEach(function(trip) {
+      const tripState = String(trip[9] || "").trim().toLowerCase();
+      const assignedDriver = String(trip[3] || "").trim();
+      const assignedMonitor = String(trip[4] || "").trim();
+      const routeId = String(trip[1] || "").trim();
+      if (routeId && activeStates.indexOf(tripState) !== -1 &&
+          (assignedDriver === userId || assignedMonitor === userId) &&
+          assignedRouteIds.indexOf(routeId) === -1) {
+        assignedRouteIds.push(routeId);
+      }
+    });
+    routeRows.forEach(function(route) {
+      const routeId = String(route[0] || "").trim();
+      const routeState = String(route[6] || "").trim().toLowerCase();
+      if (routeId && String(route[3] || "").trim() === userId &&
+          ["activo", "activa", "active"].indexOf(routeState) !== -1 &&
+          assignedRouteIds.indexOf(routeId) !== -1) return;
+    });
+    return { authorized: true, management: false, role: role, userId: userId, studentIds: null, routeIds: assignedRouteIds };
+  }
+
+  return { authorized: true, management: false, role: role, userId: userId, studentIds: [], routeIds: [] };
+}
+
+function transportAuditDenied_(action, payload, scope, target) {
+  const callerId = String(scope && scope.userId || "").trim();
+  const role = String(scope && scope.role || "").trim();
+  logStructuredEvent(
+    "SECURITY",
+    action,
+    "WARN",
+    "UNAUTHORIZED_ACCESS_ATTEMPT",
+    "Intento no autorizado de consultar datos restringidos de transporte.",
+    { callerId: callerId, effectiveRole: role, target: target || null },
+    callerId || "Sistema"
+  );
+}
+
+function getTransportRouteIdsForScope_(ss, scope) {
+  if (scope.management) return null;
+  if (scope.routeIds) return scope.routeIds.slice();
+  const studentIds = scope.studentIds || [];
+  if (studentIds.length === 0) return [];
+  const assignmentRows = transportRows_(ss, "TransporteAsignaciones");
+  const activeStates = ["active", "activa"];
+  const routeIds = [];
+  assignmentRows.forEach(function(row) {
+    const studentId = String(row[2] || "").trim();
+    const routeId = String(row[1] || "").trim();
+    const state = String(row[5] || "").trim().toLowerCase();
+    if (routeId && studentIds.indexOf(studentId) !== -1 && activeStates.indexOf(state) !== -1 &&
+        routeIds.indexOf(routeId) === -1) routeIds.push(routeId);
+  });
+  return routeIds;
+}
+
 function getTransportRoutes(payload) {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   getOrCreateTransportVehiclesCatalog(ss);
+  const scope = resolveTransportAccessScope_(payload, ss);
+  if (!scope.authorized) {
+    transportAuditDenied_("getTransportRoutes", payload, scope, null);
+    return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED", rutas: [] };
+  }
 
-  let rows = getOrCreateSheet(ss, "TransporteRutas").getDataRange().getValues().slice(1);
-
-  if (rows.length === 0) {
+  let rows = transportRows_(ss, "TransporteRutas");
+  if (rows.length === 0 && scope.management) {
     const defaults = [
       ["RUT-01", "Ruta Principal Anillo Periférico", "BUS-01", "EMP-CONDUCTOR-01", 20, '[{"parada":"Plaza Miraflores","hora":"06:30 AM"},{"parada":"Residencial Las Uvas","hora":"06:45 AM"}]', "active", "Ruta de Mañana", "06:30", "07:30", "Matutina"],
       ["RUT-02", "Ruta Bulevar Morazán", "BUS-02", "EMP-CONDUCTOR-02", 28, '[{"parada":"Mall Multiplaza","hora":"06:25 AM"},{"parada":"Colonia Palmira","hora":"06:40 AM"}]', "active", "Ruta de Mañana", "06:25", "07:25", "Matutina"]
@@ -15760,55 +15889,59 @@ function getTransportRoutes(payload) {
     rows = defaults;
   }
 
-  // Cargar asignaciones activas para calcular ocupación en tiempo real [TASK-029]
-  const asgnRows = getOrCreateSheet(ss, "TransporteAsignaciones").getDataRange().getValues().slice(1);
+  const allowedRouteIds = getTransportRouteIdsForScope_(ss, scope);
+  const requestedRouteId = String(payload && payload.rutaId || "").trim();
+  if (!scope.management) {
+    if (requestedRouteId && allowedRouteIds.indexOf(requestedRouteId) === -1) {
+      transportAuditDenied_("getTransportRoutes", payload, scope, { rutaId: requestedRouteId });
+      return { status: "error", code: "UNAUTHORIZED_ACCESS_ATTEMPT", rutas: [] };
+    }
+    rows = rows.filter(function(row) {
+      return allowedRouteIds.indexOf(String(row[0] || "").trim()) !== -1;
+    });
+  } else if (requestedRouteId) {
+    rows = rows.filter(function(row) { return String(row[0] || "").trim() === requestedRouteId; });
+  }
+
+  const assignmentRows = transportRows_(ss, "TransporteAsignaciones");
   const ocupacionPorRuta = {};
-  asgnRows.forEach(r => {
-    const rId = String(r[1]).trim();
-    const st = String(r[5] || "").trim().toLowerCase();
-    if (st === "active" || st === "activa") {
-      ocupacionPorRuta[rId] = (ocupacionPorRuta[rId] || 0) + 1;
+  assignmentRows.forEach(function(row) {
+    const routeId = String(row[1] || "").trim();
+    const state = String(row[5] || "").trim().toLowerCase();
+    if (routeId && (state === "active" || state === "activa")) {
+      ocupacionPorRuta[routeId] = (ocupacionPorRuta[routeId] || 0) + 1;
     }
   });
-
-  // Cargar capacidades maestras de vehículos
-  const vehRows = getOrCreateSheet(ss, "TransporteVehiculos").getDataRange().getValues().slice(1);
-  const vehCapacidades = {};
-  vehRows.forEach(v => {
-    vehCapacidades[String(v[1]).trim()] = parseInt(v[5] || 0, 10);
+  const vehicleRows = transportRows_(ss, "TransporteVehiculos");
+  const vehicleCapacity = {};
+  vehicleRows.forEach(function(vehicle) {
+    vehicleCapacity[String(vehicle[1] || "").trim()] = parseInt(vehicle[5] || 0, 10);
   });
 
-  const mapped = rows.map(r => {
-    const rId = String(r[0]);
-    const uCod = String(r[2]);
-    const capVeh = vehCapacidades[uCod] !== undefined ? vehCapacidades[uCod] : parseInt(r[4] || 25, 10);
-    const ocupados = ocupacionPorRuta[rId] || 0;
-    const disponibles = Math.max(0, capVeh - ocupados);
-
+  const mapped = rows.map(function(row) {
+    const routeId = String(row[0] || "");
+    const unitCode = String(row[2] || "");
+    const capacity = vehicleCapacity[unitCode] !== undefined ? vehicleCapacity[unitCode] : parseInt(row[4] || 25, 10);
+    const occupied = ocupacionPorRuta[routeId] || 0;
     return {
-      rutaId: rId,
-      nombreRuta: r[1],
-      unidadCodigo: uCod,
-      conductorEmpleadoId: r[3],
-      capacidad: capVeh,
-      capacidadPasajeros: capVeh,
-      cuposOcupados: ocupados,
-      cuposDisponibles: disponibles,
-      paradasJSON: r[5],
-      estado: r[6],
-      observaciones: r[7],
-      horaInicio: r[8] || "06:30",
-      horaFin: r[9] || "07:30",
-      jornada: r[10] || "Matutina"
+      rutaId: routeId,
+      nombreRuta: row[1],
+      unidadCodigo: unitCode,
+      conductorEmpleadoId: row[3],
+      capacidad: capacity,
+      capacidadPasajeros: capacity,
+      cuposOcupados: occupied,
+      cuposDisponibles: Math.max(0, capacity - occupied),
+      paradasJSON: row[5],
+      estado: row[6],
+      observaciones: row[7],
+      horaInicio: row[8] || "06:30",
+      horaFin: row[9] || "07:30",
+      jornada: row[10] || "Matutina"
     };
   });
-
-  return {
-    status: "success",
-    rutas: mapped
-  };
+  return { status: "success", rutas: mapped };
 }
-
 function assignStudentTransport(payload) {
   const { rutaId, estudianteUserId, paradaNombre, horarioPlan, jornada, diasSemanaJSON, observaciones } = payload || {};
   if (!rutaId || !estudianteUserId) throw new Error("rutaId y estudianteUserId son requeridos.");
@@ -15937,96 +16070,53 @@ function assignStudentTransport(payload) {
 
 // [TASK-030] [F21-Task02] Protección de datos de transporte y aislamiento de consultas RBAC/ABAC
 function getTransportAssignments(payload) {
-  const { estudianteUserId, rutaId, authUserId, authRole } = payload || {};
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const rows = getOrCreateSheet(ss, "TransporteAsignaciones").getDataRange().getValues().slice(1);
+  const scope = resolveTransportAccessScope_(payload, ss);
+  if (!scope.authorized) {
+    transportAuditDenied_("getTransportAssignments", payload, scope, null);
+    return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED", asignaciones: [], total: 0 };
+  }
 
-  const effectiveRole = String(authRole || "Estudiante").trim();
-  const callerId = String(authUserId || estudianteUserId || "").trim();
+  const requestedStudentId = String(payload && payload.estudianteUserId || "").trim();
+  const requestedRouteId = String(payload && payload.rutaId || "").trim();
+  let rows = transportRows_(ss, "TransporteAsignaciones");
 
-  // 1. Roles con acceso institucional irrestricto
-  const isManagement = ["Administrador", "Director", "Subdirector", "Contador"].includes(effectiveRole);
-
-  // 2. Resolver ámbito de estudiantes autorizados para el llamante [TASK-030]
-  let allowedStudentIds = null;
-
-  if (!isManagement) {
-    if (["Estudiante", "Alumno"].includes(effectiveRole)) {
-      // Un estudiante solo puede consultarse a sí mismo
-      allowedStudentIds = [callerId];
-    } else if (["Padre", "Tutor", "Responsable"].includes(effectiveRole)) {
-      // Consultar relaciones familiares en ExpedientesFamiliares / RelacionesFamiliares
-      const famRows = getOrCreateSheet(ss, "RelacionesFamiliares").getDataRange().getValues().slice(1);
-      const studentMatches = famRows
-        .filter(r => String(r[0]).trim() === callerId || String(r[1]).trim() === callerId)
-        .map(r => String(r[2]).trim()); // Columna con estudianteId
-
-      allowedStudentIds = studentMatches.length > 0 ? studentMatches : [callerId];
-    } else if (["Conductor", "Chofer", "Monitor"].includes(effectiveRole)) {
-      // Conductores: Filtrar únicamente por rutas asignadas al conductor
-      const rutaRows = getOrCreateSheet(ss, "TransporteRutas").getDataRange().getValues().slice(1);
-      const driverRoutes = rutaRows
-        .filter(r => String(r[3]).trim() === callerId)
-        .map(r => String(r[0]).trim());
-
-      if (driverRoutes.length === 0 && !rutaId) {
-        return { status: "success", asignaciones: [], total: 0 };
+  if (!scope.management) {
+    if (scope.studentIds) {
+      if (requestedStudentId && scope.studentIds.indexOf(requestedStudentId) === -1) {
+        transportAuditDenied_("getTransportAssignments", payload, scope, { estudianteUserId: requestedStudentId });
+        return { status: "error", code: "UNAUTHORIZED_ACCESS_ATTEMPT", asignaciones: [], total: 0 };
       }
+      rows = rows.filter(function(row) { return scope.studentIds.indexOf(String(row[2] || "").trim()) !== -1; });
     }
+    if (scope.routeIds) {
+      if (requestedRouteId && scope.routeIds.indexOf(requestedRouteId) === -1) {
+        transportAuditDenied_("getTransportAssignments", payload, scope, { rutaId: requestedRouteId });
+        return { status: "error", code: "UNAUTHORIZED_ACCESS_ATTEMPT", asignaciones: [], total: 0 };
+      }
+      rows = rows.filter(function(row) { return scope.routeIds.indexOf(String(row[1] || "").trim()) !== -1; });
+    }
+  } else {
+    if (requestedStudentId) rows = rows.filter(function(row) { return String(row[2] || "").trim() === requestedStudentId; });
+    if (requestedRouteId) rows = rows.filter(function(row) { return String(row[1] || "").trim() === requestedRouteId; });
   }
 
-  // 3. Verificación de intento de acceso no autorizado a terceros [TASK-030]
-  if (estudianteUserId && allowedStudentIds && !allowedStudentIds.includes(String(estudianteUserId).trim())) {
-    logStructuredEvent(
-      "SECURITY",
-      "getTransportAssignments",
-      "WARN",
-      "UNAUTHORIZED_ACCESS_ATTEMPT",
-      `Intento no autorizado de consultar transporte de estudiante ajeno (${estudianteUserId}) por ${callerId} (${effectiveRole})`,
-      { callerId, effectiveRole, targetStudentId: estudianteUserId, allowedStudentIds },
-      callerId
-    );
-
+  const mapped = rows.map(function(row) {
     return {
-      status: "error",
-      code: "UNAUTHORIZED_ACCESS_ATTEMPT",
-      message: `Acceso restringido: No tiene autorización para consultar los datos de transporte del estudiante '${estudianteUserId}'.`
+      asignacionTranspId: row[0],
+      rutaId: row[1],
+      estudianteUserId: row[2],
+      paradaNombre: row[3],
+      horarioPlan: row[4],
+      estado: row[5],
+      fechaAsignacion: row[6] || "",
+      jornada: row[7] || "Matutina",
+      diasSemana: row[8] || "[\\"Lun\\",\\"Mar\\",\\"Mie\\",\\"Jue\\",\\"Vie\\"]",
+      observaciones: row[9] || ""
     };
-  }
-
-  let filtered = rows;
-
-  // Si no es directivo y no envió estudianteUserId, restringir estrictamente a su ámbito autorizado
-  if (allowedStudentIds) {
-    filtered = filtered.filter(r => allowedStudentIds.includes(String(r[2]).trim()));
-  } else if (estudianteUserId) {
-    filtered = filtered.filter(r => String(r[2]).trim() === String(estudianteUserId).trim());
-  }
-
-  if (rutaId) {
-    filtered = filtered.filter(r => String(r[1]).trim() === String(rutaId).trim());
-  }
-
-  const mapped = filtered.map(r => ({
-    asignacionTranspId: r[0],
-    rutaId: r[1],
-    estudianteUserId: r[2],
-    paradaNombre: r[3],
-    horarioPlan: r[4],
-    estado: r[5],
-    fechaAsignacion: r[6] || "",
-    jornada: r[7] || "Matutina",
-    diasSemana: r[8] || "[\"Lun\",\"Mar\",\"Mie\",\"Jue\",\"Vie\"]",
-    observaciones: r[9] || ""
-  }));
-
-  return {
-    status: "success",
-    asignaciones: mapped,
-    total: mapped.length
-  };
+  });
+  return { status: "success", asignaciones: mapped, total: mapped.length };
 }
-
 // ---------------------------------------------------------------------------
 // 2. Control de Abordaje, Descenso y Manifiesto de Pasajeros en Tiempo Real
 // [TASK-031] [F21-Task03]
