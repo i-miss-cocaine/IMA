@@ -72,3 +72,8 @@ No se ejecutaron Apps Script runtime, Sheets/Drive reales, deployment, HTTP, E2E
 ## Revisión focalizada C1.334 — fixture de fecha aislado
 - CI run 42708759124 superó la extracción balanceada y el parseo, pero falló porque el objeto Date del fixture provenía del contexto Node principal y no era instancia del Date del VM.
 - El fixture se crea dentro del contexto VM. No hay cambios en producción. Se requiere CI nuevo.
+
+
+## Revisión focalizada C1.335 — contexto Date del VM
+- CI run 42708904660 falló en la aserción de snapshot: el fixture Date se creó en un contexto VM distinto al usado por el helper.
+- Se pasa snapshotContext explícitamente al crear la fecha; producción sin cambios. Se requiere un nuevo CI exitoso.

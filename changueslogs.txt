@@ -411,3 +411,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-09] C1.334 — CI 42708759124 superó extractor y parseo; falló fixture Date por frontera entre contextos VM. Fecha de prueba creada dentro del VM; producción sin cambios; nuevo CI pendiente. Checkpoint Parte_0003 C1.334.
+
+
+[2026-11-09] C1.335 — CI 42708904660 alcanzó snapshot y falló por Date creado en otro contexto VM; fixture corregido pasando snapshotContext explícitamente. Sin cambios de producto; nuevo CI pendiente. Checkpoint Parte_0003 C1.335.

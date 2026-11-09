@@ -515,3 +515,8 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 ## C1.334 — Ajuste de fixture local TASK-636
 - CI 42708759124 falló en la comparación de Date entre contextos VM, no en código de producción. El fixture ahora se crea dentro del VM; CI nuevo pendiente.
 - Checkpoint C1.334; sesión IMA-GOV-20261109-2201Z-01; Parte_0003; índice actualizado.
+
+
+## C1.335 — Corrección de contexto Date TASK-636
+- CI 42708904660 falló en fixture Date entre contextos VM; se corrige pasando snapshotContext a vm.runInNewContext. Producción sin cambios; CI nuevo pendiente.
+- Checkpoint C1.335; sesión IMA-GOV-20261109-2201Z-01; Parte_0003; índice actualizado.

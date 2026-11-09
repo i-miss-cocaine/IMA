@@ -222,3 +222,16 @@ Checkpoint anterior: C1.333
 Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.334.
 Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.334.
 ===============================================================================
+
+
+===============================================================================
+## C1.335 — Corrección del contexto de fecha del fixture TASK-636
+ID: C1.335
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.334
+- CI run 42708904660 (commit C1.333) alcanzó el caso snapshot y mostró que la fecha se creó en un VM distinto al contexto de snapshotContext.
+- Se ajusta la creación de Date para pasar snapshotContext explícitamente a vm.runInNewContext; sin cambios de producción.
+- La ejecución del commit C1.334 se verificará separadamente; el contrato no se declara PASS hasta que el run del nuevo commit finalice success.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.335.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.335.
+===============================================================================

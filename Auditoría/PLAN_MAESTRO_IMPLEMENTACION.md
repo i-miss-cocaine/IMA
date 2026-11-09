@@ -2024,3 +2024,7 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 
 ## 10.21 Corrección de fixture local — C1.334
 - El contrato Node superó extracción y parseo, pero el fixture Date externo no era instanceof Date dentro del VM. Se crea el Date en el contexto aislado; sin cambios de producto. Esperar CI nuevo.
+
+
+## 10.22 Corrección del fixture Date — C1.335
+- CI 42708904660 detectó que el fixture Date se creó en un contexto VM distinto al helper. Se corrige usando snapshotContext explícitamente; producción sin cambios. Esperar CI nuevo.
