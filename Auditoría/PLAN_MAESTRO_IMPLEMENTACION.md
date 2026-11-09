@@ -2056,3 +2056,8 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - Writers internos con allowlist/esquema, upsert por ID interno, journal durable, idempotencia y compensación con precondición de estado.
 - Pruebas locales Node agregadas; CI pendiente de observar. Sin servicios vivos ni beta.
 - TASK-068 permanece En ejecución; siguiente iteración implementará transporte autenticado ACCOUNTING→USER/ACADEMIC y orquestación de importación.
+
+
+## 10.24 Corrección de fixture TASK-068 — C1.340
+- El run 42712140456 falló porque el mock insertSheet incluía un encabezado antes de que el helper lo inicializara; el writer no fue el origen del fallo.
+- El mock ahora representa una hoja nueva vacía. Producción sin cambios; nuevo CI pendiente.

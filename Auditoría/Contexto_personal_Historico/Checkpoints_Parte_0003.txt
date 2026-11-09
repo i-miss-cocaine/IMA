@@ -343,3 +343,17 @@ Tarea: TASK-068 / PM-01 / P0 / orden local 1
 Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.339.
 Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.339.
 ===============================================================================
+
+
+===============================================================================
+## C1.340 — Corrección del fixture de hoja vacía para TASK-068
+ID: C1.340
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.339
+- CI run 42712140456 falló en la prueba del writer porque el mock insertSheet creaba la hoja con encabezado preinsertado; ensureMigrationWriterSheet_ agregaba correctamente el encabezado al detectar una hoja recién creada. El fixture producía dos encabezados y una fila extra.
+- Se corrige el mock para que insertSheet cree una hoja vacía, reproduciendo el contrato real de Google Sheets.
+- No se modifica código de producción ni el comportamiento del writer.
+- El nuevo CI debe confirmar inserción, reintento idempotente, conflicto de payload y compensación antes de aceptar la iteración.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.340.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.340.
+===============================================================================

@@ -429,3 +429,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-09] C1.339 — TASK-068: writers locales idempotentes por servicio propietario (USER/persona; ACADEMIC/estudiante, responsable, asignatura, matrícula y documento), journal durable y compensación. Pruebas Node locales añadidas; CI pendiente. Transporte autenticado y orquestación siguen pendientes. Checkpoint Parte_0003 C1.339.
+
+
+[2026-11-09] C1.340 — CI 42712140456 detectó doble encabezado en el mock de hoja nueva del contrato TASK-068; se corrige insertSheet para devolver hoja vacía. Sin cambios de producción; nuevo CI pendiente. Checkpoint Parte_0003 C1.340.
