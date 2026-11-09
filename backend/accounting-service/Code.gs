@@ -15798,14 +15798,15 @@ function resolveTransportAccessScope_(payload, ss) {
 
   if (["Padre", "Tutor", "Responsable"].indexOf(role) !== -1) {
     const validStates = ["verificada", "activa", "aprobada"];
+    const canonicalFamilySheet = ss.getSheetByName("RelacionesFamiliares");
     const familyRows = transportRows_(ss, "RelacionesFamiliares");
     let linkedExpedientes = familyRows.filter(function(row) {
       return String(row[2] || "").trim() === userId &&
         validStates.indexOf(String(row[4] || "").trim().toLowerCase()) !== -1;
     }).map(function(row) { return String(row[1] || "").trim(); }).filter(Boolean);
 
-    // Compatibilidad con el esquema legado únicamente si no hay vínculos canónicos vigentes.
-    if (linkedExpedientes.length === 0) {
+    // El legado solo se consulta si la hoja canónica no existe; una relación revocada no se reactiva por fallback.
+    if (!canonicalFamilySheet) {
       const legacyRows = transportRows_(ss, "RelacionesEstudianteTutor");
       linkedExpedientes = legacyRows.filter(function(row) {
         return String(row[2] || "").trim() === userId &&
