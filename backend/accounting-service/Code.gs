@@ -16139,9 +16139,11 @@ function getTransportAssignments(payload) {
       rows = rows.filter(function(row) {
         const routeId = String(row[1] || "").trim();
         const jornada = String(row[7] || "").trim().toLowerCase();
-        return assignedTrips.some(function(trip) {
-          return trip.rutaId === routeId && trip.jornada && trip.jornada === jornada;
-        });
+        const assignmentState = String(row[5] || "").trim().toLowerCase();
+        return (assignmentState === "active" || assignmentState === "activa") &&
+          assignedTrips.some(function(trip) {
+            return trip.rutaId === routeId && trip.jornada && trip.jornada === jornada;
+          });
       });
     }
   } else {
