@@ -10,6 +10,11 @@ assert.ok(user.includes('getProperty("IMA_INSTITUTION_ID")'));assert.ok(user.inc
 assert.ok(user.includes("function ensureIdentityMappingSheet_()"));
 assert.ok(user.includes("IDENTITY_MAPPING_NOT_INITIALIZED"));
 assert.ok(user.includes("function identityTargetExists_"));
+assert.ok(user.includes("estudiante: [\"ExpedientesEstudiantes\", \"ExpedienteID\"]"));
+assert.ok(user.includes("responsable: [\"ResponsablesTutores\", \"ResponsableID\"]"));
+assert.ok(user.includes("asignatura: [\"CatalogoAsignaturas\", \"AsignaturaID\"]"));
+assert.ok(user.includes("matricula: [\"Matriculas\", \"MatriculaID\"]"));
+assert.ok(user.includes("documento: [\"DocumentosEstudiante\", \"DocumentoID\"]"));
 assert.ok(user.includes("IDENTITY_TARGET_NOT_FOUND_OR_UNSUPPORTED"));
 assert.ok(user.includes("identityTextCell_(String(e.motivo || \"\").slice(0, 2000))"));
 assert.ok(user.includes("identityHash_(sourceRecord)"));

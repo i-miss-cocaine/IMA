@@ -4918,3 +4918,8 @@ Alcance estático satisfecho; sin cambios de código. Hallazgos AUD-NG-374..376 
 - Resolución/lectura no crea hojas; creación separada para escritura bajo ScriptLock.
 - La revisión humana solo confirma persona/usuario cuando existe el ID en hoja y columna canónicas verificadas; tipos no soportados fallan cerrado.
 - Motivo de bitácora sanitizado y limitado; hash de origen calculado en backend. Pruebas runtime pendientes.
+
+
+## TASK-068 — C1.322, destinos permitidos para revisión
+- Validadores versionados: Personas.PersonaID, Usuarios.UserId, ExpedientesEstudiantes.ExpedienteID, ResponsablesTutores.ResponsableID, CatalogoAsignaturas.AsignaturaID, Matriculas.MatriculaID y DocumentosEstudiante.DocumentoID.
+- Empleado/curso/otros fallan cerrado hasta identificar contratos reales. USER/ACADEMIC comparten SPREADSHEET_ID en código versionado; instancia real no probada.

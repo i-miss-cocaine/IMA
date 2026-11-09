@@ -107,3 +107,9 @@ Las lecturas fueron completas (92.668, 429.611 y 713.779 caracteres). El histori
 - reviewLegacyIdentifierMapping valida existencia del destino para persona/usuario; otros tipos se rechazan hasta contar con validador de módulo.
 - Se sanitiza texto libre de bitácora y se calcula hash de registro en backend.
 - Sin Apps Script/Sheets runtime; AUD-NG-378 permanece abierto y TASK-068 En ejecución.
+
+
+## 13. Seguimiento C1.322 — catálogo de destinos verificables
+- Se verificó estáticamente el SPREADSHEET_ID común de USER y ACADEMIC y los encabezados canónicos de las siete hojas que habilitan la validación de destino.
+- Se amplía identityTargetExists_ a persona, usuario/cuenta, estudiante, responsable, asignatura, matrícula y documento; empleado/curso quedan sin confirmación hasta hallar contrato verificable.
+- Sin pruebas de Sheets real. No se crea escritor de importación por inferencia; AUD-NG-378 sigue abierto.

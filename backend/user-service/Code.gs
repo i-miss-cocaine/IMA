@@ -1690,7 +1690,7 @@ function identityTargetExists_(entityType, internalId) {
   const type = String(entityType || "").trim().toLowerCase();
   const id = String(internalId || "").trim();
   if (!id) return false;
-  const targets = { persona: ["Personas", "PersonaID"], usuario: ["Usuarios", "UserId"], user: ["Usuarios", "UserId"] };
+  const targets = { persona: ["Personas", "PersonaID"], usuario: ["Usuarios", "UserId"], user: ["Usuarios", "UserId"], cuenta: ["Usuarios", "UserId"], estudiante: ["ExpedientesEstudiantes", "ExpedienteID"], responsable: ["ResponsablesTutores", "ResponsableID"], asignatura: ["CatalogoAsignaturas", "AsignaturaID"], matricula: ["Matriculas", "MatriculaID"], documento: ["DocumentosEstudiante", "DocumentoID"] };
   const target = targets[type];
   if (!target) return false;
   const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(target[0]);

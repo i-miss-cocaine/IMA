@@ -1575,8 +1575,41 @@ Tarea: TASK-068 — En ejecución; no completada.
 - hashRegistroOrigen se calcula en servidor a partir del registro recibido; se ignora el hash arbitrario enviado por cliente.
 - Test estático amplía assertions para lecturas no mutantes, validación de destino, sanitización y hash interno.
 
+### Publicación y CI
+- Commit C1.321: 19eba80c82a00113f4aad382438c17d3f685276e.
+- Workflow identity-mapping-contract: run 42667650780 completed/success.
+
 ### Límites
 - La validación de destino soporta solo persona y usuario/user; otros tipos requieren contrato de destino específico antes de confirmar.
 - No se ejecutaron pruebas runtime Apps Script/Sheets, bloqueo, fórmula-injection en hoja real ni pruebas de reimportación.
 - Accounting import continúa fail-closed por falta de escritor destino; AUD-NG-378 sigue abierto. TASK-068 continúa En ejecución.
+===============================================================================
+
+===============================================================================
+## C1.322 — TASK-068: ampliar validación de destinos con esquemas verificados
+ID: C1.322
+Sesión: IMA-EXEC-20261109-1650Z-01
+Fecha: 2026-11-09 UTC
+Checkpoint anterior: C1.321
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+HEAD de partida: 19eba80c82a00113f4aad382438c17d3f685276e
+Tarea: TASK-068 — En ejecución; no completada.
+
+### Respaldo Git histórico previo a edición
+- backend/user-service/Code.gs blob: e772e612b660e90871c31f8710fff3b28e6db8e4
+- tests/security/identity-mapping-contract.test.js blob: 0c44c7771d523e3280a462de1186055671789419
+- Recuperación: `git show 19eba80c82a00113f4aad382438c17d3f685276e:backend/user-service/Code.gs` y `git show 19eba80c82a00113f4aad382438c17d3f685276e:tests/security/identity-mapping-contract.test.js`; verificar SHA blob esperado.
+- Se verificaron completos los dos archivos antes de editarlos.
+
+### Evidencia de esquema y cambio
+- USER y ACADEMIC comparten el mismo SPREADSHEET_ID versionado, verificado en encabezados de ambos servicios.
+- Esquemas canónicos observados en getOrCreateSheet de ACADEMIC: ExpedientesEstudiantes.ExpedienteID; ResponsablesTutores.ResponsableID; CatalogoAsignaturas.AsignaturaID; Matriculas.MatriculaID; DocumentosEstudiante.DocumentoID.
+- Esquemas canónicos observados en USER: Personas.PersonaID y Usuarios.UserId.
+- identityTargetExists_ amplía validación para persona, usuario, cuenta, estudiante, responsable, asignatura, matrícula y documento. Antes de confirmar verifica hoja existente, primera columna canónica y presencia del ID. No crea hojas.
+- Tipos empleado, curso y otros permanecen bloqueados por falta de esquema canónico verificado; no se infieren destinos.
+- Test estático agrega assertions para los cinco tipos nuevos.
+
+### Límites
+La comprobación es estática sobre esquemas versionados. No acredita que las hojas existan o conserven esos encabezados en la instancia real, ni que el ID de una fila sea semánticamente correcto. Falta Apps Script/Sheets aislado, pruebas de identidad multi-fuente y escritor idempotente de importación. AUD-NG-378 sigue abierto; TASK-068 En ejecución.
 ===============================================================================

@@ -434,3 +434,6 @@ Sesión: IMA-EXEC-20261109-1108Z-01; HEAD de partida: 32b8f5884dd24dbeaf1a3bf028
 
 
 [2026-11-09] IMA-EXEC-20261109-1650Z-01 — C1.321: lectura de identidad no mutante; creación solo en escritura bajo lock; confirmación de destinos existentes persona/usuario; sanitización de bitácora y hash interno. Sin runtime; TASK-068 sigue En ejecución.
+
+
+[2026-11-09] IMA-EXEC-20261109-1650Z-01 — C1.322: validación de destino ampliada usando esquemas versionados USER/ACADEMIC; empleado/curso permanecen fail-closed. Sin runtime ni escritor de importación.

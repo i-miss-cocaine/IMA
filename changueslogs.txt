@@ -341,3 +341,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-09] C1.321 — TASK-068: separación de lectura/escritura de hojas de identidad, validación fail-closed de destino persona/usuario, sanitización de motivo de bitácora y hash calculado en servidor. Runtime y escritor de importación pendientes.
+
+
+[2026-11-09] C1.322 — TASK-068: validador de destino ampliado a siete tipos con esquemas versionados; empleado/curso sin contrato canónico siguen bloqueados. Runtime y persistencia de importación pendientes.
