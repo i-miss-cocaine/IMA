@@ -388,3 +388,11 @@ Sesión: IMA-EXEC-20261109-1108Z-01; HEAD de partida: 32b8f5884dd24dbeaf1a3bf028
 - TASK-636 sigue En ejecución; AUD-NG-369 abierto; closeAcademicYear permanece BACKUP_REQUIRED.
 - Recuperación del requisito original: fetch_file devolvió 0 caracteres, pero el árbol Git del HEAD d7f15ec8ae91df6a33d228750ecd859b42eaecd9 identifica blob 6323f01fc2335df264dfb54d2558bb8ad505a4d8 (1.648.454 bytes); se recuperó íntegramente. El blob e9637ecc6f88b2aa0aec75909538e072509bf507 citado en C1.299 corresponde a una versión histórica anterior, no al blob actual.
 - Checkpoint C1.315: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.315; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.315.
+
+
+## Seguimiento C1.316 — AUD-NG-369 / contrato Node en CI
+- Se añade workflow restringido a NG_beta_0.0.0.1_work para ejecutar el contrato Node. Run 42659818881 (Node 22) y run 42659961195 (Node 24, acciones v7) finalizaron completed/success; ambos logs confirman el mensaje de éxito del contrato.
+- Se actualiza el workflow a Node 24 compatible y se elimina la advertencia de deprecación de Node20 de las acciones.
+- No hay appsscript.json, .clasp.json ni configuración de despliegue/proyecto Apps Script en el árbol; las pruebas Sheets/Drive aisladas e interrupciones forzadas siguen bloqueadas por falta de runtime/fixture autorizado.
+- TASK-636 En ejecución; AUD-NG-369 abierto; closeAcademicYear BACKUP_REQUIRED.
+- Checkpoint C1.316: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.316.

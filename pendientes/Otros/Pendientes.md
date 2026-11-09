@@ -3249,6 +3249,8 @@
 
 - **Seguimiento C1.315:** se serializa la recuperación con ScriptLock y se persiste restoreId/idMap en un archivo de estado Drive dentro del respaldo compensatorio. Los marcadores deterministas permiten reanudar copias sin duplicarlas; se valida hash/tamaño, nombre y carpeta padre. Contrato estático equivalente 42/42; Node y Apps Script/Sheets/Drive aislados pendientes. TASK-636 sigue En ejecución; AUD-NG-369 abierto; closeAcademicYear permanece BACKUP_REQUIRED.
 
+- **Seguimiento C1.316:** el contrato estático Node se ejecuta en GitHub Actions; runs 42659818881 y 42659961195 completed/success, el segundo con Node 24/actions v7. No hay appsscript.json/.clasp.json ni fixture Apps Script/Sheets/Drive aislado; integración dinámica pendiente. TASK-636 En ejecución; AUD-NG-369 abierto; closeAcademicYear BACKUP_REQUIRED.
+
 ===============================================================================
 
 ---

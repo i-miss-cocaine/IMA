@@ -424,3 +424,14 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - **Estado:** TASK-636 En ejecución; AUD-NG-369 abierto. No marcar Completada.
 - **Checkpoint:** C1.315; sesión IMA-EXEC-20261109-1650Z-01; Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.315; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.315.
 ===============================================================================
+
+
+===============================================================================
+## Seguimiento de TASK-636 — C1.316 / AUD-NG-369
+- **ID conservado:** TASK-636; no se crea tarea derivada.
+- **CI Node:** workflow .github/workflows/task-service-backup-restore-contract.yml, limitado a la rama NG_beta_0.0.0.1_work. Runs 42659818881 y 42659961195 terminaron completed/success; el segundo usa Node 24 y acciones v7 y no presenta la advertencia de runtime obsoleto observada en el primer run.
+- **Resultado:** contrato estático Node ejecutado en GitHub Actions; log de ambos runs confirma “Task-Service backup/restore static contract checks passed.”
+- **Bloqueo dinámico:** el repositorio no contiene appsscript.json, .clasp.json ni proyecto/fixture de Apps Script, Sheets o Drive aislado. No ejecutar pruebas destructivas contra datos reales; se requiere un proyecto aislado autorizado.
+- **Estado:** TASK-636 En ejecución; AUD-NG-369 abierto; closeAcademicYear BACKUP_REQUIRED.
+- **Checkpoint:** C1.316; sesión IMA-EXEC-20261109-1650Z-01; Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.316; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.316.
+===============================================================================

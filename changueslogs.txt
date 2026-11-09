@@ -305,3 +305,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se amplía el contrato estático; 42/42 comprobaciones equivalentes pasaron. No se ejecutaron Node ni Apps Script/Sheets/Drive aislados.
 - TASK-636 En ejecución; AUD-NG-369 abierto; cierre académico BACKUP_REQUIRED.
 - Checkpoint C1.315: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.315.
+
+
+[2026-11-09] IMA-EXEC-20261109-1650Z-01 — TASK-636 / PM-01 / C1.316
+- Se agrega workflow Node para el contrato de backup/restore en la rama exclusiva de trabajo.
+- Run 42659818881: Node 22, completed/success. Run 42659961195: Node 24 con actions/checkout@v7 y setup-node@v7, completed/success; el log confirma el contrato aprobado.
+- El árbol no contiene appsscript.json/.clasp.json ni fixture Apps Script/Sheets/Drive; integración real e interrupciones forzadas pendientes. TASK-636 En ejecución; AUD-NG-369 abierto; cierre académico bloqueado.

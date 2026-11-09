@@ -189,3 +189,12 @@ Endurecer las excepciones públicas de backend/academic-service/Code.gs mediante
 - Se ejecutaron 42 comprobaciones estáticas equivalentes en el runtime JavaScript de la sesión sobre los blobs preparados; 42/42 pasaron y los delimitadores del bloque modificado quedaron balanceados. No es ejecución del archivo Node.
 - Se verificó en documentación oficial de Apps Script que Drive File.setContent y Folder.getFilesByName/getFoldersByName existen; no se ejecutó Apps Script real.
 - Pendiente: Node, Apps Script runtime, Sheets/Drive aislados, interrupciones forzadas y repetibilidad real. AUD-NG-369 sigue abierto; closeAcademicYear permanece BACKUP_REQUIRED.
+
+
+## Revisión focalizada C1.316 — ejecución Node en CI y preparación de pruebas de integración
+- Se incorpora el workflow .github/workflows/task-service-backup-restore-contract.yml, limitado a push en NG_beta_0.0.0.1_work y a cambios del contrato/código; permisos mínimos contents:read.
+- Primera ejecución: run 42659818881, commit 4ebe03b79c168c0afc3d7df1ece46fe48132901a, Node 22, completed/success; el log confirmó “Task-Service backup/restore static contract checks passed.” Se observó advertencia deprecación del runtime Node20 en actions/checkout@v4 y setup-node@v4.
+- Se actualizan las acciones a actions/checkout@v7 y actions/setup-node@v7, Node 24 y package-manager-cache:false.
+- Segunda ejecución: run 42659961195, commit f5359a3668519b1c4a1bbad155f0d123fc09914d, completed/success; job “Run Node static contract” y paso “Execute backup and restore contract” concluyeron success. Log confirma “Task-Service backup/restore static contract checks passed.” sin advertencia de deprecación Node20.
+- Inspección del árbol Git: no existen appsscript.json ni .clasp.json, ni otra configuración de clasp/deployment; no hay proyecto de Apps Script ni entorno aislado de Sheets/Drive referenciado en el repositorio. No se puede ejecutar todavía el runtime de Google Apps Script ni pruebas destructivas/forzadas en un entorno aislado.
+- TASK-636 sigue En ejecución; AUD-NG-369 abierto; closeAcademicYear continúa BACKUP_REQUIRED hasta certificación de integración.

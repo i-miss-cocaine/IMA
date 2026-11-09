@@ -4882,3 +4882,10 @@ Alcance estático satisfecho; sin cambios de código. Hallazgos AUD-NG-374..376 
 - taskServiceRestoreMarkerName_ y taskServiceFindRestoreMarker_ localizan copias creadas antes de que el runtime se interrumpa; los activos mapeados se validan por hash/tamaño, padre y nombre antes de reutilizarse.
 - Dependencias de plataforma verificadas documentalmente: Drive File.setContent y Folder.getFilesByName/getFoldersByName. Apps Script runtime sigue pendiente.
 - Contrato estático ampliado; 42/42 comprobaciones equivalentes pasaron. AUD-NG-369 abierto y closeAcademicYear continúa BACKUP_REQUIRED.
+
+
+## TASK-636 — C1.316: contrato Node en CI y bloqueo de integración
+- Workflow .github/workflows/task-service-backup-restore-contract.yml ejecuta el contrato en push a NG_beta_0.0.0.1_work con permisos contents:read y Node 24.
+- Runs 42659818881 y 42659961195: completed/success; el segundo ejecuta Node 24 con actions v7 y elimina la advertencia de deprecación observada en el primer run.
+- Dependencia pendiente para certificación: proyecto Apps Script aislado, Spreadsheet de prueba y árbol Drive de prueba con credenciales/deployment autorizados. No existen appsscript.json ni .clasp.json en el repo.
+- No se deben ejecutar cierres/restores destructivos sobre datos reales. AUD-NG-369 abierto; closeAcademicYear sigue BACKUP_REQUIRED.

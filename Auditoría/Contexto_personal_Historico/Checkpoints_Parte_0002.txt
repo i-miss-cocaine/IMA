@@ -1280,3 +1280,60 @@ Hallazgo existente: AUD-NG-369 — respaldo/restauración verificables antes del
 - Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.315.
 - Commit de cierre: el commit único que contiene este checkpoint; SHA a verificar tras publicar.
 ===============================================================================
+
+
+===============================================================================
+## C1.316 — TASK-636 / PM-01 — ejecución Node en CI y bloqueo de integración Apps Script
+ID: C1.316
+Sesión: IMA-EXEC-20261109-1650Z-01
+Fecha: 2026-11-09 UTC
+Checkpoint anterior: C1.315
+Repositorio: i-miss-cocaine/IMA
+Rama de trabajo autorizada: NG_beta_0.0.0.1_work
+HEAD de partida: 1474c5ad247f546a0b27a862c40a240ad2213c24
+Commit de workflow inicial: 4ebe03b79c168c0afc3d7df1ece46fe48132901a
+Commit de workflow actualizado: f5359a3668519b1c4a1bbad155f0d123fc09914d
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+Tarea activa: TASK-636 — PM-01/P0
+Hallazgo: AUD-NG-369 — respaldo/restauración verificables antes del cierre académico.
+
+### Continuidad
+- Se mantiene el ID de sesión IMA-EXEC-20261109-1650Z-01; se continúa desde C1.315 sin reiniciar la tarea.
+- La rama base no se modifica. El workflow se ejecuta únicamente en la rama NG_beta_0.0.0.1_work.
+- No se crea un nuevo ID de tarea ni un informe de auditoría paralelo.
+
+### Ejecución real del contrato Node
+- Se creó .github/workflows/task-service-backup-restore-contract.yml, con trigger push limitado a NG_beta_0.0.0.1_work y paths del código, contrato y workflow; permisos contents:read.
+- Run 42659818881: commit 4ebe03b79c168c0afc3d7df1ece46fe48132901a; Node 22; completed/success; el paso “Execute backup and restore contract” concluyó success y el log mostró “Task-Service backup/restore static contract checks passed.”
+- El primer run emitió advertencia porque actions/checkout@v4 y setup-node@v4 aún declaraban runtime Node20, forzado a Node24.
+- Se actualizaron ambas acciones a v7, Node 24 explícito y package-manager-cache:false.
+- Run 42659961195: commit f5359a3668519b1c4a1bbad155f0d123fc09914d; completed/success; job “Run Node static contract” y paso de ejecución completados success. El log volvió a mostrar “Task-Service backup/restore static contract checks passed.” y no presentó advertencia de deprecación Node20.
+- Esta evidencia acredita ejecución del contrato estático Node; no acredita ejecución de Apps Script, Sheets o Drive.
+
+### Auditoría de disponibilidad del runtime
+- Se inspeccionó el árbol Git recursivo de HEAD f5359a3668519b1c4a1bbad155f0d123fc09914d.
+- No existen appsscript.json, .clasp.json, configuración clasp/deployment, proyecto Apps Script ni fixture aislado de Spreadsheet/Drive.
+- Sin proyecto/entorno aislado y acceso autorizado, no es seguro ni posible ejecutar restauraciones/cierres destructivos reales. No se usan datos productivos para probar rollback.
+
+### Archivos añadidos/modificados en C1.316
+1. .github/workflows/task-service-backup-restore-contract.yml
+2. Auditoría/AUDITORIA_TASK-636_C1.305.md
+3. Auditoria.txt
+4. tareas_auditoria.txt
+5. changueslogs.txt
+6. Auditoría/MapaDependencias.md
+7. Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+8. Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt
+9. Auditoría/INDICE_CHECKPOINTS.md
+10. pendientes/Otros/Pendientes.md
+
+### Estado y siguiente acción exacta
+- TASK-636: En ejecución; AUD-NG-369 abierto.
+- Criterio cubierto: contrato estático Node ejecutado con éxito en CI.
+- Criterio pendiente/bloqueado: pruebas de integración Apps Script/Sheets/Drive aislados, restauración repetible, interrupciones forzadas, integridad de referencias/IDs/permisos y Log_Cierres.
+- Siguiente acción exacta: disponer de un proyecto Apps Script de pruebas aislado con appsscript.json/deployment autorizado y Spreadsheet/Drive fixtures no productivos; ejecutar create/verify/restore y forzar interrupciones en fases de copia, mapeo, escritura de hojas y limpieza del journal. No ejecutar sobre producción. Mantener closeAcademicYear BACKUP_REQUIRED hasta evidencias verificables.
+- Requisito original: pendientes/Otros/Pendientes.md — bloque TASK-636; expediente principal Auditoría/AUDITORIA_TASK-636_C1.305.md.
+- Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.316.
+- Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.316.
+- Commit de cierre documental: este commit consolidado; SHA a verificar tras publicar.
+===============================================================================

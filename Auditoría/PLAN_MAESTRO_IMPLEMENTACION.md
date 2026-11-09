@@ -1936,3 +1936,10 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - Contrato estático equivalente: 42/42 comprobaciones pasaron en runtime JavaScript de la sesión; no es ejecución Node. Apps Script/Sheets/Drive aislados e interrupciones forzadas pendientes.
 - closeAcademicYear permanece BACKUP_REQUIRED; AUD-NG-369 abierto.
 - Checkpoint C1.315: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.315; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.315.
+
+
+## 10.14 Seguimiento de ejecución del Plan Maestro — C1.316
+- TASK-636 — PM-01/P0 — En ejecución. El contrato estático Node ya se ejecuta automáticamente en GitHub Actions restringido a NG_beta_0.0.0.1_work.
+- Runs 42659818881 y 42659961195: completed/success; run 42659961195 usa Node 24 y actions v7. El log confirma “Task-Service backup/restore static contract checks passed.”
+- No existen appsscript.json, .clasp.json ni proyecto/fixture Apps Script/Sheets/Drive aislado en el repositorio. La certificación dinámica sigue pendiente y no se habilita closeAcademicYear.
+- Checkpoint C1.316: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.316; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.316.
