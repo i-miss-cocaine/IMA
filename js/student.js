@@ -2302,6 +2302,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     await new Promise(function(resolveUpload, rejectUpload) {
                         window.uploadResumableFile(currentFile, {
                             userId: currentUser.userId || currentUser.id,
+                            tareaId: currentTaskId,
                             chunkSize: CHUNK_SIZE
                         }, {
                             onProgress: function(percent, statusMsg, etaSec) {
@@ -2312,7 +2313,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 rejectUpload(new Error(err));
                             },
                             onSuccess: function(res) {
-                                uploadResult = { status: 'success', data: { fileId: res.sessionKey, folderId: res.sessionKey, mimeType: 'folder' } };
+                                uploadResult = { status: 'success', data: { fileId: res.fileId, folderId: res.folderId, mimeType: 'folder' } };
                                 resolveUpload();
                             }
                         });
@@ -2401,6 +2402,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     uploadedFiles.push({
                         fileId: finalFileId,
+                        driveFileId: uploadedData.fileId,
                         fileName: currentFileName,
                         size: currentFileSize,
                         mimeType: finalMimeType
@@ -2506,7 +2508,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.error("Error al eliminar archivo remoto:", error);
                 }
 
-                uploadedFiles = uploadedFiles.filter(function(f) { return f.fileId !== fileId; });
+                uploadedFiles = uploadedFiles.filter(function(f) { return f.fileId !== fileId && f.driveFileId !== fileId; });
                 li.remove();
                 if (uploadedFiles.length === 0) {
                     uploadedFilesContainer.classList.add('hidden');

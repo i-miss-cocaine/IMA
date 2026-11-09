@@ -100,3 +100,20 @@ No se crean IDs nuevos. Se mantienen AUD-NG-002/AUD-NG-306, AUD-NG-368..371 y su
 
 ### Siguiente acción exacta
 Auditar y proteger los flujos de archivos/sesiones indicados en C1.307; después resolver excepciones públicas ACADEMIC y el respaldo/restauración de closeAcademicYear.
+
+
+## C1.308 — Propiedad de archivos, entregas y cargas reanudables
+
+- **HEAD de partida:** e7cdbf2875c382cf3b2f8300bf7bccd190c058fc; **rama base:** 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Task-Service: uploadFile/submitAssignment/saveSubmissionDraft derivan identidad de claims; el archivo debe tener metadatos activos con el mismo propietario y TareaID. Se retira ANYONE_WITH_LINK.
+- MetadatosArchivos amplía columnas 20/21 (PropietarioUserId/DriveFolderId), append-only. Los registros históricos sin propietario quedan bloqueados por controles fail-closed; no se infiere propietario por carpeta.
+- deleteFile permite limpiar archivos propios no entregados con metadatos; deleteSubmission exige docente propietario o administración.
+- Carga reanudable: sesión UUID asociada a actor y tarea; uploadChunk/progreso/cancelación/reconstrucción validan propietario; se guarda fileId real y el frontend deja de confundirlo con sessionKey. La ruta legacy uploadId/finishChunkedUpload queda deshabilitada.
+- Verificación estática: sin ANYONE_WITH_LINK, PUBLIC_ACTIONS vacío, claims/propiedad/tarea/sesión y contrato frontend comprobados. No se ejecutaron runtime Apps Script/Node, Sheets/Drive, HTTP, navegador, E2E ni pruebas por rol.
+- **AUD-NG-370 parcialmente corregido, no cerrado** por falta de migración de metadatos históricos y pruebas dinámicas. **AUD-NG-369 abierto**; closeAcademicYear continúa bloqueado con BACKUP_REQUIRED. Excepciones públicas ACADEMIC siguen pendientes.
+
+### Tareas derivadas de los hallazgos de la auditoría
+No se crean IDs nuevos. Se mantienen TASK-636/AUD-NG-370, TASK-496/AUD-NG-217, TASK-501/AUD-NG-221, TASK-502/AUD-NG-222 y TASK-685/AUD-NG-373 en sus ámbitos existentes. La migración histórica de metadatos y pruebas dinámicas quedan dentro de AUD-NG-370/TASK-636.
+
+### Siguiente acción exacta
+Endurecer las excepciones públicas de backend/academic-service/Code.gs mediante tokens opacos de alta entropía y minimizar los datos públicos; luego implementar y demostrar restauración aislada antes de habilitar closeAcademicYear.

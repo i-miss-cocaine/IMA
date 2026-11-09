@@ -1866,3 +1866,12 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - Verificación estática completada; no se ejecutaron pruebas runtime ni por rol.
 - Pendiente dentro de TASK-636: archivos no entregados/sesiones de carga, excepciones públicas de ACADEMIC, respaldo/restauración verificables y pruebas técnicas aplicables.
 - Checkpoint C1.307: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.307; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.307.
+
+
+## 10.6 Seguimiento de ejecución del Plan Maestro — C1.308
+- TASK-636 — PM-01/P0 — En ejecución. Se protegen archivos, entregas y sesiones de carga de Task-Service mediante claims, vínculo de tarea, metadatos de propietario y claves de sesión UUID.
+- Se retira la compartición Drive ANYONE_WITH_LINK; los metadatos amplían columnas al final para conservar compatibilidad histórica. Los registros antiguos sin propietario quedan en fallo cerrado y requieren migración auditada.
+- Frontend de carga reanudable transmite TareaID y consume el fileId real reconstruido. Se deshabilita el flujo legacy uploadId/finishChunkedUpload.
+- Verificación estática completada; no se ejecutaron runtime ni pruebas por rol. AUD-NG-370 parcialmente abierto; AUD-NG-369 abierto y closeAcademicYear bloqueado.
+- Siguiente subalcance: excepciones públicas ACADEMIC con tokens opacos y mínima exposición de PII; después backup/restore aislado verificable.
+- Checkpoint C1.308: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.308; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.308.

@@ -4814,3 +4814,11 @@ Alcance estático satisfecho; sin cambios de código. Hallazgos AUD-NG-374..376 
 - Evidencia: blob Task-Service 2df5dbdd08cc41fe400ac489d24eaac399418f56; verificaciones estáticas de llaves, claims, propietario y asignaciones.
 - No ejecutadas: runtime Apps Script, Sheets/Drive, HTTP, pruebas por rol ni E2E.
 - Pendiente: archivos no entregados/sesiones, ACADEMIC PUBLIC_ACTIONS y backup/restore. TASK-636 sigue En ejecución.
+
+
+## TASK-636 — C1.308: propiedad de archivos y sesiones reanudables
+- uploadFile/submitAssignment/saveSubmissionDraft requieren claims, ámbito de tarea y metadatos de propiedad. MetadatosArchivos amplía al final PropietarioUserId y DriveFolderId; no se infiere propiedad histórica.
+- Se elimina ANYONE_WITH_LINK. deleteFile valida archivos propios no entregados; deleteSubmission exige profesor propietario o administración.
+- Sesiones de carga asociadas a usuario/tarea con SessionKey UUID, controles de propiedad, finalización idempotente y fileId real entregado al frontend.
+- Evidencia: Task-Service blob 07a7dc5720274622f17813104c037c7a63dda9c2; js/ui-common.js blob 68e9fe25b96b92735045bf3f699f9437494531d9; js/student.js blob b3bf2fac774d20f5eeb412e42f75452645080811.
+- Verificación estática únicamente. Registros históricos sin propietario, runtime y pruebas por rol pendientes. AUD-NG-370 parcial; AUD-NG-369 abierto; cierre académico sigue bloqueado.

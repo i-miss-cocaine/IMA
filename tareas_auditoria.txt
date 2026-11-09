@@ -361,3 +361,19 @@ TASK-636 — ITERACIÓN C1.307 / MUTACIONES TASK-SERVICE
 - AUD-NG-369 permanece abierto hasta demostrar backup/restore; AUD-NG-370 hasta cerrar archivos temporales/no entregados.
 - AUD-NG-373 continúa en TASK-685.
 ===============================================================================
+
+
+===============================================================================
+TASK-636 — ITERACIÓN C1.308 / ARCHIVOS Y SESIONES DE CARGA
+===============================================================================
+- Estado: En ejecución; no Completada.
+- uploadFile, submitAssignment y saveSubmissionDraft derivados de claims; archivos enlazados a propietario y tarea por MetadatosArchivos. Se elimina el acceso Drive ANYONE_WITH_LINK.
+- deleteFile puede eliminar archivos propios aún no entregados cuando existe metadato de propiedad; deleteSubmission exige docente propietario o administración.
+- Sesiones reanudables protegidas por actor y tarea; SessionKey UUID, FileID real y MIME persistidos; frontend pasa TareaID y conserva identificador Drive real. Flujo legacy uploadId/finishChunkedUpload deshabilitado.
+- Verificación estática; runtime/Drive/Sheets/HTTP/E2E/pruebas por rol pendientes.
+
+### Tareas derivadas de los hallazgos de la auditoría
+- AUD-NG-370 continúa abierto parcialmente: migrar/reconciliar metadatos históricos sin inferir propietarios y completar pruebas dinámicas.
+- AUD-NG-369 continúa abierto: backup/restore verificable pendiente; closeAcademicYear sigue bloqueado.
+- Excepciones públicas ACADEMIC pendientes dentro de TASK-636. No crear IDs duplicados; mantener TASK-496/AUD-NG-217, TASK-501/AUD-NG-221, TASK-502/AUD-NG-222 y TASK-685/AUD-NG-373 en sus ámbitos.
+===============================================================================

@@ -755,3 +755,87 @@ Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002
 Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.307.
 Commit de cierre: el commit único que contiene este checkpoint; SHA confirmado tras publicación.
 ===============================================================================
+
+
+
+===============================================================================
+CHECKPOINT C1.308 — Propiedad de archivos, entregas y cargas reanudables
+===============================================================================
+ID: C1.308
+Sesión: IMA-EXEC-20261109-1510Z-01
+Checkpoint anterior: C1.307
+Repositorio: i-miss-cocaine/IMA
+Rama autorizada: NG_beta_0.0.0.1_work
+HEAD de partida: e7cdbf2875c382cf3b2f8300bf7bccd190c058fc
+Tree SHA de partida: 2b7932d66b2198272e28ff795bf6bb143177d660
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+Tarea: TASK-636
+Fase: PM-01 — Identidad, seguridad y gobierno de acceso
+Prioridad: P0
+Requisito original: pendientes/Otros/Pendientes.md, blob e9637ecc6f88b2aa0aec75909538e072509bf507; lectura íntegra recuperada en C1.305.
+
+### Alcance y evidencia revisada
+- Se continuó desde C1.307 sin reiniciar la tarea ni alterar la rama base.
+- Se revisaron en Task-Service: uploadFile, submitAssignment, saveSubmissionDraft, deleteFile, deleteSubmission, las dos definiciones históricas de uploadChunk, finishChunkedUpload, initiateResumableUpload, getUploadProgress, cancelUploadSession y reconstructFileParts.
+- Se revisaron los consumidores del flujo de carga en js/student.js y js/ui-common.js, además de js/api.js y el flujo de administración docente de entregas. Se verificó que el flujo de carga grande usa sendApiRequest('initiateResumableUpload'/'uploadChunk') y que la UI antes confundía sessionKey con Drive fileId.
+- Se revisaron las columnas de metadatos escritas por logFileMetadata: el esquema histórico tiene 19 columnas y DriveId en la posición 16 (índice 15); no hay propietario persistido en los registros históricos.
+- La revisión de PUBLIC_ACTIONS de Academic-Service se conserva como siguiente bloque; no se modificó en esta iteración.
+
+### Implementación C1.308
+Archivos de código:
+- backend/task-service/Code.gs — blob SHA 07a7dc5720274622f17813104c037c7a63dda9c2.
+- js/ui-common.js — blob SHA 68e9fe25b96b92735045bf3f699f9437494531d9.
+- js/student.js — blob SHA b3bf2fac774d20f5eeb412e42f75452645080811.
+
+Controles implementados:
+1. uploadFile deriva actor y rol de _verifiedUserId/_verifiedRole; comprueba la tarea y el ámbito de grado/sección para estudiantes, y propiedad/asignación activa para docentes. Ignora userId, parcial y asignatura como autoridad del cliente; utiliza el contexto de tarea/perfil.
+2. Se elimina el permiso Drive ANYONE_WITH_LINK. Los archivos subidos permanecen bajo el modelo de permisos heredado de Drive.
+3. MetadatosArchivos amplía el esquema al final, sin desplazar columnas históricas: columna 20 PropietarioUserId y columna 21 DriveFolderId. Si el registro de propiedad no se puede escribir, uploadFile mueve el archivo recién creado a la papelera y falla la operación.
+4. submitAssignment/saveSubmissionDraft requieren estudiante autenticado; rechazan userId discordante; verifican el ámbito de la tarea y que el fileId o folderId tenga metadatos activos del mismo propietario y tarea. Se conserva la comprobación de cuota previa a la entrega.
+5. deleteFile permite eliminar archivos propios aún no entregados siempre que exista metadato de propietario verificable; los registros históricos sin propietario no pasan esta comprobación.
+6. deleteSubmission requiere profesor propietario de la tarea o rol administrativo; el docente se vuelve a validar contra AulasVirtuales y AsignacionesDocentes. Para entregas cuyo MIME registrado es folder, se usa la API de carpeta.
+7. Se elimina la definición antigua de uploadChunk basada en uploadId y se deshabilita finishChunkedUpload legacy; no se conserva una ruta de fragmentos temporales controlada por uploadId.
+8. Las sesiones reanudables derivan UserId de claims, requieren tarea, almacenan TareaID/FinalFileID/OwnerRole/FileHash/MimeType en columnas añadidas al final y usan SessionKey aleatorio UUID. Reanudar/reemplazar exige propietario, tarea y metadatos de archivo compatibles.
+9. uploadChunk, getUploadProgress, cancelUploadSession y reconstructFileParts verifican propietario de sesión. Se valida índice/cantidad de fragmentos; la finalización es idempotente y devuelve el Drive fileId real.
+10. js/ui-common.js envía tarea y MIME, propaga el fileId/folderId real al callback y descarta una clave local obsoleta para iniciar una sesión nueva autenticada. js/student.js envía tarea, usa el fileId real y conserva driveFileId físico separado del folder lógico para limpiar correctamente el estado de UI al retirar un archivo.
+
+### Verificaciones ejecutadas
+- Confirmación de refs antes de construir el cambio: rama de trabajo e7cdbf2875c382cf3b2f8300bf7bccd190c058fc; rama base 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Verificaciones estáticas sobre los blobs preparados: PUBLIC_ACTIONS de Task-Service vacío; ausencia de ANYONE_WITH_LINK; identidad verificada presente en mutaciones; comprobación de propietario en sesiones; metadatos del mismo actor y tarea en submitAssignment; guardia de propietario docente en deleteSubmission; permiso de initiateResumableUpload añadido a estudiantes; flujo frontend pasa tarea y usa el fileId real; una sola definición activa de uploadChunk; finishChunkedUpload legacy deshabilitado.
+- Se conserva la comprobación de cuota de almacenamiento en submitAssignment.
+- No se ejecutaron: parser/runtime Node o Apps Script, servicios reales Sheets/Drive, pruebas HTTP, navegador, E2E ni pruebas con cuentas por rol. Los checks son estáticos y no equivalen a PASS funcional.
+
+### Límites y riesgos residuales
+- Los registros históricos de MetadatosArchivos no contienen PropietarioUserId/DriveFolderId; las nuevas operaciones que requieren propiedad fallan de forma cerrada para esos registros. Hace falta una migración de datos auditada o una reconciliación segura, no inferir propietarios por nombre de carpeta.
+- El control de estudiante en este bloque aplica el mismo ámbito de grado/sección de getStudentTasks; no se certificó una relación integral de matrícula/oferta académica ni datos reales de Sheets.
+- La consistencia ante cargas simultáneas, cuotas de Apps Script, fallos reales de Drive y recuperación de sesiones requiere pruebas runtime. La reanudación legacy sin TareaID se invalida; el usuario debe iniciar una carga nueva.
+- AUD-NG-370 queda parcialmente corregido, no cerrado: faltan migración/reconciliación histórica y pruebas dinámicas. AUD-NG-002/AUD-NG-306 y demás correcciones de TASK-636 continúan pendientes de pruebas.
+- AUD-NG-369 sigue abierto: closeAcademicYear permanece bloqueado con BACKUP_REQUIRED; no se habilita borrado sin backup/restore restaurable verificado.
+- Las excepciones públicas de Academic-Service (ping, createAdmissionRequest, getPublicAdmissionStatus, saveAdmissionDraft, getAdmissionDraft y getServiceHealthDiagnostics) siguen pendientes de endurecimiento. No se habilitaron ni se declararon seguras.
+
+### Tareas derivadas de los hallazgos de la auditoría
+- No se crean IDs duplicados ni se reasignan hallazgos a otra tarea.
+- AUD-NG-370 permanece dentro de TASK-636 hasta migrar/reconciliar metadatos históricos y verificar rutas de archivos/sesiones.
+- TASK-496/AUD-NG-217: validación contextual y asignación docente; conservar su alcance transversal.
+- TASK-501/AUD-NG-221: matriz dinámica de permisos; conservar su alcance transversal.
+- TASK-502/AUD-NG-222: RBAC/ABAC común; conservar su alcance transversal.
+- TASK-685/AUD-NG-373: EXAM; permanece fuera de TASK-636.
+- Siguiente bloque de TASK-636: endurecer las excepciones públicas de Academic-Service con capacidades opacas de alta entropía y sin fuga de PII; después diseñar y demostrar backup/restore aislado para closeAcademicYear.
+
+### Archivos modificados en esta iteración
+1. backend/task-service/Code.gs
+2. js/ui-common.js
+3. js/student.js
+4. Auditoría/AUDITORIA_TASK-636_C1.305.md
+5. Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt
+6. Auditoría/INDICE_CHECKPOINTS.md
+7. Auditoria.txt
+8. tareas_auditoria.txt
+9. changueslogs.txt
+10. Auditoría/MapaDependencias.md
+11. Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+
+Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.308.
+Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.308.
+Commit de cierre: el commit único que contiene este checkpoint; SHA confirmado tras publicación.
+===============================================================================

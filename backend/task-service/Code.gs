@@ -27,38 +27,11 @@ function logDebug(message, optionalParam) {
 }
 
 function logFileMetadata(ss, meta) {
-  try {
-    let sheet = ss.getSheetByName("MetadatosArchivos");
-    if (!sheet) {
-      sheet = ss.insertSheet("MetadatosArchivos");
-      sheet.appendRow(["ID", "Titulo", "NombreOriginal", "NombreFisico", "TipoRecurso", "Asignatura", "Grado", "Seccion", "Parcial", "Anio", "Tema", "TareaId", "ProfesorId", "FechaSubida", "Estado", "DriveId", "RutaDrive", "MimeType", "TamanoBytes"]);
-    }
-    const metaId = "META-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
-    const nowYear = new Date().getFullYear();
-    sheet.appendRow([
-      metaId,
-      meta.titulo || meta.fileName || "",
-      meta.fileName || "",
-      meta.fileName || "",
-      meta.tipoRecurso || "Entrega",
-      meta.asignatura || "General",
-      meta.grado || "General",
-      meta.seccion || "General",
-      meta.parcial || "I parcial",
-      nowYear,
-      meta.tema || "General",
-      meta.tareaId || "",
-      meta.profesorId || "",
-      new Date().toISOString(),
-      "Activo",
-      meta.fileId || "",
-      meta.fileUrl || "",
-      meta.mimeType || "",
-      meta.sizeBytes || 0
-    ]);
-  } catch (err) {
-    logDebug("Error logging file metadata:", err.message);
-  }
+  const sheet=ensureTaskServiceFileMetadataSheet(ss);
+  sheet.appendRow(["META-"+Utilities.getUuid(),meta.titulo||meta.fileName||"",meta.fileName||"",meta.fileName||"",meta.tipoRecurso||"Entrega",
+    meta.asignatura||"General",meta.grado||"General",meta.seccion||"General",meta.parcial||"General",new Date().getFullYear(),meta.tema||"General",
+    meta.tareaId||"",meta.profesorId||"",new Date().toISOString(),"Activo",meta.fileId||"",meta.fileUrl||"",meta.mimeType||"",meta.sizeBytes||0,
+    meta.ownerUserId||"",meta.folderId||""]);
 }
 
 function getSheetOrThrow(ss, name) {
@@ -103,12 +76,12 @@ const ROLE_PERMISSIONS = {
   ,
     "getSubmissionDocumentPreviewUrl"],
   "Estudiante": [
-    "getStudentTasks", "submitAssignment", "saveSubmissionDraft", "uploadFile", "uploadChunk", "finishChunkedUpload", "deleteFile",
+    "getStudentTasks", "submitAssignment", "saveSubmissionDraft", "uploadFile", "uploadChunk", "initiateResumableUpload", "getUploadProgress", "cancelUploadSession", "deleteFile",
     "saveProject", "deleteProject", "listProjects", "loadProject", "getAllStudentProjects",
     "getVirtualClassrooms", "getPosts", "getStudyMaterials", "getSubmissionComments", "addSubmissionComment", "getSubmissionVersions"
   ],
   "Alumno": [
-    "getStudentTasks", "submitAssignment", "saveSubmissionDraft", "uploadFile", "uploadChunk", "finishChunkedUpload", "deleteFile",
+    "getStudentTasks", "submitAssignment", "saveSubmissionDraft", "uploadFile", "uploadChunk", "initiateResumableUpload", "getUploadProgress", "cancelUploadSession", "deleteFile",
     "saveProject", "deleteProject", "listProjects", "loadProject", "getAllStudentProjects",
     "getVirtualClassrooms", "getPosts", "getStudyMaterials", "getSubmissionComments", "addSubmissionComment", "getSubmissionVersions"
   ]
@@ -607,296 +580,112 @@ function getStudentTasks(payload) {
  * Sube un archivo individualmente a Drive sin registrar la entrega aún.
  * Crea una carpeta específica para la entrega del alumno en esa tarea.
  */
-function uploadFile(payload) {
-  const { userId, tareaId, parcial, asignatura, fileData, fileName } = payload;
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const usuariosSheet = getSheetOrThrow(ss, "Usuarios");
-  const tareasSheet = getSheetOrThrow(ss, "Tareas");
 
-  const userData = usuariosSheet.getDataRange().getValues().find(row => row[0] === userId);
-  if (!userData) throw new Error("Usuario no encontrado.");
-  const [, nombre, grado, seccion] = userData;
+function assertTaskServiceStudentCanAccessTask(ss, userId, taskRow) {
+  if (!taskRow) throw new Error("Tarea no encontrada.");
+  const profile = getTaskServiceUserProfile(userId);
+  if (normalizeString(taskRow[6]) !== normalizeString(profile.grado)) throw new Error("Acceso denegado: tarea fuera del grado del estudiante.");
+  if (taskRow[7] && String(taskRow[7]).trim() && !isInTeacherList(profile.seccion, taskRow[7])) throw new Error("Acceso denegado: tarea fuera de la sección del estudiante.");
+  if (String(taskRow[11] || "Activa").trim().toLowerCase() === "desactivada") throw new Error("La tarea no está disponible.");
+  if (String(taskRow[1] || "").trim() === "Credito Extra") {
+    const originalId = String(taskRow[9] || "").trim();
+    const deliveries = getSheetOrThrow(ss, "Entregas").getDataRange().getValues().slice(1);
+    const original = deliveries.find(r => String(r[1]).trim() === originalId && String(r[2]).trim() === String(userId).trim());
+    const state = String(original && original[6] || "").trim().toLowerCase();
+    if (!original || ["rechazada", "revisada_rechazada", "tarea incompleta"].indexOf(state) === -1) throw new Error("Acceso denegado: crédito extra sin entrega original rechazada.");
+  }
+  return profile;
+}
 
-  const taskData = tareasSheet.getDataRange().getValues().find(row => row[0] === tareaId);
-  if (!taskData) throw new Error("Tarea no encontrada.");
-  const tituloTarea = taskData[2] || "Tarea Sin Titulo";
-
-  const rootFolder = DriveApp.getFolderById(DRIVE_FOLDER_ID);
-  // Normalizar metadatos a string antes de crear carpetas
-  const sGrado = String(grado || "General");
-  const sSeccion = String(seccion || "General");
-  const sNombre = String(nombre || "Usuario");
-  const sParcial = String(parcial || "General");
-  const sAsignatura = String(asignatura || "General");
-
-  const gradoFolder = getOrCreateFolder(rootFolder, sGrado);
-  const seccionFolder = getOrCreateFolder(gradoFolder, sSeccion);
-  const alumnoFolder = getOrCreateFolder(seccionFolder, sNombre);
-  const parcialFolder = getOrCreateFolder(alumnoFolder, sParcial);
-  const asignaturaFolder = getOrCreateFolder(parcialFolder, sAsignatura);
-
-  const taskDeliveryFolder = getOrCreateFolder(asignaturaFolder, `${String(tituloTarea)}_${String(userId)}`);
-
-  const fileInfo = fileData.split(',');
-  let mimeType = "application/octet-stream";
-  let base64Content = fileInfo[1];
-
-  const mimeMatch = fileInfo[0].match(/:(.*?);/);
-  if (mimeMatch && mimeMatch[1]) {
-    mimeType = mimeMatch[1];
+function ensureTaskServiceFileMetadataSheet(ss) {
+  const sheet = getOrCreateSheet(ss, "MetadatosArchivos");
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(["ID","Titulo","NombreOriginal","NombreFisico","TipoRecurso","Asignatura","Grado","Seccion","Parcial","Anio","Tema","TareaId","ProfesorId","FechaSubida","Estado","DriveId","RutaDrive","MimeType","TamanoBytes","PropietarioUserId","DriveFolderId"]);
   } else {
-    // Si no viene en el dataUrl, intentamos por extensión
-    const ext = fileName.split('.').pop().toLowerCase();
-    const mimeMap = {
-      'js': 'text/javascript',
-      'css': 'text/css',
-      'html': 'text/html',
-      'txt': 'text/plain',
-      'psc': 'text/plain', // Pseudocódigo (PSeInt)
-      'heic': 'image/heic'
-    };
-    mimeType = mimeMap[ext] || mimeType;
-    base64Content = fileData; // En caso de que no sea DataURL
+    if (!sheet.getRange(1,20).getValue()) sheet.getRange(1,20).setValue("PropietarioUserId");
+    if (!sheet.getRange(1,21).getValue()) sheet.getRange(1,21).setValue("DriveFolderId");
   }
-
-  const blob = Utilities.newBlob(Utilities.base64Decode(base64Content), mimeType, fileName);
-
-  const file = taskDeliveryFolder.createFile(blob);
-
-  try {
-    taskDeliveryFolder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-  } catch (e) {
-    logDebug("No se pudo establecer el permiso de compartir carpeta:", e.message);
-  }
-
-  logFileMetadata(ss, {
-    fileName: fileName,
-    fileId: file.getId(),
-    fileUrl: file.getUrl(),
-    mimeType: mimeType,
-    sizeBytes: blob.getBytes().length,
-    tareaId: tareaId,
-    asignatura: sAsignatura,
-    parcial: sParcial,
-    grado: sGrado,
-    seccion: sSeccion,
-    profesorId: taskData[10] || ""
-  });
-
-  return {
-    status: "success",
-    data: {
-      fileId: file.getId(),
-      folderId: taskDeliveryFolder.getId(),
-      folderUrl: taskDeliveryFolder.getUrl(),
-      mimeType: mimeType
-    }
-  };
+  return sheet;
 }
 
-/**
- * DEPRECATED: Se utiliza uploadFile con segmentación lógica en cliente.
- * Recibe un trozo de archivo y lo guarda temporalmente.
- */
-function uploadChunk(payload) {
-  try {
-    const { uploadId, chunkIndex, chunkData } = payload;
-    if (!uploadId || chunkIndex === undefined || !chunkData) throw new Error("Parámetros de chunk incompletos.");
-
-    const tempRoot = getOrCreateFolder(DriveApp.getRootFolder(), ".temp_uploads");
-    const uploadFolder = getOrCreateFolder(tempRoot, uploadId);
-
-    // REQ: Sanitización de Base64 para evitar "No se pudo descifrar la cadena" (Tarea 3)
-    let sanitizedData = chunkData.replace(/-/g, '+').replace(/_/g, '/');
-    sanitizedData = sanitizedData.replace(/\s/g, ''); // Eliminar espacios o saltos de línea
-    while (sanitizedData.length % 4 !== 0) sanitizedData += '='; // Asegurar padding
-
-    const blob = Utilities.newBlob(Utilities.base64Decode(sanitizedData), "application/octet-stream", `chunk_${chunkIndex}`);
-    uploadFolder.createFile(blob);
-
-    return { status: "success", message: `Chunk ${chunkIndex} recibido.` };
-  } catch (e) {
-    logDebug("Error en uploadChunk:", e.message);
-    return { status: "error", message: "Error al procesar fragmento: " + e.message };
-  }
+function findTaskServiceUploadSession(sessionSheet, sessionKey) {
+  const data=sessionSheet.getDataRange().getValues();
+  for(let i=1;i<data.length;i++)if(String(data[i][0])===String(sessionKey))return {rowIndex:i+1,row:data[i]};
+  return null;
 }
+
+function assertTaskServiceUploadSessionOwner(session,payload) {
+  const actorId=payload&&payload._verifiedUserId,role=payload&&payload._verifiedRole;
+  if(!session||!actorId||String(session.row[1]).trim()!==String(actorId).trim())throw new Error("Acceso denegado: sesión de carga ajena.");
+  if(role!=="Estudiante"&&role!=="Alumno"&&!isTaskServiceAdministrativeRole(role))throw new Error("Rol no autorizado para esta sesión de carga.");
+  return actorId;
+}
+
+function uploadFile(payload) {
+  const actorId=payload&&payload._verifiedUserId,role=payload&&payload._verifiedRole;
+  const tareaId=String(payload&&payload.tareaId||"").trim(),fileData=payload&&payload.fileData,fileName=String(payload&&payload.fileName||"").trim();
+  if(!actorId||!tareaId||!fileData||!fileName)throw new Error("Identidad, tarea, nombre y contenido del archivo son obligatorios.");
+  if(role!=="Estudiante"&&role!=="Alumno"&&role!=="Profesor"&&!isTaskServiceAdministrativeRole(role))throw new Error("Rol no autorizado para subir archivos.");
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),taskData=getSheetOrThrow(ss,"Tareas").getDataRange().getValues().slice(1).find(r=>String(r[0]).trim()===tareaId);
+  if(!taskData)throw new Error("Tarea no encontrada.");
+  let profile;
+  if(role==="Estudiante"||role==="Alumno")profile=assertTaskServiceStudentCanAccessTask(ss,actorId,taskData);
+  else if(role==="Profesor"){assertTaskServiceTeacherCanManageTask(payload,taskData);profile=getTaskServiceUserProfile(actorId);}
+  else profile=getTaskServiceUserProfile(actorId);
+  const parts=String(fileData).split(","),raw=parts.length>1?parts[1]:parts[0];
+  let mimeType="application/octet-stream";
+  const match=parts[0].match(/^data:([^;]+);base64$/i);
+  if(match)mimeType=match[1];
+  else {const ext=fileName.split(".").pop().toLowerCase();const map={js:"text/javascript",css:"text/css",html:"text/html",txt:"text/plain",psc:"text/plain",heic:"image/heic"};mimeType=map[ext]||mimeType;}
+  if(!raw||raw.length>70*1024*1024)throw new Error("Archivo vacío o supera el límite permitido.");
+  const bytes=Utilities.base64Decode(raw.replace(/\s/g,""));
+  if(bytes.length>50*1024*1024)throw new Error("El archivo supera el límite de 50 MB.");
+  const blob=Utilities.newBlob(bytes,mimeType,fileName),root=DriveApp.getFolderById(DRIVE_FOLDER_ID);
+  const grade=getOrCreateFolder(root,String(profile.grado||taskData[6]||"General"));
+  const section=getOrCreateFolder(grade,String(profile.seccion||taskData[7]||"General"));
+  const ownerFolder=getOrCreateFolder(section,String(profile.nombre||actorId));
+  const partial=getOrCreateFolder(ownerFolder,String(taskData[4]||"General"));
+  const subject=getOrCreateFolder(partial,String(taskData[5]||"General"));
+  const taskFolder=getOrCreateFolder(subject,String(taskData[2]||"Tarea")+"_"+actorId);
+  const file=taskFolder.createFile(blob);
+  try{logFileMetadata(ss,{fileName,fileId:file.getId(),fileUrl:file.getUrl(),mimeType,sizeBytes:bytes.length,tareaId,
+    asignatura:String(taskData[5]||"General"),parcial:String(taskData[4]||"General"),grado:String(taskData[6]||"General"),seccion:String(taskData[7]||"General"),
+    profesorId:String(taskData[10]||""),ownerUserId:actorId,folderId:taskFolder.getId()});}
+  catch(err){try{file.setTrashed(true);}catch(_){}throw new Error("No se pudo registrar la propiedad del archivo; la carga fue revertida.");}
+  return {status:"success",data:{fileId:file.getId(),folderId:taskFolder.getId(),mimeType}};
+}
+
+
 
 /**
  * DEPRECATED: Se utiliza uploadFile con segmentación lógica en cliente.
  * Une todos los chunks y crea el archivo final.
  */
-function finishChunkedUpload(payload) {
-  try {
-    const { uploadId, userId, tareaId, parcial, asignatura, fileName, mimeType, totalChunks } = payload;
-    if (!uploadId || !userId || !tareaId || totalChunks === undefined) throw new Error("Parámetros incompletos para finalizar subida.");
-
-    const tempRoot = getOrCreateFolder(DriveApp.getRootFolder(), ".temp_uploads");
-    const uploadFolder = getOrCreateFolder(tempRoot, uploadId);
-    const chunks = uploadFolder.getFiles();
-
-    const chunkMap = {};
-    let count = 0;
-    while (chunks.hasNext()) {
-      const file = chunks.next();
-      const idx = parseInt(file.getName().split('_')[1]);
-      chunkMap[idx] = file.getBlob().getBytes();
-      count++;
-    }
-
-    if (count < totalChunks) throw new Error(`Se esperaban ${totalChunks} fragmentos pero solo se encontraron ${count}.`);
-
-    // Optimización de Memoria: Pre-calcular tamaño total y usar Int8Array (Tarea 3)
-    let totalSize = 0;
-    for (let i = 0; i < totalChunks; i++) {
-      if (!chunkMap[i]) throw new Error(`Falta el fragmento número ${i}.`);
-      totalSize += chunkMap[i].length;
-    }
-
-    const combinedBytes = new Int8Array(totalSize);
-    let offset = 0;
-    for (let i = 0; i < totalChunks; i++) {
-      combinedBytes.set(chunkMap[i], offset);
-      offset += chunkMap[i].length;
-    }
-
-    const finalBlob = Utilities.newBlob(combinedBytes, mimeType, fileName);
-
-    const alumnoFolder = getStudentFolder(userId);
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    const tareasSheet = getSheetOrThrow(ss, "Tareas");
-    const taskData = tareasSheet.getDataRange().getValues().find(row => row[0] === tareaId);
-    const tituloTarea = taskData ? taskData[2] : "Tarea Sin Titulo";
-
-    const parcialFolder = getOrCreateFolder(alumnoFolder, String(parcial || "General"));
-    const asignaturaFolder = getOrCreateFolder(parcialFolder, String(asignatura || "General"));
-    const taskDeliveryFolder = getOrCreateFolder(asignaturaFolder, `${String(tituloTarea)}_${String(userId)}`);
-
-    const file = taskDeliveryFolder.createFile(finalBlob);
-
-    // Limpieza de temporales
-    try { uploadFolder.setTrashed(true); } catch (e) { logDebug("Fallo limpieza de carpeta temporal:", e.message); }
-
-    try {
-      taskDeliveryFolder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-    } catch (e) {}
-
-    return {
-      status: "success",
-      data: {
-        fileId: file.getId(),
-        folderId: taskDeliveryFolder.getId(),
-        mimeType: mimeType
-      }
-    };
-  } catch (e) {
-    logDebug("Error en finishChunkedUpload:", e.message);
-    return { status: "error", message: "Error al reconstruir el archivo: " + e.message };
-  }
-}
+function finishChunkedUpload() { throw new Error("El protocolo de carga legacy está deshabilitado; utilice carga reanudable autenticada."); }
 
 // [TAREA-10] [Fase 1: Auditoría y planificación de la expansión] - Sistema ampliado de asignaciones, entregas multimodales, revisiones, versiones, rúbricas y retroalimentación.
 function submitAssignment(payload) {
-  // [TAREA-F8-MANT-01] Verificar cuota de almacenamiento previa a la confirmación de la entrega
-  try {
-    var quotaReport = getDriveStorageQuotaMetricsReport({});
-    if (quotaReport && quotaReport.status === "success" && quotaReport.metrics && parseFloat(quotaReport.metrics.porcentajeUso) >= 99.5) {
-      return {
-        status: "error",
-        message: "No se puede confirmar la entrega: El almacenamiento del servidor ha alcanzado su límite máximo (" + quotaReport.metrics.porcentajeUso + "%). Contacte al soporte institucional."
-      };
-    }
-  } catch (errQuota) {
-    Logger.log("Aviso al verificar cuota en submitAssignment: " + errQuota.message);
-  }
-
-  const { userId, tareaId, fileId, mimeType, textoRespuesta, enlaceExterno, observaciones, esBorrador } = payload || {};
-  if (!userId || !tareaId) throw new Error("userId y tareaId son requeridos para la entrega.");
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const entregasSheet = getSheetOrThrow(ss, "Entregas");
-  const versionesSheet = getOrCreateSheet(ss, "EntregasVersiones");
-  if (versionesSheet.getLastRow() === 0) {
-    versionesSheet.appendRow(["ID", "EntregaID", "TareaID", "UserID", "VersionNum", "ArchivoUrl", "FileID", "MimeType", "TextoRespuesta", "EnlaceExterno", "FechaEnvio", "Estado", "Observaciones"]);
-  }
-
-  const data = entregasSheet.getDataRange().getValues();
-  const now = new Date();
-
-  // Verificar si ya existe una entrega previa del usuario para esta tarea
-  const existingIdx = data.findIndex(row => String(row[2]).trim() === String(userId).trim() && String(row[1]).trim() === String(tareaId).trim());
-
-  let entregaId;
-  let versionNum = 1;
-  let estadoEntrega = esBorrador ? "borrador" : "Pendiente de revisión";
-
-  // Verificar si la entrega es tardía y verificar límites de intentos
-  try {
-    const tareasSheet = getSheetOrThrow(ss, "Tareas");
-    const tareasData = tareasSheet.getDataRange().getValues();
-    const taskRow = tareasData.find(r => String(r[0]).trim() === String(tareaId).trim());
-    if (taskRow) {
-      if (taskRow[8] && !esBorrador) {
-        const fechaLimite = new Date(taskRow[8]);
-        if (now.getTime() > fechaLimite.getTime()) {
-          estadoEntrega = "EntregadaTarde";
-        }
-      }
-    }
-  } catch (e) {
-    logDebug("Error al verificar fecha limite:", e.message);
-  }
-
-  if (existingIdx !== -1) {
-    entregaId = data[existingIdx][0];
-    const prevRow = data[existingIdx];
-
-    // Obtener número de versión anterior
-    const prevVersions = versionesSheet.getDataRange().getValues().filter(r => String(r[1]).trim() === String(entregaId).trim());
-    versionNum = prevVersions.length + 1;
-
-    // Actualizar registro principal
-    prevRow[3] = now;
-    if (fileId !== undefined) prevRow[4] = fileId;
-    prevRow[6] = estadoEntrega;
-    if (mimeType !== undefined) prevRow[8] = mimeType;
-
-    entregasSheet.getRange(existingIdx + 1, 1, 1, prevRow.length).setValues([prevRow]);
-  } else {
-    entregaId = "ENT-" + now.getTime();
-    entregasSheet.appendRow([entregaId, tareaId, userId, now, fileId || '', '', estadoEntrega, observaciones || '', mimeType || '']);
-  }
-
-  // Registrar versión histórica en EntregasVersiones
-  const versionId = "VER-" + now.getTime() + "-" + versionNum;
-  versionesSheet.appendRow([
-    versionId,
-    entregaId,
-    tareaId,
-    userId,
-    versionNum,
-    fileId ? `https://drive.google.com/file/d/${fileId}/view` : "",
-    fileId || "",
-    mimeType || "",
-    textoRespuesta || "",
-    enlaceExterno || "",
-    now,
-    estadoEntrega,
-    observaciones || ""
-  ]);
-
-  const submissionToken = "RECIEVED-" + Date.now() + "-" + Math.floor(1000 + Math.random() * 9000);
-
-  return {
-    status: "success",
-    message: esBorrador ? "Borrador de tarea guardado." : "Tarea entregada y registrada en el servidor.",
-    data: {
-      entregaId: entregaId,
-      versionNum: versionNum,
-      submissionToken: submissionToken,
-      fechaRecepcion: now.toISOString(),
-      estado: estadoEntrega
-    }
-  };
+  const actorId=payload&&payload._verifiedUserId,role=payload&&payload._verifiedRole,tareaId=String(payload&&payload.tareaId||"").trim();
+  if(!actorId||(role!=="Estudiante"&&role!=="Alumno"))throw new Error("Solo el estudiante autenticado puede entregar su tarea.");
+  if(payload.userId&&String(payload.userId).trim()!==String(actorId).trim())throw new Error("El userId enviado no coincide con la sesión autenticada.");
+  if(!tareaId)throw new Error("tareaId es obligatorio.");
+  try{const quota=getDriveStorageQuotaMetricsReport({});if(quota&&quota.status==="success"&&quota.metrics&&parseFloat(quota.metrics.porcentajeUso)>=99.5)return {status:"error",message:"No se puede confirmar la entrega: el almacenamiento del servidor alcanzó su límite máximo. Contacte al soporte institucional."};}
+  catch(quotaError){Logger.log("Aviso al verificar cuota en submitAssignment: "+quotaError.message);}
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),taskRow=getSheetOrThrow(ss,"Tareas").getDataRange().getValues().slice(1).find(r=>String(r[0]).trim()===tareaId);
+  assertTaskServiceStudentCanAccessTask(ss,actorId,taskRow);
+  const fileId=extractTaskServiceFileId(payload.fileId),mimeType=payload.mimeType||"";
+  if(payload.fileId){const meta=ensureTaskServiceFileMetadataSheet(ss).getDataRange().getValues().slice(1);
+    const owned=meta.some(r=>(String(r[15]||"").trim()===fileId||String(r[20]||"").trim()===fileId)&&String(r[11]||"").trim()===tareaId&&String(r[19]||"").trim()===String(actorId).trim()&&String(r[14]||"").trim().toLowerCase()==="activo");
+    if(!owned)throw new Error("Acceso denegado: el archivo no pertenece al estudiante ni a la tarea indicada.");}
+  const entregas=getSheetOrThrow(ss,"Entregas"),versions=getOrCreateSheet(ss,"EntregasVersiones");
+  if(versions.getLastRow()===0)versions.appendRow(["ID","EntregaID","TareaID","UserID","VersionNum","ArchivoUrl","FileID","MimeType","TextoRespuesta","EnlaceExterno","FechaEnvio","Estado","Observaciones"]);
+  const data=entregas.getDataRange().getValues(),now=new Date(),idx=data.findIndex((r,i)=>i>0&&String(r[2]).trim()===String(actorId).trim()&&String(r[1]).trim()===tareaId);
+  let entregaId,versionNum=1,estado=payload.esBorrador?"borrador":"Pendiente de revisión";
+  if(taskRow[8]&&!payload.esBorrador&&now.getTime()>new Date(taskRow[8]).getTime())estado="EntregadaTarde";
+  if(idx>0){entregaId=data[idx][0];const prev=data[idx];versionNum=versions.getDataRange().getValues().filter(r=>String(r[1]).trim()===String(entregaId).trim()).length+1;prev[3]=now;prev[4]=fileId||"";prev[6]=estado;prev[8]=mimeType;entregas.getRange(idx+1,1,1,prev.length).setValues([prev]);}
+  else{entregaId="ENT-"+Utilities.getUuid();entregas.appendRow([entregaId,tareaId,actorId,now,fileId||"","",estado,payload.observaciones||"",mimeType]);}
+  versions.appendRow(["VER-"+Utilities.getUuid(),entregaId,tareaId,actorId,versionNum,fileId&&mimeType!=="folder"?"https://drive.google.com/file/d/"+fileId+"/view":"",fileId||"",mimeType,payload.textoRespuesta||"",payload.enlaceExterno||"",now,estado,payload.observaciones||""]);
+  return {status:"success",message:payload.esBorrador?"Borrador de tarea guardado.":"Tarea entregada y registrada en el servidor.",data:{entregaId,versionNum,submissionToken:"RECIEVED-"+Utilities.getUuid(),fechaRecepcion:now.toISOString(),estado}};
 }
 
 function saveSubmissionDraft(payload) {
@@ -953,15 +742,14 @@ function gradeSubmissionWithRubric(payload) {
  * Elimina un archivo de Drive (lo mueve a la papelera) (A-30).
  */
 function deleteFile(payload) {
-  const actorId = payload && payload._verifiedUserId, role = payload && payload._verifiedRole;
-  const fileId = extractTaskServiceFileId(payload && payload.fileId);
-  if (!actorId || !fileId || (role !== "Estudiante" && role !== "Alumno")) throw new Error("Acceso denegado: se requiere identidad de estudiante.");
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const deliveries = getSheetOrThrow(ss, "Entregas").getDataRange().getValues().slice(1);
-  const owned = deliveries.some(row => extractTaskServiceFileId(row[4]) === fileId && String(row[2]).trim() === String(actorId).trim());
-  if (!owned) throw new Error("Acceso denegado: el archivo no está vinculado a una entrega propia.");
+  const actorId=payload&&payload._verifiedUserId,role=payload&&payload._verifiedRole,fileId=extractTaskServiceFileId(payload&&payload.fileId);
+  if(!actorId||!fileId||(role!=="Estudiante"&&role!=="Alumno"))throw new Error("Acceso denegado: se requiere identidad de estudiante.");
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=ensureTaskServiceFileMetadataSheet(ss),rows=sheet.getDataRange().getValues();
+  const idx=rows.findIndex((r,i)=>i>0&&String(r[15]||"").trim()===fileId&&String(r[19]||"").trim()===String(actorId).trim()&&String(r[14]||"").trim().toLowerCase()==="activo");
+  if(idx<1)throw new Error("Acceso denegado: archivo sin metadatos de propiedad verificables.");
   DriveApp.getFileById(fileId).setTrashed(true);
-  return { status:"success", message:"Archivo eliminado." };
+  sheet.getRange(idx+1,15).setValue("Eliminado");
+  return {status:"success",message:"Archivo propio eliminado."};
 }
 function gradeSubmission(payload) {
   const { entregaId, calificacion, estado, comentario } = payload;
@@ -995,27 +783,17 @@ function gradeSubmission(payload) {
 }
 
 function deleteSubmission(payload) {
-  const { entregaId } = payload;
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const entregasSheet = getSheetOrThrow(ss, "Entregas");
-  const data = entregasSheet.getDataRange().getValues();
-  const rowIndex = data.findIndex(row => row[0] === entregaId);
-
-  if (rowIndex === -1) throw new Error("Entrega no encontrada.");
-
-  const fileId = data[rowIndex][4]; // Columna E: fileId
-  if (fileId) {
-    try {
-      const file = DriveApp.getFileById(fileId);
-      file.setTrashed(true);
-    } catch (e) {
-      logDebug("Error al borrar archivo de Drive:", e.message);
-      // No lanzamos error para permitir borrar el registro si el archivo ya no existe
-    }
-  }
-
-  entregasSheet.deleteRow(rowIndex + 1);
-  return { status: "success", message: "Entrega eliminada correctamente." };
+  const actorId=payload&&payload._verifiedUserId,role=payload&&payload._verifiedRole,entregaId=String(payload&&payload.entregaId||"").trim();
+  if(!actorId||!entregaId)throw new Error("Identidad y entrega requeridas.");
+  if(role!=="Profesor"&&!isTaskServiceAdministrativeRole(role))throw new Error("Acceso denegado: solo el docente propietario o administración puede eliminar entregas.");
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=getSheetOrThrow(ss,"Entregas"),data=sheet.getDataRange().getValues(),idx=data.findIndex((r,i)=>i>0&&String(r[0]).trim()===entregaId);
+  if(idx<1)throw new Error("Entrega no encontrada.");
+  const taskId=String(data[idx][1]||"").trim(),task=getSheetOrThrow(ss,"Tareas").getDataRange().getValues().slice(1).find(r=>String(r[0]).trim()===taskId);
+  if(!task)throw new Error("No se puede eliminar: la tarea asociada no existe.");
+  if(role==="Profesor")assertTaskServiceTeacherCanManageTask(payload,task);
+  const fileId=extractTaskServiceFileId(data[idx][4]),mime=String(data[idx][8]||"");
+  if(fileId){try{if(mime==="folder")DriveApp.getFolderById(fileId).setTrashed(true);else DriveApp.getFileById(fileId).setTrashed(true);}catch(e){logDebug("No se pudo eliminar archivo de entrega.",e.message);throw new Error("No se eliminó la entrega porque falló la eliminación del archivo asociado.");}}
+  sheet.deleteRow(idx+1);return {status:"success",message:"Entrega eliminada correctamente."};
 }
 
 function getTeacherActivity(payload) {
@@ -1534,102 +1312,28 @@ function getSubmissionVersions(payload) {
 // ---------------------------------------------------------------------------
 
 function initiateResumableUpload(payload) {
-  try {
-    const { userId, fileName, fileSize, totalChunks, mimeType, fileHash, resumeSessionKey, replaceSessionKey } = payload || {};
-    if (!userId || !fileName || !fileSize || !totalChunks) {
-      throw new Error("Parámetros obligatorios de sesión de carga incompletos.");
-    }
-
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    const sessionSheet = getOrCreateSheet(ss, "SesionesCargaResumible");
-    if (sessionSheet.getLastRow() === 0) {
-      sessionSheet.appendRow(["SessionKey", "UserId", "FileName", "FileSize", "TotalChunks", "ConfirmedChunks", "Status", "FolderId", "OldSessionKey", "CreatedFilesJson", "CreatedAt", "UpdatedAt"]);
-    }
-
-    // If explicit resume request: check if resumeSessionKey exists
-    if (resumeSessionKey) {
-      const data = sessionSheet.getDataRange().getValues();
-      for (let i = 1; i < data.length; i++) {
-        if (data[i][0] === resumeSessionKey && data[i][6] === "ACTIVE") {
-          const confirmed = JSON.parse(data[i][5] || "[]");
-          return {
-            status: "success",
-            sessionKey: resumeSessionKey,
-            confirmedChunks: confirmed,
-            totalChunks: parseInt(data[i][4], 10),
-            folderId: data[i][7] || "",
-            isResume: true
-          };
-        }
-      }
-    }
-
-    const baseHash = fileHash || computeSimpleHash(fileName + "_" + fileSize);
-    const newSessionKey = "SESS_" + userId + "_" + baseHash + "_" + (replaceSessionKey ? Date.now() : "ORIG");
-
-    let oldFilesJson = "[]";
-    let oldSessionKey = "";
-
-    if (replaceSessionKey) {
-      const data = sessionSheet.getDataRange().getValues();
-      for (let i = 1; i < data.length; i++) {
-        if (data[i][0] === replaceSessionKey) {
-          oldSessionKey = replaceSessionKey;
-          oldFilesJson = data[i][9] || "[]";
-          sessionSheet.getRange(i + 1, 7).setValue("REPLACED_PENDING_CLEANUP");
-          sessionSheet.getRange(i + 1, 12).setValue(new Date().toISOString());
-          break;
-        }
-      }
-    }
-
-    const data = sessionSheet.getDataRange().getValues();
-    for (let i = 1; i < data.length; i++) {
-      if (data[i][0] === newSessionKey && data[i][6] === "ACTIVE") {
-        const confirmed = JSON.parse(data[i][5] || "[]");
-        return {
-          status: "success",
-          sessionKey: newSessionKey,
-          confirmedChunks: confirmed,
-          totalChunks: parseInt(data[i][4], 10),
-          folderId: data[i][7] || "",
-          isResume: true
-        };
-      }
-    }
-
-    const rootFolder = DriveApp.getFolderById(DRIVE_FOLDER_ID);
-    const tempUploadsFolder = getOrCreateFolder(rootFolder, ".temp_resumable_uploads");
-    const sessionFolder = getOrCreateFolder(tempUploadsFolder, newSessionKey);
-
-    const now = new Date().toISOString();
-    sessionSheet.appendRow([
-      newSessionKey,
-      userId,
-      fileName,
-      fileSize,
-      totalChunks,
-      JSON.stringify([]),
-      "ACTIVE",
-      sessionFolder.getId(),
-      oldSessionKey,
-      oldFilesJson,
-      now,
-      now
-    ]);
-
-    return {
-      status: "success",
-      sessionKey: newSessionKey,
-      confirmedChunks: [],
-      totalChunks: totalChunks,
-      folderId: sessionFolder.getId(),
-      isResume: false
-    };
-  } catch (error) {
-    logDebug("Error en initiateResumableUpload:", error.message);
-    return { status: "error", message: error.message };
-  }
+  const actorId=payload&&payload._verifiedUserId,role=payload&&payload._verifiedRole,tareaId=String(payload&&payload.tareaId||"").trim();
+  const fileName=String(payload&&payload.fileName||"").trim(),fileSize=Number(payload&&payload.fileSize),totalChunks=Number(payload&&payload.totalChunks);
+  if(!actorId||(role!=="Estudiante"&&role!=="Alumno")||!tareaId||!fileName||!Number.isFinite(fileSize)||fileSize<=0||fileSize>50*1024*1024||!Number.isInteger(totalChunks)||totalChunks<1||totalChunks>100)throw new Error("Parámetros o identidad de carga no válidos.");
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),task=getSheetOrThrow(ss,"Tareas").getDataRange().getValues().slice(1).find(r=>String(r[0]).trim()===tareaId);
+  assertTaskServiceStudentCanAccessTask(ss,actorId,task);
+  const sheet=getOrCreateSheet(ss,"SesionesCargaResumible");
+  if(sheet.getLastRow()===0)sheet.appendRow(["SessionKey","UserId","FileName","FileSize","TotalChunks","ConfirmedChunks","Status","FolderId","OldSessionKey","CreatedFilesJson","CreatedAt","UpdatedAt","TareaID","FinalFileID","OwnerRole","FileHash","MimeType"]);
+  else{if(!sheet.getRange(1,13).getValue())sheet.getRange(1,13).setValue("TareaID");if(!sheet.getRange(1,14).getValue())sheet.getRange(1,14).setValue("FinalFileID");if(!sheet.getRange(1,15).getValue())sheet.getRange(1,15).setValue("OwnerRole");if(!sheet.getRange(1,16).getValue())sheet.getRange(1,16).setValue("FileHash");if(!sheet.getRange(1,17).getValue())sheet.getRange(1,17).setValue("MimeType");}
+  const rows=sheet.getDataRange().getValues(),hash=String(payload.fileHash||"");
+  const valid=row=>String(row[1]).trim()===String(actorId).trim()&&String(row[12]||"").trim()===tareaId&&String(row[2])===fileName&&Number(row[3])===fileSize&&Number(row[4])===totalChunks&&(!hash||String(row[15]||"")===hash);
+  if(payload.resumeSessionKey){const found=findTaskServiceUploadSession(sheet,payload.resumeSessionKey);if(!found)throw new Error("Sesión anterior no encontrada; inicie una nueva carga.");if(String(found.row[1]).trim()!==String(actorId).trim())throw new Error("Acceso denegado: sesión de carga ajena.");if(!valid(found.row)){if(!found.row[12]){sheet.getRange(found.rowIndex,7).setValue("LEGACY_UNBOUND");if(found.row[7]){try{DriveApp.getFolderById(found.row[7]).setTrashed(true);}catch(_){}}}throw new Error("La sesión anterior no está vinculada a esta tarea; inicie una nueva carga.");}
+    if(found.row[6]==="COMPLETED")return {status:"success",sessionKey:found.row[0],confirmedChunks:JSON.parse(found.row[5]||"[]"),totalChunks:Number(found.row[4]),folderId:found.row[7],fileId:found.row[13],isCompleted:true,isResume:true};
+    if(found.row[6]!=="ACTIVE")throw new Error("La sesión no está activa.");
+    const resumeConfirmed=JSON.parse(found.row[5]||"[]");
+    if(resumeConfirmed.length===Number(found.row[4])){const result=reconstructFileParts({_verifiedUserId:actorId,_verifiedRole:role,sessionKey:found.row[0]});if(result.status!=="success")throw new Error(result.message||"No se pudo completar la carga.");return {status:"success",sessionKey:found.row[0],confirmedChunks:resumeConfirmed,totalChunks:Number(found.row[4]),folderId:found.row[7],fileId:result.fileId,isCompleted:true,isResume:true};}
+    return {status:"success",sessionKey:found.row[0],confirmedChunks:resumeConfirmed,totalChunks:Number(found.row[4]),folderId:found.row[7],isResume:true};}
+  let oldSessionKey="";
+  if(payload.replaceSessionKey){const old=findTaskServiceUploadSession(sheet,payload.replaceSessionKey);if(!old||!valid(old.row)||old.row[6]!=="ACTIVE")throw new Error("No se puede reemplazar una sesión ajena o inactiva.");oldSessionKey=String(old.row[0]);sheet.getRange(old.rowIndex,7).setValue("REPLACED_PENDING_CLEANUP");sheet.getRange(old.rowIndex,12).setValue(new Date().toISOString());}
+  const active=rows.slice(1).find(r=>r[6]==="ACTIVE"&&valid(r));if(active){const confirmed=JSON.parse(active[5]||"[]");if(confirmed.length===Number(active[4])){const result=reconstructFileParts({_verifiedUserId:actorId,_verifiedRole:role,sessionKey:active[0]});if(result.status!=="success")throw new Error(result.message||"No se pudo completar la carga.");return {status:"success",sessionKey:active[0],confirmedChunks:confirmed,totalChunks:Number(active[4]),folderId:active[7],fileId:result.fileId,isCompleted:true,isResume:true};}return {status:"success",sessionKey:active[0],confirmedChunks:confirmed,totalChunks:Number(active[4]),folderId:active[7],isResume:true};}
+  const sessionKey="SESS_"+Utilities.getUuid(),root=getOrCreateFolder(DriveApp.getFolderById(DRIVE_FOLDER_ID),".temp_resumable_uploads"),folder=getOrCreateFolder(root,sessionKey),now=new Date().toISOString();
+  sheet.appendRow([sessionKey,actorId,fileName,fileSize,totalChunks,"[]","ACTIVE",folder.getId(),oldSessionKey,"[]",now,now,tareaId,"",role,hash,String(payload.mimeType||"application/octet-stream")]);
+  return {status:"success",sessionKey,confirmedChunks:[],totalChunks,folderId:folder.getId(),isResume:false};
 }
 
 // [TAREA-F4-P1-08] [Fase 4: Propagación y Recuperación de Cambios de Seguridad] - Purga de cachés de seguridad local
@@ -1682,223 +1386,65 @@ function purgeSecurityCaches(payload) {
 }
 
 function uploadChunk(payload) {
-  try {
-    const { sessionKey, chunkIndex, totalChunks, chunkData, fileName } = payload || {};
-    if (!sessionKey || chunkIndex === undefined || !chunkData) {
-      throw new Error("Parámetros de fragmento de carga incompletos.");
-    }
-
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    const sessionSheet = getOrCreateSheet(ss, "SesionesCargaResumible");
-    const data = sessionSheet.getDataRange().getValues();
-
-    let sessionRowIdx = -1;
-    let sessionData = null;
-
-    for (let i = 1; i < data.length; i++) {
-      if (data[i][0] === sessionKey) {
-        sessionRowIdx = i + 1;
-        sessionData = data[i];
-        break;
-      }
-    }
-
-    if (sessionRowIdx === -1) {
-      throw new Error("Sesión de carga reanudable no encontrada o expirada.");
-    }
-
-    const folderId = sessionData[7];
-    const targetFolder = DriveApp.getFolderById(folderId);
-
-    let sanitizedData = chunkData.replace(/-/g, '+').replace(/_/g, '/').replace(/\s/g, '');
-    while (sanitizedData.length % 4 !== 0) sanitizedData += '=';
-
-    const partName = `${fileName || "archivo"} - Parte ${chunkIndex + 1} de ${totalChunks}`;
-    const blob = Utilities.newBlob(Utilities.base64Decode(sanitizedData), "application/octet-stream", partName);
-    const newFile = targetFolder.createFile(blob);
-
-    let confirmed = [];
-    try { confirmed = JSON.parse(sessionData[5] || "[]"); } catch (e) { confirmed = []; }
-
-    if (!confirmed.includes(chunkIndex)) {
-      confirmed.push(chunkIndex);
-      confirmed.sort((a, b) => a - b);
-    }
-
-    // Persist created file metadata for this chunk
-    let createdFiles = [];
-    try { createdFiles = JSON.parse(sessionData[9] || "[]"); } catch (e) { createdFiles = []; }
-    createdFiles.push({ chunkIndex: chunkIndex, fileId: newFile.getId(), fileName: partName });
-    sessionSheet.getRange(sessionRowIdx, 10).setValue(JSON.stringify(createdFiles));
-
-    const isLast = confirmed.length >= totalChunks;
-    const now = new Date().toISOString();
-
-    sessionSheet.getRange(sessionRowIdx, 6).setValue(JSON.stringify(confirmed));
-    sessionSheet.getRange(sessionRowIdx, 12).setValue(now);
-
-    let reconstructedResult = null;
-    if (isLast) {
-      sessionSheet.getRange(sessionRowIdx, 7).setValue("COMPLETED");
-
-      // Automatically assemble & reconstruct chunks into single consolidated final file
-      reconstructedResult = reconstructFileParts({ sessionKey: sessionKey, folderId: folderId, fileName: fileName });
-
-      // CLEANUP OF OLD REPLACED SESSION FILES
-      const oldSessionKey = sessionData[8];
-      if (oldSessionKey) {
-        for (let i = 1; i < data.length; i++) {
-          if (data[i][0] === oldSessionKey) {
-            sessionSheet.getRange(i + 1, 7).setValue("REPLACED_CLEANED");
-            const oldFolderId = data[i][7];
-            if (oldFolderId) {
-              try { DriveApp.getFolderById(oldFolderId).setTrashed(true); } catch (e) {}
-            }
-            break;
-          }
-        }
-      }
-    }
-
-    return {
-      status: "success",
-      sessionKey: sessionKey,
-      chunkIndex: chunkIndex,
-      confirmedChunks: confirmed,
-      sessionCompleted: isLast,
-      fileId: reconstructedResult ? reconstructedResult.fileId : newFile.getId(),
-      fileUrl: reconstructedResult ? reconstructedResult.fileUrl : newFile.getUrl(),
-      folderId: folderId
-    };
-  } catch (error) {
-    logDebug("Error en uploadChunk:", error.message);
-    return { status: "error", message: "Error al procesar parte " + (chunkIndex + 1) + ": " + error.message };
-  }
+  const actorId=payload&&payload._verifiedUserId,role=payload&&payload._verifiedRole,sessionKey=payload&&payload.sessionKey;
+  const chunkIndex=Number(payload&&payload.chunkIndex),chunkData=payload&&payload.chunkData;
+  if(!sessionKey||!Number.isInteger(chunkIndex)||!chunkData)throw new Error("Fragmento de carga incompleto.");
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=getOrCreateSheet(ss,"SesionesCargaResumible"),session=findTaskServiceUploadSession(sheet,sessionKey);
+  assertTaskServiceUploadSessionOwner(session,payload);
+  if(session.row[6]==="COMPLETED"&&session.row[13])return {status:"success",sessionKey,chunkIndex,confirmedChunks:JSON.parse(session.row[5]||"[]"),sessionCompleted:true,fileId:session.row[13],folderId:session.row[7]};
+  if(session.row[6]!=="ACTIVE")throw new Error("La sesión no está activa.");
+  const total=Number(session.row[4]);if(Number(payload.totalChunks)!==total||chunkIndex<0||chunkIndex>=total)throw new Error("Índice o cantidad de fragmentos no coincide con la sesión.");
+  if(String(chunkData).length>8*1024*1024)throw new Error("Fragmento supera el tamaño permitido.");
+  let created=[];try{created=JSON.parse(session.row[9]||"[]");}catch(_){}
+  const prior=created.find(x=>Number(x.chunkIndex)===chunkIndex);
+  if(!prior){const clean=String(chunkData).replace(/-/g,"+").replace(/_/g,"/").replace(/\s/g,""),bytes=Utilities.base64Decode(clean);
+    const folder=DriveApp.getFolderById(session.row[7]),file=folder.createFile(Utilities.newBlob(bytes,"application/octet-stream","chunk_"+chunkIndex));
+    created.push({chunkIndex,fileId:file.getId()});created.sort((a,b)=>a.chunkIndex-b.chunkIndex);
+    sheet.getRange(session.rowIndex,10).setValue(JSON.stringify(created));sheet.getRange(session.rowIndex,6).setValue(JSON.stringify(created.map(x=>Number(x.chunkIndex))));sheet.getRange(session.rowIndex,12).setValue(new Date().toISOString());}
+  const confirmed=created.map(x=>Number(x.chunkIndex));
+  if(confirmed.length===total){const result=reconstructFileParts({_verifiedUserId:actorId,_verifiedRole:role,sessionKey});if(result.status!=="success")throw new Error(result.message||"No se pudo ensamblar la carga.");
+    return {status:"success",sessionKey,chunkIndex,confirmedChunks:confirmed,sessionCompleted:true,fileId:result.fileId,fileUrl:result.fileUrl,folderId:session.row[7]};}
+  return {status:"success",sessionKey,chunkIndex,confirmedChunks:confirmed,sessionCompleted:false};
 }
 
 function getUploadProgress(payload) {
-  try {
-    const { sessionKey } = payload || {};
-    if (!sessionKey) throw new Error("Llave de sesión requerida.");
-
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    const sessionSheet = getOrCreateSheet(ss, "SesionesCargaResumible");
-    const data = sessionSheet.getDataRange().getValues();
-
-    for (let i = 1; i < data.length; i++) {
-      if (data[i][0] === sessionKey) {
-        const confirmed = JSON.parse(data[i][5] || "[]");
-        const totalChunks = parseInt(data[i][4], 10);
-        return {
-          status: "success",
-          sessionKey: sessionKey,
-          confirmedChunks: confirmed,
-          totalChunks: totalChunks,
-          isCompleted: data[i][6] === "COMPLETED",
-          folderId: data[i][7]
-        };
-      }
-    }
-    return { status: "error", message: "Sesión no encontrada." };
-  } catch (error) {
-    return { status: "error", message: error.message };
-  }
+  const sheet=getOrCreateSheet(SpreadsheetApp.openById(SPREADSHEET_ID),"SesionesCargaResumible"),session=findTaskServiceUploadSession(sheet,payload&&payload.sessionKey);
+  if(!session)throw new Error("Sesión no encontrada.");assertTaskServiceUploadSessionOwner(session,payload);
+  return {status:"success",sessionKey:session.row[0],confirmedChunks:JSON.parse(session.row[5]||"[]"),totalChunks:Number(session.row[4]),isCompleted:session.row[6]==="COMPLETED",folderId:session.row[7],fileId:session.row[13]||""};
 }
 
 function cancelUploadSession(payload) {
-  try {
-    const { sessionKey } = payload || {};
-    if (!sessionKey) throw new Error("Llave de sesión requerida.");
-
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    const sessionSheet = getOrCreateSheet(ss, "SesionesCargaResumible");
-    const data = sessionSheet.getDataRange().getValues();
-
-    for (let i = 1; i < data.length; i++) {
-      if (data[i][0] === sessionKey) {
-        sessionSheet.getRange(i + 1, 7).setValue("CANCELLED");
-        sessionSheet.getRange(i + 1, 12).setValue(new Date().toISOString());
-        const folderId = data[i][7];
-        if (folderId) {
-          try {
-            const folder = DriveApp.getFolderById(folderId);
-            folder.setTrashed(true);
-          } catch (e) {}
-        }
-        return { status: "success", message: "Sesión de carga cancelada." };
-      }
-    }
-    return { status: "error", message: "Sesión no encontrada." };
-  } catch (error) {
-    return { status: "error", message: error.message };
-  }
+  const sheet=getOrCreateSheet(SpreadsheetApp.openById(SPREADSHEET_ID),"SesionesCargaResumible"),session=findTaskServiceUploadSession(sheet,payload&&payload.sessionKey);
+  if(!session)throw new Error("Sesión no encontrada.");assertTaskServiceUploadSessionOwner(session,payload);
+  if(session.row[6]==="COMPLETED")throw new Error("No se puede cancelar una sesión completada.");
+  if(session.row[6]==="CANCELLED")return {status:"success",message:"La sesión ya estaba cancelada."};
+  sheet.getRange(session.rowIndex,7).setValue("CANCELLED");sheet.getRange(session.rowIndex,12).setValue(new Date().toISOString());
+  if(session.row[7])DriveApp.getFolderById(session.row[7]).setTrashed(true);
+  return {status:"success",message:"Sesión de carga cancelada."};
 }
 
 function reconstructFileParts(payload) {
-  try {
-    const { sessionKey, folderId, fileName, mimeType } = payload || {};
-    if (!folderId) throw new Error("ID de carpeta temporal de sesión es requerido para la reconstrucción.");
-
-    const folder = DriveApp.getFolderById(folderId);
-    const filesIter = folder.getFiles();
-    const chunkFiles = [];
-
-    while (filesIter.hasNext()) {
-      const f = filesIter.next();
-      chunkFiles.push({ file: f, name: f.getName() });
-    }
-
-    // Sort chunk files numerically
-    chunkFiles.sort((a, b) => {
-      const matchA = a.name.match(/Parte\s+(\d+)/i) || a.name.match(/chunk_(\d+)/i);
-      const matchB = b.name.match(/Parte\s+(\d+)/i) || b.name.match(/chunk_(\d+)/i);
-      const numA = matchA ? parseInt(matchA[1], 10) : 0;
-      const numB = matchB ? parseInt(matchB[1], 10) : 0;
-      return numA - numB;
-    });
-
-    if (chunkFiles.length === 0) throw new Error("No se encontraron partes para ensamblar el archivo final.");
-
-    let totalBytes = 0;
-    const byteArrays = [];
-    for (let i = 0; i < chunkFiles.length; i++) {
-      const bytes = chunkFiles[i].file.getBlob().getBytes();
-      byteArrays.push(bytes);
-      totalBytes += bytes.length;
-    }
-
-    const combinedBytes = new Int8Array(totalBytes);
-    let offset = 0;
-    for (let i = 0; i < byteArrays.length; i++) {
-      combinedBytes.set(byteArrays[i], offset);
-      offset += byteArrays[i].length;
-    }
-
-    const finalMime = mimeType || "application/octet-stream";
-    const finalBlob = Utilities.newBlob(combinedBytes, finalMime, fileName || "Documento_Ensamblado.pdf");
-
-    // Save final consolidated file in the session folder
-    const finalFile = folder.createFile(finalBlob);
-
-    // Delete individual temporary chunk files
-    for (let i = 0; i < chunkFiles.length; i++) {
-      try { chunkFiles[i].file.setTrashed(true); } catch (e) {}
-    }
-
-    logDebug("Reconstrucción exitosa de archivo:", { sessionKey, fileName: finalFile.getName(), size: totalBytes });
-
-    return {
-      status: "success",
-      fileId: finalFile.getId(),
-      fileUrl: finalFile.getUrl(),
-      fileName: finalFile.getName(),
-      mimeType: finalMime,
-      sizeBytes: totalBytes
-    };
-  } catch (error) {
-    logDebug("Error en reconstructFileParts:", error.message);
-    return { status: "error", message: "Error al ensamblar partes del archivo: " + error.message };
-  }
+  const actorId=payload&&payload._verifiedUserId,sessionKey=payload&&payload.sessionKey;
+  if(!actorId||!sessionKey)throw new Error("Sesión e identidad verificada son obligatorias.");
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=getOrCreateSheet(ss,"SesionesCargaResumible"),session=findTaskServiceUploadSession(sheet,sessionKey);
+  assertTaskServiceUploadSessionOwner(session,payload);
+  if(session.row[6]==="COMPLETED"&&session.row[13]){const existing=DriveApp.getFileById(session.row[13]);return {status:"success",fileId:existing.getId(),fileUrl:existing.getUrl(),fileName:existing.getName(),sizeBytes:existing.getSize()};}
+  if(session.row[6]!=="ACTIVE")throw new Error("La sesión no está activa.");
+  const total=Number(session.row[4]),parts=JSON.parse(session.row[9]||"[]").sort((a,b)=>Number(a.chunkIndex)-Number(b.chunkIndex));
+  if(parts.length!==total||parts.some((p,i)=>Number(p.chunkIndex)!==i))throw new Error("La carga está incompleta o contiene fragmentos inconsistentes.");
+  const files=parts.map(p=>DriveApp.getFileById(p.fileId)),arrays=files.map(f=>f.getBlob().getBytes()),size=arrays.reduce((n,b)=>n+b.length,0),bytes=new Int8Array(size);let offset=0;
+  arrays.forEach(b=>{bytes.set(b,offset);offset+=b.length;});
+  const taskId=String(session.row[12]||""),task=getSheetOrThrow(ss,"Tareas").getDataRange().getValues().slice(1).find(r=>String(r[0]).trim()===taskId);
+  assertTaskServiceStudentCanAccessTask(ss,actorId,task);
+  const mime=String(session.row[16]||"application/octet-stream");
+  const folder=DriveApp.getFolderById(session.row[7]),file=folder.createFile(Utilities.newBlob(bytes,mime,String(session.row[2]||"archivo")));
+  try{logFileMetadata(ss,{fileName:file.getName(),fileId:file.getId(),fileUrl:file.getUrl(),mimeType:mime,sizeBytes:size,tareaId:taskId,
+    asignatura:String(task[5]||"General"),parcial:String(task[4]||"General"),grado:String(task[6]||"General"),seccion:String(task[7]||"General"),
+    profesorId:String(task[10]||""),ownerUserId:actorId,folderId:folder.getId()});}catch(metaError){try{file.setTrashed(true);}catch(_){}throw new Error("No se pudo registrar la propiedad del archivo ensamblado.");}
+  sheet.getRange(session.rowIndex,7).setValue("COMPLETED");sheet.getRange(session.rowIndex,12).setValue(new Date().toISOString());sheet.getRange(session.rowIndex,14).setValue(file.getId());
+  files.forEach(f=>{try{f.setTrashed(true);}catch(_){}});
+  const oldKey=String(session.row[8]||"");if(oldKey){const old=findTaskServiceUploadSession(sheet,oldKey);if(old&&old.row[7]){try{DriveApp.getFolderById(old.row[7]).setTrashed(true);sheet.getRange(old.rowIndex,7).setValue("REPLACED_CLEANED");}catch(_){}}}
+  return {status:"success",fileId:file.getId(),fileUrl:file.getUrl(),fileName:file.getName(),mimeType:mime,sizeBytes:size};
 }
 
 function readLegacyDocument(payload) {

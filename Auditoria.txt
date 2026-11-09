@@ -316,3 +316,11 @@ Sesión: IMA-EXEC-20261109-1108Z-01; HEAD de partida: 32b8f5884dd24dbeaf1a3bf028
 - TASK-636 / PM-01: mutaciones de tareas, aulas, posts y materiales de Task-Service ligadas a claims, propietario y asignación docente activa (AsignacionesDocentes + AulasVirtuales).
 - Verificación estática únicamente; no se ejecutó Apps Script ni pruebas por rol. Siguen abiertos AUD-NG-369 (backup/restore) y AUD-NG-370 (archivos temporales/no entregados).
 - Checkpoint C1.307: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.307; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.307.
+
+
+[Seguimiento C1.308 — IMA-EXEC-20261109-1510Z-01]
+- Task-Service: identidad de archivos/entregas ligada a claims y tarea; se eliminó sharing público ANYONE_WITH_LINK.
+- MetadatosArchivos añade propietario y carpeta al final del esquema; las filas históricas sin propietario quedan en fallo cerrado. Sesiones reanudables ligadas a usuario/tarea, con clave UUID y controles de propiedad.
+- Frontend usa el fileId real del ensamblado; flujo legacy uploadId/finishChunkedUpload deshabilitado.
+- Verificación estática únicamente. No runtime, Drive/Sheets, HTTP, navegador ni pruebas por rol. AUD-NG-370 parcialmente abierto; AUD-NG-369 sigue abierto y closeAcademicYear bloqueado.
+- Checkpoint C1.308: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.308; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.308.

@@ -2738,6 +2738,8 @@ window.uploadResumableFile = function(file, options, callbacks) {
     var fileName = file.name;
     var totalChunks = Math.ceil(fileSize / chunkSize);
     var userId = options.userId || (window.currentUser ? window.currentUser.id : 'usuario_anonimo');
+    var tareaId = options.tareaId || '';
+    var finalFileInfo = null;
 
     var fileHash = fileName + "_" + fileSize + "_" + userId;
     var localStorageKey = "upload_session_" + btoa(fileHash).replace(/=/g, '');
@@ -2748,6 +2750,7 @@ window.uploadResumableFile = function(file, options, callbacks) {
 
         window.sendApiRequest('initiateResumableUpload', {
             userId: userId,
+            tareaId: tareaId,
             fileName: fileName,
             fileSize: fileSize,
             totalChunks: totalChunks,
@@ -2757,6 +2760,7 @@ window.uploadResumableFile = function(file, options, callbacks) {
             replaceSessionKey: (isReplace && sessionKeyToUse) ? sessionKeyToUse : null
         }, function(initRes) {
             if (!initRes || initRes.status !== 'success') {
+                if (sessionKeyToUse) { localStorage.removeItem(localStorageKey); startUploadSession(null, false); return; }
                 if (callbacks.onError) callbacks.onError((initRes && initRes.message) || "No se pudo iniciar la sesión de carga.");
                 return;
             }
@@ -2764,6 +2768,7 @@ window.uploadResumableFile = function(file, options, callbacks) {
             var sessionKey = initRes.sessionKey;
             localStorage.setItem(localStorageKey, sessionKey);
             var confirmedChunks = initRes.confirmedChunks || [];
+            if (initRes.isCompleted && initRes.fileId) { localStorage.removeItem(localStorageKey); if (callbacks.onSuccess) callbacks.onSuccess({sessionKey:sessionKey,fileId:initRes.fileId,folderId:initRes.folderId,totalChunks:totalChunks,isCompleted:true}); return; }
 
             processChunkQueue(sessionKey, confirmedChunks, 0, Date.now());
         });
@@ -2772,7 +2777,7 @@ window.uploadResumableFile = function(file, options, callbacks) {
     function processChunkQueue(sessionKey, confirmedChunks, chunkIndex, startTime) {
         if (chunkIndex >= totalChunks) {
             localStorage.removeItem(localStorageKey);
-            if (callbacks.onSuccess) callbacks.onSuccess({ sessionKey: sessionKey, totalChunks: totalChunks, isCompleted: true });
+            if (callbacks.onSuccess) callbacks.onSuccess({ sessionKey: sessionKey, fileId: finalFileInfo && finalFileInfo.fileId, folderId: finalFileInfo && finalFileInfo.folderId, totalChunks: totalChunks, isCompleted: true });
             return;
         }
 
@@ -2803,6 +2808,7 @@ window.uploadResumableFile = function(file, options, callbacks) {
             }, function(chunkRes) {
                 if (chunkRes && chunkRes.status === 'success') {
                     confirmedChunks = chunkRes.confirmedChunks || confirmedChunks;
+                    if (chunkRes.sessionCompleted && chunkRes.fileId) finalFileInfo = {fileId:chunkRes.fileId,folderId:chunkRes.folderId};
                     var elapsedMs = Date.now() - startTime;
                     var chunksDone = confirmedChunks.length;
                     var remainingChunks = totalChunks - chunksDone;

@@ -242,3 +242,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Task-Service: autorización de mutaciones de tareas, aulas, posts y materiales ligada a claims, propietario y asignaciones docentes vigentes.
 - C1.307: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.307; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.307.
 - Sin runtime ni pruebas por rol. Archivos temporales/no entregados, ACADEMIC público y backup/restore siguen pendientes.
+
+
+[2026-11-09] IMA-EXEC-20261109-1510Z-01 — TASK-636 / C1.308
+- Task-Service: uploadFile/submitAssignment/saveSubmissionDraft verifican actor autenticado, ámbito de tarea y metadatos de propietario; se elimina ANYONE_WITH_LINK.
+- MetadatosArchivos amplía columnas append-only para propietario y carpeta. Las filas históricas sin propietario fallan de forma cerrada.
+- deleteFile y deleteSubmission verifican propiedad; deleteSubmission valida que el docente controle la tarea.
+- Sesiones reanudables usan UUID, TareaID y propietario; el frontend recibe el fileId real. Se deshabilita finishChunkedUpload legacy.
+- Solo verificaciones estáticas; no runtime ni pruebas por rol. AUD-NG-370 parcial, AUD-NG-369 abierto.
+- Checkpoint C1.308: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.308.
