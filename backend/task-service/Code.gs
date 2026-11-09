@@ -355,6 +355,7 @@ function doPost(e) {
       case "getSubmissionDocumentPreviewUrl":
         response = getSubmissionDocumentPreviewUrl(payload);
         break;
+      case "reconcileLegacyTaskFileMetadata": response = reconcileLegacyTaskFileMetadata(payload); break;
       case "getDriveStorageQuotaMetricsReport":
         response = getDriveStorageQuotaMetricsReport(payload);
         break;
@@ -2192,6 +2193,52 @@ function getMultiPartFolderFiles(payload) {
 
 
 // [TAREA-F8-MANT-01] [Fase 8: Aula Virtual y Gestión Avanzada del Aprendizaje] - Monitoreo preventivo de cuotas y disponibilidad de almacenamiento en Google Drive
+// Backfill histórico seguro: solo deriva propietario desde una entrega/version exacta; nunca desde carpetas o nombres.
+function reconcileLegacyTaskFileMetadata(payload) {
+  const role = payload && payload._verifiedRole, actorId = payload && payload._verifiedUserId;
+  if (!actorId || ["Administrador","Desarrollador"].indexOf(role) === -1) throw new Error("Solo un administrador verificado puede reconciliar metadatos históricos.");
+  const apply = payload && payload.apply === true, lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID), metadata = ensureTaskServiceFileMetadataSheet(ss);
+    const deliveries = getSheetOrThrow(ss,"Entregas").getDataRange().getValues().slice(1);
+    const versionsSheet = ss.getSheetByName("EntregasVersiones");
+    const versions = versionsSheet ? versionsSheet.getDataRange().getValues().slice(1) : [];
+    const tasks = getSheetOrThrow(ss,"Tareas").getDataRange().getValues().slice(1);
+    const rows = metadata.getDataRange().getValues(), candidates = [], unresolved = [], conflicts = [];
+    let alreadyOwned = 0;
+    for (let i=1;i<rows.length;i++) {
+      const row=rows[i], fileId=extractTaskServiceFileId(row[15]), owner=String(row[19]||"").trim();
+      if (!fileId) continue;
+      if (owner) { alreadyOwned++; continue; }
+      const pairs=[];
+      deliveries.forEach(d=>{if(extractTaskServiceFileId(d[4])===fileId)pairs.push({ownerUserId:String(d[2]||"").trim(),taskId:String(d[1]||"").trim(),source:"Entregas"});});
+      versions.forEach(d=>{if(extractTaskServiceFileId(d[6])===fileId)pairs.push({ownerUserId:String(d[3]||"").trim(),taskId:String(d[2]||"").trim(),source:"EntregasVersiones"});});
+      const unique={};pairs.forEach(p=>{if(p.ownerUserId&&p.taskId)unique[p.ownerUserId+"|"+p.taskId]=p;});
+      const matches=Object.keys(unique).map(k=>unique[k]);
+      if(matches.length===1){
+        const match=matches[0], task=tasks.find(t=>String(t[0]).trim()===match.taskId);
+        if(!task){unresolved.push({row:i+1,fileId:fileId,reason:"TAREA_NO_ENCONTRADA"});continue;}
+        candidates.push({row:i+1,fileId:fileId,ownerUserId:match.ownerUserId,taskId:match.taskId,profesorId:String(task[10]||"")});
+      } else if(matches.length>1) conflicts.push({row:i+1,fileId:fileId,reason:"PROPIEDAD_AMBIGUA",matches:matches.length});
+      else unresolved.push({row:i+1,fileId:fileId,reason:"SIN_ENTREGA_O_VERSION_VERIFICABLE"});
+    }
+    let migrated=0;
+    if(apply && candidates.length){
+      const audit=getOrCreateSheet(ss,"AuditoriaMigracionMetadatosArchivos");
+      if(audit.getLastRow()===0)audit.appendRow(["Fecha","FileId","TareaId","PropietarioUserId","ProfesorId","ActorUserId","Fuente"]);
+      candidates.forEach(c=>{
+        metadata.getRange(c.row,12).setValue(c.taskId);
+        metadata.getRange(c.row,13).setValue(c.profesorId);
+        metadata.getRange(c.row,20).setValue(c.ownerUserId);
+        audit.appendRow([new Date(),c.fileId,c.taskId,c.ownerUserId,c.profesorId,actorId,"Entregas/EntregasVersiones"]);
+        migrated++;
+      });
+    }
+    return {status:"success",dryRun:!apply,scanned:Math.max(0,rows.length-1),alreadyOwned:alreadyOwned,wouldMigrate:candidates.length,migrated:migrated,unresolved:unresolved,conflicts:conflicts};
+  } finally { lock.releaseLock(); }
+}
+
 function getDriveStorageQuotaMetricsReport(payload) {
   try {
     const role = payload && payload._verifiedRole;

@@ -132,3 +132,12 @@ Cada tarea que tenga aceptación funcional dependiente de un servicio desplegado
 
 ### Nota de cierre C1.363 — BETA-FUNC-008
 La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0.0.0.1_work). Este caso permanece Pendiente beta exclusivamente para certificar el transporte y la importación con servicios desplegados, dos fuentes sintéticas y entorno aislado. Su estado no bloquea el cierre de implementación conforme a METODOLOGIA_DESARROLLO.md §21.5.
+
+
+## BETA-FUNC-009 — TASK-636 / AUD-NG-370 — Integración real de archivos históricos y carga reanudable
+- Objetivo: certificar en entorno beta aislado la reconciliación de metadatos históricos de Drive, carga directa y por fragmentos, propiedad de archivos, ensamblado/reanudación, borrado de archivo propio no entregado y bloqueo de archivos vinculados a entrega/versión.
+- Precondiciones: deployment Task-Service beta, Spreadsheet y Drive de prueba aislados, cuentas sintéticas por rol (Administrador, Estudiante, Profesor), carpetas sin datos institucionales reales.
+- Datos sintéticos: archivos de prueba sin PII; entregas y versiones de dos usuarios distintos; un archivo histórico con relación única y otro ambiguo.
+- Pasos: ejecutar dry-run y aplicar reconciliación; verificar que solo los vínculos exactos y únicos completan ownerUserId; ejecutar carga directa y resumible; consultar progreso, ensamblar y reanudar; intentar borrar archivo propio no entregado, archivo ajeno y archivo entregado/versionado.
+- Resultado esperado: solo migraciones con una relación exacta y única se aplican; ambiguos/sin relación quedan sin propietario y reportados; carga crea metadatos de propietario; solo se elimina archivo propio no entregado; ajenos/entregados/versionados se bloquean.
+- Estado: Pendiente beta. No bloquea cierre de implementación por §21.5.

@@ -725,3 +725,19 @@ Rama base protegida: NG_beta_0.0.0.1 — 44d9891132332e692dbe2ba8602b41f50a508a5
 Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.363.
 Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.363.
 ===============================================================================
+
+
+===============================================================================
+## C1.364 — TASK-636 / AUD-NG-370: reconciliación segura de metadatos históricos
+ID: C1.364
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.363
+Baseline lógico: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+- Se reanuda TASK-636 tras cierre TASK-068.
+- Reauditoría AUD-NG-370 confirma que los registros históricos sin propietario quedan bloqueados, pero faltaba herramienta segura de conciliación.
+- Se añade reconcileLegacyTaskFileMetadata: dry-run por defecto, admin verificado, lock, derivación exclusiva desde Entregas/EntregasVersiones por FileId exacto, deduplicación por UserId+TareaID, tarea existente y bitácora. Aplica solo relaciones únicas; ambiguos y sin fuente verificable permanecen sin owner y fail-closed. Nunca infiere por carpeta/nombre ni toca Drive.
+- Se agrega BETA-FUNC-009 para validación real de Drive/cargas; Pendiente beta y no bloqueante.
+- Se añade contrato Node local para dry-run, rol, migración exacta, conflicto y no inferencia. CI pendiente.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.364.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — C1.364.
+===============================================================================

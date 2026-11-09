@@ -2192,3 +2192,9 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - TASK-068 se marca Completada tras cumplir los ocho criterios locales y CI C1.362 run 42717289902 success.
 - El transporte real con deployments y dos fuentes permanece en BETA-FUNC-008 / AUD-NG-378, Pendiente beta y no bloqueante por §21.5.
 - Próxima continuidad: TASK-636, reauditar y resolver AUD-NG-001/002/306/368/370/371 localmente; BETA-FUNC-007/AUD-NG-369 no bloquean por requerir entorno vivo.
+
+
+## 10.48 TASK-636 — C1.364 / AUD-NG-370: migración histórica fail-closed
+- Se incorpora reconciliación admin-only con dry-run predeterminado. Solo backfill de propietario/tarea/profesor cuando un FileId tiene una única relación exacta en Entregas o EntregasVersiones y la tarea existe.
+- Metadatos ambiguos o sin referencia verificable no se modifican. No se infiere propiedad desde carpeta/nombre ni se accede a Drive en esta función.
+- BETA-FUNC-009 registra pruebas reales de Drive/carga reanudable; Pendiente beta, no bloqueante.
