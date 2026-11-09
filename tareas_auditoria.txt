@@ -507,3 +507,13 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - BETA-FUNC-011 Pendiente beta, no bloqueante para implementación local.
 - AUD-NG-370 en revalidación; TASK-636 En ejecución.
 ===============================================================================
+
+
+===============================================================================
+## Seguimiento TASK-636 — C1.368 / AUD-NG-365 / AUD-NG-002
+- Se detecta discrepancia entre el informe anterior y el código actual: getNews confiaba en grado/sección/includeInactive; getInstitutionalAnnouncements confiaba en rol/audiencia y filtraba solo Retirado.
+- Se reabren hallazgos existentes y se corrige derivación de claims/perfil, filtros de audiencia, estado y fecha, y minimización de respuesta anónima.
+- Fixtures Node cubren spoofing de parámetros, contenido general/por grado/rol, borradores, inactivos y publicaciones futuras.
+- CI C1.368 pendiente; BETA-FUNC-012 Pendiente beta y no bloqueante.
+- TASK-636 En ejecución; no se crea informe de auditoría paralelo.
+===============================================================================

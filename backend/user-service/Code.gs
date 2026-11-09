@@ -3360,10 +3360,26 @@ function mergeGuestData(payload) {
 }
 
 function getNews(payload) {
-  const { grado, seccion, includeInactive } = payload || {};
-  const data = getOrCreateSheet(SpreadsheetApp.openById(SPREADSHEET_ID), "NoticiasPortal").getDataRange().getValues().slice(1);
-  const nowStr = new Date().toISOString().split('T')[0];
+  const verifiedRole = getUserVerifiedRole(payload);
+  const isAuthenticated = verifiedRole !== "NO_ACCESS";
+  const privilegedRoles = ["Administrador", "Desarrollador", "Director", "Subdirector"];
+  const isPrivileged = privilegedRoles.indexOf(verifiedRole) !== -1;
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const data = getOrCreateSheet(ss, "NoticiasPortal").getDataRange().getValues().slice(1);
+  const nowStr = new Date().toISOString().split("T")[0];
+  let userGrade = "", userSection = "";
 
+  // El grado y la sección provienen del perfil asociado a los claims, nunca del payload.
+  if (isAuthenticated && !isPrivileged && payload && payload._verifiedUserId) {
+    const users = getSheetOrThrow(ss, "Usuarios").getDataRange().getValues().slice(1);
+    const profile = users.find(row => String(row[0] || "").trim() === String(payload._verifiedUserId).trim());
+    if (profile) {
+      userGrade = String(profile[2] || "").trim();
+      userSection = String(profile[3] || "").trim();
+    }
+  }
+
+  const allowInactive = isPrivileged && payload && payload.includeInactive === true;
   const mapped = data.map(r => ({
     noticiaId: r[0] || ("NWS-" + r[1]),
     fecha: r[1],
@@ -3379,22 +3395,45 @@ function getNews(payload) {
     estado: r[11] || "Activa"
   }));
 
+  function isGeneralAudience(value, fallback) {
+    const normalized = normalizeString(value || fallback).replace(/\s+/g, "");
+    return !normalized || ["todos", "todas", "general", "todalacomunidad"].indexOf(normalized) !== -1 ||
+      normalized.indexOf("todoslos") === 0 || normalized.indexOf("todaslas") === 0;
+  }
+  function audienceMatches(value, actual, fallback) {
+    if (isGeneralAudience(value, fallback)) return true;
+    if (!actual) return false;
+    const allowed = normalizeString(value || fallback).split(",").map(item => item.trim()).filter(Boolean);
+    const actualValues = normalizeString(actual).split(",").map(item => item.trim()).filter(Boolean);
+    return allowed.some(item => actualValues.indexOf(item) !== -1);
+  }
+
   let filtered = mapped;
-  if (!includeInactive) {
-    filtered = filtered.filter(n => n.estado === "Activa");
-    filtered = filtered.filter(n => (!n.fechaInicio || n.fechaInicio <= nowStr) && (!n.fechaFin || n.fechaFin >= nowStr));
+  if (!allowInactive) {
+    filtered = filtered.filter(n => normalizeString(n.estado) === "activa");
+    filtered = filtered.filter(n => {
+      const start = n.fechaInicio ? new Date(n.fechaInicio).getTime() : null;
+      const end = n.fechaFin ? new Date(n.fechaFin).getTime() : null;
+      const today = new Date(nowStr + "T00:00:00").getTime();
+      return (start === null || (Number.isFinite(start) && start <= today)) &&
+        (end === null || (Number.isFinite(end) && end >= today));
+    });
   }
 
-  if (grado) {
-    const sGrado = normalizeString(grado);
-    filtered = filtered.filter(n => !n.gradoAudiencia || normalizeString(n.gradoAudiencia) === "todos" || normalizeString(n.gradoAudiencia) === sGrado);
-  }
-  if (seccion) {
-    const sSeccion = normalizeString(seccion);
-    filtered = filtered.filter(n => !n.seccionAudiencia || normalizeString(n.seccionAudiencia) === "todas" || normalizeString(n.seccionAudiencia) === sSeccion);
+  if (!isAuthenticated) {
+    // Visitantes anónimos reciben únicamente noticias generales, activas y vigentes.
+    filtered = filtered.filter(n =>
+      isGeneralAudience(n.gradoAudiencia, "Todos") &&
+      isGeneralAudience(n.seccionAudiencia, "Todas")
+    );
+  } else if (!isPrivileged) {
+    filtered = filtered.filter(n =>
+      audienceMatches(n.gradoAudiencia, userGrade, "Todos") &&
+      audienceMatches(n.seccionAudiencia, userSection, "Todas")
+    );
   }
 
-  filtered.sort((a,b) => new Date(b.fecha) - new Date(a.fecha) || String(b.hora).localeCompare(String(a.hora)));
+  filtered.sort((a, b) => new Date(b.fecha) - new Date(a.fecha) || String(b.hora).localeCompare(String(a.hora)));
   return { status: "success", data: filtered };
 }
 
@@ -4061,32 +4100,55 @@ function submitFamilyScholarshipApplication(payload) {
 }
 
 function getInstitutionalAnnouncements(payload) {
-  const { rol, audiencia } = payload || {};
+  const verifiedRole = getUserVerifiedRole(payload);
+  const isAuthenticated = verifiedRole !== "NO_ACCESS";
+  const userAud = isAuthenticated ? normalizeString(verifiedRole) : "";
+  const privilegedRoles = ["Administrador", "Desarrollador", "Director", "Subdirector"];
+  const isPrivileged = privilegedRoles.indexOf(verifiedRole) !== -1;
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = getOrCreateSheet(ss, "ComunicadosInstitucionales");
   const data = sheet.getDataRange().getValues();
   if (data.length <= 1) return { status: "success", data: [] };
 
-  const userAud = normalizeString(audiencia || rol || "TodaLaComunidad");
-
-  const announcements = data.slice(1).filter(r => {
-    if (r[8] === "Retirado") return false;
-    const audStr = normalizeString(typeof r[5] === 'string' ? r[5] : JSON.stringify(r[5]));
-    if (audStr.indexOf("todalacomunidad") !== -1 || audStr === "" || audStr === userAud || (userAud && audStr.indexOf(userAud) !== -1)) {
-      return true;
+  const announcements = data.slice(1).filter(row => {
+    const state = normalizeString(row[8] || "Publicado");
+    if (state !== "publicado" && state !== "activa") return false;
+    if (row[7]) {
+      const publicationTime = new Date(row[7]).getTime();
+      if (!Number.isFinite(publicationTime) || publicationTime > Date.now()) return false;
     }
-    return false;
-  }).map(r => ({
-    comunicadoId: r[0],
-    titulo: r[1],
-    contenido: r[2],
-    categoria: r[3] || "General",
-    autorId: r[4],
-    audiencia: r[5] ? (typeof r[5] === 'string' ? JSON.parse(r[5]) : r[5]) : "TodaLaComunidad",
-    requiereFirma: r[6] === true || String(r[6]).toLowerCase() === "true",
-    fechaPublicacion: r[7] ? new Date(r[7]).toISOString() : null,
-    estado: r[8] || "Publicado"
-  }));
+
+    const rawAudience = row[5] || "TodaLaComunidad";
+    const audienceText = typeof rawAudience === "string" ? rawAudience : JSON.stringify(rawAudience);
+    const audience = normalizeString(audienceText);
+    const compactAudience = audience.replace(/\s+/g, "");
+    const isGeneral = !compactAudience || compactAudience.indexOf("todalacomunidad") !== -1 ||
+      compactAudience === "todos" || compactAudience === "general";
+
+    // Sin token válido nunca se permite seleccionar un rol/audiencia desde el cliente.
+    if (!isAuthenticated) return isGeneral;
+    return isPrivileged || isGeneral || (!!userAud && audience.indexOf(userAud) !== -1);
+  }).map(row => {
+    const item = {
+      comunicadoId: row[0],
+      titulo: row[1],
+      contenido: row[2],
+      categoria: row[3] || "General",
+      requiereFirma: row[6] === true || String(row[6]).toLowerCase() === "true",
+      fechaPublicacion: row[7] ? new Date(row[7]).toISOString() : null,
+      estado: row[8] || "Publicado"
+    };
+    if (isAuthenticated) {
+      item.autorId = row[4];
+      if (row[5]) {
+        try { item.audiencia = typeof row[5] === "string" ? JSON.parse(row[5]) : row[5]; }
+        catch (_) { item.audiencia = row[5]; }
+      } else {
+        item.audiencia = "TodaLaComunidad";
+      }
+    }
+    return item;
+  });
 
   return { status: "success", data: announcements };
 }

@@ -222,3 +222,16 @@ Endurecer las excepciones públicas de backend/academic-service/Code.gs mediante
 - **CI C1.367:** pendiente de ejecución tras publicar; no se declara PASS anticipadamente.
 - **Beta:** BETA-FUNC-011 cubre las referencias de versiones en un Drive/Sheets aislado. No bloquea implementación local.
 - **Estado:** AUD-NG-370 permanece en revalidación hasta CI C1.367. TASK-636 sigue En ejecución; no se crea un ID de hallazgo nuevo ni un informe paralelo.
+
+
+## Revisión focalizada C1.368 — excepciones públicas USER y audiencias de contenido
+
+- **Hallazgos existentes reabiertos/ampliados:** AUD-NG-365 y AUD-NG-002. No se crean IDs nuevos.
+- **Discrepancia comprobada:** `getNews` aceptaba `grado`, `seccion` e `includeInactive` del cliente sin derivar ámbito de claims; un visitante podía solicitar contenido de otros grados o inactivo. `getInstitutionalAnnouncements` utilizaba `rol/audiencia` del payload, excluía solo Retirado y podía devolver borradores/futuros o audiencias ajenas.
+- **Corrección:** ambos handlers llaman `getUserVerifiedRole(payload)`. `getNews` deriva grado/sección desde Usuarios para usuarios autenticados; anónimos reciben solo noticias generales activas y vigentes; includeInactive se reserva a roles privilegiados verificados. `getInstitutionalAnnouncements` deriva la audiencia desde claims, limita todos los resultados a Publicado/Activa y fecha no futura, entrega solo general a anónimos y omite autorId/audiencia de la respuesta pública.
+- **Pruebas locales añadidas:** fixtures de noticias general/por grado/inactiva/futura; comunicados general/Estudiante/Secretaría/borrador/futuro/retirado; spoof de rol, grado, sección y audiencia; respuesta pública sin metadatos internos. Se agregan comprobaciones de persistencia/propagación del token y de capacidades opacas de ACADEMIC.
+- **Workflow:** se amplía el filtro de rutas para ejecutar el contrato cuando cambie `backend/user-service/Code.gs`.
+- **CI C1.367:** security local contracts run 42723634980 completed/success; log confirma FileID/ArchivoUrl, borrado permitido y compensación por fallo de metadatos. Backup/restore run 42723635060 debe consultarse por separado.
+- **CI C1.368:** pendiente tras publicar; no se declara PASS anticipadamente.
+- **Beta:** BETA-FUNC-012 cubre contenido público/autenticado con Apps Script/Sheets aislados; no bloquea la implementación local.
+- **Estado:** TASK-636 sigue En ejecución. AUD-NG-365 se reabre por discrepancia del HEAD auditado; AUD-NG-002 continúa en revalidación. No se cierra el alcance global.

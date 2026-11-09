@@ -481,3 +481,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se agregan fixtures Node para URL-only, FileID-only, éxito y rollback. CI C1.367 pendiente.
 - BETA-FUNC-011 registra el escenario real aislado; Pendiente beta.
 - Checkpoint C1.367: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice fila C1.367.
+
+
+[2026-11-09] IMA-EXEC-20261109-1739Z-01 — C1.368 / TASK-636 / AUD-NG-365
+- getNews deriva grado/sección del perfil verificado; anónimos solo reciben noticias generales activas y vigentes; includeInactive solo para rol privilegiado.
+- getInstitutionalAnnouncements deriva audiencia de claims, restringe estados/fechas y minimiza respuesta anónima.
+- Se amplía contrato Node y filtro de workflow para USER-Service. CI C1.368 pendiente.
+- BETA-FUNC-012 registra validación de servicios aislados; Pendiente beta.
+- Checkpoint C1.368: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice fila C1.368.

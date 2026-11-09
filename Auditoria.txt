@@ -643,3 +643,12 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - CI C1.366: runs 42723140739 y 42723140736 completed/success. CI C1.367 pendiente.
 - BETA-FUNC-011 registra verificación real con Drive/Sheets aislados; Pendiente beta y no bloqueante.
 - AUD-NG-370 en revalidación; TASK-636 En ejecución. Checkpoint C1.367: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice fila C1.367.
+
+
+## C1.368 — IMA-EXEC-20261109-1739Z-01 — TASK-636 / PM-01 / AUD-NG-365 / AUD-NG-002
+- Revisión del HEAD detectó que getNews confiaba en grado/sección/includeInactive y getInstitutionalAnnouncements en rol/audiencia del cliente; borradores/futuros podían filtrarse.
+- Se reabren los hallazgos existentes, sin IDs nuevos ni informe paralelo.
+- Se corrige la audiencia mediante claims/perfil verificado, estado/fecha de publicación y minimización de datos públicos.
+- Se agregan fixtures locales para anónimo, Estudiante y Administrador; checks de token y capacidades opacas ACADEMIC.
+- CI C1.368 pendiente. BETA-FUNC-012 Pendiente beta, no bloqueante.
+- TASK-636 En ejecución. Checkpoint C1.368: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice fila C1.368.

@@ -159,3 +159,12 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Pasos:** intentar borrar cada archivo; simular fallo de actualización de MetadatosArchivos; verificar estado Drive y metadatos después de la compensación.
 - **Resultado esperado:** FileID y ArchivoUrl bloquean el borrado; el archivo no cambia si está referenciado; borrado no referenciado actualiza metadatos; fallo de metadatos restaura el archivo o registra error crítico explícito.
 - **Estado:** Pendiente beta. No bloquea implementación local por requerir servicios desplegados.
+
+
+## BETA-FUNC-012 — TASK-636 / AUD-NG-365 — audiencias de noticias y comunicados
+- **Objetivo:** comprobar en Apps Script/Sheets aislados que los endpoints públicos no permiten seleccionar audiencias mediante parámetros del cliente.
+- **Precondiciones:** deployment beta de USER-Service, hojas sintéticas NoticiasPortal, ComunicadosInstitucionales y Usuarios; cuentas anónima, Estudiante, Profesor y Administrador.
+- **Datos:** noticias generales, por grado/sección, inactivas y futuras; comunicados generales, por rol, borradores, futuros y retirados.
+- **Pasos:** consultar sin token manipulando grado/sección/includeInactive/rol/audiencia; consultar con token válido de Estudiante alterando los mismos campos; consultar como Administrador; comprobar contenido, estado, fecha y metadatos expuestos.
+- **Resultado esperado:** anónimo solo recibe contenido general publicado/activo y vigente; usuario recibe su audiencia derivada del perfil/claims; parámetros de cliente no amplían el ámbito; borradores y publicaciones futuras no se exponen; includeInactive solo opera para rol privilegiado verificado.
+- **Estado:** Pendiente beta. No bloquea implementación local por requerir servicios desplegados.

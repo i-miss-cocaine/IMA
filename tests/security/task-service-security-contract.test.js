@@ -2,6 +2,29 @@ const assert=require("assert"),fs=require("fs"),path=require("path"),vm=require(
 const root=path.resolve(__dirname,"../..");
 const source=fs.readFileSync(path.join(root,"backend/task-service/Code.gs"),"utf8");
 new vm.Script(source,{filename:"backend/task-service/Code.gs"});
+
+const userSource = fs.readFileSync(path.join(root, "backend/user-service/Code.gs"), "utf8");
+const academicSource = fs.readFileSync(path.join(root, "backend/academic-service/Code.gs"), "utf8");
+const apiSource = fs.readFileSync(path.join(root, "js/api.js"), "utf8");
+const authSource = fs.readFileSync(path.join(root, "js/auth.js"), "utf8");
+new vm.Script(userSource, { filename: "backend/user-service/Code.gs" });
+new vm.Script(academicSource, { filename: "backend/academic-service/Code.gs" });
+assert(authSource.includes("sessionToken: result.data.sessionToken || result.sessionToken || null"), "login persists the signed session token");
+assert(authSource.includes("storage.setItem('currentUser', JSON.stringify(userData))"), "signed token is stored with currentUser");
+assert(apiSource.includes("enrichedPayload.sessionToken = currentUser.sessionToken"), "authenticated API requests propagate the signed token");
+
+const publicStatusFunction = extractFunctionFrom(academicSource, "getPublicAdmissionStatus");
+const saveDraftFunction = extractFunctionFrom(academicSource, "saveAdmissionDraft");
+const getDraftFunction = extractFunctionFrom(academicSource, "getAdmissionDraft");
+const createAdmissionFunction = extractFunctionFrom(academicSource, "createAdmissionRequest");
+assert(publicStatusFunction.includes("isValidOpaqueAdmissionAccessToken(accessToken)"), "public admission status requires opaque capability");
+assert(saveDraftFunction.includes("isValidOpaqueAdmissionAccessToken(suppliedToken)"), "draft updates validate opaque capability");
+assert(getDraftFunction.includes("isValidOpaqueAdmissionAccessToken(accessToken)"), "draft retrieval requires opaque capability");
+assert(createAdmissionFunction.includes("generateOpaqueAdmissionAccessToken()") && createAdmissionFunction.includes("hashOpaqueAdmissionAccessToken(publicAccessToken)"), "admission creation issues and stores only a hash of the opaque capability");
+const automationFunction = extractFunctionFrom(userSource, "getAutomationRules");
+assert(automationFunction.includes("getUserVerifiedRole(payload)") && automationFunction.includes('["Administrador", "Desarrollador", "Director"].indexOf(verifiedRole)'), "automation rules require verified admin claims");
+
+
 function extractFunction(name){
  const start=source.indexOf("function "+name+"(");assert.ok(start>=0,"function exists: "+name);
  const open=source.indexOf("{",start);let depth=0,quote=null,escaped=false,line=false,block=false;
@@ -9,6 +32,15 @@ function extractFunction(name){
  if(quote){if(escaped){escaped=false;continue;}if(ch==="\\"){escaped=true;continue;}if(ch===quote)quote=null;continue;}
  if(ch==="/"&&n==="/"){line=true;i++;continue;}if(ch==="/"&&n==="*"){block=true;i++;continue;}if(ch==="'"||ch==='"'||ch==="`"){quote=ch;continue;}
  if(ch==="{")depth++;else if(ch==="}"&&--depth===0)return source.slice(start,i+1);}
+ throw new Error("unbalanced "+name);
+}
+function extractFunctionFrom(sourceText,name){
+ const start=sourceText.indexOf("function "+name+"(");assert.ok(start>=0,"function exists: "+name);
+ const open=sourceText.indexOf("{",start);let depth=0,quote=null,escaped=false,line=false,block=false;
+ for(let i=open;i<sourceText.length;i++){const ch=sourceText[i],n=sourceText[i+1];if(line){if(ch==="\n")line=false;continue;}if(block){if(ch==="*"&&n==="/"){block=false;i++;}continue;}
+ if(quote){if(escaped){escaped=false;continue;}if(ch==="\\"){escaped=true;continue;}if(ch===quote)quote=null;continue;}
+ if(ch==="/"&&n==="/"){line=true;i++;continue;}if(ch==="/"&&n==="*"){block=true;i++;continue;}if(ch==="'"||ch==='"'||ch==="`"){quote=ch;continue;}
+ if(ch==="{")depth++;else if(ch==="}"&&--depth===0)return sourceText.slice(start,i+1);}
  throw new Error("unbalanced "+name);
 }
 function makeSheet(rows){return{rows,getLastRow:()=>rows.length,appendRow:r=>rows.push(r.slice()),getDataRange:()=>({getValues:()=>rows.map(r=>r.slice())}),getRange:(row,col,numRows,numCols)=>({setValue:value=>{rows[row-1][col-1]=value;},setValues:values=>{values.forEach((r,i)=>r.forEach((v,j)=>{rows[row-1+i][col-1+j]=v;}));}})};}
@@ -108,3 +140,72 @@ assert.equal(successfulDelete.file.trashed, true);
 assert.equal(successfulDelete.rows[1][14], "Eliminado");
 
 console.log("TASK-636 deleteFile local contract: FileID/ArchivoUrl reference guards and metadata rollback passed.");
+
+// PUBLIC USER NEWS CONTRACT: anonymous responses are general-only; authenticated audience comes from claims.
+
+const userNewsHeaders = ["NoticiaID","Fecha","Hora","Titulo","Contenido","ImagenUrl","Categoria","GradoAudiencia","SeccionAudiencia","FechaInicio","FechaFin","Estado"];
+const userNewsRows = [
+  userNewsHeaders,
+  ["N-GEN","2026-11-08","08:00","General","general","","General","Todos","Todas","","","Activa"],
+  ["N-G6","2026-11-08","09:00","Grade 6","grade6","","Académico","6","A","","","Activa"],
+  ["N-G9","2026-11-08","10:00","Grade 9","grade9","","Académico","9","Z","","","Activa"],
+  ["N-INACTIVE","2026-11-08","11:00","Inactive","inactive","","General","Todos","Todas","","","Inactiva"],
+  ["N-FUTURE","2026-11-08","12:00","Future","future","","General","Todos","Todas","2099-01-01","","Activa"]
+];
+const userRows = [["UserId","Nombre","Grado","Seccion"],["STU-1","Student","6","A"]];
+const announcementHeaders = ["ID","Titulo","Contenido","Categoria","AutorID","Audiencia","RequiereFirma","FechaPublicacion","Estado"];
+const announcementRows = [
+  announcementHeaders,
+  ["COM-GEN","General","public general","General","AUTHOR-1","TodaLaComunidad",false,new Date("2026-11-08T12:00:00Z"),"Publicado"],
+  ["COM-STU","Student","student only","General","AUTHOR-2",'["Estudiante"]',false,new Date("2026-11-08T12:00:00Z"),"Publicado"],
+  ["COM-SEC","Secretaría","secretary only","General","AUTHOR-3",'["Secretaría"]',false,new Date("2026-11-08T12:00:00Z"),"Publicado"],
+  ["COM-DRAFT","Draft","draft content","General","AUTHOR-4",'["Estudiante"]',false,new Date("2026-11-08T12:00:00Z"),"Borrador"],
+  ["COM-FUTURE","Future","future content","General","AUTHOR-5","TodaLaComunidad",false,new Date("2099-01-01T12:00:00Z"),"Publicado"],
+  ["COM-RETIRED","Retired","retired content","General","AUTHOR-6","TodaLaComunidad",false,new Date("2026-11-08T12:00:00Z"),"Retirado"]
+];
+const userSheets = {
+  NoticiasPortal: { getDataRange: () => ({ getValues: () => userNewsRows }) },
+  Usuarios: { getDataRange: () => ({ getValues: () => userRows }) },
+  ComunicadosInstitucionales: { getDataRange: () => ({ getValues: () => announcementRows }) }
+};
+const userSS = { getSheetByName: name => userSheets[name] || null };
+const userContext = {
+  SPREADSHEET_ID: "LOCAL",
+  SpreadsheetApp: { openById: () => userSS },
+  getOrCreateSheet: (_ss, name) => userSheets[name],
+  getSheetOrThrow: (_ss, name) => { if (!userSheets[name]) throw new Error("missing " + name); return userSheets[name]; },
+  getUserVerifiedRole: payload => {
+    if (payload && payload.sessionToken === "student-valid") {
+      payload._verifiedUserId = "STU-1"; payload._verifiedRole = "Estudiante"; return "Estudiante";
+    }
+    if (payload && payload.sessionToken === "admin-valid") {
+      payload._verifiedUserId = "ADMIN-1"; payload._verifiedRole = "Administrador"; return "Administrador";
+    }
+    return "NO_ACCESS";
+  }
+};
+vm.runInNewContext(
+  extractFunctionFrom(userSource, "normalizeString") + String.fromCharCode(10) +
+  extractFunctionFrom(userSource, "getNews") + String.fromCharCode(10) +
+  extractFunctionFrom(userSource, "getInstitutionalAnnouncements") + String.fromCharCode(10) +
+  "this.getNews = getNews; this.getAnnouncements = getInstitutionalAnnouncements;",
+  userContext
+);
+const publicNews = userContext.getNews({ grado: "9", seccion: "Z", includeInactive: true });
+assert.deepEqual(publicNews.data.map(item => item.noticiaId), ["N-GEN"], "anonymous clients cannot choose grade/section or request inactive news");
+const studentNews = userContext.getNews({ sessionToken: "student-valid", grado: "9", seccion: "Z", includeInactive: true });
+assert.deepEqual(studentNews.data.map(item => item.noticiaId).sort(), ["N-G6","N-GEN"], "authenticated news audience derives from the stored user profile");
+const publicAnnouncements = userContext.getAnnouncements({ rol: "Secretaría", audiencia: "Secretaría" });
+assert.deepEqual(publicAnnouncements.data.map(item => item.comunicadoId), ["COM-GEN"], "anonymous clients receive only current general published announcements");
+assert.equal(Object.prototype.hasOwnProperty.call(publicAnnouncements.data[0], "autorId"), false, "public announcement response omits internal author ID");
+assert.equal(Object.prototype.hasOwnProperty.call(publicAnnouncements.data[0], "audiencia"), false, "public announcement response omits internal audience metadata");
+const studentAnnouncements = userContext.getAnnouncements({ sessionToken: "student-valid", rol: "Administrador", audiencia: "Secretaría" });
+assert.deepEqual(studentAnnouncements.data.map(item => item.comunicadoId).sort(), ["COM-GEN","COM-STU"], "announcement audience derives from signed claims, not client role/audience");
+
+console.log("USER public news/announcement local contract: anonymous scope, signed role, publication state and date guards passed.");
+
+
+const adminNews = userContext.getNews({ sessionToken: "admin-valid", includeInactive: true });
+assert.deepEqual(adminNews.data.map(item => item.noticiaId).sort(), ["N-FUTURE","N-G6","N-G9","N-GEN","N-INACTIVE"], "only verified administrators may request inactive and all-audience news");
+const adminAnnouncements = userContext.getAnnouncements({ sessionToken: "admin-valid", rol: "Estudiante", audiencia: "Estudiante" });
+assert.deepEqual(adminAnnouncements.data.map(item => item.comunicadoId).sort(), ["COM-GEN","COM-SEC","COM-STU"], "verified administrators can inspect all published announcements but not drafts or future releases");

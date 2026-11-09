@@ -870,3 +870,58 @@ Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt �
 Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.367.
 Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
 ===============================================================================
+
+===============================================================================
+## C1.368 — TASK-636 / AUD-NG-365 — protección de audiencias públicas
+ID: C1.368
+Sesión: IMA-EXEC-20261109-1739Z-01
+Fecha: 2026-11-09
+Checkpoint anterior válido: C1.367
+Baseline lógico: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD físico de partida: 60b86b8b81917f503eef741e650d1b6423d216c0
+Rama: NG_beta_0.0.0.1_work
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+
+### Auditoría
+- Se revalidaron las excepciones públicas de USER-Service contra el requisito TASK-636 y el expediente único AUDITORIA_TASK-636_C1.305.md.
+- AUD-NG-365/AUD-NG-002 se reabren: getNews aceptaba grado/sección/includeInactive desde payload; getInstitutionalAnnouncements usaba rol/audiencia del payload y no restringía adecuadamente borradores/fechas.
+- El problema permite que un anónimo seleccione audiencias ajenas o reciba contenido no publicado/vigente; los controles previos documentados no coincidían con el código auditado.
+- No se crea informe paralelo ni ID duplicado.
+
+### Implementación
+- getNews llama getUserVerifiedRole; grado/sección se derivan de Usuarios mediante _verifiedUserId; los parámetros de audiencia del cliente se ignoran.
+- Anónimos: solo grado/sección general, estado Activa y fechas vigentes.
+- Usuarios autenticados: audiencia derivada del perfil/claims; roles privilegiados pueden consultar todas las audiencias; includeInactive solo se respeta para roles privilegiados verificados.
+- getInstitutionalAnnouncements deriva rol de claims; todos los usuarios reciben solo estados Publicado/Activa y fecha no futura; anónimos solo reciben audiencia TodaLaComunidad/general.
+- La respuesta anónima omite autorId y audiencia. Rol/audiencia del cliente no se usan.
+- Se agregan fixtures locales de noticias/comunicados y casos de spoofing; se añaden checks de token de sesión y capacidades opacas de ACADEMIC.
+- Workflow security local contracts incluye backend/user-service/Code.gs en sus filtros push/pull_request.
+
+### Archivos modificados
+- backend/user-service/Code.gs
+- tests/security/task-service-security-contract.test.js
+- .github/workflows/task-service-security-contract.yml
+- Auditoría/AUDITORIA_TASK-636_C1.305.md (expediente existente)
+- pendientes/Otros/Pendientes.md (seguimiento aditivo)
+- beta_test.txt (BETA-FUNC-012)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoria.txt
+- tareas_auditoria.txt
+- changueslogs.txt
+
+### Pruebas y estado
+- C1.367 security local contracts run 42723634980: completed/success; log confirma protección FileID/ArchivoUrl y rollback de metadatos.
+- C1.367 backup/restore run 42723635060: pendiente de consultar.
+- C1.368: contrato local ampliado; CI pendiente de ejecución tras publicar.
+- BETA-FUNC-012: Pendiente beta, no bloqueante para implementación local.
+- TASK-636 En ejecución; AUD-NG-365 reabierto; AUD-NG-002 en revalidación. No se marca tarea como Completada.
+
+### Siguiente acción exacta
+Consultar CI C1.368 y el workflow backup/restore C1.367; después continuar la reauditoría local de AUD-NG-001/002/306/368/371 y comprobar los criterios restantes de TASK-636 en Task-Service/Academic-Service. Mantener un único expediente y no aceptar evidencia de C1.317–C1.365.
+
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.368.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.368.
+Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
+===============================================================================

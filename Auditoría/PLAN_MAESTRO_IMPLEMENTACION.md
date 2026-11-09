@@ -2220,3 +2220,11 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - Fixtures Node locales: referencia URL-only, FileID-only, borrado permitido y rollback por fallo de metadatos. CI C1.367 pendiente.
 - BETA-FUNC-011: validación Drive/Sheets aislados, Pendiente beta y no bloqueante.
 - AUD-NG-370 en revalidación; TASK-636 En ejecución.
+
+
+## 10.52 TASK-636 — C1.368: protección de audiencias públicas USER
+- AUD-NG-365/AUD-NG-002 reabiertos: getNews y getInstitutionalAnnouncements confiaban en audiencia/grado/rol del payload y podían exponer contenido inactivo, borradores o dirigido a terceros.
+- Se deriva el rol de getUserVerifiedRole; grado/sección de Usuarios; anónimos reciben solo contenido general activo/publicado y vigente; respuesta pública omite autorId/audiencia.
+- Se amplía contrato Node con fixtures de spoofing y publicación/fecha; workflow incluye USER-Service. CI pendiente.
+- BETA-FUNC-012: validación de servicios aislados, Pendiente beta y no bloqueante.
+- TASK-636 En ejecución.
