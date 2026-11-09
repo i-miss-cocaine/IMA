@@ -395,3 +395,19 @@ TASK-636 — ITERACIÓN C1.309 / ACADEMIC PÚBLICO Y PROTECCIÓN DE ENTREGAS
 - No se crean IDs nuevos: AUD-NG-357/AUD-NG-370 permanecen en TASK-636.
 - AUD-NG-369 permanece en TASK-636; TASK-496/AUD-NG-217, TASK-501/AUD-NG-221, TASK-502/AUD-NG-222 y TASK-685/AUD-NG-373 conservan sus ámbitos.
 ===============================================================================
+
+===============================================================================
+TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISIÓN
+===============================================================================
+- Estado: En ejecución; no Completada.
+- Revisión posterior a C1.309 detectó que admision.html seguía enviando draftKey/email como credencial, no conservaba el token devuelto por saveAdmissionDraft y el tracking UI aún esperaba DNI/nombres/expediente.
+- Corrección: autosave persiste/reutiliza draftAccessToken; el envío formal adjunta la capacidad para consumir el borrador; la confirmación muestra/copia la credencial privada y la almacena localmente.
+- El seguimiento solicita token privado y presenta solo código interno, estado, grado/año y fecha; no muestra nombres/expediente ni estado financiero por la ruta pública.
+- Se conserva el respaldo local del formulario; no existe consumidor frontend de getAdmissionDraft, por lo que la recuperación en nube queda pendiente de integración explícita si el requisito funcional la exige.
+- Verificación estática del contrato y consumidores. No se ejecutaron navegador, Apps Script runtime, HTTP ni E2E.
+- AUD-NG-357 permanece parcialmente abierto por migración de registros históricos sin hash y pruebas dinámicas; TASK-636 continúa En ejecución.
+
+### Tareas derivadas de los hallazgos de la auditoría
+- No se crean IDs nuevos. Se mantiene AUD-NG-357 dentro de TASK-636.
+- AUD-NG-370 permanece parcialmente abierto; AUD-NG-369/backup-restore sigue pendiente y closeAcademicYear continúa bloqueado con BACKUP_REQUIRED.
+===============================================================================

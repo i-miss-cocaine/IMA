@@ -299,14 +299,14 @@
             <div class="text-center mb-8">
                 <span class="inline-block px-3 py-1 bg-green-50 text-green-700 text-[11px] font-bold uppercase tracking-wider rounded-full mb-2">Portal Público de Consulta</span>
                 <h2 class="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">Seguimiento de Solicitud de Admisión</h2>
-                <p class="text-xs md:text-sm text-gray-500 mt-2 max-w-xl mx-auto">Consulte el estado actualizado de su trámite ingresando su Código de Seguimiento o DNI registrado.</p>
+                <p class="text-xs md:text-sm text-gray-500 mt-2 max-w-xl mx-auto">Consulte el estado de su trámite con la credencial privada de seguimiento que recibió al registrar la solicitud.</p>
             </div>
 
             <form onsubmit="handleTrackStatus(event)" class="max-w-xl mx-auto space-y-4 mb-8">
                 <div>
-                    <label for="trackCodigo" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Código de Seguimiento (ADM-XXXXXX) o DNI del Aspirante <span class="text-red-500">*</span></label>
+                    <label for="trackCodigo" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Credencial privada de seguimiento <span class="text-red-500">*</span></label>
                     <div class="flex gap-2">
-                        <input type="text" id="trackCodigo" required class="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all text-sm font-semibold" placeholder="Ej. ADM-000001 o DNI 0801201012345">
+                        <input type="text" id="trackCodigo" required class="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all text-sm font-semibold" placeholder="Pegue el token privado recibido al registrar la solicitud">
                         <button type="submit" id="btn-track-submit" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition-all shadow-md flex items-center gap-2">
                             <i class="fas fa-search"></i> Consultar
                         </button>
@@ -332,7 +332,7 @@
             <div>
                 <span class="text-[10px] font-bold text-green-600 uppercase tracking-widest bg-green-50 px-3 py-1 rounded-full">Solicitud Recibida Exitosamente</span>
                 <h3 class="text-xl md:text-2xl font-black text-gray-900 mt-2">¡Trámite de Admisión Registrado!</h3>
-                <p class="text-xs text-gray-500 mt-1">Guarde su código de seguimiento oficial para consultar el avance de su solicitud.</p>
+                <p class="text-xs text-gray-500 mt-1">Guarde su credencial privada; funciona como una contraseña y no debe compartirla.</p>
             </div>
 
             <div class="bg-gray-50 border border-gray-200 p-4 rounded-2xl">
@@ -344,9 +344,15 @@
                 Hemos enviado un mensaje de confirmación al correo electrónico del tutor registrado. Secretaría revisará la documentación y se pondrá en contacto para programar las evaluaciones correspondientes.
             </p>
 
+            <div class="bg-amber-50 border border-amber-200 p-4 rounded-2xl text-left">
+                <span class="text-[10px] font-bold text-amber-800 uppercase tracking-widest block">Credencial privada de seguimiento</span>
+                <span id="confirm-access-token" class="text-xs font-mono font-bold text-amber-900 break-all block mt-2">No disponible</span>
+                <p class="text-[10px] text-amber-800 mt-2">También se envía al correo registrado. Quien tenga este token puede consultar el estado de la solicitud.</p>
+            </div>
+
             <div class="flex gap-3 pt-2">
                 <button onclick="copyTrackingCode()" class="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2">
-                    <i class="fas fa-copy"></i> Copiar Código
+                    <i class="fas fa-copy"></i> Copiar credencial privada
                 </button>
                 <button onclick="closeAdmissionModal()" class="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition-all shadow-md">
                     Entendido
@@ -564,11 +570,29 @@
                 observaciones: document.getElementById('observaciones').value.trim(),
                 canalIngreso: "PortalWebPublico"
             };
+            const draftKey = (payload.emailContacto || payload.identificacion || "draft_local").toLowerCase().trim();
+            const draftTokenStorageKey = "ngca_admission_draft_token_" + draftKey;
+            try {
+                const savedDraftToken = localStorage.getItem(draftTokenStorageKey) || (window.__imaAdmissionDraftTokens && window.__imaAdmissionDraftTokens[draftKey]) || "";
+                if (savedDraftToken) payload.draftAccessToken = savedDraftToken;
+            } catch (_) {}
 
             try {
                 const res = await window.fetchApi('ACADEMIC', 'createAdmissionRequest', payload);
                 if (res && res.status === 'success') {
                     document.getElementById('confirm-solicitud-id').textContent = res.solicitudId;
+                    const publicAccessToken = String(res.publicAccessToken || "");
+                    document.getElementById('confirm-access-token').textContent = publicAccessToken || "No disponible; revise el correo o contacte a Secretaría.";
+                    if (publicAccessToken) {
+                        try { localStorage.setItem('ima_admission_access_' + res.solicitudId, publicAccessToken); } catch (_) {}
+                    } else {
+                        alert("La solicitud fue registrada, pero no se recibió la credencial privada. Contacte a Secretaría antes de cerrar esta ventana.");
+                    }
+                    try {
+                        localStorage.removeItem('ngca_admission_draft_' + draftKey);
+                        localStorage.removeItem(draftTokenStorageKey);
+                        if (window.__imaAdmissionDraftTokens) delete window.__imaAdmissionDraftTokens[draftKey];
+                    } catch (_) {}
                     showAdmissionModal();
                     document.getElementById('admission-form').reset();
                     goToStep(1);
@@ -588,56 +612,43 @@
             e.preventDefault();
             const trackVal = document.getElementById('trackCodigo').value.trim();
             if (!trackVal) return;
-
             const btnTrack = document.getElementById('btn-track-submit');
             const resContainer = document.getElementById('track-result-container');
             btnTrack.disabled = true;
             btnTrack.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-
             try {
                 const res = await window.getPublicAdmissionStatus(trackVal);
                 resContainer.classList.remove('hidden');
-
-                if (res && res.status === 'success') {
-                    if (res.found && res.request) {
-                        const found = res.request;
-                        let statusColor = "bg-blue-100 text-blue-800";
-                        if (found.estadoSolicitud === 'Admitida') statusColor = "bg-green-100 text-green-800";
-                        if (found.estadoSolicitud === 'Rechazada') statusColor = "bg-red-100 text-red-800";
-                        if (found.estadoSolicitud === 'En_Revision') statusColor = "bg-amber-100 text-amber-800";
-                        if (found.estadoSolicitud === 'Convertida') statusColor = "bg-purple-100 text-purple-800";
-
-                        resContainer.innerHTML = `
-                                <div class="bg-gray-50 border border-gray-200 rounded-3xl p-6 space-y-4 text-left">
-                                    <div class="flex justify-between items-start border-b border-gray-200 pb-3">
-                                        <div>
-                                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Código de Trámite</span>
-                                            <h4 class="text-xl font-black text-gray-900">${found.solicitudId}</h4>
-                                        </div>
-                                        <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${statusColor}">${found.estadoSolicitud}</span>
-                                    </div>
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                                        <div><strong class="text-gray-700">Aspirante:</strong> ${found.nombresAspirante} ${found.apellidosAspirante}</div>
-                                        <div><strong class="text-gray-700">Grado:</strong> ${found.gradoSolicitado} (${found.anolectivo})</div>
-                                        <div><strong class="text-gray-700">Responsable:</strong> ${found.nombreResponsable || '-'}</div>
-                                        <div><strong class="text-gray-700">Canal:</strong> ${found.canalIngreso || 'Web'}</div>
-                                    </div>
-                                    ${found.observaciones ? `<div class="p-3 bg-white rounded-xl text-[11px] text-gray-600 border border-gray-100"><strong>Observaciones:</strong> ${found.observaciones}</div>` : ''}
+                if (res && res.status === 'success' && res.found && res.request) {
+                    const found = res.request;
+                    let statusColor = "bg-blue-100 text-blue-800";
+                    if (found.estadoSolicitud === 'Admitida') statusColor = "bg-green-100 text-green-800";
+                    if (found.estadoSolicitud === 'Rechazada') statusColor = "bg-red-100 text-red-800";
+                    if (found.estadoSolicitud === 'En_Revision') statusColor = "bg-amber-100 text-amber-800";
+                    if (found.estadoSolicitud === 'Convertida') statusColor = "bg-purple-100 text-purple-800";
+                    const safe = value => window.escapeHtml(String(value === undefined || value === null ? "" : value));
+                    const fecha = found.fechaSolicitud ? new Date(found.fechaSolicitud).toLocaleDateString() : "—";
+                    resContainer.innerHTML = `
+                        <div class="bg-gray-50 border border-gray-200 rounded-3xl p-6 space-y-4 text-left">
+                            <div class="flex justify-between items-start border-b border-gray-200 pb-3">
+                                <div>
+                                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Código de trámite</span>
+                                    <h4 class="text-xl font-black text-gray-900">${safe(found.solicitudId)}</h4>
                                 </div>
-                            `;
-                    } else {
-                        resContainer.innerHTML = `
-                            <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-center text-xs text-amber-900 font-medium">
-                                <i class="fas fa-exclamation-triangle text-amber-600 mb-1 text-lg block"></i>
-                                No se encontró ninguna solicitud registrada para "<strong>${trackVal}</strong>". Verifique el código ingresado o el número de identificación.
+                                <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${statusColor}">${safe(found.estadoSolicitud)}</span>
                             </div>
-                        `;
-                    }
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                                <div><strong class="text-gray-700">Grado:</strong> ${safe(found.gradoSolicitado)} (${safe(found.anolectivo)})</div>
+                                <div><strong class="text-gray-700">Fecha de solicitud:</strong> ${safe(fecha)}</div>
+                            </div>
+                        </div>`;
                 } else {
-                    resContainer.innerHTML = `<div class="p-4 text-xs text-red-500 text-center">Error al consultar el servidor.</div>`;
+                    const message = res && res.message ? res.message : "No se encontró una solicitud para esa credencial.";
+                    resContainer.innerHTML = `<div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-center text-xs text-amber-900 font-medium">${window.escapeHtml(message)}</div>`;
                 }
             } catch (err) {
-                resContainer.innerHTML = `<div class="p-4 text-xs text-red-500 text-center">Error de conexión: ${err.message}</div>`;
+                resContainer.classList.remove('hidden');
+                resContainer.innerHTML = `<div class="p-4 text-xs text-red-500 text-center">Error de conexión: ${window.escapeHtml(err.message)}</div>`;
             } finally {
                 btnTrack.disabled = false;
                 btnTrack.innerHTML = '<i class="fas fa-search"></i> Consultar';
@@ -655,14 +666,19 @@
         }
 
         function copyTrackingCode() {
-            const code = document.getElementById('confirm-solicitud-id').textContent;
-            navigator.clipboard.writeText(code).then(() => {
-                alert('Código de seguimiento copiado al portapapeles: ' + code);
+            const token = document.getElementById('confirm-access-token').textContent.trim();
+            if (!token || token.indexOf("No disponible") === 0) {
+                alert("No hay una credencial privada disponible para copiar.");
+                return;
+            }
+            navigator.clipboard.writeText(token).then(() => {
+                alert("Credencial privada copiada. No la comparta con terceros.");
             });
         }
 
         // [TAREA-F5-015] Implementación del guardado automático de borradores en segundo plano con debounce de 3s y recuperación
         let autoSaveTimer = null;
+        window.__imaAdmissionDraftTokens = window.__imaAdmissionDraftTokens || {};
 
         function updateDraftSaveIndicator(statusText, iconClass = "fa-save text-blue-500") {
             const indicator = document.getElementById('draft-save-indicator');
@@ -699,11 +715,20 @@
                 // 2. Sincronización con backend si existe clave
                 if (draftKey && draftKey !== "draft_local") {
                     try {
-                        await window.fetchApi('ACADEMIC', 'saveAdmissionDraft', {
-                            draftKey: draftKey,
+                        const draftTokenStorageKey = "ngca_admission_draft_token_" + draftKey;
+                        let draftAccessToken = "";
+                        try { draftAccessToken = localStorage.getItem(draftTokenStorageKey) || ""; } catch (_) {}
+                        if (!draftAccessToken) draftAccessToken = window.__imaAdmissionDraftTokens[draftKey] || "";
+                        const draftResponse = await window.fetchApi('ACADEMIC', 'saveAdmissionDraft', {
+                            draftAccessToken: draftAccessToken,
                             emailResponsable: draftData.emailContacto || "",
                             draftDataJSON: JSON.stringify(draftData)
                         });
+                        if (!draftResponse || draftResponse.status !== "success" || !draftResponse.draftAccessToken) {
+                            throw new Error("El servidor no devolvió la credencial del borrador.");
+                        }
+                        window.__imaAdmissionDraftTokens[draftKey] = draftResponse.draftAccessToken;
+                        try { localStorage.setItem(draftTokenStorageKey, draftResponse.draftAccessToken); } catch (_) {}
                         updateDraftSaveIndicator("Borrador guardado en nube", "fa-cloud-arrow-up text-green-500");
                     } catch (_) {
                         updateDraftSaveIndicator("Borrador guardado localmente", "fa-check text-blue-500");

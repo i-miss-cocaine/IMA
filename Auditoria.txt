@@ -340,3 +340,10 @@ Sesión: IMA-EXEC-20261109-1108Z-01; HEAD de partida: 32b8f5884dd24dbeaf1a3bf028
 - Sesión: IMA-EXEC-20261109-1533Z-01.
 - Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.309.
 - Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.309.
+
+## Seguimiento C1.310 — integración del contrato de admisión pública
+- Hallazgo de integración en admision.html: el autosave todavía enviaba draftKey/email y no persistía draftAccessToken; el envío formal no consumía el token; el tracking UI seguía mostrando DNI como alternativa y esperaba PII retirada del endpoint.
+- Corrección C1.310: autosave guarda/reutiliza la capacidad privada; el submit la adjunta y elimina el token local al consumirse; la confirmación muestra/copia la credencial; tracking pide token y presenta solo campos mínimos.
+- El panel público no consulta estado financiero. No se crea nuevo ID: continúa AUD-NG-357/TASK-636.
+- Verificación estática; no se ejecutaron navegador, Apps Script, HTTP ni E2E.
+- Checkpoint C1.310: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.310; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.310.

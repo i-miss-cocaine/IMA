@@ -127,3 +127,11 @@ Endurecer las excepciones públicas de backend/academic-service/Code.gs mediante
 - Compatibilidad: registros históricos sin hash no reciben token por inferencia de correo/DNI/ID. La ruta pública falla de forma cerrada; no se reemplaza el acceso autenticado de tutores.
 - Estado: TASK-636 En ejecución, no Completada. AUD-NG-357/AUD-NG-370 parcialmente abiertos; AUD-NG-369 abierto y closeAcademicYear sigue bloqueado con BACKUP_REQUIRED.
 - Verificación estática y Code Review focalizado. No ejecutados Apps Script runtime, Sheets/Drive reales, HTTP, navegador, E2E, concurrencia ni pruebas por rol.
+
+## Integración frontend C1.310 — seguimiento y borradores de admisión
+- Revisión posterior del commit C1.309 detectó que admision.html seguía enviando draftKey/email como credencial y no consumía el token emitido; el formulario también esperaba nombres/expediente en el estado público y mostraba DNI como alternativa.
+- Corrección: autosave reutiliza draftAccessToken y persiste la capacidad por borrador en almacenamiento local; el envío final adjunta la capacidad para consumir el borrador. La clave local derivada de email/DNI solo identifica el registro del navegador y no se envía como autorización.
+- La confirmación muestra el token privado de seguimiento y permite copiarlo; el formulario lo conserva localmente y el backend lo entrega por correo.
+- handleTrackStatus consulta mediante window.getPublicAdmissionStatus(token) y muestra solo código interno, estado, grado/año y fecha; se eliminan nombres, responsable, canal y observaciones de la respuesta pública.
+- El panel de seguimiento público no invoca el endpoint financiero. Las solicitudes autenticadas de tutores mantienen su panel financiero existente.
+- Estado: TASK-636 continúa En ejecución. No se ejecutaron navegador, Apps Script runtime ni pruebas E2E; verificación estática de contrato y referencias únicamente.

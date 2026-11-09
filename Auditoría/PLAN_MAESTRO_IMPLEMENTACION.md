@@ -1885,3 +1885,12 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - AUD-NG-369 sigue abierto; closeAcademicYear permanece fail-closed con BACKUP_REQUIRED hasta demostrar backup/restore aislado.
 - Runtime Apps Script, Sheets/Drive, HTTP, navegador, E2E y pruebas por rol no ejecutadas.
 - Checkpoint C1.309: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.309; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.309.
+
+## 10.8 Seguimiento de ejecución del Plan Maestro — C1.310
+- TASK-636 — PM-01/P0 — En ejecución. Se integra el contrato de capacidad privada con admision.html: autosave reutiliza draftAccessToken y el envío formal lo adjunta para consumir el borrador.
+- La confirmación presenta y permite copiar el token de seguimiento; el formulario conserva la capacidad localmente y el servidor la entrega en la notificación.
+- La consulta pública usa token y muestra solo datos mínimos; no acepta DNI/ID secuencial ni muestra PII/estado financiero.
+- No se encontró consumidor frontend de getAdmissionDraft; la restauración local permanece disponible. La recuperación cloud UI queda como punto funcional pendiente si está exigida por el requisito original.
+- AUD-NG-357 permanece parcialmente abierto por registros históricos sin hash y pruebas dinámicas; AUD-NG-370 por metadatos históricos y runtime; AUD-NG-369 por backup/restore aislado.
+- No se ejecutaron Apps Script runtime, navegador, HTTP, Sheets/Drive ni E2E.
+- Checkpoint C1.310: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.310; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.310.

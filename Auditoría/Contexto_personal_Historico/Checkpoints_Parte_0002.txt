@@ -915,3 +915,64 @@ Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002
 Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.309.
 Commit de cierre: el commit único que contiene este checkpoint; SHA verificado externamente tras publicación.
 ===============================================================================
+
+===============================================================================
+## C1.310 — TASK-636 / PM-01 — integración frontend de capacidades de admisión
+ID: C1.310
+Sesión: IMA-EXEC-20261109-1533Z-02 (cerrada al publicar este checkpoint)
+Checkpoint anterior: C1.309
+Repositorio: i-miss-cocaine/IMA
+Rama autorizada: NG_beta_0.0.0.1_work
+HEAD de partida: 2336d184f88246ea3801362da57fdfd55684d1b6
+Tree de partida: 312edce078e3fc1a6fd30eed9ea7a64df5a0b55c
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+Tarea: TASK-636 — Cerrar bypasses de autorización y proteger tareas, proyectos y archivos
+Fase PM: PM-01 — Identidad, seguridad y gobierno de acceso
+Prioridad: P0
+Requisito original: pendientes/Otros/Pendientes.md — bloque TASK-636, líneas 3223–3251 tras C1.309; blob C1.309 563611de9aadded3ad052e8511253ed9aee308b1.
+
+### Revisión de integración posterior a C1.309
+- Se verificó que admision.html carga js/student.js y usa window.getPublicAdmissionStatus, pero el propio formulario enviaba draftKey/email a saveAdmissionDraft y no guardaba el draftAccessToken devuelto.
+- El envío formal tampoco adjuntaba draftAccessToken; por tanto, el backend seguro no podía consumir el borrador existente y cada autosave podía crear una fila distinta.
+- El formulario de tracking aún ofrecía DNI/ID secuencial y esperaba nombres, responsable, canal y observaciones que getPublicAdmissionStatus ya no devuelve.
+- La revisión identificó además que el panel público no debía invocar getAdmissionFinancialStatus por solicitudId; se aisló el panel financiero para registros obtenidos mediante capacidad pública.
+
+### Correcciones C1.310
+1. admision.html:
+   - Autosave recupera draftAccessToken desde almacenamiento local/in-memory, lo envía a saveAdmissionDraft y persiste el token devuelto para reutilizar la misma fila.
+   - handleAdmissionSubmit adjunta el token de borrador al createAdmissionRequest; tras éxito elimina la capacidad de borrador y el borrador local.
+   - La confirmación muestra la capacidad privada de seguimiento, la almacena por solicitud y permite copiarla; el servidor también la entrega en la notificación.
+   - Tracking pide la credencial privada; no ofrece DNI como alternativa. Renderiza únicamente solicitud, estado, grado/año y fecha, escapando los valores; no representa nombres, responsable, canal ni observaciones.
+2. Se conserva la recuperación local del formulario. No se encontró consumidor frontend de getAdmissionDraft; no se declara recuperación cloud UI implementada.
+3. El panel de seguimiento público no invoca ni muestra estado financiero.
+
+### Verificaciones
+- Estáticas: autosave envía y persiste draftAccessToken; submit adjunta la credencial; tracking ya no presenta DNI/ID como credencial; respuesta mínima representada sin PII; token de seguimiento se muestra y copia; no se llama al servicio financiero en la ruta pública.
+- No ejecutadas: navegador, Apps Script runtime, HTTP, Sheets/Drive reales, E2E, concurrencia ni pruebas por rol.
+- No se declara PASS funcional; la integración requiere pruebas dinámicas.
+- TASK-636 permanece En ejecución; AUD-NG-357 parcialmente abierto por datos históricos sin hash y pruebas; AUD-NG-370 parcialmente abierto por metadatos históricos/runtime; AUD-NG-369 abierto por backup/restore.
+
+### Archivos modificados
+1. admision.html
+2. pendientes/Otros/Pendientes.md
+3. Auditoría/AUDITORIA_TASK-636_C1.305.md
+4. Auditoria.txt
+5. tareas_auditoria.txt
+6. Auditoría/MapaDependencias.md
+7. Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+8. changueslogs.txt
+9. Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt
+10. Auditoría/INDICE_CHECKPOINTS.md
+
+### Tareas derivadas de los hallazgos de la auditoría
+- No se crean IDs nuevos. AUD-NG-357 continúa dentro de TASK-636.
+- AUD-NG-370 permanece dentro de TASK-636; reconciliación histórica sin inferencia de propietario.
+- AUD-NG-369 permanece dentro de TASK-636; implementar backup/restore aislado y mantener closeAcademicYear fail-closed hasta verificar restauración.
+- TASK-496/AUD-NG-217, TASK-501/AUD-NG-221, TASK-502/AUD-NG-222 y TASK-685/AUD-NG-373 conservan sus ámbitos.
+
+### Siguiente acción exacta
+Diseñar e implementar backup/restore aislado, verificable y con rollback para closeAcademicYear en backend/task-service/Code.gs. Mantenerlo bloqueado hasta una prueba real de restauración; después abordar reconciliación de MetadatosArchivos históricos sin inferir propietarios. Revisar si el requisito original exige recuperación cloud de borradores; no declarar getAdmissionDraft como integrado mientras no exista consumidor.
+Ubicación exacta: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.310.
+Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.310.
+Commit de cierre: el commit único que contiene este checkpoint; SHA verificado externamente tras publicación.
+===============================================================================

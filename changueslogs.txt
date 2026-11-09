@@ -261,3 +261,13 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Solo verificaciones estáticas; runtime/HTTP/Drive/Sheets/E2E/pruebas por rol no ejecutadas.
 - Checkpoint C1.309: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.309; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.309.
 - Rama NG_beta_0.0.0.1_work; HEAD de partida 9f5f15952c30cb1207904fd53d5a1de6e1248139; commit único de cierre, SHA verificado externamente tras publicación.
+
+[2026-11-09] IMA-EXEC-20261109-1533Z-02 — TASK-636 / PM-01 / C1.310
+- Revisión de integración C1.309 detectó contrato frontend pendiente: admision.html todavía enviaba draftKey/email, no persistía el token de borrador y esperaba campos retirados del estado público.
+- Autosave ahora reutiliza draftAccessToken; el submit lo adjunta para consumir el borrador; la confirmación muestra/copia el token privado y lo almacena localmente.
+- Tracking UI solicita token y muestra solo código, estado, grado/año y fecha; no muestra PII ni datos financieros por ruta pública.
+- No se encontró consumidor de getAdmissionDraft; restauración local conservada y recuperación cloud UI no declarada como implementada.
+- TASK-636 En ejecución; AUD-NG-357/AUD-NG-370 parcialmente abiertos; AUD-NG-369 abierto.
+- Verificación estática únicamente; sin navegador, runtime Apps Script, HTTP, Sheets/Drive ni E2E.
+- Checkpoint C1.310: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.310; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.310.
+- Rama NG_beta_0.0.0.1_work; HEAD de partida 2336d184f88246ea3801362da57fdfd55684d1b6; commit único de cierre, SHA verificado externamente.

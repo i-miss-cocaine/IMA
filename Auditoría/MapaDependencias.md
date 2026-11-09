@@ -4833,3 +4833,11 @@ Alcance estático satisfecho; sin cambios de código. Hallazgos AUD-NG-374..376 
 - Frontend no solicita ni muestra estado financiero cuando la consulta proviene de una capacidad pública.
 - Evidencia: backend/academic-service/Code.gs; backend/task-service/Code.gs; js/student.js.
 - TASK-636 En ejecución; AUD-NG-357/AUD-NG-370 parcialmente abiertos; AUD-NG-369 abierto. Runtime/Sheets/Drive/HTTP/navegador/pruebas por rol no ejecutadas.
+
+## TASK-636 — C1.310: integración de capacidades en el formulario de admisión
+- admision.html ya no envía draftKey/email como autorización: obtiene, conserva y reutiliza draftAccessToken devuelto por saveAdmissionDraft.
+- El envío formal adjunta draftAccessToken para que createAdmissionRequest consuma el borrador correspondiente; tras éxito elimina el token local de borrador.
+- La confirmación presenta la credencial privada de seguimiento, permite copiarla y la conserva localmente; el correo de confirmación sigue siendo el canal de recuperación fuera del navegador.
+- handleTrackStatus usa getPublicAdmissionStatus con token y solo representa código interno, estado, grado/año y fecha; no representa PII ni estado financiero.
+- El endpoint getAdmissionDraft está protegido, pero no se encontró consumidor frontend; el formulario mantiene su recuperación local. No se afirma recuperación cloud UI.
+- Estado TASK-636 En ejecución; AUD-NG-357/AUD-NG-370 parcialmente abiertos; AUD-NG-369 abierto. Pruebas de navegador/runtime/HTTP/E2E no ejecutadas.
