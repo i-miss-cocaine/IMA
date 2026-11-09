@@ -426,3 +426,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-09] C1.338 — CI TASK-636 run 42709000536 completed/success (Node parse, SHA-256, snapshot fixtures); BETA-FUNC-007 Pendiente beta. CI TASK-068 run 42709680737 completed/success (identity mapping contract + TASK-030 transport scope). TASK-068 sigue En ejecución porque importDataWithColumnMapping no dispone de writer destino; AUD-NG-378 es brecha local de implementación. Checkpoint Parte_0003 C1.338.
+
+
+[2026-11-09] C1.339 — TASK-068: writers locales idempotentes por servicio propietario (USER/persona; ACADEMIC/estudiante, responsable, asignatura, matrícula y documento), journal durable y compensación. Pruebas Node locales añadidas; CI pendiente. Transporte autenticado y orquestación siguen pendientes. Checkpoint Parte_0003 C1.339.

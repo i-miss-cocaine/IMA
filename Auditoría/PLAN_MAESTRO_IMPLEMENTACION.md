@@ -2049,3 +2049,10 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - TASK-068: run 42709680737 completed/success para contrato de identidad y transporte; la clasificación conservadora pasa sus pruebas locales.
 - TASK-068 no se completa: el importador todavía devuelve DESTINATION_WRITER_NOT_CONFIGURED y no persiste entidades ni reimportaciones idempotentes. AUD-NG-378 permanece como brecha de implementación.
 - Próxima iteración: writer explícito por entidad/servicio propietario, con pruebas locales de idempotencia y compensación antes de diferir la llamada HTTP real a beta.
+
+
+## 10.23 TASK-068 — iteración C1.339: writers por owner service
+- USER: persona. ACADEMIC: estudiante, responsable, asignatura, matrícula y documento.
+- Writers internos con allowlist/esquema, upsert por ID interno, journal durable, idempotencia y compensación con precondición de estado.
+- Pruebas locales Node agregadas; CI pendiente de observar. Sin servicios vivos ni beta.
+- TASK-068 permanece En ejecución; siguiente iteración implementará transporte autenticado ACCOUNTING→USER/ACADEMIC y orquestación de importación.
