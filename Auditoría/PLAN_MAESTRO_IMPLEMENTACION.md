@@ -2074,3 +2074,8 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 ## 10.26 Corrección de contrato heredado — C1.342
 - El run 42712755670 falló antes de los nuevos casos HMAC por una aserción que todavía exigía DESTINATION_WRITER_NOT_CONFIGURED.
 - Se reemplaza por verificaciones de ausencia del bloqueo antiguo, configuración obligatoria del transporte y rollback de lote. Código de producción sin cambios; CI nuevo pendiente.
+
+
+## 10.27 Ajuste de aserciones HMAC — C1.343
+- El run 42712911846 superó los casos funcionales locales de writer y HMAC, pero falló en aserciones que esperaban getProperty(URL) literal.
+- Se verifican los valores urlProperty del registro de rutas, que es la forma real de acceso en la implementación. Sin cambios de producción; CI nuevo pendiente.

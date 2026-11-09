@@ -402,3 +402,17 @@ Checkpoint anterior: C1.341
 Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.342.
 Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.342.
 ===============================================================================
+
+
+===============================================================================
+## C1.343 — Ajuste de aserciones de configuración de rutas HMAC
+ID: C1.343
+Sesión: IMA-GOV-20261109-2201Z-01
+Checkpoint anterior: C1.342
+- CI run 42712911846 ejecutó y superó los fixtures de writer y los casos HMAC locales (firma, origen, alteración y anti-replay).
+- Falló posteriormente en una aserción estática que buscaba getProperty("IMA_USER_SERVICE_URL") y getProperty("IMA_ACADEMIC_SERVICE_URL") literalmente.
+- La implementación resuelve la clave de URL mediante route.urlProperty; se ajustan las expectativas para verificar el registro tipado USER/ACADEMIC y sus propiedades configuradas.
+- Sin cambios de producción. CI nuevo pendiente.
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.343.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.343.
+===============================================================================

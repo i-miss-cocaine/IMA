@@ -438,3 +438,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-09] C1.342 — CI 42712755670 se detuvo en aserción estática heredada que exigía DESTINATION_WRITER_NOT_CONFIGURED; se actualiza para verificar la nueva ruta de transporte/rollback y la eliminación del bloqueo anterior. Sin cambios de producción; nuevo CI pendiente. Checkpoint Parte_0003 C1.342.
+
+
+[2026-11-09] C1.343 — CI 42712911846 superó fixtures de writer y HMAC (firma, origen, tamper y anti-replay), pero falló en aserciones literales de URL; se ajustan a route.urlProperty. Sin cambios de producción; nuevo CI pendiente. Checkpoint Parte_0003 C1.343.

@@ -108,8 +108,8 @@ function runMigrationEnvelopeFixture(source,target){const secret="local-fixture-
 runMigrationEnvelopeFixture(user,"USER");
 runMigrationEnvelopeFixture(academic,"ACADEMIC");
 assert.ok(accounting.includes('getProperty("IMA_MIGRATION_HMAC_SECRET")'));
-assert.ok(accounting.includes('getProperty("IMA_USER_SERVICE_URL")'));
-assert.ok(accounting.includes('getProperty("IMA_ACADEMIC_SERVICE_URL")'));
+assert.ok(accounting.includes('urlProperty:"IMA_USER_SERVICE_URL"'));
+assert.ok(accounting.includes('urlProperty:"IMA_ACADEMIC_SERVICE_URL"'));
 assert.ok(accounting.includes("function sendMigrationOwnerRequest_"));
 assert.ok(accounting.includes("function rollbackMigrationOwnerWrites_"));
 assert.ok(accounting.includes("function mapMigrationRowToTarget_"));
