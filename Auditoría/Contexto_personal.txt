@@ -1672,3 +1672,64 @@ Ubicación exacta: Auditoría/Contexto_personal.txt — sección C1.288; rango d
 Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.288.
 Commit de cierre: el commit que contiene este checkpoint; SHA a confirmar tras publicar.
 ===============================================================================
+
+
+===============================================================================
+## C1.289 — TASK-638 — Auditoría inicial de dependencias estáticas y dinámicas
+ID de sesión: IMA-EXEC-20261109-0407Z-01
+Fecha: 2026-11-09 UTC
+Estado: auditoría preimplementación en curso; TASK-638 no completada.
+Checkpoint anterior: C1.288.
+Repositorio: i-miss-cocaine/IMA.
+Rama autorizada: NG_beta_0.0.0.1_work.
+HEAD de partida y auditado: 0afe7fd3a9b9df974afc557063d40b787a7e1c30.
+Tree de partida: 5302f8869dfcc6ce472f78e445537488a3d924b1 (1.079 entradas, 1.013 blobs, truncated=false).
+Rama base: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios.
+Fase PM: PM-00 — inventario, triage y resolución de dependencias.
+Fase metodológica: continuidad verificada y auditoría preimplementación parcial.
+Tarea: TASK-638 — Trazar dependencias estáticas y dinámicas de extremo a extremo.
+
+### Continuidad y prerrequisitos
+- HEAD de rama coincide con el commit de cierre C1.288: 0afe7fd3a9b9df974afc557063d40b787a7e1c30.
+- Rama base verificada en 44d9891132332e692dbe2ba8602b41f50a508a59.
+- TASK-637 figura Completada en C1.288; su prerrequisito para TASK-638 está satisfecho.
+- No se reaudita TASK-637 en esta iteración conforme a la instrucción expresa de inicio de implementación del Plan Maestro.
+- Contexto activo antes de anexar: 157.746 caracteres / 1.675 líneas. Proyección después de C1.289: menos de 180.000 caracteres; no requiere rotación.
+
+### Trabajo realizado y evidencia
+- Leído el requisito original TASK-638 en pendientes/Contabilidad/Pendientes.md.
+- Tree recursivo verificado: 1.013 blobs. El inventario TASK-637 (SHA d5fdf1a621481d453a7a5779d2b82615901716b3) declara 1.013 rutas únicas; conteo coincidente.
+- Distribución relevante: 100 HTML, 1 HTM, 24 JS, 6 CSS, 6 GS y 27 JSON; 359 PNG, 125 JPG, 6 GIF, 3 SVG, 2 WEBP, 65 PDF, 6 DOCX, 3 XLS/XLSX y 19 TXT.
+- Trazado directo parcial de index.html, dynamic-dashboard.html, config.js, api.js, SERVICE_URLS/SERVICE_REGISTRY, PersistenceManager y dispatchers USER/TASK/EXAM.
+- Hallazgo AUD-NG-350 ALTO/P1: el mapa no acredita cobertura canónica verificable de dependencias por archivo. Amplía TASK-678 existente; coordina TASK-674/TASK-665 y referencias existentes TASK-662/TASK-671/AUD-NG-321/322/323.
+- TASK-638 se actualiza a En ejecución en pendientes/Contabilidad/Pendientes.md. TASK-678 queda ampliada en tareas_auditoria.txt.
+- Informe: Auditoría/AUDITORIA_TASK-638_C1.289.md.
+- Mapa: Auditoría/MapaDependencias.md, sección C1.289.
+
+### Archivos modificados
+1. Auditoría/AUDITORIA_TASK-638_C1.289.md (nuevo).
+2. Auditoría/MapaDependencias.md (anexo de traza parcial C1.289; historial preservado).
+3. Auditoria.txt (registro AUD-NG-350 y referencias).
+4. tareas_auditoria.txt (ampliación TASK-678, sin duplicar ID).
+5. pendientes/Contabilidad/Pendientes.md (TASK-638 En ejecución; requisitos originales conservados).
+6. Auditoría/Contexto_personal.txt (este checkpoint).
+7. Auditoría/INDICE_CHECKPOINTS.md (índice C1.289 y corrección de estado publicado C1.288).
+8. Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md (seguimiento operativo C1.289).
+9. changueslogs.txt (entrada acumulativa C1.289).
+
+### Archivos revisados sin modificación
+METODOLOGIA_DESARROLLO.md, docs/architecture/repository-inventory.md, index.html, js/config.js, js/api.js, backend/user-service/Code.gs, backend/task-service/Code.gs, backend/academic-service/Code.gs, backend/exam-service/Code.gs, app/html/dashboards/dynamic-dashboard.html y tests/regression/modular-dashboard-suite.js.
+
+### Pruebas y límites
+- Ejecutadas: lectura estática manual de los archivos/rangos indicados; Git tree recursivo no truncado; conciliación del total de blobs con el inventario; verificación de HEAD y rama base; control de tamaño del contexto.
+- No ejecutadas: Node, navegador, HTTP, Apps Script, Drive, Sheets, pruebas de contrato runtime ni E2E.
+- Cobertura incompleta: no se inspeccionaron individualmente todos los HTML/HTM, JS, CSS, GS, JSON ni recursos. No se declara que las rutas dinámicas funcionen; no se afirman ciclos ni duplicados confirmados.
+- No se modificó código fuente, rutas ni contratos. TASK-638 NO está completada.
+
+### Siguiente acción exacta
+Continuar auditoría manual por grupos de los 100 HTML y 1 HTM: extraer y verificar por cada página scripts, links, imágenes, fuentes, manifest, Service Worker y rutas relativas/sensibles a mayúsculas; después trazar cada JS/CSS/GS/JSON hasta sus consumidores, llamadas API, dispatchers, handlers y persistencia. Actualizar el mapa y el informe con evidencia por archivo. No iniciar traslados ni cambios de contratos hasta cerrar la matriz y las dependencias.
+
+Ubicación exacta: Auditoría/Contexto_personal.txt — sección C1.289; rango de líneas calculado y registrado en Auditoría/INDICE_CHECKPOINTS.md.
+Índice central: Auditoría/INDICE_CHECKPOINTS.md — fila C1.289.
+Commit de cierre: este commit consolidado; SHA a confirmar consultando el HEAD tras publicación.
+===============================================================================

@@ -4188,3 +4188,32 @@ La documentación contiene inventarios y rutas parciales, pero no representa con
 
 ### Dictamen
 Los espacios funcionales y el aprovisionamiento se simulan; el aislamiento no se hace cumplir. USER y ACADEMIC comparten el mismo archivo y realizan escrituras cruzadas; el modelo de sesión solo contiene un rol; solicitudes no se persisten y eventos no se entregan a otros servicios. No se ejecutaron pruebas runtime ni se modificó código.
+
+
+---
+
+## C1.289 — TASK-638: traza inicial de dependencias estáticas y dinámicas
+
+**Estado:** avance parcial; auditoría preimplementación en curso. **HEAD:** `0afe7fd3a9b9df974afc557063d40b787a7e1c30`. **Informe:** `Auditoría/AUDITORIA_TASK-638_C1.289.md`.
+
+### Snapshot y alcance
+- Tree recursivo: 1.079 entradas, 1.013 blobs, no truncado; inventario TASK-637: 1.013 rutas únicas, coincidente con el tree.
+- Archivos relevantes: 100 HTML, 1 HTM, 24 JS, 6 CSS, 6 GS y 27 JSON.
+- El mapa conserva encabezado v7.6.1, 4.191 líneas y 425.086 caracteres; contiene relaciones generales e informes históricos, pero no matriz verificable de todas las dependencias por archivo.
+
+### Cadena estática verificada — index.html
+`index.html` (SHA `cd742047cdc4948259dd721119429b04f78330ca`, scripts líneas 427–433) carga en orden: `js/config.js` → `js/persistence.js` → `js/api.js` → `js/games-adapter.js` → `js/ui-common.js` → `js/data.js` → `js/index-ui.js`. También referencia `css/style.css`, `imagenes/new-generation-logo.png`, `manifest.json`, Tailwind CDN, Google Fonts, Font Awesome y Chart.js.
+
+### Dependencias dinámicas confirmadas por código
+- `js/config.js` SHA `49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc`: globals SERVICE_URLS, SERVICE_REGISTRY, MODULE_ROUTING_DICTIONARY y DYNAMIC_DASHBOARD_MODULE_CONTRACTS; `syncAcademicScope` llama ACADEMIC/getAcademicConfig, actualiza GLOBAL_SCOPE y emite `academic-scope-updated`.
+- `js/api.js` SHA `6b24f666db30a811a8e9b38d466fc6001cf6dfa9`: `fetchApi` consume SERVICE_URLS, localStorage/sessionStorage, fetch y PersistenceManager; envía POST `{action,payload}` y realiza fallback para acciones get*. AUD-NG-322 ya cubre la semántica de fallback que aparenta éxito vacío.
+- `app/html/dashboards/dynamic-dashboard.html` SHA `765a45e5666c24c430e841cb70c3d71d03cf9074`: carga config/persistence/api/ui-common desde ../../../ y llama `window.loadDynamicDashboard()` en DOMContentLoaded; su cadena difiere de index.html.
+- La configuración declara seis servicios; ACCOUNTING y DEVELOPER tienen endpoints con apariencia de placeholder y metadatos declarativos no verificados. AUD-NG-323 cubre la anomalía de ACCOUNTING.
+- MODULES_CATALOG tiene 13 módulos y DYNAMIC_DASHBOARD_MODULE_CONTRACTS seis; ya registrado en AUD-NG-321.
+
+### Hallazgo y tareas derivadas
+- AUD-NG-350 ALTO/P1: no existe cobertura canónica verificable de dependencias estáticas/dinámicas por archivo; ampliar TASK-678 y coordinar TASK-674/TASK-665. Evidencia completa en el informe C1.289.
+- No se crean IDs duplicados para AUD-NG-321/323 ni para TASK-674/665/662/671.
+
+### Límites
+La pasada es parcial: no se inspeccionaron todos los HTML/HTM, JS, CSS, GS, JSON ni recursos; no se ejecutaron Node, navegador, HTTP, Apps Script, Drive o E2E. No se declaran rutas funcionales, ciclos ni duplicados sin evidencia. TASK-638 sigue En ejecución.

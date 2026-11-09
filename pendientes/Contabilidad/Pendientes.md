@@ -3062,7 +3062,7 @@
 - **Referencia:** AUD-NG-282.
 - **Severidad:** ALTO.
 - **Prioridad:** P1.
-- **Estado:** Pendiente.
+- **Estado:** En ejecución (auditoría preimplementación y trazado parcial C1.289).
 - **Objetivo y acción:** documentar por archivo las dependencias HTML `script/link`, CSS, imágenes, fuentes, imports, referencias dinámicas, rutas, endpoints, acciones backend, contratos y servicios externos; distinguir referencias comprobadas de inferidas y registrar consumidores/proveedores.
 - **Archivos/módulos afectados:** HTML, JS, CSS, JSON, GAS, configuración, documentación y recursos del repositorio; `AUDITORIAS/MapaDependencias.md`.
 - **Dependencias:** TASK-637, catálogo completo de archivos.

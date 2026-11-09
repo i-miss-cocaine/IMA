@@ -80,3 +80,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - TASK-637 pasa a [X]/Completada con evidencia C1.287; la fase beta permanece no iniciada.
 - Inventario reconciliado con el tree final de este commit.
 - Checkpoint C1.288; sesión IMA-GOV-20261109-0355Z-01; ubicación Auditoría/Contexto_personal.txt — sección C1.288; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.288.
+
+
+[2026-11-09] IMA-EXEC-20261109-0407Z-01 — C1.289 / TASK-638 (PM-00)
+- Se verifica HEAD 0afe7fd3a9b9df974afc557063d40b787a7e1c30 y rama base sin cambios.
+- Auditoría parcial: tree 1.013 blobs, coincidente con el inventario; traza directa de index.html, dynamic-dashboard.html, módulos frontend comunes y fronteras iniciales de servicios.
+- AUD-NG-350: el mapa no acredita cobertura canónica verificable por archivo; se amplía TASK-678 y se referencian tareas existentes sin duplicar IDs.
+- TASK-638 queda En ejecución. Sin cambios de código, rutas ni contratos; sin pruebas runtime.
+- Archivos: informe C1.289, MapaDependencias.md, Auditoria.txt, tareas_auditoria.txt, backlog Contabilidad, contexto, índice, Plan Maestro y este changelog.
+- Checkpoint C1.289; ubicación Auditoría/Contexto_personal.txt — sección C1.289, líneas 1676–1736; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.289.

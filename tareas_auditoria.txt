@@ -78,3 +78,19 @@ El propósito de este documento es llevar el registro de las tareas derivadas de
 - **Estado:** Resuelta en C1.287.
 - **Evidencia:** índice actualizado y verificado en el commit de esta iteración.
 
+
+
+===============================================================================
+## TASK-678 — Ampliación por AUD-NG-350 / C1.289
+- **ID:** TASK-678 (ampliación del ID existente; no crear duplicado).
+- **Informe/hallazgo:** `Auditoría/AUDITORIA_TASK-638_C1.289.md`, AUD-NG-350.
+- **Requisito de origen:** F8-Task15 / TAREA-MOD-05; mapa de dependencias y documentación arquitectónica.
+- **Severidad/prioridad:** ALTO / P1.
+- **Objetivo:** convertir el mapa histórico en una matriz canónica y verificable por archivo, reconciliada con el inventario vigente.
+- **Acción ejecutable:** registrar por cada dependencia origen/destino exactos, tipo (script/link/import/asset/API/evento/persistencia/ruta), consumidor/proveedor, evidencia y rango, sensibilidad de mayúsculas/ruta relativa y estado (estática, dinámica confirmada o inferida). Relacionar cada acción frontend con endpoint, dispatcher, handler y persistencia; distinguir endpoints declarados de deployments comprobados.
+- **Archivos afectados:** `Auditoría/MapaDependencias.md`, documentación de arquitectura, fuentes HTML/JS/CSS/GS/JSON consultadas y pruebas de cobertura.
+- **Dependencias:** TASK-637 completada; tree Git recursivo e inventario de 1.013 rutas; contratos/dispatchers por servicio. TASK-674, TASK-665, TASK-662 y TASK-671 se coordinan por sus alcances existentes.
+- **Alcance/exclusiones:** documentación y verificación de trazas; no mover archivos, cambiar rutas, endpoints, contratos ni código durante la auditoría.
+- **Criterios de aceptación:** cobertura de todas las dependencias explícitas del inventario; origen/destino exactos; rutas relativas y sensibilidad a mayúsculas verificadas; referencias dinámicas clasificadas y sustentadas; cada acción API ligada a dispatcher/handler; consumidores y proveedores identificados; endpoints no comprobados no se declaran operativos; diff y revisión documental aprobados.
+- **Estado:** En ejecución como ampliación de TASK-678; matriz parcial en C1.289.
+- **Evidencia:** informe C1.289 y sección homónima de `Auditoría/MapaDependencias.md`; faltan los grupos de HTML/HTM restantes y la traza exhaustiva de JS/CSS/GS/JSON/recursos.

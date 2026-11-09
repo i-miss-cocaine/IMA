@@ -90,3 +90,13 @@ Sesión: IMA-GOV-20261109-0355Z-01; HEAD de partida: e255ee616e3d82394243e2d924a
 - Se crea docs/testing/PRUEBAS_FUNCIONALES_BETA.md para 16 familias de escenarios y campaña futura. Beta no iniciada.
 - TASK-637 pasa a [X]/Completada por evidencia C1.287; no equivale a certificación beta.
 - Checkpoint C1.288; sesión IMA-GOV-20261109-0355Z-01; ubicación Auditoría/Contexto_personal.txt — sección C1.288; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.288.
+
+
+===============================================================================
+## TASK-638 / C1.289 — Auditoría inicial de dependencias
+Sesión: IMA-EXEC-20261109-0407Z-01; HEAD auditado: 0afe7fd3a9b9df974afc557063d40b787a7e1c30.
+- AUD-NG-350 ALTO/P1: el mapa vigente no acredita una matriz canónica y verificable de dependencias por archivo. El inventario sí coincide con el tree (1.013 blobs), pero solo se trazaron directamente index.html, dynamic-dashboard.html, módulos frontend comunes y fronteras iniciales de servicios.
+- Evidencia: tree 5302f8869dfcc6ce472f78e445537488a3d924b1, 1.079 entradas/1.013 blobs, no truncado; MapaDependencias.md SHA aef3b8c2f7f8d85a83eeda938e80f25bffbb1b85, 4.191 líneas; index.html SHA cd742047cdc4948259dd721119429b04f78330ca; config.js SHA 49ef90807e5b9dfe1379f76d66efdb4ccd2b6cdc; api.js SHA 6b24f666db30a811a8e9b38d466fc6001cf6dfa9; dynamic-dashboard.html SHA 765a45e5666c24c430e841cb70c3d71d03cf9074.
+- Reconciliación: ampliar TASK-678 existente; referencias a AUD-NG-321/TASK-671 (contratos incompletos), AUD-NG-322 (fallback de fetchApi) y AUD-NG-323 (endpoint ACCOUNTING); no duplicar IDs.
+- Dictamen: TASK-638 continúa En ejecución; criterios de trazabilidad por archivo y contratos completos aún NO CUMPLEN. No se modificó código ni rutas. No se ejecutaron pruebas runtime.
+- Informe: Auditoría/AUDITORIA_TASK-638_C1.289.md. Checkpoint C1.289; sesión IMA-EXEC-20261109-0407Z-01; ubicación Auditoría/Contexto_personal.txt — sección C1.289; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.289.

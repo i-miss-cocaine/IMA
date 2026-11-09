@@ -1755,3 +1755,11 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - Las pruebas funcionales integrales se planifican y registran en `docs/testing/PRUEBAS_FUNCIONALES_BETA.md`; su ausencia no mantiene una tarea de implementación en revisión.
 - **TASK-637:** implementación documental, cobertura del inventario, autoauditoría y Code Review interno fueron verificados en C1.287. Su estado operativo se actualiza a **Completada**; no se afirma que el portal haya superado pruebas funcionales beta.
 - **Siguiente tarea elegible:** TASK-638; auditar sus requisitos originales antes de implementar.
+
+
+## Seguimiento operativo — C1.289
+
+- **TASK-638:** En ejecución; fase actual de auditoría preimplementación PM-00. El prerrequisito TASK-637 está satisfecho conforme al cierre C1.288.
+- **Evidencia:** informe `Auditoría/AUDITORIA_TASK-638_C1.289.md`; mapa `Auditoría/MapaDependencias.md`, sección C1.289; hallazgo AUD-NG-350 y ampliación de TASK-678 en `tareas_auditoria.txt`.
+- **Estado de aceptación:** parcial. El inventario de 1.013 blobs coincide con el tree, pero no existe aún traza individual completa de todas las dependencias por archivo ni contratos dinámicos exhaustivos.
+- **Siguiente acción:** continuar inspección manual de HTML/HTM por grupos y trazar recursos, scripts, llamadas API, handlers y persistencia. No iniciar cambios de rutas o contratos hasta cerrar auditoría.
