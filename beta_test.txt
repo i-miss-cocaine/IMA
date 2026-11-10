@@ -253,3 +253,19 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Resultado esperado:** solo se accede a la entrega propia o a estudiantes con relación de tutoría vigente; personal solo opera dentro de su propiedad/ámbito autorizado; comentarios privados no son visibles para estudiantes/tutores; autor y rol proceden de la sesión firmada; IDs discordantes, suplantación, sesión inválida y acceso fuera de ámbito se deniegan sin filtrar existencia ni metadatos de otros recursos.
 - **Estado:** Pendiente beta. Las pruebas locales de contrato y seguridad deben ejecutarse y aprobarse antes del cierre de implementación; este caso cubre únicamente la validación funcional contra el servicio desplegado.
 - **Evidencia requerida:** build/commit, ambiente, rol sintético utilizado, pasos, respuestas/denegaciones, logs saneados y resultado por escenario, sin tokens, secretos ni datos personales.
+
+## BETA-FUNC-022 — EXAM: autenticación, aislamiento y propiedad de exámenes/entregas
+- **Módulo/roles:** EXAM Service; Administrador/Desarrollador, Dirección/Secretaría, Profesor, Estudiante/Alumno, Padre/Tutor/Responsable.
+- **Requisito:** TASK-153 / AUD-NG-386.
+- **Objetivo:** comprobar en el servicio desplegado la autenticación obligatoria, la propiedad del examen y la entrega, el ámbito departamental/institucional y la relación académica del tutor.
+- **Precondiciones:** versión beta aislada de EXAM; institución sintética con dos departamentos, dos docentes, estudiantes de ambos ámbitos y tutor vinculado a un solo estudiante; exámenes y entregas sintéticos con propiedad registrada. No usar datos personales reales.
+- **Pasos:**
+  1. Consultar getAllExams y getStudentExams sin token, con token inválido y con sesión válida por rol.
+  2. Como estudiante, solicitar exámenes/resultados propios y después alterar userId/entregaId para acceder a otro estudiante.
+  3. Como tutor, consultar al estudiante vinculado e intentar acceder a uno no vinculado.
+  4. Como docente, consultar y modificar exámenes/entregas de su ámbito y repetir con IDs de otro departamento/institución.
+  5. Intentar crear, actualizar, desactivar, eliminar, calificar y eliminar entregas fuera del ámbito autorizado.
+  6. Probar IDs inexistentes, propiedad ausente/duplicada, ámbito vencido y sesión expirada.
+- **Resultado esperado:** los listados sensibles exigen sesión válida; identidad y rol proceden de claims firmados; estudiantes solo acceden a sus propios registros; tutores solo a relaciones vigentes; personal opera únicamente sobre recursos de su propiedad/ámbito y con permiso explícito; los accesos no autorizados se deniegan sin filtrar existencia ni datos.
+- **Estado:** Pendiente beta. Las pruebas locales de código/contrato se ejecutan por separado y deben aprobarse para cerrar la implementación.
+- **Evidencia requerida:** build/commit, ambiente, rol sintético, pasos, respuestas/denegaciones y logs saneados, sin tokens ni datos sensibles.

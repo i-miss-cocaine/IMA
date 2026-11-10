@@ -1061,3 +1061,43 @@ Commits normativos y alineación: 0e987d206f083081050b3073f96927c972fefca1 (NDAS
 - Los casos de validación del servicio desplegado quedan registrados en BETA-FUNC-021 y se ejecutarán en fase beta.
 - Próximo trabajo de producto continúa según continuidad: abordar AUD-NG-386 en `backend/exam-service/Code.gs`, sin marcar tareas como Completadas hasta ejecutar y aprobar sus pruebas locales aplicables.
 ===============================================================================
+
+===============================================================================
+## CHECKPOINT C1.436 — TASK-153 / AUD-NG-386: cierre del bypass de autenticación en listados EXAM
+Sesión: IMA-EXEC-20261110-1658Z-01
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+HEAD inicial verificado: c26ac2c6a4448994d2bd6a27b9011d8f3a1d2035.
+HEAD de rama base verificado antes y después: 44d9891132332e692dbe2ba8602b41f50a508a59; sin escrituras en la base.
+Checkpoint anterior: C1.435.
+
+### Alcance ejecutado
+- Se corrigió el bypass de autenticación en EXAM eliminando `getAllExams` y `getStudentExams` de `PUBLIC_ACTIONS`. Ambas acciones ahora pasan por `verifySessionToken`, la validación contextual y la matriz de permisos.
+- Se conservaron como públicas únicamente las consultas de metadatos `getEvaluationCategories` y `getRubrics`; su clasificación deberá revisarse si se amplía el contenido sensible que devuelven.
+- Se añadió `tests/security/exam-service-security-contract.test.js` con escenarios de sesión ausente/inválida, sesión de docente, identidad derivada de claims firmados y rechazo de suplantación de otro estudiante.
+- Se añadió `.github/workflows/exam-service-security-contract.yml` para ejecutar el contrato en Node 22 al cambiar EXAM o su prueba en la rama autorizada.
+
+### Archivos del commit de implementación
+- `backend/exam-service/Code.gs`
+- `tests/security/exam-service-security-contract.test.js`
+- `.github/workflows/exam-service-security-contract.yml`
+
+Commit de implementación: b0e8842acb1d04cdaba175b524065b09fa9b8886 (`fix(exam): require session for exam listings`).
+
+### Verificación y límites
+- Revisión focalizada del diff: PASS; el cambio elimina exclusivamente las dos acciones sensibles del bypass público y conserva la ruta de permisos autenticados.
+- Pruebas locales del nuevo contrato: NOT RUN. No hay checkout/runtime local conectado a este repositorio en esta sesión; no se declara PASS ni se sustituye por CI.
+- GitHub Actions para el commit de implementación: no había runs asociados al SHA al consultar inmediatamente después de publicar (0 resultados); ejecución CI pendiente/no observada.
+- Pruebas desplegadas Apps Script/Sheets/Drive, navegador y E2E: NOT RUN; se registra el escenario remoto en BETA-FUNC-022 como Pendiente beta.
+- No se declara cerrado AUD-NG-386 ni completada TASK-153. El cambio solo corrige el bypass de autenticación de los listados.
+- La rama base se mantuvo en `44d9891132332e692dbe2ba8602b41f50a508a59`.
+
+### Trabajo pendiente y siguiente acción
+- Integrar `ResourceOwnership` y el ámbito institucional/departamental en `getAllExams`, `getStudentExams`, `getExamQuestions`, `submitExam`, `getExamResult` y `getTeacherExamActivity`.
+- Proteger `createExam`, `updateExam`, `updateExamStatus`, `deleteExam`, `gradeExamSubmission` y `deleteExamSubmission`; derivar el actor del token y validar la propiedad de examen/entrega antes de mutar.
+- Resolver relación de tutoría mediante una fuente verificable, sin aceptar IDs del payload como autorización.
+- Ampliar y ejecutar contratos positivos/negativos de propiedad, IDOR, departamentos, institución, entrega propia y mutaciones.
+- Mantener TASK-153 En ejecución hasta completar alcance y ejecutar PASS en todas las pruebas locales pertinentes.
+
+===============================================================================

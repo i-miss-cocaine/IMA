@@ -1006,3 +1006,12 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - **Estado:** ABIERTO; siguiente subtramo de TASK-153. No se modificó EXAM en C1.434. La corrección debe derivar identidad de sesión firmada, verificar relación estudiante/tutor o propiedad/ámbito de personal, y mantener acceso institucional global solo mediante permisos explícitos.
 - **Pruebas:** no ejecutadas; crear contratos positivos/negativos y verificar no autenticado, IDOR, ámbito departamental, tutoría, entrega propia y mutaciones.
 ===============================================================================
+
+===============================================================================
+## SEGUIMIENTO IMA-EXEC-20261110-1658Z-01 — AUD-NG-386 / EXAM
+- Commit de implementación: b0e8842acb1d04cdaba175b524065b09fa9b8886. Se retiran `getAllExams` y `getStudentExams` de `PUBLIC_ACTIONS`; los listados requieren ahora sesión firmada y permiso de acción.
+- Se añade contrato local para sesión ausente/inválida, claims firmados y suplantación de identidad estudiantil, más workflow Node 22.
+- **Estado del hallazgo:** mitigación parcial; permanece ABIERTO. No se han integrado aún ResourceOwnership/ámbito en consultas ni mutaciones, ni se han protegido todas las operaciones sobre exámenes y entregas.
+- **Pruebas:** contrato local NOT RUN en esta sesión por ausencia de checkout/runtime; workflow CI sin run observado inmediatamente tras el commit; beta pendiente en BETA-FUNC-022.
+- **Siguiente acción:** completar autorización por recurso/ámbito en endpoints de lectura y mutación; ejecutar y aprobar contratos locales antes de cerrar.
+===============================================================================

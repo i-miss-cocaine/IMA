@@ -877,3 +877,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - `METODOLOGIA_DESARROLLO.md` §21.1, §21.2 y §21.5 se alinean con la norma maestra.
 - Se añade BETA-FUNC-021 para validar en servicio desplegado la propiedad, privacidad y aislamiento del historial de entregas de TASK-153.
 - Validaciones documentales locales: PASS (versión, reglas de cierre, registro beta canónico, ID único y estado Pendiente beta). No se ejecutaron suites de producto; no hubo cambios de código de aplicación.
+
+[2026-11-10] C1.436 — IMA-EXEC-20261110-1658Z-01 — TASK-153 / AUD-NG-386: autenticación obligatoria en listados EXAM
+- Se retiran getAllExams y getStudentExams de PUBLIC_ACTIONS; ambos listados pasan a requerir sesión firmada y permiso de acción.
+- Se añade tests/security/exam-service-security-contract.test.js y workflow dedicado de Node 22.
+- Commit de implementación: b0e8842acb1d04cdaba175b524065b09fa9b8886.
+- Revisión del diff: PASS. Prueba local del contrato: NOT RUN; CI sin run observado al momento del checkpoint. No se declara PASS.
+- AUD-NG-386 queda mitigada parcialmente y abierta; TASK-153 continúa En ejecución. Próximo alcance: ResourceOwnership/ámbito y autorización de todas las operaciones EXAM.
