@@ -1708,3 +1708,46 @@ Checkpoint anterior: C1.449.
 - TASK-153 permanece En ejecución; AUD-NG-386 abierto por otros requisitos y rutas ACADEMIC.
 - Próxima iteración: revisar reconciliación de reintentos cuando existan restos de ejecuciones anteriores o marcadores inconsistentes, manteniendo una sola tarea y la sesión IMA-EXEC-20261110-1825Z-02.
 ===============================================================================
+\n\n===============================================================================
+## CHECKPOINT C1.451 — ACADEMIC: reconciliación de reintentos de admisión convertida
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.450.
+
+### Trabajo de esta iteración (un solo subhallazgo)
+- Se detectó que el retorno temprano de convertAdmissionToStudent para estado Convertida comprobaba ownership del expediente, pero no verificaba matrícula ni movimiento.
+- Se agregó findAdmissionConversionEnrollment_ para localizar únicamente una matrícula única del usuario/año con marcador exacto de solicitud y grado coincidente.
+- Se agregó assertAdmissionConversionArtifactsComplete_: exige expediente único con PersonaID, cuenta estudiantil activa única, matrícula propia y movimiento de ingreso de la solicitud vinculado a esa matrícula y con grado/sección coincidentes.
+- El retorno idempotente informa los IDs verificados. Artefactos ausentes, duplicados o inconsistentes fallan cerradamente. No se intenta reparar ni borrar registros de forma automática.
+
+### Archivos
+- backend/academic-service/Code.gs
+- tests/security/academic-student-expediente-ownership.test.js
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Commits
+- f61d2074b8910b9d8fdefcc55fa0133e38d66ad7 — validación de artefactos en el retorno ya convertido.
+- fa4db0612f59552633037bc20332d9e5bf6abf34 — contrato de reconciliación.
+- 021484b6d79dcd8db9f8d86ad57ab3fb1ddf3eab — corrección de ensamblado de saltos de línea del harness.
+- ca4b0f2ace7b33ecd1b761441e7be4cdb8d07451 — Plan Maestro.
+- 8a0ef544ba763540d01625a0d284b706e0c31b2d — Auditoría.
+
+### Verificación
+- Parseo/sintaxis de backend/academic-service/Code.gs: PASS.
+- Parseo/sintaxis de tests/security/academic-student-expediente-ownership.test.js: PASS.
+- Ejecución dinámica aislada del retorno ya convertido: PASS para expediente/cuenta/matrícula/movimiento íntegros.
+- Rechazos esperados PASS: matrícula ausente, movimiento ausente, movimiento vinculado a otra matrícula, grado/sección del movimiento discordantes y expediente duplicado.
+- Suite Node completa y CI: NOT RUN; no se declara PASS.
+- Despliegue Apps Script y datos reales: no ejecutados.
+
+### Límites y continuidad
+- La validación verifica expediente, cuenta, matrícula y movimiento. No certifica cargos, documentos ni vínculos familiares: los esquemas actuales no permiten atribuir todos esos registros inequívocamente a esta conversión.
+- No se reparan ni eliminan restos automáticamente. Los casos inconsistentes requieren conciliación explícita y evidencia de propiedad antes de cualquier mutación.
+- TASK-153 permanece En ejecución; AUD-NG-386 continúa abierto por el resto de rutas/requisitos ACADEMIC.
+- Siguiente foco: revisar la atribución e idempotencia de cargos de matrícula para evitar considerar reconciliado un cargo ajeno o ausente. Mantener la sesión IMA-EXEC-20261110-1825Z-02.
+===============================================================================\n
