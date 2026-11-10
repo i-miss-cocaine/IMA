@@ -42,7 +42,6 @@ const ownershipByExam={"EXP-1":"D1","EXP-2":"D2"};
 const scopeCalls=[];
 const context={
   getVerifiedAcademicIdentity_:payload=>payload.identity,
-  getStudentPersonIdForUser_:extractFunction("getStudentPersonIdForUser_")?undefined:undefined,
   getVerifiedAcademicDepartmentScope_:(_payload,_ss,identity)=>{
     scopeCalls.push({userId:identity.userId,role:identity.role});
     const departmentIds=identity.userId==="STU-2"?["D2"]:["D1"];
