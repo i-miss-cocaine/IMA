@@ -3067,3 +3067,18 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - BETA-FUNC-023 cubre acceso propio/tutor a expedientes y ahora incluye lectura/alta/baja de relaciones; permanece Pendiente beta.
 - Pruebas locales NOT RUN; no se desplegó Apps Script ni se accedió a datos reales.
 - Siguiente: migración determinista de aulas AULA_VIRTUAL existentes y auditoría de otras rutas de datos de estudiante, recursos institucionales/solicitudes de firma, referencias compartidas, filtros/importaciones y E2E.
+
+
+### 10.104 TASK-153 / ACADEMIC — ownership en expedientes, tutores, informes y admisiones (C1.446)
+
+- **Hallazgo SELF/GUARDIAN:** `assertStudentExpedienteScopeAccess_` verificaba PersonaID y relación familiar, pero no el departamento propietario para estudiante/tutor. Ahora exige ResourceOwnership `EXPEDIENTE_ESTUDIANTE`; el tutor resuelve la identidad y el rol real de la cuenta activa del estudiante relacionado y usa ese ámbito, nunca el del tutor.
+- **Relaciones de tutores:** `getStudentGuardians`, `saveStudentGuardian` y `unlinkStudentGuardian` exigen permiso RBAC y acceso al expediente. La actualización de un tutor existente verifica todos sus expedientes activos vinculados para evitar modificar datos personales compartidos fuera del ámbito.
+- **Consultas PII:** `findDuplicateStudents` y `getStudentFileAdministrativeReports` filtran por ownership; se corrige además la resolución PersonaID→UserID y la columna de fecha de nacimiento usada en la detección de duplicados. Exportaciones registran el actor de sesión, no `authUserId` del payload.
+- **Admisiones:** `getAdmissionRequests` y `updateAdmissionStatus` aplican alcance y ownership; los documentos asociados a solicitudes usan la misma guarda. Solicitudes públicas aún no asignadas son visibles únicamente a scope institucional explícito, y cualquier historial de ownership (inactivo/ajeno/ambiguo) elimina esa excepción.
+- **Pruebas añadidas:** contratos sintéticos para SELF/GUARDIAN, relación familiar, propiedad cruzada, endpoints de tutores, búsqueda de duplicados, cuatro tipos de informes, cola de admisiones y excepción de intake institucional.
+- **Verificación estática:** 15 aserciones de estructura/guardas PASS. Contratos dinámicos añadidos; ejecución Node local NOT RUN; CI sin checks/workflow runs visibles para el HEAD consultado. No se declara PASS dinámico ni CI.
+- **Beta:** BETA-FUNC-023 (expediente propio/tutor) y BETA-FUNC-024 (informes/duplicados/admisiones) añadidas, ambas Pendiente beta; estas pruebas desplegadas no bloquean desarrollo.
+- **Pendiente siguiente:** `convertAdmissionToStudent` aún requiere validación y registro atómico de propiedad del expediente recién creado; revisar también evaluaciones/entrevistas de admisión y restantes endpoints de consulta.
+- **Archivos:** `backend/academic-service/Code.gs`, `tests/security/academic-student-expediente-ownership.test.js`, `beta_test.txt`.
+- **Commits:** 3d3d0015cbdd67a715a9fe60385fd82664e2f34d; b113a6f88b338c63f04ecc3531cd9efa85b8b257; 42ca04bad4209760bb883a20b0286a59b8054df9; 5874fa64f615f1dd1d691f60aea3e0b9ee9417b6; ea178e9ff2b70da97573a32a47bac650ef415fa0; 19a64b518ec4eee24b6f0c25b775f43e0058b90f; c77088ad8abd721453ebd3b3b92700ff9575cc86; df644f9a87838450a74f168e310ca423992b2be8; 9b7e619252f8c3489ea05980b58e570d1942148c; 1df0394c1953e19a7e67a8331aa4eebae8c795d2; 2ae88b8fca460911ed2e8f555b3cca9bf6a4a6ce; 589873ae6659c735c4a9ce8fd7ca61aba5224e77.
+- **Estado:** TASK-153 permanece En ejecución; AUD-NG-386 abierto por rutas de conversión/admisión y criterios globales restantes.
