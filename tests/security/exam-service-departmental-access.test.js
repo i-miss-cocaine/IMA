@@ -88,7 +88,7 @@ const sheetObjects = Object.fromEntries(Object.entries(sheets).map(([name, rows]
 const ss = { getSheetByName(name) { return sheetObjects[name] || null; } };
 const runtime = {
   SPREADSHEET_ID: "LOCAL", EXAM_RESOURCE_OWNERSHIP_REQUEST_CACHE_: new WeakMap(),
-  PUBLIC_ACTIONS: [], ROLE_PERMISSIONS: { Profesor: ["updateExam","updateExamStatus","deleteExam","gradeExamSubmission","deleteExamSubmission"] },
+  PUBLIC_ACTIONS: [], ROLE_PERMISSIONS: { Profesor: ["getAllExams","getTeacherExamActivity","updateExam","updateExamStatus","deleteExam","gradeExamSubmission","deleteExamSubmission"] },
   getDynamicPermissionsForRole() { return null; }, hasActiveDelegationForAction() { return false; },
   validateContextualAccess() { return { authorized: true }; },
   verifySessionToken(token) { return claims[token] || null; },
