@@ -1219,3 +1219,14 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - **Riesgo residual:** ejecutar `node tests/security/academic-student-expediente-ownership.test.js` y `node --check < backend/academic-service/Code.gs` en runner local/CI; corregir cualquier fallo antes de cerrar TASK-153.
 - **Estado:** cambios de código y prueba publicados en rama autorizada; TASK-153 permanece En ejecución. AUD-NG-386 continúa abierto.
 ===============================================================================
+
+===============================================================================
+## Seguimiento C1.455 — verificación local de conversión de admisión y contención de concurrencia
+- **Corrección adicional:** la rama ordinaria de `registerStudentEnrollmentInternal_` usaba `String(chargeReference || "")` dentro de la propia inicialización de `chargeReference`, generando TDZ cuando no había prefijo de admisión. Se reemplazó por el parámetro privado `_chargeReference`.
+- **Contrato de concurrencia:** `academic-student-expediente-ownership.test.js` ahora verifica que `convertAdmissionToStudent` adquiere `ScriptLock` antes de acceder a hojas, libera el lock en `finally` ante fallo y rechaza una solicitud contenciosa sin lecturas/escrituras.
+- **Verificación local aislada:** GitHub Actions run `42889702855` SUCCESS (Node 24). PASS: contratos Department Scope, departmental resource access, ACADEMIC student expediente/admission, ACCOUNTING departmental resource access, ResourceOwnership ABAC, student private voucher client; PASS: sintaxis Node de User/Academic/Accounting Code.gs y `js/student.js`.
+- **Incidencia de test:** run `42889622852` falló únicamente por el escape del separador de línea en el fixture nuevo. Se corrigió en `ad44dde863065b2a2dc54580ee5a393f43d4570e`; la repetición completa `42889702855` terminó SUCCESS.
+- **Límites:** no despliegue, servicios vivos ni datos reales. Las pruebas dependientes de despliegue permanecen para beta.
+- **Estado:** subalcance ACADEMIC de conversión, cargo, CargoID, compensación, reintento y lock verificado. TASK-153 permanece En ejecución y AUD-NG-386 abierto por las rutas/requisitos de aislamiento restantes; no se marca completada la tarea global.
+- **Commits:** `3bb1d3b7dfc9c4d0259d6a124f353d46b0f38a13`; `91c17ba2bddc7cf4e9d35316b877ae7034898907`; `ad44dde863065b2a2dc54580ee5a393f43d4570e`.
+===============================================================================
