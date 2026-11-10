@@ -998,6 +998,8 @@ Revisar RBAC, identidad, propiedad, IDs duplicados y consistencia concurrente de
 ===============================================================================
 ### Addendum C1.483-R1 — publicación
 - HEAD inicial: e7487060a8ada0cc626e24efbba35a69003d03a4.
-- Commit de código, pruebas y registros: pendiente de publicar.
-- Rama base verificada en el inicio: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Commit de código, pruebas y registros: 689db17ea771fd594f2fffdcae2c28260cfedb1d.
+- HEAD verificado tras publicar: 689db17ea771fd594f2fffdcae2c28260cfedb1d.
+- Rama base NG_beta_0.0.0.1 verificada sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Actualización de NG_beta_0.0.0.1_work mediante compare-and-swap fast-forward; no se utilizó force push.
 ===============================================================================
