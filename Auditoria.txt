@@ -1126,7 +1126,7 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 
 
 ===============================================================================
-## C1.446 — ACADEMIC: aislamiento departamental de expedientes y admisiones
+## C1.447 — ACADEMIC: aislamiento departamental de expedientes y admisiones
 - **SELF/GUARDIAN:** el guard de expediente ahora exige ResourceOwnership también para estudiante y tutor. En tutores se resuelve la cuenta activa única del estudiante vinculado y se usa su rol/ámbito.
 - **Relaciones familiares:** getStudentGuardians, saveStudentGuardian y unlinkStudentGuardian verifican RBAC y ownership; la edición de un tutor existente comprueba todos los expedientes activos asociados antes de cambiar PII compartida.
 - **Consultas PII:** findDuplicateStudents y getStudentFileAdministrativeReports filtran expedientes, matrículas, movimientos y documentos por ResourceOwnership; la búsqueda corrige PersonaID→UserID y usa fechaNacimiento del expediente. exportLog usa actor firmado.
