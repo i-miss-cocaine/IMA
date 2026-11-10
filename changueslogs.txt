@@ -601,3 +601,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - USER: validateRoleScopeAccess utiliza el contexto autenticado; assignRoleScope exige actor verificado y rol de destino.
 - Se agrega tests/security/department-scope-contract.test.js y workflow dedicado limitado a la rama autorizada.
 - TASK-153 permanece En ejecución; integración en Academic/Accounting y controles de recursos pendientes.
+
+## C1.386–C1.388 — IMA-EXEC-20261110-0122Z-01
+- TASK-153: integración parcial de identidad firmada y ámbitos departamentales en Academic/Accounting.
+- Academic: control de propiedad de expedientes/documentos, estudiante propio y tutor vinculado; validación académica con ámbitos y asignación docente.
+- Accounting: documentos laborales filtrados por departamento; nuevas cargas privadas; validación de ámbito para acciones de documentos.
+- CI final: identity mapping 42737873813 success; department scope 42737873883 success; task-service 42737665503 success. La primera ejecución C1.386 falló por sintaxis y fue corregida en C1.387.
+- TASK-153 continúa En ejecución: falta propiedad departamental en expedientes/documentos estudiantiles, estructuras institucionales/firmas, referencias compartidas, operaciones granulares y filtros/importaciones.
+

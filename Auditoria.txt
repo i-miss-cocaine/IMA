@@ -779,3 +779,14 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - Corrección parcial: USER incorpora contexto de ámbito derivado de sesión firmada y asignaciones activas; permisos de ámbito ya no se resuelven usando el userId del cliente.
 - Pendiente: integración perimetral en Academic/Accounting, propiedad documental, referencias compartidas y pruebas negativas de endpoints.
 - No se crea un ID de hallazgo nuevo; se conservan F41-08 y E2E-41-09.
+
+### Seguimiento F41-08 / E2E-41-09 — TASK-153 — C1.386–C1.388
+- **Estado:** En corrección; sin cierre global.
+- **Implementado parcialmente:** Academic valida identidad firmada, ámbito departamental, relación estudiante/tutor y propiedad de documentos; Accounting limita documentos laborales por departamento y configura nuevas cargas como privadas.
+- **Controles locales:** identity mapping run 42737873813 success; department scope run 42737873883 success; task-service run 42737665503 success. C1.386 falló inicialmente por colisión de variable, corregida en C1.387.
+- **Limitación estructural:** expedientes/documentos estudiantiles carecen de DepartamentoID; el backend falla cerrado para usuarios departamentales cuando no puede resolver propietario. La suite positiva usa fixtures con propietario explícito; no certifica el esquema real existente.
+- **Estructuras no encontradas:** ExpedientesInstitucionales, SolicitudesFirmas y CatalogoDepartamentos; existe DepartamentosAcademicos. ExpedientesLaborales.Departamento permite resolver el ámbito de documentos laborales.
+- **Riesgos relacionados pendientes:** archivos laborales existentes pueden mantener permisos públicos; validateEvidenceFileAndPermissions rechaza evidencia no vinculada a DocumentosEstudiante; uploadPaymentVoucher conserva ANYONE_WITH_LINK y confía en payload.userId.
+- **Pendiente funcional:** referencias compartidas revocables; descarga/firma/compartir/exportar/eliminar/restaurar; filtros de búsqueda/importación; parametrización de política estricta.
+- Se reutilizan F41-08/E2E-41-09; no se crea ID duplicado. TASK-153 permanece En ejecución.
+

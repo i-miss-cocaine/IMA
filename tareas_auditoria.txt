@@ -662,3 +662,11 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - Corrección parcial en USER: getUserContextScope basado en sesión firmada; asignaciones activas por rol y fechas; alcance institucional explícito; validateRoleScopeAccess verificado; assignRoleScope requiere actor verificado.
 - Prueba dedicada añadida: tests/security/department-scope-contract.test.js; workflow .github/workflows/department-scope-contract.yml.
 - CI C1.385 pendiente; TASK-153 sigue En ejecución. No marcar criterios globales como completados.
+
+### TASK-153 — seguimiento C1.386–C1.388
+- C1.386 introdujo controles Academic/Accounting y suites locales; su primera CI falló por duplicación de actor en getStudentTimeline.
+- C1.387 corrigió la colisión; Task-Service security local contracts run 42737665503 success.
+- C1.388 ajustó la expectativa de listado para incluir todos los documentos del mismo departamento; identity mapping run 42737873813 y Department Scope run 42737873883 success.
+- Brechas abiertas: propiedad departamental ausente en expedientes/documentos estudiantiles; estructuras institucionales y de firma no encontradas; permisos de archivos laborales preexistentes; uploadPaymentVoucher aún público; referencias compartidas y operaciones granulares pendientes.
+- No se cierra TASK-153 ni se crea un nuevo ID F41-08/E2E-41-09.
+

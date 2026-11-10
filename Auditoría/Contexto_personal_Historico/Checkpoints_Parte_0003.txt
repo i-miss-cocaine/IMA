@@ -1673,3 +1673,50 @@ Commit de cierre: este commit; SHA se confirmará externamente tras publicación
 - **Siguiente acción:** ejecutar CI C1.385 y continuar la integración perimetral en Academic Service.
 - **Commit:** este commit C1.385; SHA a verificar después de publicar.
 ===============================================================================
+
+===============================================================================
+## C1.388 — 2026-11-10 — IMA-EXEC-20261110-0122Z-01
+
+- **Baseline válido:** C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a.
+- **Rama autorizada:** NG_beta_0.0.0.1_work.
+- **Rama protegida:** NG_beta_0.0.0.1 — SHA 44d9891132332e692dbe2ba8602b41f50a508a59, sin modificaciones.
+- **Checkpoint anterior documentado:** C1.385. La iteración incluye los commits C1.386, C1.387 y C1.388.
+- **Commits de código/prueba:** C1.386 5bbafab8c4b28ac2a5d31bcf9ebd64bd49a1f016; C1.387 f9be130f38aab02fd43d34cc7ebf12fcc5865357; C1.388 03471a1e36bdfccc29668103d1d4426e4353018a (HEAD verificado).
+- **Tarea activa:** TASK-153 — PM-01 / P0 / orden local 1. Estado En ejecución; no se cierra ni se marca ningún criterio global como completo.
+- **Requisito original:** pendientes/Dirección/Pendientes.md, bloque TASK-153; fuente histórica RECUPERACION/Pendientes_RECUPERADO.md, líneas 6506–6548.
+- **Auditoría única reutilizada:** Auditoría/AUDITORIA_FASE_41_PRUEBAS_INTEGRALES_DIGITALIZACION.md, F41-08 y E2E-41-09. No se crea un informe duplicado ni un ID de hallazgo nuevo.
+
+### Cambios de C1.386–C1.388
+
+- **ACADEMIC:** identidad de actor obtenida de sesión firmada; validateAcademicResponsibilityAndScopeAccess ignora userId/role aportados por el cliente y exige ámbitos activos; valida departamento de asignatura y asignación docente vigente.
+- **ACADEMIC:** getStudentFile y getStudentDocuments aplican propiedad del expediente; estudiante solo accede a su persona vinculada; tutor requiere relación activa y acceso de portal habilitado; getPendingDocumentsReport, uploadStudentDocument, updateDocumentStatus y grantDocumentExemption aplican la barrera de ámbito.
+- **ACADEMIC:** assertRecordOwnership deja de conceder acceso por defecto a roles internos; getSecureDocumentStream y validateEvidenceFileAndPermissions exigen que el archivo se resuelva a un documento autorizado.
+- **ACCOUNTING:** contexto de identidad y ámbito verificado; getEmployeeDocuments filtra por departamento resuelto desde ExpedientesLaborales.Departamento; uploadEmployeeDocument comprueba propiedad/ámbito; validateRolePermission exige ámbito para las acciones de documentos laborales.
+- **ACCOUNTING:** las nuevas cargas de DocumentosLaborales se configuran como privadas, no como enlaces públicos para cualquiera.
+- **Pruebas:** contratos directos Academic y Accounting; se amplía el contrato de identity mapping; workflow department-scope-contract.yml ejecuta las suites de ámbito.
+
+### CI y revalidación
+
+- C1.386 tuvo una primera ejecución fallida por una colisión de nombre actor en getStudentTimeline; corregida en C1.387. Esa ejecución fallida no se usa como evidencia de aprobación.
+- **Task-Service security local contracts:** run 42737665503, success, HEAD C1.387.
+- **Identity mapping and transport security contracts:** run 42737873813, success, HEAD C1.388.
+- **Department Scope Contract:** run 42737873883, success, HEAD C1.388.
+- Estas pruebas son contratos locales Node/VM. No se ejecutó integración real remota Apps Script/Sheets/Drive.
+
+### Límites y hallazgos pendientes
+
+1. ExpedientesEstudiantes y DocumentosEstudiante no contienen actualmente un DepartamentoID propietario. Los accesos departamentales a esos recursos fallan cerrados con RESOURCE_DEPARTMENT_UNRESOLVED cuando no se puede determinar el propietario. Las pruebas de departamento usan fixtures con el campo presente; falta ampliar el esquema, migrar datos y validar su integridad.
+2. ExpedientesLaborales sí contiene Departamento; DocumentosLaborales se autoriza mediante esa relación. Los archivos laborales preexistentes pueden conservar permisos públicos anteriores; no se ejecutó una limpieza/revocación masiva.
+3. No se encontraron implementaciones de las estructuras ExpedientesInstitucionales ni SolicitudesFirmas. Tampoco se encontró CatalogoDepartamentos; existe DepartamentosAcademicos, usado para resolver departamentos.
+4. validateEvidenceFileAndPermissions ahora falla cerrado para archivos que no estén relacionados con DocumentosEstudiante; falta mapear los demás tipos de evidencia a su expediente y ámbito.
+5. Sigue pendiente revisar uploadPaymentVoucher en ACCOUNTING: el flujo observado conserva ANYONE_WITH_LINK y recibe userId del payload. Se registra como riesgo relacionado, no corregido en esta iteración.
+6. No se implementaron todavía referencias compartidas con campos permitidos, vigencia y revocación; control granular completo de descarga/firma/compartir/exportar/eliminar/restaurar; filtros de búsqueda/importación; ni el parámetro POLITICA_ESTRICTA_AISLAMIENTO_DEPARTAMENTAL.
+7. BETA-FUNC-008 continúa pendiente por integración/configuración entre despliegues; no se declara ejecutada y permanece no bloqueante conforme a §21.5.
+
+### Dictamen y siguiente paso
+
+- TASK-153 permanece En ejecución y sus criterios de aceptación globales continúan pendientes.
+- Próximo trabajo dentro de TASK-153: incorporar propiedad departamental verificable a expedientes/documentos estudiantiles y migrar datos; corregir el flujo uploadPaymentVoucher; resolver las estructuras institucionales y de firmas; continuar con referencias compartidas y operaciones granulares.
+- **HEAD C1.388 verificado:** 03471a1e36bdfccc29668103d1d4426e4353018a.
+- **Siguiente publicación:** actualización documental/checkpoint C1.388, sin modificar la rama protegida.
+===============================================================================

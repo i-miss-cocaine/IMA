@@ -2368,3 +2368,14 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - **Verificación:** CI del commit C1.385 pendiente. No se declara PASS anticipado.
 - **Criterios:** solo se considera implementada la base de resolución de contexto. La protección de endpoints Academic/Accounting, propiedad documental, operaciones granulares, referencias compartidas, filtros/importaciones y auditoría completa siguen pendientes. TASK-153 permanece En ejecución.
 - **Siguiente acción:** integrar el contexto de ámbito en `assertRecordOwnership`, `validateAcademicResponsibilityAndScopeAccess`, `getStudentFile`, `getStudentDocuments` y las rutas de descarga; continuar después con ACCOUNTING y referencias compartidas.
+
+## 10.70 TASK-153 — integración parcial de controles por ámbito — C1.386–C1.388
+
+- **Estado:** En ejecución; TASK-153 no se cierra.
+- **Cambios:** Academic valida claims firmados, ámbito de asignatura, asignación docente y propiedad de expedientes/documentos; Accounting filtra DocumentosLaborales mediante ExpedientesLaborales.Departamento, aplica ámbito en validateRolePermission y crea archivos laborales privados.
+- **Evidencia CI:** identity mapping 42737873813 success; department scope 42737873883 success; task-service local contracts 42737665503 success.
+- **Brechas estructurales:** ExpedientesEstudiantes y DocumentosEstudiante no tienen DepartamentoID; ExpedientesInstitucionales y SolicitudesFirmas no están implementados/encontrados; CatalogoDepartamentos no existe con ese nombre (se dispone de DepartamentosAcademicos).
+- **Riesgos residuales:** uploadPaymentVoucher sigue usando enlace público y payload.userId; los archivos laborales existentes requieren revisar/revocar permisos anteriores; evidencia fuera de DocumentosEstudiante falla cerrada.
+- **Criterios todavía pendientes:** propiedad departamental y migración de datos; referencias compartidas con revocación; operaciones granulares; filtros de búsqueda/importación; política configurable; pruebas integrales remotas.
+- **Siguiente acción:** mantener TASK-153 como tarea activa y resolver primero la propiedad documental y las rutas de carga que aún exponen enlaces públicos.
+

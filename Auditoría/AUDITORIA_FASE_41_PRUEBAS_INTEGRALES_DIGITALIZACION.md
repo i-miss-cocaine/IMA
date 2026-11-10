@@ -266,3 +266,14 @@ La plataforma cuenta con un excelente control de concurrencia para identificador
 - Se agrega el contrato determinista `tests/security/department-scope-contract.test.js` y workflow limitado a `NG_beta_0.0.0.1_work`.
 
 **Estado:** implementación parcial. La suite CI C1.385 está pendiente; aún no se aplican los controles a todos los endpoints Academic/Accounting ni se implementan las referencias compartidas, por lo que TASK-153 permanece **En ejecución** y sus criterios de aceptación globales siguen pendientes.
+
+### Seguimiento F41-08 / E2E-41-09 — TASK-153 — C1.386–C1.388
+- **Estado:** En corrección; sin cierre global.
+- **Implementado parcialmente:** Academic valida identidad firmada, ámbito departamental, relación estudiante/tutor y propiedad de documentos; Accounting limita documentos laborales por departamento y configura nuevas cargas como privadas.
+- **Controles locales:** identity mapping run 42737873813 success; department scope run 42737873883 success; task-service run 42737665503 success. C1.386 falló inicialmente por colisión de variable, corregida en C1.387.
+- **Limitación estructural:** expedientes/documentos estudiantiles carecen de DepartamentoID; el backend falla cerrado para usuarios departamentales cuando no puede resolver propietario. La suite positiva usa fixtures con propietario explícito; no certifica el esquema real existente.
+- **Estructuras no encontradas:** ExpedientesInstitucionales, SolicitudesFirmas y CatalogoDepartamentos; existe DepartamentosAcademicos. ExpedientesLaborales.Departamento permite resolver el ámbito de documentos laborales.
+- **Riesgos relacionados pendientes:** archivos laborales existentes pueden mantener permisos públicos; validateEvidenceFileAndPermissions rechaza evidencia no vinculada a DocumentosEstudiante; uploadPaymentVoucher conserva ANYONE_WITH_LINK y confía en payload.userId.
+- **Pendiente funcional:** referencias compartidas revocables; descarga/firma/compartir/exportar/eliminar/restaurar; filtros de búsqueda/importación; parametrización de política estricta.
+- Se reutilizan F41-08/E2E-41-09; no se crea ID duplicado. TASK-153 permanece En ejecución.
+
