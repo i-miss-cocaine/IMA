@@ -1355,3 +1355,13 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - Commits de código/pruebas: 836154141d9098882ca1e7046e9b94b6f89c2498; 0ff23efa8170a502c4044cb03ed4072e91cba196.
 
 - **Addendum C1.472-R1:** `generateSignatureAuditCertificate` sustituye `getOrCreateSheet` por `getSheetByName`; una consulta sin hoja de firmas no crea ni modifica almacenamiento. El ownership se valida y se devuelve `NO_SIGNATURES_FOUND`. Contrato V8 local de 9 escenarios PASS; Department Scope CI run 42908073626 SUCCESS. Commits: 2fa2c4068ebf296a2bc050c914165496ee9c1732; 811d7b54a1701e5dcb80828ba807c252228f508c.
+
+
+===============================================================================
+## C1.474 — AUD-NG-063: credenciales de proveedores de firma
+- API_KEY y HMAC_SECRET se guardan en Script Properties con claves por proveedor; el secreto HMAC es el mismo que consume el callback autenticado.
+- Se migran credenciales legacy de la columna D bajo ScriptLock, con precedencia de la propiedad existente y limpieza posterior. La lectura no devuelve secretos, no crea hojas y no presenta un PSC ficticio.
+- Se evitan fugas en el log RBAC; se rechazan secretos en configuracionJSON y endpoints inseguros, y se redaccionan endpoints legacy con credenciales.
+- Contrato V8 local: 12 escenarios/17 aserciones PASS; parseo PASS. CI Department Scope 42910740964, Task-Service 42910740844 e Identity Mapping 42910740991 — SUCCESS.
+- Riesgo residual: Script Properties sigue accesible a editores autorizados del proyecto y no sustituye un gestor externo de secretos. BETA-FUNC-028 Pendiente beta.
+- AUD-NG-063 completada en código; TASK-153/AUD-NG-386 siguen abiertos por otras rutas y validación PSC específica.

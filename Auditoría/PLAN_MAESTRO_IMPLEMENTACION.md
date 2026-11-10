@@ -3330,3 +3330,15 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - Commit: deda3ef0e2bff98b79f703fd6971940bce33df59 (servicio y contrato).
 - BETA-FUNC-027 cubre la conexión real del proveedor y la validación de sus evidencias; permanece Pendiente beta. No se simula un PSC ni se inventa un protocolo de proveedor real.
 - TASK-153 permanece En ejecución; AUD-NG-386 continúa abierto por validación criptográfica específica y otras superficies pendientes.
+
+
+### 10.129 AUD-NG-063 / USER — protección de credenciales de proveedores de firma (C1.474)
+
+- **Hallazgo:** `configureAdvancedSignatureProvider` persistía `apiKey` en texto claro dentro de `ConfiguracionFirmaAvanzada`; la hoja seguía exponiendo la credencial aunque la respuesta HTTP la enmascarara.
+- **Corrección:** `API_KEY` y `HMAC_SECRET` se almacenan en Script Properties con claves por proveedor. El secreto HMAC comparte el nombre de propiedad que consume el callback. La omisión de credenciales conserva los valores actuales; su eliminación requiere flags explícitos. La escritura de secretos se revierte si falla la persistencia de configuración.
+- **Migración:** bajo ScriptLock se migran los `apiKey` legacy desde la columna D, dando prioridad a una propiedad ya existente/rotada y limpiando la celda solo después de persistir. IDs/filas duplicadas o referencias inválidas se rechazan.
+- **Protección de salida y entrada:** las consultas devuelven solo máscaras/indicadores; el log RBAC de denegación no registra secretos; se rechazan claves sensibles en `configuracionJSON`, endpoints sin HTTPS o con credenciales/tokens incrustados y HMAC secrets débiles. Endpoints legacy con credenciales se redaccionan.
+- **No configuración ficticia:** `getAdvancedSignatureProviderConfig` es de solo lectura y devuelve lista vacía si no hay proveedor configurado; no crea hojas ni presenta un PSC por defecto no verificado.
+- **Contrato local:** 12 escenarios / 17 aserciones V8 PASS; parseo de servicio y test PASS. CI Department Scope `42910740964`, Task-Service `42910740844` e Identity Mapping `42910740991` — SUCCESS.
+- **Estado:** AUD-NG-063 completada en código. BETA-FUNC-028 Pendiente beta para comprobar Script Properties/migración en Apps Script real. Script Properties no equivale a un gestor externo de secretos y siguen aplicando los controles de acceso de editores del proyecto.
+- **Commit de código y pruebas:** `0053c0ecf8e99b0eaa60a594366eb91b3dc8d445`.

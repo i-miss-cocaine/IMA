@@ -356,3 +356,13 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - Resultado esperado: callbacks inválidos se rechazan sin mutar transacciones; requestId autenticado no se puede reutilizar; mensaje HMAC válido no se equipara a firma documental válida; solo evidencia criptográfica verificada bajo contrato oficial puede habilitar una transición de estado definida. Sin contrato PSC o material de confianza, el estado permanece pendiente y esFirmadoValido=false.
 - Estado: Pendiente beta. No se ejecutó proveedor externo ni validación criptográfica real.
 - Evidencia requerida: versión/build, proveedor de pruebas, configuración de secreto sin revelar su valor, IDs sintéticos, respuestas allow/deny, comprobaciones de certificados y logs saneados. Nunca adjuntar secretos, tokens, certificados privados ni datos personales.
+
+
+## BETA-FUNC-028 — USER: almacenamiento seguro y migración de credenciales de proveedores de firma
+- **Módulo/servicio:** USER Service — configureAdvancedSignatureProvider y getAdvancedSignatureProviderConfig.
+- **Objetivo:** verificar en Apps Script desplegado que las credenciales API/HMAC se almacenan en Script Properties, que las filas legacy se migran sin pérdida y que hojas/respuestas/logs no exponen secretos.
+- **Precondiciones:** entorno beta aislado; proveedor sintético PSC_TEST; API key y HMAC secret de prueba (nunca credenciales reales); fila legacy con apiKey en columna D; Script Properties habilitado.
+- **Pasos:** configurar proveedor nuevo con API_KEY/HMAC_SECRET; leer configuración y comprobar máscara/indicadores; actualizar omitiendo secretos y comprobar conservación; configurar fila legacy y comprobar migración/limpieza; preparar propiedad rotada y valor legacy antiguo para confirmar precedencia; solicitar eliminación explícita; enviar secretos dentro de configuracionJSON y URL; comprobar que el log de denegación RBAC no incluye valores secretos; consultar con hoja ausente y verificar que no se crea PSC ficticio.
+- **Resultado esperado:** las credenciales existen únicamente en Script Properties tras migración; no aparecen en celdas, respuestas, logs ni URL devueltas; actualización parcial conserva secretos; eliminación es explícita; errores/locks no borran la única copia disponible. Esto no equivale a cifrado ni sustituye el control de editores del proyecto.
+- **Estado:** Pendiente beta. No se ejecutó Apps Script/Sheets/PropertiesService real.
+- **Evidencia requerida:** build/commit, proveedor sintético, comprobación de propiedades sin registrar valores, celdas legacy antes/después, respuestas enmascaradas, logs saneados y resultado por paso. No adjuntar secretos.

@@ -786,3 +786,11 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - BETA-FUNC-025 ampliada, Pendiente beta. TASK-153 permanece En ejecución; AUD-NG-386 abierto.
 
 - **Addendum C1.472-R1:** la ruta de certificado es estrictamente de lectura: `getSheetByName` reemplaza `getOrCreateSheet`; ausencia de hoja no genera una mutación. Contrato local V8 (9 escenarios) y parseo PASS; CI run 42908073626 SUCCESS. Commits: 2fa2c4068ebf296a2bc050c914165496ee9c1732; 811d7b54a1701e5dcb80828ba807c252228f508c.
+
+
+### AUD-NG-063 — cierre de código C1.474
+- `configureAdvancedSignatureProvider` almacena API_KEY/HMAC_SECRET en Script Properties por proveedor, no en la hoja; el secreto HMAC queda listo para el callback bajo el nombre de propiedad ya consumido por USER.
+- La migración legacy se ejecuta bajo ScriptLock, respeta una propiedad vigente/rotada y limpia la columna antigua después de persistir. Los secretos no se devuelven ni se registran en el log de denegación RBAC.
+- Se rechazan campos sensibles en configuracionJSON, endpoints que no sean HTTPS o incluyan credenciales y HMAC secrets menores de 32 caracteres; la lectura no crea hojas ni inventa proveedor.
+- V8 local 12 escenarios/17 aserciones PASS; sintaxis servicio/test PASS; CI 42910740964, 42910740844 y 42910740991 SUCCESS. BETA-FUNC-028 Pendiente beta.
+- AUD-NG-063 completada en código; riesgo residual: permisos de editores Apps Script sobre Script Properties.

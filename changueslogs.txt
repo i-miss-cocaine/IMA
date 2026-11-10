@@ -1108,3 +1108,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - La verificación HMAC precede a la reserva anti-replay; la reserva se serializa con ScriptLock.
 - El callback autenticado no modifica transacciones ni acredita firma criptográfica. Integración PSC y validación específica permanecen pendientes beta (BETA-FUNC-027).
 - Commit de código/pruebas: deda3ef0e2bff98b79f703fd6971940bce33df59. V8 aislado y parseo PASS; Department Scope Contract run 42909005349 SUCCESS; Task-Service security run 42909005375 SUCCESS.
+
+
+[2026-11-10] C1.474 — AUD-NG-063: protección de credenciales de proveedores de firma
+- USER guarda API_KEY y HMAC_SECRET en Script Properties por proveedor; el secreto HMAC coincide con la clave usada por el callback autenticado.
+- Migra apiKey legacy desde ConfiguracionFirmaAvanzada bajo ScriptLock, da prioridad a una propiedad ya rotada y limpia la celda tras persistirla. La salida solo indica presencia/máscara; se protege el log RBAC y se rechazan secretos dentro de JSON/URL.
+- La consulta de configuración es de solo lectura y no inventa un proveedor PSC por defecto. Endpoints legacy con credenciales se redaccionan.
+- V8 local 12 escenarios/17 aserciones PASS; parseo de servicio/test PASS. CI 42910740964, 42910740844 y 42910740991 SUCCESS.
+- BETA-FUNC-028 Pendiente beta; no se accedió a Script Properties reales. Commit de código/pruebas: 0053c0ecf8e99b0eaa60a594366eb91b3dc8d445.

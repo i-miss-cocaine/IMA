@@ -578,3 +578,42 @@ Implementar un contrato genérico de recepción autenticada para callbacks de pr
 ### Siguiente iteración
 Continuar con la validación criptográfica específica del proveedor únicamente si existe contrato y material de confianza verificable. No simular respuestas PSC. TASK-153 y AUD-NG-386 permanecen abiertos.
 ===============================================================================
+
+### Addendum C1.473-R1 — validación estricta del sobre de callback
+- Se acota correlationId a caracteres explícitos, se rechazan estados/referencias de evento que no sean cadenas con formato permitido y se limita la clave anti-replay al par proveedor/requestId.
+- Contratos de regresión añadidos para estado no escalar y correlationId sobredimensionado; la validación ocurre antes de consultar el secreto.
+- GitHub Actions sobre el commit `a7c29a7b9a0a4723e0fde39d875c8081c98e81e3`: Department Scope `42909356902`, Task-Service security `42909356724` e Identity Mapping `42909356688` — SUCCESS.
+
+## CHECKPOINT C1.474 — USER: protección de credenciales de proveedores de firma
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.473.
+HEAD inicial: a7c29a7b9a0a4723e0fde39d875c8081c98e81e3.
+Commit de código y contratos: 0053c0ecf8e99b0eaa60a594366eb91b3dc8d445.
+
+### Alcance único
+Resolver AUD-NG-063 en USER: evitar que credenciales de proveedores de firma avanzada se almacenen o expongan desde ConfiguracionFirmaAvanzada. No se implementa integración PSC ni verificación criptográfica de documentos.
+
+### Hallazgos y cambios
+- configureAdvancedSignatureProvider almacenaba apiKey en texto claro en la columna D de ConfiguracionFirmaAvanzada. Ahora API_KEY y HMAC_SECRET se almacenan en Script Properties por proveedor; HMAC_SECRET utiliza exactamente la clave que consume handleSignatureProviderCallback_.
+- La migración de filas legacy se serializa con ScriptLock: una propiedad ya configurada prevalece sobre el valor antiguo de la hoja; después de persistir la credencial, se limpia la celda legacy. Los duplicados o IDs de proveedor inválidos fallan cerrados.
+- La omisión de apiKey/hmacSecret en una actualización conserva el secreto actual; la eliminación requiere flags booleanos explícitos. Si falla la escritura de configuración después de cambiar secretos, se intenta restaurar el valor anterior y se informa SIGNATURE_PROVIDER_SECRET_ROLLBACK_REQUIRED si la compensación también falla.
+- getAdvancedSignatureProviderConfig nunca devuelve secretos: expone únicamente máscaras/indicadores. La consulta es de solo lectura, no crea hojas y deja de inventar un PSC-HN-DEFAULT cuando no existe configuración.
+- Se rechazan claves sensibles dentro de configuracionJSON, endpoints que no usen HTTPS o que incrusten credenciales/tokens, y HMAC secrets de menos de 32 caracteres. Los endpoints legacy con credenciales incrustadas se omiten de la respuesta y se marcan para revisión.
+- La identidad de actualización se toma de _verifiedUserId, no de actualizadoPor enviado por el cliente. El log de denegación RBAC para esta acción registra solo proveedor y banderas de presencia/eliminación, nunca los secretos.
+
+### Pruebas y evidencia
+- V8 local aislado sobre funciones de la rama: 12 escenarios / 17 aserciones PASS (almacenamiento, respuesta enmascarada, preservación al omitir, migración legacy, precedencia de propiedad actual, eliminación explícita, rechazo de secretos en JSON, URL con credenciales, HMAC débil, lock ocupado, consulta vacía sin hoja ficticia y redacción de endpoint legacy).
+- Parseo JavaScript local de backend/user-service/Code.gs y tests/security/user-service-signature-ownership.test.js: PASS.
+- GitHub Actions sobre el commit de código/pruebas 0053c0ecf8e99b0eaa60a594366eb91b3dc8d445: Department Scope Contract run 42910740964, Task-Service security run 42910740844 e Identity mapping run 42910740991 — SUCCESS.
+- Se amplía BETA-FUNC-028 para validar Script Properties y migración en Apps Script real; queda Pendiente beta. No se accedió a hojas ni propiedades reales.
+
+### Riesgos y límites
+- Script Properties evita exponer credenciales en hojas/respuestas, pero no es un gestor externo de secretos ni una afirmación de cifrado; los editores del proyecto Apps Script con acceso suficiente pueden leerlas. La administración de editores y la rotación operativa siguen siendo controles de despliegue.
+- La migración legacy se ejecuta al configurar un proveedor; BETA-FUNC-028 debe confirmar en el entorno aislado que todas las filas antiguas quedan migradas. No se usaron credenciales reales.
+- AUD-NG-063 queda completada en el alcance de código. TASK-153 y AUD-NG-386 permanecen En ejecución/abiertos por la validación específica del PSC y otras rutas.
+
+### Siguiente iteración
+Continuar con la siguiente ruta independiente de USER/TASK-153. La validación criptográfica específica del proveedor solo se implementará cuando exista contrato oficial y material de confianza verificable; no simular respuestas PSC ni declarar validez documental.
