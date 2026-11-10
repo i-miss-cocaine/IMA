@@ -1022,5 +1022,6 @@ Fase: PM-01 — TASK-153 P0, En ejecución.
 ### Estado y siguiente acción
 - TASK-153 permanece En ejecución; esta corrección no completa toda la integración de Task Service ni cierra TASK-153.
 - Siguiente tramo: integrar ResourceOwnership en backend/exam-service/Code.gs, empezando por la autenticación de getAllExams/getStudentExams y la autorización de creación, lectura de preguntas/resultados, calificación y eliminación. Revisar también los endpoints de libro de calificaciones por ámbito y no confiar en userId, profesorId, authRole ni otros identificadores/roles del payload.
+- Hallazgo siguiente identificado: AUD-NG-386, CRÍTICO/P0 — EXAM permite getAllExams/getStudentExams mediante PUBLIC_ACTIONS sin validar sesión; varias operaciones de examen/entrega tampoco comprueban ResourceOwnership. Se registra abierto en Auditoria.txt; no se modificó EXAM en esta iteración.
 - Después: auditoría de aplicabilidad en DEVELOPER, recursos institucionales/solicitudes de firma, normalización de errores/listados, referencias compartidas, filtros/importaciones y E2E.
 ===============================================================================
