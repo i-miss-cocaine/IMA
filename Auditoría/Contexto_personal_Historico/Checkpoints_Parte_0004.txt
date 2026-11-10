@@ -2037,3 +2037,45 @@ Auditar y corregir la ruta `resolveAdmissionDuplicate` dentro de TASK-153 / AUD-
 - Las pruebas que requieran despliegue quedan reservadas para beta; no son condición de cierre de este subalcance.
 - Siguiente acción: continuar con el siguiente subalcance pendiente de TASK-153/AUD-NG-386, manteniendo esta sesión.
 ===============================================================================
+
+===============================================================================
+## CHECKPOINT C1.458 — ACADEMIC: resolución de duplicados con control directivo y propiedad departamental
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.457.
+HEAD inicial del subalcance: 25bea9e9ed69460c1b2bf21ab2bf951f4a837ba5.
+
+### Alcance
+Endurecer `resolveAdmissionDuplicate` dentro de TASK-153 / AUD-NG-386 para evitar decisiones duplicadas, suplantación de rol, cruce departamental y escrituras concurrentes.
+
+### Implementación
+- Requiere identidad ACADEMIC verificada y rol directivo permitido (`Director`, `Administrador`, `Desarrollador` o `Secretaria`).
+- Adquiere ScriptLock y revalida el ownership de `SOLICITUD_ADMISION` con payload nulo para evitar reutilizar datos de autorización/cache anteriores al lock.
+- En `VincularExistente`, valida ownership del `EXPEDIENTE_ESTUDIANTE` bajo el mismo lock y exige coincidencia exacta de departamento entre solicitud y expediente.
+- Rechaza una segunda decisión cuando existe `[DUPLICADO_RESUELTO:]` y bloquea decisiones incompatibles si la solicitud ya contiene otro ExpedienteID.
+- `AprobarNuevo` conserva el estado existente; `VincularExistente` escribe observación y expediente en un solo rango contiguo; `RechazarDuplicado` escribe estado, canal y observación en un solo rango.
+- El historial se anexa dentro de la sección crítica. Si falla después de la mutación, devuelve `historyRecorded:false` y emite `DUPLICATE_RESOLUTION_HISTORY_FAILED`; no oculta ni declara persistido el historial.
+- Actor y rol de auditoría proceden de `ctx.actor` verificado.
+
+### Verificación local
+- GitHub Actions run `42892900933`: SUCCESS, Node 24. URL: https://github.com/i-miss-cocaine/IMA/actions/runs/42892900933
+- `academic-admission-ownership.test.js`: PASS para contratos previos y nuevos de duplicados; tres resoluciones, doble decisión, rol no directivo, solicitud sin ownership, destino sin ownership, destino de otro departamento, lock contencioso, revalidación bajo lock y fallo de historial.
+- `department-scope-contract.test.js`, `departmental-resource-access.test.js`, `academic-student-expediente-ownership.test.js`, `accounting-departmental-resource-access.test.js`, `resource-ownership-abac.test.js` y `student-payment-voucher-client.test.js`: PASS.
+- `node --check` de servicios Apps Script y sintaxis de `js/student.js`: PASS.
+- Los fallos anteriores de las ejecuciones iniciales correspondieron a fixtures/aislamiento VM (helper de rol, normalización y soporte de `setValues`); se corrigieron y la ejecución integral final terminó SUCCESS.
+- No se ejecutó despliegue, Google Sheets real ni datos institucionales reales. La concurrencia se verifica localmente con lock controlado/fixtures.
+
+### Commits
+- `cc60ed6e50cf411ac65490ef8cca6ca9542eafa0` — guardas de resolución, idempotencia y trazabilidad.
+- `89ca3edfc6cff41105c03fccc2d6a83188b2026c` — rol directivo verificado inline.
+- `25bea9e9ed69460c1b2bf21ab2bf951f4a837ba5` — fixtures de escrituras atómicas.
+- Documentación: plan `c2064af56f9ceb148b06eecec5510bfcff4d84f7`; auditoría `d0e8ee6b4897547db907e0ff2510247bfff7cd30`; changelog `6590685733b9d480bbf4b65bbc95043b5f9c4e97`.
+
+### Estado y continuidad
+- Resolución de duplicados ACADEMIC corregida y aprobada localmente.
+- **TASK-153 permanece En ejecución y AUD-NG-386 abierto** por otras rutas de recursos institucionales, solicitudes de firma, permisos granulares, referencias compartidas, importaciones y flujos pendientes.
+- Pruebas que requieren servicios desplegados quedan reservadas a beta; no bloquean el cierre local de implementación.
+- Siguiente acción: continuar con el siguiente subalcance pendiente de TASK-153, manteniendo la sesión `IMA-EXEC-20261110-1825Z-02`.
+===============================================================================
