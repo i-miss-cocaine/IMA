@@ -283,3 +283,5 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.439 | IMA-EXEC-20261110-1740Z-01 | EXAM: lecturas estudiante/tutor con identidad, relación y propiedad; local PASS; CI PASS | PM-01 — TASK-153 / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.439 | 1209–1257 | C1.438 | ac9e65c18cdb7a33a9776d0c232d7429ec2ab978 |
 
 | C1.440 | IMA-EXEC-20261110-1750Z-01 | EXAM: submitExam ligado a identidad, ámbito, propiedad e intentos; local PASS; CI PASS | PM-01 — TASK-153 / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.440 | 1262–1304 | C1.439 | d640ddbab2b247dd4736f0332b8f7a75ca096e8b |
+
+| C1.441 | IMA-EXEC-20261110-1756Z-01 | EXAM: createExam con ownership departamental y rollback compensatorio; local PASS; CI PASS | PM-01 — TASK-153 / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.441 | 1307–1350 | C1.440 | b497635b5cb6ea742361bbd847571c75a961c1a3 |
