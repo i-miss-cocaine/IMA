@@ -34,10 +34,13 @@ for (const name of ["updateExamStatus", "updateExam", "deleteExam", "gradeExamSu
   const declarations = source.match(new RegExp("function\\s+" + name + "\\s*\\(", "g")) || [];
   assert.equal(declarations.length, 1, name + " must have exactly one active function declaration");
   const handler = extractFunction(source, name);
-  const guard = name === "gradeExamSubmission" || name === "deleteExamSubmission"
-    ? "getAuthorizedExamSubmissionMutationContext_"
-    : "getAuthorizedExamMutationContext_";
+  const isSubmissionMutation = name === "gradeExamSubmission" || name === "deleteExamSubmission";
+  const guard = isSubmissionMutation ? "withAuthorizedExamSubmissionMutation_" : "getAuthorizedExamMutationContext_";
   assert.ok(handler.includes(guard), name + " must enforce identity, action permission, resource ownership and scope");
+  if (isSubmissionMutation) {
+    assert.ok(extractFunction(source, "withAuthorizedExamSubmissionMutation_").includes("getAuthorizedExamSubmissionMutationContext_"),
+      name + " wrapper must revalidate identity, action permission, resource ownership and scope under lock");
+  }
 }
 
 const publicActionsSource = source.match(/const PUBLIC_ACTIONS = \[[\s\S]*?\];/);
