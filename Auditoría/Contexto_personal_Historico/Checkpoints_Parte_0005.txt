@@ -737,3 +737,10 @@ Cerrar la condición de carrera en submitExam: el control de IntentosPermitidos 
 - Rama base NG_beta_0.0.0.1 permanece sin cambios.
 - Siguiente subalcance elegible: continuar revisando otras rutas EXAM que alteren EntregasExamen o el ownership de exámenes; no reabrir los handlers de envío/calificación/eliminación ya serializados.
 ===============================================================================
+
+===============================================================================
+### Addendum C1.477-R1 — verificación de publicación
+- HEAD verificado tras publicar el checkpoint C1.477 y sus registros: 886000e81eaca3b03b5bd582aab9906093d9b29b.
+- La rama base NG_beta_0.0.0.1 permanece en 44d9891132332e692dbe2ba8602b41f50a508a59; no se escribió en ella.
+- Se conserva la rama exclusiva NG_beta_0.0.0.1_work y el historial fast-forward; no se utilizó force push.
+===============================================================================
