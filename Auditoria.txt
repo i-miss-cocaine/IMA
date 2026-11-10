@@ -1123,3 +1123,17 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - Department Scope Contract runs 42876302825 y 42876368270 PASS; Task-Service security run 42876334741 PASS; backup/restore 42875483013 PASS; EXAM 42872609050 PASS. Pruebas locales NOT RUN.
 - BETA-FUNC-023 ampliada; Pendiente beta. TASK-153 sigue En ejecución; AUD-NG-385/386 abiertos. Sin despliegue ni datos reales.
 ===============================================================================
+
+
+===============================================================================
+## C1.446 — ACADEMIC: aislamiento departamental de expedientes y admisiones
+- **SELF/GUARDIAN:** el guard de expediente ahora exige ResourceOwnership también para estudiante y tutor. En tutores se resuelve la cuenta activa única del estudiante vinculado y se usa su rol/ámbito.
+- **Relaciones familiares:** getStudentGuardians, saveStudentGuardian y unlinkStudentGuardian verifican RBAC y ownership; la edición de un tutor existente comprueba todos los expedientes activos asociados antes de cambiar PII compartida.
+- **Consultas PII:** findDuplicateStudents y getStudentFileAdministrativeReports filtran expedientes, matrículas, movimientos y documentos por ResourceOwnership; la búsqueda corrige PersonaID→UserID y usa fechaNacimiento del expediente. exportLog usa actor firmado.
+- **Admisiones:** getAdmissionRequests y updateAdmissionStatus verifican alcance/ownership. Documentos de solicitud reutilizan la guarda. Solicitudes completamente no asignadas solo se exponen a ámbito institucional explícito; cualquier fila histórica de ownership cancela la excepción.
+- **Pruebas:** contratos sintéticos añadidos para SELF/GUARDIAN, relación familiar, informes, duplicados y admisiones. 15 aserciones estáticas PASS.
+- **Ejecución:** Node local NOT RUN; CI sin checks/workflow runs visibles. No se declara PASS dinámico ni CI. BETA-FUNC-023/024 Pendiente beta.
+- **Pendiente:** convertAdmissionToStudent requiere validación y registro atómico de ownership del expediente creado; revisar evaluaciones/entrevistas y demás endpoints.
+- **Commits:** 3d3d0015cbdd67a715a9fe60385fd82664e2f34d; b113a6f88b338c63f04ecc3531cd9efa85b8b257; 42ca04bad4209760bb883a20b0286a59b8054df9; 5874fa64f615f1dd1d691f60aea3e0b9ee9417b6; ea178e9ff2b70da97573a32a47bac650ef415fa0; 19a64b518ec4eee24b6f0c25b775f43e0058b90f; c77088ad8abd721453ebd3b3b92700ff9575cc86; df644f9a87838450a74f168e310ca423992b2be8; 9b7e619252f8c3489ea05980b58e570d1942148c; 1df0394c1953e19a7e67a8331aa4eebae8c795d2; 2ae88b8fca460911ed2e8f555b3cca9bf6a4a6ce; 589873ae6659c735c4a9ce8fd7ca61aba5224e77.
+- **Estado:** TASK-153 En ejecución; AUD-NG-386 abierto.
+===============================================================================
