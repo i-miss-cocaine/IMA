@@ -208,3 +208,92 @@ function makeStatusHarness(options = {}) {
     /SIGNATURE_CALLBACK_AUTHENTICATION_REQUIRED/);
   assert.equal(forgedCallback.state.opens,0,"client-supplied provider responses must be rejected before storage access");
 }
+
+function makeManualSignatureHarness(options = {}) {
+  const headers=["FirmaID","SolicitudID","DocumentoID","FirmanteID","RolFirmante","TipoFirma","TokenVerificacion","FechaFirma","IPOrigen","DocumentoHash","SignatureHash"];
+  const initial=options.rows||[];
+  const rows=[headers].concat(initial.map(row=>row.slice()));
+  const state={held:false,opens:0,reads:0,appends:0,releases:0,ownershipCalls:0,events:[]};
+  const sheet={
+    getDataRange(){assert.equal(state.held,true);state.reads++;return {getValues:()=>rows.map(row=>row.slice())};},
+    appendRow(row){assert.equal(state.held,true);state.appends++;rows.push(row.slice());}
+  };
+  const context={
+    validateRolePermission:action=>{assert.equal(action,"registerDocumentSignature");return {authorized:options.permissionAllowed!==false};},
+    getUserVerifiedRole:payload=>{payload._verifiedUserId=options.actorId||"ACTOR-1";return options.role||"Director";},
+    LockService:{getScriptLock:()=>({tryLock:()=>{if(options.lockAvailable===false)return false;state.held=true;return true;},
+      releaseLock:()=>{assert.equal(state.held,true);state.held=false;state.releases++;}})},
+    SpreadsheetApp:{openById:()=>{assert.equal(state.held,true);state.opens++;return {}; }},
+    SPREADSHEET_ID:"SPREADSHEET",
+    assertAdvancedSignatureDocumentScope_:(_payload,_ss,docId,requestId,operation)=>{
+      state.ownershipCalls++;assert.equal(state.held,true);assert.equal(docId,"DOC-1");assert.equal(requestId,"SOL-1");assert.equal(operation,"UPDATE");
+      return {authorized:options.ownerAuthorized!==false,code:"RESOURCE_SCOPE_DENIED",documentId:"DOC-CANONICAL",departmentId:"D1"};
+    },
+    getOrCreateSheet:(_ss,name)=>{assert.equal(state.held,true);assert.equal(name,"FirmasConformidades");return sheet;},
+    Utilities:{getUuid:()=>"UUID-1"},
+    computeDocumentSHA256:value=>"HASH:"+value,
+    logStructuredEvent:(_service,_fn,_level,code,_message,data,role)=>state.events.push({code,data,role}),
+    Date
+  };
+  vm.runInNewContext(extractFunction("registerDocumentSignature"),context);
+  const payload={solicitudId:"SOL-1",documentoId:"DOC-1",firmanteId:options.signerId||"ACTOR-1",
+    tipoFirma:options.tipoFirma||"Conformidad Digital Institucional",documentoHash:options.documentoHash===undefined?"DOC-HASH-1":options.documentoHash};
+  return {execute:()=>context.registerDocumentSignature(payload),state,rows,payload};
+}
+
+{
+  const valid=makeManualSignatureHarness();
+  const result=valid.execute();
+  assert.equal(result.status,"success");
+  assert.equal(result.documentoHash,"DOC-HASH-1");
+  assert.match(result.signatureHash,/^HASH:/);
+  assert.equal(valid.rows[1][2],"DOC-CANONICAL","persist canonical document identity");
+  assert.equal(valid.rows[1][3],"ACTOR-1","the signer must be the verified actor");
+  assert.equal(valid.state.ownershipCalls,1);
+  assert.equal(valid.state.appends,1);
+  assert.equal(valid.state.events[0].data.actorUserId,"ACTOR-1");
+  assert.equal(valid.state.events[0].role,"Director");
+  assert.equal(valid.state.held,false);
+  assert.equal(valid.state.releases,1);
+
+  const existingRow=["SIG-EXISTING","SOL-1","DOC-CANONICAL","ACTOR-1","Director",
+    "Conformidad Digital Institucional","VERIF-EXISTING","2026-11-10T12:00:00.000Z","NO_DISPONIBLE","DOC-HASH-1","HASH:stable"];
+  const retry=makeManualSignatureHarness({rows:[existingRow]});
+  const retryResult=retry.execute();
+  assert.equal(retryResult.isExisting,true);
+  assert.equal(retryResult.firmaId,"SIG-EXISTING");
+  assert.equal(retry.state.appends,0,"an exact retry must not append a second signature");
+
+  const changedHash=makeManualSignatureHarness({rows:[existingRow],documentoHash:"OTHER-HASH"});
+  assert.throws(()=>changedHash.execute(),/SIGNATURE_ALREADY_REGISTERED/);
+  assert.equal(changedHash.state.appends,0);
+
+  const ambiguous=makeManualSignatureHarness({rows:[existingRow,existingRow]});
+  assert.throws(()=>ambiguous.execute(),/RESOURCE_OWNERSHIP_AMBIGUOUS/);
+  assert.equal(ambiguous.state.appends,0);
+
+  const wrongSigner=makeManualSignatureHarness({signerId:"OTHER-USER"});
+  assert.throws(()=>wrongSigner.execute(),/SIGNER_IDENTITY_MISMATCH/);
+  assert.equal(wrongSigner.state.lockAttempts||0,0);
+
+  const advanced=makeManualSignatureHarness({tipoFirma:"Firma Avanzada Cualificada X.509"});
+  assert.throws(()=>advanced.execute(),/SIGNATURE_PROVIDER_CALLBACK_REQUIRED/);
+  assert.equal(advanced.state.opens,0);
+
+  const denied=makeManualSignatureHarness({ownerAuthorized:false});
+  assert.throws(()=>denied.execute(),/RESOURCE_SCOPE_DENIED/);
+  assert.equal(denied.state.reads,0);
+  assert.equal(denied.state.appends,0);
+
+  const busy=makeManualSignatureHarness({lockAvailable:false});
+  assert.throws(()=>busy.execute(),/Servicio ocupado/);
+  assert.equal(busy.state.opens,0);
+  assert.equal(busy.state.reads,0);
+  assert.equal(busy.state.releases,0);
+
+  const forbidden=makeManualSignatureHarness({permissionAllowed:false});
+  assert.throws(()=>forbidden.execute(),/AUTH_PERMISSION_DENIED/);
+  assert.equal(forbidden.state.lockAttempts||0,0);
+}
+
+console.log("USER manual conformity signer identity, ownership, idempotency and lock contracts: PASS");
