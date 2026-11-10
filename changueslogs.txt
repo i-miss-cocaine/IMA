@@ -789,3 +789,7 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - PM-01 selecciona AUD-NG-128 por severidad Crítica, ausencia de prerrequisitos declarados y bypass central confirmado en validateRolePermission.
 - Política de tickets autenticados/propios y reglas de automatización administrativas se centraliza con TICKET_ADMIN_ROLES_. Handlers ya tenían controles parciales de identidad/propiedad.
 - Se añade prueba contractual Node; pendiente ejecución/CI y Code Review. AUD-NG-128 permanece En ejecución, no completada.
+[2026-11-10] C1.421 — IMA-EXEC-20261110-1340Z-09 — cierre AUD-NG-128
+- Pruebas de autorización central y handlers de tickets ejecutadas en entorno JS aislado con shim compatible; todas las aserciones pasaron.
+- Se validaron identidad verificada, userId falsificado, listado propio, notas internas, respuesta cruzada, respuesta titular/administrador y acceso administrativo a reglas.
+- Code Review interno aprobado. GitHub no reportó checks CI; no se ejecutó Apps Script productivo. AUD-NG-128 Completada en alcance local/contractual.

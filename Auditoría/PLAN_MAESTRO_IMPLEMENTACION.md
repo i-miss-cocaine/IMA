@@ -2896,4 +2896,4 @@ Siguiente selección: aplicar §6.1 en PM-01 y verificar dependencias reales ant
 
 **Cambios:** autorización central explícita para las acciones de tickets y reglas; reutilización de la política administrativa en handlers; prueba contractual Node para identidad verificada, cuentas inactivas, propiedad de ticket y acceso a reglas.
 
-**Estado:** En ejecución hasta verificar Node/CI y revisión del diff. No marcar AUD-NG-128 Completada antes de esas verificaciones.
+**Cierre C1.421:** AUD-NG-128 queda Completada. La prueba contractual y sus escenarios de autorización pasaron en entorno JS aislado con shim compatible; el servicio y el test compilan. No hay checks CI reportados por GitHub para el commit. Code Review interno aprobado; no se ejecutaron pruebas en Apps Script desplegado ni acceso a datos productivos.

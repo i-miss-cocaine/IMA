@@ -5100,3 +5100,12 @@ Alcance estático satisfecho; sin cambios de código. Hallazgos AUD-NG-374..376 
 - Se centraliza TICKET_ADMIN_ROLES_; se retiran las acciones del bypass incondicional. Otros bypasses no incluidos en AUD-NG-128 quedan fuera de alcance.
 - Prueba contractual añadida en tests/security/problem-ticket-authorization.test.js. Pendiente ejecución/CI y Code Review.
 ===============================================================================
+===============================================================================
+## C1.421 — Cierre AUD-NG-128
+
+- La política de autorización central se valida: cuenta activa con sesión verificada puede gestionar sus propios tickets; identidad de autor/lector/respondedor procede de claims; ticket ajeno requiere rol administrativo; reglas de automatización solo Administrador/Desarrollador/Director.
+- Pruebas dinámicas con hojas simuladas: listado propio, ocultación de nota interna, acceso administrativo, rechazo de respuesta cruzada sin escritura, respuesta del titular, respuesta administrativa y submit con userId falsificado conservando el ID verificado.
+- Pruebas de autorización central: sesión ausente/inactiva denegada; rol estudiante/docente no puede leer/configurar reglas; Director sí.
+- Sintaxis de Code.gs y test aprobada. El test contractual ejecutado en entorno JS aislado con shim compatible; no se reportaron checks CI.
+- AUD-NG-128 Completada en el alcance local/contractual; no se certifica Apps Script desplegado ni datos productivos.
+===============================================================================

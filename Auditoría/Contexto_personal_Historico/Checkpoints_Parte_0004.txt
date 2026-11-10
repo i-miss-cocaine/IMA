@@ -500,3 +500,45 @@ Fase: PM-01 — identidad, seguridad y gobierno de acceso.
 Ejecutar tests/security/problem-ticket-authorization.test.js mediante Node/CI, revisar diff completo y verificar checks. Si pasa, completar documentación; si falla, corregir.
 Commit: SHA por verificar.
 ===============================================================================
+===============================================================================
+## CHECKPOINT C1.421 — Cierre AUD-NG-128
+Sesión: IMA-EXEC-20261110-1340Z-09
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA; rama exclusiva: NG_beta_0.0.0.1_work.
+HEAD de partida: c7dfa7188146a77ef1c1ed15d45281df30bac87d.
+Checkpoint anterior: C1.420.
+Fase: PM-01 — identidad, seguridad y gobierno de acceso.
+
+### Resultado
+- AUD-NG-128: Completada en el alcance local/contractual.
+- La autorización central ya no concede bypass a submitProblemTicket/getProblemTickets/replyProblemTicket/configureAutomationRules/getAutomationRules.
+- Cuenta activa autenticada puede crear/leer/responder tickets propios. La atención de tickets ajenos y reglas de automatización queda reservada a Administrador/Desarrollador/Director.
+- TICKET_ADMIN_ROLES_ centraliza la lista administrativa y se reutiliza en handlers de listado/respuesta/estado/configuración/consulta de reglas.
+- Otros bypasses no incluidos en AUD-NG-128 no se modificaron.
+
+### Pruebas ejecutadas
+- Sintaxis de todo backend/user-service/Code.gs y tests/security/problem-ticket-authorization.test.js.
+- Autorización central: usuario activo, identidad verificada, userId spoof, sesión ausente/inactiva; reglas admin-only.
+- Handlers con hojas simuladas: listado propio; ocultación de notas internas; vista administrativa; respuesta cruzada denegada sin escritura; respuesta del titular; respuesta administrativa; creación de ticket con userId de cliente falsificado y persistencia bajo ID verificado.
+- Todas las aserciones pasaron en entorno JavaScript aislado con shim compatible para assert/fs/path/vm. No se afirma que se ejecutara Node nativo.
+- GitHub reportó statuses CI vacíos para commit C1.420; no hay evidencia de ejecución de workflow remoto.
+
+### Code Review y límites
+- Code Review interno del diff aprobado; cambios limitados al control de tickets y reglas de automatización.
+- No se desplegó Apps Script ni se accedió a Google Sheets/Drive productivos.
+- No se probaron sesiones/cuentas reales, permisos Drive ni flujos multiinstitución productivos.
+- AUD-NG-128 se cierra solo para el alcance verificable local/contractual; no certifica despliegue productivo.
+
+### Archivos modificados en esta iteración
+- tests/security/problem-ticket-authorization.test.js — pruebas dinámicas de propiedad y acceso cruzado.
+- pendientes/Otros/Pendientes.md — AUD-NG-128 marcada Completada con evidencia.
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md — cierre §10.90.
+- Auditoría/MapaDependencias.md — C1.421.
+- changueslogs.txt — C1.421.
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — este checkpoint.
+- Auditoría/INDICE_CHECKPOINTS.md — C1.421.
+
+### Siguiente acción
+Reaplicar §6.1 en PM-01. Mantener el ciclo F29-TASK05↔F29-TASK17 sin resolver hasta completar su triage. No extender la corrección de AUD-NG-128 a bypasses ajenos al hallazgo sin tarea y evidencia propia.
+Commit: SHA por verificar.
+===============================================================================

@@ -12889,14 +12889,19 @@ SEGUNDA PARTE: REESTRUCTURACIÓN ARQUITECTÓNICA, ESCALABILIDAD Y ADMINISTRACIÓ
 ---
 
 <!-- ID: AUD-NG-128 | Fuentes: Pendientes.md -->
-### [ ] [AUD-NG-128] Eliminar bypass RBAC y vincular tickets a la identidad verificada
+### [x] [AUD-NG-128] Eliminar bypass RBAC y vincular tickets a la identidad verificada
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-128 (REQ-EXP-008).
 - **Severidad/Clasificación:** Crítico
 - **Archivos Involucrados:** `backend/user-service/Code.gs`; pruebas de autorización.
 - **Dependencias Expuestas:** `validateRolePermission`, `validateContextualAccess`, `getProblemTickets`, `submitProblemTicket`, `replyProblemTicket`, `getAutomationRules`, `_verifiedUserId`.
 - **Descripción del Alcance:** La lista de acciones permitidas incondicionalmente en `validateRolePermission` omite la matriz RBAC y la validación contextual. Dentro de esa lista, `getProblemTickets` filtra por `payload.userId` y si falta devuelve todos los tickets; `replyProblemTicket` permite responder a cualquier ticket si no se envía userId; `submitProblemTicket` acepta un userId de cliente; `getAutomationRules` no realiza control de rol. Sustituir el bypass por permisos explícitos y usar exclusivamente `_verifiedUserId` para acciones personales.
 - **Criterios de Aceptación:** Cada acción está asignada a roles explícitos; ausencia o falsificación de userId no amplía el acceso; usuario solo consulta/responde sus tickets; ticket de otro usuario requiere rol autorizado; solo Administrador/Desarrollador/Director acceden a reglas de automatización; las acciones no autorizadas devuelven `AUTH_PERMISSION_DENIED`; pruebas de IDOR y acceso cruzado.
-- **Estado:** [ ] Pendiente
+- **Estado:** [x] Completada
+- **Cierre C1.421:** el control central ya no concede bypass a acciones de tickets ni a reglas de automatización. Política: cuentas activas autenticadas crean/consultan/responden tickets propios; los handlers restringen acceso cruzado a roles administrativos. Las reglas de automatización quedan reservadas a Administrador/Desarrollador/Director.
+- **Evidencia:** commit `c7dfa7188146a77ef1c1ed15d45281df30bac87d`; `backend/user-service/Code.gs` blob `8595141506f2b287754b947372731cd2577b722e`; prueba `tests/security/problem-ticket-authorization.test.js` blob `e7cb338a82c034a986c2664ab56fe0f9f9bf72e7`.
+- **Verificación:** sintaxis completa del servicio y del test; pruebas de autorización central, sesión ausente/inactiva, usuarioId falsificado, listado propio, ocultación de notas internas, rechazo de respuesta cruzada, respuesta del titular y respuesta administrativa; submit registra al propietario de claims. Todas las aserciones pasaron en entorno JS aislado con shim compatible de assert/fs/path/vm. GitHub no reportó checks CI para el commit (statuses vacíos).
+- **Code Review interno:** revisado el diff; cambios limitados al bypass de tickets/reglas y centralización de la lista administrativa. Otros bypasses no cubiertos por AUD-NG-128 permanecen intactos.
+- **Límites:** no se ejecutó Apps Script desplegado ni se accedió a hojas/usuarios productivos; no se afirma prueba de integración productiva.
 
 ---
 
