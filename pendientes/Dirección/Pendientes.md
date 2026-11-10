@@ -747,7 +747,7 @@
 - **Avance C1.438:** EXAM incorpora resolución de identidad firmada, lectura de ámbitos activos y adaptador ResourceOwnership. `getAllExams` y `getTeacherExamActivity` aplican propiedad institucional/departamental; payload `profesorId` no autoriza. Contratos de autenticación y aislamiento PASS en GitHub Actions run 42863062888.
 - **Avance C1.439:** `getStudentExams`, `getExamQuestions` y `getExamResult` derivan identidad/perfil del estudiante desde cuenta verificada y validan ámbito/propiedad; tutores requieren vínculo familiar vigente y ámbito del estudiante relacionado. Contratos locales y GitHub Actions PASS.
 - **Avance C1.440:** `submitExam` usa identidad firmada, comprueba examen activo, asignación académica, propiedad/ámbito, pertenencia de preguntas y límite de intentos. El contrato local de envío y parseo PASS; GitHub Actions run 42867761346 PASS en ambos contratos. Beta NOT RUN.
-- **Estado:** [ ] En ejecución (C1.440; TASK/ACADEMIC/ACCOUNTING parcialmente integrados; EXAM con listados, lecturas y envíos de estudiante/tutor protegidos; alta de propiedad en createExam, mutaciones y otros endpoints pendientes; T153-S01 limitada a datos institucionales reales y no bloquea el motor; criterios globales pendientes).
+- **Estado:** [ ] En ejecución (C1.441; TASK/ACADEMIC/ACCOUNTING parcialmente integrados; EXAM con listados, lecturas, envíos de estudiante/tutor y createExam con ownership/rollback protegidos; mutaciones de examen/entrega y otros endpoints pendientes; T153-S01 limitada a datos institucionales reales y no bloquea el motor; criterios globales pendientes).
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7086-7126; clave TASK-169; asignación única: Dirección -->
 
@@ -4910,3 +4910,9 @@ TAREAS DERIVADAS — AUDITORÍA TASK-639 / C1.302
 
 
 - **Avance C1.434:** TASK Service protege getSubmissionComments, addSubmissionComment y getSubmissionVersions mediante contexto de entrega/tarea derivado de sesión firmada y ResourceOwnership. Personal requiere propiedad y ámbito; estudiantes quedan limitados a su propia entrega; tutores a relaciones académicas verificadas; comentarios privados no se muestran a usuarios no staff y la autoría no se acepta desde el payload. Contrato sintético añadido; ejecución local y resultado CI pendientes de verificación. TASK-153 permanece En ejecución.
+
+
+### Avance C1.441 — TASK-153 / AUD-NG-386 / EXAM
+- `createExam` ahora exige sesión firmada y ámbito departamental autorizado; deriva el creador de claims y registra ResourceOwnership antes del examen/preguntas.
+- Escritura protegida por ScriptLock y rollback compensatorio. Contratos locales y parseo PASS; GitHub Actions run 42870106305 PASS en ambos contratos EXAM. La prueba beta continúa Pendiente beta.
+- **Estado:** TASK-153 En ejecución; AUD-NG-386 abierto. Siguiente subalcance: updateExam, updateExamStatus, deleteExam, gradeExamSubmission y deleteExamSubmission.
