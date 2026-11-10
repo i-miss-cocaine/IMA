@@ -470,3 +470,17 @@ La plataforma debe ofrecer, como mínimo:
 - Si no hay ocupante elegible para el rol aprobador, el proceso queda pendiente y genera una ruta de resolución, no una aprobación automática.
 
 **Estado:** regla de diseño registrada en esta propuesta. Requiere ratificación institucional y descomposición en requisitos técnicos/pruebas antes de implementación. No crea ni modifica asignaciones, roles, usuarios, documentos o permisos reales.
+
+
+### N-24. Autoridad institucional superior y representación legal
+
+1. Se incorpora por encima de Dirección el rol funcional **Titular Institucional / Representante Legal (TIRL)**, separado de cualquier rol de desarrollo, soporte o administración técnica de IMA.
+2. El TIRL representa la máxima responsabilidad institucional en el modelo propuesto. Su facultad de representación legal solo se considera activa cuando exista nombramiento, poder, estatuto, acta o instrumento jurídico válido que la acredite para la entidad correspondiente. La plataforma registra el tipo de instrumento, alcance, vigencia y evidencia; no presume representación por el mero nombre del rol.
+3. El TIRL puede ejercer las facultades ordinarias de Dirección cuando la institución así lo configure y formalice, o asumir temporalmente sus funciones mediante una modalidad explícita de **Dirección en funciones**, con ámbito, motivo, fecha de inicio/fin y trazabilidad.
+4. La capacidad de actuar como Dirección no elimina la distinción entre autoridad superior, representación legal y gestión diaria. Las operaciones incompatibles o que requieran doble control mantienen segregación; el TIRL no puede autoaprobar una operación que la política reserve a un segundo rol independiente.
+5. Las facultades del TIRL se definen por capacidades configurables: aprobar políticas y estructura institucional, designar roles funcionales mediante la plataforma, ratificar delegaciones, supervisar cumplimiento y representar a la institución dentro de los límites jurídicos acreditados.
+6. El TIRL no recibe privilegios de desarrollador, acceso a secretos técnicos, ni administración de infraestructura por defecto. El desarrollador no obtiene autoridad institucional, custodia documental ni representación legal por razón de su función técnica.
+7. La asignación de ocupante del TIRL se realiza por rol y membresía configurables, nunca por nombre personal incrustado en reglas. La identidad del actor y evidencia del nombramiento se conserva en registros protegidos.
+8. Si la entidad tiene órgano colegiado, propietario, patronato, junta directiva u otra autoridad estatutaria superior, la relación de competencias debe reflejarse y aprobarse conforme a sus instrumentos constitutivos; el rol TIRL no desplaza competencias legalmente reservadas a ese órgano.
+
+**Estado:** propuesta de gobierno institucional; requiere validación de estatutos, personalidad jurídica, instrumento de nombramiento y asesoría legal hondureña antes de activar facultades.
