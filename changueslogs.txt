@@ -894,3 +894,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - AUD-NG-386 y TASK-153 permanecen abiertos/En ejecución por integración pendiente de ResourceOwnership, ámbitos y mutaciones.
 
 [Actualización C1.437] GitHub Actions run 42859943846 — Exam-Service security local contracts: PASS; el contrato confirmó autenticación, identidad firmada y filtro de propiedad docente. Prueba local en entorno de desarrollo: NOT RUN; CI no la sustituye. AUD-NG-386 sigue abierto; TASK-153 En ejecución.
+
+[2026-11-10] C1.438 — IMA-EXEC-20261110-1715Z-01 — TASK-153 / EXAM: ResourceOwnership en listados y actividad docente
+- EXAM incorpora contexto de identidad firmada, ámbito activo y adaptador ResourceOwnership. getAllExams y getTeacherExamActivity filtran por propietario docente y ámbito institucional/departamental; el payload no determina la identidad.
+- Se añade tests/security/exam-service-departmental-access.test.js y se actualiza el workflow para ejecutar ambos contratos EXAM.
+- Commits de implementación/pruebas: 185c1f2, f4adcb5, 00c24e9 y 0b23710c0b732fcf37f7c39bf2e6e82a2b608789.
+- GitHub Actions run 42863062888 PASS: contrato de autenticación y contrato de aislamiento departamental/tenant. Tres runs previos fallaron por fixtures/harness incompletos; corregidos antes del PASS final.
+- Prueba local NOT RUN; beta BETA-FUNC-022 permanece Pendiente beta. TASK-153 En ejecución; AUD-NG-386 abierto por endpoints restantes y ciclo de propiedad.

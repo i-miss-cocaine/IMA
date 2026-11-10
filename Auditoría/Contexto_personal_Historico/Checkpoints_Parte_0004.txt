@@ -1149,3 +1149,56 @@ Commit: 8f1063028c6b4d53cdbb62038b100bb9d651d609 (`fix(exam): scope teacher exam
 - Prueba local en el entorno de desarrollo: NOT RUN; la ejecución CI remota no la sustituye.
 
 ===============================================================================
+
+
+===============================================================================
+## CHECKPOINT C1.438 — TASK-153 / EXAM: integración inicial de ResourceOwnership en listados
+Sesión: IMA-EXEC-20261110-1715Z-01
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+HEAD inicial verificado: 2f97557eb6f1ec7e2a5740ad852127846a474c55.
+HEAD final de implementación verificado: 0b23710c0b732fcf37f7c39bf2e6e82a2b608789.
+HEAD de rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59; sin escrituras en la base.
+Checkpoint anterior: C1.437.
+
+### Alcance ejecutado
+- EXAM incorpora resolución local de identidad firmada mediante `verifySessionToken`, sin confiar en identidad aportada por el payload.
+- Se integra lectura de `AsignacionesAmbitosRoles` con rol normalizado, estados activos y ventanas de vigencia; el ámbito institucional se reconoce solo si contiene el `IMA_INSTITUTION_ID` configurado.
+- Se incorpora adaptador local `assertExamResourceOwnershipForScope_` para consultar `ResourceOwnership`, exigir exactamente una propiedad activa, departamento propietario no vacío y coincidencia de institución/departamento o alcance institucional vigente.
+- `getAllExams` filtra en servidor por propietario docente firmado y por ResourceOwnership. Los recursos sin propiedad, duplicados o fuera de ámbito no se muestran.
+- `getTeacherExamActivity` ignora el `profesorId` del payload como autoridad y limita las entregas a exámenes propios del docente y con propiedad departamental/institucional autorizada.
+- Se añadió `tests/security/exam-service-departmental-access.test.js` con fixtures sintéticos para departamento propio/ajeno, institución global, institución diferente, propiedad ausente/duplicada, manipulación de identidad y actividad docente.
+- Se amplió el workflow EXAM para ejecutar el contrato anterior de autenticación y el nuevo contrato departamental.
+
+### Archivos de implementación y pruebas
+- `backend/exam-service/Code.gs`
+- `tests/security/exam-service-departmental-access.test.js`
+- `tests/security/exam-service-security-contract.test.js` (ajuste del harness para las nuevas dependencias de ámbito/propiedad)
+- `.github/workflows/exam-service-security-contract.yml`
+
+Commits de esta iteración:
+- `185c1f271c777c1046d0458e3a4e436b441bc2e3` — implementación de ámbito/propiedad en listados.
+- `f4adcb593ec8477e72fa60c9b4b4214e9ae72c9b` — adaptación inicial del contrato existente.
+- `00c24e927371418bdc75aa38dda8255844e09197` — fixture de Spreadsheet ID para contrato existente.
+- `0b23710c0b732fcf37f7c39bf2e6e82a2b608789` — cabeceras correctas en fixtures y corrección final de pruebas.
+
+### Verificación
+- Revisión del diff completo de implementación: PASS; no se tocaron servicios fuera de EXAM, datos productivos ni configuración institucional.
+- GitHub Actions run **42863062888** — workflow `Exam-Service security local contracts`: **PASS**.
+  - `exam-service-security-contract.test.js`: PASS.
+  - `exam-service-departmental-access.test.js`: PASS.
+  - Logs: `authentication, identity and teacher ownership assertions passed` y `signed identity, department scope, tenant isolation and ownership assertions passed`.
+- Runs previos 42862525451, 42862724887 y 42862876429 fallaron por dependencias/fixtures incompletos del harness; se corrigieron y el run final 42863062888 pasó ambos contratos. Se conserva la evidencia de fallos como iteraciones corregidas, no se oculta.
+- Pruebas locales en entorno de desarrollo: **NOT RUN**; no hay checkout/runtime local conectado en esta sesión. CI no se presenta como ejecución local.
+- Pruebas beta de Apps Script/Sheets/Drive y navegador: **NOT RUN**, permanecen en BETA-FUNC-022 como Pendiente beta.
+- La implementación de listados ahora falla cerrada para exámenes sin una fila activa `ResourceOwnership` de tipo `EXAMEN`. No se ha incorporado aún el alta automática de esa propiedad en `createExam`; validar/migrar registros existentes y el flujo de creación es parte del siguiente alcance. No se afirma que todos los listados estén operativos hasta cubrir ese ciclo.
+- TASK-153 permanece En ejecución; AUD-NG-386 no se cierra.
+
+### Siguiente acción elegible
+- Continuar EXAM con propiedad y autorización en `getExamQuestions`, `submitExam`, `getExamResult` y `getStudentExams`, derivando identidad/estudiante desde claims y relación verificable; impedir IDOR en entrega y tutor.
+- Proteger mutaciones `createExam`, `updateExam`, `updateExamStatus`, `deleteExam`, `gradeExamSubmission` y `deleteExamSubmission`; registrar propiedad al crear solo con departamento explícito/autorizado y sin inferirlo desde grado/sección.
+- Ampliar contratos positivos/negativos y ejecutar pruebas locales cuando exista runtime local disponible.
+- Mantener TASK-153 En ejecución hasta completar todos los criterios del alcance.
+
+===============================================================================

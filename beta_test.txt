@@ -266,6 +266,7 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
   4. Como docente, consultar y modificar exámenes/entregas de su ámbito y repetir con IDs de otro departamento/institución.
   5. Intentar crear, actualizar, desactivar, eliminar, calificar y eliminar entregas fuera del ámbito autorizado.
   6. Probar IDs inexistentes, propiedad ausente/duplicada, ámbito vencido y sesión expirada.
-- **Resultado esperado:** los listados sensibles exigen sesión válida; identidad y rol proceden de claims firmados; estudiantes solo acceden a sus propios registros; tutores solo a relaciones vigentes; personal opera únicamente sobre recursos de su propiedad/ámbito y con permiso explícito; los accesos no autorizados se deniegan sin filtrar existencia ni datos.
+  7. Verificar que getAllExams y getTeacherExamActivity solo devuelvan exámenes/entregas con ResourceOwnership activo y dentro del ámbito; probar payload profesorId manipulado, propiedad duplicada y recursos de otro departamento/institución.
+- **Resultado esperado:** los listados sensibles exigen sesión válida; getAllExams y getTeacherExamActivity filtran por ResourceOwnership activo y ámbito; identidad y rol proceden de claims firmados; estudiantes solo acceden a sus propios registros; tutores solo a relaciones vigentes; personal opera únicamente sobre recursos de su propiedad/ámbito y con permiso explícito; los accesos no autorizados se deniegan sin filtrar existencia ni datos.
 - **Estado:** Pendiente beta. Las pruebas locales de código/contrato se ejecutan por separado y deben aprobarse para cerrar la implementación.
 - **Evidencia requerida:** build/commit, ambiente, rol sintético, pasos, respuestas/denegaciones y logs saneados, sin tokens ni datos sensibles.

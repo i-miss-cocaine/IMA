@@ -5,11 +5,11 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.437**
-- Última sesión: `IMA-EXEC-20261110-1705Z-01`
+- Último checkpoint: **C1.438**
+- Última sesión: `IMA-EXEC-20261110-1715Z-01`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.437: **102902**
+- Caracteres del archivo activo tras C1.438: **107807**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 - Baseline lógico válido: **C1.316** (`31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`). C1.317–C1.382 se conservan, pero no se aceptan como evidencia de continuidad por corrección expresa del usuario.
@@ -277,3 +277,5 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.436 | IMA-EXEC-20261110-1658Z-01 | AUD-NG-386 mitigada parcialmente; TASK-153 En ejecución; pruebas locales NOT RUN | PM-01 — TASK-153 / EXAM: autenticación de listados | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.436 | 1066–1108 | C1.435 | b0e8842acb1d04cdaba175b524065b09fa9b8886 + commit documental de checkpoint y actualización CI |
 
 | C1.437 | IMA-EXEC-20261110-1705Z-01 | EXAM: listado docente limitado por identidad firmada; TASK-153 En ejecución; CI PASS (run 42859943846) | PM-01 — TASK-153 / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.437 | 1111–1151 | C1.436 | 8f1063028c6b4d53cdbb62038b100bb9d651d609 + commit documental y actualización CI |
+
+| C1.438 | IMA-EXEC-20261110-1715Z-01 | EXAM: ResourceOwnership en listados y actividad docente; CI PASS; TASK-153 En ejecución | PM-01 — TASK-153 / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.438 | 1156–1204 | C1.437 | 0b23710c0b732fcf37f7c39bf2e6e82a2b608789 + commits de implementación y correcciones de contratos |

@@ -2959,3 +2959,12 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 
 
 **Seguimiento C1.430 — confirmación TASK-Service:** el HEAD d0d01c8d (commit `fix(security): honor institution-wide ownership assignment scope`) permite que el ámbito institucional global asigne propiedad a un departamento de la misma institución, sin omitir la institución ni aceptar DepartmentID vacío. El contrato `Task-Service security local contracts` pasó en run 42846982461 y `Task-Service backup and restore contract` pasó en run 42846982439. TASK-153 continúa En ejecución; la integración de endpoints TASK/EXAM y los demás criterios de aceptación siguen pendientes. Reanudar en `backend/task-service/Code.gs`, endpoints `getStudentTasks`, `getAllTasks`, `getTeacherActivity` y mutaciones, con requisitos originales en `pendientes/Dirección/Pendientes.md`, TASK-153.
+
+## 10.96 TASK-153 / AUD-NG-386 — integración inicial EXAM (C1.438)
+
+- EXAM incorpora `getVerifiedExamIdentity_`, `getVerifiedExamDepartmentScope_` y `assertExamResourceOwnershipForScope_`, siguiendo el contrato ya probado por ACADEMIC/ACCOUNTING y el motor USER.
+- `getAllExams` y `getTeacherExamActivity` aplican identidad firmada, ámbito activo y propiedad única activa de tipo `EXAMEN`; el identificador de profesor del payload no concede acceso.
+- Contratos Node dedicados de autenticación y aislamiento/tenant pasan en GitHub Actions run 42863062888. La prueba local en entorno de desarrollo no se ejecutó; CI no se registra como prueba local.
+- **Límite:** el listado falla cerrado para recursos sin propiedad registrada. Aún no se implementa la creación/registro de ownership en `createExam`, ni la protección de preguntas, entregas, resultados y mutaciones. La compatibilidad del flujo completo requiere resolver ese ciclo antes de considerar integrada toda la superficie EXAM.
+- **Estado:** TASK-153 En ejecución; AUD-NG-386 abierto.
+- **Siguiente:** proteger `getExamQuestions`, `submitExam`, `getExamResult`, `getStudentExams` y mutaciones; registrar propiedad al crear solo con departamento autorizado explícito; ampliar contratos locales y beta.

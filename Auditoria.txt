@@ -1033,3 +1033,11 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - Workflow `Exam-Service security local contracts`: PASS; run 42859943846; job `exam-security-contracts`; commit probado `8f1063028c6b4d53cdbb62038b100bb9d651d609`.
 - Log: `exam-service-security-contract: authentication, identity and teacher ownership assertions passed`.
 - Prueba local en entorno de desarrollo: NOT RUN. AUD-NG-386 sigue abierto por ResourceOwnership/ámbito y operaciones EXAM restantes.
+
+===============================================================================
+## SEGUIMIENTO IMA-EXEC-20261110-1715Z-01 — AUD-NG-386 / EXAM
+- Se integra en EXAM el contexto de ámbito activo y el adaptador ResourceOwnership para recursos `EXAMEN`.
+- `getAllExams` y `getTeacherExamActivity` filtran por identidad docente firmada y propiedad institucional/departamental; propiedad ausente, duplicada o fuera de ámbito queda excluida.
+- Contratos sintéticos de autenticación y ámbito: PASS en GitHub Actions run 42863062888 (ambos contratos). Los tres runs fallidos previos corresponden a harness/fixtures incompletos y fueron corregidos.
+- Prueba local en entorno de desarrollo: NOT RUN; beta remota: NOT RUN. El ciclo de propiedad aún no está completo: alta en createExam, consultas de preguntas/resultados/entregas y mutaciones pendientes. AUD-NG-386 permanece ABIERTO.
+===============================================================================
