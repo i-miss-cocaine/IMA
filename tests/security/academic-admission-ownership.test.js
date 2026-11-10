@@ -529,3 +529,98 @@ console.log("academic admission duplicate resolution ownership, role and lock co
 }
 
 console.log("academic admission reopening ownership, lock and history contracts: PASS");
+
+// Adding a request to the waitlist is single-shot under ScriptLock and
+// compensates the appended waitlist row if the admission status write fails.
+{
+  const waitHeader=["EsperaID","SolicitudID","AnoLectivo","Grado","Posicion","Puntaje","CriteriosJSON","EstadoOferta","FechaExpiracionOferta","JustificacionManual","FechaIngreso","UltimaActualizacion"];
+  function makeWaitlistHarness({lockAvailable=true,requestAuthorized=true,requestRows=null,waitRows=null,failStatusWrite=false,failRollback=false}={}) {
+    let held=false,attempts=0,releases=0,scopeChecks=0,authorizedIdsChecks=0,reads=0,idCalls=0,events=[];
+    const admissions=requestRows||[["SolicitudID","Fecha","Ano","Grado","Nombres","Apellidos","Identificacion","Nacimiento","Responsable","Telefono","Email","Estado","Canal","Observaciones","ExpedienteID"],
+      ["REQ-WAIT",new Date(),"2026","1","Ana","Prueba","ID-WAIT","2015-01-01","Tutor","555","a@example.test","Recibida","Web","",""]];
+    const admissionSheet={
+      rows:admissions,
+      getDataRange(){reads++;const self=this;return {getValues(){return self.rows.map(row=>row.slice());}};},
+      getRange(row,col){const self=this;return {setValue(value){if(failStatusWrite)throw new Error("status write failed");self.rows[row-1][col-1]=value;}};}
+    };
+    const waitRowsActual=waitRows||[waitHeader];
+    const waitSheet={
+      rows:waitRowsActual,
+      getDataRange(){reads++;const self=this;return {getValues(){return self.rows.map(row=>row.slice());}};},
+      appendRow(row){assert.equal(held,true,"waitlist append must be under lock");this.rows.push(row.slice());},
+      getLastRow(){return this.rows.length;},
+      deleteRow(row){if(failRollback)throw new Error("rollback failed");this.rows.splice(row-1,1);}
+    };
+    const ss={};
+    const context={
+      getAcademicAdmissionScopeContext_:(_payload,action,id,operation)=>({
+        authorized:action==="addToWaitlist"&&id==="REQ-WAIT"&&operation==="UPDATE",ss,
+        actor:{authorized:true,userId:"MANAGER-WAIT",role:"Director"},
+        scope:{authorized:true,institutionId:"INST-1",departmentIds:["D1"],institutionWide:false}
+      }),
+      LockService:{getScriptLock:()=>({tryLock:()=>{attempts++;if(!lockAvailable)return false;held=true;return true;},releaseLock:()=>{assert.equal(held,true);held=false;releases++;}})},
+      assertAcademicAdmissionRequestScopeAccess_:(_ss,_scope,id,_payload,operation)=>{
+        assert.equal(held,true,"request ownership must be revalidated after acquiring lock");assert.equal(id,"REQ-WAIT");assert.equal(operation,"UPDATE");scopeChecks++;
+        return {authorized:requestAuthorized,departmentId:"D1"};
+      },
+      getAuthorizedAdmissionRequestIds_:(_ss,_scope,_payload,operation)=>{
+        assert.equal(held,true);assert.equal(operation,"READ");authorizedIdsChecks++;return requestAuthorized?new Set(["REQ-WAIT","REQ-OTHER"]):new Set();
+      },
+      getOrCreateSheet:(_ss,name)=>{assert.equal(held,true,"admission/waitlist sheets must not be accessed before lock");return name==="SolicitudesAdmision"?admissionSheet:waitSheet;},
+      generateInstitutionalId:()=>{assert.equal(held,true,"waitlist ID must be generated under lock");idCalls++;return {generatedId:"ESP-NEW"};},
+      logStructuredEvent:(_service,_fn,_level,code,_message,data,role)=>events.push({code,data,role}),
+      Date
+    };
+    vm.runInNewContext(extractFunction("addToWaitlist"),context);
+    return {execute:criteria=>context.addToWaitlist({solicitudId:"REQ-WAIT",criteriosJSON:criteria||{tieneHermanosMatriculados:true,esHijoPersonal:true}}),
+      state:()=>({held,attempts,releases,scopeChecks,authorizedIdsChecks,reads,idCalls,events,admissionRow:admissionSheet.rows[1],waitRows:waitSheet.rows})};
+  }
+  const added=makeWaitlistHarness();
+  const addedResult=added.execute();
+  assert.equal(addedResult.status,"success");assert.equal(addedResult.esperaId,"ESP-NEW");
+  let state=added.state();
+  assert.equal(state.held,false);assert.equal(state.attempts,1);assert.equal(state.releases,1);
+  assert.equal(state.scopeChecks,1);assert.equal(state.authorizedIdsChecks,1);assert.equal(state.idCalls,1);
+  assert.equal(state.admissionRow[11],"En_Espera");assert.equal(state.waitRows.length,2);
+  assert.equal(state.waitRows[1][4],1);assert.equal(state.waitRows[1][5],90);
+  const duplicateResult=added.execute();
+  assert.equal(duplicateResult.isExisting,true);assert.equal(duplicateResult.esperaId,"ESP-NEW");
+  assert.equal(added.state().waitRows.length,2,"repeat request must reuse the active waitlist entry");
+
+  const busy=makeWaitlistHarness({lockAvailable:false});
+  assert.throws(()=>busy.execute(),/Servicio ocupado/);
+  assert.deepEqual({reads:busy.state().reads,releases:busy.state().releases,idCalls:busy.state().idCalls},{reads:0,releases:0,idCalls:0});
+
+  const denied=makeWaitlistHarness({requestAuthorized:false});
+  assert.throws(()=>denied.execute(),/RESOURCE_NOT_FOUND/);
+  assert.equal(denied.state().reads,0);assert.equal(denied.state().idCalls,0);
+
+  const duplicateAdmissionRows=makeWaitlistHarness({requestRows:[
+    ["SolicitudID","Fecha","Ano","Grado","Nombres","Apellidos","Identificacion","Nacimiento","Responsable","Telefono","Email","Estado","Canal","Observaciones","ExpedienteID"],
+    ["REQ-WAIT",new Date(),"2026","1","Ana","Prueba","ID-1","","Tutor","555","a@b.test","Recibida","Web","",""],
+    ["REQ-WAIT",new Date(),"2026","1","Ana","Prueba","ID-1","","Tutor","555","a@b.test","Recibida","Web","",""]
+  ]});
+  assert.throws(()=>duplicateAdmissionRows.execute(),/RESOURCE_NOT_FOUND/);
+  assert.equal(duplicateAdmissionRows.state().waitRows.length,1);
+
+  const activeDuplicates=makeWaitlistHarness({waitRows:[waitHeader,
+    ["ESP-1","REQ-WAIT","2026","1",1,10,"{}","En_Espera","","",new Date(),new Date()],
+    ["ESP-2","REQ-WAIT","2026","1",2,10,"{}","Plaza_Ofrecida","","",new Date(),new Date()]
+  ]});
+  assert.throws(()=>activeDuplicates.execute(),/RESOURCE_CONFLICT_WAITLIST_DUPLICATE/);
+  assert.equal(activeDuplicates.state().idCalls,0);
+
+  const invalidCriteria=makeWaitlistHarness();
+  assert.throws(()=>invalidCriteria.execute({tieneHermanosMatriculados:"true"}),/CRITERIO_LISTA_ESPERA_INVALIDO/);
+  assert.equal(invalidCriteria.state().waitRows.length,1);assert.equal(invalidCriteria.state().admissionRow[11],"Recibida");
+
+  const compensated=makeWaitlistHarness({failStatusWrite:true});
+  assert.throws(()=>compensated.execute(),/WAITLIST_WRITE_FAILED/);
+  assert.equal(compensated.state().waitRows.length,1,"failed admission status write must compensate the appended waitlist row");
+  assert.equal(compensated.state().admissionRow[11],"Recibida");
+  const failedRollback=makeWaitlistHarness({failStatusWrite:true,failRollback:true});
+  assert.throws(()=>failedRollback.execute(),/WAITLIST_WRITE_FAILED/);
+  assert.equal(failedRollback.state().events.some(event=>event.code==="WAITLIST_COMPENSATION_FAILED"),true);
+}
+
+console.log("academic admission waitlist insertion ownership, idempotency and lock contracts: PASS");
