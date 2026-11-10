@@ -2004,41 +2004,6 @@ Revisar la escritura de evaluaciones de admisión para cerrar riesgos de concurr
 ===============================================================================
 
 ===============================================================================
-## CHECKPOINT C1.458 — ACADEMIC: resolución segura de duplicados de admisión
-Sesión: IMA-EXEC-20261110-1825Z-02
-Fecha: 2026-11-10 UTC.
-Repositorio: i-miss-cocaine/IMA.
-Rama exclusiva: NG_beta_0.0.0.1_work.
-Checkpoint anterior: C1.457.
-
-### Alcance
-Auditar y corregir la ruta `resolveAdmissionDuplicate` dentro de TASK-153 / AUD-NG-386, con énfasis en autorización de gestión, ownership interdepartamental, escrituras concurrentes e integridad de trazabilidad.
-
-### Cambios
-- La resolución requiere uno de los roles de gestión permitidos, leído desde `ctx.actor` verificado; no depende de `payload.authRole`.
-- `ScriptLock` protege la revalidación del ownership de la solicitud, la comprobación del expediente destino, la lectura del registro y las mutaciones. El lock se libera en `finally`; la contención falla antes de acceder a hojas.
-- Para `VincularExistente`, la solicitud y el expediente deben pertenecer al mismo departamento. Se revalida el ownership bajo lock sin reutilizar la caché asociada al payload.
-- Se evita resolver nuevamente una solicitud marcada como resuelta o reemplazar una vinculación previa incompatible. Las columnas de destino/observaciones y estado se actualizan en rangos coordinados; el resultado informa si el historial pudo persistirse.
-
-### Verificaciones
-- GitHub Actions run `42892900933`: SUCCESS, Node 24.
-- `academic-admission-ownership.test.js`: PASS; cubre rol no autorizado, contención de lock, rechazo de vínculo entre departamentos antes de leer/escribir, aceptación dentro del mismo departamento, liberación de lock y regresiones de resolución repetida/vinculación incompatible.
-- Contratos de Department Scope, ACADEMIC departmental resource access, ACADEMIC student/guardian expediente ownership, admisión, ACCOUNTING departmental access, ResourceOwnership ABAC y voucher client: PASS.
-- `node --check`: User/Academic/Accounting Code.gs y `js/student.js`: PASS.
-- Sin despliegue, servicios vivos, Google Sheets real ni datos institucionales reales. La concurrencia se simuló con fixtures y lock local.
-
-### Commits
-- `89ca3edfc6cff41105c03fccc2d6a83188b2026c` — autorización de gestión verificada en resolución de duplicados.
-- `25bea9e9ed69460c1b2bf21ab2bf951f4a837ba5` — contratos de ownership, departamento y lock.
-
-### Estado y continuidad
-- Resolución de duplicados ACADEMIC verificada localmente.
-- **TASK-153 permanece En ejecución y AUD-NG-386 abierto** por recursos institucionales, solicitudes de firma, permisos granulares, referencias compartidas, filtros/importaciones y otras rutas pendientes.
-- Las pruebas que requieran despliegue quedan reservadas para beta; no son condición de cierre de este subalcance.
-- Siguiente acción: continuar con el siguiente subalcance pendiente de TASK-153/AUD-NG-386, manteniendo esta sesión.
-===============================================================================
-
-===============================================================================
 ## CHECKPOINT C1.458 — ACADEMIC: resolución de duplicados con control directivo y propiedad departamental
 Sesión: IMA-EXEC-20261110-1825Z-02
 Fecha: 2026-11-10 UTC.
@@ -2051,7 +2016,7 @@ HEAD inicial del subalcance: 25bea9e9ed69460c1b2bf21ab2bf951f4a837ba5.
 Endurecer `resolveAdmissionDuplicate` dentro de TASK-153 / AUD-NG-386 para evitar decisiones duplicadas, suplantación de rol, cruce departamental y escrituras concurrentes.
 
 ### Implementación
-- Requiere identidad ACADEMIC verificada y rol directivo permitido (`Director`, `Administrador`, `Desarrollador` o `Secretaria`).
+- Requiere identidad ACADEMIC verificada y rol directivo permitido (`Director`, `Administrador`, `Desarrollador` o `Secretaria`); los nombres de rol se normalizan con Unicode NFD para admitir variantes acentuadas como `Secretaría`.
 - Adquiere ScriptLock y revalida el ownership de `SOLICITUD_ADMISION` con payload nulo para evitar reutilizar datos de autorización/cache anteriores al lock.
 - En `VincularExistente`, valida ownership del `EXPEDIENTE_ESTUDIANTE` bajo el mismo lock y exige coincidencia exacta de departamento entre solicitud y expediente.
 - Rechaza una segunda decisión cuando existe `[DUPLICADO_RESUELTO:]` y bloquea decisiones incompatibles si la solicitud ya contiene otro ExpedienteID.
@@ -2060,8 +2025,8 @@ Endurecer `resolveAdmissionDuplicate` dentro de TASK-153 / AUD-NG-386 para evita
 - Actor y rol de auditoría proceden de `ctx.actor` verificado.
 
 ### Verificación local
-- GitHub Actions run `42892900933`: SUCCESS, Node 24. URL: https://github.com/i-miss-cocaine/IMA/actions/runs/42892900933
-- `academic-admission-ownership.test.js`: PASS para contratos previos y nuevos de duplicados; tres resoluciones, doble decisión, rol no directivo, solicitud sin ownership, destino sin ownership, destino de otro departamento, lock contencioso, revalidación bajo lock y fallo de historial.
+- GitHub Actions run `42893612257`: SUCCESS, Node 24. URL: https://github.com/i-miss-cocaine/IMA/actions/runs/42892900933
+- `academic-admission-ownership.test.js`: PASS para contratos previos y nuevos de duplicados; tres resoluciones, doble decisión, rol no directivo, rol directivo acentuado `Secretaría`, solicitud sin ownership, destino sin ownership, destino de otro departamento, lock contencioso, revalidación bajo lock y fallo de historial.
 - `department-scope-contract.test.js`, `departmental-resource-access.test.js`, `academic-student-expediente-ownership.test.js`, `accounting-departmental-resource-access.test.js`, `resource-ownership-abac.test.js` y `student-payment-voucher-client.test.js`: PASS.
 - `node --check` de servicios Apps Script y sintaxis de `js/student.js`: PASS.
 - Los fallos anteriores de las ejecuciones iniciales correspondieron a fixtures/aislamiento VM (helper de rol, normalización y soporte de `setValues`); se corrigieron y la ejecución integral final terminó SUCCESS.
@@ -2071,6 +2036,8 @@ Endurecer `resolveAdmissionDuplicate` dentro de TASK-153 / AUD-NG-386 para evita
 - `cc60ed6e50cf411ac65490ef8cca6ca9542eafa0` — guardas de resolución, idempotencia y trazabilidad.
 - `89ca3edfc6cff41105c03fccc2d6a83188b2026c` — rol directivo verificado inline.
 - `25bea9e9ed69460c1b2bf21ab2bf951f4a837ba5` — fixtures de escrituras atómicas.
+- `07b22d3180461320052eda9958d677acf7355805` — normalización Unicode de roles directivos.
+- `d2b818e2536f8fcad04317ba687b9e5392c44814` — regresión de compatibilidad con el rol `Secretaría`.
 - Documentación: plan `c2064af56f9ceb148b06eecec5510bfcff4d84f7`; auditoría `d0e8ee6b4897547db907e0ff2510247bfff7cd30`; changelog `6590685733b9d480bbf4b65bbc95043b5f9c4e97`.
 
 ### Estado y continuidad
