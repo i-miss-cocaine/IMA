@@ -725,3 +725,11 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - C1.376 security/backup success; identity mapping falló en TASK-030 con actual ['EXP-02','STU-02'] vs esperado [].
 - BETA-FUNC-018 Pendiente; configuración real no inspeccionada.
 - TASK-636 En ejecución. Checkpoint C1.377: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt.
+
+
+## C1.378 — IMA-EXEC-20261109-1739Z-01 — TASK-636 / PM-01 / AUD-NG-002/306/369
+- Se audita allowlist pública de ACADEMIC, capacidades opacas, minimización de estado, hash de borradores, métricas globales y cierre académico.
+- No se halló bypass adicional en los caminos revisados; se añaden contratos locales para fijar el límite.
+- C1.377 security/backup success; identity mapping run 42729179521 falla en TASK-030 (actual ['EXP-02','STU-02'], esperado []).
+- C1.378 CI pendiente; BETA-FUNC-019 Pendiente.
+- TASK-636 En ejecución. Checkpoint C1.378: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt.

@@ -331,3 +331,15 @@ Endurecer las excepciones públicas de backend/academic-service/Code.gs mediante
 - **CI C1.377:** pendiente tras publicar.
 - **Beta:** BETA-FUNC-018 requiere confirmar provisionamiento idéntico y privado de Script Properties en los seis despliegues, login y verificación cruzada; Pendiente beta.
 - **Estado:** AUD-NG-001/002 continúan abiertos hasta verificar configuración real y ejecución; TASK-636 En ejecución.
+
+
+## Revisión focalizada C1.378 — frontera pública de ACADEMIC, métricas globales y cierre académico
+
+- Se audita la allowlist pública de ACADEMIC: solo `ping`, `createAdmissionRequest`, `getPublicAdmissionStatus`, `saveAdmissionDraft` y `getAdmissionDraft`.
+- Las tres capacidades de admisión consultadas usan token opaco de 64 caracteres hexadecimales; el almacenamiento conserva SHA-256 y la consulta de estado devuelve una proyección mínima (solicitud, fecha, año, grado y estado), sin identificación, responsable, teléfono, correo u observaciones.
+- `getDriveStorageQuotaMetricsReport` en TASK exige rol verificado Administrador/Desarrollador antes de acceder a Drive; no confía en `payload.authRole`.
+- `closeAcademicYear` permanece fail-closed con `BACKUP_REQUIRED` y sin efectos destructivos; no se habilita mientras no exista certificación aislada de backup/restore/rollback.
+- **Pruebas añadidas:** contrato local verifica allowlist exacta, exclusión de acciones sensibles, capability y minimización de datos, hash de borradores, guardia de métricas y cierre no destructivo.
+- **CI C1.377:** Task-Service security run 42729179413 success; backup/restore run 42729179412 success. Identity mapping run 42729179521 failure en TASK-030: actual `['EXP-02','STU-02']`, esperado `[]`; se mantiene como incidencia independiente.
+- **CI C1.378:** pendiente tras publicar.
+- **Estado:** AUD-NG-002/306 y AUD-NG-369 se mantienen en revalidación; TASK-636 sigue En ejecución.

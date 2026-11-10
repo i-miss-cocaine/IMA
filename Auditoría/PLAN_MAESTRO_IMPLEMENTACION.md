@@ -2292,3 +2292,12 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - Pruebas locales de secreto configurado/ausente/corto añadidas; CI pendiente.
 - BETA-FUNC-018: provisionar misma clave privada en seis servicios y verificar interoperabilidad; Pendiente beta.
 - TASK-636 En ejecución.
+
+
+## 10.62 TASK-636 — C1.378: frontera pública y operaciones globales
+- ACADEMIC mantiene solo ping y admisión con capacidades opacas en PUBLIC_ACTIONS; respuesta de estado minimiza PII y borradores almacenan hash.
+- TASK getDriveStorageQuotaMetricsReport exige Administrador/Desarrollador verificado.
+- closeAcademicYear permanece BACKUP_REQUIRED sin efectos destructivos.
+- Se añaden contratos locales de estos límites; CI pendiente.
+- BETA-FUNC-019: verificación real de capacidades, métricas y cierre; Pendiente beta.
+- TASK-636 En ejecución.

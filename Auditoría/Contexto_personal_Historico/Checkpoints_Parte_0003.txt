@@ -1359,3 +1359,53 @@ Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt �
 Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.377.
 Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
 ===============================================================================
+
+===============================================================================
+## C1.378 — TASK-636 / AUD-NG-002/306/369 — auditoría de frontera pública y operaciones globales
+ID: C1.378
+Sesión: IMA-EXEC-20261109-1739Z-01
+Fecha: 2026-11-10
+Checkpoint anterior válido: C1.377
+Baseline lógico: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD físico de partida: b3a5188b37b49346496b1d640ae51ae34a2ef703
+Rama: NG_beta_0.0.0.1_work
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+
+### Auditoría
+- Se revisaron los requisitos originales TASK-636 y las excepciones públicas de ACADEMIC, métricas globales de Drive y cierre académico.
+- PUBLIC_ACTIONS ACADEMIC queda limitada a ping y cuatro acciones de admisión con capacidad opaca; los endpoints sensibles restantes requieren sesión/RBAC.
+- El token de admisión es de 64 hex, solo se almacena hash y getPublicAdmissionStatus expone campos mínimos no identificativos.
+- Métricas globales de Drive exigen Administrador/Desarrollador verificado antes de acceso a Drive.
+- closeAcademicYear sigue fail-closed con BACKUP_REQUIRED y sin borrar filas/archivos; backup/restore real continúa requisito pendiente.
+
+### Implementación
+- Sin cambios productivos en esta iteración.
+- Se agregan contratos locales de allowlist exacta, capacidades opacas, minimización de respuesta pública, hash de borradores, guardia de métricas y cierre fail-closed.
+
+### Archivos modificados
+- tests/security/task-service-security-contract.test.js
+- Auditoría/AUDITORIA_TASK-636_C1.305.md
+- pendientes/Otros/Pendientes.md (seguimiento aditivo)
+- beta_test.txt (BETA-FUNC-019)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoria.txt
+- tareas_auditoria.txt
+- changueslogs.txt
+
+### Pruebas y estado
+- C1.377 Task-Service security run 42729179413: completed/success; incluye claims estrictos y HMAC privado en seis servicios.
+- C1.377 backup/restore run 42729179412: completed/success.
+- Identity mapping run 42729179521: failure en TASK-030 transport access scope (actual ['EXP-02','STU-02'], esperado []); TASK-068 pasa. Incidencia independiente no modificada.
+- C1.378: contratos locales agregados; CI pendiente.
+- BETA-FUNC-019 Pendiente beta; no se ejecutó Apps Script real.
+- TASK-636 En ejecución; AUD-NG-002/306/369 continúan abiertos/revalidación.
+
+### Siguiente acción exacta
+Consultar CI C1.378; investigar por separado la discrepancia del contrato TASK-030 sin ampliar el alcance si no es elegible; continuar auditoría de autorización contextual restante y validar provisionamiento AUTH_TOKEN_SECRET en beta. Mantener closeAcademicYear bloqueado hasta backup/restore/rollback verificables.
+
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.378.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.378.
+Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
+===============================================================================

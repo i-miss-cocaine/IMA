@@ -547,3 +547,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - AUTH_TOKEN_SECRET debe estar provisionado como Script Property privada de al menos 32 caracteres.
 - Contrato local añadido; CI pendiente; BETA-FUNC-018 para validar configuración cruzada.
 - Checkpoint C1.377: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt.
+
+
+[2026-11-10] IMA-EXEC-20261109-1739Z-01 — C1.378 / TASK-636
+- Contratos de frontera pública ACADEMIC, minimización de estado de admisión, métricas globales y cierre académico fail-closed.
+- CI C1.378 pendiente; C1.377 security/backup success, identity mapping pendiente de corrección TASK-030.
+- Checkpoint C1.378: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt.

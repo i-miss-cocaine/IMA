@@ -597,3 +597,12 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - Pruebas locales para propiedad configurada/ausente/débil; CI C1.377 pendiente.
 - BETA-FUNC-018 Pendiente beta; no se inspeccionó Script Properties.
 ===============================================================================
+
+
+===============================================================================
+## Seguimiento TASK-636 — C1.378 / AUD-NG-002/306/369
+- Contrato público ACADEMIC: solo ping y admisión mediante tokens opacos; estado público mínimo y borradores almacenan hash.
+- Métricas globales Drive exigen rol admin verificado.
+- closeAcademicYear continúa BACKUP_REQUIRED sin efectos destructivos.
+- CI C1.378 pendiente; BETA-FUNC-019 Pendiente beta.
+===============================================================================

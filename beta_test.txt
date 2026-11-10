@@ -221,3 +221,10 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Pasos:** configurar el mismo secreto aleatorio de al menos 32 caracteres en AUTH_TOKEN_SECRET de cada servicio; emitir sesión desde USER; verificarla en ACADEMIC/TASK y servicios que la aceptan; retirar temporalmente propiedad en una instancia de prueba y comprobar denegación; restaurar configuración y repetir.
 - **Resultado esperado:** solo secreto privado provisionado habilita HMAC; ausencia/valor débil falla cerrado; firmas son interoperables entre servicios configurados con el mismo secreto.
 - **Estado:** Pendiente beta. No se consultaron Script Properties ni se ejecutaron despliegues.
+
+
+## BETA-FUNC-019 — TASK-636 / AUD-NG-002/306/369 — límites públicos y operaciones globales
+- **Objetivo:** verificar que la admisión pública solo opera mediante capacidades opacas, métricas globales requieren administración y el cierre académico no elimina datos sin respaldo restaurable.
+- **Pasos:** solicitudes anónimas a cada endpoint sensible; consultas de estado con token válido/incorrecto; inspección de proyección pública; llamadas de métricas con Estudiante/Profesor/Administrador; invocar cierre académico sin respaldo certificado.
+- **Resultado esperado:** allowlist exacta; tokens incorrectos denegados; respuesta pública sin PII adicional; métricas solo para Administrador/Desarrollador; cierre devuelve BACKUP_REQUIRED sin borrar filas ni mover archivos.
+- **Estado:** Pendiente beta. No se ejecutó runtime real.

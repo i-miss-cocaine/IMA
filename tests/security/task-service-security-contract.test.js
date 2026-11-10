@@ -468,3 +468,29 @@ for (const [serviceName, serviceSource] of hmacSecretServices) {
   assert.throws(() => shortContext.getSecret(), /AUTH_TOKEN_SECRET_NOT_CONFIGURED/, serviceName + " rejects weak secrets");
 }
 console.log("TASK-636 private HMAC secret contract: all six services require a provisioned shared secret of at least 32 characters; deterministic public fallback removed.");
+
+// TASK-636 AUD-NG-002/306/369: audit public Academic exceptions, global metrics and destructive close boundary.
+
+const publicActionsMatch = academicSource.match(/const PUBLIC_ACTIONS = (\[[^\]]*\]);/);
+assert(publicActionsMatch, "Academic public action allowlist exists");
+const academicPublicActions = JSON.parse(publicActionsMatch[1]);
+assert.deepEqual(academicPublicActions.sort(), ["createAdmissionRequest","getAdmissionDraft","getPublicAdmissionStatus","ping","saveAdmissionDraft"].sort(), "only documented public admission capabilities and ping bypass session RBAC");
+for (const sensitiveAction of ["getAdmissionRequests","updateAdmissionStatus","getStudentFile","getStudentEnrollments","saveQuestion","getAcademicHistory","closeAcademicYear"]) {
+  assert(!academicPublicActions.includes(sensitiveAction), "sensitive Academic action is not public: " + sensitiveAction);
+}
+const publicAdmissionStatus = extractFunctionFrom(academicSource, "getPublicAdmissionStatus");
+assert(publicAdmissionStatus.includes("isValidOpaqueAdmissionAccessToken(accessToken)") && publicAdmissionStatus.includes("hashOpaqueAdmissionAccessToken(accessToken)"), "public status uses a hashed opaque capability");
+assert(publicAdmissionStatus.includes("solicitudId: match[0]") && publicAdmissionStatus.includes("estadoSolicitud: match[11]"), "public status exposes only the minimal request status projection");
+for (const privateField of ["identificacion:","nombreResponsable:","telefonoContacto:","emailContacto:","observaciones:"]) {
+  assert(!publicAdmissionStatus.includes(privateField), "public status must not expose PII field " + privateField);
+}
+const savePublicDraft = extractFunctionFrom(academicSource, "saveAdmissionDraft");
+assert(savePublicDraft.includes('ensureAdmissionTokenColumn(sheet, "AccessTokenHash")') && savePublicDraft.includes("newRow[tokenColumn - 1] = accessTokenHash"), "draft sheet persists only the capability hash");
+const readPublicDraft = extractFunctionFrom(academicSource, "getAdmissionDraft");
+assert(readPublicDraft.includes("isValidOpaqueAdmissionAccessToken(accessToken)") && readPublicDraft.includes("hashOpaqueAdmissionAccessToken(accessToken)"), "draft retrieval requires the opaque capability");
+const globalDriveMetrics = extractFunction("getDriveStorageQuotaMetricsReport");
+assert(globalDriveMetrics.includes('["Administrador", "Desarrollador"].indexOf(role)') && globalDriveMetrics.indexOf("const role") < globalDriveMetrics.indexOf("DriveApp"), "global Drive metrics require verified admin role before Drive access");
+assert(!globalDriveMetrics.includes("payload.authRole"), "global Drive metrics never trust client role");
+const closeYear = extractFunction("closeAcademicYear");
+assert(closeYear.includes('code:"BACKUP_REQUIRED"') && !closeYear.includes("deleteRow") && !closeYear.includes("setTrashed"), "academic year close remains fail-closed without destructive side effects");
+console.log("TASK-636 public boundary local contract: Academic opaque admission capabilities, minimal public status, admin-only global Drive metrics and fail-closed year close passed.");
