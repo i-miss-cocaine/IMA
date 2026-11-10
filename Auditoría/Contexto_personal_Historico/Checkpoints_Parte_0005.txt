@@ -911,3 +911,11 @@ Revisar quién puede consultar resultados, la exposición de claves de respuesta
 - Rama base NG_beta_0.0.0.1 sin cambios; no se ejecutó despliegue.
 - Siguiente subalcance: revisar getStudentExams/getExamQuestions y cualquier lectura de entregas/exámenes restante que no comparta contexto/lock, sin reabrir getExamResult.
 ===============================================================================
+
+===============================================================================
+### Addendum C1.481-R1 — verificación de publicación
+- Commit de implementación, prueba local y documentación de checkpoint: 72a26852996adcc743bd45fafebb42558a011f87.
+- Rama base NG_beta_0.0.0.1 verificada sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Estado CI consultado para el commit de implementación: sin statuses ni workflow runs visibles; no se declara PASS.
+- NG_beta_0.0.0.1_work se actualizó mediante compare-and-swap fast-forward; no se utilizó force push.
+===============================================================================
