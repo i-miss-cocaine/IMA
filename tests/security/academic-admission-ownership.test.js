@@ -624,3 +624,85 @@ console.log("academic admission reopening ownership, lock and history contracts:
 }
 
 console.log("academic admission waitlist insertion ownership, idempotency and lock contracts: PASS");
+
+// Waitlist offers resolve only the key columns before request ownership,
+// serialize the transition, and avoid replacing an already active offer.
+{
+  const offerHeader=["EsperaID","SolicitudID","AnoLectivo","Grado","Posicion","Puntaje","CriteriosJSON","EstadoOferta","FechaExpiracionOferta","JustificacionManual","FechaIngreso","UltimaActualizacion"];
+  function makeOfferHarness({lockAvailable=true,requestAuthorized=true,status="En_Espera",expiry=null,duplicateId=false}={}) {
+    let held=false,attempts=0,releases=0,keyReads=0,fullReads=0,writes=0,ownershipChecks=0,events=[];
+    const now=Date.now();
+    const row=["ESP-OFFER","REQ-OFFER","2026","1",1,90,"{}",status,expiry,"Nota manual",new Date(now-10000),new Date(now-10000)];
+    const rows=[offerHeader,row];
+    if(duplicateId)rows.push(["ESP-OFFER","REQ-OTHER","2026","1",2,50,"{}","En_Espera","","",new Date(),new Date()]);
+    const sheet={
+      rows,
+      getLastRow(){return this.rows.length;},
+      getRange(rowNumber,column,numRows,numCols){
+        const self=this;
+        return {
+          getValues(){if(column===1&&numCols===2)keyReads++;else if(numCols===12)fullReads++;return Array.from({length:numRows},(_,r)=>self.rows[rowNumber-1+r].slice(column-1,column-1+numCols));},
+          setValues(values){writes++;for(let r=0;r<numRows;r++)for(let c=0;c<numCols;c++)self.rows[rowNumber-1+r][column-1+c]=values[r][c];}
+        };
+      }
+    };
+    const context={
+      getAcademicAdmissionScopeContext_:(_payload,action,id,operation)=>({
+        authorized:action==="offerWaitlistSlot"&&id===null&&operation==="UPDATE",ss:{},
+        actor:{authorized:true,userId:"MGR-OFFER",role:"Director"},
+        scope:{authorized:true,institutionId:"INST-1",departmentIds:["D1"],institutionWide:false}
+      }),
+      LockService:{getScriptLock:()=>({tryLock:()=>{attempts++;if(!lockAvailable)return false;held=true;return true;},releaseLock:()=>{assert.equal(held,true);held=false;releases++;}})},
+      getOrCreateSheet:()=>{assert.equal(held,true,"waitlist sheet must not be accessed before lock");return sheet;},
+      assertAcademicAdmissionRequestScopeAccess_:(_ss,_scope,id,_payload,operation)=>{
+        assert.equal(held,true,"request ownership must be checked under lock");assert.equal(id,"REQ-OFFER");assert.equal(operation,"UPDATE");ownershipChecks++;
+        return {authorized:requestAuthorized,departmentId:"D1"};
+      },
+      logStructuredEvent:(_service,_fn,_level,code,_message,data,role)=>events.push({code,data,role}),
+      Date
+    };
+    vm.runInNewContext(extractFunction("offerWaitlistSlot"),context);
+    return {execute:hours=>context.offerWaitlistSlot({esperaId:"ESP-OFFER",horasVigencia:hours}),
+      state:()=>({held,attempts,releases,keyReads,fullReads,writes,ownershipChecks,events,row:sheet.rows[1],rows})};
+  }
+  const offered=makeOfferHarness();
+  const result=offered.execute(48);
+  assert.equal(result.status,"success");
+  let state=offered.state();
+  assert.equal(state.row[7],"Plaza_Ofrecida");assert.equal(state.writes,1);
+  assert.equal(state.keyReads,1);assert.equal(state.fullReads,1);assert.equal(state.ownershipChecks,1);
+  assert.equal(state.held,false);assert.equal(state.releases,1);
+  assert.ok(new Date(state.row[8]).getTime()>Date.now()+47*60*60*1000);
+  const repeat=offered.execute(24);
+  assert.equal(repeat.isExisting,true,"an active offer must be idempotent");
+  assert.equal(offered.state().writes,1,"repeat offer must not reset expiry or emit another write");
+
+  const expired=makeOfferHarness({status:"Plaza_Ofrecida",expiry:new Date(Date.now()-60000)});
+  const renewed=expired.execute(24);
+  assert.equal(renewed.status,"success");assert.equal(expired.state().row[7],"Plaza_Ofrecida");
+  assert.ok(new Date(expired.state().row[8]).getTime()>Date.now());
+
+  const busy=makeOfferHarness({lockAvailable:false});
+  assert.throws(()=>busy.execute(72),/Servicio ocupado/);
+  assert.deepEqual({keyReads:busy.state().keyReads,fullReads:busy.state().fullReads,writes:busy.state().writes,releases:busy.state().releases},
+    {keyReads:0,fullReads:0,writes:0,releases:0});
+
+  const denied=makeOfferHarness({requestAuthorized:false});
+  assert.throws(()=>denied.execute(72),/RESOURCE_NOT_FOUND/);
+  assert.equal(denied.state().keyReads,1);assert.equal(denied.state().fullReads,0);assert.equal(denied.state().writes,0);
+
+  const ambiguous=makeOfferHarness({duplicateId:true});
+  assert.throws(()=>ambiguous.execute(72),/RESOURCE_NOT_FOUND/);
+  assert.equal(ambiguous.state().fullReads,0);
+
+  const invalidState=makeOfferHarness({status:"Retirada"});
+  assert.throws(()=>invalidState.execute(72),/RESOURCE_CONFLICT_WAITLIST_STATE/);
+  assert.equal(invalidState.state().writes,0);
+  const invalidExpiry=makeOfferHarness({status:"Plaza_Ofrecida",expiry:"not-a-date"});
+  assert.throws(()=>invalidExpiry.execute(72),/RESOURCE_CONFLICT_WAITLIST_EXPIRY_INVALID/);
+  const invalidHours=makeOfferHarness();
+  assert.throws(()=>invalidHours.execute(-1),/VIGENCIA_OFERTA_INVALIDA/);
+  assert.equal(invalidHours.state().attempts,0);
+}
+
+console.log("academic admission waitlist offer ownership, state and lock contracts: PASS");
