@@ -1966,3 +1966,39 @@ Corregir riesgos de autorización y concurrencia en la agenda de entrevistas y e
 - No se requiere despliegue para cerrar este subalcance; las pruebas dependientes de servicios desplegados se ejecutarán en beta.
 - Siguiente acción: continuar con el siguiente bloque pendiente de TASK-153, sin cambiar de sesión.
 ===============================================================================
+
+===============================================================================
+## CHECKPOINT C1.457 — ACADEMIC: serializar evaluaciones y usar rol verificado en auditoría
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.456.
+HEAD inicial de este subalcance: 38084f6d97105f1e25dab3904b2f6a9e6c26697b.
+
+### Alcance
+Revisar la escritura de evaluaciones de admisión para cerrar riesgos de concurrencia e integridad de identidad/auditoría dentro de TASK-153 / AUD-NG-386.
+
+### Cambios
+- `saveAdmissionEvaluation` ahora adquiere `ScriptLock` antes de acceder a `EvaluacionesAdmision`, generar el ID (con `skipLock: true`) y anexar la evaluación. El lock se libera en `finally`.
+- El evaluador de la fila y el rol del evento `EVALUATION_SAVED` se derivan de `ctx.actor` verificado; `payload.authRole` ya no influye en la auditoría.
+- La lectura de evaluaciones conserva el filtrado por solicitudes autorizadas; no se alteró el contrato de consulta.
+
+### Verificaciones
+- GitHub Actions run `42891200883`: SUCCESS, Node 24 en runner aislado.
+- Contrato `academic-admission-ownership.test.js`: PASS; comprueba escritura bajo lock, identidad y rol de auditoría verificados, liberación y contención sin acceso a hoja.
+- Suite de alcance departamental, ACADEMIC expediente/admisión/entrevistas/evaluaciones, ACCOUNTING, ResourceOwnership ABAC y voucher client: PASS.
+- `node --check`: User/Academic/Accounting Code.gs y `js/student.js`: PASS.
+- Sin despliegue, servicios vivos, Google Sheets real ni datos institucionales reales.
+
+### Commits
+- `f198730c1d8a37cc35a44a30c531b26ca6a5caaf` — serializar escritura de evaluaciones y usar rol verificado.
+- `9b0a53bfec2f984ce665c5ea9d0d282b7f207700` — contrato de identidad y lock.
+- Documentación: plan `47ab35364a76a3fd8b667f95597d204558448745`; auditoría `52cc33a333dd9e38ce1fc66078a2b2277b9ca792`; changelog `e0a76bf4a3d27908e45a68f2de6b1e3fc8e4bb5e`.
+
+### Estado y continuidad
+- Escritura de evaluaciones de admisión verificada localmente.
+- **TASK-153 permanece En ejecución y AUD-NG-386 abierto** por recursos institucionales, solicitudes de firma, permisos granulares, referencias compartidas, filtros/importaciones y otras rutas pendientes.
+- Las pruebas que requieran despliegue quedan reservadas a beta; no son condición de cierre de este subalcance.
+- Siguiente acción: continuar con el siguiente subalcance pendiente de TASK-153/AUD-NG-386, manteniendo esta sesión.
+===============================================================================
