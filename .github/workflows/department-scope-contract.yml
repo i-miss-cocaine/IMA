@@ -8,6 +8,8 @@ on:
       - backend/user-service/Code.gs
       - backend/academic-service/Code.gs
       - backend/accounting-service/Code.gs
+      - js/student.js
+      - tests/security/student-payment-voucher-client.test.js
       - tests/security/department-scope-contract.test.js
       - tests/security/departmental-resource-access.test.js
       - tests/security/accounting-departmental-resource-access.test.js
@@ -32,3 +34,7 @@ jobs:
         run: node tests/security/departmental-resource-access.test.js
       - name: Run accounting departmental resource access contract
         run: node tests/security/accounting-departmental-resource-access.test.js
+      - name: Run student private voucher client contract
+        run: node tests/security/student-payment-voucher-client.test.js
+      - name: Check student client syntax
+        run: node --check js/student.js

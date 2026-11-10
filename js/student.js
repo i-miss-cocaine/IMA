@@ -2632,27 +2632,225 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
+    // --- Comprobantes de pago: consulta y vista privada mediante ACCOUNTING ---
+    var voucherPreviewObjectUrl = null;
+
+    function closeStudentVoucherPreview() {
+        var modal = document.getElementById('student-voucher-preview-modal');
+        if (modal && modal.parentNode) modal.parentNode.removeChild(modal);
+        if (voucherPreviewObjectUrl) {
+            URL.revokeObjectURL(voucherPreviewObjectUrl);
+            voucherPreviewObjectUrl = null;
+        }
+    }
+
+    async function showStudentVoucherFile(comprobanteId, button) {
+        if (!comprobanteId) return;
+        if (button) {
+            button.disabled = true;
+            button.textContent = 'Cargando archivo...';
+        }
+        try {
+            closeStudentVoucherPreview();
+            var result = await fetchApi('ACCOUNTING', 'getPaymentVoucherFile', { comprobanteId: comprobanteId });
+            if (!result || result.status !== 'success' || result.encoding !== 'base64' || !result.fileData) {
+                throw new Error((result && result.message) || 'No fue posible recuperar el comprobante.');
+            }
+
+            var binary = atob(result.fileData);
+            var bytes = new Uint8Array(binary.length);
+            for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+            var blob = new Blob([bytes], { type: result.mimeType || 'application/octet-stream' });
+            voucherPreviewObjectUrl = URL.createObjectURL(blob);
+
+            var overlay = document.createElement('div');
+            overlay.id = 'student-voucher-preview-modal';
+            overlay.className = 'fixed inset-0 z-[10020] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 md:p-6';
+            var panel = document.createElement('div');
+            panel.className = 'w-full max-w-5xl max-h-[92vh] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col';
+            var header = document.createElement('div');
+            header.className = 'flex items-center justify-between gap-3 p-4 border-b border-slate-200';
+            var title = document.createElement('h3');
+            title.className = 'text-sm font-black text-slate-800 truncate';
+            title.textContent = result.fileName || 'Comprobante de pago';
+            var actions = document.createElement('div');
+            actions.className = 'flex items-center gap-2 flex-shrink-0';
+            var download = document.createElement('a');
+            download.href = voucherPreviewObjectUrl;
+            download.download = result.fileName || 'comprobante';
+            download.className = 'px-3 py-2 rounded-lg bg-blue-600 text-white text-xs font-bold';
+            download.textContent = 'Descargar';
+            var close = document.createElement('button');
+            close.type = 'button';
+            close.className = 'px-3 py-2 rounded-lg bg-slate-100 text-slate-700 text-xs font-bold';
+            close.textContent = 'Cerrar';
+            close.addEventListener('click', closeStudentVoucherPreview);
+            actions.appendChild(download);
+            actions.appendChild(close);
+            header.appendChild(title);
+            header.appendChild(actions);
+
+            var content = document.createElement('div');
+            content.className = 'min-h-0 flex-1 overflow-auto bg-slate-100 p-2';
+            if (result.mimeType === 'application/pdf') {
+                var frame = document.createElement('iframe');
+                frame.title = 'Vista previa del comprobante';
+                frame.src = voucherPreviewObjectUrl;
+                frame.className = 'w-full h-[75vh] bg-white rounded-lg';
+                content.appendChild(frame);
+            } else if (String(result.mimeType || '').indexOf('image/') === 0) {
+                var image = document.createElement('img');
+                image.alt = 'Vista previa del comprobante';
+                image.src = voucherPreviewObjectUrl;
+                image.className = 'block max-w-full max-h-[75vh] mx-auto object-contain';
+                content.appendChild(image);
+            } else {
+                throw new Error('El tipo de archivo recibido no admite vista previa.');
+            }
+
+            panel.appendChild(header);
+            panel.appendChild(content);
+            overlay.appendChild(panel);
+            overlay.addEventListener('click', function(event) {
+                if (event.target === overlay) closeStudentVoucherPreview();
+            });
+            document.body.appendChild(overlay);
+        } catch (error) {
+            closeStudentVoucherPreview();
+            alert('No se pudo abrir el comprobante: ' + error.message);
+        } finally {
+            if (button) {
+                button.disabled = false;
+                button.textContent = 'Ver comprobante';
+            }
+        }
+    }
+
+    async function renderStudentPaymentVouchers() {
+        var container = document.getElementById('student-financial-container');
+        if (!container) return;
+        container.innerHTML = '<div class="text-center py-8 text-slate-400 text-xs"><i class="fas fa-spinner fa-spin mr-2"></i>Consultando comprobantes...</div>';
+        try {
+            var response = await fetchApi('ACCOUNTING', 'getPaymentVouchers', {});
+            if (!response || response.status !== 'success') {
+                throw new Error((response && response.message) || 'No fue posible consultar los comprobantes.');
+            }
+            var vouchers = Array.isArray(response.comprobantes) ? response.comprobantes : [];
+            container.innerHTML = '';
+
+            var heading = document.createElement('div');
+            heading.className = 'flex flex-col sm:flex-row sm:items-center justify-between gap-2';
+            var headingText = document.createElement('div');
+            var title = document.createElement('h2');
+            title.className = 'text-lg font-black text-slate-900';
+            title.textContent = 'Comprobantes de pago';
+            var description = document.createElement('p');
+            description.className = 'text-xs text-slate-500 mt-1';
+            description.textContent = 'Los archivos se consultan mediante autorización del servidor; no se abre un enlace público de Drive.';
+            headingText.appendChild(title);
+            headingText.appendChild(description);
+            var refresh = document.createElement('button');
+            refresh.type = 'button';
+            refresh.className = 'px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold';
+            refresh.textContent = 'Actualizar';
+            refresh.addEventListener('click', renderStudentPaymentVouchers);
+            heading.appendChild(headingText);
+            heading.appendChild(refresh);
+            container.appendChild(heading);
+
+            if (!vouchers.length) {
+                var empty = document.createElement('div');
+                empty.className = 'p-6 text-center bg-white border border-slate-200 rounded-2xl text-xs text-slate-500';
+                empty.textContent = 'No hay comprobantes de pago registrados.';
+                container.appendChild(empty);
+                return;
+            }
+
+            var list = document.createElement('div');
+            list.className = 'space-y-3';
+            vouchers.forEach(function(voucher) {
+                var card = document.createElement('article');
+                card.className = 'p-4 bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3';
+                var details = document.createElement('div');
+                details.className = 'min-w-0 space-y-1';
+                var id = document.createElement('h3');
+                id.className = 'text-xs font-black text-slate-900';
+                id.textContent = String(voucher.comprobanteId || 'Comprobante');
+                var metadata = document.createElement('p');
+                metadata.className = 'text-[11px] text-slate-500';
+                var dateValue = voucher.fecha ? new Date(voucher.fecha) : null;
+                var dateText = dateValue && !isNaN(dateValue.getTime()) ? dateValue.toLocaleDateString() : 'Fecha no disponible';
+                metadata.textContent = dateText + ' · ' + String(voucher.metodoPago || 'Método no indicado') + ' · Ref. ' + String(voucher.referencia || 'N/D');
+                var amount = document.createElement('p');
+                amount.className = 'text-sm font-black text-slate-800';
+                amount.textContent = 'L. ' + (parseFloat(voucher.montoReportado) || 0).toFixed(2);
+                var state = document.createElement('span');
+                state.className = 'inline-flex text-[10px] font-bold uppercase tracking-wide text-blue-700 bg-blue-50 rounded-full px-2.5 py-1';
+                state.textContent = String(voucher.estado || 'Sin estado');
+                details.appendChild(id);
+                details.appendChild(metadata);
+                details.appendChild(amount);
+                details.appendChild(state);
+
+                var action = document.createElement('button');
+                action.type = 'button';
+                action.className = 'px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold disabled:opacity-50';
+                action.textContent = 'Ver comprobante';
+                action.disabled = !voucher.comprobanteUrl;
+                if (!voucher.comprobanteUrl) {
+                    action.textContent = 'Sin archivo adjunto';
+                } else {
+                    action.addEventListener('click', function() {
+                        showStudentVoucherFile(voucher.comprobanteId, action);
+                    });
+                }
+                card.appendChild(details);
+                card.appendChild(action);
+                list.appendChild(card);
+            });
+            container.appendChild(list);
+        } catch (error) {
+            container.innerHTML = '';
+            var errorBox = document.createElement('div');
+            errorBox.className = 'p-5 rounded-2xl border border-red-200 bg-red-50 text-red-700 text-xs';
+            errorBox.textContent = 'Error al cargar los comprobantes: ' + error.message;
+            container.appendChild(errorBox);
+        }
+    }
+
     // --- Sistema de Pestañas Principal (Tarea 1 - Fase Diagnóstico) ---
     var tabActivities = document.getElementById('tab-activities');
     var tabProgress = document.getElementById('tab-progress');
+    var tabFinancial = document.getElementById('tab-financial');
     var viewActivities = document.getElementById('view-activities');
     var viewProgress = document.getElementById('view-progress');
+    var viewFinancial = document.getElementById('view-financial');
+    var activeTabClass = "px-8 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest transition-all duration-300 bg-blue-600 text-white shadow-lg shadow-blue-100";
+    var inactiveTabClass = "px-8 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest transition-all duration-300 text-gray-500 hover:bg-white hover:text-blue-600";
 
-    if (tabActivities && tabProgress && viewActivities && viewProgress) {
+    function activateStudentTab(tabName) {
+        var tabs = { activities: tabActivities, progress: tabProgress, financial: tabFinancial };
+        var views = { activities: viewActivities, progress: viewProgress, financial: viewFinancial };
+        Object.keys(tabs).forEach(function(key) {
+            if (tabs[key]) tabs[key].className = key === tabName ? activeTabClass : inactiveTabClass;
+            if (views[key]) views[key].classList.toggle('hidden', key !== tabName);
+        });
+    }
+
+    if (tabActivities && tabProgress && tabFinancial && viewActivities && viewProgress && viewFinancial) {
         tabActivities.addEventListener('click', function() {
-            tabActivities.className = "px-8 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest transition-all duration-300 bg-blue-600 text-white shadow-lg shadow-blue-100";
-            tabProgress.className = "px-8 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest transition-all duration-300 text-gray-500 hover:bg-white hover:text-blue-600";
-            viewActivities.classList.remove('hidden');
-            viewProgress.classList.add('hidden');
+            activateStudentTab('activities');
         });
 
         tabProgress.addEventListener('click', function() {
-            tabProgress.className = "px-8 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest transition-all duration-300 bg-blue-600 text-white shadow-lg shadow-blue-100";
-            tabActivities.className = "px-8 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest transition-all duration-300 text-gray-500 hover:bg-white hover:text-blue-600";
-            viewProgress.classList.remove('hidden');
-            viewActivities.classList.add('hidden');
+            activateStudentTab('progress');
             // Asegurar que las métricas se rendericen al cambiar a la pestaña
             window.renderStudentExpediente(allActivitiesData);
+        });
+
+        tabFinancial.addEventListener('click', function() {
+            activateStudentTab('financial');
+            renderStudentPaymentVouchers();
         });
     }
 
