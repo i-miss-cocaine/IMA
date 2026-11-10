@@ -35,10 +35,15 @@ for (const name of ["updateExamStatus", "updateExam", "deleteExam", "gradeExamSu
   assert.equal(declarations.length, 1, name + " must have exactly one active function declaration");
   const handler = extractFunction(source, name);
   const isSubmissionMutation = name === "gradeExamSubmission" || name === "deleteExamSubmission";
-  const guard = isSubmissionMutation ? "withAuthorizedExamSubmissionMutation_" : "getAuthorizedExamMutationContext_";
+  const isExamMetadataMutation = name === "updateExamStatus" || name === "updateExam" || name === "deleteExam";
+  const guard = isSubmissionMutation ? "withAuthorizedExamSubmissionMutation_" : (isExamMetadataMutation ? "withAuthorizedExamMutation_" : "getAuthorizedExamMutationContext_");
   assert.ok(handler.includes(guard), name + " must enforce identity, action permission, resource ownership and scope");
   if (isSubmissionMutation) {
     assert.ok(extractFunction(source, "withAuthorizedExamSubmissionMutation_").includes("getAuthorizedExamSubmissionMutationContext_"),
+      name + " wrapper must revalidate identity, action permission, resource ownership and scope under lock");
+  }
+  if (isExamMetadataMutation) {
+    assert.ok(extractFunction(source, "withAuthorizedExamMutation_").includes("getAuthorizedExamMutationContext_"),
       name + " wrapper must revalidate identity, action permission, resource ownership and scope under lock");
   }
 }
