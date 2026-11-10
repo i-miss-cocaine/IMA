@@ -1068,3 +1068,14 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - Beta NOT RUN; BETA-FUNC-022 sigue Pendiente beta. No se modificaron datos reales ni se desplegó Apps Script.
 - **Estado:** mitigación parcial; AUD-NG-386 permanece ABIERTO hasta proteger mutaciones de examen/entrega y completar el ciclo.
 ===============================================================================
+
+===============================================================================
+## C1.442 — AUD-NG-386 / EXAM: overrides legacy en mutaciones
+- **Severidad:** CRÍTICA (P0), dentro del hallazgo existente AUD-NG-386; no se crea un ID paralelo.
+- **Hallazgo:** `gradeExamSubmission` y `deleteExamSubmission` tenían declaraciones legacy posteriores a sus versiones protegidas. La última declaración prevalecía y consultaba/mutaba entregas solo por ID, sin verificar identidad, permiso, propiedad ni ámbito.
+- **Corrección:** se eliminan las dos declaraciones legacy. Las implementaciones activas conservan `getAuthorizedExamSubmissionMutationContext_`; los otros tres endpoints (`updateExamStatus`, `updateExam`, `deleteExam`) conservan `getAuthorizedExamMutationContext_`.
+- **Regresión:** el contrato `tests/security/exam-service-security-contract.test.js` ahora exige una sola declaración por endpoint y la invocación del guard correcto para los cinco endpoints de mutación.
+- **Evidencia:** revisión del diff y conteo estático en HEAD `798553ae147818659d176864b299c608808f9e5d`: 1 declaración por endpoint. Commit de código `c0bbf6bb26ad1459da40b7759b52b6f61f328b3f`; commit de prueba `798553ae147818659d176864b299c608808f9e5d`.
+- **Pruebas locales:** NOT RUN por ausencia de checkout/runtime. **CI:** sin check visible para el commit final; no se declara PASS. Beta BETA-FUNC-022 Pendiente beta.
+- **Estado:** mitigación implementada; AUD-NG-386 abierto y TASK-153 En ejecución hasta ejecución local y revisión de contratos.
+===============================================================================
