@@ -710,6 +710,17 @@ function getAuthorizedExamMutationContext_(payload, action, requestedExamId) {
   return { ss, actor, scope, examSheet, exam, examId, ownership };
 }
 
+function withAuthorizedExamMutation_(payload, action, mutation) {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) throw new Error("EXAM_MUTATION_LOCK_TIMEOUT");
+  try {
+    const context = getAuthorizedExamMutationContext_(payload, action);
+    return mutation(context);
+  } finally {
+    try { lock.releaseLock(); } catch (_) {}
+  }
+}
+
 function getAuthorizedExamSubmissionMutationContext_(payload, action) {
   const entregaId = String((payload && (payload.entregaId || payload.entregaExamenId)) || "").trim();
   if (!entregaId) throw new Error("RESOURCE_NOT_AVAILABLE");
@@ -735,7 +746,10 @@ function getAuthorizedExamSubmissionMutationContext_(payload, action) {
 }
 
 function updateExamStatus(payload) {
-  const context = getAuthorizedExamMutationContext_(payload, "updateExamStatus");
+  return withAuthorizedExamMutation_(payload, "updateExamStatus", context => updateExamStatusUnlocked_(payload, context));
+}
+
+function updateExamStatusUnlocked_(payload, context) {
   const estado = String((payload && payload.estado) || "").trim();
   if (["Activo", "Inactivo"].indexOf(estado) === -1) throw new Error("EXAM_STATUS_INVALID");
   context.examSheet.getRange(context.exam.rowIndex + 1, 8).setValue(estado);
@@ -743,7 +757,10 @@ function updateExamStatus(payload) {
 }
 
 function updateExam(payload) {
-  const context = getAuthorizedExamMutationContext_(payload, "updateExam");
+  return withAuthorizedExamMutation_(payload, "updateExam", context => updateExamUnlocked_(payload, context));
+}
+
+function updateExamUnlocked_(payload, context) {
   const { titulo, asignatura, gradoAsignado, seccionAsignada, fechaLimite, tiempoLimite, parcial } = payload || {};
   const examRow = context.exam.row.slice();
   if (titulo !== undefined) examRow[1] = titulo;
@@ -758,7 +775,10 @@ function updateExam(payload) {
 }
 
 function deleteExam(payload) {
-  const context = getAuthorizedExamMutationContext_(payload, "deleteExam");
+  return withAuthorizedExamMutation_(payload, "deleteExam", context => deleteExamUnlocked_(payload, context));
+}
+
+function deleteExamUnlocked_(payload, context) {
   const entregasSheet = getSheetOrThrow(context.ss, "EntregasExamen");
   const deliveries = entregasSheet.getDataRange().getValues().slice(1);
   const hasSubmissions = deliveries.some(row => String(row[1] || "").trim() === context.examId);

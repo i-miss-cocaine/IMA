@@ -394,3 +394,12 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Resultado esperado:** no se supera IntentosPermitidos; las solicitudes concurrentes se serializan y la segunda reevalúa el conteo actualizado; timeout falla cerrado con EXAM_SUBMISSION_LOCK_TIMEOUT y no persiste datos.
 - **Estado:** Pendiente beta. La lógica de serialización se verifica con pruebas locales sintéticas; Apps Script/Sheets real no ejecutado.
 - **Evidencia requerida:** build/commit, examen/estudiante sintéticos, orden/resultados concurrentes, conteo final de entregas y logs saneados.
+
+## BETA-EXAM-032 — AUD-NG-386 / EXAM: serialización de actualización y baja lógica
+- **Módulo/acciones:** EXAM — updateExam, updateExamStatus y deleteExam.
+- **Objetivo:** validar que autorización, ownership, lectura de filas, comprobación de entregas y mutación de Examenes/ResourceOwnership ocurren bajo el mismo ScriptLock.
+- **Precondiciones:** entorno beta aislado; exámenes sintéticos con y sin entregas, ownership activo y cuentas docentes de dos departamentos.
+- **Pasos:** ejecutar simultáneamente actualización/estado/baja sobre el mismo examen; intercalar eliminación con cambio de estado; probar timeout de lock y un examen con entregas mientras se elimina.
+- **Resultado esperado:** no hay escrituras sobre índices de fila obsoletos; no se elimina físicamente un examen con entregas; el ownership se desactiva solo para baja lógica sin entregas; timeout falla cerrado con EXAM_MUTATION_LOCK_TIMEOUT.
+- **Estado:** Pendiente beta. Los contratos locales prueban relectura del contexto tras eliminación concurrente y timeout; Apps Script/Sheets real no ejecutado.
+- **Evidencia requerida:** build/commit, orden de solicitudes, estado final de examen/ownership, conteo de entregas y logs saneados.

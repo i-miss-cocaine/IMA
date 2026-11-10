@@ -123,7 +123,7 @@ assert.equal(duplicate.authorized, false); assert.equal(duplicate.code, "RESOURC
 assert.deepEqual(Array.from(runtime.getAllExams({ sessionToken: "other-token" }).data), [], "no accessible ownership returns an empty list");
 const readFunctions = ["getVerifiedExamIdentity_", "getVerifiedExamDepartmentScope_", "assertExamResourceOwnershipForScope_",
   "getExamStudentProfile_", "isExamAssignedToStudent_", "getVerifiedGuardianStudentIds_", "getExamReadContext_", "getStudentExams", "getExamQuestions", "getExamResult", "submitExam", "submitExamUnlocked_",
-  "validateRolePermission", "getAuthorizedExamMutationContext_", "getAuthorizedExamSubmissionMutationContext_", "withAuthorizedExamSubmissionMutation_", "updateExam", "updateExamStatus", "deleteExam", "gradeExamSubmission", "deleteExamSubmission"]
+  "validateRolePermission", "getAuthorizedExamMutationContext_", "withAuthorizedExamMutation_", "getAuthorizedExamSubmissionMutationContext_", "withAuthorizedExamSubmissionMutation_", "updateExam", "updateExamUnlocked_", "updateExamStatus", "updateExamStatusUnlocked_", "deleteExam", "deleteExamUnlocked_", "gradeExamSubmission", "deleteExamSubmission"]
   .map(name => extractFunction(source, name)).join("\n");
 vm.runInNewContext(readFunctions + "\nthis.getStudentExams = getStudentExams; this.getExamQuestions = getExamQuestions; this.getExamResult = getExamResult; this.submitExam = submitExam; " +
   "this.updateExam = updateExam; this.updateExamStatus = updateExamStatus; this.deleteExam = deleteExam; " +
@@ -216,6 +216,26 @@ assert.equal(examRows.find(row => row[0] === "EXM-7")[7], "Eliminado", "exam wit
 assert.equal(ownershipRows.find(row => row[3] === "EXM-7")[5], "INACTIVE", "logical deletion deactivates resource ownership");
 assert.throws(() => runtime.deleteExam({ sessionToken: "teacher-token", examenId: "EXM-2" }),
   /RESOURCE_NOT_AVAILABLE/, "teacher cannot delete an exam outside assigned scope");
+
+examRows.push(["EXM-9", "Stale row target", "Historia", "11", "A", "", "", "Activo", "TEACHER-1", "P1"]);
+examRows.push(["EXM-10", "Following row", "Historia", "11", "A", "", "", "Activo", "TEACHER-1", "P1"]);
+ownershipRows.push(["OWN-9", "I1", "EXAMEN", "EXM-9", "D1", "ACTIVE", "TEACHER-1", "", ""]);
+ownershipRows.push(["OWN-10", "I1", "EXAMEN", "EXM-10", "D1", "ACTIVE", "TEACHER-1", "", ""]);
+examMutationBeforeAcquire = () => {
+  const staleIndex = examRows.findIndex(row => row[0] === "EXM-9");
+  if (staleIndex >= 0) examRows.splice(staleIndex, 1);
+};
+assert.throws(() => runtime.updateExamStatus({ sessionToken: "teacher-token", examenId: "EXM-9", estado: "Inactivo" }),
+  /RESOURCE_NOT_AVAILABLE/, "exam context is re-read under lock after a concurrent deletion");
+assert.equal(examRows.find(row => row[0] === "EXM-10")[7], "Activo",
+  "a stale row index cannot mutate the following exam after concurrent deletion");
+const statusBeforeTimeout = examRows.find(row => row[0] === "EXM-10")[7];
+examMutationLockAvailable = false;
+assert.throws(() => runtime.updateExamStatus({ sessionToken: "teacher-token", examenId: "EXM-10", estado: "Inactivo" }),
+  /EXAM_MUTATION_LOCK_TIMEOUT/, "exam mutations fail closed when lock acquisition times out");
+assert.equal(examRows.find(row => row[0] === "EXM-10")[7], statusBeforeTimeout);
+examMutationLockAvailable = true;
+
 
 
 assert.ok(examMutationLockAcquires >= 4, "submission mutations acquire lock");

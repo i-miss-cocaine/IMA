@@ -210,4 +210,14 @@ assert.ok(submitHandler.includes("submitExamUnlocked_(payload)"), "submitExam ex
 assert.ok(submitHandler.includes("finally") && submitHandler.includes("releaseLock()"), "submitExam releases lock on success and failure");
 assert.ok(submitWorker.includes("previousAttempts >= allowedAttempts"), "attempt limit is checked inside the locked worker");
 assert.ok(submitWorker.includes("deliveriesSheet.appendRow"), "delivery persistence is inside the locked worker");
-process.stdout.write("exam-service-security-contract: authentication, identity, teacher ownership and serialized submission assertions passed\\n");
+const examMutationNames = ["updateExam", "updateExamStatus", "deleteExam"];
+examMutationNames.forEach(name => {
+  const handler = extractFunction(source, name);
+  assert.ok(handler.includes("withAuthorizedExamMutation_"), name + " delegates to the locked authorization wrapper");
+});
+const examMutationWrapper = extractFunction(source, "withAuthorizedExamMutation_");
+assert.ok(examMutationWrapper.includes("LockService.getScriptLock()"), "exam metadata mutations share the script lock");
+assert.ok(examMutationWrapper.includes("tryLock(5000)"), "exam metadata lock acquisition is bounded");
+assert.ok(examMutationWrapper.includes("getAuthorizedExamMutationContext_(payload, action)"), "exam authorization/context is revalidated after lock acquisition");
+assert.ok(examMutationWrapper.includes("finally") && examMutationWrapper.includes("releaseLock()"), "exam metadata lock is always released");
+process.stdout.write("exam-service-security-contract: authentication, identity, teacher ownership and serialized exam mutations assertions passed\\n");
