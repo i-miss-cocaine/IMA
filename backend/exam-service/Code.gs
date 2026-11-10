@@ -598,27 +598,22 @@ function manageQuestionBankUnlocked_(payload, context) {
   const bankRow = [qId, p.areaCurricular || "General", p.asignatura || "", p.grado || "", p.tema || "",
     p.dificultad || "Media", p.tipo || "opcion_multiple", p.textoPregunta || "", opcStr,
     p.respuestaCorrecta || "", p.etiquetas || "", p.puntosPredeterminados || 1, "Activo"];
-  let bankWritten = false, ownershipWritten = false;
   try {
     context.ownershipSheet.appendRow([ownershipId, context.scope.institutionId, "BANCO_PREGUNTA", qId,
       context.departmentId, "ACTIVE", context.actor.userId, now, now]);
-    ownershipWritten = true;
     bankSheet.appendRow(bankRow);
-    bankWritten = true;
   } catch (error) {
     let rollbackFailed = false;
-    if (bankWritten) {
-      try {
-        const rows = bankSheet.getDataRange().getValues();
-        for (let i = rows.length - 1; i >= 1; i--) if (String(rows[i][0] || "").trim() === qId) bankSheet.deleteRow(i + 1);
-      } catch (_) { rollbackFailed = true; }
-    }
-    if (ownershipWritten) {
-      try {
-        const rows = context.ownershipSheet.getDataRange().getValues();
-        for (let i = rows.length - 1; i >= 1; i--) if (String(rows[i][0] || "").trim() === ownershipId) context.ownershipSheet.deleteRow(i + 1);
-      } catch (_) { rollbackFailed = true; }
-    }
+    // Re-scan both sheets even when appendRow threw: a provider may persist the
+    // row and still report an error, so local flags cannot prove no write occurred.
+    try {
+      const rows = bankSheet.getDataRange().getValues();
+      for (let i = rows.length - 1; i >= 1; i--) if (String(rows[i][0] || "").trim() === qId) bankSheet.deleteRow(i + 1);
+    } catch (_) { rollbackFailed = true; }
+    try {
+      const rows = context.ownershipSheet.getDataRange().getValues();
+      for (let i = rows.length - 1; i >= 1; i--) if (String(rows[i][0] || "").trim() === ownershipId) context.ownershipSheet.deleteRow(i + 1);
+    } catch (_) { rollbackFailed = true; }
     if (rollbackFailed) throw new Error("QUESTION_BANK_CREATE_ROLLBACK_FAILED");
     throw error;
   }

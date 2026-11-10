@@ -40,7 +40,7 @@ let failBankAppend=false, lockAvailable=true, lockHeld=false, beforeAcquire=null
 function makeSheet(rows,kind) {
  return {
   getDataRange(){return {getValues:()=>rows.map(row=>row.slice())};},
-  appendRow(row){if(kind==="bank"&&failBankAppend){failBankAppend=false;throw Error("synthetic bank append failure");}rows.push(row.slice());},
+  appendRow(row){if(kind==="bank"&&failBankAppend){failBankAppend=false;rows.push(row.slice());throw Error("synthetic bank append failure after persistence");}rows.push(row.slice());},
   deleteRow(n){rows.splice(n-1,1);},
   getRange(row,col,numRows,numCols){return {
    setValue(v){rows[row-1][col-1]=v;},
@@ -98,7 +98,7 @@ assert.throws(()=>runtime.manageQuestionBank({sessionToken:"teacher-token",banco
 assert.equal(bankRows.some(r=>r[0]==="BNK-RACE"),false);
 const bankCount=bankRows.length,ownerCount=ownershipRows.length;
 failBankAppend=true;
-assert.throws(()=>runtime.manageQuestionBank({sessionToken:"teacher-token",departmentId:"D1",accion:"crear",textoPregunta:"Rollback"}),/synthetic bank append failure/);
+assert.throws(()=>runtime.manageQuestionBank({sessionToken:"teacher-token",departmentId:"D1",accion:"crear",textoPregunta:"Rollback"}),/synthetic bank append failure after persistence/);
 assert.equal(bankRows.length,bankCount);assert.equal(ownershipRows.length,ownerCount);
 assert.equal(lockAcquires,lockReleases+1,"only the contended lock acquisition is unreleased");
 process.stdout.write("exam-service-question-bank-security: ownership, department scope, serialized writes and rollback assertions passed\n");
