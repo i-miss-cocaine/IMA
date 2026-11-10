@@ -5182,3 +5182,10 @@ Alcance estático satisfecho; sin cambios de código. Hallazgos AUD-NG-374..376 
 - Department Scope Contract: éxito, run 42839462181. Identity mapping and transport security: éxito, run 42839462098.
 - Task-Service security local contracts: fallo, run 42839462129. La causa identificada es una aserción de test desactualizada sobre la forma literal de declarar el allowlist administrativo; el código usa TICKET_ADMIN_ROLES_ y getUserVerifiedRole(payload). El fallo ya se reproducía en commits anteriores a C1.428.
 - Se corrige el contrato, no el control de producción. Rerun pendiente. La integración de ResourceOwnership en TASK sigue siendo el siguiente tramo técnico.
+
+
+## Seguimiento C1.430 — TASK-153 / CI Task-Service
+- HEAD verificado: d0d01c8d; commit: fix(security): honor institution-wide ownership assignment scope.
+- El alcance institucional global puede seleccionar un DepartmentID de la misma institución para registrar ResourceOwnership; se mantiene la exigencia de departamento no vacío y permiso dinámico.
+- Task-Service security local contracts: éxito, run 42846982461. Task-Service backup and restore contract: éxito, run 42846982439.
+- TASK-153 sigue En ejecución. Próximo tramo: endpoints de lectura/mutación TASK, luego EXAM y aplicabilidad DEVELOPER; referencias compartidas, permisos granulares, filtros/importaciones y E2E pendientes.

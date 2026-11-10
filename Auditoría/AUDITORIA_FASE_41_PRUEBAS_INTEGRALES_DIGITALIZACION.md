@@ -390,3 +390,11 @@ Obtener una decisión institucional aprobada que identifique: (a) fuente autorit
 
 ### Seguimiento de CI C1.429 — sin auditoría duplicada
 Los workflows posteriores a C1.428 confirmaron: Department Scope Contract correcto (42839462181) e Identity mapping and transport security correcto (42839462098). Task-Service security local contracts falló (42839462129) en una aserción estática de prueba que esperaba que `getAutomationRules` contuviera literalmente el array de roles. El código obtiene el rol mediante `getUserVerifiedRole(payload)` y consulta el allowlist central `TICKET_ADMIN_ROLES_`, por lo que la expectativa estaba desactualizada; el mismo fallo aparece en runs anteriores a C1.428 (42831442425 y 42827931422). Se ajusta el contrato para validar el diseño real sin debilitar la condición de identidad ni el conjunto de roles. No se modificó producción por este fallo. El rerun del workflow queda pendiente.
+
+
+### Seguimiento focalizado C1.430 — integración de propiedad institutionWide en TASK
+Se revisó el cambio de HEAD d0d01c8d en `backend/task-service/Code.gs` y `tests/security/task-service-resource-ownership.test.js`. `resolveTaskServiceOwnershipDepartment_` y `registerTaskServiceResourceOwnership_` permiten seleccionar/registrar un departamento de la misma institución cuando el ámbito autenticado es institutionWide; mantienen la validación de institución, departamento no vacío, identidad verificada y permiso dinámico `registerResourceOwnership`. La prueba añade el escenario positivo de asignación y registro bajo alcance institucional.
+
+**CI:** Task-Service security local contracts SUCCESS (run 42846982461) y Task-Service backup and restore contract SUCCESS (run 42846982439), ambos en HEAD d0d01c8d. La falla histórica de contrato 42839462129 queda superada por la ejecución exitosa posterior. Esto no demuestra E2E completo ni ejecución contra Apps Script/Sheets/Drive reales.
+
+**Estado:** TASK-153 permanece En ejecución. No se crea informe ni hallazgo duplicado; se amplía el expediente F41-08/E2E-41-09 conforme al protocolo de auditoría única. Próxima verificación: endpoints de lectura/mutación TASK, seguido de EXAM y aplicabilidad DEVELOPER.

@@ -826,3 +826,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Task-Service security local contracts reveló una aserción estática obsoleta sobre getAutomationRules; el fallo se reproduce en commits previos a C1.428.
 - Se actualiza el test para validar getUserVerifiedRole(payload) y TICKET_ADMIN_ROLES_ centralizado; no se cambia código de producción.
 - Rerun CI pendiente. TASK-153 sigue En ejecución; próximo tramo: ResourceOwnership en TASK.
+
+[2026-11-10] C1.430 — IMA-AUDIT-20261110-1430Z — TASK-153: checkpoint de continuidad y confirmación CI
+- Se verifica HEAD d0d01c8d y la corrección institutionWide en Task-Service: la asignación puede seleccionar un departamento de la misma institución sin omitir DepartmentID ni la autorización dinámica.
+- Task-Service security local contracts: SUCCESS (42846982461); Task-Service backup and restore contract: SUCCESS (42846982439).
+- TASK-153 permanece En ejecución; no se declara completada ni se afirma E2E/Apps Script real.
+- Checkpoint C1.430 consolidado en la rama exclusiva NG_beta_0.0.0.1_work.

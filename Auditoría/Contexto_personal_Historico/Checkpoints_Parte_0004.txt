@@ -830,3 +830,53 @@ Fase: PM-01 — TASK-153 P0, En ejecución.
 - Siguiente tarea exacta: continuar la integración de ResourceOwnership en backend/task-service/Code.gs, empezando por getStudentTasks/getAllTasks, getTeacherActivity, assertTaskServiceTeacherCanManageTask y los controles de mutación; verificar creación y asignación de propiedad de nuevas tareas sin confiar en departmentId no validado. Requisitos: pendientes/Dirección/Pendientes.md, entrada TASK-153; Plan Maestro §9 y §10.95. Reutilizar las pruebas de tests/security/task-service-security-contract.test.js y no duplicar AUD-NG-002.
 - No se publicaron cambios fuera de NG_beta_0.0.0.1_work.
 ===============================================================================
+
+
+===============================================================================
+## CHECKPOINT C1.430 — TASK-153: confirmación de integración TASK y cierre documental de continuidad
+Sesión: IMA-AUDIT-20261110-1430Z
+Fecha: 2026-11-10 UTC; registro preparado después de 15:44Z.
+Repositorio: i-miss-cocaine/IMA; rama exclusiva: NG_beta_0.0.0.1_work.
+HEAD de partida verificado: d0d01c8d3c94aaace2f1b6dbda5fd094af66bf84; checkpoint documental anterior: C1.429 (HEAD de referencia f75fdb91a1e7ac8e19ff9bba87c1e22fcf7f8010).
+HEAD base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59; comparación: rama de trabajo 551 commits adelantada, 0 atrasados. La rama base no se modificó.
+Fase: PM-01 — TASK-153 P0, En ejecución.
+Estado de sesión: abierta; checkpoint intermedio. Inicio de esta sesión: C1.427. Este checkpoint: C1.430.
+
+### Continuidad y control de cambios
+- Se detectó que la rama avanzó después de C1.429; no se trabajó sobre el HEAD antiguo. El HEAD vigente al preparar este checkpoint es d0d01c8d3c94aaace2f1b6dbda5fd094af66bf84, commit cuyo padre es fe1c4b31d016a26732430ba94add74e9afa70828.
+- Comparación f75fdb91...d0d01c8d: 6 commits posteriores, 551 commits de adelanto respecto de la rama base y 0 atrasados. El cambio de código más reciente es el commit d0d01c8d; no se reescribe historia.
+- Se reutilizan C1.427–C1.429 y el expediente principal F41-08/E2E-41-09. No se repiten pruebas ya ejecutadas ni se crea una auditoría nueva.
+- Se conserva la decisión arquitectónica: el alcance institucional global permite asignar recursos a un departamento de la misma institución aunque ese departamento no figure en la lista de ámbitos departamentales explícitos del usuario; esto no habilita otra institución ni elimina la obligación de registrar DepartmentID en ResourceOwnership. La configuración de organigrama real sigue siendo responsabilidad de cada institución y no bloquea el motor genérico.
+
+### Cambio de código verificado en HEAD
+- Commit d0d01c8d: `fix(security): honor institution-wide ownership assignment scope`.
+- `backend/task-service/Code.gs`: `resolveTaskServiceOwnershipDepartment_` acepta el DepartmentID solicitado cuando el ámbito verificado es institutionWide, sin relajar el rechazo para usuarios sin ese alcance.
+- `registerTaskServiceResourceOwnership_` permite registrar propiedad en un departamento de la misma institución para alcance institutionWide; mantiene validación de tipo, ID, departamento no vacío, permiso dinámico `registerResourceOwnership`, identidad/ámbito verificados y bloqueo de concurrencia.
+- `tests/security/task-service-resource-ownership.test.js`: añade aserciones positivas de selección departamental y registro de propiedad para usuario institutionWide. No se afirma que la integración completa TASK-153 esté terminada.
+
+### Verificaciones CI observadas
+- Task-Service security local contracts: SUCCESS, run 42846982461, HEAD d0d01c8d.
+- Task-Service backup and restore contract: SUCCESS, run 42846982439, HEAD d0d01c8d.
+- Runs previos en HEAD fe1c4b31 también registraron éxito: 42846669850 y 42846670644.
+- Se conservan las evidencias previas: Department Scope Contract SUCCESS 42839462181; Identity mapping and transport security SUCCESS 42839462098.
+- La falla histórica 42839462129 queda superada por el contrato corregido y el run exitoso 42846982461. Esta evidencia solo confirma los workflows indicados; no equivale a E2E completo ni a pruebas Apps Script/Sheets/Drive reales.
+- En esta sesión no se ejecutaron localmente suites Node, pruebas V8 adicionales, Apps Script desplegado, Drive/Sheets reales, navegador ni E2E.
+
+### Auditoría, autoauditoría y Code Review
+- Revisión focalizada del diff del commit d0d01c8d y del contrato de prueba: el bypass institutionWide solo evita la comparación contra la lista departamental individual; no suprime la comprobación de institución ni la exigencia de DepartmentID. La prueba incluye el caso positivo de asignación.
+- No se encontró evidencia para marcar TASK-153 completada: siguen pendientes integración y cobertura de EXAM, revisión de aplicabilidad en DEVELOPER, recursos institucionales/solicitudes de firma, normalización de respuestas/listados, búsquedas/importaciones, permisos granulares, referencias compartidas con allowlist/vigencia/revocación y E2E por servicio.
+- No se creó PR ni se publicaron cambios fuera de la rama autorizada. Code Review externo por PR no ejecutado; la revisión focalizada aquí es interna y no sustituye una revisión externa si la metodología la exige para cierre.
+
+### Archivos inspeccionados en esta iteración
+- `backend/task-service/Code.gs` y `tests/security/task-service-resource-ownership.test.js`: cambio de propiedad institutionWide en el commit d0d01c8d.
+- `tests/security/task-service-security-contract.test.js` y `.github/workflows/task-service-security-contract.yml`: contrato corregido y workflow asociado; ejecución CI confirmada por run 42846982461.
+- `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt`, `Auditoría/INDICE_CHECKPOINTS.md`, `Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md`, `Auditoría/MapaDependencias.md`, `Auditoria.txt`, `tareas_auditoria.txt`, `changueslogs.txt` y `pendientes/Dirección/Pendientes.md`: continuidad, requisitos, dependencias y estado.
+- Expediente principal consultado: `Auditoría/AUDITORIA_FASE_41_PRUEBAS_INTEGRALES_DIGITALIZACION.md`, secciones F41-08/E2E-41-09 y seguimiento C1.429.
+
+### Estado y punto de reanudación
+- TASK-153 permanece En ejecución; no se marca completada.
+- Siguiente acción exacta: continuar la integración de propiedad en `backend/task-service/Code.gs`, empezando por los endpoints `getStudentTasks`, `getAllTasks`, `getTeacherActivity` y las mutaciones de tareas; comprobar lectura, edición, eliminación y creación/registro de propiedad sin confiar en `departmentId` del payload. Requisitos originales completos: `pendientes/Dirección/Pendientes.md`, entrada TASK-153; Plan Maestro §9 y §10.95. Reutilizar `tests/security/task-service-resource-ownership.test.js`, `tests/security/task-service-security-contract.test.js` y el expediente F41-08/E2E-41-09.
+- Después: integrar EXAM, auditar aplicabilidad DEVELOPER, recursos institucionales y solicitudes de firma; implementar referencias compartidas y permisos granulares; filtros/importaciones; normalización de errores; pruebas E2E.
+- No se modificó código en esta iteración de checkpoint. Este commit consolida exclusivamente los registros documentales del checkpoint; el cambio de código d0d01c8d permanece en su commit previo.
+- Commit de cierre: el commit que contiene este checkpoint; SHA verificado externamente después de publicar.
+===============================================================================
