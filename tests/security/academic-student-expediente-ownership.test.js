@@ -555,6 +555,9 @@ console.log("ACADEMIC converted admission reconciliation contract passed.");
     /ADMISSION_CONVERSION_INCOMPLETE/,"missing admission charge must fail closed");
   assert.throws(()=>helperContext.find([header,linked,linked],"STU-1","2026","ADM-1","MAT-1"),
     /ADMISSION_CHARGE_AMBIGUOUS/,"duplicate admission charge references must fail closed");
+  const incompleteCharge=linked.slice();incompleteCharge[4]="";
+  assert.throws(()=>helperContext.find([header,incompleteCharge],"STU-1","2026","ADM-1","MAT-1"),
+    /ADMISSION_CHARGE_CONFLICT/,"charge with missing amount fields must fail closed");
   assert.throws(()=>helperContext.find([header,[...linked.slice(0,2),"STU-OTHER",...linked.slice(3)]],"STU-1","2026","ADM-1","MAT-1"),
     /ADMISSION_CHARGE_CONFLICT/,"reference owned by another user must fail closed");
 
