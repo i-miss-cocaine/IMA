@@ -9,7 +9,7 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 - Última sesión: `IMA-EXEC-20261110-1621Z-01`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.434: **92124**
+- Caracteres del archivo activo tras C1.434: **92421**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 - Baseline lógico válido: **C1.316** (`31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`). C1.317–C1.382 se conservan, pero no se aceptan como evidencia de continuidad por corrección expresa del usuario.
@@ -270,4 +270,4 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 
 | C1.433 | IMA-GOV-20261110-1614Z-01 | Renombre del archivo maestro | Gobierno documental | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.433 | 970–984 | C1.432 | Commit de renombre; SHA verificado tras publicación |
 
-| C1.434 | IMA-EXEC-20261110-1621Z-01 | Corrección IDOR de comentarios/versiones en Task Service; TASK-153 continúa En ejecución | PM-01 — TASK-153 / seguridad de entregas | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.434 | 986–1027 | C1.433 | Commit de checkpoint; SHA verificado tras publicación |
+| C1.434 | IMA-EXEC-20261110-1621Z-01 | Corrección IDOR de comentarios/versiones en Task Service; TASK-153 continúa En ejecución | PM-01 — TASK-153 / seguridad de entregas | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.434 | 986–1028 | C1.433 | Commit de checkpoint; SHA verificado tras publicación |
