@@ -109,6 +109,11 @@ console.log("academic admission ownership contract: PASS");
       scope:{authorized:true,institutionId:"INST-1",departmentIds:["D1"],institutionWide:false},
       requestAccess:{authorized:true,departmentId:"D1"}
     }),
+    assertAcademicAdmissionRequestScopeAccess_:(_ss,_scope,id,_payload,operation)=>{
+      assert.equal(lockHeld,true,"request ownership must be revalidated while scheduling lock is held");
+      assert.equal(id,"REQ-2");assert.equal(operation,"UPDATE");
+      return {authorized:true,departmentId:"D1"};
+    },
     LockService:{getScriptLock:()=>({
       tryLock:()=>{lockAttempts++;lockHeld=true;return true;},
       releaseLock:()=>{assert.equal(lockHeld,true);lockHeld=false;releases++;}
@@ -220,6 +225,11 @@ console.log("academic admission interview ownership and lock contracts: PASS");
         scope:{authorized:true,institutionId:"INST-1",departmentIds:["D1"],institutionWide:false},
         requestAccess:{authorized:true,departmentId:"D1"}
       }),
+      assertAcademicAdmissionRequestScopeAccess_:(_ss,_scope,id,_payload,operation)=>{
+        assert.equal(held,true,"evaluation ownership must be revalidated while lock is held");
+        assert.equal(id,"REQ-EVAL");assert.equal(operation,"UPDATE");
+        return {authorized:true,departmentId:"D1"};
+      },
       LockService:{getScriptLock:()=>({
         tryLock:()=>{if(!lockAvailable)return false;held=true;return true;},
         releaseLock:()=>{assert.equal(held,true);held=false;releases++;}
