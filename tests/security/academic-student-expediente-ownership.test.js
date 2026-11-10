@@ -410,7 +410,7 @@ console.log("ACADEMIC admission conversion compensation contract passed.");
 {
   const helperSource=extractFunction("assertAdmissionEnrollmentRetrySafe_")+"\n"+extractFunction("findAdmissionConversionMovement_");
   const helperContext={};
-  vm.runInNewContext(helperSource+"\\nthis.enrollment=assertAdmissionEnrollmentRetrySafe_;this.movement=findAdmissionConversionMovement_;",helperContext);
+  vm.runInNewContext(helperSource+"\nthis.enrollment=assertAdmissionEnrollmentRetrySafe_;this.movement=findAdmissionConversionMovement_;",helperContext);
   const enrollmentHeader=["MatriculaID","Fecha","UserId","Alumno","Grado","Seccion","Periodo","Tipo","Estado","BecaDescuento","Observaciones"];
   const sameRequest=["MAT-1",new Date(),"STU-1","Ada Example","1","A","2026","IngresoNuevo","Activa",0,"Convertido desde solicitud ADM-1"];
   assert.equal(helperContext.enrollment([enrollmentHeader,sameRequest],"STU-1","2026","1","A","ADM-1")[0],"MAT-1",
@@ -495,7 +495,7 @@ console.log("ACADEMIC admission conversion idempotency contract passed.");
       "assertAdmissionConversionArtifactsComplete_",
       "convertAdmissionToStudent"
     ].map(extractFunction).join("\n");
-    vm.runInNewContext(functions+"\\nthis.run=convertAdmissionToStudent;",context);
+    vm.runInNewContext(functions+"\nthis.run=convertAdmissionToStudent;",context);
     return context.run({solicitudId:"ADM-RETRY"});
   }
   const complete=runAlreadyConverted();
@@ -527,7 +527,7 @@ console.log("ACADEMIC converted admission reconciliation contract passed.");
 {
   const helperSource=extractFunction("findAdmissionConversionCharge_");
   const helperContext={};
-  vm.runInNewContext(helperSource+"\\nthis.find=findAdmissionConversionCharge_;",helperContext);
+  vm.runInNewContext(helperSource+"\nthis.find=findAdmissionConversionCharge_;",helperContext);
   const header=["CargoID","Fecha","UserId","Concepto","MontoBase","Descuento","MontoFinal","Estado","FechaVencimiento","ReferenciaOrigen"];
   const linked=["CRG-1",new Date(),"STU-1","Matrícula Ordinaria 2026",1500,0,1500,"Pendiente","",
     "ADMISION|ADM-1|MAT-1"];
@@ -568,7 +568,7 @@ console.log("ACADEMIC converted admission reconciliation contract passed.");
       Date,
       Math
     };
-    vm.runInNewContext(extractFunction("registerStudentEnrollment")+"\\nthis.register=registerStudentEnrollment;",context);
+    vm.runInNewContext(extractFunction("registerStudentEnrollment")+"\nthis.register=registerStudentEnrollment;",context);
     const rollback=[];
     const result=context.register({
       userId:"STU-1",alumno:"Student",grado:"1",seccion:"A",periodo:"2026",
