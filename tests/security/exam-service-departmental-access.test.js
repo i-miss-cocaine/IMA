@@ -164,20 +164,23 @@ assert.throws(() => runtime.submitExam({ sessionToken: "student3-token", examenI
   respuestas: [{ preguntaId: "Q-6", respuestaEstudiante: "A" }] }), /EXAM_ATTEMPTS_EXHAUSTED/,
   "default one-attempt policy prevents duplicate submissions");
 
-const beforeConcurrentAttempts = deliveryRows.filter(row => row[1] === "EXM-6" && row[2] === "STUDENT-3").length;
+examRows.push(["EXM-8", "Concurrent submission", "Historia", "11", "A", "", "", "Activo", "TEACHER-1", "P1", "", "", "1"]);
+ownershipRows.push(["OWN-8", "I1", "EXAMEN", "EXM-8", "D1", "ACTIVE", "TEACHER-1", "", ""]);
+questionRows.push(["Q-8", "EXM-8", "opcion_multiple", "Pregunta concurrente", "{}", "A"]);
+const beforeConcurrentAttempts = deliveryRows.filter(row => row[1] === "EXM-8" && row[2] === "STUDENT-3").length;
 let nestedSubmissionError = "";
 examSubmissionDuringAppend = () => {
   try {
-    runtime.submitExam({ sessionToken: "student3-token", examenId: "EXM-6",
-      respuestas: [{ preguntaId: "Q-6", respuestaEstudiante: "A" }] });
+    runtime.submitExam({ sessionToken: "student3-token", examenId: "EXM-8",
+      respuestas: [{ preguntaId: "Q-8", respuestaEstudiante: "A" }] });
   } catch (error) { nestedSubmissionError = error.message; }
 };
-const serializedSubmission = runtime.submitExam({ sessionToken: "student3-token", examenId: "EXM-6",
-  respuestas: [{ preguntaId: "Q-6", respuestaEstudiante: "A" }] });
+const serializedSubmission = runtime.submitExam({ sessionToken: "student3-token", examenId: "EXM-8",
+  respuestas: [{ preguntaId: "Q-8", respuestaEstudiante: "A" }] });
 assert.equal(serializedSubmission.status, "success");
 assert.equal(nestedSubmissionError, "EXAM_SUBMISSION_LOCK_TIMEOUT",
   "a concurrent submit cannot pass the attempt-count check while another submission is appending");
-assert.equal(deliveryRows.filter(row => row[1] === "EXM-6" && row[2] === "STUDENT-3").length,
+assert.equal(deliveryRows.filter(row => row[1] === "EXM-8" && row[2] === "STUDENT-3").length,
   beforeConcurrentAttempts + 1, "only one concurrent submission is persisted");
 assert.equal(examMutationLockHeld, false, "submission lock is released after successful append");
 
