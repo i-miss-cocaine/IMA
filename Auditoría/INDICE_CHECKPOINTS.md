@@ -5,11 +5,11 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.446**
-- Última sesión: `IMA-EXEC-20261110-C1.446-02`
+- Último checkpoint: **C1.447**
+- Última sesión: `IMA-EXEC-20261110-1825Z-02`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.446: **134104**
+- Caracteres del archivo activo tras C1.447: **137374**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 - Baseline lógico válido: **C1.316** (`31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`). C1.317–C1.382 se conservan, pero no se aceptan como evidencia de continuidad por corrección expresa del usuario.
@@ -295,3 +295,5 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.445 | IMA-EXEC-20261110-1825Z-02 | TASK-153: aulas con ownership; lectura legacy restringida; folderId legacy deshabilitado; mutaciones admin con guard; Node local NOT RUN | PM-01 — TASK-153 / TASK Service | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.445 | 1458–1498 | C1.444 | e7d036abad8ef6cecc19252057b2f4888a29dbd2 + 6024d318162fe1f758f194ac00c1f23fea803076 + 176c5b08974a8a44f1314ea8e65f3ca371541e77 + 742fe9576062108c857cfb3e00fd0de59b5ef4a4 + 2d5526565a8332cbbed8e80c92ab5427b2deb7cb + f71bebc496ffb6487cdefc3701d1f24043649bd3 + dee57ca34414c591f4d8bb6342c2567a9bdb8a33 + 87dbe7ecf4b3eaab69fc473d7a06df966f86b24c + commits documentales |
 
 | C1.446 | IMA-EXEC-20261110-C1.446-02 | TASK aulas/contenido/legacy + ACADEMIC self/guardian ownership; Department Scope/Task CI PASS; local NOT RUN | PM-01 — TASK-153 / AUD-NG-385/386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.446 | 1500–1532 | C1.445 | 19a64b518ec4eee24b6f0c25b775f43e0058b90f + registros C1.446 |
+
+| C1.447 | IMA-EXEC-20261110-1825Z-02 | ACADEMIC: SELF/GUARDIAN ownership, relaciones, informes PII, duplicados y cola de admisiones; Node local NOT RUN | PM-01 — TASK-153 / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.447 | 1534–1579 | C1.446 | 3d3d0015cbdd67a715a9fe60385fd82664e2f34d; b113a6f88b338c63f04ecc3531cd9efa85b8b257; 42ca04bad4209760bb883a20b0286a59b8054df9; 5874fa64f615f1dd1d691f60aea3e0b9ee9417b6; ea178e9ff2b70da97573a32a47bac650ef415fa0; 19a64b518ec4eee24b6f0c25b775f43e0058b90f; c77088ad8abd721453ebd3b3b92700ff9575cc86; df644f9a87838450a74f168e310ca423992b2be8; 9b7e619252f8c3489ea05980b58e570d1942148c; 1df0394c1953e19a7e67a8331aa4eebae8c795d2; 2ae88b8fca460911ed2e8f555b3cca9bf6a4a6ce; 589873ae6659c735c4a9ce8fd7ca61aba5224e77 + commits documentales |
