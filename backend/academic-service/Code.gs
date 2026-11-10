@@ -1162,68 +1162,37 @@ function createAdmissionRequest(payload) {
 
 // [TAREA-F5-020] [Fase 5: Optimización de Admisiones] - Consulta con paginación en servidor, ordenamiento y monitoreo de latencia (>2000ms)
 function getAdmissionRequests(payload) {
-  const startTime = new Date().getTime();
-  const { estado, anolectivo, grado, solicitudId, page, pageSize, fetchAll } = payload || {};
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const rows = getOrCreateSheet(ss, "SolicitudesAdmision").getDataRange().getValues().slice(1);
-
-  let filtered = rows;
-  if (solicitudId) filtered = filtered.filter(r => String(r[0]).trim() === String(solicitudId).trim());
-  if (estado) filtered = filtered.filter(r => String(r[11]).trim() === String(estado).trim());
-  if (anolectivo) filtered = filtered.filter(r => String(r[2]).trim() === String(anolectivo).trim());
-  if (grado) filtered = filtered.filter(r => normalizeString(r[3]) === normalizeString(grado));
-
-  const totalRecords = filtered.length;
-  let paginatedRows = filtered;
-  let pageNum = 1;
-  let limit = totalRecords || 1;
-  let totalPages = 1;
-
-  if (!fetchAll && page !== undefined) {
-    pageNum = parseInt(page, 10) || 1;
-    limit = parseInt(pageSize, 10) || 50;
-    totalPages = Math.ceil(totalRecords / limit) || 1;
-    const startIndex = (pageNum - 1) * limit;
-    paginatedRows = filtered.slice(startIndex, startIndex + limit);
+  const permission=validateRolePermission("getAdmissionRequests",payload);
+  if(!permission||permission.authorized!==true)return {status:"error",code:"RESOURCE_SCOPE_DENIED",message:"Acceso denegado."};
+  const actor=getVerifiedAcademicIdentity_(payload);
+  if(!actor.authorized)return {status:"error",code:"RESOURCE_SCOPE_DENIED",message:"Acceso denegado."};
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),scope=getVerifiedAcademicDepartmentScope_(payload,ss,actor);
+  if(!scope||!scope.authorized)return {status:"error",code:"RESOURCE_SCOPE_DENIED",message:"Acceso denegado."};
+  const {estado,anolectivo,grado,solicitudId,page,pageSize,fetchAll}=payload||{};
+  const allRows=getOrCreateSheet(ss,"SolicitudesAdmision").getDataRange().getValues().slice(1);
+  const filtered=allRows.filter(row=>{
+    const id=String(row[0]||"").trim();
+    if(!id||!assertAcademicAdmissionRequestScopeAccess_(ss,scope,id,payload).authorized)return false;
+    if(estado&&String(row[11]).trim()!==String(estado).trim())return false;
+    if(anolectivo&&String(row[2]).trim()!==String(anolectivo).trim())return false;
+    if(grado&&normalizeString(row[3])!==normalizeString(grado))return false;
+    if(solicitudId&&id!==String(solicitudId).trim())return false;
+    return true;
+  });
+  if(solicitudId&&filtered.length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Solicitud no encontrada."};
+  const totalRecords=filtered.length;
+  let paginatedRows=filtered,pageNum=1,limit=totalRecords||1,totalPages=1;
+  if(!fetchAll&&page!==undefined){
+    pageNum=parseInt(page,10)||1;limit=parseInt(pageSize,10)||50;
+    totalPages=Math.ceil(totalRecords/limit)||1;
+    const startIndex=(pageNum-1)*limit;paginatedRows=filtered.slice(startIndex,startIndex+limit);
   }
-
-  const mapped = paginatedRows.map(r => ({
-    solicitudId: r[0],
-    fechaSolicitud: r[1],
-    anolectivo: r[2],
-    gradoSolicitado: r[3],
-    nombresAspirante: r[4],
-    apellidosAspirante: r[5],
-    identificacion: r[6],
-    fechaNacimiento: r[7],
-    nombreResponsable: r[8],
-    telefonoContacto: r[9],
-    emailContacto: r[10],
-    estadoSolicitud: r[11],
-    canalIngreso: r[12],
-    observaciones: r[13],
-    expedienteId: r[14]
-  }));
-
-  const durationMs = new Date().getTime() - startTime;
-  if (durationMs > 2000) {
-    logStructuredEvent("ACADEMIC", "getAdmissionRequests", "WARN", "LATENCY_THRESHOLD_EXCEEDED", `Consulta de solicitudes de admisión excedió el umbral óptimo (${durationMs}ms)`, { totalRecords, durationMs });
-  }
-
-  return {
-    status: "success",
-    requests: mapped,
-    pagination: {
-      currentPage: pageNum,
-      pageSize: limit,
-      totalRecords: totalRecords,
-      totalPages: totalPages
-    }
-  };
+  const mapped=paginatedRows.map(row=>({solicitudId:row[0],fechaSolicitud:row[1],anolectivo:row[2],gradoSolicitado:row[3],
+    nombresAspirante:row[4],apellidosAspirante:row[5],identificacion:row[6],fechaNacimiento:row[7],
+    nombreResponsable:row[8],telefonoContacto:row[9],emailContacto:row[10],estadoSolicitud:row[11],
+    canalIngreso:row[12],observaciones:row[13],expedienteId:row[14]}));
+  return {status:"success",requests:mapped,pagination:{currentPage:pageNum,pageSize:limit,totalRecords,totalPages}};
 }
-
-// [F10-Task16] [P2] - Ampliar los informes de asistencia, convivencia y seguimiento
 function generateConsolidatedAttendanceAndCoexistenceReport(payload) {
   const { grado, seccion, fechaInicio, fechaFin, rolSolicitante } = payload || {};
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -1966,12 +1935,20 @@ function updateAdmissionStatus(payload) {
     const sheet = getOrCreateSheet(ss, "SolicitudesAdmision");
     const data = sheet.getDataRange().getValues();
 
-    const idx = data.findIndex(r => String(r[0]).trim() === String(solicitudId).trim());
-    if (idx === -1) throw new Error("Solicitud de admisión no encontrada.");
-
+    const permission = validateRolePermission("updateAdmissionStatus", payload);
+    if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_FOUND");
+    const actor = getVerifiedAcademicIdentity_(payload);
+    if (!actor.authorized) throw new Error("RESOURCE_NOT_FOUND");
+    const scope = getVerifiedAcademicDepartmentScope_(payload, ss, actor);
+    if (!scope || !scope.authorized) throw new Error("RESOURCE_NOT_FOUND");
+    const matches = data.map((row, index) => ({ row, index })).filter(item => String(item.row[0] || "").trim() === String(solicitudId).trim());
+    if (matches.length !== 1) throw new Error("RESOURCE_NOT_FOUND");
+    const idx = matches[0].index;
     const row = data[idx];
+    const requestAccess = assertAcademicAdmissionRequestScopeAccess_(ss, scope, solicitudId, payload);
+    if (!requestAccess.authorized) throw new Error("RESOURCE_NOT_FOUND");
     const estadoActual = String(row[11] || "Recibida").trim();
-    const actorUserId = (payload && (payload._verifiedUserId || payload.actorId || payload.adminId)) || "Secretaría";
+    const actorUserId = actor.userId;
 
     // Si ya está en el estado solicitado, retornar idempotente
     if (estadoActual === estadoSolicitado) {
@@ -2649,7 +2626,9 @@ function assertStudentDocumentScopeAccess_(payload, ss, documentSheet, documentR
   if (!scope.authorized) return scope;
   const resourceType = solicitudId ? "SOLICITUD_ADMISION" : "DOCUMENTO_ESTUDIANTE";
   const resourceId = solicitudId || String(documentRow && documentRow[0] || "").trim();
-  const ownership = assertResourceOwnershipForScope_(ss, scope, resourceType, resourceId, "READ", payload);
+  const ownership = solicitudId
+    ? assertAcademicAdmissionRequestScopeAccess_(ss, scope, solicitudId, payload)
+    : assertResourceOwnershipForScope_(ss, scope, resourceType, resourceId, "READ", payload);
   if (!ownership.authorized) return ownership;
   return { authorized: true, accessType: ownership.accessType, departmentId: ownership.departmentId };
 }
