@@ -997,10 +997,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-10] C1.458 — IMA-EXEC-20261110-1825Z-02 — TASK-153 / ACADEMIC: resolución segura de duplicados
-- `resolveAdmissionDuplicate` exige rol directivo verificado, revalida ownership de la solicitud bajo ScriptLock y valida que el expediente destino pertenezca al mismo departamento.
+- `resolveAdmissionDuplicate` exige rol directivo verificado con normalización Unicode NFD, compatible con “Secretaría”, revalida ownership de la solicitud bajo ScriptLock y valida que el expediente destino pertenezca al mismo departamento.
 - Protege contra doble resolución y expediente ya vinculado incompatible; agrupa las escrituras relacionadas en una operación de rango contiguo.
 - El historial de cambios se anexa bajo lock; si falla, retorna `historyRecorded:false` y emite evento estructurado de error.
 - Contratos locales de las tres decisiones, autorización, aislamiento departamental, repetición, lock contention y error de historial PASS.
-- GitHub Actions run 42892900933 SUCCESS; contratos de seguridad y sintaxis de servicios/cliente PASS.
+- GitHub Actions run 42893612257 SUCCESS; contratos de seguridad y sintaxis de servicios/cliente PASS.
 - Sin despliegue ni datos reales. TASK-153 sigue En ejecución; AUD-NG-386 abierto.
-- Commits: cc60ed6e50cf411ac65490ef8cca6ca9542eafa0; 89ca3edfc6cff41105c03fccc2d6a83188b2026c; 25bea9e9ed69460c1b2bf21ab2bf951f4a837ba5.
+- Commits: cc60ed6e50cf411ac65490ef8cca6ca9542eafa0; 89ca3edfc6cff41105c03fccc2d6a83188b2026c; 25bea9e9ed69460c1b2bf21ab2bf951f4a837ba5; 07b22d3180461320052eda9958d677acf7355805; d2b818e2536f8fcad04317ba687b9e5392c44814.
