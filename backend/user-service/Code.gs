@@ -146,6 +146,7 @@ function invalidateUserRoleCache(userId) {
     const cache = CacheService.getScriptCache();
     cache.remove("user_role_" + userId);
     cache.remove("acct_state_" + userId);
+    cache.remove("acct_role_" + userId);
     return true;
   } catch (e) {
     console.warn("No se pudo invalidar la caché para " + userId, e);
@@ -2605,6 +2606,7 @@ function manageAccountState(payload) {
     }
 
     sheet.getRange(idx + 1, 11).setValue(newState);
+    invalidateUserRoleCache(userId);
 
     recordEntityChangeLog("Usuario", userId, { estadoCuenta: oldState }, { estadoCuenta: newState }, "ACCOUNT_STATE_CHANGED", payload && payload._verifiedUserId);
 
@@ -2660,6 +2662,7 @@ function registerUser(payload) {
         data[existingIndex][11] || now,
         now
       ]]);
+      invalidateUserRoleCache(userId);
       return { status: "success", userId, message: "Cuenta actualizada." };
     }
     return { status: "error", exists: true, message: "Email ya registrado.", data: { nombre: data[existingIndex][1], gradoActual: data[existingIndex][2], seccionActual: data[existingIndex][3] } };

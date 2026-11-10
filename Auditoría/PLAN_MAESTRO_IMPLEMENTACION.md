@@ -2320,3 +2320,9 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - CI C1.380 detectó que el harness VM no inyectaba Utilities.MacAlgorithm.HMAC_SHA_256, usado directamente por DEVELOPER.
 - Se completa el stub del fixture sin cambios productivos ni relajación de HMAC.
 - Backup/restore e identity mapping C1.380 success; security pendiente.
+
+
+## 10.66 TASK-636 — C1.382: invalidación de caché de rol vigente
+- C1.380 introdujo acct_role_; Code Review detectó que no se eliminaba con invalidación ni tras todas las mutaciones de rol/estado.
+- Se amplía invalidateUserRoleCache y se invoca tras manageAccountState y registerUser(forceUpdate).
+- Fixtures VM para claves y caminos de mutación; CI pendiente. BETA-FUNC-020 Pendiente beta.

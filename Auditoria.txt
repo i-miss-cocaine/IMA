@@ -755,3 +755,10 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - No hay cambios productivos.
 - C1.380 backup/restore e identity mapping success; security falló solo por harness; CI C1.381 pendiente.
 - Checkpoint C1.381: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt.
+
+
+## C1.382 — IMA-EXEC-20261109-1739Z-01 — TASK-636 / PM-01 / AUD-NG-001/002
+- Se corrige invalidación de acct_role_ y se cubren cambios de estado/cuenta y forceUpdate.
+- C1.381 security run 42730707185 completed/success.
+- C1.382 CI pendiente; BETA-FUNC-020 Pendiente.
+- TASK-636 En ejecución. Checkpoint C1.382: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt.

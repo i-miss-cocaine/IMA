@@ -1558,3 +1558,51 @@ Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt �
 Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.381.
 Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
 ===============================================================================
+
+===============================================================================
+## C1.382 — TASK-636 / AUD-NG-001/002 — invalidación de caché de rol vigente
+ID: C1.382
+Sesión: IMA-EXEC-20261109-1739Z-01
+Fecha: 2026-11-10
+Checkpoint anterior válido: C1.381
+Baseline lógico: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD físico de partida: 99aa4c5d331b2058ed3c30ad0c705336fd652cfa
+Rama: NG_beta_0.0.0.1_work
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+
+### Auditoría
+- C1.381 security run 42730707185 completed/success; seis claims estrictos y HMAC privado pasaron.
+- Code Review del cache introducido en C1.380 detectó que invalidateUserRoleCache no eliminaba acct_role_<userId>; manageAccountState y registerUser(forceUpdate) no siempre invalidaban la caché tras mutar estado/rol.
+- El TTL de 60s limitaba la exposición, pero la invalidación inmediata debía cubrir todas las claves relacionadas.
+
+### Implementación
+- invalidateUserRoleCache elimina user_role_, acct_state_ y acct_role_.
+- manageAccountState invalida después de actualizar Usuarios[10].
+- registerUser(forceUpdate) invalida después de restablecer el rol/cuenta.
+- Se agregan fixtures VM que verifican las tres claves eliminadas y ambos caminos de invalidación.
+
+### Archivos modificados
+- backend/user-service/Code.gs
+- tests/security/task-service-security-contract.test.js
+- Auditoría/AUDITORIA_TASK-636_C1.305.md
+- pendientes/Otros/Pendientes.md
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoria.txt
+- tareas_auditoria.txt
+- changueslogs.txt
+
+### Pruebas y estado
+- C1.381 security run 42730707185: completed/success.
+- C1.382 local VM fixture added; CI pending.
+- BETA-FUNC-020 remains Pendiente beta; no real deployment/Sheets validation.
+- TASK-636 En ejecución; AUD-NG-001/002 no cerrados.
+
+### Siguiente acción exacta
+Consultar CI C1.382; continuar auditoría contextual de permisos y revisar que los servicios que comparten Usuarios manejen consistentemente invalidación/revocación. Mantener la configuración HMAC real como validación beta pendiente.
+
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.382.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.382.
+Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
+===============================================================================

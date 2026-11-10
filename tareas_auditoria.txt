@@ -631,3 +631,11 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - No se modifica el verificador productivo.
 - CI security pendiente tras commit.
 ===============================================================================
+
+
+===============================================================================
+## Seguimiento TASK-636 — C1.382 / AUD-NG-001/002
+- invalidateUserRoleCache ahora elimina user_role_, acct_state_ y acct_role_.
+- manageAccountState y registerUser(forceUpdate) invalidan tras mutar cuenta/rol.
+- Fixture VM cubre las claves y ambos caminos; CI pendiente.
+===============================================================================

@@ -500,3 +500,15 @@ assert(!globalDriveMetrics.includes("payload.authRole"), "global Drive metrics n
 const closeYear = extractFunction("closeAcademicYear");
 assert(closeYear.includes('code:"BACKUP_REQUIRED"') && !closeYear.includes("deleteRow") && !closeYear.includes("setTrashed"), "academic year close remains fail-closed without destructive side effects");
 console.log("TASK-636 public boundary local contract: Academic opaque admission capabilities, minimal public status, admin-only global Drive metrics and fail-closed year close passed.");
+
+// TASK-636 AUD-NG-001/002: invalidate the newly introduced current-role cache on identity mutations.
+
+const invalidateRoleCache = extractFunctionFrom(userSource, "invalidateUserRoleCache");
+const removedCacheKeys = [];
+const cacheInvalidationContext = { CacheService: { getScriptCache: () => ({ remove: key => removedCacheKeys.push(key) }) } };
+vm.runInNewContext(invalidateRoleCache + String.fromCharCode(10) + "this.invalidate = invalidateUserRoleCache;", cacheInvalidationContext);
+assert.equal(cacheInvalidationContext.invalidate("USER-1"), true);
+assert.deepEqual(removedCacheKeys.sort(), ["acct_role_USER-1","acct_state_USER-1","user_role_USER-1"].sort(), "role and account state cache entries are all invalidated");
+assert(extractFunctionFrom(userSource, "manageAccountState").includes("invalidateUserRoleCache(userId)"), "account state changes invalidate session claim caches immediately");
+assert(extractFunctionFrom(userSource, "registerUser").includes("invalidateUserRoleCache(userId)"), "forced account role reset invalidates session claim caches immediately");
+console.log("TASK-636 role cache invalidation local contract: role/state cache keys are cleared after account and role changes.");

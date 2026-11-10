@@ -572,3 +572,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Corrección del harness VM: inyectar Utilities.MacAlgorithm.HMAC_SHA_256.
 - Sin cambios productivos ni relajación de HMAC.
 - CI pendiente; checkpoint C1.381.
+
+
+[2026-11-10] IMA-EXEC-20261109-1739Z-01 — C1.382 / TASK-636
+- Se invalida acct_role_ junto con user_role_/acct_state_ y se agregan invalidaciones a manageAccountState/registerUser(forceUpdate).
+- CI pendiente; C1.381 security success.
+- Checkpoint C1.382: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt.

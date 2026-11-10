@@ -372,3 +372,13 @@ Endurecer las excepciones públicas de backend/academic-service/Code.gs mediante
 - **Diagnóstico:** DEVELOPER implementa HMAC directamente con `Utilities.computeHmacSignature(Utilities.MacAlgorithm.HMAC_SHA_256,...)`; el contexto VM compartido no inyectaba `Utilities.MacAlgorithm.HMAC_SHA_256`, por lo que falló antes de evaluar claims. No es fallo del algoritmo ni de los claims productivos.
 - **Corrección:** el fixture inyecta la constante de algoritmo usada por Apps Script y conserva la salida HMAC simulada determinista. No se modifica backend ni se relaja la firma.
 - **CI C1.381:** pendiente tras publicar.
+
+
+## Revisión focalizada C1.382 — invalidación inmediata de caché de rol vigente
+
+- **Hallazgo derivado de C1.380:** los cinco verificadores que comparan `claims.role` con `Usuarios[6]` almacenan `acct_role_<userId>` durante 60 segundos. `invalidateUserRoleCache` solo eliminaba `user_role_` y `acct_state_`; además, los cambios de estado y el forceUpdate de registro no siempre invocaban la invalidación. Esto dejaba el nuevo cache de rol vivo hasta su TTL.
+- **Corrección:** la invalidación elimina también `acct_role_`; `manageAccountState` invalida tras escribir el nuevo estado; `registerUser(forceUpdate)` invalida después de restablecer el rol/cuenta.
+- **Pruebas añadidas:** contrato VM comprueba eliminación de las tres claves y presencia de invalidación en ambos caminos de mutación.
+- **CI C1.381:** security run 42730707185 completed/success; logs confirman claims estrictos en seis servicios, rol obsoleto en cinco, secreto HMAC privado en seis y límites públicos ACADEMIC/métricas/cierre.
+- **CI C1.382:** pendiente tras publicar.
+- **Estado:** AUD-NG-001/002 en revalidación; el límite de revocación en servicios distintos de USER sigue sujeto al TTL máximo 60s y validación beta.
