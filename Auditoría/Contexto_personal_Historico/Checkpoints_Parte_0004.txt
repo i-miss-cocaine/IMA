@@ -190,3 +190,13 @@ I. **AUDITORÍA ÚNICA Y CONTROL DE RECURSIVIDAD (OBLIGATORIO):** antes de inici
 - Pruebas de producto/autorización no ejecutadas; criterios de aceptación solo documentados.
 - Archivos de checkpoint, índice, auditoría y changelog actualizados; rama de trabajo exclusiva NG_beta_0.0.0.1_work.
 ===============================================================================
+
+
+===============================================================================
+## C1.412 — IMA-EXEC-20261110-1202Z-01 — matriz de autorización configurable y autoridad institucional superior
+- Solicitud: diseñar reglas configurables por rol/responsabilidad; limitar Dirección, Secretaría y asistentes, Contaduría y su asistente, y Docencia; excluir padre/madre/representante, alumno y empleados no habilitados de la autoridad interna.
+- Se crea Auditoría/ESPECIFICACION_MATRIZ_ROLES_RESPONSABILIDADES.md con catálogos, matriz por tipo documental/operación/ámbito, regla de autoría-propuesta, alcance docente por asignatura, límites financieros, controles y pruebas de aceptación.
+- Se incorpora N-24: rol superior Titular Institucional / Representante Legal (TIRL), separado del desarrollador; puede ejercer funciones de Dirección por configuración/delegación temporal. La representación legal efectiva requiere instrumento jurídico válido; las competencias de órganos estatutarios superiores se preservan.
+- Se amplía Plan Maestro §10.83. La propuesta requiere ratificación institucional y revisión legal hondureña.
+- No se crean usuarios, roles, membresías o permisos reales; no se modifican código, esquemas ni datos productivos. No se ejecutaron pruebas. T153-S01 sigue Bloqueada.
+===============================================================================
