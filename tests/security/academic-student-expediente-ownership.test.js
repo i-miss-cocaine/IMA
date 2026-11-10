@@ -99,3 +99,55 @@ for(const name of ["getStudentDocuments","uploadStudentDocument","updateDocument
     name+" must inherit the hardened expediente ownership guard");
 }
 console.log("ACADEMIC student/guardian expediente ResourceOwnership contract passed.");
+
+
+// Guardian relation endpoints must validate the target expediente before exposing
+// guardian PII or changing a relationship.
+{
+  const expSheet=makeSheet([
+    ["ExpedienteID","PersonaID"],
+    ["EXP-FOREIGN","PERSON-FOREIGN"]
+  ]);
+  let guardianSheetReads=0,guardianWrites=0,relationWrites=0;
+  const relationSheet={
+    getDataRange:()=>({getValues:()=>[
+      ["RelacionID","ExpedienteID","ResponsableID","Parentesco","x4","x5","x6","x7","Portal","Estado"],
+      ["REL-FOREIGN","EXP-FOREIGN","RESP-1","","","","","","Sí","Activo"]
+    ]}),
+    getRange:()=>({setValue:()=>{relationWrites++;}})
+  };
+  const base={
+    SPREADSHEET_ID:"LOCAL",
+    SpreadsheetApp:{openById:()=>({getSheetByName:name=>name==="ExpedientesEstudiantes"?expSheet:null})},
+    validateRolePermission:action=>({authorized:true,action}),
+    getVerifiedAcademicIdentity_:()=>({authorized:true,userId:"DIRECTOR-1",role:"Director"}),
+    assertStudentExpedienteScopeAccess_:()=>({authorized:false,code:"RESOURCE_SCOPE_DENIED"}),
+    getOrCreateSheet:(_ss,name)=>{
+      if(name==="RelacionesEstudianteTutor")return relationSheet;
+      if(name==="ResponsablesTutores"){guardianSheetReads++;return {getDataRange:()=>({getValues:()=>[["ID"]]})};}
+      throw Error("unexpected sheet "+name);
+    },
+    normalizeString:value=>String(value||"").trim().toLowerCase()
+  };
+  const getContext=Object.assign({},base);
+  vm.runInNewContext(extractFunction("getStudentGuardians")+"\nthis.run=getStudentGuardians;",getContext);
+  const getResult=getContext.run({expedienteId:"EXP-FOREIGN"});
+  assert.equal(getResult.code,"RESOURCE_NOT_FOUND","guardian PII is hidden outside the actor's expediente scope");
+  assert.equal(guardianSheetReads,0,"guardian records are not read before the expediente guard passes");
+
+  const saveContext=Object.assign({},base);
+  vm.runInNewContext(extractFunction("saveStudentGuardian")+"\nthis.run=saveStudentGuardian;",saveContext);
+  assert.throws(()=>saveContext.run({expedienteId:"EXP-FOREIGN",nombres:"Test",apellidos:"Guardian"}),/RESOURCE_NOT_FOUND/);
+  assert.equal(guardianSheetReads,0,"guardian data is not changed for an out-of-scope expediente");
+
+  const unlinkContext=Object.assign({},base);
+  vm.runInNewContext(extractFunction("unlinkStudentGuardian")+"\nthis.run=unlinkStudentGuardian;",unlinkContext);
+  assert.throws(()=>unlinkContext.run({relacionId:"REL-FOREIGN"}),/RESOURCE_NOT_FOUND/);
+  assert.equal(relationWrites,0,"an out-of-scope guardian relationship is not deactivated");
+}
+for(const name of ["getStudentGuardians","saveStudentGuardian","unlinkStudentGuardian"]){
+  const fn=extractFunction(name);
+  assert(fn.includes("validateRolePermission")&&fn.includes("assertStudentExpedienteScopeAccess_"),
+    name+" must enforce RBAC and expediente ownership");
+}
+console.log("ACADEMIC guardian relation endpoint ownership contracts passed.");
