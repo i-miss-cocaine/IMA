@@ -86,6 +86,7 @@ const sheetObjects = Object.fromEntries(Object.entries(sheets).map(([name, rows]
   }; }
 }]));
 const ss = { getSheetByName(name) { return sheetObjects[name] || null; } };
+let examMutationLockAvailable = true, examMutationLockAcquires = 0, examMutationLockReleases = 0, examMutationBeforeAcquire = null;
 const runtime = {
   SPREADSHEET_ID: "LOCAL", EXAM_RESOURCE_OWNERSHIP_REQUEST_CACHE_: new WeakMap(),
   PUBLIC_ACTIONS: [], ROLE_PERMISSIONS: { Profesor: ["getAllExams","getTeacherExamActivity","updateExam","updateExamStatus","deleteExam","gradeExamSubmission","deleteExamSubmission"] },
@@ -96,7 +97,11 @@ const runtime = {
   SpreadsheetApp: { openById() { return ss; } },
   getSheetOrThrow(spreadsheet, name) { const sheet = spreadsheet.getSheetByName(name); if (!sheet) throw new Error("Missing sheet " + name); return sheet; },
   isInTeacherList(value, filter) { return String(value).trim() === String(filter).trim(); },
-  normalizeString(value) { return String(value || "").trim().toLowerCase(); }
+  normalizeString(value) { return String(value || "").trim().toLowerCase(); },
+  LockService: { getScriptLock() { return {
+    tryLock() { examMutationLockAcquires++; if (examMutationBeforeAcquire) { const cb = examMutationBeforeAcquire; examMutationBeforeAcquire = null; cb(); } return examMutationLockAvailable; },
+    releaseLock() { examMutationLockReleases++; }
+  }; } }
 };
 const helpers = ["getVerifiedExamIdentity_", "getVerifiedExamDepartmentScope_", "assertExamResourceOwnershipForScope_", "validateRolePermission", "getAllExams", "getTeacherExamActivity"].map(name => extractFunction(source, name)).join("\n");
 vm.runInNewContext(helpers + "\nthis.getAllExams = getAllExams; this.getTeacherExamActivity = getTeacherExamActivity; this.validateRolePermission = validateRolePermission; this.getVerifiedExamDepartmentScope_ = getVerifiedExamDepartmentScope_; this.assertExamResourceOwnershipForScope_ = assertExamResourceOwnershipForScope_;", runtime);
@@ -118,7 +123,7 @@ assert.equal(duplicate.authorized, false); assert.equal(duplicate.code, "RESOURC
 assert.deepEqual(Array.from(runtime.getAllExams({ sessionToken: "other-token" }).data), [], "no accessible ownership returns an empty list");
 const readFunctions = ["getVerifiedExamIdentity_", "getVerifiedExamDepartmentScope_", "assertExamResourceOwnershipForScope_",
   "getExamStudentProfile_", "isExamAssignedToStudent_", "getVerifiedGuardianStudentIds_", "getExamReadContext_", "getStudentExams", "getExamQuestions", "getExamResult", "submitExam",
-  "validateRolePermission", "getAuthorizedExamMutationContext_", "getAuthorizedExamSubmissionMutationContext_", "updateExam", "updateExamStatus", "deleteExam", "gradeExamSubmission", "deleteExamSubmission"]
+  "validateRolePermission", "getAuthorizedExamMutationContext_", "getAuthorizedExamSubmissionMutationContext_", "withAuthorizedExamSubmissionMutation_", "updateExam", "updateExamStatus", "deleteExam", "gradeExamSubmission", "deleteExamSubmission"]
   .map(name => extractFunction(source, name)).join("\n");
 vm.runInNewContext(readFunctions + "\nthis.getStudentExams = getStudentExams; this.getExamQuestions = getExamQuestions; this.getExamResult = getExamResult; " +
   "this.updateExam = updateExam; this.updateExamStatus = updateExamStatus; this.deleteExam = deleteExam; " +
@@ -190,5 +195,18 @@ assert.equal(examRows.find(row => row[0] === "EXM-7")[7], "Eliminado", "exam wit
 assert.equal(ownershipRows.find(row => row[3] === "EXM-7")[5], "INACTIVE", "logical deletion deactivates resource ownership");
 assert.throws(() => runtime.deleteExam({ sessionToken: "teacher-token", examenId: "EXM-2" }),
   /RESOURCE_NOT_AVAILABLE/, "teacher cannot delete an exam outside assigned scope");
+
+
+assert.ok(examMutationLockAcquires >= 4, "submission mutations acquire lock");
+assert.equal(examMutationLockAcquires, examMutationLockReleases, "lock released after mutations");
+deliveryRows.push(["DEL-RACE","EXM-1","STUDENT-1",new Date(),"[]",50,"Entregado",""]);
+examMutationBeforeAcquire = () => { const i=deliveryRows.findIndex(row=>row[0]==="DEL-RACE"); if(i>=0)deliveryRows.splice(i,1); };
+assert.throws(()=>runtime.gradeExamSubmission({sessionToken:"teacher-token",entregaId:"DEL-RACE",calificacion:100}),/RESOURCE_NOT_AVAILABLE/);
+assert.equal(deliveryRows.some(row=>row[0]==="DEL-RACE"),false);
+const beforeContendedGrade=deliveryRows.find(row=>row[0]==="DEL-2")[5];
+examMutationLockAvailable=false;
+assert.throws(()=>runtime.gradeExamSubmission({sessionToken:"teacher-token",entregaId:"DEL-2",calificacion:0}),/EXAM_SUBMISSION_LOCK_TIMEOUT/);
+assert.equal(deliveryRows.find(row=>row[0]==="DEL-2")[5],beforeContendedGrade);
+examMutationLockAvailable=true;
 
 process.stdout.write("exam-service-departmental-access: signed identity, department scope, tenant isolation and ownership assertions passed\n");

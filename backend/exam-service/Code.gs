@@ -796,24 +796,37 @@ function deleteExam(payload) {
   return { status: "success", message: "Examen eliminado." };
 }
 
+function withAuthorizedExamSubmissionMutation_(payload, action, mutation) {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) throw new Error("EXAM_SUBMISSION_LOCK_TIMEOUT");
+  try {
+    const context = getAuthorizedExamSubmissionMutationContext_(payload, action);
+    return mutation(context);
+  } finally {
+    try { lock.releaseLock(); } catch (_) {}
+  }
+}
+
 function gradeExamSubmission(payload) {
-  const context = getAuthorizedExamSubmissionMutationContext_(payload, "gradeExamSubmission");
-  const { calificacion, estado, comentario, temaAsociado, asignaturaAsociada } = payload || {};
-  const rowData = context.delivery.row.slice();
-  while (rowData.length < 10) rowData.push("");
-  rowData[5] = calificacion;
-  rowData[6] = estado;
-  rowData[7] = comentario;
-  rowData[8] = temaAsociado || "";
-  rowData[9] = asignaturaAsociada || "";
-  context.deliverySheet.getRange(context.delivery.rowIndex + 1, 1, 1, rowData.length).setValues([rowData]);
-  return { status: "success", message: "Examen calificado." };
+  return withAuthorizedExamSubmissionMutation_(payload, "gradeExamSubmission", context => {
+    const { calificacion, estado, comentario, temaAsociado, asignaturaAsociada } = payload || {};
+    const rowData = context.delivery.row.slice();
+    while (rowData.length < 10) rowData.push("");
+    rowData[5] = calificacion;
+    rowData[6] = estado;
+    rowData[7] = comentario;
+    rowData[8] = temaAsociado || "";
+    rowData[9] = asignaturaAsociada || "";
+    context.deliverySheet.getRange(context.delivery.rowIndex + 1, 1, 1, rowData.length).setValues([rowData]);
+    return { status: "success", message: "Examen calificado." };
+  });
 }
 
 function deleteExamSubmission(payload) {
-  const context = getAuthorizedExamSubmissionMutationContext_(payload, "deleteExamSubmission");
-  context.deliverySheet.deleteRow(context.delivery.rowIndex + 1);
-  return { status: "success", message: "Entrega de examen eliminada correctamente." };
+  return withAuthorizedExamSubmissionMutation_(payload, "deleteExamSubmission", context => {
+    context.deliverySheet.deleteRow(context.delivery.rowIndex + 1);
+    return { status: "success", message: "Entrega de examen eliminada correctamente." };
+  });
 }
 
 function getAllExams(payload) {

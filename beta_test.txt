@@ -376,3 +376,12 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Resultado esperado:** no existe fallback PSC-HN-DEFAULT ni proveedor implícito; solo se acepta una fila de configuración única con nombre y estado Activo. Los rechazos no generan transacciones ni lecturas de Drive; la aceptación no inicia una integración PSC ni declara validez criptográfica.
 - **Estado:** Pendiente beta. No se ejecutó Apps Script/Sheets real ni integración PSC.
 - **Evidencia requerida:** build/commit, filas sintéticas saneadas, respuestas allow/deny, conteos de transacciones/lecturas y logs sin credenciales. Nunca adjuntar secretos o datos personales.
+
+## BETA-EXAM-030 — AUD-NG-386 / EXAM: serialización de mutaciones de entregas
+- **Módulo/acciones:** EXAM gradeExamSubmission y deleteExamSubmission.
+- **Objetivo:** comprobar en Apps Script desplegado que ScriptLock serializa la validación de identidad, permisos, ownership y mutación de una entrega.
+- **Precondiciones:** entorno beta aislado; examen y entregas sintéticas con ownership válido; dos actores docentes con ámbitos separados.
+- **Pasos:** provocar operaciones concurrentes calificar/calificar y calificar/eliminar sobre la misma entrega; verificar que la segunda reevalúa el estado bajo lock; provocar timeout.
+- **Resultado esperado:** operaciones serializadas; denegación segura ante entrega inexistente o timeout; liberación del lock en éxito y error.
+- **Estado:** Pendiente beta. Lógica de lock y relectura verificada localmente con fixtures; Apps Script/Sheets real no ejecutado.
+- **Evidencia requerida:** commit/build, actores y entregas sintéticas, orden y resultados de operaciones, logs saneados.
