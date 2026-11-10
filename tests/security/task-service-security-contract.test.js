@@ -565,3 +565,34 @@ const guardianTaskResult = studentTaskContext.run({ _verifiedUserId: "TUTOR-1", 
 assert.deepEqual(guardianTaskResult.data.map(item => item.tareaId), ["TASK-OWN-1"], "guardian list uses the linked student's department ownership");
 assert.equal(ownershipChecks.every(check => check.userId === "STUDENT-1"), true, "guardian cannot substitute their own scope for the student's scope");
 console.log("TASK-153 student/guardian task-list ResourceOwnership contract passed.");
+
+
+// TASK-153: direct student submission/file access must re-check task ownership,
+// not rely only on grade/section or on the visibility of the task list.
+const studentOwnershipContext = {
+  getTaskServiceUserProfile: userId => ({ grado: "6", seccion: "A", userId }),
+  normalizeString: value => String(value || "").trim().toLowerCase(),
+  isInTeacherList: (value, list) => !list || String(list).split(",").map(x => x.trim()).includes(String(value).trim()),
+  getVerifiedTaskDepartmentScope_: (_payload, _ss, identity) => {
+    assert.equal(identity.userId, "STUDENT-1");
+    assert.equal(identity.role, "Estudiante");
+    return { authorized: true, institutionId: "I1", departmentIds: ["D1"], institutionWide: false };
+  },
+  assertTaskServiceResourceOwnership_: (_payload, type, id, operation, _ss, identity, scope) => ({
+    authorized: type === "TAREA" && id === "TASK-OWN-1" && operation === "READ" &&
+      identity.userId === "STUDENT-1" && scope.departmentIds.includes("D1")
+  })
+};
+vm.runInNewContext(
+  extractFunction("assertTaskServiceStudentCanAccessTask") + String.fromCharCode(10) +
+  "this.run = assertTaskServiceStudentCanAccessTask;",
+  studentOwnershipContext
+);
+assert.doesNotThrow(() => studentOwnershipContext.run({}, "STUDENT-1",
+  ["TASK-OWN-1","Tarea","Owned","","P1","Matemáticas","6","A","","","PROF-1","Activa"]));
+assert.throws(() => studentOwnershipContext.run({}, "STUDENT-1",
+  ["TASK-FOREIGN","Tarea","Foreign","","P1","Matemáticas","6","A","","","PROF-2","Activa"]), /RESOURCE_NOT_FOUND/);
+const previewContract = extractFunction("getSubmissionDocumentPreviewUrl");
+assert(previewContract.includes("getTaskServiceSubmissionAccess_"), "document preview delegates to the shared submission ownership guard");
+assert(previewContract.includes("matches.length !== 1"), "document preview rejects ambiguous file-to-delivery links");
+console.log("TASK-153 direct student submission and document ownership contract passed.");
