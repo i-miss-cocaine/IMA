@@ -706,3 +706,88 @@ console.log("academic admission waitlist insertion ownership, idempotency and lo
 }
 
 console.log("academic admission waitlist offer ownership, state and lock contracts: PASS");
+
+// Waitlist reordering authorizes the target before reading details, applies
+// a deterministic group reorder, and compensates partial position writes.
+{
+  const reorderHeader=["EsperaID","SolicitudID","AnoLectivo","Grado","Posicion","Puntaje","CriteriosJSON","EstadoOferta","FechaExpiracionOferta","JustificacionManual","FechaIngreso","UltimaActualizacion"];
+  function makeReorderHarness({lockAvailable=true,targetAuthorized=true,failWrites=[],statuses=null}={}) {
+    let held=false,attempts=0,releases=0,keyReads=0,detailReads=0,writes=0,ownershipChecks=0,allowedChecks=0,events=[];
+    const rows=[reorderHeader,
+      ["ESP-R1","REQ-R1","2026","1",1,90,"{}","En_Espera","","Nota R1",new Date(1000),new Date(1000)],
+      ["ESP-R2","REQ-R2","2026","1",2,80,"{}","En_Espera","","Nota R2",new Date(2000),new Date(2000)],
+      ["ESP-R3","REQ-R3","2026","1",3,70,"{}","En_Espera","","Nota R3",new Date(3000),new Date(3000)],
+      ["ESP-FOREIGN","REQ-FOREIGN","2026","1",1,99,"{}","En_Espera","","Privado",new Date(500),new Date(500)]];
+    if(statuses)statuses.forEach((status,index)=>{rows[index+1][7]=status;});
+    const sheet={
+      rows,
+      getLastRow(){return this.rows.length;},
+      getRange(rowNumber,column,numRows=1,numCols=1){
+        const self=this;
+        return {
+          getValues(){
+            if(column===1&&numCols===2)keyReads++;
+            else {detailReads++;if(self.rows[rowNumber-1][1]==="REQ-FOREIGN")throw new Error("unauthorized row details must not be read");}
+            return Array.from({length:numRows},(_,r)=>self.rows[rowNumber-1+r].slice(column-1,column-1+numCols));
+          },
+          setValue(value){writes++;if(failWrites.indexOf(writes)!==-1)throw new Error("injected position write failure");self.rows[rowNumber-1][column-1]=value;},
+          setValues(values){writes++;for(let r=0;r<numRows;r++)for(let c=0;c<numCols;c++)self.rows[rowNumber-1+r][column-1+c]=values[r][c];}
+        };
+      }
+    };
+    const context={
+      getAcademicAdmissionScopeContext_:(_payload,action,id,operation)=>({
+        authorized:action==="reorderWaitlist"&&id===null&&operation==="UPDATE",ss:{},
+        actor:{authorized:true,userId:"MGR-REORDER",role:"Director"},
+        scope:{authorized:true,institutionId:"INST-1",departmentIds:["D1"],institutionWide:false}
+      }),
+      LockService:{getScriptLock:()=>({tryLock:()=>{attempts++;if(!lockAvailable)return false;held=true;return true;},releaseLock:()=>{assert.equal(held,true);held=false;releases++;}})},
+      getOrCreateSheet:()=>{assert.equal(held,true,"waitlist sheet must not be accessed before lock");return sheet;},
+      assertAcademicAdmissionRequestScopeAccess_:(_ss,_scope,id,_payload,operation)=>{
+        assert.equal(held,true);assert.equal(id,"REQ-R1");assert.equal(operation,"UPDATE");ownershipChecks++;return {authorized:targetAuthorized,departmentId:"D1"};
+      },
+      getAuthorizedAdmissionRequestIds_:(_ss,_scope,_payload,operation)=>{assert.equal(held,true);assert.equal(operation,"UPDATE");allowedChecks++;return new Set(["REQ-R1","REQ-R2","REQ-R3"]);},
+      logStructuredEvent:(_service,_fn,_level,code,_message,data,role)=>events.push({code,data,role}),
+      Date
+    };
+    vm.runInNewContext(extractFunction("reorderWaitlist"),context);
+    return {execute:position=>context.reorderWaitlist({esperaId:"ESP-R1",nuevaPosicion:position,justificacionManual:"Reordenamiento institucional justificado"}),
+      state:()=>({held,attempts,releases,keyReads,detailReads,writes,ownershipChecks,allowedChecks,events,rows})};
+  }
+  const reordered=makeReorderHarness();
+  const result=reordered.execute(3);
+  assert.equal(result.status,"success");
+  let state=reordered.state();
+  assert.deepEqual(state.rows.slice(1,4).map(row=>row[4]),[3,1,2]);
+  assert.equal(state.rows[1][9].includes("Reordenamiento Manual"),true);
+  assert.equal(state.rows[1][11] instanceof Date,true);
+  assert.equal(state.rows[4][4],1,"una fila de otro departamento must not be reordered");
+  assert.equal(state.held,false);assert.equal(state.releases,1);assert.equal(state.ownershipChecks,1);assert.equal(state.allowedChecks,1);
+
+  const busy=makeReorderHarness({lockAvailable:false});
+  assert.throws(()=>busy.execute(2),/Servicio ocupado/);
+  assert.equal(busy.state().keyReads,0);assert.equal(busy.state().detailReads,0);assert.equal(busy.state().releases,0);
+
+  const denied=makeReorderHarness({targetAuthorized:false});
+  assert.throws(()=>denied.execute(2),/RESOURCE_NOT_FOUND/);
+  assert.equal(denied.state().keyReads,1);assert.equal(denied.state().detailReads,0);assert.equal(denied.state().writes,0);
+
+  const outOfRange=makeReorderHarness();
+  assert.throws(()=>outOfRange.execute(4),/WAITLIST_POSITION_OUT_OF_RANGE/);
+  assert.equal(outOfRange.state().writes,0);
+  const invalidPosition=makeReorderHarness();
+  assert.throws(()=>invalidPosition.execute(1.5),/WAITLIST_POSITION_INVALID/);
+  assert.equal(invalidPosition.state().attempts,0);
+  const invalidState=makeReorderHarness({statuses:["Plaza_Ofrecida"]});
+  assert.throws(()=>invalidState.execute(2),/RESOURCE_CONFLICT_WAITLIST_STATE/);
+  assert.equal(invalidState.state().writes,0);
+
+  const compensated=makeReorderHarness({failWrites:[2]});
+  assert.throws(()=>compensated.execute(3),/WAITLIST_REORDER_WRITE_FAILED/);
+  assert.deepEqual(compensated.state().rows.slice(1,4).map(row=>row[4]),[1,2,3],"failed reorder must restore previous positions");
+  const failedRollback=makeReorderHarness({failWrites:[2,3]});
+  assert.throws(()=>failedRollback.execute(3),/WAITLIST_REORDER_WRITE_FAILED/);
+  assert.equal(failedRollback.state().events.some(event=>event.code==="WAITLIST_REORDER_COMPENSATION_FAILED"),true);
+}
+
+console.log("academic admission waitlist reorder ownership, group and rollback contracts: PASS");
