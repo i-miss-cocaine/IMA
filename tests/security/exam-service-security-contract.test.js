@@ -233,16 +233,26 @@ const questionBankWorker = extractFunction(source, "manageQuestionBankUnlocked_"
 assert.ok(questionBankWorker.includes("ownershipSheet.appendRow") && questionBankWorker.includes('"BANCO_PREGUNTA"'),
   "question bank creation persists ownership together with the question");
 const questionBankRead = extractFunction(source, "getQuestionBank");
-assert.ok(questionBankRead.includes('validateRolePermission("getQuestionBank", p)'),
+assert.ok(questionBankRead.includes("withAuthorizedQuestionBankRead_"),
+  "question bank reads delegate to the serialized reader");
+const questionBankReadWrapper = extractFunction(source, "withAuthorizedQuestionBankRead_");
+assert.ok(questionBankReadWrapper.includes("LockService.getScriptLock()") &&
+  questionBankReadWrapper.includes("tryLock(5000)") &&
+  questionBankReadWrapper.includes("getAuthorizedQuestionBankReadContext_(payload)"),
+  "question bank reads share the mutation lock and load their context after acquisition");
+const questionBankReadContext = extractFunction(source, "getAuthorizedQuestionBankReadContext_");
+assert.ok(questionBankReadContext.includes('validateRolePermission("getQuestionBank", p)'),
   "question bank reads require the explicit RBAC action permission");
-assert.ok(questionBankRead.includes("getVerifiedExamIdentity_(p)") &&
-  questionBankRead.includes("getVerifiedExamDepartmentScope_(p, ss, actor)"),
+assert.ok(questionBankReadContext.includes("getVerifiedExamIdentity_(p)") &&
+  questionBankReadContext.includes("getVerifiedExamDepartmentScope_(p, ss, actor)"),
   "question bank reads derive identity and department scope from signed claims");
-assert.ok(questionBankRead.includes('assertExamResourceOwnershipForScope_(ss, scope, "BANCO_PREGUNTA"'),
-  "question bank reads filter every item through institution and department ownership");
-assert.ok(questionBankRead.includes('validateRolePermission("manageQuestionBank", p)') &&
-  questionBankRead.includes("if (canReadAnswerKey) question.respuestaCorrecta"),
-  "answer keys are returned only to roles authorized to manage the question bank");
+assert.ok(questionBankReadContext.includes('validateRolePermission("manageQuestionBank", p)') &&
+  questionBankReadContext.includes("canReadAnswerKey"),
+  "answer-key visibility is derived from the separate manage permission");
+const questionBankReadWorker = extractFunction(source, "getQuestionBankUnlocked_");
+assert.ok(questionBankReadWorker.includes('assertExamResourceOwnershipForScope_(context.ss, context.scope, "BANCO_PREGUNTA"') &&
+  questionBankReadWorker.includes("bankIdCounts[resourceId] !== 1"),
+  "question bank reads exclude resources without unique institution/department ownership and ambiguous IDs");
 const examMutationNames = ["updateExam", "updateExamStatus", "deleteExam"];
 examMutationNames.forEach(name => {
   const handler = extractFunction(source, name);
