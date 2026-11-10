@@ -77,10 +77,7 @@ const rows={
   ["ComprobanteID","Fecha","UserId","Alumno","CargoID","MontoReportado","MetodoPago","Referencia","ComprobanteUrl","Estado","Observaciones"],
   ["VCH-A",new Date("2026-01-01"),"U-STUDENT","Alumno A","GRAL",100,"Transferencia","REF-A","https://lh3.googleusercontent.com/d/FILE_A_123456789012345678901234567890","En Revisión",""],
   ["VCH-B",new Date("2026-01-02"),"U-OTHER","Alumno B","GRAL",200,"Transferencia","REF-B","https://lh3.googleusercontent.com/d/FILE_B_123456789012345678901234567890","En Revisión",""],
-  ["VCH-N",new Date("2026-01-03"),"U-NODEPT","Alumno N","GRAL",300,"Transferencia","REF-N","https://lh3.googleusercontent.com/d/FILE_N_123456789012345678901234567890","En Revisión",""],
-  ["VCH-TRASHED",new Date("2026-01-04"),"U-STUDENT","Alumno A","GRAL",100,"Transferencia","REF-T","https://lh3.googleusercontent.com/d/FILE_TRASHED_123456789012345678901234567890","En Revisión",""],
-  ["VCH-BADTYPE",new Date("2026-01-05"),"U-STUDENT","Alumno A","GRAL",100,"Transferencia","REF-X","https://lh3.googleusercontent.com/d/FILE_BADTYPE_123456789012345678901234567890","En Revisión",""],
-  ["VCH-EMPTY",new Date("2026-01-06"),"U-STUDENT","Alumno A","GRAL",100,"Transferencia","REF-E","https://lh3.googleusercontent.com/d/FILE_EMPTY_123456789012345678901234567890","En Revisión",""]
+  ["VCH-N",new Date("2026-01-03"),"U-NODEPT","Alumno N","GRAL",300,"Transferencia","REF-N","https://lh3.googleusercontent.com/d/FILE_N_123456789012345678901234567890","En Revisión",""]
  ]
 };
 const ss={getSheetByName:name=>rows[name]?makeSheet(rows[name]):null};
@@ -132,6 +129,11 @@ assert.equal(studentVoucherList[0].tieneComprobante,true,"voucher list must expo
 assert.deepEqual(Array.from(context.getPaymentVouchers(actor("guardian")).comprobantes,c=>c.comprobanteId),["VCH-A"]);
 assert.deepEqual(Array.from(context.getPaymentVouchers(actor("staffA")).comprobantes,c=>c.comprobanteId),["VCH-A"]);
 assert.deepEqual(Array.from(context.getPaymentVouchers(actor("admin")).comprobantes,c=>c.comprobanteId),["VCH-A","VCH-B","VCH-N"]);
+rows.ComprobantesPago.push(
+ ["VCH-TRASHED",new Date("2026-01-04"),"U-STUDENT","Alumno A","GRAL",100,"Transferencia","REF-T","https://lh3.googleusercontent.com/d/FILE_TRASHED_123456789012345678901234567890","En Revisión",""],
+ ["VCH-BADTYPE",new Date("2026-01-05"),"U-STUDENT","Alumno A","GRAL",100,"Transferencia","REF-X","https://lh3.googleusercontent.com/d/FILE_BADTYPE_123456789012345678901234567890","En Revisión",""],
+ ["VCH-EMPTY",new Date("2026-01-06"),"U-STUDENT","Alumno A","GRAL",100,"Transferencia","REF-E","https://lh3.googleusercontent.com/d/FILE_EMPTY_123456789012345678901234567890","En Revisión",""]
+);
 assert.equal(context.getPaymentVouchers({sessionToken:"staffA",userId:"U-OTHER"}).code,"RESOURCE_SCOPE_DENIED");
 assert.equal(context.uploadPaymentVoucher({sessionToken:"student",userId:"U-OTHER",montoReportado:100}).code,"RESOURCE_SCOPE_DENIED");
 assert.equal(context.reviewPaymentVoucher({sessionToken:"student",comprobanteId:"VCH-A",nuevoEstado:"Rechazado"}).code,"RESOURCE_SCOPE_DENIED");
