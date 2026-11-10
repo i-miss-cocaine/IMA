@@ -452,12 +452,14 @@ console.log("ACADEMIC admission conversion idempotency contract passed.");
   const userRow=["STU-RETRY","","Student","","","","Estudiante","","","PERSON-RETRY","Activa"];
   const enrollmentRow=["MAT-RETRY",new Date(),"STU-RETRY","Student","1","B","2026","IngresoNuevo","Activa",0,"Convertido desde solicitud ADM-RETRY"];
   const movementRow=["MOV-RETRY","EXP-RETRY","MAT-RETRY","2026","IngresoNuevo","","","1","B",new Date(),"Admisión y Matrícula Inicial aprobada desde ADM-RETRY"];
+  const chargeRow=["CRG-RETRY",new Date(),"STU-RETRY","Matrícula Ordinaria 2026",1500,0,1500,"Pendiente","","ADMISION|ADM-RETRY|MAT-RETRY"];
   const headers={
     SolicitudesAdmision:["SolicitudID","","Ano","Grado","","","","","","","","Estado","","","ExpedienteID"],
     ExpedientesEstudiantes:["ExpedienteID","PersonaID"],
     Usuarios:["UserID","","","","","","Rol","","","PersonaID","Estado"],
     Matriculas:["MatriculaID","Fecha","UserId","Alumno","Grado","Seccion","Periodo","Tipo","Estado","BecaDescuento","Observaciones"],
-    MovimientosEstudiante:["MovimientoID","ExpedienteID","MatriculaID","Ano","Tipo","","","Grado","Seccion","Fecha","Observaciones"]
+    MovimientosEstudiante:["MovimientoID","ExpedienteID","MatriculaID","Ano","Tipo","","","Grado","Seccion","Fecha","Observaciones"],
+    CargosEstudiante:["CargoID","Fecha","UserId","Concepto","MontoBase","Descuento","MontoFinal","Estado","FechaVencimiento","ReferenciaOrigen"]
   };
   function runAlreadyConverted(overrides) {
     const data=Object.assign({
@@ -465,7 +467,8 @@ console.log("ACADEMIC admission conversion idempotency contract passed.");
       ExpedientesEstudiantes:[headers.ExpedientesEstudiantes,expedienteRow],
       Usuarios:[headers.Usuarios,userRow],
       Matriculas:[headers.Matriculas,enrollmentRow],
-      MovimientosEstudiante:[headers.MovimientosEstudiante,movementRow]
+      MovimientosEstudiante:[headers.MovimientosEstudiante,movementRow],
+      CargosEstudiante:[headers.CargosEstudiante,chargeRow]
     },overrides||{});
     const sheets={};
     Object.keys(data).forEach(name=>sheets[name]=readSheet(data[name]));
@@ -502,6 +505,13 @@ console.log("ACADEMIC admission conversion idempotency contract passed.");
   assert.equal(complete.status,"success","complete converted admission retry remains idempotently successful");
   assert.equal(complete.matriculaId,"MAT-RETRY");
   assert.equal(complete.movimientoId,"MOV-RETRY");
+  assert.equal(complete.cargoId,"CRG-RETRY","complete converted admission must expose its uniquely linked charge");
+  assert.throws(()=>runAlreadyConverted({
+    CargosEstudiante:[headers.CargosEstudiante]
+  }),/ADMISSION_CONVERSION_INCOMPLETE/,"missing admission charge must not be reported as successfully converted");
+  assert.throws(()=>runAlreadyConverted({
+    CargosEstudiante:[headers.CargosEstudiante,["CRG-LEGACY",new Date(),"STU-RETRY","Matrícula Ordinaria 2026",1500,0,1500,"Pendiente",""]]
+  }),/ADMISSION_CHARGE_CONFLICT/,"unmarked legacy charge must not be adopted by a converted admission");
 
   assert.throws(()=>runAlreadyConverted({
     Matriculas:[headers.Matriculas]
