@@ -9,7 +9,7 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 - Última sesión: `IMA-EXEC-20261110-1825Z-02`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.484: **90886**
+- Caracteres del archivo activo tras C1.484: **91462**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 - Baseline lógico válido: **C1.316** (`31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`). C1.317–C1.382 se conservan, pero no se aceptan como evidencia de continuidad por corrección expresa del usuario.
@@ -334,4 +334,4 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.481 | IMA-EXEC-20261110-1825Z-02 | EXAM: getExamResult exige permiso explícito y deriva identidad del estudiante desde la entrega bajo ScriptLock; lectura consistente con calificación/baja; prueba local V8 PASS | PM-01 — TASK-153 / EXAM / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt — sección C1.481 | 882–914 | C1.480 | 72a26852996adcc743bd45fafebb42558a011f87; CI/Node nativo NOT RUN |
 | C1.482 | IMA-EXEC-20261110-1825Z-02 | EXAM: getStudentExams/getExamQuestions exigen RBAC explícito y leen bajo ScriptLock; duplicados ambiguos excluidos; seis pruebas locales PASS | PM-01 — TASK-153 / EXAM / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt — sección C1.482 | 923–959 | C1.481 | 4526caac1a8538b1649561dd844d9598376df311; CI/Node nativo NOT RUN |
 | C1.483 | IMA-EXEC-20261110-1825Z-02 | EXAM: getAllExams/getTeacherExamActivity serializados; RBAC, ownership y duplicados; harness V8 PASS | PM-01 — TASK-153 / EXAM / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt — sección C1.483 | 968–1004 | C1.482 | 689db17ea771fd594f2fffdcae2c28260cfedb1d; 70e8fe492461ee760dd2e96ad2ca0b07d043cf81 |
-| C1.484 | IMA-EXEC-20261110-1825Z-02 | EXAM: getExamGradeDistributionAnalytics serializado; RBAC, ownership, duplicados y notas finitas; 8 escenarios V8 PASS | PM-01 — TASK-153 / EXAM / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt — sección C1.484 | 1007–1049 | C1.483 | pendiente de publicar |
+| C1.484 | IMA-EXEC-20261110-1825Z-02 | EXAM: getExamGradeDistributionAnalytics serializado; RBAC, ownership, duplicados y notas finitas; 8 escenarios V8 PASS | PM-01 — TASK-153 / EXAM / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt — sección C1.484 | 1007–1056 | C1.483 | 1b3983d2cc8229e500a329b53797b087f7b2d85a |

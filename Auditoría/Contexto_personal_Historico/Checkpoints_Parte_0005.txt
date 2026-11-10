@@ -1047,3 +1047,10 @@ Auditar e implementar la seguridad y consistencia de la lectura getExamGradeDist
 - Rama base NG_beta_0.0.0.1: sin cambios.
 
 ===============================================================================
+===============================================================================
+### Addendum C1.484-R1 — publicación
+- Commit de implementación, pruebas y registros: 1b3983d2cc8229e500a329b53797b087f7b2d85a.
+- HEAD verificado tras publicar la implementación: 1b3983d2cc8229e500a329b53797b087f7b2d85a.
+- Rama base NG_beta_0.0.0.1 verificada sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- NG_beta_0.0.0.1_work actualizado mediante compare-and-swap fast-forward; no se utilizó force push.
+===============================================================================
