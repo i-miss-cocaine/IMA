@@ -2048,3 +2048,43 @@ Endurecer `resolveAdmissionDuplicate` dentro de TASK-153 / AUD-NG-386 para evita
 - Pruebas que requieren servicios desplegados quedan reservadas a beta; no bloquean el cierre local de implementación.
 - Siguiente acción: continuar con el siguiente subalcance pendiente de TASK-153, manteniendo la sesión `IMA-EXEC-20261110-1825Z-02`.
 ===============================================================================
+
+===============================================================================
+## CHECKPOINT C1.459 — ACADEMIC: reapertura de solicitudes con autorización, lock e historial canónico
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.458.
+HEAD inicial del subalcance: 94ec9a3294ff276bfce88941659a1c3f52a030e2.
+
+### Alcance
+Corregir `reopenAdmissionRequest` dentro de TASK-153 / AUD-NG-386 para serializar la reapertura, preservar el estado de la solicitud y registrar trazabilidad verificable.
+
+### Implementación
+- Exige contexto ACADEMIC verificado y rol gestor (`isAcademicAdmissionManagerRole_`); revalida ownership de `SOLICITUD_ADMISION` después de adquirir `ScriptLock`.
+- El lock protege lectura, validación y escritura; contención falla antes de consultar hojas y se libera en `finally`.
+- Solo permite `nuevoEstado="Reabierta"`; rechaza una solicitud ya reabierta, convertida o con ExpedienteID asociado.
+- Estado, canal original y observación de reapertura se escriben en un único rango contiguo de tres columnas.
+- Historial usa el esquema canónico de nueve columnas (`HistorialID`, `Fecha`, `EntidadTipo`, `EntidadID`, `Accion`, `ValorAnteriorJSON`, `ValorNuevoJSON`, `UsuarioResponsable`, `CorrelationID`) y valida encabezados. Si el append falla o el esquema no coincide, la operación informa `historyRecorded:false` y emite `ADMISSION_REOPEN_HISTORY_FAILED`.
+
+### Verificación local
+- GitHub Actions run `42894133956`: SUCCESS, Node 24. URL: https://github.com/i-miss-cocaine/IMA/actions/runs/42894133956
+- `academic-admission-ownership.test.js`: PASS; reapertura autorizada, ownership bajo lock, actualización atómica, canal preservado, historial canónico, segunda reapertura denegada, solicitud convertida protegida, estado destino manipulado rechazado, rol no gestor denegado, contención de lock y esquema de historial inválido.
+- Department Scope, ACADEMIC departmental resource access, expediente/guardian, admisión/conversión, entrevistas, evaluaciones, duplicados, ACCOUNTING departmental access, ResourceOwnership ABAC y voucher client: PASS.
+- `node --check`: User/Academic/Accounting Code.gs y `js/student.js`: PASS.
+- Sin despliegue, servicios vivos, Google Sheets real ni datos institucionales reales.
+
+### Commits
+- `dfab2d1486dd7599e9ccadb890ff71003632c669` — proteger y serializar reapertura de solicitudes.
+- `5ae37e4a1aea2b779df2d14b42274719c9b2eccc` — contrato local de reapertura.
+- `94ec9a3294ff276bfce88941659a1c3f52a030e2` — corregir comparación de encabezado entre realms VM.
+- `7648d34076df4b10545b3c6ce4e2cc4229fff5f3` — normalización Unicode de roles directivos para resolución de duplicados.
+- Documentación: plan `822c8118cb94518901d7d8a642215da09374e4ee`; auditoría `b619caad4d9b04f55796d63b37c82c7c719fc4d4`; changelog `2e3501fbf0b2617a134560e28d63b5203d52d79e`.
+
+### Estado y continuidad
+- Reapertura ACADEMIC corregida y aprobada localmente.
+- **TASK-153 permanece En ejecución y AUD-NG-386 abierto** por recursos institucionales, firmas, permisos granulares, referencias compartidas, importaciones y otras rutas pendientes.
+- Pruebas dependientes de servicios desplegados quedan reservadas a beta; no bloquean la aprobación local de implementación.
+- Siguiente acción: continuar con el siguiente subalcance pendiente de TASK-153, manteniendo la sesión `IMA-EXEC-20261110-1825Z-02`.
+===============================================================================
