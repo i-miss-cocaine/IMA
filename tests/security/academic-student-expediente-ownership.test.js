@@ -286,3 +286,59 @@ console.log("ACADEMIC administrative search/report ResourceOwnership contracts p
     "admission status mutation must verify request ownership and use the signed actor identity");
 }
 console.log("ACADEMIC admission queue and institution-wide intake ownership contracts passed.");
+
+
+// Admission conversion must not reuse an identity-matched expediente from another
+// department or resolve its linked student account before ownership is verified.
+{
+  const requestRows=[
+    ["SolicitudID","Fecha","Ano","Grado","Nombres","Apellidos","Identificacion","Nacimiento","Responsable","Telefono","Email","Estado","Canal","Notas","ExpedienteID"],
+    ["ADM-FOREIGN","","2026","1","Ana","Example","DNI-123","2018-01-01","","","","Admitida","","",""]
+  ];
+  const expedienteRows=[
+    ["ExpedienteID","PersonaID","Codigo","Nacimiento","Nacionalidad","x5","x6","Estado","Creado","Actualizado","Identificacion"],
+    ["EXP-FOREIGN","PERSON-FOREIGN","STU-FOREIGN","2018-01-01","","","","Activo","","","DNI-123"]
+  ];
+  const makeWritableSheet=rows=>({
+    getLastRow:()=>rows.length,
+    getDataRange:()=>({getValues:()=>rows.map(row=>row.slice())}),
+    appendRow:()=>{throw Error("unexpected write before duplicate ownership check");},
+    getRange:()=>({setValue:()=>{throw Error("unexpected write before duplicate ownership check");}})
+  });
+  const sheets={
+    SolicitudesAdmision:makeWritableSheet(requestRows),
+    ExpedientesEstudiantes:makeWritableSheet(expedienteRows)
+  };
+  const ss={getSheetByName:name=>sheets[name]||null};
+  let ownershipChecks=0,studentIdentityLookups=0,ownershipWrites=0;
+  const context={
+    ALLOW_INCOMPLETE_ADMISSION_CONVERSION:true,
+    getAcademicAdmissionScopeContext_:()=>({
+      authorized:true,ss,actor:{authorized:true,userId:"DIRECTOR-1",role:"Director"},
+      scope:{authorized:true,userId:"DIRECTOR-1",role:"Director",institutionId:"INST-1",departmentIds:["D1"],institutionWide:false},
+      requestAccess:{authorized:true}
+    }),
+    resolveAcademicAdmissionDepartment_:()=>({authorized:true,departmentId:"D1"}),
+    getDynamicPermissionsForRole:()=>false,
+    LockService:{getScriptLock:()=>({tryLock:()=>true,releaseLock:()=>{}})},
+    getOrCreateSheet:(_ss,name)=>sheets[name],
+    checkEnrollmentCapacity:()=>({hayCupo:true}),
+    generateInstitutionalId:({entityType})=>({generatedId:entityType+"-NEW"}),
+    normalizeString:value=>String(value||"").trim().toLowerCase(),
+    assertResourceOwnershipForScope_:(_ss,_scope,type,id,operation)=>{
+      ownershipChecks++;
+      assert.equal(type,"EXPEDIENTE_ESTUDIANTE");
+      assert.equal(id,"EXP-FOREIGN");
+      assert.equal(operation,"UPDATE");
+      return {authorized:false,code:"RESOURCE_SCOPE_DENIED",departmentId:"D2"};
+    },
+    getStudentIdentityForPerson_:()=>{studentIdentityLookups++;return {userId:"STU-FOREIGN"};},
+    registerAcademicResourceOwnership_:()=>{ownershipWrites++;return {authorized:true,created:true,ownershipId:"OWN-NEW"};}
+  };
+  vm.runInNewContext(extractFunction("convertAdmissionToStudent")+"\\nthis.run=convertAdmissionToStudent;",context);
+  assert.throws(()=>context.run({solicitudId:"ADM-FOREIGN"}),/RESOURCE_NOT_FOUND/);
+  assert.equal(ownershipChecks,1,"the existing expediente must be checked against active department ownership");
+  assert.equal(studentIdentityLookups,0,"foreign student identity must not be resolved");
+  assert.equal(ownershipWrites,0,"no ownership may be assigned to a foreign expediente");
+}
+console.log("ACADEMIC admission conversion duplicate expediente ownership contract passed.");
