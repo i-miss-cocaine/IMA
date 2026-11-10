@@ -594,38 +594,94 @@ function getQuestionBank(payload) {
 }
 
 function createExam(p) {
+  p = p && typeof p === "object" && !Array.isArray(p) ? p : {};
+  const actor = getVerifiedExamIdentity_(p);
+  if (!actor.authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
+
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const scope = getVerifiedExamDepartmentScope_(p, ss, actor);
+  if (!scope.authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
+
+  const requestedDepartmentId = String(p.departmentId || p.departamentoId || "").trim();
+  const departmentId = requestedDepartmentId || ((scope.departmentIds || []).length === 1
+    ? String(scope.departmentIds[0] || "").trim() : "");
+  const departmentAllowed = !!departmentId && (scope.departmentIds || []).some(value =>
+    String(value || "").trim() === departmentId);
+  // Incluso los ámbitos institucionales deben seleccionar un departamento que
+  // figure explícitamente entre los departamentos autorizados del actor.
+  if (!departmentAllowed) throw new Error("RESOURCE_SCOPE_DENIED");
+
   const examenes = getSheetOrThrow(ss, "Examenes");
   const preguntas = getSheetOrThrow(ss, "PreguntasExamen");
-
-  const examenId = "EXM-" + Date.now();
-  examenes.appendRow([
-    examenId,
-    p.titulo,
-    p.asignatura,
-    p.gradoAsignado,
-    p.seccionAsignada,
-    p.fechaLimite,
-    p.tiempoLimite || "",
-    "Inactivo",
-    p.profesorId || "",
-    p.parcial || "Primer Parcial"
-  ]);
-
-  const preguntasData = (p.preguntas || []).map((q, i) => [
-    `PRE-${examenId}-${i}`,
-    examenId,
-    q.preguntaTipo,
-    q.textoPregunta,
-    JSON.stringify(q.opciones || {}),
-    q.respuestaCorrecta
-  ]);
-
-  if (preguntasData.length > 0) {
-    preguntas.getRange(preguntas.getLastRow() + 1, 1, preguntasData.length, 6).setValues(preguntasData);
+  const ownership = getSheetOrThrow(ss, "ResourceOwnership");
+  const ownershipHeaders = ownership.getDataRange().getValues()[0] || [];
+  const expectedHeaders = ["OwnershipID", "InstitutionID", "ResourceType", "ResourceID", "DepartmentID", "Status", "RegisteredBy", "CreatedAt", "UpdatedAt"];
+  if (expectedHeaders.some((header, index) => String(ownershipHeaders[index] || "").trim() !== header)) {
+    throw new Error("RESOURCE_OWNERSHIP_SCHEMA_INVALID");
   }
 
-  return { status: "success", examenId };
+  const preguntasData = (Array.isArray(p.preguntas) ? p.preguntas : []).map((q, i) => [
+    `PRE-${Date.now()}-${i}`, "", q && q.preguntaTipo, q && q.textoPregunta,
+    JSON.stringify((q && q.opciones) || {}), q && q.respuestaCorrecta
+  ]);
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) throw new Error("EXAM_CREATE_LOCK_TIMEOUT");
+
+  let examenId = "";
+  let ownershipId = "";
+  try {
+    const now = new Date().toISOString();
+    const uniqueSuffix = Utilities.getUuid();
+    examenId = "EXM-" + Date.now() + "-" + uniqueSuffix;
+    ownershipId = "OWN-" + Utilities.getUuid();
+
+    const ownershipRows = ownership.getDataRange().getValues();
+    const duplicate = ownershipRows.slice(1).some(row =>
+      String(row[1] || "").trim() === String(scope.institutionId || "").trim() &&
+      String(row[2] || "").trim().toUpperCase() === "EXAMEN" &&
+      String(row[3] || "").trim() === examenId);
+    if (duplicate || examenes.getDataRange().getValues().slice(1).some(row => String(row[0] || "").trim() === examenId)) {
+      throw new Error("EXAM_CREATE_ID_COLLISION");
+    }
+
+    // Primero se registra la propiedad; nunca se publica un examen sin ownership.
+    ownership.appendRow([ownershipId, scope.institutionId, "EXAMEN", examenId,
+      departmentId, "ACTIVE", actor.userId, now, now]);
+    examenes.appendRow([
+      examenId, p.titulo, p.asignatura, p.gradoAsignado, p.seccionAsignada,
+      p.fechaLimite, p.tiempoLimite || "", "Inactivo", actor.userId,
+      p.parcial || "Primer Parcial"
+    ]);
+
+    if (preguntasData.length > 0) {
+      const rows = preguntasData.map(row => {
+        row[0] = `PRE-${examenId}-${row[0].split("-").pop()}`;
+        row[1] = examenId;
+        return row;
+      });
+      preguntas.getRange(preguntas.getLastRow() + 1, 1, rows.length, 6).setValues(rows);
+    }
+    return { status: "success", examenId, departmentId };
+  } catch (error) {
+    let rollbackFailed = false;
+    const removeMatchingRows = (sheet, column, value) => {
+      try {
+        const rows = sheet.getDataRange().getValues();
+        for (let i = rows.length - 1; i >= 1; i--) {
+          if (String(rows[i][column] || "").trim() === String(value)) sheet.deleteRow(i + 1);
+        }
+      } catch (_) { rollbackFailed = true; }
+    };
+    if (examenId) {
+      removeMatchingRows(preguntas, 1, examenId);
+      removeMatchingRows(examenes, 0, examenId);
+      removeMatchingRows(ownership, 3, examenId);
+    }
+    if (rollbackFailed) throw new Error("EXAM_CREATE_ROLLBACK_FAILED");
+    throw error;
+  } finally {
+    try { lock.releaseLock(); } catch (_) {}
+  }
 }
 
 function updateExamStatus({ examenId, estado }) {
