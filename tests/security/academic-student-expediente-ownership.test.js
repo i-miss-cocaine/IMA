@@ -435,3 +435,88 @@ console.log("ACADEMIC admission conversion compensation contract passed.");
     "duplicate request movements must fail closed");
 }
 console.log("ACADEMIC admission conversion idempotency contract passed.");
+
+
+// A converted admission is idempotently successful only when its expediente,
+// active student identity, exact enrollment, and request-linked ingress movement
+// are all present and mutually consistent. Missing artifacts fail closed.
+{
+  function readSheet(rows) {
+    return {
+      getLastRow:()=>rows.length,
+      getDataRange:()=>({getValues:()=>rows.map(row=>row.slice())})
+    };
+  }
+  const requestRow=["ADM-RETRY","","2026","1","","","","","","","","Convertida","","","EXP-RETRY"];
+  const expedienteRow=["EXP-RETRY","PERSON-RETRY","STU-CODE","","","","","","","","ID-RETRY"];
+  const userRow=["STU-RETRY","","Student","","","","Estudiante","","","PERSON-RETRY","Activa"];
+  const enrollmentRow=["MAT-RETRY",new Date(),"STU-RETRY","Student","1","B","2026","IngresoNuevo","Activa",0,"Convertido desde solicitud ADM-RETRY"];
+  const movementRow=["MOV-RETRY","EXP-RETRY","MAT-RETRY","2026","IngresoNuevo","","","1","B",new Date(),"Admisión y Matrícula Inicial aprobada desde ADM-RETRY"];
+  const headers={
+    SolicitudesAdmision:["SolicitudID","","Ano","Grado","","","","","","","","Estado","","","ExpedienteID"],
+    ExpedientesEstudiantes:["ExpedienteID","PersonaID"],
+    Usuarios:["UserID","","","","","","Rol","","","PersonaID","Estado"],
+    Matriculas:["MatriculaID","Fecha","UserId","Alumno","Grado","Seccion","Periodo","Tipo","Estado","BecaDescuento","Observaciones"],
+    MovimientosEstudiante:["MovimientoID","ExpedienteID","MatriculaID","Ano","Tipo","","","Grado","Seccion","Fecha","Observaciones"]
+  };
+  function runAlreadyConverted(overrides) {
+    const data=Object.assign({
+      SolicitudesAdmision:[headers.SolicitudesAdmision,requestRow],
+      ExpedientesEstudiantes:[headers.ExpedientesEstudiantes,expedienteRow],
+      Usuarios:[headers.Usuarios,userRow],
+      Matriculas:[headers.Matriculas,enrollmentRow],
+      MovimientosEstudiante:[headers.MovimientosEstudiante,movementRow]
+    },overrides||{});
+    const sheets={};
+    Object.keys(data).forEach(name=>sheets[name]=readSheet(data[name]));
+    const ss={getSheetByName:name=>sheets[name]||null};
+    const context={
+      getAcademicAdmissionScopeContext_:()=>({
+        authorized:true,ss,
+        actor:{userId:"DIR-RETRY",role:"Director"},
+        scope:{authorized:true,institutionId:"INST-1",departmentIds:["D1"],institutionWide:false},
+        requestAccess:{authorized:true}
+      }),
+      resolveAcademicAdmissionDepartment_:()=>({authorized:true,departmentId:"D1"}),
+      getDynamicPermissionsForRole:()=>false,
+      LockService:{getScriptLock:()=>({tryLock:()=>true,releaseLock:()=>{}})},
+      getOrCreateSheet:(_ss,name)=>sheets[name],
+      assertResourceOwnershipForScope_:(_ss,_scope,type,id,operation)=>{
+        assert.equal(type,"EXPEDIENTE_ESTUDIANTE");
+        assert.equal(id,"EXP-RETRY");
+        assert.equal(operation,"READ");
+        return {authorized:true,departmentId:"D1"};
+      }
+    };
+    const functions=[
+      "getStudentIdentityForPerson_",
+      "findAdmissionConversionEnrollment_",
+      "findAdmissionConversionMovement_",
+      "assertAdmissionConversionArtifactsComplete_",
+      "convertAdmissionToStudent"
+    ].map(extractFunction).join("\\n");
+    vm.runInNewContext(functions+"\\nthis.run=convertAdmissionToStudent;",context);
+    return context.run({solicitudId:"ADM-RETRY"});
+  }
+  const complete=runAlreadyConverted();
+  assert.equal(complete.status,"success","complete converted admission retry remains idempotently successful");
+  assert.equal(complete.matriculaId,"MAT-RETRY");
+  assert.equal(complete.movimientoId,"MOV-RETRY");
+
+  assert.throws(()=>runAlreadyConverted({
+    Matriculas:[headers.Matriculas]
+  }),/ADMISSION_CONVERSION_INCOMPLETE/,"missing enrollment must not be reported as successfully converted");
+  assert.throws(()=>runAlreadyConverted({
+    MovimientosEstudiante:[headers.MovimientosEstudiante]
+  }),/ADMISSION_CONVERSION_INCOMPLETE/,"missing request-linked ingress movement must fail closed");
+  assert.throws(()=>runAlreadyConverted({
+    MovimientosEstudiante:[headers.MovimientosEstudiante,["MOV-RETRY","EXP-RETRY","MAT-OTHER","2026","IngresoNuevo","","","1","B",new Date(),"Admisión y Matrícula Inicial aprobada desde ADM-RETRY"]]
+  }),/ADMISSION_MOVEMENT_CONFLICT/,"request movement linked to another enrollment must fail closed");
+  assert.throws(()=>runAlreadyConverted({
+    MovimientosEstudiante:[headers.MovimientosEstudiante,["MOV-RETRY","EXP-RETRY","MAT-RETRY","2026","IngresoNuevo","","","1","A",new Date(),"Admisión y Matrícula Inicial aprobada desde ADM-RETRY"]]
+  }),/ADMISSION_CONVERSION_INCOMPLETE/,"movement grade/section must agree with the enrollment");
+  assert.throws(()=>runAlreadyConverted({
+    ExpedientesEstudiantes:[headers.ExpedientesEstudiantes,expedienteRow,expedienteRow]
+  }),/ADMISSION_CONVERSION_INCOMPLETE/,"ambiguous expediente must not be treated as a complete conversion");
+}
+console.log("ACADEMIC converted admission reconciliation contract passed.");
