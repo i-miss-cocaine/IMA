@@ -1345,3 +1345,11 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - Sin despliegue ni datos reales. TASK-153 sigue En ejecución; certificado de auditoría pendiente.
 - Commit de contrato: `05f8498cb50efcffe9b6cf05b51633309a40865a`.
 ===============================================================================
+
+## C1.472 — USER: protección del certificado de auditoría de conformidades
+- generateSignatureAuditCertificate comprueba ownership SOLICITUD_ADMISION/READ bajo lock antes de consultar claves de firmas en búsquedas por solicitud; una denegación no abre FirmasConformidades.
+- Referencias transactionId no autorizadas/inexistentes/ambiguas y denegaciones documentales se normalizan a RESOURCE_NOT_FOUND para evitar enumeración por mensajes.
+- La respuesta omite IPOrigen y declara explícitamente su naturaleza no probatoria, verificación criptográfica no realizada y alcance de la huella SHA-256.
+- Contrato V8 local (8 escenarios) y parseo PASS; Department Scope Contract run 42907619042 SUCCESS, incluidos USER signature ownership y syntax-check.
+- BETA-FUNC-025 ampliada; Pendiente beta. Sin PSC, callback autenticado, Drive/Sheets real ni despliegue.
+- Commits de código/pruebas: 836154141d9098882ca1e7046e9b94b6f89c2498; 0ff23efa8170a502c4044cb03ed4072e91cba196.

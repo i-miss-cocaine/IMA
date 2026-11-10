@@ -777,3 +777,10 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - Contratos de lectura verifican filtrado de evaluaciones/entrevistas por solicitudes autorizadas y denegación antes de abrir hojas privadas; se mantienen los contratos de ownership previo a detalles y transición de resultados.
 - V8 local y parseo JavaScript PASS. Department Scope Contract run 42905094147 SUCCESS, todos los pasos PASS. Los dos intentos iniciales fallaron por fixtures incompletos/sintaxis de prueba; correcciones aplicadas y repetición final exitosa.
 - TASK-153 permanece En ejecución; AUD-NG-386 abierto por rutas y superficies restantes.
+
+
+### TASK-153 — seguimiento C1.472
+- USER generateSignatureAuditCertificate valida ownership SOLICITUD_ADMISION/READ bajo ScriptLock antes de consultar claves en búsquedas por solicitud; solicitudes ajenas no abren ni enumeran FirmasConformidades.
+- Referencias de transacción sin recurso autorizado y denegaciones documentales se normalizan a RESOURCE_NOT_FOUND. El certificado omite IPOrigen y declara que es un resumen no probatorio, con verificación criptográfica no realizada y hash SHA-256 limitado al resumen serializado.
+- V8 local: 8 escenarios PASS; parseo de servicio y contrato PASS. Department Scope Contract run 42907619042 SUCCESS, incluidos USER signature ownership y syntax-check.
+- BETA-FUNC-025 ampliada, Pendiente beta. TASK-153 permanece En ejecución; AUD-NG-386 abierto.

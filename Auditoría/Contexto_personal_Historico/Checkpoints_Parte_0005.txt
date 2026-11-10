@@ -491,3 +491,48 @@ Ejecutar el siguiente subalcance de TASK-153 / AUD-NG-386: reforzar aislamiento 
 - Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt
 - Auditoría/INDICE_CHECKPOINTS.md
 ===============================================================================
+## CHECKPOINT C1.472 — USER: protección del certificado de auditoría de conformidades
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.471.
+HEAD inicial verificado: 87a09033e3049a841cb130ff69b1933351e9519b.
+Commits de la unidad: be2978afb55199d4d91f9351a3cd6c39d8266454; 35f91c0a891ca0a1b16536a990e7bf4a9c4f86ae; 836154141d9098882ca1e7046e9b94b6f89c2498; 0ff23efa8170a502c4044cb03ed4072e91cba196.
+
+### Alcance
+Completar el subalcance USER de TASK-153 señalado como pendiente desde C1.464/C1.465: autorización por recurso, aislamiento de referencias, privacidad de datos y semántica no probatoria de generateSignatureAuditCertificate. No se implementa callback real ni validación criptográfica de PSC.
+
+### Hallazgos y cambios
+- La consulta por solicitud sin documento consultaba claves de FirmasConformidades antes de verificar que el actor tuviera READ sobre SOLICITUD_ADMISION. Ahora valida assertRecordOwnership bajo ScriptLock antes de abrir la hoja de firmas; una denegación devuelve RESOURCE_NOT_FOUND sin abrir ni enumerar referencias.
+- La búsqueda basada únicamente en transactionId normaliza referencias inexistentes y ambiguas a RESOURCE_NOT_FOUND. La validación documental denegada, ambigua o inexistente también devuelve RESOURCE_NOT_FOUND, evitando diferencias de respuesta que revelen existencia o ámbito.
+- El resumen deja de exponer IPOrigen en pistaAuditoriaFirmantes. Conserva solo los campos de auditoría ya existentes y presentes, sin fabricar valores.
+- El objeto declara explícitamente naturaleza RESUMEN_AUDITORIA_NO_PROBATORIO, verificacionCriptografica NO_VERIFICADA y requiereValidacionAutenticadaProveedor=true. El alcance de certificadoIntegridadSHA256 explica que es una huella del resumen serializado antes de añadir el propio campo, no una firma, sello de tiempo ni prueba de identidad.
+- Se conserva la selección exacta por solicitud/documento, el rechazo de combinaciones transactionId discordantes, el permiso y la identidad verificada, ScriptLock/finally y la omisión de tokenVerificacion.
+
+### Verificación
+- Parseo JavaScript local de backend/user-service/Code.gs y tests/security/user-service-signature-ownership.test.js: PASS.
+- Ejecución local aislada V8 sobre la función real: PASS, 8 escenarios — par exacto autorizado, omisión de IP, semántica no probatoria y alcance del hash, solicitud ajena sin abrir FirmasConformidades, ambigüedad de solicitud autorizada, transactionId inexistente/ambiguo sin enumeración, denegación documental normalizada y lock contencioso sin acceso a almacenamiento.
+- GitHub Actions Department Scope Contract run 42907619042: SUCCESS. Todos los pasos PASS, incluido USER signature ownership contract, ACADEMIC, ACCOUNTING, ResourceOwnership ABAC, syntax-check de servicios y Student Private Voucher Client.
+- Las ejecuciones intermedias 42907258763 y 42907279176 fallaron en USER signature ownership durante la secuencia de cambios; el código/contrato se corrigió y la ejecución final 42907619042 pasó completa.
+- BETA-FUNC-025 actualizado para comprobar en entorno desplegado la no exposición de IP, respuestas genéricas de no divulgación y semántica no probatoria. Estado Pendiente beta; no bloquea el cierre local.
+- No se ejecutó Apps Script/Sheets/Drive real, proveedor PSC, callback autenticado ni despliegue.
+
+### Estado y continuidad
+- Subalcance generateSignatureAuditCertificate: implementado y aprobado localmente/CI.
+- TASK-153 permanece En ejecución; AUD-NG-386 sigue abierto por recursos institucionales, rutas de firma restantes, permisos granulares, referencias compartidas, filtros/importaciones y otros servicios.
+- Siguiente unidad elegible: continuar en USER con el contrato genérico de callback autenticado de proveedor de firma, sin simular respuesta PSC ni afirmar validez criptográfica; las comprobaciones de proveedor real permanecen beta.
+- La rama base no fue modificada; su HEAD verificado permanece 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+### Archivos de la iteración
+- backend/user-service/Code.gs
+- tests/security/user-service-signature-ownership.test.js
+- beta_test.txt
+- pendientes/Dirección/Pendientes.md
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoria.txt
+- tareas_auditoria.txt
+- changueslogs.txt
+===============================================================================

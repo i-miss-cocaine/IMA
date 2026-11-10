@@ -3305,3 +3305,13 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - CI: Department Scope Contract run 42905094147 — SUCCESS; todos los pasos del workflow PASS, incluidos ACADEMIC admission ownership y syntax-check.
 - Límites: sin Apps Script/Sheets real, integración externa ni despliegue. TASK-153 continúa En ejecución; AUD-NG-386 permanece abierto por otras superficies.
 - Commits: 06d818ee81124622ab4e394d5d30d3fec463b931 (servicio); 9d23739677c37732195528c961777bf20ff3df3a (contratos finales; incluye adaptación/corrección de fixtures).
+
+### 10.127 TASK-153 / USER — protección de certificado de auditoría de conformidades (C1.472)
+
+- generateSignatureAuditCertificate valida SOLICITUD_ADMISION/READ antes de consultar claves de firma cuando la búsqueda parte de una solicitud sin documento; el guard se ejecuta bajo ScriptLock. Las solicitudes denegadas reciben RESOURCE_NOT_FOUND sin abrir FirmasConformidades.
+- Las referencias transactionId inexistentes o ambiguas sin un recurso previamente autorizado, y las denegaciones documentales, se normalizan a RESOURCE_NOT_FOUND para evitar oráculos de existencia/ámbito. Las consultas autorizadas conservan la detección explícita de ambigüedad dentro de su propio ámbito.
+- Se omite ipOrigen del resumen. El objeto declara que es RESUMEN_AUDITORIA_NO_PROBATORIO, que la verificación criptográfica no se ha realizado y que requiere validación autenticada del proveedor. Se explica el alcance limitado del hash SHA-256 del resumen.
+- Contrato local V8 PASS (8 escenarios); parseo del servicio y test PASS. Department Scope Contract run 42907619042 SUCCESS, incluidos USER signature ownership y syntax-check.
+- BETA-FUNC-025 ampliada; sigue Pendiente beta. Sin PSC real, callback autenticado, Drive/Sheets real ni despliegue.
+- El subalcance del certificado queda implementado; TASK-153 permanece En ejecución y AUD-NG-386 abierto por las rutas restantes.
+- Commits: 836154141d9098882ca1e7046e9b94b6f89c2498 (código) y 0ff23efa8170a502c4044cb03ed4072e91cba196 (contrato); commits intermedios de la misma secuencia: be2978afb55199d4d91f9351a3cd6c39d8266454, 35f91c0a891ca0a1b16536a990e7bf4a9c4f86ae.

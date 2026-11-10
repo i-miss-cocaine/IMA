@@ -5,11 +5,11 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.471**
+- Último checkpoint: **C1.472**
 - Última sesión: `IMA-EXEC-20261110-1825Z-02`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.471: **40988**
+- Caracteres del archivo activo tras C1.472: **45488**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 - Baseline lógico válido: **C1.316** (`31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`). C1.317–C1.382 se conservan, pero no se aceptan como evidencia de continuidad por corrección expresa del usuario.
@@ -324,3 +324,5 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.469 | IMA-EXEC-20261110-1825Z-02 | USER: destinatario de firma avanzada verificado contra cuenta activa y ámbito institucional/relación SELF-GUARDIAN; perfil canónico; CI Department Scope, Identity Mapping y Task-Service PASS | PM-01 — TASK-153 / USER / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt — sección C1.469 | 361–405 | C1.468 | 75e28fbc017bc3167689dc8386d910b8a06706e8; 7e06d3a0c8eebf5301842ed29b1f00f52f1e01da |
 | C1.470 | IMA-EXEC-20261110-1825Z-02 | ACADEMIC: contrato conductual de conversión, ownership de solicitud/expediente, rollback integral, fallo de compensación explícito y reentrada/lock; local y CI PASS | PM-01 — TASK-153 / ACADEMIC / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt — sección C1.470 | 407–450 | C1.469 | 88b3462e969ec427f5b31fbcb7894c1fbbc49dff; 08813b2dbcddbf2df23e2ed1d008052f425c252b |
 | C1.471 | IMA-EXEC-20261110-1825Z-02 | ACADEMIC: aislamiento de evaluaciones/entrevistas, revalidación de ownership e identidad/ámbito bajo lock; local y CI PASS | PM-01 — TASK-153 / ACADEMIC / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt — sección C1.471 | 452–493 | C1.470 | 06d818ee81124622ab4e394d5d30d3fec463b931; 9d23739677c37732195528c961777bf20ff3df3a; CI 42905094147 |
+
+| C1.472 | IMA-EXEC-20261110-1825Z-02 | USER: certificado de auditoría con prevalidación de ownership, no divulgación de referencias, omisión de IP y semántica no probatoria; local y CI PASS | PM-01 — TASK-153 / USER / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt — sección C1.472 | 494–538 | C1.471 | 836154141d9098882ca1e7046e9b94b6f89c2498; 0ff23efa8170a502c4044cb03ed4072e91cba196; CI 42907619042 |

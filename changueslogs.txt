@@ -1088,3 +1088,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Verificación local V8 y parseo JavaScript PASS. Department Scope Contract run 42905094147 SUCCESS; todos los pasos PASS.
 - Sin Apps Script/Sheets real ni despliegue. TASK-153 continúa En ejecución; AUD-NG-386 abierto.
 - Commits de código/pruebas: 06d818ee81124622ab4e394d5d30d3fec463b931; 9d23739677c37732195528c961777bf20ff3df3a.
+
+
+[2026-11-10] C1.472 — IMA-EXEC-20261110-1825Z-02 — TASK-153 / USER: certificado de auditoría de conformidades
+- Se añade prevalidación de ownership de SOLICITUD_ADMISION bajo ScriptLock antes de consultar referencias de firma cuando la búsqueda parte de una solicitud; denegaciones no abren FirmasConformidades.
+- Referencias transactionId no autorizadas/inexistentes/ambiguas y denegaciones de documento responden RESOURCE_NOT_FOUND genérico. Se omite IPOrigen de la salida.
+- El certificado declara naturaleza RESUMEN_AUDITORIA_NO_PROBATORIO, verificación criptográfica NO_VERIFICADA, validación autenticada del proveedor pendiente y alcance no probatorio del SHA-256.
+- Contrato V8 local (8 escenarios), parseo y Department Scope CI run 42907619042 PASS. BETA-FUNC-025 ampliada, Pendiente beta; sin PSC/callback real ni despliegue.
+- Commits: 836154141d9098882ca1e7046e9b94b6f89c2498; 0ff23efa8170a502c4044cb03ed4072e91cba196.
