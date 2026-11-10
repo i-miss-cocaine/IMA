@@ -371,7 +371,10 @@ console.log("academic admission duplicate resolution ownership and concurrency c
       rows:[requestHeader,["REQ-DUP","2026-11-10","2026","1","Aspirante","Prueba","ID-1","","Responsable","000","a@b.test","EnRevision","Web","Observación previa",""]],
       reads:0,writes:[],
       getDataRange(){this.reads++;const self=this;return {getValues(){return self.rows.map(row=>row.slice());}};},
-      getRange(row,col){const self=this;return {setValue(value){self.writes.push({row,col,value});self.rows[row-1][col-1]=value;}};}
+      getRange(row,col,numRows,numCols){const self=this;return {
+        setValue(value){self.writes.push({row,col,value});self.rows[row-1][col-1]=value;},
+        setValues(values){values.forEach((line,r)=>line.forEach((value,cell)=>{self.writes.push({row:row+r,col:col+cell,value});self.rows[row+r-1][col+cell-1]=value;}));}
+      };}
     };
   }
   function makeResolutionHarness(options) {
