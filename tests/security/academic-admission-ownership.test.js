@@ -78,3 +78,107 @@ assert.equal(ambiguous.authorized,false);
 assert.equal(ambiguous.code,"RESOURCE_OWNERSHIP_AMBIGUOUS");
 
 console.log("academic admission ownership contract: PASS");
+
+// Interview scheduling serializes the overlap check and append; result updates
+// verify the request scope before reading interview details.
+{
+  const interviewHeader=["EntrevistaID","SolicitudID","Fecha","HoraInicio","HoraFin","EvaluadorUserID","Lugar","Modalidad","Estado","Observaciones","Creada"] ;
+  function makeInterviewSheet(rows) {
+    return {
+      rows:rows.map(row=>row.slice()),
+      getLastRow(){return this.rows.length;},
+      getDataRange(){const self=this;return {getValues(){return self.rows.map(row=>row.slice());}};},
+      getRange(row,col,numRows,numCols){
+        const self=this;
+        return {
+          getValues(){return Array.from({length:numRows},(_,r)=>self.rows[row-1+r].slice(col-1,col-1+numCols));},
+          setValue(value){self.rows[row-1][col-1]=value;}
+        };
+      },
+      appendRow(row){this.rows.push(row.slice());}
+    };
+  }
+  const existing=["ENT-1","REQ-1","2026-11-11","09:00","10:00","EVAL-1","Campus","Presencial","Programada","","created"];
+  const sheet=makeInterviewSheet([interviewHeader,existing]);
+  let lockHeld=false,lockAttempts=0,releases=0,sheetReads=0;
+  const scheduleContext={
+    getAcademicAdmissionScopeContext_:(_payload,action,requestId,operation)=>({
+      authorized:action==="scheduleAdmissionInterview"&&requestId==="REQ-2"&&operation==="UPDATE",
+      ss:{},actor:{authorized:true,userId:"EVAL-1",role:"Evaluador"},
+      scope:{authorized:true,institutionId:"INST-1",departmentIds:["D1"],institutionWide:false},
+      requestAccess:{authorized:true,departmentId:"D1"}
+    }),
+    LockService:{getScriptLock:()=>({
+      tryLock:()=>{lockAttempts++;lockHeld=true;return true;},
+      releaseLock:()=>{assert.equal(lockHeld,true);lockHeld=false;releases++;}
+    })},
+    getOrCreateSheet:()=>{assert.equal(lockHeld,true,"interview rows must be read only while the scheduling lock is held");sheetReads++;return sheet;},
+    generateInstitutionalId:()=>{assert.equal(lockHeld,true);return {generatedId:"ENT-NEW"};},
+    logStructuredEvent:()=>{},Date
+  };
+  vm.runInNewContext(extractFunction("scheduleAdmissionInterview"),scheduleContext);
+  assert.throws(()=>scheduleContext.scheduleAdmissionInterview({
+    solicitudId:"REQ-2",fecha:"2026-11-11",horaInicio:"09:30",horaFin:"10:30",evaluadorUserId:"EVAL-1"
+  }),/Conflicto de horario/,"overlapping interviews for the same evaluator must be rejected");
+  assert.equal(sheet.rows.length,2,"conflicting schedule must not append an interview");
+  assert.equal(lockHeld,false,"the scheduling lock must be released after a conflict");
+  const scheduled=scheduleContext.scheduleAdmissionInterview({
+    solicitudId:"REQ-2",fecha:"2026-11-11",horaInicio:"10:00",horaFin:"11:00",evaluadorUserId:"EVAL-1"
+  });
+  assert.equal(scheduled.entrevistaId,"ENT-NEW","non-overlapping adjacent interval must be schedulable");
+  assert.equal(sheet.rows.length,3);
+  assert.equal(lockHeld,false);
+  assert.equal(lockAttempts,2);
+  assert.equal(releases,2);
+  assert.equal(sheetReads,2);
+
+  function runOutcome(requestAuthorized) {
+    const outcomeSheet=makeInterviewSheet([interviewHeader,["ENT-OUT","REQ-OUT","2026-11-12","12:00","13:00","EVAL-OUT","Campus","Presencial","Programada","Nota privada","created"]]);
+    let contextVerified=false,scopeVerified=false,fullRowReads=0,writes=0,held=false,released=0;
+    const context={
+      getAcademicAdmissionScopeContext_:(_payload,action,requestId,operation)=>{
+        assert.equal(action,"recordInterviewOutcome");assert.equal(requestId,null);assert.equal(operation,"UPDATE");
+        contextVerified=true;
+        return {authorized:true,ss:{},actor:{authorized:true,userId:"EVAL-OUT",role:"Evaluador"},
+          scope:{authorized:true,institutionId:"INST-1",departmentIds:["D1"],institutionWide:false}};
+      },
+      LockService:{getScriptLock:()=>({tryLock:()=>{held=true;return true;},releaseLock:()=>{held=false;released++;}})},
+      getOrCreateSheet:()=>{assert.equal(contextVerified,true,"identity/scope must be verified before resolving interview IDs");return outcomeSheet;},
+      assertAcademicAdmissionRequestScopeAccess_:(_ss,_scope,id,_payload,operation)=>{
+        assert.equal(id,"REQ-OUT");assert.equal(operation,"UPDATE");scopeVerified=true;return {authorized:requestAuthorized};
+      },
+      isAcademicAdmissionManagerRole_:()=>false
+    };
+    const originalGetRange=outcomeSheet.getRange.bind(outcomeSheet);
+    outcomeSheet.getRange=(row,col,numRows,numCols)=>{
+      if(row===2&&col===1&&numRows===1&&numCols===11){
+        assert.equal(scopeVerified,true,"request ownership must pass before reading interview details");fullRowReads++;
+      }
+      const range=originalGetRange(row,col,numRows,numCols);
+      const originalSet=range.setValue;
+      range.setValue=value=>{writes++;return originalSet(value);};
+      return range;
+    };
+    vm.runInNewContext(extractFunction("recordInterviewOutcome"),context);
+    return {
+      execute:()=>context.recordInterviewOutcome({entrevistaId:"ENT-OUT",estado:"Realizada",observaciones:"Evaluación completada"}),
+      state:()=>({contextVerified,scopeVerified,fullRowReads,writes,held,released,row:outcomeSheet.rows[1]})
+    };
+  }
+  const denied=runOutcome(false);
+  assert.throws(()=>denied.execute(),/RESOURCE_NOT_FOUND/);
+  assert.deepEqual({...denied.state(),row:undefined},{contextVerified:true,scopeVerified:true,fullRowReads:0,writes:0,held:false,released:1,row:undefined},
+    "out-of-scope interview must not read private details or mutate status/observations");
+  const allowed=runOutcome(true);
+  const result=allowed.execute();
+  assert.equal(result.status,"success");
+  const state=allowed.state();
+  assert.equal(state.fullRowReads,1);
+  assert.equal(state.writes,2);
+  assert.equal(state.held,false);
+  assert.equal(state.released,1);
+  assert.equal(state.row[8],"Realizada");
+  assert.equal(state.row[9],"Nota privada | [Realizada]: Evaluación completada");
+}
+
+console.log("academic admission interview ownership and lock contracts: PASS");
