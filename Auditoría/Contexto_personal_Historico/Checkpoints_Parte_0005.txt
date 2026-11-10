@@ -536,3 +536,9 @@ Completar el subalcance USER de TASK-153 señalado como pendiente desde C1.464/C
 - tareas_auditoria.txt
 - changueslogs.txt
 ===============================================================================
+
+### Addendum C1.472-R1 — consulta sin efectos secundarios
+- La revisión final detectó que el endpoint de consulta usaba getOrCreateSheet, que podía crear FirmasConformidades durante una lectura. Se sustituyó por ss.getSheetByName; si la hoja no existe, la consulta devuelve NO_SIGNATURES_FOUND después de validar ownership documental, sin crear ni modificar hojas.
+- El contrato local añade el escenario de hoja ausente: valida ownership, no ejecuta lectura completa, no crea hoja y libera ScriptLock. La ejecución local V8 queda en 9 escenarios PASS; parseo del servicio y test PASS.
+- GitHub Actions Department Scope Contract run 42908073626: SUCCESS; USER signature ownership y todos los demás pasos/syntax-check PASS.
+- Commits de esta corrección: 2fa2c4068ebf296a2bc050c914165496ee9c1732 (código); 811d7b54a1701e5dcb80828ba807c252228f508c (contrato). El HEAD de código/pruebas conserva también los cambios C1.472 anteriores.

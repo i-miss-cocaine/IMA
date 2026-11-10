@@ -1096,3 +1096,8 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - El certificado declara naturaleza RESUMEN_AUDITORIA_NO_PROBATORIO, verificación criptográfica NO_VERIFICADA, validación autenticada del proveedor pendiente y alcance no probatorio del SHA-256.
 - Contrato V8 local (8 escenarios), parseo y Department Scope CI run 42907619042 PASS. BETA-FUNC-025 ampliada, Pendiente beta; sin PSC/callback real ni despliegue.
 - Commits: 836154141d9098882ca1e7046e9b94b6f89c2498; 0ff23efa8170a502c4044cb03ed4072e91cba196.
+
+[2026-11-10] C1.472-R1 — corrección de solo lectura del certificado
+- `generateSignatureAuditCertificate` ya no usa `getOrCreateSheet`; consulta la hoja existente con `getSheetByName` y no crea almacenamiento al consultar. Si falta la hoja, valida ownership documental y devuelve `NO_SIGNATURES_FOUND` sin lectura completa.
+- Contrato local V8 de 9 escenarios y parseo PASS; Department Scope Contract run 42908073626 SUCCESS.
+- Commits: 2fa2c4068ebf296a2bc050c914165496ee9c1732; 811d7b54a1701e5dcb80828ba807c252228f508c.

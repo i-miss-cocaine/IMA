@@ -1353,3 +1353,5 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - Contrato V8 local (8 escenarios) y parseo PASS; Department Scope Contract run 42907619042 SUCCESS, incluidos USER signature ownership y syntax-check.
 - BETA-FUNC-025 ampliada; Pendiente beta. Sin PSC, callback autenticado, Drive/Sheets real ni despliegue.
 - Commits de código/pruebas: 836154141d9098882ca1e7046e9b94b6f89c2498; 0ff23efa8170a502c4044cb03ed4072e91cba196.
+
+- **Addendum C1.472-R1:** `generateSignatureAuditCertificate` sustituye `getOrCreateSheet` por `getSheetByName`; una consulta sin hoja de firmas no crea ni modifica almacenamiento. El ownership se valida y se devuelve `NO_SIGNATURES_FOUND`. Contrato V8 local de 9 escenarios PASS; Department Scope CI run 42908073626 SUCCESS. Commits: 2fa2c4068ebf296a2bc050c914165496ee9c1732; 811d7b54a1701e5dcb80828ba807c252228f508c.

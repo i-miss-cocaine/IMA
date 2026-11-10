@@ -784,3 +784,5 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - Referencias de transacción sin recurso autorizado y denegaciones documentales se normalizan a RESOURCE_NOT_FOUND. El certificado omite IPOrigen y declara que es un resumen no probatorio, con verificación criptográfica no realizada y hash SHA-256 limitado al resumen serializado.
 - V8 local: 8 escenarios PASS; parseo de servicio y contrato PASS. Department Scope Contract run 42907619042 SUCCESS, incluidos USER signature ownership y syntax-check.
 - BETA-FUNC-025 ampliada, Pendiente beta. TASK-153 permanece En ejecución; AUD-NG-386 abierto.
+
+- **Addendum C1.472-R1:** la ruta de certificado es estrictamente de lectura: `getSheetByName` reemplaza `getOrCreateSheet`; ausencia de hoja no genera una mutación. Contrato local V8 (9 escenarios) y parseo PASS; CI run 42908073626 SUCCESS. Commits: 2fa2c4068ebf296a2bc050c914165496ee9c1732; 811d7b54a1701e5dcb80828ba807c252228f508c.
