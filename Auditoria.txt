@@ -1371,3 +1371,12 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - Se añade contrato conductual de doPost: una denegación RBAC de configureAdvancedSignatureProvider registra solo proveedor y banderas de presencia/eliminación, nunca apiKey/hmacSecret.
 - V8 local PASS; parseo PASS. El primer run 42911446883 falló por deepStrictEqual entre objetos VM; se corrigió el test con aserciones escalares. Repetición Department Scope 42911571605 SUCCESS, incluido USER signature ownership y syntax-check.
 - Commit de test: 740b681f2b78f714b0b268d0717841232726ba3e. Total C1.474: 13 escenarios/26 aserciones locales PASS.
+===============================================================================
+
+## C1.475 — USER: proveedor explícito y activo en solicitudes de firma
+- createAdvancedSignatureRequest ya no asigna PSC-HN-DEFAULT. Exige proveedorId explícito, válido, configurado una sola vez, con nombre y Estado Activo.
+- La validación se realiza bajo ScriptLock tras autorización/ownership del documento y del firmante, pero antes de leer TransaccionesFirmaAvanzada o bytes de Drive.
+- Contrato local V8: seis escenarios de proveedor (ausente, malformado, desconocido, inactivo, duplicado y hoja ausente) PASS; suite USER completa PASS; parseo completo del servicio PASS.
+- CI Department Scope 42912889131, Task-Service security 42912889221 e Identity Mapping 42912889181 — SUCCESS.
+- BETA-FUNC-029 Pendiente beta; sin Apps Script/Sheets real, PSC externo ni verificación criptográfica. TASK-153 sigue En ejecución; AUD-NG-386 permanece abierto.
+===============================================================================

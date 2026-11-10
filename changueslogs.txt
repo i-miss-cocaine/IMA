@@ -1122,3 +1122,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se añade contrato conductual de doPost: una denegación RBAC de configureAdvancedSignatureProvider registra solo proveedor y banderas de presencia/eliminación, nunca apiKey/hmacSecret.
 - V8 local PASS; parseo PASS. El primer run 42911446883 falló por deepStrictEqual entre objetos VM; se corrigió el test con aserciones escalares. Repetición Department Scope 42911571605 SUCCESS, incluido USER signature ownership y syntax-check.
 - Commit de test: 740b681f2b78f714b0b268d0717841232726ba3e. Total C1.474: 13 escenarios/26 aserciones locales PASS.
+===============================================================================
+
+[2026-11-10] C1.475 — IMA-EXEC-20261110-1825Z-02 — TASK-153 / USER: selección explícita de proveedor activo
+- createAdvancedSignatureRequest requiere proveedorId explícito y una única configuración con nombre y Estado Activo; se elimina PSC-HN-DEFAULT.
+- Los proveedores ausentes, malformados, desconocidos, inactivos o duplicados se rechazan antes de crear transacciones o leer Drive. La transacción guarda el ID validado.
+- Se amplía el contrato local con seis escenarios; suite USER V8 y parseo completo PASS. CI 42912889131, 42912889221 y 42912889181 SUCCESS.
+- BETA-FUNC-029 Pendiente beta. No se integró PSC ni se afirmó validez criptográfica.
+- Commit de implementación/pruebas: 40b89c239aa35f370003fc5b54af2182cefa7e59.
+===============================================================================

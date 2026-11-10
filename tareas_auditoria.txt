@@ -800,3 +800,13 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - Se añade contrato conductual de doPost: una denegación RBAC de configureAdvancedSignatureProvider registra solo proveedor y banderas de presencia/eliminación, nunca apiKey/hmacSecret.
 - V8 local PASS; parseo PASS. El primer run 42911446883 falló por deepStrictEqual entre objetos VM; se corrigió el test con aserciones escalares. Repetición Department Scope 42911571605 SUCCESS, incluido USER signature ownership y syntax-check.
 - Commit de test: 740b681f2b78f714b0b268d0717841232726ba3e. Total C1.474: 13 escenarios/26 aserciones locales PASS.
+===============================================================================
+
+### TASK-153 — seguimiento C1.475
+- USER createAdvancedSignatureRequest exige proveedorId explícito y valida que ConfiguracionFirmaAvanzada contenga una sola fila coincidente, con nombre y Estado Activo. Se elimina el fallback PSC-HN-DEFAULT.
+- Proveedor ausente, ID inválido, desconocido, inactivo, duplicado o hoja ausente se rechaza antes de abrir TransaccionesFirmaAvanzada y antes de leer bytes de Drive; el ID validado es el que se persiste.
+- Contrato V8 local: seis escenarios nuevos de proveedor y regresión de la suite USER completa PASS; parseo del servicio completo PASS.
+- CI: Department Scope 42912889131, Task-Service security 42912889221 e Identity Mapping 42912889181 — SUCCESS.
+- BETA-FUNC-029 Pendiente beta; no se ejecutó Apps Script/Sheets real ni integración PSC. No se declara validez criptográfica.
+- TASK-153 permanece En ejecución; AUD-NG-386 abierto por otras superficies de aislamiento y permisos.
+===============================================================================

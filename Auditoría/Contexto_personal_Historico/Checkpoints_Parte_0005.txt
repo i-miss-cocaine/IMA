@@ -624,3 +624,38 @@ Siguiente tarea concreta: revisar `createAdvancedSignatureRequest` para exigir u
 - El primer CI `42911446883` falló únicamente por una comparación deepStrictEqual entre objetos de distintos contextos VM en el nuevo test; se sustituyó por aserciones escalares. No fue un fallo del código productivo.
 - Repetición Department Scope Contract `42911571605` — SUCCESS; USER signature ownership contract y syntax-check PASS.
 - Commit de ampliación de contrato: `740b681f2b78f714b0b268d0717841232726ba3e`.
+
+===============================================================================
+## CHECKPOINT C1.475 — USER: selección explícita de proveedor de firma activo
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.474.
+HEAD inicial verificado: 5198a35d8da3278a97b05cfad583346d48678301.
+Commit de implementación y contratos: 40b89c239aa35f370003fc5b54af2182cefa7e59.
+
+### Alcance único
+Ajustar createAdvancedSignatureRequest para exigir un proveedor de firma indicado explícitamente, configurado de forma única y en estado Activo. Eliminar el fallback ficticio PSC-HN-DEFAULT. No implementar integración PSC ni validación criptográfica documental.
+
+### Cambios
+- Se incorpora assertAdvancedSignatureProviderActive_: valida ID [A-Z0-9_-]{1,64}, requiere la hoja ConfiguracionFirmaAvanzada, una sola fila coincidente, nombre no vacío y Estado exactamente Activo. Admite el formato con encabezados y filas legacy sin encabezado.
+- La ausencia de proveedor, ID malformado, proveedor desconocido, configuración ausente/incompleta, duplicidad o estado inactivo se rechaza con errores específicos y sin crear una transacción ni leer bytes de Drive.
+- La comprobación ocurre dentro de ScriptLock, después de verificar identidad, permiso, ownership documental y ámbito del firmante, y antes de acceder a TransaccionesFirmaAvanzada o Drive.
+- La transacción aceptada persiste exactamente el proveedor configurado; se elimina cualquier selección implícita de PSC-HN-DEFAULT.
+
+### Verificación
+- Ejecución local aislada V8 de tests/security/user-service-signature-ownership.test.js: PASS; seis escenarios nuevos de proveedor (ausente, ID inválido, desconocido, inactivo, duplicado y hoja ausente), junto con todos los contratos USER preexistentes.
+- Parseo sintáctico local del archivo completo backend/user-service/Code.gs: PASS.
+- GitHub Actions sobre 40b89c239aa35f370003fc5b54af2182cefa7e59:
+  - Department Scope Contract run 42912889131 — SUCCESS; incluye USER signature ownership y syntax-check de servicios.
+  - Task-Service security local contracts run 42912889221 — SUCCESS.
+  - Identity mapping and transport security contracts run 42912889181 — SUCCESS.
+- BETA-FUNC-029 añadido a beta_test.txt; Pendiente beta para Apps Script/Sheets desplegado. No se ejecutó proveedor PSC, integración externa, Drive/Sheets real ni validación X.509/CRL/OCSP.
+
+### Estado y continuidad
+- Subalcance de selección explícita de proveedor: implementado y aprobado localmente/CI.
+- TASK-153 permanece En ejecución; AUD-NG-386 sigue abierto por otras superficies de aislamiento y permisos.
+- No se modificó la rama base NG_beta_0.0.0.1.
+- Siguiente subtramo elegible: AUD-NG-386 / EXAM — revisar el contexto de autorización compartido de gradeExamSubmission y deleteExamSubmission, verificando ownership del examen/entrega y permiso del actor antes de mutar.
+===============================================================================
