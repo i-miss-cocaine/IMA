@@ -411,15 +411,23 @@ function doPost(e) {
 
 // [TAREA-10] [Fase 1 - Sistema de Tareas y Entregas] - Sistema ampliado de asignaciones, entregas multimodales, revisiones, versiones y retroalimentación.
 function createTask(payload) {
- const role=payload&&payload._verifiedRole,uid=payload&&payload._verifiedUserId;if(!uid||(role!=="Profesor"&&!isTaskServiceAdministrativeRole(role)))throw new Error("Acceso denegado.");
+ const identity=getVerifiedTaskIdentity_(payload),role=identity.role,uid=identity.userId;if(!identity.authorized||!uid||(role!=="Profesor"&&!isTaskServiceAdministrativeRole(role)))throw new Error("Acceso denegado.");
  const {tipo,titulo,descripcion,parcial,asignatura,gradoAsignado,seccionAsignada,fechaLimite,tareaOriginalId,puntaje,archivoUrl,fechaDisponible,tipoRecurso}=payload||{};
- if(!titulo||!gradoAsignado||!asignatura)throw new Error("Título, grado y asignatura obligatorios.");let owner=String(uid).trim();
- if(role==="Profesor"){const classes=getSheetOrThrow(SpreadsheetApp.openById(SPREADSHEET_ID),"AulasVirtuales").getDataRange().getValues().slice(1);
+ if(!titulo||!gradoAsignado||!asignatura)throw new Error("Título, grado y asignatura obligatorios.");
+ const ss=SpreadsheetApp.openById(SPREADSHEET_ID),taskSheet=getSheetOrThrow(ss,"Tareas");let owner=String(uid).trim();
+ if(role==="Profesor"){const classes=getSheetOrThrow(ss,"AulasVirtuales").getDataRange().getValues().slice(1);
   const c=classes.find(r=>String(r[7]||"Activa")!=="Desactivada"&&normalizeString(r[3])===normalizeString(gradoAsignado)&&(!r[4]||normalizeString(r[4])===normalizeString(seccionAsignada||""))&&normalizeString(r[5])===normalizeString(asignatura)&&String(r[6]||"").trim()===owner);
   if(!c)throw new Error("No existe aula asignada para el ámbito de la tarea.");assertTaskServiceTeacherAssignedToOffer(owner,c[1]);
  }else if(payload.profesorId)owner=String(payload.profesorId).trim();
- if(tareaOriginalId){const orig=getSheetOrThrow(SpreadsheetApp.openById(SPREADSHEET_ID),"Tareas").getDataRange().getValues().slice(1).find(r=>String(r[0]).trim()===String(tareaOriginalId).trim());if(!orig)throw new Error("Tarea original no encontrada.");if(role==="Profesor")assertTaskServiceTeacherCanManageTask(payload,orig);}
- const id="TSK-"+Utilities.getUuid();getSheetOrThrow(SpreadsheetApp.openById(SPREADSHEET_ID),"Tareas").appendRow([id,tipo||"Tarea",titulo,descripcion||"",parcial||"",asignatura,gradoAsignado,seccionAsignada||"",fechaLimite||"",tareaOriginalId||"",owner,"Activa",puntaje===undefined?100:puntaje,archivoUrl||"",fechaDisponible||"",tipoRecurso||"Tarea"]);
+ if(tareaOriginalId){const orig=taskSheet.getDataRange().getValues().slice(1).find(r=>String(r[0]).trim()===String(tareaOriginalId).trim());if(!orig)throw new Error("Tarea original no encontrada.");assertTaskServiceTeacherCanManageTask(payload,orig,"CREATE_DERIVED");}
+ const scope=getVerifiedTaskDepartmentScope_(payload,ss,identity);if(!scope.authorized)throw new Error(scope.code||"DEPARTMENT_SCOPE_NOT_ASSIGNED");
+ const department=resolveTaskServiceOwnershipDepartment_(payload,scope);if(!department.authorized)throw new Error(department.code);
+ if(getDynamicPermissionsForRole(role,"registerResourceOwnership")!==true)throw new Error("AUTH_PERMISSION_DENIED");
+ const registry=ss.getSheetByName("ResourceOwnership");if(!registry||registry.getLastRow()<1)throw new Error("RESOURCE_OWNERSHIP_NOT_CONFIGURED");
+ const headers=registry.getRange(1,1,1,TASK_RESOURCE_OWNERSHIP_HEADERS_.length).getValues()[0].map(v=>String(v||"").trim());if(JSON.stringify(headers)!==JSON.stringify(TASK_RESOURCE_OWNERSHIP_HEADERS_))throw new Error("RESOURCE_OWNERSHIP_SCHEMA_MISMATCH");
+ const id="TSK-"+Utilities.getUuid();taskSheet.appendRow([id,tipo||"Tarea",titulo,descripcion||"",parcial||"",asignatura,gradoAsignado,seccionAsignada||"",fechaLimite||"",tareaOriginalId||"",owner,"Activa",puntaje===undefined?100:puntaje,archivoUrl||"",fechaDisponible||"",tipoRecurso||"Tarea"]);
+ const registered=registerTaskServiceResourceOwnership_(scope,"TAREA",id,department.departmentId,ss);
+ if(!registered.authorized){try{const rows=taskSheet.getDataRange().getValues(),idx=rows.findIndex((r,n)=>n>0&&String(r[0]||"").trim()===id);if(idx>0)taskSheet.deleteRow(idx+1);}catch(_){throw new Error("RESOURCE_OWNERSHIP_ROLLBACK_FAILED");}throw new Error(registered.code||"RESOURCE_OWNERSHIP_WRITE_FAILED");}
  return {status:"success",message:"Tarea creada.",data:{tareaId:id}};
 }
 function updateTask(payload) {
@@ -437,7 +445,9 @@ function updateTask(payload) {
 function deleteTask(payload) {
  const id=payload&&payload.tareaId;if(!id)throw new Error("tareaId requerido.");const ss=SpreadsheetApp.openById(SPREADSHEET_ID),sh=getSheetOrThrow(ss,"Tareas"),data=sh.getDataRange().getValues(),i=data.findIndex(r=>String(r[0]).trim()===String(id).trim());if(i<1)throw new Error("Tarea no encontrada.");
  assertTaskServiceTeacherCanManageTask(payload,data[i]);const has=getSheetOrThrow(ss,"Entregas").getDataRange().getValues().slice(1).some(r=>String(r[1]).trim()===String(id).trim());
- if(has){sh.getRange(i+1,12).setValue("Inactiva");return {status:"success",message:"Tarea marcada como inactiva (existen entregas)."};}sh.deleteRow(i+1);return {status:"success",message:"Tarea eliminada."};
+ if(has){sh.getRange(i+1,12).setValue("Inactiva");return {status:"success",message:"Tarea marcada como inactiva (existen entregas)."};}
+ const revoked=deactivateTaskServiceResourceOwnership_(payload,"TAREA",id,ss);if(!revoked.authorized)throw new Error("RESOURCE_NOT_FOUND");
+ sh.deleteRow(i+1);return {status:"success",message:"Tarea eliminada."};
 }
 function closeAcademicYear(payload) {
   const role = payload && payload._verifiedRole;
@@ -1153,12 +1163,12 @@ function assertTaskServiceClassroomAccess(payload,id) {
  const row=getTaskServiceClassroomById(id);if(!row||String(row[7]||"Activa")==="Desactivada")throw new Error("Aula no válida o inactiva.");
  assertTaskServiceTeacherAssignedToOffer(uid,row[1]);if(String(row[6]||"").trim()!==String(uid).trim())throw new Error("El aula no está asignada al docente autenticado.");return row;
 }
-function assertTaskServiceTeacherCanManageTask(payload,row) {
- const role=payload&&payload._verifiedRole,uid=payload&&payload._verifiedUserId;if(!uid)throw new Error("Identidad verificada requerida.");if(isTaskServiceAdministrativeRole(role))return true;
- if(role!=="Profesor")throw new Error("Acceso denegado: solo el docente asignado puede gestionar la tarea.");
- const classrooms=getTaskServiceAuthorizedClassrooms(payload);
- if(!isTaskServiceTeacherTaskAuthorized_(row,classrooms,uid))throw new Error("Acceso denegado: la tarea no pertenece a un aula/oferta activa del docente.");
- return true;
+function assertTaskServiceTeacherCanManageTask(payload,row,operation) {
+ const identity=getVerifiedTaskIdentity_(payload),uid=identity.userId,role=identity.role;if(!identity.authorized||!uid||!row||!String(row[0]||"").trim())throw new Error("RESOURCE_NOT_FOUND");
+ const ss=SpreadsheetApp.openById(SPREADSHEET_ID),scope=getVerifiedTaskDepartmentScope_(payload,ss,identity);
+ const ownership=assertTaskServiceResourceOwnership_(payload,"TAREA",row[0],operation||"MANAGE",ss,identity,scope);if(!ownership.authorized)throw new Error("RESOURCE_NOT_FOUND");
+ if(isTaskServiceAdministrativeRole(role))return true;if(role!=="Profesor")throw new Error("Acceso denegado: solo el docente asignado puede gestionar la tarea.");
+ const classrooms=getTaskServiceAuthorizedClassrooms(payload);if(!isTaskServiceTeacherTaskAuthorized_(row,classrooms,uid))throw new Error("RESOURCE_NOT_FOUND");return true;
 }
 
 function getTaskServiceAuthorizedClassrooms(payload) {
@@ -1182,6 +1192,94 @@ function isTaskServiceTeacherTaskAuthorized_(task, authorizedClassrooms, teacher
   );
 }
 
+
+var TASK_RESOURCE_OWNERSHIP_REQUEST_CACHE_ = new WeakMap();
+var TASK_RESOURCE_OWNERSHIP_HEADERS_ = ["OwnershipID","InstitutionID","ResourceType","ResourceID","DepartmentID","Status","RegisteredBy","CreatedAt","UpdatedAt"];
+function getVerifiedTaskIdentity_(payload) {
+ const token=payload&&(payload.sessionToken||payload.authToken||payload.token),claims=token?verifySessionToken(token):null;
+ if(!claims||!claims.userId||!claims.role)return {authorized:false,code:"VERIFIED_IDENTITY_REQUIRED"};
+ return {authorized:true,userId:String(claims.userId).trim(),role:String(claims.role).trim()};
+}
+function getVerifiedTaskDepartmentScope_(payload,ss,identity) {
+ const actor=identity||getVerifiedTaskIdentity_(payload);if(!actor||!actor.authorized)return actor||{authorized:false,code:"VERIFIED_IDENTITY_REQUIRED"};
+ let institutionId="";try{institutionId=String(PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID")||"").trim();}catch(_){}
+ if(!institutionId)return {authorized:false,code:"IDENTITY_CONFIGURATION_REQUIRED"};
+ const sheet=ss&&ss.getSheetByName("AsignacionesAmbitosRoles");if(!sheet)return {authorized:false,code:"ROLE_SCOPE_NOT_INITIALIZED"};
+ const data=sheet.getDataRange().getValues();
+ const norm=v=>String(v||"").trim().toUpperCase().replace(/[ÁÀÄ]/g,"A").replace(/[ÉÈË]/g,"E").replace(/[ÍÌÏ]/g,"I").replace(/[ÓÒÖ]/g,"O").replace(/[ÚÙÜ]/g,"U").replace(/Ñ/g,"N").replace(/^ROLE[_-]?/,"").replace(/[^A-Z0-9]/g,"");
+ const parse=v=>{if(Array.isArray(v))return v.map(x=>String(x).trim()).filter(Boolean);const raw=String(v||"").trim();if(!raw)return [];try{const p=JSON.parse(raw);if(Array.isArray(p))return p.map(x=>String(x).trim()).filter(Boolean);if(p!==null&&p!==undefined)return [String(p).trim()].filter(Boolean);}catch(_){}return raw.split(",").map(x=>String(x).trim()).filter(Boolean);};
+ const now=new Date(),scopes=[];
+ for(let i=1;i<data.length;i++){const r=data[i]||[];if(String(r[1]||"").trim()!==actor.userId||norm(r[2])!==norm(actor.role))continue;
+  if(["ACTIVO","ACTIVA","ACTIVE"].indexOf(String(r[5]||"").trim().toUpperCase())===-1)continue;
+  const start=r[8]?new Date(r[8]):null,end=r[9]?new Date(r[9]):null;
+  if((start&&isNaN(start.getTime()))||(end&&isNaN(end.getTime())))continue;if(start&&start>now)continue;if(end&&end<now)continue;
+  const scopeType=String(r[3]||"").trim().toUpperCase(),scopeValues=parse(r[4]);if(scopeType&&scopeValues.length)scopes.push({assignmentId:String(r[0]||""),roleId:String(r[2]||""),scopeType,scopeValues});
+ }
+ if(!scopes.length)return {authorized:false,code:"DEPARTMENT_SCOPE_NOT_ASSIGNED",userId:actor.userId,role:actor.role,institutionId,scopes:[],departmentIds:[],institutionWide:false};
+ const departmentIds=[];let institutionWide=false;
+ scopes.forEach(s=>{if(s.scopeType==="DEPARTAMENTO")s.scopeValues.forEach(v=>{if(departmentIds.indexOf(v)===-1)departmentIds.push(v);});if(s.scopeType==="INSTITUCION"&&s.scopeValues.indexOf(institutionId)!==-1)institutionWide=true;});
+ return {authorized:true,userId:actor.userId,role:actor.role,institutionId,scopes,departmentIds,institutionWide};
+}
+function getTaskServiceResourceOwnershipSnapshot_(ss,payload) {
+ try{if(payload&&typeof payload==="object"){const c=TASK_RESOURCE_OWNERSHIP_REQUEST_CACHE_.get(payload);if(c)return c;}}catch(_){}
+ const sheet=ss&&ss.getSheetByName("ResourceOwnership");if(!sheet||sheet.getLastRow()<=1)return {authorized:false,code:"RESOURCE_OWNERSHIP_NOT_CONFIGURED"};
+ const data=sheet.getDataRange().getValues(),headers=(data[0]||[]).slice(0,TASK_RESOURCE_OWNERSHIP_HEADERS_.length).map(v=>String(v||"").trim());
+ if(JSON.stringify(headers)!==JSON.stringify(TASK_RESOURCE_OWNERSHIP_HEADERS_))return {authorized:false,code:"RESOURCE_OWNERSHIP_SCHEMA_MISMATCH"};
+ const result={authorized:true,sheet,data};try{if(payload&&typeof payload==="object")TASK_RESOURCE_OWNERSHIP_REQUEST_CACHE_.set(payload,result);}catch(_){}return result;
+}
+function assertTaskServiceResourceOwnership_(payload,typeValue,idValue,operation,ss,identity,scope) {
+ try{
+  const actor=identity||getVerifiedTaskIdentity_(payload);if(!actor||!actor.authorized)return actor||{authorized:false,code:"VERIFIED_IDENTITY_REQUIRED"};
+  const context=scope||getVerifiedTaskDepartmentScope_(payload,ss||SpreadsheetApp.openById(SPREADSHEET_ID),actor);if(!context||!context.authorized)return context||{authorized:false,code:"DEPARTMENT_SCOPE_NOT_ASSIGNED"};
+  const type=String(typeValue||"").trim().toUpperCase(),id=String(idValue||"").trim();if(!type||!id)return {authorized:false,code:"RESOURCE_REFERENCE_INVALID"};
+  const snapshot=getTaskServiceResourceOwnershipSnapshot_(ss||SpreadsheetApp.openById(SPREADSHEET_ID),payload);if(!snapshot.authorized)return snapshot;
+  const matches=snapshot.data.slice(1).filter(r=>String(r[1]||"").trim()===context.institutionId&&String(r[2]||"").trim().toUpperCase()===type&&String(r[3]||"").trim()===id&&String(r[5]||"").trim().toUpperCase()==="ACTIVE");
+  if(!matches.length)return {authorized:false,code:"RESOURCE_OWNERSHIP_UNVERIFIED"};if(matches.length!==1)return {authorized:false,code:"RESOURCE_OWNERSHIP_AMBIGUOUS"};
+  const departmentId=String(matches[0][4]||"").trim();if(!departmentId)return {authorized:false,code:"RESOURCE_DEPARTMENT_UNRESOLVED"};
+  const inDepartment=(context.departmentIds||[]).some(v=>String(v||"").trim()===departmentId);if(context.institutionWide!==true&&!inDepartment)return {authorized:false,code:"RESOURCE_SCOPE_DENIED"};
+  return {authorized:true,code:"RESOURCE_SCOPE_ALLOWED",userId:actor.userId,role:actor.role,institutionId:context.institutionId,departmentId,resourceType:type,resourceId:id,operation:String(operation||"").trim().toUpperCase(),accessType:context.institutionWide===true?"INSTITUTION":"DEPARTMENT"};
+ }catch(_){return {authorized:false,code:"RESOURCE_OWNERSHIP_CHECK_FAILED"};}
+}
+function resolveTaskServiceOwnershipDepartment_(payload,scope) {
+ if(!scope||!scope.authorized)return {authorized:false,code:scope&&scope.code||"DEPARTMENT_SCOPE_NOT_ASSIGNED"};
+ const allowed=(scope.departmentIds||[]).map(v=>String(v||"").trim()).filter(Boolean),requested=String(payload&&payload.departmentId||"").trim();
+ if(requested){if(allowed.indexOf(requested)===-1)return {authorized:false,code:"RESOURCE_DEPARTMENT_SELECTION_DENIED"};return {authorized:true,departmentId:requested};}
+ if(allowed.length===1)return {authorized:true,departmentId:allowed[0]};if(allowed.length>1)return {authorized:false,code:"RESOURCE_DEPARTMENT_SELECTION_REQUIRED"};return {authorized:false,code:"RESOURCE_DEPARTMENT_UNRESOLVED"};
+}
+function registerTaskServiceResourceOwnership_(scope,typeValue,idValue,departmentValue,ss) {
+ let lock=null;try{
+  if(!scope||!scope.authorized||!scope.userId||!scope.institutionId)return {authorized:false,code:"DEPARTMENT_SCOPE_NOT_ASSIGNED"};
+  if(getDynamicPermissionsForRole(scope.role,"registerResourceOwnership")!==true)return {authorized:false,code:"AUTH_PERMISSION_DENIED"};
+  const type=String(typeValue||"").trim().toUpperCase(),id=String(idValue||"").trim(),dept=String(departmentValue||"").trim();
+  if(!type||!id||!dept||(scope.departmentIds||[]).map(String).indexOf(dept)===-1)return {authorized:false,code:"RESOURCE_OWNERSHIP_FIELDS_INVALID"};
+  const sheet=(ss||SpreadsheetApp.openById(SPREADSHEET_ID)).getSheetByName("ResourceOwnership");if(!sheet||sheet.getLastRow()<1)return {authorized:false,code:"RESOURCE_OWNERSHIP_NOT_CONFIGURED"};
+  const headers=sheet.getRange(1,1,1,TASK_RESOURCE_OWNERSHIP_HEADERS_.length).getValues()[0].map(v=>String(v||"").trim());if(JSON.stringify(headers)!==JSON.stringify(TASK_RESOURCE_OWNERSHIP_HEADERS_))return {authorized:false,code:"RESOURCE_OWNERSHIP_SCHEMA_MISMATCH"};
+  lock=LockService.getScriptLock();if(!lock.tryLock(5000))return {authorized:false,code:"RESOURCE_OWNERSHIP_LOCK_TIMEOUT"};
+  const data=sheet.getDataRange().getValues(),matches=[];
+  for(let i=1;i<data.length;i++){const r=data[i]||[];if(String(r[1]||"").trim()===scope.institutionId&&String(r[2]||"").trim().toUpperCase()===type&&String(r[3]||"").trim()===id)matches.push(r);}
+  if(matches.length>1)return {authorized:false,code:"RESOURCE_OWNERSHIP_AMBIGUOUS"};
+  if(matches.length===1){const r=matches[0];if(String(r[5]||"").trim().toUpperCase()==="ACTIVE"&&String(r[4]||"").trim()===dept)return {authorized:true,ownershipId:String(r[0]||"").trim(),idempotent:true};return {authorized:false,code:"RESOURCE_OWNERSHIP_CONFLICT"};}
+  const now=new Date().toISOString(),ownershipId="OWN-"+Utilities.getUuid();sheet.appendRow([ownershipId,scope.institutionId,type,id,dept,"ACTIVE",scope.userId,now,now]);return {authorized:true,ownershipId,idempotent:false};
+ }catch(_){return {authorized:false,code:"RESOURCE_OWNERSHIP_WRITE_FAILED"};}finally{if(lock){try{lock.releaseLock();}catch(_){}}}
+}
+function assertTaskServiceSubmissionTaskOwnership_(payload,deliveryId,operation) {
+ const ss=SpreadsheetApp.openById(SPREADSHEET_ID),deliveries=getSheetOrThrow(ss,"Entregas").getDataRange().getValues().slice(1);
+ const delivery=deliveries.find(r=>String(r[0]||"").trim()===String(deliveryId||"").trim());if(!delivery)throw new Error("RESOURCE_NOT_FOUND");
+ const task=getSheetOrThrow(ss,"Tareas").getDataRange().getValues().slice(1).find(r=>String(r[0]||"").trim()===String(delivery[1]||"").trim());
+ if(!task)throw new Error("RESOURCE_NOT_FOUND");assertTaskServiceTeacherCanManageTask(payload,task,operation||"MANAGE");return {delivery,task};
+}
+function deactivateTaskServiceResourceOwnership_(payload,typeValue,idValue,ss) {
+ const identity=getVerifiedTaskIdentity_(payload);if(!identity.authorized)return {authorized:false,code:identity.code};
+ const scope=getVerifiedTaskDepartmentScope_(payload,ss,identity);if(!scope.authorized)return {authorized:false,code:scope.code};
+ const sheet=ss.getSheetByName("ResourceOwnership");if(!sheet||sheet.getLastRow()<=1)return {authorized:false,code:"RESOURCE_OWNERSHIP_NOT_CONFIGURED"};
+ const data=sheet.getDataRange().getValues(),matches=[];
+ for(let i=1;i<data.length;i++){const r=data[i]||[];if(String(r[1]||"").trim()===scope.institutionId&&String(r[2]||"").trim().toUpperCase()===String(typeValue||"").trim().toUpperCase()&&String(r[3]||"").trim()===String(idValue||"").trim()&&String(r[5]||"").trim().toUpperCase()==="ACTIVE")matches.push({row:r,rowNumber:i+1});}
+ if(matches.length!==1)return {authorized:false,code:matches.length?"RESOURCE_OWNERSHIP_AMBIGUOUS":"RESOURCE_OWNERSHIP_UNVERIFIED"};
+ const owner=String(matches[0].row[4]||"").trim();if((scope.departmentIds||[]).map(String).indexOf(owner)===-1&&scope.institutionWide!==true)return {authorized:false,code:"RESOURCE_SCOPE_DENIED"};
+ sheet.getRange(matches[0].rowNumber,6).setValue("INACTIVE");sheet.getRange(matches[0].rowNumber,7).setValue(identity.userId);sheet.getRange(matches[0].rowNumber,9).setValue(new Date().toISOString());return {authorized:true};
+}
+
+
 function getStudentTasks(payload) {
   const role = payload && payload._verifiedRole, actorId = payload && payload._verifiedUserId;
   if (!actorId) throw new Error("Acceso denegado: se requiere identidad verificada.");
@@ -1200,9 +1298,12 @@ function getStudentTasks(payload) {
   const tasksData = getSheetOrThrow(ss, "Tareas").getDataRange().getValues().slice(1);
   const entregasData = getSheetOrThrow(ss, "Entregas").getDataRange().getValues().slice(1);
   const teacherClassrooms = role === "Profesor" ? getTaskServiceAuthorizedClassrooms(payload) : null;
+  const staffScope = role === "Profesor" || isTaskServiceAdministrativeRole(role) ? getVerifiedTaskDepartmentScope_(payload, ss) : null;
+  if (staffScope && !staffScope.authorized) throw new Error("Acceso denegado.");
   const seenOriginalTasksForEC = new Set();
   const studentTasks = tasksData.filter(task => {
     if (role === "Profesor" && !isTaskServiceTeacherTaskAuthorized_(task, teacherClassrooms, actorId)) return false;
+    if (staffScope && !assertTaskServiceResourceOwnership_(payload, "TAREA", task[0], "READ", ss, null, staffScope).authorized) return false;
     if (normalizeString(task[6]) !== normalizeString(grado)) return false;
     if (task[7] && String(task[7]).trim() && !isInTeacherList(seccion, task[7])) return false;
     if (task[1] === "Credito Extra") {
@@ -1285,8 +1386,7 @@ function uploadFile(payload) {
   if(!taskData)throw new Error("Tarea no encontrada.");
   let profile;
   if(role==="Estudiante"||role==="Alumno")profile=assertTaskServiceStudentCanAccessTask(ss,actorId,taskData);
-  else if(role==="Profesor"){assertTaskServiceTeacherCanManageTask(payload,taskData);profile=getTaskServiceUserProfile(actorId);}
-  else profile=getTaskServiceUserProfile(actorId);
+  else {assertTaskServiceTeacherCanManageTask(payload,taskData,"UPLOAD_FILE");profile=getTaskServiceUserProfile(actorId);}
   const parts=String(fileData).split(","),raw=parts.length>1?parts[1]:parts[0];
   let mimeType="application/octet-stream";
   const match=parts[0].match(/^data:([^;]+);base64$/i);
@@ -1349,6 +1449,7 @@ function saveSubmissionDraft(payload) {
 
 function gradeSubmissionWithRubric(payload) {
   const { entregaId, calificacion, estado, comentario, rubricaEvaluacionJSON } = payload || {};
+  assertTaskServiceSubmissionTaskOwnership_(payload, entregaId, "GRADE");
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const entregasSheet = getSheetOrThrow(ss, "Entregas");
 
@@ -1443,7 +1544,8 @@ function deleteFile(payload) {
 }
 
 function gradeSubmission(payload) {
-  const { entregaId, calificacion, estado, comentario } = payload;
+  const { entregaId, calificacion, estado, comentario } = payload || {};
+  assertTaskServiceSubmissionTaskOwnership_(payload, entregaId, "GRADE");
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const entregasSheet = getSheetOrThrow(ss, "Entregas");
 
@@ -1481,7 +1583,7 @@ function deleteSubmission(payload) {
   if(idx<1)throw new Error("Entrega no encontrada.");
   const taskId=String(data[idx][1]||"").trim(),task=getSheetOrThrow(ss,"Tareas").getDataRange().getValues().slice(1).find(r=>String(r[0]).trim()===taskId);
   if(!task)throw new Error("No se puede eliminar: la tarea asociada no existe.");
-  if(role==="Profesor")assertTaskServiceTeacherCanManageTask(payload,task);
+  assertTaskServiceTeacherCanManageTask(payload,task,"DELETE_SUBMISSION");
   const fileId=extractTaskServiceFileId(data[idx][4]),mime=String(data[idx][8]||"");
   if(fileId){try{if(mime==="folder")DriveApp.getFolderById(fileId).setTrashed(true);else DriveApp.getFileById(fileId).setTrashed(true);}catch(e){logDebug("No se pudo eliminar archivo de entrega.",e.message);throw new Error("No se eliminó la entrega porque falló la eliminación del archivo asociado.");}}
   sheet.deleteRow(idx+1);return {status:"success",message:"Entrega eliminada correctamente."};
@@ -1502,6 +1604,8 @@ function getTeacherActivity(payload) {
   const tareasData = tareasSheet.getDataRange().getValues();
   const entregasValues = entregasSheet.getDataRange().getValues();
   const teacherClassrooms = !isAdmin ? getTaskServiceAuthorizedClassrooms(payload) : null;
+  const staffScope = getVerifiedTaskDepartmentScope_(payload, ss);
+  if (!staffScope.authorized) throw new Error("Acceso denegado.");
   const entregasHeaders = entregasValues.shift();
   let fileIdIndex = entregasHeaders.indexOf("fileUrl");
   if (fileIdIndex === -1) {
@@ -1516,6 +1620,7 @@ function getTeacherActivity(payload) {
     // SI LA TAREA NO EXISTE O NO PERTENECE AL PROFESOR -> DESCARTAR
     if (!tarea) return null;
     if (!isAdmin && !isTaskServiceTeacherTaskAuthorized_(tarea, teacherClassrooms, actorId)) return null;
+    if (!assertTaskServiceResourceOwnership_(payload, "TAREA", tarea[0], "READ", ss, null, staffScope).authorized) return null;
     if (isAdmin && profesorId && String(tarea[10] || "").trim() !== profesorId) return null;
 
     const usuario = usuariosData.find(u => u[0] == entrega[2]);
@@ -1560,9 +1665,12 @@ function getAllTasks(payload) {
   const tareasSheet = getSheetOrThrow(ss, "Tareas");
   const data = tareasSheet.getDataRange().getValues().slice(1);
   const teacherClassrooms = !isAdmin ? getTaskServiceAuthorizedClassrooms(payload) : null;
+  const staffScope = getVerifiedTaskDepartmentScope_(payload, ss);
+  if (!staffScope.authorized) throw new Error("Acceso denegado.");
 
   const filtered = data.filter(r => {
     if (!isAdmin && !isTaskServiceTeacherTaskAuthorized_(r, teacherClassrooms, actorId)) return false;
+    if (!assertTaskServiceResourceOwnership_(payload, "TAREA", r[0], "READ", ss, null, staffScope).authorized) return false;
     if (isAdmin && profesorId && String(r[10] || "").trim() !== profesorId) return false;
     return true;
   });
@@ -1924,8 +2032,10 @@ function deleteStudyMaterial(payload) {
  sh.getRange(i+1,13).setValue("Eliminado");return {status:"success",message:"Material eliminado."};
 }
 function returnSubmissionForRevision(payload) {
-  const { entregaId, comentario, profesorId } = payload || {};
+  const { entregaId, comentario } = payload || {};
   if (!entregaId) throw new Error("entregaId es requerido.");
+  assertTaskServiceSubmissionTaskOwnership_(payload, entregaId, "RETURN_FOR_REVISION");
+  const profesorId = payload && payload._verifiedUserId;
 
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const entregasSheet = getSheetOrThrow(ss, "Entregas");
@@ -2425,16 +2535,14 @@ function getSubmissionDocumentPreviewUrl(payload) {
     if (!delivery) return { status:"error", code:"AUTH_PERMISSION_DENIED", message:"Archivo no vinculado a una entrega institucional." };
     const role = String(claims.role), actorId = String(claims.userId).trim();
     const taskRow = getSheetOrThrow(ss,"Tareas").getDataRange().getValues().slice(1).find(row => String(row[0]).trim() === String(delivery[1]).trim());
-    let allowed = ["Administrador","Desarrollador","Dirección","Secretaría"].indexOf(role) !== -1;
+    let allowed = false;
     if (role === "Estudiante" || role === "Alumno") allowed = String(delivery[2]).trim() === actorId;
-    if (role === "Profesor") {
+    if (role === "Profesor" || isTaskServiceAdministrativeRole(role)) {
       try {
-        if (!taskRow) throw new Error("Tarea no encontrada.");
-        assertTaskServiceTeacherCanManageTask({ _verifiedRole: role, _verifiedUserId: actorId }, taskRow);
+        if (!taskRow) throw new Error("RESOURCE_NOT_FOUND");
+        assertTaskServiceTeacherCanManageTask({ sessionToken: payload.sessionToken || payload.authToken || payload.token }, taskRow, "READ_CONTENT");
         allowed = true;
-      } catch (_) {
-        allowed = false;
-      }
+      } catch (_) { allowed = false; }
     }
     if (["Padre","Tutor","Responsable"].indexOf(role) !== -1) allowed = getTaskServiceGuardianStudentIds(actorId).indexOf(String(delivery[2]).trim()) !== -1;
     if (!allowed) return { status:"error", code:"AUTH_PERMISSION_DENIED", message:"No tiene autorización sobre el documento solicitado." };
