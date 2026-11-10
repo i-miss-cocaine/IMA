@@ -13189,7 +13189,7 @@ function registerStudentEnrollment(payload) {
 }
 
 function registerStudentEnrollmentInternal_(payload) {
-  const { userId, alumno, grado, seccion, periodo, tipo, becaDescuento, observaciones, cargos, _rollbackActions, chargeReference, _chargeReferencePrefix } = payload || {};
+  const { userId, alumno, grado, seccion, periodo, tipo, becaDescuento, observaciones, cargos, _rollbackActions, _chargeReference, _chargeReferencePrefix } = payload || {};
   if (!userId || !grado || !periodo) throw new Error("Datos de matrícula incompletos.");
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const matSheet = getOrCreateSheet(ss, "Matriculas");
