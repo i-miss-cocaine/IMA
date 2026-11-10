@@ -981,3 +981,46 @@ Decisión: el único archivo maestro de normas pasa a llamarse `Normas_Desarollo
 - Sin cambios de código, datos o configuración de ramas.
 - Pruebas de software: no aplican; cambio documental.
 ===============================================================================
+
+
+===============================================================================
+## CHECKPOINT C1.434 — TASK-153: aislamiento de comentarios e historial en Task Service
+Sesión: IMA-EXEC-20261110-1621Z-01
+Fecha: 2026-11-10 UTC.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+HEAD inicial verificado: 4b878e6b4a6a1741f19e9ab2c8859112aca72cd7.
+Commits de implementación: 09d6ad571e8b6a7a965317239a48e27d97f2fd8e (código); 7270a0f24249a681ab5fd10f91a16a682ba542b0 (contratos).
+Fase: PM-01 — TASK-153 P0, En ejecución.
+
+### Alcance implementado
+- Se detectó y corrigió un IDOR en getSubmissionComments, addSubmissionComment y getSubmissionVersions: ahora resuelven la entrega y su tarea, y autorizan con identidad firmada.
+- Personal docente/administrativo pasa por assertTaskServiceTeacherCanManageTask, que verifica ResourceOwnership, institución, departamento y rol/ámbito.
+- Estudiantes solo consultan/gestionan el historial de su propia entrega y deben cumplir la relación estudiante-tarea.
+- Padre/Tutor/Responsable solo consulta comentarios de entregas de estudiantes con relación académica verificada; si la selección resulta ambigua, se deniega.
+- Comentarios privados no se devuelven a estudiantes ni tutores. El autor y rol del comentario se derivan del token; el cliente no puede suplantarlos. Solo personal puede registrar comentarios privados.
+- Se conserva el permiso por acción del dispatcher y no se altera el modelo institucional ni se codifican departamentos/cargos.
+
+### Archivos modificados
+- backend/task-service/Code.gs
+- tests/security/task-service-resource-ownership.test.js
+- Auditoria.txt
+- pendientes/Dirección/Pendientes.md
+- changueslogs.txt
+- Este checkpoint y Auditoría/INDICE_CHECKPOINTS.md.
+
+### Verificación y límites
+- Se añadió contrato sintético para identidad firmada, entrega propia, entrega ajena, relación de tutor, acceso de personal con/sin ámbito, discrepancia entre IDs, privacidad y autoría.
+- Pruebas locales: NOT RUN (no hay checkout/runtime de repositorio disponible en esta sesión).
+- CI: el workflow de seguridad está configurado para ejecutarse en push sobre los archivos modificados; no se pudo recuperar un resultado de ejecución para estos commits. No se declara PASS.
+- Apps Script, Sheets/Drive reales, navegador y E2E: NOT RUN.
+- Revisión interna focalizada del diff realizada; sin revisión externa por PR.
+- No se modificaron datos productivos, configuración de permisos reales ni la rama base.
+
+### Hallazgo
+- AUD-NG-385, CRÍTICO/P0: IDOR en comentarios e historial de entregas; corrección aplicada en este cambio. Evidencia y límites registrados en Auditoria.txt.
+
+### Estado y siguiente acción
+- TASK-153 permanece En ejecución; esta corrección no completa toda la integración de Task Service ni cierra TASK-153.
+- Siguiente tramo: integrar ResourceOwnership en backend/exam-service/Code.gs, empezando por la autenticación de getAllExams/getStudentExams y la autorización de creación, lectura de preguntas/resultados, calificación y eliminación. Revisar también los endpoints de libro de calificaciones por ámbito y no confiar en userId, profesorId, authRole ni otros identificadores/roles del payload.
+- Después: auditoría de aplicabilidad en DEVELOPER, recursos institucionales/solicitudes de firma, normalización de errores/listados, referencias compartidas, filtros/importaciones y E2E.
+===============================================================================
