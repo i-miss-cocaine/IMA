@@ -1340,3 +1340,45 @@ Checkpoint anterior: C1.440.
 - C1.441 completa para el subalcance de creación; TASK-153 permanece En ejecución y AUD-NG-386 abierto.
 - Siguiente: proteger `updateExam`, `updateExamStatus`, `deleteExam`, `gradeExamSubmission` y `deleteExamSubmission` con identidad, permiso por operación, ResourceOwnership y ámbito; revisar los permisos de `getTeacherExamActivity` y validar ciclo completo.
 ===============================================================================
+
+===============================================================================
+## CHECKPOINT C1.442 — TASK-153 / AUD-NG-386: corrección de overrides EXAM
+Sesión: IMA-EXEC-20261110-1808Z-01
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+HEAD inicial de esta iteración: c3b04f3e7fa5e5fd6eaf85d627ada3054ff9b382.
+HEAD de código: c0bbf6bb26ad1459da40b7759b52b6f61f328b3f.
+HEAD final de contrato: 798553ae147818659d176864b299c608808f9e5d.
+HEAD de la rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59.
+Checkpoint anterior: C1.441.
+
+### Tarea y resultado
+- Se revisó el siguiente alcance pendiente de AUD-NG-386: updateExamStatus, updateExam, deleteExam, gradeExamSubmission y deleteExamSubmission.
+- Se detectó que gradeExamSubmission y deleteExamSubmission estaban declaradas dos veces. Las versiones legacy posteriores sobrescribían los handlers con autorización por recurso.
+- Se eliminaron exclusivamente las dos declaraciones legacy. Los handlers activos mantienen sus validadores de permiso, identidad, ownership y ámbito.
+- Se amplió el contrato para impedir declaraciones duplicadas y exigir el guard correcto en cada mutación.
+
+### Archivos modificados
+- backend/exam-service/Code.gs
+- tests/security/exam-service-security-contract.test.js
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificaciones y límites
+- Conteo estático sobre el archivo de servicio: exactamente una declaración para cada uno de los cinco endpoints.
+- Revisión del diff de código: eliminadas únicamente las dos declaraciones legacy; revisión de prueba: guardas estáticas para los cinco endpoints.
+- Pruebas locales Node: NOT RUN; no existe checkout/runtime local accesible en esta sesión. Intento de obtener checkout por red: bloqueado por resolución DNS.
+- CI: el estado combinado no reportó checks y el conector no devolvió workflow runs para el commit final; no se declara PASS.
+- Beta BETA-FUNC-022: Pendiente beta. No se desplegó Apps Script ni se modificaron datos reales.
+- Rama base: SHA `44d9891132332e692dbe2ba8602b41f50a508a59`, sin cambios; comparación base→trabajo: rama de trabajo ahead 625, behind 0.
+
+### Estado y siguiente acción
+- La corrección de overrides está publicada; AUD-NG-386 permanece ABIERTO y TASK-153 En ejecución.
+- No se marca Completada por faltar la ejecución local obligatoria de los dos contratos EXAM.
+- Siguiente acción: ejecutar ambos contratos localmente, corregir fallos si aparecen y continuar la verificación de autorización por mutación y del ciclo EXAM completo.
+- HEAD de cierre documental: se verificará después de publicar los registros.
+===============================================================================
