@@ -2605,21 +2605,19 @@ function convertAdmissionToStudent(payload) {
       }
     } catch (_) {}
     if (!montoMatriculaBase) montoMatriculaBase = 1500;
-    // Crear/resolver primero la matrícula; su ID es parte de la referencia
-    // inmutable del cargo y todavía no existe antes de esta operación.
-    const enrollmentPayload = {
+    const enrollRes = registerStudentEnrollmentInternal_({
       userId: targetUserId, alumno: (nombres + " " + apellidos).trim(), grado: grado, seccion: targetSeccion,
       periodo: anolectivo, tipo: "IngresoNuevo", observaciones: "Convertido desde solicitud " + solicitudId,
-      skipLock: true, _rollbackActions: rollbackActions
-    };
-    const enrollRes = registerStudentEnrollmentInternal_(enrollmentPayload);
-    if (!enrollRes || enrollRes.status !== "success" || !enrollRes.matriculaId) throw new Error("ENROLLMENT_CREATION_FAILED");
-    const matriculaRealId = String(enrollRes.matriculaId).trim();
-    const chargeRes = registerStudentEnrollmentInternal_(Object.assign({}, enrollmentPayload, {
+      skipLock: true,
       cargos: [{ concepto: "Matrícula Ordinaria " + anolectivo, montoBase: montoMatriculaBase, descuento: 0, estado: "Pendiente" }],
-      _chargeReference: "ADMISION|" + String(solicitudId).trim() + "|" + matriculaRealId
-    }));
-    if (!chargeRes || chargeRes.status !== "success" || !chargeRes.cargoId) throw new Error("ADMISSION_CHARGE_CREATION_FAILED");
+      _chargeReferencePrefix: "ADMISION|" + String(solicitudId).trim() + "|",
+      _rollbackActions: rollbackActions
+    });
+    if (!enrollRes || enrollRes.status !== "success" || !enrollRes.matriculaId || !enrollRes.cargoId) {
+      throw new Error("ADMISSION_ENROLLMENT_OR_CHARGE_CREATION_FAILED");
+    }
+    const matriculaRealId = String(enrollRes.matriculaId).trim();
+    const chargeRes = enrollRes;
 
     const movSheet = getOrCreateSheet(ss, "MovimientosEstudiante");
     const movData = movSheet.getDataRange().getValues();
@@ -13185,12 +13183,13 @@ function generateMigrationReport(payload) {
 function registerStudentEnrollment(payload) {
   const publicPayload = Object.assign({}, payload || {});
   delete publicPayload._chargeReference;
+  delete publicPayload._chargeReferencePrefix;
   delete publicPayload._rollbackActions;
   return registerStudentEnrollmentInternal_(publicPayload);
 }
 
 function registerStudentEnrollmentInternal_(payload) {
-  const { userId, alumno, grado, seccion, periodo, tipo, becaDescuento, observaciones, cargos, _rollbackActions, _chargeReference } = payload || {};
+  const { userId, alumno, grado, seccion, periodo, tipo, becaDescuento, observaciones, cargos, _rollbackActions, chargeReference, _chargeReferencePrefix } = payload || {};
   if (!userId || !grado || !periodo) throw new Error("Datos de matrícula incompletos.");
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const matSheet = getOrCreateSheet(ss, "Matriculas");
@@ -13246,10 +13245,13 @@ function registerStudentEnrollmentInternal_(payload) {
     });
   }
 
+  const chargeReference = _chargeReferencePrefix
+    ? String(_chargeReferencePrefix).trim() + String(matriculaId).trim()
+    : String(chargeReference || "").trim();
   let admissionChargeId = "";
   if (Array.isArray(cargos) && cargos.length > 0) {
     let existingCargos = cargosSheet.getDataRange().getValues();
-    if (_chargeReference) {
+    if (chargeReference) {
       if (!existingCargos.length || String(existingCargos[0][0] || "").trim() !== "CargoID") {
         throw new Error("STUDENT_CHARGE_SCHEMA_CONFLICT");
       }
@@ -13267,8 +13269,8 @@ function registerStudentEnrollmentInternal_(payload) {
       const montoBase = parseFloat(c.montoBase || 0);
       const descuento = parseFloat(c.descuento || becaDescuento || 0);
       const montoFinal = Math.max(0, montoBase - descuento);
-      if (_chargeReference) {
-        const referenceMatches = existingCargos.slice(1).filter(r => String(r[9] || "").trim() === String(_chargeReference).trim());
+      if (chargeReference) {
+        const referenceMatches = existingCargos.slice(1).filter(r => String(r[9] || "").trim() === String(chargeReference).trim());
         if (referenceMatches.length > 1) throw new Error("ADMISSION_CHARGE_AMBIGUOUS");
         if (referenceMatches.length === 1) {
           const existing = referenceMatches[0];
@@ -13307,11 +13309,11 @@ function registerStudentEnrollmentInternal_(payload) {
         c.estado || "Pendiente",
         c.fechaVencimiento || ""
       ];
-      if (_chargeReference) chargeRow.push(String(_chargeReference).trim());
+      if (chargeReference) chargeRow.push(String(chargeReference).trim());
       cargosSheet.appendRow(chargeRow);
-      if (_chargeReference && !admissionChargeId) admissionChargeId = cargoId;
+      if (chargeReference && !admissionChargeId) admissionChargeId = cargoId;
       existingCargos.push([cargoId, now, sUserId, concepto, montoBase, descuento, montoFinal,
-        c.estado || "Pendiente", c.fechaVencimiento || "", _chargeReference || ""]);
+        c.estado || "Pendiente", c.fechaVencimiento || "", chargeReference || ""]);
       const insertedCargoRow = cargosSheet.getLastRow();
       if (Array.isArray(_rollbackActions)) _rollbackActions.push(function() {
         const current = cargosSheet.getDataRange().getValues();
