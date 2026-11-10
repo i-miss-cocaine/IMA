@@ -5,11 +5,11 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.461**
+- Último checkpoint: **C1.462**
 - Última sesión: `IMA-EXEC-20261110-1825Z-02`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.461: **6917**
+- Caracteres del archivo activo tras C1.462: **10155**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 - Baseline lógico válido: **C1.316** (`31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`). C1.317–C1.382 se conservan, pero no se aceptan como evidencia de continuidad por corrección expresa del usuario.
@@ -314,3 +314,4 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.459 | IMA-EXEC-20261110-1825Z-02 | ACADEMIC: reapertura con rol gestor, ownership bajo lock, estado único y trazabilidad canónica; contratos y sintaxis PASS | PM-01 — TASK-153 / ACADEMIC / AUD-NG-386 | `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt` — sección C1.459 | 2054–2090 | C1.458 | dfab2d1486dd7599e9ccadb890ff71003632c669; 5ae37e4a1aea2b779df2d14b42274719c9b2eccc; 94ec9a3294ff276bfce88941659a1c3f52a030e2; 7648d34076df4b10545b3c6ce4e2cc4229fff5f3; 822c8118cb94518901d7d8a642215da09374e4; b619caad4d9b04f55796d63b37c82c7c719fc4d4; 2e3501fbf0b2617a134560e28d63b5203d52d79e; 52cdc013fd167b1edd8e3d176b6b1e428bdbfe19 |
 | C1.460 | IMA-EXEC-20261110-1825Z-02 | ACADEMIC: alta a lista de espera con lock, idempotencia, ownership y compensación; contratos y sintaxis PASS | PM-01 — TASK-153 / ACADEMIC / AUD-NG-386 | `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt` — sección C1.460 | 10–46 | C1.459 | 6009994e5df3fc45ddbadad9f782468dc65ba100; 314e07b4fa5cfeae005d69b1b417d66a44803851; ecec8f1c7de75cbe7e4d92765fcae4556f486c4d; 82f849a1ab9dae059ed0158454bfbc92e5ceed48; 482df85ea0ab152e5d71c5ae5e34b93b3939766c; 5085910c32bb45c84c9e19851273c687018bcca8 |
 | C1.461 | IMA-EXEC-20261110-1825Z-02 | ACADEMIC: oferta de plaza con ownership previo, lock, idempotencia y estados válidos; contratos y sintaxis PASS | PM-01 — TASK-153 / ACADEMIC / AUD-NG-386 | `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt` — sección C1.461 | 50–84 | C1.460 | 7f3153e036d17ec6d070a67325b447f9c034422d; 239e360700728569e4a000ca542e837be77b1c25; 87d74fbc4df20cca0ef9e650251215a28d30d044; 6eec4411a7bfe8763c22b3084aeb56def6702499; 942601763749c79a79df5d07fb843ee378f404d4; e7e96d2bcbe2a30ed12425ce2a21e2bc43f3ce5b |
+| C1.462 | IMA-EXEC-20261110-1825Z-02 | USER: creación de solicitudes de firma avanzada con RBAC, ownership documental y ScriptLock; contratos y sintaxis PASS | PM-01 — TASK-153 / USER / AUD-NG-386 | `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt` — sección C1.462 | 87–123 | C1.461 | bbd2d1389234233f9d75c8ddd0fb9697e8c5a434; 58d2a03f1d7f0c83e52e88c47f821c8d39256871; 21fe586777cc6394effcdcbc639f8d5da1fa1374; ce08eabc4821f7856c40be16b1bd7620891c75ac; 18e2320cdfe397a6e3a8374dcb934281b2c61498; d7e1bc4e9e9e4bda42388aec22c9b82d94bfe9cd; 5a5f4d3ba5eca42d3c6d0d48f78226950a47e957; 018078b8ca6844b714116f417556e694d78366bd |
