@@ -25,7 +25,9 @@ function extractFunction(text, name) {
 const claims = {
   "teacher-token": { userId: "TEACHER-1", role: "Profesor" },
   "director-token": { userId: "DIRECTOR-1", role: "Dirección" },
-  "other-token": { userId: "TEACHER-2", role: "Profesor" }
+  "other-token": { userId: "TEACHER-2", role: "Profesor" },
+  "student-token": { userId: "STUDENT-1", role: "Estudiante" },
+  "tutor-token": { userId: "TUTOR-1", role: "Tutor" }
 };
 const examRows = [
   ["ExamenID", "Titulo", "Asignatura", "Grado", "Seccion", "FechaLimite", "TiempoLimite", "Estado", "ProfesorID", "Parcial"],
@@ -39,7 +41,8 @@ const scopeRows = [
   ["AssignmentID", "UserID", "RoleID", "ScopeType", "ScopeValues", "Status", "", "", "StartAt", "EndAt"],
   ["ASG-1", "TEACHER-1", "Profesor", "DEPARTAMENTO", "D1", "ACTIVO", "", "", "", ""],
   ["ASG-2", "TEACHER-2", "Profesor", "DEPARTAMENTO", "D2", "ACTIVO", "", "", "", ""],
-  ["ASG-3", "DIRECTOR-1", "Dirección", "INSTITUCION", "I1", "ACTIVO", "", "", "", ""]
+  ["ASG-3", "DIRECTOR-1", "Dirección", "INSTITUCION", "I1", "ACTIVO", "", "", "", ""],
+  ["ASG-4", "STUDENT-1", "Estudiante", "DEPARTAMENTO", "D1", "ACTIVO", "", "", "", ""]
 ];
 const ownershipRows = [
   ["OwnershipID", "InstitutionID", "ResourceType", "ResourceID", "DepartmentID", "Status", "RegisteredBy", "CreatedAt", "UpdatedAt"],
@@ -62,7 +65,8 @@ const userRows = [
   ["STUDENT-2", "Estudiante Dos", "10", "A", "student2@example.invalid"],
   ["STUDENT-3", "Estudiante Tres", "10", "A", "student3@example.invalid"]
 ];
-const sheets = { Examenes: examRows, AsignacionesAmbitosRoles: scopeRows, ResourceOwnership: ownershipRows, EntregasExamen: deliveryRows, Usuarios: userRows };
+const questionRows = [["PreguntaID", "ExamenID", "Tipo", "Texto", "OpcionesJSON", "RespuestaCorrecta"], ["Q-1", "EXM-1", "opcion_multiple", "Pregunta propia", "{}", "A"], ["Q-2", "EXM-2", "opcion_multiple", "Pregunta otro departamento", "{}", "B"]];
+const sheets = { Examenes: examRows, AsignacionesAmbitosRoles: scopeRows, ResourceOwnership: ownershipRows, EntregasExamen: deliveryRows, Usuarios: userRows, PreguntasExamen: questionRows };
 const sheetObjects = Object.fromEntries(Object.entries(sheets).map(([name, rows]) => [name, { getDataRange() { return { getValues: () => rows.map(row => row.slice()) }; } }]));
 const ss = { getSheetByName(name) { return sheetObjects[name] || null; } };
 const runtime = {
@@ -71,7 +75,8 @@ const runtime = {
   PropertiesService: { getScriptProperties() { return { getProperty(name) { return name === "IMA_INSTITUTION_ID" ? "I1" : null; } }; } },
   SpreadsheetApp: { openById() { return ss; } },
   getSheetOrThrow(spreadsheet, name) { const sheet = spreadsheet.getSheetByName(name); if (!sheet) throw new Error("Missing sheet " + name); return sheet; },
-  isInTeacherList(value, filter) { return String(value).trim() === String(filter).trim(); }
+  isInTeacherList(value, filter) { return String(value).trim() === String(filter).trim(); },
+  normalizeString(value) { return String(value || "").trim().toLowerCase(); }
 };
 const helpers = ["getVerifiedExamIdentity_", "getVerifiedExamDepartmentScope_", "assertExamResourceOwnershipForScope_", "getAllExams", "getTeacherExamActivity"].map(name => extractFunction(source, name)).join("\n");
 vm.runInNewContext(helpers + "\nthis.getAllExams = getAllExams; this.getTeacherExamActivity = getTeacherExamActivity; this.getVerifiedExamDepartmentScope_ = getVerifiedExamDepartmentScope_; this.assertExamResourceOwnershipForScope_ = assertExamResourceOwnershipForScope_;", runtime);
@@ -91,4 +96,21 @@ assert.equal(missing.authorized, false); assert.equal(missing.code, "RESOURCE_OW
 const duplicate = runtime.assertExamResourceOwnershipForScope_(ss, scope, "EXAMEN", "EXM-5", "READ", {});
 assert.equal(duplicate.authorized, false); assert.equal(duplicate.code, "RESOURCE_OWNERSHIP_AMBIGUOUS");
 assert.deepEqual(Array.from(runtime.getAllExams({ sessionToken: "other-token" }).data), [], "no accessible ownership returns an empty list");
+const readFunctions = ["getVerifiedExamIdentity_", "getVerifiedExamDepartmentScope_", "assertExamResourceOwnershipForScope_",
+  "getExamStudentProfile_", "isExamAssignedToStudent_", "getExamReadContext_", "getStudentExams", "getExamQuestions", "getExamResult"]
+  .map(name => extractFunction(source, name)).join("\\n");
+vm.runInNewContext(readFunctions + "\\nthis.getStudentExams = getStudentExams; this.getExamQuestions = getExamQuestions; this.getExamResult = getExamResult;", runtime);
+const studentListPayload = { sessionToken: "student-token", userId: "STUDENT-2", grado: "99", seccion: "Z" };
+const studentList = runtime.getStudentExams(studentListPayload);
+assert.deepEqual(Array.from(studentList.data, row => row.examenId), ["EXM-1"],
+  "student listing derives user, grade and section from verified account data and filters department ownership");
+assert.equal(studentListPayload._verifiedUserId, "STUDENT-1");
+assert.throws(() => runtime.getExamQuestions({ sessionToken: "student-token", examenId: "EXM-2" }),
+  /RESOURCE_NOT_AVAILABLE/, "student cannot read questions from another department");
+assert.equal(runtime.getExamQuestions({ sessionToken: "student-token", examenId: "EXM-1" }).data.preguntas.length, 1);
+assert.throws(() => runtime.getExamResult({ sessionToken: "student-token", entregaExamenId: "DEL-2" }),
+  /RESOURCE_NOT_AVAILABLE/, "student cannot read another student's result");
+assert.equal(runtime.getExamResult({ sessionToken: "student-token", entregaExamenId: "DEL-1" }).data.calificacionTotal, 90);
+assert.throws(() => runtime.getStudentExams({ sessionToken: "tutor-token", userId: "STUDENT-1" }),
+  /RESOURCE_NOT_AVAILABLE/, "tutor access is denied until a verified tutor-student relationship source is available");
 process.stdout.write("exam-service-departmental-access: signed identity, department scope, tenant isolation and ownership assertions passed\n");
