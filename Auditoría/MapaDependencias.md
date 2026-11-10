@@ -5109,3 +5109,13 @@ Alcance estático satisfecho; sin cambios de código. Hallazgos AUD-NG-374..376 
 - Sintaxis de Code.gs y test aprobada. El test contractual ejecutado en entorno JS aislado con shim compatible; no se reportaron checks CI.
 - AUD-NG-128 Completada en el alcance local/contractual; no se certifica Apps Script desplegado ni datos productivos.
 ===============================================================================
+===============================================================================
+## C1.422 — AUD-NG-001: transporte de identidad desde sesión persistida
+
+- Se verificó que js/auth.js ya conserva result.data.sessionToken/result.sessionToken en currentUser.
+- Brecha vigente en js/api.js: el token persistido solo se inyectaba si el payload no incluía sessionToken/authToken/token; requesterUserId/requesterRole también podían ser aportados por el consumidor.
+- Se corrige para que, en acciones protegidas, el token y requester* procedan de currentUser y se eliminen credenciales alternativas; sin sesión local se eliminan todos esos campos.
+- loginUser/registerUser/requestPasswordRecovery/resetPassword quedan excluidas para preservar el flujo de autenticación y el token de recuperación.
+- Se añade prueba dinámica de prioridad de sesión, eliminación de suplantación, no mutación del payload y preservación del token de recuperación.
+- AUD-NG-001 permanece En ejecución hasta prueba/revisión.
+===============================================================================

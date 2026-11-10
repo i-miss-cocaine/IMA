@@ -2897,3 +2897,14 @@ Siguiente selección: aplicar §6.1 en PM-01 y verificar dependencias reales ant
 **Cambios:** autorización central explícita para las acciones de tickets y reglas; reutilización de la política administrativa en handlers; prueba contractual Node para identidad verificada, cuentas inactivas, propiedad de ticket y acceso a reglas.
 
 **Cierre C1.421:** AUD-NG-128 queda Completada. La prueba contractual y sus escenarios de autorización pasaron en entorno JS aislado con shim compatible; el servicio y el test compilan. No hay checks CI reportados por GitHub para el commit. Code Review interno aprobado; no se ejecutaron pruebas en Apps Script desplegado ni acceso a datos productivos.
+
+
+### 10.91 PM-01 — AUD-NG-001: impedir suplantación de sesión desde payload (C1.422)
+
+**Selección:** AUD-NG-001, severidad Crítica, PM-01. La integración login → almacenamiento ya existe, pero la revisión de `fetchApi` confirmó que un `sessionToken`, `authToken` o `token` aportado en el payload impedía inyectar el token persistido. Además, los campos `requesterUserId` y `requesterRole` solo se rellenaban si faltaban. Esto deja al consumidor controlar credenciales/metadatos de identidad en lugar de derivarlos de la sesión local.
+
+**Corrección:** para acciones distintas de login/registro/recuperación, clonar el payload y sobrescribir siempre `sessionToken` con el token de `currentUser`; eliminar credenciales alternativas y derivar `requesterUserId/requesterRole` de `currentUser`. Si no existe sesión local, eliminar esos campos para que el servidor aplique su denegación por defecto. Las acciones `resetPassword` y recuperación conservan su capacidad propia y no reciben el token de sesión anterior.
+
+**Evidencia:** `js/auth.js` blob `51a7e01fea0d70a3de7f71c58f46145fa04b4a4e`; `js/api.js` blob `c54d23ad1fc84add9e204a0233d824a2bfcc8ed3`; los cinco servicios backend verifican token firmado y rechazan `AUTH_PERMISSION_DENIED` cuando la autorización falla.
+
+**Estado:** En ejecución hasta ejecutar la prueba dinámica de transporte, revisar el diff y verificar el comportamiento de acciones de recuperación.

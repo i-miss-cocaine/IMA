@@ -47,16 +47,26 @@ function fetchApi(service, action, payload, retryCount, options) {
     var enrichedPayload = payload && typeof payload === 'object' && !Array.isArray(payload)
         ? Object.assign({}, payload)
         : {};
-    if (currentUser && typeof enrichedPayload === 'object') {
-        // El token firmado es la única credencial de identidad; requester* se conserva
-        // solo por compatibilidad y nunca debe usarse como fuente de autorización.
-        if (currentUser.sessionToken &&
-            ['loginUser', 'registerUser', 'requestPasswordRecovery', 'resetPassword'].indexOf(action) === -1 &&
-            !enrichedPayload.sessionToken && !enrichedPayload.authToken && !enrichedPayload.token) {
+    var authBootstrapActions = ['loginUser', 'registerUser', 'requestPasswordRecovery', 'resetPassword'];
+    if (authBootstrapActions.indexOf(action) === -1) {
+        // La identidad de la petición procede exclusivamente de la sesión persistida.
+        // Ningún token ni requester* enviado por el consumidor puede reemplazarla.
+        if (currentUser && currentUser.sessionToken) {
             enrichedPayload.sessionToken = currentUser.sessionToken;
+            delete enrichedPayload.authToken;
+            delete enrichedPayload.token;
+            if (currentUser.userId) enrichedPayload.requesterUserId = currentUser.userId;
+            else delete enrichedPayload.requesterUserId;
+            if (currentUser.rol) enrichedPayload.requesterRole = currentUser.rol;
+            else delete enrichedPayload.requesterRole;
+        } else {
+            // Sin sesión local no se acepta una identidad aportada por el payload.
+            delete enrichedPayload.sessionToken;
+            delete enrichedPayload.authToken;
+            delete enrichedPayload.token;
+            delete enrichedPayload.requesterUserId;
+            delete enrichedPayload.requesterRole;
         }
-        if (!enrichedPayload.requesterUserId) enrichedPayload.requesterUserId = currentUser.userId;
-        if (!enrichedPayload.requesterRole) enrichedPayload.requesterRole = currentUser.rol;
     }
 
     var fetchOptions = {

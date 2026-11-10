@@ -542,3 +542,34 @@ Fase: PM-01 — identidad, seguridad y gobierno de acceso.
 Reaplicar §6.1 en PM-01. Mantener el ciclo F29-TASK05↔F29-TASK17 sin resolver hasta completar su triage. No extender la corrección de AUD-NG-128 a bypasses ajenos al hallazgo sin tarea y evidencia propia.
 Commit: SHA por verificar.
 ===============================================================================
+===============================================================================
+## CHECKPOINT C1.422 — Selección y avance de AUD-NG-001
+Sesión: IMA-EXEC-20261110-1340Z-10
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA; rama exclusiva: NG_beta_0.0.0.1_work.
+HEAD de partida: ae65cf5371adbc14388277a305fbb28423449131; checkpoint anterior C1.421.
+Fase: PM-01 — identidad, seguridad y gobierno de acceso.
+
+### Selección
+- AUD-NG-001, severidad Crítica; dependencia técnica de F29-TASK05 y TASK-067.
+- Revalidación: js/auth.js ya persiste el token firmado, pero js/api.js solo lo inyectaba si el payload no traía sessionToken/authToken/token. El payload podía sustituir la credencial persistida y requesterUserId/requesterRole.
+- Los cinco servicios backend USER/ACADEMIC/ACCOUNTING/TASK/EXAM verifican tokens firmados y devuelven AUTH_PERMISSION_DENIED ante autorización fallida.
+
+### Cambio
+- fetchApi clona el payload y, para acciones distintas de login/register/recovery/reset, fuerza sessionToken/requesterUserId/requesterRole desde currentUser y elimina credenciales alternativas.
+- Sin sesión local elimina credenciales y requester* aportados por payload, dejando que el servidor aplique denegación por defecto.
+- resetPassword conserva el token de recuperación y no recibe la sesión anterior.
+- Se añade tests/security/session-token-transport.test.js con pruebas dinámicas de prioridad de sesión y recuperación.
+
+### Archivos modificados
+- js/api.js; tests/security/session-token-transport.test.js; Plan Maestro §10.91; MapaDependencias C1.422; changueslogs; checkpoint; índice.
+
+### Estado y límites
+- AUD-NG-001 permanece En ejecución hasta ejecutar prueba dinámica, revisar diff y confirmar que el token de recuperación se conserva.
+- No se cambia backend ni secretos; no se accede a cuentas/servicios productivos.
+- No se declara la tarea completada todavía.
+
+### Siguiente acción
+Ejecutar tests/security/session-token-transport.test.js en entorno JS aislado y revisar el diff; si pasa, cerrar AUD-NG-001 con límites de CI/productivo explícitos.
+Commit: SHA por verificar.
+===============================================================================
