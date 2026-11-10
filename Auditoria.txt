@@ -1114,3 +1114,12 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - **Commits:** e7d036abad8ef6cecc19252057b2f4888a29dbd2; 6024d318162fe1f758f194ac00c1f23fea803076; 176c5b08974a8a44f1314ea8e65f3ca371541e77; 742fe9576062108c857cfb3e00fd0de59b5ef4a4; 2d5526565a8332cbbed8e80c92ab5427b2deb7cb; f71bebc496ffb6487cdefc3701d1f24043649bd3; dee57ca34414c591f4d8bb6342c2567a9bdb8a33; 87dbe7ecf4b3eaab69fc473d7a06df966f86b24c.
 - **Estado:** TASK-153 En ejecución; AUD-NG-385/386 abiertos. Beta/despliegue reservado a su fase y no bloquea desarrollo.
 ===============================================================================
+
+
+===============================================================================
+## Seguimiento C1.446 — ACADEMIC: propiedad de expedientes y relaciones de tutores
+- Acceso propio y de tutor a expedientes exige ResourceOwnership EXPEDIENTE_ESTUDIANTE y ámbito del estudiante; el tutor debe tener relación activa/portal habilitado y el estudiante una cuenta activa única asociada a PersonaID.
+- getStudentGuardians, saveStudentGuardian y unlinkStudentGuardian verifican expediente antes de leer PII o modificar relaciones.
+- Department Scope Contract runs 42876302825 y 42876368270 PASS; Task-Service security run 42876334741 PASS; backup/restore 42875483013 PASS; EXAM 42872609050 PASS. Pruebas locales NOT RUN.
+- BETA-FUNC-023 ampliada; Pendiente beta. TASK-153 sigue En ejecución; AUD-NG-385/386 abiertos. Sin despliegue ni datos reales.
+===============================================================================

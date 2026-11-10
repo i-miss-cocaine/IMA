@@ -949,3 +949,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Contratos añadidos para acceso permitido/denegado, metadatos/tareas ambiguos y bypass administrativo. 14 aserciones estáticas PASS; Node local NOT RUN; CI sin checks visibles.
 - BETA-FUNC-021 ampliada; Pendiente beta, no bloquea desarrollo.
 - Commits: e7d036abad8ef6cecc19252057b2f4888a29dbd2; 6024d318162fe1f758f194ac00c1f23fea803076; 176c5b08974a8a44f1314ea8e65f3ca371541e77; 742fe9576062108c857cfb3e00fd0de59b5ef4a4; 2d5526565a8332cbbed8e80c92ab5427b2deb7cb; f71bebc496ffb6487cdefc3701d1f24043649bd3; dee57ca34414c591f4d8bb6342c2567a9bdb8a33; 87dbe7ecf4b3eaab69fc473d7a06df966f86b24c.
+
+
+[2026-11-10] C1.446 — IMA-EXEC-20261110-C1.446-02 — TASK-153 / ACADEMIC expediente y relaciones de tutoría
+- Se exige ResourceOwnership/ámbito del estudiante para acceso propio y de tutores; cuenta activa única por PersonaID y relación vigente.
+- getStudentGuardians/saveStudentGuardian/unlinkStudentGuardian verifican expediente antes de leer PII o cambiar relaciones.
+- Department Scope Contract runs 42876302825 y 42876368270 PASS; Task-Service run 42876334741 PASS; backup/restore 42875483013 PASS. Pruebas locales NOT RUN.
+- BETA-FUNC-023 ampliada; Pendiente beta.

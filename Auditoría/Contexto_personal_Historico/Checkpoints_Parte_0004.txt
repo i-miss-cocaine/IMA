@@ -1495,3 +1495,36 @@ HEAD de código/pruebas/beta antes de documentación: 87dbe7ecf4b3eaab69fc473d7a
 - TASK-153 permanece En ejecución; AUD-NG-385/386 abiertos.
 - Siguiente foco técnico: referencias compartidas autorizadas, filtros/importaciones y revisar rutas directas restantes en TASK/EXAM y servicios documentales.
 ===============================================================================
+
+
+## CHECKPOINT C1.446 — IMA-EXEC-20261110-C1.446-02
+
+**Repositorio:** i-miss-cocaine/IMA  
+**Rama autorizada:** NG_beta_0.0.0.1_work  
+**Rama base:** NG_beta_0.0.0.1  
+**HEAD de código/pruebas:** 19a64b518ec4eee24b6f0c25b775f43e0058b90f  
+**HEAD documental previo:** C1.445 (índice b67b9e390144f1a1b7d70f04adcfc6932e75e032)  
+**Base verificada:** 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios).
+
+### Trabajo realizado
+- TASK: ownership AULA_VIRTUAL en listados/creación de aulas; publicaciones/materiales específicos heredan ámbito del aula; mutaciones de contenido validan propiedad; General requiere administrador institutionWide para escritura.
+- TASK: readLegacyDocument exige metadata activa única, vínculo único a tarea y propiedad/ámbito antes de Drive; getMultiPartFolderFiles deshabilitado para evitar enumeración legacy de carpetas.
+- ACADEMIC: assertStudentExpedienteScopeAccess_ exige que estudiante propio coincida con PersonaID y tenga scope/ResourceOwnership; para tutor verifica relación activa/portal habilitado, resuelve una cuenta activa única de estudiante por PersonaID y aplica el ámbito/ownership del estudiante.
+- ACADEMIC: getStudentGuardians, saveStudentGuardian y unlinkStudentGuardian verifican el expediente antes de exponer PII o modificar relaciones.
+- El workflow incorpora academic-student-expediente-ownership.test.js y fixture de acceso departamental con identidad/cuentas/scope sintéticos.
+
+### Verificaciones
+- Department Scope Contract run 42876302825: PASS (incluye student expediente ownership, accounting, ABAC y sintaxis de servicios).
+- Department Scope Contract run 42876368270: PASS (incluye contratos de relaciones de tutoría).
+- Task-Service security run 42876334741: PASS.
+- Task-Service security run 42875494405: PASS; backup/restore run 42875483013: PASS.
+- EXAM run 42872609050: PASS.
+- Los runs 42876008009/42875983130 fallaron por fixture de identidad/ámbito estudiantil incompleto; se añadieron getStudentIdentityForPerson_, cuentas activas y scopes, y el run 42876302825 pasó. No queda fallo abierto de esos contratos.
+- Pruebas locales NOT RUN por limitación de checkout/resolución de red. Los PASS son de GitHub Actions remoto. No hubo despliegue Apps Script ni acceso a datos reales.
+
+### Estado y continuidad
+- BETA-FUNC-021 incluye listados/entregas/archivos legacy/aulas/contenido; BETA-FUNC-023 cubre expediente propio/tutor y relaciones de tutoría. Ambas Pendiente beta.
+- Aulas existentes sin ResourceOwnership quedan ocultas; migración determinista pendiente. Casos ambiguos no se infieren.
+- TASK-153 sigue En ejecución; AUD-NG-385/386 abiertos. DEVELOPER permanece como plano de control sin ABAC departamental; authRole fallback en AUD-NG-082/TASK-645.
+- Siguiente tarea: migración determinista de AULA_VIRTUAL y auditoría de otras rutas de datos estudiantiles, recursos institucionales/solicitudes de firma, referencias compartidas, filtros/importaciones y E2E.
+===============================================================================
