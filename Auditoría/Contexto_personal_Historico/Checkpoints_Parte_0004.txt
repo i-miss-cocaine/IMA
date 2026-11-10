@@ -1,613 +1,258 @@
-# GATE PRIORITARIO IMA: COMMITS CONSOLIDADOS Y CHECKPOINTS OBLIGATORIOS
-
-**LECTURA Y CUMPLIMIENTO OBLIGATORIOS ANTES DE CUALQUIER TRABAJO EN IMA.** Estas reglas son controles de entrada y salida, no sugerencias. Si alguna no puede cumplirse, se detiene el trabajo sin continuar ni publicar cambios parciales.
-
-A. **COMMIT ÚNICO:** por cada iteración de trabajo se prepara y verifica el conjunto completo de cambios de todos los archivos relacionados y se publica exactamente un commit final. Nunca crear commits por archivo, documento, carpeta, subtarea o avance intermedio. Esta instrucción prevalece sobre cualquier texto anterior ambiguo de «un commit por tarea», «commits modulares», «lotes» o «subdividir por cuota». Solo separar en más de un commit si el usuario lo autoriza expresamente. Si el commit único no es posible, detenerse sin commits parciales.
-
-B. **CHECKPOINT OBLIGATORIO:** antes de pausar, terminar una sesión/iteración, transferir el trabajo, cerrar un sublote o detenerse por un bloqueo, agregar un checkpoint acumulativo al archivo de contexto real existente. No borrar, reescribir ni resumir checkpoints anteriores. No se permite terminar la iteración dejando el checkpoint para después.
-
-C. **PUERTA DE INICIO:** antes de modificar cualquier archivo, leer el contexto completo, la metodología completa, el plan vigente y el último checkpoint; verificar repositorio, rama de trabajo, rama base y HEAD de ambas ramas. Si no existe checkpoint fiable o hay contradicción de instrucciones, investigar y detenerse hasta resolverla.
-
-D. **PUERTA DE CIERRE:** el checkpoint debe incluir estado exacto de tarea/lote, último elemento terminado, elemento en curso, siguiente acción concreta, archivo/función/sección/rango exacto, evidencia y SHA de respaldo, pruebas realmente ejecutadas/no ejecutadas, archivos modificados/no modificados, limitaciones, rama y HEAD de partida. Tras publicar el único commit, verificar el HEAD de la rama y la integridad del commit; no crear un segundo commit solo para añadir el SHA que el propio commit no puede contener. El SHA final se confirma consultando el HEAD de GitHub y se comunica en el reporte de cierre.
-
-E. **VERIFICACIÓN:** antes del único commit revisar el diff total y confirmar que todos los cambios relacionados estén incluidos, que no existan cambios ajenos, que el historial previo se conserve y que la rama base permanezca intacta. Después comprobar que el commit incluye el checkpoint y todos los archivos de la iteración.
-
-Estas reglas son específicas y prioritarias para IMA. No modifican ni autorizan alterar las instrucciones de otros repositorios/proyectos. En caso de contradicción, prevalece esta adenda IMA más reciente y la instrucción expresa del usuario.
-
-F. **RECUPERACIÓN HISTÓRICA OBLIGATORIA CUANDO UN ARCHIVO DEVUELVA CERO CARACTERES:** una respuesta de lectura con contenido vacío (0 caracteres), incluso si Git informa que el archivo existe y tiene un blob SHA, NO demuestra que el archivo esté vacío, eliminado, corrupto ni que carezca de historial. Está prohibido sobrescribirlo, recrearlo o sustituirlo por una versión legacy antes de recuperar y verificar su contenido.
-   1. Confirmar repositorio, rama de trabajo autorizada y HEAD actual. La búsqueda de historial, commits, árboles y blobs para recuperar el archivo se limita exclusivamente a esa rama de trabajo y a sus commits alcanzables. No usar la rama base, otras ramas, ramas remotas ajenas ni copias legacy como fuente de restauración. Una copia legacy puede utilizarse únicamente como referencia comparativa si el alcance lo permite.
-   2. Consultar el historial del archivo dentro de la rama de trabajo, identificar el blob más reciente cuyo contenido completo pueda recuperarse y contrastar también el blob del HEAD actual. Si el blob actual puede recuperarse íntegramente, tiene prioridad; si no, seleccionar el commit histórico más reciente de esa misma rama que conserve una versión íntegra y estructuralmente válida. No elegir una versión solo por tamaño o fecha.
-   3. Verificar el contenido recuperado: SHA del blob, tamaño/caracteres, líneas, estructura inicial y final, encabezados, identificadores y estados. Para registros de tareas, inventariar los identificadores reales por categoría (sin contar marcadores o plantillas como tareas), total de tareas únicas, último identificador y, cuando corresponda, tareas completadas y pendientes. Comparar con el registro legacy solo para demostrar diferencias, nunca para reemplazar el historial de trabajo.
-   4. Preservar el blob y el commit de origen como respaldo inmutable. Antes de restaurar, reconciliar cambios posteriores, tareas nuevas, duplicados y estados; revisar el diff completo. La restauración solo se ejecuta si está autorizada y puede hacerse sin pérdida histórica, siguiendo el commit único por iteración. Si no se puede recuperar o validar íntegramente, detenerse y documentar el bloqueo; no escribir sobre el archivo.
-   5. **Inventario obligatorio en el checkpoint:** registrar ruta, rama, HEAD consultado, commit y blob SHA seleccionados, motivo de selección, resultado de la lectura convencional (0 caracteres), caracteres/tamaño y líneas recuperadas, cantidad de tareas por categoría, total de identificadores únicos de tarea, identificador máximo/último, estados completados/pendientes cuando se puedan contar de forma fiable, comparación con legacy y validaciones realizadas/no realizadas. No declarar «recuperado íntegramente» sin esa evidencia.
-
-Esta regla aplica a CUALQUIER archivo del repositorio IMA, sin excepción por tipo, extensión, ubicación o propósito: código fuente, documentación, configuraciones, datos, pruebas, recursos, archivos binarios y cualquier otro artefacto versionado. El hecho de que una herramienta devuelva 0 caracteres no permite clasificar el archivo como vacío. Si el archivo no es texto o la lectura textual no es compatible con su formato, la recuperación y validación deben hacerse sobre el objeto Git y sus bytes (incluidos tamaño y SHA); no se debe forzar una interpretación textual. El inventario de tareas/IDs se exige cuando el archivo contenga registros de tareas; para los demás archivos se registra expresamente «no aplica» y se inventarían las propiedades pertinentes al tipo de archivo.
-
-G. **CONTROL DE CRECIMIENTO, ROTACIÓN Y LOCALIZACIÓN DE CHECKPOINTS (OBLIGATORIO):**
-   1. El tamaño máximo de cada archivo activo de checkpoints será de **180.000 caracteres Unicode**, medidos sobre el contenido UTF-8 decodificado e incluyendo espacios y saltos de línea. Antes de anexar cualquier entrada, calcular el tamaño resultante. Si la adición excedería el límite, no escribir en ese archivo: crear el siguiente archivo secuencial de checkpoints.
-   2. La rotación es preventiva: el archivo nuevo debe quedar por debajo del límite desde su creación. Nunca truncar, borrar, resumir, mover ni reescribir checkpoints anteriores. El archivo que alcanzó el límite queda cerrado para nuevas entradas y permanece íntegro.
-   3. Cada archivo nuevo debe iniciar con una copia íntegra y vigente de este bloque normativo A–I del contexto personal (incluidas restricciones, precedencia, commits, checkpoints, recuperación y rotación), seguida de la identificación del repositorio/proyecto y referencias a la metodología vigente. No copiar todo el historial anterior: conservarlo en su archivo original. La copia normativa se considera una instantánea; cualquier cambio futuro de reglas debe propagarse a los nuevos archivos.
-   4. Convención de nombres: mantener Auditoría/Contexto_personal.txt como primer archivo histórico y punto de entrada; los archivos rotados se crearán como Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt, ..._0003.txt, etc., incrementando secuencialmente y sin reutilizar nombres. Los archivos Parte_01.txt a Parte_07.txt existentes son fragmentos de recuperación del contexto original y no se renombrarán ni se considerarán partes de esta nueva serie.
-   5. Mantener Auditoría/INDICE_CHECKPOINTS.md como índice permanente: una fila por checkpoint con ID, sesión, estado, archivo/ruta, ubicación (sección o líneas), tarea/fase y commit de cierre o estado de publicación. El índice debe señalar el último checkpoint y el archivo activo. No depender de buscar manualmente el último ID en todos los archivos.
-   6. Todo checkpoint debe declarar Ubicación exacta del checkpoint: ruta del archivo, identificador de parte, encabezado/sección y rango de líneas cuando sea posible; además debe incluir ID del checkpoint anterior y referencia al índice central. Si el rango final de líneas solo puede confirmarse tras escribir, calcularlo y registrarlo en el índice dentro del mismo cambio preparado.
-   7. Auditoria.txt y changueslogs.txt deben registrar el ID del checkpoint relacionado, ID de sesión, ruta exacta y referencia a la fila/entrada del índice. No duplicar el texto íntegro del checkpoint en esos registros; mantener evidencia local y referencias cruzadas.
-   8. Al rotar, preparar en una sola iteración el nuevo archivo con el bloque normativo completo, el checkpoint que provocó la rotación, la actualización del índice, la referencia de continuidad desde el archivo anterior y los cambios relacionados en auditoría/changelog. Publicar todo en el commit consolidado habitual; nunca crear un commit separado solo para rotar.
-   9. Antes de cada escritura comprobar tamaño actual, tamaño proyectado, SHA del blob, HEAD y espacio disponible respecto al límite. Si el archivo actual ya supera 180.000 caracteres, no anexar nada: preservar y cerrar ese archivo, crear la siguiente parte y documentar la anomalía. Si la fuente normativa no puede recuperarse íntegramente, detener la rotación hasta restaurarla de forma verificable.
-
-H. **ESTADO DE IMPLEMENTACIÓN Y PRUEBAS FUNCIONALES BETA (OBLIGATORIO PARA IMA):**
-   1. **Completada** describe que todos los requisitos de implementación de la tarea terminaron; exige verificaciones técnicas internas aplicables, autoauditoría, Code Review interno aprobado, evidencia y actualización del backlog/Plan Maestro. No requiere aprobación adicional del usuario.
-   2. No confundir cierre de implementación con certificación funcional integral. Las pruebas E2E, regresión transversal, seguridad por roles, integración y escenarios de plataforma se ejecutan en beta y se registran en `docs/testing/PRUEBAS_FUNCIONALES_BETA.md`.
-   3. Las pruebas técnicas/unitarias/contratos y controles acotados al cambio se ejecutan durante implementación cuando apliquen. Las pruebas integrales se difieren a beta. No afirmar que una prueba no ejecutada pasó.
-   4. Una tarea puede estar Completada mientras sus escenarios beta están Pendientes. Un defecto beta que demuestre incumplimiento de un requisito de implementación puede reabrirla con evidencia; la ausencia de pruebas beta no.
-   5. La plataforma no queda certificada para piloto/cutover por el simple hecho de que las tareas estén Completadas. La salida beta tiene sus propios criterios conforme a la sección 21 de `METODOLOGIA_DESARROLLO.md`.
-
-I. **AUDITORÍA ÚNICA Y CONTROL DE RECURSIVIDAD (OBLIGATORIO):** antes de iniciar, consulta el expediente e informes existentes y aplica §19.6 de METODOLOGIA_DESARROLLO.md. Mantén un expediente principal por tarea; no crees informes completos duplicados. Verifica correcciones de forma focalizada y regístralas en el expediente existente. Repite una auditoría completa solo por cambios sustanciales, requisitos modificados, dependencias que invaliden conclusiones, evidencia nueva contradictoria o cobertura original incompleta; justifica el alcance. Clasifica hallazgos como defecto de implementación, defecto relacionado, defecto documental o incidencia metodológica. No conviertas automáticamente defectos documentales/metodológicos en auditorías recursivas. Está prohibido auditar una auditoría cuyo único objeto sea revisar otro informe; usa una lista de comprobación documental y corrige directamente. Si no hay evidencia nueva ni criterio pendiente, continúa con la siguiente acción/tarea elegible.
-
----
-
-## Identificación del proyecto y referencias de continuidad
-
-- Proyecto/repositorio: `i-miss-cocaine/IMA`.
-- Rama exclusiva de trabajo: `NG_beta_0.0.0.1_work`.
-- Rama base protegida por instrucción: `NG_beta_0.0.0.1`; no escribir en ella.
-- Metodología vigente: `METODOLOGIA_DESARROLLO.md`; plan: `Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md`; mapa: `Auditoría/MapaDependencias.md`.
-- Este archivo es la parte rotativa `Checkpoints_Parte_0004.txt`; no contiene el historial previo. Continuidad anterior: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt`, C1.407, líneas 2250–2263. Índice central: `Auditoría/INDICE_CHECKPOINTS.md`.
-- La parte 0003 quedó cerrada al alcanzar exactamente 180.000 caracteres; no se modifica ni se anexa más contenido.
-
-## C1.408 — continuidad, recuperación documental y triage PM-00
-
-**Sesión:** IMA-EXEC-20261110-1132Z-01  
-**Fecha:** 2026-11-10 11:32Z  
-**Checkpoint anterior:** C1.407  
-**HEAD de partida verificado:** ced7d9b6fe3a2249efe564473d0f93dce0bddbd2  
-**Rama:** `NG_beta_0.0.0.1_work`  
-**Rama base:** `NG_beta_0.0.0.1` @ 44d9891132332e692dbe2ba8602b41f50a508a59  
-**Ámbito:** continuidad, recuperación de blob y triage documental PM-00; sin implementación funcional.
-
-### 1. Continuidad y auditoría de la tarea anterior
-- HEAD de trabajo verificado mediante GitHub: ced7d9b6fe3a2249efe564473d0f93dce0bddbd2; C1.407 tiene como padre c0530aaad2d68a09cede69040ae723cca89caa14.
-- La comparación desde el padre de C1.407 hasta HEAD contiene solo cambios en checkpoint Parte_0003, índice y changelog; no hay cambios de código que invaliden la evidencia de C1.406/C1.403.
-- Rama base verificada en 44d9891132332e692dbe2ba8602b41f50a508a59; no recibió cambios. GitHub reporta `protected=false` y `protection.enabled=false` para la rama base, en contradicción con la descripción de protección. No se modificó la configuración; se mantiene la prohibición absoluta de escribir en ella.
-- No existe decisión institucional aprobada nueva sobre la fuente canónica de departamentos. TASK-153 sigue En ejecución global; T153-S01 permanece Bloqueada. Se reutiliza el expediente FASE 41/F41-08/E2E-41-09 y la evidencia C1.403; no se repite la auditoría funcional.
-- TASK-696 permanece Bloqueada por TASK-153/T153-S01, F29-TASK17 y F37-TASK10. No se adelanta PM-02.
-
-### 2. Recuperación obligatoria de `pendientes/Otros/Pendientes.md`
-- Ruta: `pendientes/Otros/Pendientes.md`; rama `NG_beta_0.0.0.1_work`; HEAD consultado ced7d9b6fe3a2249efe564473d0f93dce0bddbd2.
-- Lectura convencional en la rama: 0 caracteres; la respuesta sí proporcionó blob SHA `24347c3776521c930391f89e0430910554bf233b`.
-- Se recuperó el blob exacto del HEAD actual mediante Git: SHA `24347c3776521c930391f89e0430910554bf233b`; commit de origen: HEAD ced7d9b6fe3a2249efe564473d0f93dce0bddbd2. Se priorizó el blob actual; no se restauró desde un commit histórico ni desde otra rama.
-- Contenido: 1,636,155 caracteres Unicode; 16,510 líneas. Encabezado inicial: `# Backlog consolidado — Otros`; cierre: `- **Estado:** [ ] Pendiente`.
-- Inventario: 674 encabezados/IDs reales; 674 identificadores únicos; 0 duplicados. Categorías: AUD-NG-:110, F:188, TAREA-F:69, TASK-:255, TAREA-:10, FASE:19, AUDIT-CR-:4, T-UX-:19.
-- Estados: 0 completados; 674 pendientes. Mayor sufijo numérico observado: TASK-682; último identificador por posición: TASK-501.
-- No se comparó con un backlog legacy porque se recuperó íntegramente el blob actual del HEAD; no se seleccionó una versión histórica alternativa. El blob/commit de origen permanece como respaldo Git inmutable.
-- Validaciones: SHA del blob coincide con el SHA devuelto al leer la ruta; contenido recuperable por fetch_blob; dimensiones, encabezado, cierre, cantidad de registros, unicidad y estados contados. No se recalculó independientemente SHA-1 del contenido; no se escribió ni alteró el archivo.
-
-### 3. Triage de dependencias PM-00
-- Requisito F29-TASK05: `pendientes/Otros/Pendientes.md`, bloque F29-TASK05; declara AUD-NG-001, AUD-NG-127 y F29-TASK17.
-- Requisito F29-TASK17: `pendientes/Dirección/Pendientes.md`, bloque F29-TASK17; declara F29-Task05/13 y AUD-NG-001/002/036/105/106/108/128/130/136/158.
-- Ciclo explícito: F29-TASK05 → F29-TASK17 → F29-TASK05. Ambas PM-01/P0 permanecen Pendientes. No se elimina ni altera ninguna dependencia original.
-- Se registra triage en Plan Maestro §10.80 y MapaDependencias C1.408; se corrigen solo los extractos de dependencias de §9. No se crea nuevo ID global, hallazgo de producto ni informe de auditoría.
-- Por §6.1, la selección se detiene para resolver el ciclo en PM-00. La tarea activa previa T153-S01 sigue además bloqueada por decisión institucional externa; no se selecciona una tarea sustituta.
-
-### 4. Estado de ejecución, archivos y pruebas
-- Último elemento terminado: verificación de continuidad C1.407, recuperación/validación documental del backlog Otros y detección del ciclo F29.
-- Elemento en curso: triage PM-00 del ciclo y espera de decisión institucional para T153-S01.
-- Archivos documentales modificados en este commit: checkpoint Parte_0004, índice, Plan Maestro, MapaDependencias, Auditoria.txt y changueslogs.txt.
-- Código, datos, esquemas, permisos, configuración y backlogs departamentales fuente: sin modificar.
-- Pruebas de producto, unitarias, integración, Apps Script, Sheets/Drive y E2E: no ejecutadas; esta iteración no contiene implementación.
-- Verificaciones ejecutadas: lectura documental focalizada; consulta de refs/HEAD; comparación de commits; recuperación de blob actual; conteo de líneas/IDs/estados; revisión de rutas de requisitos y dependencias.
-- Limitaciones: la decisión institucional requerida no está presente; no se puede validar autoridad del catálogo ni asignar propietarios. No se modificó branch protection.
-
-### 5. Siguiente acción exacta
-1. Obtener una decisión institucional aprobada que identifique el catálogo departamental autoritativo, la relación formal CatalogoDepartamentos↔DepartamentosAcademicos, claves estables, jerarquía, estados/vigencia y propietario de cada tipo de recurso.
-2. Verificar esa fuente real y reanudar T153-S01 conforme a su requisito y al expediente FASE 41 existente.
-3. Obtener resolución del responsable funcional sobre el orden de F29-TASK05/F29-TASK17; mantener ambas bloqueadas hasta resolver el ciclo sin reinterpretar requisitos.
-4. Reejecutar §6.1 y no iniciar TASK-696 ni otra dependencia PM-02 antes de satisfacer sus prerrequisitos.
-
-**Ubicación exacta:** `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt`, parte 0004, sección C1.408; rango de líneas incluido en el índice. Anterior C1.407; índice central `Auditoría/INDICE_CHECKPOINTS.md`.  
-**Commit de cierre:** este commit consolidado; SHA a verificar tras publicación.  
-===============================================================================
-
-
-
-## C1.409 — corrección focalizada de ubicación del checkpoint
-**Sesión:** IMA-EXEC-20261110-1136Z-01  
-**Fecha:** 2026-11-10 11:36Z  
-**Checkpoint anterior:** C1.408  
-**HEAD de partida:** b6cb9d5e897418017aacbf97c3aaa70d52a2296d  
-**Rama:** `NG_beta_0.0.0.1_work`  
-**Rama base:** `NG_beta_0.0.0.1` @ 44d9891132332e692dbe2ba8602b41f50a508a59
-
-- Verificación documental focalizada: el checkpoint C1.408 comienza en la línea 58 y termina en la línea 109 de este archivo. La fila C1.408 del índice había consignado erróneamente el final como 108; se corrige a 109.
-- No se modifica el cuerpo de C1.408, el contenido normativo A–I, requisitos originales, código, datos, configuración ni backlogs.
-- No se repite ninguna auditoría funcional ni se crea informe/tarea nueva. TASK-153/T153-S01 sigue Bloqueada; el ciclo F29-TASK05↔F29-TASK17 permanece remitido a PM-00.
-- Pruebas de producto: ninguna. Verificación ejecutada: lectura de blob, conteo de líneas y cotejo de rango con la sección C1.408.
-- **Ubicación exacta:** `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt`, sección C1.409, rango a registrar en el índice central `Auditoría/INDICE_CHECKPOINTS.md`. Anterior C1.408.
-===============================================================================
-
-
-===============================================================================
-## C1.410 — Investigación comparativa y plan de decisión T153-S01
-**Sesión:** IMA-EXEC-20261110-1140Z-01  
-**Fecha:** 2026-11-10 11:40Z  
-**Checkpoint anterior:** C1.409  
-**HEAD de partida verificado:** dfbd19cd867e5d750d4978f8aa4ce36ceb4b82e6  
-**Rama de trabajo:** `NG_beta_0.0.0.1_work`  
-**Rama base:** `NG_beta_0.0.0.1` @ 44d9891132332e692dbe2ba8602b41f50a508a59  
-**Tarea/fase:** TASK-153 / T153-S01 / PM-01; investigación y planificación documental, sin implementación.
-
-### 1. Continuidad y alcance
-- HEAD de trabajo y rama base consultados antes de escribir: dfbd19cd867e5d750d4978f8aa4ce36ceb4b82e6 y 44d9891132332e692dbe2ba8602b41f50a508a59. La base no cambió desde C1.409.
-- Se leyó el contexto personal vigente (bloque A–I), metodología, Plan Maestro, checkpoint C1.409, backlog Dirección, FASE 37, FASE 41, PLAN-IMA-001/TASK-695, FASE2-T04, tareas_auditoria y registros históricos.
-- Se reutiliza la auditoría focal C1.403 y los expedientes FASE 37/41 y FASE2-T04. No se repite auditoría funcional, no se crea informe de auditoría nuevo, no se crea ID ni se duplica el subplan.
-- Requisito completo de TASK-153: `pendientes/Dirección/Pendientes.md`, bloque TASK-153; subtarea: Plan Maestro, tabla «Descomposición ejecutable — PM-01», T153-S01. Referencias: FASE 41 F41-08/E2E-41-09; FASE 37; FASE2-T04/AUD-NG-175; AUD-NG-226/TASK-506; C1.403.
-- HEAD de partida se compara con C1.409; no se detectaron cambios funcionales posteriores que invaliden la evidencia C1.403.
-
-### 2. Investigación externa y conclusiones
-- Ed-Fi separa EducationOrganization y OrganizationDepartment; Canvas y Moodle asignan roles/permisos por contextos organizativos jerárquicos y permiten asignaciones distintas por contexto; OneRoster define intercambio SIS/LMS de organizaciones, usuarios, cursos, matrículas y calificaciones, no autorización.
-- NIST SP 800-162/205 respalda ABAC con atributos de sujeto, recurso, acción y entorno; OWASP recomienda deny-by-default y validación por solicitud.
-- SACE/USINIEH es referencia contextual hondureña para organización y administración educativa; su rol de fuente estadística no demuestra autoridad del catálogo interno de IMA. FERPA se cita solo como comparador de privacidad estadounidense, no como ley aplicable a Honduras.
-- Fuentes y URLs oficiales quedan anexadas en Plan Maestro §10.81.2.
-- Dictamen: una fuente lógica de verdad por dominio, con unidades tipadas y relaciones explícitas; no asumir que el departamento académico equivale al administrativo ni que un catálogo técnico de spreadsheets representa propiedad organizativa.
-
-### 3. Plan elaborado
-- Se añade §10.81 al Plan Maestro como ampliación del subplan T153-S01 existente: evidencia vigente; benchmark comparativo; modelo conceptual; cuatro alternativas sin seleccionar; siete etapas S01-0…S01-7; criterios de cierre; pruebas de contrato planificadas; decisiones pendientes.
-- Se mantiene el orden original T153-S01…S08 y las dependencias de TASK-153. No se crean nuevos IDs ni se altera el requisito original.
-- Criterio central: la institución debe identificar autoridad aprobadora, dueño/steward del dato, fuente documental vigente y semántica de unidades, jerarquía, claves, vigencia y propiedad/custodia.
-- La alternativa A/B/C/D queda sin decisión hasta contar con evidencia institucional. El modelo propuesto es conceptual, no un esquema aprobado.
-
-### 4. Estado real y límites
-- TASK-153: En ejecución; T153-S01: Bloqueada por falta de autoridad institucional verificable. Esta iteración no desbloquea la subtarea.
-- No se fusionan catálogos, no se crean tablas, no se modifican códigos, permisos, esquemas ni datos productivos. No se accedió a filas productivas.
-- No se ejecutaron pruebas unitarias, de contrato, Apps Script, Sheets/Drive, HTTP, navegador ni E2E. Las pruebas de contrato se documentan como planificadas.
-- No se crean hallazgos/tareas derivados: la investigación no demuestra una nueva falla distinta; se reutilizan AUD-NG-175, AUD-NG-226, TASK-506, TASK-046, TASK-062 y AUD-NG-158.
-- Tareas relacionadas: TASK-696 sigue Bloqueada; F29-TASK05↔F29-TASK17 sigue en ciclo PM-00.
-
-### 5. Archivos y verificación
-- Modificados: `Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md`, `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt`, `Auditoría/INDICE_CHECKPOINTS.md`, `Auditoria.txt`, `changueslogs.txt`.
-- No modificados: código, pruebas, esquemas, datos, permisos, backlogs fuente, `tareas_auditoria.txt`, FASE 37, FASE 41, FASE2-T04, PLAN-IMA-001 y rama base.
-- Revisiones ejecutadas: cotejo de requisitos originales, vigencia de evidencia C1.403, no duplicación §19.6, fuentes web oficiales, coherencia del plan con §6.1 y límites de alcance.
-- Pruebas de producto: no aplican a esta entrega documental; ninguna fue declarada como ejecutada.
-
-### 6. Siguiente acción exacta
-1. Solicitar/obtener la decisión institucional firmada y los documentos de autoridad enumerados en §10.81.5 S01-0.
-2. Con autorización, completar inventario de solo lectura S01-1 y crosswalk S01-4 sin tocar datos.
-3. Aplicar la alternativa A/B/C/D únicamente con evidencia y aprobación; completar contrato S01-3/S01-5.
-4. Reejecutar §6.1 antes de seleccionar una nueva unidad; no iniciar S02/S03 ni TASK-696 mientras sigan sus dependencias.
-
-**Ubicación exacta:** `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt`, sección C1.410, rango de líneas a registrar en índice central `Auditoría/INDICE_CHECKPOINTS.md`. Anterior C1.409.  
-**Commit de cierre:** este commit consolidado; SHA se confirma externamente tras publicar.  
-===============================================================================
-
-
-===============================================================================
-## C1.411 — IMA-EXEC-20261110-1150Z-01 — autoridad y responsabilidad configurables por rol
-- Solicitud: registrar que IMA no debe fijar nombres personales como titulares de responsabilidades/autoridad; toda asignación sobre antecedentes, expedientes y documentos debe configurarse desde la plataforma mediante roles.
-- Se incorpora N-23 en Auditoría/ORGANIGRAMA_Y_NORMATIVA_INSTITUCIONAL_PROPUESTA.md: catálogo de roles/capacidades, membresías vigentes, matriz por tipo documental/operación/ámbito, aprobaciones dirigidas a roles, delegaciones temporales, sustitución y denegación por defecto.
-- Se distingue configuración de autoridad por rol de la identidad autenticada del actor: la primera no se define por nombre personal; la segunda se conserva en auditoría protegida para trazabilidad, junto con rol efectivo y contexto.
-- Se amplía Plan Maestro §10.82 con requisitos funcionales, pruebas requeridas y dependencias.
-- No se registran nombres personales como responsables en el organigrama ni se crean asignaciones reales. No se modifican código, esquemas, datos productivos, usuarios, roles, permisos o backlogs fuente.
-- T153-S01 permanece Bloqueada hasta decisión institucional sobre autoridad y fuente canónica; T153-S02…S08 y TASK-696 no se adelantan.
-- Pruebas de producto/autorización no ejecutadas; criterios de aceptación solo documentados.
-- Archivos de checkpoint, índice, auditoría y changelog actualizados; rama de trabajo exclusiva NG_beta_0.0.0.1_work.
-===============================================================================
-
-
-===============================================================================
-## C1.412 — IMA-EXEC-20261110-1202Z-01 — matriz de autorización configurable y autoridad institucional superior
-- Solicitud: diseñar reglas configurables por rol/responsabilidad; limitar Dirección, Secretaría y asistentes, Contaduría y su asistente, y Docencia; excluir padre/madre/representante, alumno y empleados no habilitados de la autoridad interna.
-- Se crea Auditoría/ESPECIFICACION_MATRIZ_ROLES_RESPONSABILIDADES.md con catálogos, matriz por tipo documental/operación/ámbito, regla de autoría-propuesta, alcance docente por asignatura, límites financieros, controles y pruebas de aceptación.
-- Se incorpora N-24: rol superior Titular Institucional / Representante Legal (TIRL), separado del desarrollador; puede ejercer funciones de Dirección por configuración/delegación temporal. La representación legal efectiva requiere instrumento jurídico válido; las competencias de órganos estatutarios superiores se preservan.
-- Se amplía Plan Maestro §10.83. La propuesta requiere ratificación institucional y revisión legal hondureña.
-- No se crean usuarios, roles, membresías o permisos reales; no se modifican código, esquemas ni datos productivos. No se ejecutaron pruebas. T153-S01 sigue Bloqueada.
-===============================================================================
-===============================================================================
-## CHECKPOINT C1.413 — Precisión normativa: autonomía institucional y protección de rama
-Sesión: IMA-EXEC-20261110-1237Z-01
-Fecha: 2026-11-10 UTC.
-Repositorio: i-miss-cocaine/IMA.
-Rama exclusiva de trabajo: NG_beta_0.0.0.1_work.
-Rama base: NG_beta_0.0.0.1.
-HEAD de partida verificado: f1e583fd9e9c5ba2e65ffd29413b5d72f8d93c83.
-Checkpoint anterior: C1.412.
-Actividad: PM-00 — aclaración normativa y corrección de criterios de bloqueo; no constituye cierre de tarea funcional.
-
-### Decisiones normativas
-1. GitHub `protected=false` en la rama base es un dato descriptivo y no un bloqueo. La protección es responsabilidad de configuración del propietario/administrador. El agente no la modifica. Se mantiene prohibido escribir/publicar en la rama base o cualquier rama distinta de la autorizada.
-2. IMA es una plataforma tecnológica multiinstitucional, no una institución usuaria. No impone organigrama, cargos, autoridades, departamentos ni políticas universales.
-3. La ausencia de documentos, estatutos, actas, nombramientos u organigrama institucional no bloquea requisitos funcionales ni desarrollo genérico. Los mecanismos configurables pueden diseñarse, implementarse y probarse con datos sintéticos.
-4. Cada institución decide y aprueba su configuración real. La aprobación se exige para seleccionar fuentes canónicas, registrar datos organizativos reales, asignar propietarios/membresías/permisos productivos, migrar datos reales o ejecutar actos institucionales; no para desarrollar los mecanismos genéricos.
-5. T153-S01 conserva un bloqueo acotado a la fuente canónica y conciliación de datos institucionales reales. No bloquea el motor genérico ni tareas independientes con datos sintéticos. Las dependencias se reevalúan individualmente conforme a §6.1; no se eliminan dependencias explícitas sin el procedimiento formal.
-6. §10.83 queda corregido: roles de ejemplo, incluido TIRL, son plantillas opcionales, no una matriz universal ni cargos obligatorios.
-
-### Archivos modificados
-- METODOLOGIA_DESARROLLO.md — numerales 9 y 10 añadidos al gate de inicio.
-- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md — §§10.81.7, 10.82.5 y 10.83.
-- changueslogs.txt — entrada C1.413.
-- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — este checkpoint.
-- Auditoría/INDICE_CHECKPOINTS.md — fila C1.413.
-
-### Alcance y verificaciones
-- Cambios exclusivamente documentales/normativos; sin cambios de código, esquema, datos, permisos, configuración de ramas ni asignaciones institucionales.
-- Se verificaron los bloques fuente exactos, sustituciones, ausencia de los textos normativos obsoletos y coherencia de los nuevos límites.
-- Pruebas de producto/código: no aplican y no se ejecutaron.
-- T153-S01 no se declara completada ni se autoriza selección de fuente institucional real.
-- El ciclo F29-TASK05↔F29-TASK17 no se resuelve con esta regla y permanece pendiente de triage.
-
-### Siguiente acción
-Reaplicar el algoritmo PM-00/§6.1, distinguiendo bloqueos para datos/actos institucionales reales de tareas genéricas configurables. Leer los requisitos originales completos y verificar dependencias de la siguiente candidata. No asumir que T153-S01 bloquea el motor genérico.
-Commit: SHA por verificar después de publicar.
-===============================================================================
-===============================================================================
-## CHECKPOINT C1.414 — Triage PM-00: orden topológico de idempotencia
-Sesión: IMA-EXEC-20261110-1245Z-02
-Fecha: 2026-11-10 UTC.
-Repositorio: i-miss-cocaine/IMA.
-Rama: NG_beta_0.0.0.1_work.
-HEAD de partida verificado: 40ba9bf1090aaa7b136604e1c8fbc48e02d1f485.
-Checkpoint anterior: C1.413.
-Fase: PM-00 — clasificación y resolución de dependencias; sin implementación funcional.
-
-### Tarea/resultado
-- AUD-NG-071 y AUD-NG-069 se reclasifican de PM-00 provisional a PM-03, coherente con el alcance de integración/procesos/eventos.
-- Orden topológico: AUD-NG-071 → AUD-NG-069.
-- AUD-NG-006 se conserva en PM-08 como criterio transversal de integración/regresión; su evidencia consume las dos piezas anteriores sin duplicar implementación.
-- Los tres IDs permanecen Pendientes. Ninguno se marca Completado.
-
-### Evidencia y razonamiento
-- Requisitos originales completos leídos en `pendientes/Otros/Pendientes.md`, blob SHA `24347c3776521c930391f89e0430910554bf233b`.
-- `backend/user-service/Code.gs` SHA `85d12dad06826fdc37660f47d92e6976ff28bfe7`: checkAndRegisterIdempotencyKey/saveIdempotentResult usan CacheService; no se observa reserva atómica bajo LockService antes de ejecutar.
-- `js/api.js` SHA `c54d23ad1fc84add9e204a0233d824a2bfcc8ed3`: fetchApi reintenta fallos de red hasta dos veces y no genera/propaga idempotencyKey/idempotencyToken.
-- La aceptación de AUD-NG-069 requiere que el servidor ya pueda deduplicar atómicamente; por eso AUD-NG-071 debe precederla.
-- AUD-NG-006 ya contiene el requisito transversal y evidencia estática; se reutiliza, sin nueva auditoría ni duplicación.
-
-### Archivos modificados
-- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md — filas de AUD-NG-069, AUD-NG-071 y AUD-NG-006; §10.84.
-- Auditoría/MapaDependencias.md — arista AUD-NG-071 → AUD-NG-069 y relación con AUD-NG-006.
-- changueslogs.txt — entrada C1.414.
-- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — este checkpoint.
-- Auditoría/INDICE_CHECKPOINTS.md — fila C1.414.
-
-### Verificaciones y límites
-- Revisión textual de las filas, nueva arista y consistencia de fases.
-- Revisión focalizada de código existente y reutilización de evidencia conforme a §19.6.
-- No se modificó código, datos, esquemas, permisos, ramas ni configuración.
-- Pruebas de producto no ejecutadas; no aplica a esta reclasificación documental.
-- No se resolvió el ciclo F29-TASK05↔F29-TASK17 ni el bloqueo de fuente canónica real de T153-S01.
-
-### Siguiente acción exacta
-Continuar PM-00 con la siguiente tarea elegible tras aplicar §6.1. Candidatas con requisitos completos para clasificación: TASK-641 (P1, Service Worker, ruta `pendientes/Otros/Pendientes.md`, fuente `Auditoría/AUDITORIA_COMPLETADAS_F8-TASK03.md`) y TASK-680 (Crítico/P0, pero bloqueada por F8-TASK19/20/22 pendientes). TASK-641 requiere revisión de dependencias y asignación de fase destino; no iniciar implementación hasta confirmar fase y puertas PM.
-Commit: SHA por verificar después de publicar.
-===============================================================================
-===============================================================================
-## CHECKPOINT C1.415 — Triage PM-00: clasificación de TASK-641
-Sesión: IMA-EXEC-20261110-1245Z-03
-Fecha: 2026-11-10 UTC.
-Repositorio: i-miss-cocaine/IMA.
-Rama: NG_beta_0.0.0.1_work.
-HEAD de partida: 696a6331a040470fdeb681d26472d1c417269c34.
-Checkpoint anterior: C1.414.
-Fase: PM-00 — clasificación de requisito existente; no implementación.
-
-### Tarea y decisión
-- TASK-641 — «Reparar y verificar el precache del Service Worker».
-- Se reclasifica de PM-00 provisional a PM-08 (Pruebas integrales, resiliencia y observabilidad), por su alcance de precache, instalación/activación y disponibilidad offline.
-- Prioridad original P1; estado permanece Pendiente.
-- Requisito original: `pendientes/Otros/Pendientes.md`, blob vigente SHA `24347c3776521c930391f89e0430910554bf233b`.
-- Expediente de auditoría principal reutilizado: `Auditoría/AUDITORIA_COMPLETADAS_F8-TASK03.md`, SHA `1e8d4518303d53f6f19ae73b4b818a22961cb9ca`, hallazgo AUD-NG-285.
-
-### Vigencia de evidencia
-- `sw.js` actual SHA `b031e9d0fdee0686f9bda54ba13b751122de827b`, igual al auditado; contiene `./css/styles.css`.
-- `css/style.css` actual SHA `f1ff84312ce70949a58eaa099b2aad0ff0a59cb6`, igual al auditado.
-- `manifest.json` actual SHA `0caa5febfbd7fdbb88e9d174fa6623fb7daebb4e`, igual al auditado.
-- La referencia plural `styles.css` no corresponde al archivo versionado `style.css`. La evidencia estática sigue vigente.
-
-### Archivos modificados
-- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md — fila TASK-641 y §10.85.
-- Auditoría/MapaDependencias.md — nota de clasificación y vigencia de evidencia.
-- changueslogs.txt — entrada C1.415.
-- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — este checkpoint.
-- Auditoría/INDICE_CHECKPOINTS.md — fila C1.415.
-
-### Pruebas y límites
-- Verificación de SHA y revisión estática de las rutas citadas.
-- No se modificó código, datos, esquemas, permisos ni configuración de ramas.
-- No se ejecutaron pruebas de navegador, HTTP, Service Worker, instalación, activación ni offline.
-- TASK-641 no se declara Completada; implementación queda para PM-08.
-
-### Siguiente acción exacta
-Continuar PM-00 con AUD-NG-007 (timeout configurable de fetchApi), severidad Media, requisito en `pendientes/Otros/Pendientes.md`, blob SHA `24347c3776521c930391f89e0430910554bf233b`. Reutilizar la evidencia de código disponible; clasificar su fase y dependencias conforme a §6.1 antes de cualquier implementación.
-Commit: SHA por verificar después de publicar.
-===============================================================================
-===============================================================================
-## CHECKPOINT C1.416 — Triage PM-00: clasificación de AUD-NG-007
-Sesión: IMA-EXEC-20261110-1245Z-04
-Fecha: 2026-11-10 UTC.
-Repositorio: i-miss-cocaine/IMA.
-Rama: NG_beta_0.0.0.1_work.
-HEAD de partida: ebbfacfca825354cc91d0fc03671e6af8317fe9f.
-Checkpoint anterior: C1.415.
-Fase: PM-00 — clasificación de dependencia transversal; no implementación.
-
-### Tarea y decisión
-- AUD-NG-007 — «Aplicar el timeout configurado por llamada en fetchApi».
-- Se reclasifica de PM-00 provisional a PM-03 (Integración, procesos y eventos).
-- Justificación de fase: es una capacidad transversal de transporte/API y una dependencia explícita de TASK-429, asignada a PM-05. PM-03 debe preceder a PM-05.
-- AUD-NG-007 permanece Pendiente. No se modifica su alcance original.
-
-### Evidencia reutilizada y verificación focalizada
-- Requisito original: `pendientes/Otros/Pendientes.md`, blob SHA `24347c3776521c930391f89e0430910554bf233b`.
-- Expediente/evidencia de código actual: `js/api.js`, SHA `c54d23ad1fc84add9e204a0233d824a2bfcc8ed3`.
-- `checkMicroserviceHealth` pasa timeout de 6000 ms, pero `fetchApi` usa 60000 ms fijo y no lee `options.timeout`.
-- El temporizador se limpia al recibir respuesta, pero no se limpia en el `catch` antes de reintentar; la aceptación exige limpieza en éxito, error y reintento.
-- La dependencia de AUD-NG-007 respecto a TASK-429 se preserva y ahora queda coherente con el orden PM-03 → PM-05.
-
-### Archivos modificados
-- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md — fila AUD-NG-007 y §10.86.
-- Auditoría/MapaDependencias.md — clasificación y precedencia AUD-NG-007 → TASK-429.
-- changueslogs.txt — entrada C1.416.
-- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — este checkpoint.
-- Auditoría/INDICE_CHECKPOINTS.md — fila C1.416.
-
-### Verificaciones y límites
-- Lectura focalizada de `js/api.js` y revisión de SHA; no se repitió auditoría completa.
-- No se modificó código, datos, esquemas, permisos ni ramas.
-- No se ejecutaron pruebas de navegador, red, timeout, abort ni reintentos.
-- No se declaró AUD-NG-007 Completada.
-
-### Siguiente acción exacta
-Reaplicar §6.1 a los PM-00 restantes. TASK-279 (P1) debe verificarse contra su dependencia «modelo de tickets y permisos validados» antes de seleccionarse; si esa dependencia no está satisfecha, continuar con AUD-NG-096 (Observación) y documentar su resolución sin alterar el estado de TASK-050.
-Commit: SHA por verificar después de publicar.
-===============================================================================
-
-===============================================================================
-## CHECKPOINT C1.417 — Resolución documental AUD-NG-096 / TASK-050
-Sesión: IMA-EXEC-20261110-1312Z-05
-Fecha: 2026-11-10 UTC.
-Repositorio: i-miss-cocaine/IMA.
-Rama exclusiva: NG_beta_0.0.0.1_work.
-HEAD de partida: b055ecf685ad7a6a2d18bd11323767dd772bbe76.
-Checkpoint anterior: C1.416.
-Fase: PM-00 — conciliación administrativa/documental.
-
-### Dictamen
-- AUD-NG-096: Completada, solo la rectificación documental.
-- TASK-050: permanece Pendiente; ocho criterios de aceptación siguen sin marcar.
-- AUD-NG-091 a AUD-NG-096 continúan vinculadas.
-
-### Evidencia
-- Commit histórico: `40c9e15f85224f716d0ddfa597b72e1142ed0191`; blob Dirección: `bd6b1e573e3eda36e34af2a8c83f0483673026a0`; encabezado TASK-050 `[X]`, estado interno `[ ] Pendiente`.
-- HEAD previo: `b055ecf685ad7a6a2d18bd11323767dd772bbe76`; blob Dirección actual: `0f82e33a8c62a4bb31b9b1280d10d0838f213c94`; encabezado `[ ]`, estado `[ ] Pendiente`.
-- La nota C1.417 registra la reconciliación y preserva el histórico. No se cambia TASK-050 ni TASK-051.
-
-### Archivos modificados
-- `pendientes/Dirección/Pendientes.md`: nota aditiva TASK-050.
-- `pendientes/Contabilidad/Pendientes.md`: AUD-NG-096 completada con evidencia.
-- `Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md`: fila y §10.87.
-- `Auditoría/MapaDependencias.md`: resolución C1.417.
-- `changueslogs.txt`: entrada C1.417.
-- `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt`: este checkpoint.
-- `Auditoría/INDICE_CHECKPOINTS.md`: fila C1.417.
-
-### Verificaciones y límites
-- Comparación de versiones históricas y actuales por commit/blob SHA.
-- Encabezado/estado actual y conteo de ocho criterios abiertos verificados.
-- No se modificó código, datos, esquemas, permisos ni configuración de ramas.
-- No se ejecutaron pruebas de producto; no aplican a esta rectificación.
-- No se auditó la auditoría ni se creó informe paralelo.
-
-### Siguiente acción
-Reaplicar §6.1 PM-00. TASK-279 no es elegible mientras «modelo de tickets y permisos validados» no esté verificado como Completado. Continuar con siguiente tarea PM-00 elegible, leyendo requisito íntegro y dependencias. El ciclo F29-TASK05↔F29-TASK17 sigue pendiente de triage.
-Commit: el commit que contiene este checkpoint; SHA verificado tras publicación.
-===============================================================================
-
-===============================================================================
-## CHECKPOINT C1.418 — Reconciliación del inventario TASK-637
-Sesión: IMA-EXEC-20261110-1312Z-06
-Fecha: 2026-11-10 UTC.
-Repositorio: i-miss-cocaine/IMA.
-Rama exclusiva: NG_beta_0.0.0.1_work.
-HEAD de partida: 9ad4b2ed33ea07fa0f63e5fe90f1d01cee8d9be1.
-Checkpoint anterior: C1.417.
-Fase: PM-00 — mantenimiento del inventario y cierre documental.
-
-### Tarea y resultado
-- TASK-637 — inventario integral de archivos.
-- Estado: Completada (reconciliación vigente C1.418).
-- El árbol Git recursivo no truncado contiene 1.051 blobs.
-- Inventario anterior: 1024 filas parseables, 27 rutas omitidas, 31 filas con SHA/tamaño desactualizados.
-- Inventario nuevo: 1.051 rutas únicas; cero omisiones/extras; tamaños y SHA exactos en los 1.050 archivos distintos del inventario; autorreferencia SELF con tamaño UTF-8 exacto.
-- `index.html` conserva SHA `cd742047cdc4948259dd721119429b04f78330ca`. Resumen por área recalculado.
-
-### Archivos modificados
-- `docs/architecture/repository-inventory.md` — reconstrucción completa del snapshot.
-- `pendientes/Contabilidad/Pendientes.md` — cierre vigente C1.418 de TASK-637.
-- `Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md` — §10.88.
-- `Auditoría/MapaDependencias.md` — registro C1.418.
-- `changueslogs.txt` — entrada C1.418.
-- `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt` — este checkpoint.
-- `Auditoría/INDICE_CHECKPOINTS.md` — fila C1.418.
-
-### Autoauditoría / Code Review / pruebas
-- Se compararon rutas del tree con las filas de inventario; unicidad, cobertura, SHA y tamaños verificados.
-- Se verificó el tamaño UTF-8 de la autorreferencia y la integridad del resumen por área.
-- Revisión documental interna aprobada; no se modificó código ni contenido funcional.
-- No se ejecutaron pruebas de producto, despliegues ni operaciones productivas; no aplican a este inventario.
-- No se creó una auditoría duplicada ni se reescribieron snapshots históricos.
-
-### Siguiente acción
-TASK-638 tiene su dependencia TASK-637 satisfecha; verificar si su mapa de dependencias vigente conserva evidencia válida frente a los cambios del árbol antes de seleccionarla/cerrarla. Reaplicar §6.1 y continuar PM-00. TASK-279 permanece no elegible mientras su dependencia de modelo de tickets y permisos validados no esté acreditada.
-Commit: el commit que contiene este checkpoint; SHA verificado tras publicación.
-===============================================================================
-===============================================================================
-## CHECKPOINT C1.419 — Cierre del triage PM-00
-Sesión: IMA-EXEC-20261110-1340Z-07
-Fecha: 2026-11-10 UTC.
-Repositorio: i-miss-cocaine/IMA; rama exclusiva: NG_beta_0.0.0.1_work.
-HEAD de partida: 2a5a5bfff03f1ed0817f82cb2f6d76378426cf4c; checkpoint anterior C1.418.
-
-### Decisiones
-- TASK-279 → PM-03, con AUD-NG-128 PM-01 como dependencia de autorización de tickets.
-- TASK-680 → PM-04, depende F8-TASK19/20 PM-02 y F8-TASK22 PM-04. Motor configurable por institución y pruebas sintéticas; no exigir organigrama/documentos institucionales.
-- TASK-681 permanece PM-03, depende F8-TASK21 PM-02 y F8-TASK23 PM-01.
-- TAREA-10/13 son agregados; AUD-NG-165 PM-01 y AUD-NG-168 PM-05 tienen clasificación propia.
-- Veintidós registros solo contienen encabezados sin requisitos independientes; excluidos de cola conforme §6.1, no completados.
-- AUD-NG-096 y TASK-637/638/639 mantienen cierres previos. TASK-050 sigue Pendiente.
-
-### Archivos
-- Plan Maestro, MapaDependencias, changueslogs, este checkpoint e índice.
-
-### Resultado y límites
-- PM-00 sin tareas ejecutables pendientes; PM-01 habilitada.
-- TASK-279, TASK-680 y TASK-681 siguen Pendientes.
-- Sin cambios de código, datos, esquemas, permisos o configuración institucional; sin pruebas funcionales.
-- No se declara completado el Plan Maestro ni una fase funcional.
-
-### Siguiente acción
-Aplicar §6.1 en PM-01, priorizar severidad/riesgo y verificar dependencias. No bloquear el motor genérico por ausencia de organigrama. Resolver ciclos antes de seleccionar.
-Commit: SHA por verificar.
-===============================================================================
-===============================================================================
-## CHECKPOINT C1.420 — Selección y avance de AUD-NG-128
-Sesión: IMA-EXEC-20261110-1340Z-08
-Fecha: 2026-11-10 UTC.
-Repositorio: i-miss-cocaine/IMA; rama exclusiva: NG_beta_0.0.0.1_work.
-HEAD de partida: c6ca63be31f261acffda734cfa00d91e0678d92a; checkpoint anterior C1.419.
-Fase: PM-01 — identidad, seguridad y gobierno de acceso.
-
-### Selección conforme §6.1
-- AUD-NG-128 — eliminar bypass RBAC y vincular tickets a identidad verificada. Severidad Crítica; no declara dependencias previas. El control de identidad/contexto existe y el bypass central se confirma.
-- Tareas P0 con dependencias explícitas no se adelantaron sin verificar prerrequisitos; el ciclo F29-TASK05↔F29-TASK17 no se fuerza.
-- No se exige organigrama institucional: la política de autoservicio de tickets es genérica y usa claims verificados.
-
-### Evidencia inicial
-- backend/user-service/Code.gs blob 85d12dad06826fdc37660f47d92e6976ff28bfe7.
-- validateRolePermission concedía autorización incondicional a submitProblemTicket/getProblemTickets/replyProblemTicket/configureAutomationRules.
-- Los handlers de tickets ya verificaban _verifiedUserId y propiedad; configureAutomationRules/getAutomationRules ya tenían controles internos de rol.
-- Política objetivo: cuenta activa autenticada crea/lee/responde sus propios tickets; atención de tickets ajenos y reglas solo para Administrador, Desarrollador y Director.
-
-### Archivos modificados
-- backend/user-service/Code.gs — autorización central explícita y TICKET_ADMIN_ROLES_.
-- tests/security/problem-ticket-authorization.test.js — prueba contractual.
-- Plan Maestro §10.90, MapaDependencias C1.420, changueslogs, checkpoint e índice.
-
-### Estado y límites
-- AUD-NG-128 queda En ejecución hasta prueba Node/CI y revisión del diff.
-- Otros bypasses fuera del alcance no se modifican.
-- Sin cambios de datos institucionales ni operaciones productivas.
-- No se declara completada la tarea ni se afirma que las pruebas hayan pasado.
-
-### Siguiente acción
-Ejecutar tests/security/problem-ticket-authorization.test.js mediante Node/CI, revisar diff completo y verificar checks. Si pasa, completar documentación; si falla, corregir.
-Commit: SHA por verificar.
-===============================================================================
-===============================================================================
-## CHECKPOINT C1.421 — Cierre AUD-NG-128
-Sesión: IMA-EXEC-20261110-1340Z-09
-Fecha: 2026-11-10 UTC.
-Repositorio: i-miss-cocaine/IMA; rama exclusiva: NG_beta_0.0.0.1_work.
-HEAD de partida: c7dfa7188146a77ef1c1ed15d45281df30bac87d.
-Checkpoint anterior: C1.420.
-Fase: PM-01 — identidad, seguridad y gobierno de acceso.
-
-### Resultado
-- AUD-NG-128: Completada en el alcance local/contractual.
-- La autorización central ya no concede bypass a submitProblemTicket/getProblemTickets/replyProblemTicket/configureAutomationRules/getAutomationRules.
-- Cuenta activa autenticada puede crear/leer/responder tickets propios. La atención de tickets ajenos y reglas de automatización queda reservada a Administrador/Desarrollador/Director.
-- TICKET_ADMIN_ROLES_ centraliza la lista administrativa y se reutiliza en handlers de listado/respuesta/estado/configuración/consulta de reglas.
-- Otros bypasses no incluidos en AUD-NG-128 no se modificaron.
-
-### Pruebas ejecutadas
-- Sintaxis de todo backend/user-service/Code.gs y tests/security/problem-ticket-authorization.test.js.
-- Autorización central: usuario activo, identidad verificada, userId spoof, sesión ausente/inactiva; reglas admin-only.
-- Handlers con hojas simuladas: listado propio; ocultación de notas internas; vista administrativa; respuesta cruzada denegada sin escritura; respuesta del titular; respuesta administrativa; creación de ticket con userId de cliente falsificado y persistencia bajo ID verificado.
-- Todas las aserciones pasaron en entorno JavaScript aislado con shim compatible para assert/fs/path/vm. No se afirma que se ejecutara Node nativo.
-- GitHub reportó statuses CI vacíos para commit C1.420; no hay evidencia de ejecución de workflow remoto.
-
-### Code Review y límites
-- Code Review interno del diff aprobado; cambios limitados al control de tickets y reglas de automatización.
-- No se desplegó Apps Script ni se accedió a Google Sheets/Drive productivos.
-- No se probaron sesiones/cuentas reales, permisos Drive ni flujos multiinstitución productivos.
-- AUD-NG-128 se cierra solo para el alcance verificable local/contractual; no certifica despliegue productivo.
-
-### Archivos modificados en esta iteración
-- tests/security/problem-ticket-authorization.test.js — pruebas dinámicas de propiedad y acceso cruzado.
-- pendientes/Otros/Pendientes.md — AUD-NG-128 marcada Completada con evidencia.
-- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md — cierre §10.90.
-- Auditoría/MapaDependencias.md — C1.421.
-- changueslogs.txt — C1.421.
-- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — este checkpoint.
-- Auditoría/INDICE_CHECKPOINTS.md — C1.421.
-
-### Siguiente acción
-Reaplicar §6.1 en PM-01. Mantener el ciclo F29-TASK05↔F29-TASK17 sin resolver hasta completar su triage. No extender la corrección de AUD-NG-128 a bypasses ajenos al hallazgo sin tarea y evidencia propia.
-Commit: SHA por verificar.
-===============================================================================
-===============================================================================
-## CHECKPOINT C1.422 — Selección y avance de AUD-NG-001
-Sesión: IMA-EXEC-20261110-1340Z-10
-Fecha: 2026-11-10 UTC.
-Repositorio: i-miss-cocaine/IMA; rama exclusiva: NG_beta_0.0.0.1_work.
-HEAD de partida: ae65cf5371adbc14388277a305fbb28423449131; checkpoint anterior C1.421.
-Fase: PM-01 — identidad, seguridad y gobierno de acceso.
-
-### Selección
-- AUD-NG-001, severidad Crítica; dependencia técnica de F29-TASK05 y TASK-067.
-- Revalidación: js/auth.js ya persiste el token firmado, pero js/api.js solo lo inyectaba si el payload no traía sessionToken/authToken/token. El payload podía sustituir la credencial persistida y requesterUserId/requesterRole.
-- Los cinco servicios backend USER/ACADEMIC/ACCOUNTING/TASK/EXAM verifican tokens firmados y devuelven AUTH_PERMISSION_DENIED ante autorización fallida.
-
-### Cambio
-- fetchApi clona el payload y, para acciones distintas de login/register/recovery/reset, fuerza sessionToken/requesterUserId/requesterRole desde currentUser y elimina credenciales alternativas.
-- Sin sesión local elimina credenciales y requester* aportados por payload, dejando que el servidor aplique denegación por defecto.
-- resetPassword conserva el token de recuperación y no recibe la sesión anterior.
-- Se añade tests/security/session-token-transport.test.js con pruebas dinámicas de prioridad de sesión y recuperación.
-
-### Archivos modificados
-- js/api.js; tests/security/session-token-transport.test.js; Plan Maestro §10.91; MapaDependencias C1.422; changueslogs; checkpoint; índice.
-
-### Estado y límites
-- AUD-NG-001 permanece En ejecución hasta ejecutar prueba dinámica, revisar diff y confirmar que el token de recuperación se conserva.
-- No se cambia backend ni secretos; no se accede a cuentas/servicios productivos.
-- No se declara la tarea completada todavía.
-
-### Siguiente acción
-Ejecutar tests/security/session-token-transport.test.js en entorno JS aislado y revisar el diff; si pasa, cerrar AUD-NG-001 con límites de CI/productivo explícitos.
-Commit: SHA por verificar.
-===============================================================================
-===============================================================================
-## CHECKPOINT C1.423 — Cierre AUD-NG-001
-Sesión: IMA-EXEC-20261110-1340Z-11
-Fecha: 2026-11-10 UTC.
-Repositorio: i-miss-cocaine/IMA; rama exclusiva: NG_beta_0.0.0.1_work.
-HEAD de partida: d68352d083dac7c129aec5be4f5ad6c5827d41a6.
-Checkpoint anterior: C1.422.
-Fase: PM-01 — identidad, seguridad y gobierno de acceso.
-
-### Resultado
-- AUD-NG-001: Completada en alcance local/contractual.
-- login conserva el token firmado en currentUser.
-- fetchApi clona el payload y, para acciones no-bootstrap, fuerza sessionToken/requesterUserId/requesterRole desde currentUser; elimina authToken/token alternativos y los campos de identidad si no existe sesión local.
-- resetPassword conserva su token de recuperación y no recibe la sesión anterior.
-- Cinco servicios backend USER/ACADEMIC/ACCOUNTING/TASK/EXAM inspeccionados: validan token firmado y responden AUTH_PERMISSION_DENIED ante autorización fallida.
-
-### Pruebas
-- Test dinámico de transporte: token persistido vence a sessionToken/authToken/token falsos; requester* falsificados se reemplazan; payload original no se muta; ausencia de sesión elimina credenciales; resetPassword conserva token de recuperación.
-- Flujo doPost USER con getUserVerifiedRole/validateRolePermission reales y verifySessionToken simulado: operación protegida válida deriva U-REAL; token ausente/inválido devuelve AUTH_PERMISSION_DENIED.
-- Todas las aserciones pasaron en entorno JavaScript aislado con shim compatible; no se afirma ejecución en Node nativo.
-- GitHub no reportó checks CI. No se ejecutó Apps Script desplegado ni se usaron tokens/usuarios productivos.
-
-### Code Review y límites
-- Diff de fetchApi revisado; no se modificaron los servicios backend ni los secretos.
-- Cierre limitado al transporte local/contractual y la denegación backend ya existente; no certifica despliegue productivo.
-
-### Archivos modificados en esta iteración
-- pendientes/Otros/Pendientes.md — AUD-NG-001 Completada con evidencia.
-- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md — cierre §10.91.
-- Auditoría/MapaDependencias.md — C1.423.
-- changueslogs.txt — C1.423.
-- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — este checkpoint.
-- Auditoría/INDICE_CHECKPOINTS.md — C1.423.
-
-### Siguiente acción
-Reaplicar §6.1 en PM-01. AUD-NG-001 desbloquea su dependencia de token para F29-TASK05/TASK17, pero el ciclo F29-TASK05↔F29-TASK17 persiste y no se resuelve automáticamente.
-Commit: SHA por verificar.
-===============================================================================
+# Índice central de checkpoints — IMA
+
+Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
+
+## Estado actual
+- Último checkpoint: **C1.410**
+- Última sesión: `IMA-EXEC-20261110-1140Z-01`
+- Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt`
+- Límite por archivo: **180.000 caracteres**
+- Caracteres del archivo activo tras C1.410: **25888**
+- Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt`
+- Rama de trabajo: `NG_beta_0.0.0.1_work`
+- Baseline lógico válido: **C1.316** (`31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`). C1.317–C1.382 se conservan, pero no se aceptan como evidencia de continuidad por corrección expresa del usuario.
+
+## Registro de checkpoints
+
+| ID | Sesión | Estado | Tarea / fase | Ubicación exacta | Líneas | Anterior | Commit |
+|---|---|---|---|---|---:|---|---|
+| C1.285 | IMA-GOV-20261109-0322Z-01 | Publicado | Gobierno documental / PM-00 | `Auditoría/Contexto_personal.txt` — sección C1.285 | 1508–1531 | C1.284 | `4cda8611c4d3c4aece4c7d80922cc4c14c920f5a` |
+| C1.286 | IMA-GOV-20261109-0339Z-01 | Publicado | Gobierno documental / PM-00 | `Auditoría/Contexto_personal.txt` — sección C1.286 | 1547–1587 | C1.285 | `a77e9a6dc373a66e243d6287743139cea67e4c26` | 
+| C1.287 | IMA-EXEC-20261109-0343Z-01 | Publicado en este commit | TASK-637 / PM-00 | `Auditoría/Contexto_personal.txt` — sección C1.287 | 1590–1632 | C1.286 | Este commit; SHA verificado externamente en el reporte de cierre |
+| C1.288 | IMA-GOV-20261109-0355Z-01 | Publicado | Gobierno de estado / pruebas beta | `Auditoría/Contexto_personal.txt` — sección C1.288 | 1643–1674 | C1.287 | `0afe7fd3a9b9df974afc557063d40b787a7e1c30` |
+| C1.289 | IMA-EXEC-20261109-0407Z-01 | Publicado | TASK-638 / PM-00 — auditoría parcial | `Auditoría/Contexto_personal.txt` — sección C1.289 | 1676–1736 | C1.288 | `57643c473df081aa57cdd8e5def542281f500000` |
+| C1.290 | IMA-EXEC-20261109-0413Z-01 | Publicado | TASK-638 / PM-00 — páginas y portales, grupo 2 | `Auditoría/Contexto_personal.txt` — sección C1.290 | 1738–1788 | C1.289 | `b26169f8c0d4e729db152fa7910ec585bc28d5e5` |
+
+| C1.291 | IMA-EXEC-20261109-0420Z-01 | Publicado | TASK-638 / PM-00 — cobertura HTML/HTM 101/101 | `Auditoría/Contexto_personal.txt` — sección C1.291 | 1790–1840 | C1.290 | `3694b763b78a1d400a4564dddcb6ebd3c0108ce9` |
+
+| C1.292 | IMA-EXEC-20261109-0430Z-01 | Publicado | TASK-638 / PM-00 — inventario JS y dependencias runtime | Auditoría/Contexto_personal.txt — sección C1.292 | 1842–1892 | C1.291 | 32b8f5884dd24dbeaf1a3bf028eb7635ada592df |
+| C1.293 | IMA-EXEC-20261109-1108Z-01 | Publicado | TASK-638 / PM-00 — CSS/GS/JSON y contratos | Auditoría/Contexto_personal.txt — sección C1.293 | 1895–1943 | C1.292 | fd73830144a9822369e4402076685928171908d6 |
+| C1.294 | IMA-AUDIT-20261109-1140Z | Publicado | TASK-637 reauditoría / PM-00.3 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.294 | 55–128 | C1.293 | `00ffac159929fd65f1fc3a65e72509838df0cbde` |
+
+- SHA del bloque normativo A–I de Parte_0003: `a434b8ac19bd40646e81c0a911c525e3cea9920f`.
+
+## Reglas de mantenimiento
+1. Agregar una fila por cada checkpoint, sin borrar ni reutilizar IDs.
+2. Actualizar «Último checkpoint» y «Archivo activo» en el mismo commit que incorpora el checkpoint.
+3. Al rotar, registrar la nueva parte, el SHA de su bloque normativo A–I y el rango exacto de líneas.
+4. Auditoria.txt y changueslogs.txt deben apuntar a esta tabla mediante el ID exacto.
+5. Los checkpoints anteriores a la adopción del índice son legado histórico; no inventar ubicaciones ni rangos retrospectivos. Indexarlos solo cuando puedan verificarse.
+
+
+| C1.295 | IMA-AUDIT-20261109-1152Z | Publicado | TASK-637 corrección / PM-00.3 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.295 | 131–172 | C1.294 | `0edce6ae2721b1d839ef259dad7ea77962fe8ab3` |
+
+| C1.296 | IMA-AUDIT-20261109-1152Z | Publicado | TASK-638 auditoría / PM-00 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.296 | 175–210 | C1.295 | 5bf51a6b0c12fd62edc42385c55976789d00a423 |
+| C1.297 | IMA-AUDIT-20261109-1152Z | Publicado | TASK-638 auditoría / PM-00 — USER/ACADEMIC | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.297 | 212–237 | C1.296 | `103c02dc0ba31c0d3ceb2e5c5a39c1a747cc67f9` |
+
+| C1.298 | IMA-AUDIT-20261109-1222Z-01 | Publicado en este commit | TASK-638 auditoría / PM-00 — TASK/EXAM | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.298 | 239–269 | C1.297 | Este commit; SHA a verificar externamente |
+
+| C1.299 | IMA-AUDIT-20261109-1232Z-01 | Publicado | TASK-638 auditoría / PM-00 — autorización contextual TASK/EXAM | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.299 | 270–298 | C1.298 | `9e21a060922bc4c7d96d06c0098a48d643b32276` |
+| C1.300 | IMA-GOV-20261109-1255Z-01 | Publicado | Gobernanza documental — auditoría única / IMA | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.300 | 302–344 | C1.299 | `650a3cccf1974afbc7d29f7d5d922a3f30bc1b1b` |
+| C1.301 | IMA-EXEC-20261109-1305Z-01 | Publicado | TASK-638 completada / PM-00 — matriz integral de dependencias | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.301 | 347–395 | C1.300 | `aa5a85f9eaedec5f89963a15cd32e8ed5e6e45e6` |
+
+| C1.302 | IMA-AUDIT-20261109-1339Z-01 | Publicado | TASK-639 completada / PM-00 — símbolos, redefiniciones y ciclos | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.302 | 398–451 | C1.301 | `9ddafd273ccda4aeeb13e04fdb03a053a7556848` |
+| C1.303 | IMA-DOCFIX-20261109-1344Z-01 | Publicado en este commit | Corrección documental del índice C1.302 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.303 | 454–490 | C1.302 | Este commit; SHA a verificar externamente |
+
+| C1.304 | IMA-BLOCK-20261109-1350Z-01 | Publicado en este commit | Bloqueo de lectura del requisito original TASK-636 / PM-01 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.304 | 493–542 | C1.303 | Este commit; SHA a verificar externamente |
+
+| C1.305 | IMA-EXEC-20261109-1435Z-01 | Publicado en este commit | Implementación parcial TASK-636 / PM-01 — token, tickets, noticias y automatización | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.305 | 545–600 | C1.304 | Este commit; SHA verificado tras publicación |
+
+| C1.306 | IMA-EXEC-20261109-1450Z-01 | Publicado en este commit | Task-Service: claims, propiedad y filtrado de recursos; cierre destructivo bloqueado | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.306 | 603–663 | C1.305 | Este commit; SHA verificado tras publicación |
+
+| C1.307 | IMA-EXEC-20261109-1455Z-01 | Preparado para commit único | TASK-636 / PM-01 — mutaciones Task-Service y conciliación de asignaciones | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.307 | 665–758 | C1.306 | Este commit; SHA verificado tras publicación |
+
+| C1.308 | IMA-EXEC-20261109-1510Z-01 | Publicado en este commit | TASK-636 / PM-01 — propiedad de archivos, entregas y cargas reanudables | `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt` — sección C1.308 | 762–842 | C1.307 | Este commit; SHA verificado tras publicación |
+
+| C1.309 | IMA-EXEC-20261109-1533Z-01 | Publicado en este commit | TASK-636 / PM-01 — capacidades públicas ACADEMIC y protección de archivos | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.309 | 844–917 | C1.308 | Este commit; SHA a verificar externamente |
+
+| C1.310 | IMA-EXEC-20261109-1533Z-02 | Publicado en este commit | TASK-636 / PM-01 — integración frontend de capacidades de admisión | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.310 | 920–978 | C1.309 | Este commit; SHA a verificar externamente |
+
+| C1.311 | IMA-EXEC-20261109-1605Z-01 | Publicado en este commit | TASK-636 / PM-01 — bloqueo de cierre docente y auditoría backup/restore | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.311 | 981–1034 | C1.310 | Este commit; SHA verificado tras publicación |
+
+| C1.312 | IMA-EXEC-20261109-1618Z-01 | Publicado en este commit | TASK-636 / PM-01 — protocolo dedicado de backup/restore, cierre aún bloqueado | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.312 | 1036–1105 | C1.311 | Este commit; SHA verificado tras publicación |
+
+| C1.313 | IMA-EXEC-20261109-1635Z-01 | Publicado en este commit | TASK-636 / PM-01 — journal durable y recuperación de restore | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.313 | 1107–1162 | C1.312 | Este commit; SHA verificado tras publicación |
+
+| C1.314 | IMA-EXEC-20261109-1650Z-01 | Publicado en este commit | TASK-636 / PM-01 — confirmación explícita de recuperación | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.314 | 1164–1214 | C1.313 | Este commit; SHA verificado tras publicación |
+
+| C1.315 | IMA-EXEC-20261109-1650Z-01 | Publicado en este commit | TASK-636 / PM-01 — recuperación serializada e idempotencia Drive | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.315 | 1216–1282 | C1.314 | Este commit; SHA verificado tras publicación |
+
+| C1.316 | IMA-EXEC-20261109-1650Z-01 | Publicado en este commit | TASK-636 / PM-01 — contrato Node en CI; integración Apps Script bloqueada por falta de entorno aislado | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.316 | 1284–1339 | C1.315 | Este commit; SHA verificado tras publicación |
+
+| C1.317 | IMA-EXEC-20261109-1650Z-01 | Publicado en este commit | TASK-636 / PM-01 — continuidad verificada; integración Apps Script aislada bloqueada | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.317 | 1342–1403 | C1.316 | Este commit; SHA verificado tras publicación |
+
+| C1.318 | IMA-EXEC-20261109-1650Z-01 | Publicado en este commit | TASK-068 / PM-01 — auditoría preimplementación; implementación pendiente | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.318 | 1406–1461 | C1.317 | Este commit; SHA verificado tras publicación |
+
+| C1.319 | IMA-EXEC-20261109-1650Z-01 | Publicado en este commit | TASK-068 / PM-01 — respaldo Git histórico e implementación parcial | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.319 | 1464–1510 | C1.318 | Este commit; SHA verificado tras publicación |
+
+| C1.320 | IMA-EXEC-20261109-1650Z-01 | Publicado en este commit | TASK-068 / PM-01 — caché IndexedDB y wrappers API cliente | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — C1.320 | 1512–1546 | C1.319 | Este commit; SHA verificado tras publicación |
+
+| C1.320 | IMA-EXEC-20261109-1650Z-01 | Publicado en este commit | TASK-068 / PM-01 — caché IndexedDB y wrappers API cliente | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — C1.320 | 1512–1546 | C1.319 | C1.320 implementation d2b721a; test fix 0b891a5; CI 42667176023 PASS |
+| C1.321 | IMA-EXEC-20261109-1650Z-01 | Publicado en este commit | TASK-068 / PM-01 — lecturas no mutantes y validación de destino | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — C1.321 | 1553–1582 | C1.320 | 19eba80; CI 42667650780 PASS |
+
+| C1.322 | IMA-EXEC-20261109-1650Z-01 | Publicado en este commit | TASK-068 / PM-01 — validadores de destino por esquemas verificados | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — C1.322 | 1588–1615 | C1.321 | 6e4a934; CI 42668165457 PASS |
+
+| C1.323 | IMA-EXEC-20261109-1650Z-01 | Publicado en este commit | TASK-068 / PM-01 — auditoría estática de escritores de destino | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — C1.323 | 1622–1658 | C1.322 | Este commit; SHA verificado tras publicación |
+
+| C1.324 | IMA-EXEC-20261109-1802Z-01 | Preparado para commit único | TASK-068 / PM-01 — validación integral del esquema destino; AUD-NG-380 corregido, AUD-NG-378 abierto | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.324 | 1662–1716 | C1.323 | Este commit; SHA verificado externamente tras publicación |
+
+| C1.325 | IMA-EXEC-20261109-1802Z-01 | Preparado para commit único | TASK-068 / PM-01 — corrección del harness de validación de esquemas; AUD-NG-381 registrado | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.325 | 1720–1770 | C1.324 | Este commit; SHA verificado externamente tras publicación |
+
+| C1.326 | IMA-EXEC-20261109-1802Z-01 | Preparado para commit único | TASK-068 / PM-01 — extractor determinista del test de esquemas; AUD-NG-381 abierto hasta CI | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.326 | 1774–1824 | C1.325 | Este commit; SHA verificado externamente tras publicación |
+
+| C1.327 | IMA-EXEC-20261109-1802Z-01 | Preparado para commit único | TASK-068 / PM-01 — CI aprobado; AUD-NG-378 bloqueado por transporte/configuración externa | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.327 | 1828–1872 | C1.326 | Este commit; SHA verificado externamente tras publicación |
+
+| C1.328 | IMA-EXEC-20261109-1909Z-01 | Preparado para commit único | TASK-068 / PM-01 — bloqueo AUD-NG-378 y recuperación del backlog de requisitos | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0002.txt — sección C1.328 | 1875–1936 | C1.327 | Este commit; SHA verificado tras publicación |
+
+| C1.329 | IMA-GOV-20261109-2154Z-01 | Publicado en este commit | Recuperación íntegra del backlog y norma de pruebas beta | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.329 | 61–104 | C1.328 | Este commit; SHA verificado tras publicación |
+
+| C1.330 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | Casos beta específicos TASK-636 y TASK-068 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.330 | 107–139 | C1.329 | Este commit; SHA verificado tras publicación |
+
+| C1.331 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | Corrección de rumbo / reauditoría TASK-636 — C1.316 como baseline lógico; pruebas locales y beta diferidas | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.331 | 2 | C1.316 (último válido) | Este commit; SHA verificado tras publicación |
+
+| C1.332 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | Corrección del harness local TASK-636; separadores VM deterministas | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.332 | 198 | C1.331 | Este commit; SHA verificado tras publicación |
+
+| C1.333 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | Extractor balanceado del contrato local TASK-636 tras fallo CI | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.333 | 212 | C1.332 | Este commit; SHA verificado tras publicación |
+
+| C1.334 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | Fixture Date creado en VM para contrato local TASK-636 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.334 | 225 | C1.333 | Este commit; SHA verificado tras publicación |
+
+| C1.335 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | Corrección del contexto VM de Date en fixture snapshot TASK-636 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.335 | 238 | C1.334 | Este commit; SHA verificado tras publicación |
+
+| C1.336 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | TASK-068 — clasificación local conservadora de identidades | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.336 | 268 | C1.335 | Este commit; SHA verificado tras publicación |
+
+| C1.337 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | CI TASK-636 aprobado; ajuste de formato de contrato TASK-068 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.337 | 282 | C1.336 | Este commit; SHA verificado tras publicación |
+
+| C1.338 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | CI aprobado TASK-636 y TASK-068; writer de importación sigue como brecha local | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.338 | 307 | C1.337 | Este commit; SHA verificado tras publicación |
+
+| C1.339 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | TASK-068 — writers idempotentes por servicio propietario | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.339 | 346 | C1.316 (último válido) | Este commit; SHA verificado tras publicación |
+
+| C1.340 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | TASK-068 — corregir mock de hoja vacía; CI 42712140456 falló por doble encabezado en fixture | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.340 | 360 | C1.339 | Este commit; SHA verificado tras publicación |
+
+| C1.341 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | TASK-068 — transporte HMAC y orquestación de importación multi-servicio | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.341 | 391 | C1.340 | Este commit; SHA verificado tras publicación |
+
+| C1.342 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | Ajustar contrato estático: retirar expectativa obsoleta DESTINATION_WRITER_NOT_CONFIGURED | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.342 | 405 | C1.341 | Este commit; SHA verificado tras publicación |
+
+| C1.343 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | Aserciones de URL alineadas con route.urlProperty; fixtures HMAC ya superados | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.343 | 419 | C1.342 | Este commit; SHA verificado tras publicación |
+
+| C1.344 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | TASK-068 — snapshots Date tipados y pruebas sobre writers reales | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.344 | 434 | C1.343 | Este commit; SHA verificado tras publicación |
+
+| C1.345 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | Harness enlazado a writers reales USER/ACADEMIC; pruebas UPDATE/Date | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.345 | 448 | C1.344 | Este commit; SHA verificado tras publicación |
+
+| C1.346 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | Completar funciones encode/decode Date para snapshots en USER/ACADEMIC | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.346 | 462 | C1.345 | Este commit; SHA verificado tras publicación |
+
+| C1.347 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | Corregir captura de hoja destino tras primera inserción en fixture | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.347 | 475 | C1.346 | Este commit; SHA verificado tras publicación |
+
+| C1.348 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | TASK-068 — mocks de orquestación, dos fuentes, idempotencia y compensación multi-fila | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.348 | 490 | C1.347 | Este commit; SHA verificado tras publicación |
+
+| C1.349 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | TASK-068 — veto de homónimos con identificación/código/fecha contradictorios | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.349 | 506 | C1.348 | Este commit; SHA verificado tras publicación |
+
+| C1.350 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | TASK-068 — consola de Secretaría para búsqueda/revisión e historial de identidades | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.350 | 526 | C1.349 | Este commit; SHA verificado tras publicación |
+
+| C1.351 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | TASK-068 — pruebas de referencias múltiples, relaciones y caché confirmada | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.351 | 544 | C1.350 | Este commit; SHA verificado tras publicación |
+
+| C1.352 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | Corrección fixture relacional TASK-068: SPREADSHEET_ID y PersonaID de responsable | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.352 | 557 | C1.351 | Este commit; SHA verificado tras publicación |
+
+| C1.353 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | TASK-068 — RBAC explícito para búsqueda y vinculación de identidades | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.353 | 572 | C1.352 | Este commit; SHA verificado tras publicación |
+
+| C1.354 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | TASK-068 — motivo obligatorio server-side y prueba de vinculación auditable | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.354 | 587 | C1.353 | Este commit; SHA verificado tras publicación |
+
+| C1.355 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | Corrección fixture linkPersonAccount: SPREADSHEET_ID VM | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.355 | 600 | C1.354 | Este commit; SHA verificado tras publicación |
+
+| C1.356 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | TASK-068 — reconciliación de claves y destinos de correspondencia | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.356 | 615 | C1.355 | Este commit; SHA verificado tras publicación |
+
+| C1.357 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | TASK-068 — escritores locales para empleado y curso en ACCOUNTING | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.357 | 631 | C1.356 | Este commit; SHA verificado tras publicación |
+
+| C1.358 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | Ajustar aserción del esquema de curso al literal canónico compacto | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.358 | 644 | C1.357 | Este commit; SHA verificado tras publicación |
+
+| C1.359 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | TASK-068 — UPDATE/compensación Date y dispatch local ACCOUNTING | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.359 | 658 | C1.358 | Este commit; SHA verificado tras publicación |
+
+| C1.360 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | TASK-068 — prueba real de registro, idempotencia, revisión, resolución e historial | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.360 | 671 | C1.359 | Este commit; SHA verificado tras publicación |
+
+| C1.361 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | TASK-068 — inicialización first-use de esquemas y búsqueda no mutante | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.361 | 685 | C1.360 | Este commit; SHA verificado tras publicación |
+
+| C1.362 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | TASK-068 — integridad académica/familiar/administrativa y auditoría read-only | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.362 | 699 | C1.361 | Este commit; SHA verificado tras publicación |
+
+| C1.363 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | Cierre TASK-068; BETA-FUNC-008 diferida; próxima TASK-636 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.363 | 728 | C1.362 | Este commit; SHA verificado tras publicación |
+
+| C1.364 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | TASK-636 AUD-NG-370 — reconciliación segura de metadatos históricos | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.364 | 744 | C1.363 | Este commit; SHA verificado tras publicación |
+
+| C1.365 | IMA-GOV-20261109-2201Z-01 | Publicado en este commit | TASK-636 — rollback atómico de backfill y parseo VM del servicio | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — C1.365 | 759 | C1.364 | Este commit; SHA verificado tras publicación |
+
+| C1.366 | IMA-EXEC-20261109-1739Z-01 | Publicado en este commit; baseline lógico C1.316 | TASK-636 / PM-01 — aislamiento del estado de recuperación compensatoria | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.366 | 761–815 | C1.316 (último válido) | Este commit; SHA verificado tras publicación |
+
+| C1.367 | IMA-EXEC-20261109-1739Z-01 | Publicado en este commit; baseline lógico C1.316 | TASK-636 / PM-01 — protección de referencias URL en versiones | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.367 | 818–872 | C1.366 | Este commit; SHA verificado tras publicación |
+
+| C1.368 | IMA-EXEC-20261109-1739Z-01 | Publicado en este commit; baseline lógico C1.316 | TASK-636 / PM-01 — protección de audiencias públicas | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.368 | 875–927 | C1.367 | Este commit; SHA verificado tras publicación |
+
+| C1.369 | IMA-EXEC-20261109-1739Z-01 | Publicado en este commit; baseline lógico C1.316 | TASK-636 / PM-01 — normalización de borradores en getPosts | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.369 | 930–977 | C1.368 | Este commit; SHA verificado tras publicación |
+
+| C1.370 | IMA-EXEC-20261109-1739Z-01 | Publicado en este commit; baseline lógico C1.316 | TASK-636 / PM-01 — ajuste de expectativas del fixture getPosts | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.370 | 980–1018 | C1.369 | Este commit; SHA verificado tras publicación |
+
+| C1.371 | IMA-EXEC-20261109-1739Z-01 | Publicado en este commit; baseline lógico C1.316 | TASK-636 / PM-01 — eliminación segura de proyectos | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.371 | 1021–1070 | C1.370 | Este commit; SHA verificado tras publicación |
+
+| C1.372 | IMA-EXEC-20261109-1739Z-01 | Publicado en este commit; baseline lógico C1.316 | TASK-636 / PM-01 — vigencia de asignaciones docentes en lecturas | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.372 | 1073–1121 | C1.371 | Este commit; SHA verificado tras publicación |
+
+| C1.373 | IMA-EXEC-20261109-1739Z-01 | Publicado en este commit; baseline lógico C1.316 | TASK-636 / PM-01 — publicación vigente de posts y materiales | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.373 | 1124–1171 | C1.372 | Este commit; SHA verificado tras publicación |
+
+| C1.374 | IMA-EXEC-20261109-1739Z-01 | Publicado en este commit; baseline lógico C1.316 | TASK-636 / PM-01 — dependencia del fixture getPosts | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.374 | 1174–1212 | C1.373 | Este commit; SHA verificado tras publicación |
+
+| C1.375 | IMA-EXEC-20261109-1739Z-01 | Publicado en este commit; baseline lógico C1.316 | TASK-636 / PM-01 — orden del fixture getStudyMaterials | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.375 | 1215–1253 | C1.374 | Este commit; SHA verificado tras publicación |
+
+| C1.376 | IMA-EXEC-20261109-1739Z-01 | Publicado en este commit; baseline lógico C1.316 | TASK-636 / PM-01 — claims de sesión fail-closed en USER/ACADEMIC/TASK | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.376 | 1256–1305 | C1.375 | Este commit; SHA verificado tras publicación |
+
+| C1.377 | IMA-EXEC-20261109-1739Z-01 | Publicado en este commit; baseline lógico C1.316 | TASK-636 / PM-01 — secreto HMAC privado sin fallback determinista | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.377 | 1308–1361 | C1.376 | Este commit; SHA verificado tras publicación |
+
+| C1.378 | IMA-EXEC-20261109-1739Z-01 | Publicado en este commit; baseline lógico C1.316 | TASK-636 / PM-01 — frontera pública ACADEMIC, métricas y cierre académico | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.378 | 1364–1411 | C1.377 | Este commit; SHA verificado tras publicación |
+
+| C1.379 | IMA-EXEC-20261109-1739Z-01 | Publicado en este commit; baseline lógico C1.316 | TASK-636 / PM-01 — estabilidad temporal del contrato TASK-030 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.379 | 1414–1459 | C1.378 | Este commit; SHA verificado tras publicación |
+
+| C1.380 | IMA-EXEC-20261109-1739Z-01 | Publicado en este commit; baseline lógico C1.316 | TASK-636 / PM-01 — claims estrictos y rol vigente en seis verificadores | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.380 | 1462–1514 | C1.379 | Este commit; SHA verificado tras publicación |
+
+| C1.381 | IMA-EXEC-20261109-1739Z-01 | Publicado en este commit; baseline lógico C1.316 | TASK-636 / PM-01 — fixture de firma HMAC DEVELOPER | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.381 | 1517–1560 | C1.380 | Este commit; SHA verificado tras publicación |
+
+| C1.382 | IMA-EXEC-20261109-1739Z-01 | Publicado en este commit; baseline lógico C1.316 | TASK-636 / PM-01 — invalidación de caché de rol vigente | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.382 | 1563–1608 | C1.381 | Este commit; SHA verificado tras publicación |
+
+| C1.383 | IMA-EXEC-20261110-0042Z-01 | 7dc8e22bdd49b25ae4dbff8ad7b103a6580d1569; baseline lógico C1.316 | TASK-068 / PM-01 — resolvers fail-closed y clasificación insuficiente; CI success | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.383 | 1611–1631 | C1.382 | Este commit; SHA verificado tras publicación |
+
+| C1.384 | IMA-EXEC-20261110-0042Z-01 | fd15a79c2feab0a5eb975b98b9dce0bdf3f1726c; cierre local TASK-068 | TASK-153 seleccionado — PM-01 / P0 / orden 1; PM-00 TASK-682 triage resuelto | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.384 | 1634–1654 | C1.383 | Este commit; SHA verificado tras publicación |
+
+| C1.385 | IMA-EXEC-20261110-0042Z-01 | Publicado en este commit; TASK-153 en ejecución | USER scope context firmado y contrato local; CI pendiente | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.385 | 1657–1675 | C1.384 | Este commit; SHA a verificar tras publicación |
+| C1.388 | IMA-EXEC-20261110-0122Z-01 | 03471a1e36bdfccc29668103d1d4426e4353018a; TASK-153 continúa En ejecución | TASK-153 / PM-01 / P0 — barreras Academic/Accounting y contratos locales CI aprobados | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.388 | 1678–1722 | C1.385 | C1.388 HEAD verificado; checkpoint y registros en commit documental siguiente |
+| C1.391 | IMA-EXEC-20261110-0153Z-01 | 2a5f892ed024e0291bf89ec116df2ec43851efc4; TASK-153 sigue En ejecución | TASK-153 / PM-01 / P0 — comprobantes de pago con propietario/ámbito y archivos privados | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.391 | 1725–1767 | C1.388 | HEAD C1.391 verificado; documentación registrada en C1.392 |
+| C1.393 | IMA-EXEC-20261110-0158Z-01 | c9b0cb6524693087731c34d36645212aec21711a; CI local success | TASK-153 / PM-01 / P0 — endpoint autenticado de lectura de comprobantes privados | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.393 | 1770–1807 | C1.391 | HEAD C1.393 verificado; checkpoint y registros en commit documental siguiente |
+| C1.395 | IMA-EXEC-20261110-0158Z-01 | d972031231d8ebe8fbbf30e37379a4976508f49a; Department Scope Contract success | TASK-153 / PM-01 / P0 — integración de vista de comprobantes privados en portal estudiantil | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.395 | 1811–1847 | C1.393 | HEAD C1.395 verificado; checkpoint y registros en commit documental siguiente |
+| C1.399 | IMA-EXEC-20261110-0158Z-01 | 3996c0bfacaea278647a657e0c4c0dcf6fe60464; Department Scope Contract success (runs previos de fixtures corregidos) | TASK-153 / PM-01 / P0 — no exposición de enlaces legacy y errores opacos de lectura de archivos | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.399 | 1851–1887 | C1.395 | HEAD C1.398 verificado; checkpoint y registros en commit documental siguiente |
+
+| C1.400 | IMA-EXEC-20261110-0253Z-01 | Preparado para publicación; AUD-NG-382 corregido; TASK-153 sigue En ejecución | TASK-153 / PM-01 / P0 — auditoría C1.397–C1.398 y preimplementación; corrección de clasificación TASK-682 / PM-01 / P1 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.400 | 1892–1948 | C1.399 | Este commit; SHA se confirma tras publicación |
+| C1.401 | IMA-EXEC-20261110-0306Z-01 | HEAD de partida 48d89e6f96f9f3573647698067c4a1713435084a; commit documental C1.401 a verificar | TASK-153 / PM-01 / P0 sigue En ejecución y bloqueada por fuente propietaria; dependencias derivadas TASK-139/TASK-123; AUD-NG-383 vinculado a F11-TASK01 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.401 | 1951–2005 | C1.400 | Este commit; SHA verificado tras publicación |
+
+| C1.402 | IMA-EXEC-20261110-0436Z-01 | Publicado; TASK-153 continúa En ejecución | TASK-153 / PM-01 / P0 — T153-S01…S08; selección de T153-S01 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.402 | 2008–2051 | C1.401 | 14e5dfe77fbe93759ec63b5066781967316883a8 |
+| C1.403 | IMA-EXEC-20261110-0439Z-01 | T153-S01 auditada; bloqueada por decisión institucional pendiente | TASK-153 / PM-01 / P0 — T153-S01 autoridad del catálogo departamental | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.403 | 2054–2142 | C1.402 | Este commit; SHA a confirmar tras publicación |
+
+| C1.404 | IMA-EXEC-20261110-0500Z-01 | TASK-694 completada como diseño documental; UNI-S01…S10 sin iniciar; TASK-153 conserva bloqueo C1.403 | PM-02 — investigación y subplan de arquitectura universal multiinstitucional P-20W | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.404 | 2145–2186 | C1.403 | Este commit; SHA a verificar |
+
+| C1.405 | IMA-EXEC-20261110-0513Z-01 | TASK-695 completada como diseño documental; 24 unidades definidas; U01/U04/U07/U10/U22 candidatas a auditoría; TASK-153 conserva bloqueo | PM-02 — PLAN-IMA-001 / requisitos y aceptación UNI-U01…UNI-U24 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.405 | 2190–2219 | C1.404 | Este commit; SHA a verificar |
+| C1.406 | IMA-EXEC-20261110-1108Z-01 | AUD-NG-384 confirmada; TASK-696 registrada y bloqueada por dependencias PM-01; TASK-153 conserva bloqueo | UNI-U01 / auditoría runtime tenant — PM-02, sin implementación | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.406 | 2222–2247 | C1.405 | Este commit; SHA verificado tras publicación |
+| C1.407 | IMA-EXEC-20261110-1108Z-01 | Continuidad verificada; TASK-153/T153-S01 continúa Bloqueada por falta de decisión institucional; sin cambios funcionales | PM-01 — TASK-153 / T153-S01; dictamen C1.403 vigente | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.407 | 2250–2263 | C1.406 | Este commit; SHA verificado tras publicación |
+
+| C1.408 | IMA-EXEC-20261110-1132Z-01 | T153-S01 bloqueada; backlog Otros recuperado desde blob actual; ciclo F29-TASK05↔F29-TASK17 remitido a PM-00; sin cambios funcionales | PM-00 triage / PM-01 continuidad TASK-153 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.408 | 58–109 | C1.407 | Este commit; SHA verificado tras publicación |
+
+| C1.409 | IMA-EXEC-20261110-1136Z-01 | Corrección documental focalizada del rango de C1.408; sin cambios funcionales ni reauditoría | Continuidad / control documental de checkpoint | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.409 | 113–126 | C1.408 | Este commit; SHA verificado tras publicación |
+
+| C1.410 | IMA-EXEC-20261110-1140Z-01 | Investigación externa y plan detallado T153-S01; subtarea permanece Bloqueada | PM-01 / TASK-153 / T153-S01 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.410 | 130–180 | C1.409 | Este commit; SHA verificado tras publicación |
+
+| C1.411 | IMA-EXEC-20261110-1150Z-01 | Regla transversal: autoridad y responsabilidad sobre antecedentes/documentos configuradas por roles desde IMA; no titulares personales estáticos | PM-01 §10.82 / N-23 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.411 | 181–193 | C1.410 | Este commit; SHA verificado tras publicación |
+
+| C1.412 | IMA-EXEC-20261110-1202Z-01 | Especificación de matriz configurable por rol/documento/ámbito; TIRL superior a Dirección con facultades legales condicionadas | N-24 / PM-01 §10.83 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.412 | 194–207 | C1.411 | Este commit; SHA verificado tras publicación |
+| C1.413 | IMA-EXEC-20261110-1237Z-01 | Regla: protected=false no bloquea; falta de organigrama/documentos institucionales no bloquea capacidades genéricas; T153-S01 limitado a datos/decisiones institucionales reales | PM-00 — corrección normativa / §§10.81.7, 10.82.5, 10.83 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.413 | 204–240 | C1.412 | Este commit; SHA verificado tras publicación |
+| C1.414 | IMA-EXEC-20261110-1245Z-02 | Triage PM-00: AUD-NG-071 y AUD-NG-069 a PM-03; orden AUD-NG-071 → AUD-NG-069; AUD-NG-006 conserva verificación transversal PM-08 | PM-00 — clasificación/dependencias | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.414 | 241–281 | C1.413 | Este commit; SHA verificado tras publicación |
+| C1.415 | IMA-EXEC-20261110-1245Z-03 | TASK-641 reclasificada PM-00 → PM-08; evidencia AUD-NG-285 vigente por SHA; tarea permanece Pendiente | PM-00 — clasificación / PM-08 ejecución futura | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.415 | 282–321 | C1.414 | Este commit; SHA verificado tras publicación |
+| C1.416 | IMA-EXEC-20261110-1245Z-04 | AUD-NG-007 reclasificada PM-00 → PM-03; se preserva su precedencia como dependencia de TASK-429 PM-05 | PM-00 — clasificación / PM-03 ejecución futura | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.416 | 322–361 | C1.415 | Este commit; SHA verificado tras publicación |
+| C1.417 | IMA-EXEC-20261110-1312Z-05 | AUD-NG-096 completada mediante conciliación histórica; TASK-050 permanece Pendiente con ocho criterios abiertos | PM-00 — conciliación documental | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.417 | 362–402 | C1.416 | Este commit; SHA verificado tras publicación |
+| C1.418 | IMA-EXEC-20261110-1312Z-06 | TASK-637 inventario reconciliado con 1.051 blobs, cero omisiones/extras y SHA/tamaños exactos | PM-00 — mantenimiento de inventario | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.418 | 403–441 | C1.417 | Este commit; SHA verificado tras publicación |
+| C1.419 | IMA-EXEC-20261110-1340Z-07 | PM-00 triage cerrado; TASK-279→PM-03, TASK-680→PM-04; 22 encabezados sin requisitos excluidos; PM-01 habilitada | PM-00 — cierre de clasificación | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.419 | 442–469 | C1.418 | Este commit; SHA verificado tras publicación |
+| C1.420 | IMA-EXEC-20261110-1340Z-08 | AUD-NG-128 seleccionada PM-01; autorización central explícita y test contractual añadidos; pendiente CI/Code Review | PM-01 — implementación en ejecución | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.420 | 470–503 | C1.419 | Este commit; SHA verificado tras publicación |
+| C1.421 | IMA-EXEC-20261110-1340Z-09 | AUD-NG-128 Completada; test de autorización y propiedad de tickets ejecutado; CI sin checks reportados | PM-01 — cierre local/contractual | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.421 | 504–545 | C1.420 | Este commit; SHA verificado tras publicación |
+| C1.422 | IMA-EXEC-20261110-1340Z-10 | AUD-NG-001 seleccionada PM-01; fetchApi prioriza token persistido y elimina identidad aportada por payload; test dinámico agregado | PM-01 — implementación en ejecución | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.422 | 546–576 | C1.421 | Este commit; SHA verificado tras publicación |
+| C1.423 | IMA-EXEC-20261110-1340Z-11 | AUD-NG-001 Completada; test de transporte y doPost USER pasó con verificación de claims simulada; CI sin checks | PM-01 — cierre local/contractual | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.423 | 577–614 | C1.422 | Este commit; SHA verificado tras publicación |
+| C1.424 | IMA-EXEC-20261110-1340Z-12 | AUD-NG-003 Completada; 50 escenarios de expiración y generación de tokens pasaron en entorno aislado | PM-01 — cierre local/contractual | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.424 | 615–653 | C1.423 | Este commit; SHA verificado tras publicación |
