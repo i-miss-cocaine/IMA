@@ -408,7 +408,7 @@ console.log("ACADEMIC admission conversion compensation contract passed.");
 
 // Admission conversion retries may reuse only records created by the same request.
 {
-  const helperSource=extractFunction("assertAdmissionEnrollmentRetrySafe_")+"\\n"+extractFunction("findAdmissionConversionMovement_");
+  const helperSource=extractFunction("assertAdmissionEnrollmentRetrySafe_")+"\n"+extractFunction("findAdmissionConversionMovement_");
   const helperContext={};
   vm.runInNewContext(helperSource+"\\nthis.enrollment=assertAdmissionEnrollmentRetrySafe_;this.movement=findAdmissionConversionMovement_;",helperContext);
   const enrollmentHeader=["MatriculaID","Fecha","UserId","Alumno","Grado","Seccion","Periodo","Tipo","Estado","BecaDescuento","Observaciones"];
@@ -494,7 +494,7 @@ console.log("ACADEMIC admission conversion idempotency contract passed.");
       "findAdmissionConversionMovement_",
       "assertAdmissionConversionArtifactsComplete_",
       "convertAdmissionToStudent"
-    ].map(extractFunction).join("\\n");
+    ].map(extractFunction).join("\n");
     vm.runInNewContext(functions+"\\nthis.run=convertAdmissionToStudent;",context);
     return context.run({solicitudId:"ADM-RETRY"});
   }
