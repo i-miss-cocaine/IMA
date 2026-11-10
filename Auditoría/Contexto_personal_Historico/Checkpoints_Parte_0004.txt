@@ -1708,7 +1708,9 @@ Checkpoint anterior: C1.449.
 - TASK-153 permanece En ejecución; AUD-NG-386 abierto por otros requisitos y rutas ACADEMIC.
 - Próxima iteración: revisar reconciliación de reintentos cuando existan restos de ejecuciones anteriores o marcadores inconsistentes, manteniendo una sola tarea y la sesión IMA-EXEC-20261110-1825Z-02.
 ===============================================================================
-\n\n===============================================================================
+
+
+===============================================================================
 ## CHECKPOINT C1.451 — ACADEMIC: reconciliación de reintentos de admisión convertida
 Sesión: IMA-EXEC-20261110-1825Z-02
 Fecha: 2026-11-10 UTC.
@@ -1750,4 +1752,4 @@ Checkpoint anterior: C1.450.
 - No se reparan ni eliminan restos automáticamente. Los casos inconsistentes requieren conciliación explícita y evidencia de propiedad antes de cualquier mutación.
 - TASK-153 permanece En ejecución; AUD-NG-386 continúa abierto por el resto de rutas/requisitos ACADEMIC.
 - Siguiente foco: revisar la atribución e idempotencia de cargos de matrícula para evitar considerar reconciliado un cargo ajeno o ausente. Mantener la sesión IMA-EXEC-20261110-1825Z-02.
-===============================================================================\n
+===============================================================================
