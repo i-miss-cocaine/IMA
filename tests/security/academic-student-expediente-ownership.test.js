@@ -392,8 +392,8 @@ console.log("ACADEMIC admission conversion duplicate expediente ownership contra
     Utilities:{getUuid:()=>"UUID"},
     Date
   };
-  const functions=extractFunction("convertAdmissionToStudent")+"\\n"+extractFunction("registerStudentEnrollment");
-  vm.runInNewContext(functions+"\\nthis.run=convertAdmissionToStudent;",context);
+  const functions=extractFunction("convertAdmissionToStudent")+"\n"+extractFunction("registerStudentEnrollment");
+  vm.runInNewContext(functions+"\nthis.run=convertAdmissionToStudent;",context);
   assert.throws(()=>context.run({solicitudId:"ADM-ROLLBACK"}),/INJECTED_MOVEMENT_FAILURE/);
   assert.equal(sheets.SolicitudesAdmision.rows[1][11],"Admitida","admission state must remain unchanged after rollback");
   assert.equal(sheets.SolicitudesAdmision.rows[1][14],"","admission expediente link must be restored");
