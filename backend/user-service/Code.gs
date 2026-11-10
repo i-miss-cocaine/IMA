@@ -1418,7 +1418,7 @@ function handleSignatureProviderCallback_(envelope) {
   const providerMatch = /^SIGNATURE_PROVIDER:([A-Z0-9_-]{1,64})$/.exec(sourceService);
 
   if (!providerMatch || targetService !== "USER" || action !== "signatureStatusCallback" ||
-      !/^[A-Za-z0-9_-]{8,128}$/.test(requestId) || !correlationId ||
+      !/^[A-Za-z0-9_-]{8,128}$/.test(requestId) || !/^[A-Za-z0-9_.:-]{1,128}$/.test(correlationId) ||
       typeof timestamp !== "number" || !Number.isFinite(timestamp) ||
       Math.floor(timestamp) !== timestamp || Math.abs(Date.now() - timestamp) > 300000 ||
       !/^[a-f0-9]{64}$/.test(signature) || !payload || typeof payload !== "object" || Array.isArray(payload)) {
@@ -1426,15 +1426,15 @@ function handleSignatureProviderCallback_(envelope) {
   }
 
   const providerId = providerMatch[1];
-  const transactionId = String(payload.transaccionId || "").trim();
-  const providerStatus = String(payload.estadoProveedor || "").trim();
+  const transactionId = typeof payload.transaccionId === "string" ? payload.transaccionId.trim() : "";
+  const providerStatus = typeof payload.estadoProveedor === "string" ? payload.estadoProveedor.trim() : "";
   if (!/^[A-Za-z0-9_-]{1,128}$/.test(transactionId) ||
-      !providerStatus || providerStatus.length > 80 ||
+      !/^[A-Za-z0-9_.:-]{1,80}$/.test(providerStatus) ||
       Object.keys(payload).some(function(key) {
         return key !== "transaccionId" && key !== "estadoProveedor" && key !== "referenciaEvento";
       }) ||
       (payload.referenciaEvento !== undefined &&
-        (typeof payload.referenciaEvento !== "string" || payload.referenciaEvento.length > 128))) {
+        (typeof payload.referenciaEvento !== "string" || !/^[A-Za-z0-9_.:-]{1,128}$/.test(payload.referenciaEvento)))) {
     throw new Error("SIGNATURE_CALLBACK_PAYLOAD_INVALID");
   }
 
@@ -1463,7 +1463,7 @@ function handleSignatureProviderCallback_(envelope) {
     hasLock = lock.tryLock(10000);
     if (!hasLock) throw new Error("SIGNATURE_CALLBACK_SERVICE_BUSY");
     const cache = CacheService.getScriptCache();
-    const replayKey = "SIGNATURE_PROVIDER_CALLBACK_" + requestId;
+    const replayKey = "SIGNATURE_PROVIDER_CALLBACK_" + providerId + "_" + requestId;
     if (cache.get(replayKey)) throw new Error("SIGNATURE_CALLBACK_REPLAY_DETECTED");
     cache.put(replayKey, "SEEN", 600);
   } finally {

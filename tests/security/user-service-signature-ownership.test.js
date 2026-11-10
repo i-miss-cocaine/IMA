@@ -605,3 +605,13 @@ function makeProviderCallbackHarness(options = {}) {
   assert.equal(busy.state.releases,0);
 }
 console.log("USER generic signature-provider callback authentication, replay protection and non-probative state contract: PASS");
+
+{
+  const nonStringStatus=makeProviderCallbackHarness();
+  assert.throws(()=>nonStringStatus.run({payload:{transaccionId:"TX-1",estadoProveedor:{status:"completed"}}}),/SIGNATURE_CALLBACK_PAYLOAD_INVALID/);
+  assert.equal(nonStringStatus.state.secretReads.length,0,"non-string provider status must be rejected before secret lookup");
+  const oversizedCorrelation=makeProviderCallbackHarness();
+  assert.throws(()=>oversizedCorrelation.run({correlationId:"C".repeat(129)}),/SIGNATURE_CALLBACK_ENVELOPE_INVALID/);
+  assert.equal(oversizedCorrelation.state.secretReads.length,0);
+}
+console.log("USER callback strict scalar and correlation bounds: PASS");
