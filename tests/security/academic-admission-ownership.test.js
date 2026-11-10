@@ -1098,7 +1098,7 @@ console.log("academic admission conversion atomic ownership, rollback and concur
   function makeScheduleHarness({requestAuthorized=true,manager=false,evaluatorScope=true}={}) {
     let held=false,ownershipChecks=0,sheetReads=0,appends=0,releases=0,evaluatorIdentityChecks=0,evaluatorScopeChecks=0;
     const sheet={
-      getDataRange(){assert.equal(held,true);sheetReads++;return {getValues:()=>[["ID","SolicitudID","Fecha","Inicio","Fin","Evaluador","Lugar","Modalidad","Estado"],];};},
+      getDataRange(){assert.equal(held,true);sheetReads++;return {getValues:()=>[["ID","SolicitudID","Fecha","Inicio","Fin","Evaluador","Lugar","Modalidad","Estado"]]};},
       appendRow(){assert.equal(held,true);appends++;}
     };
     const context={
