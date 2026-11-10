@@ -6,7 +6,11 @@ on:
       - NG_beta_0.0.0.1_work
     paths:
       - backend/user-service/Code.gs
+      - backend/academic-service/Code.gs
+      - backend/accounting-service/Code.gs
       - tests/security/department-scope-contract.test.js
+      - tests/security/departmental-resource-access.test.js
+      - tests/security/accounting-departmental-resource-access.test.js
       - .github/workflows/department-scope-contract.yml
 
 permissions:
@@ -24,3 +28,7 @@ jobs:
           node-version: 24
       - name: Run department scope contract
         run: node tests/security/department-scope-contract.test.js
+      - name: Run academic departmental resource access contract
+        run: node tests/security/departmental-resource-access.test.js
+      - name: Run accounting departmental resource access contract
+        run: node tests/security/accounting-departmental-resource-access.test.js

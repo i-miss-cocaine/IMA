@@ -1399,7 +1399,9 @@ function getStudentFileSummary(payload) {
   if (fileRes.status !== "success") return fileRes;
 
   const exp = fileRes.studentFile;
-  const userRole = (payload && payload.authRole) || "";
+  const actor = getVerifiedAcademicIdentity_(payload);
+  if (!actor.authorized) return { status: "error", code: actor.code, message: "Acceso denegado." };
+  const userRole = actor.role;
   const roleUpper = String(userRole).toUpperCase();
   const isAdminOrSecretary = ["ADMINISTRADOR", "DIRECTOR", "SECRETARÍA", "SECRETARIA", "SUBDIRECTOR", "DESARROLLADOR"].indexOf(roleUpper) !== -1;
   const isTeacher = roleUpper === "PROFESOR" || roleUpper === "DOCENTE";
@@ -2408,111 +2410,314 @@ function convertAdmissionToStudent(payload) {
 // ---------------------------------------------------------------------------
 
 // [T-GOV-02] [Fase Gobernanza y Seguridad] - Función central de validación estricta de propiedad y alcance de acceso a registros
-function assertRecordOwnership(authRole, authenticatedUserId, targetUserId, resourceType) {
-  if (!authRole) return { authorized: false, reason: "AUTH_PERMISSION_DENIED" };
-  const roleUpper = String(authRole).toUpperCase();
-  if (roleUpper === "ADMINISTRADOR" || roleUpper === "DIRECTOR" || roleUpper === "ADMIN") {
-    return { authorized: true };
+
+function getVerifiedAcademicIdentity_(payload) {
+  const token = payload && (payload.sessionToken || payload.authToken || payload.token);
+  const claims = token ? verifySessionToken(token) : null;
+  if (!claims || !claims.userId || !claims.role) return { authorized: false, code: "VERIFIED_IDENTITY_REQUIRED" };
+  return { authorized: true, userId: String(claims.userId).trim(), role: String(claims.role).trim() };
+}
+
+function getVerifiedAcademicDepartmentScope_(payload, ss, identity) {
+  const actor = identity || getVerifiedAcademicIdentity_(payload);
+  if (!actor.authorized) return actor;
+  let institutionId = "";
+  try { institutionId = String(PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID") || "").trim(); } catch (_) {}
+  if (!institutionId) return { authorized: false, code: "IDENTITY_CONFIGURATION_REQUIRED" };
+  const sheet = ss.getSheetByName("AsignacionesAmbitosRoles");
+  if (!sheet) return { authorized: false, code: "ROLE_SCOPE_NOT_INITIALIZED" };
+  const data = sheet.getDataRange().getValues();
+  const norm = function(value) {
+    return String(value || "").trim().toUpperCase()
+      .replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E").replace(/[ÍÌÏ]/g, "I")
+      .replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N")
+      .replace(/^ROLE[_-]?/, "").replace(/[^A-Z0-9]/g, "");
+  };
+  const parseValues = function(value) {
+    if (Array.isArray(value)) return value.map(function(v) { return String(v).trim(); }).filter(Boolean);
+    const raw = String(value || "").trim();
+    if (!raw) return [];
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed.map(function(v) { return String(v).trim(); }).filter(Boolean);
+      if (parsed !== null && parsed !== undefined) return [String(parsed).trim()].filter(Boolean);
+    } catch (_) {}
+    return raw.split(",").map(function(v) { return String(v).trim(); }).filter(Boolean);
+  };
+  const now = new Date();
+  const scopes = [];
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i] || [];
+    if (String(row[1] || "").trim() !== actor.userId || norm(row[2]) !== norm(actor.role)) continue;
+    if (["ACTIVO", "ACTIVA", "ACTIVE"].indexOf(String(row[5] || "").trim().toUpperCase()) === -1) continue;
+    const start = row[8] ? new Date(row[8]) : null;
+    const end = row[9] ? new Date(row[9]) : null;
+    if ((start && isNaN(start.getTime())) || (end && isNaN(end.getTime()))) continue;
+    if (start && start.getTime() > now.getTime()) continue;
+    if (end && end.getTime() < now.getTime()) continue;
+    const scopeType = String(row[3] || "").trim().toUpperCase();
+    const scopeValues = parseValues(row[4]);
+    if (!scopeType || !scopeValues.length) continue;
+    scopes.push({ assignmentId: String(row[0] || ""), roleId: String(row[2] || ""), scopeType: scopeType, scopeValues: scopeValues });
   }
-  if (roleUpper === "ESTUDIANTE" || roleUpper === "ALUMNO") {
-    if (authenticatedUserId && targetUserId && String(authenticatedUserId).trim() === String(targetUserId).trim()) {
-      return { authorized: true };
+  const departmentIds = [];
+  let institutionWide = false;
+  scopes.forEach(function(scope) {
+    if (scope.scopeType === "DEPARTAMENTO") scope.scopeValues.forEach(function(value) {
+      if (departmentIds.indexOf(value) === -1) departmentIds.push(value);
+    });
+    if (scope.scopeType === "INSTITUCION" && scope.scopeValues.indexOf(institutionId) !== -1) institutionWide = true;
+  });
+  return { authorized: true, userId: actor.userId, role: actor.role, institutionId: institutionId, scopes: scopes, departmentIds: departmentIds, institutionWide: institutionWide };
+}
+
+function getStudentPersonIdForUser_(ss, userId) {
+  const sheet = ss.getSheetByName("Usuarios");
+  if (!sheet || sheet.getLastRow() < 2) return "";
+  const values = sheet.getDataRange().getValues();
+  const headers = (values[0] || []).map(function(v) { return String(v || "").trim().toLowerCase(); });
+  const userIdx = headers.indexOf("userid") >= 0 ? headers.indexOf("userid") : 0;
+  const personIdx = headers.indexOf("personaid") >= 0 ? headers.indexOf("personaid") : 9;
+  const row = values.slice(1).find(function(r) { return String(r[userIdx] || "").trim() === String(userId || "").trim(); });
+  return row ? String(row[personIdx] || "").trim() : "";
+}
+
+function assertStudentExpedienteScopeAccess_(payload, ss, expSheet, expRow) {
+  const actor = getVerifiedAcademicIdentity_(payload);
+  if (!actor.authorized) return actor;
+  if (!expRow || !expSheet) return { authorized: false, code: "RESOURCE_OWNER_UNRESOLVED" };
+  const role = String(actor.role || "").toUpperCase().replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E").replace(/[ÍÌÏ]/g, "I").replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N").replace(/[^A-Z0-9]/g, "");
+  const expedienteId = String(expRow[0] || "").trim();
+  const personId = getStudentPersonIdForUser_(ss, actor.userId);
+  const isStudent = role === "ESTUDIANTE" || role === "ALUMNO";
+  const isGuardian = ["PADRE", "MADRE", "TUTOR", "RESPONSABLE", "RESPONSABLEFAMILIAR"].indexOf(role) !== -1;
+
+  if (isStudent) {
+    return personId && String(expRow[1] || "").trim() === personId
+      ? { authorized: true, accessType: "SELF", userId: actor.userId }
+      : { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+  }
+
+  if (isGuardian) {
+    if (!personId || !expedienteId) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+    const relations = ss.getSheetByName("RelacionesEstudianteTutor");
+    const guardians = ss.getSheetByName("ResponsablesTutores");
+    if (!relations || !guardians) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+    const relRows = relations.getDataRange().getValues().slice(1);
+    const guardianRows = guardians.getDataRange().getValues().slice(1);
+    const linked = relRows.some(function(r) {
+      if (String(r[1] || "").trim() !== expedienteId) return false;
+      const state = String(r[9] || "").trim().toUpperCase();
+      const portal = String(r[8] || "").trim().toUpperCase();
+      if (["ACTIVO", "ACTIVA", "ACTIVE"].indexOf(state) === -1 || ["SI", "SÍ", "TRUE", "1", "ACTIVO", "ACTIVA"].indexOf(portal) === -1) return false;
+      const guardian = guardianRows.find(function(g) { return String(g[0] || "").trim() === String(r[2] || "").trim(); });
+      return guardian && String(guardian[1] || "").trim() === personId;
+    });
+    return linked ? { authorized: true, accessType: "GUARDIAN", userId: actor.userId } : { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+  }
+
+  const scope = getVerifiedAcademicDepartmentScope_(payload, ss, actor);
+  if (!scope.authorized) return scope;
+  if (scope.institutionWide) return { authorized: true, accessType: "INSTITUTION" };
+  const headers = expSheet.getDataRange().getValues()[0] || [];
+  const departmentIndex = headers.findIndex(function(h) { return String(h || "").trim().toUpperCase() === "DEPARTAMENTOID"; });
+  if (departmentIndex < 0 || !String(expRow[departmentIndex] || "").trim()) {
+    return { authorized: false, code: "RESOURCE_DEPARTMENT_UNRESOLVED" };
+  }
+  const ownerDepartment = String(expRow[departmentIndex]).trim();
+  const allowed = scope.departmentIds.some(function(id) { return String(id).trim().toUpperCase() === ownerDepartment.toUpperCase(); });
+  return allowed ? { authorized: true, accessType: "DEPARTMENT" } : { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+}
+
+function assertStudentDocumentScopeAccess_(payload, ss, documentSheet, documentRow, expSheet) {
+  const actor = getVerifiedAcademicIdentity_(payload);
+  if (!actor.authorized) return actor;
+  const expedienteId = String(documentRow && documentRow[1] || "").trim();
+  const solicitudId = String(documentRow && documentRow[2] || "").trim();
+  let resolvedExpedienteId = expedienteId;
+  if (!resolvedExpedienteId && documentRow && documentRow[2]) {
+    const applications = ss.getSheetByName("SolicitudesAdmision");
+    if (applications) {
+      const appRows = applications.getDataRange().getValues().slice(1);
+      const app = appRows.find(function(r) { return String(r[0] || "").trim() === String(documentRow[2]).trim(); });
+      if (app && app[14]) resolvedExpedienteId = String(app[14]).trim();
     }
-    return { authorized: false, reason: "AUTH_PERMISSION_DENIED" };
   }
-  return { authorized: true };
+  if (expedienteId && solicitudId) {
+    const applications = ss.getSheetByName("SolicitudesAdmision");
+    const appRows = applications ? applications.getDataRange().getValues().slice(1) : [];
+    const app = appRows.find(function(r) { return String(r[0] || "").trim() === solicitudId; });
+    if (!app || !String(app[14] || "").trim() || String(app[14]).trim() !== expedienteId) return { authorized: false, code: "RESOURCE_OWNER_UNRESOLVED" };
+  }
+  if (resolvedExpedienteId) {
+    if (!expSheet) return { authorized: false, code: "RESOURCE_OWNER_UNRESOLVED" };
+    const expRows = expSheet.getDataRange().getValues().slice(1);
+    const exp = expRows.find(function(r) { return String(r[0] || "").trim() === resolvedExpedienteId; });
+    if (!exp) return { authorized: false, code: "RESOURCE_OWNER_UNRESOLVED" };
+    return assertStudentExpedienteScopeAccess_(payload, ss, expSheet, exp);
+  }
+  const scope = getVerifiedAcademicDepartmentScope_(payload, ss, actor);
+  if (scope.authorized && scope.institutionWide) return { authorized: true, accessType: "INSTITUTION" };
+  const headers = documentSheet && documentSheet.getDataRange().getValues()[0] || [];
+  const departmentIndex = headers.findIndex(function(h) { return String(h || "").trim().toUpperCase() === "DEPARTAMENTOID"; });
+  const ownerDepartment = departmentIndex >= 0 ? String(documentRow[departmentIndex] || "").trim() : "";
+  if (!ownerDepartment) return { authorized: false, code: "RESOURCE_DEPARTMENT_UNRESOLVED" };
+  if (!scope.authorized) return scope;
+  const allowed = scope.departmentIds.some(function(id) { return String(id).trim().toUpperCase() === ownerDepartment.toUpperCase(); });
+  return allowed ? { authorized: true, accessType: "DEPARTMENT" } : { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+}
+
+function assertStudentRequestScopeAccess_(payload, ss, expedienteId, solicitudId) {
+  const actor = getVerifiedAcademicIdentity_(payload);
+  if (!actor.authorized) return actor;
+  const cleanExpedienteId = String(expedienteId || "").trim();
+  const cleanSolicitudId = String(solicitudId || "").trim();
+  if (cleanExpedienteId && cleanSolicitudId) {
+    const applications = ss.getSheetByName("SolicitudesAdmision");
+    const appRows = applications ? applications.getDataRange().getValues().slice(1) : [];
+    const app = appRows.find(function(r) { return String(r[0] || "").trim() === cleanSolicitudId; });
+    if (!app || !String(app[14] || "").trim() || String(app[14]).trim() !== cleanExpedienteId) {
+      return { authorized: false, code: "RESOURCE_OWNER_UNRESOLVED" };
+    }
+  }
+  const pseudoRow = ["", cleanExpedienteId, cleanSolicitudId];
+  return assertStudentDocumentScopeAccess_(payload, ss, null, pseudoRow, ss.getSheetByName("ExpedientesEstudiantes"));
+}
+
+function resolveAcademicRequestDepartment_(ss, asignaturaId) {
+  if (!asignaturaId) return "";
+  const subjectSheet = ss.getSheetByName("CatalogoAsignaturas");
+  if (!subjectSheet) return "";
+  const subjectData = subjectSheet.getDataRange().getValues();
+  if (subjectData.length < 2) return "";
+  const subjectHeaders = (subjectData[0] || []).map(function(v) { return String(v || "").trim().toUpperCase(); });
+  const subjectIdIndex = subjectHeaders.indexOf("ASIGNATURAID") >= 0 ? subjectHeaders.indexOf("ASIGNATURAID") : 0;
+  const areaIndex = subjectHeaders.indexOf("AREAACADEMICA");
+  const directDepartmentIndex = subjectHeaders.indexOf("DEPARTAMENTOID");
+  const subject = subjectData.slice(1).find(function(r) { return String(r[subjectIdIndex] || "").trim() === String(asignaturaId).trim(); });
+  if (!subject) return "";
+  if (directDepartmentIndex >= 0 && String(subject[directDepartmentIndex] || "").trim()) return String(subject[directDepartmentIndex]).trim();
+  if (areaIndex < 0 || !String(subject[areaIndex] || "").trim()) return "";
+  const areaValue = String(subject[areaIndex]).trim();
+  const areaSheet = ss.getSheetByName("AreasCurricularesExtensiones");
+  if (!areaSheet) return "";
+  const areaData = areaSheet.getDataRange().getValues();
+  if (areaData.length < 2) return "";
+  const areaHeaders = (areaData[0] || []).map(function(v) { return String(v || "").trim().toUpperCase(); });
+  const areaIdIndex = areaHeaders.indexOf("AREAID") >= 0 ? areaHeaders.indexOf("AREAID") : 0;
+  const areaCodeIndex = areaHeaders.indexOf("CODIGO");
+  const areaNameIndex = areaHeaders.indexOf("NOMBREAREA");
+  const departmentIndex = areaHeaders.indexOf("DEPARTAMENTOID");
+  if (departmentIndex < 0) return "";
+  const area = areaData.slice(1).find(function(r) {
+    const candidates = [r[areaIdIndex], areaCodeIndex >= 0 ? r[areaCodeIndex] : "", areaNameIndex >= 0 ? r[areaNameIndex] : ""];
+    return candidates.some(function(v) { return String(v || "").trim().toUpperCase() === areaValue.toUpperCase(); });
+  });
+  return area ? String(area[departmentIndex] || "").trim() : "";
+}
+
+function hasActiveTeacherAssignment_(ss, userId, asignaturaId, grado, seccion, periodoId) {
+  const sheet = ss.getSheetByName("AsignacionesDocentes") || ss.getSheetByName("Docentes");
+  if (!sheet) return false;
+  const data = sheet.getDataRange().getValues();
+  if (data.length < 2) return false;
+  const headers = (data[0] || []).map(function(v) { return String(v || "").trim().toLowerCase(); });
+  const findIndex = function(names, fallback) {
+    for (let i = 0; i < names.length; i++) { const idx = headers.indexOf(names[i]); if (idx >= 0) return idx; }
+    return fallback;
+  };
+  const teacherIndex = findIndex(["docenteuserid", "docenteid", "userid"], -1);
+  const subjectIndex = findIndex(["asignaturaid", "asignatura"], -1);
+  const gradeIndex = findIndex(["grado"], -1);
+  const sectionIndex = findIndex(["seccion"], -1);
+  const periodIndex = findIndex(["periodoid", "periodo", "anolectivo"], -1);
+  const stateIndex = findIndex(["estado"], -1);
+  if (teacherIndex < 0 || subjectIndex < 0) return false;
+  return data.slice(1).some(function(row) {
+    if (String(row[teacherIndex] || "").trim() !== String(userId).trim()) return false;
+    if (asignaturaId && String(row[subjectIndex] || "").trim() !== String(asignaturaId).trim()) return false;
+    if (grado && gradeIndex >= 0 && String(row[gradeIndex] || "").trim() !== String(grado).trim()) return false;
+    if (seccion && sectionIndex >= 0 && String(row[sectionIndex] || "").trim() !== String(seccion).trim()) return false;
+    if (periodoId && periodIndex >= 0 && String(row[periodIndex] || "").trim() !== String(periodoId).trim()) return false;
+    if (stateIndex >= 0 && ["ACTIVO", "ACTIVA", "ACTIVE"].indexOf(String(row[stateIndex] || "").trim().toUpperCase()) === -1) return false;
+    return true;
+  });
+}
+
+function assertRecordOwnership(authRole, authenticatedUserId, targetUserId, resourceType) {
+  if (!authRole || !authenticatedUserId || !targetUserId) return { authorized: false, reason: "AUTH_PERMISSION_DENIED" };
+  const roleUpper = String(authRole).toUpperCase().replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E")
+    .replace(/[ÍÌÏ]/g, "I").replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N").replace(/[^A-Z0-9]/g, "");
+  if (roleUpper === "ESTUDIANTE" || roleUpper === "ALUMNO") {
+    const sameOwner = String(authenticatedUserId).trim() === String(targetUserId).trim();
+    return sameOwner ? { authorized: true } : { authorized: false, reason: "AUTH_PERMISSION_DENIED" };
+  }
+  return { authorized: false, reason: "RESOURCE_SCOPE_REQUIRED" };
 }
 
 // [F10-Task13] [P1] - Mejorar la gestión de evidencias y documentos sensibles
 function validateEvidenceFileAndPermissions(payload) {
-  const { fileId, mimeType, sizeBytes, sessionToken, token, authRole } = payload || {};
-  const targetToken = sessionToken || token || (payload && payload.token);
-
+  const { fileId, mimeType, sizeBytes } = payload || {};
   if (!fileId) throw new Error("Parámetro obligatorio ausente: fileId.");
+  const actor = getVerifiedAcademicIdentity_(payload);
+  if (!actor.authorized) return { status: "error", code: actor.code, message: "Acceso denegado." };
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const documentSheet = ss.getSheetByName("DocumentosEstudiante");
+  const expSheet = ss.getSheetByName("ExpedientesEstudiantes");
+  if (!documentSheet) return { status: "error", code: "RESOURCE_OWNER_UNRESOLVED", message: "Acceso denegado." };
+  const docRows = documentSheet.getDataRange().getValues().slice(1);
+  const docRow = docRows.find(function(row) { return String(row[5] || "").trim() === String(fileId).trim(); });
+  if (!docRow) return { status: "error", code: "RESOURCE_OWNER_UNRESOLVED", message: "Acceso denegado." };
+  const access = assertStudentDocumentScopeAccess_(payload, ss, documentSheet, docRow, expSheet);
+  if (!access.authorized) return { status: "error", code: access.code || "RESOURCE_SCOPE_DENIED", message: "Acceso denegado." };
 
-  // Validar token de sesión y autenticación
-  const claims = verifySessionToken(targetToken);
-  if (!claims && !payload._verifiedUserId) {
-    return {
-      status: "error",
-      code: "AUTH_PERMISSION_DENIED",
-      message: "Acceso denegado: Se requiere una sesión autenticada para acceder a archivos de evidencia sensible."
-    };
-  }
-
-  // Validar tamaño máximo (default 10 MB)
   const maxSizeBytes = 10 * 1024 * 1024;
-  if (sizeBytes && parseInt(sizeBytes) > maxSizeBytes) {
-    return {
-      status: "error",
-      code: "FILE_TOO_LARGE",
-      message: "El archivo de evidencia excede el límite máximo permitido de 10 MB."
-    };
+  if (sizeBytes && parseInt(sizeBytes, 10) > maxSizeBytes) {
+    return { status: "error", code: "FILE_TOO_LARGE", message: "El archivo de evidencia excede el límite máximo permitido de 10 MB." };
   }
-
-  // Validar tipo MIME permitido
   const allowedMimeTypes = ["application/pdf", "image/png", "image/jpeg", "image/jpg", "image/webp"];
   if (mimeType && allowedMimeTypes.indexOf(String(mimeType).toLowerCase().trim()) === -1) {
-    return {
-      status: "error",
-      code: "UNSUPPORTED_FILE_TYPE",
-      message: "Formato de archivo no permitido. Únicamente se admiten documentos PDF e imágenes (PNG, JPG, WEBP)."
-    };
+    return { status: "error", code: "UNSUPPORTED_FILE_TYPE", message: "Formato de archivo no permitido. Únicamente se admiten documentos PDF e imágenes (PNG, JPG, WEBP)." };
   }
-
   try {
     const file = DriveApp.getFileById(fileId);
     const actualMime = file.getMimeType();
     const actualSize = file.getSize();
-
-    if (actualSize > maxSizeBytes) {
-      return {
-        status: "error",
-        code: "FILE_TOO_LARGE",
-        message: "El archivo de evidencia almacenado excede el límite permitido de 10 MB."
-      };
-    }
-
-    logStructuredEvent("ACADEMIC", "validateEvidenceFileAndPermissions", "INFO", "EVIDENCE_FILE_VALIDATED", `Archivo de evidencia ${fileId} verificado para usuario ${claims ? claims.userId : (payload._verifiedUserId || 'Autenticado')}`, { fileId, actualMime, actualSize }, authRole || (claims ? claims.role : "Autenticado"));
-
+    if (actualSize > maxSizeBytes) return { status: "error", code: "FILE_TOO_LARGE", message: "El archivo de evidencia almacenado excede el límite permitido de 10 MB." };
+    logStructuredEvent("ACADEMIC", "validateEvidenceFileAndPermissions", "INFO", "EVIDENCE_FILE_VALIDATED", "Archivo de evidencia validado para la identidad autenticada.", { fileId: fileId, actualMime: actualMime, actualSize: actualSize }, actor.role);
     return {
-      status: "success",
-      fileId,
-      fileName: file.getName(),
-      mimeType: actualMime,
-      fileSizeMb: (actualSize / (1024 * 1024)).toFixed(2),
-      isPdf: actualMime === "application/pdf",
+      status: "success", fileId: fileId, fileName: file.getName(), mimeType: actualMime,
+      fileSizeMb: (actualSize / (1024 * 1024)).toFixed(2), isPdf: actualMime === "application/pdf",
       previewUrl: "https://drive.google.com/file/d/" + fileId + "/preview",
-      message: "Archivo de evidencia verificado y protegido de acceso no autenticado."
+      message: "Archivo de evidencia verificado y protegido por el ámbito del expediente."
     };
   } catch (e) {
-    return {
-      status: "error",
-      message: "Error al verificar archivo de evidencia en Google Drive: " + e.message
-    };
+    return { status: "error", message: "Error al verificar archivo de evidencia en Google Drive: " + e.message };
   }
 }
 
 // [T-GOV-03] [Fase Gobernanza y Seguridad] - Proxy de descarga segura y autorización de adjuntos en Google Drive
 function getSecureDocumentStream(payload) {
-  const { fileId, documentId, userId, userRole, authenticatedUserId } = payload || {};
-  const targetId = fileId || documentId;
-  if (!targetId) {
-    return { status: "error", message: "Identificador de documento no proporcionado." };
-  }
-  const ownership = assertRecordOwnership(userRole, authenticatedUserId || userId, userId, "DOCUMENT");
-  if (!ownership.authorized) {
-    return { status: "error", code: "AUTH_PERMISSION_DENIED", message: "Acceso denegado al documento solicitado." };
-  }
+  const { fileId, documentId } = payload || {};
+  if (!fileId && !documentId) return { status: "error", code: "RESOURCE_OWNER_UNRESOLVED", message: "Identificador de documento no proporcionado." };
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const documentSheet = ss.getSheetByName("DocumentosEstudiante");
+  const expSheet = ss.getSheetByName("ExpedientesEstudiantes");
+  if (!documentSheet) return { status: "error", code: "RESOURCE_OWNER_UNRESOLVED", message: "Acceso denegado." };
+  const rows = documentSheet.getDataRange().getValues();
+  const docRow = rows.slice(1).find(function(r) {
+    const idMatches = !documentId || String(r[0] || "").trim() === String(documentId).trim();
+    const fileMatches = !fileId || String(r[5] || "").trim() === String(fileId).trim();
+    return idMatches && fileMatches;
+  });
+  if (!docRow) return { status: "error", code: "RESOURCE_OWNER_UNRESOLVED", message: "Acceso denegado." };
+  const access = assertStudentDocumentScopeAccess_(payload, ss, documentSheet, docRow, expSheet);
+  if (!access.authorized) return { status: "error", code: access.code || "RESOURCE_SCOPE_DENIED", message: "Acceso denegado." };
+  const targetId = String(fileId || docRow[5] || "").trim();
+  if (!targetId || targetId !== String(docRow[5] || "").trim()) return { status: "error", code: "RESOURCE_OWNER_UNRESOLVED", message: "Acceso denegado." };
   try {
     const file = DriveApp.getFileById(targetId);
-    return {
-      status: "success",
-      fileId: targetId,
-      fileName: file.getName(),
-      mimeType: file.getMimeType(),
-      downloadUrl: file.getDownloadUrl()
-    };
+    return { status: "success", fileId: targetId, fileName: file.getName(), mimeType: file.getMimeType(), downloadUrl: file.getDownloadUrl() };
   } catch (e) {
     return { status: "error", message: "Error al acceder al documento en Drive: " + e.message };
   }
@@ -2524,101 +2729,56 @@ function getStudentFile(payload) {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const expSheet = getOrCreateSheet(ss, "ExpedientesEstudiantes");
   const expRows = expSheet.getDataRange().getValues().slice(1);
-
+  const actor = getVerifiedAcademicIdentity_(payload);
+  if (!actor.authorized) return { status: "error", code: actor.code, message: "Acceso denegado." };
+  const actorRole = String(actor.role || "").toUpperCase().replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E").replace(/[ÍÌÏ]/g, "I").replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N").replace(/[^A-Z0-9]/g, "");
+  const isStudentActor = actorRole === "ESTUDIANTE" || actorRole === "ALUMNO";
+  const effectiveUserId = isStudentActor ? getStudentPersonIdForUser_(ss, actor.userId) : userId;
   const exp = expRows.find(r =>
     (expedienteId && String(r[0]).trim() === String(expedienteId).trim()) ||
-    (userId && String(r[1]).trim() === String(userId).trim()) ||
+    (effectiveUserId && String(r[1]).trim() === String(effectiveUserId).trim()) ||
     (codigoInstitucional && String(r[2]).trim() === String(codigoInstitucional).trim())
   );
-
   if (!exp) return { status: "error", message: "Expediente de estudiante no encontrado." };
+  const access = assertStudentExpedienteScopeAccess_(payload, ss, expSheet, exp);
+  if (!access.authorized) return { status: "error", code: access.code || "RESOURCE_SCOPE_DENIED", message: "Acceso denegado." };
 
   const targetExpId = exp[0];
   const targetUserId = exp[1];
-
-  // Cargar Matrículas
   const matRows = getOrCreateSheet(ss, "Matriculas").getDataRange().getValues().slice(1);
   const enrollments = matRows.filter(r => String(r[2]).trim() === String(targetUserId).trim()).map(r => ({
-    matriculaId: r[0],
-    fecha: r[1],
-    userId: r[2],
-    alumno: r[3],
-    grado: r[4],
-    seccion: r[5],
-    periodo: r[6],
-    tipo: r[7],
-    estado: r[8],
-    becaDescuento: r[9],
-    observaciones: r[10]
+    matriculaId: r[0], fecha: r[1], userId: r[2], alumno: r[3], grado: r[4], seccion: r[5],
+    periodo: r[6], tipo: r[7], estado: r[8], becaDescuento: r[9], observaciones: r[10]
   }));
-
-  // Cargar Tutores/Responsables
   const relRows = getOrCreateSheet(ss, "RelacionesEstudianteTutor").getDataRange().getValues().slice(1);
   const tutRows = getOrCreateSheet(ss, "ResponsablesTutores").getDataRange().getValues().slice(1);
-
   const studentRels = relRows.filter(r => String(r[1]).trim() === String(targetExpId).trim());
   const guardians = studentRels.map(r => {
     const tut = tutRows.find(t => String(t[0]).trim() === String(r[2]).trim());
     return {
-      relacionId: r[0],
-      responsableId: r[2],
-      nombres: tut ? tut[2] : "",
-      apellidos: tut ? tut[3] : "",
-      identificacion: tut ? tut[4] : "",
-      telefono: tut ? tut[5] : "",
-      email: tut ? tut[6] : "",
-      tipoParentesco: r[3],
-      esRepresentanteLegal: r[4],
-      esContactoEmergencia: r[5],
-      esResponsableFinanciero: r[6],
-      autorizadoPickUp: r[7],
-      accesoPortal: r[8]
+      relacionId: r[0], responsableId: r[2], nombres: tut ? tut[2] : "", apellidos: tut ? tut[3] : "",
+      identificacion: tut ? tut[4] : "", telefono: tut ? tut[5] : "", email: tut ? tut[6] : "",
+      tipoParentesco: r[3], esRepresentanteLegal: r[4], esContactoEmergencia: r[5],
+      esResponsableFinanciero: r[6], autorizadoPickUp: r[7], accesoPortal: r[8]
     };
   });
-
-  // Cargar Documentos
   const docRows = getOrCreateSheet(ss, "DocumentosEstudiante").getDataRange().getValues().slice(1);
   const docs = docRows.filter(r => String(r[1]).trim() === String(targetExpId).trim()).map(r => ({
-    documentoId: r[0],
-    tipoDocumento: r[3],
-    nombreArchivo: r[4],
-    driveUrl: r[6],
-    fechaRecepcion: r[7],
-    estadoRevision: r[9]
+    documentoId: r[0], tipoDocumento: r[3], nombreArchivo: r[4], driveUrl: r[6],
+    fechaRecepcion: r[7], estadoRevision: r[9]
   }));
-
-  // Cargar Movimientos
   const movRows = getOrCreateSheet(ss, "MovimientosEstudiante").getDataRange().getValues().slice(1);
   const moves = movRows.filter(r => String(r[1]).trim() === String(targetExpId).trim()).map(r => ({
-    movimientoId: r[0],
-    anoLectivo: r[3],
-    tipoMovimiento: r[4],
-    gradoOrigen: r[5],
-    seccionOrigen: r[6],
-    gradoDestino: r[7],
-    seccionDestino: r[8],
-    fechaEfectiva: r[9],
-    motivo: r[10]
+    movimientoId: r[0], anoLectivo: r[3], tipoMovimiento: r[4], gradoOrigen: r[5],
+    seccionOrigen: r[6], gradoDestino: r[7], seccionDestino: r[8], fechaEfectiva: r[9], motivo: r[10]
   }));
-
   return {
     status: "success",
     studentFile: {
-      expedienteId: exp[0],
-      personaId: exp[1],
-      userId: targetUserId,
-      codigoInstitucional: exp[2],
-      fechaNacimiento: exp[3],
-      nacionalidad: exp[4],
-      direccionResidencia: exp[5],
-      fotografiaUrl: exp[6],
-      estadoExpediente: exp[7],
-      fechaCreacion: exp[8],
-      observaciones: exp[10],
-      enrollments: enrollments,
-      guardians: guardians,
-      documents: docs,
-      movements: moves
+      expedienteId: exp[0], personaId: exp[1], userId: targetUserId, codigoInstitucional: exp[2],
+      fechaNacimiento: exp[3], nacionalidad: exp[4], direccionResidencia: exp[5], fotografiaUrl: exp[6],
+      estadoExpediente: exp[7], fechaCreacion: exp[8], observaciones: exp[10],
+      enrollments: enrollments, guardians: guardians, documents: docs, movements: moves
     }
   };
 }
@@ -9984,7 +10144,9 @@ function getStudentTimeline(payload) {
   const exp = fileRes.studentFile;
   const targetExpId = String(expedienteId || (exp && exp.expedienteId) || "").trim();
   const events = [];
-  const userRole = (payload && payload.authRole) || "";
+  const actor = getVerifiedAcademicIdentity_(payload);
+  if (!actor.authorized) return { status: "error", code: actor.code, message: "Acceso denegado." };
+  const userRole = actor.role;
   const isPrivileged = ["Administrador", "Director", "Secretaría", "Secretaria", "Subdirector", "Desarrollador"].indexOf(userRole) !== -1;
 
   if (exp.fechaCreacion) {
@@ -10710,6 +10872,8 @@ function uploadStudentDocument(payload) {
   if ((!expedienteId && !solicitudId) || !tipoDocumento || !fileData) {
     throw new Error("expedienteId o solicitudId, tipoDocumento y fileData son requeridos.");
   }
+  const access = assertStudentRequestScopeAccess_(payload, SpreadsheetApp.openById(SPREADSHEET_ID), expedienteId, solicitudId);
+  if (!access.authorized) return { status: "error", code: access.code || "RESOURCE_SCOPE_DENIED", message: "Acceso denegado." };
 
   // Validación de tipo MIME y tamaño de archivo (máximo 10 MB = 10,485,760 bytes)
   let mimeType = "application/pdf";
@@ -10844,80 +11008,49 @@ function uploadStudentDocument(payload) {
 function getStudentDocuments(payload) {
   const { expedienteId, solicitudId } = payload || {};
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const rows = getOrCreateSheet(ss, "DocumentosEstudiante").getDataRange().getValues().slice(1);
+  const documentSheet = getOrCreateSheet(ss, "DocumentosEstudiante");
+  const expSheet = ss.getSheetByName("ExpedientesEstudiantes");
+  const rows = documentSheet.getDataRange().getValues().slice(1);
   const verRows = getOrCreateSheet(ss, "HistorialVersionesDocumentos").getDataRange().getValues().slice(1);
-
   const cleanExpId = expedienteId ? String(expedienteId).trim().toLowerCase() : "";
   const cleanSolId = solicitudId ? String(solicitudId).trim().toLowerCase() : "";
-
-  const filtered = rows.filter(r => {
+  const explicitTarget = !!(cleanExpId || cleanSolId);
+  const candidates = rows.filter(r => {
     const rowExpId = String(r[1] || "").trim().toLowerCase();
     const rowSolId = String(r[2] || "").trim().toLowerCase();
-
-    if (cleanExpId && cleanSolId) {
-      return rowExpId === cleanExpId || rowSolId === cleanSolId;
-    }
-    if (cleanExpId) {
-      return rowExpId === cleanExpId;
-    }
-    if (cleanSolId) {
-      return rowSolId === cleanSolId;
-    }
+    if (cleanExpId && cleanSolId) return rowExpId === cleanExpId || rowSolId === cleanSolId;
+    if (cleanExpId) return rowExpId === cleanExpId;
+    if (cleanSolId) return rowSolId === cleanSolId;
     return true;
   });
-
+  const filtered = [];
+  for (let i = 0; i < candidates.length; i++) {
+    const access = assertStudentDocumentScopeAccess_(payload, ss, documentSheet, candidates[i], expSheet);
+    if (access.authorized) filtered.push(candidates[i]);
+    else if (explicitTarget) return { status: "error", code: access.code || "RESOURCE_SCOPE_DENIED", message: "Acceso denegado." };
+  }
+  if (!explicitTarget && candidates.length && !filtered.length) {
+    return { status: "error", code: "RESOURCE_SCOPE_DENIED", message: "No existen documentos disponibles dentro del ámbito autorizado." };
+  }
   const mapped = filtered.map(r => {
     const docId = String(r[0]);
     const fileId = String(r[5] || "").trim();
-
-    // Verificación de accesibilidad real del archivo en Drive
-    let driveAccessible = true;
+    let driveAccessible = false;
     if (fileId) {
-      try {
-        const file = DriveApp.getFileById(fileId);
-        if (file.isTrashed()) driveAccessible = false;
-      } catch (_) {
-        driveAccessible = false;
-      }
-    } else {
-      driveAccessible = false;
+      try { const file = DriveApp.getFileById(fileId); driveAccessible = !file.isTrashed(); } catch (_) { driveAccessible = false; }
     }
-
-    // Obtener historial de versiones del documento
-    const versions = verRows
-      .filter(v => String(v[1]).trim() === docId.trim())
-      .map(v => ({
-        versionId: v[0],
-        documentoId: v[1],
-        nombreArchivo: v[2],
-        driveFileId: v[3],
-        driveUrl: v[4],
-        fechaCreacion: v[5],
-        archivadoPor: v[6],
-        motivoArchivado: v[7],
-        fechaArchivado: v[8]
-      }));
-
+    const versions = verRows.filter(v => String(v[1]).trim() === docId.trim()).map(v => ({
+      versionId: v[0], documentoId: v[1], nombreArchivo: v[2], driveFileId: v[3],
+      driveUrl: v[4], fechaCreacion: v[5], archivadoPor: v[6], motivoArchivado: v[7], fechaArchivado: v[8]
+    }));
     return {
-      documentoId: docId,
-      expedienteId: r[1],
-      solicitudId: r[2],
-      tipoDocumento: r[3],
-      nombreArchivo: r[4],
-      driveFileId: r[5],
-      driveUrl: r[6],
-      fechaRecepcion: r[7],
-      fechaVencimiento: r[8],
-      estadoRevision: r[9],
-      subidoPor: r[10],
-      validadoPor: r[11],
-      observaciones: r[12],
-      driveAccessible: driveAccessible,
-      totalVersionesPrevias: versions.length,
+      documentoId: docId, expedienteId: r[1], solicitudId: r[2], tipoDocumento: r[3],
+      nombreArchivo: r[4], driveFileId: r[5], driveUrl: r[6], fechaRecepcion: r[7],
+      fechaVencimiento: r[8], estadoRevision: r[9], subidoPor: r[10], validadoPor: r[11],
+      observaciones: r[12], driveAccessible: driveAccessible, totalVersionesPrevias: versions.length,
       historialVersiones: versions
     };
   });
-
   return { status: "success", documents: mapped };
 }
 
@@ -10979,9 +11112,13 @@ function updateDocumentStatus(payload) {
 
   const idx = data.findIndex(r => String(r[0]).trim() === String(documentoId).trim());
   if (idx === -1) throw new Error("Documento no encontrado.");
+  const access = assertStudentDocumentScopeAccess_(payload, ss, sheet, data[idx], ss.getSheetByName("ExpedientesEstudiantes"));
+  if (!access.authorized || ["SELF", "GUARDIAN"].indexOf(access.accessType) !== -1) return { status: "error", code: access.code || "RESOURCE_SCOPE_DENIED", message: "Acceso denegado." };
+  const actor = getVerifiedAcademicIdentity_(payload);
+  if (!actor.authorized) return { status: "error", code: actor.code, message: "Acceso denegado." };
 
   sheet.getRange(idx + 1, 10).setValue(nuevoEstado);
-  sheet.getRange(idx + 1, 12).setValue((payload && payload.userId) || "Secretaría");
+  sheet.getRange(idx + 1, 12).setValue(actor.userId);
   if (observaciones) sheet.getRange(idx + 1, 13).setValue(observaciones);
 
   return { status: "success", message: `Estado del documento actualizado a '${nuevoEstado}'.` };
@@ -10991,6 +11128,8 @@ function updateDocumentStatus(payload) {
 function getPendingDocumentsReport(payload) {
   const { expedienteId, solicitudId } = payload || {};
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const access = assertStudentRequestScopeAccess_(payload, ss, expedienteId, solicitudId);
+  if (!access.authorized) return { status: "error", code: access.code || "RESOURCE_SCOPE_DENIED", message: "Acceso denegado." };
 
   const mandatoryRequirements = [
     { tipoDocumento: "PartidaNacimiento", obligatorio: true, descripcion: "Certificado o Partida de Nacimiento" },
@@ -10999,7 +11138,8 @@ function getPendingDocumentsReport(payload) {
     { tipoDocumento: "FichaMedicaVacunas", obligatorio: false, descripcion: "Ficha Médica o Registro de Vacunación" }
   ];
 
-  const docRes = getStudentDocuments({ expedienteId, solicitudId });
+  const docRes = getStudentDocuments(Object.assign({}, payload || {}, { expedienteId: expedienteId, solicitudId: solicitudId }));
+  if (!docRes || docRes.status !== "success") return docRes || { status: "error", code: "RESOURCE_SCOPE_DENIED", message: "Acceso denegado." };
   const presentDocs = docRes.documents || [];
 
   const exempSheet = getOrCreateSheet(ss, "ExencionesDocumentales");
@@ -11125,6 +11265,9 @@ function grantDocumentExemption(payload) {
   }
 
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const access = assertStudentRequestScopeAccess_(payload, ss, expedienteId, solicitudId);
+  if (!access.authorized || ["SELF", "GUARDIAN"].indexOf(access.accessType) !== -1) return { status: "error", code: access.code || "RESOURCE_SCOPE_DENIED", message: "Acceso denegado." };
+  const actor = getVerifiedAcademicIdentity_(payload);
   const sheet = getOrCreateSheet(ss, "ExencionesDocumentales");
   if (sheet.getLastRow() === 0) {
     sheet.appendRow(["ExencionID", "ExpedienteID", "SolicitudID", "TipoDocumento", "Motivo", "OtorgadoPor", "FechaOtorgamiento", "FechaVencimientoExencion"]);
@@ -11132,7 +11275,7 @@ function grantDocumentExemption(payload) {
 
   const exencionId = "EXEMP-" + Date.now();
   const now = new Date();
-  const author = (payload && payload.userId) || "Secretaría";
+  const author = actor.userId;
 
   sheet.appendRow([
     exencionId,
@@ -13257,144 +13400,66 @@ function generateStudentReportCard(payload) {
 
 // [F9-Task08] [P0] - Fortalecer el control de permisos y la separación de responsabilidades académicas
 function validateAcademicResponsibilityAndScopeAccess(payload) {
-  const { userId, role, estudianteId, asignaturaId, grado, seccion, periodoId, operacion } = payload || {};
+  const identity = getVerifiedAcademicIdentity_(payload);
+  if (!identity.authorized) return { status: "error", authorized: false, code: identity.code, message: "Se requiere una sesión firmada y vigente." };
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const roleUpper = String(identity.role || "").toUpperCase()
+    .replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E").replace(/[ÍÌÏ]/g, "I")
+    .replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N").replace(/[^A-Z0-9]/g, "");
+  const { estudianteId, asignaturaId, grado, seccion, periodoId, operacion } = payload || {};
+  const restrictedStudentOperations = ["EDITAR_NOTA", "REGISTRAR_NOTA", "RECTIFICAR_NOTA", "PUBLICAR_NOTAS", "CERRAR_PERIODO"];
+  const isStudentOrGuardian = ["ESTUDIANTE", "ALUMNO", "TUTOR", "PADRE", "MADRE", "RESPONSABLE", "RESPONSABLEFAMILIAR"].indexOf(roleUpper) !== -1;
 
-  if (!userId || !role) {
-    return {
-      status: "error",
-      authorized: false,
-      message: "userId y role son requeridos para la validación de responsabilidades académicas."
-    };
+  if (isStudentOrGuardian) {
+    if (operacion && restrictedStudentOperations.indexOf(String(operacion).toUpperCase()) !== -1) {
+      return { status: "success", authorized: false, code: "OPERATION_NOT_ALLOWED", reason: "La operación requiere permisos académicos de edición.", message: "Acceso denegado." };
+    }
+    const expSheet = ss.getSheetByName("ExpedientesEstudiantes");
+    if (!expSheet) return { status: "success", authorized: false, code: "RESOURCE_OWNER_UNRESOLVED", message: "Acceso denegado." };
+    const expRows = expSheet.getDataRange().getValues().slice(1);
+    const personId = getStudentPersonIdForUser_(ss, identity.userId);
+    const requestedId = String(estudianteId || "").trim();
+    const resolvedPersonId = requestedId ? (getStudentPersonIdForUser_(ss, requestedId) || requestedId) : personId;
+    const exp = expRows.find(function(r) {
+      return (requestedId && [r[0], r[1], r[2]].some(function(v) { return String(v || "").trim() === requestedId; })) ||
+        (resolvedPersonId && String(r[1] || "").trim() === resolvedPersonId);
+    });
+    if (!exp) return { status: "success", authorized: false, code: "RESOURCE_OWNER_UNRESOLVED", message: "Acceso denegado." };
+    const access = assertStudentExpedienteScopeAccess_(payload, ss, expSheet, exp);
+    return { status: "success", authorized: !!access.authorized, code: access.code || "", role: identity.role, message: access.authorized ? "Acceso autorizado para el expediente vinculado." : "Acceso denegado." };
   }
 
-  const roleUpper = String(role).trim().toUpperCase();
-
-  // Roles de administración institucional tienen acceso completo a los ámbitos académicos
-  if (["ADMINISTRADOR", "ADMIN", "DIRECTOR", "DIRECCION", "SECRETARIA", "COORDINADOR", "COORDINACION"].indexOf(roleUpper) >= 0) {
-    return {
-      status: "success",
-      authorized: true,
-      role: roleUpper,
-      message: "Acceso autorizado por responsabilidad institucional de dirección/administración."
-    };
+  if (estudianteId) {
+    const expSheet = ss.getSheetByName("ExpedientesEstudiantes");
+    if (!expSheet) return { status: "success", authorized: false, code: "RESOURCE_OWNER_UNRESOLVED", message: "Acceso denegado." };
+    const expRows = expSheet.getDataRange().getValues().slice(1);
+    const requestedStudent = String(estudianteId).trim();
+    const mappedPersonId = getStudentPersonIdForUser_(ss, requestedStudent);
+    const exp = expRows.find(function(r) {
+      return [r[0], r[1], r[2]].some(function(v) { return String(v || "").trim() === requestedStudent; }) ||
+        (mappedPersonId && String(r[1] || "").trim() === mappedPersonId);
+    });
+    if (!exp) return { status: "success", authorized: false, code: "RESOURCE_OWNER_UNRESOLVED", message: "Acceso denegado." };
+    const studentAccess = assertStudentExpedienteScopeAccess_(payload, ss, expSheet, exp);
+    if (!studentAccess.authorized) return { status: "success", authorized: false, code: studentAccess.code || "RESOURCE_SCOPE_DENIED", message: "Acceso denegado." };
+  }
+  const scope = getVerifiedAcademicDepartmentScope_(payload, ss, identity);
+  if (!scope.authorized) return { status: "error", authorized: false, code: scope.code, message: "No fue posible validar el ámbito institucional." };
+  const departmentId = resolveAcademicRequestDepartment_(ss, asignaturaId);
+  if (!scope.institutionWide && asignaturaId) {
+    if (!departmentId) return { status: "success", authorized: false, code: "RESOURCE_DEPARTMENT_UNRESOLVED", role: identity.role, message: "No se pudo determinar el departamento propietario del recurso." };
+    const inScope = scope.departmentIds.some(function(id) { return String(id).trim().toUpperCase() === departmentId.toUpperCase(); });
+    if (!inScope) return { status: "success", authorized: false, code: "RESOURCE_SCOPE_DENIED", role: identity.role, message: "Acceso denegado." };
+  } else if (!scope.institutionWide && !estudianteId) {
+    return { status: "success", authorized: false, code: "RESOURCE_DEPARTMENT_UNRESOLVED", role: identity.role, message: "No se pudo determinar el departamento propietario del recurso." };
   }
 
-  // Validación para Rol Docente / Profesor
   if (roleUpper === "DOCENTE" || roleUpper === "PROFESOR") {
-    if (asignaturaId || grado || seccion) {
-      const ss = getSpreadsheet();
-      const sheetAsignaciones = ss.getSheetByName("AsignacionesDocentes") || ss.getSheetByName("Docentes");
-      let docenteAsignado = false;
-
-      if (sheetAsignaciones) {
-        const data = sheetAsignaciones.getDataRange().getValues();
-        if (data.length > 1) {
-          const headers = data[0].map(h => String(h).trim().toLowerCase());
-          const idxDocente = headers.indexOf("docenteid") >= 0 ? headers.indexOf("docenteid") : headers.indexOf("userid");
-          const idxAsig = headers.indexOf("asignaturaid") >= 0 ? headers.indexOf("asignaturaid") : headers.indexOf("asignatura");
-          const idxGrado = headers.indexOf("grado");
-          const idxSeccion = headers.indexOf("seccion");
-
-          for (let i = 1; i < data.length; i++) {
-            const rowDocente = String(data[i][idxDocente] || "").trim();
-            if (rowDocente === String(userId).trim()) {
-              const rowAsig = idxAsig >= 0 ? String(data[i][idxAsig]).trim() : "";
-              const rowGrado = idxGrado >= 0 ? String(data[i][idxGrado]).trim() : "";
-              const rowSeccion = idxSeccion >= 0 ? String(data[i][idxSeccion]).trim() : "";
-
-              const matchAsig = !asignaturaId || rowAsig === String(asignaturaId).trim();
-              const matchGrado = !grado || rowGrado === String(grado).trim();
-              const matchSeccion = !seccion || rowSeccion === String(seccion).trim();
-
-              if (matchAsig && matchGrado && matchSeccion) {
-                docenteAsignado = true;
-                break;
-              }
-            }
-          }
-        }
-      } else {
-        docenteAsignado = true;
-      }
-
-      if (!docenteAsignado) {
-        logStructuredEvent("ACADEMIC", "validateAcademicResponsibilityAndScopeAccess", "WARN", "UNAUTHORIZED_ACCESS_ATTEMPT", `Docente '${userId}' intentó acceder a la asignatura '${asignaturaId}' sin asignación activa.`, { userId, asignaturaId, grado, seccion, operacion }, roleUpper);
-        return {
-          status: "success",
-          authorized: false,
-          reason: "El docente no tiene asignación académica activa para la asignatura, grado o sección solicitados.",
-          message: "Acceso denegado: Asignación académica no encontrada."
-        };
-      }
-    }
-
-    return {
-      status: "success",
-      authorized: true,
-      role: roleUpper,
-      message: "Acceso autorizado para el docente dentro de su carga académica."
-    };
+    if (!asignaturaId) return { status: "success", authorized: false, code: "ACADEMIC_ASSIGNMENT_REQUIRED", role: identity.role, message: "Se requiere asignatura para validar la asignación docente." };
+    const assigned = hasActiveTeacherAssignment_(ss, identity.userId, asignaturaId, grado, seccion, periodoId);
+    if (!assigned) return { status: "success", authorized: false, code: "ACADEMIC_ASSIGNMENT_REQUIRED", role: identity.role, message: "No existe una asignación docente activa para el ámbito solicitado." };
   }
-
-  // Validación para Estudiantes y Tutores / Padres
-  if (roleUpper === "ESTUDIANTE" || roleUpper === "ALUMNO" || roleUpper === "TUTOR" || roleUpper === "PADRE" || roleUpper === "RESPONSABLE") {
-    if (estudianteId && String(estudianteId).trim() !== String(userId).trim()) {
-      let tutorVinculado = false;
-      const ss = getSpreadsheet();
-      const sheetTutores = ss.getSheetByName("RelacionesTutores") || ss.getSheetByName("TutoresEstudiantes");
-
-      if (sheetTutores) {
-        const dataT = sheetTutores.getDataRange().getValues();
-        if (dataT.length > 1) {
-          const headers = dataT[0].map(h => String(h).trim().toLowerCase());
-          const idxTutor = headers.indexOf("tutorid") >= 0 ? headers.indexOf("tutorid") : headers.indexOf("userid");
-          const idxEstud = headers.indexOf("estudianteid") >= 0 ? headers.indexOf("estudianteid") : headers.indexOf("alumnoid");
-
-          for (let i = 1; i < dataT.length; i++) {
-            if (String(dataT[i][idxTutor]).trim() === String(userId).trim() && String(dataT[i][idxEstud]).trim() === String(estudianteId).trim()) {
-              tutorVinculado = true;
-              break;
-            }
-          }
-        }
-      }
-
-      if (!tutorVinculado) {
-        logStructuredEvent("ACADEMIC", "validateAcademicResponsibilityAndScopeAccess", "WARN", "UNAUTHORIZED_ACCESS_ATTEMPT", `Usuario '${userId}' con rol '${roleUpper}' intentó acceder a datos del estudiante '${estudianteId}' sin vínculo autorizado.`, { userId, estudianteId, operacion }, roleUpper);
-        return {
-          status: "success",
-          authorized: false,
-          reason: "No se encontró vinculación autorizada entre el usuario y el estudiante solicitado.",
-          message: "Acceso denegado: Intento de consulta de expediente o calificaciones de un tercero."
-        };
-      }
-    }
-
-    if (operacion && ["EDITAR_NOTA", "REGISTRAR_NOTA", "RECTIFICAR_NOTA", "PUBLICAR_NOTAS", "CERRAR_PERIODO"].indexOf(String(operacion).toUpperCase()) >= 0) {
-      logStructuredEvent("ACADEMIC", "validateAcademicResponsibilityAndScopeAccess", "WARN", "UNAUTHORIZED_ACCESS_ATTEMPT", `Rol '${roleUpper}' intentó ejecutar la operación restringida '${operacion}'.`, { userId, operacion }, roleUpper);
-      return {
-        status: "success",
-        authorized: false,
-        reason: `La operación '${operacion}' requiere permisos de edición o administración académica.`,
-        message: "Acceso denegado: Operación no permitida para el rol del usuario."
-      };
-    }
-
-    return {
-      status: "success",
-      authorized: true,
-      role: roleUpper,
-      message: "Acceso autorizado para consulta de resultados académicos propios o de dependientes vinculados."
-    };
-  }
-
-  logStructuredEvent("ACADEMIC", "validateAcademicResponsibilityAndScopeAccess", "WARN", "UNAUTHORIZED_ACCESS_ATTEMPT", `Rol '${roleUpper}' no reconocido para validación de responsabilidades académicas.`, { userId, role }, roleUpper);
-  return {
-    status: "success",
-    authorized: false,
-    reason: `Rol '${roleUpper}' no reconocido para responsabilidad académica.`,
-    message: "Acceso denegado por defecto."
-  };
+  return { status: "success", authorized: true, role: identity.role, departmentId: departmentId || "", message: "Acceso autorizado por ámbito verificado." };
 }
 
 // [F9-Task13] [P1] - Optimizar la exportación académica y los formatos de intercambio

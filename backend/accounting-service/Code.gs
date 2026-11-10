@@ -454,6 +454,16 @@ function validateRolePermission(action, payload) {
   if (!ctxCheck.authorized) {
     return { authorized: false, role: userRole + " (" + ctxCheck.reason + ")" };
   }
+  if (["getEmployeeDocuments", "uploadEmployeeDocument"].indexOf(action) !== -1) {
+    const roleKey = String(userRole || "").toUpperCase().replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E").replace(/[ÍÌÏ]/g, "I").replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N").replace(/[^A-Z0-9]/g, "");
+    const employeeSelfRole = ["EMPLEADO", "TRABAJADOR", "PERSONAL"].indexOf(roleKey) !== -1;
+    if (!employeeSelfRole) {
+      const scope = getVerifiedAccountingDepartmentScope_(payload, SpreadsheetApp.openById(SPREADSHEET_ID), { authorized: true, userId: verifiedUserId, role: userRole });
+      if (!scope.authorized || (!scope.institutionWide && !scope.departmentIds.length)) {
+        return { authorized: false, role: userRole + " (" + (scope.code || "DEPARTMENT_SCOPE_REQUIRED") + ")" };
+      }
+    }
+  }
 
   const dynamicCheck = getDynamicPermissionsForRole(userRole, action);
   if (dynamicCheck !== null) {
@@ -5935,9 +5945,116 @@ function generatePayrollReceiptPDF(payload) {
   };
 }
 
+
+function getVerifiedAccountingIdentity_(payload) {
+  const token = payload && (payload.sessionToken || payload.authToken || payload.token);
+  const claims = token ? verifySessionToken(token) : null;
+  if (!claims || !claims.userId || !claims.role) return { authorized: false, code: "VERIFIED_IDENTITY_REQUIRED" };
+  return { authorized: true, userId: String(claims.userId).trim(), role: String(claims.role).trim() };
+}
+
+function getVerifiedAccountingDepartmentScope_(payload, ss, identity) {
+  const actor = identity || getVerifiedAccountingIdentity_(payload);
+  if (!actor.authorized) return actor;
+  let institutionId = "";
+  try { institutionId = String(PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID") || "").trim(); } catch (_) {}
+  if (!institutionId) return { authorized: false, code: "IDENTITY_CONFIGURATION_REQUIRED" };
+  const sheet = ss.getSheetByName("AsignacionesAmbitosRoles");
+  if (!sheet) return { authorized: false, code: "ROLE_SCOPE_NOT_INITIALIZED" };
+  const data = sheet.getDataRange().getValues();
+  const norm = function(value) {
+    return String(value || "").trim().toUpperCase()
+      .replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E").replace(/[ÍÌÏ]/g, "I")
+      .replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N")
+      .replace(/^ROLE[_-]?/, "").replace(/[^A-Z0-9]/g, "");
+  };
+  const parseValues = function(value) {
+    if (Array.isArray(value)) return value.map(function(v) { return String(v).trim(); }).filter(Boolean);
+    const raw = String(value || "").trim();
+    if (!raw) return [];
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed.map(function(v) { return String(v).trim(); }).filter(Boolean);
+      if (parsed !== null && parsed !== undefined) return [String(parsed).trim()].filter(Boolean);
+    } catch (_) {}
+    return raw.split(",").map(function(v) { return String(v).trim(); }).filter(Boolean);
+  };
+  const now = new Date();
+  const scopes = [];
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i] || [];
+    if (String(row[1] || "").trim() !== actor.userId || norm(row[2]) !== norm(actor.role)) continue;
+    if (["ACTIVO", "ACTIVA", "ACTIVE"].indexOf(String(row[5] || "").trim().toUpperCase()) === -1) continue;
+    const start = row[8] ? new Date(row[8]) : null;
+    const end = row[9] ? new Date(row[9]) : null;
+    if ((start && isNaN(start.getTime())) || (end && isNaN(end.getTime()))) continue;
+    if (start && start.getTime() > now.getTime()) continue;
+    if (end && end.getTime() < now.getTime()) continue;
+    const scopeType = String(row[3] || "").trim().toUpperCase();
+    const scopeValues = parseValues(row[4]);
+    if (!scopeType || !scopeValues.length) continue;
+    scopes.push({ assignmentId: String(row[0] || ""), roleId: String(row[2] || ""), scopeType: scopeType, scopeValues: scopeValues });
+  }
+  const departmentIds = [];
+  let institutionWide = false;
+  scopes.forEach(function(scope) {
+    if (scope.scopeType === "DEPARTAMENTO") scope.scopeValues.forEach(function(value) {
+      if (departmentIds.indexOf(value) === -1) departmentIds.push(value);
+    });
+    if (scope.scopeType === "INSTITUCION" && scope.scopeValues.indexOf(institutionId) !== -1) institutionWide = true;
+  });
+  return { authorized: true, userId: actor.userId, role: actor.role, institutionId: institutionId, scopes: scopes, departmentIds: departmentIds, institutionWide: institutionWide };
+}
+
+function resolveEmployeeDepartmentId_(ss, expedienteId) {
+  const sheet = ss.getSheetByName("ExpedientesLaborales");
+  if (!sheet) return { resolved: false, code: "RESOURCE_OWNER_UNRESOLVED" };
+  const values = sheet.getDataRange().getValues();
+  if (values.length < 2) return { resolved: false, code: "RESOURCE_OWNER_UNRESOLVED" };
+  const headers = (values[0] || []).map(function(v) { return String(v || "").trim().toUpperCase(); });
+  const idIndex = headers.indexOf("EXPEDIENTEID") >= 0 ? headers.indexOf("EXPEDIENTEID") : 0;
+  const departmentIndex = headers.indexOf("DEPARTAMENTO") >= 0 ? headers.indexOf("DEPARTAMENTO") : 4;
+  const employee = values.slice(1).find(function(r) { return String(r[idIndex] || "").trim() === String(expedienteId || "").trim(); });
+  if (!employee || !String(employee[departmentIndex] || "").trim()) return { resolved: false, code: "RESOURCE_OWNER_UNRESOLVED" };
+  const rawDepartment = String(employee[departmentIndex]).trim();
+  const departmentSheet = ss.getSheetByName("DepartamentosAcademicos");
+  if (departmentSheet) {
+    const departments = departmentSheet.getDataRange().getValues().slice(1);
+    const match = departments.find(function(r) {
+      return String(r[0] || "").trim().toUpperCase() === rawDepartment.toUpperCase() ||
+        String(r[1] || "").trim().toUpperCase() === rawDepartment.toUpperCase();
+    });
+    if (match && String(match[0] || "").trim()) return { resolved: true, departmentId: String(match[0]).trim(), rawDepartment: rawDepartment, employee: employee };
+  }
+  return { resolved: true, departmentId: rawDepartment, rawDepartment: rawDepartment, employee: employee };
+}
+
+function assertEmployeeExpedienteScopeAccess_(payload, ss, expedienteId) {
+  const actor = getVerifiedAccountingIdentity_(payload);
+  if (!actor.authorized) return actor;
+  const owner = resolveEmployeeDepartmentId_(ss, expedienteId);
+  if (!owner.resolved) return { authorized: false, code: owner.code || "RESOURCE_OWNER_UNRESOLVED" };
+  const role = String(actor.role || "").toUpperCase().replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E").replace(/[ÍÌÏ]/g, "I").replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N").replace(/[^A-Z0-9]/g, "");
+  if (["EMPLEADO", "TRABAJADOR", "PERSONAL"].indexOf(role) !== -1 && String(owner.employee[2] || "").trim() === actor.userId) {
+    return { authorized: true, accessType: "SELF", userId: actor.userId };
+  }
+  const scope = getVerifiedAccountingDepartmentScope_(payload, ss, actor);
+  if (!scope.authorized) return scope;
+  if (scope.institutionWide) return { authorized: true, accessType: "INSTITUTION" };
+  const allowed = scope.departmentIds.some(function(id) {
+    return String(id).trim().toUpperCase() === String(owner.departmentId).trim().toUpperCase() ||
+      String(id).trim().toUpperCase() === String(owner.rawDepartment).trim().toUpperCase();
+  });
+  return allowed ? { authorized: true, accessType: "DEPARTMENT" } : { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+}
+
 function uploadEmployeeDocument(payload) {
-  const { expedienteId, categoriaDoc, tituloDocumento, fileData, fileName, observaciones, authRole } = payload || {};
+  const { expedienteId, categoriaDoc, tituloDocumento, fileData, fileName, observaciones } = payload || {};
   if (!expedienteId || !tituloDocumento) throw new Error("expedienteId y tituloDocumento son requeridos.");
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const access = assertEmployeeExpedienteScopeAccess_(payload, ss, expedienteId);
+  if (!access.authorized) return { status: "error", code: access.code || "RESOURCE_SCOPE_DENIED", message: "Acceso denegado." };
+  const actor = getVerifiedAccountingIdentity_(payload);
 
   let archivoUrl = "";
   if (fileData && fileName) {
@@ -5946,14 +6063,13 @@ function uploadEmployeeDocument(payload) {
       const mimeType = fileData.split(',')[0].match(/:(.*?);/)[1];
       const base64Data = fileData.split(',')[1];
       const file = folder.createFile(Utilities.newBlob(Utilities.base64Decode(base64Data), mimeType, fileName));
-      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      file.setSharing(DriveApp.Access.PRIVATE, DriveApp.Permission.NONE);
       archivoUrl = `https://lh3.googleusercontent.com/d/${file.getId()}`;
     } catch (e) {
       logDebug("Error subida archivo laboral:", e.message);
     }
   }
 
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = getOrCreateSheet(ss, "DocumentosLaborales");
   const now = new Date();
   const docId = "DOC-LAB-" + now.getTime();
@@ -5965,7 +6081,7 @@ function uploadEmployeeDocument(payload) {
     tituloDocumento,
     archivoUrl || "https://newgeneration.edu.hn/documento-privado.pdf",
     now,
-    authRole || "RecursosHumanos",
+    actor.userId,
     "PrivadoEmpleado",
     observaciones || ""
   ]);
@@ -5982,23 +6098,22 @@ function getEmployeeDocuments(payload) {
   const { expedienteId, categoriaDoc } = payload || {};
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const rows = getOrCreateSheet(ss, "DocumentosLaborales").getDataRange().getValues().slice(1);
-
-  let filtered = rows;
-  if (expedienteId) filtered = filtered.filter(r => String(r[1]).trim() === String(expedienteId).trim());
-  if (categoriaDoc) filtered = filtered.filter(r => String(r[2]).toLowerCase().trim() === String(categoriaDoc).toLowerCase().trim());
-
+  let candidates = rows;
+  if (expedienteId) candidates = candidates.filter(r => String(r[1] || "").trim() === String(expedienteId).trim());
+  if (categoriaDoc) candidates = candidates.filter(r => String(r[2] || "").toLowerCase().trim() === String(categoriaDoc).toLowerCase().trim());
+  const filtered = [];
+  for (let i = 0; i < candidates.length; i++) {
+    const access = assertEmployeeExpedienteScopeAccess_(payload, ss, candidates[i][1]);
+    if (access.authorized) filtered.push(candidates[i]);
+    else if (expedienteId) return { status: "error", code: access.code || "RESOURCE_SCOPE_DENIED", message: "Acceso denegado." };
+  }
+  if (!expedienteId && candidates.length && !filtered.length) {
+    return { status: "error", code: "RESOURCE_SCOPE_DENIED", message: "No existen documentos disponibles dentro del ámbito autorizado." };
+  }
   const mapped = filtered.map(r => ({
-    documentoId: r[0],
-    expedienteId: r[1],
-    categoriaDoc: r[2],
-    tituloDocumento: r[3],
-    archivoUrl: r[4],
-    fechaCarga: r[5],
-    cargadoPor: r[6],
-    estadoVisibilidad: r[7],
-    observaciones: r[8]
+    documentoId: r[0], expedienteId: r[1], categoriaDoc: r[2], tituloDocumento: r[3],
+    archivoUrl: r[4], fechaCarga: r[5], cargadoPor: r[6], estadoVisibilidad: r[7], observaciones: r[8]
   }));
-
   return { status: "success", documentos: mapped };
 }
 
