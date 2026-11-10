@@ -296,7 +296,7 @@ console.log("academic admission evaluation identity and lock contracts: PASS");
       logStructuredEvent:(_service,_fn,_level,code,_message,_data,role)=>{loggedRole=role;if(code==="DUPLICATE_RESOLUTION_HISTORY_FAILED")loggedHistoryFailure=true;},
       Date
     };
-    vm.runInNewContext(extractFunction("resolveAdmissionDuplicate"),context);
+    vm.runInNewContext(extractFunction("isAcademicAdmissionManagerRole_")+"\n"+extractFunction("resolveAdmissionDuplicate"),context);
     return {
       execute:()=>context.resolveAdmissionDuplicate({solicitudId:"REQ-DUP",resolucion:resolution,
         expedienteDestinoId:resolution==="VincularExistente"?"EXP-DEST":undefined,
@@ -379,7 +379,7 @@ console.log("academic admission duplicate resolution ownership and concurrency c
         authorized:true,ss:{},actor:{authorized:true,userId:"MGR-1",role:options.role||"Director"},
         scope:{authorized:true,institutionId:"INST-1",departmentIds:["D1","D2"],institutionWide:false}
       }),
-      isAcademicAdmissionManagerRole_:role=>["director","administrador","desarrollador","secretaria"].includes(String(role).toLowerCase()),
+      normalizeString:value=>String(value||"").toLowerCase(),
       LockService:{getScriptLock:()=>({tryLock:()=>{attempts++;if(!options.lockAvailable)return false;held=true;return true;},
         releaseLock:()=>{assert.equal(held,true);held=false;releases++;}})},
       assertAcademicAdmissionRequestScopeAccess_:(_ss,_scope,id,payload,operation)=>{
