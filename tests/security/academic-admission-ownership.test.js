@@ -28,6 +28,8 @@ hasGuard("convertAdmissionToStudent", "registerAcademicResourceOwnership_");
 hasGuard("convertAdmissionToStudent", "SOLICITUD_ADMISION");
 hasGuard("convertAdmissionToStudent", "EXPEDIENTE_ESTUDIANTE");
 hasGuard("convertAdmissionToStudent", "deleteAcademicResourceOwnership_");
+assert.ok(extractFunction("convertAdmissionToStudent").includes("DOCUMENT_VALIDATION_FAILED"), "document validation must fail closed");
+assert.ok(extractFunction("convertAdmissionToStudent").includes("CAPACITY_VALIDATION_FAILED"), "capacity validation must fail closed");
 hasGuard("resolveAdmissionDuplicate", "assertResourceOwnershipForScope_");
 assert.ok(extractFunction("updateAdmissionStatus").includes("Object.assign({}, payload || {}, { solicitudId: solicitudId })"), "internal admission reads must preserve verified session context");
 
@@ -65,7 +67,8 @@ assert.equal(first.created,true);
 const second = registerContext.registerAcademicResourceOwnership_(ss,scope,"SOLICITUD_ADMISION","REQ-1","D1","U-DIR");
 assert.equal(second.authorized,true);
 assert.equal(second.existing,true);
-const conflict = registerContext.registerAcademicResourceOwnership_(ss,scope,"SOLICITUD_ADMISION","REQ-1","D2","U-DIR");
+const multiScope = {authorized:true,institutionId:"INST-1",departmentIds:["D1","D2"],institutionWide:false,role:"Director",userId:"U-DIR"};
+const conflict = registerContext.registerAcademicResourceOwnership_(ss,multiScope,"SOLICITUD_ADMISION","REQ-1","D2","U-DIR");
 assert.equal(conflict.authorized,false);
 assert.equal(conflict.code,"RESOURCE_OWNERSHIP_CONFLICT");
 rows.push(["OWN-2","INST-1","SOLICITUD_ADMISION","REQ-2","D1","ACTIVE","U-DIR",new Date(),new Date()]);

@@ -1887,7 +1887,7 @@ function addToWaitlist(payload) {
   // Actualizar estado de la solicitud a En_Espera
   admSheet.getRange(admIdx + 1, 12).setValue("En_Espera");
 
-  logStructuredEvent("ACADEMIC", "addToWaitlist", "INFO", "ADDED_TO_WAITLIST", `Solicitud ${solicitudId} incorporada a lista de espera ${esperaId} (Posición ${posicion}, Puntaje ${puntaje})`, { esperaId, solicitudId, anolectivo, grado, posicion, puntaje }, payload && payload.authRole);
+  logStructuredEvent("ACADEMIC", "addToWaitlist", "INFO", "ADDED_TO_WAITLIST", `Solicitud ${solicitudId} incorporada a lista de espera ${esperaId} (Posición ${posicion}, Puntaje ${puntaje})`, { esperaId, solicitudId, anolectivo, grado, posicion, puntaje }, ctx.actor.role);
 
   return { status: "success", esperaId: esperaId, posicion: posicion, puntajePrioridad: puntaje, message: `Solicitud incorporada a lista de espera en posición ${posicion}.` };
 }
@@ -2292,10 +2292,11 @@ function convertAdmissionToStudent(payload) {
     }
     if (estadoActual === "Admitida" && !allowIncomplete) {
       const docRes = getStudentDocuments(Object.assign({}, payload || {}, { solicitudId: solicitudId }));
-      if (docRes && Array.isArray(docRes.documents)) {
-        const pendingDocs = docRes.documents.filter(function(doc){return doc.estadoRevision === "Pendiente" || doc.estadoRevision === "Rechazado";});
-        if (pendingDocs.length) throw new Error("La solicitud tiene documentos obligatorios pendientes o rechazados.");
+      if (!docRes || docRes.status !== "success" || !Array.isArray(docRes.documents)) {
+        throw new Error("DOCUMENT_VALIDATION_FAILED");
       }
+      const pendingDocs = docRes.documents.filter(function(doc){return doc.estadoRevision === "Pendiente" || doc.estadoRevision === "Rechazado";});
+      if (pendingDocs.length) throw new Error("La solicitud tiene documentos obligatorios pendientes o rechazados.");
     }
 
     const nombres = String(row[4] || "").trim();
@@ -2310,7 +2311,10 @@ function convertAdmissionToStudent(payload) {
     const emailContacto = String(row[10] || "").trim().toLowerCase();
 
     const capacityCheck = checkEnrollmentCapacity({ anolectivo: anolectivo, grado: grado, seccion: targetSeccion, skipLock: true });
-    if (capacityCheck && capacityCheck.hayCupo === false && !capacityOverrideAllowed) {
+    if (!capacityCheck || typeof capacityCheck.hayCupo !== "boolean") {
+      throw new Error("CAPACITY_VALIDATION_FAILED");
+    }
+    if (capacityCheck.hayCupo === false && !capacityOverrideAllowed) {
       return { status: "error", code: "SECTION_FULL", message: "No hay cupos disponibles en el grado " + grado + " sección " + targetSeccion + " para el año " + anolectivo + "." };
     }
 
