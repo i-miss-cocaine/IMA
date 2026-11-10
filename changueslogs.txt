@@ -886,3 +886,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - AUD-NG-386 queda mitigada parcialmente y abierta; TASK-153 continúa En ejecución. Próximo alcance: ResourceOwnership/ámbito y autorización de todas las operaciones EXAM.
 
 [Actualización C1.436] GitHub Actions run 42859343859 — Exam-Service security local contracts: PASS; job exam-security-contracts. El contrato ejecutó las aserciones de autenticación e identidad estudiantil en Node 22. Prueba local en entorno de desarrollo: NOT RUN; CI no sustituye esa ejecución. AUD-NG-386 permanece abierto y TASK-153 En ejecución.
+
+[2026-11-10] C1.437 — IMA-EXEC-20261110-1705Z-01 — EXAM: listado docente con identidad firmada
+- getAllExams exige identidad verificada y filtra para Profesor por el propietario derivado de claims firmados; se ignora payload.profesorId.
+- Se amplía el contrato de seguridad con casos de identidad ausente, manipulación del payload, propietario docente propio/ajeno y rol administrativo autorizado.
+- Commit: 8f1063028c6b4d53cdbb62038b100bb9d651d609. Revisión del diff PASS; prueba local NOT RUN; workflow CI run 42859943846 en curso al checkpoint.
+- AUD-NG-386 y TASK-153 permanecen abiertos/En ejecución por integración pendiente de ResourceOwnership, ámbitos y mutaciones.

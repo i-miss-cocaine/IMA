@@ -1020,3 +1020,11 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - Workflow `Exam-Service security local contracts`: PASS; run 42859343859; job `exam-security-contracts`; commit probado `b0e8842acb1d04cdaba175b524065b09fa9b8886`.
 - El paso Node ejecutó `tests/security/exam-service-security-contract.test.js` y el log registró que pasaron las aserciones de autenticación e identidad estudiantil.
 - La ejecución CI no sustituye la prueba local obligatoria. Prueba local: NOT RUN. AUD-NG-386 sigue abierto por la integración pendiente de propiedad/ámbito y protección de mutaciones.
+
+===============================================================================
+## SEGUIMIENTO IMA-EXEC-20261110-1705Z-01 — AUD-NG-386 / EXAM
+- `getAllExams` ahora exige identidad verificada; para Profesor filtra exclusivamente por `profesorId` igual al usuario autenticado. Ignora el `profesorId` del payload.
+- Contrato ampliado con escenarios de docente propio/ajeno, identidad ausente, manipulación del filtro y rol administrativo permitido.
+- Commit: 8f1063028c6b4d53cdbb62038b100bb9d651d609. Revisión del diff PASS.
+- Prueba local: NOT RUN. GitHub Actions run 42859943846 estaba en curso al momento del checkpoint. AUD-NG-386 sigue abierto por ResourceOwnership/ámbito y endpoints restantes.
+===============================================================================

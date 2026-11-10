@@ -1106,3 +1106,41 @@ Commit de implementación: b0e8842acb1d04cdaba175b524065b09fa9b8886 (`fix(exam):
 - Esta evidencia CI remota no sustituye la ejecución local obligatoria: prueba local en el entorno de desarrollo sigue **NOT RUN** y no se marca la tarea como Completada.
 
 ===============================================================================
+
+===============================================================================
+## CHECKPOINT C1.437 — TASK-153 / EXAM: listado docente derivado de identidad firmada
+Sesión: IMA-EXEC-20261110-1705Z-01
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+HEAD inicial: 9ab56de000ef7add497d0b8219b07711df7dcf74.
+HEAD de rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59; sin escrituras en la base.
+Checkpoint anterior: C1.436.
+
+### Alcance ejecutado
+- `getAllExams` exige ahora `_verifiedUserId` y `_verifiedRole`; falla cerrado si no recibe identidad verificada.
+- Para el rol Profesor, el listado se limita a exámenes cuyo campo propietario `profesorId` coincide con el usuario derivado de claims firmados. El filtro `payload.profesorId` deja de otorgar acceso o ampliar el listado.
+- Los roles administrativos conservan el comportamiento de listado permitido por `ROLE_PERMISSIONS`; su filtro por ResourceOwnership/ámbito departamental sigue pendiente y no se considera resuelto.
+- Se amplía `tests/security/exam-service-security-contract.test.js` con pruebas sintéticas de docente propio/ajeno, identidad ausente, payload `profesorId` manipulado y continuidad de acceso administrativo autorizado.
+
+### Archivos del commit
+- `backend/exam-service/Code.gs`
+- `tests/security/exam-service-security-contract.test.js`
+
+Commit: 8f1063028c6b4d53cdbb62038b100bb9d651d609 (`fix(exam): scope teacher exam listings to signed identity`).
+
+### Verificación y límites
+- Revisión focalizada del diff: PASS; la rama de docente usa únicamente identidad verificada y la comparación con la columna propietaria del examen.
+- Pruebas locales en entorno de desarrollo: NOT RUN; no hay checkout/runtime local disponible en esta sesión.
+- GitHub Actions run 42859943846 (`Exam-Service security local contracts`) estaba In progress al registrar este checkpoint; aún no se declara resultado.
+- El run anterior 42859343859 continúa PASS para la primera corrección de autenticación.
+- No se ha integrado aún ResourceOwnership/ámbito en el listado ni en el resto de endpoints; AUD-NG-386 permanece abierto.
+- No se modificaron datos reales ni se desplegó Apps Script.
+
+### Siguiente acción
+- Recuperar el resultado del run 42859943846.
+- Diseñar e implementar comprobación fail-closed de ResourceOwnership y ámbito en los listados y lecturas EXAM, sin confiar en IDs de estudiante/tutor ni en datos de departamento del payload.
+- Continuar con submit, calificación, eliminación y mutaciones; ampliar contratos positivos/negativos.
+- Mantener TASK-153 En ejecución hasta completar criterios y ejecutar las pruebas locales pertinentes con PASS.
+
+===============================================================================
