@@ -7672,13 +7672,149 @@ function assertAdvancedSignatureDocumentScope_(payload, ss, documentoId, solicit
   };
 }
 
+function assertAdvancedSignatureSignerScope_(ss, documentAccess, firmanteId) {
+  const deny = function(code) { return { authorized: false, code: code }; };
+  try {
+    const signerId = String(firmanteId || "").trim();
+    const departmentId = String(documentAccess && documentAccess.departmentId || "").trim();
+    const institutionId = String(documentAccess && documentAccess.institutionId || "").trim();
+    const expedienteId = String(documentAccess && documentAccess.expedienteId || "").trim();
+    if (!signerId) return deny("SIGNATURE_SIGNER_REFERENCE_INVALID");
+    if (!departmentId || !institutionId) return deny("RESOURCE_DEPARTMENT_UNRESOLVED");
+
+    const usersSheet = ss && ss.getSheetByName("Usuarios");
+    if (!usersSheet || usersSheet.getLastRow() <= 1) return deny("SIGNATURE_SIGNER_NOT_FOUND");
+    const userData = usersSheet.getDataRange().getValues();
+    const headers = (userData[0] || []).map(function(value) { return String(value || "").trim().toLowerCase(); });
+    const column = function(name, fallback) {
+      const index = headers.indexOf(name.toLowerCase());
+      return index >= 0 ? index : fallback;
+    };
+    const userIdIndex = column("userid", 0);
+    const nameIndex = column("nombre", 1);
+    const emailIndex = column("email", 4);
+    const roleIndex = column("rol", 6);
+    const personIndex = column("personaid", 9);
+    const stateIndex = column("estadocuenta", 10);
+    const users = userData.slice(1).filter(function(row) {
+      return String(row[userIdIndex] || "").trim() === signerId;
+    });
+    if (!users.length) return deny("SIGNATURE_SIGNER_NOT_FOUND");
+    if (users.length !== 1) return deny("SIGNATURE_SIGNER_ID_AMBIGUOUS");
+
+    const user = users[0];
+    if (String(user[stateIndex] || "Activa").trim().toUpperCase() !== "ACTIVA") {
+      return deny("SIGNATURE_SIGNER_INACTIVE");
+    }
+    const signerRole = String(user[roleIndex] || "").trim();
+    const signerName = String(user[nameIndex] || "").trim();
+    const signerEmail = String(user[emailIndex] || "").trim();
+    const signerPersonId = String(user[personIndex] || "").trim();
+    if (!signerRole || !signerName) return deny("SIGNATURE_SIGNER_PROFILE_INCOMPLETE");
+
+    const normalize = function(value) {
+      return String(value || "").trim().toUpperCase()
+        .replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E").replace(/[ÍÌÏ]/g, "I")
+        .replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N")
+        .replace(/^ROLE[_-]?/, "").replace(/[^A-Z0-9]/g, "");
+    };
+    const role = normalize(signerRole);
+    const isStudent = role === "ESTUDIANTE" || role === "ALUMNO";
+    const isGuardian = ["PADRE", "MADRE", "TUTOR", "RESPONSABLE", "RESPONSABLEFAMILIAR"].indexOf(role) !== -1;
+    let accessType = "";
+
+    if (isStudent || isGuardian) {
+      if (!expedienteId || !signerPersonId) return deny("SIGNATURE_SIGNER_SCOPE_DENIED");
+      const expedienteSheet = ss.getSheetByName("ExpedientesEstudiantes");
+      if (!expedienteSheet) return deny("SIGNATURE_SIGNER_SCOPE_DENIED");
+      const expedienteRows = expedienteSheet.getDataRange().getValues().slice(1).filter(function(row) {
+        return String(row[0] || "").trim() === expedienteId;
+      });
+      if (expedienteRows.length !== 1) return deny("SIGNATURE_SIGNER_SCOPE_DENIED");
+      const studentPersonId = String(expedienteRows[0][1] || "").trim();
+      if (!studentPersonId) return deny("SIGNATURE_SIGNER_SCOPE_DENIED");
+
+      if (isStudent) {
+        if (signerPersonId !== studentPersonId) return deny("SIGNATURE_SIGNER_SCOPE_DENIED");
+        accessType = "SELF";
+      } else {
+        const relationSheet = ss.getSheetByName("RelacionesEstudianteTutor");
+        const guardianSheet = ss.getSheetByName("ResponsablesTutores");
+        if (!relationSheet || !guardianSheet) return deny("SIGNATURE_SIGNER_SCOPE_DENIED");
+        const activeRelations = relationSheet.getDataRange().getValues().slice(1).filter(function(row) {
+          const state = String(row[9] || "").trim().toUpperCase();
+          const portal = String(row[8] || "").trim().toUpperCase();
+          return String(row[1] || "").trim() === expedienteId &&
+            ["ACTIVO", "ACTIVA", "ACTIVE"].indexOf(state) !== -1 &&
+            ["SI", "SÍ", "TRUE", "1", "ACTIVO", "ACTIVA"].indexOf(portal) !== -1;
+        });
+        const guardianRows = guardianSheet.getDataRange().getValues().slice(1);
+        const linked = activeRelations.filter(function(relation) {
+          const guardianMatches = guardianRows.filter(function(guardian) {
+            return String(guardian[0] || "").trim() === String(relation[2] || "").trim() &&
+              String(guardian[1] || "").trim() === signerPersonId &&
+              ["ACTIVO", "ACTIVA", "ACTIVE"].indexOf(String(guardian[9] || "").trim().toUpperCase()) !== -1;
+          });
+          return guardianMatches.length === 1;
+        });
+        if (linked.length !== 1) return deny("SIGNATURE_SIGNER_SCOPE_DENIED");
+        accessType = "GUARDIAN";
+      }
+    } else {
+      const scopeSheet = ss.getSheetByName("AsignacionesAmbitosRoles");
+      if (!scopeSheet) return deny("SIGNATURE_SIGNER_SCOPE_DENIED");
+      const scopeRows = scopeSheet.getDataRange().getValues().slice(1);
+      const parseValues = function(value) {
+        if (Array.isArray(value)) return value.map(function(item) { return String(item).trim(); }).filter(Boolean);
+        const raw = String(value || "").trim();
+        if (!raw) return [];
+        try {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) return parsed.map(function(item) { return String(item).trim(); }).filter(Boolean);
+          if (parsed !== null && parsed !== undefined) return [String(parsed).trim()].filter(Boolean);
+        } catch (_) {}
+        return raw.split(",").map(function(item) { return String(item).trim(); }).filter(Boolean);
+      };
+      const now = Date.now();
+      const authorizedScopes = scopeRows.filter(function(row) {
+        if (String(row[1] || "").trim() !== signerId || normalize(row[2]) !== role) return false;
+        if (["ACTIVO", "ACTIVA", "ACTIVE"].indexOf(String(row[5] || "").trim().toUpperCase()) === -1) return false;
+        const start = row[8] ? new Date(row[8]) : null;
+        const end = row[9] ? new Date(row[9]) : null;
+        if ((start && isNaN(start.getTime())) || (end && isNaN(end.getTime()))) return false;
+        if (start && start.getTime() > now) return false;
+        if (end && end.getTime() < now) return false;
+        const scopeType = String(row[3] || "").trim().toUpperCase();
+        const values = parseValues(row[4]);
+        return (scopeType === "DEPARTAMENTO" && values.indexOf(departmentId) !== -1) ||
+          (scopeType === "INSTITUCION" && values.indexOf(institutionId) !== -1);
+      });
+      if (!authorizedScopes.length) return deny("SIGNATURE_SIGNER_SCOPE_DENIED");
+      accessType = authorizedScopes.some(function(row) {
+        return String(row[3] || "").trim().toUpperCase() === "INSTITUCION";
+      }) ? "INSTITUTION" : "DEPARTMENT";
+    }
+
+    return {
+      authorized: true,
+      userId: signerId,
+      nombre: signerName,
+      email: signerEmail,
+      role: signerRole,
+      institutionId: institutionId,
+      departmentId: departmentId,
+      accessType: accessType
+    };
+  } catch (_) {
+    return deny("SIGNATURE_SIGNER_SCOPE_CHECK_FAILED");
+  }
+}
+
 function createAdvancedSignatureRequest(payload) {
   const {
     documentoId,
     solicitudId,
     firmanteId,
-    firmanteNombre,
-    firmanteEmail,
     tipoDocumento,
     mecanismoFirma,
     proveedorId,
@@ -7708,6 +7844,13 @@ function createAdvancedSignatureRequest(payload) {
     if (!documentAccess || documentAccess.authorized !== true) {
       throw new Error(documentAccess && documentAccess.code || "RESOURCE_SCOPE_DENIED");
     }
+    const signerAccess = assertAdvancedSignatureSignerScope_(ss, documentAccess, firmanteId);
+    if (!signerAccess || signerAccess.authorized !== true) {
+      throw new Error(signerAccess && signerAccess.code || "SIGNATURE_SIGNER_SCOPE_DENIED");
+    }
+    const canonicalSignerId = signerAccess.userId;
+    const canonicalSignerName = signerAccess.nombre;
+    const canonicalSignerEmail = signerAccess.email;
 
     const sMecanismo = mecanismoFirma || "FirmaAvanzadaCualificada";
     const sProveedor = proveedorId || "PSC-HN-DEFAULT";
@@ -7715,7 +7858,7 @@ function createAdvancedSignatureRequest(payload) {
     const data = txSheet.getDataRange().getValues();
     const pendingDuplicate = data.slice(1).some(function(row) {
       return String(row[1] || "").trim() === documentAccess.documentId &&
-        String(row[3] || "").trim() === String(firmanteId).trim() &&
+        String(row[3] || "").trim() === canonicalSignerId &&
         String(row[9] || "").trim() === "Pendiente";
     });
     if (pendingDuplicate) throw new Error("SIGNATURE_REQUEST_ALREADY_PENDING");
@@ -7747,9 +7890,9 @@ function createAdvancedSignatureRequest(payload) {
       txId,
       documentAccess.documentId,
       documentAccess.solicitudId || "N/A",
-      String(firmanteId).trim(),
-      firmanteNombre || "Firmante",
-      firmanteEmail || "",
+      canonicalSignerId,
+      canonicalSignerName,
+      canonicalSignerEmail,
       sMecanismo,
       sProveedor,
       resolvedDocumentHash,
@@ -7762,7 +7905,8 @@ function createAdvancedSignatureRequest(payload) {
     logStructuredEvent("USER", "createAdvancedSignatureRequest", "INFO", "ADVANCED_SIGNATURE_REQUEST_CREATED",
       "Solicitud de firma avanzada creada para documento autorizado.",
       { transaccionId: txId, documentoId: documentAccess.documentId,
-        solicitudId: documentAccess.solicitudId || null, firmanteId: String(firmanteId).trim(),
+        solicitudId: documentAccess.solicitudId || null, firmanteId: canonicalSignerId,
+        firmanteRole: signerAccess.role, signerAccessType: signerAccess.accessType,
         actorUserId: actorUserId, departmentId: documentAccess.departmentId,
         mecanismoFirma: sMecanismo, proveedorId: sProveedor }, actorRole);
 

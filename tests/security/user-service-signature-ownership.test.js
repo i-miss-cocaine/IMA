@@ -36,16 +36,32 @@ function makeHarness(options = {}) {
     getDataRange(){this.reads++;const self=this;return {getValues(){return self.rows.map(row=>row.slice());}};},
     appendRow(row){assert.equal(state.held,true,"transaction append must occur while lock is held");this.appends.push(row.slice());this.rows.push(row.slice());}
   };
-  const ss = {
-    getSheetByName(name){
-      assert.equal(state.held,true,"document and admission sheets must be read under lock");
-      if(name==="DocumentosEstudiante")return documentSheet;
-      if(name==="SolicitudesAdmision")return admissionSheet;
-      return null;
-    }
-  };
   const state={held:false,lockAttempts:0,releases:0,spreadsheetOpens:0,txSheetRequests:0,
     ownershipCalls:[],events:[],permissionCalls:0,driveReads:0};
+  const signerRole=options.signerRole||"Director";
+  const userRows=[["UserId","Nombre","Grado","Seccion","Email","PasswordHash","Rol","Telefono","NumeroLista","PersonaID","EstadoCuenta"],
+    [options.signerId||"SIGNER-1",options.signerName||"Nombre canónico","","",options.signerEmail||"canonico@example.test","",""+signerRole,"","",options.signerPersonId||"PERS-SIGNER",options.signerState===undefined?"Activa":options.signerState]];
+  if(options.duplicateSigner)userRows.push(userRows[1].slice());
+  const scopeRows=[["AsignacionID","UserId","RoleID","ScopeType","ScopeValues","Estado","CreadoPor","FechaCreacion","FechaInicio","FechaFin","EsSuplente","SuplenteDeUserId"]];
+  if(options.scopeRows)options.scopeRows.forEach(row=>scopeRows.push(row.slice()));
+  else if(options.includeScope!==false)scopeRows.push(["ASG-1","SIGNER-1",signerRole,options.scopeType||"DEPARTAMENTO",options.scopeValues||JSON.stringify(["D1"]),"Activo","","","","","",""]);
+  const expedienteRows=[["ExpedienteID","PersonaID"],["EXP-1",options.expedientePersonId||"PERS-STUDENT"]];
+  const relationRows=[["RelacionID","ExpedienteID","ResponsableID","TipoParentesco","EsRepresentanteLegal","EsContactoEmergencia","EsResponsableFinanciero","AutorizadoPickUp","AccesoPortal","Estado","Observaciones"],
+    ["REL-1","EXP-1","RESP-1","Madre",true,false,false,false,options.portalAccess===undefined?"Sí":options.portalAccess,options.relationState||"Activo",""]];
+  const guardianRows=[["ResponsableID","PersonaID","Nombres","Apellidos","Identificacion","Telefono","Email","Direccion","Ocupacion","Estado"],
+    ["RESP-1",options.guardianPersonId||"PERS-GUARD","Nombre","Tutora","","","guardian@example.test","","","Activo"]];
+  const makeSheet=rows=>({getLastRow:()=>rows.length,getDataRange:()=>({getValues:()=>rows.map(row=>row.slice())})});
+  const sheets={Usuarios:makeSheet(userRows),AsignacionesAmbitosRoles:makeSheet(scopeRows),
+    ExpedientesEstudiantes:makeSheet(expedienteRows),RelacionesEstudianteTutor:makeSheet(relationRows),
+    ResponsablesTutores:makeSheet(guardianRows)};
+  const ss = {
+    getSheetByName(name){
+      assert.equal(state.held,true,"document and signer records must be read under lock");
+      if(name==="DocumentosEstudiante")return documentSheet;
+      if(name==="SolicitudesAdmision")return admissionSheet;
+      return sheets[name]||null;
+    }
+  };
   const context={
     validateRolePermission:(action,payload)=>{state.permissionCalls++;assert.equal(action,"createAdvancedSignatureRequest");return {authorized:options.permissionAllowed!==false};},
     getUserVerifiedRole:payload=>{if(options.identityAllowed===false)return "NO_ACCESS";payload._verifiedUserId="ACTOR-1";return options.role||"Director";},
@@ -80,7 +96,7 @@ function makeHarness(options = {}) {
     logStructuredEvent:(_service,_action,_level,code,_message,data,role)=>state.events.push({code,data,role}),
     Date
   };
-  vm.runInNewContext(extractFunction("assertAdvancedSignatureDocumentScope_")+"\n"+extractFunction("createAdvancedSignatureRequest"),context);
+  vm.runInNewContext(extractFunction("assertAdvancedSignatureDocumentScope_")+"\n"+extractFunction("assertAdvancedSignatureSignerScope_")+"\n"+extractFunction("createAdvancedSignatureRequest"),context);
   const payload={documentoId:options.requestDocumentId||"DRIVE-1",solicitudId:options.requestSolicitudId===undefined?"SOL-1":options.requestSolicitudId,
     firmanteId:"SIGNER-1",firmanteNombre:"Firmante de prueba",firmanteEmail:"signer@example.test"};
   return {execute:()=>context.createAdvancedSignatureRequest(payload),payload,transactions,documentSheet,admissionSheet,state};
@@ -95,6 +111,8 @@ function makeHarness(options = {}) {
   assert.equal(valid.transactions.appends[0][1],"DOC-1");
   assert.equal(valid.transactions.appends[0][2],"SOL-1");
   assert.equal(valid.transactions.appends[0][3],"SIGNER-1");
+  assert.equal(valid.transactions.appends[0][4],"Nombre canónico","signer name must come from the trusted user record");
+  assert.equal(valid.transactions.appends[0][5],"canonico@example.test","signer email must come from the trusted user record");
   assert.equal(valid.transactions.appends[0][8],"01".repeat(32),"persist the SHA-256 digest of the actual source bytes");
   assert.equal(result.documentoHash,"01".repeat(32));
   assert.equal(valid.state.driveReads,1);
@@ -167,12 +185,58 @@ function makeHarness(options = {}) {
   assert.throws(()=>inaccessibleFile.execute(),/SIGNATURE_SOURCE_FILE_UNAVAILABLE/);
   assert.equal(inaccessibleFile.transactions.appends.length,0);
 
+
+  const missingSigner=makeHarness({signerId:"UNKNOWN"});
+  assert.throws(()=>missingSigner.execute(),/SIGNATURE_SIGNER_NOT_FOUND/);
+  assert.equal(missingSigner.state.txSheetRequests,0);
+  assert.equal(missingSigner.state.driveReads,0);
+
+  const duplicateSigner=makeHarness({duplicateSigner:true});
+  assert.throws(()=>duplicateSigner.execute(),/SIGNATURE_SIGNER_ID_AMBIGUOUS/);
+  assert.equal(duplicateSigner.transactions.appends.length,0);
+
+  const inactiveSigner=makeHarness({signerState:"Suspendida"});
+  assert.throws(()=>inactiveSigner.execute(),/SIGNATURE_SIGNER_INACTIVE/);
+  assert.equal(inactiveSigner.state.txSheetRequests,0);
+
+  const outOfDepartmentSigner=makeHarness({scopeValues:'["D2"]'});
+  assert.throws(()=>outOfDepartmentSigner.execute(),/SIGNATURE_SIGNER_SCOPE_DENIED/);
+  assert.equal(outOfDepartmentSigner.state.txSheetRequests,0);
+
+  const noScopeSigner=makeHarness({includeScope:false});
+  assert.throws(()=>noScopeSigner.execute(),/SIGNATURE_SIGNER_SCOPE_DENIED/);
+  assert.equal(noScopeSigner.transactions.appends.length,0);
+
+  const expiredScopeSigner=makeHarness({scopeRows:[["ASG-1","SIGNER-1","Director","DEPARTAMENTO",'["D1"]',"Activo","","","2020-01-01","2021-01-01","",""]]});
+  assert.throws(()=>expiredScopeSigner.execute(),/SIGNATURE_SIGNER_SCOPE_DENIED/);
+
+  const institutionScopeSigner=makeHarness({scopeType:"INSTITUCION",scopeValues:'["INST-1"]'});
+  assert.equal(institutionScopeSigner.execute().status,"success");
+
+  const studentSigner=makeHarness({signerRole:"Estudiante",signerPersonId:"PERS-STUDENT",includeScope:false});
+  assert.equal(studentSigner.execute().status,"success");
+
+  const wrongStudentSigner=makeHarness({signerRole:"Estudiante",signerPersonId:"PERS-OTHER",includeScope:false});
+  assert.throws(()=>wrongStudentSigner.execute(),/SIGNATURE_SIGNER_SCOPE_DENIED/);
+
+  const guardianSigner=makeHarness({signerRole:"Madre",signerPersonId:"PERS-GUARD",includeScope:false});
+  assert.equal(guardianSigner.execute().status,"success");
+
+  const unrelatedGuardian=makeHarness({signerRole:"Madre",signerPersonId:"PERS-OTHER",includeScope:false});
+  assert.throws(()=>unrelatedGuardian.execute(),/SIGNATURE_SIGNER_SCOPE_DENIED/);
+
+  const disabledGuardianPortal=makeHarness({signerRole:"Madre",signerPersonId:"PERS-GUARD",portalAccess:"No",includeScope:false});
+  assert.throws(()=>disabledGuardianPortal.execute(),/SIGNATURE_SIGNER_SCOPE_DENIED/);
+
+  const inactiveGuardianRelation=makeHarness({signerRole:"Madre",signerPersonId:"PERS-GUARD",relationState:"Revocado",includeScope:false});
+  assert.throws(()=>inactiveGuardianRelation.execute(),/SIGNATURE_SIGNER_SCOPE_DENIED/);
+
   const requestOnly=makeHarness({expedienteId:"",storedSolicitudId:"SOL-1"});
   requestOnly.execute();
   assert.deepEqual(requestOnly.state.ownershipCalls[0],{type:"SOLICITUD_ADMISION",id:"SOL-1",operation:"UPDATE"});
 }
 
-console.log("USER advanced signature request ownership, actual-file SHA-256, hash-claim validation, RBAC, idempotency and lock contracts: PASS");
+console.log("USER advanced signature request ownership, signer identity/scope, canonical profile, actual-file SHA-256, hash-claim validation, RBAC, idempotency and lock contracts: PASS");
 
 
 function makeStatusHarness(options = {}) {
