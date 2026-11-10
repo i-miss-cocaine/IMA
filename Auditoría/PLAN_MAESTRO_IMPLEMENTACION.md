@@ -3392,3 +3392,13 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **CI/Apps Script real:** NOT RUN. **Beta:** BETA-EXAM-035 Pendiente beta para concurrencia real de lectura/calificación/baja y permisos por rol.
 - **Estado:** subalcance getExamResult completado; TASK-153 permanece En ejecución y AUD-NG-386 abierto por otras superficies EXAM.
 - **Siguiente subalcance:** auditar getStudentExams/getExamQuestions y otras lecturas EXAM restantes por snapshot/ownership/lock.
+
+### 10.135 TASK-153 / AUD-NG-386 — RBAC y lectura consistente de getStudentExams/getExamQuestions (C1.482)
+
+- **Hallazgo:** ambos endpoints comprobaban identidad firmada/ámbito, pero no llamaban explícitamente validateRolePermission para su acción; tampoco serializaban sus lecturas con las mutaciones EXAM.
+- **Corrección:** withAuthorizedExamRead_ aplica ScriptLock de 5 s, valida validateRolePermission(action) y resuelve getExamReadContext_ después de adquirirlo. Ambos endpoints leen sus filas dentro del mismo lock de envío, calificación, eliminación y modificación de examen.
+- **Integridad:** getStudentExams excluye IDs de examen duplicados y omite exámenes con entregas múltiples para el estudiante; mantiene calificación null cuando la entrega está Pendiente. getExamQuestions requiere examen único, limita estudiantes/tutores a asignación y entrega propia única cuando el examen no está activo, omite IDs de pregunta duplicados y no expone respuestaCorrecta.
+- **Pruebas locales:** parseo V8 PASS; read-endpoints-security, departmental-access, security-contract, exam-result-security, question-bank-read-security y question-bank-security PASS en harness V8 aislado con stubs. Runner Node nativo NOT RUN.
+- **CI/Apps Script real:** NOT RUN. **Beta:** BETA-EXAM-036 Pendiente beta para concurrencia real, RBAC dinámico y duplicados.
+- **Estado:** subalcance completado; TASK-153 En ejecución y AUD-NG-386 abierto por otras lecturas EXAM.
+- **Siguiente subalcance:** auditar getAllExams/getTeacherExamActivity y lecturas restantes expuestas por dispatcher.

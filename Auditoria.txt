@@ -1429,3 +1429,12 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - Parseo V8 de backend y test PASS; nuevo test de seguridad PASS en harness V8 aislado con stubs. CI, Node nativo y Apps Script/Sheets real NOT RUN. BETA-EXAM-035 Pendiente beta.
 - TASK-153 En ejecución; AUD-NG-386 permanece abierto por otras superficies EXAM.
 ===============================================================================
+
+===============================================================================
+## C1.482 — EXAM: getStudentExams/getExamQuestions
+- Hallazgo corregido: faltaba validación RBAC explícita por acción y las lecturas no se serializaban con mutaciones EXAM.
+- Corrección: wrapper compartido con ScriptLock, timeout fail-closed, validateRolePermission(action) y contexto de identidad/ámbito posterior a lock. Duplicados de examen/entrega/pregunta no se resuelven arbitrariamente; pregunta no expone respuestaCorrecta.
+- Se preservan filtros por estudiante/tutor/profesor, propiedad y ámbito. Calificación de entrega Pendiente sigue oculta.
+- Parseo V8 y seis pruebas locales PASS en harness aislado: read-endpoints-security, departmental-access, security-contract, exam-result-security, question-bank-read-security y question-bank-security. CI, Node nativo y Apps Script/Sheets real NOT RUN. BETA-EXAM-036 Pendiente beta.
+- TASK-153 En ejecución; AUD-NG-386 abierto para otras lecturas EXAM.
+===============================================================================

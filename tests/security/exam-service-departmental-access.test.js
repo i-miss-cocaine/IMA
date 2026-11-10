@@ -89,7 +89,7 @@ const ss = { getSheetByName(name) { return sheetObjects[name] || null; } };
 let examMutationLockAvailable = true, examMutationLockHeld = false, examMutationLockAcquires = 0, examMutationLockReleases = 0, examMutationBeforeAcquire = null, examSubmissionDuringAppend = null;
 const runtime = {
   SPREADSHEET_ID: "LOCAL", EXAM_RESOURCE_OWNERSHIP_REQUEST_CACHE_: new WeakMap(),
-  PUBLIC_ACTIONS: [], ROLE_PERMISSIONS: { Profesor: ["getAllExams","getTeacherExamActivity","updateExam","updateExamStatus","deleteExam","gradeExamSubmission","deleteExamSubmission"] },
+  PUBLIC_ACTIONS: [], ROLE_PERMISSIONS: { Profesor: ["getAllExams","getTeacherExamActivity","getStudentExams","getExamQuestions","updateExam","updateExamStatus","deleteExam","gradeExamSubmission","deleteExamSubmission"], Estudiante: ["getStudentExams","getExamQuestions","getExamResult"], Tutor: ["getStudentExams","getExamQuestions","getExamResult"] },
   getDynamicPermissionsForRole() { return null; }, hasActiveDelegationForAction() { return false; },
   validateContextualAccess() { return { authorized: true }; },
   verifySessionToken(token) { return claims[token] || null; },
@@ -122,7 +122,7 @@ const duplicate = runtime.assertExamResourceOwnershipForScope_(ss, scope, "EXAME
 assert.equal(duplicate.authorized, false); assert.equal(duplicate.code, "RESOURCE_OWNERSHIP_AMBIGUOUS");
 assert.deepEqual(Array.from(runtime.getAllExams({ sessionToken: "other-token" }).data), [], "no accessible ownership returns an empty list");
 const readFunctions = ["getVerifiedExamIdentity_", "getVerifiedExamDepartmentScope_", "assertExamResourceOwnershipForScope_",
-  "getExamStudentProfile_", "isExamAssignedToStudent_", "getVerifiedGuardianStudentIds_", "getExamReadContext_", "getStudentExams", "getExamQuestions", "getExamResult", "submitExam", "submitExamUnlocked_",
+  "getExamStudentProfile_", "isExamAssignedToStudent_", "getVerifiedGuardianStudentIds_", "getExamReadContext_", "withAuthorizedExamRead_", "getAuthorizedExamReadContext_", "getStudentExams", "getStudentExamsUnlocked_", "getExamQuestions", "getExamQuestionsUnlocked_", "getExamResult", "withAuthorizedExamResultRead_", "getAuthorizedExamResultReadContext_", "getExamResultUnlocked_", "submitExam", "submitExamUnlocked_",
   "validateRolePermission", "getAuthorizedExamMutationContext_", "withAuthorizedExamMutation_", "getAuthorizedExamSubmissionMutationContext_", "withAuthorizedExamSubmissionMutation_", "updateExam", "updateExamUnlocked_", "updateExamStatus", "updateExamStatusUnlocked_", "deleteExam", "deleteExamUnlocked_", "gradeExamSubmission", "deleteExamSubmission"]
   .map(name => extractFunction(source, name)).join("\n");
 vm.runInNewContext(readFunctions + "\nthis.getStudentExams = getStudentExams; this.getExamQuestions = getExamQuestions; this.getExamResult = getExamResult; this.submitExam = submitExam; " +

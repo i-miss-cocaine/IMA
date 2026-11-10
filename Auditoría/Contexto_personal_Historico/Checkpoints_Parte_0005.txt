@@ -919,3 +919,40 @@ Revisar quién puede consultar resultados, la exposición de claves de respuesta
 - Estado CI consultado para el commit de implementación: sin statuses ni workflow runs visibles; no se declara PASS.
 - NG_beta_0.0.0.1_work se actualizó mediante compare-and-swap fast-forward; no se utilizó force push.
 ===============================================================================
+
+===============================================================================
+## CHECKPOINT C1.482 — EXAM: RBAC y lectura consistente de getStudentExams/getExamQuestions
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.481.
+HEAD inicial: 13ad5a43b3db26c5149e7ba3cdd62502bcd1fd90.
+
+### Alcance
+Asegurar autorización explícita por acción, propiedad y consistencia de las lecturas de exámenes asignados a estudiantes y reactivos del examen, en sincronía con envíos, calificación, eliminación y cambios de examen.
+
+### Hallazgos y corrección
+- getStudentExams/getExamQuestions validaban identidad firmada y ámbito mediante getExamReadContext_, pero no invocaban validateRolePermission para su acción concreta. Las lecturas tampoco compartían el ScriptLock de las mutaciones EXAM, permitiendo snapshots obsoletos frente a cambios/eliminaciones concurrentes.
+- Ambos handlers ahora delegan en withAuthorizedExamRead_: adquiere ScriptLock con timeout de 5 s, ejecuta validateRolePermission(action) y resuelve identidad/ámbito después de adquirir el lock; finally libera el lock. Timeout falla cerrado con EXAM_READ_LOCK_TIMEOUT.
+- getStudentExams conserva las reglas de estudiante/tutor/profesor/ownership, excluye IDs de examen duplicados y omite exámenes con más de una entrega para el estudiante en vez de seleccionar arbitrariamente una calificación. La calificación de una entrega Pendiente sigue siendo null.
+- getExamQuestions vuelve a verificar examen único y propiedad/asignación bajo lock; estudiantes/tutores solo acceden a examen activo o con una única entrega propia; si existen entregas propias ambiguas se deniega. Los IDs de pregunta duplicados se excluyen y la respuestaCorrecta no se devuelve.
+- Los dos endpoints comparten el ScriptLock de submitExam, gradeExamSubmission, deleteExamSubmission, updateExam/updateExamStatus/deleteExam y operaciones de banco de preguntas.
+
+### Verificación local
+- Parseo sintáctico V8 de backend/exam-service/Code.gs: PASS.
+- tests/security/exam-service-read-endpoints-security.test.js: PASS en harness V8 aislado con stubs; cubre RBAC por acción, lock/timeout, lectura de estudiante, calificación Pendiente, IDs duplicados, ausencia de clave y eliminación de entrega antes de lock.
+- tests/security/exam-service-departmental-access.test.js: PASS; regresión de estudiante/tutor/profesor, scope departamental, ownership y flujos EXAM existentes.
+- tests/security/exam-service-security-contract.test.js: PASS; contrato estático de autorización y serialización.
+- tests/security/exam-service-exam-result-security.test.js: PASS (regresión C1.481).
+- tests/security/exam-service-question-bank-read-security.test.js: PASS (regresión C1.480).
+- tests/security/exam-service-question-bank-security.test.js: PASS (regresión C1.479).
+- Todas las pruebas ejecutadas en harness V8 aislado con stubs para fs/path/vm/assert; runner Node nativo NOT RUN. CI y Apps Script/Sheets real NOT RUN.
+- BETA-EXAM-036 queda Pendiente beta para concurrencia real, permisos dinámicos y datos duplicados en entorno desplegado.
+
+### Estado y continuidad
+- Subalcance getStudentExams/getExamQuestions completado en código y pruebas locales aplicables.
+- TASK-153 permanece En ejecución y AUD-NG-386 abierto por otras superficies de lectura EXAM.
+- Rama base NG_beta_0.0.0.1 sin cambios; no se ejecutó despliegue.
+- Siguiente subalcance: inventariar y auditar getAllExams/getTeacherExamActivity y lecturas restantes expuestas por dispatcher para comprobar RBAC, ownership, duplicados y serialización.
+===============================================================================

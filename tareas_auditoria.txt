@@ -859,3 +859,12 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - BETA-EXAM-035 Pendiente beta. TASK-153 En ejecución; AUD-NG-386 abierto.
 - Siguiente: revisar getStudentExams/getExamQuestions y lecturas EXAM restantes para snapshot/ownership/serialización.
 ===============================================================================
+
+===============================================================================
+### TASK-153 — seguimiento C1.482 / AUD-NG-386 EXAM
+- getStudentExams y getExamQuestions exigen validateRolePermission por acción y comparten ScriptLock con operaciones de envío, calificación, baja y actualización de exámenes.
+- Listado excluye examen duplicado y múltiples entregas del estudiante; preguntas requieren examen único, evitan entregas propias ambiguas y omiten IDs de pregunta duplicados; no exponen respuestaCorrecta.
+- Parseo V8 y seis pruebas locales PASS en harness V8 aislado con stubs. CI, Node nativo y Apps Script/Sheets real NOT RUN.
+- BETA-EXAM-036 Pendiente beta. TASK-153 En ejecución; AUD-NG-386 abierto.
+- Siguiente: revisar getAllExams/getTeacherExamActivity y lecturas EXAM restantes expuestas por dispatcher.
+===============================================================================

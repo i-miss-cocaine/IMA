@@ -964,29 +964,83 @@ function getAllExams(payload) {
   })) };
 }
 
-function getExamQuestions(payload) {
-  const examenId = String((payload && payload.examenId) || "").trim();
-  if (!examenId) throw new Error("RESOURCE_NOT_AVAILABLE");
+function withAuthorizedExamRead_(action, payload, reader) {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) throw new Error("EXAM_READ_LOCK_TIMEOUT");
+  try {
+    const context = getAuthorizedExamReadContext_(action, payload);
+    return reader(context);
+  } finally {
+    try { lock.releaseLock(); } catch (_) {}
+  }
+}
+
+function getAuthorizedExamReadContext_(action, payload) {
+  const permission = validateRolePermission(action, payload);
+  if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
   const requestedStudentId = payload && (payload.studentId || payload.estudianteId || payload.userId);
   const context = getExamReadContext_(payload, requestedStudentId);
+  return { ...context, requestedStudentId: String(requestedStudentId || "").trim() };
+}
+
+function getStudentExamsUnlocked_(payload, context) {
+  const { actor, ss, studentActor, guardianActor, profile, scope } = context;
+  const targetId = studentActor || guardianActor ? profile.userId : context.requestedStudentId;
+  const targetProfile = studentActor || guardianActor ? profile : getExamStudentProfile_(ss, targetId);
+  if (!targetProfile) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const exams = getSheetOrThrow(ss, "Examenes").getDataRange().getValues().slice(1);
+  const deliveries = getSheetOrThrow(ss, "EntregasExamen").getDataRange().getValues().slice(1);
+  const examIdCounts = {};
+  exams.forEach(row => { const id = String(row[0] || "").trim(); if (id) examIdCounts[id] = (examIdCounts[id] || 0) + 1; });
+  const data = exams.filter(exam => {
+    const examId = String(exam[0] || "").trim();
+    if (!examId || examIdCounts[examId] !== 1 || !isExamAssignedToStudent_(exam, targetProfile) ||
+        !assertExamResourceOwnershipForScope_(ss, scope, "EXAMEN", examId, "READ_STUDENT_EXAMS", payload).authorized) return false;
+    if (!studentActor && !guardianActor && actor.role === "Profesor" && String(exam[8] || "").trim() !== actor.userId) return false;
+    const matchingDeliveries = deliveries.filter(row => String(row[1] || "").trim() === examId && String(row[2] || "").trim() === targetId);
+    if (matchingDeliveries.length > 1) return false;
+    return String(exam[7] || "") === "Activo" || matchingDeliveries.length === 1;
+  }).map(exam => {
+    const examId = String(exam[0] || "").trim();
+    const deliveryMatches = deliveries.filter(row => String(row[1] || "").trim() === examId && String(row[2] || "").trim() === targetId);
+    const delivery = deliveryMatches.length === 1 ? deliveryMatches[0] : null;
+    const state = delivery ? delivery[6] : exam[7];
+    return { examenId: exam[0], titulo: exam[1], asignatura: exam[2], parcial: exam[9] || "Primer Parcial",
+      grado: exam[3], seccion: exam[4], fechaLimite: exam[5] ? new Date(exam[5]).toISOString() : null,
+      estado: state, profesorId: exam[8],
+      entrega: delivery ? { estado: state, calificacion: state === "Pendiente" ? null : delivery[5], comentario: delivery[7] || "" } : null };
+  });
+  return { status: "success", data };
+}
+
+function getExamQuestionsUnlocked_(payload, context) {
+  const examenId = String((payload && payload.examenId) || "").trim();
+  if (!examenId) throw new Error("RESOURCE_NOT_AVAILABLE");
   const { actor, ss, studentActor, guardianActor, profile, scope } = context;
   const exams = getSheetOrThrow(ss, "Examenes").getDataRange().getValues();
-  const matches = exams.slice(1).filter(row => String(row[0]) === examenId);
+  const matches = exams.slice(1).filter(row => String(row[0] || "").trim() === examenId);
   if (matches.length !== 1) throw new Error("RESOURCE_NOT_AVAILABLE");
   const exam = matches[0];
   if (studentActor || guardianActor) {
     if (!isExamAssignedToStudent_(exam, profile) || !assertExamResourceOwnershipForScope_(ss, scope, "EXAMEN", examenId, "READ_QUESTIONS", payload).authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
     const deliveries = getSheetOrThrow(ss, "EntregasExamen").getDataRange().getValues().slice(1);
-    const hasOwnDelivery = deliveries.some(row => String(row[1]) === examenId && String(row[2]) === profile.userId);
-    if (String(exam[7] || "") !== "Activo" && !hasOwnDelivery) throw new Error("RESOURCE_NOT_AVAILABLE");
+    const ownDeliveries = deliveries.filter(row => String(row[1] || "").trim() === examenId && String(row[2] || "").trim() === profile.userId);
+    if (ownDeliveries.length > 1 || (String(exam[7] || "") !== "Activo" && ownDeliveries.length !== 1)) throw new Error("RESOURCE_NOT_AVAILABLE");
   } else {
     if (actor.role === "Profesor" && String(exam[8] || "").trim() !== actor.userId) throw new Error("RESOURCE_NOT_AVAILABLE");
     if (!assertExamResourceOwnershipForScope_(ss, scope, "EXAMEN", examenId, "READ_QUESTIONS", payload).authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
   }
-  const questions = getSheetOrThrow(ss, "PreguntasExamen").getDataRange().getValues().slice(1)
-    .filter(row => String(row[1]) === examenId)
+  const questionRows = getSheetOrThrow(ss, "PreguntasExamen").getDataRange().getValues().slice(1)
+    .filter(row => String(row[1] || "").trim() === examenId);
+  const questionIdCounts = {};
+  questionRows.forEach(row => { const id = String(row[0] || "").trim(); if (id) questionIdCounts[id] = (questionIdCounts[id] || 0) + 1; });
+  const questions = questionRows.filter(row => String(row[0] || "").trim() && questionIdCounts[String(row[0]).trim()] === 1)
     .map(row => ({ preguntaId: row[0], tipo: row[2], texto: row[3], opciones: JSON.parse(row[4] || "{}") }));
   return { status: "success", data: { titulo: exam[1], tiempoLimite: exam[6], preguntas: questions } };
+}
+
+function getExamQuestions(payload) {
+  return withAuthorizedExamRead_("getExamQuestions", payload, context => getExamQuestionsUnlocked_(payload, context));
 }
 
 // [F9-Task14] [P1] - Mejorar el rendimiento, la persistencia y la recuperación de operaciones de calificación
@@ -1440,29 +1494,7 @@ function getExamReadContext_(payload, requestedStudentId) {
 
 // [TAREA-F4-P0-02] [Fase 4: Protección IDOR y ABAC] - Aislamiento estricto de evaluaciones por estudiante
 function getStudentExams(payload) {
-  const requestedId = payload && (payload.studentId || payload.estudianteId || payload.userId);
-  const context = getExamReadContext_(payload, requestedId);
-  const { actor, ss, studentActor, guardianActor, profile, scope } = context;
-  const targetId = studentActor || guardianActor ? profile.userId : String(requestedId || "").trim();
-  const targetProfile = studentActor || guardianActor ? profile : getExamStudentProfile_(ss, targetId);
-  if (!targetProfile) throw new Error("RESOURCE_NOT_AVAILABLE");
-  const exams = getSheetOrThrow(ss, "Examenes").getDataRange().getValues().slice(1);
-  const deliveries = getSheetOrThrow(ss, "EntregasExamen").getDataRange().getValues().slice(1);
-  const data = exams.filter(exam => {
-    if (!isExamAssignedToStudent_(exam, targetProfile) ||
-        !assertExamResourceOwnershipForScope_(ss, scope, "EXAMEN", exam[0], "READ_STUDENT_EXAMS", payload).authorized) return false;
-    if (!studentActor && !guardianActor && actor.role === "Profesor" && String(exam[8] || "").trim() !== actor.userId) return false;
-    const delivery = deliveries.find(row => String(row[1]) === String(exam[0]) && String(row[2]) === targetId);
-    return String(exam[7] || "") === "Activo" || !!delivery;
-  }).map(exam => {
-    const delivery = deliveries.find(row => String(row[1]) === String(exam[0]) && String(row[2]) === targetId);
-    const state = delivery ? delivery[6] : exam[7];
-    return { examenId: exam[0], titulo: exam[1], asignatura: exam[2], parcial: exam[9] || "Primer Parcial",
-      grado: exam[3], seccion: exam[4], fechaLimite: exam[5] ? new Date(exam[5]).toISOString() : null,
-      estado: state, profesorId: exam[8],
-      entrega: delivery ? { estado: state, calificacion: state === "Pendiente" ? null : delivery[5], comentario: delivery[7] || "" } : null };
-  });
-  return { status: "success", data };
+  return withAuthorizedExamRead_("getStudentExams", payload, context => getStudentExamsUnlocked_(payload, context));
 }
 
 function getExamResult(payload) {

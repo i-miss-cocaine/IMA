@@ -280,4 +280,28 @@ assert.ok(examResultWorker.includes('String(delivery[6] || "") === "Pendiente"')
   examResultWorker.includes('String(exam[8] || "").trim() !== actor.userId'),
   "exam result enforces grading state, exam ownership and teacher ownership before exposing answer keys");
 
+
+for (const name of ["getStudentExams", "getExamQuestions"]) {
+  const handler = extractFunction(source, name);
+  assert.ok(handler.includes("withAuthorizedExamRead_"), name + " delegates to the serialized reader");
+}
+const examReadWrapper = extractFunction(source, "withAuthorizedExamRead_");
+assert.ok(examReadWrapper.includes("LockService.getScriptLock()") && examReadWrapper.includes("tryLock(5000)") &&
+  examReadWrapper.includes("getAuthorizedExamReadContext_(action, payload)") &&
+  examReadWrapper.includes("finally") && examReadWrapper.includes("releaseLock()"),
+  "student exam and question reads share the bounded mutation lock");
+const examReadContext = extractFunction(source, "getAuthorizedExamReadContext_");
+assert.ok(examReadContext.includes("validateRolePermission(action, payload)") &&
+  examReadContext.includes("getExamReadContext_(payload, requestedStudentId)"),
+  "each exam read requires its own action permission and signed identity/scope context");
+const studentExamWorker = extractFunction(source, "getStudentExamsUnlocked_");
+assert.ok(studentExamWorker.includes("examIdCounts[examId] !== 1") &&
+  studentExamWorker.includes("matchingDeliveries.length > 1"),
+  "student exam list excludes duplicate exam IDs and ambiguous deliveries");
+const examQuestionsWorker = extractFunction(source, "getExamQuestionsUnlocked_");
+assert.ok(examQuestionsWorker.includes("matches.length !== 1") &&
+  examQuestionsWorker.includes("ownDeliveries.length > 1") &&
+  examQuestionsWorker.includes("questionIdCounts[String(row[0]).trim()] === 1"),
+  "question reads require a unique exam/delivery and exclude duplicate question IDs");
+
 process.stdout.write("exam-service-security-contract: authentication, identity, teacher ownership and serialized exam mutations assertions passed\\n");

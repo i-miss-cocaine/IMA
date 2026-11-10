@@ -1171,3 +1171,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Estudiante/tutor solo acceden a su entrega/vínculo y después de que deje Pendiente; profesor solo a sus exámenes; personal requiere ownership/scope.
 - Parseo V8 y prueba local aislada exam-service-exam-result-security PASS. Node nativo/CI/Apps Script real NOT RUN; BETA-EXAM-035 Pendiente beta.
 ===============================================================================
+
+[2026-11-10] C1.482 — IMA-EXEC-20261110-1825Z-02 — EXAM: lecturas de exámenes y preguntas
+- getStudentExams/getExamQuestions ahora validan permiso RBAC específico y leen bajo ScriptLock compartido con mutaciones EXAM.
+- Se excluyen IDs de examen/pregunta duplicados y entregas múltiples ambiguas; se mantiene el aislamiento de estudiante/tutor/profesor y no se expone respuestaCorrecta.
+- Parseo V8 y seis pruebas locales PASS en harness aislado. CI/Node nativo/Apps Script real NOT RUN; BETA-EXAM-036 Pendiente beta.
+===============================================================================
