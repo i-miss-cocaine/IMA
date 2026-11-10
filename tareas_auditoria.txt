@@ -614,3 +614,12 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - Solo cambia tests/security/transport-access-scope.test.js; código productivo intacto.
 - CI pendiente tras commit.
 ===============================================================================
+
+
+===============================================================================
+## Seguimiento TASK-636 — C1.380 / AUD-NG-001/002
+- Se extienden claims estrictos a ACCOUNTING/EXAM/DEVELOPER.
+- USER/ACADEMIC/TASK/ACCOUNTING/EXAM comparan rol actual y estado de cuenta en Usuarios; rol obsoleto es denegado.
+- Contratos VM cubren seis verificadores y cambio de rol en cinco.
+- CI C1.380 pendiente; BETA-FUNC-020 Pendiente beta.
+===============================================================================

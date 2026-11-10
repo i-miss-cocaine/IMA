@@ -1457,3 +1457,58 @@ Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt �
 Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.379.
 Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
 ===============================================================================
+
+===============================================================================
+## C1.380 — TASK-636 / AUD-NG-001/002 — claims y rol vigente en verificadores
+ID: C1.380
+Sesión: IMA-EXEC-20261109-1739Z-01
+Fecha: 2026-11-10
+Checkpoint anterior válido: C1.379
+Baseline lógico: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD físico de partida: f83f6b411b952ffd5611d5d8399818af7a52be76
+Rama: NG_beta_0.0.0.1_work
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+
+### Auditoría
+- Se reauditaron los seis verifySessionToken después de C1.376.
+- ACCOUNTING, EXAM y DEVELOPER aún aceptaban claims incompletos; los cinco servicios conectados a Usuarios no invalidaban un token cuando el rol de la cuenta cambiaba.
+- USER/ACADEMIC/TASK tenían claims estrictos, pero su rol firmado podía permanecer vigente hasta expirar el token.
+- DEVELOPER usa un spreadsheet de control separado y su fallback de authRole se mantiene trazado a TASK-645/AUD-NG-289, fuera del alcance de esta iteración.
+
+### Implementación
+- Los seis servicios exigen userId, role, sessionId, iat y exp válidos; TTL máximo 24h y tolerancia de reloj 60s.
+- USER, ACADEMIC, TASK, ACCOUNTING y EXAM comparan el rol vigente de Usuarios[6] con claims.role y el estado Usuarios[10] con Activa; se cachea 60s y se falla cerrado ante usuario ausente, estado inactivo o rol discordante.
+- DEVELOPER aplica claims estrictos, sin añadir lectura de la hoja Usuarios que no es su fuente de identidad.
+- Se amplía fixture VM a los seis verificadores; cinco servicios prueban rechazo de rol obsoleto.
+
+### Archivos modificados
+- backend/user-service/Code.gs
+- backend/academic-service/Code.gs
+- backend/task-service/Code.gs
+- backend/accounting-service/Code.gs
+- backend/exam-service/Code.gs
+- backend/developer-service/Code.gs
+- tests/security/task-service-security-contract.test.js
+- Auditoría/AUDITORIA_TASK-636_C1.305.md
+- pendientes/Otros/Pendientes.md
+- beta_test.txt (BETA-FUNC-020)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoria.txt
+- tareas_auditoria.txt
+- changueslogs.txt
+
+### Pruebas y estado
+- C1.379 Identity mapping run 42729838941: completed/success; TASK-030 temporal fixture determinism fixed.
+- C1.380 local VM contracts added; CI pending.
+- BETA-FUNC-020 Pendiente beta; no se ejecutaron despliegues ni hojas reales.
+- TASK-636 En ejecución; AUD-NG-001/002 en revalidación.
+
+### Siguiente acción exacta
+Consultar CI C1.380; después revisar el ámbito de las excepciones públicas ACADEMIC ya cubierto, continuar autorización contextual en los servicios restantes y validar el provisionamiento de AUTH_TOKEN_SECRET. El fallback authRole de DEVELOPER se remite a TASK-645/AUD-NG-289 sin duplicar hallazgo.
+
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.380.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.380.
+Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
+===============================================================================

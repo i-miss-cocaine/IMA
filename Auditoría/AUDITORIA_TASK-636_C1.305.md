@@ -353,3 +353,14 @@ Endurecer las excepciones públicas de backend/academic-service/Code.gs mediante
 - **CI C1.378:** Task-Service security run 42729514766 completed/success; valida frontera pública ACADEMIC, métricas globales y cierre fail-closed.
 - **CI C1.379:** pendiente tras publicar.
 - **Estado:** la discrepancia TASK-030 queda en revalidación del fixture; no se cierra hasta que el workflow vuelva a pasar.
+
+
+## Revisión focalizada C1.380 — claims y rol vigente en los seis verificadores
+
+- **Hallazgo ampliado AUD-NG-001/002:** tras C1.376 se confirmó que ACCOUNTING, EXAM y DEVELOPER aún usaban el antiguo control de expiración condicional; USER/ACADEMIC/TASK ya exigían claims completos, pero los cinco servicios con hoja Usuarios no comparaban el rol del token con el rol vigente en la fuente de verdad. Un cambio de rol podía conservar privilegios hasta la expiración del token (máximo 24h).
+- **Corrección:** los seis verificadores exigen ahora userId/role/sessionId, iat/exp enteros, emisión no futura (tolerancia 60s), expiración futura y TTL máximo 24h. USER/ACADEMIC/TASK/ACCOUNTING/EXAM consultan Usuarios y comparan rol vigente (columna 6) y estado Activa (columna 10), con caché de 60s; usuario inexistente, estado inactivo o rol cambiado deniegan.
+- **DEVELOPER:** se endurecen los claims y se mantiene el límite del almacén de identidades propio del servicio; no se añade consulta a Usuarios porque usa un spreadsheet de control separado. El fallback de `authRole` en su doPost pertenece a la matriz TASK-645/AUD-NG-289 y queda fuera de esta iteración.
+- **Pruebas añadidas:** contrato VM de los seis verificadores para token válido, campos ausentes, expiración, iat futuro, TTL excesivo; cinco servicios con Usuarios rechazan rol obsoleto.
+- **CI C1.379:** Identity mapping and transport security run 42729838941 completed/success tras fijar fixtures de fechas deterministas.
+- **CI C1.380:** pendiente tras publicar.
+- **Estado:** AUD-NG-001/002 siguen en revalidación; la configuración real de claves y el control de rol de DEVELOPER requieren revisión específica; TASK-636 no se cierra.

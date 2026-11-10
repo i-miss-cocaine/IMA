@@ -373,41 +373,37 @@ function verifySessionToken(tokenString) {
     const jsonStr = Utilities.newBlob(Utilities.base64Decode(normalizedB64)).getDataAsString();
     const claims = JSON.parse(jsonStr);
     const now = Math.floor(Date.now() / 1000);
-    if (claims.exp && now > claims.exp) {
-      return null;
-    }
-    // [TAREA-F4-P0-03] [Fase 4: Gestión de Sesiones] - Verificación de revocación explícita por sessionId y estado de cuenta
-    if (claims.userId) {
-      const cache = CacheService.getScriptCache();
-      if (cache.get("revoked_user_" + claims.userId)) {
-        return null;
-      }
-      if (claims.sessionId && cache.get("revoked_session_" + claims.sessionId)) {
-        return null;
-      }
+    if (!claims || typeof claims !== "object" || Array.isArray(claims)) return null;
+    if (typeof claims.userId !== "string" || !claims.userId.trim()) return null;
+    if (typeof claims.role !== "string" || !claims.role.trim()) return null;
+    if (typeof claims.sessionId !== "string" || !claims.sessionId.trim()) return null;
+    if (!Number.isSafeInteger(claims.iat) || !Number.isSafeInteger(claims.exp)) return null;
+    if (claims.iat > now + 60 || claims.exp <= now || claims.exp <= claims.iat || claims.exp - claims.iat > 86400) return null;
+    const cache = CacheService.getScriptCache();
+    if (cache.get("revoked_user_" + claims.userId)) return null;
+    if (cache.get("revoked_session_" + claims.sessionId)) return null;
 
-      const cacheKey = "acct_state_" + claims.userId;
-      let acctState = cache.get(cacheKey);
-      if (!acctState) {
-        try {
-          const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-          const uSheet = ss.getSheetByName("Usuarios");
-          if (uSheet) {
-            const data = uSheet.getDataRange().getValues();
-            for (let i = 1; i < data.length; i++) {
-              if (String(data[i][0]).trim() === String(claims.userId).trim()) {
-                acctState = String(data[i][10] || "Activa").trim();
-                cache.put(cacheKey, acctState, 60);
-                break;
-              }
-            }
-          }
-        } catch (e) {}
-      }
-      if (!acctState || acctState !== "Activa") {
+    const stateCacheKey = "acct_state_" + claims.userId;
+    const roleCacheKey = "acct_role_" + claims.userId;
+    let acctState = cache.get(stateCacheKey);
+    let currentRole = cache.get(roleCacheKey);
+    if (!acctState || !currentRole) {
+      try {
+        const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+        const uSheet = ss.getSheetByName("Usuarios");
+        if (!uSheet) return null;
+        const data = uSheet.getDataRange().getValues();
+        const currentUser = data.find((row, index) => index > 0 && String(row[0] || "").trim() === claims.userId.trim());
+        if (!currentUser) return null;
+        acctState = String(currentUser[10] || "Activa").trim();
+        currentRole = String(currentUser[6] || "").trim();
+        cache.put(stateCacheKey, acctState, 60);
+        cache.put(roleCacheKey, currentRole, 60);
+      } catch (error) {
         return null;
       }
     }
+    if (acctState !== "Activa" || !currentRole || currentRole !== claims.role.trim()) return null;
     return claims;
   } catch (e) {
     return null;

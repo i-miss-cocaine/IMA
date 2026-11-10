@@ -420,19 +420,21 @@ function verifyTokenWithClaims(sourceText, claims) {
     computeHmacSignature: () => "signed",
     Utilities: {
       base64Decode: value => Buffer.from(value, "base64"),
+      computeHmacSignature: () => [115,105,103,110,101,100],
       newBlob: bytes => ({ getDataAsString: () => Buffer.from(bytes).toString("utf8") })
     },
     CacheService: { getScriptCache: () => ({ get: () => null, put: () => {} }) },
     SpreadsheetApp: { openById: () => ({ getSheetByName: name => name === "Usuarios" ? {
-      getDataRange: () => ({ getValues: () => [["UserId","","","","","","","","","","Estado"], ["USER-1","","","","","","","","","","Activa"]] })
+      getDataRange: () => ({ getValues: () => [["UserId","","","","","","","","","","Estado"], ["USER-1","","","","","","Estudiante","","","","Activa"]] })
     } : null }) }
   };
   vm.runInNewContext(extractFunctionFrom(sourceText, "verifySessionToken") + String.fromCharCode(10) + "this.verify = verifySessionToken;", context);
-  return context.verify(payloadB64 + ".signed");
+  const signature = sourceText.includes("const rawSig = Utilities.computeHmacSignature") ? "7369676e6564" : "signed";
+  return context.verify(payloadB64 + "." + signature);
 }
 const tokenNow = Math.floor(Date.now() / 1000);
 const validSessionClaims = { userId:"USER-1", role:"Estudiante", sessionId:"SES-1", iat:tokenNow, exp:tokenNow+3600 };
-for (const [serviceName, sourceText] of [["USER", userSource], ["ACADEMIC", academicSource], ["TASK", source]]) {
+for (const [serviceName, sourceText] of [["USER", userSource], ["ACADEMIC", academicSource], ["TASK", source], ["ACCOUNTING", fs.readFileSync(path.join(root, "backend/accounting-service/Code.gs"), "utf8")], ["EXAM", fs.readFileSync(path.join(root, "backend/exam-service/Code.gs"), "utf8")], ["DEVELOPER", fs.readFileSync(path.join(root, "backend/developer-service/Code.gs"), "utf8")]]) {
   assert(verifyTokenWithClaims(sourceText, validSessionClaims), serviceName + " accepts complete unexpired session claims");
   assert.equal(verifyTokenWithClaims(sourceText, { ...validSessionClaims, exp: undefined }), null, serviceName + " rejects sessions without expiration");
   assert.equal(verifyTokenWithClaims(sourceText, { ...validSessionClaims, iat: undefined }), null, serviceName + " rejects sessions without issued-at time");
@@ -442,8 +444,11 @@ for (const [serviceName, sourceText] of [["USER", userSource], ["ACADEMIC", acad
   assert.equal(verifyTokenWithClaims(sourceText, { ...validSessionClaims, exp: tokenNow }), null, serviceName + " rejects expired sessions");
   assert.equal(verifyTokenWithClaims(sourceText, { ...validSessionClaims, iat: tokenNow+120 }), null, serviceName + " rejects future-issued sessions");
   assert.equal(verifyTokenWithClaims(sourceText, { ...validSessionClaims, exp: tokenNow+90000 }), null, serviceName + " rejects excessive token lifetime");
+  if (serviceName !== "DEVELOPER") {
+    assert.equal(verifyTokenWithClaims(sourceText, { ...validSessionClaims, role: "Profesor" }), null, serviceName + " rejects stale role claims after role change");
+  }
 }
-console.log("TASK-636 strict session claims local contract: USER/ACADEMIC/TASK reject missing identity, role, session ID, iat, exp, expired, future-issued and overlong sessions.");
+console.log("TASK-636 strict session claims local contract: all six services reject incomplete, expired, future-issued and overlong sessions; five shared-data services also reject stale role claims.");
 
 // TASK-636 AUD-NG-001/002: HMAC signing keys must never be derived from public spreadsheet IDs.
 

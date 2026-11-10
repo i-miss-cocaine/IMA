@@ -228,3 +228,11 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Pasos:** solicitudes anónimas a cada endpoint sensible; consultas de estado con token válido/incorrecto; inspección de proyección pública; llamadas de métricas con Estudiante/Profesor/Administrador; invocar cierre académico sin respaldo certificado.
 - **Resultado esperado:** allowlist exacta; tokens incorrectos denegados; respuesta pública sin PII adicional; métricas solo para Administrador/Desarrollador; cierre devuelve BACKUP_REQUIRED sin borrar filas ni mover archivos.
 - **Estado:** Pendiente beta. No se ejecutó runtime real.
+
+
+## BETA-FUNC-020 — TASK-636 / AUD-NG-001/002 — revocación efectiva de rol en sesión
+- **Objetivo:** validar que un token firmado no conserva privilegios después de cambiar el rol o estado de la cuenta.
+- **Servicios:** USER, ACADEMIC, TASK, ACCOUNTING y EXAM (fuente Usuarios compartida); DEVELOPER valida claims estrictos en su almacén separado.
+- **Pasos:** emitir token como Profesor; cambiar rol en Usuarios a Estudiante; invocar endpoint privilegiado antes/después de 60 segundos; repetir con cuenta Suspendida/Desactivada y usuario eliminado.
+- **Resultado esperado:** los cinco servicios rechazan rol obsoleto y estado no Activa; el cache puede retrasar la revocación como máximo 60 segundos; token incompleto/expirado se rechaza en los seis servicios.
+- **Estado:** Pendiente beta. No se consultaron hojas ni despliegues reales.

@@ -740,3 +740,11 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - Se fijan fechas deterministas en test de transporte; no se modifica lógica productiva.
 - C1.378 security run 42729514766 success; CI TASK-030 C1.379 pendiente.
 - Checkpoint C1.379: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt.
+
+
+## C1.380 — IMA-EXEC-20261109-1739Z-01 — TASK-636 / PM-01 / AUD-NG-001/002
+- Se detecta inconsistencia entre verificadores: ACCOUNTING/EXAM/DEVELOPER aceptaban claims incompletos; cinco servicios no comprobaban rol vigente.
+- Se unifican claims estrictos en seis servicios y rol/estado actual en cinco conectados a Usuarios.
+- CI C1.379 identity mapping run 42729838941 success; CI C1.380 pendiente.
+- BETA-FUNC-020 Pendiente beta; no hay verificación de despliegues.
+- TASK-636 En ejecución. Checkpoint C1.380: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt.

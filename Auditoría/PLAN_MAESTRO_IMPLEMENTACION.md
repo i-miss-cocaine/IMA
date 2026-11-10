@@ -2307,3 +2307,10 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - El test de ámbito de transporte usaba fechas futuras/activas ligadas al 10-11-2026 y fallaba al coincidir el reloj CI con ese día.
 - Se estabilizan únicamente las fechas fixture (activa 2020–2099, futura 2099, expirada 2020); no hay cambio productivo.
 - CI C1.379 pendiente.
+
+
+## 10.64 TASK-636 — C1.380: claims y rol vigente
+- Se extienden claims estrictos a los seis verificadores.
+- USER/ACADEMIC/TASK/ACCOUNTING/EXAM comparan rol y estado actuales de Usuarios, con caché de 60s; rol obsoleto se rechaza.
+- DEVELOPER mantiene claims estrictos; fallback authRole se rastrea a TASK-645/AUD-NG-289.
+- Fixtures VM transversales añadidos; CI pendiente. BETA-FUNC-020 Pendiente beta.

@@ -559,3 +559,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Fixture temporal del contrato de ámbito transporte estabilizado con fechas 2020/2099.
 - Sin cambios productivos; CI pendiente.
 - Checkpoint C1.379: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt.
+
+
+[2026-11-10] IMA-EXEC-20261109-1739Z-01 — C1.380 / TASK-636
+- Claims estrictos aplicados a seis verificadores; cinco servicios validan rol/estado vigente desde Usuarios.
+- Se agrega prueba de rol obsoleto y campos incompletos.
+- CI pendiente; BETA-FUNC-020 para revocación efectiva de rol.
+- Checkpoint C1.380: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt.
