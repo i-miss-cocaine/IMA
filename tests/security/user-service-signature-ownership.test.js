@@ -154,7 +154,7 @@ function makeHarness(options = {}) {
   assert.throws(()=>malformedHash.execute(),/DOCUMENT_HASH_FORMAT_INVALID/);
   assert.equal(malformedHash.transactions.appends.length,0);
 
-  const missingFile=makeHarness({driveFileId:""});
+  const missingFile=makeHarness({driveFileId:"",requestDocumentId:"DOC-1"});
   assert.throws(()=>missingFile.execute(),/SIGNATURE_SOURCE_FILE_UNAVAILABLE/);
   assert.equal(missingFile.state.driveReads,0);
   assert.equal(missingFile.transactions.appends.length,0);

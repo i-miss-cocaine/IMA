@@ -752,3 +752,8 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - Rechaza archivo fuente ausente, vacío o ilegible; hash cliente malformado o discordante. Lectura posterior a ownership y dentro de ScriptLock.
 - Contrato aislado local: PASS (7 escenarios). Contrato del repositorio ampliado; CI pendiente tras commit. Sin Drive/Apps Script real ni despliegue.
 - TASK-153 permanece En ejecución; AUD-NG-386 abierto. Siguiente subalcance: verificar identidad y ámbito del firmante destinatario.
+
+
+### TASK-153 — corrección C1.467
+- Se corrigió el fixture de archivo fuente ausente: mantiene el documento canónico y deja vacío únicamente el DriveFileID. CI anterior falló en esta preparación del escenario, no en la lógica del servicio.
+- Repetición de CI pendiente tras este commit. Se conserva el alcance C1.466 sin abrir una tarea distinta.

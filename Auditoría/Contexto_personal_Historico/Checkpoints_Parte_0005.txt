@@ -316,3 +316,24 @@ Siguiente subalcance: revisar y proteger la identidad/ámbito del firmante desti
 - tareas_auditoria.txt
 - beta_test.txt
 ===============================================================================
+
+## CHECKPOINT C1.467 — corrección de fixture del contrato de archivo fuente de firma
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-10 UTC.
+Rama: NG_beta_0.0.0.1_work.
+Checkpoint relacionado: C1.466.
+HEAD inicial: 0818103c4c11f9c8206f613ac5a14c3d3f2b4765.
+
+### Corrección
+La primera CI de C1.466 falló únicamente en el caso de archivo fuente ausente: el fixture enviaba como referencia documental un DriveFileID vacío, por lo que el guard devolvía RESOURCE_NOT_FOUND antes de alcanzar la validación de disponibilidad del archivo. Se corrigió el fixture para enviar el ID documental canónico DOC-1 mientras el campo DriveFileID permanece vacío.
+
+### Evidencia
+- Workflow Department Scope Contract run 42900955758: FAIL en la aserción del fixture (no en la implementación); otros contratos de ese workflow anteriores al paso USER: PASS.
+- Task-Service security local contracts run 42900955681: SUCCESS.
+- Identity mapping and transport security contracts run 42900955822: SUCCESS.
+- Contrato aislado local previo: PASS.
+- Se requiere repetir CI sobre este commit para confirmar el fixture corregido.
+
+### Estado
+C1.466 conserva su alcance funcional. Esta corrección no añade una segunda tarea: ajusta el caso de prueba del mismo subalcance. TASK-153 permanece En ejecución; AUD-NG-386 abierto.
+===============================================================================
