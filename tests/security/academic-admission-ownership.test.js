@@ -252,3 +252,107 @@ console.log("academic admission interview ownership and lock contracts: PASS");
 }
 
 console.log("academic admission evaluation identity and lock contracts: PASS");
+
+// Duplicate decisions must be serialized, ownership-checked and single-shot.
+{
+  const requestHeader=Array.from({length:15},(_,i)=>"H"+(i+1));
+  function makeRequestSheet(observations="",expedienteId="") {
+    const row=["REQ-DUP",new Date(),"2026","1ro","Ana","Prueba","ID-1","2015-01-01","Tutor","555","a@example.test","Recibida","Web",observations,expedienteId];
+    const rows=[requestHeader,row];
+    return {
+      rows,
+      getDataRange(){return {getValues:()=>rows.map(r=>r.slice())};},
+      getRange(rowNumber,column,numRows=1,numCols=1){
+        return {
+          setValue(value){rows[rowNumber-1][column-1]=value;},
+          setValues(values){for(let r=0;r<numRows;r++)for(let c=0;c<numCols;c++)rows[rowNumber-1+r][column-1+c]=values[r][c];}
+        };
+      }
+    };
+  }
+  function runResolution({resolution="AprobarNuevo",lockAvailable=true,destinationAuthorized=true,alreadyResolved=false,historyFails=false,initialExpediente=""}={}) {
+    let held=false,lockAttempts=0,releases=0,requestReads=0,ownershipChecks=0,historyWrites=0,loggedRole="",loggedHistoryFailure=false;
+    const requestSheet=makeRequestSheet(alreadyResolved?"[DUPLICADO_RESUELTO: anterior]":"",initialExpediente);
+    const historySheet={appendRow(){assert.equal(held,true,"history append must be protected by the resolution lock");if(historyFails)throw new Error("history unavailable");historyWrites++;}};
+    const ss={getSheetByName:name=>name==="SolicitudesAdmision"?requestSheet:name==="HistorialCambiosEntidad"?historySheet:null};
+    const context={
+      getAcademicAdmissionScopeContext_:(payload,action,id,operation)=>({
+        authorized:action==="resolveAdmissionDuplicate"&&id==="REQ-DUP"&&operation==="UPDATE",ss,
+        actor:{authorized:true,userId:"USER-VERIFIED",role:"Director"},
+        scope:{authorized:true,institutionId:"INST-1",departmentIds:["D1"],institutionWide:false},
+        requestAccess:{authorized:true,departmentId:"D1"}
+      }),
+      LockService:{getScriptLock:()=>({
+        tryLock:()=>{lockAttempts++;if(!lockAvailable)return false;held=true;return true;},
+        releaseLock:()=>{assert.equal(held,true);held=false;releases++;}
+      })},
+      assertResourceOwnershipForScope_:(_ss,_scope,type,id,operation)=>{
+        assert.equal(held,true,"destination ownership must be checked within the critical section");ownershipChecks++;
+        assert.equal(type,"EXPEDIENTE_ESTUDIANTE");assert.equal(id,"EXP-DEST");assert.equal(operation,"UPDATE");
+        return {authorized:destinationAuthorized};
+      },
+      getOrCreateSheet:(_ss,name)=>{assert.equal(held,true,"request sheet must be accessed only under lock");if(name==="SolicitudesAdmision")requestReads++;return name==="SolicitudesAdmision"?requestSheet:historySheet;},
+      logStructuredEvent:(_service,_fn,_level,code,_message,_data,role)=>{loggedRole=role;if(code==="DUPLICATE_RESOLUTION_HISTORY_FAILED")loggedHistoryFailure=true;},
+      Date
+    };
+    vm.runInNewContext(extractFunction("resolveAdmissionDuplicate"),context);
+    return {
+      execute:()=>context.resolveAdmissionDuplicate({solicitudId:"REQ-DUP",resolucion:resolution,
+        expedienteDestinoId:resolution==="VincularExistente"?"EXP-DEST":undefined,
+        motivoJustificado:"Validación documental confirmada",authRole:"Estudiante"}),
+      state:()=>({held,lockAttempts,releases,requestReads,ownershipChecks,historyWrites,loggedRole,loggedHistoryFailure,row:requestSheet.rows[1]})
+    };
+  }
+  const approved=runResolution();
+  const approvedResult=approved.execute();
+  assert.equal(approvedResult.status,"success");
+  let state=approved.state();
+  assert.equal(state.held,false);assert.equal(state.lockAttempts,1);assert.equal(state.releases,1);
+  assert.equal(state.requestReads,1);assert.equal(state.historyWrites,1);
+  assert.equal(state.row[13].includes("DUPLICADO_RESUELTO: Aprobado como nuevo postulante"),true);
+  assert.equal(state.row[11],"Recibida","AprobarNuevo must preserve the existing request status");
+  assert.equal(state.loggedRole,"Director","audit role must come from verified actor");
+  assert.throws(()=>approved.execute(),/RESOURCE_CONFLICT_ALREADY_RESOLVED/,"a second decision must not overwrite the first");
+  assert.equal(approved.state().historyWrites,1);
+
+  const linked=runResolution({resolution:"VincularExistente"});
+  const linkedResult=linked.execute();
+  assert.equal(linkedResult.status,"success");
+  state=linked.state();
+  assert.equal(state.ownershipChecks,1);assert.equal(state.row[14],"EXP-DEST");
+  assert.equal(state.row[13].includes("Vinculado a expediente EXP-DEST"),true);
+
+  const rejected=runResolution({resolution:"RechazarDuplicado"});
+  rejected.execute();
+  state=rejected.state();
+  assert.equal(state.row[11],"Rechazada");
+  assert.equal(state.row[12],"Web");
+  assert.equal(state.row[13].includes("Rechazada por duplicidad"),true);
+
+  const busy=runResolution({lockAvailable:false});
+  assert.throws(()=>busy.execute(),/Servicio ocupado/);
+  state=busy.state();
+  assert.deepEqual({held:state.held,releases:state.releases,requestReads:state.requestReads,historyWrites:state.historyWrites},
+    {held:false,releases:0,requestReads:0,historyWrites:0},"lock contention must not read or mutate request records");
+
+  const denied=runResolution({resolution:"VincularExistente",destinationAuthorized:false});
+  assert.throws(()=>denied.execute(),/RESOURCE_NOT_FOUND/);
+  state=denied.state();
+  assert.equal(state.requestReads,0);assert.equal(state.historyWrites,0);assert.equal(state.row[14],"");
+  assert.equal(state.releases,1);
+
+  const duplicate=runResolution({alreadyResolved:true});
+  assert.throws(()=>duplicate.execute(),/RESOURCE_CONFLICT_ALREADY_RESOLVED/);
+  assert.equal(duplicate.state().historyWrites,0);
+  const linkedConflict=runResolution({resolution:"VincularExistente",initialExpediente:"EXP-OTHER"});
+  assert.throws(()=>linkedConflict.execute(),/RESOURCE_CONFLICT_EXPEDIENTE_ALREADY_LINKED/);
+  assert.equal(linkedConflict.state().historyWrites,0);
+
+  const historyFailure=runResolution({historyFails:true});
+  const historyResult=historyFailure.execute();
+  assert.equal(historyResult.status,"success");
+  assert.equal(historyResult.historyRecorded,false);
+  assert.equal(historyFailure.state().loggedHistoryFailure,true,"failed history append must be surfaced in the structured audit log");
+}
+
+console.log("academic admission duplicate resolution ownership and concurrency contracts: PASS");
