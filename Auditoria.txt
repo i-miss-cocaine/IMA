@@ -1259,7 +1259,7 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - La vinculación se rechaza si solicitud y expediente pertenecen a departamentos distintos. La resolución repetida se rechaza mediante el marcador persistido; se protege contra referencias a expedientes ya vinculados incompatibles.
 - Se agrupan las mutaciones relacionadas en una única escritura contigua. La escritura del historial queda bajo lock; su fallo se informa mediante `historyRecorded:false` y evento estructurado, sin ocultar la falta de trazabilidad.
 - Contratos locales cubren las tres resoluciones, segunda decisión, rol no autorizado, rol válido acentuado, destino sin ownership, cruce departamental, contención del lock, revalidación y fallo de historial.
-- GitHub Actions run `42893612257` SUCCESS: contratos ACADEMIC, Department Scope, ACCOUNTING, ResourceOwnership ABAC y voucher client PASS; sintaxis Apps Script/cliente PASS.
+- GitHub Actions run `42894133956` SUCCESS: contratos ACADEMIC, Department Scope, ACCOUNTING, ResourceOwnership ABAC y voucher client PASS; sintaxis Apps Script/cliente PASS.
 - Límites: fixtures y lock local, no Google Sheets real; sin despliegue ni datos reales. Las pruebas beta quedan pendientes solo para escenarios dependientes de servicios desplegados.
 - TASK-153 sigue En ejecución; AUD-NG-386 abierto por el resto de rutas ACADEMIC.
 - Commits: `cc60ed6e50cf411ac65490ef8cca6ca9542eafa0`; `89ca3edfc6cff41105c03fccc2d6a83188b2026c`; `25bea9e9ed69460c1b2bf21ab2bf951f4a837ba5`.
