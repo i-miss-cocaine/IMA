@@ -1057,3 +1057,14 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - Parseo local y contrato de comportamiento de envío: PASS. GitHub Actions run 42867761346 en HEAD exacto: PASS en ambos contratos EXAM.
 - Beta NOT RUN. `createExam` sin alta de ownership y mutaciones restantes continúan pendientes. AUD-NG-386 sigue ABIERTO.
 ===============================================================================
+
+
+===============================================================================
+## EVIDENCIA C1.441 — AUD-NG-386 / EXAM createExam
+- `createExam` ya no permite escritura sin identidad firmada y ámbito departamental activo; registra ResourceOwnership único en la institución/departamento autorizado antes de persistir examen y preguntas.
+- La identidad del creador se deriva de claims. La selección departamental se valida contra `scope.departmentIds`; el permiso institucional amplio no se usa como autorización para inventar un departamento.
+- El flujo usa ScriptLock y rollback compensatorio de ownership/examen/preguntas ante errores capturables. Un fallo del rollback genera `EXAM_CREATE_ROLLBACK_FAILED`. La persistencia en varias hojas no constituye una transacción ACID; una interrupción abrupta puede dejar una fila ownership sin examen, pero no se registra primero un examen huérfano.
+- Contratos locales aislados y parseo: PASS. GitHub Actions run 42870106305 sobre HEAD b497635b5cb6ea742361bbd847571c75a961c1a3: PASS en ambos contratos EXAM. Run intermedio 42869895990 falló por fixture incompleto; corregido antes del PASS final.
+- Beta NOT RUN; BETA-FUNC-022 sigue Pendiente beta. No se modificaron datos reales ni se desplegó Apps Script.
+- **Estado:** mitigación parcial; AUD-NG-386 permanece ABIERTO hasta proteger mutaciones de examen/entrega y completar el ciclo.
+===============================================================================
