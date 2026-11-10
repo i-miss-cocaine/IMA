@@ -33,7 +33,7 @@ const examRows = [
   ["ExamenID", "Titulo", "Asignatura", "Grado", "Seccion", "FechaLimite", "TiempoLimite", "Estado", "ProfesorID", "Parcial"],
   ["EXM-1", "Propio y mismo departamento", "Matemáticas", "10", "A", "", "", "Activo", "TEACHER-1", "P1"],
   ["EXM-2", "Propio pero otro departamento", "Ciencias", "10", "A", "", "", "Activo", "TEACHER-1", "P1"],
-  ["EXM-3", "Docente ajeno", "Historia", "10", "A", "", "", "Activo", "TEACHER-2", "P1"],
+  ["EXM-3", "Docente ajeno", "Historia", "11", "A", "", "", "Activo", "TEACHER-2", "P1"],
   ["EXM-4", "Sin propiedad", "Inglés", "10", "A", "", "", "Activo", "TEACHER-1", "P1"],
   ["EXM-5", "Propiedad duplicada", "Arte", "10", "A", "", "", "Activo", "TEACHER-1", "P1"]
 ];
