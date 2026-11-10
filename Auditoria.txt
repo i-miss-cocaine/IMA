@@ -1230,3 +1230,14 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - **Estado:** subalcance ACADEMIC de conversión, cargo, CargoID, compensación, reintento y lock verificado. TASK-153 permanece En ejecución y AUD-NG-386 abierto por las rutas/requisitos de aislamiento restantes; no se marca completada la tarea global.
 - **Commits:** `3bb1d3b7dfc9c4d0259d6a124f353d46b0f38a13`; `91c17ba2bddc7cf4e9d35316b877ae7034898907`; `ad44dde863065b2a2dc54580ee5a393f43d4570e`.
 ===============================================================================
+
+===============================================================================
+## Seguimiento C1.456 — seguridad y concurrencia de entrevistas de admisión
+- **Agenda:** `scheduleAdmissionInterview` ahora serializa bajo `ScriptLock` la lectura de conflictos de horario y el append; evita reservas superpuestas por intercalación concurrente. El lock se libera en `finally` y una solicitud contenciosa falla antes de consultar o mutar la agenda.
+- **Resultado de entrevista:** `recordInterviewOutcome` verifica identidad/ámbito antes de resolver el ID; bajo lock obtiene primero solo EntrevistaID/SolicitudID, valida ownership de la solicitud y después lee detalles privados. La mutación exige que el actor sea el evaluador asignado o un manager autorizado.
+- **Contrato local:** solapamiento rechazado, intervalo adyacente aceptado, lock ocupado sin lectura/escritura, ownership antes de leer detalles, denegación sin mutación y actualización permitida de estado/observaciones.
+- **Verificación:** GitHub Actions run `42890756763` SUCCESS. Contratos ACADEMIC de entrevistas/admisión/expediente, alcance departamental, ACCOUNTING, ResourceOwnership ABAC y cliente voucher PASS; sintaxis User/Academic/Accounting Code.gs y `js/student.js` PASS.
+- **Límites:** concurrencia probada con lock simulado y fixtures; no se afirma prueba simultánea en Google Sheets real. Sin despliegue ni datos reales; la validación beta queda pendiente para cuando existan servicios desplegados.
+- **Estado:** entrevistas de admisión corregidas y verificadas localmente. TASK-153 sigue En ejecución; AUD-NG-386 abierto por el alcance institucional restante.
+- **Commits:** `eb0bc0f6d8dc44d07d9ba79778194fd3cf223ad2`; `0901d2b0e4d129123461a6219cdbb138cbc9e7a2`; `dc993865cbb07266e138d4702bd1c9c638c379e4`.
+===============================================================================
