@@ -293,3 +293,10 @@ La plataforma cuenta con un excelente control de concurrencia para identificador
 - **Pruebas:** el contrato Accounting agrega casos positivos y negativos de IDOR, tutor, departamento, ámbito institucional, sesión inválida, comprobante inexistente y file ID inyectado ignorado.
 - **CI:** identity mapping run 42739904392 success; department scope run 42739904420 success. La segunda ejecución incluye los contratos Academic y Accounting.
 - **Pendiente:** no se integró aún el cliente/UI; los permisos públicos de archivos históricos requieren inventario y revocación controlada; no se ejecutó integración real Apps Script/Sheets/Drive. TASK-153 permanece En ejecución; no se crea un nuevo ID F41-08/E2E-41-09.
+
+
+### Seguimiento F41-08 / E2E-41-09 — portal estudiantil para comprobantes privados — C1.395
+- **Cliente:** se conecta la pestaña Matrícula y Finanzas con getPaymentVouchers y presenta los comprobantes devueltos para la identidad autenticada.
+- **Vista/descarga:** el botón Ver comprobante llama getPaymentVoucherFile por comprobanteId; transforma Base64 en Blob URL para PDF/imagen y revoca el URL local al cerrar. No navega al enlace histórico de Drive.
+- **Pruebas:** contrato estático student-payment-voucher-client y node --check js/student.js; CI Department Scope run 42740584865 completed/success junto con los contratos de ámbito Academic y Accounting.
+- **Límites:** no se ejecutó browser automation, despliegue real Apps Script/Sheets/Drive ni prueba con archivo privado real. La UI solo cubre estudiante/alumno; tutores y personal no tienen esta vista en este incremento. Los permisos públicos históricos requieren inventario/revocación. TASK-153 sigue En ejecución; se reutilizan F41-08/E2E-41-09.

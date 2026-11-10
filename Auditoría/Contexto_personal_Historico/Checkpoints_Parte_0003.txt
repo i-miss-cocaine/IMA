@@ -1806,3 +1806,43 @@ Commit de cierre: este commit; SHA se confirmará externamente tras publicación
 - Siguiente trabajo: integrar el endpoint Base64 en la UI de comprobantes y validar el flujo de extremo a extremo con un archivo privado de prueba; después inventariar y revocar de forma controlada permisos públicos históricos. Continuar la propiedad departamental y migración de expedientes/documentos estudiantiles.
 - **HEAD C1.393 verificado:** c9b0cb6524693087731c34d36645212aec21711a.
 ===============================================================================
+
+===============================================================================
+## C1.395 — 2026-11-10 — IMA-EXEC-20261110-0158Z-01
+
+- **Baseline lógico válido:** C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a.
+- **Checkpoint anterior:** C1.393, registrado en el commit documental C1.394 (1eb6ad69f40daa2f7d1a75d01fa2d07d28b7ba15).
+- **Rama autorizada:** NG_beta_0.0.0.1_work. **Rama protegida:** NG_beta_0.0.0.1 — SHA 44d9891132332e692dbe2ba8602b41f50a508a59, sin modificaciones.
+- **Commit funcional C1.395:** d972031231d8ebe8fbbf30e37379a4976508f49a; HEAD de rama de trabajo verificado.
+- **Tarea activa:** TASK-153 — PM-01 / P0 / orden local 1. Sigue En ejecución; no se cierra ningún criterio global.
+- **Auditoría única:** continuación de F41-08/E2E-41-09 en el informe FASE 41; no se crea un ID ni un informe duplicado.
+
+### Incremento C1.395 — integración de vista de comprobantes privados en portal estudiantil
+
+- Se habilita la pestaña existente Matrícula y Finanzas del dashboard estudiantil, que ahora consulta ACCOUNTING mediante getPaymentVouchers.
+- La vista presenta únicamente los comprobantes que devuelve el backend para la identidad estudiantil autenticada; muestra fecha, referencia, importe y estado usando nodos DOM/textContent.
+- La acción Ver comprobante invoca getPaymentVoucherFile con el comprobanteId interno. No abre ni navega al comprobanteUrl histórico de Drive.
+- El contenido Base64 se transforma en Blob y URL.createObjectURL para vista PDF/imagen y descarga; el objeto URL se revoca al cerrar el modal o reemplazar la vista.
+- La UI informa comprobantes sin archivo y errores de consulta/lectura sin exponer enlaces de Drive.
+- Se agrega tests/security/student-payment-voucher-client.test.js y se amplía department-scope-contract.yml para ejecutar el contrato cliente y node --check js/student.js en los cambios de la rama autorizada.
+
+### CI C1.395
+
+- **Department Scope Contract:** run 42740584865 — completed/success, HEAD d972031231d8ebe8fbbf30e37379a4976508f49a.
+- Los pasos ejecutados y aprobados incluyen department scope, Academic departmental resource access, Accounting departmental resource access, student private voucher client contract y node --check js/student.js.
+- El contrato cliente es una verificación estática de integración de acciones/Blob URL; node --check valida sintaxis. No se ejecutó automatización de navegador ni integración real de Apps Script/Sheets/Drive.
+
+### Límites y pendientes
+
+1. La vista integrada corresponde al portal de estudiante/alumno; no se agregó UI de consulta de archivos para tutores ni personal administrativo.
+2. No se realizó prueba real de navegador, sesión desplegada, archivo privado en Drive ni despliegue Apps Script.
+3. Los comprobantes/documentos históricos pueden conservar permisos públicos anteriores; este cambio no revoca enlaces compartidos previamente.
+4. ExpedientesEstudiantes/DocumentosEstudiante siguen sin DepartamentoID propietario; faltan migración y validación de esquema.
+5. Referencias compartidas, operaciones granulares, filtros de búsqueda/importación, estructuras institucionales/firmas y parametrización estricta siguen pendientes.
+
+### Dictamen y siguiente paso
+
+- TASK-153 permanece En ejecución. No se marcan completos los criterios globales de aislamiento.
+- Siguiente trabajo: prueba end-to-end en un despliegue de prueba con un comprobante privado real y sesión autenticada; después inventario/revocación controlada de enlaces públicos históricos. Continuar la propiedad departamental y migración de expedientes/documentos estudiantiles.
+- **HEAD C1.395 verificado:** d972031231d8ebe8fbbf30e37379a4976508f49a.
+===============================================================================

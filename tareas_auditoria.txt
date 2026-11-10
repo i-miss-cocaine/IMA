@@ -685,3 +685,11 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - Pruebas directas: estudiante propio/IDOR, tutor vinculado, personal departamental, rol institucional, sesión inválida y comprobante inexistente.
 - CI identity mapping 42739904392 y Department Scope 42739904420 success; el segundo ejecutó los contratos de Academic y Accounting.
 - Pendiente integrar UI, revisar y revocar permisos públicos históricos y probar Drive/Apps Script real. TASK-153 continúa En ejecución.
+
+
+### TASK-153 — seguimiento C1.395
+- Se habilita Matrícula y Finanzas en student-dashboard para consultar comprobantes propios mediante ACCOUNTING.getPaymentVouchers.
+- Ver comprobante llama getPaymentVoucherFile por comprobanteId, transforma Base64 en Blob URL y revoca el URL local al cerrar.
+- Contrato cliente estático y node --check js/student.js agregados al workflow Department Scope.
+- CI 42740584865 success; también ejecutó pruebas de ámbito Academic y Accounting.
+- No se ha probado navegador real ni Apps Script/Drive; UI de tutor/personal y revocación de enlaces históricos siguen pendientes. TASK-153 permanece En ejecución.

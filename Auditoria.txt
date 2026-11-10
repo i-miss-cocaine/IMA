@@ -805,3 +805,11 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - Contrato Accounting ampliado con pruebas de IDOR, tutor vinculado, departamento, ámbito institucional, sesión inválida y referencia de archivo inyectada.
 - CI 42739904392 y 42739904420: success. Sin integración real Apps Script/Sheets/Drive ni integración UI en este incremento.
 - Los permisos públicos de archivos históricos, el esquema departamental estudiantil y los demás criterios de TASK-153 permanecen pendientes.
+
+
+### Seguimiento TASK-153 — C1.395
+- Se integra la vista de comprobantes en Matrícula y Finanzas del portal de estudiante/alumno.
+- La lista se obtiene mediante getPaymentVouchers; la vista/descarga invoca getPaymentVoucherFile con comprobanteId y usa Blob URL local con revocación al cerrar.
+- No se navega al enlace público/legacy de Drive. Datos de lista se insertan con nodos DOM/textContent.
+- CI 42740584865 completed/success: contratos department scope, Academic, Accounting, contrato cliente y node --check js/student.js.
+- Sin browser automation ni prueba Apps Script/Drive real; tutores/personal y permisos públicos históricos pendientes. TASK-153 continúa En ejecución.

@@ -2400,3 +2400,14 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - **Pruebas/CI:** contrato Accounting ampliado; identity mapping 42739904392 y Department Scope 42739904420 — completed/success. El segundo workflow ejecutó también contratos Academic y Accounting.
 - **Límites:** integración UI aún pendiente; archivos históricos pueden conservar permisos públicos; no se probó runtime real Apps Script/Drive. Expedientes estudiantiles siguen sin DepartamentoID; referencias compartidas, operaciones granulares, filtros/importaciones y política configurable siguen abiertos.
 - **Siguiente acción:** integrar el endpoint en la UI y validar preview/descarga end-to-end con archivo privado de prueba; luego inventariar/revocar enlaces públicos históricos de forma controlada.
+
+
+## 10.73 TASK-153 — vista estudiantil de comprobantes privados — C1.395
+
+- **Estado:** En ejecución; no cierra TASK-153 ni los criterios globales F41-08.
+- **Implementación cliente:** se habilita Matrícula y Finanzas en student-dashboard; consulta getPaymentVouchers y muestra fecha, referencia, importe, estado y disponibilidad del archivo.
+- **Lectura privada:** Ver comprobante solicita getPaymentVoucherFile usando comprobanteId. La UI convierte Base64 a Blob URL para PDF/imagen, ofrece descarga y revoca el objeto URL al cerrar; no abre comprobanteUrl de Drive.
+- **Seguridad de presentación:** datos del comprobante se insertan mediante textContent/nodos DOM; la autorización final permanece en ACCOUNTING.
+- **CI:** Department Scope run 42740584865 success; incluye contratos de ámbito, Academic, Accounting, contrato cliente y node --check js/student.js.
+- **Límites:** contrato cliente estático, sin browser automation ni prueba Apps Script/Drive real. Solo portal estudiante/alumno; UI para tutores/personal y limpieza de archivos históricos pendientes.
+- **Siguiente acción:** validar extremo a extremo en despliegue de prueba con archivo privado real y sesión autenticada; inventariar y revocar enlaces públicos históricos de forma controlada.

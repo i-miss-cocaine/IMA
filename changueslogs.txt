@@ -625,3 +625,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Contrato Accounting ampliado con casos IDOR, tutor, ámbito departamental/institucional, sesión inválida y referencia inyectada.
 - CI: 42739904392 y 42739904420 — success. Sin integración real Apps Script/Drive; los permisos públicos históricos siguen pendientes de revocación.
 - TASK-153 permanece En ejecución.
+
+
+## C1.395 — IMA-EXEC-20261110-0158Z-01
+- Portal estudiantil: pestaña Matrícula y Finanzas muestra comprobantes autenticados.
+- Vista/descarga utiliza getPaymentVoucherFile y Blob URL local; no abre enlaces legacy de Drive y revoca el object URL al cerrar.
+- Se agrega contrato cliente y verificación sintáctica Node para js/student.js.
+- CI Department Scope 42740584865 — success, incluidos contratos de ámbito, Academic, Accounting y cliente.
+- Sin prueba browser ni integración Apps Script/Drive real; TASK-153 sigue En ejecución.

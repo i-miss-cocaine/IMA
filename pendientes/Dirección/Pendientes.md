@@ -736,7 +736,7 @@
   - [ ] Las operaciones de descarga, firma y exportación respetan el ámbito departamental asignado.
   - [ ] Los roles institucionales con acceso global funcionan conforme a sus permisos explícitos sin falsos bloqueos.
 - **Dependencias:** Sistema de usuarios, departamentos, roles y estructura de propiedad documental.
-- **Estado:** [ ] En ejecución (C1.393; endpoint autenticado de lectura de comprobantes privados y CI local aprobados; criterios globales pendientes).
+- **Estado:** [ ] En ejecución (C1.395; endpoint y vista estudiantil de comprobantes privados con CI local aprobado; criterios globales pendientes).
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7086-7126; clave TASK-169; asignación única: Dirección -->
 
@@ -748,6 +748,8 @@
 - **Limitación C1.391:** los comprobantes privados todavía no tienen endpoint de preview/stream autorizado; los archivos históricos pueden conservar enlaces públicos. El DepartamentoID sigue ausente en ExpedientesEstudiantes/DocumentosEstudiante; TASK-153 no se cierra.
 - **Avance C1.393:** ACCOUNTING añade getPaymentVoucherFile, derivando el archivo desde ComprobantesPago y validando sesión, propietario/relación y ámbito antes de devolver Base64; se validan existencia, papelera, tamaño (10 MiB) y MIME/extensión. CI runs 42739904392 y 42739904420 — success.
 - **Limitaciones C1.393:** falta integración UI para preview/descarga; no se han revocado permisos públicos históricos ni probado Drive/Apps Script real. TASK-153 continúa En ejecución.
+- **Avance C1.395:** el portal estudiantil integra la pestaña Matrícula y Finanzas, lista comprobantes autenticados y solicita la vista/descarga mediante getPaymentVoucherFile; Base64 se transforma en Blob y se revoca el object URL al cerrar. CI 42740584865 — success (contratos y node --check).
+- **Limitaciones C1.395:** sin prueba de navegador ni Apps Script/Drive real; la UI solo cubre estudiante/alumno y los enlaces públicos históricos siguen pendientes de revocación.
 ---
 
 <!-- ID: AUD-NG-164 | Fuentes: Pendientes.md -->
