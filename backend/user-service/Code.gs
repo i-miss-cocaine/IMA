@@ -7300,7 +7300,8 @@ function registerDocumentSignature(payload) {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const documentAccess = assertAdvancedSignatureDocumentScope_(payload, ss, documentId, requestId, "UPDATE");
     if (!documentAccess || documentAccess.authorized !== true) {
-      throw new Error(documentAccess && documentAccess.code || "RESOURCE_SCOPE_DENIED");
+      // Respuesta indistinguible para recurso inexistente, ambiguo o fuera de ámbito.
+      throw new Error("RESOURCE_NOT_FOUND");
     }
     const sheet = getOrCreateSheet(ss, "FirmasConformidades");
     const data = sheet.getDataRange().getValues();
@@ -7368,6 +7369,17 @@ function generateSignatureAuditCertificate(payload) {
     hasLock = lock.tryLock(10000);
     if (!hasLock) throw new Error("Servicio ocupado generando el certificado de auditoría. Por favor reintente.");
 
+    // Una búsqueda por solicitud debe acreditar primero la propiedad de esa solicitud.
+    // No se consulta FirmasConformidades para solicitudes ajenas.
+    if (!requestedDocumentId && requestedSolicitudId) {
+      const requestAccess = assertRecordOwnership(
+        payload, "SOLICITUD_ADMISION", requestedSolicitudId, "READ"
+      );
+      if (!requestAccess || requestAccess.authorized !== true) {
+        throw new Error("RESOURCE_NOT_FOUND");
+      }
+    }
+
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const firmSheet = getOrCreateSheet(ss, "FirmasConformidades");
     let resolvedDocumentId = requestedDocumentId;
@@ -7401,6 +7413,8 @@ function generateSignatureAuditCertificate(payload) {
       });
       const resolvedPairs = Object.keys(pairs).map(function(key) { return pairs[key]; });
       if (resolvedPairs.length !== 1) {
+        // Sin solicitud previamente autorizada, no distinguir inexistencia de ambigüedad.
+        if (!requestedSolicitudId) throw new Error("RESOURCE_NOT_FOUND");
         throw new Error(resolvedPairs.length > 1 ? "RESOURCE_REFERENCE_AMBIGUOUS" : "NO_SIGNATURES_FOUND");
       }
       resolvedDocumentId = resolvedPairs[0].documentoId;
@@ -7465,7 +7479,6 @@ function generateSignatureAuditCertificate(payload) {
         rolFirmante: row[4] || null,
         tipoMecanismo: row[5] || null,
         timestampUTC: timestampUTC,
-        ipOrigen: row[8] || null,
         documentoHashVinculado: row[9] || null,
         signatureHash: row[10] || null
       };
@@ -7478,9 +7491,13 @@ function generateSignatureAuditCertificate(payload) {
       documentoId: resolvedDocumentId,
       documentoOriginalSHA256: documentHashes.length === 1 ? documentHashes[0] : null,
       fechaEmisionUTC: issuedAt,
+      naturalezaCertificado: "RESUMEN_AUDITORIA_NO_PROBATORIO",
+      verificacionCriptografica: "NO_VERIFICADA",
+      requiereValidacionAutenticadaProveedor: true,
+      alcanceIntegridadSHA256: "Huella del resumen serializado antes de incorporar este campo; no es firma electrónica, sello de tiempo ni validación de identidad.",
       totalFirmantes: auditSigners.length,
       pistaAuditoriaFirmantes: auditSigners,
-      message: "Resumen de registros de conformidad. No acredita por sí mismo la validez criptográfica de una firma."
+      message: "Resumen de registros de conformidad. No acredita identidad, autoría, integridad del documento fuente ni validez criptográfica de una firma; la IP de origen se omite por privacidad."
     };
     certificate.certificadoIntegridadSHA256 = computeDocumentSHA256(JSON.stringify(certificate));
 
