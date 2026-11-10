@@ -7380,13 +7380,18 @@ function generateSignatureAuditCertificate(payload) {
     }
 
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    const firmSheet = getOrCreateSheet(ss, "FirmasConformidades");
+    // La consulta es de solo lectura: no crear hojas al generar un resumen.
+    const firmSheet = ss.getSheetByName("FirmasConformidades");
     let resolvedDocumentId = requestedDocumentId;
     let resolvedSolicitudId = requestedSolicitudId;
     let keyRows = null;
 
     const readSignatureKeys = function() {
       if (keyRows !== null) return keyRows;
+      if (!firmSheet) {
+        keyRows = [];
+        return keyRows;
+      }
       const lastRow = firmSheet.getLastRow();
       if (lastRow <= 1) {
         keyRows = [];
@@ -7448,6 +7453,7 @@ function generateSignatureAuditCertificate(payload) {
       resolvedSolicitudId = requestIds[0];
     }
 
+    if (!firmSheet) throw new Error("NO_SIGNATURES_FOUND");
     const firmData = firmSheet.getDataRange().getValues();
     const matches = firmData.slice(1).filter(function(row) {
       return String(row[1] || "").trim() === resolvedSolicitudId &&
