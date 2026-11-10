@@ -356,3 +356,89 @@ console.log("academic admission evaluation identity and lock contracts: PASS");
 }
 
 console.log("academic admission duplicate resolution ownership and concurrency contracts: PASS");
+
+
+// Duplicate resolution requires a verified manager, serializes read/validate/write,
+// and never links an admission request to an expediente in another department.
+{
+  const requestHeader=["SolicitudID","Fecha","Ano","Grado","Nombres","Apellidos","Identificacion","Nacimiento","Responsable","Telefono","Email","Estado","Canal","Observaciones","ExpedienteID"];
+  function makeRequestSheet() {
+    return {
+      rows:[requestHeader,["REQ-DUP","2026-11-10","2026","1","Aspirante","Prueba","ID-1","","Responsable","000","a@b.test","EnRevision","Web","Observación previa",""]],
+      reads:0,writes:[],
+      getDataRange(){this.reads++;const self=this;return {getValues(){return self.rows.map(row=>row.slice());}};},
+      getRange(row,col){const self=this;return {setValue(value){self.writes.push({row,col,value});self.rows[row-1][col-1]=value;}};}
+    };
+  }
+  function makeResolutionHarness(options) {
+    const requests=makeRequestSheet(),history={appended:[],appendRow(row){this.appended.push(row.slice());}};
+    let held=false,attempts=0,releases=0,requestChecks=0,destinationChecks=0,loggedRole="";
+    const context={
+      getAcademicAdmissionScopeContext_:()=>({
+        authorized:true,ss:{},actor:{authorized:true,userId:"MGR-1",role:options.role||"Director"},
+        scope:{authorized:true,institutionId:"INST-1",departmentIds:["D1","D2"],institutionWide:false}
+      }),
+      isAcademicAdmissionManagerRole_:role=>["director","administrador","desarrollador","secretaria"].includes(String(role).toLowerCase()),
+      LockService:{getScriptLock:()=>({tryLock:()=>{attempts++;if(!options.lockAvailable)return false;held=true;return true;},
+        releaseLock:()=>{assert.equal(held,true);held=false;releases++;}})},
+      assertAcademicAdmissionRequestScopeAccess_:(_ss,_scope,id,payload,operation)=>{
+        assert.equal(held,true,"request ownership must be revalidated inside the lock");
+        assert.equal(id,"REQ-DUP");assert.equal(payload,null);assert.equal(operation,"UPDATE");requestChecks++;
+        return options.requestAccess||{authorized:true,departmentId:"D1"};
+      },
+      resolveAcademicAdmissionDepartment_:(_payload,_scope,access)=>{
+        assert.equal(held,true);return {authorized:true,departmentId:access.departmentId||"D1"};
+      },
+      assertResourceOwnershipForScope_:(_ss,_scope,type,id,operation,payload)=>{
+        assert.equal(held,true,"destination ownership must be checked under the lock");
+        assert.equal(type,"EXPEDIENTE_ESTUDIANTE");assert.equal(id,"EXP-1");
+        assert.equal(operation,"UPDATE");assert.equal(payload,null);destinationChecks++;
+        return {authorized:true,departmentId:options.destinationDepartment||"D1"};
+      },
+      getOrCreateSheet:(_ss,name)=>{
+        assert.equal(held,true,"request/history sheets must not be accessed before lock acquisition");
+        return name==="SolicitudesAdmision"?requests:history;
+      },
+      logStructuredEvent:(_service,_fn,_level,_code,_message,_data,role)=>{loggedRole=role;},
+      Date
+    };
+    vm.runInNewContext(extractFunction("resolveAdmissionDuplicate"),context);
+    return {execute:()=>context.resolveAdmissionDuplicate({solicitudId:"REQ-DUP",resolucion:"VincularExistente",
+      expedienteDestinoId:"EXP-1",motivoJustificado:"Coincidencia confirmada documentalmente"}),
+      state:()=>({held,attempts,releases,requestChecks,destinationChecks,reads:requests.reads,writes:requests.writes,
+        history:history.appended,loggedRole,row:requests.rows[1]})};
+  }
+
+  const crossDepartment=makeResolutionHarness({lockAvailable:true,destinationDepartment:"D2"});
+  assert.throws(()=>crossDepartment.execute(),/RESOURCE_SCOPE_DENIED/);
+  const crossState=crossDepartment.state();
+  assert.equal(crossState.reads,0,"cross-department destination must be rejected before reading/writing the request");
+  assert.equal(crossState.writes.length,0);
+  assert.equal(crossState.history.length,0);
+  assert.equal(crossState.held,false);
+  assert.equal(crossState.releases,1);
+
+  const sameDepartment=makeResolutionHarness({lockAvailable:true,destinationDepartment:"D1"});
+  const result=sameDepartment.execute();
+  assert.equal(result.status,"success");
+  const sameState=sameDepartment.state();
+  assert.equal(sameState.reads,1);
+  assert.equal(sameState.row[14],"EXP-1");
+  assert.equal(sameState.writes.length,2,"destination and audit observations are the only request writes");
+  assert.equal(sameState.history.length,1);
+  assert.equal(sameState.loggedRole,"Director");
+  assert.equal(sameState.held,false);
+  assert.equal(sameState.releases,1);
+
+  const busy=makeResolutionHarness({lockAvailable:false});
+  assert.throws(()=>busy.execute(),/Servicio ocupado/);
+  assert.deepEqual({reads:busy.state().reads,writes:busy.state().writes.length,releases:busy.state().releases},
+    {reads:0,writes:0,releases:0},"contending resolution must fail before any sheet access");
+
+  const nonManager=makeResolutionHarness({lockAvailable:true,role:"Evaluador"});
+  assert.throws(()=>nonManager.execute(),/AUTH_PERMISSION_DENIED/);
+  assert.deepEqual({attempts:nonManager.state().attempts,reads:nonManager.state().reads},
+    {attempts:0,reads:0},"non-manager role must be rejected before acquiring the lock");
+}
+
+console.log("academic admission duplicate resolution ownership, role and lock contracts: PASS");
