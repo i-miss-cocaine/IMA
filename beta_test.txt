@@ -279,3 +279,20 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Resultado esperado:** listados, lecturas y submitExam exigen sesión válida; el envío se registra bajo el UserID firmado y solo acepta preguntas del examen y dentro del límite de intentos; getAllExams, getTeacherExamActivity, getStudentExams, getExamQuestions y getExamResult filtran por ResourceOwnership y ámbito; identidad/perfil proceden de fuentes verificadas; identidad y rol proceden de claims firmados; estudiantes solo acceden a sus propios registros; tutores solo a relaciones vigentes; personal opera únicamente sobre recursos de su propiedad/ámbito y con permiso explícito; los accesos no autorizados se deniegan sin filtrar existencia ni datos.
 - **Estado:** Pendiente beta. Las pruebas locales de código/contrato se ejecutan por separado y deben aprobarse para cerrar la implementación.
 - **Evidencia requerida:** build/commit, ambiente, rol sintético, pasos, respuestas/denegaciones y logs saneados, sin tokens ni datos sensibles.
+
+
+## BETA-FUNC-023 — TASK-153 / ACADEMIC: propiedad departamental en expedientes propios y acceso de tutores
+- **Módulo/servicio:** ACADEMIC Service — expedientes estudiantiles, documentos y versiones.
+- **Roles:** Estudiante/Alumno, Padre/Madre/Tutor/Responsable y personal académico con ámbito autorizado.
+- **Objetivo:** verificar que el acceso propio y la relación familiar no omiten ResourceOwnership ni el departamento propietario del expediente.
+- **Precondiciones:** despliegue beta aislado de ACADEMIC; dos departamentos sintéticos; dos estudiantes con expedientes y ResourceOwnership separados; tutor vinculado únicamente al primer estudiante mediante relación activa y portal habilitado; cuentas y asignaciones de ámbito sintéticas. No utilizar datos reales.
+- **Pasos:**
+  1. Consultar getStudentFile y getStudentDocuments como cada estudiante para su propio expediente y documentos.
+  2. Alterar expedienteId, solicitudId, codigoInstitucional y documentoId para solicitar recursos del otro departamento.
+  3. Consultar como tutor el expediente/documentos del estudiante vinculado y después intentar consultar el expediente del estudiante no vinculado.
+  4. Mantener la relación familiar activa, pero cambiar el ResourceOwnership del expediente a otro departamento; repetir el acceso del tutor y del estudiante.
+  5. Probar expediente sin ownership, ownership duplicado, departamento vacío, asignación de ámbito vencida y estudiante sin cuenta activa única asociada a PersonaID.
+  6. Repetir las pruebas en uploadStudentDocument, updateDocumentStatus y restoreDocumentVersion; confirmar que la misma guarda de expediente protege las mutaciones y el historial.
+- **Resultado esperado:** estudiantes solo acceden a su expediente dentro de su ámbito y ResourceOwnership; tutores solo acceden a estudiantes vinculados y dentro del ámbito departamental del estudiante relacionado; la relación familiar no sustituye ownership; propiedad ausente/duplicada, asignación inválida o relación no vigente producen denegación sin revelar existencia ni metadatos.
+- **Estado:** Pendiente beta. Las pruebas locales sintéticas de la guarda se mantienen separadas de esta validación desplegada.
+- **Evidencia requerida:** commit/build, ambiente aislado, roles sintéticos, departamento y recurso de prueba, respuestas allow/deny y logs saneados; nunca incluir tokens, datos personales ni identificadores reales.
