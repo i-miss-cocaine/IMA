@@ -1255,3 +1255,50 @@ Commits principales:
 - Completar contratos de integridad/propiedad y continuar con pruebas locales y CI.
 
 ===============================================================================
+
+
+===============================================================================
+## CHECKPOINT C1.440 — TASK-153 / EXAM: submitExam ligado a identidad, ámbito y propiedad
+Sesión: IMA-EXEC-20261110-1750Z-01
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+HEAD inicial: 7f5e8d761cbc12ebb5c1271513a67b9bf04b11bf.
+HEAD final de código/contratos: d640ddbab2b247dd4736f0332b8f7a75ca096e8b.
+HEAD base verificado previamente: 44d9891132332e692dbe2ba8602b41f50a508a59; sin escrituras en la rama base.
+Checkpoint anterior: C1.439.
+
+### Alcance implementado
+- `submitExam` deja de aceptar el UserID enviado por el cliente como propietario de la entrega. Exige sesión firmada y usa `actor.userId`.
+- Solo permite envíos del rol Estudiante/Alumno; obtiene perfil desde `Usuarios`, comprueba grado/sección contra el examen activo y valida ámbito departamental del estudiante.
+- Comprueba una única fila de examen y una propiedad activa única `ResourceOwnership` dentro de la institución/departamento autorizado.
+- Valida que `respuestas` sea arreglo y que cada `preguntaId` pertenezca al examen; rechaza IDs ajenos, IDs vacíos y preguntas duplicadas.
+- Aplica `IntentosPermitidos` (columna 13 / índice 12) y usa un intento por defecto cuando el campo está vacío/no válido; bloquea envíos duplicados tras agotar intentos.
+- La calificación automática conserva el comportamiento de tipos de pregunta ya existente; la entrega se registra con UserID firmado y estado Pendiente.
+- Contrato de seguridad ampliado con fixtures para examen propio/ajeno, pregunta ajena, payload UserID manipulado, calificación y reintento duplicado.
+- Se corrigieron fixtures/expectativas de listados afectados por la incorporación de un examen sintético adicional; el contrato final pasa.
+
+### Archivos modificados en este incremento
+- `backend/exam-service/Code.gs`
+- `tests/security/exam-service-departmental-access.test.js`
+
+Commits de este incremento:
+- `aed83c431662f25ec006ae0cbd1331f87830ac35` — guard de envío autenticado y propiedad.
+- `fd95c733b0e993506c44f7c8b16955fafb6ca6e4` — eliminación del handler antiguo que quedó tras reemplazar firma destructurada.
+- `d640ddbab2b247dd4736f0332b8f7a75ca096e8b` — expectativas de contrato alineadas con fixture adicional.
+
+### Verificación
+- Parseo local de `backend/exam-service/Code.gs` con runtime JavaScript aislado: **PASS**.
+- Contrato local de comportamiento de `submitExam` con mocks/fixtures: **PASS**. Incluye bloqueo cross-department, rechazo de pregunta de otro examen, propietario derivado del token, cálculo 100.00 y denegación del segundo intento por defecto.
+- GitHub Actions run **42867761346**, HEAD exacto `d640ddbab2b247dd4736f0332b8f7a75ca096e8b`: **PASS**; ambos pasos `exam-service-security-contract.test.js` y `exam-service-departmental-access.test.js` pasaron.
+- Runs fallidos intermedios 42867611143 y 42867474395: fallos de sintaxis/expectativas de fixture durante iteración, corregidos antes del PASS final; no se ocultan.
+- Beta Apps Script/Sheets/Drive y navegador: **NOT RUN**, BETA-FUNC-022 sigue Pendiente beta.
+- No se modificaron datos reales ni se desplegó Apps Script.
+- TASK-153 permanece En ejecución; AUD-NG-386 abierto. `createExam` aún no registra propiedad automáticamente; update/delete/grade/delete submission y demás mutaciones siguen pendientes.
+
+### Siguiente acción elegible
+- Integrar alta de `ResourceOwnership` en `createExam` con departamento explícito autorizado y persistencia compensable/segura para evitar examen huérfano.
+- Proteger `updateExam`, `updateExamStatus`, `deleteExam`, `gradeExamSubmission` y `deleteExamSubmission` con identidad, permiso por operación, propiedad y ámbito.
+- Probar integridad del ciclo crear/listar/consultar/enviar/resultado y casos de rollback/propiedad ausente o duplicada.
+
+===============================================================================

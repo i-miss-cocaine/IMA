@@ -2976,3 +2976,11 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - El resultado del estudiante se devuelve solo si la entrega es propia y no está Pendiente; docente debe ser propietario del examen y superar el ámbito. Respuestas de acceso no disponible no revelan existencia ni datos.
 - Contrato local aislado con mocks/fixtures y parseo: PASS; GitHub Actions runs 42866518036 y 42866358902: PASS. Beta BETA-FUNC-022 sigue pendiente y no bloquea el código.
 - **Estado:** TASK-153 En ejecución; AUD-NG-386 abierto. `submitExam`, `createExam` con alta de propiedad y mutaciones continúan pendientes.
+
+## 10.98 TASK-153 / AUD-NG-386 — protección de submitExam (C1.440)
+
+- `submitExam` deriva el actor desde token firmado; ignora `payload.userId` para persistir la entrega. Solo Estudiante/Alumno puede enviar.
+- Se exige examen único y activo, asignación grado/sección desde `Usuarios`, ámbito vigente del estudiante y ResourceOwnership único dentro de la institución/departamento.
+- Se validan respuestas como arreglo, IDs de pregunta pertenecientes al examen y ausencia de IDs duplicados. Se aplica `IntentosPermitidos` con default 1 y se bloquean reintentos agotados.
+- Parseo local y contrato aislado de envío: PASS. GitHub Actions run 42867761346 PASS en contratos EXAM. Beta BETA-FUNC-022 sigue Pendiente beta.
+- **Estado:** TASK-153 En ejecución; AUD-NG-386 abierto. Alta de ownership en createExam y mutaciones EXAM siguen pendientes.

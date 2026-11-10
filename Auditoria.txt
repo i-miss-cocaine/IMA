@@ -1049,3 +1049,11 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - Contrato local aislado de parseo y comportamiento: PASS. GitHub Actions run 42866518036 y 42866358902: PASS en los dos contratos EXAM. El run 42866518036 corresponde al HEAD exacto de limpieza ac9e65c18cdb7a33a9776d0c232d7429ec2ab978 y pasó ambos contratos.
 - Beta NOT RUN. `submitExam`, alta de propiedad en `createExam` y mutaciones permanecen pendientes. AUD-NG-386 continúa ABIERTO.
 ===============================================================================
+
+===============================================================================
+## SEGUIMIENTO IMA-EXEC-20261110-1750Z-01 — AUD-NG-386 / EXAM
+- `submitExam` exige estudiante autenticado, deriva el UserID desde claims firmados, valida asignación académica, ámbito/ResourceOwnership, IDs de preguntas del examen y límite de intentos.
+- Los envíos de otra institución/departamento, con preguntas ajenas, payload de identidad manipulado o reintentos agotados se rechazan; el registro persiste bajo el usuario firmado.
+- Parseo local y contrato de comportamiento de envío: PASS. GitHub Actions run 42867761346 en HEAD exacto: PASS en ambos contratos EXAM.
+- Beta NOT RUN. `createExam` sin alta de ownership y mutaciones restantes continúan pendientes. AUD-NG-386 sigue ABIERTO.
+===============================================================================
