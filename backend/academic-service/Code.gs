@@ -2420,7 +2420,7 @@ function convertAdmissionToStudent(payload) {
       const conversionArtifacts = assertAdmissionConversionArtifactsComplete_(ss, row, solicitudId, expedienteExistenteId);
       return { status: "success", isAlreadyConverted: true, expedienteId: expedienteExistenteId,
         userId: conversionArtifacts.userId, matriculaId: conversionArtifacts.matriculaId,
-        movimientoId: conversionArtifacts.movimientoId,
+        cargoId: conversionArtifacts.cargoId, movimientoId: conversionArtifacts.movimientoId,
         message: "La solicitud " + solicitudId + " ya fue convertida previamente al expediente " + expedienteExistenteId + "." };
     }
 
@@ -2605,16 +2605,21 @@ function convertAdmissionToStudent(payload) {
       }
     } catch (_) {}
     if (!montoMatriculaBase) montoMatriculaBase = 1500;
-    const enrollRes = registerStudentEnrollmentInternal_({
+    // Crear/resolver primero la matrícula; su ID es parte de la referencia
+    // inmutable del cargo y todavía no existe antes de esta operación.
+    const enrollmentPayload = {
       userId: targetUserId, alumno: (nombres + " " + apellidos).trim(), grado: grado, seccion: targetSeccion,
       periodo: anolectivo, tipo: "IngresoNuevo", observaciones: "Convertido desde solicitud " + solicitudId,
-      skipLock: true,
-      cargos: [{ concepto: "Matrícula Ordinaria " + anolectivo, montoBase: montoMatriculaBase, descuento: 0, estado: "Pendiente" }],
-      _chargeReference: "ADMISION|" + String(solicitudId).trim() + "|" + String(matriculaRealId).trim(),
-      _rollbackActions: rollbackActions
-    });
+      skipLock: true, _rollbackActions: rollbackActions
+    };
+    const enrollRes = registerStudentEnrollmentInternal_(enrollmentPayload);
     if (!enrollRes || enrollRes.status !== "success" || !enrollRes.matriculaId) throw new Error("ENROLLMENT_CREATION_FAILED");
-    const matriculaRealId = enrollRes.matriculaId;
+    const matriculaRealId = String(enrollRes.matriculaId).trim();
+    const chargeRes = registerStudentEnrollmentInternal_(Object.assign({}, enrollmentPayload, {
+      cargos: [{ concepto: "Matrícula Ordinaria " + anolectivo, montoBase: montoMatriculaBase, descuento: 0, estado: "Pendiente" }],
+      _chargeReference: "ADMISION|" + String(solicitudId).trim() + "|" + matriculaRealId
+    }));
+    if (!chargeRes || chargeRes.status !== "success" || !chargeRes.cargoId) throw new Error("ADMISSION_CHARGE_CREATION_FAILED");
 
     const movSheet = getOrCreateSheet(ss, "MovimientosEstudiante");
     const movData = movSheet.getDataRange().getValues();
@@ -13241,6 +13246,7 @@ function registerStudentEnrollmentInternal_(payload) {
     });
   }
 
+  let admissionChargeId = "";
   if (Array.isArray(cargos) && cargos.length > 0) {
     let existingCargos = cargosSheet.getDataRange().getValues();
     if (_chargeReference) {
@@ -13274,6 +13280,7 @@ function registerStudentEnrollmentInternal_(payload) {
               !String(existing[0] || "").trim()) {
             throw new Error("ADMISSION_CHARGE_CONFLICT");
           }
+          admissionChargeId = String(existing[0] || "").trim();
           return;
         }
         const activeDuplicates = existingCargos.slice(1).filter(r =>
@@ -13302,6 +13309,7 @@ function registerStudentEnrollmentInternal_(payload) {
       ];
       if (_chargeReference) chargeRow.push(String(_chargeReference).trim());
       cargosSheet.appendRow(chargeRow);
+      if (_chargeReference && !admissionChargeId) admissionChargeId = cargoId;
       existingCargos.push([cargoId, now, sUserId, concepto, montoBase, descuento, montoFinal,
         c.estado || "Pendiente", c.fechaVencimiento || "", _chargeReference || ""]);
       const insertedCargoRow = cargosSheet.getLastRow();
@@ -13312,7 +13320,7 @@ function registerStudentEnrollmentInternal_(payload) {
     });
   }
 
-  return { status: "success", matriculaId: matriculaId, message: "Matrícula registrada exitosamente." };
+  return { status: "success", matriculaId: matriculaId, cargoId: admissionChargeId, message: "Matrícula registrada exitosamente." };
 }
 
 // [TAREA-F4-P0-02] [Fase 4: Protección IDOR y ABAC] - Aislamiento estricto de historial de matrícula por usuario
