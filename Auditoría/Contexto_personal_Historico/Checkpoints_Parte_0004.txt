@@ -1531,12 +1531,12 @@ HEAD de código/pruebas/beta antes de documentación: 87dbe7ecf4b3eaab69fc473d7a
 
 
 ===============================================================================
-## CHECKPOINT C1.446 — ACADEMIC: ownership de expedientes SELF/GUARDIAN e informes/admisiones
+## CHECKPOINT C1.447 — ACADEMIC: ownership de expedientes SELF/GUARDIAN e informes/admisiones
 Sesión: IMA-EXEC-20261110-1825Z-02
 Fecha: 2026-11-10 UTC.
 Repositorio: i-miss-cocaine/IMA.
 Rama exclusiva: NG_beta_0.0.0.1_work.
-Checkpoint anterior: C1.445.
+Checkpoint anterior: C1.446.
 HEAD de código/pruebas/beta antes de documentación: 589873ae6659c735c4a9ce8fd7ca61aba5224e77.
 
 ### Trabajo
