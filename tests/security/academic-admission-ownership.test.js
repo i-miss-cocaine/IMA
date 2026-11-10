@@ -803,7 +803,7 @@ console.log("academic admission waitlist reorder ownership, group and rollback c
     const state={
       held:false, lockAttempts:0, releases:0, sheetReads:0, ownerCalls:0,
       rollbackOwnerCalls:0, ownership:[], enrollments:[], events:[],
-      statusFailureUsed:false, reentryAttempted:false, reentryError:"", reentryReadsBefore:0
+      statusFailureUsed:false, reentryAttempted:false, reentryError:"", reentryReadsBefore:0, reentryReadsAfter:0
     };
     function makeSheet(name,rows) {
       return {
@@ -831,6 +831,7 @@ console.log("academic admission waitlist reorder ownership, group and rollback c
             state.reentryReadsBefore=state.sheetReads;
             try { context.convertAdmissionToStudent({solicitudId:"REQ-1",seccion:"A"}); }
             catch(error) { state.reentryError=String(error && error.message || error); }
+            state.reentryReadsAfter=state.sheetReads;
           }
         },
         deleteRow(row){this.rows.splice(row-1,1);}
@@ -959,9 +960,8 @@ console.log("academic admission waitlist reorder ownership, group and rollback c
   assert.equal(successful.state.releases,1);
   assert.equal(successful.state.lockAttempts,2);
   assert.match(successful.state.reentryError,/Servicio ocupado/);
-  assert.equal(successful.state.sheetReads,successful.state.reentryReadsBefore +
-    (successful.state.sheetReads-successful.state.reentryReadsBefore),
-    "the reentrant attempt must not interrupt the first conversion");
+  assert.equal(successful.state.reentryReadsAfter,successful.state.reentryReadsBefore,
+    "the reentrant attempt must not read or mutate conversion sheets while the first conversion holds the lock");
 
   const lateFailure=makeConversionHarness({failStatusWrite:true});
   assert.throws(()=>lateFailure.execute(),/INJECTED_ADMISSION_STATUS_WRITE/);
