@@ -3344,3 +3344,12 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Commit de código y pruebas:** `0053c0ecf8e99b0eaa60a594366eb91b3dc8d445`.
 - **Siguiente unidad registrada:** revisar `createAdvancedSignatureRequest` para exigir un proveedor configurado/activo explícito y eliminar el fallback `PSC-HN-DEFAULT`, sin atribuir integración o validez PSC.
 - **Addendum R1:** contrato de redacción del log RBAC para credenciales; 13 escenarios/26 aserciones locales PASS. El primer run 42911446883 falló por comparación de objetos entre contextos VM; corrección del test y repetición Department Scope run 42911571605 SUCCESS. Commit de test: `740b681f2b78f714b0b268d0717841232726ba3e`.
+
+### 10.130 TASK-153 / AUD-NG-386 — serialización de submitExam (C1.477)
+
+- **Hallazgo:** submitExam consultaba IntentosPermitidos y luego insertaba en EntregasExamen sin lock; solicitudes concurrentes podían observar el mismo conteo y exceder el límite.
+- **Corrección:** submitExam adquiere ScriptLock con timeout de 5 segundos y ejecuta submitExamUnlocked_ bajo el lock. La revalidación de identidad, rol, examen, ownership, preguntas, respuestas y conteo queda dentro de la sección crítica, junto con appendRow. finally libera el lock.
+- **Pruebas locales:** parseo V8 PASS; departmental-access y security-contract PASS en harness V8 aislado con stubs. Se simuló reentrada durante appendRow y se verificó una sola entrega. No se ejecutó runner Node nativo.
+- **CI:** sin ejecución visible asociada al commit al consultar; no se declara PASS. **Beta:** BETA-EXAM-031 Pendiente beta para Apps Script/Sheets real.
+- **Estado:** subalcance submitExam completado en código; TASK-153 En ejecución y AUD-NG-386 abierto por otras rutas EXAM.
+- **Commits:** 6e410c7db8a135d7ffc7772167bd99998409f4f3; d9846a877facead35d4321955d3a0c408755271c; 843f6673a5eb12f732b70adc7162fdff266d9dc4; f118ce5e4f54dad255dc13f9621efb3e9e9e4261.

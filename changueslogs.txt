@@ -1139,3 +1139,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - CI inicial 42914044340 falló por expectativa estática obsoleta; corregida en f06fde4bbe29e80665f27a4e138509747efee3c5 y repetida PASS.
 - BETA-EXAM-030 Pendiente beta. Commit de implementación: 5ed0f69fea65eb11ddad0b8851b77f3eabb4e99b.
 ===============================================================================
+
+[2026-11-10] C1.477 — IMA-EXEC-20261110-1825Z-02 — EXAM: serialización de submitExam
+- submitExam ahora mantiene ScriptLock durante autenticación/ownership, validación de respuestas, comprobación de IntentosPermitidos y appendRow. Timeout fail-closed y liberación en finally.
+- Se añade simulación local de envío reentrante durante la persistencia; solo una entrega se registra. Contratos departmental-access y security-contract PASS en harness V8 aislado; parseo PASS.
+- Sin CI visible ni Apps Script/Sheets real. BETA-EXAM-031 Pendiente beta.
+- Commits de implementación y pruebas: 6e410c7db8a135d7ffc7772167bd99998409f4f3; d9846a877facead35d4321955d3a0c408755271c; 843f6673a5eb12f732b70adc7162fdff266d9dc4; f118ce5e4f54dad255dc13f9621efb3e9e9e4261.
+===============================================================================

@@ -819,3 +819,11 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - Primer CI 42914044340 falló por una expectativa estática obsoleta; corregida en f06fde4bbe29e80665f27a4e138509747efee3c5. No fue fallo de comportamiento.
 - BETA-EXAM-030 Pendiente beta; no se ejecutó Apps Script/Sheets real. AUD-NG-386 permanece abierto; TASK-153 En ejecución.
 ===============================================================================
+
+===============================================================================
+### TASK-153 — seguimiento C1.477 / AUD-NG-386 EXAM
+- submitExam ejecuta la resolución de identidad, permiso contextual, ownership del examen, validación de preguntas/respuestas, conteo de intentos y appendRow bajo ScriptLock único.
+- Timeout de 5 s falla cerrado; finally libera el lock en éxito/error. La prueba departamental simula una segunda solicitud durante appendRow: no adquiere el lock y no persiste una entrega duplicada.
+- Parseo local y ejecución V8 aislada de los contratos departmental-access y security-contract PASS. Harness con stubs; runner Node nativo y CI no ejecutados. Apps Script/Sheets real pendiente.
+- BETA-EXAM-031 Pendiente beta. TASK-153 En ejecución; AUD-NG-386 abierto por otras rutas EXAM.
+===============================================================================

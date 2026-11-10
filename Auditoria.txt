@@ -1389,3 +1389,12 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - CI intermedio 42914044340 FAIL por aserción estática no actualizada; corregida y repetida satisfactoriamente.
 - BETA-EXAM-030 Pendiente beta. AUD-NG-386 continúa abierto por otras rutas EXAM y demás superficies.
 ===============================================================================
+
+===============================================================================
+## C1.477 — EXAM: concurrencia en submitExam
+- Hallazgo: IntentosPermitidos se consultaba antes de appendRow sin lock; dos solicitudes concurrentes podían superar el límite.
+- submitExam ahora mantiene ScriptLock desde la resolución de identidad/ownership y validación de preguntas/respuestas hasta el conteo de intentos y la inserción de EntregasExamen. Timeout fail-closed; finally libera el lock.
+- Contrato local V8: simulación de segundo envío reentrante durante appendRow; la segunda adquisición falla y solo persiste una entrega. Contratos departmental-access y security-contract PASS; parseo PASS.
+- Los tests se ejecutaron en harness V8 aislado con stubs compatibles; no se ejecutó Node CLI ni CI. No se ejecutó Apps Script/Sheets real.
+- BETA-EXAM-031 Pendiente beta. AUD-NG-386 sigue abierto por otras rutas EXAM.
+===============================================================================

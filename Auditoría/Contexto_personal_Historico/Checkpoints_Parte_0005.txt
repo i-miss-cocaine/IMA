@@ -701,3 +701,39 @@ Corregir la condición de carrera entre la lectura y mutación de entregas en gr
 - No se modificó NG_beta_0.0.0.1.
 - Siguiente tarea elegible: continuar AUD-NG-386 / EXAM revisando otra mutación de entrega o examen no cubierta por el wrapper, priorizando submitExam y cualquier ruta que pueda alterar EntregasExamen o su ownership fuera del lock.
 ===============================================================================
+
+===============================================================================
+## CHECKPOINT C1.477 — EXAM: serialización de envíos y límite de intentos
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.476.
+HEAD inicial: 375484d21762ae980a9c86c4cca8b434c2abd07a.
+Commits de implementación/pruebas: 6e410c7db8a135d7ffc7772167bd99998409f4f3; d9846a877facead35d4321955d3a0c408755271c; 843f6673a5eb12f732b70adc7162fdff266d9dc4; f118ce5e4f54dad255dc13f9621efb3e9e9e4261.
+
+### Alcance
+Cerrar la condición de carrera en submitExam: el control de IntentosPermitidos y la persistencia de EntregasExamen deben ser una única operación serializada.
+
+### Cambios
+- submitExam adquiere ScriptLock con timeout de 5 segundos y delega la validación completa y el append a submitExamUnlocked_ mientras conserva el lock.
+- Identidad firmada, rol estudiante, examen activo/único, asignación, ownership, preguntas, respuestas y conteo de intentos se resuelven dentro de la sección crítica.
+- Timeout devuelve EXAM_SUBMISSION_LOCK_TIMEOUT sin ejecutar la lógica de envío; finally libera el lock en éxito y error.
+- El contrato departamental simula un segundo envío reentrante durante appendRow; el lock ocupado impide el segundo envío y solo queda una entrega.
+- El contrato de seguridad comprueba que la validación del límite y appendRow permanecen dentro del worker protegido.
+- BETA-EXAM-031 documenta la comprobación de concurrencia en Apps Script/Sheets desplegado.
+
+### Verificación
+- Parseo sintáctico local de backend/exam-service/Code.gs mediante compilación V8: PASS.
+- Ejecución local aislada de tests/security/exam-service-departmental-access.test.js: PASS.
+- Ejecución local aislada de tests/security/exam-service-security-contract.test.js: PASS.
+- Los dos contratos se ejecutaron en un harness V8 aislado con stubs para fs/path/vm/assert; no se ejecutó el runner Node nativo.
+- GitHub Actions/CI: sin ejecución visible asociada al commit al consultar el estado; no se declara PASS de CI.
+- No se ejecutó Apps Script/Sheets real. BETA-EXAM-031 queda Pendiente beta.
+
+### Estado y continuidad
+- Subalcance de concurrencia de submitExam: implementado y aprobado por pruebas locales aisladas y revisión del diff.
+- TASK-153 permanece En ejecución; AUD-NG-386 continúa abierto por otras rutas y superficies EXAM.
+- Rama base NG_beta_0.0.0.1 permanece sin cambios.
+- Siguiente subalcance elegible: continuar revisando otras rutas EXAM que alteren EntregasExamen o el ownership de exámenes; no reabrir los handlers de envío/calificación/eliminación ya serializados.
+===============================================================================
