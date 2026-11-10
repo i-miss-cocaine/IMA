@@ -825,3 +825,10 @@ Proteger las operaciones de alta, edición y baja de manageQuestionBank con iden
 - TASK-153 permanece En ejecución; AUD-NG-386 sigue abierto.
 - Rama base NG_beta_0.0.0.1 permanece sin cambios.
 ===============================================================================
+
+===============================================================================
+### Addendum C1.479-R1 — verificación de publicación
+- HEAD tras publicar código, pruebas y registros: 2c4865f972a5b6c0cb12e1146fcd7c5253f8ea37.
+- Rama base NG_beta_0.0.0.1 verificada sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Actualización de NG_beta_0.0.0.1_work realizada mediante compare-and-swap fast-forward; no se utilizó force push.
+===============================================================================
