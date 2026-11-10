@@ -1704,26 +1704,38 @@ function scheduleAdmissionInterview(payload) {
       throw new Error("RESOURCE_NOT_FOUND");
     }
   }
-  const ss = ctx.ss;
-  const sheet = getOrCreateSheet(ss, "EntrevistasAdmision");
-  const data = sheet.getDataRange().getValues();
-  if (data.length > 1) {
-    const existing = data.slice(1).find(function(r) {
-      if (String(r[5] || "").trim() !== evaluatorId) return false;
-      if (String(r[8] || "").trim() === "Cancelada") return false;
-      if (String(r[2] || "").trim() !== String(fecha).trim()) return false;
-      return String(horaInicio) < String(r[4]) && String(horaFin) > String(r[3]);
-    });
-    if (existing) throw new Error("Conflicto de horario del evaluador.");
+
+  // El chequeo de solapamiento y el append forman una sección crítica: dos
+  // solicitudes simultáneas no deben reservar el mismo intervalo del evaluador.
+  const lock = LockService.getScriptLock();
+  let hasLock = false;
+  try {
+    hasLock = lock.tryLock(10000);
+    if (!hasLock) throw new Error("Servicio ocupado programando entrevistas. Por favor reintente.");
+    const sheet = getOrCreateSheet(ctx.ss, "EntrevistasAdmision");
+    const data = sheet.getDataRange().getValues();
+    if (data.length > 1) {
+      const existing = data.slice(1).find(function(r) {
+        if (String(r[5] || "").trim() !== evaluatorId) return false;
+        if (String(r[8] || "").trim() === "Cancelada") return false;
+        if (String(r[2] || "").trim() !== String(fecha).trim()) return false;
+        return String(horaInicio) < String(r[4]) && String(horaFin) > String(r[3]);
+      });
+      if (existing) throw new Error("Conflicto de horario del evaluador.");
+    }
+    const idGen = generateInstitutionalId({ entityType: "EntrevistaAdmision", prefix: "ENT-ADM-", skipLock: true });
+    const entrevistaId = (idGen && idGen.generatedId) ? idGen.generatedId : ("ENT-ADM-" + Date.now());
+    const now = new Date();
+    sheet.appendRow([entrevistaId, solicitudId, fecha, horaInicio, horaFin, evaluatorId, lugarEnlace || "Campus Principal", modalidad || "Presencial", "Programada", observaciones || "", now]);
+    logStructuredEvent("ACADEMIC", "scheduleAdmissionInterview", "INFO", "INTERVIEW_SCHEDULED",
+      "Entrevista " + entrevistaId + " agendada para solicitud " + solicitudId,
+      { entrevistaId: entrevistaId, solicitudId: solicitudId, fecha: fecha, evaluadorUserId: evaluatorId }, ctx.actor.role);
+    return { status: "success", entrevistaId: entrevistaId, message: "Entrevista de admisión agendada exitosamente." };
+  } finally {
+    if (hasLock) {
+      try { lock.releaseLock(); } catch (_) {}
+    }
   }
-  const idGen = generateInstitutionalId({ entityType: "EntrevistaAdmision", prefix: "ENT-ADM-", skipLock: true });
-  const entrevistaId = (idGen && idGen.generatedId) ? idGen.generatedId : ("ENT-ADM-" + Date.now());
-  const now = new Date();
-  sheet.appendRow([entrevistaId, solicitudId, fecha, horaInicio, horaFin, evaluatorId, lugarEnlace || "Campus Principal", modalidad || "Presencial", "Programada", observaciones || "", now]);
-  logStructuredEvent("ACADEMIC", "scheduleAdmissionInterview", "INFO", "INTERVIEW_SCHEDULED",
-    "Entrevista " + entrevistaId + " agendada para solicitud " + solicitudId,
-    { entrevistaId: entrevistaId, solicitudId: solicitudId, fecha: fecha, evaluadorUserId: evaluatorId }, ctx.actor.role);
-  return { status: "success", entrevistaId: entrevistaId, message: "Entrevista de admisión agendada exitosamente." };
 }
 
 function getAdmissionInterviews(payload) {
@@ -1751,27 +1763,43 @@ function getAdmissionInterviews(payload) {
 function recordInterviewOutcome(payload) {
   const { entrevistaId, estado, observaciones } = payload || {};
   if (!entrevistaId || !estado) throw new Error("entrevistaId y estado son requeridos.");
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "EntrevistasAdmision");
-  const data = sheet.getDataRange().getValues();
-  const matches = data.map(function(row, index) { return { row: row, index: index }; })
-    .filter(function(item) { return String(item.row[0] || "").trim() === String(entrevistaId).trim(); });
-  if (matches.length !== 1) throw new Error("RESOURCE_NOT_FOUND");
-  const idx = matches[0].index;
-  const interview = matches[0].row;
-  const solicitudId = String(interview[1] || "").trim();
-  const ctx = getAcademicAdmissionScopeContext_(payload, "recordInterviewOutcome", solicitudId, "UPDATE");
+  // Verificar identidad y ámbito antes de resolver el identificador de entrevista.
+  const ctx = getAcademicAdmissionScopeContext_(payload, "recordInterviewOutcome", null, "UPDATE");
   if (!ctx.authorized) throw new Error("RESOURCE_NOT_FOUND");
-  if (String(interview[5] || "").trim() !== String(ctx.actor.userId).trim() && !isAcademicAdmissionManagerRole_(ctx.actor.role)) {
-    throw new Error("RESOURCE_NOT_FOUND");
+  const lock = LockService.getScriptLock();
+  let hasLock = false;
+  try {
+    hasLock = lock.tryLock(10000);
+    if (!hasLock) throw new Error("Servicio ocupado actualizando entrevistas. Por favor reintente.");
+    const sheet = getOrCreateSheet(ctx.ss, "EntrevistasAdmision");
+    const lastRow = sheet.getLastRow();
+    if (lastRow < 2) throw new Error("RESOURCE_NOT_FOUND");
+    // Resolver únicamente ID y solicitud; aún no leer notas, ubicación ni otros campos.
+    const keys = sheet.getRange(2, 1, lastRow - 1, 2).getValues();
+    const matches = keys.map(function(row, index) { return { row: row, index: index }; })
+      .filter(function(item) { return String(item.row[0] || "").trim() === String(entrevistaId).trim(); });
+    if (matches.length !== 1) throw new Error("RESOURCE_NOT_FOUND");
+    const rowNumber = matches[0].index + 2;
+    const solicitudId = String(matches[0].row[1] || "").trim();
+    const requestAccess = assertAcademicAdmissionRequestScopeAccess_(ctx.ss, ctx.scope, solicitudId, payload, "UPDATE");
+    if (!requestAccess || requestAccess.authorized !== true) throw new Error("RESOURCE_NOT_FOUND");
+    const interview = sheet.getRange(rowNumber, 1, 1, 11).getValues()[0];
+    if (String(interview[0] || "").trim() !== String(entrevistaId).trim() ||
+        String(interview[1] || "").trim() !== solicitudId) throw new Error("RESOURCE_NOT_FOUND");
+    if (String(interview[5] || "").trim() !== String(ctx.actor.userId).trim() && !isAcademicAdmissionManagerRole_(ctx.actor.role)) {
+      throw new Error("RESOURCE_NOT_FOUND");
+    }
+    sheet.getRange(rowNumber, 9).setValue(estado);
+    if (observaciones) {
+      const obsPrev = String(interview[9] || "");
+      sheet.getRange(rowNumber, 10).setValue(obsPrev ? obsPrev + " | [" + estado + "]: " + observaciones : "[" + estado + "]: " + observaciones);
+    }
+    return { status: "success", message: "Entrevista actualizada a estado '" + estado + "'." };
+  } finally {
+    if (hasLock) {
+      try { lock.releaseLock(); } catch (_) {}
+    }
   }
-  const scopedSheet = getOrCreateSheet(ctx.ss, "EntrevistasAdmision");
-  scopedSheet.getRange(idx + 1, 9).setValue(estado);
-  if (observaciones) {
-    const obsPrev = String(interview[9] || "");
-    scopedSheet.getRange(idx + 1, 10).setValue(obsPrev ? obsPrev + " | [" + estado + "]: " + observaciones : "[" + estado + "]: " + observaciones);
-  }
-  return { status: "success", message: "Entrevista actualizada a estado '" + estado + "'." };
 }
 
 function saveAdmissionEvaluation(payload) {
