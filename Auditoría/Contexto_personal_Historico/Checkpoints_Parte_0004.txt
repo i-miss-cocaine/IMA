@@ -318,3 +318,43 @@ Fase: PM-00 — clasificación de requisito existente; no implementación.
 Continuar PM-00 con AUD-NG-007 (timeout configurable de fetchApi), severidad Media, requisito en `pendientes/Otros/Pendientes.md`, blob SHA `24347c3776521c930391f89e0430910554bf233b`. Reutilizar la evidencia de código disponible; clasificar su fase y dependencias conforme a §6.1 antes de cualquier implementación.
 Commit: SHA por verificar después de publicar.
 ===============================================================================
+===============================================================================
+## CHECKPOINT C1.416 — Triage PM-00: clasificación de AUD-NG-007
+Sesión: IMA-EXEC-20261110-1245Z-04
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama: NG_beta_0.0.0.1_work.
+HEAD de partida: ebbfacfca825354cc91d0fc03671e6af8317fe9f.
+Checkpoint anterior: C1.415.
+Fase: PM-00 — clasificación de dependencia transversal; no implementación.
+
+### Tarea y decisión
+- AUD-NG-007 — «Aplicar el timeout configurado por llamada en fetchApi».
+- Se reclasifica de PM-00 provisional a PM-03 (Integración, procesos y eventos).
+- Justificación de fase: es una capacidad transversal de transporte/API y una dependencia explícita de TASK-429, asignada a PM-05. PM-03 debe preceder a PM-05.
+- AUD-NG-007 permanece Pendiente. No se modifica su alcance original.
+
+### Evidencia reutilizada y verificación focalizada
+- Requisito original: `pendientes/Otros/Pendientes.md`, blob SHA `24347c3776521c930391f89e0430910554bf233b`.
+- Expediente/evidencia de código actual: `js/api.js`, SHA `c54d23ad1fc84add9e204a0233d824a2bfcc8ed3`.
+- `checkMicroserviceHealth` pasa timeout de 6000 ms, pero `fetchApi` usa 60000 ms fijo y no lee `options.timeout`.
+- El temporizador se limpia al recibir respuesta, pero no se limpia en el `catch` antes de reintentar; la aceptación exige limpieza en éxito, error y reintento.
+- La dependencia de AUD-NG-007 respecto a TASK-429 se preserva y ahora queda coherente con el orden PM-03 → PM-05.
+
+### Archivos modificados
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md — fila AUD-NG-007 y §10.86.
+- Auditoría/MapaDependencias.md — clasificación y precedencia AUD-NG-007 → TASK-429.
+- changueslogs.txt — entrada C1.416.
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — este checkpoint.
+- Auditoría/INDICE_CHECKPOINTS.md — fila C1.416.
+
+### Verificaciones y límites
+- Lectura focalizada de `js/api.js` y revisión de SHA; no se repitió auditoría completa.
+- No se modificó código, datos, esquemas, permisos ni ramas.
+- No se ejecutaron pruebas de navegador, red, timeout, abort ni reintentos.
+- No se declaró AUD-NG-007 Completada.
+
+### Siguiente acción exacta
+Reaplicar §6.1 a los PM-00 restantes. TASK-279 (P1) debe verificarse contra su dependencia «modelo de tickets y permisos validados» antes de seleccionarse; si esa dependencia no está satisfecha, continuar con AUD-NG-096 (Observación) y documentar su resolución sin alterar el estado de TASK-050.
+Commit: SHA por verificar después de publicar.
+===============================================================================

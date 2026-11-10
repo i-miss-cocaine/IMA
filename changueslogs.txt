@@ -759,3 +759,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se reutiliza AUD-NG-285 en Auditoría/AUDITORIA_COMPLETADAS_F8-TASK03.md; SHA actual de sw.js, css/style.css y manifest.json coincide con evidencia previa.
 - La referencia ./css/styles.css sigue distinta de css/style.css. TASK-641 permanece Pendiente; no se modifica código ni se ejecutan pruebas de navegador/offline.
 - Checkpoint C1.415 en Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt; índice actualizado.
+
+[2026-11-10] C1.416 — IMA-EXEC-20261110-1245Z-04 — clasificación PM-00 de AUD-NG-007
+- AUD-NG-007 se reclasifica a PM-03 como capacidad transversal de timeout/abort de fetchApi; se preserva su precedencia sobre TASK-429 PM-05.
+- Evidencia actual js/api.js SHA c54d23ad1fc84add9e204a0233d824a2bfcc8ed3: options.timeout se ignora, timeout fijo 60000 ms y timer sin limpiar en catch/reintento.
+- Estado permanece Pendiente; no se modificó código ni se ejecutaron pruebas.
+- Checkpoint C1.416 en Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt; índice actualizado.

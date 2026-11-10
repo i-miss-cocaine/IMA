@@ -5050,3 +5050,14 @@ Alcance estático satisfecho; sin cambios de código. Hallazgos AUD-NG-374..376 
 - Vigencia verificada por igualdad de SHA: `sw.js` = `b031e9d0fdee0686f9bda54ba13b751122de827b`; `css/style.css` = `f1ff84312ce70949a58eaa099b2aad0ff0a59cb6`; `manifest.json` = `0caa5febfbd7fdbb88e9d174fa6623fb7daebb4e`. El Service Worker continúa solicitando `./css/styles.css`, no existente en el árbol; el archivo disponible es `css/style.css`.
 - TASK-641 permanece Pendiente. No se cambió código ni se ejecutaron pruebas de navegador, instalación, activación u offline.
 ===============================================================================
+
+
+===============================================================================
+## C1.416 — Clasificación y precedencia de AUD-NG-007
+
+- AUD-NG-007 se reclasifica de PM-00 provisional a PM-03 (Integración, procesos y eventos).
+- La fase se determina por su rol como capacidad transversal de timeout/abort en `fetchApi`, no como una prueba final PM-08.
+- **Dependencia de planificación existente:** TASK-429 (PM-05) consume AUD-NG-007; por tanto, AUD-NG-007 debe quedar antes de TASK-429 para respetar la secuencia PM.
+- Evidencia actual: `js/api.js` SHA `c54d23ad1fc84add9e204a0233d824a2bfcc8ed3`. El parámetro `options.timeout` no se aplica; el timer se fija en 60000 ms y el `catch` no lo limpia antes de reintentar.
+- Estado AUD-NG-007: Pendiente. Sin cambios de código, sin pruebas ejecutadas y sin auditoría duplicada.
+===============================================================================

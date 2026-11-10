@@ -372,7 +372,7 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 | TASK-279 | Dirección | 00 | PM-00 | Triage manual: metadato incompleto, ampliación o relación por resolver | P1 | 9 | modelo de tickets y permisos validados. | [P1] Clasificación Automática de Incidencias y Gestión Paramétrica de SLA | `pendientes/Dirección/Pendientes.md` |
 | TAREA-10 | Docente | 00 | PM-00 | Triage manual: metadato incompleto, ampliación o relación por resolver | No explícita | — | No declaradas en el bloque extraído | Ampliación de criterios existentes derivada de TAREA-10 (2026-11-05) | `pendientes/Docente/Pendientes.md` |
 | TAREA-13 | Docente | 00 | PM-00 | Triage manual: metadato incompleto, ampliación o relación por resolver | No explícita | — | No declaradas en el bloque extraído | Ampliación de criterios derivada de TAREA-13 (2026-11-05) | `pendientes/Docente/Pendientes.md` |
-| AUD-NG-007 | Otros | 00 | PM-00 | Triage manual: metadato incompleto, ampliación o relación por resolver | No explícita | — | fetchApi, checkMicroserviceHealth, checkAllMicroservicesHealth | Aplicar el timeout configurado por llamada en fetchApi | `pendientes/Otros/Pendientes.md` |
+| AUD-NG-007 | Otros | 03 | PM-03 | Integración, procesos y eventos | No explícita | — | fetchApi, checkMicroserviceHealth, checkAllMicroservicesHealth; debe preceder a TASK-429 (PM-05) | Aplicar el timeout configurado por llamada en fetchApi | `pendientes/Otros/Pendientes.md` |
 | AUD-NG-069 | Otros | 03 | PM-03 | Integración, procesos y eventos | No explícita | — | AUD-NG-071; fetchApi, MAX_RETRIES, idempotencyToken, idempotencyKey, checkAndRegisterIdempotencyKey y saveIdempotentResult. | Propagar claves idempotentes en fetchApi y controlar los reintentos de POST | `pendientes/Otros/Pendientes.md` |
 | AUD-NG-071 | Otros | 03 | PM-03 | Integración, procesos y eventos | No explícita | — | checkAndRegisterIdempotencyKey, saveIdempotentResult, LockService y doPost; reserva server-side atómica antes de reintentos automáticos | Reservar claves idempotentes de forma atómica antes de ejecutar operaciones | `pendientes/Otros/Pendientes.md` |
 | TASK-043 | Otros | 00 | PM-00 | Triage manual: metadato incompleto, ampliación o relación por resolver | P0 | — | No declaradas en el bloque extraído | P0 — PRIORIDAD CRÍTICA | `pendientes/Otros/Pendientes.md` |
@@ -2854,3 +2854,12 @@ TASK-641 se asigna a PM-08 (Pruebas integrales, resiliencia y observabilidad), y
 **Evidencia vigente reutilizada:** el informe principal `Auditoría/AUDITORIA_COMPLETADAS_F8-TASK03.md` (SHA `1e8d4518303d53f6f19ae73b4b818a22961cb9ca`) documenta AUD-NG-285 y los criterios CA-MOD-107/108. Los blobs actuales de `sw.js`, `css/style.css` y `manifest.json` coinciden exactamente con los SHA inspeccionados en ese informe; la evidencia del hallazgo continúa vigente. `sw.js` sigue solicitando `./css/styles.css`, mientras el archivo versionado es `css/style.css`.
 
 **Estado:** TASK-641 permanece Pendiente. No se modifica el Service Worker ni se declara corregida la instalación. La tarea deberá ejecutarse cuando PM-08 sea la fase activa, respetando las puertas PM precedentes. Pruebas de navegador/Service Worker/offline siguen pendientes; no se simulan resultados.
+
+
+### 10.86 PM-00 — Clasificación de AUD-NG-007 (C1.416)
+
+AUD-NG-007 se asigna a PM-03 (Integración, procesos y eventos), no a PM-08, porque corrige la política de timeout/abort de la capa común de llamadas API y constituye una dependencia explícita de TASK-429 en PM-05. Esta ubicación mantiene la precedencia PM-03 → PM-05.
+
+**Evidencia vigente:** `js/api.js` SHA `c54d23ad1fc84add9e204a0233d824a2bfcc8ed3`. `checkMicroserviceHealth` llama a `fetchApi` con `{ timeout: 6000 }`, pero `fetchApi` ignora `options.timeout` y configura 60000 ms fijos. Además, el temporizador se limpia en la respuesta HTTP, pero el `catch` de errores de red/reintento no lo limpia antes de programar el siguiente intento; esto deja timers activos y puede provocar abortos tardíos. El requisito original también exige limpiar el temporizador en éxito, error y reintento.
+
+**Estado:** AUD-NG-007 permanece Pendiente. Se reutiliza el hallazgo existente; no se crea auditoría duplicada ni se modifica código. Su precedencia respecto a TASK-429 queda explícita en el registro maestro.
