@@ -1,5 +1,5 @@
 REFERENCIA NORMATIVA OBLIGATORIA
-Antes de modificar este checkpoint o cualquier archivo del repositorio, leer `NORMAS_DESARROLLO_AGIL_SEGURO_CONTINUO.md`, única fuente de normas operativas.
+Antes de modificar este checkpoint o cualquier archivo del repositorio, leer `Normas_Desarollo.md`, única fuente de normas operativas.
 
 # GATE PRIORITARIO IMA: COMMITS CONSOLIDADOS Y CHECKPOINTS OBLIGATORIOS
 
@@ -898,7 +898,7 @@ Checkpoint anterior: C1.430.
 Alcance: gobernanza operativa y alineación documental; sin cambios de código de producto.
 
 ### Decisión normativa adoptada
-- Se adopta `NORMAS_DESARROLLO_AGIL_SEGURO_CONTINUO.md` (NDASC v1.0) como fuente normativa operativa única para IMA.
+- Se adopta `Normas_Desarollo.md` (NDASC v1.0) como fuente normativa operativa única para IMA.
 - La norma reemplaza gates administrativos, auditorías exhaustivas obligatorias para todo cambio, separación rígida de análisis/edición, reinicios completos por Code Review, respaldos duplicados, documentación repetitiva y commit único obligatorio por iteración.
 - Se conservan controles de seguridad, privacidad, aislamiento multiinstitucional, integridad de datos, compatibilidad, pruebas pertinentes, revisión del diff, trazabilidad y recuperación.
 - Se define inspección y verificación proporcionales al riesgo; automatización, CI, mocks y fixtures están permitidos. Los resultados deben distinguir PASS/FAIL/BLOCKED/NOT RUN.
@@ -908,7 +908,7 @@ Alcance: gobernanza operativa y alineación documental; sin cambios de código d
 - `protected=false` no bloquea el desarrollo. La rama base y su protección son responsabilidad del propietario; el agente solo trabaja en la rama exclusiva.
 
 ### Archivos modificados
-- `NORMAS_DESARROLLO_AGIL_SEGURO_CONTINUO.md`: nueva norma operativa v1.0.
+- `Normas_Desarollo.md`: nueva norma operativa v1.0.
 - `Instrucciones.txt`: sustituye la adenda IMA anterior por una directiva prioritaria breve; el procedimiento genérico queda subordinado para IMA y se conserva para otros proyectos.
 - `METODOLOGIA_DESARROLLO.md`: actualiza la puerta superior y su regla de precedencia; las especificaciones de producto, seguridad y pruebas beta siguen vigentes.
 - `Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md`: versión 1.2; PM-00 deja de ser bloqueo universal, dependencias y secuencia se interpretan proporcionalmente.
@@ -943,7 +943,7 @@ Alcance: consolidación de gobierno documental; sin cambios de código de produc
 
 ### Decisión
 - NDASC pasa a versión 1.1 y establece expresamente la lectura obligatoria del archivo maestro antes de modificar cualquier archivo del repositorio.
-- `NORMAS_DESARROLLO_AGIL_SEGURO_CONTINUO.md` queda como única fuente de normas operativas y de gobierno de IMA.
+- `Normas_Desarollo.md` queda como única fuente de normas operativas y de gobierno de IMA.
 - `Instrucciones.txt` se reduce a una referencia directa, sin duplicar reglas.
 - `METODOLOGIA_DESARROLLO.md` conserva requisitos técnicos y funcionales del producto, seguridad, calidad y beta; las reglas operativas se subordinan al maestro.
 - El Plan Maestro conserva planificación y estados, no normas operativas.
@@ -951,7 +951,7 @@ Alcance: consolidación de gobierno documental; sin cambios de código de produc
 - Se establece que informes, mapas, backlogs, checkpoints e índices deben consultarse junto con el archivo maestro antes de modificarse.
 
 ### Archivos modificados
-- `NORMAS_DESARROLLO_AGIL_SEGURO_CONTINUO.md`
+- `Normas_Desarollo.md`
 - `Instrucciones.txt`
 - `METODOLOGIA_DESARROLLO.md`
 - `Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md`
@@ -966,4 +966,18 @@ Alcance: consolidación de gobierno documental; sin cambios de código de produc
 - Se preservan íntegros los registros históricos de auditoría y changelog, agregando únicamente referencias normativas.
 - La rama base permanece intacta.
 - Commit y HEAD final se registran en el índice y se verifican después de publicar.
+===============================================================================
+
+===============================================================================
+## CHECKPOINT C1.433 — Renombre del archivo maestro de normas
+Sesión: IMA-GOV-20261110-1614Z-01
+Fecha: 2026-11-10 UTC.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+HEAD inicial: 6780cc5da964912421f0f29ded9947d4bf2fb471.
+Decisión: el único archivo maestro de normas pasa a llamarse `Normas_Desarollo.md`.
+- Se conserva íntegramente el contenido de NDASC v1.1.
+- Se actualizan las referencias activas en instrucciones, metodología, Plan Maestro, auditoría, changelog, checkpoints e índice.
+- Se elimina el nombre anterior del árbol Git; no se mantiene copia duplicada.
+- Sin cambios de código, datos o configuración de ramas.
+- Pruebas de software: no aplican; cambio documental.
 ===============================================================================

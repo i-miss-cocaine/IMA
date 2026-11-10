@@ -1,5 +1,5 @@
 REFERENCIA NORMATIVA OBLIGATORIA
-Antes de agregar o modificar una entrada de este changelog o cualquier otro archivo del repositorio, leer `NORMAS_DESARROLLO_AGIL_SEGURO_CONTINUO.md`. Este archivo es exclusivamente un historial de cambios; no establece normas operativas ni sustituye al archivo maestro. Las entradas históricas se conservan.
+Antes de agregar o modificar una entrada de este changelog o cualquier otro archivo del repositorio, leer `Normas_Desarollo.md`. Este archivo es exclusivamente un historial de cambios; no establece normas operativas ni sustituye al archivo maestro. Las entradas históricas se conservan.
 
 ===============================================================================
 
@@ -840,7 +840,7 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-10] C1.431 — IMA-GOV-20261110-1553Z-01 — Adopción de NDASC v1.0
-- Se crea NORMAS_DESARROLLO_AGIL_SEGURO_CONTINUO.md como fuente normativa operativa única para IMA.
+- Se crea Normas_Desarollo.md como fuente normativa operativa única para IMA.
 - Instrucciones.txt y METODOLOGIA_DESARROLLO.md quedan alineados con su precedencia; las reglas genéricas se conservan para otros proyectos y para IMA cuando sean compatibles.
 - El Plan Maestro pasa a versión 1.2: PM-00 y la secuencia PM-00→PM-09 dejan de ser bloqueos universales; solo bloquean prerrequisitos técnicos demostrables.
 - Se sustituyen auditorías exhaustivas y reinicios administrativos por inspección proporcional, pruebas basadas en riesgo y correcciones focalizadas. Se mantienen seguridad, integridad, compatibilidad, revisión del diff, trazabilidad y recuperación.
@@ -854,3 +854,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Instrucciones.txt queda como referencia directa; metodología y Plan Maestro remiten al maestro y conservan sus especificaciones técnicas/funcionales y planificación.
 - Auditoria.txt y changueslogs.txt reciben encabezados de referencia sin alterar entradas históricas.
 - Checkpoint C1.432 e índice actualizados. Cambio documental; sin cambios de código ni pruebas de producto.
+
+
+[2026-11-10] C1.433 — Renombre del archivo maestro de normas
+- El archivo único de normas operativas se renombra de `NORMAS_DESARROLLO_AGIL_SEGURO_CONTINUO.md` a `Normas_Desarollo.md`.
+- Se actualizan las referencias documentales, el índice y el checkpoint activo; se conserva el contenido normativo y el historial.
+- No se modifican archivos de código ni la rama base.

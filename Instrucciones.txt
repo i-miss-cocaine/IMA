@@ -1,6 +1,6 @@
 # IMA — Referencia normativa única
 
 Antes de realizar **cualquier cambio en cualquier archivo** del repositorio IMA, leer:
-[`NORMAS_DESARROLLO_AGIL_SEGURO_CONTINUO.md`](NORMAS_DESARROLLO_AGIL_SEGURO_CONTINUO.md).
+[`Normas_Desarollo.md`](Normas_Desarollo.md).
 
 Ese archivo es la única fuente de normas operativas y de gobierno. Esta hoja no duplica ni modifica la normativa. Si existe una contradicción, prevalece el archivo maestro. Los requisitos técnicos y funcionales del producto se consultan en sus especificaciones correspondientes.

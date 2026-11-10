@@ -6,7 +6,7 @@
 
 # REFERENCIA AL ARCHIVO MAESTRO DE NORMAS
 
-Antes de realizar cualquier cambio en este documento o en cualquier otro archivo de IMA, leer `NORMAS_DESARROLLO_AGIL_SEGURO_CONTINUO.md`. Es la única fuente de normas operativas y de gobierno del desarrollo. Este documento conserva especificaciones y criterios técnicos/funcionales del producto, seguridad, calidad y pruebas beta; no constituye una normativa operativa paralela. Cualquier regla de proceso aquí conservada como antecedente o referencia se interpreta subordinada al archivo maestro.
+Antes de realizar cualquier cambio en este documento o en cualquier otro archivo de IMA, leer `Normas_Desarollo.md`. Es la única fuente de normas operativas y de gobierno del desarrollo. Este documento conserva especificaciones y criterios técnicos/funcionales del producto, seguridad, calidad y pruebas beta; no constituye una normativa operativa paralela. Cualquier regla de proceso aquí conservada como antecedente o referencia se interpreta subordinada al archivo maestro.
 
 ---
 

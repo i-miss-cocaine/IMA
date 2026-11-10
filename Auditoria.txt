@@ -1,5 +1,5 @@
 REFERENCIA NORMATIVA OBLIGATORIA
-Antes de agregar, corregir o modificar cualquier registro de auditoría o cualquier otro archivo del repositorio, leer `NORMAS_DESARROLLO_AGIL_SEGURO_CONTINUO.md`. Este archivo es un registro histórico de hallazgos y evidencia, no una fuente de normas operativas. Conservar íntegro el historial existente.
+Antes de agregar, corregir o modificar cualquier registro de auditoría o cualquier otro archivo del repositorio, leer `Normas_Desarollo.md`. Este archivo es un registro histórico de hallazgos y evidencia, no una fuente de normas operativas. Conservar íntegro el historial existente.
 
 ===============================================================================
 

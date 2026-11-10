@@ -1,6 +1,6 @@
 # PLAN MAESTRO DE IMPLEMENTACIÓN — IMA
 
-> **Referencia normativa obligatoria:** antes de modificar este plan o cualquier archivo del repositorio, leer `NORMAS_DESARROLLO_AGIL_SEGURO_CONTINUO.md`. Este plan organiza tareas, dependencias y estados; no define una normativa operativa paralela. Las reglas de desarrollo y gobierno se consultan exclusivamente en el archivo maestro.
+> **Referencia normativa obligatoria:** antes de modificar este plan o cualquier archivo del repositorio, leer `Normas_Desarollo.md`. Este plan organiza tareas, dependencias y estados; no define una normativa operativa paralela. Las reglas de desarrollo y gobierno se consultan exclusivamente en el archivo maestro.
 
 
 **Versión:** 1.2 — secuencia flexible y dependencias proporcionales (NDASC v1.0)  
@@ -317,7 +317,7 @@ Se ejecuta por subflujos, no por una migración masiva de todos los departamento
 6. Las tareas de prueba acompañan a cada implementación. PM-08 no sustituye las pruebas de las fases anteriores.
 7. Las ampliaciones de criterios (por ejemplo, TAREA-10/TAREA-13) se incorporan a su tarea madre; no se implementan como duplicados.
 8. Los registros de encabezado/agrupación sin requisitos propios no son tareas ejecutables independientes.
-9. Cada tarea sigue el ciclo continuo de `NORMAS_DESARROLLO_AGIL_SEGURO_CONTINUO.md`; inspección, implementación, pruebas y correcciones se dimensionan según el riesgo. No se exige repetir fases completas.
+9. Cada tarea sigue el ciclo continuo de `Normas_Desarollo.md`; inspección, implementación, pruebas y correcciones se dimensionan según el riesgo. No se exige repetir fases completas.
 10. Publicar commits por unidades coherentes y recuperables; los checkpoints se registran en hitos, pausas, transferencias o antes de operaciones de riesgo.
 
 ### 6.1 Algoritmo obligatorio para seleccionar la siguiente tarea
