@@ -4846,3 +4846,22 @@ TAREAS DERIVADAS — AUDITORÍA TASK-639 / C1.302
 - **Prioridad:** P0. **Fase:** PM-02, diseño documental; no autoriza saltar puertas PM-01.
 - **Estado:** [X] Completada — C1.404, solo investigación y diseño. UNI-S01…UNI-S10 no iniciadas.
 - **Evidencia:** informe, subplan y commit C1.404.
+
+
+---
+
+<!-- ID: TASK-695 | Fuentes: solicitud de producto 2026-11-10; TASK-694; PLAN-IMA-001 -->
+### [X] [TASK-695] [P0] Descomponer la arquitectura universal en 24 unidades funcionales con requisitos y criterios de aceptación
+- **Tipo:** diseño/planificación documental PM-02; no equivale a implementación.
+- **Objetivo:** convertir la arquitectura universal multiinstitucional P-20W en un plan ejecutable desde primera infancia hasta educación superior, con servicios administrativos y operativos.
+- **Entregable:** Auditoría/PLAN-IMA-001_UNIDADES_FUNCIONALES.md y vínculo en Auditoría/ARQUITECTURA_UNIVERSAL_MULTIINSTITUCIONAL_INVESTIGACION.md.
+- **Descomposición local:** UNI-U01…UNI-U24: tenants; organización; admisiones; primera infancia; expediente/trayectoria; calendario; formación técnica/superior; horarios; asistencia; LMS; evaluación; bienestar; familias; comunicación; finanzas estudiantiles; RR. HH.; ERP; biblioteca; transporte; documentos; analítica; integraciones; configuración/localización; gobierno/migración.
+- **Requisitos mínimos:** objetivo/alcance; entidades/relaciones; reglas; roles/ámbitos; estados/vigencias; integridad/idempotencia; auditoría; dependencias; riesgos; interoperabilidad/accesibilidad/localización aplicables.
+- **Criterios de aceptación:** cada unidad contiene requisitos y criterios observables; dependencias ordenadas; tareas equivalentes vinculadas; brechas marcadas como candidatas; no se crean IDs duplicados; problemas de usuario convertidos en estrategias; PM-00/PM-01 y fail-closed preservados.
+- **Tareas existentes reutilizadas/ampliadas:** TASK-153, TASK-060, F26-TASK01, TASK-506, TASK-171, TASK-668, AUD-NG-164, TASK-005, FASE2-T04, F29-TASK17, TAREA-F5-002/005/007/008/010/011/012/013, F9-TASK03…12, F10/F11, TAREA-F7-IMP-01/02/04/06, TASK-023…027, TASK-029…036, TASK-051/071/072/077/084/086/091…108/129/131/153/159/161/167/173/193/195/196…209/212…217/227/235/263/269/275/276/285/286/288…318/344/345/357/367/382/384…391/397/406…408/415/422/424/432/438/488/506/517/521/522/527/533/534/548/552/553/555/605/613/614/617/668 y tareas F16/F18/F19/F20/F21/F22/F23/F24/F25/F29/F30/F31/F33/F34/F35/F37/F40.
+- **Brechas candidatas:** U01 runtime tenant; U04 cuidado infantil; U07 créditos/degree audit/credenciales superiores; U10 LMS completo; U22 adaptadores OneRoster/Edu-API/LTI. U13 requiere ampliar relaciones familiares más allá de recogida en transporte. No crear IDs globales adicionales hasta comprobar código/backlogs.
+- **Opiniones:** señales cualitativas de navegación lenta, clics excesivos, sincronización SIS/LMS frágil, discrepancias de notas, carga documental de primera infancia, mensajes fuera de horario, rutas inviables y costos de migración; estrategias/fuentes en el subplan.
+- **Dependencias/riesgos:** TASK-694; PM-01/TASK-153; TASK-060/F26-TASK01; TASK-506/TASK-171/TASK-668; AUD-NG-164/TASK-005; FASE2-T04; F29-TASK17. Riesgo de duplicación o de generalizar opiniones aisladas; mitigación mediante matriz y validación institucional.
+- **Alcance/exclusiones:** diseño y reconciliación documental; no modificar código, datos, esquemas, permisos, configuración, integraciones ni despliegue; no afirmar paridad con proveedores ni cumplimiento legal universal.
+- **Prioridad:** P0. **Estado:** completada como entregable documental; UNI-U01…U24 sin iniciar.
+- **Evidencia:** subplan, Plan Maestro §10.78, mapa de dependencias y checkpoint C1.405. Sin pruebas de producto.

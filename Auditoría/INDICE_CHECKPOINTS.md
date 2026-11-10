@@ -230,3 +230,5 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.403 | IMA-EXEC-20261110-0439Z-01 | T153-S01 auditada; bloqueada por decisión institucional pendiente | TASK-153 / PM-01 / P0 — T153-S01 autoridad del catálogo departamental | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.403 | 2054–2142 | C1.402 | Este commit; SHA a confirmar tras publicación |
 
 | C1.404 | IMA-EXEC-20261110-0500Z-01 | TASK-694 completada como diseño documental; UNI-S01…S10 sin iniciar; TASK-153 conserva bloqueo C1.403 | PM-02 — investigación y subplan de arquitectura universal multiinstitucional P-20W | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.404 | 2145–2186 | C1.403 | Este commit; SHA a verificar |
+
+| C1.405 | IMA-EXEC-20261110-0513Z-01 | TASK-695 completada como diseño documental; 24 unidades definidas; U01/U04/U07/U10/U22 candidatas a auditoría; TASK-153 conserva bloqueo | PM-02 — PLAN-IMA-001 / requisitos y aceptación UNI-U01…UNI-U24 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.405 | 2190–2219 | C1.404 | Este commit; SHA a verificar |

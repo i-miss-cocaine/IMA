@@ -4996,3 +4996,17 @@ Alcance estático satisfecho; sin cambios de código. Hallazgos AUD-NG-374..376 
 - CEDS P-20W, Ed-Fi, OneRoster, Edu-API, LTI, CASE, QTI, CLR, Open Badges y Caliper mediante adaptadores.
 - Tareas reutilizadas: TASK-153, TASK-060, F26-TASK01, TASK-506, TASK-171, TASK-668, AUD-NG-164, TASK-005, F8-TASK09, FASE2-T04 y F29-TASK17.
 - Subplan UNI-S01…UNI-S10; sin implementación en C1.404. TASK-153 conserva bloqueo C1.403.
+
+
+## TASK-695 — PLAN-IMA-001: dependencias de unidades universales
+
+- TASK-694 → TASK-695; TASK-695 → UNI-U01…UNI-U24 (IDs locales).
+- U01 → U02/U03/U04/U05/U06/U13/U16/U23; U02 → U06/U08/U16/U17/U23.
+- U03 → U05/U06/U20; U05 → U06/U07/U09/U10/U11/U12/U13/U15/U18/U19/U20/U21/U22/U24.
+- U06 → U07/U08/U09/U10/U11/U18/U21/U22; U07 → U08/U10/U11/U21/U22.
+- U08 → U09/U10/U11/U19; U09 → U12/U14/U21; U10 ↔ U11 por contrato de entregas/calificaciones; U11 → U21.
+- U13 → U04/U09/U12/U14/U19; U14 → U04/U13/U19/U20; U15 → U17/U21; U16 → U08/U17; U17 → U20/U21.
+- U18 → U20/U21; U19 → U15/U21; U20 → U22/U24; U22 depende de U01/U05/U06/U10/U11/U15; U23 depende de U01/U02/U06/U07; U24 depende de U01–U23.
+- Reutilización: TASK-506/171/668 → U02; AUD-NG-164/TASK-005 → U06/U07; F9-TASK y AUD-NG-165…167 → U11; F10/F11 → U09/U12/U14; biblioteca → U18; F21/TASK-029…036 → U19; F22/F31/F33/F40 → U20; TASK-051/235/285/397/406/408 → U21; FASE2-T04/F25/F29/F35 → U22; TASK-060/F26-TASK01 → U23; F29/TASK-077/275/276 → U24.
+- Gate PM-01: TASK-153/T153-S01 bloquea cambios de ownership, ámbitos y migración de expedientes; ningún paquete relaja fail-closed.
+- Las aristas son dependencias de planificación, no evidencia de implementación ni autorización para alterar el orden PM.

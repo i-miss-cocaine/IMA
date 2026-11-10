@@ -545,6 +545,7 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 | TAREA-F4-P1-07 | Dirección | 02 | PM-02 | Arquitectura y contratos de plataforma | No explícita | — | No declaradas en el bloque extraído | Implementar gestión institucional de roles, cargos, departamentos y asignaciones | `pendientes/Dirección/Pendientes.md` |
 | TASK-060 | Dirección | 02 | PM-02 | Modelo de datos, contratos y persistencia | P0 | — | Estructuras de usuarios, roles, departamentos, `ConfiguracionSistema`, permisos server-side y servicios consumidores de configuración. | [P0] [Gobernanza Jerárquica - Motor Central de Configuración Jerárquica y Herencia Departamental] | `pendientes/Dirección/Pendientes.md` |
 | TASK-694 | Dirección | 02 | PM-02 | Arquitectura universal multiinstitucional y modelo educativo P-20W | P0 | 0 | Contraste con TASK-153/PM-01, TASK-060/F26-TASK01, TASK-506/TASK-171/TASK-668, AUD-NG-164/TASK-005, FASE2-T04 y F29-TASK17. | Especificar arquitectura universal multiinstitucional y modelo educativo P-20W | `pendientes/Dirección/Pendientes.md` |
+| TASK-695 | Dirección | 02 | PM-02 | Arquitectura y contratos de plataforma | P0 | 1 | TASK-694; tareas UNI-U01…U24; PM-01/TASK-153 como puerta de seguridad. | Descomponer 24 unidades funcionales universales con requisitos, aceptación y reconciliación de backlog | `pendientes/Dirección/Pendientes.md` |
 | TASK-249 | Dirección | 02 | PM-02 | Modelo de datos, contratos y persistencia | P1 | — | Reportes institucionales existentes, permisos, catálogos de campos y almacenamiento de preferencias. | [P1] [Reportes Personalizados - Implementar Persistencia de Vistas y Configuraciones Personalizadas de Reportes] | `pendientes/Dirección/Pendientes.md` |
 | TASK-506 | Dirección | 02 | PM-02 | Modelo de datos, contratos y persistencia | P1 | — | CatalogoDepartamentos, CatalogoCargos, HistorialAdscripciones, DepartamentosAcademicos, Usuarios, manageDepartmentPositions, assignDepartmentHead, generateInstitutionalId. | Garantizar integridad referencial y atomicidad en departamentos, cargos y adscripciones institucionales | `pendientes/Dirección/Pendientes.md` |
 | TASK-027 | Docente | 02 | PM-02 | Modelo de datos, contratos y persistencia | P0 | — | `LockService`, `BibliotecaPrestamos`, `BibliotecaEjemplares` | Control de concurrencia e idempotencia en circulación bibliotecaria | `pendientes/Docente/Pendientes.md` |
@@ -2593,3 +2594,16 @@ Solo se registra y descompone el alcance funcional. No se modificó código, dat
 Se reutilizan TASK-153, TASK-060, F26-TASK01, TASK-506, TASK-171, TASK-668, AUD-NG-164, TASK-005, F8-TASK09, FASE2-T04 y F29-TASK17. No se duplican IDs ni se cambia su estado.
 
 **Estado:** TASK-694 completada solo como investigación/diseño. UNI-S01…S10 sin iniciar. TASK-153/T153-S01 conserva bloqueo C1.403. Sin código, datos, esquemas, permisos, configuración ni pruebas de producto.
+
+
+## 10.78 TASK-695 — PLAN-IMA-001: descomposición funcional universal de 24 unidades
+
+- **Tipo:** diseño funcional y planificación PM-02; no implementación.
+- **Objetivo:** convertir TASK-694 en paquetes UNI-U01…UNI-U24 con requisitos, criterios verificables, dependencias, riesgos, evidencia de usuarios y relación con tareas globales existentes.
+- **Entregable:** Auditoría/PLAN-IMA-001_UNIDADES_FUNCIONALES.md; vínculo desde el informe universal.
+- **Regla de IDs:** UNI-U01…UNI-U24 son claves locales, no IDs globales. Se reutilizan/amplían tareas existentes; no se crean 24 tareas duplicadas. Brechas U01/U04/U07/U10/U22 requieren auditoría técnica antes de generar IDs nuevos.
+- **Criterios de aceptación:** 24 unidades con objetivo, requisitos, dependencias y criterios observables; tareas equivalentes vinculadas; brechas candidatas, no ausencias demostradas; opiniones de usuario traducidas en estrategias; límites de evidencia explícitos; PM-01/fail-closed preservados.
+- **Dependencias:** TASK-694; TASK-153; TASK-060/F26-TASK01; TASK-506/TASK-171/TASK-668; AUD-NG-164/TASK-005; FASE2-T04; F29-TASK17 y tareas departamentales del subplan.
+- **Puertas:** TASK-153/T153-S01 no se omite; U01/U02/U23 preceden a multiinstitución/configuración; U05/U06 a admisión/matrícula; U22 a sincronización externa; U24 a migración/piloto.
+- **Límites:** sin cambios de código/datos/esquemas/permisos/configuración/despliegue; sin pruebas de producto.
+- **Estado:** completada como diseño y reconciliación documental inicial. UNI-U01…U24 sin implementar.

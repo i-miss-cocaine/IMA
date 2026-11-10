@@ -882,3 +882,14 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - Sin cambios de código/datos/esquemas/configuración ni pruebas de producto.
 - Checkpoint C1.404: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice Auditoría/INDICE_CHECKPOINTS.md.
 ===============================================================================
+
+
+===============================================================================
+## C1.405 — TASK-695 — PLAN-IMA-001
+- Se verifica TASK-695 libre; máximo ID numérico 694 en Plan Maestro y backlogs Dirección, Docente, Secretaría, Estudiante, Padre y Contabilidad.
+- Se registran 24 paquetes UNI-U01…UNI-U24 con requisitos, criterios de aceptación, dependencias y tareas existentes en Auditoría/PLAN-IMA-001_UNIDADES_FUNCIONALES.md.
+- Se reutilizan tareas existentes; U01/U04/U07/U10/U22 quedan como brechas candidatas a auditoría técnica. No se crean IDs globales duplicados.
+- Opiniones cualitativas documentadas con fuentes y límites de representatividad.
+- TASK-153/T153-S01 conserva bloqueo C1.403; sin cambios de código/datos/esquemas/configuración ni pruebas de producto.
+- Checkpoint C1.405 anexo; índice actualizado.
+===============================================================================

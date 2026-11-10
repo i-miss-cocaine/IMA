@@ -2184,3 +2184,35 @@ Ejecutadas: comparación rama/HEAD; revisión de fuentes; unicidad de TASK-694 e
 ### Cierre
 TASK-694 completada solo como investigación y diseño documental. UNI-S01…S10 sin iniciar. PM-01 conserva prioridad: TASK-153 sigue En ejecución y T153-S01 bloqueada según C1.403. Rama base intacta. Un único commit consolidado.
 ===============================================================================
+
+
+===============================================================================
+## C1.405 — TASK-695 / PLAN-IMA-001 — descomposición funcional universal
+**Sesión:** IMA-EXEC-20261110-0513Z-01  
+**Fecha:** 2026-11-10  
+**Checkpoint anterior:** C1.404  
+**HEAD de partida:** af781161d229342e7b7a80b507ab3a9934c91d60  
+**Rama:** NG_beta_0.0.0.1_work  
+**Base:** NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59  
+**Tarea:** TASK-695 / PM-02 / P0 — diseño documental.  
+**Entregable:** PLAN-IMA-001_UNIDADES_FUNCIONALES.md; informe universal §11; Plan Maestro §10.78.
+
+### Continuidad y auditoría
+- Se consultaron metodología, Plan Maestro, TASK-694, informe de arquitectura, mapa, checkpoint/índice y backlogs de Dirección, Docente, Secretaría, Estudiante, Padre y Contabilidad.
+- HEAD/árbol de trabajo y base confirmados por Git refs. TASK-695 no existe; máximo ID numérico = TASK-694 en backlogs legibles.
+- pendientes/Otros/Pendientes.md devolvió 0 caracteres; no se interpretó como backlog vacío ni se modificó.
+
+### Trabajo realizado
+- 24 paquetes UNI-U01…UNI-U24; cada uno tiene objetivo, requisitos, criterios, dependencias y referencias existentes.
+- Tareas existentes reutilizadas/ampliables; U01/U04/U07/U10/U22 son brechas candidatas pendientes de auditoría técnica. No se crean IDs globales duplicados.
+- Señales de usuarios ECE, K–12/SIS, LMS, superior, biblioteca, transporte, comunicación y carga administrativa documentadas con enlaces y límites.
+- TASK-695 agregado al Plan Maestro y backlog Dirección; mapa, logs e índice actualizados.
+
+### Límites y pruebas
+- Solo documentación; sin cambios de código, datos productivos, esquemas, permisos, configuración o despliegue.
+- No se ejecutaron suites, pruebas unitarias/integración, Apps Script, Sheets/Drive reales, HTTP/E2E, navegador ni migraciones.
+- TASK-153/T153-S01 sigue bloqueada por decisión institucional pendiente; fail-closed preservado.
+
+### Siguiente tarea
+Auditoría técnica focalizada de U01 (registro y aislamiento runtime de tenants), respetando PM-00/PM-01. No iniciar cambios de ownership ni migración mientras TASK-153 siga bloqueada.
+===============================================================================

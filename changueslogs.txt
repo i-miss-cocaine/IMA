@@ -678,3 +678,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se registra TASK-694 en pendientes/Dirección/Pendientes.md y Plan Maestro; se reutilizan tareas existentes.
 - Sin cambios de código, datos, esquemas productivos, configuración ni pruebas de producto.
 - Checkpoint C1.404: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice Auditoría/INDICE_CHECKPOINTS.md.
+
+
+[2026-11-10] C1.405 — TASK-695 / PLAN-IMA-001
+- Se registra descomposición universal en 24 paquetes UNI-U01…UNI-U24 con requisitos, aceptación, dependencias y tareas relacionadas.
+- Se contrastan backlogs Dirección, Docente, Secretaría, Estudiante, Padre y Contabilidad; no se duplica trabajo existente.
+- Se documentan señales cualitativas de usuarios y estrategias para reducir fricción, errores, carga administrativa y riesgos de migración.
+- U01/U04/U07/U10/U22 quedan como brechas candidatas a auditoría técnica; no se generan IDs nuevos sin confirmar ausencia.
+- Sin cambios de código/datos ni pruebas de producto. TASK-153 conserva su bloqueo.
+- Checkpoint C1.405.

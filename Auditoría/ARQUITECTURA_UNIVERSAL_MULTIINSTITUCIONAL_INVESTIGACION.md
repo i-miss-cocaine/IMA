@@ -197,3 +197,8 @@ FERPA: https://studentprivacy.ed.gov/faq/what-must-educational-agencies-or-insti
 WCAG 2.2: https://www.w3.org/TR/WCAG22/
 
 **Límite:** fuentes públicas no verifican código, seguridad ni contratos internos de todos los proveedores. El diseño se debe contrastar con código, datos, requisitos y políticas institucionales antes de implementar.
+
+
+## 11. Subplan funcional asociado — TASK-695 / PLAN-IMA-001
+
+El detalle de las 24 unidades UNI-U01…UNI-U24, sus requisitos, criterios de aceptación, dependencias, tareas existentes, brechas candidatas y señales de usuarios se registra en [PLAN-IMA-001_UNIDADES_FUNCIONALES.md](PLAN-IMA-001_UNIDADES_FUNCIONALES.md). Los IDs UNI son locales, no globales. No se crean tareas duplicadas; las brechas U01/U04/U07/U10/U22 requieren auditoría técnica antes de asignar nuevos IDs. TASK-153/T153-S01 conserva el bloqueo PM-01.
