@@ -1241,7 +1241,7 @@ function assertTaskServiceResourceOwnership_(payload,typeValue,idValue,operation
 function resolveTaskServiceOwnershipDepartment_(payload,scope) {
  if(!scope||!scope.authorized)return {authorized:false,code:scope&&scope.code||"DEPARTMENT_SCOPE_NOT_ASSIGNED"};
  const allowed=(scope.departmentIds||[]).map(v=>String(v||"").trim()).filter(Boolean),requested=String(payload&&payload.departmentId||"").trim();
- if(requested){if(allowed.indexOf(requested)===-1)return {authorized:false,code:"RESOURCE_DEPARTMENT_SELECTION_DENIED"};return {authorized:true,departmentId:requested};}
+ if(requested){if(allowed.indexOf(requested)===-1&&scope.institutionWide!==true)return {authorized:false,code:"RESOURCE_DEPARTMENT_SELECTION_DENIED"};return {authorized:true,departmentId:requested};}
  if(allowed.length===1)return {authorized:true,departmentId:allowed[0]};if(allowed.length>1)return {authorized:false,code:"RESOURCE_DEPARTMENT_SELECTION_REQUIRED"};return {authorized:false,code:"RESOURCE_DEPARTMENT_UNRESOLVED"};
 }
 
@@ -1259,7 +1259,7 @@ function registerTaskServiceResourceOwnership_(scope,typeValue,idValue,departmen
   if(!scope||!scope.authorized||!scope.userId||!scope.institutionId)return {authorized:false,code:"DEPARTMENT_SCOPE_NOT_ASSIGNED"};
   if(getDynamicPermissionsForRole(scope.role,"registerResourceOwnership")!==true)return {authorized:false,code:"AUTH_PERMISSION_DENIED"};
   const type=String(typeValue||"").trim().toUpperCase(),id=String(idValue||"").trim(),dept=String(departmentValue||"").trim();
-  if(!type||!id||!dept||(scope.departmentIds||[]).map(String).indexOf(dept)===-1)return {authorized:false,code:"RESOURCE_OWNERSHIP_FIELDS_INVALID"};
+  if(!type||!id||!dept||((scope.departmentIds||[]).map(String).indexOf(dept)===-1&&scope.institutionWide!==true))return {authorized:false,code:"RESOURCE_OWNERSHIP_FIELDS_INVALID"};
   lock=LockService.getScriptLock();if(!lock.tryLock(5000))return {authorized:false,code:"RESOURCE_OWNERSHIP_LOCK_TIMEOUT"};
   let sheet;try{sheet=ensureTaskServiceResourceOwnershipSheet_(ss||SpreadsheetApp.openById(SPREADSHEET_ID));}catch(error){return {authorized:false,code:error&&error.message==="RESOURCE_OWNERSHIP_SCHEMA_MISMATCH"?"RESOURCE_OWNERSHIP_SCHEMA_MISMATCH":"RESOURCE_OWNERSHIP_NOT_CONFIGURED"};}
   const data=sheet.getDataRange().getValues(),matches=[];
