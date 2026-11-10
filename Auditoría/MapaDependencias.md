@@ -5079,3 +5079,14 @@ Alcance estático satisfecho; sin cambios de código. Hallazgos AUD-NG-374..376 
 - `index.html` conserva SHA `cd742047cdc4948259dd721119429b04f78330ca`. Resumen funcional por área recalculado.
 - TASK-637 queda Completada; los snapshots C1.299 se conservan como historial. No se modificó código, rutas fuente ni datos productivos.
 ===============================================================================
+
+===============================================================================
+## C1.419 — Triage PM-00 y orden topológico
+
+- TASK-279 → PM-03; dependencia de autorización: AUD-NG-128 PM-01; no iniciar TASK-279 hasta verificarla.
+- TASK-680 → PM-04; depende de F8-TASK19/20 PM-02 y F8-TASK22 PM-04. Espacios/roles configurables por institución; no se requiere organigrama/documentación institucional para motor genérico y pruebas sintéticas (§10.83).
+- TASK-681 permanece PM-03 con F8-TASK21 PM-02 y F8-TASK23 PM-01.
+- TAREA-10/13 son agregados: AUD-NG-165 PM-01 y AUD-NG-168 PM-05 tienen clasificación propia.
+- Veintidós IDs solo contienen encabezados, sin objetivo/dependencias/criterios; excluidos de cola ejecutable conforme §6.1, no completados.
+- PM-00 queda sin trabajo ejecutable; PM-01 habilitada.
+===============================================================================

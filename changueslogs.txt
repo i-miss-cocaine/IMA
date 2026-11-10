@@ -779,3 +779,8 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Inventario reconciliado: 1.051 rutas únicas, cero omitidas/extras, tamaños/SHA exactos para 1.050 archivos externos y SELF con tamaño UTF-8 exacto; resumen por área actualizado.
 - index.html conserva SHA cd742047cdc4948259dd721119429b04f78330ca. Autoauditoría y Code Review documental aprobados; no se modificó código ni se ejecutaron pruebas productivas.
 - TASK-637 Completada; checkpoint C1.418 en Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt; índice actualizado.
+
+[2026-11-10] C1.419 — IMA-EXEC-20261110-1340Z-07 — triage PM-00
+- TASK-279 → PM-03 con dependencia AUD-NG-128 PM-01; TASK-680 → PM-04 con F8-TASK19/20 PM-02 y F8-TASK22 PM-04; TASK-681 permanece PM-03.
+- TAREA-10/13 son agregados; 22 IDs sin requisitos se excluyen de cola conforme §6.1 sin cierre ficticio.
+- PM §10.89 y MapaDependencias C1.419 registran salida PM-00 y habilitación PM-01. Regla de motor genérico configurable preservada.

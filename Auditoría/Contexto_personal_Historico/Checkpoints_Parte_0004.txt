@@ -438,3 +438,31 @@ Fase: PM-00 — mantenimiento del inventario y cierre documental.
 TASK-638 tiene su dependencia TASK-637 satisfecha; verificar si su mapa de dependencias vigente conserva evidencia válida frente a los cambios del árbol antes de seleccionarla/cerrarla. Reaplicar §6.1 y continuar PM-00. TASK-279 permanece no elegible mientras su dependencia de modelo de tickets y permisos validados no esté acreditada.
 Commit: el commit que contiene este checkpoint; SHA verificado tras publicación.
 ===============================================================================
+===============================================================================
+## CHECKPOINT C1.419 — Cierre del triage PM-00
+Sesión: IMA-EXEC-20261110-1340Z-07
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA; rama exclusiva: NG_beta_0.0.0.1_work.
+HEAD de partida: 2a5a5bfff03f1ed0817f82cb2f6d76378426cf4c; checkpoint anterior C1.418.
+
+### Decisiones
+- TASK-279 → PM-03, con AUD-NG-128 PM-01 como dependencia de autorización de tickets.
+- TASK-680 → PM-04, depende F8-TASK19/20 PM-02 y F8-TASK22 PM-04. Motor configurable por institución y pruebas sintéticas; no exigir organigrama/documentos institucionales.
+- TASK-681 permanece PM-03, depende F8-TASK21 PM-02 y F8-TASK23 PM-01.
+- TAREA-10/13 son agregados; AUD-NG-165 PM-01 y AUD-NG-168 PM-05 tienen clasificación propia.
+- Veintidós registros solo contienen encabezados sin requisitos independientes; excluidos de cola conforme §6.1, no completados.
+- AUD-NG-096 y TASK-637/638/639 mantienen cierres previos. TASK-050 sigue Pendiente.
+
+### Archivos
+- Plan Maestro, MapaDependencias, changueslogs, este checkpoint e índice.
+
+### Resultado y límites
+- PM-00 sin tareas ejecutables pendientes; PM-01 habilitada.
+- TASK-279, TASK-680 y TASK-681 siguen Pendientes.
+- Sin cambios de código, datos, esquemas, permisos o configuración institucional; sin pruebas funcionales.
+- No se declara completado el Plan Maestro ni una fase funcional.
+
+### Siguiente acción
+Aplicar §6.1 en PM-01, priorizar severidad/riesgo y verificar dependencias. No bloquear el motor genérico por ausencia de organigrama. Resolver ciclos antes de seleccionar.
+Commit: SHA por verificar.
+===============================================================================
