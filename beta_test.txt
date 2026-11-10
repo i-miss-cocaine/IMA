@@ -186,3 +186,12 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Pasos:** intentar borrar por nombre, por fileId y por ambos; enviar fileId vacío con nombre incorrecto; simular fallo Drive al enviar a papelera; simular fallo deleteRow en Sheets después de mover a papelera.
 - **Resultado esperado:** no se elimina proyecto ajeno ni coincidencia ambigua; solo se reporta success tras borrar la fila; fallo Drive deja la fila intacta; fallo Sheets restaura el archivo o reporta error crítico de rollback.
 - **Estado:** Pendiente beta. No bloquea implementación local.
+
+
+## BETA-FUNC-015 — TASK-636 / AUD-NG-371 — vigencia de asignaciones docentes en lecturas
+- **Objetivo:** verificar que un docente solo consulta tareas, entregas y documentos de aulas/ofertas que mantiene asignadas y activas.
+- **Precondiciones:** Task-Service beta, AulasVirtuales, AsignacionesDocentes, Tareas, Entregas y Drive aislados; cuentas sintéticas Profesor A/B.
+- **Datos:** oferta vigente, oferta vencida, asignación inactiva, aula desactivada con mayúsculas/minúsculas mixtas; tareas y entregas de cada aula.
+- **Pasos:** consultar getStudentTasks/getAllTasks/getTeacherActivity y getSubmissionDocumentPreviewUrl antes y después de expirar/desactivar asignación; repetir intentando alterar profesorId y aulaId en payload.
+- **Resultado esperado:** solo se accede a tareas propias en aulas/ofertas activas del profesor autenticado; al expirar/desactivar la asignación, lecturas y preview se deniegan; payload no amplía ámbito.
+- **Estado:** Pendiente beta. No bloquea implementación local.

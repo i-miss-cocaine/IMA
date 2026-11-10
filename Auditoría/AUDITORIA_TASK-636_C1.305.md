@@ -268,3 +268,16 @@ Endurecer las excepciones públicas de backend/academic-service/Code.gs mediante
 - **CI C1.371:** pendiente tras publicar.
 - **Beta:** BETA-FUNC-014 cubre operación Drive/Sheets real aislada; no bloquea implementación local.
 - **Estado:** AUD-NG-002 continúa en revalidación; TASK-636 permanece En ejecución.
+
+
+## Revisión focalizada C1.372 — alcance docente en consultas y previsualización
+
+- **Hallazgo existente ampliado:** AUD-NG-371. `getStudentTasks`, `getAllTasks`, `getTeacherActivity` y la previsualización de entregas comprobaban que la tarea perteneciera al profesor creador, pero no verificaban en todos los caminos que su oferta/aula continuara asignada y activa.
+- **Riesgo:** un docente podía conservar lectura de tareas, entregas y documentos tras expirar/desactivar su asignación; el control activo ya existía para mutaciones, pero no se aplicaba consistentemente a consultas.
+- **Corrección:** se introduce `isTaskServiceTeacherTaskAuthorized_`, que cruza propietario, grado, sección, asignatura, aula activa y clases devueltas por `getTaskServiceAuthorizedClassrooms` (que ya filtra ofertas activas y vigentes). Se aplica a las tres consultas y a la previsualización; `assertTaskServiceTeacherCanManageTask` reutiliza el mismo control.
+- **Normalización:** estado de aula desactivada se compara sin distinguir mayúsculas/minúsculas; estado de asignación se recorta antes de comparar.
+- **Pruebas locales añadidas:** ofertas activas, vencidas e inactivas; aulas desactivadas en capitalización mixta; tarea propia/asignada, tarea fuera de sección/oferta y propietario distinto; checks estáticos de los handlers de lectura y preview.
+- **CI C1.371:** pendiente al iniciar esta revisión; runs 42725331670 (security) y 42725331631 (backup/restore) se consultan en el siguiente control.
+- **CI C1.372:** pendiente tras publicar.
+- **Beta:** BETA-FUNC-015 cubre expiración/desactivación real de asignaciones y acceso a entregas en Apps Script/Sheets/Drive aislados.
+- **Estado:** AUD-NG-371 continúa en revalidación; TASK-636 sigue En ejecución.

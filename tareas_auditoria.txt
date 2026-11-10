@@ -545,3 +545,13 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - CI C1.370 security run 42724840584: success; C1.369 backup run 42724684967: success; C1.371 pendiente.
 - BETA-FUNC-014 Pendiente beta, no bloqueante.
 ===============================================================================
+
+
+===============================================================================
+## Seguimiento TASK-636 — C1.372 / AUD-NG-371
+- Las consultas docentes ahora comparten el control de oferta/aula activa; la propiedad por creador ya no basta si la asignación expiró o se desactivó.
+- getStudentTasks/getAllTasks/getTeacherActivity y preview aplican ámbito de aula/oferta derivado de AsignacionesDocentes.
+- Fixtures locales cubren asignaciones vencidas/inactivas y aulas desactivadas.
+- CI C1.371 runs 42725331670/42725331631 pendientes; CI C1.372 pendiente.
+- BETA-FUNC-015 Pendiente beta, no bloqueante.
+===============================================================================

@@ -2250,3 +2250,11 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - Fixtures Node cubren propiedad, coincidencias, Drive/Sheets y rollback. CI pendiente.
 - BETA-FUNC-014: prueba real aislada de Drive/Sheets, Pendiente beta y no bloqueante.
 - TASK-636 En ejecución.
+
+
+## 10.56 TASK-636 — C1.372: asignación docente activa en consultas
+- AUD-NG-371: las consultas getStudentTasks/getAllTasks/getTeacherActivity y preview verificaban profesor creador, pero no oferta/aula vigente.
+- Se unifica el control propietario + grado/sección/asignatura + aula/oferta activa y se aplica a lecturas, preview y mutaciones.
+- Se agregan fixtures de asignación vigente/vencida/inactiva y aulas desactivadas. CI pendiente.
+- BETA-FUNC-015: validación Apps Script/Sheets/Drive aislados; Pendiente beta y no bloqueante.
+- TASK-636 En ejecución.

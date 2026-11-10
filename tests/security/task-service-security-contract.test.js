@@ -316,3 +316,63 @@ assert.equal(sheetFailureFixture.rows.length, 2, "metadata row remains after fai
 assert.equal(sheetFailureFixture.file.trashed, false, "Drive trash is compensated if metadata deletion fails");
 
 console.log("TASK-636 deleteProject local contract: strict ownership/identifier matching and Drive/Sheets compensation passed.");
+
+// TASK-636: teacher reads/previews require active offer assignment, not merely task creator ID.
+
+const teacherReadFunctions = [
+  ["getStudentTasks", extractFunction("getStudentTasks")],
+  ["getAllTasks", extractFunction("getAllTasks")],
+  ["getTeacherActivity", extractFunction("getTeacherActivity")]
+];
+for (const [name, fn] of teacherReadFunctions) {
+  assert(fn.includes("isTaskServiceTeacherTaskAuthorized_"), name + " must enforce active assigned classroom scope");
+}
+assert(extractFunction("getSubmissionDocumentPreviewUrl").includes("assertTaskServiceTeacherCanManageTask"), "teacher preview must validate active assignment");
+assert(extractFunction("assertTaskServiceTeacherCanManageTask").includes("getTaskServiceAuthorizedClassrooms(payload)"), "teacher mutation/preview guard must use active offer assignments");
+
+const assignmentRows = [
+  ["ID","OfertaID","ProfesorID","Asignatura","Inicio","Fin","Estado"],
+  ["AS-1","OFFER-1","PROF-1","","2026-01-01","2099-01-01","Activo"],
+  ["AS-2","OFFER-2","PROF-1","","2020-01-01","2020-12-31","Activo"],
+  ["AS-3","OFFER-3","PROF-1","","2026-01-01","2099-01-01","Inactivo"],
+  ["AS-4","OFFER-4","PROF-1","","2026-01-01","2099-01-01","Activo"]
+];
+const classroomRows = [
+  ["AulaID","OfertaID","Nombre","Grado","Seccion","Asignatura","ProfesorID","Estado"],
+  ["CLASS-1","OFFER-1","Aula A","6","A","Matemáticas","PROF-1","Activa"],
+  ["CLASS-2","OFFER-2","Aula B","6","B","Matemáticas","PROF-1","Activa"],
+  ["CLASS-3","OFFER-3","Aula C","6","C","Matemáticas","PROF-1","Activa"],
+  ["CLASS-4","OFFER-1","Aula D","6","D","Matemáticas","PROF-1","Desactivada"],
+  ["CLASS-5","OFFER-4","Aula E","6","E","Matemáticas","PROF-1","desactivada"]
+];
+const assignmentSheets = {
+  AulasVirtuales: { getDataRange: () => ({ getValues: () => classroomRows }) },
+  AsignacionesDocentes: { getDataRange: () => ({ getValues: () => assignmentRows }) }
+};
+const assignmentSS = { getSheetByName: name => assignmentSheets[name] || null };
+const assignmentContext = {
+  SPREADSHEET_ID: "LOCAL",
+  SpreadsheetApp: { openById: () => assignmentSS },
+  getSheetOrThrow: (_ss, name) => { if (!assignmentSheets[name]) throw new Error("missing " + name); return assignmentSheets[name]; },
+  isTaskServiceAdministrativeRole: role => ["Administrador","Desarrollador","Dirección","Secretaría"].includes(role)
+};
+vm.runInNewContext(
+  extractFunction("normalizeString") + String.fromCharCode(10) +
+  extractFunction("isInTeacherList") + String.fromCharCode(10) +
+  extractFunction("getTaskServiceAuthorizedClassrooms") + String.fromCharCode(10) +
+  extractFunction("isTaskServiceTeacherTaskAuthorized_") + String.fromCharCode(10) +
+  "this.getClassrooms = getTaskServiceAuthorizedClassrooms; this.isAuthorized = isTaskServiceTeacherTaskAuthorized_;",
+  assignmentContext
+);
+const authorizedClassrooms = assignmentContext.getClassrooms({_verifiedRole:"Profesor",_verifiedUserId:"PROF-1"});
+assert.deepEqual(authorizedClassrooms.map(row => row[0]), ["CLASS-1"], "expired/inactive offers and deactivated classrooms are excluded");
+const assignedTask = ["T-1","Tarea","Math","desc","P1","Matemáticas","6","A","", "", "PROF-1"];
+const expiredTask = ["T-2","Tarea","Math","desc","P1","Matemáticas","6","B","", "", "PROF-1"];
+const foreignOwnerTask = ["T-3","Tarea","Math","desc","P1","Matemáticas","6","A","", "", "PROF-2"];
+const sectionListTask = ["T-4","Tarea","Math","desc","P1","Matemáticas","6","A,B","", "", "PROF-1"];
+assert.equal(assignmentContext.isAuthorized(assignedTask, authorizedClassrooms, "PROF-1"), true);
+assert.equal(assignmentContext.isAuthorized(expiredTask, authorizedClassrooms, "PROF-1"), false);
+assert.equal(assignmentContext.isAuthorized(foreignOwnerTask, authorizedClassrooms, "PROF-1"), false);
+assert.equal(assignmentContext.isAuthorized(sectionListTask, authorizedClassrooms, "PROF-1"), true, "task section lists may include the assigned classroom section");
+
+console.log("TASK-636 teacher scope local contract: active assignments, classroom scope and read/preview guards passed.");

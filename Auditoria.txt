@@ -677,3 +677,12 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - CI C1.370 run 42724840584 completed/success; C1.369 backup run 42724684967 completed/success; C1.369 security falló por expectativa de test y C1.370 la corrigió.
 - CI C1.371 pendiente. BETA-FUNC-014 Pendiente beta.
 - TASK-636 En ejecución. Checkpoint C1.371: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice fila C1.371.
+
+
+## C1.372 — IMA-EXEC-20261109-1739Z-01 — TASK-636 / PM-01 / AUD-NG-371
+- Se detecta que las lecturas docentes filtraban por creador, pero no exigían asignación vigente; preview tenía el mismo control parcial.
+- Se introduce helper único basado en aulas/ofertas autorizadas y se aplica a getStudentTasks, getAllTasks, getTeacherActivity, preview y mutaciones.
+- Se normalizan estados de aula/asignación y se agregan fixtures de vigencia, sección y propietario.
+- CI C1.371 runs 42725331670/42725331631 pendientes de consultar; CI C1.372 pendiente.
+- BETA-FUNC-015 Pendiente beta.
+- TASK-636 En ejecución. Checkpoint C1.372: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice fila C1.372.

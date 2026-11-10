@@ -1147,7 +1147,7 @@ function assertTaskServiceTeacherAssignedToOffer(userId,offerId) {
  if(!userId||!offerId)throw new Error("Oferta académica no verificable.");
  const sh=SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName("AsignacionesDocentes");if(!sh)throw new Error("No existe AsignacionesDocentes; acceso denegado.");
  const now=Date.now(),rows=sh.getDataRange().getValues().slice(1);
- if(!rows.some(r=>String(r[1]).trim()===String(offerId).trim()&&String(r[2]).trim()===String(userId).trim()&&String(r[6]||"Activo").toLowerCase()==="activo"&&(!r[4]||new Date(r[4]).getTime()<=now)&&(!r[5]||new Date(r[5]).getTime()>=now)))throw new Error("Acceso denegado: no existe asignación docente activa para la oferta.");
+ if(!rows.some(r=>String(r[1]).trim()===String(offerId).trim()&&String(r[2]).trim()===String(userId).trim()&&String(r[6]||"Activo").trim().toLowerCase()==="activo"&&(!r[4]||new Date(r[4]).getTime()<=now)&&(!r[5]||new Date(r[5]).getTime()>=now)))throw new Error("Acceso denegado: no existe asignación docente activa para la oferta.");
  return true;
 }
 function getTaskServiceClassroomById(id) {
@@ -1163,15 +1163,15 @@ function assertTaskServiceClassroomAccess(payload,id) {
 }
 function assertTaskServiceTeacherCanManageTask(payload,row) {
  const role=payload&&payload._verifiedRole,uid=payload&&payload._verifiedUserId;if(!uid)throw new Error("Identidad verificada requerida.");if(isTaskServiceAdministrativeRole(role))return true;
- if(role!=="Profesor"||String(row[10]||"").trim()!==String(uid).trim())throw new Error("Acceso denegado: la tarea no pertenece al docente.");
- const classes=getSheetOrThrow(SpreadsheetApp.openById(SPREADSHEET_ID),"AulasVirtuales").getDataRange().getValues().slice(1);
- const c=classes.find(r=>String(r[7]||"Activa")!=="Desactivada"&&normalizeString(r[3])===normalizeString(row[6])&&(!r[4]||normalizeString(r[4])===normalizeString(row[7]))&&normalizeString(r[5])===normalizeString(row[5])&&String(r[6]||"").trim()===String(uid).trim());
- if(!c)throw new Error("La tarea no coincide con un aula del docente.");assertTaskServiceTeacherAssignedToOffer(uid,c[1]);return true;
+ if(role!=="Profesor")throw new Error("Acceso denegado: solo el docente asignado puede gestionar la tarea.");
+ const classrooms=getTaskServiceAuthorizedClassrooms(payload);
+ if(!isTaskServiceTeacherTaskAuthorized_(row,classrooms,uid))throw new Error("Acceso denegado: la tarea no pertenece a un aula/oferta activa del docente.");
+ return true;
 }
 
 function getTaskServiceAuthorizedClassrooms(payload) {
  const role=payload&&payload._verifiedRole,uid=payload&&payload._verifiedUserId;if(!uid)throw new Error("Identidad verificada requerida.");
- const ss=SpreadsheetApp.openById(SPREADSHEET_ID),rows=getSheetOrThrow(ss,"AulasVirtuales").getDataRange().getValues().slice(1).filter(r=>String(r[7]||"Activa")!=="Desactivada");
+ const ss=SpreadsheetApp.openById(SPREADSHEET_ID),rows=getSheetOrThrow(ss,"AulasVirtuales").getDataRange().getValues().slice(1).filter(r=>normalizeString(r[7]||"Activa")!=="desactivada");
  if(isTaskServiceAdministrativeRole(role))return rows;
  if(role==="Profesor"){const sh=ss.getSheetByName("AsignacionesDocentes");if(!sh)return [];const now=Date.now(),as=sh.getDataRange().getValues().slice(1);
   const offers=new Set(as.filter(r=>String(r[2]).trim()===String(uid).trim()&&String(r[6]||"Activo").toLowerCase()==="activo"&&(!r[4]||new Date(r[4]).getTime()<=now)&&(!r[5]||new Date(r[5]).getTime()>=now)).map(r=>String(r[1]||"").trim()));
@@ -1179,6 +1179,17 @@ function getTaskServiceAuthorizedClassrooms(payload) {
  let profiles=[];if(role==="Estudiante"||role==="Alumno")profiles=[getTaskServiceUserProfile(uid)];else if(["Padre","Tutor","Responsable"].includes(role))profiles=getTaskServiceGuardianStudentIds(uid).map(getTaskServiceUserProfile);
  return rows.filter(r=>profiles.some(p=>normalizeString(r[3])===normalizeString(p.grado)&&(!r[4]||normalizeString(r[4])===normalizeString(p.seccion))));
 }
+function isTaskServiceTeacherTaskAuthorized_(task, authorizedClassrooms, teacherId) {
+  if (!task || !teacherId || String(task[10] || "").trim() !== String(teacherId).trim()) return false;
+  return (authorizedClassrooms || []).some(classroom =>
+    normalizeString(classroom[7] || "Activa") !== "desactivada" &&
+    normalizeString(classroom[3]) === normalizeString(task[6]) &&
+    (!classroom[4] || isInTeacherList(classroom[4], task[7])) &&
+    normalizeString(classroom[5]) === normalizeString(task[5]) &&
+    String(classroom[6] || "").trim() === String(teacherId).trim()
+  );
+}
+
 function getStudentTasks(payload) {
   const role = payload && payload._verifiedRole, actorId = payload && payload._verifiedUserId;
   if (!actorId) throw new Error("Acceso denegado: se requiere identidad verificada.");
@@ -1196,9 +1207,10 @@ function getStudentTasks(payload) {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const tasksData = getSheetOrThrow(ss, "Tareas").getDataRange().getValues().slice(1);
   const entregasData = getSheetOrThrow(ss, "Entregas").getDataRange().getValues().slice(1);
+  const teacherClassrooms = role === "Profesor" ? getTaskServiceAuthorizedClassrooms(payload) : null;
   const seenOriginalTasksForEC = new Set();
   const studentTasks = tasksData.filter(task => {
-    if (role === "Profesor" && String(task[10] || "").trim() !== String(actorId).trim()) return false;
+    if (role === "Profesor" && !isTaskServiceTeacherTaskAuthorized_(task, teacherClassrooms, actorId)) return false;
     if (normalizeString(task[6]) !== normalizeString(grado)) return false;
     if (task[7] && String(task[7]).trim() && !isInTeacherList(seccion, task[7])) return false;
     if (task[1] === "Credito Extra") {
@@ -1497,6 +1509,7 @@ function getTeacherActivity(payload) {
   const usuariosData = usuariosSheet.getDataRange().getValues();
   const tareasData = tareasSheet.getDataRange().getValues();
   const entregasValues = entregasSheet.getDataRange().getValues();
+  const teacherClassrooms = !isAdmin ? getTaskServiceAuthorizedClassrooms(payload) : null;
   const entregasHeaders = entregasValues.shift();
   let fileIdIndex = entregasHeaders.indexOf("fileUrl");
   if (fileIdIndex === -1) {
@@ -1510,7 +1523,7 @@ function getTeacherActivity(payload) {
 
     // SI LA TAREA NO EXISTE O NO PERTENECE AL PROFESOR -> DESCARTAR
     if (!tarea) return null;
-    if (!isAdmin && String(tarea[10] || "").trim() !== profesorId) return null;
+    if (!isAdmin && !isTaskServiceTeacherTaskAuthorized_(tarea, teacherClassrooms, actorId)) return null;
     if (isAdmin && profesorId && String(tarea[10] || "").trim() !== profesorId) return null;
 
     const usuario = usuariosData.find(u => u[0] == entrega[2]);
@@ -1554,9 +1567,10 @@ function getAllTasks(payload) {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const tareasSheet = getSheetOrThrow(ss, "Tareas");
   const data = tareasSheet.getDataRange().getValues().slice(1);
+  const teacherClassrooms = !isAdmin ? getTaskServiceAuthorizedClassrooms(payload) : null;
 
   const filtered = data.filter(r => {
-    if (!isAdmin && String(r[10] || "").trim() !== profesorId) return false;
+    if (!isAdmin && !isTaskServiceTeacherTaskAuthorized_(r, teacherClassrooms, actorId)) return false;
     if (isAdmin && profesorId && String(r[10] || "").trim() !== profesorId) return false;
     return true;
   });
@@ -2415,7 +2429,15 @@ function getSubmissionDocumentPreviewUrl(payload) {
     const taskRow = getSheetOrThrow(ss,"Tareas").getDataRange().getValues().slice(1).find(row => String(row[0]).trim() === String(delivery[1]).trim());
     let allowed = ["Administrador","Desarrollador","Dirección","Secretaría"].indexOf(role) !== -1;
     if (role === "Estudiante" || role === "Alumno") allowed = String(delivery[2]).trim() === actorId;
-    if (role === "Profesor") allowed = !!taskRow && String(taskRow[10] || "").trim() === actorId;
+    if (role === "Profesor") {
+      try {
+        if (!taskRow) throw new Error("Tarea no encontrada.");
+        assertTaskServiceTeacherCanManageTask({ _verifiedRole: role, _verifiedUserId: actorId }, taskRow);
+        allowed = true;
+      } catch (_) {
+        allowed = false;
+      }
+    }
     if (["Padre","Tutor","Responsable"].indexOf(role) !== -1) allowed = getTaskServiceGuardianStudentIds(actorId).indexOf(String(delivery[2]).trim()) !== -1;
     if (!allowed) return { status:"error", code:"AUTH_PERMISSION_DENIED", message:"No tiene autorización sobre el documento solicitado." };
     const file = DriveApp.getFileById(fileId), mimeType = file.getMimeType(), fileName = file.getName(), fileSize = file.getSize();

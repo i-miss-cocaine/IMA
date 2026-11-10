@@ -509,3 +509,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se implementa compensación Drive/Sheets ante fallo y se añaden fixtures locales.
 - CI C1.371 pendiente; BETA-FUNC-014 registra escenario real aislado.
 - Checkpoint C1.371: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice fila C1.371.
+
+
+[2026-11-09] IMA-EXEC-20261109-1739Z-01 — C1.372 / TASK-636 / AUD-NG-371
+- Se exige asignación docente activa en consultas de tareas, actividad y preview; el creador de la tarea no conserva acceso después de expirar su oferta.
+- Se agrega helper común y fixtures de aulas/ofertas vigentes, vencidas e inactivas.
+- CI C1.372 pendiente; BETA-FUNC-015 registra prueba real aislada.
+- Checkpoint C1.372: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice fila C1.372.

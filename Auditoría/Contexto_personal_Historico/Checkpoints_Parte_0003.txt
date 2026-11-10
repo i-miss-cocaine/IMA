@@ -1068,3 +1068,54 @@ Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt �
 Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.371.
 Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
 ===============================================================================
+
+===============================================================================
+## C1.372 — TASK-636 / AUD-NG-371 — vigencia de asignaciones docentes en lecturas
+ID: C1.372
+Sesión: IMA-EXEC-20261109-1739Z-01
+Fecha: 2026-11-09
+Checkpoint anterior válido: C1.371
+Baseline lógico: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD físico de partida: 7a1fe9840a90683c0e869aeb4e90349ea0690e26
+Rama: NG_beta_0.0.0.1_work
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+
+### Auditoría
+- Se revisó el criterio de ámbito docente de TASK-636.
+- AUD-NG-371 se amplía: getStudentTasks, getAllTasks y getTeacherActivity filtraban por task[10] (profesor creador), pero no verificaban que la oferta/aula siguiera activa y asignada. La previsualización de entregas repetía el mismo control parcial.
+- El control activo existía en assertTaskServiceTeacherCanManageTask para mutaciones, pero no se aplicaba a todos los caminos de lectura.
+
+### Implementación
+- Se añade isTaskServiceTeacherTaskAuthorized_ para validar propietario, grado, sección, asignatura, aula activa y lista de aulas/ofertas autorizadas.
+- getStudentTasks, getAllTasks y getTeacherActivity aplican el helper para profesores; administradores conservan su ámbito administrativo.
+- getSubmissionDocumentPreviewUrl exige assertTaskServiceTeacherCanManageTask para profesores.
+- assertTaskServiceTeacherCanManageTask reutiliza getTaskServiceAuthorizedClassrooms.
+- Estados de aula desactivada y asignación activa se normalizan sin sensibilidad a mayúsculas/minúsculas ni espacios finales.
+- Fixtures locales prueban oferta vigente/vencida/inactiva, aula desactivada, sección, propietario y controles de lectura/preview.
+
+### Archivos modificados
+- backend/task-service/Code.gs
+- tests/security/task-service-security-contract.test.js
+- Auditoría/AUDITORIA_TASK-636_C1.305.md
+- pendientes/Otros/Pendientes.md (seguimiento aditivo)
+- beta_test.txt (BETA-FUNC-015)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoria.txt
+- tareas_auditoria.txt
+- changueslogs.txt
+
+### Pruebas y estado
+- C1.371: CI security/backup runs 42725331670/42725331631 pendientes de consulta al iniciar esta iteración.
+- C1.372: fixtures locales agregados; CI pendiente tras publicar.
+- BETA-FUNC-015: Pendiente beta, no bloqueante para implementación local.
+- TASK-636 En ejecución; AUD-NG-371 en revalidación. No se marca Completada.
+
+### Siguiente acción exacta
+Consultar CI C1.372 y los runs C1.371; continuar revisión de los criterios restantes AUD-NG-001/002/306/368, y determinar el alcance exacto de closeAcademicYear sin habilitar operaciones destructivas sin respaldo verificado.
+
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.372.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.372.
+Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
+===============================================================================
