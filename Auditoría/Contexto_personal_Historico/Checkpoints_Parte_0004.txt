@@ -1242,7 +1242,7 @@ Commits principales:
 ### Verificación
 - Parseo local del archivo Apps Script mediante compilación en runtime JavaScript aislado: **PASS** (`new Function(source)`, 94,749 caracteres).
 - Contrato local de comportamiento ejecutado sobre el código actual con fixtures sintéticos y mocks de SpreadsheetApp/PropertiesService: **PASS**. Incluye estudiante propio, suplantación de userId/grado/sección, pregunta propia/ajena, resultado propio/ajeno, tutor vinculado y tutor no vinculado.
-- GitHub Actions run **42866518036** (HEAD de limpieza anterior) y **42866358902** (HEAD anterior con contrato ampliado): **PASS**, ambos jobs `exam-service-security-contract` y `exam-service-departmental-access` completados. El run final de rama **42866518036** precede al último commit de limpieza; la limpieza no altera la lógica, pero el workflow disparado por el último commit `ac9e65c18cdb7a33a9776d0c232d7429ec2ab978` debe confirmarse por separado.
+- GitHub Actions run **42866518036** para el HEAD exacto `ac9e65c18cdb7a33a9776d0c232d7429ec2ab978`: **PASS**, ambos jobs `exam-service-security-contract` y `exam-service-departmental-access` completados. El run **42866358902** también pasó en el HEAD previo con los contratos ampliados.
 - Runs previos fallidos durante la corrección se conservaron como iteraciones; causas: sintaxis residual de funciones con parámetros destructurados, separadores del harness, fixtures y expectativa de grado. Corregidos antes de los PASS citados.
 - Pruebas beta Apps Script/Sheets/Drive y navegador: **NOT RUN**, BETA-FUNC-022 permanece Pendiente beta.
 - No se alteraron datos reales ni se desplegó Apps Script.

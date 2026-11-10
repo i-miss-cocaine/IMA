@@ -1046,6 +1046,6 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 ## SEGUIMIENTO IMA-EXEC-20261110-1740Z-01 — AUD-NG-386 / EXAM
 - Se cierran las rutas IDOR de lectura `getStudentExams`, `getExamQuestions` y `getExamResult` para estudiante: identidad y perfil académico derivados de cuenta firmada; acceso filtrado por ámbito y ResourceOwnership.
 - Padre/Tutor/Responsable acceden solo mediante vínculo familiar vigente en `RelacionesFamiliares` y mapeo de expediente; se conserva fallback de relación legado. El ámbito de acceso se deriva del estudiante vinculado.
-- Contrato local aislado de parseo y comportamiento: PASS. GitHub Actions run 42866518036 y 42866358902: PASS en los dos contratos EXAM. El último commit de limpieza de helper/workflow aún requiere verificar su run propio.
+- Contrato local aislado de parseo y comportamiento: PASS. GitHub Actions run 42866518036 y 42866358902: PASS en los dos contratos EXAM. El run 42866518036 corresponde al HEAD exacto de limpieza ac9e65c18cdb7a33a9776d0c232d7429ec2ab978 y pasó ambos contratos.
 - Beta NOT RUN. `submitExam`, alta de propiedad en `createExam` y mutaciones permanecen pendientes. AUD-NG-386 continúa ABIERTO.
 ===============================================================================
