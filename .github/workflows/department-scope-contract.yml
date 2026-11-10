@@ -12,6 +12,7 @@ on:
       - tests/security/student-payment-voucher-client.test.js
       - tests/security/department-scope-contract.test.js
       - tests/security/departmental-resource-access.test.js
+      - tests/security/academic-student-expediente-ownership.test.js
       - tests/security/accounting-departmental-resource-access.test.js
       - tests/security/resource-ownership-abac.test.js
       - .github/workflows/department-scope-contract.yml
@@ -33,6 +34,8 @@ jobs:
         run: node tests/security/department-scope-contract.test.js
       - name: Run academic departmental resource access contract
         run: node tests/security/departmental-resource-access.test.js
+      - name: Run academic student expediente ownership contract
+        run: node tests/security/academic-student-expediente-ownership.test.js
       - name: Run accounting departmental resource access contract
         run: node tests/security/accounting-departmental-resource-access.test.js
       - name: Run generic resource ownership ABAC contract
