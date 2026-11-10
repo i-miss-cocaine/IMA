@@ -918,3 +918,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - createExam exige identidad firmada y departamento dentro del ámbito verificado; registra ResourceOwnership antes del examen y preguntas, ignora profesorId enviado por cliente y compensa escrituras parciales ante errores capturables.
 - Contratos locales aislados y parseo PASS; GitHub Actions run 42870106305 PASS en ambos contratos EXAM. Run intermedio 42869895990 falló por fixture sin hoja de ámbitos; fixture corregido.
 - BETA-FUNC-022 Pendiente beta. TASK-153 En ejecución; AUD-NG-386 abierto por mutaciones restantes.
+
+[2026-11-10] C1.442 — IMA-EXEC-20261110-1808Z-01 — TASK-153 / AUD-NG-386: corrección de overrides en mutaciones EXAM
+- Se eliminan las declaraciones legacy duplicadas de gradeExamSubmission y deleteExamSubmission que prevalecían sobre los handlers protegidos.
+- El contrato de seguridad exige una única declaración y el guard de autorización correspondiente en updateExamStatus, updateExam, deleteExam, gradeExamSubmission y deleteExamSubmission.
+- Commits: c0bbf6bb26ad1459da40b7759b52b6f61f328b3f (código) y 798553ae147818659d176864b299c608808f9e5d (contrato).
+- Revisión estática y conteo de declaraciones: PASS. Pruebas locales: NOT RUN. CI: sin check visible; no se declara PASS.
+- AUD-NG-386 permanece abierto; TASK-153 En ejecución. BETA-FUNC-022 sigue Pendiente beta.
