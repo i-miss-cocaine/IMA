@@ -2014,36 +2014,117 @@ function getWaitlist(payload) {
 
 function reorderWaitlist(payload) {
   const { esperaId, nuevaPosicion, justificacionManual } = payload || {};
-  if (!esperaId || !nuevaPosicion || !justificacionManual) {
-    throw new Error("esperaId, nuevaPosicion y justificacionManual (mínimo 10 caracteres) son requeridos.");
-  }
+  const waitlistId = String(esperaId || "").trim();
+  const reason = String(justificacionManual || "").trim();
+  const targetPosition = Number(nuevaPosicion);
+  if (!waitlistId || !reason) throw new Error("esperaId, nuevaPosicion y justificacionManual son requeridos.");
+  if (reason.length < 10) throw new Error("Justificación obligatoria requerida: se exigen al menos 10 caracteres.");
+  if (!Number.isSafeInteger(targetPosition) || targetPosition <= 0) throw new Error("WAITLIST_POSITION_INVALID");
 
-  if (String(justificacionManual).trim().length < 10) {
-    throw new Error("Justificación obligatoria requerida: Se exigen al menos 10 caracteres exponiendo el motivo institucional.");
-  }
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "ListaEsperaAdmision");
-  const data = sheet.getDataRange().getValues();
-
-  const idx = data.findIndex(r => String(r[0]).trim() === String(esperaId).trim());
-  if (idx === -1) throw new Error("RESOURCE_NOT_FOUND");
-  const solicitudId = String(data[idx][1] || "").trim();
-  const ctx = getAcademicAdmissionScopeContext_(payload, "reorderWaitlist", solicitudId, "UPDATE");
+  // Validar identidad y permiso antes de resolver IDs o leer datos de espera.
+  const ctx = getAcademicAdmissionScopeContext_(payload, "reorderWaitlist", null, "UPDATE");
   if (!ctx.authorized) throw new Error("RESOURCE_NOT_FOUND");
-  const scopedSheet = getOrCreateSheet(ctx.ss, "ListaEsperaAdmision");
-  const scopedData = scopedSheet.getDataRange().getValues();
-  const scopedIdx = scopedData.findIndex(r => String(r[0] || "").trim() === String(esperaId).trim());
-  if (scopedIdx === -1) throw new Error("RESOURCE_NOT_FOUND");
+  const lock = LockService.getScriptLock();
+  let hasLock = false;
+  try {
+    hasLock = lock.tryLock(10000);
+    if (!hasLock) throw new Error("Servicio ocupado reordenando la lista de espera. Por favor reintente.");
+    const sheet = getOrCreateSheet(ctx.ss, "ListaEsperaAdmision");
+    const lastRow = sheet.getLastRow();
+    if (lastRow < 2) throw new Error("RESOURCE_NOT_FOUND");
+    // Primera lectura mínima: ID de espera y solicitud asociada.
+    const keys = sheet.getRange(2, 1, lastRow - 1, 2).getValues();
+    const matches = keys.map(function(row, index) { return { row: row, index: index }; })
+      .filter(function(item) { return String(item.row[0] || "").trim() === waitlistId; });
+    if (matches.length !== 1) throw new Error("RESOURCE_NOT_FOUND");
+    const targetRowNumber = matches[0].index + 2;
+    const requestId = String(matches[0].row[1] || "").trim();
+    const requestAccess = assertAcademicAdmissionRequestScopeAccess_(
+      ctx.ss, ctx.scope, requestId, null, "UPDATE");
+    if (!requestAccess || requestAccess.authorized !== true) throw new Error("RESOURCE_NOT_FOUND");
+    const allowedRequestIds = getAuthorizedAdmissionRequestIds_(ctx.ss, ctx.scope, null, "UPDATE");
+    if (!allowedRequestIds.has(requestId)) throw new Error("RESOURCE_NOT_FOUND");
 
-  scopedSheet.getRange(scopedIdx + 1, 5).setValue(nuevaPosicion);
-  scopedSheet.getRange(scopedIdx + 1, 10).setValue("[Reordenamiento Manual]: " + justificacionManual);
-  scopedSheet.getRange(scopedIdx + 1, 12).setValue(new Date());
+    const targetMeta = sheet.getRange(targetRowNumber, 3, 1, 3).getValues()[0];
+    const anolectivo = String(targetMeta[0] || "").trim();
+    const grado = String(targetMeta[1] || "").trim();
+    const estado = String(sheet.getRange(targetRowNumber, 8).getValues()[0][0] || "").trim();
+    if (estado !== "En_Espera") throw new Error("RESOURCE_CONFLICT_WAITLIST_STATE");
+    const currentPosition = Number(targetMeta[2]);
+    const targetJustification = String(sheet.getRange(targetRowNumber, 10).getValues()[0][0] || "").trim();
 
-  const actorUserId = String(ctx.actor.userId).trim();
-  logStructuredEvent("ACADEMIC", "reorderWaitlist", "WARN", "WAITLIST_REORDERED", "Posición de " + esperaId + " ajustada manualmente a " + nuevaPosicion, { esperaId: esperaId, nuevaPosicion: nuevaPosicion, justificacionManual: justificacionManual }, ctx.actor.role);
+    // Consultar metadatos de posición solo para solicitudes que el actor puede actualizar.
+    const group = [];
+    keys.forEach(function(keyRow, index) {
+      const rowRequestId = String(keyRow[1] || "").trim();
+      if (!rowRequestId || !allowedRequestIds.has(rowRequestId)) return;
+      const rowNumber = index + 2;
+      const meta = sheet.getRange(rowNumber, 3, 1, 3).getValues()[0];
+      const rowStatus = String(sheet.getRange(rowNumber, 8).getValues()[0][0] || "").trim();
+      if (String(meta[0] || "").trim() !== anolectivo || String(meta[1] || "").trim() !== grado || rowStatus !== "En_Espera") return;
+      const createdAt = sheet.getRange(rowNumber, 11).getValues()[0][0];
+      group.push({ rowNumber: rowNumber, esperaId: String(keyRow[0] || "").trim(),
+        requestId: rowRequestId, position: Number(meta[2]), createdAt: createdAt });
+    });
+    if (!group.length || !group.some(function(item) { return item.rowNumber === targetRowNumber; })) {
+      throw new Error("RESOURCE_NOT_FOUND");
+    }
+    if (!Number.isSafeInteger(targetPosition) || targetPosition > group.length) {
+      throw new Error("WAITLIST_POSITION_OUT_OF_RANGE");
+    }
+    group.sort(function(a, b) {
+      const pa = Number.isFinite(a.position) ? a.position : Number.MAX_SAFE_INTEGER;
+      const pb = Number.isFinite(b.position) ? b.position : Number.MAX_SAFE_INTEGER;
+      if (pa !== pb) return pa - pb;
+      const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return ta - tb || a.rowNumber - b.rowNumber;
+    });
+    const targetIndex = group.findIndex(function(item) { return item.rowNumber === targetRowNumber; });
+    const reordered = group.slice();
+    const moved = reordered.splice(targetIndex, 1)[0];
+    reordered.splice(targetPosition - 1, 0, moved);
+    const now = new Date();
+    const newJustification = (targetJustification ? targetJustification + " | " : "") +
+      "[Reordenamiento Manual " + now.toISOString() + "]: " + reason;
 
-  return { status: "success", message: `Posición reordenada a ${nuevaPosicion} con trazabilidad registrada.` };
+    const changed = reordered.filter(function(item, index) { return Number(item.position) !== index + 1; });
+    const applied = [];
+    try {
+      changed.forEach(function(item) {
+        const oldPosition = item.position;
+        const newPosition = reordered.indexOf(item) + 1;
+        sheet.getRange(item.rowNumber, 5).setValue(newPosition);
+        applied.push({ rowNumber: item.rowNumber, oldPosition: oldPosition });
+      });
+      sheet.getRange(targetRowNumber, 10, 1, 3).setValues([[newJustification,
+        sheet.getRange(targetRowNumber, 11).getValues()[0][0], now]]);
+    } catch (writeError) {
+      let rollbackFailed = false;
+      for (let i = applied.length - 1; i >= 0; i--) {
+        try { sheet.getRange(applied[i].rowNumber, 5).setValue(applied[i].oldPosition); }
+        catch (_) { rollbackFailed = true; }
+      }
+      if (rollbackFailed) {
+        try { logStructuredEvent("ACADEMIC", "reorderWaitlist", "ERROR", "WAITLIST_REORDER_COMPENSATION_FAILED",
+          "Falló la compensación de posiciones después de un error al reordenar la lista.",
+          { esperaId: waitlistId, solicitudId: requestId, targetPosition: targetPosition }, ctx.actor.role); } catch (_) {}
+      }
+      throw new Error("WAITLIST_REORDER_WRITE_FAILED");
+    }
+    try {
+      logStructuredEvent("ACADEMIC", "reorderWaitlist", "WARN", "WAITLIST_REORDERED",
+        "Posición de " + waitlistId + " ajustada manualmente a " + targetPosition,
+        { esperaId: waitlistId, solicitudId: requestId, anolectivo: anolectivo, grado: grado,
+          posicionAnterior: currentPosition, nuevaPosicion: targetPosition, justificacionManual: reason }, ctx.actor.role);
+    } catch (_) {}
+    return { status: "success", esperaId: waitlistId, nuevaPosicion: targetPosition,
+      message: "Posición reordenada a " + targetPosition + " con trazabilidad registrada." };
+  } finally {
+    if (hasLock) {
+      try { lock.releaseLock(); } catch (_) {}
+    }
+  }
 }
 
 function offerWaitlistSlot(payload) {
