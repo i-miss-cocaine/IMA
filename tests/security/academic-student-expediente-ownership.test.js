@@ -347,11 +347,13 @@ console.log("ACADEMIC admission conversion duplicate expediente ownership contra
 // Admission conversion compensates every write when a downstream movement write fails.
 {
   function mutableSheet(rows, failAppend) {
+    let shouldFailAppend = failAppend === true;
     return {
       rows: rows.map(row=>row.slice()),
       getLastRow(){return this.rows.length;},
       getDataRange(){const self=this;return {getValues(){return self.rows.map(row=>row.slice());}};},
-      appendRow(row){if(failAppend)throw Error("INJECTED_MOVEMENT_FAILURE");this.rows.push(row.slice());},
+      setFailAppend(value){shouldFailAppend = value === true;},
+      appendRow(row){if(shouldFailAppend)throw Error("INJECTED_MOVEMENT_FAILURE");this.rows.push(row.slice());},
       deleteRow(row){this.rows.splice(row-1,1);},
       getRange(row,col,numRows,numCols){
         const self=this;
@@ -407,8 +409,23 @@ console.log("ACADEMIC admission conversion duplicate expediente ownership contra
   assert.equal(sheets.Matriculas.rows.length,1,"new enrollment must be removed");
   assert.equal(sheets.CargosEstudiante.rows.length,1,"new enrollment charge must be removed");
   assert.equal(sheets.MovimientosEstudiante.rows.length,1,"failed movement must not persist");
+
+  // The same fixture must complete once the injected downstream failure is removed.
+  // This exercises the real conversion order: enrollment ID first, then charge reference.
+  sheets.MovimientosEstudiante.setFailAppend(false);
+  const converted=context.run({solicitudId:"ADM-ROLLBACK"});
+  assert.equal(converted.status,"success","admission conversion must complete after the downstream dependency recovers");
+  assert.ok(converted.matriculaId,"successful conversion must return its enrollment ID");
+  assert.ok(converted.cargoId,"successful conversion must return the exact admission charge ID");
+  assert.equal(sheets.CargosEstudiante.rows.length,2,"successful conversion must persist exactly one admission charge");
+  assert.equal(sheets.CargosEstudiante.rows[0][9],"ReferenciaOrigen","admission conversion must add the origin reference header");
+  assert.equal(sheets.CargosEstudiante.rows[1][0],converted.cargoId,"returned charge ID must identify the inserted charge");
+  assert.equal(sheets.CargosEstudiante.rows[1][9],"ADMISION|ADM-ROLLBACK|"+converted.matriculaId,
+    "charge origin must reference the resolved enrollment ID");
+  assert.equal(sheets.SolicitudesAdmision.rows[1][11],"Convertida","successful conversion must update the request state");
+  assert.equal(sheets.MovimientosEstudiante.rows.length,2,"successful conversion must persist its ingress movement");
 }
-console.log("ACADEMIC admission conversion compensation contract passed.");
+console.log("ACADEMIC admission conversion compensation and success contracts passed.");
 
 
 // Admission conversion retries may reuse only records created by the same request.
@@ -601,13 +618,16 @@ console.log("ACADEMIC converted admission reconciliation contract passed.");
   assert.equal(first.sheet.rows.length,2,"admission charge must be inserted once");
   assert.equal(first.sheet.rows[0][9],"ReferenciaOrigen","legacy sheet header must be extended");
   assert.equal(first.sheet.rows[1][9],"ADMISION|ADM-1|MAT-1","new charge must carry exact request/enrollment reference");
+  assert.equal(first.result.cargoId,first.sheet.rows[1][0],"charge registration must return the inserted CargoID");
   const retry=registerCharge(first.sheet.rows,"ADMISION|ADM-1|MAT-1",1500);
   assert.equal(retry.sheet.rows.length,2,"exact retry must reuse its charge without inserting a duplicate");
+  assert.equal(retry.result.cargoId,first.result.cargoId,"exact retry must return the reused CargoID");
   assert.throws(()=>registerCharge([emptyHeader[0],["CRG-OLD",new Date(),"STU-1","Matrícula Ordinaria 2026",1500,0,1500,"Pendiente",""]],"ADMISION|ADM-1|MAT-1",1500),
     /ADMISSION_CHARGE_CONFLICT/,"unmarked active charge must block admission charge creation");
   assert.throws(()=>registerCharge([emptyHeader[0],linked],"ADMISION|ADM-1|MAT-1",1600),
     /ADMISSION_CHARGE_CONFLICT/,"same reference with changed amount must fail closed");
   const ordinary=registerCharge(emptyHeader,"",1500);
+  assert.equal(ordinary.result.cargoId,"","ordinary enrollment must not claim an admission CargoID");
   assert.equal(ordinary.sheet.rows[1].length,9,"ordinary charges must preserve the legacy nine-column row shape");
   assert.equal(ordinary.sheet.rows[0].length,9,"ordinary enrollment must not trigger admission-reference schema migration");
   const voided=registerCharge([emptyHeader[0],["CRG-VOID",new Date(),"STU-1","Matrícula Ordinaria 2026",1500,0,1500,"ANULADO",""]],"ADMISION|ADM-1|MAT-1",1500);
