@@ -2984,3 +2984,12 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - Se validan respuestas como arreglo, IDs de pregunta pertenecientes al examen y ausencia de IDs duplicados. Se aplica `IntentosPermitidos` con default 1 y se bloquean reintentos agotados.
 - Parseo local y contrato aislado de envío: PASS. GitHub Actions run 42867761346 PASS en contratos EXAM. Beta BETA-FUNC-022 sigue Pendiente beta.
 - **Estado:** TASK-153 En ejecución; AUD-NG-386 abierto. Alta de ownership en createExam y mutaciones EXAM siguen pendientes.
+
+
+## 10.99 TASK-153 / AUD-NG-386 — protección de createExam (C1.441)
+
+- `createExam` exige identidad firmada, ámbito departamental activo y departamento perteneciente a las asignaciones verificadas. Si existe una única asignación departamental se resuelve sin confiar en el payload; con varias se exige selección explícita autorizada. Un ámbito institucional sin departamento asignado no habilita selección arbitraria.
+- La escritura exige esquema canónico de `ResourceOwnership`; registra ownership antes de examen/preguntas bajo ScriptLock y compensa las filas de las tres hojas ante errores capturables. Si falla el rollback devuelve error explícito.
+- Contratos locales aislados de creación, suplantación, ámbito no autorizado, esquema inválido y rollback: PASS. Parseo local: PASS. GitHub Actions run 42870106305, HEAD exacto b497635b5cb6ea742361bbd847571c75a961c1a3: PASS en ambos contratos EXAM.
+- Limitación: Sheets no ofrece transacción multihoja; una terminación abrupta entre escrituras no puede garantizarse solo con catch/rollback. No se desplegó ni se probaron servicios reales; BETA-FUNC-022 sigue Pendiente beta.
+- **Estado:** subalcance createExam completado; TASK-153 En ejecución y AUD-NG-386 abierto. Mutaciones update/status/delete/grade/deleteSubmission pendientes.
