@@ -2025,7 +2025,7 @@ Endurecer `resolveAdmissionDuplicate` dentro de TASK-153 / AUD-NG-386 para evita
 - Actor y rol de auditoría proceden de `ctx.actor` verificado.
 
 ### Verificación local
-- GitHub Actions run `42893612257`: SUCCESS, Node 24. URL: https://github.com/i-miss-cocaine/IMA/actions/runs/42892900933
+- GitHub Actions run `42893612257`: SUCCESS, Node 24. URL: https://github.com/i-miss-cocaine/IMA/actions/runs/42893612257
 - `academic-admission-ownership.test.js`: PASS para contratos previos y nuevos de duplicados; tres resoluciones, doble decisión, rol no directivo, rol directivo acentuado `Secretaría`, solicitud sin ownership, destino sin ownership, destino de otro departamento, lock contencioso, revalidación bajo lock y fallo de historial.
 - `department-scope-contract.test.js`, `departmental-resource-access.test.js`, `academic-student-expediente-ownership.test.js`, `accounting-departmental-resource-access.test.js`, `resource-ownership-abac.test.js` y `student-payment-voucher-client.test.js`: PASS.
 - `node --check` de servicios Apps Script y sintaxis de `js/student.js`: PASS.
