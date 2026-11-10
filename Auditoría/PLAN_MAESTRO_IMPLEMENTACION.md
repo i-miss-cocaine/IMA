@@ -2746,3 +2746,39 @@ Se requiere una resolución institucional aprobada y, para cualquier perfilado d
 - F29-TASK05↔F29-TASK17 conserva su ciclo PM-00 y no se considera resuelto por esta investigación.
 
 **Estado C1.410:** investigación externa y plan de decisión documentados; no es cierre de T153-S01 ni autorización de implementación.
+
+
+## 10.82. PM-01 — regla obligatoria de asignación de autoridad por roles configurables (C1.411)
+
+### 10.82.1 Decisión de diseño incorporada
+Se registra a solicitud del usuario una regla transversal: **toda asignación de responsabilidad y autoridad sobre antecedentes, expedientes, documentos y procesos se define por roles funcionales configurables desde la plataforma; no por nombres personales estáticos**. El organigrama funcional representa roles/puestos y relaciones, nunca titulares nominales.
+
+La plataforma debe permitir configurar catálogo de roles/capacidades, ámbito institucional y departamental, membresías con vigencia, matriz de operaciones por clase de recurso, responsables funcionales, custodios, aprobadores, firmantes, suplencias y delegaciones temporales. Los workflows se dirigen al rol; el motor resuelve el ocupante vigente al momento de la acción.
+
+### 10.82.2 Distinción crítica de identidad y responsabilidad
+La regla no elimina autenticación ni trazabilidad individual. IMA debe conservar en auditoría protegida la identidad autenticada del actor y el rol/ámbito efectivo bajo el que actuó, mientras que las reglas de autoridad y la configuración institucional no se codifican por nombre personal. La identidad histórica de quien actuó no es una asignación permanente ni debe convertirse en clave de autorización.
+
+### 10.82.3 Requisitos funcionales mínimos
+1. CRUD administrativo autorizado de roles y capacidades, con versionado.
+2. Asignación/revocación de usuarios a roles por tenant/unidad y periodo efectivo.
+3. Matriz rol × tipo de antecedente/documento × operación × ámbito.
+4. Resolución dinámica de ocupante para aprobaciones, firmas, certificaciones y custodia.
+5. Delegación/suplencia temporal, con motivo, otorgante, alcance, vencimiento y revocación.
+6. Segregación de funciones y prohibición de autoasignación de autoridad superior.
+7. Denegación por defecto cuando falta ocupante, membresía, ámbito o política.
+8. Historial inmutable/auditable de cambios de configuración y de acciones ejecutadas.
+
+### 10.82.4 Pruebas requeridas antes de implementación
+- Sustitución de ocupante sin reescritura de antecedentes/documentos históricos.
+- Revocación y expiración de asignación, incluyendo sesiones/tokens conforme al control de identidad.
+- Aprobación atribuida al rol y al actor autenticado real.
+- Bloqueo por ausencia de ocupante elegible.
+- Rechazo de autoasignación y combinaciones incompatibles.
+- No escalamiento horizontal/vertical entre unidades ni tenants.
+- Búsqueda, lectura, descarga, exportación, firma y endpoints directos respetan la matriz.
+- Ausencia de nombres personales hardcodeados en reglas, código, plantillas o workflows.
+
+### 10.82.5 Dependencias y límites
+Esta regla se incorpora como requisito normativo/arquitectónico para la futura matriz de autorización. No resuelve quién tiene autoridad institucional para aprobar el organigrama ni qué catálogo de departamentos es canónico; por ello T153-S01 conserva su bloqueo hasta evidencia formal. No se adelantan T153-S02…S08 ni TASK-696. No se modifican datos, esquemas, código, permisos ni asignaciones productivas. Las pruebas anteriores quedan planificadas, no ejecutadas.
+
+**Resultado C1.411:** regla de responsabilidad/autoridad por roles configurables registrada en normativa propuesta y Plan Maestro; pendiente ratificación institucional y planificación de implementación según dependencias.
