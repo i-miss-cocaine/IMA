@@ -738,3 +738,10 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - **Estado:** Abierto; TASK-696 Bloqueada y no elegible hasta resolver las dependencias PM-01 y el orden topológico.
 - **Pruebas:** inspección estática focalizada; pruebas unitarias/contrato/HTTP/E2E/Apps Script/Sheets/Drive y fixtures multi-tenant no ejecutadas.
 ===============================================================================
+
+
+### TASK-153 — seguimiento C1.465
+- USER: `generateSignatureAuditCertificate` exige permiso e identidad verificada, lock, ownership READ antes de lectura detallada y coincidencia exacta de solicitud/documento; referencias ambiguas o transactionId discordante se rechazan.
+- Se eliminan valores probatorios inventados (IP loopback, timestamps, hashes y metadatos por defecto, estado final, entidad emisora y marco legal); el resumen no afirma validez criptográfica.
+- Contratos locales focalizados y parseo PASS. Suite completa/CI no ejecutados; despliegue y pruebas beta pendientes.
+- TASK-153 continúa En ejecución; AUD-NG-386 abierto. Próximo subalcance: recursos institucionales y solicitudes de firma restantes.

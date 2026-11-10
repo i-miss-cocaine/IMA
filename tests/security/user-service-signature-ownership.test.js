@@ -297,3 +297,91 @@ function makeManualSignatureHarness(options = {}) {
 }
 
 console.log("USER manual conformity signer identity, ownership, idempotency and lock contracts: PASS");
+
+function makeAuditCertificateHarness(options = {}) {
+  const rows = [
+    ["FirmaID","SolicitudID","DocumentoID","FirmanteID","RolFirmante","TipoFirma","TokenVerificacion","FechaFirma","IPOrigen","DocumentoHash","SignatureHash"],
+    ["SIG-1","SOL-1","DOC-1","U-1","Director","Conformidad manual","TOK-1","2026-11-10T10:00:00Z","10.0.0.1","HASH-DOC","HASH-SIG-1"],
+    ["SIG-2","SOL-1","DOC-2","U-2","Secretaría","Conformidad manual","TOK-2","2026-11-10T11:00:00Z","10.0.0.2","HASH-DOC-2","HASH-SIG-2"],
+    ["SIG-3","SOL-2","DOC-1","U-3","Director","Conformidad manual","TOK-3","","","",""]
+  ];
+  const state = { held:false, fullReads:0, keyReads:0, releases:0, scopes:[], events:[] };
+  const sheet = {
+    getLastRow:()=>rows.length,
+    getRange:(row,col,numRows,numCols)=>({getValues:()=>{state.keyReads++;return rows.slice(row-1,row-1+numRows).map(r=>r.slice(col-1,col-1+numCols));}}),
+    getDataRange:()=>({getValues:()=>{assert.equal(state.held,true);state.fullReads++;return rows.map(r=>r.slice());}})
+  };
+  const context = {
+    validateRolePermission:(action)=>{assert.equal(action,"generateSignatureAuditCertificate");return {authorized:options.permission!==false};},
+    getUserVerifiedRole:payload=>{if(options.identity===false)return "NO_ACCESS";payload._verifiedUserId="ACTOR-1";return "Director";},
+    LockService:{getScriptLock:()=>({tryLock:()=>{if(options.lock===false)return false;state.held=true;return true;},
+      releaseLock:()=>{assert.equal(state.held,true);state.held=false;state.releases++;}})},
+    SpreadsheetApp:{openById:()=>{assert.equal(state.held,true);return {getSheetByName:name=>{assert.equal(name,"FirmasConformidades");return sheet;}};}},
+    SPREADSHEET_ID:"SHEET",
+    getOrCreateSheet:(_ss,name)=>{assert.equal(name,"FirmasConformidades");return sheet;},
+    assertAdvancedSignatureDocumentScope_:(_payload,_ss,doc,req,op)=>{
+      state.scopes.push({doc,req,op});
+      return options.owner===false?{authorized:false,code:"RESOURCE_SCOPE_DENIED"}:
+        {authorized:true,documentId:doc,solicitudId:req||"SOL-1",departmentId:"D1",role:"Director"};
+    },
+    computeDocumentSHA256:value=>"HASH-CERT:"+value,
+    logStructuredEvent:(_s,_a,_l,code,_m,data)=>state.events.push({code,data}),
+    Date
+  };
+  vm.runInNewContext(extractFunction("generateSignatureAuditCertificate"),context);
+  return {run:payload=>context.generateSignatureAuditCertificate(payload),state};
+}
+
+{
+  const valid=makeAuditCertificateHarness();
+  const certificate=valid.run({documentoId:"DOC-1",solicitudId:"SOL-1"});
+  assert.equal(certificate.totalFirmantes,1,"certificate must include only the exact request/document pair");
+  assert.equal(certificate.pistaAuditoriaFirmantes[0].firmaId,"SIG-1");
+  assert.equal(certificate.pistaAuditoriaFirmantes[0].tokenVerificacion,undefined,"verification tokens must not be exposed");
+  assert.equal(valid.state.scopes[0].op,"READ");
+  assert.equal(valid.state.fullReads,1);
+  assert.equal(valid.state.releases,1);
+  assert.equal(valid.state.events[0].code,"SIGNATURE_AUDIT_CERTIFICATE_VIEWED");
+
+  const documentOnly=makeAuditCertificateHarness();
+  assert.equal(documentOnly.run({documentoId:"DOC-1"}).solicitudId,"SOL-1");
+
+  const ambiguous=makeAuditCertificateHarness();
+  assert.throws(()=>ambiguous.run({solicitudId:"SOL-1"}),/RESOURCE_REFERENCE_AMBIGUOUS/);
+  assert.equal(ambiguous.state.fullReads,0);
+
+  const transaction=makeAuditCertificateHarness();
+  const transactionCertificate=transaction.run({transactionId:"TOK-3"});
+  assert.equal(transactionCertificate.solicitudId,"SOL-2");
+  assert.equal(transactionCertificate.totalFirmantes,1);
+
+  const mismatch=makeAuditCertificateHarness();
+  assert.throws(()=>mismatch.run({documentoId:"DOC-1",solicitudId:"SOL-1",transactionId:"TOK-3"}),/SIGNATURE_TRANSACTION_NOT_FOUND/);
+
+  const denied=makeAuditCertificateHarness({owner:false});
+  assert.throws(()=>denied.run({documentoId:"DOC-1",solicitudId:"SOL-1"}),/RESOURCE_SCOPE_DENIED/);
+  assert.equal(denied.state.fullReads,0,"private signature rows must not be read before ownership succeeds");
+  assert.equal(denied.state.releases,1);
+
+  const noPermission=makeAuditCertificateHarness({permission:false});
+  assert.throws(()=>noPermission.run({documentoId:"DOC-1"}),/AUTH_PERMISSION_DENIED/);
+  assert.equal(noPermission.state.releases,0);
+
+  const noIdentity=makeAuditCertificateHarness({identity:false});
+  assert.throws(()=>noIdentity.run({documentoId:"DOC-1"}),/VERIFIED_IDENTITY_REQUIRED/);
+  assert.equal(noIdentity.state.releases,0);
+
+  const busy=makeAuditCertificateHarness({lock:false});
+  assert.throws(()=>busy.run({documentoId:"DOC-1"}),/Servicio ocupado/);
+  assert.equal(busy.state.fullReads,0);
+  assert.equal(busy.state.releases,0);
+
+  const noEvidence=makeAuditCertificateHarness();
+  const noEvidenceCertificate=noEvidence.run({transactionId:"TOK-3"});
+  assert.equal(noEvidenceCertificate.documentoOriginalSHA256,null);
+  assert.equal(noEvidenceCertificate.pistaAuditoriaFirmantes[0].timestampUTC,null);
+  assert.equal(noEvidenceCertificate.pistaAuditoriaFirmantes[0].ipOrigen,null);
+  assert.equal(noEvidenceCertificate.pistaAuditoriaFirmantes[0].signatureHash,null);
+}
+
+console.log("USER signature audit certificate identity, ownership, isolation, evidence and lock contracts: PASS");

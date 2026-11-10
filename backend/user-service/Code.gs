@@ -7349,103 +7349,156 @@ function registerDocumentSignature(payload) {
 }
 function generateSignatureAuditCertificate(payload) {
   const { solicitudId, documentoId, transactionId } = payload || {};
-  if (!solicitudId && !documentoId && !transactionId) {
+  const requestedSolicitudId = String(solicitudId || "").trim();
+  const requestedDocumentId = String(documentoId || "").trim();
+  const requestedTransactionId = String(transactionId || "").trim();
+  if (!requestedSolicitudId && !requestedDocumentId && !requestedTransactionId) {
     throw new Error("solicitudId, documentoId o transactionId es requerido para generar el certificado de auditoría.");
   }
 
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const firmSheet = getOrCreateSheet(ss, "FirmasConformidades");
-  const firmData = firmSheet.getDataRange().getValues();
+  const permission = validateRolePermission("generateSignatureAuditCertificate", payload);
+  if (!permission || permission.authorized !== true) throw new Error("AUTH_PERMISSION_DENIED");
+  const actorRole = getUserVerifiedRole(payload);
+  const actorUserId = String((payload && payload._verifiedUserId) || "").trim();
+  if (!actorUserId || !actorRole || actorRole === "NO_ACCESS") throw new Error("VERIFIED_IDENTITY_REQUIRED");
 
-  // Filtrar firmas relacionadas a la transacción
-  const matches = firmData.slice(1).filter(r => {
-    if (solicitudId && String(r[1]).trim() === String(solicitudId).trim()) return true;
-    if (documentoId && String(r[2]).trim() === String(documentoId).trim()) return true;
-    if (transactionId && (String(r[0]).trim() === String(transactionId).trim() || String(r[6]).trim() === String(transactionId).trim())) return true;
-    return false;
-  });
+  const lock = LockService.getScriptLock();
+  let hasLock = false;
+  try {
+    hasLock = lock.tryLock(10000);
+    if (!hasLock) throw new Error("Servicio ocupado generando el certificado de auditoría. Por favor reintente.");
 
-  if (matches.length === 0) {
-    throw new Error("NO_SIGNATURES_FOUND: No se encontraron registros de firmas o conformidades para la transacción especificada.");
-  }
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const firmSheet = getOrCreateSheet(ss, "FirmasConformidades");
+    let resolvedDocumentId = requestedDocumentId;
+    let resolvedSolicitudId = requestedSolicitudId;
+    let keyRows = null;
 
-  // Obtener metadatos de la solicitud si existe
-  let solicitudMeta = null;
-  const solSheet = getOrCreateSheet(ss, "SolicitudesTramites");
-  const solData = solSheet.getDataRange().getValues();
-  const solRow = solData.slice(1).find(r => (solicitudId && String(r[0]).trim() === String(solicitudId).trim()) || (matches[0] && String(r[0]).trim() === String(matches[0][1]).trim()));
-
-  if (solRow) {
-    solicitudMeta = {
-      solicitudId: solRow[0],
-      solicitanteId: solRow[1],
-      estudianteId: solRow[2],
-      tipoTramite: solRow[3],
-      descripcion: solRow[4],
-      estadoSolicitud: solRow[6]
+    const readSignatureKeys = function() {
+      if (keyRows !== null) return keyRows;
+      const lastRow = firmSheet.getLastRow();
+      if (lastRow <= 1) {
+        keyRows = [];
+        return keyRows;
+      }
+      keyRows = firmSheet.getRange(2, 1, lastRow - 1, 7).getValues();
+      return keyRows;
     };
-  }
 
-  // Recopilar información de los firmantes secuenciales
-  const certId = "CERT-AUDIT-" + Date.now();
-  const now = new Date();
-  const nowUTC = now.toISOString();
+    if (!resolvedDocumentId) {
+      const candidates = readSignatureKeys().filter(function(row) {
+        const matchesRequest = !resolvedSolicitudId || String(row[1] || "").trim() === resolvedSolicitudId;
+        const matchesTransaction = !requestedTransactionId ||
+          String(row[0] || "").trim() === requestedTransactionId ||
+          String(row[6] || "").trim() === requestedTransactionId;
+        return matchesRequest && matchesTransaction;
+      });
+      const pairs = {};
+      candidates.forEach(function(row) {
+        const docId = String(row[2] || "").trim();
+        const reqId = String(row[1] || "").trim();
+        if (docId && reqId) pairs[reqId + "\u0000" + docId] = { solicitudId: reqId, documentoId: docId };
+      });
+      const resolvedPairs = Object.keys(pairs).map(function(key) { return pairs[key]; });
+      if (resolvedPairs.length !== 1) {
+        throw new Error(resolvedPairs.length > 1 ? "RESOURCE_REFERENCE_AMBIGUOUS" : "NO_SIGNATURES_FOUND");
+      }
+      resolvedDocumentId = resolvedPairs[0].documentoId;
+      resolvedSolicitudId = resolvedPairs[0].solicitudId;
+    }
 
-  // Helper cálculo hora Honduras GMT-6
-  const getHondurasTime = function(isoStr) {
-    const d = isoStr ? new Date(isoStr) : new Date();
-    const utc = d.getTime() + (d.getTimezoneOffset() * 60000);
-    const hn = new Date(utc - (3600000 * 6));
-    return hn.toISOString().replace("T", " ").substring(0, 19) + " (GMT-6)";
-  };
+    const documentAccess = assertAdvancedSignatureDocumentScope_(
+      payload, ss, resolvedDocumentId, resolvedSolicitudId, "READ"
+    );
+    if (!documentAccess || documentAccess.authorized !== true) {
+      throw new Error(documentAccess && documentAccess.code || "RESOURCE_SCOPE_DENIED");
+    }
+    resolvedDocumentId = String(documentAccess.documentId || "").trim();
+    resolvedSolicitudId = String(documentAccess.solicitudId || resolvedSolicitudId || "").trim();
 
-  const docHashOriginal = matches[0][9] || computeDocumentSHA256((solicitudMeta ? solicitudMeta.solicitudId : "") + "|" + (matches[0][2] || ""));
+    if (!resolvedDocumentId) throw new Error("RESOURCE_NOT_FOUND");
+    if (!resolvedSolicitudId) {
+      const candidates = readSignatureKeys().filter(function(row) {
+        const matchesDocument = String(row[2] || "").trim() === resolvedDocumentId;
+        const matchesTransaction = !requestedTransactionId ||
+          String(row[0] || "").trim() === requestedTransactionId ||
+          String(row[6] || "").trim() === requestedTransactionId;
+        return matchesDocument && matchesTransaction;
+      });
+      const requestIds = Array.from(new Set(candidates.map(function(row) {
+        return String(row[1] || "").trim();
+      }).filter(Boolean)));
+      if (requestIds.length !== 1) {
+        throw new Error(requestIds.length > 1 ? "RESOURCE_REFERENCE_AMBIGUOUS" : "NO_SIGNATURES_FOUND");
+      }
+      resolvedSolicitudId = requestIds[0];
+    }
 
-  const firmantesAudit = matches.map((r, idx) => {
-    const fechaISO = r[7] ? new Date(r[7]).toISOString() : nowUTC;
-    return {
-      ordenFirma: idx + 1,
-      firmaId: r[0],
-      firmanteId: r[3],
-      rolFirmante: r[4] || "Autoridad Institucional",
-      tipoMecanismo: r[5] || "Conformidad Digital Institucional",
-      tokenVerificacion: r[6],
-      timestampUTC: fechaISO,
-      timestampHondurasGMT6: getHondurasTime(fechaISO),
-      ipOrigen: r[8] || "127.0.0.1",
-      documentoHashVinculado: r[9] || docHashOriginal,
-      signatureHash: r[10] || computeDocumentSHA256(r[0] + "|" + r[3] + "|" + fechaISO)
+    const firmData = firmSheet.getDataRange().getValues();
+    const matches = firmData.slice(1).filter(function(row) {
+      return String(row[1] || "").trim() === resolvedSolicitudId &&
+        String(row[2] || "").trim() === resolvedDocumentId;
+    });
+    if (matches.length === 0) throw new Error("NO_SIGNATURES_FOUND");
+    if (requestedTransactionId && !matches.some(function(row) {
+      return String(row[0] || "").trim() === requestedTransactionId ||
+        String(row[6] || "").trim() === requestedTransactionId;
+    })) {
+      throw new Error("SIGNATURE_TRANSACTION_NOT_FOUND");
+    }
+
+    const documentHashes = Array.from(new Set(matches.map(function(row) {
+      return String(row[9] || "").trim();
+    }).filter(Boolean)));
+    if (documentHashes.length > 1) throw new Error("SIGNATURE_DOCUMENT_HASH_CONFLICT");
+
+    const issuedAt = new Date().toISOString();
+    const auditSigners = matches.map(function(row) {
+      let timestampUTC = null;
+      if (row[7]) {
+        const parsedDate = new Date(row[7]);
+        if (!Number.isNaN(parsedDate.getTime())) timestampUTC = parsedDate.toISOString();
+      }
+      return {
+        firmaId: row[0] || null,
+        firmanteId: row[3] || null,
+        rolFirmante: row[4] || null,
+        tipoMecanismo: row[5] || null,
+        timestampUTC: timestampUTC,
+        ipOrigen: row[8] || null,
+        documentoHashVinculado: row[9] || null,
+        signatureHash: row[10] || null
+      };
+    });
+
+    const certificate = {
+      status: "success",
+      certificadoId: "CERT-AUDIT-" + Date.now(),
+      solicitudId: resolvedSolicitudId,
+      documentoId: resolvedDocumentId,
+      documentoOriginalSHA256: documentHashes.length === 1 ? documentHashes[0] : null,
+      fechaEmisionUTC: issuedAt,
+      totalFirmantes: auditSigners.length,
+      pistaAuditoriaFirmantes: auditSigners,
+      message: "Resumen de registros de conformidad. No acredita por sí mismo la validez criptográfica de una firma."
     };
-  });
+    certificate.certificadoIntegridadSHA256 = computeDocumentSHA256(JSON.stringify(certificate));
 
-  const targetDocId = matches[0][2] || (solicitudMeta ? solicitudMeta.solicitudId : "DOC-GENERICO");
-  const estadoFinalProceso = (solicitudMeta && solicitudMeta.estadoSolicitud === "Rechazada") ? "Rechazado" : "CompletadoConExito";
-
-  // Huella inmutable SHA-256 del certificado probatorio completo
-  const certificadoDigestData = certId + "|" + targetDocId + "|" + docHashOriginal + "|" + JSON.stringify(firmantesAudit) + "|" + nowUTC;
-  const certificadoSHA256 = computeDocumentSHA256(certificadoDigestData);
-
-  const certificado = {
-    status: "success",
-    certificadoId: certId,
-    transaccionId: matches[0][1] || matches[0][0],
-    documentoId: targetDocId,
-    tipoDocumento: solicitudMeta ? solicitudMeta.tipoTramite : "Documento Escolar Institucional",
-    documentoOriginalSHA256: docHashOriginal,
-    certificadoIntegridadSHA256: certificadoSHA256,
-    estadoTransaccion: estadoFinalProceso,
-    fechaEmisionUTC: nowUTC,
-    fechaEmisionHonduras: getHondurasTime(nowUTC),
-    entidadEmisora: "New Generation Bilingual School and Institute",
-    marcoLegalNormativo: "Decreto Legislativo No. 149-2013 y Acuerdo Ejecutivo No. 41-2014 (Honduras)",
-    totalFirmantes: firmantesAudit.length,
-    pistaAuditoriaFirmantes: firmantesAudit,
-    message: "Certificado de finalización y expediente probatorio generado con éxito."
-  };
-
-  return certificado;
+    try {
+      logStructuredEvent("USER", "generateSignatureAuditCertificate", "INFO", "SIGNATURE_AUDIT_CERTIFICATE_VIEWED",
+        "Se generó un resumen de auditoría de conformidades dentro del ámbito autorizado.",
+        { certificadoId: certificate.certificadoId, solicitudId: resolvedSolicitudId,
+          documentoId: resolvedDocumentId, totalFirmantes: auditSigners.length,
+          actorUserId: actorUserId, departmentId: documentAccess.departmentId || "" },
+        documentAccess.role || actorRole);
+    } catch (_) {}
+    return certificate;
+  } finally {
+    if (hasLock) {
+      try { lock.releaseLock(); } catch (_) {}
+    }
+  }
 }
-
 // [TASK-041] [F22-Task04] - Integración con Proveedores de Firma Electrónica Avanzada (Decreto Legislativo 149-2013)
 function configureAdvancedSignatureProvider(payload) {
   const {

@@ -239,3 +239,38 @@ Revisar `registerDocumentSignature` como flujo de conformidad manual, separado d
 - Las pruebas que requieren despliegue quedan reservadas a beta.
 - Siguiente acción: proteger `generateSignatureAuditCertificate` con autenticación/ownership por documento, evitar mezcla de firmas de solicitudes diferentes y eliminar metadatos probatorios inventados.
 ===============================================================================
+
+
+## CHECKPOINT C1.465 — USER: certificado de auditoría de conformidades con autorización y evidencia fiel
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.464.
+HEAD inicial: 90d9928cc76716fa15a2736d2cb29345b3150845.
+
+### Alcance
+Proteger `generateSignatureAuditCertificate`, siguiente acción indicada en C1.464 para TASK-153 / AUD-NG-386.
+
+### Implementación
+- Exige `validateRolePermission("generateSignatureAuditCertificate")` e identidad autenticada verificada.
+- Adquiere ScriptLock antes de leer los datos; libera en finally.
+- Resuelve un único par solicitud/documento y rechaza referencias ambiguas o selectores de transacción incompatibles.
+- Valida ownership con `assertAdvancedSignatureDocumentScope_(..., "READ")` antes de leer el detalle de firmas.
+- Filtra por coincidencia exacta de solicitud y documento; no mezcla firmas de solicitudes/documentos distintos.
+- Omite token de verificación y no fabrica IP, timestamps, hashes de documento/firma, rol, mecanismo, estado de trámite, entidad emisora ni marco legal.
+- La respuesta se identifica expresamente como resumen de conformidades y no como prueba de validez criptográfica.
+- Registra consulta con actor verificado y ámbito autorizado.
+
+### Verificación local
+- `node --check` del código focal: PASS.
+- Contratos Node focalizados: identidad, permiso, ownership previo a lectura detallada, aislamiento de pares, resolución por transactionId, ambigüedad, selector discordante, ausencia de evidencia, lock ocupado y liberación: PASS.
+- No se ejecutó la suite completa del repositorio ni CI en esta iteración.
+- No se desplegaron servicios ni se ejecutaron pruebas beta.
+
+### Límites y continuidad
+- TASK-153 permanece En ejecución y AUD-NG-386 abierto; este subalcance no cubre recursos institucionales, integración restante de solicitudes de firma ni callback/validación criptográfica del proveedor.
+- La consulta no transforma registros de conformidad manual en firma criptográfica.
+- Los escenarios que requieren servicio desplegado se reservan a beta.
+- Siguiente subalcance: continuar la integración y autorización de recursos institucionales y solicitudes de firma, partiendo de los esquemas y propietarios reales encontrados; no bloquear el motor genérico por catálogos institucionales ausentes.
+===============================================================================

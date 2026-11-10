@@ -323,3 +323,13 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Resultado esperado:** informes, evaluaciones, entrevistas y lista de espera solo exponen solicitudes dentro del scope; operaciones de evaluación/entrevista/cola/reapertura/duplicados validan el request antes de leer PII o mutar. La conversión exige UPDATE sobre la solicitud, determina un departamento permitido, registra ownership SOLICITUD_ADMISION y EXPEDIENTE_ESTUDIANTE de forma idempotente y no marca Convertida antes de completar matrícula/movimiento. Si la identificación coincide con un expediente de otro departamento, la conversión se deniega sin reutilizar ni reasignar ese expediente y sin consultar su identidad vinculada. El fallo de ownership revierte las escrituras nuevas; accesos cruzados se deniegan sin filtrar existencia ni metadatos.
 - **Estado:** Pendiente beta. Los contratos sintéticos locales se documentan por separado.
 - **Evidencia requerida:** build desplegado, roles/ámbitos sintéticos, resultados allow/deny, conteos y logs saneados; no registrar PII real, tokens ni identificadores personales.
+
+
+## BETA-FUNC-025 — TASK-153 / USER: certificado de auditoría de conformidades por ámbito
+- **Módulo/servicio:** USER Service — consulta de certificado/resumen de auditoría de conformidades.
+- **Objetivo:** comprobar en beta que la generación del resumen exige sesión y permiso, y que solo incluye firmas del mismo documento y solicitud autorizados.
+- **Precondiciones:** dos departamentos sintéticos; documentos y solicitudes de prueba con ownership diferente; firmas manuales con pares solicitud/documento distintos; usuarios con permisos y ámbitos separados.
+- **Pasos:** consultar el par autorizado; intentar documento ajeno, solicitud ajena, solicitud con varios documentos, transactionId de otra solicitud, sesión inválida y rol sin permiso; comparar registros incluidos con el par exacto; comprobar que faltantes de evidencia permanecen vacíos y que no se exponen tokens de verificación ni se declara validez criptográfica.
+- **Resultado esperado:** respuestas limitadas al ownership verificado, sin mezcla ni enumeración interdepartamental; evidencia ausente no se sustituye por valores sintéticos; el resumen no se presenta como firma avanzada cualificada.
+- **Estado:** Pendiente beta.
+- **Evidencia requerida:** build desplegado, identidades y recursos sintéticos, respuestas allow/deny y logs saneados; sin PII real, tokens ni credenciales.
