@@ -983,3 +983,15 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - Se actualiza únicamente el contrato de prueba para verificar identidad firmada y allowlist centralizado. Rerun pendiente; no se declara CI completo.
 - Se conserva el informe principal F41-08/E2E-41-09. Sin nueva auditoría ni tarea derivada.
 ===============================================================================
+
+
+===============================================================================
+## AUD-NG-385 — TASK-153 / TASK Service: aislamiento de comentarios e historial de entregas
+- **Severidad:** CRÍTICA (P0) — exposición IDOR de comentarios privados, metadatos y versiones de entregas.
+- **Superficie:** getSubmissionComments, addSubmissionComment, getSubmissionVersions en backend/task-service/Code.gs.
+- **Hallazgo:** los endpoints aceptaban identificadores de entrega/tarea aportados por el cliente sin resolver la relación con el recurso propietario. La lectura podía devolver comentarios/versiones de otras entregas; el alta permitía suplantar autorId y rolAutor.
+- **Corrección:** se incorpora getTaskServiceSubmissionAccess_, que deriva actor/rol de la sesión firmada, resuelve Entrega→Tarea, aplica ResourceOwnership y ámbito a personal, limita estudiantes a su propia entrega y tutores a relaciones académicas verificadas. Las consultas no staff excluyen comentarios privados. La autoría se deriva del token; solo personal puede crear comentarios privados.
+- **Verificación añadida:** contrato sintético en tests/security/task-service-resource-ownership.test.js para identidad, propiedad de entrega, relación de tutor, ámbito de personal, IDs discordantes, privacidad y autoría.
+- **Estado de pruebas:** NOT RUN localmente; CI de push no pudo verificarse mediante el conector disponible. No se declara PASS. Sin pruebas Apps Script/Sheets/Drive reales ni E2E.
+- **Estado del alcance:** corrección implementada en la rama de trabajo; TASK-153 continúa En ejecución. No implica cierre de la integración TASK/EXAM/DEVELOPER ni de las referencias compartidas, filtros/importaciones y pruebas E2E.
+===============================================================================
