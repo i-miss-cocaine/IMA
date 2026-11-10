@@ -420,6 +420,7 @@ function verifyTokenWithClaims(sourceText, claims) {
     computeHmacSignature: () => "signed",
     Utilities: {
       base64Decode: value => Buffer.from(value, "base64"),
+      MacAlgorithm: { HMAC_SHA_256: "HMAC_SHA_256" },
       computeHmacSignature: () => [115,105,103,110,101,100],
       newBlob: bytes => ({ getDataAsString: () => Buffer.from(bytes).toString("utf8") })
     },

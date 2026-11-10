@@ -566,3 +566,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se agrega prueba de rol obsoleto y campos incompletos.
 - CI pendiente; BETA-FUNC-020 para revocación efectiva de rol.
 - Checkpoint C1.380: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt.
+
+
+[2026-11-10] IMA-EXEC-20261109-1739Z-01 — C1.381 / TASK-636
+- Corrección del harness VM: inyectar Utilities.MacAlgorithm.HMAC_SHA_256.
+- Sin cambios productivos ni relajación de HMAC.
+- CI pendiente; checkpoint C1.381.

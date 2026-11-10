@@ -623,3 +623,11 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - Contratos VM cubren seis verificadores y cambio de rol en cinco.
 - CI C1.380 pendiente; BETA-FUNC-020 Pendiente beta.
 ===============================================================================
+
+
+===============================================================================
+## Seguimiento TASK-636 — C1.381
+- Se agrega MacAlgorithm.HMAC_SHA_256 al stub VM para DEVELOPER.
+- No se modifica el verificador productivo.
+- CI security pendiente tras commit.
+===============================================================================

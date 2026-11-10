@@ -1512,3 +1512,49 @@ Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt �
 Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.380.
 Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
 ===============================================================================
+
+===============================================================================
+## C1.381 — TASK-636 / corrección de fixture HMAC DEVELOPER
+ID: C1.381
+Sesión: IMA-EXEC-20261109-1739Z-01
+Fecha: 2026-11-10
+Checkpoint anterior válido: C1.380
+Baseline lógico: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD físico de partida: cfea77cdfb745a5ac8afa87e206e6146f91fe1f5
+Rama: NG_beta_0.0.0.1_work
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+
+### Code Review y diagnóstico
+- C1.380 Task-Service security run 42730386581 falló al ejecutar el verificador DEVELOPER dentro de VM.
+- El verificador de DEVELOPER usa Utilities.computeHmacSignature y Utilities.MacAlgorithm.HMAC_SHA_256 directamente; el fixture compartido no inyectaba MacAlgorithm.
+- El fallo ocurre antes de verificar el token/claims; no constituye evidencia de fallo de autenticación productiva.
+
+### Corrección
+- Se agrega MacAlgorithm.HMAC_SHA_256 al stub Utilities del fixture.
+- Se conserva la firma simulada determinista y las pruebas de claims.
+- No se modifica código productivo ni se debilita la verificación HMAC.
+
+### Pruebas y estado
+- C1.380 backup/restore run 42730386639: completed/success.
+- C1.380 identity mapping run 42730387149: completed/success.
+- C1.380 security run 42730386581: failure por dependencia faltante del harness.
+- C1.381 security pendiente tras publicar.
+
+### Archivos modificados
+- tests/security/task-service-security-contract.test.js
+- Auditoría/AUDITORIA_TASK-636_C1.305.md
+- pendientes/Otros/Pendientes.md
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoria.txt
+- tareas_auditoria.txt
+- changueslogs.txt
+
+### Siguiente acción exacta
+Consultar CI C1.381. Si pasa, continuar revisión de autorización contextual y registrar cualquier limitación de DEVELOPER (fallback authRole) en la tarea rectora TASK-645/AUD-NG-289 sin duplicar hallazgos.
+
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.381.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.381.
+Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
+===============================================================================

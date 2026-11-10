@@ -2314,3 +2314,9 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - USER/ACADEMIC/TASK/ACCOUNTING/EXAM comparan rol y estado actuales de Usuarios, con caché de 60s; rol obsoleto se rechaza.
 - DEVELOPER mantiene claims estrictos; fallback authRole se rastrea a TASK-645/AUD-NG-289.
 - Fixtures VM transversales añadidos; CI pendiente. BETA-FUNC-020 Pendiente beta.
+
+
+## 10.65 TASK-636 — C1.381: fixture HMAC DEVELOPER
+- CI C1.380 detectó que el harness VM no inyectaba Utilities.MacAlgorithm.HMAC_SHA_256, usado directamente por DEVELOPER.
+- Se completa el stub del fixture sin cambios productivos ni relajación de HMAC.
+- Backup/restore e identity mapping C1.380 success; security pendiente.

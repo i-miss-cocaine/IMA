@@ -748,3 +748,10 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - CI C1.379 identity mapping run 42729838941 success; CI C1.380 pendiente.
 - BETA-FUNC-020 Pendiente beta; no hay verificación de despliegues.
 - TASK-636 En ejecución. Checkpoint C1.380: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt.
+
+
+## C1.381 — IMA-EXEC-20261109-1739Z-01 — TASK-636 / ajuste de fixture
+- Se corrige stub VM para Utilities.MacAlgorithm.HMAC_SHA_256 requerido por el verificador DEVELOPER.
+- No hay cambios productivos.
+- C1.380 backup/restore e identity mapping success; security falló solo por harness; CI C1.381 pendiente.
+- Checkpoint C1.381: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt.

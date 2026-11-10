@@ -364,3 +364,11 @@ Endurecer las excepciones públicas de backend/academic-service/Code.gs mediante
 - **CI C1.379:** Identity mapping and transport security run 42729838941 completed/success tras fijar fixtures de fechas deterministas.
 - **CI C1.380:** pendiente tras publicar.
 - **Estado:** AUD-NG-001/002 siguen en revalidación; la configuración real de claves y el control de rol de DEVELOPER requieren revisión específica; TASK-636 no se cierra.
+
+
+## Revisión focalizada C1.381 — dependencia del fixture criptográfico DEVELOPER
+
+- **CI C1.380:** backup/restore run 42730386639 success; identity mapping run 42730387149 success; security run 42730386581 failure únicamente en el fixture de verifySessionToken de DEVELOPER.
+- **Diagnóstico:** DEVELOPER implementa HMAC directamente con `Utilities.computeHmacSignature(Utilities.MacAlgorithm.HMAC_SHA_256,...)`; el contexto VM compartido no inyectaba `Utilities.MacAlgorithm.HMAC_SHA_256`, por lo que falló antes de evaluar claims. No es fallo del algoritmo ni de los claims productivos.
+- **Corrección:** el fixture inyecta la constante de algoritmo usada por Apps Script y conserva la salida HMAC simulada determinista. No se modifica backend ni se relaja la firma.
+- **CI C1.381:** pendiente tras publicar.
