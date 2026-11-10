@@ -1022,3 +1022,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Contratos locales de idempotencia, lock contention, ownership, duplicidad, validación de criterios y compensación PASS; GitHub Actions run 42894855396 SUCCESS con sintaxis Apps Script/cliente.
 - Sin despliegue ni datos reales. TASK-153 sigue En ejecución.
 - Commits: 6009994e5df3fc45ddbadad9f782468dc65ba100; 314e07b4fa5cfeae005d69b1b417d66a44803851.
+
+
+[2026-11-10] C1.461 — IMA-EXEC-20261110-1825Z-02 — TASK-153 / ACADEMIC: oferta de plaza de lista de espera
+- `offerWaitlistSlot` verifica identidad/ámbito antes de leer la lista; bajo ScriptLock resuelve claves mínimas, valida ownership y después consulta detalles.
+- Oferta vigente idempotente; oferta vencida renovable; otros estados/expiraciones inválidas rechazados. Estado, expiración y timestamp se actualizan en un rango contiguo.
+- Vigencia positiva entera segura, 72 horas por defecto; contratos locales de autorización, ownership, lock, idempotencia y estados PASS.
+- GitHub Actions run 42895517906 SUCCESS, incluida sintaxis Apps Script/cliente; sin despliegue ni datos reales.
+- TASK-153 sigue En ejecución; AUD-NG-386 abierto.
+- Commits: 7f3153e036d17ec6d070a67325b447f9c034422d; 239e360700728569e4a000ca542e837be77b1c25.
