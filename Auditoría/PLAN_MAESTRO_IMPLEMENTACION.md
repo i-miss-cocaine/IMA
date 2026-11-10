@@ -2271,3 +2271,8 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 ## 10.58 TASK-636 — C1.374: dependencia del fixture getPosts
 - Code Review agrega normalizeString real al contexto VM del test getPosts; no hay cambios productivos.
 - CI C1.374 pendiente.
+
+
+## 10.59 TASK-636 — C1.375: orden del fixture getStudyMaterials
+- Code Review alinea el array esperado con el orden lexicográfico real del resultado; sin cambios productivos.
+- CI C1.375 pendiente.

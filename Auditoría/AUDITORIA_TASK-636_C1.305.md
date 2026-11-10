@@ -300,3 +300,10 @@ Endurecer las excepciones públicas de backend/academic-service/Code.gs mediante
 - Code Review del contrato C1.373 detectó que getPosts ahora invoca normalizeString para normalizar el estado, pero el contexto VM del fixture no incluía esa función.
 - Se incorpora la función normalizeString real extraída del mismo USER/TASK source al contexto del test. No se altera código productivo ni el alcance de autorización.
 - CI C1.373 permanece pendiente de lectura; C1.374 ejecutará el fixture corregido.
+
+
+## C1.375 — corrección de orden esperado en fixture getStudyMaterials
+
+- El CI C1.374 ejecutó correctamente los contratos anteriores y la lógica de getStudyMaterials; falló únicamente por el orden lexicográfico esperado en el array del test de personal.
+- Se ordena el resultado esperado para que coincida con el `.sort()` aplicado al resultado real. No cambia código productivo ni criterios de acceso.
+- CI C1.375 pendiente tras publicar.

@@ -406,6 +406,6 @@ vm.runInNewContext(
 const studentMaterials = materialContext.getMaterials({_verifiedRole:"Estudiante"});
 assert.deepEqual(studentMaterials.data.map(item => item.materialId).sort(), ["M-CLASS","M-GEN"], "students receive only current active/published materials in authorized classrooms");
 const teacherMaterials = materialContext.getMaterials({_verifiedRole:"Profesor"});
-assert.deepEqual(teacherMaterials.data.map(item => item.materialId).sort(), ["M-CLASS","M-DRAFT","M-FUTURE","M-GEN","M-EMPTY"], "staff can inspect legacy/draft/scheduled materials but never deleted records or other classrooms");
+assert.deepEqual(teacherMaterials.data.map(item => item.materialId).sort(), ["M-CLASS","M-DRAFT","M-EMPTY","M-FUTURE","M-GEN"], "staff can inspect legacy/draft/scheduled materials but never deleted records or other classrooms");
 
 console.log("TASK-636 getStudyMaterials local contract: audience, explicit publication state, future-date and deleted-record guards passed.");

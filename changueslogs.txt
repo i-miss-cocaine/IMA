@@ -528,3 +528,8 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-09] IMA-EXEC-20261109-1739Z-01 — C1.374 / TASK-636 / AUD-NG-002
 - Se corrige el harness de getPosts para incluir normalizeString real; sin cambios productivos.
 - CI C1.374 pendiente. Checkpoint C1.374: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice fila C1.374.
+
+
+[2026-11-09] IMA-EXEC-20261109-1739Z-01 — C1.375 / TASK-636 / AUD-NG-002
+- Se corrige el orden esperado del fixture getStudyMaterials; no cambia producción.
+- CI C1.375 pendiente. Checkpoint C1.375: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice fila C1.375.

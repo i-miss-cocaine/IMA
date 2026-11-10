@@ -1210,3 +1210,44 @@ Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt �
 Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.374.
 Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
 ===============================================================================
+
+===============================================================================
+## C1.375 — TASK-636 / AUD-NG-002 — orden del fixture getStudyMaterials
+ID: C1.375
+Sesión: IMA-EXEC-20261109-1739Z-01
+Fecha: 2026-11-09
+Checkpoint anterior válido: C1.374
+Baseline lógico: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD físico de partida: 7f9c704e99011ac77b166439e92cc541ee92b093
+Rama: NG_beta_0.0.0.1_work
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+
+### Code Review
+- CI C1.374 run 42726484169 ejecutó y aprobó los contratos anteriores: reconciliación, deleteFile, USER public content, getPosts, deleteProject y teacher scope.
+- Falló solo el último assert de getStudyMaterials: el resultado real estaba ordenado por .sort(), mientras el array esperado no estaba en el mismo orden.
+- Se ordena el esperado. No cambia lógica productiva ni reglas de autorización.
+
+### Archivos modificados
+- tests/security/task-service-security-contract.test.js
+- Auditoría/AUDITORIA_TASK-636_C1.305.md
+- pendientes/Otros/Pendientes.md (seguimiento aditivo)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoria.txt
+- tareas_auditoria.txt
+- changueslogs.txt
+
+### Pruebas y estado
+- C1.374: security run 42726484169 failure por orden de expected array, no por implementación.
+- C1.373: backup/restore run 42726290161 completed/success.
+- C1.375: fixture corregido; CI pendiente tras publicar.
+- TASK-636 En ejecución; AUD-NG-002 sigue en revalidación.
+
+### Siguiente acción exacta
+Consultar CI C1.375; si pasa, continuar la reauditoría de los criterios restantes del Plan Maestro en el expediente único.
+
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.375.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.375.
+Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
+===============================================================================

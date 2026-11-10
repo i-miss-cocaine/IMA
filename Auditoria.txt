@@ -701,3 +701,9 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - El contrato aislado de getPosts ahora recibe normalizeString real del código fuente, dependencia requerida por la normalización de estados añadida en C1.373.
 - Sin cambios productivos. CI C1.374 pendiente.
 - Checkpoint C1.374: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice fila C1.374.
+
+
+## C1.375 — IMA-EXEC-20261109-1739Z-01 — TASK-636 / AUD-NG-002 — corrección de fixture
+- CI C1.374 run 42726484169 falló únicamente por orden del array esperado en el test de personal de getStudyMaterials; los contratos previos del job pasaron.
+- Se corrige el orden esperado, sin cambio de producción.
+- CI C1.375 pendiente. Checkpoint C1.375: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice fila C1.375.

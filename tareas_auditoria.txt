@@ -572,3 +572,10 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - Se inyecta normalizeString real en el contexto VM del test getPosts.
 - Sin cambios productivos; CI C1.374 pendiente.
 ===============================================================================
+
+
+===============================================================================
+## Seguimiento TASK-636 — C1.375 / fixture getStudyMaterials
+- Se ordena el array esperado de materiales de personal para coincidir con .sort() del resultado.
+- Sin cambios productivos. CI C1.375 pendiente.
+===============================================================================

@@ -3260,6 +3260,7 @@
 - **Seguimiento C1.372:** AUD-NG-371: getStudentTasks/getAllTasks/getTeacherActivity y preview validaban al profesor creador, pero no exigían oferta/aula activa en todos los caminos. Se unifica la comprobación de propietario + aula/oferta vigente mediante getTaskServiceAuthorizedClassrooms y se aplica a lecturas/preview/mutaciones. Fixtures cubren ofertas expiradas/inactivas, aulas desactivadas, secciones y propietario. CI pendiente; BETA-FUNC-015 Pendiente beta.
 - **Seguimiento C1.373:** AUD-NG-002: getStudyMaterials no filtraba FechaPublicacion futura y las comparaciones literales permitían que estados Eliminado con distinta capitalización aparecieran a personal. getPosts tenía la misma inconsistencia de capitalización para eliminados. Se normalizan estados, se excluye Eliminado para todos y se exige Activo/Publicado vigente para estudiantes/familia. Fixtures locales cubren fecha futura, borrador, eliminado, aula ajena y estado vacío. CI pendiente; BETA-FUNC-016 Pendiente beta.
 - **Seguimiento C1.374:** Code Review agrega normalizeString al contexto VM del fixture getPosts, requerido por la nueva normalización del estado. Sin cambio productivo; CI del contrato corregido pendiente.
+- **Seguimiento C1.375:** CI C1.374 falló solo por el orden del array esperado en el fixture de personal de getStudyMaterials; la lista real ya estaba correctamente filtrada. Se ordena el esperado. Sin cambio productivo; CI C1.375 pendiente.
 
 ===============================================================================
 
