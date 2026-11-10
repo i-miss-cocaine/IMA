@@ -5040,3 +5040,13 @@ Alcance estático satisfecho; sin cambios de código. Hallazgos AUD-NG-374..376 
 - **Límites:** no se eliminan requisitos originales ni se cambian estados; no se crea una auditoría duplicada; no se modificó código ni se ejecutaron pruebas de producto.
 - **Fuentes vigentes:** `js/api.js` SHA `c54d23ad1fc84add9e204a0233d824a2bfcc8ed3`; `backend/user-service/Code.gs` SHA `85d12dad06826fdc37660f47d92e6976ff28bfe7`; backlog Otros blob SHA `24347c3776521c930391f89e0430910554bf233b`; auditoría previa reutilizada: AUD-NG-006 en el propio backlog.
 ===============================================================================
+
+
+===============================================================================
+## C1.415 — Clasificación de TASK-641 / AUD-NG-285
+
+- TASK-641 se reclasifica de PM-00 provisional a PM-08 (Pruebas integrales, resiliencia y observabilidad); su alcance es el precache y ciclo de vida del Service Worker.
+- Se reutiliza el expediente principal `Auditoría/AUDITORIA_COMPLETADAS_F8-TASK03.md`, sección 4, AUD-NG-285. No se crea una auditoría duplicada.
+- Vigencia verificada por igualdad de SHA: `sw.js` = `b031e9d0fdee0686f9bda54ba13b751122de827b`; `css/style.css` = `f1ff84312ce70949a58eaa099b2aad0ff0a59cb6`; `manifest.json` = `0caa5febfbd7fdbb88e9d174fa6623fb7daebb4e`. El Service Worker continúa solicitando `./css/styles.css`, no existente en el árbol; el archivo disponible es `css/style.css`.
+- TASK-641 permanece Pendiente. No se cambió código ni se ejecutaron pruebas de navegador, instalación, activación u offline.
+===============================================================================

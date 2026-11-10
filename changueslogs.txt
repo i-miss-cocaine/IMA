@@ -753,3 +753,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Evidencia reutilizada: backend/user-service/Code.gs SHA 85d12dad06826fdc37660f47d92e6976ff28bfe7; js/api.js SHA c54d23ad1fc84add9e204a0233d824a2bfcc8ed3; requisitos completos en backlog Otros blob SHA 24347c3776521c930391f89e0430910554bf233b.
 - Estados de tareas sin cambios (Pendientes). Solo cambios documentales; sin código, datos, esquemas, permisos ni pruebas de producto.
 - Checkpoint C1.414: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt; índice Auditoría/INDICE_CHECKPOINTS.md.
+
+[2026-11-10] C1.415 — IMA-EXEC-20261110-1245Z-03 — clasificación PM-00 de TASK-641
+- TASK-641 se reclasifica a PM-08 por su alcance de precache/ciclo de vida Service Worker y pruebas offline.
+- Se reutiliza AUD-NG-285 en Auditoría/AUDITORIA_COMPLETADAS_F8-TASK03.md; SHA actual de sw.js, css/style.css y manifest.json coincide con evidencia previa.
+- La referencia ./css/styles.css sigue distinta de css/style.css. TASK-641 permanece Pendiente; no se modifica código ni se ejecutan pruebas de navegador/offline.
+- Checkpoint C1.415 en Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt; índice actualizado.

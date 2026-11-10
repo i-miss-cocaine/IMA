@@ -397,7 +397,7 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 | TASK-446 | Otros | 00 | PM-00 | Triage manual: metadato incompleto, ampliación o relación por resolver | P2 | — | No declaradas en el bloque extraído | BLOQUE 3. RECONOCIMIENTO AUTOMÁTICO Y PROCESAMIENTO INTELIGENTE (P2) | `pendientes/Otros/Pendientes.md` |
 | TASK-450 | Otros | 00 | PM-00 | Triage manual: metadato incompleto, ampliación o relación por resolver | P2 | — | No declaradas en el bloque extraído | BLOQUE 3. AUTOMATIZACIÓN AVANZADA Y AMPLIACIÓN DE CAPACIDADES (P2) | `pendientes/Otros/Pendientes.md` |
 | TASK-470 | Otros | 00 | PM-00 | Triage manual: metadato incompleto, ampliación o relación por resolver | P3 | — | No declaradas en el bloque extraído | P3 — PRIORIDAD BAJA | `pendientes/Otros/Pendientes.md` |
-| TASK-641 | Otros | 00 | PM-00 | Triage manual: metadato incompleto, ampliación o relación por resolver | P1 | — | No declaradas en el bloque extraído | Reparar y verificar el precache del Service Worker | `pendientes/Otros/Pendientes.md` |
+| TASK-641 | Otros | 08 | PM-08 | Calidad y resiliencia | P1 | — | ASSETS del Service Worker, cache.addAll, ciclo install/activate/offline y recursos versionados; sin dependencia de tarea declarada | Reparar y verificar el precache del Service Worker | `pendientes/Otros/Pendientes.md` |
 | TASK-680 | Otros | 00 | PM-00 | Triage manual: metadato incompleto, ampliación o relación por resolver | CRÍTICO | — | F8-Task19, F8-Task20, F8-Task22; configuración de Drive y propiedades. - Aceptación: archivo existe y se abre por ID real; registro/historial persistidos; permisos de Drive/hojas comprobados; segunda ejecución no duplica | Implementar aprovisionamiento real y verificable de espacios funcionales | `pendientes/Otros/Pendientes.md` |
 | TASK-682 | Otros | 01 | PM-01 | Identidad, seguridad y gobierno de acceso | P1 | — | catálogo de roles/responsabilidades, matriz de permisos, asignaciones de ámbito y auditoría. - Aceptación: un usuario puede tener dos o más roles vigentes en una sesión; cada acción se autoriza con rol/ámbito correcto; a | Soportar múltiples roles simultáneos y ámbitos independientes por rol | `pendientes/Otros/Pendientes.md` |
 | TASK-639 | Secretaría | 00 | PM-00 | Triage manual: metadato incompleto, ampliación o relación por resolver | P2 | — | TASK-637 y TASK-638. | Verificar duplicaciones, símbolos globales y ciclos | `pendientes/Secretaria/Pendientes.md` |
@@ -2845,3 +2845,12 @@ No se crean asignaciones productivas por inferencia. Los componentes genéricos 
 **Evidencia reutilizada:** `pendientes/Otros/Pendientes.md` (blob del HEAD, SHA `24347c3776521c930391f89e0430910554bf233b`); `backend/user-service/Code.gs` SHA `85d12dad06826fdc37660f47d92e6976ff28bfe7`; `js/api.js` SHA `c54d23ad1fc84add9e204a0233d824a2bfcc8ed3`; requisitos y evidencia previos de AUD-NG-006 en el mismo backlog y `Auditoría/MapaDependencias.md`. Revisión focalizada de dependencias conforme a metodología §19.6; no se repitió la auditoría original.
 
 **Siguiente orden de implementación dentro de PM-03:** AUD-NG-071, después AUD-NG-069; AUD-NG-006 permanece como verificación integrada PM-08.
+
+
+### 10.85 PM-00 — Clasificación de TASK-641 (C1.415)
+
+TASK-641 se asigna a PM-08 (Pruebas integrales, resiliencia y observabilidad), ya que su alcance es la corrección y validación del ciclo de vida del Service Worker, precache, instalación, activación y operación offline. La sección PM-08 incluye expresamente resiliencia, pruebas de fallo/recuperación y regresión integrada.
+
+**Evidencia vigente reutilizada:** el informe principal `Auditoría/AUDITORIA_COMPLETADAS_F8-TASK03.md` (SHA `1e8d4518303d53f6f19ae73b4b818a22961cb9ca`) documenta AUD-NG-285 y los criterios CA-MOD-107/108. Los blobs actuales de `sw.js`, `css/style.css` y `manifest.json` coinciden exactamente con los SHA inspeccionados en ese informe; la evidencia del hallazgo continúa vigente. `sw.js` sigue solicitando `./css/styles.css`, mientras el archivo versionado es `css/style.css`.
+
+**Estado:** TASK-641 permanece Pendiente. No se modifica el Service Worker ni se declara corregida la instalación. La tarea deberá ejecutarse cuando PM-08 sea la fase activa, respetando las puertas PM precedentes. Pruebas de navegador/Service Worker/offline siguen pendientes; no se simulan resultados.

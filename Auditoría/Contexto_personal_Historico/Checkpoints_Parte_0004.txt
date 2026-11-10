@@ -278,3 +278,43 @@ Fase: PM-00 — clasificación y resolución de dependencias; sin implementació
 Continuar PM-00 con la siguiente tarea elegible tras aplicar §6.1. Candidatas con requisitos completos para clasificación: TASK-641 (P1, Service Worker, ruta `pendientes/Otros/Pendientes.md`, fuente `Auditoría/AUDITORIA_COMPLETADAS_F8-TASK03.md`) y TASK-680 (Crítico/P0, pero bloqueada por F8-TASK19/20/22 pendientes). TASK-641 requiere revisión de dependencias y asignación de fase destino; no iniciar implementación hasta confirmar fase y puertas PM.
 Commit: SHA por verificar después de publicar.
 ===============================================================================
+===============================================================================
+## CHECKPOINT C1.415 — Triage PM-00: clasificación de TASK-641
+Sesión: IMA-EXEC-20261110-1245Z-03
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama: NG_beta_0.0.0.1_work.
+HEAD de partida: 696a6331a040470fdeb681d26472d1c417269c34.
+Checkpoint anterior: C1.414.
+Fase: PM-00 — clasificación de requisito existente; no implementación.
+
+### Tarea y decisión
+- TASK-641 — «Reparar y verificar el precache del Service Worker».
+- Se reclasifica de PM-00 provisional a PM-08 (Pruebas integrales, resiliencia y observabilidad), por su alcance de precache, instalación/activación y disponibilidad offline.
+- Prioridad original P1; estado permanece Pendiente.
+- Requisito original: `pendientes/Otros/Pendientes.md`, blob vigente SHA `24347c3776521c930391f89e0430910554bf233b`.
+- Expediente de auditoría principal reutilizado: `Auditoría/AUDITORIA_COMPLETADAS_F8-TASK03.md`, SHA `1e8d4518303d53f6f19ae73b4b818a22961cb9ca`, hallazgo AUD-NG-285.
+
+### Vigencia de evidencia
+- `sw.js` actual SHA `b031e9d0fdee0686f9bda54ba13b751122de827b`, igual al auditado; contiene `./css/styles.css`.
+- `css/style.css` actual SHA `f1ff84312ce70949a58eaa099b2aad0ff0a59cb6`, igual al auditado.
+- `manifest.json` actual SHA `0caa5febfbd7fdbb88e9d174fa6623fb7daebb4e`, igual al auditado.
+- La referencia plural `styles.css` no corresponde al archivo versionado `style.css`. La evidencia estática sigue vigente.
+
+### Archivos modificados
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md — fila TASK-641 y §10.85.
+- Auditoría/MapaDependencias.md — nota de clasificación y vigencia de evidencia.
+- changueslogs.txt — entrada C1.415.
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — este checkpoint.
+- Auditoría/INDICE_CHECKPOINTS.md — fila C1.415.
+
+### Pruebas y límites
+- Verificación de SHA y revisión estática de las rutas citadas.
+- No se modificó código, datos, esquemas, permisos ni configuración de ramas.
+- No se ejecutaron pruebas de navegador, HTTP, Service Worker, instalación, activación ni offline.
+- TASK-641 no se declara Completada; implementación queda para PM-08.
+
+### Siguiente acción exacta
+Continuar PM-00 con AUD-NG-007 (timeout configurable de fetchApi), severidad Media, requisito en `pendientes/Otros/Pendientes.md`, blob SHA `24347c3776521c930391f89e0430910554bf233b`. Reutilizar la evidencia de código disponible; clasificar su fase y dependencias conforme a §6.1 antes de cualquier implementación.
+Commit: SHA por verificar después de publicar.
+===============================================================================
