@@ -27,6 +27,7 @@ const claims = {
   "director-token": { userId: "DIRECTOR-1", role: "Dirección" },
   "other-token": { userId: "TEACHER-2", role: "Profesor" },
   "student-token": { userId: "STUDENT-1", role: "Estudiante" },
+  "student3-token": { userId: "STUDENT-3", role: "Estudiante" },
   "tutor-token": { userId: "TUTOR-1", role: "Tutor" }
 };
 const examRows = [
@@ -35,14 +36,16 @@ const examRows = [
   ["EXM-2", "Propio pero otro departamento", "Ciencias", "10", "A", "", "", "Activo", "TEACHER-1", "P1"],
   ["EXM-3", "Docente ajeno", "Historia", "11", "A", "", "", "Activo", "TEACHER-2", "P1"],
   ["EXM-4", "Sin propiedad", "Inglés", "10", "A", "", "", "Activo", "TEACHER-1", "P1"],
-  ["EXM-5", "Propiedad duplicada", "Arte", "10", "A", "", "", "Activo", "TEACHER-1", "P1"]
+  ["EXM-5", "Propiedad duplicada", "Arte", "10", "A", "", "", "Activo", "TEACHER-1", "P1"],
+  ["EXM-6", "Examen nuevo para entrega", "Historia", "11", "A", "", "", "Activo", "TEACHER-1", "P1"]
 ];
 const scopeRows = [
   ["AssignmentID", "UserID", "RoleID", "ScopeType", "ScopeValues", "Status", "", "", "StartAt", "EndAt"],
   ["ASG-1", "TEACHER-1", "Profesor", "DEPARTAMENTO", "D1", "ACTIVO", "", "", "", ""],
   ["ASG-2", "TEACHER-2", "Profesor", "DEPARTAMENTO", "D2", "ACTIVO", "", "", "", ""],
   ["ASG-3", "DIRECTOR-1", "Dirección", "INSTITUCION", "I1", "ACTIVO", "", "", "", ""],
-  ["ASG-4", "STUDENT-1", "Estudiante", "DEPARTAMENTO", "D1", "ACTIVO", "", "", "", ""]
+  ["ASG-4", "STUDENT-1", "Estudiante", "DEPARTAMENTO", "D1", "ACTIVO", "", "", "", ""],
+  ["ASG-5", "STUDENT-3", "Estudiante", "DEPARTAMENTO", "D1", "ACTIVO", "", "", "", ""]
 ];
 const ownershipRows = [
   ["OwnershipID", "InstitutionID", "ResourceType", "ResourceID", "DepartmentID", "Status", "RegisteredBy", "CreatedAt", "UpdatedAt"],
@@ -51,7 +54,8 @@ const ownershipRows = [
   ["OWN-3", "I1", "EXAMEN", "EXM-3", "D1", "ACTIVE", "TEACHER-2", "", ""],
   ["OWN-4", "I1", "EXAMEN", "EXM-5", "D1", "ACTIVE", "TEACHER-1", "", ""],
   ["OWN-5", "I1", "EXAMEN", "EXM-5", "D1", "ACTIVE", "TEACHER-1", "", ""],
-  ["OWN-6", "I2", "EXAMEN", "EXM-1", "D1", "ACTIVE", "TEACHER-1", "", ""]
+  ["OWN-6", "I2", "EXAMEN", "EXM-1", "D1", "ACTIVE", "TEACHER-1", "", ""],
+  ["OWN-7", "I1", "EXAMEN", "EXM-6", "D1", "ACTIVE", "TEACHER-1", "", ""]
 ];
 const deliveryRows = [
   ["EntregaID", "ExamenID", "UserID", "Fecha", "Respuestas", "Nota", "Estado", "Comentario"],
@@ -63,15 +67,15 @@ const userRows = [
   ["UserID", "Nombre", "Grado", "Seccion", "Email"],
   ["STUDENT-1", "Estudiante Uno", "10", "A", "student1@example.invalid"],
   ["STUDENT-2", "Estudiante Dos", "10", "A", "student2@example.invalid"],
-  ["STUDENT-3", "Estudiante Tres", "10", "A", "student3@example.invalid"],
+  ["STUDENT-3", "Estudiante Tres", "11", "A", "student3@example.invalid"],
   ["TUTOR-1", "Tutor Uno", "", "", "tutor1@example.invalid", "", "Tutor"]
 ];
-const questionRows = [["PreguntaID", "ExamenID", "Tipo", "Texto", "OpcionesJSON", "RespuestaCorrecta"], ["Q-1", "EXM-1", "opcion_multiple", "Pregunta propia", "{}", "A"], ["Q-2", "EXM-2", "opcion_multiple", "Pregunta otro departamento", "{}", "B"]];
+const questionRows = [["PreguntaID", "ExamenID", "Tipo", "Texto", "OpcionesJSON", "RespuestaCorrecta"], ["Q-1", "EXM-1", "opcion_multiple", "Pregunta propia", "{}", "A"], ["Q-2", "EXM-2", "opcion_multiple", "Pregunta otro departamento", "{}", "B"], ["Q-6", "EXM-6", "opcion_multiple", "Pregunta de entrega", "{}", "A"]];
 const familyRows = [["RelacionID", "PersonaEstudianteID", "PersonaResponsableID", "TipoParentesco", "EstadoAutorizacion"], ["REL-1", "EXP-1", "TUTOR-1", "Madre/Padre", "Verificada"], ["REL-2", "EXP-2", "TUTOR-1", "Madre/Padre", "Revocada"]];
 const studentExpRows = [["ExpedienteID", "UserID"], ["EXP-1", "STUDENT-1"], ["EXP-2", "STUDENT-2"]];
 const legacyGuardianRows = [["RelacionID", "EstudianteID", "TutorID", "", "", "", "", "", "", "Estado"], ["LEG-2", "STUDENT-2", "TUTOR-1", "", "", "", "", "", "", "Activa"]];
 const sheets = { Examenes: examRows, AsignacionesAmbitosRoles: scopeRows, ResourceOwnership: ownershipRows, EntregasExamen: deliveryRows, Usuarios: userRows, PreguntasExamen: questionRows, RelacionesFamiliares: familyRows, ExpedientesEstudiantes: studentExpRows, RelacionesEstudianteTutor: legacyGuardianRows };
-const sheetObjects = Object.fromEntries(Object.entries(sheets).map(([name, rows]) => [name, { getDataRange() { return { getValues: () => rows.map(row => row.slice()) }; } }]));
+const sheetObjects = Object.fromEntries(Object.entries(sheets).map(([name, rows]) => [name, { getDataRange() { return { getValues: () => rows.map(row => row.slice()) }; }, appendRow(row) { rows.push(row.slice()); } }]));
 const ss = { getSheetByName(name) { return sheetObjects[name] || null; } };
 const runtime = {
   SPREADSHEET_ID: "LOCAL", EXAM_RESOURCE_OWNERSHIP_REQUEST_CACHE_: new WeakMap(),
@@ -101,7 +105,7 @@ const duplicate = runtime.assertExamResourceOwnershipForScope_(ss, scope, "EXAME
 assert.equal(duplicate.authorized, false); assert.equal(duplicate.code, "RESOURCE_OWNERSHIP_AMBIGUOUS");
 assert.deepEqual(Array.from(runtime.getAllExams({ sessionToken: "other-token" }).data), [], "no accessible ownership returns an empty list");
 const readFunctions = ["getVerifiedExamIdentity_", "getVerifiedExamDepartmentScope_", "assertExamResourceOwnershipForScope_",
-  "getExamStudentProfile_", "isExamAssignedToStudent_", "getVerifiedGuardianStudentIds_", "getExamReadContext_", "getStudentExams", "getExamQuestions", "getExamResult"]
+  "getExamStudentProfile_", "isExamAssignedToStudent_", "getVerifiedGuardianStudentIds_", "getExamReadContext_", "getStudentExams", "getExamQuestions", "getExamResult", "submitExam"]
   .map(name => extractFunction(source, name)).join("\n");
 vm.runInNewContext(readFunctions + "\nthis.getStudentExams = getStudentExams; this.getExamQuestions = getExamQuestions; this.getExamResult = getExamResult;", runtime);
 const studentListPayload = { sessionToken: "student-token", userId: "STUDENT-2", grado: "99", seccion: "Z" };
@@ -124,4 +128,19 @@ assert.equal(runtime.getExamQuestions({ sessionToken: "tutor-token", studentId: 
 assert.equal(runtime.getExamResult({ sessionToken: "tutor-token", entregaExamenId: "DEL-1" }).data.calificacionTotal, 90);
 assert.throws(() => runtime.getExamResult({ sessionToken: "tutor-token", entregaExamenId: "DEL-2" }),
   /RESOURCE_NOT_AVAILABLE/, "guardian cannot read a result for an unrelated student");
+const crossExamSubmission = { sessionToken: "student3-token", examenId: "EXM-2", userId: "STUDENT-1", respuestas: [{ preguntaId: "Q-2", respuestaEstudiante: "B" }] };
+assert.throws(() => runtime.submitExam(crossExamSubmission), /RESOURCE_NOT_AVAILABLE/,
+  "student cannot submit an exam outside their department scope");
+assert.throws(() => runtime.submitExam({ sessionToken: "student3-token", examenId: "EXM-6", userId: "STUDENT-1",
+  respuestas: [{ preguntaId: "Q-2", respuestaEstudiante: "B" }] }), /SUBMISSION_INVALID/,
+  "submission cannot include a question from another exam");
+const newSubmission = runtime.submitExam({ sessionToken: "student3-token", examenId: "EXM-6", userId: "STUDENT-1",
+  respuestas: [{ preguntaId: "Q-6", respuestaEstudiante: "A" }] });
+assert.equal(newSubmission.status, "success");
+const savedDelivery = deliveryRows.find(row => row[0] === newSubmission.data.entregaExamenId);
+assert.equal(savedDelivery[2], "STUDENT-3", "submission owner is derived from signed identity, not payload userId");
+assert.equal(newSubmission.data.calificacion, "100.00");
+assert.throws(() => runtime.submitExam({ sessionToken: "student3-token", examenId: "EXM-6",
+  respuestas: [{ preguntaId: "Q-6", respuestaEstudiante: "A" }] }), /EXAM_ATTEMPTS_EXHAUSTED/,
+  "default one-attempt policy prevents duplicate submissions");
 process.stdout.write("exam-service-departmental-access: signed identity, department scope, tenant isolation and ownership assertions passed\n");
