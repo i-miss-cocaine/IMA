@@ -695,3 +695,44 @@ Fase: PM-01 — identidad, seguridad y gobierno de acceso.
 Reaplicar §6.1 en PM-01. Priorizar hallazgos críticos con dependencias verificables; no confundir cierre local con verificación de configuración en producción.
 Commit: SHA por verificar.
 ===============================================================================
+
+
+===============================================================================
+## CHECKPOINT C1.427 — TASK-153: motor genérico de propiedad departamental
+Sesión: IMA-EXEC-20261110-1340Z-15
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA; rama exclusiva: NG_beta_0.0.0.1_work.
+HEAD de partida: cf8beaae9f5b8fefe4d76186c4d06927ede6dc25; checkpoint anterior C1.426.
+Fase: PM-01 — identidad, seguridad y gobierno de acceso.
+
+### Decisión arquitectónica
+- IMA es una plataforma; no define el organigrama de sus instituciones usuarias.
+- T153-S01 queda limitada a la futura selección/migración de datos reales de propiedad institucional. No bloquea el diseño, la implementación ni las pruebas sintéticas del motor genérico.
+- Los roles y permisos para administrar propiedad se configuran dinámicamente por cada institución en MatrizPermisosRoles; no se fijan nombres universales de cargos.
+
+### Implementación
+- backend/user-service/Code.gs incorpora hoja genérica ResourceOwnership con InstitutionID, ResourceType, ResourceID, DepartmentID, Status, RegisteredBy, CreatedAt y UpdatedAt.
+- registerResourceOwnership exige permiso dinámico registerResourceOwnership, identidad firmada y ámbito activo; deriva InstitutionID del contexto verificado y rechaza DepartmentID fuera de ámbito.
+- assertRecordOwnership comprueba propiedad única activa, institución y departamento; deniega si falta/duplica la propiedad o el recurso pertenece a otro ámbito.
+- El helper deja explícito que el RBAC de la acción debe validarse separadamente. No se añaden datos institucionales reales.
+
+### Pruebas
+- tests/security/resource-ownership-abac.test.js cubre rol dinámico sin nombres hardcodeados, institución derivada del contexto, acceso propio, ámbito institucional global dentro de misma institución, aislamiento interinstitucional, spoof de departamento, falta de propiedad y duplicados.
+- Todas las aserciones sintéticas pasaron en entorno JS aislado con shim compatible.
+- No se ejecutó Apps Script desplegado ni se modificaron hojas productivas.
+
+### Archivos modificados
+- backend/user-service/Code.gs — registro y helper de propiedad.
+- tests/security/resource-ownership-abac.test.js — pruebas sintéticas.
+- pendientes/Dirección/Pendientes.md — aclaración T153-S01 y avance.
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md — §10.95.
+- Auditoría/MapaDependencias.md — C1.427.
+- changueslogs.txt — C1.427.
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — este checkpoint.
+- Auditoría/INDICE_CHECKPOINTS.md — C1.427.
+
+### Estado y límites
+- TASK-153 permanece En ejecución.
+- Pendientes: integrar assertRecordOwnership en endpoints ACADEMIC/ACCOUNTING/TASK/EXAM/DEVELOPER; implementar referencias compartidas con allowlist de campos/operaciones y revocación; ejecutar pruebas E2E por servicio.
+- La ausencia de organigrama o fuente institucional real no bloquea estas tareas de plataforma.
+===============================================================================

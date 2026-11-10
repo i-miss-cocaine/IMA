@@ -808,3 +808,8 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - 25 aserciones de configuración/rotación en cinco servicios y prueba de generación USER pasaron en entorno JS aislado con shim.
 - Runbook de rotación coordinada agregado. No se verificaron propiedades productivas ni CI.
 - AUD-NG-004 Completada en alcance de código/documentación/pruebas locales.
+[2026-11-10] C1.427 — IMA-EXEC-20261110-1340Z-15 — TASK-153: motor genérico de propiedad departamental
+- Se separa T153-S01 (configuración de datos institucionales reales) del motor genérico, que no queda bloqueado.
+- USER añade ResourceOwnership, registerResourceOwnership con permiso dinámico por institución y assertRecordOwnership fail-closed.
+- Pruebas sintéticas de aislamiento y manipulación de payload pasaron en entorno JS aislado.
+- TASK-153 permanece En ejecución; falta integración transversal y referencias compartidas.

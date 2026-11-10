@@ -5157,3 +5157,13 @@ Alcance estático satisfecho; sin cambios de código. Hallazgos AUD-NG-374..376 
 - Pruebas ejecutadas en entorno JS aislado con shim compatible; HMAC/Script Properties simulados. No se verificaron valores productivos ni checks CI.
 - AUD-NG-004 Completada en alcance de código/documentación/pruebas locales.
 ===============================================================================
+===============================================================================
+## C1.427 — TASK-153: motor genérico de propiedad departamental
+
+- T153-S01 se limita a datos institucionales reales; no bloquea el motor genérico.
+- USER incorpora ResourceOwnership, registerResourceOwnership protegido por permiso dinámico MatrizPermisosRoles y assertRecordOwnership fail-closed.
+- InstitutionID se deriva del contexto verificado, no del payload. DepartmentID se valida contra ámbitos activos; institutionWide solo aplica dentro de la misma institución.
+- No se codifican nombres de departamentos ni cargos.
+- Pruebas sintéticas cubren ámbito propio, acceso institucional global, aislamiento entre instituciones, payload spoof, permiso dinámico, registro fuera de ámbito, propiedad ausente y duplicada.
+- TASK-153 sigue En ejecución: falta integración transversal y referencias compartidas interdepartamentales.
+===============================================================================

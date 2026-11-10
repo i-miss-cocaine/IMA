@@ -2934,3 +2934,13 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 **Rotación:** se añade `Auditoría/PROTOCOLO_ROTACION_AUTH_TOKEN_SECRET.md`. La implementación usa una clave activa única por entorno, por lo que la rotación es coordinada y produce invalidación global de sesiones/envelopes antiguos; no admite despliegue parcial ni doble clave.
 
 **Cierre:** AUD-NG-004 Completada en alcance de código/documentación/pruebas locales. Los valores reales de Script Properties en proyectos productivos deben verificarse durante el despliegue; no se accedió a esos proyectos en esta sesión.
+
+### 10.95 PM-01 — TASK-153: motor genérico de propiedad departamental (C1.427)
+
+**Selección:** TASK-153, P0, orden de ejecución 1. La arquitectura separa motor de plataforma y configuración institucional. T153-S01 solo limita la asignación de fuentes/datos reales de propiedad; no bloquea el diseño, la implementación ni las pruebas sintéticas del motor.
+
+**Implementación inicial:** USER incorpora el registro genérico `ResourceOwnership`, una acción de alta/actualización protegida por permiso dinámico `registerResourceOwnership` configurado por cada institución en `MatrizPermisosRoles`, y el helper `assertRecordOwnership`. El registro toma `InstitutionID` del contexto verificado, valida que el actor tenga ámbito sobre el departamento y no acepta la institución del payload. La consulta falla cerrada si falta o se duplica la propiedad, si el recurso pertenece a otro departamento o si corresponde a otra institución. No se codifican nombres de cargos/departamentos.
+
+**Pruebas:** `tests/security/resource-ownership-abac.test.js` usa instituciones/departamentos sintéticos para validar ámbito propio, acceso institucional global dentro de la misma institución, aislamiento interinstitucional, manipulación de campos del payload, permisos dinámicos y propiedad ausente/duplicada.
+
+**Estado:** TASK-153 permanece En ejecución. Pendiente integrar el helper en endpoints de ACADEMIC/ACCOUNTING/TASK/EXAM/DEVELOPER, implementar referencias compartidas interdepartamentales y completar E2E. La configuración real de cada institución no es requisito para desarrollar ni probar el motor.

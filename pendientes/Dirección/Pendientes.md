@@ -736,6 +736,9 @@
   - [ ] Las operaciones de descarga, firma y exportación respetan el ámbito departamental asignado.
   - [ ] Los roles institucionales con acceso global funcionan conforme a sus permisos explícitos sin falsos bloqueos.
 - **Dependencias:** Sistema de usuarios, departamentos, roles y estructura de propiedad documental.
+- **Aclaración arquitectónica C1.427:** la ausencia de organigrama, catálogo departamental real o fuente institucional aprobada no bloquea el desarrollo del motor genérico. T153-S01 queda limitada a la futura selección/migración de datos de propiedad de cada institución; no condiciona esquema, lógica ni pruebas sintéticas.
+- **Avance C1.427:** USER incorpora el registro genérico `ResourceOwnership`, `registerResourceOwnership` autorizado exclusivamente por permiso dinámico `MatrizPermisosRoles`, y `assertRecordOwnership` con denegación segura ante propiedad ausente, duplicada, fuera de departamento o de otra institución. No hay nombres de departamentos ni cargos codificados.
+- **Límites pendientes:** integración de `assertRecordOwnership` en endpoints ACADEMIC/ACCOUNTING/TASK/EXAM/DEVELOPER, referencias compartidas interdepartamentales con campos/operaciones permitidos y pruebas E2E por servicio.
 - **Estado:** [ ] En ejecución (C1.403; controles de comprobantes privados verificados en C1.398; T153-S01 bloqueada por falta de fuente institucional de propiedad departamental; criterios globales pendientes).
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7086-7126; clave TASK-169; asignación única: Dirección -->

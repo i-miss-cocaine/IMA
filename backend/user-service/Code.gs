@@ -1282,6 +1282,10 @@ function validateRolePermission(action, payload) {
     return { authorized: true, role: userRole, userId: payload && payload._verifiedUserId };
   }
   if (IDENTITY_MANAGER_ACTIONS_.indexOf(action) !== -1) return { authorized: IDENTITY_MANAGER_ROLES_.indexOf(userRole) !== -1, role: userRole };
+  // La administración de propiedad depende exclusivamente de la matriz dinámica de cada institución.
+  if (action === "registerResourceOwnership") {
+    return { authorized: getDynamicPermissionsForRole(userRole, action) === true, role: userRole };
+  }
   // Autoservicio de tickets: cuenta activa autenticada; los handlers restringen por propiedad.
   if (["submitProblemTicket", "getProblemTickets", "replyProblemTicket"].indexOf(action) !== -1) {
     const verifiedUserId = payload && payload._verifiedUserId;
@@ -1621,6 +1625,9 @@ function doPost(e) {
         break;
       case "assignRoleScope":
         result = assignRoleScope(payload);
+        break;
+      case "registerResourceOwnership":
+        result = registerResourceOwnership(payload);
         break;
       case "getUserScopeConfig":
         result = getUserScopeConfig(payload);
@@ -9651,6 +9658,126 @@ function validateRoleScopeAccess(payload) {
     return { status: "success", authorized: isAllowed, userId: context.userId, role: context.role, institutionId: context.institutionId, scopeType: scopeType, requestedValue: requestedValue, reason: isAllowed ? "Acceso al ámbito autorizado." : "El valor solicitado está fuera de los ámbitos activos del usuario." };
   } catch (error) {
     return { status: "error", authorized: false, code: "SCOPE_VALIDATION_FAILED", message: error.message };
+  }
+}
+
+
+/**
+ * Comprueba el ámbito propietario de un recurso existente.
+ * La autorización RBAC de la operación debe validarse por separado.
+ */
+function assertRecordOwnership(payload, resourceType, resourceId, operation) {
+  try {
+    const context = getUserContextScope(payload);
+    if (!context || context.status !== "success" || !context.userId) {
+      return { authorized: false, code: context && context.code ? context.code : "VERIFIED_IDENTITY_REQUIRED" };
+    }
+    const type = String(resourceType || "").trim().toUpperCase();
+    const id = String(resourceId || "").trim();
+    if (!type || !id) return { authorized: false, code: "RESOURCE_REFERENCE_INVALID" };
+    const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName("ResourceOwnership");
+    if (!sheet || sheet.getLastRow() <= 1) return { authorized: false, code: "RESOURCE_OWNERSHIP_NOT_CONFIGURED" };
+    const data = sheet.getDataRange().getValues();
+    const matches = [];
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i] || [];
+      if (String(row[1] || "").trim() !== String(context.institutionId || "").trim()) continue;
+      if (String(row[2] || "").trim().toUpperCase() !== type || String(row[3] || "").trim() !== id) continue;
+      if (String(row[5] || "").trim().toUpperCase() !== "ACTIVE") continue;
+      matches.push(row);
+    }
+    if (!matches.length) return { authorized: false, code: "RESOURCE_OWNERSHIP_UNVERIFIED" };
+    if (matches.length !== 1) return { authorized: false, code: "RESOURCE_OWNERSHIP_AMBIGUOUS" };
+    const departmentId = String(matches[0][4] || "").trim();
+    const inDepartment = (context.departmentIds || []).some(function(value) {
+      return String(value || "").trim() === departmentId;
+    });
+    const allowed = context.institutionWide === true || (departmentId && inDepartment);
+    if (!allowed) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+    return {
+      authorized: true, code: "RESOURCE_SCOPE_ALLOWED",
+      userId: context.userId, role: context.role, institutionId: context.institutionId,
+      departmentId: departmentId, resourceType: type, resourceId: id,
+      operation: String(operation || "").trim().toUpperCase()
+    };
+  } catch (error) {
+    return { authorized: false, code: "RESOURCE_OWNERSHIP_CHECK_FAILED" };
+  }
+}
+
+/**
+ * Registra o actualiza la propiedad departamental de un recurso.
+ * El permiso registerResourceOwnership se define por institución en MatrizPermisosRoles.
+ */
+function registerResourceOwnership(payload) {
+  let lock = null;
+  try {
+    const verifiedRole = getUserVerifiedRole(payload);
+    const actorUserId = String((payload && payload._verifiedUserId) || "").trim();
+    if (!actorUserId || !verifiedRole || verifiedRole === "NO_ACCESS") {
+      return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
+    }
+    if (getDynamicPermissionsForRole(verifiedRole, "registerResourceOwnership") !== true) {
+      return { status: "error", code: "AUTH_PERMISSION_DENIED" };
+    }
+    const context = getUserContextScope(payload);
+    if (!context || context.status !== "success") {
+      return { status: "error", code: context && context.code ? context.code : "DEPARTMENT_SCOPE_NOT_ASSIGNED" };
+    }
+    const resourceType = String((payload && payload.resourceType) || "").trim().toUpperCase();
+    const resourceId = String((payload && payload.resourceId) || "").trim();
+    const departmentId = String((payload && payload.departmentId) || "").trim();
+    if (!resourceType || !resourceId || !departmentId) {
+      return { status: "error", code: "RESOURCE_OWNERSHIP_FIELDS_REQUIRED" };
+    }
+    const departmentAllowed = context.institutionWide === true || (context.departmentIds || []).some(function(value) {
+      return String(value || "").trim() === departmentId;
+    });
+    if (!departmentAllowed) return { status: "error", code: "DEPARTMENT_SCOPE_DENIED" };
+
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = getOrCreateSheet(ss, "ResourceOwnership");
+    if (sheet.getLastRow() === 0) {
+      sheet.appendRow(["OwnershipID", "InstitutionID", "ResourceType", "ResourceID", "DepartmentID", "Status", "RegisteredBy", "CreatedAt", "UpdatedAt"]);
+    }
+    lock = LockService.getScriptLock();
+    if (!lock.tryLock(5000)) return { status: "error", code: "RESOURCE_OWNERSHIP_LOCK_TIMEOUT" };
+    const data = sheet.getDataRange().getValues();
+    const matches = [];
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i] || [];
+      if (String(row[1] || "").trim() === String(context.institutionId || "").trim() &&
+          String(row[2] || "").trim().toUpperCase() === resourceType &&
+          String(row[3] || "").trim() === resourceId) {
+        matches.push({ row: row, rowNumber: i + 1 });
+      }
+    }
+    if (matches.length > 1) return { status: "error", code: "RESOURCE_OWNERSHIP_AMBIGUOUS" };
+    const now = new Date().toISOString();
+    let ownershipId;
+    if (matches.length === 1) {
+      ownershipId = String(matches[0].row[0] || "").trim();
+      sheet.getRange(matches[0].rowNumber, 5).setValue(departmentId);
+      sheet.getRange(matches[0].rowNumber, 6).setValue("ACTIVE");
+      sheet.getRange(matches[0].rowNumber, 7).setValue(actorUserId);
+      sheet.getRange(matches[0].rowNumber, 9).setValue(now);
+    } else {
+      ownershipId = "OWN-" + Utilities.getUuid();
+      sheet.appendRow([ownershipId, context.institutionId, resourceType, resourceId, departmentId, "ACTIVE", actorUserId, now, now]);
+    }
+    logStructuredEvent("USER", "registerResourceOwnership", "INFO", "RESOURCE_OWNERSHIP_REGISTERED", "Propiedad departamental registrada.", {
+      ownershipId: ownershipId, institutionId: context.institutionId, resourceType: resourceType,
+      resourceId: resourceId, departmentId: departmentId
+    }, verifiedRole);
+    return { status: "success", ownershipId: ownershipId, institutionId: context.institutionId, resourceType: resourceType, resourceId: resourceId, departmentId: departmentId };
+  } catch (error) {
+    logStructuredEvent("USER", "registerResourceOwnership", "ERROR", "RESOURCE_OWNERSHIP_REGISTER_FAILED", error.message, {
+      resourceType: String((payload && payload.resourceType) || "").trim().toUpperCase(),
+      resourceId: String((payload && payload.resourceId) || "").trim()
+    }, payload && payload._verifiedRole);
+    return { status: "error", code: "RESOURCE_OWNERSHIP_WRITE_FAILED" };
+  } finally {
+    if (lock) { try { lock.releaseLock(); } catch (e) {} }
   }
 }
 
