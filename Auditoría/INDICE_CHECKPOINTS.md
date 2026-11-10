@@ -5,11 +5,11 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.455**
+- Último checkpoint: **C1.456**
 - Última sesión: `IMA-EXEC-20261110-1825Z-02`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.455: **164255**
+- Caracteres del archivo activo tras C1.456: **167457**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 - Baseline lógico válido: **C1.316** (`31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`). C1.317–C1.382 se conservan, pero no se aceptan como evidencia de continuidad por corrección expresa del usuario.
@@ -308,3 +308,4 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.453 | IMA-EXEC-20261110-1825Z-02 | ACADEMIC: logs insuficientes para atribuir cargos históricos; sin backfill; detectado TDZ en referencia de cargo para próxima corrección | PM-01 — TASK-153 / ACADEMIC / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.453 | 1819–1851 | C1.452 | 6e147bffdea9c8b747795e1032b6dfe55d4e514e; e61718c44712254bc9ab372d3b268481221a076b; 08581a3b19bb3b97b684a8a2a0631fa4929bb095 |
 | C1.454 | IMA-EXEC-20261110-1825Z-02 | ACADEMIC: referencia cargo derivada después de matrícula; CargoID propagado y regresión ampliada; Node/sintaxis NOT RUN | PM-01 — TASK-153 / ACADEMIC / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.454 | 1854–1894 | C1.453 | 2aec68a829fce262d3f7bc389166349a1bbb2e26; af3fc6471fc9e38eadfc5ac76af1e73a6ba5e159; 03a96a5e20ff0d0f0971fba1339cfdd2a07866a1; b41d48b4a0646a1fbcca9beb7e3e12bb9cd213f2; 5d7b49724c44b8718785afbfd83cbadeeda31bc5 |
 | C1.455 | IMA-EXEC-20261110-1825Z-02 | ACADEMIC: conversión de admisión, CargoID y contención de ScriptLock; contratos locales y sintaxis PASS (GitHub Actions aislado) | PM-01 — TASK-153 / ACADEMIC / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.455 | 1897–1931 | C1.454 | 3bb1d3b7dfc9c4d0259d6a124f353d46b0f38a13; 91c17ba2bddc7cf4e9d35316b877ae7034898907; ad44dde863065b2a2dc54580ee5a393f43d4570e; d483a35509e20e1f4a26186f42941be1d7d5ba6f; 8b86fda9030134b6b8bd75958ff6be19412c5c6c; 3c5ffb0c5411e6122f7a85e881ac18677f073988; 0b00730786b172c596c3186ecabbf89b30906dbb |
+| C1.456 | IMA-EXEC-20261110-1825Z-02 | ACADEMIC: agenda y resultados de entrevistas con ownership, lock y pruebas locales PASS | PM-01 — TASK-153 / ACADEMIC / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.456 | 1934–1968 | C1.455 | eb0bc0f6d8dc44d07d9ba79778194fd3cf223ad2; 0901d2b0e4d129123461a6219cdbb138cbc9e7a2; dc993865cbb07266e138d4702bd1c9c638c379e4; 58ca1f6ea7cc436ffcc9b62bab59e7d302f69ba7; 35323eb433a69ca6efe199924dbe1ad2d4ff63a4; 1c7d127be25d19508b2a1dd98335d8df8abe1669; a85ae38d530d934834afe1ef00ef52391f3fc413 |
