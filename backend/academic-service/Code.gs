@@ -2645,11 +2645,13 @@ function convertAdmissionToStudent(payload) {
     admSheet.getRange(admissionRowNumber, 12).setValue("Convertida");
     logStructuredEvent("ACADEMIC", "convertAdmissionToStudent", "INFO", "ADMISSION_CONVERTED",
       "Solicitud " + solicitudId + " convertida a expediente " + finalExpId + " y matrícula " + matriculaRealId,
-      { solicitudId: solicitudId, expedienteId: finalExpId, matriculaRealId: matriculaRealId, anolectivo: anolectivo, grado: grado, departmentId: departmentId },
+      { solicitudId: solicitudId, expedienteId: finalExpId, matriculaRealId: matriculaRealId, cargoId: chargeRes.cargoId,
+        anolectivo: anolectivo, grado: grado, departmentId: departmentId },
       ctx.actor.role);
     return {
       status: "success", solicitudId: solicitudId, expedienteId: finalExpId, codigoInstitucional: code,
-      userId: targetUserId, matriculaId: matriculaRealId, message: "Solicitud " + solicitudId + " convertida exitosamente en expediente y matrícula."
+      userId: targetUserId, matriculaId: matriculaRealId, cargoId: chargeRes.cargoId,
+      message: "Solicitud " + solicitudId + " convertida exitosamente en expediente y matrícula."
     };
     } catch (conversionError) {
       const rollbackErrors = [];
