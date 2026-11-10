@@ -731,3 +731,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se amplía Plan Maestro §10.82 con requisitos funcionales, controles y pruebas requeridas; no se ejecutaron pruebas.
 - No se crean usuarios, roles o asignaciones reales ni se modifican código, datos, esquemas, permisos o backlogs fuente. T153-S01 conserva su bloqueo.
 - Checkpoint C1.411: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt, líneas 181–193; índice Auditoría/INDICE_CHECKPOINTS.md, fila C1.411.
+
+[2026-11-10] C1.412 — IMA-EXEC-20261110-1202Z-01 — matriz configurable de roles y autoridad institucional superior
+- Nueva especificación Auditoría/ESPECIFICACION_MATRIZ_ROLES_RESPONSABILIDADES.md: roles, responsabilidades, tipos documentales, operaciones, ámbitos, propuesta de responsable por autor, reglas de acceso y pruebas futuras.
+- N-24 incorpora Titular Institucional / Representante Legal (TIRL) por encima de Dirección, separado del desarrollador; puede asumir Dirección en funciones con vigencia y auditoría. La representación legal exige instrumento válido y no desplaza órganos estatutarios.
+- Límites: representantes y alumnos excluidos de autoridad interna; Docencia restringida a sus asignaturas asignadas; Contaduría al dominio financiero; asistentes solo por delegación; otros empleados sin rol habilitado denegados por defecto.
+- Plan Maestro §10.83. Propuesta pendiente de ratificación y asesoría legal. Sin cambios de código, esquemas, datos o permisos reales; pruebas no ejecutadas; T153-S01 sigue Bloqueada.
