@@ -1399,11 +1399,15 @@ function getStudentTasks(payload) {
  */
 
 function assertTaskServiceStudentCanAccessTask(ss, userId, taskRow) {
-  if (!taskRow) throw new Error("Tarea no encontrada.");
+  if (!taskRow) throw new Error("RESOURCE_NOT_FOUND");
   const profile = getTaskServiceUserProfile(userId);
-  if (normalizeString(taskRow[6]) !== normalizeString(profile.grado)) throw new Error("Acceso denegado: tarea fuera del grado del estudiante.");
-  if (taskRow[7] && String(taskRow[7]).trim() && !isInTeacherList(profile.seccion, taskRow[7])) throw new Error("Acceso denegado: tarea fuera de la sección del estudiante.");
-  if (String(taskRow[11] || "Activa").trim().toLowerCase() === "desactivada") throw new Error("La tarea no está disponible.");
+  if (normalizeString(taskRow[6]) !== normalizeString(profile.grado)) throw new Error("RESOURCE_NOT_FOUND");
+  if (taskRow[7] && String(taskRow[7]).trim() && !isInTeacherList(profile.seccion, taskRow[7])) throw new Error("RESOURCE_NOT_FOUND");
+  if (String(taskRow[11] || "Activa").trim().toLowerCase() === "desactivada") throw new Error("RESOURCE_NOT_FOUND");
+  const studentIdentity = { authorized: true, userId: String(userId || "").trim(), role: "Estudiante" };
+  const studentScope = getVerifiedTaskDepartmentScope_({}, ss, studentIdentity);
+  const ownership = assertTaskServiceResourceOwnership_({}, "TAREA", taskRow[0], "READ", ss, studentIdentity, studentScope);
+  if (!ownership.authorized) throw new Error("RESOURCE_NOT_FOUND");
   if (String(taskRow[1] || "").trim() === "Credito Extra") {
     const originalId = String(taskRow[9] || "").trim();
     const deliveries = getSheetOrThrow(ss, "Entregas").getDataRange().getValues().slice(1);
@@ -2606,26 +2610,21 @@ function getDriveStorageQuotaMetricsReport(payload) {
 function getSubmissionDocumentPreviewUrl(payload) {
   try {
     if (!payload || !payload.fileId) return { status:"error", message:"fileId es requerido." };
-    const claims = verifySessionToken(payload.sessionToken || payload.authToken || payload.token);
+    const token = payload.sessionToken || payload.authToken || payload.token;
+    const claims = verifySessionToken(token);
     if (!claims || !claims.userId || !claims.role) return { status:"error", code:"AUTH_PERMISSION_DENIED", message:"Sesión no válida o expirada." };
     const fileId = extractTaskServiceFileId(payload.fileId);
+    if (!fileId) return { status:"error", code:"AUTH_PERMISSION_DENIED", message:"Archivo no vinculado a una entrega institucional." };
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const deliveries = getSheetOrThrow(ss,"Entregas").getDataRange().getValues().slice(1);
-    const delivery = deliveries.find(row => extractTaskServiceFileId(row[4]) === fileId);
-    if (!delivery) return { status:"error", code:"AUTH_PERMISSION_DENIED", message:"Archivo no vinculado a una entrega institucional." };
-    const role = String(claims.role), actorId = String(claims.userId).trim();
-    const taskRow = getSheetOrThrow(ss,"Tareas").getDataRange().getValues().slice(1).find(row => String(row[0]).trim() === String(delivery[1]).trim());
-    let allowed = false;
-    if (role === "Estudiante" || role === "Alumno") allowed = String(delivery[2]).trim() === actorId;
-    if (role === "Profesor" || isTaskServiceAdministrativeRole(role)) {
-      try {
-        if (!taskRow) throw new Error("RESOURCE_NOT_FOUND");
-        assertTaskServiceTeacherCanManageTask({ sessionToken: payload.sessionToken || payload.authToken || payload.token }, taskRow, "READ_CONTENT");
-        allowed = true;
-      } catch (_) { allowed = false; }
+    const matches = deliveries.filter(row => extractTaskServiceFileId(row[4]) === fileId);
+    if (matches.length !== 1) return { status:"error", code:"AUTH_PERMISSION_DENIED", message:"Archivo no vinculado a una entrega única." };
+    const delivery = matches[0];
+    const access = getTaskServiceSubmissionAccess_({ sessionToken: token, entregaId: String(delivery[0] || "").trim() }, "READ_CONTENT");
+    if (!access.delivery || String(access.delivery[0] || "").trim() !== String(delivery[0] || "").trim() ||
+        extractTaskServiceFileId(access.delivery[4]) !== fileId) {
+      return { status:"error", code:"AUTH_PERMISSION_DENIED", message:"No tiene autorización sobre el documento solicitado." };
     }
-    if (["Padre","Tutor","Responsable"].indexOf(role) !== -1) allowed = getTaskServiceGuardianStudentIds(actorId).indexOf(String(delivery[2]).trim()) !== -1;
-    if (!allowed) return { status:"error", code:"AUTH_PERMISSION_DENIED", message:"No tiene autorización sobre el documento solicitado." };
     const file = DriveApp.getFileById(fileId), mimeType = file.getMimeType(), fileName = file.getName(), fileSize = file.getSize();
     return { status:"success",fileId:fileId,fileName:fileName,fileSizeMb:(fileSize/(1024*1024)).toFixed(2),mimeType:mimeType,
       isPdf:mimeType==="application/pdf"||fileName.toLowerCase().endsWith(".pdf"),
