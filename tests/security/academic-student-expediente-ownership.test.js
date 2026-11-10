@@ -520,3 +520,73 @@ console.log("ACADEMIC admission conversion idempotency contract passed.");
   }),/ADMISSION_CONVERSION_INCOMPLETE/,"ambiguous expediente must not be treated as a complete conversion");
 }
 console.log("ACADEMIC converted admission reconciliation contract passed.");
+
+
+// Admission-generated enrollment charges carry an exact request/enrollment reference.
+// Unmarked ordinary charges are never adopted as admission charges.
+{
+  const helperSource=extractFunction("findAdmissionConversionCharge_");
+  const helperContext={};
+  vm.runInNewContext(helperSource+"\\nthis.find=findAdmissionConversionCharge_;",helperContext);
+  const header=["CargoID","Fecha","UserId","Concepto","MontoBase","Descuento","MontoFinal","Estado","FechaVencimiento","ReferenciaOrigen"];
+  const linked=["CRG-1",new Date(),"STU-1","Matrícula Ordinaria 2026",1500,0,1500,"Pendiente","",
+    "ADMISION|ADM-1|MAT-1"];
+  assert.equal(helperContext.find([header,linked],"STU-1","2026","ADM-1","MAT-1")[0],"CRG-1",
+    "exactly linked admission charge must be found");
+  assert.throws(()=>helperContext.find([header,["CRG-OLD",new Date(),"STU-1","Matrícula Ordinaria 2026",1500,0,1500,"Pendiente",""]],"STU-1","2026","ADM-1","MAT-1"),
+    /ADMISSION_CHARGE_CONFLICT/,"unmarked legacy charge must not be adopted");
+  assert.throws(()=>helperContext.find([header],"STU-1","2026","ADM-1","MAT-1"),
+    /ADMISSION_CONVERSION_INCOMPLETE/,"missing admission charge must fail closed");
+  assert.throws(()=>helperContext.find([header,linked,linked],"STU-1","2026","ADM-1","MAT-1"),
+    /ADMISSION_CHARGE_AMBIGUOUS/,"duplicate admission charge references must fail closed");
+  assert.throws(()=>helperContext.find([header,[...linked.slice(0,2),"STU-OTHER",...linked.slice(3)]],"STU-1","2026","ADM-1","MAT-1"),
+    /ADMISSION_CHARGE_CONFLICT/,"reference owned by another user must fail closed");
+
+  function mutableChargeSheet(rows) {
+    return {
+      rows:rows.map(row=>row.slice()),
+      getLastRow(){return this.rows.length;},
+      getDataRange(){const self=this;return {getValues(){return self.rows.map(row=>row.slice());}};},
+      appendRow(row){this.rows.push(row.slice());},
+      deleteRow(row){this.rows.splice(row-1,1);},
+      getRange(row,col) {
+        const self=this;
+        return {setValue(value){self.rows[row-1][col-1]=value;}};
+      }
+    };
+  }
+  function registerCharge(initialRows, reference, amount) {
+    const sheet=mutableChargeSheet(initialRows);
+    const ss={getSheetByName:name=>name==="CargosEstudiante"?sheet:null};
+    const context={
+      SPREADSHEET_ID:"TEST",
+      SpreadsheetApp:{openById:()=>ss},
+      getOrCreateSheet:(_ss,name)=>name==="CargosEstudiante"?sheet:{
+        getDataRange:()=>({getValues:()=>[["MatriculaID","Fecha","UserId","Alumno","Grado","Seccion","Periodo","Tipo","Estado","BecaDescuento","Observaciones"]]}),
+        appendRow:()=>{},getLastRow:()=>1
+      },
+      Date,
+      Math
+    };
+    vm.runInNewContext(extractFunction("registerStudentEnrollment")+"\\nthis.register=registerStudentEnrollment;",context);
+    const rollback=[];
+    const result=context.register({
+      userId:"STU-1",alumno:"Student",grado:"1",seccion:"A",periodo:"2026",
+      cargos:[{concepto:"Matrícula Ordinaria 2026",montoBase:amount,descuento:0,estado:"Pendiente"}],
+      _chargeReference:reference,_rollbackActions:rollback
+    });
+    return {sheet,result,rollback};
+  }
+  const emptyHeader=[["CargoID","Fecha","UserId","Concepto","MontoBase","Descuento","MontoFinal","Estado","FechaVencimiento"]];
+  const first=registerCharge(emptyHeader,"ADMISION|ADM-1|MAT-1",1500);
+  assert.equal(first.sheet.rows.length,2,"admission charge must be inserted once");
+  assert.equal(first.sheet.rows[0][9],"ReferenciaOrigen","legacy sheet header must be extended");
+  assert.equal(first.sheet.rows[1][9],"ADMISION|ADM-1|MAT-1","new charge must carry exact request/enrollment reference");
+  const retry=registerCharge(first.sheet.rows,"ADMISION|ADM-1|MAT-1",1500);
+  assert.equal(retry.sheet.rows.length,2,"exact retry must reuse its charge without inserting a duplicate");
+  assert.throws(()=>registerCharge([emptyHeader[0],["CRG-OLD",new Date(),"STU-1","Matrícula Ordinaria 2026",1500,0,1500,"Pendiente",""]],"ADMISION|ADM-1|MAT-1",1500),
+    /ADMISSION_CHARGE_CONFLICT/,"unmarked active charge must block admission charge creation");
+  assert.throws(()=>registerCharge([emptyHeader[0],linked],"ADMISION|ADM-1|MAT-1",1600),
+    /ADMISSION_CHARGE_CONFLICT/,"same reference with changed amount must fail closed");
+}
+console.log("ACADEMIC admission charge attribution contract passed.");
