@@ -2278,6 +2278,64 @@ function findAdmissionConversionMovement_(movData, expedienteId, periodo, solici
   return matches[0];
 }
 
+function findAdmissionConversionEnrollment_(matData, userId, periodo, solicitudId, grado) {
+  const requestMarker = "Convertido desde solicitud " + String(solicitudId || "").trim();
+  const matches = (Array.isArray(matData) ? matData : []).slice(1).filter(function(row) {
+    return String(row[2] || "").trim() === String(userId || "").trim() &&
+      String(row[6] || "").trim() === String(periodo || "").trim();
+  });
+  if (matches.length > 1) throw new Error("ADMISSION_ENROLLMENT_AMBIGUOUS");
+  if (!matches.length) throw new Error("ADMISSION_CONVERSION_INCOMPLETE: enrollment missing");
+  const enrollment = matches[0];
+  if (String(enrollment[10] || "").trim() !== requestMarker ||
+      String(enrollment[4] || "").trim() !== String(grado || "").trim()) {
+    throw new Error("ADMISSION_ENROLLMENT_CONFLICT");
+  }
+  return enrollment;
+}
+
+function assertAdmissionConversionArtifactsComplete_(ss, solicitudRow, solicitudId, expedienteId) {
+  const expSheet = ss && ss.getSheetByName("ExpedientesEstudiantes");
+  const expRows = expSheet ? expSheet.getDataRange().getValues().slice(1) : [];
+  const expMatches = expRows.filter(function(row) {
+    return String(row[0] || "").trim() === String(expedienteId || "").trim();
+  });
+  if (expMatches.length !== 1 || !String(expMatches[0][1] || "").trim()) {
+    throw new Error("ADMISSION_CONVERSION_INCOMPLETE: expediente missing or ambiguous");
+  }
+
+  const studentIdentity = getStudentIdentityForPerson_(ss, expMatches[0][1]);
+  if (!studentIdentity || !studentIdentity.userId) {
+    throw new Error("ADMISSION_CONVERSION_INCOMPLETE: student account unresolved");
+  }
+
+  const periodo = String(solicitudRow[2] || "2026").trim();
+  const grado = String(solicitudRow[3] || "").trim();
+  const matSheet = ss.getSheetByName("Matriculas");
+  if (!matSheet) throw new Error("ADMISSION_CONVERSION_INCOMPLETE: enrollment sheet missing");
+  const enrollment = findAdmissionConversionEnrollment_(
+    matSheet.getDataRange().getValues(), studentIdentity.userId, periodo, solicitudId, grado
+  );
+
+  const movementSheet = ss.getSheetByName("MovimientosEstudiante");
+  if (!movementSheet) throw new Error("ADMISSION_CONVERSION_INCOMPLETE: movement sheet missing");
+  const movement = findAdmissionConversionMovement_(
+    movementSheet.getDataRange().getValues(), expedienteId, periodo, solicitudId, enrollment[0]
+  );
+  if (!movement ||
+      String(movement[7] || "").trim() !== String(enrollment[4] || "").trim() ||
+      String(movement[8] || "").trim() !== String(enrollment[5] || "").trim()) {
+    throw new Error("ADMISSION_CONVERSION_INCOMPLETE: movement does not match enrollment");
+  }
+
+  return {
+    expedienteId: String(expedienteId),
+    userId: studentIdentity.userId,
+    matriculaId: String(enrollment[0]),
+    movimientoId: String(movement[0])
+  };
+}
+
 function convertAdmissionToStudent(payload) {
   const { solicitudId, seccion, forceCapacityOverride, allowIncompleteOverride } = payload || {};
   if (!solicitudId) throw new Error("solicitudId es requerido.");
@@ -2318,7 +2376,10 @@ function convertAdmissionToStudent(payload) {
       if (!existingAccess || existingAccess.authorized !== true || String(existingAccess.departmentId || "").trim() !== departmentId) {
         throw new Error("RESOURCE_NOT_FOUND");
       }
+      const conversionArtifacts = assertAdmissionConversionArtifactsComplete_(ss, row, solicitudId, expedienteExistenteId);
       return { status: "success", isAlreadyConverted: true, expedienteId: expedienteExistenteId,
+        userId: conversionArtifacts.userId, matriculaId: conversionArtifacts.matriculaId,
+        movimientoId: conversionArtifacts.movimientoId,
         message: "La solicitud " + solicitudId + " ya fue convertida previamente al expediente " + expedienteExistenteId + "." };
     }
 
