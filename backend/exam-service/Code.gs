@@ -1135,25 +1135,6 @@ function isExamAssignedToStudent_(examRow, studentProfile) {
   return grade === studentProfile.grado.toLowerCase() &&
     (!section || section.toLowerCase() === "todas" || isInTeacherList(studentProfile.seccion, section));
 }
-function hasExamOwnershipInInstitution_(ss, resourceId) {
-  try {
-    const institutionId = String(PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID") || "").trim();
-    if (!institutionId || !resourceId) return false;
-    const sheet = ss && ss.getSheetByName("ResourceOwnership");
-    if (!sheet) return false;
-    const rows = sheet.getDataRange().getValues(), matches = [];
-    for (let i = 1; i < rows.length; i++) {
-      const row = rows[i] || [];
-      if (String(row[1] || "").trim() !== institutionId ||
-          String(row[2] || "").trim().toUpperCase() !== "EXAMEN" ||
-          String(row[3] || "").trim() !== String(resourceId).trim() ||
-          String(row[5] || "").trim().toUpperCase() !== "ACTIVE") continue;
-      if (!String(row[4] || "").trim()) return false;
-      matches.push(row);
-    }
-    return matches.length === 1;
-  } catch (_) { return false; }
-}
 function getVerifiedGuardianStudentIds_(ss, tutorUserId) {
   const tutorId = String(tutorUserId || "").trim();
   if (!tutorId) return [];

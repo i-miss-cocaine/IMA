@@ -12,6 +12,7 @@ on:
     paths:
       - 'backend/exam-service/Code.gs'
       - 'tests/security/exam-service-security-contract.test.js'
+      - 'tests/security/exam-service-departmental-access.test.js'
       - '.github/workflows/exam-service-security-contract.yml'
 jobs:
   exam-security-contracts:
