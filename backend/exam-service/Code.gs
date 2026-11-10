@@ -1060,7 +1060,65 @@ function purgeSecurityCaches(payload) {
   }
 }
 
-function submitExam({ examenId, userId, respuestas }) {
+function submitExam(payload) {
+  const examenId = String((payload && payload.examenId) || "").trim();
+  const respuestas = payload && payload.respuestas;
+  if (!examenId || !Array.isArray(respuestas)) throw new Error("SUBMISSION_INVALID");
+  const context = getExamReadContext_(payload);
+  const { actor, ss, studentActor, profile, scope } = context;
+  if (!studentActor || actor.role !== "Estudiante" && actor.role !== "Alumno") throw new Error("RESOURCE_NOT_AVAILABLE");
+  const examRows = getSheetOrThrow(ss, "Examenes").getDataRange().getValues();
+  const examMatches = examRows.slice(1).filter(row => String(row[0]) === examenId);
+  if (examMatches.length !== 1) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const exam = examMatches[0];
+  if (String(exam[7] || "") !== "Activo" || !isExamAssignedToStudent_(exam, profile) ||
+      !assertExamResourceOwnershipForScope_(ss, scope, "EXAMEN", examenId, "SUBMIT", payload).authorized) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
+  const questionRows = getSheetOrThrow(ss, "PreguntasExamen").getDataRange().getValues().slice(1)
+    .filter(row => String(row[1]) === examenId);
+  const questionIds = new Set(questionRows.map(row => String(row[0])));
+  const submittedIds = new Set();
+  respuestas.forEach(answer => {
+    const questionId = String(answer && answer.preguntaId || "").trim();
+    if (!questionId || !questionIds.has(questionId) || submittedIds.has(questionId)) {
+      throw new Error("SUBMISSION_INVALID");
+    }
+    submittedIds.add(questionId);
+  });
+  const deliveriesSheet = getSheetOrThrow(ss, "EntregasExamen");
+  const deliveries = deliveriesSheet.getDataRange().getValues().slice(1);
+  const previousAttempts = deliveries.filter(row => String(row[1]) === examenId && String(row[2]) === actor.userId).length;
+  const configuredAttempts = parseInt(exam[12], 10);
+  const allowedAttempts = Number.isSafeInteger(configuredAttempts) && configuredAttempts > 0 ? configuredAttempts : 1;
+  if (previousAttempts >= allowedAttempts) throw new Error("EXAM_ATTEMPTS_EXHAUSTED");
+  let correctas = 0;
+  respuestas.forEach(answer => {
+    const question = questionRows.find(row => String(row[0]) === String(answer.preguntaId));
+    let points = 0;
+    if (question[2] === "termino_pareado") {
+      try {
+        const studentMap = JSON.parse(answer.respuestaEstudiante || "{}");
+        const correctMap = JSON.parse(question[5] || "{}");
+        const total = Object.keys(correctMap).length;
+        let hits = 0;
+        for (const key in correctMap) if (studentMap[key] === correctMap[key]) hits++;
+        points = total > 0 ? hits / total : 0;
+      } catch (_) { points = 0; }
+    } else {
+      const isText = question[2] === "completacion" || question[2] === "verdadero_falso";
+      const matches = isText
+        ? normalizeString(answer.respuestaEstudiante) === normalizeString(question[5])
+        : answer.respuestaEstudiante === question[5];
+      points = matches ? 1 : 0;
+    }
+    correctas += points;
+  });
+  const nota = questionRows.length ? ((correctas / questionRows.length) * 100).toFixed(2) : "0";
+  const entregaExamenId = "EEX-" + Date.now();
+  deliveriesSheet.appendRow([entregaExamenId, examenId, actor.userId, new Date(), JSON.stringify(respuestas), nota, "Pendiente"]);
+  return { status: "success", data: { entregaExamenId, calificacion: nota } };
+}) {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const preguntas = getSheetOrThrow(ss, "PreguntasExamen")
     .getDataRange().getValues().slice(1)
