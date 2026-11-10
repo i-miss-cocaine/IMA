@@ -2388,3 +2388,15 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - **CI:** identity mapping 42738762937 success; department scope 42738862173 success.
 - **Brechas:** expediente estudiantil sin DepartamentoID; no hay preview/stream seguro para archivos privados; permisos de archivos antiguos pendientes de revocación; siguen pendientes estructuras institucionales/firmas, referencias compartidas, operaciones granulares, búsquedas/importaciones y política configurable.
 
+
+
+## 10.72 TASK-153 — endpoint autenticado para comprobantes privados — C1.393
+
+- **Estado:** En ejecución; no cierra TASK-153 ni los criterios globales de F41-08.
+- **Implementación:** ACCOUNTING expone getPaymentVoucherFile por doPost; la fila de ComprobantesPago es la única fuente del file ID. El cliente no puede seleccionar un archivo arbitrario.
+- **Autorización:** sesión firmada y assertPaymentVoucherOwnerAccess_ para estudiante propio, tutor vinculado con portal activo, personal de ámbito departamental y rol institucional explícito.
+- **Respuesta:** contenido Base64 con MIME, nombre y tamaño; rechaza archivo ausente/en papelera/vacío, mayor de 10 MiB o extensión/MIME no permitidos.
+- **RBAC:** nuevo permiso limitado a roles que ya tienen getPaymentVouchers; validateRolePermission aplica las mismas barreras de ámbito para la nueva acción.
+- **Pruebas/CI:** contrato Accounting ampliado; identity mapping 42739904392 y Department Scope 42739904420 — completed/success. El segundo workflow ejecutó también contratos Academic y Accounting.
+- **Límites:** integración UI aún pendiente; archivos históricos pueden conservar permisos públicos; no se probó runtime real Apps Script/Drive. Expedientes estudiantiles siguen sin DepartamentoID; referencias compartidas, operaciones granulares, filtros/importaciones y política configurable siguen abiertos.
+- **Siguiente acción:** integrar el endpoint en la UI y validar preview/descarga end-to-end con archivo privado de prueba; luego inventariar/revocar enlaces públicos históricos de forma controlada.

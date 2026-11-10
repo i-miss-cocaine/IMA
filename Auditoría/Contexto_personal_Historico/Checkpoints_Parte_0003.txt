@@ -1765,3 +1765,44 @@ Commit de cierre: este commit; SHA se confirmará externamente tras publicación
 - Siguiente trabajo: propiedad departamental y migración de expedientes/documentos estudiantiles; servicio de lectura/preview autorizado para archivos privados; revocación de enlaces públicos históricos; después estructuras institucionales/firmas, referencias compartidas y operaciones granulares.
 - **HEAD C1.391 verificado:** 2a5f892ed024e0291bf89ec116df2ec43851efc4.
 ===============================================================================
+
+===============================================================================
+## C1.393 — 2026-11-10 — IMA-EXEC-20261110-0158Z-01
+
+- **Baseline lógico válido:** C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a.
+- **Checkpoint anterior:** C1.391, registrado en el commit documental C1.392 (c785939f9e264f3abe30571eb9ca015ce8e736f1).
+- **Rama autorizada:** NG_beta_0.0.0.1_work. **Rama protegida:** NG_beta_0.0.0.1 — SHA 44d9891132332e692dbe2ba8602b41f50a508a59, sin modificaciones.
+- **Commit funcional C1.393:** c9b0cb6524693087731c34d36645212aec21711a; HEAD de rama de trabajo verificado.
+- **Tarea activa:** TASK-153 — PM-01 / P0 / orden local 1. Sigue En ejecución; no se cierra ningún criterio global.
+- **Auditoría única:** se continúa F41-08/E2E-41-09 en el informe FASE 41 existente; no se crea un informe ni un ID duplicado.
+
+### Incremento C1.393 — lectura autenticada de comprobantes privados
+
+- ACCOUNTING incorpora getPaymentVoucherFile, expuesto mediante el router doPost y permisos RBAC de los roles que ya podían consultar comprobantes.
+- La operación exige sesión verificada y un comprobanteId; localiza la fila en ComprobantesPago y deriva el file ID exclusivamente de la referencia almacenada. Ignora cualquier fileId proporcionado por el cliente.
+- Antes de acceder a Drive reutiliza assertPaymentVoucherOwnerAccess_: estudiante propio, tutor con relación activa y acceso de portal, personal con ámbito departamental o rol con ámbito institucional explícito.
+- La lectura falla cerrada si la referencia no es válida, el archivo no existe o está en papelera, está vacío, supera 10 MiB o su extensión/MIME no pertenece a PDF/JPG/JPEG/PNG/WEBP.
+- El endpoint entrega el contenido autorizado en Base64, junto con nombre, MIME y tamaño, para que un cliente autenticado pueda construir una vista/descarga sin un enlace público.
+- Se amplía tests/security/accounting-departmental-resource-access.test.js con casos de identidad propia, IDOR, tutor vinculado, ámbito departamental, alcance institucional, sesión inválida, comprobante inexistente y file ID inyectado en payload (ignorado).
+
+### CI C1.393
+
+- **Identity mapping and transport security contracts:** run 42739904392 — completed/success. Logs confirman TASK-068 identity mapping y TASK-030 transport scope.
+- **Department Scope Contract:** run 42739904420 — completed/success. Logs confirman department scope, Academic departmental resource access y Accounting departmental resource/payment voucher access contracts.
+- Ambas ejecuciones corresponden exactamente al HEAD C1.393 (c9b0cb6524693087731c34d36645212aec21711a) en NG_beta_0.0.0.1_work.
+- Las pruebas son contratos locales Node/VM. No se ejecutó una integración real con Apps Script, Sheets o Drive.
+
+### Límites y pendientes
+
+1. No se integró todavía la llamada del cliente/UI para solicitar getPaymentVoucherFile y construir la vista/descarga desde Base64; este incremento implementa y prueba el endpoint backend.
+2. Los comprobantes y documentos históricos pueden conservar permisos públicos anteriores. No se ejecutó limpieza ni revocación masiva en Drive; la existencia del endpoint no revoca enlaces ya compartidos.
+3. El esquema de ExpedientesEstudiantes/DocumentosEstudiante sigue sin DepartamentoID propietario; la migración desde una fuente autoritativa continúa pendiente.
+4. Siguen pendientes ExpedientesInstitucionales, SolicitudesFirmas, referencias compartidas revocables, operaciones granulares, filtros de búsqueda/importación y POLITICA_ESTRICTA_AISLAMIENTO_DEPARTAMENTAL.
+5. No se probó acceso en runtime de despliegues Apps Script ni la recuperación de archivos reales; no se afirma PASS de integración.
+
+### Dictamen y siguiente paso
+
+- TASK-153 permanece En ejecución; no se marcan completos los criterios de aceptación globales.
+- Siguiente trabajo: integrar el endpoint Base64 en la UI de comprobantes y validar el flujo de extremo a extremo con un archivo privado de prueba; después inventariar y revocar de forma controlada permisos públicos históricos. Continuar la propiedad departamental y migración de expedientes/documentos estudiantiles.
+- **HEAD C1.393 verificado:** c9b0cb6524693087731c34d36645212aec21711a.
+===============================================================================

@@ -284,3 +284,12 @@ La plataforma cuenta con un excelente control de concurrencia para identificador
 - **Límites:** expedientes/documentos estudiantiles no tienen DepartamentoID; no existe aún endpoint de preview/stream autorizado para comprobantes privados; comprobantes históricos y documentos laborales anteriores pueden conservar permisos públicos. TASK-153 continúa En ejecución.
 - Se mantiene F41-08/E2E-41-09; no se crea ID de auditoría duplicado.
 
+
+
+### Seguimiento F41-08 / E2E-41-09 — lectura autenticada de comprobantes privados — C1.393
+- **Corrección:** ACCOUNTING incorpora getPaymentVoucherFile, que exige identidad firmada, localiza el comprobante por ID interno y deriva el file ID de la fila almacenada; no acepta un file ID del cliente.
+- **Autorización del recurso:** reutiliza assertPaymentVoucherOwnerAccess_ para estudiante propietario, tutor con relación activa/portal, personal con ámbito departamental o acceso institucional explícito.
+- **Protección del contenido:** archivos en papelera, vacíos, mayores de 10 MiB o con extensión/MIME fuera de PDF/JPG/JPEG/PNG/WEBP se rechazan; la respuesta entrega Base64 solo después de autorizar.
+- **Pruebas:** el contrato Accounting agrega casos positivos y negativos de IDOR, tutor, departamento, ámbito institucional, sesión inválida, comprobante inexistente y file ID inyectado ignorado.
+- **CI:** identity mapping run 42739904392 success; department scope run 42739904420 success. La segunda ejecución incluye los contratos Academic y Accounting.
+- **Pendiente:** no se integró aún el cliente/UI; los permisos públicos de archivos históricos requieren inventario y revocación controlada; no se ejecutó integración real Apps Script/Sheets/Drive. TASK-153 permanece En ejecución; no se crea un nuevo ID F41-08/E2E-41-09.

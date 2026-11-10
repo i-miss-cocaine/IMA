@@ -616,3 +616,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - CI: identity mapping 42738762937 success; department scope 42738862173 success. La primera ejecución de la suite de ámbito falló por argumento extra en el test y se corrigió antes del run aprobado.
 - TASK-153 sigue En ejecución; quedan propiedad departamental de expedientes estudiantiles, preview seguro de archivos privados, limpieza de archivos históricos, referencias compartidas y operaciones granulares.
 
+
+
+## C1.393 — IMA-EXEC-20261110-0158Z-01
+- ACCOUNTING incorpora getPaymentVoucherFile para recuperar comprobantes privados tras verificar identidad firmada y propietario/relación/ámbito.
+- El file ID se deriva de ComprobantesPago y no se acepta desde el cliente; se valida existencia, papelera, tamaño y MIME/extensión.
+- La respuesta entrega Base64 para preview/descarga autenticada; integración de UI todavía pendiente.
+- Contrato Accounting ampliado con casos IDOR, tutor, ámbito departamental/institucional, sesión inválida y referencia inyectada.
+- CI: 42739904392 y 42739904420 — success. Sin integración real Apps Script/Drive; los permisos públicos históricos siguen pendientes de revocación.
+- TASK-153 permanece En ejecución.

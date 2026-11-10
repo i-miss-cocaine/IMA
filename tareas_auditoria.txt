@@ -677,3 +677,11 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - Sigue pendiente el preview seguro de archivos privados, la limpieza de enlaces públicos históricos, propiedad departamental de expedientes estudiantiles, referencias compartidas y operaciones granulares.
 - TASK-153 permanece En ejecución; no se crea un nuevo ID F41-08/E2E-41-09.
 
+
+
+### TASK-153 — seguimiento C1.393
+- Se incorpora getPaymentVoucherFile en ACCOUNTING con autorización de propietario y ámbito, file ID derivado de la fila ComprobantesPago y respuesta Base64.
+- Se rechaza file ID proporcionado por el cliente; se valida estado en papelera, tamaño máximo 10 MiB y MIME/extensión permitidos.
+- Pruebas directas: estudiante propio/IDOR, tutor vinculado, personal departamental, rol institucional, sesión inválida y comprobante inexistente.
+- CI identity mapping 42739904392 y Department Scope 42739904420 success; el segundo ejecutó los contratos de Academic y Accounting.
+- Pendiente integrar UI, revisar y revocar permisos públicos históricos y probar Drive/Apps Script real. TASK-153 continúa En ejecución.

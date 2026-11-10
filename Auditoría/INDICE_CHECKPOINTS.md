@@ -3,11 +3,11 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.385**
-- Última sesión: `IMA-EXEC-20261110-0042Z-01`
+- Último checkpoint: **C1.393**
+- Última sesión: `IMA-EXEC-20261110-0158Z-01`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.385: **122910**
+- Caracteres del archivo activo tras C1.393: **136940**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 - Baseline lógico válido: **C1.316** (`31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`). C1.317–C1.382 se conservan, pero no se aceptan como evidencia de continuidad por corrección expresa del usuario.
@@ -219,3 +219,4 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.385 | IMA-EXEC-20261110-0042Z-01 | Publicado en este commit; TASK-153 en ejecución | USER scope context firmado y contrato local; CI pendiente | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.385 | 1657–1675 | C1.384 | Este commit; SHA a verificar tras publicación |
 | C1.388 | IMA-EXEC-20261110-0122Z-01 | 03471a1e36bdfccc29668103d1d4426e4353018a; TASK-153 continúa En ejecución | TASK-153 / PM-01 / P0 — barreras Academic/Accounting y contratos locales CI aprobados | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.388 | 1678–1722 | C1.385 | C1.388 HEAD verificado; checkpoint y registros en commit documental siguiente |
 | C1.391 | IMA-EXEC-20261110-0153Z-01 | 2a5f892ed024e0291bf89ec116df2ec43851efc4; TASK-153 sigue En ejecución | TASK-153 / PM-01 / P0 — comprobantes de pago con propietario/ámbito y archivos privados | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.391 | 1725–1767 | C1.388 | HEAD C1.391 verificado; documentación registrada en C1.392 |
+| C1.393 | IMA-EXEC-20261110-0158Z-01 | c9b0cb6524693087731c34d36645212aec21711a; CI local success | TASK-153 / PM-01 / P0 — endpoint autenticado de lectura de comprobantes privados | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.393 | 1770–1807 | C1.391 | HEAD C1.393 verificado; checkpoint y registros en commit documental siguiente |

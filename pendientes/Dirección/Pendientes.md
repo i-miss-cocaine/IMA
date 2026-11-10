@@ -736,7 +736,7 @@
   - [ ] Las operaciones de descarga, firma y exportación respetan el ámbito departamental asignado.
   - [ ] Los roles institucionales con acceso global funcionan conforme a sus permisos explícitos sin falsos bloqueos.
 - **Dependencias:** Sistema de usuarios, departamentos, roles y estructura de propiedad documental.
-- **Estado:** [ ] En ejecución (C1.391; controles locales aprobados, criterios globales pendientes).
+- **Estado:** [ ] En ejecución (C1.393; endpoint autenticado de lectura de comprobantes privados y CI local aprobados; criterios globales pendientes).
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7086-7126; clave TASK-169; asignación única: Dirección -->
 
@@ -746,6 +746,8 @@
 - **Limitaciones C1.388:** los esquemas actuales de ExpedientesEstudiantes y DocumentosEstudiante carecen de DepartamentoID; el acceso departamental falla cerrado hasta incorporar/migrar esa propiedad. ExpedientesInstitucionales y SolicitudesFirmas no se encontraron; CatalogoDepartamentos tampoco, aunque existe DepartamentosAcademicos. uploadPaymentVoucher conserva enlace público y payload.userId; archivos laborales antiguos requieren revisión de permisos. Referencias compartidas, operaciones granulares y filtros/importaciones siguen pendientes.
 - **Avance C1.390–C1.391:** Accounting protege uploadPaymentVoucher, getPaymentVouchers y reviewPaymentVoucher con identidad firmada y propietario/ámbito; estudiantes solo gestionan sus comprobantes, tutores requieren relación activa y personal requiere ámbito. Los nuevos archivos se guardan privados. CI identity mapping 42738762937 y Department Scope 42738862173: success.
 - **Limitación C1.391:** los comprobantes privados todavía no tienen endpoint de preview/stream autorizado; los archivos históricos pueden conservar enlaces públicos. El DepartamentoID sigue ausente en ExpedientesEstudiantes/DocumentosEstudiante; TASK-153 no se cierra.
+- **Avance C1.393:** ACCOUNTING añade getPaymentVoucherFile, derivando el archivo desde ComprobantesPago y validando sesión, propietario/relación y ámbito antes de devolver Base64; se validan existencia, papelera, tamaño (10 MiB) y MIME/extensión. CI runs 42739904392 y 42739904420 — success.
+- **Limitaciones C1.393:** falta integración UI para preview/descarga; no se han revocado permisos públicos históricos ni probado Drive/Apps Script real. TASK-153 continúa En ejecución.
 ---
 
 <!-- ID: AUD-NG-164 | Fuentes: Pendientes.md -->

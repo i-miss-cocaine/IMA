@@ -797,3 +797,11 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - **Límites:** expedientes/documentos estudiantiles no tienen DepartamentoID; no existe aún endpoint de preview/stream autorizado para comprobantes privados; comprobantes históricos y documentos laborales anteriores pueden conservar permisos públicos. TASK-153 continúa En ejecución.
 - Se mantiene F41-08/E2E-41-09; no se crea ID de auditoría duplicado.
 
+
+
+### Seguimiento TASK-153 — C1.393
+- ACCOUNTING incorpora getPaymentVoucherFile: el archivo se resuelve desde el registro del comprobante, no desde un file ID del cliente.
+- La lectura exige sesión firmada y autorización de propietario/relación/ámbito; devuelve Base64 solo para archivos PDF/JPG/JPEG/PNG/WEBP válidos, no vacíos y de hasta 10 MiB.
+- Contrato Accounting ampliado con pruebas de IDOR, tutor vinculado, departamento, ámbito institucional, sesión inválida y referencia de archivo inyectada.
+- CI 42739904392 y 42739904420: success. Sin integración real Apps Script/Sheets/Drive ni integración UI en este incremento.
+- Los permisos públicos de archivos históricos, el esquema departamental estudiantil y los demás criterios de TASK-153 permanecen pendientes.
