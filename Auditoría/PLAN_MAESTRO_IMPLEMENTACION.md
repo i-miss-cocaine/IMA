@@ -3031,3 +3031,14 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Verificación:** GitHub Actions run `42874101082` **PASS** en los dos contratos Node: `task-service-security-contract.test.js` y `task-service-resource-ownership.test.js`. El run `42873964908` había fallado por una aserción obsoleta del preview; se alineó la prueba con el guard compartido en `bf0c17f` y el run posterior pasó. Las pruebas locales en este entorno siguen NOT RUN por falta de checkout/runtime local; CI no se presenta como ejecución local.
 - **Límites:** no se desplegó Apps Script ni se accedió a Sheets/Drive reales. La validación beta/despliegue queda para la fase correspondiente y no bloquea la continuación del desarrollo.
 - **Estado:** mitigación TASK Service publicada; TASK-153 continúa En ejecución y AUD-NG-386 permanece abierto por la superficie EXAM y demás criterios globales pendientes.
+
+
+### 10.102 TASK-153 — endurecimiento de accesos directos a entregas y archivos TASK (C1.444)
+
+- **Continuidad:** el backlog ya registra C1.443 para la cobertura de ResourceOwnership en listados de estudiante/tutor. Esta entrada documenta la extensión y consolidación de la misma frontera en accesos directos.
+- **Corrección:** `getStudentTasks` valida el ámbito departamental del estudiante objetivo y, para consultas de personal, exige además el ámbito del actor. `assertTaskServiceStudentCanAccessTask` ahora exige ResourceOwnership y ámbito verificado antes de permitir acceso estudiantil a una tarea. `getTaskServiceSubmissionAccess_` reutiliza esa guarda para entregas, comentarios y versiones.
+- **Archivos/preview:** `getSubmissionDocumentPreviewUrl` deja de implementar autorizaciones por rol separadas; localiza una única entrega y delega autorización en `getTaskServiceSubmissionAccess_` con operación `READ_CONTENT`. Los vínculos ambiguos se rechazan.
+- **Pruebas:** se agregan escenarios sintéticos para estudiante/tutor y acceso directo, más aserciones sobre delegación de preview y rechazo de asociaciones ambiguas. Revisión estática de 10 condiciones de estructura/guardas: PASS.
+- **Ejecución:** el contrato dinámico Node no se ejecutó en runtime local durante esta sesión; no se declara PASS. GitHub combined status y workflow runs para el último commit consultado no reportaron checks. La validación beta/despliegue queda en la fase beta y no bloquea el desarrollo.
+- **Commits:** `538d1dc5f732de3fc26faaeeabab907e51122740` y `1558e5c99b4fee58474a849bc8087d9c16914028` (con los commits previos de C1.443 en la misma secuencia de trabajo).
+- **Estado:** TASK-153 continúa En ejecución; AUD-NG-386 permanece abierto por alcance EXAM y demás criterios globales pendientes.
