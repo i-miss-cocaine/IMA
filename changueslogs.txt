@@ -958,7 +958,7 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - BETA-FUNC-023 ampliada; Pendiente beta.
 
 
-[2026-11-10] C1.446 — IMA-EXEC-20261110-1825Z-02 — ACADEMIC: ownership en expedientes SELF/GUARDIAN, relaciones e informes
+[2026-11-10] C1.447 — IMA-EXEC-20261110-1825Z-02 — ACADEMIC: ownership en expedientes SELF/GUARDIAN, relaciones e informes
 - Acceso SELF/GUARDIAN ahora exige ResourceOwnership; tutores resuelven el ámbito de la cuenta activa del estudiante vinculado.
 - getStudentGuardians/saveStudentGuardian/unlinkStudentGuardian validan RBAC y expediente; se impide editar un responsable compartido sin acceso a todos sus expedientes activos.
 - Búsqueda de duplicados e informes PII filtran por ownership; se corrige PersonaID→UserID y fechaNacimiento.
