@@ -5070,3 +5070,12 @@ Alcance estático satisfecho; sin cambios de código. Hallazgos AUD-NG-374..376 
 - Se añade nota aditiva al bloque TASK-050; preservado el histórico. AUD-NG-091…096 siguen vinculadas. Solo AUD-NG-096 se marca Completada.
 - Sin cambios funcionales ni auditoría duplicada.
 ===============================================================================
+
+===============================================================================
+## C1.418 — Reconciliación de TASK-637 / inventario integral
+- Tree de partida HEAD `9ad4b2ed33ea07fa0f63e5fe90f1d01cee8d9be1`, no truncado, 1.051 blobs.
+- Inventario C1.299: 1024 filas parseables; 27 rutas omitidas; 31 rutas con tamaño/SHA obsoletos.
+- Inventario C1.418: 1.051 rutas únicas; 0 omitidas; 0 extras; 0 discrepancias de SHA/tamaño en los 1.050 archivos externos al inventario; SELF con tamaño UTF-8 exacto.
+- `index.html` conserva SHA `cd742047cdc4948259dd721119429b04f78330ca`. Resumen funcional por área recalculado.
+- TASK-637 queda Completada; los snapshots C1.299 se conservan como historial. No se modificó código, rutas fuente ni datos productivos.
+===============================================================================

@@ -399,3 +399,42 @@ Fase: PM-00 — conciliación administrativa/documental.
 Reaplicar §6.1 PM-00. TASK-279 no es elegible mientras «modelo de tickets y permisos validados» no esté verificado como Completado. Continuar con siguiente tarea PM-00 elegible, leyendo requisito íntegro y dependencias. El ciclo F29-TASK05↔F29-TASK17 sigue pendiente de triage.
 Commit: el commit que contiene este checkpoint; SHA verificado tras publicación.
 ===============================================================================
+
+===============================================================================
+## CHECKPOINT C1.418 — Reconciliación del inventario TASK-637
+Sesión: IMA-EXEC-20261110-1312Z-06
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+HEAD de partida: 9ad4b2ed33ea07fa0f63e5fe90f1d01cee8d9be1.
+Checkpoint anterior: C1.417.
+Fase: PM-00 — mantenimiento del inventario y cierre documental.
+
+### Tarea y resultado
+- TASK-637 — inventario integral de archivos.
+- Estado: Completada (reconciliación vigente C1.418).
+- El árbol Git recursivo no truncado contiene 1.051 blobs.
+- Inventario anterior: 1024 filas parseables, 27 rutas omitidas, 31 filas con SHA/tamaño desactualizados.
+- Inventario nuevo: 1.051 rutas únicas; cero omisiones/extras; tamaños y SHA exactos en los 1.050 archivos distintos del inventario; autorreferencia SELF con tamaño UTF-8 exacto.
+- `index.html` conserva SHA `cd742047cdc4948259dd721119429b04f78330ca`. Resumen por área recalculado.
+
+### Archivos modificados
+- `docs/architecture/repository-inventory.md` — reconstrucción completa del snapshot.
+- `pendientes/Contabilidad/Pendientes.md` — cierre vigente C1.418 de TASK-637.
+- `Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md` — §10.88.
+- `Auditoría/MapaDependencias.md` — registro C1.418.
+- `changueslogs.txt` — entrada C1.418.
+- `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt` — este checkpoint.
+- `Auditoría/INDICE_CHECKPOINTS.md` — fila C1.418.
+
+### Autoauditoría / Code Review / pruebas
+- Se compararon rutas del tree con las filas de inventario; unicidad, cobertura, SHA y tamaños verificados.
+- Se verificó el tamaño UTF-8 de la autorreferencia y la integridad del resumen por área.
+- Revisión documental interna aprobada; no se modificó código ni contenido funcional.
+- No se ejecutaron pruebas de producto, despliegues ni operaciones productivas; no aplican a este inventario.
+- No se creó una auditoría duplicada ni se reescribieron snapshots históricos.
+
+### Siguiente acción
+TASK-638 tiene su dependencia TASK-637 satisfecha; verificar si su mapa de dependencias vigente conserva evidencia válida frente a los cambios del árbol antes de seleccionarla/cerrarla. Reaplicar §6.1 y continuar PM-00. TASK-279 permanece no elegible mientras su dependencia de modelo de tickets y permisos validados no esté acreditada.
+Commit: el commit que contiene este checkpoint; SHA verificado tras publicación.
+===============================================================================

@@ -772,3 +772,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se añadió nota aditiva en TASK-050; AUD-NG-091 a AUD-NG-096 siguen vinculadas.
 - AUD-NG-096 queda Completada únicamente por su rectificación documental. Sin código ni pruebas de producto.
 - Checkpoint C1.417: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt; índice Auditoría/INDICE_CHECKPOINTS.md.
+
+[2026-11-10] C1.418 — IMA-EXEC-20261110-1312Z-06 — reconciliación del inventario TASK-637
+- Tree HEAD de partida 9ad4b2ed33ea07fa0f63e5fe90f1d01cee8d9be1, no truncado: 1.051 blobs.
+- Inventario previo: 1024 filas; 27 rutas omitidas y 31 metadatos SHA/tamaño desactualizados.
+- Inventario reconciliado: 1.051 rutas únicas, cero omitidas/extras, tamaños/SHA exactos para 1.050 archivos externos y SELF con tamaño UTF-8 exacto; resumen por área actualizado.
+- index.html conserva SHA cd742047cdc4948259dd721119429b04f78330ca. Autoauditoría y Code Review documental aprobados; no se modificó código ni se ejecutaron pruebas productivas.
+- TASK-637 Completada; checkpoint C1.418 en Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt; índice actualizado.
