@@ -1006,3 +1006,119 @@ console.log("academic admission waitlist reorder ownership, group and rollback c
 }
 
 console.log("academic admission conversion atomic ownership, rollback and concurrency contract: PASS");
+
+
+// Admission evaluation/interview reads must return only requests whose current
+// ResourceOwnership is authorized; writes revalidate that ownership under lock.
+{
+  const evaluationRows=[
+    ["ID","SolicitudID","Tipo","Puntaje","Escala","Dictamen","Obligatoria","Evaluador","Rubrica","Notas","Fecha"],
+    ["E-OWN","REQ-OWNED","Academica",90,"100","Aprobado",true,"EVAL-1","{}","nota propia","today"],
+    ["E-FOREIGN","REQ-FOREIGN","Academica",10,"100","Reprobado",true,"EVAL-2","{}","PII ajena","today"]
+  ];
+  const interviewRows=[
+    ["ID","SolicitudID","Fecha","Inicio","Fin","Evaluador","Lugar","Modalidad","Estado","Notas","Creada"],
+    ["I-OWN","REQ-OWNED","2026-11-14","09:00","10:00","EVAL-1","Campus","Presencial","Programada","nota propia","today"],
+    ["I-FOREIGN","REQ-FOREIGN","2026-11-14","10:00","11:00","EVAL-2","Privado","Presencial","Programada","PII ajena","today"]
+  ];
+  function makeReadSheet(rows) {
+    return {getDataRange(){return {getValues:()=>rows.map(row=>row.slice())};}};
+  }
+  for (const [name,fn,rows,key] of [
+    ["EvaluacionesAdmision","getAdmissionEvaluations",evaluationRows,"evaluations"],
+    ["EntrevistasAdmision","getAdmissionInterviews",interviewRows,"interviews"]
+  ]) {
+    const context={
+      getAcademicAdmissionScopeContext_:(_payload,action,requestId,operation)=>({
+        authorized:action===fn&&requestId===""&&operation==="READ",ss:{},
+        actor:{authorized:true,userId:"EVAL-1",role:"Evaluador"},
+        scope:{authorized:true,institutionId:"INST-1",departmentIds:["D1"],institutionWide:false}
+      }),
+      getAuthorizedAdmissionRequestIds_:()=>new Set(["REQ-OWNED"]),
+      getOrCreateSheet:(_ss,sheetName)=>{assert.equal(sheetName,name);return makeReadSheet(rows);}
+    };
+    vm.runInNewContext(extractFunction(fn),context);
+    const result=fn==="getAdmissionEvaluations"
+      ?context.getAdmissionEvaluations({})
+      :context.getAdmissionInterviews({});
+    assert.equal(result.status,"success");
+    assert.deepEqual(Array.from(result[key],item=>item.solicitudId),["REQ-OWNED"],
+      fn+" must exclude every evaluation/interview belonging to an unauthorized request");
+    assert.equal(JSON.stringify(result).includes("PII ajena"),false);
+  }
+}
+
+// A specific-request read is denied before opening the private evaluation or
+// interview sheet when the request ownership check fails.
+{
+  for (const fn of ["getAdmissionEvaluations","getAdmissionInterviews"]) {
+    let sheetReads=0;
+    const context={
+      getAcademicAdmissionScopeContext_:()=>({authorized:false}),
+      getOrCreateSheet:()=>{sheetReads++;throw new Error("must not read");}
+    };
+    vm.runInNewContext(extractFunction(fn),context);
+    const result=fn==="getAdmissionEvaluations"
+      ?context.getAdmissionEvaluations({solicitudId:"REQ-FOREIGN"})
+      :context.getAdmissionInterviews({solicitudId:"REQ-FOREIGN"});
+    assert.equal(result.code,"RESOURCE_NOT_FOUND");
+    assert.equal(sheetReads,0);
+  }
+}
+
+// Ownership is checked again after lock acquisition for evaluation writes;
+// a revoked request scope cannot append a record using a stale pre-lock context.
+{
+  let held=false,ownershipChecks=0,sheetReads=0,appends=0,releases=0;
+  const context={
+    getAcademicAdmissionScopeContext_:()=>({authorized:true,ss:{},actor:{userId:"EVAL-1",role:"Evaluador"}}),
+    LockService:{getScriptLock:()=>({tryLock:()=>{held=true;return true;},releaseLock:()=>{held=false;releases++;}})},
+    assertAcademicAdmissionRequestScopeAccess_:()=>{assert.equal(held,true);ownershipChecks++;return {authorized:false};},
+    getOrCreateSheet:()=>{sheetReads++;return {appendRow:()=>{appends++;}};}
+  };
+  vm.runInNewContext(extractFunction("saveAdmissionEvaluation"),context);
+  assert.throws(()=>context.saveAdmissionEvaluation({solicitudId:"REQ-1",tipoEvaluacion:"Academica",dictamen:"Aprobado"}),/RESOURCE_NOT_FOUND/);
+  assert.deepEqual({held,ownershipChecks,sheetReads,appends,releases},{held:false,ownershipChecks:1,sheetReads:0,appends:0,releases:1});
+}
+
+// Interview scheduling revalidates request ownership inside the lock before
+// reading the schedule or appending; manager-selected evaluators are rechecked
+// for a current departmental assignment in that same critical section.
+{
+  function makeScheduleHarness({requestAuthorized=true,manager=false,evaluatorScope=true}={}) {
+    let held=false,ownershipChecks=0,sheetReads=0,appends=0,releases=0,evaluatorIdentityChecks=0,evaluatorScopeChecks=0;
+    const sheet={
+      getDataRange(){assert.equal(held,true);sheetReads++;return {getValues:()=>[["ID","SolicitudID","Fecha","Inicio","Fin","Evaluador","Lugar","Modalidad","Estado"],];};},
+      appendRow(){assert.equal(held,true);appends++;}
+    };
+    const context={
+      getAcademicAdmissionScopeContext_:()=>({authorized:true,ss:{},actor:{userId:"MANAGER-1",role:manager?"Director":"Evaluador"},
+        scope:{authorized:true,institutionId:"INST-1",departmentIds:["D1"],institutionWide:false},requestAccess:{authorized:true,departmentId:"D1"}}),
+      assertAcademicAdmissionRequestScopeAccess_:()=>{assert.equal(held,true);ownershipChecks++;return {authorized:requestAuthorized,departmentId:"D1"};},
+      isAcademicAdmissionManagerRole_:()=>manager,
+      getAcademicUserIdentityForAdmission_:()=>{assert.equal(held,true);evaluatorIdentityChecks++;return {userId:"EVAL-2"};},
+      getVerifiedAcademicDepartmentScope_:()=>{assert.equal(held,true);evaluatorScopeChecks++;return {authorized:evaluatorScope,departmentIds:["D1"],institutionWide:false};},
+      resolveAcademicAdmissionDepartment_:()=>({departmentId:"D1"}),
+      LockService:{getScriptLock:()=>({tryLock:()=>{held=true;return true;},releaseLock:()=>{held=false;releases++;}})},
+      getOrCreateSheet:()=>{assert.equal(held,true);return sheet;},
+      generateInstitutionalId:()=>({generatedId:"ENT-NEW"}),
+      logStructuredEvent:()=>{},Date
+    };
+    vm.runInNewContext(extractFunction("scheduleAdmissionInterview"),context);
+    return {
+      execute:()=>context.scheduleAdmissionInterview({solicitudId:"REQ-1",fecha:"2026-11-15",horaInicio:"09:00",horaFin:"10:00",evaluadorUserId:manager?"EVAL-2":"MANAGER-1"}),
+      state:()=>({held,ownershipChecks,sheetReads,appends,releases,evaluatorIdentityChecks,evaluatorScopeChecks})
+    };
+  }
+  const denied=makeScheduleHarness({requestAuthorized:false});
+  assert.throws(()=>denied.execute(),/RESOURCE_NOT_FOUND/);
+  assert.deepEqual(denied.state(),{held:false,ownershipChecks:1,sheetReads:0,appends:0,releases:1,evaluatorIdentityChecks:0,evaluatorScopeChecks:0});
+  const managerDenied=makeScheduleHarness({manager:true,evaluatorScope:false});
+  assert.throws(()=>managerDenied.execute(),/RESOURCE_NOT_FOUND/);
+  assert.deepEqual(managerDenied.state(),{held:false,ownershipChecks:1,sheetReads:0,appends:0,releases:1,evaluatorIdentityChecks:1,evaluatorScopeChecks:1});
+  const managerAllowed=makeScheduleHarness({manager:true,evaluatorScope:true});
+  assert.equal(managerAllowed.execute().status,"success");
+  assert.deepEqual(managerAllowed.state(),{held:false,ownershipChecks:1,sheetReads:1,appends:1,releases:1,evaluatorIdentityChecks:1,evaluatorScopeChecks:1});
+}
+
+console.log("academic admission evaluation/interview isolation and TOCTOU contracts: PASS");
