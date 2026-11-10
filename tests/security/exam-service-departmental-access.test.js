@@ -63,10 +63,13 @@ const userRows = [
   ["UserID", "Nombre", "Grado", "Seccion", "Email"],
   ["STUDENT-1", "Estudiante Uno", "10", "A", "student1@example.invalid"],
   ["STUDENT-2", "Estudiante Dos", "10", "A", "student2@example.invalid"],
-  ["STUDENT-3", "Estudiante Tres", "10", "A", "student3@example.invalid"]
+  ["STUDENT-3", "Estudiante Tres", "10", "A", "student3@example.invalid"],
+  ["TUTOR-1", "Tutor Uno", "", "", "tutor1@example.invalid", "", "Tutor"]
 ];
 const questionRows = [["PreguntaID", "ExamenID", "Tipo", "Texto", "OpcionesJSON", "RespuestaCorrecta"], ["Q-1", "EXM-1", "opcion_multiple", "Pregunta propia", "{}", "A"], ["Q-2", "EXM-2", "opcion_multiple", "Pregunta otro departamento", "{}", "B"]];
-const sheets = { Examenes: examRows, AsignacionesAmbitosRoles: scopeRows, ResourceOwnership: ownershipRows, EntregasExamen: deliveryRows, Usuarios: userRows, PreguntasExamen: questionRows };
+const familyRows = [["RelacionID", "PersonaEstudianteID", "PersonaResponsableID", "TipoParentesco", "EstadoAutorizacion"], ["REL-1", "EXP-1", "TUTOR-1", "Madre/Padre", "Verificada"]];
+const studentExpRows = [["ExpedienteID", "UserID"], ["EXP-1", "STUDENT-1"]];
+const sheets = { Examenes: examRows, AsignacionesAmbitosRoles: scopeRows, ResourceOwnership: ownershipRows, EntregasExamen: deliveryRows, Usuarios: userRows, PreguntasExamen: questionRows, RelacionesFamiliares: familyRows, ExpedientesEstudiantes: studentExpRows };
 const sheetObjects = Object.fromEntries(Object.entries(sheets).map(([name, rows]) => [name, { getDataRange() { return { getValues: () => rows.map(row => row.slice()) }; } }]));
 const ss = { getSheetByName(name) { return sheetObjects[name] || null; } };
 const runtime = {
@@ -97,7 +100,7 @@ const duplicate = runtime.assertExamResourceOwnershipForScope_(ss, scope, "EXAME
 assert.equal(duplicate.authorized, false); assert.equal(duplicate.code, "RESOURCE_OWNERSHIP_AMBIGUOUS");
 assert.deepEqual(Array.from(runtime.getAllExams({ sessionToken: "other-token" }).data), [], "no accessible ownership returns an empty list");
 const readFunctions = ["getVerifiedExamIdentity_", "getVerifiedExamDepartmentScope_", "assertExamResourceOwnershipForScope_",
-  "getExamStudentProfile_", "isExamAssignedToStudent_", "getExamReadContext_", "getStudentExams", "getExamQuestions", "getExamResult"]
+  "getExamStudentProfile_", "isExamAssignedToStudent_", "getVerifiedGuardianStudentIds_", "getExamReadContext_", "getStudentExams", "getExamQuestions", "getExamResult"]
   .map(name => extractFunction(source, name)).join("\n");
 vm.runInNewContext(readFunctions + "\nthis.getStudentExams = getStudentExams; this.getExamQuestions = getExamQuestions; this.getExamResult = getExamResult;", runtime);
 const studentListPayload = { sessionToken: "student-token", userId: "STUDENT-2", grado: "99", seccion: "Z" };
@@ -111,6 +114,13 @@ assert.equal(runtime.getExamQuestions({ sessionToken: "student-token", examenId:
 assert.throws(() => runtime.getExamResult({ sessionToken: "student-token", entregaExamenId: "DEL-2" }),
   /RESOURCE_NOT_AVAILABLE/, "student cannot read another student's result");
 assert.equal(runtime.getExamResult({ sessionToken: "student-token", entregaExamenId: "DEL-1" }).data.calificacionTotal, 90);
-assert.throws(() => runtime.getStudentExams({ sessionToken: "tutor-token", userId: "STUDENT-1" }),
-  /RESOURCE_NOT_AVAILABLE/, "tutor access is denied until a verified tutor-student relationship source is available");
+const guardianList = runtime.getStudentExams({ sessionToken: "tutor-token", studentId: "STUDENT-1" });
+assert.deepEqual(Array.from(guardianList.data, row => row.examenId), ["EXM-1"],
+  "guardian reads are limited to a student with an active verified family link");
+assert.throws(() => runtime.getStudentExams({ sessionToken: "tutor-token", studentId: "STUDENT-2" }),
+  /RESOURCE_NOT_AVAILABLE/, "guardian cannot substitute an unrelated student ID");
+assert.equal(runtime.getExamQuestions({ sessionToken: "tutor-token", studentId: "STUDENT-1", examenId: "EXM-1" }).data.preguntas.length, 1);
+assert.equal(runtime.getExamResult({ sessionToken: "tutor-token", entregaExamenId: "DEL-1" }).data.calificacionTotal, 90);
+assert.throws(() => runtime.getExamResult({ sessionToken: "tutor-token", entregaExamenId: "DEL-2" }),
+  /RESOURCE_NOT_AVAILABLE/, "guardian cannot read a result for an unrelated student");
 process.stdout.write("exam-service-departmental-access: signed identity, department scope, tenant isolation and ownership assertions passed\n");
