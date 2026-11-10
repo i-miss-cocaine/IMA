@@ -30,6 +30,16 @@ function extractFunction(text, name) {
   throw new Error("unbalanced function " + name);
 }
 
+for (const name of ["updateExamStatus", "updateExam", "deleteExam", "gradeExamSubmission", "deleteExamSubmission"]) {
+  const declarations = source.match(new RegExp("function\\s+" + name + "\\s*\\(", "g")) || [];
+  assert.equal(declarations.length, 1, name + " must have exactly one active function declaration");
+  const handler = extractFunction(source, name);
+  const guard = name === "gradeExamSubmission" || name === "deleteExamSubmission"
+    ? "getAuthorizedExamSubmissionMutationContext_"
+    : "getAuthorizedExamMutationContext_";
+  assert.ok(handler.includes(guard), name + " must enforce identity, action permission, resource ownership and scope");
+}
+
 const publicActionsSource = source.match(/const PUBLIC_ACTIONS = \[[\s\S]*?\];/);
 assert.ok(publicActionsSource, "PUBLIC_ACTIONS declaration exists");
 const publicActions = vm.runInNewContext(publicActionsSource[0] + "\nPUBLIC_ACTIONS");
