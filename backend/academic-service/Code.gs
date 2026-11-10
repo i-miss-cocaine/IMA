@@ -2482,6 +2482,27 @@ function getStudentPersonIdForUser_(ss, userId) {
   return row ? String(row[personIdx] || "").trim() : "";
 }
 
+function getStudentUserIdForPerson_(ss, personId) {
+  const target = String(personId || "").trim();
+  if (!target) return "";
+  const sheet = ss && ss.getSheetByName("Usuarios");
+  if (!sheet || sheet.getLastRow() < 2) return "";
+  const values = sheet.getDataRange().getValues();
+  const headers = (values[0] || []).map(function(value) { return String(value || "").trim().toLowerCase(); });
+  const userIdx = headers.indexOf("userid") >= 0 ? headers.indexOf("userid") : 0;
+  const roleIdx = headers.indexOf("rol") >= 0 ? headers.indexOf("rol") : 6;
+  const personIdx = headers.indexOf("personaid") >= 0 ? headers.indexOf("personaid") : 9;
+  const stateIdx = headers.indexOf("estado") >= 0 ? headers.indexOf("estado") : 10;
+  const matches = values.slice(1).filter(function(row) {
+    const role = String(row[roleIdx] || "").trim().toUpperCase();
+    const state = String(row[stateIdx] || "Activa").trim().toUpperCase();
+    return String(row[personIdx] || "").trim() === target &&
+      ["ESTUDIANTE", "ALUMNO"].indexOf(role) !== -1 &&
+      ["ACTIVA", "ACTIVO", "ACTIVE"].indexOf(state) !== -1;
+  });
+  return matches.length === 1 ? String(matches[0][userIdx] || "").trim() : "";
+}
+
 var RESOURCE_OWNERSHIP_REQUEST_CACHE_ = new WeakMap();
 
 function assertResourceOwnershipForScope_(ss, scope, resourceType, resourceId, operation, payload) {
@@ -2540,18 +2561,16 @@ function assertStudentExpedienteScopeAccess_(payload, ss, expSheet, expRow) {
   if (!expRow || !expSheet) return { authorized: false, code: "RESOURCE_OWNER_UNRESOLVED" };
   const role = String(actor.role || "").toUpperCase().replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E").replace(/[ÍÌÏ]/g, "I").replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N").replace(/[^A-Z0-9]/g, "");
   const expedienteId = String(expRow[0] || "").trim();
-  const personId = getStudentPersonIdForUser_(ss, actor.userId);
+  const personId = String(expRow[1] || "").trim();
+  const actorPersonId = getStudentPersonIdForUser_(ss, actor.userId);
   const isStudent = role === "ESTUDIANTE" || role === "ALUMNO";
   const isGuardian = ["PADRE", "MADRE", "TUTOR", "RESPONSABLE", "RESPONSABLEFAMILIAR"].indexOf(role) !== -1;
+  let ownershipIdentity = actor;
 
   if (isStudent) {
-    return personId && String(expRow[1] || "").trim() === personId
-      ? { authorized: true, accessType: "SELF", userId: actor.userId }
-      : { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
-  }
-
-  if (isGuardian) {
-    if (!personId || !expedienteId) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+    if (!actorPersonId || personId !== actorPersonId) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+  } else if (isGuardian) {
+    if (!actorPersonId || !expedienteId || !personId) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
     const relations = ss.getSheetByName("RelacionesEstudianteTutor");
     const guardians = ss.getSheetByName("ResponsablesTutores");
     if (!relations || !guardians) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
@@ -2563,16 +2582,27 @@ function assertStudentExpedienteScopeAccess_(payload, ss, expSheet, expRow) {
       const portal = String(r[8] || "").trim().toUpperCase();
       if (["ACTIVO", "ACTIVA", "ACTIVE"].indexOf(state) === -1 || ["SI", "SÍ", "TRUE", "1", "ACTIVO", "ACTIVA"].indexOf(portal) === -1) return false;
       const guardian = guardianRows.find(function(g) { return String(g[0] || "").trim() === String(r[2] || "").trim(); });
-      return guardian && String(guardian[1] || "").trim() === personId;
+      return guardian && String(guardian[1] || "").trim() === actorPersonId;
     });
-    return linked ? { authorized: true, accessType: "GUARDIAN", userId: actor.userId } : { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+    if (!linked) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+    const studentUserId = getStudentUserIdForPerson_(ss, personId);
+    if (!studentUserId) return { authorized: false, code: "RESOURCE_OWNER_UNRESOLVED" };
+    ownershipIdentity = { authorized: true, userId: studentUserId, role: "Estudiante" };
   }
 
-  const scope = getVerifiedAcademicDepartmentScope_(payload, ss, actor);
-  if (!scope.authorized) return scope;
+  // SELF and GUARDIAN access are relational exceptions to staff RBAC, not
+  // exceptions to the institution/department ownership boundary.
+  const scope = getVerifiedAcademicDepartmentScope_(payload, ss, ownershipIdentity);
+  if (!scope || !scope.authorized) return scope || { authorized: false, code: "DEPARTMENT_SCOPE_NOT_ASSIGNED" };
   const ownership = assertResourceOwnershipForScope_(ss, scope, "EXPEDIENTE_ESTUDIANTE", expedienteId, "READ", payload);
-  if (!ownership.authorized) return ownership;
-  return { authorized: true, accessType: ownership.accessType, userId: actor.userId, departmentId: ownership.departmentId };
+  if (!ownership || !ownership.authorized) return ownership || { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+  return {
+    authorized: true,
+    accessType: isStudent ? "SELF" : (isGuardian ? "GUARDIAN" : ownership.accessType),
+    userId: actor.userId,
+    studentUserId: isGuardian ? ownershipIdentity.userId : "",
+    departmentId: ownership.departmentId
+  };
 }
 
 function assertStudentDocumentScopeAccess_(payload, ss, documentSheet, documentRow, expSheet) {
