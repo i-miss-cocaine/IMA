@@ -2555,6 +2555,19 @@ function assertResourceOwnershipForScope_(ss, scope, resourceType, resourceId, o
   }
 }
 
+function assertAcademicAdmissionRequestScopeAccess_(ss, scope, solicitudId, payload) {
+  if(!scope||!scope.authorized||!solicitudId)return {authorized:false,code:"RESOURCE_SCOPE_DENIED"};
+  const ownershipSheet=ss&&ss.getSheetByName("ResourceOwnership");
+  if(!ownershipSheet)return {authorized:false,code:"RESOURCE_OWNERSHIP_NOT_CONFIGURED"};
+  const rows=ownershipSheet.getDataRange().getValues().slice(1);
+  const historical=rows.filter(row=>String(row[2]||"").trim().toUpperCase()==="SOLICITUD_ADMISION"&&
+    String(row[3]||"").trim()===String(solicitudId).trim());
+  if(!historical.length&&scope.institutionWide===true){
+    return {authorized:true,code:"INSTITUTION_UNASSIGNED",accessType:"INSTITUTION",resourceType:"SOLICITUD_ADMISION",resourceId:String(solicitudId)};
+  }
+  return assertResourceOwnershipForScope_(ss,scope,"SOLICITUD_ADMISION",solicitudId,"READ",payload);
+}
+
 function assertStudentExpedienteScopeAccess_(payload, ss, expSheet, expRow) {
   const actor = getVerifiedAcademicIdentity_(payload);
   if (!actor.authorized) return actor;
@@ -10356,108 +10369,57 @@ function getStudentTimeline(payload) {
 
 // [TAREA-F5-017] [Fase 5: Admisiones y Calidad de Datos] - Detección de duplicados, clasificación por niveles de coincidencia y resolución de duplicados.
 function findDuplicateStudents(payload) {
-  const { nombres, apellidos, identificacion, fechaNacimiento, email, telefono, solicitudId } = payload || {};
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-
-  const admRows = getOrCreateSheet(ss, "SolicitudesAdmision").getDataRange().getValues().slice(1);
-  const expRows = getOrCreateSheet(ss, "ExpedientesEstudiantes").getDataRange().getValues().slice(1);
-  const userRows = ss.getSheetByName("Usuarios") ? ss.getSheetByName("Usuarios").getDataRange().getValues().slice(1) : [];
-
-  const normIdent = normalizeString(identificacion);
-  const normEmail = normalizeString(email);
-  const normPhone = (telefono || "").replace(/\D/g, "");
-  const normFullName = normalizeString(`${nombres || ''} ${apellidos || ''}`);
-  const normFechaNac = fechaNacimiento ? String(fechaNacimiento).trim() : "";
-
-  const candidates = [];
-
-  // 1. Comparar contra Expedientes de Estudiantes Matriculados
-  expRows.forEach(e => {
-    const expId = String(e[0]).trim();
-    const user = userRows.find(u => String(u[0]).trim() === String(e[1]).trim());
-    const uNombre = user ? user[1] : "";
-    const uEmail = user ? user[4] : "";
-    const uPhone = user && user[5] ? String(user[5]).replace(/\D/g, "") : "";
-    const uIdent = user ? normalizeString(user[8]) : "";
-
-    let matchReason = null;
-    let matchLevel = null;
-
-    if (normIdent && uIdent && uIdent === normIdent) {
-      matchReason = "IDENTIFICACION_EXACTA";
-      matchLevel = "COINCIDENCIA_EXACTA";
-    } else if (normFullName && uNombre && normalizeString(uNombre) === normFullName && normFechaNac && String(e[7] || "").trim() === normFechaNac) {
-      matchReason = "NOMBRE_Y_FECHA_NACIMIENTO";
-      matchLevel = "COINCIDENCIA_ALTA";
-    } else if (normEmail && uEmail && normalizeString(uEmail) === normEmail) {
-      matchReason = "EMAIL_COINCIDENTE";
-      matchLevel = "COINCIDENCIA_MEDIA";
-    } else if (normPhone && uPhone && uPhone.length >= 8 && normPhone.endsWith(uPhone.slice(-8))) {
-      matchReason = "TELEFONO_COINCIDENTE";
-      matchLevel = "COINCIDENCIA_MEDIA";
-    }
-
-    if (matchReason) {
-      candidates.push({
-        id: expId,
-        tipo: "EXPEDIENTE_ESTUDIANTE",
-        codigoInstitucional: e[2] || expId,
-        nombreCompleto: uNombre || `${nombres || ''} ${apellidos || ''}`,
-        identificacion: uIdent ? maskDni(uIdent) : "N/D",
-        email: uEmail || "N/D",
-        coincidencia: matchReason,
-        nivelCoincidencia: matchLevel
-      });
-    }
+  const permission=validateRolePermission("findDuplicateStudents",payload);
+  if(!permission||permission.authorized!==true)return {status:"error",code:"RESOURCE_SCOPE_DENIED",message:"Acceso denegado."};
+  const actor=getVerifiedAcademicIdentity_(payload);
+  if(!actor.authorized)return {status:"error",code:"RESOURCE_SCOPE_DENIED",message:"Acceso denegado."};
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),scope=getVerifiedAcademicDepartmentScope_(payload,ss,actor);
+  if(!scope||!scope.authorized)return {status:"error",code:"RESOURCE_SCOPE_DENIED",message:"Acceso denegado."};
+  const {nombres,apellidos,identificacion,fechaNacimiento,email,telefono,solicitudId}=payload||{};
+  const admRows=getOrCreateSheet(ss,"SolicitudesAdmision").getDataRange().getValues().slice(1);
+  const expRows=getOrCreateSheet(ss,"ExpedientesEstudiantes").getDataRange().getValues().slice(1);
+  const userRows=ss.getSheetByName("Usuarios")?ss.getSheetByName("Usuarios").getDataRange().getValues().slice(1):[];
+  const normIdent=normalizeString(identificacion),normEmail=normalizeString(email),normPhone=String(telefono||"").replace(/\D/g,"");
+  const normFullName=normalizeString(`${nombres||""} ${apellidos||""}`),normFechaNac=fechaNacimiento?String(fechaNacimiento).trim():"";
+  const candidates=[],expIdCounts={};
+  expRows.forEach(row=>{const id=String(row[0]||"").trim();if(id)expIdCounts[id]=(expIdCounts[id]||0)+1;});
+  expRows.forEach(e=>{
+    const expId=String(e[0]||"").trim(),personId=String(e[1]||"").trim();
+    if(!expId||!personId||expIdCounts[expId]!==1)return;
+    const ownership=assertResourceOwnershipForScope_(ss,scope,"EXPEDIENTE_ESTUDIANTE",expId,"READ",payload);
+    if(!ownership.authorized)return;
+    const studentIdentity=getStudentIdentityForPerson_(ss,personId);
+    if(!studentIdentity||!studentIdentity.userId)return;
+    const user=userRows.find(row=>String(row[0]||"").trim()===studentIdentity.userId);
+    if(!user)return;
+    const uNombre=user[1]||"",uEmail=user[4]||"",uPhone=user[5]?String(user[5]).replace(/\D/g,""):"",uIdent=normalizeString(user[8]);
+    let matchReason=null,matchLevel=null;
+    if(normIdent&&uIdent&&uIdent===normIdent){matchReason="IDENTIFICACION_EXACTA";matchLevel="COINCIDENCIA_EXACTA";}
+    else if(normFullName&&uNombre&&normalizeString(uNombre)===normFullName&&normFechaNac&&String(e[3]||"").trim()===normFechaNac){matchReason="NOMBRE_Y_FECHA_NACIMIENTO";matchLevel="COINCIDENCIA_ALTA";}
+    else if(normEmail&&uEmail&&normalizeString(uEmail)===normEmail){matchReason="EMAIL_COINCIDENTE";matchLevel="COINCIDENCIA_MEDIA";}
+    else if(normPhone&&uPhone&&uPhone.length>=8&&normPhone.endsWith(uPhone.slice(-8))){matchReason="TELEFONO_COINCIDENTE";matchLevel="COINCIDENCIA_MEDIA";}
+    if(matchReason)candidates.push({id:expId,tipo:"EXPEDIENTE_ESTUDIANTE",codigoInstitucional:e[2]||expId,
+      nombreCompleto:uNombre||`${nombres||""} ${apellidos||""}`,identificacion:uIdent?maskDni(uIdent):"N/D",email:uEmail||"N/D",
+      coincidencia:matchReason,nivelCoincidencia:matchLevel});
   });
-
-  // 2. Comparar contra Solicitudes de Admisión Activas
-  admRows.forEach(r => {
-    const sId = String(r[0]).trim();
-    const rEstado = String(r[11] || "").trim();
-    if (sId === String(solicitudId || "").trim() || rEstado === "Rechazada" || rEstado === "Retirada") return;
-
-    const rIdent = normalizeString(r[6]);
-    const rName = normalizeString(`${r[4] || ''} ${r[5] || ''}`);
-    const rFechaNac = String(r[7] || "").trim();
-    const rEmail = normalizeString(r[10]);
-    const rPhone = String(r[9] || "").replace(/\D/g, "");
-
-    let matchReason = null;
-    let matchLevel = null;
-
-    if (normIdent && rIdent && rIdent === normIdent) {
-      matchReason = "IDENTIFICACION_EXACTA";
-      matchLevel = "COINCIDENCIA_EXACTA";
-    } else if (normFullName && rName && normFullName === rName && normFechaNac && rFechaNac === normFechaNac) {
-      matchReason = "NOMBRE_Y_FECHA_NACIMIENTO";
-      matchLevel = "COINCIDENCIA_ALTA";
-    } else if (normEmail && rEmail && normEmail === rEmail) {
-      matchReason = "EMAIL_COINCIDENTE";
-      matchLevel = "COINCIDENCIA_MEDIA";
-    } else if (normPhone && rPhone && rPhone.length >= 8 && normPhone.endsWith(rPhone.slice(-8))) {
-      matchReason = "TELEFONO_COINCIDENTE";
-      matchLevel = "COINCIDENCIA_MEDIA";
-    }
-
-    if (matchReason) {
-      candidates.push({
-        id: sId,
-        tipo: "SOLICITUD_ADMISION",
-        codigoInstitucional: sId,
-        nombreCompleto: `${r[4] || ''} ${r[5] || ''}`.trim(),
-        identificacion: rIdent ? maskDni(rIdent) : "N/D",
-        email: rEmail || "N/D",
-        estadoSolicitud: rEstado,
-        coincidencia: matchReason,
-        nivelCoincidencia: matchLevel
-      });
-    }
+  admRows.forEach(row=>{
+    const id=String(row[0]||"").trim(),state=String(row[11]||"").trim();
+    if(!id||id===String(solicitudId||"").trim()||["Rechazada","Retirada"].includes(state))return;
+    const ownership=assertAcademicAdmissionRequestScopeAccess_(ss,scope,id,payload);
+    if(!ownership.authorized)return;
+    const rowIdent=normalizeString(row[6]),rowName=normalizeString(`${row[4]||""} ${row[5]||""}`);
+    const rowBirth=String(row[7]||"").trim(),rowEmail=normalizeString(row[10]),rowPhone=String(row[9]||"").replace(/\D/g,"");
+    let matchReason=null,matchLevel=null;
+    if(normIdent&&rowIdent&&rowIdent===normIdent){matchReason="IDENTIFICACION_EXACTA";matchLevel="COINCIDENCIA_EXACTA";}
+    else if(normFullName&&rowName&&normFullName===rowName&&normFechaNac&&rowBirth===normFechaNac){matchReason="NOMBRE_Y_FECHA_NACIMIENTO";matchLevel="COINCIDENCIA_ALTA";}
+    else if(normEmail&&rowEmail&&rowEmail===normEmail){matchReason="EMAIL_COINCIDENTE";matchLevel="COINCIDENCIA_MEDIA";}
+    else if(normPhone&&rowPhone&&rowPhone.length>=8&&normPhone.endsWith(rowPhone.slice(-8))){matchReason="TELEFONO_COINCIDENTE";matchLevel="COINCIDENCIA_MEDIA";}
+    if(matchReason)candidates.push({id,tipo:"SOLICITUD_ADMISION",codigoInstitucional:id,
+      nombreCompleto:`${row[4]||""} ${row[5]||""}`.trim(),identificacion:rowIdent?maskDni(rowIdent):"N/D",
+      email:rowEmail||"N/D",estadoSolicitud:state,coincidencia:matchReason,nivelCoincidencia:matchLevel});
   });
-
-  return { status: "success", duplicatesCount: candidates.length, candidates: candidates };
+  return {status:"success",duplicatesCount:candidates.length,candidates};
 }
-
 function maskDni(dni) {
   if (!dni) return "";
   const s = String(dni).trim();
@@ -10680,127 +10642,76 @@ function unmergeStudentFiles(payload) {
 
 // [TAREA-F6-026] [Fase 6: Expediente Institucional y Ciclo de Vida] - Catálogo de informes administrativos con exportación controlada y trazabilidad de descargas PII
 function getStudentFileAdministrativeReports(payload) {
-  const { reporteTipo, anoLectivo, grado, seccion, estadoFilter, fechaInicio, fechaFin, exportLog } = payload || {};
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const now = new Date();
-
-  const expRows = getOrCreateSheet(ss, "ExpedientesEstudiantes").getDataRange().getValues().slice(1);
-  const matRows = getOrCreateSheet(ss, "Matriculas").getDataRange().getValues().slice(1);
-  const movRows = getOrCreateSheet(ss, "MovimientosEstudiante").getDataRange().getValues().slice(1);
-  const docRows = getOrCreateSheet(ss, "DocumentosEstudiante").getDataRange().getValues().slice(1);
-  const userRows = ss.getSheetByName("Usuarios") ? ss.getSheetByName("Usuarios").getDataRange().getValues().slice(1) : [];
-
-  let reportData = [];
-  const type = reporteTipo || "ESTADO_EXPEDIENTES";
-
-  if (type === "ESTADO_EXPEDIENTES") {
-    reportData = expRows.filter(r => {
-      const estado = String(r[7] || "Activo");
-      return !estadoFilter || estado.toLowerCase() === String(estadoFilter).toLowerCase();
-    }).map(r => {
-      const expId = String(r[0]);
-      const userId = String(r[1]);
-      const uMatch = userRows.find(u => String(u[0]).trim() === userId.trim());
-      const matMatch = matRows.find(m => String(m[2]).trim() === userId.trim());
-
-      return {
-        expedienteId: expId,
-        codigoInstitucional: r[2],
-        nombreCompleto: uMatch ? uMatch[1] : ("Estudiante " + expId),
-        estadoExpediente: r[7] || "Activo",
-        grado: matMatch ? matMatch[4] : "N/A",
-        seccion: matMatch ? matMatch[5] : "N/A",
-        periodoLectivo: matMatch ? matMatch[6] : "2026",
-        fechaCreacion: r[8]
-      };
+  const permission=validateRolePermission("getStudentFileAdministrativeReports",payload);
+  if(!permission||permission.authorized!==true)return {status:"error",code:"RESOURCE_SCOPE_DENIED",message:"Acceso denegado."};
+  const actor=getVerifiedAcademicIdentity_(payload);
+  if(!actor.authorized)return {status:"error",code:"RESOURCE_SCOPE_DENIED",message:"Acceso denegado."};
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),scope=getVerifiedAcademicDepartmentScope_(payload,ss,actor);
+  if(!scope||!scope.authorized)return {status:"error",code:"RESOURCE_SCOPE_DENIED",message:"Acceso denegado."};
+  const {reporteTipo,anoLectivo,grado,seccion,estadoFilter,exportLog}=payload||{},now=new Date();
+  const expRows=getOrCreateSheet(ss,"ExpedientesEstudiantes").getDataRange().getValues().slice(1);
+  const matRows=getOrCreateSheet(ss,"Matriculas").getDataRange().getValues().slice(1);
+  const movRows=getOrCreateSheet(ss,"MovimientosEstudiante").getDataRange().getValues().slice(1);
+  const docRows=getOrCreateSheet(ss,"DocumentosEstudiante").getDataRange().getValues().slice(1);
+  const userRows=ss.getSheetByName("Usuarios")?ss.getSheetByName("Usuarios").getDataRange().getValues().slice(1):[];
+  const expCounts={};expRows.forEach(row=>{const id=String(row[0]||"").trim();if(id)expCounts[id]=(expCounts[id]||0)+1;});
+  const authorizedExpedientes=new Map(),authorizedPersonIds=new Set();
+  expRows.forEach(row=>{
+    const expId=String(row[0]||"").trim(),personId=String(row[1]||"").trim();
+    if(!expId||!personId||expCounts[expId]!==1)return;
+    const ownership=assertResourceOwnershipForScope_(ss,scope,"EXPEDIENTE_ESTUDIANTE",expId,"READ",payload);
+    if(!ownership.authorized)return;
+    const student=getStudentIdentityForPerson_(ss,personId);
+    if(!student||!student.userId)return;
+    authorizedExpedientes.set(expId,{row,student});
+    authorizedPersonIds.add(personId);
+  });
+  let reportData=[],type=reporteTipo||"ESTADO_EXPEDIENTES";
+  if(type==="ESTADO_EXPEDIENTES"){
+    reportData=Array.from(authorizedExpedientes.entries()).filter(([,item])=>{
+      const state=String(item.row[7]||"Activo");
+      return !estadoFilter||state.toLowerCase()===String(estadoFilter).toLowerCase();
+    }).map(([expId,item])=>{
+      const user=userRows.find(row=>String(row[0]||"").trim()===item.student.userId);
+      const mat=matRows.find(row=>String(row[2]||"").trim()===String(item.row[1]||"").trim());
+      return {expedienteId:expId,codigoInstitucional:item.row[2],nombreCompleto:user?user[1]:"Estudiante "+expId,
+        estadoExpediente:item.row[7]||"Activo",grado:mat?mat[4]:"N/A",seccion:mat?mat[5]:"N/A",
+        periodoLectivo:mat?mat[6]:"2026",fechaCreacion:item.row[8]};
     });
-  } else if (type === "MATRICULAS_POR_PERIODO") {
-    reportData = matRows.filter(m => {
-      const matchesAno = !anoLectivo || String(m[6]).trim() === String(anoLectivo).trim();
-      const matchesGrado = !grado || String(m[4]).toLowerCase() === String(grado).toLowerCase();
-      const matchesSeccion = !seccion || String(m[5]).toLowerCase() === String(seccion).toLowerCase();
-      const matchesEstado = !estadoFilter || String(m[8]).toLowerCase() === String(estadoFilter).toLowerCase();
-      return matchesAno && matchesGrado && matchesSeccion && matchesEstado;
-    }).map(m => ({
-      matriculaId: m[0],
-      fecha: m[1],
-      userId: m[2],
-      alumno: m[3],
-      grado: m[4],
-      seccion: m[5],
-      periodoLectivo: m[6],
-      tipoMatricula: m[7],
-      estadoMatricula: m[8]
-    }));
-  } else if (type === "REINCORPORACIONES_Y_MOVIMIENTOS") {
-    reportData = movRows.filter(m => {
-      const matchesAno = !anoLectivo || String(m[3]).trim() === String(anoLectivo).trim();
-      return matchesAno;
-    }).map(m => ({
-      movimientoId: m[0],
-      expedienteId: m[1],
-      periodo: m[3],
-      tipoMovimiento: m[4],
-      gradoOrigen: m[5],
-      seccionOrigen: m[6],
-      gradoDestino: m[7],
-      seccionDestino: m[8],
-      fechaEfectiva: m[9],
-      motivo: m[10]
-    }));
-  } else if (type === "DOCUMENTOS_PENDIENTES_VENCIDOS") {
-    reportData = docRows.filter(d => {
-      const estado = String(d[9] || "");
-      const fechaVencRaw = d[8];
-      const isExpired = fechaVencRaw && new Date(fechaVencRaw) < now;
-      return estado === "EnRevision" || estado === "Pendiente" || isExpired;
-    }).map(d => ({
-      documentoId: d[0],
-      expedienteId: d[1],
-      tipoDocumento: d[3],
-      nombreArchivo: d[4],
-      fechaRecepcion: d[7],
-      fechaVencimiento: d[8],
-      estadoRevision: d[9]
-    }));
+  }else if(type==="MATRICULAS_POR_PERIODO"){
+    reportData=matRows.filter(row=>{
+      const matchesAno=!anoLectivo||String(row[6]).trim()===String(anoLectivo).trim();
+      const matchesGrado=!grado||String(row[4]).toLowerCase()===String(grado).toLowerCase();
+      const matchesSeccion=!seccion||String(row[5]).toLowerCase()===String(seccion).toLowerCase();
+      const matchesEstado=!estadoFilter||String(row[8]).toLowerCase()===String(estadoFilter).toLowerCase();
+      return authorizedPersonIds.has(String(row[2]||"").trim())&&matchesAno&&matchesGrado&&matchesSeccion&&matchesEstado;
+    }).map(row=>({matriculaId:row[0],fecha:row[1],userId:row[2],alumno:row[3],grado:row[4],seccion:row[5],
+      periodoLectivo:row[6],tipoMatricula:row[7],estadoMatricula:row[8]}));
+  }else if(type==="REINCORPORACIONES_Y_MOVIMIENTOS"){
+    reportData=movRows.filter(row=>authorizedExpedientes.has(String(row[1]||"").trim())&&
+      (!anoLectivo||String(row[3]).trim()===String(anoLectivo).trim())).map(row=>({movimientoId:row[0],expedienteId:row[1],
+      periodo:row[3],tipoMovimiento:row[4],gradoOrigen:row[5],seccionOrigen:row[6],gradoDestino:row[7],
+      seccionDestino:row[8],fechaEfectiva:row[9],motivo:row[10]}));
+  }else if(type==="DOCUMENTOS_PENDIENTES_VENCIDOS"){
+    reportData=docRows.filter(row=>{
+      const state=String(row[9]||""),expired=row[8]&&new Date(row[8])<now;
+      return authorizedExpedientes.has(String(row[1]||"").trim())&&(state==="EnRevision"||state==="Pendiente"||expired);
+    }).map(row=>({documentoId:row[0],expedienteId:row[1],tipoDocumento:row[3],nombreArchivo:row[4],
+      fechaRecepcion:row[7],fechaVencimiento:row[8],estadoRevision:row[9]}));
+  }else return {status:"error",code:"REPORT_TYPE_INVALID",message:"Tipo de reporte no válido."};
+  if(exportLog){
+    try{
+      getOrCreateSheet(ss,"HistorialCambiosEntidad").appendRow([`HIST-${Date.now()}`,"ReportesAdministrativos",type,
+        "EXPORTACION_MASIVA_PII",`Exportación CSV/Excel realizada (${reportData.length} registros)`,actor.userId,now.toISOString(),
+        `Filtros aplicados: anoLectivo=${anoLectivo||"Todos"}, grado=${grado||"Todos"}, estado=${estadoFilter||"Todos"}`]);
+    }catch(_){}
+    logStructuredEvent("ACADEMIC","getStudentFileAdministrativeReports","WARN","REPORT_MASS_EXPORTED",
+      `Reporte ${type} exportado por ${actor.userId}. Registros: ${reportData.length}`,
+      {type,totalRegistros:reportData.length,anoLectivo,grado,estadoFilter},actor.role);
   }
-
-  // Auditoría obligatoria si se solicitó o ejecutó exportación con PII
-  if (exportLog) {
-    try {
-      const histSheet = getOrCreateSheet(ss, "HistorialCambiosEntidad");
-      histSheet.appendRow([
-        `HIST-${Date.now()}`,
-        "ReportesAdministrativos",
-        type,
-        "EXPORTACION_MASIVA_PII",
-        `Exportación CSV/Excel realizada (${reportData.length} registros)`,
-        (payload && payload.authUserId) || "Secretaría",
-        now.toISOString(),
-        `Filtros aplicados: anoLectivo=${anoLectivo || 'Todos'}, grado=${grado || 'Todos'}, estado=${estadoFilter || 'Todos'}`
-      ]);
-    } catch (_) {}
-
-    logStructuredEvent("ACADEMIC", "getStudentFileAdministrativeReports", "WARN", "REPORT_MASS_EXPORTED", `Reporte ${type} exportado por ${payload && payload.authUserId || 'Secretaría'}. Registros: ${reportData.length}`, {
-      type, totalRegistros: reportData.length, anoLectivo, grado, estadoFilter
-    }, payload && payload.authRole);
-  }
-
-  return {
-    status: "success",
-    reporteTipo: type,
-    filtrosAplicados: { anoLectivo, grado, seccion, estadoFilter },
-    totalRegistros: reportData.length,
-    reporte: reportData,
-    fechaGeneracion: now.toISOString()
-  };
+  return {status:"success",reporteTipo:type,filtrosAplicados:{anoLectivo,grado,seccion,estadoFilter},
+    totalRegistros:reportData.length,reporte:reportData,fechaGeneracion:now.toISOString()};
 }
-
-// ---------------------------------------------------------------------------
-// FASE 4: 4. PADRES, TUTORES Y RESPONSABLES
-// ---------------------------------------------------------------------------
-
-// [REQ-EXP-003] [Fase 1: Registro y Expediente de Estudiantes] - Service backend endpoints (getStudentGuardians, saveStudentGuardian, unlinkStudentGuardian) para la gestión de padres, tutores y responsables legales del estudiante.
 function getStudentGuardians(payload) {
   const { expedienteId } = payload || {};
   if (!expedienteId) return { status:"error", code:"RESOURCE_NOT_FOUND", message:"Acceso denegado." };
