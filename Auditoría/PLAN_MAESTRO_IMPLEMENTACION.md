@@ -3216,3 +3216,14 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Límites:** fixtures y lock local; no se afirma concurrencia real de Google Sheets. Sin despliegue ni datos institucionales reales.
 - **Estado:** incorporación a lista de espera corregida y aprobada localmente. TASK-153 sigue En ejecución por otras mutaciones de lista de espera y requisitos ACADEMIC pendientes.
 - **Commits:** `6009994e5df3fc45ddbadad9f782468dc65ba100` (código) y `314e07b4fa5cfeae005d69b1b417d66a44803851` (contrato).
+
+### 10.119 TASK-153 / ACADEMIC — proteger la oferta de plazas de lista de espera (C1.461)
+
+- **Autorización antes de datos:** `offerWaitlistSlot` valida contexto ACADEMIC sin solicitud, adquiere `ScriptLock` y resuelve inicialmente solo `EsperaID`/`SolicitudID`. Revalida el ownership de la solicitud bajo lock antes de leer fecha, criterios, observaciones o estado completo.
+- **Concurrencia y estados:** serializa la transición y actualiza estado, expiración, justificación preservada, fecha de ingreso y última actualización en un único rango. Una oferta todavía vigente es idempotente y no se sobrescribe; una oferta vencida puede renovarse. Solo admite `En_Espera`, `Oferta_Expirada` o `Plaza_Ofrecida` ya vencida; fechas de expiración inválidas y otros estados fallan cerradamente.
+- **Validación:** `horasVigencia` debe ser entero seguro positivo; conserva 72 horas por defecto.
+- **Contrato local:** autorización antes de leer detalles, denegación de ownership, ID ambiguo, lock contencioso, oferta válida, reintento idempotente sin escritura, renovación vencida, estado inválido, expiración inválida y vigencia no positiva.
+- **Ejecución:** GitHub Actions run `42895517906` — SUCCESS, Node 24. Contratos Department Scope, ACADEMIC (incluidas incorporación/oferta de lista de espera), ACCOUNTING, ResourceOwnership ABAC y voucher client PASS; sintaxis Apps Script y cliente PASS.
+- **Límites:** lock y datos simulados localmente; no se afirma concurrencia real de Sheets. Sin despliegue ni datos institucionales reales.
+- **Estado:** oferta de plazas ACADEMIC corregida y aprobada localmente. TASK-153 sigue En ejecución; queda revisar reordenamiento y otras rutas de lista de espera, además de recursos institucionales, firmas y referencias compartidas.
+- **Commits:** `7f3153e036d17ec6d070a67325b447f9c034422d` (código) y `239e360700728569e4a000ca542e837be77b1c25` (contrato).
