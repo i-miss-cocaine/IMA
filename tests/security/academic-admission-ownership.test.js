@@ -182,3 +182,23 @@ console.log("academic admission ownership contract: PASS");
 }
 
 console.log("academic admission interview ownership and lock contracts: PASS");
+
+// A contending schedule request must fail before checking or appending interview rows.
+{
+  let reads=0,appends=0,releases=0;
+  const busySheet={getDataRange:()=>{reads++;return {getValues:()=>[[]]};},appendRow:()=>{appends++;}};
+  const context={
+    getAcademicAdmissionScopeContext_:()=>({authorized:true,ss:{},actor:{authorized:true,userId:"EVAL-BUSY",role:"Evaluador"},
+      scope:{authorized:true,institutionId:"INST-1",departmentIds:["D1"],institutionWide:false},requestAccess:{authorized:true,departmentId:"D1"}}),
+    LockService:{getScriptLock:()=>({tryLock:()=>false,releaseLock:()=>{releases++;}})},
+    getOrCreateSheet:()=>busySheet,
+    generateInstitutionalId:()=>({generatedId:"SHOULD-NOT-EXIST"}),
+    logStructuredEvent:()=>{}
+  };
+  vm.runInNewContext(extractFunction("scheduleAdmissionInterview"),context);
+  assert.throws(()=>context.scheduleAdmissionInterview({solicitudId:"REQ-BUSY",fecha:"2026-11-13",
+    horaInicio:"09:00",horaFin:"10:00",evaluadorUserId:"EVAL-BUSY"}),/Servicio ocupado/);
+  assert.deepEqual({reads,appends,releases},{reads:0,appends:0,releases:0},
+    "a schedule request that cannot acquire the lock must not inspect or append interviews");
+}
+
