@@ -2206,31 +2206,80 @@ function updateAdmissionStatus(payload) {
 // [TAREA-F5-002] [Fase 5: Admisiones y Matrícula] - Reapertura explícita de solicitudes rechazadas/cerradas por Dirección o Administración
 function reopenAdmissionRequest(payload) {
   const { solicitudId, motivoReapertura, nuevoEstado } = payload || {};
-  if (!solicitudId || !motivoReapertura) throw new Error("solicitudId y motivoReapertura son requeridos.");
-  const textoMotivo = String(motivoReapertura).trim();
-  if (textoMotivo.length < 10) throw new Error("El motivo de reapertura debe contener al menos 10 caracteres.");
-  const ctx = getAcademicAdmissionScopeContext_(payload, "reopenAdmissionRequest", solicitudId, "UPDATE");
+  const requestId = String(solicitudId || "").trim();
+  const reason = String(motivoReapertura || "").trim();
+  if (!requestId || !reason) throw new Error("solicitudId y motivoReapertura son requeridos.");
+  if (reason.length < 10) throw new Error("El motivo de reapertura debe contener al menos 10 caracteres.");
+  const targetState = String(nuevoEstado || "Reabierta").trim();
+  if (targetState !== "Reabierta") throw new Error("ESTADO_REAPERTURA_INVALIDO");
+
+  const ctx = getAcademicAdmissionScopeContext_(payload, "reopenAdmissionRequest", requestId, "UPDATE");
   if (!ctx.authorized) throw new Error("RESOURCE_NOT_FOUND");
   if (!isAcademicAdmissionManagerRole_(ctx.actor.role)) throw new Error("RESOURCE_NOT_FOUND");
-  const targetState = nuevoEstado || "Reabierta";
-  const sheet = getOrCreateSheet(ctx.ss, "SolicitudesAdmision");
-  const data = sheet.getDataRange().getValues();
-  const matches = data.map(function(row,index){return {row:row,index:index};})
-    .filter(function(item){return String(item.row[0]||"").trim()===String(solicitudId).trim();});
-  if (matches.length !== 1) throw new Error("RESOURCE_NOT_FOUND");
-  const idx = matches[0].index;
-  const row = matches[0].row;
-  const estadoAnterior = String(row[11] || "").trim();
-  sheet.getRange(idx + 1, 12).setValue(targetState);
-  const obsPrevias = String(row[13] || "").trim();
-  const nuevaObs = (obsPrevias ? obsPrevias + " | " : "") + "[REAPERTURA " + new Date().toISOString().split("T")[0] + " por " + ctx.actor.role + "]: " + textoMotivo;
-  sheet.getRange(idx + 1, 14).setValue(nuevaObs);
-  recordEntityChangeLog("SolicitudAdmision", solicitudId, { estadoSolicitud: estadoAnterior }, { estadoSolicitud: targetState, motivoReapertura: textoMotivo }, "ADMISSION_REOPENED", ctx.actor.userId);
-  logStructuredEvent("ACADEMIC", "reopenAdmissionRequest", "WARN", "ADMISSION_REOPENED",
-    "Solicitud " + solicitudId + " reabierta desde '" + estadoAnterior + "' a '" + targetState + "'",
-    { solicitudId: solicitudId, estadoAnterior: estadoAnterior, targetState: targetState, motivoReapertura: textoMotivo }, ctx.actor.role);
-  return { status: "success", solicitudId: solicitudId, estadoAnterior: estadoAnterior, nuevoEstado: targetState,
-    message: "Solicitud " + solicitudId + " reabierta exitosamente." };
+
+  const lock = LockService.getScriptLock();
+  let hasLock = false;
+  try {
+    hasLock = lock.tryLock(10000);
+    if (!hasLock) throw new Error("Servicio ocupado reabriendo solicitudes. Por favor reintente.");
+    const requestAccess = assertAcademicAdmissionRequestScopeAccess_(
+      ctx.ss, ctx.scope, requestId, null, "UPDATE");
+    if (!requestAccess || requestAccess.authorized !== true) throw new Error("RESOURCE_NOT_FOUND");
+
+    const sheet = getOrCreateSheet(ctx.ss, "SolicitudesAdmision");
+    const data = sheet.getDataRange().getValues();
+    const matches = data.map(function(row, index) { return { row: row, index: index }; })
+      .filter(function(item) { return String(item.row[0] || "").trim() === requestId; });
+    if (matches.length !== 1) throw new Error("RESOURCE_NOT_FOUND");
+    const rowIndex = matches[0].index;
+    const row = matches[0].row;
+    const estadoAnterior = String(row[11] || "").trim();
+    const expedienteId = String(row[14] || "").trim();
+    if (estadoAnterior === "Convertida" || expedienteId) throw new Error("RESOURCE_CONFLICT_ADMISSION_ALREADY_CONVERTED");
+    if (estadoAnterior === "Reabierta") throw new Error("RESOURCE_CONFLICT_ADMISSION_ALREADY_REOPENED");
+
+    const now = new Date();
+    const nowIso = now.toISOString();
+    const obsPrevias = String(row[13] || "").trim();
+    const nuevaObs = (obsPrevias ? obsPrevias + " | " : "") +
+      "[REAPERTURA " + nowIso.split("T")[0] + " por " + ctx.actor.role + "]: " + reason;
+    // Estado, canal preservado y observación se escriben como una sola operación.
+    sheet.getRange(rowIndex + 1, 12, 1, 3).setValues([[targetState, row[12] || "", nuevaObs]]);
+
+    const previousValue = { estadoSolicitud: estadoAnterior };
+    const newValue = { estadoSolicitud: targetState, motivoReapertura: reason };
+    let historyRecorded = true;
+    try {
+      const historySheet = getOrCreateSheet(ctx.ss, "HistorialCambiosEntidad");
+      const headers = ["HistorialID", "Fecha", "EntidadTipo", "EntidadID", "Accion", "ValorAnteriorJSON", "ValorNuevoJSON", "UsuarioResponsable", "CorrelationID"];
+      if (historySheet.getLastRow() === 0) historySheet.appendRow(headers);
+      const currentHeaders = historySheet.getRange(1, 1, 1, headers.length).getValues()[0].map(function(value) { return String(value || "").trim(); });
+      if (headers.some(function(value, index) { return currentHeaders[index] !== value; })) throw new Error("HISTORY_SCHEMA_MISMATCH");
+      const correlationId = "CORR-ADM-REOPEN-" + requestId + "-" + now.getTime();
+      historySheet.appendRow([
+        "HIST-CHANGE-" + now.getTime(), now, "SolicitudAdmision", requestId, "ADMISSION_REOPENED",
+        JSON.stringify(previousValue), JSON.stringify(newValue), String(ctx.actor.userId).trim(), correlationId
+      ]);
+    } catch (historyError) {
+      historyRecorded = false;
+      try { logStructuredEvent("ACADEMIC", "reopenAdmissionRequest", "ERROR", "ADMISSION_REOPEN_HISTORY_FAILED",
+        "La solicitud " + requestId + " se reabrió, pero no se pudo persistir el historial de cambios.",
+        { solicitudId: requestId, actorUserId: ctx.actor.userId, error: String(historyError && historyError.message || historyError) }, ctx.actor.role); } catch (_) {}
+    }
+    try {
+      logStructuredEvent("ACADEMIC", "reopenAdmissionRequest", "WARN", "ADMISSION_REOPENED",
+        "Solicitud " + requestId + " reabierta desde '" + estadoAnterior + "' a '" + targetState + "'",
+        { solicitudId: requestId, estadoAnterior: estadoAnterior, targetState: targetState,
+          motivoReapertura: reason, historyRecorded: historyRecorded }, ctx.actor.role);
+    } catch (_) {}
+    return { status: "success", solicitudId: requestId, estadoAnterior: estadoAnterior, nuevoEstado: targetState,
+      historyRecorded: historyRecorded,
+      message: "Solicitud " + requestId + " reabierta exitosamente." };
+  } finally {
+    if (hasLock) {
+      try { lock.releaseLock(); } catch (_) {}
+    }
+  }
 }
 
 function generateInstitutionalId(payload) {
