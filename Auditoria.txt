@@ -840,3 +840,16 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - **Estado:** corregido en el plan maestro; el requisito TASK-682 continúa Pendiente para implementación posterior.
 - **Checkpoint:** C1.400 — Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice Auditoría/INDICE_CHECKPOINTS.md.
 ===============================================================================
+
+### AUD-NG-383 — Aislamiento insuficiente de expedientes de bienestar (F11-TASK01)
+
+- **Severidad:** P0 / crítica. **Estado:** Abierto; vinculado a F11-TASK01 existente.
+- **Tipo:** autorización por recurso/ámbito y confidencialidad de datos sensibles.
+- **Evidencia primaria:** en backend/academic-service/Code.gs, getAttendanceFollowupCases prioriza authRole del payload sobre _verifiedRole; ROLE_PERMISSIONS permite la acción a Secretaría. saveAttendanceFollowupCase y addCaseFollowUpNote no validan asignación/ámbito por expediente. getGuidanceAppointments entrega NotasConfidenciales a usuarios de Orientación/Consejería sin comprobar asignación del caso. generateConsolidatedAttendanceAndCoexistenceReport confía en rolSolicitante y expone conteos de casos excluidos.
+- **Precisión:** Docente no aparece actualmente habilitado en ROLE_PERMISSIONS para getAttendanceFollowupCases; el bypass confirmado se atribuye a Secretaría, no a Docente.
+- **Esquema:** RegistrosOrientacion no se encontró en los Code.gs del backend; CitasOrientacion sí contiene NotasConfidenciales y CasosSeguimiento almacena acciones/actas.
+- **Impacto:** un rol con permiso general de seguimiento puede declarar un rol superior para el filtro de confidencialidad; además, la ausencia de autorización por caso permite leer/modificar expedientes fuera de la asignación del actor.
+- **Corrección:** F11-TASK01 existente. Exigir rol de identidad firmada, autorización por caso y ámbito institucional, filtros fail-closed y logs sin contenido confidencial. No crear un ID de tarea duplicado.
+- **Pruebas:** inspección manual de handlers y ROLE_PERMISSIONS; no se ejecutaron pruebas dinámicas HTTP, Apps Script ni navegador.
+- **Informe:** adenda C1.401 en Auditoría/AUDITORIA-FASE-11-COMUNICACION-BIENESTAR-SUPERVISION-FINANZAS.md.
+===============================================================================

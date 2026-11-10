@@ -4948,3 +4948,18 @@ Alcance estático satisfecho; sin cambios de código. Hallazgos AUD-NG-374..376 
 - ExpedientesEstudiantes, DocumentosEstudiante, SolicitudesAdmision y Matriculas no declaran DepartamentoID en sus esquemas vigentes. La asignación de ámbitos representa el ámbito del actor, no la propiedad del recurso.
 - USER mantiene CatalogoDepartamentos y ACADEMIC DepartamentosAcademicos sin fuente única demostrada. No inferir el propietario desde grado/sección ni desde el rol del actor. Los validadores existentes continúan fallando cerrado cuando no se resuelve el propietario.
 - AUD-NG-382: defecto documental de clasificación/exclusión de TASK-682. Checkpoint C1.400.
+
+## C1.401 — Dependencias derivadas y revalidación focalizada F11
+
+### Propiedad departamental
+- TASK-153 es prerrequisito de TASK-139 para autorizar la dimensión departamental de los permisos documentales: el rol/ámbito del actor no demuestra quién es propietario del expediente o documento.
+- TASK-153 es prerrequisito de TASK-123 para resolver el departamento propietario de cada entidad y destino. CatalogoSpreadsheets existe en USER/ACADEMIC/ACCOUNTING, pero los resolvers observados no utilizan departamento/servicio para establecer propiedad y recurren a fallback; no se acredita un mapeo institucional autoritativo.
+- Estas aristas son dependencias derivadas de los requisitos originales y de los esquemas observados. No sustituyen ni reescriben esos requisitos.
+- TASK-682 continúa P1; no se incorpora una arista obligatoria TASK-682 → TASK-153.
+
+### F11-TASK01 — confidencialidad de bienestar
+- Hallazgo AUD-NG-383: getAttendanceFollowupCases confía en authRole del payload antes de _verifiedRole; la acción está permitida a Secretaría. saveAttendanceFollowupCase y addCaseFollowUpNote no aplican autorización por expediente/ámbito. getGuidanceAppointments entrega notas confidenciales sin comprobar asignación del caso. El reporte consolidado confía en rolSolicitante.
+- El rol Docente no aparece actualmente autorizado en ROLE_PERMISSIONS para getAttendanceFollowupCases; no se declara una ruta pública demostrada para Docente.
+- No se encontró la hoja RegistrosOrientacion en los Code.gs del backend. CitasOrientacion sí aparece y almacena NotasConfidenciales; CasosSeguimiento almacena acciones/notas en JSON.
+- AUD-NG-383 se vincula al F11-TASK01 existente. No se crea una tarea ni un informe duplicado; se agrega una adenda al informe FASE 11 existente.
+- La revisión es focalizada y no cierra F11-TASK01. No se modificó código ni se ejecutaron pruebas de producto.

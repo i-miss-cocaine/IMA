@@ -1946,3 +1946,59 @@ Commit de cierre: este commit; SHA se confirmará externamente tras publicación
 - **Siguiente acción concreta:** obtener confirmación de la fuente institucional autoritativa para DepartamentoID; después diseñar la migración histórica verificable y continuar TASK-153 en un commit separado.
 - **Ubicación exacta:** Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.400.
 ===============================================================================
+
+===============================================================================
+## C1.401 — IMA-EXEC-20261110-0306Z-01 — Continuidad bloqueada, dependencias PM-01 y AUD-NG-383
+
+### Continuidad y rama
+- HEAD de partida: 48d89e6f96f9f3573647698067c4a1713435084a (commit documental C1.400).
+- Rama exclusiva: NG_beta_0.0.0.1_work.
+- Rama base protegida: NG_beta_0.0.0.1, HEAD 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios.
+- C1.400 se confirma como checkpoint vigente. No se reinicia trabajo ni se repiten las pruebas/actividades de C1.397–C1.398.
+
+### Tarea activa y bloqueo
+- TASK-153 / PM-01 / P0 / orden local 1 permanece En ejecución.
+- Se revalida la decisión de 10.75: la siguiente acción es obtener una fuente institucional autoritativa para DepartamentoID del recurso estudiantil y continuar el mapeo/migración fail-closed.
+- ExpedientesEstudiantes, DocumentosEstudiante, SolicitudesAdmision y Matriculas no contienen DepartamentoID. getStudentPersonIdForUser_ identifica PersonaID, no el departamento propietario. getVerifiedAcademicDepartmentScope_ devuelve ámbitos del actor, no la propiedad del recurso. No se encontró una relación institucional verificable entre grado/sección/matrícula y departamento propietario.
+- No se deduce propiedad desde el departamento del actor, grado o sección. Sin fuente autoritativa o asignación explícita aprobada y auditable, el bloqueo es real y permanece abierto.
+
+### Dependencias derivadas de TASK-153
+- TASK-139 queda bloqueada para la dimensión departamental de MatrizPermisosDocumentales: la matriz de roles existente no determina el propietario del expediente/documento.
+- TASK-123 queda bloqueada para la resolución de destinos: CatalogoSpreadsheets existe, pero no acredita el departamento propietario de cada entidad/destino.
+- Se incorporan ambas aristas en el Plan Maestro y MapaDependencias, conforme al paso 6 de §6.1. No se alteran los requisitos originales.
+- TASK-682 permanece P1 pendiente; no se inventa dependencia TASK-682 → TASK-153.
+
+### Hallazgo focalizado de seguridad — AUD-NG-383
+- Se detecta un bypass en getAttendanceFollowupCases: authRole del cliente prevalece sobre _verifiedRole. ROLE_PERMISSIONS permite la acción a Secretaría, por lo que un actor autenticado como Secretaría puede declarar Director para el filtro de confidencialidad.
+- saveAttendanceFollowupCase y addCaseFollowUpNote carecen de autorización por expediente/asignación. getGuidanceAppointments entrega NotasConfidenciales a cualquier usuario de Orientación/Consejería sin comprobar asignación. Las mutaciones relacionadas tampoco verifican el vínculo del actor con el caso.
+- generateConsolidatedAttendanceAndCoexistenceReport confía en rolSolicitante y expone el conteo de casos excluidos; además confunde ResponsableID con categoría al inspeccionar row[4].
+- Docente no aparece actualmente autorizado en ROLE_PERMISSIONS para getAttendanceFollowupCases; no se le atribuye el bypass confirmado.
+- RegistrosOrientacion no se encontró en Code.gs del backend; CitasOrientacion sí contiene NotasConfidenciales. La discrepancia requisito-esquema queda registrada.
+- AUD-NG-383 se vincula al F11-TASK01 existente. Se agrega adenda al informe FASE 11; no se crea informe ni tarea duplicados. F11-TASK01 permanece Pendiente y no se implementa en esta sesión.
+
+### Archivos modificados
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/MapaDependencias.md
+- Auditoría/AUDITORIA-FASE-11-COMUNICACION-BIENESTAR-SUPERVISION-FINANZAS.md
+- Auditoria.txt
+- tareas_auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Archivos de producto y pruebas
+- Código de producto: sin cambios.
+- Pruebas y workflows: sin cambios.
+- Datos, hojas, propiedades, despliegues y ramas externas: sin cambios.
+- Pruebas ejecutadas: verificación documental de dependencias, lectura de rutas de código/roles, validación de unicidad de AUD-NG-383 y comprobación de integridad/longitud de los documentos preparados.
+- Pruebas no ejecutadas: suites de producto, runtime Apps Script, navegador, HTTP/E2E, Drive/Sheets reales. No se declara ningún PASS funcional.
+
+### Respaldo y publicación
+- Backups Git alcanzables desde HEAD de partida: Plan 25e7f85c8b404222292a8e8696523848e0eb7a0e; Mapa dc179f803f60738d690cdcc1161c4533e4d0b5ff; Índice 9b589c8a7cd0806f4f6163feba6916d69ac56e94; Checkpoints Parte 0003 a121b2b1aabf96eaec3ef4be319b1ec1d3fbad0a; FASE 11 9999dd843c028b02b86f8ceb06645fd90f182286; Auditoria.txt 4bd406c49c6033f24da3ad3e24fb2ca640250727; tareas_auditoria.txt cf481629969f85ff810f218362b73660ee6671e3; changueslogs.txt 49ae71b07e382b785bd2ffe4b6ce658fc9eeb972.
+- Checkpoint Parte 0003 antes de anexar: 152.699 bytes; el tamaño resultante se valida por debajo del límite de rotación de 180.000 bytes.
+- Se publicará un único commit documental, solo en NG_beta_0.0.0.1_work, con expected_sha 48d89e6f96f9f3573647698067c4a1713435084a. La rama base no se toca.
+- HEAD y SHA del commit de cierre se verificarán después de publicar.
+
+### Siguiente acción exacta
+Obtener/confirmar la fuente institucional autoritativa que relaciona cada expediente/recurso estudiantil con su departamento propietario, o una asignación explícita aprobada y auditable. Después diseñar el mapeo histórico verificable y continuar TASK-153. No iniciar TASK-139/TASK-123 mientras esa dependencia siga sin resolver.
+===============================================================================

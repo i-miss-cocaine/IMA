@@ -709,3 +709,11 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - TASK-682 tiene requisito completo, origen AUD-NG-341 y prioridad P1. Se reclasifica a PM-01 / Identidad, seguridad y gobierno de acceso. Sigue Pendiente; no se crea un ID duplicado ni se inicia implementación.
 - No existe dependencia obligatoria TASK-682 → TASK-153 declarada en el requisito original. TASK-153 P0 conserva prioridad de selección.
 - Hallazgo documental AUD-NG-382; no genera tarea nueva. Checkpoint C1.400 en Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt, índice Auditoría/INDICE_CHECKPOINTS.md.
+
+### AUD-NG-383 — F11-TASK01 (vinculación a tarea existente)
+- **Prioridad/severidad:** P0 / crítica.
+- **Objetivo:** cerrar el bypass de rol declarado por cliente y la ausencia de autorización por expediente/ámbito en los flujos de bienestar.
+- **Acción:** endurecer getAttendanceFollowupCases, saveAttendanceFollowupCase, addCaseFollowUpNote, getGuidanceAppointments, updateGuidanceAppointmentStatus y las mutaciones de actas/derivaciones/compromisos; filtrar por identidad firmada, asignación del expediente y ámbito vigente; impedir que rolSolicitante/authRole del cliente determine permisos; no exponer conteos de casos confidenciales a roles no autorizados.
+- **Tarea ejecutable:** F11-TASK01, ya existente en pendientes/Secretaria/Pendientes.md. No crear una tarea nueva ni duplicar el identificador original.
+- **Estado:** Abierto; F11-TASK01 permanece Pendiente y no se selecciona en C1.401 porque TASK-153 continúa como tarea activa heredada y está bloqueada por una fuente institucional externa.
+- **Evidencia:** adenda C1.401 del informe FASE 11; inspección manual del código y ROLE_PERMISSIONS. Pruebas dinámicas pendientes.

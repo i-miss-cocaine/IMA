@@ -649,3 +649,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Auditoría de continuidad TASK-153 C1.397–C1.398: sin defecto accionable; CI 42741228237 success. No se activa §19.2.1.
 - Auditoría preimplementación: no hay fuente autoritativa de DepartamentoID en ExpedientesEstudiantes, DocumentosEstudiante, SolicitudesAdmision o Matriculas; se mantiene el fail-closed. No se modificó código ni datos.
 - Hallazgo documental AUD-NG-382. Informe principal FASE 41 actualizado; checkpoint C1.400 en Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice Auditoría/INDICE_CHECKPOINTS.md.
+
+[2026-11-10] C1.401 — Continuidad TASK-153 y dependencias derivadas PM-01
+- Se confirma que TASK-153 sigue siendo la tarea activa heredada de C1.400 y que su siguiente acción continúa bloqueada por la ausencia de una fuente institucional autoritativa de departamento propietario.
+- Se agregan dependencias derivadas TASK-153 → TASK-139 (dimensión departamental de permisos documentales) y TASK-153 → TASK-123 (propietario departamental del destino). Los requisitos originales permanecen intactos.
+- Se registra AUD-NG-383, vinculado a F11-TASK01 existente, por bypass de authRole y ausencia de autorización por expediente/ámbito en bienestar. Se reutiliza el informe FASE 11 con adenda; no se crea tarea duplicada.
+- No se modificó código, datos ni configuración. No se ejecutaron pruebas de producto. Checkpoint documental C1.401.
