@@ -1466,21 +1466,43 @@ function getStudentExams(payload) {
 }
 
 function getExamResult(payload) {
+  return withAuthorizedExamResultRead_(payload, context => getExamResultUnlocked_(payload, context));
+}
+
+function withAuthorizedExamResultRead_(payload, reader) {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) throw new Error("EXAM_RESULT_READ_LOCK_TIMEOUT");
+  try {
+    const context = getAuthorizedExamResultReadContext_(payload);
+    return reader(context);
+  } finally {
+    try { lock.releaseLock(); } catch (_) {}
+  }
+}
+
+function getAuthorizedExamResultReadContext_(payload) {
+  const permission = validateRolePermission("getExamResult", payload);
+  if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
   const deliveryId = String((payload && payload.entregaExamenId) || "").trim();
   if (!deliveryId) throw new Error("RESOURCE_NOT_AVAILABLE");
-  const ssPreAuth = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const deliveryPreAuth = getSheetOrThrow(ssPreAuth, "EntregasExamen").getDataRange().getValues().slice(1)
-    .filter(row => String(row[0]) === deliveryId);
-  if (deliveryPreAuth.length !== 1) throw new Error("RESOURCE_NOT_AVAILABLE");
-  const requestedStudentId = String(deliveryPreAuth[0][2] || "").trim();
-  const context = getExamReadContext_(payload, requestedStudentId);
-  const { actor, ss, studentActor, guardianActor, profile, scope } = context;
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const deliveries = getSheetOrThrow(ss, "EntregasExamen").getDataRange().getValues();
-  const deliveryMatches = deliveries.slice(1).filter(row => String(row[0]) === deliveryId);
+  const matches = deliveries.slice(1).filter(row => String(row[0] || "").trim() === deliveryId);
+  if (matches.length !== 1) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const requestedStudentId = String(matches[0][2] || "").trim();
+  const context = getExamReadContext_(payload, requestedStudentId);
+  return { ...context, ss, deliveryId };
+}
+
+function getExamResultUnlocked_(payload, context) {
+  const { actor, ss, studentActor, guardianActor, profile, scope, deliveryId } = context;
+  const deliveries = getSheetOrThrow(ss, "EntregasExamen").getDataRange().getValues();
+  const deliveryMatches = deliveries.slice(1).filter(row => String(row[0] || "").trim() === deliveryId);
   if (deliveryMatches.length !== 1) throw new Error("RESOURCE_NOT_AVAILABLE");
-  const delivery = deliveryMatches[0], examId = String(delivery[1] || "");
+  const delivery = deliveryMatches[0], examId = String(delivery[1] || "").trim();
+  if (!examId) throw new Error("RESOURCE_NOT_AVAILABLE");
   const examRows = getSheetOrThrow(ss, "Examenes").getDataRange().getValues();
-  const examMatches = examRows.slice(1).filter(row => String(row[0]) === examId);
+  const examMatches = examRows.slice(1).filter(row => String(row[0] || "").trim() === examId);
   if (examMatches.length !== 1) throw new Error("RESOURCE_NOT_AVAILABLE");
   const exam = examMatches[0];
   if (studentActor || guardianActor) {
@@ -1509,7 +1531,6 @@ function getExamResult(payload) {
   });
   return { status: "success", data: { examenTitulo: exam[1], calificacionTotal: delivery[5], resultadosDetallados: detailed } };
 }
-
 function getTeacherExamActivity(payload) {
   const permission = validateRolePermission("getTeacherExamActivity", payload);
   if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");

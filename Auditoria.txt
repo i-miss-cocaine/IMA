@@ -1420,3 +1420,12 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - Corrección: RBAC + identidad firmada + scope departamental/institucional bajo el mismo ScriptLock de escritura; filtro por ownership único y activo; exclusión de legacy, IDs duplicados, preguntas inactivas y recursos ajenos. Clave solo con permiso manageQuestionBank.
 - Pruebas locales V8 PASS: question-bank-read-security, question-bank-security, security-contract y departmental-access. Incluye timeout, scope manipulado y snapshot posterior a lock.
 - Runner Node nativo/CI NOT RUN; Apps Script/Sheets real NOT RUN. BETA-EXAM-034 Pendiente beta.
+
+===============================================================================
+## C1.481 — EXAM: getExamResult
+- Hallazgo: lectura previa de EntregasExamen para inferir estudiante antes de autenticar y segunda lectura sin sincronización con calificación/eliminación.
+- Corrección: permiso explícito getExamResult y resolución de estudiante/contexto desde entrega única bajo ScriptLock compartido; relectura de entrega, examen y preguntas dentro de la sección crítica. Timeout fail-closed EXAM_RESULT_READ_LOCK_TIMEOUT.
+- Se preservan estudiante propio, tutor vinculado, profesor propietario y ownership/scope del personal. Estudiante/tutor no acceden mientras estado Pendiente.
+- Parseo V8 de backend y test PASS; nuevo test de seguridad PASS en harness V8 aislado con stubs. CI, Node nativo y Apps Script/Sheets real NOT RUN. BETA-EXAM-035 Pendiente beta.
+- TASK-153 En ejecución; AUD-NG-386 permanece abierto por otras superficies EXAM.
+===============================================================================

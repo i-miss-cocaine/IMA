@@ -263,4 +263,21 @@ assert.ok(examMutationWrapper.includes("LockService.getScriptLock()"), "exam met
 assert.ok(examMutationWrapper.includes("tryLock(5000)"), "exam metadata lock acquisition is bounded");
 assert.ok(examMutationWrapper.includes("getAuthorizedExamMutationContext_(payload, action)"), "exam authorization/context is revalidated after lock acquisition");
 assert.ok(examMutationWrapper.includes("finally") && examMutationWrapper.includes("releaseLock()"), "exam metadata lock is always released");
+
+const examResultHandler = extractFunction(source, "getExamResult");
+const examResultWrapper = extractFunction(source, "withAuthorizedExamResultRead_");
+const examResultContext = extractFunction(source, "getAuthorizedExamResultReadContext_");
+const examResultWorker = extractFunction(source, "getExamResultUnlocked_");
+assert.ok(examResultHandler.includes("withAuthorizedExamResultRead_"), "getExamResult delegates to the serialized reader");
+assert.ok(examResultWrapper.includes("LockService.getScriptLock()") && examResultWrapper.includes("tryLock(5000)") &&
+  examResultWrapper.includes("getAuthorizedExamResultReadContext_(payload)") && examResultWrapper.includes("finally") &&
+  examResultWrapper.includes("releaseLock()"), "exam result reads share the script lock and release it on every acquired path");
+assert.ok(examResultContext.includes('validateRolePermission("getExamResult", payload)') &&
+  examResultContext.includes("getExamReadContext_(payload, requestedStudentId)"),
+  "exam result read requires explicit action permission and derives student scope from the locked delivery");
+assert.ok(examResultWorker.includes('String(delivery[6] || "") === "Pendiente"') &&
+  examResultWorker.includes('assertExamResourceOwnershipForScope_') &&
+  examResultWorker.includes('String(exam[8] || "").trim() !== actor.userId'),
+  "exam result enforces grading state, exam ownership and teacher ownership before exposing answer keys");
+
 process.stdout.write("exam-service-security-contract: authentication, identity, teacher ownership and serialized exam mutations assertions passed\\n");

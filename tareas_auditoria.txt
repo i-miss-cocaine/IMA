@@ -850,3 +850,12 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - Parseo V8 y pruebas locales question-bank-read-security, question-bank-security, security-contract y departmental-access PASS en harness aislado. CI/runner Node nativo NOT RUN; Apps Script/Sheets real pendiente.
 - BETA-EXAM-034 Pendiente beta. TASK-153 En ejecución; AUD-NG-386 abierto.
 - Siguiente: seleccionar y auditar otra superficie de lectura EXAM expuesta por dispatcher.
+
+===============================================================================
+### TASK-153 — seguimiento C1.481 / AUD-NG-386 EXAM
+- getExamResult ahora valida permiso getExamResult y resuelve identidad/ámbito del estudiante a partir de la entrega bajo ScriptLock, compartido con las mutaciones de exámenes y entregas.
+- La lectura vuelve a comprobar entrega y examen dentro del lock; estudiante propio, tutor vinculado, profesor propietario y ownership departamental/institucional conservan sus límites. Estudiante/tutor no reciben respuesta correcta ni calificación con estado Pendiente.
+- Parseo V8 y nuevo contrato exam-service-exam-result-security PASS en harness aislado con stubs; CI, runner Node nativo y Apps Script/Sheets real NOT RUN.
+- BETA-EXAM-035 Pendiente beta. TASK-153 En ejecución; AUD-NG-386 abierto.
+- Siguiente: revisar getStudentExams/getExamQuestions y lecturas EXAM restantes para snapshot/ownership/serialización.
+===============================================================================

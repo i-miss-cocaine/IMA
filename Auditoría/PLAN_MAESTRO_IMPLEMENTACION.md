@@ -3382,3 +3382,13 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Limitación:** filas legacy sin ownership único/ID único no aparecen; claves requieren permiso de gestión. La granularidad futura de respuestas puede ajustarse por matriz RBAC institucional.
 - **Estado:** subalcance getQuestionBank completado; TASK-153 En ejecución y AUD-NG-386 abierto por otras superficies EXAM.
 - **Commits:** a62a3dbd976093da997ffe08698be3811fc52d09; 6ddff072cff57d00787edcd3fbe67e5d33e37002; 67c7640d125c3facda2811f90791e64038055d17; 33b64970c7870a3129c7d8669cef9477a784aa42; 04916bf7ae74c7d6b21c5568813b37640479d10b; 37ffd27c404a8262b0dd620e2c2ddb2bacb9249e; 6346195479eaa434fdfa5392409d46be65733d5c.
+
+### 10.134 TASK-153 / AUD-NG-386 — seguridad de lectura de getExamResult (C1.481)
+
+- **Hallazgo:** getExamResult leía EntregasExamen para descubrir el estudiante antes de autenticar/autorizar, y volvía a leer la fila sin lock. Una eliminación o calificación concurrente podía intercalarse entre la resolución de contexto y la construcción del resultado.
+- **Corrección:** withAuthorizedExamResultRead_ usa ScriptLock de 5 s compartido con envío, calificación, eliminación y mutaciones de examen; obtiene el contexto después de adquirirlo y libera en finally. getAuthorizedExamResultReadContext_ exige validateRolePermission("getExamResult"), obtiene una entrega única bajo lock y deriva de ella el estudiante para getExamReadContext_. El worker relee entrega, examen y preguntas bajo la misma sección crítica.
+- **Autorización:** estudiante solo accede a su entrega; tutor/padre/responsable requiere vínculo verificado; profesor solo accede a exámenes propios; personal autorizado requiere ownership y ámbito institucional/departamental. Estudiante/tutor no reciben el resultado si la entrega sigue Pendiente. La clave correcta se mantiene disponible para actores autorizados según la política existente.
+- **Pruebas locales:** parseo V8 de Code.gs y test PASS; nuevo exam-service-exam-result-security.test.js PASS en harness V8 aislado con stubs, con permiso, ownership, estado Pendiente, ID ajeno, lock timeout, entrega eliminada antes de lock y profesor ajeno. Runner Node nativo NOT RUN.
+- **CI/Apps Script real:** NOT RUN. **Beta:** BETA-EXAM-035 Pendiente beta para concurrencia real de lectura/calificación/baja y permisos por rol.
+- **Estado:** subalcance getExamResult completado; TASK-153 permanece En ejecución y AUD-NG-386 abierto por otras superficies EXAM.
+- **Siguiente subalcance:** auditar getStudentExams/getExamQuestions y otras lecturas EXAM restantes por snapshot/ownership/lock.

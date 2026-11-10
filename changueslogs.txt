@@ -1165,3 +1165,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - respuestaCorrecta solo se devuelve con permiso manageQuestionBank; roles de solo lectura reciben preguntas sin clave. Se conservan filtros de contenido.
 - Parseo V8 y pruebas locales question-bank-read-security, question-bank-security, security-contract y departmental-access PASS. CI/runner Node nativo NOT RUN; Apps Script real NOT RUN; BETA-EXAM-034 Pendiente beta.
 - Commits: a62a3dbd976093da997ffe08698be3811fc52d09; 6ddff072cff57d00787edcd3fbe67e5d33e37002; 67c7640d125c3facda2811f90791e64038055d17; 33b64970c7870a3129c7d8669cef9477a784aa42; 04916bf7ae74c7d6b21c5568813b37640479d10b; 37ffd27c404a8262b0dd620e2c2ddb2bacb9249e; 6346195479eaa434fdfa5392409d46be65733d5c.
+
+[2026-11-10] C1.481 — IMA-EXEC-20261110-1825Z-02 — EXAM: lectura segura de resultados
+- getExamResult ahora exige permiso explícito y deriva el estudiante objetivo desde la entrega después de adquirir ScriptLock; la relectura y el cálculo del resultado se serializan con calificación/eliminación.
+- Estudiante/tutor solo acceden a su entrega/vínculo y después de que deje Pendiente; profesor solo a sus exámenes; personal requiere ownership/scope.
+- Parseo V8 y prueba local aislada exam-service-exam-result-security PASS. Node nativo/CI/Apps Script real NOT RUN; BETA-EXAM-035 Pendiente beta.
+===============================================================================

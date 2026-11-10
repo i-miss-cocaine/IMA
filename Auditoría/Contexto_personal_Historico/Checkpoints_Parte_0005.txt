@@ -878,3 +878,36 @@ Proteger getQuestionBank contra lecturas sin identidad/permisos, exposición int
 - Rama base NG_beta_0.0.0.1 verificada sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
 - NG_beta_0.0.0.1_work actualizado mediante compare-and-swap fast-forward; no se utilizó force push.
 ===============================================================================
+
+===============================================================================
+## CHECKPOINT C1.481 — EXAM: autorización, propiedad y lectura consistente de getExamResult
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.480.
+HEAD inicial: 809a1da5ac061e7bce5788df7135ae580ff8600b.
+
+### Alcance
+Revisar quién puede consultar resultados, la exposición de claves de respuesta y la consistencia entre EntregasExamen, Examenes y PreguntasExamen frente a calificación/eliminación concurrente.
+
+### Hallazgos y corrección
+- getExamResult obtenía el ID del estudiante mediante una lectura previa de EntregasExamen antes de autenticar/autorizar y luego repetía la lectura sin lock. La entrega podía desaparecer o cambiar entre ambas lecturas y el resultado se calculaba desde un snapshot no serializado con gradeExamSubmission/deleteExamSubmission.
+- El endpoint ahora delega en withAuthorizedExamResultRead_: ScriptLock de 5 segundos, contexto RBAC/identidad/ámbito resuelto después de adquirirlo y liberación protegida en finally. Timeout falla cerrado con EXAM_RESULT_READ_LOCK_TIMEOUT.
+- getAuthorizedExamResultReadContext_ exige permiso explícito getExamResult, busca una única entrega bajo lock y deriva el estudiante objetivo desde esa fila protegida antes de resolver el contexto verificado. El worker vuelve a leer la entrega y el examen bajo la misma sección crítica.
+- Se conservan los controles de estudiante propio, vínculo de tutor, ownership institucional/departamental y profesor propietario del examen. Estudiante/tutor no reciben resultado ni clave mientras el estado de la entrega sea Pendiente; los actores de personal autorizados conservan la consulta según su permiso y ámbito.
+- El mismo ScriptLock ya serializa submitExam, gradeExamSubmission, deleteExamSubmission, cambios/baja de exámenes y las lecturas/mutaciones del banco de preguntas, por lo que el resultado no observa una transición parcial de esas operaciones.
+
+### Verificación local
+- Parseo sintáctico V8 del backend/exam-service/Code.gs y del nuevo test: PASS.
+- tests/security/exam-service-exam-result-security.test.js: PASS en harness V8 aislado con stubs para fs/path/vm/assert. Cubre lectura autorizada y clave tras calificación, denegación de entrega Pendiente, estudiante distinto, permiso ausente, ownership denegado, timeout fail-closed, entrega eliminada antes de adquirir lock y profesor ajeno.
+- Prueba dinámica aislada adicional de lectura autorizada, bloqueo de Pendiente, liberación de lock y timeout: PASS.
+- Runner Node nativo, CI y Apps Script/Sheets real: NOT RUN. No se declara PASS de esas verificaciones.
+- BETA-EXAM-035 queda Pendiente beta para comprobar la intercalación real de lectura con calificación/eliminación y los roles de estudiante/tutor/profesor en Apps Script/Sheets.
+
+### Estado y continuidad
+- Subalcance getExamResult completado en código y verificaciones locales ejecutadas; TASK-153 permanece En ejecución y AUD-NG-386 continúa abierto por otras superficies EXAM.
+- La política heredada de disponibilidad para estudiante/tutor sigue siendo estado distinto de Pendiente; no se introdujo una lista nueva de estados de calificación para evitar incompatibilidad con los estados actuales del flujo.
+- Rama base NG_beta_0.0.0.1 sin cambios; no se ejecutó despliegue.
+- Siguiente subalcance: revisar getStudentExams/getExamQuestions y cualquier lectura de entregas/exámenes restante que no comparta contexto/lock, sin reabrir getExamResult.
+===============================================================================
