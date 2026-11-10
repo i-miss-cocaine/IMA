@@ -5,11 +5,11 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.448**
+- Último checkpoint: **C1.449**
 - Última sesión: `IMA-EXEC-20261110-1825Z-02`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.448: **140525**
+- Caracteres del archivo activo tras C1.449: **143751**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 - Baseline lógico válido: **C1.316** (`31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`). C1.317–C1.382 se conservan, pero no se aceptan como evidencia de continuidad por corrección expresa del usuario.
@@ -299,3 +299,5 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.447 | IMA-EXEC-20261110-1825Z-02 | ACADEMIC: SELF/GUARDIAN ownership, relaciones, informes PII, duplicados y cola de admisiones; Node local NOT RUN | PM-01 — TASK-153 / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.447 | 1534–1579 | C1.446 | 3d3d0015cbdd67a715a9fe60385fd82664e2f34d; b113a6f88b338c63f04ecc3531cd9efa85b8b257; 42ca04bad4209760bb883a20b0286a59b8054df9; 5874fa64f615f1dd1d691f60aea3e0b9ee9417b6; ea178e9ff2b70da97573a32a47bac650ef415fa0; 19a64b518ec4eee24b6f0c25b775f43e0058b90f; c77088ad8abd721453ebd3b3b92700ff9575cc86; df644f9a87838450a74f168e310ca423992b2be8; 9b7e619252f8c3489ea05980b58e570d1942148c; 1df0394c1953e19a7e67a8331aa4eebae8c795d2; 2ae88b8fca460911ed2e8f555b3cca9bf6a4a6ce; 589873ae6659c735c4a9ce8fd7ca61aba5224e77 + commits documentales |
 
 | C1.448 | IMA-EXEC-20261110-1825Z-02 | ACADEMIC: conversión de admisiones bloquea reuso de expediente coincidente sin ownership del mismo departamento; contrato dinámico aislado PASS; suite Node/CI NOT RUN | PM-01 — TASK-153 / ACADEMIC / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.448 | 1580–1625 | C1.447 | 55e6c109f7870cb02358c8c20e2783140f42229e; 4a3df02770c3e96d140ae8b5c067d5ef23c3249a; e8e15cee160b584da43ecc22d38feff7596c72d5; 9100ba12deef98e3bc05be1a1e034f0fb85542e1; b3f7cf57e44f5adb01876ac5d9e14d5aa97c65b5; ca1b230fa8ff1614a55348e4fece00255e973535; 82314c4ac6f7c29ffcc6d25e22bb5c9e5f178308 |
+
+| C1.449 | IMA-EXEC-20261110-1825Z-02 | ACADEMIC: compensación LIFO de escritura parcial en conversión; rollback local aislado PASS; suite Node/CI NOT RUN | PM-01 — TASK-153 / ACADEMIC / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.449 | 1628–1669 | C1.448 | f494f0bde9afa83ed11c5b5e1bd28729e81a4260; b20fa1382461a1f1d4b7bcc8bb22407df0f8b6b2; c339188cd5600c9f54460d430ffc6d18b95311ad; 151f5eeaeea7b964199f69378f42bcd5e358d509; fc6a0e390a592a6ea39ec75ef889374ab8c4e384; 15a495d7b15706ffb65252d66df250550f78ccec |
