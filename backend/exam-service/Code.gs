@@ -636,11 +636,18 @@ function getQuestionBank(payload) {
   const ownershipHeaders = ["OwnershipID", "InstitutionID", "ResourceType", "ResourceID", "DepartmentID", "Status", "RegisteredBy", "CreatedAt", "UpdatedAt"];
   if (!data.length || bankHeaders.some((header, index) => String(data[0][index] || "").trim() !== header)) throw new Error("QUESTION_BANK_SCHEMA_INVALID");
   if (!ownershipRows.length || ownershipHeaders.some((header, index) => String(ownershipRows[0][index] || "").trim() !== header)) throw new Error("RESOURCE_OWNERSHIP_SCHEMA_INVALID");
+  const bankIdCounts = Object.create(null);
+  data.slice(1).forEach(row => {
+    const id = String(row[0] || "").trim();
+    if (id) bankIdCounts[id] = (bankIdCounts[id] || 0) + 1;
+  });
   const normArea = p.areaCurricular ? normalizeString(p.areaCurricular) : "";
   const normAsig = p.asignatura ? normalizeString(p.asignatura) : "";
   const normGrado = p.grado ? normalizeString(p.grado) : "";
   const canReadAnswerKey = validateRolePermission("manageQuestionBank", p).authorized === true;
   const preguntas = data.slice(1).filter(row => {
+    const resourceId = String(row[0] || "").trim();
+    if (!resourceId || bankIdCounts[resourceId] !== 1) return false;
     if (String(row[12] || "").trim().toLowerCase() === "inactivo") return false;
     if (normArea && normalizeString(row[1]) !== normArea) return false;
     if (normAsig && normalizeString(row[2]) !== normAsig) return false;
