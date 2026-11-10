@@ -454,9 +454,12 @@ function verifySessionToken(tokenString) {
     const jsonStr = Utilities.newBlob(Utilities.base64Decode(normalizedB64)).getDataAsString();
     const claims = JSON.parse(jsonStr);
     const now = Math.floor(Date.now() / 1000);
-    if (claims.exp && now > claims.exp) {
-      return null;
-    }
+    if (!claims || typeof claims !== "object" || Array.isArray(claims)) return null;
+    if (typeof claims.userId !== "string" || !claims.userId.trim()) return null;
+    if (typeof claims.role !== "string" || !claims.role.trim()) return null;
+    if (typeof claims.sessionId !== "string" || !claims.sessionId.trim()) return null;
+    if (!Number.isSafeInteger(claims.iat) || !Number.isSafeInteger(claims.exp)) return null;
+    if (claims.iat > now + 60 || claims.exp <= now || claims.exp <= claims.iat || claims.exp - claims.iat > 86400) return null;
     // [TAREA-F4-P0-03] [Fase 4: Gestión de Sesiones] - Verificación de revocación explícita por sessionId y estado de cuenta
     if (claims.userId) {
       const cache = CacheService.getScriptCache();

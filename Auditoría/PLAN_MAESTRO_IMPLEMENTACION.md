@@ -2276,3 +2276,11 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 ## 10.59 TASK-636 — C1.375: orden del fixture getStudyMaterials
 - Code Review alinea el array esperado con el orden lexicográfico real del resultado; sin cambios productivos.
 - CI C1.375 pendiente.
+
+
+## 10.60 TASK-636 — C1.376: claims de sesión fail-closed
+- AUD-NG-001/002: USER/ACADEMIC/TASK aceptaban claims sin exp, userId o sessionId; la expiración era condicional a exp truthy.
+- Los tres servicios ahora exigen claims completos, iat/exp válidos, exp futuro y TTL máximo de 24h; conservan revocación/estado de cuenta.
+- Fixtures VM transversales añadidos; CI pendiente.
+- BETA-FUNC-017: login/expiración/revocación real en servicios aislados; Pendiente beta.
+- TASK-636 En ejecución.

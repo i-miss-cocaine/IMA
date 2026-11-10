@@ -409,3 +409,38 @@ const teacherMaterials = materialContext.getMaterials({_verifiedRole:"Profesor"}
 assert.deepEqual(teacherMaterials.data.map(item => item.materialId).sort(), ["M-CLASS","M-DRAFT","M-EMPTY","M-FUTURE","M-GEN"], "staff can inspect legacy/draft/scheduled materials but never deleted records or other classrooms");
 
 console.log("TASK-636 getStudyMaterials local contract: audience, explicit publication state, future-date and deleted-record guards passed.");
+
+// TASK-636 AUD-NG-001/002: fail-closed session claim contract across USER, ACADEMIC and TASK.
+
+function verifyTokenWithClaims(sourceText, claims) {
+  const payloadB64 = Buffer.from(JSON.stringify(claims)).toString("base64").replace(/=/g,"").replace(/\+/g,"-").replace(/\//g,"_");
+  const context = {
+    SPREADSHEET_ID: "LOCAL",
+    getAuthTokenSecret: () => "test-secret",
+    computeHmacSignature: () => "signed",
+    Utilities: {
+      base64Decode: value => Buffer.from(value, "base64"),
+      newBlob: bytes => ({ getDataAsString: () => Buffer.from(bytes).toString("utf8") })
+    },
+    CacheService: { getScriptCache: () => ({ get: () => null, put: () => {} }) },
+    SpreadsheetApp: { openById: () => ({ getSheetByName: name => name === "Usuarios" ? {
+      getDataRange: () => ({ getValues: () => [["UserId","","","","","","","","","","Estado"], ["USER-1","","","","","","","","","","Activa"]] })
+    } : null }) }
+  };
+  vm.runInNewContext(extractFunctionFrom(sourceText, "verifySessionToken") + String.fromCharCode(10) + "this.verify = verifySessionToken;", context);
+  return context.verify(payloadB64 + ".signed");
+}
+const tokenNow = Math.floor(Date.now() / 1000);
+const validSessionClaims = { userId:"USER-1", role:"Estudiante", sessionId:"SES-1", iat:tokenNow, exp:tokenNow+3600 };
+for (const [serviceName, sourceText] of [["USER", userSource], ["ACADEMIC", academicSource], ["TASK", source]]) {
+  assert(verifyTokenWithClaims(sourceText, validSessionClaims), serviceName + " accepts complete unexpired session claims");
+  assert.equal(verifyTokenWithClaims(sourceText, { ...validSessionClaims, exp: undefined }), null, serviceName + " rejects sessions without expiration");
+  assert.equal(verifyTokenWithClaims(sourceText, { ...validSessionClaims, iat: undefined }), null, serviceName + " rejects sessions without issued-at time");
+  assert.equal(verifyTokenWithClaims(sourceText, { ...validSessionClaims, userId: "" }), null, serviceName + " rejects sessions without identity");
+  assert.equal(verifyTokenWithClaims(sourceText, { ...validSessionClaims, role: "" }), null, serviceName + " rejects sessions without role");
+  assert.equal(verifyTokenWithClaims(sourceText, { ...validSessionClaims, sessionId: "" }), null, serviceName + " rejects sessions without session ID");
+  assert.equal(verifyTokenWithClaims(sourceText, { ...validSessionClaims, exp: tokenNow }), null, serviceName + " rejects expired sessions");
+  assert.equal(verifyTokenWithClaims(sourceText, { ...validSessionClaims, iat: tokenNow+120 }), null, serviceName + " rejects future-issued sessions");
+  assert.equal(verifyTokenWithClaims(sourceText, { ...validSessionClaims, exp: tokenNow+90000 }), null, serviceName + " rejects excessive token lifetime");
+}
+console.log("TASK-636 strict session claims local contract: USER/ACADEMIC/TASK reject missing identity, role, session ID, iat, exp, expired, future-issued and overlong sessions.");

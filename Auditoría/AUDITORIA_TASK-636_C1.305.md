@@ -307,3 +307,15 @@ Endurecer las excepciones públicas de backend/academic-service/Code.gs mediante
 - El CI C1.374 ejecutó correctamente los contratos anteriores y la lógica de getStudyMaterials; falló únicamente por el orden lexicográfico esperado en el array del test de personal.
 - Se ordena el resultado esperado para que coincida con el `.sort()` aplicado al resultado real. No cambia código productivo ni criterios de acceso.
 - CI C1.375 pendiente tras publicar.
+
+
+## Revisión focalizada C1.376 — claims de sesión obligatorios en USER/ACADEMIC/TASK
+
+- **Hallazgo existente:** AUD-NG-001/002, sesión institucional y validación fail-closed. Se confirma que los tres verificadores `verifySessionToken` aceptaban claims firmados sin `exp`, sin `userId` y sin `sessionId`; la comprobación anterior `if (claims.exp && now > claims.exp)` trataba la ausencia de expiración como válida. El verificador solo consultaba revocación/estado de cuenta cuando existía userId.
+- **Compatibilidad comprobada en código:** `generateSessionToken` de USER emite `userId`, `role`, `sessionId`, `iat` y `exp` con vigencia de 24 horas. Los servicios USER, ACADEMIC y TASK comparten el contrato de claims.
+- **Corrección transversal:** los tres verificadores ahora exigen objeto claims, userId/role/sessionId no vacíos, iat/exp enteros seguros, iat no más de 60 segundos en el futuro, exp estrictamente posterior al momento actual y a iat, y duración máxima de 24 horas. La lógica existente de revocación y estado activo permanece.
+- **Pruebas locales añadidas:** contrato ejecutable en VM sobre los tres verificadores: token completo válido; ausencia de exp/iat/userId/role/sessionId; token expirado; emisión futura; vigencia superior a 24 horas.
+- **CI C1.375:** security run 42726782516 completed/success; jobs local-security-contracts success. Logs confirman los contratos anteriores y el test de getStudyMaterials.
+- **CI C1.376:** pendiente tras publicar.
+- **Beta:** BETA-FUNC-017 propone verificación de sesión real con login, expiración, revocación y estado de cuenta en los tres servicios aislados; no se declara ejecutada.
+- **Estado:** AUD-NG-001/002 permanecen en revalidación; TASK-636 En ejecución, no completada.

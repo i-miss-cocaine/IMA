@@ -579,3 +579,12 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - Se ordena el array esperado de materiales de personal para coincidir con .sort() del resultado.
 - Sin cambios productivos. CI C1.375 pendiente.
 ===============================================================================
+
+
+===============================================================================
+## Seguimiento TASK-636 — C1.376 / AUD-NG-001/002
+- USER, ACADEMIC y TASK ahora rechazan tokens firmados sin identidad, rol, sessionId, iat o exp; se limita TTL a 24h.
+- Se conservan revocación de sesión/usuario y consulta de estado de cuenta.
+- Fixtures VM añadidos para claims válidos, campos faltantes, expiración, emisión futura y TTL excesivo.
+- CI C1.376 pendiente; BETA-FUNC-017 Pendiente beta.
+===============================================================================

@@ -1251,3 +1251,55 @@ Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt �
 Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.375.
 Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
 ===============================================================================
+
+===============================================================================
+## C1.376 — TASK-636 / AUD-NG-001/002 — claims de sesión fail-closed
+ID: C1.376
+Sesión: IMA-EXEC-20261109-1739Z-01
+Fecha: 2026-11-10
+Checkpoint anterior válido: C1.375
+Baseline lógico: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD físico de partida: a1bf06e9f186ba6b5a347796c627aa2b3b28cfba
+Rama: NG_beta_0.0.0.1_work
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+
+### Auditoría
+- Se revisaron los requisitos originales de TASK-636 (pendientes/Otros/Pendientes.md, sección TASK-636) y el expediente único AUDITORIA_TASK-636_C1.305.
+- Los verificadores USER/ACADEMIC/TASK aceptaban claims sin exp porque la condición anterior solo rechazaba exp si truthy y vencido; userId y sessionId tampoco eran obligatorios.
+- Sin userId se omitía la consulta de revocación y estado de cuenta. La ausencia de sesión completa no debía ser aceptable.
+- generateSessionToken en USER emite userId, role, sessionId, iat y exp con TTL de 24h.
+
+### Implementación
+- USER, ACADEMIC y TASK exigen claims object no-array, userId/role/sessionId no vacíos, iat/exp enteros seguros.
+- iat no puede exceder ahora + 60 segundos; exp debe ser estrictamente futuro y mayor que iat; TTL no puede exceder 86400 segundos.
+- Se conserva la comprobación de revocación de usuario/sesión y estado de cuenta Activa.
+- Se agregan pruebas VM con los tres source files y escenarios válidos, campos ausentes, expiración, iat futuro y TTL excesivo.
+
+### Archivos modificados
+- backend/user-service/Code.gs
+- backend/academic-service/Code.gs
+- backend/task-service/Code.gs
+- tests/security/task-service-security-contract.test.js
+- Auditoría/AUDITORIA_TASK-636_C1.305.md
+- pendientes/Otros/Pendientes.md (seguimiento aditivo)
+- beta_test.txt (BETA-FUNC-017)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoria.txt
+- tareas_auditoria.txt
+- changueslogs.txt
+
+### Pruebas y estado
+- C1.375 security run 42726782516: completed/success; job local-security-contracts success; logs confirman contratos deleteProject, teacher scope y getStudyMaterials.
+- C1.376: contrato VM añadido; CI pendiente tras publicar.
+- BETA-FUNC-017: Pendiente beta. No se declara ejecución real de Apps Script, login, expiración o revocación.
+- TASK-636 En ejecución; AUD-NG-001/002 en revalidación. No se marca Completada.
+
+### Siguiente acción exacta
+Consultar CI C1.376 y continuar auditoría de excepciones públicas ACADEMIC (admisión con capacidad opaca), permisos de métricas globales y cierre académico. No habilitar closeAcademicYear hasta implementar y demostrar backup/restauración aislada verificable.
+
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.376.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.376.
+Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
+===============================================================================

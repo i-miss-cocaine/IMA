@@ -204,3 +204,11 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Pasos:** consultar como estudiante/familia; repetir como profesor/admin; alterar aulaId, includeDrafts y estado enviado en payload; verificar contenido y fecha.
 - **Resultado esperado:** estudiante/familia solo reciben material Activo/Publicado con fecha válida no futura y posts Publicado vigentes; Eliminado se excluye para todos; personal puede revisar borradores/programados solo en aulas autorizadas.
 - **Estado:** Pendiente beta. No bloquea implementación local.
+
+
+## BETA-FUNC-017 — TASK-636 / AUD-NG-001/002 — ciclo de vida de sesión transversal
+- **Objetivo:** comprobar en USER, ACADEMIC y TASK que solo se aceptan sesiones emitidas por login con claims completos y vigencia máxima de 24 horas.
+- **Precondiciones:** despliegues de prueba aislados de los tres servicios; usuarios sintéticos activos; acceso a configuración de secretos de test; reloj controlable.
+- **Casos:** login y llamada válida; token sin exp/iat/userId/role/sessionId; token expirado; iat futuro; TTL mayor de 24h; sessionId revocado; usuario revocado; cuenta Suspendida/Desactivada.
+- **Resultado esperado:** solo token íntegro, vigente, no revocado y asociado a cuenta Activa permite llamadas protegidas; todos los demás escenarios se deniegan en los tres servicios.
+- **Estado:** Pendiente beta. No se declara ejecutada ni bloquea la implementación local.

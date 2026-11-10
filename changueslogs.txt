@@ -533,3 +533,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-09] IMA-EXEC-20261109-1739Z-01 — C1.375 / TASK-636 / AUD-NG-002
 - Se corrige el orden esperado del fixture getStudyMaterials; no cambia producción.
 - CI C1.375 pendiente. Checkpoint C1.375: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice fila C1.375.
+
+
+[2026-11-10] IMA-EXEC-20261109-1739Z-01 — C1.376 / TASK-636 / AUD-NG-001/002
+- Se endurece verifySessionToken en USER, ACADEMIC y TASK: claims completos obligatorios, exp estricta, iat no futuro y TTL máximo 24h.
+- Se agrega contrato VM transversal para escenarios positivos/negativos.
+- CI pendiente; BETA-FUNC-017 registra pruebas reales de ciclo de sesión.
+- Checkpoint C1.376: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice fila C1.376.
