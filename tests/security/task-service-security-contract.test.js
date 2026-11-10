@@ -602,3 +602,76 @@ const previewContract = extractFunction("getSubmissionDocumentPreviewUrl");
 assert(previewContract.includes("getTaskServiceSubmissionAccess_"), "document preview delegates to the shared submission ownership guard");
 assert(previewContract.includes("matches.length !== 1"), "document preview rejects ambiguous file-to-delivery links");
 console.log("TASK-153 direct student submission and document ownership contract passed.");
+
+
+// TASK-153: legacy document reads must resolve an active metadata-to-task link
+// and enforce the verified student's ownership or the staff task scope.
+{
+  const file = {
+    isTrashed: () => false,
+    getName: () => "assignment.txt",
+    getMimeType: () => "text/plain",
+    getUrl: () => "https://drive.google.com/file/d/FILE-1/view",
+    getBlob: () => ({ getDataAsString: () => "Authorized assignment text for this test." })
+  };
+  const metadataHeaders = ["ID","Titulo","NombreOriginal","NombreFisico","TipoRecurso","Asignatura","Grado","Seccion","Parcial","Anio","Tema","TareaId","ProfesorId","FechaSubida","Estado","DriveId","RutaDrive","MimeType","TamanoBytes","PropietarioUserId","DriveFolderId"];
+  const metadataRow = ["META-1","Assignment","assignment.txt","assignment.txt","Entrega","Matemáticas","6","A","P1",2026,"Tema","TASK-1","PROF-1","2026-11-10","Activo","FILE-1","url","text/plain",40,"STU-1","FOLDER-1"];
+  const taskRow = ["TASK-1","Tarea","Assignment","","P1","Matemáticas","6","A","","","PROF-1","Activa",100];
+  let driveReads = 0, studentChecks = 0, staffChecks = 0;
+  const metadataSheet = { getDataRange: () => ({ getValues: () => [metadataHeaders, metadataRow] }) };
+  const ss = { getSheetByName: name => name === "MetadatosArchivos" ? metadataSheet : null };
+  const baseContext = {
+    SPREADSHEET_ID: "LOCAL",
+    SpreadsheetApp: { openById: () => ss },
+    getSheetOrThrow: (_ss, name) => {
+      assert.equal(name, "Tareas");
+      return { getDataRange: () => ({ getValues: () => [["ID"], taskRow] }) };
+    },
+    getVerifiedTaskIdentity_: payload => ({ authorized: true, userId: payload.actorId, role: payload.role }),
+    extractTaskServiceFileId: value => String(value || "").match(/FILE-1/) ? "FILE-1" : String(value || ""),
+    isTaskServiceAdministrativeRole: role => ["Administrador","Desarrollador","Dirección","Secretaría"].includes(role),
+    assertTaskServiceStudentCanAccessTask: (_ss, userId, task) => {
+      studentChecks++;
+      assert.equal(userId, "STU-1");
+      assert.equal(task[0], "TASK-1");
+    },
+    assertTaskServiceTeacherCanManageTask: () => { staffChecks++; throw new Error("RESOURCE_NOT_FOUND"); },
+    DriveApp: { getFileById: id => { driveReads++; assert.equal(id, "FILE-1"); return file; } }
+  };
+  const readContext = Object.assign({}, baseContext);
+  vm.runInNewContext(extractFunction("readLegacyDocument") + String.fromCharCode(10) + "this.run = readLegacyDocument;", readContext);
+  const allowed = readContext.run({ actorId:"STU-1", role:"Estudiante", fileId:"FILE-1" });
+  assert.equal(allowed.status, "success", "verified owner can read their task file");
+  assert.equal(studentChecks, 1);
+  const denied = readContext.run({ actorId:"STU-2", role:"Estudiante", fileId:"FILE-1" });
+  assert.equal(denied.errorCode, "RESOURCE_NOT_FOUND", "another student cannot read a file by guessing its Drive ID");
+  assert.equal(driveReads, 1, "unauthorized file reads are denied before Drive access");
+
+  const ambiguousContext = Object.assign({}, baseContext, {
+    SpreadsheetApp: { openById: () => ({ getSheetByName: name => name === "MetadatosArchivos" ? {
+      getDataRange: () => ({ getValues: () => [metadataHeaders, metadataRow, metadataRow] })
+    } : null }) }
+  });
+  vm.runInNewContext(extractFunction("readLegacyDocument") + String.fromCharCode(10) + "this.run = readLegacyDocument;", ambiguousContext);
+  assert.equal(ambiguousContext.run({ actorId:"STU-1", role:"Estudiante", fileId:"FILE-1" }).errorCode, "RESOURCE_NOT_FOUND",
+    "duplicate file ownership metadata is denied");
+  assert.equal(driveReads, 1, "ambiguous ownership is denied before Drive access");
+
+  const staffContext = Object.assign({}, baseContext, {
+    getVerifiedTaskIdentity_: payload => ({ authorized:true, userId:payload.actorId, role:"Administrador" })
+  });
+  vm.runInNewContext(extractFunction("readLegacyDocument") + String.fromCharCode(10) + "this.run = readLegacyDocument;", staffContext);
+  assert.equal(staffContext.run({ actorId:"ADMIN-1", role:"Administrador", fileId:"FILE-1" }).errorCode, "RESOURCE_NOT_FOUND",
+    "department-scoped staff cannot bypass the parent task ownership guard");
+  assert.equal(staffChecks, 1);
+  assert.equal(driveReads, 1);
+}
+{
+  let driveFolderReads = 0;
+  const disabledContext = { DriveApp: { getFolderById: () => { driveFolderReads++; throw new Error("must not be called"); } } };
+  vm.runInNewContext(extractFunction("getMultiPartFolderFiles") + String.fromCharCode(10) + "this.run = getMultiPartFolderFiles;", disabledContext);
+  const response = disabledContext.run({ folderId:"FOREIGN-FOLDER" });
+  assert.equal(response.code, "LEGACY_FOLDER_ENUMERATION_DISABLED");
+  assert.equal(driveFolderReads, 0, "legacy direct folder enumeration never accesses Drive");
+}
+console.log("TASK-153 legacy document and folder-IDOR contracts passed.");
