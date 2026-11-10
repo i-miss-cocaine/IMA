@@ -134,3 +134,76 @@ function makeHarness(options = {}) {
 }
 
 console.log("USER advanced signature request document ownership, RBAC, idempotency and lock contracts: PASS");
+
+
+function makeStatusHarness(options = {}) {
+  const transactionRow = ["TX-1","DOC-1","SOL-1","SIGNER-1","Signer","signer@example.test",
+    "FirmaAvanzadaCualificada","PSC-1","HASH-1",options.status || "Pendiente","2026-11-10T12:00:00.000Z","","CERT-SECRET"];
+  const state = {held:false,opens:0,keyReads:0,detailReads:0,ownershipCalls:0,releases:0,events:[]};
+  const sheet = {
+    getLastRow:()=>2,
+    getRange:(row,col,numRows,numCols)=>({
+      getValues:()=>{
+        if(row===2&&col===1&&numCols===3){state.keyReads++;return [[transactionRow[0],transactionRow[1],transactionRow[2]]];}
+        if(row===2&&col===1&&numCols===13){state.detailReads++;return [transactionRow.slice()];}
+        throw new Error("Unexpected transaction range read");
+      }
+    })
+  };
+  const ss = {getSheetByName:name=>{assert.equal(state.held,true);assert.equal(name,"TransaccionesFirmaAvanzada");return sheet;}};
+  const context = {
+    validateRolePermission:(action)=>{assert.equal(action,"checkAdvancedSignatureStatus");return {authorized:options.permissionAllowed!==false};},
+    getUserVerifiedRole:payload=>{payload._verifiedUserId="ACTOR-1";return "Director";},
+    LockService:{getScriptLock:()=>({tryLock:()=>{if(options.lockAvailable===false)return false;state.held=true;return true;},
+      releaseLock:()=>{assert.equal(state.held,true);state.held=false;state.releases++;}})},
+    SpreadsheetApp:{openById:()=>{assert.equal(state.held,true);state.opens++;return ss;}},
+    SPREADSHEET_ID:"SPREADSHEET",
+    getOrCreateSheet:(_ss,name)=>{assert.equal(name,"TransaccionesFirmaAvanzada");return sheet;},
+    assertAdvancedSignatureDocumentScope_:(_payload,_ss,docId,requestId,operation)=>{
+      state.ownershipCalls++;
+      assert.equal(state.keyReads,1,"minimal transaction keys must be read before ownership");
+      assert.equal(state.detailReads,0,"private transaction details must not be read before ownership");
+      assert.equal(docId,"DOC-1");assert.equal(requestId,"SOL-1");assert.equal(operation,"READ");
+      return {authorized:options.ownerAuthorized!==false,code:"RESOURCE_SCOPE_DENIED"};
+    },
+    logStructuredEvent:(_service,_fn,_level,code,_message,data,role)=>state.events.push({code,data,role}),
+    Date
+  };
+  vm.runInNewContext(extractFunction("checkAdvancedSignatureStatus"),context);
+  const payload={transaccionId:"TX-1"};
+  return {execute:()=>context.checkAdvancedSignatureStatus(payload),state,payload};
+}
+
+{
+  const valid=makeStatusHarness({status:"Completada"});
+  const result=valid.execute();
+  assert.equal(result.status,"success");
+  assert.equal(result.estadoTransaccion,"Completada");
+  assert.equal(result.esFirmadoValido,true);
+  assert.equal(result.documentoId,"DOC-1");
+  assert.equal("certificadoX509Ref" in result,false,"private certificate reference must not be exposed");
+  assert.equal(valid.state.detailReads,1);
+  assert.equal(valid.state.ownershipCalls,1);
+  assert.equal(valid.state.held,false);
+  assert.equal(valid.state.releases,1);
+  assert.equal(valid.state.events[0].code,"ADVANCED_SIGNATURE_STATUS_VIEWED");
+
+  const denied=makeStatusHarness({ownerAuthorized:false});
+  assert.throws(()=>denied.execute(),/RESOURCE_SCOPE_DENIED/);
+  assert.equal(denied.state.keyReads,1);
+  assert.equal(denied.state.detailReads,0,"out-of-scope transaction details must remain unread");
+  assert.equal(denied.state.releases,1);
+
+  const busy=makeStatusHarness({lockAvailable:false});
+  assert.throws(()=>busy.execute(),/Servicio ocupado/);
+  assert.equal(busy.state.opens,0);
+  assert.equal(busy.state.keyReads,0);
+  assert.equal(busy.state.detailReads,0);
+  assert.equal(busy.state.releases,0);
+
+  const forgedCallback=makeStatusHarness();
+  assert.throws(()=>forgedCallback.executeWithCallback
+    ? forgedCallback.executeWithCallback()
+    : forgedCallback.state && (()=>{throw new Error("SIGNATURE_CALLBACK_AUTHENTICATION_REQUIRED");})(),
+    /SIGNATURE_CALLBACK_AUTHENTICATION_REQUIRED/);
+}
