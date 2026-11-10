@@ -1207,3 +1207,15 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - **Verificaciones:** inspección estática del código fuente y del esquema de logging; no se accedió a una hoja LogsSistema real ni a datos productivos. No se ejecutaron pruebas dinámicas porque esta iteración no modificó código.
 - **Estado:** investigación completada; cero cargos históricos modificados. TASK-153 En ejecución; AUD-NG-386 abierto.
 ===============================================================================
+
+
+===============================================================================
+## Seguimiento C1.454 — corrección TDZ y trazabilidad CargoID en conversión de admisión
+- **Defecto:** `convertAdmissionToStudent` referenciaba `matriculaRealId` antes de su inicialización al construir la referencia del cargo.
+- **Corrección:** la conversión pasa `_chargeReferencePrefix` privado. `registerStudentEnrollmentInternal_` resuelve primero la matrícula y deriva después la referencia exacta `ADMISION|<solicitudId>|<matriculaId>`, dentro de la misma operación de matrícula/cargo. El helper retorna `cargoId` tanto para cargo recién insertado como para coincidencia exacta reutilizada.
+- **Seguridad/contrato:** la API pública `registerStudentEnrollment` elimina `_chargeReferencePrefix` además de los metadatos internos ya filtrados. La conversión valida y retorna `matriculaId` y `cargoId`; el retorno idempotente expone el CargoID conciliado. El evento `ADMISSION_CONVERTED` conserva ahora `cargoId` para nuevas trazas.
+- **Prueba añadida:** contrato de conversión con mocks que primero inyecta fallo al insertar el movimiento y verifica compensación; después retira el fallo y verifica conversión exitosa, CargoID, referencia exacta y persistencia de un único cargo. Se amplían los asserts de reuso del CargoID y filtrado de prefijo interno.
+- **Verificaciones:** revisión estática de los bloques modificados y del diff PASS. Pruebas Node/sintaxis NOT RUN: no se dispone de checkout local en esta sesión; `git clone` falló por DNS (`Could not resolve host: github.com`). Consulta de status/checks GitHub para HEAD sin status ni runs devueltos. No afirmar pruebas dinámicas o CI aprobadas.
+- **Riesgo residual:** ejecutar `node tests/security/academic-student-expediente-ownership.test.js` y `node --check < backend/academic-service/Code.gs` en runner local/CI; corregir cualquier fallo antes de cerrar TASK-153.
+- **Estado:** cambios de código y prueba publicados en rama autorizada; TASK-153 permanece En ejecución. AUD-NG-386 continúa abierto.
+===============================================================================
