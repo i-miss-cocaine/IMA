@@ -607,6 +607,8 @@ console.log("ACADEMIC converted admission reconciliation contract passed.");
   const ordinary=registerCharge(emptyHeader,"",1500);
   assert.equal(ordinary.sheet.rows[1].length,9,"ordinary charges must preserve the legacy nine-column row shape");
   assert.equal(ordinary.sheet.rows[0].length,9,"ordinary enrollment must not trigger admission-reference schema migration");
+  const voided=registerCharge([emptyHeader[0],["CRG-VOID",new Date(),"STU-1","Matrícula Ordinaria 2026",1500,0,1500,"ANULADO",""]],"ADMISION|ADM-1|MAT-1",1500);
+  assert.equal(voided.sheet.rows.length,3,"a voided legacy charge must not block a new admission-linked charge");
 }
 console.log("ACADEMIC admission charge attribution contract passed.");
 
