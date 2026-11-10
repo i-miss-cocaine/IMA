@@ -1146,3 +1146,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Sin CI visible ni Apps Script/Sheets real. BETA-EXAM-031 Pendiente beta.
 - Commits de implementación y pruebas: 6e410c7db8a135d7ffc7772167bd99998409f4f3; d9846a877facead35d4321955d3a0c408755271c; 843f6673a5eb12f732b70adc7162fdff266d9dc4; f118ce5e4f54dad255dc13f9621efb3e9e9e4261.
 ===============================================================================
+
+[2026-11-10] C1.478 — IMA-EXEC-20261110-1825Z-02 — EXAM: serialización de actualización y baja lógica
+- updateExam, updateExamStatus y deleteExam delegan en workers ejecutados bajo withAuthorizedExamMutation_; ScriptLock de 5 s, revalidación de identidad/permisos/ownership y liberación en finally.
+- Se prueba localmente el desplazamiento de fila por eliminación concurrente y timeout; no se modifica un examen distinto. Parseo V8, departmental-access y security-contract PASS.
+- Runner Node nativo/CI NOT RUN; Apps Script/Sheets real NOT RUN. BETA-EXAM-032 Pendiente beta.
+- Commits: 07e32f50b8b104bbdbc94c52b726b7b23168774f; 9ac430c38f350ff2305dbd103d36e9fa80f3b3ac.
+===============================================================================

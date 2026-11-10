@@ -3353,3 +3353,13 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **CI:** sin ejecución visible asociada al commit al consultar; no se declara PASS. **Beta:** BETA-EXAM-031 Pendiente beta para Apps Script/Sheets real.
 - **Estado:** subalcance submitExam completado en código; TASK-153 En ejecución y AUD-NG-386 abierto por otras rutas EXAM.
 - **Commits:** 6e410c7db8a135d7ffc7772167bd99998409f4f3; d9846a877facead35d4321955d3a0c408755271c; 843f6673a5eb12f732b70adc7162fdff266d9dc4; f118ce5e4f54dad255dc13f9621efb3e9e9e4261.
+
+### 10.131 TASK-153 / AUD-NG-386 — serialización de updateExam, updateExamStatus y deleteExam (C1.478)
+
+- **Hallazgo:** estas tres rutas obtenían el rowIndex/contexto autorizado antes de mutar sin lock. Una eliminación concurrente podía desplazar filas y permitir que una actualización escribiera sobre otro examen; deleteExam también podía decidir su baja según un conteo de entregas obsoleto.
+- **Corrección:** wrapper withAuthorizedExamMutation_ adquiere ScriptLock (5 s), vuelve a resolver identidad, permiso, scope y ownership después de adquirirlo y mantiene el lock durante la actualización de Examenes/ResourceOwnership. Los tres handlers delegan en workers internos; deleteExam conserva la baja lógica cuando hay entregas y el rollback de ownership.
+- **Pruebas locales:** parseo V8 PASS; departmental-access y security-contract PASS en harness V8 aislado. Se simula la eliminación del examen objetivo justo antes de adquirir lock y se verifica que no se modifica la fila siguiente; timeout fail-closed PASS.
+- **Runner Node nativo/CI:** NOT RUN. **Beta:** BETA-EXAM-032 Pendiente beta para concurrencia real en Apps Script/Sheets.
+- **Estado:** subalcance completado; TASK-153 En ejecución y AUD-NG-386 abierto por otras rutas EXAM.
+- **Commits:** 07e32f50b8b104bbdbc94c52b726b7b23168774f; 9ac430c38f350ff2305dbd103d36e9fa80f3b3ac.
+- **Siguiente subalcance:** inspeccionar manageQuestionBank como superficie separada de escritura de preguntas.

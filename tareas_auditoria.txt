@@ -827,3 +827,11 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - Parseo local y ejecución V8 aislada de los contratos departmental-access y security-contract PASS. Harness con stubs; runner Node nativo y CI no ejecutados. Apps Script/Sheets real pendiente.
 - BETA-EXAM-031 Pendiente beta. TASK-153 En ejecución; AUD-NG-386 abierto por otras rutas EXAM.
 ===============================================================================
+
+===============================================================================
+### TASK-153 — seguimiento C1.478 / AUD-NG-386 EXAM
+- updateExam, updateExamStatus y deleteExam ejecutan autorización, scope, ownership, lectura de examen y escritura bajo un mismo ScriptLock. Contexto revalidado tras adquirir lock; timeout fail-closed y finally libera.
+- Contratos locales departmental-access y security-contract PASS en harness V8 aislado; parseo completo EXAM PASS. Prueba determinista elimina el objetivo antes de resolver contexto y verifica que no se actualiza la fila desplazada.
+- Runner Node nativo/CI NOT RUN; Apps Script/Sheets real pendiente. BETA-EXAM-032 Pendiente beta.
+- TASK-153 En ejecución; AUD-NG-386 abierto por otras rutas. Siguiente subalcance: manageQuestionBank.
+===============================================================================

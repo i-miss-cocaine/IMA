@@ -1398,3 +1398,11 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - Los tests se ejecutaron en harness V8 aislado con stubs compatibles; no se ejecutó Node CLI ni CI. No se ejecutó Apps Script/Sheets real.
 - BETA-EXAM-031 Pendiente beta. AUD-NG-386 sigue abierto por otras rutas EXAM.
 ===============================================================================
+
+===============================================================================
+## C1.478 — EXAM: serialización de actualización y baja lógica
+- Hallazgo corregido: updateExam, updateExamStatus y deleteExam obtenían contexto/rowIndex antes de la mutación sin lock. Se introduce withAuthorizedExamMutation_ para resolver autorización, scope, ownership y fila después de adquirir ScriptLock, manteniéndolo durante la escritura.
+- deleteExam conserva la desactivación en lugar de borrar físicamente cuando existen entregas; ownership se desactiva dentro de la misma sección crítica para baja lógica sin entregas.
+- Parseo V8, departmental-access y security-contract PASS en harness V8 aislado. La prueba simula eliminación concurrente del objetivo antes de resolver contexto y demuestra que no se modifica la fila siguiente; timeout fail-closed PASS.
+- Runner Node nativo/CI NOT RUN; Apps Script/Sheets real NOT RUN. BETA-EXAM-032 Pendiente beta.
+===============================================================================

@@ -744,3 +744,40 @@ Cerrar la condición de carrera en submitExam: el control de IntentosPermitidos 
 - La rama base NG_beta_0.0.0.1 permanece en 44d9891132332e692dbe2ba8602b41f50a508a59; no se escribió en ella.
 - Se conserva la rama exclusiva NG_beta_0.0.0.1_work y el historial fast-forward; no se utilizó force push.
 ===============================================================================
+
+===============================================================================
+## CHECKPOINT C1.478 — EXAM: serialización de mutaciones del examen
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.477.
+HEAD inicial: a92e3f5533ff4d5113f50da66468dfb9112b9935.
+Commits de implementación/pruebas: 07e32f50b8b104bbdbc94c52b726b7b23168774f; 9ac430c38f350ff2305dbd103d36e9fa80f3b3ac.
+
+### Alcance
+Cerrar la carrera de filas obsoletas en updateExam, updateExamStatus y deleteExam. La autorización/ownership, la lectura del examen y las decisiones de persistencia deben ejecutarse bajo el mismo lock que protege la mutación.
+
+### Cambios
+- Se añadió withAuthorizedExamMutation_: ScriptLock de 5 s, revalidación de getAuthorizedExamMutationContext_ después de adquirir el lock, callback de mutación y liberación en finally.
+- updateExam, updateExamStatus y deleteExam delegan en workers internos; el contexto autorizado se obtiene dentro del lock.
+- updateExam actualiza el snapshot de fila recién leído; updateExamStatus no escribe sobre un rowIndex obsoleto; deleteExam comprueba entregas y ownership dentro de la sección crítica y conserva la baja lógica/rollback existente.
+- Timeout fail-closed con EXAM_MUTATION_LOCK_TIMEOUT.
+- La prueba local elimina el examen objetivo justo antes de adquirir el lock y confirma que el contexto se vuelve a leer y que no se modifica el examen que ocupa la fila siguiente. También verifica timeout sin mutación.
+- Contrato de seguridad actualizado para exigir el wrapper común en las tres rutas.
+- BETA-EXAM-032 registra la validación desplegada de actualización, estado y baja lógica.
+
+### Verificación
+- Parseo sintáctico local V8 de backend/exam-service/Code.gs: PASS.
+- tests/security/exam-service-departmental-access.test.js: PASS en harness V8 aislado con stubs.
+- tests/security/exam-service-security-contract.test.js: PASS en harness V8 aislado con stubs.
+- Revisión del diff limitado a servicio EXAM, contratos de seguridad y caso beta: sin cambios ajenos detectados.
+- Runner Node nativo y CI: NOT RUN; no se declara PASS.
+- Apps Script/Sheets real: NOT RUN; BETA-EXAM-032 Pendiente beta.
+
+### Estado y continuidad
+- Subalcance updateExam/updateExamStatus/deleteExam: completado en código y pruebas locales.
+- TASK-153 permanece En ejecución; AUD-NG-386 sigue abierto por otras rutas EXAM.
+- Rama base NG_beta_0.0.0.1 permanece sin cambios.
+- Siguiente subalcance elegible: inspeccionar manageQuestionBank y sus operaciones de alta/edición/baja para validar autorización, ownership y consistencia de escritura; tratarlo como tarea separada.
+===============================================================================
