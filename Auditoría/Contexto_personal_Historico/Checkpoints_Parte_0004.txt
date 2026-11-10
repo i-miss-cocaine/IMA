@@ -2002,3 +2002,38 @@ Revisar la escritura de evaluaciones de admisión para cerrar riesgos de concurr
 - Las pruebas que requieran despliegue quedan reservadas a beta; no son condición de cierre de este subalcance.
 - Siguiente acción: continuar con el siguiente subalcance pendiente de TASK-153/AUD-NG-386, manteniendo esta sesión.
 ===============================================================================
+
+===============================================================================
+## CHECKPOINT C1.458 — ACADEMIC: resolución segura de duplicados de admisión
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.457.
+
+### Alcance
+Auditar y corregir la ruta `resolveAdmissionDuplicate` dentro de TASK-153 / AUD-NG-386, con énfasis en autorización de gestión, ownership interdepartamental, escrituras concurrentes e integridad de trazabilidad.
+
+### Cambios
+- La resolución requiere uno de los roles de gestión permitidos, leído desde `ctx.actor` verificado; no depende de `payload.authRole`.
+- `ScriptLock` protege la revalidación del ownership de la solicitud, la comprobación del expediente destino, la lectura del registro y las mutaciones. El lock se libera en `finally`; la contención falla antes de acceder a hojas.
+- Para `VincularExistente`, la solicitud y el expediente deben pertenecer al mismo departamento. Se revalida el ownership bajo lock sin reutilizar la caché asociada al payload.
+- Se evita resolver nuevamente una solicitud marcada como resuelta o reemplazar una vinculación previa incompatible. Las columnas de destino/observaciones y estado se actualizan en rangos coordinados; el resultado informa si el historial pudo persistirse.
+
+### Verificaciones
+- GitHub Actions run `42892900933`: SUCCESS, Node 24.
+- `academic-admission-ownership.test.js`: PASS; cubre rol no autorizado, contención de lock, rechazo de vínculo entre departamentos antes de leer/escribir, aceptación dentro del mismo departamento, liberación de lock y regresiones de resolución repetida/vinculación incompatible.
+- Contratos de Department Scope, ACADEMIC departmental resource access, ACADEMIC student/guardian expediente ownership, admisión, ACCOUNTING departmental access, ResourceOwnership ABAC y voucher client: PASS.
+- `node --check`: User/Academic/Accounting Code.gs y `js/student.js`: PASS.
+- Sin despliegue, servicios vivos, Google Sheets real ni datos institucionales reales. La concurrencia se simuló con fixtures y lock local.
+
+### Commits
+- `89ca3edfc6cff41105c03fccc2d6a83188b2026c` — autorización de gestión verificada en resolución de duplicados.
+- `25bea9e9ed69460c1b2bf21ab2bf951f4a837ba5` — contratos de ownership, departamento y lock.
+
+### Estado y continuidad
+- Resolución de duplicados ACADEMIC verificada localmente.
+- **TASK-153 permanece En ejecución y AUD-NG-386 abierto** por recursos institucionales, solicitudes de firma, permisos granulares, referencias compartidas, filtros/importaciones y otras rutas pendientes.
+- Las pruebas que requieran despliegue quedan reservadas para beta; no son condición de cierre de este subalcance.
+- Siguiente acción: continuar con el siguiente subalcance pendiente de TASK-153/AUD-NG-386, manteniendo esta sesión.
+===============================================================================
