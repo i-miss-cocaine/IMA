@@ -499,7 +499,7 @@ console.log("academic admission duplicate resolution ownership, role and lock co
   assert.equal(state.held,false);assert.equal(state.releases,1);assert.equal(state.requestChecks,1);
   assert.equal(state.requestRow[11],"Reabierta");assert.equal(state.requestRow[12],"Web");
   assert.equal(state.requestRow[13].includes("Nota previa | [REAPERTURA"),true);
-  assert.deepEqual(state.historyRows[0],historyHeaders);
+  assert.equal(JSON.stringify(Array.from(state.historyRows[0])),JSON.stringify(historyHeaders),"history header must use the canonical entity-change schema");
   assert.equal(state.historyRows[1][2],"SolicitudAdmision");assert.equal(state.historyRows[1][3],"REQ-REOPEN");
   assert.equal(state.historyRows[1][7],"MANAGER-VERIFIED");
   assert.throws(()=>reopened.execute(),/RESOURCE_CONFLICT_ADMISSION_ALREADY_REOPENED/);
