@@ -177,3 +177,16 @@ I. **AUDITORÍA ÚNICA Y CONTROL DE RECURSIVIDAD (OBLIGATORIO):** antes de inici
 **Ubicación exacta:** `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt`, sección C1.410, rango de líneas a registrar en índice central `Auditoría/INDICE_CHECKPOINTS.md`. Anterior C1.409.  
 **Commit de cierre:** este commit consolidado; SHA se confirma externamente tras publicar.  
 ===============================================================================
+
+
+===============================================================================
+## C1.411 — IMA-EXEC-20261110-1150Z-01 — autoridad y responsabilidad configurables por rol
+- Solicitud: registrar que IMA no debe fijar nombres personales como titulares de responsabilidades/autoridad; toda asignación sobre antecedentes, expedientes y documentos debe configurarse desde la plataforma mediante roles.
+- Se incorpora N-23 en Auditoría/ORGANIGRAMA_Y_NORMATIVA_INSTITUCIONAL_PROPUESTA.md: catálogo de roles/capacidades, membresías vigentes, matriz por tipo documental/operación/ámbito, aprobaciones dirigidas a roles, delegaciones temporales, sustitución y denegación por defecto.
+- Se distingue configuración de autoridad por rol de la identidad autenticada del actor: la primera no se define por nombre personal; la segunda se conserva en auditoría protegida para trazabilidad, junto con rol efectivo y contexto.
+- Se amplía Plan Maestro §10.82 con requisitos funcionales, pruebas requeridas y dependencias.
+- No se registran nombres personales como responsables en el organigrama ni se crean asignaciones reales. No se modifican código, esquemas, datos productivos, usuarios, roles, permisos o backlogs fuente.
+- T153-S01 permanece Bloqueada hasta decisión institucional sobre autoridad y fuente canónica; T153-S02…S08 y TASK-696 no se adelantan.
+- Pruebas de producto/autorización no ejecutadas; criterios de aceptación solo documentados.
+- Archivos de checkpoint, índice, auditoría y changelog actualizados; rama de trabajo exclusiva NG_beta_0.0.0.1_work.
+===============================================================================
