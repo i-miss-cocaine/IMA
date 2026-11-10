@@ -2782,3 +2782,22 @@ La regla no elimina autenticación ni trazabilidad individual. IMA debe conserva
 Esta regla se incorpora como requisito normativo/arquitectónico para la futura matriz de autorización. No resuelve quién tiene autoridad institucional para aprobar el organigrama ni qué catálogo de departamentos es canónico; por ello T153-S01 conserva su bloqueo hasta evidencia formal. No se adelantan T153-S02…S08 ni TASK-696. No se modifican datos, esquemas, código, permisos ni asignaciones productivas. Las pruebas anteriores quedan planificadas, no ejecutadas.
 
 **Resultado C1.411:** regla de responsabilidad/autoridad por roles configurables registrada en normativa propuesta y Plan Maestro; pendiente ratificación institucional y planificación de implementación según dependencias.
+
+
+### 10.83 PM-01 — Matriz configurable de roles, responsabilidades y autoridad superior (C1.412)
+
+**Objetivo:** convertir N-23/N-24 en una política de autorización administrable desde IMA, con límites explícitos por rol, documento, operación y ámbito.
+
+**Requisitos funcionales**
+- Catálogos configurables de roles, responsabilidades, recursos documentales, operaciones, ámbitos, membresías y delegaciones.
+- Rol superior Titular Institucional / Representante Legal (TIRL), con facultades jurídicas condicionadas a instrumento válido; puede asumir funciones de Dirección mediante modalidad temporal y auditable.
+- Matriz inicial limitada a TIRL, Dirección, Secretaría, asistentes de Dirección/Secretaría, Contaduría, Asistencia de Contaduría y Docencia; representantes y alumnos excluidos de autoridad/responsabilidad interna; otros empleados denegados por defecto.
+- Contaduría limitada al dominio financiero; su asistente solo opera dentro de delegación y sin aprobación/liberación final por defecto.
+- Docencia autorizada exclusivamente por asignación vigente de asignatura, grupo/sección y período, para desempeño de estudiantes de esa asignatura.
+- Autoría solo propone roles responsables elegibles; no concede autoridad, acceso, custodia ni aprobación.
+- Separación entre autor, responsable funcional, propietario institucional, custodio, revisor, aprobador y firmante.
+- Autorización de servidor en todos los canales y operaciones, denegación por defecto, auditoría protegida, versionado y aprobación separada de políticas.
+
+**Pruebas requeridas:** exclusión de representantes/alumnos y empleados no habilitados; aislamiento financiero; límites de asistentes; alcance docente por asignatura; revocación por expiración; bloqueo de IDOR/API/descarga/exportación; propuesta de responsable por autor sin elevación; cambio de ocupante sin reescritura histórica; ausencia de autoaprobación y conflictos de segregación; TIRL sin privilegios de desarrollador y con evidencia jurídica para representación.
+
+**Dependencias y límites:** ratificación institucional y legal; validación del instrumento de representación y de competencias estatutarias; T153-S01 permanece Bloqueada. No crear roles, usuarios, membresías, permisos ni asignaciones reales; no modificar código, esquemas o datos productivos. Pruebas no ejecutadas.
