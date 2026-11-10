@@ -2370,8 +2370,13 @@ function convertAdmissionToStudent(payload) {
       }
     }
 
-    const requestOwner = registerAcademicResourceOwnership_(ss, ctx.scope, "SOLICITUD_ADMISION", solicitudId, departmentId, ctx.actor.userId);
-    if (!requestOwner.authorized) throw new Error(requestOwner.code || "RESOURCE_OWNERSHIP_REGISTRATION_FAILED");
+    const rollbackActions = [];
+    let requestOwner = null;
+    let expedienteOwner = null;
+    try {
+      requestOwner = registerAcademicResourceOwnership_(ss, ctx.scope, "SOLICITUD_ADMISION", solicitudId, departmentId, ctx.actor.userId);
+      if (!requestOwner.authorized) throw new Error(requestOwner.code || "RESOURCE_OWNERSHIP_REGISTRATION_FAILED");
+      if (requestOwner.created) rollbackActions.push(function() { deleteAcademicResourceOwnership_(ss, requestOwner.ownershipId); });
 
     if (!duplicate) {
       newExpRowNumber = expSheet.getLastRow() + 1;
@@ -2379,16 +2384,21 @@ function convertAdmissionToStudent(payload) {
         finalExpId, targetPersonaId, code, fechaNac || "", "Hondureña", "", "", "Activo", now, now,
         "Admisión aprobada desde solicitud " + solicitudId + ". Responsable: " + nombreResponsable + ", Tel: " + telefonoContacto + ", Email: " + emailContacto + ", DNI: " + identificacion
       ]);
+      rollbackActions.push(function() {
+        const current = expSheet.getDataRange().getValues();
+        if (newExpRowNumber > 0 && newExpRowNumber <= current.length &&
+            String(current[newExpRowNumber - 1][0] || "") === String(finalExpId)) expSheet.deleteRow(newExpRowNumber);
+      });
     }
 
-    const expedienteOwner = registerAcademicResourceOwnership_(ss, ctx.scope, "EXPEDIENTE_ESTUDIANTE", finalExpId, departmentId, ctx.actor.userId);
-    if (!expedienteOwner.authorized) {
-      if (newExpRowNumber) expSheet.deleteRow(newExpRowNumber);
-      if (requestOwner.created) deleteAcademicResourceOwnership_(ss, requestOwner.ownershipId);
-      throw new Error(expedienteOwner.code || "RESOURCE_OWNERSHIP_REGISTRATION_FAILED");
-    }
+    expedienteOwner = registerAcademicResourceOwnership_(ss, ctx.scope, "EXPEDIENTE_ESTUDIANTE", finalExpId, departmentId, ctx.actor.userId);
+    if (!expedienteOwner.authorized) throw new Error(expedienteOwner.code || "RESOURCE_OWNERSHIP_REGISTRATION_FAILED");
+    if (expedienteOwner.created) rollbackActions.push(function() { deleteAcademicResourceOwnership_(ss, expedienteOwner.ownershipId); });
     if (userMatchesForLink.length === 1 && !String(userMatchesForLink[0].row[9] || "").trim()) {
-      userSheetForLink.getRange(userMatchesForLink[0].index + 1, 10).setValue(targetPersonaId);
+      const linkedUserRow = userMatchesForLink[0].index + 1;
+      const previousLinkedPersonId = userMatchesForLink[0].row[9];
+      rollbackActions.push(function() { userSheetForLink.getRange(linkedUserRow, 10).setValue(previousLinkedPersonId); });
+      userSheetForLink.getRange(linkedUserRow, 10).setValue(targetPersonaId);
     }
 
     if (emailContacto) {
@@ -2408,6 +2418,11 @@ function convertAdmissionToStudent(payload) {
           const relGen = generateInstitutionalId({ entityType: "RelacionFamiliar", prefix: "REL-", skipLock: true });
           const relId = (relGen && relGen.generatedId) ? relGen.generatedId : ("REL-" + Date.now());
           relSheet.appendRow([relId, finalExpId, parentUserId, "Padre/Tutor", "Verificada", now, "", "Vinculación transferida desde solicitud " + solicitudId + "."]);
+          const insertedRelationRow = relSheet.getLastRow();
+          rollbackActions.push(function() {
+            const current = relSheet.getDataRange().getValues();
+            if (insertedRelationRow <= current.length && String(current[insertedRelationRow - 1][0] || "") === String(relId)) relSheet.deleteRow(insertedRelationRow);
+          });
         }
       } else {
         const invSheet = getOrCreateSheet(ss, "InvitacionesVinculacion");
@@ -2419,6 +2434,11 @@ function convertAdmissionToStudent(payload) {
           const token = "TOK-" + Utilities.getUuid();
           const expDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
           invSheet.appendRow([invId, finalExpId, emailContacto, token, now, expDate, "Activa", ctx.actor.userId]);
+          const insertedInvitationRow = invSheet.getLastRow();
+          rollbackActions.push(function() {
+            const current = invSheet.getDataRange().getValues();
+            if (insertedInvitationRow <= current.length && String(current[insertedInvitationRow - 1][0] || "") === String(invId)) invSheet.deleteRow(insertedInvitationRow);
+          });
         }
       }
     }
@@ -2427,7 +2447,10 @@ function convertAdmissionToStudent(payload) {
     const docData = docSheet.getDataRange().getValues();
     for (let d = 1; d < docData.length; d++) {
       if (String(docData[d][2] || "").trim() === String(solicitudId).trim() && !docData[d][1]) {
-        docSheet.getRange(d + 1, 2).setValue(finalExpId);
+        const documentRow = d + 1;
+        const previousDocumentExpedienteId = docData[d][1];
+        rollbackActions.push(function() { docSheet.getRange(documentRow, 2).setValue(previousDocumentExpedienteId); });
+        docSheet.getRange(documentRow, 2).setValue(finalExpId);
       }
     }
 
@@ -2444,7 +2467,8 @@ function convertAdmissionToStudent(payload) {
       userId: targetUserId, alumno: (nombres + " " + apellidos).trim(), grado: grado, seccion: targetSeccion,
       periodo: anolectivo, tipo: "IngresoNuevo", observaciones: "Convertido desde solicitud " + solicitudId,
       skipLock: true,
-      cargos: [{ concepto: "Matrícula Ordinaria " + anolectivo, montoBase: montoMatriculaBase, descuento: 0, estado: "Pendiente" }]
+      cargos: [{ concepto: "Matrícula Ordinaria " + anolectivo, montoBase: montoMatriculaBase, descuento: 0, estado: "Pendiente" }],
+      _rollbackActions: rollbackActions
     });
     if (!enrollRes || enrollRes.status !== "success" || !enrollRes.matriculaId) throw new Error("ENROLLMENT_CREATION_FAILED");
     const matriculaRealId = enrollRes.matriculaId;
@@ -2460,10 +2484,22 @@ function convertAdmissionToStudent(payload) {
         movId, finalExpId, matriculaRealId, anolectivo, "IngresoNuevo", "", "", grado, targetSeccion, now,
         "Admisión y Matrícula Inicial aprobada desde " + solicitudId, ctx.actor.userId, "Confirmado"
       ]);
+      const insertedMovementRow = movSheet.getLastRow();
+      rollbackActions.push(function() {
+        const current = movSheet.getDataRange().getValues();
+        if (insertedMovementRow <= current.length && String(current[insertedMovementRow - 1][0] || "") === String(movId)) movSheet.deleteRow(insertedMovementRow);
+      });
     }
 
-    admSheet.getRange(idx + 1, 15).setValue(finalExpId);
-    admSheet.getRange(idx + 1, 12).setValue("Convertida");
+    const admissionRowNumber = idx + 1;
+    const previousAdmissionExpedienteId = row[14];
+    const previousAdmissionStatus = row[11];
+    rollbackActions.push(function() {
+      admSheet.getRange(admissionRowNumber, 15).setValue(previousAdmissionExpedienteId);
+      admSheet.getRange(admissionRowNumber, 12).setValue(previousAdmissionStatus);
+    });
+    admSheet.getRange(admissionRowNumber, 15).setValue(finalExpId);
+    admSheet.getRange(admissionRowNumber, 12).setValue("Convertida");
     logStructuredEvent("ACADEMIC", "convertAdmissionToStudent", "INFO", "ADMISSION_CONVERTED",
       "Solicitud " + solicitudId + " convertida a expediente " + finalExpId + " y matrícula " + matriculaRealId,
       { solicitudId: solicitudId, expedienteId: finalExpId, matriculaRealId: matriculaRealId, anolectivo: anolectivo, grado: grado, departmentId: departmentId },
@@ -2472,6 +2508,17 @@ function convertAdmissionToStudent(payload) {
       status: "success", solicitudId: solicitudId, expedienteId: finalExpId, codigoInstitucional: code,
       userId: targetUserId, matriculaId: matriculaRealId, message: "Solicitud " + solicitudId + " convertida exitosamente en expediente y matrícula."
     };
+    } catch (conversionError) {
+      const rollbackErrors = [];
+      for (let undoIndex = rollbackActions.length - 1; undoIndex >= 0; undoIndex--) {
+        try { rollbackActions[undoIndex](); } catch (rollbackError) { rollbackErrors.push(String(rollbackError && rollbackError.message || rollbackError)); }
+      }
+      if (rollbackErrors.length) {
+        throw new Error("ADMISSION_CONVERSION_COMPENSATION_REQUIRED: " +
+          String(conversionError && conversionError.message || conversionError) + " | " + rollbackErrors.join(" | "));
+      }
+      throw conversionError;
+    }
   } finally {
     if (hasLock) {
       try { lock.releaseLock(); } catch (_) {}
@@ -12986,7 +13033,7 @@ function generateMigrationReport(payload) {
 // Módulo de Matrícula
 // [REQ-EXP-009] [Requerimientos de Expansión y Desarrollo] - Registro de matrículas por período y vinculación con cargos financieros del estudiante.
 function registerStudentEnrollment(payload) {
-  const { userId, alumno, grado, seccion, periodo, tipo, becaDescuento, observaciones, cargos } = payload || {};
+  const { userId, alumno, grado, seccion, periodo, tipo, becaDescuento, observaciones, cargos, _rollbackActions } = payload || {};
   if (!userId || !grado || !periodo) throw new Error("Datos de matrícula incompletos.");
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const matSheet = getOrCreateSheet(ss, "Matriculas");
@@ -13003,6 +13050,10 @@ function registerStudentEnrollment(payload) {
 
   if (existingIndex !== -1) {
     matriculaId = matData[existingIndex][0];
+    const previousEnrollmentRow = matData[existingIndex].slice(0, 11);
+    if (Array.isArray(_rollbackActions)) _rollbackActions.push(function() {
+      matSheet.getRange(existingIndex + 1, 1, 1, 11).setValues([previousEnrollmentRow]);
+    });
     matSheet.getRange(existingIndex + 1, 1, 1, 11).setValues([[
       matriculaId,
       now,
@@ -13031,6 +13082,11 @@ function registerStudentEnrollment(payload) {
       becaDescuento || 0,
       observaciones || ""
     ]);
+    const insertedEnrollmentRow = matSheet.getLastRow();
+    if (Array.isArray(_rollbackActions)) _rollbackActions.push(function() {
+      const current = matSheet.getDataRange().getValues();
+      if (insertedEnrollmentRow <= current.length && String(current[insertedEnrollmentRow - 1][0] || "") === String(matriculaId)) matSheet.deleteRow(insertedEnrollmentRow);
+    });
   }
 
   if (Array.isArray(cargos) && cargos.length > 0) {
@@ -13054,6 +13110,11 @@ function registerStudentEnrollment(payload) {
           c.estado || "Pendiente",
           c.fechaVencimiento || ""
         ]);
+        const insertedCargoRow = cargosSheet.getLastRow();
+        if (Array.isArray(_rollbackActions)) _rollbackActions.push(function() {
+          const current = cargosSheet.getDataRange().getValues();
+          if (insertedCargoRow <= current.length && String(current[insertedCargoRow - 1][0] || "") === String(cargoId)) cargosSheet.deleteRow(insertedCargoRow);
+        });
       }
     });
   }
