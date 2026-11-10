@@ -1080,3 +1080,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Contrato local aislado PASS (5 escenarios). Department Scope CI run 42903670806 SUCCESS, incluyendo contrato ACADEMIC y syntax-check.
 - Sin cambios productivos; sin Apps Script/Sheets real ni despliegue. TASK-153 sigue En ejecución; AUD-NG-386 abierto.
 - Commits: 88b3462e969ec427f5b31fbcb7894c1fbbc49dff; 08813b2dbcddbf2df23e2ed1d008052f425c252b.
+
+
+[2026-11-10] C1.471 — IMA-EXEC-20261110-1825Z-02 — TASK-153 / ACADEMIC: aislamiento de evaluaciones y entrevistas
+- saveAdmissionEvaluation y scheduleAdmissionInterview revalidan ownership de solicitud bajo ScriptLock antes de leer/escribir; asignaciones de evaluador realizadas por gestores vuelven a comprobar identidad y ámbito departamental bajo lock.
+- Contratos para getAdmissionEvaluations y getAdmissionInterviews verifican exclusión de solicitudes ajenas y denegación antes de abrir hojas privadas. Se conservan pruebas de ownership previo a lectura detallada y autorización del actor al registrar resultados.
+- Verificación local V8 y parseo JavaScript PASS. Department Scope Contract run 42905094147 SUCCESS; todos los pasos PASS.
+- Sin Apps Script/Sheets real ni despliegue. TASK-153 continúa En ejecución; AUD-NG-386 abierto.
+- Commits de código/pruebas: 06d818ee81124622ab4e394d5d30d3fec463b931; 9d23739677c37732195528c961777bf20ff3df3a.

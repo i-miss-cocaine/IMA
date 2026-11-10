@@ -3294,3 +3294,14 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Estado:** el subalcance conductual de conversión queda cubierto. TASK-153 sigue En ejecución y AUD-NG-386 abierto por las demás rutas y superficies pendientes.
 - **Commits:** `88b3462e969ec427f5b31fbcb7894c1fbbc49dff` (contrato); `08813b2dbcddbf2df23e2ed1d008052f425c252b` (ajuste de aserción de reentrada).
 
+
+### 10.126 TASK-153 / ACADEMIC — aislamiento de evaluaciones y entrevistas de admisión (C1.471)
+
+- Lecturas: getAdmissionEvaluations y getAdmissionInterviews filtran los registros por los IDs de solicitud con ownership autorizado; el contrato verifica que filas de solicitudes ajenas y sus notas no aparezcan en la respuesta. Una consulta específica denegada no abre la hoja privada.
+- Escritura de evaluaciones: saveAdmissionEvaluation revalida el ownership de la solicitud dentro de ScriptLock después de adquirirlo y antes de abrir EvaluacionesAdmision o generar ID/append, cerrando la ventana TOCTOU de revocación.
+- Programación de entrevistas: scheduleAdmissionInterview revalida ownership dentro del lock. Si un gestor asigna otro evaluador, la identidad canónica y su ámbito departamental se vuelven a comprobar dentro de la sección crítica antes de consultar solapamientos o escribir.
+- Resultados: el contrato existente de recordInterviewOutcome mantiene identidad/ámbito antes de resolver el ID, ownership de solicitud antes de leer notas/detalles y actor evaluador o gestor antes de cambiar estado. No se alteran los estados funcionales permitidos en esta tarea.
+- Verificación local: V8 aislado PASS para denegación sin efectos secundarios, filtrado de solicitudes ajenas y revalidación de evaluador gestor; parseo JavaScript de servicio y contrato PASS.
+- CI: Department Scope Contract run 42905094147 — SUCCESS; todos los pasos del workflow PASS, incluidos ACADEMIC admission ownership y syntax-check.
+- Límites: sin Apps Script/Sheets real, integración externa ni despliegue. TASK-153 continúa En ejecución; AUD-NG-386 permanece abierto por otras superficies.
+- Commits: 06d818ee81124622ab4e394d5d30d3fec463b931 (servicio); 9d23739677c37732195528c961777bf20ff3df3a (contratos finales; incluye adaptación/corrección de fixtures).

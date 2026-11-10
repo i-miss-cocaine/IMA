@@ -769,3 +769,11 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - Contrato conductual local para `convertAdmissionToStudent` PASS: conversión completa, ownership de solicitud/expediente, vínculo documental, matrícula/cargo y movimiento; rollback ante fallo tardío; compensación del fallo del segundo ownership; error explícito cuando una compensación de ownership falla; lock ocupado y reentrada concurrente sin lecturas.
 - CI Department Scope run 42903670806 SUCCESS; ACADEMIC admission ownership y syntax-check Apps Script PASS.
 - No se modificó lógica productiva. TASK-153 sigue En ejecución; AUD-NG-386 abierto. Siguiente unidad: revisar contratos conductuales y aislamiento de evaluaciones/entrevistas de admisión (lectura, escritura y transición de resultados), sin reabrir el subalcance de conversión ya aprobado.
+
+
+### TASK-153 — seguimiento C1.471
+- ACADEMIC revalida ownership de solicitud dentro de ScriptLock en saveAdmissionEvaluation y scheduleAdmissionInterview, cerrando la ventana de revocación entre autorización y escritura.
+- La programación por gestor vuelve a verificar identidad canónica y ámbito departamental del evaluador asignado dentro de la misma sección crítica.
+- Contratos de lectura verifican filtrado de evaluaciones/entrevistas por solicitudes autorizadas y denegación antes de abrir hojas privadas; se mantienen los contratos de ownership previo a detalles y transición de resultados.
+- V8 local y parseo JavaScript PASS. Department Scope Contract run 42905094147 SUCCESS, todos los pasos PASS. Los dos intentos iniciales fallaron por fixtures incompletos/sintaxis de prueba; correcciones aplicadas y repetición final exitosa.
+- TASK-153 permanece En ejecución; AUD-NG-386 abierto por rutas y superficies restantes.

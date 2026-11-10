@@ -448,3 +448,46 @@ Archivo: `tests/security/academic-admission-ownership.test.js`.
 - Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt
 - Auditoría/INDICE_CHECKPOINTS.md
 ===============================================================================
+
+## CHECKPOINT C1.471 — ACADEMIC: aislamiento de evaluaciones y entrevistas de admisión
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.470.
+HEAD inicial verificado: 4e12463de02719ab914dd8958a867deca2374dac.
+Commits de implementación y pruebas: 06d818ee81124622ab4e394d5d30d3fec463b931; ee50d5afed156826c9a69565100aa2dcafaf781a; 96f564c3bd0d52913210f106b5503ad34cf4a9fa; 9d23739677c37732195528c961777bf20ff3df3a.
+
+### Alcance
+Ejecutar el siguiente subalcance de TASK-153 / AUD-NG-386: reforzar aislamiento y autorización de lecturas/escrituras de evaluaciones y entrevistas de admisión, incluyendo transición de resultados, sin repetir ni alterar el contrato de conversión aprobado en C1.470.
+
+### Hallazgos y cambios
+- saveAdmissionEvaluation comprobaba ownership antes de adquirir ScriptLock, dejando una ventana TOCTOU entre la autorización inicial y el append. Ahora vuelve a ejecutar assertAcademicAdmissionRequestScopeAccess_ dentro del lock y rechaza con RESOURCE_NOT_FOUND antes de abrir la hoja si el ownership ya no está vigente.
+- scheduleAdmissionInterview tenía la misma ventana. Ahora revalida el ownership de la solicitud bajo lock antes de leer la agenda; cuando un gestor asigna a otro evaluador, vuelve a resolver su identidad y ámbito departamental dentro de la misma sección crítica antes del chequeo de solapamiento y append.
+- Se añadieron contratos conductuales para getAdmissionEvaluations y getAdmissionInterviews: las listas excluyen filas de solicitudes sin ownership autorizado y las consultas por solicitud denegada no abren las hojas privadas.
+- Se añadieron escenarios de denegación por ownership revocado durante la escritura y por evaluador asignado fuera del ámbito. Se conservaron y ejecutaron los contratos existentes de solapamiento, lock, ownership previo a lectura detallada y transición de resultado en recordInterviewOutcome.
+- No se modificaron los criterios funcionales de los estados de entrevista ni se inventaron nuevas transiciones permitidas; el alcance de esta unidad es la autorización, propiedad y aislamiento de los resultados existentes.
+
+### Verificación
+- Ejecución local aislada en V8 sobre las funciones de la rama: PASS para rechazo de ownership revocado sin lecturas/escrituras, filtrado de evaluaciones/entrevistas ajenas y revalidación de identidad/ámbito del evaluador gestor bajo lock.
+- Parseo JavaScript local de backend/academic-service/Code.gs y tests/security/academic-admission-ownership.test.js: PASS.
+- GitHub Actions Department Scope Contract run 42905094147: SUCCESS. Todos los pasos PASS: Department Scope, Academic Departmental Resource Access, Academic Student Expediente Ownership, Academic Admission Ownership, USER signature ownership, ACCOUNTING departmental access, ResourceOwnership ABAC, syntax-check de USER/ACADEMIC/ACCOUNTING y Student Private Voucher Client.
+- Los intentos iniciales 42904749792 y 42904758199 fallaron por fixtures que no implementaban el nuevo guard y por un error sintáctico en el fixture añadido; ambos defectos de prueba fueron corregidos y la ejecución final 42905094147 pasó completa. No se atribuyen esos fallos al código productivo.
+- No se ejecutó Apps Script/Google Sheets real, integración externa ni despliegue. Esas verificaciones siguen sujetas a beta y no bloquean este subalcance local.
+
+### Estado y continuidad
+- Subalcance de lectura, escritura y aislamiento de evaluaciones/entrevistas: implementado y aprobado localmente/CI.
+- TASK-153 permanece En ejecución; AUD-NG-386 continúa abierto por las demás rutas de admisión, recursos institucionales, solicitudes de firma, permisos granulares, referencias compartidas y filtros/importaciones.
+- Siguiente unidad elegible: continuar con las rutas restantes de TASK-153 según el requisito original y evidencia vigente, priorizando los recursos institucionales/solicitudes de firma que no tengan prerrequisito institucional bloqueante.
+- La rama base no fue modificada; su HEAD verificado permanece 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+### Archivos de la iteración
+- backend/academic-service/Code.gs
+- tests/security/academic-admission-ownership.test.js
+- pendientes/Dirección/Pendientes.md
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- changueslogs.txt
+- tareas_auditoria.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+===============================================================================
