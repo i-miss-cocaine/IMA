@@ -13247,7 +13247,7 @@ function registerStudentEnrollmentInternal_(payload) {
 
   const chargeReference = _chargeReferencePrefix
     ? String(_chargeReferencePrefix).trim() + String(matriculaId).trim()
-    : String(chargeReference || "").trim();
+    : String(_chargeReference || "").trim();
   let admissionChargeId = "";
   if (Array.isArray(cargos) && cargos.length > 0) {
     let existingCargos = cargosSheet.getDataRange().getValues();
