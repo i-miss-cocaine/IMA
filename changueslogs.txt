@@ -966,3 +966,13 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Contratos sintéticos añadidos; 15 aserciones estáticas PASS; Node local NOT RUN; CI sin checks visibles. BETA-FUNC-023/024 Pendiente beta.
 - Pendiente: conversión de admisión a expediente con ownership atómico y restantes endpoints de admisión.
 - Commits: 3d3d0015cbdd67a715a9fe60385fd82664e2f34d; b113a6f88b338c63f04ecc3531cd9efa85b8b257; 42ca04bad4209760bb883a20b0286a59b8054df9; 5874fa64f615f1dd1d691f60aea3e0b9ee9417b6; ea178e9ff2b70da97573a32a47bac650ef415fa0; 19a64b518ec4eee24b6f0c25b775f43e0058b90f; c77088ad8abd721453ebd3b3b92700ff9575cc86; df644f9a87838450a74f168e310ca423992b2be8; 9b7e619252f8c3489ea05980b58e570d1942148c; 1df0394c1953e19a7e67a8331aa4eebae8c795d2; 2ae88b8fca460911ed2e8f555b3cca9bf6a4a6ce; 589873ae6659c735c4a9ce8fd7ca61aba5224e77.
+
+
+[2026-11-10] C1.455 — IMA-EXEC-20261110-1825Z-02 — TASK-153 / ACADEMIC: aprobación local de conversión y concurrencia
+- Se corrigió una segunda TDZ en `registerStudentEnrollmentInternal_`: la rama de matrícula ordinaria ahora lee `_chargeReference` y no la variable `chargeReference` durante su propia inicialización.
+- Se amplió el contrato ACADEMIC para verificar el orden de adquisición del ScriptLock, la liberación en `finally` y el rechazo de solicitudes contenciosas antes de acceder a hojas.
+- GitHub Actions run 42889702855 SUCCESS: contratos de alcance departamental, expedientes/admisión ACADEMIC, ACCOUNTING y ResourceOwnership ABAC; pruebas cliente de voucher; sintaxis de servicios User/Academic/Accounting y `js/student.js` PASS.
+- El primer intento del contrato de lock (run 42889622852) detectó un escape incorrecto en el fixture; se corrigió y el run posterior completo terminó SUCCESS.
+- No se ejecutó despliegue ni se accedió a servicios/datos reales. Las pruebas de despliegue se reservan para beta.
+- TASK-153 sigue En ejecución y AUD-NG-386 abierto por el alcance departamental restante; este avance solo cierra la verificación local del subflujo de conversión ACADEMIC.
+- Commits: 3bb1d3b7dfc9c4d0259d6a124f353d46b0f38a13; 91c17ba2bddc7cf4e9d35316b877ae7034898907; ad44dde863065b2a2dc54580ee5a393f43d4570e.
