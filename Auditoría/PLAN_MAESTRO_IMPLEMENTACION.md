@@ -3004,8 +3004,8 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Pruebas locales:** NOT RUN en esta sesión; no hay checkout/runtime local disponible y el acceso de red para obtenerlo falló. No se declara PASS.
 - **CI:** sin estado/check run visible para el commit final al consultar el conector; no se declara PASS. El workflow dedicado se activa por push en la rama autorizada.
 - **Beta:** BETA-FUNC-022 permanece Pendiente beta; no se desplegó Apps Script ni se accedió a Sheets/Drive reales.
-- **Estado:** corrección publicada, pero AUD-NG-386 permanece ABIERTO y TASK-153 En ejecución hasta ejecutar localmente ambos contratos EXAM, revisar los resultados y continuar la validación del ciclo completo.
-- **Siguiente acción:** ejecutar `node tests/security/exam-service-security-contract.test.js` y `node tests/security/exam-service-departmental-access.test.js` en checkout local; corregir cualquier fallo y continuar la revisión de las mutaciones y el ciclo EXAM.
+- **Estado:** corrección publicada; AUD-NG-386 permanece ABIERTO y TASK-153 En ejecución por alcance técnico EXAM aún pendiente. Las verificaciones beta/despliegue se reservan a esa fase y no condicionan la continuidad del desarrollo.
+- **Siguiente acción:** continuar con las superficies técnicas pendientes de TASK-153 y mantener separada la validación del entorno desplegado.
 
 ## 10.101 TASK-153 / AUD-NG-385/386 — aislamiento de listados y lecturas directas TASK; aplicabilidad DEVELOPER (C1.443)
 
@@ -3018,3 +3018,16 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Beta:** BETA-FUNC-021 se amplía para cubrir listados, intersección de ámbitos y lectura de archivos; permanece Pendiente beta. BETA-FUNC-022 permanece Pendiente beta.
 - **Estado:** TASK-153 continúa En ejecución; AUD-NG-385/386 siguen abiertos. No se declara cierre global.
 - **Siguiente acción elegible:** auditar `AulasVirtuales`, `PublicacionesAnuncios` y `MaterialesEducativos` en `getVirtualClassrooms`, `getPosts` y `getStudyMaterials`; determinar la propiedad departamental del aula y el alcance de publicaciones/materiales generales antes de modificar esos contratos. Después continuar referencias compartidas, filtros/importaciones y E2E.
+
+
+### 10.101 TASK-153 — ampliación de aislamiento departamental en TASK Service (C1.443)
+
+- **Hallazgo:** `getStudentTasks` podía devolver tareas por coincidencia de grado/sección sin exigir ResourceOwnership al estudiante. Además, los accesos directos a entregas/archivos de estudiantes y tutores verificaban relación o grado/sección, pero no volvían a comprobar la propiedad departamental del recurso.
+- **Corrección del listado:** el ámbito de propiedad se deriva del estudiante objetivo verificado. Para tutores se deriva del estudiante vinculado mediante la relación autorizada; no se usa el ámbito propio del tutor. Las consultas de personal conservan su control y además se intersectan con el ámbito del estudiante objetivo.
+- **Corrección de accesos directos:** `assertTaskServiceStudentCanAccessTask` ahora exige identidad sintética interna del estudiante, ámbito departamental activo y ResourceOwnership único para la tarea. `getTaskServiceSubmissionAccess_` reutiliza esa guarda para lecturas/comentarios/versiones y demás operaciones de entrega. `getSubmissionDocumentPreviewUrl` delega en el mismo contexto autorizado y rechaza relaciones ambiguas entre archivo y entrega.
+- **Pruebas añadidas:** contrato sintético para listados de estudiante/tutor, resolución de ámbito del estudiante vinculado, denegación de tarea de otro departamento, acceso directo a entrega y delegación de vista previa al guard compartido.
+- **Archivos:** `backend/task-service/Code.gs`; `tests/security/task-service-security-contract.test.js`.
+- **Commits:** `aea722f2b516c683a83ebec6b758eac373bc7e9d`, `10d356c5fb74b33cfc4abb15a4dff039dcf28b8e`, `6de048068216cb2afbec3feb28fdbd5a94c8f7f9`, `538d1dc5f732de3fc26faaeeabab907e51122740`, `1558e5c99b4fee58474a849bc8087d9c16914028`.
+- **Verificación:** revisión de diffs y diez aserciones estáticas de estructura/guardas PASS. El contrato dinámico se añadió, pero no se ejecutó en runtime Node local durante esta sesión; no se declara PASS de ejecución. GitHub no reportó checks ni workflow runs para el último commit consultado.
+- **Límites:** no se desplegó Apps Script ni se accedió a Sheets/Drive reales. La validación beta/despliegue queda para la fase correspondiente y no bloquea la continuación del desarrollo.
+- **Estado:** mitigación TASK Service publicada; TASK-153 continúa En ejecución y AUD-NG-386 permanece abierto por la superficie EXAM y demás criterios globales pendientes.
