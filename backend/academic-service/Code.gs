@@ -1867,68 +1867,110 @@ function getAdmissionEvaluations(payload) {
 // [TAREA-F5-008] [Fase 5: Admisiones y Matrícula] - Módulo de Listas de Espera con Orden de Prelación y Asignación Controlada de Plazas
 function addToWaitlist(payload) {
   const { solicitudId, criteriosJSON } = payload || {};
-  if (!solicitudId) throw new Error("solicitudId es requerido.");
+  const requestId = String(solicitudId || "").trim();
+  if (!requestId) throw new Error("solicitudId es requerido.");
 
-  const ctx = getAcademicAdmissionScopeContext_(payload, "addToWaitlist", solicitudId, "UPDATE");
+  const ctx = getAcademicAdmissionScopeContext_(payload, "addToWaitlist", requestId, "UPDATE");
   if (!ctx.authorized) throw new Error("RESOURCE_NOT_FOUND");
-  const ss = ctx.ss;
-  const admSheet = getOrCreateSheet(ss, "SolicitudesAdmision");
-  const admData = admSheet.getDataRange().getValues();
+  const lock = LockService.getScriptLock();
+  let hasLock = false;
+  try {
+    hasLock = lock.tryLock(10000);
+    if (!hasLock) throw new Error("Servicio ocupado incorporando solicitudes a lista de espera. Por favor reintente.");
+    const requestAccess = assertAcademicAdmissionRequestScopeAccess_(
+      ctx.ss, ctx.scope, requestId, null, "UPDATE");
+    if (!requestAccess || requestAccess.authorized !== true) throw new Error("RESOURCE_NOT_FOUND");
 
-  const admIdx = admData.findIndex(r => String(r[0]).trim() === String(solicitudId).trim());
-  if (admIdx === -1) throw new Error("Solicitud de admisión no encontrada.");
+    const allowedRequestIds = getAuthorizedAdmissionRequestIds_(ctx.ss, ctx.scope, null, "READ");
+    if (!allowedRequestIds.has(requestId)) throw new Error("RESOURCE_NOT_FOUND");
+    const admSheet = getOrCreateSheet(ctx.ss, "SolicitudesAdmision");
+    const admData = admSheet.getDataRange().getValues();
+    const admissionMatches = admData.map(function(row, index) { return { row: row, index: index }; })
+      .filter(function(item) { return String(item.row[0] || "").trim() === requestId; });
+    if (admissionMatches.length !== 1) throw new Error("RESOURCE_NOT_FOUND");
+    const admIdx = admissionMatches[0].index;
+    const admRow = admissionMatches[0].row;
+    if (String(admRow[11] || "").trim() === "Convertida" || String(admRow[14] || "").trim()) {
+      throw new Error("RESOURCE_CONFLICT_ADMISSION_ALREADY_CONVERTED");
+    }
+    const anolectivo = String(admRow[2] || "2026").trim();
+    const grado = String(admRow[3] || "").trim();
 
-  const admRow = admData[admIdx];
-  const anolectivo = String(admRow[2] || "2026").trim();
-  const grado = String(admRow[3] || "").trim();
+    const waitSheet = getOrCreateSheet(ctx.ss, "ListaEsperaAdmision");
+    const waitData = waitSheet.getDataRange().getValues();
+    const activeMatches = waitData.slice(1).filter(function(row) {
+      const status = String(row[7] || "").trim();
+      return String(row[1] || "").trim() === requestId &&
+        ["Oferta_Rechazada", "Oferta_Expirada", "Retirada"].indexOf(status) === -1;
+    });
+    if (activeMatches.length > 1) throw new Error("RESOURCE_CONFLICT_WAITLIST_DUPLICATE");
+    if (activeMatches.length === 1) {
+      return { status: "success", esperaId: activeMatches[0][0], isExisting: true,
+        message: "La solicitud " + requestId + " ya se encuentra en la lista de espera (Posición " + activeMatches[0][4] + ")." };
+    }
 
-  const waitSheet = getOrCreateSheet(ss, "ListaEsperaAdmision");
-  const waitData = waitSheet.getDataRange().getValues();
-  const allowedRequestIds = getAuthorizedAdmissionRequestIds_(ss, ctx.scope, payload, "READ");
+    let criterios = {};
+    if (criteriosJSON !== undefined && criteriosJSON !== null && criteriosJSON !== "") {
+      try { criterios = typeof criteriosJSON === "object" ? criteriosJSON : JSON.parse(String(criteriosJSON)); }
+      catch (_) { throw new Error("CRITERIOS_LISTA_ESPERA_INVALIDOS"); }
+      if (!criterios || typeof criterios !== "object" || Array.isArray(criterios)) {
+        throw new Error("CRITERIOS_LISTA_ESPERA_INVALIDOS");
+      }
+    }
+    ["tieneHermanosMatriculados", "esHijoExalumno", "esHijoPersonal", "repostulante"].forEach(function(key) {
+      if (criterios[key] !== undefined && typeof criterios[key] !== "boolean") {
+        throw new Error("CRITERIO_LISTA_ESPERA_INVALIDO: " + key);
+      }
+    });
 
-  // Verificar si ya está en la lista de espera
-  const existing = waitData.slice(1).find(r => String(r[1]).trim() === String(solicitudId).trim() && r[7] !== "Oferta_Rechazada" && r[7] !== "Oferta_Expirada" && r[7] !== "Retirada");
-  if (existing) {
-    return { status: "success", esperaId: existing[0], isExisting: true, message: `La solicitud ${solicitudId} ya se encuentra en la lista de espera (Posición ${existing[4]}).` };
+    let puntaje = 0;
+    if (criterios.tieneHermanosMatriculados === true) puntaje += 50;
+    if (criterios.esHijoExalumno === true) puntaje += 30;
+    if (criterios.esHijoPersonal === true) puntaje += 40;
+    if (criterios.repostulante === true) puntaje += 10;
+
+    const sameGroup = waitData.slice(1).filter(function(row) {
+      return allowedRequestIds.has(String(row[1] || "").trim()) &&
+        String(row[2] || "").trim() === anolectivo && String(row[3] || "").trim() === grado &&
+        String(row[7] || "").trim() === "En_Espera";
+    });
+    const posicion = sameGroup.length + 1;
+    const idGen = generateInstitutionalId({ entityType: "ListaEsperaAdmision", prefix: "ESP-", skipLock: true });
+    const esperaId = String(idGen && idGen.generatedId || ("ESP-" + Date.now())).trim();
+    if (!esperaId || waitData.slice(1).some(function(row) { return String(row[0] || "").trim() === esperaId; })) {
+      throw new Error("RESOURCE_CONFLICT_WAITLIST_ID");
+    }
+    const now = new Date();
+    const newRow = [esperaId, requestId, anolectivo, grado, posicion, puntaje, JSON.stringify(criterios),
+      "En_Espera", "", "", now, now];
+    waitSheet.appendRow(newRow);
+    const insertedRow = waitSheet.getLastRow();
+    try {
+      admSheet.getRange(admIdx + 1, 12).setValue("En_Espera");
+    } catch (writeError) {
+      try { waitSheet.deleteRow(insertedRow); }
+      catch (rollbackError) {
+        try { logStructuredEvent("ACADEMIC", "addToWaitlist", "ERROR", "WAITLIST_COMPENSATION_FAILED",
+          "No se pudo compensar la entrada de lista de espera tras fallar la actualización de la solicitud.",
+          { esperaId: esperaId, solicitudId: requestId, insertedRow: insertedRow }, ctx.actor.role); } catch (_) {}
+      }
+      throw new Error("WAITLIST_WRITE_FAILED");
+    }
+
+    try {
+      logStructuredEvent("ACADEMIC", "addToWaitlist", "INFO", "ADDED_TO_WAITLIST",
+        "Solicitud " + requestId + " incorporada a lista de espera " + esperaId +
+        " (Posición " + posicion + ", Puntaje " + puntaje + ")",
+        { esperaId: esperaId, solicitudId: requestId, anolectivo: anolectivo, grado: grado,
+          posicion: posicion, puntaje: puntaje }, ctx.actor.role);
+    } catch (_) {}
+    return { status: "success", esperaId: esperaId, posicion: posicion, puntajePrioridad: puntaje,
+      message: "Solicitud incorporada a lista de espera en posición " + posicion + "." };
+  } finally {
+    if (hasLock) {
+      try { lock.releaseLock(); } catch (_) {}
+    }
   }
-
-  // Calcular puntaje de prioridad según criterios de prelación
-  const criterios = typeof criteriosJSON === 'object' ? criteriosJSON : (criteriosJSON ? JSON.parse(criteriosJSON) : {});
-  let puntaje = 0;
-  if (criterios.tieneHermanosMatriculados) puntaje += 50;
-  if (criterios.esHijoExalumno) puntaje += 30;
-  if (criterios.esHijoPersonal) puntaje += 40;
-  if (criterios.repostulante) puntaje += 10;
-
-  // Calcular posición según puntaje y orden de llegada
-  const sameGroup = waitData.slice(1).filter(r => allowedRequestIds.has(String(r[1] || "").trim()) && String(r[2]).trim() === anolectivo && String(r[3]).trim() === grado && r[7] === "En_Espera");
-  const posicion = sameGroup.length + 1;
-
-  const idGen = generateInstitutionalId({ entityType: "ListaEsperaAdmision", prefix: "ESP-", skipLock: true });
-  const esperaId = (idGen && idGen.generatedId) ? idGen.generatedId : ("ESP-" + Date.now());
-  const now = new Date();
-
-  waitSheet.appendRow([
-    esperaId,
-    solicitudId,
-    anolectivo,
-    grado,
-    posicion,
-    puntaje,
-    JSON.stringify(criterios),
-    "En_Espera",
-    "", // FechaExpiracionOferta
-    "", // JustificacionManual
-    now,
-    now
-  ]);
-
-  // Actualizar estado de la solicitud a En_Espera
-  admSheet.getRange(admIdx + 1, 12).setValue("En_Espera");
-
-  logStructuredEvent("ACADEMIC", "addToWaitlist", "INFO", "ADDED_TO_WAITLIST", `Solicitud ${solicitudId} incorporada a lista de espera ${esperaId} (Posición ${posicion}, Puntaje ${puntaje})`, { esperaId, solicitudId, anolectivo, grado, posicion, puntaje }, ctx.actor.role);
-
-  return { status: "success", esperaId: esperaId, posicion: posicion, puntajePrioridad: puntaje, message: `Solicitud incorporada a lista de espera en posición ${posicion}.` };
 }
 
 function getWaitlist(payload) {
