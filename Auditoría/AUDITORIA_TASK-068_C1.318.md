@@ -205,6 +205,13 @@ Las lecturas fueron completas (92.668, 429.611 y 713.779 caracteres). El histori
 
 **Archivos de producto/prueba:** `backend/user-service/Code.gs`, `backend/accounting-service/Code.gs`, `js/secretary.js`, `tests/security/identity-mapping-contract.test.js`.
 
-**Estado de este checkpoint:** cambios preparados; CI de C1.383 pendiente. No se declara PASS anticipado.
+**Estado de este checkpoint:** CI C1.383 aprobado. Workflow identity-mapping-contract 42732686635 y task-service-security-contract 42732686509 concluyeron success.
 
 **Beta:** `BETA-FUNC-008` permanece pendiente de configuración/ejecución real entre despliegues; no bloquea el cierre local por §21.5.
+
+
+## Cierre local — C1.384
+
+- La suite de identidad ejecutó y aprobó los nuevos casos de destino incompleto, resolución central ACCOUNTING, aislamiento institucional, duplicidad, configuración ausente y clasificación insuficiente.
+- El contrato de seguridad TASK-636 también concluyó success en la misma revisión.
+- TASK-068 se marca **Completada localmente**. La prueba beta `BETA-FUNC-008` sigue pendiente; no se declara ejecutada ni aprobada y no bloquea por §21.5.

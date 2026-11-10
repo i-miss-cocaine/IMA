@@ -646,4 +646,11 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - TASK-068 / PM-01: revalidación en curso desde baseline C1.316.
 - Seguimiento AUD-NG-377: resolvers USER/ACCOUNTING rechazan correspondencias CONFIRMADA incompletas; pruebas deterministas directas añadidas.
 - Clasificación COINCIDENCIA_INSUFICIENTE añadida a búsqueda y UI.
-- Estado de CI del commit C1.383: pendiente; no marcar completada hasta verificarlo.
+- CI C1.383: 42732686635 y 42732686509 concluyeron success; TASK-068 Completada localmente. BETA-FUNC-008 pendiente no bloqueante por §21.5.
+
+
+### Selección siguiente tarea — C1.384 — IMA-EXEC-20261110-0042Z-01
+- PM-00: triage de la fila sintética TASK-682 resuelto como no-tarea; no existe bloque original en `pendientes/Otros/Pendientes.md` en C1.316 (archivo vacío) ni en el blob histórico recuperado `ef47d232db3ed46317dc14f22b1cdf8f938e8405` (1.443.391 bytes); la búsqueda completa no contiene TASK-682 ni el título de la fila.
+- TASK-153: seleccionada como siguiente P0 PM-01, orden local 1. Base de usuarios, departamentos, roles y propiedad ya presente parcialmente; los elementos documentales ausentes son parte del alcance original.
+- TASK-153 requisitos: `pendientes/Dirección/Pendientes.md`, bloque TASK-153; fuente histórica `RECUPERACION/Pendientes_RECUPERADO.md`, líneas 6506–6548; auditoría existente `Auditoría/AUDITORIA_FASE_41_PRUEBAS_INTEGRALES_DIGITALIZACION.md`, F41-08 y E2E-41-09.
+- F17-TASK02 se mantiene en cola; su matriz legal de recargos 25/50/75 requiere triage de política antes de fijar reglas monetarias.

@@ -395,3 +395,10 @@ Endurecer las excepciones públicas de backend/academic-service/Code.gs mediante
 - No se encontró un defecto en el workflow ni en el resultado registrado de la iteración C1.316. La tarea global TASK-636 permanece **En ejecución** por hallazgos y verificaciones pendientes.
 
 **Resultado:** iteración C1.316 auditada; sin cambio de estado global de TASK-636.
+
+
+## Evidencia adicional C1.383 — IMA-EXEC-20261110-0042Z-01
+
+- La ejecución 42732686509 (`task-service-security-contract`) concluyó `success` y ejecutó el contrato local de seguridad con el código vigente de USER/TASK.
+- La ejecución 42732686635 (`identity-mapping-contract`) concluyó `success` para la suite de identidad/migración.
+- Estas pruebas locales complementan la auditoría de la iteración C1.316, pero no cierran la tarea global TASK-636 ni sustituyen la integración real Apps Script/Sheets/Drive, que continúa en beta.

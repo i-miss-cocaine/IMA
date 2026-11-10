@@ -765,8 +765,9 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 
 
 ### Seguimiento C1.383 — AUD-NG-377 (TASK-068)
-- Estado: En verificación en esta sesión.
+- Estado: Resuelto localmente en C1.383.
 - Hallazgo focal: un registro marcado CONFIRMADA pero sin idMapeo o idNuevoPlataforma podía producir una respuesta de éxito en los resolvers.
 - Corrección: ambos resolvers rechazan la correspondencia incompleta con IDENTITY_CONFIRMED_MAPPING_INCOMPLETE.
-- Evidencia local añadida: resolver USER y resolver ACCOUNTING ejercitados con fixtures; CI del nuevo commit pendiente.
+- Evidencia: CI 42732686635 (identity-mapping-contract) concluyó success; los casos USER/ACCOUNTING de destino incompleto y resolución central quedaron aprobados.
+- BETA-FUNC-008 permanece pendiente y no bloquea por §21.5.
 - Se mantiene el mismo ID de hallazgo para evitar duplicación.

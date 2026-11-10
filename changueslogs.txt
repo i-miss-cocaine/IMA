@@ -586,3 +586,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - TASK-068: la búsqueda expone COINCIDENCIA_INSUFICIENTE cuando no existen candidatos y Secretaría muestra el estado.
 - Se amplía el contrato local para probar directamente el resolver ACCOUNTING sobre la hoja compartida y los casos de institución, duplicidad, configuración y datos incompletos.
 - CI del commit C1.383 pendiente de verificación.
+
+
+## C1.384 — IMA-EXEC-20261110-0042Z-01
+- TASK-068 cerrado localmente después de CI exitoso (42732686635 y 42732686509); BETA-FUNC-008 permanece pendiente no bloqueante.
+- Se corrige la ubicación del registro de revalidación en el backlog de Dirección.
+- PM-00: la fila TASK-682 se clasifica como artefacto sintético sin requisito original y se excluye de la cola ejecutable.
+- Siguiente tarea elegida: TASK-153 / PM-01 / P0 / orden local 1, con requisito histórico RECUPERACION/Pendientes_RECUPERADO.md líneas 6506–6548 y auditoría FASE 41 existente.

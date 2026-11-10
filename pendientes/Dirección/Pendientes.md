@@ -299,7 +299,7 @@
 ---
 
 <!-- ID: TASK-068 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
-### [ ] [TASK-068] [P0] Sistema Centralizado de Correspondencia de Identificadores y Resolución de Identidades
+### [X] [TASK-068] [P0] Sistema Centralizado de Correspondencia de Identificadores y Resolución de Identidades
 - **Orden de Ejecución:** 1
 - **Prioridad:** P0 (Crítica)
 - **Componentes Afectados:**
@@ -345,14 +345,14 @@
   - [x] Las decisiones de vinculación pueden consultarse y auditarse en bitácora.
   - [x] Las relaciones académicas, familiares y administrativas permanecen asociadas al identificador interno correcto.
   - [x] Se demuestra la resolución de identidades provenientes de, al menos, dos fuentes diferentes.
-- **Estado:** En ejecución (revalidación C1.383; CI pendiente).
+- **Estado:** [X] Completada localmente (C1.383; CI 42732686635 y 42732686509 exitosos).
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 3638-3673; clave TASK-073; asignación única: Dirección -->
 
+- **Revalidación C1.383:** resolvers USER/ACCOUNTING rechazan correspondencias CONFIRMADA incompletas; búsqueda clasifica COINCIDENCIA_INSUFICIENTE; pruebas directas de ambos resolvers aprobadas por CI 42732686635. BETA-FUNC-008 queda pendiente no bloqueante por §21.5.
 ---
 
 <!-- ID: TASK-073 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
-- **Revalidación C1.383:** resolvers USER/ACCOUNTING fail-closed ante correspondencias confirmadas incompletas; clasificación explícita de coincidencia insuficiente; prueba directa del resolver ACCOUNTING sobre la hoja compartida. Cierre sujeto a CI.
 
 ### [ ] [TASK-073] [P0] Migración Segura de Usuarios, Roles y Flujo de Activación Masiva de Cuentas
 - **Orden de Ejecución:** 8

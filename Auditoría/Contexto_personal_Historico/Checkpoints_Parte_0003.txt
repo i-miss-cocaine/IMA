@@ -1623,9 +1623,32 @@ Commit de cierre: este commit; SHA se confirmará externamente tras publicación
 - **Hallazgo:** seguimiento de AUD-NG-377, sin crear un ID duplicado.
 - **Archivos de producto/prueba:** backend/user-service/Code.gs; backend/accounting-service/Code.gs; js/secretary.js; tests/security/identity-mapping-contract.test.js.
 - **Registros actualizados:** auditoría principal TASK-636; auditoría principal TASK-068; Auditoria.txt; tareas_auditoria.txt; changueslogs.txt; Plan Maestro; backlog de Dirección; índice y parte activa de checkpoints.
-- **Pruebas:** ejecuciones posteriores a C1.316 no se aceptan como evidencia de continuidad. CI del commit C1.383 todavía pendiente; no se declara PASS anticipado.
+- **Pruebas:** ejecuciones posteriores a C1.316 no se aceptan como evidencia de continuidad. CI C1.383: 42732686635 identity-mapping-contract success; 42732686509 task-service-security-contract success. No se ejecutó integración remota Apps Script/Sheets/Drive.
 - **Beta pendiente:** BETA-FUNC-008 — comunicación real entre despliegues y configuración institucional. No bloqueante por §21.5.
-- **Commit:** este commit C1.383; SHA a verificar después de publicar.
+- **Commit:** C1.383 publicado: 7dc8e22bdd49b25ae4dbff8ad7b103a6580d1569.
 - **HEAD posterior:** pendiente de verificación después de actualizar exclusivamente NG_beta_0.0.0.1_work.
 - **Siguiente acción:** comprobar CI de C1.383 y cerrar TASK-068 únicamente si las pruebas concluyen correctamente; luego recalcular la siguiente tarea elegible PM-01 con §6.1.
+===============================================================================
+
+
+===============================================================================
+## C1.384 — 2026-11-10 — IMA-EXEC-20261110-0042Z-01
+
+- **Baseline válido:** C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a.
+- **Checkpoint de implementación:** C1.383 — 7dc8e22bdd49b25ae4dbff8ad7b103a6580d1569.
+- **Rama:** NG_beta_0.0.0.1_work.
+- **HEAD previo verificado:** 7dc8e22bdd49b25ae4dbff8ad7b103a6580d1569.
+- **Rama protegida:** NG_beta_0.0.0.1 — SHA 44d9891132332e692dbe2ba8602b41f50a508a59, sin modificaciones.
+- **TASK-068:** Completada localmente. CI 42732686635 y 42732686509 success. BETA-FUNC-008 sigue pendiente, no ejecutada y no bloqueante por §21.5.
+- **AUD-NG-377:** seguimiento resuelto localmente; ambos resolvers fallan cerrados ante correspondencias CONFIRMADA incompletas.
+- **TASK-636:** la iteración C1.316 está auditada; la tarea global sigue En ejecución. La ejecución 42732686509 valida contrato local de seguridad, no integración externa.
+- **PM-00:** la fila TASK-682 no tiene requisito original en la fuente indicada ni en el blob histórico recuperado; se clasifica como artefacto sintético no ejecutable y se excluye de la cola.
+- **Siguiente tarea:** TASK-153 — PM-01 — P0 — orden local 1.
+- **Requisito exacto:** pendientes/Dirección/Pendientes.md, bloque TASK-153; RECUPERACION/Pendientes_RECUPERADO.md, líneas 6506–6548.
+- **Auditoría de origen:** Auditoría/AUDITORIA_FASE_41_PRUEBAS_INTEGRALES_DIGITALIZACION.md, sección B/F41-08 y sección E/E2E-41-09.
+- **Prerrequisitos revisados:** Usuarios, CatalogoDepartamentos, AsignacionesAmbitosRoles, permisos de servicio, helper de propiedad y campos departamentales existen; estructuras específicas pendientes forman parte del alcance de TASK-153.
+- **F17-TASK02:** permanece pendiente; la matriz legal de recargos 25/50/75 requiere triage antes de calcular importes.
+- **Archivos actualizados:** backlog Dirección, auditorías principales TASK-636/TASK-068, Auditoria.txt, tareas_auditoria.txt, changueslogs.txt, Plan Maestro, índice y parte activa de checkpoints.
+- **Commit:** este commit C1.384; SHA a verificar tras publicación.
+- **Siguiente acción:** iniciar auditoría única de TASK-153 reutilizando el informe FASE 41 existente; no crear informe duplicado.
 ===============================================================================

@@ -2335,5 +2335,24 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - Se revalida TASK-068, PM-01, P0, orden local 1, requisito original `pendientes/Dirección/Pendientes.md` / `TASK-068`.
 - Se corrigió el retorno de éxito para correspondencias confirmadas incompletas en USER y ACCOUNTING y se incorporó la clasificación explícita `COINCIDENCIA_INSUFICIENTE`.
 - Se amplió la prueba local para ejecutar directamente el resolver ACCOUNTING contra el esquema compartido.
-- Estado: En ejecución hasta verificar CI del commit C1.383. `BETA-FUNC-008` queda pendiente y no bloquea por §21.5.
-- Siguiente acción: verificar CI y cerrar TASK-068 solo con resultado real; después recalcular la siguiente tarea PM-01 mediante §6.1.
+- Estado: TASK-068 Completada localmente en C1.383; CI 42732686635 y 42732686509 success. `BETA-FUNC-008` queda pendiente y no bloquea por §21.5.
+- Siguiente acción: TASK-153, PM-01, P0, orden local 1; requisito en `pendientes/Dirección/Pendientes.md` / TASK-153 y fuente histórica `RECUPERACION/Pendientes_RECUPERADO.md` líneas 6506–6548.
+
+
+## 10.68 Cierre TASK-068 y selección siguiente — IMA-EXEC-20261110-0042Z-01
+
+### Cierre de TASK-068
+- CI 42732686635 (`identity-mapping-contract`) y 42732686509 (`task-service-security-contract`) concluyeron success.
+- TASK-068 queda Completada localmente; `BETA-FUNC-008` sigue pendiente, no ejecutada y no bloqueante por §21.5.
+
+### Resolución PM-00
+- La fila `TASK-682` del cuadro de selección no tiene requisito original: `pendientes/Otros/Pendientes.md` estaba vacío en C1.316 y el blob histórico recuperado `ef47d232db3ed46317dc14f22b1cdf8f938e8405` no contiene el ID ni el título atribuido.
+- Se clasifica como artefacto sintético de planificación, no como tarea ejecutable. Se conserva la fila histórica, pero queda excluida de la cola. PM-00 no mantiene este bloqueo.
+
+### Siguiente tarea elegible
+- **TASK-153 — PM-01 — P0 — orden local 1.**
+- Riesgo prioritario: la auditoría F41-08/E2E-41-09 documenta acceso a datos de otro departamento mediante manipulación de identificadores.
+- Prerrequisitos verificados: usuarios, catálogo de departamentos, asignaciones de ámbitos/roles, permisos por servicio, helper de propiedad y campos departamentales existentes. Las estructuras documentales ausentes indicadas en el requisito forman parte del alcance de TASK-153, no una dependencia externa.
+- Requisito original: `pendientes/Dirección/Pendientes.md`, bloque TASK-153; `RECUPERACION/Pendientes_RECUPERADO.md`, líneas 6506–6548.
+- Informe de origen ya existente: `Auditoría/AUDITORIA_FASE_41_PRUEBAS_INTEGRALES_DIGITALIZACION.md`, sección B/F41-08 y sección E/E2E-41-09. Se reutilizará; no se crea auditoría duplicada.
+- F17-TASK02 permanece en cola para revaluación posterior; su tabla de recargos 25/50/75 requiere resolver la política aplicable antes de implementar importes.
