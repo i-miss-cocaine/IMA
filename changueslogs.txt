@@ -1013,3 +1013,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Contratos locales de autorización, ownership, concurrencia, estados, historial y regresión PASS; GitHub Actions run 42894133956 SUCCESS, incluida sintaxis de servicios/cliente.
 - Sin despliegue ni datos reales. TASK-153 sigue En ejecución; AUD-NG-386 abierto.
 - Commits: dfab2d1486dd7599e9ccadb890ff71003632c669; 5ae37e4a1aea2b779df2d14b42274719c9b2eccc; 94ec9a3294ff276bfce88941659a1c3f52a030e2.
+
+
+[2026-11-10] C1.460 — IMA-EXEC-20261110-1825Z-02 — TASK-153 / ACADEMIC: alta segura a lista de espera
+- `addToWaitlist` serializa ownership, lectura, cálculo de posición, generación de ID y append con ScriptLock.
+- Reintentos reutilizan la entrada activa; solicitudes convertidas/vinculadas y duplicidades activas ambiguas fallan cerradamente.
+- Valida criterios booleanos y filtra posiciones por solicitudes autorizadas. Compensa el append si falla la actualización del estado de admisión; registra fallo si la compensación no puede completarse.
+- Contratos locales de idempotencia, lock contention, ownership, duplicidad, validación de criterios y compensación PASS; GitHub Actions run 42894855396 SUCCESS con sintaxis Apps Script/cliente.
+- Sin despliegue ni datos reales. TASK-153 sigue En ejecución.
+- Commits: 6009994e5df3fc45ddbadad9f782468dc65ba100; 314e07b4fa5cfeae005d69b1b417d66a44803851.
