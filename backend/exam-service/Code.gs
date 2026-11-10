@@ -620,6 +620,21 @@ function manageQuestionBankUnlocked_(payload, context) {
   return { status: "success", bancoPreguntaId: qId, message: "Pregunta añadida exitosamente al banco." };
 }
 function getQuestionBank(payload) {
+  return withAuthorizedQuestionBankRead_(payload, context => getQuestionBankUnlocked_(payload, context));
+}
+
+function withAuthorizedQuestionBankRead_(payload, reader) {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) throw new Error("QUESTION_BANK_READ_LOCK_TIMEOUT");
+  try {
+    const context = getAuthorizedQuestionBankReadContext_(payload);
+    return reader(context);
+  } finally {
+    try { lock.releaseLock(); } catch (_) {}
+  }
+}
+
+function getAuthorizedQuestionBankReadContext_(payload) {
   const p = payload || {};
   const permission = validateRolePermission("getQuestionBank", p);
   if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
@@ -636,6 +651,15 @@ function getQuestionBank(payload) {
   const ownershipHeaders = ["OwnershipID", "InstitutionID", "ResourceType", "ResourceID", "DepartmentID", "Status", "RegisteredBy", "CreatedAt", "UpdatedAt"];
   if (!data.length || bankHeaders.some((header, index) => String(data[0][index] || "").trim() !== header)) throw new Error("QUESTION_BANK_SCHEMA_INVALID");
   if (!ownershipRows.length || ownershipHeaders.some((header, index) => String(ownershipRows[0][index] || "").trim() !== header)) throw new Error("RESOURCE_OWNERSHIP_SCHEMA_INVALID");
+  if (p && typeof p === "object") {
+    try { EXAM_RESOURCE_OWNERSHIP_REQUEST_CACHE_.set(p, ownershipRows); } catch (_) {}
+  }
+  return { ss, scope, data, canReadAnswerKey: validateRolePermission("manageQuestionBank", p).authorized === true };
+}
+
+function getQuestionBankUnlocked_(payload, context) {
+  const p = payload || {};
+  const data = context.data;
   const bankIdCounts = Object.create(null);
   data.slice(1).forEach(row => {
     const id = String(row[0] || "").trim();
@@ -644,7 +668,6 @@ function getQuestionBank(payload) {
   const normArea = p.areaCurricular ? normalizeString(p.areaCurricular) : "";
   const normAsig = p.asignatura ? normalizeString(p.asignatura) : "";
   const normGrado = p.grado ? normalizeString(p.grado) : "";
-  const canReadAnswerKey = validateRolePermission("manageQuestionBank", p).authorized === true;
   const preguntas = data.slice(1).filter(row => {
     const resourceId = String(row[0] || "").trim();
     if (!resourceId || bankIdCounts[resourceId] !== 1) return false;
@@ -654,7 +677,7 @@ function getQuestionBank(payload) {
     if (normGrado && normalizeString(row[3]) !== normGrado) return false;
     if (p.tema && normalizeString(row[4]) !== normalizeString(p.tema)) return false;
     if (p.dificultad && normalizeString(row[5]) !== normalizeString(p.dificultad)) return false;
-    return assertExamResourceOwnershipForScope_(ss, scope, "BANCO_PREGUNTA", row[0], "READ", p).authorized === true;
+    return assertExamResourceOwnershipForScope_(context.ss, context.scope, "BANCO_PREGUNTA", resourceId, "READ", p).authorized === true;
   }).map(row => {
     const question = {
       bancoPreguntaId: row[0], areaCurricular: row[1], asignatura: row[2], grado: row[3],
@@ -662,7 +685,7 @@ function getQuestionBank(payload) {
       opciones: JSON.parse(row[8] || "{}"), etiquetas: row[10],
       puntosPredeterminados: parseFloat(row[11]) || 1
     };
-    if (canReadAnswerKey) question.respuestaCorrecta = row[9];
+    if (context.canReadAnswerKey) question.respuestaCorrecta = row[9];
     return question;
   });
   return { status: "success", preguntas };
