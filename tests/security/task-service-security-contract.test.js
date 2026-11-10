@@ -675,3 +675,43 @@ console.log("TASK-153 direct student submission and document ownership contract 
   assert.equal(driveFolderReads, 0, "legacy direct folder enumeration never accesses Drive");
 }
 console.log("TASK-153 legacy document and folder-IDOR contracts passed.");
+
+
+// TASK-153: staff mutations of class-scoped content must not bypass the parent
+// classroom owner check merely because the actor has an administrative role.
+{
+  let postMutation = false, materialSheetAccess = false, driveAccess = false;
+  const postRows = [
+    ["ID","AulaID","Titulo","Contenido","Categoria","AutorID","EsFijado","EsBorrador","FechaProgramada","FechaPublicacion","AdjuntosJSON","Audiencia","Estado"],
+    ["POST-1","AULA-D2","Foreign post","content","Anuncio","PROF-2",false,false,"","2026-11-10","[]","Todos","Publicado"]
+  ];
+  const postSheet = {
+    getDataRange: () => ({ getValues: () => postRows }),
+    getRange: () => ({ setValue: () => { postMutation = true; } })
+  };
+  const deleteContext = {
+    SPREADSHEET_ID:"LOCAL",
+    SpreadsheetApp:{openById:()=>({})},
+    getOrCreateSheet:()=>postSheet,
+    isTaskServiceAdministrativeRole:role=>role==="Administrador",
+    assertTaskServiceClassroomAccess:(_payload,classId)=>{assert.equal(classId,"AULA-D2");throw new Error("RESOURCE_SCOPE_DENIED");}
+  };
+  vm.runInNewContext(extractFunction("deletePost")+"\nthis.run=deletePost;",deleteContext);
+  assert.throws(()=>deleteContext.run({_verifiedUserId:"ADMIN-1",_verifiedRole:"Administrador",postId:"POST-1"}),/RESOURCE_SCOPE_DENIED/);
+  assert.equal(postMutation,false,"foreign post is not soft-deleted by a department-scoped administrator");
+
+  const materialContext = {
+    SPREADSHEET_ID:"LOCAL",
+    SpreadsheetApp:{openById:()=>({})},
+    isTaskServiceAdministrativeRole:role=>role==="Administrador",
+    assertTaskServiceClassroomAccess:(_payload,classId)=>{assert.equal(classId,"General");throw new Error("AUTH_PERMISSION_DENIED");},
+    getOrCreateSheet:()=>{materialSheetAccess=true;return {getLastRow:()=>0,appendRow:()=>{}};},
+    DriveApp:{getFileById:()=>{driveAccess=true;return {isTrashed:()=>false};}},
+    extractTaskServiceFileId:value=>String(value)
+  };
+  vm.runInNewContext(extractFunction("createStudyMaterial")+"\nthis.run=createStudyMaterial;",materialContext);
+  assert.throws(()=>materialContext.run({_verifiedUserId:"ADMIN-1",_verifiedRole:"Administrador",aulaId:"General",titulo:"General material",archivoUrl:"https://example.test/file"}),/AUTH_PERMISSION_DENIED/);
+  assert.equal(materialSheetAccess,false,"general material is not persisted without institution-wide scope");
+  assert.equal(driveAccess,false,"Drive is not accessed before general-scope authorization");
+}
+console.log("TASK-153 administrative content mutation scope contracts passed.");
