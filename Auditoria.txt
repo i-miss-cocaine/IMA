@@ -1195,3 +1195,15 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - **Commits principales:** 95a6b4d791fb9051a57482f3f9b93efa286760c2; 2aa6dcdaec0315e9d16a1383051bf0d11fa11bfa; 4dae41b25cf393563d50768b194e9fc20c0ab762; 24a45ddb5d915a028352e8cb2bbfd05455a4f145; 086d98eb4605a701ce7c1f99d4958b3f10b1037a; 2745da1cc659c3cffce1dd8b51124d059a42a158; 424af6b66931d1bc1f50459d59a468a4596ddd2a; deb974e07ceed041225e6373d32495681c472633; 1ed0effebdce56c03756178e098f38bb22637204.
 - **Estado:** subhallazgo corregido para nuevas conversiones. TASK-153 En ejecución; AUD-NG-386 continúa abierto por el resto del alcance.
 ===============================================================================
+
+
+===============================================================================
+## Seguimiento C1.453 — trazabilidad de cargos históricos de admisión
+- **Pregunta:** determinar si los registros de auditoría/eventos permiten atribuir cargos históricos a una solicitud/matrícula sin inferencias.
+- **Evidencia:** `logStructuredEvent` escribe en `LogsSistema` los campos ID, Timestamp, Servicio, Función, Severidad, CódigoError, Mensaje, DatosPayload y RolUsuario. El evento `ADMISSION_CONVERTED` guarda solicitudId, expedienteId, matriculaRealId, anolectivo, grado y departmentId; no contiene CargoID, importes ni ReferenciaOrigen. El helper `registerStudentEnrollmentInternal_` inserta filas de `CargosEstudiante` sin emitir un evento de cargo.
+- **Dictamen:** no existe en el flujo inspeccionado un vínculo histórico verificable entre la matrícula de admisión y una fila de cargo. La coincidencia de usuario, concepto, periodo, importe o fecha no acredita origen. No realizar backfill automático ni asignar referencias retrospectivas por heurística.
+- **Conciliación admisible:** únicamente mediante fuente contable original e independiente que relacione de manera inequívoca CargoID con solicitud/matrícula; en ausencia de esa evidencia, conservar el cargo sin atribución.
+- **Hallazgo alto para próxima iteración:** `convertAdmissionToStudent` construye `_chargeReference` leyendo `matriculaRealId` antes de ejecutar su inicialización `const matriculaRealId = enrollRes.matriculaId`; el acceso está en la zona temporal muerta y puede producir `ReferenceError`. El retorno idempotente tampoco expone `cargoId` aunque `assertAdmissionConversionArtifactsComplete_` lo devuelve. Requiere corrección y prueba del flujo completo.
+- **Verificaciones:** inspección estática del código fuente y del esquema de logging; no se accedió a una hoja LogsSistema real ni a datos productivos. No se ejecutaron pruebas dinámicas porque esta iteración no modificó código.
+- **Estado:** investigación completada; cero cargos históricos modificados. TASK-153 En ejecución; AUD-NG-386 abierto.
+===============================================================================
