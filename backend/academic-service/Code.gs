@@ -2482,7 +2482,7 @@ function getStudentPersonIdForUser_(ss, userId) {
   return row ? String(row[personIdx] || "").trim() : "";
 }
 
-function getStudentUserIdForPerson_(ss, personId) {
+function getStudentIdentityForPerson_(ss, personId) {
   const target = String(personId || "").trim();
   if (!target) return "";
   const sheet = ss && ss.getSheetByName("Usuarios");
@@ -2500,7 +2500,7 @@ function getStudentUserIdForPerson_(ss, personId) {
       ["ESTUDIANTE", "ALUMNO"].indexOf(role) !== -1 &&
       ["ACTIVA", "ACTIVO", "ACTIVE"].indexOf(state) !== -1;
   });
-  return matches.length === 1 ? String(matches[0][userIdx] || "").trim() : "";
+  return matches.length === 1 ? { userId: String(matches[0][userIdx] || "").trim(), role: String(matches[0][roleIdx] || "").trim() } : null;
 }
 
 var RESOURCE_OWNERSHIP_REQUEST_CACHE_ = new WeakMap();
@@ -2585,9 +2585,9 @@ function assertStudentExpedienteScopeAccess_(payload, ss, expSheet, expRow) {
       return guardian && String(guardian[1] || "").trim() === actorPersonId;
     });
     if (!linked) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
-    const studentUserId = getStudentUserIdForPerson_(ss, personId);
-    if (!studentUserId) return { authorized: false, code: "RESOURCE_OWNER_UNRESOLVED" };
-    ownershipIdentity = { authorized: true, userId: studentUserId, role: "Estudiante" };
+    const studentIdentity = getStudentIdentityForPerson_(ss, personId);
+    if (!studentIdentity || !studentIdentity.userId || !studentIdentity.role) return { authorized: false, code: "RESOURCE_OWNER_UNRESOLVED" };
+    ownershipIdentity = { authorized: true, userId: studentIdentity.userId, role: studentIdentity.role };
   }
 
   // SELF and GUARDIAN access are relational exceptions to staff RBAC, not
