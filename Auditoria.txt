@@ -861,3 +861,12 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - Se adoptan referentes SIS/LMS y ERP/SoD como patrones de diseño, sin ampliar TASK-153 a implementación financiera.
 - T153-S01: identificar autoridad de CatalogoDepartamentos vs DepartamentosAcademicos antes de migrar/asignar propietarios.
 - No hubo cambios de código/datos ni pruebas de producto. Checkpoint C1.402.
+
+
+## C1.403 — IMA-EXEC-20261110-0439Z-01 — T153-S01 / PM-01
+- Continuidad: C1.402 verificado; HEAD de partida abe1d701a0b13cf2dc926550670615407e9f2612 en NG_beta_0.0.0.1_work; rama base 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Revisión focalizada del modelo: USER crea CatalogoDepartamentos sin relación/lectores observados; ACADEMIC crea y consume DepartamentosAcademicos; ACCOUNTING lo usa para normalizar expedientes laborales; AsignacionesAmbitosRoles no valida los valores contra catálogo canónico.
+- No se demuestra fuente institucional, mapeo, jerarquía ni propietario de expedientes estudiantiles. No se accedió a filas productivas; no se fusionan catálogos ni se migran datos.
+- Se reutilizan FASE 41, AUD-NG-226/TASK-506 y FASE2-T04; no se crea tarea ni informe duplicado. TASK-506 permanece PM-02/P1.
+- T153-S01 bloqueada para implementación de datos; TASK-153 permanece En ejecución. TASK-139/TASK-123 continúan dependientes.
+- No hubo cambios de código/datos ni pruebas nuevas. Checkpoint C1.403: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.403; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.403.

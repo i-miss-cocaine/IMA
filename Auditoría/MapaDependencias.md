@@ -4973,3 +4973,15 @@ Alcance estático satisfecho; sin cambios de código. Hallazgos AUD-NG-374..376 
 - T153-S01 es la siguiente unidad. Reconciliar CatalogoDepartamentos y DepartamentosAcademicos antes de asignar propietario o migrar registros. No inferir desde actor, grado, sección, rol o módulo.
 - Dependencias derivadas TASK-153 → TASK-139 y TASK-153 → TASK-123 se mantienen. La rama base no se modifica.
 - No hay cambios de código, datos ni pruebas de producto en C1.402.
+
+
+## C1.403 — T153-S01: evidencia de catálogos departamentales
+
+- **USER:** `manageDepartmentPositions` crea `CatalogoDepartamentos` con `deptId/nombre/jefaturaUserId/estado/fechaCreacion`; la escritura admite ID del cliente o ID generado. En los servicios y controladores principales inspeccionados no se encontró consumidor del catálogo. No se observó relación con el modelo académico, FK ni jerarquía.
+- **ACADEMIC:** `assignDepartmentHead` crea/actualiza `DepartamentosAcademicos` con `DepartamentoID/Nombre/JefeUserId/Estado/FechaActualizacion/AutorizadoPor`, sin validar el ID contra USER ni comprobar jefatura activa. `getDepartmentAcademicPlanning` devuelve las filas sin filtrar departamentos inactivos. Sus consumidores incluyen teacher.js y secretary.js.
+- **ACCOUNTING:** `resolveEmployeeDepartmentId_` consulta DepartamentosAcademicos por ID/nombre y conserva el valor textual como fallback; aplica a ExpedientesLaborales, no a propiedad estudiantil.
+- **Ámbitos:** AsignacionesAmbitosRoles almacena valores DEPARTAMENTO sin FK contra un catálogo canónico; el ámbito del actor no define la propiedad del recurso.
+- **Propiedad estudiantil:** se mantiene vigente la evidencia C1.400 sobre ausencia de DepartamentoID en ExpedientesEstudiantes, DocumentosEstudiante, SolicitudesAdmision y Matriculas y el fallo cerrado de los helpers. No se reaudita ese alcance ni se relaja.
+- **Tareas relacionadas:** AUD-NG-226 / TASK-506 cubren validación referencial, estados y relación explícita/separación de los catálogos. TASK-506 es PM-02/P1 y su ruta canónica es `pendientes/Dirección/Pendientes.md`; no se crea una tarea ni una arista duplicada. FASE2-T04 documenta el déficit general de autoridad de catálogos.
+- **Resultado:** no se demuestra fuente institucional aprobada, relación formal ni propietario de recursos estudiantiles. T153-S01 queda bloqueada para migración/escritura hasta recibir decisión institucional verificable. TASK-153 permanece PM-01 / En ejecución; TASK-139 y TASK-123 siguen dependientes de su resolución.
+- **Límites:** evidencia estática de código y documentos; sin acceso a filas productivas de Sheets/Drive y sin pruebas nuevas.

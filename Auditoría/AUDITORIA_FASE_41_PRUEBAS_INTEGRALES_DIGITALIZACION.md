@@ -330,3 +330,42 @@ La plataforma cuenta con un excelente control de concurrencia para identificador
 ### Hallazgo documental relacionado
 - AUD-NG-382 se registra en Auditoria.txt: la exclusión PM-00 de TASK-682 en 10.68 utilizó el blob de RECUPERACION como si fuera el backlog canónico. El backlog canónico de Otros en C1.316 sí contenía el requisito completo (blob 35cbd51f1e0b2f91f18b46c94d38223338d5ccdf, líneas 8891–8902). La fila maestra se reclasifica a PM-01/P1; TASK-682 permanece Pendiente.
 - Esta corrección es documental y no genera un ID de tarea nuevo. El informe F8-TASK16 y la ficha existente TASK-682 se reutilizan.
+
+
+## Revisión focalizada C1.403 — T153-S01: autoridad del catálogo departamental
+
+**Sesión:** IMA-EXEC-20261110-0439Z-01  
+**HEAD auditado:** abe1d701a0b13cf2dc926550670615407e9f2612  
+**Checkpoint anterior:** C1.402. Se reutiliza este expediente principal; no se crea un informe de auditoría duplicado.
+
+### Continuidad y alcance
+- El commit C1.402 (14e5dfe77fbe93759ec63b5066781967316883a8) y el commit de cierre de índice (abe1d701a0b13cf2dc926550670615407e9f2612) contienen cambios documentales. La comparación desde el HEAD de partida C1.401 no muestra cambios de código posteriores a la implementación C1.397–C1.398.
+- La revisión C1.400 ya auditó C1.397–C1.398 y confirmó CI Department Scope run 42741228237 como completed/success. Esa evidencia se conserva vigente; no se repiten sus pruebas.
+- Alcance nuevo y limitado: autoridad, esquema, claves, escrituras, consumidores, vigencia y jerarquía de CatalogoDepartamentos / DepartamentosAcademicos; contraste con los requisitos originales de TASK-153 y con las tareas existentes sobre integridad de catálogos.
+
+### Evidencia estática actual
+1. **USER — CatalogoDepartamentos.** `manageDepartmentPositions` crea la hoja de forma diferida con columnas `deptId`, `nombre`, `jefaturaUserId`, `estado`, `fechaCreacion`. `CREATE_DEPT` admite un `deptId` recibido del cliente o un ID generado; no se encontró validación de unicidad, relación con el catálogo académico ni jerarquía. La búsqueda dirigida en los siete servicios backend y los controladores principales no encontró lectores de este catálogo: el uso observado es su creación/escritura.
+2. **ACADEMIC — DepartamentosAcademicos.** `assignDepartmentHead` crea la hoja con `DepartamentoID`, `Nombre`, `JefeUserId`, `Estado`, `FechaActualizacion`, `AutorizadoPor`; admite IDs suministrados y, si no existe fila, usa el propio ID como nombre y crea estado Activo. No valida que el departamento o la jefatura existan/estén activos ni establece una relación con CatalogoDepartamentos. No hay columna de padre, nivel o jerarquía.
+3. **Lectores académicos.** `getDepartmentAcademicPlanning` lee DepartamentosAcademicos y devuelve las filas sin filtrar departamentos inactivos. Sus consumidores visibles incluyen `js/teacher.js` y `js/secretary.js`; el formulario docente invoca `assignDepartmentHead`. No se encontró consumo de CatalogoDepartamentos en esos clientes.
+4. **ACCOUNTING.** `resolveEmployeeDepartmentId_` intenta relacionar el texto de `ExpedientesLaborales.Departamento` con ID o nombre de DepartamentosAcademicos y, si no hay coincidencia, conserva el valor de texto como ID. Esta resolución corresponde a expedientes laborales; no prueba propiedad de expedientes estudiantiles ni autoridad institucional.
+5. **Ámbitos del actor.** `AsignacionesAmbitosRoles` guarda valores de ámbito enviados por la operación; `assignRoleScope` no valida que los valores DEPARTAMENTO existan o estén activos en un catálogo canónico. La asignación de ámbito del actor no demuestra la propiedad de un recurso.
+6. **Propiedad estudiantil.** Se mantiene vigente la evidencia de C1.400: los esquemas estudiantiles inspeccionados no contienen DepartamentoID y los helpers de acceso fallan cerrados cuando no resuelven el propietario. No se modifica ese comportamiento. En esta iteración no se consultó una instancia real de Sheets/Drive ni se verificaron filas productivas.
+
+### Contraste con auditorías y tareas existentes
+- AUD-NG-226 ya documenta la falta de integridad referencial, validación de estado y relación explícita entre catálogos; su informe principal es `Auditoría/AUDITORIA_COMPLETADAS_TAREA-F4-P1-07.md`.
+- TASK-506 ya existe en `pendientes/Dirección/Pendientes.md` y en §9 del Plan Maestro como PM-02 / P1. Su requisito incluye formalizar la relación o separación documentada entre CatalogoDepartamentos y DepartamentosAcademicos, validar IDs/estados y evitar referencias huérfanas. No se crea una tarea duplicada ni se cambia su orden.
+- `Auditoría/AUDITORIA_COMPLETADAS_FASE2-T04.md` ya documenta la ausencia de inventario formal de autoridad para catálogos y la existencia de copias locales. Se reutiliza como evidencia relacionada, sin reauditar el informe.
+- La copia textual de TASK-506 hallada en el backlog consolidado Otros no sustituye su fuente: §9 asigna como requisito canónico `pendientes/Dirección/Pendientes.md`. No se modifica el backlog Otros recuperado.
+
+### Dictamen y estado
+- El código demuestra dos esquemas y propósitos operativos distintos, pero no demuestra si la institución los considera entidades independientes o si existe una relación formal entre ellos. Tampoco demuestra qué unidad debe ser propietaria de cada expediente/recurso estudiantil, cuáles son sus claves institucionales estables ni su jerarquía.
+- No hay evidencia de una fuente institucional aprobada ni acceso a las filas productivas. No es seguro elegir un catálogo, fusionarlos, inferir equivalencias por nombre/ID, ni asignar propietarios desde actor, rol, grado, sección, matrícula o módulo.
+- **T153-S01: Bloqueada para implementación de datos** hasta obtener la definición institucional aprobada y verificable. **TASK-153 permanece En ejecución**; no se declara completada. Se conservan las denegaciones fail-closed.
+- No se genera un AUD-NG nuevo ni una tarea derivada: las brechas de integridad de catálogo ya están vinculadas a AUD-NG-226/TASK-506. No se agrega una arista nueva al mapa de dependencias. TASK-139 y TASK-123 siguen dependiendo de resolver TASK-153.
+
+### Verificaciones y límites
+- Ejecutado: inspección estática manual de los tres servicios, consumidores frontend principales, contratos de pruebas existentes, backlog original, Plan Maestro, Mapa de Dependencias y expedientes de auditoría relacionados.
+- No ejecutado: pruebas locales/CI nuevas, Apps Script real, consultas a Sheets/Drive, migración, pruebas HTTP/E2E o navegador. El código no cambió; la última evidencia CI reutilizable es la de C1.398.
+
+### Siguiente acción exacta
+Obtener una decisión institucional aprobada que identifique: (a) fuente autoritativa de departamentos; (b) si el departamento administrativo y el académico son entidades separadas o relacionadas y, en este último caso, su mapeo estable; (c) jerarquía, estados y reglas de vigencia; y (d) qué departamento es propietario de cada tipo de recurso estudiantil protegido. Después contrastar esa decisión con las filas reales de Sheets, emitir el mapeo verificable y continuar T153-S01 sin migrar datos hasta demostrar correspondencia.

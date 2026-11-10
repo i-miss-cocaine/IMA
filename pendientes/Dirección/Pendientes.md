@@ -736,7 +736,7 @@
   - [ ] Las operaciones de descarga, firma y exportación respetan el ámbito departamental asignado.
   - [ ] Los roles institucionales con acceso global funcionan conforme a sus permisos explícitos sin falsos bloqueos.
 - **Dependencias:** Sistema de usuarios, departamentos, roles y estructura de propiedad documental.
-- **Estado:** [ ] En ejecución (C1.398; endpoint y vista estudiantil de comprobantes privados, ocultación de enlaces legacy y CI local aprobado; criterios globales pendientes).
+- **Estado:** [ ] En ejecución (C1.403; controles de comprobantes privados verificados en C1.398; T153-S01 bloqueada por falta de fuente institucional de propiedad departamental; criterios globales pendientes).
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7086-7126; clave TASK-169; asignación única: Dirección -->
 
@@ -752,6 +752,7 @@
 - **Limitaciones C1.395:** sin prueba de navegador ni Apps Script/Drive real; la UI solo cubre estudiante/alumno y los enlaces públicos históricos siguen pendientes de revocación.
 - **Avance C1.397–C1.398:** getPaymentVouchers ya no expone URLs de Drive (comprobanteUrl vacío; tieneComprobante booleano); getPaymentVoucherFile responde RESOURCE_NOT_FOUND tanto para IDs inexistentes como no autorizados. Se prueban IDOR, archivos en papelera, vacíos y MIME/extensión no permitidos. CI final 42741228237 — success.
 - **Limitaciones C1.398:** no se ha revocado el permiso real de los archivos históricos; falta deployment de prueba/Drive fixture para E2E real. TASK-153 sigue En ejecución.
+- **Seguimiento C1.403:** T153-S01 inspeccionó las estructuras y consumidores de ambos catálogos. USER crea CatalogoDepartamentos sin relación ni lector observado; ACADEMIC usa DepartamentosAcademicos para planificación; ACCOUNTING lo consulta solo al resolver expedientes laborales. No se acredita fuente institucional ni propietario estudiantil. Se reutilizan AUD-NG-226/TASK-506 (PM-02/P1) y FASE2-T04; no se crea tarea duplicada. T153-S01 queda bloqueada hasta una decisión institucional aprobada; no se migran ni modifican datos.
 ---
 
 <!-- ID: AUD-NG-164 | Fuentes: Pendientes.md -->

@@ -3,11 +3,11 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.402**
-- Última sesión: `IMA-EXEC-20261110-0436Z-01`
+- Último checkpoint: **C1.403**
+- Última sesión: `IMA-EXEC-20261110-0439Z-01`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.400: **150130**
+- Caracteres del archivo activo tras C1.403: **169118**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 - Baseline lógico válido: **C1.316** (`31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`). C1.317–C1.382 se conservan, pero no se aceptan como evidencia de continuidad por corrección expresa del usuario.
@@ -227,3 +227,4 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.401 | IMA-EXEC-20261110-0306Z-01 | HEAD de partida 48d89e6f96f9f3573647698067c4a1713435084a; commit documental C1.401 a verificar | TASK-153 / PM-01 / P0 sigue En ejecución y bloqueada por fuente propietaria; dependencias derivadas TASK-139/TASK-123; AUD-NG-383 vinculado a F11-TASK01 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.401 | 1951–2005 | C1.400 | Este commit; SHA verificado tras publicación |
 
 | C1.402 | IMA-EXEC-20261110-0436Z-01 | Publicado; TASK-153 continúa En ejecución | TASK-153 / PM-01 / P0 — T153-S01…S08; selección de T153-S01 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.402 | 2008–2051 | C1.401 | 14e5dfe77fbe93759ec63b5066781967316883a8 |
+| C1.403 | IMA-EXEC-20261110-0439Z-01 | T153-S01 auditada; bloqueada por decisión institucional pendiente | TASK-153 / PM-01 / P0 — T153-S01 autoridad del catálogo departamental | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.403 | 2054–2142 | C1.402 | Este commit; SHA a confirmar tras publicación |

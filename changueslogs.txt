@@ -663,3 +663,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Ocho subtareas locales T153-S01…S08 registradas con criterios de aceptación y dependencias.
 - Siguiente tarea: T153-S01 — autoridad del catálogo departamental. TASK-153 permanece En ejecución.
 - Solo documentación; sin cambios de código/datos ni pruebas de producto.
+
+
+[2026-11-10] C1.403 — T153-S01 / PM-01
+- Auditoría focalizada de CatalogoDepartamentos y DepartamentosAcademicos: no se acredita fuente única, relación formal ni jerarquía; no se accedió a filas productivas.
+- Se reutilizan AUD-NG-226/TASK-506 y FASE2-T04; no se crea tarea ni informe duplicado.
+- T153-S01 queda bloqueada para implementación de datos; TASK-153 sigue En ejecución. Sin cambios de código/datos ni pruebas nuevas.
+- Checkpoint C1.403: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.403.

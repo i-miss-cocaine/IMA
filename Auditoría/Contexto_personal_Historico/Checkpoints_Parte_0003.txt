@@ -2048,3 +2048,95 @@ Ejecutar únicamente T153-S01: inspeccionar el modelo completo de CatalogoDepart
 ### Commit
 Commit documental C1.402 en NG_beta_0.0.0.1_work; SHA a verificar tras publicación. Rama base intacta.
 ===============================================================================
+
+
+===============================================================================
+## C1.403 — TASK-153 / T153-S01 — dictamen de autoridad departamental
+
+**Sesión:** IMA-EXEC-20261110-0439Z-01  
+**Fecha:** 2026-11-10 04:39Z  
+**Checkpoint anterior:** C1.402  
+**HEAD de partida:** abe1d701a0b13cf2dc926550670615407e9f2612  
+**Rama:** NG_beta_0.0.0.1_work  
+**Rama base protegida:** NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59  
+**Tarea:** TASK-153 / PM-01 / P0; unidad T153-S01.  
+**Requisito original:** `pendientes/Dirección/Pendientes.md`, bloque TASK-153, líneas 696–754; fila TASK-153 de `Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md` §9.  
+**Unidad siguiente según C1.402:** T153-S01 — inspección de autoridad de CatalogoDepartamentos y DepartamentosAcademicos.
+
+### Auditoría de continuidad y tarea anterior
+- C1.402 se verificó en `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt`, líneas 2008–2051. El commit de contenido es 14e5dfe77fbe93759ec63b5066781967316883a8; abe1d701a0b13cf2dc926550670615407e9f2612 finaliza la fila del índice.
+- La comparación desde el HEAD anterior a C1.402 muestra únicamente documentación/checkpoint/índice; no hay cambios de código después de C1.398. La revisión C1.400 del incremento C1.397–C1.398 permanece vigente y CI Department Scope run 42741228237 fue completed/success.
+- No se activa §19.2.1: no se encontró incumplimiento nuevo en la tarea anterior que exija corrección de código antes de T153-S01.
+
+### Auditoría del requisito objetivo y selección
+- TASK-153 es PM-01/P0/orden local 1; su requisito original exige autorización por ámbito y propiedad real del recurso, no inferida desde el actor.
+- T153-S01 precede a T153-S03 y T153-S04. TASK-139 y TASK-123 continúan dependiendo de TASK-153.
+- TASK-506 es una tarea distinta existente PM-02/P1, con requisito canónico en `pendientes/Dirección/Pendientes.md`, líneas 2366 en adelante. Su criterio 3 cubre la relación o separación explícita entre catálogos; no se adelanta ni se duplica.
+- El algoritmo §6.1 impide tratar como elegible una unidad cuyo prerrequisito institucional no está resuelto. No se selecciona una tarea alternativa ni se salta de fase.
+
+### Evidencia de modelo y consumidores
+- USER `backend/user-service/Code.gs` (blob 85d12dad06826fdc37660f47d92e6976ff28bfe7), `manageDepartmentPositions`: crea diferidamente `CatalogoDepartamentos` con `deptId/nombre/jefaturaUserId/estado/fechaCreacion`; admite ID del cliente o generado; no se observó FK, mapeo ni campo de jerarquía. La búsqueda en los siete servicios backend y controladores principales no encontró consumidores del catálogo.
+- ACADEMIC `backend/academic-service/Code.gs` (blob 6c7ff36bb1ff314917bb85497a23c303a0dcf397), `assignDepartmentHead`: crea `DepartamentosAcademicos` con `DepartamentoID/Nombre/JefeUserId/Estado/FechaActualizacion/AutorizadoPor`; admite ID arbitrario, no valida jefe/departamento activo ni correspondencia con USER. No hay campo padre/nivel. `getDepartmentAcademicPlanning` devuelve departamentos sin filtrar por estado.
+- Consumidores observados: `js/teacher.js` (blob bc6495b4d0349a768626dcbf40b5f5ac8055de49) llama getDepartmentAcademicPlanning y assignDepartmentHead; `js/secretary.js` (blob 2860297607beb79100d08fe34f33b73ee54f8967) llama getDepartmentAcademicPlanning. No se encontró consumo de CatalogoDepartamentos.
+- ACCOUNTING `backend/accounting-service/Code.gs` (blob 15b01bef8a7bcdac9624219bca6f5085a5f8a827), `resolveEmployeeDepartmentId_`: busca ID/nombre en DepartamentosAcademicos y admite fallback al texto original. Solo resuelve ExpedientesLaborales; no demuestra propietario de expedientes estudiantiles.
+- USER `AsignacionesAmbitosRoles` guarda ScopeValues de DEPARTAMENTO sin validar existencia/estado contra catálogo canónico. El ámbito del actor no equivale a la propiedad del recurso.
+- Se conserva la evidencia C1.400 sobre ausencia de DepartamentoID en los esquemas estudiantiles observados y denegación fail-closed cuando no se resuelve propietario. No se relaja.
+
+### Reutilización de auditorías y tareas existentes
+- Expediente principal TASK-153: `Auditoría/AUDITORIA_FASE_41_PRUEBAS_INTEGRALES_DIGITALIZACION.md`; se agrega revisión focalizada C1.403, sin informe nuevo.
+- AUD-NG-226: expediente principal `Auditoría/AUDITORIA_COMPLETADAS_TAREA-F4-P1-07.md`; cubre integridad referencial, estado y relación intercatálogo. TASK-506 ya existe en PM-02/P1.
+- FASE2-T04: `Auditoría/AUDITORIA_COMPLETADAS_FASE2-T04.md`; documenta falta de inventario formal de autoridad de catálogos y duplicación de copias locales.
+- No se crea AUD-NG nuevo, tarea derivada ni arista de dependencia duplicada. `tareas_auditoria.txt` no se modifica.
+
+### Recuperación y verificación de backlog Otros
+- La lectura convencional de `pendientes/Otros/Pendientes.md` devolvió 0 caracteres; no se asumió que estuviera vacío ni se escribió sobre él.
+- Recuperación por blob desde la misma rama: SHA `24347c3776521c930391f89e0430910554bf233b`; árbol HEAD registra 1.655.930 bytes; fetch_blob devolvió 1.636.155 caracteres y 16.510 líneas. La historia por ruta identifica como último cambio 5d6d4091d97c9ca5c5bbefdcd8a8f4ffab4cd484 (C1.382); el tree de ese commit conserva el mismo blob SHA.
+- Inventario estructural: 674 registros con marcador ID, 674 IDs únicos, 0 duplicados; 674 encabezados pendientes y 0 marcados completados. Categorías por prefijo: AUD-NG 110; F 188; TAREA 79; TASK 255; FASE 19; AUDIT 4; T 19. Último ID de registro por aparición: TASK-501.
+- Comparación solo para demostrar diferencia, no como fuente de restauración: `Auditoría/legacy/Pendientes.md` blob 631b4c2dbf0e86d5704b63625382d73ccb8ceb3c (1.782.094 caracteres / 20.182 líneas; formato histórico distinto y 35 encabezados [X]); `Auditoría/legacy/Pendientes_legacy.md` blob 5b35a722efbe4368b19a7d4947033dba9da3d410 (1.307.758 caracteres / 16.872 líneas; 33 encabezados [X]). Ninguna copia legacy reemplaza el backlog actual.
+- La copia textual de TASK-506 hallada dentro del consolidado Otros no sustituye la fuente canónica: §9 del Plan Maestro indica `pendientes/Dirección/Pendientes.md`. No se modifica el backlog Otros.
+
+### Dictamen y estado real
+- No se demuestra qué catálogo es institucionalmente autoritativo, si los departamentos administrativo y académico son entidades independientes o relacionadas, cuál es su mapeo estable, su jerarquía/estados ni quién es propietario de cada expediente/recurso estudiantil.
+- No hubo acceso a filas productivas de Sheets/Drive. No se elige fuente por conveniencia, no se fusionan catálogos, no se infieren propietarios desde actor/rol/grado/sección/matrícula y no se modifican datos.
+- **T153-S01: Bloqueada para implementación de datos** hasta recibir una decisión institucional aprobada y verificable. **TASK-153: En ejecución**, no completada. Se conserva fail-closed.
+- Hallazgos de integridad relacionados permanecen en AUD-NG-226/TASK-506; no se duplican. TASK-139 y TASK-123 siguen bloqueadas por la resolución de TASK-153.
+
+### Archivos modificados
+- Auditoría/AUDITORIA_FASE_41_PRUEBAS_INTEGRALES_DIGITALIZACION.md
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/MapaDependencias.md
+- Auditoria.txt
+- changueslogs.txt
+- pendientes/Dirección/Pendientes.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Archivos revisados sin modificación
+- METODOLOGIA_DESARROLLO.md; Auditoría/Contexto_personal.txt; Auditoría/INDICE_CHECKPOINTS.md (estado previo); Auditoria.txt; tareas_auditoria.txt; changueslogs.txt.
+- pendientes/Dirección/Pendientes.md; backlog Otros recuperado por blob; Auditoría/AUDITORIA_FASE_41_PRUEBAS_INTEGRALES_DIGITALIZACION.md; Auditoría/AUDITORIA_COMPLETADAS_TAREA-F4-P1-07.md; Auditoría/AUDITORIA_COMPLETADAS_FASE2-T04.md.
+- backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; backend/task-service/Code.gs; backend/exam-service/Code.gs; backend/developer-service/Code.gs; js/teacher.js; js/secretary.js; js/api.js; dashboard-recursos-humanos.html; dashboard-direccion.html.
+- tests/security/department-scope-contract.test.js; tests/security/departmental-resource-access.test.js; tests/security/accounting-departmental-resource-access.test.js.
+
+### Pruebas y límites
+- Pruebas nuevas ejecutadas: ninguna; esta unidad fue auditoría estática y dictamen de autoridad, sin cambios de código.
+- CI reutilizado como evidencia vigente: Department Scope run 42741228237 completed/success sobre C1.398. No se repitió.
+- Apps Script/Sheets/Drive reales, HTTP/E2E y navegador: no ejecutados/no disponibles en esta revisión.
+
+### Respaldo Git histórico previo a la edición documental
+- HEAD de respaldo: abe1d701a0b13cf2dc926550670615407e9f2612; árbol: d3694566de41039f4e337cb88983e9b5e8d40187.
+- Auditoría FASE 41: f383d1aaff741474c28ec688b9e8aa5fae8260e3.
+- Plan Maestro: be400bdcfef3dc3d81f16dd3a8322c32e28ff82b.
+- MapaDependencias: 58c2c6d68b3c9b07ffcfac38e8ae6703ce7dd255.
+- Auditoria.txt: c41abc4a8535df752b557a7aef4e8920866f0826.
+- changueslogs.txt: e18bf397d230a0100a2cc6bf95e28ed3fd816af5.
+- Backlog Dirección: a8fe342f178a8dedf04e7ba136f6e77d3640e95a.
+- Checkpoints_Parte_0003.txt: 52810b8e4041f87acc2b6c84a99c7508ce0d28a6.
+- INDICE_CHECKPOINTS.md: bc21b83e96f1343b424ffb797eaec3875d71bbfb.
+- Método de recuperación: blob Git histórico publicado y alcanzable; no se afirma respaldo local. No se modifican blobs históricos.
+
+### Siguiente acción exacta
+Obtener de la institución el documento/registro aprobado que defina la fuente autoritativa, relación o separación entre departamentos administrativos/académicos, IDs estables, jerarquía, estados/vigencia y propietario de cada tipo de recurso estudiantil. Después verificar las filas reales de Sheets, elaborar mapeo explícito y reanudar T153-S01. No iniciar TASK-139/TASK-123 ni ejecutar migración antes de resolverlo.
+
+### Commit
+Un único commit documental de C1.403 en NG_beta_0.0.0.1_work; SHA a confirmar después de publicación. Rama base intacta.
+===============================================================================

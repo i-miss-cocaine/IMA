@@ -2547,3 +2547,17 @@ Los identificadores siguientes son claves internas de seguimiento de esta descom
 ### Estado de esta iteración
 
 Solo se registra y descompone el alcance funcional. No se modificó código, datos, esquemas productivos ni configuración; no se ejecutaron pruebas de producto. TASK-153 permanece En ejecución. T153-S01 queda seleccionada como siguiente unidad, con bloqueo de implementación de datos hasta identificar la fuente autorizada.
+
+
+#### Seguimiento C1.403 — T153-S01: dictamen de autoridad departamental
+
+- **HEAD auditado:** abe1d701a0b13cf2dc926550670615407e9f2612. Revisión focalizada agregada al expediente FASE 41 existente; no se crea informe duplicado.
+- **USER:** CatalogoDepartamentos se crea de forma diferida desde manageDepartmentPositions con `deptId/nombre/jefaturaUserId/estado/fechaCreacion`. No se encontró lector en los servicios/controladores revisados, ni FK, mapeo o jerarquía.
+- **ACADEMIC:** DepartamentosAcademicos usa `DepartamentoID/Nombre/JefeUserId/Estado/FechaActualizacion/AutorizadoPor`; assignDepartmentHead admite altas por ID recibido sin validar correspondencia con USER. getDepartmentAcademicPlanning devuelve departamentos sin filtrar por estado. No hay columna jerárquica.
+- **ACCOUNTING:** resolveEmployeeDepartmentId_ usa DepartamentosAcademicos para normalizar ExpedientesLaborales.Departamento y admite fallback al texto original; esto no establece propietario estudiantil.
+- **Ámbitos:** AsignacionesAmbitosRoles contiene valores de ámbito del actor, sin validar su existencia/estado contra una fuente canónica; no sustituye el propietario del recurso.
+- **Contraste:** AUD-NG-226/TASK-506 ya cubren integridad, estados y relación intercatálogo; TASK-506 permanece PM-02/P1 y su requisito canónico está en `pendientes/Dirección/Pendientes.md`. FASE2-T04 ya documenta la falta de inventario de autoridad. No se crea AUD-NG ni tarea duplicada ni se cambia el orden PM.
+- **Dictamen:** ninguna fuente institucional única ni relación aprobada se demuestra desde el código/documentos disponibles; no se tuvo acceso a filas productivas de Sheets. No inferir, fusionar ni migrar.
+- **Estado:** T153-S01 Bloqueada para implementación de datos; TASK-153 sigue En ejecución. Se mantienen los controles fail-closed y las dependencias TASK-139/TASK-123.
+- **Siguiente acción:** obtener decisión institucional aprobada sobre catálogo autoritativo, relación/separación administrativo-académica, IDs, jerarquía, estados y propietario de cada recurso estudiantil; luego verificarla contra datos reales y emitir mapeo.
+- **Límites:** revisión estática manual; no se ejecutaron pruebas nuevas ni Apps Script/Sheets/Drive/HTTP/E2E/browser.
