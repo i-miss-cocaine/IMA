@@ -418,3 +418,55 @@ Los estándares técnicos guían diseño e interoperabilidad; no reemplazan la a
 
 **Aprobación requerida:** órgano de gobierno/representante legal de la institución, Dirección General, responsables funcionales y asesoría legal.  
 **Fin del documento.**
+
+
+## 14. N-23. Asignación institucional basada exclusivamente en roles configurados en plataforma
+
+**Regla obligatoria de diseño:** IMA no debe registrar nombres personales como titulares estáticos de cargos, responsables de expedientes, propietarios operativos, custodios, aprobadores ni autoridades dentro del organigrama funcional, las matrices de responsabilidad o las reglas de acceso. La responsabilidad y autoridad se definen mediante **roles institucionales y funciones configurables desde la plataforma**.
+
+### N-23.1 Modelo de asignación
+- La institución configura en IMA su catálogo de roles funcionales (por ejemplo: Dirección General, Responsable de Registro Académico, Custodio de Expediente, Aprobador de Certificaciones, Responsable de Protección, Dueño del Dominio Financiero).
+- La institución configura qué rol tiene cada responsabilidad, autoridad, alcance, capacidad y límite de aprobación por tipo de antecedente, expediente, documento, proceso y unidad.
+- La institución asigna y retira membresías de usuarios a esos roles desde la interfaz administrativa autorizada de IMA. No se codifican titulares ni nombres de personas en código fuente, plantillas, políticas, organigramas, workflows ni metadatos de documentos.
+- El motor resuelve dinámicamente quién puede actuar consultando la identidad autenticada, las asignaciones vigentes, la unidad/tenant, la vigencia temporal y el ámbito del recurso.
+- Si una persona deja el puesto, basta revocar o expirar su asignación y asignar el rol al nuevo ocupante desde la plataforma; la autoridad funcional del rol no se reescribe en cada expediente ni documento.
+- Una misma persona puede ocupar varios roles si la institución lo autoriza; cada asignación es independiente y no fusiona ámbitos o capacidades automáticamente.
+
+### N-23.2 Autoridad sobre antecedentes y documentos
+- Cada tipo de antecedente y documento debe tener configurados: rol propietario funcional, rol custodio, roles que pueden crear, consultar, corregir, aprobar, firmar, certificar, descargar, exportar, compartir, archivar y eliminar; clasificación, alcance, retención y flujo de aprobación.
+- La autoridad sobre un expediente no se deriva del nombre de quien lo creó, de quien lo escaneó, de quien lo subió, de quien aparece mencionado en él ni del departamento que lo consulta habitualmente.
+- La propiedad institucional del dato y la custodia operativa son asignaciones de roles separadas. El custodio no puede modificar la política de propiedad ni conceder permisos globales salvo capacidad explícita.
+- Las aprobaciones se dirigen a un rol configurado; la plataforma determina al usuario elegible en el momento de la aprobación y verifica su membresía y segregación de funciones.
+- Las delegaciones se configuran como asignaciones temporales de rol/autoridad con alcance, motivo, otorgante autorizado, fecha de inicio, vencimiento y revocación. No se aceptan delegaciones abiertas o permanentes sin política aprobada.
+- Si el rol requerido no tiene un ocupante vigente, la operación se bloquea o se envía al flujo formal de sustitución; nunca se asigna por inferencia a cualquier usuario o administrador.
+
+### N-23.3 Separación entre rol y persona
+- **La configuración de responsabilidad es por rol, no por nombre personal.** El organigrama funcional representa puestos/roles y relaciones de autoridad; no nombres de empleados o estudiantes.
+- La identidad individual sigue siendo necesaria para autenticar sesiones y atribuir acciones en bitácoras protegidas. Esa identidad técnica/de auditoría no convierte a la persona en titular permanente del rol ni sustituye la asignación configurable. El acceso a datos identificativos de auditoría se restringe por finalidad y política.
+- En documentos y vistas de negocio se muestra el cargo/rol que aprobó o actuó cuando la política así lo determine; la evidencia interna de auditoría conserva la identidad autenticada del actor, el rol efectivo, el alcance, la fecha y la decisión. No se debe eliminar la trazabilidad individual de acciones por el hecho de que la autoridad se modele por rol.
+- No se debe usar el nombre personal como clave primaria, código de rol, regla de autorización, condición de workflow ni sustituto de un identificador institucional estable.
+
+### N-23.4 Configuración y controles de plataforma
+La plataforma debe ofrecer, como mínimo:
+1. Catálogo configurable de roles, capacidades, responsabilidades y ámbitos.
+2. Asignación y revocación de membresías por institución y unidad, con fechas de vigencia.
+3. Matriz configurable rol × recurso/tipo documental × operación × alcance.
+4. Flujos de aprobación dirigidos a roles, con resolución dinámica del ocupante.
+5. Sustitución temporal, delegación y suplencia con expiración y trazabilidad.
+6. Validación de incompatibilidades y segregación de funciones antes de guardar una asignación.
+7. Historial de versiones de configuración, quién la cambió, motivo, aprobación y vigencia.
+8. Revisión periódica de roles sin ocupante, asignaciones huérfanas, privilegios incompatibles y roles excesivos.
+9. Denegación por defecto cuando no exista una asignación vigente o haya ambigüedad.
+10. Interfaces administrativas con autorización específica; no permitir que un usuario se asigne a sí mismo autoridad superior ni que un administrador técnico se nombre dueño funcional por conveniencia.
+
+### N-23.5 Criterios de aceptación
+- Cambiar al ocupante de un rol desde la plataforma transfiere futuras facultades sin modificar documentos históricos.
+- Un documento conserva el rol de autoridad que lo aprobó y la evidencia del actor que ejecutó la aprobación.
+- Revocar la membresía elimina el acceso futuro y no borra la autoría histórica.
+- Un usuario sin rol vigente no obtiene acceso aunque conozca el ID o URL del antecedente.
+- Una persona con varios roles solo obtiene la combinación de capacidades autorizada para el contexto concreto.
+- No existen nombres personales incrustados en políticas, reglas, código, matrices o plantillas de asignación.
+- Una delegación expirada no puede aprobar ni firmar; una delegación activa solo opera dentro del alcance autorizado.
+- Si no hay ocupante elegible para el rol aprobador, el proceso queda pendiente y genera una ruta de resolución, no una aprobación automática.
+
+**Estado:** regla de diseño registrada en esta propuesta. Requiere ratificación institucional y descomposición en requisitos técnicos/pruebas antes de implementación. No crea ni modifica asignaciones, roles, usuarios, documentos o permisos reales.
