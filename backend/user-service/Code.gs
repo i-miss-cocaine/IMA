@@ -7274,57 +7274,79 @@ function getWorkflowHistory(payload) {
 
 // [TASK-039] [F22-Task02] - Registro de firma electrónica y conformidad institucional con vinculación criptográfica SHA-256
 function registerDocumentSignature(payload) {
-  const {
-    solicitudId,
-    documentoId,
-    firmanteId,
-    rolFirmante,
-    tipoFirma,
-    documentoHash,
-    ipOrigen
-  } = payload || {};
-
-  if (!solicitudId || !firmanteId) {
-    throw new Error("solicitudId y firmanteId son requeridos para registrar la firma/conformidad.");
+  const { solicitudId, documentoId, firmanteId, tipoFirma, documentoHash } = payload || {};
+  const requestId = String(solicitudId || "").trim();
+  const documentId = String(documentoId || "").trim();
+  const signerId = String(firmanteId || "").trim();
+  if (!requestId || !documentId || !signerId) {
+    throw new Error("solicitudId, documentoId y firmanteId son requeridos.");
+  }
+  const permission = validateRolePermission("registerDocumentSignature", payload);
+  if (!permission || permission.authorized !== true) throw new Error("AUTH_PERMISSION_DENIED");
+  const actorRole = getUserVerifiedRole(payload);
+  const actorUserId = String((payload && payload._verifiedUserId) || "").trim();
+  if (!actorUserId || !actorRole || actorRole === "NO_ACCESS") throw new Error("VERIFIED_IDENTITY_REQUIRED");
+  if (signerId !== actorUserId) throw new Error("SIGNER_IDENTITY_MISMATCH");
+  const signatureType = String(tipoFirma || "Conformidad Digital Institucional").trim();
+  if (/avanzada|cualificada|qualified|x\.509|cades|pkcs7/i.test(signatureType)) {
+    throw new Error("SIGNATURE_PROVIDER_CALLBACK_REQUIRED");
   }
 
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "FirmasConformidades");
-  const fid = "SIG-" + Date.now();
-  const now = new Date();
-  const nowISO = now.toISOString();
-  const tokenVerif = "VERIF-" + Math.random().toString(36).substring(2, 10).toUpperCase();
+  const lock = LockService.getScriptLock();
+  let hasLock = false;
+  try {
+    hasLock = lock.tryLock(10000);
+    if (!hasLock) throw new Error("Servicio ocupado registrando conformidades. Por favor reintente.");
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const documentAccess = assertAdvancedSignatureDocumentScope_(payload, ss, documentId, requestId, "UPDATE");
+    if (!documentAccess || documentAccess.authorized !== true) {
+      throw new Error(documentAccess && documentAccess.code || "RESOURCE_SCOPE_DENIED");
+    }
+    const sheet = getOrCreateSheet(ss, "FirmasConformidades");
+    const data = sheet.getDataRange().getValues();
+    const documentHashReference = String(documentoHash || "").trim();
+    const existing = data.slice(1).filter(function(row) {
+      return String(row[1] || "").trim() === requestId &&
+        String(row[2] || "").trim() === documentAccess.documentId &&
+        String(row[3] || "").trim() === signerId;
+    });
+    if (existing.length > 1) throw new Error("RESOURCE_OWNERSHIP_AMBIGUOUS");
+    if (existing.length === 1) {
+      if (String(existing[0][5] || "").trim() === signatureType &&
+          String(existing[0][9] || "").trim() === documentHashReference) {
+        return { status: "success", firmaId: existing[0][0], tokenVerificacion: existing[0][6],
+          signatureHash: existing[0][10], documentoHash: existing[0][9],
+          fechaFirma: existing[0][7], isExisting: true,
+          message: "La conformidad ya estaba registrada para este documento y firmante." };
+      }
+      throw new Error("SIGNATURE_ALREADY_REGISTERED");
+    }
 
-  // Calcular Hash vinculante SHA-256 de la firma si no se suministra o derivarlo de los datos inmutables
-  const baseData = (documentoHash || "") + "|" + solicitudId + "|" + (documentoId || "DOC-N/A") + "|" + firmanteId + "|" + (rolFirmante || "Autoridad") + "|" + nowISO;
-  const signatureHash = computeDocumentSHA256(baseData);
-
-  sheet.appendRow([
-    fid,
-    solicitudId,
-    documentoId || "DOC-N/A",
-    firmanteId,
-    rolFirmante || "Autoridad Institucional",
-    tipoFirma || "Conformidad Digital Institucional",
-    tokenVerif,
-    nowISO,
-    ipOrigen || "127.0.0.1",
-    documentoHash || "",
-    signatureHash
-  ]);
-
-  return {
-    status: "success",
-    firmaId: fid,
-    tokenVerificacion: tokenVerif,
-    signatureHash: signatureHash,
-    documentoHash: documentoHash || "",
-    fechaFirma: nowISO,
-    message: "Firma / Conformidad institucional registrada con token y vinculación criptográfica SHA-256 garantizada."
-  };
+    const now = new Date();
+    const nowISO = now.toISOString();
+    const fid = "SIG-" + Utilities.getUuid();
+    const tokenVerif = "VERIF-" + Utilities.getUuid().replace(/-/g, "").substring(0, 12).toUpperCase();
+    const baseData = documentHashReference + "|" + requestId + "|" + documentAccess.documentId +
+      "|" + signerId + "|" + actorRole + "|" + nowISO;
+    const signatureHash = computeDocumentSHA256(baseData);
+    sheet.appendRow([fid, requestId, documentAccess.documentId, signerId, actorRole,
+      signatureType, tokenVerif, nowISO, "NO_DISPONIBLE", documentHashReference, signatureHash]);
+    try {
+      logStructuredEvent("USER", "registerDocumentSignature", "INFO", "DOCUMENT_CONFORMITY_REGISTERED",
+        "Conformidad institucional manual registrada por la identidad autenticada.",
+        { firmaId: fid, solicitudId: requestId, documentoId: documentAccess.documentId,
+          firmanteId: signerId, actorUserId: actorUserId, departmentId: documentAccess.departmentId,
+          signatureType: signatureType }, actorRole);
+    } catch (_) {}
+    return { status: "success", firmaId: fid, tokenVerificacion: tokenVerif,
+      signatureHash: signatureHash, documentoHash: documentHashReference, fechaFirma: nowISO,
+      message: "Conformidad institucional manual registrada. No equivale a una firma avanzada cualificada de un PSC." };
+  } finally {
+    if (hasLock) {
+      try { lock.releaseLock(); } catch (_) {}
+    }
+  }
 }
-
-// [TASK-040] [F22-Task03] - Generador de Certificado de Finalización (Certificate of Completion / Audit Trail)
 function generateSignatureAuditCertificate(payload) {
   const { solicitudId, documentoId, transactionId } = payload || {};
   if (!solicitudId && !documentoId && !transactionId) {
@@ -7690,57 +7712,58 @@ function createAdvancedSignatureRequest(payload) {
 
 function checkAdvancedSignatureStatus(payload) {
   const { transaccionId, respuestaProveedor } = payload || {};
-  if (!transaccionId) throw new Error("transaccionId es requerido.");
+  const transactionId = String(transaccionId || "").trim();
+  if (!transactionId) throw new Error("transaccionId es requerido.");
+  if (respuestaProveedor !== undefined && respuestaProveedor !== null) {
+    throw new Error("SIGNATURE_CALLBACK_AUTHENTICATION_REQUIRED");
+  }
+  const permission = validateRolePermission("checkAdvancedSignatureStatus", payload);
+  if (!permission || permission.authorized !== true) throw new Error("AUTH_PERMISSION_DENIED");
+  const actorRole = getUserVerifiedRole(payload);
+  const actorUserId = String((payload && payload._verifiedUserId) || "").trim();
+  if (!actorUserId || !actorRole || actorRole === "NO_ACCESS") throw new Error("VERIFIED_IDENTITY_REQUIRED");
 
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const txSheet = getOrCreateSheet(ss, "TransaccionesFirmaAvanzada");
-  const data = txSheet.getDataRange().getValues();
-
-  const idx = data.findIndex(r => String(r[0]).trim() === String(transaccionId).trim());
-  if (idx === -1) throw new Error("Transacción de firma avanzada no encontrada.");
-
-  const row = data[idx];
-  let estadoActual = row[9];
-
-  // Si se provee actualización desde callback o consulta de proveedor
-  if (respuestaProveedor && typeof respuestaProveedor === "object") {
-    const { nuevoEstado, tokenCUV, certificadoX509, hashValidado } = respuestaProveedor;
-    if (nuevoEstado && ["Completada", "Rechazada", "Cancelada", "Expirada"].indexOf(nuevoEstado) !== -1) {
-      estadoActual = nuevoEstado;
-      const now = new Date();
-      txSheet.getRange(idx + 1, 10).setValue(nuevoEstado);
-      txSheet.getRange(idx + 1, 12).setValue(now.toISOString());
-      if (certificadoX509) txSheet.getRange(idx + 1, 13).setValue(certificadoX509);
-
-      // Si el proveedor confirma la firma exitosamente, registrar en FirmasConformidades
-      if (nuevoEstado === "Completada") {
-        registerDocumentSignature({
-          solicitudId: row[2] !== "N/A" ? row[2] : row[1],
-          documentoId: row[1],
-          firmanteId: row[3],
-          rolFirmante: "Firmante Calificado PSC",
-          tipoFirma: row[6], // Mecanismo certificado
-          documentoHash: hashValidado || row[8],
-          ipOrigen: "127.0.0.1"
-        });
-      }
+  const lock = LockService.getScriptLock();
+  let hasLock = false;
+  try {
+    hasLock = lock.tryLock(10000);
+    if (!hasLock) throw new Error("Servicio ocupado consultando el estado de firma. Por favor reintente.");
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const txSheet = getOrCreateSheet(ss, "TransaccionesFirmaAvanzada");
+    const lastRow = txSheet.getLastRow();
+    if (lastRow < 2) throw new Error("RESOURCE_NOT_FOUND");
+    // Resolver solo ID, documento y solicitud; no leer firmante/hash/certificado antes del ownership.
+    const keys = txSheet.getRange(2, 1, lastRow - 1, 3).getValues();
+    const matches = keys.map(function(row, index) { return { row: row, index: index }; })
+      .filter(function(item) { return String(item.row[0] || "").trim() === transactionId; });
+    if (matches.length !== 1) throw new Error("RESOURCE_NOT_FOUND");
+    const rowNumber = matches[0].index + 2;
+    const documentId = String(matches[0].row[1] || "").trim();
+    const requestId = String(matches[0].row[2] || "").trim();
+    const documentAccess = assertAdvancedSignatureDocumentScope_(
+      payload, ss, documentId, requestId && requestId !== "N/A" ? requestId : null, "READ");
+    if (!documentAccess || documentAccess.authorized !== true) {
+      throw new Error(documentAccess && documentAccess.code || "RESOURCE_SCOPE_DENIED");
+    }
+    const row = txSheet.getRange(rowNumber, 1, 1, 13).getValues()[0];
+    if (String(row[0] || "").trim() !== transactionId ||
+        String(row[1] || "").trim() !== documentId || String(row[2] || "").trim() !== requestId) {
+      throw new Error("RESOURCE_NOT_FOUND");
+    }
+    try {
+      logStructuredEvent("USER", "checkAdvancedSignatureStatus", "INFO", "ADVANCED_SIGNATURE_STATUS_VIEWED",
+        "Estado de transacción de firma consultado por usuario autorizado.",
+        { transaccionId: transactionId, documentoId: documentId, actorUserId: actorUserId }, actorRole);
+    } catch (_) {}
+    return { status: "success", transaccionId: row[0], documentoId: row[1],
+      firmanteId: row[3], mecanismoFirma: row[6], proveedorId: row[7],
+      estadoTransaccion: row[9], esFirmadoValido: row[9] === "Completada" };
+  } finally {
+    if (hasLock) {
+      try { lock.releaseLock(); } catch (_) {}
     }
   }
-
-  return {
-    status: "success",
-    transaccionId: row[0],
-    documentoId: row[1],
-    firmanteId: row[3],
-    mecanismoFirma: row[6],
-    proveedorId: row[7],
-    documentoHash: row[8],
-    estadoTransaccion: estadoActual,
-    esFirmadoValido: estadoActual === "Completada"
-  };
 }
-
-// [TASK-046] [F23-Task03] [P0] Enrutador Universal de Spreadsheets y Resolución Dinámica de Fuentes de Datos
 function registerSpreadsheetSource(payload) {
   const { dominioArea, anoLectivo, spreadsheetId, urlAcceso, estado, schemaVersion, departamento, servicio, observaciones } = payload || {};
   if (!dominioArea || !anoLectivo || !spreadsheetId) throw new Error("dominioArea, anoLectivo y spreadsheetId son requeridos.");
