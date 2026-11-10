@@ -10739,26 +10739,28 @@ function maskDni(dni) {
 // [TAREA-F5-017] [Fase 5: Admisiones y Calidad de Datos] - Endpoint de resolución de alertas de duplicidad sin fusión automática arbitraria
 function resolveAdmissionDuplicate(payload) {
   const { solicitudId, resolucion, expedienteDestinoId, motivoJustificado } = payload || {};
-  if (!solicitudId || !resolucion) throw new Error("solicitudId y resolucion son obligatorios.");
-  if (!motivoJustificado || String(motivoJustificado).trim().length < 10) throw new Error("Debe proporcionar una motivación justificada de al menos 10 caracteres.");
+  const requestId = String(solicitudId || "").trim();
+  const destinationId = String(expedienteDestinoId || "").trim();
+  const reason = String(motivoJustificado || "").trim();
+  if (!requestId || !resolucion) throw new Error("solicitudId y resolucion son obligatorios.");
+  if (reason.length < 10) throw new Error("Debe proporcionar una motivación justificada de al menos 10 caracteres.");
   const validResolutions = ["AprobarNuevo", "VincularExistente", "RechazarDuplicado"];
   if (validResolutions.indexOf(resolucion) === -1) throw new Error("Resolución no válida.");
+  if (resolucion === "VincularExistente" && !destinationId) throw new Error("expedienteDestinoId es requerido para la vinculación.");
 
-  const ctx = getAcademicAdmissionScopeContext_(payload, "resolveAdmissionDuplicate", solicitudId, "UPDATE");
+  const ctx = getAcademicAdmissionScopeContext_(payload, "resolveAdmissionDuplicate", requestId, "UPDATE");
   if (!ctx.authorized) throw new Error("RESOURCE_NOT_FOUND");
   if (!isAcademicAdmissionManagerRole_(ctx.actor.role)) throw new Error("AUTH_PERMISSION_DENIED");
-  if (resolucion === "VincularExistente" && !expedienteDestinoId) {
-    throw new Error("expedienteDestinoId es requerido para la vinculación.");
-  }
 
   const lock = LockService.getScriptLock();
-  if (!lock.tryLock(10000)) throw new Error("Servicio ocupado. Intente nuevamente.");
+  let hasLock = false;
   try {
-    // Revalidar ownership dentro de la sección crítica y evitar decisiones
-    // basadas en una autorización/caché previa a la adquisición del lock.
+    hasLock = lock.tryLock(10000);
+    if (!hasLock) throw new Error("Servicio ocupado. Intente nuevamente.");
+    // Revalidar propiedad después de obtener el lock para evitar decisiones
+    // basadas en una lectura de ownership previa a la sección crítica.
     const requestAccess = assertAcademicAdmissionRequestScopeAccess_(
-      ctx.ss, ctx.scope, solicitudId, null, "UPDATE"
-    );
+      ctx.ss, ctx.scope, requestId, null, "UPDATE");
     if (!requestAccess || requestAccess.authorized !== true) throw new Error("RESOURCE_NOT_FOUND");
 
     let requestDepartment = null;
@@ -10768,8 +10770,7 @@ function resolveAdmissionDuplicate(payload) {
         throw new Error(requestDepartment && requestDepartment.code || "RESOURCE_SCOPE_DENIED");
       }
       const expedienteAccess = assertResourceOwnershipForScope_(
-        ctx.ss, ctx.scope, "EXPEDIENTE_ESTUDIANTE", expedienteDestinoId, "UPDATE", null
-      );
+        ctx.ss, ctx.scope, "EXPEDIENTE_ESTUDIANTE", destinationId, "UPDATE", null);
       if (!expedienteAccess || expedienteAccess.authorized !== true) throw new Error("RESOURCE_NOT_FOUND");
       if (String(expedienteAccess.departmentId || "").trim() !== String(requestDepartment.departmentId || "").trim()) {
         throw new Error("RESOURCE_SCOPE_DENIED");
@@ -10778,41 +10779,65 @@ function resolveAdmissionDuplicate(payload) {
 
     const sheet = getOrCreateSheet(ctx.ss, "SolicitudesAdmision");
     const data = sheet.getDataRange().getValues();
-    const matches = data.map(function(row,index){return {row:row,index:index};})
-      .filter(function(item){return String(item.row[0]||"").trim()===String(solicitudId).trim();});
+    const matches = data.map(function(row, index) { return { row: row, index: index }; })
+      .filter(function(item) { return String(item.row[0] || "").trim() === requestId; });
     if (matches.length !== 1) throw new Error("RESOURCE_NOT_FOUND");
-
     const rowIndex = matches[0].index;
-    const oldObs = String(matches[0].row[13] || "");
+    const current = matches[0].row;
+    const oldObs = String(current[13] || "");
+    if (/\[DUPLICADO_RESUELTO:/i.test(oldObs)) throw new Error("RESOURCE_CONFLICT_ALREADY_RESOLVED");
+    const currentExpedienteId = String(current[14] || "").trim();
+    if (currentExpedienteId && currentExpedienteId !== destinationId) {
+      throw new Error("RESOURCE_CONFLICT_EXPEDIENTE_ALREADY_LINKED");
+    }
+    if (resolucion !== "VincularExistente" && currentExpedienteId) {
+      throw new Error("RESOURCE_CONFLICT_EXPEDIENTE_ALREADY_LINKED");
+    }
+
     const nowStr = new Date().toISOString();
-    let newObs = oldObs;
-    let newStatus = matches[0].row[11];
+    let newStatus = current[11];
+    let newObs;
     if (resolucion === "AprobarNuevo") {
-      newObs = "[DUPLICADO_RESUELTO: Aprobado como nuevo postulante por " + ctx.actor.userId + " el " + nowStr + ". Motivo: " + motivoJustificado + "] " + oldObs;
+      newObs = "[DUPLICADO_RESUELTO: Aprobado como nuevo postulante por " + ctx.actor.userId +
+        " el " + nowStr + ". Motivo: " + reason + "] " + oldObs;
+      sheet.getRange(rowIndex + 1, 14).setValue(newObs);
     } else if (resolucion === "VincularExistente") {
-      sheet.getRange(rowIndex + 1, 15).setValue(expedienteDestinoId);
-      newObs = "[DUPLICADO_RESUELTO: Vinculado a expediente " + expedienteDestinoId + " por " + ctx.actor.userId + " el " + nowStr + ". Motivo: " + motivoJustificado + "] " + oldObs;
+      newObs = "[DUPLICADO_RESUELTO: Vinculado a expediente " + destinationId + " por " + ctx.actor.userId +
+        " el " + nowStr + ". Motivo: " + reason + "] " + oldObs;
+      sheet.getRange(rowIndex + 1, 14, 1, 2).setValues([[newObs, destinationId]]);
     } else {
       newStatus = "Rechazada";
-      sheet.getRange(rowIndex + 1, 12).setValue("Rechazada");
-      newObs = "[DUPLICADO_RESUELTO: Rechazada por duplicidad por " + ctx.actor.userId + " el " + nowStr + ". Motivo: " + motivoJustificado + "] " + oldObs;
+      newObs = "[DUPLICADO_RESUELTO: Rechazada por duplicidad por " + ctx.actor.userId +
+        " el " + nowStr + ". Motivo: " + reason + "] " + oldObs;
+      sheet.getRange(rowIndex + 1, 12, 1, 3).setValues([[newStatus, current[12] || "", newObs]]);
     }
-    sheet.getRange(rowIndex + 1, 14).setValue(newObs);
-    logStructuredEvent("ACADEMIC", "resolveAdmissionDuplicate", "INFO", "DUPLICATE_RESOLVED",
-      "Solicitud " + solicitudId + " resuelta con opción " + resolucion,
-      { solicitudId: solicitudId, resolucion: resolucion, expedienteDestinoId: expedienteDestinoId,
-        departmentId: requestDepartment && requestDepartment.departmentId || requestAccess.departmentId || "",
-        motivoJustificado: motivoJustificado }, ctx.actor.role);
+
+    let historyRecorded = true;
     try {
       getOrCreateSheet(ctx.ss, "HistorialCambiosEntidad").appendRow([
-        "HIST-" + Date.now(), "SolicitudAdmision", solicitudId, "DeteccionDuplicados",
-        resolucion, ctx.actor.userId, nowStr, motivoJustificado
+        "HIST-" + Date.now(), "SolicitudAdmision", requestId, "DeteccionDuplicados",
+        resolucion, ctx.actor.userId, nowStr, reason
       ]);
+    } catch (historyError) {
+      historyRecorded = false;
+      try { logStructuredEvent("ACADEMIC", "resolveAdmissionDuplicate", "ERROR", "DUPLICATE_RESOLUTION_HISTORY_FAILED",
+        "La solicitud " + requestId + " se resolvió, pero no se pudo anexar el historial de cambios.",
+        { solicitudId: requestId, resolucion: resolucion, actorUserId: ctx.actor.userId }, ctx.actor.role); } catch (_) {}
+    }
+    try {
+      logStructuredEvent("ACADEMIC", "resolveAdmissionDuplicate", "INFO", "DUPLICATE_RESOLVED",
+        "Solicitud " + requestId + " resuelta con opción " + resolucion,
+        { solicitudId: requestId, resolucion: resolucion, expedienteDestinoId: destinationId || null,
+          departmentId: requestDepartment && requestDepartment.departmentId || requestAccess.departmentId || "",
+          motivoJustificado: reason, historyRecorded: historyRecorded }, ctx.actor.role);
     } catch (_) {}
-    return { status: "success", solicitudId: solicitudId, resolucion: resolucion, nuevoEstado: newStatus,
-      message: "Alerta de duplicado para " + solicitudId + " resuelta exitosamente." };
+    return { status: "success", solicitudId: requestId, resolucion: resolucion, nuevoEstado: newStatus,
+      historyRecorded: historyRecorded,
+      message: "Alerta de duplicado para " + requestId + " resuelta exitosamente." };
   } finally {
-    lock.releaseLock();
+    if (hasLock) {
+      try { lock.releaseLock(); } catch (_) {}
+    }
   }
 }
 
