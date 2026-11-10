@@ -2968,3 +2968,11 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Límite:** el listado falla cerrado para recursos sin propiedad registrada. Aún no se implementa la creación/registro de ownership en `createExam`, ni la protección de preguntas, entregas, resultados y mutaciones. La compatibilidad del flujo completo requiere resolver ese ciclo antes de considerar integrada toda la superficie EXAM.
 - **Estado:** TASK-153 En ejecución; AUD-NG-386 abierto.
 - **Siguiente:** proteger `getExamQuestions`, `submitExam`, `getExamResult`, `getStudentExams` y mutaciones; registrar propiedad al crear solo con departamento autorizado explícito; ampliar contratos locales y beta.
+
+## 10.97 TASK-153 / AUD-NG-386 — lecturas EXAM de estudiante y tutor (C1.439)
+
+- `getStudentExams`, `getExamQuestions` y `getExamResult` exigen identidad firmada y aplican ámbito/ResourceOwnership. El estudiante se deriva desde claims y su grado/sección se consulta en `Usuarios`; payload de identidad o perfil no autoriza.
+- Padre/Tutor/Responsable requiere relación familiar vigente en `RelacionesFamiliares` (o fallback `RelacionesEstudianteTutor`) y se evalúa el ámbito del estudiante vinculado, no el payload.
+- El resultado del estudiante se devuelve solo si la entrega es propia y no está Pendiente; docente debe ser propietario del examen y superar el ámbito. Respuestas de acceso no disponible no revelan existencia ni datos.
+- Contrato local aislado con mocks/fixtures y parseo: PASS; GitHub Actions runs 42866518036 y 42866358902: PASS. Beta BETA-FUNC-022 sigue pendiente y no bloquea el código.
+- **Estado:** TASK-153 En ejecución; AUD-NG-386 abierto. `submitExam`, `createExam` con alta de propiedad y mutaciones continúan pendientes.

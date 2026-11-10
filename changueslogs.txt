@@ -901,3 +901,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Commits de implementación/pruebas: 185c1f2, f4adcb5, 00c24e9 y 0b23710c0b732fcf37f7c39bf2e6e82a2b608789.
 - GitHub Actions run 42863062888 PASS: contrato de autenticación y contrato de aislamiento departamental/tenant. Tres runs previos fallaron por fixtures/harness incompletos; corregidos antes del PASS final.
 - Prueba local NOT RUN; beta BETA-FUNC-022 permanece Pendiente beta. TASK-153 En ejecución; AUD-NG-386 abierto por endpoints restantes y ciclo de propiedad.
+
+[2026-11-10] C1.439 — IMA-EXEC-20261110-1740Z-01 — TASK-153 / EXAM: lecturas de estudiante/tutor con identidad y propiedad
+- Se protegen getStudentExams, getExamQuestions y getExamResult: perfil de estudiante derivado de Usuarios, asignación académica, ámbito departamental y ResourceOwnership. Tutor/Padre/Responsable limitado por vínculo verificado en RelacionesFamiliares y ámbito del estudiante.
+- Contratos sintéticos ampliados para identidad manipulada, grado/sección manipulados, acceso a pregunta/resultado ajeno, tutor vinculado/no vinculado.
+- Parseo y contrato de comportamiento local aislado: PASS. GitHub Actions runs 42866518036 y 42866358902: PASS. Último commit de limpieza ac9e65c18cdb7a33a9776d0c232d7429ec2ab978 requiere run propio.
+- BETA-FUNC-022 sigue Pendiente beta. TASK-153 En ejecución; AUD-NG-386 abierto por submitExam, createExam/ownership y mutaciones.

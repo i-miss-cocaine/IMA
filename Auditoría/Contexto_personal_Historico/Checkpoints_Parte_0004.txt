@@ -1202,3 +1202,56 @@ Commits de esta iteración:
 - Mantener TASK-153 En ejecución hasta completar todos los criterios del alcance.
 
 ===============================================================================
+
+
+===============================================================================
+## CHECKPOINT C1.439 — TASK-153 / EXAM: aislamiento de lecturas de estudiante y tutor
+Sesión: IMA-EXEC-20261110-1740Z-01
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+HEAD inicial: 533471b1166ffc9b4b721f1c3899237bf5d54931.
+HEAD final de código/contratos: ac9e65c18cdb7a33a9776d0c232d7429ec2ab978.
+HEAD base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59; sin escrituras en la rama base.
+Checkpoint anterior: C1.438.
+
+### Alcance implementado
+- `getStudentExams` exige identidad firmada. Para estudiante/alumno, el usuario, grado y sección se obtienen de `Usuarios`; los valores del payload no modifican la identidad ni el perfil.
+- El listado limita cada examen por asignación académica, ámbito departamental activo y fila única de `ResourceOwnership` de la institución.
+- `getExamQuestions` valida examen único, identidad, asignación académica del estudiante, propiedad/ámbito; para docentes verifica además que el profesor autenticado sea propietario del examen.
+- `getExamResult` valida que la entrega sea única, que pertenezca al estudiante autenticado (o estudiante vinculado al tutor), que el resultado esté publicado para el alumno y que el examen conserve propiedad y ámbito.
+- Se habilita acceso de Padre/Tutor/Responsable únicamente a través de relación vigente en `RelacionesFamiliares` (estado Verificada/Activa/Aprobada), con mapeo de expediente a UserID desde `ExpedientesEstudiantes`; se conserva fallback a `RelacionesEstudianteTutor` solo si no hay relación verificada en la tabla principal. La consulta de tutor deriva el ámbito del estudiante vinculado y no acepta un ID de estudiante no relacionado.
+- Se usa respuesta genérica `RESOURCE_NOT_AVAILABLE` para recursos inexistentes o fuera del ámbito.
+- El workflow de contratos también se dispara en PR cuando cambia el contrato departamental.
+
+### Archivos modificados
+- `backend/exam-service/Code.gs`
+- `tests/security/exam-service-departmental-access.test.js`
+- `.github/workflows/exam-service-security-contract.yml`
+
+Commits principales:
+- `990fbd68bd5ec420c838b53d8f77123231ff576a` — guards de lectura para identidad de estudiante.
+- `30d2a8369c96de2e44ed5d8ea73a49d6b662fea0` — propiedad institucional en lecturas de estudiantes (luego se consolidó en ámbito derivado del estudiante).
+- `87f5122c8326c320f58403789b763ef6d4aaf44b` — ámbito departamental para estudiantes.
+- `6ecced8636d70a57de7ed46d2ff956044f14e20e` — corrección de sintaxis de reemplazos en endpoints de lectura.
+- `6197c41f46f68f42e77a05da4d61e5415ea97897` y `9923ace4fb2e25bf242768be8029ff50f0036fc1` — ampliación/corrección de contratos.
+- `41a9c627403e8eb8c84d606f9d663b6fd7379026` — verificación de relación tutor-estudiante.
+- `d28b0debd4a0fc2bacbde63cb8651812c874f054` — pruebas positivas/negativas de tutor.
+- `ac9e65c18cdb7a33a9776d0c232d7429ec2ab978` — limpieza de helper no utilizado y disparador de PR.
+
+### Verificación
+- Parseo local del archivo Apps Script mediante compilación en runtime JavaScript aislado: **PASS** (`new Function(source)`, 94,749 caracteres).
+- Contrato local de comportamiento ejecutado sobre el código actual con fixtures sintéticos y mocks de SpreadsheetApp/PropertiesService: **PASS**. Incluye estudiante propio, suplantación de userId/grado/sección, pregunta propia/ajena, resultado propio/ajeno, tutor vinculado y tutor no vinculado.
+- GitHub Actions run **42866518036** (HEAD de limpieza anterior) y **42866358902** (HEAD anterior con contrato ampliado): **PASS**, ambos jobs `exam-service-security-contract` y `exam-service-departmental-access` completados. El run final de rama **42866518036** precede al último commit de limpieza; la limpieza no altera la lógica, pero el workflow disparado por el último commit `ac9e65c18cdb7a33a9776d0c232d7429ec2ab978` debe confirmarse por separado.
+- Runs previos fallidos durante la corrección se conservaron como iteraciones; causas: sintaxis residual de funciones con parámetros destructurados, separadores del harness, fixtures y expectativa de grado. Corregidos antes de los PASS citados.
+- Pruebas beta Apps Script/Sheets/Drive y navegador: **NOT RUN**, BETA-FUNC-022 permanece Pendiente beta.
+- No se alteraron datos reales ni se desplegó Apps Script.
+- TASK-153 permanece En ejecución; AUD-NG-386 abierto. Mutaciones, submitExam, registro de propiedad en createExam y otros endpoints siguen pendientes.
+
+### Siguiente acción elegible
+- Proteger `submitExam` para derivar el UserID de claims, validar examen/ámbito/propiedad y evitar envíos duplicados o por IDs ajenos.
+- Integrar alta transaccional/compensable de ResourceOwnership en `createExam` con departamento explícito y autorizado, evitando crear examen huérfano.
+- Proteger mutaciones de examen y entrega, y revisar `getTeacherExamActivity`/lecturas para controles de permiso por operación.
+- Completar contratos de integridad/propiedad y continuar con pruebas locales y CI.
+
+===============================================================================
