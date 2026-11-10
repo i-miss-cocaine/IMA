@@ -1810,31 +1810,41 @@ function saveAdmissionEvaluation(payload) {
 
   const ctx = getAcademicAdmissionScopeContext_(payload, "saveAdmissionEvaluation", solicitudId, "UPDATE");
   if (!ctx.authorized) throw new Error("RESOURCE_NOT_FOUND");
-  const ss = ctx.ss;
-  const sheet = getOrCreateSheet(ss, "EvaluacionesAdmision");
-  const now = new Date();
+  const lock = LockService.getScriptLock();
+  let hasLock = false;
+  try {
+    hasLock = lock.tryLock(10000);
+    if (!hasLock) throw new Error("Servicio ocupado registrando evaluaciones. Por favor reintente.");
+    const sheet = getOrCreateSheet(ctx.ss, "EvaluacionesAdmision");
+    const now = new Date();
+    // El ID y el append se serializan porque el generador se invoca con skipLock.
+    const idGen = generateInstitutionalId({ entityType: "EvaluacionAdmision", prefix: "EVAL-ADM-", skipLock: true });
+    const evalId = (idGen && idGen.generatedId) ? idGen.generatedId : ("EVAL-ADM-" + Date.now());
+    const evaluatorId = String(ctx.actor.userId).trim();
+    sheet.appendRow([
+      evalId,
+      solicitudId,
+      tipoEvaluacion,
+      puntajeNum || 0,
+      escalaQual || "",
+      dictamen, // Aprobado / Reprobado / Pendiente
+      esObligatoria !== undefined ? esObligatoria : true,
+      evaluatorId,
+      typeof rubricaJSON === 'object' ? JSON.stringify(rubricaJSON) : (rubricaJSON || '{}'),
+      observaciones || "",
+      now
+    ]);
 
-  const idGen = generateInstitutionalId({ entityType: "EvaluacionAdmision", prefix: "EVAL-ADM-", skipLock: true });
-  const evalId = (idGen && idGen.generatedId) ? idGen.generatedId : ("EVAL-ADM-" + Date.now());
-  const evaluatorId = String(ctx.actor.userId).trim();
+    logStructuredEvent("ACADEMIC", "saveAdmissionEvaluation", "INFO", "EVALUATION_SAVED",
+      `Evaluación ${evalId} (${dictamen}) registrada para solicitud ${solicitudId}`,
+      { evalId, solicitudId, tipoEvaluacion, dictamen }, ctx.actor.role);
 
-  sheet.appendRow([
-    evalId,
-    solicitudId,
-    tipoEvaluacion,
-    puntajeNum || 0,
-    escalaQual || "",
-    dictamen, // Aprobado / Reprobado / Pendiente
-    esObligatoria !== undefined ? esObligatoria : true,
-    evaluatorId,
-    typeof rubricaJSON === 'object' ? JSON.stringify(rubricaJSON) : (rubricaJSON || '{}'),
-    observaciones || "",
-    now
-  ]);
-
-  logStructuredEvent("ACADEMIC", "saveAdmissionEvaluation", "INFO", "EVALUATION_SAVED", `Evaluación ${evalId} (${dictamen}) registrada para solicitud ${solicitudId}`, { evalId, solicitudId, tipoEvaluacion, dictamen }, payload && payload.authRole);
-
-  return { status: "success", evaluacionId: evalId, message: "Evaluación de admisión registrada exitosamente." };
+    return { status: "success", evaluacionId: evalId, message: "Evaluación de admisión registrada exitosamente." };
+  } finally {
+    if (hasLock) {
+      try { lock.releaseLock(); } catch (_) {}
+    }
+  }
 }
 
 function getAdmissionEvaluations(payload) {
