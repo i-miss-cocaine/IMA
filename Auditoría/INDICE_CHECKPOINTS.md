@@ -270,4 +270,4 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 
 | C1.433 | IMA-GOV-20261110-1614Z-01 | Renombre del archivo maestro | Gobierno documental | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.433 | 970–984 | C1.432 | Commit de renombre; SHA verificado tras publicación |
 
-| C1.434 | IMA-EXEC-20261110-1621Z-01 | Corrección IDOR de comentarios/versiones en Task Service; TASK-153 continúa En ejecución | PM-01 — TASK-153 / seguridad de entregas | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.434 | 984–1027 | C1.433 | Commit de checkpoint; SHA verificado tras publicación |
+| C1.434 | IMA-EXEC-20261110-1621Z-01 | Corrección IDOR de comentarios/versiones en Task Service; TASK-153 continúa En ejecución | PM-01 — TASK-153 / seguridad de entregas | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.434 | 986–1027 | C1.433 | Commit de checkpoint; SHA verificado tras publicación |
