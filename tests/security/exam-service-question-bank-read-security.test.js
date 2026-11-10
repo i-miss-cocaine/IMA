@@ -56,6 +56,7 @@ const scopeRows = [
  ["ASG-1","TEACHER-1","Profesor","DEPARTAMENTO","D1","ACTIVO","","","",""],
  ["ASG-2","READER-1","Lector","DEPARTAMENTO","D1","ACTIVO","","","",""]
 ];
+let lockAvailable = true, lockHeld = false, beforeAcquire = null, lockAcquires = 0, lockReleases = 0;
 function makeSheet(rows) { return { getDataRange() { return { getValues: () => rows.map(row => row.slice()) }; } }; }
 const sheets = { BancoPreguntas: makeSheet(bankRows), ResourceOwnership: makeSheet(ownershipRows), AsignacionesAmbitosRoles: makeSheet(scopeRows) };
 const ss = { getSheetByName(name) { return sheets[name] || null; } };
@@ -67,9 +68,13 @@ const runtime = {
  hasActiveDelegationForAction(){return false;},
  PropertiesService:{getScriptProperties(){return {getProperty(name){return name==="IMA_INSTITUTION_ID"?"I1":null;}};}},
  SpreadsheetApp:{openById(){return ss;}}, getSheetOrThrow(spreadsheet,name){const sheet=spreadsheet.getSheetByName(name);if(!sheet)throw Error("Missing "+name);return sheet;},
- normalizeString(value){return String(value||"").trim().toLowerCase();}
+ normalizeString(value){return String(value||"").trim().toLowerCase();},
+ LockService:{getScriptLock(){return {
+  tryLock(){lockAcquires++;if(beforeAcquire){const fn=beforeAcquire;beforeAcquire=null;fn();}if(!lockAvailable||lockHeld)return false;lockHeld=true;return true;},
+  releaseLock(){lockReleases++;lockHeld=false;}
+ };}}
 };
-const helpers=["validateRolePermission","getVerifiedExamIdentity_","getVerifiedExamDepartmentScope_","assertExamResourceOwnershipForScope_","getQuestionBank"].map(name=>extractFunction(source,name)).join("\n");
+const helpers=["validateRolePermission","getVerifiedExamIdentity_","getVerifiedExamDepartmentScope_","assertExamResourceOwnershipForScope_","getAuthorizedQuestionBankReadContext_","withAuthorizedQuestionBankRead_","getQuestionBankUnlocked_","getQuestionBank"].map(name=>extractFunction(source,name)).join("\n");
 vm.runInNewContext(helpers+"\nthis.getQuestionBank=getQuestionBank;",runtime);
 const teacherResult=runtime.getQuestionBank({sessionToken:"teacher-token"});
 assert.equal(teacherResult.status,"success");
@@ -91,4 +96,17 @@ assert.throws(()=>runtime.getQuestionBank({}),/RESOURCE_NOT_AVAILABLE/,"missing 
 assert.throws(()=>runtime.getQuestionBank({sessionToken:"unscoped-token"}),/RESOURCE_NOT_AVAILABLE/,"identity without an assigned department scope is denied");
 const filtered=runtime.getQuestionBank({sessionToken:"teacher-token",asignatura:"Biología",dificultad:"Media"});
 assert.deepEqual(Array.from(filtered.preguntas,q=>q.bancoPreguntaId),["Q-D1"],"existing subject and difficulty filters remain functional");
+lockAvailable=false;
+assert.throws(()=>runtime.getQuestionBank({sessionToken:"teacher-token"}),/QUESTION_BANK_READ_LOCK_TIMEOUT/,"read lock timeout fails closed");
+lockAvailable=true;
+beforeAcquire=()=>{
+ const bankIndex=bankRows.findIndex(row=>row[0]==="Q-D1-2");
+ if(bankIndex>=0)bankRows.splice(bankIndex,1);
+ const ownershipIndex=ownershipRows.findIndex(row=>row[3]==="Q-D1-2");
+ if(ownershipIndex>=0)ownershipRows.splice(ownershipIndex,1);
+};
+const afterConcurrentDelete=runtime.getQuestionBank({sessionToken:"teacher-token"});
+assert.deepEqual(Array.from(afterConcurrentDelete.preguntas,q=>q.bancoPreguntaId),["Q-D1"],
+ "read context is loaded after acquiring the same lock used by question bank mutations");
+assert.equal(lockAcquires,lockReleases+1,"all successful read locks release; only timed-out acquisition remains unreleased");
 process.stdout.write("exam-service-question-bank-read-security: signed identity, ownership filtering and answer-key authorization passed\n");
