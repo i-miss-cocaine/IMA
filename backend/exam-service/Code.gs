@@ -620,43 +620,46 @@ function manageQuestionBankUnlocked_(payload, context) {
   return { status: "success", bancoPreguntaId: qId, message: "Pregunta añadida exitosamente al banco." };
 }
 function getQuestionBank(payload) {
-  const { areaCurricular, asignatura, grado, tema, dificultad } = payload || {};
+  const p = payload || {};
+  const permission = validateRolePermission("getQuestionBank", p);
+  if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const actor = getVerifiedExamIdentity_(p);
+  if (!actor.authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "BancoPreguntas");
+  const scope = getVerifiedExamDepartmentScope_(p, ss, actor);
+  if (!scope.authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const sheet = getSheetOrThrow(ss, "BancoPreguntas");
+  const ownershipSheet = getSheetOrThrow(ss, "ResourceOwnership");
   const data = sheet.getDataRange().getValues();
-
-  if (data.length <= 1) return { status: "success", preguntas: [] };
-
-  const normArea = areaCurricular ? normalizeString(areaCurricular) : "";
-  const normAsig = asignatura ? normalizeString(asignatura) : "";
-  const normGrado = grado ? normalizeString(grado) : "";
-
-  const preguntas = data.slice(1).filter(r => {
-    if (r[12] === "Inactivo") return false;
-    if (normArea && normalizeString(r[1]) !== normArea) return false;
-    if (normAsig && normalizeString(r[2]) !== normAsig) return false;
-    if (normGrado && normalizeString(r[3]) !== normGrado) return false;
-    if (tema && normalizeString(r[4]) !== normalizeString(tema)) return false;
-    if (dificultad && normalizeString(r[5]) !== normalizeString(dificultad)) return false;
-    return true;
-  }).map(r => ({
-    bancoPreguntaId: r[0],
-    areaCurricular: r[1],
-    asignatura: r[2],
-    grado: r[3],
-    tema: r[4],
-    dificultad: r[5],
-    tipo: r[6],
-    textoPregunta: r[7],
-    opciones: JSON.parse(r[8] || "{}"),
-    respuestaCorrecta: r[9],
-    etiquetas: r[10],
-    puntosPredeterminados: parseFloat(r[11]) || 1
-  }));
-
-  return { status: "success", preguntas: preguntas };
+  const ownershipRows = ownershipSheet.getDataRange().getValues();
+  const bankHeaders = ["BancoPreguntaID", "AreaCurricular", "Asignatura", "Grado", "Tema", "Dificultad", "Tipo", "TextoPregunta", "OpcionesJSON", "RespuestaCorrecta", "Etiquetas", "PuntosPredeterminados", "Estado"];
+  const ownershipHeaders = ["OwnershipID", "InstitutionID", "ResourceType", "ResourceID", "DepartmentID", "Status", "RegisteredBy", "CreatedAt", "UpdatedAt"];
+  if (!data.length || bankHeaders.some((header, index) => String(data[0][index] || "").trim() !== header)) throw new Error("QUESTION_BANK_SCHEMA_INVALID");
+  if (!ownershipRows.length || ownershipHeaders.some((header, index) => String(ownershipRows[0][index] || "").trim() !== header)) throw new Error("RESOURCE_OWNERSHIP_SCHEMA_INVALID");
+  const normArea = p.areaCurricular ? normalizeString(p.areaCurricular) : "";
+  const normAsig = p.asignatura ? normalizeString(p.asignatura) : "";
+  const normGrado = p.grado ? normalizeString(p.grado) : "";
+  const canReadAnswerKey = validateRolePermission("manageQuestionBank", p).authorized === true;
+  const preguntas = data.slice(1).filter(row => {
+    if (String(row[12] || "").trim().toLowerCase() === "inactivo") return false;
+    if (normArea && normalizeString(row[1]) !== normArea) return false;
+    if (normAsig && normalizeString(row[2]) !== normAsig) return false;
+    if (normGrado && normalizeString(row[3]) !== normGrado) return false;
+    if (p.tema && normalizeString(row[4]) !== normalizeString(p.tema)) return false;
+    if (p.dificultad && normalizeString(row[5]) !== normalizeString(p.dificultad)) return false;
+    return assertExamResourceOwnershipForScope_(ss, scope, "BANCO_PREGUNTA", row[0], "READ", p).authorized === true;
+  }).map(row => {
+    const question = {
+      bancoPreguntaId: row[0], areaCurricular: row[1], asignatura: row[2], grado: row[3],
+      tema: row[4], dificultad: row[5], tipo: row[6], textoPregunta: row[7],
+      opciones: JSON.parse(row[8] || "{}"), etiquetas: row[10],
+      puntosPredeterminados: parseFloat(row[11]) || 1
+    };
+    if (canReadAnswerKey) question.respuestaCorrecta = row[9];
+    return question;
+  });
+  return { status: "success", preguntas };
 }
-
 function createExam(p) {
   p = p && typeof p === "object" && !Array.isArray(p) ? p : {};
   const actor = getVerifiedExamIdentity_(p);
