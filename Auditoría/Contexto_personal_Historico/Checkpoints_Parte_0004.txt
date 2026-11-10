@@ -1813,3 +1813,39 @@ Checkpoint anterior: C1.451.
 - TASK-153 permanece En ejecución; AUD-NG-386 continúa abierto por el resto de rutas/requisitos ACADEMIC.
 - Siguiente foco: evaluar si hay una vía verificable para conciliar cargos históricos mediante registros de auditoría/eventos antes de considerar cualquier backfill. Mantener IMA-EXEC-20261110-1825Z-02.
 ===============================================================================
+
+
+===============================================================================
+## CHECKPOINT C1.453 — ACADEMIC: dictamen de trazabilidad de cargos históricos
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.452.
+HEAD inicial verificado: 93b5bc2435f9f0b5f2682c9c82ee418e370fcc59.
+
+### Trabajo de esta iteración (una sola investigación)
+- Se inspeccionó el esquema y la escritura de `LogsSistema`, el evento `ADMISSION_CONVERTED`, `convertAdmissionToStudent` y `registerStudentEnrollmentInternal_`.
+- El evento de conversión conserva solicitudId, expedienteId, matriculaRealId, año, grado y departamento; no registra CargoID, importes ni ReferenciaOrigen.
+- La escritura del cargo en `CargosEstudiante` no emite un evento independiente. Las filas históricas de nueve columnas no contienen relación con solicitud/matrícula.
+- Dictamen: los registros de aplicación no permiten atribuir de forma inequívoca cargos históricos. Coincidencias por usuario, concepto, periodo, importe o fecha no son evidencia suficiente. No se ejecutó backfill ni se modificaron cargos históricos.
+- Solo una fuente contable original que vincule inequívocamente CargoID con solicitud/matrícula podría justificar conciliación manual.
+
+### Hallazgo relacionado para la siguiente iteración
+- En `convertAdmissionToStudent`, `_chargeReference` lee `matriculaRealId` antes de inicializar `const matriculaRealId = enrollRes.matriculaId`. El acceso ocurre en la zona temporal muerta y puede lanzar `ReferenceError`, interrumpiendo la conversión antes de completar el cargo.
+- El retorno idempotente tampoco incluye `cargoId`, aunque `assertAdmissionConversionArtifactsComplete_` devuelve ese identificador.
+- Siguiente tarea: corregir la construcción de la referencia después de resolver la matrícula, exponer el CargoID de forma coherente y añadir una regresión que ejecute el flujo completo de conversión con mocks.
+
+### Verificaciones y límites
+- Inspección estática del esquema de logging y de los caminos de escritura/lectura: realizada.
+- Acceso a datos reales de `LogsSistema`/contabilidad: no disponible ni ejecutado.
+- Pruebas locales de código: no aplicables a esta investigación documental; no se modificó código.
+- Pruebas beta/despliegue: no ejecutadas.
+- TASK-153 permanece En ejecución; AUD-NG-386 continúa abierto.
+
+### Archivos documentales
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+===============================================================================
