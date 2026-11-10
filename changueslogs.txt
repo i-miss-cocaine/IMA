@@ -985,3 +985,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - GitHub Actions run 42890756763 SUCCESS: contratos ACADEMIC, Department Scope, ACCOUNTING y ResourceOwnership ABAC; sintaxis de servicios User/Academic/Accounting y cliente estudiantil PASS.
 - Sin despliegue ni datos reales; concurrencia simulada con lock/fixtures locales. TASK-153 permanece En ejecución y AUD-NG-386 abierto por el resto de requisitos.
 - Commits: eb0bc0f6d8dc44d07d9ba79778194fd3cf223ad2; 0901d2b0e4d129123461a6219cdbb138cbc9e7a2; dc993865cbb07266e138d4702bd1c9c638c379e4.
+
+
+[2026-11-10] C1.457 — IMA-EXEC-20261110-1825Z-02 — TASK-153 / ACADEMIC: evaluaciones de admisión
+- `saveAdmissionEvaluation` serializa generación de ID y append mediante ScriptLock, con liberación en finally.
+- El evaluador y el rol del evento EVALUATION_SAVED provienen de `ctx.actor` verificado; no se acepta `payload.authRole` para auditoría.
+- Contrato local cubre append bajo lock, identidad/rol verificados, liberación y rechazo de solicitudes contenciosas sin lectura/escritura.
+- GitHub Actions run 42891200883 SUCCESS: contratos ACADEMIC, Department Scope, ACCOUNTING, ResourceOwnership ABAC y voucher client; sintaxis User/Academic/Accounting y `js/student.js` PASS.
+- Sin despliegue ni datos reales. TASK-153 sigue En ejecución; AUD-NG-386 abierto por el resto de requisitos.
+- Commits: f198730c1d8a37cc35a44a30c531b26ca6a5caaf; 9b0a53bfec2f984ce665c5ea9d0d282b7f207700.
