@@ -454,10 +454,14 @@ function validateRolePermission(action, payload) {
   if (!ctxCheck.authorized) {
     return { authorized: false, role: userRole + " (" + ctxCheck.reason + ")" };
   }
-  if (["getEmployeeDocuments", "uploadEmployeeDocument"].indexOf(action) !== -1) {
+  const resourceScopeActions = ["getEmployeeDocuments", "uploadEmployeeDocument", "getPaymentVouchers", "uploadPaymentVoucher", "reviewPaymentVoucher"];
+  if (resourceScopeActions.indexOf(action) !== -1) {
     const roleKey = String(userRole || "").toUpperCase().replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E").replace(/[ÍÌÏ]/g, "I").replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N").replace(/[^A-Z0-9]/g, "");
-    const employeeSelfRole = ["EMPLEADO", "TRABAJADOR", "PERSONAL"].indexOf(roleKey) !== -1;
-    if (!employeeSelfRole) {
+    const employeeSelfRole = ["EMPLEADO", "TRABAJADOR", "PERSONAL"].indexOf(roleKey) !== -1 &&
+      ["getEmployeeDocuments", "uploadEmployeeDocument"].indexOf(action) !== -1;
+    const paymentSelfServiceRole = ["ESTUDIANTE", "ALUMNO", "TUTOR", "PADRE", "MADRE", "RESPONSABLE", "RESPONSABLEFAMILIAR"].indexOf(roleKey) !== -1 &&
+      ["getPaymentVouchers", "uploadPaymentVoucher"].indexOf(action) !== -1;
+    if (!employeeSelfRole && !paymentSelfServiceRole) {
       const scope = getVerifiedAccountingDepartmentScope_(payload, SpreadsheetApp.openById(SPREADSHEET_ID), { authorized: true, userId: verifiedUserId, role: userRole });
       if (!scope.authorized || (!scope.institutionWide && !scope.departmentIds.length)) {
         return { authorized: false, role: userRole + " (" + (scope.code || "DEPARTMENT_SCOPE_REQUIRED") + ")" };
@@ -4104,9 +4108,93 @@ function computeDocumentSHA256(contentOrBase64) {
 }
 
 // [TASK-038] [F22-Task01] - Subida segura de comprobante con validación binaria
+
+function getAccountingPersonIdForUser_(ss, userId) {
+  const sheet = ss.getSheetByName("Usuarios");
+  if (!sheet) return "";
+  const values = sheet.getDataRange().getValues();
+  if (values.length < 2) return "";
+  const headers = (values[0] || []).map(function(v) { return String(v || "").trim().toLowerCase(); });
+  const userIndex = headers.indexOf("userid") >= 0 ? headers.indexOf("userid") : 0;
+  const personIndex = headers.indexOf("personaid") >= 0 ? headers.indexOf("personaid") : 9;
+  const row = values.slice(1).find(function(r) { return String(r[userIndex] || "").trim() === String(userId || "").trim(); });
+  return row ? String(row[personIndex] || "").trim() : "";
+}
+
+function resolveStudentExpedienteForAccounting_(ss, studentUserId) {
+  const personId = getAccountingPersonIdForUser_(ss, studentUserId);
+  if (!personId) return { resolved: false, code: "RESOURCE_OWNER_UNRESOLVED" };
+  const expSheet = ss.getSheetByName("ExpedientesEstudiantes");
+  if (!expSheet) return { resolved: true, personId: personId, expSheet: null, expRow: null };
+  const data = expSheet.getDataRange().getValues();
+  const headers = (data[0] || []).map(function(v) { return String(v || "").trim().toUpperCase(); });
+  const personIndex = headers.indexOf("PERSONAID") >= 0 ? headers.indexOf("PERSONAID") : 1;
+  const expRow = data.slice(1).find(function(r) { return String(r[personIndex] || "").trim() === personId; }) || null;
+  return { resolved: true, userId: String(studentUserId).trim(), personId: personId, expSheet: expSheet, expRow: expRow };
+}
+
+function assertPaymentVoucherOwnerAccess_(payload, targetUserId, options) {
+  const actor = getVerifiedAccountingIdentity_(payload);
+  if (!actor.authorized) return actor;
+  const target = String(targetUserId || "").trim();
+  if (!target) return { authorized: false, code: "RESOURCE_OWNER_UNRESOLVED" };
+  const role = String(actor.role || "").toUpperCase()
+    .replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E").replace(/[ÍÌÏ]/g, "I")
+    .replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N").replace(/[^A-Z0-9]/g, "");
+  const studentRoles = ["ESTUDIANTE", "ALUMNO"];
+  const guardianRoles = ["TUTOR", "PADRE", "MADRE", "RESPONSABLE", "RESPONSABLEFAMILIAR"];
+  if (studentRoles.indexOf(role) !== -1) {
+    if (options && options.requireStaff) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+    return target === actor.userId ? { authorized: true, accessType: "SELF" } : { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+  }
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const targetInfo = resolveStudentExpedienteForAccounting_(ss, target);
+  if (!targetInfo.resolved) return { authorized: false, code: targetInfo.code || "RESOURCE_OWNER_UNRESOLVED" };
+  if (guardianRoles.indexOf(role) !== -1) {
+    if (options && options.requireStaff) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+    if (!targetInfo.expRow || !targetInfo.expSheet) return { authorized: false, code: "RESOURCE_OWNER_UNRESOLVED" };
+    const actorPersonId = getAccountingPersonIdForUser_(ss, actor.userId);
+    const relationSheet = ss.getSheetByName("RelacionesEstudianteTutor");
+    const guardianSheet = ss.getSheetByName("ResponsablesTutores");
+    if (!actorPersonId || !relationSheet || !guardianSheet) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+    const guardianRows = guardianSheet.getDataRange().getValues().slice(1);
+    const guardian = guardianRows.find(function(r) { return String(r[1] || "").trim() === actorPersonId; });
+    if (!guardian) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+    const relations = relationSheet.getDataRange().getValues().slice(1);
+    const linked = relations.some(function(r) {
+      if (String(r[1] || "").trim() !== String(targetInfo.expRow[0] || "").trim()) return false;
+      if (String(r[2] || "").trim() !== String(guardian[0] || "").trim()) return false;
+      const state = String(r[9] || "").trim().toUpperCase();
+      const portal = String(r[8] || "").trim().toUpperCase();
+      return ["ACTIVO", "ACTIVA", "ACTIVE"].indexOf(state) !== -1 &&
+        ["SI", "SÍ", "TRUE", "1", "ACTIVO", "ACTIVA"].indexOf(portal) !== -1;
+    });
+    return linked ? { authorized: true, accessType: "GUARDIAN" } : { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+  }
+  if (options && options.requireStaff && studentRoles.concat(guardianRoles).indexOf(role) !== -1) {
+    return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+  }
+  const scope = getVerifiedAccountingDepartmentScope_(payload, ss, actor);
+  if (!scope.authorized) return scope;
+  if (scope.institutionWide) return { authorized: true, accessType: "INSTITUTION" };
+  if (!targetInfo.expRow || !targetInfo.expSheet) return { authorized: false, code: "RESOURCE_OWNER_UNRESOLVED" };
+  const headers = targetInfo.expSheet.getDataRange().getValues()[0] || [];
+  const departmentIndex = headers.findIndex(function(h) { return String(h || "").trim().toUpperCase() === "DEPARTAMENTOID"; });
+  if (departmentIndex < 0 || !String(targetInfo.expRow[departmentIndex] || "").trim()) {
+    return { authorized: false, code: "RESOURCE_DEPARTMENT_UNRESOLVED" };
+  }
+  const ownerDepartment = String(targetInfo.expRow[departmentIndex]).trim();
+  const allowed = scope.departmentIds.some(function(id) { return String(id).trim().toUpperCase() === ownerDepartment.toUpperCase(); });
+  return allowed ? { authorized: true, accessType: "DEPARTMENT" } : { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+}
+
 function uploadPaymentVoucher(payload) {
   const { userId, alumno, cargoId, montoReportado, metodoPago, referencia, fileData, fileName, observaciones } = payload || {};
   if (!userId || !montoReportado) throw new Error("userId y monto reportado son requeridos.");
+  const actor = getVerifiedAccountingIdentity_(payload);
+  if (!actor.authorized) return { status: "error", code: actor.code, message: "Acceso denegado." };
+  const access = assertPaymentVoucherOwnerAccess_(payload, userId, {});
+  if (!access.authorized) return { status: "error", code: access.code || "RESOURCE_SCOPE_DENIED", message: "Acceso denegado." };
 
   let comprobanteUrl = "";
   let binaryValidation = null;
@@ -4115,13 +4203,12 @@ function uploadPaymentVoucher(payload) {
       maxSizeBytes: 10 * 1024 * 1024,
       allowedExtensions: [".pdf", ".jpg", ".jpeg", ".png", ".webp"]
     });
-
     try {
       const folder = getOrCreateFolderNews(getParentDriveFolder(), "Comprobantes_Pago");
-      const base64Data = fileData.indexOf(",") !== -1 ? fileData.split(',')[1] : fileData;
+      const base64Data = fileData.indexOf(",") !== -1 ? fileData.split(",")[1] : fileData;
       const file = folder.createFile(Utilities.newBlob(Utilities.base64Decode(base64Data), binaryValidation.mimeType, fileName));
-      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-      comprobanteUrl = `https://lh3.googleusercontent.com/d/${file.getId()}`;
+      file.setSharing(DriveApp.Access.PRIVATE, DriveApp.Permission.NONE);
+      comprobanteUrl = "https://lh3.googleusercontent.com/d/" + file.getId();
     } catch (e) {
       logDebug("Error subida archivo comprobante:", e.message);
     }
@@ -4131,98 +4218,76 @@ function uploadPaymentVoucher(payload) {
   const compSheet = getOrCreateSheet(ss, "ComprobantesPago");
   const now = new Date();
   const comprobanteId = "VCH-" + now.getTime();
-
   compSheet.appendRow([
-    comprobanteId,
-    now,
-    String(userId).trim(),
-    alumno || "Estudiante",
-    cargoId || "GRAL",
-    parseFloat(montoReportado || 0),
-    metodoPago || "Transferencia Bancaria",
-    referencia || "SIN-REF",
-    comprobanteUrl,
-    "En Revisión",
-    observaciones || ""
+    comprobanteId, now, String(userId).trim(), alumno || "Estudiante", cargoId || "GRAL",
+    parseFloat(montoReportado || 0), metodoPago || "Transferencia Bancaria", referencia || "SIN-REF",
+    comprobanteUrl, "En Revisión", observaciones || ""
   ]);
-
   return {
-    status: "success",
-    comprobanteId: comprobanteId,
-    comprobanteUrl: comprobanteUrl,
+    status: "success", comprobanteId: comprobanteId, comprobanteUrl: comprobanteUrl,
     message: "Comprobante de pago adjuntado en revisión."
   };
 }
 
 // [TAREA-F4-P0-02] [Fase 4: Protección IDOR y ABAC] - Aislamiento estricto de comprobantes de pago por usuario
 function getPaymentVouchers(payload) {
-  const callerRole = (payload && payload._verifiedRole) || "Estudiante";
-  let { userId, estado } = payload || {};
-
-  if ((callerRole === "Estudiante" || callerRole === "Alumno") && payload._verifiedUserId) {
-    userId = payload._verifiedUserId;
-  }
-
+  const actor = getVerifiedAccountingIdentity_(payload);
+  if (!actor.authorized) return { status: "error", code: actor.code, message: "Acceso denegado." };
+  const role = String(actor.role || "").toUpperCase().replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E")
+    .replace(/[ÍÌÏ]/g, "I").replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N").replace(/[^A-Z0-9]/g, "");
+  const { userId, estado } = payload || {};
+  const studentRole = role === "ESTUDIANTE" || role === "ALUMNO";
+  const targetUserId = studentRole ? actor.userId : String(userId || "").trim();
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const rows = getOrCreateSheet(ss, "ComprobantesPago").getDataRange().getValues().slice(1);
-
-  let filtered = rows;
-  if (userId) filtered = filtered.filter(r => String(r[2]).trim() === String(userId).trim());
-  if (estado) filtered = filtered.filter(r => String(r[9]).toLowerCase().trim() === String(estado).toLowerCase().trim());
-
+  let candidates = rows;
+  if (targetUserId) candidates = candidates.filter(r => String(r[2] || "").trim() === targetUserId);
+  if (estado) candidates = candidates.filter(r => String(r[9] || "").toLowerCase().trim() === String(estado).toLowerCase().trim());
+  const filtered = [];
+  for (let i = 0; i < candidates.length; i++) {
+    const access = assertPaymentVoucherOwnerAccess_(payload, candidates[i][2], {});
+    if (access.authorized) filtered.push(candidates[i]);
+    else if (targetUserId) return { status: "error", code: access.code || "RESOURCE_SCOPE_DENIED", message: "Acceso denegado." };
+  }
+  if (!targetUserId && candidates.length && !filtered.length) {
+    return { status: "error", code: "RESOURCE_SCOPE_DENIED", message: "No existen comprobantes dentro del ámbito autorizado." };
+  }
   const mapped = filtered.map(r => ({
-    comprobanteId: r[0],
-    fecha: r[1],
-    userId: r[2],
-    alumno: r[3],
-    cargoId: r[4],
-    montoReportado: parseFloat(r[5] || 0),
-    metodoPago: r[6],
-    referencia: r[7],
-    comprobanteUrl: r[8],
-    estado: r[9],
-    observaciones: r[10]
+    comprobanteId: r[0], fecha: r[1], userId: r[2], alumno: r[3], cargoId: r[4],
+    montoReportado: parseFloat(r[5] || 0), metodoPago: r[6], referencia: r[7],
+    comprobanteUrl: r[8], estado: r[9], observaciones: r[10]
   }));
-
   return { status: "success", comprobantes: mapped };
 }
 
 function reviewPaymentVoucher(payload) {
-  const { comprobanteId, nuevoEstado, observacionesAdmin, authRole } = payload || {};
+  const { comprobanteId, nuevoEstado, observacionesAdmin } = payload || {};
   if (!comprobanteId || !nuevoEstado) throw new Error("comprobanteId y nuevoEstado son requeridos.");
-
+  const actor = getVerifiedAccountingIdentity_(payload);
+  if (!actor.authorized) return { status: "error", code: actor.code, message: "Acceso denegado." };
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = getOrCreateSheet(ss, "ComprobantesPago");
   const data = sheet.getDataRange().getValues();
-
   const idx = data.findIndex(r => String(r[0]).trim() === String(comprobanteId).trim());
   if (idx === -1) throw new Error("Comprobante de pago no encontrado.");
-
   const row = data[idx];
+  const access = assertPaymentVoucherOwnerAccess_(payload, row[2], { requireStaff: true });
+  if (!access.authorized) return { status: "error", code: access.code || "RESOURCE_SCOPE_DENIED", message: "Acceso denegado." };
+  const allowedStates = ["Aprobado", "Confirmado", "Rechazado", "Observado"];
+  if (allowedStates.indexOf(String(nuevoEstado)) === -1) return { status: "error", code: "INVALID_VOUCHER_STATE", message: "Estado de comprobante no permitido." };
   sheet.getRange(idx + 1, 10).setValue(nuevoEstado);
   if (observacionesAdmin) sheet.getRange(idx + 1, 11).setValue(observacionesAdmin);
-
-  // Si fue Aprobado, registrar automáticamente el pago en PagosAbonos
   let pagoRes = null;
   if (nuevoEstado === "Aprobado" || nuevoEstado === "Confirmado") {
     pagoRes = recordStudentPayment({
-      userId: row[2],
-      cargoId: row[4],
-      montoAbono: row[5],
-      metodoPago: row[6],
-      referencia: row[7],
-      observaciones: `Aprobado administrativamente desde comprobante ${comprobanteId}. ${observacionesAdmin || ''}`
+      userId: row[2], cargoId: row[4], montoAbono: row[5], metodoPago: row[6],
+      referencia: row[7], observaciones: "Aprobado administrativamente desde comprobante " + comprobanteId + ". " + (observacionesAdmin || "")
     });
   }
-
-  logStructuredEvent("ACCOUNTING", "reviewPaymentVoucher", "INFO", "VOUCHER_REVIEWED", `Comprobante ${comprobanteId} revisado a estado ${nuevoEstado}`, payload, authRole);
-
+  logStructuredEvent("ACCOUNTING", "reviewPaymentVoucher", "INFO", "VOUCHER_REVIEWED", "Comprobante revisado a estado " + nuevoEstado, { comprobanteId: comprobanteId }, actor.role);
   return {
-    status: "success",
-    comprobanteId: comprobanteId,
-    nuevoEstado: nuevoEstado,
-    pagoProcesado: pagoRes,
-    message: `Comprobante de pago ${nuevoEstado} exitosamente.`
+    status: "success", comprobanteId: comprobanteId, nuevoEstado: nuevoEstado,
+    pagoProcesado: pagoRes, message: "Comprobante de pago " + nuevoEstado + " exitosamente."
   };
 }
 
