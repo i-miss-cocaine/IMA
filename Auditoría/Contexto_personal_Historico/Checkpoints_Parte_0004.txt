@@ -1025,3 +1025,39 @@ Fase: PM-01 — TASK-153 P0, En ejecución.
 - Hallazgo siguiente identificado: AUD-NG-386, CRÍTICO/P0 — EXAM permite getAllExams/getStudentExams mediante PUBLIC_ACTIONS sin validar sesión; varias operaciones de examen/entrega tampoco comprueban ResourceOwnership. Se registra abierto en Auditoria.txt; no se modificó EXAM en esta iteración.
 - Después: auditoría de aplicabilidad en DEVELOPER, recursos institucionales/solicitudes de firma, normalización de errores/listados, referencias compartidas, filtros/importaciones y E2E.
 ===============================================================================
+
+
+===============================================================================
+## CHECKPOINT C1.435 — NDASC v1.2: ejecución local obligatoria y pruebas diferidas a beta
+Sesión: IMA-GOV-20261110-1632Z-01
+Fecha: 2026-11-10 UTC.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+HEAD inicial de esta iteración: 205fc5f984de43df84d31e587f95104fb71be54b.
+Commits normativos y alineación: 0e987d206f083081050b3073f96927c972fefca1 (NDASC v1.2); 1d6f110bd7036a65fd75004ea583b8b53f64939b (metodología); 30ed469b803d1939a12bc8a96f61b29deddcf800 (BETA-FUNC-021); 2453a4135e1b1e15137fcd828ce07fb152a3ff48 (changelog).
+
+### Reglas incorporadas
+- Toda prueba/verificación local aplicable al alcance debe ejecutarse antes de cerrar una tarea. Añadir pruebas sin ejecutarlas, inspeccionar código o confiar únicamente en CI no satisface este requisito.
+- Si la lógica nueva/modificada no tiene prueba pertinente, crear o ampliar el contrato y ejecutarlo.
+- Una tarea no puede marcarse Completada si una prueba local aplicable está FAIL, BLOCKED o NOT RUN. Corregir y volver a ejecutar; si no puede ejecutarse, mantener En ejecución/Bloqueada según la causa y registrar la limitación.
+- Las pruebas funcionales que requieren deployment, URLs/servicios vivos, infraestructura externa, credenciales/propiedades remotas, cuotas o navegador contra el servicio desplegado se difieren a beta.
+- `beta_test.txt` en la raíz queda confirmado como único registro beta activo. `docs/testing/PRUEBAS_FUNCIONALES_BETA.md` permanece histórico, sin nuevos casos.
+- Las pruebas beta pendientes no impiden cerrar la implementación cuando todas las pruebas locales aplicables pasaron; una prueba local no puede reclasificarse como beta.
+
+### Archivos modificados
+- `Normas_Desarollo.md` — versión 1.2, secciones 6 y 14.
+- `METODOLOGIA_DESARROLLO.md` — alineación de §21.1, §21.2 y §21.5.
+- `beta_test.txt` — nuevo BETA-FUNC-021 para TASK-153: propiedad, privacidad y aislamiento del historial de entregas en TASK Service desplegado.
+- `changueslogs.txt` — registro C1.435.
+- Este checkpoint y `Auditoría/INDICE_CHECKPOINTS.md`.
+
+### Verificación
+- Validaciones documentales locales: PASS; se comprobaron versión NDASC, texto de obligatoriedad, criterio de cierre, ruta canónica beta, unicidad de BETA-FUNC-021 y estado Pendiente beta.
+- Suites de producto/código: no aplican a este cambio documental y no se ejecutaron.
+- No se desplegaron servicios ni se ejecutaron pruebas remotas; BETA-FUNC-021 queda Pendiente beta.
+- No se modificó código de aplicación, datos productivos ni rama base.
+
+### Efecto en la ejecución
+- TASK-153 no se marca Completada: su checkpoint C1.434 indica que las pruebas locales quedaron NOT RUN. De acuerdo con NDASC v1.2, deberán ejecutarse y pasar antes de completar la tarea.
+- Los casos de validación del servicio desplegado quedan registrados en BETA-FUNC-021 y se ejecutarán en fase beta.
+- Próximo trabajo de producto continúa según continuidad: abordar AUD-NG-386 en `backend/exam-service/Code.gs`, sin marcar tareas como Completadas hasta ejecutar y aprobar sus pruebas locales aplicables.
+===============================================================================
