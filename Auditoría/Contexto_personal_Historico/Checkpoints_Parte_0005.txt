@@ -199,3 +199,43 @@ Revisar `checkAdvancedSignatureStatus` y la frontera de confianza para respuesta
 - Las pruebas que requieren despliegue quedan reservadas a beta; no bloquean la aprobación local de este subalcance.
 - Siguiente acción: revisar `registerDocumentSignature` para impedir que una conformidad institucional manual sea confundida con una firma avanzada, verificar ownership/idempotencia y proteger los datos de auditoría.
 ===============================================================================
+
+===============================================================================
+## CHECKPOINT C1.464 — USER: registro seguro de conformidad documental manual
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.463.
+HEAD inicial del subalcance: 4aa2a9a251e53ec0044956f66e7a32263ca86a98.
+
+### Alcance
+Revisar `registerDocumentSignature` como flujo de conformidad manual, separado de la firma avanzada cualificada.
+
+### Controles verificados
+- La acción valida permiso e identidad de sesión y exige `firmanteId` igual al usuario autenticado verificado; un cliente no puede atribuir la conformidad a otra persona.
+- Rechaza tipos de firma que declaren mecanismos avanzados/cualificados (avanzada, cualificada, qualified, X.509, CAdES, PKCS#7) con `SIGNATURE_PROVIDER_CALLBACK_REQUIRED`.
+- Adquiere `ScriptLock` antes de abrir el repositorio y verificar ownership del documento/solicitud; solo después consulta `FirmasConformidades`.
+- Persiste el ID canónico del documento, identidad/rol verificados y departamento propietario. El evento de auditoría usa el actor verificado.
+- Un reintento único con mismo tipo y hash reutiliza el registro existente; varios registros activos son ambiguos y cambios de tipo/hash se rechazan. Lock liberado en `finally`.
+
+### Contratos y verificación local
+- Se añadió cobertura para alta autorizada, canonicalización, identidad del firmante, rol de auditoría, ownership, idempotencia exacta, hash/tipo discordante, registros ambiguos, firmante suplantado, tipo avanzado, ownership denegado y lock contencioso.
+- GitHub Actions run `42898684084` — SUCCESS, Node 24. Contratos Department Scope, ACADEMIC, USER signature ownership, ACCOUNTING, ResourceOwnership ABAC, voucher client y sintaxis de servicios/cliente PASS.
+- Sin despliegue, Drive/Sheets reales ni datos institucionales.
+
+### Límites
+- `documentoHash` continúa siendo un valor recibido por payload; este subalcance no lo recalcula a partir de los bytes del archivo en Drive.
+- `signatureHash` es una huella SHA-256 de datos del registro/metadatos, no una firma electrónica criptográfica ni una prueba de identidad PSC.
+- La acción se mantiene explícitamente como conformidad institucional manual y no equivale a firma avanzada cualificada.
+
+### Commits
+- `05f8498cb50efcffe9b6cf05b51633309a40865a` — contratos locales de identidad, ownership, idempotencia y lock.
+- Documentación: plan `8d67aa316540ebd21aa03f6a47fda31e37d409e7`; auditoría `9677e133f17017bd418d5bdb33b0fcf4723604ff`; changelog `f23d7b6190f52aa05d82d3c9d096ce994eebce96`.
+
+### Estado y continuidad
+- Registro de conformidad documental manual revisado y cubierto por pruebas locales; no se atribuye firma criptográfica.
+- **TASK-153 permanece En ejecución y AUD-NG-386 abierto** por el certificado de auditoría, callback autenticado/validación criptográfica, recursos institucionales y rutas restantes.
+- Las pruebas que requieren despliegue quedan reservadas a beta.
+- Siguiente acción: proteger `generateSignatureAuditCertificate` con autenticación/ownership por documento, evitar mezcla de firmas de solicitudes diferentes y eliminar metadatos probatorios inventados.
+===============================================================================
