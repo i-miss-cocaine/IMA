@@ -1334,3 +1334,14 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - TASK-153 sigue En ejecución; AUD-NG-386 abierto.
 - Commits: `31cc21b9572c47e792d0b3188237aeaaccd480a6`; `e7e8588402d2e462b7a4e70161309f52d46ae70b`; `dafdbbb0526ee550d7d4ca462340e0351ee6742a`; `4aa2a9a251e53ec0044956f66e7a32263ca86a98`.
 ===============================================================================
+===============================================================================
+## C1.464 — registro de conformidad documental manual
+- `registerDocumentSignature` exige que `firmanteId` sea la identidad verificada y rechaza mecanismos avanzados/cualificados enviados como tipo manual.
+- Bajo ScriptLock verifica ownership documental antes de leer `FirmasConformidades`; guarda el ID canónico, actor y rol verificados.
+- Reintento exacto reutiliza la firma; registros múltiples o cambios de tipo/hash se rechazan. La mutación se serializa y libera lock en finally.
+- Contrato local cubre alta autorizada, identidad, ownership, canonicalización, auditoría, idempotencia, hash/tipo discordante, duplicidad ambigua, suplantación, mecanismo avanzado y lock ocupado.
+- GitHub Actions run `42898684084` SUCCESS: suite completa de Department Scope, ACADEMIC, USER signature ownership, ACCOUNTING, ResourceOwnership ABAC, voucher y sintaxis.
+- Límite: `documentoHash` aún proviene del payload y no se recalcula contra el archivo de Drive; `signatureHash` es huella de metadatos, no firma criptográfica. El flujo solo representa conformidad manual.
+- Sin despliegue ni datos reales. TASK-153 sigue En ejecución; certificado de auditoría pendiente.
+- Commit de contrato: `05f8498cb50efcffe9b6cf05b51633309a40865a`.
+===============================================================================
