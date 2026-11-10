@@ -7755,9 +7755,12 @@ function checkAdvancedSignatureStatus(payload) {
         "Estado de transacción de firma consultado por usuario autorizado.",
         { transaccionId: transactionId, documentoId: documentId, actorUserId: actorUserId }, actorRole);
     } catch (_) {}
+    const completedAwaitingVerification = String(row[9] || "").trim() === "Completada";
     return { status: "success", transaccionId: row[0], documentoId: row[1],
       firmanteId: row[3], mecanismoFirma: row[6], proveedorId: row[7],
-      estadoTransaccion: row[9], esFirmadoValido: row[9] === "Completada" };
+      estadoTransaccion: row[9], esFirmadoValido: false,
+      verificacionCriptograficaPendiente: completedAwaitingVerification,
+      requiereValidacionAutenticadaProveedor: true };
   } finally {
     if (hasLock) {
       try { lock.releaseLock(); } catch (_) {}
