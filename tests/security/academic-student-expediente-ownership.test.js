@@ -342,3 +342,65 @@ console.log("ACADEMIC admission queue and institution-wide intake ownership cont
   assert.equal(ownershipWrites,0,"no ownership may be assigned to a foreign expediente");
 }
 console.log("ACADEMIC admission conversion duplicate expediente ownership contract passed.");
+
+
+// Admission conversion compensates every write when a downstream movement write fails.
+{
+  function mutableSheet(rows, failAppend) {
+    return {
+      rows: rows.map(row=>row.slice()),
+      getLastRow(){return this.rows.length;},
+      getDataRange(){const self=this;return {getValues(){return self.rows.map(row=>row.slice());}};},
+      appendRow(row){if(failAppend)throw Error("INJECTED_MOVEMENT_FAILURE");this.rows.push(row.slice());},
+      deleteRow(row){this.rows.splice(row-1,1);},
+      getRange(row,col,numRows,numCols){
+        const self=this;
+        return {
+          setValue(value){self.rows[row-1][col-1]=value;},
+          setValues(values){for(let r=0;r<numRows;r++)for(let c=0;c<numCols;c++)self.rows[row-1+r][col-1+c]=values[r][c];}
+        };
+      }
+    };
+  }
+  const sheets={
+    SolicitudesAdmision:mutableSheet([["SolicitudID","","","","","","","","","","","Estado","","","ExpedienteID"],["ADM-ROLLBACK","","2026","1","Ada","Example","","2018","","","", "Admitida","","",""]]),
+    ExpedientesEstudiantes:mutableSheet([["ExpedienteID","PersonaID","Codigo","FechaNacimiento","Nacionalidad","","","Estado","Creado","Actualizado","Identificacion"]]),
+    Usuarios:mutableSheet([["UserID","","","","","","Rol","","","PersonaID","Estado"]]),
+    ResourceOwnership:mutableSheet([["OwnershipID","InstitutionID","ResourceType","ResourceID","DepartmentID","Status","CreatedBy","CreatedAt","UpdatedAt"]]),
+    Matriculas:mutableSheet([["MatriculaID","Fecha","UserId","Alumno","Grado","Seccion","Periodo","Tipo","Estado","BecaDescuento","Observaciones"]]),
+    CargosEstudiante:mutableSheet([["CargoID","Fecha","UserId","Concepto","MontoBase","Descuento","MontoFinal","Estado","FechaVencimiento"]]),
+    DocumentosEstudiante:mutableSheet([["DocumentoID","ExpedienteID","SolicitudID"]]),
+    MovimientosEstudiante:mutableSheet([["MovimientoID","ExpedienteID","MatriculaID","Ano","Tipo"]],true)
+  };
+  const ss={getSheetByName:name=>sheets[name]||null};
+  let ownershipSequence=0;
+  const context={
+    ALLOW_INCOMPLETE_ADMISSION_CONVERSION:true,SPREADSHEET_ID:"TEST",
+    SpreadsheetApp:{openById:()=>ss},
+    LockService:{getScriptLock:()=>({tryLock:()=>true,releaseLock:()=>{}})},
+    getAcademicAdmissionScopeContext_:()=>({authorized:true,ss,actor:{authorized:true,userId:"DIR-1",role:"Director"},scope:{authorized:true,userId:"DIR-1",role:"Director",institutionId:"INST-1",departmentIds:["D1"],institutionWide:false},requestAccess:{authorized:true}}),
+    resolveAcademicAdmissionDepartment_:()=>({authorized:true,departmentId:"D1"}),
+    getDynamicPermissionsForRole:()=>false,
+    getOrCreateSheet:(_ss,name)=>sheets[name],
+    checkEnrollmentCapacity:()=>({hayCupo:true}),
+    generateInstitutionalId:({entityType})=>({generatedId:entityType+"-ROLLBACK"}),
+    normalizeString:value=>String(value||"").trim().toLowerCase(),
+    registerAcademicResourceOwnership_:(_ss,_scope,type,id,departmentId)=>{const ownershipId="OWN-"+(++ownershipSequence);sheets.ResourceOwnership.appendRow([ownershipId,"INST-1",type,id,departmentId,"ACTIVE","DIR-1",new Date(),new Date()]);return {authorized:true,created:true,ownershipId};},
+    deleteAcademicResourceOwnership_:(_ss,id)=>{const rows=sheets.ResourceOwnership.rows;const index=rows.findIndex((row,i)=>i>0&&row[0]===id);if(index>0)sheets.ResourceOwnership.deleteRow(index+1);return index>0;},
+    getInstitutionParams:()=>({data:[]}),
+    logStructuredEvent:()=>{},
+    Utilities:{getUuid:()=>"UUID"},
+    Date
+  };
+  const functions=extractFunction("convertAdmissionToStudent")+"\\n"+extractFunction("registerStudentEnrollment");
+  vm.runInNewContext(functions+"\\nthis.run=convertAdmissionToStudent;",context);
+  assert.throws(()=>context.run({solicitudId:"ADM-ROLLBACK"}),/INJECTED_MOVEMENT_FAILURE/);
+  assert.equal(sheets.SolicitudesAdmision.rows[1][11],"Admitida","admission state must remain unchanged after rollback");
+  assert.equal(sheets.SolicitudesAdmision.rows[1][14],"","admission expediente link must be restored");
+  assert.equal(sheets.ExpedientesEstudiantes.rows.length,1,"new expediente must be removed");
+  assert.equal(sheets.ResourceOwnership.rows.length,1,"new ownership rows must be removed");
+  assert.equal(sheets.Matriculas.rows.length,1,"new enrollment must be removed");
+  assert.equal(sheets.CargosEstudiante.rows.length,1,"new enrollment charge must be removed");
+  assert.equal(sheets.MovimientosEstudiante.rows.length,1,"failed movement must not persist");
+}
+console.log("ACADEMIC admission conversion compensation contract passed.");
