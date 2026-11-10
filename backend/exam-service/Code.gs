@@ -684,30 +684,68 @@ function createExam(p) {
   }
 }
 
-function updateExamStatus({ examenId, estado }) {
+function getAuthorizedExamMutationContext_(payload, action, requestedExamId) {
+  const permission = validateRolePermission(action, payload);
+  if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const actor = getVerifiedExamIdentity_(payload);
+  if (!actor.authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getSheetOrThrow(ss, "Examenes");
-  const data = sheet.getDataRange().getValues();
-
-  for (let i = 1; i < data.length; i++) {
-    if (data[i][0] === examenId) {
-      sheet.getRange(i + 1, 8).setValue(estado);
-      return { status: "success" };
-    }
+  const scope = getVerifiedExamDepartmentScope_(payload, ss, actor);
+  if (!scope.authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const examId = String(requestedExamId || (payload && payload.examenId) || "").trim();
+  if (!examId) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const examSheet = getSheetOrThrow(ss, "Examenes");
+  const examRows = examSheet.getDataRange().getValues();
+  const matches = [];
+  for (let i = 1; i < examRows.length; i++) {
+    if (String(examRows[i][0] || "").trim() === examId) matches.push({ row: examRows[i], rowIndex: i });
   }
-  throw new Error("Examen no encontrado");
+  if (matches.length !== 1) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const exam = matches[0];
+  if (actor.role === "Profesor" && String(exam.row[8] || "").trim() !== actor.userId) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
+  const ownership = assertExamResourceOwnershipForScope_(ss, scope, "EXAMEN", examId, action, payload);
+  if (!ownership.authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
+  return { ss, actor, scope, examSheet, exam, examId, ownership };
+}
+
+function getAuthorizedExamSubmissionMutationContext_(payload, action) {
+  const entregaId = String((payload && (payload.entregaId || payload.entregaExamenId)) || "").trim();
+  if (!entregaId) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const permission = validateRolePermission(action, payload);
+  if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const actor = getVerifiedExamIdentity_(payload);
+  if (!actor.authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const deliverySheet = getSheetOrThrow(ss, "EntregasExamen");
+  const deliveryRows = deliverySheet.getDataRange().getValues();
+  const matches = [];
+  for (let i = 1; i < deliveryRows.length; i++) {
+    if (String(deliveryRows[i][0] || "").trim() === entregaId) matches.push({ row: deliveryRows[i], rowIndex: i });
+  }
+  if (matches.length !== 1) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const delivery = matches[0];
+  const examId = String(delivery.row[1] || "").trim();
+  if (!examId || (payload && payload.examenId && String(payload.examenId).trim() !== examId)) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
+  const examContext = getAuthorizedExamMutationContext_(payload, action, examId);
+  return { ...examContext, deliverySheet, delivery, entregaId };
+}
+
+function updateExamStatus(payload) {
+  const context = getAuthorizedExamMutationContext_(payload, "updateExamStatus");
+  const estado = String((payload && payload.estado) || "").trim();
+  if (["Activo", "Inactivo"].indexOf(estado) === -1) throw new Error("EXAM_STATUS_INVALID");
+  context.examSheet.getRange(context.exam.rowIndex + 1, 8).setValue(estado);
+  return { status: "success" };
 }
 
 function updateExam(payload) {
-  const { examenId, titulo, asignatura, gradoAsignado, seccionAsignada, fechaLimite, tiempoLimite, parcial } = payload;
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getSheetOrThrow(ss, "Examenes");
-  const data = sheet.getDataRange().getValues();
-  const rowIndex = data.findIndex(r => r[0] === examenId);
-
-  if (rowIndex === -1) throw new Error("Examen no encontrado.");
-
-  const examRow = data[rowIndex];
+  const context = getAuthorizedExamMutationContext_(payload, "updateExam");
+  const { titulo, asignatura, gradoAsignado, seccionAsignada, fechaLimite, tiempoLimite, parcial } = payload || {};
+  const examRow = context.exam.row.slice();
   if (titulo !== undefined) examRow[1] = titulo;
   if (asignatura !== undefined) examRow[2] = asignatura;
   if (gradoAsignado !== undefined) examRow[3] = gradoAsignado;
@@ -715,41 +753,56 @@ function updateExam(payload) {
   if (fechaLimite !== undefined) examRow[5] = fechaLimite;
   if (tiempoLimite !== undefined) examRow[6] = tiempoLimite;
   if (parcial !== undefined) examRow[9] = parcial;
-
-  sheet.getRange(rowIndex + 1, 1, 1, examRow.length).setValues([examRow]);
-
+  context.examSheet.getRange(context.exam.rowIndex + 1, 1, 1, examRow.length).setValues([examRow]);
   return { status: "success", message: "Examen actualizado." };
 }
 
 function deleteExam(payload) {
-  const { examenId } = payload;
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const examenesSheet = getSheetOrThrow(ss, "Examenes");
-  const entregasSheet = getSheetOrThrow(ss, "EntregasExamen");
-  const preguntasSheet = getSheetOrThrow(ss, "PreguntasExamen");
-
-  const examenesData = examenesSheet.getDataRange().getValues();
-  const rowIndex = examenesData.findIndex(r => r[0] === examenId);
-  if (rowIndex === -1) throw new Error("Examen no encontrado.");
-
-  const entregasData = entregasSheet.getDataRange().getValues();
-  const hasSubmissions = entregasData.some(r => r[1] === examenId);
-
+  const context = getAuthorizedExamMutationContext_(payload, "deleteExam");
+  const entregasSheet = getSheetOrThrow(context.ss, "EntregasExamen");
+  const deliveries = entregasSheet.getDataRange().getValues().slice(1);
+  const hasSubmissions = deliveries.some(row => String(row[1] || "").trim() === context.examId);
   if (hasSubmissions) {
-    examenesSheet.getRange(rowIndex + 1, 8).setValue("Inactivo");
+    context.examSheet.getRange(context.exam.rowIndex + 1, 8).setValue("Inactivo");
     return { status: "success", message: "Examen desactivado (existen entregas)." };
-  } else {
-    // Eliminar preguntas
-    const preguntasData = preguntasSheet.getDataRange().getValues();
-    for (let i = preguntasData.length - 1; i >= 1; i--) {
-      if (preguntasData[i][1] === examenId) {
-        preguntasSheet.deleteRow(i + 1);
-      }
-    }
-    // Eliminar examen
-    examenesSheet.deleteRow(rowIndex + 1);
-    return { status: "success", message: "Examen eliminado." };
   }
+
+  // Baja lógica: conserva evidencia histórica y desactiva el ownership para
+  // que el recurso no vuelva a aparecer en listados ni lecturas.
+  const ownershipSheet = getSheetOrThrow(context.ss, "ResourceOwnership");
+  const ownershipRows = ownershipSheet.getDataRange().getValues();
+  const ownershipMatches = [];
+  for (let i = 1; i < ownershipRows.length; i++) {
+    const row = ownershipRows[i] || [];
+    if (String(row[1] || "").trim() === String(context.scope.institutionId || "").trim() &&
+        String(row[2] || "").trim().toUpperCase() === "EXAMEN" &&
+        String(row[3] || "").trim() === context.examId &&
+        String(row[5] || "").trim().toUpperCase() === "ACTIVE") ownershipMatches.push(i + 1);
+  }
+  if (ownershipMatches.length !== 1) throw new Error("RESOURCE_NOT_AVAILABLE");
+  context.examSheet.getRange(context.exam.rowIndex + 1, 8).setValue("Eliminado");
+  ownershipSheet.getRange(ownershipMatches[0], 6).setValue("INACTIVE");
+  return { status: "success", message: "Examen eliminado." };
+}
+
+function gradeExamSubmission(payload) {
+  const context = getAuthorizedExamSubmissionMutationContext_(payload, "gradeExamSubmission");
+  const { calificacion, estado, comentario, temaAsociado, asignaturaAsociada } = payload || {};
+  const rowData = context.delivery.row.slice();
+  while (rowData.length < 10) rowData.push("");
+  rowData[5] = calificacion;
+  rowData[6] = estado;
+  rowData[7] = comentario;
+  rowData[8] = temaAsociado || "";
+  rowData[9] = asignaturaAsociada || "";
+  context.deliverySheet.getRange(context.delivery.rowIndex + 1, 1, 1, rowData.length).setValues([rowData]);
+  return { status: "success", message: "Examen calificado." };
+}
+
+function deleteExamSubmission(payload) {
+  const context = getAuthorizedExamSubmissionMutationContext_(payload, "deleteExamSubmission");
+  context.deliverySheet.deleteRow(context.delivery.rowIndex + 1);
+  return { status: "success", message: "Entrega de examen eliminada correctamente." };
 }
 
 function getAllExams(payload) {
