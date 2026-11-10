@@ -678,7 +678,7 @@ console.log("ACADEMIC public enrollment internal-metadata isolation contract pas
       })},
       getOrCreateSheet:()=>{sheetReads++;assert.equal(lockHeld,true,"admission persistence must only be accessed while the script lock is held");throw Error("INJECTED_LOCKED_READ");}
     };
-    vm.runInNewContext(extractFunction("convertAdmissionToStudent")+"\\nthis.run=convertAdmissionToStudent;",context);
+    vm.runInNewContext(extractFunction("convertAdmissionToStudent")+"\nthis.run=convertAdmissionToStudent;",context);
     return {
       execute:()=>context.run({solicitudId:"ADM-LOCK"}),
       getState:()=>({lockHeld,lockAttempts,releaseCount,sheetReads})
