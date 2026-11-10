@@ -4,7 +4,7 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 
 ## Estado actual
 - Último checkpoint: **C1.431**
-- Última sesión: `IMA-EXEC-20261110-1500Z-17`
+- Última sesión: `IMA-GOV-20261110-1553Z-01`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt`
 - Límite por archivo: **180.000 caracteres**
 - Caracteres del archivo activo tras C1.431: **85566**
@@ -262,4 +262,4 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.428 | IMA-EXEC-20261110-1430Z-16 | TASK-153 en ejecución; propiedad integrada parcialmente en ACADEMIC/ACCOUNTING; restauración documental protegida; 16 pruebas sintéticas aisladas pasaron; CI pendiente | PM-01 — implementación parcial P0 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.428 | 742–805 | C1.427 | Este commit; SHA verificado tras publicación |
 | C1.429 | IMA-EXEC-20261110-1500Z-17 | CI Department Scope e Identity Mapping correctos; se corrige aserción obsoleta de Task-Service; rerun pendiente | PM-01 — corrección de contrato CI P0 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.429 | 808–833 | C1.428 | Este commit; SHA verificado tras publicación |
 | C1.430 | IMA-AUDIT-20261110-1430Z | TASK-153 en ejecución; CI Task-Service Security y Backup/Restore correctos en HEAD d0d01c8d; checkpoint de continuidad | PM-01 — verificación focalizada P0 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.430 | 836–882 | C1.429 | 2a5bf4b697fdec153f4a5dd1e2cce30b4ccef05c |
-| C1.431 | IMA-GOV-20261110-1553Z-01 | Adopción NDASC v1.0; simplificación normativa y control proporcional | Gobernanza operativa IMA | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.431 | 887–928 | C1.430 | Este commit; SHA verificado tras publicación |
+| C1.431 | IMA-GOV-20261110-1553Z-01 | Adopción NDASC v1.0; simplificación normativa y control proporcional | Gobernanza operativa IMA | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.431 | 887–928 | C1.430 | 531a684970c57fb567f17a8a45c623d5154a4edf |
