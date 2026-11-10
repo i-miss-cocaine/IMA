@@ -1848,13 +1848,14 @@ function getPosts(payload) {
   if (data.length <= 1) return { status:"success", data:[] };
   const now = Date.now();
   const posts = data.slice(1).filter(row => {
-    if (row[12] === "Eliminado") return false;
+    const postState = normalizeString(row[12] || "");
+    if (postState === "eliminado") return false;
     const classId = String(row[1] || "").trim();
     if (classId !== "General" && !allowedIds.has(classId)) return false;
     if (aulaId && classId !== String(aulaId).trim()) return false;
     const isDraft = row[7] === true || String(row[7] || "").trim().toLowerCase() === "true";
     if (isDraft && (!includeDrafts || !isTeacherOrAdmin)) return false;
-    if (!isTeacherOrAdmin && (isDraft || row[12] !== "Publicado")) return false;
+    if (!isTeacherOrAdmin && (isDraft || postState !== "publicado")) return false;
     if (row[8] && new Date(row[8]).getTime() > now && !isTeacherOrAdmin) return false;
     if (!isTeacherOrAdmin && !isTaskServiceAudienceAllowed(row[11],role)) return false;
     if (asignatura && String(row[4] || "") !== String(asignatura)) return false;
@@ -1896,11 +1897,16 @@ function getStudyMaterials(payload) {
   const data = getOrCreateSheet(SpreadsheetApp.openById(SPREADSHEET_ID),"MaterialesEducativos").getDataRange().getValues();
   if (data.length <= 1) return { status:"success", data:[] };
   const materials = data.slice(1).filter(row => {
-    if (row[12] === "Eliminado") return false;
+    const materialState = normalizeString(row[12] || "");
+    if (materialState === "eliminado") return false;
     const classId = String(row[1] || "").trim();
     if (classId !== "General" && !allowedIds.has(classId)) return false;
     if (aulaId && classId !== String(aulaId).trim()) return false;
-    if (!isStaff && ["Activo","Publicado"].indexOf(String(row[12] || "Activo")) === -1) return false;
+    if (!isStaff && ["activo","publicado"].indexOf(materialState) === -1) return false;
+    if (!isStaff && row[11]) {
+      const publicationTime = new Date(row[11]).getTime();
+      if (!Number.isFinite(publicationTime) || publicationTime > Date.now()) return false;
+    }
     if (parcial && normalizeString(row[5]) !== normalizeString(parcial)) return false;
     if (unidad && normalizeString(row[6]) !== normalizeString(unidad)) return false;
     if (tema && normalizeString(row[7]) !== normalizeString(tema)) return false;

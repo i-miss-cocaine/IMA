@@ -218,7 +218,8 @@ const postFixtureRows = [
   ["P2","AULA-1","String draft","body","Anuncio","PROF-1",false,"true","",new Date("2026-11-08T12:00:00Z"),"[]","Todos","Publicado"],
   ["P3","AULA-1","Boolean draft","body","Anuncio","PROF-1",false,true,"",new Date("2026-11-08T12:00:00Z"),"[]","Todos","Publicado"],
   ["P4","AULA-2","Other classroom","body","Anuncio","PROF-2",false,false,"",new Date("2026-11-08T12:00:00Z"),"[]","Todos","Publicado"],
-  ["P5","AULA-1","Future","body","Anuncio","PROF-1",false,false,new Date("2099-01-01T12:00:00Z"),new Date("2026-11-08T12:00:00Z"),"[]","Todos","Publicado"]
+  ["P5","AULA-1","Future","body","Anuncio","PROF-1",false,false,new Date("2099-01-01T12:00:00Z"),new Date("2026-11-08T12:00:00Z"),"[]","Todos","Publicado"],
+  ["P6","AULA-1","Deleted","body","Anuncio","PROF-1",false,false,"",new Date("2026-11-08T12:00:00Z"),"[]","Todos","eliminado"]
 ];
 const postSheet = { getDataRange: () => ({ getValues: () => postFixtureRows }) };
 const postSS = { getSheetByName: () => postSheet };
@@ -376,3 +377,35 @@ assert.equal(assignmentContext.isAuthorized(foreignOwnerTask, authorizedClassroo
 assert.equal(assignmentContext.isAuthorized(sectionListTask, authorizedClassrooms, "PROF-1"), true, "task section lists may include the assigned classroom section");
 
 console.log("TASK-636 teacher scope local contract: active assignments, classroom scope and read/preview guards passed.");
+
+// TASK-636: study materials must be explicitly active/published and not future for non-staff.
+
+const studyMaterialRows = [
+  ["ID","AulaID","Titulo","Descripcion","TipoRecurso","Parcial","Unidad","Tema","ArchivoUrl","DriveId","AutorID","FechaPublicacion","Estado"],
+  ["M-GEN","General","General current","","Documento","I","U1","T1","","","ADMIN-1",new Date("2026-11-08T12:00:00Z"),"Activo"],
+  ["M-CLASS","CLASS-1","Class current","","Documento","I","U1","T1","","","PROF-1",new Date("2026-11-08T12:00:00Z"),"Publicado"],
+  ["M-FUTURE","CLASS-1","Future","","Documento","I","U1","T1","","","PROF-1",new Date("2099-01-01T12:00:00Z"),"Activo"],
+  ["M-DRAFT","CLASS-1","Draft","","Documento","I","U1","T1","","","PROF-1",new Date("2026-11-08T12:00:00Z"),"Borrador"],
+  ["M-DELETED","CLASS-1","Deleted","","Documento","I","U1","T1","","","PROF-1",new Date("2026-11-08T12:00:00Z"),"eliminado"],
+  ["M-OTHER","CLASS-2","Other class","","Documento","I","U1","T1","","","PROF-2",new Date("2026-11-08T12:00:00Z"),"Activo"],
+  ["M-EMPTY","CLASS-1","Missing state","","Documento","I","U1","T1","","","PROF-1",new Date("2026-11-08T12:00:00Z"),""]
+];
+const materialSheet = { getDataRange: () => ({ getValues: () => studyMaterialRows }) };
+const materialContext = {
+  SPREADSHEET_ID: "LOCAL",
+  SpreadsheetApp: { openById: () => ({}) },
+  getTaskServiceAuthorizedClassrooms: () => [["CLASS-1"]],
+  getOrCreateSheet: () => materialSheet
+};
+vm.runInNewContext(
+  extractFunction("normalizeString") + String.fromCharCode(10) +
+  extractFunction("getStudyMaterials") + String.fromCharCode(10) +
+  "this.getMaterials = getStudyMaterials;",
+  materialContext
+);
+const studentMaterials = materialContext.getMaterials({_verifiedRole:"Estudiante"});
+assert.deepEqual(studentMaterials.data.map(item => item.materialId).sort(), ["M-CLASS","M-GEN"], "students receive only current active/published materials in authorized classrooms");
+const teacherMaterials = materialContext.getMaterials({_verifiedRole:"Profesor"});
+assert.deepEqual(teacherMaterials.data.map(item => item.materialId).sort(), ["M-CLASS","M-DRAFT","M-FUTURE","M-GEN","M-EMPTY"], "staff can inspect legacy/draft/scheduled materials but never deleted records or other classrooms");
+
+console.log("TASK-636 getStudyMaterials local contract: audience, explicit publication state, future-date and deleted-record guards passed.");

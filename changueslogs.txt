@@ -516,3 +516,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se agrega helper común y fixtures de aulas/ofertas vigentes, vencidas e inactivas.
 - CI C1.372 pendiente; BETA-FUNC-015 registra prueba real aislada.
 - Checkpoint C1.372: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice fila C1.372.
+
+
+[2026-11-09] IMA-EXEC-20261109-1739Z-01 — C1.373 / TASK-636 / AUD-NG-002
+- getStudyMaterials filtra FechaPublicacion futura y exige estado Activo/Publicado para estudiantes/familia.
+- getPosts/getStudyMaterials normalizan estados y excluyen Eliminado para todos.
+- Se agregan fixtures locales; CI C1.373 pendiente; BETA-FUNC-016 Pendiente beta.
+- Checkpoint C1.373: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice fila C1.373.

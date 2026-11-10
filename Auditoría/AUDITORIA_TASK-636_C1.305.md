@@ -281,3 +281,15 @@ Endurecer las excepciones públicas de backend/academic-service/Code.gs mediante
 - **CI C1.372:** pendiente tras publicar.
 - **Beta:** BETA-FUNC-015 cubre expiración/desactivación real de asignaciones y acceso a entregas en Apps Script/Sheets/Drive aislados.
 - **Estado:** AUD-NG-371 continúa en revalidación; TASK-636 sigue En ejecución.
+
+
+## Revisión focalizada C1.373 — fecha/estado de publicación de contenidos
+
+- **Hallazgo existente ampliado:** AUD-NG-002. `getStudyMaterials` filtraba estado, pero no verificaba `FechaPublicacion`; un material Activo con fecha futura podía aparecer a estudiantes antes de publicarse. Además, el estado se comparaba literalmente, y un registro con `eliminado` en minúsculas podía permanecer visible para personal. `getPosts` también comparaba `Eliminado` con sensibilidad a mayúsculas/minúsculas, permitiendo que personal recibiera registros eliminados con otra capitalización.
+- **Corrección:** `getStudyMaterials` normaliza estado; estudiantes/familia solo reciben estado explícito Activo/Publicado y fecha válida no futura. Registros Eliminado se excluyen para todos. `getPosts` normaliza estado, excluye Eliminado para todos y exige Publicado a usuarios no privilegiados.
+- **Pruebas locales añadidas:** fixtures de material general/aula, futuro, borrador, eliminado con minúsculas, aula ajena y estado vacío; posts con estado eliminado en minúsculas. Personal conserva acceso de revisión a borradores/programados en aulas autorizadas.
+- **CI C1.371:** security run 42725331670 completed/success; backup/restore run 42725331631 completed/success.
+- **CI C1.372:** security run 42725726339 completed/success; backup/restore run 42725726361 completed/success. Log de security confirma contratos de asignación docente activa.
+- **CI C1.373:** pendiente tras publicar.
+- **Beta:** BETA-FUNC-016 cubre publicación futura, estado y visibilidad en Sheets aislados; no bloquea implementación local.
+- **Estado:** AUD-NG-002 continúa en revalidación; TASK-636 sigue En ejecución.

@@ -195,3 +195,12 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Pasos:** consultar getStudentTasks/getAllTasks/getTeacherActivity y getSubmissionDocumentPreviewUrl antes y después de expirar/desactivar asignación; repetir intentando alterar profesorId y aulaId en payload.
 - **Resultado esperado:** solo se accede a tareas propias en aulas/ofertas activas del profesor autenticado; al expirar/desactivar la asignación, lecturas y preview se deniegan; payload no amplía ámbito.
 - **Estado:** Pendiente beta. No bloquea implementación local.
+
+
+## BETA-FUNC-016 — TASK-636 / AUD-NG-002 — publicación vigente de posts y materiales
+- **Objetivo:** verificar que estudiantes/familia no reciben materiales o posts antes de su publicación ni registros eliminados.
+- **Precondiciones:** Task-Service beta, hojas MaterialesEducativos/PublicacionesAnuncios y AulasVirtuales aisladas; cuentas Estudiante, Profesor y Administrador.
+- **Datos:** material Activo con fecha pasada/futura, Publicado, Borrador, Eliminado con capitalización distinta, estado vacío y aula ajena; posts Publicado, programado, borrador y Eliminado.
+- **Pasos:** consultar como estudiante/familia; repetir como profesor/admin; alterar aulaId, includeDrafts y estado enviado en payload; verificar contenido y fecha.
+- **Resultado esperado:** estudiante/familia solo reciben material Activo/Publicado con fecha válida no futura y posts Publicado vigentes; Eliminado se excluye para todos; personal puede revisar borradores/programados solo en aulas autorizadas.
+- **Estado:** Pendiente beta. No bloquea implementación local.

@@ -555,3 +555,13 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - CI C1.371 runs 42725331670/42725331631 pendientes; CI C1.372 pendiente.
 - BETA-FUNC-015 Pendiente beta, no bloqueante.
 ===============================================================================
+
+
+===============================================================================
+## Seguimiento TASK-636 — C1.373 / AUD-NG-002
+- getStudyMaterials ahora oculta materiales con FechaPublicacion futura a estudiantes/familia y exige estado Activo/Publicado explícito.
+- getPosts/getStudyMaterials excluyen estados Eliminado sin importar capitalización.
+- Fixtures Node cubren fechas futuras, borradores, eliminados y ámbito de aula.
+- CI C1.371 y C1.372: security/backup workflows success; C1.373 pendiente.
+- BETA-FUNC-016 Pendiente beta, no bloqueante.
+===============================================================================

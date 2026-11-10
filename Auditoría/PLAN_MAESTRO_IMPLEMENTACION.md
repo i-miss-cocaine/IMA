@@ -2258,3 +2258,11 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - Se agregan fixtures de asignación vigente/vencida/inactiva y aulas desactivadas. CI pendiente.
 - BETA-FUNC-015: validación Apps Script/Sheets/Drive aislados; Pendiente beta y no bloqueante.
 - TASK-636 En ejecución.
+
+
+## 10.57 TASK-636 — C1.373: publicación vigente de posts y materiales
+- AUD-NG-002: getStudyMaterials permitía materiales Activos con FechaPublicacion futura; getPosts/getStudyMaterials comparaban Eliminado de forma sensible a capitalización.
+- Se normalizan estados; estudiantes/familia reciben solo Activo/Publicado vigente; Eliminado se excluye para todos.
+- Fixtures Node cubren fechas futuras, borradores, eliminados, aula ajena y estado vacío. CI pendiente.
+- BETA-FUNC-016: validación real en Sheets aislados; Pendiente beta y no bloqueante.
+- TASK-636 En ejecución.

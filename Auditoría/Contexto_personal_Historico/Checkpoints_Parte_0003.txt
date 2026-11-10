@@ -1119,3 +1119,53 @@ Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt �
 Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.372.
 Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
 ===============================================================================
+
+===============================================================================
+## C1.373 — TASK-636 / AUD-NG-002 — publicación vigente de posts y materiales
+ID: C1.373
+Sesión: IMA-EXEC-20261109-1739Z-01
+Fecha: 2026-11-09
+Checkpoint anterior válido: C1.372
+Baseline lógico: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD físico de partida: 47b7c105a40cd1d82f8356544ce9736d39ac0a65
+Rama: NG_beta_0.0.0.1_work
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+
+### Auditoría
+- Se revisó el criterio de publicación/visibilidad de MaterialesEducativos y PublicacionesAnuncios.
+- AUD-NG-002 se amplía: getStudyMaterials no filtraba FechaPublicacion futura; un material Activo programado podía ser visto antes por estudiantes/familia.
+- Las comparaciones de estado eran sensibles a mayúsculas/minúsculas; registros "eliminado" podían aparecer a personal en getStudyMaterials/getPosts.
+- No se crea un hallazgo nuevo ni un informe paralelo.
+
+### Implementación
+- getStudyMaterials normaliza estado, excluye Eliminado para todos y exige estado explícito Activo/Publicado con fecha válida no futura para usuarios no privilegiados.
+- getPosts normaliza estado, excluye Eliminado para todos y exige Publicado para usuarios no privilegiados; personal conserva revisión de borradores/programados dentro de aulas autorizadas.
+- Se agregan fixtures locales de material general/aula, futuro, borrador, eliminado, aula ajena, estado vacío y posts eliminados con capitalización mixta.
+
+### Archivos modificados
+- backend/task-service/Code.gs
+- tests/security/task-service-security-contract.test.js
+- Auditoría/AUDITORIA_TASK-636_C1.305.md
+- pendientes/Otros/Pendientes.md (seguimiento aditivo)
+- beta_test.txt (BETA-FUNC-016)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoria.txt
+- tareas_auditoria.txt
+- changueslogs.txt
+
+### Pruebas y estado
+- C1.371: security run 42725331670 y backup/restore run 42725331631 completed/success.
+- C1.372: security run 42725726339 y backup/restore run 42725726361 completed/success; logs confirman contratos de asignación docente activa.
+- C1.373: fixtures locales agregados; CI pendiente tras publicar.
+- BETA-FUNC-016: Pendiente beta, no bloqueante para implementación local.
+- TASK-636 En ejecución; AUD-NG-002 en revalidación. No se marca Completada.
+
+### Siguiente acción exacta
+Consultar CI C1.373; continuar la reauditoría de los criterios de sesión/token, métricas globales y excepciones públicas ACADEMIC/USER; revisar el estado de closeAcademicYear sin habilitar cierres destructivos sin respaldo verificado.
+
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.373.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.373.
+Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
+===============================================================================
