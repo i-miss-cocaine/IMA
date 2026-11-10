@@ -645,11 +645,14 @@ console.log("ACADEMIC admission charge attribution contract passed.");
   const result=context.run({
     userId:"STU-1",grado:"1",periodo:"2026",
     _chargeReference:"ADMISION|FORGED|MAT-1",
+    _chargeReferencePrefix:"ADMISION|FORGED|",
     _rollbackActions:[()=>{throw Error("untrusted callback executed");}]
   });
   assert.equal(result.status,"success");
   assert.equal(Object.prototype.hasOwnProperty.call(forwarded,"_chargeReference"),false,
     "public enrollment API must strip admission-only charge reference");
+  assert.equal(Object.prototype.hasOwnProperty.call(forwarded,"_chargeReferencePrefix"),false,
+    "public enrollment API must strip the internal admission charge-reference prefix");
   assert.equal(Object.prototype.hasOwnProperty.call(forwarded,"_rollbackActions"),false,
     "public enrollment API must strip caller-controlled rollback callbacks");
 }
