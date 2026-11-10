@@ -884,3 +884,5 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Commit de implementación: b0e8842acb1d04cdaba175b524065b09fa9b8886.
 - Revisión del diff: PASS. Prueba local del contrato: NOT RUN; CI sin run observado al momento del checkpoint. No se declara PASS.
 - AUD-NG-386 queda mitigada parcialmente y abierta; TASK-153 continúa En ejecución. Próximo alcance: ResourceOwnership/ámbito y autorización de todas las operaciones EXAM.
+
+[Actualización C1.436] GitHub Actions run 42859343859 — Exam-Service security local contracts: PASS; job exam-security-contracts. El contrato ejecutó las aserciones de autenticación e identidad estudiantil en Node 22. Prueba local en entorno de desarrollo: NOT RUN; CI no sustituye esa ejecución. AUD-NG-386 permanece abierto y TASK-153 En ejecución.

@@ -1100,4 +1100,9 @@ Commit de implementación: b0e8842acb1d04cdaba175b524065b09fa9b8886 (`fix(exam):
 - Ampliar y ejecutar contratos positivos/negativos de propiedad, IDOR, departamentos, institución, entrega propia y mutaciones.
 - Mantener TASK-153 En ejecución hasta completar alcance y ejecutar PASS en todas las pruebas locales pertinentes.
 
+### Actualización de verificación posterior al checkpoint C1.436
+- GitHub Actions: **PASS**, workflow `Exam-Service security local contracts`, run **42859343859**, job `exam-security-contracts`, commit probado `b0e8842acb1d04cdaba175b524065b09fa9b8886`.
+- El paso `node tests/security/exam-service-security-contract.test.js` terminó correctamente; el log confirma: `exam-service-security-contract: authentication and student identity assertions passed`.
+- Esta evidencia CI remota no sustituye la ejecución local obligatoria: prueba local en el entorno de desarrollo sigue **NOT RUN** y no se marca la tarea como Completada.
+
 ===============================================================================

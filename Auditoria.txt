@@ -1015,3 +1015,8 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - **Pruebas:** contrato local NOT RUN en esta sesión por ausencia de checkout/runtime; workflow CI sin run observado inmediatamente tras el commit; beta pendiente en BETA-FUNC-022.
 - **Siguiente acción:** completar autorización por recurso/ámbito en endpoints de lectura y mutación; ejecutar y aprobar contratos locales antes de cerrar.
 ===============================================================================
+
+### Evidencia CI posterior — AUD-NG-386 / C1.436
+- Workflow `Exam-Service security local contracts`: PASS; run 42859343859; job `exam-security-contracts`; commit probado `b0e8842acb1d04cdaba175b524065b09fa9b8886`.
+- El paso Node ejecutó `tests/security/exam-service-security-contract.test.js` y el log registró que pasaron las aserciones de autenticación e identidad estudiantil.
+- La ejecución CI no sustituye la prueba local obligatoria. Prueba local: NOT RUN. AUD-NG-386 sigue abierto por la integración pendiente de propiedad/ámbito y protección de mutaciones.
