@@ -912,3 +912,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - submitExam deriva el UserID de claims firmados, valida estudiante/perfil, examen activo, asignación, ResourceOwnership, IDs de preguntas y límite de intentos.
 - Contrato local de envío/parseo PASS; GitHub Actions run 42867761346 PASS en los contratos de autenticación y aislamiento departamental.
 - Fallos intermedios de sintaxis/fixture corregidos antes del PASS final. BETA-FUNC-022 sigue Pendiente beta; createExam/ownership y mutaciones pendientes.
+
+
+[2026-11-10] C1.441 — IMA-EXEC-20261110-1756Z-01 — TASK-153 / EXAM: createExam con ownership y rollback
+- createExam exige identidad firmada y departamento dentro del ámbito verificado; registra ResourceOwnership antes del examen y preguntas, ignora profesorId enviado por cliente y compensa escrituras parciales ante errores capturables.
+- Contratos locales aislados y parseo PASS; GitHub Actions run 42870106305 PASS en ambos contratos EXAM. Run intermedio 42869895990 falló por fixture sin hoja de ámbitos; fixture corregido.
+- BETA-FUNC-022 Pendiente beta. TASK-153 En ejecución; AUD-NG-386 abierto por mutaciones restantes.
