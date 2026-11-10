@@ -723,3 +723,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - TASK-153/T153-S01 permanece Bloqueada; TASK-696 sigue Bloqueada; ciclo F29-TASK05↔F29-TASK17 no se resuelve con esta investigación.
 - Sin cambios de código, datos, esquemas, permisos ni backlogs fuente; sin pruebas de producto.
 - Checkpoint C1.410: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt, líneas 130–180; índice Auditoría/INDICE_CHECKPOINTS.md, fila C1.410.
+
+
+[2026-11-10] C1.411 — IMA-EXEC-20261110-1150Z-01 — autoridad y responsabilidad configurables por rol
+- Se incorpora N-23 en Auditoría/ORGANIGRAMA_Y_NORMATIVA_INSTITUCIONAL_PROPUESTA.md: IMA debe configurar roles, capacidades, ámbitos, responsables funcionales, custodios, aprobadores, firmantes, suplencias y delegaciones desde la plataforma; no se usan nombres personales como titulares estáticos.
+- Se distingue la asignación funcional por rol de la identidad autenticada del actor que debe permanecer en auditoría protegida para trazabilidad.
+- Se amplía Plan Maestro §10.82 con requisitos funcionales, controles y pruebas requeridas; no se ejecutaron pruebas.
+- No se crean usuarios, roles o asignaciones reales ni se modifican código, datos, esquemas, permisos o backlogs fuente. T153-S01 conserva su bloqueo.
+- Checkpoint C1.411: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt, líneas 181–193; índice Auditoría/INDICE_CHECKPOINTS.md, fila C1.411.
