@@ -423,8 +423,7 @@ function createTask(payload) {
  const scope=getVerifiedTaskDepartmentScope_(payload,ss,identity);if(!scope.authorized)throw new Error(scope.code||"DEPARTMENT_SCOPE_NOT_ASSIGNED");
  const department=resolveTaskServiceOwnershipDepartment_(payload,scope);if(!department.authorized)throw new Error(department.code);
  if(getDynamicPermissionsForRole(role,"registerResourceOwnership")!==true)throw new Error("AUTH_PERMISSION_DENIED");
- const registry=ss.getSheetByName("ResourceOwnership");if(!registry||registry.getLastRow()<1)throw new Error("RESOURCE_OWNERSHIP_NOT_CONFIGURED");
- const headers=registry.getRange(1,1,1,TASK_RESOURCE_OWNERSHIP_HEADERS_.length).getValues()[0].map(v=>String(v||"").trim());if(JSON.stringify(headers)!==JSON.stringify(TASK_RESOURCE_OWNERSHIP_HEADERS_))throw new Error("RESOURCE_OWNERSHIP_SCHEMA_MISMATCH");
+ const registry=ensureTaskServiceResourceOwnershipSheet_(ss);
  const id="TSK-"+Utilities.getUuid();taskSheet.appendRow([id,tipo||"Tarea",titulo,descripcion||"",parcial||"",asignatura,gradoAsignado,seccionAsignada||"",fechaLimite||"",tareaOriginalId||"",owner,"Activa",puntaje===undefined?100:puntaje,archivoUrl||"",fechaDisponible||"",tipoRecurso||"Tarea"]);
  const registered=registerTaskServiceResourceOwnership_(scope,"TAREA",id,department.departmentId,ss);
  if(!registered.authorized){try{const rows=taskSheet.getDataRange().getValues(),idx=rows.findIndex((r,n)=>n>0&&String(r[0]||"").trim()===id);if(idx>0)taskSheet.deleteRow(idx+1);}catch(_){throw new Error("RESOURCE_OWNERSHIP_ROLLBACK_FAILED");}throw new Error(registered.code||"RESOURCE_OWNERSHIP_WRITE_FAILED");}
@@ -1246,14 +1245,23 @@ function resolveTaskServiceOwnershipDepartment_(payload,scope) {
  if(requested){if(allowed.indexOf(requested)===-1)return {authorized:false,code:"RESOURCE_DEPARTMENT_SELECTION_DENIED"};return {authorized:true,departmentId:requested};}
  if(allowed.length===1)return {authorized:true,departmentId:allowed[0]};if(allowed.length>1)return {authorized:false,code:"RESOURCE_DEPARTMENT_SELECTION_REQUIRED"};return {authorized:false,code:"RESOURCE_DEPARTMENT_UNRESOLVED"};
 }
+
+function ensureTaskServiceResourceOwnershipSheet_(ss) {
+  let sheet=ss&&ss.getSheetByName("ResourceOwnership");
+  if(!sheet)sheet=ss.insertSheet("ResourceOwnership");
+  if(sheet.getLastRow()===0)sheet.appendRow(TASK_RESOURCE_OWNERSHIP_HEADERS_);
+  const headers=sheet.getRange(1,1,1,TASK_RESOURCE_OWNERSHIP_HEADERS_.length).getValues()[0].map(v=>String(v||"").trim());
+  if(JSON.stringify(headers)!==JSON.stringify(TASK_RESOURCE_OWNERSHIP_HEADERS_))throw new Error("RESOURCE_OWNERSHIP_SCHEMA_MISMATCH");
+  return sheet;
+}
+
 function registerTaskServiceResourceOwnership_(scope,typeValue,idValue,departmentValue,ss) {
  let lock=null;try{
   if(!scope||!scope.authorized||!scope.userId||!scope.institutionId)return {authorized:false,code:"DEPARTMENT_SCOPE_NOT_ASSIGNED"};
   if(getDynamicPermissionsForRole(scope.role,"registerResourceOwnership")!==true)return {authorized:false,code:"AUTH_PERMISSION_DENIED"};
   const type=String(typeValue||"").trim().toUpperCase(),id=String(idValue||"").trim(),dept=String(departmentValue||"").trim();
   if(!type||!id||!dept||(scope.departmentIds||[]).map(String).indexOf(dept)===-1)return {authorized:false,code:"RESOURCE_OWNERSHIP_FIELDS_INVALID"};
-  const sheet=(ss||SpreadsheetApp.openById(SPREADSHEET_ID)).getSheetByName("ResourceOwnership");if(!sheet||sheet.getLastRow()<1)return {authorized:false,code:"RESOURCE_OWNERSHIP_NOT_CONFIGURED"};
-  const headers=sheet.getRange(1,1,1,TASK_RESOURCE_OWNERSHIP_HEADERS_.length).getValues()[0].map(v=>String(v||"").trim());if(JSON.stringify(headers)!==JSON.stringify(TASK_RESOURCE_OWNERSHIP_HEADERS_))return {authorized:false,code:"RESOURCE_OWNERSHIP_SCHEMA_MISMATCH"};
+  let sheet;try{sheet=ensureTaskServiceResourceOwnershipSheet_(ss||SpreadsheetApp.openById(SPREADSHEET_ID));}catch(error){return {authorized:false,code:error&&error.message==="RESOURCE_OWNERSHIP_SCHEMA_MISMATCH"?"RESOURCE_OWNERSHIP_SCHEMA_MISMATCH":"RESOURCE_OWNERSHIP_NOT_CONFIGURED"};}
   lock=LockService.getScriptLock();if(!lock.tryLock(5000))return {authorized:false,code:"RESOURCE_OWNERSHIP_LOCK_TIMEOUT"};
   const data=sheet.getDataRange().getValues(),matches=[];
   for(let i=1;i<data.length;i++){const r=data[i]||[];if(String(r[1]||"").trim()===scope.institutionId&&String(r[2]||"").trim().toUpperCase()===type&&String(r[3]||"").trim()===id)matches.push(r);}

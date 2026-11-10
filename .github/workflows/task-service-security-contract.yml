@@ -20,6 +20,7 @@ on:
       - 'js/api.js'
       - 'js/auth.js'
       - 'tests/security/task-service-security-contract.test.js'
+      - 'tests/security/task-service-resource-ownership.test.js'
       - '.github/workflows/task-service-security-contract.yml'
 jobs:
   local-security-contracts:
