@@ -62,6 +62,7 @@ const sheets = {
 };
 const ss = { getSheetByName(name) { return sheets[name] || null; } };
 const runtime = {
+  SPREADSHEET_ID: "LOCAL",
   PUBLIC_ACTIONS: publicActions,
   ROLE_PERMISSIONS: {
     Profesor: ["getAllExams"],
