@@ -3113,3 +3113,12 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Pruebas:** contrato persistente añadido para reuso de matrícula propia, rechazo de matrícula ajena, rechazo de cambio de grado/sección, ambigüedad, ignorar movimiento ajeno, reuso del movimiento propio y rechazo de vínculo/duplicado. Parseo de Code.gs y test PASS; ejecución dinámica aislada de los validadores PASS.
 - **Límites:** suite Node completa y CI no ejecutados; no hay despliegue ni datos reales. La idempotencia cubre matrícula y movimiento de conversión; no representa una garantía transaccional global para integraciones externas o escrituras remotas que persistan y lancen.
 - **Estado:** subhallazgo de reutilización segura y asociación de matrícula/movimiento corregido. TASK-153 En ejecución; AUD-NG-386 continúa abierto por los demás requisitos/rutas ACADEMIC.
+
+
+### 10.109 TASK-153 / ACADEMIC — validar artefactos en reintento de admisión ya convertida (C1.451)
+
+- **Hallazgo:** el retorno temprano para una solicitud en estado `Convertida` verificaba el ownership del expediente, pero informaba éxito sin comprobar que el expediente siguiera siendo único ni que existieran la cuenta estudiantil, matrícula y movimiento de ingreso propios de esa solicitud.
+- **Corrección:** el retorno ya convertido ahora exige un único expediente con PersonaID, una cuenta activa única de estudiante para esa persona, una matrícula única del usuario/año con marcador exacto de solicitud y grado coincidente, y el movimiento exacto de ingreso vinculado a esa matrícula y con grado/sección coincidentes. Devuelve los identificadores verificados. Los artefactos faltantes o inconsistentes fallan cerradamente; no se reparan ni eliminan datos automáticamente.
+- **Pruebas locales ejecutadas:** sintaxis de Code.gs y del contrato PASS. Ejecución dinámica aislada del retorno completo PASS para conversión íntegra; fallos esperados PASS para matrícula ausente, movimiento ausente, movimiento vinculado a otra matrícula, sección discordante y expediente duplicado.
+- **Límites:** suite Node completa y CI no ejecutados en esta iteración. Sin despliegue ni datos reales. La conciliación verifica expediente/cuenta/matrícula/movimiento; no certifica cargos financieros, documentos ni vínculos familiares porque sus esquemas actuales no permiten atribuirlos inequívocamente a esta conversión. No se realiza reparación automática.
+- **Estado:** subhallazgo del retorno prematuro corregido. TASK-153 continúa En ejecución y AUD-NG-386 abierto por el resto de rutas/requisitos ACADEMIC.
