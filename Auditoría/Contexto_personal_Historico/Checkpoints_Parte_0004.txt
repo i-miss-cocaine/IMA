@@ -200,3 +200,40 @@ I. **AUDITORÍA ÚNICA Y CONTROL DE RECURSIVIDAD (OBLIGATORIO):** antes de inici
 - Se amplía Plan Maestro §10.83. La propuesta requiere ratificación institucional y revisión legal hondureña.
 - No se crean usuarios, roles, membresías o permisos reales; no se modifican código, esquemas ni datos productivos. No se ejecutaron pruebas. T153-S01 sigue Bloqueada.
 ===============================================================================
+===============================================================================
+## CHECKPOINT C1.413 — Precisión normativa: autonomía institucional y protección de rama
+Sesión: IMA-EXEC-20261110-1237Z-01
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva de trabajo: NG_beta_0.0.0.1_work.
+Rama base: NG_beta_0.0.0.1.
+HEAD de partida verificado: f1e583fd9e9c5ba2e65ffd29413b5d72f8d93c83.
+Checkpoint anterior: C1.412.
+Actividad: PM-00 — aclaración normativa y corrección de criterios de bloqueo; no constituye cierre de tarea funcional.
+
+### Decisiones normativas
+1. GitHub `protected=false` en la rama base es un dato descriptivo y no un bloqueo. La protección es responsabilidad de configuración del propietario/administrador. El agente no la modifica. Se mantiene prohibido escribir/publicar en la rama base o cualquier rama distinta de la autorizada.
+2. IMA es una plataforma tecnológica multiinstitucional, no una institución usuaria. No impone organigrama, cargos, autoridades, departamentos ni políticas universales.
+3. La ausencia de documentos, estatutos, actas, nombramientos u organigrama institucional no bloquea requisitos funcionales ni desarrollo genérico. Los mecanismos configurables pueden diseñarse, implementarse y probarse con datos sintéticos.
+4. Cada institución decide y aprueba su configuración real. La aprobación se exige para seleccionar fuentes canónicas, registrar datos organizativos reales, asignar propietarios/membresías/permisos productivos, migrar datos reales o ejecutar actos institucionales; no para desarrollar los mecanismos genéricos.
+5. T153-S01 conserva un bloqueo acotado a la fuente canónica y conciliación de datos institucionales reales. No bloquea el motor genérico ni tareas independientes con datos sintéticos. Las dependencias se reevalúan individualmente conforme a §6.1; no se eliminan dependencias explícitas sin el procedimiento formal.
+6. §10.83 queda corregido: roles de ejemplo, incluido TIRL, son plantillas opcionales, no una matriz universal ni cargos obligatorios.
+
+### Archivos modificados
+- METODOLOGIA_DESARROLLO.md — numerales 9 y 10 añadidos al gate de inicio.
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md — §§10.81.7, 10.82.5 y 10.83.
+- changueslogs.txt — entrada C1.413.
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — este checkpoint.
+- Auditoría/INDICE_CHECKPOINTS.md — fila C1.413.
+
+### Alcance y verificaciones
+- Cambios exclusivamente documentales/normativos; sin cambios de código, esquema, datos, permisos, configuración de ramas ni asignaciones institucionales.
+- Se verificaron los bloques fuente exactos, sustituciones, ausencia de los textos normativos obsoletos y coherencia de los nuevos límites.
+- Pruebas de producto/código: no aplican y no se ejecutaron.
+- T153-S01 no se declara completada ni se autoriza selección de fuente institucional real.
+- El ciclo F29-TASK05↔F29-TASK17 no se resuelve con esta regla y permanece pendiente de triage.
+
+### Siguiente acción
+Reaplicar el algoritmo PM-00/§6.1, distinguiendo bloqueos para datos/actos institucionales reales de tareas genéricas configurables. Leer los requisitos originales completos y verificar dependencias de la siguiente candidata. No asumir que T153-S01 bloquea el motor genérico.
+Commit: SHA por verificar después de publicar.
+===============================================================================

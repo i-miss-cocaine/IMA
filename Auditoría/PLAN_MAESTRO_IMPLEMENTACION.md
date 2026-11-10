@@ -2734,18 +2734,27 @@ T153-S01 solo puede declararse completada cuando exista evidencia de:
 
 **Pruebas que corresponden al diseño/contrato:** unicidad de clave; estabilidad ante renombre; rechazo de ID/código no válido; referencias inactivas; parent inexistente; ciclos; vigencia temporal; equivalencia ambigua; unidades sin crosswalk; usuario con múltiples adscripciones; herencia no autorizada. Son criterios planificados, no pruebas ejecutadas en C1.410.
 
-### 10.81.7 Decisiones y límites pendientes
+### 10.81.7 Decisiones institucionales y límites de aplicación
 
-La web y los estándares no pueden resolver los siguientes datos internos: quién tiene autoridad para aprobar el organigrama de IMA; cuál catálogo refleja la estructura aprobada; si las unidades académicas y administrativas se superponen; quién es dueño/steward de cada dominio; qué tipos de expedientes deben tener propietario institucional o custodio departamental; qué relaciones jerárquicas conceden delegación administrativa (si alguna).
+IMA no puede ni debe decidir por una institución usuaria quién aprueba su organigrama, cuál catálogo refleja su estructura real, qué unidades se superponen, quién es dueño/steward de cada dominio ni qué relaciones jerárquicas conceden autoridad. Esas decisiones pertenecen a cada institución y se configuran en su propio espacio institucional.
 
-Se requiere una resolución institucional aprobada y, para cualquier perfilado de datos reales, autorización de lectura específica. Hasta entonces:
-- T153-S01 permanece **Bloqueada**; TASK-153 permanece **En ejecución**.
-- No se selecciona A/B/C/D por intuición.
-- No se fusionan catálogos, no se crean nuevas tablas, no se cambia `DepartamentoID`, no se asignan owners, no se migran datos ni se alteran permisos.
-- T153-S02…S08 no se adelantan; TASK-696 permanece Bloqueada por sus dependencias originales.
-- F29-TASK05↔F29-TASK17 conserva su ciclo PM-00 y no se considera resuelto por esta investigación.
+**La ausencia de decisiones o documentos institucionales NO bloquea requisitos funcionales ni el desarrollo genérico de IMA.** Sin organigrama aprobado ni documentos de una institución usuaria, la plataforma puede especificar, auditar, implementar y probar localmente con datos sintéticos:
+- Modelos configurables de institución/tenant, unidades, departamentos, tipos organizativos, jerarquías y relaciones no jerárquicas.
+- Catálogos configurables/versionados, claves estables, estados y vigencias, sin imponer valores universales.
+- Roles, capacidades, ámbitos, membresías, responsabilidades, propiedad/custodia de recursos, delegaciones y reglas de autorización.
+- Contratos, validaciones, aislamiento multiinstitución, auditoría, administración y flujos para que cada institución gestione su configuración.
+- Adaptadores, interfaces y mecanismos para seleccionar fuentes institucionales, conciliar catálogos y registrar aprobaciones cuando cada institución los configure.
 
-**Estado C1.410:** investigación externa y plan de decisión documentados; no es cierre de T153-S01 ni autorización de implementación.
+La aprobación institucional y la autorización específica de datos reales se exigen únicamente para actos que dependen de esa institución: elegir su fuente canónica, declarar su organigrama real, ratificar titulares/competencias, cargar o migrar sus datos, asignar propietarios/membresías/permisos productivos o ejecutar actos jurídicos en su nombre. No se deben crear valores reales por inferencia.
+
+Por tanto:
+- **T153-S01 conserva un bloqueo acotado** a seleccionar/ratificar la fuente canónica y reconciliar datos institucionales reales. No bloquea el diseño ni la implementación del motor genérico configurable ni tareas independientes ejecutables con datos sintéticos.
+- No se selecciona A/B/C/D como fuente canónica real por intuición; sí se pueden diseñar contratos y mecanismos neutrales que soporten cualquiera de las opciones.
+- No se fusionan catálogos reales, no se alteran `DepartamentoID`, no se asignan owners reales ni se migran datos productivos sin autorización. Estas restricciones no impiden construir y probar capacidades genéricas equivalentes.
+- T153-S02…S08 y TASK-696 deben reevaluarse individualmente mediante §6.1 y sus requisitos originales. Una dependencia institucional solo bloquea el componente o acto que requiera datos/decisiones reales; no se presume que bloquee toda tarea por compartir el tema «departamentos» o «roles». No se elimina ni cambia una dependencia explícita sin el procedimiento formal de resolución.
+- F29-TASK05↔F29-TASK17 conserva su ciclo PM-00; esta regla arquitectónica no lo resuelve.
+
+**Estado C1.410, reinterpretado por esta regla transversal:** la investigación no cierra T153-S01 ni autoriza asignaciones o migraciones reales; tampoco justifica bloquear el desarrollo genérico de IMA.
 
 
 ## 10.82. PM-01 — regla obligatoria de asignación de autoridad por roles configurables (C1.411)
@@ -2779,25 +2788,45 @@ La regla no elimina autenticación ni trazabilidad individual. IMA debe conserva
 - Ausencia de nombres personales hardcodeados en reglas, código, plantillas o workflows.
 
 ### 10.82.5 Dependencias y límites
-Esta regla se incorpora como requisito normativo/arquitectónico para la futura matriz de autorización. No resuelve quién tiene autoridad institucional para aprobar el organigrama ni qué catálogo de departamentos es canónico; por ello T153-S01 conserva su bloqueo hasta evidencia formal. No se adelantan T153-S02…S08 ni TASK-696. No se modifican datos, esquemas, código, permisos ni asignaciones productivas. Las pruebas anteriores quedan planificadas, no ejecutadas.
+La falta de aprobación del organigrama o de un catálogo departamental real no es una dependencia para definir ni implementar la matriz genérica de autorización. El motor configurable, sus contratos, reglas, interfaces administrativas y pruebas con fixtures/datos sintéticos pueden desarrollarse conforme a los requisitos de IMA sin documentos de una institución usuaria.
 
-**Resultado C1.411:** regla de responsabilidad/autoridad por roles configurables registrada en normativa propuesta y Plan Maestro; pendiente ratificación institucional y planificación de implementación según dependencias.
+La aprobación institucional se exige solo al configurar en producción valores reales: unidades, cargos, jerarquías, responsables, propietarios/custodios, membresías, permisos y delegaciones; también al elegir fuentes canónicas o realizar migraciones/actos institucionales. La ausencia de esos valores debe manejarse mediante configuración pendiente y denegación segura de operaciones que requieran una asignación real, no mediante el bloqueo del desarrollo de la plataforma.
+
+No se crean asignaciones productivas por inferencia. Los componentes genéricos pueden implementarse y probarse con datos sintéticos. Las dependencias concretas se verifican tarea por tarea mediante §6.1; no se extiende una dependencia de configuración institucional al motor genérico completo.
+
+**Resultado C1.411, precisado:** la regla de responsabilidad/autoridad por roles configurables es un requisito funcional de IMA; la configuración real corresponde a cada institución. La ratificación institucional no es condición para desarrollar el mecanismo genérico.
 
 
-### 10.83 PM-01 — Matriz configurable de roles, responsabilidades y autoridad superior (C1.412)
+### 10.83 PM-01 — Motor configurable de roles, responsabilidades y autoridad (C1.412; precisión arquitectónica C1.413)
 
-**Objetivo:** convertir N-23/N-24 en una política de autorización administrable desde IMA, con límites explícitos por rol, documento, operación y ámbito.
+**Objetivo:** proporcionar a cada institución usuaria mecanismos configurables para definir su propio modelo de autorización, sin imponer desde IMA un organigrama, jerarquía, catálogo de cargos ni distribución universal de autoridad.
 
-**Requisitos funcionales**
-- Catálogos configurables de roles, responsabilidades, recursos documentales, operaciones, ámbitos, membresías y delegaciones.
-- Rol superior Titular Institucional / Representante Legal (TIRL), con facultades jurídicas condicionadas a instrumento válido; puede asumir funciones de Dirección mediante modalidad temporal y auditable.
-- Matriz inicial limitada a TIRL, Dirección, Secretaría, asistentes de Dirección/Secretaría, Contaduría, Asistencia de Contaduría y Docencia; representantes y alumnos excluidos de autoridad/responsabilidad interna; otros empleados denegados por defecto.
-- Contaduría limitada al dominio financiero; su asistente solo opera dentro de delegación y sin aprobación/liberación final por defecto.
-- Docencia autorizada exclusivamente por asignación vigente de asignatura, grupo/sección y período, para desempeño de estudiantes de esa asignatura.
-- Autoría solo propone roles responsables elegibles; no concede autoridad, acceso, custodia ni aprobación.
-- Separación entre autor, responsable funcional, propietario institucional, custodio, revisor, aprobador y firmante.
-- Autorización de servidor en todos los canales y operaciones, denegación por defecto, auditoría protegida, versionado y aprobación separada de políticas.
+**Requisitos funcionales neutrales de la plataforma**
+- Catálogos administrables y versionados por institución para roles, capacidades, responsabilidades, tipos de recursos/documentos, operaciones, ámbitos, unidades, membresías, delegaciones y políticas.
+- Soporte de jerarquías organizativas y relaciones matriciales/funcionales configurables; la herencia de permisos debe ser explícita, limitada y evaluada en servidor.
+- Separación entre identidad autenticada, rol, responsabilidad, ámbito, membresía, propietario institucional, custodio, responsable funcional, revisor, aprobador y firmante.
+- Matriz configurable rol × recurso × operación × ámbito, con vigencias, precedencia, denegación por defecto, segregación de funciones y auditoría protegida.
+- Resolución dinámica de ocupantes y delegaciones/suplencias temporales; conservación histórica de quién actuó y bajo qué configuración efectiva.
+- Interfaces y validaciones para que administradores autorizados de cada institución creen, modifiquen, aprueben, versionen y revoquen su propia configuración.
+- Ningún cargo, nombre de autoridad, jerarquía ni conjunto de roles se codifica como estructura obligatoria común a todas las instituciones.
 
-**Pruebas requeridas:** exclusión de representantes/alumnos y empleados no habilitados; aislamiento financiero; límites de asistentes; alcance docente por asignatura; revocación por expiración; bloqueo de IDOR/API/descarga/exportación; propuesta de responsable por autor sin elevación; cambio de ocupante sin reescritura histórica; ausencia de autoaprobación y conflictos de segregación; TIRL sin privilegios de desarrollador y con evidencia jurídica para representación.
+**Plantillas y ejemplos no obligatorios**
+- IMA puede ofrecer plantillas iniciales opcionales (por ejemplo, Dirección, Secretaría, Contaduría, Docencia o una autoridad institucional superior) como datos de ejemplo configurables. No son cargos obligatorios, no constituyen un organigrama universal y no se activan como autoridad real sin decisión/configuración de la institución.
+- Un rol equivalente a Titular Institucional / Representante Legal (TIRL) puede existir si la institución lo define. Sus facultades jurídicas y representación efectiva dependen de la normativa, nombramiento e instrumento aplicables a esa institución; IMA solo registra y aplica la configuración aprobada. No se presupone que todas las instituciones tengan ese cargo ni que esté por encima de Dirección.
+- Los límites de Contaduría, asistentes, Docencia, representantes, alumnos y demás colectivos se determinan mediante la política configurable de cada institución; IMA ofrece controles para aplicar restricciones, segregación y mínimo privilegio, sin imponer esas asignaciones como datos universales.
 
-**Dependencias y límites:** ratificación institucional y legal; validación del instrumento de representación y de competencias estatutarias; T153-S01 permanece Bloqueada. No crear roles, usuarios, membresías, permisos ni asignaciones reales; no modificar código, esquemas o datos productivos. Pruebas no ejecutadas.
+**Pruebas requeridas para el motor genérico**
+- Aislamiento entre instituciones y departamentos configurados; ausencia de escalamiento horizontal/vertical.
+- Herencia explícita, precedencia, conflictos, ausencia de configuración y denegación segura.
+- Membresías múltiples, vigencias, revocación, delegación y cambio de ocupante sin reescritura histórica.
+- Separación de autor, responsable, custodio, revisor, aprobador y firmante; prevención de autoaprobación y conflictos de segregación según política.
+- Bloqueo de IDOR/API/lectura/descarga/exportación/firma cuando la matriz efectiva no autoriza.
+- Configuración pendiente o inexistente sin conceder permisos implícitos; pruebas locales con instituciones y roles sintéticos.
+- Ningún nombre personal o cargo de una institución concreta hardcodeado en reglas, código, plantillas obligatorias o workflows.
+
+**Dependencias y límites**
+- No se requiere ratificación institucional, organigrama, acta, estatuto ni documento de una institución usuaria para especificar, implementar o probar localmente este motor genérico.
+- La institución debe aprobar sus propios valores y asignaciones antes de activarlos como configuración real/autoridad productiva. IMA no inventa esos datos ni actúa como autoridad institucional.
+- No crear usuarios, membresías, permisos o asignaciones reales por inferencia. Las pruebas descritas son requisitos de implementación; su ejecución debe registrarse con evidencia.
+- T153-S01 solo condiciona la selección de fuente canónica y reconciliación de datos institucionales reales; no bloquea el motor genérico ni tareas independientes ejecutables con datos sintéticos.
+- Esta actualización es documental; no modifica código, esquemas ni datos productivos.

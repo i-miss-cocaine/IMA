@@ -737,3 +737,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - N-24 incorpora Titular Institucional / Representante Legal (TIRL) por encima de Dirección, separado del desarrollador; puede asumir Dirección en funciones con vigencia y auditoría. La representación legal exige instrumento válido y no desplaza órganos estatutarios.
 - Límites: representantes y alumnos excluidos de autoridad interna; Docencia restringida a sus asignaturas asignadas; Contaduría al dominio financiero; asistentes solo por delegación; otros empleados sin rol habilitado denegados por defecto.
 - Plan Maestro §10.83. Propuesta pendiente de ratificación y asesoría legal. Sin cambios de código, esquemas, datos o permisos reales; pruebas no ejecutadas; T153-S01 sigue Bloqueada.
+
+[2026-11-10] C1.413 — IMA-EXEC-20261110-1237Z-01 — precisión normativa sobre autonomía institucional y protección de rama
+- METODOLOGIA_DESARROLLO.md: GitHub protected=false en la rama base no es bloqueo; la protección corresponde al propietario/administrador. Se mantiene el trabajo exclusivo en NG_beta_0.0.0.1_work y la prohibición de escribir en otras ramas.
+- METODOLOGIA_DESARROLLO.md: ausencia de organigrama o documentos institucionales no bloquea requisitos ni capacidades genéricas configurables de IMA.
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md §§10.81.7 y 10.82.5: aprobación institucional limitada a datos reales, fuentes canónicas, asignaciones productivas y actos institucionales; desarrollo genérico con datos sintéticos permitido.
+- §10.83: roles/jerarquías de ejemplo, incluido TIRL, son plantillas opcionales; se elimina la matriz universal obligatoria.
+- T153-S01 conserva alcance bloqueado solo para decisión/fuente canónica y conciliación de datos institucionales reales; no bloquea el motor genérico. No se alteran dependencias explícitas.
+- Solo cambios documentales. Sin cambios de código, esquemas, datos, permisos ni configuración de ramas. Pruebas de producto no aplican/no ejecutadas.
+- Checkpoint C1.413 en Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt; índice actualizado.
