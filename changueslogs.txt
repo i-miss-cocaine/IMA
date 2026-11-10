@@ -1004,3 +1004,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - GitHub Actions run 42892900933 SUCCESS; contratos de seguridad y sintaxis de servicios/cliente PASS.
 - Sin despliegue ni datos reales. TASK-153 sigue En ejecución; AUD-NG-386 abierto.
 - Commits: cc60ed6e50cf411ac65490ef8cca6ca9542eafa0; 89ca3edfc6cff41105c03fccc2d6a83188b2026c; 25bea9e9ed69460c1b2bf21ab2bf951f4a837ba5.
+
+[2026-11-10] C1.458 — IMA-EXEC-20261110-1825Z-02 — TASK-153 / ACADEMIC: resolución segura de duplicados
+- `resolveAdmissionDuplicate` exige rol de gestión verificado y serializa revalidación de ownership, lectura y escritura con ScriptLock.
+- Vinculación entre solicitud y expediente requiere igualdad de departamento; un destino de otro departamento se rechaza antes de leer/escribir la solicitud.
+- Se cubren lock ocupado, denegación de rol, vínculo interdepartamental, vínculo válido mismo departamento, resoluciones repetidas y escritura coordinada.
+- GitHub Actions run 42892900933 SUCCESS: contratos de seguridad/ownership y sintaxis local PASS (Node 24).
+- Sin despliegue ni datos reales; las pruebas de despliegue se reservan para beta. TASK-153 permanece En ejecución.
+- Commits: 89ca3edfc6cff41105c03fccc2d6a83188b2026c; 25bea9e9ed69460c1b2bf21ab2bf951f4a837ba5.
