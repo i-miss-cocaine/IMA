@@ -10803,137 +10803,113 @@ function getStudentFileAdministrativeReports(payload) {
 // [REQ-EXP-003] [Fase 1: Registro y Expediente de Estudiantes] - Service backend endpoints (getStudentGuardians, saveStudentGuardian, unlinkStudentGuardian) para la gestión de padres, tutores y responsables legales del estudiante.
 function getStudentGuardians(payload) {
   const { expedienteId } = payload || {};
-  if (!expedienteId) throw new Error("expedienteId es requerido.");
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const relRows = getOrCreateSheet(ss, "RelacionesEstudianteTutor").getDataRange().getValues().slice(1);
-  const tutRows = getOrCreateSheet(ss, "ResponsablesTutores").getDataRange().getValues().slice(1);
-
-  const studentRels = relRows.filter(r => String(r[1]).trim() === String(expedienteId).trim() && r[9] === "Activo");
-
-  const guardians = studentRels.map(r => {
-    const tut = tutRows.find(t => String(t[0]).trim() === String(r[2]).trim());
-    return {
-      relacionId: r[0],
-      expedienteId: r[1],
-      responsableId: r[2],
-      nombres: tut ? tut[2] : "",
-      apellidos: tut ? tut[3] : "",
-      identificacion: tut ? tut[4] : "",
-      telefono: tut ? tut[5] : "",
-      email: tut ? tut[6] : "",
-      direccion: tut ? tut[7] : "",
-      ocupacion: tut ? tut[8] : "",
-      tipoParentesco: r[3],
-      esRepresentanteLegal: r[4],
-      esContactoEmergencia: r[5],
-      esResponsableFinanciero: r[6],
-      autorizadoPickUp: r[7],
-      accesoPortal: r[8],
-      observaciones: r[10]
-    };
-  });
-
-  return { status: "success", guardians: guardians };
+  if (!expedienteId) return { status:"error", code:"RESOURCE_NOT_FOUND", message:"Acceso denegado." };
+  const permission=validateRolePermission("getStudentGuardians",payload);
+  if(!permission||permission.authorized!==true)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Acceso denegado."};
+  const actor=getVerifiedAcademicIdentity_(payload);
+  if(!actor.authorized)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Acceso denegado."};
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),expSheet=ss.getSheetByName("ExpedientesEstudiantes");
+  if(!expSheet)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Acceso denegado."};
+  const expMatches=expSheet.getDataRange().getValues().slice(1).filter(row=>String(row[0]||"").trim()===String(expedienteId).trim());
+  if(expMatches.length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Acceso denegado."};
+  const access=assertStudentExpedienteScopeAccess_(payload,ss,expSheet,expMatches[0]);
+  if(!access.authorized)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Acceso denegado."};
+  const relRows=getOrCreateSheet(ss,"RelacionesEstudianteTutor").getDataRange().getValues().slice(1);
+  const tutRows=getOrCreateSheet(ss,"ResponsablesTutores").getDataRange().getValues().slice(1);
+  const studentRels=relRows.filter(row=>String(row[1]||"").trim()===String(expedienteId).trim()&&String(row[9]||"").trim().toUpperCase()==="ACTIVO");
+  const guardians=studentRels.map(row=>{
+    const matches=tutRows.filter(t=>String(t[0]||"").trim()===String(row[2]||"").trim());
+    if(matches.length!==1)return null;
+    const tut=matches[0];
+    return {relacionId:row[0],expedienteId:row[1],responsableId:row[2],nombres:tut[2]||"",apellidos:tut[3]||"",
+      identificacion:tut[4]||"",telefono:tut[5]||"",email:tut[6]||"",direccion:tut[7]||"",ocupacion:tut[8]||"",
+      tipoParentesco:row[3],esRepresentanteLegal:row[4],esContactoEmergencia:row[5],esResponsableFinanciero:row[6],
+      autorizadoPickUp:row[7],accesoPortal:row[8],observaciones:row[10]||""};
+  }).filter(Boolean);
+  return {status:"success",guardians};
 }
 
 function saveStudentGuardian(payload) {
   const { expedienteId, responsableId, nombres, apellidos, identificacion, telefono, email, direccion, ocupacion, tipoParentesco, esRepresentanteLegal, esContactoEmergencia, esResponsableFinanciero, autorizadoPickUp, accesoPortal, observaciones } = payload || {};
-  if (!expedienteId || !nombres || !apellidos) throw new Error("expedienteId, nombres y apellidos del responsable son requeridos.");
+  if(!expedienteId||!nombres||!apellidos)throw new Error("expedienteId, nombres y apellidos del responsable son requeridos.");
+  const permission=validateRolePermission("saveStudentGuardian",payload);
+  if(!permission||permission.authorized!==true)throw new Error("RESOURCE_NOT_FOUND");
+  const actor=getVerifiedAcademicIdentity_(payload);
+  if(!actor.authorized)throw new Error("RESOURCE_NOT_FOUND");
+  const actorRole=String(actor.role||"").toUpperCase().replace(/[^A-Z]/g,"");
+  if(["ESTUDIANTE","ALUMNO","PADRE","MADRE","TUTOR","RESPONSABLE","RESPONSABLEFAMILIAR"].includes(actorRole))throw new Error("RESOURCE_NOT_FOUND");
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),expSheet=ss.getSheetByName("ExpedientesEstudiantes");
+  if(!expSheet)throw new Error("RESOURCE_NOT_FOUND");
+  const expMatches=expSheet.getDataRange().getValues().slice(1).filter(row=>String(row[0]||"").trim()===String(expedienteId).trim());
+  if(expMatches.length!==1)throw new Error("RESOURCE_NOT_FOUND");
+  const targetAccess=assertStudentExpedienteScopeAccess_(payload,ss,expSheet,expMatches[0]);
+  if(!targetAccess.authorized||["SELF","GUARDIAN"].includes(targetAccess.accessType))throw new Error("RESOURCE_NOT_FOUND");
 
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const tutSheet = getOrCreateSheet(ss, "ResponsablesTutores");
-  const tutData = tutSheet.getDataRange().getValues();
-
-  let respId = responsableId;
-  const normIdent = normalizeString(identificacion);
-  const normEmail = normalizeString(email);
-
-  let existingTutIdx = -1;
-  if (respId) {
-    existingTutIdx = tutData.findIndex(r => String(r[0]).trim() === String(respId).trim());
-  } else if (normIdent || normEmail) {
-    existingTutIdx = tutData.findIndex(r => (normIdent && normalizeString(r[4]) === normIdent) || (normEmail && normalizeString(r[6]) === normEmail));
+  const tutSheet=getOrCreateSheet(ss,"ResponsablesTutores"),tutData=tutSheet.getDataRange().getValues();
+  const normIdent=normalizeString(identificacion),normEmail=normalizeString(email);
+  let matches=[];
+  if(responsableId)matches=tutData.slice(1).map((row,index)=>({row,index:index+1})).filter(item=>String(item.row[0]||"").trim()===String(responsableId).trim());
+  else if(normIdent||normEmail)matches=tutData.slice(1).map((row,index)=>({row,index:index+1})).filter(item=>(normIdent&&normalizeString(item.row[4])===normIdent)||(normEmail&&normalizeString(item.row[6])===normEmail));
+  if(matches.length>1)throw new Error("RESOURCE_NOT_FOUND");
+  let existingTutIdx=matches.length===1?matches[0].index:-1;
+  let respId=existingTutIdx!==-1?String(tutData[existingTutIdx][0]).trim():"";
+  const relSheet=getOrCreateSheet(ss,"RelacionesEstudianteTutor"),relData=relSheet.getDataRange().getValues();
+  if(existingTutIdx!==-1){
+    const linkedExpIds=[...new Set(relData.slice(1).filter(row=>String(row[2]||"").trim()===respId&&String(row[9]||"").trim().toUpperCase()==="ACTIVO").map(row=>String(row[1]||"").trim()).filter(Boolean))];
+    for(const linkedExpId of linkedExpIds){
+      const linkedMatches=expSheet.getDataRange().getValues().slice(1).filter(row=>String(row[0]||"").trim()===linkedExpId);
+      if(linkedMatches.length!==1)throw new Error("RESOURCE_NOT_FOUND");
+      const linkedAccess=assertStudentExpedienteScopeAccess_(payload,ss,expSheet,linkedMatches[0]);
+      if(!linkedAccess.authorized||["SELF","GUARDIAN"].includes(linkedAccess.accessType))throw new Error("RESOURCE_NOT_FOUND");
+    }
   }
-
-  const now = new Date();
-
-  if (existingTutIdx !== -1) {
-    respId = tutData[existingTutIdx][0];
-    tutSheet.getRange(existingTutIdx + 1, 3, 1, 7).setValues([[
-      nombres.trim(),
-      apellidos.trim(),
-      identificacion ? String(identificacion).trim() : "",
-      telefono ? String(telefono).trim() : "",
-      email ? String(email).trim().toLowerCase() : "",
-      direccion || "",
-      ocupacion || ""
-    ]]);
-  } else {
-    respId = "RES-" + now.getTime();
-    tutSheet.appendRow([
-      respId,
-      "PER-" + Date.now(),
-      nombres.trim(),
-      apellidos.trim(),
-      identificacion ? String(identificacion).trim() : "",
-      telefono ? String(telefono).trim() : "",
-      email ? String(email).trim().toLowerCase() : "",
-      direccion || "",
-      ocupacion || "",
-      "Activo"
-    ]);
+  const now=new Date();
+  if(existingTutIdx!==-1){
+    tutSheet.getRange(existingTutIdx+1,3,1,7).setValues([[nombres.trim(),apellidos.trim(),identificacion?String(identificacion).trim():"",
+      telefono?String(telefono).trim():"",email?String(email).trim().toLowerCase():"",direccion||"",ocupacion||""]]);
+  }else{
+    respId="RES-"+now.getTime();
+    tutSheet.appendRow([respId,"PER-"+Date.now(),nombres.trim(),apellidos.trim(),identificacion?String(identificacion).trim():"",
+      telefono?String(telefono).trim():"",email?String(email).trim().toLowerCase():"",direccion||"",ocupacion||"","Activo"]);
   }
-
-  // Vincular con Expediente
-  const relSheet = getOrCreateSheet(ss, "RelacionesEstudianteTutor");
-  const relData = relSheet.getDataRange().getValues();
-
-  let relIdx = relData.findIndex(r => String(r[1]).trim() === String(expedienteId).trim() && String(r[2]).trim() === String(respId).trim());
-
-  if (relIdx !== -1) {
-    relSheet.getRange(relIdx + 1, 4, 1, 7).setValues([[
-      tipoParentesco || "Padre/Madre",
-      esRepresentanteLegal !== undefined ? esRepresentanteLegal : true,
-      esContactoEmergencia !== undefined ? esContactoEmergencia : true,
-      esResponsableFinanciero !== undefined ? esResponsableFinanciero : true,
-      autorizadoPickUp !== undefined ? autorizadoPickUp : true,
-      accesoPortal !== undefined ? accesoPortal : true,
-      "Activo"
-    ]]);
-  } else {
-    const relId = "REL-" + Math.floor(10000 + Math.random() * 90000);
-    relSheet.appendRow([
-      relId,
-      expedienteId,
-      respId,
-      tipoParentesco || "Padre/Madre",
-      esRepresentanteLegal !== undefined ? esRepresentanteLegal : true,
-      esContactoEmergencia !== undefined ? esContactoEmergencia : true,
-      esResponsableFinanciero !== undefined ? esResponsableFinanciero : true,
-      autorizadoPickUp !== undefined ? autorizadoPickUp : true,
-      accesoPortal !== undefined ? accesoPortal : true,
-      "Activo",
-      observaciones || ""
-    ]);
+  const relMatches=relData.map((row,index)=>({row,index})).filter(item=>item.index>0&&String(item.row[1]||"").trim()===String(expedienteId).trim()&&String(item.row[2]||"").trim()===respId);
+  if(relMatches.length>1)throw new Error("RESOURCE_NOT_FOUND");
+  if(relMatches.length===1){
+    relSheet.getRange(relMatches[0].index+1,4,1,7).setValues([[tipoParentesco||"Padre/Madre",
+      esRepresentanteLegal!==undefined?esRepresentanteLegal:true,esContactoEmergencia!==undefined?esContactoEmergencia:true,
+      esResponsableFinanciero!==undefined?esResponsableFinanciero:true,autorizadoPickUp!==undefined?autorizadoPickUp:true,
+      accesoPortal!==undefined?accesoPortal:true,"Activo"]]);
+  }else{
+    const relId="REL-"+Utilities.getUuid();
+    relSheet.appendRow([relId,expedienteId,respId,tipoParentesco||"Padre/Madre",
+      esRepresentanteLegal!==undefined?esRepresentanteLegal:true,esContactoEmergencia!==undefined?esContactoEmergencia:true,
+      esResponsableFinanciero!==undefined?esResponsableFinanciero:true,autorizadoPickUp!==undefined?autorizadoPickUp:true,
+      accesoPortal!==undefined?accesoPortal:true,"Activo",observaciones||""]);
   }
-
-  return { status: "success", responsableId: respId, message: "Tutor/Responsable vinculado al expediente con éxito." };
+  return {status:"success",responsableId:respId,message:"Tutor/Responsable vinculado al expediente con éxito."};
 }
 
 function unlinkStudentGuardian(payload) {
   const { relacionId } = payload || {};
-  if (!relacionId) throw new Error("relacionId requerido.");
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "RelacionesEstudianteTutor");
-  const data = sheet.getDataRange().getValues();
-
-  const idx = data.findIndex(r => String(r[0]).trim() === String(relacionId).trim());
-  if (idx === -1) throw new Error("Relación no encontrada.");
-
-  sheet.getRange(idx + 1, 10).setValue("Inactivo");
-  return { status: "success", message: "Vínculo de responsable deshabilitado." };
+  if(!relacionId)throw new Error("relacionId requerido.");
+  const permission=validateRolePermission("unlinkStudentGuardian",payload);
+  if(!permission||permission.authorized!==true)throw new Error("RESOURCE_NOT_FOUND");
+  const actor=getVerifiedAcademicIdentity_(payload);
+  if(!actor.authorized)throw new Error("RESOURCE_NOT_FOUND");
+  const actorRole=String(actor.role||"").toUpperCase().replace(/[^A-Z]/g,"");
+  if(["ESTUDIANTE","ALUMNO","PADRE","MADRE","TUTOR","RESPONSABLE","RESPONSABLEFAMILIAR"].includes(actorRole))throw new Error("RESOURCE_NOT_FOUND");
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=getOrCreateSheet(ss,"RelacionesEstudianteTutor");
+  const data=sheet.getDataRange().getValues();
+  const matches=data.map((row,index)=>({row,index})).filter(item=>item.index>0&&String(item.row[0]||"").trim()===String(relacionId).trim());
+  if(matches.length!==1)throw new Error("RESOURCE_NOT_FOUND");
+  const relation=matches[0].row,expSheet=ss.getSheetByName("ExpedientesEstudiantes");
+  if(!expSheet)throw new Error("RESOURCE_NOT_FOUND");
+  const expMatches=expSheet.getDataRange().getValues().slice(1).filter(row=>String(row[0]||"").trim()===String(relation[1]||"").trim());
+  if(expMatches.length!==1)throw new Error("RESOURCE_NOT_FOUND");
+  const access=assertStudentExpedienteScopeAccess_(payload,ss,expSheet,expMatches[0]);
+  if(!access.authorized||["SELF","GUARDIAN"].includes(access.accessType))throw new Error("RESOURCE_NOT_FOUND");
+  sheet.getRange(matches[0].index+1,10).setValue("Inactivo");
+  return {status:"success",message:"Vínculo de responsable deshabilitado."};
 }
 
 // ---------------------------------------------------------------------------
