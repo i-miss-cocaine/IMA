@@ -3237,3 +3237,14 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Límites:** fixtures y lock local; no se afirma concurrencia real de Sheets. Sin despliegue, servicios vivos ni datos institucionales reales. Este subalcance cubre creación de la solicitud; quedan pendientes el callback/actualización de estado, registro de firma y certificado de auditoría.
 - **Estado:** creación de solicitudes de firma avanzada con ownership verificado aprobada localmente. TASK-153 permanece En ejecución y AUD-NG-386 abierto por el resto de rutas.
 - **Commits:** `bbd2d1389234233f9d75c8ddd0fb9697e8c5a434` (ownership y lock), `58d2a03f1d7f0c83e52e88c47f821c8d39256871` (RBAC en handler), `21fe586777cc6394effcdcbc639f8d5da1fa1374` (contrato) y `ce08eabc4821f7856c40be16b1bd7620891c75ac` (workflow).
+
+### 10.120 TASK-153 / ACADEMIC — proteger y normalizar el reordenamiento de lista de espera (C1.462)
+
+- **Autorización antes de detalles:** `reorderWaitlist` valida contexto y permiso sin resolver solicitud, adquiere `ScriptLock` y lee inicialmente solo `EsperaID`/`SolicitudID`. Revalida ownership del objetivo bajo lock; después obtiene el conjunto de solicitudes autorizadas y consulta metadatos de posición solo de esas filas.
+- **Integridad del grupo:** solo permite reordenar entradas `En_Espera` del mismo año lectivo y grado. La posición destino debe ser entero seguro positivo dentro del tamaño del grupo. Recalcula el orden completo del grupo con desempate determinista por posición, fecha de ingreso y fila.
+- **Compensación:** las escrituras de posición quedan bajo lock. Si una escritura falla, restaura las posiciones anteriores; si también falla la compensación, emite `WAITLIST_REORDER_COMPENSATION_FAILED`.
+- **Contrato local:** orden del grupo completo, fila de otro departamento nunca leída en detalle ni modificada, ownership denegado antes de detalles, lock ocupado, estado no elegible, posición no entera/fuera de rango y rollback de escritura parcial/fallo de rollback.
+- **Ejecución:** GitHub Actions run `42896093654` — SUCCESS, Node 24. Contratos Department Scope, ACADEMIC (expediente/admisión/conversión/entrevistas/evaluaciones/duplicados/reapertura/lista de espera), USER signature ownership, ACCOUNTING, ResourceOwnership ABAC y voucher client PASS; sintaxis Apps Script/cliente PASS.
+- **Límites:** grupo y persistencia simulados localmente con mocks/fixtures y lock controlado; sin Google Sheets real, despliegue ni datos institucionales reales.
+- **Estado:** reordenamiento de lista de espera ACADEMIC corregido y aprobado localmente. TASK-153 sigue En ejecución por recursos institucionales, firmas, permisos granulares, referencias compartidas, importaciones y otras rutas pendientes.
+- **Commits:** `647c50e9a96c70d80809be56600716fac37b75f7` (código) y `be34332567dd0b93e101d260c7def03cbb95ea52` (contrato).
