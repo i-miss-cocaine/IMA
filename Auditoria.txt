@@ -1321,3 +1321,16 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - Sin despliegue ni datos reales. TASK-153 sigue En ejecución; AUD-NG-386 abierto por otras rutas.
 - Commits: `647c50e9a96c70d80809be56600716fac37b75f7`; `be34332567dd0b93e101d260c7def03cbb95ea52`.
 ===============================================================================
+
+===============================================================================
+## C1.463 — consulta segura del estado de firma avanzada
+- `checkAdvancedSignatureStatus` rechaza `respuestaProveedor` suministrada por cliente; no se detectó callback/webhook de PSC autenticado en USER.
+- Exige permiso e identidad verificados, adquiere ScriptLock, obtiene inicialmente solo claves mínimas y verifica ownership documental antes de leer la fila completa.
+- `Completada` deja de implicar firma válida: `esFirmadoValido:false`; expone verificación criptográfica pendiente y necesidad de validación autenticada del proveedor.
+- Contratos locales de lectura autorizada, ownership antes de detalles, denegación interdepartamental, lock ocupado, callback falsificado y no exposición X.509 PASS.
+- GitHub Actions run `42898171738` SUCCESS: Department Scope, ACADEMIC, USER signature ownership, ACCOUNTING, ResourceOwnership ABAC, voucher client y sintaxis PASS.
+- Un run intermedio falló por expectativa antigua del fixture (`esFirmadoValido:true`); contrato actualizado y run integral final SUCCESS.
+- Sin despliegue, PSC real, validación X.509 real ni datos institucionales. Callback autenticado y verificación criptográfica permanecen pendientes.
+- TASK-153 sigue En ejecución; AUD-NG-386 abierto.
+- Commits: `31cc21b9572c47e792d0b3188237aeaaccd480a6`; `e7e8588402d2e462b7a4e70161309f52d46ae70b`; `dafdbbb0526ee550d7d4ca462340e0351ee6742a`; `4aa2a9a251e53ec0044956f66e7a32263ca86a98`.
+===============================================================================
