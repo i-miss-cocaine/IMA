@@ -1161,6 +1161,115 @@ function createAdmissionRequest(payload) {
 }
 
 // [TAREA-F5-020] [Fase 5: Optimización de Admisiones] - Consulta con paginación en servidor, ordenamiento y monitoreo de latencia (>2000ms)
+
+function getAcademicAdmissionScopeContext_(payload, action, solicitudId, operation) {
+  const permission = validateRolePermission(action, payload);
+  if (!permission || permission.authorized !== true) return { authorized: false, code: "AUTH_PERMISSION_DENIED" };
+  const actor = getVerifiedAcademicIdentity_(payload);
+  if (!actor || actor.authorized !== true) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const scope = getVerifiedAcademicDepartmentScope_(payload, ss, actor);
+  if (!scope || scope.authorized !== true) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+  let requestAccess = null;
+  if (solicitudId) {
+    requestAccess = assertAcademicAdmissionRequestScopeAccess_(ss, scope, solicitudId, payload, operation || "READ");
+    if (!requestAccess || requestAccess.authorized !== true) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
+  }
+  return { authorized: true, ss: ss, actor: actor, scope: scope, requestAccess: requestAccess };
+}
+
+function getAuthorizedAdmissionRequestIds_(ss, scope, payload, operation) {
+  const rows = getOrCreateSheet(ss, "SolicitudesAdmision").getDataRange().getValues().slice(1);
+  const ids = new Set();
+  rows.forEach(function(row) {
+    const id = String(row[0] || "").trim();
+    if (!id) return;
+    const access = assertAcademicAdmissionRequestScopeAccess_(ss, scope, id, payload, operation || "READ");
+    if (access && access.authorized === true) ids.add(id);
+  });
+  return ids;
+}
+
+function resolveAcademicAdmissionDepartment_(payload, scope, requestAccess) {
+  if (!scope || scope.authorized !== true) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+  const ownedDepartment = String((requestAccess && requestAccess.departmentId) || "").trim();
+  const requestedDepartment = String((payload && payload.departmentId) || "").trim();
+  if (ownedDepartment) {
+    if (requestedDepartment && requestedDepartment !== ownedDepartment) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+    return { authorized: true, departmentId: ownedDepartment, source: "EXISTING_OWNERSHIP" };
+  }
+  const allowedDepartments = (scope.departmentIds || []).map(function(value) { return String(value || "").trim(); }).filter(Boolean);
+  if (requestedDepartment) {
+    if (scope.institutionWide !== true && allowedDepartments.indexOf(requestedDepartment) === -1) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+    return { authorized: true, departmentId: requestedDepartment, source: "EXPLICIT_SELECTION" };
+  }
+  if (allowedDepartments.length === 1) return { authorized: true, departmentId: allowedDepartments[0], source: "UNIQUE_SCOPE" };
+  return { authorized: false, code: "RESOURCE_DEPARTMENT_SELECTION_REQUIRED" };
+}
+
+function registerAcademicResourceOwnership_(ss, scope, resourceType, resourceId, departmentId, actorUserId) {
+  if (!scope || scope.authorized !== true || !String(scope.institutionId || "").trim()) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+  if (getDynamicPermissionsForRole(scope.role, "registerResourceOwnership") !== true) return { authorized: false, code: "AUTH_PERMISSION_DENIED" };
+  const type = String(resourceType || "").trim().toUpperCase();
+  const id = String(resourceId || "").trim();
+  const department = String(departmentId || "").trim();
+  if (!type || !id || !department) return { authorized: false, code: "RESOURCE_REFERENCE_INVALID" };
+  const inScope = (scope.departmentIds || []).some(function(value) { return String(value || "").trim() === department; });
+  if (scope.institutionWide !== true && !inScope) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+  let sheet = ss && ss.getSheetByName("ResourceOwnership");
+  if (!sheet && ss && typeof ss.insertSheet === "function") sheet = ss.insertSheet("ResourceOwnership");
+  if (!sheet) return { authorized: false, code: "RESOURCE_OWNERSHIP_NOT_CONFIGURED" };
+  const headers = ["OwnershipID","InstitutionID","ResourceType","ResourceID","DepartmentID","Status","CreatedBy","CreatedAt","UpdatedAt"];
+  if (sheet.getLastRow() === 0) sheet.appendRow(headers);
+  const header = sheet.getRange(1, 1, 1, headers.length).getValues()[0].map(function(value) { return String(value || "").trim(); });
+  if (headers.some(function(value, index) { return header[index] !== value; })) return { authorized: false, code: "RESOURCE_OWNERSHIP_SCHEMA_MISMATCH" };
+  const rows = sheet.getDataRange().getValues().slice(1);
+  const historical = rows.filter(function(row) {
+    return String(row[1] || "").trim() === String(scope.institutionId).trim() &&
+      String(row[2] || "").trim().toUpperCase() === type &&
+      String(row[3] || "").trim() === id;
+  });
+  const active = historical.filter(function(row) { return String(row[5] || "").trim().toUpperCase() === "ACTIVE"; });
+  if (active.length > 1) return { authorized: false, code: "RESOURCE_OWNERSHIP_AMBIGUOUS" };
+  if (active.length === 1) {
+    if (String(active[0][4] || "").trim() === department) return { authorized: true, existing: true, created: false, departmentId: department, ownershipId: String(active[0][0] || "") };
+    return { authorized: false, code: "RESOURCE_OWNERSHIP_CONFLICT" };
+  }
+  if (historical.length) return { authorized: false, code: "RESOURCE_OWNERSHIP_HISTORY_CONFLICT" };
+  const ownershipId = Utilities.getUuid();
+  const now = new Date();
+  sheet.appendRow([ownershipId, String(scope.institutionId).trim(), type, id, department, "ACTIVE", String(actorUserId || scope.userId || "").trim(), now, now]);
+  return { authorized: true, existing: false, created: true, departmentId: department, ownershipId: ownershipId };
+}
+
+function deleteAcademicResourceOwnership_(ss, ownershipId) {
+  const id = String(ownershipId || "").trim();
+  const sheet = ss && ss.getSheetByName("ResourceOwnership");
+  if (!id || !sheet) return false;
+  const rows = sheet.getDataRange().getValues();
+  const matches = [];
+  for (let i = 1; i < rows.length; i++) if (String(rows[i][0] || "").trim() === id) matches.push(i + 1);
+  if (matches.length !== 1) return false;
+  sheet.deleteRow(matches[0]);
+  return true;
+}
+
+function isAcademicAdmissionManagerRole_(role) {
+  return ["director","administrador","desarrollador","secretaria"].indexOf(normalizeString(role)) !== -1;
+}
+
+function getAcademicUserIdentityForAdmission_(ss, userId) {
+  const id = String(userId || "").trim();
+  if (!id) return null;
+  const rows = getOrCreateSheet(ss, "Usuarios").getDataRange().getValues().slice(1);
+  const matches = rows.filter(function(row) {
+    return String(row[0] || "").trim() === id &&
+      ["activo","active"].indexOf(normalizeString(row[10])) !== -1;
+  });
+  if (matches.length !== 1) return null;
+  return { authorized: true, userId: id, role: String(matches[0][6] || "").trim() };
+}
+
 function getAdmissionRequests(payload) {
   const permission=validateRolePermission("getAdmissionRequests",payload);
   if(!permission||permission.authorized!==true)return {status:"error",code:"RESOURCE_SCOPE_DENIED",message:"Acceso denegado."};
@@ -1580,95 +1689,89 @@ function scheduleAdmissionInterview(payload) {
   if (!solicitudId || !fecha || !horaInicio || !horaFin || !evaluadorUserId) {
     throw new Error("solicitudId, fecha, horaInicio, horaFin y evaluadorUserId son obligatorios.");
   }
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "EntrevistasAdmision");
-  const data = sheet.getDataRange().getValues();
-
-  // Detección de solapamiento/conflicto en la agenda del evaluador
-  if (data.length > 1) {
-    const existing = data.slice(1).find(r => {
-      if (String(r[5]).trim() !== String(evaluadorUserId).trim()) return false;
-      if (r[8] === "Cancelada") return false;
-      if (String(r[2]).trim() !== String(fecha).trim()) return false;
-
-      const exStart = String(r[3]);
-      const exEnd = String(r[4]);
-      return (horaInicio < exEnd && horaFin > exStart);
-    });
-
-    if (existing) {
-      throw new Error(`Conflicto de horario: El evaluador ${evaluadorUserId} ya tiene una cita programada el ${fecha} de ${existing[3]} a ${existing[4]}.`);
+  const ctx = getAcademicAdmissionScopeContext_(payload, "scheduleAdmissionInterview", solicitudId, "UPDATE");
+  if (!ctx.authorized) throw new Error("RESOURCE_NOT_FOUND");
+  const evaluatorId = String(evaluadorUserId).trim();
+  if (evaluatorId !== String(ctx.actor.userId).trim()) {
+    if (!isAcademicAdmissionManagerRole_(ctx.actor.role)) throw new Error("RESOURCE_NOT_FOUND");
+    const evaluatorIdentity = getAcademicUserIdentityForAdmission_(ctx.ss, evaluatorId);
+    if (!evaluatorIdentity) throw new Error("RESOURCE_NOT_FOUND");
+    const evaluatorScope = getVerifiedAcademicDepartmentScope_(payload, ctx.ss, evaluatorIdentity);
+    const department = ctx.requestAccess.departmentId || resolveAcademicAdmissionDepartment_(payload, ctx.scope, ctx.requestAccess).departmentId;
+    if (!evaluatorScope || evaluatorScope.authorized !== true ||
+        (department && evaluatorScope.institutionWide !== true &&
+         !(evaluatorScope.departmentIds || []).some(function(value) { return String(value).trim() === String(department).trim(); }))) {
+      throw new Error("RESOURCE_NOT_FOUND");
     }
   }
-
+  const ss = ctx.ss;
+  const sheet = getOrCreateSheet(ss, "EntrevistasAdmision");
+  const data = sheet.getDataRange().getValues();
+  if (data.length > 1) {
+    const existing = data.slice(1).find(function(r) {
+      if (String(r[5] || "").trim() !== evaluatorId) return false;
+      if (String(r[8] || "").trim() === "Cancelada") return false;
+      if (String(r[2] || "").trim() !== String(fecha).trim()) return false;
+      return String(horaInicio) < String(r[4]) && String(horaFin) > String(r[3]);
+    });
+    if (existing) throw new Error("Conflicto de horario del evaluador.");
+  }
   const idGen = generateInstitutionalId({ entityType: "EntrevistaAdmision", prefix: "ENT-ADM-", skipLock: true });
   const entrevistaId = (idGen && idGen.generatedId) ? idGen.generatedId : ("ENT-ADM-" + Date.now());
   const now = new Date();
-
-  sheet.appendRow([
-    entrevistaId,
-    solicitudId,
-    fecha,
-    horaInicio,
-    horaFin,
-    evaluadorUserId,
-    lugarEnlace || "Campus Principal",
-    modalidad || "Presencial",
-    "Programada",
-    observaciones || "",
-    now
-  ]);
-
-  logStructuredEvent("ACADEMIC", "scheduleAdmissionInterview", "INFO", "INTERVIEW_SCHEDULED", `Entrevista ${entrevistaId} agendada para solicitud ${solicitudId}`, { entrevistaId, solicitudId, fecha, evaluadorUserId }, payload && payload.authRole);
-
+  sheet.appendRow([entrevistaId, solicitudId, fecha, horaInicio, horaFin, evaluatorId, lugarEnlace || "Campus Principal", modalidad || "Presencial", "Programada", observaciones || "", now]);
+  logStructuredEvent("ACADEMIC", "scheduleAdmissionInterview", "INFO", "INTERVIEW_SCHEDULED",
+    "Entrevista " + entrevistaId + " agendada para solicitud " + solicitudId,
+    { entrevistaId: entrevistaId, solicitudId: solicitudId, fecha: fecha, evaluadorUserId: evaluatorId }, ctx.actor.role);
   return { status: "success", entrevistaId: entrevistaId, message: "Entrevista de admisión agendada exitosamente." };
 }
 
 function getAdmissionInterviews(payload) {
-  const { solicitudId, evaluadorUserId } = payload || {};
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const rows = getOrCreateSheet(ss, "EntrevistasAdmision").getDataRange().getValues().slice(1);
-
-  let filtered = rows;
-  if (solicitudId) filtered = filtered.filter(r => String(r[1]).trim() === String(solicitudId).trim());
-  if (evaluadorUserId) filtered = filtered.filter(r => String(r[5]).trim() === String(evaluadorUserId).trim());
-
-  const mapped = filtered.map(r => ({
-    entrevistaId: r[0],
-    solicitudId: r[1],
-    fecha: r[2],
-    horaInicio: r[3],
-    horaFin: r[4],
-    evaluadorUserId: r[5],
-    lugarEnlace: r[6],
-    modalidad: r[7],
-    estado: r[8],
-    observaciones: r[9],
-    fechaCreacion: r[10]
-  }));
-
+  const solicitudId = String((payload && payload.solicitudId) || "").trim();
+  const evaluadorUserId = String((payload && payload.evaluadorUserId) || "").trim();
+  const ctx = getAcademicAdmissionScopeContext_(payload, "getAdmissionInterviews", solicitudId, "READ");
+  if (!ctx.authorized) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Acceso denegado." };
+  if (evaluadorUserId && evaluadorUserId !== String(ctx.actor.userId).trim() && !isAcademicAdmissionManagerRole_(ctx.actor.role)) {
+    return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Acceso denegado." };
+  }
+  const allowedIds = solicitudId ? new Set([solicitudId]) : getAuthorizedAdmissionRequestIds_(ctx.ss, ctx.scope, payload, "READ");
+  const rows = getOrCreateSheet(ctx.ss, "EntrevistasAdmision").getDataRange().getValues().slice(1);
+  let filtered = rows.filter(function(row) { return allowedIds.has(String(row[1] || "").trim()); });
+  if (evaluadorUserId) filtered = filtered.filter(function(row) { return String(row[5] || "").trim() === evaluadorUserId; });
+  const mapped = filtered.map(function(r) {
+    return {
+      entrevistaId: r[0], solicitudId: r[1], fecha: r[2], horaInicio: r[3], horaFin: r[4],
+      evaluadorUserId: r[5], lugarEnlace: r[6], modalidad: r[7], estado: r[8],
+      observaciones: r[9], fechaCreacion: r[10]
+    };
+  });
   return { status: "success", interviews: mapped };
 }
 
 function recordInterviewOutcome(payload) {
   const { entrevistaId, estado, observaciones } = payload || {};
   if (!entrevistaId || !estado) throw new Error("entrevistaId y estado son requeridos.");
-
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = getOrCreateSheet(ss, "EntrevistasAdmision");
   const data = sheet.getDataRange().getValues();
-
-  const idx = data.findIndex(r => String(r[0]).trim() === String(entrevistaId).trim());
-  if (idx === -1) throw new Error("Entrevista no encontrada.");
-
-  sheet.getRange(idx + 1, 9).setValue(estado);
-  if (observaciones) {
-    const obsPrev = String(data[idx][9] || "");
-    sheet.getRange(idx + 1, 10).setValue(obsPrev ? `${obsPrev} | [${estado}]: ${observaciones}` : `[${estado}]: ${observaciones}`);
+  const matches = data.map(function(row, index) { return { row: row, index: index }; })
+    .filter(function(item) { return String(item.row[0] || "").trim() === String(entrevistaId).trim(); });
+  if (matches.length !== 1) throw new Error("RESOURCE_NOT_FOUND");
+  const idx = matches[0].index;
+  const interview = matches[0].row;
+  const solicitudId = String(interview[1] || "").trim();
+  const ctx = getAcademicAdmissionScopeContext_(payload, "recordInterviewOutcome", solicitudId, "UPDATE");
+  if (!ctx.authorized) throw new Error("RESOURCE_NOT_FOUND");
+  if (String(interview[5] || "").trim() !== String(ctx.actor.userId).trim() && !isAcademicAdmissionManagerRole_(ctx.actor.role)) {
+    throw new Error("RESOURCE_NOT_FOUND");
   }
-
-  return { status: "success", message: `Entrevista actualizada a estado '${estado}'.` };
+  const scopedSheet = getOrCreateSheet(ctx.ss, "EntrevistasAdmision");
+  scopedSheet.getRange(idx + 1, 9).setValue(estado);
+  if (observaciones) {
+    const obsPrev = String(interview[9] || "");
+    scopedSheet.getRange(idx + 1, 10).setValue(obsPrev ? obsPrev + " | [" + estado + "]: " + observaciones : "[" + estado + "]: " + observaciones);
+  }
+  return { status: "success", message: "Entrevista actualizada a estado '" + estado + "'." };
 }
 
 function saveAdmissionEvaluation(payload) {
@@ -1677,13 +1780,15 @@ function saveAdmissionEvaluation(payload) {
     throw new Error("solicitudId, tipoEvaluacion y dictamen son obligatorios.");
   }
 
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const ctx = getAcademicAdmissionScopeContext_(payload, "saveAdmissionEvaluation", solicitudId, "UPDATE");
+  if (!ctx.authorized) throw new Error("RESOURCE_NOT_FOUND");
+  const ss = ctx.ss;
   const sheet = getOrCreateSheet(ss, "EvaluacionesAdmision");
   const now = new Date();
 
   const idGen = generateInstitutionalId({ entityType: "EvaluacionAdmision", prefix: "EVAL-ADM-", skipLock: true });
   const evalId = (idGen && idGen.generatedId) ? idGen.generatedId : ("EVAL-ADM-" + Date.now());
-  const evaluatorId = (payload && (payload._verifiedUserId || payload.userId)) || "Secretaría";
+  const evaluatorId = String(ctx.actor.userId).trim();
 
   sheet.appendRow([
     evalId,
@@ -1705,27 +1810,19 @@ function saveAdmissionEvaluation(payload) {
 }
 
 function getAdmissionEvaluations(payload) {
-  const { solicitudId } = payload || {};
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const rows = getOrCreateSheet(ss, "EvaluacionesAdmision").getDataRange().getValues().slice(1);
-
-  let filtered = rows;
-  if (solicitudId) filtered = filtered.filter(r => String(r[1]).trim() === String(solicitudId).trim());
-
-  const mapped = filtered.map(r => ({
-    evaluacionId: r[0],
-    solicitudId: r[1],
-    tipoEvaluacion: r[2],
-    puntajeNum: r[3],
-    escalaQual: r[4],
-    dictamen: r[5],
-    esObligatoria: r[6] === true || String(r[6]).toLowerCase() === "true",
-    evaluadorUserId: r[7],
-    rubricaJSON: r[8],
-    observaciones: r[9],
-    fechaEvaluacion: r[10]
-  }));
-
+  const solicitudId = String((payload && payload.solicitudId) || "").trim();
+  const ctx = getAcademicAdmissionScopeContext_(payload, "getAdmissionEvaluations", solicitudId, "READ");
+  if (!ctx.authorized) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Acceso denegado." };
+  const allowedIds = solicitudId ? new Set([solicitudId]) : getAuthorizedAdmissionRequestIds_(ctx.ss, ctx.scope, payload, "READ");
+  const rows = getOrCreateSheet(ctx.ss, "EvaluacionesAdmision").getDataRange().getValues().slice(1);
+  const filtered = rows.filter(function(row) { return allowedIds.has(String(row[1] || "").trim()); });
+  const mapped = filtered.map(function(r) {
+    return {
+      evaluacionId: r[0], solicitudId: r[1], tipoEvaluacion: r[2], puntajeNum: r[3], escalaQual: r[4],
+      dictamen: r[5], esObligatoria: r[6] === true || String(r[6]).toLowerCase() === "true",
+      evaluadorUserId: r[7], rubricaJSON: r[8], observaciones: r[9], fechaEvaluacion: r[10]
+    };
+  });
   return { status: "success", evaluations: mapped };
 }
 
@@ -1734,7 +1831,9 @@ function addToWaitlist(payload) {
   const { solicitudId, criteriosJSON } = payload || {};
   if (!solicitudId) throw new Error("solicitudId es requerido.");
 
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const ctx = getAcademicAdmissionScopeContext_(payload, "addToWaitlist", solicitudId, "UPDATE");
+  if (!ctx.authorized) throw new Error("RESOURCE_NOT_FOUND");
+  const ss = ctx.ss;
   const admSheet = getOrCreateSheet(ss, "SolicitudesAdmision");
   const admData = admSheet.getDataRange().getValues();
 
@@ -1795,11 +1894,14 @@ function addToWaitlist(payload) {
 
 function getWaitlist(payload) {
   const { anolectivo, grado, estadoOferta } = payload || {};
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const ctx = getAcademicAdmissionScopeContext_(payload, "getWaitlist", null, "READ");
+  if (!ctx.authorized) return { status: "error", code: "RESOURCE_SCOPE_DENIED", message: "Acceso denegado." };
+  const ss = ctx.ss;
+  const allowedRequestIds = getAuthorizedAdmissionRequestIds_(ss, ctx.scope, payload, "READ");
   const rows = getOrCreateSheet(ss, "ListaEsperaAdmision").getDataRange().getValues().slice(1);
   const admRows = getOrCreateSheet(ss, "SolicitudesAdmision").getDataRange().getValues().slice(1);
 
-  let filtered = rows;
+  let filtered = rows.filter(function(row) { return allowedRequestIds.has(String(row[1] || "").trim()); });
   if (anolectivo) filtered = filtered.filter(r => String(r[2]).trim() === String(anolectivo).trim());
   if (grado) filtered = filtered.filter(r => String(r[3]).trim() === String(grado).trim());
   if (estadoOferta) filtered = filtered.filter(r => String(r[7]).trim() === String(estadoOferta).trim());
@@ -1844,14 +1946,21 @@ function reorderWaitlist(payload) {
   const data = sheet.getDataRange().getValues();
 
   const idx = data.findIndex(r => String(r[0]).trim() === String(esperaId).trim());
-  if (idx === -1) throw new Error("Registro de lista de espera no encontrado.");
+  if (idx === -1) throw new Error("RESOURCE_NOT_FOUND");
+  const solicitudId = String(data[idx][1] || "").trim();
+  const ctx = getAcademicAdmissionScopeContext_(payload, "reorderWaitlist", solicitudId, "UPDATE");
+  if (!ctx.authorized) throw new Error("RESOURCE_NOT_FOUND");
+  const scopedSheet = getOrCreateSheet(ctx.ss, "ListaEsperaAdmision");
+  const scopedData = scopedSheet.getDataRange().getValues();
+  const scopedIdx = scopedData.findIndex(r => String(r[0] || "").trim() === String(esperaId).trim());
+  if (scopedIdx === -1) throw new Error("RESOURCE_NOT_FOUND");
 
-  sheet.getRange(idx + 1, 5).setValue(nuevaPosicion);
-  sheet.getRange(idx + 1, 10).setValue(`[Reordenamiento Manual]: ${justificacionManual}`);
-  sheet.getRange(idx + 1, 12).setValue(new Date());
+  scopedSheet.getRange(scopedIdx + 1, 5).setValue(nuevaPosicion);
+  scopedSheet.getRange(scopedIdx + 1, 10).setValue("[Reordenamiento Manual]: " + justificacionManual);
+  scopedSheet.getRange(scopedIdx + 1, 12).setValue(new Date());
 
-  const actorUserId = (payload && (payload._verifiedUserId || payload.userId)) || "Secretaría";
-  logStructuredEvent("ACADEMIC", "reorderWaitlist", "WARN", "WAITLIST_REORDERED", `Posición de ${esperaId} ajustada manualmente a ${nuevaPosicion}`, { esperaId, nuevaPosicion, justificacionManual }, payload && payload.authRole);
+  const actorUserId = String(ctx.actor.userId).trim();
+  logStructuredEvent("ACADEMIC", "reorderWaitlist", "WARN", "WAITLIST_REORDERED", "Posición de " + esperaId + " ajustada manualmente a " + nuevaPosicion, { esperaId: esperaId, nuevaPosicion: nuevaPosicion, justificacionManual: justificacionManual }, ctx.actor.role);
 
   return { status: "success", message: `Posición reordenada a ${nuevaPosicion} con trazabilidad registrada.` };
 }
@@ -1868,15 +1977,21 @@ function offerWaitlistSlot(payload) {
   if (idx === -1) throw new Error("Registro de lista de espera no encontrado.");
 
   const row = waitData[idx];
-  const solicitudId = row[1];
+  const solicitudId = String(row[1] || "").trim();
+  const ctx = getAcademicAdmissionScopeContext_(payload, "offerWaitlistSlot", solicitudId, "UPDATE");
+  if (!ctx.authorized) throw new Error("RESOURCE_NOT_FOUND");
+  const scopedWaitSheet = getOrCreateSheet(ctx.ss, "ListaEsperaAdmision");
+  const scopedWaitData = scopedWaitSheet.getDataRange().getValues();
+  const scopedIdx = scopedWaitData.findIndex(r => String(r[0] || "").trim() === String(esperaId).trim());
+  if (scopedIdx === -1) throw new Error("RESOURCE_NOT_FOUND");
   const horas = parseInt(horasVigencia) || 72; // Default 72 horas
   const expDate = new Date(Date.now() + horas * 60 * 60 * 1000);
 
-  waitSheet.getRange(idx + 1, 8).setValue("Plaza_Ofrecida");
-  waitSheet.getRange(idx + 1, 9).setValue(expDate);
-  waitSheet.getRange(idx + 1, 12).setValue(new Date());
+  scopedWaitSheet.getRange(scopedIdx + 1, 8).setValue("Plaza_Ofrecida");
+  scopedWaitSheet.getRange(scopedIdx + 1, 9).setValue(expDate);
+  scopedWaitSheet.getRange(scopedIdx + 1, 12).setValue(new Date());
 
-  logStructuredEvent("ACADEMIC", "offerWaitlistSlot", "INFO", "WAITLIST_SLOT_OFFERED", `Plaza ofrecida para solicitud ${solicitudId} (Vigente hasta ${expDate.toISOString()})`, { esperaId, solicitudId, expDate }, payload && payload.authRole);
+  logStructuredEvent("ACADEMIC", "offerWaitlistSlot", "INFO", "WAITLIST_SLOT_OFFERED", "Plaza ofrecida para solicitud " + solicitudId, { esperaId: esperaId, solicitudId: solicitudId, expDate: expDate }, ctx.actor.role);
 
   return { status: "success", esperaId: esperaId, solicitudId: solicitudId, fechaExpiracionOferta: expDate, message: `Plaza vacante ofrecida a la solicitud ${solicitudId} con vigencia de ${horas} horas.` };
 }
@@ -1975,7 +2090,7 @@ function updateAdmissionStatus(payload) {
 
     // Validaciones específicas según el estado destino
     if (estadoSolicitado === "Evaluacion") {
-      const docRes = getStudentDocuments({ solicitudId });
+      const docRes = getStudentDocuments(Object.assign({}, payload || {}, { solicitudId: solicitudId }));
       if (docRes && Array.isArray(docRes.documents)) {
         const pendingDocs = docRes.documents.filter(d => d.estadoRevision === "Pendiente" || d.estadoRevision === "Rechazado");
         if (pendingDocs.length > 0) {
@@ -1985,7 +2100,7 @@ function updateAdmissionStatus(payload) {
     }
 
     if (estadoSolicitado === "Admitida") {
-      const evalRes = getAdmissionEvaluations({ solicitudId });
+      const evalRes = getAdmissionEvaluations(Object.assign({}, payload || {}, { solicitudId: solicitudId }));
       if (evalRes && Array.isArray(evalRes.evaluations)) {
         const pendingOrFailed = evalRes.evaluations.filter(ev => ev.esObligatoria && (ev.dictamen === 'Reprobado' || ev.dictamen === 'Pendiente'));
         if (pendingOrFailed.length > 0) {
@@ -2051,48 +2166,32 @@ function updateAdmissionStatus(payload) {
 
 // [TAREA-F5-002] [Fase 5: Admisiones y Matrícula] - Reapertura explícita de solicitudes rechazadas/cerradas por Dirección o Administración
 function reopenAdmissionRequest(payload) {
-  const callerRole = (payload && payload._verifiedRole) || getUserVerifiedRole(payload);
-  if (callerRole !== "Director" && callerRole !== "Administrador" && callerRole !== "Desarrollador") {
-    throw new Error("Acción denegada: Únicamente los usuarios con rol Director o Administrador están autorizados a reabrir expedientes de admisión.");
-  }
-
   const { solicitudId, motivoReapertura, nuevoEstado } = payload || {};
-  if (!solicitudId || !motivoReapertura) {
-    throw new Error("solicitudId y motivoReapertura son requeridos.");
-  }
-
+  if (!solicitudId || !motivoReapertura) throw new Error("solicitudId y motivoReapertura son requeridos.");
   const textoMotivo = String(motivoReapertura).trim();
-  if (textoMotivo.length < 10) {
-    throw new Error("El motivo de reapertura debe contener al menos 10 caracteres exponiendo la justificación institucional.");
-  }
-
+  if (textoMotivo.length < 10) throw new Error("El motivo de reapertura debe contener al menos 10 caracteres.");
+  const ctx = getAcademicAdmissionScopeContext_(payload, "reopenAdmissionRequest", solicitudId, "UPDATE");
+  if (!ctx.authorized) throw new Error("RESOURCE_NOT_FOUND");
+  if (!isAcademicAdmissionManagerRole_(ctx.actor.role)) throw new Error("RESOURCE_NOT_FOUND");
   const targetState = nuevoEstado || "Reabierta";
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "SolicitudesAdmision");
+  const sheet = getOrCreateSheet(ctx.ss, "SolicitudesAdmision");
   const data = sheet.getDataRange().getValues();
-
-  const idx = data.findIndex(r => String(r[0]).trim() === String(solicitudId).trim());
-  if (idx === -1) throw new Error("Solicitud de admisión no encontrada.");
-
-  const row = data[idx];
+  const matches = data.map(function(row,index){return {row:row,index:index};})
+    .filter(function(item){return String(item.row[0]||"").trim()===String(solicitudId).trim();});
+  if (matches.length !== 1) throw new Error("RESOURCE_NOT_FOUND");
+  const idx = matches[0].index;
+  const row = matches[0].row;
   const estadoAnterior = String(row[11] || "").trim();
-
   sheet.getRange(idx + 1, 12).setValue(targetState);
   const obsPrevias = String(row[13] || "").trim();
-  const nuevaObs = `${obsPrevias} | [REAPERTURA ${new Date().toISOString().split('T')[0]} por ${callerRole}]: ${textoMotivo}`;
+  const nuevaObs = (obsPrevias ? obsPrevias + " | " : "") + "[REAPERTURA " + new Date().toISOString().split("T")[0] + " por " + ctx.actor.role + "]: " + textoMotivo;
   sheet.getRange(idx + 1, 14).setValue(nuevaObs);
-
-  const actorUserId = (payload && payload._verifiedUserId) || "Director";
-  recordEntityChangeLog("SolicitudAdmision", solicitudId, { estadoSolicitud: estadoAnterior }, { estadoSolicitud: targetState, motivoReapertura: textoMotivo }, "ADMISSION_REOPENED", actorUserId);
-  logStructuredEvent("ACADEMIC", "reopenAdmissionRequest", "WARN", "ADMISSION_REOPENED", `Solicitud ${solicitudId} reabierta por ${callerRole} desde '${estadoAnterior}' a '${targetState}'`, { solicitudId, estadoAnterior, targetState, motivoReapertura: textoMotivo }, callerRole);
-
-  return {
-    status: "success",
-    solicitudId: solicitudId,
-    estadoAnterior: estadoAnterior,
-    nuevoEstado: targetState,
-    message: `Solicitud ${solicitudId} reabierta exitosamente. Estado actualizado a '${targetState}'.`
-  };
+  recordEntityChangeLog("SolicitudAdmision", solicitudId, { estadoSolicitud: estadoAnterior }, { estadoSolicitud: targetState, motivoReapertura: textoMotivo }, "ADMISSION_REOPENED", ctx.actor.userId);
+  logStructuredEvent("ACADEMIC", "reopenAdmissionRequest", "WARN", "ADMISSION_REOPENED",
+    "Solicitud " + solicitudId + " reabierta desde '" + estadoAnterior + "' a '" + targetState + "'",
+    { solicitudId: solicitudId, estadoAnterior: estadoAnterior, targetState: targetState, motivoReapertura: textoMotivo }, ctx.actor.role);
+  return { status: "success", solicitudId: solicitudId, estadoAnterior: estadoAnterior, nuevoEstado: targetState,
+    message: "Solicitud " + solicitudId + " reabierta exitosamente." };
 }
 
 function generateInstitutionalId(payload) {
@@ -2145,51 +2244,57 @@ function generateInstitutionalId(payload) {
 
 // [TAREA-F5-001] [Fase 5: Admisiones y Matrícula] - Conversión segura de aspirante admitido a expediente estudiantil, matrícula y vinculación familiar
 function convertAdmissionToStudent(payload) {
-  const { solicitudId, userId, codigoInstitucional, seccion, forceCapacityOverride, allowIncompleteOverride } = payload || {};
+  const { solicitudId, seccion, forceCapacityOverride, allowIncompleteOverride } = payload || {};
   if (!solicitudId) throw new Error("solicitudId es requerido.");
+  const ctx = getAcademicAdmissionScopeContext_(payload, "convertAdmissionToStudent", solicitudId, "UPDATE");
+  if (!ctx.authorized) throw new Error("RESOURCE_NOT_FOUND");
+  const departmentResolution = resolveAcademicAdmissionDepartment_(payload, ctx.scope, ctx.requestAccess);
+  if (!departmentResolution.authorized) throw new Error(departmentResolution.code || "RESOURCE_DEPARTMENT_SELECTION_REQUIRED");
+  const departmentId = departmentResolution.departmentId;
+
+  const requestedIncompleteOverride = allowIncompleteOverride === true;
+  const requestedCapacityOverride = forceCapacityOverride === true;
+  const incompleteOverrideAllowed = requestedIncompleteOverride && getDynamicPermissionsForRole(ctx.actor.role, "overrideAdmissionRequirements") === true;
+  const capacityOverrideAllowed = requestedCapacityOverride && getDynamicPermissionsForRole(ctx.actor.role, "overrideEnrollmentCapacity") === true;
+  if (requestedIncompleteOverride && !incompleteOverrideAllowed) throw new Error("AUTH_PERMISSION_DENIED");
+  if (requestedCapacityOverride && !capacityOverrideAllowed) throw new Error("AUTH_PERMISSION_DENIED");
+  const systemAllowsIncomplete = typeof ALLOW_INCOMPLETE_ADMISSION_CONVERSION !== "undefined" && ALLOW_INCOMPLETE_ADMISSION_CONVERSION === true;
+  const allowIncomplete = incompleteOverrideAllowed || systemAllowsIncomplete;
 
   let hasLock = false;
   const lock = LockService.getScriptLock();
   try {
     hasLock = lock.tryLock(10000);
-    if (!hasLock) {
-      throw new Error("Servicio ocupado procesando solicitudes de admisiones en paralelo. Por favor reintente en unos segundos.");
-    }
+    if (!hasLock) throw new Error("Servicio ocupado procesando solicitudes de admisiones en paralelo. Por favor reintente en unos segundos.");
 
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const ss = ctx.ss;
     const admSheet = getOrCreateSheet(ss, "SolicitudesAdmision");
     const admData = admSheet.getDataRange().getValues();
-
-    const idx = admData.findIndex(r => String(r[0]).trim() === String(solicitudId).trim());
-    if (idx === -1) throw new Error("Solicitud de admisión no encontrada.");
-
-    const row = admData[idx];
+    const requestMatches = admData.map(function(row,index){return {row:row,index:index};})
+      .filter(function(item){return String(item.row[0]||"").trim()===String(solicitudId).trim();});
+    if (requestMatches.length !== 1) throw new Error("RESOURCE_NOT_FOUND");
+    const idx = requestMatches[0].index;
+    const row = requestMatches[0].row;
     const estadoActual = String(row[11] || "").trim();
     const expedienteExistenteId = String(row[14] || "").trim();
 
-    // 1. Verificación idempotente si ya fue convertida
     if (estadoActual === "Convertida" && expedienteExistenteId) {
-      return {
-        status: "success",
-        isAlreadyConverted: true,
-        expedienteId: expedienteExistenteId,
-        message: `La solicitud ${solicitudId} ya fue convertida previamente al expediente ${expedienteExistenteId}.`
-      };
+      const existingAccess = assertResourceOwnershipForScope_(ss, ctx.scope, "EXPEDIENTE_ESTUDIANTE", expedienteExistenteId, "READ", payload);
+      if (!existingAccess || existingAccess.authorized !== true || String(existingAccess.departmentId || "").trim() !== departmentId) {
+        throw new Error("RESOURCE_NOT_FOUND");
+      }
+      return { status: "success", isAlreadyConverted: true, expedienteId: expedienteExistenteId,
+        message: "La solicitud " + solicitudId + " ya fue convertida previamente al expediente " + expedienteExistenteId + "." };
     }
 
-    // 2. Validación de estado 'Admitida' y verificación de requisitos documentales pendientes
-    const allowIncomplete = allowIncompleteOverride || (typeof ALLOW_INCOMPLETE_ADMISSION_CONVERSION !== "undefined" && ALLOW_INCOMPLETE_ADMISSION_CONVERSION === true);
     if (estadoActual !== "Admitida" && !allowIncomplete) {
-      throw new Error(`Acción denegada: La solicitud ${solicitudId} se encuentra en estado '${estadoActual}'. Únicamente las solicitudes en estado 'Admitida' pueden convertirse en expediente estudiantil.`);
+      throw new Error("Acción denegada: únicamente las solicitudes admitidas pueden convertirse.");
     }
-
     if (estadoActual === "Admitida" && !allowIncomplete) {
-      const docRes = getStudentDocuments({ solicitudId });
+      const docRes = getStudentDocuments(Object.assign({}, payload || {}, { solicitudId: solicitudId }));
       if (docRes && Array.isArray(docRes.documents)) {
-        const pendingDocs = docRes.documents.filter(d => d.estadoRevision === "Pendiente" || d.estadoRevision === "Rechazado");
-        if (pendingDocs.length > 0) {
-          throw new Error(`Acción denegada: La solicitud ${solicitudId} tiene ${pendingDocs.length} documento(s) obligatorio(s) pendiente(s) o rechazado(s). Complete la revisión documental antes de convertir.`);
-        }
+        const pendingDocs = docRes.documents.filter(function(doc){return doc.estadoRevision === "Pendiente" || doc.estadoRevision === "Rechazado";});
+        if (pendingDocs.length) throw new Error("La solicitud tiene documentos obligatorios pendientes o rechazados.");
       }
     }
 
@@ -2199,182 +2304,142 @@ function convertAdmissionToStudent(payload) {
     const fechaNac = row[7];
     const grado = String(row[3] || "").trim();
     const anolectivo = String(row[2] || "2026").trim();
-    const targetSeccion = seccion || "A";
+    const targetSeccion = String(seccion || "A").trim();
     const nombreResponsable = String(row[8] || "").trim();
     const telefonoContacto = String(row[9] || "").trim();
     const emailContacto = String(row[10] || "").trim().toLowerCase();
 
-    // 3. Verificar Capacidad de Sección
-    const capacityCheck = checkEnrollmentCapacity({ anolectivo, grado, seccion: targetSeccion });
-    if (capacityCheck && capacityCheck.hayCupo === false && !forceCapacityOverride) {
-      return {
-        status: "error",
-        code: "SECTION_FULL",
-        message: `No hay cupos disponibles en el grado ${grado} sección ${targetSeccion} para el año ${anolectivo}. (Capacidad: ${capacityCheck.capacidadMaxima}, Ocupados: ${capacityCheck.inscritosActuales}).`
-      };
+    const capacityCheck = checkEnrollmentCapacity({ anolectivo: anolectivo, grado: grado, seccion: targetSeccion, skipLock: true });
+    if (capacityCheck && capacityCheck.hayCupo === false && !capacityOverrideAllowed) {
+      return { status: "error", code: "SECTION_FULL", message: "No hay cupos disponibles en el grado " + grado + " sección " + targetSeccion + " para el año " + anolectivo + "." };
     }
 
     const now = new Date();
-
-    // 4. Generación de IDs Atómicos sin marcas de tiempo (pasando skipLock: true)
     const expGen = generateInstitutionalId({ entityType: "ExpedienteEstudiante", prefix: "EXP-", skipLock: true });
-    const expId = (expGen && expGen.generatedId) ? expGen.generatedId : ("EXP-000001");
-
     const codeGen = generateInstitutionalId({ entityType: "CodigoEstudiante", prefix: "STU-", skipLock: true });
-    const code = codigoInstitucional || ((codeGen && codeGen.generatedId) ? codeGen.generatedId : ("STU-000001"));
-
     const personaGen = generateInstitutionalId({ entityType: "Persona", prefix: "PER-", skipLock: true });
-    const targetPersonaId = (personaGen && personaGen.generatedId) ? personaGen.generatedId : "PER-000001";
-
     const userGen = generateInstitutionalId({ entityType: "Usuario", prefix: "USR-", skipLock: true });
-    const targetUserId = userId || ((userGen && userGen.generatedId) ? userGen.generatedId : "USR-000001");
+    const generatedExpId = (expGen && expGen.generatedId) ? expGen.generatedId : ("EXP-" + Date.now());
+    let code = (codeGen && codeGen.generatedId) ? codeGen.generatedId : ("STU-" + Date.now());
+    let targetPersonaId = (personaGen && personaGen.generatedId) ? personaGen.generatedId : ("PER-" + Date.now());
+    let targetUserId = (userGen && userGen.generatedId) ? userGen.generatedId : ("USR-" + Date.now());
 
-    // 5. Registrar/Recuperar Expediente
     const expSheet = getOrCreateSheet(ss, "ExpedientesEstudiantes");
     const expData = expSheet.getDataRange().getValues();
-    let dupExp = expData.slice(1).find(r =>
-      normalizeString(`${r[1]}`) === normalizeString(targetPersonaId) ||
-      (identificacion && normalizeString(String(r[10] || "")).includes(normalizeString(identificacion)))
-    );
+    const duplicateMatches = expData.slice(1).filter(function(expRow) {
+      return identificacion && normalizeString(String(expRow[10] || "")).indexOf(normalizeString(identificacion)) !== -1;
+    });
+    if (duplicateMatches.length > 1) throw new Error("RESOURCE_OWNERSHIP_AMBIGUOUS");
+    const duplicate = duplicateMatches.length === 1 ? duplicateMatches[0] : null;
+    let finalExpId = generatedExpId;
+    let newExpRowNumber = 0;
+    if (duplicate) {
+      finalExpId = String(duplicate[0] || "").trim();
+      targetPersonaId = String(duplicate[1] || "").trim();
+      code = String(duplicate[2] || code).trim();
+      const linkedStudent = getStudentIdentityForPerson_(ss, targetPersonaId);
+      if (linkedStudent && linkedStudent.userId) targetUserId = String(linkedStudent.userId).trim();
+    }
 
-    let finalExpId = expId;
-    if (dupExp) {
-      finalExpId = dupExp[0];
-    } else {
+    const requestOwner = registerAcademicResourceOwnership_(ss, ctx.scope, "SOLICITUD_ADMISION", solicitudId, departmentId, ctx.actor.userId);
+    if (!requestOwner.authorized) throw new Error(requestOwner.code || "RESOURCE_OWNERSHIP_REGISTRATION_FAILED");
+
+    if (!duplicate) {
+      newExpRowNumber = expSheet.getLastRow() + 1;
       expSheet.appendRow([
-        finalExpId,
-        targetPersonaId,
-        code,
-        fechaNac || "",
-        "Hondureña",
-        "", // DireccionResidencia
-        "", // FotografiaUrl
-        "Activo",
-        now,
-        now,
-        `Admisión aprobada desde solicitud ${solicitudId}. Responsable: ${nombreResponsable}, Tel: ${telefonoContacto}, Email: ${emailContacto}, DNI: ${identificacion}`
+        finalExpId, targetPersonaId, code, fechaNac || "", "Hondureña", "", "", "Activo", now, now,
+        "Admisión aprobada desde solicitud " + solicitudId + ". Responsable: " + nombreResponsable + ", Tel: " + telefonoContacto + ", Email: " + emailContacto + ", DNI: " + identificacion
       ]);
     }
 
-    // 6. Transferencia / Vinculación del Tutor (RelacionesFamiliares e Invitaciones)
+    const expedienteOwner = registerAcademicResourceOwnership_(ss, ctx.scope, "EXPEDIENTE_ESTUDIANTE", finalExpId, departmentId, ctx.actor.userId);
+    if (!expedienteOwner.authorized) {
+      if (newExpRowNumber) expSheet.deleteRow(newExpRowNumber);
+      if (requestOwner.created) deleteAcademicResourceOwnership_(ss, requestOwner.ownershipId);
+      throw new Error(expedienteOwner.code || "RESOURCE_OWNERSHIP_REGISTRATION_FAILED");
+    }
+
     if (emailContacto) {
       const usersSheet = getOrCreateSheet(ss, "Usuarios");
       const usersData = usersSheet.getDataRange().getValues();
-      const parentUserRow = usersData.slice(1).find(r => String(r[4]).trim().toLowerCase() === emailContacto);
-
+      const parentUserRow = usersData.slice(1).find(function(userRow) {
+        return String(userRow[4] || "").trim().toLowerCase() === emailContacto &&
+          ["padre","tutor","responsable"].indexOf(normalizeString(userRow[6])) !== -1 &&
+          ["activo","active"].indexOf(normalizeString(userRow[10])) !== -1;
+      });
       const relSheet = getOrCreateSheet(ss, "RelacionesFamiliares");
       const relData = relSheet.getDataRange().getValues();
-
       if (parentUserRow) {
-        const parentUserId = parentUserRow[0];
-        const dupRel = relData.slice(1).find(r => String(r[1]).trim() === finalExpId && String(r[2]).trim() === String(parentUserId).trim());
+        const parentUserId = String(parentUserRow[0] || "").trim();
+        const dupRel = relData.slice(1).find(function(rel){return String(rel[1]||"").trim()===finalExpId && String(rel[2]||"").trim()===parentUserId;});
         if (!dupRel) {
           const relGen = generateInstitutionalId({ entityType: "RelacionFamiliar", prefix: "REL-", skipLock: true });
-          const relId = (relGen && relGen.generatedId) ? relGen.generatedId : ("REL-000001");
-          relSheet.appendRow([
-            relId,
-            finalExpId,
-            parentUserId,
-            "Padre/Tutor",
-            "Verificada",
-            now,
-            "",
-            `Vinculación transferida automáticamente desde solicitud de admisión ${solicitudId}.`
-          ]);
+          const relId = (relGen && relGen.generatedId) ? relGen.generatedId : ("REL-" + Date.now());
+          relSheet.appendRow([relId, finalExpId, parentUserId, "Padre/Tutor", "Verificada", now, "", "Vinculación transferida desde solicitud " + solicitudId + "."]);
         }
       } else {
-        // Tutor no tiene usuario aún: Crear invitación de vinculación
         const invSheet = getOrCreateSheet(ss, "InvitacionesVinculacion");
-        const invGen = generateInstitutionalId({ entityType: "InvitacionVinculacion", prefix: "INV-", skipLock: true });
-        const invId = (invGen && invGen.generatedId) ? invGen.generatedId : ("INV-000001");
-        const token = "TOK-" + Utilities.getUuid();
-        const expDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-        invSheet.appendRow([
-          invId,
-          finalExpId,
-          emailContacto,
-          token,
-          now,
-          expDate,
-          "Activa",
-          (payload && (payload.actorId || payload.adminId)) || "Secretaría"
-        ]);
-      }
-    }
-
-    // 7. Marcar Solicitud como Convertida y migrar documentos de la solicitud al nuevo expediente
-    admSheet.getRange(idx + 1, 12).setValue("Convertida");
-    admSheet.getRange(idx + 1, 15).setValue(finalExpId);
-
-    try {
-      const docSheet = getOrCreateSheet(ss, "DocumentosEstudiante");
-      const docData = docSheet.getDataRange().getValues();
-      for (let d = 1; d < docData.length; d++) {
-        if (String(docData[d][2]).trim() === String(solicitudId).trim() && !docData[d][1]) {
-          docSheet.getRange(d + 1, 2).setValue(finalExpId);
+        const invData = invSheet.getDataRange().getValues();
+        const existingInvitation = invData.slice(1).find(function(inv){return String(inv[1]||"").trim()===finalExpId && String(inv[2]||"").trim().toLowerCase()===emailContacto && String(inv[6]||"").trim()==="Activa";});
+        if (!existingInvitation) {
+          const invGen = generateInstitutionalId({ entityType: "InvitacionVinculacion", prefix: "INV-", skipLock: true });
+          const invId = (invGen && invGen.generatedId) ? invGen.generatedId : ("INV-" + Date.now());
+          const token = "TOK-" + Utilities.getUuid();
+          const expDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+          invSheet.appendRow([invId, finalExpId, emailContacto, token, now, expDate, "Activa", ctx.actor.userId]);
         }
       }
-    } catch (eDoc) {
-      console.warn("Advertencia migración de documentos:", eDoc.message);
     }
 
-    // 8. Obtener Monto Paramétrico de Matrícula y Registrar Matrícula Inicial
+    const docSheet = getOrCreateSheet(ss, "DocumentosEstudiante");
+    const docData = docSheet.getDataRange().getValues();
+    for (let d = 1; d < docData.length; d++) {
+      if (String(docData[d][2] || "").trim() === String(solicitudId).trim() && !docData[d][1]) {
+        docSheet.getRange(d + 1, 2).setValue(finalExpId);
+      }
+    }
+
     let montoMatriculaBase = 0;
     try {
       const paramRes = getInstitutionParams();
       if (paramRes && Array.isArray(paramRes.data)) {
-        const mParam = paramRes.data.find(p => p.clave === ("MONTO_MATRICULA_" + anolectivo) || p.clave === "MONTO_MATRICULA_ORDINARIA");
+        const mParam = paramRes.data.find(function(param){return param.clave === ("MONTO_MATRICULA_" + anolectivo) || param.clave === "MONTO_MATRICULA_ORDINARIA";});
         if (mParam && mParam.valor) montoMatriculaBase = parseFloat(mParam.valor) || 0;
       }
     } catch (_) {}
     if (!montoMatriculaBase) montoMatriculaBase = 1500;
-
-    const matGen = generateInstitutionalId({ entityType: "Matricula", prefix: "MAT-", skipLock: true });
-    const fallbackMatId = (matGen && matGen.generatedId) ? matGen.generatedId : ("MAT-000001");
-
     const enrollRes = registerStudentEnrollment({
-      userId: targetUserId,
-      alumno: `${nombres} ${apellidos}`,
-      grado: grado,
-      seccion: targetSeccion,
-      periodo: anolectivo,
-      tipo: "IngresoNuevo",
-      observaciones: `Convertido desde solicitud ${solicitudId}`,
-      cargos: [
-        { concepto: "Matrícula Ordinaria " + anolectivo, montoBase: montoMatriculaBase, descuento: 0, estado: "Pendiente" }
-      ]
+      userId: targetUserId, alumno: (nombres + " " + apellidos).trim(), grado: grado, seccion: targetSeccion,
+      periodo: anolectivo, tipo: "IngresoNuevo", observaciones: "Convertido desde solicitud " + solicitudId,
+      skipLock: true,
+      cargos: [{ concepto: "Matrícula Ordinaria " + anolectivo, montoBase: montoMatriculaBase, descuento: 0, estado: "Pendiente" }]
     });
+    if (!enrollRes || enrollRes.status !== "success" || !enrollRes.matriculaId) throw new Error("ENROLLMENT_CREATION_FAILED");
+    const matriculaRealId = enrollRes.matriculaId;
 
-    const matriculaRealId = (enrollRes && enrollRes.matriculaId) ? enrollRes.matriculaId : fallbackMatId;
-
-    // 9. Registrar Movimiento Inicial
     const movSheet = getOrCreateSheet(ss, "MovimientosEstudiante");
-    const movGen = generateInstitutionalId({ entityType: "MovimientoEstudiante", prefix: "MOV-", skipLock: true });
-    const movId = (movGen && movGen.generatedId) ? movGen.generatedId : ("MOV-000001");
-    movSheet.appendRow([
-      movId,
-      finalExpId,
-      matriculaRealId,
-      anolectivo,
-      "IngresoNuevo",
-      "", "", grado, targetSeccion,
-      now,
-      `Admisión y Matrícula Inicial aprobada desde ${solicitudId}`,
-      (payload && (payload.actorId || payload.adminId)) || "Secretaría",
-      "Confirmado"
-    ]);
+    const movData = movSheet.getDataRange().getValues();
+    const existingMovement = movData.slice(1).find(function(mov){return String(mov[1]||"").trim()===finalExpId && String(mov[3]||"").trim()===anolectivo && String(mov[4]||"").trim()==="IngresoNuevo";});
+    let movId = existingMovement ? existingMovement[0] : "";
+    if (!existingMovement) {
+      const movGen = generateInstitutionalId({ entityType: "MovimientoEstudiante", prefix: "MOV-", skipLock: true });
+      movId = (movGen && movGen.generatedId) ? movGen.generatedId : ("MOV-" + Date.now());
+      movSheet.appendRow([
+        movId, finalExpId, matriculaRealId, anolectivo, "IngresoNuevo", "", "", grado, targetSeccion, now,
+        "Admisión y Matrícula Inicial aprobada desde " + solicitudId, ctx.actor.userId, "Confirmado"
+      ]);
+    }
 
-    logStructuredEvent("ACADEMIC", "convertAdmissionToStudent", "INFO", "ADMISSION_CONVERTED", `Solicitud ${solicitudId} convertida exitosamente a expediente ${finalExpId} y matrícula ${matriculaRealId}`, { solicitudId, expedienteId: finalExpId, matriculaRealId, anolectivo, grado }, payload && payload.authRole);
-
+    admSheet.getRange(idx + 1, 15).setValue(finalExpId);
+    admSheet.getRange(idx + 1, 12).setValue("Convertida");
+    logStructuredEvent("ACADEMIC", "convertAdmissionToStudent", "INFO", "ADMISSION_CONVERTED",
+      "Solicitud " + solicitudId + " convertida a expediente " + finalExpId + " y matrícula " + matriculaRealId,
+      { solicitudId: solicitudId, expedienteId: finalExpId, matriculaRealId: matriculaRealId, anolectivo: anolectivo, grado: grado, departmentId: departmentId },
+      ctx.actor.role);
     return {
-      status: "success",
-      solicitudId: solicitudId,
-      expedienteId: finalExpId,
-      codigoInstitucional: code,
-      matriculaId: matriculaRealId,
-      message: `Solicitud ${solicitudId} convertida exitosamente en expediente ${finalExpId} y matrícula activa.`
+      status: "success", solicitudId: solicitudId, expedienteId: finalExpId, codigoInstitucional: code,
+      matriculaId: matriculaRealId, message: "Solicitud " + solicitudId + " convertida exitosamente en expediente y matrícula."
     };
-
   } finally {
     if (hasLock) {
       try { lock.releaseLock(); } catch (_) {}
@@ -10408,66 +10473,50 @@ function maskDni(dni) {
 
 // [TAREA-F5-017] [Fase 5: Admisiones y Calidad de Datos] - Endpoint de resolución de alertas de duplicidad sin fusión automática arbitraria
 function resolveAdmissionDuplicate(payload) {
-  const { solicitudId, resolucion, expedienteDestinoId, motivoJustificado, authRole, authUserId } = payload || {};
+  const { solicitudId, resolucion, expedienteDestinoId, motivoJustificado } = payload || {};
   if (!solicitudId || !resolucion) throw new Error("solicitudId y resolucion son obligatorios.");
-  if (!motivoJustificado || String(motivoJustificado).trim().length < 10) {
-    throw new Error("Debe proporcionar una motivación justificada de al menos 10 caracteres.");
-  }
-
+  if (!motivoJustificado || String(motivoJustificado).trim().length < 10) throw new Error("Debe proporcionar una motivación justificada de al menos 10 caracteres.");
   const validResolutions = ["AprobarNuevo", "VincularExistente", "RechazarDuplicado"];
-  if (!validResolutions.includes(resolucion)) {
-    throw new Error(`Resolución no válida: ${resolucion}. Opciones válidas: ${validResolutions.join(", ")}.`);
+  if (validResolutions.indexOf(resolucion) === -1) throw new Error("Resolución no válida.");
+  const ctx = getAcademicAdmissionScopeContext_(payload, "resolveAdmissionDuplicate", solicitudId, "UPDATE");
+  if (!ctx.authorized) throw new Error("RESOURCE_NOT_FOUND");
+  if (resolucion === "VincularExistente") {
+    if (!expedienteDestinoId) throw new Error("expedienteDestinoId es requerido para la vinculación.");
+    const expedienteAccess = assertResourceOwnershipForScope_(ctx.ss, ctx.scope, "EXPEDIENTE_ESTUDIANTE", expedienteDestinoId, "UPDATE", payload);
+    if (!expedienteAccess || expedienteAccess.authorized !== true) throw new Error("RESOURCE_NOT_FOUND");
   }
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "SolicitudesAdmision");
+  const sheet = getOrCreateSheet(ctx.ss, "SolicitudesAdmision");
   const data = sheet.getDataRange().getValues();
-  const rowIndex = data.findIndex(r => String(r[0]).trim() === String(solicitudId).trim());
-
-  if (rowIndex === -1) throw new Error(`Solicitud de admisión ${solicitudId} no encontrada.`);
-
-  const oldObs = String(data[rowIndex][13] || "");
+  const matches = data.map(function(row,index){return {row:row,index:index};})
+    .filter(function(item){return String(item.row[0]||"").trim()===String(solicitudId).trim();});
+  if (matches.length !== 1) throw new Error("RESOURCE_NOT_FOUND");
+  const rowIndex = matches[0].index;
+  const oldObs = String(matches[0].row[13] || "");
   const nowStr = new Date().toISOString();
   let newObs = oldObs;
-  let newStatus = data[rowIndex][11];
-
+  let newStatus = matches[0].row[11];
   if (resolucion === "AprobarNuevo") {
-    newObs = `[DUPLICADO_RESUELTO: Aprobado como nuevo postulante por ${authUserId || 'Secretaría'} el ${nowStr}. Motivo: ${motivoJustificado}] ${oldObs}`.trim();
+    newObs = "[DUPLICADO_RESUELTO: Aprobado como nuevo postulante por " + ctx.actor.userId + " el " + nowStr + ". Motivo: " + motivoJustificado + "] " + oldObs;
   } else if (resolucion === "VincularExistente") {
-    if (!expedienteDestinoId) throw new Error("expedienteDestinoId es requerido para la vinculación.");
-    sheet.getRange(rowIndex + 1, 15).setValue(expedienteDestinoId); // expedienteId col
-    newObs = `[DUPLICADO_RESUELTO: Vinculado a expediente ${expedienteDestinoId} por ${authUserId || 'Secretaría'} el ${nowStr}. Motivo: ${motivoJustificado}] ${oldObs}`.trim();
-  } else if (resolucion === "RechazarDuplicado") {
+    sheet.getRange(rowIndex + 1, 15).setValue(expedienteDestinoId);
+    newObs = "[DUPLICADO_RESUELTO: Vinculado a expediente " + expedienteDestinoId + " por " + ctx.actor.userId + " el " + nowStr + ". Motivo: " + motivoJustificado + "] " + oldObs;
+  } else {
     newStatus = "Rechazada";
     sheet.getRange(rowIndex + 1, 12).setValue("Rechazada");
-    newObs = `[DUPLICADO_RESUELTO: Rechazada por duplicidad por ${authUserId || 'Secretaría'} el ${nowStr}. Motivo: ${motivoJustificado}] ${oldObs}`.trim();
+    newObs = "[DUPLICADO_RESUELTO: Rechazada por duplicidad por " + ctx.actor.userId + " el " + nowStr + ". Motivo: " + motivoJustificado + "] " + oldObs;
   }
-
   sheet.getRange(rowIndex + 1, 14).setValue(newObs);
-
-  logStructuredEvent("ACADEMIC", "resolveAdmissionDuplicate", "INFO", "DUPLICATE_RESOLVED", `Solicitud ${solicitudId} resuelta con opción ${resolucion}`, { solicitudId, resolucion, expedienteDestinoId, motivoJustificado }, authRole);
-
+  logStructuredEvent("ACADEMIC", "resolveAdmissionDuplicate", "INFO", "DUPLICATE_RESOLVED",
+    "Solicitud " + solicitudId + " resuelta con opción " + resolucion,
+    { solicitudId: solicitudId, resolucion: resolucion, expedienteDestinoId: expedienteDestinoId, motivoJustificado: motivoJustificado }, ctx.actor.role);
   try {
-    const histSheet = getOrCreateSheet(ss, "HistorialCambiosEntidad");
-    histSheet.appendRow([
-      `HIST-${Date.now()}`,
-      "SolicitudAdmision",
-      solicitudId,
-      "DeteccionDuplicados",
-      resolucion,
-      authUserId || "Secretaría",
-      nowStr,
-      motivoJustificado
+    getOrCreateSheet(ctx.ss, "HistorialCambiosEntidad").appendRow([
+      "HIST-" + Date.now(), "SolicitudAdmision", solicitudId, "DeteccionDuplicados",
+      resolucion, ctx.actor.userId, nowStr, motivoJustificado
     ]);
   } catch (_) {}
-
-  return {
-    status: "success",
-    solicitudId: solicitudId,
-    resolucion: resolucion,
-    nuevoEstado: newStatus,
-    message: `Alerta de duplicado para ${solicitudId} resuelta exitosamente como ${resolucion}.`
-  };
+  return { status: "success", solicitudId: solicitudId, resolucion: resolucion, nuevoEstado: newStatus,
+    message: "Alerta de duplicado para " + solicitudId + " resuelta exitosamente." };
 }
 
 // [TAREA-F6-019] [Fase 6: Expediente Institucional y Ciclo de Vida] - Fusión de expedientes con persistencia de trazabilidad inmutable en FusionesExpedientes
@@ -11795,7 +11844,10 @@ function getSpreadsheetCatalog(payload) {
 function getAdmissionAnalyticsReport(payload) {
   const { anolectivo } = payload || {};
   const targetAno = anolectivo || "2026";
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const ctx = getAcademicAdmissionScopeContext_(payload, "getAdmissionAnalyticsReport", null, "READ");
+  if (!ctx.authorized) return { status: "error", code: "RESOURCE_SCOPE_DENIED", message: "Acceso denegado." };
+  const ss = ctx.ss;
+  const allowedRequestIds = getAuthorizedAdmissionRequestIds_(ss, ctx.scope, payload, "READ");
 
   const sheet = getOrCreateSheet(ss, "SolicitudesAdmision");
   const rows = sheet.getDataRange().getValues();
@@ -11823,6 +11875,8 @@ function getAdmissionAnalyticsReport(payload) {
   const idxMotivo = headers.indexOf("observaciones") !== -1 ? headers.indexOf("observaciones") : (headers.indexOf("motivorechazo") !== -1 ? headers.indexOf("motivorechazo") : 13);
 
   const filtered = rows.slice(1).filter(r => {
+    const requestId = String(r[0] || "").trim();
+    if (!requestId || !allowedRequestIds.has(requestId)) return false;
     if (idxAno === -1) return true;
     return String(r[idxAno]).trim() === String(targetAno).trim();
   });
