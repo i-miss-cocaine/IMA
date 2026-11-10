@@ -335,7 +335,7 @@ console.log("ACADEMIC admission queue and institution-wide intake ownership cont
     getStudentIdentityForPerson_:()=>{studentIdentityLookups++;return {userId:"STU-FOREIGN"};},
     registerAcademicResourceOwnership_:()=>{ownershipWrites++;return {authorized:true,created:true,ownershipId:"OWN-NEW"};}
   };
-  vm.runInNewContext(extractFunction("convertAdmissionToStudent")+"\\nthis.run=convertAdmissionToStudent;",context);
+  vm.runInNewContext(extractFunction("convertAdmissionToStudent")+"\nthis.run=convertAdmissionToStudent;",context);
   assert.throws(()=>context.run({solicitudId:"ADM-FOREIGN"}),/RESOURCE_NOT_FOUND/);
   assert.equal(ownershipChecks,1,"the existing expediente must be checked against active department ownership");
   assert.equal(studentIdentityLookups,0,"foreign student identity must not be resolved");
