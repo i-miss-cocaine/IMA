@@ -2312,7 +2312,7 @@ function findAdmissionConversionCharge_(cargoData, userId, periodo, solicitudId,
     const discount = Number(charge[5]);
     const total = Number(charge[6]);
     if (!isFinite(base) || !isFinite(discount) || !isFinite(total) ||
-        base < 0 || discount < 0 || total !== Math.max(0, base - discount) ||
+        base < 0 || discount < 0 || Math.abs(total - Math.max(0, base - discount)) > 0.000001 ||
         !String(charge[0] || "").trim() || !String(charge[7] || "").trim()) {
       throw new Error("ADMISSION_CHARGE_CONFLICT");
     }
@@ -13259,9 +13259,9 @@ function registerStudentEnrollment(payload) {
           const existing = referenceMatches[0];
           if (String(existing[2] || "").trim() !== sUserId ||
               String(existing[3] || "").trim() !== concepto ||
-              Number(existing[4]) !== montoBase ||
-              Number(existing[5]) !== descuento ||
-              Number(existing[6]) !== montoFinal ||
+              Math.abs(Number(existing[4]) - montoBase) > 0.000001 ||
+              Math.abs(Number(existing[5]) - descuento) > 0.000001 ||
+              Math.abs(Number(existing[6]) - montoFinal) > 0.000001 ||
               !String(existing[0] || "").trim()) {
             throw new Error("ADMISSION_CHARGE_CONFLICT");
           }
