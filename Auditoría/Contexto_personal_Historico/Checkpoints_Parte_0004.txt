@@ -1849,3 +1849,46 @@ HEAD inicial verificado: 93b5bc2435f9f0b5f2682c9c82ee418e370fcc59.
 - Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt
 - Auditoría/INDICE_CHECKPOINTS.md
 ===============================================================================
+
+
+===============================================================================
+## CHECKPOINT C1.454 — ACADEMIC: corregir referencia de cargo y exponer CargoID
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.453.
+HEAD inicial verificado: bcdccbb7e083cd531f9a5f4e5542bcbe4884f0d3.
+
+### Tarea única de esta iteración
+Corregir el defecto TDZ de la referencia del cargo de admisión, devolver CargoID de forma consistente y ampliar la regresión de conversión completa.
+
+### Cambios realizados
+- `convertAdmissionToStudent` ya no lee `matriculaRealId` antes de su inicialización. Entrega un prefijo privado `ADMISION|<solicitudId>|` al helper interno.
+- `registerStudentEnrollmentInternal_` calcula la referencia completa solo después de resolver `matriculaId`; mantiene una sola operación de matrícula/cargo y la misma lista de compensación.
+- El helper devuelve `cargoId` cuando inserta el cargo o cuando reutiliza una fila que coincide exactamente con la referencia y los importes/propietario validados.
+- La API pública elimina `_chargeReferencePrefix`, evitando que un llamador externo pueda fabricar referencias de admisión.
+- La conversión valida que existan `matriculaId` y `cargoId`; retorna el CargoID tanto en primera conversión como en el camino idempotente.
+- El evento `ADMISSION_CONVERTED` incorpora `cargoId` para la trazabilidad de las nuevas conversiones.
+- Se amplió `tests/security/academic-student-expediente-ownership.test.js`: escenario de compensación por fallo inyectado y posterior conversión exitosa con referencia exacta; CargoID estable en reintento; aislamiento del prefijo interno en la API pública.
+
+### Verificaciones y límites
+- Revisión estática de código, orden de inicialización, retorno del helper, filtrado de metadatos y diff: PASS.
+- Ejecución del contrato Node y parseo de Code.gs: NOT RUN. No hay checkout local disponible; el intento de `git clone` no pudo resolver `github.com` por DNS.
+- Checks/status de GitHub consultados para el HEAD: sin status ni ejecuciones devueltos. No se declara CI PASS.
+- No se accedió a hojas reales, datos productivos ni despliegue.
+- El escenario dinámico está añadido, pero su resultado permanece pendiente de ejecución.
+
+### Commits de código y pruebas
+- 2aec68a829fce262d3f7bc389166349a1bbb2e26 — propagación inicial de CargoID en respuesta/evento.
+- af3fc6471fc9e38eadfc5ac76af1e73a6ba5e159 — regresión de conversión completa y referencia exacta.
+- 03a96a5e20ff0d0f0971fba1339cfdd2a07866a1 — derivación de referencia posterior a resolver matrícula y retorno CargoID.
+- b41d48b4a0646a1fbcca9beb7e3e12bb9cd213f2 — prueba de aislamiento del prefijo interno.
+- 5d7b49724c44b8718785afbfd83cbadeeda31bc5 — corrección final del payload interno `_chargeReference`.
+
+### Estado y continuidad
+- Implementación publicada; verificación local pendiente. TASK-153 no se marca completada.
+- AUD-NG-386 permanece abierto.
+- Siguiente acción elegible: ejecutar el contrato Node y el parseo de Code.gs en un checkout/runner con acceso al repositorio; corregir cualquier fallo antes de cerrar esta tarea.
+- Mantener sesión `IMA-EXEC-20261110-1825Z-02`.
+===============================================================================
