@@ -28,6 +28,7 @@ const claims = {
   "other-token": { userId: "TEACHER-2", role: "Profesor" }
 };
 const examRows = [
+  ["ExamenID", "Titulo", "Asignatura", "Grado", "Seccion", "FechaLimite", "TiempoLimite", "Estado", "ProfesorID", "Parcial"],
   ["EXM-1", "Propio y mismo departamento", "Matemáticas", "10", "A", "", "", "Activo", "TEACHER-1", "P1"],
   ["EXM-2", "Propio pero otro departamento", "Ciencias", "10", "A", "", "", "Activo", "TEACHER-1", "P1"],
   ["EXM-3", "Docente ajeno", "Historia", "10", "A", "", "", "Activo", "TEACHER-2", "P1"],
