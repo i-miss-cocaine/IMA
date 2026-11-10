@@ -5119,3 +5119,14 @@ Alcance estático satisfecho; sin cambios de código. Hallazgos AUD-NG-374..376 
 - Se añade prueba dinámica de prioridad de sesión, eliminación de suplantación, no mutación del payload y preservación del token de recuperación.
 - AUD-NG-001 permanece En ejecución hasta prueba/revisión.
 ===============================================================================
+===============================================================================
+## C1.423 — Cierre AUD-NG-001
+
+- login persiste el token firmado; fetchApi siempre reemplaza las credenciales de payload por la sesión persistida en acciones no-bootstrap, y elimina credenciales/requester* si no hay sesión local.
+- requesterUserId/requesterRole se derivan de currentUser; el payload original no se muta.
+- resetPassword conserva el token de recuperación y no recibe la sesión anterior.
+- Test dinámico: token persistido prevalece sobre sessionToken/authToken/token falsos; requester* falsificados reemplazados; sin sesión se eliminan credenciales; resetPassword conserva capability.
+- Flujo doPost USER probado con getUserVerifiedRole/validateRolePermission reales y verifySessionToken simulado: operación protegida con token válido deriva U-REAL; sin token o token inválido devuelve AUTH_PERMISSION_DENIED.
+- Cinco servicios backend inspeccionados: verificación de token firmado y respuesta AUTH_PERMISSION_DENIED ante autorización fallida.
+- Todas las aserciones pasaron en entorno JS aislado con shim compatible. GitHub no reportó checks CI; no se ejecutó Apps Script productivo. AUD-NG-001 Completada en alcance local/contractual.
+===============================================================================

@@ -5,6 +5,8 @@ const vm = require("node:vm");
 const root = path.resolve(__dirname, "../..");
 const apiSource = fs.readFileSync(path.join(root, "js/api.js"), "utf8");
 const authSource = fs.readFileSync(path.join(root, "js/auth.js"), "utf8");
+const userSource = fs.readFileSync(path.join(root, "backend/user-service/Code.gs"), "utf8");
+new vm.Script(userSource, { filename: "backend/user-service/Code.gs" });
 new vm.Script(apiSource, { filename: "js/api.js" });
 assert.ok(authSource.includes("sessionToken: result.data.sessionToken || result.sessionToken || null"),
   "login stores the signed session token");
@@ -92,6 +94,46 @@ async function invoke(currentUser, action, payload) {
     "password recovery capability is preserved for resetPassword");
   assert.equal(recovery.sent.payload.sessionToken, undefined,
     "auth bootstrap action does not receive the previous session token");
+
+
+  const getVerifiedFn = extractFunction(userSource, "getUserVerifiedRole");
+  const permissionFn = extractFunction(userSource, "validateRolePermission");
+  const doPostFn = extractFunction(userSource, "doPost");
+  const backendContext = {
+    PUBLIC_ACTIONS: [],
+    IDENTITY_MANAGER_ACTIONS_: [],
+    IDENTITY_MANAGER_ROLES_: [],
+    TICKET_ADMIN_ROLES_: ["Administrador","Desarrollador","Director"],
+    ROLE_PERMISSIONS: { Estudiante: ["getUserInfo"] },
+    verifySessionToken(token) {
+      return token === "SIGNED_SESSION" ? { userId: "U-REAL", role: "Estudiante" } : null;
+    },
+    validateContextualAccess: () => ({ authorized: true }),
+    getDynamicPermissionsForRole: () => null,
+    hasActiveDelegationForAction: () => false,
+    logStructuredEvent() {},
+    checkAndRegisterIdempotencyKey: () => null,
+    getUserInfo(payload) { return { status: "success", userId: payload._verifiedUserId }; },
+    textResponse(value) { return JSON.stringify(value); }
+  };
+  vm.runInNewContext(getVerifiedFn + "\n" + permissionFn + "\n" + doPostFn +
+    "\nthis.callUserPost = doPost;", backendContext);
+  const validProtected = JSON.parse(backendContext.callUserPost({
+    postData: { contents: JSON.stringify({
+      action: "getUserInfo",
+      payload: { sessionToken: "SIGNED_SESSION", userId: "U-SPOOFED", authRole: "Administrador" }
+    }) }
+  }));
+  assert.equal(validProtected.status, "success");
+  assert.equal(validProtected.userId, "U-REAL", "backend derives identity from verified claims");
+  const missingToken = JSON.parse(backendContext.callUserPost({
+    postData: { contents: JSON.stringify({ action: "getUserInfo", payload: { userId: "U-REAL", authRole: "Administrador" } }) }
+  }));
+  assert.equal(missingToken.code, "AUTH_PERMISSION_DENIED", "protected operation rejects missing session");
+  const invalidToken = JSON.parse(backendContext.callUserPost({
+    postData: { contents: JSON.stringify({ action: "getUserInfo", payload: { sessionToken: "FORGED", userId: "U-REAL" } }) }
+  }));
+  assert.equal(invalidToken.code, "AUTH_PERMISSION_DENIED", "protected operation rejects invalid session");
 
   process.stdout.write("session-token-transport: all assertions passed\n");
 })().catch(error => { console.error(error); process.exitCode = 1; });

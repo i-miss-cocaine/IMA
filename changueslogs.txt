@@ -797,3 +797,7 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Confirmado que login guarda sessionToken, pero fetchApi permitía que tokens/requester* del payload bloquearan o alteraran la identidad persistida.
 - fetchApi ahora fuerza sessionToken y requester* desde currentUser en acciones no-bootstrap; sin sesión elimina credenciales aportadas por payload. resetPassword conserva su token de recuperación.
 - Se añade test dinámico; pendiente ejecución y revisión antes de cierre.
+[2026-11-10] C1.423 — IMA-EXEC-20261110-1340Z-11 — cierre AUD-NG-001
+- fetchApi ya no permite que credenciales/requester* del payload reemplacen la sesión persistida; sin sesión elimina identidad aportada por el consumidor.
+- Pruebas dinámicas de transporte y doPost USER: token persistido prevalece; token ausente/inválido denegado; identidad derivada de claims; resetPassword preserva token de recuperación.
+- Test contractual pasó en entorno JS aislado con shim; CI sin checks; sin Apps Script productivo. AUD-NG-001 Completada en alcance local/contractual.

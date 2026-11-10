@@ -2907,4 +2907,4 @@ Siguiente selección: aplicar §6.1 en PM-01 y verificar dependencias reales ant
 
 **Evidencia:** `js/auth.js` blob `51a7e01fea0d70a3de7f71c58f46145fa04b4a4e`; `js/api.js` blob `c54d23ad1fc84add9e204a0233d824a2bfcc8ed3`; los cinco servicios backend verifican token firmado y rechazan `AUTH_PERMISSION_DENIED` cuando la autorización falla.
 
-**Estado:** En ejecución hasta ejecutar la prueba dinámica de transporte, revisar el diff y verificar el comportamiento de acciones de recuperación.
+**Cierre C1.423:** AUD-NG-001 queda Completada en el alcance local/contractual. La prueba dinámica confirma prioridad del token persistido, rechazo de credenciales del payload, denegación sin token y preservación de la capacidad de recuperación. No hay checks CI reportados; la verificación de claims se simuló y no se ejecutó Apps Script productivo.

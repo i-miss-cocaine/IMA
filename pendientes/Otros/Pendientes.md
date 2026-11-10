@@ -8918,7 +8918,7 @@ FASE 7. PLANIFICACIÓN ACADÉMICA, HORARIOS Y RECURSOS
 ---
 
 <!-- ID: AUD-NG-001 | Fuentes: Pendientes.md -->
-### [ ] [AUD-NG-001] Corregir la integración del token de sesión entre login y llamadas API
+### [x] [AUD-NG-001] Corregir la integración del token de sesión entre login y llamadas API
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-001
 - **Severidad/Clasificación:** Crítico
 - **Archivos Involucrados:** js/auth.js, js/api.js, backend/user-service/Code.gs, backend/academic-service/Code.gs, backend/accounting-service/Code.gs, backend/task-service/Code.gs, backend/exam-service/Code.gs
@@ -8926,7 +8926,12 @@ FASE 7. PLANIFICACIÓN ACADÉMICA, HORARIOS Y RECURSOS
 - **Descripción del Alcance:** Conservar el token devuelto por loginUser en la sesión de usuario y transmitirlo en todas las llamadas protegidas. Definir un contrato único de token entre frontend y servicios y evitar que las operaciones protegidas dependan de credenciales que el cliente no conserva.
 - **Criterios de Aceptación:** El inicio de sesión almacena la credencial; fetchApi la envía sin permitir que el payload sobrescriba identidad verificada; una operación protegida válida funciona y una llamada sin token es rechazada.
 - **Ampliación C1.86 / TAREA-F4-P2-02:** USER/loginUser devuelve el token en `result.sessionToken` y `result.data.sessionToken`; sin embargo, js/auth.js (138-160) construye y persiste `currentUser` sin copiar `result.data.sessionToken`. js/api.js (40-57) solo añade `requesterUserId` y `requesterRole`; no transmite `sessionToken` en el cuerpo. Se confirma que el defecto de persistencia/transmisión sigue presente. No crear hallazgo duplicado.
-- **Estado:** [ ] Pendiente
+- **Estado:** [x] Completada
+- **Cierre C1.423:** `fetchApi` ahora prioriza siempre el token de sesión persistido para acciones no-bootstrap; elimina sessionToken/authToken/token y requester* del payload si no hay sesión local; deriva requesterUserId/requesterRole de currentUser; no muta el payload original. login/register/recuperación/reset conservan su flujo específico.
+- **Evidencia:** commit de implementación `d68352d083dac7c129aec5be4f5ad6c5827d41a6`; `js/api.js` blob `42740b7ef701418df5fb8e9e9887746eb508202b`; `js/auth.js` blob `51a7e01fea0d70a3de7f71c58f46145fa04b4a4e`; test `tests/security/session-token-transport.test.js`.
+- **Verificación:** prueba dinámica de transporte con token legítimo, tokens alternativos falsificados, requester* falsificados, ausencia de sesión, no mutación del payload y conservación del token de recuperación. Además, flujo doPost USER con getUserVerifiedRole/validateRolePermission reales y verifySessionToken simulado: operación protegida válida deriva U-REAL; token ausente o inválido devuelve AUTH_PERMISSION_DENIED. Cinco servicios backend inspeccionados y verificados con token firmado y denegación por defecto.
+- **Code Review interno:** diff de fetchApi revisado; payload clonado, precedencia del token persistido y exclusiones de recuperación comprobadas.
+- **Límites:** verificación de claims simulada en test; no se ejecutó Apps Script desplegado ni se usaron tokens/usuarios productivos. GitHub no reportó checks CI.
 
 ---
 

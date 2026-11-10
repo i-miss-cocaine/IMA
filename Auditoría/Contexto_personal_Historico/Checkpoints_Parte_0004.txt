@@ -573,3 +573,41 @@ Fase: PM-01 — identidad, seguridad y gobierno de acceso.
 Ejecutar tests/security/session-token-transport.test.js en entorno JS aislado y revisar el diff; si pasa, cerrar AUD-NG-001 con límites de CI/productivo explícitos.
 Commit: SHA por verificar.
 ===============================================================================
+===============================================================================
+## CHECKPOINT C1.423 — Cierre AUD-NG-001
+Sesión: IMA-EXEC-20261110-1340Z-11
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA; rama exclusiva: NG_beta_0.0.0.1_work.
+HEAD de partida: d68352d083dac7c129aec5be4f5ad6c5827d41a6.
+Checkpoint anterior: C1.422.
+Fase: PM-01 — identidad, seguridad y gobierno de acceso.
+
+### Resultado
+- AUD-NG-001: Completada en alcance local/contractual.
+- login conserva el token firmado en currentUser.
+- fetchApi clona el payload y, para acciones no-bootstrap, fuerza sessionToken/requesterUserId/requesterRole desde currentUser; elimina authToken/token alternativos y los campos de identidad si no existe sesión local.
+- resetPassword conserva su token de recuperación y no recibe la sesión anterior.
+- Cinco servicios backend USER/ACADEMIC/ACCOUNTING/TASK/EXAM inspeccionados: validan token firmado y responden AUTH_PERMISSION_DENIED ante autorización fallida.
+
+### Pruebas
+- Test dinámico de transporte: token persistido vence a sessionToken/authToken/token falsos; requester* falsificados se reemplazan; payload original no se muta; ausencia de sesión elimina credenciales; resetPassword conserva token de recuperación.
+- Flujo doPost USER con getUserVerifiedRole/validateRolePermission reales y verifySessionToken simulado: operación protegida válida deriva U-REAL; token ausente/inválido devuelve AUTH_PERMISSION_DENIED.
+- Todas las aserciones pasaron en entorno JavaScript aislado con shim compatible; no se afirma ejecución en Node nativo.
+- GitHub no reportó checks CI. No se ejecutó Apps Script desplegado ni se usaron tokens/usuarios productivos.
+
+### Code Review y límites
+- Diff de fetchApi revisado; no se modificaron los servicios backend ni los secretos.
+- Cierre limitado al transporte local/contractual y la denegación backend ya existente; no certifica despliegue productivo.
+
+### Archivos modificados en esta iteración
+- pendientes/Otros/Pendientes.md — AUD-NG-001 Completada con evidencia.
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md — cierre §10.91.
+- Auditoría/MapaDependencias.md — C1.423.
+- changueslogs.txt — C1.423.
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — este checkpoint.
+- Auditoría/INDICE_CHECKPOINTS.md — C1.423.
+
+### Siguiente acción
+Reaplicar §6.1 en PM-01. AUD-NG-001 desbloquea su dependencia de token para F29-TASK05/TASK17, pero el ciclo F29-TASK05↔F29-TASK17 persiste y no se resuelve automáticamente.
+Commit: SHA por verificar.
+===============================================================================
