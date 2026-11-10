@@ -939,3 +939,13 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - Sin código/datos/esquemas/permisos modificados; no pruebas de producto ejecutadas.
 - Checkpoint C1.410: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt, líneas 130–180; índice Auditoría/INDICE_CHECKPOINTS.md, fila C1.410.
 ===============================================================================
+
+
+===============================================================================
+## C1.411 — IMA-EXEC-20261110-1150Z-01 — asignación de responsabilidad por roles
+- Se registra N-23: las responsabilidades y autoridades sobre antecedentes, expedientes y documentos se configuran desde la plataforma mediante roles, capacidades, ámbitos y membresías vigentes; no se fijan nombres personales como titulares estáticos.
+- Se amplía Plan Maestro §10.82 con requisitos, controles y pruebas futuras. La identidad autenticada del actor se conserva en auditoría protegida, separada de la asignación funcional del rol.
+- Sin cambios funcionales, código, datos, esquemas, usuarios, roles o permisos reales; sin pruebas de producto ejecutadas.
+- T153-S01 mantiene bloqueo institucional y las dependencias no se adelantan.
+- Checkpoint C1.411: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt, líneas 181–193; índice Auditoría/INDICE_CHECKPOINTS.md, fila C1.411.
+===============================================================================
