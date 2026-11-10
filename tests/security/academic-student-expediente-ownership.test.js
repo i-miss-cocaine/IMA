@@ -225,3 +225,64 @@ for(const name of ["findDuplicateStudents","getStudentFileAdministrativeReports"
     name+" must enforce RBAC and ResourceOwnership scope");
 }
 console.log("ACADEMIC administrative search/report ResourceOwnership contracts passed.");
+
+
+// Unassigned public admission requests are institution-wide intake records only;
+// once an ownership row exists, the normal department owner guard takes over.
+{
+  let ownershipChecks=0;
+  const context={
+    assertResourceOwnershipForScope_:(_ss,scope,type,id)=>{ownershipChecks++;return {authorized:scope.departmentIds.includes("D1")&&id==="ADM-OWNED",code:"RESOURCE_SCOPE_DENIED"};}
+  };
+  vm.runInNewContext(extractFunction("assertAcademicAdmissionRequestScopeAccess_")+"\nthis.run=assertAcademicAdmissionRequestScopeAccess_;",context);
+  const noOwnership={getSheetByName:()=>makeSheet([["OwnershipID","InstitutionID","ResourceType","ResourceID","DepartmentID","Status"]])};
+  const institutionScope={authorized:true,institutionId:"INST-1",departmentIds:[],institutionWide:true};
+  assert.equal(context.run(noOwnership,institutionScope,"ADM-UNASSIGNED",{}).authorized,true,
+    "only an institution-wide scope may read a never-assigned public intake request");
+  const departmentScope={authorized:true,institutionId:"INST-1",departmentIds:["D1"],institutionWide:false};
+  assert.equal(context.run(noOwnership,departmentScope,"ADM-UNASSIGNED",{}).authorized,false,
+    "department scope cannot read an unassigned admission request");
+  const foreignHistory={getSheetByName:()=>makeSheet([
+    ["OwnershipID","InstitutionID","ResourceType","ResourceID","DepartmentID","Status"],
+    ["OWN-1","OTHER-INST","SOLICITUD_ADMISION","ADM-UNASSIGNED","D9","ACTIVE"]
+  ])};
+  assert.equal(context.run(foreignHistory,institutionScope,"ADM-UNASSIGNED",{}).authorized,false,
+    "institution-wide unassigned exception cannot override an existing foreign ownership record");
+  const ownedHistory={getSheetByName:()=>makeSheet([
+    ["OwnershipID","InstitutionID","ResourceType","ResourceID","DepartmentID","Status"],
+    ["OWN-2","INST-1","SOLICITUD_ADMISION","ADM-OWNED","D1","ACTIVE"]
+  ])};
+  assert.equal(context.run(ownedHistory,departmentScope,"ADM-OWNED",{}).authorized,true);
+  assert(ownershipChecks>=2);
+}
+{
+  const requests=[
+    ["ADM-1","","2026","1","Ana","One","","","","","ana@example.test","Recibida"],
+    ["ADM-2","","2026","1","Ana","Two","","","","","ana2@example.test","Recibida"]
+  ];
+  const requestSheet=makeSheet([["SolicitudID"],...requests]);
+  const context={
+    SPREADSHEET_ID:"LOCAL",
+    SpreadsheetApp:{openById:()=>({})},
+    validateRolePermission:()=>({authorized:true}),
+    getVerifiedAcademicIdentity_:()=>({authorized:true,userId:"DIR-1",role:"Director"}),
+    getVerifiedAcademicDepartmentScope_:()=>({authorized:true,userId:"DIR-1",institutionId:"INST-1",departmentIds:["D1"],institutionWide:false}),
+    getOrCreateSheet:()=>requestSheet,
+    assertAcademicAdmissionRequestScopeAccess_:(_ss,_scope,id)=>({authorized:id==="ADM-1"}),
+    normalizeString:value=>String(value||"").trim().toLowerCase()
+  };
+  vm.runInNewContext(extractFunction("getAdmissionRequests")+"\nthis.run=getAdmissionRequests;",context);
+  const listed=context.run({fetchAll:true});
+  assert.deepEqual(listed.requests.map(row=>row.solicitudId),["ADM-1"],"admission queue hides requests outside the actor's department ownership");
+  const direct=context.run({solicitudId:"ADM-2"});
+  assert.equal(direct.code,"RESOURCE_NOT_FOUND","direct request ID cannot bypass admission ownership");
+}
+{
+  const statusFn=extractFunction("updateAdmissionStatus");
+  assert(statusFn.includes('validateRolePermission("updateAdmissionStatus"')&&
+    statusFn.includes("getVerifiedAcademicDepartmentScope_")&&
+    statusFn.includes("assertAcademicAdmissionRequestScopeAccess_")&&
+    statusFn.includes("const actorUserId = actor.userId"),
+    "admission status mutation must verify request ownership and use the signed actor identity");
+}
+console.log("ACADEMIC admission queue and institution-wide intake ownership contracts passed.");
