@@ -947,21 +947,29 @@ function deleteExamSubmission(payload) {
 }
 
 function getAllExams(payload) {
-  const actor = getVerifiedExamIdentity_(payload);
-  if (!actor.authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const scope = getVerifiedExamDepartmentScope_(payload, ss, actor);
-  if (!scope.authorized) return { status: "success", data: [] };
+  return withAuthorizedExamRead_("getAllExams", payload, context => getAllExamsUnlocked_(payload, context));
+}
+function getAllExamsUnlocked_(payload, context) {
+  const { actor, ss, scope } = context;
   const data = getSheetOrThrow(ss, "Examenes").getDataRange().getValues().slice(1);
-  const filtered = data.filter(row => {
-    if (actor.role === "Profesor" && String(row[8] || "").trim() !== actor.userId) return false;
-    const access = assertExamResourceOwnershipForScope_(ss, scope, "EXAMEN", row[0], "LIST", payload);
-    return access.authorized === true;
+  const examIdCounts = Object.create(null);
+  data.forEach(row => {
+    const id = String(row[0] || "").trim();
+    if (id) examIdCounts[id] = (examIdCounts[id] || 0) + 1;
   });
-  return { status: "success", data: filtered.map(r => ({
-    examenId: r[0], titulo: r[1], asignatura: r[2], grado: r[3], seccion: r[4],
-    fechaLimite: r[5] ? new Date(r[5]).toISOString() : null, estado: r[7], parcial: r[9] || "Primer Parcial"
-  })) };
+  const filtered = data.filter(row => {
+    const examId = String(row[0] || "").trim();
+    if (!examId || examIdCounts[examId] !== 1) return false;
+    if (actor.role === "Profesor" && String(row[8] || "").trim() !== actor.userId) return false;
+    const access = assertExamResourceOwnershipForScope_(ss, scope, "EXAMEN", examId, "LIST", payload);
+    return access && access.authorized === true;
+  });
+  return { status: "success", data: filtered.map(row => {
+    const deadline = row[5] ? new Date(row[5]) : null;
+    return { examenId: row[0], titulo: row[1], asignatura: row[2], grado: row[3], seccion: row[4],
+      fechaLimite: deadline && !isNaN(deadline.getTime()) ? deadline.toISOString() : null,
+      estado: row[7], parcial: row[9] || "Primer Parcial" };
+  }) };
 }
 
 function withAuthorizedExamRead_(action, payload, reader) {
@@ -1564,36 +1572,57 @@ function getExamResultUnlocked_(payload, context) {
   return { status: "success", data: { examenTitulo: exam[1], calificacionTotal: delivery[5], resultadosDetallados: detailed } };
 }
 function getTeacherExamActivity(payload) {
-  const permission = validateRolePermission("getTeacherExamActivity", payload);
-  if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
-  const actor = getVerifiedExamIdentity_(payload);
-  if (!actor.authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const scope = getVerifiedExamDepartmentScope_(payload, ss, actor);
-  if (!scope.authorized) return { status: "success", data: [] };
-  const usuariosData = getSheetOrThrow(ss, "Usuarios").getDataRange().getValues();
-  const examenesData = getSheetOrThrow(ss, "Examenes").getDataRange().getValues();
-  const entregasValues = getSheetOrThrow(ss, "EntregasExamen").getDataRange().getValues();
-  const submissions = entregasValues.slice(1).map(entrega => {
-    const examen = examenesData.find(row => String(row[0]) === String(entrega[1]));
-    if (!examen) return null;
-    if (actor.role === "Profesor" && String(examen[8] || "").trim() !== actor.userId) return null;
-    const ownership = assertExamResourceOwnershipForScope_(ss, scope, "EXAMEN", examen[0], "READ_SUBMISSIONS", payload);
-    if (!ownership.authorized) return null;
-    const usuario = usuariosData.find(row => String(row[0]) === String(entrega[2]));
+  return withAuthorizedExamRead_("getTeacherExamActivity", payload, context => getTeacherExamActivityUnlocked_(payload, context));
+}
+function getTeacherExamActivityUnlocked_(payload, context) {
+  const { actor, ss, scope } = context;
+  const userRows = getSheetOrThrow(ss, "Usuarios").getDataRange().getValues().slice(1);
+  const examRows = getSheetOrThrow(ss, "Examenes").getDataRange().getValues().slice(1);
+  const deliveryRows = getSheetOrThrow(ss, "EntregasExamen").getDataRange().getValues().slice(1);
+  const examIdCounts = Object.create(null), examById = Object.create(null);
+  examRows.forEach(row => {
+    const id = String(row[0] || "").trim();
+    if (!id) return;
+    examIdCounts[id] = (examIdCounts[id] || 0) + 1;
+    examById[id] = row;
+  });
+  const userIdCounts = Object.create(null), userById = Object.create(null);
+  userRows.forEach(row => {
+    const id = String(row[0] || "").trim();
+    if (!id) return;
+    userIdCounts[id] = (userIdCounts[id] || 0) + 1;
+    userById[id] = row;
+  });
+  const deliveryIdCounts = Object.create(null);
+  deliveryRows.forEach(row => {
+    const id = String(row[0] || "").trim();
+    if (id) deliveryIdCounts[id] = (deliveryIdCounts[id] || 0) + 1;
+  });
+  const submissions = [];
+  deliveryRows.forEach(delivery => {
+    const deliveryId = String(delivery[0] || "").trim();
+    const examId = String(delivery[1] || "").trim();
+    const studentId = String(delivery[2] || "").trim();
+    if (!deliveryId || deliveryIdCounts[deliveryId] !== 1 || !examId || examIdCounts[examId] !== 1) return;
+    const exam = examById[examId];
+    if (!exam) return;
+    if (actor.role === "Profesor" && String(exam[8] || "").trim() !== actor.userId) return;
+    const ownership = assertExamResourceOwnershipForScope_(ss, scope, "EXAMEN", examId, "READ_SUBMISSIONS", payload);
+    if (!ownership || ownership.authorized !== true) return;
+    const usuario = userIdCounts[studentId] === 1 ? userById[studentId] : null;
     if (usuario) {
-      if (payload && payload.grado && !isInTeacherList(usuario[2], payload.grado)) return null;
-      if (payload && payload.seccion && !isInTeacherList(usuario[3], payload.seccion)) return null;
+      if (payload && payload.grado && !isInTeacherList(usuario[2], payload.grado)) return;
+      if (payload && payload.seccion && !isInTeacherList(usuario[3], payload.seccion)) return;
     }
-    return {
-      tipo: "Examen", entregaId: entrega[0], examenId: entrega[1], titulo: examen[1],
-      alumnoId: entrega[2], alumnoNombre: usuario ? usuario[1] : "Usuario Desconocido",
+    const fecha = new Date(delivery[3]);
+    if (isNaN(fecha.getTime())) return;
+    submissions.push({ tipo: "Examen", entregaId: delivery[0], examenId: delivery[1], titulo: exam[1],
+      alumnoId: delivery[2], alumnoNombre: usuario ? usuario[1] : "Usuario Desconocido",
       email: usuario ? usuario[4] : "N/A", grado: usuario ? usuario[2] : "N/A",
-      seccion: usuario ? usuario[3] : "N/A", asignatura: examen[2] || "N/A",
-      parcial: examen[9] || "Primer Parcial", fecha: new Date(entrega[3]),
-      calificacion: entrega[5], estado: entrega[6], comentario: entrega[7] || ""
-    };
-  }).filter(Boolean);
+      seccion: usuario ? usuario[3] : "N/A", asignatura: exam[2] || "N/A",
+      parcial: exam[9] || "Primer Parcial", fecha, calificacion: delivery[5],
+      estado: delivery[6], comentario: delivery[7] || "" });
+  });
   submissions.sort((a, b) => b.fecha - a.fecha);
   return { status: "success", data: submissions.map(item => ({ ...item, fecha: item.fecha.toISOString() })) };
 }

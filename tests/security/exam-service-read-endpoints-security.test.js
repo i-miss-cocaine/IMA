@@ -32,13 +32,19 @@ function runtime(options = {}) {
     ["EXM-2","Inactivo con entrega","Math","10","A","","30","Inactivo","PROF-1","P1"],
     ["EXM-3","Activo sin entrega","Math","10","A","","30","Activo","PROF-1","P1"],
     ["EXM-D","Duplicado","Math","10","A","","30","Activo","PROF-1","P1"],
-    ["EXM-D","Duplicado dos","Math","10","A","","30","Activo","PROF-1","P1"]
+    ["EXM-D","Duplicado dos","Math","10","A","","30","Activo","PROF-1","P1"],
+    ["EXM-4","Otro profesor","Math","11","B","","30","Activo","PROF-2","P1"]
   ];
   const deliveryRows = [
-    ["DEL-1","EXM-1","STU-1",null,"[]",90,"Calificado",""],
-    ["DEL-2","EXM-2","STU-1",null,"[]",null,"Pendiente",""],
-    ["DEL-D1","EXM-1","STU-1",null,"[]",88,"Calificado",""],
-    ["DEL-D2","EXM-1","STU-1",null,"[]",89,"Calificado",""]
+    ["DEL-1","EXM-1","STU-1",new Date("2026-11-10T10:00:00Z"),"[]",90,"Calificado",""],
+    ["DEL-2","EXM-2","STU-1",new Date("2026-11-10T11:00:00Z"),"[]",null,"Pendiente",""],
+    ["DEL-D1","EXM-1","STU-1",new Date("2026-11-10T12:00:00Z"),"[]",88,"Calificado",""],
+    ["DEL-D2","EXM-1","STU-1",new Date("2026-11-10T13:00:00Z"),"[]",89,"Calificado",""],
+    ["DEL-DUP","EXM-3","STU-1",new Date("2026-11-10T14:00:00Z"),"[]",70,"Calificado",""],
+    ["DEL-DUP","EXM-3","STU-1",new Date("2026-11-10T15:00:00Z"),"[]",71,"Calificado",""],
+    ["DEL-AMB","EXM-3","STU-D",new Date("2026-11-10T16:00:00Z"),"[]",80,"Calificado",""],
+    ["DEL-FOREIGN","EXM-4","STU-1",new Date("2026-11-10T17:00:00Z"),"[]",60,"Calificado",""],
+    ["DEL-DUP-EXM","EXM-D","STU-1",new Date("2026-11-10T18:00:00Z"),"[]",60,"Calificado",""]
   ];
   const questionRows = [
     ["Q-1","EXM-3","opcion_multiple","Pregunta única",'{"A":"1"}',"A"],
@@ -49,7 +55,9 @@ function runtime(options = {}) {
   const sheets = {
     Examenes: makeSheet([["ExamenID"], ...examRows]),
     EntregasExamen: makeSheet([["EntregaID"], ...deliveryRows]),
-    PreguntasExamen: makeSheet([["PreguntaID"], ...questionRows])
+    PreguntasExamen: makeSheet([["PreguntaID"], ...questionRows]),
+    Usuarios: makeSheet([["UserID"], ["STU-1","Estudiante Uno","10","A","one@example.test"],
+      ["STU-D","Duplicado A","10","A","a@example.test"], ["STU-D","Duplicado B","10","A","b@example.test"]])
   };
   const ss = { getSheetByName(name) { return sheets[name] || null; } };
   let held = false, acquires = 0, releases = 0;
@@ -73,7 +81,7 @@ function runtime(options = {}) {
       if (options.contextError) throw new Error("RESOURCE_NOT_AVAILABLE");
       const studentActor = options.studentActor !== false;
       return {
-        actor: options.actor || { userId: "STU-1", role: "Estudiante" },
+        actor: options.actor || (studentActor ? { userId: "STU-1", role: "Estudiante" } : { userId: "PROF-1", role: "Profesor" }),
         ss, studentActor, guardianActor: !!options.guardianActor,
         profile: { userId: options.profileUserId || "STU-1", grado: "10", seccion: "A", role: "Estudiante" },
         scope: { authorized: true }, requestedStudentId: requestedId
@@ -85,9 +93,12 @@ function runtime(options = {}) {
     isExamAssignedToStudent_(exam, profile) { return String(exam[3]) === profile.grado && String(exam[4]) === profile.seccion; },
     assertExamResourceOwnershipForScope_() { return { authorized: options.ownership !== false }; }
   };
-  const names = ["withAuthorizedExamRead_", "getAuthorizedExamReadContext_", "getStudentExams", "getStudentExamsUnlocked_", "getExamQuestions", "getExamQuestionsUnlocked_"];
+  const names = ["withAuthorizedExamRead_", "getAuthorizedExamReadContext_", "getStudentExams", "getStudentExamsUnlocked_",
+    "getExamQuestions", "getExamQuestionsUnlocked_", "getAllExams", "getAllExamsUnlocked_",
+    "getTeacherExamActivity", "getTeacherExamActivityUnlocked_"];
   vm.runInNewContext(names.map(extractFunction).join("\n") +
-    "\nthis.getStudentExams=getStudentExams; this.getExamQuestions=getExamQuestions;", context);
+    "\nthis.getStudentExams=getStudentExams; this.getExamQuestions=getExamQuestions; " +
+    "this.getAllExams=getAllExams; this.getTeacherExamActivity=getTeacherExamActivity;", context);
   return { context, sheets, stats: () => ({ acquires, releases, held }) };
 }
 const valid = runtime();
@@ -114,4 +125,34 @@ assert.throws(() => deletedBeforeRead.context.getExamQuestions({ sessionToken: "
   /RESOURCE_NOT_AVAILABLE/, "inactive exam access is re-evaluated after acquiring lock when delivery disappears");
 assert.deepEqual(deletedBeforeRead.stats(), { acquires: 1, releases: 1, held: false },
   "lock is released when the locked read denies access");
+
+const staff = runtime({ studentActor: false });
+const allExams = staff.context.getAllExams({ sessionToken: "teacher" });
+assert.deepEqual(Array.from(allExams.data, row => row.examenId), ["EXM-1", "EXM-2", "EXM-3"],
+  "staff exam list excludes duplicate IDs and exams owned by another teacher");
+assert.deepEqual(staff.stats(), { acquires: 1, releases: 1, held: false },
+  "getAllExams acquires and releases the shared exam read lock");
+const activity = staff.context.getTeacherExamActivity({ sessionToken: "teacher" });
+assert.deepEqual(Array.from(activity.data, row => row.entregaId), ["DEL-AMB", "DEL-D2", "DEL-D1", "DEL-2", "DEL-1"],
+  "teacher activity excludes duplicate delivery IDs, duplicate exam IDs and foreign-owned exams");
+const ambiguousProfile = activity.data.find(row => row.entregaId === "DEL-AMB");
+assert.equal(ambiguousProfile.alumnoNombre, "Usuario Desconocido",
+  "duplicate student IDs do not select an arbitrary student profile");
+assert.equal(ambiguousProfile.email, "N/A", "duplicate student IDs do not expose arbitrary email data");
+assert.deepEqual(staff.stats(), { acquires: 2, releases: 2, held: false },
+  "getTeacherExamActivity acquires and releases the shared exam read lock");
+assert.throws(() => runtime({ studentActor: false, deniedAction: "getAllExams" }).context.getAllExams({}),
+  /RESOURCE_NOT_AVAILABLE/, "getAllExams revalidates its explicit RBAC action");
+assert.throws(() => runtime({ studentActor: false, deniedAction: "getTeacherExamActivity" }).context.getTeacherExamActivity({}),
+  /RESOURCE_NOT_AVAILABLE/, "getTeacherExamActivity revalidates its explicit RBAC action");
+assert.throws(() => runtime({ studentActor: false, lockAvailable: false }).context.getAllExams({}),
+  /EXAM_READ_LOCK_TIMEOUT/, "getAllExams fails closed on lock timeout");
+assert.throws(() => runtime({ studentActor: false, lockAvailable: false }).context.getTeacherExamActivity({}),
+  /EXAM_READ_LOCK_TIMEOUT/, "getTeacherExamActivity fails closed on lock timeout");
+const race = runtime({ studentActor: false, beforeAcquire() { race.sheets.Examenes.rows.splice(3, 1); } });
+const afterRace = race.context.getAllExams({});
+assert.deepEqual(Array.from(afterRace.data, row => row.examenId), ["EXM-1", "EXM-2"],
+  "getAllExams observes the state after acquiring the lock, not a stale pre-lock snapshot");
+assert.deepEqual(race.stats(), { acquires: 1, releases: 1, held: false });
+
 process.stdout.write("exam-service-read-endpoints-security: PASS\\n");

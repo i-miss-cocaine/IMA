@@ -964,3 +964,40 @@ Asegurar autorización explícita por acción, propiedad y consistencia de las l
 - CI consultado para el commit: sin statuses ni workflow runs visibles; no se declara PASS.
 - NG_beta_0.0.0.1_work actualizado mediante compare-and-swap fast-forward; no se utilizó force push.
 ===============================================================================
+===============================================================================
+## CHECKPOINT C1.483 — EXAM: lecturas serializadas de getAllExams/getTeacherExamActivity
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.482.
+HEAD inicial verificado: e7487060a8ada0cc626e24efbba35a69003d03a4.
+
+### Alcance
+Revisar RBAC, identidad, propiedad, IDs duplicados y consistencia concurrente de las lecturas getAllExams/getTeacherExamActivity expuestas por el dispatcher EXAM.
+
+### Hallazgos y corrección
+- getAllExams dependía únicamente de la comprobación previa de doPost para el permiso y no compartía ScriptLock con mutaciones EXAM.
+- getTeacherExamActivity validaba RBAC en el handler, pero tampoco serializaba la lectura con cambios/bajas de exámenes y entregas.
+- Ambas funciones delegan ahora en withAuthorizedExamRead_, que adquiere ScriptLock con timeout de 5 s, revalida validateRolePermission(action), identidad firmada y ámbito después de adquirirlo, y libera el lock en finally.
+- getAllExams excluye IDs vacíos/duplicados y conserva filtros de profesor propietario y ResourceOwnership.
+- getTeacherExamActivity excluye entregas y exámenes con IDs ambiguos; si el ID del usuario tiene más de un perfil, no devuelve nombre/correo arbitrario. Conserva autorización de ownership, filtros de grado/sección y orden cronológico.
+
+### Verificación
+- Harness V8 aislado con stubs de RBAC, identidad/contexto, ScriptLock, ownership y fixtures duplicados: PASS.
+- Suites del repositorio exam-service-read-endpoints-security.test.js y exam-service-security-contract.test.js: NOT RUN (no hay checkout local disponible en el entorno de ejecución).
+- CI: NOT RUN en esta iteración.
+- Apps Script/Sheets real: NOT RUN; BETA-EXAM-037 queda Pendiente beta.
+
+### Estado y continuidad
+- El subalcance de código está implementado, pero el cierre global de TASK-153/AUD-NG-386 no se declara: quedan otras lecturas EXAM por inventariar y las suites del repositorio requieren ejecución en un checkout local.
+- TASK-153 permanece En ejecución; AUD-NG-386 permanece abierto por superficies restantes.
+- Rama base NG_beta_0.0.0.1: sin cambios.
+- Siguiente subalcance elegible: inventariar las demás acciones de lectura EXAM expuestas por doPost (incluyendo getQuestionBank ya protegido y otras consultas) para comprobar permiso específico, ownership, duplicados y serialización, sin reabrir los subalcances ya cubiertos.
+
+===============================================================================
+### Addendum C1.483-R1 — publicación
+- HEAD inicial: e7487060a8ada0cc626e24efbba35a69003d03a4.
+- Commit de código, pruebas y registros: pendiente de publicar.
+- Rama base verificada en el inicio: 44d9891132332e692dbe2ba8602b41f50a508a59.
+===============================================================================

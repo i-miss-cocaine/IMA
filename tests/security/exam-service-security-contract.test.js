@@ -304,4 +304,21 @@ assert.ok(examQuestionsWorker.includes("matches.length !== 1") &&
   examQuestionsWorker.includes("questionIdCounts[String(row[0]).trim()] === 1"),
   "question reads require a unique exam/delivery and exclude duplicate question IDs");
 
+
+for (const name of ["getAllExams", "getTeacherExamActivity"]) {
+  const handler = extractFunction(source, name);
+  assert.ok(handler.includes("withAuthorizedExamRead_"), name + " delegates to the shared serialized RBAC reader");
+}
+const allExamsWorker = extractFunction(source, "getAllExamsUnlocked_");
+assert.ok(allExamsWorker.includes("examIdCounts[examId] !== 1") &&
+  allExamsWorker.includes("assertExamResourceOwnershipForScope_") &&
+  allExamsWorker.includes('actor.role === "Profesor"'),
+  "getAllExams excludes ambiguous IDs and enforces signed teacher ownership plus ResourceOwnership");
+const teacherActivityWorker = extractFunction(source, "getTeacherExamActivityUnlocked_");
+assert.ok(teacherActivityWorker.includes("deliveryIdCounts[deliveryId] !== 1") &&
+  teacherActivityWorker.includes("examIdCounts[examId] !== 1") &&
+  teacherActivityWorker.includes("userIdCounts[studentId] === 1") &&
+  teacherActivityWorker.includes("assertExamResourceOwnershipForScope_"),
+  "teacher activity rejects ambiguous deliveries/exams/profiles and enforces ResourceOwnership");
+
 process.stdout.write("exam-service-security-contract: authentication, identity, teacher ownership and serialized exam mutations assertions passed\\n");

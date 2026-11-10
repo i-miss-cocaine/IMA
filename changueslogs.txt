@@ -1177,3 +1177,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se excluyen IDs de examen/pregunta duplicados y entregas múltiples ambiguas; se mantiene el aislamiento de estudiante/tutor/profesor y no se expone respuestaCorrecta.
 - Parseo V8 y seis pruebas locales PASS en harness aislado. CI/Node nativo/Apps Script real NOT RUN; BETA-EXAM-036 Pendiente beta.
 ===============================================================================
+[2026-11-10] C1.483 — IMA-EXEC-20261110-1825Z-02 — EXAM: getAllExams/getTeacherExamActivity
+- Ambas lecturas exigen permiso RBAC específico y comparten el ScriptLock con mutaciones EXAM; identidad y ámbito se revalidan después de adquirir el lock.
+- Se excluyen IDs de examen/entrega ambiguos y perfiles de usuario duplicados; getAllExams mantiene propiedad docente y ResourceOwnership.
+- Harness V8 aislado de RBAC, ownership, lock/timeout, duplicados y lectura posterior al lock: PASS. Suites del repositorio NOT RUN por ausencia de checkout local; CI y Apps Script/Sheets real no ejecutados.
+- BETA-EXAM-037 Pendiente beta. AUD-NG-386 abierto por otras lecturas; TASK-153 En ejecución.
+===============================================================================

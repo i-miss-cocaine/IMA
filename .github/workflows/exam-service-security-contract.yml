@@ -6,6 +6,7 @@ on:
       - 'backend/exam-service/Code.gs'
       - 'tests/security/exam-service-security-contract.test.js'
       - 'tests/security/exam-service-departmental-access.test.js'
+      - 'tests/security/exam-service-read-endpoints-security.test.js'
       - '.github/workflows/exam-service-security-contract.yml'
   pull_request:
     branches: [NG_beta_0.0.0.1_work]
@@ -13,6 +14,7 @@ on:
       - 'backend/exam-service/Code.gs'
       - 'tests/security/exam-service-security-contract.test.js'
       - 'tests/security/exam-service-departmental-access.test.js'
+      - 'tests/security/exam-service-read-endpoints-security.test.js'
       - '.github/workflows/exam-service-security-contract.yml'
 jobs:
   exam-security-contracts:
@@ -24,3 +26,4 @@ jobs:
           node-version: '22'
       - run: node tests/security/exam-service-security-contract.test.js
       - run: node tests/security/exam-service-departmental-access.test.js
+      - run: node tests/security/exam-service-read-endpoints-security.test.js

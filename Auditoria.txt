@@ -1438,3 +1438,12 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - Parseo V8 y seis pruebas locales PASS en harness aislado: read-endpoints-security, departmental-access, security-contract, exam-result-security, question-bank-read-security y question-bank-security. CI, Node nativo y Apps Script/Sheets real NOT RUN. BETA-EXAM-036 Pendiente beta.
 - TASK-153 En ejecución; AUD-NG-386 abierto para otras lecturas EXAM.
 ===============================================================================
+===============================================================================
+## C1.483 — EXAM: lecturas serializadas de getAllExams/getTeacherExamActivity
+- Hallazgo corregido en este subalcance: getAllExams y getTeacherExamActivity no compartían el ScriptLock de las mutaciones EXAM; la primera no revalidaba su permiso dentro del handler y ambas podían resolver IDs duplicados mediante selección no determinista.
+- Ambas acciones delegan ahora en withAuthorizedExamRead_: permiso RBAC específico, identidad firmada y ámbito se vuelven a resolver después de adquirir el lock; timeout falla cerrado con EXAM_READ_LOCK_TIMEOUT y finally libera el lock.
+- getAllExams excluye IDs de examen vacíos/duplicados y conserva el filtro de propietario docente y ResourceOwnership.
+- getTeacherExamActivity excluye IDs de entrega/examen duplicados, no selecciona perfiles de usuario duplicados y conserva los filtros solicitados, propiedad docente, ownership y orden cronológico. Fechas inválidas se omiten para evitar que una fila defectuosa derribe toda la respuesta.
+- Se amplían contratos de seguridad y workflow; BETA-EXAM-037 queda Pendiente beta. AUD-NG-386 permanece abierto por otras lecturas EXAM; TASK-153 continúa En ejecución.
+- Verificación local ejecutada: harness V8 aislado con stubs para RBAC, ScriptLock, ownership y datos duplicados: PASS. Las suites del repositorio no pudieron ejecutarse en este entorno sin checkout local: NOT RUN. CI/Apps Script/Sheets real: no consultados/no ejecutados.
+===============================================================================
