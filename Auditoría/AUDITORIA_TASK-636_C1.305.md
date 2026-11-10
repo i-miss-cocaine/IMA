@@ -343,3 +343,13 @@ Endurecer las excepciones públicas de backend/academic-service/Code.gs mediante
 - **CI C1.377:** Task-Service security run 42729179413 success; backup/restore run 42729179412 success. Identity mapping run 42729179521 failure en TASK-030: actual `['EXP-02','STU-02']`, esperado `[]`; se mantiene como incidencia independiente.
 - **CI C1.378:** pendiente tras publicar.
 - **Estado:** AUD-NG-002/306 y AUD-NG-369 se mantienen en revalidación; TASK-636 sigue En ejecución.
+
+
+## Revisión focalizada C1.379 — estabilidad temporal del contrato TASK-030
+
+- **CI C1.377/C1.378:** el workflow Identity mapping and transport security contracts falló en Verify TASK-030 transport access scope; el caso futureFamilyLink esperaba vacío, pero la fecha inicial fixture 2026-11-10 coincidió con el reloj del runner 2026-11-10 y por eso la relación era vigente.
+- **Diagnóstico:** el fallo es una dependencia temporal del test, no un cambio de permisos ni un bypass productivo. El fixture activo también estaba limitado a 2026-11-10 y podía caducar en ejecuciones futuras.
+- **Corrección exclusiva de pruebas:** las relaciones fixtures activas usan 2020-01-01 a 2099-12-31; la relación futura inicia 2099-01-01; la relación expirada termina 2020-12-31. No se modifica backend/accounting-service ni comportamiento de producción.
+- **CI C1.378:** Task-Service security run 42729514766 completed/success; valida frontera pública ACADEMIC, métricas globales y cierre fail-closed.
+- **CI C1.379:** pendiente tras publicar.
+- **Estado:** la discrepancia TASK-030 queda en revalidación del fixture; no se cierra hasta que el workflow vuelva a pasar.

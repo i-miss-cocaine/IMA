@@ -733,3 +733,10 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - C1.377 security/backup success; identity mapping run 42729179521 falla en TASK-030 (actual ['EXP-02','STU-02'], esperado []).
 - C1.378 CI pendiente; BETA-FUNC-019 Pendiente.
 - TASK-636 En ejecución. Checkpoint C1.378: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt.
+
+
+## C1.379 — IMA-EXEC-20261109-1739Z-01 — seguimiento de CI TASK-030
+- Se diagnostica fallo por fixture de relación futura con fecha 2026-11-10 coincidente con fecha de CI.
+- Se fijan fechas deterministas en test de transporte; no se modifica lógica productiva.
+- C1.378 security run 42729514766 success; CI TASK-030 C1.379 pendiente.
+- Checkpoint C1.379: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt.

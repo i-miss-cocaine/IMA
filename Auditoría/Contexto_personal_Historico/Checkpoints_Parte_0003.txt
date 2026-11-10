@@ -1409,3 +1409,51 @@ Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt �
 Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.378.
 Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
 ===============================================================================
+
+===============================================================================
+## C1.379 — TASK-636 / seguimiento CI TASK-030 — fixture temporal determinista
+ID: C1.379
+Sesión: IMA-EXEC-20261109-1739Z-01
+Fecha: 2026-11-10
+Checkpoint anterior válido: C1.378
+Baseline lógico: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD físico de partida: e10692bf1f6d86b60269cbb989e437923e716ff8
+Rama: NG_beta_0.0.0.1_work
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+
+### Auditoría y diagnóstico
+- C1.377/C1.378 identity mapping workflow falló en TASK-030 transport access scope con actual ['EXP-02','STU-02'], esperado [].
+- El caso futureFamilyLink usa FechaInicio 2026-11-10; el runner se ejecutó el mismo día, por lo que la relación ya era vigente según transportRelationshipIsCurrent_.
+- La relación activa también expiraba el 2026-11-10, haciendo el fixture no determinista en ejecuciones posteriores.
+- No se encontró evidencia de regresión productiva en la función de ámbito; el fallo era una expectativa dependiente de la fecha real.
+
+### Corrección
+- Solo tests/security/transport-access-scope.test.js:
+  - relación activa: 2020-01-01 a 2099-12-31;
+  - relación futura: inicia 2099-01-01;
+  - relación expirada: 2020-01-01 a 2020-12-31.
+- No se modifica backend/accounting-service/Code.gs ni permisos productivos.
+
+### Pruebas y estado
+- C1.378 Task-Service security run 42729514766: completed/success; contrato de frontera pública aprobado.
+- Identity mapping C1.379 pendiente tras publicar.
+- TASK-030 no se marca cerrado hasta que su workflow pase.
+
+### Archivos modificados
+- tests/security/transport-access-scope.test.js
+- Auditoría/AUDITORIA_TASK-636_C1.305.md
+- pendientes/Otros/Pendientes.md (seguimiento aditivo)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoria.txt
+- tareas_auditoria.txt
+- changueslogs.txt
+
+### Siguiente acción exacta
+Consultar CI C1.379. Si TASK-030 pasa, continuar la auditoría contextual de TASK-636 y validar provisionamiento HMAC en beta; si falla, analizar la nueva evidencia sin alterar la lógica de negocio por conveniencia.
+
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.379.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.379.
+Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
+===============================================================================

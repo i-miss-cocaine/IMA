@@ -2301,3 +2301,9 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - Se añaden contratos locales de estos límites; CI pendiente.
 - BETA-FUNC-019: verificación real de capacidades, métricas y cierre; Pendiente beta.
 - TASK-636 En ejecución.
+
+
+## 10.63 Seguimiento CI TASK-030 — C1.379
+- El test de ámbito de transporte usaba fechas futuras/activas ligadas al 10-11-2026 y fallaba al coincidir el reloj CI con ese día.
+- Se estabilizan únicamente las fechas fixture (activa 2020–2099, futura 2099, expirada 2020); no hay cambio productivo.
+- CI C1.379 pendiente.

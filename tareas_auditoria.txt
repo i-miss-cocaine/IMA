@@ -606,3 +606,11 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - closeAcademicYear continúa BACKUP_REQUIRED sin efectos destructivos.
 - CI C1.378 pendiente; BETA-FUNC-019 Pendiente beta.
 ===============================================================================
+
+
+===============================================================================
+## Seguimiento CI TASK-030 — C1.379
+- Se reemplazan fechas de fixture dependientes del reloj por rangos deterministas 2020/2099.
+- Solo cambia tests/security/transport-access-scope.test.js; código productivo intacto.
+- CI pendiente tras commit.
+===============================================================================

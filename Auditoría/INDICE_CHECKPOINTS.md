@@ -3,11 +3,11 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.378**
+- Último checkpoint: **C1.379**
 - Última sesión: `IMA-EXEC-20261109-1739Z-01`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.378: **105603**
+- Caracteres del archivo activo tras C1.379: **108122**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 - Baseline lógico válido: **C1.316** (`31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`). C1.317–C1.365 se conservan, pero no se aceptan como evidencia de continuidad por corrección expresa del usuario.
@@ -203,3 +203,5 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.377 | IMA-EXEC-20261109-1739Z-01 | Publicado en este commit; baseline lógico C1.316 | TASK-636 / PM-01 — secreto HMAC privado sin fallback determinista | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.377 | 1308–1361 | C1.376 | Este commit; SHA verificado tras publicación |
 
 | C1.378 | IMA-EXEC-20261109-1739Z-01 | Publicado en este commit; baseline lógico C1.316 | TASK-636 / PM-01 — frontera pública ACADEMIC, métricas y cierre académico | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.378 | 1364–1411 | C1.377 | Este commit; SHA verificado tras publicación |
+
+| C1.379 | IMA-EXEC-20261109-1739Z-01 | Publicado en este commit; baseline lógico C1.316 | TASK-636 / PM-01 — estabilidad temporal del contrato TASK-030 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.379 | 1414–1459 | C1.378 | Este commit; SHA verificado tras publicación |

@@ -75,11 +75,11 @@ const data = {
   ],
   RelacionesFamiliares: [
     ["RelacionID", "ExpedienteID", "ResponsableUserId", "Parentesco", "Estado", "FechaInicio", "FechaFin", "Observaciones", "PermisosJSON"],
-    ["REL-1", "EXP-01", "PARENT-01", "Madre", "Verificada", "2026-11-08", "2026-11-10", "", "{}"],
+    ["REL-1", "EXP-01", "PARENT-01", "Madre", "Verificada", "2020-01-01", "2099-12-31", "", "{}"],
     ["REL-2", "EXP-02", "PARENT-02", "Padre", "Activa", "2026-11-08", "2026-11-10", "", "{}"],
     ["REL-3", "EXP-02", "PARENT-01", "Padre", "Rechazada", "2026-11-08", "2026-11-10", "", "{}"],
-    ["REL-4", "EXP-02", "PARENT-03", "Madre", "Activa", "2026-11-10", "", "", "{}"],
-    ["REL-5", "EXP-02", "PARENT-04", "Padre", "Activa", "2026-11-01", "2026-11-08", "", "{}"]
+    ["REL-4", "EXP-02", "PARENT-03", "Madre", "Activa", "2099-01-01", "", "", "{}"],
+    ["REL-5", "EXP-02", "PARENT-04", "Padre", "Activa", "2020-01-01", "2020-12-31", "", "{}"]
   ],
   TransporteAsignaciones: [
     ["ID", "RutaID", "EstudianteUserId", "Parada", "Horario", "Estado", "Fecha", "Jornada"],
