@@ -1945,7 +1945,7 @@ function updateAdmissionStatus(payload) {
     if (matches.length !== 1) throw new Error("RESOURCE_NOT_FOUND");
     const idx = matches[0].index;
     const row = data[idx];
-    const requestAccess = assertAcademicAdmissionRequestScopeAccess_(ss, scope, solicitudId, payload);
+    const requestAccess = assertAcademicAdmissionRequestScopeAccess_(ss, scope, solicitudId, payload, "UPDATE");
     if (!requestAccess.authorized) throw new Error("RESOURCE_NOT_FOUND");
     const estadoActual = String(row[11] || "Recibida").trim();
     const actorUserId = actor.userId;
@@ -2532,8 +2532,8 @@ function assertResourceOwnershipForScope_(ss, scope, resourceType, resourceId, o
   }
 }
 
-function assertAcademicAdmissionRequestScopeAccess_(ss, scope, solicitudId, payload) {
-  if(!scope||!scope.authorized||!solicitudId)return {authorized:false,code:"RESOURCE_SCOPE_DENIED"};
+function assertAcademicAdmissionRequestScopeAccess_(ss, scope, solicitudId, payload, operation) {
+  if(!scope||!scope.authorized||!String(scope.institutionId||"").trim()||!solicitudId)return {authorized:false,code:"RESOURCE_SCOPE_DENIED"};
   const ownershipSheet=ss&&ss.getSheetByName("ResourceOwnership");
   if(!ownershipSheet)return {authorized:false,code:"RESOURCE_OWNERSHIP_NOT_CONFIGURED"};
   const rows=ownershipSheet.getDataRange().getValues().slice(1);
@@ -2542,7 +2542,7 @@ function assertAcademicAdmissionRequestScopeAccess_(ss, scope, solicitudId, payl
   if(!historical.length&&scope.institutionWide===true){
     return {authorized:true,code:"INSTITUTION_UNASSIGNED",accessType:"INSTITUTION",resourceType:"SOLICITUD_ADMISION",resourceId:String(solicitudId)};
   }
-  return assertResourceOwnershipForScope_(ss,scope,"SOLICITUD_ADMISION",solicitudId,"READ",payload);
+  return assertResourceOwnershipForScope_(ss,scope,"SOLICITUD_ADMISION",solicitudId,operation||"READ",payload);
 }
 
 function assertStudentExpedienteScopeAccess_(payload, ss, expSheet, expRow) {
