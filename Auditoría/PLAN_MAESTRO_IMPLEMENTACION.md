@@ -3402,3 +3402,13 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **CI/Apps Script real:** NOT RUN. **Beta:** BETA-EXAM-036 Pendiente beta para concurrencia real, RBAC dinámico y duplicados.
 - **Estado:** subalcance completado; TASK-153 En ejecución y AUD-NG-386 abierto por otras lecturas EXAM.
 - **Siguiente subalcance:** auditar getAllExams/getTeacherExamActivity y lecturas restantes expuestas por dispatcher.
+
+### 10.136 TASK-153 / AUD-NG-386 — seguridad y consistencia de getExamGradeDistributionAnalytics (C1.484)
+
+- **Hallazgo:** la analítica leía el primer examen coincidente y agregaba entregas sin validar unicidad, permiso específico, propiedad docente ni ownership dentro de la sección crítica compartida.
+- **Corrección:** el handler usa withAuthorizedExamRead_ con validateRolePermission de getExamGradeDistributionAnalytics, identidad firmada y ámbito resueltos después de adquirir ScriptLock. El worker exige examen único, propiedad del profesor cuando aplica y ResourceOwnership activo/único.
+- **Integridad:** entregas sin ID o con ID duplicado quedan excluidas; notas no finitas no contaminan promedios/estadísticas; entregas Pendiente sin nota mantienen su conteo. Se conserva el esquema y cálculo estadístico de respuesta.
+- **Pruebas locales:** parseo V8 y harness aislado de 8 escenarios PASS. El runner Node nativo, CI y Apps Script/Sheets real no se ejecutaron.
+- **Beta:** BETA-EXAM-038 Pendiente beta; no bloquea el cierre local del subalcance.
+- **Estado:** subalcance completado; TASK-153 En ejecución y AUD-NG-386 abierto por otras lecturas EXAM.
+- **Siguiente:** auditar individualmente checkExamSchedulingConflict, simulateExamReschedule y getGradingPerformanceAndPersistenceMetrics; no se agrupan en una sola implementación.

@@ -1003,3 +1003,47 @@ Revisar RBAC, identidad, propiedad, IDs duplicados y consistencia concurrente de
 - Rama base NG_beta_0.0.0.1 verificada sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
 - Actualización de NG_beta_0.0.0.1_work mediante compare-and-swap fast-forward; no se utilizó force push.
 ===============================================================================
+===============================================================================
+## CHECKPOINT C1.484 — EXAM: analítica de distribución de calificaciones
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.483.
+HEAD inicial verificado: 70e8fe492461ee760dd2e96ad2ca0b07d043cf81.
+
+### Alcance
+Auditar e implementar la seguridad y consistencia de la lectura getExamGradeDistributionAnalytics expuesta por doPost.
+
+### Hallazgo y corrección
+- El handler consultaba Examenes/EntregasExamen directamente, seleccionaba la primera fila coincidente y sumaba entregas asociadas sin validar IDs ambiguos.
+- No revalidaba validateRolePermission dentro del handler ni compartía ScriptLock con calificación/baja/modificación de examen.
+- El handler delega ahora en withAuthorizedExamRead_("getExamGradeDistributionAnalytics", ...), que adquiere ScriptLock, revalida permiso específico, identidad firmada y scope después del lock, y libera en finally.
+- El worker exige ID de examen único, limita al profesor a sus propios exámenes y exige ResourceOwnership activo y único en el ámbito autorizado.
+- Entregas sin ID o con ID duplicado se excluyen. Solo las notas finitas participan en agregados; las entregas Pendiente sin nota siguen contabilizándose como pendientes. Se conserva el contrato estadístico de salida.
+
+### Archivos
+- backend/exam-service/Code.gs
+- tests/security/exam-service-read-endpoints-security.test.js
+- tests/security/exam-service-security-contract.test.js
+- beta_test.txt
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt
+
+### Verificación local
+- Parseo V8 de Code.gs: PASS.
+- Harness V8 aislado sobre los workers reales: PASS, 8 escenarios de permiso específico, ownership, examen duplicado, profesor ajeno, IDs de entrega duplicados, estado Pendiente, timeout y snapshot post-lock.
+- Contrato local del repositorio ampliado en read-endpoints-security y security-contract; runner Node nativo NOT RUN en este entorno.
+- CI: NOT RUN.
+- Apps Script/Sheets real: NOT RUN; BETA-EXAM-038 Pendiente beta.
+
+### Estado y continuidad
+- Subalcance getExamGradeDistributionAnalytics completado en código y verificación local.
+- TASK-153 permanece En ejecución; AUD-NG-386 abierto por otras lecturas EXAM.
+- Siguiente subalcance: revisar checkExamSchedulingConflict, simulateExamReschedule y getGradingPerformanceAndPersistenceMetrics; seleccionar una sola acción por iteración.
+- Rama base NG_beta_0.0.0.1: sin cambios.
+
+===============================================================================

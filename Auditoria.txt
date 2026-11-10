@@ -1447,3 +1447,12 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - Se amplían contratos de seguridad y workflow; BETA-EXAM-037 queda Pendiente beta. AUD-NG-386 permanece abierto por otras lecturas EXAM; TASK-153 continúa En ejecución.
 - Verificación local ejecutada: harness V8 aislado con stubs para RBAC, ScriptLock, ownership y datos duplicados: PASS. Las suites del repositorio no pudieron ejecutarse en este entorno sin checkout local: NOT RUN. CI/Apps Script/Sheets real: no consultados/no ejecutados.
 ===============================================================================
+===============================================================================
+## C1.484 — EXAM: seguridad y consistencia de getExamGradeDistributionAnalytics
+- Hallazgo: el endpoint de analítica seleccionaba el primer examen coincidente, agregaba todas las entregas asociadas y no revalidaba RBAC, propiedad ni ámbito dentro del mismo lock de las mutaciones.
+- Corrección: getExamGradeDistributionAnalytics delega en withAuthorizedExamRead_; valida el permiso específico, identidad firmada y scope después de adquirir ScriptLock. Exige examen único, profesor propietario y ResourceOwnership activo único.
+- Integridad: se excluyen entregas sin ID o con ID duplicado; solo se agregan notas finitas. Se conserva el cálculo de distribución y el conteo de entregas Pendiente sin nota.
+- Pruebas locales: parseo V8 completo PASS; harness V8 aislado con RBAC denegado, ownership denegado, examen duplicado, examen de otro profesor, timeout, duplicidad de entregas, notas no finitas y lectura post-lock: PASS (8 escenarios).
+- Suite de repositorio Node nativo: NOT RUN; CI: NOT RUN; Apps Script/Sheets real: NOT RUN. BETA-EXAM-038 queda Pendiente beta.
+- TASK-153 permanece En ejecución y AUD-NG-386 abierto por otras lecturas EXAM. Siguiente subalcance: revisar checkExamSchedulingConflict, simulateExamReschedule y getGradingPerformanceAndPersistenceMetrics sin reabrir analítica.
+===============================================================================

@@ -321,4 +321,15 @@ assert.ok(teacherActivityWorker.includes("deliveryIdCounts[deliveryId] !== 1") &
   teacherActivityWorker.includes("assertExamResourceOwnershipForScope_"),
   "teacher activity rejects ambiguous deliveries/exams/profiles and enforces ResourceOwnership");
 
+
+const analyticsHandler = extractFunction(source, "getExamGradeDistributionAnalytics");
+assert.ok(analyticsHandler.includes('withAuthorizedExamRead_("getExamGradeDistributionAnalytics"'),
+  "grade distribution analytics delegates to the shared serialized RBAC reader");
+const analyticsWorker = extractFunction(source, "getExamGradeDistributionAnalyticsUnlocked_");
+assert.ok(analyticsWorker.includes("examIdCounts[examenId] !== 1") &&
+  analyticsWorker.includes("deliveryIdCounts[deliveryId] !== 1") &&
+  analyticsWorker.includes("assertExamResourceOwnershipForScope_") &&
+  analyticsWorker.includes('actor.role === "Profesor"') &&
+  analyticsWorker.includes("Number.isFinite(notaNum)"),
+  "grade analytics requires a unique owned exam, unique deliveries and finite scores");
 process.stdout.write("exam-service-security-contract: authentication, identity, teacher ownership and serialized exam mutations assertions passed\\n");

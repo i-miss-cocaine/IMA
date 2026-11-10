@@ -95,10 +95,12 @@ function runtime(options = {}) {
   };
   const names = ["withAuthorizedExamRead_", "getAuthorizedExamReadContext_", "getStudentExams", "getStudentExamsUnlocked_",
     "getExamQuestions", "getExamQuestionsUnlocked_", "getAllExams", "getAllExamsUnlocked_",
-    "getTeacherExamActivity", "getTeacherExamActivityUnlocked_"];
+    "getTeacherExamActivity", "getTeacherExamActivityUnlocked_", "getExamGradeDistributionAnalytics",
+    "getExamGradeDistributionAnalyticsUnlocked_"];
   vm.runInNewContext(names.map(extractFunction).join("\n") +
     "\nthis.getStudentExams=getStudentExams; this.getExamQuestions=getExamQuestions; " +
-    "this.getAllExams=getAllExams; this.getTeacherExamActivity=getTeacherExamActivity;", context);
+    "this.getAllExams=getAllExams; this.getTeacherExamActivity=getTeacherExamActivity; " +
+    "this.getExamGradeDistributionAnalytics=getExamGradeDistributionAnalytics;", context);
   return { context, sheets, stats: () => ({ acquires, releases, held }) };
 }
 const valid = runtime();
@@ -154,5 +156,38 @@ const afterRace = race.context.getAllExams({});
 assert.deepEqual(Array.from(afterRace.data, row => row.examenId), ["EXM-1", "EXM-2"],
   "getAllExams observes the state after acquiring the lock, not a stale pre-lock snapshot");
 assert.deepEqual(race.stats(), { acquires: 1, releases: 1, held: false });
+
+
+const analyticsRuntime = runtime({ studentActor: false });
+const analyticsRows = analyticsRuntime.sheets.EntregasExamen.rows;
+analyticsRows.push(
+  ["DEL-PENDING-AN","EXM-1","STU-1",new Date("2026-11-10T19:00:00Z"),"[]",null,"Pendiente",""],
+  ["DEL-AN-DUP","EXM-1","STU-1",new Date("2026-11-10T20:00:00Z"),"[]",100,"Calificado",""],
+  ["DEL-AN-DUP","EXM-1","STU-1",new Date("2026-11-10T21:00:00Z"),"[]",0,"Calificado",""],
+  ["DEL-AN-INF","EXM-1","STU-1",new Date("2026-11-10T22:00:00Z"),"[]",Infinity,"Calificado",""],
+  ["DEL-AN-NAN","EXM-1","STU-1",new Date("2026-11-10T23:00:00Z"),"[]","no-grade","Calificado",""],
+  ["","EXM-1","STU-1",new Date("2026-11-10T23:30:00Z"),"[]",99,"Calificado",""]
+);
+const analytics = analyticsRuntime.context.getExamGradeDistributionAnalytics({ sessionToken: "teacher", examenId: "EXM-1" });
+assert.equal(analytics.data.totalEvaluados, 3, "analytics excludes duplicate IDs, blank IDs and non-finite scores");
+assert.equal(analytics.data.totalPendientes, 1, "analytics preserves pending deliveries without grades");
+assert.equal(analytics.data.promedio, 89, "analytics calculates only unique finite graded deliveries");
+assert.deepEqual(analyticsRuntime.stats(), { acquires: 1, releases: 1, held: false });
+assert.throws(() => runtime({ studentActor: false, deniedAction: "getExamGradeDistributionAnalytics" }).context
+  .getExamGradeDistributionAnalytics({ sessionToken: "teacher", examenId: "EXM-1" }), /RESOURCE_NOT_AVAILABLE/);
+assert.throws(() => runtime({ studentActor: false, ownership: false }).context
+  .getExamGradeDistributionAnalytics({ sessionToken: "teacher", examenId: "EXM-1" }), /RESOURCE_NOT_AVAILABLE/);
+assert.throws(() => runtime({ studentActor: false }).context
+  .getExamGradeDistributionAnalytics({ sessionToken: "teacher", examenId: "EXM-D" }), /RESOURCE_NOT_AVAILABLE/);
+assert.throws(() => runtime({ studentActor: false }).context
+  .getExamGradeDistributionAnalytics({ sessionToken: "teacher", examenId: "EXM-4" }), /RESOURCE_NOT_AVAILABLE/);
+assert.throws(() => runtime({ studentActor: false, lockAvailable: false }).context
+  .getExamGradeDistributionAnalytics({ sessionToken: "teacher", examenId: "EXM-1" }), /EXAM_READ_LOCK_TIMEOUT/);
+const analyticsRace = runtime({ studentActor: false, beforeAcquire() {
+  const row = analyticsRace.sheets.EntregasExamen.rows.find(item => item[0] === "DEL-1"); row[5] = 30;
+} });
+const postLockAnalytics = analyticsRace.context.getExamGradeDistributionAnalytics({ sessionToken: "teacher", examenId: "EXM-1" });
+assert.equal(postLockAnalytics.data.promedio, 69, "analytics reads post-lock grades");
+assert.deepEqual(analyticsRace.stats(), { acquires: 1, releases: 1, held: false });
 
 process.stdout.write("exam-service-read-endpoints-security: PASS\\n");

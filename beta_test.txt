@@ -446,3 +446,11 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Resultado esperado:** permiso explícito por acción; identidad/rol derivados de claims firmados; profesor limitado a sus exámenes; personal limitado a ResourceOwnership/ámbito; IDs ambiguos excluidos sin seleccionar arbitrariamente filas; lecturas serializadas con mutaciones y timeout fail-closed EXAM_READ_LOCK_TIMEOUT.
 - **Estado:** Pendiente beta. El contrato local aislado cubre RBAC, ownership, duplicados, timeout y lectura posterior al lock; Apps Script/Sheets real no ejecutado.
 - **Evidencia requerida:** commit/build, actores sintéticos, matriz de permisos, secuencias concurrentes, filas duplicadas de prueba, respuestas saneadas, logs y estado final de recursos.
+## BETA-EXAM-038 — TASK-153 / AUD-NG-386 / EXAM: analítica de distribución de calificaciones
+- **Módulo/acción:** EXAM getExamGradeDistributionAnalytics; concurrencia con gradeExamSubmission, deleteExamSubmission, updateExam y deleteExam.
+- **Objetivo:** confirmar en Apps Script/Sheets desplegado que la analítica exige permiso específico, identidad firmada, ownership/ámbito y que el agregado refleja una lectura consistente sin duplicar entregas.
+- **Precondiciones:** entorno beta aislado; profesores de dos departamentos; exámenes con ownership válido, ausente, duplicado y ajeno; entregas únicas, duplicadas, Pendiente y con notas inválidas.
+- **Pasos:** probar sesión ausente/inválida y permiso denegado; consultar como profesor propietario y no propietario; intentar IDs de examen duplicados; duplicar IDs de entrega; intercalar lecturas con calificación/baja; provocar timeout del ScriptLock.
+- **Resultado esperado:** acceso solo a examen único dentro del ámbito; profesor solo consulta exámenes propios; ownership activo único; IDs de entrega duplicados excluidos; estados Pendiente sin nota contabilizados como pendientes; agregados calculados solo con notas finitas; timeout EXAM_READ_LOCK_TIMEOUT.
+- **Estado:** Pendiente beta. Harness V8 local con actores y fixtures sintéticos PASS; Apps Script/Sheets real no ejecutado.
+- **Evidencia requerida:** commit/build, matriz RBAC, IDs sintéticos, secuencias concurrentes, estadísticas saneadas y logs sin datos personales.

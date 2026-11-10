@@ -1183,3 +1183,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Harness V8 aislado de RBAC, ownership, lock/timeout, duplicados y lectura posterior al lock: PASS. Suites del repositorio NOT RUN por ausencia de checkout local; CI y Apps Script/Sheets real no ejecutados.
 - BETA-EXAM-037 Pendiente beta. AUD-NG-386 abierto por otras lecturas; TASK-153 En ejecución.
 ===============================================================================
+[2026-11-10] C1.484 — IMA-EXEC-20261110-1825Z-02 — EXAM: analítica de distribución
+- getExamGradeDistributionAnalytics ahora revalida RBAC/identidad/ámbito y ownership de examen único bajo ScriptLock compartido.
+- Se excluyen IDs de entrega vacíos/duplicados y notas no finitas; se preserva el conteo de pendientes sin calificación.
+- Parseo V8 y harness aislado (8 escenarios: permiso, ownership, duplicados, profesor ajeno, timeout, lock/snapshot y agregados) PASS. Suite Node, CI y Apps Script/Sheets real NOT RUN.
+- BETA-EXAM-038 Pendiente beta; TASK-153 En ejecución y AUD-NG-386 abierto.
+===============================================================================
