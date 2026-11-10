@@ -871,3 +871,10 @@ Proteger getQuestionBank contra lecturas sin identidad/permisos, exposición int
 - Rama base NG_beta_0.0.0.1 permanece sin cambios.
 - Siguiente subalcance: revisar otra superficie de lectura EXAM expuesta por el dispatcher y confirmar su filtrado de ownership/roles antes de elegir el próximo cambio.
 ===============================================================================
+
+===============================================================================
+### Addendum C1.480-R1 — verificación de publicación
+- HEAD tras publicar código, pruebas y registros: 09641287f52e19f6c4094cf97a01ba47f023de43.
+- Rama base NG_beta_0.0.0.1 verificada sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- NG_beta_0.0.0.1_work actualizado mediante compare-and-swap fast-forward; no se utilizó force push.
+===============================================================================
