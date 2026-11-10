@@ -2339,6 +2339,16 @@ function convertAdmissionToStudent(payload) {
     let newExpRowNumber = 0;
     if (duplicate) {
       finalExpId = String(duplicate[0] || "").trim();
+      // La búsqueda por identificación no concede acceso al expediente coincidente.
+      // Antes de reutilizarlo o resolver su cuenta vinculada, exigir ownership activo
+      // dentro del departamento de destino para evitar cruces entre departamentos.
+      const duplicateAccess = assertResourceOwnershipForScope_(
+        ss, ctx.scope, "EXPEDIENTE_ESTUDIANTE", finalExpId, "UPDATE", payload
+      );
+      if (!duplicateAccess || duplicateAccess.authorized !== true ||
+          String(duplicateAccess.departmentId || "").trim() !== departmentId) {
+        throw new Error("RESOURCE_NOT_FOUND");
+      }
       targetPersonaId = String(duplicate[1] || "").trim();
       code = String(duplicate[2] || code).trim();
       const linkedStudent = getStudentIdentityForPerson_(ss, targetPersonaId);
