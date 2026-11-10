@@ -75,10 +75,22 @@ const familyRows = [["RelacionID", "PersonaEstudianteID", "PersonaResponsableID"
 const studentExpRows = [["ExpedienteID", "UserID"], ["EXP-1", "STUDENT-1"], ["EXP-2", "STUDENT-2"]];
 const legacyGuardianRows = [["RelacionID", "EstudianteID", "TutorID", "", "", "", "", "", "", "Estado"], ["LEG-2", "STUDENT-2", "TUTOR-1", "", "", "", "", "", "", "Activa"]];
 const sheets = { Examenes: examRows, AsignacionesAmbitosRoles: scopeRows, ResourceOwnership: ownershipRows, EntregasExamen: deliveryRows, Usuarios: userRows, PreguntasExamen: questionRows, RelacionesFamiliares: familyRows, ExpedientesEstudiantes: studentExpRows, RelacionesEstudianteTutor: legacyGuardianRows };
-const sheetObjects = Object.fromEntries(Object.entries(sheets).map(([name, rows]) => [name, { getDataRange() { return { getValues: () => rows.map(row => row.slice()) }; }, appendRow(row) { rows.push(row.slice()); } }]));
+const sheetObjects = Object.fromEntries(Object.entries(sheets).map(([name, rows]) => [name, {
+  getDataRange() { return { getValues: () => rows.map(row => row.slice()) }; },
+  getLastRow() { return rows.length; },
+  appendRow(row) { rows.push(row.slice()); },
+  deleteRow(rowNumber) { rows.splice(rowNumber - 1, 1); },
+  getRange(rowNumber, columnNumber) { return {
+    setValue(value) { rows[rowNumber - 1][columnNumber - 1] = value; },
+    setValues(values) { values.forEach((value, index) => { rows[rowNumber - 1 + index] = value.slice(); }); }
+  }; }
+}]));
 const ss = { getSheetByName(name) { return sheetObjects[name] || null; } };
 const runtime = {
   SPREADSHEET_ID: "LOCAL", EXAM_RESOURCE_OWNERSHIP_REQUEST_CACHE_: new WeakMap(),
+  PUBLIC_ACTIONS: [], ROLE_PERMISSIONS: { Profesor: ["updateExam","updateExamStatus","deleteExam","gradeExamSubmission","deleteExamSubmission"] },
+  getDynamicPermissionsForRole() { return null; }, hasActiveDelegationForAction() { return false; },
+  validateContextualAccess() { return { authorized: true }; },
   verifySessionToken(token) { return claims[token] || null; },
   PropertiesService: { getScriptProperties() { return { getProperty(name) { return name === "IMA_INSTITUTION_ID" ? "I1" : null; } }; } },
   SpreadsheetApp: { openById() { return ss; } },
@@ -105,9 +117,12 @@ const duplicate = runtime.assertExamResourceOwnershipForScope_(ss, scope, "EXAME
 assert.equal(duplicate.authorized, false); assert.equal(duplicate.code, "RESOURCE_OWNERSHIP_AMBIGUOUS");
 assert.deepEqual(Array.from(runtime.getAllExams({ sessionToken: "other-token" }).data), [], "no accessible ownership returns an empty list");
 const readFunctions = ["getVerifiedExamIdentity_", "getVerifiedExamDepartmentScope_", "assertExamResourceOwnershipForScope_",
-  "getExamStudentProfile_", "isExamAssignedToStudent_", "getVerifiedGuardianStudentIds_", "getExamReadContext_", "getStudentExams", "getExamQuestions", "getExamResult", "submitExam"]
+  "getExamStudentProfile_", "isExamAssignedToStudent_", "getVerifiedGuardianStudentIds_", "getExamReadContext_", "getStudentExams", "getExamQuestions", "getExamResult", "submitExam",
+  "validateRolePermission", "getAuthorizedExamMutationContext_", "getAuthorizedExamSubmissionMutationContext_", "updateExam", "updateExamStatus", "deleteExam", "gradeExamSubmission", "deleteExamSubmission"]
   .map(name => extractFunction(source, name)).join("\n");
-vm.runInNewContext(readFunctions + "\nthis.getStudentExams = getStudentExams; this.getExamQuestions = getExamQuestions; this.getExamResult = getExamResult;", runtime);
+vm.runInNewContext(readFunctions + "\nthis.getStudentExams = getStudentExams; this.getExamQuestions = getExamQuestions; this.getExamResult = getExamResult; " +
+  "this.updateExam = updateExam; this.updateExamStatus = updateExamStatus; this.deleteExam = deleteExam; " +
+  "this.gradeExamSubmission = gradeExamSubmission; this.deleteExamSubmission = deleteExamSubmission;", runtime);
 const studentListPayload = { sessionToken: "student-token", userId: "STUDENT-2", grado: "99", seccion: "Z" };
 const studentList = runtime.getStudentExams(studentListPayload);
 assert.deepEqual(Array.from(studentList.data, row => row.examenId), ["EXM-1"],
@@ -143,4 +158,37 @@ assert.equal(newSubmission.data.calificacion, "100.00");
 assert.throws(() => runtime.submitExam({ sessionToken: "student3-token", examenId: "EXM-6",
   respuestas: [{ preguntaId: "Q-6", respuestaEstudiante: "A" }] }), /EXAM_ATTEMPTS_EXHAUSTED/,
   "default one-attempt policy prevents duplicate submissions");
+
+const beforeTitle = examRows.find(row => row[0] === "EXM-1")[1];
+runtime.updateExam({ sessionToken: "teacher-token", examenId: "EXM-1", titulo: "Título actualizado", profesorId: "TEACHER-2" });
+assert.equal(examRows.find(row => row[0] === "EXM-1")[1], "Título actualizado", "teacher can update own exam in assigned department");
+assert.throws(() => runtime.updateExam({ sessionToken: "teacher-token", examenId: "EXM-2", titulo: "Cross department" }),
+  /RESOURCE_NOT_AVAILABLE/, "teacher cannot update an exam in another department");
+assert.throws(() => runtime.updateExam({ sessionToken: "teacher-token", examenId: "EXM-3", titulo: "Other teacher" }),
+  /RESOURCE_NOT_AVAILABLE/, "teacher cannot update another teacher's exam");
+runtime.updateExamStatus({ sessionToken: "teacher-token", examenId: "EXM-1", estado: "Inactivo" });
+assert.equal(examRows.find(row => row[0] === "EXM-1")[7], "Inactivo");
+assert.throws(() => runtime.updateExamStatus({ sessionToken: "teacher-token", examenId: "EXM-1", estado: "Publicado" }),
+  /EXAM_STATUS_INVALID/, "exam status only accepts supported active/inactive values");
+runtime.gradeExamSubmission({ sessionToken: "teacher-token", entregaId: "DEL-1", calificacion: 95, estado: "Calificado", comentario: "Revisado" });
+assert.equal(deliveryRows.find(row => row[0] === "DEL-1")[5], 95, "teacher can grade a submission for own exam");
+assert.throws(() => runtime.gradeExamSubmission({ sessionToken: "teacher-token", entregaId: "DEL-2", calificacion: 0 }),
+  /RESOURCE_NOT_AVAILABLE/, "teacher cannot grade a submission belonging to another department");
+assert.throws(() => runtime.gradeExamSubmission({ sessionToken: "teacher-token", entregaId: "DEL-1", examenId: "EXM-2", calificacion: 0 }),
+  /RESOURCE_NOT_AVAILABLE/, "delivery/exam ID mismatch is rejected");
+runtime.deleteExam({ sessionToken: "teacher-token", examenId: "EXM-1" });
+assert.equal(examRows.find(row => row[0] === "EXM-1")[7], "Inactivo", "exam with submissions is deactivated, not removed");
+assert.equal(ownershipRows.find(row => row[3] === "EXM-1")[5], "ACTIVE", "ownership remains active while prior submissions exist");
+runtime.deleteExamSubmission({ sessionToken: "teacher-token", entregaId: "DEL-1" });
+assert.equal(deliveryRows.some(row => row[0] === "DEL-1"), false, "teacher can delete submission for own exam");
+assert.throws(() => runtime.deleteExamSubmission({ sessionToken: "teacher-token", entregaId: "DEL-2" }),
+  /RESOURCE_NOT_AVAILABLE/, "teacher cannot delete a submission from another department");
+examRows.push(["EXM-7", "Sin entregas", "Matemáticas", "10", "A", "", "", "Activo", "TEACHER-1", "P1"]);
+ownershipRows.push(["OWN-8", "I1", "EXAMEN", "EXM-7", "D1", "ACTIVE", "TEACHER-1", "", ""]);
+runtime.deleteExam({ sessionToken: "teacher-token", examenId: "EXM-7" });
+assert.equal(examRows.find(row => row[0] === "EXM-7")[7], "Eliminado", "exam without submissions uses logical deletion");
+assert.equal(ownershipRows.find(row => row[3] === "EXM-7")[5], "INACTIVE", "logical deletion deactivates resource ownership");
+assert.throws(() => runtime.deleteExam({ sessionToken: "teacher-token", examenId: "EXM-2" }),
+  /RESOURCE_NOT_AVAILABLE/, "teacher cannot delete an exam outside assigned scope");
+
 process.stdout.write("exam-service-departmental-access: signed identity, department scope, tenant isolation and ownership assertions passed\n");
