@@ -7,7 +7,7 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 ## Estado actual
 - Último checkpoint: **C1.459**
 - Última sesión: `IMA-EXEC-20261110-1825Z-02`
-- Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt`
+- Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt`
 - Límite por archivo: **180.000 caracteres**
 - Caracteres del archivo activo tras C1.458: **174521**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt`
