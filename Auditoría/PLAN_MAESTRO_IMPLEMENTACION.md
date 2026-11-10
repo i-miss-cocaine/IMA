@@ -3143,3 +3143,13 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Criterio de conciliación futura:** solo considerar registros respaldados por una fuente contable original que identifique inequívocamente el CargoID y la solicitud/matrícula, con trazabilidad preservada; si esa evidencia no existe, mantener el cargo sin atribución.
 - **Hallazgo para la siguiente iteración:** la inspección estática de `convertAdmissionToStudent` detectó que se interpola `matriculaRealId` en `_chargeReference` antes de inicializar la constante con el resultado de `registerStudentEnrollmentInternal_`. La lectura cae en la zona temporal muerta y puede lanzar `ReferenceError`, impidiendo la conversión. Además, el retorno idempotente omite `cargoId` aunque el validador ya lo devuelve. Corregir y cubrir el flujo completo antes de continuar el alcance de admisiones.
 - **Estado:** investigación de trazabilidad completada; sin backfill. TASK-153 permanece En ejecución y AUD-NG-386 abierto.
+
+
+### 10.112 TASK-153 / ACADEMIC — corregir referencia de cargo en conversión y propagar CargoID (C1.454)
+
+- **Defecto corregido:** `convertAdmissionToStudent` construía `_chargeReference` usando `matriculaRealId` antes de inicializarlo, provocando acceso TDZ.
+- **Implementación:** el flujo ahora entrega un prefijo interno `ADMISION|<solicitudId>|`; `registerStudentEnrollmentInternal_` deriva la referencia completa después de resolver `matriculaId`, antes de insertar/reutilizar el cargo. Devuelve `cargoId` tanto al crear como al reutilizar una referencia exacta.
+- **Contrato:** `registerStudentEnrollment` elimina también `_chargeReferencePrefix` del payload público. La conversión exige `matriculaId` y `cargoId`, devuelve ambos en conversión nueva y en el retorno idempotente. El evento `ADMISSION_CONVERTED` incluye `cargoId` para trazabilidad de futuras conversiones.
+- **Regresión añadida:** el contrato ACADEMIC amplía el escenario con fallo inyectado y rollback para repetir luego la conversión con éxito; verifica CargoID devuelto, referencia `ADMISION|solicitud|matrícula`, reintento de cargo con CargoID estable y filtrado del prefijo interno en la API pública.
+- **Verificación:** revisión estática de cambios y contratos por lectura del diff PASS. Ejecución local Node/sintaxis: NOT RUN (no hay checkout local; el intento de clonar falló por resolución DNS de github.com). El estado de checks de GitHub no expone ejecuciones ni status para el HEAD consultado; no se declara PASS de CI ni de las pruebas dinámicas.
+- **Estado:** implementación y regresión publicadas; TASK-153 permanece En ejecución hasta ejecutar y aprobar las verificaciones locales pertinentes. No hubo acceso a datos reales ni despliegue.
