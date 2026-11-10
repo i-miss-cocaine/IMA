@@ -1039,3 +1039,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - GitHub Actions run 42895590817 SUCCESS; sin despliegue ni datos reales.
 - Quedan pendientes el callback/estado, registro de firma y certificado de auditoría. TASK-153 sigue En ejecución.
 - Commits: bbd2d1389234233f9d75c8ddd0fb9697e8c5a434; 58d2a03f1d7f0c83e52e88c47f821c8d39256871; 21fe586777cc6394effcdcbc639f8d5da1fa1374; ce08eabc4821f7856c40be16b1bd7620891c75ac.
+
+
+[2026-11-10] C1.462 — IMA-EXEC-20261110-1825Z-02 — TASK-153 / ACADEMIC: reordenamiento de lista de espera
+- `reorderWaitlist` autentica antes de leer detalles; bajo ScriptLock resuelve claves mínimas, valida ownership y consulta metadatos solo de solicitudes autorizadas.
+- Reordena el grupo completo `En_Espera` del mismo año/grado; valida posición y compensa escrituras parciales. Filas de otros departamentos no se leen en detalle ni se modifican.
+- Contratos locales de orden, aislamiento, ownership, lock, estados, posiciones y rollback PASS; GitHub Actions run 42896093654 SUCCESS, incluida sintaxis.
+- Sin despliegue ni datos reales. TASK-153 sigue En ejecución.
+- Commits: 647c50e9a96c70d80809be56600716fac37b75f7; be34332567dd0b93e101d260c7def03cbb95ea52.
