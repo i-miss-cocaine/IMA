@@ -499,62 +499,131 @@ function doPost(e) {
 
 // [TAREA-11] [Fase 1 - Motor de Exámenes] - Motor ampliado de evaluaciones, bancos de preguntas polimórficos por área, aleatoriedad y analítica psicométrica.
 function manageQuestionBank(payload) {
-  const { bancoPreguntaId, areaCurricular, asignatura, grado, tema, dificultad, tipo, textoPregunta, opcionesJSON, respuestaCorrecta, etiquetas, puntosPredeterminados, accion } = payload || {};
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "BancoPreguntas");
-
-  if (accion === "eliminar" && bancoPreguntaId) {
-    const data = sheet.getDataRange().getValues();
-    const idx = data.findIndex(r => String(r[0]).trim() === String(bancoPreguntaId).trim());
-    if (idx !== -1) {
-      sheet.getRange(idx + 1, 13).setValue("Inactivo");
-      return { status: "success", message: "Pregunta desactivada en el banco de preguntas." };
-    }
-    throw new Error("Pregunta no encontrada en el banco.");
-  }
-
-  const qId = bancoPreguntaId || ("BNK-" + Date.now() + "-" + Math.floor(Math.random() * 1000));
-  const opcStr = typeof opcionesJSON === "object" ? JSON.stringify(opcionesJSON) : (opcionesJSON || "{}");
-  const data = sheet.getDataRange().getValues();
-  const idx = data.findIndex(r => String(r[0]).trim() === String(qId).trim());
-
-  if (idx !== -1) {
-    sheet.getRange(idx + 1, 2, 1, 12).setValues([[
-      areaCurricular || "General",
-      asignatura || "",
-      grado || "",
-      tema || "",
-      dificultad || "Media",
-      tipo || "opcion_multiple",
-      textoPregunta || "",
-      opcStr,
-      respuestaCorrecta || "",
-      etiquetas || "",
-      puntosPredeterminados || 1,
-      "Activo"
-    ]]);
-    return { status: "success", bancoPreguntaId: qId, message: "Pregunta del banco actualizada correctamente." };
-  }
-
-  sheet.appendRow([
-    qId,
-    areaCurricular || "General",
-    asignatura || "",
-    grado || "",
-    tema || "",
-    dificultad || "Media",
-    tipo || "opcion_multiple",
-    textoPregunta || "",
-    opcStr,
-    respuestaCorrecta || "",
-    etiquetas || "",
-    puntosPredeterminados || 1,
-    "Activo"
-  ]);
-
-  return { status: "success", bancoPreguntaId: qId, message: "Pregunta añadida exitosamente al banco." };
+  return withAuthorizedQuestionBankMutation_(payload, context => manageQuestionBankUnlocked_(payload, context));
 }
 
+function getAuthorizedQuestionBankMutationContext_(payload) {
+  const permission = validateRolePermission("manageQuestionBank", payload);
+  if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const actor = getVerifiedExamIdentity_(payload);
+  if (!actor.authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const scope = getVerifiedExamDepartmentScope_(payload, ss, actor);
+  if (!scope.authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const bankSheet = getOrCreateSheet(ss, "BancoPreguntas");
+  const ownershipSheet = getSheetOrThrow(ss, "ResourceOwnership");
+  const bankHeaders = ["BancoPreguntaID", "AreaCurricular", "Asignatura", "Grado", "Tema", "Dificultad", "Tipo", "TextoPregunta", "OpcionesJSON", "RespuestaCorrecta", "Etiquetas", "PuntosPredeterminados", "Estado"];
+  const ownershipHeaders = ["OwnershipID", "InstitutionID", "ResourceType", "ResourceID", "DepartmentID", "Status", "RegisteredBy", "CreatedAt", "UpdatedAt"];
+  const bankRows = bankSheet.getDataRange().getValues();
+  const ownershipRows = ownershipSheet.getDataRange().getValues();
+  if (!bankRows.length || bankHeaders.some((header, index) => String(bankRows[0][index] || "").trim() !== header)) throw new Error("QUESTION_BANK_SCHEMA_INVALID");
+  if (!ownershipRows.length || ownershipHeaders.some((header, index) => String(ownershipRows[0][index] || "").trim() !== header)) throw new Error("RESOURCE_OWNERSHIP_SCHEMA_INVALID");
+  const requestedId = String((payload && payload.bancoPreguntaId) || "").trim();
+  const action = String((payload && payload.accion) || "").trim().toLowerCase();
+  if (action === "eliminar" && !requestedId) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const matches = requestedId ? bankRows.slice(1).map((row, index) => ({ row, rowIndex: index + 1 }))
+    .filter(item => String(item.row[0] || "").trim() === requestedId) : [];
+  if (requestedId && matches.length !== 1) throw new Error("RESOURCE_NOT_AVAILABLE");
+  let ownership = null;
+  if (requestedId) {
+    const check = assertExamResourceOwnershipForScope_(ss, scope, "BANCO_PREGUNTA", requestedId, action === "eliminar" ? "DELETE" : "UPDATE", payload);
+    if (!check.authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
+    const owned = ownershipRows.slice(1).map((row, index) => ({ row, rowIndex: index + 1 }))
+      .filter(item => String(item.row[1] || "").trim() === String(scope.institutionId || "").trim() &&
+        String(item.row[2] || "").trim().toUpperCase() === "BANCO_PREGUNTA" &&
+        String(item.row[3] || "").trim() === requestedId && String(item.row[5] || "").trim().toUpperCase() === "ACTIVE");
+    if (owned.length !== 1) throw new Error("RESOURCE_NOT_AVAILABLE");
+    ownership = owned[0];
+  } else {
+    if (action === "eliminar") throw new Error("RESOURCE_NOT_AVAILABLE");
+    const requestedDepartmentId = String((payload && (payload.departmentId || payload.departamentoId)) || "").trim();
+    const departmentId = requestedDepartmentId || ((scope.departmentIds || []).length === 1 ? String(scope.departmentIds[0] || "").trim() : "");
+    const departmentAllowed = !!departmentId && (scope.departmentIds || []).some(value => String(value || "").trim() === departmentId);
+    if (!departmentAllowed) throw new Error("RESOURCE_SCOPE_DENIED");
+    return { ss, actor, scope, bankSheet, ownershipSheet, bankRows, ownershipRows, departmentId, bankRow: null, ownership: null };
+  }
+  return { ss, actor, scope, bankSheet, ownershipSheet, bankRows, ownershipRows, departmentId: ownership.row[4],
+    bankRow: matches[0], ownership };
+}
+
+function withAuthorizedQuestionBankMutation_(payload, mutation) {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) throw new Error("QUESTION_BANK_LOCK_TIMEOUT");
+  try {
+    const context = getAuthorizedQuestionBankMutationContext_(payload);
+    return mutation(context);
+  } finally {
+    try { lock.releaseLock(); } catch (_) {}
+  }
+}
+
+function manageQuestionBankUnlocked_(payload, context) {
+  const p = payload || {};
+  const action = String(p.accion || "").trim().toLowerCase();
+  const bankSheet = context.bankSheet;
+  if (context.bankRow) {
+    const rowNumber = context.bankRow.rowIndex + 1;
+    if (action === "eliminar") {
+      const oldBankStatus = context.bankRow.row[12];
+      const oldOwnershipStatus = context.ownership.row[5];
+      try {
+        context.ownershipSheet.getRange(context.ownership.rowIndex + 1, 6).setValue("INACTIVE");
+        bankSheet.getRange(rowNumber, 13).setValue("Inactivo");
+      } catch (error) {
+        let rollbackFailed = false;
+        try { context.ownershipSheet.getRange(context.ownership.rowIndex + 1, 6).setValue(oldOwnershipStatus); } catch (_) { rollbackFailed = true; }
+        try { bankSheet.getRange(rowNumber, 13).setValue(oldBankStatus); } catch (_) { rollbackFailed = true; }
+        if (rollbackFailed) throw new Error("QUESTION_BANK_DELETE_ROLLBACK_FAILED");
+        throw error;
+      }
+      return { status: "success", message: "Pregunta desactivada en el banco de preguntas." };
+    }
+    const opcStr = typeof p.opcionesJSON === "object" ? JSON.stringify(p.opcionesJSON) : (p.opcionesJSON || "{}");
+    bankSheet.getRange(rowNumber, 2, 1, 12).setValues([[
+      p.areaCurricular || "General", p.asignatura || "", p.grado || "", p.tema || "",
+      p.dificultad || "Media", p.tipo || "opcion_multiple", p.textoPregunta || "", opcStr,
+      p.respuestaCorrecta || "", p.etiquetas || "", p.puntosPredeterminados || 1, "Activo"
+    ]]);
+    return { status: "success", bancoPreguntaId: String(context.bankRow.row[0]), message: "Pregunta del banco actualizada correctamente." };
+  }
+  const qId = "BNK-" + Utilities.getUuid();
+  if (context.bankRows.slice(1).some(row => String(row[0] || "").trim() === qId) ||
+      context.ownershipRows.slice(1).some(row => String(row[1] || "").trim() === context.scope.institutionId &&
+        String(row[2] || "").trim().toUpperCase() === "BANCO_PREGUNTA" && String(row[3] || "").trim() === qId)) {
+    throw new Error("QUESTION_BANK_ID_COLLISION");
+  }
+  const opcStr = typeof p.opcionesJSON === "object" ? JSON.stringify(p.opcionesJSON) : (p.opcionesJSON || "{}");
+  const now = new Date().toISOString();
+  const ownershipId = "OWN-" + Utilities.getUuid();
+  const bankRow = [qId, p.areaCurricular || "General", p.asignatura || "", p.grado || "", p.tema || "",
+    p.dificultad || "Media", p.tipo || "opcion_multiple", p.textoPregunta || "", opcStr,
+    p.respuestaCorrecta || "", p.etiquetas || "", p.puntosPredeterminados || 1, "Activo"];
+  let bankWritten = false, ownershipWritten = false;
+  try {
+    context.ownershipSheet.appendRow([ownershipId, context.scope.institutionId, "BANCO_PREGUNTA", qId,
+      context.departmentId, "ACTIVE", context.actor.userId, now, now]);
+    ownershipWritten = true;
+    bankSheet.appendRow(bankRow);
+    bankWritten = true;
+  } catch (error) {
+    let rollbackFailed = false;
+    if (bankWritten) {
+      try {
+        const rows = bankSheet.getDataRange().getValues();
+        for (let i = rows.length - 1; i >= 1; i--) if (String(rows[i][0] || "").trim() === qId) bankSheet.deleteRow(i + 1);
+      } catch (_) { rollbackFailed = true; }
+    }
+    if (ownershipWritten) {
+      try {
+        const rows = context.ownershipSheet.getDataRange().getValues();
+        for (let i = rows.length - 1; i >= 1; i--) if (String(rows[i][0] || "").trim() === ownershipId) context.ownershipSheet.deleteRow(i + 1);
+      } catch (_) { rollbackFailed = true; }
+    }
+    if (rollbackFailed) throw new Error("QUESTION_BANK_CREATE_ROLLBACK_FAILED");
+    throw error;
+  }
+  return { status: "success", bancoPreguntaId: qId, message: "Pregunta añadida exitosamente al banco." };
+}
 function getQuestionBank(payload) {
   const { areaCurricular, asignatura, grado, tema, dificultad } = payload || {};
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
