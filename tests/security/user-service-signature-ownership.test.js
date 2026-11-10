@@ -409,7 +409,7 @@ function makeAuditCertificateHarness(options = {}) {
     ["SIG-3","SOL-2","DOC-1","U-3","Director","Conformidad manual","TOK-3","","","",""]
   ];
   if (options.extraRows) options.extraRows.forEach(row=>rows.push(row.slice()));
-  const state = { held:false, fullReads:0, keyReads:0, releases:0, scopes:[], events:[], requestOwnershipCalls:0 };
+  const state = { held:false, opens:0, fullReads:0, keyReads:0, releases:0, scopes:[], events:[], requestOwnershipCalls:0 };
   const sheet = {
     getLastRow:()=>rows.length,
     getRange:(row,col,numRows,numCols)=>({getValues:()=>{state.keyReads++;return rows.slice(row-1,row-1+numRows).map(r=>r.slice(col-1,col-1+numCols));}}),
@@ -420,10 +420,11 @@ function makeAuditCertificateHarness(options = {}) {
     getUserVerifiedRole:payload=>{if(options.identity===false)return "NO_ACCESS";payload._verifiedUserId="ACTOR-1";return "Director";},
     LockService:{getScriptLock:()=>({tryLock:()=>{if(options.lock===false)return false;state.held=true;return true;},
       releaseLock:()=>{assert.equal(state.held,true);state.held=false;state.releases++;}})},
-    SpreadsheetApp:{openById:()=>{assert.equal(state.held,true);return {getSheetByName:name=>{assert.equal(name,"FirmasConformidades");return sheet;}};}},
+    SpreadsheetApp:{openById:()=>{assert.equal(state.held,true);state.opens++;return {getSheetByName:name=>{assert.equal(name,"FirmasConformidades");return sheet;}};}},
     SPREADSHEET_ID:"SHEET",
     getOrCreateSheet:(_ss,name)=>{assert.equal(name,"FirmasConformidades");return sheet;},
     assertRecordOwnership:(_payload,type,id,op)=>{
+      assert.equal(state.held,true,"request ownership must be revalidated under the certificate lock");
       state.requestOwnershipCalls++;
       assert.equal(type,"SOLICITUD_ADMISION");assert.equal(id,"SOL-1");assert.equal(op,"READ");
       return {authorized:options.requestOwner!==false};
@@ -472,6 +473,7 @@ function makeAuditCertificateHarness(options = {}) {
   const requestDenied=makeAuditCertificateHarness({requestOwner:false});
   assert.throws(()=>requestDenied.run({solicitudId:"SOL-1"}),/RESOURCE_NOT_FOUND/);
   assert.equal(requestDenied.state.requestOwnershipCalls,1);
+  assert.equal(requestDenied.state.opens,0,"unauthorized requests must be denied before opening signature storage");
   assert.equal(requestDenied.state.keyReads,0,"unauthorized requests must not enumerate signature references");
   assert.equal(requestDenied.state.fullReads,0);
   assert.equal(requestDenied.state.releases,1);
