@@ -1692,26 +1692,30 @@ function scheduleAdmissionInterview(payload) {
   const ctx = getAcademicAdmissionScopeContext_(payload, "scheduleAdmissionInterview", solicitudId, "UPDATE");
   if (!ctx.authorized) throw new Error("RESOURCE_NOT_FOUND");
   const evaluatorId = String(evaluadorUserId).trim();
-  if (evaluatorId !== String(ctx.actor.userId).trim()) {
-    if (!isAcademicAdmissionManagerRole_(ctx.actor.role)) throw new Error("RESOURCE_NOT_FOUND");
-    const evaluatorIdentity = getAcademicUserIdentityForAdmission_(ctx.ss, evaluatorId);
-    if (!evaluatorIdentity) throw new Error("RESOURCE_NOT_FOUND");
-    const evaluatorScope = getVerifiedAcademicDepartmentScope_(payload, ctx.ss, evaluatorIdentity);
-    const department = ctx.requestAccess.departmentId || resolveAcademicAdmissionDepartment_(payload, ctx.scope, ctx.requestAccess).departmentId;
-    if (!evaluatorScope || evaluatorScope.authorized !== true ||
-        (department && evaluatorScope.institutionWide !== true &&
-         !(evaluatorScope.departmentIds || []).some(function(value) { return String(value).trim() === String(department).trim(); }))) {
-      throw new Error("RESOURCE_NOT_FOUND");
-    }
-  }
 
-  // El chequeo de solapamiento y el append forman una sección crítica: dos
-  // solicitudes simultáneas no deben reservar el mismo intervalo del evaluador.
+  // El chequeo de solapamiento, la revalidación de ownership y el append forman
+  // una sección crítica: revocar el ámbito o la asignación no debe dejar pasar
+  // una reserva que fue autorizada con un contexto ya obsoleto.
   const lock = LockService.getScriptLock();
   let hasLock = false;
   try {
     hasLock = lock.tryLock(10000);
     if (!hasLock) throw new Error("Servicio ocupado programando entrevistas. Por favor reintente.");
+    const currentRequestAccess = assertAcademicAdmissionRequestScopeAccess_(ctx.ss, ctx.scope, solicitudId, payload, "UPDATE");
+    if (!currentRequestAccess || currentRequestAccess.authorized !== true) throw new Error("RESOURCE_NOT_FOUND");
+    if (evaluatorId !== String(ctx.actor.userId).trim()) {
+      if (!isAcademicAdmissionManagerRole_(ctx.actor.role)) throw new Error("RESOURCE_NOT_FOUND");
+      const evaluatorIdentity = getAcademicUserIdentityForAdmission_(ctx.ss, evaluatorId);
+      if (!evaluatorIdentity) throw new Error("RESOURCE_NOT_FOUND");
+      const evaluatorScope = getVerifiedAcademicDepartmentScope_(payload, ctx.ss, evaluatorIdentity);
+      const department = currentRequestAccess.departmentId ||
+        resolveAcademicAdmissionDepartment_(payload, ctx.scope, currentRequestAccess).departmentId;
+      if (!evaluatorScope || evaluatorScope.authorized !== true ||
+          (department && evaluatorScope.institutionWide !== true &&
+           !(evaluatorScope.departmentIds || []).some(function(value) { return String(value).trim() === String(department).trim(); }))) {
+        throw new Error("RESOURCE_NOT_FOUND");
+      }
+    }
     const sheet = getOrCreateSheet(ctx.ss, "EntrevistasAdmision");
     const data = sheet.getDataRange().getValues();
     if (data.length > 1) {
@@ -1815,6 +1819,10 @@ function saveAdmissionEvaluation(payload) {
   try {
     hasLock = lock.tryLock(10000);
     if (!hasLock) throw new Error("Servicio ocupado registrando evaluaciones. Por favor reintente.");
+    // Revalidar ownership dentro de la sección crítica para evitar usar una
+    // autorización revocada o modificada entre la comprobación inicial y el append.
+    const currentRequestAccess = assertAcademicAdmissionRequestScopeAccess_(ctx.ss, ctx.scope, solicitudId, payload, "UPDATE");
+    if (!currentRequestAccess || currentRequestAccess.authorized !== true) throw new Error("RESOURCE_NOT_FOUND");
     const sheet = getOrCreateSheet(ctx.ss, "EvaluacionesAdmision");
     const now = new Date();
     // El ID y el append se serializan porque el generador se invoca con skipLock.
