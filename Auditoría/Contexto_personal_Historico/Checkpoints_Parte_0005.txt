@@ -121,3 +121,42 @@ Revisar la creación de solicitudes de firma avanzada en USER para evitar transa
 - Las pruebas dependientes de servicios desplegados quedan reservadas a beta; no bloquean esta aprobación local.
 - Siguiente acción: auditar la actualización de estado/callback de firma avanzada, sin asumir autenticidad de `respuestaProveedor` enviada por cliente.
 ===============================================================================
+
+===============================================================================
+## CHECKPOINT C1.462 — ACADEMIC: reordenamiento grupal de lista de espera con aislamiento y rollback
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.461.
+HEAD inicial del subalcance: 239e360700728569e4a000ca542e837be77b1c25.
+
+### Alcance
+Corregir `reorderWaitlist` para evitar lecturas de detalles previas a autorización, limitar el reordenamiento al departamento autorizado y mantener consistencia de posiciones ante fallos parciales.
+
+### Implementación
+- Valida contexto ACADEMIC sin solicitud, adquiere `ScriptLock` y resuelve inicialmente solo `EsperaID`/`SolicitudID`.
+- Revalida ownership del objetivo bajo lock y obtiene los IDs de solicitudes autorizadas para `UPDATE`; solo después consulta año, grado, posición, estado y fecha de ingreso de filas autorizadas.
+- Reordena el grupo completo de entradas `En_Espera` del mismo año lectivo/grado, con orden determinista por posición, fecha de ingreso y número de fila.
+- Exige posición destino entero seguro positivo dentro del tamaño del grupo; solo permite mover un objetivo en estado `En_Espera`.
+- Si una escritura de posición falla, restaura las posiciones anteriores en orden inverso. Si falla la compensación, registra `WAITLIST_REORDER_COMPENSATION_FAILED`.
+- Añade la justificación manual al registro objetivo y actualiza timestamp bajo la misma sección crítica.
+
+### Verificación local
+- GitHub Actions run `42896093654`: SUCCESS, Node 24. URL: https://github.com/i-miss-cocaine/IMA/actions/runs/42896093654
+- Contrato `academic-admission-ownership.test.js`: PASS; reordenamiento completo del grupo, fila de otro departamento no leída en detalle ni modificada, ownership denegado, lock ocupado, posición inválida/fuera de rango, estado no elegible, rollback y fallo de rollback.
+- Department Scope, ACADEMIC expediente/admisión/conversión/entrevistas/evaluaciones/duplicados/reapertura/lista de espera, USER signature ownership, ACCOUNTING departmental access, ResourceOwnership ABAC y voucher client: PASS.
+- `node --check`: User/Academic/Accounting Code.gs y `js/student.js`: PASS.
+- Sin despliegue, servicios vivos, Google Sheets real ni datos institucionales reales.
+
+### Commits
+- `647c50e9a96c70d80809be56600716fac37b75f7` — autorización, reordenamiento grupal y compensación.
+- `be34332567dd0b93e101d260c7def03cbb95ea52` — contratos de alcance, grupo y rollback.
+- Documentación: plan `c1dfe1420157c59099ef1f16f3f0962a4d3afde9`; auditoría `1cff06fd74a217763b531917044c3086584d5029`; changelog `9745e7f26d5ce88caefb45934c775561f62d7a67`.
+
+### Estado y continuidad
+- Reordenamiento de lista de espera ACADEMIC corregido y aprobado localmente.
+- **TASK-153 permanece En ejecución y AUD-NG-386 abierto** por recursos institucionales, firmas, permisos granulares, referencias compartidas, importaciones y otras rutas pendientes.
+- Pruebas dependientes de servicios desplegados se reservan a beta; no bloquean la aprobación local.
+- Siguiente acción: continuar con el siguiente requisito pendiente de TASK-153/AUD-NG-386, manteniendo la sesión `IMA-EXEC-20261110-1825Z-02`.
+===============================================================================
