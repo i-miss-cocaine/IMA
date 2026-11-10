@@ -420,9 +420,8 @@ function makeAuditCertificateHarness(options = {}) {
     getUserVerifiedRole:payload=>{if(options.identity===false)return "NO_ACCESS";payload._verifiedUserId="ACTOR-1";return "Director";},
     LockService:{getScriptLock:()=>({tryLock:()=>{if(options.lock===false)return false;state.held=true;return true;},
       releaseLock:()=>{assert.equal(state.held,true);state.held=false;state.releases++;}})},
-    SpreadsheetApp:{openById:()=>{assert.equal(state.held,true);state.opens++;return {getSheetByName:name=>{assert.equal(name,"FirmasConformidades");return sheet;}};}},
+    SpreadsheetApp:{openById:()=>{assert.equal(state.held,true);state.opens++;return {getSheetByName:name=>{assert.equal(name,"FirmasConformidades");return options.sheetMissing?null:sheet;}};}},
     SPREADSHEET_ID:"SHEET",
-    getOrCreateSheet:(_ss,name)=>{assert.equal(name,"FirmasConformidades");return sheet;},
     assertRecordOwnership:(_payload,type,id,op)=>{
       assert.equal(state.held,true,"request ownership must be revalidated under the certificate lock");
       state.requestOwnershipCalls++;
@@ -463,6 +462,12 @@ function makeAuditCertificateHarness(options = {}) {
 
   const documentOnly=makeAuditCertificateHarness();
   assert.equal(documentOnly.run({documentoId:"DOC-1"}).solicitudId,"SOL-1");
+
+  const missingSheet=makeAuditCertificateHarness({sheetMissing:true});
+  assert.throws(()=>missingSheet.run({documentoId:"DOC-1",solicitudId:"SOL-1"}),/NO_SIGNATURES_FOUND/);
+  assert.equal(missingSheet.state.scopes.length,1,"document ownership is checked even when the signature sheet is absent");
+  assert.equal(missingSheet.state.fullReads,0);
+  assert.equal(missingSheet.state.releases,1);
 
   const ambiguous=makeAuditCertificateHarness();
   assert.throws(()=>ambiguous.run({solicitudId:"SOL-1"}),/RESOURCE_REFERENCE_AMBIGUOUS/);
