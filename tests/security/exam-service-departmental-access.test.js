@@ -98,7 +98,7 @@ const runtime = {
   isInTeacherList(value, filter) { return String(value).trim() === String(filter).trim(); },
   normalizeString(value) { return String(value || "").trim().toLowerCase(); }
 };
-const helpers = ["getVerifiedExamIdentity_", "getVerifiedExamDepartmentScope_", "assertExamResourceOwnershipForScope_", "getAllExams", "getTeacherExamActivity"].map(name => extractFunction(source, name)).join("\n");
+const helpers = ["getVerifiedExamIdentity_", "getVerifiedExamDepartmentScope_", "assertExamResourceOwnershipForScope_", "validateRolePermission", "getAllExams", "getTeacherExamActivity"].map(name => extractFunction(source, name)).join("\n");
 vm.runInNewContext(helpers + "\nthis.getAllExams = getAllExams; this.getTeacherExamActivity = getTeacherExamActivity; this.getVerifiedExamDepartmentScope_ = getVerifiedExamDepartmentScope_; this.assertExamResourceOwnershipForScope_ = assertExamResourceOwnershipForScope_;", runtime);
 const payload = { sessionToken: "teacher-token", profesorId: "TEACHER-2" };
 const list = runtime.getAllExams(payload);
