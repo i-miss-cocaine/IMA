@@ -1452,3 +1452,46 @@ HEAD de código y contratos: 1558e5c99b4fee58474a849bc8087d9c16914028.
 - TASK-153 permanece En ejecución; AUD-NG-386 abierto por mutaciones EXAM y criterios globales pendientes.
 - Próximo alcance técnico: revisar mutaciones restantes TASK/EXAM, filtros/importaciones, referencias compartidas y permisos por operación.
 ===============================================================================
+
+
+===============================================================================
+## CHECKPOINT C1.445 — TASK-153 / TASK Service: ownership de aulas y hardening de archivos legacy
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.444.
+HEAD de código/pruebas/beta antes de documentación: 87dbe7ecf4b3eaab69fc473d7a06df966f86b24c.
+
+### Trabajo
+- Se revisó el control de `AULA_VIRTUAL`: listados por ResourceOwnership para Profesor/administración/estudiante/tutor; creación registra departamento con rollback compensatorio; publicaciones y materiales por aula heredan ownership.
+- Se corrigieron dos bypass administrativos: `deletePost` valida el aula siempre y `createStudyMaterial` valida tanto aula específica como General. Las cinco mutaciones de publicaciones/materiales pasan por `assertTaskServiceClassroomAccess`.
+- `readLegacyDocument` exige identidad de sesión firmada, metadata activa y única, tarea padre única y guard de ownership/ámbito para estudiante/tutor/personal antes de abrir Drive. Respuesta de error normalizada.
+- `getMultiPartFolderFiles` se deshabilita porque aceptaba un folderId arbitrario y enumeraba archivos; la carga legacy ya estaba deshabilitada y el flujo actual utiliza sesiones reanudables.
+- Se amplía BETA-FUNC-021 con validación desplegada de lectura legacy, denegaciones por IDOR/ambigüedad y endpoint legacy deshabilitado.
+
+### Archivos
+- `backend/task-service/Code.gs`
+- `tests/security/task-service-security-contract.test.js`
+- `beta_test.txt`
+
+### Commits
+- e7d036abad8ef6cecc19252057b2f4888a29dbd2
+- 6024d318162fe1f758f194ac00c1f23fea803076
+- 176c5b08974a8a44f1314ea8e65f3ca371541e77
+- 742fe9576062108c857cfb3e00fd0de59b5ef4a4
+- 2d5526565a8332cbbed8e80c92ab5427b2deb7cb
+- f71bebc496ffb6487cdefc3701d1f24043649bd3
+- dee57ca34414c591f4d8bb6342c2567a9bdb8a33
+- 87dbe7ecf4b3eaab69fc473d7a06df966f86b24c
+
+### Verificación
+- 14 aserciones estáticas sobre identidad, metadata única, tarea padre única, guards, endpoint deshabilitado y mutaciones de contenido: PASS.
+- Contratos dinámicos añadidos con escenarios permitidos/denegados; ejecución Node local NOT RUN en el runtime disponible. No se declara PASS dinámico.
+- GitHub combined status/workflow runs para el HEAD consultado: sin checks visibles; no se declara PASS CI.
+- No se desplegó Apps Script ni se accedió a Drive/Sheets reales. BETA-FUNC-021 queda Pendiente beta; estas validaciones de despliegue no bloquean la continuidad de desarrollo.
+
+### Estado y continuidad
+- TASK-153 permanece En ejecución; AUD-NG-385/386 abiertos.
+- Siguiente foco técnico: referencias compartidas autorizadas, filtros/importaciones y revisar rutas directas restantes en TASK/EXAM y servicios documentales.
+===============================================================================
