@@ -1181,3 +1181,17 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - **Commits de código/prueba:** f61d2074b8910b9d8fdefcc55fa0133e38d66ad7; fa4db0612f59552633037bc20332d9e5bf6abf34; 021484b6d79dcd8db9f8d86ad57ab3fb1ddf3eab.
 - **Estado:** subhallazgo corregido. TASK-153 En ejecución; AUD-NG-386 permanece abierto por el resto del alcance.
 ===============================================================================
+
+
+===============================================================================
+## Seguimiento C1.452 — atribución e idempotencia del cargo de admisión
+- **Hallazgo:** la deduplicación genérica de cargos usaba solo usuario/concepto y podía suprimir el cargo de admisión por coincidencia con un cargo ordinario; no existía un vínculo de origen persistido.
+- **Corrección:** cada cargo de admisión nuevo lleva referencia exacta `ADMISION|solicitudId|matriculaId` en `CargosEstudiante.ReferenciaOrigen`. Se reutiliza únicamente una referencia única cuyo usuario, concepto y montos coinciden. Cargo activo sin referencia, origen diferente o importes discordantes: conflicto; referencia duplicada: ambigüedad. El retorno de una solicitud ya convertida exige el cargo vinculado y expone CargoID. El registro se integra al rollback LIFO.
+- **Seguridad/API:** la acción pública `registerStudentEnrollment` elimina los metadatos internos `_chargeReference` y `_rollbackActions`; la conversión llama al helper privado `registerStudentEnrollmentInternal_`. No se permite falsificar el marcador desde el payload público.
+- **Compatibilidad:** los cargos ordinarios siguen escribiéndose con nueve columnas. El encabezado décimo `ReferenciaOrigen` se incorpora solo en el flujo de admisión. Un cargo legado anulado no bloquea un cargo nuevo; un cargo activo sin marca no se adopta.
+- **Pruebas:** sintaxis Code.gs/test PASS. Ejecución dinámica aislada PASS para creación/reintento, rollback del cargo, metadatos públicos filtrados, fila ordinaria de nueve columnas, legado anulado ignorado y rechazos por referencia ausente/duplicada/ajena, importes inconsistentes y cargo faltante.
+- **Compatibilidad histórica:** no se realiza backfill por coincidencia de usuario/concepto/importe. Las conversiones previas con cargos no marcados no pueden probar la procedencia; quedan en conflicto/incompletas y requieren conciliación manual con evidencia.
+- **Límites:** suite Node completa/CI NOT RUN; sin despliegue ni datos reales. Sin garantía ACID ni reparación automática de registros antiguos.
+- **Commits principales:** 95a6b4d791fb9051a57482f3f9b93efa286760c2; 2aa6dcdaec0315e9d16a1383051bf0d11fa11bfa; 4dae41b25cf393563d50768b194e9fc20c0ab762; 24a45ddb5d915a028352e8cb2bbfd05455a4f145; 086d98eb4605a701ce7c1f99d4958b3f10b1037a; 2745da1cc659c3cffce1dd8b51124d059a42a158; 424af6b66931d1bc1f50459d59a468a4596ddd2a; deb974e07ceed041225e6373d32495681c472633; 1ed0effebdce56c03756178e098f38bb22637204.
+- **Estado:** subhallazgo corregido para nuevas conversiones. TASK-153 En ejecución; AUD-NG-386 continúa abierto por el resto del alcance.
+===============================================================================
