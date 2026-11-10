@@ -956,3 +956,11 @@ Asegurar autorización explícita por acción, propiedad y consistencia de las l
 - Rama base NG_beta_0.0.0.1 sin cambios; no se ejecutó despliegue.
 - Siguiente subalcance: inventariar y auditar getAllExams/getTeacherExamActivity y lecturas restantes expuestas por dispatcher para comprobar RBAC, ownership, duplicados y serialización.
 ===============================================================================
+
+===============================================================================
+### Addendum C1.482-R1 — verificación de publicación
+- Commit de implementación, pruebas locales y registros: 4526caac1a8538b1649561dd844d9598376df311.
+- Rama base NG_beta_0.0.0.1 verificada sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- CI consultado para el commit: sin statuses ni workflow runs visibles; no se declara PASS.
+- NG_beta_0.0.0.1_work actualizado mediante compare-and-swap fast-forward; no se utilizó force push.
+===============================================================================
