@@ -274,3 +274,45 @@ Proteger `generateSignatureAuditCertificate`, siguiente acción indicada en C1.4
 - Los escenarios que requieren servicio desplegado se reservan a beta.
 - Siguiente subalcance: continuar la integración y autorización de recursos institucionales y solicitudes de firma, partiendo de los esquemas y propietarios reales encontrados; no bloquear el motor genérico por catálogos institucionales ausentes.
 ===============================================================================
+
+## CHECKPOINT C1.466 — USER: hash de solicitud de firma avanzada derivado del archivo fuente
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.465.
+HEAD inicial: e64ebf627de74c64ba0602881d1961a08796964c.
+
+### Alcance
+Corregir la integridad de evidencia al crear solicitudes de firma avanzada dentro de TASK-153 / AUD-NG-386. Una solicitud no debe utilizar un hash aportado por cliente ni un valor sintético basado en IDs como si representara el documento.
+
+### Implementación
+- `assertAdvancedSignatureDocumentScope_` devuelve el DriveFileID asociado al documento canónico únicamente después de resolver el documento y validar su propiedad departamental.
+- `createAdvancedSignatureRequest` obtiene los bytes del archivo desde Drive después de la autorización de ownership y calcula SHA-256 binario con `Utilities.computeDigest`.
+- No crea una solicitud si falta el archivo, no puede leerse o está vacío.
+- Si el cliente aporta un hash, se exige formato SHA-256 hexadecimal y coincidencia exacta con los bytes reales; el valor persistido y devuelto es siempre el hash calculado desde el archivo.
+- La respuesta ya no declara cumplimiento de un decreto ni presenta la creación de la solicitud como certificación jurídica o criptográfica.
+- La lectura del archivo se mantiene dentro del ScriptLock y después de la comprobación de ownership.
+
+### Verificación
+- Contrato aislado local ejecutado con Node: PASS, 7 escenarios (hash real, persistencia, hash cliente discordante, formato inválido, ownership denegado antes de Drive, archivo ausente, archivo vacío/ilegible).
+- La suite real `tests/security/user-service-signature-ownership.test.js` fue ampliada con casos equivalentes; su ejecución directa local sobre el checkout del repositorio no está disponible en este entorno y queda pendiente de CI tras el commit.
+- No se ejecutó Apps Script/Drive real ni despliegue; validación real de permisos de Drive y formatos de archivo queda en beta.
+
+### Límites
+- Este subalcance garantiza el hash del archivo fuente al crear la solicitud; no implementa callback autenticado del proveedor, validación criptográfica del certificado ni revocación/rotación de permisos del archivo.
+- No se inventa ni se infiere identidad del firmante a partir de nombre/correo enviados por el cliente; la selección/autorización del firmante queda para el siguiente subalcance.
+- TASK-153 sigue En ejecución y AUD-NG-386 abierto.
+
+### Continuidad
+Siguiente subalcance: revisar y proteger la identidad/ámbito del firmante destinatario en la creación de solicitudes de firma, usando las fuentes de identidad y asignación de ámbito existentes; no integrar callbacks de proveedor sin mecanismo autenticado verificable.
+
+### Archivos de la iteración
+- backend/user-service/Code.gs
+- tests/security/user-service-signature-ownership.test.js
+- pendientes/Dirección/Pendientes.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- tareas_auditoria.txt
+- beta_test.txt
+===============================================================================

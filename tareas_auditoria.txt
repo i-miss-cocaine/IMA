@@ -745,3 +745,10 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - Se eliminan valores probatorios inventados (IP loopback, timestamps, hashes y metadatos por defecto, estado final, entidad emisora y marco legal); el resumen no afirma validez criptográfica.
 - Contratos locales focalizados y parseo PASS. Suite completa/CI no ejecutados; despliegue y pruebas beta pendientes.
 - TASK-153 continúa En ejecución; AUD-NG-386 abierto. Próximo subalcance: recursos institucionales y solicitudes de firma restantes.
+
+
+### TASK-153 — seguimiento C1.466
+- USER: las solicitudes de firma avanzada ya no aceptan hash sintético derivado de IDs ni sustituyen el contenido real por un hash suministrado por el cliente. SHA-256 se calcula desde bytes del DriveFileID resuelto tras ownership.
+- Rechaza archivo fuente ausente, vacío o ilegible; hash cliente malformado o discordante. Lectura posterior a ownership y dentro de ScriptLock.
+- Contrato aislado local: PASS (7 escenarios). Contrato del repositorio ampliado; CI pendiente tras commit. Sin Drive/Apps Script real ni despliegue.
+- TASK-153 permanece En ejecución; AUD-NG-386 abierto. Siguiente subalcance: verificar identidad y ámbito del firmante destinatario.

@@ -333,3 +333,13 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Resultado esperado:** respuestas limitadas al ownership verificado, sin mezcla ni enumeración interdepartamental; evidencia ausente no se sustituye por valores sintéticos; el resumen no se presenta como firma avanzada cualificada.
 - **Estado:** Pendiente beta.
 - **Evidencia requerida:** build desplegado, identidades y recursos sintéticos, respuestas allow/deny y logs saneados; sin PII real, tokens ni credenciales.
+
+
+## BETA-FUNC-026 — TASK-153 / USER: hash del archivo fuente en solicitud de firma avanzada
+- **Módulo/servicio:** USER Service — createAdvancedSignatureRequest.
+- **Objetivo:** verificar que el hash persistido corresponde a los bytes del archivo asociado al documento canónico y que la lectura de Drive ocurre solo después de autorización de ownership.
+- **Precondiciones:** versión beta desplegada; documento de prueba con DriveFileID válido y otro sin archivo; usuarios sintéticos con ámbitos departamentales distintos; permisos de lectura Drive configurados para el servicio.
+- **Pasos:** crear solicitud para documento autorizado; comparar SHA-256 persistido con hash calculado independientemente sobre el archivo; enviar hash concordante, discordante y malformado; probar archivo ausente, vacío, inaccesible y documento de otro departamento.
+- **Resultado esperado:** hash siempre calculado desde bytes del archivo; rechazo sin insertar transacción ante evidencia ausente/ilegible o hash discordante; ninguna lectura Drive para ownership denegado; lock liberado ante fallos.
+- **Estado:** Pendiente beta.
+- **Evidencia requerida:** IDs sintéticos, hash independiente, respuestas allow/deny, conteo de transacciones y logs saneados; sin PII, tokens ni credenciales.

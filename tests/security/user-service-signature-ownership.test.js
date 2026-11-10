@@ -15,7 +15,7 @@ function makeHarness(options = {}) {
     ["DocumentoID","ExpedienteID","SolicitudID","TipoDocumento","NombreArchivo","DriveFileID"],
     [options.documentId || "DOC-1", options.expedienteId === undefined ? "EXP-1" : options.expedienteId,
       options.storedSolicitudId === undefined ? "SOL-1" : options.storedSolicitudId,
-      "Identidad","identidad.pdf","DRIVE-1"]
+      "Identidad","identidad.pdf",options.driveFileId === undefined ? "DRIVE-1" : options.driveFileId]
   ];
   const admissionRows = [
     ["SolicitudID","SolicitanteID","EstudianteID","TipoTramite","Descripcion","Fecha","Estado","","","","","","","","ExpedienteID"],
@@ -45,7 +45,7 @@ function makeHarness(options = {}) {
     }
   };
   const state={held:false,lockAttempts:0,releases:0,spreadsheetOpens:0,txSheetRequests:0,
-    ownershipCalls:[],events:[],permissionCalls:0};
+    ownershipCalls:[],events:[],permissionCalls:0,driveReads:0};
   const context={
     validateRolePermission:(action,payload)=>{state.permissionCalls++;assert.equal(action,"createAdvancedSignatureRequest");return {authorized:options.permissionAllowed!==false};},
     getUserVerifiedRole:payload=>{if(options.identityAllowed===false)return "NO_ACCESS";payload._verifiedUserId="ACTOR-1";return options.role||"Director";},
@@ -65,8 +65,18 @@ function makeHarness(options = {}) {
     SpreadsheetApp:{openById:id=>{assert.equal(state.held,true);assert.equal(id,"SPREADSHEET");state.spreadsheetOpens++;return ss;}},
     SPREADSHEET_ID:"SPREADSHEET",
     getOrCreateSheet:(_ss,name)=>{assert.equal(state.held,true);assert.equal(name,"TransaccionesFirmaAvanzada");state.txSheetRequests++;return transactions;},
-    Utilities:{getUuid:()=>"UUID-1"},
-    computeDocumentSHA256:value=>"SHA256:"+value,
+    Utilities:{
+      getUuid:()=>"UUID-1",
+      DigestAlgorithm:{SHA_256:"SHA_256"},
+      computeDigest:(algorithm,bytes)=>{assert.equal(algorithm,"SHA_256");assert.deepEqual(Array.from(bytes),[1,2,3]);return Array(32).fill(1);}
+    },
+    DriveApp:{getFileById:fileId=>{
+      assert.equal(state.held,true,"Drive file bytes must be read while the lock is held");
+      assert.equal(state.ownershipCalls.length,1,"Drive bytes must not be read before ownership verification");
+      state.driveReads++;assert.equal(fileId,"DRIVE-1");
+      if(options.driveReadFails)throw new Error("drive access denied");
+      return {getBlob:()=>({getBytes:()=>options.fileBytes===undefined?[1,2,3]:options.fileBytes})};
+    }},
     logStructuredEvent:(_service,_action,_level,code,_message,data,role)=>state.events.push({code,data,role}),
     Date
   };
@@ -85,6 +95,9 @@ function makeHarness(options = {}) {
   assert.equal(valid.transactions.appends[0][1],"DOC-1");
   assert.equal(valid.transactions.appends[0][2],"SOL-1");
   assert.equal(valid.transactions.appends[0][3],"SIGNER-1");
+  assert.equal(valid.transactions.appends[0][8],"01".repeat(32),"persist the SHA-256 digest of the actual source bytes");
+  assert.equal(result.documentoHash,"01".repeat(32));
+  assert.equal(valid.state.driveReads,1);
   assert.equal(valid.state.ownershipCalls.length,1);
   assert.deepEqual(valid.state.ownershipCalls[0],{type:"EXPEDIENTE_ESTUDIANTE",id:"EXP-1",operation:"UPDATE"});
   assert.equal(valid.state.events[0].code,"ADVANCED_SIGNATURE_REQUEST_CREATED");
@@ -107,6 +120,7 @@ function makeHarness(options = {}) {
   assert.throws(()=>noOwnership.execute(),/RESOURCE_SCOPE_DENIED/);
   assert.equal(noOwnership.state.txSheetRequests,0);
   assert.equal(noOwnership.transactions.appends.length,0);
+  assert.equal(noOwnership.state.driveReads,0,"do not read source bytes before ownership is authorized");
 
   const mismatchedRequest=makeHarness({requestSolicitudId:"SOL-OTHER"});
   assert.throws(()=>mismatchedRequest.execute(),/RESOURCE_NOT_FOUND/);
@@ -118,6 +132,7 @@ function makeHarness(options = {}) {
   assert.equal(busy.state.spreadsheetOpens,0);
   assert.equal(busy.documentSheet.reads,0);
   assert.equal(busy.state.releases,0);
+  assert.equal(busy.state.driveReads,0);
 
   const deniedRole=makeHarness({permissionAllowed:false});
   assert.throws(()=>deniedRole.execute(),/AUTH_PERMISSION_DENIED/);
@@ -128,12 +143,36 @@ function makeHarness(options = {}) {
   assert.throws(()=>noIdentity.execute(),/AUTH_PERMISSION_DENIED|VERIFIED_IDENTITY_REQUIRED/);
   assert.equal(noIdentity.state.lockAttempts,0);
 
+  const forgedHash=makeHarness();
+  forgedHash.payload.documentoHash="0".repeat(64);
+  assert.throws(()=>forgedHash.execute(),/DOCUMENT_HASH_MISMATCH/);
+  assert.equal(forgedHash.transactions.appends.length,0);
+  assert.equal(forgedHash.state.driveReads,1);
+
+  const malformedHash=makeHarness();
+  malformedHash.payload.documentoHash="not-a-sha256";
+  assert.throws(()=>malformedHash.execute(),/DOCUMENT_HASH_FORMAT_INVALID/);
+  assert.equal(malformedHash.transactions.appends.length,0);
+
+  const missingFile=makeHarness({driveFileId:""});
+  assert.throws(()=>missingFile.execute(),/SIGNATURE_SOURCE_FILE_UNAVAILABLE/);
+  assert.equal(missingFile.state.driveReads,0);
+  assert.equal(missingFile.transactions.appends.length,0);
+
+  const emptyFile=makeHarness({fileBytes:[]});
+  assert.throws(()=>emptyFile.execute(),/SIGNATURE_SOURCE_FILE_EMPTY/);
+  assert.equal(emptyFile.transactions.appends.length,0);
+
+  const inaccessibleFile=makeHarness({driveReadFails:true});
+  assert.throws(()=>inaccessibleFile.execute(),/SIGNATURE_SOURCE_FILE_UNAVAILABLE/);
+  assert.equal(inaccessibleFile.transactions.appends.length,0);
+
   const requestOnly=makeHarness({expedienteId:"",storedSolicitudId:"SOL-1"});
   requestOnly.execute();
   assert.deepEqual(requestOnly.state.ownershipCalls[0],{type:"SOLICITUD_ADMISION",id:"SOL-1",operation:"UPDATE"});
 }
 
-console.log("USER advanced signature request document ownership, RBAC, idempotency and lock contracts: PASS");
+console.log("USER advanced signature request ownership, actual-file SHA-256, hash-claim validation, RBAC, idempotency and lock contracts: PASS");
 
 
 function makeStatusHarness(options = {}) {

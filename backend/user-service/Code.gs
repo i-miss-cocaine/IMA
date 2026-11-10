@@ -7664,6 +7664,7 @@ function assertAdvancedSignatureDocumentScope_(payload, ss, documentoId, solicit
     documentId: canonicalDocumentId,
     expedienteId: expedienteId,
     solicitudId: resolvedSolicitudId,
+    driveFileId: String(documentRow[5] || "").trim(),
     departmentId: ownership.departmentId || "",
     userId: context.userId,
     role: context.role,
@@ -7721,9 +7722,27 @@ function createAdvancedSignatureRequest(payload) {
 
     const now = new Date();
     const txId = "TX-SIG-ADV-" + Utilities.getUuid();
-    const resolvedDocumentHash = documentoHash || computeDocumentSHA256(
-      documentAccess.documentId + "|" + String(firmanteId).trim()
-    );
+    // Hash actual Drive bytes only after ownership has been verified.
+    const sourceFileId = String(documentAccess.driveFileId || "").trim();
+    if (!sourceFileId) throw new Error("SIGNATURE_SOURCE_FILE_UNAVAILABLE");
+    let sourceBytes;
+    try {
+      sourceBytes = DriveApp.getFileById(sourceFileId).getBlob().getBytes();
+    } catch (_) {
+      throw new Error("SIGNATURE_SOURCE_FILE_UNAVAILABLE");
+    }
+    if (!sourceBytes || !sourceBytes.length) throw new Error("SIGNATURE_SOURCE_FILE_EMPTY");
+    const digestBytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, sourceBytes);
+    const resolvedDocumentHash = digestBytes.map(function(value) {
+      return ("0" + (value & 0xFF).toString(16)).slice(-2);
+    }).join("");
+    const suppliedHash = String(documentoHash || "").trim().replace(/^sha256:/i, "").toLowerCase();
+    if (suppliedHash && !/^[a-f0-9]{64}$/.test(suppliedHash)) {
+      throw new Error("DOCUMENT_HASH_FORMAT_INVALID");
+    }
+    if (suppliedHash && suppliedHash !== resolvedDocumentHash) {
+      throw new Error("DOCUMENT_HASH_MISMATCH");
+    }
     txSheet.appendRow([
       txId,
       documentAccess.documentId,
@@ -7754,7 +7773,8 @@ function createAdvancedSignatureRequest(payload) {
       mecanismoFirma: sMecanismo,
       proveedorId: sProveedor,
       estadoTransaccion: "Pendiente",
-      message: "Solicitud de firma avanzada creada en estado Pendiente bajo normativa Decreto 149-2013."
+      documentoHash: resolvedDocumentHash,
+      message: "Solicitud de firma creada en estado Pendiente; el hash corresponde a los bytes del archivo fuente consultado."
     };
   } finally {
     if (hasLock) {
