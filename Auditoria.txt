@@ -1287,3 +1287,14 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - Sin despliegue ni datos reales; concurrencia verificada con lock/fixtures locales. TASK-153 sigue En ejecución; AUD-NG-386 abierto.
 - Commits: `6009994e5df3fc45ddbadad9f782468dc65ba100`; `314e07b4fa5cfeae005d69b1b417d66a44803851`.
 ===============================================================================
+
+===============================================================================
+## C1.461 — oferta de plaza de lista de espera: autorización previa, lock y transición idempotente
+- `offerWaitlistSlot` autentica/valida ámbito antes de leer la lista; bajo ScriptLock resuelve primero solo ID/solicitud, valida ownership y después lee los detalles.
+- Una oferta vigente se devuelve idempotentemente sin sobrescribir su expiración. Ofertas vencidas pueden renovarse; otros estados y expiraciones inválidas se rechazan.
+- Estado, expiración, justificación preservada y timestamp se escriben en un solo rango; `horasVigencia` debe ser entero seguro positivo (72 por defecto).
+- Contrato local cubre autorización antes de datos, ownership denegado, ID ambiguo, lock ocupado, oferta válida, reintento, renovación vencida y validaciones negativas.
+- GitHub Actions run `42895517906` SUCCESS: contratos ACADEMIC, Department Scope, ACCOUNTING, ResourceOwnership ABAC y voucher client PASS; sintaxis Apps Script/cliente PASS.
+- Sin despliegue ni datos reales; lock y fixtures locales. TASK-153 sigue En ejecución; AUD-NG-386 abierto.
+- Commits: `7f3153e036d17ec6d070a67325b447f9c034422d`; `239e360700728569e4a000ca542e837be77b1c25`.
+===============================================================================
