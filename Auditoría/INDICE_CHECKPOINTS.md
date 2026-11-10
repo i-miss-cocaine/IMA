@@ -5,11 +5,11 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.452**
+- Último checkpoint: **C1.453**
 - Última sesión: `IMA-EXEC-20261110-1825Z-02`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.452: **154660**
+- Caracteres del archivo activo tras C1.453: **157332**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 - Baseline lógico válido: **C1.316** (`31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`). C1.317–C1.382 se conservan, pero no se aceptan como evidencia de continuidad por corrección expresa del usuario.
@@ -305,3 +305,4 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.450 | IMA-EXEC-20261110-1825Z-02 | ACADEMIC: idempotencia de reintentos; validadores de matrícula/movimiento PASS aislado; suite Node/CI NOT RUN | PM-01 — TASK-153 / ACADEMIC / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.450 | 1672–1711 | C1.449 | 0f4262aaff538d0cc908ad196944016f4b9bb3aa; 7be60a51941b41dad15fb7e79fbbe6114bddc8eb; 905c5c5c5e5ec107c1cb0f7c1127025a4a8507a4; 5f6663f4ba7f683822f5fa616cd66f98bc56032a; 37ec59ead69a84200d4c3e460cadf45aa75680c |
 | C1.451 | IMA-EXEC-20261110-1825Z-02 | ACADEMIC: retorno idempotente valida expediente, cuenta, matrícula y movimiento; regresión dinámica aislada PASS; suite Node/CI NOT RUN | PM-01 — TASK-153 / ACADEMIC / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.451 | 1714–1755 | C1.450 | f61d2074b8910b9d8fdefcc55fa0133e38d66ad7; fa4db0612f59552633037bc20332d9e5bf6abf34; 021484b6d79dcd8db9f8d86ad57ab3fb1ddf3eab; ca4b0f2ace7b33ecd1b761441e7be4cdb8d07451; 8a0ef544ba763540d01625a0d284b706e0c31b2d; 071684049c2ea626880e2f57043af62277d6810c; 76d219a6a554ddf491e387b861a5245aef5ce862 |
 | C1.452 | IMA-EXEC-20261110-1825Z-02 | ACADEMIC: cargos de admisión con referencia exacta y control de metadatos internos; rollback/idempotencia aislados PASS; suite Node/CI NOT RUN | PM-01 — TASK-153 / ACADEMIC / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.452 | 1759–1815 | C1.451 | 95a6b4d791fb9051a57482f3f9b93efa286760c2; 2aa6dcdaec0315e9d16a1383051bf0d11fa11bfa; 4dae41b25cf393563d50768b194e9fc20c0ab762; 24a45ddb5d915a028352e8cb2bbfd05455a4f145; 086d98eb4605a701ce7c1f99d4958b3f10b1037a; 2745da1cc659c3cffce1dd8b51124d059a42a158; 6d68e0d3fde476eab33254943d6846c2aa319b18; 55725a71fca0d2b38a430e208ff2a60250707ede; b0e5cdc0f3f8a68f9db84cedd64dfbd446fc42c5; 31053d3eaa9c4df36a3f549ca0818fe55fe6f0dd; dcd43d05621c90f6afc7f9cbd2d0f6d7a645205b; 424af6b66931d1bc1f50459d59a468a4596ddd2a; deb974e07ceed041225e6373d32495681c472633; 1ed0effebdce56c03756178e098f38bb22637204; 44656485003944569311f74bf5a18c894e5a1598; ebb8a65a200fd17bb52aa231461951dcacd61573; f905c7cd0e1ea3488b633fdd28b1991ae22c43ac |
+| C1.453 | IMA-EXEC-20261110-1825Z-02 | ACADEMIC: logs insuficientes para atribuir cargos históricos; sin backfill; detectado TDZ en referencia de cargo para próxima corrección | PM-01 — TASK-153 / ACADEMIC / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.453 | 1819–1851 | C1.452 | pendiente de commit de esta iteración |
