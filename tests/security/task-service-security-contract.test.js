@@ -334,7 +334,10 @@ const teacherReadFunctions = [
 for (const [name, fn] of teacherReadFunctions) {
   assert(fn.includes("isTaskServiceTeacherTaskAuthorized_"), name + " must enforce active assigned classroom scope");
 }
-assert(extractFunction("getSubmissionDocumentPreviewUrl").includes("assertTaskServiceTeacherCanManageTask"), "teacher preview must validate active assignment");
+const previewFunction = extractFunction("getSubmissionDocumentPreviewUrl");
+assert(previewFunction.includes("getTaskServiceSubmissionAccess_"), "document preview must delegate to the shared submission ownership guard");
+assert(previewFunction.includes('"READ_CONTENT"'), "document preview must request content-level authorization");
+assert(extractFunction("getTaskServiceSubmissionAccess_").includes("assertTaskServiceTeacherCanManageTask(payload, task"), "staff preview must validate active assignment through the shared guard");
 assert(extractFunction("assertTaskServiceTeacherCanManageTask").includes("getTaskServiceAuthorizedClassrooms(payload)"), "teacher mutation/preview guard must use active offer assignments");
 
 const assignmentRows = [
