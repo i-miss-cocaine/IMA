@@ -1606,3 +1606,26 @@ Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt �
 Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.382.
 Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
 ===============================================================================
+
+
+===============================================================================
+## C1.383 — 2026-11-10 — IMA-EXEC-20261110-0042Z-01
+
+- **Baseline válido:** C1.316 (SHA 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a).
+- **Rama de trabajo:** NG_beta_0.0.0.1_work.
+- **HEAD físico anterior:** 5d6d4091d97c9ca5c5bbefdcd8a8f4ffab4cd484 (C1.382).
+- **Commits posteriores preservados:** C1.317–C1.382; no se usan como evidencia de continuidad. No se hizo reset, cherry-pick ni modificación de la rama base.
+- **Rama base protegida:** NG_beta_0.0.0.1 — SHA verificado antes de publicar: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Auditoría previa:** TASK-636 / iteración C1.316. Workflow y ejecuciones 42659818881 y 42659961195 exitosas; TASK-636 global continúa En ejecución; integración remota pendiente en beta.
+- **Tarea objetivo:** TASK-068 — PM-01, P0, orden local 1.
+- **Requisito original:** pendientes/Dirección/Pendientes.md, bloque TASK-068.
+- **Cambios:** resolvers USER y ACCOUNTING rechazan registros CONFIRMADA incompletos; findPersonMatches devuelve COINCIDENCIA_INSUFICIENTE; UI de Secretaría comunica ese estado; pruebas locales directas para ambos resolvers.
+- **Hallazgo:** seguimiento de AUD-NG-377, sin crear un ID duplicado.
+- **Archivos de producto/prueba:** backend/user-service/Code.gs; backend/accounting-service/Code.gs; js/secretary.js; tests/security/identity-mapping-contract.test.js.
+- **Registros actualizados:** auditoría principal TASK-636; auditoría principal TASK-068; Auditoria.txt; tareas_auditoria.txt; changueslogs.txt; Plan Maestro; backlog de Dirección; índice y parte activa de checkpoints.
+- **Pruebas:** ejecuciones posteriores a C1.316 no se aceptan como evidencia de continuidad. CI del commit C1.383 todavía pendiente; no se declara PASS anticipado.
+- **Beta pendiente:** BETA-FUNC-008 — comunicación real entre despliegues y configuración institucional. No bloqueante por §21.5.
+- **Commit:** este commit C1.383; SHA a verificar después de publicar.
+- **HEAD posterior:** pendiente de verificación después de actualizar exclusivamente NG_beta_0.0.0.1_work.
+- **Siguiente acción:** comprobar CI de C1.383 y cerrar TASK-068 únicamente si las pruebas concluyen correctamente; luego recalcular la siguiente tarea elegible PM-01 con §6.1.
+===============================================================================

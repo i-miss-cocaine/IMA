@@ -228,6 +228,10 @@ assert.equal(found.matches.length,1);
 assert.equal(found.matches[0].personaId,"PER-1");
 assert.equal(found.matches[0].evidencia.responsableCoincidente,true);
 assert.equal(found.matches[0].evidencia.historialMatriculaCoincidente,true);
+assert.equal(found.clasificacionGeneral,"COINCIDENCIAS_REQUIEREN_REVISION");
+const insufficient=findContext.find({nombres:"Luis",apellidos:"Lopez"});
+assert.equal(insufficient.matches.length,0);
+assert.equal(insufficient.clasificacionGeneral,"COINCIDENCIA_INSUFICIENTE","no candidate must be explicitly classified as insufficient");
 assert.equal(JSON.stringify(tables.RelacionesFamiliares),relationSnapshot,"candidate search must not mutate family relations");
 assert.equal(JSON.stringify(tables.Matriculas),enrollmentSnapshot,"candidate search must not mutate enrollment links");
 
@@ -387,3 +391,57 @@ vm.runInNewContext(initFns.map(n=>extractBalancedFunction(user,n)).join(String.f
 assert.equal(initContext.ensureMap().rows[0].join("|"),headers.join("|"));
 assert.equal(initContext.ensureAudit().rows[0].join("|"),mappingDecisionHeaders.join("|"));
 assert.ok(user.includes('getSheetOrThrow(ss,"Personas")'),"candidate search must not create a missing Personas sheet");
+
+
+// TASK-068: confirmed USER mappings with an empty internal target must fail closed.
+const incompleteMappingRows=[headers,["MAP-EMPTY","SACE","estudiante","RNE-EMPTY","","INST-1","hash","2026-11-10","1","CONFIRMADA","EXACTA","NO_CALIBRADA","ADMIN"]];
+const incompleteResolverContext={
+ requireIdentityManager_:function(){return true;},
+ getIdentityInstitutionId_:function(){return "INST-1";},
+ getIdentityMappingSheet_:function(){return {getDataRange:function(){return {getValues:function(){return incompleteMappingRows.map(r=>r.slice());}};}};}
+};
+vm.runInNewContext(extractBalancedFunction(user,"identityCompositeKey_")+String.fromCharCode(10)+extractBalancedFunction(user,"resolveInternalIdFromLegacy")+"this.resolve=resolveInternalIdFromLegacy;",incompleteResolverContext);
+assert.throws(()=>incompleteResolverContext.resolve({sistemaOrigen:"SACE",tipoEntidad:"estudiante",idOriginalLegado:"RNE-EMPTY"}),/IDENTITY_CONFIRMED_MAPPING_INCOMPLETE/);
+
+function runAccountingCrossReferenceResolverTests(source){
+ const headerStart=source.indexOf("const ACCOUNTING_IDENTITY_MAPPING_HEADERS_");
+ const headerEnd=source.indexOf(";",headerStart)+1;
+ assert.ok(headerStart>=0&&headerEnd>headerStart,"ACCOUNTING identity mapping schema exists");
+ const headerDeclaration=source.slice(headerStart,headerEnd);
+ const resolverRows=[
+  headers,
+  ["MAP-OK","SACE","estudiante","RNE-1","EXP-1","INST-1","hash","2026-11-10","1","CONFIRMADA","EXACTA","NO_CALIBRADA","ADMIN"],
+  ["MAP-PENDING","SACE","estudiante","RNE-PENDING","EXP-1","INST-1","hash","2026-11-10","1","PENDIENTE_REVISION","SIN_CONFIRMAR","NO_CALIBRADA","ADMIN"],
+  ["MAP-OTHER-INST","SACE","estudiante","RNE-OTHER","EXP-2","INST-2","hash","2026-11-10","1","CONFIRMADA","EXACTA","NO_CALIBRADA","ADMIN"],
+  ["MAP-EMPTY","SACE","estudiante","RNE-EMPTY","","INST-1","hash","2026-11-10","1","CONFIRMADA","EXACTA","NO_CALIBRADA","ADMIN"]
+ ];
+ const state={institution:"INST-1",sheetAvailable:true};
+ const sheet={
+  getRange:function(row,col,rowCount,colCount){return{getValues:function(){return resolverRows.slice(row-1,row-1+rowCount).map(r=>r.slice(col-1,col-1+colCount));}};},
+  getDataRange:function(){return{getValues:function(){return resolverRows.map(r=>r.slice());}};}
+ };
+ const ctx={
+  SPREADSHEET_ID:"LOCAL",
+  PropertiesService:{getScriptProperties:function(){return{getProperty:function(){return state.institution;}};}},
+  SpreadsheetApp:{openById:function(id){assert.equal(id,"LOCAL");return{getSheetByName:function(name){return state.sheetAvailable&&name==="CorrespondenciaIdentificadores"?sheet:null;}};}}
+ };
+ vm.runInNewContext(headerDeclaration+String.fromCharCode(10)+extractBalancedFunction(source,"resolveCrossReferenceIdentifier")+"this.resolve=resolveCrossReferenceIdentifier;",ctx);
+ const before=JSON.stringify(resolverRows);
+ const ok=ctx.resolve({sistemaOrigen:"SACE",tipoEntidad:"estudiante",idOriginalLegado:"RNE-1"});
+ assert.equal(ok.status,"success");assert.equal(ok.idMapeo,"MAP-OK");assert.equal(ok.idNuevoPlataforma,"EXP-1");assert.equal(ok.institucionId,"INST-1");
+ const pending=ctx.resolve({sistemaOrigen:"SACE",tipoEntidad:"estudiante",idOriginalLegado:"RNE-PENDING"});
+ assert.equal(pending.status,"pending_review");assert.equal(pending.code,"IDENTITY_REVIEW_REQUIRED");
+ const other=ctx.resolve({sistemaOrigen:"SACE",tipoEntidad:"estudiante",idOriginalLegado:"RNE-OTHER"});
+ assert.equal(other.status,"not_found","cross-institution mappings must not resolve");
+ assert.throws(()=>ctx.resolve({sistemaOrigen:"SACE",tipoEntidad:"estudiante",idOriginalLegado:"RNE-EMPTY"}),/IDENTITY_CONFIRMED_MAPPING_INCOMPLETE/);
+ resolverRows.push(resolverRows[1].slice());
+ assert.throws(()=>ctx.resolve({sistemaOrigen:"SACE",tipoEntidad:"estudiante",idOriginalLegado:"RNE-1"}),/IDENTITY_UNIQUENESS_VIOLATION/);
+ resolverRows.pop();
+ state.sheetAvailable=false;
+ assert.equal(ctx.resolve({sistemaOrigen:"SACE",tipoEntidad:"estudiante",idOriginalLegado:"RNE-1"}).code,"IDENTITY_MAPPING_NOT_INITIALIZED");
+ state.sheetAvailable=true;state.institution="";
+ assert.throws(()=>ctx.resolve({sistemaOrigen:"SACE",tipoEntidad:"estudiante",idOriginalLegado:"RNE-1"}),/IDENTITY_CONFIGURATION_REQUIRED/);
+ assert.equal(JSON.stringify(resolverRows),before,"cross-reference resolution is read-only");
+}
+runAccountingCrossReferenceResolverTests(accounting);
+console.log("TASK-068 resolver integrity: confirmed-target fail-closed, shared-sheet scope and insufficient classification passed.");

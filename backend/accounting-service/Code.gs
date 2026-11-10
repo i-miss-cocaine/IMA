@@ -15367,7 +15367,9 @@ function resolveCrossReferenceIdentifier(payload) {
  if(!rows.length) return {status:"not_found",code:"IDENTITY_MAPPING_NOT_FOUND"};
  if(rows.length!==1) throw new Error("IDENTITY_UNIQUENESS_VIOLATION.");
  if(String(rows[0][9])!=="CONFIRMADA") return {status:"pending_review",code:"IDENTITY_REVIEW_REQUIRED",estadoCorrespondencia:rows[0][9]};
- return {status:"success",idMapeo:rows[0][0],idNuevoPlataforma:rows[0][4],institucionId:institution};
+ const mapId=String(rows[0][0]||"").trim(), internalId=String(rows[0][4]||"").trim();
+ if(!mapId||!internalId) throw new Error("IDENTITY_CONFIRMED_MAPPING_INCOMPLETE: el registro confirmado carece de identificador interno.");
+ return {status:"success",idMapeo:mapId,idNuevoPlataforma:internalId,institucionId:institution};
 }
 // [REQ-EXP-010] [Fase 1: Registro y Expediente de Estudiantes] - Service backend endpoint (importDataWithColumnMapping) para la importación masiva de expedientes desde archivos CSV y XLSX.
 // [TASK-068] Resolver identidad no equivale a persistir entidad destino.

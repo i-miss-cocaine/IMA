@@ -188,3 +188,23 @@ Las lecturas fueron completas (92.668, 429.611 y 713.779 caracteres). El histori
 - El log confirma: `TASK-068 identity mapping contract: syntax, schemas, destination validation and conservative identity classification passed.`
 - La cobertura aprobada es local/contractual. No acredita persistencia del importador ni transporte HTTP real.
 - AUD-NG-378 permanece abierto por `DESTINATION_WRITER_NOT_CONFIGURED` y transporte interservicio sin completar. TASK-068 sigue En ejecución.
+
+
+## Revalidación técnica — sesión IMA-EXEC-20261110-0042Z-01 — C1.383
+
+**Baseline de continuidad:** C1.316. Los commits posteriores se conservan físicamente, pero no se aceptan como evidencia de continuidad.
+
+**Requisito original:** `pendientes/Dirección/Pendientes.md`, bloque `TASK-068`.
+
+**Revisión focal y correcciones:**
+1. USER, ACCOUNTING y ACADEMIC comparten el mismo `SPREADSHEET_ID`; la lectura del resolver ACCOUNTING consulta la misma hoja central y no constituye una segunda fuente de verdad.
+2. Se identificó que los resolvers USER y ACCOUNTING podían devolver `status: success` para una fila `CONFIRMADA` cuyo `idMapeo` o `idNuevoPlataforma` estuviera vacío por corrupción o edición manual. Se añadió rechazo fail-closed `IDENTITY_CONFIRMED_MAPPING_INCOMPLETE`, como seguimiento del hallazgo existente `AUD-NG-377`; no se crea un ID duplicado.
+3. La búsqueda sin candidatos no exponía una clasificación explícita. Se añadió `clasificacionGeneral: COINCIDENCIA_INSUFICIENTE` y el mensaje correspondiente en la interfaz de Secretaría.
+4. Se añadió prueba determinista directa de `resolveCrossReferenceIdentifier()` sobre la hoja compartida: resolución confirmada, pendiente, aislamiento institucional, duplicidad, hoja ausente, configuración ausente y destino incompleto. También se añadió la prueba del resolver USER ante destino incompleto.
+5. Se mantiene revisión humana, sin fusión automática de personas y con escritura delegada a los servicios propietarios.
+
+**Archivos de producto/prueba:** `backend/user-service/Code.gs`, `backend/accounting-service/Code.gs`, `js/secretary.js`, `tests/security/identity-mapping-contract.test.js`.
+
+**Estado de este checkpoint:** cambios preparados; CI de C1.383 pendiente. No se declara PASS anticipado.
+
+**Beta:** `BETA-FUNC-008` permanece pendiente de configuración/ejecución real entre despliegues; no bloquea el cierre local por §21.5.

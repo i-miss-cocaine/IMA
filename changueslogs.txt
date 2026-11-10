@@ -578,3 +578,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se invalida acct_role_ junto con user_role_/acct_state_ y se agregan invalidaciones a manageAccountState/registerUser(forceUpdate).
 - CI pendiente; C1.381 security success.
 - Checkpoint C1.382: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt.
+
+
+## C1.383 — IMA-EXEC-20261110-0042Z-01
+- Se revalida la iteración C1.316 de TASK-636; la tarea global permanece En ejecución y las pruebas de integración remota continúan en beta.
+- TASK-068: los resolvers USER y ACCOUNTING fallan cerrados ante correspondencias confirmadas incompletas.
+- TASK-068: la búsqueda expone COINCIDENCIA_INSUFICIENTE cuando no existen candidatos y Secretaría muestra el estado.
+- Se amplía el contrato local para probar directamente el resolver ACCOUNTING sobre la hoja compartida y los casos de institución, duplicidad, configuración y datos incompletos.
+- CI del commit C1.383 pendiente de verificación.

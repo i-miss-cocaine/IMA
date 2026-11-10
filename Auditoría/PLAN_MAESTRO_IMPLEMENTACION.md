@@ -2326,3 +2326,14 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - C1.380 introdujo acct_role_; Code Review detectó que no se eliminaba con invalidación ni tras todas las mutaciones de rol/estado.
 - Se amplía invalidateUserRoleCache y se invoca tras manageAccountState y registerUser(forceUpdate).
 - Fixtures VM para claves y caminos de mutación; CI pendiente. BETA-FUNC-020 Pendiente beta.
+
+
+## 10.67 Revalidación desde C1.316 — IMA-EXEC-20261110-0042Z-01
+
+- Se conserva C1.316 como último checkpoint válido. Los commits C1.317–C1.382 permanecen físicamente en la rama de trabajo, sin reset ni pérdida de cambios, pero no se aceptan como evidencia de continuidad.
+- Se auditó la iteración CI registrada en C1.316 para TASK-636. La iteración es válida; TASK-636 global sigue En ejecución.
+- Se revalida TASK-068, PM-01, P0, orden local 1, requisito original `pendientes/Dirección/Pendientes.md` / `TASK-068`.
+- Se corrigió el retorno de éxito para correspondencias confirmadas incompletas en USER y ACCOUNTING y se incorporó la clasificación explícita `COINCIDENCIA_INSUFICIENTE`.
+- Se amplió la prueba local para ejecutar directamente el resolver ACCOUNTING contra el esquema compartido.
+- Estado: En ejecución hasta verificar CI del commit C1.383. `BETA-FUNC-008` queda pendiente y no bloquea por §21.5.
+- Siguiente acción: verificar CI y cerrar TASK-068 solo con resultado real; después recalcular la siguiente tarea PM-01 mediante §6.1.

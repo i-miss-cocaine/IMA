@@ -639,3 +639,11 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - manageAccountState y registerUser(forceUpdate) invalidan tras mutar cuenta/rol.
 - Fixture VM cubre las claves y ambos caminos; CI pendiente.
 ===============================================================================
+
+
+### IMA-EXEC-20261110-0042Z-01 — continuidad y TASK-068
+- C1.316: iteración CI de TASK-636 auditada; workflow y ejecución registrados exitosos. TASK-636 global continúa En ejecución; integración remota pendiente no bloqueante por §21.5.
+- TASK-068 / PM-01: revalidación en curso desde baseline C1.316.
+- Seguimiento AUD-NG-377: resolvers USER/ACCOUNTING rechazan correspondencias CONFIRMADA incompletas; pruebas deterministas directas añadidas.
+- Clasificación COINCIDENCIA_INSUFICIENTE añadida a búsqueda y UI.
+- Estado de CI del commit C1.383: pendiente; no marcar completada hasta verificarlo.

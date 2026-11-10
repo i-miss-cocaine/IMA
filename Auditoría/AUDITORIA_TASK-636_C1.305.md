@@ -382,3 +382,16 @@ Endurecer las excepciones públicas de backend/academic-service/Code.gs mediante
 - **CI C1.381:** security run 42730707185 completed/success; logs confirman claims estrictos en seis servicios, rol obsoleto en cinco, secreto HMAC privado en seis y límites públicos ACADEMIC/métricas/cierre.
 - **CI C1.382:** pendiente tras publicar.
 - **Estado:** AUD-NG-001/002 en revalidación; el límite de revocación en servicios distintos de USER sigue sujeto al TTL máximo 60s y validación beta.
+
+
+## Revalidación de continuidad — sesión IMA-EXEC-20261110-0042Z-01 — C1.383
+
+**Alcance:** auditoría focal de la iteración registrada en C1.316; no se duplica la auditoría general de TASK-636.
+
+- El commit C1.316 es documental/checkpoint; la iteración CI registrada se apoya en `.github/workflows/task-service-backup-restore-contract.yml` y la ejecución 42659961195, concluida correctamente con Node.js 24.
+- La ejecución 42659818881 también concluyó correctamente para el contrato de respaldo/restauración.
+- La versión de prueba de C1.316 era un contrato estático. Los checkpoints C1.317–C1.382 no se aceptan como evidencia de continuidad; no se declaran PASS sus ejecuciones.
+- No se ejecutó una integración real con Apps Script/Sheets/Drive. Esas pruebas permanecen en beta y no bloquean por §21.5; no se declaran PASS.
+- No se encontró un defecto en el workflow ni en el resultado registrado de la iteración C1.316. La tarea global TASK-636 permanece **En ejecución** por hallazgos y verificaciones pendientes.
+
+**Resultado:** iteración C1.316 auditada; sin cambio de estado global de TASK-636.

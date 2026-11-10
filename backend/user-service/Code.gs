@@ -1785,7 +1785,9 @@ function resolveInternalIdFromLegacy(payload) {
   if(!found.length) return {status:"not_found",code:"IDENTITY_MAPPING_NOT_FOUND"};
   if(found.length!==1) throw new Error("IDENTITY_UNIQUENESS_VIOLATION: clave compuesta duplicada.");
   if(String(found[0][9])!=="CONFIRMADA") return {status:"pending_review",code:"IDENTITY_REVIEW_REQUIRED",estadoCorrespondencia:found[0][9],idMapeo:found[0][0]};
-  return {status:"success",idMapeo:found[0][0],idNuevoPlataforma:found[0][4],institucionId:institution};
+  const mapId=String(found[0][0]||"").trim(), internalId=String(found[0][4]||"").trim();
+  if(!mapId||!internalId) throw new Error("IDENTITY_CONFIRMED_MAPPING_INCOMPLETE: el registro confirmado carece de identificador interno.");
+  return {status:"success",idMapeo:mapId,idNuevoPlataforma:internalId,institucionId:institution};
 }
 function resolveLegacyIdFromInternal(payload) {
   requireIdentityManager_(payload);
@@ -1898,7 +1900,7 @@ function findPersonMatches(payload) {
       clasificacionIdentidad:match.clasificacionIdentidad,nivelConfianza:match.nivelConfianza,requiereRevisionHumana:true,
       fusionAutomaticaPermitida: false,evidencia:match.evidencia});
   });
-  return {status:"success",matches:matches};
+  return {status:"success",matches:matches,clasificacionGeneral:matches.length?"COINCIDENCIAS_REQUIEREN_REVISION":"COINCIDENCIA_INSUFICIENTE"};
 }
 function createPerson(payload) {
   const { nombres, apellidos, identificacion, emailContacto, telefonoContacto, observaciones } = payload || {};

@@ -762,3 +762,11 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - C1.381 security run 42730707185 completed/success.
 - C1.382 CI pendiente; BETA-FUNC-020 Pendiente.
 - TASK-636 En ejecución. Checkpoint C1.382: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt.
+
+
+### Seguimiento C1.383 — AUD-NG-377 (TASK-068)
+- Estado: En verificación en esta sesión.
+- Hallazgo focal: un registro marcado CONFIRMADA pero sin idMapeo o idNuevoPlataforma podía producir una respuesta de éxito en los resolvers.
+- Corrección: ambos resolvers rechazan la correspondencia incompleta con IDENTITY_CONFIRMED_MAPPING_INCOMPLETE.
+- Evidencia local añadida: resolver USER y resolver ACCOUNTING ejercitados con fixtures; CI del nuevo commit pendiente.
+- Se mantiene el mismo ID de hallazgo para evitar duplicación.
