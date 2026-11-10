@@ -2294,6 +2294,40 @@ function findAdmissionConversionEnrollment_(matData, userId, periodo, solicitudI
   return enrollment;
 }
 
+function findAdmissionConversionCharge_(cargoData, userId, periodo, solicitudId, matriculaId) {
+  const reference = "ADMISION|" + String(solicitudId || "").trim() + "|" + String(matriculaId || "").trim();
+  const concepto = "Matrícula Ordinaria " + String(periodo || "").trim();
+  const rows = (Array.isArray(cargoData) ? cargoData : []).slice(1);
+  const linked = rows.filter(function(row) {
+    return String(row[9] || "").trim() === reference;
+  });
+  if (linked.length > 1) throw new Error("ADMISSION_CHARGE_AMBIGUOUS");
+  if (linked.length === 1) {
+    const charge = linked[0];
+    if (String(charge[2] || "").trim() !== String(userId || "").trim() ||
+        String(charge[3] || "").trim() !== concepto) {
+      throw new Error("ADMISSION_CHARGE_CONFLICT");
+    }
+    const base = Number(charge[4]);
+    const discount = Number(charge[5]);
+    const total = Number(charge[6]);
+    if (!isFinite(base) || !isFinite(discount) || !isFinite(total) ||
+        base < 0 || discount < 0 || total !== Math.max(0, base - discount) ||
+        !String(charge[0] || "").trim() || !String(charge[7] || "").trim()) {
+      throw new Error("ADMISSION_CHARGE_CONFLICT");
+    }
+    return charge;
+  }
+  const activeLegacy = rows.filter(function(row) {
+    return String(row[2] || "").trim() === String(userId || "").trim() &&
+      String(row[3] || "").trim() === concepto &&
+      String(row[7] || "").trim() !== "Anulado";
+  });
+  if (activeLegacy.length > 1) throw new Error("ADMISSION_CHARGE_AMBIGUOUS");
+  if (activeLegacy.length === 1) throw new Error("ADMISSION_CHARGE_CONFLICT");
+  throw new Error("ADMISSION_CONVERSION_INCOMPLETE: charge missing");
+}
+
 function assertAdmissionConversionArtifactsComplete_(ss, solicitudRow, solicitudId, expedienteId) {
   const expSheet = ss && ss.getSheetByName("ExpedientesEstudiantes");
   const expRows = expSheet ? expSheet.getDataRange().getValues().slice(1) : [];
@@ -2317,6 +2351,12 @@ function assertAdmissionConversionArtifactsComplete_(ss, solicitudRow, solicitud
     matSheet.getDataRange().getValues(), studentIdentity.userId, periodo, solicitudId, grado
   );
 
+  const cargoSheet = ss.getSheetByName("CargosEstudiante");
+  if (!cargoSheet) throw new Error("ADMISSION_CONVERSION_INCOMPLETE: charge sheet missing");
+  const charge = findAdmissionConversionCharge_(
+    cargoSheet.getDataRange().getValues(), studentIdentity.userId, periodo, solicitudId, enrollment[0]
+  );
+
   const movementSheet = ss.getSheetByName("MovimientosEstudiante");
   if (!movementSheet) throw new Error("ADMISSION_CONVERSION_INCOMPLETE: movement sheet missing");
   const movement = findAdmissionConversionMovement_(
@@ -2332,6 +2372,7 @@ function assertAdmissionConversionArtifactsComplete_(ss, solicitudRow, solicitud
     expedienteId: String(expedienteId),
     userId: studentIdentity.userId,
     matriculaId: String(enrollment[0]),
+    cargoId: String(charge[0]),
     movimientoId: String(movement[0])
   };
 }
@@ -2569,6 +2610,7 @@ function convertAdmissionToStudent(payload) {
       periodo: anolectivo, tipo: "IngresoNuevo", observaciones: "Convertido desde solicitud " + solicitudId,
       skipLock: true,
       cargos: [{ concepto: "Matrícula Ordinaria " + anolectivo, montoBase: montoMatriculaBase, descuento: 0, estado: "Pendiente" }],
+      _chargeReference: "ADMISION|" + String(solicitudId).trim() + "|" + String(matriculaRealId).trim(),
       _rollbackActions: rollbackActions
     });
     if (!enrollRes || enrollRes.status !== "success" || !enrollRes.matriculaId) throw new Error("ENROLLMENT_CREATION_FAILED");
@@ -13134,7 +13176,7 @@ function generateMigrationReport(payload) {
 // Módulo de Matrícula
 // [REQ-EXP-009] [Requerimientos de Expansión y Desarrollo] - Registro de matrículas por período y vinculación con cargos financieros del estudiante.
 function registerStudentEnrollment(payload) {
-  const { userId, alumno, grado, seccion, periodo, tipo, becaDescuento, observaciones, cargos, _rollbackActions } = payload || {};
+  const { userId, alumno, grado, seccion, periodo, tipo, becaDescuento, observaciones, cargos, _rollbackActions, _chargeReference } = payload || {};
   if (!userId || !grado || !periodo) throw new Error("Datos de matrícula incompletos.");
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const matSheet = getOrCreateSheet(ss, "Matriculas");
@@ -13191,32 +13233,72 @@ function registerStudentEnrollment(payload) {
   }
 
   if (Array.isArray(cargos) && cargos.length > 0) {
-    const existingCargos = cargosSheet.getDataRange().getValues();
+    let existingCargos = cargosSheet.getDataRange().getValues();
+    if (_chargeReference) {
+      if (!existingCargos.length || String(existingCargos[0][0] || "").trim() !== "CargoID") {
+        throw new Error("STUDENT_CHARGE_SCHEMA_CONFLICT");
+      }
+      const referenceHeader = String(existingCargos[0][9] || "").trim();
+      if (referenceHeader && referenceHeader !== "ReferenciaOrigen") {
+        throw new Error("STUDENT_CHARGE_SCHEMA_CONFLICT");
+      }
+      if (!referenceHeader) {
+        cargosSheet.getRange(1, 10).setValue("ReferenciaOrigen");
+        existingCargos[0][9] = "ReferenciaOrigen";
+      }
+    }
     cargos.forEach(c => {
       const concepto = c.concepto || "Matrícula/Colegiatura";
-      const dup = existingCargos.find(r => String(r[2]).trim() === sUserId && String(r[3]).trim() === concepto && String(r[7]) !== "Anulado");
-      if (!dup) {
-        const cargoId = "CRG-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
-        const montoBase = parseFloat(c.montoBase || 0);
-        const descuento = parseFloat(c.descuento || becaDescuento || 0);
-        const montoFinal = Math.max(0, montoBase - descuento);
-        cargosSheet.appendRow([
-          cargoId,
-          now,
-          sUserId,
-          concepto,
-          montoBase,
-          descuento,
-          montoFinal,
-          c.estado || "Pendiente",
-          c.fechaVencimiento || ""
-        ]);
-        const insertedCargoRow = cargosSheet.getLastRow();
-        if (Array.isArray(_rollbackActions)) _rollbackActions.push(function() {
-          const current = cargosSheet.getDataRange().getValues();
-          if (insertedCargoRow <= current.length && String(current[insertedCargoRow - 1][0] || "") === String(cargoId)) cargosSheet.deleteRow(insertedCargoRow);
-        });
+      const montoBase = parseFloat(c.montoBase || 0);
+      const descuento = parseFloat(c.descuento || becaDescuento || 0);
+      const montoFinal = Math.max(0, montoBase - descuento);
+      if (_chargeReference) {
+        const referenceMatches = existingCargos.slice(1).filter(r => String(r[9] || "").trim() === String(_chargeReference).trim());
+        if (referenceMatches.length > 1) throw new Error("ADMISSION_CHARGE_AMBIGUOUS");
+        if (referenceMatches.length === 1) {
+          const existing = referenceMatches[0];
+          if (String(existing[2] || "").trim() !== sUserId ||
+              String(existing[3] || "").trim() !== concepto ||
+              Number(existing[4]) !== montoBase ||
+              Number(existing[5]) !== descuento ||
+              Number(existing[6]) !== montoFinal ||
+              !String(existing[0] || "").trim()) {
+            throw new Error("ADMISSION_CHARGE_CONFLICT");
+          }
+          return;
+        }
+        const activeDuplicates = existingCargos.slice(1).filter(r =>
+          String(r[2] || "").trim() === sUserId &&
+          String(r[3] || "").trim() === concepto &&
+          String(r[7] || "").trim() !== "Anulado"
+        );
+        if (activeDuplicates.length > 1) throw new Error("ADMISSION_CHARGE_AMBIGUOUS");
+        if (activeDuplicates.length === 1) throw new Error("ADMISSION_CHARGE_CONFLICT");
+      } else {
+        const dup = existingCargos.find(r => String(r[2]).trim() === sUserId && String(r[3]).trim() === concepto && String(r[7]) !== "Anulado");
+        if (dup) return;
       }
+
+      const cargoId = "CRG-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
+      cargosSheet.appendRow([
+        cargoId,
+        now,
+        sUserId,
+        concepto,
+        montoBase,
+        descuento,
+        montoFinal,
+        c.estado || "Pendiente",
+        c.fechaVencimiento || "",
+        _chargeReference || ""
+      ]);
+      existingCargos.push([cargoId, now, sUserId, concepto, montoBase, descuento, montoFinal,
+        c.estado || "Pendiente", c.fechaVencimiento || "", _chargeReference || ""]);
+      const insertedCargoRow = cargosSheet.getLastRow();
+      if (Array.isArray(_rollbackActions)) _rollbackActions.push(function() {
+        const current = cargosSheet.getDataRange().getValues();
+        if (insertedCargoRow <= current.length && String(current[insertedCargoRow - 1][0] || "") === String(cargoId)) cargosSheet.deleteRow(insertedCargoRow);
+      });
     });
   }
 
