@@ -1,0 +1,7 @@
+# Checkpoints IMA — Parte 0005
+
+Archivo rotativo activo a partir de C1.460.
+Continuidad histórica: `Checkpoints_Parte_0004.txt` conserva íntegramente los checkpoints anteriores hasta C1.459.
+Los checkpoints nuevos se anexan aquí en orden cronológico; no modificar ni trasladar entradas históricas de la parte anterior.
+Sesión de continuidad: `IMA-EXEC-20261110-1825Z-02`.
+Rama exclusiva: `NG_beta_0.0.0.1_work`.
