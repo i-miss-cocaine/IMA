@@ -215,6 +215,23 @@ assert.ok(submitHandler.includes("submitExamUnlocked_(payload)"), "submitExam ex
 assert.ok(submitHandler.includes("finally") && submitHandler.includes("releaseLock()"), "submitExam releases lock on success and failure");
 assert.ok(submitWorker.includes("previousAttempts >= allowedAttempts"), "attempt limit is checked inside the locked worker");
 assert.ok(submitWorker.includes("deliveriesSheet.appendRow"), "delivery persistence is inside the locked worker");
+const questionBankHandler = extractFunction(source, "manageQuestionBank");
+assert.ok(questionBankHandler.includes("withAuthorizedQuestionBankMutation_"), "manageQuestionBank delegates to the serialized authorization wrapper");
+const questionBankWrapper = extractFunction(source, "withAuthorizedQuestionBankMutation_");
+assert.ok(questionBankWrapper.includes("LockService.getScriptLock()") && questionBankWrapper.includes("tryLock(5000)"),
+  "question bank writes use a bounded script lock");
+assert.ok(questionBankWrapper.includes("getAuthorizedQuestionBankMutationContext_(payload)"),
+  "question bank identity, permission and ownership are resolved after lock acquisition");
+const questionBankContext = extractFunction(source, "getAuthorizedQuestionBankMutationContext_");
+assert.ok(questionBankContext.includes('validateRolePermission("manageQuestionBank", payload)'),
+  "question bank mutation revalidates its RBAC action");
+assert.ok(questionBankContext.includes('assertExamResourceOwnershipForScope_(ss, scope, "BANCO_PREGUNTA"'),
+  "question bank update/delete require institution and department ownership");
+assert.ok(questionBankContext.includes("departmentAllowed"),
+  "question bank creation is restricted to a department in the verified scope");
+const questionBankWorker = extractFunction(source, "manageQuestionBankUnlocked_");
+assert.ok(questionBankWorker.includes("ownershipSheet.appendRow") && questionBankWorker.includes('"BANCO_PREGUNTA"'),
+  "question bank creation persists ownership together with the question");
 const examMutationNames = ["updateExam", "updateExamStatus", "deleteExam"];
 examMutationNames.forEach(name => {
   const handler = extractFunction(source, name);
