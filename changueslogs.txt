@@ -994,3 +994,13 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - GitHub Actions run 42891200883 SUCCESS: contratos ACADEMIC, Department Scope, ACCOUNTING, ResourceOwnership ABAC y voucher client; sintaxis User/Academic/Accounting y `js/student.js` PASS.
 - Sin despliegue ni datos reales. TASK-153 sigue En ejecución; AUD-NG-386 abierto por el resto de requisitos.
 - Commits: f198730c1d8a37cc35a44a30c531b26ca6a5caaf; 9b0a53bfec2f984ce665c5ea9d0d282b7f207700.
+
+
+[2026-11-10] C1.458 — IMA-EXEC-20261110-1825Z-02 — TASK-153 / ACADEMIC: resolución segura de duplicados
+- `resolveAdmissionDuplicate` exige rol directivo verificado, revalida ownership de la solicitud bajo ScriptLock y valida que el expediente destino pertenezca al mismo departamento.
+- Protege contra doble resolución y expediente ya vinculado incompatible; agrupa las escrituras relacionadas en una operación de rango contiguo.
+- El historial de cambios se anexa bajo lock; si falla, retorna `historyRecorded:false` y emite evento estructurado de error.
+- Contratos locales de las tres decisiones, autorización, aislamiento departamental, repetición, lock contention y error de historial PASS.
+- GitHub Actions run 42892900933 SUCCESS; contratos de seguridad y sintaxis de servicios/cliente PASS.
+- Sin despliegue ni datos reales. TASK-153 sigue En ejecución; AUD-NG-386 abierto.
+- Commits: cc60ed6e50cf411ac65490ef8cca6ca9542eafa0; 89ca3edfc6cff41105c03fccc2d6a83188b2026c; 25bea9e9ed69460c1b2bf21ab2bf951f4a837ba5.
