@@ -788,3 +788,40 @@ Cerrar la carrera de filas obsoletas en updateExam, updateExamStatus y deleteExa
 - Rama base NG_beta_0.0.0.1 verificada sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
 - Historial de NG_beta_0.0.0.1_work actualizado mediante compare-and-swap fast-forward; no se usó force push.
 ===============================================================================
+===============================================================================
+## CHECKPOINT C1.479 — EXAM: autorización, ownership y consistencia del banco de preguntas
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.478.
+HEAD inicial: 05d735b15c7517dc24ebdffa2c1b37b977a2c931.
+Commits de implementación/pruebas: a995fc574bd5730e1986a3af28250d7128b240d9; 6a4a9ab1922140cb0d09bc96a3d0b12ad0acebda; 1056e5ec7a330dfa7365c0adc5fe4c54b52074e4; 1ca0e5813a896116d4e8445dcfcbc8a97ad4bd55.
+
+### Alcance
+Proteger las operaciones de alta, edición y baja de manageQuestionBank con identidad firmada, permiso RBAC, ownership institucional/departamental y serialización.
+
+### Cambios
+- manageQuestionBank delega en withAuthorizedQuestionBankMutation_: ScriptLock de 5 segundos y revalidación de contexto después de adquirirlo.
+- El contexto exige permiso manageQuestionBank, identidad firmada, ámbito departamental y esquema esperado de BancoPreguntas/ResourceOwnership.
+- Edición y baja requieren una única fila activa de BANCO_PREGUNTA dentro del ámbito autorizado. Registros legacy sin ownership o con ownership duplicado se rechazan de forma segura.
+- Las altas exigen departmentId explícito o un único departamento asignado; se registra ownership BANCO_PREGUNTA junto con la pregunta.
+- La baja lógica marca la pregunta Inactivo y desactiva ownership; si una escritura falla, restaura los estados previos.
+- Alta compensatoria vuelve a leer ambas hojas y elimina cualquier fila parcial, incluso si appendRow persistió antes de lanzar un error.
+- BETA-EXAM-033 registra validación desplegada de concurrencia, ownership y rollback.
+
+### Verificación local
+- Parseo V8 de backend/exam-service/Code.gs: PASS.
+- tests/security/exam-service-question-bank-security.test.js: PASS; alta/edición/baja, permisos, ámbito cruzado, legacy sin ownership, ownership duplicado, timeout, fila eliminada antes de adquirir lock y rollback tras persistencia parcial.
+- tests/security/exam-service-security-contract.test.js: PASS.
+- tests/security/exam-service-departmental-access.test.js: PASS.
+- Los tests se ejecutaron en harness V8 aislado con stubs de fs/path/vm/assert; no se ejecutó el runner Node nativo.
+- CI sin ejecuciones/status visibles asociados al commit consultado; no se declara PASS. Apps Script/Sheets real NOT RUN; BETA-EXAM-033 Pendiente beta.
+- Revisión del diff: cambios limitados al servicio EXAM y contratos de seguridad; sin otros archivos de producto modificados.
+
+### Riesgos y continuidad
+- Las preguntas legacy sin ownership único no pueden editarse ni eliminarse hasta que su propiedad departamental sea registrada de forma controlada; no se inventó un departamento para migrarlas.
+- La lectura getQuestionBank queda como superficie separada pendiente de inspección: hoy debe revisarse su filtrado por ownership/ámbito y exposición de respuestas correctas.
+- TASK-153 permanece En ejecución; AUD-NG-386 sigue abierto.
+- Rama base NG_beta_0.0.0.1 permanece sin cambios.
+===============================================================================

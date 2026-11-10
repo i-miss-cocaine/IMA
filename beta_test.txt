@@ -403,3 +403,12 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Resultado esperado:** no hay escrituras sobre índices de fila obsoletos; no se elimina físicamente un examen con entregas; el ownership se desactiva solo para baja lógica sin entregas; timeout falla cerrado con EXAM_MUTATION_LOCK_TIMEOUT.
 - **Estado:** Pendiente beta. Los contratos locales prueban relectura del contexto tras eliminación concurrente y timeout; Apps Script/Sheets real no ejecutado.
 - **Evidencia requerida:** build/commit, orden de solicitudes, estado final de examen/ownership, conteo de entregas y logs saneados.
+
+## BETA-EXAM-033 — AUD-NG-386 / EXAM: ownership y concurrencia del banco de preguntas
+- **Módulo/acción:** EXAM manageQuestionBank (alta, edición, baja).
+- **Objetivo:** validar en Apps Script/Sheets desplegado la revalidación de RBAC/identidad/ownership bajo ScriptLock y la consistencia de BancoPreguntas con ResourceOwnership.
+- **Precondiciones:** entorno beta aislado; BancoPreguntas y ResourceOwnership con esquemas esperados; docentes sintéticos de departamentos D1/D2; pregunta propia, ajena, legacy sin ownership y registro con ownership duplicado.
+- **Pasos:** crear pregunta en D1 y verificar una fila de ownership BANCO_PREGUNTA; editar/eliminar pregunta propia; intentar editar/eliminar recurso de D2 desde D1; intentar modificar registro legacy y ownership duplicado; provocar lock timeout; ejecutar dos operaciones simultáneas sobre la misma pregunta; inducir fallo de escritura para comprobar compensación.
+- **Resultado esperado:** solo se mutan recursos con ownership único dentro del ámbito; alta pregunta/ownership coherente; baja lógica sincronizada; timeout falla cerrado con QUESTION_BANK_LOCK_TIMEOUT; los errores no dejan filas parciales.
+- **Estado:** Pendiente beta. Los contratos locales cubren autorización, ownership, intercalación antes de lock y rollback parcial; Apps Script/Sheets real no ejecutado.
+- **Evidencia requerida:** build/commit, actores y preguntas sintéticas, orden de solicitudes, estado final de ambas hojas y logs saneados sin respuestas reales.

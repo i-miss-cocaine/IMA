@@ -835,3 +835,11 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - Runner Node nativo/CI NOT RUN; Apps Script/Sheets real pendiente. BETA-EXAM-032 Pendiente beta.
 - TASK-153 En ejecución; AUD-NG-386 abierto por otras rutas. Siguiente subalcance: manageQuestionBank.
 ===============================================================================
+
+===============================================================================
+### TASK-153 — seguimiento C1.479 / AUD-NG-386 EXAM
+- manageQuestionBank ahora ejecuta alta/edición/baja bajo ScriptLock y revalida permiso RBAC, identidad, ámbito y ownership institucional/departamental.
+- Alta registra ResourceOwnership BANCO_PREGUNTA; edición/baja requieren ownership único y activo. Baja lógica sincronizada; rollback de escritura parcial. Filas legacy sin ownership se rechazan de forma segura.
+- Parseo V8 y contratos locales question-bank-security, security-contract y departmental-access PASS en harness aislado. CI/runner Node nativo NOT RUN; Apps Script/Sheets real pendiente.
+- BETA-EXAM-033 Pendiente beta. TASK-153 En ejecución; AUD-NG-386 abierto.
+- Siguiente subalcance: revisar getQuestionBank para filtrado por ownership y protección de claves de respuesta.

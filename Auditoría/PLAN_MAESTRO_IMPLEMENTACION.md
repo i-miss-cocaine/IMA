@@ -3363,3 +3363,13 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Estado:** subalcance completado; TASK-153 En ejecución y AUD-NG-386 abierto por otras rutas EXAM.
 - **Commits:** 07e32f50b8b104bbdbc94c52b726b7b23168774f; 9ac430c38f350ff2305dbd103d36e9fa80f3b3ac.
 - **Siguiente subalcance:** inspeccionar manageQuestionBank como superficie separada de escritura de preguntas.
+
+### 10.132 TASK-153 / AUD-NG-386 — seguridad de escritura de manageQuestionBank (C1.479)
+
+- **Hallazgo:** manageQuestionBank confiaba únicamente en el permiso RBAC del dispatcher; no validaba ámbito/ownership del registro y leía índices antes de escribir sin lock. Alta de pregunta y ownership no eran una operación compensable.
+- **Corrección:** wrapper withAuthorizedQuestionBankMutation_ adquiere ScriptLock (5 s) y revalida permiso, identidad firmada, scope y ownership bajo lock. Alta exige departamento explícito o único asignado y crea ResourceOwnership BANCO_PREGUNTA. Edición/baja requieren ownership activo, único y dentro del ámbito. Baja lógica desactiva ambos registros con compensación; alta elimina filas parciales incluso si appendRow persiste y lanza error.
+- **Pruebas locales:** parseo V8 PASS; question-bank-security, security-contract y departmental-access PASS en harness V8 aislado. Cobertura de actor ajeno, departamento ajeno, legacy sin ownership, ownership duplicado, timeout, fila retirada antes de adquirir lock y rollback parcial.
+- **CI/runner Node nativo:** NOT RUN (sin status/workflow visible asociado al commit consultado). **Beta:** BETA-EXAM-033 Pendiente beta.
+- **Limitación:** las filas legacy sin ownership único quedan bloqueadas para edición/baja hasta registrar ownership correcto; no se asigna un departamento por inferencia.
+- **Siguiente subalcance:** auditar getQuestionBank, su filtro de ownership y la exposición de claves de respuesta.
+- **Commits:** a995fc574bd5730e1986a3af28250d7128b240d9; 6a4a9ab1922140cb0d09bc96a3d0b12ad0acebda; 1056e5ec7a330dfa7365c0adc5fe4c54b52074e4; 1ca0e5813a896116d4e8445dcfcbc8a97ad4bd55.

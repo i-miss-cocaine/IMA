@@ -1406,3 +1406,11 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - Parseo V8, departmental-access y security-contract PASS en harness V8 aislado. La prueba simula eliminación concurrente del objetivo antes de resolver contexto y demuestra que no se modifica la fila siguiente; timeout fail-closed PASS.
 - Runner Node nativo/CI NOT RUN; Apps Script/Sheets real NOT RUN. BETA-EXAM-032 Pendiente beta.
 ===============================================================================
+
+===============================================================================
+## C1.479 — EXAM: manageQuestionBank
+- Hallazgo: la función permitía escrituras sin validar ownership departamental y sin serializar lectura/mutación; RBAC del dispatcher por sí solo no delimitaba el registro.
+- Corrección: manageQuestionBank revalida permiso, identidad, scope y ownership BANCO_PREGUNTA bajo ScriptLock. Alta crea ownership; edición/baja exigen ownership único activo. Baja lógica y alta compensan fallos, incluso appendRow parcialmente persistido.
+- Pruebas locales V8 PASS: question-bank-security, security-contract y departmental-access; incluye actor/departamento ajeno, ownership ausente/duplicado, lock timeout, fila eliminada antes del lock y rollback parcial.
+- Limitación: filas legacy sin ownership único quedan denegadas hasta registrar propiedad institucional correcta. getQuestionBank requiere revisión separada por su filtrado y exposición de respuestas.
+- Runner Node nativo/CI NOT RUN; Apps Script/Sheets real NOT RUN. BETA-EXAM-033 Pendiente beta.
