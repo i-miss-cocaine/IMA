@@ -179,7 +179,9 @@ function makeStatusHarness(options = {}) {
   const result=valid.execute();
   assert.equal(result.status,"success");
   assert.equal(result.estadoTransaccion,"Completada");
-  assert.equal(result.esFirmadoValido,true);
+  assert.equal(result.esFirmadoValido,false,"a completed status is not proof of a cryptographically valid signature");
+  assert.equal(result.verificacionCriptograficaPendiente,true);
+  assert.equal(result.requiereValidacionAutenticadaProveedor,true);
   assert.equal(result.documentoId,"DOC-1");
   assert.equal("certificadoX509Ref" in result,false,"private certificate reference must not be exposed");
   assert.equal(valid.state.detailReads,1);
