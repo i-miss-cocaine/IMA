@@ -717,15 +717,17 @@ function getAllExams(payload) {
 function getExamQuestions(payload) {
   const examenId = String((payload && payload.examenId) || "").trim();
   if (!examenId) throw new Error("RESOURCE_NOT_AVAILABLE");
-  const context = getExamReadContext_(payload), { actor, ss, studentActor, profile, scope } = context;
+  const requestedStudentId = payload && (payload.studentId || payload.estudianteId || payload.userId);
+  const context = getExamReadContext_(payload, requestedStudentId);
+  const { actor, ss, studentActor, guardianActor, profile, scope } = context;
   const exams = getSheetOrThrow(ss, "Examenes").getDataRange().getValues();
   const matches = exams.slice(1).filter(row => String(row[0]) === examenId);
   if (matches.length !== 1) throw new Error("RESOURCE_NOT_AVAILABLE");
   const exam = matches[0];
-  if (studentActor) {
+  if (studentActor || guardianActor) {
     if (!isExamAssignedToStudent_(exam, profile) || !assertExamResourceOwnershipForScope_(ss, scope, "EXAMEN", examenId, "READ_QUESTIONS", payload).authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
     const deliveries = getSheetOrThrow(ss, "EntregasExamen").getDataRange().getValues().slice(1);
-    const hasOwnDelivery = deliveries.some(row => String(row[1]) === examenId && String(row[2]) === actor.userId);
+    const hasOwnDelivery = deliveries.some(row => String(row[1]) === examenId && String(row[2]) === profile.userId);
     if (String(exam[7] || "") !== "Activo" && !hasOwnDelivery) throw new Error("RESOURCE_NOT_AVAILABLE");
   } else {
     if (actor.role === "Profesor" && String(exam[8] || "").trim() !== actor.userId) throw new Error("RESOURCE_NOT_AVAILABLE");
@@ -1123,7 +1125,8 @@ function getExamStudentProfile_(ss, studentId) {
   const rows = getSheetOrThrow(ss, "Usuarios").getDataRange().getValues();
   const matches = rows.slice(1).filter(row => String(row[0] || "").trim() === id);
   if (matches.length !== 1) return null;
-  return { userId: id, grado: String(matches[0][2] || "").trim(), seccion: String(matches[0][3] || "").trim() };
+  return { userId: id, grado: String(matches[0][2] || "").trim(), seccion: String(matches[0][3] || "").trim(),
+    role: String(matches[0][6] || "Estudiante").trim() };
 }
 function isExamAssignedToStudent_(examRow, studentProfile) {
   if (!examRow || !studentProfile || !studentProfile.grado || !studentProfile.seccion) return false;
@@ -1151,33 +1154,60 @@ function hasExamOwnershipInInstitution_(ss, resourceId) {
     return matches.length === 1;
   } catch (_) { return false; }
 }
-function getExamReadContext_(payload) {
+function getVerifiedGuardianStudentIds_(ss, tutorUserId) {
+  const tutorId = String(tutorUserId || "").trim();
+  if (!tutorId) return [];
+  const statusAllowed = value => ["VERIFICADA", "ACTIVA", "APROBADA"].indexOf(String(value || "").trim().toUpperCase()) !== -1;
+  const expSheet = ss && ss.getSheetByName("ExpedientesEstudiantes");
+  const expRows = expSheet ? expSheet.getDataRange().getValues().slice(1) : [];
+  const expToUser = {};
+  expRows.forEach(row => { if (row[0]) expToUser[String(row[0]).trim()] = String(row[1] || row[0]).trim(); });
+  const familySheet = ss && ss.getSheetByName("RelacionesFamiliares");
+  const familyRows = familySheet ? familySheet.getDataRange().getValues().slice(1) : [];
+  let studentIds = familyRows.filter(row => String(row[2] || "").trim() === tutorId && statusAllowed(row[4]))
+    .map(row => expToUser[String(row[1] || "").trim()] || String(row[1] || "").trim()).filter(Boolean);
+  if (!studentIds.length) {
+    const legacySheet = ss && ss.getSheetByName("RelacionesEstudianteTutor");
+    const legacyRows = legacySheet ? legacySheet.getDataRange().getValues().slice(1) : [];
+    studentIds = legacyRows.filter(row => String(row[2] || "").trim() === tutorId && statusAllowed(row[9]))
+      .map(row => String(row[1] || "").trim()).filter(Boolean);
+  }
+  return Array.from(new Set(studentIds));
+}
+function getExamReadContext_(payload, requestedStudentId) {
   const actor = getVerifiedExamIdentity_(payload);
   if (!actor.authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID), role = String(actor.role || "").trim();
-  if (["Tutor", "Padre", "Responsable"].indexOf(role) !== -1) throw new Error("RESOURCE_NOT_AVAILABLE");
   const studentActor = role === "Estudiante" || role === "Alumno";
-  const profile = studentActor ? getExamStudentProfile_(ss, actor.userId) : null;
-  if (studentActor && !profile) throw new Error("RESOURCE_NOT_AVAILABLE");
-  const scope = getVerifiedExamDepartmentScope_(payload, ss, actor);
+  const guardianActor = ["Tutor", "Padre", "Responsable"].indexOf(role) !== -1;
+  const targetStudentId = studentActor ? actor.userId : (guardianActor ? String(requestedStudentId || "").trim() : "");
+  const profile = studentActor || guardianActor ? getExamStudentProfile_(ss, targetStudentId) : null;
+  if ((studentActor || guardianActor) && !profile) throw new Error("RESOURCE_NOT_AVAILABLE");
+  if (guardianActor && getVerifiedGuardianStudentIds_(ss, actor.userId).indexOf(targetStudentId) === -1) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
+  const scopeIdentity = studentActor || guardianActor
+    ? { authorized: true, userId: profile.userId, role: profile.role || "Estudiante" }
+    : actor;
+  const scope = getVerifiedExamDepartmentScope_(payload, ss, scopeIdentity);
   if (!scope.authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
-  return { actor, ss, role, studentActor, profile, scope };
+  return { actor, ss, role, studentActor, guardianActor, profile, scope };
 }
 
 // [TAREA-F4-P0-02] [Fase 4: Protección IDOR y ABAC] - Aislamiento estricto de evaluaciones por estudiante
 function getStudentExams(payload) {
-  const context = getExamReadContext_(payload), { actor, ss, studentActor, profile, scope } = context;
-  const targetId = studentActor ? actor.userId : String((payload && payload.userId) || "").trim();
-  const targetProfile = studentActor ? profile : getExamStudentProfile_(ss, targetId);
+  const requestedId = payload && (payload.studentId || payload.estudianteId || payload.userId);
+  const context = getExamReadContext_(payload, requestedId);
+  const { actor, ss, studentActor, guardianActor, profile, scope } = context;
+  const targetId = studentActor || guardianActor ? profile.userId : String(requestedId || "").trim();
+  const targetProfile = studentActor || guardianActor ? profile : getExamStudentProfile_(ss, targetId);
   if (!targetProfile) throw new Error("RESOURCE_NOT_AVAILABLE");
   const exams = getSheetOrThrow(ss, "Examenes").getDataRange().getValues().slice(1);
   const deliveries = getSheetOrThrow(ss, "EntregasExamen").getDataRange().getValues().slice(1);
   const data = exams.filter(exam => {
-    if (!isExamAssignedToStudent_(exam, targetProfile) || !assertExamResourceOwnershipForScope_(ss, scope, "EXAMEN", exam[0], "READ_STUDENT_EXAMS", payload).authorized) return false;
-    if (!studentActor) {
-      if (actor.role === "Profesor" && String(exam[8] || "").trim() !== actor.userId) return false;
-      if (!assertExamResourceOwnershipForScope_(ss, scope, "EXAMEN", exam[0], "READ_STUDENT_EXAMS", payload).authorized) return false;
-    }
+    if (!isExamAssignedToStudent_(exam, targetProfile) ||
+        !assertExamResourceOwnershipForScope_(ss, scope, "EXAMEN", exam[0], "READ_STUDENT_EXAMS", payload).authorized) return false;
+    if (!studentActor && !guardianActor && actor.role === "Profesor" && String(exam[8] || "").trim() !== actor.userId) return false;
     const delivery = deliveries.find(row => String(row[1]) === String(exam[0]) && String(row[2]) === targetId);
     return String(exam[7] || "") === "Activo" || !!delivery;
   }).map(exam => {
@@ -1194,7 +1224,13 @@ function getStudentExams(payload) {
 function getExamResult(payload) {
   const deliveryId = String((payload && payload.entregaExamenId) || "").trim();
   if (!deliveryId) throw new Error("RESOURCE_NOT_AVAILABLE");
-  const context = getExamReadContext_(payload), { actor, ss, studentActor, scope } = context;
+  const ssPreAuth = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const deliveryPreAuth = getSheetOrThrow(ssPreAuth, "EntregasExamen").getDataRange().getValues().slice(1)
+    .filter(row => String(row[0]) === deliveryId);
+  if (deliveryPreAuth.length !== 1) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const requestedStudentId = String(deliveryPreAuth[0][2] || "").trim();
+  const context = getExamReadContext_(payload, requestedStudentId);
+  const { actor, ss, studentActor, guardianActor, profile, scope } = context;
   const deliveries = getSheetOrThrow(ss, "EntregasExamen").getDataRange().getValues();
   const deliveryMatches = deliveries.slice(1).filter(row => String(row[0]) === deliveryId);
   if (deliveryMatches.length !== 1) throw new Error("RESOURCE_NOT_AVAILABLE");
@@ -1203,8 +1239,9 @@ function getExamResult(payload) {
   const examMatches = examRows.slice(1).filter(row => String(row[0]) === examId);
   if (examMatches.length !== 1) throw new Error("RESOURCE_NOT_AVAILABLE");
   const exam = examMatches[0];
-  if (studentActor) {
-    if (String(delivery[2] || "").trim() !== actor.userId || String(delivery[6] || "") === "Pendiente" || !assertExamResourceOwnershipForScope_(ss, scope, "EXAMEN", examId, "READ_RESULT", payload).authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
+  if (studentActor || guardianActor) {
+    if (String(delivery[2] || "").trim() !== profile.userId || String(delivery[6] || "") === "Pendiente" ||
+        !assertExamResourceOwnershipForScope_(ss, scope, "EXAMEN", examId, "READ_RESULT", payload).authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
   } else {
     if (actor.role === "Profesor" && String(exam[8] || "").trim() !== actor.userId) throw new Error("RESOURCE_NOT_AVAILABLE");
     if (!assertExamResourceOwnershipForScope_(ss, scope, "EXAMEN", examId, "READ_RESULT", payload).authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
