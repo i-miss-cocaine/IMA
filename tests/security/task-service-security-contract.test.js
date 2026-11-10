@@ -665,6 +665,14 @@ console.log("TASK-153 direct student submission and document ownership contract 
     "department-scoped staff cannot bypass the parent task ownership guard");
   assert.equal(staffChecks, 1);
   assert.equal(driveReads, 1);
+
+  const duplicateTaskContext = Object.assign({}, baseContext, {
+    getSheetOrThrow: () => ({ getDataRange: () => ({ getValues: () => [["ID"], taskRow, taskRow] }) })
+  });
+  vm.runInNewContext(extractFunction("readLegacyDocument") + String.fromCharCode(10) + "this.run = readLegacyDocument;", duplicateTaskContext);
+  assert.equal(duplicateTaskContext.run({ actorId:"STU-1", role:"Estudiante", fileId:"FILE-1" }).errorCode, "RESOURCE_NOT_FOUND",
+    "ambiguous parent task identifiers are denied");
+  assert.equal(driveReads, 1, "ambiguous task ownership is denied before Drive access");
 }
 {
   let driveFolderReads = 0;
