@@ -607,7 +607,7 @@ console.log("ACADEMIC admission charge attribution contract passed.");
 {
   let forwarded;
   const context={registerStudentEnrollmentInternal_:payload=>{forwarded=payload;return {status:"success"};}};
-  vm.runInNewContext(extractFunction("registerStudentEnrollment")+"\\nthis.run=registerStudentEnrollment;",context);
+  vm.runInNewContext(extractFunction("registerStudentEnrollment")+"\nthis.run=registerStudentEnrollment;",context);
   const result=context.run({
     userId:"STU-1",grado:"1",periodo:"2026",
     _chargeReference:"ADMISION|FORGED|MAT-1",
