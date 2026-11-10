@@ -4902,3 +4902,6 @@ TAREAS DERIVADAS — AUDITORÍA TASK-639 / C1.302
 - **Alcance/exclusiones:** entorno sandbox y datos sintéticos; no acceder ni modificar datos productivos; no alterar el catálogo departamental ni sustituir tareas F29/F37 existentes.
 - **Prioridad:** P0 / crítico. **Estado:** Bloqueada; registrada para PM-02, no elegible para ejecución.
 - **Informe principal:** `Auditoría/AUDITORIA_UNI-U01_TENANT_RUNTIME_C1.406.md` (AUD-NG-384).
+
+
+- **Avance C1.434:** TASK Service protege getSubmissionComments, addSubmissionComment y getSubmissionVersions mediante contexto de entrega/tarea derivado de sesión firmada y ResourceOwnership. Personal requiere propiedad y ámbito; estudiantes quedan limitados a su propia entrega; tutores a relaciones académicas verificadas; comentarios privados no se muestran a usuarios no staff y la autoría no se acepta desde el payload. Contrato sintético añadido; ejecución local y resultado CI pendientes de verificación. TASK-153 permanece En ejecución.
