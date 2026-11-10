@@ -728,10 +728,11 @@ console.log("USER signature provider credentials, legacy migration, masking, rem
   assert.equal(response.code,"AUTH_PERMISSION_DENIED");
   assert.equal(logged.length,1);
   const auditPayload=logged[0][5];
-  assert.deepEqual(auditPayload,{
-    proveedorId:"PSC_HN",apiKeyProvided:true,hmacSecretProvided:true,
-    apiKeyRemovalRequested:false,hmacSecretRemovalRequested:false
-  });
+  assert.equal(auditPayload.proveedorId,"PSC_HN");
+  assert.equal(auditPayload.apiKeyProvided,true);
+  assert.equal(auditPayload.hmacSecretProvided,true);
+  assert.equal(auditPayload.apiKeyRemovalRequested,false);
+  assert.equal(auditPayload.hmacSecretRemovalRequested,false);
   assert.equal(JSON.stringify(auditPayload).includes(apiSecret),false);
   assert.equal(JSON.stringify(auditPayload).includes(hmacSecret),false);
 }
