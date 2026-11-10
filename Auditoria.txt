@@ -821,3 +821,22 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - Se amplían pruebas de archivos en papelera, vacíos y extensión/MIME no permitidos; cliente usa el indicador y no URLs legacy.
 - CI final 42741228237 success. Los runs 42741028029 y 42741142611 fallaron por expectativas de fixtures, corregidas antes del run aprobado.
 - Sin prueba real Drive/Apps Script ni revocación de permisos históricos. TASK-153 continúa En ejecución.
+
+
+===============================================================================
+## AUD-NG-382 — MEDIO/P2 — Exclusión documental incorrecta de TASK-682 en la cola PM
+
+- **Tipo:** defecto documental/de planificación; no es un defecto de implementación.
+- **Origen:** selección PM-00 de C1.384 / sección 10.68 de Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md.
+- **Evidencia primaria:** en el baseline lógico C1.316, el árbol Git contiene pendientes/Otros/Pendientes.md con blob 35cbd51f1e0b2f91f18b46c94d38223338d5ccdf (1.649.288 bytes). El bloque TASK-682 está presente en líneas 8891–8902 y contiene prioridad ALTO/P1, origen AUD-NG-341, objetivo, archivos, dependencias y criterios de aceptación.
+- **Evidencia vigente:** en HEAD de partida 88f9163b47a18cd464d13bf5c827ac4b114768d0, el backlog canónico de Otros tiene blob 24347c3776521c930391f89e0430910554bf233b y conserva TASK-682 en línea 8909.
+- **Causa raíz:** se utilizó el blob ef47d232db3ed46317dc14f22b1cdf8f938e8405 de RECUPERACION/Pendientes_RECUPERADO.md como si fuera el backlog canónico de Otros. Que ese archivo recuperado no contenga TASK-682 no demuestra que el backlog departamental no lo contenga.
+- **Impacto:** una tarea de seguridad P1 con requisitos completos fue excluida de la cola ejecutable y etiquetada como artefacto sintético; la selección PM-01 perdió trazabilidad completa.
+- **Corrección:** la fila maestra TASK-682 se reclasifica PM-01 / Identidad, seguridad y gobierno de acceso / P1. La tarea permanece Pendiente. Se conserva la declaración histórica de 10.68 y se supersede mediante la entrada 10.75.
+- **Relación con TASK-153:** no hay dependencia obligatoria explícita TASK-682 → TASK-153 en el requisito original. TASK-153 mantiene prioridad P0; TASK-682 permanece como P1 de PM-01.
+- **Tareas derivadas:** ninguna nueva; se conserva el ID TASK-682 existente. No se duplica AUD-NG-341.
+- **Archivos de respaldo:** Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md SHA e432415966c248a3f67785439e3ff5483391e94e; pendientes/Otros/Pendientes.md SHA 24347c3776521c930391f89e0430910554bf233b; baseline C1.316 blob 35cbd51f1e0b2f91f18b46c94d38223338d5ccdf.
+- **Verificación:** revisión del árbol C1.316, lectura íntegra del blob canónico, localización del bloque TASK-682 y contraste con el blob actual. Corrección documental preparada en C1.400.
+- **Estado:** corregido en el plan maestro; el requisito TASK-682 continúa Pendiente para implementación posterior.
+- **Checkpoint:** C1.400 — Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice Auditoría/INDICE_CHECKPOINTS.md.
+===============================================================================

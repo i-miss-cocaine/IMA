@@ -3,11 +3,11 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.399**
-- Última sesión: `IMA-EXEC-20261110-0158Z-01`
+- Último checkpoint: **C1.400**
+- Última sesión: `IMA-EXEC-20261110-0253Z-01`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.399: **144463**
+- Caracteres del archivo activo tras C1.400: **150130**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 - Baseline lógico válido: **C1.316** (`31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`). C1.317–C1.382 se conservan, pero no se aceptan como evidencia de continuidad por corrección expresa del usuario.
@@ -222,3 +222,5 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.393 | IMA-EXEC-20261110-0158Z-01 | c9b0cb6524693087731c34d36645212aec21711a; CI local success | TASK-153 / PM-01 / P0 — endpoint autenticado de lectura de comprobantes privados | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.393 | 1770–1807 | C1.391 | HEAD C1.393 verificado; checkpoint y registros en commit documental siguiente |
 | C1.395 | IMA-EXEC-20261110-0158Z-01 | d972031231d8ebe8fbbf30e37379a4976508f49a; Department Scope Contract success | TASK-153 / PM-01 / P0 — integración de vista de comprobantes privados en portal estudiantil | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.395 | 1811–1847 | C1.393 | HEAD C1.395 verificado; checkpoint y registros en commit documental siguiente |
 | C1.399 | IMA-EXEC-20261110-0158Z-01 | 3996c0bfacaea278647a657e0c4c0dcf6fe60464; Department Scope Contract success (runs previos de fixtures corregidos) | TASK-153 / PM-01 / P0 — no exposición de enlaces legacy y errores opacos de lectura de archivos | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.399 | 1851–1887 | C1.395 | HEAD C1.398 verificado; checkpoint y registros en commit documental siguiente |
+
+| C1.400 | IMA-EXEC-20261110-0253Z-01 | Preparado para publicación; AUD-NG-382 corregido; TASK-153 sigue En ejecución | TASK-153 / PM-01 / P0 — auditoría C1.397–C1.398 y preimplementación; corrección de clasificación TASK-682 / PM-01 / P1 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.400 | 1892–1948 | C1.399 | Este commit; SHA se confirma tras publicación |

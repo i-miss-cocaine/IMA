@@ -1886,3 +1886,63 @@ Commit de cierre: este commit; SHA se confirmará externamente tras publicación
 - Siguiente trabajo: identificar fuente autoritativa para DepartamentoID de expedientes/documentos estudiantiles y diseñar migración fail-closed; la validación en Drive real queda condicionada a un deployment de prueba y fixtures privados controlados.
 - **HEAD C1.398 verificado:** 3996c0bfacaea278647a657e0c4c0dcf6fe60464.
 ===============================================================================
+
+
+===============================================================================
+## C1.400 — 2026-11-10 — IMA-EXEC-20261110-0253Z-01
+
+- **Baseline lógico válido:** C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a.
+- **Checkpoint anterior:** C1.399 — Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice Auditoría/INDICE_CHECKPOINTS.md.
+- **Repositorio:** i-miss-cocaine/IMA.
+- **Rama autorizada:** NG_beta_0.0.0.1_work. **HEAD de partida verificado:** 88f9163b47a18cd464d13bf5c827ac4b114768d0.
+- **Rama base protegida:** NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59; sin modificaciones.
+- **Tarea activa auditada:** TASK-153 — PM-01 / P0. Sigue En ejecución.
+- **Tarea reclasificada:** TASK-682 — PM-01 / P1. Sigue Pendiente; no se implementa en esta iteración.
+
+### Auditoría de la iteración anterior — TASK-153 / C1.397–C1.398
+- Commits revisados: C1.397 e382c9a614f2c77bc5107bc17598bc1ac4694360; C1.398 3996c0bfacaea278647a657e0c4c0dcf6fe60464.
+- CI Department Scope run 42741228237: completed/success sobre C1.398.
+- Dictamen: el incremento publicado cumple su alcance local; no se identificó defecto accionable ni razón para reabrir TASK-153. No se activa la excepción de dos commits de §19.2.1.
+- No ejecutados: browser automation, Apps Script real, Sheets/Drive reales ni descarga con fixture remoto; se conservan como límites beta.
+
+### Auditoría preimplementación — continuación TASK-153
+- Siguiente alcance: determinar la fuente autoritativa del DepartamentoID propietario para expedientes/documentos estudiantiles y diseñar migración fail-closed.
+- Esquema ExpedientesEstudiantes: 11 campos, sin DepartamentoID.
+- Esquema DocumentosEstudiante: 13 campos, con ExpedienteID/SolicitudID, sin DepartamentoID.
+- SolicitudesAdmision: 16 campos, sin DepartamentoID. Matriculas: 11 campos, sin DepartamentoID.
+- getStudentPersonIdForUser_ solo resuelve PersonaID. getVerifiedAcademicDepartmentScope_ devuelve ámbitos del actor, no la propiedad del recurso.
+- assertStudentExpedienteScopeAccess_ y assertStudentDocumentScopeAccess_ fallan cerrados si no resuelven DepartamentoID. USER usa CatalogoDepartamentos y ACADEMIC DepartamentosAcademicos; no se acreditó fuente única ni mapeo por grado/sección.
+- Dictamen: no existe evidencia suficiente para migrar propietario sin inferencia. No copiar el departamento del actor ni deducirlo de grado/sección. Se requiere fuente institucional autoritativa o asignación explícita aprobada y auditable. TASK-153 permanece En ejecución, sin nuevo código.
+
+### Hallazgo documental AUD-NG-382 — corrección de PM-00
+- La selección C1.384 afirmó que el backlog canónico de Otros estaba vacío en C1.316. Es incorrecto: el árbol C1.316 contiene pendientes/Otros/Pendientes.md, blob 35cbd51f1e0b2f91f18b46c94d38223338d5ccdf, 1.649.288 bytes, con TASK-682 en líneas 8891–8902.
+- El blob ef47d232db3ed46317dc14f22b1cdf8f938e8405 es RECUPERACION/Pendientes_RECUPERADO.md, no el backlog canónico. El blob actual de Otros es 24347c3776521c930391f89e0430910554bf233b.
+- TASK-682 tiene requisitos completos y prioridad P1; la fila maestra se reclasifica PM-01 / Identidad, seguridad y gobierno de acceso / P1. No hay dependencia obligatoria explícita TASK-682 → TASK-153; TASK-153 conserva P0.
+- Se conserva el historial C1.384 y se supersede únicamente su decisión sobre TASK-682. No se crea un ID de tarea nuevo.
+
+### Archivos modificados
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/AUDITORIA_FASE_41_PRUEBAS_INTEGRALES_DIGITALIZACION.md
+- Auditoria.txt
+- tareas_auditoria.txt
+- Auditoría/MapaDependencias.md
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Archivos/código no modificados
+- pendientes/Otros/Pendientes.md (requisito fuente intacto)
+- RECUPERACION/Pendientes_RECUPERADO.md (fuente histórica intacta)
+- Código de producto, pruebas, configuraciones y datos productivos: sin cambios.
+- No se ejecutaron pruebas nuevas de producto; solo verificaciones documentales/estructurales.
+
+### Verificaciones
+- HEAD de trabajo y HEAD base consultados antes de preparar cambios.
+- Blobs de respaldo registrados: Plan e432415966c248a3f67785439e3ff5483391e94e; FASE 41 961be16ed418b3079097eb6072caa47f619df72d; Auditoria.txt 68d45378c514c7de74401e609797c12d2bbf6e62; tareas_auditoria.txt a056ab229ac66e979ce0a922226bdad518073432; MapaDependencias 350ac4601f2787b3321ae91fb5d5653ab3124dd5; changueslogs 1aa889d79454cbf3fbf79dd1049b7ee40c2e0def; checkpoint original SHA se registra en el índice; índice original SHA se registra en el commit.
+- Backlog canónico baseline C1.316: 35cbd51f1e0b2f91f18b46c94d38223338d5ccdf. Backlog canónico vigente: 24347c3776521c930391f89e0430910554bf233b. Blob RECUPERACION no canónico: ef47d232db3ed46317dc14f22b1cdf8f938e8405.
+- Pruebas ejecutadas: validación de existencia del requisito, comparación de ruta/blob correcto, verificación de sustitución única de fila PM, conteo de caracteres del checkpoint y revisión de archivos preparados.
+- Pruebas no ejecutadas: test suites de producto, runtime Apps Script, browser automation, HTTP/E2E y Drive/Sheets reales; no se modificó código.
+- **Commit de cierre:** este commit; SHA a confirmar tras publicación consultando HEAD de GitHub.
+- **Siguiente acción concreta:** obtener confirmación de la fuente institucional autoritativa para DepartamentoID; después diseñar la migración histórica verificable y continuar TASK-153 en un commit separado.
+- **Ubicación exacta:** Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.400.
+===============================================================================

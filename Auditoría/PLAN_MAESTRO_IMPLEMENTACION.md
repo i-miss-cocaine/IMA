@@ -399,7 +399,7 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 | TASK-470 | Otros | 00 | PM-00 | Triage manual: metadato incompleto, ampliación o relación por resolver | P3 | — | No declaradas en el bloque extraído | P3 — PRIORIDAD BAJA | `pendientes/Otros/Pendientes.md` |
 | TASK-641 | Otros | 00 | PM-00 | Triage manual: metadato incompleto, ampliación o relación por resolver | P1 | — | No declaradas en el bloque extraído | Reparar y verificar el precache del Service Worker | `pendientes/Otros/Pendientes.md` |
 | TASK-680 | Otros | 00 | PM-00 | Triage manual: metadato incompleto, ampliación o relación por resolver | CRÍTICO | — | F8-Task19, F8-Task20, F8-Task22; configuración de Drive y propiedades. - Aceptación: archivo existe y se abre por ID real; registro/historial persistidos; permisos de Drive/hojas comprobados; segunda ejecución no duplica | Implementar aprovisionamiento real y verificable de espacios funcionales | `pendientes/Otros/Pendientes.md` |
-| TASK-682 | Otros | 00 | PM-00 | Triage manual: metadato incompleto, ampliación o relación por resolver | No explícita | — | catálogo de roles/responsabilidades, matriz de permisos, asignaciones de ámbito y auditoría. - Aceptación: un usuario puede tener dos o más roles vigentes en una sesión; cada acción se autoriza con rol/ámbito correcto; a | Soportar múltiples roles simultáneos y ámbitos independientes por rol | `pendientes/Otros/Pendientes.md` |
+| TASK-682 | Otros | 01 | PM-01 | Identidad, seguridad y gobierno de acceso | P1 | — | catálogo de roles/responsabilidades, matriz de permisos, asignaciones de ámbito y auditoría. - Aceptación: un usuario puede tener dos o más roles vigentes en una sesión; cada acción se autoriza con rol/ámbito correcto; a | Soportar múltiples roles simultáneos y ámbitos independientes por rol | `pendientes/Otros/Pendientes.md` |
 | TASK-639 | Secretaría | 00 | PM-00 | Triage manual: metadato incompleto, ampliación o relación por resolver | P2 | — | TASK-637 y TASK-638. | Verificar duplicaciones, símbolos globales y ciclos | `pendientes/Secretaria/Pendientes.md` |
 | AUD-NG-033 | Contabilidad | 01 | PM-01 | Identidad, seguridad y gobierno de acceso | No explícita | — | recordAccountingJournalEntry, verifyAccountingIntegrity, approvePurchaseOrder, createPurchaseOrder, validateRolePermission, AsientosContables, OrdenesCompra | Validar importes contables y vincular las aprobaciones de compra con la identidad verificada | `pendientes/Contabilidad/Pendientes.md` |
 | AUD-NG-044 | Contabilidad | 01 | PM-01 | Identidad, seguridad y gobierno de acceso | No explícita | — | validateRolePermission, doPost, _verifiedUserId, _verifiedRole, approvePurchaseOrder, OrdenesCompra.AprobadoPor, bitácora de estados | Atribuir aprobaciones y transiciones a la identidad autenticada del usuario | `pendientes/Contabilidad/Pendientes.md` |
@@ -2423,3 +2423,41 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - **CI:** Department Scope run 42741228237 completed/success; incluye suites de ámbito, Academic, Accounting, cliente y node --check. Los runs 42741028029 y 42741142611 fallaron por fixtures/expectativas, corregidos antes del PASS final.
 - **Límites:** no se revocan enlaces ya públicos en Drive; falta prueba real Apps Script/Drive y browser; no existe aún UI tutor/personal. Esquema departamental estudiantil y demás controles globales pendientes.
 - **Siguiente acción:** determinar la fuente autoritativa para DepartamentoID y plan de migración fail-closed de expedientes/documentos estudiantiles; preparar deployment/fixtures de integración para Drive.
+
+
+## 10.75 Corrección de clasificación TASK-682 y revalidación de continuidad — IMA-EXEC-20261110-0253Z-01
+
+### Corrección documental AUD-NG-382
+- La decisión de la sección 10.68 que excluyó TASK-682 por supuesta ausencia del requisito no es válida. En el baseline lógico C1.316, el archivo canónico pendientes/Otros/Pendientes.md tiene blob 35cbd51f1e0b2f91f18b46c94d38223338d5ccdf, 1.649.288 bytes, y contiene TASK-682 en líneas 8891–8902.
+- En el HEAD de esta sesión, el mismo backlog canónico conserva el requisito en blob 24347c3776521c930391f89e0430910554bf233b, línea 8909. Incluye origen AUD-NG-341, prioridad ALTO/P1, objetivo, módulos afectados, dependencias y criterios de aceptación.
+- El blob ef47d232db3ed46317dc14f22b1cdf8f938e8405 corresponde a RECUPERACION/Pendientes_RECUPERADO.md, no al backlog canónico de Otros. Su ausencia de TASK-682 no justifica excluir el registro que sí está en el backlog departamental.
+- Se corrige la fila maestra de TASK-682: PM-00 → PM-01; prioridad P1; subflujo Identidad, seguridad y gobierno de acceso. La tarea permanece Pendiente; no se marca En ejecución ni Completada.
+- Los cuadros 2.2 y 2.3 conservan sus recuentos como distribución inicial histórica; no se reescriben retroactivamente por esta reclasificación puntual.
+- No se identifica TASK-682 como dependencia obligatoria explícita de TASK-153: el requisito original de TASK-153 declara una dependencia general del sistema de usuarios/departamentos/roles/propiedad, pero no referencia TASK-682. El catálogo de roles, ROLE_PERMISSIONS, AsignacionesAmbitosRoles y la bitácora ya existen. TASK-682 es una capacidad P1 relacionada, no una puerta obligatoria demostrada para el control perimetral P0 de TASK-153.
+- TASK-153 conserva prioridad P0 y permanece como tarea activa. TASK-682 queda en PM-01 como tarea P1 pendiente. Esta corrección supersede únicamente la exclusión de TASK-682 registrada en 10.68; no declara cerrado todo el triage PM-00.
+
+### Auditoría de la iteración anterior — TASK-153 / C1.397–C1.398
+- Se revisaron los commits C1.397 e382c9a614f2c77bc5107bc17598bc1ac4694360 y C1.398 3996c0bfacaea278647a657e0c4c0dcf6fe60464.
+- C1.397 retira la URL de Drive de getPaymentVouchers, expone solo tieneComprobante y normaliza el acceso no autorizado a RESOURCE_NOT_FOUND; el cliente estudiantil deja de consumir comprobanteUrl.
+- C1.398 corrige la expectativa del contrato para que el acceso interdepartamental también devuelva RESOURCE_NOT_FOUND. CI Department Scope run 42741228237 terminó completed/success sobre C1.398.
+- Dictamen de continuidad: el incremento publicado cumple su alcance local; no se encontró defecto accionable que requiera reabrirlo. Los límites de Drive/Apps Script real y browser automation siguen correctamente declarados como no ejecutados. No se activa el flujo excepcional 19.2.1 de dos commits.
+
+### Auditoría preimplementación — continuación TASK-153
+- Alcance inmediato heredado de C1.399: determinar la fuente autoritativa de DepartamentoID para expedientes/documentos estudiantiles y diseñar una migración fail-closed.
+- ExpedientesEstudiantes contiene 11 campos y no declara DepartamentoID.
+- DocumentosEstudiante contiene 13 campos, con ExpedienteID/SolicitudID, y no declara DepartamentoID.
+- SolicitudesAdmision tampoco declara DepartamentoID. Matriculas se escribe con once campos (MatriculaID, Fecha, UserId, Alumno, Grado, Seccion, Periodo, Tipo, Estado, BecaDescuento y Observaciones), sin DepartamentoID.
+- getStudentPersonIdForUser_ resuelve PersonaID desde Usuarios; no determina el departamento propietario del expediente. getVerifiedAcademicDepartmentScope_ devuelve los departamentos autorizados al actor, no la propiedad del recurso.
+- assertStudentExpedienteScopeAccess_ exige una columna DepartamentoID para personal departamental y devuelve RESOURCE_DEPARTMENT_UNRESOLVED cuando falta. assertStudentDocumentScopeAccess_ hereda el propietario del expediente vinculado o exige DepartamentoID directo; también falla cerrado si no puede resolverlo.
+- El Mapa de Dependencias documenta dos catálogos no reconciliados: USER usa CatalogoDepartamentos y ACADEMIC usa DepartamentosAcademicos. No se encontró relación autoritativa entre grado/sección/matrícula y departamento propietario.
+- Dictamen: no hay fuente de verdad suficiente para asignar DepartamentoID a los registros históricos sin inferencia. No se debe copiar el departamento del actor ni deducirlo de grado/sección. La siguiente implementación de TASK-153 queda detenida hasta definir una fuente institucional verificable o una asignación explícita aprobada y auditable. Los registros no resueltos deben continuar fallando cerrados.
+- No se modificó código ni datos. No se ejecutaron pruebas nuevas de producto en esta sesión.
+
+### Estado y siguiente acción
+- Única corrección ejecutada en esta iteración: reclasificación documental de TASK-682 y rectificación de su exclusión en la selección PM-00.
+- TASK-153 permanece En ejecución, sin nuevo incremento funcional en este commit.
+- Próxima acción: obtener/confirmar la fuente institucional autoritativa del departamento propietario de expedientes estudiantiles; después diseñar el mapeo histórico verificable y continuar TASK-153 en una iteración/commit independiente.
+- Informe principal reutilizado: Auditoría/AUDITORIA_FASE_41_PRUEBAS_INTEGRALES_DIGITALIZACION.md. No se crea un informe completo duplicado.
+- Checkpoint: C1.400; índice central Auditoría/INDICE_CHECKPOINTS.md.
+- HEAD de partida: 88f9163b47a18cd464d13bf5c827ac4b114768d0. Rama base: 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios.
+- Commit de cierre: este commit; SHA a confirmar consultando HEAD después de publicar.

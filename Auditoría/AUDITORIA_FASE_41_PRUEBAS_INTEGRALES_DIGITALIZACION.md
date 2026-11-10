@@ -309,3 +309,24 @@ La plataforma cuenta con un excelente control de concurrencia para identificador
 - CI final Department Scope run 42741228237 completed/success; incluye contratos de ámbito, Academic, Accounting, cliente estudiantil y node --check js/student.js.
 - Runs 42741028029 y 42741142611 fallaron por expectativas de fixtures; ambas causas se corrigieron y no se cuentan como PASS.
 - Sin integración real Drive/Apps Script ni browser automation. Permisos históricos, esquemas departamentales estudiantiles y criterios globales siguen pendientes. Se conserva F41-08/E2E-41-09 sin duplicación.
+
+
+## Revisión C1.400 — continuidad y preimplementación TASK-153 — IMA-EXEC-20261110-0253Z-01
+
+### Auditoría de la iteración anterior (C1.397–C1.398)
+- Commits revisados: C1.397 e382c9a614f2c77bc5107bc17598bc1ac4694360 y C1.398 3996c0bfacaea278647a657e0c4c0dcf6fe60464.
+- C1.397 retira comprobanteUrl del resultado de listado, expone tieneComprobante, devuelve RESOURCE_NOT_FOUND para acceso no autorizado y actualiza la UI estudiantil para solicitar el archivo por el endpoint autenticado.
+- C1.398 cambia la expectativa del contrato de acceso interdepartamental a RESOURCE_NOT_FOUND. CI Department Scope run 42741228237: completed/success sobre C1.398.
+- No se detectó incumplimiento de implementación en el incremento publicado. No procede reabrir TASK-153 por este incremento ni activar §19.2.1. No se ejecutaron Apps Script/Drive reales ni browser automation; se conservan como límites beta.
+
+### Auditoría preimplementación de la siguiente parte de TASK-153
+- El trabajo siguiente indicado por C1.399 es resolver la propiedad departamental de ExpedientesEstudiantes y DocumentosEstudiante antes de migrar registros.
+- El esquema vigente de ExpedientesEstudiantes no tiene DepartamentoID. El esquema de DocumentosEstudiante tampoco; se relaciona por ExpedienteID o SolicitudID. SolicitudesAdmision y Matriculas tampoco declaran DepartamentoID.
+- getStudentPersonIdForUser_ enlaza Usuario con Persona, no con departamento. getVerifiedAcademicDepartmentScope_ resuelve los ámbitos del actor, no el propietario de cada recurso.
+- assertStudentExpedienteScopeAccess_ y assertStudentDocumentScopeAccess_ fallan cerrados con RESOURCE_DEPARTMENT_UNRESOLVED cuando no pueden resolverlo; no debe relajarse ese comportamiento.
+- El Mapa de Dependencias registra divergencia entre CatalogoDepartamentos (USER) y DepartamentosAcademicos (ACADEMIC), sin fuente única demostrada ni regla autoritativa de asignación desde grado/sección/matrícula.
+- Resultado: la migración histórica no puede ejecutarse de forma segura con la evidencia disponible. No inferir propiedad desde el rol del solicitante, el departamento del actor, el grado o la sección. Se requiere una fuente institucional autoritativa o una asignación explícita aprobada y auditable antes de modificar datos.
+
+### Hallazgo documental relacionado
+- AUD-NG-382 se registra en Auditoria.txt: la exclusión PM-00 de TASK-682 en 10.68 utilizó el blob de RECUPERACION como si fuera el backlog canónico. El backlog canónico de Otros en C1.316 sí contenía el requisito completo (blob 35cbd51f1e0b2f91f18b46c94d38223338d5ccdf, líneas 8891–8902). La fila maestra se reclasifica a PM-01/P1; TASK-682 permanece Pendiente.
+- Esta corrección es documental y no genera un ID de tarea nuevo. El informe F8-TASK16 y la ficha existente TASK-682 se reutilizan.

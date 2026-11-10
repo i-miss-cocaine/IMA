@@ -4938,3 +4938,13 @@ Alcance estático satisfecho; sin cambios de código. Hallazgos AUD-NG-374..376 
 - Configuración requerida fuera de Git: `USER_SERVICE_URL` en ACCOUNTING; secreto aleatorio `IMA_INTERSERVICE_HMAC_SECRET` en Script Properties de los servicios participantes; `IMA_INSTITUTION_ID` en los proyectos aislados; deployments de prueba y Spreadsheet fixtures.
 - El fallback de `getAuthTokenSecret` basado en ID de spreadsheet + constante no se acepta como secreto de servicio. Los locks de proyectos independientes no coordinan escrituras concurrentes sobre una hoja compartida.
 - Hasta aprobar este contrato, la importación permanece fail-closed y `DESTINATION_WRITER_NOT_CONFIGURED`; AUD-NG-378 abierto. C1.327 documenta dependencia/configuración, no cambia el grafo de dependencias de tareas PM.
+
+
+## C1.400 — Corrección de clasificación TASK-682 y auditoría de propiedad estudiantil
+
+- TASK-682 existe en el backlog canónico de Otros desde el baseline lógico C1.316: blob 35cbd51f1e0b2f91f18b46c94d38223338d5ccdf, líneas 8891–8902. La fuente vigente es blob 24347c3776521c930391f89e0430910554bf233b, línea 8909.
+- Se reclasifica TASK-682 de PM-00 a PM-01/P1; su alcance es identidad, seguridad, roles múltiples y ámbitos independientes. No se crea tarea duplicada; permanece Pendiente.
+- El requisito TASK-153 no declara TASK-682 como prerrequisito obligatorio. TASK-153 conserva P0 y estado En ejecución.
+- ExpedientesEstudiantes, DocumentosEstudiante, SolicitudesAdmision y Matriculas no declaran DepartamentoID en sus esquemas vigentes. La asignación de ámbitos representa el ámbito del actor, no la propiedad del recurso.
+- USER mantiene CatalogoDepartamentos y ACADEMIC DepartamentosAcademicos sin fuente única demostrada. No inferir el propietario desde grado/sección ni desde el rol del actor. Los validadores existentes continúan fallando cerrado cuando no se resuelve el propietario.
+- AUD-NG-382: defecto documental de clasificación/exclusión de TASK-682. Checkpoint C1.400.

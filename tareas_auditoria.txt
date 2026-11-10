@@ -701,3 +701,11 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - Pruebas adicionales: no exposición URL, no enumeración IDOR/interdepartamental, archivo en papelera, archivo vacío y MIME/extensión inválido.
 - CI final Department Scope 42741228237 success; incluye contratos de ámbito, Academic, Accounting, cliente y sintaxis JS.
 - Los dos runs previos fallaron por fixtures/expectativas y fueron corregidos. Permisos Drive históricos y prueba E2E real siguen pendientes.
+
+
+### Corrección de selección PM-00 — C1.400 — IMA-EXEC-20261110-0253Z-01
+- Se rectifica la selección C1.384: la afirmación de que pendientes/Otros/Pendientes.md estaba vacío en C1.316 es falsa. El árbol de C1.316 contiene el archivo con blob 35cbd51f1e0b2f91f18b46c94d38223338d5ccdf, 1.649.288 bytes; TASK-682 aparece en líneas 8891–8902.
+- El blob ef47d232db3ed46317dc14f22b1cdf8f938e8405 pertenece a RECUPERACION/Pendientes_RECUPERADO.md y no sustituye la consulta del backlog canónico de Otros.
+- TASK-682 tiene requisito completo, origen AUD-NG-341 y prioridad P1. Se reclasifica a PM-01 / Identidad, seguridad y gobierno de acceso. Sigue Pendiente; no se crea un ID duplicado ni se inicia implementación.
+- No existe dependencia obligatoria TASK-682 → TASK-153 declarada en el requisito original. TASK-153 P0 conserva prioridad de selección.
+- Hallazgo documental AUD-NG-382; no genera tarea nueva. Checkpoint C1.400 en Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt, índice Auditoría/INDICE_CHECKPOINTS.md.

@@ -641,3 +641,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se prueban IDOR, archivos en papelera, vacíos y MIME/extensión inválidos.
 - CI final 42741228237 — success. Runs 42741028029 y 42741142611 fallaron por fixtures/expectativas corregidas antes del PASS final.
 - No se revocaron permisos de archivos históricos ni se ejecutó integración real Drive/Apps Script. TASK-153 sigue En ejecución.
+
+
+[2026-11-10] C1.400 — Corrección de clasificación PM-00 y auditoría previa TASK-153
+- Se rectifica la exclusión de TASK-682: el backlog canónico de Otros en C1.316 sí contenía el requisito completo (blob 35cbd51f1e0b2f91f18b46c94d38223338d5ccdf, líneas 8891–8902). El blob ef47d232db3ed46317dc14f22b1cdf8f938e8405 corresponde a RECUPERACION/Pendientes_RECUPERADO.md, no al backlog canónico.
+- TASK-682 se reclasifica PM-01/P1 y permanece Pendiente. No se duplica su ID ni se implementa en esta iteración.
+- Auditoría de continuidad TASK-153 C1.397–C1.398: sin defecto accionable; CI 42741228237 success. No se activa §19.2.1.
+- Auditoría preimplementación: no hay fuente autoritativa de DepartamentoID en ExpedientesEstudiantes, DocumentosEstudiante, SolicitudesAdmision o Matriculas; se mantiene el fail-closed. No se modificó código ni datos.
+- Hallazgo documental AUD-NG-382. Informe principal FASE 41 actualizado; checkpoint C1.400 en Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice Auditoría/INDICE_CHECKPOINTS.md.
