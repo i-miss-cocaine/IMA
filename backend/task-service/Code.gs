@@ -2140,7 +2140,8 @@ function updatePost(payload) {
 function deletePost(payload) {
  const role=payload&&payload._verifiedRole,uid=payload&&payload._verifiedUserId,id=payload&&payload.postId;if(!uid||!id)throw new Error("Identidad y postId requeridos.");
  const sh=getOrCreateSheet(SpreadsheetApp.openById(SPREADSHEET_ID),"PublicacionesAnuncios"),data=sh.getDataRange().getValues(),i=data.findIndex(r=>String(r[0]).trim()===String(id).trim());if(i<1)throw new Error("Publicación no encontrada.");const row=data[i];
- if(!isTaskServiceAdministrativeRole(role)){if(role!=="Profesor"||String(row[5]).trim()!==String(uid).trim())throw new Error("La publicación no pertenece al docente.");assertTaskServiceClassroomAccess(payload,row[1]);}
+ if(!isTaskServiceAdministrativeRole(role)&&(role!=="Profesor"||String(row[5]).trim()!==String(uid).trim()))throw new Error("La publicación no pertenece al docente.");
+ assertTaskServiceClassroomAccess(payload,row[1]);
  sh.getRange(i+1,13).setValue("Eliminado");return {status:"success",message:"Publicación eliminada."};
 }
 function getStudyMaterials(payload) {
@@ -2175,8 +2176,10 @@ function getStudyMaterials(payload) {
 }
 function createStudyMaterial(payload) {
  const role=payload&&payload._verifiedRole,uid=payload&&payload._verifiedUserId,{aulaId,titulo,descripcion,tipoRecurso,parcial,unidad,tema,archivoUrl,driveId}=payload||{},classId=aulaId||"General";
- if(!uid||!titulo||!archivoUrl)throw new Error("Identidad, título y archivo obligatorios.");if(role==="Profesor")assertTaskServiceClassroomAccess(payload,classId);else if(!isTaskServiceAdministrativeRole(role))throw new Error("Acceso denegado.");
- if(classId==="General"&&!isTaskServiceAdministrativeRole(role))throw new Error("Solo administración puede publicar materiales generales.");if(driveId){const file=DriveApp.getFileById(extractTaskServiceFileId(driveId));if(file.isTrashed())throw new Error("Archivo eliminado.");}
+ if(!uid||!titulo||!archivoUrl)throw new Error("Identidad, título y archivo obligatorios.");
+ if(role==="Profesor"||isTaskServiceAdministrativeRole(role))assertTaskServiceClassroomAccess(payload,classId);else throw new Error("Acceso denegado.");
+ if(classId==="General"&&!isTaskServiceAdministrativeRole(role))throw new Error("Solo administración puede publicar materiales generales.");
+ if(driveId){const file=DriveApp.getFileById(extractTaskServiceFileId(driveId));if(file.isTrashed())throw new Error("Archivo eliminado.");}
  const sh=getOrCreateSheet(SpreadsheetApp.openById(SPREADSHEET_ID),"MaterialesEducativos");if(sh.getLastRow()===0)sh.appendRow(["ID","AulaID","Titulo","Descripcion","TipoRecurso","Parcial","Unidad","Tema","ArchivoUrl","DriveId","AutorID","FechaPublicacion","Estado"]);
  const id="MAT-"+Utilities.getUuid(),now=new Date();sh.appendRow([id,classId,titulo,descripcion||"",tipoRecurso||"Documento",parcial||"I parcial",unidad||"Unidad 1",tema||"Tema General",archivoUrl,driveId||"",uid,now,"Activo"]);return {status:"success",message:"Material educativo publicado.",data:{materialId:id}};
 }
