@@ -1101,3 +1101,16 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - **Commits principales:** 538d1dc5f732de3fc26faaeeabab907e51122740; 1558e5c99b4fee58474a849bc8087d9c16914028.
 - **Estado:** mitigación parcial publicada; TASK-153 En ejecución y AUD-NG-386 abierto.
 ===============================================================================
+
+
+===============================================================================
+## C1.445 — TASK-153 / TASK Service: aulas, archivos legacy y mutaciones de contenido
+- **Aulas:** HEAD contiene ResourceOwnership `AULA_VIRTUAL` en listados y mutaciones; creación registra propiedad con rollback. Publicaciones y materiales de aula heredan el ámbito del aula; General exige alcance institucional para mutaciones.
+- **Hallazgo:** `readLegacyDocument` leía archivos Drive por ID/URL sin comprobar ownership; `getMultiPartFolderFiles` enumeraba carpetas por folderId sin control de propiedad.
+- **Corrección:** lectura legacy ahora requiere sesión firmada, metadata activa/única, tarea padre única y autorización de propietario/relación/ámbito; `getMultiPartFolderFiles` deshabilitado sin acceso a Drive.
+- **Corrección relacionada:** `deletePost` y `createStudyMaterial` aplican el guard también a actores administrativos; las cinco mutaciones de publicaciones/materiales validan aula/alcance institucional.
+- **Pruebas:** contratos sintéticos añadidos para acceso a archivo propio/ajeno, metadata/tarea duplicadas, personal fuera de ámbito, endpoint folderId deshabilitado y bypass administrativo. 14 aserciones estáticas PASS.
+- **Ejecución:** Node local NOT RUN; CI sin checks/workflow runs visibles para HEAD. No se declara PASS dinámico ni CI. BETA-FUNC-021 ampliada; Pendiente beta.
+- **Commits:** e7d036abad8ef6cecc19252057b2f4888a29dbd2; 6024d318162fe1f758f194ac00c1f23fea803076; 176c5b08974a8a44f1314ea8e65f3ca371541e77; 742fe9576062108c857cfb3e00fd0de59b5ef4a4; 2d5526565a8332cbbed8e80c92ab5427b2deb7cb; f71bebc496ffb6487cdefc3701d1f24043649bd3; dee57ca34414c591f4d8bb6342c2567a9bdb8a33; 87dbe7ecf4b3eaab69fc473d7a06df966f86b24c.
+- **Estado:** TASK-153 En ejecución; AUD-NG-385/386 abiertos. Beta/despliegue reservado a su fase y no bloquea desarrollo.
+===============================================================================
