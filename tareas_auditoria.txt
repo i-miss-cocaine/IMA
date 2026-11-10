@@ -717,3 +717,10 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - **Tarea ejecutable:** F11-TASK01, ya existente en pendientes/Secretaria/Pendientes.md. No crear una tarea nueva ni duplicar el identificador original.
 - **Estado:** Abierto; F11-TASK01 permanece Pendiente y no se selecciona en C1.401 porque TASK-153 continúa como tarea activa heredada y está bloqueada por una fuente institucional externa.
 - **Evidencia:** adenda C1.401 del informe FASE 11; inspección manual del código y ROLE_PERMISSIONS. Pruebas dinámicas pendientes.
+
+
+### C1.402 — TASK-153 / PM-01 — descomposición funcional
+- Registradas ocho subtareas locales T153-S01…S08 con entregables, criterios y dependencias; TASK-153 sigue En ejecución.
+- Siguiente unidad: T153-S01, reconciliación de catálogo departamental y autoridad de propiedad.
+- Referentes SIS/LMS y ERP/SoD incorporados como patrones; alcance restringido a recursos estudiantiles y autorización departamental.
+- No se crea ID global duplicado ni se implementa código en esta iteración.

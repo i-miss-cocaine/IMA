@@ -2002,3 +2002,49 @@ Commit de cierre: este commit; SHA se confirmará externamente tras publicación
 ### Siguiente acción exacta
 Obtener/confirmar la fuente institucional autoritativa que relaciona cada expediente/recurso estudiantil con su departamento propietario, o una asignación explícita aprobada y auditable. Después diseñar el mapeo histórico verificable y continuar TASK-153. No iniciar TASK-139/TASK-123 mientras esa dependencia siga sin resolver.
 ===============================================================================
+
+
+===============================================================================
+## C1.402 — Descomposición funcional TASK-153 / PM-01
+
+**Sesión:** IMA-EXEC-20261110-0436Z-01  
+**Fecha:** 2026-11-10  
+**Checkpoint anterior:** C1.401  
+**HEAD de partida:** e7c7b57f9b7ddb865e61f59afc317b65d9d126d6  
+**Rama:** NG_beta_0.0.0.1_work  
+**Rama base protegida:** NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+
+### Auditoría de continuidad
+- Rama y HEAD verificados antes de editar: NG_beta_0.0.0.1_work @ e7c7b57f9b7ddb865e61f59afc317b65d9d126d6. La rama base permanece en 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Se releen plan maestro, mapa de dependencias, índice, checkpoint C1.401, auditoría consolidada y changelog.
+- TASK-153 continúa En ejecución / PM-01 / P0. Se conserva la tarea madre; no se crea un ID global duplicado.
+
+### Trabajo realizado
+- Se incorpora la especificación del usuario a PLAN_MAESTRO_IMPLEMENTACION.md §10.77.
+- Se registra el uso de referentes SIS/LMS y ERP/SoD, distinguiendo patrones de diseño de requisitos internos y limitando el alcance a propiedad/autorización de recursos estudiantiles.
+- Se descompone TASK-153 en ocho unidades locales T153-S01…T153-S08: fuente canónica; contexto de roles/responsabilidades/ámbitos; propiedad de recursos; conciliación histórica; autorización por recurso; filtros masivos; delegación/cambio de propietario; certificación.
+- Se establecen criterios transversales: alta con propietario válido; rechazo de departamento inexistente/inactivo; denegación interdepartamental; alcance global solo por jerarquía formal; contexto activo para multiámbito; fail-closed para huérfanos; protección de expedientes cerrados/archivados; auditoría de delegación.
+- T153-S01 queda como siguiente unidad ejecutable. Antes de migrar o escribir DepartamentoID debe identificarse la autoridad entre CatalogoDepartamentos y DepartamentosAcademicos.
+- Se mantienen las dependencias TASK-153 → TASK-139 y TASK-153 → TASK-123.
+
+### Archivos modificados
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/MapaDependencias.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoria.txt
+- tareas_auditoria.txt
+- changueslogs.txt
+
+### Verificación y límites
+- Verificación documental: HEAD/ramas, lectura de documentos rectores y consistencia del alcance de la descomposición.
+- No se modificó código, esquemas, datos ni configuración.
+- No se ejecutaron pruebas de producto, runtime Apps Script, Sheets/Drive reales, HTTP/E2E ni navegador.
+- TASK-153 no se cierra. T153-S01 queda seleccionada; la asignación/migración de propietarios continúa bloqueada hasta obtener una fuente institucional autoritativa o decisión formal aprobada y auditable.
+
+### Siguiente acción exacta
+Ejecutar únicamente T153-S01: inspeccionar el modelo completo de CatalogoDepartamentos y DepartamentosAcademicos, sus IDs, relaciones, escrituras, consumidores y reglas de vigencia; contrastarlo con la definición institucional disponible. Emitir dictamen de autoridad y mapeo. Si no existe autoridad demostrable, registrar el bloqueo y solicitar/esperar la decisión institucional sin tocar datos. Mantener el commit por unidad.
+
+### Commit
+Commit documental C1.402 en NG_beta_0.0.0.1_work; SHA a verificar tras publicación. Rama base intacta.
+===============================================================================

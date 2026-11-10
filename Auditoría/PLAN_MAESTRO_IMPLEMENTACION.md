@@ -2484,3 +2484,66 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - **Archivos de respaldo (HEAD 48d89e6):** PLAN_MAESTRO_IMPLEMENTACION.md 25e7f85c8b404222292a8e8696523848e0eb7a0e; MapaDependencias.md dc179f803f60738d690cdcc1161c4533e4d0b5ff; INDICE_CHECKPOINTS.md 9b589c8a7cd0806f4f6163feba6916d69ac56e94; Checkpoints_Parte_0003.txt a121b2b1aabf96eaec3ef4be319b1ec1d3fbad0a; informe FASE 11 9999dd843c028b02b86f8ceb06645fd90f182286; Auditoria.txt 4bd406c49c6033f24da3ad3e24fb2ca640250727; tareas_auditoria.txt cf481629969f85ff810f218362b73660ee6671e3; changueslogs.txt 49ae71b07e382b785bd2ffe4b6ce658fc9eeb972.
 - **Commit de cierre:** este commit documental en NG_beta_0.0.0.1_work; SHA a verificar después de publicación. No se publica en ninguna otra rama.
 ===============================================================================
+
+
+## 10.77 — TASK-153: descomposición funcional de propiedad departamental y autorización contextual
+
+**Sesión:** IMA-EXEC-20261110-0436Z-01  
+**Checkpoint anterior:** C1.401. **HEAD de partida:** e7c7b57f9b7ddb865e61f59afc317b65d9d126d6.  
+**Tarea madre:** TASK-153 / PM-01 / P0 / En ejecución. Esta descomposición es un plan de ejecución subordinado; no crea ni sustituye IDs del backlog departamental.
+
+### Decisión de arquitectura y alcance
+
+Se incorpora como definición funcional de TASK-153 la especificación «Asignación de Responsabilidad y Control de Acceso por Departamento / Área» aportada por el usuario. El control de acceso debe combinar identidad verificada, roles efectivos, responsabilidades asignadas, ámbito departamental vigente, capacidad/operación y propiedad canónica del recurso. Un rol, módulo, dashboard o responsabilidad funcional por sí solos no conceden acceso global.
+
+La propiedad del recurso y el ámbito del actor son relaciones distintas. Todo expediente/recurso estudiantil protegido debe resolver un departamento propietario mediante dato canónico obligatorio o relación institucional explícita, verificable y auditable. No se infiere desde el departamento del actor, el grado, sección, curso, rol ni módulo. Los huérfanos y las relaciones ambiguas fallan cerrados.
+
+### Referentes funcionales y límites de uso
+
+- **PowerSchool SIS:** referencia para permisos por ámbito, jerarquía de unidades e aislamiento institucional/departamental.
+- **Moodle:** referencia para roles contextuales, donde la concesión en curso/categoría no se convierte en permiso global.
+- **Google Classroom / Workspace for Education:** referencia para unidades organizativas y acceso a documentos por propietario/ubicación restringida.
+- **Califik y Edboox/Edubox:** referencias de flujos de control escolar y documentación académica.
+- **Holded, QuickBooks, Odoo, Zoho Books, Sage 50, Quipu, Visionwin, GnuCash, ContaSol y Xero:** referencias conceptuales para segregación de funciones (SoD) entre Docencia, Orientación, Tesorería, Administración y áreas operativas. No amplían el alcance de TASK-153 a implementar módulos financieros/ERP; esos dominios solo sirven para validar que la autorización departamental no permita cruces indebidos.
+
+Estos productos se usan como patrones de capacidad y criterios, no como afirmación de equivalencia técnica ni como fuente de requisitos internos de IMA.
+
+### Descomposición ejecutable — PM-01, orden local subordinado a TASK-153
+
+Los identificadores siguientes son claves internas de seguimiento de esta descomposición, **no IDs globales del backlog**. Cada unidad se ejecutará y cerrará con auditoría, pruebas y commit independiente.
+
+| Orden | Subtarea | Entregable y criterio de aceptación |
+|---:|---|---|
+| 1 | **T153-S01 — Fuente canónica de departamentos** | Reconciliar CatalogoDepartamentos y DepartamentosAcademicos; identificar autoridad, claves estables, estado activo/inactivo y jerarquía. No fusionar catálogos ni migrar hasta probar correspondencia y autoridad. Los departamentos inexistentes/inactivos se rechazan. |
+| 2 | **T153-S02 — Modelo de roles, responsabilidades y ámbitos** | Documentar y completar la relación usuario↔roles↔responsabilidades↔ámbitos con vigencia y revocación. Soportar múltiples roles y múltiples departamentos sin convertir la unión en privilegio implícito. Resolver contexto activo explícito cuando sea necesario y validar cada capacidad en servidor. |
+| 3 | **T153-S03 — Propiedad departamental de recursos estudiantiles** | Definir y aplicar propietario canónico obligatorio en ExpedientesEstudiantes, DocumentosEstudiante y entidades relacionadas que lo requieran (incluidas SolicitudesAdmision y Matriculas tras verificar sus relaciones). Alta sin propietario, propietario inactivo o referencia inexistente: rechazo controlado. Documento vinculado hereda solo desde expediente cuya relación esté verificada; no se permite propietario contradictorio. |
+| 4 | **T153-S04 — Conciliación y migración histórica fail-closed** | Clasificar registros históricos como resolubles por fuente autoritativa, asignables mediante aprobación auditada o huérfanos/ambiguos. No inferir desde actor/grado/sección. Migración idempotente, reporte de conciliación, respaldo y rollback; los no resueltos quedan inaccesibles a personal departamental hasta resolución autorizada. |
+| 5 | **T153-S05 — Política central de autorización por recurso** | Aplicar decisión compuesta: identidad firmada + permiso de operación + responsabilidad/capacidad vigente + ámbito del usuario + departamento propietario del recurso. Denegar cruces no autorizados con 403 o respuesta de no-existencia controlada donde la enumeración sea riesgo. La elevación institucional solo procede por jerarquía/configuración formal explícita y comprobable. |
+| 6 | **T153-S06 — Listados, consultas y operaciones masivas** | Filtrar en servidor todas las listas, búsquedas, exportaciones, conteos, vistas previas e importaciones cubiertas por TASK-153. Usuario sin ámbito obtiene conjunto vacío/restringido; no confiar en filtros enviados por cliente. Probar ausencia de filtraciones laterales y agregados. |
+| 7 | **T153-S07 — Delegación temporal y cambios de propietario** | Delegación interdepartamental opcional, explícita por recurso/operación, otorgante autorizado, motivo, inicio/fin, revocación y bitácora. Nunca se interpreta como propiedad. Bloquear cambio de propietario en expediente cerrado/archivado salvo procedimiento formal de reapertura con auditoría. |
+| 8 | **T153-S08 — Contratos, auditoría y certificación** | Pruebas positivas/negativas por rol, responsabilidad, departamento, estado del recurso, multiámbito, expiración, IDOR, huérfanos, departamento inactivo, acceso institucional y consultas masivas. Registrar actor, recurso, operación, decisión y motivo sin copiar contenido confidencial. Certificar servicios y cliente; separar evidencia CI de pruebas reales Apps Script/Sheets/Drive/browser. |
+
+### Criterios transversales de aceptación
+
+1. Ningún alta protegida se persiste sin departamento propietario válido.
+2. Un usuario de Docencia no lee ni modifica expedientes de Administración/Tesorería/Orientación por el solo hecho de poseer otro rol o módulo.
+3. Dirección/Secretaría General solo tienen alcance global o multisectorial si existe jerarquía institucional formal, explícita, vigente y probada; no por nombre de rol.
+4. Usuarios con varios departamentos operan dentro de un contexto activo explícito o con una unión estrictamente limitada a los departamentos autorizados; nunca se amplía el acceso a todos los departamentos.
+5. Los documentos heredan propietario solo mediante una relación de expediente validada; referencias rotas o contradictorias fallan cerradas.
+6. No se cambia propietario de expedientes cerrados/archivados por una mutación ordinaria.
+7. Toda delegación temporal expira y puede revocarse; queda trazabilidad sin exposición del contenido del expediente.
+8. Las lecturas individuales, masivas, exportaciones, búsquedas y conteos aplican el mismo control de propiedad.
+
+### Dependencias, orden y bloqueo actual
+
+- T153-S01 precede a T153-S03 y T153-S04.
+- T153-S02 precede a T153-S05 y T153-S06.
+- T153-S03 y T153-S04 preceden a T153-S05.
+- T153-S05 precede a T153-S06 y T153-S07.
+- T153-S08 certifica las subtareas anteriores y no sustituye sus pruebas locales.
+- La evidencia actual demuestra dos catálogos no reconciliados y ausencia de DepartamentoID en esquemas estudiantiles observados. Por tanto, **T153-S01 es la siguiente unidad ejecutable**. Su primera acción es determinar la fuente institucional autorizada; no se implementará migración ni se asignarán propietarios por inferencia.
+- TASK-139 y TASK-123 siguen dependiendo de la resolución de propiedad departamental de TASK-153. No se adelantan en esta iteración.
+
+### Estado de esta iteración
+
+Solo se registra y descompone el alcance funcional. No se modificó código, datos, esquemas productivos ni configuración; no se ejecutaron pruebas de producto. TASK-153 permanece En ejecución. T153-S01 queda seleccionada como siguiente unidad, con bloqueo de implementación de datos hasta identificar la fuente autorizada.

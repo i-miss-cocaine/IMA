@@ -4963,3 +4963,13 @@ Alcance estático satisfecho; sin cambios de código. Hallazgos AUD-NG-374..376 
 - No se encontró la hoja RegistrosOrientacion en los Code.gs del backend. CitasOrientacion sí aparece y almacena NotasConfidenciales; CasosSeguimiento almacena acciones/notas en JSON.
 - AUD-NG-383 se vincula al F11-TASK01 existente. No se crea una tarea ni un informe duplicado; se agrega una adenda al informe FASE 11 existente.
 - La revisión es focalizada y no cierra F11-TASK01. No se modificó código ni se ejecutaron pruebas de producto.
+
+
+## C1.402 — TASK-153: descomposición PM-01 de propiedad departamental
+
+- Se registra la especificación funcional de propiedad departamental y autorización contextual en PLAN_MAESTRO_IMPLEMENTACION.md §10.77.
+- Se crean claves subordinadas de seguimiento T153-S01…T153-S08 (no son IDs globales del backlog): catálogo canónico; roles/responsabilidades/ámbitos; propiedad de recursos estudiantiles; migración histórica; policy por recurso; filtros masivos; delegación/cambio de propietario; pruebas y auditoría.
+- Patrones SIS/LMS: PowerSchool (scope y jerarquía), Moodle (roles contextuales), Google Classroom/Workspace (OU y propiedad documental), Califik y Edboox/Edubox (flujos académicos). Patrones ERP/SoD: Holded, QuickBooks, Odoo, Zoho Books, Sage 50, Quipu, Visionwin, GnuCash, ContaSol y Xero. Se limita TASK-153 a seguridad/propiedad de recursos estudiantiles; no se abre implementación financiera.
+- T153-S01 es la siguiente unidad. Reconciliar CatalogoDepartamentos y DepartamentosAcademicos antes de asignar propietario o migrar registros. No inferir desde actor, grado, sección, rol o módulo.
+- Dependencias derivadas TASK-153 → TASK-139 y TASK-153 → TASK-123 se mantienen. La rama base no se modifica.
+- No hay cambios de código, datos ni pruebas de producto en C1.402.

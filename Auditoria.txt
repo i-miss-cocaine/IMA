@@ -853,3 +853,11 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - **Pruebas:** inspección manual de handlers y ROLE_PERMISSIONS; no se ejecutaron pruebas dinámicas HTTP, Apps Script ni navegador.
 - **Informe:** adenda C1.401 en Auditoría/AUDITORIA-FASE-11-COMUNICACION-BIENESTAR-SUPERVISION-FINANZAS.md.
 ===============================================================================
+
+
+### C1.402 — TASK-153: especificación y descomposición PM-01
+- Se incorpora la especificación de asignación de responsabilidad y control de acceso por departamento/área en PLAN_MAESTRO_IMPLEMENTACION.md §10.77.
+- Se descompone la tarea madre en T153-S01…T153-S08, con criterios verificables y secuencia subordinada; los códigos son claves locales, no IDs globales nuevos.
+- Se adoptan referentes SIS/LMS y ERP/SoD como patrones de diseño, sin ampliar TASK-153 a implementación financiera.
+- T153-S01: identificar autoridad de CatalogoDepartamentos vs DepartamentosAcademicos antes de migrar/asignar propietarios.
+- No hubo cambios de código/datos ni pruebas de producto. Checkpoint C1.402.

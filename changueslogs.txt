@@ -655,3 +655,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se agregan dependencias derivadas TASK-153 → TASK-139 (dimensión departamental de permisos documentales) y TASK-153 → TASK-123 (propietario departamental del destino). Los requisitos originales permanecen intactos.
 - Se registra AUD-NG-383, vinculado a F11-TASK01 existente, por bypass de authRole y ausencia de autorización por expediente/ámbito en bienestar. Se reutiliza el informe FASE 11 con adenda; no se crea tarea duplicada.
 - No se modificó código, datos ni configuración. No se ejecutaron pruebas de producto. Checkpoint documental C1.401.
+
+
+
+[2026-11-10] C1.402 — Descomposición TASK-153 / PM-01
+- Especificación de asignación de responsabilidad y control de acceso departamental incorporada al plan maestro.
+- Ocho subtareas locales T153-S01…S08 registradas con criterios de aceptación y dependencias.
+- Siguiente tarea: T153-S01 — autoridad del catálogo departamental. TASK-153 permanece En ejecución.
+- Solo documentación; sin cambios de código/datos ni pruebas de producto.
