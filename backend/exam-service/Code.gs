@@ -1194,6 +1194,16 @@ function purgeSecurityCaches(payload) {
 }
 
 function submitExam(payload) {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) throw new Error("EXAM_SUBMISSION_LOCK_TIMEOUT");
+  try {
+    return submitExamUnlocked_(payload);
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function submitExamUnlocked_(payload) {
   const examenId = String((payload && payload.examenId) || "").trim();
   const respuestas = payload && payload.respuestas;
   if (!examenId || !Array.isArray(respuestas)) throw new Error("SUBMISSION_INVALID");

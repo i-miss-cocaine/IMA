@@ -78,7 +78,7 @@ const sheets = { Examenes: examRows, AsignacionesAmbitosRoles: scopeRows, Resour
 const sheetObjects = Object.fromEntries(Object.entries(sheets).map(([name, rows]) => [name, {
   getDataRange() { return { getValues: () => rows.map(row => row.slice()) }; },
   getLastRow() { return rows.length; },
-  appendRow(row) { rows.push(row.slice()); },
+  appendRow(row) { rows.push(row.slice()); if (examSubmissionDuringAppend) { const cb = examSubmissionDuringAppend; examSubmissionDuringAppend = null; cb(); } },
   deleteRow(rowNumber) { rows.splice(rowNumber - 1, 1); },
   getRange(rowNumber, columnNumber) { return {
     setValue(value) { rows[rowNumber - 1][columnNumber - 1] = value; },
@@ -86,7 +86,7 @@ const sheetObjects = Object.fromEntries(Object.entries(sheets).map(([name, rows]
   }; }
 }]));
 const ss = { getSheetByName(name) { return sheetObjects[name] || null; } };
-let examMutationLockAvailable = true, examMutationLockAcquires = 0, examMutationLockReleases = 0, examMutationBeforeAcquire = null;
+let examMutationLockAvailable = true, examMutationLockHeld = false, examMutationLockAcquires = 0, examMutationLockReleases = 0, examMutationBeforeAcquire = null, examSubmissionDuringAppend = null;
 const runtime = {
   SPREADSHEET_ID: "LOCAL", EXAM_RESOURCE_OWNERSHIP_REQUEST_CACHE_: new WeakMap(),
   PUBLIC_ACTIONS: [], ROLE_PERMISSIONS: { Profesor: ["getAllExams","getTeacherExamActivity","updateExam","updateExamStatus","deleteExam","gradeExamSubmission","deleteExamSubmission"] },
@@ -99,8 +99,8 @@ const runtime = {
   isInTeacherList(value, filter) { return String(value).trim() === String(filter).trim(); },
   normalizeString(value) { return String(value || "").trim().toLowerCase(); },
   LockService: { getScriptLock() { return {
-    tryLock() { examMutationLockAcquires++; if (examMutationBeforeAcquire) { const cb = examMutationBeforeAcquire; examMutationBeforeAcquire = null; cb(); } return examMutationLockAvailable; },
-    releaseLock() { examMutationLockReleases++; }
+    tryLock() { examMutationLockAcquires++; if (examMutationBeforeAcquire) { const cb = examMutationBeforeAcquire; examMutationBeforeAcquire = null; cb(); } if (!examMutationLockAvailable || examMutationLockHeld) return false; examMutationLockHeld = true; return true; },
+    releaseLock() { examMutationLockReleases++; examMutationLockHeld = false; }
   }; } }
 };
 const helpers = ["getVerifiedExamIdentity_", "getVerifiedExamDepartmentScope_", "assertExamResourceOwnershipForScope_", "validateRolePermission", "getAllExams", "getTeacherExamActivity"].map(name => extractFunction(source, name)).join("\n");
@@ -122,7 +122,7 @@ const duplicate = runtime.assertExamResourceOwnershipForScope_(ss, scope, "EXAME
 assert.equal(duplicate.authorized, false); assert.equal(duplicate.code, "RESOURCE_OWNERSHIP_AMBIGUOUS");
 assert.deepEqual(Array.from(runtime.getAllExams({ sessionToken: "other-token" }).data), [], "no accessible ownership returns an empty list");
 const readFunctions = ["getVerifiedExamIdentity_", "getVerifiedExamDepartmentScope_", "assertExamResourceOwnershipForScope_",
-  "getExamStudentProfile_", "isExamAssignedToStudent_", "getVerifiedGuardianStudentIds_", "getExamReadContext_", "getStudentExams", "getExamQuestions", "getExamResult", "submitExam",
+  "getExamStudentProfile_", "isExamAssignedToStudent_", "getVerifiedGuardianStudentIds_", "getExamReadContext_", "getStudentExams", "getExamQuestions", "getExamResult", "submitExam", "submitExamUnlocked_",
   "validateRolePermission", "getAuthorizedExamMutationContext_", "getAuthorizedExamSubmissionMutationContext_", "withAuthorizedExamSubmissionMutation_", "updateExam", "updateExamStatus", "deleteExam", "gradeExamSubmission", "deleteExamSubmission"]
   .map(name => extractFunction(source, name)).join("\n");
 vm.runInNewContext(readFunctions + "\nthis.getStudentExams = getStudentExams; this.getExamQuestions = getExamQuestions; this.getExamResult = getExamResult; " +
@@ -163,6 +163,24 @@ assert.equal(newSubmission.data.calificacion, "100.00");
 assert.throws(() => runtime.submitExam({ sessionToken: "student3-token", examenId: "EXM-6",
   respuestas: [{ preguntaId: "Q-6", respuestaEstudiante: "A" }] }), /EXAM_ATTEMPTS_EXHAUSTED/,
   "default one-attempt policy prevents duplicate submissions");
+
+const beforeConcurrentAttempts = deliveryRows.filter(row => row[1] === "EXM-6" && row[2] === "STUDENT-3").length;
+let nestedSubmissionError = "";
+examSubmissionDuringAppend = () => {
+  try {
+    runtime.submitExam({ sessionToken: "student3-token", examenId: "EXM-6",
+      respuestas: [{ preguntaId: "Q-6", respuestaEstudiante: "A" }] });
+  } catch (error) { nestedSubmissionError = error.message; }
+};
+const serializedSubmission = runtime.submitExam({ sessionToken: "student3-token", examenId: "EXM-6",
+  respuestas: [{ preguntaId: "Q-6", respuestaEstudiante: "A" }] });
+assert.equal(serializedSubmission.status, "success");
+assert.equal(nestedSubmissionError, "EXAM_SUBMISSION_LOCK_TIMEOUT",
+  "a concurrent submit cannot pass the attempt-count check while another submission is appending");
+assert.equal(deliveryRows.filter(row => row[1] === "EXM-6" && row[2] === "STUDENT-3").length,
+  beforeConcurrentAttempts + 1, "only one concurrent submission is persisted");
+assert.equal(examMutationLockHeld, false, "submission lock is released after successful append");
+
 
 const beforeTitle = examRows.find(row => row[0] === "EXM-1")[1];
 runtime.updateExam({ sessionToken: "teacher-token", examenId: "EXM-1", titulo: "Título actualizado", profesorId: "TEACHER-2" });

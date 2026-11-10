@@ -385,3 +385,12 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Resultado esperado:** operaciones serializadas; denegación segura ante entrega inexistente o timeout; liberación del lock en éxito y error.
 - **Estado:** Pendiente beta. Lógica de lock y relectura verificada localmente con fixtures; Apps Script/Sheets real no ejecutado.
 - **Evidencia requerida:** commit/build, actores y entregas sintéticas, orden y resultados de operaciones, logs saneados.
+
+## BETA-EXAM-031 — AUD-NG-386 / EXAM: serialización de envíos y límite de intentos
+- **Módulo/acción:** EXAM — submitExam.
+- **Objetivo:** comprobar en Apps Script/Sheets desplegado que la comprobación de intentos permitidos y la inserción de la entrega se ejecutan bajo el mismo ScriptLock.
+- **Precondiciones:** entorno beta aislado; estudiante sintético, examen activo con propiedad institucional/departamental válida, preguntas del examen y límite de intentos configurado; dos solicitudes simultáneas para el mismo estudiante/examen.
+- **Pasos:** enviar dos solicitudes simultáneas cuando queda un solo intento; repetir con límite mayor a uno; provocar timeout de lock; comprobar que un envío rechazado no crea entrega y que el lock se libera tras éxito y error.
+- **Resultado esperado:** no se supera IntentosPermitidos; las solicitudes concurrentes se serializan y la segunda reevalúa el conteo actualizado; timeout falla cerrado con EXAM_SUBMISSION_LOCK_TIMEOUT y no persiste datos.
+- **Estado:** Pendiente beta. La lógica de serialización se verifica con pruebas locales sintéticas; Apps Script/Sheets real no ejecutado.
+- **Evidencia requerida:** build/commit, examen/estudiante sintéticos, orden/resultados concurrentes, conteo final de entregas y logs saneados.
