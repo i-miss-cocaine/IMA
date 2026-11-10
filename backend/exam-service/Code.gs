@@ -600,13 +600,19 @@ function deleteExam(payload) {
 }
 
 function getAllExams(payload) {
-  const { profesorId } = payload || {};
+  const verifiedUserId = String(payload && payload._verifiedUserId || "").trim();
+  const verifiedRole = String(payload && payload._verifiedRole || "").trim();
+  if (!verifiedUserId || !verifiedRole) throw new Error("VERIFIED_IDENTITY_REQUIRED");
+
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const data = getSheetOrThrow(ss, "Examenes")
     .getDataRange().getValues().slice(1);
 
   const filtered = data.filter(r => {
-    if (profesorId && r[8] && r[8] !== profesorId) return false;
+    // El docente solo consulta exámenes cuyo propietario coincide con su identidad firmada.
+    if (verifiedRole === "Profesor") {
+      return String(r[8] || "").trim() === verifiedUserId;
+    }
     return true;
   });
 
