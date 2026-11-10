@@ -392,7 +392,12 @@ console.log("ACADEMIC admission conversion duplicate expediente ownership contra
     Utilities:{getUuid:()=>"UUID"},
     Date
   };
-  const functions=extractFunction("convertAdmissionToStudent")+"\n"+extractFunction("registerStudentEnrollmentInternal_");
+  const functions=[
+    "assertAdmissionEnrollmentRetrySafe_",
+    "findAdmissionConversionMovement_",
+    "convertAdmissionToStudent",
+    "registerStudentEnrollmentInternal_"
+  ].map(extractFunction).join("\n");
   vm.runInNewContext(functions+"\nthis.run=convertAdmissionToStudent;",context);
   assert.throws(()=>context.run({solicitudId:"ADM-ROLLBACK"}),/INJECTED_MOVEMENT_FAILURE/);
   assert.equal(sheets.SolicitudesAdmision.rows[1][11],"Admitida","admission state must remain unchanged after rollback");
@@ -495,6 +500,7 @@ console.log("ACADEMIC admission conversion idempotency contract passed.");
       "getStudentIdentityForPerson_",
       "findAdmissionConversionEnrollment_",
       "findAdmissionConversionMovement_",
+      "findAdmissionConversionCharge_",
       "assertAdmissionConversionArtifactsComplete_",
       "convertAdmissionToStudent"
     ].map(extractFunction).join("\n");
@@ -578,7 +584,7 @@ console.log("ACADEMIC converted admission reconciliation contract passed.");
       Date,
       Math
     };
-    vm.runInNewContext(extractFunction("registerStudentEnrollmentInternal_")+"\nthis.register=registerStudentEnrollment;",context);
+    vm.runInNewContext(extractFunction("registerStudentEnrollmentInternal_")+"\nthis.register=registerStudentEnrollmentInternal_;",context);
     const rollback=[];
     const result=context.register({
       userId:"STU-1",alumno:"Student",grado:"1",seccion:"A",periodo:"2026",
