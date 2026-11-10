@@ -366,3 +366,13 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Resultado esperado:** las credenciales existen únicamente en Script Properties tras migración; no aparecen en celdas, respuestas, logs ni URL devueltas; actualización parcial conserva secretos; eliminación es explícita; errores/locks no borran la única copia disponible. Esto no equivale a cifrado ni sustituye el control de editores del proyecto.
 - **Estado:** Pendiente beta. No se ejecutó Apps Script/Sheets/PropertiesService real.
 - **Evidencia requerida:** build/commit, proveedor sintético, comprobación de propiedades sin registrar valores, celdas legacy antes/después, respuestas enmascaradas, logs saneados y resultado por paso. No adjuntar secretos.
+
+
+## BETA-FUNC-029 — TASK-153 / USER: selección explícita de proveedor activo en solicitudes de firma
+- **Módulo/servicio:** USER Service — createAdvancedSignatureRequest y ConfiguracionFirmaAvanzada.
+- **Objetivo:** comprobar en Apps Script desplegado que una solicitud solo se crea con un proveedor indicado explícitamente, único, configurado y en estado Activo.
+- **Precondiciones:** entorno beta aislado; documento/firmante sintéticos con ownership y permisos válidos; proveedores PSC_TEST activo, PSC_DISABLED inactivo y PSC_DUP duplicado; no usar credenciales productivas.
+- **Pasos:** intentar crear una solicitud sin proveedor, con ID malformado, desconocido, inactivo y duplicado; verificar que no se inserta transacción ni se accede a Drive después del rechazo. Crear una solicitud con PSC_TEST activo y comprobar que la transacción conserva exactamente ese ID. Repetir tras desactivar o eliminar el proveedor.
+- **Resultado esperado:** no existe fallback PSC-HN-DEFAULT ni proveedor implícito; solo se acepta una fila de configuración única con nombre y estado Activo. Los rechazos no generan transacciones ni lecturas de Drive; la aceptación no inicia una integración PSC ni declara validez criptográfica.
+- **Estado:** Pendiente beta. No se ejecutó Apps Script/Sheets real ni integración PSC.
+- **Evidencia requerida:** build/commit, filas sintéticas saneadas, respuestas allow/deny, conteos de transacciones/lecturas y logs sin credenciales. Nunca adjuntar secretos o datos personales.

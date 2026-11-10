@@ -30,6 +30,14 @@ function makeHarness(options = {}) {
     reads:0,
     getDataRange(){this.reads++;return {getValues(){return admissionRows.map(row=>row.slice());}};}
   };
+  const providerRows = options.providerRows ? options.providerRows.map(row => row.slice()) : [
+    ["ProveedorID","NombreProveedor","EndpointURL","ApiKeyLegacy","TipoMecanismo","PoliticaSelladoTiempo","FormatoCertificado","Estado","ConfiguracionJSON","FechaActualizacion","ActualizadoPor"],
+    ["PSC_TEST","Proveedor sintético","https://psc.example.test/api","","FirmaAvanzadaCualificada","Deshabilitado","X.509_v3","Activo","{}","",""]
+  ];
+  const providerSheet = {
+    getLastRow:()=>providerRows.length,
+    getDataRange:()=>({getValues:()=>providerRows.map(row=>row.slice())})
+  };
   const transactions = {
     rows:[["TransaccionID","DocumentoID","SolicitudID","FirmanteID","FirmanteNombre","FirmanteEmail","MecanismoFirma","ProveedorID","DocumentoHash","Estado","FechaSolicitud","FechaRespuesta","CertificadoX509Ref"]],
     reads:0,appends:[],
@@ -37,7 +45,7 @@ function makeHarness(options = {}) {
     appendRow(row){assert.equal(state.held,true,"transaction append must occur while lock is held");this.appends.push(row.slice());this.rows.push(row.slice());}
   };
   const state={held:false,lockAttempts:0,releases:0,spreadsheetOpens:0,txSheetRequests:0,
-    ownershipCalls:[],events:[],permissionCalls:0,driveReads:0};
+    ownershipCalls:[],events:[],permissionCalls:0,driveReads:0,providerConfigReads:0};
   const signerRole=options.signerRole||"Director";
   const userRows=[["UserId","Nombre","Grado","Seccion","Email","PasswordHash","Rol","Telefono","NumeroLista","PersonaID","EstadoCuenta"],
     [options.signerId||"SIGNER-1",options.signerName||"Nombre canónico","","",options.signerEmail||"canonico@example.test","",""+signerRole,"","",options.signerPersonId||"PERS-SIGNER",options.signerState===undefined?"Activa":options.signerState]];
@@ -59,6 +67,7 @@ function makeHarness(options = {}) {
       assert.equal(state.held,true,"document and signer records must be read under lock");
       if(name==="DocumentosEstudiante")return documentSheet;
       if(name==="SolicitudesAdmision")return admissionSheet;
+      if(name==="ConfiguracionFirmaAvanzada"){state.providerConfigReads++;return options.providerSheetMissing?null:providerSheet;}
       return sheets[name]||null;
     }
   };
@@ -96,9 +105,10 @@ function makeHarness(options = {}) {
     logStructuredEvent:(_service,_action,_level,code,_message,data,role)=>state.events.push({code,data,role}),
     Date
   };
-  vm.runInNewContext(extractFunction("assertAdvancedSignatureDocumentScope_")+"\n"+extractFunction("assertAdvancedSignatureSignerScope_")+"\n"+extractFunction("createAdvancedSignatureRequest"),context);
+  vm.runInNewContext(extractFunction("assertAdvancedSignatureDocumentScope_")+"\n"+extractFunction("assertAdvancedSignatureSignerScope_")+"\n"+extractFunction("assertAdvancedSignatureProviderActive_")+"\n"+extractFunction("createAdvancedSignatureRequest"),context);
   const payload={documentoId:options.requestDocumentId||"DRIVE-1",solicitudId:options.requestSolicitudId===undefined?"SOL-1":options.requestSolicitudId,
-    firmanteId:"SIGNER-1",firmanteNombre:"Firmante de prueba",firmanteEmail:"signer@example.test"};
+    firmanteId:"SIGNER-1",firmanteNombre:"Firmante de prueba",firmanteEmail:"signer@example.test",
+    proveedorId:options.providerId===undefined?"PSC_TEST":options.providerId};
   return {execute:()=>context.createAdvancedSignatureRequest(payload),payload,transactions,documentSheet,admissionSheet,state};
 }
 
@@ -113,6 +123,7 @@ function makeHarness(options = {}) {
   assert.equal(valid.transactions.appends[0][3],"SIGNER-1");
   assert.equal(valid.transactions.appends[0][4],"Nombre canónico","signer name must come from the trusted user record");
   assert.equal(valid.transactions.appends[0][5],"canonico@example.test","signer email must come from the trusted user record");
+  assert.equal(valid.transactions.appends[0][7],"PSC_TEST","persist the explicitly configured provider ID");
   assert.equal(valid.transactions.appends[0][8],"01".repeat(32),"persist the SHA-256 digest of the actual source bytes");
   assert.equal(result.documentoHash,"01".repeat(32));
   assert.equal(valid.state.driveReads,1);
@@ -230,6 +241,40 @@ function makeHarness(options = {}) {
 
   const inactiveGuardianRelation=makeHarness({signerRole:"Madre",signerPersonId:"PERS-GUARD",relationState:"Revocado",includeScope:false});
   assert.throws(()=>inactiveGuardianRelation.execute(),/SIGNATURE_SIGNER_SCOPE_DENIED/);
+
+  const missingProvider=makeHarness({providerId:""});
+  assert.throws(()=>missingProvider.execute(),/SIGNATURE_PROVIDER_ID_REQUIRED/);
+  assert.equal(missingProvider.state.txSheetRequests,0);
+  assert.equal(missingProvider.state.driveReads,0);
+
+  const malformedProvider=makeHarness({providerId:"PSC TEST"});
+  assert.throws(()=>malformedProvider.execute(),/SIGNATURE_PROVIDER_ID_INVALID/);
+  assert.equal(malformedProvider.state.txSheetRequests,0);
+
+  const unknownProvider=makeHarness({providerId:"PSC_UNKNOWN"});
+  assert.throws(()=>unknownProvider.execute(),/SIGNATURE_PROVIDER_NOT_CONFIGURED/);
+  assert.equal(unknownProvider.state.txSheetRequests,0);
+  assert.equal(unknownProvider.state.driveReads,0);
+
+  const inactiveProvider=makeHarness({providerRows:[
+    ["ProveedorID","NombreProveedor","EndpointURL","ApiKeyLegacy","TipoMecanismo","PoliticaSelladoTiempo","FormatoCertificado","Estado","ConfiguracionJSON","FechaActualizacion","ActualizadoPor"],
+    ["PSC_TEST","Proveedor sintético","https://psc.example.test/api","","FirmaAvanzadaCualificada","Deshabilitado","X.509_v3","Inactivo","{}","",""]
+  ]});
+  assert.throws(()=>inactiveProvider.execute(),/SIGNATURE_PROVIDER_INACTIVE/);
+  assert.equal(inactiveProvider.state.txSheetRequests,0);
+  assert.equal(inactiveProvider.state.driveReads,0);
+
+  const duplicateProvider=makeHarness({providerRows:[
+    ["ProveedorID","NombreProveedor","EndpointURL","ApiKeyLegacy","TipoMecanismo","PoliticaSelladoTiempo","FormatoCertificado","Estado","ConfiguracionJSON","FechaActualizacion","ActualizadoPor"],
+    ["PSC_TEST","Proveedor sintético","https://psc.example.test/api","","FirmaAvanzadaCualificada","Deshabilitado","X.509_v3","Activo","{}","",""],
+    ["PSC_TEST","Proveedor duplicado","https://psc2.example.test/api","","FirmaAvanzadaCualificada","Deshabilitado","X.509_v3","Activo","{}","",""]
+  ]});
+  assert.throws(()=>duplicateProvider.execute(),/SIGNATURE_PROVIDER_CONFIGURATION_AMBIGUOUS/);
+  assert.equal(duplicateProvider.state.txSheetRequests,0);
+
+  const absentProviderSheet=makeHarness({providerSheetMissing:true});
+  assert.throws(()=>absentProviderSheet.execute(),/SIGNATURE_PROVIDER_NOT_CONFIGURED/);
+  assert.equal(absentProviderSheet.state.txSheetRequests,0);
 
   const requestOnly=makeHarness({expedienteId:"",storedSolicitudId:"SOL-1"});
   requestOnly.execute();

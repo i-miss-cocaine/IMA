@@ -7943,6 +7943,23 @@ function assertAdvancedSignatureSignerScope_(ss, documentAccess, firmanteId) {
   }
 }
 
+function assertAdvancedSignatureProviderActive_(ss, providerId) {
+  const id = String(providerId || "").trim();
+  if (!id) throw new Error("SIGNATURE_PROVIDER_ID_REQUIRED");
+  if (!/^[A-Z0-9_-]{1,64}$/.test(id)) throw new Error("SIGNATURE_PROVIDER_ID_INVALID");
+  const sheet = ss && ss.getSheetByName("ConfiguracionFirmaAvanzada");
+  if (!sheet || sheet.getLastRow() < 1) throw new Error("SIGNATURE_PROVIDER_NOT_CONFIGURED");
+  const data = sheet.getDataRange().getValues();
+  const start = String((data[0] || [])[0] || "").trim().toLowerCase() === "proveedorid" ? 1 : 0;
+  const matches = data.slice(start).filter(row => String(row[0] || "").trim() === id);
+  if (!matches.length) throw new Error("SIGNATURE_PROVIDER_NOT_CONFIGURED");
+  if (matches.length !== 1) throw new Error("SIGNATURE_PROVIDER_CONFIGURATION_AMBIGUOUS");
+  const provider = matches[0];
+  if (!String(provider[1] || "").trim()) throw new Error("SIGNATURE_PROVIDER_NOT_CONFIGURED");
+  if (String(provider[7] || "").trim() !== "Activo") throw new Error("SIGNATURE_PROVIDER_INACTIVE");
+  return id;
+}
+
 function createAdvancedSignatureRequest(payload) {
   const {
     documentoId,
@@ -7986,7 +8003,7 @@ function createAdvancedSignatureRequest(payload) {
     const canonicalSignerEmail = signerAccess.email;
 
     const sMecanismo = mecanismoFirma || "FirmaAvanzadaCualificada";
-    const sProveedor = proveedorId || "PSC-HN-DEFAULT";
+    const sProveedor = assertAdvancedSignatureProviderActive_(ss, proveedorId);
     const txSheet = getOrCreateSheet(ss, "TransaccionesFirmaAvanzada");
     const data = txSheet.getDataRange().getValues();
     const pendingDuplicate = data.slice(1).some(function(row) {
