@@ -171,7 +171,7 @@ function makeStatusHarness(options = {}) {
   };
   vm.runInNewContext(extractFunction("checkAdvancedSignatureStatus"),context);
   const payload={transaccionId:"TX-1"};
-  return {execute:()=>context.checkAdvancedSignatureStatus(payload),state,payload};
+  return {execute:(extra)=>context.checkAdvancedSignatureStatus(Object.assign({},payload,extra||{})),state,payload};
 }
 
 {
@@ -202,8 +202,7 @@ function makeStatusHarness(options = {}) {
   assert.equal(busy.state.releases,0);
 
   const forgedCallback=makeStatusHarness();
-  assert.throws(()=>forgedCallback.executeWithCallback
-    ? forgedCallback.executeWithCallback()
-    : forgedCallback.state && (()=>{throw new Error("SIGNATURE_CALLBACK_AUTHENTICATION_REQUIRED");})(),
+  assert.throws(()=>forgedCallback.execute({respuestaProveedor:{estado:"Completada",certificado:"FORGED"}}),
     /SIGNATURE_CALLBACK_AUTHENTICATION_REQUIRED/);
+  assert.equal(forgedCallback.state.opens,0,"client-supplied provider responses must be rejected before storage access");
 }
