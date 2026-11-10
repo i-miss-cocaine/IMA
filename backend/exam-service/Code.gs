@@ -1118,64 +1118,6 @@ function submitExam(payload) {
   const entregaExamenId = "EEX-" + Date.now();
   deliveriesSheet.appendRow([entregaExamenId, examenId, actor.userId, new Date(), JSON.stringify(respuestas), nota, "Pendiente"]);
   return { status: "success", data: { entregaExamenId, calificacion: nota } };
-}) {
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const preguntas = getSheetOrThrow(ss, "PreguntasExamen")
-    .getDataRange().getValues().slice(1)
-    .filter(p => p[1] === examenId);
-
-  let correctas = 0;
-  respuestas.forEach(r => {
-    const q = preguntas.find(p => p[0] === r.preguntaId);
-    if (!q) return;
-
-    let points = 0;
-    if (q[2] === "termino_pareado") {
-      try {
-        const studentMapping = JSON.parse(r.respuestaEstudiante || "{}");
-        const correctMapping = JSON.parse(q[5] || "{}");
-        let totalPairs = Object.keys(correctMapping).length;
-        let correctPairs = 0;
-        for (let key in correctMapping) {
-          if (studentMapping[key] === correctMapping[key]) {
-            correctPairs++;
-          }
-        }
-        points = totalPairs > 0 ? (correctPairs / totalPairs) : 0;
-      } catch (e) { points = 0; }
-    } else {
-      // Tarea 1: Normalizar comparación para Verdadero/Falso y Completación
-      const ok = (q[2] === "completacion" || q[2] === "verdadero_falso")
-        ? normalizeString(r.respuestaEstudiante) === normalizeString(q[5])
-        : r.respuestaEstudiante === q[5];
-      points = ok ? 1 : 0;
-    }
-    correctas += points;
-  });
-
-  const nota = preguntas.length
-    ? ((correctas / preguntas.length) * 100).toFixed(2)
-    : "0";
-
-  const entregaExamenId = "EEX-" + Date.now();
-  getSheetOrThrow(ss, "EntregasExamen").appendRow([
-    entregaExamenId,
-    examenId,
-    userId,
-    new Date(),
-    JSON.stringify(respuestas),
-    nota,
-    "Pendiente"
-  ]);
-
-  // Se devuelve el ID en un objeto data para que el frontend pueda redirigir
-  return {
-    status: "success",
-    data: {
-      entregaExamenId: entregaExamenId,
-      calificacion: nota
-    }
-  };
 }
 
 function getExamStudentProfile_(ss, studentId) {
