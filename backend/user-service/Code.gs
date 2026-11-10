@@ -1502,7 +1502,8 @@ function doPost(e) {
     const { action, payload } = request;
     const authCheck = validateRolePermission(action, payload);
     if (!authCheck.authorized) {
-      logStructuredEvent("USER", action, "WARN", "AUTH_PERMISSION_DENIED", `Acceso denegado a acción ${action} para rol ${authCheck.role}`, payload, authCheck.role);
+      const auditPayload = action === "configureAdvancedSignatureProvider" ? { proveedorId: payload && payload.proveedorId || null, apiKeyProvided: !!(payload && typeof payload.apiKey === "string" && payload.apiKey.length), hmacSecretProvided: !!(payload && typeof payload.hmacSecret === "string" && payload.hmacSecret.length), apiKeyRemovalRequested: !!(payload && payload.eliminarApiKey === true), hmacSecretRemovalRequested: !!(payload && payload.eliminarHmacSecret === true) } : payload;
+      logStructuredEvent("USER", action, "WARN", "AUTH_PERMISSION_DENIED", `Acceso denegado a acción ${action} para rol ${authCheck.role}`, auditPayload, authCheck.role);
       return textResponse({ status: "error", code: "AUTH_PERMISSION_DENIED", message: "Acceso denegado: El rol " + authCheck.role + " no tiene permiso para la acción " + action + "." });
     }
 
@@ -7616,105 +7617,121 @@ function generateSignatureAuditCertificate(payload) {
   }
 }
 // [TASK-041] [F22-Task04] - Integración con Proveedores de Firma Electrónica Avanzada (Decreto Legislativo 149-2013)
-function configureAdvancedSignatureProvider(payload) {
-  const {
-    proveedorId,
-    nombreProveedor,
-    endpointUrl,
-    apiKey,
-    tipoMecanismo, // 'FirmaSimple', 'ProveedorExterno', 'FirmaAvanzadaCualificada'
-    politicaSelladoTiempo,
-    formatoCertificado, // 'X.509_v3', 'PKCS7', 'CAdES_BES'
-    estadoHabilitado,
-    configuracionJSON,
-    actualizadoPor
-  } = payload || {};
-
-  if (!proveedorId || !nombreProveedor) {
-    throw new Error("proveedorId y nombreProveedor son requeridos.");
-  }
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "ConfiguracionFirmaAvanzada");
-  const data = sheet.getDataRange().getValues();
-  const now = new Date();
-
-  const cfgJSON = typeof configuracionJSON === "object" ? JSON.stringify(configuracionJSON) : (configuracionJSON || "{}");
-  const rowIdx = data.findIndex(r => String(r[0]).trim() === String(proveedorId).trim());
-
-  if (rowIdx !== -1) {
-    sheet.getRange(rowIdx + 1, 2, 1, 8).setValues([[
-      nombreProveedor,
-      endpointUrl || "",
-      apiKey || "",
-      tipoMecanismo || "FirmaAvanzadaCualificada",
-      politicaSelladoTiempo ? "Habilitado" : "Deshabilitado",
-      formatoCertificado || "X.509_v3",
-      estadoHabilitado !== false ? "Activo" : "Inactivo",
-      cfgJSON
-    ]]);
-  } else {
-    sheet.appendRow([
-      proveedorId,
-      nombreProveedor,
-      endpointUrl || "",
-      apiKey || "",
-      tipoMecanismo || "FirmaAvanzadaCualificada",
-      politicaSelladoTiempo ? "Habilitado" : "Deshabilitado",
-      formatoCertificado || "X.509_v3",
-      estadoHabilitado !== false ? "Activo" : "Inactivo",
-      cfgJSON,
-      now.toISOString(),
-      actualizadoPor || "Administrador"
-    ]);
-  }
-
-  return {
-    status: "success",
-    proveedorId: proveedorId,
-    nombreProveedor: nombreProveedor,
-    tipoMecanismo: tipoMecanismo || "FirmaAvanzadaCualificada",
-    message: "Configuración de proveedor de firma avanzada guardada exitosamente."
-  };
+function getAdvancedSignatureProviderSecretPropertyKey_(providerId, suffix) {
+  const id = String(providerId || "").trim(), kind = String(suffix || "").trim();
+  if (!/^[A-Z0-9_-]{1,64}$/.test(id) || !/^(API_KEY|HMAC_SECRET)$/.test(kind)) throw new Error("SIGNATURE_PROVIDER_ID_INVALID");
+  return "IMA_SIGNATURE_PROVIDER_" + id + "_" + kind;
 }
-
-function getAdvancedSignatureProviderConfig(payload) {
-  const { proveedorId, soloActivos } = payload || {};
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "ConfiguracionFirmaAvanzada");
-  const data = sheet.getDataRange().getValues();
-
-  if (data.length <= 1) {
-    return {
-      status: "success",
-      proveedores: [{
-        proveedorId: "PSC-HN-DEFAULT",
-        nombreProveedor: "Prestador de Certificación Oficial Honduras",
-        tipoMecanismo: "FirmaAvanzadaCualificada",
-        formatoCertificado: "X.509_v3",
-        politicaSelladoTiempo: "Habilitado",
-        estado: "Activo",
-        marcoLegal: "Decreto 149-2013"
-      }]
-    };
+function validateAdvancedSignatureProviderConfigJSON_(value) {
+  let parsed;
+  try { parsed = typeof value === "string" ? JSON.parse(value || "{}") : (value && typeof value === "object" ? value : {}); }
+  catch (_) { throw new Error("SIGNATURE_PROVIDER_CONFIGURATION_JSON_INVALID"); }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("SIGNATURE_PROVIDER_CONFIGURATION_JSON_INVALID");
+  const sensitive = /(api[_-]?key|hmac[_-]?secret|secret|token|password|credential|private[_-]?key|client[_-]?secret)/i;
+  const inspect = function(node, depth) {
+    if (depth > 12) throw new Error("SIGNATURE_PROVIDER_CONFIGURATION_JSON_INVALID");
+    if (!node || typeof node !== "object") return;
+    Object.keys(node).forEach(function(key) {
+      if (sensitive.test(key)) throw new Error("SIGNATURE_PROVIDER_SECRET_IN_CONFIGURATION");
+      inspect(node[key], depth + 1);
+    });
+  };
+  inspect(parsed, 0);
+  const json = JSON.stringify(parsed);
+  if (json.length > 20000) throw new Error("SIGNATURE_PROVIDER_CONFIGURATION_JSON_INVALID");
+  return json;
+}
+function ensureAdvancedSignatureProviderSheet_(ss) {
+  const headers = ["ProveedorID","NombreProveedor","EndpointURL","ApiKeyLegacy","TipoMecanismo","PoliticaSelladoTiempo","FormatoCertificado","Estado","ConfiguracionJSON","FechaActualizacion","ActualizadoPor"];
+  let sheet = ss.getSheetByName("ConfiguracionFirmaAvanzada");
+  if (!sheet) sheet = ss.insertSheet("ConfiguracionFirmaAvanzada");
+  if (sheet.getLastRow() === 0) { sheet.appendRow(headers); return sheet; }
+  const first = sheet.getRange(1,1,1,headers.length).getValues()[0].map(v=>String(v||"").trim());
+  if (first[0].toLowerCase() === "proveedorid") {
+    if (JSON.stringify(first) !== JSON.stringify(headers)) throw new Error("SIGNATURE_PROVIDER_CONFIGURATION_SCHEMA_MISMATCH");
+  } else {
+    // Legacy installations wrote provider records without a header row.
+    sheet.insertRowBefore(1);
+    sheet.getRange(1,1,1,headers.length).setValues([headers]);
   }
-
-  const providers = data.slice(1).filter(r => {
-    if (proveedorId && String(r[0]).trim() !== String(proveedorId).trim()) return false;
-    if (soloActivos && String(r[7]).trim() !== "Activo") return false;
+  return sheet;
+}
+function configureAdvancedSignatureProvider(payload) {
+  const {proveedorId,nombreProveedor,endpointUrl,apiKey,hmacSecret,tipoMecanismo,politicaSelladoTiempo,formatoCertificado,estadoHabilitado,configuracionJSON,eliminarApiKey,eliminarHmacSecret}=payload||{};
+  const id=String(proveedorId||"").trim(), name=String(nombreProveedor||"").trim();
+  if(!name||name.length>160)throw new Error("SIGNATURE_PROVIDER_NAME_REQUIRED");
+  const apiProp=getAdvancedSignatureProviderSecretPropertyKey_(id,"API_KEY");
+  const hmacProp=getAdvancedSignatureProviderSecretPropertyKey_(id,"HMAC_SECRET");
+  if(apiKey!==undefined&&apiKey!==null&&typeof apiKey!=="string")throw new Error("SIGNATURE_PROVIDER_API_KEY_INVALID");
+  if(typeof apiKey==="string"&&apiKey.trim()&&(!/^[\x21-\x7E]+$/.test(apiKey)||apiKey.length>8000))throw new Error("SIGNATURE_PROVIDER_API_KEY_INVALID");
+  if(hmacSecret!==undefined&&hmacSecret!==null&&typeof hmacSecret!=="string")throw new Error("SIGNATURE_PROVIDER_HMAC_SECRET_INVALID");
+  const cleanHmac=typeof hmacSecret==="string"?hmacSecret.trim():"";
+  if(cleanHmac&&(!/^[\x21-\x7E]{32,8000}$/.test(cleanHmac)))throw new Error("SIGNATURE_PROVIDER_HMAC_SECRET_INVALID");
+  if(eliminarApiKey!==undefined&&typeof eliminarApiKey!=="boolean")throw new Error("SIGNATURE_PROVIDER_API_KEY_INVALID");
+  if(eliminarHmacSecret!==undefined&&typeof eliminarHmacSecret!=="boolean")throw new Error("SIGNATURE_PROVIDER_HMAC_SECRET_INVALID");
+  if(eliminarApiKey===true&&typeof apiKey==="string"&&apiKey.trim())throw new Error("SIGNATURE_PROVIDER_API_KEY_INVALID");
+  if(eliminarHmacSecret===true&&cleanHmac)throw new Error("SIGNATURE_PROVIDER_HMAC_SECRET_INVALID");
+  const endpoint=String(endpointUrl||"").trim();
+  const endpointHasCredentials=/\/\/[^/@]+:[^/@]+@/.test(endpoint)||/[?&](?:api[_-]?key|hmac[_-]?secret|secret|token|password|credential|access[_-]?token|client[_-]?secret)=/i.test(endpoint);
+  if(endpoint&&(!/^https:\/\//i.test(endpoint)||endpointHasCredentials))throw new Error("SIGNATURE_PROVIDER_ENDPOINT_INVALID");
+  const cfg=validateAdvancedSignatureProviderConfigJSON_(configuracionJSON);
+  const lock=LockService.getScriptLock();let held=false;
+  try{
+    held=lock.tryLock(10000);if(!held)throw new Error("SIGNATURE_PROVIDER_CONFIGURATION_BUSY");
+    const properties=PropertiesService.getScriptProperties();
+    const ss=SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet=ensureAdvancedSignatureProviderSheet_(ss);
+    const rows=sheet.getDataRange().getValues().slice(1),seen=Object.create(null);
+    rows.forEach(row=>{
+      const rowId=String(row[0]||"").trim();if(!rowId)return;
+      if(seen[rowId])throw new Error("SIGNATURE_PROVIDER_CONFIGURATION_AMBIGUOUS");
+      seen[rowId]=true;
+      if(String(row[3]||""))getAdvancedSignatureProviderSecretPropertyKey_(rowId,"API_KEY");
+    });
+    // Migrate legacy plaintext API keys only after every legacy reference is valid and unique.
+    rows.forEach((row,index)=>{
+      const rowId=String(row[0]||"").trim(),legacy=String(row[3]||"");
+      if(!rowId||!legacy)return;
+      const legacyProp=getAdvancedSignatureProviderSecretPropertyKey_(rowId,"API_KEY");
+      if(!properties.getProperty(legacyProp))properties.setProperty(legacyProp,legacy);
+      sheet.getRange(index+2,4).clearContent();
+    });
+    const oldApi=properties.getProperty(apiProp)||"",oldHmac=properties.getProperty(hmacProp)||"";
+    let changed=false;
+    try{
+      if(eliminarApiKey===true){properties.deleteProperty(apiProp);changed=true;}
+      else if(typeof apiKey==="string"&&apiKey.trim()){properties.setProperty(apiProp,apiKey);changed=true;}
+      if(eliminarHmacSecret===true){properties.deleteProperty(hmacProp);changed=true;}
+      else if(cleanHmac){properties.setProperty(hmacProp,cleanHmac);changed=true;}
+      const data=sheet.getDataRange().getValues(),matches=[];
+      for(let i=1;i<data.length;i++)if(String(data[i][0]||"").trim()===id)matches.push(i+1);
+      if(matches.length>1)throw new Error("SIGNATURE_PROVIDER_CONFIGURATION_AMBIGUOUS");
+      const row=[id,name,endpoint,"",tipoMecanismo||"FirmaAvanzadaCualificada",politicaSelladoTiempo?"Habilitado":"Deshabilitado",formatoCertificado||"X.509_v3",estadoHabilitado!==false?"Activo":"Inactivo",cfg,new Date().toISOString(),String(payload&&payload._verifiedUserId||"SYSTEM")];
+      if(matches.length)sheet.getRange(matches[0],1,1,row.length).setValues([row]);else sheet.appendRow(row);
+    }catch(err){
+      if(changed){try{if(oldApi)properties.setProperty(apiProp,oldApi);else properties.deleteProperty(apiProp);if(oldHmac)properties.setProperty(hmacProp,oldHmac);else properties.deleteProperty(hmacProp);}catch(_){throw new Error("SIGNATURE_PROVIDER_SECRET_ROLLBACK_REQUIRED");}}
+      throw err;
+    }
+    return {status:"success",proveedorId:id,nombreProveedor:name,tipoMecanismo:tipoMecanismo||"FirmaAvanzadaCualificada",apiKeyConfigurada:!!properties.getProperty(apiProp),hmacSecretConfigurado:!!properties.getProperty(hmacProp),message:"Configuración de proveedor guardada; las credenciales se conservan fuera de la hoja."};
+  }finally{if(held){try{lock.releaseLock();}catch(_){}}}
+}
+function getAdvancedSignatureProviderConfig(payload) {
+  const {proveedorId,soloActivos}=payload||{};
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=ss.getSheetByName("ConfiguracionFirmaAvanzada");
+  if(!sheet||sheet.getLastRow()===0)return {status:"success",configuracionDisponible:false,proveedores:[]};
+  const data=sheet.getDataRange().getValues(),start=String((data[0]||[])[0]||"").trim().toLowerCase()==="proveedorid"?1:0;
+  const properties=PropertiesService.getScriptProperties();
+  const providers=data.slice(start).filter(row=>{
+    if(proveedorId&&String(row[0]).trim()!==String(proveedorId).trim())return false;
+    if(soloActivos&&String(row[7]).trim()!=="Activo")return false;
     return true;
-  }).map(r => ({
-    proveedorId: r[0],
-    nombreProveedor: r[1],
-    endpointUrl: r[2],
-    apiKey: r[3] ? "••••••••" : "",
-    tipoMecanismo: r[4] || "FirmaAvanzadaCualificada",
-    politicaSelladoTiempo: r[5],
-    formatoCertificado: r[6] || "X.509_v3",
-    estado: r[7] || "Activo"
-  }));
-
-  return { status: "success", proveedores: providers };
+  }).map(row=>{
+    const id=String(row[0]||"").trim(),apiProp=getAdvancedSignatureProviderSecretPropertyKey_(id,"API_KEY"),hmacProp=getAdvancedSignatureProviderSecretPropertyKey_(id,"HMAC_SECRET");
+    const apiConfigured=!!properties.getProperty(apiProp)||!!String(row[3]||"");
+    const endpoint=String(row[2]||""),endpointHasCredentials=/\/\/[^/@]+:[^/@]+@/.test(endpoint)||/[?&](?:api[_-]?key|hmac[_-]?secret|secret|token|password|credential|access[_-]?token|client[_-]?secret)=/i.test(endpoint);
+    return {proveedorId:row[0],nombreProveedor:row[1],endpointUrl:endpointHasCredentials?"":endpoint,endpointCredentialDetected:endpointHasCredentials,apiKey:apiConfigured?"••••••••":"",apiKeyConfigurada:apiConfigured,hmacSecretConfigurado:!!properties.getProperty(hmacProp),requiereMigracionCredencial:!!String(row[3]||""),tipoMecanismo:row[4]||"FirmaAvanzadaCualificada",politicaSelladoTiempo:row[5],formatoCertificado:row[6]||"X.509_v3",estado:row[7]||"Activo"};
+  });
+  return {status:"success",configuracionDisponible:providers.length>0,proveedores:providers};
 }
 
 function assertAdvancedSignatureDocumentScope_(payload, ss, documentoId, solicitudId, operation) {

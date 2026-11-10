@@ -615,3 +615,98 @@ console.log("USER generic signature-provider callback authentication, replay pro
   assert.equal(oversizedCorrelation.state.secretReads.length,0);
 }
 console.log("USER callback strict scalar and correlation bounds: PASS");
+
+
+function makeProviderConfigHarness(initialRows = [], options = {}) {
+  let rows = initialRows.map(row => row.slice());
+  const state = { held:false, opens:0, creates:0, lockAttempts:0, releases:0, reads:0 };
+  const sheet = {
+    getLastRow: () => rows.length,
+    getDataRange: () => ({ getValues: () => { state.reads++; return rows.map(row => row.slice()); } }),
+    getRange: (row, col, rowCount, colCount) => ({
+      getValues: () => Array.from({length:rowCount},(_,ri)=>Array.from({length:colCount},(_,ci)=>(rows[row-1+ri]||[])[col-1+ci] ?? "")),
+      setValues: values => { for(let ri=0;ri<values.length;ri++){while(rows.length<row+ri)rows.push([]);rows[row-1+ri]=values[ri].slice();} },
+      clearContent: () => { if(rows[row-1])rows[row-1][col-1]=""; }
+    }),
+    appendRow: row => rows.push(row.slice()),
+    insertRowBefore: row => rows.splice(row-1,0,[])
+  };
+  const ss = {
+    getSheetByName: name => name==="ConfiguracionFirmaAvanzada" ? (options.noSheet ? null : sheet) : null,
+    insertSheet: name => { assert.equal(name,"ConfiguracionFirmaAvanzada"); state.creates++; options.noSheet=false; return sheet; }
+  };
+  const propertyValues = new Map(Object.entries(options.properties || {}));
+  const properties = {
+    getProperty: key => propertyValues.get(key) || null,
+    setProperty: (key,value) => propertyValues.set(key,String(value)),
+    deleteProperty: key => propertyValues.delete(key)
+  };
+  const context = {
+    LockService: { getScriptLock: () => ({
+      tryLock: () => { state.lockAttempts++; if(options.lockAvailable===false)return false; state.held=true; return true; },
+      releaseLock: () => { assert.equal(state.held,true); state.held=false; state.releases++; }
+    })},
+    PropertiesService: { getScriptProperties: () => properties },
+    SpreadsheetApp: { openById: () => { state.opens++; return ss; } },
+    SPREADSHEET_ID: "SPREADSHEET"
+  };
+  ["getAdvancedSignatureProviderSecretPropertyKey_","validateAdvancedSignatureProviderConfigJSON_",
+    "ensureAdvancedSignatureProviderSheet_","configureAdvancedSignatureProvider",
+    "getAdvancedSignatureProviderConfig"].forEach(name => vm.runInNewContext(extractFunction(name),context));
+  return {configure:p=>context.configureAdvancedSignatureProvider(p),get:p=>context.getAdvancedSignatureProviderConfig(p||{}),state,rows:()=>rows,properties:propertyValues};
+}
+{
+  const configured=makeProviderConfigHarness();
+  const result=configured.configure({proveedorId:"PSC_HN",nombreProveedor:"PSC de prueba",endpointUrl:"https://psc.example.test/api",apiKey:"API-SECRET-DO-NOT-STORE",hmacSecret:"H".repeat(40),_verifiedUserId:"ACTOR-1"});
+  assert.equal(result.apiKeyConfigurada,true);assert.equal(result.hmacSecretConfigurado,true);
+  assert.equal(configured.properties.get("IMA_SIGNATURE_PROVIDER_PSC_HN_API_KEY"),"API-SECRET-DO-NOT-STORE");
+  assert.equal(configured.properties.get("IMA_SIGNATURE_PROVIDER_PSC_HN_HMAC_SECRET"),"H".repeat(40));
+  assert.equal(configured.rows()[1][3],"");assert.equal(configured.rows()[1][10],"ACTOR-1");
+  const publicConfig=configured.get();
+  assert.equal(publicConfig.proveedores[0].apiKey,"••••••••");assert.equal(publicConfig.proveedores[0].hmacSecretConfigurado,true);
+  assert.equal(JSON.stringify(publicConfig).includes("API-SECRET-DO-NOT-STORE"),false);
+  assert.equal(JSON.stringify(publicConfig).includes("H".repeat(40)),false);
+  configured.configure({proveedorId:"PSC_HN",nombreProveedor:"PSC de prueba",endpointUrl:"https://psc.example.test/api"});
+  assert.equal(configured.properties.get("IMA_SIGNATURE_PROVIDER_PSC_HN_API_KEY"),"API-SECRET-DO-NOT-STORE");
+
+  const legacy=makeProviderConfigHarness([["PSC_OLD","PSC anterior","https://old.example.test","LEGACY-SECRET","FirmaAvanzadaCualificada","Habilitado","X.509_v3","Activo","{}","",""]]);
+  legacy.configure({proveedorId:"PSC_NEW",nombreProveedor:"PSC nuevo"});
+  assert.equal(legacy.properties.get("IMA_SIGNATURE_PROVIDER_PSC_OLD_API_KEY"),"LEGACY-SECRET");
+  assert.equal(legacy.rows()[1][3],"");assert.equal(legacy.rows()[2][3],"");
+
+  const precedence=makeProviderConfigHarness([
+    ["ProveedorID","NombreProveedor","EndpointURL","ApiKeyLegacy","TipoMecanismo","PoliticaSelladoTiempo","FormatoCertificado","Estado","ConfiguracionJSON","FechaActualizacion","ActualizadoPor"],
+    ["PSC_HN","PSC","https://psc.example.test","STALE-SECRET","FirmaAvanzadaCualificada","Habilitado","X.509_v3","Activo","{}","",""]
+  ],{properties:{IMA_SIGNATURE_PROVIDER_PSC_HN_API_KEY:"ROTATED-SECRET"}});
+  precedence.configure({proveedorId:"PSC_HN",nombreProveedor:"PSC"});
+  assert.equal(precedence.properties.get("IMA_SIGNATURE_PROVIDER_PSC_HN_API_KEY"),"ROTATED-SECRET");assert.equal(precedence.rows()[1][3],"");
+
+  configured.configure({proveedorId:"PSC_HN",nombreProveedor:"PSC de prueba",eliminarApiKey:true,eliminarHmacSecret:true});
+  assert.equal(configured.properties.has("IMA_SIGNATURE_PROVIDER_PSC_HN_API_KEY"),false);
+  assert.equal(configured.properties.has("IMA_SIGNATURE_PROVIDER_PSC_HN_HMAC_SECRET"),false);
+
+  const sensitive=makeProviderConfigHarness();
+  assert.throws(()=>sensitive.configure({proveedorId:"PSC_HN",nombreProveedor:"PSC",configuracionJSON:{apiKey:"LEAK"}}),/SIGNATURE_PROVIDER_SECRET_IN_CONFIGURATION/);
+  assert.equal(sensitive.state.opens,0);
+  const endpoint=makeProviderConfigHarness();
+  assert.throws(()=>endpoint.configure({proveedorId:"PSC_HN",nombreProveedor:"PSC",endpointUrl:"https://user:pass@psc.example.test"}),/SIGNATURE_PROVIDER_ENDPOINT_INVALID/);
+  assert.equal(endpoint.state.opens,0);
+  const weakHmac=makeProviderConfigHarness();
+  assert.throws(()=>weakHmac.configure({proveedorId:"PSC_HN",nombreProveedor:"PSC",hmacSecret:"short"}),/SIGNATURE_PROVIDER_HMAC_SECRET_INVALID/);
+  assert.equal(weakHmac.state.opens,0);
+
+  const busy=makeProviderConfigHarness([],{lockAvailable:false});
+  assert.throws(()=>busy.configure({proveedorId:"PSC_HN",nombreProveedor:"PSC"}),/SIGNATURE_PROVIDER_CONFIGURATION_BUSY/);
+  assert.equal(busy.state.opens,0);assert.equal(busy.state.releases,0);
+
+  const empty=makeProviderConfigHarness([],{noSheet:true}),emptyConfig=empty.get();
+  assert.equal(emptyConfig.proveedores.length,0);assert.equal(emptyConfig.configuracionDisponible,false);assert.equal(empty.state.creates,0);
+
+  const legacyEndpoint=makeProviderConfigHarness([
+    ["ProveedorID","NombreProveedor","EndpointURL","ApiKeyLegacy","TipoMecanismo","PoliticaSelladoTiempo","FormatoCertificado","Estado","ConfiguracionJSON","FechaActualizacion","ActualizadoPor"],
+    ["PSC_LEGACY","PSC","https://user:pass@psc.example.test?token=SECRET","","FirmaAvanzadaCualificada","Habilitado","X.509_v3","Activo","{}","",""]
+  ]);
+  const safeLegacyView=legacyEndpoint.get();
+  assert.equal(safeLegacyView.proveedores[0].endpointUrl,"");assert.equal(safeLegacyView.proveedores[0].endpointCredentialDetected,true);
+}
+console.log("USER signature provider credentials, legacy migration, masking, removal and read-only config contracts: PASS");
