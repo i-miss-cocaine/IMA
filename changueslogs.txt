@@ -746,3 +746,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - T153-S01 conserva alcance bloqueado solo para decisión/fuente canónica y conciliación de datos institucionales reales; no bloquea el motor genérico. No se alteran dependencias explícitas.
 - Solo cambios documentales. Sin cambios de código, esquemas, datos, permisos ni configuración de ramas. Pruebas de producto no aplican/no ejecutadas.
 - Checkpoint C1.413 en Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt; índice actualizado.
+
+[2026-11-10] C1.414 — IMA-EXEC-20261110-1245Z-02 — triage PM-00 y orden topológico de idempotencia
+- AUD-NG-071 y AUD-NG-069 se reclasifican a PM-03; orden de implementación AUD-NG-071 (reserva atómica server-side) antes de AUD-NG-069 (propagación de claves/reintentos del cliente).
+- AUD-NG-006 permanece en PM-08 como verificación transversal integrada; no se duplican las implementaciones.
+- Evidencia reutilizada: backend/user-service/Code.gs SHA 85d12dad06826fdc37660f47d92e6976ff28bfe7; js/api.js SHA c54d23ad1fc84add9e204a0233d824a2bfcc8ed3; requisitos completos en backlog Otros blob SHA 24347c3776521c930391f89e0430910554bf233b.
+- Estados de tareas sin cambios (Pendientes). Solo cambios documentales; sin código, datos, esquemas, permisos ni pruebas de producto.
+- Checkpoint C1.414: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt; índice Auditoría/INDICE_CHECKPOINTS.md.

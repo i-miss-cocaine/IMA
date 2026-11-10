@@ -5027,3 +5027,16 @@ Alcance estático satisfecho; sin cambios de código. Hallazgos AUD-NG-374..376 
 - TASK-153/T153-S01 permanece Bloqueada por falta de autoridad institucional verificable para CatalogoDepartamentos/DepartamentosAcademicos y propiedad departamental. No inferir, fusionar catálogos ni migrar recursos.
 - TASK-696 permanece Bloqueada por TASK-153/T153-S01, F29-TASK17 y F37-TASK10; no adelantar PM-02.
 - La selección §6.1 se detiene en esta iteración para resolver el ciclo y el bloqueo externo. No se crea tarea global ni expediente duplicado.
+
+
+===============================================================================
+## C1.414 — Orden topológico de idempotencia (AUD-NG-071 / AUD-NG-069 / AUD-NG-006)
+
+- **Clasificación:** AUD-NG-071 y AUD-NG-069 se asignan a PM-03 (Integración, procesos y eventos), de acuerdo con el alcance PM-03 ya descrito en el Plan Maestro. AUD-NG-006 permanece en PM-08 como requisito transversal de calidad/resiliencia.
+- **AUD-NG-071:** reserva atómica server-side. El código actual en `backend/user-service/Code.gs` contiene `checkAndRegisterIdempotencyKey` y `saveIdempotentResult`, pero la consulta/registro observado usa `CacheService`; no hay reserva atómica bajo `LockService` antes de ejecutar la operación. Requisito sigue Pendiente.
+- **AUD-NG-069:** generación y propagación de clave por solicitud lógica en `fetchApi`, con reintentos seguros. El código actual `js/api.js` no crea ni propaga clave de idempotencia y reintenta errores de red hasta dos veces. Requisito sigue Pendiente.
+- **Arista nueva:** AUD-NG-071 → AUD-NG-069. La reserva atómica del servidor debe existir antes de permitir reintentos automáticos de mutaciones desde el cliente; evita la carrera en la que dos solicitudes con la misma clave ejecutan la escritura antes de persistir el resultado.
+- **Relación con AUD-NG-006:** AUD-NG-006 conserva el alcance amplio de idempotencia por operación y se verifica una vez que las dos piezas anteriores estén integradas. La implementación de la reserva y la propagación no se repetirá como trabajo separado dentro de AUD-NG-006.
+- **Límites:** no se eliminan requisitos originales ni se cambian estados; no se crea una auditoría duplicada; no se modificó código ni se ejecutaron pruebas de producto.
+- **Fuentes vigentes:** `js/api.js` SHA `c54d23ad1fc84add9e204a0233d824a2bfcc8ed3`; `backend/user-service/Code.gs` SHA `85d12dad06826fdc37660f47d92e6976ff28bfe7`; backlog Otros blob SHA `24347c3776521c930391f89e0430910554bf233b`; auditoría previa reutilizada: AUD-NG-006 en el propio backlog.
+===============================================================================

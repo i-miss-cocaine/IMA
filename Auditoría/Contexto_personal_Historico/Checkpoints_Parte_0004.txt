@@ -237,3 +237,44 @@ Actividad: PM-00 — aclaración normativa y corrección de criterios de bloqueo
 Reaplicar el algoritmo PM-00/§6.1, distinguiendo bloqueos para datos/actos institucionales reales de tareas genéricas configurables. Leer los requisitos originales completos y verificar dependencias de la siguiente candidata. No asumir que T153-S01 bloquea el motor genérico.
 Commit: SHA por verificar después de publicar.
 ===============================================================================
+===============================================================================
+## CHECKPOINT C1.414 — Triage PM-00: orden topológico de idempotencia
+Sesión: IMA-EXEC-20261110-1245Z-02
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama: NG_beta_0.0.0.1_work.
+HEAD de partida verificado: 40ba9bf1090aaa7b136604e1c8fbc48e02d1f485.
+Checkpoint anterior: C1.413.
+Fase: PM-00 — clasificación y resolución de dependencias; sin implementación funcional.
+
+### Tarea/resultado
+- AUD-NG-071 y AUD-NG-069 se reclasifican de PM-00 provisional a PM-03, coherente con el alcance de integración/procesos/eventos.
+- Orden topológico: AUD-NG-071 → AUD-NG-069.
+- AUD-NG-006 se conserva en PM-08 como criterio transversal de integración/regresión; su evidencia consume las dos piezas anteriores sin duplicar implementación.
+- Los tres IDs permanecen Pendientes. Ninguno se marca Completado.
+
+### Evidencia y razonamiento
+- Requisitos originales completos leídos en `pendientes/Otros/Pendientes.md`, blob SHA `24347c3776521c930391f89e0430910554bf233b`.
+- `backend/user-service/Code.gs` SHA `85d12dad06826fdc37660f47d92e6976ff28bfe7`: checkAndRegisterIdempotencyKey/saveIdempotentResult usan CacheService; no se observa reserva atómica bajo LockService antes de ejecutar.
+- `js/api.js` SHA `c54d23ad1fc84add9e204a0233d824a2bfcc8ed3`: fetchApi reintenta fallos de red hasta dos veces y no genera/propaga idempotencyKey/idempotencyToken.
+- La aceptación de AUD-NG-069 requiere que el servidor ya pueda deduplicar atómicamente; por eso AUD-NG-071 debe precederla.
+- AUD-NG-006 ya contiene el requisito transversal y evidencia estática; se reutiliza, sin nueva auditoría ni duplicación.
+
+### Archivos modificados
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md — filas de AUD-NG-069, AUD-NG-071 y AUD-NG-006; §10.84.
+- Auditoría/MapaDependencias.md — arista AUD-NG-071 → AUD-NG-069 y relación con AUD-NG-006.
+- changueslogs.txt — entrada C1.414.
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — este checkpoint.
+- Auditoría/INDICE_CHECKPOINTS.md — fila C1.414.
+
+### Verificaciones y límites
+- Revisión textual de las filas, nueva arista y consistencia de fases.
+- Revisión focalizada de código existente y reutilización de evidencia conforme a §19.6.
+- No se modificó código, datos, esquemas, permisos, ramas ni configuración.
+- Pruebas de producto no ejecutadas; no aplica a esta reclasificación documental.
+- No se resolvió el ciclo F29-TASK05↔F29-TASK17 ni el bloqueo de fuente canónica real de T153-S01.
+
+### Siguiente acción exacta
+Continuar PM-00 con la siguiente tarea elegible tras aplicar §6.1. Candidatas con requisitos completos para clasificación: TASK-641 (P1, Service Worker, ruta `pendientes/Otros/Pendientes.md`, fuente `Auditoría/AUDITORIA_COMPLETADAS_F8-TASK03.md`) y TASK-680 (Crítico/P0, pero bloqueada por F8-TASK19/20/22 pendientes). TASK-641 requiere revisión de dependencias y asignación de fase destino; no iniciar implementación hasta confirmar fase y puertas PM.
+Commit: SHA por verificar después de publicar.
+===============================================================================
