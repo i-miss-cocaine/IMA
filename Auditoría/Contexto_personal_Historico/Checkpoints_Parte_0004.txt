@@ -1302,3 +1302,41 @@ Commits de este incremento:
 - Probar integridad del ciclo crear/listar/consultar/enviar/resultado y casos de rollback/propiedad ausente o duplicada.
 
 ===============================================================================
+
+
+===============================================================================
+## CHECKPOINT C1.441 — TASK-153 / EXAM: createExam con propiedad departamental y rollback compensatorio
+Sesión: IMA-EXEC-20261110-1756Z-01
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+HEAD inicial: f01a1cb3d63214a923152e07e0b33caba43f1e8a.
+HEAD final de implementación/contratos: b497635b5cb6ea742361bbd847571c75a961c1a3.
+HEAD base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59; sin escrituras en la rama base.
+Checkpoint anterior: C1.440.
+
+### Alcance implementado
+- `createExam` exige identidad firmada y ámbito departamental vigente; el UserID del creador se deriva de claims, no de `payload.profesorId`.
+- Resuelve el departamento desde la asignación verificada única o exige `departmentId/departamentoId` cuando el actor tiene más de uno. El departamento elegido debe pertenecer a `scope.departmentIds`; un permiso institucional amplio sin asignación departamental explícita no permite escoger departamentos arbitrarios.
+- Exige la hoja `ResourceOwnership` y valida su encabezado canónico de nueve columnas. Falla cerrado si falta la hoja o el esquema no coincide.
+- Bajo ScriptLock registra primero la propiedad EXAMEN con institución, departamento, estado ACTIVE y actor firmado; después escribe examen y preguntas. El examen no se publica antes de su ownership.
+- Ante fallo de persistencia compensa preguntas, examen y ownership por ID; si la compensación falla devuelve `EXAM_CREATE_ROLLBACK_FAILED`. Esto cubre fallos capturables; una interrupción abrupta del runtime entre escrituras sigue siendo una limitación de la persistencia multihoja de Sheets y requiere beta/operación real para validación adicional.
+- Contratos añadidos: alta correcta y propiedad, identidad del creador firmada, denegación de departamento ajeno, esquema de ownership inválido y rollback tras fallo de escritura de preguntas. Los contratos previos mantienen pruebas de propiedad ausente/duplicada en lecturas.
+
+### Archivos modificados
+- `backend/exam-service/Code.gs`
+- `tests/security/exam-service-security-contract.test.js`
+- Registros de continuidad, plan, auditoría, pendientes, changelog y beta.
+
+### Verificación
+- Parseo/sintaxis local del servicio: PASS.
+- Contrato local aislado en Code Mode con mocks/fixtures: PASS (creación, ownership, identidad, ámbito y rollback compensatorio).
+- GitHub Actions workflow `Exam-Service security local contracts`, run **42870106305**, HEAD exacto `b497635b5cb6ea742361bbd847571c75a961c1a3`: **PASS**; pasos `exam-service-security-contract.test.js` y `exam-service-departmental-access.test.js` PASS.
+- Run intermedio **42869895990**: FAIL por fixture de prueba sin hoja `AsignacionesAmbitosRoles`; se corrigió el fixture y el run final indicado pasó. Run de código previo **42869802136**: PASS antes de añadir el nuevo contrato.
+- Beta Apps Script/Sheets/Drive y navegador: NOT RUN; BETA-FUNC-022 permanece Pendiente beta.
+- No se desplegó Apps Script ni se modificaron datos reales.
+
+### Estado y siguiente acción
+- C1.441 completa para el subalcance de creación; TASK-153 permanece En ejecución y AUD-NG-386 abierto.
+- Siguiente: proteger `updateExam`, `updateExamStatus`, `deleteExam`, `gradeExamSubmission` y `deleteExamSubmission` con identidad, permiso por operación, ResourceOwnership y ámbito; revisar los permisos de `getTeacherExamActivity` y validar ciclo completo.
+===============================================================================
