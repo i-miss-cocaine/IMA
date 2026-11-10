@@ -1298,3 +1298,15 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - Sin despliegue ni datos reales; lock y fixtures locales. TASK-153 sigue En ejecución; AUD-NG-386 abierto.
 - Commits: `7f3153e036d17ec6d070a67325b447f9c034422d`; `239e360700728569e4a000ca542e837be77b1c25`.
 ===============================================================================
+
+===============================================================================
+## C1.462 — creación de solicitudes de firma avanzada: RBAC, ownership y lock
+- `createAdvancedSignatureRequest` exige RBAC e identidad verificada; el documento debe existir en DocumentosEstudiante y su propiedad se resuelve por expediente, solicitud de admisión o ownership documental.
+- Se verifica la coherencia solicitud↔expediente y se rechaza el acceso fuera del departamento. Se canonicaliza el documento cuando el usuario proporciona DriveFileID.
+- ScriptLock cubre ownership, detección de transacción pendiente duplicada y append. Una solicitud pendiente del mismo documento/firmante no puede duplicarse.
+- Contrato local: creación autorizada, canonicalización, ownership por expediente/solicitud, cruce departamental, ownership ausente, solicitud discordante, RBAC/identidad, lock ocupado e idempotencia PASS.
+- GitHub Actions run `42895590817` SUCCESS: nuevo contrato USER de firma y suites Department Scope, ACADEMIC, ACCOUNTING, ResourceOwnership ABAC, voucher client y sintaxis PASS.
+- Sin despliegue ni datos reales. La actualización de estado/callback, registro de firma y certificado de auditoría quedan pendientes.
+- TASK-153 sigue En ejecución; AUD-NG-386 abierto.
+- Commits: `bbd2d1389234233f9d75c8ddd0fb9697e8c5a434`; `58d2a03f1d7f0c83e52e88c47f821c8d39256871`; `21fe586777cc6394effcdcbc639f8d5da1fa1374`; `ce08eabc4821f7856c40be16b1bd7620891c75ac`.
+===============================================================================
