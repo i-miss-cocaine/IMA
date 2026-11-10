@@ -1666,3 +1666,45 @@ Checkpoint anterior: C1.448.
 - TASK-153 permanece En ejecución; AUD-NG-386 abierto por idempotencia/reintentos, evaluaciones/entrevistas y demás rutas/requisitos ACADEMIC.
 - Próxima iteración: revisar idempotencia de conversión y reintentos tras éxito parcial, sin abrir otra tarea. Mantener sesión IMA-EXEC-20261110-1825Z-02.
 ===============================================================================
+
+
+===============================================================================
+## CHECKPOINT C1.450 — ACADEMIC: idempotencia de reintentos de conversión
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.449.
+
+### Trabajo de esta iteración (un solo subhallazgo)
+- Se añadió assertAdmissionEnrollmentRetrySafe_: una matrícula del mismo usuario/año solo puede reutilizarse si su observación identifica exactamente la solicitud que se está convirtiendo y grado/sección coinciden. Más de una coincidencia o una matrícula de otro origen/datos incompatibles falla cerradamente.
+- Se añadió findAdmissionConversionMovement_: identifica el movimiento de ingreso por expediente/año/tipo y marcador exacto de solicitud. No reutiliza movimientos ordinarios/importados; valida que el movimiento propio esté asociado a la matrícula actual y rechaza duplicados o vínculos cruzados.
+- convertAdmissionToStudent valida la matrícula preexistente antes de iniciar las escrituras compensables y usa el nuevo selector estricto para el movimiento.
+
+### Archivos
+- backend/academic-service/Code.gs
+- tests/security/academic-student-expediente-ownership.test.js
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Commits
+- 0f4262aaff538d0cc908ad196944016f4b9bb3aa — validación de idempotencia matrícula/movimiento.
+- 7be60a51941b41dad15fb7e79fbbe6114bddc8eb — contrato de reintentos.
+- 905c5c5c5e5ec107c1cb0f7c1127025a4a8507a4 — Plan Maestro.
+- 5f6663f4ba7f683822f5fa616cd66f98bc56032a — auditoría.
+
+### Verificación
+- Parseo/sintaxis backend/academic-service/Code.gs: PASS.
+- Parseo/sintaxis del contrato: PASS.
+- Ejecución dinámica aislada de los validadores: PASS para reuso de matrícula propia, rechazo de matrícula ajena, movimiento ajeno ignorado y reuso del movimiento propio. El contrato persistente también cubre cambio de grado/sección, ambigüedad y asociación conflictiva.
+- Suite Node completa y CI: NOT RUN/no reportados como PASS.
+- Despliegue Apps Script/datos reales: no ejecutados.
+
+### Límites y continuidad
+- Se evita sobrescribir matrícula ordinaria ajena a la solicitud y confundir movimientos existentes con el movimiento de conversión.
+- El alcance idempotente de esta iteración cubre matrícula y movimiento de ingreso. No se afirma idempotencia global de servicios externos ni atomicidad ACID de Google Sheets.
+- TASK-153 permanece En ejecución; AUD-NG-386 abierto por otros requisitos y rutas ACADEMIC.
+- Próxima iteración: revisar reconciliación de reintentos cuando existan restos de ejecuciones anteriores o marcadores inconsistentes, manteniendo una sola tarea y la sesión IMA-EXEC-20261110-1825Z-02.
+===============================================================================
