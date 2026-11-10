@@ -756,4 +756,4 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 
 ### TASK-153 — corrección C1.467
 - Se corrigió el fixture de archivo fuente ausente: mantiene el documento canónico y deja vacío únicamente el DriveFileID. CI anterior falló en esta preparación del escenario, no en la lógica del servicio.
-- Repetición de CI pendiente tras este commit. Se conserva el alcance C1.466 sin abrir una tarea distinta.
+- Repetición CI run 42901121407: SUCCESS; el contrato USER signature ownership y todos los pasos del workflow Department Scope terminaron SUCCESS. Se conserva el alcance C1.466 sin abrir una tarea distinta.

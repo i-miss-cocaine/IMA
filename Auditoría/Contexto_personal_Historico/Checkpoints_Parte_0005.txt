@@ -337,3 +337,23 @@ La primera CI de C1.466 falló únicamente en el caso de archivo fuente ausente:
 ### Estado
 C1.466 conserva su alcance funcional. Esta corrección no añade una segunda tarea: ajusta el caso de prueba del mismo subalcance. TASK-153 permanece En ejecución; AUD-NG-386 abierto.
 ===============================================================================
+
+## CHECKPOINT C1.468 — verificación CI de hash binario de archivo fuente
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-10 UTC.
+Rama: NG_beta_0.0.0.1_work.
+Checkpoint relacionado: C1.466 / C1.467.
+HEAD inicial: 40aa58a2719837e1a72d945fab2673b18515d96e.
+
+### Resultado de verificación
+- GitHub Actions Department Scope Contract run 42901121407: SUCCESS.
+- El paso `Run user-service signature ownership contract` terminó SUCCESS.
+- También finalizaron SUCCESS los contratos Department Scope, Academic Departmental Resource Access, Academic Student Expediente Ownership, Academic Admission Ownership, Accounting Departmental Resource Access, Generic Resource Ownership ABAC y Student Private Voucher Client.
+- Syntax-check de USER, ACADEMIC y ACCOUNTING: SUCCESS.
+- La corrección del fixture de archivo ausente quedó validada en CI.
+
+### Estado
+C1.466 implementado y su contrato de repositorio aprobado por CI. Las pruebas aisladas locales de C1.466 también PASS. No se ejecutó Drive/Apps Script real ni beta. TASK-153 continúa En ejecución; AUD-NG-386 abierto.
+Siguiente subalcance: revisar identidad y ámbito del firmante destinatario en createAdvancedSignatureRequest.
+
+===============================================================================
