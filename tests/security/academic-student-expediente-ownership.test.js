@@ -598,6 +598,9 @@ console.log("ACADEMIC converted admission reconciliation contract passed.");
     /ADMISSION_CHARGE_CONFLICT/,"unmarked active charge must block admission charge creation");
   assert.throws(()=>registerCharge([emptyHeader[0],linked],"ADMISION|ADM-1|MAT-1",1600),
     /ADMISSION_CHARGE_CONFLICT/,"same reference with changed amount must fail closed");
+  const ordinary=registerCharge(emptyHeader,"",1500);
+  assert.equal(ordinary.sheet.rows[1].length,9,"ordinary charges must preserve the legacy nine-column row shape");
+  assert.equal(ordinary.sheet.rows[0].length,9,"ordinary enrollment must not trigger admission-reference schema migration");
 }
 console.log("ACADEMIC admission charge attribution contract passed.");
 
