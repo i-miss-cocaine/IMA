@@ -82,3 +82,42 @@ Corregir `offerWaitlistSlot` para eliminar lectura de detalles antes de autoriza
 - Las pruebas dependientes de servicios desplegados se reservan a beta; no bloquean la aprobación local.
 - Siguiente acción: revisar `reorderWaitlist` y sus límites de autorización/posición, manteniendo la sesión `IMA-EXEC-20261110-1825Z-02`.
 ===============================================================================
+
+===============================================================================
+## CHECKPOINT C1.462 — USER: propiedad y concurrencia en solicitudes de firma avanzada
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.461.
+HEAD inicial del subalcance: 3cea8be985c82ddd60f95a1c931915d62988f04c.
+HEAD final de implementación y pruebas: ce08eabc4821f7856c40be16b1bd7620891c75ac.
+
+### Alcance
+Revisar la creación de solicitudes de firma avanzada en USER para evitar transacciones sin propiedad documental verificada, acceso fuera del departamento y duplicidad concurrente.
+
+### Implementación
+- `createAdvancedSignatureRequest` valida `validateRolePermission` en el handler, requiere identidad verificada y ejecuta el flujo bajo `ScriptLock`.
+- `assertAdvancedSignatureDocumentScope_` resuelve el documento por ID canónico o DriveFileID; comprueba la coherencia de solicitud y expediente y verifica ownership de `EXPEDIENTE_ESTUDIANTE`, `SOLICITUD_ADMISION` o `DOCUMENTO_ESTUDIANTE` según el vínculo.
+- La transacción almacena el ID canónico del documento. Una transacción `Pendiente` existente para el mismo documento/firmante impide duplicar la solicitud.
+- El evento `ADVANCED_SIGNATURE_REQUEST_CREATED` registra el actor verificado y el departamento propietario; el lock se libera en `finally`.
+
+### Verificación local
+- GitHub Actions run `42895590817`: SUCCESS, Node 24. URL: https://github.com/i-miss-cocaine/IMA/actions/runs/42895590817
+- `user-service-signature-ownership.test.js`: PASS; creación válida, DriveFileID→documento canónico, ownership de expediente y solicitud, rechazo interdepartamental, ownership ausente, solicitud discordante, RBAC/identidad inválidos, lock contencioso sin acceso a Sheets y duplicidad pendiente.
+- Contratos Department Scope, ACADEMIC expediente/admisión/entrevistas/evaluaciones/duplicados/reapertura/lista de espera, ACCOUNTING, ResourceOwnership ABAC y voucher client: PASS.
+- `node --check`: User/Academic/Accounting Code.gs y `js/student.js`: PASS.
+- Sin despliegue, servicios vivos, Google Sheets real ni datos institucionales reales. Concurrencia simulada con lock y fixtures locales.
+
+### Commits
+- `bbd2d1389234233f9d75c8ddd0fb9697e8c5a434` — ownership documental y lock.
+- `58d2a03f1d7f0c83e52e88c47f821c8d39256871` — RBAC en handler.
+- `21fe586777cc6394effcdcbc639f8d5da1fa1374` — contrato local.
+- `ce08eabc4821f7856c40be16b1bd7620891c75ac` — integración al workflow.
+
+### Estado y continuidad
+- Creación de solicitudes de firma avanzada corregida y aprobada localmente.
+- **TASK-153 permanece En ejecución y AUD-NG-386 abierto**. No se han cerrado `checkAdvancedSignatureStatus`, `registerDocumentSignature` ni `generateSignatureAuditCertificate`; requieren revisión separada de autenticidad del proveedor, ownership y confidencialidad.
+- Las pruebas dependientes de servicios desplegados quedan reservadas a beta; no bloquean esta aprobación local.
+- Siguiente acción: auditar la actualización de estado/callback de firma avanzada, sin asumir autenticidad de `respuestaProveedor` enviada por cliente.
+===============================================================================
