@@ -1275,6 +1275,56 @@ function assertTaskServiceSubmissionTaskOwnership_(payload,deliveryId,operation)
  const task=getSheetOrThrow(ss,"Tareas").getDataRange().getValues().slice(1).find(r=>String(r[0]||"").trim()===String(delivery[1]||"").trim());
  if(!task)throw new Error("RESOURCE_NOT_FOUND");assertTaskServiceTeacherCanManageTask(payload,task,operation||"MANAGE");return {delivery,task};
 }
+
+function getTaskServiceSubmissionAccess_(payload, operation) {
+  const identity = getVerifiedTaskIdentity_(payload);
+  if (!identity || !identity.authorized) throw new Error("RESOURCE_NOT_FOUND");
+  const role = identity.role;
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const deliveries = getSheetOrThrow(ss, "Entregas").getDataRange().getValues().slice(1);
+  const requestedDeliveryId = String(payload && payload.entregaId || "").trim();
+  const requestedTaskId = String(payload && payload.tareaId || "").trim();
+  let delivery = null;
+  if (requestedDeliveryId) {
+    delivery = deliveries.find(row => String(row[0] || "").trim() === requestedDeliveryId) || null;
+    if (!delivery) throw new Error("RESOURCE_NOT_FOUND");
+  }
+  if (delivery && requestedTaskId && String(delivery[1] || "").trim() !== requestedTaskId) {
+    throw new Error("RESOURCE_NOT_FOUND");
+  }
+  const taskId = String(delivery && delivery[1] || requestedTaskId).trim();
+  if (!taskId) throw new Error("RESOURCE_NOT_FOUND");
+  const task = getSheetOrThrow(ss, "Tareas").getDataRange().getValues().slice(1)
+    .find(row => String(row[0] || "").trim() === taskId) || null;
+  if (!task) throw new Error("RESOURCE_NOT_FOUND");
+
+  const isStaff = role === "Profesor" || isTaskServiceAdministrativeRole(role);
+  let studentId = delivery ? String(delivery[2] || "").trim() : "";
+  if (isStaff) {
+    assertTaskServiceTeacherCanManageTask(payload, task, operation || "READ");
+  } else {
+    let allowedStudentIds = [];
+    if (role === "Estudiante" || role === "Alumno") {
+      allowedStudentIds = [identity.userId];
+    } else if (["Padre", "Tutor", "Responsable"].indexOf(role) !== -1) {
+      allowedStudentIds = getTaskServiceGuardianStudentIds(identity.userId).map(value => String(value || "").trim());
+    } else {
+      throw new Error("RESOURCE_NOT_FOUND");
+    }
+    if (!delivery) {
+      const candidates = deliveries.filter(row =>
+        String(row[1] || "").trim() === taskId &&
+        allowedStudentIds.indexOf(String(row[2] || "").trim()) !== -1
+      );
+      if (candidates.length !== 1) throw new Error("RESOURCE_NOT_FOUND");
+      delivery = candidates[0];
+      studentId = String(delivery[2] || "").trim();
+    }
+    if (!studentId || allowedStudentIds.indexOf(studentId) === -1) throw new Error("RESOURCE_NOT_FOUND");
+    assertTaskServiceStudentCanAccessTask(ss, studentId, task);
+  }
+  return { ss, identity, role, isStaff, task, taskId, delivery, deliveries, studentId };
+}
 function deactivateTaskServiceResourceOwnership_(payload,typeValue,idValue,ss) {
  const identity=getVerifiedTaskIdentity_(payload);if(!identity.authorized)return {authorized:false,code:identity.code};
  const scope=getVerifiedTaskDepartmentScope_(payload,ss,identity);if(!scope.authorized)return {authorized:false,code:scope.code};
@@ -2072,75 +2122,94 @@ function returnSubmissionForRevision(payload) {
 }
 
 function getSubmissionComments(payload) {
-  const { entregaId, tareaId } = payload || {};
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "ComentariosEntregas");
+  const context = getTaskServiceSubmissionAccess_(payload, "READ_HISTORY");
+  const sheet = getOrCreateSheet(context.ss, "ComentariosEntregas");
   const data = sheet.getDataRange().getValues();
   if (data.length <= 1) return { status: "success", data: [] };
-
-  const comments = data.slice(1).filter(r => {
-    if (entregaId && String(r[1]).trim() === String(entregaId).trim()) return true;
-    if (tareaId && String(r[2]).trim() === String(tareaId).trim()) return true;
-    return false;
-  }).map(r => ({
-    comentarioId: r[0],
-    entregaId: r[1],
-    tareaId: r[2],
-    autorId: r[3],
-    rolAutor: r[4] || "Usuario",
-    mensaje: r[5],
-    esPrivado: r[6] === true || String(r[6]).toLowerCase() === "true",
-    fechaCreacion: r[7] ? new Date(r[7]).toISOString() : null
+  const deliveryId = context.delivery ? String(context.delivery[0] || "").trim() : "";
+  const comments = data.slice(1).filter(row => {
+    if (deliveryId) {
+      if (String(row[1] || "").trim() !== deliveryId) return false;
+    } else if (String(row[2] || "").trim() !== context.taskId) {
+      return false;
+    }
+    const isPrivate = row[6] === true || String(row[6]).toLowerCase() === "true";
+    return context.isStaff || !isPrivate;
+  }).map(row => ({
+    comentarioId: row[0],
+    entregaId: row[1],
+    tareaId: row[2],
+    autorId: row[3],
+    rolAutor: row[4] || "Usuario",
+    mensaje: row[5],
+    esPrivado: row[6] === true || String(row[6]).toLowerCase() === "true",
+    fechaCreacion: row[7] ? new Date(row[7]).toISOString() : null
   }));
-
   return { status: "success", data: comments };
 }
 
 function addSubmissionComment(payload) {
-  const { entregaId, tareaId, autorId, rolAutor, mensaje, esPrivado } = payload || {};
+  const mensaje = String(payload && payload.mensaje || "").trim();
   if (!mensaje) throw new Error("Mensaje de comentario es requerido.");
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "ComentariosEntregas");
+  const context = getTaskServiceSubmissionAccess_(payload, "COMMENT");
+  const sheet = getOrCreateSheet(context.ss, "ComentariosEntregas");
   if (sheet.getLastRow() === 0) {
     sheet.appendRow(["ID", "EntregaID", "TareaID", "AutorID", "RolAutor", "Mensaje", "EsPrivado", "FechaCreacion"]);
   }
-
-  const comId = "COM-" + Date.now();
+  const comId = "COM-" + Utilities.getUuid();
   const now = new Date();
-
-  sheet.appendRow([comId, entregaId || "", tareaId || "", autorId || "Usuario", rolAutor || "Estudiante", mensaje, esPrivado !== false, now]);
-
+  // La identidad y el rol del autor siempre proceden de la sesión firmada.
+  // Los comentarios de estudiantes son visibles para el personal; solo el personal puede crear notas privadas.
+  const esPrivado = context.isStaff && payload.esPrivado !== false;
+  sheet.appendRow([
+    comId,
+    context.delivery ? String(context.delivery[0] || "").trim() : "",
+    context.taskId,
+    context.identity.userId,
+    context.identity.role,
+    mensaje,
+    esPrivado,
+    now
+  ]);
   return { status: "success", message: "Comentario publicado.", data: { comentarioId: comId } };
 }
 
 function getSubmissionVersions(payload) {
-  const { entregaId, tareaId, userId } = payload || {};
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "EntregasVersiones");
+  const context = getTaskServiceSubmissionAccess_(payload, "READ_HISTORY");
+  const requestedUserId = String(payload && payload.userId || "").trim();
+  if (!context.isStaff && requestedUserId && requestedUserId !== context.studentId) {
+    throw new Error("RESOURCE_NOT_FOUND");
+  }
+  if (context.isStaff && requestedUserId) {
+    const targetExists = context.deliveries.some(row =>
+      String(row[1] || "").trim() === context.taskId &&
+      String(row[2] || "").trim() === requestedUserId
+    );
+    if (!targetExists) throw new Error("RESOURCE_NOT_FOUND");
+  }
+  const sheet = getOrCreateSheet(context.ss, "EntregasVersiones");
   const data = sheet.getDataRange().getValues();
   if (data.length <= 1) return { status: "success", data: [] };
-
-  const versions = data.slice(1).filter(r => {
-    if (entregaId && String(r[1]).trim() === String(entregaId).trim()) return true;
-    if (tareaId && userId && String(r[2]).trim() === String(tareaId).trim() && String(r[3]).trim() === String(userId).trim()) return true;
-    return false;
-  }).map(r => ({
-    versionId: r[0],
-    entregaId: r[1],
-    tareaId: r[2],
-    userId: r[3],
-    versionNum: r[4],
-    archivoUrl: r[5],
-    fileId: r[6],
-    mimeType: r[7],
-    textoRespuesta: r[8],
-    enlaceExterno: r[9],
-    fechaEnvio: r[10] ? new Date(r[10]).toISOString() : null,
-    estado: r[11],
-    observaciones: r[12]
+  const deliveryId = context.delivery ? String(context.delivery[0] || "").trim() : "";
+  const versions = data.slice(1).filter(row => {
+    if (deliveryId) return String(row[1] || "").trim() === deliveryId;
+    return String(row[2] || "").trim() === context.taskId &&
+      (!requestedUserId || String(row[3] || "").trim() === requestedUserId);
+  }).map(row => ({
+    versionId: row[0],
+    entregaId: row[1],
+    tareaId: row[2],
+    userId: row[3],
+    versionNum: row[4],
+    archivoUrl: row[5],
+    fileId: row[6],
+    mimeType: row[7],
+    textoRespuesta: row[8],
+    enlaceExterno: row[9],
+    fechaEnvio: row[10] ? new Date(row[10]).toISOString() : null,
+    estado: row[11],
+    observaciones: row[12]
   }));
-
   return { status: "success", data: versions };
 }
 
