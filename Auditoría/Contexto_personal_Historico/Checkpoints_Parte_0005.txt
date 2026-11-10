@@ -666,3 +666,38 @@ Ajustar createAdvancedSignatureRequest para exigir un proveedor de firma indicad
 - La rama autorizada contenía el commit de implementación/pruebas 40b89c239aa35f370003fc5b54af2182cefa7e59 y el registro de checkpoint; no se reescribió historial.
 - Rama base NG_beta_0.0.0.1 verificada sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
 ===============================================================================
+
+===============================================================================
+## CHECKPOINT C1.476 — EXAM: serialización de calificación y eliminación de entregas
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.475.
+HEAD inicial: d45a458152ce55063dd17579c31ae69134ed7f6e.
+Commit de implementación: 5ed0f69fea65eb11ddad0b8851b77f3eabb4e99b.
+Commit de ajuste del contrato: f06fde4bbe29e80665f27a4e138509747efee3c5.
+
+### Alcance
+Corregir la condición de carrera entre la lectura y mutación de entregas en gradeExamSubmission y deleteExamSubmission, manteniendo intactos los controles de identidad, permisos, ownership del examen y ámbito institucional/departamental.
+
+### Cambios
+- Se incorpora withAuthorizedExamSubmissionMutation_: adquiere ScriptLock con timeout de 5 segundos, vuelve a resolver getAuthorizedExamSubmissionMutationContext_ bajo el lock y ejecuta la mutación dentro de la sección crítica.
+- gradeExamSubmission y deleteExamSubmission delegan la operación completa al wrapper. La lectura de la entrega, verificación de coincidencia única, comprobación de examen/ownership y escritura/eliminación quedan serializadas.
+- El lock se libera en finally ante éxito o error. Timeout produce EXAM_SUBMISSION_LOCK_TIMEOUT y no ejecuta autorización ni mutación.
+- Se amplía el contrato de seguridad para comprobar el wrapper y su delegación al contexto de autorización; el contrato departamental añade contención de lock y entrega eliminada antes de la lectura protegida.
+- BETA-EXAM-030 registra el escenario concurrente dependiente de Apps Script desplegado.
+
+### Verificación
+- Contrato V8 local enfocado del wrapper: PASS (éxito, timeout fail-closed, autorización después de adquirir lock y liberación en finally tras excepción).
+- Parseo sintáctico local de backend/exam-service/Code.gs: PASS.
+- Primer CI 42914044340 — FAIL en el contrato estático antiguo, que exigía que cada handler llamara directamente al helper; no fue un fallo de ejecución del código. Se corrigió el contrato para comprobar el wrapper y que este invoque el helper.
+- CI final 42914122834 — SUCCESS: exam-service-security-contract.test.js y exam-service-departmental-access.test.js ambos PASS.
+- No se ejecutó Apps Script/Sheets real. BETA-EXAM-030 queda Pendiente beta.
+
+### Estado y continuidad
+- Subalcance EXAM de serialización de calificación/eliminación: implementado y aprobado por verificaciones locales y CI.
+- AUD-NG-386 permanece abierto por otras rutas/superficies; TASK-153 continúa En ejecución.
+- No se modificó NG_beta_0.0.0.1.
+- Siguiente tarea elegible: continuar AUD-NG-386 / EXAM revisando otra mutación de entrega o examen no cubierta por el wrapper, priorizando submitExam y cualquier ruta que pueda alterar EntregasExamen o su ownership fuera del lock.
+===============================================================================

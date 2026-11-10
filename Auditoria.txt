@@ -1380,3 +1380,12 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - CI Department Scope 42912889131, Task-Service security 42912889221 e Identity Mapping 42912889181 — SUCCESS.
 - BETA-FUNC-029 Pendiente beta; sin Apps Script/Sheets real, PSC externo ni verificación criptográfica. TASK-153 sigue En ejecución; AUD-NG-386 permanece abierto.
 ===============================================================================
+===============================================================================
+
+## C1.476 — EXAM: condición de carrera en mutaciones de entregas
+- Hallazgo corregido: gradeExamSubmission y deleteExamSubmission resolvían identidad/permiso/ownership y leían la fila de entrega sin mantener un lock durante la mutación. Una operación concurrente podía invalidar el rowIndex o permitir escritura sobre una lectura obsoleta.
+- Se introdujo wrapper con ScriptLock de 5 s que vuelve a obtener el contexto autorizado dentro del lock y mantiene el lock hasta completar setValues/deleteRow. Timeout fail-closed; release en finally.
+- Contrato local enfocado y sintaxis completa PASS; CI 42914122834 SUCCESS (ambos contratos EXAM).
+- CI intermedio 42914044340 FAIL por aserción estática no actualizada; corregida y repetida satisfactoriamente.
+- BETA-EXAM-030 Pendiente beta. AUD-NG-386 continúa abierto por otras rutas EXAM y demás superficies.
+===============================================================================

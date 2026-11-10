@@ -1131,3 +1131,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - BETA-FUNC-029 Pendiente beta. No se integró PSC ni se afirmó validez criptográfica.
 - Commit de implementación/pruebas: 40b89c239aa35f370003fc5b54af2182cefa7e59.
 ===============================================================================
+===============================================================================
+
+[2026-11-10] C1.476 — IMA-EXEC-20261110-1825Z-02 — EXAM: serialización de mutaciones de entregas
+- gradeExamSubmission y deleteExamSubmission ahora resuelven autorización/ownership y mutan bajo un único ScriptLock; timeout fail-closed y liberación garantizada en finally.
+- Se amplían los contratos security y departmental-access. Contrato local enfocado y sintaxis PASS; CI 42914122834 SUCCESS.
+- CI inicial 42914044340 falló por expectativa estática obsoleta; corregida en f06fde4bbe29e80665f27a4e138509747efee3c5 y repetida PASS.
+- BETA-EXAM-030 Pendiente beta. Commit de implementación: 5ed0f69fea65eb11ddad0b8851b77f3eabb4e99b.
+===============================================================================

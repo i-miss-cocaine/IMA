@@ -810,3 +810,12 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - BETA-FUNC-029 Pendiente beta; no se ejecutó Apps Script/Sheets real ni integración PSC. No se declara validez criptográfica.
 - TASK-153 permanece En ejecución; AUD-NG-386 abierto por otras superficies de aislamiento y permisos.
 ===============================================================================
+===============================================================================
+
+### TASK-153 — seguimiento C1.476 / AUD-NG-386 EXAM
+- gradeExamSubmission y deleteExamSubmission ejecutan resolución de identidad, permiso, ownership y mutación de entrega bajo un mismo ScriptLock; timeout falla cerrado y finally libera el lock.
+- Se amplió el contrato de seguridad y el contrato departamental con wrapper, lock contention y relectura de una entrega eliminada antes de adquirir el lock.
+- Contrato local enfocado del wrapper y sintaxis completa EXAM PASS. CI 42914122834 SUCCESS (security contract y departmental access contract).
+- Primer CI 42914044340 falló por una expectativa estática obsoleta; corregida en f06fde4bbe29e80665f27a4e138509747efee3c5. No fue fallo de comportamiento.
+- BETA-EXAM-030 Pendiente beta; no se ejecutó Apps Script/Sheets real. AUD-NG-386 permanece abierto; TASK-153 En ejecución.
+===============================================================================
