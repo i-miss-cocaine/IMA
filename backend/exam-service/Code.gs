@@ -780,8 +780,19 @@ function deleteExam(payload) {
         String(row[5] || "").trim().toUpperCase() === "ACTIVE") ownershipMatches.push(i + 1);
   }
   if (ownershipMatches.length !== 1) throw new Error("RESOURCE_NOT_AVAILABLE");
-  context.examSheet.getRange(context.exam.rowIndex + 1, 8).setValue("Eliminado");
+  // Desactivar primero el ownership: ante un fallo posterior el recurso queda
+  // oculto; si la actualización del examen falla, se intenta restaurar ACTIVE.
   ownershipSheet.getRange(ownershipMatches[0], 6).setValue("INACTIVE");
+  try {
+    context.examSheet.getRange(context.exam.rowIndex + 1, 8).setValue("Eliminado");
+  } catch (error) {
+    try {
+      ownershipSheet.getRange(ownershipMatches[0], 6).setValue("ACTIVE");
+    } catch (_) {
+      throw new Error("RESOURCE_OWNERSHIP_ROLLBACK_FAILED");
+    }
+    throw error;
+  }
   return { status: "success", message: "Examen eliminado." };
 }
 
