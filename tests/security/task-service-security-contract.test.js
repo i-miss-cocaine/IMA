@@ -364,6 +364,9 @@ const assignmentContext = {
   SPREADSHEET_ID: "LOCAL",
   SpreadsheetApp: { openById: () => assignmentSS },
   getSheetOrThrow: (_ss, name) => { if (!assignmentSheets[name]) throw new Error("missing " + name); return assignmentSheets[name]; },
+  getVerifiedTaskIdentity_: payload => ({ authorized: true, userId: payload._verifiedUserId, role: payload._verifiedRole }),
+  getVerifiedTaskDepartmentScope_: (payload, _ss, identity) => ({ authorized: true, userId: identity.userId, role: identity.role, institutionId: "INST-1", departmentIds: ["DEP-1"], institutionWide: false }),
+  assertTaskServiceResourceOwnership_: () => ({ authorized: true }),
   isTaskServiceAdministrativeRole: role => ["Administrador","Desarrollador","Dirección","Secretaría"].includes(role)
 };
 vm.runInNewContext(
