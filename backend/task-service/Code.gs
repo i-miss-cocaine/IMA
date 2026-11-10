@@ -1356,13 +1356,15 @@ function getStudentTasks(payload) {
   const entregasData = getSheetOrThrow(ss, "Entregas").getDataRange().getValues().slice(1);
   const teacherClassrooms = role === "Profesor" ? getTaskServiceAuthorizedClassrooms(payload) : null;
   const staffScope = role === "Profesor" || isTaskServiceAdministrativeRole(role) ? getVerifiedTaskDepartmentScope_(payload, ss) : null;
-  const resourceIdentity = staffScope ? null : { authorized: true, userId: targetUserId, role: "Estudiante" };
-  const resourceScope = staffScope || getVerifiedTaskDepartmentScope_(payload, ss, resourceIdentity);
-  if (!resourceScope || !resourceScope.authorized) throw new Error("Acceso denegado.");
+  const resourceIdentity = { authorized: true, userId: targetUserId, role: "Estudiante" };
+  const resourceScope = getVerifiedTaskDepartmentScope_(payload, ss, resourceIdentity);
+  if (!resourceScope || !resourceScope.authorized) throw new Error("Acceso denegado: ámbito departamental del estudiante no verificado.");
+  if (staffScope && !staffScope.authorized) throw new Error("Acceso denegado: ámbito del personal no verificado.");
   const seenOriginalTasksForEC = new Set();
   const studentTasks = tasksData.filter(task => {
     if (role === "Profesor" && !isTaskServiceTeacherTaskAuthorized_(task, teacherClassrooms, actorId)) return false;
-    if (!assertTaskServiceResourceOwnership_(payload, "TAREA", task[0], "READ", ss, resourceIdentity || null, resourceScope).authorized) return false;
+    if (!assertTaskServiceResourceOwnership_(payload, "TAREA", task[0], "READ", ss, resourceIdentity, resourceScope).authorized) return false;
+    if (staffScope && !assertTaskServiceResourceOwnership_(payload, "TAREA", task[0], "READ", ss, null, staffScope).authorized) return false;
     if (normalizeString(task[6]) !== normalizeString(grado)) return false;
     if (task[7] && String(task[7]).trim() && !isInTeacherList(seccion, task[7])) return false;
     if (task[1] === "Credito Extra") {

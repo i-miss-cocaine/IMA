@@ -96,3 +96,49 @@ function makeSubmissionAccessFixture() {
   assert.throws(() => f.resolve({ identity: student.identity, entregaId: "ENT-1", tareaId: "TASK-OTHER" }, "READ_HISTORY"), /RESOURCE_NOT_FOUND/);
 }
 console.log("TASK-153 submission discussion/history contract passed: signed identity, delivery ownership, guardian relationship, staff scope and anti-IDOR checks.");
+
+
+// TASK-153: staff reading a student's task list must satisfy both the student's
+// department ownership and the staff member's own authorized resource scope.
+{
+  const listFn = extractFunction("getStudentTasks");
+  const taskRows = [
+    ["TareaID","Tipo","Titulo","Descripcion","Parcial","Asignatura","Grado","Seccion","FechaLimite","OriginalID","ProfesorID","Estado","Puntaje","Archivo","FechaDisponible","TipoRecurso"],
+    ["TASK-A","Tarea","Task A","","P1","Matemáticas","6","A","","","PROF-1","Activa",100,"","","Tarea"],
+    ["TASK-B","Tarea","Task B","","P1","Matemáticas","6","A","","","PROF-2","Activa",100,"","","Tarea"]
+  ];
+  const deliveryRows = [["EntregaID","TareaID","UserID","Fecha","FileId","Nota","Estado","Comentario","MimeType"]];
+  const sheets = {
+    Tareas: { getDataRange: () => ({ getValues: () => taskRows.map(row => row.slice()) }) },
+    Entregas: { getDataRange: () => ({ getValues: () => deliveryRows.map(row => row.slice()) }) }
+  };
+  const ownerDepartments = { "TASK-A": "D1", "TASK-B": "D2" };
+  const scopeCalls = [];
+  const context = {
+    SPREADSHEET_ID: "LOCAL",
+    SpreadsheetApp: { openById: () => ({}) },
+    getSheetOrThrow: (_ss, name) => sheets[name],
+    getTaskServiceUserProfile: userId => ({ userId, grado: "6", seccion: "A" }),
+    getTaskServiceAuthorizedClassrooms: () => ["CLASS-A"],
+    isTaskServiceAdministrativeRole: role => ["Administrador","Desarrollador","Dirección","Secretaría"].includes(role),
+    getVerifiedTaskDepartmentScope_: (payload, _ss, identity) => {
+      const actor = identity || { userId: payload._verifiedUserId, role: payload._verifiedRole };
+      scopeCalls.push({ userId: actor.userId, role: actor.role });
+      const departmentIds = actor.userId === "STUDENT-2" ? ["D2"] : ["D1"];
+      return { authorized: true, userId: actor.userId, role: actor.role, institutionId: "I1", departmentIds, institutionWide: false };
+    },
+    assertTaskServiceResourceOwnership_: (_payload, _type, id, _operation, _ss, _identity, scope) => ({
+      authorized: (scope.departmentIds || []).includes(ownerDepartments[id])
+    }),
+    isTaskServiceTeacherTaskAuthorized_: (task, _classrooms, actorId) => String(task[10]) === String(actorId),
+    normalizeString: value => String(value || "").trim().toLowerCase(),
+    isInTeacherList: (value, list) => !list || String(list).split(",").map(item => item.trim()).includes(String(value).trim())
+  };
+  vm.runInNewContext(listFn + "\nthis.list = getStudentTasks;", context);
+  const sameDepartment = context.list({ _verifiedRole: "Profesor", _verifiedUserId: "PROF-1", studentId: "STUDENT-1" });
+  assert.deepEqual(sameDepartment.data.map(item => item.tareaId), ["TASK-A"], "teacher sees only tasks inside both student and teacher scopes");
+  const otherDepartment = context.list({ _verifiedRole: "Profesor", _verifiedUserId: "PROF-1", studentId: "STUDENT-2" });
+  assert.deepEqual(otherDepartment.data, [], "teacher cannot expose department-A tasks to a student assigned to department B");
+  assert(scopeCalls.some(call => call.userId === "STUDENT-2" && call.role === "Estudiante"), "staff request resolves the target student's department scope");
+}
+console.log("TASK-153 staff/student department intersection contract passed.");
