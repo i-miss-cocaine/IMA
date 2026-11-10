@@ -392,7 +392,7 @@ console.log("ACADEMIC admission conversion duplicate expediente ownership contra
     Utilities:{getUuid:()=>"UUID"},
     Date
   };
-  const functions=extractFunction("convertAdmissionToStudent")+"\n"+extractFunction("registerStudentEnrollment");
+  const functions=extractFunction("convertAdmissionToStudent")+"\n"+extractFunction("registerStudentEnrollmentInternal_");
   vm.runInNewContext(functions+"\nthis.run=convertAdmissionToStudent;",context);
   assert.throws(()=>context.run({solicitudId:"ADM-ROLLBACK"}),/INJECTED_MOVEMENT_FAILURE/);
   assert.equal(sheets.SolicitudesAdmision.rows[1][11],"Admitida","admission state must remain unchanged after rollback");
@@ -578,7 +578,7 @@ console.log("ACADEMIC converted admission reconciliation contract passed.");
       Date,
       Math
     };
-    vm.runInNewContext(extractFunction("registerStudentEnrollment")+"\nthis.register=registerStudentEnrollment;",context);
+    vm.runInNewContext(extractFunction("registerStudentEnrollmentInternal_")+"\nthis.register=registerStudentEnrollment;",context);
     const rollback=[];
     const result=context.register({
       userId:"STU-1",alumno:"Student",grado:"1",seccion:"A",periodo:"2026",
@@ -600,3 +600,23 @@ console.log("ACADEMIC converted admission reconciliation contract passed.");
     /ADMISSION_CHARGE_CONFLICT/,"same reference with changed amount must fail closed");
 }
 console.log("ACADEMIC admission charge attribution contract passed.");
+
+
+// The public enrollment action must never accept internal admission charge markers
+// or caller-supplied rollback callbacks.
+{
+  let forwarded;
+  const context={registerStudentEnrollmentInternal_:payload=>{forwarded=payload;return {status:"success"};}};
+  vm.runInNewContext(extractFunction("registerStudentEnrollment")+"\\nthis.run=registerStudentEnrollment;",context);
+  const result=context.run({
+    userId:"STU-1",grado:"1",periodo:"2026",
+    _chargeReference:"ADMISION|FORGED|MAT-1",
+    _rollbackActions:[()=>{throw Error("untrusted callback executed");}]
+  });
+  assert.equal(result.status,"success");
+  assert.equal(Object.prototype.hasOwnProperty.call(forwarded,"_chargeReference"),false,
+    "public enrollment API must strip admission-only charge reference");
+  assert.equal(Object.prototype.hasOwnProperty.call(forwarded,"_rollbackActions"),false,
+    "public enrollment API must strip caller-controlled rollback callbacks");
+}
+console.log("ACADEMIC public enrollment internal-metadata isolation contract passed.");
