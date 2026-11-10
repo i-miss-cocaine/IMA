@@ -860,3 +860,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - El archivo único de normas operativas se renombra de `NORMAS_DESARROLLO_AGIL_SEGURO_CONTINUO.md` a `Normas_Desarollo.md`.
 - Se actualizan las referencias documentales, el índice y el checkpoint activo; se conserva el contenido normativo y el historial.
 - No se modifican archivos de código ni la rama base.
+
+
+[2026-11-10] C1.434 — IMA-EXEC-20261110-1621Z-01 — TASK-153: aislamiento de comentarios e historial en Task Service
+- Se corrige el acceso IDOR a comentarios y versiones de entregas; identidad/rol se derivan de la sesión firmada, la entrega se vincula con su tarea y el personal pasa por ResourceOwnership/ámbito.
+- Estudiantes quedan limitados a su propia entrega; tutores a relaciones familiares verificadas; los comentarios privados quedan ocultos para no staff y la autoría se deriva del token.
+- Se amplía tests/security/task-service-resource-ownership.test.js con contratos de aislamiento y anti-suplantación.
+- Commits de código y pruebas: 09d6ad571e8b6a7a965317239a48e27d97f2fd8e y 7270a0f24249a681ab5fd10f91a16a682ba542b0.
+- Pruebas locales no ejecutadas; CI no verificable en esta sesión. TASK-153 continúa En ejecución.
