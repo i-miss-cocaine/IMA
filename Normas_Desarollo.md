@@ -1,5 +1,5 @@
 # IMA — Norma de Desarrollo Ágil, Seguro y Continuo (NDASC)
-**Versión:** 1.1  
+**Versión:** 1.2  
 **Vigencia:** 2026-11-10  
 **Repositorio:** `i-miss-cocaine/IMA`  
 **Rama exclusiva de trabajo:** `NG_beta_0.0.0.1_work`  
@@ -63,9 +63,13 @@ Las pruebas se seleccionan por el comportamiento y la superficie modificada:
 - En contratos o integraciones, probar productores/consumidores y compatibilidad relevante.
 - Usar automatización, scripts, CI, mocks, fixtures y análisis estático cuando aporten evidencia; la inspección manual complementa, no sustituye, estas pruebas.
 
-No ejecutar suites completas o E2E de toda la plataforma por cambios menores si no aportan cobertura adicional razonable. Las pruebas remotas/de despliegue que dependan de infraestructura o credenciales externas siguen registradas para beta conforme a §21 de la metodología.
+No ejecutar suites completas o E2E de toda la plataforma por cambios menores si no aportan cobertura adicional razonable. **Ejecución local obligatoria:** las pruebas locales aplicables al cambio siempre deben ejecutarse antes de considerar terminada una tarea. No basta con añadir pruebas, inspeccionar el código, confiar en CI o declarar que una prueba está disponible: hay que ejecutarla en el entorno local de trabajo y conservar el resultado verificable. Si no existe una prueba pertinente para una lógica nueva o modificada, crearla o ampliar el contrato correspondiente y ejecutarlo. Como mínimo, ejecutar las pruebas unitarias, de contrato, integración aislada, seguridad, regresión, sintaxis, lint, tipos o validaciones estáticas que correspondan al alcance y estén configuradas/disponibles. Repetir las pruebas afectadas después de corregir fallos.
 
-**Honestidad de resultados:** diferenciar PASS, FAIL, BLOCKED y NOT RUN. Nunca declarar aprobada una prueba no ejecutada. Si una prueba pertinente no puede ejecutarse, registrar la causa y el riesgo residual. Un defecto local reproducible que afecte al requisito o a seguridad/integridad debe corregirse antes de cerrar el cambio.
+**Criterio obligatorio de cierre:** una tarea solo puede marcarse **Completada** cuando todas las pruebas y verificaciones locales aplicables hayan sido ejecutadas y hayan resultado PASS, además de cumplir los demás criterios de implementación, revisión y evidencia. Una prueba local aplicable en FAIL, BLOCKED o NOT RUN impide marcar la tarea como Completada; corregirla y volver a ejecutar, o mantener la tarea En ejecución/Bloqueada según la causa. No sustituir la ejecución local por resultados de CI. Las pruebas locales no se difieren a beta por conveniencia ni porque el entorno desplegado aún no exista.
+
+**Pruebas funcionales diferidas a beta:** se reservan para beta únicamente las verificaciones que por su naturaleza requieren un servicio desplegado, URLs/infraestructura remota, credenciales o permisos del entorno real, navegador contra la plataforma desplegada, integraciones externas vivas, cuotas o propiedades remotas. Cada escenario diferido se agrega al archivo maestro \`beta_test.txt\` en la raíz del repositorio, con su ID, módulo/rol, tarea/requisito, objetivo, precondiciones, pasos, resultado esperado, estado Pendiente beta y evidencia que deberá recopilarse. No añadir nuevos casos al archivo histórico \`docs/testing/PRUEBAS_FUNCIONALES_BETA.md\`. Las pruebas beta pendientes no bloquean el cierre de implementación si todas las pruebas locales aplicables pasaron; un defecto local no puede reclasificarse como prueba beta.
+
+**Honestidad de resultados:** diferenciar PASS, FAIL, BLOCKED y NOT RUN. Nunca declarar aprobada una prueba no ejecutada. Si una prueba local aplicable no puede ejecutarse, registrar la causa y el riesgo residual, y no marcar la tarea como Completada. Un defecto local reproducible que afecte al requisito o a seguridad/integridad debe corregirse antes de cerrar el cambio.
 
 ## 7. Hallazgos y defectos
 Clasificar los hallazgos como:
@@ -133,11 +137,11 @@ La protección de `NG_beta_0.0.0.1` es una configuración que corresponde al pro
 Una unidad de trabajo puede cerrarse cuando su alcance está implementado, las verificaciones pertinentes fueron ejecutadas o sus limitaciones quedaron explícitas, el diff fue revisado y existe evidencia suficiente. No requiere aprobar trámites administrativos no relacionados ni ejecutar pruebas beta remotas pendientes.
 
 Estados:
-- **Completada:** criterios de implementación cumplidos y verificaciones locales aplicables satisfactorias.
-- **En ejecución:** queda trabajo del alcance pendiente.
-- **Bloqueada:** existe un prerrequisito técnico o autorización externa imprescindible, identificado y probado.
+- **Completada:** todos los requisitos de implementación están cumplidos, todas las pruebas y verificaciones locales aplicables fueron efectivamente ejecutadas con resultado PASS, la revisión interna exigida está aprobada y existe evidencia verificable. No se permite completar una tarea con pruebas locales aplicables en FAIL, BLOCKED o NOT RUN.
+- **En ejecución:** queda trabajo del alcance o alguna prueba/verificación local aplicable pendiente de ejecución, corrección o aprobación.
+- **Bloqueada:** existe un prerrequisito técnico o autorización externa imprescindible, identificado y probado, que impide avanzar en el alcance afectado.
 - **Pendiente:** aún no iniciada.
-- Las pruebas beta conservan estados independientes; su ausencia no bloquea la implementación.
+- Las pruebas funcionales que requieren despliegue/servicios vivos se registran por separado en \`beta_test.txt\` y conservan estados beta independientes; su ausencia no bloquea una implementación cuyas pruebas locales aplicables hayan pasado.
 
 ## 15. Reglas de aplicación y mantenimiento
 Esta norma aplica solo al repositorio IMA. Las reglas específicas de producto (seguridad, privacidad, requisitos funcionales, accesibilidad, contenidos y beta) continúan vigentes cuando no contradicen el proceso operativo aquí definido. Si una regla antigua impone auditoría total, fases rígidas, copia redundante, registro exhaustivo, reinicio completo, commit único obligatorio o bloqueo por dependencia meramente documental, prevalece esta NDASC.
