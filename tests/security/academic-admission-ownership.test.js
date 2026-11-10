@@ -283,6 +283,8 @@ console.log("academic admission evaluation identity and lock contracts: PASS");
         scope:{authorized:true,institutionId:"INST-1",departmentIds:["D1"],institutionWide:false},
         requestAccess:{authorized:true,departmentId:"D1"}
       }),
+      assertAcademicAdmissionRequestScopeAccess_:(_ss,_scope,id,_payload,operation)=>{assert.equal(held,true,"request ownership must be revalidated under lock");assert.equal(id,"REQ-DUP");assert.equal(operation,"UPDATE");return {authorized:true,departmentId:"D1"};},
+      resolveAcademicAdmissionDepartment_:()=>({authorized:true,departmentId:"D1"}),
       LockService:{getScriptLock:()=>({
         tryLock:()=>{lockAttempts++;if(!lockAvailable)return false;held=true;return true;},
         releaseLock:()=>{assert.equal(held,true);held=false;releases++;}
@@ -290,7 +292,7 @@ console.log("academic admission evaluation identity and lock contracts: PASS");
       assertResourceOwnershipForScope_:(_ss,_scope,type,id,operation)=>{
         assert.equal(held,true,"destination ownership must be checked within the critical section");ownershipChecks++;
         assert.equal(type,"EXPEDIENTE_ESTUDIANTE");assert.equal(id,"EXP-DEST");assert.equal(operation,"UPDATE");
-        return {authorized:destinationAuthorized};
+        return {authorized:destinationAuthorized,departmentId:"D1"};
       },
       getOrCreateSheet:(_ss,name)=>{assert.equal(held,true,"request sheet must be accessed only under lock");if(name==="SolicitudesAdmision")requestReads++;return name==="SolicitudesAdmision"?requestSheet:historySheet;},
       logStructuredEvent:(_service,_fn,_level,code,_message,_data,role)=>{loggedRole=role;if(code==="DUPLICATE_RESOLUTION_HISTORY_FAILED")loggedHistoryFailure=true;},
