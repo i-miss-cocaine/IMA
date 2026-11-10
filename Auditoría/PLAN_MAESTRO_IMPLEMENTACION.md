@@ -1,7 +1,7 @@
 # PLAN MAESTRO DE IMPLEMENTACIÓN — IMA
 
-**Versión:** 1.1 — secuencia PM y rutas de requisitos por ID  
-**Fecha:** 2026-11-09  
+**Versión:** 1.2 — secuencia flexible y dependencias proporcionales (NDASC v1.0)  
+**Fecha:** 2026-11-10  
 **Repositorio:** `i-miss-cocaine/IMA`  
 **Rama de trabajo:** `NG_beta_0.0.0.1_work`  
 **Estado:** plan rector de secuenciación; ninguna tarea se declara implementada por aparecer aquí.  
@@ -17,7 +17,7 @@ Este documento establece el orden maestro para ejecutar las tareas de los siete 
 
 El plan **ordena la ejecución, pero no reemplaza los requisitos originales**. Cada tarea conserva su ID, descripción, criterios, archivos, prioridad, relaciones y fuentes en su archivo departamental. El anexo de este documento es un índice de planificación por ID, no una versión abreviada del requisito.
 
-La asignación de fase es una propuesta inicial basada en el contenido de cada registro, su familia de ID, componentes y dependencias disponibles. La Fase 0 de la metodología debe confirmar el alcance real y actualizar las dependencias antes de implementar cada tarea. Las asignaciones PM-00 quedan expresamente bloqueadas para implementación hasta resolver su clasificación.
+La asignación de fase es una propuesta inicial basada en el contenido de cada registro, su familia de ID, componentes y dependencias disponibles. Antes de implementar se confirma únicamente el alcance y las dependencias que afecten al cambio. PM-00 es una fase de inventario y triage, no una puerta universal: las tareas independientes pueden implementarse mientras se resuelven clasificaciones pendientes.
 
 ## 2. Inventario estudiado
 
@@ -314,20 +314,20 @@ Se ejecuta por subflujos, no por una migración masiva de todos los departamento
 6. Las tareas de prueba acompañan a cada implementación. PM-08 no sustituye las pruebas de las fases anteriores.
 7. Las ampliaciones de criterios (por ejemplo, TAREA-10/TAREA-13) se incorporan a su tarea madre; no se implementan como duplicados.
 8. Los registros de encabezado/agrupación sin requisitos propios no son tareas ejecutables independientes.
-9. Cada tarea pasa por las fases 0–7 de `METODOLOGIA_DESARROLLO.md`; el PM indica el orden de producto, no elimina auditoría, respaldo, autoauditoría, Code Review ni cierre.
-10. Cada iteración publica un único commit consolidado con el checkpoint obligatorio.
+9. Cada tarea sigue el ciclo continuo de `NORMAS_DESARROLLO_AGIL_SEGURO_CONTINUO.md`; inspección, implementación, pruebas y correcciones se dimensionan según el riesgo. No se exige repetir fases completas.
+10. Publicar commits por unidades coherentes y recuperables; los checkpoints se registran en hitos, pausas, transferencias o antes de operaciones de riesgo.
 
 ### 6.1 Algoritmo obligatorio para seleccionar la siguiente tarea
 
-La secuencia PM-00 → PM-09 es el orden rector de implementación. No se debe saltar a una fase posterior mientras queden tareas ejecutables o puertas de salida pendientes en una fase precedente, salvo dependencia o excepción aprobada y documentada en el propio plan.
+La secuencia PM-00 → PM-09 es el orden recomendado de capas y dependencias, no una barrera administrativa absoluta. Se puede avanzar en cualquier tarea cuyo alcance sea técnicamente independiente y seguro, aunque existan tareas o documentos pendientes en fases anteriores. No se omiten prerrequisitos técnicos reales ni controles de seguridad/integridad.
 
 Dentro de la fase PM activa, el agente debe construir y respetar una cola de ejecución con este procedimiento, antes de escoger una tarea:
 
 1. **Filtrar por fase y estado:** considerar únicamente IDs de la fase activa cuyo estado esté Pendiente o Bloqueado por una causa ya resuelta. Excluir encabezados, ampliaciones sin requisitos independientes y tareas reclasificadas como no ejecutables.
 2. **Resolver prerrequisitos:** leer todas las dependencias del requisito original en la ruta exacta indicada en la última columna del registro maestro. Contrastar el estado real de cada dependencia con el código, las pruebas, el backlog y sus evidencias; no confiar solo en etiquetas de estado.
-3. **Orden topológico:** una tarea solo es elegible cuando todas sus dependencias obligatorias están Completadas y verificadas. Ejecutar primero sus prerrequisitos. Si hay ciclos, referencias ambiguas o dependencias sin ID, detener la selección y registrar el bloqueo/triage en PM-00.
+3. **Orden topológico proporcional:** una tarea solo espera las dependencias obligatorias que sean prerrequisitos técnicos demostrables para su alcance. Clasificar cada relación como obligatoria, condicional o informativa. Si hay ciclos, referencias ambiguas o dependencias sin ID, aislar el subflujo seguro y continuar con trabajo independiente; bloquear únicamente la operación que realmente necesite la relación no resuelta. Registrar el triage sin paralizar el resto del plan.
 4. **Desempate entre tareas elegibles:** aplicar, en este orden: (a) riesgo de seguridad/integridad y severidad; (b) prioridad P0, P1, P2, P3; (c) orden local explícito dentro de la misma iniciativa; (d) menor número de dependencias consumidoras desbloqueadas; (e) ID alfanumérico únicamente como último desempate estable. Ningún desempate permite violar una dependencia.
-5. **Confirmación previa:** antes de iniciar, registrar en checkpoint el ID elegido, ruta exacta del requisito, fase PM, subflujo, dependencias verificadas y razón por la que es la siguiente tarea elegible.
+5. **Trazabilidad:** registrar el ID/requisito, fase, alcance y dependencias relevantes en el expediente o checkpoint del hito. No exigir checkpoint antes de cada tarea o subpaso.
 6. **Cambio de orden:** si la auditoría demuestra que otra tarea debe precederla, actualizar el plan de forma aditiva con IDs afectados, dependencias antes/después y evidencia. No reordenar solo por conveniencia.
 7. **Paralelismo:** solo se permite entre tareas sin dependencias entre sí y que no compartan archivos, servicio, esquema, catálogo, contrato ni fuente de verdad susceptible de edición concurrente. Debe existir aislamiento de pruebas y un responsable por recurso compartido.
 
@@ -348,17 +348,17 @@ La ejecución de producto no comienza por pantallas. El primer bloque es de arqu
 9. PM-08: certificar el sistema completo y sus escenarios de fallo.
 10. PM-09: piloto, aprobación, cutover y retiro de legado.
 
-La lista anterior es una secuencia de puertas y capas; la selección de la siguiente tarea concreta se realiza desde el anexo y se confirma mediante auditoría manual de sus dependencias y criterios.
+La lista anterior expresa una secuencia recomendada de capas. La selección de trabajo puede desviarse cuando exista independencia técnica demostrable; basta una verificación focalizada de los requisitos y dependencias relevantes.
 
 ## 8. Criterios de avance y control del plan
 
 - Estado operativo permitido: Pendiente, En ejecución, Bloqueada, Completada.
 - «Completada» significa implementación de todos los requisitos de la tarea, verificaciones técnicas internas aplicables, autoauditoría, Code Review interno aprobado, evidencia y actualización del registro. No requiere aprobación del usuario ni certificación funcional beta. Las pruebas integrales beta se controlan separadamente en `docs/testing/PRUEBAS_FUNCIONALES_BETA.md`.
-- Una tarea bloqueada debe registrar ID del prerrequisito y evidencia del bloqueo; no se sustituye por un workaround.
+- Una tarea solo se marca Bloqueada si existe un prerrequisito técnico, dato real o autorización externa imprescindible para su alcance. Registrar la causa y el subalcance afectado; continuar cualquier trabajo independiente. No convertir una dependencia informativa o documental en bloqueo.
 - El plan se actualiza de forma aditiva al resolver dependencias, descubrir nuevas tareas o cambiar el orden por evidencia. Nunca se borran requisitos originales.
 - La trazabilidad del cambio debe llegar desde el ID de tarea y hallazgo de origen hasta archivos, funciones, pruebas, commit y checkpoint.
 - Los archivos de backlog departamental son el índice operativo para seleccionar trabajo dentro de esta etapa. Los archivos históricos `Pendientes.md` y `completadas.md` no se reescriben como parte de la ejecución de este plan; se consultan únicamente cuando la trazabilidad histórica de una tarea lo exija.
-- El plan no autoriza cambios de alcance, saltos de fase, commits parciales ni cambios a la rama base.
+- El plan no autoriza cambios funcionales no solicitados, omitir prerrequisitos técnicos reales ni escribir en la rama base. La secuencia de fases es orientativa y los commits siguen NDASC v1.0.
 
 ## 9. Registro maestro por tarea
 

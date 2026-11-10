@@ -3,11 +3,11 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.429**
+- Último checkpoint: **C1.431**
 - Última sesión: `IMA-EXEC-20261110-1500Z-17`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.429: **74608**
+- Caracteres del archivo activo tras C1.431: **85566**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 - Baseline lógico válido: **C1.316** (`31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`). C1.317–C1.382 se conservan, pero no se aceptan como evidencia de continuidad por corrección expresa del usuario.
@@ -261,4 +261,5 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.427 | IMA-EXEC-20261110-1340Z-15 | TASK-153 en ejecución; ResourceOwnership y assertRecordOwnership genéricos implementados en USER; pruebas sintéticas pasaron; T153-S01 no bloquea motor | PM-01 — implementación parcial P0 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.427 | 699–739 | C1.426 | Este commit; SHA verificado tras publicación |
 | C1.428 | IMA-EXEC-20261110-1430Z-16 | TASK-153 en ejecución; propiedad integrada parcialmente en ACADEMIC/ACCOUNTING; restauración documental protegida; 16 pruebas sintéticas aisladas pasaron; CI pendiente | PM-01 — implementación parcial P0 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.428 | 742–805 | C1.427 | Este commit; SHA verificado tras publicación |
 | C1.429 | IMA-EXEC-20261110-1500Z-17 | CI Department Scope e Identity Mapping correctos; se corrige aserción obsoleta de Task-Service; rerun pendiente | PM-01 — corrección de contrato CI P0 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.429 | 808–833 | C1.428 | Este commit; SHA verificado tras publicación |
-| C1.430 | IMA-AUDIT-20261110-1430Z | TASK-153 en ejecución; CI Task-Service Security y Backup/Restore correctos en HEAD d0d01c8d; checkpoint de continuidad | PM-01 — verificación focalizada P0 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.430 | 835–883 | C1.429 | Este commit; SHA verificado tras publicación |
+| C1.430 | IMA-AUDIT-20261110-1430Z | TASK-153 en ejecución; CI Task-Service Security y Backup/Restore correctos en HEAD d0d01c8d; checkpoint de continuidad | PM-01 — verificación focalizada P0 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.430 | 836–882 | C1.429 | 2a5bf4b697fdec153f4a5dd1e2cce30b4ccef05c |
+| C1.431 | IMA-GOV-20261110-1553Z-01 | Adopción NDASC v1.0; simplificación normativa y control proporcional | Gobernanza operativa IMA | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.431 | 887–928 | C1.430 | Este commit; SHA verificado tras publicación |

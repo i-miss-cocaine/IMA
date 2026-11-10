@@ -1,25 +1,29 @@
 #Importante: 
 ----------------------------------------PROHIBIDO AGREGAR CONTENIDO ANTES DE ESTA LINEA-------------------------------------
 
-# ADENDA PRIORITARIA IMA: COMMIT ÚNICO Y CHECKPOINT (NO OMITIR)
+# NORMA PRIORITARIA IMA — NDASC v1.0
 
-Esta adenda se aplica exclusivamente cuando el trabajo se realiza en el repositorio IMA. No altera las instrucciones específicas de GPSpedia ni autoriza trabajar en otros repositorios.
+Para el repositorio `i-miss-cocaine/IMA`, la fuente normativa operativa es `NORMAS_DESARROLLO_AGIL_SEGURO_CONTINUO.md`. Debe consultarse antes de desarrollar y prevalece sobre cualquier instrucción posterior incompatible de este archivo o de la metodología. Las instrucciones restantes conservan vigencia para los demás proyectos y para IMA únicamente cuando sean compatibles con NDASC y con las especificaciones del producto.
 
-1. Antes de trabajar en IMA, leer Contexto_personal.txt, METODOLOGIA_DESARROLLO.md, el plan vigente y el checkpoint más reciente; verificar la rama de trabajo, la rama base y ambos HEAD.
-2. **Un solo commit final por iteración completa:** todos los archivos modificados en esa iteración se agrupan en un único commit. Prohibidos commits por archivo, documento, carpeta, tarea/subtarea o avances intermedios. La división en lotes solo organiza el análisis; no divide commits. Solo el usuario puede autorizar expresamente más de un commit.
-3. Si no se puede publicar el conjunto completo en un commit, detenerse sin commits parciales. No intentar eludir bloqueos, límites o cuotas mediante commits pequeños.
-4. Antes de pausar, cerrar la iteración/sesión, transferir el trabajo, terminar un sublote o detenerse por un bloqueo, anexar obligatoriamente un checkpoint acumulativo a Contexto_personal.txt. No se permite cerrar la ejecución sin checkpoint.
-5. El checkpoint debe permitir reanudar sin consultar el chat: repositorio; ramas y HEAD de partida; último ID/tarea/lote terminado; tarea en curso; siguiente ID/tarea exacta; archivo/función/sección/rango exacto; qué se buscaba; resultados y evidencia; SHA de respaldo; pruebas ejecutadas/no ejecutadas; archivos modificados/no modificados; bloqueos y siguiente acción.
-6. El checkpoint se incluye en el mismo commit único de la iteración. Después se verifica el SHA final consultando el HEAD de GitHub. No se crea otro commit para agregar el SHA del commit que contiene el checkpoint.
-7. Si falta cualquier requisito, el gate falla: no empezar o no cerrar/publicar hasta corregirlo. Nunca declarar una tarea o iteración completada sin verificar checkpoint, commit y rama.
+1. Implementar directamente cuando el requisito y el alcance estén claros; análisis, edición, pruebas y correcciones son iterativos, no fases bloqueantes.
+2. Inspeccionar de forma proporcional al riesgo; no exigir auditoría línea por línea del repositorio, mapa completo, informe o tarea nueva para cada cambio.
+3. Preservar funcionalidades, contratos, seguridad, aislamiento institucional, datos e historial. Revisar el diff completo antes de publicar.
+4. Ejecutar pruebas locales pertinentes según la superficie modificada; automatización, CI, mocks y fixtures están permitidos. Registrar con honestidad PASS/FAIL/BLOCKED/NOT RUN.
+5. Corregir observaciones de forma focalizada; no reiniciar el procedimiento completo por cada comentario de Code Review.
+6. Registrar solo hallazgos accionables, decisiones relevantes y cambios necesarios. No duplicar información ni crear tareas para correcciones resueltas en la misma unidad.
+7. Las dependencias bloquean solo cuando son prerrequisitos técnicos demostrables. PM-00 y la secuencia PM-00→PM-09 no bloquean trabajo independiente. La ausencia de organigramas/documentos institucionales no bloquea motores genéricos configurables.
+8. Usar Git como respaldo verificable; no exigir copias duplicadas cuando el blob histórico íntegro sea recuperable.
+9. Crear commits por unidades coherentes y recuperables, no por archivo ni por microavance. Crear checkpoints en hitos, pausas, transferencias o antes de operaciones de riesgo; conservar el historial y el límite de 180.000 caracteres.
+10. Trabajar solo en `NG_beta_0.0.0.1_work`. Nunca escribir en `NG_beta_0.0.0.1` ni cambiar su protección. `protected=false` no es bloqueo; la protección es responsabilidad del propietario.
 
+La calidad no se acredita por completar formularios o repetir auditorías, sino por el comportamiento correcto, pruebas pertinentes, revisión del diff y evidencia reproducible.
 
 ##PROHIBIDO BORRAR LAS SIGUIENTES INSTRUCCIONES.
 — PROCEDIMIENTO OBLIGATORIO DE TRABAJO.
 ===================================================================
 
-#Este procedimiento es de CUMPLIMIENTO OBLIGATORIO en TODOS los proyectos.
-##No se permite omitir, alterar ni reordenar pasos.
+#Este procedimiento es el estándar general para los proyectos que no tengan una norma específica de mayor prioridad.
+##Para IMA, aplicar NDASC v1.0; los pasos siguientes no pueden interpretarse de forma que la contradigan.
 
 --------------------------------------------------
 ##FLUJO PRINCIPAL DE TRABAJO

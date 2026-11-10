@@ -880,3 +880,49 @@ Estado de sesión: abierta; checkpoint intermedio. Inicio de esta sesión: C1.42
 - No se modificó código en esta iteración de checkpoint. Este commit consolida exclusivamente los registros documentales del checkpoint; el cambio de código d0d01c8d permanece en su commit previo.
 - Commit de cierre: el commit que contiene este checkpoint; SHA verificado externamente después de publicar.
 ===============================================================================
+
+
+
+===============================================================================
+## CHECKPOINT C1.431 — Adopción NDASC v1.0: simplificación normativa y control proporcional
+Sesión: IMA-GOV-20261110-1553Z-01
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+HEAD de partida verificado: 2a5bf4b697fdec153f4a5dd1e2cce30b4ccef05c.
+HEAD de rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59; no se escribe ni publica en ella.
+Checkpoint anterior: C1.430.
+Alcance: gobernanza operativa y alineación documental; sin cambios de código de producto.
+
+### Decisión normativa adoptada
+- Se adopta `NORMAS_DESARROLLO_AGIL_SEGURO_CONTINUO.md` (NDASC v1.0) como fuente normativa operativa única para IMA.
+- La norma reemplaza gates administrativos, auditorías exhaustivas obligatorias para todo cambio, separación rígida de análisis/edición, reinicios completos por Code Review, respaldos duplicados, documentación repetitiva y commit único obligatorio por iteración.
+- Se conservan controles de seguridad, privacidad, aislamiento multiinstitucional, integridad de datos, compatibilidad, pruebas pertinentes, revisión del diff, trazabilidad y recuperación.
+- Se define inspección y verificación proporcionales al riesgo; automatización, CI, mocks y fixtures están permitidos. Los resultados deben distinguir PASS/FAIL/BLOCKED/NOT RUN.
+- Se define corrección focalizada sin reiniciar el ciclo; commits por unidades coherentes; checkpoints en hitos, pausas, handoffs y antes de operaciones de riesgo.
+- Dependencias bloquean solo si son prerrequisitos técnicos demostrables. PM-00 y PM-00→PM-09 no son gates universales.
+- Se reafirma que IMA es una plataforma multiinstitucional, no una institución; la falta de organigramas o documentos institucionales no bloquea motores genéricos. Los datos reales y actos institucionales conservan sus autorizaciones específicas.
+- `protected=false` no bloquea el desarrollo. La rama base y su protección son responsabilidad del propietario; el agente solo trabaja en la rama exclusiva.
+
+### Archivos modificados
+- `NORMAS_DESARROLLO_AGIL_SEGURO_CONTINUO.md`: nueva norma operativa v1.0.
+- `Instrucciones.txt`: sustituye la adenda IMA anterior por una directiva prioritaria breve; el procedimiento genérico queda subordinado para IMA y se conserva para otros proyectos.
+- `METODOLOGIA_DESARROLLO.md`: actualiza la puerta superior y su regla de precedencia; las especificaciones de producto, seguridad y pruebas beta siguen vigentes.
+- `Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md`: versión 1.2; PM-00 deja de ser bloqueo universal, dependencias y secuencia se interpretan proporcionalmente.
+- `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt`: este checkpoint acumulativo C1.431.
+- `Auditoría/INDICE_CHECKPOINTS.md`: índice actualizado y referencia a C1.431.
+- `changueslogs.txt`: registro de adopción y alcance.
+
+### Verificación y límites
+- Revisión de contenido y transformaciones de las secciones superiores; se comprobó que el plan ya no contiene la cláusula de bloqueo universal de PM-00 y que §6.1 distingue dependencias técnicas obligatorias.
+- No se modificó código de producto ni configuración GitHub.
+- Pruebas de software: No aplica (cambio exclusivamente normativo/documental). No se ejecutaron suites ni workflows; no se declara PASS de CI.
+- El tamaño del archivo activo antes de anexar era 81.323 caracteres, inferior al máximo de 180.000; la nueva entrada se conserva en la misma parte sin rotación.
+- No se crearon tareas de auditoría: las inconsistencias normativas se resolvieron en esta misma unidad documental.
+- Próxima acción de desarrollo: reanudar TASK-153 según el requisito original y la evidencia C1.430, sin repetir auditorías ya vigentes; empezar por endpoints de lectura/mutación TASK en `backend/task-service/Code.gs` y probar la propiedad/ámbito en los casos afectados.
+
+### Estado
+- NDASC v1.0 preparada para publicación en la rama exclusiva.
+- Commit de cierre: el commit que contiene este checkpoint; SHA se confirma externamente después de publicar.
+- Rama base intacta; no se ha solicitado ni ejecutado modificación de protección.
+===============================================================================
