@@ -710,3 +710,29 @@ function makeProviderConfigHarness(initialRows = [], options = {}) {
   assert.equal(safeLegacyView.proveedores[0].endpointUrl,"");assert.equal(safeLegacyView.proveedores[0].endpointCredentialDetected,true);
 }
 console.log("USER signature provider credentials, legacy migration, masking, removal and read-only config contracts: PASS");
+
+{
+  const logged=[];
+  const context={
+    validateRolePermission:()=>({authorized:false,role:"Estudiante"}),
+    logStructuredEvent:(...args)=>logged.push(args),
+    textResponse:value=>value
+  };
+  vm.runInNewContext(extractFunction("doPost"),context);
+  const apiSecret="API-SECRET-MUST-NOT-BE-LOGGED";
+  const hmacSecret="H".repeat(40);
+  const response=context.doPost({postData:{contents:JSON.stringify({
+    action:"configureAdvancedSignatureProvider",
+    payload:{proveedorId:"PSC_HN",apiKey:apiSecret,hmacSecret:hmacSecret}
+  })}});
+  assert.equal(response.code,"AUTH_PERMISSION_DENIED");
+  assert.equal(logged.length,1);
+  const auditPayload=logged[0][5];
+  assert.deepEqual(auditPayload,{
+    proveedorId:"PSC_HN",apiKeyProvided:true,hmacSecretProvided:true,
+    apiKeyRemovalRequested:false,hmacSecretRemovalRequested:false
+  });
+  assert.equal(JSON.stringify(auditPayload).includes(apiSecret),false);
+  assert.equal(JSON.stringify(auditPayload).includes(hmacSecret),false);
+}
+console.log("USER provider credential RBAC denial log redaction contract: PASS");
