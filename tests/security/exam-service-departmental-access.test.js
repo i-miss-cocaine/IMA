@@ -67,9 +67,10 @@ const userRows = [
   ["TUTOR-1", "Tutor Uno", "", "", "tutor1@example.invalid", "", "Tutor"]
 ];
 const questionRows = [["PreguntaID", "ExamenID", "Tipo", "Texto", "OpcionesJSON", "RespuestaCorrecta"], ["Q-1", "EXM-1", "opcion_multiple", "Pregunta propia", "{}", "A"], ["Q-2", "EXM-2", "opcion_multiple", "Pregunta otro departamento", "{}", "B"]];
-const familyRows = [["RelacionID", "PersonaEstudianteID", "PersonaResponsableID", "TipoParentesco", "EstadoAutorizacion"], ["REL-1", "EXP-1", "TUTOR-1", "Madre/Padre", "Verificada"]];
-const studentExpRows = [["ExpedienteID", "UserID"], ["EXP-1", "STUDENT-1"]];
-const sheets = { Examenes: examRows, AsignacionesAmbitosRoles: scopeRows, ResourceOwnership: ownershipRows, EntregasExamen: deliveryRows, Usuarios: userRows, PreguntasExamen: questionRows, RelacionesFamiliares: familyRows, ExpedientesEstudiantes: studentExpRows };
+const familyRows = [["RelacionID", "PersonaEstudianteID", "PersonaResponsableID", "TipoParentesco", "EstadoAutorizacion"], ["REL-1", "EXP-1", "TUTOR-1", "Madre/Padre", "Verificada"], ["REL-2", "EXP-2", "TUTOR-1", "Madre/Padre", "Revocada"]];
+const studentExpRows = [["ExpedienteID", "UserID"], ["EXP-1", "STUDENT-1"], ["EXP-2", "STUDENT-2"]];
+const legacyGuardianRows = [["RelacionID", "EstudianteID", "TutorID", "", "", "", "", "", "", "Estado"], ["LEG-2", "STUDENT-2", "TUTOR-1", "", "", "", "", "", "", "Activa"]];
+const sheets = { Examenes: examRows, AsignacionesAmbitosRoles: scopeRows, ResourceOwnership: ownershipRows, EntregasExamen: deliveryRows, Usuarios: userRows, PreguntasExamen: questionRows, RelacionesFamiliares: familyRows, ExpedientesEstudiantes: studentExpRows, RelacionesEstudianteTutor: legacyGuardianRows };
 const sheetObjects = Object.fromEntries(Object.entries(sheets).map(([name, rows]) => [name, { getDataRange() { return { getValues: () => rows.map(row => row.slice()) }; } }]));
 const ss = { getSheetByName(name) { return sheetObjects[name] || null; } };
 const runtime = {
