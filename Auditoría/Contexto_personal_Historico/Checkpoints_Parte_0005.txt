@@ -44,3 +44,41 @@ Corregir `addToWaitlist` dentro de TASK-153 / AUD-NG-386 para impedir entradas d
 - Pruebas que dependen de servicios desplegados quedan reservadas a beta; no bloquean la aprobación local.
 - Siguiente acción: revisar la siguiente mutación de lista de espera, especialmente oferta de plaza y reordenamiento, manteniendo la sesión `IMA-EXEC-20261110-1825Z-02`.
 ===============================================================================
+
+===============================================================================
+## CHECKPOINT C1.461 — ACADEMIC: oferta de plaza con ownership previo, lock y transición idempotente
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.460.
+HEAD inicial del subalcance: 314e07b4fa5cfeae005d69b1b417d66a44803851.
+
+### Alcance
+Corregir `offerWaitlistSlot` para eliminar lectura de detalles antes de autorización, serializar las transiciones y evitar sobrescribir ofertas vigentes.
+
+### Implementación
+- Valida contexto ACADEMIC sin resolver todavía una solicitud; adquiere ScriptLock y lee inicialmente solo `EsperaID`/`SolicitudID`.
+- Revalida `SOLICITUD_ADMISION` bajo lock antes de leer la fila completa; ID inexistente/ambiguo y ownership denegado fallan cerradamente.
+- `horasVigencia` acepta solo enteros seguros positivos; mantiene 72 horas como valor por defecto.
+- Una oferta `Plaza_Ofrecida` con expiración futura se devuelve como existente sin nueva escritura. Una oferta vencida puede renovarse; también se admite `En_Espera` y `Oferta_Expirada`. Otros estados y fechas inválidas se rechazan.
+- Estado, expiración, justificación preservada, fecha de ingreso y última actualización se escriben en un único rango contiguo.
+
+### Verificación local
+- GitHub Actions run `42895517906`: SUCCESS, Node 24. URL: https://github.com/i-miss-cocaine/IMA/actions/runs/42895517906
+- Contrato `academic-admission-ownership.test.js`: PASS; ownership antes de leer detalles, ID ambiguo, lock contencioso, oferta válida, repetición idempotente sin mutación, renovación de oferta vencida, estado inválido, fecha inválida y horas no positivas.
+- Department Scope, ACADEMIC expediente/admisión/conversión/entrevistas/evaluaciones/duplicados/reapertura/lista de espera, ACCOUNTING departmental access, ResourceOwnership ABAC y voucher client: PASS.
+- `node --check`: User/Academic/Accounting Code.gs y `js/student.js`: PASS.
+- Sin despliegue, servicios vivos, Google Sheets real ni datos institucionales reales.
+
+### Commits
+- `7f3153e036d17ec6d070a67325b447f9c034422d` — autorización, ownership y transición de oferta bajo lock.
+- `239e360700728569e4a000ca542e837be77b1c25` — contrato local de oferta.
+- Documentación: plan `87d74fbc4df20cca0ef9e650251215a28d30d044`; auditoría `6eec4411a7bfe8763c22b3084aeb56def6702499`; changelog `942601763749c79a79df5d07fb843ee378f404d4`.
+
+### Estado y continuidad
+- Oferta de plazas de lista de espera ACADEMIC corregida y aprobada localmente.
+- **TASK-153 permanece En ejecución y AUD-NG-386 abierto** por reordenamiento de lista de espera, recursos institucionales, firmas, permisos granulares, referencias compartidas, importaciones y otras rutas pendientes.
+- Las pruebas dependientes de servicios desplegados se reservan a beta; no bloquean la aprobación local.
+- Siguiente acción: revisar `reorderWaitlist` y sus límites de autorización/posición, manteniendo la sesión `IMA-EXEC-20261110-1825Z-02`.
+===============================================================================
