@@ -255,3 +255,16 @@ Endurecer las excepciones públicas de backend/academic-service/Code.gs mediante
 - Se ajustan únicamente las expectativas del fixture: Profesor sin includeDrafts ve publicaciones normales y programadas; con includeDrafts ve además borradores de su aula. Estudiante sigue sin ver borradores ni publicaciones futuras.
 - No cambia la implementación de autorización ni se amplía el acceso del estudiante. Se conserva el hallazgo AUD-NG-002 y el expediente único.
 - CI C1.369 queda pendiente; C1.370 ejecutará el contrato actualizado.
+
+
+## Revisión focalizada C1.371 — eliminación segura de proyectos propios
+
+- **Hallazgo existente ampliado:** AUD-NG-002 (propiedad de proyectos). `deleteProject` podía coincidir con cualquier URL propia cuando `fileId` estaba vacío porque `indexOf("")` devuelve 0; además, capturaba errores de Sheets/Drive y devolvía success aunque no hubiera eliminado el proyecto o el archivo.
+- **Corrección:** la búsqueda exige propietario autenticado; compara el ID y/o nombre aportados, y cuando ambos se envían exige que ambos correspondan al mismo registro. Se elimina el fallback por substring vacío.
+- **Consistencia Drive/Sheets:** el archivo se envía a papelera antes de borrar la fila; si falla Drive, la fila permanece; si falla el borrado de la fila, se intenta restaurar el archivo. Errores de compensación se reportan explícitamente; no se devuelve success por errores absorbidos.
+- **Pruebas locales añadidas:** nombre incorrecto sin fileId, proyecto de otro usuario, identificadores discordantes, eliminación propia, fallo Drive y fallo Sheets con rollback.
+- **CI C1.370:** security local contracts run 42724840584 completed/success; log confirma reconciliación de metadatos, deleteFile, USER public news/announcements y getPosts.
+- **CI C1.369:** backup/restore run 42724684967 completed/success; security run 42724685285 falló solo por expectativa incorrecta del fixture docente P5; C1.370 corrige la expectativa y pasa.
+- **CI C1.371:** pendiente tras publicar.
+- **Beta:** BETA-FUNC-014 cubre operación Drive/Sheets real aislada; no bloquea implementación local.
+- **Estado:** AUD-NG-002 continúa en revalidación; TASK-636 permanece En ejecución.

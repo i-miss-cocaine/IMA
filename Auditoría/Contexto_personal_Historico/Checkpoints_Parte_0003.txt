@@ -1016,3 +1016,55 @@ Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt �
 Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.370.
 Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
 ===============================================================================
+
+===============================================================================
+## C1.371 — TASK-636 / AUD-NG-002 — eliminación segura de proyectos
+ID: C1.371
+Sesión: IMA-EXEC-20261109-1739Z-01
+Fecha: 2026-11-09
+Checkpoint anterior válido: C1.370
+Baseline lógico: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD físico de partida: cd9d9d3e0b60b41c87d008470ecd76c9501c09a9
+Rama: NG_beta_0.0.0.1_work
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+
+### Auditoría
+- Se revisó deleteProject dentro del criterio de propiedad de proyectos de TASK-636.
+- AUD-NG-002 se amplía: con fileId vacío, el uso de indexOf("") podía coincidir con cualquier URL del propietario; el catch global absorbía errores y devolvía success aunque la operación fallara.
+- La propiedad de otros usuarios ya estaba filtrada, pero el falso positivo podía borrar el proyecto equivocado del propio usuario y los errores cruzados quedaban ocultos.
+
+### Implementación
+- Se exige rol Estudiante/Alumno e identidad derivada de claims.
+- La búsqueda se realiza por propietario y por los identificadores aportados; si se envían fileId y fileName, ambos deben coincidir en el mismo registro.
+- Se elimina el matching por substring vacío y se rechaza explícitamente un proyecto no encontrado/no coincidente.
+- Drive se mueve a papelera antes de eliminar la fila. Si Drive falla, no se borra la fila; si falla deleteRow, se intenta deshacer setTrashed. Rollback fallido devuelve DELETE_PROJECT_ROLLBACK_FAILED.
+- Se elimina el catch que devolvía success ante errores.
+- Se agregan fixtures Node para nombre incorrecto, proyecto ajeno, ID/nombre discordantes, éxito y fallos Drive/Sheets con compensación.
+
+### Archivos modificados
+- backend/task-service/Code.gs
+- tests/security/task-service-security-contract.test.js
+- Auditoría/AUDITORIA_TASK-636_C1.305.md
+- pendientes/Otros/Pendientes.md (seguimiento aditivo)
+- beta_test.txt (BETA-FUNC-014)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoria.txt
+- tareas_auditoria.txt
+- changueslogs.txt
+
+### Pruebas y estado
+- C1.370 security local contracts run 42724840584: completed/success; log confirma USER, deleteFile, reconciliación y getPosts.
+- C1.369 backup/restore run 42724684967: completed/success. Security run 42724685285 falló por expectativa del fixture docente sobre publicación programada; C1.370 corrigió la expectativa y pasó.
+- C1.371: fixtures locales agregados; CI pendiente tras publicar.
+- BETA-FUNC-014: Pendiente beta, no bloqueante para implementación local.
+- TASK-636 sigue En ejecución; AUD-NG-002 en revalidación. No se marca Completada.
+
+### Siguiente acción exacta
+Consultar CI C1.371 y continuar reauditoría de getStudentTasks/getAllTasks/getTeacherActivity/getSubmissionDocumentPreviewUrl y autorización contextual docente. Mantener closeAcademicYear fail-closed hasta definir y verificar la operación destructiva conforme al requisito rector.
+
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.371.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.371.
+Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
+===============================================================================

@@ -249,3 +249,70 @@ const teacherWithDrafts = postContext.run({
 assert.deepEqual(teacherWithDrafts.data.map(row => row.postId).sort(), ["P1","P2","P3","P5"], "teacher may see drafts only in authorized classroom when requested and scheduled posts");
 
 console.log("TASK-636 getPosts local contract: verified role, string/boolean draft guards and classroom scope passed.");
+
+// TASK-636: project deletion must match owner + supplied identifiers and compensate cross-service failures.
+
+function makeProjectDeleteFixture(ownerId, fileId, options) {
+  options = options || {};
+  const rows = [
+    ["UserId","NombreArchivo","ArchivoUrl","Codigo"],
+    [ownerId,"project.psc",fileId ? "https://drive.google.com/file/d/" + fileId + "/view" : "","print('test')"]
+  ];
+  const sheet = {
+    getDataRange: () => ({ getValues: () => rows.map(row => row.slice()) }),
+    deleteRow: rowNumber => {
+      if (options.failDelete) throw new Error("simulated sheet delete failure");
+      rows.splice(rowNumber - 1, 1);
+    }
+  };
+  const file = {
+    trashed: !!options.alreadyTrashed,
+    isTrashed: function () { return this.trashed; },
+    setTrashed: function (value) {
+      if (value && options.failTrash) throw new Error("simulated Drive trash failure");
+      this.trashed = value;
+    }
+  };
+  const ss = { getSheetByName: name => name === "pseudocode" ? sheet : null };
+  const context = {
+    SPREADSHEET_ID: "LOCAL",
+    SpreadsheetApp: { openById: () => ss },
+    getSheetOrThrow: (_ss, name) => { if (name !== "pseudocode") throw new Error("missing " + name); return sheet; },
+    DriveApp: { getFileById: id => { assert.equal(id, fileId); return file; } }
+  };
+  vm.runInNewContext(
+    extractFunction("extractTaskServiceFileId") + String.fromCharCode(10) +
+    extractFunction("deleteProject") + String.fromCharCode(10) +
+    "this.run = deleteProject;",
+    context
+  );
+  return { run: context.run, rows, file };
+}
+const wrongNameFixture = makeProjectDeleteFixture("STU-1", "FILE-OWN");
+assert.throws(() => wrongNameFixture.run({_verifiedUserId:"STU-1",_verifiedRole:"Estudiante",fileName:"wrong.psc"}), /no coincide con los identificadores/);
+assert.equal(wrongNameFixture.rows.length, 2, "empty fileId plus wrong fileName must not match every URL");
+assert.equal(wrongNameFixture.file.trashed, false);
+
+const foreignProjectFixture = makeProjectDeleteFixture("STU-2", "FILE-FOREIGN");
+assert.throws(() => foreignProjectFixture.run({_verifiedUserId:"STU-1",_verifiedRole:"Estudiante",fileId:"FILE-FOREIGN"}), /no coincide con los identificadores/);
+assert.equal(foreignProjectFixture.rows.length, 2, "another user's project remains untouched");
+
+const mismatchedIdentifiersFixture = makeProjectDeleteFixture("STU-1", "FILE-OWN");
+assert.throws(() => mismatchedIdentifiersFixture.run({_verifiedUserId:"STU-1",_verifiedRole:"Estudiante",fileId:"FILE-OTHER",fileName:"project.psc"}), /no coincide con los identificadores/);
+assert.equal(mismatchedIdentifiersFixture.file.trashed, false, "when both identifiers are supplied, both must match");
+
+const successProjectFixture = makeProjectDeleteFixture("STU-1", "FILE-OWN");
+assert.equal(successProjectFixture.run({_verifiedUserId:"STU-1",_verifiedRole:"Estudiante",fileId:"FILE-OWN",fileName:"project.psc"}).status, "success");
+assert.equal(successProjectFixture.rows.length, 1, "verified project row is deleted");
+assert.equal(successProjectFixture.file.trashed, true, "verified project file is moved to trash");
+
+const driveFailureFixture = makeProjectDeleteFixture("STU-1", "FILE-OWN", { failTrash: true });
+assert.throws(() => driveFailureFixture.run({_verifiedUserId:"STU-1",_verifiedRole:"Estudiante",fileId:"FILE-OWN"}), /simulated Drive trash failure/);
+assert.equal(driveFailureFixture.rows.length, 2, "Drive failure must not delete the metadata row");
+
+const sheetFailureFixture = makeProjectDeleteFixture("STU-1", "FILE-OWN", { failDelete: true });
+assert.throws(() => sheetFailureFixture.run({_verifiedUserId:"STU-1",_verifiedRole:"Estudiante",fileId:"FILE-OWN"}), /DELETE_PROJECT_METADATA_FAILED/);
+assert.equal(sheetFailureFixture.rows.length, 2, "metadata row remains after failed deletion");
+assert.equal(sheetFailureFixture.file.trashed, false, "Drive trash is compensated if metadata deletion fails");
+
+console.log("TASK-636 deleteProject local contract: strict ownership/identifier matching and Drive/Sheets compensation passed.");

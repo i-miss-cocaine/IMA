@@ -502,3 +502,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Code Review ajusta el fixture de getPosts para permitir al Profesor autorizado revisar publicaciones programadas de su aula.
 - Estudiante sigue bloqueado para borradores y publicaciones futuras. Sin cambio de código productivo.
 - CI C1.370 pendiente. Checkpoint C1.370: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice fila C1.370.
+
+
+[2026-11-09] IMA-EXEC-20261109-1739Z-01 — C1.371 / TASK-636 / AUD-NG-002
+- deleteProject exige propietario e identificadores coherentes, elimina el matching por substring vacío y deja de absorber errores.
+- Se implementa compensación Drive/Sheets ante fallo y se añaden fixtures locales.
+- CI C1.371 pendiente; BETA-FUNC-014 registra escenario real aislado.
+- Checkpoint C1.371: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice fila C1.371.

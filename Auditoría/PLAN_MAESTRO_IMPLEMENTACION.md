@@ -2242,3 +2242,11 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - Code Review identifica que el fixture esperaba bloquear publicaciones programadas futuras para Profesor; el alcance autorizado permite al docente revisarlas en su aula.
 - Se ajusta el test: Profesor recibe programadas; Estudiante no recibe borradores ni programadas; includeDrafts solo controla borradores.
 - Sin cambios en permisos ni código productivo. CI C1.370 pendiente.
+
+
+## 10.55 TASK-636 — C1.371: eliminación segura de proyectos propios
+- AUD-NG-002: deleteProject podía coincidir con cualquier URL si fileId estaba vacío y absorbía errores, reportando success falso.
+- Se exige propietario + identificadores coherentes; Drive se mueve a papelera antes de borrar fila y se compensa si falla Sheets; los errores no se absorben.
+- Fixtures Node cubren propiedad, coincidencias, Drive/Sheets y rollback. CI pendiente.
+- BETA-FUNC-014: prueba real aislada de Drive/Sheets, Pendiente beta y no bloqueante.
+- TASK-636 En ejecución.

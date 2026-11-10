@@ -1705,34 +1705,54 @@ function listProjects(payload) {
 }
 
 function deleteProject(payload) {
-  const fileId = payload && payload.fileId, fileName = payload && payload.fileName;
-  const userId = payload && payload._verifiedUserId, role = payload && payload._verifiedRole;
-  if (!userId || (role !== "Estudiante" && role !== "Alumno")) throw new Error("Acceso denegado: solo el estudiante autenticado puede eliminar sus proyectos.");
-  if (!fileId && !fileName) throw new Error("Identificador de proyecto requerido.");
+  const fileIdInput = String(payload && payload.fileId || "").trim();
+  const requestedFileId = fileIdInput ? extractTaskServiceFileId(fileIdInput) : "";
+  const requestedName = String(payload && payload.fileName || "").trim();
+  const userId = String(payload && payload._verifiedUserId || "").trim();
+  const role = payload && payload._verifiedRole;
+  if (!userId || (role !== "Estudiante" && role !== "Alumno")) {
+    throw new Error("Acceso denegado: solo el estudiante autenticado puede eliminar sus proyectos.");
+  }
+  if (!requestedFileId && !requestedName) throw new Error("Identificador de proyecto requerido.");
 
-  try {
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    const pseudocodeSheet = getSheetOrThrow(ss, "pseudocode");
-    const data = pseudocodeSheet.getDataRange().getValues();
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const pseudocodeSheet = getSheetOrThrow(ss, "pseudocode");
+  const data = pseudocodeSheet.getDataRange().getValues();
+  const projectIndex = data.slice(1).findIndex(row => {
+    if (String(row[0] || "").trim() !== userId) return false;
+    const storedName = String(row[1] || "").trim();
+    const storedFileId = extractTaskServiceFileId(row[2] || "");
+    const matchesId = !!requestedFileId && (storedFileId === requestedFileId || storedName === requestedFileId);
+    const matchesName = !!requestedName && storedName === requestedName;
+    if (requestedFileId && requestedName) return matchesId && matchesName;
+    return matchesId || matchesName;
+  });
+  if (projectIndex < 0) throw new Error("Acceso denegado: el proyecto no pertenece al estudiante autenticado o no coincide con los identificadores.");
 
-    // Buscar por fileId (en URL) o por NombreArchivo (si fileId es el nombre)
-    const rowIndex = data.findIndex(r => (r[0] == userId && (r[1] == fileName || r[1] == fileId || (r[2] || "").indexOf(fileId) !== -1)));
-
-    if (rowIndex === -1) throw new Error("Acceso denegado: el proyecto no pertenece al estudiante autenticado.");
-    const storedFileId = extractTaskServiceFileId(data[rowIndex][2] || "");
-    pseudocodeSheet.deleteRow(rowIndex + 1);
-    if (storedFileId) {
-      try { DriveApp.getFileById(storedFileId).setTrashed(true); } catch (driveError) { logDebug("No se pudo eliminar el archivo del proyecto:", driveError.message); }
-    }
-  } catch (e) {
-    logDebug("Error al eliminar de la hoja:", e.message);
+  const row = data[projectIndex + 1];
+  const storedFileId = extractTaskServiceFileId(row[2] || "");
+  let file = null, fileWasTrashed = false;
+  if (storedFileId) {
+    file = DriveApp.getFileById(storedFileId);
+    fileWasTrashed = file.isTrashed();
+    if (!fileWasTrashed) file.setTrashed(true);
   }
 
-  // La eliminación de Drive se hace únicamente con el ID recuperado de la fila propia verificada.
+  try {
+    pseudocodeSheet.deleteRow(projectIndex + 2);
+  } catch (sheetError) {
+    if (file && !fileWasTrashed) {
+      try {
+        file.setTrashed(false);
+      } catch (rollbackError) {
+        throw new Error("DELETE_PROJECT_ROLLBACK_FAILED: " + sheetError.message + " | " + rollbackError.message);
+      }
+    }
+    throw new Error("DELETE_PROJECT_METADATA_FAILED: " + sheetError.message);
+  }
 
   return { status: "success", message: "Proyecto eliminado." };
 }
-
 function loadProject(payload) {
   const userId = payload && payload._verifiedUserId;
   const role = payload && payload._verifiedRole;

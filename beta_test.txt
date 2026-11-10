@@ -177,3 +177,12 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Pasos:** consultar como estudiante enviando authRole Administrador e includeDrafts=true; consultar como profesor con includeDrafts false y true; repetir con ambos tipos de booleano y aula ajena.
 - **Resultado esperado:** estudiante nunca ve borradores; el rol enviado por cliente no altera autorización; profesor ve borradores solo con includeDrafts explícito y dentro de su aula asignada; fecha futura no se expone a estudiantes.
 - **Estado:** Pendiente beta. No bloquea implementación local.
+
+
+## BETA-FUNC-014 — TASK-636 / AUD-NG-002 — eliminación de proyectos con consistencia Drive/Sheets
+- **Objetivo:** comprobar que deleteProject solo elimina proyectos del estudiante autenticado y mantiene consistencia entre pseudocode y Drive.
+- **Precondiciones:** Task-Service beta aislado, hoja pseudocode y Drive de prueba, dos cuentas sintéticas de estudiantes.
+- **Datos:** proyecto propio, proyecto ajeno, ID/nombre discordantes, proyecto legacy sin DriveId.
+- **Pasos:** intentar borrar por nombre, por fileId y por ambos; enviar fileId vacío con nombre incorrecto; simular fallo Drive al enviar a papelera; simular fallo deleteRow en Sheets después de mover a papelera.
+- **Resultado esperado:** no se elimina proyecto ajeno ni coincidencia ambigua; solo se reporta success tras borrar la fila; fallo Drive deja la fila intacta; fallo Sheets restaura el archivo o reporta error crítico de rollback.
+- **Estado:** Pendiente beta. No bloquea implementación local.

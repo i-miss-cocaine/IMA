@@ -535,3 +535,13 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - Estudiante sigue sin acceso a borradores ni publicaciones futuras; el rol de cliente no interviene.
 - Sin cambios de código productivo. CI C1.370 pendiente.
 ===============================================================================
+
+
+===============================================================================
+## Seguimiento TASK-636 — C1.371 / AUD-NG-002
+- deleteProject ya no permite matching accidental por fileId vacío; si ambos identificadores se envían, ambos deben corresponder al mismo registro propio.
+- Se mueve el archivo a papelera antes de eliminar la fila; los fallos de Drive/Sheets se propagan y se compensa la operación cruzada.
+- Fixtures Node cubren acceso propio/ajeno, coincidencias e integridad.
+- CI C1.370 security run 42724840584: success; C1.369 backup run 42724684967: success; C1.371 pendiente.
+- BETA-FUNC-014 Pendiente beta, no bloqueante.
+===============================================================================
