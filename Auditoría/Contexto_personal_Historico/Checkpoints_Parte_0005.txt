@@ -616,7 +616,7 @@ Resolver AUD-NG-063 en USER: evitar que credenciales de proveedores de firma ava
 - AUD-NG-063 queda completada en el alcance de código. TASK-153 y AUD-NG-386 permanecen En ejecución/abiertos por la validación específica del PSC y otras rutas.
 
 ### Siguiente iteración
-Continuar con la siguiente ruta independiente de USER/TASK-153. La validación criptográfica específica del proveedor solo se implementará cuando exista contrato oficial y material de confianza verificable; no simular respuestas PSC ni declarar validez documental.
+Siguiente tarea concreta: revisar `createAdvancedSignatureRequest` para exigir un proveedor explícitamente configurado y activo, y retirar el fallback ficticio `PSC-HN-DEFAULT`. No integrar ni simular un PSC; la validación criptográfica específica solo se implementará cuando exista contrato oficial y material de confianza verificable.
 
 ### Addendum C1.474-R1 — redacción de credenciales en logs RBAC
 - Se añadió un contrato conductual de doPost para demostrar que una denegación RBAC de configureAdvancedSignatureProvider registra únicamente proveedor y banderas de presencia/eliminación; nunca apiKey ni hmacSecret.

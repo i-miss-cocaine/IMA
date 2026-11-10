@@ -4951,3 +4951,5 @@ TAREAS DERIVADAS — AUDITORÍA TASK-639 / C1.302
 - Las respuestas solo exponen máscara/indicadores; se sanea el log RBAC; se rechazan secretos en configuracionJSON y URLs inseguras; endpoints legacy con credenciales se redaccionan. La consulta es de solo lectura y no presenta un PSC por defecto no configurado.
 - V8 local 12 escenarios/17 aserciones PASS; parseo servicio/test PASS. CI Department Scope 42910740964, Task-Service 42910740844 e Identity Mapping 42910740991 — SUCCESS.
 - AUD-NG-063 completada en código; BETA-FUNC-028 Pendiente beta. TASK-153 y AUD-NG-386 siguen En ejecución/abiertos.
+
+- **Siguiente iteración registrada:** revisar `createAdvancedSignatureRequest`; exigir proveedor de firma explícitamente configurado/activo y eliminar el fallback PSC-HN-DEFAULT. No simular PSC ni declarar validez criptográfica sin contrato/material oficial.
