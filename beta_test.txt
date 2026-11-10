@@ -300,3 +300,20 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Resultado esperado:** estudiantes solo acceden a su expediente dentro de su ámbito y ResourceOwnership; tutores solo acceden a estudiantes vinculados y dentro del ámbito departamental del estudiante; la relación familiar no sustituye ownership; getStudentGuardians/saveStudentGuardian/unlinkStudentGuardian validan el expediente antes de leer PII o mutar relaciones; propiedad ausente/duplicada, asignación inválida o relación no vigente producen denegación sin revelar existencia ni metadatos.
 - **Estado:** Pendiente beta. Las pruebas locales sintéticas de la guarda se mantienen separadas de esta validación desplegada.
 - **Evidencia requerida:** commit/build, ambiente aislado, roles sintéticos, departamento y recurso de prueba, respuestas allow/deny y logs saneados; nunca incluir tokens, datos personales ni identificadores reales.
+
+
+## BETA-FUNC-024 — TASK-153 / ACADEMIC: informes, búsqueda de duplicados y cola de admisiones por ámbito
+- **Módulo/servicio:** ACADEMIC Service — informes administrativos, detección de duplicados y solicitudes de admisión.
+- **Roles:** Dirección, Secretaría y administración con ámbitos departamentales e institucionales.
+- **Objetivo:** verificar que informes PII, búsquedas de duplicados y operaciones de solicitudes no filtren ni modifiquen recursos fuera del ámbito autorizado.
+- **Precondiciones:** dos departamentos sintéticos; expedientes, matrículas, movimientos y documentos con ResourceOwnership distinto; solicitudes públicas sin asignación y solicitudes con propietario activo; usuarios Director/Secretaría con scope D1 e institución-wide.
+- **Pasos:**
+  1. Ejecutar cada tipo de `getStudentFileAdministrativeReports` con scope D1 y comprobar que solo incluye expedientes/documentos/movimientos/matrículas de D1.
+  2. Solicitar exportLog y verificar que el actor registrado coincide con la identidad firmada, ignorando `authUserId` manipulado en el payload.
+  3. Ejecutar `findDuplicateStudents` con coincidencias sintéticas en D1 y D2; verificar que D1 no recibe nombres, correo ni identificación de D2.
+  4. Consultar `getAdmissionRequests` con scope D1; verificar que solicitudes sin asignación o propiedad de D2 no aparecen y que el acceso directo por solicitudId responde no encontrado.
+  5. Consultar la cola como institución-wide; verificar que las solicitudes públicas completamente no asignadas son visibles, pero una solicitud con propiedad histórica ajena/inactiva/ambigua no recibe la excepción.
+  6. Intentar `updateAdmissionStatus` sobre solicitud de otro departamento, solicitud sin asignación desde scope D1, ID duplicado y sesión inválida.
+- **Resultado esperado:** los informes y búsquedas filtran por ResourceOwnership; la exportación registra identidad verificada; solicitudes sin propietario son visibles únicamente para alcance institucional explícito; la propiedad histórica, aunque inactiva o de otra institución, nunca se trata como recurso sin asignar; cambios de estado fuera de ámbito se deniegan sin mutación.
+- **Estado:** Pendiente beta. Los contratos sintéticos locales se documentan por separado.
+- **Evidencia requerida:** build desplegado, roles/ámbitos sintéticos, resultados allow/deny, conteos y logs saneados; no registrar PII real, tokens ni identificadores personales.
