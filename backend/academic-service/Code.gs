@@ -2605,7 +2605,7 @@ function convertAdmissionToStudent(payload) {
       }
     } catch (_) {}
     if (!montoMatriculaBase) montoMatriculaBase = 1500;
-    const enrollRes = registerStudentEnrollment({
+    const enrollRes = registerStudentEnrollmentInternal_({
       userId: targetUserId, alumno: (nombres + " " + apellidos).trim(), grado: grado, seccion: targetSeccion,
       periodo: anolectivo, tipo: "IngresoNuevo", observaciones: "Convertido desde solicitud " + solicitudId,
       skipLock: true,
@@ -13176,6 +13176,13 @@ function generateMigrationReport(payload) {
 // Módulo de Matrícula
 // [REQ-EXP-009] [Requerimientos de Expansión y Desarrollo] - Registro de matrículas por período y vinculación con cargos financieros del estudiante.
 function registerStudentEnrollment(payload) {
+  const publicPayload = Object.assign({}, payload || {});
+  delete publicPayload._chargeReference;
+  delete publicPayload._rollbackActions;
+  return registerStudentEnrollmentInternal_(publicPayload);
+}
+
+function registerStudentEnrollmentInternal_(payload) {
   const { userId, alumno, grado, seccion, periodo, tipo, becaDescuento, observaciones, cargos, _rollbackActions, _chargeReference } = payload || {};
   if (!userId || !grado || !periodo) throw new Error("Datos de matrícula incompletos.");
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
