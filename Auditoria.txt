@@ -1241,3 +1241,14 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - **Estado:** entrevistas de admisión corregidas y verificadas localmente. TASK-153 sigue En ejecución; AUD-NG-386 abierto por el alcance institucional restante.
 - **Commits:** `eb0bc0f6d8dc44d07d9ba79778194fd3cf223ad2`; `0901d2b0e4d129123461a6219cdbb138cbc9e7a2`; `dc993865cbb07266e138d4702bd1c9c638c379e4`.
 ===============================================================================
+
+===============================================================================
+## Seguimiento C1.457 — evaluaciones de admisión: lock e identidad verificada
+- **Hallazgo:** `saveAdmissionEvaluation` llamaba al generador de ID con `skipLock: true` y anexaba sin lock; el evento `EVALUATION_SAVED` tomaba el rol desde `payload.authRole`.
+- **Corrección:** `ScriptLock` cubre adquisición de hoja, generación de ID y append, con liberación en `finally`. El evaluador y el rol de auditoría se derivan de `ctx.actor` verificado; se ignora el rol falsificado del payload.
+- **Contrato local:** append solo bajo lock; actor verificado en fila; rol de evento no suplantable; liberación tras éxito y rechazo contencioso sin lectura/escritura.
+- **Verificación:** GitHub Actions run `42891200883` SUCCESS. Contratos ACADEMIC (incluidas entrevistas/evaluaciones), Department Scope, ACCOUNTING, ResourceOwnership ABAC y voucher client PASS; sintaxis User/Academic/Accounting y `js/student.js` PASS.
+- **Límites:** pruebas locales aisladas con lock simulado/fixtures; sin Google Sheets real, despliegue ni datos reales.
+- **Estado:** evaluaciones de admisión corregidas y verificadas localmente. TASK-153 permanece En ejecución; AUD-NG-386 continúa abierto por el resto del alcance departamental.
+- **Commits:** `f198730c1d8a37cc35a44a30c531b26ca6a5caaf`; `9b0a53bfec2f984ce665c5ea9d0d282b7f207700`.
+===============================================================================
