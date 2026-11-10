@@ -1528,3 +1528,51 @@ HEAD de código/pruebas/beta antes de documentación: 87dbe7ecf4b3eaab69fc473d7a
 - TASK-153 sigue En ejecución; AUD-NG-385/386 abiertos. DEVELOPER permanece como plano de control sin ABAC departamental; authRole fallback en AUD-NG-082/TASK-645.
 - Siguiente tarea: migración determinista de AULA_VIRTUAL y auditoría de otras rutas de datos estudiantiles, recursos institucionales/solicitudes de firma, referencias compartidas, filtros/importaciones y E2E.
 ===============================================================================
+
+
+===============================================================================
+## CHECKPOINT C1.446 — ACADEMIC: ownership de expedientes SELF/GUARDIAN e informes/admisiones
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.445.
+HEAD de código/pruebas/beta antes de documentación: 589873ae6659c735c4a9ce8fd7ca61aba5224e77.
+
+### Trabajo
+- assertStudentExpedienteScopeAccess_ ahora aplica ResourceOwnership EXPEDIENTE_ESTUDIANTE también a estudiantes y tutores. Para tutor se verifica relación activa con portal habilitado, se resuelve una única cuenta estudiante activa asociada a PersonaID y se usa su rol/ámbito.
+- getStudentGuardians, saveStudentGuardian y unlinkStudentGuardian exigen permiso RBAC y acceso al expediente. Si se edita un responsable ya existente, se validan todos sus expedientes activos vinculados para impedir cambios de PII compartida fuera del ámbito.
+- findDuplicateStudents filtra expedientes y solicitudes; las solicitudes públicas sin asignación solo son visibles para scope institucional explícito y sin historial de ownership. Se corrige la asociación PersonaID→UserID y la columna FechaNacimiento.
+- getStudentFileAdministrativeReports limita estados, matrículas, movimientos y documentos a expedientes autorizados; exportLog registra actor.userId firmado.
+- getAdmissionRequests y updateAdmissionStatus verifican permiso, identidad, ámbito y ownership. Los documentos asociados a solicitud usan la misma regla de intake institucional no asignado o ResourceOwnership normal.
+- Se añadieron contratos sintéticos para acceso SELF/GUARDIAN, tutor vinculado/no vinculado, mutaciones de relaciones, informes, duplicados y admisiones.
+
+### Archivos
+- backend/academic-service/Code.gs
+- tests/security/academic-student-expediente-ownership.test.js
+- beta_test.txt
+
+### Commits
+- 3d3d0015cbdd67a715a9fe60385fd82664e2f34d
+- b113a6f88b338c63f04ecc3531cd9efa85b8b257
+- 42ca04bad4209760bb883a20b0286a59b8054df9
+- 5874fa64f615f1dd1d691f60aea3e0b9ee9417b6
+- ea178e9ff2b70da97573a32a47bac650ef415fa0
+- 19a64b518ec4eee24b6f0c25b775f43e0058b90f
+- c77088ad8abd721453ebd3b3b92700ff9575cc86
+- df644f9a87838450a74f168e310ca423992b2be8
+- 9b7e619252f8c3489ea05980b58e570d1942148c
+- 1df0394c1953e19a7e67a8331aa4eebae8c795d2
+- 2ae88b8fca460911ed2e8f555b3cca9bf6a4a6ce
+- 589873ae6659c735c4a9ce8fd7ca61aba5224e77
+
+### Verificación
+- 15 aserciones estáticas de estructura y guardas: PASS.
+- Contratos dinámicos añadidos; ejecución Node local NOT RUN en el runtime disponible. No se declara PASS dinámico.
+- GitHub combined status/workflow runs para el HEAD consultado: arrays vacíos; no se declara CI PASS.
+- BETA-FUNC-023 y BETA-FUNC-024 quedan Pendiente beta; las pruebas de despliegue no bloquean desarrollo.
+
+### Estado y continuidad
+- TASK-153 permanece En ejecución; AUD-NG-386 abierto.
+- Siguiente foco técnico: convertAdmissionToStudent debe validar la solicitud y registrar ownership del expediente de forma atómica; revisar getAdmissionEvaluations/getAdmissionInterviews y otros endpoints de admisión. Continuar después con referencias compartidas y filtros/importaciones.
+===============================================================================
