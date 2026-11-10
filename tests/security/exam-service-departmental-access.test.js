@@ -98,8 +98,8 @@ assert.equal(duplicate.authorized, false); assert.equal(duplicate.code, "RESOURC
 assert.deepEqual(Array.from(runtime.getAllExams({ sessionToken: "other-token" }).data), [], "no accessible ownership returns an empty list");
 const readFunctions = ["getVerifiedExamIdentity_", "getVerifiedExamDepartmentScope_", "assertExamResourceOwnershipForScope_",
   "getExamStudentProfile_", "isExamAssignedToStudent_", "getExamReadContext_", "getStudentExams", "getExamQuestions", "getExamResult"]
-  .map(name => extractFunction(source, name)).join("\\n");
-vm.runInNewContext(readFunctions + "\\nthis.getStudentExams = getStudentExams; this.getExamQuestions = getExamQuestions; this.getExamResult = getExamResult;", runtime);
+  .map(name => extractFunction(source, name)).join("\n");
+vm.runInNewContext(readFunctions + "\nthis.getStudentExams = getStudentExams; this.getExamQuestions = getExamQuestions; this.getExamResult = getExamResult;", runtime);
 const studentListPayload = { sessionToken: "student-token", userId: "STUDENT-2", grado: "99", seccion: "Z" };
 const studentList = runtime.getStudentExams(studentListPayload);
 assert.deepEqual(Array.from(studentList.data, row => row.examenId), ["EXM-1"],
