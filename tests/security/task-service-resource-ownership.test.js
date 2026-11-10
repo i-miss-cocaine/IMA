@@ -142,3 +142,65 @@ console.log("TASK-153 submission discussion/history contract passed: signed iden
   assert(scopeCalls.some(call => call.userId === "STUDENT-2" && call.role === "Estudiante"), "staff request resolves the target student's department scope");
 }
 console.log("TASK-153 staff/student department intersection contract passed.");
+
+
+// TASK-153: virtual classrooms are departmental resources; class-scoped posts/materials
+// inherit the parent classroom's ownership. General content remains institution-wide.
+{
+  const authorizedFn = extractFunction("getTaskServiceAuthorizedClassrooms");
+  const createFn = extractFunction("createVirtualClassroom");
+  const accessFn = extractFunction("assertTaskServiceClassroomAccess");
+  assert(authorizedFn.includes('assertTaskServiceResourceOwnership_(payload,"AULA_VIRTUAL"'), "classroom listings must filter by ResourceOwnership");
+  assert(createFn.includes('registerTaskServiceResourceOwnership_(scope,"AULA_VIRTUAL"'), "classroom creation must register ownership");
+  assert(createFn.includes("sh.deleteRow(rowIndex)"), "classroom creation must compensate failed ownership registration");
+  assert(accessFn.includes('assertTaskServiceResourceOwnership_(payload,"AULA_VIRTUAL"'), "classroom writes must enforce owner scope");
+  assert(accessFn.includes("scope.institutionWide!==true"), "General content requires institution-wide authorization");
+  for (const name of ["getVirtualClassrooms","getPosts","getStudyMaterials"]) {
+    assert(extractFunction(name).includes("getTaskServiceAuthorizedClassrooms(payload)"), name + " must consume owner-filtered classrooms");
+  }
+  for (const name of ["createPost","updatePost","deletePost","createStudyMaterial","deleteStudyMaterial"]) {
+    assert(extractFunction(name).includes("assertTaskServiceClassroomAccess(payload"), name + " must enforce parent classroom ownership");
+  }
+
+  const classroomRows = [
+    ["AulaID","OfertaID","Nombre","Grado","Seccion","Asignatura","ProfesorID","Estado"],
+    ["AULA-D1","OFFER-1","Aula D1","6","A","Matemáticas","PROF-1","Activa"],
+    ["AULA-D2","OFFER-2","Aula D2","6","A","Matemáticas","PROF-1","Activa"],
+    ["AULA-D1B","OFFER-3","Aula D1B","7","B","Matemáticas","PROF-1","Activa"]
+  ];
+  const assignmentRows = [
+    ["ID","OfertaID","ProfesorID","Asignatura","Inicio","Fin","Estado"],
+    ["AS-1","OFFER-1","PROF-1","","2026-01-01","2099-01-01","Activo"],
+    ["AS-2","OFFER-2","PROF-1","","2026-01-01","2099-01-01","Activo"],
+    ["AS-3","OFFER-3","PROF-1","","2026-01-01","2099-01-01","Activo"]
+  ];
+  const ownerDepartments = { "AULA-D1":"D1", "AULA-D2":"D2", "AULA-D1B":"D1" };
+  const classSheet = { getDataRange: () => ({ getValues: () => classroomRows.map(row => row.slice()) }) };
+  const assignmentSheet = { getDataRange: () => ({ getValues: () => assignmentRows.map(row => row.slice()) }) };
+  const ss = { getSheetByName: name => name === "AsignacionesDocentes" ? assignmentSheet : null };
+  const context = {
+    SPREADSHEET_ID:"LOCAL",
+    SpreadsheetApp:{openById:()=>ss},
+    getSheetOrThrow:(_ss,name)=>name==="AulasVirtuales"?classSheet:null,
+    getVerifiedTaskIdentity_:payload=>({authorized:true,userId:payload._verifiedUserId,role:payload._verifiedRole}),
+    getVerifiedTaskDepartmentScope_:(payload,_ss,identity)=>{
+      const actor=identity||{userId:payload._verifiedUserId,role:payload._verifiedRole};
+      const departmentIds=actor.userId==="STU-2"?["D2"]:actor.userId==="ADMIN-WIDE"?[]:["D1"];
+      return {authorized:true,userId:actor.userId,role:actor.role,institutionId:"I1",departmentIds,institutionWide:actor.userId==="ADMIN-WIDE"};
+    },
+    getTaskServiceUserProfile:userId=>({userId,grado:"6",seccion:"A"}),
+    getTaskServiceGuardianStudentIds:userId=>userId==="TUTOR-1"?["STU-1","STU-2"]:[],
+    assertTaskServiceResourceOwnership_:(_payload,type,id,_operation,_ss,identity,scope)=>({
+      authorized:type==="AULA_VIRTUAL"&&!!ownerDepartments[id]&&(scope.institutionWide===true||scope.departmentIds.includes(ownerDepartments[id]))
+    }),
+    isTaskServiceAdministrativeRole:role=>["Administrador","Desarrollador","Dirección","Secretaría"].includes(role),
+    normalizeString:value=>String(value||"").trim().toLowerCase()
+  };
+  vm.runInNewContext(authorizedFn+"\nthis.list=getTaskServiceAuthorizedClassrooms;",context);
+  assert.deepEqual(Array.from(context.list({_verifiedRole:"Estudiante",_verifiedUserId:"STU-1"}),row=>row[0]),["AULA-D1"],"student sees only same-department classrooms");
+  assert.deepEqual(Array.from(context.list({_verifiedRole:"Padre",_verifiedUserId:"TUTOR-1"}),row=>row[0]),["AULA-D1","AULA-D2"],"guardian sees only classrooms belonging to linked students' departments");
+  assert.deepEqual(Array.from(context.list({_verifiedRole:"Profesor",_verifiedUserId:"PROF-1"}),row=>row[0]),["AULA-D1","AULA-D1B"],"teacher sees only assigned classrooms in own departments");
+  assert.deepEqual(Array.from(context.list({_verifiedRole:"Administrador",_verifiedUserId:"ADMIN-1"}),row=>row[0]),["AULA-D1","AULA-D1B"],"department-scoped admin cannot see foreign classrooms");
+  assert.equal(context.list({_verifiedRole:"Administrador",_verifiedUserId:"ADMIN-WIDE"}).length,3,"institution-wide admin can see all classrooms in the same institution");
+}
+console.log("TASK-153 classroom ownership contract passed.");
