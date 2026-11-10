@@ -657,3 +657,41 @@ console.log("ACADEMIC admission charge attribution contract passed.");
     "public enrollment API must strip caller-controlled rollback callbacks");
 }
 console.log("ACADEMIC public enrollment internal-metadata isolation contract passed.");
+
+// Admission conversion serializes concurrent requests with the script lock.
+// The lock must be acquired before any sheet read and released after failures;
+// a contending request must fail before touching persistence.
+{
+  function runWithLock(lockAvailable) {
+    let lockHeld=false,lockAttempts=0,releaseCount=0,sheetReads=0;
+    const context={
+      getAcademicAdmissionScopeContext_:()=>({
+        authorized:true,ss:{},actor:{authorized:true,userId:"DIR-LOCK",role:"Director"},
+        scope:{authorized:true,userId:"DIR-LOCK",role:"Director",institutionId:"INST-1",departmentIds:["D1"],institutionWide:false},
+        requestAccess:{authorized:true}
+      }),
+      resolveAcademicAdmissionDepartment_:()=>({authorized:true,departmentId:"D1"}),
+      getDynamicPermissionsForRole:()=>false,
+      LockService:{getScriptLock:()=>({
+        tryLock:()=>{lockAttempts++;if(!lockAvailable)return false;lockHeld=true;return true;},
+        releaseLock:()=>{assert.equal(lockHeld,true,"only an acquired lock may be released");lockHeld=false;releaseCount++;}
+      })},
+      getOrCreateSheet:()=>{sheetReads++;assert.equal(lockHeld,true,"admission persistence must only be accessed while the script lock is held");throw Error("INJECTED_LOCKED_READ");}
+    };
+    vm.runInNewContext(extractFunction("convertAdmissionToStudent")+"\\nthis.run=convertAdmissionToStudent;",context);
+    return {
+      execute:()=>context.run({solicitudId:"ADM-LOCK"}),
+      getState:()=>({lockHeld,lockAttempts,releaseCount,sheetReads})
+    };
+  }
+  const acquired=runWithLock(true);
+  assert.throws(()=>acquired.execute(),/INJECTED_LOCKED_READ/);
+  assert.deepEqual(acquired.getState(),{lockHeld:false,lockAttempts:1,releaseCount:1,sheetReads:1},
+    "acquired script lock must guard sheet access and be released in finally after a failure");
+
+  const contended=runWithLock(false);
+  assert.throws(()=>contended.execute(),/Servicio ocupado/);
+  assert.deepEqual(contended.getState(),{lockHeld:false,lockAttempts:1,releaseCount:0,sheetReads:0},
+    "a concurrent conversion that cannot acquire the lock must not read or mutate persistence");
+}
+console.log("ACADEMIC admission conversion lock contention and release contract passed.");
