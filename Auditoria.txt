@@ -1088,3 +1088,16 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - **DEVELOPER:** no aplica ABAC departamental al plano de control global. El fallback authRole sin token ya está registrado como AUD-NG-082/TASK-645 (AUD-NG-289), P0 Pendiente; no se duplica.
 - **Estado:** TASK-153 En ejecución; AUD-NG-385/386 abiertos; BETA-FUNC-021/022 Pendiente beta. Sin despliegues ni datos reales.
 ===============================================================================
+
+
+===============================================================================
+## C1.444 — TASK-153 / TASK Service: guardas para entregas y vista previa de archivos
+- **Alcance:** continuidad del avance C1.443; se refuerza el acceso directo, que no debe depender de que el recurso aparezca en un listado filtrado.
+- **Hallazgo corregido:** estudiantes y tutores podían alcanzar rutas de entrega/archivo mediante IDs directos que verificaban relación o grado/sección, pero no revalidaban ResourceOwnership departamental.
+- **Corrección:** assertTaskServiceStudentCanAccessTask exige ámbito verificado del estudiante y ownership de TAREA. getTaskServiceSubmissionAccess_ reutiliza la guarda para entregas, comentarios y versiones. getSubmissionDocumentPreviewUrl exige una relación única archivo-entrega y delega autorización al guard compartido READ_CONTENT.
+- **Ámbito del listado:** getStudentTasks deriva ownership del estudiante objetivo; consultas de personal exigen intersección entre el ámbito del estudiante y el del actor.
+- **Verificación estática:** 10 aserciones sobre estructura y uso de guardas PASS. Contrato dinámico Node añadido, no ejecutado en runtime local; no se declara PASS de ejecución. GitHub combined status/workflow runs sin checks visibles para el último commit.
+- **Beta/despliegue:** no ejecutados; se reservan a la fase beta y no bloquean el desarrollo. Sin acceso a datos reales.
+- **Commits principales:** 538d1dc5f732de3fc26faaeeabab907e51122740; 1558e5c99b4fee58474a849bc8087d9c16914028.
+- **Estado:** mitigación parcial publicada; TASK-153 En ejecución y AUD-NG-386 abierto.
+===============================================================================
