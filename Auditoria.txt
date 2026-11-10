@@ -1170,3 +1170,14 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - **Commits:** 0f4262aaff538d0cc908ad196944016f4b9bb3aa (lógica); 7be60a51941b41dad15fb7e79fbbe6114bddc8eb (contrato); commits documentales C1.450 pendientes.
 - **Estado:** subhallazgo corregido. TASK-153 En ejecución; AUD-NG-386 abierto por el resto del alcance.
 ===============================================================================
+
+
+===============================================================================
+## Seguimiento C1.451 — reconciliación segura de admisión ya convertida
+- **Hallazgo:** el retorno temprano de `convertAdmissionToStudent` consideraba suficiente el estado Convertida y el ownership del expediente; podía informar éxito aunque faltara la matrícula o el movimiento propio de la solicitud.
+- **Corrección:** se valida expediente único/PersonaID, cuenta estudiantil activa única, matrícula propia por marcador exacto/usuario/año/grado y movimiento propio vinculado a esa matrícula con grado/sección coincidentes. El retorno expone los IDs verificados. Ausencias, duplicados o conflictos fallan cerradamente y no provocan escrituras de reparación.
+- **Pruebas locales:** parseo Code.gs/test PASS; harness dinámico aislado del retorno completo PASS para escenario íntegro y rechazos esperados de matrícula/movimiento ausentes, vínculo cruzado, sección discordante y expediente duplicado.
+- **Límites:** suite Node completa y CI no ejecutados; sin despliegue ni datos reales. Cargos, documentos y relaciones familiares no se declaran reconciliados: los esquemas actuales no permiten vincular todos esos registros inequívocamente a la conversión. No hay reparación ni borrado automático.
+- **Commits de código/prueba:** f61d2074b8910b9d8fdefcc55fa0133e38d66ad7; fa4db0612f59552633037bc20332d9e5bf6abf34; 021484b6d79dcd8db9f8d86ad57ab3fb1ddf3eab.
+- **Estado:** subhallazgo corregido. TASK-153 En ejecución; AUD-NG-386 permanece abierto por el resto del alcance.
+===============================================================================
