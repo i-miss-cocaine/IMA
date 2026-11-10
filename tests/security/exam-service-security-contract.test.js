@@ -38,18 +38,43 @@ assert.equal(publicActions.includes("getStudentExams"), false, "student exam lis
 
 const claims = {
   "teacher-session": { userId: "TEACHER-1", role: "Profesor" },
-  "student-session": { userId: "STUDENT-1", role: "Estudiante" }
+  "student-session": { userId: "STUDENT-1", role: "Estudiante" },
+  "admin-session": { userId: "ADMIN-1", role: "Administrador" }
 };
+const examRows = [
+  ["EXM-1", "Examen propio", "Matemáticas", "10", "A", "", "", "Activo", "TEACHER-1", "Primer Parcial"],
+  ["EXM-2", "Examen ajeno", "Ciencias", "10", "B", "", "", "Activo", "TEACHER-2", "Primer Parcial"]
+];
+const scopeRows = [
+  ["AssignmentID", "UserID", "RoleID", "ScopeType", "ScopeValues", "Status", "", "", "StartAt", "EndAt"],
+  ["ASG-1", "TEACHER-1", "Profesor", "DEPARTAMENTO", "D1", "ACTIVO", "", "", "", ""],
+  ["ASG-2", "ADMIN-1", "Administrador", "INSTITUCION", "I1", "ACTIVO", "", "", "", ""]
+];
+const ownershipRows = [
+  ["OwnershipID", "InstitutionID", "ResourceType", "ResourceID", "DepartmentID", "Status", "RegisteredBy", "CreatedAt", "UpdatedAt"],
+  ["OWN-1", "I1", "EXAMEN", "EXM-1", "D1", "ACTIVE", "TEACHER-1", "", ""],
+  ["OWN-2", "I1", "EXAMEN", "EXM-2", "D2", "ACTIVE", "TEACHER-2", "", ""]
+];
+const sheets = {
+  Examenes: { getDataRange() { return { getValues: () => [["ID"], ...examRows].map(row => row.slice()) }; } },
+  AsignacionesAmbitosRoles: { getDataRange() { return { getValues: () => scopeRows.map(row => row.slice()) }; } },
+  ResourceOwnership: { getDataRange() { return { getValues: () => ownershipRows.map(row => row.slice()) }; } }
+};
+const ss = { getSheetByName(name) { return sheets[name] || null; } };
 const runtime = {
   PUBLIC_ACTIONS: publicActions,
   ROLE_PERMISSIONS: {
     Profesor: ["getAllExams"],
     Estudiante: ["getStudentExams"]
   },
+  EXAM_RESOURCE_OWNERSHIP_REQUEST_CACHE_: new WeakMap(),
   verifySessionToken(token) { return claims[token] || null; },
   getDynamicPermissionsForRole() { return null; },
   hasActiveDelegationForAction() { return false; },
-  Logger: { log() {} }
+  Logger: { log() {} },
+  PropertiesService: { getScriptProperties() { return { getProperty(name) { return name === "IMA_INSTITUTION_ID" ? "I1" : null; } }; } },
+  SpreadsheetApp: { openById() { return ss; } },
+  getSheetOrThrow(spreadsheet, name) { const sheet = spreadsheet.getSheetByName(name); if (!sheet) throw new Error("Missing sheet " + name); return sheet; }
 };
 const contextual = extractFunction(source, "validateContextualAccess");
 const permission = extractFunction(source, "validateRolePermission");
@@ -69,32 +94,20 @@ assert.equal(runtime.validate("getStudentExams", ownStudent).authorized, true);
 const otherStudent = { sessionToken: "student-session", userId: "STUDENT-2" };
 assert.equal(runtime.validate("getStudentExams", otherStudent).authorized, false, "student cannot request another student's exams");
 
-const examRows = [
-  ["EXM-1", "Examen propio", "Matemáticas", "10", "A", "", "", "Activo", "TEACHER-1", "Primer Parcial"],
-  ["EXM-2", "Examen ajeno", "Ciencias", "10", "B", "", "", "Activo", "TEACHER-2", "Primer Parcial"]
-];
-const examSheet = {
-  getDataRange() { return { getValues: () => [["ID"], ...examRows].map(row => row.slice()) }; }
-};
-runtime.SPREADSHEET_ID = "LOCAL";
-runtime.SpreadsheetApp = { openById() { return {}; } };
-runtime.getSheetOrThrow = () => examSheet;
-const getAllExams = extractFunction(source, "getAllExams");
-vm.runInNewContext(getAllExams + "\nthis.getAllExams = getAllExams;", runtime);
+const helpers = ["getVerifiedExamIdentity_", "getVerifiedExamDepartmentScope_", "assertExamResourceOwnershipForScope_", "getAllExams"]
+  .map(name => extractFunction(source, name)).join("\n");
+vm.runInNewContext(helpers + "\nthis.getAllExams = getAllExams;", runtime);
 const teacherExamList = runtime.getAllExams({
-  _verifiedUserId: "TEACHER-1",
+  sessionToken: "teacher-session",
+  _verifiedUserId: "ATTACKER",
   _verifiedRole: "Profesor",
   profesorId: "TEACHER-2"
 });
 assert.deepEqual(Array.from(teacherExamList.data, row => row.examenId), ["EXM-1"],
-  "teacher listing uses signed identity and ignores payload profesorId");
+  "teacher listing uses signed identity and department ownership, ignoring payload identity");
 assert.throws(() => runtime.getAllExams({ profesorId: "TEACHER-1" }),
-  /VERIFIED_IDENTITY_REQUIRED/, "exam listing requires verified identity context");
-const adminExamList = runtime.getAllExams({
-  _verifiedUserId: "ADMIN-1",
-  _verifiedRole: "Administrador"
-});
+  /RESOURCE_NOT_AVAILABLE/, "exam listing requires verified identity context");
+const adminExamList = runtime.getAllExams({ sessionToken: "admin-session" });
 assert.deepEqual(Array.from(adminExamList.data, row => row.examenId), ["EXM-1", "EXM-2"],
-  "authorized administrative role retains its configured listing behavior");
-
+  "institution-wide administrative scope retains access to owned resources");
 process.stdout.write("exam-service-security-contract: authentication, identity and teacher ownership assertions passed\n");
