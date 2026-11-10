@@ -803,3 +803,8 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Test contractual pasó en entorno JS aislado con shim; CI sin checks; sin Apps Script productivo. AUD-NG-001 Completada en alcance local/contractual.
 [2026-11-10] C1.424 — IMA-EXEC-20261110-1340Z-12 — AUD-NG-003 cerrada tras 50 escenarios de expiración y pruebas de generación de tokens en cinco servicios.
 [2026-11-10] C1.425 — IMA-EXEC-20261110-1340Z-13 — corrección de integridad documental: restaurados backlog, plan, mapa, changelog y checkpoint desde blobs del padre C1.423; C1.424 reaplicado en rutas correctas. No se modificó código.
+[2026-11-10] C1.426 — IMA-EXEC-20261110-1340Z-14 — cierre AUD-NG-004
+- Los cinco servicios leen AUTH_TOKEN_SECRET desde Script Properties y fallan cerrados si falta, no puede leerse o tiene menos de 32 caracteres; no usan SPREADSHEET_ID.
+- 25 aserciones de configuración/rotación en cinco servicios y prueba de generación USER pasaron en entorno JS aislado con shim.
+- Runbook de rotación coordinada agregado. No se verificaron propiedades productivas ni CI.
+- AUD-NG-004 Completada en alcance de código/documentación/pruebas locales.

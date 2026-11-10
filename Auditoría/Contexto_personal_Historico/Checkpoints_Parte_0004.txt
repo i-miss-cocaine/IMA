@@ -653,3 +653,45 @@ C1.424 se reaplicó sobre estos contenidos restaurados: AUD-NG-003 y el test de 
 ### Verificación posterior
 Comprobar paths, encabezados y tamaños del árbol Git después de publicar este commit.
 ===============================================================================
+
+
+===============================================================================
+## CHECKPOINT C1.426 — Cierre AUD-NG-004
+Sesión: IMA-EXEC-20261110-1340Z-14
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA; rama exclusiva: NG_beta_0.0.0.1_work.
+HEAD de partida: 4df99be538ae951bfa145015f8cd11eb0d101da8; checkpoint anterior C1.425.
+Fase: PM-01 — identidad, seguridad y gobierno de acceso.
+
+### Resultado
+- AUD-NG-004 Completada en alcance de código/documentación/pruebas locales.
+- Los cinco servicios USER/ACADEMIC/ACCOUNTING/TASK/EXAM leen AUTH_TOKEN_SECRET desde Script Properties.
+- Propiedad ausente, error de acceso o longitud menor de 32 genera fallo cerrado; no existe fallback derivado de SPREADSHEET_ID.
+- Rotación coordinada documentada: clave única activa por entorno; actualizar los cinco proyectos en ventana de mantenimiento; invalidar tokens/envelopes anteriores; exigir reautenticación.
+
+### Pruebas ejecutadas
+- Cinco servicios: secreto válido, ausente, corto, error de PropertiesService.
+- Rotación: token firmado con secreto anterior aceptado antes del cambio y rechazado después; token con secreto nuevo aceptado.
+- Generación USER: la firma cambia cuando cambia el secreto.
+- 25 aserciones de configuración/rotación y generación pasaron en entorno JS aislado con shim compatible.
+- HMAC/Script Properties/cache/hoja de usuario simulados. No se verificaron propiedades reales en proyectos productivos ni checks CI.
+
+### Archivos modificados
+- tests/security/hmac-secret-config.test.js — pruebas de configuración/rotación.
+- Auditoría/PROTOCOLO_ROTACION_AUTH_TOKEN_SECRET.md — runbook.
+- pendientes/Otros/Pendientes.md — AUD-NG-004 Completada con evidencia.
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md — §10.94.
+- Auditoría/MapaDependencias.md — C1.426.
+- changueslogs.txt — C1.426.
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — este checkpoint.
+- Auditoría/INDICE_CHECKPOINTS.md — C1.426.
+
+### Límites
+- No se modificó código funcional.
+- El secreto real no se leyó ni cambió en Apps Script.
+- El cierre cubre el contrato de configuración/rotación y su documentación, no una rotación productiva ejecutada.
+
+### Siguiente acción
+Reaplicar §6.1 en PM-01. Priorizar hallazgos críticos con dependencias verificables; no confundir cierre local con verificación de configuración en producción.
+Commit: SHA por verificar.
+===============================================================================

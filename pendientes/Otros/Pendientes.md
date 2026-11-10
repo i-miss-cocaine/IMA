@@ -12018,14 +12018,18 @@ SEGUNDA PARTE: REESTRUCTURACIÓN ARQUITECTÓNICA, ESCALABILIDAD Y ADMINISTRACIÓ
 ---
 
 <!-- ID: AUD-NG-004 | Fuentes: Pendientes.md -->
-### [ ] [AUD-NG-004] Sustituir la derivación predecible del secreto HMAC por configuración segura
+### [x] [AUD-NG-004] Sustituir la derivación predecible del secreto HMAC por configuración segura
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-004
 - **Severidad/Clasificación:** Crítico
 - **Archivos Involucrados:** backend/user-service/Code.gs, backend/task-service/Code.gs, backend/exam-service/Code.gs, backend/academic-service/Code.gs, backend/accounting-service/Code.gs
 - **Dependencias Expuestas:** AUTH_TOKEN_SECRET, Script Properties, computeHmacSignature, generateSessionToken, verifySessionToken
 - **Descripción del Alcance:** Eliminar el fallback derivado de SPREADSHEET_ID y exigir un secreto aleatorio de alta entropía configurado fuera del código. Definir distribución segura, rotación y compatibilidad coordinada entre servicios.
 - **Criterios de Aceptación:** Si falta el secreto, el servicio falla de forma cerrada; ningún servicio deriva secretos de identificadores públicos; la rotación invalida o migra credenciales según procedimiento documentado.
-- **Estado:** [ ] Pendiente
+- **Estado:** [x] Completada
+- **Cierre C1.426:** los cinco servicios obtienen AUTH_TOKEN_SECRET exclusivamente de Script Properties; ante ausencia, error de acceso o longitud menor a 32, fallan cerrados. No hay derivación desde SPREADSHEET_ID. La rotación coordinada cambia la firma aceptada y rechaza tokens emitidos con el secreto anterior.
+- **Evidencia:** `tests/security/hmac-secret-config.test.js` — pruebas de configuración/rotación en cinco servicios; `Auditoría/PROTOCOLO_ROTACION_AUTH_TOKEN_SECRET.md` — procedimiento de rotación con invalidación global de sesiones.
+- **Verificación:** cinco servicios, cada uno con secreto válido, ausente, corto y error de Script Properties; firma antigua rechazada después de rotar y nueva firma aceptada; generación de token cambia firma. Todas las aserciones pasaron en entorno JS aislado con shim compatible.
+- **Límites:** HMAC y Script Properties simulados; no se verificaron los valores configurados en proyectos Apps Script productivos. GitHub no reportó checks CI.
 
 ---
 

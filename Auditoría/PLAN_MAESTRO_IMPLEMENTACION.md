@@ -2922,3 +2922,15 @@ Siguiente selección: aplicar §6.1 en PM-01 y verificar dependencias reales ant
 ### 10.93 — Corrección de integridad documental C1.425
 
 C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el contenido de Plan Maestro se escribió también en `pendientes/Otros/Pendientes.md` y varios registros posteriores quedaron desplazados una posición. La discrepancia se detectó comparando SHA/tamaños de los blobs del árbol contra el padre C1.423. C1.425 restaura los seis archivos desde sus blobs exactos del padre verificado y reaplica la entrada AUD-NG-003, mapa, changelog, checkpoint e índice en sus rutas correctas. No se altera código ni la rama base. El commit C1.424 no debe utilizarse como fuente de contenido para esos documentos; C1.425 es la corrección autoritativa.
+
+### 10.94 PM-01 — AUD-NG-004: secreto HMAC de configuración segura y rotación (C1.426)
+
+**Selección:** AUD-NG-004, severidad Crítica, PM-01. Sin dependencia técnica que impida la verificación.
+
+**Evidencia:** `getAuthTokenSecret` en USER, ACADEMIC, ACCOUNTING, TASK y EXAM obtiene `AUTH_TOKEN_SECRET` exclusivamente de Script Properties; ante error de acceso lanza `AUTH_TOKEN_SECRET_UNAVAILABLE`, y ante ausencia/longitud menor de 32 lanza `AUTH_TOKEN_SECRET_NOT_CONFIGURED`. No deriva la clave de `SPREADSHEET_ID`.
+
+**Pruebas:** `tests/security/hmac-secret-config.test.js` cubre configuración válida, ausente, corta, error de propiedades, aceptación con clave activa, rechazo de firma anterior tras rotación y aceptación de firma nueva en los cinco servicios; además verifica que la generación USER cambie de firma al rotar. Todas las aserciones pasaron en entorno JS aislado con shim compatible.
+
+**Rotación:** se añade `Auditoría/PROTOCOLO_ROTACION_AUTH_TOKEN_SECRET.md`. La implementación usa una clave activa única por entorno, por lo que la rotación es coordinada y produce invalidación global de sesiones/envelopes antiguos; no admite despliegue parcial ni doble clave.
+
+**Cierre:** AUD-NG-004 Completada en alcance de código/documentación/pruebas locales. Los valores reales de Script Properties en proyectos productivos deben verificarse durante el despliegue; no se accedió a esos proyectos en esta sesión.

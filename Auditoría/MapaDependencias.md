@@ -5147,3 +5147,13 @@ Alcance estático satisfecho; sin cambios de código. Hallazgos AUD-NG-374..376 
 - Se reaplicó C1.424 en las rutas correctas: AUD-NG-003 cerrada, prueba de expiración añadida, mapa/log/checkpoint/índice actualizados.
 - C1.425 es el registro correctivo autoritativo; no se modificó código ni la rama base.
 ===============================================================================
+===============================================================================
+## C1.426 — Cierre AUD-NG-004: secreto HMAC y rotación
+
+- USER/ACADEMIC/ACCOUNTING/TASK/EXAM obtienen AUTH_TOKEN_SECRET de Script Properties; longitud mínima 32; error de lectura o propiedad ausente/corta produce fallo cerrado.
+- No existe derivación desde SPREADSHEET_ID en getAuthTokenSecret.
+- Test hmac-secret-config.test.js: configuración válida, ausente, corta, error de propiedades, aceptación clave activa, rechazo de firma antigua después de rotar y aceptación de firma nueva en cinco servicios; generación USER cambia firma.
+- Runbook Auditoría/PROTOCOLO_ROTACION_AUTH_TOKEN_SECRET.md documenta generación CSPRNG, Script Properties por servicio, rotación coordinada e invalidación de sesiones/envelopes.
+- Pruebas ejecutadas en entorno JS aislado con shim compatible; HMAC/Script Properties simulados. No se verificaron valores productivos ni checks CI.
+- AUD-NG-004 Completada en alcance de código/documentación/pruebas locales.
+===============================================================================
