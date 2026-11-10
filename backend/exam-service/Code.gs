@@ -1145,9 +1145,12 @@ function getVerifiedGuardianStudentIds_(ss, tutorUserId) {
   expRows.forEach(row => { if (row[0]) expToUser[String(row[0]).trim()] = String(row[1] || row[0]).trim(); });
   const familySheet = ss && ss.getSheetByName("RelacionesFamiliares");
   const familyRows = familySheet ? familySheet.getDataRange().getValues().slice(1) : [];
-  let studentIds = familyRows.filter(row => String(row[2] || "").trim() === tutorId && statusAllowed(row[4]))
+  const primaryTutorRows = familyRows.filter(row => String(row[2] || "").trim() === tutorId);
+  let studentIds = primaryTutorRows.filter(row => statusAllowed(row[4]))
     .map(row => expToUser[String(row[1] || "").trim()] || String(row[1] || "").trim()).filter(Boolean);
-  if (!studentIds.length) {
+  // El esquema legado solo se consulta si el tutor no tiene ninguna fila en la fuente primaria.
+  // Una relación revocada/pendiente en RelacionesFamiliares nunca se reactiva por fallback.
+  if (!primaryTutorRows.length) {
     const legacySheet = ss && ss.getSheetByName("RelacionesEstudianteTutor");
     const legacyRows = legacySheet ? legacySheet.getDataRange().getValues().slice(1) : [];
     studentIds = legacyRows.filter(row => String(row[2] || "").trim() === tutorId && statusAllowed(row[9]))
