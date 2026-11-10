@@ -404,3 +404,34 @@ console.log("ACADEMIC admission conversion duplicate expediente ownership contra
   assert.equal(sheets.MovimientosEstudiante.rows.length,1,"failed movement must not persist");
 }
 console.log("ACADEMIC admission conversion compensation contract passed.");
+
+
+// Admission conversion retries may reuse only records created by the same request.
+{
+  const helperSource=extractFunction("assertAdmissionEnrollmentRetrySafe_")+"\\n"+extractFunction("findAdmissionConversionMovement_");
+  const helperContext={};
+  vm.runInNewContext(helperSource+"\\nthis.enrollment=assertAdmissionEnrollmentRetrySafe_;this.movement=findAdmissionConversionMovement_;",helperContext);
+  const enrollmentHeader=["MatriculaID","Fecha","UserId","Alumno","Grado","Seccion","Periodo","Tipo","Estado","BecaDescuento","Observaciones"];
+  const sameRequest=["MAT-1",new Date(),"STU-1","Ada Example","1","A","2026","IngresoNuevo","Activa",0,"Convertido desde solicitud ADM-1"];
+  assert.equal(helperContext.enrollment([enrollmentHeader,sameRequest],"STU-1","2026","1","A","ADM-1")[0],"MAT-1",
+    "retry may reuse the exact enrollment created for the same admission request");
+  assert.throws(()=>helperContext.enrollment([enrollmentHeader,["MAT-OLD",new Date(),"STU-1","Ada Example","1","A","2026","Ordinaria","Activa",0,"Matrícula ordinaria"]],"STU-1","2026","1","A","ADM-1"),/ADMISSION_ENROLLMENT_CONFLICT/,
+    "conversion must not overwrite an unrelated existing enrollment");
+  assert.throws(()=>helperContext.enrollment([enrollmentHeader,sameRequest],"STU-1","2026","2","A","ADM-1"),/ADMISSION_ENROLLMENT_CONFLICT/,
+    "retry with changed grade or section must not silently mutate the original enrollment");
+  assert.throws(()=>helperContext.enrollment([enrollmentHeader,sameRequest,sameRequest],"STU-1","2026","1","A","ADM-1"),/ADMISSION_ENROLLMENT_AMBIGUOUS/,
+    "duplicate enrollment candidates must fail closed");
+
+  const movementHeader=["MovimientoID","ExpedienteID","MatriculaID","Ano","Tipo","x5","x6","Grado","Seccion","Fecha","Observaciones"];
+  const unrelated=["MOV-OLD","EXP-1","MAT-OLD","2026","IngresoNuevo","","","1","A",new Date(),"Ingreso nuevo importado"];
+  const exact=["MOV-1","EXP-1","MAT-1","2026","IngresoNuevo","","","1","A",new Date(),"Admisión y Matrícula Inicial aprobada desde ADM-1"];
+  assert.equal(helperContext.movement([movementHeader,unrelated],"EXP-1","2026","ADM-1","MAT-1"),null,
+    "unrelated ingress movements must not be mistaken for this admission conversion");
+  assert.equal(helperContext.movement([movementHeader,exact],"EXP-1","2026","ADM-1","MAT-1")[0],"MOV-1",
+    "retry must reuse its own matching ingress movement");
+  assert.throws(()=>helperContext.movement([movementHeader,exact],"EXP-1","2026","ADM-1","MAT-OTHER"),/ADMISSION_MOVEMENT_CONFLICT/,
+    "request movement linked to another enrollment must fail closed");
+  assert.throws(()=>helperContext.movement([movementHeader,exact,exact],"EXP-1","2026","ADM-1","MAT-1"),/ADMISSION_MOVEMENT_AMBIGUOUS/,
+    "duplicate request movements must fail closed");
+}
+console.log("ACADEMIC admission conversion idempotency contract passed.");
