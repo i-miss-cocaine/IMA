@@ -2244,6 +2244,40 @@ function generateInstitutionalId(payload) {
 }
 
 // [TAREA-F5-001] [Fase 5: Admisiones y Matrícula] - Conversión segura de aspirante admitido a expediente estudiantil, matrícula y vinculación familiar
+function assertAdmissionEnrollmentRetrySafe_(matData, userId, periodo, grado, seccion, solicitudId) {
+  const sUserId = String(userId || "").trim();
+  const sPeriodo = String(periodo || "").trim();
+  const requestMarker = "Convertido desde solicitud " + String(solicitudId || "").trim();
+  const matches = (Array.isArray(matData) ? matData : []).slice(1).filter(function(row) {
+    return String(row[2] || "").trim() === sUserId && String(row[6] || "").trim() === sPeriodo;
+  });
+  if (matches.length > 1) throw new Error("ADMISSION_ENROLLMENT_AMBIGUOUS");
+  if (!matches.length) return null;
+  const existing = matches[0];
+  if (String(existing[10] || "").trim() !== requestMarker ||
+      String(existing[4] || "").trim() !== String(grado || "").trim() ||
+      String(existing[5] || "").trim() !== String(seccion || "").trim()) {
+    throw new Error("ADMISSION_ENROLLMENT_CONFLICT");
+  }
+  return existing;
+}
+
+function findAdmissionConversionMovement_(movData, expedienteId, periodo, solicitudId, matriculaId) {
+  const requestMarker = "Admisión y Matrícula Inicial aprobada desde " + String(solicitudId || "").trim();
+  const matches = (Array.isArray(movData) ? movData : []).slice(1).filter(function(row) {
+    return String(row[1] || "").trim() === String(expedienteId || "").trim() &&
+      String(row[3] || "").trim() === String(periodo || "").trim() &&
+      String(row[4] || "").trim() === "IngresoNuevo" &&
+      String(row[10] || "").trim() === requestMarker;
+  });
+  if (matches.length > 1) throw new Error("ADMISSION_MOVEMENT_AMBIGUOUS");
+  if (!matches.length) return null;
+  if (String(matches[0][2] || "").trim() !== String(matriculaId || "").trim()) {
+    throw new Error("ADMISSION_MOVEMENT_CONFLICT");
+  }
+  return matches[0];
+}
+
 function convertAdmissionToStudent(payload) {
   const { solicitudId, seccion, forceCapacityOverride, allowIncompleteOverride } = payload || {};
   if (!solicitudId) throw new Error("solicitudId es requerido.");
@@ -2370,6 +2404,12 @@ function convertAdmissionToStudent(payload) {
       }
     }
 
+    // Un reintento solo puede reutilizar una matrícula creada por esta misma solicitud.
+    // No se permite que la conversión sobrescriba una matrícula ordinaria preexistente.
+    const matSheetForRetry = getOrCreateSheet(ss, "Matriculas");
+    const matDataForRetry = matSheetForRetry.getDataRange().getValues();
+    assertAdmissionEnrollmentRetrySafe_(matDataForRetry, targetUserId, anolectivo, grado, targetSeccion, solicitudId);
+
     const rollbackActions = [];
     let requestOwner = null;
     let expedienteOwner = null;
@@ -2475,7 +2515,7 @@ function convertAdmissionToStudent(payload) {
 
     const movSheet = getOrCreateSheet(ss, "MovimientosEstudiante");
     const movData = movSheet.getDataRange().getValues();
-    const existingMovement = movData.slice(1).find(function(mov){return String(mov[1]||"").trim()===finalExpId && String(mov[3]||"").trim()===anolectivo && String(mov[4]||"").trim()==="IngresoNuevo";});
+    const existingMovement = findAdmissionConversionMovement_(movData, finalExpId, anolectivo, solicitudId, matriculaRealId);
     let movId = existingMovement ? existingMovement[0] : "";
     if (!existingMovement) {
       const movGen = generateInstitutionalId({ entityType: "MovimientoEstudiante", prefix: "MOV-", skipLock: true });
