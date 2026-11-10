@@ -151,3 +151,77 @@ for(const name of ["getStudentGuardians","saveStudentGuardian","unlinkStudentGua
     name+" must enforce RBAC and expediente ownership");
 }
 console.log("ACADEMIC guardian relation endpoint ownership contracts passed.");
+
+
+// Administrative duplicate search and reports must filter every returned record
+// through the requesting actor's verified department ownership.
+{
+  const expRows=[
+    ["EXP-1","PERSON-1","CODE-1","2000-01-01","","","","Activo"],
+    ["EXP-2","PERSON-2","CODE-2","2000-01-01","","","","Activo"]
+  ];
+  const userRows=[
+    ["STU-1","Ana Example","","","same@example.test","5551111","","","ID-1"],
+    ["STU-2","Ana Example","","","same@example.test","5552222","","","ID-2"]
+  ];
+  const appRows=[
+    ["ADM-1","","2026","1","Ana","Example","ID-1","2000-01-01","","5551111","same@example.test","Recibida"],
+    ["ADM-2","","2026","1","Ana","Example","ID-2","2000-01-01","","5552222","same@example.test","Recibida"]
+  ];
+  const matRows=[
+    ["MAT-1","","PERSON-1","Ana","1","A","2026","Ordinaria","Activa"],
+    ["MAT-2","","PERSON-2","Ana","1","A","2026","Ordinaria","Activa"]
+  ];
+  const movRows=[["MOV-1","EXP-1","","2026","Ingreso"],["MOV-2","EXP-2","","2026","Ingreso"]];
+  const docRows=[
+    ["DOC-1","EXP-1","","Partida","one.pdf","","","2026-01-01","","Pendiente"],
+    ["DOC-2","EXP-2","","Partida","two.pdf","","","2026-01-01","","Pendiente"]
+  ];
+  const sheetFor=rows=>makeSheet([["header"],...rows]);
+  const sheets={
+    Usuarios:sheetFor(userRows),
+    ResourceOwnership:sheetFor([["OWN-1","INST-1","EXPEDIENTE_ESTUDIANTE","EXP-1","D1","ACTIVE"]]),
+    SolicitudesAdmision:sheetFor(appRows),
+    ExpedientesEstudiantes:sheetFor(expRows),
+    Matriculas:sheetFor(matRows),
+    MovimientosEstudiante:sheetFor(movRows),
+    DocumentosEstudiante:sheetFor(docRows)
+  };
+  const ss={getSheetByName:name=>sheets[name]||null};
+  const common={
+    SPREADSHEET_ID:"LOCAL",
+    SpreadsheetApp:{openById:()=>ss},
+    validateRolePermission:()=>({authorized:true}),
+    getVerifiedAcademicIdentity_:()=>({authorized:true,userId:"DIR-1",role:"Director"}),
+    getVerifiedAcademicDepartmentScope_:()=>({authorized:true,userId:"DIR-1",role:"Director",institutionId:"INST-1",departmentIds:["D1"],institutionWide:false}),
+    getStudentIdentityForPerson_:(_ss,personId)=>personId==="PERSON-1"?{userId:"STU-1",role:"Estudiante"}:({userId:"STU-2",role:"Estudiante"}),
+    assertResourceOwnershipForScope_:(_ss,scope,type,id)=>({authorized:type==="EXPEDIENTE_ESTUDIANTE"&&id==="EXP-1",code:"RESOURCE_SCOPE_DENIED"}),
+    assertAcademicAdmissionRequestScopeAccess_:()=>({authorized:false,code:"RESOURCE_OWNERSHIP_UNVERIFIED"}),
+    getOrCreateSheet:(_ss,name)=>sheets[name],
+    normalizeString:value=>String(value||"").trim().toLowerCase(),
+    maskDni:value=>"MASKED-"+value,
+    logStructuredEvent:()=>{}
+  };
+  const duplicateContext=Object.assign({},common);
+  vm.runInNewContext(extractFunction("findDuplicateStudents")+"\nthis.run=findDuplicateStudents;",duplicateContext);
+  const duplicateResult=duplicateContext.run({nombres:"Ana",apellidos:"Example",email:"same@example.test"});
+  assert.equal(duplicateResult.candidates.length,1,"duplicate search only returns expediente matches owned by the actor's department");
+  assert.equal(duplicateResult.candidates[0].id,"EXP-1");
+
+  const reportContext=Object.assign({},common);
+  vm.runInNewContext(extractFunction("getStudentFileAdministrativeReports")+"\nthis.run=getStudentFileAdministrativeReports;",reportContext);
+  const states=reportContext.run({reporteTipo:"ESTADO_EXPEDIENTES"});
+  assert.deepEqual(states.reporte.map(row=>row.expedienteId),["EXP-1"],"expediente report excludes other-department records");
+  const enrollments=reportContext.run({reporteTipo:"MATRICULAS_POR_PERIODO"});
+  assert.deepEqual(enrollments.reporte.map(row=>row.matriculaId),["MAT-1"],"enrollment report is filtered by the owned person/expediente");
+  const movements=reportContext.run({reporteTipo:"REINCORPORACIONES_Y_MOVIMIENTOS"});
+  assert.deepEqual(movements.reporte.map(row=>row.expedienteId),["EXP-1"],"movement report excludes foreign expediente history");
+  const documents=reportContext.run({reporteTipo:"DOCUMENTOS_PENDIENTES_VENCIDOS"});
+  assert.deepEqual(documents.reporte.map(row=>row.documentoId),["DOC-1"],"document report excludes foreign expediente documents");
+}
+for(const name of ["findDuplicateStudents","getStudentFileAdministrativeReports"]){
+  const fn=extractFunction(name);
+  assert(fn.includes("validateRolePermission")&&fn.includes("getVerifiedAcademicDepartmentScope_")&&fn.includes("assertResourceOwnershipForScope_"),
+    name+" must enforce RBAC and ResourceOwnership scope");
+}
+console.log("ACADEMIC administrative search/report ResourceOwnership contracts passed.");
