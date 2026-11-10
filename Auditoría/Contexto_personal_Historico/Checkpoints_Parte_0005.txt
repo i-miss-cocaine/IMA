@@ -160,3 +160,42 @@ Corregir `reorderWaitlist` para evitar lecturas de detalles previas a autorizaci
 - Pruebas dependientes de servicios desplegados se reservan a beta; no bloquean la aprobación local.
 - Siguiente acción: continuar con el siguiente requisito pendiente de TASK-153/AUD-NG-386, manteniendo la sesión `IMA-EXEC-20261110-1825Z-02`.
 ===============================================================================
+
+===============================================================================
+## CHECKPOINT C1.463 — USER: consulta segura del estado de firma avanzada
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint previo: C1.462 (dos subalcances concurrentes, USER y ACADEMIC).
+HEAD inicial de este subalcance: ce08eabc4821f7856c40be16b1bd7620891c75ac.
+
+### Alcance
+Revisar `checkAdvancedSignatureStatus` y la frontera de confianza para respuestas de proveedores de firma avanzada, dentro de TASK-153 / AUD-NG-386.
+
+### Hallazgos y correcciones
+- No existe una ruta de callback/webhook de PSC autenticada en USER. `checkAdvancedSignatureStatus` ahora rechaza cualquier `respuestaProveedor` incluida en el payload de usuario con `SIGNATURE_CALLBACK_AUTHENTICATION_REQUIRED`; no procesa estados enviados por el cliente.
+- La consulta exige `validateRolePermission` e identidad verificada. Bajo `ScriptLock`, resuelve inicialmente solo TransaccionID/DocumentoID/SolicitudID, verifica ownership documental y solo entonces lee los datos completos de la transacción.
+- El lock se libera en `finally`; una contención falla antes de abrir la hoja. La respuesta no expone `CertificadoX509Ref`.
+- Se corrigió una falsa equivalencia de confianza: el estado administrativo `Completada` ya no produce `esFirmadoValido:true`. Devuelve `esFirmadoValido:false`, `verificacionCriptograficaPendiente:true` y `requiereValidacionAutenticadaProveedor:true` cuando corresponda.
+- No se simula ni se declara validación de certificado X.509 ni respuesta autenticada de PSC. La implementación mantiene el estado pendiente de verificación hasta disponer de una integración criptográfica confiable.
+
+### Contratos y verificación local
+- `user-service-signature-ownership.test.js`: consulta autorizada, ownership antes de lectura privada, denegación interdepartamental sin leer detalles, lock contencioso sin acceso a Sheets, rechazo de callback falsificado, no exposición X.509 y `Completada` sin validez criptográfica.
+- GitHub Actions run `42898171738` — SUCCESS, Node 24: Department Scope, ACADEMIC expediente/admisión/entrevistas/evaluaciones/duplicados/reapertura/lista de espera, USER signature ownership, ACCOUNTING departmental access, ResourceOwnership ABAC, voucher client y sintaxis de servicios/cliente.
+- Un run intermedio falló porque el fixture conservaba la expectativa anterior `esFirmadoValido:true`; se corrigió la expectativa y el run integral posterior terminó SUCCESS.
+- Sin despliegue, servicios vivos, proveedor PSC real, verificación X.509 real, Google Sheets ni datos institucionales.
+
+### Commits
+- `e7e8588402d2e462b7a4e70161309f52d46ae70b` — contrato de consulta autorizada.
+- `dafdbbb0526ee550d7d4ca462340e0351ee6742a` — rechazo de respuesta de proveedor enviada por cliente.
+- `31cc21b9572c47e792d0b3188237aeaaccd480a6` — no equiparar estado completado con firma válida.
+- `4aa2a9a251e53ec0044956f66e7a32263ca86a98` — regresión de verificación criptográfica pendiente.
+- Documentación: plan `d34448b7d5319f615b9c026dc0e006df520a08c2`; auditoría `4140d4b2678764b75da772fa89a0528a0d4f34f0`; changelog `476dd4e8c4ea4ec993c69937d5915565416dd5b7`.
+
+### Estado y continuidad
+- Consulta del estado de firma avanzada protegida y verificada localmente.
+- **TASK-153 permanece En ejecución y AUD-NG-386 abierto**: siguen pendientes callback autenticado de proveedor, validación criptográfica, `registerDocumentSignature`, `generateSignatureAuditCertificate`, recursos institucionales y otras rutas de permisos/referencias.
+- Las pruebas que requieren despliegue quedan reservadas a beta; no bloquean la aprobación local de este subalcance.
+- Siguiente acción: revisar `registerDocumentSignature` para impedir que una conformidad institucional manual sea confundida con una firma avanzada, verificar ownership/idempotencia y proteger los datos de auditoría.
+===============================================================================
