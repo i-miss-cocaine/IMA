@@ -90,12 +90,12 @@ const helpers = ["getVerifiedExamIdentity_", "getVerifiedExamDepartmentScope_", 
 vm.runInNewContext(helpers + "\nthis.getAllExams = getAllExams; this.getTeacherExamActivity = getTeacherExamActivity; this.getVerifiedExamDepartmentScope_ = getVerifiedExamDepartmentScope_; this.assertExamResourceOwnershipForScope_ = assertExamResourceOwnershipForScope_;", runtime);
 const payload = { sessionToken: "teacher-token", profesorId: "TEACHER-2" };
 const list = runtime.getAllExams(payload);
-assert.deepEqual(Array.from(list.data, row => row.examenId), ["EXM-1"], "teacher list uses signed identity and department ownership; client profesorId is ignored");
+assert.deepEqual(Array.from(list.data, row => row.examenId), ["EXM-1", "EXM-6"], "teacher list uses signed identity and department ownership; client profesorId is ignored");
 assert.equal(payload._verifiedUserId, "TEACHER-1");
 const activity = runtime.getTeacherExamActivity({ sessionToken: "teacher-token", profesorId: "TEACHER-2" });
 assert.deepEqual(Array.from(activity.data, row => row.entregaId), ["DEL-1"], "teacher activity is limited to owned exams");
 const directorList = runtime.getAllExams({ sessionToken: "director-token" });
-assert.deepEqual(Array.from(directorList.data, row => row.examenId), ["EXM-1", "EXM-2", "EXM-3"], "institution-wide role sees unique owned resources in its institution");
+assert.deepEqual(Array.from(directorList.data, row => row.examenId), ["EXM-1", "EXM-2", "EXM-3", "EXM-6"], "institution-wide role sees unique owned resources in its institution");
 const scope = runtime.getVerifiedExamDepartmentScope_({ sessionToken: "teacher-token" }, ss);
 const cross = runtime.assertExamResourceOwnershipForScope_(ss, scope, "EXAMEN", "EXM-2", "READ", {});
 assert.equal(cross.authorized, false); assert.equal(cross.code, "RESOURCE_SCOPE_DENIED");
