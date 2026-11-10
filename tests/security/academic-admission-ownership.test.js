@@ -202,3 +202,53 @@ console.log("academic admission interview ownership and lock contracts: PASS");
     "a schedule request that cannot acquire the lock must not inspect or append interviews");
 }
 
+// Admission evaluations are append-only records: serialize ID generation and
+// append, and log the verified actor role rather than a caller-supplied role.
+{
+  function runEvaluation(lockAvailable) {
+    let held=false,reads=0,appends=0,releases=0,loggedRole="";
+    const rows=[];
+    const sheet={
+      appendRow(row){assert.equal(held,true,"evaluation append must occur while the script lock is held");appends++;rows.push(row.slice());}
+    };
+    const context={
+      getAcademicAdmissionScopeContext_:(_payload,action,id,operation)=>({
+        authorized:action==="saveAdmissionEvaluation"&&id==="REQ-EVAL"&&operation==="UPDATE",
+        ss:{},actor:{authorized:true,userId:"EVAL-VERIFIED",role:"Evaluador"},
+        scope:{authorized:true,institutionId:"INST-1",departmentIds:["D1"],institutionWide:false},
+        requestAccess:{authorized:true,departmentId:"D1"}
+      }),
+      LockService:{getScriptLock:()=>({
+        tryLock:()=>{if(!lockAvailable)return false;held=true;return true;},
+        releaseLock:()=>{assert.equal(held,true);held=false;releases++;}
+      })},
+      getOrCreateSheet:()=>{assert.equal(held,true,"evaluation sheet must not be accessed before acquiring the lock");reads++;return sheet;},
+      generateInstitutionalId:()=>{assert.equal(held,true);return {generatedId:"EVAL-LOCK-1"};},
+      logStructuredEvent:(_service,_fn,_level,_code,_message,_data,role)=>{loggedRole=role;},
+      Date
+    };
+    vm.runInNewContext(extractFunction("saveAdmissionEvaluation"),context);
+    return {
+      execute:()=>context.saveAdmissionEvaluation({solicitudId:"REQ-EVAL",tipoEvaluacion:"Academica",dictamen:"Aprobado",
+        puntajeNum:90,rubricaJSON:{criterio:"lectura"},observaciones:"Correcto",authRole:"Director"}),
+      state:()=>({held,reads,appends,releases,loggedRole,rows})
+    };
+  }
+  const saved=runEvaluation(true);
+  const result=saved.execute();
+  assert.equal(result.status,"success");
+  assert.equal(result.evaluacionId,"EVAL-LOCK-1");
+  const state=saved.state();
+  assert.equal(state.held,false);
+  assert.equal(state.reads,1);
+  assert.equal(state.appends,1);
+  assert.equal(state.releases,1);
+  assert.equal(state.rows[0][7],"EVAL-VERIFIED","evaluator identity must come from the verified actor");
+  assert.equal(state.loggedRole,"Evaluador","audit role must come from verified identity, not payload.authRole");
+  const busy=runEvaluation(false);
+  assert.throws(()=>busy.execute(),/Servicio ocupado/);
+  assert.deepEqual(busy.state(),{held:false,reads:0,appends:0,releases:0,loggedRole:"",rows:[]},
+    "a contending evaluation request must fail before reading or appending records");
+}
+
+console.log("academic admission evaluation identity and lock contracts: PASS");
