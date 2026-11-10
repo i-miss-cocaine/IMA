@@ -3205,3 +3205,14 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Límites:** pruebas locales con mocks/fixtures y lock controlado; sin Google Sheets real, servicios vivos, despliegue ni datos institucionales reales.
 - **Estado:** reapertura de solicitudes ACADEMIC corregida y aprobada localmente. TASK-153 continúa En ejecución por recursos institucionales, firmas, permisos granulares, referencias compartidas, importaciones y otras rutas pendientes.
 - **Commits:** `dfab2d1486dd7599e9ccadb890ff71003632c669` (código); `5ae37e4a1aea2b779df2d14b42274719c9b2eccc` y `94ec9a3294ff276bfce88941659a1c3f52a030e2` (contratos/fixtures).
+
+### 10.118 TASK-153 / ACADEMIC — serializar la incorporación a lista de espera (C1.460)
+
+- **Concurrencia e idempotencia:** `addToWaitlist` adquiere `ScriptLock` antes de revalidar ownership, leer solicitudes/lista, calcular posición, generar ID y anexar. Si ya existe una entrada activa única para la solicitud, devuelve el mismo `esperaId`; si hay varias entradas activas, falla cerradamente.
+- **Aislamiento:** revalida `SOLICITUD_ADMISION` bajo lock y exige que el ID esté en el conjunto de solicitudes autorizadas del actor. La posición solo considera entradas `En_Espera` pertenecientes a solicitudes visibles en el mismo alcance.
+- **Integridad y compensación:** valida el objeto JSON y que los criterios de prelación sean booleanos; protege solicitudes convertidas o con expediente asociado. Si el append a la lista funciona pero falla la actualización de estado de la solicitud, elimina la fila recién insertada; si la compensación también falla, emite `WAITLIST_COMPENSATION_FAILED`.
+- **Contrato local:** alta con puntaje/posición, reintento idempotente, lock contencioso sin lecturas, solicitud sin ownership, IDs de solicitud duplicados, duplicidad activa ambigua, criterio mal tipado, rollback de append tras fallo de estado y registro de fallo de compensación.
+- **Ejecución:** GitHub Actions run `42894855396` — SUCCESS, Node 24. Contratos Department Scope, ACADEMIC (expediente/admisión/conversión/entrevistas/evaluaciones/duplicados/reapertura/lista de espera), ACCOUNTING, ResourceOwnership ABAC y voucher client PASS; sintaxis Apps Script y cliente PASS.
+- **Límites:** fixtures y lock local; no se afirma concurrencia real de Google Sheets. Sin despliegue ni datos institucionales reales.
+- **Estado:** incorporación a lista de espera corregida y aprobada localmente. TASK-153 sigue En ejecución por otras mutaciones de lista de espera y requisitos ACADEMIC pendientes.
+- **Commits:** `6009994e5df3fc45ddbadad9f782468dc65ba100` (código) y `314e07b4fa5cfeae005d69b1b417d66a44803851` (contrato).
