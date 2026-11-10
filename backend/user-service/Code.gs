@@ -7300,8 +7300,7 @@ function registerDocumentSignature(payload) {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const documentAccess = assertAdvancedSignatureDocumentScope_(payload, ss, documentId, requestId, "UPDATE");
     if (!documentAccess || documentAccess.authorized !== true) {
-      // Respuesta indistinguible para recurso inexistente, ambiguo o fuera de ámbito.
-      throw new Error("RESOURCE_NOT_FOUND");
+      throw new Error(documentAccess && documentAccess.code || "RESOURCE_SCOPE_DENIED");
     }
     const sheet = getOrCreateSheet(ss, "FirmasConformidades");
     const data = sheet.getDataRange().getValues();
@@ -7425,7 +7424,8 @@ function generateSignatureAuditCertificate(payload) {
       payload, ss, resolvedDocumentId, resolvedSolicitudId, "READ"
     );
     if (!documentAccess || documentAccess.authorized !== true) {
-      throw new Error(documentAccess && documentAccess.code || "RESOURCE_SCOPE_DENIED");
+      // Respuesta indistinguible para recurso inexistente, ambiguo o fuera de ámbito.
+      throw new Error("RESOURCE_NOT_FOUND");
     }
     resolvedDocumentId = String(documentAccess.documentId || "").trim();
     resolvedSolicitudId = String(documentAccess.solicitudId || resolvedSolicitudId || "").trim();
