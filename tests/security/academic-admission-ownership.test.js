@@ -791,3 +791,218 @@ console.log("academic admission waitlist offer ownership, state and lock contrac
 }
 
 console.log("academic admission waitlist reorder ownership, group and rollback contracts: PASS");
+
+
+// Exercise convertAdmissionToStudent as an orchestration unit with isolated
+// sheets, ownership registration, enrollment persistence and deterministic failures.
+{
+  function makeConversionHarness({
+    failStatusWrite=false, failSecondOwnership=false, failOwnershipRollback=false,
+    lockAvailable=true, reenterDuringExpedienteAppend=false
+  }={}) {
+    const state={
+      held:false, lockAttempts:0, releases:0, sheetReads:0, ownerCalls:0,
+      rollbackOwnerCalls:0, ownership:[], enrollments:[], events:[],
+      statusFailureUsed:false, reentryAttempted:false, reentryError:"", reentryReadsBefore:0
+    };
+    function makeSheet(name,rows) {
+      return {
+        name, rows:rows.map(row=>row.slice()),
+        getLastRow(){return this.rows.length;},
+        getDataRange(){
+          const self=this;
+          return {getValues(){state.sheetReads++;return self.rows.map(row=>row.slice());}};
+        },
+        getRange(row,column) {
+          const self=this;
+          return {setValue(value){
+            if(name==="SolicitudesAdmision" && column===12 && value==="Convertida" &&
+                failStatusWrite && !state.statusFailureUsed) {
+              state.statusFailureUsed=true;
+              throw new Error("INJECTED_ADMISSION_STATUS_WRITE");
+            }
+            self.rows[row-1][column-1]=value;
+          }};
+        },
+        appendRow(row) {
+          this.rows.push(row.slice());
+          if(name==="ExpedientesEstudiantes" && reenterDuringExpedienteAppend && !state.reentryAttempted) {
+            state.reentryAttempted=true;
+            state.reentryReadsBefore=state.sheetReads;
+            try { context.convertAdmissionToStudent({solicitudId:"REQ-1",seccion:"A"}); }
+            catch(error) { state.reentryError=String(error && error.message || error); }
+          }
+        },
+        deleteRow(row){this.rows.splice(row-1,1);}
+      };
+    }
+
+    const admissionSheet=makeSheet("SolicitudesAdmision",[
+      ["SolicitudID","","Ano","Grado","","","","","","","","Estado","","","ExpedienteID"],
+      ["REQ-1","","2026","1","Ana","Prueba","",new Date("2015-01-01"),"","","","Admitida","","",""]
+    ]);
+    const expedienteSheet=makeSheet("ExpedientesEstudiantes",[
+      ["ExpedienteID","PersonaID","Codigo","FechaNac","Nacionalidad","","","Estado"]
+    ]);
+    const usersSheet=makeSheet("Usuarios",[
+      ["UserID","Nombre","","","","","Rol","","","PersonaID","Estado"]
+    ]);
+    const enrollmentSheet=makeSheet("Matriculas",[
+      ["MatriculaID","UserID","Periodo","Grado","Seccion"]
+    ]);
+    const documentSheet=makeSheet("DocumentosEstudiante",[
+      ["DocumentoID","ExpedienteID","SolicitudID"],
+      ["DOC-1","","REQ-1"]
+    ]);
+    const movementSheet=makeSheet("MovimientosEstudiante",[
+      ["MovimientoID","ExpedienteID","MatriculaID","Periodo"]
+    ]);
+    const sheets={
+      SolicitudesAdmision:admissionSheet,ExpedientesEstudiantes:expedienteSheet,
+      Usuarios:usersSheet,Matriculas:enrollmentSheet,
+      DocumentosEstudiante:documentSheet,MovimientosEstudiante:movementSheet
+    };
+    const ss={getSheetByName(name){return sheets[name]||null;}};
+    const admissionContext={
+      authorized:true,ss,
+      actor:{authorized:true,userId:"DIRECTOR-1",role:"Director"},
+      scope:{authorized:true,institutionId:"INST-1",departmentIds:["D1"],institutionWide:false,role:"Director",userId:"DIRECTOR-1"},
+      requestAccess:{authorized:true,departmentId:"D1"}
+    };
+    const context={
+      ALLOW_INCOMPLETE_ADMISSION_CONVERSION:true,
+      getAcademicAdmissionScopeContext_(){return admissionContext;},
+      resolveAcademicAdmissionDepartment_(){return {authorized:true,departmentId:"D1"};},
+      getDynamicPermissionsForRole(){return false;},
+      LockService:{getScriptLock(){return {
+        tryLock(){
+          state.lockAttempts++;
+          if(!lockAvailable || state.held) return false;
+          state.held=true;
+          return true;
+        },
+        releaseLock(){assert.equal(state.held,true);state.held=false;state.releases++;}
+      };}},
+      getOrCreateSheet(_ss,name){
+        assert.equal(state.held,true,"conversion sheets must only be accessed under ScriptLock");
+        return sheets[name]||(sheets[name]=makeSheet(name,[[]]));
+      },
+      checkEnrollmentCapacity(){return {hayCupo:true};},
+      generateInstitutionalId({entityType}){
+        return {generatedId:{
+          ExpedienteEstudiante:"EXP-1",CodigoEstudiante:"STU-1",
+          Persona:"PER-1",MovimientoEstudiante:"MOV-1"
+        }[entityType]||"ID-1"};
+      },
+      normalizeString(value){return String(value||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");},
+      getStudentIdentityForPerson_(){return null;},
+      assertAdmissionEnrollmentRetrySafe_(){return true;},
+      registerAcademicResourceOwnership_(_ss,_scope,type,resourceId,departmentId,actorId){
+        state.ownerCalls++;
+        if(failSecondOwnership && state.ownerCalls===2) {
+          return {authorized:false,code:"INJECTED_SECOND_OWNERSHIP_FAILURE"};
+        }
+        const ownershipId="OWN-"+state.ownerCalls;
+        state.ownership.push({ownershipId,type,resourceId,departmentId,actorId});
+        return {authorized:true,created:true,ownershipId};
+      },
+      deleteAcademicResourceOwnership_(_ss,ownershipId){
+        state.rollbackOwnerCalls++;
+        if(failOwnershipRollback && state.rollbackOwnerCalls===1) {
+          throw new Error("INJECTED_OWNERSHIP_ROLLBACK_FAILURE");
+        }
+        const index=state.ownership.findIndex(item=>item.ownershipId===ownershipId);
+        if(index>=0) state.ownership.splice(index,1);
+      },
+      registerStudentEnrollmentInternal_(args){
+        const enrollment={matriculaId:"MAT-1",cargoId:"CAR-1",userId:args.userId};
+        state.enrollments.push(enrollment);
+        const rowNumber=enrollmentSheet.rows.length+1;
+        enrollmentSheet.appendRow(["MAT-1",args.userId,args.periodo,args.grado,args.seccion]);
+        args._rollbackActions.push(function(){
+          const index=state.enrollments.indexOf(enrollment);
+          if(index>=0) state.enrollments.splice(index,1);
+          if(enrollmentSheet.rows.length>=rowNumber &&
+              String(enrollmentSheet.rows[rowNumber-1][0])==="MAT-1") {
+            enrollmentSheet.deleteRow(rowNumber);
+          }
+        });
+        return {status:"success",matriculaId:"MAT-1",cargoId:"CAR-1"};
+      },
+      findAdmissionConversionMovement_(){return null;},
+      getInstitutionParams(){return {status:"success",data:[]};},
+      Utilities:{getUuid(){return "UUID-1";}},
+      logStructuredEvent(...args){state.events.push(args);},
+      Date
+    };
+    vm.runInNewContext(extractFunction("convertAdmissionToStudent"),context);
+    return {
+      context,
+      execute(){return context.convertAdmissionToStudent({solicitudId:"REQ-1",seccion:"A"});},
+      state,sheets
+    };
+  }
+
+  const successful=makeConversionHarness({reenterDuringExpedienteAppend:true});
+  const converted=successful.execute();
+  assert.equal(converted.status,"success");
+  assert.equal(successful.sheets.SolicitudesAdmision.rows[1][11],"Convertida");
+  assert.equal(successful.sheets.SolicitudesAdmision.rows[1][14],"EXP-1");
+  assert.equal(successful.sheets.ExpedientesEstudiantes.rows.length,2);
+  assert.equal(successful.sheets.DocumentosEstudiante.rows[1][1],"EXP-1");
+  assert.equal(successful.sheets.Matriculas.rows.length,2);
+  assert.equal(successful.sheets.MovimientosEstudiante.rows.length,2);
+  assert.deepEqual(successful.state.ownership.map(item=>item.type),[
+    "SOLICITUD_ADMISION","EXPEDIENTE_ESTUDIANTE"
+  ]);
+  assert.equal(successful.state.held,false);
+  assert.equal(successful.state.releases,1);
+  assert.equal(successful.state.lockAttempts,2);
+  assert.match(successful.state.reentryError,/Servicio ocupado/);
+  assert.equal(successful.state.sheetReads,successful.state.reentryReadsBefore +
+    (successful.state.sheetReads-successful.state.reentryReadsBefore),
+    "the reentrant attempt must not interrupt the first conversion");
+
+  const lateFailure=makeConversionHarness({failStatusWrite:true});
+  assert.throws(()=>lateFailure.execute(),/INJECTED_ADMISSION_STATUS_WRITE/);
+  assert.equal(lateFailure.state.ownership.length,0);
+  assert.equal(lateFailure.state.enrollments.length,0);
+  assert.equal(lateFailure.sheets.ExpedientesEstudiantes.rows.length,1);
+  assert.equal(lateFailure.sheets.Matriculas.rows.length,1);
+  assert.equal(lateFailure.sheets.MovimientosEstudiante.rows.length,1);
+  assert.equal(lateFailure.sheets.DocumentosEstudiante.rows[1][1],"");
+  assert.equal(lateFailure.sheets.SolicitudesAdmision.rows[1][11],"Admitida");
+  assert.equal(lateFailure.sheets.SolicitudesAdmision.rows[1][14],"");
+  assert.equal(lateFailure.state.held,false);
+  assert.equal(lateFailure.state.releases,1);
+
+  const secondOwnershipFailure=makeConversionHarness({failSecondOwnership:true});
+  assert.throws(()=>secondOwnershipFailure.execute(),/INJECTED_SECOND_OWNERSHIP_FAILURE/);
+  assert.equal(secondOwnershipFailure.state.ownership.length,0);
+  assert.equal(secondOwnershipFailure.sheets.ExpedientesEstudiantes.rows.length,1);
+  assert.equal(secondOwnershipFailure.sheets.SolicitudesAdmision.rows[1][11],"Admitida");
+  assert.equal(secondOwnershipFailure.state.held,false);
+
+  const failedCompensation=makeConversionHarness({
+    failStatusWrite:true,failOwnershipRollback:true
+  });
+  assert.throws(()=>failedCompensation.execute(),error=>
+    /ADMISSION_CONVERSION_COMPENSATION_REQUIRED/.test(error.message) &&
+    /INJECTED_OWNERSHIP_ROLLBACK_FAILURE/.test(error.message));
+  assert.equal(failedCompensation.sheets.ExpedientesEstudiantes.rows.length,1);
+  assert.equal(failedCompensation.sheets.Matriculas.rows.length,1);
+  assert.equal(failedCompensation.sheets.MovimientosEstudiante.rows.length,1);
+  assert.equal(failedCompensation.sheets.DocumentosEstudiante.rows[1][1],"");
+  assert.equal(failedCompensation.sheets.SolicitudesAdmision.rows[1][11],"Admitida");
+  assert.equal(failedCompensation.state.held,false);
+  assert.equal(failedCompensation.state.releases,1);
+  assert.equal(failedCompensation.state.ownership.length,1,
+    "a failed ownership deletion must remain visible for explicit compensation");
+
+  const busy=makeConversionHarness({lockAvailable:false});
+  assert.throws(()=>busy.execute(),/Servicio ocupado/);
+  assert.equal(busy.state.sheetReads,0);
+  assert.equal(busy.state.releases,0);
+}
+
+console.log("academic admission conversion atomic ownership, rollback and concurrency contract: PASS");
