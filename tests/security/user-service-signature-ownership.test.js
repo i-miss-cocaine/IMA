@@ -408,7 +408,8 @@ function makeAuditCertificateHarness(options = {}) {
     ["SIG-2","SOL-1","DOC-2","U-2","Secretaría","Conformidad manual","TOK-2","2026-11-10T11:00:00Z","10.0.0.2","HASH-DOC-2","HASH-SIG-2"],
     ["SIG-3","SOL-2","DOC-1","U-3","Director","Conformidad manual","TOK-3","","","",""]
   ];
-  const state = { held:false, fullReads:0, keyReads:0, releases:0, scopes:[], events:[] };
+  if (options.extraRows) options.extraRows.forEach(row=>rows.push(row.slice()));
+  const state = { held:false, fullReads:0, keyReads:0, releases:0, scopes:[], events:[], requestOwnershipCalls:0 };
   const sheet = {
     getLastRow:()=>rows.length,
     getRange:(row,col,numRows,numCols)=>({getValues:()=>{state.keyReads++;return rows.slice(row-1,row-1+numRows).map(r=>r.slice(col-1,col-1+numCols));}}),
@@ -422,6 +423,11 @@ function makeAuditCertificateHarness(options = {}) {
     SpreadsheetApp:{openById:()=>{assert.equal(state.held,true);return {getSheetByName:name=>{assert.equal(name,"FirmasConformidades");return sheet;}};}},
     SPREADSHEET_ID:"SHEET",
     getOrCreateSheet:(_ss,name)=>{assert.equal(name,"FirmasConformidades");return sheet;},
+    assertRecordOwnership:(_payload,type,id,op)=>{
+      state.requestOwnershipCalls++;
+      assert.equal(type,"SOLICITUD_ADMISION");assert.equal(id,"SOL-1");assert.equal(op,"READ");
+      return {authorized:options.requestOwner!==false};
+    },
     assertAdvancedSignatureDocumentScope_:(_payload,_ss,doc,req,op)=>{
       state.scopes.push({doc,req,op});
       return options.owner===false?{authorized:false,code:"RESOURCE_SCOPE_DENIED"}:
@@ -445,24 +451,51 @@ function makeAuditCertificateHarness(options = {}) {
   assert.equal(valid.state.fullReads,1);
   assert.equal(valid.state.releases,1);
   assert.equal(valid.state.events[0].code,"SIGNATURE_AUDIT_CERTIFICATE_VIEWED");
+  assert.equal(valid.state.requestOwnershipCalls,0);
+  assert.equal("ipOrigen" in certificate.pistaAuditoriaFirmantes[0],false,"raw IP addresses must not be exposed");
+  assert.equal(certificate.naturalezaCertificado,"RESUMEN_AUDITORIA_NO_PROBATORIO");
+  assert.equal(certificate.verificacionCriptografica,"NO_VERIFICADA");
+  assert.equal(certificate.requiereValidacionAutenticadaProveedor,true);
+  assert.match(certificate.alcanceIntegridadSHA256,/no es firma electrónica/);
+  const certificateWithoutDigest={...certificate};delete certificateWithoutDigest.certificadoIntegridadSHA256;
+  assert.equal(certificate.certificadoIntegridadSHA256,"HASH-CERT:"+JSON.stringify(certificateWithoutDigest));
 
   const documentOnly=makeAuditCertificateHarness();
   assert.equal(documentOnly.run({documentoId:"DOC-1"}).solicitudId,"SOL-1");
 
   const ambiguous=makeAuditCertificateHarness();
   assert.throws(()=>ambiguous.run({solicitudId:"SOL-1"}),/RESOURCE_REFERENCE_AMBIGUOUS/);
+  assert.equal(ambiguous.state.requestOwnershipCalls,1,"request ownership must be checked before signature-key lookup");
+  assert.equal(ambiguous.state.keyReads,1);
   assert.equal(ambiguous.state.fullReads,0);
+
+  const requestDenied=makeAuditCertificateHarness({requestOwner:false});
+  assert.throws(()=>requestDenied.run({solicitudId:"SOL-1"}),/RESOURCE_NOT_FOUND/);
+  assert.equal(requestDenied.state.requestOwnershipCalls,1);
+  assert.equal(requestDenied.state.keyReads,0,"unauthorized requests must not enumerate signature references");
+  assert.equal(requestDenied.state.fullReads,0);
+  assert.equal(requestDenied.state.releases,1);
 
   const transaction=makeAuditCertificateHarness();
   const transactionCertificate=transaction.run({transactionId:"TOK-3"});
   assert.equal(transactionCertificate.solicitudId,"SOL-2");
   assert.equal(transactionCertificate.totalFirmantes,1);
+  assert.equal("ipOrigen" in transactionCertificate.pistaAuditoriaFirmantes[0],false);
+
+  const unknownTransaction=makeAuditCertificateHarness();
+  assert.throws(()=>unknownTransaction.run({transactionId:"UNKNOWN-TOKEN"}),/RESOURCE_NOT_FOUND/);
+  assert.equal(unknownTransaction.state.fullReads,0);
+  const ambiguousTransaction=makeAuditCertificateHarness({extraRows:[
+    ["SIG-4","SOL-1","DOC-2","U-4","Director","Conformidad manual","TOK-3","","","HASH-DOC-2","HASH-SIG-4"]
+  ]});
+  assert.throws(()=>ambiguousTransaction.run({transactionId:"TOK-3"}),/RESOURCE_NOT_FOUND/);
+  assert.equal(ambiguousTransaction.state.fullReads,0);
 
   const mismatch=makeAuditCertificateHarness();
   assert.throws(()=>mismatch.run({documentoId:"DOC-1",solicitudId:"SOL-1",transactionId:"TOK-3"}),/SIGNATURE_TRANSACTION_NOT_FOUND/);
 
   const denied=makeAuditCertificateHarness({owner:false});
-  assert.throws(()=>denied.run({documentoId:"DOC-1",solicitudId:"SOL-1"}),/RESOURCE_SCOPE_DENIED/);
+  assert.throws(()=>denied.run({documentoId:"DOC-1",solicitudId:"SOL-1"}),/RESOURCE_NOT_FOUND/);
   assert.equal(denied.state.fullReads,0,"private signature rows must not be read before ownership succeeds");
   assert.equal(denied.state.releases,1);
 
@@ -483,7 +516,7 @@ function makeAuditCertificateHarness(options = {}) {
   const noEvidenceCertificate=noEvidence.run({transactionId:"TOK-3"});
   assert.equal(noEvidenceCertificate.documentoOriginalSHA256,null);
   assert.equal(noEvidenceCertificate.pistaAuditoriaFirmantes[0].timestampUTC,null);
-  assert.equal(noEvidenceCertificate.pistaAuditoriaFirmantes[0].ipOrigen,null);
+  assert.equal("ipOrigen" in noEvidenceCertificate.pistaAuditoriaFirmantes[0],false);
   assert.equal(noEvidenceCertificate.pistaAuditoriaFirmantes[0].signatureHash,null);
 }
 
