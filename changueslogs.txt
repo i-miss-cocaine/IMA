@@ -956,3 +956,13 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - getStudentGuardians/saveStudentGuardian/unlinkStudentGuardian verifican expediente antes de leer PII o cambiar relaciones.
 - Department Scope Contract runs 42876302825 y 42876368270 PASS; Task-Service run 42876334741 PASS; backup/restore 42875483013 PASS. Pruebas locales NOT RUN.
 - BETA-FUNC-023 ampliada; Pendiente beta.
+
+
+[2026-11-10] C1.446 — IMA-EXEC-20261110-1825Z-02 — ACADEMIC: ownership en expedientes SELF/GUARDIAN, relaciones e informes
+- Acceso SELF/GUARDIAN ahora exige ResourceOwnership; tutores resuelven el ámbito de la cuenta activa del estudiante vinculado.
+- getStudentGuardians/saveStudentGuardian/unlinkStudentGuardian validan RBAC y expediente; se impide editar un responsable compartido sin acceso a todos sus expedientes activos.
+- Búsqueda de duplicados e informes PII filtran por ownership; se corrige PersonaID→UserID y fechaNacimiento.
+- Cola de admisiones y cambios de estado se filtran por propiedad; intake público no asignado queda reservado a scope institucional; documentos de solicitud usan la misma guarda.
+- Contratos sintéticos añadidos; 15 aserciones estáticas PASS; Node local NOT RUN; CI sin checks visibles. BETA-FUNC-023/024 Pendiente beta.
+- Pendiente: conversión de admisión a expediente con ownership atómico y restantes endpoints de admisión.
+- Commits: 3d3d0015cbdd67a715a9fe60385fd82664e2f34d; b113a6f88b338c63f04ecc3531cd9efa85b8b257; 42ca04bad4209760bb883a20b0286a59b8054df9; 5874fa64f615f1dd1d691f60aea3e0b9ee9417b6; ea178e9ff2b70da97573a32a47bac650ef415fa0; 19a64b518ec4eee24b6f0c25b775f43e0058b90f; c77088ad8abd721453ebd3b3b92700ff9575cc86; df644f9a87838450a74f168e310ca423992b2be8; 9b7e619252f8c3489ea05980b58e570d1942148c; 1df0394c1953e19a7e67a8331aa4eebae8c795d2; 2ae88b8fca460911ed2e8f555b3cca9bf6a4a6ce; 589873ae6659c735c4a9ce8fd7ca61aba5224e77.
