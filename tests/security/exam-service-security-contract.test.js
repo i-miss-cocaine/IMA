@@ -133,7 +133,12 @@ function makeCreationRuntime(options) {
   const creationSheets = {
     Examenes: makeSheet([["ExamenID","Titulo","Asignatura","Grado","Seccion","FechaLimite","TiempoLimite","Estado","ProfesorID","Parcial"]]),
     PreguntasExamen: makeSheet([["PreguntaID","ExamenID","Tipo","Texto","OpcionesJSON","RespuestaCorrecta"]], options && options.failQuestions),
-    ResourceOwnership: makeSheet([["OwnershipID","InstitutionID","ResourceType","ResourceID","DepartmentID","Status","RegisteredBy","CreatedAt","UpdatedAt"]])
+    ResourceOwnership: makeSheet([["OwnershipID","InstitutionID","ResourceType","ResourceID","DepartmentID","Status","RegisteredBy","CreatedAt","UpdatedAt"]]),
+    AsignacionesAmbitosRoles: makeSheet([
+      ["AssignmentID","UserID","RoleID","ScopeType","ScopeValues","Status","","","StartAt","EndAt"],
+      ["ASG-TEACHER","TEACHER-1","Profesor","DEPARTAMENTO","D1","ACTIVO","","","",""],
+      ["ASG-ADMIN","ADMIN-1","Administrador","INSTITUCION","I1","ACTIVO","","","",""]
+    ])
   };
   if (options && options.badOwnershipSchema) creationSheets.ResourceOwnership.rows[0][4] = "WrongHeader";
   let uuid = 0;
