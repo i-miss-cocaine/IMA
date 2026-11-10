@@ -425,7 +425,7 @@ console.log("academic admission duplicate resolution ownership and concurrency c
   assert.equal(crossState.held,false);
   assert.equal(crossState.releases,1);
 
-  const sameDepartment=makeResolutionHarness({lockAvailable:true,destinationDepartment:"D1"});
+  const sameDepartment=makeResolutionHarness({lockAvailable:true,destinationDepartment:"D1",role:"Secretaría"});
   const result=sameDepartment.execute();
   assert.equal(result.status,"success");
   const sameState=sameDepartment.state();
@@ -433,7 +433,7 @@ console.log("academic admission duplicate resolution ownership and concurrency c
   assert.equal(sameState.row[14],"EXP-1");
   assert.equal(sameState.writes.length,2,"destination and audit observations are the only request writes");
   assert.equal(sameState.history.length,1);
-  assert.equal(sameState.loggedRole,"Director");
+  assert.equal(sameState.loggedRole,"Secretaría","accented verified manager roles must remain authorized and auditable");
   assert.equal(sameState.held,false);
   assert.equal(sameState.releases,1);
 
