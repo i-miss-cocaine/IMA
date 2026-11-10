@@ -1892,3 +1892,40 @@ Corregir el defecto TDZ de la referencia del cargo de admisión, devolver CargoI
 - Siguiente acción elegible: ejecutar el contrato Node y el parseo de Code.gs en un checkout/runner con acceso al repositorio; corregir cualquier fallo antes de cerrar esta tarea.
 - Mantener sesión `IMA-EXEC-20261110-1825Z-02`.
 ===============================================================================
+
+===============================================================================
+## CHECKPOINT C1.455 — ACADEMIC: corrección de TDZ ordinaria y verificación local de lock
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.454.
+HEAD inicial de esta continuación: 5cf1ed264242378399b4bef120f63196ec5f41d6 (norma NDASC v1.4 ya incorporada).
+
+### Alcance
+Continuar la verificación local del subflujo ACADEMIC de TASK-153 / AUD-NG-386 conforme a NDASC v1.4; corregir fallos reproducibles y probar contención de concurrencia sin desplegar servicios.
+
+### Hallazgos y correcciones
+- La prueba de matrícula ordinaria ejecutó una ruta que no usa prefijo de admisión y descubrió una segunda TDZ en `registerStudentEnrollmentInternal_`: el fallback `String(chargeReference || "")` se autorreferenciaba. Se corrigió a `String(_chargeReference || "")`.
+- Se añadió un contrato local de `ScriptLock`: verifica adquisición antes de leer hojas, liberación en `finally` tras fallo y rechazo de una solicitud contenciosa antes de acceder a persistencia.
+- El flujo de conversión conserva referencia exacta `ADMISION|<solicitudId>|<matriculaId>`, CargoID, rollback e idempotencia verificados por los contratos previos.
+
+### Verificaciones
+- GitHub Actions run `42889702855`: SUCCESS, Node 24 en checkout aislado de la rama autorizada.
+- PASS: `department-scope-contract.test.js`; `departmental-resource-access.test.js`; `academic-student-expediente-ownership.test.js` (incluye compensación, conversión exitosa, referencia/CargoID, reintento, filtrado de metadatos y contención/liberación del lock); `academic-admission-ownership.test.js`; `accounting-departmental-resource-access.test.js`; `resource-ownership-abac.test.js`; `student-payment-voucher-client.test.js`.
+- PASS: `node --check` para `backend/user-service/Code.gs`, `backend/academic-service/Code.gs`, `backend/accounting-service/Code.gs` y `js/student.js`.
+- El primer run ampliado `42889622852` falló por un escape incorrecto de salto de línea en el fixture de lock. Se corrigió el fixture y el run posterior completo `42889702855` terminó SUCCESS. Se conserva esta evidencia del intento fallido.
+- Las pruebas se ejecutaron sobre el código fuente en runner aislado; no se desplegó la plataforma, no se llamaron servicios vivos y no se accedió a hojas/datos reales.
+
+### Commits de esta continuación
+- `3bb1d3b7dfc9c4d0259d6a124f353d46b0f38a13` — corregir fallback privado de referencia del cargo.
+- `91c17ba2bddc7cf4e9d35316b877ae7034898907` — añadir contrato de contención del ScriptLock.
+- `ad44dde863065b2a2dc54580ee5a393f43d4570e` — corregir el fixture de salto de línea.
+- Documentación: plan `d483a35509e20e1f4a26186f42941be1d7d5ba6f`; auditoría `8b86fda9030134b6b8bd75958ff6be19412c5c6c`; changelog `3c5ffb0c5411e6122f7a85e881ac18677f073988`.
+
+### Estado y continuidad
+- El subalcance de conversión de admisión, CargoID, rollback, reintento y contención del lock queda verificado localmente.
+- **TASK-153 permanece En ejecución y AUD-NG-386 abierto** por otras rutas y requisitos pendientes de aislamiento departamental; no se declara completada la tarea global.
+- No quedan pruebas de despliegue como condición de cierre de este subalcance. Las pruebas que requieran servicios desplegados quedan reservadas a beta conforme a NDASC v1.4.
+- Siguiente acción: seleccionar el siguiente subalcance pendiente de TASK-153/AUD-NG-386, revisar sus dependencias y contratos y mantener la misma sesión.
+===============================================================================
