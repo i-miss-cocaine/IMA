@@ -5061,3 +5061,12 @@ Alcance estático satisfecho; sin cambios de código. Hallazgos AUD-NG-374..376 
 - Evidencia actual: `js/api.js` SHA `c54d23ad1fc84add9e204a0233d824a2bfcc8ed3`. El parámetro `options.timeout` no se aplica; el timer se fija en 60000 ms y el `catch` no lo limpia antes de reintentar.
 - Estado AUD-NG-007: Pendiente. Sin cambios de código, sin pruebas ejecutadas y sin auditoría duplicada.
 ===============================================================================
+
+===============================================================================
+## C1.417 — Resolución AUD-NG-096: estado histórico de TASK-050
+- AUD-NG-096 se cierra como tarea documental PM-00; TASK-050 no cambia de estado.
+- Commit histórico `40c9e15f85224f716d0ddfa597b72e1142ed0191`, blob Dirección `bd6b1e573e3eda36e34af2a8c83f0483673026a0`: encabezado TASK-050 `[X]`, estado interno `[ ] Pendiente`.
+- HEAD previo `b055ecf685ad7a6a2d18bd11323767dd772bbe76`, blob Dirección `0f82e33a8c62a4bb31b9b1280d10d0838f213c94`: encabezado `[ ]`, estado `[ ] Pendiente`; ocho criterios permanecen sin marcar.
+- Se añade nota aditiva al bloque TASK-050; preservado el histórico. AUD-NG-091…096 siguen vinculadas. Solo AUD-NG-096 se marca Completada.
+- Sin cambios funcionales ni auditoría duplicada.
+===============================================================================

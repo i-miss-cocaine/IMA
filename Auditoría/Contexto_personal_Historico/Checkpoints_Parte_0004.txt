@@ -358,3 +358,44 @@ Fase: PM-00 — clasificación de dependencia transversal; no implementación.
 Reaplicar §6.1 a los PM-00 restantes. TASK-279 (P1) debe verificarse contra su dependencia «modelo de tickets y permisos validados» antes de seleccionarse; si esa dependencia no está satisfecha, continuar con AUD-NG-096 (Observación) y documentar su resolución sin alterar el estado de TASK-050.
 Commit: SHA por verificar después de publicar.
 ===============================================================================
+
+===============================================================================
+## CHECKPOINT C1.417 — Resolución documental AUD-NG-096 / TASK-050
+Sesión: IMA-EXEC-20261110-1312Z-05
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+HEAD de partida: b055ecf685ad7a6a2d18bd11323767dd772bbe76.
+Checkpoint anterior: C1.416.
+Fase: PM-00 — conciliación administrativa/documental.
+
+### Dictamen
+- AUD-NG-096: Completada, solo la rectificación documental.
+- TASK-050: permanece Pendiente; ocho criterios de aceptación siguen sin marcar.
+- AUD-NG-091 a AUD-NG-096 continúan vinculadas.
+
+### Evidencia
+- Commit histórico: `40c9e15f85224f716d0ddfa597b72e1142ed0191`; blob Dirección: `bd6b1e573e3eda36e34af2a8c83f0483673026a0`; encabezado TASK-050 `[X]`, estado interno `[ ] Pendiente`.
+- HEAD previo: `b055ecf685ad7a6a2d18bd11323767dd772bbe76`; blob Dirección actual: `0f82e33a8c62a4bb31b9b1280d10d0838f213c94`; encabezado `[ ]`, estado `[ ] Pendiente`.
+- La nota C1.417 registra la reconciliación y preserva el histórico. No se cambia TASK-050 ni TASK-051.
+
+### Archivos modificados
+- `pendientes/Dirección/Pendientes.md`: nota aditiva TASK-050.
+- `pendientes/Contabilidad/Pendientes.md`: AUD-NG-096 completada con evidencia.
+- `Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md`: fila y §10.87.
+- `Auditoría/MapaDependencias.md`: resolución C1.417.
+- `changueslogs.txt`: entrada C1.417.
+- `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt`: este checkpoint.
+- `Auditoría/INDICE_CHECKPOINTS.md`: fila C1.417.
+
+### Verificaciones y límites
+- Comparación de versiones históricas y actuales por commit/blob SHA.
+- Encabezado/estado actual y conteo de ocho criterios abiertos verificados.
+- No se modificó código, datos, esquemas, permisos ni configuración de ramas.
+- No se ejecutaron pruebas de producto; no aplican a esta rectificación.
+- No se auditó la auditoría ni se creó informe paralelo.
+
+### Siguiente acción
+Reaplicar §6.1 PM-00. TASK-279 no es elegible mientras «modelo de tickets y permisos validados» no esté verificado como Completado. Continuar con siguiente tarea PM-00 elegible, leyendo requisito íntegro y dependencias. El ciclo F29-TASK05↔F29-TASK17 sigue pendiente de triage.
+Commit: el commit que contiene este checkpoint; SHA verificado tras publicación.
+===============================================================================

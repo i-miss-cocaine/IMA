@@ -3514,6 +3514,11 @@
 - Verificar que REP-ACAD-01 y REP-ACAD-02 tengan generadores distintos y coherentes con sus definiciones; no enrutar todo informe category=ACADEMICA a un mismo reporte.
 - No anunciar formatos/roles/filtros que el generador no implementa.
 
+
+### Nota de conciliación administrativa C1.417 — AUD-NG-096
+
+La versión histórica de este bloque en commit `40c9e15f85224f716d0ddfa597b72e1142ed0191` (blob `bd6b1e573e3eda36e34af2a8c83f0483673026a0`) tenía encabezado `[X]` y campo interno `[ ] Pendiente`. En el backlog canónico vigente al HEAD previo `b055ecf685ad7a6a2d18bd11323767dd772bbe76` (blob `0f82e33a8c62a4bb31b9b1280d10d0838f213c94`) el encabezado y el estado interno ya coinciden: `[ ]` / `[ ] Pendiente`. Se verificaron ocho criterios de aceptación sin marcar. Por tanto, TASK-050 permanece **Pendiente**; la marca histórica no acredita implementación ni cierre. Esta nota es aditiva, preserva el historial y no modifica requisitos ni estado. AUD-NG-091 a AUD-NG-096 continúan vinculadas.
+
 ---
 
 <!-- ID: TASK-051 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-17.md ; Pendientes.md ; pendientes/Dirección/Pendientes.md -->

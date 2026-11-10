@@ -4602,14 +4602,16 @@
 ---
 
 <!-- ID: AUD-NG-096 | Fuentes: Pendientes.md -->
-### [ ] [AUD-NG-096] Rectificar de forma aditiva el estado contradictorio de TASK-050
+### [x] [AUD-NG-096] Rectificar de forma aditiva el estado contradictorio de TASK-050
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-096 (TASK-050 / F24-Task01)
 - **Severidad/Clasificación:** Observación
 - **Archivos Involucrados:** Pendientes.md; ChangesLogs.txt; Auditoria.txt
 - **Dependencias Expuestas:** Encabezado [ ] de TASK-050, campo Estado [ ] Pendiente, criterios de aceptación y registro histórico de ChangesLogs.txt.
 - **Descripción del Alcance:** Determinar el estado administrativo de TASK-050 a partir de la verificación funcional y la revisión correspondiente. Documentar la rectificación mediante una anotación aditiva y trazable, sin borrar ni reescribir el registro histórico original. No declarar cumplimiento mientras existan criterios de aceptación no satisfechos.
 - **Criterios de Aceptación:** El inventario permite identificar inequívocamente el estado de TASK-050; la rectificación conserva el encabezado y contenido históricos; la decisión se apoya en evidencias y revisión formal; las tareas derivadas permanecen vinculadas a AUD-NG-091 a AUD-NG-096.
-- **Estado:** [ ] Pendiente
+- **Resolución C1.417:** el histórico de TASK-050 presentaba `[X]` en encabezado y `[ ] Pendiente` en estado interno; el backlog canónico actual ya presenta ambos como pendientes y mantiene ocho criterios sin marcar. Se añade conciliación en el bloque TASK-050, sin reescribir historia ni cambiar su estado. AUD-NG-091 a AUD-NG-096 siguen vinculadas. Se cumplen los criterios de esta tarea documental.
+- **Evidencia:** commit histórico `40c9e15f85224f716d0ddfa597b72e1142ed0191`, blob `bd6b1e573e3eda36e34af2a8c83f0483673026a0`; HEAD previo `b055ecf685ad7a6a2d18bd11323767dd772bbe76`, blob actual `0f82e33a8c62a4bb31b9b1280d10d0838f213c94`; ocho criterios de TASK-050 abiertos.
+- **Estado:** [x] Completada
 
 ---
 
