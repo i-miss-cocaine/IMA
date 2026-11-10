@@ -9,7 +9,7 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 - Última sesión: `IMA-EXEC-20261110-1825Z-02`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.474: **54153**
+- Caracteres del archivo activo tras C1.474: **55069**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 - Baseline lógico válido: **C1.316** (`31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`). C1.317–C1.382 se conservan, pero no se aceptan como evidencia de continuidad por corrección expresa del usuario.
@@ -326,5 +326,5 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.471 | IMA-EXEC-20261110-1825Z-02 | ACADEMIC: aislamiento de evaluaciones/entrevistas, revalidación de ownership e identidad/ámbito bajo lock; local y CI PASS | PM-01 — TASK-153 / ACADEMIC / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt — sección C1.471 | 452–493 | C1.470 | 06d818ee81124622ab4e394d5d30d3fec463b931; 9d23739677c37732195528c961777bf20ff3df3a; CI 42905094147 |
 
 | C1.473 | IMA-EXEC-20261110-1825Z-02 | USER: callback genérico autenticado con HMAC por proveedor, payload estricto, replay por proveedor y sin mutación/validez probatoria; V8 local y CI PASS | PM-01 — TASK-153 / USER / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt — sección C1.473 | 545–581; addendum R1 | C1.472 | deda3ef0e2bff98b79f703fd6971940bce33df59; a7c29a7b9a0a4723e0fde39d875c8081c98e81e3; CI 42909005349/42909356902; CI 42909356724/42909356688 |
-| C1.474 | IMA-EXEC-20261110-1825Z-02 | USER: credenciales API/HMAC protegidas en Script Properties, migración legacy, salida enmascarada, sin PSC ficticio; 12 escenarios/17 aserciones V8 y CI PASS | PM-06 — AUD-NG-063 / USER | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt — sección C1.474 | 588–619 | C1.473 | 0053c0ecf8e99b0eaa60a594366eb91b3dc8d445; CI 42910740964; CI 42910740844; CI 42910740991 |
+| C1.474 | IMA-EXEC-20261110-1825Z-02 | USER: credenciales API/HMAC en Script Properties, migración legacy, salida enmascarada y redacción del log RBAC; 13 escenarios/26 aserciones V8 y CI PASS | PM-06 — AUD-NG-063 / USER | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt — sección C1.474 | 588–619; addendum R1 622–626 | C1.473 | 0053c0ecf8e99b0eaa60a594366eb91b3dc8d445; 740b681f2b78f714b0b268d0717841232726ba3e; CI 42910740964/42910740844/42910740991; CI 42911571605 |
 | C1.472 | IMA-EXEC-20261110-1825Z-02 | USER: certificado de auditoría con prevalidación de ownership, no divulgación de referencias, omisión de IP y semántica no probatoria; local y CI PASS | PM-01 — TASK-153 / USER / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt — sección C1.472 | 494–544 | C1.471 | 836154141d9098882ca1e7046e9b94b6f89c2498; 0ff23efa8170a502c4044cb03ed4072e91cba196; 2fa2c4068ebf296a2bc050c914165496ee9c1732; 811d7b54a1701e5dcb80828ba807c252228f508c; CI 42907619042; CI 42908073626 |

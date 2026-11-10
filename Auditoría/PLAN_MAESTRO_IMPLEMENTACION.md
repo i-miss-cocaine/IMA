@@ -3342,3 +3342,4 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Contrato local:** 12 escenarios / 17 aserciones V8 PASS; parseo de servicio y test PASS. CI Department Scope `42910740964`, Task-Service `42910740844` e Identity Mapping `42910740991` — SUCCESS.
 - **Estado:** AUD-NG-063 completada en código. BETA-FUNC-028 Pendiente beta para comprobar Script Properties/migración en Apps Script real. Script Properties no equivale a un gestor externo de secretos y siguen aplicando los controles de acceso de editores del proyecto.
 - **Commit de código y pruebas:** `0053c0ecf8e99b0eaa60a594366eb91b3dc8d445`.
+- **Addendum R1:** contrato de redacción del log RBAC para credenciales; 13 escenarios/26 aserciones locales PASS. El primer run 42911446883 falló por comparación de objetos entre contextos VM; corrección del test y repetición Department Scope run 42911571605 SUCCESS. Commit de test: `740b681f2b78f714b0b268d0717841232726ba3e`.

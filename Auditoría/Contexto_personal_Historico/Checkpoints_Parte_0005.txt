@@ -605,9 +605,9 @@ Resolver AUD-NG-063 en USER: evitar que credenciales de proveedores de firma ava
 - La identidad de actualización se toma de _verifiedUserId, no de actualizadoPor enviado por el cliente. El log de denegación RBAC para esta acción registra solo proveedor y banderas de presencia/eliminación, nunca los secretos.
 
 ### Pruebas y evidencia
-- V8 local aislado sobre funciones de la rama: 12 escenarios / 17 aserciones PASS (almacenamiento, respuesta enmascarada, preservación al omitir, migración legacy, precedencia de propiedad actual, eliminación explícita, rechazo de secretos en JSON, URL con credenciales, HMAC débil, lock ocupado, consulta vacía sin hoja ficticia y redacción de endpoint legacy).
+- V8 local aislado sobre funciones de la rama: 13 escenarios / 26 aserciones PASS (almacenamiento, respuesta enmascarada, preservación al omitir, migración legacy, precedencia de propiedad actual, eliminación explícita, rechazo de secretos en JSON, URL con credenciales, HMAC débil, lock ocupado, consulta vacía sin hoja ficticia y redacción de endpoint legacy).
 - Parseo JavaScript local de backend/user-service/Code.gs y tests/security/user-service-signature-ownership.test.js: PASS.
-- GitHub Actions sobre el commit de código/pruebas 0053c0ecf8e99b0eaa60a594366eb91b3dc8d445: Department Scope Contract run 42910740964, Task-Service security run 42910740844 e Identity mapping run 42910740991 — SUCCESS.
+- GitHub Actions sobre el commit de código/pruebas 0053c0ecf8e99b0eaa60a594366eb91b3dc8d445: Department Scope Contract run 42910740964, Task-Service security run 42910740844 e Identity mapping run 42910740991 — SUCCESS; ampliación RBAC log redaction: Department Scope run 42911571605 — SUCCESS.
 - Se amplía BETA-FUNC-028 para validar Script Properties y migración en Apps Script real; queda Pendiente beta. No se accedió a hojas ni propiedades reales.
 
 ### Riesgos y límites
@@ -617,3 +617,10 @@ Resolver AUD-NG-063 en USER: evitar que credenciales de proveedores de firma ava
 
 ### Siguiente iteración
 Continuar con la siguiente ruta independiente de USER/TASK-153. La validación criptográfica específica del proveedor solo se implementará cuando exista contrato oficial y material de confianza verificable; no simular respuestas PSC ni declarar validez documental.
+
+### Addendum C1.474-R1 — redacción de credenciales en logs RBAC
+- Se añadió un contrato conductual de doPost para demostrar que una denegación RBAC de configureAdvancedSignatureProvider registra únicamente proveedor y banderas de presencia/eliminación; nunca apiKey ni hmacSecret.
+- V8 local aislado del doPost: PASS; parseo del archivo de contratos: PASS. Total del subalcance: 13 escenarios / 26 aserciones locales PASS.
+- El primer CI `42911446883` falló únicamente por una comparación deepStrictEqual entre objetos de distintos contextos VM en el nuevo test; se sustituyó por aserciones escalares. No fue un fallo del código productivo.
+- Repetición Department Scope Contract `42911571605` — SUCCESS; USER signature ownership contract y syntax-check PASS.
+- Commit de ampliación de contrato: `740b681f2b78f714b0b268d0717841232726ba3e`.

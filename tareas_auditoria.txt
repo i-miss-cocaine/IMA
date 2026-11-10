@@ -794,3 +794,9 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - Se rechazan campos sensibles en configuracionJSON, endpoints que no sean HTTPS o incluyan credenciales y HMAC secrets menores de 32 caracteres; la lectura no crea hojas ni inventa proveedor.
 - V8 local 12 escenarios/17 aserciones PASS; sintaxis servicio/test PASS; CI 42910740964, 42910740844 y 42910740991 SUCCESS. BETA-FUNC-028 Pendiente beta.
 - AUD-NG-063 completada en código; riesgo residual: permisos de editores Apps Script sobre Script Properties.
+
+
+[2026-11-10] C1.474-R1 — prueba de redacción del log RBAC para credenciales
+- Se añade contrato conductual de doPost: una denegación RBAC de configureAdvancedSignatureProvider registra solo proveedor y banderas de presencia/eliminación, nunca apiKey/hmacSecret.
+- V8 local PASS; parseo PASS. El primer run 42911446883 falló por deepStrictEqual entre objetos VM; se corrigió el test con aserciones escalares. Repetición Department Scope 42911571605 SUCCESS, incluido USER signature ownership y syntax-check.
+- Commit de test: 740b681f2b78f714b0b268d0717841232726ba3e. Total C1.474: 13 escenarios/26 aserciones locales PASS.

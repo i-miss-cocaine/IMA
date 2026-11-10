@@ -1116,3 +1116,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - La consulta de configuración es de solo lectura y no inventa un proveedor PSC por defecto. Endpoints legacy con credenciales se redaccionan.
 - V8 local 12 escenarios/17 aserciones PASS; parseo de servicio/test PASS. CI 42910740964, 42910740844 y 42910740991 SUCCESS.
 - BETA-FUNC-028 Pendiente beta; no se accedió a Script Properties reales. Commit de código/pruebas: 0053c0ecf8e99b0eaa60a594366eb91b3dc8d445.
+
+
+[2026-11-10] C1.474-R1 — prueba de redacción del log RBAC para credenciales
+- Se añade contrato conductual de doPost: una denegación RBAC de configureAdvancedSignatureProvider registra solo proveedor y banderas de presencia/eliminación, nunca apiKey/hmacSecret.
+- V8 local PASS; parseo PASS. El primer run 42911446883 falló por deepStrictEqual entre objetos VM; se corrigió el test con aserciones escalares. Repetición Department Scope 42911571605 SUCCESS, incluido USER signature ownership y syntax-check.
+- Commit de test: 740b681f2b78f714b0b268d0717841232726ba3e. Total C1.474: 13 escenarios/26 aserciones locales PASS.

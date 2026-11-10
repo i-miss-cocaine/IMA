@@ -1365,3 +1365,9 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - Contrato V8 local: 12 escenarios/17 aserciones PASS; parseo PASS. CI Department Scope 42910740964, Task-Service 42910740844 e Identity Mapping 42910740991 — SUCCESS.
 - Riesgo residual: Script Properties sigue accesible a editores autorizados del proyecto y no sustituye un gestor externo de secretos. BETA-FUNC-028 Pendiente beta.
 - AUD-NG-063 completada en código; TASK-153/AUD-NG-386 siguen abiertos por otras rutas y validación PSC específica.
+
+
+[2026-11-10] C1.474-R1 — prueba de redacción del log RBAC para credenciales
+- Se añade contrato conductual de doPost: una denegación RBAC de configureAdvancedSignatureProvider registra solo proveedor y banderas de presencia/eliminación, nunca apiKey/hmacSecret.
+- V8 local PASS; parseo PASS. El primer run 42911446883 falló por deepStrictEqual entre objetos VM; se corrigió el test con aserciones escalares. Repetición Department Scope 42911571605 SUCCESS, incluido USER signature ownership y syntax-check.
+- Commit de test: 740b681f2b78f714b0b268d0717841232726ba3e. Total C1.474: 13 escenarios/26 aserciones locales PASS.
