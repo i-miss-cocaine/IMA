@@ -2379,3 +2379,12 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - **Criterios todavía pendientes:** propiedad departamental y migración de datos; referencias compartidas con revocación; operaciones granulares; filtros de búsqueda/importación; política configurable; pruebas integrales remotas.
 - **Siguiente acción:** mantener TASK-153 como tarea activa y resolver primero la propiedad documental y las rutas de carga que aún exponen enlaces públicos.
 
+## 10.71 TASK-153 — control de comprobantes de pago — C1.390–C1.391
+
+- **Estado:** En ejecución; no cierra TASK-153.
+- uploadPaymentVoucher valida sesión firmada y propiedad del usuario destino: estudiante propio, tutor con relación activa o personal con ámbito departamental/institucional. Nuevas cargas privadas.
+- getPaymentVouchers filtra por usuario/relación/ámbito; reviewPaymentVoucher comprueba identidad, rol y propiedad antes de mutar.
+- validateRolePermission exige contexto de ámbito para las acciones administrativas de comprobantes y documentos laborales; self-service pasa a validación de recurso en el endpoint.
+- **CI:** identity mapping 42738762937 success; department scope 42738862173 success.
+- **Brechas:** expediente estudiantil sin DepartamentoID; no hay preview/stream seguro para archivos privados; permisos de archivos antiguos pendientes de revocación; siguen pendientes estructuras institucionales/firmas, referencias compartidas, operaciones granulares, búsquedas/importaciones y política configurable.
+

@@ -609,3 +609,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - CI final: identity mapping 42737873813 success; department scope 42737873883 success; task-service 42737665503 success. La primera ejecución C1.386 falló por sintaxis y fue corregida en C1.387.
 - TASK-153 continúa En ejecución: falta propiedad departamental en expedientes/documentos estudiantiles, estructuras institucionales/firmas, referencias compartidas, operaciones granulares y filtros/importaciones.
 
+## C1.390–C1.391 — IMA-EXEC-20261110-0153Z-01
+- Accounting: comprobantes de pago ahora verifican identidad firmada y propietario (estudiante, tutor vinculado o personal con ámbito autorizado).
+- getPaymentVouchers filtra por propietario/ámbito; reviewPaymentVoucher exige permiso del propietario y actor firmado.
+- Se elimina el enlace público para nuevas cargas; los archivos quedan privados.
+- CI: identity mapping 42738762937 success; department scope 42738862173 success. La primera ejecución de la suite de ámbito falló por argumento extra en el test y se corrigió antes del run aprobado.
+- TASK-153 sigue En ejecución; quedan propiedad departamental de expedientes estudiantiles, preview seguro de archivos privados, limpieza de archivos históricos, referencias compartidas y operaciones granulares.
+

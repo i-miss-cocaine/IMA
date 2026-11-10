@@ -736,7 +736,7 @@
   - [ ] Las operaciones de descarga, firma y exportación respetan el ámbito departamental asignado.
   - [ ] Los roles institucionales con acceso global funcionan conforme a sus permisos explícitos sin falsos bloqueos.
 - **Dependencias:** Sistema de usuarios, departamentos, roles y estructura de propiedad documental.
-- **Estado:** [ ] En ejecución (C1.388; controles locales aprobados, criterios globales pendientes).
+- **Estado:** [ ] En ejecución (C1.391; controles locales aprobados, criterios globales pendientes).
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7086-7126; clave TASK-169; asignación única: Dirección -->
 
@@ -744,6 +744,8 @@
 
 - **Avance C1.386–C1.388:** Academic aplica identidad firmada y control de ámbito a validateAcademicResponsibilityAndScopeAccess, expedientes, documentos, reportes y mutaciones; estudiante y tutor quedan limitados a sus relaciones verificadas. Accounting filtra DocumentosLaborales por departamento, exige ámbito para las acciones de documentos y crea nuevas cargas privadas. CI local final: 42737873813, 42737873883 y 42737665503 — success.
 - **Limitaciones C1.388:** los esquemas actuales de ExpedientesEstudiantes y DocumentosEstudiante carecen de DepartamentoID; el acceso departamental falla cerrado hasta incorporar/migrar esa propiedad. ExpedientesInstitucionales y SolicitudesFirmas no se encontraron; CatalogoDepartamentos tampoco, aunque existe DepartamentosAcademicos. uploadPaymentVoucher conserva enlace público y payload.userId; archivos laborales antiguos requieren revisión de permisos. Referencias compartidas, operaciones granulares y filtros/importaciones siguen pendientes.
+- **Avance C1.390–C1.391:** Accounting protege uploadPaymentVoucher, getPaymentVouchers y reviewPaymentVoucher con identidad firmada y propietario/ámbito; estudiantes solo gestionan sus comprobantes, tutores requieren relación activa y personal requiere ámbito. Los nuevos archivos se guardan privados. CI identity mapping 42738762937 y Department Scope 42738862173: success.
+- **Limitación C1.391:** los comprobantes privados todavía no tienen endpoint de preview/stream autorizado; los archivos históricos pueden conservar enlaces públicos. El DepartamentoID sigue ausente en ExpedientesEstudiantes/DocumentosEstudiante; TASK-153 no se cierra.
 ---
 
 <!-- ID: AUD-NG-164 | Fuentes: Pendientes.md -->

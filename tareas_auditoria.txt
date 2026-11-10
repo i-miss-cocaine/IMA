@@ -670,3 +670,10 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - Brechas abiertas: propiedad departamental ausente en expedientes/documentos estudiantiles; estructuras institucionales y de firma no encontradas; permisos de archivos laborales preexistentes; uploadPaymentVoucher aún público; referencias compartidas y operaciones granulares pendientes.
 - No se cierra TASK-153 ni se crea un nuevo ID F41-08/E2E-41-09.
 
+### TASK-153 — seguimiento C1.390–C1.391
+- uploadPaymentVoucher ahora valida sesión y propietario; getPaymentVouchers filtra por propietario y ámbito; reviewPaymentVoucher valida actor y propietario antes de revisar.
+- Nuevas cargas de comprobantes se guardan privadas; tutor solo accede con relación activa y portal habilitado.
+- Identity mapping 42738762937 success; Department Scope 42738862173 success. La primera ejecución de Department Scope C1.390 falló por la firma de llamada en el test y fue corregida en C1.391.
+- Sigue pendiente el preview seguro de archivos privados, la limpieza de enlaces públicos históricos, propiedad departamental de expedientes estudiantiles, referencias compartidas y operaciones granulares.
+- TASK-153 permanece En ejecución; no se crea un nuevo ID F41-08/E2E-41-09.
+

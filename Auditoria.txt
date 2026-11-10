@@ -790,3 +790,10 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - **Pendiente funcional:** referencias compartidas revocables; descarga/firma/compartir/exportar/eliminar/restaurar; filtros de búsqueda/importación; parametrización de política estricta.
 - Se reutilizan F41-08/E2E-41-09; no se crea ID duplicado. TASK-153 permanece En ejecución.
 
+### Seguimiento F41-08 / E2E-41-09 — comprobantes de pago — C1.390–C1.391
+- **Corrección:** uploadPaymentVoucher verifica identidad firmada y propiedad del usuario objetivo; tutor requiere relación activa y acceso de portal; personal requiere alcance departamental/institucional. Nuevos archivos privados.
+- **Lectura/revisión:** getPaymentVouchers filtra por propietario y ámbito; reviewPaymentVoucher exige actor firmado y autorización sobre el propietario antes de cambiar estado.
+- **CI:** identity mapping run 42738762937 success; department scope run 42738862173 success. La primera suite C1.390 falló por una llamada de test con parámetro adicional; corregida y aprobada en C1.391.
+- **Límites:** expedientes/documentos estudiantiles no tienen DepartamentoID; no existe aún endpoint de preview/stream autorizado para comprobantes privados; comprobantes históricos y documentos laborales anteriores pueden conservar permisos públicos. TASK-153 continúa En ejecución.
+- Se mantiene F41-08/E2E-41-09; no se crea ID de auditoría duplicado.
+

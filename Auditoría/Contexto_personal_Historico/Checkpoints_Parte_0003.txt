@@ -1720,3 +1720,48 @@ Commit de cierre: este commit; SHA se confirmará externamente tras publicación
 - **HEAD C1.388 verificado:** 03471a1e36bdfccc29668103d1d4426e4353018a.
 - **Siguiente publicación:** actualización documental/checkpoint C1.388, sin modificar la rama protegida.
 ===============================================================================
+
+===============================================================================
+## C1.391 — 2026-11-10 — IMA-EXEC-20261110-0153Z-01
+
+- **Baseline válido:** C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a.
+- **Checkpoint previo:** C1.388, documentado en C1.389.
+- **Rama:** NG_beta_0.0.0.1_work. **Rama protegida:** NG_beta_0.0.0.1 — SHA 44d9891132332e692dbe2ba8602b41f50a508a59, sin modificaciones.
+- **Commits:** C1.390 26a97d3a752233b9468bdc1f068edfe18cf5e7cf; C1.391 2a5f892ed024e0291bf89ec116df2ec43851efc4 (HEAD verificado).
+- **Tarea activa:** TASK-153 — PM-01 / P0 / orden local 1. Sigue En ejecución; no se cierra ningún criterio global.
+- **Auditoría única:** F41-08 y E2E-41-09 del informe FASE 41 existente; sin ID duplicado.
+
+### Incremento C1.390–C1.391 — comprobantes de pago
+
+- Se añade resolución de persona y expediente del estudiante desde Usuarios y ExpedientesEstudiantes.
+- uploadPaymentVoucher exige sesión firmada y verifica estudiante propio, tutor con relación activa y acceso de portal, o personal con ámbito departamental/institucional autorizado.
+- Los archivos nuevos de comprobantes se configuran como privados; se elimina ANYONE_WITH_LINK.
+- getPaymentVouchers filtra por propietario y ámbito; el selector userId del cliente no puede cambiar la identidad de un estudiante autenticado.
+- reviewPaymentVoucher exige actor firmado, rechaza revisión por estudiante/tutor y comprueba el ámbito del propietario antes de mutar estado o registrar el pago.
+- validateRolePermission incorpora prevalidación de ámbito para las acciones de comprobantes y documentos laborales.
+- Se amplía el contrato Accounting con pruebas de estudiante propio, IDOR, tutor vinculado/no vinculado, departamento, alcance institucional, revisión y privacidad del archivo.
+
+### CI
+
+- **Identity mapping and transport security contracts:** run 42738762937, success, HEAD C1.390.
+- **Department Scope Contract:** run 42738862173, success, HEAD C1.391.
+- **Task-Service security local contracts:** run 42737665503, success, HEAD C1.387; no se modificó TASK-Service en C1.390–C1.391.
+- La primera ejecución Department Scope de C1.390 falló porque el test pasó un argumento Spreadsheet adicional al helper; se corrigió en C1.391. La ejecución aprobada es 42738862173.
+- CI local Node/VM; no se ejecutó integración real Apps Script/Sheets/Drive.
+
+### Límites y pendientes
+
+1. ExpedientesEstudiantes y DocumentosEstudiante siguen sin DepartamentoID propietario. Personal departamental no obtiene acceso a esos registros cuando el propietario no puede resolverse; el backend falla cerrado. Falta ampliar esquema, asignar departamento desde fuente autoritativa y migrar datos existentes.
+2. Los nuevos comprobantes se guardan privados, pero todavía no existe un endpoint de streaming/preview autorizado para esos archivos; el URL devuelto puede no ser accesible directamente al usuario final. Los comprobantes preexistentes pueden seguir siendo públicos y requieren limpieza/revocación.
+3. DocumentosLaborales preexistentes también requieren revisión de permisos anteriores; los nuevos uploads son privados.
+4. ExpedientesInstitucionales y SolicitudesFirmas no fueron encontrados/implementados; CatalogoDepartamentos tampoco, aunque existe DepartamentosAcademicos.
+5. validateEvidenceFileAndPermissions falla cerrado para evidencia no vinculada a DocumentosEstudiante; faltan relaciones de propiedad para otros tipos de evidencia.
+6. Continúan pendientes las referencias compartidas con vigencia/revocación, operaciones granulares de descarga/firma/compartir/exportar/eliminar/restaurar, filtros de búsqueda/importación y POLITICA_ESTRICTA_AISLAMIENTO_DEPARTAMENTAL.
+7. BETA-FUNC-008 sigue pendiente y no bloqueante por §21.5.
+
+### Dictamen y siguiente paso
+
+- TASK-153 permanece En ejecución. No se marcan completos los criterios de aceptación globales.
+- Siguiente trabajo: propiedad departamental y migración de expedientes/documentos estudiantiles; servicio de lectura/preview autorizado para archivos privados; revocación de enlaces públicos históricos; después estructuras institucionales/firmas, referencias compartidas y operaciones granulares.
+- **HEAD C1.391 verificado:** 2a5f892ed024e0291bf89ec116df2ec43851efc4.
+===============================================================================
