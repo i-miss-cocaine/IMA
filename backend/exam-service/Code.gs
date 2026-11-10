@@ -73,7 +73,8 @@ function doOptions() {
 }
 
 const PUBLIC_ACTIONS = [
-  "getStudentExams", "getAllExams", "getEvaluationCategories", "getRubrics"
+  // Solo metadatos no sensibles pueden consultarse sin sesión.
+  "getEvaluationCategories", "getRubrics"
 ];
 
 const ROLE_PERMISSIONS = {

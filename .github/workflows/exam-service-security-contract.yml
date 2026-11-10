@@ -1,0 +1,23 @@
+name: Exam-Service security local contracts
+on:
+  push:
+    branches: [NG_beta_0.0.0.1_work]
+    paths:
+      - 'backend/exam-service/Code.gs'
+      - 'tests/security/exam-service-security-contract.test.js'
+      - '.github/workflows/exam-service-security-contract.yml'
+  pull_request:
+    branches: [NG_beta_0.0.0.1_work]
+    paths:
+      - 'backend/exam-service/Code.gs'
+      - 'tests/security/exam-service-security-contract.test.js'
+      - '.github/workflows/exam-service-security-contract.yml'
+jobs:
+  exam-security-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node tests/security/exam-service-security-contract.test.js
