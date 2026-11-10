@@ -925,3 +925,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Commits: c0bbf6bb26ad1459da40b7759b52b6f61f328b3f (código) y 798553ae147818659d176864b299c608808f9e5d (contrato).
 - Revisión estática y conteo de declaraciones: PASS. Pruebas locales: NOT RUN. CI: sin check visible; no se declara PASS.
 - AUD-NG-386 permanece abierto; TASK-153 En ejecución. BETA-FUNC-022 sigue Pendiente beta.
+
+
+[2026-11-10] C1.443 — IMA-EXEC-20261110-TASK153-01 — TASK-153 / TASK-Service ownership y aplicabilidad DEVELOPER
+- Se protege getStudentTasks por ResourceOwnership del estudiante/tutor y por intersección de ámbito cuando consulta personal.
+- Las lecturas directas de entregas verifican propiedad; getSubmissionDocumentPreviewUrl delega al guard compartido READ_CONTENT y rechaza enlaces ambiguos.
+- Task-Service CI run 42874101082 PASS; EXAM CI run 42872609050 PASS (corrección de evidencia C1.442). Pruebas locales en este entorno NOT RUN.
+- DEVELOPER no requiere ABAC departamental como plano de control; su fallback authRole permanece en AUD-NG-082/TASK-645, P0 Pendiente.
+- BETA-FUNC-021 ampliada y pendiente; TASK-153 sigue En ejecución.

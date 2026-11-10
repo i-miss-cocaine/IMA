@@ -1382,3 +1382,35 @@ Checkpoint anterior: C1.441.
 - Siguiente acción: ejecutar ambos contratos localmente, corregir fallos si aparecen y continuar la verificación de autorización por mutación y del ciclo EXAM completo.
 - HEAD de cierre documental: se verificará después de publicar los registros.
 ===============================================================================
+
+
+## CHECKPOINT C1.443 — IMA-EXEC-20261110-TASK153-01
+
+**Repositorio:** i-miss-cocaine/IMA  
+**Rama autorizada:** NG_beta_0.0.0.1_work  
+**Rama base:** NG_beta_0.0.0.1  
+**HEAD de código/pruebas:** bf0c17fb261e59d8c5c68293c196ac6ef90a30c7  
+**HEAD previo al incremento TASK:** e0bae1d397e5fb8822a265e9bfe3da85e4ab14f9  
+**Base verificada:** 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios).
+
+### Trabajo realizado
+- TASK Service: `getStudentTasks` ahora exige ResourceOwnership en el ámbito del estudiante vinculado. En lecturas solicitadas por Profesor/Administración se valida además el ámbito propio del personal, evitando que un docente consulte tareas de un alumno de otro departamento por coincidencia de grado/sección.
+- `assertTaskServiceStudentCanAccessTask` comprueba propiedad y ámbito antes de acceso directo a la entrega. `getSubmissionDocumentPreviewUrl` exige una relación única archivo-entrega y delega autorización `READ_CONTENT` al guard común de submission.
+- Contratos ampliados para estudiante, tutor, docente y personal; pruebas de cruce departamental y lectura directa de archivos.
+- DEVELOPER auditado: plano de control global sin modelo de propiedad departamental. No se aplica ABAC departamental a su catálogo global. El fallback `payload.authRole` sin token permanece en el hallazgo existente AUD-NG-082/TASK-645 (AUD-NG-289), P0 Pendiente; no se duplica ni se corrige dentro de TASK-153.
+
+### Verificaciones
+- Task-Service CI run 42874101082: **PASS**. Pasos `task-service-security-contract.test.js` y `task-service-resource-ownership.test.js` completados correctamente en el runner.
+- Task-Service CI run 42873812361: **PASS**. Run 42873964908 falló por aserción obsoleta de preview; el contrato se actualizó para validar el guard compartido y el run 42874101082 pasó.
+- Task-Service run 42873635617 falló por helper ausente en fixture; se añadió el helper y run 42873667616: **PASS**.
+- EXAM CI run 42872609050: **PASS** para HEAD 798553ae147818659d176864b299c608808f9e5d; corrige el estado no visible reportado en C1.442.
+- **Pruebas locales en este entorno:** NOT RUN. El intento de checkout local falló por resolución de red; no se presenta CI como ejecución local. Sin pruebas de despliegue Apps Script/Sheets/Drive.
+
+### Registros y beta
+- BETA-FUNC-021 ampliada para listados de tareas, intersección de ámbitos y lectura de archivos; Pendiente beta. BETA-FUNC-022 Pendiente beta.
+- TASK-153 permanece En ejecución. AUD-NG-385 y AUD-NG-386 permanecen abiertos; no se declara completado el alcance global.
+- No se modificó la rama base ni otra rama. No se accedió a datos reales.
+
+### Siguiente tarea elegible
+Auditar `AulasVirtuales`, `PublicacionesAnuncios` y `MaterialesEducativos` en los endpoints de lectura/creación/modificación, determinando el propietario departamental del aula y el alcance de contenido General; después continuar referencias compartidas, filtros/importaciones y E2E.
+===============================================================================

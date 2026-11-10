@@ -1079,3 +1079,12 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - **Pruebas locales:** NOT RUN por ausencia de checkout/runtime. **CI:** sin check visible para el commit final; no se declara PASS. Beta BETA-FUNC-022 Pendiente beta.
 - **Estado:** mitigación implementada; AUD-NG-386 abierto y TASK-153 En ejecución hasta ejecución local y revisión de contratos.
 ===============================================================================
+
+
+===============================================================================
+## Seguimiento C1.443 — TASK-153 / TASK Service y DEVELOPER
+- **TASK Service:** se cierra la brecha de ámbito en `getStudentTasks` para estudiantes/tutores y se exige intersección estudiante/personal en consultas staff. La lectura directa de entregas verifica ResourceOwnership; la vista de archivos delega al guard común READ_CONTENT y exige relación única archivo-entrega.
+- **Evidencia CI:** Task-Service run 42874101082 success (contratos security y resource ownership). EXAM run 42872609050 success, corrigiendo el estado no visible consignado en C1.442. Las pruebas locales en este entorno siguen NOT RUN.
+- **DEVELOPER:** no aplica ABAC departamental al plano de control global. El fallback authRole sin token ya está registrado como AUD-NG-082/TASK-645 (AUD-NG-289), P0 Pendiente; no se duplica.
+- **Estado:** TASK-153 En ejecución; AUD-NG-385/386 abiertos; BETA-FUNC-021/022 Pendiente beta. Sin despliegues ni datos reales.
+===============================================================================

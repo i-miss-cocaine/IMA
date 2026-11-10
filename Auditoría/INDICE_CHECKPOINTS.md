@@ -5,11 +5,11 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.442**
-- Última sesión: `IMA-EXEC-20261110-1808Z-01`
+- Último checkpoint: **C1.443**
+- Última sesión: `IMA-EXEC-20261110-TASK153-01`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.442: **123002**
+- Caracteres del archivo activo tras C1.443: **126016**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 - Baseline lógico válido: **C1.316** (`31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`). C1.317–C1.382 se conservan, pero no se aceptan como evidencia de continuidad por corrección expresa del usuario.
@@ -287,3 +287,5 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.441 | IMA-EXEC-20261110-1756Z-01 | EXAM: createExam con ownership departamental y rollback compensatorio; local PASS; CI PASS | PM-01 — TASK-153 / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.441 | 1307–1350 | C1.440 | b497635b5cb6ea742361bbd847571c75a961c1a3 |
 
 | C1.442 | IMA-EXEC-20261110-1808Z-01 | Corrección publicada; pruebas locales NOT RUN; AUD-NG-386 abierto | TASK-153 / PM-01 / P0 — eliminación de overrides legacy en mutaciones EXAM | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.442 | 1344–1385 | C1.441 | 798553ae147818659d176864b299c608808f9e5d + registros C1.442 |
+
+| C1.443 | IMA-EXEC-20261110-TASK153-01 | TASK listados/entregas/archivos con ownership; DEVELOPER sin ABAC departamental; CI TASK/EXAM PASS; local NOT RUN | PM-01 — TASK-153 / AUD-NG-385/386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.443 | 1387–1418 | C1.442 | bf0c17fb261e59d8c5c68293c196ac6ef90a30c7 + registros C1.443 |
