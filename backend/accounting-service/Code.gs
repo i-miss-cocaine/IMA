@@ -283,18 +283,14 @@ function computeHmacSignature(message, secret) {
 }
 
 function getAuthTokenSecret() {
-  const props = PropertiesService.getScriptProperties();
   let secret = "";
   try {
-    secret = props.getProperty("AUTH_TOKEN_SECRET");
-  } catch (e) {}
-  if (!secret) {
-    const rawBytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SPREADSHEET_ID + "_MASTER_AUTH_HMAC_SECRET");
-    const arr = Array.from ? Array.from(rawBytes) : [].slice.call(rawBytes);
-    secret = arr.map(b => ('0' + (b & 0xFF).toString(16)).slice(-2)).join('');
-    try {
-      props.setProperty("AUTH_TOKEN_SECRET", secret);
-    } catch (e) {}
+    secret = String(PropertiesService.getScriptProperties().getProperty("AUTH_TOKEN_SECRET") || "").trim();
+  } catch (error) {
+    throw new Error("AUTH_TOKEN_SECRET_UNAVAILABLE");
+  }
+  if (secret.length < 32) {
+    throw new Error("AUTH_TOKEN_SECRET_NOT_CONFIGURED");
   }
   return secret;
 }

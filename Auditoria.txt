@@ -716,3 +716,12 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - C1.375 security run 42726782516 completed/success.
 - BETA-FUNC-017 Pendiente beta. TASK-636 En ejecución.
 - Checkpoint C1.376: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice fila C1.376.
+
+
+## C1.377 — IMA-EXEC-20261109-1739Z-01 — TASK-636 / PM-01 / AUD-NG-001/002
+- Hallazgo: getAuthTokenSecret derivaba la clave HMAC de un ID de hoja y literal conocido en seis servicios.
+- Se elimina fallback determinista; AUTH_TOKEN_SECRET debe existir como Script Property privada de al menos 32 caracteres.
+- Pruebas locales de configuración/ausencia/secreto débil añadidas; CI pendiente.
+- C1.376 security/backup success; identity mapping falló en TASK-030 con actual ['EXP-02','STU-02'] vs esperado [].
+- BETA-FUNC-018 Pendiente; configuración real no inspeccionada.
+- TASK-636 En ejecución. Checkpoint C1.377: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt.

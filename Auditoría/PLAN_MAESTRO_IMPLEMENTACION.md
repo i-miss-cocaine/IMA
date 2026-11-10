@@ -2284,3 +2284,11 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - Fixtures VM transversales añadidos; CI pendiente.
 - BETA-FUNC-017: login/expiración/revocación real en servicios aislados; Pendiente beta.
 - TASK-636 En ejecución.
+
+
+## 10.61 TASK-636 — C1.377: secreto HMAC privado
+- AUD-NG-001/002: fallback AUTH_TOKEN_SECRET derivado de SPREADSHEET_ID era predecible.
+- Se elimina fallback en USER/ACADEMIC/TASK/ACCOUNTING/EXAM/DEVELOPER; se exige Script Property privada de al menos 32 caracteres.
+- Pruebas locales de secreto configurado/ausente/corto añadidas; CI pendiente.
+- BETA-FUNC-018: provisionar misma clave privada en seis servicios y verificar interoperabilidad; Pendiente beta.
+- TASK-636 En ejecución.

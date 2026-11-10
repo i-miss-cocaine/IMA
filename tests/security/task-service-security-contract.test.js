@@ -444,3 +444,27 @@ for (const [serviceName, sourceText] of [["USER", userSource], ["ACADEMIC", acad
   assert.equal(verifyTokenWithClaims(sourceText, { ...validSessionClaims, exp: tokenNow+90000 }), null, serviceName + " rejects excessive token lifetime");
 }
 console.log("TASK-636 strict session claims local contract: USER/ACADEMIC/TASK reject missing identity, role, session ID, iat, exp, expired, future-issued and overlong sessions.");
+
+// TASK-636 AUD-NG-001/002: HMAC signing keys must never be derived from public spreadsheet IDs.
+
+const hmacSecretServices = [
+  ["USER", userSource],
+  ["ACADEMIC", academicSource],
+  ["TASK", source],
+  ["ACCOUNTING", fs.readFileSync(path.join(root, "backend/accounting-service/Code.gs"), "utf8")],
+  ["EXAM", fs.readFileSync(path.join(root, "backend/exam-service/Code.gs"), "utf8")],
+  ["DEVELOPER", fs.readFileSync(path.join(root, "backend/developer-service/Code.gs"), "utf8")]
+];
+for (const [serviceName, serviceSource] of hmacSecretServices) {
+  const getSecret = extractFunctionFrom(serviceSource, "getAuthTokenSecret");
+  const configuredContext = { PropertiesService: { getScriptProperties: () => ({ getProperty: key => key === "AUTH_TOKEN_SECRET" ? "a".repeat(64) : null }) } };
+  vm.runInNewContext(getSecret + String.fromCharCode(10) + "this.getSecret = getAuthTokenSecret;", configuredContext);
+  assert.equal(configuredContext.getSecret(), "a".repeat(64), serviceName + " returns the provisioned shared secret");
+  const missingContext = { PropertiesService: { getScriptProperties: () => ({ getProperty: () => null }) } };
+  vm.runInNewContext(getSecret + String.fromCharCode(10) + "this.getSecret = getAuthTokenSecret;", missingContext);
+  assert.throws(() => missingContext.getSecret(), /AUTH_TOKEN_SECRET_NOT_CONFIGURED/, serviceName + " fails closed when secret is missing");
+  const shortContext = { PropertiesService: { getScriptProperties: () => ({ getProperty: () => "short" }) } };
+  vm.runInNewContext(getSecret + String.fromCharCode(10) + "this.getSecret = getAuthTokenSecret;", shortContext);
+  assert.throws(() => shortContext.getSecret(), /AUTH_TOKEN_SECRET_NOT_CONFIGURED/, serviceName + " rejects weak secrets");
+}
+console.log("TASK-636 private HMAC secret contract: all six services require a provisioned shared secret of at least 32 characters; deterministic public fallback removed.");

@@ -1303,3 +1303,59 @@ Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt �
 Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.376.
 Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
 ===============================================================================
+
+===============================================================================
+## C1.377 — TASK-636 / AUD-NG-001/002 — secreto HMAC privado sin fallback determinista
+ID: C1.377
+Sesión: IMA-EXEC-20261109-1739Z-01
+Fecha: 2026-11-10
+Checkpoint anterior válido: C1.376
+Baseline lógico: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD físico de partida: 91f7183243edfa2126bf2282159230aa0c830e8b
+Rama: NG_beta_0.0.0.1_work
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+
+### Auditoría
+- Se revisó getAuthTokenSecret en USER, ACADEMIC, TASK, ACCOUNTING, EXAM y DEVELOPER.
+- El fallback calculaba SHA-256 de SPREADSHEET_ID + literal conocido y guardaba el resultado en Script Properties. Como el código y los IDs están en el repositorio, no era una clave secreta frente a quien conozca esos datos.
+- Se conserva la compatibilidad con propiedades existentes, pero un despliegue limpio requiere configuración explícita.
+
+### Implementación
+- Los seis getAuthTokenSecret eliminan la derivación determinista y exigen AUTH_TOKEN_SECRET en Script Properties.
+- La propiedad debe contener al menos 32 caracteres; ausencia, error de lectura o valor débil lanza error fail-closed.
+- Se añade contrato local para los seis servicios: secreto provisionado aceptado; propiedad ausente y secreto corto rechazados.
+- C1.376 ya endureció claims de sesión USER/ACADEMIC/TASK: userId/role/sessionId/iat/exp requeridos, expiración estricta, iat futuro limitado y TTL máximo 24h.
+
+### Archivos modificados
+- backend/user-service/Code.gs
+- backend/academic-service/Code.gs
+- backend/task-service/Code.gs
+- backend/accounting-service/Code.gs
+- backend/exam-service/Code.gs
+- backend/developer-service/Code.gs
+- tests/security/task-service-security-contract.test.js
+- Auditoría/AUDITORIA_TASK-636_C1.305.md
+- pendientes/Otros/Pendientes.md (seguimiento aditivo)
+- beta_test.txt (BETA-FUNC-018)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoria.txt
+- tareas_auditoria.txt
+- changueslogs.txt
+
+### Pruebas y estado
+- C1.376 Task-Service security run 42728633783: completed/success.
+- C1.376 backup/restore run 42728633788: completed/success.
+- Identity mapping run 42728633992: failure en Verify TASK-030 transport access scope; actual ['EXP-02','STU-02'], esperado []; TASK-068 identity mapping success. Incidencia independiente pendiente de investigación.
+- C1.377: contrato local añadido; CI pendiente.
+- BETA-FUNC-018: Pendiente beta; no se consultaron propiedades reales ni despliegues.
+- TASK-636 En ejecución; AUD-NG-001/002 abiertos hasta validar provisionamiento y runtime.
+
+### Siguiente acción exacta
+Consultar CI C1.377. Revisar el contrato de capacidades públicas de admisión ACADEMIC y los permisos de métricas globales; mantener closeAcademicYear bloqueado con BACKUP_REQUIRED hasta certificación aislada de backup/restore/rollback.
+
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.377.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.377.
+Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
+===============================================================================

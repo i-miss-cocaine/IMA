@@ -319,3 +319,15 @@ Endurecer las excepciones públicas de backend/academic-service/Code.gs mediante
 - **CI C1.376:** pendiente tras publicar.
 - **Beta:** BETA-FUNC-017 propone verificación de sesión real con login, expiración, revocación y estado de cuenta en los tres servicios aislados; no se declara ejecutada.
 - **Estado:** AUD-NG-001/002 permanecen en revalidación; TASK-636 En ejecución, no completada.
+
+
+## Revisión focalizada C1.377 — eliminación de clave HMAC derivada de identificador público
+
+- **Hallazgo existente:** AUD-NG-001/002, integridad de sesión HMAC. USER, ACADEMIC, TASK, ACCOUNTING, EXAM y DEVELOPER derivaban `AUTH_TOKEN_SECRET` de SHA-256(`SPREADSHEET_ID + "_MASTER_AUTH_HMAC_SECRET"`) cuando la propiedad no estaba configurada. Los IDs de hoja y el código fuente están en el repositorio; por tanto, el fallback no constituye un secreto privado y permite construir firmas conocidas en entornos sin propiedad provisionada.
+- **Corrección transversal:** los seis servicios dejan de derivar/guardar claves deterministas. `getAuthTokenSecret` exige `AUTH_TOKEN_SECRET` en Script Properties con al menos 32 caracteres; si falta, no puede leerse o es débil, falla con error explícito y no firma ni verifica tokens.
+- **Compatibilidad operativa:** los despliegues existentes que ya persistieron la propiedad conservan su valor; los despliegues nuevos/limpios requieren provisionar el mismo secreto aleatorio compartido en todos los servicios que verifican los mismos tokens. No se inspeccionaron Script Properties de despliegues ni se realizó rotación.
+- **Pruebas locales añadidas:** en los seis servicios se prueba lectura de secreto provisionado, rechazo de propiedad ausente y rechazo de secreto corto. C1.376 ya verifica claims estrictos en USER/ACADEMIC/TASK.
+- **CI C1.376:** Task-Service security run 42728633783 success; backup/restore run 42728633788 success; identity mapping run 42728633992 failure en el paso TASK-030 (actual `['EXP-02','STU-02']`, esperado `[]`), mientras el paso TASK-068 fue success. No corresponde a los archivos de clave HMAC modificados; se conserva como incidencia independiente.
+- **CI C1.377:** pendiente tras publicar.
+- **Beta:** BETA-FUNC-018 requiere confirmar provisionamiento idéntico y privado de Script Properties en los seis despliegues, login y verificación cruzada; Pendiente beta.
+- **Estado:** AUD-NG-001/002 continúan abiertos hasta verificar configuración real y ejecución; TASK-636 En ejecución.

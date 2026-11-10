@@ -540,3 +540,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se agrega contrato VM transversal para escenarios positivos/negativos.
 - CI pendiente; BETA-FUNC-017 registra pruebas reales de ciclo de sesión.
 - Checkpoint C1.376: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice fila C1.376.
+
+
+[2026-11-10] IMA-EXEC-20261109-1739Z-01 — C1.377 / TASK-636 / AUD-NG-001/002
+- Eliminado fallback HMAC determinista basado en SPREADSHEET_ID en seis servicios.
+- AUTH_TOKEN_SECRET debe estar provisionado como Script Property privada de al menos 32 caracteres.
+- Contrato local añadido; CI pendiente; BETA-FUNC-018 para validar configuración cruzada.
+- Checkpoint C1.377: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt.

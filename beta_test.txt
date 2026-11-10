@@ -212,3 +212,12 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Casos:** login y llamada válida; token sin exp/iat/userId/role/sessionId; token expirado; iat futuro; TTL mayor de 24h; sessionId revocado; usuario revocado; cuenta Suspendida/Desactivada.
 - **Resultado esperado:** solo token íntegro, vigente, no revocado y asociado a cuenta Activa permite llamadas protegidas; todos los demás escenarios se deniegan en los tres servicios.
 - **Estado:** Pendiente beta. No se declara ejecutada ni bloquea la implementación local.
+
+
+## BETA-FUNC-018 — TASK-636 / AUD-NG-001/002 — provisionamiento de secreto HMAC compartido
+- **Objetivo:** confirmar que los seis microservicios no usan fallback público y comparten el mismo secreto privado de autenticación.
+- **Servicios:** USER, ACADEMIC, TASK, ACCOUNTING, EXAM y DEVELOPER.
+- **Precondiciones:** despliegues beta aislados y acceso administrativo seguro a Script Properties; no registrar ni exportar el secreto en logs, hojas o reportes.
+- **Pasos:** configurar el mismo secreto aleatorio de al menos 32 caracteres en AUTH_TOKEN_SECRET de cada servicio; emitir sesión desde USER; verificarla en ACADEMIC/TASK y servicios que la aceptan; retirar temporalmente propiedad en una instancia de prueba y comprobar denegación; restaurar configuración y repetir.
+- **Resultado esperado:** solo secreto privado provisionado habilita HMAC; ausencia/valor débil falla cerrado; firmas son interoperables entre servicios configurados con el mismo secreto.
+- **Estado:** Pendiente beta. No se consultaron Script Properties ni se ejecutaron despliegues.

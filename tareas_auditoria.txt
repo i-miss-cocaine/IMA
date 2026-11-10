@@ -588,3 +588,12 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - Fixtures VM añadidos para claims válidos, campos faltantes, expiración, emisión futura y TTL excesivo.
 - CI C1.376 pendiente; BETA-FUNC-017 Pendiente beta.
 ===============================================================================
+
+
+===============================================================================
+## Seguimiento TASK-636 — C1.377 / AUD-NG-001/002
+- Se elimina el fallback HMAC derivado del ID público en USER, ACADEMIC, TASK, ACCOUNTING, EXAM y DEVELOPER.
+- Los seis servicios requieren AUTH_TOKEN_SECRET privado de al menos 32 caracteres; despliegues nuevos deben provisionar el mismo secreto compartido.
+- Pruebas locales para propiedad configurada/ausente/débil; CI C1.377 pendiente.
+- BETA-FUNC-018 Pendiente beta; no se inspeccionó Script Properties.
+===============================================================================
