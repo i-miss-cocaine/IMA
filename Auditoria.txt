@@ -1264,3 +1264,15 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - TASK-153 sigue En ejecución; AUD-NG-386 abierto por el resto de rutas ACADEMIC.
 - Commits: `cc60ed6e50cf411ac65490ef8cca6ca9542eafa0`; `89ca3edfc6cff41105c03fccc2d6a83188b2026c`; `25bea9e9ed69460c1b2bf21ab2bf951f4a837ba5`.
 ===============================================================================
+
+===============================================================================
+## C1.459 — reapertura de solicitudes de admisión con lock e historial canónico
+- `reopenAdmissionRequest` exige identidad/ámbito ACADEMIC verificado y rol gestor; revalida ownership bajo ScriptLock antes de leer la solicitud.
+- Solo permite `Reabierta`; rechaza solicitudes ya reabiertas, convertidas o con ExpedienteID. Estado, canal preservado y observación se escriben en un único rango contiguo.
+- El historial usa el esquema canónico de nueve columnas y valida encabezados. Si no puede persistirse, retorna `historyRecorded:false` y registra `ADMISSION_REOPEN_HISTORY_FAILED`.
+- Contrato local cubre reapertura válida, doble reapertura, conversión previa, estado manipulado, rol no gestor, lock ocupado, propiedad bajo lock, historial correcto y esquema inválido.
+- GitHub Actions run `42894133956` SUCCESS: suite ACADEMIC, Department Scope, ACCOUNTING, ResourceOwnership ABAC y voucher client PASS; sintaxis Apps Script/cliente PASS.
+- Sin despliegue ni datos reales; las pruebas dependientes de servicios desplegados quedan para beta.
+- TASK-153 permanece En ejecución; AUD-NG-386 abierto por otras rutas institucionales y de admisión.
+- Commits: `dfab2d1486dd7599e9ccadb890ff71003632c669`; `5ae37e4a1aea2b779df2d14b42274719c9b2eccc`; `94ec9a3294ff276bfce88941659a1c3f52a030e2`.
+===============================================================================
