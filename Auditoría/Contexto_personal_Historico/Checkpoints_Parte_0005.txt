@@ -781,3 +781,10 @@ Cerrar la carrera de filas obsoletas en updateExam, updateExamStatus y deleteExa
 - Rama base NG_beta_0.0.0.1 permanece sin cambios.
 - Siguiente subalcance elegible: inspeccionar manageQuestionBank y sus operaciones de alta/edición/baja para validar autorización, ownership y consistencia de escritura; tratarlo como tarea separada.
 ===============================================================================
+
+===============================================================================
+### Addendum C1.478-R1 — verificación de publicación
+- HEAD tras publicar código, pruebas y registros: 450e3dec6bf8ada3c08debc6b16a93b73989bfaa.
+- Rama base NG_beta_0.0.0.1 verificada sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Historial de NG_beta_0.0.0.1_work actualizado mediante compare-and-swap fast-forward; no se usó force push.
+===============================================================================
