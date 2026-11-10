@@ -106,3 +106,20 @@ I. **AUDITORÍA ÚNICA Y CONTROL DE RECURSIVIDAD (OBLIGATORIO):** antes de inici
 **Ubicación exacta:** `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt`, parte 0004, sección C1.408; rango de líneas incluido en el índice. Anterior C1.407; índice central `Auditoría/INDICE_CHECKPOINTS.md`.  
 **Commit de cierre:** este commit consolidado; SHA a verificar tras publicación.  
 ===============================================================================
+
+
+
+## C1.409 — corrección focalizada de ubicación del checkpoint
+**Sesión:** IMA-EXEC-20261110-1136Z-01  
+**Fecha:** 2026-11-10 11:36Z  
+**Checkpoint anterior:** C1.408  
+**HEAD de partida:** b6cb9d5e897418017aacbf97c3aaa70d52a2296d  
+**Rama:** `NG_beta_0.0.0.1_work`  
+**Rama base:** `NG_beta_0.0.0.1` @ 44d9891132332e692dbe2ba8602b41f50a508a59
+
+- Verificación documental focalizada: el checkpoint C1.408 comienza en la línea 58 y termina en la línea 109 de este archivo. La fila C1.408 del índice había consignado erróneamente el final como 108; se corrige a 109.
+- No se modifica el cuerpo de C1.408, el contenido normativo A–I, requisitos originales, código, datos, configuración ni backlogs.
+- No se repite ninguna auditoría funcional ni se crea informe/tarea nueva. TASK-153/T153-S01 sigue Bloqueada; el ciclo F29-TASK05↔F29-TASK17 permanece remitido a PM-00.
+- Pruebas de producto: ninguna. Verificación ejecutada: lectura de blob, conteo de líneas y cotejo de rango con la sección C1.408.
+- **Ubicación exacta:** `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt`, sección C1.409, rango a registrar en el índice central `Auditoría/INDICE_CHECKPOINTS.md`. Anterior C1.408.
+===============================================================================

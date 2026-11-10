@@ -708,3 +708,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - TASK-153/T153-S01 sigue Bloqueada por decisión institucional pendiente; TASK-696 permanece Bloqueada. No se selecciona tarea sustituta hasta resolver el ciclo y reejecutar §6.1.
 - La parte 0003 alcanzó 180.000 caracteres y queda cerrada; se inicia Parte_0004 con bloque normativo A–I íntegro.
 - Checkpoint C1.408: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt`, líneas 58–108; índice `Auditoría/INDICE_CHECKPOINTS.md`, fila C1.408.
+
+
+[2026-11-10] C1.409 — IMA-EXEC-20261110-1136Z-01 — corrección documental focalizada
+- Se rectifica la ubicación exacta de C1.408 en el índice: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt, líneas 58–109.
+- Sin cambios funcionales, sin reauditoría y sin pruebas de producto. TASK-153/T153-S01 y triage F29 conservan sus estados.
+- Checkpoint C1.409: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt, líneas 113–126; índice Auditoría/INDICE_CHECKPOINTS.md, fila C1.409.

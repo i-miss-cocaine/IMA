@@ -921,3 +921,11 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - No se ejecutaron pruebas de producto ni se modificó código/datos/configuración.
 - Checkpoint C1.408; sesión IMA-EXEC-20261110-1132Z-01; ubicación `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt`, sección C1.408, líneas 58–108; índice `Auditoría/INDICE_CHECKPOINTS.md`, fila C1.408.
 ===============================================================================
+
+
+===============================================================================
+## C1.409 — IMA-EXEC-20261110-1136Z-01 — corrección documental de ubicación
+- Se corrige en el índice el rango exacto de C1.408: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt, líneas 58–109; el rango anterior terminaba una línea antes.
+- Sin cambios de código, datos, requisitos ni estado de tareas; sin reauditoría funcional y sin pruebas de producto.
+- Checkpoint C1.409; ubicación Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt, sección C1.409, líneas 113–126; índice Auditoría/INDICE_CHECKPOINTS.md, fila C1.409.
+===============================================================================
