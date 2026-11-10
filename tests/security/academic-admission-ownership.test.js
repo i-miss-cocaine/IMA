@@ -9,7 +9,8 @@ function extractFunction(name) {
   assert.notEqual(start, -1, "missing function " + name);
   const next = source.indexOf("\nfunction ", start + 10);
   const block = source.slice(start, next === -1 ? source.length : next);
-  const close = block.indexOf("\n}\n");
+  let close = block.indexOf("\n}\n");
+  if (close === -1) close = block.lastIndexOf("\n}");
   assert.notEqual(close, -1, "unterminated function " + name);
   return block.slice(0, close + 2);
 }
