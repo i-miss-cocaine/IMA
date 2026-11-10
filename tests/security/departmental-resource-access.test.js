@@ -77,7 +77,8 @@ const context={
   SpreadsheetApp:{openById:()=>ss},
   verifySessionToken:token=>claims[token]||null,
   getOrCreateSheet:(spreadsheet,name)=>spreadsheet.getSheetByName(name)||makeSheet([[]]),
-  DriveApp:{getFileById:id=>({isTrashed:()=>false,getName:()=>id,getMimeType:()=>"application/pdf",getDownloadUrl:()=>"download:"+id,getSize:()=>1024})}
+  DriveApp:{getFileById:id=>({isTrashed:()=>false,getName:()=>id,getMimeType:()=>"application/pdf",getDownloadUrl:()=>"download:"+id,getSize:()=>1024})},
+  logStructuredEvent:()=>{}
 };
 vm.runInNewContext(code + "\nthis.assertStudentExpedienteScopeAccess_=assertStudentExpedienteScopeAccess_;this.assertStudentDocumentScopeAccess_=assertStudentDocumentScopeAccess_;this.assertStudentRequestScopeAccess_=assertStudentRequestScopeAccess_;this.validateAcademicResponsibilityAndScopeAccess=validateAcademicResponsibilityAndScopeAccess;this.getStudentFile=getStudentFile;this.getStudentDocuments=getStudentDocuments;this.getSecureDocumentStream=getSecureDocumentStream;this.validateEvidenceFileAndPermissions=validateEvidenceFileAndPermissions;this.assertRecordOwnership=assertRecordOwnership;",context);
 const actor=token=>({sessionToken:token});

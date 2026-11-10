@@ -10144,9 +10144,9 @@ function getStudentTimeline(payload) {
   const exp = fileRes.studentFile;
   const targetExpId = String(expedienteId || (exp && exp.expedienteId) || "").trim();
   const events = [];
-  const actor = getVerifiedAcademicIdentity_(payload);
-  if (!actor.authorized) return { status: "error", code: actor.code, message: "Acceso denegado." };
-  const userRole = actor.role;
+  const verifiedActor = getVerifiedAcademicIdentity_(payload);
+  if (!verifiedActor.authorized) return { status: "error", code: verifiedActor.code, message: "Acceso denegado." };
+  const userRole = verifiedActor.role;
   const isPrivileged = ["Administrador", "Director", "Secretaría", "Secretaria", "Subdirector", "Desarrollador"].indexOf(userRole) !== -1;
 
   if (exp.fechaCreacion) {
