@@ -1576,3 +1576,49 @@ HEAD de código/pruebas/beta antes de documentación: 589873ae6659c735c4a9ce8fd7
 - TASK-153 permanece En ejecución; AUD-NG-386 abierto.
 - Siguiente foco técnico: convertAdmissionToStudent debe validar la solicitud y registrar ownership del expediente de forma atómica; revisar getAdmissionEvaluations/getAdmissionInterviews y otros endpoints de admisión. Continuar después con referencias compartidas y filtros/importaciones.
 ===============================================================================
+
+
+===============================================================================
+## CHECKPOINT C1.448 — ACADEMIC: ownership previo al reuso de expediente en conversión de admisiones
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.447.
+
+### Trabajo de esta iteración (un solo subhallazgo)
+- `convertAdmissionToStudent` encontraba expedientes coincidentes por identificación sin verificar antes el ownership del expediente.
+- Antes de reutilizar el expediente o resolver PersonaID/cuenta estudiantil, ahora exige `assertResourceOwnershipForScope_` sobre `EXPEDIENTE_ESTUDIANTE` con operación UPDATE y departamento propietario idéntico al departamento destino.
+- Si el expediente no tiene ownership activo, es ambiguo o pertenece a otro departamento, se deniega con `RESOURCE_NOT_FOUND`. No se resuelve la identidad vinculada ni se registra ownership nuevo para el expediente coincidente.
+- Se agregó prueba de regresión sintética D1→expediente D2 y se amplió BETA-FUNC-024 con el mismo escenario para validación desplegada.
+
+### Archivos
+- backend/academic-service/Code.gs
+- tests/security/academic-student-expediente-ownership.test.js
+- beta_test.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Commits
+- `55e6c109f7870cb02358c8c20e2783140f42229e` — guard de ownership previo al reuso.
+- `4a3df02770c3e96d140ae8b5c067d5ef23c3249a` — prueba de regresión.
+- `e8e15cee160b584da43ecc22d38feff7596c72d5` — corrección del harness de prueba.
+- `9100ba12deef98e3bc05be1a1e034f0fb85542e1` — caso beta.
+- `b3f7cf57e44f5adb01876ac5d9e14d5aa97c65b5` — registro en Plan Maestro.
+- `ca1b230fa8ff1614a55348e4fece00255e973535` — registro de auditoría.
+
+### Verificación
+- Parseo/sintaxis de `backend/academic-service/Code.gs`: PASS.
+- Parseo/sintaxis de `tests/security/academic-student-expediente-ownership.test.js`: PASS.
+- Ejecución dinámica aislada de la función extraída del código fuente con mocks: PASS para expediente coincidente de D2; se observó una comprobación de ownership, cero consultas de identidad ajena y cero escrituras de ownership.
+- Suite Node completa desde checkout local: NOT RUN; no se dispuso de checkout local conectado al repositorio.
+- GitHub combined status/workflow runs consultados: sin checks/runs reportados; no se declara CI PASS.
+- BETA-FUNC-024: Pendiente beta. No hubo despliegue Apps Script ni acceso a datos reales.
+
+### Estado y continuidad
+- Subhallazgo de reutilización cruzada corregido y registrado.
+- TASK-153 permanece En ejecución; AUD-NG-386 abierto. No se declara completada la conversión ni la tarea global.
+- Siguiente foco en la próxima iteración: revisar la integridad, rollback compensatorio e idempotencia de todo el flujo `convertAdmissionToStudent` (matrícula, cargos, relaciones familiares, invitaciones, documentos, movimiento y estado de solicitud). Mantener la sesión `IMA-EXEC-20261110-1825Z-02`.
+===============================================================================
