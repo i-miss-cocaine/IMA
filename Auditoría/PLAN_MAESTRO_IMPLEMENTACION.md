@@ -2411,3 +2411,15 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - **CI:** Department Scope run 42740584865 success; incluye contratos de ámbito, Academic, Accounting, contrato cliente y node --check js/student.js.
 - **Límites:** contrato cliente estático, sin browser automation ni prueba Apps Script/Drive real. Solo portal estudiante/alumno; UI para tutores/personal y limpieza de archivos históricos pendientes.
 - **Siguiente acción:** validar extremo a extremo en despliegue de prueba con archivo privado real y sesión autenticada; inventariar y revocar enlaces públicos históricos de forma controlada.
+
+
+## 10.74 TASK-153 — ocultación de enlaces legacy y no enumeración de comprobantes — C1.397–C1.398
+
+- **Estado:** En ejecución; no cierra TASK-153 ni criterios globales F41-08.
+- **Respuesta de listado:** getPaymentVouchers no devuelve la URL de Drive; expone comprobanteUrl vacío y tieneComprobante booleano.
+- **Respuesta de lectura:** getPaymentVoucherFile normaliza recurso no existente y recurso no autorizado a RESOURCE_NOT_FOUND con mensaje genérico.
+- **UI:** el portal usa tieneComprobante y solicita el contenido por el endpoint autenticado; no consume la URL legacy.
+- **Pruebas negativas:** referencia inyectada, IDOR de estudiante, acceso interdepartamental, archivo en papelera, archivo vacío y extensión/MIME no permitido.
+- **CI:** Department Scope run 42741228237 completed/success; incluye suites de ámbito, Academic, Accounting, cliente y node --check. Los runs 42741028029 y 42741142611 fallaron por fixtures/expectativas, corregidos antes del PASS final.
+- **Límites:** no se revocan enlaces ya públicos en Drive; falta prueba real Apps Script/Drive y browser; no existe aún UI tutor/personal. Esquema departamental estudiantil y demás controles globales pendientes.
+- **Siguiente acción:** determinar la fuente autoritativa para DepartamentoID y plan de migración fail-closed de expedientes/documentos estudiantiles; preparar deployment/fixtures de integración para Drive.

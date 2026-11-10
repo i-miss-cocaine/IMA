@@ -1846,3 +1846,43 @@ Commit de cierre: este commit; SHA se confirmará externamente tras publicación
 - Siguiente trabajo: prueba end-to-end en un despliegue de prueba con un comprobante privado real y sesión autenticada; después inventario/revocación controlada de enlaces públicos históricos. Continuar la propiedad departamental y migración de expedientes/documentos estudiantiles.
 - **HEAD C1.395 verificado:** d972031231d8ebe8fbbf30e37379a4976508f49a.
 ===============================================================================
+
+===============================================================================
+## C1.399 — 2026-11-10 — IMA-EXEC-20261110-0158Z-01
+
+- **Baseline lógico válido:** C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a.
+- **Checkpoint anterior:** C1.395, registrado en el commit documental C1.396 (bb2d22d1a349b3651feb3ee40bc8c3f6d0a815ea).
+- **Rama autorizada:** NG_beta_0.0.0.1_work. **Rama protegida:** NG_beta_0.0.0.1 — SHA 44d9891132332e692dbe2ba8602b41f50a508a59, sin modificaciones.
+- **Commits funcionales/test:** C1.397 e382c9a614f2c77bc5107bc17598bc1ac4694360; C1.398 3996c0bfacaea278647a657e0c4c0dcf6fe60464 (HEAD verificado).
+- **Tarea activa:** TASK-153 — PM-01 / P0 / orden local 1. Sigue En ejecución; no se cierra ningún criterio global.
+- **Auditoría única:** F41-08/E2E-41-09, informe FASE 41 existente; no se crea un ID ni un informe duplicado.
+
+### Incremento C1.397–C1.398 — reducción de exposición y errores opacos
+
+- getPaymentVouchers deja de devolver el enlace histórico de Drive: comprobanteUrl se devuelve vacío y se expone solo tieneComprobante como indicador de disponibilidad.
+- La UI estudiantil usa tieneComprobante y no consume comprobanteUrl.
+- getPaymentVoucherFile normaliza los intentos de acceso no autorizado a RESOURCE_NOT_FOUND con mensaje genérico, igual que un comprobante inexistente, para no revelar si un ID de otro propietario/departamento existe.
+- Se amplían los contratos Accounting para comprobar que el listado no expone el enlace, que el cliente no lo consume y que los archivos en papelera, vacíos o con extensión/MIME no permitido se rechazan.
+- Los fixtures de archivos inválidos se agregan después de las aserciones de listados para no alterar las expectativas de aislamiento del conjunto de comprobantes.
+
+### CI y correcciones de fixtures
+
+- **CI final Department Scope Contract:** run 42741228237 — completed/success, HEAD C1.398 (3996c0bfacaea278647a657e0c4c0dcf6fe60464).
+- Logs: department scope, Academic departmental resource access, Accounting departmental resource/payment voucher access, student private voucher client contract y node --check js/student.js — todos success.
+- **Ejecuciones previas no aprobadas:** run 42741028029 falló por expectativa de lista no actualizada al agregar fixtures; run 42741142611 falló porque el test esperaba RESOURCE_SCOPE_DENIED, aunque el endpoint ya ocultaba correctamente el recurso con RESOURCE_NOT_FOUND. Ambos problemas fueron corregidos en C1.398. No se usan como evidencia PASS.
+- No se ejecutó integración real Apps Script/Sheets/Drive ni automatización de navegador.
+
+### Límites y pendientes
+
+1. El portal implementado cubre estudiante/alumno; no hay UI equivalente para tutor ni personal administrativo.
+2. No se probó navegador real, sesión de despliegue, archivo privado real en Drive ni despliegue Apps Script.
+3. Los permisos públicos de archivos históricos no se revocan por ocultar comprobanteUrl; requieren inventario y cambio controlado de permisos en Drive.
+4. ExpedientesEstudiantes/DocumentosEstudiante siguen sin DepartamentoID propietario; la migración desde una fuente autoritativa continúa pendiente.
+5. Referencias compartidas, operaciones granulares, filtros de búsqueda/importación, estructuras institucionales/firmas y política estricta siguen pendientes.
+
+### Dictamen y siguiente paso
+
+- TASK-153 permanece En ejecución; no se marcan completos los criterios globales.
+- Siguiente trabajo: identificar fuente autoritativa para DepartamentoID de expedientes/documentos estudiantiles y diseñar migración fail-closed; la validación en Drive real queda condicionada a un deployment de prueba y fixtures privados controlados.
+- **HEAD C1.398 verificado:** 3996c0bfacaea278647a657e0c4c0dcf6fe60464.
+===============================================================================

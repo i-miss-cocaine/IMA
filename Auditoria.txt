@@ -813,3 +813,11 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - No se navega al enlace público/legacy de Drive. Datos de lista se insertan con nodos DOM/textContent.
 - CI 42740584865 completed/success: contratos department scope, Academic, Accounting, contrato cliente y node --check js/student.js.
 - Sin browser automation ni prueba Apps Script/Drive real; tutores/personal y permisos públicos históricos pendientes. TASK-153 continúa En ejecución.
+
+
+### Seguimiento TASK-153 — C1.397–C1.398
+- ACCOUNTING deja de exponer comprobanteUrl de Drive en getPaymentVouchers y devuelve tieneComprobante como booleano.
+- getPaymentVoucherFile responde RESOURCE_NOT_FOUND para ID inexistente o no autorizado, reduciendo enumeración por propietario/departamento.
+- Se amplían pruebas de archivos en papelera, vacíos y extensión/MIME no permitidos; cliente usa el indicador y no URLs legacy.
+- CI final 42741228237 success. Los runs 42741028029 y 42741142611 fallaron por expectativas de fixtures, corregidas antes del run aprobado.
+- Sin prueba real Drive/Apps Script ni revocación de permisos históricos. TASK-153 continúa En ejecución.

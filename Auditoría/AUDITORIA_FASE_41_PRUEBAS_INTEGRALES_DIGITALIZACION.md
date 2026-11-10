@@ -300,3 +300,12 @@ La plataforma cuenta con un excelente control de concurrencia para identificador
 - **Vista/descarga:** el botón Ver comprobante llama getPaymentVoucherFile por comprobanteId; transforma Base64 en Blob URL para PDF/imagen y revoca el URL local al cerrar. No navega al enlace histórico de Drive.
 - **Pruebas:** contrato estático student-payment-voucher-client y node --check js/student.js; CI Department Scope run 42740584865 completed/success junto con los contratos de ámbito Academic y Accounting.
 - **Límites:** no se ejecutó browser automation, despliegue real Apps Script/Sheets/Drive ni prueba con archivo privado real. La UI solo cubre estudiante/alumno; tutores y personal no tienen esta vista en este incremento. Los permisos públicos históricos requieren inventario/revocación. TASK-153 sigue En ejecución; se reutilizan F41-08/E2E-41-09.
+
+
+### Seguimiento F41-08 / E2E-41-09 — ocultación de enlaces y respuesta opaca — C1.397–C1.398
+- getPaymentVouchers deja de exponer URLs de Drive: comprobanteUrl vacío y tieneComprobante booleano; el portal utiliza únicamente el indicador y la acción autenticada.
+- getPaymentVoucherFile devuelve RESOURCE_NOT_FOUND para IDs inexistentes y recursos fuera de ámbito, evitando enumeración de comprobantes de otro propietario/departamento.
+- Contratos Accounting prueban que el listado no filtra URLs, que la UI no las consume y que archivos en papelera, vacíos y de tipo no permitido fallan cerrados.
+- CI final Department Scope run 42741228237 completed/success; incluye contratos de ámbito, Academic, Accounting, cliente estudiantil y node --check js/student.js.
+- Runs 42741028029 y 42741142611 fallaron por expectativas de fixtures; ambas causas se corrigieron y no se cuentan como PASS.
+- Sin integración real Drive/Apps Script ni browser automation. Permisos históricos, esquemas departamentales estudiantiles y criterios globales siguen pendientes. Se conserva F41-08/E2E-41-09 sin duplicación.

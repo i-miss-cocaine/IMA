@@ -633,3 +633,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se agrega contrato cliente y verificación sintáctica Node para js/student.js.
 - CI Department Scope 42740584865 — success, incluidos contratos de ámbito, Academic, Accounting y cliente.
 - Sin prueba browser ni integración Apps Script/Drive real; TASK-153 sigue En ejecución.
+
+
+## C1.397–C1.398 — IMA-EXEC-20261110-0158Z-01
+- getPaymentVouchers ya no entrega URL de Drive; el cliente recibe tieneComprobante y consulta el archivo por endpoint autenticado.
+- getPaymentVoucherFile oculta existencia de recursos fuera de ámbito devolviendo RESOURCE_NOT_FOUND.
+- Se prueban IDOR, archivos en papelera, vacíos y MIME/extensión inválidos.
+- CI final 42741228237 — success. Runs 42741028029 y 42741142611 fallaron por fixtures/expectativas corregidas antes del PASS final.
+- No se revocaron permisos de archivos históricos ni se ejecutó integración real Drive/Apps Script. TASK-153 sigue En ejecución.

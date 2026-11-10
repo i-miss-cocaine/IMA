@@ -693,3 +693,11 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - Contrato cliente estático y node --check js/student.js agregados al workflow Department Scope.
 - CI 42740584865 success; también ejecutó pruebas de ámbito Academic y Accounting.
 - No se ha probado navegador real ni Apps Script/Drive; UI de tutor/personal y revocación de enlaces históricos siguen pendientes. TASK-153 permanece En ejecución.
+
+
+### TASK-153 — seguimiento C1.397–C1.398
+- Se oculta comprobanteUrl de la respuesta getPaymentVouchers; solo se expone tieneComprobante.
+- Se unifica la respuesta del endpoint getPaymentVoucherFile para IDs inexistentes y fuera de ámbito (RESOURCE_NOT_FOUND).
+- Pruebas adicionales: no exposición URL, no enumeración IDOR/interdepartamental, archivo en papelera, archivo vacío y MIME/extensión inválido.
+- CI final Department Scope 42741228237 success; incluye contratos de ámbito, Academic, Accounting, cliente y sintaxis JS.
+- Los dos runs previos fallaron por fixtures/expectativas y fueron corregidos. Permisos Drive históricos y prueba E2E real siguen pendientes.

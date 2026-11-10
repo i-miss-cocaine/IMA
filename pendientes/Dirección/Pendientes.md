@@ -736,7 +736,7 @@
   - [ ] Las operaciones de descarga, firma y exportación respetan el ámbito departamental asignado.
   - [ ] Los roles institucionales con acceso global funcionan conforme a sus permisos explícitos sin falsos bloqueos.
 - **Dependencias:** Sistema de usuarios, departamentos, roles y estructura de propiedad documental.
-- **Estado:** [ ] En ejecución (C1.395; endpoint y vista estudiantil de comprobantes privados con CI local aprobado; criterios globales pendientes).
+- **Estado:** [ ] En ejecución (C1.398; endpoint y vista estudiantil de comprobantes privados, ocultación de enlaces legacy y CI local aprobado; criterios globales pendientes).
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7086-7126; clave TASK-169; asignación única: Dirección -->
 
@@ -750,6 +750,8 @@
 - **Limitaciones C1.393:** falta integración UI para preview/descarga; no se han revocado permisos públicos históricos ni probado Drive/Apps Script real. TASK-153 continúa En ejecución.
 - **Avance C1.395:** el portal estudiantil integra la pestaña Matrícula y Finanzas, lista comprobantes autenticados y solicita la vista/descarga mediante getPaymentVoucherFile; Base64 se transforma en Blob y se revoca el object URL al cerrar. CI 42740584865 — success (contratos y node --check).
 - **Limitaciones C1.395:** sin prueba de navegador ni Apps Script/Drive real; la UI solo cubre estudiante/alumno y los enlaces públicos históricos siguen pendientes de revocación.
+- **Avance C1.397–C1.398:** getPaymentVouchers ya no expone URLs de Drive (comprobanteUrl vacío; tieneComprobante booleano); getPaymentVoucherFile responde RESOURCE_NOT_FOUND tanto para IDs inexistentes como no autorizados. Se prueban IDOR, archivos en papelera, vacíos y MIME/extensión no permitidos. CI final 42741228237 — success.
+- **Limitaciones C1.398:** no se ha revocado el permiso real de los archivos históricos; falta deployment de prueba/Drive fixture para E2E real. TASK-153 sigue En ejecución.
 ---
 
 <!-- ID: AUD-NG-164 | Fuentes: Pendientes.md -->
