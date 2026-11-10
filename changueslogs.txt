@@ -699,3 +699,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-10 11:22Z] C1.407 — Continuidad de TASK-153/T153-S01 en la sesión IMA-EXEC-20261110-1108Z-01. Se verifica HEAD y que los blobs de código de C1.406 siguen vigentes. No aparece decisión institucional aprobada; T153-S01 permanece Bloqueada. Sin cambios de código/datos ni pruebas de producto. Checkpoint C1.407 e índice actualizados; rama base intacta.
+
+
+[2026-11-10] C1.408 — IMA-EXEC-20261110-1132Z-01 — continuidad, recuperación documental y triage PM-00
+- HEAD de partida ced7d9b6fe3a2249efe564473d0f93dce0bddbd2; rama base 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios en código ni datos.
+- Se recuperó desde el blob actual del HEAD `pendientes/Otros/Pendientes.md` (blob 24347c3776521c930391f89e0430910554bf233b) tras una lectura convencional de 0 caracteres. Validación: 1.636.155 caracteres, 16.510 líneas, 674 IDs únicos, 0 duplicados, 674 pendientes y 0 completados. El backlog no se modificó.
+- Se confirmó el ciclo de dependencias F29-TASK05↔F29-TASK17 y se registró triage PM-00 en Plan Maestro §10.80 y MapaDependencias; requisitos originales intactos.
+- TASK-153/T153-S01 sigue Bloqueada por decisión institucional pendiente; TASK-696 permanece Bloqueada. No se selecciona tarea sustituta hasta resolver el ciclo y reejecutar §6.1.
+- La parte 0003 alcanzó 180.000 caracteres y queda cerrada; se inicia Parte_0004 con bloque normativo A–I íntegro.
+- Checkpoint C1.408: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt`, líneas 58–108; índice `Auditoría/INDICE_CHECKPOINTS.md`, fila C1.408.

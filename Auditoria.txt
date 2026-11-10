@@ -910,3 +910,14 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - Solo se actualizaron registros y planificación; sin cambios de código, datos, esquemas, permisos, configuración ni despliegue.
 - Checkpoint C1.406; sesión IMA-EXEC-20261110-1108Z-01; ubicación `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt`; índice `Auditoría/INDICE_CHECKPOINTS.md` — fila C1.406; commit de cierre: este commit, SHA verificado tras publicación.
 ===============================================================================
+
+
+===============================================================================
+## C1.408 — IMA-EXEC-20261110-1132Z-01 — continuidad y triage PM-00
+- HEAD de partida verificado: ced7d9b6fe3a2249efe564473d0f93dce0bddbd2; rama base 44d9891132332e692dbe2ba8602b41f50a508a59. La comparación desde C1.407 muestra solo cambios documentales; código sin cambios.
+- TASK-153/T153-S01 conserva el bloqueo institucional C1.403; se reutiliza FASE 41/F41-08/E2E-41-09. TASK-696 sigue Bloqueada.
+- Recuperación documental: `pendientes/Otros/Pendientes.md` devolvió 0 caracteres en fetch_file; blob actual 24347c3776521c930391f89e0430910554bf233b del HEAD recuperado: 1.636.155 caracteres, 16.510 líneas, 674 IDs únicos, 0 duplicados, 674 Pendientes y 0 Completados. No se modificó el backlog.
+- Triage PM-00: ciclo F29-TASK05 → F29-TASK17 → F29-TASK05, confirmado en requisitos originales de `pendientes/Otros/Pendientes.md` y `pendientes/Dirección/Pendientes.md`. Se actualizan extractos del Plan y Mapa; no se crea informe/ID duplicado ni se elimina una dependencia.
+- No se ejecutaron pruebas de producto ni se modificó código/datos/configuración.
+- Checkpoint C1.408; sesión IMA-EXEC-20261110-1132Z-01; ubicación `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt`, sección C1.408, líneas 58–108; índice `Auditoría/INDICE_CHECKPOINTS.md`, fila C1.408.
+===============================================================================

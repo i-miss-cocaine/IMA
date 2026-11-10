@@ -5018,3 +5018,12 @@ Alcance estático satisfecho; sin cambios de código. Hallazgos AUD-NG-374..376 
 - F29-TASK17 cubre migración de roles/relaciones; F37-TASK10 cubre pruebas interdepartamentales con sedes/departamentos. No sustituyen la frontera runtime tenant.
 - TASK-696 bloquea la implementación de UNI-U01 y, por dependencia, U02/U03/U04/U05/U06/U13/U16/U23 y los paquetes consumidores señalados en PLAN-IMA-001. No se modifica ownership ni se migran datos mientras TASK-153/T153-S01 siga bloqueada.
 - Estado: TASK-696 Bloqueada / no elegible. Evidencia principal: `Auditoría/AUDITORIA_UNI-U01_TENANT_RUNTIME_C1.406.md`.
+
+
+## C1.408 — PM-00: ciclo de dependencias F29 y continuidad PM-01
+- F29-TASK05 (PM-01/P0, `pendientes/Otros/Pendientes.md`) → F29-TASK17, además de AUD-NG-001 y AUD-NG-127.
+- F29-TASK17 (PM-01/P0, `pendientes/Dirección/Pendientes.md`) → F29-TASK05 y F29-Task13, además de AUD-NG-001/002/036/105/106/108/128/130/136/158.
+- **Ciclo:** F29-TASK05 ↔ F29-TASK17. Los requisitos originales permanecen intactos; no se elimina ninguna arista ni se declara satisfecha una dependencia. Ambas tareas siguen Pendientes/no elegibles hasta resolución formal PM-00.
+- TASK-153/T153-S01 permanece Bloqueada por falta de autoridad institucional verificable para CatalogoDepartamentos/DepartamentosAcademicos y propiedad departamental. No inferir, fusionar catálogos ni migrar recursos.
+- TASK-696 permanece Bloqueada por TASK-153/T153-S01, F29-TASK17 y F37-TASK10; no adelantar PM-02.
+- La selección §6.1 se detiene en esta iteración para resolver el ciclo y el bloqueo externo. No se crea tarea global ni expediente duplicado.
