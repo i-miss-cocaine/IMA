@@ -1159,3 +1159,14 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - **Commits:** f494f0bde9afa83ed11c5b5e1bd28729e81a4260 (código); b20fa1382461a1f1d4b7bcc8bb22407df0f8b6b2 (contrato); c339188cd5600c9f54460d430ffc6d18b95311ad (harness); 151f5eeaeea7b964199f69378f42bcd5e358d509 (Plan Maestro).
 - **Estado:** subhallazgo de compensación corregido y verificado en escenario aislado. TASK-153 En ejecución; AUD-NG-386 abierto por idempotencia/reintentos y demás rutas/requisitos ACADEMIC.
 ===============================================================================
+
+
+===============================================================================
+## Seguimiento C1.450 — idempotencia de reintentos de conversión de admisiones
+- **Hallazgo:** un reintento podía sobrescribir una matrícula ajena a la solicitud o reutilizar un movimiento IngresoNuevo no relacionado por coincidencia de expediente/año/tipo.
+- **Corrección:** solo se acepta matrícula previa si su observación contiene el marcador exacto de la solicitud y usuario/año/grado/sección coinciden; duplicados y conflictos fallan cerrados. El movimiento se identifica por marcador exacto de solicitud y se valida que apunte a la matrícula resultante; movimientos ajenos se ignoran, duplicados o vínculos cruzados se rechazan.
+- **Pruebas:** contrato persistente para reuso propio, conflicto de matrícula, cambio de grado/sección, ambigüedad, movimiento ajeno, reuso del movimiento propio y vínculo/duplicado conflictivo. Parseo de Code.gs/test PASS; validadores ejecutados dinámicamente aislados PASS.
+- **Límites:** suite Node completa/CI NOT RUN; sin despliegue ni datos reales. No se afirma transacción ACID ni idempotencia global de efectos externos.
+- **Commits:** 0f4262aaff538d0cc908ad196944016f4b9bb3aa (lógica); 7be60a51941b41dad15fb7e79fbbe6114bddc8eb (contrato); commits documentales C1.450 pendientes.
+- **Estado:** subhallazgo corregido. TASK-153 En ejecución; AUD-NG-386 abierto por el resto del alcance.
+===============================================================================
