@@ -3238,7 +3238,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Estado:** creación de solicitudes de firma avanzada con ownership verificado aprobada localmente. TASK-153 permanece En ejecución y AUD-NG-386 abierto por el resto de rutas.
 - **Commits:** `bbd2d1389234233f9d75c8ddd0fb9697e8c5a434` (ownership y lock), `58d2a03f1d7f0c83e52e88c47f821c8d39256871` (RBAC en handler), `21fe586777cc6394effcdcbc639f8d5da1fa1374` (contrato) y `ce08eabc4821f7856c40be16b1bd7620891c75ac` (workflow).
 
-### 10.120 TASK-153 / ACADEMIC — proteger y normalizar el reordenamiento de lista de espera (C1.462)
+### 10.121 TASK-153 / ACADEMIC — proteger y normalizar el reordenamiento de lista de espera (C1.462)
 
 - **Autorización antes de detalles:** `reorderWaitlist` valida contexto y permiso sin resolver solicitud, adquiere `ScriptLock` y lee inicialmente solo `EsperaID`/`SolicitudID`. Revalida ownership del objetivo bajo lock; después obtiene el conjunto de solicitudes autorizadas y consulta metadatos de posición solo de esas filas.
 - **Integridad del grupo:** solo permite reordenar entradas `En_Espera` del mismo año lectivo y grado. La posición destino debe ser entero seguro positivo dentro del tamaño del grupo. Recalcula el orden completo del grupo con desempate determinista por posición, fecha de ingreso y fila.
