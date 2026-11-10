@@ -4865,3 +4865,29 @@ TAREAS DERIVADAS — AUDITORÍA TASK-639 / C1.302
 - **Alcance/exclusiones:** diseño y reconciliación documental; no modificar código, datos, esquemas, permisos, configuración, integraciones ni despliegue; no afirmar paridad con proveedores ni cumplimiento legal universal.
 - **Prioridad:** P0. **Estado:** completada como entregable documental; UNI-U01…U24 sin iniciar.
 - **Evidencia:** subplan, Plan Maestro §10.78, mapa de dependencias y checkpoint C1.405. Sin pruebas de producto.
+
+---
+
+<!-- ID: TASK-696 | Fuentes: AUD-NG-384; TASK-695/PLAN-IMA-001 UNI-U01 -->
+### [ ] [TASK-696] [P0] Implementar registro y aislamiento runtime de tenants (UNI-U01)
+- **Tipo:** implementación de arquitectura y seguridad, PM-02. No es una ampliación de la migración de roles ni de los ámbitos departamentales.
+- **Objetivo:** establecer el tenant como frontera de seguridad verificable, con instituciones y sedes subordinadas, grupos opcionales y contexto explícito de tenant en sesión/API.
+- **Requisitos:**
+  1. Crear un registro de tenants con estado, país, zona horaria, módulos habilitados y relaciones tenant→instituciones→sedes; grupos/consorcios opcionales sin mezclar fronteras de seguridad.
+  2. Resolver la membresía tenant del usuario desde una fuente autoritativa; emitir contexto firmado y revalidarlo en servidor. El tenant enviado por el cliente nunca autoriza por sí solo.
+  3. Aplicar un guard transversal en USER, ACADEMIC, ACCOUNTING, TASK, EXAM y servicios adicionales; toda acción pública debe tener política tenant explícita.
+  4. Enrutar persistencia por tenant y fallar cerrado ante tenant ausente, suspendido o partición no configurada; prohibido el fallback a un Spreadsheet global compartido.
+  5. Aislar cachés, claves de idempotencia, locks, archivos, búsquedas, exports, jobs, colas, notificaciones y webhooks por tenant.
+  6. Suspender un tenant bloquea nuevas operaciones sin borrar ni alterar su historia.
+- **Criterios de aceptación:**
+  - Dos tenants sintéticos con instituciones/sedes separadas pueden operar en el mismo entorno sin lectura, escritura, búsqueda, archivo, export o job cruzado.
+  - Toda petición protegida exige contexto tenant derivado de sesión/membresía verificada; IDs/tenantIds/fileIds manipulados se rechazan fail-closed.
+  - La pertenencia revocada, tenant suspendido o contexto caducado bloquea la operación; no se confía en requesterUserId/requesterRole ni en tenantId del payload.
+  - Ningún resolver usa el Spreadsheet principal como fallback entre tenants; cada ruta devuelve tenant/procedencia y versión de esquema.
+  - Cachés, idempotencia, archivos, exports, jobs y webhooks no colisionan ni filtran entre tenants.
+  - Pruebas negativas y positivas reproducibles para dos tenants, roles, sedes, IDs directos, archivos, búsquedas, exports, jobs, suspensión y revocación; fixtures/rollback aislados.
+- **Dependencias:** TASK-694 (diseño, completada); TASK-153/T153-S01 (PM-01, bloqueada por decisión institucional); F29-TASK17 (P0, Pendiente); F37-TASK10 (P1, Pendiente). Respetar todas las dependencias originales y el orden topológico.
+- **Puertas:** no iniciar implementación hasta resolver PM-00/PM-01 y las dependencias anteriores. No inferir ownership ni migrar expedientes mientras TASK-153/T153-S01 siga bloqueada.
+- **Alcance/exclusiones:** entorno sandbox y datos sintéticos; no acceder ni modificar datos productivos; no alterar el catálogo departamental ni sustituir tareas F29/F37 existentes.
+- **Prioridad:** P0 / crítico. **Estado:** Bloqueada; registrada para PM-02, no elegible para ejecución.
+- **Informe principal:** `Auditoría/AUDITORIA_UNI-U01_TENANT_RUNTIME_C1.406.md` (AUD-NG-384).

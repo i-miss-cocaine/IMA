@@ -5010,3 +5010,11 @@ Alcance estático satisfecho; sin cambios de código. Hallazgos AUD-NG-374..376 
 - Reutilización: TASK-506/171/668 → U02; AUD-NG-164/TASK-005 → U06/U07; F9-TASK y AUD-NG-165…167 → U11; F10/F11 → U09/U12/U14; biblioteca → U18; F21/TASK-029…036 → U19; F22/F31/F33/F40 → U20; TASK-051/235/285/397/406/408 → U21; FASE2-T04/F25/F29/F35 → U22; TASK-060/F26-TASK01 → U23; F29/TASK-077/275/276 → U24.
 - Gate PM-01: TASK-153/T153-S01 bloquea cambios de ownership, ámbitos y migración de expedientes; ningún paquete relaja fail-closed.
 - Las aristas son dependencias de planificación, no evidencia de implementación ni autorización para alterar el orden PM.
+
+
+## C1.406 — UNI-U01: registro y aislamiento runtime de tenants
+- TASK-694 → TASK-695 → UNI-U01 (requisito local) → AUD-NG-384 → TASK-696.
+- TASK-696 depende de TASK-153/T153-S01 (PM-01, bloqueada por decisión institucional), F29-TASK17 (P0, Pendiente) y F37-TASK10 (P1, Pendiente); TASK-694/TASK-695 son diseño/planificación completados.
+- F29-TASK17 cubre migración de roles/relaciones; F37-TASK10 cubre pruebas interdepartamentales con sedes/departamentos. No sustituyen la frontera runtime tenant.
+- TASK-696 bloquea la implementación de UNI-U01 y, por dependencia, U02/U03/U04/U05/U06/U13/U16/U23 y los paquetes consumidores señalados en PLAN-IMA-001. No se modifica ownership ni se migran datos mientras TASK-153/T153-S01 siga bloqueada.
+- Estado: TASK-696 Bloqueada / no elegible. Evidencia principal: `Auditoría/AUDITORIA_UNI-U01_TENANT_RUNTIME_C1.406.md`.

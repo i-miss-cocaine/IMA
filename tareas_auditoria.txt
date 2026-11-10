@@ -724,3 +724,17 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - Siguiente unidad: T153-S01, reconciliación de catálogo departamental y autoridad de propiedad.
 - Referentes SIS/LMS y ERP/SoD incorporados como patrones; alcance restringido a recursos estudiantiles y autorización departamental.
 - No se crea ID global duplicado ni se implementa código en esta iteración.
+
+
+===============================================================================
+## AUD-NG-384 — UNI-U01 — falta de frontera runtime multi-tenant
+- **Severidad/prioridad:** CRÍTICO / P0.
+- **Requisito original:** `Auditoría/PLAN-IMA-001_UNIDADES_FUNCIONALES.md`, UNI-U01; tenant como frontera de seguridad, instituciones/sedes subordinadas y contexto explícito en sesión/API.
+- **Expediente principal único:** `Auditoría/AUDITORIA_UNI-U01_TENANT_RUNTIME_C1.406.md`.
+- **Evidencia:** USER genera/verifica tokens sin tenantId/institutionId; verificadores equivalentes en ACADEMIC/ACCOUNTING/TASK/EXAM tampoco exigen tenant; `js/api.js` no propaga contexto tenant; `getIdentityInstitutionId_()` usa un único ID institucional global; los entrypoints inspeccionados carecen de guard tenant transversal; el resolver financiero usa dominio/año y fallback global.
+- **Impacto:** no se puede garantizar aislamiento entre tenants si se habilita operación multiinstitucional sobre estas rutas. No se demostró una fuga real ni se ejecutó prueba con dos tenants.
+- **Tarea ejecutable derivada:** TASK-696, Dirección, PM-02/P0; registro de tenants, membresía verificada, sesión/API, guard transversal, enrutamiento fail-closed y pruebas con dos tenants sintéticos. Requisitos completos en `pendientes/Dirección/Pendientes.md`.
+- **Dependencias:** TASK-153/T153-S01 (bloqueada); F29-TASK17 (P0, Pendiente); F37-TASK10 (P1, Pendiente). TASK-694/TASK-695 son diseño completado. No duplicar tareas F29/F37.
+- **Estado:** Abierto; TASK-696 Bloqueada y no elegible hasta resolver las dependencias PM-01 y el orden topológico.
+- **Pruebas:** inspección estática focalizada; pruebas unitarias/contrato/HTTP/E2E/Apps Script/Sheets/Drive y fixtures multi-tenant no ejecutadas.
+===============================================================================

@@ -3,11 +3,11 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.403**
-- Última sesión: `IMA-EXEC-20261110-0439Z-01`
+- Último checkpoint: **C1.406**
+- Última sesión: `IMA-EXEC-20261110-1108Z-01`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.403: **169118**
+- Caracteres del archivo activo tras C1.406: **178247**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 - Baseline lógico válido: **C1.316** (`31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`). C1.317–C1.382 se conservan, pero no se aceptan como evidencia de continuidad por corrección expresa del usuario.
@@ -232,3 +232,4 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.404 | IMA-EXEC-20261110-0500Z-01 | TASK-694 completada como diseño documental; UNI-S01…S10 sin iniciar; TASK-153 conserva bloqueo C1.403 | PM-02 — investigación y subplan de arquitectura universal multiinstitucional P-20W | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.404 | 2145–2186 | C1.403 | Este commit; SHA a verificar |
 
 | C1.405 | IMA-EXEC-20261110-0513Z-01 | TASK-695 completada como diseño documental; 24 unidades definidas; U01/U04/U07/U10/U22 candidatas a auditoría; TASK-153 conserva bloqueo | PM-02 — PLAN-IMA-001 / requisitos y aceptación UNI-U01…UNI-U24 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.405 | 2190–2219 | C1.404 | Este commit; SHA a verificar |
+| C1.406 | IMA-EXEC-20261110-1108Z-01 | AUD-NG-384 confirmada; TASK-696 registrada y bloqueada por dependencias PM-01; TASK-153 conserva bloqueo | UNI-U01 / auditoría runtime tenant — PM-02, sin implementación | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.406 | 2222–2247 | C1.405 | Este commit; SHA verificado tras publicación |

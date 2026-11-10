@@ -546,6 +546,7 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 | TASK-060 | Dirección | 02 | PM-02 | Modelo de datos, contratos y persistencia | P0 | — | Estructuras de usuarios, roles, departamentos, `ConfiguracionSistema`, permisos server-side y servicios consumidores de configuración. | [P0] [Gobernanza Jerárquica - Motor Central de Configuración Jerárquica y Herencia Departamental] | `pendientes/Dirección/Pendientes.md` |
 | TASK-694 | Dirección | 02 | PM-02 | Arquitectura universal multiinstitucional y modelo educativo P-20W | P0 | 0 | Contraste con TASK-153/PM-01, TASK-060/F26-TASK01, TASK-506/TASK-171/TASK-668, AUD-NG-164/TASK-005, FASE2-T04 y F29-TASK17. | Especificar arquitectura universal multiinstitucional y modelo educativo P-20W | `pendientes/Dirección/Pendientes.md` |
 | TASK-695 | Dirección | 02 | PM-02 | Arquitectura y contratos de plataforma | P0 | 1 | TASK-694; tareas UNI-U01…U24; PM-01/TASK-153 como puerta de seguridad. | Descomponer 24 unidades funcionales universales con requisitos, aceptación y reconciliación de backlog | `pendientes/Dirección/Pendientes.md` |
+| TASK-696 | Dirección | 02 | PM-02 | Arquitectura y contratos de plataforma | P0 | 2 | TASK-694/TASK-695; TASK-153; F29-TASK17; F37-TASK10. | Implementar registro y aislamiento runtime de tenants (UNI-U01) | `pendientes/Dirección/Pendientes.md` |
 | TASK-249 | Dirección | 02 | PM-02 | Modelo de datos, contratos y persistencia | P1 | — | Reportes institucionales existentes, permisos, catálogos de campos y almacenamiento de preferencias. | [P1] [Reportes Personalizados - Implementar Persistencia de Vistas y Configuraciones Personalizadas de Reportes] | `pendientes/Dirección/Pendientes.md` |
 | TASK-506 | Dirección | 02 | PM-02 | Modelo de datos, contratos y persistencia | P1 | — | CatalogoDepartamentos, CatalogoCargos, HistorialAdscripciones, DepartamentosAcademicos, Usuarios, manageDepartmentPositions, assignDepartmentHead, generateInstitutionalId. | Garantizar integridad referencial y atomicidad en departamentos, cargos y adscripciones institucionales | `pendientes/Dirección/Pendientes.md` |
 | TASK-027 | Docente | 02 | PM-02 | Modelo de datos, contratos y persistencia | P0 | — | `LockService`, `BibliotecaPrestamos`, `BibliotecaEjemplares` | Control de concurrencia e idempotencia en circulación bibliotecaria | `pendientes/Docente/Pendientes.md` |
@@ -2607,3 +2608,13 @@ Se reutilizan TASK-153, TASK-060, F26-TASK01, TASK-506, TASK-171, TASK-668, AUD-
 - **Puertas:** TASK-153/T153-S01 no se omite; U01/U02/U23 preceden a multiinstitución/configuración; U05/U06 a admisión/matrícula; U22 a sincronización externa; U24 a migración/piloto.
 - **Límites:** sin cambios de código/datos/esquemas/permisos/configuración/despliegue; sin pruebas de producto.
 - **Estado:** completada como diseño y reconciliación documental inicial. UNI-U01…U24 sin implementar.
+
+
+## 10.79 AUD-NG-384 / TASK-696 — auditoría técnica y brecha runtime UNI-U01
+
+- **Origen:** TASK-695 / PLAN-IMA-001, unidad UNI-U01; expediente principal `Auditoría/AUDITORIA_UNI-U01_TENANT_RUNTIME_C1.406.md`.
+- **Resultado:** brecha CRÍTICA/P0 confirmada en la frontera transversal: los tokens no incluyen tenant verificable; la API no establece contexto tenant; los entrypoints inspeccionados aplican RBAC pero no un guard tenant común; el resolver financiero usa dominio/año y fallback global.
+- **No equivalencia:** F29-TASK17 cubre migración de roles/relaciones; F37-TASK10 cubre regresión interdepartamental con sedes/departamentos. Ninguna sustituye registro y aislamiento runtime de tenants.
+- **Tarea:** TASK-696 registrada en Dirección, PM-02/P0, con requisitos y criterios de aceptación derivados de UNI-U01. Estado Bloqueada; no elegible mientras TASK-153/T153-S01, F29-TASK17 y F37-TASK10 no estén satisfechas.
+- **Límites:** auditoría estática focalizada; sin prueba de fuga real, dos tenants runtime, Apps Script, Sheets/Drive productivos ni pruebas dinámicas. No se modificó código ni datos.
+- **Continuidad:** C1.406; PM-01 conserva precedencia. No iniciar ownership ni migración mientras TASK-153 siga bloqueada.

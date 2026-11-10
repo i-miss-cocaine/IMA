@@ -687,3 +687,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - U01/U04/U07/U10/U22 quedan como brechas candidatas a auditoría técnica; no se generan IDs nuevos sin confirmar ausencia.
 - Sin cambios de código/datos ni pruebas de producto. TASK-153 conserva su bloqueo.
 - Checkpoint C1.405.
+
+
+
+[2026-11-10] C1.406 — AUD-NG-384 / TASK-696 / UNI-U01
+- Auditoría técnica focalizada confirma brecha de frontera runtime multi-tenant: sesión sin tenant verificable, contexto institucional global, ausencia de guard tenant transversal en entrypoints revisados y resolver de fuentes con fallback global.
+- Se reutilizan F29-TASK17 y F37-TASK10 sin duplicarlos; ambos siguen pendientes y no sustituyen registro/aislamiento runtime. TASK-153/T153-S01 conserva bloqueo institucional.
+- Se registra AUD-NG-384 y TASK-696 (PM-02/P0) en tareas_auditoria, backlog Dirección y Plan Maestro. TASK-696 queda Bloqueada por dependencias PM-01.
+- Informe principal único: Auditoría/AUDITORIA_UNI-U01_TENANT_RUNTIME_C1.406.md. Sin cambios de código/datos ni pruebas dinámicas; no se afirma fuga real.
+- Checkpoint C1.406: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice Auditoría/INDICE_CHECKPOINTS.md — fila C1.406.

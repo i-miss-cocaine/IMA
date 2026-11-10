@@ -893,3 +893,20 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - TASK-153/T153-S01 conserva bloqueo C1.403; sin cambios de código/datos/esquemas/configuración ni pruebas de producto.
 - Checkpoint C1.405 anexo; índice actualizado.
 ===============================================================================
+
+
+===============================================================================
+## C1.406 — IMA-EXEC-20261110-1108Z-01 — auditoría UNI-U01
+
+### AUD-NG-384 — CRÍTICO/P0 — Falta de frontera runtime multi-tenant
+- **Evidencia:** tokens HMAC sin tenantId/institutionId verificable; `getIdentityInstitutionId_()` usa un IMA_INSTITUTION_ID global; `fetchApi()` no propaga contexto tenant; USER/ACADEMIC/ACCOUNTING/TASK/EXAM no muestran guard tenant transversal en sus entrypoints; `resolveSpreadsheetSource` enruta por dominio/año y recurre al Spreadsheet principal.
+- **No equivalencia:** F29-TASK17 es migración de roles/relaciones; F37-TASK10 prueba límites interdepartamentales con sedes/departamentos. Ambos siguen Pendientes y no demuestran aislamiento entre dos tenants.
+- **Impacto:** no existe evidencia suficiente para garantizar el confinamiento tenant al habilitar multiinstitución. No se reprodujo ni se afirma una fuga real.
+- **Tarea derivada:** TASK-696, Dirección, PM-02/P0, registrada en `pendientes/Dirección/Pendientes.md`; queda Bloqueada por TASK-153/T153-S01, F29-TASK17 y F37-TASK10.
+- **Informe principal único:** `Auditoría/AUDITORIA_UNI-U01_TENANT_RUNTIME_C1.406.md`. No se crea auditoría paralela de F29/F37 ni se reabre TASK-153.
+- **Pruebas:** inspección estática focalizada; no se ejecutaron pruebas dinámicas, Apps Script, Sheets/Drive productivos ni escenarios con dos tenants.
+
+### Cierre documental
+- Solo se actualizaron registros y planificación; sin cambios de código, datos, esquemas, permisos, configuración ni despliegue.
+- Checkpoint C1.406; sesión IMA-EXEC-20261110-1108Z-01; ubicación `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt`; índice `Auditoría/INDICE_CHECKPOINTS.md` — fila C1.406; commit de cierre: este commit, SHA verificado tras publicación.
+===============================================================================

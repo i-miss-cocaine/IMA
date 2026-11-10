@@ -2216,3 +2216,31 @@ TASK-694 completada solo como investigación y diseño documental. UNI-S01…S10
 ### Siguiente tarea
 Auditoría técnica focalizada de U01 (registro y aislamiento runtime de tenants), respetando PM-00/PM-01. No iniciar cambios de ownership ni migración mientras TASK-153 siga bloqueada.
 ===============================================================================
+
+
+===============================================================================
+## C1.406 — UNI-U01 / AUD-NG-384 / TASK-696 — auditoría runtime multi-tenant
+**Sesión:** IMA-EXEC-20261110-1108Z-01  
+**Fecha:** 2026-11-10  
+**Checkpoint anterior:** C1.405  
+**HEAD de partida:** 2b9275c25a8e8ff0cc720c269588118a56529568  
+**Rama:** NG_beta_0.0.0.1_work  
+**Base:** NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59  
+**Tarea:** auditoría focalizada de UNI-U01; PM-02; sin implementación.  
+**Informe principal:** Auditoría/AUDITORIA_UNI-U01_TENANT_RUNTIME_C1.406.md
+
+### Continuidad y selección
+- C1.405 verificado en HEAD 2b9275c25a8e8ff0cc720c269588118a56529568; rama base confirmada en 44d9891132332e692dbe2ba8602b41f50a508a59. TASK-153/T153-S01 conserva bloqueo C1.403. No se reaudita ni se repite evidencia vigente.
+- Requisitos leídos: UNI-U01; TASK-153; F29-TASK17; F37-TASK10. F29-TASK17 (P0) y F37-TASK10 (P1) siguen Pendientes; no son equivalentes al registro/guard runtime tenant.
+
+### Resultado de auditoría
+- Tokens HMAC de USER/ACADEMIC/ACCOUNTING/TASK/EXAM sin tenant verificable; fetchApi no propaga contexto tenant; USER deriva institutionId de una Script Property global.
+- Entry points revisados aplican RBAC, no un guard tenant transversal. Resolver financiero por dominio/año conserva fallback al Spreadsheet principal.
+- AUD-NG-384 CRÍTICO/P0: brecha runtime confirmada; no se afirma fuga real. TASK-696 registrada en Dirección/PM-02/P0 y queda Bloqueada por TASK-153/T153-S01, F29-TASK17 y F37-TASK10.
+
+### Alcance, cambios y pruebas
+- Solo documentación/registros; código, datos, esquemas, permisos, configuración y despliegue sin cambios.
+- Sin pruebas dinámicas, Apps Script, Sheets/Drive productivos ni fixtures de dos tenants. Auditoría estática focalizada; handlers individuales no revisados exhaustivamente.
+- Respaldo Git histórico (no local), recuperable con `git show 2b9275c25a8e8ff0cc720c269588118a56529568:<ruta>`; blobs verificados completos desde HEAD: backlog Dirección 17a15a59e0d84931bbc32c1bd479442a5206a71e; Plan Maestro 1d1cd1a65c22f067acb350a7e651afe7189e39c4; PLAN-IMA-001 885d0e5ed67ed97c81ef1b77686276d9627f3be1; Mapa e0390a4081ca86259b48b6c5d66e7eff4b70bf84; Auditoria.txt c9e9265f0a6df07fcce80b65c0b52f39c5dadf3c; tareas_auditoria e5b2f1711604485214601486adce5581d71ede3f; changueslogs ac8aadbab686f2c51779ab2208be68c12a36b642; índice cf6022ceebb6edd17faf43f16384dab27f4c1a78; checkpoint 14f0fca622f7fb52f7e7737876dbf25ed0cb49e2.
+- Siguiente tarea: TASK-153/T153-S01, pendiente de decisión institucional autoritativa; no iniciar ownership ni migración. TASK-696 permanece Bloqueada.
+===============================================================================

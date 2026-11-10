@@ -140,7 +140,15 @@ No hubo muestra suficiente para generalizar opiniones sobre ERP/contabilidad, RR
 
 ## Brechas candidatas y decisión
 
-U01: runtime tenant (auditar); U04: cuidado infantil (nueva tarea tras auditoría); U07: créditos/degree audit/credenciales superiores (auditar); U10: LMS completo (auditar); U22: adaptadores OneRoster/Edu-API/LTI (auditar). U13: ampliar relaciones familiares. No se declara ausencia por una búsqueda textual.
+U01: runtime tenant (brecha confirmada por auditoría C1.406; AUD-NG-384/TASK-696; Bloqueada por dependencias PM-01); U04: cuidado infantil (nueva tarea tras auditoría); U07: créditos/degree audit/credenciales superiores (auditar); U10: LMS completo (auditar); U22: adaptadores OneRoster/Edu-API/LTI (auditar). U13: ampliar relaciones familiares. Para U04/U07/U10/U22 no se declara ausencia por una búsqueda textual.
+
+
+### Resultado de auditoría técnica UNI-U01 — C1.406
+- **Expediente principal:** `Auditoría/AUDITORIA_UNI-U01_TENANT_RUNTIME_C1.406.md`; hallazgo AUD-NG-384, CRÍTICO/P0; tarea derivada TASK-696.
+- **Resultado:** no se demuestra un registro/guard runtime de tenants. Los tokens inspeccionados no contienen tenantId; el cliente no propaga contexto tenant; `IMA_INSTITUTION_ID` es global; los entrypoints revisados no aplican un guard tenant transversal; el resolver financiero no filtra por tenant y conserva fallback global.
+- **No equivalencia:** F29-TASK17 (migración de roles) y F37-TASK10 (pruebas interdepartamentales con sedes/departamentos) siguen pendientes y no satisfacen el requisito de dos tenants.
+- **Estado:** TASK-696 registrada, Bloqueada por TASK-153/T153-S01, F29-TASK17 y F37-TASK10. No iniciar implementación ni migración hasta resolver las puertas PM-00/PM-01.
+- **Limitación:** revisión estática focalizada; no se afirma fuga real ni se declaran pruebas dinámicas ejecutadas.
 
 ## Requisitos transversales y puertas
 
