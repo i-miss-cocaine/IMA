@@ -3173,3 +3173,13 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Límites:** prueba de concurrencia mediante lock simulado y fixtures locales; no se afirma prueba de simultaneidad contra Google Sheets real. No hubo despliegue, servicio vivo ni datos institucionales reales.
 - **Estado:** subalcance de agenda y resultados de entrevistas ACADEMIC corregido y verificado localmente. TASK-153 permanece En ejecución y AUD-NG-386 abierto por recursos institucionales, firmas, permisos granulares, referencias compartidas, importaciones y rutas restantes.
 - **Commits:** `eb0bc0f6d8dc44d07d9ba79778194fd3cf223ad2` (código), `0901d2b0e4d129123461a6219cdbb138cbc9e7a2` (contratos), `dc993865cbb07266e138d4702bd1c9c638c379e4` (contención del lock en test).
+
+### 10.115 TASK-153 / ACADEMIC — serializar evaluaciones de admisión y fijar identidad de auditoría (C1.457)
+
+- **Hallazgo:** `saveAdmissionEvaluation` generaba el ID con `skipLock: true` y ejecutaba `appendRow` sin una sección crítica. Solicitudes simultáneas podían competir por el recurso de ID/append. Además, el evento de auditoría tomaba el rol de `payload.authRole`, un valor controlable por el cliente.
+- **Corrección:** la función ahora adquiere `ScriptLock` antes de obtener la hoja, generar el ID y anexar la evaluación; libera el lock en `finally` incluso ante fallos. El identificador del evaluador y el rol registrado en `EVALUATION_SAVED` proceden de `ctx.actor` verificado, no del payload.
+- **Contrato local:** prueba de escritura con lock adquirido, ID y evaluador derivados del contexto verificado, rol de auditoría inmune a `authRole` falsificado, liberación del lock y rechazo contencioso sin lecturas ni append.
+- **Ejecución local aislada:** GitHub Actions run `42891200883` — SUCCESS, Node 24. Contratos de alcance departamental, ACADEMIC expediente/admisión/entrevistas/evaluaciones, ACCOUNTING, ResourceOwnership ABAC y voucher client PASS; sintaxis Node de User/Academic/Accounting Code.gs y `js/student.js` PASS.
+- **Límites:** lock y persistencia probados con fixtures locales; no se afirma concurrencia real de Google Sheets ni se ejecutó despliegue/datos reales.
+- **Estado:** escritura de evaluaciones ACADEMIC corregida y verificada localmente. TASK-153 sigue En ejecución y AUD-NG-386 abierto por las rutas institucionales, firmas, permisos granulares, referencias compartidas, filtros/importaciones y otras rutas pendientes.
+- **Commits:** `f198730c1d8a37cc35a44a30c531b26ca6a5caaf` (código) y `9b0a53bfec2f984ce665c5ea9d0d282b7f207700` (contrato).
