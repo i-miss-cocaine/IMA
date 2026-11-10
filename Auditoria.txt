@@ -695,3 +695,9 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - CI C1.371 security/backup runs 42725331670/42725331631: success; C1.372 security/backup runs 42725726339/42725726361: success.
 - CI C1.373 pendiente. BETA-FUNC-016 Pendiente beta.
 - TASK-636 En ejecución. Checkpoint C1.373: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice fila C1.373.
+
+
+## C1.374 — IMA-EXEC-20261109-1739Z-01 — TASK-636 / AUD-NG-002 — ajuste de fixture
+- El contrato aislado de getPosts ahora recibe normalizeString real del código fuente, dependencia requerida por la normalización de estados añadida en C1.373.
+- Sin cambios productivos. CI C1.374 pendiente.
+- Checkpoint C1.374: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice fila C1.374.

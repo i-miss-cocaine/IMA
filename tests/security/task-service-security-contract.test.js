@@ -232,7 +232,7 @@ const postContext = {
 };
 const getPostsFunction = extractFunction("getPosts");
 assert.equal(getPostsFunction.includes("authRole"), false, "getPosts must not trust authRole from payload");
-vm.runInNewContext(getPostsFunction + String.fromCharCode(10) + "this.run = getPosts;", postContext);
+vm.runInNewContext(extractFunction("normalizeString") + String.fromCharCode(10) + getPostsFunction + String.fromCharCode(10) + "this.run = getPosts;", postContext);
 const studentPosts = postContext.run({
   _verifiedUserId: "STU-1", _verifiedRole: "Estudiante",
   authRole: "Administrador", includeDrafts: true, aulaId: "AULA-1"

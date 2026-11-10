@@ -3,11 +3,11 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.373**
+- Último checkpoint: **C1.374**
 - Última sesión: `IMA-EXEC-20261109-1739Z-01`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.373: **92134**
+- Caracteres del archivo activo tras C1.374: **94148**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 - Baseline lógico válido: **C1.316** (`31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`). C1.317–C1.365 se conservan, pero no se aceptan como evidencia de continuidad por corrección expresa del usuario.
@@ -193,3 +193,5 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.372 | IMA-EXEC-20261109-1739Z-01 | Publicado en este commit; baseline lógico C1.316 | TASK-636 / PM-01 — vigencia de asignaciones docentes en lecturas | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.372 | 1073–1121 | C1.371 | Este commit; SHA verificado tras publicación |
 
 | C1.373 | IMA-EXEC-20261109-1739Z-01 | Publicado en este commit; baseline lógico C1.316 | TASK-636 / PM-01 — publicación vigente de posts y materiales | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.373 | 1124–1171 | C1.372 | Este commit; SHA verificado tras publicación |
+
+| C1.374 | IMA-EXEC-20261109-1739Z-01 | Publicado en este commit; baseline lógico C1.316 | TASK-636 / PM-01 — dependencia del fixture getPosts | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.374 | 1174–1212 | C1.373 | Este commit; SHA verificado tras publicación |

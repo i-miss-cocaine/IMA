@@ -565,3 +565,10 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - CI C1.371 y C1.372: security/backup workflows success; C1.373 pendiente.
 - BETA-FUNC-016 Pendiente beta, no bloqueante.
 ===============================================================================
+
+
+===============================================================================
+## Seguimiento TASK-636 — C1.374 / fixture getPosts
+- Se inyecta normalizeString real en el contexto VM del test getPosts.
+- Sin cambios productivos; CI C1.374 pendiente.
+===============================================================================

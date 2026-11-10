@@ -2266,3 +2266,8 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - Fixtures Node cubren fechas futuras, borradores, eliminados, aula ajena y estado vacío. CI pendiente.
 - BETA-FUNC-016: validación real en Sheets aislados; Pendiente beta y no bloqueante.
 - TASK-636 En ejecución.
+
+
+## 10.58 TASK-636 — C1.374: dependencia del fixture getPosts
+- Code Review agrega normalizeString real al contexto VM del test getPosts; no hay cambios productivos.
+- CI C1.374 pendiente.

@@ -523,3 +523,8 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - getPosts/getStudyMaterials normalizan estados y excluyen Eliminado para todos.
 - Se agregan fixtures locales; CI C1.373 pendiente; BETA-FUNC-016 Pendiente beta.
 - Checkpoint C1.373: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice fila C1.373.
+
+
+[2026-11-09] IMA-EXEC-20261109-1739Z-01 — C1.374 / TASK-636 / AUD-NG-002
+- Se corrige el harness de getPosts para incluir normalizeString real; sin cambios productivos.
+- CI C1.374 pendiente. Checkpoint C1.374: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt; índice fila C1.374.

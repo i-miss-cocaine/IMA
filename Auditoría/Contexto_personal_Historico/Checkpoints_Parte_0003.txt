@@ -1169,3 +1169,44 @@ Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt �
 Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.373.
 Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
 ===============================================================================
+
+===============================================================================
+## C1.374 — TASK-636 / AUD-NG-002 — dependencia del fixture getPosts
+ID: C1.374
+Sesión: IMA-EXEC-20261109-1739Z-01
+Fecha: 2026-11-09
+Checkpoint anterior válido: C1.373
+Baseline lógico: C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a
+HEAD físico de partida: 5024bf74e2d3b664ef63ab25ff4e71e042e2b385
+Rama: NG_beta_0.0.0.1_work
+Rama base protegida: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59
+
+### Code Review
+- getPosts normaliza estados mediante normalizeString.
+- El fixture C1.373 ejecutaba la función aislada sin inyectar normalizeString en el contexto VM, por lo que el test habría fallado por dependencia del harness y no por comportamiento del handler.
+- Se agrega la función real extraída del código fuente al contexto de ejecución del fixture.
+- No se modifica código productivo ni permisos.
+
+### Archivos modificados
+- tests/security/task-service-security-contract.test.js
+- Auditoría/AUDITORIA_TASK-636_C1.305.md
+- pendientes/Otros/Pendientes.md (seguimiento aditivo)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoria.txt
+- tareas_auditoria.txt
+- changueslogs.txt
+
+### Pruebas y estado
+- C1.373: workflow backup/restore run 42726290161 queued al preparar esta corrección; security local contract pendiente de aparecer/consultarse.
+- C1.374: fixture corregido; CI pendiente tras publicar.
+- TASK-636 En ejecución; AUD-NG-002 continúa en revalidación.
+
+### Siguiente acción exacta
+Consultar CI C1.374; si pasa, continuar auditoría de los criterios restantes de TASK-636 sin duplicar informes.
+
+Ubicación: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.374.
+Índice: Auditoría/INDICE_CHECKPOINTS.md — fila C1.374.
+Commit de cierre: este commit; SHA se confirmará externamente tras publicación.
+===============================================================================

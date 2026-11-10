@@ -293,3 +293,10 @@ Endurecer las excepciones públicas de backend/academic-service/Code.gs mediante
 - **CI C1.373:** pendiente tras publicar.
 - **Beta:** BETA-FUNC-016 cubre publicación futura, estado y visibilidad en Sheets aislados; no bloquea implementación local.
 - **Estado:** AUD-NG-002 continúa en revalidación; TASK-636 sigue En ejecución.
+
+
+## C1.374 — ajuste de dependencia del fixture getPosts
+
+- Code Review del contrato C1.373 detectó que getPosts ahora invoca normalizeString para normalizar el estado, pero el contexto VM del fixture no incluía esa función.
+- Se incorpora la función normalizeString real extraída del mismo USER/TASK source al contexto del test. No se altera código productivo ni el alcance de autorización.
+- CI C1.373 permanece pendiente de lectura; C1.374 ejecutará el fixture corregido.
