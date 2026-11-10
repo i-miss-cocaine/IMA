@@ -1261,8 +1261,8 @@ function registerTaskServiceResourceOwnership_(scope,typeValue,idValue,departmen
   if(getDynamicPermissionsForRole(scope.role,"registerResourceOwnership")!==true)return {authorized:false,code:"AUTH_PERMISSION_DENIED"};
   const type=String(typeValue||"").trim().toUpperCase(),id=String(idValue||"").trim(),dept=String(departmentValue||"").trim();
   if(!type||!id||!dept||(scope.departmentIds||[]).map(String).indexOf(dept)===-1)return {authorized:false,code:"RESOURCE_OWNERSHIP_FIELDS_INVALID"};
-  let sheet;try{sheet=ensureTaskServiceResourceOwnershipSheet_(ss||SpreadsheetApp.openById(SPREADSHEET_ID));}catch(error){return {authorized:false,code:error&&error.message==="RESOURCE_OWNERSHIP_SCHEMA_MISMATCH"?"RESOURCE_OWNERSHIP_SCHEMA_MISMATCH":"RESOURCE_OWNERSHIP_NOT_CONFIGURED"};}
   lock=LockService.getScriptLock();if(!lock.tryLock(5000))return {authorized:false,code:"RESOURCE_OWNERSHIP_LOCK_TIMEOUT"};
+  let sheet;try{sheet=ensureTaskServiceResourceOwnershipSheet_(ss||SpreadsheetApp.openById(SPREADSHEET_ID));}catch(error){return {authorized:false,code:error&&error.message==="RESOURCE_OWNERSHIP_SCHEMA_MISMATCH"?"RESOURCE_OWNERSHIP_SCHEMA_MISMATCH":"RESOURCE_OWNERSHIP_NOT_CONFIGURED"};}
   const data=sheet.getDataRange().getValues(),matches=[];
   for(let i=1;i<data.length;i++){const r=data[i]||[];if(String(r[1]||"").trim()===scope.institutionId&&String(r[2]||"").trim().toUpperCase()===type&&String(r[3]||"").trim()===id)matches.push(r);}
   if(matches.length>1)return {authorized:false,code:"RESOURCE_OWNERSHIP_AMBIGUOUS"};
