@@ -528,3 +528,80 @@ function makeAuditCertificateHarness(options = {}) {
 }
 
 console.log("USER signature audit certificate identity, ownership, isolation, evidence and lock contracts: PASS");
+
+
+function makeProviderCallbackHarness(options = {}) {
+  const cacheValues = new Map();
+  const state = { held:false, lockAttempts:0, releases:0, cacheGets:0, cachePuts:0, events:[], secretReads:[] };
+  const secret = options.secret === undefined ? "S".repeat(40) : options.secret;
+  const context = {
+    Date: { now: () => options.now || 1794344400000 },
+    PropertiesService: { getScriptProperties: () => ({ getProperty: key => {
+      state.secretReads.push(key);
+      return options.secretUnavailable ? null : secret;
+    }})},
+    computeHmacSignature: (message, key) => {
+      assert.equal(key, secret);
+      return "a".repeat(64);
+    },
+    LockService: { getScriptLock: () => ({
+      tryLock: () => { state.lockAttempts++; if(options.lockAvailable===false)return false; state.held=true; return true; },
+      releaseLock: () => { assert.equal(state.held,true); state.held=false; state.releases++; }
+    })},
+    CacheService: { getScriptCache: () => ({
+      get: key => { state.cacheGets++; return cacheValues.get(key)||null; },
+      put: (key,value,ttl) => { state.cachePuts++; assert.equal(ttl,600); cacheValues.set(key,value); }
+    })},
+    logStructuredEvent: (_service,_action,_level,code,_message,data) => state.events.push({code,data})
+  };
+  vm.runInNewContext(extractFunction("handleSignatureProviderCallback_"), context);
+  const payload = { transaccionId:"TX-123", estadoProveedor:"completed", referenciaEvento:"EVT-1" };
+  const envelope = {
+    sourceService:"SIGNATURE_PROVIDER:PSC_HN", targetService:"USER",
+    action:"signatureStatusCallback", requestId:"REQ-CALLBACK-123",
+    timestamp:context.Date.now(), correlationId:"CORR-123", payload,
+    hmacSignature:"a".repeat(64)
+  };
+  return { run:extra=>context.handleSignatureProviderCallback_(Object.assign({},envelope,extra||{})), envelope, state };
+}
+
+{
+  const valid=makeProviderCallbackHarness();
+  const accepted=valid.run();
+  assert.equal(accepted.code,"SIGNATURE_CALLBACK_AUTHENTICATED_PENDING_VALIDATION");
+  assert.equal(accepted.callbackAuthenticated,true);
+  assert.equal(accepted.estadoTransaccionActualizado,false,"an authenticated callback must not mutate transaction state before provider-specific validation");
+  assert.equal(accepted.verificacionCriptografica,"NO_VERIFICADA");
+  assert.equal(valid.state.cachePuts,1);
+  assert.equal(valid.state.releases,1);
+  assert.equal(valid.state.events[0].code,"SIGNATURE_PROVIDER_CALLBACK_AUTHENTICATED");
+  assert.throws(()=>valid.run(),/SIGNATURE_CALLBACK_REPLAY_DETECTED/);
+  assert.equal(valid.state.cachePuts,1);
+
+  const invalidSignature=makeProviderCallbackHarness();
+  assert.throws(()=>invalidSignature.run({hmacSignature:"b".repeat(64)}),/SIGNATURE_CALLBACK_AUTHENTICATION_FAILED/);
+  assert.equal(invalidSignature.state.lockAttempts,0,"unauthenticated IDs must not be reserved in replay cache");
+
+  const unknownProvider=makeProviderCallbackHarness({secretUnavailable:true});
+  assert.throws(()=>unknownProvider.run(),/SIGNATURE_CALLBACK_SECRET_NOT_CONFIGURED/);
+  assert.equal(unknownProvider.state.lockAttempts,0);
+
+  const stale=makeProviderCallbackHarness();
+  assert.throws(()=>stale.run({timestamp:stale.envelope.timestamp-300001}),/SIGNATURE_CALLBACK_ENVELOPE_INVALID/);
+  assert.equal(stale.state.secretReads.length,0);
+
+  const wrongTarget=makeProviderCallbackHarness();
+  assert.throws(()=>wrongTarget.run({targetService:"TASK"}),/SIGNATURE_CALLBACK_ENVELOPE_INVALID/);
+  assert.equal(wrongTarget.state.secretReads.length,0);
+
+  const invalidPayload=makeProviderCallbackHarness();
+  assert.throws(()=>invalidPayload.run({payload:{transaccionId:"TX-1",estadoProveedor:"completed",certificado:"forged"}}),/SIGNATURE_CALLBACK_PAYLOAD_INVALID/);
+  assert.equal(invalidPayload.state.secretReads.length,0);
+
+  const busy=makeProviderCallbackHarness({lockAvailable:false});
+  assert.throws(()=>busy.run(),/SIGNATURE_CALLBACK_SERVICE_BUSY/);
+  assert.equal(busy.state.cacheGets,0);
+  assert.equal(busy.state.cachePuts,0);
+  assert.equal(busy.state.releases,0);
+}
+console.log("USER generic signature-provider callback authentication, replay protection and non-probative state contract: PASS");

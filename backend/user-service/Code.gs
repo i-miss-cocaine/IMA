@@ -1401,10 +1401,103 @@ function handleTrustedMigrationEnvelope_(envelope){
  throw new Error("MIGRATION_ACTION_NOT_ALLOWED");
 }
 
+// Generic authenticated callback contract for external signature providers.
+// Provider-specific certificate/OCSP/CRL validation and transaction state changes are intentionally separate.
+function handleSignatureProviderCallback_(envelope) {
+  if (!envelope || typeof envelope !== "object" || Array.isArray(envelope)) {
+    throw new Error("SIGNATURE_CALLBACK_ENVELOPE_INVALID");
+  }
+  const sourceService = String(envelope.sourceService || "").trim();
+  const targetService = String(envelope.targetService || "").trim();
+  const action = String(envelope.action || "").trim();
+  const requestId = String(envelope.requestId || "").trim();
+  const correlationId = String(envelope.correlationId || "").trim();
+  const timestamp = envelope.timestamp;
+  const signature = String(envelope.hmacSignature || "").trim().toLowerCase();
+  const payload = envelope.payload;
+  const providerMatch = /^SIGNATURE_PROVIDER:([A-Z0-9_-]{1,64})$/.exec(sourceService);
+
+  if (!providerMatch || targetService !== "USER" || action !== "signatureStatusCallback" ||
+      !/^[A-Za-z0-9_-]{8,128}$/.test(requestId) || !correlationId ||
+      typeof timestamp !== "number" || !Number.isFinite(timestamp) ||
+      Math.floor(timestamp) !== timestamp || Math.abs(Date.now() - timestamp) > 300000 ||
+      !/^[a-f0-9]{64}$/.test(signature) || !payload || typeof payload !== "object" || Array.isArray(payload)) {
+    throw new Error("SIGNATURE_CALLBACK_ENVELOPE_INVALID");
+  }
+
+  const providerId = providerMatch[1];
+  const transactionId = String(payload.transaccionId || "").trim();
+  const providerStatus = String(payload.estadoProveedor || "").trim();
+  if (!/^[A-Za-z0-9_-]{1,128}$/.test(transactionId) ||
+      !providerStatus || providerStatus.length > 80 ||
+      Object.keys(payload).some(function(key) {
+        return key !== "transaccionId" && key !== "estadoProveedor" && key !== "referenciaEvento";
+      }) ||
+      (payload.referenciaEvento !== undefined &&
+        (typeof payload.referenciaEvento !== "string" || payload.referenciaEvento.length > 128))) {
+    throw new Error("SIGNATURE_CALLBACK_PAYLOAD_INVALID");
+  }
+
+  const secretProperty = "IMA_SIGNATURE_PROVIDER_" + providerId + "_HMAC_SECRET";
+  let secret = "";
+  try {
+    secret = String(PropertiesService.getScriptProperties().getProperty(secretProperty) || "").trim();
+  } catch (_) {
+    throw new Error("SIGNATURE_CALLBACK_SECRET_UNAVAILABLE");
+  }
+  if (secret.length < 32) throw new Error("SIGNATURE_CALLBACK_SECRET_NOT_CONFIGURED");
+
+  const bodyToSign = requestId + "|" + timestamp + "|" + correlationId + "|" +
+    sourceService + "|" + targetService + "|" + action + "|" + JSON.stringify(payload);
+  const expectedSignature = String(computeHmacSignature(bodyToSign, secret)).toLowerCase();
+  let signatureDiff = signature.length ^ expectedSignature.length;
+  for (let i = 0; i < Math.max(signature.length, expectedSignature.length); i++) {
+    signatureDiff |= (signature.charCodeAt(i) || 0) ^ (expectedSignature.charCodeAt(i) || 0);
+  }
+  if (signatureDiff !== 0) throw new Error("SIGNATURE_CALLBACK_AUTHENTICATION_FAILED");
+
+  // Serialize replay checks; never reserve attacker-controlled IDs before authenticating the HMAC.
+  const lock = LockService.getScriptLock();
+  let hasLock = false;
+  try {
+    hasLock = lock.tryLock(10000);
+    if (!hasLock) throw new Error("SIGNATURE_CALLBACK_SERVICE_BUSY");
+    const cache = CacheService.getScriptCache();
+    const replayKey = "SIGNATURE_PROVIDER_CALLBACK_" + requestId;
+    if (cache.get(replayKey)) throw new Error("SIGNATURE_CALLBACK_REPLAY_DETECTED");
+    cache.put(replayKey, "SEEN", 600);
+  } finally {
+    if (hasLock) {
+      try { lock.releaseLock(); } catch (_) {}
+    }
+  }
+
+  try {
+    logStructuredEvent("USER", "signatureStatusCallback", "INFO",
+      "SIGNATURE_PROVIDER_CALLBACK_AUTHENTICATED",
+      "Se autenticó un mensaje de proveedor; el estado y la validez criptográfica permanecen sin verificar.",
+      { proveedorId: providerId, transaccionId: transactionId, requestId: requestId,
+        correlationId: correlationId }, "SYSTEM");
+  } catch (_) {}
+
+  return {
+    status: "accepted",
+    code: "SIGNATURE_CALLBACK_AUTHENTICATED_PENDING_VALIDATION",
+    callbackAuthenticated: true,
+    proveedorId: providerId,
+    transaccionId: transactionId,
+    estadoProveedorRecibido: providerStatus,
+    estadoTransaccionActualizado: false,
+    verificacionCriptografica: "NO_VERIFICADA",
+    requiereValidacionEspecificaProveedor: true
+  };
+}
+
 function doPost(e) {
   try {
     if (!e || !e.postData || !e.postData.contents) return textResponse({ status: "error", message: "No se recibieron datos." });
     const request = JSON.parse(e.postData.contents);
+    if (request && typeof request.sourceService === "string" && /^SIGNATURE_PROVIDER:/i.test(request.sourceService)) return textResponse(handleSignatureProviderCallback_(request));
     if (request && request.sourceService) return textResponse(handleTrustedMigrationEnvelope_(request));
     const { action, payload } = request;
     const authCheck = validateRolePermission(action, payload);
