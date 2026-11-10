@@ -2048,33 +2048,71 @@ function reorderWaitlist(payload) {
 
 function offerWaitlistSlot(payload) {
   const { esperaId, horasVigencia } = payload || {};
-  if (!esperaId) throw new Error("esperaId es requerido.");
+  const waitlistId = String(esperaId || "").trim();
+  if (!waitlistId) throw new Error("esperaId es requerido.");
+  const horas = horasVigencia === undefined || horasVigencia === null || horasVigencia === "" ? 72 : Number(horasVigencia);
+  if (!Number.isSafeInteger(horas) || horas <= 0) throw new Error("VIGENCIA_OFERTA_INVALIDA");
 
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const waitSheet = getOrCreateSheet(ss, "ListaEsperaAdmision");
-  const waitData = waitSheet.getDataRange().getValues();
-
-  const idx = waitData.findIndex(r => String(r[0]).trim() === String(esperaId).trim());
-  if (idx === -1) throw new Error("Registro de lista de espera no encontrado.");
-
-  const row = waitData[idx];
-  const solicitudId = String(row[1] || "").trim();
-  const ctx = getAcademicAdmissionScopeContext_(payload, "offerWaitlistSlot", solicitudId, "UPDATE");
+  // Autenticar primero sin resolver ni leer detalles del registro de espera.
+  const ctx = getAcademicAdmissionScopeContext_(payload, "offerWaitlistSlot", null, "UPDATE");
   if (!ctx.authorized) throw new Error("RESOURCE_NOT_FOUND");
-  const scopedWaitSheet = getOrCreateSheet(ctx.ss, "ListaEsperaAdmision");
-  const scopedWaitData = scopedWaitSheet.getDataRange().getValues();
-  const scopedIdx = scopedWaitData.findIndex(r => String(r[0] || "").trim() === String(esperaId).trim());
-  if (scopedIdx === -1) throw new Error("RESOURCE_NOT_FOUND");
-  const horas = parseInt(horasVigencia) || 72; // Default 72 horas
-  const expDate = new Date(Date.now() + horas * 60 * 60 * 1000);
+  const lock = LockService.getScriptLock();
+  let hasLock = false;
+  try {
+    hasLock = lock.tryLock(10000);
+    if (!hasLock) throw new Error("Servicio ocupado ofreciendo plazas. Por favor reintente.");
+    const waitSheet = getOrCreateSheet(ctx.ss, "ListaEsperaAdmision");
+    const lastRow = waitSheet.getLastRow();
+    if (lastRow < 2) throw new Error("RESOURCE_NOT_FOUND");
+    // Resolver únicamente ID y solicitud; no consultar fecha, criterios ni notas aún.
+    const keys = waitSheet.getRange(2, 1, lastRow - 1, 2).getValues();
+    const matches = keys.map(function(row, index) { return { row: row, index: index }; })
+      .filter(function(item) { return String(item.row[0] || "").trim() === waitlistId; });
+    if (matches.length !== 1) throw new Error("RESOURCE_NOT_FOUND");
+    const rowNumber = matches[0].index + 2;
+    const requestId = String(matches[0].row[1] || "").trim();
+    const requestAccess = assertAcademicAdmissionRequestScopeAccess_(
+      ctx.ss, ctx.scope, requestId, null, "UPDATE");
+    if (!requestAccess || requestAccess.authorized !== true) throw new Error("RESOURCE_NOT_FOUND");
 
-  scopedWaitSheet.getRange(scopedIdx + 1, 8).setValue("Plaza_Ofrecida");
-  scopedWaitSheet.getRange(scopedIdx + 1, 9).setValue(expDate);
-  scopedWaitSheet.getRange(scopedIdx + 1, 12).setValue(new Date());
+    const row = waitSheet.getRange(rowNumber, 1, 1, 12).getValues()[0];
+    if (String(row[0] || "").trim() !== waitlistId || String(row[1] || "").trim() !== requestId) {
+      throw new Error("RESOURCE_NOT_FOUND");
+    }
+    const estadoActual = String(row[7] || "").trim();
+    const now = new Date();
+    if (estadoActual === "Plaza_Ofrecida") {
+      const currentExpiry = row[8] ? new Date(row[8]) : null;
+      if (!currentExpiry || isNaN(currentExpiry.getTime())) throw new Error("RESOURCE_CONFLICT_WAITLIST_EXPIRY_INVALID");
+      if (currentExpiry.getTime() > now.getTime()) {
+        return { status: "success", esperaId: waitlistId, solicitudId: requestId,
+          fechaExpiracionOferta: currentExpiry, isExisting: true,
+          message: "La plaza ya tiene una oferta vigente para esta solicitud." };
+      }
+    } else if (estadoActual !== "En_Espera" && estadoActual !== "Oferta_Expirada") {
+      throw new Error("RESOURCE_CONFLICT_WAITLIST_STATE");
+    }
 
-  logStructuredEvent("ACADEMIC", "offerWaitlistSlot", "INFO", "WAITLIST_SLOT_OFFERED", "Plaza ofrecida para solicitud " + solicitudId, { esperaId: esperaId, solicitudId: solicitudId, expDate: expDate }, ctx.actor.role);
-
-  return { status: "success", esperaId: esperaId, solicitudId: solicitudId, fechaExpiracionOferta: expDate, message: `Plaza vacante ofrecida a la solicitud ${solicitudId} con vigencia de ${horas} horas.` };
+    const expDate = new Date(now.getTime() + horas * 60 * 60 * 1000);
+    const updated = row.slice(7, 12);
+    updated[0] = "Plaza_Ofrecida";
+    updated[1] = expDate;
+    updated[4] = now;
+    // Estado, expiración y timestamp se actualizan como un único rango contiguo.
+    waitSheet.getRange(rowNumber, 8, 1, 5).setValues([updated]);
+    try {
+      logStructuredEvent("ACADEMIC", "offerWaitlistSlot", "INFO", "WAITLIST_SLOT_OFFERED",
+        "Plaza ofrecida para solicitud " + requestId,
+        { esperaId: waitlistId, solicitudId: requestId, expDate: expDate, horasVigencia: horas }, ctx.actor.role);
+    } catch (_) {}
+    return { status: "success", esperaId: waitlistId, solicitudId: requestId,
+      fechaExpiracionOferta: expDate,
+      message: "Plaza vacante ofrecida a la solicitud " + requestId + " con vigencia de " + horas + " horas." };
+  } finally {
+    if (hasLock) {
+      try { lock.releaseLock(); } catch (_) {}
+    }
+  }
 }
 
 function respondToWaitlistSlot(payload) {
