@@ -5,11 +5,11 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.440**
-- Última sesión: `IMA-EXEC-20261110-1750Z-01`
+- Último checkpoint: **C1.442**
+- Última sesión: `IMA-EXEC-20261110-1808Z-01`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.440: **116628**
+- Caracteres del archivo activo tras C1.442: **123002**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 - Baseline lógico válido: **C1.316** (`31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`). C1.317–C1.382 se conservan, pero no se aceptan como evidencia de continuidad por corrección expresa del usuario.
@@ -285,3 +285,5 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.440 | IMA-EXEC-20261110-1750Z-01 | EXAM: submitExam ligado a identidad, ámbito, propiedad e intentos; local PASS; CI PASS | PM-01 — TASK-153 / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.440 | 1262–1304 | C1.439 | d640ddbab2b247dd4736f0332b8f7a75ca096e8b |
 
 | C1.441 | IMA-EXEC-20261110-1756Z-01 | EXAM: createExam con ownership departamental y rollback compensatorio; local PASS; CI PASS | PM-01 — TASK-153 / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.441 | 1307–1350 | C1.440 | b497635b5cb6ea742361bbd847571c75a961c1a3 |
+
+| C1.442 | IMA-EXEC-20261110-1808Z-01 | Corrección publicada; pruebas locales NOT RUN; AUD-NG-386 abierto | TASK-153 / PM-01 / P0 — eliminación de overrides legacy en mutaciones EXAM | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.442 | 1344–1385 | C1.441 | 798553ae147818659d176864b299c608808f9e5d + registros C1.442 |
