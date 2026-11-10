@@ -1310,3 +1310,14 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - TASK-153 sigue En ejecución; AUD-NG-386 abierto.
 - Commits: `bbd2d1389234233f9d75c8ddd0fb9697e8c5a434`; `58d2a03f1d7f0c83e52e88c47f821c8d39256871`; `21fe586777cc6394effcdcbc639f8d5da1fa1374`; `ce08eabc4821f7856c40be16b1bd7620891c75ac`.
 ===============================================================================
+
+===============================================================================
+## C1.462 — reordenamiento de lista de espera: alcance departamental, orden grupal y rollback
+- `reorderWaitlist` valida contexto antes de leer la lista; bajo ScriptLock obtiene primero solo IDs, revalida ownership del objetivo y consulta metadatos de posición únicamente para solicitudes autorizadas.
+- Reordena el grupo completo `En_Espera` de igual año/grado; valida posición entera dentro del rango y usa desempate determinista. No consulta detalles ni modifica filas de otros departamentos.
+- Si falla una escritura de posición, restaura los valores previos; si la compensación también falla, emite `WAITLIST_REORDER_COMPENSATION_FAILED`.
+- Contrato local cubre orden grupal, aislamiento, ownership, lock ocupado, estado inválido, posición no válida/fuera de rango y compensación de escrituras parciales.
+- GitHub Actions run `42896093654` SUCCESS: ACADEMIC, Department Scope, USER signature ownership, ACCOUNTING, ResourceOwnership ABAC y voucher client PASS; sintaxis Apps Script/cliente PASS.
+- Sin despliegue ni datos reales. TASK-153 sigue En ejecución; AUD-NG-386 abierto por otras rutas.
+- Commits: `647c50e9a96c70d80809be56600716fac37b75f7`; `be34332567dd0b93e101d260c7def03cbb95ea52`.
+===============================================================================
