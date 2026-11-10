@@ -2453,112 +2453,60 @@ function reconstructFileParts(payload) {
 
 function readLegacyDocument(payload) {
   try {
-    const { fileId, fileUrl, format } = payload || {};
-    let targetFile = null;
+    const identity=getVerifiedTaskIdentity_(payload);
+    if(!identity||!identity.authorized)throw new Error("RESOURCE_NOT_FOUND");
+    const requestedFileId=extractTaskServiceFileId(payload&&(payload.fileId||payload.fileUrl));
+    if(!requestedFileId)throw new Error("RESOURCE_NOT_FOUND");
+    const ss=SpreadsheetApp.openById(SPREADSHEET_ID);
+    const metadataSheet=ss.getSheetByName("MetadatosArchivos");
+    if(!metadataSheet)throw new Error("RESOURCE_NOT_FOUND");
+    const metadataRows=metadataSheet.getDataRange().getValues().slice(1);
+    const matches=metadataRows.filter(row=>extractTaskServiceFileId(row[15])===requestedFileId&&
+      String(row[14]||"").trim().toLowerCase()==="activo");
+    if(matches.length!==1)throw new Error("RESOURCE_NOT_FOUND");
+    const metadata=matches[0],taskId=String(metadata[11]||"").trim(),ownerId=String(metadata[19]||"").trim();
+    if(!taskId||!ownerId)throw new Error("RESOURCE_NOT_FOUND");
+    const task=getSheetOrThrow(ss,"Tareas").getDataRange().getValues().slice(1)
+      .find(row=>String(row[0]||"").trim()===taskId);
+    if(!task)throw new Error("RESOURCE_NOT_FOUND");
+    if(identity.role==="Profesor"||isTaskServiceAdministrativeRole(identity.role)){
+      assertTaskServiceTeacherCanManageTask(payload,task,"READ_CONTENT");
+    }else if(identity.role==="Estudiante"||identity.role==="Alumno"){
+      if(ownerId!==identity.userId)throw new Error("RESOURCE_NOT_FOUND");
+      assertTaskServiceStudentCanAccessTask(ss,identity.userId,task);
+    }else if(["Padre","Tutor","Responsable"].includes(identity.role)){
+      const linkedIds=getTaskServiceGuardianStudentIds(identity.userId).map(value=>String(value||"").trim());
+      if(linkedIds.indexOf(ownerId)===-1)throw new Error("RESOURCE_NOT_FOUND");
+      assertTaskServiceStudentCanAccessTask(ss,ownerId,task);
+    }else throw new Error("RESOURCE_NOT_FOUND");
 
-    if (fileId) {
-      targetFile = DriveApp.getFileById(fileId);
-    } else if (fileUrl) {
-      const extractedId = extractDriveFileId(fileUrl);
-      if (extractedId) targetFile = DriveApp.getFileById(extractedId);
+    const targetFile=DriveApp.getFileById(requestedFileId);
+    if(targetFile.isTrashed())throw new Error("RESOURCE_NOT_FOUND");
+    const fileName=targetFile.getName(),mimeType=targetFile.getMimeType(),ext=fileName.split(".").pop().toLowerCase();
+    let contentText="";
+    if(["txt","psc","html","js","css"].includes(ext)){
+      try{contentText=targetFile.getBlob().getDataAsString("UTF-8");}catch(_){contentText="";}
+    }else{
+      try{
+        const raw=targetFile.getBlob().getDataAsString();
+        const textMatches=raw.match(/[A-Za-z0-9áéíóúÁÉÍÓÚñÑ\s.,;:()\-]{3,}/g)||[];
+        const filtered=textMatches.filter(value=>value.trim().length>3&&!value.includes("<?xml")&&!value.includes("xmlns"));
+        if(filtered.length)contentText=filtered.join(" ");
+      }catch(_){contentText="";}
     }
-
-    if (!targetFile) {
-      return {
-        status: "error",
-        errorCode: "NOT_FOUND",
-        message: "No se encontró el documento solicitado."
-      };
+    if(!contentText||contentText.trim().length<10){
+      contentText="DOCUMENTO: "+fileName+"\n\nContenido textual no disponible para previsualización; utiliza la descarga autorizada del archivo original.";
     }
-
-    const fileName = targetFile.getName();
-    const mimeType = targetFile.getMimeType();
-    const ext = fileName.split('.').pop().toLowerCase();
-
-    let contentText = "";
-
-    if (ext === "txt" || ext === "psc" || ext === "html" || ext === "js" || ext === "css") {
-      try {
-        contentText = targetFile.getBlob().getDataAsString("UTF-8");
-      } catch (e) { contentText = ""; }
-    } else {
-      // Clean structured extraction for legacy Word / Office formats (.doc, .docx, .rtf, .odt)
-      try {
-        const fileBlob = targetFile.getBlob();
-        const raw = fileBlob.getDataAsString();
-        const textMatches = raw.match(/[A-Za-z0-9áéíóúÁÉÍÓÚñÑ\s.,;:()\-]{3,}/g) || [];
-        const filtered = textMatches.filter(t => t.trim().length > 3 && !t.includes("<?xml") && !t.includes("xmlns"));
-        if (filtered.length > 0) {
-          contentText = filtered.join(" ");
-        }
-      } catch (convErr) {
-        contentText = "";
-      }
-    }
-
-    if (!contentText || contentText.trim().length < 10) {
-      contentText = "DOCUMENTO OFICIAL INSTITUCIONAL: " + fileName + "\n\n" +
-        "1. ESTRUCTURA Y ENCABEZADOS:\n" +
-        "   - Archivo: " + fileName + "\n" +
-        "   - Formato: " + ext.toUpperCase() + "\n" +
-        "   - Verificación de Integridad: APROBADO (Malla Institucional)\n\n" +
-        "2. CONTENIDO DEL DOCUMENTO:\n" +
-        "   El documento ha sido cargado y verificado en la estructura del expediente oficial. " +
-        "Se preservan la totalidad de tablas, gráficos y textos del registro de origen. " +
-        "Puedes utilizar el botón 'Descargar Documento Original' en la barra superior para conservar una copia nativa.";
-    }
-
-    return {
-      status: "success",
-      fileName: fileName,
-      format: ext,
-      mimeType: mimeType,
-      fileUrl: targetFile.getUrl(),
-      content: contentText.substring(0, 50000)
-    };
-  } catch (error) {
-    return {
-      status: "error",
-      errorCode: "READ_FAILED",
-      message: "No se pudo recuperar el documento completo. Inténtalo nuevamente.",
-      errorDetails: error.message
-    };
+    return {status:"success",fileName,format:ext,mimeType,fileUrl:targetFile.getUrl(),content:contentText.substring(0,50000)};
+  }catch(error){
+    return {status:"error",errorCode:"RESOURCE_NOT_FOUND",message:"No se pudo recuperar el documento solicitado."};
   }
 }
 
 function getMultiPartFolderFiles(payload) {
-  try {
-    const { folderId } = payload || {};
-    if (!folderId) throw new Error("ID de carpeta requerido.");
-
-    const folder = DriveApp.getFolderById(folderId);
-    const filesIter = folder.getFiles();
-    const filesList = [];
-
-    while (filesIter.hasNext()) {
-      const f = filesIter.next();
-      filesList.push({
-        id: f.getId(),
-        name: f.getName(),
-        size: f.getSize(),
-        url: f.getUrl(),
-        created: f.getDateCreated().toISOString()
-      });
-    }
-
-    // Natural numeric sorting rule (Parte 1, Parte 2, ..., Parte 10)
-    filesList.sort((a, b) => {
-      const matchA = a.name.match(/Parte\s+(\d+)/i) || a.name.match(/chunk_(\d+)/i);
-      const matchB = b.name.match(/Parte\s+(\d+)/i) || b.name.match(/chunk_(\d+)/i);
-      const numA = matchA ? parseInt(matchA[1], 10) : 0;
-      const numB = matchB ? parseInt(matchB[1], 10) : 0;
-      return numA - numB;
-    });
-
-    return { status: "success", folderName: folder.getName(), files: filesList };
-  } catch (error) {
-    return { status: "error", message: error.message };
-  }
+  // Legacy folderId enumeration is disabled. Resumable uploads are bound to an
+  // authenticated sessionKey and are assembled server-side by reconstructFileParts.
+  return {status:"error",code:"LEGACY_FOLDER_ENUMERATION_DISABLED",message:"La enumeración directa de carpetas de Drive está deshabilitada; utilice el flujo de carga reanudable autenticada."};
 }
 
 
