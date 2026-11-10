@@ -1753,3 +1753,63 @@ Checkpoint anterior: C1.450.
 - TASK-153 permanece En ejecución; AUD-NG-386 continúa abierto por el resto de rutas/requisitos ACADEMIC.
 - Siguiente foco: revisar la atribución e idempotencia de cargos de matrícula para evitar considerar reconciliado un cargo ajeno o ausente. Mantener la sesión IMA-EXEC-20261110-1825Z-02.
 ===============================================================================
+
+
+===============================================================================
+## CHECKPOINT C1.452 — ACADEMIC: atribución e idempotencia del cargo de admisión
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.451.
+
+### Trabajo de esta iteración (un solo subhallazgo)
+- Se detectó que la deduplicación de CargosEstudiante comparaba solo usuario/concepto, pudiendo omitir el cargo de admisión por coincidencia con uno ordinario y sin preservar procedencia.
+- Los cargos creados por conversión ahora registran ReferenciaOrigen en columna 10: ADMISION|<solicitudId>|<matriculaId>.
+- La reutilización requiere referencia exacta única y coincidencia de usuario, concepto y montos; cargos activos sin marca o de otro origen fallan con ADMISSION_CHARGE_CONFLICT, duplicados con ADMISSION_CHARGE_AMBIGUOUS.
+- El retorno idempotente de una solicitud Convertida exige el cargo exacto, además de expediente/cuenta/matrícula/movimiento, y devuelve CargoID.
+- La acción pública registerStudentEnrollment filtra _chargeReference y _rollbackActions; delega a registerStudentEnrollmentInternal_ privado. Solo convertAdmissionToStudent construye el marcador interno.
+- El cargo nuevo se integra al rollback LIFO. Filas ordinarias conservan nueve columnas; solo el flujo de admisión extiende el encabezado a ReferenciaOrigen. Un cargo legado anulado no bloquea nueva creación.
+
+### Archivos
+- backend/academic-service/Code.gs
+- tests/security/academic-student-expediente-ownership.test.js
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Commits de código y pruebas
+- 95a6b4d791fb9051a57482f3f9b93efa286760c2 — lógica de referencia de cargo y validación de conciliación.
+- 2aa6dcdaec0315e9d16a1383051bf0d11fa11bfa — contrato de atribución/reintento.
+- 4dae41b25cf393563d50768b194e9fc20c0ab762 — tolerancia de precisión numérica.
+- 24a45ddb5d915a028352e8cb2bbfd05455a4f145 — separación API pública/helper interno.
+- 086d98eb4605a701ce7c1f99d4958b3f10b1037a — compatibilidad de filas ordinarias de nueve columnas.
+- 2745da1cc659c3cffce1dd8b51124d059a42a158 — normalización de estado Anulado.
+- 6d68e0d3fde476eab33254943d6846c2aa319b18 — corrección de separadores de harness.
+- 55725a71fca0d2b38a430e208ff2a60250707ede — contrato de aislamiento de metadatos internos.
+- b0e5cdc0f3f8a68f9db84cedd64dfbd446fc42c5 — ajuste de separador del contrato público.
+- 31053d3eaa9c4df36a3f549ca0818fe55fe6f0dd — contrato de compatibilidad ordinaria.
+- dcd43d05621c90f6afc7f9cbd2d0f6d7a645205b — contrato de cargo legado anulado.
+- 424af6b66931d1bc1f50459d59a468a4596ddd2a — dependencias de harness completas.
+- deb974e07ceed041225e6373d32495681c472633 — rechazo de importes incompletos.
+- 1ed0effebdce56c03756178e098f38bb22637204 — regresión de importes incompletos.
+- 44656485003944569311f74bf5a18c894e5a1598 — Plan Maestro.
+- ebb8a65a200fd17bb52aa231461951dcacd61573 — Auditoría.
+
+### Verificación
+- Parseo/sintaxis de backend/academic-service/Code.gs: PASS.
+- Parseo/sintaxis de tests/security/academic-student-expediente-ownership.test.js: PASS.
+- Ejecución dinámica aislada PASS: creación del cargo con referencia; reintento sin duplicado; rollback del cargo insertado; wrapper público filtra referencia y callback; fila ordinaria conserva nueve columnas; cargo legado ANULADO no bloquea.
+- Conciliación completa aislada PASS con expediente/cuenta/matrícula/cargo/movimiento.
+- Rechazos aislados PASS: cargo faltante, legado activo sin referencia, referencia duplicada, usuario distinto, importe faltante o inconsistente.
+- Suite Node completa y CI: NOT RUN; no se declaran PASS.
+- Despliegue Apps Script y datos reales: no ejecutados.
+
+### Compatibilidad histórica y límites
+- Los cargos anteriores no tienen referencia de origen. No se les asigna retrospectivamente una solicitud por coincidencia de concepto o importe. Los reintentos de conversiones históricas con cargos no marcados quedan en conflicto/incompletos y requieren conciliación manual sustentada antes de cualquier backfill.
+- La ampliación del encabezado se hace solo al registrar un cargo de admisión; la lectura histórica existente usa las primeras nueve columnas y permanece compatible.
+- No se afirma atomicidad ACID de Sheets ni reparación automática de registros históricos.
+- TASK-153 permanece En ejecución; AUD-NG-386 continúa abierto por el resto de rutas/requisitos ACADEMIC.
+- Siguiente foco: evaluar si hay una vía verificable para conciliar cargos históricos mediante registros de auditoría/eventos antes de considerar cualquier backfill. Mantener IMA-EXEC-20261110-1825Z-02.
+===============================================================================
