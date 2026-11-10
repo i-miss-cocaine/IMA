@@ -929,3 +929,13 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - Sin cambios de código, datos, requisitos ni estado de tareas; sin reauditoría funcional y sin pruebas de producto.
 - Checkpoint C1.409; ubicación Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt, sección C1.409, líneas 113–126; índice Auditoría/INDICE_CHECKPOINTS.md, fila C1.409.
 ===============================================================================
+
+
+===============================================================================
+## C1.410 — IMA-EXEC-20261110-1140Z-01 — investigación y planificación T153-S01
+- Investigación comparativa basada en fuentes oficiales Ed-Fi, Canvas, Moodle, 1EdTech, NIST, OWASP y referencias educativas hondureñas SACE/USINIEH.
+- Se amplía el subplan existente en Plan Maestro §10.81; no se crea auditoría, tarea ni ID duplicado.
+- Se reutilizan FASE 37, FASE 41/E2E-41-09, FASE2-T04/AUD-NG-175, AUD-NG-226/TASK-506 y C1.403. Se preservan los bloqueos: T153-S01 requiere decisión institucional; F29-TASK05↔F29-TASK17 permanece en triage PM-00.
+- Sin código/datos/esquemas/permisos modificados; no pruebas de producto ejecutadas.
+- Checkpoint C1.410: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt, líneas 130–180; índice Auditoría/INDICE_CHECKPOINTS.md, fila C1.410.
+===============================================================================

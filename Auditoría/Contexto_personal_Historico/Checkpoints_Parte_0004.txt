@@ -123,3 +123,57 @@ I. **AUDITORÍA ÚNICA Y CONTROL DE RECURSIVIDAD (OBLIGATORIO):** antes de inici
 - Pruebas de producto: ninguna. Verificación ejecutada: lectura de blob, conteo de líneas y cotejo de rango con la sección C1.408.
 - **Ubicación exacta:** `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt`, sección C1.409, rango a registrar en el índice central `Auditoría/INDICE_CHECKPOINTS.md`. Anterior C1.408.
 ===============================================================================
+
+
+===============================================================================
+## C1.410 — Investigación comparativa y plan de decisión T153-S01
+**Sesión:** IMA-EXEC-20261110-1140Z-01  
+**Fecha:** 2026-11-10 11:40Z  
+**Checkpoint anterior:** C1.409  
+**HEAD de partida verificado:** dfbd19cd867e5d750d4978f8aa4ce36ceb4b82e6  
+**Rama de trabajo:** `NG_beta_0.0.0.1_work`  
+**Rama base:** `NG_beta_0.0.0.1` @ 44d9891132332e692dbe2ba8602b41f50a508a59  
+**Tarea/fase:** TASK-153 / T153-S01 / PM-01; investigación y planificación documental, sin implementación.
+
+### 1. Continuidad y alcance
+- HEAD de trabajo y rama base consultados antes de escribir: dfbd19cd867e5d750d4978f8aa4ce36ceb4b82e6 y 44d9891132332e692dbe2ba8602b41f50a508a59. La base no cambió desde C1.409.
+- Se leyó el contexto personal vigente (bloque A–I), metodología, Plan Maestro, checkpoint C1.409, backlog Dirección, FASE 37, FASE 41, PLAN-IMA-001/TASK-695, FASE2-T04, tareas_auditoria y registros históricos.
+- Se reutiliza la auditoría focal C1.403 y los expedientes FASE 37/41 y FASE2-T04. No se repite auditoría funcional, no se crea informe de auditoría nuevo, no se crea ID ni se duplica el subplan.
+- Requisito completo de TASK-153: `pendientes/Dirección/Pendientes.md`, bloque TASK-153; subtarea: Plan Maestro, tabla «Descomposición ejecutable — PM-01», T153-S01. Referencias: FASE 41 F41-08/E2E-41-09; FASE 37; FASE2-T04/AUD-NG-175; AUD-NG-226/TASK-506; C1.403.
+- HEAD de partida se compara con C1.409; no se detectaron cambios funcionales posteriores que invaliden la evidencia C1.403.
+
+### 2. Investigación externa y conclusiones
+- Ed-Fi separa EducationOrganization y OrganizationDepartment; Canvas y Moodle asignan roles/permisos por contextos organizativos jerárquicos y permiten asignaciones distintas por contexto; OneRoster define intercambio SIS/LMS de organizaciones, usuarios, cursos, matrículas y calificaciones, no autorización.
+- NIST SP 800-162/205 respalda ABAC con atributos de sujeto, recurso, acción y entorno; OWASP recomienda deny-by-default y validación por solicitud.
+- SACE/USINIEH es referencia contextual hondureña para organización y administración educativa; su rol de fuente estadística no demuestra autoridad del catálogo interno de IMA. FERPA se cita solo como comparador de privacidad estadounidense, no como ley aplicable a Honduras.
+- Fuentes y URLs oficiales quedan anexadas en Plan Maestro §10.81.2.
+- Dictamen: una fuente lógica de verdad por dominio, con unidades tipadas y relaciones explícitas; no asumir que el departamento académico equivale al administrativo ni que un catálogo técnico de spreadsheets representa propiedad organizativa.
+
+### 3. Plan elaborado
+- Se añade §10.81 al Plan Maestro como ampliación del subplan T153-S01 existente: evidencia vigente; benchmark comparativo; modelo conceptual; cuatro alternativas sin seleccionar; siete etapas S01-0…S01-7; criterios de cierre; pruebas de contrato planificadas; decisiones pendientes.
+- Se mantiene el orden original T153-S01…S08 y las dependencias de TASK-153. No se crean nuevos IDs ni se altera el requisito original.
+- Criterio central: la institución debe identificar autoridad aprobadora, dueño/steward del dato, fuente documental vigente y semántica de unidades, jerarquía, claves, vigencia y propiedad/custodia.
+- La alternativa A/B/C/D queda sin decisión hasta contar con evidencia institucional. El modelo propuesto es conceptual, no un esquema aprobado.
+
+### 4. Estado real y límites
+- TASK-153: En ejecución; T153-S01: Bloqueada por falta de autoridad institucional verificable. Esta iteración no desbloquea la subtarea.
+- No se fusionan catálogos, no se crean tablas, no se modifican códigos, permisos, esquemas ni datos productivos. No se accedió a filas productivas.
+- No se ejecutaron pruebas unitarias, de contrato, Apps Script, Sheets/Drive, HTTP, navegador ni E2E. Las pruebas de contrato se documentan como planificadas.
+- No se crean hallazgos/tareas derivados: la investigación no demuestra una nueva falla distinta; se reutilizan AUD-NG-175, AUD-NG-226, TASK-506, TASK-046, TASK-062 y AUD-NG-158.
+- Tareas relacionadas: TASK-696 sigue Bloqueada; F29-TASK05↔F29-TASK17 sigue en ciclo PM-00.
+
+### 5. Archivos y verificación
+- Modificados: `Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md`, `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt`, `Auditoría/INDICE_CHECKPOINTS.md`, `Auditoria.txt`, `changueslogs.txt`.
+- No modificados: código, pruebas, esquemas, datos, permisos, backlogs fuente, `tareas_auditoria.txt`, FASE 37, FASE 41, FASE2-T04, PLAN-IMA-001 y rama base.
+- Revisiones ejecutadas: cotejo de requisitos originales, vigencia de evidencia C1.403, no duplicación §19.6, fuentes web oficiales, coherencia del plan con §6.1 y límites de alcance.
+- Pruebas de producto: no aplican a esta entrega documental; ninguna fue declarada como ejecutada.
+
+### 6. Siguiente acción exacta
+1. Solicitar/obtener la decisión institucional firmada y los documentos de autoridad enumerados en §10.81.5 S01-0.
+2. Con autorización, completar inventario de solo lectura S01-1 y crosswalk S01-4 sin tocar datos.
+3. Aplicar la alternativa A/B/C/D únicamente con evidencia y aprobación; completar contrato S01-3/S01-5.
+4. Reejecutar §6.1 antes de seleccionar una nueva unidad; no iniciar S02/S03 ni TASK-696 mientras sigan sus dependencias.
+
+**Ubicación exacta:** `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt`, sección C1.410, rango de líneas a registrar en índice central `Auditoría/INDICE_CHECKPOINTS.md`. Anterior C1.409.  
+**Commit de cierre:** este commit consolidado; SHA se confirma externamente tras publicar.  
+===============================================================================

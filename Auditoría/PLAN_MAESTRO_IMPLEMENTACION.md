@@ -2630,3 +2630,119 @@ Se reutilizan TASK-153, TASK-060, F26-TASK01, TASK-506, TASK-171, TASK-668, AUD-
 - **Continuidad prioritaria:** TASK-153/T153-S01 sigue siendo el trabajo activo PM-01/P0 y continúa Bloqueado por ausencia de decisión institucional aprobada sobre autoridad del catálogo departamental, relación entre modelos, claves/jerarquía/estados y propietario por recurso. No inferir ownership ni migrar datos.
 - **Selección:** detenida por el ciclo que requiere triage PM-00 y por el bloqueo externo de T153-S01. No se selecciona ni se inicia una tarea sustituta en esta iteración. Reejecutar §6.1 tras resolver ambos impedimentos.
 - **Evidencia:** C1.407/HEAD `ced7d9b6fe3a2249efe564473d0f93dce0bddbd2`; blobs originales de ambos backlogs leídos; F29-TASK05 recuperada desde blob `24347c3776521c930391f89e0430910554bf233b` del HEAD actual. No se crea un informe de auditoría adicional.
+
+
+## 10.81 PM-01 — investigación comparativa y plan de decisión T153-S01 (C1.410)
+
+**Alcance:** ampliación documental del subplan existente T153-S01. No crea subtarea, ID global, hallazgo ni expediente de auditoría adicional. No sustituye los requisitos completos de `pendientes/Dirección/Pendientes.md`, TASK-153, FASE 37, FASE 41, FASE2-T04 ni el diseño TASK-695/PLAN-IMA-001.
+
+### 10.81.1 Dictamen de continuidad y evidencia IMA reutilizada
+
+La investigación externa complementa —no invalida ni repite— la evidencia vigente:
+
+1. **FASE 41 / F41-08 / E2E-41-09:** aislamiento departamental implementado parcialmente; E2E-41-09 falló porque una consulta directa alterando el ID podía devolver datos generales de otro ámbito. El riesgo se clasifica P0 en el expediente existente.
+2. **FASE 37:** existe `CatalogoSpreadsheets` para resolver fuentes físicas por dominio/año, pero no es un catálogo de unidades organizativas ni acredita propiedad de recursos. La auditoría detectó destino de importación controlado por cliente, catálogo formal de relaciones interdepartamentales ausente y brechas de compartición mínima.
+3. **FASE2-T04 / AUD-NG-175:** se identificaron catálogos locales y backend inconsistentes, sincronización parcial, ausencia de propietario/autoridad documentados, validación no integrada en mutaciones, fallback local silencioso y falta de historial suficiente. Reutilizar AUD-NG-175, TASK-046, TASK-062 y AUD-NG-158; no crear duplicados.
+4. **AUD-NG-226 / TASK-506:** ya cubre unicidad, integridad referencial, relación entre catálogos administrativos/académicos y atomicidad de adscripciones. TASK-506 permanece PM-02/P1; T153-S01 no debe adelantar su implementación ni duplicarla.
+5. **C1.403:** USER crea `CatalogoDepartamentos` sin relación/lector observado en la revisión; ACADEMIC usa `DepartamentosAcademicos` para planificación; ACCOUNTING lo consulta al resolver expedientes laborales. No se demostró autoridad institucional, crosswalk formal ni propietario departamental de recursos estudiantiles. No se inspeccionaron filas productivas ni se migraron datos.
+
+**Conclusión interna:** la presencia de un catálogo en un servicio, su uso más frecuente o el nombre de la tabla no demuestran autoridad institucional. La decisión requiere una fuente organizativa aprobada por la institución y un responsable de datos explícitamente designado.
+
+### 10.81.2 Investigación externa: plataformas educativas y estándares
+
+| Referencia | Modelo/patrón documentado | Aplicación al diseño IMA | Límite de la referencia |
+|---|---|---|---|
+| **Ed-Fi Data Standard 6 — Education Organization** | Distingue organizaciones educativas y jerarquías (p. ej. agencia, distrito, centro) y modela `OrganizationDepartment` como unidad organizativa subordinada a una organización educativa. | Separar institución/centro y unidad/departamento; permitir tipos organizativos y relaciones explícitas; evitar que «departamento académico» sea automáticamente equivalente a «departamento administrativo». | Estándar de intercambio/modelado educativo, no determina quién tiene autoridad dentro de IMA ni prescribe su esquema físico. |
+| **Canvas LMS — account/subaccount hierarchy** | Admite cuentas/subcuentas que pueden reflejar la estructura SIS; los administradores se asignan a subcuentas con permisos acotados; la herencia de permisos desciende en la jerarquía, no asciende. Una persona puede tener roles diferentes en subcuentas distintas. | Usar el contexto organizativo como ámbito de administración; permitir múltiples adscripciones contextualizadas; no convertir un rol de una unidad en privilegio global. | La jerarquía de cuentas de Canvas es un patrón LMS, no una fuente institucional de departamentos ni una política de propiedad de expedientes. |
+| **Moodle — roles y contextos** | Roles se asignan en contextos (sistema, categoría, curso, módulo); el contexto inferior puede heredar desde el superior, no concede por sí mismo permisos laterales o ascendentes; una persona puede tener roles distintos por contexto. | Separar identidad, rol y ámbito; explicitar reglas de herencia; probar permisos en el contexto concreto y evitar la unión automática de todos los roles. | Moodle define permisos de capacidades/contextos LMS; no define ownership departamental de recursos institucionales. |
+| **1EdTech OneRoster 1.2** | Estandariza intercambio de usuarios, cursos, clases, organizaciones, matrículas y calificaciones entre SIS/LMS mediante CSV/REST. | Diseñar adaptadores/crosswalk para interoperabilidad; mantener identificadores de origen y procedencia; validar la sincronización sin ceder autoridad a un consumidor LMS. | OneRoster es un estándar de intercambio; no es motor de autorización ni decide el catálogo maestro institucional. |
+| **NIST SP 800-162 / SP 800-205** | ABAC evalúa atributos del sujeto, objeto/recurso, operación y condiciones del entorno; requiere atributos definidos y gobernados de forma consistente. | Política de acceso compuesta con usuario verificado, membresía vigente, rol/capacidad, unidad propietaria, acción, estado del recurso, institución y vigencia. | Guía técnica de control de acceso; no asigna valores ni autoridad a atributos internos de IMA. |
+| **OWASP Authorization Cheat Sheet** | Recomienda denegar por defecto y validar permisos en cada solicitud, sin confiar en la interfaz o el origen de la llamada. | Reforzar backend fail-closed para consultas, búsquedas, descargas, firmas, exportaciones, importaciones y mutaciones; evitar bypasses por endpoint. | Guía de seguridad de aplicaciones; no sustituye el gobierno institucional de datos. |
+| **SACE / USINIEH — Honduras** | SACE se describe como sistema de administración de centros educativos para registro, matrícula, evaluación y promoción; USINIEH publica sistemas, documentos normativos y referencias organizativas. El portal de Secretaría de Educación publica estructura/organigrama institucional. | Usar como referencia contextual hondureña para distinguir nivel central, direcciones departamentales/municipales/distritales y centros educativos; considerar perfiles jurisdiccionales e interoperabilidad. | No asumir que la jerarquía pública de la Secretaría de Educación equivale a la estructura interna de IMA. La designación de SACE como fuente oficial de producción estadística no demuestra que SACE sea el catálogo de propiedad departamental de una institución particular. |
+| **FERPA (EE. UU.) — legitimate educational interest** | El acceso a expedientes educativos por personal institucional se limita a quienes tengan interés educativo legítimo y se deben usar métodos razonables para limitar acceso. | Como principio comparativo de minimización y necesidad funcional, exigir justificación de función/operación y limitar campos y expedientes. | Norma estadounidense; no se presenta como legislación aplicable a IMA/Honduras. Debe prevalecer la normativa hondureña e institucional que corresponda. |
+
+**Fuentes oficiales consultadas (10 de noviembre de 2026):**
+- Ed-Fi Education Organization Domain: https://docs.ed-fi.org/reference/data-exchange/data-standard/model-reference/education-organization-domain/
+- Ed-Fi Education Organization Overview: https://docs.ed-fi.org/reference/data-exchange/data-standard/4/model-reference/education-organization-domain/overview/
+- Canvas — estructura de cuentas y subcuentas: https://community.instructure.com/en/kb/articles/661404-what-is-the-hierarchical-structure-for-canvas-accounts
+- Moodle — Role contexts: https://docs.moodle.org/403/en/Role_contexts
+- 1EdTech OneRoster: https://www.1edtech.org/standards/oneroster
+- NIST SP 800-162: https://csrc.nist.gov/pubs/sp/800/162/upd2/final
+- NIST SP 800-205: https://csrc.nist.gov/pubs/sp/800/205/final
+- OWASP Authorization Cheat Sheet: https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html
+- SACE Honduras: https://sace.se.gob.hn/
+- USINIEH / perfil y normativa: https://www.se.gob.hn/perfil-usinieh/
+- Secretaría de Educación — estructura institucional: https://www.se.gob.hn/se-detalle-institucional/
+- Acuerdo Ejecutivo 1358-SE-2014, Reglamento General de la Ley Fundamental de Educación: https://www.coned.gob.hn/wp-content/uploads/2023/07/Acuerdo-No.-1358-SE-2014-Reglamento-General-de-la-LFE.pdf
+- Secretaría de Educación — leyes y reglamentos del sistema educativo: https://www.se.gob.hn/se-leyes/
+- FERPA — métodos razonables para limitar acceso por interés educativo legítimo: https://studentprivacy.ed.gov/faq/what-must-educational-agencies-or-institutions-do-ensure-only-school-officials-legitimate
+
+### 10.81.3 Síntesis arquitectónica propuesta (no es aún un esquema aprobado)
+
+La solución debe distinguir conceptos que hoy pueden estar mezclados:
+
+1. **Organización institucional:** tenant/institución y, si corresponde, sedes/centros. Constituye el límite superior de pertenencia y aislamiento.
+2. **Unidad organizativa:** departamento/unidad con tipo explícito (académico, administrativo, servicio u otro autorizado), código, nombre, estado, vigencia y relación jerárquica.
+3. **Relación organizativa:** jerarquía padre-hijo y relaciones matriciales/funcionales separadas. Una relación funcional o de colaboración no debe crear herencia de permisos.
+4. **Adscripción/membresía:** relación temporal entre usuario y unidad, con rol/capacidad, alcance, vigencia, estado, actor aprobador y revocación. Una persona puede tener varias adscripciones; ninguna implica automáticamente acceso a todas ellas.
+5. **Propiedad/custodia del recurso:** separar el propietario institucional/de negocio, la unidad responsable de custodia/gestión y el ámbito desde el que se permite operar. No asumir que todo expediente estudiantil pertenece por naturaleza a un único departamento: la autoridad debe decidir si la propiedad es institucional y la custodia departamental, o si el tipo concreto de recurso sí tiene propietario departamental exclusivo.
+6. **Referencia compartida:** acceso excepcional a recurso/campos/operaciones específicos, con finalidad, autorizador, destinatario, vigencia y revocación. Compartir una referencia no transfiere la propiedad.
+7. **Fuente y procedencia:** cada unidad y relación debe poder indicar sistema fuente, identificador externo, versión/fecha efectiva, actor de aprobación y evidencia documental.
+
+Como modelo conceptual, la identidad de unidad debe ser inmutable y distinta del nombre visible. El código externo debe llevar namespace/organización emisora y no sustituir automáticamente la clave interna. El estado y la vigencia deben conservar historia; no se borran unidades que ya tengan relaciones o recursos históricos. La jerarquía debe impedir ciclos; las relaciones matriciales se modelan por separado. La herencia de permisos debe ser explícita, direccional y comprobable.
+
+**No se aprueba todavía** el nombre de una tabla, el UUID, el catálogo concreto, el árbol organizativo ni la semántica de propiedad. Son decisiones posteriores a la evidencia institucional y a la comparación de los datos reales.
+
+### 10.81.4 Alternativas que debe resolver la decisión institucional
+
+| Alternativa | Cuándo sería válida | Evidencia necesaria | Riesgo si se adopta sin evidencia |
+|---|---|---|---|
+| **A. CatalogoDepartamentos como autoridad** | Si el órgano competente confirma que contiene todas las unidades relevantes, claves oficiales, estados, jerarquía y gobierno de cambios. | Acto/organigrama aprobado; propietario y steward; reglas de alta/cambio/baja; mapeo de consumidores; validación de cobertura. | Convertir un catálogo de USER sin lectores observados en fuente maestra por mera ubicación técnica. |
+| **B. DepartamentosAcademicos como autoridad** | Solo si su mandato cubre realmente los departamentos académicos y administrativos requeridos por TASK-153, o si el alcance se limita formalmente al dominio académico. | Aprobación de autoridad; alcance documentado; prueba de cobertura; responsables de actualización; compatibilidad de identificadores. | Extender un catálogo académico de planificación a RR. HH., Secretaría, Contabilidad y propiedad documental sin mandato. |
+| **C. Mantener ambos como dominios distintos con relación explícita** | Si los catálogos describen conceptos diferentes pero relacionados (p. ej. unidad académica frente a unidad administrativa). | Tipos/definiciones institucionales; crosswalk aprobado; cardinalidad y vigencia; reglas para unidades sin equivalencia. | Falsas equivalencias, relaciones ambiguas o permisos heredados incorrectamente si el crosswalk no está gobernado. |
+| **D. Crear un registro canónico de unidades organizativas** | Si ninguno de los catálogos existentes es autoridad suficiente y la institución aprueba un registro común con dominios tipados y fuentes subordinadas. | Decisión formal, responsable de datos, modelo aprobado, política de sincronización y plan de transición. | Crear una tercera fuente paralela y agravar la fragmentación. |
+
+**Recomendación técnica provisional:** preferir una fuente institucional gobernada por dominio, con identificadores estables y crosswalk explícito; conservar separados los conceptos académicos y administrativos cuando la institución confirme que son distintos. Una única fuente lógica no obliga a fusionar conceptos ni a concentrarlos en una sola tabla física. No se elige A, B, C o D hasta recibir la decisión documentada.
+
+### 10.81.5 Plan de ejecución detallado de T153-S01
+
+| Etapa | Actividad | Evidencia/entregable | Puerta de salida |
+|---|---|---|---|
+| **S01-0 — Mandato y autoridad** | Identificar órgano aprobador, dueño del dato, steward operativo y custodios de los catálogos; solicitar organigrama, reglamento/manual vigente y acto de aprobación. | Decisión/ADR institucional firmada, fuente normativa y responsables identificados. | Sin autoridad verificable, permanecer Bloqueada; no escoger catálogo por inferencia. |
+| **S01-1 — Inventario técnico de solo lectura** | Reutilizar C1.403 y FASE2-T04; inspeccionar esquemas/headers, inicializadores, CRUD, lectores, consumidores, sincronizaciones, cachés y referencias de ambos catálogos. No leer/modificar filas productivas sin autorización específica. | Matriz por catálogo: ruta, servicio, tabla/hoja, campos, ID, estado, jerarquía, escritores, lectores, consumidores, SHA y evidencia. | Cobertura suficiente para afirmar qué existe y qué no; lagunas declaradas. |
+| **S01-2 — Semántica y clasificación** | Clasificar unidades por tipo y ámbito; diferenciar centro/sede, departamento académico, unidad administrativa, servicio y módulo. Identificar si existe estructura de árbol, matriz o ambas. | Glosario institucional y matriz de conceptos/relaciones con ejemplos autorizados. | Definiciones no ambiguas y aprobadas por dueño funcional. |
+| **S01-3 — Identidad y ciclo de vida** | Proponer/validar clave estable; códigos externos con namespace; estados y transiciones; vigencia; cierre/reactivación; renombre; fusión/división; unidad sin padre; preservación histórica. | Contrato de identidad, estado, jerarquía, vigencia e historial. | Reglas aprobadas y sin colisión/ambigüedad conocida. |
+| **S01-4 — Crosswalk y autoridad** | Comparar catálogo por catálogo; clasificar cada registro como coincidencia exacta, equivalencia aprobada, relación 1:N/N:1, sin correspondencia o conflicto. Determinar autoridad por dominio y precedencia. | Matriz de correspondencia con evidencia, responsable y resolución de excepciones. | Toda relación tiene origen y aprobación; los conflictos no se resuelven automáticamente. |
+| **S01-5 — Gobierno y contratos** | Definir quién crea, aprueba, modifica, desactiva y consulta; reglas de publicación; versión; consumidores; API/contrato; validación de estado y ámbito; cache invalidation. Reutilizar TASK-046/TASK-062/AUD-NG-175/AUD-NG-158. | RACI, contrato lógico, política de fuente de verdad y matriz de consumidores. | Fuente, escritor autorizado y contrato de lectura claramente definidos. |
+| **S01-6 — Perfil de calidad sin mutación** | Con autorización, ejecutar conciliación de solo lectura sobre datos reales; medir IDs duplicados, códigos repetidos por namespace, referencias huérfanas, estados inválidos, ciclos, vigencias superpuestas y registros sin correspondencia. | Informe de calidad con conteos, muestras anonimizadas, excepciones y SHA del snapshot. | 100% de registros clasificados o excepciones con dueño/plan; ningún cambio automático. |
+| **S01-7 — Decisión y traspaso** | Presentar opciones, impactos y riesgos; registrar la decisión aprobada; actualizar el mapa/contrato y preparar el alcance de T153-S02/S03 sin implementarlos prematuramente. | ADR/acta de decisión, modelo lógico aprobado, crosswalk y plan de transición. | Criterios originales de T153-S01 satisfechos; desbloqueo explícito de la siguiente subtarea por dependencias. |
+
+### 10.81.6 Criterios verificables de cierre de T153-S01
+
+T153-S01 solo puede declararse completada cuando exista evidencia de:
+
+- Autoridad institucional formal y responsable del dato.
+- Fuente canónica identificada por dominio y alcance; si hay varios dominios, precedencia y crosswalk explícitos.
+- Claves estables e inmutables diferenciadas de nombre/código visible.
+- Semántica de activo/inactivo, vigencia, cierre, reactivación y preservación histórica.
+- Jerarquía organizativa aprobada, sin ciclos, y relaciones matriciales separadas.
+- Inventario de escritores, lectores y consumidores con contratos compatibles.
+- Correspondencia de registros clasificada; conflictos y huérfanos identificados, sin asignación automática.
+- Política de cambios, auditoría, sincronización, caché y responsable de aprobación.
+- Decisión explícita sobre propietario institucional frente a custodio departamental para cada clase de recurso, sin adelantar el esquema de T153-S03.
+- Code Review documental y trazabilidad al requisito original; no se requiere modificar código si el entregable de S01 es exclusivamente de autoridad/modelado.
+
+**Pruebas que corresponden al diseño/contrato:** unicidad de clave; estabilidad ante renombre; rechazo de ID/código no válido; referencias inactivas; parent inexistente; ciclos; vigencia temporal; equivalencia ambigua; unidades sin crosswalk; usuario con múltiples adscripciones; herencia no autorizada. Son criterios planificados, no pruebas ejecutadas en C1.410.
+
+### 10.81.7 Decisiones y límites pendientes
+
+La web y los estándares no pueden resolver los siguientes datos internos: quién tiene autoridad para aprobar el organigrama de IMA; cuál catálogo refleja la estructura aprobada; si las unidades académicas y administrativas se superponen; quién es dueño/steward de cada dominio; qué tipos de expedientes deben tener propietario institucional o custodio departamental; qué relaciones jerárquicas conceden delegación administrativa (si alguna).
+
+Se requiere una resolución institucional aprobada y, para cualquier perfilado de datos reales, autorización de lectura específica. Hasta entonces:
+- T153-S01 permanece **Bloqueada**; TASK-153 permanece **En ejecución**.
+- No se selecciona A/B/C/D por intuición.
+- No se fusionan catálogos, no se crean nuevas tablas, no se cambia `DepartamentoID`, no se asignan owners, no se migran datos ni se alteran permisos.
+- T153-S02…S08 no se adelantan; TASK-696 permanece Bloqueada por sus dependencias originales.
+- F29-TASK05↔F29-TASK17 conserva su ciclo PM-00 y no se considera resuelto por esta investigación.
+
+**Estado C1.410:** investigación externa y plan de decisión documentados; no es cierre de T153-S01 ni autorización de implementación.

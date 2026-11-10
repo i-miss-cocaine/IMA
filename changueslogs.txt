@@ -714,3 +714,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se rectifica la ubicación exacta de C1.408 en el índice: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt, líneas 58–109.
 - Sin cambios funcionales, sin reauditoría y sin pruebas de producto. TASK-153/T153-S01 y triage F29 conservan sus estados.
 - Checkpoint C1.409: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt, líneas 113–126; índice Auditoría/INDICE_CHECKPOINTS.md, fila C1.409.
+
+
+[2026-11-10] C1.410 — IMA-EXEC-20261110-1140Z-01 — investigación comparativa y plan T153-S01
+- Se amplía el subplan T153-S01 existente en Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md §10.81 con fuentes oficiales Ed-Fi, Canvas, Moodle, OneRoster, NIST, OWASP y referencias hondureñas SACE/USINIEH.
+- Se incorpora matriz de alternativas sin seleccionar fuente canónica; la decisión depende de autoridad institucional documentada. Se separan unidades académicas/administrativas, membresía, ownership/custodia y compartición.
+- Se reutilizan expedientes y tareas existentes; no se crea informe, hallazgo ni ID duplicado.
+- TASK-153/T153-S01 permanece Bloqueada; TASK-696 sigue Bloqueada; ciclo F29-TASK05↔F29-TASK17 no se resuelve con esta investigación.
+- Sin cambios de código, datos, esquemas, permisos ni backlogs fuente; sin pruebas de producto.
+- Checkpoint C1.410: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt, líneas 130–180; índice Auditoría/INDICE_CHECKPOINTS.md, fila C1.410.
