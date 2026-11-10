@@ -654,3 +654,11 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - TASK-153: seleccionada como siguiente P0 PM-01, orden local 1. Base de usuarios, departamentos, roles y propiedad ya presente parcialmente; los elementos documentales ausentes son parte del alcance original.
 - TASK-153 requisitos: `pendientes/Dirección/Pendientes.md`, bloque TASK-153; fuente histórica `RECUPERACION/Pendientes_RECUPERADO.md`, líneas 6506–6548; auditoría existente `Auditoría/AUDITORIA_FASE_41_PRUEBAS_INTEGRALES_DIGITALIZACION.md`, F41-08 y E2E-41-09.
 - F17-TASK02 se mantiene en cola; su matriz legal de recargos 25/50/75 requiere triage de política antes de fijar reglas monetarias.
+
+
+### IMA-EXEC-20261110-0042Z-01 — TASK-153 / C1.385
+- Auditoría focal realizada sobre F41-08 y E2E-41-09 del informe FASE 41 existente.
+- Hallazgos: validación de ámbito basada en payload no verificado; bypass global para roles internos; helper de propiedad no comprueba departamento; endpoints de documentos sin filtro perimetral común.
+- Corrección parcial en USER: getUserContextScope basado en sesión firmada; asignaciones activas por rol y fechas; alcance institucional explícito; validateRoleScopeAccess verificado; assignRoleScope requiere actor verificado.
+- Prueba dedicada añadida: tests/security/department-scope-contract.test.js; workflow .github/workflows/department-scope-contract.yml.
+- CI C1.385 pendiente; TASK-153 sigue En ejecución. No marcar criterios globales como completados.

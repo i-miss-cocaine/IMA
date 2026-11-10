@@ -771,3 +771,11 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - Evidencia: CI 42732686635 (identity-mapping-contract) concluyó success; los casos USER/ACCOUNTING de destino incompleto y resolución central quedaron aprobados.
 - BETA-FUNC-008 permanece pendiente y no bloquea por §21.5.
 - Se mantiene el mismo ID de hallazgo para evitar duplicación.
+
+
+### Seguimiento F41-08 / E2E-41-09 — TASK-153 — C1.385
+- Estado: En corrección.
+- Hallazgos revalidados: validación académica confía en userId/role del payload; helper de propiedad no limita departamento para roles internos; consultas de expedientes/documentos carecen de barrera común.
+- Corrección parcial: USER incorpora contexto de ámbito derivado de sesión firmada y asignaciones activas; permisos de ámbito ya no se resuelven usando el userId del cliente.
+- Pendiente: integración perimetral en Academic/Accounting, propiedad documental, referencias compartidas y pruebas negativas de endpoints.
+- No se crea un ID de hallazgo nuevo; se conservan F41-08 y E2E-41-09.

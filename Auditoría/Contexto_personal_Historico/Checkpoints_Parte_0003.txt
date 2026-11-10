@@ -1649,6 +1649,27 @@ Commit de cierre: este commit; SHA se confirmará externamente tras publicación
 - **Prerrequisitos revisados:** Usuarios, CatalogoDepartamentos, AsignacionesAmbitosRoles, permisos de servicio, helper de propiedad y campos departamentales existen; estructuras específicas pendientes forman parte del alcance de TASK-153.
 - **F17-TASK02:** permanece pendiente; la matriz legal de recargos 25/50/75 requiere triage antes de calcular importes.
 - **Archivos actualizados:** backlog Dirección, auditorías principales TASK-636/TASK-068, Auditoria.txt, tareas_auditoria.txt, changueslogs.txt, Plan Maestro, índice y parte activa de checkpoints.
-- **Commit:** este commit C1.384; SHA a verificar tras publicación.
+- **Commit:** C1.384 publicado: fd15a79c2feab0a5eb975b98b9dce0bdf3f1726c.
 - **Siguiente acción:** iniciar auditoría única de TASK-153 reutilizando el informe FASE 41 existente; no crear informe duplicado.
+===============================================================================
+
+
+===============================================================================
+## C1.385 — 2026-11-10 — IMA-EXEC-20261110-0042Z-01
+
+- **Baseline válido:** C1.316 — 31262d5ccbfc46a5f87a5d0fc9c363b177283d9a.
+- **Checkpoint anterior:** C1.384 — fd15a79c2feab0a5eb975b98b9dce0bdf3f1726c.
+- **Rama:** NG_beta_0.0.0.1_work.
+- **HEAD previo verificado:** fd15a79c2feab0a5eb975b98b9dce0bdf3f1726c.
+- **Rama protegida:** NG_beta_0.0.0.1 — SHA 44d9891132332e692dbe2ba8602b41f50a508a59, sin modificaciones.
+- **Tarea:** TASK-153 — PM-01 / P0 / orden local 1.
+- **Requisito:** pendientes/Dirección/Pendientes.md, bloque TASK-153; RECUPERACION/Pendientes_RECUPERADO.md, líneas 6506–6548.
+- **Auditoría de origen:** Auditoría/AUDITORIA_FASE_41_PRUEBAS_INTEGRALES_DIGITALIZACION.md, F41-08 y E2E-41-09; informe existente reutilizado.
+- **Hallazgos:** helper académico confía en payload; roles internos reciben bypass global; assertRecordOwnership no valida departamento para roles internos; consultas de documentos/expedientes sin barrera común; USER no exponía getUserContextScope.
+- **Cambios:** getUserContextScope basado en sesión firmada; filtra asignaciones activas por usuario+rol y vigencia; reconoce alcance institucional solo por asignación explícita; validateRoleScopeAccess usa contexto verificado; assignRoleScope exige actor verificado y upsert por usuario+rol+tipo.
+- **Pruebas:** nuevo contrato tests/security/department-scope-contract.test.js y workflow .github/workflows/department-scope-contract.yml; CI pendiente.
+- **Estado:** TASK-153 En ejecución. No se marcan criterios globales completos.
+- **Pendiente:** integración de assertRecordOwnership/validateAcademicResponsibilityAndScopeAccess en Academic, validación de Accounting, propiedad documental, operaciones granulares, referencias compartidas, filtros/importaciones y auditoría completa.
+- **Siguiente acción:** ejecutar CI C1.385 y continuar la integración perimetral en Academic Service.
+- **Commit:** este commit C1.385; SHA a verificar después de publicar.
 ===============================================================================

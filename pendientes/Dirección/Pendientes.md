@@ -736,10 +736,11 @@
   - [ ] Las operaciones de descarga, firma y exportación respetan el ámbito departamental asignado.
   - [ ] Los roles institucionales con acceso global funcionan conforme a sus permisos explícitos sin falsos bloqueos.
 - **Dependencias:** Sistema de usuarios, departamentos, roles y estructura de propiedad documental.
-- **Estado:** [ ] Pendiente
+- **Estado:** [ ] En ejecución (C1.385; alcance parcial).
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7086-7126; clave TASK-169; asignación única: Dirección -->
 
+- **Avance C1.385:** User Service incorpora `getUserContextScope` desde sesión firmada; filtra ámbitos activos por usuario y rol verificados, vigencia temporal y alcance institucional explícito. `validateRoleScopeAccess` usa ese contexto y `assignRoleScope` deja de confiar en `payload.authRole`. La integración de `assertRecordOwnership` en Academic/Accounting, propiedad documental, referencias compartidas, filtros/importaciones y pruebas interservicio sigue pendiente.
 ---
 
 <!-- ID: AUD-NG-164 | Fuentes: Pendientes.md -->

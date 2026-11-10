@@ -1,0 +1,26 @@
+name: Department Scope Contract
+
+on:
+  push:
+    branches:
+      - NG_beta_0.0.0.1_work
+    paths:
+      - backend/user-service/Code.gs
+      - tests/security/department-scope-contract.test.js
+      - .github/workflows/department-scope-contract.yml
+
+permissions:
+  contents: read
+
+jobs:
+  department-scope-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout authorized work branch
+        uses: actions/checkout@v4
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Run department scope contract
+        run: node tests/security/department-scope-contract.test.js

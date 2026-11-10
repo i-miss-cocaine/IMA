@@ -2356,3 +2356,15 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - Requisito original: `pendientes/Dirección/Pendientes.md`, bloque TASK-153; `RECUPERACION/Pendientes_RECUPERADO.md`, líneas 6506–6548.
 - Informe de origen ya existente: `Auditoría/AUDITORIA_FASE_41_PRUEBAS_INTEGRALES_DIGITALIZACION.md`, sección B/F41-08 y sección E/E2E-41-09. Se reutilizará; no se crea auditoría duplicada.
 - F17-TASK02 permanece en cola para revaluación posterior; su tabla de recargos 25/50/75 requiere resolver la política aplicable antes de implementar importes.
+
+
+## 10.69 TASK-153 — auditoría y primer incremento de alcance — IMA-EXEC-20261110-0042Z-01
+
+- **Fase/prioridad:** PM-01 / P0 / orden local 1.
+- **Requisito original:** `pendientes/Dirección/Pendientes.md`, bloque TASK-153; fuente recuperada `RECUPERACION/Pendientes_RECUPERADO.md`, líneas 6506–6548.
+- **Informe de origen:** `Auditoría/AUDITORIA_FASE_41_PRUEBAS_INTEGRALES_DIGITALIZACION.md`, F41-08 y E2E-41-09. Se reutiliza este informe conforme al protocolo de auditoría única.
+- **Auditoría del HEAD C1.384:** helper académico basado en payload no verificado; roles administrativos con bypass global; `assertRecordOwnership` no valida departamento para roles internos; endpoints de expedientes/documentos no aplican una barrera común; USER no exponía contexto de ámbito autenticado.
+- **Incremento C1.385:** nuevo `getUserContextScope` basado en sesión firmada, usuario/rol verificados, asignaciones activas y vigencia; alcance institucional explícito; `validateRoleScopeAccess` usa contexto verificado; `assignRoleScope` exige actor verificado y asignación ligada al rol; contrato de pruebas y workflow de CI dedicados.
+- **Verificación:** CI del commit C1.385 pendiente. No se declara PASS anticipado.
+- **Criterios:** solo se considera implementada la base de resolución de contexto. La protección de endpoints Academic/Accounting, propiedad documental, operaciones granulares, referencias compartidas, filtros/importaciones y auditoría completa siguen pendientes. TASK-153 permanece En ejecución.
+- **Siguiente acción:** integrar el contexto de ámbito en `assertRecordOwnership`, `validateAcademicResponsibilityAndScopeAccess`, `getStudentFile`, `getStudentDocuments` y las rutas de descarga; continuar después con ACCOUNTING y referencias compartidas.

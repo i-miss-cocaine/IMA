@@ -3,11 +3,11 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.384**
+- Último checkpoint: **C1.385**
 - Última sesión: `IMA-EXEC-20261110-0042Z-01`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.384: **120796**
+- Caracteres del archivo activo tras C1.385: **122910**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 - Baseline lógico válido: **C1.316** (`31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`). C1.317–C1.382 se conservan, pero no se aceptan como evidencia de continuidad por corrección expresa del usuario.
@@ -214,4 +214,6 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 
 | C1.383 | IMA-EXEC-20261110-0042Z-01 | 7dc8e22bdd49b25ae4dbff8ad7b103a6580d1569; baseline lógico C1.316 | TASK-068 / PM-01 — resolvers fail-closed y clasificación insuficiente; CI success | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.383 | 1611–1631 | C1.382 | Este commit; SHA verificado tras publicación |
 
-| C1.384 | IMA-EXEC-20261110-0042Z-01 | Publicado en este commit; cierre local TASK-068 | TASK-153 seleccionado — PM-01 / P0 / orden 1; PM-00 TASK-682 triage resuelto | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.384 | 1634–1654 | C1.383 | Este commit; SHA verificado tras publicación |
+| C1.384 | IMA-EXEC-20261110-0042Z-01 | fd15a79c2feab0a5eb975b98b9dce0bdf3f1726c; cierre local TASK-068 | TASK-153 seleccionado — PM-01 / P0 / orden 1; PM-00 TASK-682 triage resuelto | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.384 | 1634–1654 | C1.383 | Este commit; SHA verificado tras publicación |
+
+| C1.385 | IMA-EXEC-20261110-0042Z-01 | Publicado en este commit; TASK-153 en ejecución | USER scope context firmado y contrato local; CI pendiente | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0003.txt — sección C1.385 | 1657–1675 | C1.384 | Este commit; SHA a verificar tras publicación |

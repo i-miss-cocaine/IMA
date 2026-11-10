@@ -246,3 +246,23 @@ La plataforma cuenta con un excelente control de concurrencia para identificador
 - **F41-03/CAR-F41-02:** completa y verificada según el informe; no se crea tarea correctiva para concurrencia de identificadores.
 - **E2E-41-01..E2E-41-12 y métricas 100%/90%/80%:** resultados históricos; esta normalización no reejecuta pruebas ni certifica el estado actual del código.
 - **Dictamen:** Requiere Mejoras / No Aprobada para Producción Crítica; añadir este bloque no cierra brechas funcionales.
+
+
+## Revalidación TASK-153 — IMA-EXEC-20261110-0042Z-01 — C1.385
+
+**Fuentes existentes reutilizadas:** F41-08 y E2E-41-09. No se crea un nuevo informe ni se duplica el hallazgo.
+
+**Hallazgos confirmados en el HEAD previo C1.384:**
+1. `validateAcademicResponsibilityAndScopeAccess` usa `payload.userId` y `payload.role` como identidad, y concede acceso general a roles administrativos sin verificar un ámbito departamental. La acción aparece expuesta en el router, pero no está integrada como control perimetral de los endpoints de datos.
+2. `assertRecordOwnership` permite por defecto a roles distintos de estudiante; su comprobación de propietario no equivale a una validación de departamento.
+3. `getStudentDocuments` puede devolver el conjunto completo cuando no recibe filtro; `getStudentFile` no aplica comprobación departamental propia.
+4. En USER, `getUserScopeConfig` acepta un `userId` del payload, `validateRoleScopeAccess` lo utilizaba para resolver ámbitos y `assignRoleScope` priorizaba `payload.authRole` antes de la identidad verificada. No existía `getUserContextScope`.
+
+**Corrección parcial C1.385:**
+- Nuevo `getUserContextScope(payload)`: obtiene identidad mediante `getUserVerifiedRole`/sesión firmada; ignora `userId` y `role` del cliente; devuelve solo asignaciones activas del usuario y rol verificados, dentro de su vigencia.
+- El alcance institucional solo se reconoce mediante una asignación explícita `INSTITUCION` cuyo valor coincide con la institución configurada; el rol por sí solo no concede acceso global.
+- `validateRoleScopeAccess` consulta el contexto verificado y deniega valores fuera del ámbito.
+- `assignRoleScope` exige actor verificado, requiere `roleId` y actualiza asignaciones por usuario+rol+tipo de ámbito.
+- Se agrega el contrato determinista `tests/security/department-scope-contract.test.js` y workflow limitado a `NG_beta_0.0.0.1_work`.
+
+**Estado:** implementación parcial. La suite CI C1.385 está pendiente; aún no se aplican los controles a todos los endpoints Academic/Accounting ni se implementan las referencias compartidas, por lo que TASK-153 permanece **En ejecución** y sus criterios de aceptación globales siguen pendientes.
