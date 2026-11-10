@@ -1056,3 +1056,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Contratos locales y sintaxis PASS; GitHub Actions run 42898171738 SUCCESS.
 - Sin despliegue ni proveedor real. TASK-153 sigue En ejecución.
 - Commits: 31cc21b9572c47e792d0b3188237aeaaccd480a6; e7e8588402d2e462b7a4e70161309f52d46ae70b; dafdbbb0526ee550d7d4ca462340e0351ee6742a; 4aa2a9a251e53ec0044956f66e7a32263ca86a98.
+
+[2026-11-10] C1.464 — IMA-EXEC-20261110-1825Z-02 — TASK-153 / USER: conformidad documental manual
+- Verificados controles existentes de identidad del firmante, ownership antes de leer, ID documental canónico, ScriptLock e idempotencia.
+- Contrato local cubre alta, reintento, hash/tipo discordante, duplicidad ambigua, suplantación, mecanismo avanzado, ownership y lock; GitHub Actions run 42898684084 SUCCESS.
+- `documentoHash` sigue siendo input no recalculado contra Drive y `signatureHash` es huella de metadatos, no firma criptográfica. No se atribuye validez avanzada.
+- TASK-153 continúa En ejecución; siguiente revisión: `generateSignatureAuditCertificate`.
+- Commit: 05f8498cb50efcffe9b6cf05b51633309a40865a.
