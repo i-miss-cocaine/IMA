@@ -403,7 +403,7 @@ console.log("academic admission duplicate resolution ownership and concurrency c
       logStructuredEvent:(_service,_fn,_level,_code,_message,_data,role)=>{loggedRole=role;},
       Date
     };
-    vm.runInNewContext(extractFunction("resolveAdmissionDuplicate"),context);
+    vm.runInNewContext(extractFunction("isAcademicAdmissionManagerRole_")+"\n"+extractFunction("resolveAdmissionDuplicate"),context);
     return {execute:()=>context.resolveAdmissionDuplicate({solicitudId:"REQ-DUP",resolucion:"VincularExistente",
       expedienteDestinoId:"EXP-1",motivoJustificado:"Coincidencia confirmada documentalmente"}),
       state:()=>({held,attempts,releases,requestChecks,destinationChecks,reads:requests.reads,writes:requests.writes,
