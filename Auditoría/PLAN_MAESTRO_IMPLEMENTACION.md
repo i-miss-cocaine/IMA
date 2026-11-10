@@ -2993,3 +2993,16 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - Contratos locales aislados de creación, suplantación, ámbito no autorizado, esquema inválido y rollback: PASS. Parseo local: PASS. GitHub Actions run 42870106305, HEAD exacto b497635b5cb6ea742361bbd847571c75a961c1a3: PASS en ambos contratos EXAM.
 - Limitación: Sheets no ofrece transacción multihoja; una terminación abrupta entre escrituras no puede garantizarse solo con catch/rollback. No se desplegó ni se probaron servicios reales; BETA-FUNC-022 sigue Pendiente beta.
 - **Estado:** subalcance createExam completado; TASK-153 En ejecución y AUD-NG-386 abierto. Mutaciones update/status/delete/grade/deleteSubmission pendientes.
+
+## 10.100 TASK-153 / AUD-NG-386 — corrección de overrides en mutaciones EXAM (C1.442)
+
+- La revisión de `backend/exam-service/Code.gs` detectó declaraciones legacy posteriores de `gradeExamSubmission` y `deleteExamSubmission`. En JavaScript, la declaración posterior prevalecía sobre la implementación protegida anterior y permitía omitir el contexto de autorización por recurso.
+- Se eliminaron únicamente esos dos handlers legacy. Se conservan las implementaciones que invocan `getAuthorizedExamSubmissionMutationContext_`, el cual valida permiso de acción, identidad firmada, examen único, propiedad `EXAMEN` y ámbito institucional/departamental.
+- `updateExamStatus`, `updateExam` y `deleteExam` también conservan `getAuthorizedExamMutationContext_`. Se añadió al contrato de seguridad una comprobación de unicidad de declaración y guard esperado para los cinco endpoints de mutación.
+- Commits: código `c0bbf6bb26ad1459da40b7759b52b6f61f328b3f`; contrato `798553ae147818659d176864b299c608808f9e5d`.
+- Revisión estática del archivo actualizado: exactamente una declaración para cada uno de los cinco endpoints. Diff de código: eliminación exclusiva de los dos handlers legacy (40 líneas netas retiradas); prueba: 10 líneas de aserciones añadidas.
+- **Pruebas locales:** NOT RUN en esta sesión; no hay checkout/runtime local disponible y el acceso de red para obtenerlo falló. No se declara PASS.
+- **CI:** sin estado/check run visible para el commit final al consultar el conector; no se declara PASS. El workflow dedicado se activa por push en la rama autorizada.
+- **Beta:** BETA-FUNC-022 permanece Pendiente beta; no se desplegó Apps Script ni se accedió a Sheets/Drive reales.
+- **Estado:** corrección publicada, pero AUD-NG-386 permanece ABIERTO y TASK-153 En ejecución hasta ejecutar localmente ambos contratos EXAM, revisar los resultados y continuar la validación del ciclo completo.
+- **Siguiente acción:** ejecutar `node tests/security/exam-service-security-contract.test.js` y `node tests/security/exam-service-departmental-access.test.js` en checkout local; corregir cualquier fallo y continuar la revisión de las mutaciones y el ciclo EXAM.
