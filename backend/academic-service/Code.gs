@@ -10750,7 +10750,8 @@ function resolveAdmissionDuplicate(payload) {
 
   const ctx = getAcademicAdmissionScopeContext_(payload, "resolveAdmissionDuplicate", requestId, "UPDATE");
   if (!ctx.authorized) throw new Error("RESOURCE_NOT_FOUND");
-  if (!isAcademicAdmissionManagerRole_(ctx.actor.role)) throw new Error("AUTH_PERMISSION_DENIED");
+  const actorRole = String(ctx.actor.role || "").trim().toLowerCase();
+  if (["director","administrador","desarrollador","secretaria"].indexOf(actorRole) === -1) throw new Error("AUTH_PERMISSION_DENIED");
 
   const lock = LockService.getScriptLock();
   let hasLock = false;
