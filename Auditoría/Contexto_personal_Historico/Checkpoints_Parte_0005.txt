@@ -5,3 +5,42 @@ Continuidad histórica: `Checkpoints_Parte_0004.txt` conserva íntegramente los 
 Los checkpoints nuevos se anexan aquí en orden cronológico; no modificar ni trasladar entradas históricas de la parte anterior.
 Sesión de continuidad: `IMA-EXEC-20261110-1825Z-02`.
 Rama exclusiva: `NG_beta_0.0.0.1_work`.
+
+===============================================================================
+## CHECKPOINT C1.460 — ACADEMIC: incorporación a lista de espera con idempotencia y compensación
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.459 (Parte_0004.txt).
+HEAD inicial del subalcance: 94ec9a3294ff276bfce88941659a1c3f52a030e2.
+
+### Alcance
+Corregir `addToWaitlist` dentro de TASK-153 / AUD-NG-386 para impedir entradas duplicadas por concurrencia y mantener coherentes la lista de espera y el estado de la solicitud.
+
+### Implementación
+- Adquiere `ScriptLock` antes de revalidar ownership, consultar solicitudes/lista de espera, calcular posición, generar ID y anexar. Si no obtiene lock, falla antes de acceder a hojas.
+- Revalida `SOLICITUD_ADMISION` con payload nulo y exige que el ID esté en el conjunto autorizado del actor.
+- Una entrada activa existente única se devuelve como resultado idempotente; múltiples entradas activas ambiguas producen `RESOURCE_CONFLICT_WAITLIST_DUPLICATE`.
+- Rechaza solicitudes convertidas o con ExpedienteID asociado; valida que criterios de prelación sean un objeto y sus flags conocidos sean booleanos.
+- El cálculo de posición considera solo entradas `En_Espera` de solicitudes autorizadas del mismo año y grado.
+- Si `appendRow` tiene éxito y falla la actualización de estado de la solicitud, elimina la fila insertada. Si el rollback falla, registra `WAITLIST_COMPENSATION_FAILED` antes de devolver error.
+
+### Verificación local
+- GitHub Actions run `42894855396`: SUCCESS, Node 24. URL: https://github.com/i-miss-cocaine/IMA/actions/runs/42894855396
+- Contrato `academic-admission-ownership.test.js`: PASS; alta válida y puntaje/posición, reintento idempotente, lock ocupado sin lecturas, ownership denegado, IDs de solicitud duplicados, entradas activas ambiguas, criterios inválidos, rollback de fila y fallo de compensación.
+- Department Scope, ACADEMIC expediente/admisión/conversión/entrevistas/evaluaciones/duplicados/reapertura/lista de espera, ACCOUNTING departmental access, ResourceOwnership ABAC y voucher client: PASS.
+- `node --check`: User/Academic/Accounting Code.gs y `js/student.js`: PASS.
+- Sin despliegue, servicios vivos, Google Sheets real ni datos institucionales reales.
+
+### Commits
+- `6009994e5df3fc45ddbadad9f782468dc65ba100` — serializar alta y compensar escritura parcial.
+- `314e07b4fa5cfeae005d69b1b417d66a44803851` — contratos de idempotencia, ownership, lock y rollback.
+- Documentación: plan `ecec8f1c7de75cbe7e4d92765fcae4556f486c4d`; auditoría `82f849a1ab9dae059ed0158454bfbc92e5ceed48`; changelog `482df85ea0ab152e5d71c5ae5e34b93b3939766c`.
+
+### Estado y continuidad
+- Alta a lista de espera ACADEMIC corregida y aprobada localmente.
+- **TASK-153 permanece En ejecución y AUD-NG-386 abierto** por mutaciones restantes de lista de espera, recursos institucionales, firmas, permisos granulares, referencias compartidas, importaciones y otros flujos pendientes.
+- Pruebas que dependen de servicios desplegados quedan reservadas a beta; no bloquean la aprobación local.
+- Siguiente acción: revisar la siguiente mutación de lista de espera, especialmente oferta de plaza y reordenamiento, manteniendo la sesión `IMA-EXEC-20261110-1825Z-02`.
+===============================================================================
