@@ -926,3 +926,41 @@ Alcance: gobernanza operativa y alineación documental; sin cambios de código d
 - Commit de cierre: el commit que contiene este checkpoint; SHA se confirma externamente después de publicar.
 - Rama base intacta; no se ha solicitado ni ejecutado modificación de protección.
 ===============================================================================
+
+===============================================================================
+## CHECKPOINT C1.432 — Consolidación de la normativa en un único archivo
+Sesión: IMA-GOV-20261110-1605Z-01
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+HEAD de partida: d2df9c153b4fb49186860a2a2f29379a7c71fcc6.
+HEAD de rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59; no se modifica.
+Checkpoint anterior: C1.431.
+Alcance: consolidación de gobierno documental; sin cambios de código de producto.
+
+### Decisión
+- NDASC pasa a versión 1.1 y establece expresamente la lectura obligatoria del archivo maestro antes de modificar cualquier archivo del repositorio.
+- `NORMAS_DESARROLLO_AGIL_SEGURO_CONTINUO.md` queda como única fuente de normas operativas y de gobierno de IMA.
+- `Instrucciones.txt` se reduce a una referencia directa, sin duplicar reglas.
+- `METODOLOGIA_DESARROLLO.md` conserva requisitos técnicos y funcionales del producto, seguridad, calidad y beta; las reglas operativas se subordinan al maestro.
+- El Plan Maestro conserva planificación y estados, no normas operativas.
+- `Auditoria.txt` y `changueslogs.txt` reciben encabezados de referencia; sus registros históricos no se borran ni reescriben.
+- Se establece que informes, mapas, backlogs, checkpoints e índices deben consultarse junto con el archivo maestro antes de modificarse.
+
+### Archivos modificados
+- `NORMAS_DESARROLLO_AGIL_SEGURO_CONTINUO.md`
+- `Instrucciones.txt`
+- `METODOLOGIA_DESARROLLO.md`
+- `Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md`
+- `Auditoria.txt`
+- `changueslogs.txt`
+- `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt`
+- `Auditoría/INDICE_CHECKPOINTS.md`
+
+### Verificación y límites
+- Cambio documental; no se modifica código de producto, datos, permisos ni configuración de ramas.
+- Pruebas de software: no aplican; no se ejecutan suites ni workflows.
+- Se preservan íntegros los registros históricos de auditoría y changelog, agregando únicamente referencias normativas.
+- La rama base permanece intacta.
+- Commit y HEAD final se registran en el índice y se verifican después de publicar.
+===============================================================================

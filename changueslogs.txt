@@ -1,3 +1,8 @@
+REFERENCIA NORMATIVA OBLIGATORIA
+Antes de agregar o modificar una entrada de este changelog o cualquier otro archivo del repositorio, leer `NORMAS_DESARROLLO_AGIL_SEGURO_CONTINUO.md`. Este archivo es exclusivamente un historial de cambios; no establece normas operativas ni sustituye al archivo maestro. Las entradas históricas se conservan.
+
+===============================================================================
+
 REGISTRO DE CAMBIOS DEL NUEVO PLAN DE IMPLEMENTACIÓN
 
 Este archivo es el registro oficial de cambios del nuevo plan de implementación. Es un documento permanente: no debe borrarse, editarse ni sobrescribirse ninguna entrada ya registrada. Cada nueva entrada debe agregarse exclusivamente al final del documento, conservando íntegro el historial anterior.
@@ -842,3 +847,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Commits por unidades coherentes; checkpoints en hitos, pausas, transferencias y antes de operaciones de riesgo. Git sigue siendo respaldo principal verificable.
 - No se modifica código de producto, ramas ajenas ni configuración de protección. Pruebas de software: no aplican por tratarse de documentación normativa; no se ejecutaron workflows.
 - Checkpoint C1.431: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt, sección C1.431; índice Auditoría/INDICE_CHECKPOINTS.md, fila C1.431.
+
+
+[2026-11-10] C1.432 — IMA-GOV-20261110-1605Z-01 — Consolidación de normativa en fuente única
+- NDASC se actualiza a v1.1 y establece lectura obligatoria antes de modificar cualquier archivo de IMA.
+- Instrucciones.txt queda como referencia directa; metodología y Plan Maestro remiten al maestro y conservan sus especificaciones técnicas/funcionales y planificación.
+- Auditoria.txt y changueslogs.txt reciben encabezados de referencia sin alterar entradas históricas.
+- Checkpoint C1.432 e índice actualizados. Cambio documental; sin cambios de código ni pruebas de producto.

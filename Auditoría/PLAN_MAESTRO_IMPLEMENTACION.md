@@ -1,5 +1,8 @@
 # PLAN MAESTRO DE IMPLEMENTACIÓN — IMA
 
+> **Referencia normativa obligatoria:** antes de modificar este plan o cualquier archivo del repositorio, leer `NORMAS_DESARROLLO_AGIL_SEGURO_CONTINUO.md`. Este plan organiza tareas, dependencias y estados; no define una normativa operativa paralela. Las reglas de desarrollo y gobierno se consultan exclusivamente en el archivo maestro.
+
+
 **Versión:** 1.2 — secuencia flexible y dependencias proporcionales (NDASC v1.0)  
 **Fecha:** 2026-11-10  
 **Repositorio:** `i-miss-cocaine/IMA`  

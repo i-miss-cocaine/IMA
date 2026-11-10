@@ -4,13 +4,9 @@
 
 ----------------------------------------PROHIBIDO AGREGAR CONTENIDO ANTES DE ESTA LINEA-------------------------------------
 
-# NORMA PRIORITARIA IMA — NDASC v1.0
+# REFERENCIA AL ARCHIVO MAESTRO DE NORMAS
 
-Antes de trabajar en este repositorio, consultar `NORMAS_DESARROLLO_AGIL_SEGURO_CONTINUO.md`. Es la fuente normativa operativa única para IMA y prevalece sobre cualquier regla incompatible de este documento, incluidos sus procedimientos secuenciales, auditorías exhaustivas, respaldos duplicados, reinicios, commits únicos y gates administrativos.
-
-El agente debe implementar de forma continua y autónoma, inspeccionar según el riesgo, ejecutar pruebas pertinentes, corregir de manera focalizada y preservar seguridad, datos, contratos y capacidades existentes. No se bloquea el trabajo independiente por PM-00, ciclos de dependencias no aplicables, documentos institucionales ni el indicador `protected=false`. La rama exclusiva es `NG_beta_0.0.0.1_work`; la rama base `NG_beta_0.0.0.1` es de solo lectura para el agente.
-
-Las secciones posteriores de esta metodología siguen siendo referencia para requisitos de producto, seguridad, pruebas beta, continuidad y documentación cuando sean compatibles con NDASC. No deben usarse para restablecer burocracia que NDASC elimina. Las reglas específicas de presentaciones, contenidos, seguridad, privacidad y aceptación funcional no se derogan.
+Antes de realizar cualquier cambio en este documento o en cualquier otro archivo de IMA, leer `NORMAS_DESARROLLO_AGIL_SEGURO_CONTINUO.md`. Es la única fuente de normas operativas y de gobierno del desarrollo. Este documento conserva especificaciones y criterios técnicos/funcionales del producto, seguridad, calidad y pruebas beta; no constituye una normativa operativa paralela. Cualquier regla de proceso aquí conservada como antecedente o referencia se interpreta subordinada al archivo maestro.
 
 ---
 

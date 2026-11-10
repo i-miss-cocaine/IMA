@@ -1,5 +1,5 @@
 # IMA — Norma de Desarrollo Ágil, Seguro y Continuo (NDASC)
-**Versión:** 1.0  
+**Versión:** 1.1  
 **Vigencia:** 2026-11-10  
 **Repositorio:** `i-miss-cocaine/IMA`  
 **Rama exclusiva de trabajo:** `NG_beta_0.0.0.1_work`  
@@ -143,3 +143,24 @@ Estados:
 Esta norma aplica solo al repositorio IMA. Las reglas específicas de producto (seguridad, privacidad, requisitos funcionales, accesibilidad, contenidos y beta) continúan vigentes cuando no contradicen el proceso operativo aquí definido. Si una regla antigua impone auditoría total, fases rígidas, copia redundante, registro exhaustivo, reinicio completo, commit único obligatorio o bloqueo por dependencia meramente documental, prevalece esta NDASC.
 
 Los cambios futuros a esta norma deben ser explícitos, versionados y compatibles con el historial. No se permite usarla para justificar omitir controles de seguridad, integridad, pruebas relevantes o revisión del diff.
+
+
+## 16. Fuente normativa única y lectura obligatoria antes de modificar archivos
+
+Este documento es la **única fuente de normas operativas y de gobierno del desarrollo de IMA**. Su lectura es obligatoria antes de iniciar cualquier cambio en cualquier archivo del repositorio, incluidos código, pruebas, configuraciones, documentación, auditorías, planes, backlogs, checkpoints e índices. Si una sesión continúa después de una pausa o cambia de alcance, se vuelve a consultar la sección pertinente antes de editar.
+
+Ningún otro archivo debe crear, copiar, mantener ni modificar una normativa paralela. Los documentos auxiliares pueden incluir únicamente una referencia a este archivo y las reglas mínimas de conservación propias de su función. Si se propone cambiar una norma, se modifica primero este documento, se versiona y se registra el cambio; después se alinean las referencias afectadas. Ante contradicción, prevalece esta norma.
+
+### 16.1 Función de los demás documentos
+
+- `Instrucciones.txt`: acceso directo a esta norma; no contiene una segunda normativa para IMA.
+- `METODOLOGIA_DESARROLLO.md`: conserva especificaciones y criterios técnicos/funcionales del producto, seguridad, calidad y beta. No gobierna el flujo operativo; cualquier regla de proceso se interpreta conforme a este documento.
+- `Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md`: conserva planificación, secuenciación, estado y dependencias de tareas; no crea normas de desarrollo.
+- `Auditoria.txt` y `changueslogs.txt`: conservan sus registros históricos. Sus encabezados remiten a esta norma; no contienen normativa duplicada.
+- Informes, mapas, backlogs, checkpoints e índices: conservan evidencia, requisitos, decisiones y continuidad. Antes de modificarlos se consulta esta norma y se respetan sus reglas de conservación e historial.
+
+### 16.2 Regla de lectura y modificación
+
+Antes de modificar cualquier documento auxiliar, leer esta norma y la parte del documento auxiliar que corresponda al cambio. No es necesario volver a leer íntegramente todo el repositorio ni todos los documentos: la lectura se limita al alcance y riesgo definidos aquí. Las referencias de los documentos auxiliares no sustituyen la lectura del archivo maestro.
+
+Esta sección no elimina requisitos funcionales, técnicos, de seguridad, privacidad, accesibilidad ni aceptación del producto. Distingue esos requisitos de las normas operativas, cuya fuente única es este archivo.
