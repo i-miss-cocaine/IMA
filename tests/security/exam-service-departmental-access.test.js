@@ -125,7 +125,7 @@ const readFunctions = ["getVerifiedExamIdentity_", "getVerifiedExamDepartmentSco
   "getExamStudentProfile_", "isExamAssignedToStudent_", "getVerifiedGuardianStudentIds_", "getExamReadContext_", "getStudentExams", "getExamQuestions", "getExamResult", "submitExam", "submitExamUnlocked_",
   "validateRolePermission", "getAuthorizedExamMutationContext_", "getAuthorizedExamSubmissionMutationContext_", "withAuthorizedExamSubmissionMutation_", "updateExam", "updateExamStatus", "deleteExam", "gradeExamSubmission", "deleteExamSubmission"]
   .map(name => extractFunction(source, name)).join("\n");
-vm.runInNewContext(readFunctions + "\nthis.getStudentExams = getStudentExams; this.getExamQuestions = getExamQuestions; this.getExamResult = getExamResult; " +
+vm.runInNewContext(readFunctions + "\nthis.getStudentExams = getStudentExams; this.getExamQuestions = getExamQuestions; this.getExamResult = getExamResult; this.submitExam = submitExam; " +
   "this.updateExam = updateExam; this.updateExamStatus = updateExamStatus; this.deleteExam = deleteExam; " +
   "this.gradeExamSubmission = gradeExamSubmission; this.deleteExamSubmission = deleteExamSubmission;", runtime);
 const studentListPayload = { sessionToken: "student-token", userId: "STUDENT-2", grado: "99", seccion: "Z" };
