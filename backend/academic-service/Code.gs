@@ -2308,11 +2308,11 @@ function findAdmissionConversionCharge_(cargoData, userId, periodo, solicitudId,
         String(charge[3] || "").trim() !== concepto) {
       throw new Error("ADMISSION_CHARGE_CONFLICT");
     }
-    const base = Number(charge[4]);
-    const discount = Number(charge[5]);
-    const total = Number(charge[6]);
+    const base = parseFloat(charge[4]);
+    const discount = parseFloat(charge[5]);
+    const total = parseFloat(charge[6]);
     if (!isFinite(base) || !isFinite(discount) || !isFinite(total) ||
-        base < 0 || discount < 0 || Math.abs(total - Math.max(0, base - discount)) > 0.000001 ||
+        base <= 0 || discount < 0 || Math.abs(total - Math.max(0, base - discount)) > 0.000001 ||
         !String(charge[0] || "").trim() || !String(charge[7] || "").trim()) {
       throw new Error("ADMISSION_CHARGE_CONFLICT");
     }
