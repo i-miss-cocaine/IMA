@@ -289,3 +289,5 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.442 | IMA-EXEC-20261110-1808Z-01 | Corrección publicada; pruebas locales NOT RUN; AUD-NG-386 abierto | TASK-153 / PM-01 / P0 — eliminación de overrides legacy en mutaciones EXAM | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.442 | 1344–1385 | C1.441 | 798553ae147818659d176864b299c608808f9e5d + registros C1.442 |
 
 | C1.443 | IMA-EXEC-20261110-TASK153-01 | TASK listados/entregas/archivos con ownership; DEVELOPER sin ABAC departamental; CI TASK/EXAM PASS; local NOT RUN | PM-01 — TASK-153 / AUD-NG-385/386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.443 | 1387–1418 | C1.442 | bf0c17fb261e59d8c5c68293c196ac6ef90a30c7 + registros C1.443 |
+
+| C1.444 | IMA-EXEC-20261110-1815Z-01 | TASK-153: guardas de ownership en accesos directos TASK; beta/despliegue no bloquea desarrollo | PM-01 — TASK-153 / TASK Service | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.444 | 1420–1454 | C1.442 (con avance C1.443 en backlog) | 1558e5c99b4fee58474a849bc8087d9c16914028 + commits documentales |
