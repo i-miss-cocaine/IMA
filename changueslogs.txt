@@ -1063,3 +1063,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - `documentoHash` sigue siendo input no recalculado contra Drive y `signatureHash` es huella de metadatos, no firma criptográfica. No se atribuye validez avanzada.
 - TASK-153 continúa En ejecución; siguiente revisión: `generateSignatureAuditCertificate`.
 - Commit: 05f8498cb50efcffe9b6cf05b51633309a40865a.
+
+[2026-11-10] C1.469 — IMA-EXEC-20261110-1825Z-02 — TASK-153 / USER: identidad y ámbito del destinatario de firma avanzada
+- `createAdvancedSignatureRequest` valida al firmante contra una cuenta `Usuarios` única y activa; no confía en firmanteNombre/firmanteEmail del cliente y persiste nombre/correo canónicos.
+- Personal requiere asignación de ámbito activa/vigente al departamento propietario o ámbito institucional de la institución configurada. Estudiante requiere PersonaID del expediente; padre/madre/tutor/responsable requiere relación activa, acceso al portal y persona vinculada al expediente.
+- Rechazos ocurren antes de consultar transacciones o leer bytes de Drive. ScriptLock y validación de ownership documental se conservan.
+- Contrato USER y syntax-check PASS en Department Scope run 42902550008; Identity Mapping run 42902550038 y Task-Service security run 42902550046 — SUCCESS.
+- Sin PSC real, callback autenticado, verificación criptográfica, Drive/Apps Script real ni despliegue. TASK-153 permanece En ejecución.
+- Commit: 78836e55b007feac17577d9d7888165e63af4724.

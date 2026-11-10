@@ -5,11 +5,11 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.462**
+- Último checkpoint: **C1.469**
 - Última sesión: `IMA-EXEC-20261110-1825Z-02`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.462: **13462**
+- Caracteres del archivo activo tras C1.469: **32774**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 - Baseline lógico válido: **C1.316** (`31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`). C1.317–C1.382 se conservan, pero no se aceptan como evidencia de continuidad por corrección expresa del usuario.
@@ -321,3 +321,4 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.466 | IMA-EXEC-20261110-1825Z-02 | USER: solicitudes de firma avanzada calculan SHA-256 desde bytes Drive tras ownership; rechazan hash discordante y archivo no disponible; contrato aislado local PASS | PM-01 — TASK-153 / USER / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt — sección C1.466 | 278–318 | C1.465 | 647b2c71047a2a9c6a7ed8dc54c4e3395c6348b6; e5586d9baaade2cba04709c821b70ebeadd7b765; 73b15105f690c11d83288d9ee7012b96323a0513; 35a4b071aeb1fdcef1daa773303ac69fd0cd0911; 86fa72bac881fdd8c2c24971f3c8e9de867b75eb; 44bc16700c365d13914bbb2543e614a68574f47f |
 | C1.467 | IMA-EXEC-20261110-1825Z-02 | Corrección de fixture: archivo fuente ausente usa documento canónico válido y DriveFileID vacío; repetición CI pendiente | PM-01 — TASK-153 / USER / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt — sección C1.467 | 320–339 | C1.466 | 5eb79500c4f7a64330b1418728e87d242addcfde; 5175f546ceaa7666a7c7f53df0e44ce7ceac6447; 9cb3a6449165e55e97cb653d710e543e41013f60; 5d5ebc9e197be4e918c524681ad244323af0732c |
 | C1.468 | IMA-EXEC-20261110-1825Z-02 | CI Department Scope Contract run 42901121407 SUCCESS; USER signature ownership contract y sintaxis de servicios PASS | PM-01 — TASK-153 / USER / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt — sección C1.468 | 341–359 | C1.467 | 6f4bd2c556eeb3b8f310a3db3bb8c79942f89c97; ce535534c39fa2f4a9a1c9be068f03b775303403; d76837da8b9260dec24fa5f20e58183b4d984724 |
+| C1.469 | IMA-EXEC-20261110-1825Z-02 | USER: destinatario de firma avanzada verificado contra cuenta activa y ámbito institucional/relación SELF-GUARDIAN; perfil canónico; CI Department Scope, Identity Mapping y Task-Service PASS | PM-01 — TASK-153 / USER / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt — sección C1.469 | 361–405 | C1.468 | 75e28fbc017bc3167689dc8386d910b8a06706e8; 7e06d3a0c8eebf5301842ed29b1f00f52f1e01da |

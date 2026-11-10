@@ -757,3 +757,9 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 ### TASK-153 — corrección C1.467
 - Se corrigió el fixture de archivo fuente ausente: mantiene el documento canónico y deja vacío únicamente el DriveFileID. CI anterior falló en esta preparación del escenario, no en la lógica del servicio.
 - Repetición CI run 42901121407: SUCCESS; el contrato USER signature ownership y todos los pasos del workflow Department Scope terminaron SUCCESS. Se conserva el alcance C1.466 sin abrir una tarea distinta.
+
+
+### TASK-153 — seguimiento C1.469
+- USER `createAdvancedSignatureRequest` valida cuenta única/activa del destinatario y ámbito antes de transacciones/Drive. Perfil nombre/correo canónico desde Usuarios; staff por asignación activa/vigente de departamento o institución; estudiante por PersonaID↔expediente; tutor por relación activa y acceso portal.
+- Contratos USER y sintaxis Apps Script PASS: Department Scope 42902550008. Identity Mapping 42902550038 y Task-Service security 42902550046 SUCCESS.
+- TASK-153 sigue En ejecución; AUD-NG-386 abierto. Siguiente unidad elegible: contrato conductual aislado de `convertAdmissionToStudent` para ownership atómico y compensación/rollback de escrituras parciales.

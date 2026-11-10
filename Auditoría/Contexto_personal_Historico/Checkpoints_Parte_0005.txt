@@ -357,3 +357,49 @@ C1.466 implementado y su contrato de repositorio aprobado por CI. Las pruebas ai
 Siguiente subalcance: revisar identidad y ámbito del firmante destinatario en createAdvancedSignatureRequest.
 
 ===============================================================================
+
+## CHECKPOINT C1.469 — USER: identidad y ámbito del destinatario de firma avanzada
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.468.
+HEAD inicial del subalcance: 78836e55b007feac17577d9d7888165e63af4724.
+Commit de implementación: 78836e55b007feac17577d9d7888165e63af4724.
+
+### Alcance
+Completar la verificación de identidad y ámbito del firmante destinatario en TASK-153 / AUD-NG-386, sin aceptar identificadores o datos de perfil declarados por el cliente como prueba de identidad.
+
+### Implementación
+- Nuevo helper `assertAdvancedSignatureSignerScope_` resuelve el firmante por UserId exacto en `Usuarios`; exige coincidencia única, cuenta activa, rol y nombre canónicos.
+- Personal institucional: requiere una asignación de `AsignacionesAmbitosRoles` activa y vigente que cubra el departamento propietario del documento o el ámbito institucional de la institución configurada.
+- Estudiante: requiere que el PersonaID de la cuenta coincida con el PersonaID del expediente vinculado al documento.
+- Padre/madre/tutor/responsable: requiere cuenta activa, PersonaID coincidente con `ResponsablesTutores`, relación activa con el expediente y acceso al portal habilitado.
+- Nombre y correo persistidos se obtienen de `Usuarios`; `firmanteNombre` y `firmanteEmail` del payload ya no se usan como fuente.
+- La comprobación del destinatario ocurre bajo ScriptLock, después de validar ownership documental y antes de consultar transacciones o leer bytes de Drive.
+- La semántica de acceso no introduce departamentos codificados; utiliza los IDs de propiedad y ámbitos existentes.
+
+### Verificación
+- Department Scope Contract run 42902550008: SUCCESS. Paso USER signature ownership contract: SUCCESS; syntax-check USER/ACADEMIC/ACCOUNTING: SUCCESS.
+- Identity mapping and transport security contracts run 42902550038: SUCCESS.
+- Task-Service security local contracts run 42902550046: SUCCESS.
+- Casos añadidos: destinatario no registrado, ID duplicado, cuenta inactiva, asignación fuera de departamento, sin asignación, asignación vencida, ámbito institucional válido, estudiante SELF coincidente/no coincidente, tutor GUARDIAN vinculado/no vinculado, portal deshabilitado y relación revocada; además perfil canónico.
+- No se ejecutó PSC real, callback autenticado, validación X.509/CAdES, Drive/Apps Script real ni despliegue. Esas verificaciones quedan fuera del contrato local actual y se registran en beta.
+
+### Límites y continuidad
+- La identidad del destinatario y su relación con el recurso quedan verificadas contra los registros actuales; esto no acredita que una firma PSC sea criptográficamente válida.
+- No se implementa callback de proveedor porque aún no existe un contrato/autenticador verificable de integración en el repositorio.
+- TASK-153 permanece En ejecución; AUD-NG-386 abierto.
+- Siguiente unidad elegible: crear/ejecutar contrato conductual aislado de `convertAdmissionToStudent` que pruebe el registro atómico de ownership y la compensación/rollback ante fallos parciales. La inspección inicial muestra lógica de rollback existente, pero la suite actual verifica principalmente guards estáticos y registro aislado; falta demostrar el comportamiento integral con fixtures.
+
+### Archivos de la iteración
+- backend/user-service/Code.gs
+- tests/security/user-service-signature-ownership.test.js
+- pendientes/Dirección/Pendientes.md
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- changueslogs.txt
+- beta_test.txt
+- tareas_auditoria.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+===============================================================================

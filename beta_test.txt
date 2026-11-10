@@ -343,3 +343,6 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Resultado esperado:** hash siempre calculado desde bytes del archivo; rechazo sin insertar transacción ante evidencia ausente/ilegible o hash discordante; ninguna lectura Drive para ownership denegado; lock liberado ante fallos.
 - **Estado:** Pendiente beta.
 - **Evidencia requerida:** IDs sintéticos, hash independiente, respuestas allow/deny, conteo de transacciones y logs saneados; sin PII, tokens ni credenciales.
+
+- **Ampliación C1.469:** probar firmante de personal con asignación activa al mismo departamento; alcance institucional válido; asignación vencida/ajena/inexistente; cuenta ausente, duplicada o inactiva; estudiante cuyo PersonaID coincide/no coincide con el expediente; tutor con relación activa y acceso portal habilitado/deshabilitado. Enviar nombre/correo falsificados y verificar que se persiste únicamente el perfil canónico de Usuarios.
+- **Resultado esperado adicional:** no se consulta la hoja de transacciones ni se accede al archivo fuente cuando el destinatario no existe, está inactivo o carece de ámbito/relación válida.
