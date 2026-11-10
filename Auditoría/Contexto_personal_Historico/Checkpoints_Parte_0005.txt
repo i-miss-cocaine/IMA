@@ -426,6 +426,7 @@ Archivo: `tests/security/academic-admission-ownership.test.js`.
 - Lock no disponible y reentrada concurrente: no se leen hojas ni se modifica estado mientras la conversión original mantiene ScriptLock.
 
 ### Verificación
+- Corrección del fixture local: el primer ensayo mostró que el doble de `registerStudentEnrollmentInternal_` quitaba su registro de control, pero no la fila simulada de `Matriculas`; se ajustó la compensación del mock para revertir ambas representaciones. No fue un fallo de la función productiva.
 - Contrato conductual aislado ejecutado localmente sobre el código de la rama: PASS, cinco escenarios.
 - GitHub Actions Department Scope Contract run 42903670806: SUCCESS.
 - Log del job: `academic admission conversion atomic ownership, rollback and concurrency contract: PASS`.
