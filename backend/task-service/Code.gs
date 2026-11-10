@@ -2469,9 +2469,10 @@ function readLegacyDocument(payload) {
     if(matches.length!==1)throw new Error("RESOURCE_NOT_FOUND");
     const metadata=matches[0],taskId=String(metadata[11]||"").trim(),ownerId=String(metadata[19]||"").trim();
     if(!taskId||!ownerId)throw new Error("RESOURCE_NOT_FOUND");
-    const task=getSheetOrThrow(ss,"Tareas").getDataRange().getValues().slice(1)
-      .find(row=>String(row[0]||"").trim()===taskId);
-    if(!task)throw new Error("RESOURCE_NOT_FOUND");
+    const taskMatches=getSheetOrThrow(ss,"Tareas").getDataRange().getValues().slice(1)
+      .filter(row=>String(row[0]||"").trim()===taskId);
+    if(taskMatches.length!==1)throw new Error("RESOURCE_NOT_FOUND");
+    const task=taskMatches[0];
     if(identity.role==="Profesor"||isTaskServiceAdministrativeRole(identity.role)){
       assertTaskServiceTeacherCanManageTask(payload,task,"READ_CONTENT");
     }else if(identity.role==="Estudiante"||identity.role==="Alumno"){
