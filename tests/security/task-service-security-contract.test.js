@@ -22,7 +22,13 @@ assert(saveDraftFunction.includes("isValidOpaqueAdmissionAccessToken(suppliedTok
 assert(getDraftFunction.includes("isValidOpaqueAdmissionAccessToken(accessToken)"), "draft retrieval requires opaque capability");
 assert(createAdmissionFunction.includes("generateOpaqueAdmissionAccessToken()") && createAdmissionFunction.includes("hashOpaqueAdmissionAccessToken(publicAccessToken)"), "admission creation issues and stores only a hash of the opaque capability");
 const automationFunction = extractFunctionFrom(userSource, "getAutomationRules");
-assert(automationFunction.includes("getUserVerifiedRole(payload)") && automationFunction.includes('["Administrador", "Desarrollador", "Director"].indexOf(verifiedRole)'), "automation rules require verified admin claims");
+const ticketAdminRoles = 'const TICKET_ADMIN_ROLES_ = ["Administrador", "Desarrollador", "Director"];';
+assert(
+  automationFunction.includes("getUserVerifiedRole(payload)") &&
+  automationFunction.includes("TICKET_ADMIN_ROLES_.indexOf(verifiedRole)") &&
+  userSource.includes(ticketAdminRoles),
+  "automation rules require verified identity and the centralized admin-role allowlist"
+);
 
 
 function extractFunction(name){

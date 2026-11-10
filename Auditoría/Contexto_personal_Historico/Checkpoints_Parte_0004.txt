@@ -802,3 +802,31 @@ Tarea: TASK-153, P0, orden 1; estado En ejecución.
 - Próxima tarea exacta: continuar TASK-153 en backend/task-service/Code.gs y backend/exam-service/Code.gs. Requisitos originales: pendientes/Dirección/Pendientes.md, entrada TASK-153; Plan Maestro §9 y §10.95. Reutilizar AUD-NG-002 y los informes existentes sin duplicarlos.
 - La rama base permanece sin modificaciones. El commit C1.428 se publicará únicamente en NG_beta_0.0.0.1_work y el HEAD se verificará después de publicar.
 ===============================================================================
+
+
+===============================================================================
+## CHECKPOINT C1.429 — TASK-153: análisis de CI y corrección de contrato
+Sesión: IMA-EXEC-20261110-1500Z-17
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA; rama exclusiva: NG_beta_0.0.0.1_work.
+HEAD de partida: f75fdb91a1e7ac8e19ff9bba87c1e22fcf7f8010; checkpoint anterior C1.428.
+Rama base verificada al inicio de esta iteración: NG_beta_0.0.0.1 (HEAD 44d9891132332e692dbe2ba8602b41f50a508a59); no se modificó.
+Fase: PM-01 — TASK-153 P0, En ejecución.
+
+### Resultados CI de C1.428
+- Department Scope Contract: SUCCESS, run 42839462181. Incluye contratos USER/ACADEMIC/ACCOUNTING y node --check de los tres servicios.
+- Identity mapping and transport security contracts: SUCCESS, run 42839462098.
+- Task-Service security local contracts: FAILURE, run 42839462129. La falla ocurrió en una aserción de test que buscaba literalmente el array [Administrador, Desarrollador, Director] dentro de getAutomationRules.
+- Se comparó con runs anteriores 42831442425 (HEAD 4be1e3db) y 42827931422 (HEAD c7dfa718): el mismo contrato fallaba antes de C1.428. El código de producción getAutomationRules no fue modificado en C1.428 y usa getUserVerifiedRole(payload) junto al allowlist central TICKET_ADMIN_ROLES_. Por tanto, el fallo es una expectativa estática obsoleta, no una regresión introducida por C1.428.
+
+### Corrección de contrato
+- Se modifica tests/security/task-service-security-contract.test.js para exigir: llamada a getUserVerifiedRole(payload), uso de TICKET_ADMIN_ROLES_.indexOf(verifiedRole) y declaración central exacta de TICKET_ADMIN_ROLES_ = ["Administrador", "Desarrollador", "Director"].
+- No se cambia código de producción ni se debilita el control de identidad/roles.
+- El workflow debe repetirse después del commit; resultado todavía pendiente.
+
+### Revisión y continuidad
+- Se reutiliza el informe F41-08/E2E-41-09; no se abre auditoría nueva.
+- No se crea tarea nueva: el contrato CI y la integración TASK pertenecen al alcance activo TASK-153.
+- Siguiente tarea exacta: continuar la integración de ResourceOwnership en backend/task-service/Code.gs, empezando por getStudentTasks/getAllTasks, getTeacherActivity, assertTaskServiceTeacherCanManageTask y los controles de mutación; verificar creación y asignación de propiedad de nuevas tareas sin confiar en departmentId no validado. Requisitos: pendientes/Dirección/Pendientes.md, entrada TASK-153; Plan Maestro §9 y §10.95. Reutilizar las pruebas de tests/security/task-service-security-contract.test.js y no duplicar AUD-NG-002.
+- No se publicaron cambios fuera de NG_beta_0.0.0.1_work.
+===============================================================================

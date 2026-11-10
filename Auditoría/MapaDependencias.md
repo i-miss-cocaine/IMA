@@ -5176,3 +5176,9 @@ Alcance estático satisfecho; sin cambios de código. Hallazgos AUD-NG-374..376 
 - No se añade dependencia nueva ni se altera la posición de TASK-153. T153-S01 no bloquea el motor genérico.
 - Siguiente tramo de implementación: `backend/task-service/Code.gs` y `backend/exam-service/Code.gs`, con sus contratos de seguridad; después auditar DEVELOPER y los recursos institucionales/solicitudes de firma. Reutilizar AUD-NG-002 y los informes existentes, sin duplicar hallazgos.
 - Referencias compartidas, operación granular, normalización de errores/listados, importaciones y E2E permanecen pendientes.
+
+
+## Seguimiento CI TASK-153 — C1.429
+- Department Scope Contract: éxito, run 42839462181. Identity mapping and transport security: éxito, run 42839462098.
+- Task-Service security local contracts: fallo, run 42839462129. La causa identificada es una aserción de test desactualizada sobre la forma literal de declarar el allowlist administrativo; el código usa TICKET_ADMIN_ROLES_ y getUserVerifiedRole(payload). El fallo ya se reproducía en commits anteriores a C1.428.
+- Se corrige el contrato, no el control de producción. Rerun pendiente. La integración de ResourceOwnership en TASK sigue siendo el siguiente tramo técnico.

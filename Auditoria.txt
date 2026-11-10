@@ -969,3 +969,12 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - No se modificaron datos institucionales ni se accedió a Apps Script/Sheets/Drive productivos. TASK-153 continúa En ejecución.
 - Informe principal reutilizado: Auditoría/AUDITORIA_FASE_41_PRUEBAS_INTEGRALES_DIGITALIZACION.md. No se crea auditoría duplicada ni tarea derivada fuera del alcance.
 ===============================================================================
+
+
+===============================================================================
+## C1.429 — TASK-153 / seguimiento de CI
+- Department Scope Contract (42839462181) e Identity mapping and transport security (42839462098): éxito.
+- Task-Service security local contracts (42839462129): fallo en aserción estática obsoleta que buscaba un array literal en getAutomationRules; el código usa getUserVerifiedRole(payload) y TICKET_ADMIN_ROLES_. El mismo fallo existía antes de C1.428 (runs 42831442425 y 42827931422).
+- Se actualiza únicamente el contrato de prueba para verificar identidad firmada y allowlist centralizado. Rerun pendiente; no se declara CI completo.
+- Se conserva el informe principal F41-08/E2E-41-09. Sin nueva auditoría ni tarea derivada.
+===============================================================================
