@@ -892,3 +892,5 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se amplía el contrato de seguridad con casos de identidad ausente, manipulación del payload, propietario docente propio/ajeno y rol administrativo autorizado.
 - Commit: 8f1063028c6b4d53cdbb62038b100bb9d651d609. Revisión del diff PASS; prueba local NOT RUN; workflow CI run 42859943846 en curso al checkpoint.
 - AUD-NG-386 y TASK-153 permanecen abiertos/En ejecución por integración pendiente de ResourceOwnership, ámbitos y mutaciones.
+
+[Actualización C1.437] GitHub Actions run 42859943846 — Exam-Service security local contracts: PASS; el contrato confirmó autenticación, identidad firmada y filtro de propiedad docente. Prueba local en entorno de desarrollo: NOT RUN; CI no la sustituye. AUD-NG-386 sigue abierto; TASK-153 En ejecución.

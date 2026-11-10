@@ -1028,3 +1028,8 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - Commit: 8f1063028c6b4d53cdbb62038b100bb9d651d609. Revisión del diff PASS.
 - Prueba local: NOT RUN. GitHub Actions run 42859943846 estaba en curso al momento del checkpoint. AUD-NG-386 sigue abierto por ResourceOwnership/ámbito y endpoints restantes.
 ===============================================================================
+
+### Evidencia CI posterior — AUD-NG-386 / C1.437
+- Workflow `Exam-Service security local contracts`: PASS; run 42859943846; job `exam-security-contracts`; commit probado `8f1063028c6b4d53cdbb62038b100bb9d651d609`.
+- Log: `exam-service-security-contract: authentication, identity and teacher ownership assertions passed`.
+- Prueba local en entorno de desarrollo: NOT RUN. AUD-NG-386 sigue abierto por ResourceOwnership/ámbito y operaciones EXAM restantes.

@@ -1143,4 +1143,9 @@ Commit: 8f1063028c6b4d53cdbb62038b100bb9d651d609 (`fix(exam): scope teacher exam
 - Continuar con submit, calificación, eliminación y mutaciones; ampliar contratos positivos/negativos.
 - Mantener TASK-153 En ejecución hasta completar criterios y ejecutar las pruebas locales pertinentes con PASS.
 
+### Actualización de verificación posterior al checkpoint C1.437
+- GitHub Actions: **PASS**, workflow `Exam-Service security local contracts`, run **42859943846**, job `exam-security-contracts`, commit probado `8f1063028c6b4d53cdbb62038b100bb9d651d609`.
+- El paso `node tests/security/exam-service-security-contract.test.js` terminó correctamente; el log confirma: `exam-service-security-contract: authentication, identity and teacher ownership assertions passed`.
+- Prueba local en el entorno de desarrollo: NOT RUN; la ejecución CI remota no la sustituye.
+
 ===============================================================================
