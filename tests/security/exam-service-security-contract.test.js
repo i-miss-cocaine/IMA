@@ -111,4 +111,77 @@ assert.throws(() => runtime.getAllExams({ profesorId: "TEACHER-1" }),
 const adminExamList = runtime.getAllExams({ sessionToken: "admin-session" });
 assert.deepEqual(Array.from(adminExamList.data, row => row.examenId), ["EXM-1", "EXM-2"],
   "institution-wide administrative scope retains access to owned resources");
+
+const creationClaims = { "teacher-session": { userId: "TEACHER-1", role: "Profesor" },
+  "admin-session": { userId: "ADMIN-1", role: "Administrador" } };
+function makeSheet(rows, failSetValues) {
+  return {
+    rows: rows.map(row => row.slice()),
+    getDataRange() { return { getValues: () => this.rows.map(row => row.slice()) }; },
+    getLastRow() { return this.rows.length; },
+    appendRow(row) { this.rows.push(row.slice()); },
+    deleteRow(rowNumber) { this.rows.splice(rowNumber - 1, 1); },
+    getRange(row, col, numRows, numCols) {
+      return { setValues: values => {
+        if (failSetValues) throw new Error("synthetic question write failure");
+        values.forEach((value, index) => { this.rows[row - 1 + index] = value.slice(); });
+      } };
+    }
+  };
+}
+function makeCreationRuntime(options) {
+  const creationSheets = {
+    Examenes: makeSheet([["ExamenID","Titulo","Asignatura","Grado","Seccion","FechaLimite","TiempoLimite","Estado","ProfesorID","Parcial"]]),
+    PreguntasExamen: makeSheet([["PreguntaID","ExamenID","Tipo","Texto","OpcionesJSON","RespuestaCorrecta"]], options && options.failQuestions),
+    ResourceOwnership: makeSheet([["OwnershipID","InstitutionID","ResourceType","ResourceID","DepartmentID","Status","RegisteredBy","CreatedAt","UpdatedAt"]])
+  };
+  if (options && options.badOwnershipSchema) creationSheets.ResourceOwnership.rows[0][4] = "WrongHeader";
+  let uuid = 0;
+  const context = {
+    SPREADSHEET_ID: "LOCAL",
+    EXAM_RESOURCE_OWNERSHIP_REQUEST_CACHE_: new WeakMap(),
+    verifySessionToken(token) { return creationClaims[token] || null; },
+    PropertiesService: { getScriptProperties() { return { getProperty(name) { return name === "IMA_INSTITUTION_ID" ? "I1" : null; } }; } },
+    SpreadsheetApp: { openById() { return { getSheetByName(name) { return creationSheets[name] || null; } }; } },
+    getSheetOrThrow(spreadsheet, name) { const sheet = spreadsheet.getSheetByName(name); if (!sheet) throw new Error("Missing sheet " + name); return sheet; },
+    LockService: { getScriptLock() { return { tryLock() { return true; }, releaseLock() {} }; } },
+    Utilities: { getUuid() { uuid++; return "UUID-" + uuid; } }
+  };
+  const functions = ["getVerifiedExamIdentity_", "getVerifiedExamDepartmentScope_", "createExam"]
+    .map(name => extractFunction(source, name)).join("\n");
+  vm.runInNewContext(functions + "\nthis.createExam = createExam;", context);
+  return { context, sheets: creationSheets };
+}
+const creation = makeCreationRuntime();
+const created = creation.context.createExam({ sessionToken: "teacher-session", titulo: "Prueba", asignatura: "Matemáticas",
+  gradoAsignado: "10", seccionAsignada: "A", profesorId: "ATTACKER",
+  preguntas: [{ preguntaTipo: "opcion_multiple", textoPregunta: "¿2+2?", opciones: { A: "4" }, respuestaCorrecta: "A" }] });
+assert.equal(created.status, "success");
+assert.equal(creation.sheets.Examenes.rows.length, 2);
+assert.equal(creation.sheets.Examenes.rows[1][8], "TEACHER-1", "exam creator comes from signed identity, not payload profesorId");
+assert.equal(creation.sheets.ResourceOwnership.rows.length, 2);
+assert.equal(creation.sheets.ResourceOwnership.rows[1][1], "I1");
+assert.equal(creation.sheets.ResourceOwnership.rows[1][2], "EXAMEN");
+assert.equal(creation.sheets.ResourceOwnership.rows[1][3], created.examenId);
+assert.equal(creation.sheets.ResourceOwnership.rows[1][4], "D1", "single authorized department is assigned explicitly");
+assert.equal(creation.sheets.ResourceOwnership.rows[1][6], "TEACHER-1");
+assert.equal(creation.sheets.PreguntasExamen.rows[1][1], created.examenId);
+assert.throws(() => creation.context.createExam({ sessionToken: "teacher-session", departmentId: "D2", titulo: "Spoof" }),
+  /RESOURCE_SCOPE_DENIED/, "client cannot assign an exam to a department outside the signed scope");
+assert.equal(creation.sheets.Examenes.rows.length, 2, "rejected department does not persist an exam");
+const rollback = makeCreationRuntime({ failQuestions: true });
+assert.throws(() => rollback.context.createExam({ sessionToken: "teacher-session", titulo: "Rollback",
+  preguntas: [{ preguntaTipo: "opcion_multiple", textoPregunta: "Q", opciones: {}, respuestaCorrecta: "A" }] }),
+  /synthetic question write failure/);
+assert.equal(rollback.sheets.Examenes.rows.length, 1, "failed creation compensates the exam row");
+assert.equal(rollback.sheets.ResourceOwnership.rows.length, 1, "failed creation compensates its ownership row");
+assert.equal(rollback.sheets.PreguntasExamen.rows.length, 1, "failed creation leaves no question rows");
+const badSchema = makeCreationRuntime({ badOwnershipSchema: true });
+assert.throws(() => badSchema.context.createExam({ sessionToken: "teacher-session", titulo: "No ownership" }),
+  /RESOURCE_OWNERSHIP_SCHEMA_INVALID/);
+assert.equal(badSchema.sheets.Examenes.rows.length, 1, "invalid ownership schema fails before exam persistence");
+const institutionOnly = makeCreationRuntime();
+assert.throws(() => institutionOnly.context.createExam({ sessionToken: "admin-session", departmentId: "D1", titulo: "No department grant" }),
+  /RESOURCE_SCOPE_DENIED/, "institution-wide access alone does not authorize choosing an unassigned department");
+
 process.stdout.write("exam-service-security-contract: authentication, identity and teacher ownership assertions passed\n");
