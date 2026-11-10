@@ -1929,3 +1929,40 @@ Continuar la verificación local del subflujo ACADEMIC de TASK-153 / AUD-NG-386 
 - No quedan pruebas de despliegue como condición de cierre de este subalcance. Las pruebas que requieran servicios desplegados quedan reservadas a beta conforme a NDASC v1.4.
 - Siguiente acción: seleccionar el siguiente subalcance pendiente de TASK-153/AUD-NG-386, revisar sus dependencias y contratos y mantener la misma sesión.
 ===============================================================================
+
+===============================================================================
+## CHECKPOINT C1.456 — ACADEMIC: proteger agenda y resultados de entrevistas de admisión
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.455.
+HEAD inicial de este subalcance: b4e36762d2b5e154b452f5e3dba45f213d0977b1.
+
+### Alcance
+Corregir riesgos de autorización y concurrencia en la agenda de entrevistas y el registro de resultados ACADEMIC dentro de TASK-153 / AUD-NG-386.
+
+### Cambios realizados
+- `scheduleAdmissionInterview` ejecuta la comprobación de solapamiento y el append dentro de `ScriptLock`; se libera el bloqueo en `finally`. Una solicitud que no obtiene el lock falla sin consultar ni escribir la agenda.
+- `recordInterviewOutcome` verifica identidad/ámbito antes de resolver el ID. Bajo lock, primero obtiene solo EntrevistaID/SolicitudID, comprueba `SOLICITUD_ADMISION` en ResourceOwnership y solo entonces lee detalles de entrevista. La mutación exige evaluador asignado o manager autorizado y queda serializada.
+- `getAdmissionEvaluations`/`saveAdmissionEvaluation` y `getAdmissionInterviews` mantienen el contexto de acceso de solicitud; no se amplió su comportamiento en este subalcance.
+
+### Pruebas y resultados
+- Contrato `tests/security/academic-admission-ownership.test.js`: PASS en GitHub Actions run `42890756763`.
+- Cobertura: solapamiento rechazado; intervalo adyacente permitido; lock contencioso no accede a la hoja; identidad y ámbito antes de resolver entrevista; ownership antes de leer detalles; denegación no muta; actualización autorizada cambia estado/observaciones.
+- Suite del workflow: Department Scope, ACADEMIC expediente/admisión/entrevistas, ACCOUNTING departmental access, ResourceOwnership ABAC y student voucher client PASS.
+- Sintaxis `node --check`: User, Academic, Accounting Code.gs y `js/student.js` PASS.
+- La concurrencia se prueba con lock simulado/fixtures locales; no se afirma simultaneidad contra Google Sheets real. Sin despliegue, servicios vivos ni datos reales.
+
+### Commits
+- `eb0bc0f6d8dc44d07d9ba79778194fd3cf223ad2` — serializar agenda y proteger lectura/actualización de resultados.
+- `0901d2b0e4d129123461a6219cdbb138cbc9e7a2` — contratos de ownership y lock de entrevistas.
+- `dc993865cbb07266e138d4702bd1c9c638c379e4` — contención de lock en agenda.
+- Documentación: plan `58ca1f6ea7cc436ffcc9b62bab59e7d302f69ba7`; auditoría `35323eb433a69ca6efe199924dbe1ad2d4ff63a4`; changelog `1c7d127be25d19508b2a1dd98335d8df8abe1669`.
+
+### Estado y continuidad
+- Agenda y resultados de entrevistas ACADEMIC quedan verificados localmente.
+- **TASK-153 permanece En ejecución y AUD-NG-386 abierto** por recursos institucionales, solicitudes de firma, permisos granulares, referencias compartidas, filtros/importaciones y otras rutas restantes.
+- No se requiere despliegue para cerrar este subalcance; las pruebas dependientes de servicios desplegados se ejecutarán en beta.
+- Siguiente acción: continuar con el siguiente bloque pendiente de TASK-153, sin cambiar de sesión.
+===============================================================================
