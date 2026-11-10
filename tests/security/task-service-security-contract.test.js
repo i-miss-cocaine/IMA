@@ -539,6 +539,7 @@ const studentTaskContext = {
   SpreadsheetApp: { openById: () => studentSS },
   getSheetOrThrow: (_ss, name) => { if (!studentSheets[name]) throw new Error("missing " + name); return studentSheets[name]; },
   getTaskServiceUserProfile: userId => ({ grado: "6", seccion: "A", userId }),
+  isTaskServiceAdministrativeRole: role => ["Administrador", "Desarrollador", "Dirección", "Secretaría"].includes(role),
   getTaskServiceGuardianStudentIds: guardianId => guardianId === "TUTOR-1" ? ["STUDENT-1"] : [],
   getVerifiedTaskDepartmentScope_: (_payload, _ss, identity) => {
     assert.equal(identity && identity.userId, "STUDENT-1", "guardian scope is resolved from the linked student, not the tutor payload");
