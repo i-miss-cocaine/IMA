@@ -137,6 +137,7 @@ console.log("academic admission ownership contract: PASS");
     const outcomeSheet=makeInterviewSheet([interviewHeader,["ENT-OUT","REQ-OUT","2026-11-12","12:00","13:00","EVAL-OUT","Campus","Presencial","Programada","Nota privada","created"]]);
     let contextVerified=false,scopeVerified=false,fullRowReads=0,writes=0,held=false,released=0;
     const context={
+      normalizeString:value=>String(value||"").toLowerCase(),
       getAcademicAdmissionScopeContext_:(_payload,action,requestId,operation)=>{
         assert.equal(action,"recordInterviewOutcome");assert.equal(requestId,null);assert.equal(operation,"UPDATE");
         contextVerified=true;
