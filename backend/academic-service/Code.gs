@@ -10799,7 +10799,7 @@ function resolveAdmissionDuplicate(payload) {
 
   const ctx = getAcademicAdmissionScopeContext_(payload, "resolveAdmissionDuplicate", requestId, "UPDATE");
   if (!ctx.authorized) throw new Error("RESOURCE_NOT_FOUND");
-  const actorRole = String(ctx.actor.role || "").trim().toLowerCase().normalize("NFD").replace(/[\\u0300-\\u036f]/g, "");
+  const actorRole = String(ctx.actor.role || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   if (["director","administrador","desarrollador","secretaria"].indexOf(actorRole) === -1) throw new Error("AUTH_PERMISSION_DENIED");
 
   const lock = LockService.getScriptLock();
