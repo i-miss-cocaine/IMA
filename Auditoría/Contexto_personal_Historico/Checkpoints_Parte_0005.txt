@@ -832,3 +832,42 @@ Proteger las operaciones de alta, edición y baja de manageQuestionBank con iden
 - Rama base NG_beta_0.0.0.1 verificada sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
 - Actualización de NG_beta_0.0.0.1_work realizada mediante compare-and-swap fast-forward; no se utilizó force push.
 ===============================================================================
+===============================================================================
+## CHECKPOINT C1.480 — EXAM: lectura aislada del banco de preguntas y protección de claves
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.479.
+HEAD inicial: 43283810f6ca2af35579e2bbf6aee1adf719096e.
+Commits de implementación/pruebas: a62a3dbd976093da997ffe08698be3811fc52d09; 6ddff072cff57d00787edcd3fbe67e5d33e37002; 67c7640d125c3facda2811f90791e64038055d17; 33b64970c7870a3129c7d8669cef9477a784aa42; 04916bf7ae74c7d6b21c5568813b37640479d10b; 37ffd27c404a8262b0dd620e2c2ddb2bacb9249e; 6346195479eaa434fdfa5392409d46be65733d5c.
+
+### Alcance
+Proteger getQuestionBank contra lecturas sin identidad/permisos, exposición interdepartamental/institucional y entrega de claves a roles con permiso de solo lectura; mantener consistencia con las mutaciones serializadas de C1.479.
+
+### Cambios
+- getQuestionBank delega en withAuthorizedQuestionBankRead_: usa el mismo ScriptLock que las mutaciones, timeout fail-closed QUESTION_BANK_READ_LOCK_TIMEOUT y liberación en finally.
+- El contexto de lectura se resuelve después de adquirir el lock: valida RBAC getQuestionBank, identidad firmada, ámbito departamental/institucional y esquemas de BancoPreguntas/ResourceOwnership.
+- La instantánea de ownership se reutiliza para filtrar cada recurso. Solo se devuelven preguntas activas con ownership BANCO_PREGUNTA único, activo y dentro de la institución/departamento verificado.
+- Los registros legacy sin ownership, con ownership ambiguo, de otro departamento/institución o con identificadores de pregunta duplicados se excluyen.
+- respuestaCorrecta se incluye únicamente si el actor también tiene el permiso separado manageQuestionBank. Los lectores con solo getQuestionBank reciben el contenido sin clave.
+- Se conservan los filtros existentes de área, asignatura, grado, tema y dificultad.
+- BETA-EXAM-034 registra validación desplegada de aislamiento de lectura, concurrencia y exposición de claves.
+
+### Verificación local
+- Parseo sintáctico V8 de backend/exam-service/Code.gs: PASS.
+- tests/security/exam-service-question-bank-read-security.test.js: PASS; identidad firmada, permiso de lectura, ámbito D1/D2, institución, ownership ausente/duplicado, ID de pregunta duplicado, inactivos, filtros, payload de departamento manipulado, clave permitida/omitida, timeout y cambio de filas antes de adquirir lock.
+- tests/security/exam-service-question-bank-security.test.js: PASS (regresión de escritura C1.479).
+- tests/security/exam-service-security-contract.test.js: PASS.
+- tests/security/exam-service-departmental-access.test.js: PASS.
+- Ejecución en harness V8 aislado con stubs de fs/path/vm/assert; runner Node nativo NOT RUN.
+- CI sin workflow/status visible asociado al commit consultado; no se declara PASS. Apps Script/Sheets real NOT RUN; BETA-EXAM-034 Pendiente beta.
+- Diff revisado: solo backend/exam-service/Code.gs y los dos contratos de seguridad relacionados; no hay archivos de producto ajenos al alcance.
+
+### Riesgos y continuidad
+- La visibilidad de claves se vincula al permiso manageQuestionBank; si una institución necesita una política más granular que ese permiso, deberá configurarla en su matriz dinámica RBAC.
+- Preguntas legacy sin ownership único o con identificadores duplicados permanecen ocultas hasta corregir la propiedad/deduplicar mediante proceso controlado.
+- TASK-153 permanece En ejecución; AUD-NG-386 sigue abierto por otras superficies del servicio EXAM.
+- Rama base NG_beta_0.0.0.1 permanece sin cambios.
+- Siguiente subalcance: revisar otra superficie de lectura EXAM expuesta por el dispatcher y confirmar su filtrado de ownership/roles antes de elegir el próximo cambio.
+===============================================================================

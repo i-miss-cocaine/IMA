@@ -1414,3 +1414,9 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - Pruebas locales V8 PASS: question-bank-security, security-contract y departmental-access; incluye actor/departamento ajeno, ownership ausente/duplicado, lock timeout, fila eliminada antes del lock y rollback parcial.
 - Limitación: filas legacy sin ownership único quedan denegadas hasta registrar propiedad institucional correcta. getQuestionBank requiere revisión separada por su filtrado y exposición de respuestas.
 - Runner Node nativo/CI NOT RUN; Apps Script/Sheets real NOT RUN. BETA-EXAM-033 Pendiente beta.
+===============================================================================
+## C1.480 — EXAM: getQuestionBank
+- Hallazgo corregido: lectura de preguntas sin scope/ownership y exposición incondicional de respuestaCorrecta; lectura no sincronizada con mutaciones.
+- Corrección: RBAC + identidad firmada + scope departamental/institucional bajo el mismo ScriptLock de escritura; filtro por ownership único y activo; exclusión de legacy, IDs duplicados, preguntas inactivas y recursos ajenos. Clave solo con permiso manageQuestionBank.
+- Pruebas locales V8 PASS: question-bank-read-security, question-bank-security, security-contract y departmental-access. Incluye timeout, scope manipulado y snapshot posterior a lock.
+- Runner Node nativo/CI NOT RUN; Apps Script/Sheets real NOT RUN. BETA-EXAM-034 Pendiente beta.

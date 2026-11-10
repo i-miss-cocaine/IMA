@@ -1159,3 +1159,9 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Alta registra ownership departamental; edición/baja rechazan filas legacy sin ownership único o de otro ámbito. Baja lógica sincroniza estado de pregunta y ownership; compensación ante errores.
 - Tests locales V8 question-bank-security, security-contract y departmental-access PASS; parseo PASS. CI/runner Node nativo NOT RUN; Apps Script real NOT RUN; BETA-EXAM-033 Pendiente beta.
 - Commits: a995fc574bd5730e1986a3af28250d7128b240d9; 6a4a9ab1922140cb0d09bc96a3d0b12ad0acebda; 1056e5ec7a330dfa7365c0adc5fe4c54b52074e4; 1ca0e5813a896116d4e8445dcfcbc8a97ad4bd55.
+[2026-11-10] C1.480 — IMA-EXEC-20261110-1825Z-02 — EXAM: aislamiento de lectura del banco de preguntas
+- getQuestionBank ahora valida permiso, identidad firmada y scope dentro del mismo ScriptLock que las mutaciones.
+- Solo devuelve preguntas activas con ownership BANCO_PREGUNTA único de la institución/departamento; omite registros legacy/ambiguos/IDs duplicados y recursos ajenos.
+- respuestaCorrecta solo se devuelve con permiso manageQuestionBank; roles de solo lectura reciben preguntas sin clave. Se conservan filtros de contenido.
+- Parseo V8 y pruebas locales question-bank-read-security, question-bank-security, security-contract y departmental-access PASS. CI/runner Node nativo NOT RUN; Apps Script real NOT RUN; BETA-EXAM-034 Pendiente beta.
+- Commits: a62a3dbd976093da997ffe08698be3811fc52d09; 6ddff072cff57d00787edcd3fbe67e5d33e37002; 67c7640d125c3facda2811f90791e64038055d17; 33b64970c7870a3129c7d8669cef9477a784aa42; 04916bf7ae74c7d6b21c5568813b37640479d10b; 37ffd27c404a8262b0dd620e2c2ddb2bacb9249e; 6346195479eaa434fdfa5392409d46be65733d5c.

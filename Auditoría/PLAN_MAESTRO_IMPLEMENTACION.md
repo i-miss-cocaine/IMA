@@ -3373,3 +3373,12 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Limitación:** las filas legacy sin ownership único quedan bloqueadas para edición/baja hasta registrar ownership correcto; no se asigna un departamento por inferencia.
 - **Siguiente subalcance:** auditar getQuestionBank, su filtro de ownership y la exposición de claves de respuesta.
 - **Commits:** a995fc574bd5730e1986a3af28250d7128b240d9; 6a4a9ab1922140cb0d09bc96a3d0b12ad0acebda; 1056e5ec7a330dfa7365c0adc5fe4c54b52074e4; 1ca0e5813a896116d4e8445dcfcbc8a97ad4bd55.
+### 10.133 TASK-153 / AUD-NG-386 — seguridad de lectura de getQuestionBank (C1.480)
+
+- **Hallazgo:** getQuestionBank devolvía todas las preguntas activas y respuestaCorrecta sin verificar identidad/ámbito ni ownership por recurso. La lectura no compartía la sección crítica de las mutaciones, por lo que podía observar estados intermedios.
+- **Corrección:** wrapper withAuthorizedQuestionBankRead_ comparte ScriptLock con manageQuestionBank; resuelve RBAC, identidad firmada, scope y snapshot de ownership después de adquirir lock. La lectura devuelve solo preguntas activas con ownership BANCO_PREGUNTA único dentro de institución/departamento; excluye legacy, ownership duplicado, ID duplicado y recursos ajenos. respuestaCorrecta se agrega solo si también se autoriza manageQuestionBank. Se conservan filtros de contenido.
+- **Pruebas locales:** parseo V8 PASS; question-bank-read-security, question-bank-security, security-contract y departmental-access PASS en harness V8 aislado. Cobertura de identidad, rol solo lectura, scope falsificado, ownership y IDs ambiguos, inactivos, filtros, timeout y relectura después de lock.
+- **CI/runner Node nativo:** NOT RUN (sin workflow/status visible asociado al commit consultado). **Beta:** BETA-EXAM-034 Pendiente beta.
+- **Limitación:** filas legacy sin ownership único/ID único no aparecen; claves requieren permiso de gestión. La granularidad futura de respuestas puede ajustarse por matriz RBAC institucional.
+- **Estado:** subalcance getQuestionBank completado; TASK-153 En ejecución y AUD-NG-386 abierto por otras superficies EXAM.
+- **Commits:** a62a3dbd976093da997ffe08698be3811fc52d09; 6ddff072cff57d00787edcd3fbe67e5d33e37002; 67c7640d125c3facda2811f90791e64038055d17; 33b64970c7870a3129c7d8669cef9477a784aa42; 04916bf7ae74c7d6b21c5568813b37640479d10b; 37ffd27c404a8262b0dd620e2c2ddb2bacb9249e; 6346195479eaa434fdfa5392409d46be65733d5c.

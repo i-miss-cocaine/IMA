@@ -843,3 +843,10 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - Parseo V8 y contratos locales question-bank-security, security-contract y departmental-access PASS en harness aislado. CI/runner Node nativo NOT RUN; Apps Script/Sheets real pendiente.
 - BETA-EXAM-033 Pendiente beta. TASK-153 En ejecución; AUD-NG-386 abierto.
 - Siguiente subalcance: revisar getQuestionBank para filtrado por ownership y protección de claves de respuesta.
+===============================================================================
+### TASK-153 — seguimiento C1.480 / AUD-NG-386 EXAM
+- getQuestionBank ahora exige RBAC/identidad/scope y lee bajo el mismo ScriptLock de las mutaciones; filtra ownership único y activo por institución/departamento.
+- Claves respuestaCorrecta solo para actores con manageQuestionBank; roles solo lectura reciben el resto del reactivo sin clave. Se preservan filtros existentes.
+- Parseo V8 y pruebas locales question-bank-read-security, question-bank-security, security-contract y departmental-access PASS en harness aislado. CI/runner Node nativo NOT RUN; Apps Script/Sheets real pendiente.
+- BETA-EXAM-034 Pendiente beta. TASK-153 En ejecución; AUD-NG-386 abierto.
+- Siguiente: seleccionar y auditar otra superficie de lectura EXAM expuesta por dispatcher.
