@@ -7613,6 +7613,8 @@ function createAdvancedSignatureRequest(payload) {
     throw new Error("documentoId y firmanteId son requeridos para iniciar la transacción de firma avanzada.");
   }
 
+  const permission = validateRolePermission("createAdvancedSignatureRequest", payload);
+  if (!permission || permission.authorized !== true) throw new Error("AUTH_PERMISSION_DENIED");
   const actorRole = getUserVerifiedRole(payload);
   const actorUserId = String((payload && payload._verifiedUserId) || "").trim();
   if (!actorUserId || !actorRole || actorRole === "NO_ACCESS") throw new Error("VERIFIED_IDENTITY_REQUIRED");
