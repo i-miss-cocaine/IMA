@@ -2321,7 +2321,7 @@ function findAdmissionConversionCharge_(cargoData, userId, periodo, solicitudId,
   const activeLegacy = rows.filter(function(row) {
     return String(row[2] || "").trim() === String(userId || "").trim() &&
       String(row[3] || "").trim() === concepto &&
-      String(row[7] || "").trim() !== "Anulado";
+      String(row[7] || "").trim().toUpperCase() !== "ANULADO";
   });
   if (activeLegacy.length > 1) throw new Error("ADMISSION_CHARGE_AMBIGUOUS");
   if (activeLegacy.length === 1) throw new Error("ADMISSION_CHARGE_CONFLICT");
@@ -13277,7 +13277,7 @@ function registerStudentEnrollmentInternal_(payload) {
         const activeDuplicates = existingCargos.slice(1).filter(r =>
           String(r[2] || "").trim() === sUserId &&
           String(r[3] || "").trim() === concepto &&
-          String(r[7] || "").trim() !== "Anulado"
+          String(r[7] || "").trim().toUpperCase() !== "ANULADO"
         );
         if (activeDuplicates.length > 1) throw new Error("ADMISSION_CHARGE_AMBIGUOUS");
         if (activeDuplicates.length === 1) throw new Error("ADMISSION_CHARGE_CONFLICT");
