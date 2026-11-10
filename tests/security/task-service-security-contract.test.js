@@ -518,3 +518,49 @@ assert.deepEqual(removedCacheKeys.sort(), ["acct_role_USER-1","acct_state_USER-1
 assert(extractFunctionFrom(userSource, "manageAccountState").includes("invalidateUserRoleCache(userId)"), "account state changes invalidate session claim caches immediately");
 assert(extractFunctionFrom(userSource, "registerUser").includes("invalidateUserRoleCache(userId)"), "forced account role reset invalidates session claim caches immediately");
 console.log("TASK-636 role cache invalidation local contract: role/state cache keys are cleared after account and role changes.");
+
+
+// TASK-153: every student-facing task list, including guardian reads, is filtered by
+// ResourceOwnership using the verified student's department assignment.
+const studentTaskRows = [
+  ["TareaID","Tipo","Titulo","Descripcion","Parcial","Asignatura","Grado","Seccion","FechaLimite","OriginalID","ProfesorID","Estado","Puntaje","Archivo","FechaDisponible","TipoRecurso"],
+  ["TASK-OWN-1","Tarea","Owned","desc","P1","Matemáticas","6","A","","","PROF-1","Activa",100,"","", "Tarea"],
+  ["TASK-OWN-2","Tarea","Foreign department","desc","P1","Matemáticas","6","A","","","PROF-2","Activa",100,"","", "Tarea"]
+];
+const studentDeliveryRows = [["EntregaID","TareaID","UserID","Fecha","FileId","Nota","Estado","Comentario","MimeType"]];
+const studentSheets = {
+  Tareas: makeSheet(studentTaskRows),
+  Entregas: makeSheet(studentDeliveryRows)
+};
+const studentSS = { getSheetByName: name => studentSheets[name] || null };
+const ownershipChecks = [];
+const studentTaskContext = {
+  SPREADSHEET_ID: "LOCAL",
+  SpreadsheetApp: { openById: () => studentSS },
+  getSheetOrThrow: (_ss, name) => { if (!studentSheets[name]) throw new Error("missing " + name); return studentSheets[name]; },
+  getTaskServiceUserProfile: userId => ({ grado: "6", seccion: "A", userId }),
+  getTaskServiceGuardianStudentIds: guardianId => guardianId === "TUTOR-1" ? ["STUDENT-1"] : [],
+  getVerifiedTaskDepartmentScope_: (_payload, _ss, identity) => {
+    assert.equal(identity && identity.userId, "STUDENT-1", "guardian scope is resolved from the linked student, not the tutor payload");
+    assert.equal(identity && identity.role, "Estudiante");
+    return { authorized: true, institutionId: "I1", departmentIds: ["D1"], institutionWide: false };
+  },
+  assertTaskServiceResourceOwnership_: (_payload, type, id, operation, _ss, identity, scope) => {
+    ownershipChecks.push({ type, id, operation, userId: identity && identity.userId, scope });
+    return { authorized: id === "TASK-OWN-1" && scope.departmentIds.includes("D1") };
+  },
+  normalizeString: value => String(value || "").trim().toLowerCase(),
+  isInTeacherList: (value, list) => !list || String(list).split(",").map(x => x.trim()).includes(String(value).trim())
+};
+vm.runInNewContext(
+  extractFunction("getStudentTasks") + String.fromCharCode(10) + "this.run = getStudentTasks;",
+  studentTaskContext
+);
+const studentTaskResult = studentTaskContext.run({ _verifiedUserId: "STUDENT-1", _verifiedRole: "Estudiante" });
+assert.deepEqual(studentTaskResult.data.map(item => item.tareaId), ["TASK-OWN-1"], "student list excludes tasks outside the student's department ownership");
+assert.equal(ownershipChecks.length, 2, "ownership is checked for each candidate task");
+ownershipChecks.length = 0;
+const guardianTaskResult = studentTaskContext.run({ _verifiedUserId: "TUTOR-1", _verifiedRole: "Tutor", studentId: "STUDENT-1" });
+assert.deepEqual(guardianTaskResult.data.map(item => item.tareaId), ["TASK-OWN-1"], "guardian list uses the linked student's department ownership");
+assert.equal(ownershipChecks.every(check => check.userId === "STUDENT-1"), true, "guardian cannot substitute their own scope for the student's scope");
+console.log("TASK-153 student/guardian task-list ResourceOwnership contract passed.");
