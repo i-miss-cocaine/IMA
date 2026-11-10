@@ -1276,3 +1276,14 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - TASK-153 permanece En ejecución; AUD-NG-386 abierto por otras rutas institucionales y de admisión.
 - Commits: `dfab2d1486dd7599e9ccadb890ff71003632c669`; `5ae37e4a1aea2b779df2d14b42274719c9b2eccc`; `94ec9a3294ff276bfce88941659a1c3f52a030e2`.
 ===============================================================================
+
+===============================================================================
+## C1.460 — alta a lista de espera de admisión: idempotencia, lock y compensación
+- `addToWaitlist` ahora serializa revalidación de ownership, lectura de solicitud/lista, cálculo de posición, generación de ID y append con ScriptLock.
+- Un reintento devuelve la entrada activa existente; varias entradas activas para una solicitud producen conflicto. Solicitudes convertidas o vinculadas no pueden entrar.
+- Valida criterios de prelación y booleanos; filtra el cálculo de posición por solicitudes autorizadas. Si falla la actualización del estado tras insertar la entrada, elimina la fila insertada; si falla la compensación, emite `WAITLIST_COMPENSATION_FAILED`.
+- Contrato local: alta, score/posición, reintento idempotente, lock ocupado, ownership denegado, IDs de solicitud duplicados, entradas activas ambiguas, criterio inválido, rollback y fallo de rollback.
+- GitHub Actions run `42894855396` SUCCESS: contratos ACADEMIC, Department Scope, ACCOUNTING, ResourceOwnership ABAC y voucher client PASS; sintaxis Apps Script/cliente PASS.
+- Sin despliegue ni datos reales; concurrencia verificada con lock/fixtures locales. TASK-153 sigue En ejecución; AUD-NG-386 abierto.
+- Commits: `6009994e5df3fc45ddbadad9f782468dc65ba100`; `314e07b4fa5cfeae005d69b1b417d66a44803851`.
+===============================================================================
