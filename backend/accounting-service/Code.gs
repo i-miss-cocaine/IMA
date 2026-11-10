@@ -4177,16 +4177,10 @@ function assertPaymentVoucherOwnerAccess_(payload, targetUserId, options) {
   }
   const scope = getVerifiedAccountingDepartmentScope_(payload, ss, actor);
   if (!scope.authorized) return scope;
-  if (scope.institutionWide) return { authorized: true, accessType: "INSTITUTION" };
   if (!targetInfo.expRow || !targetInfo.expSheet) return { authorized: false, code: "RESOURCE_OWNER_UNRESOLVED" };
-  const headers = targetInfo.expSheet.getDataRange().getValues()[0] || [];
-  const departmentIndex = headers.findIndex(function(h) { return String(h || "").trim().toUpperCase() === "DEPARTAMENTOID"; });
-  if (departmentIndex < 0 || !String(targetInfo.expRow[departmentIndex] || "").trim()) {
-    return { authorized: false, code: "RESOURCE_DEPARTMENT_UNRESOLVED" };
-  }
-  const ownerDepartment = String(targetInfo.expRow[departmentIndex]).trim();
-  const allowed = scope.departmentIds.some(function(id) { return String(id).trim().toUpperCase() === ownerDepartment.toUpperCase(); });
-  return allowed ? { authorized: true, accessType: "DEPARTMENT" } : { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+  const ownership = assertResourceOwnershipForScope_(ss, scope, "EXPEDIENTE_ESTUDIANTE", targetInfo.expRow[0], "READ", payload);
+  if (!ownership.authorized) return ownership;
+  return { authorized: true, accessType: ownership.accessType, departmentId: ownership.departmentId };
 }
 
 function uploadPaymentVoucher(payload) {
@@ -6147,10 +6141,11 @@ function resolveEmployeeDepartmentId_(ss, expedienteId) {
   if (values.length < 2) return { resolved: false, code: "RESOURCE_OWNER_UNRESOLVED" };
   const headers = (values[0] || []).map(function(v) { return String(v || "").trim().toUpperCase(); });
   const idIndex = headers.indexOf("EXPEDIENTEID") >= 0 ? headers.indexOf("EXPEDIENTEID") : 0;
-  const departmentIndex = headers.indexOf("DEPARTAMENTO") >= 0 ? headers.indexOf("DEPARTAMENTO") : 4;
+  const departmentIndex = headers.indexOf("DEPARTAMENTO");
   const employee = values.slice(1).find(function(r) { return String(r[idIndex] || "").trim() === String(expedienteId || "").trim(); });
-  if (!employee || !String(employee[departmentIndex] || "").trim()) return { resolved: false, code: "RESOURCE_OWNER_UNRESOLVED" };
-  const rawDepartment = String(employee[departmentIndex]).trim();
+  if (!employee) return { resolved: false, code: "RESOURCE_OWNER_UNRESOLVED" };
+  const rawDepartment = departmentIndex >= 0 ? String(employee[departmentIndex] || "").trim() : "";
+  if (!rawDepartment) return { resolved: true, departmentId: "", rawDepartment: "", employee: employee };
   const departmentSheet = ss.getSheetByName("DepartamentosAcademicos");
   if (departmentSheet) {
     const departments = departmentSheet.getDataRange().getValues().slice(1);
@@ -6161,6 +6156,58 @@ function resolveEmployeeDepartmentId_(ss, expedienteId) {
     if (match && String(match[0] || "").trim()) return { resolved: true, departmentId: String(match[0]).trim(), rawDepartment: rawDepartment, employee: employee };
   }
   return { resolved: true, departmentId: rawDepartment, rawDepartment: rawDepartment, employee: employee };
+}
+
+var RESOURCE_OWNERSHIP_REQUEST_CACHE_ = new WeakMap();
+
+function assertResourceOwnershipForScope_(ss, scope, resourceType, resourceId, operation, payload) {
+  try {
+    if (!scope || !scope.authorized) return scope || { authorized: false, code: "DEPARTMENT_SCOPE_NOT_ASSIGNED" };
+    const institutionId = String(scope.institutionId || "").trim();
+    const type = String(resourceType || "").trim().toUpperCase();
+    const id = String(resourceId || "").trim();
+    if (!institutionId) return { authorized: false, code: "IDENTITY_CONFIGURATION_REQUIRED" };
+    if (!type || !id) return { authorized: false, code: "RESOURCE_REFERENCE_INVALID" };
+    const sheet = ss && ss.getSheetByName("ResourceOwnership");
+    if (!sheet) return { authorized: false, code: "RESOURCE_OWNERSHIP_NOT_CONFIGURED" };
+    let data = null;
+    if (payload && typeof payload === "object") {
+      try { data = RESOURCE_OWNERSHIP_REQUEST_CACHE_.get(payload) || null; } catch (_) {}
+    }
+    if (!data) {
+      data = sheet.getDataRange().getValues();
+      if (payload && typeof payload === "object") {
+        try { RESOURCE_OWNERSHIP_REQUEST_CACHE_.set(payload, data); } catch (_) {}
+      }
+    }
+    if (!data || data.length <= 1) return { authorized: false, code: "RESOURCE_OWNERSHIP_NOT_CONFIGURED" };
+    const matches = [];
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i] || [];
+      if (String(row[1] || "").trim() !== institutionId) continue;
+      if (String(row[2] || "").trim().toUpperCase() !== type || String(row[3] || "").trim() !== id) continue;
+      if (String(row[5] || "").trim().toUpperCase() !== "ACTIVE") continue;
+      matches.push(row);
+    }
+    if (!matches.length) return { authorized: false, code: "RESOURCE_OWNERSHIP_UNVERIFIED" };
+    if (matches.length !== 1) return { authorized: false, code: "RESOURCE_OWNERSHIP_AMBIGUOUS" };
+    const departmentId = String(matches[0][4] || "").trim();
+    if (!departmentId) return { authorized: false, code: "RESOURCE_DEPARTMENT_UNRESOLVED" };
+    const inDepartment = (scope.departmentIds || []).some(function(value) {
+      return String(value || "").trim() === departmentId;
+    });
+    const allowed = scope.institutionWide === true || inDepartment;
+    if (!allowed) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+    return {
+      authorized: true, code: "RESOURCE_SCOPE_ALLOWED",
+      userId: scope.userId, role: scope.role, institutionId: institutionId,
+      departmentId: departmentId, resourceType: type, resourceId: id,
+      operation: String(operation || "").trim().toUpperCase(),
+      accessType: scope.institutionWide === true ? "INSTITUTION" : "DEPARTMENT"
+    };
+  } catch (error) {
+    return { authorized: false, code: "RESOURCE_OWNERSHIP_CHECK_FAILED" };
+  }
 }
 
 function assertEmployeeExpedienteScopeAccess_(payload, ss, expedienteId) {
@@ -6174,12 +6221,9 @@ function assertEmployeeExpedienteScopeAccess_(payload, ss, expedienteId) {
   }
   const scope = getVerifiedAccountingDepartmentScope_(payload, ss, actor);
   if (!scope.authorized) return scope;
-  if (scope.institutionWide) return { authorized: true, accessType: "INSTITUTION" };
-  const allowed = scope.departmentIds.some(function(id) {
-    return String(id).trim().toUpperCase() === String(owner.departmentId).trim().toUpperCase() ||
-      String(id).trim().toUpperCase() === String(owner.rawDepartment).trim().toUpperCase();
-  });
-  return allowed ? { authorized: true, accessType: "DEPARTMENT" } : { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+  const ownership = assertResourceOwnershipForScope_(ss, scope, "EXPEDIENTE_LABORAL", expedienteId, "READ", payload);
+  if (!ownership.authorized) return ownership;
+  return { authorized: true, accessType: ownership.accessType, departmentId: ownership.departmentId };
 }
 
 function uploadEmployeeDocument(payload) {

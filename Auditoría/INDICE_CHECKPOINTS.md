@@ -3,11 +3,11 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.410**
-- Última sesión: `IMA-EXEC-20261110-1140Z-01`
+- Último checkpoint: **C1.428**
+- Última sesión: `IMA-EXEC-20261110-1430Z-16`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.410: **25888**
+- Caracteres del archivo activo tras C1.428: **71884**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 - Baseline lógico válido: **C1.316** (`31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`). C1.317–C1.382 se conservan, pero no se aceptan como evidencia de continuidad por corrección expresa del usuario.
@@ -259,3 +259,4 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.425 | IMA-EXEC-20261110-1340Z-13 | Restauración de integridad documental tras error de mapeo de rutas; C1.424 reaplicado correctamente | Corrección documental | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.425 | 632–656 | C1.424 | Este commit; SHA verificado tras publicación |
 | C1.426 | IMA-EXEC-20261110-1340Z-14 | AUD-NG-004 Completada; 25 aserciones de configuración/rotación en cinco servicios y runbook coordinado | PM-01 — cierre local/documental | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.426 | 657–698 | C1.425 | Este commit; SHA verificado tras publicación |
 | C1.427 | IMA-EXEC-20261110-1340Z-15 | TASK-153 en ejecución; ResourceOwnership y assertRecordOwnership genéricos implementados en USER; pruebas sintéticas pasaron; T153-S01 no bloquea motor | PM-01 — implementación parcial P0 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.427 | 699–739 | C1.426 | Este commit; SHA verificado tras publicación |
+| C1.428 | IMA-EXEC-20261110-1430Z-16 | TASK-153 en ejecución; propiedad integrada parcialmente en ACADEMIC/ACCOUNTING; restauración documental protegida; 16 pruebas sintéticas aisladas pasaron; CI pendiente | PM-01 — implementación parcial P0 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.428 | 742–805 | C1.427 | Este commit; SHA verificado tras publicación |

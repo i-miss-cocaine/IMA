@@ -25,11 +25,11 @@ function makeSheet(rows){
 }
 const accounting=fs.readFileSync(path.resolve(__dirname,"../../backend/accounting-service/Code.gs"),"utf8");
 const names=[
- "getVerifiedAccountingIdentity_","getVerifiedAccountingDepartmentScope_","resolveEmployeeDepartmentId_","assertEmployeeExpedienteScopeAccess_",
+ "getVerifiedAccountingIdentity_","getVerifiedAccountingDepartmentScope_","assertResourceOwnershipForScope_","resolveEmployeeDepartmentId_","assertEmployeeExpedienteScopeAccess_",
  "getAccountingPersonIdForUser_","resolveStudentExpedienteForAccounting_","assertPaymentVoucherOwnerAccess_",
  "extractDriveFileId","getEmployeeDocuments","uploadEmployeeDocument","uploadPaymentVoucher","getPaymentVouchers","getPaymentVoucherFile","reviewPaymentVoucher","validateRolePermission"
 ];
-const code=names.map(n=>extractFunction(accounting,n)).join("\n");
+const code="var RESOURCE_OWNERSHIP_REQUEST_CACHE_ = new WeakMap();\n"+names.map(n=>extractFunction(accounting,n)).join("\n");
 const claims={
  staffA:{userId:"U-A",role:"Director"},staffB:{userId:"U-B",role:"Director"},
  employee:{userId:"U-EMP",role:"Empleado"},admin:{userId:"U-ADMIN",role:"Administrador"},
@@ -53,6 +53,13 @@ const rows={
   ["DocumentoID","ExpedienteID","CategoriaDoc","TituloDocumento","ArchivoUrl","FechaCarga","CargadoPor","EstadoVisibilidad","Observaciones"],
   ["DOC-A","EXP-A","Contrato","A","url","","U-A","Privado",""],
   ["DOC-B","EXP-B","Contrato","B","url","","U-B","Privado",""]
+ ],
+ ResourceOwnership:[
+  ["OwnershipID","InstitutionID","ResourceType","ResourceID","DepartmentID","Status","RegisteredBy","CreatedAt","UpdatedAt"],
+  ["OWN-EMP-A","INST-1","EXPEDIENTE_LABORAL","EXP-A","DEP-A","ACTIVE","U-ADMIN","",""],
+  ["OWN-EMP-B","INST-1","EXPEDIENTE_LABORAL","EXP-B","DEP-B","ACTIVE","U-ADMIN","",""],
+  ["OWN-STUDENT-A","INST-1","EXPEDIENTE_ESTUDIANTE","EXP-STUDENT","DEP-A","ACTIVE","U-ADMIN","",""],
+  ["OWN-STUDENT-B","INST-1","EXPEDIENTE_ESTUDIANTE","EXP-OTHER","DEP-B","ACTIVE","U-ADMIN","",""]
  ],
  Usuarios:[
   ["UserId","Nombre","Grado","Seccion","Email","PasswordHash","Rol","Telefono","NumeroLista","PersonaID","EstadoCuenta","FechaCreacion","UltimoAcceso"],
@@ -105,7 +112,9 @@ const actor=token=>({sessionToken:token});
 assert.equal(context.assertEmployeeExpedienteScopeAccess_(actor("staffA"),ss,"EXP-A").authorized,true);
 assert.equal(context.assertEmployeeExpedienteScopeAccess_(actor("staffA"),ss,"EXP-B").code,"RESOURCE_SCOPE_DENIED");
 assert.equal(context.assertEmployeeExpedienteScopeAccess_(actor("admin"),ss,"EXP-B").accessType,"INSTITUTION");
-assert.equal(context.assertEmployeeExpedienteScopeAccess_(actor("staffA"),ss,"EXP-NO-DEPT").code,"RESOURCE_OWNER_UNRESOLVED");
+assert.equal(context.assertEmployeeExpedienteScopeAccess_(actor("staffA"),ss,"EXP-NO-DEPT").code,"RESOURCE_OWNERSHIP_UNVERIFIED");
+rows.ResourceOwnership.push(["OWN-EMP-NODEPT","INST-1","EXPEDIENTE_LABORAL","EXP-NO-DEPT","DEP-A","ACTIVE","U-ADMIN","",""]);
+assert.equal(context.assertEmployeeExpedienteScopeAccess_(actor("staffA"),ss,"EXP-NO-DEPT").authorized,true,"ownership registry must work without legacy employee department column");
 assert.equal(context.assertEmployeeExpedienteScopeAccess_(actor("employee"),ss,"EXP-A").accessType,"SELF");
 assert.equal(context.assertEmployeeExpedienteScopeAccess_({sessionToken:"invalid"},ss,"EXP-A").code,"VERIFIED_IDENTITY_REQUIRED");
 assert.deepEqual(Array.from(context.getEmployeeDocuments(actor("staffA")).documentos,d=>d.documentoId),["DOC-A"]);
@@ -120,7 +129,7 @@ assert.equal(context.assertPaymentVoucherOwnerAccess_(actor("guardian"),"U-STUDE
 assert.equal(context.assertPaymentVoucherOwnerAccess_(actor("guardian"),"U-OTHER",{}).code,"RESOURCE_SCOPE_DENIED");
 assert.equal(context.assertPaymentVoucherOwnerAccess_(actor("staffA"),"U-STUDENT",{}).accessType,"DEPARTMENT");
 assert.equal(context.assertPaymentVoucherOwnerAccess_(actor("staffA"),"U-OTHER",{}).code,"RESOURCE_SCOPE_DENIED");
-assert.equal(context.assertPaymentVoucherOwnerAccess_(actor("staffA"),"U-NODEPT",{}).code,"RESOURCE_DEPARTMENT_UNRESOLVED");
+assert.equal(context.assertPaymentVoucherOwnerAccess_(actor("staffA"),"U-NODEPT",{}).code,"RESOURCE_OWNERSHIP_UNVERIFIED");
 assert.equal(context.assertPaymentVoucherOwnerAccess_(actor("admin"),"U-OTHER",{}).accessType,"INSTITUTION");
 assert.deepEqual(Array.from(context.getPaymentVouchers({sessionToken:"student",userId:"U-OTHER"}).comprobantes,c=>c.comprobanteId),["VCH-A"]);
 const studentVoucherList=context.getPaymentVouchers(actor("student")).comprobantes;
@@ -128,7 +137,7 @@ assert.equal(studentVoucherList[0].comprobanteUrl,"","voucher list must not disc
 assert.equal(studentVoucherList[0].tieneComprobante,true,"voucher list must expose only attachment availability");
 assert.deepEqual(Array.from(context.getPaymentVouchers(actor("guardian")).comprobantes,c=>c.comprobanteId),["VCH-A"]);
 assert.deepEqual(Array.from(context.getPaymentVouchers(actor("staffA")).comprobantes,c=>c.comprobanteId),["VCH-A"]);
-assert.deepEqual(Array.from(context.getPaymentVouchers(actor("admin")).comprobantes,c=>c.comprobanteId),["VCH-A","VCH-B","VCH-N"]);
+assert.deepEqual(Array.from(context.getPaymentVouchers(actor("admin")).comprobantes,c=>c.comprobanteId),["VCH-A","VCH-B"],"institution-wide access still requires a registered resource owner");
 rows.ComprobantesPago.push(
  ["VCH-TRASHED",new Date("2026-01-04"),"U-STUDENT","Alumno A","GRAL",100,"Transferencia","REF-T","https://lh3.googleusercontent.com/d/FILE_TRASHED_123456789012345678901234567890","En Revisión",""],
  ["VCH-BADTYPE",new Date("2026-01-05"),"U-STUDENT","Alumno A","GRAL",100,"Transferencia","REF-X","https://lh3.googleusercontent.com/d/FILE_BADTYPE_123456789012345678901234567890","En Revisión",""],
@@ -160,6 +169,8 @@ assert.ok(extractFunction(accounting,"uploadEmployeeDocument").includes("DriveAp
 assert.ok(!extractFunction(accounting,"uploadEmployeeDocument").includes("ANYONE_WITH_LINK"));
 assert.ok(extractFunction(accounting,"uploadPaymentVoucher").includes("DriveApp.Access.PRIVATE"));
 assert.ok(!extractFunction(accounting,"uploadPaymentVoucher").includes("ANYONE_WITH_LINK"));
+assert.ok(extractFunction(accounting,"assertEmployeeExpedienteScopeAccess_").includes("assertResourceOwnershipForScope_"));
+assert.ok(extractFunction(accounting,"assertPaymentVoucherOwnerAccess_").includes("assertResourceOwnershipForScope_"));
 assert.ok(extractFunction(accounting,"getPaymentVouchers").includes("assertPaymentVoucherOwnerAccess_"));
 assert.ok(extractFunction(accounting,"reviewPaymentVoucher").includes("assertPaymentVoucherOwnerAccess_"));
 assert.ok(accounting.includes('"getPaymentVoucherFile"'),"new file action must be declared in role permissions");

@@ -813,3 +813,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - USER añade ResourceOwnership, registerResourceOwnership con permiso dinámico por institución y assertRecordOwnership fail-closed.
 - Pruebas sintéticas de aislamiento y manipulación de payload pasaron en entorno JS aislado.
 - TASK-153 permanece En ejecución; falta integración transversal y referencias compartidas.
+
+[2026-11-10] C1.428 — IMA-EXEC-20261110-1430Z-16 — TASK-153: integración parcial ResourceOwnership ACADEMIC/ACCOUNTING
+- USER rechaza propiedad activa con DepartmentID vacío, incluso bajo alcance institucional global.
+- ACADEMIC y ACCOUNTING aplican ResourceOwnership a expedientes estudiantiles, documentos/solicitudes vinculadas, expedientes laborales y comprobantes; se preserva autoservicio verificado.
+- ACADEMIC protege restoreDocumentVersion contra IDOR, falta de identidad y restauración sin ámbito; se valida que la versión corresponda al documento.
+- 16 escenarios sintéticos aislados pasaron. Contratos Node y CI aún pendientes al checkpoint.
+- TASK-153 permanece En ejecución; TASK/EXAM, DEVELOPER (aplicabilidad), referencias compartidas y E2E siguen pendientes.

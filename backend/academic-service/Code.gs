@@ -2482,6 +2482,58 @@ function getStudentPersonIdForUser_(ss, userId) {
   return row ? String(row[personIdx] || "").trim() : "";
 }
 
+var RESOURCE_OWNERSHIP_REQUEST_CACHE_ = new WeakMap();
+
+function assertResourceOwnershipForScope_(ss, scope, resourceType, resourceId, operation, payload) {
+  try {
+    if (!scope || !scope.authorized) return scope || { authorized: false, code: "DEPARTMENT_SCOPE_NOT_ASSIGNED" };
+    const institutionId = String(scope.institutionId || "").trim();
+    const type = String(resourceType || "").trim().toUpperCase();
+    const id = String(resourceId || "").trim();
+    if (!institutionId) return { authorized: false, code: "IDENTITY_CONFIGURATION_REQUIRED" };
+    if (!type || !id) return { authorized: false, code: "RESOURCE_REFERENCE_INVALID" };
+    const sheet = ss && ss.getSheetByName("ResourceOwnership");
+    if (!sheet) return { authorized: false, code: "RESOURCE_OWNERSHIP_NOT_CONFIGURED" };
+    let data = null;
+    if (payload && typeof payload === "object") {
+      try { data = RESOURCE_OWNERSHIP_REQUEST_CACHE_.get(payload) || null; } catch (_) {}
+    }
+    if (!data) {
+      data = sheet.getDataRange().getValues();
+      if (payload && typeof payload === "object") {
+        try { RESOURCE_OWNERSHIP_REQUEST_CACHE_.set(payload, data); } catch (_) {}
+      }
+    }
+    if (!data || data.length <= 1) return { authorized: false, code: "RESOURCE_OWNERSHIP_NOT_CONFIGURED" };
+    const matches = [];
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i] || [];
+      if (String(row[1] || "").trim() !== institutionId) continue;
+      if (String(row[2] || "").trim().toUpperCase() !== type || String(row[3] || "").trim() !== id) continue;
+      if (String(row[5] || "").trim().toUpperCase() !== "ACTIVE") continue;
+      matches.push(row);
+    }
+    if (!matches.length) return { authorized: false, code: "RESOURCE_OWNERSHIP_UNVERIFIED" };
+    if (matches.length !== 1) return { authorized: false, code: "RESOURCE_OWNERSHIP_AMBIGUOUS" };
+    const departmentId = String(matches[0][4] || "").trim();
+    if (!departmentId) return { authorized: false, code: "RESOURCE_DEPARTMENT_UNRESOLVED" };
+    const inDepartment = (scope.departmentIds || []).some(function(value) {
+      return String(value || "").trim() === departmentId;
+    });
+    const allowed = scope.institutionWide === true || inDepartment;
+    if (!allowed) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+    return {
+      authorized: true, code: "RESOURCE_SCOPE_ALLOWED",
+      userId: scope.userId, role: scope.role, institutionId: institutionId,
+      departmentId: departmentId, resourceType: type, resourceId: id,
+      operation: String(operation || "").trim().toUpperCase(),
+      accessType: scope.institutionWide === true ? "INSTITUTION" : "DEPARTMENT"
+    };
+  } catch (error) {
+    return { authorized: false, code: "RESOURCE_OWNERSHIP_CHECK_FAILED" };
+  }
+}
+
 function assertStudentExpedienteScopeAccess_(payload, ss, expSheet, expRow) {
   const actor = getVerifiedAcademicIdentity_(payload);
   if (!actor.authorized) return actor;
@@ -2518,15 +2570,9 @@ function assertStudentExpedienteScopeAccess_(payload, ss, expSheet, expRow) {
 
   const scope = getVerifiedAcademicDepartmentScope_(payload, ss, actor);
   if (!scope.authorized) return scope;
-  if (scope.institutionWide) return { authorized: true, accessType: "INSTITUTION" };
-  const headers = expSheet.getDataRange().getValues()[0] || [];
-  const departmentIndex = headers.findIndex(function(h) { return String(h || "").trim().toUpperCase() === "DEPARTAMENTOID"; });
-  if (departmentIndex < 0 || !String(expRow[departmentIndex] || "").trim()) {
-    return { authorized: false, code: "RESOURCE_DEPARTMENT_UNRESOLVED" };
-  }
-  const ownerDepartment = String(expRow[departmentIndex]).trim();
-  const allowed = scope.departmentIds.some(function(id) { return String(id).trim().toUpperCase() === ownerDepartment.toUpperCase(); });
-  return allowed ? { authorized: true, accessType: "DEPARTMENT" } : { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+  const ownership = assertResourceOwnershipForScope_(ss, scope, "EXPEDIENTE_ESTUDIANTE", expedienteId, "READ", payload);
+  if (!ownership.authorized) return ownership;
+  return { authorized: true, accessType: ownership.accessType, userId: actor.userId, departmentId: ownership.departmentId };
 }
 
 function assertStudentDocumentScopeAccess_(payload, ss, documentSheet, documentRow, expSheet) {
@@ -2557,14 +2603,12 @@ function assertStudentDocumentScopeAccess_(payload, ss, documentSheet, documentR
     return assertStudentExpedienteScopeAccess_(payload, ss, expSheet, exp);
   }
   const scope = getVerifiedAcademicDepartmentScope_(payload, ss, actor);
-  if (scope.authorized && scope.institutionWide) return { authorized: true, accessType: "INSTITUTION" };
-  const headers = documentSheet && documentSheet.getDataRange().getValues()[0] || [];
-  const departmentIndex = headers.findIndex(function(h) { return String(h || "").trim().toUpperCase() === "DEPARTAMENTOID"; });
-  const ownerDepartment = departmentIndex >= 0 ? String(documentRow[departmentIndex] || "").trim() : "";
-  if (!ownerDepartment) return { authorized: false, code: "RESOURCE_DEPARTMENT_UNRESOLVED" };
   if (!scope.authorized) return scope;
-  const allowed = scope.departmentIds.some(function(id) { return String(id).trim().toUpperCase() === ownerDepartment.toUpperCase(); });
-  return allowed ? { authorized: true, accessType: "DEPARTMENT" } : { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+  const resourceType = solicitudId ? "SOLICITUD_ADMISION" : "DOCUMENTO_ESTUDIANTE";
+  const resourceId = solicitudId || String(documentRow && documentRow[0] || "").trim();
+  const ownership = assertResourceOwnershipForScope_(ss, scope, resourceType, resourceId, "READ", payload);
+  if (!ownership.authorized) return ownership;
+  return { authorized: true, accessType: ownership.accessType, departmentId: ownership.departmentId };
 }
 
 function assertStudentRequestScopeAccess_(payload, ss, expedienteId, solicitudId) {
@@ -11058,48 +11102,52 @@ function getStudentDocuments(payload) {
 function restoreDocumentVersion(payload) {
   const { documentoId, versionId, motivo } = payload || {};
   if (!documentoId || !versionId) throw new Error("documentoId y versionId son requeridos para la restauración.");
+  const actor = getVerifiedAcademicIdentity_(payload);
+  if (!actor.authorized) return { status: "error", code: actor.code || "VERIFIED_IDENTITY_REQUIRED", message: "Acceso denegado." };
 
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const docSheet = getOrCreateSheet(ss, "DocumentosEstudiante");
   const verSheet = getOrCreateSheet(ss, "HistorialVersionesDocumentos");
-
   const docRows = docSheet.getDataRange().getValues();
-  const verRows = verSheet.getDataRange().getValues();
-
-  const docIdx = docRows.findIndex(r => String(r[0]).trim() === String(documentoId).trim());
-  const verIdx = verRows.findIndex(r => String(r[0]).trim() === String(versionId).trim());
-
-  if (docIdx === -1 || verIdx === -1) throw new Error("Documento o versión especificada no fue encontrada.");
+  const cleanDocumentId = String(documentoId).trim();
+  const docIdx = docRows.findIndex(r => String(r[0] || "").trim() === cleanDocumentId);
+  if (docIdx <= 0) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Documento o versión no disponible." };
 
   const currDoc = docRows[docIdx];
-  const targetVer = verRows[verIdx];
-  const now = new Date();
+  const access = assertStudentDocumentScopeAccess_(payload, ss, docSheet, currDoc, ss.getSheetByName("ExpedientesEstudiantes"));
+  if (!access.authorized || ["SELF", "GUARDIAN"].indexOf(access.accessType) !== -1) {
+    return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Documento o versión no disponible." };
+  }
 
-  // 1. Archivar la versión vigente actual en la bitácora de versiones
+  const verRows = verSheet.getDataRange().getValues();
+  const verIdx = verRows.findIndex(r => String(r[0] || "").trim() === String(versionId).trim());
+  if (verIdx <= 0) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Documento o versión no disponible." };
+  const targetVer = verRows[verIdx];
+  if (String(targetVer[1] || "").trim() !== cleanDocumentId) {
+    return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Documento o versión no disponible." };
+  }
+
+  const now = new Date();
   verSheet.appendRow([
     `VER-${Date.now()}`,
-    documentoId,
+    cleanDocumentId,
     currDoc[4] || "",
     currDoc[5] || "",
     currDoc[6] || "",
     currDoc[7] || now,
-    (payload && (payload.authUserId || payload.userId)) || "Secretaría",
-    `Reemplazado por restauración a la versión ${versionId}. Motivo: ${motivo || 'Restauración manual'}`,
+    actor.userId,
+    `Reemplazado por restauración a la versión ${versionId}. Motivo: ${motivo || "Restauración manual"}`,
     now
   ]);
-
-  // 2. Restaurar los valores de la versión seleccionada como la versión activa
-  docSheet.getRange(docIdx + 1, 5).setValue(targetVer[2]); // nombreArchivo
-  docSheet.getRange(docIdx + 1, 6).setValue(targetVer[3]); // driveFileId
-  docSheet.getRange(docIdx + 1, 7).setValue(targetVer[4]); // driveUrl
+  docSheet.getRange(docIdx + 1, 5).setValue(targetVer[2]);
+  docSheet.getRange(docIdx + 1, 6).setValue(targetVer[3]);
+  docSheet.getRange(docIdx + 1, 7).setValue(targetVer[4]);
   docSheet.getRange(docIdx + 1, 8).setValue(now);
   docSheet.getRange(docIdx + 1, 10).setValue("Aprobado");
-  docSheet.getRange(docIdx + 1, 11).setValue((payload && (payload.authUserId || payload.userId)) || "Secretaría");
-  docSheet.getRange(docIdx + 1, 13).setValue(`Restaurado desde versión ${versionId}. Motivo: ${motivo || 'Restauración de versión previa'}`);
-
-  logStructuredEvent("ACADEMIC", "restoreDocumentVersion", "WARN", "DOCUMENT_VERSION_RESTORED", `Documento ${documentoId} restaurado a versión ${versionId}`, { documentoId, versionId, motivo }, payload && payload.authRole);
-
-  return { status: "success", message: `Documento ${documentoId} restaurado exitosamente a la versión ${versionId}.` };
+  docSheet.getRange(docIdx + 1, 11).setValue(actor.userId);
+  docSheet.getRange(docIdx + 1, 13).setValue(`Restaurado desde versión ${versionId}. Motivo: ${motivo || "Restauración de versión previa"}`);
+  logStructuredEvent("ACADEMIC", "restoreDocumentVersion", "WARN", "DOCUMENT_VERSION_RESTORED", `Documento ${cleanDocumentId} restaurado a versión ${versionId}`, { documentoId: cleanDocumentId, versionId, motivo }, actor.role);
+  return { status: "success", message: `Documento ${cleanDocumentId} restaurado exitosamente a versión ${versionId}.` };
 }
 
 function updateDocumentStatus(payload) {

@@ -736,3 +736,69 @@ Fase: PM-01 — identidad, seguridad y gobierno de acceso.
 - Pendientes: integrar assertRecordOwnership en endpoints ACADEMIC/ACCOUNTING/TASK/EXAM/DEVELOPER; implementar referencias compartidas con allowlist de campos/operaciones y revocación; ejecutar pruebas E2E por servicio.
 - La ausencia de organigrama o fuente institucional real no bloquea estas tareas de plataforma.
 ===============================================================================
+
+
+===============================================================================
+## CHECKPOINT C1.428 — TASK-153: integración parcial ResourceOwnership en ACADEMIC/ACCOUNTING
+Sesión: IMA-EXEC-20261110-1430Z-16
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA; rama exclusiva: NG_beta_0.0.0.1_work.
+HEAD de partida: 4be1e3dbcd8b737a7c1caace3acc09a6c995fa81; checkpoint anterior C1.427.
+Rama base: NG_beta_0.0.0.1; HEAD verificado 44d9891132332e692dbe2ba8602b41f50a508a59. Rama de trabajo 544 commits adelantada y 0 atrasada al inicio.
+Fase: PM-01 — identidad, seguridad y gobierno de acceso.
+Tarea: TASK-153, P0, orden 1; estado En ejecución.
+
+### Continuidad y auditoría previa
+- Se verificó el HEAD de la rama de trabajo y se comparó con C1.427; el commit 4be1e3db es el checkpoint vigente, sin trabajo concurrente sin checkpoint.
+- Se conservaron las evidencias de AUD-NG-004 y C1.427; no se repitieron sus pruebas ni se reauditaron informes.
+- Se reutiliza el informe F41-08 / E2E-41-09 en Auditoría/AUDITORIA_FASE_41_PRUEBAS_INTEGRALES_DIGITALIZACION.md, aplicando el protocolo de auditoría única.
+- T153-S01 sigue limitada a la selección/migración de datos reales de propiedad institucional. No bloquea el motor genérico ni las pruebas sintéticas; no se requieren organigramas institucionales para continuar el desarrollo de plataforma.
+
+### Hallazgos y correcciones
+- USER: assertRecordOwnership permitía una fila activa sin DepartmentID cuando institutionWide era true. Ahora devuelve RESOURCE_DEPARTMENT_UNRESOLVED y falla cerrado.
+- ACADEMIC: la comprobación anterior podía omitir propiedad para usuarios institutionWide y dependía de DepartmentID legacy. Se integra la lectura del registro compartido para expedientes estudiantiles, documentos y solicitudes/documentos sin expediente resuelto.
+- ACADEMIC: restoreDocumentVersion carecía de identidad/ámbito, confiaba en usuario del payload y no vinculaba la versión al documento solicitado. Ahora exige identidad firmada, propiedad autorizada, excluye SELF/GUARDIAN, comprueba DocumentoID de la versión y usa actor autenticado; las denegaciones devuelven RESOURCE_NOT_FOUND.
+- ACCOUNTING: la autorización de expedientes laborales y comprobantes omitía el registro para institutionWide y dependía de columnas legacy. Ahora exige propiedad activa única y DepartmentID válido; la ausencia de departamento legacy no bloquea si existe propiedad registrada.
+- Se preservan las rutas de autoservicio de estudiante, tutor y empleado con identidad y relaciones verificadas.
+
+### Implementación
+- USER: validación de DepartmentID no vacío en assertRecordOwnership.
+- ACADEMIC: adaptador assertResourceOwnershipForScope_ sobre ResourceOwnership para EXPEDIENTE_ESTUDIANTE, DOCUMENTO_ESTUDIANTE y SOLICITUD_ADMISION; protegido restoreDocumentVersion.
+- ACCOUNTING: adaptador equivalente para EXPEDIENTE_LABORAL y EXPEDIENTE_ESTUDIANTE asociado a comprobantes; el registro compartido es la fuente de propiedad para personal.
+- Los adaptadores son locales a los proyectos Apps Script ACADEMIC/ACCOUNTING; no se declara resuelta su consolidación interservicio. No se escribieron filas productivas ni se modificaron esquemas/datos reales.
+
+### Respaldo y pruebas
+- Respaldo Git previo a la edición en HEAD 4be1e3db: USER Code.gs blob 7978134406e2815c7ea49d6d5b0f81e579c3e350; ACADEMIC Code.gs blob 6c7ff36bb1ff314917bb85497a23c303a0dcf397; ACCOUNTING Code.gs blob 15b01bef8a7bcdac9624219bca6f5085a5f8a827.
+- Respaldo de contratos: academic test 2a95af2204e7e4650c2bdd9ef439949138f88231; accounting test a89ceacc6e6997a8c9bcb062cab5f39d6b0f44f0; USER ABAC test 3f57ad9ec805b6711a50ec530562d6ef67ffb064; workflow 5eaf785178b2301b53993705c6911b16dd0c0f70.
+- Ejecutadas en V8 aislado 16 comprobaciones sintéticas (8 por adaptador): mismo departamento, cruce departamental, institutionWide, propietario ausente, DepartmentID vacío, institución ajena, duplicidad activa y hoja no configurada. Resultado: 16/16 correctas.
+- Se amplían los contratos Node para USER/ACADEMIC/ACCOUNTING y el workflow Department Scope incluye el test genérico y node --check de los tres servicios. La ejecución Node/CI queda pendiente de confirmar después del commit.
+- No ejecutado: Apps Script desplegado, Sheets/Drive reales, navegador, E2E ni migración de datos.
+
+### Autoauditoría y Code Review
+- Revisión interna del diff focalizado: las rutas staff requieren propietario activo único; los accesos SELF/GUARDIAN existentes se conservan para consulta y no habilitan restauración; el actor de restauración procede de identidad firmada; la versión debe pertenecer al documento.
+- No se solicita revisión externa mediante PR para no publicar cambios fuera de la rama autorizada. La revisión externa formal queda pendiente si la metodología la requiere antes del cierre final.
+- Se detecta deuda de diseño: la función adaptadora se replica en dos servicios; debe evaluarse un contrato interservicio común antes de extender a TASK/EXAM.
+
+### Archivos preparados para el commit C1.428
+- backend/user-service/Code.gs
+- backend/academic-service/Code.gs
+- backend/accounting-service/Code.gs
+- tests/security/departmental-resource-access.test.js
+- tests/security/accounting-departmental-resource-access.test.js
+- tests/security/resource-ownership-abac.test.js
+- .github/workflows/department-scope-contract.yml
+- Auditoría/AUDITORIA_FASE_41_PRUEBAS_INTEGRALES_DIGITALIZACION.md
+- Auditoria.txt
+- pendientes/Dirección/Pendientes.md
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/MapaDependencias.md
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Estado y límites
+- TASK-153 permanece En ejecución; no se marca completada.
+- Pendiente integrar TASK/EXAM; auditar la aplicabilidad del motor en DEVELOPER y los recursos ExpedientesInstitucionales/SolicitudesFirmas; normalizar errores/listados para no revelar existencia; completar filtros/importaciones, permisos por operación, referencias compartidas con allowlist/vigencia/revocación y E2E.
+- Próxima tarea exacta: continuar TASK-153 en backend/task-service/Code.gs y backend/exam-service/Code.gs. Requisitos originales: pendientes/Dirección/Pendientes.md, entrada TASK-153; Plan Maestro §9 y §10.95. Reutilizar AUD-NG-002 y los informes existentes sin duplicarlos.
+- La rama base permanece sin modificaciones. El commit C1.428 se publicará únicamente en NG_beta_0.0.0.1_work y el HEAD se verificará después de publicar.
+===============================================================================

@@ -9689,10 +9689,11 @@ function assertRecordOwnership(payload, resourceType, resourceId, operation) {
     if (!matches.length) return { authorized: false, code: "RESOURCE_OWNERSHIP_UNVERIFIED" };
     if (matches.length !== 1) return { authorized: false, code: "RESOURCE_OWNERSHIP_AMBIGUOUS" };
     const departmentId = String(matches[0][4] || "").trim();
+    if (!departmentId) return { authorized: false, code: "RESOURCE_DEPARTMENT_UNRESOLVED" };
     const inDepartment = (context.departmentIds || []).some(function(value) {
       return String(value || "").trim() === departmentId;
     });
-    const allowed = context.institutionWide === true || (departmentId && inDepartment);
+    const allowed = context.institutionWide === true || inDepartment;
     if (!allowed) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
     return {
       authorized: true, code: "RESOURCE_SCOPE_ALLOWED",

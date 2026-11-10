@@ -5167,3 +5167,12 @@ Alcance estático satisfecho; sin cambios de código. Hallazgos AUD-NG-374..376 
 - Pruebas sintéticas cubren ámbito propio, acceso institucional global, aislamiento entre instituciones, payload spoof, permiso dinámico, registro fuera de ámbito, propiedad ausente y duplicada.
 - TASK-153 sigue En ejecución: falta integración transversal y referencias compartidas interdepartamentales.
 ===============================================================================
+
+
+## Seguimiento TASK-153 — C1.428
+- PM-01 / P0 continúa en ejecución. El registro USER `ResourceOwnership` se consume ahora desde ACADEMIC y ACCOUNTING para expedientes estudiantiles, documentos/solicitudes vinculadas, expedientes laborales y comprobantes de pago.
+- Los endpoints preservan autoservicio autenticado de estudiante/tutor/empleado; el acceso de personal, incluido alcance institucional global, exige propiedad activa única y DepartmentID no vacío.
+- La restauración de versiones académicas queda protegida por identidad, propiedad del documento y correspondencia documento-versión.
+- No se añade dependencia nueva ni se altera la posición de TASK-153. T153-S01 no bloquea el motor genérico.
+- Siguiente tramo de implementación: `backend/task-service/Code.gs` y `backend/exam-service/Code.gs`, con sus contratos de seguridad; después auditar DEVELOPER y los recursos institucionales/solicitudes de firma. Reutilizar AUD-NG-002 y los informes existentes, sin duplicar hallazgos.
+- Referencias compartidas, operación granular, normalización de errores/listados, importaciones y E2E permanecen pendientes.

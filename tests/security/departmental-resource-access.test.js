@@ -20,10 +20,10 @@ function extractFunction(source, name) {
   }
   throw new Error("Unbalanced function " + name);
 }
-function makeSheet(rows) { return { getLastRow: () => rows.length, getDataRange: () => ({ getValues: () => rows.map(r => r.slice()) }), getRange: () => ({ setValue: () => {} }) }; }
+function makeSheet(rows) { return { getLastRow: () => rows.length, getDataRange: () => ({ getValues: () => rows.map(r => r.slice()) }), appendRow: row => rows.push(row.slice()), getRange: () => ({ setValue: () => {} }) }; }
 const academic = fs.readFileSync(path.resolve(__dirname, "../../backend/academic-service/Code.gs"), "utf8");
-const names = ["getVerifiedAcademicIdentity_","getVerifiedAcademicDepartmentScope_","getStudentPersonIdForUser_","assertStudentExpedienteScopeAccess_","assertStudentDocumentScopeAccess_","assertStudentRequestScopeAccess_","resolveAcademicRequestDepartment_","hasActiveTeacherAssignment_","validateAcademicResponsibilityAndScopeAccess","getStudentFile","getStudentDocuments","getSecureDocumentStream","validateEvidenceFileAndPermissions","assertRecordOwnership","getStudentFileSummary","getStudentTimeline"];
-const code = names.map(n => extractFunction(academic, n)).join("\n");
+const names = ["getVerifiedAcademicIdentity_","getVerifiedAcademicDepartmentScope_","assertResourceOwnershipForScope_","getStudentPersonIdForUser_","assertStudentExpedienteScopeAccess_","assertStudentDocumentScopeAccess_","assertStudentRequestScopeAccess_","resolveAcademicRequestDepartment_","hasActiveTeacherAssignment_","validateAcademicResponsibilityAndScopeAccess","getStudentFile","getStudentDocuments","getSecureDocumentStream","validateEvidenceFileAndPermissions","assertRecordOwnership","getStudentFileSummary","getStudentTimeline","restoreDocumentVersion"];
+const code = "var RESOURCE_OWNERSHIP_REQUEST_CACHE_ = new WeakMap();\n" + names.map(n => extractFunction(academic, n)).join("\n");
 const claims = {
   staffA:{userId:"U-A",role:"Director"}, staffB:{userId:"U-B",role:"Director"},
   admin:{userId:"U-ADMIN",role:"Administrador"}, teacher:{userId:"U-TEACH",role:"Docente"},
@@ -37,6 +37,12 @@ const rows = {
     ["S-ADMIN","U-ADMIN","Administrador","INSTITUCION",'["INST-1"]',"Activo","","","","","",""],
     ["S-TEACH","U-TEACH","Docente","DEPARTAMENTO",'["DEP-A"]',"Activo","","","","","",""],
     ["S-EXPIRED","U-A","Director","DEPARTAMENTO",'["DEP-OLD"]',"Activo","","","2020-01-01","2021-01-01","",""]
+  ],
+  ResourceOwnership:[
+    ["OwnershipID","InstitutionID","ResourceType","ResourceID","DepartmentID","Status","RegisteredBy","CreatedAt","UpdatedAt"],
+    ["OWN-EXP-A","INST-1","EXPEDIENTE_ESTUDIANTE","EXP-A","DEP-A","ACTIVE","U-ADMIN","",""],
+    ["OWN-EXP-B","INST-1","EXPEDIENTE_ESTUDIANTE","EXP-B","DEP-B","ACTIVE","U-ADMIN","",""],
+    ["OWN-EXP-S","INST-1","EXPEDIENTE_ESTUDIANTE","EXP-STUDENT","DEP-A","ACTIVE","U-ADMIN","",""]
   ],
   Usuarios:[
     ["UserId","Nombre","Grado","Seccion","Email","PasswordHash","Rol","Telefono","NumeroLista","PersonaID","EstadoCuenta","FechaCreacion","UltimoAcceso"],
@@ -63,7 +69,12 @@ const rows = {
     ["DOC-MISMATCH","EXP-A","SOL-B","ID","x.pdf","FILE-X","url-x","","","Aprobado","","",""]
   ],
   SolicitudesAdmision:[["SolicitudID","FechaSolicitud","AnoLectivo","GradoSolicitado","NombresAspirante","ApellidosAspirante","Identificacion","FechaNacimiento","NombreResponsable","TelefonoContacto","EmailContacto","EstadoSolicitud","CanalIngreso","Observaciones","ExpedienteID"],["SOL-B","","","","","","","","","","","","","","EXP-B"]],
-  HistorialVersionesDocumentos:[["VersionID","DocumentoID"]],
+  HistorialVersionesDocumentos:[
+    ["VersionID","DocumentoID","NombreArchivo","DriveFileId","DriveUrl","FechaCreacion","ArchivadoPor","MotivoArchivado","FechaArchivado"],
+    ["VER-A","DOC-A","old-a.pdf","FILE-A-OLD","url-old-a",new Date("2026-01-01"),"U-A","legacy",""],
+    ["VER-B","DOC-B","old-b.pdf","FILE-B-OLD","url-old-b",new Date("2026-01-02"),"U-B","legacy",""],
+    ["VER-S","DOC-S","old-s.pdf","FILE-S-OLD","url-old-s",new Date("2026-01-03"),"U-STUDENT","legacy",""]
+  ],
   Matriculas:[["MatriculaID","Fecha","UserId","Alumno","Grado","Seccion","Periodo","Tipo","Estado","BecaDescuento","Observaciones"]],
   MovimientosEstudiante:[["MovimientoID","ExpedienteID","MatriculaID","AnoLectivo","TipoMovimiento","GradoOrigen","SeccionOrigen","GradoDestino","SeccionDestino","FechaEfectiva","Motivo"]],
   CatalogoAsignaturas:[["AsignaturaID","NombreOficial","Codigo","AreaAcademica","CargaHorariaRef","Estado"],["ASIG-A","A","A","AREA-A","","Activo"],["ASIG-B","B","B","AREA-B","","Activo"]],
@@ -92,11 +103,18 @@ assert.equal(context.assertStudentExpedienteScopeAccess_(actor("guardian"),ss,ex
 assert.equal(context.assertStudentExpedienteScopeAccess_(actor("guardian"),ss,expSheet,rows.ExpedientesEstudiantes[2]).code,"RESOURCE_SCOPE_DENIED");
 assert.equal(context.assertStudentExpedienteScopeAccess_({sessionToken:"invalid"},ss,expSheet,rows.ExpedientesEstudiantes[1]).code,"VERIFIED_IDENTITY_REQUIRED");
 const noDept=makeSheet([["ExpedienteID","PersonaID"],["EXP-X","P-X"]]);
-assert.equal(context.assertStudentExpedienteScopeAccess_(actor("staffA"),ss,noDept,["EXP-X","P-X"]).code,"RESOURCE_DEPARTMENT_UNRESOLVED");
+assert.equal(context.assertStudentExpedienteScopeAccess_(actor("staffA"),ss,noDept,["EXP-X","P-X"]).code,"RESOURCE_OWNERSHIP_UNVERIFIED");
+assert.equal(context.assertStudentExpedienteScopeAccess_(actor("admin"),ss,noDept,["EXP-X","P-X"]).code,"RESOURCE_OWNERSHIP_UNVERIFIED");
+rows.ResourceOwnership.push(["OWN-EXP-X","INST-1","EXPEDIENTE_ESTUDIANTE","EXP-X","DEP-A","ACTIVE","U-ADMIN","",""]);
+assert.equal(context.assertStudentExpedienteScopeAccess_(actor("staffA"),ss,noDept,["EXP-X","P-X"]).authorized,true,"registry ownership must work without legacy DepartmentID");
+rows.ResourceOwnership.push(["OWN-EXP-BLANK","INST-1","EXPEDIENTE_ESTUDIANTE","EXP-BLANK","","ACTIVE","U-ADMIN","",""]);
+assert.equal(context.assertStudentExpedienteScopeAccess_(actor("admin"),ss,noDept,["EXP-BLANK","P-X"]).code,"RESOURCE_DEPARTMENT_UNRESOLVED");
 assert.equal(context.assertStudentDocumentScopeAccess_(actor("staffA"),ss,makeSheet(rows.DocumentosEstudiante),rows.DocumentosEstudiante[1],expSheet).authorized,true);
 assert.equal(context.assertStudentDocumentScopeAccess_(actor("staffA"),ss,makeSheet(rows.DocumentosEstudiante),rows.DocumentosEstudiante[2],expSheet).code,"RESOURCE_SCOPE_DENIED");
 assert.equal(context.assertStudentDocumentScopeAccess_(actor("staffA"),ss,makeSheet(rows.DocumentosEstudiante),rows.DocumentosEstudiante[4],expSheet).code,"RESOURCE_OWNER_UNRESOLVED");
 assert.equal(context.assertStudentRequestScopeAccess_(actor("staffA"),ss,"EXP-A","SOL-B").code,"RESOURCE_OWNER_UNRESOLVED");
+assert.ok(extractFunction(academic,"assertStudentExpedienteScopeAccess_").includes("assertResourceOwnershipForScope_"));
+assert.ok(extractFunction(academic,"assertStudentDocumentScopeAccess_").includes("assertResourceOwnershipForScope_"));
 const ownFile=context.getStudentFile({sessionToken:"student",userId:"P-B"});
 assert.equal(ownFile.status,"success"); assert.equal(ownFile.studentFile.expedienteId,"EXP-STUDENT");
 assert.equal(context.getStudentFile({sessionToken:"staffA",expedienteId:"EXP-B"}).code,"RESOURCE_SCOPE_DENIED");
@@ -129,4 +147,19 @@ assert.equal(context.validateEvidenceFileAndPermissions({sessionToken:"staffA",f
 assert.ok(extractFunction(academic,"getStudentFileSummary").includes("getVerifiedAcademicIdentity_"));
 assert.ok(extractFunction(academic,"getStudentTimeline").includes("getVerifiedAcademicIdentity_"));
 
+const historyBeforeRestore = rows.HistorialVersionesDocumentos.length;
+const mismatchedVersion = context.restoreDocumentVersion({sessionToken:"staffA",documentoId:"DOC-B",versionId:"VER-A"});
+assert.equal(mismatchedVersion.code,"RESOURCE_NOT_FOUND","a version must belong to the requested document");
+assert.equal(rows.HistorialVersionesDocumentos.length,historyBeforeRestore,"mismatched versions must not mutate history");
+const crossDepartmentRestore = context.restoreDocumentVersion({sessionToken:"staffA",documentoId:"DOC-B",versionId:"VER-B"});
+assert.equal(crossDepartmentRestore.code,"RESOURCE_NOT_FOUND","cross-department restore must not disclose document existence");
+assert.equal(rows.HistorialVersionesDocumentos.length,historyBeforeRestore,"denied restore must not mutate history");
+const studentRestore = context.restoreDocumentVersion({sessionToken:"student",documentoId:"DOC-S",versionId:"VER-S"});
+assert.equal(studentRestore.code,"RESOURCE_NOT_FOUND","self-service access does not authorize or disclose document restoration");
+assert.equal(rows.HistorialVersionesDocumentos.length,historyBeforeRestore,"student restore must not mutate history");
+const allowedRestore = context.restoreDocumentVersion({sessionToken:"staffA",documentoId:"DOC-A",versionId:"VER-A"});
+assert.equal(allowedRestore.status,"success","authorized department staff may restore an in-scope version");
+assert.equal(rows.HistorialVersionesDocumentos.length,historyBeforeRestore+1,"authorized restore must archive the current version");
+assert.ok(extractFunction(academic,"restoreDocumentVersion").includes("assertStudentDocumentScopeAccess_"));
+assert.ok(extractFunction(academic,"restoreDocumentVersion").includes("getVerifiedAcademicIdentity_"));
 console.log("Academic departmental resource access contracts passed.");

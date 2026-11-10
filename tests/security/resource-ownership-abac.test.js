@@ -90,4 +90,7 @@ assert.equal(outOfScope.code, "DEPARTMENT_SCOPE_DENIED");
 rows.push(rows[1].slice());
 const duplicate = runtime.assertOwner({ sessionToken: "coord-token" }, "EXPEDIENTE", "EXP-001", "READ");
 assert.equal(duplicate.authorized, false); assert.equal(duplicate.code, "RESOURCE_OWNERSHIP_AMBIGUOUS");
+rows.push(["OWN-BLANK","I1","EXPEDIENTE","EXP-003","","ACTIVE","U1","2026-11-10","2026-11-10"]);
+const blankOwner = runtime.assertOwner({ sessionToken: "global-token" }, "EXPEDIENTE", "EXP-003", "READ");
+assert.equal(blankOwner.authorized, false); assert.equal(blankOwner.code, "RESOURCE_DEPARTMENT_UNRESOLVED");
 process.stdout.write("resource-ownership-abac: all synthetic isolation assertions passed\n");

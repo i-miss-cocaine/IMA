@@ -958,3 +958,14 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - Plan Maestro §10.83 ampliado; especificación detallada en Auditoría/ESPECIFICACION_MATRIZ_ROLES_RESPONSABILIDADES.md.
 - Todo es propuesta pendiente de ratificación y revisión legal. Sin cambios de código, datos, esquemas, permisos o asignaciones reales; pruebas no ejecutadas; T153-S01 permanece Bloqueada.
 ===============================================================================
+
+
+===============================================================================
+## C1.428 — TASK-153 / F41-08 / E2E-41-09 — revisión focalizada de propiedad
+- Se corrige USER: una fila activa de ResourceOwnership sin DepartmentID ya no concede acceso institucional global.
+- ACADEMIC integra el registro para expedientes, documentos/solicitudes y protege restoreDocumentVersion contra falta de identidad, cruce departamental, restauración SELF/GUARDIAN y asociación versión-documento inválida.
+- ACCOUNTING integra el registro para expedientes laborales y expedientes estudiantiles que sustentan comprobantes; conserva acceso propio de empleado, estudiante y tutor bajo relaciones verificadas.
+- 16 escenarios sintéticos aislados de los adaptadores pasaron. Las suites Node y CI se programan en el workflow, aún pendientes al crear este registro.
+- No se modificaron datos institucionales ni se accedió a Apps Script/Sheets/Drive productivos. TASK-153 continúa En ejecución.
+- Informe principal reutilizado: Auditoría/AUDITORIA_FASE_41_PRUEBAS_INTEGRALES_DIGITALIZACION.md. No se crea auditoría duplicada ni tarea derivada fuera del alcance.
+===============================================================================
