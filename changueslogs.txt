@@ -1047,3 +1047,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Contratos locales de orden, aislamiento, ownership, lock, estados, posiciones y rollback PASS; GitHub Actions run 42896093654 SUCCESS, incluida sintaxis.
 - Sin despliegue ni datos reales. TASK-153 sigue En ejecución.
 - Commits: 647c50e9a96c70d80809be56600716fac37b75f7; be34332567dd0b93e101d260c7def03cbb95ea52.
+
+
+[2026-11-10] C1.463 — IMA-EXEC-20261110-1825Z-02 — TASK-153 / USER: consulta de estado de firma avanzada
+- `checkAdvancedSignatureStatus` rechaza respuestas de proveedor enviadas por cliente; la consulta requiere identidad/permiso verificados y ownership documental.
+- ScriptLock protege la lectura; primero se resuelven claves mínimas, luego se verifica ownership y después se consultan detalles.
+- `Completada` no implica firma criptográficamente válida; se mantiene `esFirmadoValido:false` hasta integrar callback autenticado y validación criptográfica.
+- Contratos locales y sintaxis PASS; GitHub Actions run 42898171738 SUCCESS.
+- Sin despliegue ni proveedor real. TASK-153 sigue En ejecución.
+- Commits: 31cc21b9572c47e792d0b3188237aeaaccd480a6; e7e8588402d2e462b7a4e70161309f52d46ae70b; dafdbbb0526ee550d7d4ca462340e0351ee6742a; 4aa2a9a251e53ec0044956f66e7a32263ca86a98.
