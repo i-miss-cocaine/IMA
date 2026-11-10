@@ -2025,7 +2025,7 @@ Endurecer `resolveAdmissionDuplicate` dentro de TASK-153 / AUD-NG-386 para evita
 - Actor y rol de auditoría proceden de `ctx.actor` verificado.
 
 ### Verificación local
-- GitHub Actions run `42893612257`: SUCCESS, Node 24. URL: https://github.com/i-miss-cocaine/IMA/actions/runs/42893612257
+- GitHub Actions run `42894133956`: SUCCESS, Node 24. URL: https://github.com/i-miss-cocaine/IMA/actions/runs/42894133956
 - `academic-admission-ownership.test.js`: PASS para contratos previos y nuevos de duplicados; tres resoluciones, doble decisión, rol no directivo, rol directivo acentuado `Secretaría`, solicitud sin ownership, destino sin ownership, destino de otro departamento, lock contencioso, revalidación bajo lock y fallo de historial.
 - `department-scope-contract.test.js`, `departmental-resource-access.test.js`, `academic-student-expediente-ownership.test.js`, `accounting-departmental-resource-access.test.js`, `resource-ownership-abac.test.js` y `student-payment-voucher-client.test.js`: PASS.
 - `node --check` de servicios Apps Script y sintaxis de `js/student.js`: PASS.
@@ -2038,6 +2038,8 @@ Endurecer `resolveAdmissionDuplicate` dentro de TASK-153 / AUD-NG-386 para evita
 - `25bea9e9ed69460c1b2bf21ab2bf951f4a837ba5` — fixtures de escrituras atómicas.
 - `07b22d3180461320052eda9958d677acf7355805` — normalización Unicode de roles directivos.
 - `d2b818e2536f8fcad04317ba687b9e5392c44814` — regresión de compatibilidad con el rol `Secretaría`.
+- `7648d34076df4b10545b3c6ce4e2cc4229fff5f3` — eliminación de marcas combinantes en la normalización de roles.
+- `94ec9a3294ff276bfce88941659a1c3f52a030e2` — corrección de aserción de encabezado entre contextos VM.
 - Documentación: plan `c2064af56f9ceb148b06eecec5510bfcff4d84f7`; auditoría `d0e8ee6b4897547db907e0ff2510247bfff7cd30`; changelog `6590685733b9d480bbf4b65bbc95043b5f9c4e97`.
 
 ### Estado y continuidad
