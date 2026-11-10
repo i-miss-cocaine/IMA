@@ -659,3 +659,10 @@ Ajustar createAdvancedSignatureRequest para exigir un proveedor de firma indicad
 - No se modificó la rama base NG_beta_0.0.0.1.
 - Siguiente subtramo elegible: AUD-NG-386 / EXAM — revisar el contexto de autorización compartido de gradeExamSubmission y deleteExamSubmission, verificando ownership del examen/entrega y permiso del actor antes de mutar.
 ===============================================================================
+
+===============================================================================
+### Addendum C1.475-R1 — verificación de publicación del checkpoint
+- HEAD final verificado tras publicar C1.475: 135ad0de3ce91d0a477fe5d671ef44a3b54fba41.
+- La rama autorizada contenía el commit de implementación/pruebas 40b89c239aa35f370003fc5b54af2182cefa7e59 y el registro de checkpoint; no se reescribió historial.
+- Rama base NG_beta_0.0.0.1 verificada sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+===============================================================================
