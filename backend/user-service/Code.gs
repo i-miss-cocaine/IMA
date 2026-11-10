@@ -7526,6 +7526,76 @@ function getAdvancedSignatureProviderConfig(payload) {
   return { status: "success", proveedores: providers };
 }
 
+function assertAdvancedSignatureDocumentScope_(payload, ss, documentoId, solicitudId, operation) {
+  const verifiedRole = getUserVerifiedRole(payload);
+  const verifiedUserId = String((payload && payload._verifiedUserId) || "").trim();
+  if (!verifiedUserId || !verifiedRole || verifiedRole === "NO_ACCESS") {
+    return { authorized: false, code: "VERIFIED_IDENTITY_REQUIRED" };
+  }
+  const context = getUserContextScope(payload);
+  if (!context || context.status !== "success" || !context.userId) {
+    return { authorized: false, code: context && context.code || "DEPARTMENT_SCOPE_NOT_ASSIGNED" };
+  }
+
+  const cleanDocumentId = String(documentoId || "").trim();
+  const requestedSolicitudId = String(solicitudId || "").trim();
+  if (!cleanDocumentId) return { authorized: false, code: "RESOURCE_REFERENCE_INVALID" };
+  const documentSheet = ss && ss.getSheetByName("DocumentosEstudiante");
+  if (!documentSheet || documentSheet.getLastRow() <= 1) {
+    return { authorized: false, code: "RESOURCE_OWNER_UNRESOLVED" };
+  }
+  const documentRows = documentSheet.getDataRange().getValues().slice(1);
+  const matches = documentRows.filter(function(row) {
+    return String(row[0] || "").trim() === cleanDocumentId ||
+      String(row[5] || "").trim() === cleanDocumentId;
+  });
+  if (matches.length !== 1) {
+    return { authorized: false, code: matches.length > 1 ? "RESOURCE_OWNERSHIP_AMBIGUOUS" : "RESOURCE_NOT_FOUND" };
+  }
+
+  const documentRow = matches[0];
+  const canonicalDocumentId = String(documentRow[0] || "").trim();
+  const expedienteId = String(documentRow[1] || "").trim();
+  const storedSolicitudId = String(documentRow[2] || "").trim();
+  if (requestedSolicitudId && storedSolicitudId && requestedSolicitudId !== storedSolicitudId) {
+    return { authorized: false, code: "RESOURCE_NOT_FOUND" };
+  }
+  const resolvedSolicitudId = storedSolicitudId || requestedSolicitudId;
+
+  if (expedienteId && resolvedSolicitudId) {
+    const admissionSheet = ss.getSheetByName("SolicitudesAdmision");
+    const admissionRows = admissionSheet ? admissionSheet.getDataRange().getValues().slice(1) : [];
+    const admission = admissionRows.find(function(row) {
+      return String(row[0] || "").trim() === resolvedSolicitudId;
+    });
+    if (!admission || String(admission[14] || "").trim() !== expedienteId) {
+      return { authorized: false, code: "RESOURCE_OWNER_UNRESOLVED" };
+    }
+  }
+
+  let ownership;
+  if (expedienteId) {
+    ownership = assertRecordOwnership(payload, "EXPEDIENTE_ESTUDIANTE", expedienteId, operation);
+  } else if (resolvedSolicitudId) {
+    ownership = assertRecordOwnership(payload, "SOLICITUD_ADMISION", resolvedSolicitudId, operation);
+  } else {
+    ownership = assertRecordOwnership(payload, "DOCUMENTO_ESTUDIANTE", canonicalDocumentId, operation);
+  }
+  if (!ownership || ownership.authorized !== true) {
+    return { authorized: false, code: ownership && ownership.code || "RESOURCE_SCOPE_DENIED" };
+  }
+  return {
+    authorized: true,
+    documentId: canonicalDocumentId,
+    expedienteId: expedienteId,
+    solicitudId: resolvedSolicitudId,
+    departmentId: ownership.departmentId || "",
+    userId: context.userId,
+    role: context.role,
+    institutionId: context.institutionId
+  };
+}
+
 function createAdvancedSignatureRequest(payload) {
   const {
     documentoId,
@@ -7534,7 +7604,7 @@ function createAdvancedSignatureRequest(payload) {
     firmanteNombre,
     firmanteEmail,
     tipoDocumento,
-    mecanismoFirma, // 'FirmaSimple', 'ProveedorExterno', 'FirmaAvanzadaCualificada'
+    mecanismoFirma,
     proveedorId,
     documentoHash
   } = payload || {};
@@ -7543,39 +7613,77 @@ function createAdvancedSignatureRequest(payload) {
     throw new Error("documentoId y firmanteId son requeridos para iniciar la transacción de firma avanzada.");
   }
 
-  const sMecanismo = mecanismoFirma || "FirmaAvanzadaCualificada";
-  const sProveedor = proveedorId || "PSC-HN-DEFAULT";
-  const now = new Date();
-  const txId = "TX-SIG-ADV-" + Date.now();
+  const actorRole = getUserVerifiedRole(payload);
+  const actorUserId = String((payload && payload._verifiedUserId) || "").trim();
+  if (!actorUserId || !actorRole || actorRole === "NO_ACCESS") throw new Error("VERIFIED_IDENTITY_REQUIRED");
 
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const txSheet = getOrCreateSheet(ss, "TransaccionesFirmaAvanzada");
+  const lock = LockService.getScriptLock();
+  let hasLock = false;
+  try {
+    hasLock = lock.tryLock(10000);
+    if (!hasLock) throw new Error("Servicio ocupado creando solicitudes de firma. Por favor reintente.");
 
-  txSheet.appendRow([
-    txId,
-    documentoId,
-    solicitudId || "N/A",
-    firmanteId,
-    firmanteNombre || "Firmante",
-    firmanteEmail || "",
-    sMecanismo,
-    sProveedor,
-    documentoHash || computeDocumentSHA256(documentoId + "|" + firmanteId),
-    "Pendiente", // Estados: Pendiente, Completada, Rechazada, Cancelada, Expirada
-    now.toISOString(),
-    "", // fechaRespuesta
-    "" // certificadoX509Ref
-  ]);
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const documentAccess = assertAdvancedSignatureDocumentScope_(
+      payload, ss, documentoId, solicitudId, "UPDATE"
+    );
+    if (!documentAccess || documentAccess.authorized !== true) {
+      throw new Error(documentAccess && documentAccess.code || "RESOURCE_SCOPE_DENIED");
+    }
 
-  return {
-    status: "success",
-    transaccionId: txId,
-    documentoId: documentoId,
-    mecanismoFirma: sMecanismo,
-    proveedorId: sProveedor,
-    estadoTransaccion: "Pendiente",
-    message: "Solicitud de firma avanzada creada en estado Pendiente bajo normativa Decreto 149-2013."
-  };
+    const sMecanismo = mecanismoFirma || "FirmaAvanzadaCualificada";
+    const sProveedor = proveedorId || "PSC-HN-DEFAULT";
+    const txSheet = getOrCreateSheet(ss, "TransaccionesFirmaAvanzada");
+    const data = txSheet.getDataRange().getValues();
+    const pendingDuplicate = data.slice(1).some(function(row) {
+      return String(row[1] || "").trim() === documentAccess.documentId &&
+        String(row[3] || "").trim() === String(firmanteId).trim() &&
+        String(row[9] || "").trim() === "Pendiente";
+    });
+    if (pendingDuplicate) throw new Error("SIGNATURE_REQUEST_ALREADY_PENDING");
+
+    const now = new Date();
+    const txId = "TX-SIG-ADV-" + Utilities.getUuid();
+    const resolvedDocumentHash = documentoHash || computeDocumentSHA256(
+      documentAccess.documentId + "|" + String(firmanteId).trim()
+    );
+    txSheet.appendRow([
+      txId,
+      documentAccess.documentId,
+      documentAccess.solicitudId || "N/A",
+      String(firmanteId).trim(),
+      firmanteNombre || "Firmante",
+      firmanteEmail || "",
+      sMecanismo,
+      sProveedor,
+      resolvedDocumentHash,
+      "Pendiente",
+      now.toISOString(),
+      "",
+      ""
+    ]);
+
+    logStructuredEvent("USER", "createAdvancedSignatureRequest", "INFO", "ADVANCED_SIGNATURE_REQUEST_CREATED",
+      "Solicitud de firma avanzada creada para documento autorizado.",
+      { transaccionId: txId, documentoId: documentAccess.documentId,
+        solicitudId: documentAccess.solicitudId || null, firmanteId: String(firmanteId).trim(),
+        actorUserId: actorUserId, departmentId: documentAccess.departmentId,
+        mecanismoFirma: sMecanismo, proveedorId: sProveedor }, actorRole);
+
+    return {
+      status: "success",
+      transaccionId: txId,
+      documentoId: documentAccess.documentId,
+      mecanismoFirma: sMecanismo,
+      proveedorId: sProveedor,
+      estadoTransaccion: "Pendiente",
+      message: "Solicitud de firma avanzada creada en estado Pendiente bajo normativa Decreto 149-2013."
+    };
+  } finally {
+    if (hasLock) {
+      try { lock.releaseLock(); } catch (_) {}
+    }
+  }
 }
 
 function checkAdvancedSignatureStatus(payload) {
