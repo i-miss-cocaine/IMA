@@ -735,44 +735,6 @@ function getExamQuestions(payload) {
     .filter(row => String(row[1]) === examenId)
     .map(row => ({ preguntaId: row[0], tipo: row[2], texto: row[3], opciones: JSON.parse(row[4] || "{}") }));
   return { status: "success", data: { titulo: exam[1], tiempoLimite: exam[6], preguntas: questions } };
-}) {
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-
-  // 1. Obtener los detalles del examen
-  const examenesSheet = getSheetOrThrow(ss, "Examenes");
-  const examenData = examenesSheet.getDataRange().getValues();
-  const examenRow = examenData.find(row => row[0] === examenId);
-
-  if (!examenRow) {
-    throw new Error("Examen no encontrado.");
-  }
-
-  const examDetails = {
-    titulo: examenRow[1],
-    tiempoLimite: examenRow[6]
-  };
-
-  // 2. Obtener las preguntas del examen
-  const preguntasSheet = getSheetOrThrow(ss, "PreguntasExamen");
-  const preguntasData = preguntasSheet.getDataRange().getValues();
-  const preguntas = preguntasData.slice(1)
-    .filter(p => p[1] === examenId)
-    .map(p => ({
-      preguntaId: p[0],
-      tipo: p[2],
-      texto: p[3],
-      opciones: JSON.parse(p[4] || "{}")
-      // No se incluye la respuesta correcta para la vista del estudiante
-    }));
-
-  // 3. Combinar y devolver la estructura de datos correcta
-  return {
-    status: "success",
-    data: {
-      ...examDetails,
-      preguntas: preguntas
-    }
-  };
 }
 
 // [F9-Task14] [P1] - Mejorar el rendimiento, la persistencia y la recuperación de operaciones de calificación
@@ -1265,74 +1227,6 @@ function getExamResult(payload) {
       esCorrecta: correct, score: (score * 100).toFixed(0) + "%" };
   });
   return { status: "success", data: { examenTitulo: exam[1], calificacionTotal: delivery[5], resultadosDetallados: detailed } };
-}) {
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const entregasSheet = getSheetOrThrow(ss, "EntregasExamen");
-  const entregasData = entregasSheet.getDataRange().getValues();
-  const entregaRow = entregasData.find(r => r[0] === entregaExamenId);
-
-  if (!entregaRow) throw new Error("Resultado no encontrado");
-
-  const examenId = entregaRow[1];
-  const respuestasEstudiante = JSON.parse(entregaRow[4] || "[]");
-
-  // Obtener detalles del examen
-  const examenesSheet = getSheetOrThrow(ss, "Examenes");
-  const examenRow = examenesSheet.getDataRange().getValues().find(r => r[0] === examenId);
-  const examenTitulo = examenRow ? examenRow[1] : "Examen Desconocido";
-
-  // Obtener preguntas para comparar
-  const preguntasSheet = getSheetOrThrow(ss, "PreguntasExamen");
-  const preguntasData = preguntasSheet.getDataRange().getValues().slice(1).filter(p => p[1] === examenId);
-
-  const resultadosDetallados = preguntasData.map(p => {
-    const preguntaId = p[0];
-    const tipo = p[2];
-    const texto = p[3];
-    const respuestaCorrecta = p[5];
-
-    const entrega = respuestasEstudiante.find(r => r.preguntaId === preguntaId);
-    const respuestaEstudiante = entrega ? entrega.respuestaEstudiante : "";
-
-    let esCorrecta = false;
-    let score = 0;
-    if (tipo === "termino_pareado") {
-      try {
-        const sMap = JSON.parse(respuestaEstudiante || "{}");
-        const cMap = JSON.parse(respuestaCorrecta || "{}");
-        let total = Object.keys(cMap).length;
-        let hits = 0;
-        for (let k in cMap) { if (sMap[k] === cMap[k]) hits++; }
-        esCorrecta = hits === total;
-        score = total > 0 ? (hits / total) : 0;
-      } catch (e) {}
-    } else if (tipo === "completacion" || tipo === "verdadero_falso") {
-      // Tarea 1: Normalizar comparación para Verdadero/Falso y Completación en resultados
-      esCorrecta = normalizeString(respuestaEstudiante) === normalizeString(respuestaCorrecta);
-      score = esCorrecta ? 1 : 0;
-    } else {
-      esCorrecta = respuestaEstudiante === respuestaCorrecta;
-      score = esCorrecta ? 1 : 0;
-    }
-
-    return {
-      texto,
-      tipo,
-      respuestaEstudiante,
-      respuestaCorrecta,
-      esCorrecta,
-      score: (score * 100).toFixed(0) + "%"
-    };
-  });
-
-  return {
-    status: "success",
-    data: {
-      examenTitulo: examenTitulo,
-      calificacionTotal: entregaRow[5],
-      resultadosDetallados: resultadosDetallados
-    }
-  };
 }
 
 function getTeacherExamActivity(payload) {
