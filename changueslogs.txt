@@ -1031,3 +1031,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - GitHub Actions run 42895517906 SUCCESS, incluida sintaxis Apps Script/cliente; sin despliegue ni datos reales.
 - TASK-153 sigue En ejecución; AUD-NG-386 abierto.
 - Commits: 7f3153e036d17ec6d070a67325b447f9c034422d; 239e360700728569e4a000ca542e837be77b1c25.
+
+[2026-11-10] C1.462 — IMA-EXEC-20261110-1825Z-02 — TASK-153 / USER: creación segura de solicitudes de firma avanzada
+- `createAdvancedSignatureRequest` exige RBAC/identidad verificada y ownership del documento vinculado a expediente, solicitud de admisión o recurso documental.
+- Comprueba la relación solicitud↔expediente, canonicaliza IDs de Drive, serializa validación y append con ScriptLock, y rechaza solicitudes pendientes duplicadas para documento/firmante.
+- Contrato local de ownership, denegación interdepartamental, RBAC, lock, solicitud discordante e idempotencia PASS.
+- GitHub Actions run 42895590817 SUCCESS; sin despliegue ni datos reales.
+- Quedan pendientes el callback/estado, registro de firma y certificado de auditoría. TASK-153 sigue En ejecución.
+- Commits: bbd2d1389234233f9d75c8ddd0fb9697e8c5a434; 58d2a03f1d7f0c83e52e88c47f821c8d39256871; 21fe586777cc6394effcdcbc639f8d5da1fa1374; ce08eabc4821f7856c40be16b1bd7620891c75ac.
