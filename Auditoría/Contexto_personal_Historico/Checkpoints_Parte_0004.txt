@@ -1,3 +1,6 @@
+REFERENCIA NORMATIVA OBLIGATORIA
+Antes de modificar este checkpoint o cualquier archivo del repositorio, leer `NORMAS_DESARROLLO_AGIL_SEGURO_CONTINUO.md`, única fuente de normas operativas.
+
 # GATE PRIORITARIO IMA: COMMITS CONSOLIDADOS Y CHECKPOINTS OBLIGATORIOS
 
 **LECTURA Y CUMPLIMIENTO OBLIGATORIOS ANTES DE CUALQUIER TRABAJO EN IMA.** Estas reglas son controles de entrada y salida, no sugerencias. Si alguna no puede cumplirse, se detiene el trabajo sin continuar ni publicar cambios parciales.
