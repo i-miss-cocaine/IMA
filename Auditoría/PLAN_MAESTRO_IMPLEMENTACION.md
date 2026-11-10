@@ -544,6 +544,7 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 | F37-TASK05 | Dirección | 02 | PM-02 | Modelo de datos, contratos y persistencia | P1 | — | No declaradas en el bloque extraído | Diagnosticar registros huérfanos y desalineados entre departamentos | `pendientes/Dirección/Pendientes.md` |
 | TAREA-F4-P1-07 | Dirección | 02 | PM-02 | Arquitectura y contratos de plataforma | No explícita | — | No declaradas en el bloque extraído | Implementar gestión institucional de roles, cargos, departamentos y asignaciones | `pendientes/Dirección/Pendientes.md` |
 | TASK-060 | Dirección | 02 | PM-02 | Modelo de datos, contratos y persistencia | P0 | — | Estructuras de usuarios, roles, departamentos, `ConfiguracionSistema`, permisos server-side y servicios consumidores de configuración. | [P0] [Gobernanza Jerárquica - Motor Central de Configuración Jerárquica y Herencia Departamental] | `pendientes/Dirección/Pendientes.md` |
+| TASK-694 | Dirección | 02 | PM-02 | Arquitectura universal multiinstitucional y modelo educativo P-20W | P0 | 0 | Contraste con TASK-153/PM-01, TASK-060/F26-TASK01, TASK-506/TASK-171/TASK-668, AUD-NG-164/TASK-005, FASE2-T04 y F29-TASK17. | Especificar arquitectura universal multiinstitucional y modelo educativo P-20W | `pendientes/Dirección/Pendientes.md` |
 | TASK-249 | Dirección | 02 | PM-02 | Modelo de datos, contratos y persistencia | P1 | — | Reportes institucionales existentes, permisos, catálogos de campos y almacenamiento de preferencias. | [P1] [Reportes Personalizados - Implementar Persistencia de Vistas y Configuraciones Personalizadas de Reportes] | `pendientes/Dirección/Pendientes.md` |
 | TASK-506 | Dirección | 02 | PM-02 | Modelo de datos, contratos y persistencia | P1 | — | CatalogoDepartamentos, CatalogoCargos, HistorialAdscripciones, DepartamentosAcademicos, Usuarios, manageDepartmentPositions, assignDepartmentHead, generateInstitutionalId. | Garantizar integridad referencial y atomicidad en departamentos, cargos y adscripciones institucionales | `pendientes/Dirección/Pendientes.md` |
 | TASK-027 | Docente | 02 | PM-02 | Modelo de datos, contratos y persistencia | P0 | — | `LockService`, `BibliotecaPrestamos`, `BibliotecaEjemplares` | Control de concurrencia e idempotencia en circulación bibliotecaria | `pendientes/Docente/Pendientes.md` |
@@ -2561,3 +2562,34 @@ Solo se registra y descompone el alcance funcional. No se modificó código, dat
 - **Estado:** T153-S01 Bloqueada para implementación de datos; TASK-153 sigue En ejecución. Se mantienen los controles fail-closed y las dependencias TASK-139/TASK-123.
 - **Siguiente acción:** obtener decisión institucional aprobada sobre catálogo autoritativo, relación/separación administrativo-académica, IDs, jerarquía, estados y propietario de cada recurso estudiantil; luego verificarla contra datos reales y emitir mapeo.
 - **Límites:** revisión estática manual; no se ejecutaron pruebas nuevas ni Apps Script/Sheets/Drive/HTTP/E2E/browser.
+
+
+---
+
+## C1.404 — TASK-694: arquitectura universal multiinstitucional y subplan
+
+**Principio:** IMA será universal, configurable y multiinstitucional. Se separan plataforma, tenant, grupo/consorcio, institución, sedes, unidades, estructura académica, enseñanza y ubicación física.
+
+**Informe:** Auditoría/ARQUITECTURA_UNIVERSAL_MULTIINSTITUCIONAL_INVESTIGACION.md. Incluye primera infancia (Procare, Famly, brightwheel); SIS K–12 (PowerSchool, Infinite Campus, Skyward, Synergy, eSchoolPLUS, SIMS, Arbor, Sentral, ManageBac, iSAMS, Ed-admin, openSIS, Gibbon, RosarioSIS); superior/técnica (Workday Student, Ellucian Banner, PeopleSoft Campus Solutions, Anthology Student, Frappe Education); LMS (Moodle, Canvas, Brightspace, Blackboard, Open edX); SACE Honduras y estándares CEDS/Ed-Fi/1EdTech.
+
+**Hallazgos:** SIS/LMS/ERP/primera infancia son dominios complementarios; tenant es frontera de aislamiento; las estructuras administrativa, académica, de enseñanza y física son distintas; trayectoria del aprendiz longitudinal; actor y propietario son dimensiones separadas; configuración heredable según política de cada clave; perfiles EarlyYears/K12/TVET/HigherEducation/AdultLearning como plantillas; interoperabilidad mediante adaptadores; localización por país/institución.
+
+### Subplan UNI-S01…UNI-S10
+| Orden | Unidad | Dependencias | Entregable | Criterio |
+|---:|---|---|---|---|
+| 1 | UNI-S01 Tenant/institución | PM-01; TASK-153 | Modelo, aislamiento, lifecycle, provisioning | Sin acceso cruzado por IDs/endpoints/búsquedas/exportaciones |
+| 2 | UNI-S02 Organización | S01; TASK-506/171/668 | Tipos, nodos, relaciones, membresías | Tipos configurables, ciclos rechazados, sin cascada implícita |
+| 3 | UNI-S03 Núcleo P-20W | S01/S02; AUD-NG-164/TASK-005 | Calendarios, niveles, programas, planes, cursos, secciones | Sin estructura única obligatoria |
+| 4 | UNI-S04 Trayectoria | S01/S03; TASK-153/F29-TASK17 | Persona, estudiante, tutores, matrículas, transferencias | Historia y procedencia preservadas |
+| 5 | UNI-S05 Autorización/ownership | S01–S04; TASK-153/TASK-060/F8-TASK09/TASK-668 | RBAC/ABAC, propiedad, clasificación, delegación | Ownership y ámbito en endpoints, búsquedas y archivos |
+| 6 | UNI-S06 Configuración | S01/S02; TASK-060/F26-TASK01 | Catálogo, políticas, resolver, versiones | Herencia determinista; seguridad no sobrescribible |
+| 7 | UNI-S07 Currículo/evaluación | S03/S04; AUD-NG-164 | Escalas, rúbricas, competencias, créditos/horas | Unidades configurables e historia preservada |
+| 8 | UNI-S08 Perfiles | S03/S06/S07 | Plantillas EarlyYears/K12/TVET/HigherEducation/AdultLearning | Combinables, sin forks ni permisos automáticos |
+| 9 | UNI-S09 Interoperabilidad | S03/S04/S07; FASE2-T04 | Adaptadores y mappings | Idempotencia, conciliación, sin duplicados |
+| 10 | UNI-S10 Gobierno/migración | S01–S09; F29 | Privacidad, retención, accesibilidad, staging, rollback | Pruebas multi-tenant/perfil y migración reversible |
+
+**Puertas:** TASK-153/PM-01 antes de ownership/scopes; S01 precede a todas; S02 antes de fijar relaciones; S03 antes de módulos académicos; S04/S05 antes de migrar expedientes; S06 antes de overrides productivos; S07/S08 antes de perfiles; S09 antes de sincronización externa; S10 antes de pilotos.
+
+Se reutilizan TASK-153, TASK-060, F26-TASK01, TASK-506, TASK-171, TASK-668, AUD-NG-164, TASK-005, F8-TASK09, FASE2-T04 y F29-TASK17. No se duplican IDs ni se cambia su estado.
+
+**Estado:** TASK-694 completada solo como investigación/diseño. UNI-S01…S10 sin iniciar. TASK-153/T153-S01 conserva bloqueo C1.403. Sin código, datos, esquemas, permisos, configuración ni pruebas de producto.

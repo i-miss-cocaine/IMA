@@ -2140,3 +2140,47 @@ Obtener de la institución el documento/registro aprobado que defina la fuente a
 ### Commit
 Un único commit documental de C1.403 en NG_beta_0.0.0.1_work; SHA a confirmar después de publicación. Rama base intacta.
 ===============================================================================
+
+
+===============================================================================
+## C1.404 — TASK-694 — investigación y diseño de arquitectura universal multiinstitucional
+**Sesión:** IMA-EXEC-20261110-0500Z-01  
+**Fecha:** 2026-11-10  
+**Checkpoint anterior:** C1.403  
+**HEAD de partida:** 43799cc9f533a78e37bfd186f6fd8245466f8b97  
+**Rama:** NG_beta_0.0.0.1_work  
+**Rama base:** NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59  
+**Tarea:** TASK-694 / PM-02 / P0, diseño documental.  
+**Informe:** Auditoría/ARQUITECTURA_UNIVERSAL_MULTIINSTITUCIONAL_INVESTIGACION.md.
+
+### Continuidad
+- NG_beta_0.0.0.1_work se comparó idéntica al commit 43799cc9f533a78e37bfd186f6fd8245466f8b97; C1.403 era el checkpoint vigente.
+- Rama base: 44d9891132332e692dbe2ba8602b41f50a508a59; comparación base→work: 508 commits ahead, 0 behind.
+- Se consultaron metodología, contexto, Plan Maestro, checkpoint C1.403 y backlogs relevantes.
+- TASK-694 es nuevo: máximo TASK en Plan Maestro y backlogs departamentales legibles era TASK-693. Backlog Otros devolvió 0 caracteres y no se sobrescribe; C1.403 documenta su recuperación por blob y máximo TASK-501.
+- No se modifica tareas_auditoria.txt: TASK-694 nace de solicitud de producto, no de hallazgo de auditoría.
+
+### Investigación
+Primera infancia: Procare/Famly/brightwheel. K–12: PowerSchool/Infinite Campus/Skyward/Synergy/eSchoolPLUS/SIMS/Arbor/Sentral/ManageBac/iSAMS/Ed-admin/openSIS/Gibbon/RosarioSIS. Técnico/superior: Workday Student/Ellucian Banner/PeopleSoft/Anthology/Frappe Education. LMS: Moodle/Canvas/Brightspace/Blackboard/Open edX. Referencia local: SACE Honduras. Estándares: CEDS P-20W, Ed-Fi, OneRoster 1.2, Edu-API (Candidate Final Public en página consultada), LTI, CASE, QTI, CLR, Open Badges y Caliper. FERPA es ejemplo jurisdiccional; WCAG 2.2 es referencia de accesibilidad. Fuentes y límites en el informe.
+
+### Dictamen
+Separar plataforma/tenant/grupo/institución/sede; estructuras administrativa, académica, enseñanza y físicas; identidad/relaciones/matrículas; ownership del recurso y ámbito del actor; configuración por política de clave; perfiles combinables; adaptadores de estándares. No se decide partición física, base de datos, microservicios, despliegue ni migración sin inventario técnico.
+
+### Subplan
+UNI-S01 tenant/institución; UNI-S02 organización; UNI-S03 núcleo P-20W; UNI-S04 trayectoria; UNI-S05 autorización/ownership; UNI-S06 configuración/herencia; UNI-S07 currículo/evaluación/credenciales; UNI-S08 perfiles; UNI-S09 interoperabilidad; UNI-S10 gobierno/migración/privacidad/accesibilidad/certificación. Dependencias y criterios en Plan Maestro e informe. Claves locales, sin IDs globales.
+
+### Reutilización y bloqueos
+TASK-153, TASK-060, F26-TASK01, TASK-506, TASK-171, TASK-668, AUD-NG-164, TASK-005, F8-TASK09, FASE2-T04 y F29-TASK17 se reutilizan. Ninguna cambia de estado. TASK-153/T153-S01 sigue bloqueada conforme C1.403; se conservan controles fail-closed.
+
+### Archivos modificados
+Informe nuevo; Plan Maestro; pendientes/Dirección/Pendientes.md; MapaDependencias; Auditoria.txt; changueslogs.txt; Checkpoints_Parte_0003.txt; INDICE_CHECKPOINTS.md.
+
+### Archivos revisados sin modificación
+METODOLOGIA_DESARROLLO.md; Auditoría/Contexto_personal.txt; checkpoint C1.403; índice previo; tareas_auditoria.txt; backlogs de Dirección, Docente, Secretaría, Estudiante, Padre y Contabilidad. Código, pruebas, datos productivos, permisos y configuración sin cambios. pendientes/Otros/Pendientes.md no se modifica.
+
+### Pruebas y límites
+Ejecutadas: comparación rama/HEAD; revisión de fuentes; unicidad de TASK-694 en fuentes legibles; revisión documental de dependencias; cálculo del checkpoint. No ejecutadas: suites, Node, Apps Script, Sheets/Drive reales, HTTP/E2E, navegador, migración ni pruebas de aislamiento. No se afirma conformidad de proveedores ni legislación universal.
+
+### Cierre
+TASK-694 completada solo como investigación y diseño documental. UNI-S01…S10 sin iniciar. PM-01 conserva prioridad: TASK-153 sigue En ejecución y T153-S01 bloqueada según C1.403. Rama base intacta. Un único commit consolidado.
+===============================================================================

@@ -4831,3 +4831,18 @@ TAREAS DERIVADAS — AUDITORÍA TASK-639 / C1.302
 - **Dependencias:** TASK-691 y TASK-692; contratos de identidad/sesión PM-01.
 - **Criterios:** propietario y versión contractual por servicio; divergencias intencionales documentadas; guardas distinguen duplicados del mismo ámbito, funciones locales y proyectos aislados; ciclos reales detectados con evidencia.
 - **Estado:** Pendiente.
+
+
+---
+
+<!-- ID: TASK-694 | Origen: Solicitud de producto 2026-11-10; investigación en Auditoría/ARQUITECTURA_UNIVERSAL_MULTIINSTITUCIONAL_INVESTIGACION.md -->
+### [X] [TASK-694] [P0] Especificar la arquitectura universal multiinstitucional y el modelo educativo P-20W
+- **Objetivo:** definir arquitectura configurable para primera infancia, prebásica, básica, media, técnica, superior y formación continua, sin bifurcar código.
+- **Alcance:** investigación SIS/LMS/primera infancia/superior y estándares; modelo tenant/institución/organización; separación de estructuras administrativa, académica, enseñanza y física; trayectoria longitudinal; seguridad/propiedad; configuración; perfiles; interoperabilidad; localización; privacidad; accesibilidad; subplan UNI-S01…UNI-S10.
+- **Entregables:** Auditoría/ARQUITECTURA_UNIVERSAL_MULTIINSTITUCIONAL_INVESTIGACION.md; subplan en Plan Maestro; relaciones en MapaDependencias.
+- **Tareas existentes reutilizadas:** TASK-153, TASK-060, F26-TASK01, TASK-506, TASK-171, TASK-668, AUD-NG-164, TASK-005, F8-TASK09, FASE2-T04 y F29-TASK17. No duplicar IDs/requisitos.
+- **Exclusiones:** sin código, esquemas productivos, migraciones, datos, permisos reales o despliegues; no afirma equivalencia ni cumplimiento legal universal.
+- **Criterios de aceptación:** [x] cobertura de niveles/plataformas/estándares; [x] separación tenant/institución/unidad; [x] estructuras separadas; [x] trayectoria longitudinal; [x] ownership y autorización contextual; [x] configuración/perfiles; [x] interoperabilidad/localización/privacidad/accesibilidad; [x] aprovisionamiento/migración/pruebas; [x] UNI-S01…S10 con dependencias/criterios; [x] unicidad verificada en fuentes legibles.
+- **Prioridad:** P0. **Fase:** PM-02, diseño documental; no autoriza saltar puertas PM-01.
+- **Estado:** [X] Completada — C1.404, solo investigación y diseño. UNI-S01…UNI-S10 no iniciadas.
+- **Evidencia:** informe, subplan y commit C1.404.

@@ -4985,3 +4985,14 @@ Alcance estático satisfecho; sin cambios de código. Hallazgos AUD-NG-374..376 
 - **Tareas relacionadas:** AUD-NG-226 / TASK-506 cubren validación referencial, estados y relación explícita/separación de los catálogos. TASK-506 es PM-02/P1 y su ruta canónica es `pendientes/Dirección/Pendientes.md`; no se crea una tarea ni una arista duplicada. FASE2-T04 documenta el déficit general de autoridad de catálogos.
 - **Resultado:** no se demuestra fuente institucional aprobada, relación formal ni propietario de recursos estudiantiles. T153-S01 queda bloqueada para migración/escritura hasta recibir decisión institucional verificable. TASK-153 permanece PM-01 / En ejecución; TASK-139 y TASK-123 siguen dependientes de su resolución.
 - **Límites:** evidencia estática de código y documentos; sin acceso a filas productivas de Sheets/Drive y sin pruebas nuevas.
+
+
+## C1.404 — Arquitectura universal multiinstitucional (TASK-694)
+- Separar plataforma, tenant, grupo/consorcio, institución, sedes y unidades.
+- Separar organización administrativa, estructura académica, enseñanza y ubicaciones.
+- Dominios lógicos: Tenant/Institution Registry, Organization/Membership, Identity/Access, Academic Core, Learner Records, Learning/Assessment, Early Years, Student Services, Finance, Integration Hub, Configuration/Policy y Reporting.
+- Seguridad: tenant/institución + identidad + membresía/rol/capacidad + ámbito + operación + propietario + clasificación. Actor y propietario son dimensiones separadas; denegar por defecto.
+- Configuración por política de clave; límites de seguridad no sobrescribibles. Perfiles EarlyYears/K12/TVET/HigherEducation/AdultLearning combinables.
+- CEDS P-20W, Ed-Fi, OneRoster, Edu-API, LTI, CASE, QTI, CLR, Open Badges y Caliper mediante adaptadores.
+- Tareas reutilizadas: TASK-153, TASK-060, F26-TASK01, TASK-506, TASK-171, TASK-668, AUD-NG-164, TASK-005, F8-TASK09, FASE2-T04 y F29-TASK17.
+- Subplan UNI-S01…UNI-S10; sin implementación en C1.404. TASK-153 conserva bloqueo C1.403.
