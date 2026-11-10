@@ -1622,3 +1622,47 @@ Checkpoint anterior: C1.447.
 - TASK-153 permanece En ejecución; AUD-NG-386 abierto. No se declara completada la conversión ni la tarea global.
 - Siguiente foco en la próxima iteración: revisar la integridad, rollback compensatorio e idempotencia de todo el flujo `convertAdmissionToStudent` (matrícula, cargos, relaciones familiares, invitaciones, documentos, movimiento y estado de solicitud). Mantener la sesión `IMA-EXEC-20261110-1825Z-02`.
 ===============================================================================
+
+
+===============================================================================
+## CHECKPOINT C1.449 — ACADEMIC: compensación de escrituras parciales en conversión de admisiones
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.448.
+
+### Trabajo de esta iteración (un solo subhallazgo)
+- convertAdmissionToStudent ahora mantiene una pila de compensaciones LIFO para las mutaciones realizadas durante la conversión.
+- Se registran reversiones de ownership nuevo, expediente nuevo, asociación PersonaID, relación familiar, invitación, vinculación documental, matrícula/cargos, movimiento y campos de estado/expediente de la solicitud.
+- registerStudentEnrollment acepta _rollbackActions opcional. Si actualiza matrícula existente conserva snapshot para restaurarla; si inserta matrícula/cargo registra eliminación condicionada a que la fila siga identificada por su ID.
+- Ante excepción, se recorren las compensaciones en orden inverso. Si alguna falla, se devuelve ADMISSION_CONVERSION_COMPENSATION_REQUIRED con detalle de error original y errores de rollback.
+
+### Archivos
+- backend/academic-service/Code.gs
+- tests/security/academic-student-expediente-ownership.test.js
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Commits
+- f494f0bde9afa83ed11c5b5e1bd28729e81a4260 — compensación de conversión y journal interno de matrícula/cargos.
+- b20fa1382461a1f1d4b7bcc8bb22407df0f8b6b2 — contrato de rollback con fallo inyectado.
+- c339188cd5600c9f54460d430ffc6d18b95311ad — corrección de separadores del harness.
+- 151f5eeaeea7b964199f69378f42bcd5e358d509 — registro Plan Maestro.
+- fc6a0e390a592a6ea39ec75ef889374ab8c4e384 — registro de auditoría.
+
+### Verificación
+- Parseo/sintaxis de backend/academic-service/Code.gs: PASS.
+- Parseo/sintaxis del archivo de contrato: PASS.
+- Ejecución dinámica aislada de convertAdmissionToStudent y registerStudentEnrollment con mocks: PASS para fallo inyectado al insertar MovimientosEstudiante después de matrícula/cargo; se comprobó que la solicitud permanece Admitida, el vínculo de expediente queda vacío y no permanecen expediente, ownership, matrícula ni cargo.
+- Suite Node completa: NOT RUN desde checkout local. CI no consultado como resultado de ejecución local; no se declara PASS.
+- Despliegue Apps Script/datos reales: no ejecutados.
+
+### Límites y continuidad
+- La compensación revierte mutaciones registradas por esta ejecución. Un append remoto que persista y lance antes de devolver control podría requerir conciliación; no se presenta como transacción ACID de Sheets.
+- Idempotencia entre reintentos y reconciliación de estados parciales no se cubren en este subhallazgo.
+- TASK-153 permanece En ejecución; AUD-NG-386 abierto por idempotencia/reintentos, evaluaciones/entrevistas y demás rutas/requisitos ACADEMIC.
+- Próxima iteración: revisar idempotencia de conversión y reintentos tras éxito parcial, sin abrir otra tarea. Mantener sesión IMA-EXEC-20261110-1825Z-02.
+===============================================================================
