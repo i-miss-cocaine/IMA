@@ -3069,7 +3069,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - Siguiente: migración determinista de aulas AULA_VIRTUAL existentes y auditoría de otras rutas de datos de estudiante, recursos institucionales/solicitudes de firma, referencias compartidas, filtros/importaciones y E2E.
 
 
-### 10.104 TASK-153 / ACADEMIC — ownership en expedientes, tutores, informes y admisiones (C1.446)
+### 10.105 TASK-153 / ACADEMIC — ownership en expedientes, tutores, informes y admisiones (C1.447)
 
 - **Hallazgo SELF/GUARDIAN:** `assertStudentExpedienteScopeAccess_` verificaba PersonaID y relación familiar, pero no el departamento propietario para estudiante/tutor. Ahora exige ResourceOwnership `EXPEDIENTE_ESTUDIANTE`; el tutor resuelve la identidad y el rol real de la cuenta activa del estudiante relacionado y usa ese ámbito, nunca el del tutor.
 - **Relaciones de tutores:** `getStudentGuardians`, `saveStudentGuardian` y `unlinkStudentGuardian` exigen permiso RBAC y acceso al expediente. La actualización de un tutor existente verifica todos sus expedientes activos vinculados para evitar modificar datos personales compartidos fuera del ámbito.
