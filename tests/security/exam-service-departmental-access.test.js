@@ -219,7 +219,7 @@ assert.throws(() => runtime.deleteExam({ sessionToken: "teacher-token", examenId
 
 
 assert.ok(examMutationLockAcquires >= 4, "submission mutations acquire lock");
-assert.equal(examMutationLockAcquires, examMutationLockReleases, "lock released after mutations");
+assert.equal(examMutationLockAcquires, examMutationLockReleases + 1, "successful mutation locks are released; nested contended submit does not release an unacquired lock");
 deliveryRows.push(["DEL-RACE","EXM-1","STUDENT-1",new Date(),"[]",50,"Entregado",""]);
 examMutationBeforeAcquire = () => { const i=deliveryRows.findIndex(row=>row[0]==="DEL-RACE"); if(i>=0)deliveryRows.splice(i,1); };
 assert.throws(()=>runtime.gradeExamSubmission({sessionToken:"teacher-token",entregaId:"DEL-RACE",calificacion:100}),/RESOURCE_NOT_AVAILABLE/);

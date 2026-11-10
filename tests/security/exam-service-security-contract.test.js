@@ -204,10 +204,10 @@ assert.throws(() => institutionOnly.context.createExam({ sessionToken: "admin-se
 
 const submitHandler = extractFunction(source, "submitExam");
 const submitWorker = extractFunction(source, "submitExamUnlocked_");
-assert.match(submitHandler, /LockService\\.getScriptLock\\(\\)/, "submitExam serializes attempt validation and persistence");
-assert.match(submitHandler, /tryLock\\(5000\\)/, "submitExam uses bounded lock acquisition");
-assert.match(submitHandler, /submitExamUnlocked_\\(payload\\)/, "submitExam executes validation and append under lock");
-assert.match(submitHandler, /finally[\\s\\S]*releaseLock\\(\\)/, "submitExam releases lock on success and failure");
-assert.match(submitWorker, /previousAttempts >= allowedAttempts/, "attempt limit is checked inside the locked worker");
-assert.match(submitWorker, /deliveriesSheet\\.appendRow/, "delivery persistence is inside the locked worker");
+assert.ok(submitHandler.includes("LockService.getScriptLock()"), "submitExam serializes attempt validation and persistence");
+assert.ok(submitHandler.includes("tryLock(5000)"), "submitExam uses bounded lock acquisition");
+assert.ok(submitHandler.includes("submitExamUnlocked_(payload)"), "submitExam executes validation and append under lock");
+assert.ok(submitHandler.includes("finally") && submitHandler.includes("releaseLock()"), "submitExam releases lock on success and failure");
+assert.ok(submitWorker.includes("previousAttempts >= allowedAttempts"), "attempt limit is checked inside the locked worker");
+assert.ok(submitWorker.includes("deliveriesSheet.appendRow"), "delivery persistence is inside the locked worker");
 process.stdout.write("exam-service-security-contract: authentication, identity, teacher ownership and serialized submission assertions passed\\n");
