@@ -236,3 +236,20 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Pasos:** emitir token como Profesor; cambiar rol en Usuarios a Estudiante; invocar endpoint privilegiado antes/después de 60 segundos; repetir con cuenta Suspendida/Desactivada y usuario eliminado.
 - **Resultado esperado:** los cinco servicios rechazan rol obsoleto y estado no Activa; el cache puede retrasar la revocación como máximo 60 segundos; token incompleto/expirado se rechaza en los seis servicios.
 - **Estado:** Pendiente beta. No se consultaron hojas ni despliegues reales.
+
+
+## BETA-FUNC-021 — TASK-153 / AUD-NG-385 — propiedad, privacidad y aislamiento del historial de entregas
+- **Módulo/servicio:** TASK Service — comentarios, versiones e historial de entregas.
+- **Roles:** Profesor, personal administrativo autorizado, Estudiante, Padre/Tutor/Responsable.
+- **Objetivo:** verificar en el servicio desplegado que la identidad firmada, la propiedad de la entrega, la relación de tutoría y el ámbito institucional/departamental se apliquen en las operaciones de comentarios e historial.
+- **Precondiciones:** despliegue beta aislado de TASK Service; cuentas sintéticas de personal, dos estudiantes y un tutor vinculado únicamente al primer estudiante; dos entregas de prueba asociadas a la misma tarea; comentarios públicos y privados; versiones de ambas entregas. No utilizar datos reales.
+- **Pasos:**
+  1. Consultar comentarios y versiones como cada estudiante usando su propia entrega y después intentar acceder a la entrega del otro estudiante.
+  2. Consultar como tutor la entrega del estudiante vinculado e intentar acceder a la entrega del estudiante no vinculado.
+  3. Consultar comentarios privados como estudiante y tutor.
+  4. Crear comentarios como estudiante, tutor y personal; intentar falsificar autorId/rolAutor desde el cliente y crear comentarios privados sin rol staff.
+  5. Consultar y modificar el historial como personal dentro de su ámbito y repetir con una cuenta sin propiedad/asignación al recurso y con otra institución/departamento.
+  6. Enviar entregaId y tareaId discordantes, IDs inexistentes, identidad ausente/expirada y roles alterados en el payload.
+- **Resultado esperado:** solo se accede a la entrega propia o a estudiantes con relación de tutoría vigente; personal solo opera dentro de su propiedad/ámbito autorizado; comentarios privados no son visibles para estudiantes/tutores; autor y rol proceden de la sesión firmada; IDs discordantes, suplantación, sesión inválida y acceso fuera de ámbito se deniegan sin filtrar existencia ni metadatos de otros recursos.
+- **Estado:** Pendiente beta. Las pruebas locales de contrato y seguridad deben ejecutarse y aprobarse antes del cierre de implementación; este caso cubre únicamente la validación funcional contra el servicio desplegado.
+- **Evidencia requerida:** build/commit, ambiente, rol sintético utilizado, pasos, respuestas/denegaciones, logs saneados y resultado por escenario, sin tokens, secretos ni datos personales.
