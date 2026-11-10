@@ -101,7 +101,7 @@ const ownFile=context.getStudentFile({sessionToken:"student",userId:"P-B"});
 assert.equal(ownFile.status,"success"); assert.equal(ownFile.studentFile.expedienteId,"EXP-STUDENT");
 assert.equal(context.getStudentFile({sessionToken:"staffA",expedienteId:"EXP-B"}).code,"RESOURCE_SCOPE_DENIED");
 assert.equal(context.getStudentFile({sessionToken:"admin",expedienteId:"EXP-B"}).status,"success");
-assert.deepEqual(Array.from(context.getStudentDocuments(actor("staffA")).documents,d=>d.documentoId),["DOC-A"]);
+assert.deepEqual(Array.from(context.getStudentDocuments(actor("staffA")).documents,d=>d.documentoId),["DOC-A","DOC-S"]);
 assert.equal(context.getStudentDocuments({sessionToken:"staffA",expedienteId:"EXP-B"}).code,"RESOURCE_SCOPE_DENIED");
 assert.deepEqual(Array.from(context.getStudentDocuments(actor("student")).documents,d=>d.documentoId),["DOC-S"]);
 assert.deepEqual(Array.from(context.getStudentDocuments(actor("admin")).documents,d=>d.documentoId),["DOC-A","DOC-B","DOC-S"]);

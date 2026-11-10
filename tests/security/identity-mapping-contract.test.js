@@ -7,6 +7,9 @@ for(const id of ["modal-identity-mapping","form-identity-search","form-identity-
 for(const fn of ["openIdentityMappingManager","handleIdentityMatchSearch","handleIdentityMappingRegister","handleIdentityMappingReview","loadIdentityDecisionHistory","handleIdentityAccountLink"])assert.ok(secretary.includes("window."+fn+" ="));
 assert.ok(dashboard.includes('role === "Secretaría"')&&dashboard.includes('role === "Administrador"'));
 new vm.Script(user,{filename:up}); new vm.Script(accounting,{filename:ap}); new vm.Script(academic,{filename:"backend/academic-service/Code.gs"}); new vm.Script(persistence,{filename:"js/persistence.js"}); new vm.Script(api,{filename:"js/api.js"});
+for(const fn of ["getVerifiedAcademicIdentity_","getVerifiedAcademicDepartmentScope_","assertStudentExpedienteScopeAccess_","assertStudentDocumentScopeAccess_","validateAcademicResponsibilityAndScopeAccess"]) assert.ok(academic.includes("function "+fn+"("),"academic scope guard "+fn);
+for(const fn of ["getVerifiedAccountingIdentity_","getVerifiedAccountingDepartmentScope_","assertEmployeeExpedienteScopeAccess_"]) assert.ok(accounting.includes("function "+fn+"("),"accounting scope guard "+fn);
+assert.ok(accounting.includes("DriveApp.Access.PRIVATE"),"employee documents are not public by default");
 const headers=["idMapeo","sistemaOrigen","tipoEntidad","idOriginalLegado","idNuevoPlataforma","institucionId","hashRegistroOrigen","fechaMigracion","versionMapeo","estadoCorrespondencia","metodoCoincidencia","nivelConfianza","migradoPor"];
 for(const h of headers) assert.ok(user.includes('"'+h+'"'),"header "+h);
 for(const fn of ["registerLegacyIdentifierMapping","resolveInternalIdFromLegacy","resolveLegacyIdFromInternal","resolveUserByLegacyId","reviewLegacyIdentifierMapping","getIdentityDecisionHistory"]) {assert.ok(user.includes("function "+fn+"("));assert.ok(user.includes('case "'+fn+'"'));}
