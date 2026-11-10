@@ -3280,3 +3280,17 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Estado:** subalcances C1.466 y C1.469 implementados y aprobados por contratos CI. TASK-153 continúa En ejecución y AUD-NG-386 abierto por rutas restantes, permisos granulares, referencias compartidas, filtros/importaciones y flujos de admisión.
 - **Commits:** `78836e55b007feac17577d9d7888165e63af4724` (código y contratos C1.469); C1.466–C1.468 documentados en checkpoints anteriores.
 
+### 10.125 TASK-153 / ACADEMIC — contrato conductual de conversión de admisión, ownership y compensación (C1.470)
+
+- **Alcance:** se ejercita `convertAdmissionToStudent` como unidad de orquestación con hojas aisladas y dobles deterministas de los servicios dependientes; no se cambia código productivo.
+- **Éxito:** registra ownership de `SOLICITUD_ADMISION` y `EXPEDIENTE_ESTUDIANTE`, crea expediente, matrícula/cargo y movimiento, enlaza documentos y marca la solicitud `Convertida`.
+- **Fallo tardío:** fallo inyectado al actualizar el estado de admisión restaura el estado/expediente de la solicitud, el vínculo documental, movimiento, matrícula, expediente y ambos ownership.
+- **Fallo intermedio:** si el segundo registro de ownership falla, revierte el expediente y el ownership de la solicitud.
+- **Compensación incompleta:** si falla la eliminación de un ownership, devuelve `ADMISSION_CONVERSION_COMPENSATION_REQUIRED` con el error concreto y ejecuta las demás acciones de rollback.
+- **Concurrencia:** lock no disponible evita lecturas de Sheets; una reentrada durante la conversión recibe lock ocupado y no realiza lecturas mientras el primer intento mantiene el lock.
+- **Verificación local:** contrato conductual aislado ejecutado sobre el código de la rama — PASS, cinco escenarios. La prueba fue incorporada a `tests/security/academic-admission-ownership.test.js`.
+- **CI:** Department Scope Contract run `42903670806` — SUCCESS; el paso de ACADEMIC admission ownership y los contratos de los demás servicios/syntax-check terminaron SUCCESS.
+- **Límites:** no se modificó la función productiva ni se probó Apps Script/Sheets real. La persistencia real y los permisos/efectos externos siguen siendo beta; no bloquean este contrato local.
+- **Estado:** el subalcance conductual de conversión queda cubierto. TASK-153 sigue En ejecución y AUD-NG-386 abierto por las demás rutas y superficies pendientes.
+- **Commits:** `88b3462e969ec427f5b31fbcb7894c1fbbc49dff` (contrato); `08813b2dbcddbf2df23e2ed1d008052f425c252b` (ajuste de aserción de reentrada).
+

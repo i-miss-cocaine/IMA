@@ -763,3 +763,9 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - USER `createAdvancedSignatureRequest` valida cuenta única/activa del destinatario y ámbito antes de transacciones/Drive. Perfil nombre/correo canónico desde Usuarios; staff por asignación activa/vigente de departamento o institución; estudiante por PersonaID↔expediente; tutor por relación activa y acceso portal.
 - Contratos USER y sintaxis Apps Script PASS: Department Scope 42902550008. Identity Mapping 42902550038 y Task-Service security 42902550046 SUCCESS.
 - TASK-153 sigue En ejecución; AUD-NG-386 abierto. Siguiente unidad elegible: contrato conductual aislado de `convertAdmissionToStudent` para ownership atómico y compensación/rollback de escrituras parciales.
+
+
+### TASK-153 — seguimiento C1.470
+- Contrato conductual local para `convertAdmissionToStudent` PASS: conversión completa, ownership de solicitud/expediente, vínculo documental, matrícula/cargo y movimiento; rollback ante fallo tardío; compensación del fallo del segundo ownership; error explícito cuando una compensación de ownership falla; lock ocupado y reentrada concurrente sin lecturas.
+- CI Department Scope run 42903670806 SUCCESS; ACADEMIC admission ownership y syntax-check Apps Script PASS.
+- No se modificó lógica productiva. TASK-153 sigue En ejecución; AUD-NG-386 abierto. Siguiente unidad: revisar contratos conductuales y aislamiento de evaluaciones/entrevistas de admisión (lectura, escritura y transición de resultados), sin reabrir el subalcance de conversión ya aprobado.

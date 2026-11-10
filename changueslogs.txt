@@ -1071,3 +1071,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Contrato USER y syntax-check PASS en Department Scope run 42902550008; Identity Mapping run 42902550038 y Task-Service security run 42902550046 — SUCCESS.
 - Sin PSC real, callback autenticado, verificación criptográfica, Drive/Apps Script real ni despliegue. TASK-153 permanece En ejecución.
 - Commit: 78836e55b007feac17577d9d7888165e63af4724.
+
+
+[2026-11-10] C1.470 — IMA-EXEC-20261110-1825Z-02 — TASK-153 / ACADEMIC: conversión de admisión, ownership y rollback
+- Se añadió contrato conductual para `convertAdmissionToStudent`: éxito integral con ownership de solicitud/expediente, expediente, matrícula/cargo, movimiento y vínculo documental.
+- Fallo tardío de estado: rollback integral. Fallo del segundo ownership: compensa las escrituras previas. Fallo de compensación: devuelve ADMISSION_CONVERSION_COMPENSATION_REQUIRED y sigue ejecutando las demás reversiones.
+- Lock ocupado y reentrada durante conversión: no permiten lecturas adicionales mientras otra ejecución posee ScriptLock.
+- Contrato local aislado PASS (5 escenarios). Department Scope CI run 42903670806 SUCCESS, incluyendo contrato ACADEMIC y syntax-check.
+- Sin cambios productivos; sin Apps Script/Sheets real ni despliegue. TASK-153 sigue En ejecución; AUD-NG-386 abierto.
+- Commits: 88b3462e969ec427f5b31fbcb7894c1fbbc49dff; 08813b2dbcddbf2df23e2ed1d008052f425c252b.

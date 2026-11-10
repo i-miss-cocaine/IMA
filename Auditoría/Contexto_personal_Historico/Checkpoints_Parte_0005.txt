@@ -403,3 +403,47 @@ Completar la verificación de identidad y ámbito del firmante destinatario en T
 - Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt
 - Auditoría/INDICE_CHECKPOINTS.md
 ===============================================================================
+
+## CHECKPOINT C1.470 — ACADEMIC: conversión de admisión, ownership y rollback
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.469.
+HEAD inicial: 88ee9354841d74a4e16f9134cad12e9a8647ad57.
+Commit del contrato: 88b3462e969ec427f5b31fbcb7894c1fbbc49dff.
+Commit de ajuste: 08813b2dbcddbf2df23e2ed1d008052f425c252b.
+
+### Alcance y decisión
+Completar el subalcance pendiente de TASK-153 / AUD-NG-386: probar de forma conductual la orquestación de `convertAdmissionToStudent`, la creación de ownership para solicitud y expediente, y la compensación de escrituras parciales. La función productiva existente no necesitó cambios; la brecha era de evidencia conductual y se cerró ampliando el contrato de seguridad.
+
+### Pruebas agregadas
+Archivo: `tests/security/academic-admission-ownership.test.js`.
+- Conversión exitosa: crea ownership de `SOLICITUD_ADMISION` y `EXPEDIENTE_ESTUDIANTE`, expediente, matrícula/cargo, movimiento y vínculo documental; actualiza la solicitud a Convertida.
+- Fallo tardío al escribir estado: restaura la solicitud, el vínculo documental, movimiento, matrícula, expediente y ownership.
+- Fallo en el segundo registro de ownership: revierte el expediente y el primer ownership.
+- Fallo al eliminar un ownership durante rollback: expone `ADMISSION_CONVERSION_COMPENSATION_REQUIRED` con detalle, sin detener las restantes compensaciones; el ownership no eliminado queda visible para intervención.
+- Lock no disponible y reentrada concurrente: no se leen hojas ni se modifica estado mientras la conversión original mantiene ScriptLock.
+
+### Verificación
+- Contrato conductual aislado ejecutado localmente sobre el código de la rama: PASS, cinco escenarios.
+- GitHub Actions Department Scope Contract run 42903670806: SUCCESS.
+- Log del job: `academic admission conversion atomic ownership, rollback and concurrency contract: PASS`.
+- Los pasos Department Scope, Academic Departmental Resource Access, Academic Student Expediente Ownership, Academic Admission Ownership, USER signature ownership, Accounting departmental access, ResourceOwnership ABAC, syntax-check de USER/ACADEMIC/ACCOUNTING y Student Private Voucher Client: SUCCESS.
+- No se modificó `backend/academic-service/Code.gs`; no se desplegó ni se ejecutó Apps Script/Google Sheets real.
+
+### Estado y continuidad
+- Subalcance conductual de conversión de admisión: cubierto y aprobado localmente/CI.
+- TASK-153 permanece En ejecución; AUD-NG-386 abierto por evaluaciones/entrevistas y otras rutas, recursos institucionales, firmas, permisos granulares, referencias compartidas y filtros/importaciones.
+- Siguiente unidad: revisar contratos de evaluaciones/entrevistas de admisión para lectura, escritura y transición de resultados, sin repetir el contrato de conversión.
+- La validación real de persistencia y permisos Google Apps Script/Sheets queda como beta; no bloquea el cierre de este subalcance local.
+
+### Archivos de la iteración
+- tests/security/academic-admission-ownership.test.js
+- pendientes/Dirección/Pendientes.md
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- changueslogs.txt
+- tareas_auditoria.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+===============================================================================
