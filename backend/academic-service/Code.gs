@@ -1846,6 +1846,7 @@ function addToWaitlist(payload) {
 
   const waitSheet = getOrCreateSheet(ss, "ListaEsperaAdmision");
   const waitData = waitSheet.getDataRange().getValues();
+  const allowedRequestIds = getAuthorizedAdmissionRequestIds_(ss, ctx.scope, payload, "READ");
 
   // Verificar si ya está en la lista de espera
   const existing = waitData.slice(1).find(r => String(r[1]).trim() === String(solicitudId).trim() && r[7] !== "Oferta_Rechazada" && r[7] !== "Oferta_Expirada" && r[7] !== "Retirada");
@@ -1862,7 +1863,7 @@ function addToWaitlist(payload) {
   if (criterios.repostulante) puntaje += 10;
 
   // Calcular posición según puntaje y orden de llegada
-  const sameGroup = waitData.slice(1).filter(r => String(r[2]).trim() === anolectivo && String(r[3]).trim() === grado && r[7] === "En_Espera");
+  const sameGroup = waitData.slice(1).filter(r => allowedRequestIds.has(String(r[1] || "").trim()) && String(r[2]).trim() === anolectivo && String(r[3]).trim() === grado && r[7] === "En_Espera");
   const posicion = sameGroup.length + 1;
 
   const idGen = generateInstitutionalId({ entityType: "ListaEsperaAdmision", prefix: "ESP-", skipLock: true });
@@ -2287,10 +2288,10 @@ function convertAdmissionToStudent(payload) {
         message: "La solicitud " + solicitudId + " ya fue convertida previamente al expediente " + expedienteExistenteId + "." };
     }
 
-    if (estadoActual !== "Admitida" && !allowIncomplete) {
+    if (estadoActual !== "Admitida") {
       throw new Error("Acción denegada: únicamente las solicitudes admitidas pueden convertirse.");
     }
-    if (estadoActual === "Admitida" && !allowIncomplete) {
+    if (!allowIncomplete) {
       const docRes = getStudentDocuments(Object.assign({}, payload || {}, { solicitudId: solicitudId }));
       if (!docRes || docRes.status !== "success" || !Array.isArray(docRes.documents)) {
         throw new Error("DOCUMENT_VALIDATION_FAILED");
@@ -2322,11 +2323,10 @@ function convertAdmissionToStudent(payload) {
     const expGen = generateInstitutionalId({ entityType: "ExpedienteEstudiante", prefix: "EXP-", skipLock: true });
     const codeGen = generateInstitutionalId({ entityType: "CodigoEstudiante", prefix: "STU-", skipLock: true });
     const personaGen = generateInstitutionalId({ entityType: "Persona", prefix: "PER-", skipLock: true });
-    const userGen = generateInstitutionalId({ entityType: "Usuario", prefix: "USR-", skipLock: true });
-    const generatedExpId = (expGen && expGen.generatedId) ? expGen.generatedId : ("EXP-" + Date.now());
+        const generatedExpId = (expGen && expGen.generatedId) ? expGen.generatedId : ("EXP-" + Date.now());
     let code = (codeGen && codeGen.generatedId) ? codeGen.generatedId : ("STU-" + Date.now());
     let targetPersonaId = (personaGen && personaGen.generatedId) ? personaGen.generatedId : ("PER-" + Date.now());
-    let targetUserId = (userGen && userGen.generatedId) ? userGen.generatedId : ("USR-" + Date.now());
+    let targetUserId = "";
 
     const expSheet = getOrCreateSheet(ss, "ExpedientesEstudiantes");
     const expData = expSheet.getDataRange().getValues();
@@ -2345,6 +2345,21 @@ function convertAdmissionToStudent(payload) {
       if (linkedStudent && linkedStudent.userId) targetUserId = String(linkedStudent.userId).trim();
     }
 
+    if (!targetUserId) targetUserId = "USR-" + String(targetPersonaId).replace(/[^A-Za-z0-9]/g, "");
+    const userSheetForLink = getOrCreateSheet(ss, "Usuarios");
+    const userRowsForLink = userSheetForLink.getDataRange().getValues();
+    const userMatchesForLink = userRowsForLink.map(function(userRow,index){return {row:userRow,index:index};})
+      .filter(function(item){return String(item.row[0]||"").trim()===targetUserId;});
+    if (userMatchesForLink.length > 1) throw new Error("STUDENT_ACCOUNT_AMBIGUOUS");
+    if (userMatchesForLink.length === 1) {
+      const userRow = userMatchesForLink[0].row;
+      const userRole = normalizeString(userRow[6]);
+      const linkedPersonId = String(userRow[9] || "").trim();
+      if (["estudiante","alumno"].indexOf(userRole) === -1 || (linkedPersonId && linkedPersonId !== targetPersonaId)) {
+        throw new Error("STUDENT_ACCOUNT_CONFLICT");
+      }
+    }
+
     const requestOwner = registerAcademicResourceOwnership_(ss, ctx.scope, "SOLICITUD_ADMISION", solicitudId, departmentId, ctx.actor.userId);
     if (!requestOwner.authorized) throw new Error(requestOwner.code || "RESOURCE_OWNERSHIP_REGISTRATION_FAILED");
 
@@ -2361,6 +2376,9 @@ function convertAdmissionToStudent(payload) {
       if (newExpRowNumber) expSheet.deleteRow(newExpRowNumber);
       if (requestOwner.created) deleteAcademicResourceOwnership_(ss, requestOwner.ownershipId);
       throw new Error(expedienteOwner.code || "RESOURCE_OWNERSHIP_REGISTRATION_FAILED");
+    }
+    if (userMatchesForLink.length === 1 && !String(userMatchesForLink[0].row[9] || "").trim()) {
+      userSheetForLink.getRange(userMatchesForLink[0].index + 1, 10).setValue(targetPersonaId);
     }
 
     if (emailContacto) {
@@ -2442,7 +2460,7 @@ function convertAdmissionToStudent(payload) {
       ctx.actor.role);
     return {
       status: "success", solicitudId: solicitudId, expedienteId: finalExpId, codigoInstitucional: code,
-      matriculaId: matriculaRealId, message: "Solicitud " + solicitudId + " convertida exitosamente en expediente y matrícula."
+      userId: targetUserId, matriculaId: matriculaRealId, message: "Solicitud " + solicitudId + " convertida exitosamente en expediente y matrícula."
     };
   } finally {
     if (hasLock) {
