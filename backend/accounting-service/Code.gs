@@ -4256,7 +4256,7 @@ function getPaymentVouchers(payload) {
   const mapped = filtered.map(r => ({
     comprobanteId: r[0], fecha: r[1], userId: r[2], alumno: r[3], cargoId: r[4],
     montoReportado: parseFloat(r[5] || 0), metodoPago: r[6], referencia: r[7],
-    comprobanteUrl: r[8], estado: r[9], observaciones: r[10]
+    comprobanteUrl: "", tieneComprobante: !!String(r[8] || "").trim(), estado: r[9], observaciones: r[10]
   }));
   return { status: "success", comprobantes: mapped };
 }
@@ -4280,7 +4280,7 @@ function getPaymentVoucherFile(payload) {
 
   const row = rows[rowIndex];
   const access = assertPaymentVoucherOwnerAccess_(payload, row[2], {});
-  if (!access.authorized) return { status: "error", code: access.code || "RESOURCE_SCOPE_DENIED", message: "Acceso denegado." };
+  if (!access.authorized) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Archivo no disponible." };
 
   const fileId = extractDriveFileId(row[8]);
   if (!fileId) return { status: "error", code: "VOUCHER_FILE_REFERENCE_INVALID", message: "Archivo no disponible." };

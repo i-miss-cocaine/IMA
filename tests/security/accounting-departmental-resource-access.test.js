@@ -77,7 +77,10 @@ const rows={
   ["ComprobanteID","Fecha","UserId","Alumno","CargoID","MontoReportado","MetodoPago","Referencia","ComprobanteUrl","Estado","Observaciones"],
   ["VCH-A",new Date("2026-01-01"),"U-STUDENT","Alumno A","GRAL",100,"Transferencia","REF-A","https://lh3.googleusercontent.com/d/FILE_A_123456789012345678901234567890","En Revisión",""],
   ["VCH-B",new Date("2026-01-02"),"U-OTHER","Alumno B","GRAL",200,"Transferencia","REF-B","https://lh3.googleusercontent.com/d/FILE_B_123456789012345678901234567890","En Revisión",""],
-  ["VCH-N",new Date("2026-01-03"),"U-NODEPT","Alumno N","GRAL",300,"Transferencia","REF-N","https://lh3.googleusercontent.com/d/FILE_N_123456789012345678901234567890","En Revisión",""]
+  ["VCH-N",new Date("2026-01-03"),"U-NODEPT","Alumno N","GRAL",300,"Transferencia","REF-N","https://lh3.googleusercontent.com/d/FILE_N_123456789012345678901234567890","En Revisión",""],
+  ["VCH-TRASHED",new Date("2026-01-04"),"U-STUDENT","Alumno A","GRAL",100,"Transferencia","REF-T","https://lh3.googleusercontent.com/d/FILE_TRASHED_123456789012345678901234567890","En Revisión",""],
+  ["VCH-BADTYPE",new Date("2026-01-05"),"U-STUDENT","Alumno A","GRAL",100,"Transferencia","REF-X","https://lh3.googleusercontent.com/d/FILE_BADTYPE_123456789012345678901234567890","En Revisión",""],
+  ["VCH-EMPTY",new Date("2026-01-06"),"U-STUDENT","Alumno A","GRAL",100,"Transferencia","REF-E","https://lh3.googleusercontent.com/d/FILE_EMPTY_123456789012345678901234567890","En Revisión",""]
  ]
 };
 const ss={getSheetByName:name=>rows[name]?makeSheet(rows[name]):null};
@@ -85,7 +88,10 @@ const fileBytes=Buffer.from("%PDF-1.4 test");
 const files={
  FILE_A_123456789012345678901234567890:{isTrashed:()=>false,getName:()=>"voucher-a.pdf",getMimeType:()=>"application/pdf",getBlob:()=>({getBytes:()=>Array.from(fileBytes),getContentType:()=>"application/pdf"})},
  FILE_B_123456789012345678901234567890:{isTrashed:()=>false,getName:()=>"voucher-b.pdf",getMimeType:()=>"application/pdf",getBlob:()=>({getBytes:()=>Array.from(fileBytes),getContentType:()=>"application/pdf"})},
- FILE_N_123456789012345678901234567890:{isTrashed:()=>false,getName:()=>"voucher-n.pdf",getMimeType:()=>"application/pdf",getBlob:()=>({getBytes:()=>Array.from(fileBytes),getContentType:()=>"application/pdf"})}
+ FILE_N_123456789012345678901234567890:{isTrashed:()=>false,getName:()=>"voucher-n.pdf",getMimeType:()=>"application/pdf",getBlob:()=>({getBytes:()=>Array.from(fileBytes),getContentType:()=>"application/pdf"})},
+ FILE_TRASHED_123456789012345678901234567890:{isTrashed:()=>true,getName:()=>"voucher-trashed.pdf",getMimeType:()=>"application/pdf",getBlob:()=>({getBytes:()=>Array.from(fileBytes),getContentType:()=>"application/pdf"})},
+ FILE_BADTYPE_123456789012345678901234567890:{isTrashed:()=>false,getName:()=>"voucher.exe",getMimeType:()=>"application/octet-stream",getBlob:()=>({getBytes:()=>Array.from(fileBytes),getContentType:()=>"application/octet-stream"})},
+ FILE_EMPTY_123456789012345678901234567890:{isTrashed:()=>false,getName:()=>"voucher-empty.pdf",getMimeType:()=>"application/pdf",getBlob:()=>({getBytes:()=>[],getContentType:()=>"application/pdf"})}
 };
 const context={
  SPREADSHEET_ID:"TEST",
@@ -120,6 +126,9 @@ assert.equal(context.assertPaymentVoucherOwnerAccess_(actor("staffA"),"U-OTHER",
 assert.equal(context.assertPaymentVoucherOwnerAccess_(actor("staffA"),"U-NODEPT",{}).code,"RESOURCE_DEPARTMENT_UNRESOLVED");
 assert.equal(context.assertPaymentVoucherOwnerAccess_(actor("admin"),"U-OTHER",{}).accessType,"INSTITUTION");
 assert.deepEqual(Array.from(context.getPaymentVouchers({sessionToken:"student",userId:"U-OTHER"}).comprobantes,c=>c.comprobanteId),["VCH-A"]);
+const studentVoucherList=context.getPaymentVouchers(actor("student")).comprobantes;
+assert.equal(studentVoucherList[0].comprobanteUrl,"","voucher list must not disclose the legacy Drive URL");
+assert.equal(studentVoucherList[0].tieneComprobante,true,"voucher list must expose only attachment availability");
 assert.deepEqual(Array.from(context.getPaymentVouchers(actor("guardian")).comprobantes,c=>c.comprobanteId),["VCH-A"]);
 assert.deepEqual(Array.from(context.getPaymentVouchers(actor("staffA")).comprobantes,c=>c.comprobanteId),["VCH-A"]);
 assert.deepEqual(Array.from(context.getPaymentVouchers(actor("admin")).comprobantes,c=>c.comprobanteId),["VCH-A","VCH-B","VCH-N"]);
@@ -133,13 +142,16 @@ assert.equal(ownFile.status,"success","student may retrieve only their own vouch
 assert.equal(ownFile.fileName,"voucher-a.pdf","file reference must come from the stored voucher row, not client fileId");
 assert.equal(ownFile.mimeType,"application/pdf");
 assert.equal(ownFile.fileData,Buffer.from("%PDF-1.4 test").toString("base64"));
-assert.equal(context.getPaymentVoucherFile({sessionToken:"student",comprobanteId:"VCH-B"}).code,"RESOURCE_SCOPE_DENIED","student IDOR must be denied");
+assert.equal(context.getPaymentVoucherFile({sessionToken:"student",comprobanteId:"VCH-B"}).code,"RESOURCE_NOT_FOUND","unauthorized voucher IDs must not reveal resource existence");
 assert.equal(context.getPaymentVoucherFile({sessionToken:"guardian",comprobanteId:"VCH-A"}).status,"success","linked guardian may retrieve the linked voucher");
 assert.equal(context.getPaymentVoucherFile({sessionToken:"staffA",comprobanteId:"VCH-A"}).status,"success","department staff may retrieve an in-scope voucher");
 assert.equal(context.getPaymentVoucherFile({sessionToken:"staffA",comprobanteId:"VCH-B"}).code,"RESOURCE_SCOPE_DENIED","department staff may not retrieve another department's voucher");
 assert.equal(context.getPaymentVoucherFile({sessionToken:"admin",comprobanteId:"VCH-B"}).status,"success","institution-wide scope may retrieve an authorized voucher");
 assert.equal(context.getPaymentVoucherFile({sessionToken:"invalid",comprobanteId:"VCH-A"}).code,"VERIFIED_IDENTITY_REQUIRED");
 assert.equal(context.getPaymentVoucherFile({sessionToken:"student",comprobanteId:"NO-SUCH-VOUCHER"}).code,"RESOURCE_NOT_FOUND");
+assert.equal(context.getPaymentVoucherFile({sessionToken:"student",comprobanteId:"VCH-TRASHED"}).code,"VOUCHER_FILE_UNAVAILABLE");
+assert.equal(context.getPaymentVoucherFile({sessionToken:"student",comprobanteId:"VCH-BADTYPE"}).code,"VOUCHER_FILE_TYPE_NOT_ALLOWED");
+assert.equal(context.getPaymentVoucherFile({sessionToken:"student",comprobanteId:"VCH-EMPTY"}).code,"VOUCHER_FILE_EMPTY");
 
 assert.ok(extractFunction(accounting,"validateRolePermission").includes("getVerifiedAccountingDepartmentScope_"));
 assert.ok(extractFunction(accounting,"uploadEmployeeDocument").includes("DriveApp.Access.PRIVATE"));

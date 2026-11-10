@@ -11,4 +11,7 @@ assert.match(source, /tab-financial/, "the financial tab must be wired to the vo
 assert.match(source, /showStudentVoucherFile\(voucher\.comprobanteId, action\)/, "file retrieval must be keyed by the server-issued voucher ID");
 assert.doesNotMatch(source, /window\.open\(voucher\.comprobanteUrl/, "client must not open the legacy Drive URL directly");
 
+assert.match(source, /voucher\.tieneComprobante/, "client must use the attachment availability flag rather than a Drive URL");
+assert.doesNotMatch(source, /voucher\.comprobanteUrl/, "client must not consume the legacy Drive URL");
+
 console.log("Student private payment voucher client contract passed.");

@@ -2796,8 +2796,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 action.type = 'button';
                 action.className = 'px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold disabled:opacity-50';
                 action.textContent = 'Ver comprobante';
-                action.disabled = !voucher.comprobanteUrl;
-                if (!voucher.comprobanteUrl) {
+                action.disabled = !voucher.tieneComprobante;
+                if (!voucher.tieneComprobante) {
                     action.textContent = 'Sin archivo adjunto';
                 } else {
                     action.addEventListener('click', function() {
