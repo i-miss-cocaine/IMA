@@ -22,3 +22,77 @@ for(const name of ["gradeSubmission","gradeSubmissionWithRubric","returnSubmissi
 assert(extractFunction("deleteSubmission").includes('assertTaskServiceTeacherCanManageTask(payload,task,"DELETE_SUBMISSION")'));
 assert(extractFunction("getSubmissionDocumentPreviewUrl").includes('"READ_CONTENT"'));
 console.log("TASK-153 Task-Service ownership contract passed: scope, owner isolation, institutional access, ambiguity, validated assignment and staff read/mutation gates.");
+
+
+// TASK-153: submission comments and version history must resolve their parent task
+// and bind student/guardian access to a verified delivery, never to client-supplied IDs.
+const submissionAccess = extractFunction("getTaskServiceSubmissionAccess_");
+assert(submissionAccess.includes("getVerifiedTaskIdentity_(payload)"), "submission access derives identity from the signed session");
+assert(submissionAccess.includes("assertTaskServiceTeacherCanManageTask(payload, task"), "staff submission access enforces task ownership and scope");
+assert(submissionAccess.includes("assertTaskServiceStudentCanAccessTask(ss, studentId, task)"), "learner submission access enforces student/task relationship");
+assert(submissionAccess.includes("getTaskServiceGuardianStudentIds(identity.userId)"), "guardian access derives linked students from verified identity");
+for (const name of ["getSubmissionComments", "addSubmissionComment", "getSubmissionVersions"]) {
+  assert(extractFunction(name).includes("getTaskServiceSubmissionAccess_(payload"), name + " resolves authorized parent task/delivery context");
+}
+const commentsFn = extractFunction("getSubmissionComments");
+assert(commentsFn.includes("context.isStaff || !isPrivate"), "students and guardians cannot read private staff comments");
+const addCommentFn = extractFunction("addSubmissionComment");
+assert(addCommentFn.includes("context.identity.userId") && addCommentFn.includes("context.identity.role"), "comment author is derived from verified session");
+assert(!addCommentFn.includes("payload.autorId") && !addCommentFn.includes("payload.rolAutor"), "client cannot impersonate comment author or role");
+assert(addCommentFn.includes("context.isStaff && payload.esPrivado !== false"), "only staff can create private comments");
+const versionsFn = extractFunction("getSubmissionVersions");
+assert(versionsFn.includes("context.delivery") && versionsFn.includes("context.studentId"), "version history is restricted to the authorized delivery");
+assert(versionsFn.includes("targetExists"), "staff cannot query versions for an unrelated user ID");
+
+function makeSubmissionAccessFixture() {
+  const taskRows = [
+    ["TareaID","Tipo","Titulo","Descripcion","Parcial","Asignatura","Grado","Seccion","FechaLimite","Original","Profesor","Estado"],
+    ["TASK-1","Tarea","Matemáticas","","P1","Matemáticas","6","A","","","PROF-1","Activa"]
+  ];
+  const deliveryRows = [
+    ["EntregaID","TareaID","UserID"],
+    ["ENT-1","TASK-1","STU-1"],
+    ["ENT-2","TASK-1","STU-2"]
+  ];
+  const sheets = {
+    Entregas: { getDataRange: () => ({ getValues: () => deliveryRows }) },
+    Tareas: { getDataRange: () => ({ getValues: () => taskRows }) }
+  };
+  const calls = [];
+  const context = {
+    SPREADSHEET_ID: "LOCAL",
+    SpreadsheetApp: { openById: () => ({}) },
+    getSheetOrThrow: (_ss, name) => sheets[name],
+    getVerifiedTaskIdentity_: payload => payload.identity || { authorized: false, code: "VERIFIED_IDENTITY_REQUIRED" },
+    isTaskServiceAdministrativeRole: role => ["Administrador","Desarrollador","Dirección","Secretaría"].includes(role),
+    getTaskServiceGuardianStudentIds: userId => userId === "GUARD-1" ? ["STU-1"] : [],
+    assertTaskServiceStudentCanAccessTask: (_ss, userId, task) => {
+      if (userId !== "STU-1" || task[0] !== "TASK-1") throw new Error("RESOURCE_NOT_FOUND");
+      calls.push(["student", userId]);
+      return true;
+    },
+    assertTaskServiceTeacherCanManageTask: (payload, task, operation) => {
+      calls.push(["staff", task[0], operation]);
+      if (!payload.staffAuthorized) throw new Error("RESOURCE_NOT_FOUND");
+      return true;
+    }
+  };
+  vm.runInNewContext(submissionAccess + "\nthis.resolve = getTaskServiceSubmissionAccess_;", context);
+  return { resolve: context.resolve, calls };
+}
+{
+  const f = makeSubmissionAccessFixture();
+  const student = { identity: { authorized: true, userId: "STU-1", role: "Estudiante" }, entregaId: "ENT-1" };
+  assert.equal(f.resolve(student, "READ_HISTORY").studentId, "STU-1");
+  assert.throws(() => f.resolve({ identity: student.identity, entregaId: "ENT-2" }, "READ_HISTORY"), /RESOURCE_NOT_FOUND/);
+  assert.equal(f.resolve({ identity: student.identity, tareaId: "TASK-1" }, "READ_HISTORY").delivery[0], "ENT-1");
+  const guardian = { identity: { authorized: true, userId: "GUARD-1", role: "Padre" }, tareaId: "TASK-1" };
+  assert.equal(f.resolve(guardian, "READ_HISTORY").studentId, "STU-1");
+  assert.throws(() => f.resolve({ identity: guardian.identity, entregaId: "ENT-2" }, "READ_HISTORY"), /RESOURCE_NOT_FOUND/);
+  const staff = { identity: { authorized: true, userId: "PROF-1", role: "Profesor" }, tareaId: "TASK-1", staffAuthorized: true };
+  assert.equal(f.resolve(staff, "READ_HISTORY").isStaff, true);
+  assert.deepEqual(f.calls[f.calls.length - 1], ["staff", "TASK-1", "READ_HISTORY"]);
+  assert.throws(() => f.resolve({ ...staff, staffAuthorized: false }, "READ_HISTORY"), /RESOURCE_NOT_FOUND/);
+  assert.throws(() => f.resolve({ identity: student.identity, entregaId: "ENT-1", tareaId: "TASK-OTHER" }, "READ_HISTORY"), /RESOURCE_NOT_FOUND/);
+}
+console.log("TASK-153 submission discussion/history contract passed: signed identity, delivery ownership, guardian relationship, staff scope and anti-IDOR checks.");
