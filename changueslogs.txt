@@ -868,3 +868,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se amplía tests/security/task-service-resource-ownership.test.js con contratos de aislamiento y anti-suplantación.
 - Commits de código y pruebas: 09d6ad571e8b6a7a965317239a48e27d97f2fd8e y 7270a0f24249a681ab5fd10f91a16a682ba542b0.
 - Pruebas locales no ejecutadas; CI no verificable en esta sesión. TASK-153 continúa En ejecución.
+
+
+[2026-11-10] C1.435 — IMA-GOV-20261110-1632Z-01 — NDASC v1.2: ejecución local obligatoria y separación de pruebas beta
+- `Normas_Desarollo.md` se actualiza a v1.2: toda prueba/verificación local aplicable debe ejecutarse; una tarea no puede marcarse Completada si alguna queda FAIL, BLOCKED o NOT RUN.
+- Se aclara que los casos que requieren deployment, URLs/servicios vivos, infraestructura o credenciales remotas se registran y ejecutan en fase beta, sin retrasar la implementación cuando las pruebas locales pasaron.
+- Se confirma `beta_test.txt` (raíz) como único registro beta activo; `docs/testing/PRUEBAS_FUNCIONALES_BETA.md` queda como histórico.
+- `METODOLOGIA_DESARROLLO.md` §21.1, §21.2 y §21.5 se alinean con la norma maestra.
+- Se añade BETA-FUNC-021 para validar en servicio desplegado la propiedad, privacidad y aislamiento del historial de entregas de TASK-153.
+- Validaciones documentales locales: PASS (versión, reglas de cierre, registro beta canónico, ID único y estado Pendiente beta). No se ejecutaron suites de producto; no hubo cambios de código de aplicación.
