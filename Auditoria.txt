@@ -949,3 +949,12 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - T153-S01 mantiene bloqueo institucional y las dependencias no se adelantan.
 - Checkpoint C1.411: Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt, líneas 181–193; índice Auditoría/INDICE_CHECKPOINTS.md, fila C1.411.
 ===============================================================================
+
+===============================================================================
+## C1.412 — IMA-EXEC-20261110-1202Z-01 — matriz configurable y rol institucional superior
+- Se documenta la matriz de roles, responsabilidades, documentos, operaciones y ámbitos, incluyendo límites específicos de Docencia por asignatura, Contaduría financiera, asistentes por delegación y exclusión de padre/madre/representante, alumnos y empleados sin rol habilitado.
+- Se establece que la autoría solo puede proponer un rol responsable elegible; no concede autoridad ni privilegios.
+- Se incorpora N-24: Titular Institucional / Representante Legal sobre Dirección, distinto del desarrollador. Puede asumir funciones de Dirección por configuración temporal; la representación legal exige nombramiento/instrumento válido y se respetan competencias estatutarias superiores.
+- Plan Maestro §10.83 ampliado; especificación detallada en Auditoría/ESPECIFICACION_MATRIZ_ROLES_RESPONSABILIDADES.md.
+- Todo es propuesta pendiente de ratificación y revisión legal. Sin cambios de código, datos, esquemas, permisos o asignaciones reales; pruebas no ejecutadas; T153-S01 permanece Bloqueada.
+===============================================================================
