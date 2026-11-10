@@ -242,3 +242,5 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.410 | IMA-EXEC-20261110-1140Z-01 | Investigación externa y plan detallado T153-S01; subtarea permanece Bloqueada | PM-01 / TASK-153 / T153-S01 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.410 | 130–180 | C1.409 | Este commit; SHA verificado tras publicación |
 
 | C1.411 | IMA-EXEC-20261110-1150Z-01 | Regla transversal: autoridad y responsabilidad sobre antecedentes/documentos configuradas por roles desde IMA; no titulares personales estáticos | PM-01 §10.82 / N-23 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.411 | 181–193 | C1.410 | Este commit; SHA verificado tras publicación |
+
+| C1.412 | IMA-EXEC-20261110-1202Z-01 | Especificación de matriz configurable por rol/documento/ámbito; TIRL superior a Dirección con facultades legales condicionadas | N-24 / PM-01 §10.83 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0004.txt — sección C1.412 | 194–207 | C1.411 | Este commit; SHA verificado tras publicación |
