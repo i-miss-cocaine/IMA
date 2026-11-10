@@ -1371,6 +1371,8 @@ function getExamResult(payload) {
 }
 
 function getTeacherExamActivity(payload) {
+  const permission = validateRolePermission("getTeacherExamActivity", payload);
+  if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
   const actor = getVerifiedExamIdentity_(payload);
   if (!actor.authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
