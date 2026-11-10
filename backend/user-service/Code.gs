@@ -483,7 +483,7 @@ function getProblemTickets(payload) {
     if (verifiedRole === "NO_ACCESS" || !currentUserId) {
       return { status: "error", code: "AUTH_PERMISSION_DENIED", message: "Se requiere una identidad verificada para consultar tickets." };
     }
-    const isAdmin = ["Administrador", "Desarrollador", "Director"].indexOf(verifiedRole) !== -1;
+    const isAdmin = TICKET_ADMIN_ROLES_.indexOf(verifiedRole) !== -1;
 
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const ticketsSheet = getOrCreateSheet(ss, "TicketsReporteProblemas");
@@ -555,7 +555,7 @@ function getProblemTickets(payload) {
 function updateTicketStatus(payload) {
   try {
     const verifiedRole = getUserVerifiedRole(payload);
-    if (["Administrador", "Desarrollador", "Director"].indexOf(verifiedRole) === -1) {
+    if (TICKET_ADMIN_ROLES_.indexOf(verifiedRole) === -1) {
       return { status: "error", code: "AUTH_PERMISSION_DENIED", message: "Solo administradores pueden cambiar el estado de un ticket." };
     }
 
@@ -649,7 +649,7 @@ function replyProblemTicket(payload) {
     if (verifiedRole === "NO_ACCESS" || !currentUserId) {
       return { status: "error", code: "AUTH_PERMISSION_DENIED", message: "Se requiere una identidad verificada para responder tickets." };
     }
-    const isAdmin = ["Administrador", "Desarrollador", "Director"].indexOf(verifiedRole) !== -1;
+    const isAdmin = TICKET_ADMIN_ROLES_.indexOf(verifiedRole) !== -1;
     const ticketUserId = String(ticketRow[1]).trim();
 
     if (!isAdmin && ticketUserId !== String(currentUserId).trim()) {
@@ -1007,6 +1007,10 @@ const ROLE_PERMISSIONS = {
   ]
 };
 
+// Políticas explícitas del módulo de soporte; los handlers aplican propiedad del recurso.
+const TICKET_ADMIN_ROLES_ = ["Administrador", "Desarrollador", "Director"];
+
+
 // [TAREA-F4-P0-01] [Fase 4: Identidad, Permisos y Gobierno] - Generación y verificación de tokens firmados con HMAC-SHA256 para unificación de autenticación
 function computeHmacSignature(message, secret) {
   const bytes = Utilities.computeHmacSignature(Utilities.MacAlgorithm.HMAC_SHA_256, message, secret);
@@ -1278,7 +1282,19 @@ function validateRolePermission(action, payload) {
     return { authorized: true, role: userRole, userId: payload && payload._verifiedUserId };
   }
   if (IDENTITY_MANAGER_ACTIONS_.indexOf(action) !== -1) return { authorized: IDENTITY_MANAGER_ROLES_.indexOf(userRole) !== -1, role: userRole };
-  if (["submitProblemTicket", "getProblemTickets", "replyProblemTicket", "searchGlobalOmnibox", "configureAutomationRules", "getNotificationAuditLogs", "getServiceHealthReport", "submitPrivacyRightsRequest", "getPrivacyRightsRequests"].indexOf(action) !== -1) {
+  // Autoservicio de tickets: cuenta activa autenticada; los handlers restringen por propiedad.
+  if (["submitProblemTicket", "getProblemTickets", "replyProblemTicket"].indexOf(action) !== -1) {
+    const verifiedUserId = payload && payload._verifiedUserId;
+    if (!verifiedUserId) return { authorized: false, role: userRole };
+    return { authorized: true, role: userRole, userId: verifiedUserId };
+  }
+
+  // Las reglas de automatización son exclusivas de roles administrativos.
+  if (["configureAutomationRules", "getAutomationRules"].indexOf(action) !== -1) {
+    return { authorized: TICKET_ADMIN_ROLES_.indexOf(userRole) !== -1, role: userRole };
+  }
+
+  if (["searchGlobalOmnibox", "getNotificationAuditLogs", "getServiceHealthReport", "submitPrivacyRightsRequest", "getPrivacyRightsRequests"].indexOf(action) !== -1) {
     return { authorized: true, role: userRole };
   }
 
@@ -6866,7 +6882,7 @@ function configureAutomationRules(payload) {
   try {
     if (!payload) return { status: "error", message: "Payload no provisto." };
     const verifiedRole = getUserVerifiedRole(payload);
-    if (["Administrador", "Desarrollador", "Director"].indexOf(verifiedRole) === -1) {
+    if (TICKET_ADMIN_ROLES_.indexOf(verifiedRole) === -1) {
       return { status: "error", message: "Acceso denegado." };
     }
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -6898,7 +6914,7 @@ function configureAutomationRules(payload) {
 function getAutomationRules(payload) {
   try {
     const verifiedRole = getUserVerifiedRole(payload);
-    if (["Administrador", "Desarrollador", "Director"].indexOf(verifiedRole) === -1) {
+    if (TICKET_ADMIN_ROLES_.indexOf(verifiedRole) === -1) {
       return { status: "error", code: "AUTH_PERMISSION_DENIED", message: "Solo roles administrativos pueden consultar las reglas de automatización." };
     }
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);

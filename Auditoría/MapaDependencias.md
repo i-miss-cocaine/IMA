@@ -5090,3 +5090,13 @@ Alcance estático satisfecho; sin cambios de código. Hallazgos AUD-NG-374..376 
 - Veintidós IDs solo contienen encabezados, sin objetivo/dependencias/criterios; excluidos de cola ejecutable conforme §6.1, no completados.
 - PM-00 queda sin trabajo ejecutable; PM-01 habilitada.
 ===============================================================================
+
+===============================================================================
+## C1.420 — AUD-NG-128: bypass de tickets y reglas de automatización
+
+- Fuente actual backend/user-service/Code.gs blob 85d12dad06826fdc37660f47d92e6976ff28bfe7.
+- validateRolePermission autorizaba incondicionalmente submitProblemTicket/getProblemTickets/replyProblemTicket/configureAutomationRules. Los handlers de tickets ya usan _verifiedUserId y filtran propiedad; configure/getAutomationRules ya tenían guardias internas de roles. Se precisa el hallazgo sin afirmar que esos controles internos faltaban.
+- Política explícita: cuenta activa autenticada crea/lee/responde sus propios tickets; atención de tickets ajenos y reglas de automatización solo para Administrador/Desarrollador/Director.
+- Se centraliza TICKET_ADMIN_ROLES_; se retiran las acciones del bypass incondicional. Otros bypasses no incluidos en AUD-NG-128 quedan fuera de alcance.
+- Prueba contractual añadida en tests/security/problem-ticket-authorization.test.js. Pendiente ejecución/CI y Code Review.
+===============================================================================

@@ -466,3 +466,37 @@ HEAD de partida: 2a5a5bfff03f1ed0817f82cb2f6d76378426cf4c; checkpoint anterior C
 Aplicar §6.1 en PM-01, priorizar severidad/riesgo y verificar dependencias. No bloquear el motor genérico por ausencia de organigrama. Resolver ciclos antes de seleccionar.
 Commit: SHA por verificar.
 ===============================================================================
+===============================================================================
+## CHECKPOINT C1.420 — Selección y avance de AUD-NG-128
+Sesión: IMA-EXEC-20261110-1340Z-08
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA; rama exclusiva: NG_beta_0.0.0.1_work.
+HEAD de partida: c6ca63be31f261acffda734cfa00d91e0678d92a; checkpoint anterior C1.419.
+Fase: PM-01 — identidad, seguridad y gobierno de acceso.
+
+### Selección conforme §6.1
+- AUD-NG-128 — eliminar bypass RBAC y vincular tickets a identidad verificada. Severidad Crítica; no declara dependencias previas. El control de identidad/contexto existe y el bypass central se confirma.
+- Tareas P0 con dependencias explícitas no se adelantaron sin verificar prerrequisitos; el ciclo F29-TASK05↔F29-TASK17 no se fuerza.
+- No se exige organigrama institucional: la política de autoservicio de tickets es genérica y usa claims verificados.
+
+### Evidencia inicial
+- backend/user-service/Code.gs blob 85d12dad06826fdc37660f47d92e6976ff28bfe7.
+- validateRolePermission concedía autorización incondicional a submitProblemTicket/getProblemTickets/replyProblemTicket/configureAutomationRules.
+- Los handlers de tickets ya verificaban _verifiedUserId y propiedad; configureAutomationRules/getAutomationRules ya tenían controles internos de rol.
+- Política objetivo: cuenta activa autenticada crea/lee/responde sus propios tickets; atención de tickets ajenos y reglas solo para Administrador, Desarrollador y Director.
+
+### Archivos modificados
+- backend/user-service/Code.gs — autorización central explícita y TICKET_ADMIN_ROLES_.
+- tests/security/problem-ticket-authorization.test.js — prueba contractual.
+- Plan Maestro §10.90, MapaDependencias C1.420, changueslogs, checkpoint e índice.
+
+### Estado y límites
+- AUD-NG-128 queda En ejecución hasta prueba Node/CI y revisión del diff.
+- Otros bypasses fuera del alcance no se modifican.
+- Sin cambios de datos institucionales ni operaciones productivas.
+- No se declara completada la tarea ni se afirma que las pruebas hayan pasado.
+
+### Siguiente acción
+Ejecutar tests/security/problem-ticket-authorization.test.js mediante Node/CI, revisar diff completo y verificar checks. Si pasa, completar documentación; si falla, corregir.
+Commit: SHA por verificar.
+===============================================================================

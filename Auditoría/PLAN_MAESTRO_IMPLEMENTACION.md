@@ -2885,3 +2885,15 @@ PM-00 queda sin tareas ejecutables pendientes tras clasificar los registros here
 - Puerta de salida: los registros PM-00 ejecutables se cerraron documentalmente o reclasificaron por alcance/dependencias. PM-01 queda habilitada según PM-00 → PM-01.
 
 Siguiente selección: aplicar §6.1 en PM-01 y verificar dependencias reales antes de elegir.
+
+### 10.90 PM-01 — AUD-NG-128: autorización explícita de tickets y reglas de automatización (C1.420)
+
+**Selección:** AUD-NG-128, severidad Crítica, PM-01. Se elige tras C1.419 y §6.1: no declara dependencias previas; los controles de identidad/contexto ya existen y el defecto central está localizado en `validateRolePermission`.
+
+**Evidencia vigente:** `backend/user-service/Code.gs` blob `85d12dad06826fdc37660f47d92e6976ff28bfe7`. La rama de autorización incondicional incluía `submitProblemTicket`, `getProblemTickets`, `replyProblemTicket` y `configureAutomationRules`. Los handlers de tickets ya derivaban autor/lector/respondedor de `_verifiedUserId` y filtraban propiedad para usuarios no administrativos; `configureAutomationRules` y `getAutomationRules` ya tenían guardias internas de rol. Se distingue la brecha central vigente de los controles parciales existentes.
+
+**Política aplicada:** cuenta activa autenticada puede crear, consultar y responder sus propios tickets; la atención de tickets ajenos se limita a roles administrativos y se valida en el handler. Solo Administrador, Desarrollador y Director pueden consultar/configurar reglas de automatización. La lista administrativa se centraliza en `TICKET_ADMIN_ROLES_`.
+
+**Cambios:** autorización central explícita para las acciones de tickets y reglas; reutilización de la política administrativa en handlers; prueba contractual Node para identidad verificada, cuentas inactivas, propiedad de ticket y acceso a reglas.
+
+**Estado:** En ejecución hasta verificar Node/CI y revisión del diff. No marcar AUD-NG-128 Completada antes de esas verificaciones.
