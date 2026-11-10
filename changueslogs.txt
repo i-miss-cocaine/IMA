@@ -1101,3 +1101,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - `generateSignatureAuditCertificate` ya no usa `getOrCreateSheet`; consulta la hoja existente con `getSheetByName` y no crea almacenamiento al consultar. Si falta la hoja, valida ownership documental y devuelve `NO_SIGNATURES_FOUND` sin lectura completa.
 - Contrato local V8 de 9 escenarios y parseo PASS; Department Scope Contract run 42908073626 SUCCESS.
 - Commits: 2fa2c4068ebf296a2bc050c914165496ee9c1732; 811d7b54a1701e5dcb80828ba807c252228f508c.
+
+
+[2026-11-10] C1.473 — contrato genérico de callback autenticado de firma
+- USER recibe sobres de proveedor con HMAC-SHA256 por proveedor, timestamp limitado, destino/acción explícitos y payload mínimo.
+- La verificación HMAC precede a la reserva anti-replay; la reserva se serializa con ScriptLock.
+- El callback autenticado no modifica transacciones ni acredita firma criptográfica. Integración PSC y validación específica permanecen pendientes beta (BETA-FUNC-027).
+- Commit de código/pruebas: deda3ef0e2bff98b79f703fd6971940bce33df59. V8 aislado y parseo PASS; Department Scope Contract run 42909005349 SUCCESS; Task-Service security run 42909005375 SUCCESS.

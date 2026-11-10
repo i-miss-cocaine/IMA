@@ -4935,3 +4935,12 @@ TAREAS DERIVADAS — AUDITORÍA TASK-639 / C1.302
 - `createExam` ahora exige sesión firmada y ámbito departamental autorizado; deriva el creador de claims y registra ResourceOwnership antes del examen/preguntas.
 - Escritura protegida por ScriptLock y rollback compensatorio. Contratos locales y parseo PASS; GitHub Actions run 42870106305 PASS en ambos contratos EXAM. La prueba beta continúa Pendiente beta.
 - **Estado:** TASK-153 En ejecución; AUD-NG-386 abierto. Siguiente subalcance: updateExam, updateExamStatus, deleteExam, gradeExamSubmission y deleteExamSubmission.
+
+
+### Avance C1.473 — TASK-153 / USER: contrato genérico de callback autenticado
+- Se agrega recepción diferenciada de sobres SIGNATURE_PROVIDER:<ID> con HMAC por proveedor almacenado en Script Properties, vigencia temporal, destino/acción explícitos, payload mínimo y protección anti-replay bajo ScriptLock.
+- La autenticación del mensaje no modifica transacciones ni equivale a validar una firma. El callback queda aceptado solo como mensaje autenticado pendiente de validación específica del proveedor; no se simula PSC ni se inventan resultados X.509/CRL/OCSP.
+- Contratos locales: aceptación autenticada, replay, HMAC incorrecto, secreto ausente, timestamp vencido, destino incorrecto, campos extra en payload y lock ocupado. V8 aislado: 5 comprobaciones de comportamiento PASS; parseo JavaScript del servicio PASS.
+- CI: Department Scope Contract run 42909005349 — SUCCESS; USER signature ownership, ACADEMIC, ACCOUNTING, ResourceOwnership ABAC, sintaxis Apps Script y voucher client PASS. Task-Service security local contracts run 42909005375 — SUCCESS.
+- Commit: deda3ef0e2bff98b79f703fd6971940bce33df59 (servicio y contrato).
+- Estado: TASK-153 En ejecución; AUD-NG-386 abierto. Siguiente subalcance: validación criptográfica específica del proveedor, solo cuando exista contrato y material de confianza verificable; de lo contrario, continuar con otra ruta USER independiente.

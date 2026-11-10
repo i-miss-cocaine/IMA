@@ -542,3 +542,39 @@ Completar el subalcance USER de TASK-153 señalado como pendiente desde C1.464/C
 - El contrato local añade el escenario de hoja ausente: valida ownership, no ejecuta lectura completa, no crea hoja y libera ScriptLock. La ejecución local V8 queda en 9 escenarios PASS; parseo del servicio y test PASS.
 - GitHub Actions Department Scope Contract run 42908073626: SUCCESS; USER signature ownership y todos los demás pasos/syntax-check PASS.
 - Commits de esta corrección: 2fa2c4068ebf296a2bc050c914165496ee9c1732 (código); 811d7b54a1701e5dcb80828ba807c252228f508c (contrato). El HEAD de código/pruebas conserva también los cambios C1.472 anteriores.
+
+===============================================================================
+## CHECKPOINT C1.473 — USER: contrato genérico autenticado de callback de firma
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.472.
+HEAD inicial: 880f6b4c61de2e47de7093f10904df1792cec654.
+HEAD de código/pruebas: deda3ef0e2bff98b79f703fd6971940bce33df59.
+
+### Alcance único
+Implementar un contrato genérico de recepción autenticada para callbacks de proveedores de firma avanzada en USER. No se implementa un PSC real, validación X.509/CRL/OCSP ni transición de estado de firma.
+
+### Cambios
+- handleSignatureProviderCallback_ recibe únicamente sobres SIGNATURE_PROVIDER:<ID> dirigidos a USER y acción signatureStatusCallback.
+- Verifica campos, formato de ID, timestamp de ±5 minutos, correlationId, payload acotado y HMAC-SHA256 con secreto exclusivo de Script Properties: IMA_SIGNATURE_PROVIDER_<ID>_HMAC_SECRET.
+- La firma se comprueba antes de reservar requestId. La reserva anti-replay se serializa con ScriptLock y caché; HMAC inválido no puede bloquear IDs legítimos.
+- doPost separa esta ruta del sobre ACCOUNTING y del flujo RBAC de usuario.
+- Un callback autenticado devuelve SIGNATURE_CALLBACK_AUTHENTICATED_PENDING_VALIDATION; no lee ni escribe TransaccionesFirmaAvanzada, no cambia estado y no declara validez criptográfica.
+- El evento de auditoría registra únicamente proveedor, transacción, requestId y correlationId; no registra secretos ni payload completo.
+
+### Pruebas y evidencia
+- Contratos locales añadidos para: aceptación, replay, HMAC incorrecto, secreto ausente, timestamp vencido, destino incorrecto, campos extra en payload y lock ocupado.
+- Prueba local V8 aislada: 5 comprobaciones PASS; parseo del servicio PASS.
+- CI Department Scope Contract run 42909005349: SUCCESS; USER signature ownership, ACADEMIC, ACCOUNTING, ResourceOwnership ABAC, Apps Script syntax y voucher client PASS. Task-Service security local contracts run 42909005375: SUCCESS.
+- Revisión del diff y HEAD de código/pruebas: deda3ef0e2bff98b79f703fd6971940bce33df59; rama base sin cambios.
+
+### Riesgos y límites
+- Cada proveedor debe configurar un secreto aleatorio de al menos 32 caracteres en Script Properties con el nombre indicado; no se acepta secreto desde cliente.
+- La clave HMAC autentica el origen del mensaje según el secreto compartido, pero no demuestra por sí sola que el documento fue firmado correctamente ni valida certificados.
+- La integración real, formato de eventos del PSC, validación de certificado, revocación, sello de tiempo y transición de estado requieren especificación verificable del proveedor y permanecen pendientes beta.
+
+### Siguiente iteración
+Continuar con la validación criptográfica específica del proveedor únicamente si existe contrato y material de confianza verificable. No simular respuestas PSC. TASK-153 y AUD-NG-386 permanecen abiertos.
+===============================================================================

@@ -3316,3 +3316,17 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - El subalcance del certificado queda implementado; TASK-153 permanece En ejecución y AUD-NG-386 abierto por las rutas restantes.
 - Commits: 836154141d9098882ca1e7046e9b94b6f89c2498 (código) y 0ff23efa8170a502c4044cb03ed4072e91cba196 (contrato); commits intermedios de la misma secuencia: be2978afb55199d4d91f9351a3cd6c39d8266454, 35f91c0a891ca0a1b16536a990e7bf4a9c4f86ae.
 - **Corrección de solo lectura (C1.472-R1):** el endpoint usa `ss.getSheetByName` en vez de `getOrCreateSheet`; una hoja de firmas ausente no se crea ni modifica. Se valida el ownership documental y luego se devuelve `NO_SIGNATURES_FOUND`. Contrato local de hoja ausente PASS; Department Scope run 42908073626 SUCCESS. Commits: 2fa2c4068ebf296a2bc050c914165496ee9c1732; 811d7b54a1701e5dcb80828ba807c252228f508c.
+
+
+### 10.128 TASK-153 / USER — contrato genérico autenticado de callback de proveedor de firma (C1.473)
+
+- USER incorpora una ruta de entrada diferenciada para mensajes cuyo sourceService sigue el contrato SIGNATURE_PROVIDER:<PROVEEDOR_ID>. La ruta se procesa antes del sobre interservicio ACCOUNTING y antes del RBAC de usuario.
+- El contrato exige targetService=USER, action=signatureStatusCallback, requestId acotado, timestamp entero dentro de ±5 minutos, correlationId, firma HMAC-SHA256 y payload limitado a transaccionId, estadoProveedor y referencia de evento opcional.
+- La clave se obtiene exclusivamente de Script Properties con nombre IMA_SIGNATURE_PROVIDER_<PROVEEDOR_ID>_HMAC_SECRET; el identificador del proveedor queda restringido a [A-Z0-9_-]. No se acepta ni persiste secreto enviado por el callback.
+- La firma se verifica antes de reservar requestId en caché. La comprobación y reserva anti-replay quedan serializadas por ScriptLock; un mensaje inválido no puede envenenar el espacio de IDs. Los errores no exponen la clave ni el payload.
+- La recepción autenticada solo devuelve SIGNATURE_CALLBACK_AUTHENTICATED_PENDING_VALIDATION. No lee ni modifica TransaccionesFirmaAvanzada, no cambia su estado y no afirma verificación X.509, CRL/OCSP, identidad ni validez criptográfica. La validación específica del PSC y la transición transaccional permanecen pendientes.
+- Contratos locales: aceptación autenticada, replay, HMAC incorrecto, secreto ausente, timestamp vencido, destino incorrecto, campos extra en payload y lock ocupado. V8 aislado: 5 comprobaciones de comportamiento PASS; parseo JavaScript del servicio PASS.
+- CI: Department Scope Contract run 42909005349 — SUCCESS; USER signature ownership, ACADEMIC, ACCOUNTING, ResourceOwnership ABAC, sintaxis Apps Script y voucher client PASS. Task-Service security local contracts run 42909005375 — SUCCESS.
+- Commit: deda3ef0e2bff98b79f703fd6971940bce33df59 (servicio y contrato).
+- BETA-FUNC-027 cubre la conexión real del proveedor y la validación de sus evidencias; permanece Pendiente beta. No se simula un PSC ni se inventa un protocolo de proveedor real.
+- TASK-153 permanece En ejecución; AUD-NG-386 continúa abierto por validación criptográfica específica y otras superficies pendientes.
