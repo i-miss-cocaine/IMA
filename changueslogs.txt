@@ -933,3 +933,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Task-Service CI run 42874101082 PASS; EXAM CI run 42872609050 PASS (corrección de evidencia C1.442). Pruebas locales en este entorno NOT RUN.
 - DEVELOPER no requiere ABAC departamental como plano de control; su fallback authRole permanece en AUD-NG-082/TASK-645, P0 Pendiente.
 - BETA-FUNC-021 ampliada y pendiente; TASK-153 sigue En ejecución.
+
+
+[2026-11-10] C1.444 — IMA-EXEC-20261110-1815Z-01 — TASK-153 / TASK Service: accesos directos
+- assertTaskServiceStudentCanAccessTask exige ámbito departamental y ResourceOwnership; getTaskServiceSubmissionAccess_ hereda la protección para entregas, comentarios y versiones.
+- getSubmissionDocumentPreviewUrl delega en el guard READ_CONTENT y rechaza vínculos ambiguos archivo-entrega.
+- Contrato sintético añadido y revisión estática de 10 condiciones PASS; ejecución Node local no reportada, sin declaración de PASS dinámico. No hay checks CI visibles para el commit final.
+- Beta/despliegue queda para la fase beta y no bloquea desarrollo. TASK-153 sigue En ejecución.
