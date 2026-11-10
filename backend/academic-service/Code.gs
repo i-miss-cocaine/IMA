@@ -13287,7 +13287,7 @@ function registerStudentEnrollmentInternal_(payload) {
       }
 
       const cargoId = "CRG-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
-      cargosSheet.appendRow([
+      const chargeRow = [
         cargoId,
         now,
         sUserId,
@@ -13296,9 +13296,10 @@ function registerStudentEnrollmentInternal_(payload) {
         descuento,
         montoFinal,
         c.estado || "Pendiente",
-        c.fechaVencimiento || "",
-        _chargeReference || ""
-      ]);
+        c.fechaVencimiento || ""
+      ];
+      if (_chargeReference) chargeRow.push(String(_chargeReference).trim());
+      cargosSheet.appendRow(chargeRow);
       existingCargos.push([cargoId, now, sUserId, concepto, montoBase, descuento, montoFinal,
         c.estado || "Pendiente", c.fechaVencimiento || "", _chargeReference || ""]);
       const insertedCargoRow = cargosSheet.getLastRow();
