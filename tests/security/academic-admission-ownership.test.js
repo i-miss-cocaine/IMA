@@ -449,3 +449,83 @@ console.log("academic admission duplicate resolution ownership and concurrency c
 }
 
 console.log("academic admission duplicate resolution ownership, role and lock contracts: PASS");
+
+// Reopening an admission request is a manager-only, single-shot transition
+// protected by ScriptLock and recorded using the canonical entity-history schema.
+{
+  const historyHeaders=["HistorialID","Fecha","EntidadTipo","EntidadID","Accion","ValorAnteriorJSON","ValorNuevoJSON","UsuarioResponsable","CorrelationID"];
+  function runReopen({lockAvailable=true,role="Director",initialStatus="Rechazada",expedienteId="",badHistorySchema=false}={}) {
+    let held=false,attempts=0,releases=0,requestChecks=0,requestReads=0,historyReads=0,events=[];
+    const requestRows=[["SolicitudID","Fecha","Ano","Grado","Nombres","Apellidos","Identificacion","Nacimiento","Responsable","Telefono","Email","Estado","Canal","Observaciones","ExpedienteID"],
+      ["REQ-REOPEN",new Date(),"2026","1","Ana","Prueba","ID-REOPEN","2015-01-01","Tutor","555","a@example.test",initialStatus,"Web","Nota previa",expedienteId]];
+    const requestSheet={
+      rows:requestRows,
+      getDataRange(){requestReads++;const self=this;return {getValues(){return self.rows.map(row=>row.slice());}};},
+      getRange(row,col,numRows,numCols){const self=this;return {setValues(values){for(let r=0;r<numRows;r++)for(let c=0;c<numCols;c++)self.rows[row-1+r][col-1+c]=values[r][c];}};}
+    };
+    const historyRows=badHistorySchema?[["Wrong","Header"]]:[];
+    const historySheet={
+      rows:historyRows,
+      getLastRow(){return this.rows.length;},
+      getRange(row,col,numRows,numCols){historyReads++;const self=this;return {getValues(){return [self.rows[row-1].slice(col-1,col-1+numCols)];}};},
+      appendRow(row){assert.equal(held,true,"history writes must be inside the reopen lock");this.rows.push(row.slice());}
+    };
+    const ss={};
+    const context={
+      getAcademicAdmissionScopeContext_:(_payload,action,id,operation)=>({
+        authorized:action==="reopenAdmissionRequest"&&id==="REQ-REOPEN"&&operation==="UPDATE",ss,
+        actor:{authorized:true,userId:"MANAGER-VERIFIED",role},
+        scope:{authorized:true,institutionId:"INST-1",departmentIds:["D1"],institutionWide:false}
+      }),
+      assertAcademicAdmissionRequestScopeAccess_:(_ss,_scope,id,_payload,operation)=>{
+        assert.equal(held,true,"request ownership must be revalidated under lock");assert.equal(id,"REQ-REOPEN");assert.equal(operation,"UPDATE");requestChecks++;
+        return {authorized:true,departmentId:"D1"};
+      },
+      LockService:{getScriptLock:()=>({tryLock:()=>{attempts++;if(!lockAvailable)return false;held=true;return true;},releaseLock:()=>{assert.equal(held,true);held=false;releases++;}})},
+      getOrCreateSheet:(_ss,name)=>{assert.equal(held,true,"request and history sheets must not be accessed before lock");return name==="SolicitudesAdmision"?requestSheet:historySheet;},
+      logStructuredEvent:(_service,_fn,_level,code,_message,data,eventRole)=>events.push({code,data,role:eventRole}),
+      Date
+    };
+    vm.runInNewContext("function isAcademicAdmissionManagerRole_(role){return [\"director\",\"administrador\",\"desarrollador\",\"secretaria\"].indexOf(String(role||\"\").toLowerCase())!==-1;}"+extractFunction("reopenAdmissionRequest"),context);
+    return {
+      execute:extra=>context.reopenAdmissionRequest(Object.assign({solicitudId:"REQ-REOPEN",motivoReapertura:"Revisión documental adicional justificada"},extra||{})),
+      state:()=>({held,attempts,releases,requestChecks,requestReads,historyReads,requestRow:requestSheet.rows[1],historyRows:historySheet.rows,events})
+    };
+  }
+  const reopened=runReopen();
+  const result=reopened.execute();
+  assert.equal(result.status,"success");assert.equal(result.nuevoEstado,"Reabierta");assert.equal(result.historyRecorded,true);
+  let state=reopened.state();
+  assert.equal(state.held,false);assert.equal(state.releases,1);assert.equal(state.requestChecks,1);
+  assert.equal(state.requestRow[11],"Reabierta");assert.equal(state.requestRow[12],"Web");
+  assert.equal(state.requestRow[13].includes("Nota previa | [REAPERTURA"),true);
+  assert.deepEqual(state.historyRows[0],historyHeaders);
+  assert.equal(state.historyRows[1][2],"SolicitudAdmision");assert.equal(state.historyRows[1][3],"REQ-REOPEN");
+  assert.equal(state.historyRows[1][7],"MANAGER-VERIFIED");
+  assert.throws(()=>reopened.execute(),/RESOURCE_CONFLICT_ADMISSION_ALREADY_REOPENED/);
+  assert.equal(reopened.state().historyRows.length,2,"repeat reopening must not duplicate history");
+
+  const busy=runReopen({lockAvailable:false});
+  assert.throws(()=>busy.execute(),/Servicio ocupado/);
+  assert.deepEqual({attempts:busy.state().attempts,releases:busy.state().releases,requestReads:busy.state().requestReads,historyReads:busy.state().historyReads},
+    {attempts:1,releases:0,requestReads:0,historyReads:0},"lock contention must fail before reading either sheet");
+
+  const nonManager=runReopen({role:"Evaluador"});
+  assert.throws(()=>nonManager.execute(),/RESOURCE_NOT_FOUND/);
+  assert.deepEqual({attempts:nonManager.state().attempts,requestReads:nonManager.state().requestReads},{attempts:0,requestReads:0});
+
+  const converted=runReopen({initialStatus:"Convertida",expedienteId:"EXP-1"});
+  assert.throws(()=>converted.execute(),/RESOURCE_CONFLICT_ADMISSION_ALREADY_CONVERTED/);
+  assert.equal(converted.state().requestRow[11],"Convertida");
+  const invalidTarget=runReopen();
+  assert.throws(()=>invalidTarget.execute({nuevoEstado:"Convertida"}),/ESTADO_REAPERTURA_INVALIDO/);
+  assert.equal(invalidTarget.state().attempts,0);
+
+  const badHistory=runReopen({badHistorySchema:true});
+  const badResult=badHistory.execute();
+  assert.equal(badResult.status,"success");assert.equal(badResult.historyRecorded,false);
+  assert.equal(badHistory.state().requestRow[11],"Reabierta");
+  assert.equal(badHistory.state().events.some(event=>event.code==="ADMISSION_REOPEN_HISTORY_FAILED"),true);
+}
+
+console.log("academic admission reopening ownership, lock and history contracts: PASS");
