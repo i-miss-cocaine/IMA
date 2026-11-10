@@ -179,6 +179,103 @@ function verifySessionToken(tokenString) {
   }
 }
 
+// [TASK-153 / T153-S05-S06] Identidad, ámbito y propiedad departamental del recurso EXAM.
+var EXAM_RESOURCE_OWNERSHIP_REQUEST_CACHE_ = new WeakMap();
+function getVerifiedExamIdentity_(payload) {
+  const token = payload && (payload.sessionToken || payload.authToken || payload.token);
+  const claims = token ? verifySessionToken(token) : null;
+  if (!claims || !claims.userId || !claims.role) return { authorized: false, code: "VERIFIED_IDENTITY_REQUIRED" };
+  if (payload && typeof payload === "object") {
+    payload._verifiedUserId = String(claims.userId).trim();
+    payload._verifiedRole = String(claims.role).trim();
+  }
+  return { authorized: true, userId: String(claims.userId).trim(), role: String(claims.role).trim() };
+}
+function getVerifiedExamDepartmentScope_(payload, ss, identity) {
+  const actor = identity || getVerifiedExamIdentity_(payload);
+  if (!actor || !actor.authorized) return actor || { authorized: false, code: "VERIFIED_IDENTITY_REQUIRED" };
+  let institutionId = "";
+  try { institutionId = String(PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID") || "").trim(); } catch (_) {}
+  if (!institutionId) return { authorized: false, code: "IDENTITY_CONFIGURATION_REQUIRED" };
+  const sheet = ss && ss.getSheetByName("AsignacionesAmbitosRoles");
+  if (!sheet) return { authorized: false, code: "ROLE_SCOPE_NOT_INITIALIZED" };
+  const data = sheet.getDataRange().getValues();
+  const norm = value => String(value || "").trim().toUpperCase()
+    .replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E").replace(/[ÍÌÏ]/g, "I")
+    .replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N")
+    .replace(/^ROLE[_-]?/, "").replace(/[^A-Z0-9]/g, "");
+  const parseValues = value => {
+    if (Array.isArray(value)) return value.map(v => String(v).trim()).filter(Boolean);
+    const raw = String(value || "").trim();
+    if (!raw) return [];
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed.map(v => String(v).trim()).filter(Boolean);
+      if (parsed !== null && parsed !== undefined) return [String(parsed).trim()].filter(Boolean);
+    } catch (_) {}
+    return raw.split(",").map(v => String(v).trim()).filter(Boolean);
+  };
+  const now = new Date(), scopes = [];
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i] || [];
+    if (String(row[1] || "").trim() !== actor.userId || norm(row[2]) !== norm(actor.role)) continue;
+    if (["ACTIVO", "ACTIVA", "ACTIVE"].indexOf(String(row[5] || "").trim().toUpperCase()) === -1) continue;
+    const start = row[8] ? new Date(row[8]) : null, end = row[9] ? new Date(row[9]) : null;
+    if ((start && isNaN(start.getTime())) || (end && isNaN(end.getTime()))) continue;
+    if (start && start.getTime() > now.getTime()) continue;
+    if (end && end.getTime() < now.getTime()) continue;
+    const scopeType = String(row[3] || "").trim().toUpperCase(), scopeValues = parseValues(row[4]);
+    if (scopeType && scopeValues.length) scopes.push({ assignmentId: String(row[0] || ""), roleId: String(row[2] || ""), scopeType, scopeValues });
+  }
+  if (!scopes.length) return { authorized: false, code: "DEPARTMENT_SCOPE_NOT_ASSIGNED", userId: actor.userId, role: actor.role, institutionId, scopes: [], departmentIds: [], institutionWide: false };
+  const departmentIds = [];
+  let institutionWide = false;
+  scopes.forEach(scope => {
+    if (scope.scopeType === "DEPARTAMENTO") scope.scopeValues.forEach(value => { if (departmentIds.indexOf(value) === -1) departmentIds.push(value); });
+    if (scope.scopeType === "INSTITUCION" && scope.scopeValues.indexOf(institutionId) !== -1) institutionWide = true;
+  });
+  return { authorized: true, userId: actor.userId, role: actor.role, institutionId, scopes, departmentIds, institutionWide };
+}
+function assertExamResourceOwnershipForScope_(ss, scope, resourceType, resourceId, operation, payload) {
+  try {
+    if (!scope || !scope.authorized) return scope || { authorized: false, code: "DEPARTMENT_SCOPE_NOT_ASSIGNED" };
+    const institutionId = String(scope.institutionId || "").trim();
+    const type = String(resourceType || "").trim().toUpperCase(), id = String(resourceId || "").trim();
+    if (!institutionId) return { authorized: false, code: "IDENTITY_CONFIGURATION_REQUIRED" };
+    if (!type || !id) return { authorized: false, code: "RESOURCE_REFERENCE_INVALID" };
+    const sheet = ss && ss.getSheetByName("ResourceOwnership");
+    if (!sheet) return { authorized: false, code: "RESOURCE_OWNERSHIP_NOT_CONFIGURED" };
+    let data = null;
+    if (payload && typeof payload === "object") {
+      try { data = EXAM_RESOURCE_OWNERSHIP_REQUEST_CACHE_.get(payload) || null; } catch (_) {}
+    }
+    if (!data) {
+      data = sheet.getDataRange().getValues();
+      if (payload && typeof payload === "object") {
+        try { EXAM_RESOURCE_OWNERSHIP_REQUEST_CACHE_.set(payload, data); } catch (_) {}
+      }
+    }
+    if (!data || data.length <= 1) return { authorized: false, code: "RESOURCE_OWNERSHIP_NOT_CONFIGURED" };
+    const matches = [];
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i] || [];
+      if (String(row[1] || "").trim() !== institutionId) continue;
+      if (String(row[2] || "").trim().toUpperCase() !== type || String(row[3] || "").trim() !== id) continue;
+      if (String(row[5] || "").trim().toUpperCase() !== "ACTIVE") continue;
+      matches.push(row);
+    }
+    if (!matches.length) return { authorized: false, code: "RESOURCE_OWNERSHIP_UNVERIFIED" };
+    if (matches.length !== 1) return { authorized: false, code: "RESOURCE_OWNERSHIP_AMBIGUOUS" };
+    const departmentId = String(matches[0][4] || "").trim();
+    if (!departmentId) return { authorized: false, code: "RESOURCE_DEPARTMENT_UNRESOLVED" };
+    const inDepartment = (scope.departmentIds || []).some(value => String(value || "").trim() === departmentId);
+    if (!(scope.institutionWide === true || inDepartment)) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+    return { authorized: true, code: "RESOURCE_SCOPE_ALLOWED", userId: scope.userId, role: scope.role, institutionId,
+      departmentId, resourceType: type, resourceId: id, operation: String(operation || "").trim().toUpperCase(),
+      accessType: scope.institutionWide === true ? "INSTITUTION" : "DEPARTMENT" };
+  } catch (_) { return { authorized: false, code: "RESOURCE_OWNERSHIP_CHECK_FAILED" }; }
+}
+
 // [TAREA-01] [TAREA-F4-P0-01] [Fase 4 - Seguridad RBAC y Token Unificado] - Validar y reforzar la seguridad mediante verificación de credencial de sesión HMAC
 // [TAREA-F4-P1-04] [Fase 4: Reglas Contextuales RBAC/ABAC] - Validación de atributos contextuales (Docentes, Tutores, Estudiantes)
 function validateContextualAccess(action, payload, verifiedUserId, userRole) {
@@ -600,35 +697,21 @@ function deleteExam(payload) {
 }
 
 function getAllExams(payload) {
-  const verifiedUserId = String(payload && payload._verifiedUserId || "").trim();
-  const verifiedRole = String(payload && payload._verifiedRole || "").trim();
-  if (!verifiedUserId || !verifiedRole) throw new Error("VERIFIED_IDENTITY_REQUIRED");
-
+  const actor = getVerifiedExamIdentity_(payload);
+  if (!actor.authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const data = getSheetOrThrow(ss, "Examenes")
-    .getDataRange().getValues().slice(1);
-
-  const filtered = data.filter(r => {
-    // El docente solo consulta exámenes cuyo propietario coincide con su identidad firmada.
-    if (verifiedRole === "Profesor") {
-      return String(r[8] || "").trim() === verifiedUserId;
-    }
-    return true;
+  const scope = getVerifiedExamDepartmentScope_(payload, ss, actor);
+  if (!scope.authorized) return { status: "success", data: [] };
+  const data = getSheetOrThrow(ss, "Examenes").getDataRange().getValues().slice(1);
+  const filtered = data.filter(row => {
+    if (actor.role === "Profesor" && String(row[8] || "").trim() !== actor.userId) return false;
+    const access = assertExamResourceOwnershipForScope_(ss, scope, "EXAMEN", row[0], "LIST", payload);
+    return access.authorized === true;
   });
-
-  return {
-    status: "success",
-    data: filtered.map(r => ({
-      examenId: r[0],
-      titulo: r[1],
-      asignatura: r[2],
-      grado: r[3],
-      seccion: r[4],
-      fechaLimite: r[5] ? new Date(r[5]).toISOString() : null,
-      estado: r[7],
-      parcial: r[9] || "Primer Parcial"
-    }))
-  };
+  return { status: "success", data: filtered.map(r => ({
+    examenId: r[0], titulo: r[1], asignatura: r[2], grado: r[3], seccion: r[4],
+    fechaLimite: r[5] ? new Date(r[5]).toISOString() : null, estado: r[7], parcial: r[9] || "Primer Parcial"
+  })) };
 }
 
 function getExamQuestions({ examenId }) {
@@ -1173,54 +1256,36 @@ function getExamResult({ entregaExamenId }) {
 }
 
 function getTeacherExamActivity(payload) {
-  const { profesorId, grado, seccion } = payload || {};
+  const actor = getVerifiedExamIdentity_(payload);
+  if (!actor.authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const usuariosSheet = getSheetOrThrow(ss, "Usuarios");
-  const examenesSheet = getSheetOrThrow(ss, "Examenes");
-  const entregasSheet = getSheetOrThrow(ss, "EntregasExamen");
-
-  const usuariosData = usuariosSheet.getDataRange().getValues();
-  const examenesData = examenesSheet.getDataRange().getValues();
-  const entregasValues = entregasSheet.getDataRange().getValues();
-
+  const scope = getVerifiedExamDepartmentScope_(payload, ss, actor);
+  if (!scope.authorized) return { status: "success", data: [] };
+  const usuariosData = getSheetOrThrow(ss, "Usuarios").getDataRange().getValues();
+  const examenesData = getSheetOrThrow(ss, "Examenes").getDataRange().getValues();
+  const entregasValues = getSheetOrThrow(ss, "EntregasExamen").getDataRange().getValues();
   const submissions = entregasValues.slice(1).map(entrega => {
-    // Uso de == para ser resiliente a tipos (string vs number)
-    const examen = examenesData.find(t => t[0] == entrega[1]);
-
-    // SI EL EXAMEN NO EXISTE O NO PERTENECE AL PROFESOR -> DESCARTAR
+    const examen = examenesData.find(row => String(row[0]) === String(entrega[1]));
     if (!examen) return null;
-    if (profesorId && examen[8] && examen[8] != profesorId) return null;
-
-    const usuario = usuariosData.find(u => u[0] == entrega[2]);
-
-    // Filtro por Grado y Sección del Profesor
+    if (actor.role === "Profesor" && String(examen[8] || "").trim() !== actor.userId) return null;
+    const ownership = assertExamResourceOwnershipForScope_(ss, scope, "EXAMEN", examen[0], "READ_SUBMISSIONS", payload);
+    if (!ownership.authorized) return null;
+    const usuario = usuariosData.find(row => String(row[0]) === String(entrega[2]));
     if (usuario) {
-      if (grado && !isInTeacherList(usuario[2], grado)) return null;
-      if (seccion && !isInTeacherList(usuario[3], seccion)) return null;
+      if (payload && payload.grado && !isInTeacherList(usuario[2], payload.grado)) return null;
+      if (payload && payload.seccion && !isInTeacherList(usuario[3], payload.seccion)) return null;
     }
-
     return {
-      tipo: 'Examen',
-      entregaId: entrega[0],
-      examenId: entrega[1],
-      titulo: examen[1], // Examen ya verificado arriba
-      alumnoId: entrega[2], // Columna C: userId
-      alumnoNombre: usuario ? usuario[1] : "Usuario Desconocido",
-      email: usuario ? usuario[4] : "N/A",
-      grado: usuario ? usuario[2] : "N/A",
-      seccion: usuario ? usuario[3] : "N/A",
-      asignatura: examen[2] || "N/A",
-      parcial: examen[9] || "Primer Parcial",
-      fecha: new Date(entrega[3]),
-      calificacion: entrega[5],
-      estado: entrega[6],
-      comentario: entrega[7] || ""
+      tipo: "Examen", entregaId: entrega[0], examenId: entrega[1], titulo: examen[1],
+      alumnoId: entrega[2], alumnoNombre: usuario ? usuario[1] : "Usuario Desconocido",
+      email: usuario ? usuario[4] : "N/A", grado: usuario ? usuario[2] : "N/A",
+      seccion: usuario ? usuario[3] : "N/A", asignatura: examen[2] || "N/A",
+      parcial: examen[9] || "Primer Parcial", fecha: new Date(entrega[3]),
+      calificacion: entrega[5], estado: entrega[6], comentario: entrega[7] || ""
     };
-  }).filter(item => item !== null);
-
+  }).filter(Boolean);
   submissions.sort((a, b) => b.fecha - a.fecha);
-  const formattedActivity = submissions.map(item => ({ ...item, fecha: item.fecha.toISOString() }));
-  return { status: "success", data: formattedActivity };
+  return { status: "success", data: submissions.map(item => ({ ...item, fecha: item.fecha.toISOString() })) };
 }
 
 function isInTeacherList(value, listString) {
