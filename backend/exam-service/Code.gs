@@ -1414,46 +1414,6 @@ function isInTeacherList(value, listString) {
   return list.includes(sValue);
 }
 
-function gradeExamSubmission(payload) {
-  const { entregaId, calificacion, estado, comentario, temaAsociado, asignaturaAsociada } = payload;
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const entregasSheet = getSheetOrThrow(ss, "EntregasExamen");
-
-  const data = entregasSheet.getDataRange().getValues();
-  const rowIndex = data.findIndex(row => row[0] === entregaId);
-
-  if (rowIndex !== -1) {
-    const rowData = data[rowIndex];
-
-    // Asegurar que la fila tenga al menos 10 columnas para soportar metadatos (v7.7.5)
-    // 0:entregaId, 1:examenId, 2:userId, 3:fecha, 4:respuestas, 5:nota, 6:estado, 7:comentario, 8:tema, 9:asignatura
-    while(rowData.length < 10) { rowData.push(""); }
-
-    rowData[5] = calificacion; // Columna F: Nota
-    rowData[6] = estado;       // Columna G: Estado
-    rowData[7] = comentario;   // Columna H: Comentario
-    rowData[8] = temaAsociado || "";
-    rowData[9] = asignaturaAsociada || "";
-
-    entregasSheet.getRange(rowIndex + 1, 1, 1, rowData.length).setValues([rowData]);
-    return { status: "success", message: "Examen calificado." };
-  }
-  throw new Error("Entrega de examen no encontrada.");
-}
-
-function deleteExamSubmission(payload) {
-  const { entregaId } = payload;
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const entregasSheet = getSheetOrThrow(ss, "EntregasExamen");
-  const data = entregasSheet.getDataRange().getValues();
-  const rowIndex = data.findIndex(row => row[0] === entregaId);
-
-  if (rowIndex === -1) throw new Error("Entrega no encontrada.");
-
-  entregasSheet.deleteRow(rowIndex + 1);
-  return { status: "success", message: "Entrega de examen eliminada correctamente." };
-}
-
 // --- FUNCIONES EVALUACIÓN ACADÉMICA Y LIBRO DE CALIFICACIONES (FASE 6) ---
 
 function getEvaluationCategories(payload) {
