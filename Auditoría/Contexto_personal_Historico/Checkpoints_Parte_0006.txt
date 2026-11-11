@@ -1650,5 +1650,5 @@ Commit de implementación: 7cea38a5761a4272e2c85e536f34a4db97dc429f (fix(exam): 
 ### Estado y continuidad
 C1.554 completa la corrección y cobertura local de submitExam. TASK-153 / AUD-NG-386 continúa En ejecución; siguiente iteración: seleccionar una sola mutación EXAM restante, sin repetir C1.553/C1.554.
 
-Commit de implementación: 5a8da19637a2b3f02025784d001759fd0db683b2 (`fix(exam): revalidate submitExam authorization under lock`). Commit documental de cierre: a0075ede61606ffc62c04a27f2df64d0a2b5da72. HEAD final de `NG_beta_0.0.0.1_work` verificado: a0075ede61606ffc62c04a27f2df64d0a2b5da72. Rama base sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+Commit de implementación: 5a8da19637a2b3f02025784d001759fd0db683b2 (`fix(exam): revalidate submitExam authorization under lock`). Commit documental de cierre: a0075ede61606ffc62c04a27f2df64d0a2b5da72. HEAD de la rama de trabajo verificado tras el primer cierre documental: a0075ede61606ffc62c04a27f2df64d0a2b5da72; el cierre posterior de trazabilidad se publicó en 990b51db3851a799d78c9ac9e160a5db75d6bf35. Rama base sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
 ===============================================================================
