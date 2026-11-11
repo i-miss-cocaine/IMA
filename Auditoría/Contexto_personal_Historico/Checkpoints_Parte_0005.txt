@@ -1550,16 +1550,18 @@ Auditar y asegurar exclusivamente getRubrics dentro de TASK-153 / AUD-NG-386.
 
 ### Verificación local
 - Parseo V8 del backend: PASS.
-- Suite dedicada mediante shim V8 aislado: PASS (16 escenarios).
+- Suite dedicada mediante shim V8 aislado: PASS (17 escenarios).
 - Regresión C1.493 evaluation categories: PASS (12 escenarios).
 - Regresión C1.492 student academic report: PASS (27 escenarios).
+- Regresión exam-service-read-endpoints-security: PASS.
+- Regresión exam-service-security-contract: PASS.
 - Cobertura: identidad/RBAC/rol/scope, timeout y concurrencia, hoja ausente/vacía sin creación, esquema, filtro por asignatura, eliminadas, IDs duplicados, JSON inválido, allowlist pública y ausencia de escrituras.
 - Node nativo: NOT RUN. CI: NOT RUN. Apps Script/Sheets real: NOT RUN.
 - BETA-EXAM-048: Pendiente beta; no bloquea cierre local.
 
 ### Commits de la iteración
 - Implementación: bd64bf3bb3acc2e348392baba06089a2f6ab6c4b.
-- Suite local: 0fdd92905f990a1a7d9a44abd0596e0048e71b2e.
+- Suite local: 0fdd92905f990a1a7d9a44abd0596e0048e71b2e; cobertura RBAC heredado: afa05d589c5c3f8d686d640e0dd0befbb52ed620.
 - Auditoria.txt: 92ef20ea3c9145f114ca28f3f29584d6fc81e773.
 - Changelog: fafd896d913e0c028a39a9d73ee197872b09a0fa.
 - Beta: 33e710f3f7468db56c00cef5237b0048ee50ad06.
