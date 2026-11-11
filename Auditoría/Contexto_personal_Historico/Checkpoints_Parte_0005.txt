@@ -1257,3 +1257,12 @@ Asegurar exclusivamente la lectura getGradebookData del servicio EXAM.
 - Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios).
 
 ===============================================================================
+
+===============================================================================
+### Addendum C1.488-R1 — publicación y verificación
+- Commit de implementación/código/pruebas/registros: 4d60c97b8d13a0e16f5500c94bc1acde41ac11f9.
+- Commit del checkpoint C1.488 y su índice: 6adcce8eefcec26befd2f36f9dc8d1142a850196.
+- HEAD verificado tras publicar el checkpoint: 6adcce8eefcec26befd2f36f9dc8d1142a850196.
+- Actualización fast-forward compare-and-swap en NG_beta_0.0.0.1_work; sin force.
+- NG_beta_0.0.0.1 permanece intacta: 44d9891132332e692dbe2ba8602b41f50a508a59.
+===============================================================================
