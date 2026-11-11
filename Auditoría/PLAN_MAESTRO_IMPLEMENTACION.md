@@ -3531,3 +3531,15 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Verificación:** GitHub Actions run 42946376368 (Node 22.23.4): suite específica PASS, 17/17; exam-service-security-contract PASS. Workflow global FAIL en exam-service-departmental-access por `ReferenceError: withAuthorizedExamRead_ is not defined` (getAllExams); la misma falla aparece en run previo 42941521575, anterior a esta corrección. Suites posteriores skipped. Sin checkout local disponible; Apps Script/Sheets real y beta no ejecutados.
 - **Estado:** subtarea de harness completada; TASK-153 continúa En ejecución y AUD-NG-386 abierto.
 - **Siguiente:** auditar individualmente `saveCompetencyEvaluation` en una iteración independiente, verificando requisito, consumidores, RBAC, identidad, scope, ownership, lock y persistencia antes de modificar.
+
+
+### 10.149 TASK-153 / AUD-NG-386 — autorización y ámbito de saveCompetencyEvaluation (C1.497)
+
+- **Hallazgo:** saveCompetencyEvaluation escribía EvaluacionesCompetencias directamente con userId/asignatura/periodo del cliente; sin RBAC, identidad, scope, rol, perfil único, asignación docente, validación de rúbrica ni lock.
+- **Corrección:** wrapper con ScriptLock, RBAC e identidad firmada; allowlist explícita de Profesor y roles institucionales. El estudiante debe tener perfil único Estudiante/Alumno. Profesor demuestra asignación exacta en ConfiguracionAcademica para el grado/sección, asignatura y periodo; conflictos/ausencias se deniegan. Roles institucionales requieren scope institutionWide. Si hay rubricaId, se valida existencia única, estado, compatibilidad de asignatura y ownership activo por institución/departamento cuando aplica. Esquema validado y hoja inicializada solo después de autorización.
+- **Compatibilidad:** se conserva el esquema y respuesta histórica; defaults de indicador y campos opcionales permanecen. Rúbricas sin ownership siguen compartidas como legado; no se inventa atribución de propiedad.
+- **Pruebas locales:** parseo V8 PASS; mutación 21/21 PASS; lectura getCompetencyEvaluations 17/17 PASS; mutación de categorías 17/17 PASS. Node nativo local no disponible; harness V8 aislado ejecutado.
+- **CI:** run 42949284319 (Node 22.23.4): saveRubric 17/17 PASS, saveCompetencyEvaluation 21/21 PASS, security-contract PASS. Workflow global FAIL por ReferenceError: withAuthorizedExamRead_ is not defined en exam-service-departmental-access.test.js; falla preexistente también presente en runs 42941521575 y 42946376368. read-endpoints suite skipped por fail-fast.
+- **Beta:** BETA-EXAM-050 Pendiente beta; Apps Script/Sheets real no ejecutado.
+- **Estado:** subalcance de seguridad completado; TASK-153 continúa En ejecución y AUD-NG-386 abierto.
+- **Siguiente:** auditar individualmente saveStudentRecovery, incluyendo autorización y persistencia.

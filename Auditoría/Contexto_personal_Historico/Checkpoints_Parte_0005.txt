@@ -1670,3 +1670,59 @@ Reparar exclusivamente los defectos del harness `tests/security/exam-service-sav
 - Siguiente operación EXAM elegible para una iteración independiente: auditar y asegurar `saveCompetencyEvaluation`, que actualmente recibe userId del payload y escribe en EvaluacionesCompetencias sin el wrapper de autorización usado por las operaciones protegidas. Confirmar su requisito/consumidores antes de modificarla.
 - Rama base permanece sin cambios en 44d9891132332e692dbe2ba8602b41f50a508a59.
 ===============================================================================
+
+
+===============================================================================
+CHECKPOINT C1.497 — Protección de saveCompetencyEvaluation
+Sesión: IMA-EXEC-20261110-1825Z-02.
+Fecha: 2026-11-11 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.496.
+HEAD inicial: 1e400fb76503d972c652eb55895854ab7f63c72a.
+Commit de implementación: 22c54cc420aa2baff8d528a743b62dee68dae5ac.
+Commit de ajuste de prueba: 166e36af012143f1f935b266458d79f78a685ffc.
+Rama base: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+### Requisito y hallazgo
+TASK-153 / AUD-NG-386: auditoría individual de la escritura saveCompetencyEvaluation, parte de F9-TASK12.
+La función original recibía userId, competencia, asignatura, periodo, nivel y rúbrica del payload y escribía directamente en EvaluacionesCompetencias. No verificaba RBAC, identidad firmada, scope, rol, estudiante único, asignación docente, rúbrica, esquema ni concurrencia.
+
+Revisión de consumidores: no se encontró llamada directa en js/exam.js, js/teacher.js ni exam.html; el endpoint permanece expuesto por el dispatcher doPost. No se amplió la UI ni se cambió el contrato público de respuesta.
+
+### Implementación
+- saveCompetencyEvaluation delega en wrapper con ScriptLock compartido y timeout cerrado; RBAC e identidad se revalidan dentro del lock y el lock se libera en finally.
+- Allowlist explícita: Profesor y roles institucionales Administrador, Desarrollador, Dirección, Director y Secretaría. Estudiantes, alumnos, tutores y roles desconocidos no pueden escribir aunque la matriz dinámica concediera permiso.
+- Requiere identidad verificada y scope institucional con institución configurada.
+- El estudiante destino debe corresponder a un único perfil de Usuarios y tener rol Estudiante/Alumno; perfiles ausentes, duplicados o de otro rol se deniegan.
+- Profesor debe aportar asignatura y periodo; se comprueba grado/sección del estudiante contra ConfiguracionAcademica y se exige asignación docente coincidente. Asignación ausente o conflictiva se deniega.
+- Los roles institucionales requieren scope institutionWide.
+- Si se aporta rubricaId, se exige rúbrica existente y única, no eliminada, asignatura compatible y, cuando tiene ownership, ownership único activo en la institución/departamento del actor. Rúbricas legadas sin ownership siguen admitidas conforme al catálogo compartido anterior.
+- Se valida esquema de diez columnas; la hoja solo se crea/inicializa después de autorización. ID de evaluación usa Utilities.getUuid y se comprueba colisión.
+- Se preservan campos de respuesta y defaults históricos para indicador/rúbrica/asignatura/periodo cuando el actor institucional usa el flujo legado.
+
+### Archivos modificados
+1. backend/exam-service/Code.gs.
+2. tests/security/exam-service-competency-evaluation-mutation-security.test.js (21 escenarios).
+3. .github/workflows/exam-service-security-contract.yml.
+4. Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt (este checkpoint).
+5. Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md (seguimiento 10.149).
+6. changueslogs.txt (entrada C1.497).
+7. beta_test.txt (BETA-EXAM-050).
+8. Auditoría/INDICE_CHECKPOINTS.md (fila C1.497 y estado actual; commit de índice posterior).
+
+### Verificación
+- Parseo V8 de Code.gs y del test dedicado: PASS.
+- Harness V8 aislado del agente con mocks: saveCompetencyEvaluation 21/21 PASS; getCompetencyEvaluations 17/17 PASS; saveEvaluationCategory mutation 17/17 PASS.
+- GitHub Actions run 42949284319, Node.js 22.23.4: saveRubric 17/17 PASS; saveCompetencyEvaluation 21/21 PASS; exam-service-security-contract PASS.
+- Workflow completo FAIL en exam-service-departmental-access.test.js: ReferenceError: withAuthorizedExamRead_ is not defined. La misma falla consta en runs anteriores 42941521575 y 42946376368, por lo que es una dependencia preexistente fuera del alcance. read-endpoints-security quedó skipped por fail-fast; su regresión directa de competencias se ejecutó localmente 17/17 PASS.
+- No se ejecutó Apps Script/Sheets real ni pruebas desplegadas. No hay checkout local Node nativo conectado al repositorio; la prueba de unidad aislada se ejecutó en V8 del agente y también en Node 22 CI.
+- Revisión del diff: solo Code.gs, nuevo test y workflow; sin cambios en la rama base ni en otros servicios.
+
+### Estado y continuidad
+- Subalcance de seguridad saveCompetencyEvaluation: completado con pruebas locales aisladas y CI dedicado.
+- TASK-153 permanece En ejecución; AUD-NG-386 continúa abierto por otras operaciones EXAM.
+- BETA-EXAM-050 queda Pendiente beta para verificar roles, scopes, asignación docente, ownership de rúbrica, timeout y persistencia real en Apps Script/Sheets.
+- Siguiente operación elegible: auditar saveStudentRecovery y sus efectos de escritura, identidad, RBAC, scope, asignación y persistencia en una iteración separada.
+- Rama base permanece sin cambios en 44d9891132332e692dbe2ba8602b41f50a508a59.
+===============================================================================

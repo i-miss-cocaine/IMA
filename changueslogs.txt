@@ -1301,3 +1301,14 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - El workflow general quedó FAIL por ReferenceError: withAuthorizedExamRead_ is not defined en exam-service-departmental-access.test.js; el mismo fallo ya estaba presente en run 42941521575, anterior a este cambio. No se alteró ese contrato en esta iteración.
 - TASK-153 permanece En ejecución; siguiente operación candidata: saveCompetencyEvaluation.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] C1.497 — IMA-EXEC-20261110-1825Z-02 — Protección de saveCompetencyEvaluation
+- La escritura quedó protegida por RBAC, identidad firmada, scope institucional y ScriptLock.
+- Profesor debe demostrar asignación exacta del estudiante por grado/sección/asignatura/periodo; roles institucionales requieren scope institutionWide; roles no permitidos se deniegan.
+- Se valida perfil de estudiante único, esquema, rúbrica existente/compatible y ownership activo cuando existe; la hoja solo se inicializa tras autorización.
+- Pruebas V8 aisladas: mutación 21/21, lectura de competencias 17/17 y mutación de categorías 17/17 PASS.
+- Actions run 42949284319: saveRubric 17/17, saveCompetencyEvaluation 21/21 y security-contract PASS; suite global FAIL por ReferenceError preexistente withAuthorizedExamRead_ en departmental-access (también presente en runs anteriores). BETA-EXAM-050 Pendiente beta.
+- TASK-153 continúa En ejecución; siguiente operación: saveStudentRecovery.
+===============================================================================

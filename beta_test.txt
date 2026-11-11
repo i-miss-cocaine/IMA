@@ -561,3 +561,15 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta. Mutación local aislada 17 escenarios PASS; lectura local 17 escenarios PASS; read-endpoints/security-contract PASS. Node nativo/CI y Apps Script/Sheets real NOT RUN.
 - **Evidencia requerida:** commit/build desplegado, matriz RBAC/scope, tokens sintéticos, snapshots de CategoriasEvaluacion y ResourceOwnership antes/después, casos de acceso cruzado y evidencia de rollback.
 ===============================================================================
+
+
+===============================================================================
+## BETA-EXAM-050 — TASK-153 / AUD-NG-386 / EXAM: saveCompetencyEvaluation
+- **Módulo/acción:** EXAM — saveCompetencyEvaluation; registro cualitativo por competencia e indicador.
+- **Objetivo:** validar en Apps Script/Sheets desplegado que la escritura requiere RBAC, identidad firmada, scope institucional y asignación académica comprobada, y que las rúbricas se vinculan solo cuando son compatibles y visibles dentro del ámbito autorizado.
+- **Precondiciones:** entorno beta aislado; cuentas sintéticas Profesor, Administrador, Desarrollador, Dirección, Director y Secretaría con sesiones/scopes; estudiantes Estudiante/Alumno con perfiles únicos y duplicados; asignaciones docentes válidas, ausentes y conflictivas; rúbricas compartidas legadas, propias, de otro departamento/institución, inactivas y duplicadas; hojas con esquemas válidos/inválidos.
+- **Pasos:** probar sesión ausente/expirada, RBAC denegado, roles de estudiante/tutor/desconocido, scope ausente y scope institucional no amplio; intentar suplantar userId; comprobar asignación exacta por grado/sección/asignatura/periodo y conflicto de profesores; probar rúbrica inexistente, duplicada, eliminada, incompatible y ownership ajeno; provocar timeout y solicitudes concurrentes; probar hoja EvaluacionesCompetencias ausente, vacía y con esquema incorrecto; capturar snapshots antes/después.
+- **Resultado esperado:** solo el profesor asignado o rol institucional con scope amplio puede registrar; target siempre es un estudiante único; ninguna escritura ocurre ante denegación; rúbrica solo se vincula si existe y es compatible/en ámbito; el esquema y los campos cualitativos se preservan; el lock se libera en éxito/error.
+- **Estado:** Pendiente beta. Harness V8 local aislado 21 escenarios PASS; GitHub Actions Node 22 21/21 PASS; Apps Script/Sheets real NOT RUN.
+- **Evidencia requerida:** commit/build desplegado, matriz de RBAC/scopes, tokens sintéticos, asignaciones de prueba, rúbricas/ownership, respuestas saneadas y snapshots de EvaluacionesCompetencias/ResourceOwnership antes/después.
+===============================================================================
