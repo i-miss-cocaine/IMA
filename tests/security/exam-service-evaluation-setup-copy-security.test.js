@@ -161,7 +161,7 @@ test(() => {
   const ownershipBefore = x.sheets.ResourceOwnership.rows.map(row => row.slice());
   assert.throws(() => x.call(), /RESOURCE_NOT_AVAILABLE/);
   assert.equal(x.identityCalls(), 2, "signed identity must be revalidated after lock acquisition");
-  assert.deepEqual(x.stats.events, ["rbac", "identity", "getScriptLock", "rbac", "identity", "releaseLock"]);
+  assert.deepEqual(x.stats.events, ["rbac", "identity", "getScriptLock", "tryLock", "rbac", "identity", "releaseLock"]);
   assert.deepEqual([x.stats.acquired, x.stats.released, x.stats.held, x.stats.opens], [1, 1, false, 0]);
   assert.deepEqual(x.sheets.CategoriasEvaluacion.rows, categoriesBefore, "categories must remain unchanged");
   assert.deepEqual(x.sheets.ResourceOwnership.rows, ownershipBefore, "ownership must remain unchanged");
