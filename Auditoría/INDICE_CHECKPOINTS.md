@@ -9,7 +9,7 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 - Última sesión: `IMA-EXEC-20261110-1825Z-02`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.568: **137529**
+- Caracteres del archivo activo tras C1.568: **138595**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 - Baseline lógico válido: **C1.316** (`31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`). C1.317–C1.382 se conservan, pero no se aceptan como evidencia de continuidad por corrección expresa del usuario.
@@ -487,4 +487,4 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.567 | IMA-EXEC-20261110-1825Z-02 | bulkApplyGradebookGrades: usuario confirma PASS (30/30); RBAC concedido→revocado bajo ScriptLock rechazado, lock liberado, cero aperturas de Sheets y calificaciones intactas | PM-01 — TASK-153 / EXAM / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt — C1.567 | sección final | C1.566 | versión Node no informada; CI y Apps Script/Sheets NOT RUN; BETA-EXAM-054 Pendiente beta; cobertura local completada |
 
 
-| C1.568 | IMA-EXEC-20261110-1825Z-02 | reviewPeriodGradebook: fixture RBAC secuencial y escenario concedido→revocado bajo ScriptLock añadido; parseo PASS; suite 29 escenarios pendiente ejecución local; lock liberado, cero aperturas y fila intacta verificados por escenario | PM-01 — TASK-153 / EXAM / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt — C1.568 | sección final | C1.567 | backend sin cambios; Node suite NOT RUN; CI y Apps Script/Sheets NOT RUN; BETA-EXAM-053 Pendiente beta; tarea En ejecución |
+| C1.568 | IMA-EXEC-20261110-1825Z-02 | reviewPeriodGradebook: revocación RBAC concedido→revocado bajo ScriptLock añadida; CI paso específico PASS 29/29; workflow global FAIL por ReferenceError preexistente en security-contract; suite local pendiente | PM-01 — TASK-153 / EXAM / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt — C1.568 | sección final | C1.567 | 49996c4e3a213308f473ff9924ad94f78f1e169c |

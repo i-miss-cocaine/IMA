@@ -1895,7 +1895,7 @@ HEAD inicial: 9d2945bd82fb7f99b6036f466563443a668a50bb. Rama: NG_beta_0.0.0.1_wo
 - CI y Apps Script/Sheets real: NOT RUN.
 - C1.566 En ejecución hasta confirmar la suite local. TASK-153 / AUD-NG-386 continúa En ejecución.
 
-HEAD inicial: 03a10e12fa2b915bf1b2b476cbf85eade74a6baa. Rama: NG_beta_0.0.0.1_work. Rama base esperada sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59. HEAD final: se confirma tras publicar.
+HEAD inicial: 03a10e12fa2b915bf1b2b476cbf85eade74a6baa. Rama: NG_beta_0.0.0.1_work. Rama base esperada sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59. Commit de implementación/checkpoint: 49996c4e3a213308f473ff9924ad94f78f1e169c.
 ===============================================================================
 
 ===============================================================================
@@ -1927,8 +1927,15 @@ HEAD inicial: bcb218eff043f04860c06e476e236c4cef31b945. Rama: NG_beta_0.0.0.1_wo
 ### Verificación / estado
 - Parseo sintáctico del test modificado: PASS.
 - Suite Node focalizada: NOT RUN en esta iteración; 29 escenarios internos previstos. Pendiente ejecución local.
-- CI y Apps Script/Sheets real: NOT RUN. BETA-EXAM-053 permanece Pendiente beta e incorpora la revocación RBAC.
+- CI run 43102931371: el paso específico reviewPeriodGradebook PASS (29/29). El workflow global FAIL posteriormente en security-contract por ReferenceError: withAuthorizedExamCreation_ is not defined; el mismo fallo aparece en run 43101929348 del commit anterior bcb218eff043f04860c06e476e236c4cef31b945, por lo que no lo introduce C1.568. Apps Script/Sheets real: NOT RUN. BETA-EXAM-053 permanece Pendiente beta.
 - TASK-153 / AUD-NG-386 continúa En ejecución hasta completar la verificación local pertinente.
 
 HEAD inicial: a23caa4b70894a334ccf0ae408b963ed075823ca. Rama: NG_beta_0.0.0.1_work. Rama base sin cambios esperada: 44d9891132332e692dbe2ba8602b41f50a508a59. HEAD final: se confirma tras publicar.
 ===============================================================================
+
+
+### Addendum de verificación C1.568
+- GitHub Actions run 43102931371 (Node.js 22.23.4): paso `Run period gradebook review security regression` completado SUCCESS con `PASS (29/29)`.
+- El workflow completo concluyó FAILURE después, en `exam-service-security-contract.test.js:449`: esperaba RESOURCE_NOT_AVAILABLE, pero recibió ReferenceError `withAuthorizedExamCreation_ is not defined`.
+- El mismo fallo y la misma referencia aparecen en run 43101929348, asociado al commit anterior bcb218eff043f04860c06e476e236c4cef31b945; evidencia de que es una falla preexistente y no una regresión de C1.568.
+- La suite Node debe ejecutarse también en el entorno local de desarrollo conforme NDASC 1.4. No se declara completada aún.

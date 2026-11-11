@@ -1933,3 +1933,10 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Cambio:** secuencia RBAC [true, false] en el fixture y escenario del handler real; exige RESOURCE_NOT_AVAILABLE, lock liberado, cero aperturas de Sheets y CierresPeriodos intacto.
 - **Verificación:** parseo sintáctico PASS; suite Node actual 29 escenarios NOT RUN, pendiente ejecución local. CI y Apps Script/Sheets real NOT RUN.
 - **Alcance:** solo prueba; sin cambios productivos. BETA-EXAM-053 actualizado y Pendiente beta.
+
+
+### Addendum C1.568 — resultado CI
+- Workflow 43102931371: suite específica reviewPeriodGradebook PASS (29/29) en Node.js 22.23.4.
+- Workflow global FAIL después en exam-service-security-contract.test.js:449 por ReferenceError withAuthorizedExamCreation_ is not defined.
+- Run previo 43101929348, sobre bcb218eff043f04860c06e476e236c4cef31b945, presenta el mismo fallo; se clasifica como preexistente y no causado por C1.568.
+- Ejecución Node en entorno local del desarrollador aún pendiente; BETA-EXAM-053 sigue Pendiente beta.
