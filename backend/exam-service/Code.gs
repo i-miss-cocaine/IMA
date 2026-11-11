@@ -89,7 +89,7 @@ const ROLE_PERMISSIONS = {
     "createExam", "updateExam", "updateExamStatus", "deleteExam", "gradeExamSubmission", "deleteExamSubmission",
     "getAllExams", "getTeacherExamActivity", "getExamQuestions", "getStudentExams", "getExamResult",
     "getGradebookData", "saveGradebookGrades", "bulkApplyGradebookGrades", "copyEvaluationSetupBetweenGroups", "getEvaluationCategories", "saveEvaluationCategory",
-    "getRubrics", "saveRubric", "saveCompetencyEvaluation", "getCompetencyEvaluations", "saveStudentRecovery", "closePeriodGradebook", "reopenPeriodGradebook", "submitGradebookForReview", "reviewPeriodGradebook", "rectifyStudentGrade", "getGradeRectificationHistory", "getStudentAcademicReport",
+    "getRubrics", "saveRubric", "saveCompetencyEvaluation", "getCompetencyEvaluations", "saveStudentRecovery", "closePeriodGradebook", "reopenPeriodGradebook", "submitGradebookForReview", "reviewPeriodGradebook", "rectifyStudentGrade", "getStudentAcademicReport",
     "manageQuestionBank", "getQuestionBank", "checkExamSchedulingConflict", "simulateExamReschedule",
     "getExamGradeDistributionAnalytics"
   ],
@@ -2549,29 +2549,88 @@ function rectifyStudentGrade(payload) {
 }
 
 function getGradeRectificationHistory(payload) {
-  const { userId, evaluacionId } = payload || {};
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "HistorialRectificacionesNotas");
-  const data = sheet.getDataRange().getValues();
+  return withAuthorizedExamRead_("getGradeRectificationHistory", payload,
+    context => getGradeRectificationHistoryUnlocked_(payload, context));
+}
 
+function getGradeRectificationHistoryUnlocked_(payload, context) {
+  const p = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
+  const actor = context && context.actor;
+  const ss = context && context.ss;
+  const scope = context && context.scope;
+  if (!actor || !String(actor.userId || "").trim() || !ss || !scope || scope.authorized !== true) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
+
+  const role = String(actor.role || "").trim();
+  const studentRoles = ["Estudiante", "Alumno"];
+  const guardianRoles = ["Tutor", "Padre", "Responsable"];
+  const institutionRoles = ["Administrador", "Desarrollador", "Dirección", "Director", "Secretaría"];
+  let targetUserId = "";
+
+  if (studentRoles.indexOf(role) !== -1) {
+    targetUserId = String(actor.userId).trim();
+    if (p.userId && String(p.userId).trim() !== targetUserId) throw new Error("RESOURCE_NOT_AVAILABLE");
+    const profile = getExamStudentProfile_(ss, targetUserId);
+    if (!profile || studentRoles.indexOf(String(profile.role || "").trim()) === -1) {
+      throw new Error("RESOURCE_NOT_AVAILABLE");
+    }
+  } else if (guardianRoles.indexOf(role) !== -1) {
+    targetUserId = String(context.profile && context.profile.userId || "").trim();
+    if (!context.guardianActor || !targetUserId ||
+        (p.userId && String(p.userId).trim() !== targetUserId)) throw new Error("RESOURCE_NOT_AVAILABLE");
+  } else if (institutionRoles.indexOf(role) !== -1) {
+    if (scope.institutionWide !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+    targetUserId = String(p.userId || "").trim();
+    if (!targetUserId) throw new Error("RESOURCE_NOT_AVAILABLE");
+    const profile = getExamStudentProfile_(ss, targetUserId);
+    if (!profile || studentRoles.indexOf(String(profile.role || "").trim()) === -1) {
+      throw new Error("RESOURCE_NOT_AVAILABLE");
+    }
+  } else {
+    // La consulta docente de información académica debe pasar por getGradebookData,
+    // que valida asignación y roster; esta ruta no admite consultas directas.
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
+
+  const sheet = ss.getSheetByName("HistorialRectificacionesNotas");
+  if (!sheet) return { status: "success", data: [] };
+  const data = sheet.getDataRange().getValues();
+  if (!data.length) return { status: "success", data: [] };
+  const expectedHeaders = ["RectificacionID", "EvaluacionID", "UserID", "Accion",
+    "NotaAnterior", "NotaNueva", "Motivo", "AutorizadoPor", "Fecha"];
+  if (expectedHeaders.some((header, index) => String(data[0][index] || "").trim() !== header)) {
+    throw new Error("GRADE_RECTIFICATION_HISTORY_SCHEMA_INVALID");
+  }
   if (data.length <= 1) return { status: "success", data: [] };
 
-  const history = data.slice(1).filter(r => {
-    if (userId && String(r[2]).trim() !== String(userId).trim()) return false;
-    if (evaluacionId && String(r[1]).trim() !== String(evaluacionId).trim()) return false;
-    return true;
-  }).map(r => ({
-    rectificacionId: r[0],
-    evaluacionId: r[1],
-    userId: r[2],
-    accion: r[3],
-    notaAnterior: parseFloat(r[4]) || 0,
-    notaNueva: parseFloat(r[5]) || 0,
-    motivo: r[6],
-    autorizadoPor: r[7],
-    fecha: r[8] ? new Date(r[8]).toISOString() : null
-  }));
-
+  const idCounts = Object.create(null);
+  data.slice(1).forEach(row => {
+    const id = String(row[0] || "").trim();
+    if (id) idCounts[id] = (idCounts[id] || 0) + 1;
+  });
+  const toFiniteNumber = value => value === null || value === undefined || String(value).trim() === ""
+    ? null : (Number.isFinite(Number(value)) ? Number(value) : null);
+  const history = data.slice(1).filter(row => {
+    const id = String(row[0] || "").trim();
+    const evaluationId = String(row[1] || "").trim();
+    return !!id && idCounts[id] === 1 && !!evaluationId &&
+      String(row[2] || "").trim() === targetUserId &&
+      (!p.evaluacionId || evaluationId === String(p.evaluacionId).trim());
+  }).map(row => {
+    const date = row[8] ? new Date(row[8]) : null;
+    return {
+      rectificacionId: String(row[0]).trim(),
+      evaluacionId: String(row[1]).trim(),
+      userId: targetUserId,
+      accion: row[3] || "",
+      notaAnterior: toFiniteNumber(row[4]),
+      notaNueva: toFiniteNumber(row[5]),
+      motivo: row[6] || "",
+      autorizadoPor: row[7] || "",
+      fecha: date && !isNaN(date.getTime()) ? date.toISOString() : null
+    };
+  });
   return { status: "success", data: history };
 }
 
