@@ -62,7 +62,7 @@ function fixture(options = {}) {
     }; } },
     validateRolePermission(action) { state.action = action; return { authorized: options.permission !== false }; },
     getVerifiedExamIdentity_() { return actor; },
-    getVerifiedExamDepartmentScope_() { return scope; },
+    getVerifiedExamDepartmentScope_() { if (options.duringScope) options.duringScope(); return scope; },
     assertExamResourceOwnershipForScope_(spreadsheet, currentScope, type, id) {
       const rows = sheets.ResourceOwnership ? sheets.ResourceOwnership.rows.slice(1) : [];
       const matches = rows.filter(row => String(row[1]) === String(currentScope.institutionId) &&
@@ -134,6 +134,15 @@ test("duplicate category ID rejected on update", () => {
 });
 test("lock timeout fails closed before spreadsheet access", () => {
   const x = fixture({ timeout: true }); assert.throws(() => x.call({ nombre: "No" }), /EVALUATION_CATEGORY_MUTATION_LOCK_TIMEOUT/); assert.equal(x.state.opens, 0);
+});
+test("nested concurrent mutation is rejected while the shared script lock is held", () => {
+  let x, nestedDenied = false;
+  x = fixture({ duringScope() {
+    try { x.call({ nombre: "Nested", departmentId: "DEPT-A" }); }
+    catch (error) { nestedDenied = /EVALUATION_CATEGORY_MUTATION_LOCK_TIMEOUT/.test(error.message); }
+  }});
+  x.call({ nombre: "Outer", departmentId: "DEPT-A" });
+  assert.ok(nestedDenied); assert.equal(x.state.locks, 2); assert.equal(x.state.releases, 1); assert.equal(x.state.held, false);
 });
 test("append failure rolls back both category and ownership records", () => {
   const x = fixture({ failCategoryAppend: true }); assert.throws(() => x.call({ nombre: "Fallida", departmentId: "DEPT-A" }), /synthetic category append failure/);
