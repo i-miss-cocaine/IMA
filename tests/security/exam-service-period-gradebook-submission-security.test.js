@@ -54,6 +54,8 @@ function fixture(options = {}) {
   if (!options.missingClosure) sheets.CierresPeriodos = makeSheet(options.emptyClosure ? [] : closureRows);
   const stats = { acquired: 0, released: 0, held: false, opens: 0, events: [] };
   const actor = options.actor || { authorized: true, userId: "T1", role: "Profesor" };
+  const actors = options.actors || [actor];
+  let identityCalls = 0;
   const scope = options.scope || { authorized: true, institutionId: "I1", departmentIds: ["D1"], institutionWide: false };
   const ss = {
     getSheetByName(name) { return sheets[name] || null; },
@@ -65,7 +67,12 @@ function fixture(options = {}) {
       releaseLock() { stats.released++; stats.held = false; }
     }; } },
     validateRolePermission() { stats.events.push("rbac"); return { authorized: options.denied !== true }; },
-    getVerifiedExamIdentity_() { stats.events.push("identity"); return options.invalidIdentity ? { authorized: false } : actor; },
+    getVerifiedExamIdentity_() {
+      stats.events.push("identity");
+      identityCalls++;
+      if (options.invalidIdentity) return { authorized: false };
+      return actors[Math.min(identityCalls - 1, actors.length - 1)];
+    },
     getVerifiedExamDepartmentScope_() { return scope; },
     SpreadsheetApp: { openById() {
       stats.events.push("sheets");
@@ -93,6 +100,7 @@ function fixture(options = {}) {
     "\nthis.submitGradebookForReview = submitGradebookForReview;", runtime);
   return {
     runtime, sheets, stats,
+    identityCalls: () => identityCalls,
     call(payload = {}) {
       return runtime.submitGradebookForReview(Object.assign({
         sessionToken: "signed", anoId: "SPOOF-YEAR", periodoId: "P1",
@@ -262,4 +270,19 @@ test(() => {
   assert.deepEqual([x.stats.acquired, x.stats.released, x.stats.held], [1, 1, false]);
 });
 
-console.log("exam-service-period-gradebook-submission-security: PASS (" + count + "/25)");
+test(() => {
+  const x = fixture({ actors: [
+    { authorized: true, userId: "T1", role: "Profesor" },
+    { authorized: true, userId: "   ", role: "Profesor" }
+  ] });
+  const before = x.sheets.CierresPeriodos.rows.map(row => row.slice());
+  assert.throws(() => x.call(), /RESOURCE_NOT_AVAILABLE/);
+  assert.equal(x.identityCalls(), 2, "signed identity must be revalidated under the acquired lock");
+  assert.deepEqual(x.stats.events, ["rbac", "identity", "lock", "rbac", "identity"]);
+  assert.equal(x.stats.acquired, 1);
+  assert.equal(x.stats.released, 1);
+  assert.equal(x.stats.held, false);
+  assert.equal(x.stats.opens, 0, "incomplete identity must be rejected before Sheets is opened");
+  assert.deepEqual(x.sheets.CierresPeriodos.rows, before, "no review request may be written after identity denial");
+});
+console.log("exam-service-period-gradebook-submission-security: PASS (" + count + "/26)");
