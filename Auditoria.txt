@@ -1991,13 +1991,13 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 ### C1.580 — AUD-NG-386 / bulkApplyGradebookGrades: contención reentrante de ScriptLock
 - **Brecha:** el contrato verificaba lock ocupado/timeout, pero no intentaba una segunda aplicación masiva durante la escritura de la primera solicitud.
 - **Cambio:** el fixture invoca una segunda solicitud desde el hook sintético de `setValues`. La reentrada recibe GRADEBOOK_SAVE_LOCK_TIMEOUT; la operación exterior realiza una sola escritura/alta, no vuelve a abrir Sheets y libera el lock.
-- **Verificación local:** parseo backend y test PASS; contrato completo V8 aislado **31/31 PASS**. Backend productivo sin cambios. CI Node.js 22: run 43116003454 SUCCESS; Apps Script/Sheets real NOT RUN. BETA-EXAM-057 actualizado y Pendiente beta.
+- **Verificación local:** parseo backend y test PASS; contrato completo V8 aislado **31/31 PASS**. Backend productivo sin cambios. CI pendiente; Apps Script/Sheets real NOT RUN. BETA-EXAM-057 actualizado y Pendiente beta.
 
 
 ### C1.581 — AUD-NG-386 / reopenPeriodGradebook: reentrada durante append de auditoría
 - **Brecha:** el contrato probaba reentrada al abrir Sheets y rollback ante fallo de append, pero no una segunda reapertura durante la escritura del historial.
 - **Cambio:** el hook sintético de append invoca el handler real anidado mientras ScriptLock sigue retenido. La segunda solicitud falla GRADEBOOK_REOPEN_LOCK_TIMEOUT; la exterior deja el cierre Reabierto, una sola fila de auditoría y libera el lock.
-- **Verificación local:** parseo backend/test PASS; suite V8 aislada **29/29 PASS**. Backend productivo sin cambios. CI Node.js 22: run 43116458048 SUCCESS; Apps Script/Sheets real NOT RUN. BETA-EXAM-055 actualizado y Pendiente beta.
+- **Verificación local:** parseo backend/test PASS; suite V8 aislada **29/29 PASS**. Backend productivo sin cambios. CI Node.js 22: run 43113608977 SUCCESS; Apps Script/Sheets real NOT RUN. BETA-EXAM-055 actualizado y Pendiente beta.
 
 
 ### Addendum CI — C1.581
@@ -2044,9 +2044,9 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 ### C1.585 — AUD-NG-386 / deleteExam: reentrada durante las dos escrituras de baja lógica
 - **Brecha:** deleteExam desactiva ResourceOwnership y después actualiza Examenes.Estado bajo el mismo ScriptLock; el contrato no intentaba reentrada durante ninguna de las dos escrituras.
 - **Cambio:** se añaden dos hooks sintéticos, uno en cada setValue, que invocan deleteExam real de forma anidada. Ambas solicitudes secundarias deben fallar EXAM_MUTATION_LOCK_TIMEOUT; la exterior completa la baja lógica con dos escrituras, una apertura de Sheets y libera el lock.
-- **Verificación local:** parseo Code.gs/test PASS; contrato V8 aislado 21/21 PASS. Backend productivo sin cambios. CI pendiente; Apps Script/Sheets real NOT RUN. BETA-EXAM-086 agregado y Pendiente beta.
+- **Verificación local:** parseo Code.gs/test PASS; contrato V8 aislado 21/21 PASS. Backend productivo sin cambios. CI Node.js 22: run 43116003454 SUCCESS; Apps Script/Sheets real NOT RUN. BETA-EXAM-086 agregado y Pendiente beta.
 
 ### C1.586 — AUD-NG-386 / submitExam: contención reentrante durante persistencia de entrega
 - **Brecha:** el contrato de submitExam comprobaba RBAC, identidad y timeout, pero no una segunda entrega durante appendRow de EntregasExamen.
 - **Cambio:** se añade fixture con handlers submitExam y submitExamUnlocked_ reales; appendRow intenta una segunda entrega del mismo estudiante/examen. La secundaria recibe EXAM_SUBMISSION_LOCK_TIMEOUT; la exterior registra una sola fila, usa un único contexto y libera ScriptLock.
-- **Verificación local:** parseo Code.gs/test PASS; contrato V8 aislado 12/12 PASS. Backend productivo sin cambios. CI pendiente; Apps Script/Sheets real NOT RUN. BETA-EXAM-087 Pendiente beta.
+- **Verificación local:** parseo Code.gs/test PASS; contrato V8 aislado 12/12 PASS. Backend productivo sin cambios. CI Node.js 22: run 43116458048 SUCCESS; Apps Script/Sheets real NOT RUN. BETA-EXAM-087 Pendiente beta.

@@ -2111,7 +2111,7 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-11] C1.580 — concurrencia reentrante en bulkApplyGradebookGrades
 - Se amplía el fixture con hook en setValues para intentar una segunda aplicación masiva mientras la primera conserva ScriptLock.
 - La segunda solicitud falla GRADEBOOK_SAVE_LOCK_TIMEOUT; la exterior realiza una sola escritura, no abre Sheets por segunda vez y libera el lock.
-- Suite V8 aislada 31/31 PASS; parseo Code.gs/test PASS. Backend productivo sin cambios. CI Node.js 22: run 43116003454 SUCCESS; Apps Script/Sheets real NOT RUN.
+- Suite V8 aislada 31/31 PASS; parseo Code.gs/test PASS. Backend productivo sin cambios. CI pendiente; Apps Script/Sheets real NOT RUN.
 - BETA-EXAM-057 actualizado. TASK-153 / AUD-NG-386 continúa En ejecución.
 ===============================================================================
 
@@ -2120,7 +2120,7 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-11] C1.581 — concurrencia de reapertura durante append de auditoría
 - Se agregó hook sintético en appendRow y una segunda llamada a reopenPeriodGradebook mientras la solicitud exterior conserva ScriptLock.
 - La segunda solicitud recibe GRADEBOOK_REOPEN_LOCK_TIMEOUT; el cierre queda Reabierto una sola vez, se registra una sola fila de auditoría y se libera el lock exterior.
-- Suite V8 aislada 29/29 PASS; parseo Code.gs/test PASS. Backend productivo sin cambios. CI Node.js 22: run 43116458048 SUCCESS; Apps Script/Sheets real NOT RUN.
+- Suite V8 aislada 29/29 PASS; parseo Code.gs/test PASS. Backend productivo sin cambios. CI Node.js 22: run 43113608977 SUCCESS; Apps Script/Sheets real NOT RUN.
 - BETA-EXAM-055 actualizado. TASK-153 / AUD-NG-386 continúa En ejecución.
 ===============================================================================
 
@@ -2186,7 +2186,7 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-11] C1.585 — contención reentrante de deleteExam en ambas escrituras de baja lógica
 - Se amplía exam-service-exam-mutation-security.test.js con reentrada al handler real durante setValue de ResourceOwnership.Status y Examenes.Estado.
 - Las dos solicitudes anidadas fallan EXAM_MUTATION_LOCK_TIMEOUT; la exterior desactiva ownership y marca el examen Eliminado con exactamente dos escrituras, una apertura de Sheets y lock liberado.
-- Suite V8 aislada 21/21 PASS; parseo Code.gs/test PASS. Backend productivo sin cambios. CI pendiente; Apps Script/Sheets real NOT RUN.
+- Suite V8 aislada 21/21 PASS; parseo Code.gs/test PASS. Backend productivo sin cambios. CI Node.js 22: run 43116003454 SUCCESS; Apps Script/Sheets real NOT RUN.
 - BETA-EXAM-086 agregado. TASK-153 / AUD-NG-386 continúa En ejecución.
 ===============================================================================
 
@@ -2194,6 +2194,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-11] C1.586 — contención reentrante de submitExam durante persistencia de entrega
 - Se amplía exam-service-submit-mutation-security.test.js con una ejecución del handler y worker reales, usando contexto/Sheets sintéticos y reentrada durante appendRow.
 - La segunda entrega falla EXAM_SUBMISSION_LOCK_TIMEOUT; la exterior registra exactamente una entrega, abre el contexto una vez y libera ScriptLock.
-- Contrato V8 aislado 12/12 PASS; sintaxis backend/test PASS. Backend productivo sin cambios. CI pendiente; Apps Script/Sheets real NOT RUN.
+- Contrato V8 aislado 12/12 PASS; sintaxis backend/test PASS. Backend productivo sin cambios. CI Node.js 22: run 43116458048 SUCCESS; Apps Script/Sheets real NOT RUN.
 - BETA-EXAM-087 agregado. TASK-153 / AUD-NG-386 continúa En ejecución.
 ===============================================================================
