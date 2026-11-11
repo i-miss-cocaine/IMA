@@ -578,3 +578,15 @@ Subalcance reviewPeriodGradebook corregido; TASK-153 / AUD-NG-386 continúa En e
 Siguiente acción: inspeccionar el siguiente wrapper mutador EXAM pendiente, sin avanzar otra operación en esta iteración.
 HEAD final: pendiente de confirmar tras CI y cierre documental.
 ===============================================================================
+
+
+===============================================================================
+### ADDENDUM FINAL DE VERIFICACIÓN — C1.524 / reviewPeriodGradebook
+- Commit de implementación: `a20ce52cad7db979bff52beb5c94c27b23bfce58`.
+- Commit de suite dedicada: `70c7a70e046db64cca95909328bfef8ffce5ff28`.
+- GitHub Actions workflow `43051393921`: **completed / success**; job `exam-security-contracts` `130629202452` SUCCESS; step de revisión del libro de notas SUCCESS.
+- Suite `exam-service-period-gradebook-review-security`: **27/27 PASS** en Node 22.
+- Harness local focalizado del wrapper: **12/12 PASS** en Node. La suite completa no se declara ejecutada localmente: no había checkout local y git clone falló por resolución DNS.
+- Apps Script/Sheets real: NOT RUN. BETA-EXAM-053 permanece Pendiente beta.
+- HEAD final de rama y rama base se verifican tras publicar este addendum.
+===============================================================================
