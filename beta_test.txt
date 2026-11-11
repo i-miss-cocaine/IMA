@@ -539,3 +539,14 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta. Suite V8 local aislada de 12 escenarios PASS; runner Node nativo/CI y Apps Script/Sheets real NOT RUN.
 - **Evidencia requerida:** build/commit desplegado, matriz de roles y scopes, tokens sintéticos, respuestas saneadas, secuencia de contención del lock y snapshots de CategoriasEvaluacion antes/después.
 ===============================================================================
+
+===============================================================================
+## BETA-EXAM-048 — TASK-153 / AUD-NG-386 / EXAM: getRubrics
+- **Módulo/acción:** EXAM — getRubrics; catálogo de rúbricas y criterios de evaluación.
+- **Objetivo:** validar en Apps Script/Sheets desplegado que la consulta requiere sesión, RBAC y scope válidos; que no inicializa ni modifica la hoja; y que el contrato y filtros siguen funcionando.
+- **Precondiciones:** entorno beta aislado; usuarios sintéticos Profesor, Estudiante/Alumno, Tutor/Padre/Responsable y roles institucionales con scopes válidos; sesión ausente/expirada, permiso denegado, rol desconocido, scope ausente; hoja RubricasEvaluacion ausente, solo encabezados, poblada, con IDs duplicados y esquema/JSON inválidos.
+- **Pasos:** probar denegaciones de identidad/RBAC/rol/scope y timeout; consultar con roles autorizados; probar filtro de asignatura, exclusión de eliminadas, JSON de criterios y hoja ausente/vacía; capturar snapshot antes/después de la hoja; confirmar que no se crea cuando está ausente. Documentar explícitamente que los registros actuales no contienen InstitutionID/DepartmentID y que el catálogo opera como compartido legado.
+- **Resultado esperado:** solo sesiones autorizadas acceden; errores/timeout fallan cerrados; hoja ausente/vacía produce status/data con lista vacía sin escrituras; filtros/contrato se preservan; esquema y JSON inválidos se rechazan; no se crea ni modifica la hoja.
+- **Estado:** Pendiente beta. Suite local V8 aislada 16 escenarios PASS; regresiones C1.493 (12) y C1.492 (27) PASS; Node nativo/CI y Apps Script/Sheets real NOT RUN.
+- **Evidencia requerida:** commit/build desplegado, matriz de roles/scopes y tokens sintéticos, respuestas saneadas, snapshots de RubricasEvaluacion antes/después y evidencia de que la hoja ausente no se inicializa.
+===============================================================================
