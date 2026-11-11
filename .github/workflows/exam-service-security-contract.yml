@@ -10,6 +10,7 @@ on:
       - 'tests/security/exam-service-save-rubric-security.test.js'
       - 'tests/security/exam-service-competency-evaluation-mutation-security.test.js'
       - 'tests/security/exam-service-student-recovery-mutation-security.test.js'
+      - 'tests/security/exam-service-period-gradebook-closure-security.test.js'
       - '.github/workflows/exam-service-security-contract.yml'
   pull_request:
     branches: [NG_beta_0.0.0.1_work]
@@ -21,6 +22,7 @@ on:
       - 'tests/security/exam-service-save-rubric-security.test.js'
       - 'tests/security/exam-service-competency-evaluation-mutation-security.test.js'
       - 'tests/security/exam-service-student-recovery-mutation-security.test.js'
+      - 'tests/security/exam-service-period-gradebook-closure-security.test.js'
       - '.github/workflows/exam-service-security-contract.yml'
 jobs:
   exam-security-contracts:
@@ -36,6 +38,8 @@ jobs:
         run: node tests/security/exam-service-competency-evaluation-mutation-security.test.js
       - name: Run student recovery mutation security regression
         run: node tests/security/exam-service-student-recovery-mutation-security.test.js
+      - name: Run period gradebook closure security regression
+        run: node tests/security/exam-service-period-gradebook-closure-security.test.js
       - run: node tests/security/exam-service-security-contract.test.js
       - run: node tests/security/exam-service-departmental-access.test.js
       - run: node tests/security/exam-service-read-endpoints-security.test.js
