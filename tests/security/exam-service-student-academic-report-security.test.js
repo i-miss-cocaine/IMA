@@ -17,7 +17,7 @@ function sheet(rows){return {rows,getDataRange(){return {getValues:()=>this.rows
 function fixture(o={}){
  const sheets={
  Usuarios:sheet([["UserID","Nombre","Grado","Seccion","Email","","Rol"],["STU-1","Ana","10","A","","","Estudiante"],["STU-2","Luis","10","B","","","Estudiante"]]),
- Matriculas:sheet([["MatriculaID","Fecha","UserID","X","Grado","Seccion","Periodo","X","Estado"],["MAT-3",new Date("2026-01-01"),"STU-1","","10","A","P1","","Activa"],["MAT-2",new Date("2026-01-02"),"STU-2","","10","B","P1","","Activa"],["MAT-1",new Date(),"STU-1","","10","A","P2","","Activa"]]),
+ Matriculas:sheet([["MatriculaID","Fecha","UserID","X","Grado","Seccion","Periodo","X","Estado"],["MAT-1",new Date("2026-01-01"),"STU-1","","10","A","P1","","Activa"],["MAT-2",new Date("2026-01-02"),"STU-2","","10","B","P1","","Activa"],["MAT-1",new Date(),"STU-1","","10","A","P2","","Activa"],["MAT-3",new Date(),"STU-1","","10","A","P3","","Activa"]]),
  CalificacionesEstudiantes:sheet([["ID","EvaluacionID","UserID","NotaObtenida","PuntajePonderado","EsBorrador","EsPublicada","Observaciones","FechaRegistro"],
  ["CAL-1","E-1","STU-1",85,8.5,false,true,"Visible",new Date("2026-02-01")],
  ["CAL-2","E-2","STU-1",90,9,true,false,"Borrador oculto",null],
