@@ -73,8 +73,8 @@ function doOptions() {
 }
 
 const PUBLIC_ACTIONS = [
-  // Solo metadatos no sensibles pueden consultarse sin sesión.
-  "getEvaluationCategories", "getRubrics"
+  // Solo metadatos globales no sensibles pueden consultarse sin sesión.
+  "getRubrics"
 ];
 
 const ROLE_PERMISSIONS = {
@@ -1631,19 +1631,44 @@ function isInTeacherList(value, listString) {
 // --- FUNCIONES EVALUACIÓN ACADÉMICA Y LIBRO DE CALIFICACIONES (FASE 6) ---
 
 function getEvaluationCategories(payload) {
-  const { ambito } = payload || {};
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "CategoriasEvaluacion");
-  const data = sheet.getDataRange().getValues();
+  return withAuthorizedExamMetadataRead_("getEvaluationCategories", payload,
+    context => getEvaluationCategoriesUnlocked_(context));
+}
+
+function withAuthorizedExamMetadataRead_(action, payload, reader) {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) throw new Error("EXAM_METADATA_READ_LOCK_TIMEOUT");
+  try {
+    const permission = validateRolePermission(action, payload);
+    if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+    const actor = getVerifiedExamIdentity_(payload);
+    const allowedRoles = ["Administrador", "Desarrollador", "Dirección", "Director", "Secretaría",
+      "Profesor", "Estudiante", "Alumno", "Tutor", "Padre", "Responsable"];
+    if (!actor || actor.authorized !== true || !actor.userId ||
+        allowedRoles.indexOf(String(actor.role || "").trim()) === -1) {
+      throw new Error("RESOURCE_NOT_AVAILABLE");
+    }
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const scope = getVerifiedExamDepartmentScope_(payload, ss, actor);
+    if (!scope || scope.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+    return reader({ actor, ss, scope });
+  } finally {
+    try { lock.releaseLock(); } catch (_) {}
+  }
+}
+
+function getEvaluationCategoriesUnlocked_(context) {
+  const ss = context && context.ss;
+  if (!ss) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const sheet = ss.getSheetByName("CategoriasEvaluacion");
+  const data = sheet ? sheet.getDataRange().getValues() : [];
+  const defaultCats = [
+    ["CAT-1", "Tareas y Trabajos", "Global", 35, "100", "Activo"],
+    ["CAT-2", "Exámenes y Pruebas", "Global", 40, "100", "Activo"],
+    ["CAT-3", "Proyectos e Investigaciones", "Global", 15, "100", "Activo"],
+    ["CAT-4", "Practicas y Participacion", "Global", 10, "100", "Activo"]
+  ];
   if (data.length <= 1) {
-    const defaultCats = [
-      ["CAT-1", "Tareas y Trabajos", "Global", 35, "100", "Activo"],
-      ["CAT-2", "Exámenes y Pruebas", "Global", 40, "100", "Activo"],
-      ["CAT-3", "Proyectos e Investigaciones", "Global", 15, "100", "Activo"],
-      ["CAT-4", "Practicas y Participacion", "Global", 10, "100", "Activo"]
-    ];
-    sheet.appendRow(["ID", "Nombre", "Ambito", "PorcentajePonderacion", "EscalaID", "Estado"]);
-    defaultCats.forEach(c => sheet.appendRow(c));
     return {
       status: "success",
       data: defaultCats.map(c => ({
@@ -1651,7 +1676,10 @@ function getEvaluationCategories(payload) {
       }))
     };
   }
-
+  const expectedHeaders = ["ID", "Nombre", "Ambito", "PorcentajePonderacion", "EscalaID", "Estado"];
+  if (expectedHeaders.some((header, index) => String(data[0][index] || "").trim() !== header)) {
+    throw new Error("EVALUATION_CATEGORIES_SCHEMA_INVALID");
+  }
   const categories = data.slice(1).map(r => ({
     categoriaId: r[0],
     nombre: r[1],
@@ -1660,7 +1688,6 @@ function getEvaluationCategories(payload) {
     escalaId: r[4] || "100",
     estado: r[5] || "Activo"
   }));
-
   return { status: "success", data: categories };
 }
 
