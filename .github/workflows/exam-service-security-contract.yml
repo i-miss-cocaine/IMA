@@ -19,6 +19,7 @@ on:
       - 'tests/security/exam-service-evaluation-setup-copy-security.test.js'
       - 'tests/security/exam-service-create-exam-security.test.js'
       - 'tests/security/exam-service-security-cache-purge.test.js'
+      - 'tests/security/exam-service-grade-submission-validation.test.js'
       - 'tests/security/exam-service-gradebook-bulk-apply-security.test.js'
       - '.github/workflows/exam-service-security-contract.yml'
   pull_request:
@@ -74,6 +75,8 @@ jobs:
         run: node tests/security/exam-service-create-exam-security.test.js
       - name: Run security cache purge regression
         run: node tests/security/exam-service-security-cache-purge.test.js
+      - name: Run grade submission validation regression
+        run: node tests/security/exam-service-grade-submission-validation.test.js
       - run: node tests/security/exam-service-security-contract.test.js
       - run: node tests/security/exam-service-departmental-access.test.js
       - run: node tests/security/exam-service-read-endpoints-security.test.js
