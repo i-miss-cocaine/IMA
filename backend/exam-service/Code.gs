@@ -2311,13 +2311,15 @@ function getStudentRecoveriesUnlocked_(payload, context) {
     if (p.evaluacionId && String(row[1]).trim() !== String(p.evaluacionId).trim()) return false;
     return true;
   }).map(row => {
-    const original = Number(row[3]), recovered = Number(row[4]), finalGrade = Number(row[5]);
+    const toFiniteNumber = value => value === null || value === undefined || String(value).trim() === ""
+      ? null : (Number.isFinite(Number(value)) ? Number(value) : null);
+    const original = toFiniteNumber(row[3]), recovered = toFiniteNumber(row[4]), finalGrade = toFiniteNumber(row[5]);
     const registeredAt = row[8] ? new Date(row[8]) : null;
     return {
       recuperacionId: row[0], evaluacionId: row[1], userId: row[2],
-      notaOriginal: Number.isFinite(original) ? original : null,
-      notaRecuperada: Number.isFinite(recovered) ? recovered : null,
-      notaFinalCalculada: Number.isFinite(finalGrade) ? finalGrade : null,
+      notaOriginal: original,
+      notaRecuperada: recovered,
+      notaFinalCalculada: finalGrade,
       metodoAplicado: row[6], autorizadoPor: row[7],
       fecha: registeredAt && !isNaN(registeredAt.getTime()) ? registeredAt.toISOString() : null
     };
