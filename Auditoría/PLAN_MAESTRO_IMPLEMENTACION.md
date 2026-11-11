@@ -3836,3 +3836,13 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Beta:** BETA-EXAM-067 agregado; Apps Script/Sheets real NOT RUN.
 - **Estado:** subalcance rectifyStudentGrade corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
 - **Siguiente:** continuar inspección del siguiente wrapper mutador EXAM pendiente, una sola operación por iteración.
+
+
+### 10.180 TASK-153 / AUD-NG-386 — identidad firmada completa en mutaciones de entregas EXAM (C1.527)
+- **Hallazgo alto:** `withAuthorizedExamSubmissionMutation_` ya validaba RBAC e identidad antes de ScriptLock, pero aceptaba un actor firmado con `userId` vacío. El contexto `getAuthorizedExamSubmissionMutationContext_` también aceptaba identidad incompleta antes de abrir Sheets.
+- **Corrección:** preflight ahora exige actor autorizado y `userId` no vacío antes del lock; el contexto vuelve a exigir identidad completa antes de abrir la hoja `EntregasExamen`. Se preservan las acciones `gradeExamSubmission` y `deleteExamSubmission`, sus permisos, roles, propiedad de examen/entrega, auditoría y liberación del lock. No se amplían permisos ni roles.
+- **Pruebas locales:** parseo de Code.gs y suite PASS; suite dedicada `exam-service-delete-submission-audit.test.js` 26/26 PASS en runner JavaScript aislado con shims. Incluye userId vacío en preflight (sin lock), identidad incompleta al revalidar contexto (con liberación del lock) y aserción de que el contexto valida userId antes de abrir Sheets. Checkout/Node local nativo no disponible por fallo DNS al clonar; no se declara ejecución Node nativa local.
+- **CI:** GitHub Actions workflow 43058558651 SUCCESS; job `exam-security-contracts` 130654537657 SUCCESS; suite dedicada 26/26 PASS en Node 22 y demás suites del job SUCCESS.
+- **Beta:** Apps Script/Sheets real NOT RUN; no se requiere despliegue para aprobar el control local de identidad.
+- **Estado:** subalcance de identidad completa para gradeExamSubmission/deleteExamSubmission corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras rutas mutadoras EXAM.
+- **Siguiente:** continuar inventario de mutadores EXAM no cubiertos, una sola operación por iteración.
