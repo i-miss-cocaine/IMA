@@ -12,9 +12,9 @@ function extract(name) {
   let depth = 0, quote = "", escaped = false, line = false, block = false;
   for (let i = open; i < source.length; i++) {
     const c = source[i], n = source[i + 1];
-    if (line) { if (c === "\\n") line = false; continue; }
+    if (line) { if (c === "\n") line = false; continue; }
     if (block) { if (c === "*" && n === "/") { block = false; i++; } continue; }
-    if (quote) { if (escaped) { escaped = false; continue; } if (c === "\\\\") { escaped = true; continue; } if (c === quote) quote = ""; continue; }
+    if (quote) { if (escaped) { escaped = false; continue; } if (c === "\\") { escaped = true; continue; } if (c === quote) quote = ""; continue; }
     if (c === "/" && n === "/") { line = true; i++; continue; }
     if (c === "/" && n === "*") { block = true; i++; continue; }
     if (c === "'" || c === '"' || c === "`") { quote = c; continue; }
