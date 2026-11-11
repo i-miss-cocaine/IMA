@@ -3490,3 +3490,13 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Node nativo/CI/Apps Script real:** NOT RUN. **Beta:** BETA-EXAM-046 Pendiente beta; no bloquea cierre local.
 - **Estado:** subalcance completado; TASK-153 permanece En ejecución y AUD-NG-386 abierto por otras lecturas EXAM.
 - **Siguiente:** continuar la siguiente lectura EXAM identificada en el plan, sin ampliar el alcance de esta iteración.
+
+### 10.145 TASK-153 / AUD-NG-386 — aislamiento de getEvaluationCategories (C1.493)
+
+- **Hallazgo:** getEvaluationCategories estaba en PUBLIC_ACTIONS y podía consultarse sin sesión; además getOrCreateSheet creaba la hoja CategoriasEvaluacion y persistía encabezados/categorías predeterminadas al leer por primera vez. No validaba identidad, RBAC ni scope.
+- **Corrección:** se retiró de PUBLIC_ACTIONS. El endpoint valida permiso RBAC, identidad firmada, rol admitido y scope institucional/departamental; ejecuta bajo ScriptLock y falla cerrado ante permisos, identidad, rol, scope o timeout inválidos.
+- **Lectura/integridad:** getSheetByName sustituye getOrCreateSheet; la hoja ausente/vacía/solo encabezados devuelve los defaults en memoria sin escrituras. Se valida el esquema de seis columnas cuando hay registros y se conserva el contrato status/data y el mapeo histórico.
+- **Pruebas locales:** parseo V8 PASS; suite dedicada ejecutada mediante shim V8 aislado PASS (12 escenarios: contrato, defaults sin persistencia, RBAC, identidad, rol, scope, timeout, concurrencia, esquema y allowlist pública).
+- **Node nativo/CI/Apps Script real:** NOT RUN. **Beta:** BETA-EXAM-047 Pendiente beta; no bloquea cierre local.
+- **Estado:** subalcance completado; TASK-153 permanece En ejecución y AUD-NG-386 abierto por otras lecturas EXAM.
+- **Siguiente:** continuar con la siguiente lectura EXAM no cubierta en TASK-153, verificando su autorización y efectos laterales antes de modificarla.
