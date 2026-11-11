@@ -1976,3 +1976,29 @@ backend/exam-service/Code.gs; tests/security/exam-service-student-grade-rectific
 CalificacionesEstudiantes no contiene InstitutionID/DepartmentID ni ownership de EvaluationID; se exige spreadsheet institucional y scope institutionWide, además de usuario canónico único. No se inventa relación departamental ausente. El rollback de Sheets es compensatorio, no transaccional.
 TASK-153 y AUD-NG-386 siguen En ejecución por otras superficies EXAM. Siguiente: seleccionar siguiente mutación EXAM elegible y auditar ownership/ámbito con contrato local.
 ===============================================================================
+
+===============================================================================
+CHECKPOINT C1.504 — Protección de saveGradebookGrades
+Sesión: IMA-EXEC-20261110-1825Z-02.
+Fecha: 2026-11-11 UTC.
+Rama: NG_beta_0.0.0.1_work.
+HEAD inicial: b7624e83197342e02048f54b8c5926b71a0cf3dd.
+### Hallazgo
+saveGradebookGrades escribía calificaciones sin RBAC/identidad/scope, confiaba en flags y rol del cliente para permitir cambios en cierres, no verificaba asignación ni roster, creaba la hoja implícitamente y sobrescribía la primera coincidencia de evaluación/alumno.
+### Cambio
+- ScriptLock con timeout y liberación; RBAC, identidad firmada, scope institucional y allowlist explícita. Profesor limitado a asignación exacta; roles institucionales requieren institutionWide; Director recibe permiso específico.
+- teacher.js transmite filtros académicos activos. Contexto grado/sección/asignatura/período obligatorio; roster de estudiantes únicos.
+- Esquema de calificaciones/cierres validado; cierre bloquea escritura para todos los roles hasta reapertura.
+- Categorías CAT-1..4 heredadas o categorías activas con ownership institucional/departamental verificable.
+- Lote 1–500, sin pares repetidos; filas persistidas únicas; notas estrictas 0–100 con máximo dos decimales; una escritura consolidada y sin creación implícita de hojas.
+### Archivos
+backend/exam-service/Code.gs; js/teacher.js; tests/security/exam-service-gradebook-save-security.test.js; .github/workflows/exam-service-security-contract.yml; Plan Maestro; beta_test.txt (BETA-EXAM-057); changueslogs.txt; Auditoria.txt; historial e índice.
+### Verificación
+- Parseo completo Code.gs PASS.
+- Harness V8 ejecutando las funciones reales extraídas del código: 10/10 PASS (guardado, roles, RBAC, período cerrado, límites de nota, lock, esquema, duplicidad y fallo de escritura).
+- Suite dedicada Node de 23 escenarios incorporada a CI; ejecución Node/CI pendiente en el momento de este checkpoint.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-057 Pendiente beta.
+### Limitaciones
+CalificacionesEstudiantes no contiene PeriodoID/Asignatura; se verifica asignación y período de la solicitud y se bloquea si el cierre correspondiente está Cerrado, pero no se inventa una dimensión histórica por fila. bulkApplyGradebookGrades no se modifica en esta iteración.
+TASK-153 / AUD-NG-386 siguen En ejecución por otras mutaciones EXAM.
+===============================================================================

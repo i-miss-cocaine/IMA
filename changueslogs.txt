@@ -1366,3 +1366,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Auditoría con UUID y actor autenticado se escribe antes de mutar; fallo de actualización intenta restaurar fila y retirar evento parcial.
 - Prueba dedicada 27/27 PASS y parseo Code.gs PASS (CI run 43011012718); security-contract PASS. Workflow global FAIL en departmental-access por ReferenceError withAuthorizedExamRead_ no definido; fallo ajeno al subalcance y ya presente en run 43009948936.
 ==========================================================================
+
+
+==========================================================================
+[2026-11-11] C1.504 — IMA-EXEC-20261110-1825Z-02 — EXAM: protección de saveGradebookGrades
+- Endpoint ahora valida RBAC, identidad firmada, scope institucional, asignación docente, roster, categoría/ownership, período abierto, esquema y lote de notas; ScriptLock serializa escrituras.
+- teacher.js transmite grado/sección/asignatura/parcial activos para que el backend compruebe el contexto.
+- Parseo Code.gs y harness V8 sobre funciones reales: 10/10 PASS. Suite dedicada 23 escenarios incorporada a CI; resultado CI pendiente.
+==========================================================================

@@ -644,3 +644,14 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta. Contrato aislado Node/vm 27/27 PASS y parseo Code.gs PASS (GitHub Actions run 43011012718); workflow global FAIL en departmental-access por ReferenceError preexistente; Apps Script/Sheets real NOT RUN.
 - **Evidencia requerida:** build desplegado, tokens/scopes sintéticos, snapshots antes/después de calificaciones e historial, denegaciones, transición, actor auditado, concurrencia y rollback.
 ===============================================================================
+
+
+===============================================================================
+## BETA-EXAM-057 — TASK-153 / AUD-NG-386 / EXAM: saveGradebookGrades
+- **Objetivo:** comprobar en beta que solo actores autorizados guardan calificaciones de estudiantes del roster y contexto académico permitido, sin alterar cierres ni categorías ajenas.
+- **Precondiciones:** spreadsheet institucional aislado; usuarios sintéticos con roles institucionales, Profesor y roles no autorizados; ConfiguracionAcademica con asignaciones exactas y conflictivas; roster con estudiantes únicos/duplicados y otras secciones; categorías CAT-1..4 y categorías personalizadas con ownership activo/inactivo/duplicado; CalificacionesEstudiantes con registros únicos/duplicados; cierres abiertos/cerrados.
+- **Pasos:** probar token inválido/ausente, RBAC denegado, roles no permitidos, scope departamental/institucional, profesorId spoof, asignación ausente/conflictiva, estudiante ajeno/duplicado, categoría inexistente/ajena, IDs duplicados en lote y persistencia, nota fuera de rango/malformada/precisión excesiva, lote vacío o superior a 500, período cerrado y lock ocupado; validar alta/actualización de notas, borrador/publicación, escritura fallida y concurrencia de solicitudes.
+- **Resultado esperado:** identidad y rol derivados de sesión; profesor limitado a asignación y roster exactos; actores institucionales requieren scope institutionWide; período cerrado inmutable hasta reapertura explícita; sin escrituras parciales ante validación fallida; no se aceptan duplicados ni categorías sin ownership verificable.
+- **Estado:** Pendiente beta; Apps Script/Sheets real NOT RUN.
+- **Evidencia requerida:** identidad/rol/scope, asignación y roster, snapshots de notas antes/después, filas de ownership/categorías, denegaciones, estado de cierre y prueba de concurrencia.
+===============================================================================

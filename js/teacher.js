@@ -5375,7 +5375,11 @@ function toBase64(file) {
                 calificaciones: califsToSave,
                 esBorrador: false,
                 esPublicada: true,
-                profesorId: currentUser.userId
+                profesorId: currentUser.userId,
+                grado: document.getElementById('gb-filter-grado')?.value,
+                seccion: document.getElementById('gb-filter-seccion')?.value,
+                asignatura: document.getElementById('gb-filter-asignatura')?.value,
+                parcial: document.getElementById('gb-filter-parcial')?.value
             });
 
             if (res.status === 'success') {

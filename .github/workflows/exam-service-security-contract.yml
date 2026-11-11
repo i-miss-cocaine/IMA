@@ -15,6 +15,7 @@ on:
       - 'tests/security/exam-service-period-gradebook-review-security.test.js'
       - 'tests/security/exam-service-period-gradebook-reopen-security.test.js'
       - 'tests/security/exam-service-student-grade-rectification-security.test.js'
+      - 'tests/security/exam-service-gradebook-save-security.test.js'
       - '.github/workflows/exam-service-security-contract.yml'
   pull_request:
     branches: [NG_beta_0.0.0.1_work]
@@ -31,6 +32,7 @@ on:
       - 'tests/security/exam-service-period-gradebook-review-security.test.js'
       - 'tests/security/exam-service-period-gradebook-reopen-security.test.js'
       - 'tests/security/exam-service-student-grade-rectification-security.test.js'
+      - 'tests/security/exam-service-gradebook-save-security.test.js'
       - '.github/workflows/exam-service-security-contract.yml'
 jobs:
   exam-security-contracts:
@@ -56,6 +58,8 @@ jobs:
         run: node tests/security/exam-service-period-gradebook-reopen-security.test.js
       - name: Run student grade rectification security regression
         run: node tests/security/exam-service-student-grade-rectification-security.test.js
+      - name: Run gradebook save security regression
+        run: node tests/security/exam-service-gradebook-save-security.test.js
       - run: node tests/security/exam-service-security-contract.test.js
       - run: node tests/security/exam-service-departmental-access.test.js
       - run: node tests/security/exam-service-read-endpoints-security.test.js

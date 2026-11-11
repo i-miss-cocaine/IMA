@@ -83,7 +83,7 @@ const ROLE_PERMISSIONS = {
   "Tutor": ["getStudentExams", "getExamQuestions", "getExamResult", "getEvaluationCategories", "getRubrics", "getStudentRecoveries", "getStudentAcademicReport", "getGradeRectificationHistory"],
   "Responsable": ["getStudentExams", "getExamQuestions", "getExamResult", "getEvaluationCategories", "getRubrics", "getStudentRecoveries", "getStudentAcademicReport", "getGradeRectificationHistory"],
   "Dirección": ["*"],
-  "Director": ["reviewPeriodGradebook", "reopenPeriodGradebook", "rectifyStudentGrade"],
+  "Director": ["reviewPeriodGradebook", "reopenPeriodGradebook", "rectifyStudentGrade", "saveGradebookGrades"],
   "Secretaría": ["*"],
   "Profesor": [
     "createExam", "updateExam", "updateExamStatus", "deleteExam", "gradeExamSubmission", "deleteExamSubmission",
@@ -2457,79 +2457,181 @@ function getGradebookDataUnlocked_(payload, context) {
   };
 }
 function saveGradebookGrades(payload) {
-  const { calificaciones, esBorrador, esPublicada, profesorId, anoLectivo, esAnoHistoricoAnterior, esPadreDeEstudiante, authRole, periodoId, asignatura, grado, seccion } = payload || {};
-
-  if (esAnoHistoricoAnterior === true) {
-    throw new Error("Las calificaciones de años escolares anteriores son inalterables y no pueden modificarse por ningún rol dentro de la plataforma.");
-  }
-
-  if (esPadreDeEstudiante === true) {
-    throw new Error("Un docente no puede modificar las calificaciones de su propio hijo fuera de las reglas ordinarias de cierre de periodo.");
-  }
-
-  if (periodoId) {
-    const ssCheck = SpreadsheetApp.openById(SPREADSHEET_ID);
-    const cierresSheet = getOrCreateSheet(ssCheck, "CierresPeriodos");
-    const cierresData = cierresSheet.getDataRange().getValues();
-    const isClosed = cierresData.slice(1).some(r =>
-      String(r[2]).trim() === String(periodoId).trim() &&
-      String(r[7]).trim() === "Cerrado" &&
-      (!asignatura || String(r[5]).trim() === String(asignatura).trim())
-    );
-    if (isClosed && authRole !== "Secretaría" && authRole !== "Administrador" && authRole !== "Director") {
-      throw new Error("El periodo de evaluación se encuentra cerrado. Para modificar notas registradas se requiere autorización explícita de Secretaría.");
-    }
-  }
-
-  if (!Array.isArray(calificaciones) || calificaciones.length === 0) {
-    throw new Error("Se requiere una lista de calificaciones para guardar.");
-  }
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "CalificacionesEstudiantes");
-  if (sheet.getLastRow() === 0) {
-    sheet.appendRow(["ID", "EvaluacionID", "UserID", "NotaObtenida", "PuntajePonderado", "EsBorrador", "EsPublicada", "Observaciones", "FechaRegistro"]);
-  }
-
-  const now = new Date();
-  const data = sheet.getDataRange().getValues();
-
-  const indexMap = {};
-  for (let i = 1; i < data.length; i++) {
-    const key = `${String(data[i][1]).trim()}_${String(data[i][2]).trim()}`;
-    indexMap[key] = i;
-  }
-
-  let savedCount = 0;
-  calificaciones.forEach(c => {
-    const { evaluacionId, userId, notaObtenida, puntajePonderado, observaciones } = c;
-    if (!evaluacionId || !userId) return;
-
-    const key = `${String(evaluacionId).trim()}_${String(userId).trim()}`;
-    if (key in indexMap) {
-      const idx = indexMap[key];
-      data[idx][3] = notaObtenida || 0;
-      data[idx][4] = puntajePonderado || 0;
-      data[idx][5] = esBorrador !== false;
-      data[idx][6] = esPublicada === true;
-      data[idx][7] = observaciones || "";
-      data[idx][8] = now;
-    } else {
-      const cid = "CALIF-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
-      const newRow = [cid, evaluacionId, userId, notaObtenida || 0, puntajePonderado || 0, esBorrador !== false, esPublicada === true, observaciones || "", now];
-      data.push(newRow);
-      indexMap[key] = data.length - 1;
-    }
-    savedCount++;
-  });
-
-  if (data.length > 1) {
-    sheet.getRange(1, 1, data.length, data[0].length).setValues(data);
-  }
-
-  return { status: "success", message: `Se guardaron ${savedCount} calificaciones exitosamente.` };
+  return withAuthorizedGradebookSave_(payload, context =>
+    saveGradebookGradesUnlocked_(payload, context));
 }
 
+function withAuthorizedGradebookSave_(payload, mutation) {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) throw new Error("GRADEBOOK_SAVE_LOCK_TIMEOUT");
+  try {
+    return mutation(getAuthorizedGradebookSaveContext_(payload));
+  } finally {
+    try { lock.releaseLock(); } catch (_) {}
+  }
+}
+
+function getAuthorizedGradebookSaveContext_(payload) {
+  const p = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
+  const permission = validateRolePermission("saveGradebookGrades", p);
+  if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const actor = getVerifiedExamIdentity_(p);
+  if (!actor || actor.authorized !== true || !String(actor.userId || "").trim()) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
+  const roles = ["Profesor", "Administrador", "Desarrollador", "Dirección", "Director", "Secretaría"];
+  if (roles.indexOf(String(actor.role || "").trim()) === -1) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const scope = getVerifiedExamDepartmentScope_(p, ss, actor);
+  if (!scope || scope.authorized !== true || !String(scope.institutionId || "").trim()) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
+  const grado = String(p.grado || "").trim(), seccion = String(p.seccion || "").trim();
+  const asignatura = String(p.asignatura || "").trim(), parcial = String(p.parcial || p.periodoId || "").trim();
+  if (!grado || !seccion || !asignatura || !parcial) throw new Error("GRADEBOOK_CONTEXT_REQUIRED");
+  const institutional = ["Administrador", "Desarrollador", "Dirección", "Director", "Secretaría"].indexOf(actor.role) !== -1;
+  if (institutional) {
+    if (scope.institutionWide !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+  } else {
+    if (String(p.profesorId || "").trim() !== String(actor.userId).trim()) throw new Error("RESOURCE_NOT_AVAILABLE");
+    const config = getSheetOrThrow(ss, "ConfiguracionAcademica").getDataRange().getValues();
+    const headers = ["ID", "Fecha", "Parcial", "Grado", "Sección", "Asignatura", "Unidad", "Tema", "profesorId"];
+    if (!config.length || headers.some((h, i) => String(config[0][i] || "").trim() !== h)) {
+      throw new Error("ACADEMIC_ASSIGNMENT_SCHEMA_INVALID");
+    }
+    const norm = v => normalizeString(v);
+    const assignments = config.slice(1).filter(r => norm(r[2]) === norm(parcial) &&
+      norm(r[3]) === norm(grado) && norm(r[4]) === norm(seccion) && norm(r[5]) === norm(asignatura));
+    if (!assignments.length || assignments.some(r => String(r[8] || "").trim() !== String(actor.userId).trim())) {
+      throw new Error("RESOURCE_NOT_AVAILABLE");
+    }
+  }
+
+  const closeSheet = ss.getSheetByName("CierresPeriodos");
+  if (closeSheet) {
+    const rows = closeSheet.getDataRange().getValues();
+    const headers = ["ID", "Fecha", "Parcial", "Grado", "Seccion", "Asignatura", "ProfesorID", "Estado"];
+    if (rows.length && headers.some((h, i) => String(rows[0][i] || "").trim() !== h)) {
+      throw new Error("GRADEBOOK_CLOSURE_SCHEMA_INVALID");
+    }
+    const closed = rows.slice(1).filter(r => normalizeString(r[2]) === normalizeString(parcial) &&
+      normalizeString(r[3]) === normalizeString(grado) && normalizeString(r[4]) === normalizeString(seccion) &&
+      normalizeString(r[5]) === normalizeString(asignatura) && String(r[7] || "").trim() === "Cerrado");
+    if (closed.length) throw new Error("GRADEBOOK_PERIOD_CLOSED");
+  }
+
+  const students = getSheetOrThrow(ss, "Usuarios").getDataRange().getValues().slice(1);
+  const roster = Object.create(null), counts = Object.create(null);
+  students.forEach(r => { const id = String(r[0] || "").trim(); if (id) counts[id] = (counts[id] || 0) + 1; });
+  students.forEach(r => {
+    const id = String(r[0] || "").trim();
+    if (id && counts[id] === 1 && ["estudiante", "alumno"].indexOf(normalizeString(r[6] || r[5])) !== -1 &&
+        normalizeString(r[2]) === normalizeString(grado) && normalizeString(r[3]) === normalizeString(seccion)) {
+      roster[id] = true;
+    }
+  });
+
+  const gradeSheet = getSheetOrThrow(ss, "CalificacionesEstudiantes");
+  const gradeData = gradeSheet.getDataRange().getValues();
+  const gradeHeaders = ["ID", "EvaluacionID", "UserID", "NotaObtenida", "PuntajePonderado", "EsBorrador", "EsPublicada", "Observaciones", "FechaRegistro"];
+  if (!gradeData.length || gradeHeaders.some((h, i) => String(gradeData[0][i] || "").trim() !== h)) {
+    throw new Error("GRADEBOOK_SCHEMA_INVALID");
+  }
+  const categoriesSheet = ss.getSheetByName("CategoriasEvaluacion");
+  const categoryData = categoriesSheet ? categoriesSheet.getDataRange().getValues() : [];
+  const categoryIds = Object.create(null);
+  ["CAT-1", "CAT-2", "CAT-3", "CAT-4"].forEach(id => { categoryIds[id] = true; });
+  if (categoryData.length) {
+    const categoryHeaders = ["ID", "Nombre", "Ambito", "PorcentajePonderacion", "EscalaID", "Estado"];
+    if (categoryHeaders.some((h, i) => String(categoryData[0][i] || "").trim() !== h)) {
+      throw new Error("EVALUATION_CATEGORIES_SCHEMA_INVALID");
+    }
+    categoryData.slice(1).forEach(r => {
+      const id = String(r[0] || "").trim();
+      if (id && String(r[5] || "").trim() === "Activo") categoryIds[id] = true;
+    });
+  }
+  const ownership = ss.getSheetByName("ResourceOwnership");
+  const ownershipRows = ownership ? ownership.getDataRange().getValues() : [];
+  const ownedCategories = Object.create(null);
+  ownershipRows.slice(1).forEach(r => {
+    if (String(r[1] || "").trim() === String(scope.institutionId).trim() &&
+        String(r[2] || "").trim().toUpperCase() === "CATEGORIA_EVALUACION" &&
+        String(r[5] || "").trim().toUpperCase() === "ACTIVE") {
+      const id = String(r[3] || "").trim();
+      if (!ownedCategories[id]) ownedCategories[id] = [];
+      ownedCategories[id].push(String(r[4] || "").trim());
+    }
+  });
+  return { ss, actor, scope, institutional, grado, seccion, asignatura, parcial, roster,
+    gradeSheet, gradeData, categoryIds, ownedCategories };
+}
+
+function saveGradebookGradesUnlocked_(payload, context) {
+  const p = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
+  const calificaciones = p.calificaciones;
+  if (p.esAnoHistoricoAnterior === true || p.anoLectivo && p.esAnoHistoricoAnterior) {
+    throw new Error("GRADEBOOK_HISTORICAL_YEAR_IMMUTABLE");
+  }
+  if (p.esPadreDeEstudiante === true) throw new Error("GRADEBOOK_SELF_CHILD_FORBIDDEN");
+  if (!Array.isArray(calificaciones) || !calificaciones.length || calificaciones.length > 500) {
+    throw new Error("GRADEBOOK_BATCH_INVALID");
+  }
+  const seen = Object.create(null), pairRows = Object.create(null);
+  for (let i = 1; i < context.gradeData.length; i++) {
+    const row = context.gradeData[i] || [];
+    const key = String(row[1] || "").trim() + "\u0000" + String(row[2] || "").trim();
+    if (!pairRows[key]) pairRows[key] = [];
+    pairRows[key].push(i);
+  }
+  const normalized = calificaciones.map(item => {
+    if (!item || typeof item !== "object" || Array.isArray(item)) throw new Error("GRADEBOOK_ENTRY_INVALID");
+    const evaluacionId = String(item.evaluacionId || "").trim(), userId = String(item.userId || "").trim();
+    const raw = item.notaObtenida;
+    if (!evaluacionId || !userId || !context.roster[userId] || !context.categoryIds[evaluacionId]) {
+      throw new Error("GRADEBOOK_ENTRY_OUT_OF_SCOPE");
+    }
+    if (!["CAT-1", "CAT-2", "CAT-3", "CAT-4"].includes(evaluacionId)) {
+      const categoryOwners = context.ownedCategories[evaluacionId] || [];
+      if (categoryOwners.length !== 1 || !categoryOwners[0] ||
+          !(context.scope.institutionWide === true ||
+            (context.scope.departmentIds || []).some(id => String(id).trim() === categoryOwners[0]))) {
+        throw new Error("GRADEBOOK_CATEGORY_OWNERSHIP_UNVERIFIED");
+      }
+    }
+    if (typeof raw !== "number" && typeof raw !== "string") throw new Error("GRADEBOOK_GRADE_INVALID");
+    const text = String(raw).trim();
+    if (!/^(?:0|[1-9]\d?)(?:\.\d{1,2})?$|^100(?:\.0{1,2})?$/.test(text)) {
+      throw new Error("GRADEBOOK_GRADE_INVALID");
+    }
+    const grade = Number(text);
+    const key = evaluacionId + "\u0000" + userId;
+    if (seen[key]) throw new Error("GRADEBOOK_ENTRY_DUPLICATE");
+    seen[key] = true;
+    const existing = pairRows[key] || [];
+    if (existing.length > 1) throw new Error("GRADEBOOK_RECORD_AMBIGUOUS");
+    if (existing.length === 1 && !String(context.gradeData[existing[0]][0] || "").trim()) {
+      throw new Error("GRADEBOOK_RECORD_INVALID");
+    }
+    return { evaluacionId, userId, grade, existing: existing.length ? existing[0] : -1,
+      observaciones: String(item.observaciones || "").slice(0, 1000) };
+  });
+  const data = context.gradeData.map(r => r.slice()), now = new Date();
+  normalized.forEach(entry => {
+    const row = entry.existing >= 1 ? data[entry.existing] :
+      ["CALIF-" + Utilities.getUuid(), entry.evaluacionId, entry.userId, 0, 0, true, false, "", now];
+    row[3] = entry.grade;
+    row[4] = entry.grade;
+    row[5] = p.esBorrador !== false;
+    row[6] = p.esPublicada === true;
+    row[7] = entry.observaciones;
+    row[8] = now;
+    if (entry.existing < 1) data.push(row);
+    else data[entry.existing] = row;
+  });
+  context.gradeSheet.getRange(1, 1, data.length, 9).setValues(data);
+  return { status: "success", message: "Se guardaron " + normalized.length + " calificaciones exitosamente.", savedCount: normalized.length };
+}
 // [F9-Task10] [P1] - Ampliar el libro de calificaciones para mejorar el registro individual y masivo
 function bulkApplyGradebookGrades(payload) {
   const { evaluacionId, estudiantes, nota, observaciones, sobrescribirExistentes } = payload || {};

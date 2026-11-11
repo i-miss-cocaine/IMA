@@ -5,11 +5,11 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.503**
+- Último checkpoint: **C1.504**
 - Última sesión: `IMA-EXEC-20261110-1825Z-02`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.503: **160412**
+- Caracteres del archivo activo tras C1.504: **165408**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 - Baseline lógico válido: **C1.316** (`31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`). C1.317–C1.382 se conservan, pero no se aceptan como evidencia de continuidad por corrección expresa del usuario.
@@ -357,3 +357,5 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.503 | IMA-EXEC-20261110-1825Z-02 | EXAM: rectifyStudentGrade con RBAC/identidad/scope institutionWide, validación de fila/alumno/nota y auditoría previa a mutación con rollback; contrato 27 escenarios añadido, CI pendiente | PM-01 — TASK-153 / EXAM / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt — sección C1.503 | 1933–1958 | C1.502 | implementación y checkpoint pendientes de publicar |
 
 | C1.503 | IMA-EXEC-20261110-1825Z-02 | EXAM: rectifyStudentGrade protegido; contrato dedicado 27/27 PASS y security-contract PASS (run 43011012718); workflow global FAIL en departmental-access por ReferenceError preexistente; beta pendiente | PM-01 — TASK-153 / EXAM / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt — sección C1.503 | 1960–1978 | C1.502 | implementación 4524ab603a3dce1ca48421ef25692bc226be6db8; corrección test b1e1c4ed56707fa62bb5c7b7d0f56305eb56c072 |
+
+| C1.504 | IMA-EXEC-20261110-1825Z-02 | EXAM: saveGradebookGrades protegido con RBAC/identidad/scope, asignación y roster, ownership de categorías, cierre inmutable, ScriptLock y validación de lote; harness V8 10/10 PASS, CI dedicado pendiente | PM-01 — TASK-153 / EXAM / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt — sección C1.504 | 1980–2004 | C1.503 | implementación y verificación local aislada; CI Node pendiente |

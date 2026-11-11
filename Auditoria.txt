@@ -1595,3 +1595,12 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Integridad:** auditoría UUID/actor/motivo/transición antes de mutación; rollback compensatorio de fila y evento si falla actualización. Los datos de actor del payload se ignoran.
 - **Pruebas:** contrato aislado Node/vm 27/27 PASS y parseo Code.gs PASS (CI run 43011012718); security-contract PASS. Workflow global FAIL en departmental-access por ReferenceError withAuthorizedExamRead_ is not defined, ya presente en run 43009948936; read-endpoints skipped. Apps Script/Sheets NOT RUN; BETA-EXAM-056 Pendiente beta.
 ===============================================================================
+
+
+===============================================================================
+### AUD-NG-386 — EXAM: saveGradebookGrades (C1.504)
+- **Hallazgo alto:** endpoint de escritura masiva sin RBAC, identidad ni scope; permitía spoofing de actor/flags, escritura fuera del roster y cambios sobre período cerrado basados en authRole de cliente; primera coincidencia sobrescrita silenciosamente.
+- **Corrección:** ScriptLock, RBAC, identidad firmada, scope institucional, asignación docente exacta, roster único, ownership de categorías, cierre inmutable, validación estricta de notas y unicidad de lote/persistencia.
+- **Verificación local:** parseo Code.gs PASS; ejecución aislada de las funciones reales 10/10 PASS. Suite Node dedicada 23 escenarios agregada al workflow, pendiente de ejecución CI. Apps Script/Sheets NOT RUN; BETA-EXAM-057 Pendiente beta.
+- **Límite:** no existe PeriodoID/Asignatura en CalificacionesEstudiantes; no se inventa vínculo por fila. bulkApplyGradebookGrades queda expresamente fuera de esta iteración.
+===============================================================================
