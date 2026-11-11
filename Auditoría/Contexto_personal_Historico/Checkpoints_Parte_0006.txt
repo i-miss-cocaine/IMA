@@ -1766,3 +1766,23 @@ C1.559 completa la cobertura local de revocación RBAC para saveCompetencyEvalua
 
 HEAD inicial: 87cae5abd0d607fb724fcfeb2286d5084b66b137. Commit principal de C1.559 (prueba y documentación): 4eee53d802e12ea4c1ee109d3dc15f7e8d03df48. La publicación final de la rama se verificó después de este commit.
 ===============================================================================
+
+===============================================================================
+## C1.560 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — verificar revocación RBAC entre preflight y revalidación bajo ScriptLock en submitGradebookForReview.
+
+### Hallazgo y cambio
+- submitGradebookForReview ya valida RBAC e identidad antes del lock y vuelve a validar ambos en getAuthorizedPeriodGradebookSubmissionContext_ bajo lock. La suite dedicada probaba identidad incompleta durante la segunda fase, pero su mock RBAC era estático y no representaba la revocación entre fases.
+- El fixture ahora acepta una secuencia RBAC determinista; se añadió un caso con permiso concedido en preflight y denegado en la segunda comprobación. El test exige RESOURCE_NOT_AVAILABLE, que la revocación ocurra antes de una segunda consulta de identidad, lock liberado, cero aperturas de Sheets y CierresPeriodos sin cambios.
+- No se modificó backend productivo, matriz RBAC, roles, scope, asignaciones ni persistencia.
+
+### Verificación
+- Harness V8 aislado del flujo de autorización: PASS; 2 comprobaciones RBAC (concedida→revocada), 1 consulta de identidad, lock adquirido/liberado, cero aperturas de Sheets.
+- Suite completa actual de `tests/security/exam-service-period-gradebook-submission-security.test.js` (27 escenarios): NOT RUN; parseo Node 22 del archivo completo: NOT RUN.
+- Apps Script/Sheets real: NOT RUN; BETA-EXAM-054 permanece Pendiente beta.
+
+### Estado y continuidad
+La regresión quedó añadida, pero la suite completa actual debe ejecutarse antes de cerrar la cobertura local. TASK-153 / AUD-NG-386 continúa En ejecución; siguiente iteración: ejecutar y corregir la suite actual de submitGradebookForReview, sin repetir C1.560.
+
+HEAD inicial: 744b609399885036c145992ebd92e0f0877c5cbf. HEAD de rama antes de registrar el checkpoint: 14abfa1a7ba7adca66f55925d9b56a7cc8fae740. Rama base sin cambios esperado: 44d9891132332e692dbe2ba8602b41f50a508a59.
+===============================================================================
