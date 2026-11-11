@@ -942,6 +942,6 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Precondiciones:** versión beta desplegada; rúbrica nueva o existente con ownership sintético válido; departamento dentro del scope verificado; sesión firmada; mecanismo controlado para permitir RBAC en preflight y denegarlo en contexto bajo lock.
 - **Pasos:** invocar saveRubric con permiso concedido; revocarlo antes de la revalidación contextual; revisar respuesta, trazas RBAC/identidad/lock/Sheets y snapshots completos de RubricasEvaluacion y ResourceOwnership. Repetir flujo válido con permisos estables para comprobar creación/actualización y ownership.
 - **Resultado esperado:** RESOURCE_NOT_AVAILABLE, lock liberado, cero apertura de Sheets y ambas hojas intactas; el flujo válido conserva reglas de ownership y escritura.
-- **Estado:** Pendiente beta; cobertura local C1.577 21/21 PASS; CI focalizado NOT RUN; Apps Script/Sheets real NOT RUN.
+- **Estado:** Pendiente beta; cobertura local C1.577 21/21 PASS y paso focalizado CI run 43110460170 SUCCESS; workflow global falla después por ReferenceError preexistente; Apps Script/Sheets real NOT RUN.
 - **Evidencia requerida:** commit desplegado, trazas saneadas y snapshots completos antes/después de ambas hojas.
 ===============================================================================

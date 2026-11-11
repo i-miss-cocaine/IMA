@@ -2063,3 +2063,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - CI focalizado NOT RUN; Apps Script/Sheets NOT RUN, BETA-EXAM-082 Pendiente beta.
 - C1.577 Completada en verificación local. TASK-153 / AUD-NG-386 continúa En ejecución.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] C1.577 — resultado CI focalizado
+- GitHub Actions run 43110460170: `Run rubric mutation security regression` SUCCESS; los demás pasos de regresión focalizada del job también pasaron.
+- El workflow global falla después en `exam-service-security-contract.test.js:449` por `ReferenceError: withAuthorizedExamCreation_ is not defined`, fallo preexistente ajeno a C1.577.
+- C1.577 Completada en verificación local y CI focalizado; BETA-EXAM-082 Pendiente beta.
+===============================================================================
