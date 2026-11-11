@@ -708,3 +708,14 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta; parseo completo Code.gs PASS; contrato aislado local V8 17/17 PASS; prueba Node dedicada añadida al workflow, resultado CI aún no observado; Apps Script/Sheets real NOT RUN.
 - **Evidencia requerida:** commit desplegado, identidad/permiso y ownership sintéticos, fila de entrega antes/después, resultado de cada límite/entrada inválida y logs sin datos sensibles.
 ===============================================================================
+
+===============================================================================
+## BETA-EXAM-063 — TASK-153 / AUD-NG-386 / EXAM: eliminación trazable de entregas
+- **Módulo/rol:** Servicio EXAM; Profesor propietario del examen o rol institucional autorizado, con permiso efectivo deleteExamSubmission.
+- **Objetivo:** validar que una entrega solo se elimina con motivo documentado y que la operación deja evidencia de evento, actor y resultado sin copiar respuestas del estudiante.
+- **Precondiciones:** versión beta desplegada; examen/entrega sintéticos; identidad firmada; acceso controlado a EntregasExamen e HistorialEliminacionesEntregasExamen.
+- **Pasos:** eliminar una entrega con motivo válido; probar motivo ausente, no string, menor de 10 y mayor de 2.000 caracteres; probar actor no autorizado y entrega/examen ajenos; inducir rechazo de esquema del historial y fallo de escritura; comprobar estado DELETE_REQUESTED/DELETED/DELETE_FAILED según resultado y la creación inicial de encabezados.
+- **Resultado esperado:** no hay borrado si falla autorización, motivo, esquema o registro inicial; al borrar, el historial registra UUID, IDs de entrega/examen/estudiante, actor/rol, motivo, fecha y estado; no contiene RespuestasJSON ni respuestas del estudiante; fallo de borrado queda como DELETE_FAILED.
+- **Estado:** Pendiente beta; parseo completo Code.gs PASS; contrato aislado local 17/17 PASS; fuente del test Node parsea; CI aún no observado; Apps Script/Sheets real NOT RUN.
+- **Evidencia requerida:** commit desplegado, filas sintéticas antes/después, encabezados del historial, evento UUID y estado, pruebas negativas y confirmación de que el historial no contiene respuestas ni secretos.
+===============================================================================
