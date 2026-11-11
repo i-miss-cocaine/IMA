@@ -1978,3 +1978,10 @@ HEAD de inicio de esta iteración: f607fb31a3e9ae5f98a2fdbb167e0749b3695727. Ram
 
 HEAD inicial: 11a2475823531d5e54fe992b7a883963315681d8. Rama: NG_beta_0.0.0.1_work. Rama base esperada sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59. HEAD final: se confirma tras publicar.
 ===============================================================================
+
+
+### Addendum de CI — C1.570
+- GitHub Actions run 43104257279, commit 767589cedc802b0ae7533ab1cafc2a3950d73f63, ejecutó el paso `exam-service-delete-submission-audit` en Node.js 22.23.4: **29/29 PASS**.
+- El escenario nuevo de `gradeExamSubmission` con RBAC [true, true, false] pasó dentro de esa suite.
+- El workflow global concluyó FAIL posteriormente en `exam-service-security-contract.test.js:449` por ReferenceError `withAuthorizedExamCreation_ is not defined`; mismo error ya documentado en ejecuciones anteriores (runs 43102931371 y 43101929348), no atribuible a C1.570.
+- La ejecución local del desarrollador continúa NOT RUN y es obligatoria según NDASC 1.4. No se cierra todavía la cobertura local de C1.570.

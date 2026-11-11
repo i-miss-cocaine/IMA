@@ -1952,3 +1952,9 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Brecha de cobertura: tercera comprobación RBAC en getAuthorizedExamMutationContext_ no estaba probada con permiso revocado tras preflight y contexto de entrega.
 - Se añadió escenario del handler real con [true, true, false], esperando RESOURCE_NOT_AVAILABLE, lock liberado, una sola apertura/lectura de entrega y cero escrituras.
 - Solo se modifica la suite dedicada; backend productivo sin cambios. Parseo PASS; suite local, CI y Apps Script/Sheets NOT RUN. Pendiente ejecución local.
+
+
+### Addendum C1.570 — evidencia CI
+- Run 43104257279: suite `exam-service-delete-submission-audit` PASS 29/29 en Node.js 22.23.4; incluye la revocación RBAC en la tercera comprobación de gradeExamSubmission.
+- El workflow global falla después por ReferenceError `withAuthorizedExamCreation_ is not defined` en el security-contract; error ya presente en runs anteriores.
+- Ejecución local de esta revisión pendiente conforme NDASC 1.4; C1.570 no se cierra localmente todavía.

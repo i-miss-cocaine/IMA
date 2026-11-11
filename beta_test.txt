@@ -829,7 +829,7 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Precondiciones:** versión beta desplegada; examen y entrega sintéticos; sesión firmada válida inicialmente; mecanismo controlado para revocar/inutilizar la sesión entre la validación del contexto de entrega y la revalidación anidada del examen.
 - **Pasos:** ejecutar gradeExamSubmission y deleteExamSubmission; conservar identidad válida en preflight y contexto de entrega; hacer que la tercera comprobación RBAC deniegue el permiso durante gradeExamSubmission; hacer que la tercera verificación de identidad devuelva actor no autorizado o userId vacío/espacios; repetir con permiso/identidad estables y ownership/scope válido; revisar lock y estado de EntregasExamen e HistorialEliminacionesEntregasExamen.
 - **Resultado esperado:** RBAC revocado o identidad incompleta/no autorizada en el contexto anidado rechaza la operación; no se califica ni elimina la entrega, no se crea evento de borrado, no se realiza una segunda apertura de Sheets desde el contexto de examen y el lock se libera; flujo válido conserva sus permisos y persistencia.
-- **Estado:** Pendiente beta.
+- **Estado:** Pendiente beta; CI específico 43104257279 PASS (29/29); ejecución local de esta revisión NOT RUN.
 - **Evidencia requerida:** commit desplegado, trazas saneadas de las tres validaciones RBAC y las validaciones de identidad realizadas, aperturas/lecturas/escrituras de Sheets, estado de la entrega antes/después y estado del lock.
 ===============================================================================
 
