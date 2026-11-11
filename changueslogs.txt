@@ -2079,3 +2079,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Antes del cambio, el contrato fallaba al invocar createExam directamente por dependencias ausentes en el runtime de prueba. Tras el cambio, parseo de Code.gs y ejecución completa del contrato en V8 aislado con shims compatibles: PASS.
 - Solo cambia la suite de seguridad y registros; backend productivo, RBAC, roles, scope, ownership y persistencia sin cambios. CI posterior al commit pendiente; beta no aplica.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] C1.578 — resultado CI del contrato general EXAM
+- GitHub Actions run 43111399591, commit aaf068438b2cd3cd24bcb2bafbc50105139c1054: workflow completo SUCCESS en Node.js 22.
+- Pasaron todos los pasos del job exam-security-contracts, incluido exam-service-security-contract.test.js, departmental-access y read-endpoints-security.
+- El ReferenceError withAuthorizedExamCreation_ is not defined quedó resuelto; no se reprodujo el fallo global anterior.
+- C1.578 Completada en verificación local y CI. TASK-153 / AUD-NG-386 sigue En ejecución para el inventario EXAM restante.
+===============================================================================

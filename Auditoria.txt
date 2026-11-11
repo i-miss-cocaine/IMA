@@ -1967,3 +1967,10 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Verificación local:** parseo del backend y ejecución completa del contrato en V8 aislado con shims compatibles: PASS. CI posterior al commit pendiente.
 - **Continuidad:** TASK-153 / AUD-NG-386 permanece En ejecución; no se crea prueba beta por no alterar comportamiento desplegable.
 ===============================================================================
+
+
+### Addendum CI — C1.578
+- GitHub Actions run **43111399591**, commit `aaf068438b2cd3cd24bcb2bafbc50105139c1054`: workflow `Exam-Service security local contracts` **SUCCESS** en Node.js 22.
+- Job `exam-security-contracts`: SUCCESS; todos los pasos de regresión focalizada, contrato general, acceso departamental y lecturas EXAM pasaron.
+- `exam-service-security-contract.test.js` pasó y no volvió a producirse el ReferenceError `withAuthorizedExamCreation_ is not defined`.
+- C1.578 Completada en verificación local y CI. TASK-153 / AUD-NG-386 continúa En ejecución.

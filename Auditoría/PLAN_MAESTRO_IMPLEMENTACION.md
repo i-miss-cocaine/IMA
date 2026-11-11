@@ -4221,3 +4221,10 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Corrección:** el fixture incorpora `withAuthorizedExamCreation_` y `createExamUnlocked_` en el conjunto de funciones cargadas en el runtime aislado. No se modifica backend productivo, matriz RBAC, identidad, ownership, scope ni persistencia.
 - **Verificación local:** parseo de `backend/exam-service/Code.gs` y ejecución completa del contrato general en V8 aislado con shims compatibles: PASS; todas las aserciones completaron, incluida denegación RBAC directa, creación autorizada, aislamiento de departamento y rollback. La ejecución Node 22/CI posterior al commit queda pendiente de observar.
 - **Estado:** corrección del harness completada localmente; TASK-153 / AUD-NG-386 continúa En ejecución para el inventario EXAM restante. No requiere prueba beta porque no cambia comportamiento desplegable.
+
+
+#### Addendum CI — C1.578
+- GitHub Actions run **43111399591**, commit `aaf068438b2cd3cd24bcb2bafbc50105139c1054`, workflow `Exam-Service security local contracts`: **SUCCESS** en Node.js 22.
+- El job `exam-security-contracts` terminó SUCCESS. Pasaron todos los pasos: suites focalizadas de rúbricas, evaluaciones, recuperaciones, mutaciones EXAM, entregas, libro de calificaciones, banco de preguntas, creación de exámenes, purge de caché, validación de notas, contrato general, acceso departamental y endpoints de lectura.
+- La prueba `exam-service-security-contract.test.js` pasó; desapareció el ReferenceError `withAuthorizedExamCreation_ is not defined`. No se reprodujo el fallo global previo.
+- **Estado:** C1.578 Completada en verificación local y CI. TASK-153 / AUD-NG-386 continúa En ejecución para el inventario EXAM restante.
