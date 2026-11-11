@@ -734,3 +734,15 @@ Rama base: NG_beta_0.0.0.1 — HEAD verificado 44d9891132332e692dbe2ba8602b41f50
 Subalcance de identidad completa en mutaciones de entregas corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
 Siguiente: continuar inventario de mutadores EXAM no cubiertos, una sola operación por iteración.
 ===============================================================================
+
+
+===============================================================================
+### ADDENDUM FINAL DE VERIFICACIÓN — C1.527 / mutaciones de entregas EXAM
+- Implementación: `418c6ee8b6bbdfc97610a0532fcb85a67d1e44b8`.
+- Suite: `295c061b2d53249ef1a2e9dea63d00fc8c36397d` y cobertura de orden contexto/Sheets `b1b240ec8c8a26f3bdab789dbc39811fc935dcef`.
+- Cierre documental inicial: plan `d3b26691d263bfe7791f132d55821b451ad24c53`; auditoría `f73a42600669684ac3e4f6fda4f88f4ce159a4c5`; changelog `30b101800ab132e36b39c52b75da5af2b50d0abc`; checkpoint `5cd95439ddbe04635bd8ef6373cd437d94cec686`; índice `af8da7501496dbc510ada5a26a5c13093954c933`.
+- CI workflow `43058558651` SUCCESS; job `130654537657` SUCCESS; suite `exam-service-delete-submission-audit` 26/26 PASS en Node 22.
+- Suite aislada local 26/26 PASS; parseo Code.gs y suite PASS. Node nativo local NOT RUN por fallo DNS del checkout.
+- Apps Script/Sheets real NOT RUN; no requerido para aprobación local.
+- HEAD de trabajo verificado al momento del cierre documental: `af8da7501496dbc510ada5a26a5c13093954c933`; HEAD base `44d9891132332e692dbe2ba8602b41f50a508a59`; rama base sin escrituras.
+===============================================================================
