@@ -3650,3 +3650,9 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Pruebas locales:** contrato aislado 10/10 PASS (Node 22) sobre la función createExam: creación positiva, RBAC denegado antes de abrir Sheets, identidad/scope inválidos, departamento ajeno, lock, esquema ownership y fallos parciales de persistencia/rollback. Parseo completo del Code.gs no verificado localmente; estado del workflow de push no verificable con el resultado disponible.
 - **Beta:** BETA-EXAM-060 Pendiente beta; Apps Script/Sheets real NOT RUN.
 - **Estado:** subalcance createExam completado tras PASS de verificaciones locales; TASK-153 y AUD-NG-386 continúan En ejecución por otras mutaciones EXAM.
+
+### 10.160 TASK-153 / AUD-NG-386 — autorización y revocación de sesiones en purgeSecurityCaches (C1.508)
+- **Hallazgo:** purgeSecurityCaches no validaba RBAC ni identidad dentro de la función y confiaba en doPost; además, SESSION_REVOKED eliminaba el marcador revoked_session_<id> que verifySessionToken consulta para rechazar sesiones revocadas.
+- **Corrección:** exige permiso efectivo purgeSecurityCaches e identidad firmada antes de CacheService. SESSION_REVOKED registra REVOKED con TTL 86400; GENERIC_PURGE conserva la eliminación explícita del marcador.
+- **Pruebas locales:** contrato aislado 7/7 PASS sobre la función extraída; sintaxis de función PASS. Parseo completo de Code.gs y CI aún no observados; Apps Script/CacheService real NOT RUN.
+- **Beta:** BETA-EXAM-061 Pendiente beta. TASK-153 y AUD-NG-386 continúan En ejecución por otras superficies EXAM.
