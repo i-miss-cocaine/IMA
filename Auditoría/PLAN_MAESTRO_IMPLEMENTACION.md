@@ -4340,3 +4340,10 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Alcance:** solo tests/security/exam-service-period-gradebook-closure-security.test.js; backend productivo sin cambios. BETA-EXAM-089 registra la comprobación desplegada.
 - **Verificación local:** caso añadido; ejecución de la suite Node local NOT RUN en este entorno. CI Node.js 22 pendiente de observar tras commit. Apps Script/Sheets real NOT RUN.
 - **Estado:** C1.588 En ejecución hasta completar las verificaciones locales pertinentes. TASK-153 / AUD-NG-386 continúa En ejecución.
+
+
+#### Addendum de verificación local/CI — C1.588
+- GitHub Actions run **43119197178**, commit `03d40c226c7d2761bc9fff73beac80fa4d59ff0a`, workflow `Exam-Service security local contracts`: **SUCCESS** en Node.js 22.
+- El paso `Run period gradebook closure security regression` ejecutó el contrato dedicado y registró `exam-service-period-gradebook-closure-security: PASS (22/22)`; el job completo `exam-security-contracts` terminó SUCCESS, incluidos los contratos generales y de acceso departamental.
+- Esta ejecución aislada en runner Node.js verifica código/fixtures sin despliegue ni infraestructura remota; satisface la verificación local del contrato. El clon local del agente no estuvo disponible por resolución DNS de github.com; no se afirma ejecución en shell local.
+- C1.588 **Completada en verificación local aislada y CI**. Apps Script/Sheets real NOT RUN; BETA-EXAM-089 permanece Pendiente beta.

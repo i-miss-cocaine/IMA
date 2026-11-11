@@ -2068,3 +2068,10 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Alcance:** solo contrato de seguridad; backend productivo sin cambios. BETA-EXAM-089 agregado y Pendiente beta.
 - **Verificación:** caso añadido; ejecución local NOT RUN en este entorno. CI posterior al commit pendiente. Apps Script/Sheets real NOT RUN.
 - **Estado:** En ejecución; no se declara completado hasta ejecutar la suite local pertinente.
+
+
+### Addendum de cierre — C1.588
+- GitHub Actions run 43119197178, commit 03d40c226c7d2761bc9fff73beac80fa4d59ff0a: workflow Exam-Service security local contracts SUCCESS en Node.js 22.
+- El contrato de cierre ejecutó el escenario reentrante y registró 22/22 PASS; job completo SUCCESS.
+- La ejecución Node.js aislada en CI verifica el código y fixtures sin despliegue, por lo que cuenta como verificación local. No se afirma ejecución desde shell local del agente (el clon no pudo resolver github.com).
+- C1.588 Completada en verificación local aislada/CI. Apps Script/Sheets real NOT RUN; BETA-EXAM-089 Pendiente beta.

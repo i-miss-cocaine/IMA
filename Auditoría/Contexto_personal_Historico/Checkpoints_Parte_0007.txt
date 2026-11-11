@@ -62,3 +62,12 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - C1.588 En ejecución hasta ejecutar la verificación local pertinente.
 - HEAD inicial: ddf1ff2c1d8546ed9c4ebdc3ce50be721d360694; HEAD final: se confirma tras publicar.
 ===============================================================================
+
+
+#### Addendum de cierre — C1.588
+- GitHub Actions run 43119197178, commit 03d40c226c7d2761bc9fff73beac80fa4d59ff0a: workflow Exam-Service security local contracts SUCCESS, Node.js 22.
+- Contrato de cierre reentrante: PASS (22/22); job exam-security-contracts SUCCESS.
+- El runner ejecutó el código y fixtures sin despliegue ni servicio remoto; esta evidencia satisface la verificación local aislada. No se afirma ejecución en shell local del agente, ya que el clon falló por DNS.
+- C1.588 Completada en verificación local aislada/CI. Apps Script/Sheets real NOT RUN; BETA-EXAM-089 Pendiente beta.
+- HEAD inicial de la iteración de verificación: 03d40c226c7d2761bc9fff73beac80fa4d59ff0a; HEAD final: se confirma tras commit documental.
+- Siguiente ruta candidata, sin implementar en este checkpoint: saveGradebookGrades, cuyo contrato actual no muestra prueba de reentrada durante sus escrituras (C1.579 cubrió revocación RBAC bajo lock).

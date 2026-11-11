@@ -1023,6 +1023,6 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Precondiciones:** versión beta desplegada; período y asignatura con roster válido y cuatro categorías publicadas; sin cierre previo; mecanismo controlado para intentar una segunda solicitud durante appendRow de CierresPeriodos.
 - **Pasos:** invocar closePeriodGradebook; durante appendRow del cierre exterior intentar closePeriodGradebook anidado para el mismo contexto; revisar respuestas, trazas RBAC/identidad/lock/Sheets y snapshot de CierresPeriodos.
 - **Resultado esperado:** la solicitud secundaria termina con GRADEBOOK_CLOSURE_LOCK_TIMEOUT; la exterior crea exactamente un cierre, abre Sheets una sola vez y libera ScriptLock.
-- **Estado:** Pendiente beta; escenario local añadido al contrato dedicado. La ejecución local y CI de esta revisión deben registrarse por separado; Apps Script/Sheets real NOT RUN.
+- **Estado:** Pendiente beta; contrato local aislado 22/22 PASS; GitHub Actions run 43119197178 SUCCESS en Node.js 22. Apps Script/Sheets real NOT RUN.
 - **Evidencia requerida:** commit desplegado, trazas saneadas de ambas solicitudes, adquisiciones/liberaciones del lock, aperturas de Sheets y snapshot de CierresPeriodos antes/después.
 ===============================================================================
