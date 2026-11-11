@@ -61,12 +61,19 @@ function fixture(options = {}) {
     getSheetByName(name) { return sheets[name] || null; },
     insertSheet(name) { return sheets[name] = makeSheet([]); }
   };
+  let permissionCalls = 0;
   const runtime = {
     LockService: { getScriptLock() { stats.events.push("lock"); return {
       tryLock() { stats.acquired++; if (options.timeout || stats.held) return false; stats.held = true; return true; },
       releaseLock() { stats.released++; stats.held = false; }
     }; } },
-    validateRolePermission() { stats.events.push("rbac"); return { authorized: options.denied !== true }; },
+    validateRolePermission() {
+      stats.events.push("rbac");
+      const sequence = Array.isArray(options.permissions) ? options.permissions : [options.denied !== true];
+      const authorized = sequence[Math.min(permissionCalls, sequence.length - 1)];
+      permissionCalls++;
+      return { authorized: authorized === true };
+    },
     getVerifiedExamIdentity_() {
       stats.events.push("identity");
       identityCalls++;
@@ -285,4 +292,16 @@ test(() => {
   assert.equal(x.stats.opens, 0, "incomplete identity must be rejected before Sheets is opened");
   assert.deepEqual(x.sheets.CierresPeriodos.rows, before, "no review request may be written after identity denial");
 });
-console.log("exam-service-period-gradebook-submission-security: PASS (" + count + "/26)");
+test(() => {
+  const x = fixture({ permissions: [true, false] });
+  const before = x.sheets.CierresPeriodos.rows.map(row => row.slice());
+  assert.throws(() => x.call(), /RESOURCE_NOT_AVAILABLE/);
+  assert.deepEqual(x.stats.events, ["rbac", "identity", "lock", "rbac"]);
+  assert.equal(x.identityCalls(), 1, "RBAC revocation must stop before a second identity lookup");
+  assert.equal(x.stats.acquired, 1);
+  assert.equal(x.stats.released, 1);
+  assert.equal(x.stats.held, false);
+  assert.equal(x.stats.opens, 0, "revoked permission must be rejected before Sheets is opened");
+  assert.deepEqual(x.sheets.CierresPeriodos.rows, before, "revoked permission must not create a review request");
+});
+console.log("exam-service-period-gradebook-submission-security: PASS (" + count + "/27)");
