@@ -1830,3 +1830,10 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Pruebas locales:** parseo Code.gs PASS; suite focalizada 20/20 PASS en runtime aislado con shims, incluida revalidación TOCTOU y no apertura de Sheets; workflow path/step presentes.
 - **CI:** NOT VERIFIED (sin runs/checks devueltos por el conector); Node 22 no afirmado.
 - **Beta:** BETA-EXAM-065 ampliado y Pendiente beta; Apps Script/Sheets real NOT RUN.
+
+
+### C1.534 — AUD-NG-386 / reviewPeriodGradebook: cobertura de revalidación TOCTOU
+- **Hallazgo de auditoría:** la ruta ya rechazaba userId vacío/blanco en el contexto bajo lock, pero la suite no simulaba que la identidad firmada cambiara entre el preflight y esa revalidación.
+- **Cambio:** la fixture admite una secuencia de identidades; se añade caso válido en preflight y userId compuesto por espacios en contexto. La prueba confirma rechazo antes de abrir Sheets, no modifica el estado PendienteRevision y libera el lock.
+- **Verificación local:** parseo Code.gs PASS; suite dedicada 28/28 PASS en runtime V8 aislado con shims. Node 22 nativo NOT RUN; GitHub Actions pendiente de verificación tras publicar.
+- **Beta:** BETA-EXAM-053 ampliado y Pendiente beta; Apps Script/Sheets real NOT RUN. No se modificó lógica productiva ni se ampliaron permisos.

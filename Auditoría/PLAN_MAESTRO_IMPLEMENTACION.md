@@ -3900,3 +3900,11 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **CI:** NOT VERIFIED; el conector no devolvió runs/checks para el commit de prueba. No se afirma ejecución Node 22.
 - **Beta:** BETA-EXAM-065 existente ampliado con revalidación TOCTOU de userId en blanco; Pendiente beta. Apps Script/Sheets real NOT RUN.
 - **Estado:** subalcance closePeriodGradebook corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras rutas EXAM.
+
+
+### 10.187 TASK-153 / AUD-NG-386 — revalidación TOCTOU de identidad en reviewPeriodGradebook (C1.534)
+- **Alcance:** cerrar una brecha de cobertura de regresión en la mutación institucional reviewPeriodGradebook; el código productivo ya exige authorized === true y userId no vacío tras trim() en el contexto bajo lock.
+- **Cobertura añadida:** el harness entrega identidad válida en preflight y un segundo actor autorizado cuyo userId contiene solo espacios durante la revalidación. La prueba exige rechazo antes de abrir Sheets, ausencia de escritura/cambio de estado y liberación del lock.
+- **Verificación local:** suite dedicada ejecutada en runtime V8 aislado con shims de fs/vm/assert: 28/28 PASS; parseo completo de backend/exam-service/Code.gs: PASS. No se afirma Node 22 nativo.
+- **Beta:** BETA-EXAM-053 ampliado; permanece Pendiente beta. Apps Script/Sheets real NOT RUN.
+- **Estado:** cobertura de reviewPeriodGradebook reforzada; TASK-153 / AUD-NG-386 continúa En ejecución por otras rutas EXAM no cerradas.

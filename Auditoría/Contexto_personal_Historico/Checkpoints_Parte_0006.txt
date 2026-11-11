@@ -1005,3 +1005,42 @@ Completar la validación de identidad firmada de getAuthorizedPeriodGradebookClo
 ### Estado y continuidad
 El subalcance de identidad completa en el contexto de cierre queda corregido. TASK-153 / AUD-NG-386 permanece En ejecución por otras rutas EXAM. Rama base sin modificaciones.
 ===============================================================================
+
+
+===============================================================================
+C1.534 — TASK-153 / AUD-NG-386 / EXAM reviewPeriodGradebook
+ID de sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-11
+Rama exclusiva: NG_beta_0.0.0.1_work
+HEAD inicial verificado: 80d3c596e23dffe3752d1cc6a77dd767d9e298e3
+Rama base: NG_beta_0.0.0.1 — HEAD 44d9891132332e692dbe2ba8602b41f50a508a59; sin escrituras.
+
+### Alcance
+Completar la cobertura local de revalidación de identidad firmada entre el preflight y el contexto bajo ScriptLock en reviewPeriodGradebook.
+
+### Hallazgo y cambio
+- El contexto productivo ya exige actor presente, authorized === true y userId no vacío tras trim antes de SpreadsheetApp.openById.
+- La suite existente no modelaba el cambio de identidad entre el preflight y el contexto; la fixture ahora acepta una secuencia de actores.
+- Se añadió una regresión con userId válido en preflight y solo espacios en el segundo actor. Se verifica rechazo antes de abrir Sheets, sin modificar el estado PendienteRevision y con liberación del lock.
+- No se modificó código productivo, roles, permisos, scope ni persistencia.
+
+### Archivos modificados
+- tests/security/exam-service-period-gradebook-review-security.test.js
+- beta_test.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación local
+- Parseo completo de backend/exam-service/Code.gs: PASS.
+- Suite dedicada reviewPeriodGradebook: 28/28 PASS en runtime V8 aislado con shims fs/vm/assert.
+- Node 22 nativo: NOT RUN; el checkout local no pudo clonarse por fallo DNS de github.com.
+- GitHub Actions: pendiente de verificación tras publicar.
+- Apps Script/Sheets real: NOT RUN; BETA-EXAM-053 ampliado y Pendiente beta.
+
+### Estado y continuidad
+La cobertura de revalidación TOCTOU de reviewPeriodGradebook queda completada. TASK-153 / AUD-NG-386 permanece En ejecución por otras rutas EXAM no cerradas.
+Siguiente acción: continuar el inventario de mutaciones EXAM restantes, priorizando la revalidación TOCTOU de reopenPeriodGradebook sin repetir los controles ya cubiertos.
+===============================================================================

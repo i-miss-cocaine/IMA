@@ -52,7 +52,8 @@ function fixture(options = {}) {
   if (options.badAssignmentSchema) configRows[0][0] = "Wrong";
   const configSheet = sheet(configRows);
   const stats = { acquired: 0, released: 0, held: false, opens: 0, writes: 0, permissionChecks: 0, identityChecks: 0, events: [] };
-  const actor = options.actor || { authorized: true, userId: "SEC-1", role: "Secretaría" };
+  const actors = options.actors || [options.actor || { authorized: true, userId: "SEC-1", role: "Secretaría" }];
+  let actorIndex = 0;
   const scope = options.scope || { authorized: true, institutionId: "INST-1", institutionWide: true };
   const ss = { getSheetByName(name) {
     if (name === "CierresPeriodos") return closure;
@@ -65,7 +66,7 @@ function fixture(options = {}) {
       releaseLock() { stats.released++; stats.held = false; }
     }; }},
     validateRolePermission() { stats.events.push("rbac"); stats.permissionChecks++; return { authorized: options.denied !== true }; },
-    getVerifiedExamIdentity_() { stats.events.push("identity"); stats.identityChecks++; return options.invalidIdentity ? { authorized: false } : actor; },
+    getVerifiedExamIdentity_() { stats.events.push("identity"); stats.identityChecks++; return options.invalidIdentity ? { authorized: false } : actors[Math.min(actorIndex++, actors.length - 1)]; },
     getVerifiedExamDepartmentScope_() { return scope; },
     getSheetOrThrow(spreadsheet, name) {
       const value = spreadsheet.getSheetByName(name);
@@ -250,4 +251,18 @@ test(() => {
   assert.deepEqual(x.stats.events, ["rbac"]);
 });
 
-console.log("exam-service-period-gradebook-review-security: PASS (" + count + "/27)");
+
+test(() => {
+  const x = fixture({ actors: [
+    { authorized: true, userId: "SEC-1", role: "Secretaría" },
+    { authorized: true, userId: "   ", role: "Secretaría" }
+  ] });
+  assert.throws(() => x.call(), /RESOURCE_NOT_AVAILABLE/);
+  assert.deepEqual(x.stats.events, ["rbac", "identity", "lock", "rbac", "identity"]);
+  assert.equal(x.stats.acquired, 1);
+  assert.equal(x.stats.released, 1);
+  assert.equal(x.stats.opens, 0);
+  assert.equal(x.stats.held, false);
+  assert.equal(x.closure.rows[1][7], "PendienteRevision");
+});
+console.log("exam-service-period-gradebook-review-security: PASS (" + count + "/28)");

@@ -1712,3 +1712,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Suite dedicada ampliada: 20/20 PASS en runtime aislado con shims; parseo Code.gs PASS; workflow ya incluye suite.
 - CI NOT VERIFIED; Apps Script/Sheets real NOT RUN; BETA-EXAM-065 ampliado y Pendiente beta.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] C1.534 — EXAM reviewPeriodGradebook: regresión de identidad TOCTOU
+- Se amplía la fixture de la suite de revisión institucional para alternar identidades entre preflight y contexto bajo ScriptLock.
+- Nuevo caso: identidad válida al inicio y userId solo espacios al revalidar; se exige rechazo antes de abrir Sheets, sin cambiar el registro PendienteRevision y liberando el lock.
+- Suite dedicada 28/28 PASS en runtime V8 aislado con shims; parseo Code.gs PASS. Node 22 nativo y CI NOT VERIFIED.
+- BETA-EXAM-053 ampliado; Apps Script/Sheets real NOT RUN, Pendiente beta.
+===============================================================================
