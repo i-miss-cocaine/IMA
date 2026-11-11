@@ -1465,3 +1465,37 @@ Continuar inventario de mutaciones EXAM sin cobertura equivalente y seleccionar 
 
 HEAD final: se confirmará después de publicar y verificar el commit del checkpoint.
 ===============================================================================
+
+
+===============================================================================
+C1.549 — TASK-153 / AUD-NG-386 / saveStudentRecovery: identidad revalidada bajo lock
+ID de sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-11
+Repositorio: i-miss-cocaine/IMA
+Rama autorizada: NG_beta_0.0.0.1_work
+HEAD inicial: f9f0a18c1a89724a3d599e273095b0bb7e799b10 (C1.548)
+
+### Alcance y resultado
+Se amplió la suite de seguridad del handler real saveStudentRecovery para cubrir identidad válida en preflight y userId compuesto por espacios en la revalidación contextual bajo ScriptLock.
+
+### Cambios
+- tests/security/exam-service-student-recovery-mutation-security.test.js: fixture con secuencia y contador de identidades; escenario que exige RESOURCE_NOT_AVAILABLE, dos verificaciones, lock adquirido/liberado, cero aperturas de Sheets y snapshots intactos de todas las hojas del fixture.
+- beta_test.txt / BETA-EXAM-068: escenario desplegado de degradación de identidad bajo lock y resultado local actualizado a 17/17.
+- No se modificó backend/exam-service/Code.gs, permisos, roles, scope, contratos ni persistencia productiva.
+
+### Verificación local
+- Parseo V8 de backend/exam-service/Code.gs: PASS.
+- Parseo V8 de tests/security/exam-service-student-recovery-mutation-security.test.js: PASS.
+- Suite completa exam-service-student-recovery-mutation-security: 17/17 PASS en aislamiento V8 con shims assert/fs/path/vm.
+- Escenario nuevo: identidad válida en preflight; userId de espacios en revalidación; dos verificaciones; RESOURCE_NOT_AVAILABLE; ScriptLock adquirido y liberado; cero aperturas de Sheets; snapshots de hojas intactos.
+- Node 22/CI para la suite actual: NOT RUN.
+- Apps Script/Sheets real: NOT RUN; BETA-EXAM-068 permanece Pendiente beta.
+
+### Estado y continuidad
+C1.549 completa la cobertura local de revalidación de identidad para saveStudentRecovery. TASK-153 / AUD-NG-386 continúa En ejecución para las mutaciones EXAM restantes. No se declara aprobada la suite actual en Node 22/CI ni la prueba beta. Sin cambios productivos.
+
+### Siguiente acción exacta
+Continuar inventario de mutaciones EXAM sin cobertura equivalente y seleccionar el siguiente handler con una brecha concreta de evidencia. No repetir C1.549 ni C1.534–C1.548.
+
+HEAD final: se confirmará después de publicar y verificar el commit del checkpoint.
+===============================================================================
