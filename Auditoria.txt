@@ -1602,5 +1602,5 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Hallazgo alto: escritura sin identidad, RBAC, scope, asignación ni roster; flags/rol del cliente permitían alterar cierres.
 - Corrección: ScriptLock, identidad/RBAC/scope, asignación y roster exactos, ownership de categorías, cierre inmutable y notas/lote validados.
 - Pruebas: V8 final 5/5 PASS; CI dedicado 23/23 PASS y security-contract PASS (43012781628). Suite global falla por ReferenceError preexistente en departmental-access. Beta 057 pendiente.
-- Límite: no hay PeriodoID/Asignatura por fila; bulkApplyGradebookGrades queda fuera.
+- Límite: no hay PeriodoID/Asignatura por fila; ConfiguracionAcademica no contiene DepartmentID: se comprueban scope departamental activo y asignación exacta actor/grado/sección/asignatura/período, pero no es posible correlacionar esa asignación con un departamento concreto. El spreadsheet es institucionalmente aislado; el aislamiento departamental por fila requiere evolución de esquema. bulkApplyGradebookGrades queda fuera.
 ===============================================================================

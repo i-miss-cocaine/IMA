@@ -3623,4 +3623,5 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Beta:** BETA-EXAM-057 Pendiente beta; Apps Script/Sheets real NOT RUN.
 - **Limitación:** CalificacionesEstudiantes no almacena período/asignatura. Se conserva el contrato heredado de CAT-1..CAT-4 y no se simula separación histórica por período; antes de cualquier evolución de ese modelo debe ampliarse el esquema y sus consumidores.
 - **Estado:** subalcance saveGradebookGrades completado con verificaciones locales PASS y suite dedicada CI 23/23 PASS. Falla global departmental-access ajena al cambio; TASK-153 permanece En ejecución.
+- **Límite de ámbito:** ConfiguracionAcademica no contiene DepartmentID: se comprueban scope departamental activo y asignación exacta actor/grado/sección/asignatura/período, pero no es posible correlacionar esa asignación con un departamento concreto. El spreadsheet es institucionalmente aislado; el aislamiento departamental por fila requiere evolución de esquema.
 - **Siguiente:** auditar la siguiente mutación EXAM elegible; bulkApplyGradebookGrades permanece fuera de este alcance.

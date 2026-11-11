@@ -2000,6 +2000,6 @@ backend/exam-service/Code.gs; js/teacher.js; tests/security/exam-service-gradebo
 - Workflow global FAIL en exam-service-departmental-access.test.js por ReferenceError preexistente withAuthorizedExamRead_ no definido; read-endpoints skipped.
 - Apps Script/Sheets real NOT RUN; BETA-EXAM-057 Pendiente beta.
 ### Limitaciones
-CalificacionesEstudiantes no contiene PeriodoID/Asignatura; se verifica asignación y período de la solicitud y se bloquea si el cierre correspondiente está Cerrado, pero no se inventa una dimensión histórica por fila. bulkApplyGradebookGrades no se modifica en esta iteración.
+CalificacionesEstudiantes no contiene PeriodoID/Asignatura; se verifica asignación y período de la solicitud y se bloquea si el cierre correspondiente está Cerrado, pero no se inventa una dimensión histórica por fila. ConfiguracionAcademica no contiene DepartmentID: se comprueban scope departamental activo y asignación exacta actor/grado/sección/asignatura/período, pero no es posible correlacionar esa asignación con un departamento concreto. El spreadsheet es institucionalmente aislado; el aislamiento departamental por fila requiere evolución de esquema. bulkApplyGradebookGrades no se modifica en esta iteración.
 TASK-153 / AUD-NG-386 siguen En ejecución por otras mutaciones EXAM.
 ===============================================================================
