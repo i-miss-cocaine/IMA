@@ -1572,3 +1572,53 @@ Auditar y asegurar exclusivamente getRubrics dentro de TASK-153 / AUD-NG-386.
 - TASK-153 permanece En ejecución; AUD-NG-386 abierto por otras lecturas EXAM.
 - Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios).
 ===============================================================================
+
+
+===============================================================================
+CHECKPOINT C1.495 — EXAM: autorización y ownership de saveEvaluationCategory
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-11 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.494.
+HEAD inicial: 40e1b2dab0a4e911458fee1880906d49c10e1206.
+
+### Alcance y decisiones
+Auditar y asegurar saveEvaluationCategory dentro de TASK-153 / AUD-NG-386.
+- Hallazgo: alta/edición escribían CategoriasEvaluacion sin RBAC, identidad, scope, ownership ni serialización.
+- La mutación ahora usa RBAC explícito para saveEvaluationCategory, identidad firmada y scope institucional/departamental; ScriptLock cubre validación y persistencia.
+- La edición exige ID único y ownership activo único CATEGORIA_EVALUACION en el ámbito. Categorías legadas sin ownership no se editan.
+- El alta exige departamento autorizado, crea ID UUID y persiste ResourceOwnership con institución/departamento/actor. Fallo en la escritura coordinada intenta rollback de categoría y ownership.
+- Se valida nombre y porcentaje numérico finito entre 0 y 100.
+- getEvaluationCategories ahora filtra registros con ownership por institución/departamento, oculta ownership ambiguo y mantiene visibilidad compartida de registros legados sin ownership. Defaults continúan siendo solo memoria para hoja ausente/vacía.
+
+### Archivos
+- backend/exam-service/Code.gs
+- tests/security/exam-service-evaluation-category-mutation-security.test.js
+- tests/security/exam-service-evaluation-categories-security.test.js
+- Auditoria.txt
+- changueslogs.txt
+- beta_test.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación local
+- Parseo V8 del backend: PASS.
+- Suite de mutación aislada: PASS (17 escenarios, incluye reentrada/concurrencia, RBAC, identidad, scope, ownership, duplicados, porcentaje, timeout y rollback).
+- Suite de lectura de categorías: PASS (17 escenarios, incluye ownership institucional/departamental, duplicidad, schema, RBAC, scope y ausencia de mutación).
+- exam-service-read-endpoints-security: PASS.
+- exam-service-security-contract: PASS.
+- Node nativo: NOT RUN. CI: NOT RUN. Apps Script/Sheets real: NOT RUN.
+- BETA-EXAM-049: Pendiente beta; no bloquea cierre local.
+
+### Commits de código y pruebas
+- Backend: 8ad4382c0be786949b6b40b6bc7890fc51206ce3; a480c83d91ab5fe83f59888e2c9f096a5ccb03ce.
+- Suite mutación: f731525c56b5fba67666520fc949c436789cea2a; 68ff6322d2553c9c0d71dc825956bd025dd89a5a; 4ae02e46706f9dc029290e3496752ad02794c606.
+- Suite lectura: e302afb45bf92536aedf3c86add0dbf17162ffd8.
+
+### Estado y continuidad
+- Subalcance saveEvaluationCategory completado localmente.
+- TASK-153 permanece En ejecución; AUD-NG-386 sigue abierto por otras operaciones EXAM.
+- Rama base NG_beta_0.0.0.1 permanece en 44d9891132332e692dbe2ba8602b41f50a508a59.
+===============================================================================
