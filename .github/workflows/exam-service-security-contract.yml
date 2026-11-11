@@ -17,6 +17,7 @@ on:
       - 'tests/security/exam-service-student-grade-rectification-security.test.js'
       - 'tests/security/exam-service-gradebook-save-security.test.js'
       - 'tests/security/exam-service-evaluation-setup-copy-security.test.js'
+      - 'tests/security/exam-service-create-exam-security.test.js'
       - 'tests/security/exam-service-gradebook-bulk-apply-security.test.js'
       - '.github/workflows/exam-service-security-contract.yml'
   pull_request:
@@ -36,6 +37,7 @@ on:
       - 'tests/security/exam-service-student-grade-rectification-security.test.js'
       - 'tests/security/exam-service-gradebook-save-security.test.js'
       - 'tests/security/exam-service-evaluation-setup-copy-security.test.js'
+      - 'tests/security/exam-service-create-exam-security.test.js'
       - '.github/workflows/exam-service-security-contract.yml'
 jobs:
   exam-security-contracts:
@@ -67,6 +69,8 @@ jobs:
         run: node tests/security/exam-service-gradebook-bulk-apply-security.test.js
       - name: Run evaluation setup copy security regression
         run: node tests/security/exam-service-evaluation-setup-copy-security.test.js
+      - name: Run exam creation security regression
+        run: node tests/security/exam-service-create-exam-security.test.js
       - run: node tests/security/exam-service-security-contract.test.js
       - run: node tests/security/exam-service-departmental-access.test.js
       - run: node tests/security/exam-service-read-endpoints-security.test.js
