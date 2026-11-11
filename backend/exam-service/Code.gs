@@ -83,12 +83,13 @@ const ROLE_PERMISSIONS = {
   "Tutor": ["getStudentExams", "getExamQuestions", "getExamResult", "getEvaluationCategories", "getRubrics", "getStudentRecoveries", "getStudentAcademicReport", "getGradeRectificationHistory"],
   "Responsable": ["getStudentExams", "getExamQuestions", "getExamResult", "getEvaluationCategories", "getRubrics", "getStudentRecoveries", "getStudentAcademicReport", "getGradeRectificationHistory"],
   "Dirección": ["*"],
+  "Director": ["reviewPeriodGradebook"],
   "Secretaría": ["*"],
   "Profesor": [
     "createExam", "updateExam", "updateExamStatus", "deleteExam", "gradeExamSubmission", "deleteExamSubmission",
     "getAllExams", "getTeacherExamActivity", "getExamQuestions", "getStudentExams", "getExamResult",
     "getGradebookData", "saveGradebookGrades", "bulkApplyGradebookGrades", "copyEvaluationSetupBetweenGroups", "getEvaluationCategories", "saveEvaluationCategory",
-    "getRubrics", "saveRubric", "saveCompetencyEvaluation", "getCompetencyEvaluations", "saveStudentRecovery", "closePeriodGradebook", "reopenPeriodGradebook", "submitGradebookForReview", "reviewPeriodGradebook", "rectifyStudentGrade",
+    "getRubrics", "saveRubric", "saveCompetencyEvaluation", "getCompetencyEvaluations", "saveStudentRecovery", "closePeriodGradebook", "reopenPeriodGradebook", "submitGradebookForReview", "rectifyStudentGrade",
     "manageQuestionBank", "getQuestionBank", "checkExamSchedulingConflict", "simulateExamReschedule",
     "getExamGradeDistributionAnalytics"
   ],
@@ -2905,37 +2906,95 @@ function submitGradebookForReview(payload) {
 }
 
 function reviewPeriodGradebook(payload) {
-  const { cierreId, decision, observaciones, revisadoPor } = payload || {};
-  if (!cierreId || !decision) throw new Error("cierreId y decision ('Aprobado', 'Observado', 'Publicado') son requeridos.");
+  return withAuthorizedPeriodGradebookReview_(payload, context =>
+    reviewPeriodGradebookUnlocked_(payload, context));
+}
 
-  const estadoTarget = decision === "Observado" ? "Observado" : (decision === "Aprobado" ? "Aprobado" : "Cerrado");
+function withAuthorizedPeriodGradebookReview_(payload, mutation) {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) throw new Error("GRADEBOOK_REVIEW_LOCK_TIMEOUT");
+  try {
+    return mutation(getAuthorizedPeriodGradebookReviewContext_(payload));
+  } finally {
+    try { lock.releaseLock(); } catch (_) {}
+  }
+}
+
+function getAuthorizedPeriodGradebookReviewContext_(payload) {
+  const p = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
+  const cierreId = String(p.cierreId || "").trim();
+  const decision = String(p.decision || "").trim();
+  if (!cierreId || ["Aprobado", "Observado", "Publicado"].indexOf(decision) === -1) {
+    throw new Error("GRADEBOOK_REVIEW_REQUIRED_FIELDS_INVALID");
+  }
+  if (decision === "Publicado") {
+    throw new Error("GRADEBOOK_REVIEW_PUBLICATION_UNSUPPORTED");
+  }
+
+  const permission = validateRolePermission("reviewPeriodGradebook", p);
+  if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const actor = getVerifiedExamIdentity_(p);
+  if (!actor || actor.authorized !== true || !String(actor.userId || "").trim()) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
+  const reviewerRoles = ["Administrador", "Desarrollador", "Dirección", "Director", "Secretaría"];
+  if (reviewerRoles.indexOf(String(actor.role || "").trim()) === -1) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
 
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "CierresPeriodos");
+  const scope = getVerifiedExamDepartmentScope_(p, ss, actor);
+  if (!scope || scope.authorized !== true || !String(scope.institutionId || "").trim() ||
+      scope.institutionWide !== true) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
+
+  const sheet = ss.getSheetByName("CierresPeriodos");
+  if (!sheet) throw new Error("GRADEBOOK_REVIEW_RECORD_NOT_FOUND");
   const data = sheet.getDataRange().getValues();
-  const idx = data.findIndex(r => String(r[0]).trim() === String(cierreId).trim());
+  const headers = ["CierreID", "AnoID", "PeriodoID", "Grado", "Seccion", "Asignatura", "ProfesorID", "Estado", "FechaCierre"];
+  if (!data.length || headers.some((header, index) => String(data[0][index] || "").trim() !== header)) {
+    throw new Error("GRADEBOOK_REVIEW_SCHEMA_INVALID");
+  }
 
-  if (idx === -1) throw new Error("Registro de período no encontrado.");
+  const matches = [];
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0] || "").trim() === cierreId) matches.push({ row: data[i], rowIndex: i + 1 });
+  }
+  if (!matches.length) throw new Error("GRADEBOOK_REVIEW_RECORD_NOT_FOUND");
+  if (matches.length !== 1) throw new Error("GRADEBOOK_REVIEW_RECORD_AMBIGUOUS");
 
-  sheet.getRange(idx + 1, 8).setValue(estadoTarget);
-  sheet.getRange(idx + 1, 9).setValue(new Date());
-
-  if (estadoTarget === "Cerrado" || decision === "Publicado") {
-    const targetRow = data[idx];
-    const targetGrado = targetRow ? targetRow[3] : null;
-    const targetSeccion = targetRow ? targetRow[4] : null;
-    const targetAsignatura = targetRow ? targetRow[5] : null;
-
-    publishGradebookForContext(ss, targetGrado, targetSeccion, targetAsignatura);
+  const target = matches[0];
+  if (!String(target.row[1] || "").trim() || !String(target.row[2] || "").trim() ||
+      !String(target.row[3] || "").trim() || !String(target.row[4] || "").trim() ||
+      !String(target.row[5] || "").trim() || !String(target.row[6] || "").trim()) {
+    throw new Error("GRADEBOOK_REVIEW_RECORD_INVALID");
+  }
+  if (String(target.row[7] || "").trim() !== "PendienteRevision") {
+    throw new Error("GRADEBOOK_REVIEW_STATE_INVALID");
   }
 
   return {
-    status: "success",
+    sheet,
+    rowIndex: target.rowIndex,
     cierreId,
-    estadoActual: estadoTarget,
-    revisadoPor: revisadoPor || "Secretaría",
-    observaciones: observaciones || "",
-    message: `Revisión completada: Período marcado como '${estadoTarget}'.`
+    decision,
+    estadoTarget: decision === "Observado" ? "Observado" : "Aprobado",
+    actor
+  };
+}
+
+function reviewPeriodGradebookUnlocked_(payload, context) {
+  const observaciones = String(payload && payload.observaciones || "").trim();
+  context.sheet.getRange(context.rowIndex, 8, 1, 2)
+    .setValues([[context.estadoTarget, new Date()]]);
+  return {
+    status: "success",
+    cierreId: context.cierreId,
+    estadoActual: context.estadoTarget,
+    revisadoPor: String(context.actor.userId).trim(),
+    observaciones,
+    message: `Revisión completada: Período marcado como '${context.estadoTarget}'.`
   };
 }
 
