@@ -3647,6 +3647,6 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 ### 10.159 TASK-153 / AUD-NG-386 — autorización RBAC interna de createExam (C1.507)
 - **Hallazgo:** createExam validaba token firmado y scope departamental, pero no ejecutaba validateRolePermission("createExam", payload) dentro de la propia función. La autorización del doPost no protege invocaciones directas de la función global desde otros puntos de entrada Apps Script.
 - **Corrección:** validación RBAC dinámica/delegada al inicio del endpoint, antes de abrir el spreadsheet o adquirir el lock. Se conserva la verificación de identidad firmada, scope, departamento autorizado, ownership y rollback existente.
-- **Pruebas locales:** contrato aislado de creación con casos positivo, permiso denegado, identidad/scope inválidos, departamento ajeno, lock ocupado, esquema inválido y fallos parciales de persistencia; parseo completo de Code.gs.
+- **Pruebas locales:** contrato aislado 10/10 PASS (Node 22) sobre la función createExam: creación positiva, RBAC denegado antes de abrir Sheets, identidad/scope inválidos, departamento ajeno, lock, esquema ownership y fallos parciales de persistencia/rollback. Parseo completo del Code.gs no verificado localmente; estado del workflow de push no verificable con el resultado disponible.
 - **Beta:** BETA-EXAM-060 Pendiente beta; Apps Script/Sheets real NOT RUN.
 - **Estado:** subalcance createExam completado tras PASS de verificaciones locales; TASK-153 y AUD-NG-386 continúan En ejecución por otras mutaciones EXAM.
