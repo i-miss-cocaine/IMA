@@ -1557,3 +1557,13 @@ C1.494 — EXAM: aislamiento de getRubrics (TASK-153 / AUD-NG-386)
 - Node nativo/CI/Apps Script real: NOT RUN. BETA-EXAM-048 Pendiente beta.
 - TASK-153 permanece En ejecución; AUD-NG-386 continúa abierto por otras lecturas EXAM.
 ===============================================================================
+
+===============================================================================
+C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 / AUD-NG-386)
+- Hallazgo: saveEvaluationCategory escribía CategoriasEvaluacion sin RBAC, identidad firmada, scope institucional/departamental, ownership ni serialización; una categoría podía crearse o modificarse desde una sesión no autorizada o afectar datos de otro ámbito.
+- Corrección: la mutación ahora valida saveEvaluationCategory mediante RBAC, identidad firmada y scope verificado; ejecuta bajo ScriptLock, exige departamento autorizado (selección explícita si hay varios) y valida esquema/IDs únicos. La edición exige ownership activo único de tipo CATEGORIA_EVALUACION; categorías legadas sin ownership fallan cerrado.
+- Persistencia: las altas generan ID UUID y registran ResourceOwnership con institución, departamento, actor y timestamps; si falla una de las dos escrituras se intenta rollback de ambas. Se valida nombre y porcentaje finito entre 0 y 100.
+- Lectura asociada: getEvaluationCategories filtra recursos con ownership por institución/departamento, excluye ownership ambiguo y categorías con ID vacío/duplicado; los registros legados sin ownership conservan visibilidad compartida histórica. Defaults permanecen en memoria cuando la hoja no existe/vacía.
+- Pruebas locales: parseo V8 PASS; mutación 17 escenarios PASS; lectura 17 escenarios PASS; exam-service-read-endpoints-security PASS; exam-service-security-contract PASS. Node nativo/CI/Apps Script real NOT RUN. BETA-EXAM-049 Pendiente beta.
+- Límite: categorías legadas sin ownership no pueden editarse; requieren migración/atribución explícita antes de habilitar su edición segura. TASK-153 continúa En ejecución y AUD-NG-386 permanece abierto por otros endpoints EXAM.
+===============================================================================
