@@ -686,3 +686,14 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta; Apps Script/Sheets real NOT RUN. Contrato local aislado 10/10 PASS (Node 22) sobre la función createExam; parseo del archivo completo y estado del workflow de push no verificados en esta ejecución.
 - **Evidencia requerida:** rol/permiso, scope y departamento, snapshots antes/después de las tres hojas, IDs relacionados, respuesta de creación, errores simulados, liberación del lock y logs sin datos sensibles.
 ===============================================================================
+
+===============================================================================
+## BETA-EXAM-061 — TASK-153 / AUD-NG-386 / EXAM: purgeSecurityCaches
+- **Módulo/rol:** Servicio EXAM; actores con permiso efectivo purgeSecurityCaches según RBAC dinámico/estático.
+- **Objetivo:** verificar que la purga exige permiso e identidad firmada incluso en la función interna y que SESSION_REVOKED conserva un marcador local de revocación para el sessionId recibido.
+- **Precondiciones:** versión beta desplegada; tokens sintéticos válidos de Administrador/Desarrollador y de un rol sin permiso; IDs de usuario/sesión no reales; acceso controlado a CacheService y observabilidad de las claves locales del servicio.
+- **Pasos:** probar token ausente/expirado, RBAC denegado, identidad inválida, ACCOUNT_STATE_CHANGED con cuenta inactiva/activa, SESSION_REVOKED con sessionId y GENERIC_PURGE con sessionId; verificar que la ruta de revocación registra el marcador y que el flujo genérico solo elimina el marcador solicitado.
+- **Resultado esperado:** ninguna operación de caché ante RBAC o identidad inválidos; actor autenticado requerido; SESSION_REVOKED escribe revoked_session_<id> con TTL de 86400 y no lo elimina; cuenta inactiva marca revoked_user y cuenta activa lo elimina; la ruta genérica conserva la purga explícita.
+- **Estado:** Pendiente beta; contrato local aislado 7/7 PASS y sintaxis de función extraída PASS; parseo completo de Code.gs/CI aún no observado; Apps Script/CacheService real NOT RUN.
+- **Evidencia requerida:** versión/commit desplegado, resultado de autorización, snapshots o evidencia controlada de CacheService antes/después, expiración TTL, denegaciones y logs sin tokens ni datos sensibles.
+===============================================================================
