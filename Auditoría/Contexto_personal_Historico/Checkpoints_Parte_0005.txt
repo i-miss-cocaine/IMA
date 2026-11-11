@@ -1956,3 +1956,23 @@ backend/exam-service/Code.gs; tests/security/exam-service-student-grade-rectific
 - TASK-153 y AUD-NG-386 siguen En ejecución por otras superficies EXAM.
 - Siguiente: continuar auditoría de mutaciones EXAM restantes, seleccionando el siguiente endpoint elegible con contratos y ownership disponibles.
 ===============================================================================
+
+===============================================================================
+CHECKPOINT C1.503 — Protección de rectifyStudentGrade
+Sesión: IMA-EXEC-20261110-1825Z-02.
+Fecha: 2026-11-11 UTC.
+Rama: NG_beta_0.0.0.1_work.
+HEAD inicial: 7083799ce85323c6fae0949a8f2fb300b708cdb5.
+Commits: 4524ab603a3dce1ca48421ef25692bc226be6db8 (implementación); b1e1c4ed56707fa62bb5c7b7d0f56305eb56c072 (fixture de rollback).
+### Hallazgo y cambio
+rectifyStudentGrade modificaba notas sin autorización, identidad ni ámbito verificados; confiaba en IDs/actor del cliente, aceptaba primera coincidencia, creaba hojas, parseaba notas parcialmente y mutaba antes de auditar. Se incorporó ScriptLock, RBAC, identidad firmada, allowlist Administrador/Desarrollador/Dirección/Director/Secretaría y scope institutionWide. Profesor pierde permiso estático; Director obtiene permiso explícito. Se valida esquema exacto, calificación única, alumno canónico único y nota decimal 0–100 con hasta dos decimales. Auditoría UUID/actor/motivo/transición se escribe antes de mutar; fallo de actualización intenta restaurar fila y retirar evento parcial. autorizadoPor/_verifiedUserId del cliente no se confían.
+### Archivos
+backend/exam-service/Code.gs; tests/security/exam-service-student-grade-rectification-security.test.js; .github/workflows/exam-service-security-contract.yml; Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; beta_test.txt (BETA-EXAM-056); changueslogs.txt; Auditoria.txt; historial e índice de checkpoints.
+### Verificación
+- GitHub Actions run 43011012718: prueba dedicada 27/27 PASS; parseo Code.gs PASS; security-contract PASS.
+- Workflow global FAIL en exam-service-departmental-access.test.js: ReferenceError withAuthorizedExamRead_ is not defined; read-endpoints skipped. La misma suite falló en run 43009948936; falla fuera del subalcance rectificación.
+- La prueba dedicada ejecuta Node/vm/fixtures aislados sin despliegue. Apps Script/Sheets real NOT RUN; BETA-EXAM-056 Pendiente beta.
+### Limitaciones
+CalificacionesEstudiantes no contiene InstitutionID/DepartmentID ni ownership de EvaluationID; se exige spreadsheet institucional y scope institutionWide, además de usuario canónico único. No se inventa relación departamental ausente. El rollback de Sheets es compensatorio, no transaccional.
+TASK-153 y AUD-NG-386 siguen En ejecución por otras superficies EXAM. Siguiente: seleccionar siguiente mutación EXAM elegible y auditar ownership/ámbito con contrato local.
+===============================================================================

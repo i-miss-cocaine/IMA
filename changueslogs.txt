@@ -1364,5 +1364,5 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - La rectificación exige RBAC, identidad firmada, allowlist institucional y scope institutionWide; Profesor queda excluido y Director recibe permiso explícito.
 - Solo se modifica una calificación única con esquema válido y alumno canónico único; nota decimal estricta 0–100, motivo obligatorio.
 - Auditoría con UUID y actor autenticado se escribe antes de mutar; fallo de actualización intenta restaurar fila y retirar evento parcial.
-- Prueba dedicada de 27 escenarios añadida al workflow; resultado CI pendiente de ejecución.
+- Prueba dedicada 27/27 PASS y parseo Code.gs PASS (CI run 43011012718); security-contract PASS. Workflow global FAIL en departmental-access por ReferenceError withAuthorizedExamRead_ no definido; fallo ajeno al subalcance y ya presente en run 43009948936.
 ==========================================================================

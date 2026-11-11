@@ -1593,5 +1593,5 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Hallazgo:** rectificación sin autorización contextual; actor/alumno manipulables; primera coincidencia aceptada; hojas creadas automáticamente; parseo permisivo; nota cambiada antes de confirmar auditoría.
 - **Corrección:** ScriptLock, RBAC, identidad firmada, allowlist institucional y scope institutionWide; Profesor excluido, Director habilitado. Se valida esquema, calificación única, alumno único en Usuarios y nota decimal 0–100.
 - **Integridad:** auditoría UUID/actor/motivo/transición antes de mutación; rollback compensatorio de fila y evento si falla actualización. Los datos de actor del payload se ignoran.
-- **Pruebas:** contrato local aislado 27 escenarios incorporado al workflow; ejecución local directa no disponible en esta sesión; CI pendiente tras commit; Apps Script/Sheets NOT RUN; BETA-EXAM-056 Pendiente beta.
+- **Pruebas:** contrato aislado Node/vm 27/27 PASS y parseo Code.gs PASS (CI run 43011012718); security-contract PASS. Workflow global FAIL en departmental-access por ReferenceError withAuthorizedExamRead_ is not defined, ya presente en run 43009948936; read-endpoints skipped. Apps Script/Sheets NOT RUN; BETA-EXAM-056 Pendiente beta.
 ===============================================================================
