@@ -1273,3 +1273,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se valida el esquema de seis columnas cuando existen registros; el esquema incompatible falla cerrado.
 - Parseo V8 y suite aislada de 12 escenarios PASS. Node nativo/CI y Apps Script real NOT RUN. BETA-EXAM-047 Pendiente beta.
 ===============================================================================
+
+===============================================================================
+[2026-11-11] C1.494 — IMA-EXEC-20261110-1825Z-02 — EXAM: getRubrics
+- Se retiró getRubrics de PUBLIC_ACTIONS y se añadió autorización RBAC, identidad firmada, rol permitido y scope bajo ScriptLock.
+- Se eliminó getOrCreateSheet del endpoint; hoja ausente/vacía devuelve lista vacía sin persistencia.
+- Se valida esquema, se excluyen IDs vacíos/duplicados y rúbricas eliminadas, y se maneja JSON de criterios con fallo cerrado, conservando el contrato status/data y filtro por asignatura.
+- Límite: el modelo RubricasEvaluacion carece de InstitutionID/DepartmentID y saveRubric no persiste ownership; se mantiene como catálogo compartido legado, pendiente de eventual evolución de modelo.
+- Parseo V8 PASS; suite local aislada 16 escenarios PASS; regresiones C1.493 12 y C1.492 27 PASS. Node nativo/CI/Apps Script real NOT RUN. BETA-EXAM-048 Pendiente beta.
+===============================================================================
