@@ -693,3 +693,44 @@ Siguiente: inspeccionar el siguiente wrapper mutador EXAM pendiente, una sola op
 - Harness focalizado local: 7/7 PASS; suite completa 28/28 PASS en runner aislado con shims; no se afirma Node nativo local.
 - Apps Script/Sheets real NOT RUN; BETA-EXAM-067 continúa Pendiente beta.
 ===============================================================================
+
+
+===============================================================================
+C1.527 — TASK-153 / AUD-NG-386 / EXAM gradeExamSubmission + deleteExamSubmission
+ID de sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-11
+HEAD inicial: c16d4ea2369c95339dcf4be8946a6a2664888c9e
+Rama exclusiva: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 — HEAD verificado 44d9891132332e692dbe2ba8602b41f50a508a59; sin escrituras.
+
+### Hallazgo y corrección
+- El wrapper withAuthorizedExamSubmissionMutation_ validaba permiso e identidad antes de ScriptLock, pero no exigía userId no vacío; getAuthorizedExamSubmissionMutationContext_ tampoco lo comprobaba antes de abrir Sheets.
+- Se añadió el control de identidad completa (actor autorizado y userId no vacío) en el preflight y en el contexto, antes de SpreadsheetApp.openById.
+- Se preservan las acciones gradeExamSubmission/deleteExamSubmission, permisos, roles, ownership, auditoría, revalidación contextual y liberación finally. No se amplían permisos/roles ni se altera el esquema.
+
+### Pruebas
+- Parseo Code.gs y suite: PASS.
+- Suite dedicada exam-service-delete-submission-audit.test.js: 26/26 PASS en runner JavaScript aislado con shims; cubre userId vacío antes de lock, revalidación incompleta bajo lock con liberación y orden de validación previo a Sheets.
+- Node nativo local: NOT RUN; checkout local no disponible por fallo DNS al clonar.
+- GitHub Actions workflow 43058558651: completed/success; job exam-security-contracts 130654537657 SUCCESS; suite dedicada 26/26 PASS en Node 22; las demás suites del job SUCCESS.
+- Apps Script/Sheets real: NOT RUN; no requerido para aprobación local.
+
+### Archivos modificados
+- backend/exam-service/Code.gs
+- tests/security/exam-service-delete-submission-audit.test.js
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Commits
+- Implementación: 418c6ee8b6bbdfc97610a0532fcb85a67d1e44b8.
+- Pruebas iniciales: 295c061b2d53249ef1a2e9dea63d00fc8c36397d.
+- Cobertura de orden contexto/Sheets: b1b240ec8c8a26f3bdab789dbc39811fc935dcef.
+- Documentación y checkpoint: commits posteriores; HEAD final pendiente de verificación.
+
+### Estado y continuidad
+Subalcance de identidad completa en mutaciones de entregas corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
+Siguiente: continuar inventario de mutadores EXAM no cubiertos, una sola operación por iteración.
+===============================================================================
