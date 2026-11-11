@@ -310,3 +310,37 @@ HEAD final: pendiente de confirmación tras publicar.
 - HEAD de código y pruebas: `178e901275b84b28a3d6faa887e34d5445f02ced`. Node 22 local NOT RUN; Apps Script/Sheets real NOT RUN.
 - La rama base continúa intacta en `44d9891132332e692dbe2ba8602b41f50a508a59`; comparación final previa al cierre: 1.227 commits adelante, 0 atrás.
 - Siguiente tarea elegible: `withAuthorizedCompetencyEvaluationMutation_`; pendiente de iniciar en la próxima iteración.
+
+
+===============================================================================
+CHECKPOINT C1.519 — autorización previa al lock en saveCompetencyEvaluation
+Sesión: IMA-EXEC-20261110-1825Z-02.
+Fecha: 2026-11-11 UTC.
+Rama: NG_beta_0.0.0.1_work.
+HEAD inicial: 1ea6a79133f3430a07d4f68932d75b79150450e0.
+### Hallazgo
+withAuthorizedCompetencyEvaluationMutation_ adquiría ScriptLock antes de validar permiso saveCompetencyEvaluation e identidad firmada. La ruta directa no autorizada podía competir por el lock compartido.
+### Corrección
+- Validar permiso RBAC específico y actor firmado autorizado con userId no vacío antes de solicitar ScriptLock.
+- Conservar getAuthorizedCompetencyEvaluationMutationContext_ dentro del lock, que vuelve a validar RBAC, identidad, scope, asignación académica, rúbrica y esquema antes de permitir la escritura.
+- Mantener finally para liberar el lock ante éxito, rechazo contextual, timeout o excepción.
+### Pruebas
+- Suite dedicada exam-service-competency-evaluation-mutation-security.test.js: 24/24 PASS en V8 local compatible.
+- Parseo completo de backend/exam-service/Code.gs y contrato dedicado: PASS.
+- Casos: RBAC/identidad denegados antes de pedir lock; identidad sin userId; revalidación contextual de permiso e identidad; timeout fail-closed y orden de operaciones.
+- GitHub Actions Node 22: pendiente de ejecución/verificación.
+- Apps Script/Sheets real: NOT RUN; sin cambio de esquema.
+### Archivos modificados
+- backend/exam-service/Code.gs
+- tests/security/exam-service-competency-evaluation-mutation-security.test.js
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- beta_test.txt
+### Estado y continuidad
+Subalcance saveCompetencyEvaluation corregido. TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
+Siguiente acción: revisar el siguiente wrapper mutador elegible, sin repetir saveRubric ni saveCompetencyEvaluation.
+HEAD final: pendiente de confirmar tras publicar.
+===============================================================================

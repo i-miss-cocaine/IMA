@@ -43,7 +43,7 @@ function makeSheet(rows, options, kind) {
 }
 
 function fixture(options = {}) {
-  const state = { opens: 0, locks: 0, releases: 0, held: false, uuid: 0, action: "" };
+  const state = { opens: 0, locks: 0, releases: 0, held: false, uuid: 0, action: "", events: [], permissionCalls: 0, identityCalls: 0 };
   const actor = options.actor || { authorized: true, userId: "PROF-1", role: "Profesor" };
   const scope = options.scope || { authorized: true, institutionId: "INST-1", departmentIds: ["DEPT-1"], institutionWide: false };
   const userRows = [["UserID", "Nombre", "Grado", "Seccion", "X", "Y", "Role"],
@@ -74,16 +74,23 @@ function fixture(options = {}) {
     }
   };
   const scriptLock = {
-    tryLock() { state.locks++; if (options.timeout || state.held) return false; state.held = true; return true; },
-    releaseLock() { state.releases++; state.held = false; }
+    tryLock(timeout) { state.events.push("lock-acquire:" + timeout); state.locks++; if (options.timeout || state.held) return false; state.held = true; return true; },
+    releaseLock() { state.events.push("lock-release"); state.releases++; state.held = false; }
   };
   const runtime = {
     SPREADSHEET_ID: "LOCAL",
-    LockService: { getScriptLock() { return scriptLock; } },
-    validateRolePermission(action) { state.action = action; return { authorized: options.permission !== false }; },
-    getVerifiedExamIdentity_() { return actor; },
-    getVerifiedExamDepartmentScope_() { if (options.duringScope) options.duringScope(); return scope; },
-    SpreadsheetApp: { openById() { state.opens++; return ss; } },
+    LockService: { getScriptLock() { state.events.push("lock-request"); return scriptLock; } },
+    validateRolePermission(action) {
+      state.events.push("permission"); state.permissionCalls++; state.action = action;
+      return { authorized: options.permission !== false && !(options.contextPermission === false && state.permissionCalls > 1) };
+    },
+    getVerifiedExamIdentity_() {
+      state.events.push("identity"); state.identityCalls++;
+      if (options.contextIdentity === false && state.identityCalls > 1) return { authorized: false };
+      return actor;
+    },
+    getVerifiedExamDepartmentScope_() { state.events.push("scope"); if (options.duringScope) options.duringScope(); return scope; },
+    SpreadsheetApp: { openById() { state.events.push("spreadsheet-open"); state.opens++; return ss; } },
     getSheetOrThrow(spreadsheet, name) {
       const sheet = spreadsheet.getSheetByName(name);
       if (!sheet) throw new Error("MISSING_" + name);
@@ -120,6 +127,11 @@ test("authorized teacher creates a competency evaluation for an assigned student
   assert.equal(rows[1][4], "Math"); assert.equal(rows[1][5], "P1");
   assert.equal(rows[1][8], "RUB-1"); assert.ok(rows[1][0].startsWith("COMP-EVAL-UUID-"));
   assert.equal(x.state.action, "saveCompetencyEvaluation");
+  assert.deepEqual(x.state.events.slice(0, 7), [
+    "permission", "identity", "lock-request", "lock-acquire:5000", "permission", "identity", "spreadsheet-open"
+  ], "RBAC and signed identity must precede lock acquisition and be revalidated inside it");
+  assert.ok(x.state.events.indexOf("scope") > x.state.events.indexOf("spreadsheet-open"));
+  assert.equal(x.state.events.at(-1), "lock-release");
 });
 test("teacher may evaluate another student only within their verified assignment", () => {
   const x = fixture(); const result = x.call(Object.assign({}, x.payload, { userId: "STU-2" }));
@@ -159,20 +171,43 @@ test("institutional administrator requires institution-wide verified scope", () 
     scope: { authorized: true, institutionId: "INST-1", departmentIds: ["DEPT-1"], institutionWide: false } });
   denied(() => narrow.call());
 });
-test("RBAC denial occurs before spreadsheet access", () => {
-  const x = fixture({ permission: false }); denied(() => x.call()); assert.equal(x.state.opens, 0);
+test("RBAC denial occurs before lock request and spreadsheet access", () => {
+  const x = fixture({ permission: false }); denied(() => x.call());
+  assert.equal(x.state.opens, 0); assert.equal(x.state.locks, 0); assert.equal(x.state.releases, 0);
+  assert.deepEqual(x.state.events, ["permission"]);
 });
-test("missing signed identity is denied before spreadsheet access", () => {
-  const x = fixture({ actor: { authorized: false } }); denied(() => x.call()); assert.equal(x.state.opens, 0);
+test("missing signed identity is denied before lock request and spreadsheet access", () => {
+  const x = fixture({ actor: { authorized: false } }); denied(() => x.call());
+  assert.equal(x.state.opens, 0); assert.equal(x.state.locks, 0); assert.equal(x.state.releases, 0);
+  assert.deepEqual(x.state.events, ["permission", "identity"]);
+});
+test("signed identity without a user ID is denied before lock request", () => {
+  const x = fixture({ actor: { authorized: true, userId: " ", role: "Profesor" } }); denied(() => x.call());
+  assert.equal(x.state.locks, 0); assert.equal(x.state.opens, 0);
 });
 test("missing institution scope is denied and lock is released", () => {
   const x = fixture({ scope: { authorized: false } }); denied(() => x.call());
   assert.equal(x.state.releases, 1); assert.equal(x.state.held, false);
 });
-test("lock timeout fails closed before spreadsheet access", () => {
+test("RBAC is revalidated inside the acquired lock", () => {
+  const x = fixture({ contextPermission: false }); denied(() => x.call());
+  assert.equal(x.state.locks, 1); assert.equal(x.state.releases, 1); assert.equal(x.state.opens, 0);
+  assert.deepEqual(x.state.events, [
+    "permission", "identity", "lock-request", "lock-acquire:5000", "permission", "lock-release"
+  ]);
+});
+test("signed identity is revalidated inside the acquired lock", () => {
+  const x = fixture({ contextIdentity: false }); denied(() => x.call());
+  assert.equal(x.state.locks, 1); assert.equal(x.state.releases, 1); assert.equal(x.state.opens, 0);
+  assert.deepEqual(x.state.events, [
+    "permission", "identity", "lock-request", "lock-acquire:5000", "permission", "identity", "lock-release"
+  ]);
+});
+test("lock timeout fails closed after preflight and before spreadsheet access", () => {
   const x = fixture({ timeout: true });
   assert.throws(() => x.call(), /COMPETENCY_EVALUATION_MUTATION_LOCK_TIMEOUT/);
   assert.equal(x.state.opens, 0); assert.equal(x.state.releases, 0);
+  assert.deepEqual(x.state.events, ["permission", "identity", "lock-request", "lock-acquire:5000"]);
 });
 test("nested mutation is rejected while the shared ScriptLock is held", () => {
   let x, nestedDenied = false;
@@ -211,9 +246,10 @@ test("missing evaluation sheet is initialized only after authorization", () => {
   const x = fixture({ missingEvaluationSheet: true }); assert.equal(x.call().status, "success");
   assert.equal(JSON.stringify(x.sheets.EvaluacionesCompetencias.rows[0]), JSON.stringify(evaluationHeaders));
 });
-test("required fields are validated before RBAC and persistence", () => {
+test("required fields fail before contextual spreadsheet reads and persistence", () => {
   const x = fixture(); assert.throws(() => x.call(Object.assign({}, x.payload, { competenciaId: " ", nivelDesempeno: "" })), /COMPETENCY_EVALUATION_REQUIRED_FIELDS/);
   assert.equal(x.sheets.EvaluacionesCompetencias.rows.length, 1);
+  assert.equal(x.state.opens, 0); assert.equal(x.state.releases, 1);
 });
 test("duplicate generated evaluation ID is rejected", () => {
   const rows = [evaluationHeaders, ["COMP-EVAL-UUID-1", "OLD", "IND", "STU-1", "Math", "P1", "Bajo", "", "", null]];

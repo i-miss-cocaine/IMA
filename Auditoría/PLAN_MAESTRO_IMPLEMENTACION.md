@@ -3756,3 +3756,13 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Beta:** Apps Script/Sheets real NOT RUN; sin cambios de esquema.
 - **Estado:** subalcance saveRubric corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
 - **Siguiente:** continuar el inventario de wrappers mutadores restantes; el siguiente candidato es `withAuthorizedCompetencyEvaluationMutation_`.
+
+
+### 10.172 TASK-153 / AUD-NG-386 — autorización previa al lock en saveCompetencyEvaluation (C1.519)
+- **Hallazgo:** `withAuthorizedCompetencyEvaluationMutation_` adquiría ScriptLock antes de validar el permiso efectivo `saveCompetencyEvaluation` y la identidad firmada; una invocación directa no autorizada podía competir por el lock.
+- **Corrección:** valida RBAC e identidad firmada con `userId` no vacío antes de solicitar ScriptLock; el contexto existente revalida RBAC, identidad, scope, asignación académica, rúbrica y esquema dentro del lock.
+- **Pruebas locales:** suite dedicada 24/24 PASS en V8 local compatible; parseo completo de Code.gs y contrato PASS. Incluye denegación pre-lock, identidad incompleta, revalidación contextual, timeout y llamada anidada.
+- **CI:** pendiente de ejecutar/verificar sobre el commit de esta tarea.
+- **Beta:** BETA-EXAM-050 actualizado; Apps Script/Sheets real NOT RUN.
+- **Estado:** subalcance saveCompetencyEvaluation corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
+- **Siguiente:** continuar inventario de wrappers mutadores restantes, sin repetir saveRubric ni saveCompetencyEvaluation.

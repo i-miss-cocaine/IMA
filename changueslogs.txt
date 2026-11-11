@@ -1550,3 +1550,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Suite dedicada saveRubric: 19/19 PASS en V8 local compatible y PASS en CI Node 22.
 - Apps Script/Sheets real NOT RUN; no hubo cambio de esquema.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] C1.519 — EXAM saveCompetencyEvaluation
+- Se corrigió withAuthorizedCompetencyEvaluationMutation_: RBAC e identidad firmada con userId no vacío se validan antes de ScriptLock; RBAC/identidad/scope/asignación/rúbrica/esquema se revalidan dentro del lock.
+- Suite dedicada ampliada: 24/24 PASS en V8 local compatible; parseo completo Code.gs y test PASS.
+- CI Node 22 pendiente de verificación; Apps Script/Sheets real NOT RUN.
+- BETA-EXAM-050 actualizado para verificar orden pre-lock y revalidación contextual.
+===============================================================================

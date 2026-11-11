@@ -388,3 +388,5 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 
 
 | C1.518 | IMA-EXEC-20261110-1825Z-02 | EXAM: saveRubric valida RBAC e identidad antes de ScriptLock y revalida scope/ownership/esquema dentro; harness 7/7 y suite dedicada 19/19 PASS; workflow 43037336799 PASS | PM-01 — TASK-153 / EXAM / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt — C1.518 + addenda | 261–292; 294–304; 306–313 | C1.517 | HEAD de código/pruebas 178e901275b84b28a3d6faa887e34d5445f02ced; CI success verificado; rama base intacta |
+
+| C1.519 | IMA-EXEC-20261110-1825Z-02 | EXAM: saveCompetencyEvaluation valida RBAC e identidad antes de ScriptLock y revalida contexto/asignación/rúbrica dentro; suite dedicada 24/24 PASS local; CI pendiente | PM-01 — TASK-153 / EXAM / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt — C1.519 | 315–347 | C1.518 | HEAD inicial 1ea6a79133f3430a07d4f68932d75b79150450e0; commit final pendiente |
