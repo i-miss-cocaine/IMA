@@ -3209,7 +3209,7 @@ function getAuthorizedPeriodGradebookClosureContext_(payload) {
   const permission=validateRolePermission("closePeriodGradebook",p);
   if (!permission||permission.authorized!==true) throw new Error("RESOURCE_NOT_AVAILABLE");
   const actor=getVerifiedExamIdentity_(p);
-  if (!actor||actor.authorized!==true||!actor.userId) throw new Error("RESOURCE_NOT_AVAILABLE");
+  if (!actor||actor.authorized!==true||!String(actor.userId||"").trim()) throw new Error("RESOURCE_NOT_AVAILABLE");
   const roles=["Profesor","Administrador","Desarrollador","Dirección","Director","Secretaría"];
   if (roles.indexOf(String(actor.role||"").trim())===-1) throw new Error("RESOURCE_NOT_AVAILABLE");
   const ss=SpreadsheetApp.openById(SPREADSHEET_ID),scope=getVerifiedExamDepartmentScope_(p,ss,actor);
