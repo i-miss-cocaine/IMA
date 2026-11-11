@@ -1741,3 +1741,11 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Corrección:** preflight de `submitGradebookForReview`, actor autorizado, `userId` no vacío y rol exacto Profesor antes del lock; el contexto interno revalida RBAC, identidad, rol, scope y asignación dentro del lock.
 - **Cobertura local:** suite dedicada ajustada a 25 escenarios (23 previos + 2 nuevos); denegación pre-lock sin apertura de Sheets, identidad incompleta/no autorizada/rol incorrecto, doble validación bajo lock, envío positivo y regresiones previas.
 - **Harness focalizado:** 8/8 PASS. Suite dedicada 25/25 PASS en GitHub Actions workflow 43048342087 (Node 22); parseo completo Code.gs PASS. Apps Script/Sheets real NOT RUN. BETA-EXAM-066 permanece Pendiente beta.
+
+
+### C1.524 — AUD-NG-386 / reviewPeriodGradebook
+- **Hallazgo alto corregido:** `withAuthorizedPeriodGradebookReview_` adquiría ScriptLock antes de validar RBAC e identidad firmada.
+- **Corrección:** preflight del permiso `reviewPeriodGradebook`, identidad autorizada, `userId` no vacío y rol dentro de la allowlist existente (Administrador, Desarrollador, Dirección, Director, Secretaría) antes del lock. El contexto revalida todos los controles y scope institucional dentro del lock.
+- **Cobertura local:** suite dedicada ampliada de 23 a 27 escenarios; incluye denegación RBAC/identidad/rol antes del lock, roles permitidos, doble validación y regresiones previas.
+- **Harness local focalizado:** 12/12 PASS en Node; verifica orden pre-lock, roles, identidad, timeout y liberación.
+- **CI:** pendiente de verificación. Apps Script/Sheets real NOT RUN; BETA-EXAM-053 permanece Pendiente beta.
