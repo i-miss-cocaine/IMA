@@ -1533,3 +1533,38 @@ Continuar inventario de mutaciones EXAM sin cobertura equivalente y seleccionar 
 
 HEAD final: se confirmará después de publicar y verificar el commit del checkpoint.
 ===============================================================================
+
+
+===============================================================================
+C1.551 — TASK-153 / AUD-NG-386 / submitGradebookForReview: identidad revalidada bajo lock
+ID de sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-11
+Repositorio: i-miss-cocaine/IMA
+Rama autorizada: NG_beta_0.0.0.1_work
+HEAD inicial: 8862eb5b631f7a7de51c0ee93e06855d23d84660 (test de C1.551)
+
+### Alcance y resultado
+Se amplió la suite de seguridad de submitGradebookForReview para cubrir la degradación de identidad entre el preflight y la revalidación contextual bajo ScriptLock.
+
+### Cambios
+- tests/security/exam-service-period-gradebook-submission-security.test.js: fixture con secuencia de identidades; regresión con userId válido en preflight y compuesto por espacios bajo lock.
+- La prueba exige RESOURCE_NOT_AVAILABLE, dos verificaciones de identidad, lock adquirido/liberado, cero aperturas de Sheets y CierresPeriodos intacto.
+- beta_test.txt / BETA-EXAM-054: pasos beta ampliados.
+- No se modificó backend/exam-service/Code.gs, permisos, roles, scope ni persistencia productiva.
+
+### Verificación local
+- Parseo V8 de backend/exam-service/Code.gs: PASS.
+- Parseo V8 de tests/security/exam-service-period-gradebook-submission-security.test.js: PASS.
+- Suite completa: 26/26 PASS en aislamiento V8 con shims assert/fs/path/vm.
+- Escenario nuevo: identidad válida en preflight; userId de espacios en revalidación; RESOURCE_NOT_AVAILABLE; lock liberado; cero aperturas de Sheets; CierresPeriodos sin cambios.
+- Node 22/CI para la suite actual: NOT RUN.
+- Apps Script/Sheets real: NOT RUN; BETA-EXAM-054 permanece Pendiente beta.
+
+### Estado y continuidad
+C1.551 completa la cobertura local de revalidación de identidad para submitGradebookForReview. TASK-153 / AUD-NG-386 continúa En ejecución para mutaciones EXAM restantes. Sin cambios productivos.
+
+### Siguiente acción exacta
+Continuar inventario de mutaciones EXAM sin cobertura equivalente y seleccionar el siguiente handler con una brecha concreta. No repetir C1.551 ni C1.534–C1.550.
+
+HEAD final: se confirmará después de publicar y verificar el commit del checkpoint.
+===============================================================================

@@ -4029,3 +4029,11 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Verificación local:** parseo V8 de Code.gs y suite PASS; suite completa 25/25 PASS en aislamiento V8 con shims assert/fs/path/vm.
 - **Node 22/CI para la suite actual:** NOT RUN. Apps Script/Sheets real NOT RUN.
 - **Estado:** cobertura local completada; sin cambios productivos, permisos, roles, scope ni persistencia. TASK-153 / AUD-NG-386 continúa En ejecución para mutaciones EXAM restantes.
+
+
+### 10.203 TASK-153 / AUD-NG-386 — cubrir pérdida de identidad en submitGradebookForReview bajo lock (C1.551)
+- **Hallazgo:** submitGradebookForReview revalidaba identidad bajo ScriptLock, pero la suite no cubría userId válido en preflight y vacío/espacios en la segunda validación.
+- **Cambio:** fixture con secuencia de identidades y regresión que exige RESOURCE_NOT_AVAILABLE, lock liberado, cero aperturas de Sheets y CierresPeriodos intacto. BETA-EXAM-054 ampliado.
+- **Verificación local:** parseo V8 de Code.gs y suite PASS; suite completa 26/26 PASS en aislamiento V8 con shims assert/fs/path/vm.
+- **Node 22/CI para la suite actual:** NOT RUN. Apps Script/Sheets real NOT RUN.
+- **Estado:** cobertura local completada; sin cambios productivos, permisos, roles, scope ni persistencia. TASK-153 / AUD-NG-386 continúa En ejecución.
