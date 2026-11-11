@@ -3642,3 +3642,11 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Compatibilidad:** el contrato legacy espera ocho columnas por grupo. El esquema canónico actual de seis columnas de saveEvaluationCategory no contiene asignatura/grado/sección/período; se rechaza con EVALUATION_CATEGORY_COPY_SCHEMA_UNSUPPORTED. No se inventa migración ni se cambia el esquema.
 - **Pruebas locales:** harness aislado 22 escenarios PASS; parseo completo Code.gs y contrato PASS. Suite Node/CI pendiente de observación. BETA-EXAM-059 Pendiente beta.
 - **Limitación:** ConfiguracionAcademica carece de DepartmentID; se validan asignaciones exactas y scope activo, sin inferir correlación departamental por grupo. TASK-153 permanece En ejecución.
+
+
+### 10.159 TASK-153 / AUD-NG-386 — autorización RBAC interna de createExam (C1.507)
+- **Hallazgo:** createExam validaba token firmado y scope departamental, pero no ejecutaba validateRolePermission("createExam", payload) dentro de la propia función. La autorización del doPost no protege invocaciones directas de la función global desde otros puntos de entrada Apps Script.
+- **Corrección:** validación RBAC dinámica/delegada al inicio del endpoint, antes de abrir el spreadsheet o adquirir el lock. Se conserva la verificación de identidad firmada, scope, departamento autorizado, ownership y rollback existente.
+- **Pruebas locales:** contrato aislado de creación con casos positivo, permiso denegado, identidad/scope inválidos, departamento ajeno, lock ocupado, esquema inválido y fallos parciales de persistencia; parseo completo de Code.gs.
+- **Beta:** BETA-EXAM-060 Pendiente beta; Apps Script/Sheets real NOT RUN.
+- **Estado:** subalcance createExam completado tras PASS de verificaciones locales; TASK-153 y AUD-NG-386 continúan En ejecución por otras mutaciones EXAM.
