@@ -36,10 +36,8 @@ function fixture(o={}){
  let held=false,locks=0,releases=0;
  const ctx={LockService:{getScriptLock(){return {tryLock(){locks++;if(o.lockAvailable===false||held)return false;held=true;return true;},releaseLock(){releases++;held=false;}};}},
  getAuthorizedExamReadContext_(action,p){if(action!=="getStudentAcademicReport"||o.permissionDenied||!context.scope.authorized)throw Error("RESOURCE_NOT_AVAILABLE");return context;}};
- const names=["getStudentAcademicReport","getStudentAcademicReportUnlocked_","withAuthorizedExamRead_","getExamStudentProfile_"];
+ const names=["getStudentAcademicReport","getStudentAcademicReportUnlocked_","withAuthorizedExamRead_","getExamStudentProfile_","getSheetOrThrow"];
  const code=names.map(extract).join("\n")+";this.report=getStudentAcademicReport;";
- const keys=Object.keys(ctx);vm.runInNewContext(code,Object.assign(ctx,{}));
- new Function(...keys,code)(...keys.map(k=>ctx[k])); // syntax + isolate
  const sandbox={...ctx};vm.runInNewContext(code,sandbox);
  return {call:p=>sandbox.report(p),sheets,stats:()=>({locks,releases,held})};
 }
