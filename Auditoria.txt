@@ -1940,3 +1940,9 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Workflow global FAIL después en exam-service-security-contract.test.js:449 por ReferenceError withAuthorizedExamCreation_ is not defined.
 - Run previo 43101929348, sobre bcb218eff043f04860c06e476e236c4cef31b945, presenta el mismo fallo; se clasifica como preexistente y no causado por C1.568.
 - Ejecución Node en entorno local del desarrollador aún pendiente; BETA-EXAM-053 sigue Pendiente beta.
+
+
+### C1.569 — resultado local informado y discrepancia de conteo
+- Usuario informa PASS 28/28 para la suite reviewPeriodGradebook.
+- CI run 43102931371 confirma PASS 29/29 en el paso específico. El archivo inspeccionado en HEAD previo contiene 29 invocaciones test() y anuncia PASS (count/29).
+- Se conserva el resultado local exactamente como fue comunicado; falta reconciliar que el comando se ejecutó sobre el HEAD actualizado. C1.568 / TASK-153 permanecen En ejecución; no se inicia otra mutación EXAM en esta iteración.

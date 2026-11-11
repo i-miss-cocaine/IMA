@@ -4142,3 +4142,10 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Alcance:** cambio exclusivo de prueba; el backend ya revalida RBAC bajo lock antes de abrir Sheets. No se modifican permisos, roles, scope, persistencia ni lógica productiva.
 - **Verificación:** parseo sintáctico del test modificado PASS. Suite Node focalizada (29 escenarios internos): NOT RUN en esta iteración; pendiente ejecución local. CI 43102931371: paso específico reviewPeriodGradebook PASS (29/29); el workflow global FAIL en security-contract por ReferenceError: withAuthorizedExamCreation_ is not defined, también presente en run 43101929348 anterior a este cambio. Apps Script/Sheets real: NOT RUN. BETA-EXAM-053 permanece Pendiente beta e incorpora el escenario.
 - **Estado:** C1.568 registra la ampliación de cobertura; TASK-153 / AUD-NG-386 continúa En ejecución hasta ejecutar la suite local pertinente.
+
+
+### 10.218 TASK-153 / AUD-NG-386 — registrar ejecución local reportada de reviewPeriodGradebook (C1.569)
+- **Resultado comunicado:** el usuario informa `PASS 28/28` tras ejecutar la suite focalizada `tests/security/exam-service-period-gradebook-review-security.test.js`.
+- **Evidencia remota previa:** GitHub Actions run 43102931371 ejecutó el paso específico en Node.js 22.23.4 y reportó `PASS (29/29)`; el workflow global falla posteriormente en un security-contract por el ReferenceError preexistente documentado en C1.568.
+- **Reconciliación pendiente:** el archivo en HEAD `f607fb31a3e9ae5f98a2fdbb167e0749b3695727` contiene 29 invocaciones internas a `test()` y su salida está configurada como `PASS (count/29)`. El resultado local 28/28 no coincide con el contador de la versión revisada; falta confirmar que se ejecutó exactamente ese HEAD/archivo. Se registra el resultado del usuario literalmente, sin elevarlo a 29/29 ni inventar un escenario aprobado.
+- **Estado:** C1.569 conserva la evidencia local reportada, pero TASK-153 / AUD-NG-386 y C1.568 siguen En ejecución hasta reconciliar el conteo/HEAD. No se inicia otra mutación EXAM en esta iteración.

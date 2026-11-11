@@ -1939,3 +1939,22 @@ HEAD inicial: a23caa4b70894a334ccf0ae408b963ed075823ca. Rama: NG_beta_0.0.0.1_wo
 - El workflow completo concluyó FAILURE después, en `exam-service-security-contract.test.js:449`: esperaba RESOURCE_NOT_AVAILABLE, pero recibió ReferenceError `withAuthorizedExamCreation_ is not defined`.
 - El mismo fallo y la misma referencia aparecen en run 43101929348, asociado al commit anterior bcb218eff043f04860c06e476e236c4cef31b945; evidencia de que es una falla preexistente y no una regresión de C1.568.
 - La suite Node debe ejecutarse también en el entorno local de desarrollo conforme NDASC 1.4. No se declara completada aún.
+
+
+===============================================================================
+## C1.569 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — registrar resultado local reportado para reviewPeriodGradebook y reconciliar el conteo de escenarios.
+
+### Verificación comunicada
+- El usuario informa que ejecutó `node tests/security/exam-service-period-gradebook-review-security.test.js` y obtuvo `PASS 28/28`.
+- CI run 43102931371: paso específico reviewPeriodGradebook PASS (29/29), Node.js 22.23.4. El workflow global falla posteriormente en security-contract por `ReferenceError: withAuthorizedExamCreation_ is not defined`, fallo ya presente en run anterior 43101929348.
+- La versión de la suite examinada en HEAD previo contiene 29 llamadas internas a `test()` y el mensaje final `PASS (count/29)`. Por tanto, el 28/28 informado no se equipara automáticamente al 29/29 de CI: queda pendiente confirmar que el usuario ejecutó el archivo de HEAD actualizado.
+- El resultado local se registra fielmente como PASS 28/28 (informado por el usuario); no se afirma que los 29 escenarios del HEAD estén localmente confirmados.
+
+### Estado y continuidad
+- C1.568 permanece abierta para reconciliar la discrepancia 28/28 local frente a 29/29 CI y el contador 29 del archivo.
+- TASK-153 / AUD-NG-386 sigue En ejecución. No se inicia otra tarea EXAM en esta iteración.
+- Próxima acción: verificar que el archivo ejecutado corresponde a HEAD actualizado y reconciliar el conteo; después inspeccionar el inventario restante de mutaciones EXAM para elegir una sola brecha comprobable.
+
+HEAD de inicio de esta iteración: f607fb31a3e9ae5f98a2fdbb167e0749b3695727. Rama: NG_beta_0.0.0.1_work. Rama base sin cambios esperada: 44d9891132332e692dbe2ba8602b41f50a508a59. HEAD final: se confirma tras publicar.
+===============================================================================
