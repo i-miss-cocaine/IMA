@@ -107,4 +107,4 @@ test(() => {
   assert.equal(x.state.mutations, 0);
   assert.equal(x.state.releases, 0);
 });
-process.stdout.write("exam-service-exam-mutation-security: " + passed + "/11 PASS\\n");
+process.stdout.write("exam-service-exam-mutation-security: " + passed + "/12 PASS\\n");
