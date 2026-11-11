@@ -957,10 +957,59 @@ function gradeExamSubmission(payload) {
   });
 }
 
+function getOrCreateExamSubmissionDeletionAuditSheet_(ss) {
+  const headers = ["EventoID", "EntregaExamenID", "ExamenID", "EstudianteID", "ActorID",
+    "RolActor", "Motivo", "FechaSolicitud", "Estado"];
+  let sheet = ss.getSheetByName("HistorialEliminacionesEntregasExamen");
+  if (!sheet) {
+    sheet = ss.insertSheet("HistorialEliminacionesEntregasExamen");
+    sheet.appendRow(headers);
+    return sheet;
+  }
+  const rows = sheet.getDataRange().getValues();
+  if (!rows.length || headers.some((header, index) => String(rows[0][index] || "").trim() !== header) ||
+      rows[0].length !== headers.length) {
+    throw new Error("EXAM_SUBMISSION_DELETION_AUDIT_SCHEMA_INVALID");
+  }
+  return sheet;
+}
+
 function deleteExamSubmission(payload) {
   return withAuthorizedExamSubmissionMutation_(payload, "deleteExamSubmission", context => {
-    context.deliverySheet.deleteRow(context.delivery.rowIndex + 1);
-    return { status: "success", message: "Entrega de examen eliminada correctamente." };
+    const p = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
+    const reason = typeof p.motivo === "string" ? p.motivo.trim() : "";
+    if (reason.length < 10 || reason.length > 2000) {
+      throw new Error("EXAM_SUBMISSION_DELETION_REASON_INVALID");
+    }
+    const row = context.delivery.row;
+    const deliveryId = String(row[0] || "").trim();
+    const examId = String(row[1] || "").trim();
+    const studentId = String(row[2] || "").trim();
+    if (row.length < 7 || deliveryId !== context.entregaId || examId !== context.examId || !studentId) {
+      throw new Error("EXAM_SUBMISSION_SCHEMA_INVALID");
+    }
+
+    const auditSheet = getOrCreateExamSubmissionDeletionAuditSheet_(context.ss);
+    const eventId = Utilities.getUuid();
+    const auditRow = auditSheet.getLastRow() + 1;
+    auditSheet.appendRow([eventId, deliveryId, examId, studentId, context.actor.userId,
+      context.actor.role, reason, new Date(), "DELETE_REQUESTED"]);
+    try {
+      context.deliverySheet.deleteRow(context.delivery.rowIndex + 1);
+    } catch (error) {
+      try {
+        auditSheet.getRange(auditRow, 9).setValue("DELETE_FAILED");
+      } catch (_) {
+        throw new Error("EXAM_SUBMISSION_DELETION_AUDIT_UPDATE_FAILED");
+      }
+      throw error;
+    }
+    try {
+      auditSheet.getRange(auditRow, 9).setValue("DELETED");
+    } catch (_) {
+      throw new Error("EXAM_SUBMISSION_DELETION_AUDIT_FINALIZATION_FAILED");
+    }
+    return { status: "success", message: "Entrega de examen eliminada correctamente.", eventoId: eventId };
   });
 }
 
