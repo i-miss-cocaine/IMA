@@ -1837,3 +1837,13 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - BETA-EXAM-067 actualizado. Node22/CI de la versión actual y Apps Script/Sheets real NOT RUN. El 28/28 de workflow 43053113842 es evidencia de la suite anterior.
 - Sin cambios productivos. TASK-153 / AUD-NG-386 continúa abierta.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] C1.548 — TASK-153 / saveRubric: revalidación de identidad bajo lock
+- Añadida prueba con identidad válida en preflight y userId de espacios en la revalidación bajo ScriptLock.
+- Verifica RESOURCE_NOT_AVAILABLE, dos verificaciones, liberación del lock, cero aperturas de Sheets y rúbricas/ownership intactos.
+- Parseo V8 y suite completa 20/20 PASS en aislamiento V8 con shims.
+- BETA-EXAM-077 creado y Pendiente beta. Node22/CI de la versión actual y Apps Script/Sheets real NOT RUN.
+- Sin cambios productivos. TASK-153 / AUD-NG-386 continúa abierta.
+===============================================================================

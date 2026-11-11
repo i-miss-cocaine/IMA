@@ -1431,3 +1431,37 @@ Continuar inventario de mutaciones EXAM sin cobertura equivalente y seleccionar 
 
 HEAD final: se confirmará después de publicar y verificar el commit del checkpoint.
 ===============================================================================
+
+
+===============================================================================
+C1.548 — TASK-153 / AUD-NG-386 / saveRubric: identidad revalidada bajo lock
+ID de sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-11
+Repositorio: i-miss-cocaine/IMA
+Rama autorizada: NG_beta_0.0.0.1_work
+HEAD inicial: 65b694dd0e60a1c2f6e2291f2fe813dd823f72de (C1.547)
+
+### Alcance y resultado
+Se amplió la suite de seguridad del handler real saveRubric para cubrir identidad válida en preflight y userId compuesto por espacios en la revalidación contextual bajo ScriptLock.
+
+### Cambios
+- tests/security/exam-service-save-rubric-security.test.js: fixture con secuencia de identidades; escenario que exige RESOURCE_NOT_AVAILABLE, dos verificaciones, lock adquirido/liberado, cero aperturas de Sheets y snapshots intactos de RubricasEvaluacion y ResourceOwnership.
+- beta_test.txt / BETA-EXAM-077: escenario desplegado para identidad degradada durante la revalidación y comparación con creación válida.
+- No se modificó backend/exam-service/Code.gs, permisos, roles, scope, contratos ni persistencia productiva.
+
+### Verificación local
+- Parseo V8 de backend/exam-service/Code.gs: PASS.
+- Parseo V8 de tests/security/exam-service-save-rubric-security.test.js: PASS.
+- Suite completa exam-service-save-rubric-security: 20/20 PASS en aislamiento V8 con shims assert/fs/path/vm.
+- Escenario nuevo: identidad válida en preflight; userId de espacios en revalidación; dos verificaciones; RESOURCE_NOT_AVAILABLE; ScriptLock adquirido y liberado; cero aperturas de Sheets; rúbricas y ownership sin cambios.
+- Node 22/CI para la suite actual: NOT RUN.
+- Apps Script/Sheets real: NOT RUN; BETA-EXAM-077 permanece Pendiente beta.
+
+### Estado y continuidad
+C1.548 completa la cobertura local de revalidación de identidad para saveRubric. TASK-153 / AUD-NG-386 continúa En ejecución para las mutaciones EXAM restantes. No se declara aprobada la suite actual en Node 22/CI ni la prueba beta. Sin cambios productivos.
+
+### Siguiente acción exacta
+Continuar inventario de mutaciones EXAM sin cobertura equivalente y seleccionar el siguiente handler con una brecha concreta de evidencia. No repetir C1.548 ni C1.534–C1.547.
+
+HEAD final: se confirmará después de publicar y verificar el commit del checkpoint.
+===============================================================================

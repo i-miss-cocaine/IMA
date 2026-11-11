@@ -871,3 +871,15 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta.
 - **Evidencia requerida:** commit desplegado, trazas saneadas de RBAC/identidad/lock/Sheets y snapshots completos de la fila del examen antes/después para ambas variantes.
 ===============================================================================
+
+
+===============================================================================
+## BETA-EXAM-077 — TASK-153 / AUD-NG-386 / EXAM: identidad incompleta en saveRubric bajo lock
+- **Módulo/rol:** Servicio EXAM; Profesor con permiso efectivo saveRubric, identidad firmada y scope departamental autorizado; roles institucionales según RBAC y scope aplicable.
+- **Objetivo:** verificar en Apps Script/Sheets desplegado que saveRubric no cree ni modifique rúbricas ni registros ResourceOwnership cuando el userId válido del preflight se pierde durante la revalidación dentro de ScriptLock.
+- **Precondiciones:** versión beta desplegada; sesión firmada válida; departamento dentro del scope; hojas RubricasEvaluacion y ResourceOwnership con esquemas vigentes y snapshots iniciales; mecanismo de prueba controlado para devolver identidad válida en preflight y userId vacío/espacios en la segunda validación.
+- **Pasos:** invocar saveRubric para crear una rúbrica nueva con identidad válida en preflight; provocar userId vacío/espacios en la revalidación bajo lock; verificar RESOURCE_NOT_AVAILABLE, lock liberado, ausencia de acceso a Sheets y snapshots intactos de ambas hojas. Repetir con identidad estable y permiso/scope válidos para confirmar la creación y ownership normales.
+- **Resultado esperado:** la identidad incompleta se rechaza antes de abrir Sheets o persistir; no se crean filas de rúbrica ni ownership y el lock se libera; con identidad válida se conserva la creación normal y su vínculo de ownership.
+- **Estado:** Pendiente beta; suite local dedicada 20/20 PASS en aislamiento V8 con shims; Node 22/CI para la versión actual NOT RUN; Apps Script/Sheets real NOT RUN.
+- **Evidencia requerida:** commit/build desplegado, trazas saneadas de RBAC/identidad/lock/Sheets, actor y scope sintéticos, snapshots completos de RubricasEvaluacion y ResourceOwnership antes/después para ambas variantes.
+===============================================================================
