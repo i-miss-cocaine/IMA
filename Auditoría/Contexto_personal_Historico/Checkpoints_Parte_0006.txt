@@ -821,3 +821,9 @@ Corregir la autorización de identidad firmada en submitExam antes de solicitar 
 - Estado: subalcance submitExam corregido; TASK-153 / AUD-NG-386 continúa En ejecución.
 - Siguiente acción: inspeccionar siguiente ruta mutadora EXAM no cubierta, una sola operación en la próxima iteración, conservando esta sesión.
 ===============================================================================
+
+### C1.529 — cierre de publicación y HEAD final verificado
+- Commit documental de cierre: 032d91080306e76d9fe7373f445421148ff1313c.
+- HEAD final verificado en NG_beta_0.0.0.1_work: 032d91080306e76d9fe7373f445421148ff1313c.
+- Rama base NG_beta_0.0.0.1 permanece en 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Compare API: rama de trabajo ahead 1297, behind 0; sin modificación de la rama base.
