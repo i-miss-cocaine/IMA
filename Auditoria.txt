@@ -2029,4 +2029,8 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Job `exam-security-contracts` y paso `Run exam mutation security regression`: SUCCESS; todos los pasos del workflow terminaron SUCCESS.
 - C1.583 Completada en verificación local y CI. BETA-EXAM-084 continúa Pendiente beta.
 
+### C1.584 — AUD-NG-386 / updateExam: contención reentrante bajo ScriptLock
+- **Brecha:** el contrato de updateExam cubría autorización, identidad, scope y revocación RBAC, pero no una segunda actualización durante setValues de la solicitud exterior.
+- **Cambio:** hook sintético en setValues invoca updateExam anidado. La secundaria falla EXAM_MUTATION_LOCK_TIMEOUT; la exterior conserva la fila actualizada, realiza una escritura, no reabre Sheets y libera el lock.
+- **Verificación local:** parseo Code.gs/test PASS; contrato V8 aislado 20/20 PASS. Backend productivo sin cambios. CI pendiente; Apps Script/Sheets real NOT RUN. BETA-EXAM-085 actualizado y Pendiente beta.
 

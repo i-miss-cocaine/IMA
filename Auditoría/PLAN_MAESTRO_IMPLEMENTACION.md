@@ -4294,4 +4294,10 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - Job `exam-security-contracts` y paso `Run exam mutation security regression`: SUCCESS; todos los pasos del workflow completados sin fallos.
 - C1.583 Completada en verificación local y CI. BETA-EXAM-084 permanece Pendiente beta para Apps Script/Sheets desplegado.
 
+### 10.233 TASK-153 / AUD-NG-386 — concurrencia reentrante en updateExam (C1.584)
+- **Brecha confirmada:** updateExam revalida RBAC, identidad, ownership y scope bajo ScriptLock y escribe la fila completa mediante setValues; la suite comprobaba revocación de RBAC, pero no una segunda actualización durante la escritura exterior.
+- **Cobertura añadida:** hook sintético en Examenes.setValues que invoca el handler real updateExam de forma anidada. La secundaria debe recibir EXAM_MUTATION_LOCK_TIMEOUT; la exterior conserva sus campos, realiza exactamente una escritura, no reabre Sheets y libera ScriptLock.
+- **Alcance:** solo contrato en tests/security/exam-service-exam-mutation-security.test.js; backend productivo, permisos, identidad, ownership, scope y persistencia sin cambios. BETA-EXAM-085 registra el escenario desplegado.
+- **Verificación local:** parseo sintáctico de backend y contrato PASS; ejecución completa V8 aislada 20/20 PASS. CI Node.js 22 pendiente tras commit. Apps Script/Sheets real NOT RUN; BETA-EXAM-085 Pendiente beta.
+- **Estado:** C1.584 Completada en verificación local; TASK-153 / AUD-NG-386 continúa En ejecución para las rutas mutadoras restantes.
 

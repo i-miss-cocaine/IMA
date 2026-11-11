@@ -2336,4 +2336,23 @@ HEAD inicial: `4451fd9d161fc72afab08b2a09263ec363e0141e`. HEAD final: se confirm
 - HEAD inicial: `a8e967c6c392ab73ef65119e4354e4fca9fa90f8`; HEAD de implementación/pruebas: `0f515eeac717ec22d51cb98df1cf18c6c7256957`; cierre documental: commit posterior de esta actualización.
 ===============================================================================
 
+===============================================================================
+## C1.584 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — concurrencia reentrante en updateExam.
+
+### Hallazgo y corrección
+- La suite de mutaciones EXAM verificaba revocación RBAC, identidad, ownership y scope de updateExam, pero no una segunda actualización durante la escritura exterior con setValues.
+- Se añadió un hook sintético que invoca el handler real updateExam durante setValues. La solicitud anidada recibe EXAM_MUTATION_LOCK_TIMEOUT; la exterior conserva todos los campos, realiza una sola escritura, no abre Sheets de nuevo y libera ScriptLock.
+- No se modificó backend productivo.
+
+### Verificación local
+- Parseo sintáctico de backend y contrato: PASS.
+- Ejecución completa del contrato en V8 aislado con shims compatibles: **20/20 PASS**.
+- CI Node.js 22: pendiente de ejecución/observación tras commit. Apps Script/Sheets real: NOT RUN; BETA-EXAM-085 Pendiente beta.
+
+### Estado y continuidad
+- C1.584 Completada en verificación local; TASK-153 / AUD-NG-386 continúa En ejecución.
+- Siguiente: inspeccionar la siguiente ruta mutadora EXAM no cubierta por reentrada local equivalente, sin repetir escenarios ya cubiertos.
+- HEAD inicial: `5b8792918204eda3b08a43ab04646d0f8d6ab005`; HEAD final: se confirma tras publicar.
+===============================================================================
 

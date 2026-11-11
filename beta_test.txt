@@ -971,3 +971,14 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta; contrato local V8 aislado 19/19 PASS y GitHub Actions run 43114753785 SUCCESS (workflow completo, Node.js 22); Apps Script/Sheets real NOT RUN.
 - **Evidencia requerida:** commit desplegado, trazas saneadas de ambas solicitudes, conteo de adquisición/liberación del lock, lecturas/escrituras y snapshot antes/después de Examenes.
 ===============================================================================
+
+===============================================================================
+## BETA-EXAM-085 — TASK-153 / AUD-NG-386 / EXAM: contención reentrante de updateExam
+- **Módulo/rol:** Servicio EXAM; Profesor con permiso updateExam, identidad firmada, examen de su propiedad y scope departamental válido.
+- **Objetivo:** comprobar en Apps Script/Sheets desplegado que una segunda solicitud updateExam durante setValues de la solicitud exterior no atraviesa ScriptLock ni sobrescribe la actualización exterior.
+- **Precondiciones:** versión beta desplegada; examen sintético con ownership activo; sesión firmada y asignación departamental; mecanismo controlado para intentar una segunda solicitud durante la escritura exterior.
+- **Pasos:** invocar updateExam con cambios de título/asignatura/grado/sección/fecha/tiempo/parcial; durante setValues intentar updateExam secundario sobre el mismo examen; revisar respuesta, trazas RBAC/identidad/lock/Sheets y snapshot completo de Examenes.
+- **Resultado esperado:** la solicitud anidada termina con EXAM_MUTATION_LOCK_TIMEOUT; la exterior completa una sola escritura con todos sus campos, Sheets se abre una sola vez y ScriptLock queda liberado.
+- **Estado:** Pendiente beta; contrato local V8 aislado 20/20 PASS; GitHub Actions pendiente; Apps Script/Sheets real NOT RUN.
+- **Evidencia requerida:** commit desplegado, trazas saneadas de ambas solicitudes, conteo de adquisición/liberación del lock, lecturas/escrituras y snapshot antes/después de Examenes.
+===============================================================================
