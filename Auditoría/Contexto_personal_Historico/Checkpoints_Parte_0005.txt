@@ -1995,8 +1995,9 @@ saveGradebookGrades escribía calificaciones sin RBAC/identidad/scope, confiaba 
 backend/exam-service/Code.gs; js/teacher.js; tests/security/exam-service-gradebook-save-security.test.js; .github/workflows/exam-service-security-contract.yml; Plan Maestro; beta_test.txt (BETA-EXAM-057); changueslogs.txt; Auditoria.txt; historial e índice.
 ### Verificación
 - Parseo completo Code.gs PASS.
-- Harness V8 ejecutando las funciones reales extraídas del código: 10/10 PASS (guardado, roles, RBAC, período cerrado, límites de nota, lock, esquema, duplicidad y fallo de escritura).
-- Suite dedicada Node de 23 escenarios incorporada a CI; ejecución Node/CI pendiente en el momento de este checkpoint.
+- Harness V8 sobre funciones reales en versión final: 5/5 PASS (guardado, período cerrado, nota inválida, asignación y spoofing).
+- GitHub Actions run 43012781628: suite dedicada 23/23 PASS; security-contract PASS.
+- Workflow global FAIL en exam-service-departmental-access.test.js por ReferenceError preexistente withAuthorizedExamRead_ no definido; read-endpoints skipped.
 - Apps Script/Sheets real NOT RUN; BETA-EXAM-057 Pendiente beta.
 ### Limitaciones
 CalificacionesEstudiantes no contiene PeriodoID/Asignatura; se verifica asignación y período de la solicitud y se bloquea si el cierre correspondiente está Cerrado, pero no se inventa una dimensión histórica por fila. bulkApplyGradebookGrades no se modifica en esta iteración.

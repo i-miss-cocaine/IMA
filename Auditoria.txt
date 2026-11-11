@@ -1598,9 +1598,9 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 
 
 ===============================================================================
-### AUD-NG-386 — EXAM: saveGradebookGrades (C1.504)
-- **Hallazgo alto:** endpoint de escritura masiva sin RBAC, identidad ni scope; permitía spoofing de actor/flags, escritura fuera del roster y cambios sobre período cerrado basados en authRole de cliente; primera coincidencia sobrescrita silenciosamente.
-- **Corrección:** ScriptLock, RBAC, identidad firmada, scope institucional, asignación docente exacta, roster único, ownership de categorías, cierre inmutable, validación estricta de notas y unicidad de lote/persistencia.
-- **Verificación local:** parseo Code.gs PASS; ejecución aislada de las funciones reales 10/10 PASS. Suite Node dedicada 23 escenarios agregada al workflow, pendiente de ejecución CI. Apps Script/Sheets NOT RUN; BETA-EXAM-057 Pendiente beta.
-- **Límite:** no existe PeriodoID/Asignatura en CalificacionesEstudiantes; no se inventa vínculo por fila. bulkApplyGradebookGrades queda expresamente fuera de esta iteración.
+### AUD-NG-386 — saveGradebookGrades (C1.504)
+- Hallazgo alto: escritura sin identidad, RBAC, scope, asignación ni roster; flags/rol del cliente permitían alterar cierres.
+- Corrección: ScriptLock, identidad/RBAC/scope, asignación y roster exactos, ownership de categorías, cierre inmutable y notas/lote validados.
+- Pruebas: V8 final 5/5 PASS; CI dedicado 23/23 PASS y security-contract PASS (43012781628). Suite global falla por ReferenceError preexistente en departmental-access. Beta 057 pendiente.
+- Límite: no hay PeriodoID/Asignatura por fila; bulkApplyGradebookGrades queda fuera.
 ===============================================================================
