@@ -738,9 +738,9 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Módulo/rol:** Servicio EXAM; Profesor con permiso efectivo closePeriodGradebook y roles institucionales autorizados según RBAC.
 - **Objetivo:** comprobar que el cierre del período valida RBAC, identidad firmada, userId y rol antes de solicitar ScriptLock; el contexto de cierre debe revalidar autorización y datos académicos bajo el lock.
 - **Precondiciones:** versión beta desplegada; sesión firmada válida; período, asignación, roster, cuatro categorías publicadas y hojas académicas con esquema vigente.
-- **Pasos:** probar RBAC denegado, identidad no autorizada/ausente, userId vacío, rol no admitido, lock ocupado, autorización válida y doble validación bajo lock; completar el cierre y verificar el registro resultante sin permitir duplicados ni cierres con calificaciones incompletas.
+- **Pasos:** probar RBAC denegado, identidad no autorizada/ausente, userId vacío, rol no admitido, lock ocupado, autorización válida y doble validación bajo lock; incluir un preflight con identidad válida seguido de revalidación TOCTOU con userId compuesto solo por espacios; comprobar que no se abre Sheets y que el lock se libera; completar el cierre y verificar el registro resultante sin permitir duplicados ni cierres con calificaciones incompletas.
 - **Resultado esperado:** solicitudes inválidas no adquieren lock ni abren Sheets; la solicitud válida revalida RBAC/identidad dentro del lock y crea un único cierre coherente; el lock se libera en éxito y error.
-- **Estado:** Pendiente beta; harness local focalizado 8/8 PASS; suite dedicada 19/19 PASS en Node 22 (workflow 43046863190 SUCCESS); parseo Code.gs PASS; Apps Script/Sheets real NOT RUN.
+- **Estado:** Pendiente beta; suite histórica 19/19 PASS en Node 22 (workflow 43046863190 SUCCESS); suite ampliada actual 20/20 PASS en runtime aislado con shims; CI de C1.533 NOT VERIFIED; parseo Code.gs PASS; Apps Script/Sheets real NOT RUN.
 - **Evidencia requerida:** versión/commit desplegado, actor/rol/permiso, trazas de orden de validación y lock, snapshots sintéticos de asignación/roster/calificaciones/cierre y evidencia de liberación del lock.
 ===============================================================================
 
