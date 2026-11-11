@@ -61,12 +61,14 @@ function fixture(options = {}) {
   const ownership = [OH.slice()];
   if (!options.noOwnership) ownership.push(["OWN-SRC-1","I1","CATEGORIA_EVALUACION","CAT-SRC-1",options.ownerDepartment || "D1","ACTIVE","P1",new Date().toISOString(),new Date().toISOString()]);
   if (options.duplicateOwnership) ownership.push(ownership[1].slice());
+  if (options.duplicateOwnershipId) ownership.push(["OWN-SRC-1","I1","CATEGORIA_EVALUACION","CAT-OTHER","D1","INACTIVE","P1","t","t"]);
+  if (options.badCategory) categories[1][3] = "invalid";
   const sheets = {
     ConfiguracionAcademica: makeSheet(assignments),
     CategoriasEvaluacion: makeSheet(categories, { failWrite: options.failCategoryWrite }),
     ResourceOwnership: makeSheet(ownership)
   };
-  const stats = { acquired: 0, released: 0, held: false, opens: 0, action: "" };
+  const stats = { acquired: 0, released: 0, held: false, opens: 0, action: "", reentryError: "" };
   let uuid = 0;
   const runtime = {
     SPREADSHEET_ID: "TEST",
@@ -77,7 +79,7 @@ function fixture(options = {}) {
     validateRolePermission(action) { stats.action = action; return { authorized: options.permissionDenied !== true }; },
     getVerifiedExamIdentity_() { return options.invalidIdentity ? { authorized: false } : actor; },
     getVerifiedExamDepartmentScope_() { return options.invalidScope ? { authorized: false } : scope; },
-    SpreadsheetApp: { openById() { stats.opens++; return { getSheetByName: name => sheets[name] || null }; } },
+    SpreadsheetApp: { openById() { stats.opens++; if (options.reenter && stats.opens === 1) { try { runtime.run(payload); } catch (error) { stats.reentryError = String(error); } } return { getSheetByName: name => sheets[name] || null }; } },
     getSheetOrThrow(ss, name) { const sheet = ss.getSheetByName(name); if (!sheet) throw new Error("missing " + name); return sheet; },
     normalizeString(value) { return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim(); },
     Utilities: { getUuid() { uuid++; return options.uuid || "U" + uuid; } }
@@ -117,11 +119,14 @@ test(() => assert.throws(() => fixture({duplicateDestination:true}).call(), /RES
 test(() => assert.throws(() => fixture({ownerDepartment:"D2"}).call(), /RESOURCE_SCOPE_DENIED/));
 test(() => assert.throws(() => fixture({noOwnership:true}).call(), /RESOURCE_OWNERSHIP_UNVERIFIED/));
 test(() => assert.throws(() => fixture({duplicateOwnership:true}).call(), /RESOURCE_OWNERSHIP_UNVERIFIED/));
+test(() => assert.throws(() => fixture({duplicateOwnershipId:true}).call(), /RESOURCE_OWNERSHIP_RECORD_AMBIGUOUS/));
+test(() => assert.throws(() => fixture({badCategory:true}).call(), /EVALUATION_CATEGORY_RECORD_INVALID/));
 test(() => assert.throws(() => fixture({duplicateCategoryId:true}).call(), /EVALUATION_CATEGORY_RECORD_AMBIGUOUS/));
 test(() => assert.throws(() => fixture({canonicalSchema:true}).call(), /EVALUATION_CATEGORY_COPY_SCHEMA_UNSUPPORTED/));
 test(() => assert.throws(() => fixture().call({grupoDestino:{asignatura:"Matemáticas",grado:"10",seccion:"A",periodo:"P1"}}), /EVALUATION_COPY_SOURCE_EQUALS_DESTINATION/));
 test(() => assert.throws(() => fixture().call({grupoDestino:{asignatura:"Matemáticas",grado:"10",seccion:"B"}}), /EVALUATION_COPY_GROUP_CONTEXT_REQUIRED/));
 test(() => { const x=fixture({lockTimeout:true});assert.throws(()=>x.call(),/EVALUATION_SETUP_COPY_LOCK_TIMEOUT/);assert.equal(x.stats.opens,0); });
+test(() => { const x=fixture({reenter:true}),r=x.call();assert.equal(r.categoriasCopias,1);assert.match(x.stats.reentryError,/EVALUATION_SETUP_COPY_LOCK_TIMEOUT/);assert.equal(x.sheets.CategoriasEvaluacion.writes,1);assert.deepEqual([x.stats.acquired,x.stats.released,x.stats.held],[2,1,false]); });
 test(() => {
   const x=fixture({failCategoryWrite:true});
   assert.throws(()=>x.call(),/write failed/);
