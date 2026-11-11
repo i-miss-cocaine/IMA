@@ -2055,3 +2055,26 @@ backend/exam-service/Code.gs; tests/security/exam-service-evaluation-setup-copy-
 El endpoint legacy espera CategoriasEvaluacion de ocho columnas (ID, Asignatura, NombreCategoria, Ponderacion, Grado, Seccion, Periodo, FechaRegistro), pero saveEvaluationCategory utiliza esquema canónico de seis columnas. La operación falla cerrada en el esquema canónico; no se altera el catálogo ni se improvisa migración. ConfiguracionAcademica no contiene DepartmentID: se comprueban asignaciones exactas y scope, pero no se infiere el departamento de cada grupo.
 TASK-153 / AUD-NG-386 permanecen En ejecución por otras mutaciones EXAM.
 ===============================================================================
+
+
+===============================================================================
+CHECKPOINT C1.507 — Autorización RBAC interna de createExam
+Sesión: IMA-EXEC-20261110-1825Z-02.
+Fecha: 2026-11-11 UTC.
+Rama: NG_beta_0.0.0.1_work.
+HEAD inicial: 289d74beda69f314d0a6ff722da3ee0064e54f43.
+### Hallazgo
+createExam verificaba token e identidad y scope, pero no ejecutaba validateRolePermission("createExam", payload) en el propio endpoint. Dependía del filtro de doPost, insuficiente para invocaciones directas desde otros puntos de entrada Apps Script.
+### Cambio
+- Valida RBAC dinámico/delegado al inicio, antes de abrir el spreadsheet o tomar el lock.
+- Conserva validación de identidad firmada, scope, departamento explícitamente autorizado, ResourceOwnership, persistencia de examen/preguntas y rollback existente.
+- Añade contrato dedicado con escenarios positivos, RBAC denegado, identidad/scope/departamento, lock, esquema y fallos de persistencia parcial.
+### Archivos
+backend/exam-service/Code.gs; tests/security/exam-service-create-exam-security.test.js; .github/workflows/exam-service-security-contract.yml; beta_test.txt (BETA-EXAM-060); Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; Auditoria.txt; changueslogs.txt; historial e índice de checkpoints.
+### Verificación
+- Parseo completo de Code.gs mediante Node vm.Script y contrato dedicado.
+- Casos locales de creación positiva, permiso denegado antes de abrir Sheets, identidad/scope/departamento inválidos, lock, esquema inválido, append parcial y fallos de examen/preguntas; resultados pendientes hasta ejecución.
+- CI y Apps Script/Sheets real no se declaran PASS hasta obtener evidencia.
+### Estado
+Subalcance createExam; TASK-153 / AUD-NG-386 permanecen En ejecución por otras mutaciones EXAM.
+===============================================================================
