@@ -627,3 +627,15 @@ Subalcance reopenPeriodGradebook corregido; TASK-153 / AUD-NG-386 continúa En e
 Siguiente: inspeccionar el siguiente wrapper mutador EXAM pendiente, sin avanzar otra operación en esta iteración.
 HEAD final: se verificará tras cierre documental.
 ===============================================================================
+
+
+===============================================================================
+### ADDENDUM FINAL DE VERIFICACIÓN — C1.525 / reopenPeriodGradebook
+- Commit de implementación: `01aedb8a586b06fa4753b683f33770380d56a950`.
+- Commit de suite: `769190534426f2aa7879c39864dbbec5e51c89c2`.
+- GitHub Actions workflow `43052136181`: **completed / success**; job `exam-security-contracts` `130631828833` SUCCESS; step de reapertura SUCCESS.
+- Suite `reopen-period-gradebook-security`: **26/26 PASS** en Node 22. Las suites generales de contrato, acceso departamental y lectura también pasaron en el mismo workflow.
+- Harness local focalizado: **10/10 PASS**. La suite completa se ejecutó en CI, no se declara ejecutada localmente.
+- Apps Script/Sheets real: NOT RUN; BETA-EXAM-055 continúa Pendiente beta.
+- Rama base `NG_beta_0.0.0.1` verificada sin modificaciones. HEAD final se registra después del cierre del checkpoint.
+===============================================================================
