@@ -1476,3 +1476,13 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - Runner Node nativo y CI: NOT RUN. Apps Script/Sheets real: NOT RUN. BETA-EXAM-040 Pendiente beta.
 - TASK-153 permanece En ejecución; AUD-NG-386 abierto por otras lecturas EXAM. Siguiente subalcance único: getGradingPerformanceAndPersistenceMetrics.
 ===============================================================================
+
+===============================================================================
+## C1.487 — EXAM: seguridad de getGradingPerformanceAndPersistenceMetrics
+- Hallazgo: el endpoint abría SpreadsheetApp directamente, medía seis hojas sin autenticación/lock y su permiso estaba asignado a Profesor. El resultado es global y expone metadatos operativos institucionales.
+- Corrección: handler usa withAuthorizedExamRead_("getGradingPerformanceAndPersistenceMetrics", ...); worker exige actor Administrador o Desarrollador y scope.institutionWide === true. El permiso se retiró de Profesor. Se conserva el contrato de respuesta y los conteos getLastRow, sin devolver contenido de celdas.
+- Integridad/privacidad: lectura serializada bajo ScriptLock compartido; timeout fail-closed; métricas muestreadas después de adquirir el lock; sin escrituras ni valores personales.
+- Pruebas locales: parseo V8 y harness de read-endpoints PASS (roles permitidos/denegados, RBAC, scope departamental, lock timeout, lectura post-lock, seis hojas, umbrales, hoja ausente y no exposición de valores). Contrato estático PASS.
+- Node nativo/CI y Apps Script/Sheets real: NOT RUN. BETA-EXAM-041 Pendiente beta.
+- TASK-153 permanece En ejecución; AUD-NG-386 abierto por otras lecturas EXAM.
+===============================================================================

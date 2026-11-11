@@ -81,6 +81,7 @@ const sheets = {
 const ss = { getSheetByName(name) { return sheets[name] || null; } };
 const runtime = {
   SPREADSHEET_ID: "LOCAL",
+  LockService: { getScriptLock() { return { tryLock() { return true; }, releaseLock() {} }; } },
   PUBLIC_ACTIONS: publicActions,
   ROLE_PERMISSIONS: {
     Profesor: ["getAllExams"],
@@ -93,12 +94,19 @@ const runtime = {
   Logger: { log() {} },
   PropertiesService: { getScriptProperties() { return { getProperty(name) { return name === "IMA_INSTITUTION_ID" ? "I1" : null; } }; } },
   SpreadsheetApp: { openById() { return ss; } },
-  getSheetOrThrow(spreadsheet, name) { const sheet = spreadsheet.getSheetByName(name); if (!sheet) throw new Error("Missing sheet " + name); return sheet; }
+  getSheetOrThrow(spreadsheet, name) { const sheet = spreadsheet.getSheetByName(name); if (!sheet) throw new Error("Missing sheet " + name); return sheet; },
+  withAuthorizedExamRead_(action, payload, reader) {
+    const actor = runtime.getVerifiedExamIdentity_(payload);
+    if (!actor || actor.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+    const scope = runtime.getVerifiedExamDepartmentScope_(payload, ss, actor);
+    if (!scope || scope.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+    return reader({ actor, ss, scope });
+  }
 };
 const contextual = extractFunction(source, "validateContextualAccess");
 const permission = extractFunction(source, "validateRolePermission");
 vm.runInNewContext(contextual + "\n" + permission +
-  "\nthis.validate = validateRolePermission;", runtime);
+  "\nthis.validate = validateRolePermission; this.validateRolePermission = validateRolePermission;", runtime);
 
 for (const action of ["getAllExams", "getStudentExams"]) {
   assert.equal(runtime.validate(action, {}).authorized, false, action + " rejects missing session");
@@ -113,9 +121,9 @@ assert.equal(runtime.validate("getStudentExams", ownStudent).authorized, true);
 const otherStudent = { sessionToken: "student-session", userId: "STUDENT-2" };
 assert.equal(runtime.validate("getStudentExams", otherStudent).authorized, false, "student cannot request another student's exams");
 
-const helpers = ["getVerifiedExamIdentity_", "getVerifiedExamDepartmentScope_", "assertExamResourceOwnershipForScope_", "getAllExams"]
+const helpers = ["getVerifiedExamIdentity_", "getVerifiedExamDepartmentScope_", "assertExamResourceOwnershipForScope_", "getAllExams", "getAllExamsUnlocked_"]
   .map(name => extractFunction(source, name)).join("\n");
-vm.runInNewContext(helpers + "\nthis.getAllExams = getAllExams;", runtime);
+vm.runInNewContext(helpers + "\nthis.getVerifiedExamIdentity_ = getVerifiedExamIdentity_; this.getVerifiedExamDepartmentScope_ = getVerifiedExamDepartmentScope_; this.getAllExams = getAllExams;", runtime);
 const teacherExamList = runtime.getAllExams({
   sessionToken: "teacher-session",
   _verifiedUserId: "ATTACKER",
@@ -356,5 +364,20 @@ assert.ok(rescheduleWorker.includes("matches.length !== 1") &&
   !rescheduleWorker.includes("checkExamSchedulingConflict(") &&
   rescheduleWorker.includes("actor.role);"),
   "simulation requires a unique owned teacher-visible exam and reuses the conflict worker under the same lock");
+
+const metricsHandler = extractFunction(source, "getGradingPerformanceAndPersistenceMetrics");
+const metricsWorker = extractFunction(source, "getGradingPerformanceAndPersistenceMetricsUnlocked_");
+assert.ok(metricsHandler.includes('withAuthorizedExamRead_("getGradingPerformanceAndPersistenceMetrics"'),
+  "global persistence metrics delegate to the shared serialized RBAC reader");
+assert.ok(metricsWorker.includes('["Administrador", "Desarrollador"]') &&
+  metricsWorker.includes("scope.institutionWide !== true") &&
+  metricsWorker.includes("getLastRow()") &&
+  !metricsWorker.includes("getDataRange()") &&
+  !metricsWorker.includes("SpreadsheetApp.openById"),
+  "global metrics require an institution-wide administrator/developer and read only row counts");
+const permissionsBlock = source.slice(source.indexOf("const ROLE_PERMISSIONS"), source.indexOf("// [TAREA-F4-P0-01]"));
+const professorPermissions = /"Profesor": \[([\s\S]*?)\n  \],/.exec(permissionsBlock);
+assert.ok(professorPermissions && !professorPermissions[1].includes("getGradingPerformanceAndPersistenceMetrics"),
+  "professors no longer receive institution-wide persistence metrics permission");
 
 process.stdout.write("exam-service-security-contract: authentication, identity, teacher ownership and serialized exam mutations assertions passed\\n");

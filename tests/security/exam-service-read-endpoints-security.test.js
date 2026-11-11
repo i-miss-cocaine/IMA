@@ -24,7 +24,7 @@ function extractFunction(name) {
   throw new Error("unbalanced function " + name);
 }
 function makeSheet(rows) {
-  return { rows, getDataRange() { return { getValues: () => this.rows.map(row => row.slice()) }; } };
+  return { rows, getDataRange() { return { getValues: () => this.rows.map(row => row.slice()) }; }, getLastRow() { return this.rows.length; } };
 }
 function runtime(options = {}) {
   const examRows = [
@@ -59,6 +59,12 @@ function runtime(options = {}) {
     Usuarios: makeSheet([["UserID"], ["STU-1","Estudiante Uno","10","A","one@example.test"],
       ["STU-D","Duplicado A","10","A","a@example.test"], ["STU-D","Duplicado B","10","A","b@example.test"]])
   };
+  ["CalificacionesEstudiantes", "CategoriasEvaluacion", "HistorialRectificacionesNotas", "CierresPeriodos",
+    "RecuperacionesEstudiante", "EvaluacionesCompetencias"].forEach(name => {
+    if (options.missingMetricSheet === name) return;
+    const count = Number(options.metricRows && options.metricRows[name] || 0);
+    sheets[name] = makeSheet([["Header"], ...Array.from({ length: count }, (_, index) => ["ROW-" + index])]);
+  });
   const ss = { getSheetByName(name) { return sheets[name] || null; } };
   let held = false, acquires = 0, releases = 0;
   const events = [];
@@ -86,7 +92,7 @@ function runtime(options = {}) {
         actor: options.actor || (studentActor ? { userId: "STU-1", role: "Estudiante" } : { userId: "PROF-1", role: "Profesor" }),
         ss, studentActor, guardianActor: !!options.guardianActor,
         profile: { userId: options.profileUserId || "STU-1", grado: "10", seccion: "A", role: "Estudiante" },
-        scope: { authorized: true }, requestedStudentId: requestedId
+        scope: { authorized: true, institutionWide: options.institutionWide !== false }, requestedStudentId: requestedId
       };
     },
     getExamStudentProfile_(spreadsheet, id) {
@@ -99,11 +105,12 @@ function runtime(options = {}) {
   const names = ["withAuthorizedExamRead_", "getAuthorizedExamReadContext_", "getStudentExams", "getStudentExamsUnlocked_",
     "getExamQuestions", "getExamQuestionsUnlocked_", "getAllExams", "getAllExamsUnlocked_",
     "getTeacherExamActivity", "getTeacherExamActivityUnlocked_", "getExamGradeDistributionAnalytics",
-    "getExamGradeDistributionAnalyticsUnlocked_", "checkExamSchedulingConflict", "checkExamSchedulingConflictUnlocked_", "simulateExamReschedule", "simulateExamRescheduleUnlocked_"];
+    "getExamGradeDistributionAnalyticsUnlocked_", "checkExamSchedulingConflict", "checkExamSchedulingConflictUnlocked_", "simulateExamReschedule", "simulateExamRescheduleUnlocked_", "getGradingPerformanceAndPersistenceMetrics", "getGradingPerformanceAndPersistenceMetricsUnlocked_"];
   vm.runInNewContext(names.map(extractFunction).join("\n") +
     "\nthis.getStudentExams=getStudentExams; this.getExamQuestions=getExamQuestions; " +
     "this.getAllExams=getAllExams; this.getTeacherExamActivity=getTeacherExamActivity; " +
-    "this.getExamGradeDistributionAnalytics=getExamGradeDistributionAnalytics; this.checkExamSchedulingConflict=checkExamSchedulingConflict; this.simulateExamReschedule=simulateExamReschedule;", context);
+    "this.getExamGradeDistributionAnalytics=getExamGradeDistributionAnalytics; this.checkExamSchedulingConflict=checkExamSchedulingConflict; this.simulateExamReschedule=simulateExamReschedule; " +
+    "this.getGradingPerformanceAndPersistenceMetrics=getGradingPerformanceAndPersistenceMetrics;", context);
   return { context, sheets, events, stats: () => ({ acquires, releases, held }) };
 }
 const valid = runtime();
@@ -276,5 +283,77 @@ assert.throws(() => rescheduleRace.context.simulateExamReschedule({ examenId: "E
   /RESOURCE_NOT_AVAILABLE/, "simulation rechecks target ownership after acquiring the shared lock");
 assert.deepEqual(rescheduleRace.stats(), { acquires: 1, releases: 1, held: false },
   "post-lock ownership denial releases the lock");
+
+const metricCounts = {
+  CalificacionesEstudiantes: 10001,
+  CategoriasEvaluacion: 3001,
+  HistorialRectificacionesNotas: 2000
+};
+const adminMetricsRuntime = runtime({
+  studentActor: false,
+  actor: { userId: "ADMIN-1", role: "Administrador" },
+  metricRows: metricCounts
+});
+const adminMetrics = adminMetricsRuntime.context.getGradingPerformanceAndPersistenceMetrics({ sessionToken: "admin" });
+assert.equal(adminMetrics.status, "success");
+assert.equal(adminMetrics.servicio, "EXAM_SERVICE");
+assert.equal(adminMetrics.nivelAlertaGrading, "CRITICO");
+assert.equal(adminMetrics.metricasHojas.length, 6);
+assert.equal(adminMetrics.metricasHojas[0].rowCount, 10002);
+assert.equal(adminMetrics.metricasHojas[0].status, "RIESGO_ELEVADO");
+assert.equal(adminMetrics.metricasHojas[1].rowCount, 3002);
+assert.equal(adminMetrics.metricasHojas[1].status, "ADVERTENCIA");
+assert.equal(adminMetrics.totalFilasCalificaciones, 15008);
+assert.equal(JSON.stringify(adminMetrics).includes("ROW-"), false, "metrics never return sheet cell contents");
+assert.deepEqual(adminMetricsRuntime.stats(), { acquires: 1, releases: 1, held: false },
+  "global metrics use the shared lock exactly once");
+
+const developerMetrics = runtime({
+  studentActor: false, actor: { userId: "DEV-1", role: "Desarrollador" }
+});
+assert.equal(developerMetrics.context.getGradingPerformanceAndPersistenceMetrics({ sessionToken: "dev" }).status, "success",
+  "developer with institution-wide scope can read system metrics");
+for (const role of ["Profesor", "Dirección", "Secretaría", "Estudiante"]) {
+  const deniedMetrics = runtime({ studentActor: false, actor: { userId: "USER-1", role } });
+  assert.throws(() => deniedMetrics.context.getGradingPerformanceAndPersistenceMetrics({ sessionToken: "user" }),
+    /RESOURCE_NOT_AVAILABLE/, role + " cannot read institution-wide persistence metrics");
+  assert.deepEqual(deniedMetrics.stats(), { acquires: 1, releases: 1, held: false },
+    "unauthorized " + role + " read releases the shared lock");
+}
+const deniedMetricAction = runtime({
+  studentActor: false, actor: { userId: "ADMIN-1", role: "Administrador" },
+  deniedAction: "getGradingPerformanceAndPersistenceMetrics"
+});
+assert.throws(() => deniedMetricAction.context.getGradingPerformanceAndPersistenceMetrics({}),
+  /RESOURCE_NOT_AVAILABLE/, "metrics require their explicit RBAC action");
+const scopedMetrics = runtime({
+  studentActor: false, actor: { userId: "ADMIN-1", role: "Administrador" }, institutionWide: false
+});
+assert.throws(() => scopedMetrics.context.getGradingPerformanceAndPersistenceMetrics({}),
+  /RESOURCE_NOT_AVAILABLE/, "department-only scope cannot read institution-wide metrics");
+const timedOutMetrics = runtime({
+  studentActor: false, actor: { userId: "ADMIN-1", role: "Administrador" }, lockAvailable: false
+});
+assert.throws(() => timedOutMetrics.context.getGradingPerformanceAndPersistenceMetrics({}),
+  /EXAM_READ_LOCK_TIMEOUT/, "metrics fail closed when the shared lock is unavailable");
+assert.deepEqual(timedOutMetrics.stats(), { acquires: 1, releases: 0, held: false });
+
+const metricsRace = runtime({
+  studentActor: false, actor: { userId: "ADMIN-1", role: "Administrador" },
+  beforeAcquire() { metricsRace.sheets.CalificacionesEstudiantes.rows.push(["ROW-AFTER-LOCK"]); }
+});
+const postLockMetrics = metricsRace.context.getGradingPerformanceAndPersistenceMetrics({});
+assert.equal(postLockMetrics.metricasHojas[0].rowCount, 2,
+  "metrics are sampled after acquiring the shared lock");
+assert.deepEqual(metricsRace.stats(), { acquires: 1, releases: 1, held: false });
+
+const missingMetricSheet = runtime({
+  studentActor: false, actor: { userId: "ADMIN-1", role: "Administrador" },
+  missingMetricSheet: "EvaluacionesCompetencias"
+});
+const partialMetrics = missingMetricSheet.context.getGradingPerformanceAndPersistenceMetrics({});
+assert.equal(partialMetrics.metricasHojas[5].exists, false);
+assert.equal(partialMetrics.metricasHojas[5].rowCount, 0);
+assert.equal(partialMetrics.nivelAlertaGrading, "NORMAL");
 
 process.stdout.write("exam-service-read-endpoints-security: PASS\\n");

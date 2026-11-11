@@ -472,3 +472,12 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Resultado esperado:** acceso solo al examen único y autorizado; profesor solo simula sus propios exámenes; cálculo de conflictos reutiliza el worker interno bajo el mismo lock (sin adquirir lock anidado); sin escrituras; auditoría con rol verificado; timeout fail-closed.
 - **Estado:** Pendiente beta. Pruebas locales aisladas cubren autorización, ownership, aislamiento docente, IDs duplicados, conflicto, lock único, intercalación post-lock y ausencia de escritura observable.
 - **Evidencia requerida:** commit/build, actores sintéticos, matriz RBAC/ámbito, snapshots antes/después, secuencias concurrentes y logs saneados.
+
+## BETA-EXAM-041 — TASK-153 / AUD-NG-386 / EXAM: métricas globales de rendimiento y persistencia
+- **Módulo/acción:** EXAM getGradingPerformanceAndPersistenceMetrics.
+- **Objetivo:** verificar en Apps Script/Sheets desplegado que el diagnóstico global de las seis hojas de calificaciones está reservado a Administrador/Desarrollador con asignación de ámbito institucional activa y que solo devuelve conteos/estado, nunca valores de celdas.
+- **Precondiciones:** entorno beta aislado; cuentas Administrador, Desarrollador, Dirección, Secretaría y Profesor; asignaciones institucionales y departamentales; seis hojas con volúmenes bajo, medio y alto; una hoja ausente; tokens válidos/ausentes; posibilidad de provocar timeout de ScriptLock.
+- **Pasos:** probar acceso permitido de Administrador y Desarrollador con ámbito INSTITUCION; denegar administrador con ámbito solo departamental; denegar Profesor, Dirección, Secretaría y Estudiante incluso con permisos dinámicos/wildcard; probar acción RBAC denegada y sesión inválida; provocar timeout; variar los conteos durante una lectura concurrente y verificar snapshot posterior al lock; revisar umbrales NORMAL/ADVERTENCIA/CRITICO y hoja ausente; inspeccionar respuesta para confirmar que no incluye filas ni valores personales.
+- **Resultado esperado:** solo roles de operación autorizados y scope institucional pueden leer; un solo lock compartido; timeout fail-closed; salida limitada a nombres de hoja, existencia, conteo y estado; sin escrituras.
+- **Estado:** Pendiente beta. Las pruebas locales aisladas cubren RBAC, allowlist de rol, ámbito institucional, timeout, lectura post-lock, seis métricas, umbrales, hoja ausente y ausencia de valores de celdas.
+- **Evidencia requerida:** build/commit, matriz de roles y scopes, respuesta saneada, conteos antes/después y logs sin datos personales.

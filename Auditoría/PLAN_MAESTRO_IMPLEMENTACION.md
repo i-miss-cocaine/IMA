@@ -3432,3 +3432,13 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Node nativo/CI/Apps Script real:** NOT RUN. **Beta:** BETA-EXAM-040 Pendiente beta; no bloquea el cierre local.
 - **Estado:** subalcance completado; TASK-153 En ejecución y AUD-NG-386 abierto por otras lecturas EXAM.
 - **Siguiente:** auditar individualmente getGradingPerformanceAndPersistenceMetrics.
+
+### 10.139 TASK-153 / AUD-NG-386 — seguridad de getGradingPerformanceAndPersistenceMetrics (C1.487)
+
+- **Hallazgo:** el endpoint consultaba seis hojas globales con SpreadsheetApp.openById, sin autenticación, RBAC, ámbito institucional ni lock; además, Profesor tenía permiso explícito para la acción.
+- **Corrección:** el handler delega en withAuthorizedExamRead_; el worker permite exclusivamente Administrador/Desarrollador con scope.institutionWide === true. Se retira el permiso de Profesor. Conserva los nombres, conteos, umbrales y contrato de respuesta, sin devolver valores de celdas.
+- **Consistencia:** la muestra se obtiene después del ScriptLock compartido; timeout fail-closed; no realiza escrituras.
+- **Pruebas locales:** parseo V8 y harness local read-endpoints PASS (roles permitidos/denegados, RBAC, ámbito, timeout, intercalación post-lock, umbrales, hoja ausente y ausencia de valores de celdas). Contrato estático PASS.
+- **Node nativo/CI/Apps Script real:** NOT RUN. **Beta:** BETA-EXAM-041 Pendiente beta; no bloquea cierre local.
+- **Estado:** subalcance completado; TASK-153 En ejecución y AUD-NG-386 abierto por otras lecturas EXAM.
+- **Siguiente:** identificar y auditar individualmente el siguiente endpoint de lectura EXAM no cubierto.

@@ -91,7 +91,7 @@ const ROLE_PERMISSIONS = {
     "getGradebookData", "saveGradebookGrades", "bulkApplyGradebookGrades", "copyEvaluationSetupBetweenGroups", "getEvaluationCategories", "saveEvaluationCategory",
     "getRubrics", "saveRubric", "saveCompetencyEvaluation", "getCompetencyEvaluations", "saveStudentRecovery", "getStudentRecoveries", "closePeriodGradebook", "reopenPeriodGradebook", "submitGradebookForReview", "reviewPeriodGradebook", "rectifyStudentGrade", "getGradeRectificationHistory", "getStudentAcademicReport",
     "manageQuestionBank", "getQuestionBank", "checkExamSchedulingConflict", "simulateExamReschedule",
-    "getExamGradeDistributionAnalytics", "getGradingPerformanceAndPersistenceMetrics"
+    "getExamGradeDistributionAnalytics"
   ],
   "Estudiante": [
     "getStudentExams", "getExamQuestions", "submitExam", "getExamResult", "getEvaluationCategories", "getRubrics", "getCompetencyEvaluations", "getStudentRecoveries", "getStudentAcademicReport"
@@ -1053,9 +1053,20 @@ function getExamQuestions(payload) {
 
 // [F9-Task14] [P1] - Mejorar el rendimiento, la persistencia y la recuperación de operaciones de calificación
 function getGradingPerformanceAndPersistenceMetrics(payload) {
-  const startTime = Date.now();
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  return withAuthorizedExamRead_("getGradingPerformanceAndPersistenceMetrics", payload,
+    context => getGradingPerformanceAndPersistenceMetricsUnlocked_(payload, context));
+}
 
+function getGradingPerformanceAndPersistenceMetricsUnlocked_(payload, context) {
+  const actor = context && context.actor;
+  const scope = context && context.scope;
+  if (!actor || ["Administrador", "Desarrollador"].indexOf(String(actor.role || "").trim()) === -1 ||
+      !scope || scope.institutionWide !== true) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
+
+  const startTime = Date.now();
+  const ss = context.ss;
   const sheetsToMonitor = [
     "CalificacionesEstudiantes",
     "CategoriasEvaluacion",
