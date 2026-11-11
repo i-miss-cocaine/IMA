@@ -1823,3 +1823,10 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Pruebas:** parseo Code.gs PASS; harness aislado de wrappers 11/11 PASS; suite dedicada completa 12/12 PASS en runtime aislado con shims; no se declara ejecución Node 22 nativa.
 - **CI:** workflow integrado; estado GitHub Actions NOT VERIFIED porque no se devolvieron runs/checks para el commit.
 - **Beta:** BETA-EXAM-072 Pendiente beta; Apps Script/Sheets real NOT RUN.
+
+### C1.533 — AUD-NG-386 / closePeriodGradebook: identidad completa en contexto
+- **Hallazgo alto corregido:** el contexto bajo lock usaba !actor.userId y aceptaba userId con espacios, aunque el wrapper preflight ya lo rechazaba.
+- **Corrección:** getAuthorizedPeriodGradebookClosureContext_ exige userId no vacío tras trim antes de abrir Sheets; se mantienen RBAC, roles, scope y finally del lock.
+- **Pruebas locales:** parseo Code.gs PASS; suite focalizada 20/20 PASS en runtime aislado con shims, incluida revalidación TOCTOU y no apertura de Sheets; workflow path/step presentes.
+- **CI:** NOT VERIFIED (sin runs/checks devueltos por el conector); Node 22 no afirmado.
+- **Beta:** BETA-EXAM-065 ampliado y Pendiente beta; Apps Script/Sheets real NOT RUN.
