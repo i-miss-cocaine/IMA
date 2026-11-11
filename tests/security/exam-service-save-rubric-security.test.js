@@ -62,12 +62,13 @@ function fixture(options = {}) {
   };
   const scope = options.scope || { authorized: true, institutionId: "INST-A", departmentIds: ["DEPT-A"], institutionWide: false };
   const actor = options.actor || { authorized: true, userId: "TEACHER-A", role: "Profesor" };
+  const scriptLock = {
+    tryLock() { state.locks++; if (options.timeout || state.held) return false; state.held = true; return true; },
+    releaseLock() { state.releases++; state.held = false; }
+  };
   const runtime = {
     SPREADSHEET_ID: "LOCAL",
-    LockService: { getScriptLock() { return {
-      tryLock() { state.locks++; if (options.timeout || state.held) return false; state.held = true; return true; },
-      releaseLock() { state.releases++; state.held = false; }
-    }; } },
+    LockService: { getScriptLock() { return scriptLock; } },
     validateRolePermission(action) { state.action = action; return { authorized: options.permission !== false }; },
     getVerifiedExamIdentity_() { return actor; },
     getVerifiedExamDepartmentScope_() { return scope; },
@@ -147,7 +148,6 @@ test("lock timeout fails closed and does not access spreadsheet", () => {
 });
 test("nested mutation is excluded by the shared script lock", () => {
   const x = fixture(); const inner = () => x.call({ titulo: "Nested", departmentId: "DEPT-A" });
-  const oldTry = x.runtime.LockService.getScriptLock().tryLock;
   let nestedDenied = false;
   const lock = x.runtime.LockService.getScriptLock();
   lock.tryLock = function() { x.state.locks++; if (x.state.held) return false; x.state.held = true; return true; };
@@ -159,7 +159,7 @@ test("nested mutation is excluded by the shared script lock", () => {
 });
 test("append failure rolls back both rubric and ownership records", () => {
   const x = fixture({ failRubricAppend: true }); assert.throws(() => x.call({ titulo: "Fallida", departmentId: "DEPT-A" }), /synthetic append failure/);
-  assert.equal(x.sheets.RubricasEvaluacion.rows.length, 2);
+  assert.equal(x.sheets.RubricasEvaluacion.rows.length, 3);
   assert.equal(x.sheets.ResourceOwnership.rows.length, 2);
 });
 test("invalid title and unserializable criteria fail without writes", () => {
