@@ -1397,3 +1397,37 @@ Continuar el inventario de mutaciones EXAM sin cobertura equivalente; evaluar sa
 
 HEAD final: se confirmará después de publicar y verificar el commit de este checkpoint.
 ===============================================================================
+
+
+===============================================================================
+C1.547 — TASK-153 / AUD-NG-386 / rectifyStudentGrade: identidad revalidada bajo lock
+ID de sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-11
+Repositorio: i-miss-cocaine/IMA
+Rama autorizada: NG_beta_0.0.0.1_work
+HEAD inicial: cd11239764570aa74a7c00349ef48e9fecc90b3e (C1.546)
+
+### Alcance y resultado
+Se amplió la suite de seguridad del handler real rectifyStudentGrade para cubrir identidad válida en preflight y userId compuesto por espacios en la revalidación contextual bajo ScriptLock.
+
+### Cambios
+- tests/security/exam-service-student-grade-rectification-security.test.js: fixture ahora permite identitySequence y cuenta verificaciones; nuevo escenario exige RESOURCE_NOT_AVAILABLE, dos verificaciones, lock adquirido/liberado, cero aperturas de Sheets y snapshots intactos de CalificacionesEstudiantes e HistorialRectificacionesNotas.
+- beta_test.txt / BETA-EXAM-067: incorpora el escenario de degradación de identidad y el resultado local actual 29/29. Se conserva como antecedente el resultado Node 22 28/28 del workflow 43053113842, aclarando que corresponde a la suite previa al escenario; Node 22 para la versión actual NOT RUN.
+- No se modificó backend/exam-service/Code.gs, permisos, roles, scope, contratos ni persistencia productiva.
+
+### Verificación local
+- Parseo V8 de backend/exam-service/Code.gs: PASS.
+- Parseo V8 de tests/security/exam-service-student-grade-rectification-security.test.js: PASS.
+- Suite completa exam-service-student-grade-rectification-security: 29/29 PASS en aislamiento V8 con shims assert/fs/path/vm.
+- Escenario nuevo: identidad válida en preflight; userId de espacios en revalidación; dos verificaciones; RESOURCE_NOT_AVAILABLE; ScriptLock adquirido y liberado; cero aperturas de Sheets; calificación e historial de rectificación intactos.
+- Node 22/CI para la suite actual: NOT RUN.
+- Apps Script/Sheets real: NOT RUN; BETA-EXAM-067 permanece Pendiente beta.
+
+### Estado y continuidad
+C1.547 completa la cobertura local de revalidación de identidad para rectifyStudentGrade. TASK-153 / AUD-NG-386 continúa En ejecución para las mutaciones EXAM restantes. No se declara aprobada la suite actual en Node 22/CI ni la prueba beta. Sin cambios productivos.
+
+### Siguiente acción exacta
+Continuar inventario de mutaciones EXAM sin cobertura equivalente y seleccionar el siguiente handler con una brecha concreta de evidencia. No repetir C1.547 ni C1.534–C1.546.
+
+HEAD final: se confirmará después de publicar y verificar el commit del checkpoint.
+===============================================================================
