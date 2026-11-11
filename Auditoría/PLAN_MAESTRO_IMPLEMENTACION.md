@@ -3786,3 +3786,13 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Beta:** BETA-EXAM-059 ampliado; Apps Script/Sheets real NOT RUN.
 - **Estado:** subalcance copyEvaluationSetupBetweenGroups corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
 - **Siguiente:** inspeccionar el siguiente wrapper mutador EXAM que adquiera ScriptLock antes de autorización; no repetir este wrapper.
+
+
+### 10.175 TASK-153 / AUD-NG-386 — autorización previa al lock en closePeriodGradebook (C1.522)
+- **Hallazgo:** `withAuthorizedPeriodGradebookClosure_` adquiría ScriptLock antes de validar el permiso `closePeriodGradebook` y la identidad firmada; solicitudes no autorizadas podían competir por el lock compartido.
+- **Corrección:** preflight del permiso específico, identidad autorizada con `userId` no vacío y rol permitido antes del lock. El contexto existente conserva la revalidación de RBAC, identidad, rol, scope, asignación, roster, publicación de las cuatro categorías y unicidad del cierre dentro del lock.
+- **Pruebas locales:** suite dedicada ampliada a 19 escenarios; orden RBAC/identidad antes del lock, denegación sin lock/Sheets, identidad incompleta/no autorizada/rol no admitido, doble validación bajo lock, cierre positivo, timeout, duplicidad y regresiones previas.
+- **CI:** pendiente de ejecución/verificación Node 22. Apps Script/Sheets real NOT RUN.
+- **Beta:** BETA-EXAM-065 agregado; permanece Pendiente beta.
+- **Estado:** subalcance closePeriodGradebook corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
+- **Siguiente:** inspeccionar el siguiente wrapper mutador pendiente que solicite ScriptLock antes de autorización, sin repetir closePeriodGradebook.

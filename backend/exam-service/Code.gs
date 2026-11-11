@@ -3146,6 +3146,17 @@ function closePeriodGradebook(payload) {
   return withAuthorizedPeriodGradebookClosure_(payload, context => closePeriodGradebookUnlocked_(context));
 }
 function withAuthorizedPeriodGradebookClosure_(payload, mutation) {
+  // Rechazar RBAC e identidad inválidos antes de competir por el lock compartido.
+  // El contexto completo se revalida bajo el lock para evitar TOCTOU.
+  const permission = validateRolePermission("closePeriodGradebook", payload);
+  if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const actor = getVerifiedExamIdentity_(payload);
+  const allowedRoles = ["Profesor", "Administrador", "Desarrollador", "Dirección", "Director", "Secretaría"];
+  if (!actor || actor.authorized !== true || !String(actor.userId || "").trim() ||
+      allowedRoles.indexOf(String(actor.role || "").trim()) === -1) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
+
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(5000)) throw new Error("GRADEBOOK_CLOSURE_LOCK_TIMEOUT");
   try { return mutation(getAuthorizedPeriodGradebookClosureContext_(payload)); }

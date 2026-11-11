@@ -435,3 +435,44 @@ HEAD final: pendiente de confirmar tras publicar.
 - HEAD de implementación/pruebas probado por CI: `285b30755ec1d5b0b5cf99cdb5942d5bc1ec8a87`; los commits posteriores son exclusivamente cierre documental.
 - HEAD final de rama y estado de base se verifican tras publicar el cierre documental; no se duplica el SHA del propio checkpoint en su contenido.
 ===============================================================================
+
+
+===============================================================================
+C1.522 — TASK-153 / AUD-NG-386 / EXAM closePeriodGradebook
+ID de sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-11
+HEAD inicial verificado: da96cd40c9b8c0b39ff47cc48c8e06c66de9d370
+HEAD de implementación/pruebas: pendiente de confirmar tras publicar.
+Rama exclusiva: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 — HEAD verificado 44d9891132332e692dbe2ba8602b41f50a508a59; sin escrituras en la rama base.
+
+### Objetivo
+Corregir el orden de autorización de closePeriodGradebook para que RBAC e identidad firmada se validen antes de competir por ScriptLock, manteniendo revalidación contextual bajo lock.
+
+### Hallazgo y corrección
+- Hallazgo alto: withAuthorizedPeriodGradebookClosure_ adquiría ScriptLock antes de validar el permiso closePeriodGradebook y la identidad firmada.
+- Se añadió preflight RBAC, identidad autorizada, userId no vacío y rol permitido (Profesor y roles institucionales admitidos) antes del lock.
+- Se preservó la revalidación interna de RBAC, identidad, rol, scope, asignación, roster, publicación de las cuatro categorías, esquema y unicidad del cierre dentro del lock.
+- No se alteró la lógica de persistencia del cierre ni el esquema.
+
+### Pruebas y verificaciones
+- Suite dedicada Node: ampliada de 16 a 19 escenarios; resultado local pendiente de ejecutar/verificar en esta iteración.
+- Parseo completo Code.gs: pendiente de ejecutar localmente.
+- CI Node 22: pendiente de ejecución/verificación tras publicar.
+- Apps Script/Sheets real: NOT RUN; BETA-EXAM-065 queda Pendiente beta.
+
+### Archivos modificados
+- backend/exam-service/Code.gs
+- tests/security/exam-service-period-gradebook-closure-security.test.js
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- beta_test.txt
+
+### Estado y continuidad
+Subalcance closePeriodGradebook corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
+Siguiente acción: verificar pruebas locales/CI y cerrar C1.522; después inspeccionar el siguiente wrapper mutador pendiente.
+HEAD final: pendiente de confirmar tras publicar.
+===============================================================================

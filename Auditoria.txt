@@ -1720,3 +1720,10 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Job `exam-security-contracts`: SUCCESS; step `Run evaluation setup copy security regression`: SUCCESS en Node 22; todos los demás contratos del workflow también SUCCESS.
 - Suite local V8 compatible: 27/27 PASS; parseo completo de Code.gs y suite PASS. Reentrada concurrente determinista y rollback compensatorio incluidos.
 - Apps Script/Sheets real NOT RUN. BETA-EXAM-059 permanece Pendiente beta.
+
+
+### C1.522 — AUD-NG-386 / closePeriodGradebook
+- **Hallazgo alto corregido:** `withAuthorizedPeriodGradebookClosure_` adquiría ScriptLock antes de validar RBAC e identidad firmada.
+- **Corrección:** preflight de `closePeriodGradebook`, actor autenticado con `userId` no vacío y rol permitido antes del lock; el contexto interno revalida permiso, identidad, rol, scope y datos del cierre bajo lock.
+- **Cobertura local:** suite dedicada ampliada a 19 escenarios; denegación RBAC e identidad inválida/incompleta/rol no permitido sin lock ni apertura de Sheets; doble validación autorizada, cierre positivo y regresiones previas.
+- **CI:** pendiente de ejecución/verificación. Apps Script/Sheets real NOT RUN; BETA-EXAM-065 permanece Pendiente beta.

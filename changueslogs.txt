@@ -1603,3 +1603,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Suite local dedicada: 27/27 PASS; parseo Code.gs PASS.
 - Apps Script/Sheets real NOT RUN; BETA-EXAM-059 sigue Pendiente beta.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] C1.522 — EXAM closePeriodGradebook
+- withAuthorizedPeriodGradebookClosure_ ahora valida RBAC, identidad firmada, userId no vacío y rol permitido antes de solicitar ScriptLock.
+- El contexto de cierre conserva la revalidación bajo lock de RBAC, identidad, rol, scope, asignación, roster, publicación de categorías y unicidad del cierre.
+- Suite dedicada ampliada a 19 escenarios con cobertura de orden pre-lock, denegaciones, doble validación, cierre positivo y regresiones.
+- CI Node 22 pendiente de verificación; Apps Script/Sheets real NOT RUN. BETA-EXAM-065 actualizado.
+===============================================================================
