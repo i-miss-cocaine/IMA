@@ -486,3 +486,43 @@ HEAD final: pendiente de confirmar tras publicar.
 - Apps Script/Sheets real: NOT RUN. BETA-EXAM-065 permanece Pendiente beta.
 - HEAD final de rama y rama base se verifican tras publicar este addendum.
 ===============================================================================
+
+
+===============================================================================
+C1.523 — TASK-153 / AUD-NG-386 / EXAM submitGradebookForReview
+ID de sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-11
+HEAD inicial verificado: 1b69f1233a3968e06cdd03a72e6c00c4f527028a
+Rama exclusiva: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 — HEAD verificado 44d9891132332e692dbe2ba8602b41f50a508a59; sin escrituras en la rama base.
+
+### Objetivo
+Corregir el orden de autorización de submitGradebookForReview para que RBAC e identidad firmada del Profesor se validen antes de competir por ScriptLock, manteniendo revalidación contextual bajo lock.
+
+### Hallazgo y corrección
+- Hallazgo alto: withAuthorizedPeriodGradebookSubmission_ adquiría ScriptLock antes de validar el permiso submitGradebookForReview y la identidad firmada.
+- Se añadió preflight RBAC, identidad autorizada, userId no vacío y rol exacto Profesor antes del lock.
+- Se preservó la revalidación interna de RBAC, identidad, rol, scope institucional, asignación docente, esquema y existencia de cierres dentro del lock.
+- No se alteró la lógica de persistencia, el estado PendienteRevision ni el esquema de CierresPeriodos.
+
+### Pruebas y verificaciones
+- Harness local focalizado del wrapper: 8/8 PASS (Node 22); denegación RBAC/identidad/rol sin lock ni Sheets, orden de doble validación, ruta autorizada, timeout y liberación ante error.
+- Suite dedicada: ampliada de 21 a 24 escenarios; pendiente de ejecución local y CI.
+- Parseo completo Code.gs: pendiente de ejecución en esta iteración.
+- Apps Script/Sheets real: NOT RUN; BETA-EXAM-066 queda Pendiente beta.
+
+### Archivos modificados
+- backend/exam-service/Code.gs
+- tests/security/exam-service-period-gradebook-submission-security.test.js
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- beta_test.txt
+
+### Estado y continuidad
+Subalcance submitGradebookForReview corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
+Siguiente acción: ejecutar suite local/CI, cerrar C1.523 y después inspeccionar el siguiente wrapper mutador pendiente.
+HEAD final: pendiente de confirmar tras publicar.
+===============================================================================

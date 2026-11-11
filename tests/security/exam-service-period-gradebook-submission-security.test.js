@@ -52,7 +52,7 @@ function fixture(options = {}) {
   if (options.badSchema) closureRows[0] = ["wrong"];
   const sheets = { ConfiguracionAcademica: makeSheet(assignmentRows) };
   if (!options.missingClosure) sheets.CierresPeriodos = makeSheet(options.emptyClosure ? [] : closureRows);
-  const stats = { acquired: 0, released: 0, held: false, opens: 0 };
+  const stats = { acquired: 0, released: 0, held: false, opens: 0, events: [] };
   const actor = options.actor || { authorized: true, userId: "T1", role: "Profesor" };
   const scope = options.scope || { authorized: true, institutionId: "I1", departmentIds: ["D1"], institutionWide: false };
   const ss = {
@@ -60,14 +60,15 @@ function fixture(options = {}) {
     insertSheet(name) { return sheets[name] = makeSheet([]); }
   };
   const runtime = {
-    LockService: { getScriptLock() { return {
+    LockService: { getScriptLock() { stats.events.push("lock"); return {
       tryLock() { stats.acquired++; if (options.timeout || stats.held) return false; stats.held = true; return true; },
       releaseLock() { stats.released++; stats.held = false; }
     }; } },
-    validateRolePermission() { return { authorized: options.denied !== true }; },
-    getVerifiedExamIdentity_() { return options.invalidIdentity ? { authorized: false } : actor; },
+    validateRolePermission() { stats.events.push("rbac"); return { authorized: options.denied !== true }; },
+    getVerifiedExamIdentity_() { stats.events.push("identity"); return options.invalidIdentity ? { authorized: false } : actor; },
     getVerifiedExamDepartmentScope_() { return scope; },
     SpreadsheetApp: { openById() {
+      stats.events.push("sheets");
       stats.opens++;
       if (stats.onOpen) { const callback = stats.onOpen; stats.onOpen = null; callback(); }
       return ss;
@@ -114,7 +115,12 @@ test(() => {
   assert.equal(x.sheets.CierresPeriodos.rows[1][6], "T1");
   assert.equal(result.estado, "PendienteRevision");
   assert.equal("notasPendientesCount" in result, false);
+  assert.deepEqual(x.stats.events, ["rbac", "identity", "lock", "rbac", "identity", "sheets"]);
+  assert.equal(x.stats.events.filter(event => event === "rbac").length, 2);
+  assert.equal(x.stats.events.filter(event => event === "identity").length, 2);
+  assert.equal(x.stats.acquired, 1);
   assert.equal(x.stats.released, 1);
+  assert.equal(x.stats.held, false);
 });
 test(() => {
   const x = fixture({ actor: { authorized: true, userId: "A1", role: "Administrador" } });
@@ -200,8 +206,11 @@ test(() => {
 });
 test(() => {
   const x = fixture({ denied: true });
-  assert.throws(() => x.call());
-  assert.equal(x.stats.released, 1);
+  assert.throws(() => x.call(), /RESOURCE_NOT_AVAILABLE/);
+  assert.deepEqual(x.stats.events, ["rbac"]);
+  assert.equal(x.stats.acquired, 0);
+  assert.equal(x.stats.released, 0);
+  assert.equal(x.stats.opens, 0);
 });
 test(() => {
   const x = fixture();
@@ -228,4 +237,36 @@ test(() => {
   assert.equal(x.sheets.CierresPeriodos.rows[1][1], "ANO-CURRENT");
 });
 
-console.log("exam-service-period-gradebook-submission-security: PASS (" + count + "/21)");
+
+test(() => {
+  const x = fixture({ denied: true });
+  assert.throws(() => x.call(), /RESOURCE_NOT_AVAILABLE/);
+  assert.deepEqual(x.stats.events, ["rbac"]);
+  assert.equal(x.stats.acquired, 0);
+  assert.equal(x.stats.opens, 0);
+});
+test(() => {
+  for (const actor of [
+    { authorized: false, userId: "T1", role: "Profesor" },
+    { authorized: true, userId: "", role: "Profesor" },
+    { authorized: true, userId: "  ", role: "Profesor" },
+    { authorized: true, userId: "T1", role: "Estudiante" },
+    { authorized: true, userId: "T1", role: "Tutor" }
+  ]) {
+    const x = fixture({ actor });
+    assert.throws(() => x.call(), /RESOURCE_NOT_AVAILABLE/);
+    assert.deepEqual(x.stats.events, ["rbac", "identity"]);
+    assert.equal(x.stats.acquired, 0);
+    assert.equal(x.stats.opens, 0);
+  }
+});
+test(() => {
+  const x = fixture();
+  assert.equal(x.call().status, "success");
+  assert.deepEqual(x.stats.events.slice(0, 6), ["rbac", "identity", "lock", "rbac", "identity", "sheets"]);
+  assert.equal(x.stats.events.filter(event => event === "rbac").length, 2);
+  assert.equal(x.stats.events.filter(event => event === "identity").length, 2);
+  assert.deepEqual([x.stats.acquired, x.stats.released, x.stats.held], [1, 1, false]);
+});
+
+console.log("exam-service-period-gradebook-submission-security: PASS (" + count + "/24)");

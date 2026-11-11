@@ -743,3 +743,15 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta; harness local focalizado 8/8 PASS; suite dedicada 19/19 PASS en Node 22 (workflow 43046863190 SUCCESS); parseo Code.gs PASS; Apps Script/Sheets real NOT RUN.
 - **Evidencia requerida:** versión/commit desplegado, actor/rol/permiso, trazas de orden de validación y lock, snapshots sintéticos de asignación/roster/calificaciones/cierre y evidencia de liberación del lock.
 ===============================================================================
+
+
+===============================================================================
+## BETA-EXAM-066 — TASK-153 / AUD-NG-386 / EXAM: envío del libro de notas a revisión
+- **Módulo/rol:** Servicio EXAM; Profesor con permiso efectivo submitGradebookForReview.
+- **Objetivo:** comprobar que el envío valida RBAC, identidad firmada, userId y rol Profesor antes de solicitar ScriptLock; el contexto de asignación y cierre se revalida bajo el lock.
+- **Precondiciones:** versión beta desplegada; sesión firmada válida; asignación docente vigente y hoja CierresPeriodos con esquema vigente.
+- **Pasos:** probar RBAC denegado, identidad no autorizada/ausente, userId vacío, rol distinto de Profesor, lock ocupado, asignación no verificada, envío válido, envío duplicado y concurrencia de solicitudes para el mismo contexto.
+- **Resultado esperado:** solicitudes inválidas no adquieren lock ni abren Sheets; una solicitud válida revalida RBAC/identidad y asignación bajo lock y registra un único envío PendienteRevision; el lock se libera en éxito y error.
+- **Estado:** Pendiente beta; harness local del wrapper 8/8 PASS; suite dedicada y CI Node 22 pendientes de ejecución tras el commit; Apps Script/Sheets real NOT RUN.
+- **Evidencia requerida:** commit desplegado, actor/rol/permiso, trazas del orden RBAC/identidad/lock, filas de CierresPeriodos antes/después y evidencia de ausencia de duplicados y liberación del lock.
+===============================================================================
