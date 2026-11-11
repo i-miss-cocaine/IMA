@@ -1936,3 +1936,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Workflow global FAIL posterior en security-contract por ReferenceError withAuthorizedExamCreation_ is not defined, fallo preexistente.
 - Ejecución local obligatoria pendiente; C1.570 sigue En ejecución.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] C1.570 — cierre de verificación local gradeExamSubmission
+- El usuario sincronizó Codespaces con NG_beta_0.0.0.1_work; tras la actualización confirmó 29/29 PASS en exam-service-delete-submission-audit.test.js.
+- La captura anterior evidenció un hash local diferente del blob remoto; el fast-forward corrigió la discrepancia. La evidencia local ahora coincide con el CI focalizado 43104257279 (29/29, Node.js 22.23.4).
+- C1.570 Completada en ámbito local. Apps Script/Sheets real permanece Pendiente beta (BETA-EXAM-073). El fallo global posterior withAuthorizedExamCreation_ is not defined es preexistente y no atribuible a este cambio.
+===============================================================================

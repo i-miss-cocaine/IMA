@@ -1985,3 +1985,11 @@ HEAD inicial: 11a2475823531d5e54fe992b7a883963315681d8. Rama: NG_beta_0.0.0.1_wo
 - El escenario nuevo de `gradeExamSubmission` con RBAC [true, true, false] pasó dentro de esa suite.
 - El workflow global concluyó FAIL posteriormente en `exam-service-security-contract.test.js:449` por ReferenceError `withAuthorizedExamCreation_ is not defined`; mismo error ya documentado en ejecuciones anteriores (runs 43102931371 y 43101929348), no atribuible a C1.570.
 - La ejecución local del desarrollador continúa NOT RUN y es obligatoria según NDASC 1.4. No se cierra todavía la cobertura local de C1.570.
+
+
+### Addendum local — cierre C1.570
+- El usuario sincronizó Codespaces con `origin/NG_beta_0.0.0.1_work` mediante fast-forward y confirmó `node tests/security/exam-service-delete-submission-audit.test.js`: **29/29 PASS**.
+- La captura previa había mostrado el HEAD de rama esperado pero un hash de archivo local distinto al blob remoto, con salida 28/28. Tras sincronizar, el conteo local coincide con CI.
+- CI focalizado run 43104257279: 29/29 PASS en Node.js 22.23.4. El workflow global conserva el fallo preexistente `withAuthorizedExamCreation_ is not defined` en security-contract; no atribuible a C1.570.
+- C1.570 / cobertura local de `gradeExamSubmission`: **Completada**. Apps Script/Sheets desplegado: NOT RUN, registrado como Pendiente beta en BETA-EXAM-073. TASK-153 continúa En ejecución; siguiente operación aislada: `deleteExamSubmission`.
+- HEAD de entrada: `d04bd20c3053cba195c6690c440bc3e406e5543c`. Rama base observada: `44d9891132332e692dbe2ba8602b41f50a508a59` (sin cambios).
