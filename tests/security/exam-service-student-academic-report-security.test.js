@@ -35,7 +35,7 @@ function fixture(o={}){
  const context={actor,ss,scope:{authorized:o.authorized!==false,institutionWide:o.institutionWide!==false},guardianActor:o.guardian===true,profile:o.guardian?{userId:"STU-1",role:"Estudiante"}:null};
  let held=false,locks=0,releases=0;
  const ctx={LockService:{getScriptLock(){return {tryLock(){locks++;if(o.lockAvailable===false||held)return false;held=true;return true;},releaseLock(){releases++;held=false;}};}},
- getAuthorizedExamReadContext_(action,p){if(action!=="getStudentAcademicReport"||o.permissionDenied||!context.scope.authorized)throw Error("RESOURCE_NOT_AVAILABLE");return context;}};
+ getAuthorizedExamReadContext_(action,p){if(action!=="getStudentAcademicReport"||o.permissionDenied||!context.scope.authorized)throw Error("RESOURCE_NOT_AVAILABLE");if(o.duringContext){const callback=o.duringContext;o.duringContext=null;callback();}return context;}};
  const names=["getStudentAcademicReport","getStudentAcademicReportUnlocked_","withAuthorizedExamRead_","getExamStudentProfile_","getSheetOrThrow"];
  const code=names.map(extract).join("\n")+";this.report=getStudentAcademicReport;";
  const sandbox={...ctx};vm.runInNewContext(code,sandbox);
@@ -67,4 +67,6 @@ test("category schema mismatch fails closed",()=>{const x=fixture();x.sheets.Cat
 test("invalid dates normalized to null",()=>{const x=fixture();x.sheets.CalificacionesEstudiantes.rows[1][8]="bad";assert.equal(x.call({}).data.calificaciones[0].fechaRegistro,null);});
 test("empty and invalid grade numbers preserve zero fallback",()=>{const x=fixture();x.sheets.CalificacionesEstudiantes.rows[1][3]="bad";assert.equal(x.call({}).data.calificaciones[0].notaObtenida,0);});
 test("no sheet mutation during report reads",()=>{const x=fixture();const before=Object.keys(x.sheets).sort();x.call({});assert.deepEqual(Object.keys(x.sheets).sort(),before);});
+test("nested concurrent report read is rejected while lock is held",()=>{let x;let nested=false;x=fixture({duringContext(){denied(()=>x.call({}),/EXAM_READ_LOCK_TIMEOUT/);nested=true;}});x.call({});assert.ok(nested);assert.deepEqual(x.stats(),{locks:2,releases:1,held:false});});
+test("duplicate student profile identity denied",()=>{const x=fixture();x.sheets.Usuarios.rows.push(["STU-1","Duplicate","10","A","","","Estudiante"]);denied(()=>x.call({}));});
 process.stdout.write("exam-service-student-academic-report-security: PASS ("+cases.length+" scenarios)\n");
