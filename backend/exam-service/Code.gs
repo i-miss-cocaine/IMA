@@ -2679,8 +2679,16 @@ function getAuthorizedStudentRecoveryMutationContext_(payload) {
   const id=String(r[1]).trim();if(Object.prototype.hasOwnProperty.call(scores,id))throw new Error("STUDENT_RECOVERY_GRADEBOOK_AMBIGUOUS");
   const score=Number(r[3]);if(!Number.isFinite(score)||score<0||score>100)throw new Error("STUDENT_RECOVERY_GRADEBOOK_INVALID");scores[id]=score;
  });
- const originalGrade=Object.keys(weights).reduce((sum,id)=>sum+(scores[id]||0)*weights[id],0),sheet=ss.getSheetByName("RecuperacionesEstudiante"),recoveryHeaders=["ID","EvaluacionID","UserID","NotaOriginal","NotaRecuperada","NotaFinalCalculada","MetodoAplicado","AutorizadoPor","Fecha"];
- if(sheet){const rows=sheet.getDataRange().getValues();if(rows.length&&recoveryHeaders.some((h,i)=>String(rows[0][i]||"").trim()!==h))throw new Error("STUDENT_RECOVERY_SCHEMA_INVALID");}
+ let originalGrade=Object.keys(weights).reduce((sum,id)=>sum+(scores[id]||0)*weights[id],0);
+ const sheet=ss.getSheetByName("RecuperacionesEstudiante"),recoveryHeaders=["ID","EvaluacionID","UserID","NotaOriginal","NotaRecuperada","NotaFinalCalculada","MetodoAplicado","AutorizadoPor","Fecha"];
+ if(sheet){
+  const rows=sheet.getDataRange().getValues();
+  if(rows.length&&recoveryHeaders.some((h,i)=>String(rows[0][i]||"").trim()!==h))throw new Error("STUDENT_RECOVERY_SCHEMA_INVALID");
+  const idCounts=Object.create(null);rows.slice(1).forEach(row=>{const id=String(row[0]||"").trim();if(id)idCounts[id]=(idCounts[id]||0)+1;});
+  const previous=rows.slice(1).filter(row=>String(row[1]||"").trim()===evaluationId&&String(row[2]||"").trim()===userId);
+  if(previous.some(row=>!String(row[0]||"").trim()||idCounts[String(row[0]).trim()]!==1))throw new Error("STUDENT_RECOVERY_HISTORY_AMBIGUOUS");
+  if(previous.length){const prior=Number(previous[previous.length-1][5]);if(!Number.isFinite(prior)||prior<0||prior>100)throw new Error("STUDENT_RECOVERY_HISTORY_INVALID");originalGrade=Math.max(originalGrade,prior);}
+ }
  return {actor,ss,sheet,recoveryHeaders,userId,evaluationId,originalGrade,recoveredNumber,method};
 }
 function saveStudentRecoveryUnlocked_(payload,context) {
