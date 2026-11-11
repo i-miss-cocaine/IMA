@@ -4165,3 +4165,11 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Alcance:** ampliación exclusiva de `tests/security/exam-service-delete-submission-audit.test.js`; backend productivo, RBAC, roles, scope, ownership y persistencia sin cambios. BETA-EXAM-073 incorpora el escenario desplegado.
 - **Verificación:** usuario confirma ejecución local focalizada 30/30 PASS en Codespaces sincronizado. GitHub Actions run 43105983033: paso `Run exam submission deletion audit regression` PASS 30/30 en Node.js 22.23.4. El workflow global falla después en `exam-service-security-contract.test.js` por `ReferenceError: withAuthorizedExamCreation_ is not defined`, fallo preexistente documentado en iteraciones anteriores. Apps Script/Sheets real: NOT RUN, reservado a beta.
 - **Estado:** C1.571 Completada en cobertura local/CI. TASK-153 / AUD-NG-386 continúa En ejecución para el inventario EXAM restante.
+
+
+### 10.221 TASK-153 / AUD-NG-386 — cubrir revocación RBAC bajo ScriptLock en updateExam (C1.572)
+- **Brecha confirmada:** `updateExam` utiliza `withAuthorizedExamMutation_`, que valida RBAC antes del lock y vuelve a comprobarlo en `getAuthorizedExamMutationContext_` dentro del lock. La suite ya cubría identidad incompleta en la revalidación contextual, pero no permiso concedido→revocado.
+- **Cobertura añadida:** escenario del handler real con RBAC `[true, false]`, solicitando cambios en varios campos. Exige `RESOURCE_NOT_AVAILABLE`, dos llamadas RBAC, solo una identidad (la revocación detiene el flujo antes de la identidad contextual), lock adquirido/liberado, cero aperturas Sheets, cero escrituras y fila completa de Examenes intacta.
+- **Alcance:** solo se amplía `tests/security/exam-service-exam-mutation-security.test.js`; backend productivo, permisos, roles, scope, ownership y persistencia sin cambios. BETA-EXAM-076 incorpora el caso de revocación.
+- **Verificación:** parseo y suite local/CI pendientes de esta iteración. Apps Script/Sheets real: NOT RUN, reservado a beta.
+- **Estado:** C1.572 En ejecución hasta completar ejecución local y CI. TASK-153 / AUD-NG-386 continúa En ejecución.

@@ -2019,3 +2019,22 @@ HEAD inicial: 8388e58c76b0fca4836f2e7004745b4e4f08bf05. Rama: NG_beta_0.0.0.1_wo
 - El workflow global falla posteriormente en `exam-service-security-contract.test.js` por `ReferenceError: withAuthorizedExamCreation_ is not defined`; es el mismo fallo preexistente registrado en ejecuciones anteriores, no introducido por C1.571.
 - C1.571 **Completada** en pruebas local y CI. Validación real en Apps Script/Sheets sigue Pendiente beta (BETA-EXAM-073). TASK-153 permanece En ejecución.
 - HEAD de implementación: `6dd31390e2b80a13290b0c3dbfc88b266e24d96f`. Rama base sin cambios: `44d9891132332e692dbe2ba8602b41f50a508a59`.
+
+
+===============================================================================
+## C1.572 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — cubrir revocación RBAC durante revalidación bajo ScriptLock de `updateExam`.
+
+### Hallazgo y cambio
+- `updateExam` usa `withAuthorizedExamMutation_`: RBAC se valida en preflight y vuelve a validarse dentro de `getAuthorizedExamMutationContext_` tras adquirir ScriptLock.
+- La suite cubría identidad incompleta durante la segunda fase, pero no permiso concedido en preflight y revocado en la comprobación RBAC bajo lock.
+- Se agrega un escenario del handler real con secuencia RBAC `[true, false]`. Comprueba rechazo `RESOURCE_NOT_AVAILABLE`, dos verificaciones RBAC, una sola identidad, lock adquirido/liberado, cero aperturas de Sheets, cero escrituras y snapshot completo de Examenes intacto.
+- Solo cambia `tests/security/exam-service-exam-mutation-security.test.js`; no se modifica backend productivo ni políticas de autorización/persistencia.
+
+### Verificación / estado
+- Suite focalizada ampliada de 16 a 17 escenarios internos. Ejecución local y CI pendientes.
+- Apps Script/Sheets real: NOT RUN; BETA-EXAM-076.
+- C1.572 En ejecución. Siguiente paso: sincronizar Codespaces y ejecutar `node tests/security/exam-service-exam-mutation-security.test.js`.
+
+HEAD inicial: 04fdd9eb6f415ef5d38ceb32410d9549864397e0. Rama: NG_beta_0.0.0.1_work. Rama base esperada: 44d9891132332e692dbe2ba8602b41f50a508a59.
+===============================================================================
