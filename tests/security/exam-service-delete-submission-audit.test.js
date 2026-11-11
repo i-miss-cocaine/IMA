@@ -85,10 +85,8 @@ test(() => { const x=fixture(); assert.throws(()=>x.call({motivo:reason,entregaI
 test(() => { const x=fixture(); assert.throws(()=>x.call({motivo:reason,examenId:"EXM-OTHER"}),/RESOURCE_NOT_AVAILABLE/); assert.equal(x.calls.deleted,0); });
 test(() => {
   const x = fixture();
-  const original = x.call;
-  const contextCall = x.call;
-  assert.equal(typeof contextCall, "function");
-  assert.equal(x.calls.auditRows.length, 0);
+  x.call({ motivo: "  " + reason + "  " });
+  assert.equal(x.calls.auditRows[0][6], reason, "reason is trimmed before audit persistence");
 });
 test(() => {
   const x = fixture();
