@@ -678,7 +678,7 @@ Rama base: NG_beta_0.0.0.1 — HEAD verificado 44d9891132332e692dbe2ba8602b41f50
 - Auditoría: `013136e4fe5c4d6bdbd79185eab244e00e11eb59`.
 - Changelog: `e987c5dd38d662195b3e4888efe9ce117bc5a0b7`.
 - Beta: `5f99576315a08ab1d158b4b641cb30b141d08178`.
-- Checkpoint e índice: commits posteriores; HEAD final pendiente de verificación.
+- Checkpoint C1.526: `93f255771b435cfed62adf367ec8ee32bd4d29dd`; índice: `a738896db26de732a3ef12f1147850dfb5b62666`. HEAD final verificado: `a738896db26de732a3ef12f1147850dfb5b62666`; rama base intacta en `44d9891132332e692dbe2ba8602b41f50a508a59`.
 
 ### Estado y continuidad
 Subalcance rectifyStudentGrade corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
