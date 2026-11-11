@@ -171,3 +171,10 @@ Subalcance de autorización previa al lock de manageQuestionBank corregido. TASK
 Siguiente acción: verificar contrato ampliado en CI y continuar inventario sin repetir wrappers ya endurecidos.
 HEAD final: pendiente de confirmación tras publicar.
 ===============================================================================
+
+
+### ADDENDUM DE VERIFICACIÓN — C1.515
+- GitHub Actions **43032803048**: **PASS** sobre `98b7c48fb688e20b183140bbe2583104121cb5e4`; job `exam-security-contracts` completado con éxito.
+- Step `Run question bank mutation security regression`: **success**, incluidos los asserts de RBAC, token expirado e identidad inválida antes de adquirir el lock; los demás contratos del job también PASS.
+- Parseo local de Code.gs y del contrato: PASS. Harness focalizado local del wrapper exacto: **6/6 PASS**.
+- HEAD de implementación: `98b7c48fb688e20b183140bbe2583104121cb5e4`.

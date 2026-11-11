@@ -1481,3 +1481,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Parseo Code.gs y contrato Node PASS; harness local exacto 6/6 PASS. CI pendiente de observar.
 - Sin cambio de esquema. Apps Script/Sheets real NOT RUN. TASK-153 / AUD-NG-386 sigue En ejecución.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] Verificación C1.515 — workflow 43032803048 PASS
+- Contrato exam-service-question-bank-security.test.js: PASS; denegación de rol, token expirado e identidad inválida antes del lock.
+- Los demás contratos EXAM del job exam-security-contracts finalizaron success.
+- HEAD probado: 98b7c48fb688e20b183140bbe2583104121cb5e4. Harness local focalizado del wrapper: 6/6 PASS; parseo Code.gs y contrato: PASS.
+===============================================================================
