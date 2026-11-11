@@ -1421,3 +1421,54 @@ Auditar y asegurar exclusivamente getGradeRectificationHistory del servicio EXAM
 - Siguiente acción: auditar individualmente getStudentAcademicReport.
 - Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios).
 ===============================================================================
+
+===============================================================================
+## CHECKPOINT C1.492 — EXAM: aislamiento de getStudentAcademicReport
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-11 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.491.
+HEAD inicial: 992278975e80c0c6444f09840c8ef3f34afc8dc1.
+
+### Alcance
+Auditar y asegurar exclusivamente getStudentAcademicReport, que consolida matrículas, calificaciones, recuperaciones y categorías.
+
+### Hallazgo y corrección
+- La función aceptaba userId arbitrario sin vincularlo a identidad autenticada, leía hojas directamente y usaba getOrCreateSheet; también llamaba getEvaluationCategories, que podía crear y poblar CategoriasEvaluacion durante la lectura.
+- El permiso Profesor permitía consultar el informe académico completo sin probar asignación/roster para todas las asignaturas.
+- Endpoint ahora usa withAuthorizedExamRead_("getStudentAcademicReport", ...) y ScriptLock compartido.
+- Estudiante/Alumno solo consulta su identidad; Tutor/Padre/Responsable requiere relación verificada; roles institucionales requieren scope institucional y estudiante explícito con perfil único. Profesor se deniega en esta ruta consolidada y debe usar getGradebookData con asignación/roster; permiso estático docente retirado.
+- La lectura no crea ni modifica hojas. Categorías se leen directamente como conjunto opcional; esquemas conocidos de calificaciones, recuperaciones y categorías se validan; IDs duplicados de matrículas/calificaciones/recuperaciones se excluyen; borradores no publicados se mantienen ocultos; fechas inválidas se normalizan a null y campos numéricos conservan fallback 0 compatible.
+
+### Archivos
+- backend/exam-service/Code.gs
+- tests/security/exam-service-student-academic-report-security.test.js
+- Auditoria.txt
+- changueslogs.txt
+- beta_test.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación local
+- Parseo V8 del backend: PASS.
+- Suite dedicada ejecutada mediante shim V8 aislado: PASS (27 escenarios).
+- Cobertura: aislamiento estudiante/IDOR, tutor/vínculo, scope institucional, Profesor/roles, RBAC, timeout y contención concurrente, identidad duplicada, hojas ausentes sin mutación, borradores, IDs duplicados, esquemas, fechas y valores inválidos.
+- Node nativo: NOT RUN. CI: NOT RUN. Apps Script/Sheets real: NOT RUN.
+- BETA-EXAM-046: Pendiente beta; no bloquea cierre local.
+
+### Commits de la iteración
+- Implementación: fdb221b3fe5300bde146b5da1df4cc934dc78d6c.
+- Suite de seguridad: 2b00231f6b19febe2cd9579b3c11b6b27843788c.
+- Corrección del harness/fixtures: 8e9f4e81ab702c38b6aefc41ea04ba448cdc4202; c0d05201b226a99f952270378e94b33489d463f1; 89b9e130d4724f87083f2b2a5595a53abf717f98; 44d8eccac09d4731fe01e575c7dc553cf6a48f43.
+- Cobertura de contención concurrente e identidad duplicada: 744e457c3fdf44411add8664a68f21b0df3152fc.
+- Documentación auditoría: 64fe45efc0f63f40c758df42f1c31560ae099726.
+- Changelog: b9ab9d8af600fa493df1c98a3c641d3b1a3994f2.
+- Beta: bddf39eb9ca3bd0f8eff2ade5434de2e9e9b855e.
+
+### Estado y continuidad
+- Subalcance getStudentAcademicReport completado localmente.
+- TASK-153 permanece En ejecución; AUD-NG-386 abierto por otras lecturas EXAM.
+- Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios).
+===============================================================================
