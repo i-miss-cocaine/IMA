@@ -4075,3 +4075,12 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Verificación local:** parseo V8 del backend y del test: PASS; suite completa tests/security/exam-service-exam-mutation-security.test.js: 16/16 PASS en runtime V8 aislado con shims. El escenario positivo y las regresiones de identidad incompleta, scope, timeout, updateExam y deleteExam permanecen cubiertos.
 - **Alcance:** solo se amplía la prueba. No se modifica código productivo, permisos, roles, scope, ownership ni persistencia. Node 22/CI para esta revisión NOT RUN; Apps Script/Sheets real NOT RUN. BETA-EXAM-072 permanece Pendiente beta.
 - **Estado:** cobertura local de la revocación RBAC en updateExamStatus completada. TASK-153 / AUD-NG-386 continúa En ejecución para el inventario EXAM restante.
+
+
+
+### 10.209 TASK-153 / AUD-NG-386 — cubrir revocación RBAC de rectifyStudentGrade bajo ScriptLock (C1.557)
+- **Brecha de cobertura:** withAuthorizedStudentGradeRectification_ realiza preflight RBAC y getAuthorizedStudentGradeRectificationContext_ vuelve a validar permiso dentro del lock; la suite cubría denegación inicial e identidad degradada bajo lock, pero no la revocación entre ambas comprobaciones.
+- **Cobertura añadida:** fixture con permiso concedido en preflight y denegado durante el contexto bajo lock. Se verifica RESOURCE_NOT_AVAILABLE, dos comprobaciones RBAC, una sola consulta de identidad, lock adquirido/liberado, cero aperturas de Sheets y snapshots intactos de CalificacionesEstudiantes e HistorialRectificacionesNotas.
+- **Verificación local:** parseo V8 de backend y test PASS; suite completa tests/security/exam-service-student-grade-rectification-security.test.js: 30/30 PASS en runtime V8 aislado con shims. Se conservan escenarios positivos, validación de rol/scope/nota, auditoría, rollback, timeout e identidad degradada.
+- **Alcance:** ampliación exclusiva de pruebas. No se modifica backend productivo, permisos, roles, scope ni persistencia. Node 22/CI de esta revisión NOT RUN; Apps Script/Sheets real NOT RUN. BETA-EXAM-078 permanece Pendiente beta.
+- **Estado:** cobertura local de revocación RBAC para rectifyStudentGrade completada. TASK-153 / AUD-NG-386 continúa En ejecución para el inventario EXAM restante.

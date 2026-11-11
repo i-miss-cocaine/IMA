@@ -881,3 +881,15 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta; suite local dedicada 20/20 PASS en aislamiento V8 con shims; Node 22/CI para la versión actual NOT RUN; Apps Script/Sheets real NOT RUN.
 - **Evidencia requerida:** commit/build desplegado, trazas saneadas de RBAC/identidad/lock/Sheets, actor y scope sintéticos, snapshots completos de RubricasEvaluacion y ResourceOwnership antes/después para ambas variantes.
 ===============================================================================
+
+
+===============================================================================
+## BETA-EXAM-078 — TASK-153 / AUD-NG-386 / EXAM: revocación RBAC en rectifyStudentGrade bajo lock
+- **Módulo/rol:** Servicio EXAM; Administrador, Desarrollador, Dirección, Director o Secretaría con permiso efectivo rectifyStudentGrade y scope institucional completo.
+- **Objetivo:** comprobar en Apps Script/Sheets desplegado que una revocación del permiso después del preflight y durante la revalidación bajo ScriptLock impide rectificar una calificación y registrar auditoría.
+- **Precondiciones:** versión beta desplegada; estudiante y calificación sintéticos; filas de CalificacionesEstudiantes e HistorialRectificacionesNotas con esquemas vigentes; actor institucional con identidad firmada y permiso inicialmente válido; mecanismo controlado para revocar el permiso entre preflight y contexto bajo lock.
+- **Pasos:** invocar rectifyStudentGrade con permiso concedido en preflight; hacer que validateRolePermission deniegue la segunda comprobación dentro del lock; revisar respuesta, trazas de lock/Sheets y snapshots de ambas hojas. Repetir con permiso e identidad estables, scope institucional autorizado y nota/motivo válidos.
+- **Resultado esperado:** la revocación produce RESOURCE_NOT_AVAILABLE, libera el lock, no abre Sheets y conserva intactas la calificación y la auditoría; el caso válido conserva rectificación y trazabilidad normales.
+- **Estado:** Pendiente beta; suite local dedicada 30/30 PASS en runtime V8 aislado con shims; Node 22/CI para esta revisión NOT RUN; Apps Script/Sheets real NOT RUN.
+- **Evidencia requerida:** commit desplegado, trazas saneadas de ambas comprobaciones RBAC, identidad, lock y aperturas/escrituras de Sheets; snapshots completos de CalificacionesEstudiantes e HistorialRectificacionesNotas antes/después para ambas variantes.
+===============================================================================

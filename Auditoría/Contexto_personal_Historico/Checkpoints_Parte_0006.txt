@@ -1694,3 +1694,27 @@ C1.556 completa la cobertura local de revocación RBAC para updateExamStatus. No
 
 HEAD inicial: c3d9b8261519195b09f9396b5d04512a4921bba4. HEAD final se confirmará tras publicar los cambios de prueba y documentación.
 ===============================================================================
+
+
+===============================================================================
+## C1.557 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — cubrir revocación RBAC entre preflight y contexto bajo ScriptLock en rectifyStudentGrade.
+
+### Hallazgo y alcance
+- withAuthorizedStudentGradeRectification_ valida RBAC antes del lock y getAuthorizedStudentGradeRectificationContext_ lo vuelve a validar dentro del lock. La suite cubría denegación inicial e identidad degradada bajo lock, pero no permiso revocado entre ambas comprobaciones.
+- Se amplió el fixture para modelar una secuencia de permisos y se añadió un escenario concedido→revocado.
+- La prueba exige RESOURCE_NOT_AVAILABLE, dos comprobaciones RBAC, una consulta de identidad, lock adquirido/liberado, cero aperturas de Sheets y snapshots intactos de CalificacionesEstudiantes e HistorialRectificacionesNotas.
+- No se modificó backend productivo, matriz RBAC, roles, scope ni persistencia.
+
+### Verificación local
+- Parseo V8 de backend/exam-service/Code.gs: PASS.
+- Parseo V8 de tests/security/exam-service-student-grade-rectification-security.test.js: PASS.
+- Suite completa: 30/30 PASS en runtime V8 aislado con shims.
+- Se conservan los escenarios de éxito, roles permitidos/denegados, scope, validación de nota, registros ambiguos, auditoría, rollback, timeout e identidad degradada.
+- Node 22/CI para esta revisión: NOT RUN. Apps Script/Sheets real: NOT RUN; BETA-EXAM-078 permanece Pendiente beta.
+
+### Estado y continuidad
+C1.557 completa la cobertura local de revocación RBAC para rectifyStudentGrade. No hubo cambios productivos. TASK-153 / AUD-NG-386 continúa En ejecución para el inventario EXAM restante.
+
+HEAD inicial: 16684ee9751d2d55bb59683f84d0259bdb6bee8f. HEAD final se confirmará tras publicar los cambios de prueba y documentación.
+===============================================================================
