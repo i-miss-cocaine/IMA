@@ -1868,7 +1868,7 @@ Se decidió retirar al Profesor de la autorización de revisión, restringir la 
 8. beta_test.txt (BETA-EXAM-053).
 
 ### Verificación
-- Parseo V8 PASS para Code.gs y test dedicado.
+- Parseo V8 PASS para Code.gs y test dedicado; security-contract local PASS.
 - Harness V8 aislado local: reviewPeriodGradebook 23/23 PASS; cubre decisiones, publicación bloqueada, RBAC/identidad/roles/scope, asignación y esquema académico, fila ausente/duplicada/malformada, estado inválido, timeout/liberación, reentrada concurrente y autor derivado del servidor.
 - Regresión local de closePeriodGradebook: 16/16 PASS.
 - GitHub Actions para los commits de esta iteración: NOT CONFIRMED; las consultas de ejecuciones/estados no devolvieron runs ni statuses. No declarar CI PASS.

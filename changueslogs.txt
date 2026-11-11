@@ -1337,5 +1337,5 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Revisión protegida por RBAC, identidad firmada, allowlist institucional, scope institutionWide y ScriptLock; se excluye Profesor y se habilita Director solo para esta acción.
 - Se valida fila única PendienteRevision, esquema, contexto académico y asignación del ProfesorID en ConfiguracionAcademica; revisadoPor se deriva del actor autenticado.
 - Aprobado/Observado actualizan estado y fecha en una sola escritura. Publicado falla cerrado y ya no ejecuta publishGradebookForContext; se evita publicación masiva por período/asignatura no identificable.
-- Parseo V8 PASS; harness local 23/23 PASS; regresión closePeriodGradebook 16/16 PASS. CI NOT CONFIRMED; Apps Script/Sheets NOT RUN; BETA-EXAM-053 Pendiente beta.
+- Parseo V8 PASS; harness local 23/23 PASS; regresión closePeriodGradebook 16/16 PASS; security-contract PASS. CI NOT CONFIRMED; Apps Script/Sheets NOT RUN; BETA-EXAM-053 Pendiente beta.
 ===============================================================================
