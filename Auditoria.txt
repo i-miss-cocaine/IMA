@@ -1646,3 +1646,12 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Pruebas locales:** parseo completo Code.gs PASS; contrato aislado de función en V8 17/17 PASS; sintaxis del test Node PASS. CI/ejecución Node del archivo completo aún no observada; Apps Script/Sheets real NOT RUN.
 - **Beta:** BETA-EXAM-062 Pendiente beta. TASK-153 / AUD-NG-386 permanecen En ejecución por otros mutadores EXAM.
 ===============================================================================
+
+===============================================================================
+### AUD-NG-386 — deleteExamSubmission (C1.510)
+- **Hallazgo alto:** la operación eliminaba físicamente EntregasExamen sin motivo ni rastro de actor/resultado, pese a que la entrega puede contener evidencia académica. La autorización, identidad firmada, ownership institucional/departamental y ScriptLock ya estaban presentes en el wrapper.
+- **Corrección:** motivo obligatorio de 10–2.000 caracteres; valida integridad mínima de fila e IDs contra el contexto autorizado. Crea/valida HistorialEliminacionesEntregasExamen y registra UUID, entrega/examen/estudiante, actor/rol firmados, motivo, fecha y estado. El historial no copia RespuestasJSON. Registra DELETE_REQUESTED antes de borrar, DELETED al completar o DELETE_FAILED si falla el borrado; si no puede registrar el evento inicial, no borra.
+- **Pruebas locales:** parseo completo Code.gs PASS; contrato aislado de función y helper 17/17 PASS, incluyendo autorización denegada, motivos inválidos, schema, creación de historial, fallos de append/delete/finalización, asociación de IDs y minimización de datos; fuente del test Node parsea. CI aún no observado; Apps Script/Sheets real NOT RUN.
+- **Beta:** BETA-EXAM-063 Pendiente beta. TASK-153 / AUD-NG-386 permanecen En ejecución por otros mutadores EXAM.
+- **Límite operativo:** si falla la actualización final después de borrar, el evento queda en DELETE_REQUESTED y la función informa EXAM_SUBMISSION_DELETION_AUDIT_FINALIZATION_FAILED; la evidencia inicial no se pierde y requiere reconciliación operativa.
+===============================================================================
