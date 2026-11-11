@@ -3591,3 +3591,15 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Límite:** ConfiguracionAcademica no contiene DepartmentID ni AnoID; la verificación puede exigir un scope departamental activo y asignación docente exacta, pero no correlacionar directamente cada asignación con un departamento ni derivar el año académico real. No se inventa esa relación ni se acepta el año del cliente.
 - **Estado:** subalcance de submitGradebookForReview completado localmente; TASK-153 continúa En ejecución y AUD-NG-386 permanece abierto por otras operaciones EXAM.
 - **Siguiente:** auditar reopenPeriodGradebook y sus efectos sobre CierresPeriodos como unidad independiente.
+
+
+### 10.154 TASK-153 / AUD-NG-386 — seguridad e integridad de reopenPeriodGradebook (C1.502)
+
+- **Hallazgo:** reopenPeriodGradebook permitía reaperturas sin comprobar RBAC, identidad firmada ni scope institucional; confiaba en autorizadoPor/_verifiedUserId aportados o mutables desde payload, creaba CierresPeriodos si faltaba, seleccionaba la primera fila sin validar esquema/duplicidad/estado y ocultaba fallos de auditoría.
+- **Corrección:** wrapper ScriptLock con timeout y liberación; RBAC, identidad firmada y allowlist institucional (Administrador, Desarrollador, Dirección, Director y Secretaría), scope institutionWide; Profesor deja de tener permiso estático. Director recibe permiso específico. Solo se reabre una fila única, íntegra y en estado Cerrado; CierresPeriodos debe existir.
+- **Trazabilidad:** motivo obligatorio de 10–2.000 caracteres; HistorialRectificacionesNotas valida esquema y registra UUID, cierre, actor autenticado, acción, transición, motivo y fecha. Se ignora autorizadoPor del cliente. Si falla la escritura de auditoría, se intenta restaurar Cerrado y retirar cualquier fila parcial.
+- **Pruebas locales:** harness V8 aislado 22/22 PASS; cubre roles, RBAC, identidad, scope, contexto, ausencia/duplicidad/esquema/estado, hoja de auditoría ausente/vacía/inválida, UUID, repetición, timeout, liberación, reentrada y rollback ante fallo de auditoría. Parseo V8 de las funciones extraídas PASS. La suite completa sobre el checkout y regresiones anteriores no se ejecutaron en esta sesión.
+- **CI/beta:** ejecución CI NOT CONFIRMED; Apps Script/Sheets real NOT RUN; BETA-EXAM-055 Pendiente beta.
+- **Límite:** CierresPeriodos no almacena InstitutionID/DepartmentID; la protección institucional se apoya en el spreadsheet institucional y scope institutionWide verificado. No se atribuye ownership inexistente.
+- **Estado:** subalcance reopenPeriodGradebook completado con verificaciones locales aisladas; TASK-153 continúa En ejecución y AUD-NG-386 abierto por otros endpoints.
+- **Siguiente:** auditar rectifyStudentGrade, incluida autorización, propiedad de la calificación, integridad de nota y trazabilidad.

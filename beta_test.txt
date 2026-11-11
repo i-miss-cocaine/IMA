@@ -621,3 +621,15 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta. Harness V8 local aislado 23/23 PASS; CI pendiente de confirmación; Apps Script/Sheets real NOT RUN.
 - **Evidencia requerida:** commit/build desplegado, tokens y scopes sintéticos, asignaciones académicas, snapshots antes/después de CierresPeriodos, evidencia de denegaciones, duplicidad, reenvío y concurrencia.
 ===============================================================================
+
+
+===============================================================================
+## BETA-EXAM-055 — TASK-153 / AUD-NG-386 / EXAM: reopenPeriodGradebook
+- **Módulo/acción:** EXAM — reapertura de cierres en CierresPeriodos y registro en HistorialRectificacionesNotas.
+- **Objetivo:** verificar en Apps Script/Sheets desplegado que solo un actor institucional autenticado con scope institutionWide puede reabrir un cierre único en estado Cerrado, y que la transición queda trazada con identidad y motivo no manipulables desde el cliente.
+- **Precondiciones:** beta aislada; usuarios sintéticos Administrador, Desarrollador, Dirección, Director, Secretaría, Profesor y Estudiante; scopes institutionWide/departamental/ausente; CierresPeriodos con esquema válido/inválido, cierreId ausente/único/duplicado, campos incompletos y estados Cerrado/PendienteRevision/Aprobado/Observado/Reabierto; HistorialRectificacionesNotas inexistente/vacío/válido/inválido.
+- **Pasos:** probar sesión expirada, RBAC denegado, roles no permitidos y scope no amplio; alterar autorizadoPor; probar motivo ausente/corto/largo; probar cierre inexistente/duplicado/malformado y estados distintos de Cerrado; probar hoja de auditoría ausente/vacía/esquema inválido, UUID duplicado, timeout, reentrada y fallo de append con rollback; capturar snapshots antes/después de ambas hojas.
+- **Resultado esperado:** solo allowlist institucional y scope institutionWide pueden reabrir; el actor de auditoría siempre deriva de identidad firmada; solo la fila Cerrado única pasa a Reabierto; errores/denegaciones no dejan transición sin trazabilidad y el lock se libera.
+- **Estado:** Pendiente beta. Harness V8 aislado local 22/22 PASS; ejecución CI NOT CONFIRMED; Apps Script/Sheets real NOT RUN.
+- **Evidencia requerida:** commit/build desplegado, tokens sintéticos, scopes, snapshots antes/después, evidencia de denegaciones, transición, trazabilidad, concurrencia y rollback.
+===============================================================================

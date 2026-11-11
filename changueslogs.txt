@@ -1348,3 +1348,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - ScriptLock serializa la creación; se valida el esquema, se bloquean envíos activos/aprobados/cerrados duplicados y se permite reenvío después de Observado; ID REV-UUID con control de colisión.
 - Harness local aislado 23/23 PASS; CI pendiente de verificación; Apps Script/Sheets NOT RUN; BETA-EXAM-054 Pendiente beta.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] C1.502 — IMA-EXEC-20261110-1825Z-02 — EXAM: protección de reopenPeriodGradebook
+- La reapertura exige RBAC, identidad firmada, allowlist institucional y scope institutionWide; Profesor queda excluido y Director obtiene permiso específico.
+- Solo se reabre un registro CierresPeriodos único, íntegro y Cerrado; se valida el esquema y no se crea la hoja de cierres.
+- Motivo obligatorio; HistorialRectificacionesNotas registra UUID, cierre, actor autenticado, transición y fecha. Fallo de auditoría intenta rollback de estado y fila parcial.
+- Harness V8 aislado 22/22 PASS; CI NOT CONFIRMED; Apps Script/Sheets NOT RUN; BETA-EXAM-055 Pendiente beta.
+===============================================================================

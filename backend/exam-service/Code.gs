@@ -83,13 +83,13 @@ const ROLE_PERMISSIONS = {
   "Tutor": ["getStudentExams", "getExamQuestions", "getExamResult", "getEvaluationCategories", "getRubrics", "getStudentRecoveries", "getStudentAcademicReport", "getGradeRectificationHistory"],
   "Responsable": ["getStudentExams", "getExamQuestions", "getExamResult", "getEvaluationCategories", "getRubrics", "getStudentRecoveries", "getStudentAcademicReport", "getGradeRectificationHistory"],
   "Dirección": ["*"],
-  "Director": ["reviewPeriodGradebook"],
+  "Director": ["reviewPeriodGradebook", "reopenPeriodGradebook"],
   "Secretaría": ["*"],
   "Profesor": [
     "createExam", "updateExam", "updateExamStatus", "deleteExam", "gradeExamSubmission", "deleteExamSubmission",
     "getAllExams", "getTeacherExamActivity", "getExamQuestions", "getStudentExams", "getExamResult",
     "getGradebookData", "saveGradebookGrades", "bulkApplyGradebookGrades", "copyEvaluationSetupBetweenGroups", "getEvaluationCategories", "saveEvaluationCategory",
-    "getRubrics", "saveRubric", "saveCompetencyEvaluation", "getCompetencyEvaluations", "saveStudentRecovery", "closePeriodGradebook", "reopenPeriodGradebook", "submitGradebookForReview", "rectifyStudentGrade",
+    "getRubrics", "saveRubric", "saveCompetencyEvaluation", "getCompetencyEvaluations", "saveStudentRecovery", "closePeriodGradebook", "submitGradebookForReview", "rectifyStudentGrade",
     "manageQuestionBank", "getQuestionBank", "checkExamSchedulingConflict", "simulateExamReschedule",
     "getExamGradeDistributionAnalytics"
   ],
@@ -3099,43 +3099,124 @@ function reviewPeriodGradebookUnlocked_(payload, context) {
 
 // [F9-Task06] [P0] - Fortalecer las rectificaciones de notas y la trazabilidad de los cambios
 function reopenPeriodGradebook(payload) {
-  const { cierreId, motivo, autorizadoPor } = payload || {};
-  if (!cierreId) throw new Error("cierreId es requerido.");
-  if (!motivo || String(motivo).trim().length < 10) {
-    throw new Error("Se requiere una justificación detallada (mínimo 10 caracteres) para reabrir un período cerrado.");
+  return withAuthorizedPeriodGradebookReopen_(payload, context =>
+    reopenPeriodGradebookUnlocked_(context));
+}
+
+function withAuthorizedPeriodGradebookReopen_(payload, mutation) {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) throw new Error("GRADEBOOK_REOPEN_LOCK_TIMEOUT");
+  try {
+    return mutation(getAuthorizedPeriodGradebookReopenContext_(payload));
+  } finally {
+    try { lock.releaseLock(); } catch (_) {}
+  }
+}
+
+function getAuthorizedPeriodGradebookReopenContext_(payload) {
+  const p = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
+  const cierreId = String(p.cierreId || "").trim();
+  const motivo = String(p.motivo || "").trim();
+  if (!cierreId || cierreId.length > 160 || motivo.length < 10 || motivo.length > 2000) {
+    throw new Error("GRADEBOOK_REOPEN_REQUIRED_FIELDS_INVALID");
+  }
+
+  const permission = validateRolePermission("reopenPeriodGradebook", p);
+  if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const actor = getVerifiedExamIdentity_(p);
+  const allowedRoles = ["Administrador", "Desarrollador", "Dirección", "Director", "Secretaría"];
+  if (!actor || actor.authorized !== true || !String(actor.userId || "").trim() ||
+      allowedRoles.indexOf(String(actor.role || "").trim()) === -1) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
   }
 
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "CierresPeriodos");
-  const data = sheet.getDataRange().getValues();
-  const idx = data.findIndex(r => String(r[0]).trim() === String(cierreId).trim());
-  if (idx === -1) throw new Error("Registro de cierre no encontrado.");
-
-  sheet.getRange(idx + 1, 8).setValue("Reabierto");
-
-  try {
-    const rectSheet = getOrCreateSheet(ss, "HistorialRectificacionesNotas");
-    if (rectSheet.getLastRow() === 0) {
-      rectSheet.appendRow(["RectificacionID", "EvaluacionID", "UserID", "Accion", "NotaAnterior", "NotaNueva", "Motivo", "AutorizadoPor", "Fecha"]);
-    }
-    rectSheet.appendRow([
-      "REAP-" + Date.now(),
-      cierreId,
-      payload && payload._verifiedUserId ? payload._verifiedUserId : (autorizadoPor || "Secretaría"),
-      "REAPERTURA_PERIODO",
-      "Cerrado",
-      "Reabierto",
-      String(motivo).trim(),
-      autorizadoPor || "Secretaría",
-      new Date()
-    ]);
-  } catch (e) {
-    logDebug("Error registrando auditoría de reapertura", e.message);
+  const scope = getVerifiedExamDepartmentScope_(p, ss, actor);
+  if (!scope || scope.authorized !== true || !String(scope.institutionId || "").trim() ||
+      scope.institutionWide !== true) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
   }
 
-  return { status: "success", cierreId, estado: "Reabierto", message: "Período reabierto oficialmente para rectificaciones autorizadas." };
+  const sheet = ss.getSheetByName("CierresPeriodos");
+  if (!sheet) throw new Error("GRADEBOOK_REOPEN_RECORD_NOT_FOUND");
+  const data = sheet.getDataRange().getValues();
+  const headers = ["CierreID", "AnoID", "PeriodoID", "Grado", "Seccion", "Asignatura", "ProfesorID", "Estado", "FechaCierre"];
+  if (!data.length || headers.some((header, index) => String(data[0][index] || "").trim() !== header)) {
+    throw new Error("GRADEBOOK_REOPEN_SCHEMA_INVALID");
+  }
+
+  const matches = [];
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0] || "").trim() === cierreId) matches.push({ row: data[i], rowIndex: i + 1 });
+  }
+  if (!matches.length) throw new Error("GRADEBOOK_REOPEN_RECORD_NOT_FOUND");
+  if (matches.length !== 1) throw new Error("GRADEBOOK_REOPEN_RECORD_AMBIGUOUS");
+
+  const target = matches[0];
+  if (headers.slice(0, 7).some((header, index) => !String(target.row[index] || "").trim())) {
+    throw new Error("GRADEBOOK_REOPEN_RECORD_INVALID");
+  }
+  if (String(target.row[7] || "").trim() !== "Cerrado") {
+    throw new Error("GRADEBOOK_REOPEN_STATE_INVALID");
+  }
+
+  const auditHeaders = ["RectificacionID", "EvaluacionID", "UserID", "Accion", "NotaAnterior", "NotaNueva", "Motivo", "AutorizadoPor", "Fecha"];
+  const auditSheet = ss.getSheetByName("HistorialRectificacionesNotas");
+  let auditRows = [];
+  if (auditSheet && auditSheet.getLastRow() > 0) {
+    auditRows = auditSheet.getDataRange().getValues();
+    if (auditHeaders.some((header, index) => String(auditRows[0][index] || "").trim() !== header)) {
+      throw new Error("GRADEBOOK_REOPEN_AUDIT_SCHEMA_INVALID");
+    }
+  }
+  return {
+    ss, sheet, rowIndex: target.rowIndex, cierreId, motivo, actor,
+    auditSheet, auditHeaders, auditRows
+  };
 }
 
+function reopenPeriodGradebookUnlocked_(context) {
+  const auditSheet = context.auditSheet || getOrCreateSheet(context.ss, "HistorialRectificacionesNotas");
+  if (!context.auditSheet || auditSheet.getLastRow() === 0) auditSheet.appendRow(context.auditHeaders);
+
+  const auditId = "REAP-" + String(Utilities.getUuid() || "").trim();
+  const existingAuditRows = auditSheet.getDataRange().getValues();
+  if (auditId === "REAP-" || existingAuditRows.slice(1).some(row =>
+      String(row[0] || "").trim() === auditId)) {
+    throw new Error("GRADEBOOK_REOPEN_AUDIT_ID_COLLISION");
+  }
+
+  const now = new Date();
+  const auditRowCount = auditSheet.getLastRow();
+  context.sheet.getRange(context.rowIndex, 8).setValue("Reabierto");
+  try {
+    auditSheet.appendRow([
+      auditId, context.cierreId, String(context.actor.userId).trim(),
+      "REAPERTURA_PERIODO", "Cerrado", "Reabierto", context.motivo,
+      String(context.actor.userId).trim(), now
+    ]);
+  } catch (error) {
+    try { context.sheet.getRange(context.rowIndex, 8).setValue("Cerrado"); } catch (rollbackError) {
+      logDebug("GRADEBOOK_REOPEN_ROLLBACK_FAILED", rollbackError.message);
+    }
+    try {
+      if (auditSheet.getLastRow() > auditRowCount && auditSheet.deleteRow) {
+        auditSheet.deleteRow(auditSheet.getLastRow());
+      }
+    } catch (cleanupError) {
+      logDebug("GRADEBOOK_REOPEN_AUDIT_CLEANUP_FAILED", cleanupError.message);
+    }
+    throw new Error("GRADEBOOK_REOPEN_AUDIT_WRITE_FAILED");
+  }
+
+  return {
+    status: "success",
+    cierreId: context.cierreId,
+    estado: "Reabierto",
+    autorizadoPor: String(context.actor.userId).trim(),
+    message: "Período reabierto oficialmente para rectificaciones autorizadas."
+  };
+}
 function rectifyStudentGrade(payload) {
   const { evaluacionId, userId, calificacionId, notaNueva, motivo, autorizadoPor, authRole } = payload || {};
   if ((!calificacionId && (!evaluacionId || !userId)) || notaNueva === undefined || notaNueva === null) {

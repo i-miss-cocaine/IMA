@@ -1576,3 +1576,13 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Pruebas:** harness local aislado 23/23 PASS; CI pendiente de confirmación; Apps Script/Sheets real NOT RUN; BETA-EXAM-054 Pendiente beta.
 - **Límite:** ConfiguracionAcademica carece de DepartmentID/AnoID; no se infiere relación departamental ni año académico. TASK-153 y AUD-NG-386 continúan abiertos por otras operaciones EXAM.
 ===============================================================================
+
+
+===============================================================================
+### AUD-NG-386 — EXAM: reopenPeriodGradebook (C1.502)
+- **Hallazgo:** reapertura sin RBAC/identidad/scope; autorizadoPor manipulable; creación de hoja de cierres; selección de primera fila sin validar unicidad/esquema/estado; errores de auditoría ignorados.
+- **Corrección:** ScriptLock, RBAC, identidad firmada, allowlist institucional y scope institutionWide; Profesor excluido, Director habilitado explícitamente. Solo cierre único, completo y Cerrado; motivo acotado; auditoría con UUID y actor verificado.
+- **Integridad:** si falla el append de auditoría, se intenta restaurar Cerrado y limpiar fila parcial; no se informa éxito si falla la trazabilidad.
+- **Pruebas:** harness V8 aislado 22/22 PASS; parseo de funciones extraídas PASS; suite completa del checkout y regresiones previas NOT RUN; CI NOT CONFIRMED; Apps Script/Sheets NOT RUN; BETA-EXAM-055 Pendiente beta.
+- **Límite:** CierresPeriodos carece de InstitutionID/DepartmentID; se exige scope institucional amplio y se confía en el spreadsheet aislado de cada institución.
+===============================================================================
