@@ -94,10 +94,10 @@ const ROLE_PERMISSIONS = {
     "getExamGradeDistributionAnalytics"
   ],
   "Estudiante": [
-    "getStudentExams", "getExamQuestions", "submitExam", "getExamResult", "getEvaluationCategories", "getRubrics", "getCompetencyEvaluations", "getStudentRecoveries", "getStudentAcademicReport""getGradeRectificationHistory"
+    "getStudentExams", "getExamQuestions", "submitExam", "getExamResult", "getEvaluationCategories", "getRubrics", "getCompetencyEvaluations", "getStudentRecoveries", "getStudentAcademicReport", "getGradeRectificationHistory"
   ],
   "Alumno": [
-    "getStudentExams", "getExamQuestions", "submitExam", "getExamResult", "getEvaluationCategories", "getRubrics", "getCompetencyEvaluations", "getStudentRecoveries", "getStudentAcademicReport""getGradeRectificationHistory"
+    "getStudentExams", "getExamQuestions", "submitExam", "getExamResult", "getEvaluationCategories", "getRubrics", "getCompetencyEvaluations", "getStudentRecoveries", "getStudentAcademicReport", "getGradeRectificationHistory"
   ]
 };
 
