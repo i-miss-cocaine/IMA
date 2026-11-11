@@ -29,7 +29,7 @@ function test(fn) { fn(); scenarios++; }
 function fixture(options = {}) {
   const calls = { deleted: 0, auditRows: [], auditUpdates: [], auditCreated: false, action: null };
   const audit = {
-    rows: options.badSchema ? [["wrong", "header"]] : [["EventoID","EntregaExamenID","ExamenID","EstudianteID","ActorID","RolActor","Motivo","FechaSolicitud","Estado"]],
+    rows: options.badSchema ? [["wrong", "header"]] : (options.noAuditSheet ? [] : [["EventoID","EntregaExamenID","ExamenID","EstudianteID","ActorID","RolActor","Motivo","FechaSolicitud","Estado"]]),
     getDataRange() { return { getValues: () => this.rows.map(row => row.slice()) }; },
     getLastRow() { return this.rows.length; },
     appendRow(row) { if (options.failAuditAppend) throw new Error("audit append failed"); this.rows.push(row.slice()); calls.auditRows.push(row.slice()); },
@@ -83,6 +83,21 @@ test(() => { const x=fixture({failDelete:true,failAuditUpdate:true}); assert.thr
 test(() => { const x=fixture({failAuditUpdate:true}); assert.throws(()=>x.call({motivo:reason}),/EXAM_SUBMISSION_DELETION_AUDIT_FINALIZATION_FAILED/); assert.equal(x.calls.deleted,1); });
 test(() => { const x=fixture(); assert.throws(()=>x.call({motivo:reason,entregaId:"EEX-OTHER"}),/RESOURCE_NOT_AVAILABLE/); assert.equal(x.calls.deleted,0); });
 test(() => { const x=fixture(); assert.throws(()=>x.call({motivo:reason,examenId:"EXM-OTHER"}),/RESOURCE_NOT_AVAILABLE/); assert.equal(x.calls.deleted,0); });
+test(() => {
+  const x = fixture();
+  const original = x.call;
+  const contextCall = x.call;
+  assert.equal(typeof contextCall, "function");
+  assert.equal(x.calls.auditRows.length, 0);
+});
+test(() => {
+  const x = fixture();
+  const result = x.call({ motivo: reason });
+  const event = x.calls.auditRows[0];
+  assert.equal(event.length, 9, "audit stores identifiers and metadata only, not answer payload");
+  assert.equal(event.includes("[]"), false, "student answer JSON is not copied into the audit");
+  assert.equal(result.eventoId, event[0]);
+});
 test(() => {
   const handler = extract("deleteExamSubmission");
   const wrapper = extract("withAuthorizedExamSubmissionMutation_");
