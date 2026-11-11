@@ -1763,3 +1763,10 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Corrección:** preflight del permiso `reopenPeriodGradebook`, identidad autorizada, `userId` no vacío y allowlist existente (Administrador, Desarrollador, Dirección, Director, Secretaría) antes del lock; revalidación contextual bajo lock.
 - **Suite dedicada:** ampliada de 22 a 26 escenarios; incorpora denegación pre-lock, identidad inválida, userId vacío, roles permitidos/no permitidos y doble validación. Verificación de ejecución pendiente.
 - Apps Script/Sheets real NOT RUN; BETA-EXAM-055 permanece Pendiente beta.
+
+
+### ADDENDUM FINAL DE CI — C1.525 / reopenPeriodGradebook
+- **CI:** GitHub Actions workflow `43052136181`: completed / success; job `exam-security-contracts` `130631828833` SUCCESS; step `Run period gradebook reopen security regression` SUCCESS.
+- Suite `reopen-period-gradebook-security`: **26/26 PASS** en Node 22. Las demás suites del workflow también finalizaron SUCCESS, incluidas las pruebas generales de contrato, acceso departamental y endpoints de lectura.
+- Harness local focalizado del wrapper: **10/10 PASS**. No se declara ejecución local de la suite completa; el checkout local no estaba disponible.
+- Apps Script/Sheets real: NOT RUN; BETA-EXAM-055 permanece Pendiente beta.
