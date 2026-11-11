@@ -1742,3 +1742,27 @@ C1.558 completa la cobertura local de revocación RBAC para saveEvaluationCatego
 
 HEAD inicial: 5f1677f0bd99fc0c422d885dcb0ead52deb983a2. Commit principal de C1.558 (prueba y documentación): 023fc59340f96fef14bb064319f0de4a175f2054. La publicación final de la rama se verificó después de este commit.
 ===============================================================================
+
+
+===============================================================================
+## C1.559 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — cubrir revocación RBAC entre preflight y contexto bajo ScriptLock en saveCompetencyEvaluation.
+
+### Hallazgo y alcance
+- saveCompetencyEvaluation valida RBAC antes de adquirir el lock y getAuthorizedCompetencyEvaluationMutationContext_ vuelve a comprobarlo dentro del lock. La suite cubría denegación inicial y denegación contextual estática, pero no permiso revocado entre ambas comprobaciones.
+- Se amplió el fixture para modelar una secuencia RBAC y se añadió un escenario concedido→revocado en la revalidación.
+- La prueba exige RESOURCE_NOT_AVAILABLE, dos comprobaciones RBAC, una consulta de identidad, lock adquirido/liberado, cero aperturas de Sheets y snapshots intactos de EvaluacionesCompetencias y RubricasEvaluacion.
+- No se modificó backend productivo, RBAC, roles, scope, asignaciones, rúbricas ni persistencia.
+
+### Verificación local
+- Parseo V8 de backend/exam-service/Code.gs: PASS.
+- Parseo V8 de tests/security/exam-service-competency-evaluation-mutation-security.test.js: PASS.
+- Suite completa: 26/26 PASS en runtime V8 aislado con shims.
+- Se conservan creación autorizada, asignación docente exacta, roles/scope, rúbricas, validación de esquema, timeout, concurrencia y rollback.
+- Node 22/CI para esta revisión: NOT RUN. Apps Script/Sheets real: NOT RUN; BETA-EXAM-050 permanece Pendiente beta.
+
+### Estado y continuidad
+C1.559 completa la cobertura local de revocación RBAC para saveCompetencyEvaluation. No hubo cambios productivos. TASK-153 / AUD-NG-386 continúa En ejecución para el inventario EXAM restante.
+
+HEAD inicial: 87cae5abd0d607fb724fcfeb2286d5084b66b137. HEAD final se confirmará tras publicar los cambios de prueba y documentación.
+===============================================================================

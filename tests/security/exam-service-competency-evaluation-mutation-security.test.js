@@ -82,7 +82,10 @@ function fixture(options = {}) {
     LockService: { getScriptLock() { state.events.push("lock-request"); return scriptLock; } },
     validateRolePermission(action) {
       state.events.push("permission"); state.permissionCalls++; state.action = action;
-      return { authorized: options.permission !== false && !(options.contextPermission === false && state.permissionCalls > 1) };
+      const sequence = options.permissionSequence;
+      return { authorized: Array.isArray(sequence) && sequence.length
+        ? sequence[Math.min(state.permissionCalls - 1, sequence.length - 1)] === true
+        : options.permission !== false && !(options.contextPermission === false && state.permissionCalls > 1) };
     },
     getVerifiedExamIdentity_() {
       state.events.push("identity"); state.identityCalls++;
@@ -195,6 +198,23 @@ test("missing institution scope is denied and lock is released", () => {
 test("RBAC is revalidated inside the acquired lock", () => {
   const x = fixture({ contextPermission: false }); denied(() => x.call());
   assert.equal(x.state.locks, 1); assert.equal(x.state.releases, 1); assert.equal(x.state.opens, 0);
+  assert.deepEqual(x.state.events, [
+    "permission", "identity", "lock-request", "lock-acquire:5000", "permission", "lock-release"
+  ]);
+});
+test("RBAC permission revoked during locked context revalidation is rejected before Sheets or writes", () => {
+  const x = fixture({ permissionSequence: [true, false] });
+  const evaluationsBefore = x.sheets.EvaluacionesCompetencias.rows.map(row => row.slice());
+  const rubricsBefore = x.sheets.RubricasEvaluacion.rows.map(row => row.slice());
+  denied(() => x.call());
+  assert.equal(x.state.permissionCalls, 2, "RBAC must be checked before and after lock acquisition");
+  assert.equal(x.state.identityCalls, 1, "revoked RBAC must stop before the second identity lookup");
+  assert.equal(x.state.locks, 1);
+  assert.equal(x.state.releases, 1);
+  assert.equal(x.state.held, false);
+  assert.equal(x.state.opens, 0, "revoked permission must be rejected before opening Sheets");
+  assert.deepEqual(x.sheets.EvaluacionesCompetencias.rows, evaluationsBefore);
+  assert.deepEqual(x.sheets.RubricasEvaluacion.rows, rubricsBefore);
   assert.deepEqual(x.state.events, [
     "permission", "identity", "lock-request", "lock-acquire:5000", "permission", "lock-release"
   ]);
