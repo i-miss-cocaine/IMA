@@ -1389,5 +1389,5 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - La copia exige ownership activo único de cada categoría fuente; registra ownership para cada categoría clonada y genera IDs UUID, sin usar Math.random.
 - Las escrituras se consolidan por lote y se compensan si falla la segunda escritura; no se crea la hoja implícitamente.
 - Se rechaza el esquema canónico de seis columnas porque el endpoint histórico requiere ocho columnas de configuración por grupo; no se fuerza una migración ni se corrompe el catálogo canónico.
-- Harness local aislado 19 escenarios PASS; parseo Code.gs y contrato PASS. BETA-EXAM-059 Pendiente beta.
+- Harness local aislado 22 escenarios PASS; parseo Code.gs y contrato PASS. BETA-EXAM-059 Pendiente beta.
 ===============================================================================
