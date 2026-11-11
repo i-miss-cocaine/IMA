@@ -89,7 +89,7 @@ const ROLE_PERMISSIONS = {
     "createExam", "updateExam", "updateExamStatus", "deleteExam", "gradeExamSubmission", "deleteExamSubmission",
     "getAllExams", "getTeacherExamActivity", "getExamQuestions", "getStudentExams", "getExamResult",
     "getGradebookData", "saveGradebookGrades", "bulkApplyGradebookGrades", "copyEvaluationSetupBetweenGroups", "getEvaluationCategories", "saveEvaluationCategory",
-    "getRubrics", "saveRubric", "saveCompetencyEvaluation", "getCompetencyEvaluations", "saveStudentRecovery", "getStudentRecoveries", "closePeriodGradebook", "reopenPeriodGradebook", "submitGradebookForReview", "reviewPeriodGradebook", "rectifyStudentGrade", "getGradeRectificationHistory", "getStudentAcademicReport",
+    "getRubrics", "saveRubric", "saveCompetencyEvaluation", "getCompetencyEvaluations", "saveStudentRecovery", "closePeriodGradebook", "reopenPeriodGradebook", "submitGradebookForReview", "reviewPeriodGradebook", "rectifyStudentGrade", "getGradeRectificationHistory", "getStudentAcademicReport",
     "manageQuestionBank", "getQuestionBank", "checkExamSchedulingConflict", "simulateExamReschedule",
     "getExamGradeDistributionAnalytics"
   ],
@@ -2248,31 +2248,83 @@ function saveStudentRecovery(payload) {
 }
 
 function getStudentRecoveries(payload) {
-  const { userId, evaluacionId } = payload || {};
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "RecuperacionesEstudiante");
+  return withAuthorizedExamRead_("getStudentRecoveries", payload,
+    context => getStudentRecoveriesUnlocked_(payload, context));
+}
+
+function getStudentRecoveriesUnlocked_(payload, context) {
+  const p = payload || {};
+  const actor = context && context.actor;
+  const ss = context && context.ss;
+  const scope = context && context.scope;
+  if (!actor || !String(actor.userId || "").trim() || !ss || !scope || scope.authorized !== true) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
+
+  const role = String(actor.role || "").trim();
+  const studentRoles = ["Estudiante", "Alumno"];
+  const guardianRoles = ["Tutor", "Padre", "Responsable"];
+  const institutionRoles = ["Administrador", "Desarrollador", "Dirección", "Director", "Secretaría"];
+  let targetUserId = "";
+
+  if (studentRoles.indexOf(role) !== -1) {
+    targetUserId = String(actor.userId).trim();
+    if (p.userId && String(p.userId).trim() !== targetUserId) throw new Error("RESOURCE_NOT_AVAILABLE");
+    const profile = getExamStudentProfile_(ss, targetUserId);
+    if (!profile || studentRoles.indexOf(String(profile.role || "").trim()) === -1) throw new Error("RESOURCE_NOT_AVAILABLE");
+  } else if (guardianRoles.indexOf(role) !== -1) {
+    targetUserId = String(context.profile && context.profile.userId || "").trim();
+    if (!context.guardianActor || !targetUserId ||
+        (p.userId && String(p.userId).trim() !== targetUserId)) throw new Error("RESOURCE_NOT_AVAILABLE");
+  } else if (institutionRoles.indexOf(role) !== -1) {
+    if (scope.institutionWide !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+    targetUserId = String(p.userId || "").trim();
+    if (!targetUserId) throw new Error("RESOURCE_NOT_AVAILABLE");
+    const profile = getExamStudentProfile_(ss, targetUserId);
+    if (!profile || studentRoles.indexOf(String(profile.role || "").trim()) === -1) throw new Error("RESOURCE_NOT_AVAILABLE");
+  } else {
+    // El acceso docente se realiza mediante getGradebookData, que valida la asignación y el roster.
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
+
+  const sheet = ss.getSheetByName("RecuperacionesEstudiante");
+  if (!sheet) return { status: "success", data: [] };
   const data = sheet.getDataRange().getValues();
+  if (!data.length) return { status: "success", data: [] };
+  const expectedHeaders = ["ID", "EvaluacionID", "UserID", "NotaOriginal", "NotaRecuperada",
+    "NotaFinalCalculada", "MetodoAplicado", "AutorizadoPor", "Fecha"];
+  if (expectedHeaders.some((header, index) => String(data[0][index] || "").trim() !== header)) {
+    throw new Error("STUDENT_RECOVERY_SCHEMA_INVALID");
+  }
   if (data.length <= 1) return { status: "success", data: [] };
 
-  const recoveries = data.slice(1).filter(r => {
-    if (userId && String(r[2]).trim() !== String(userId).trim()) return false;
-    if (evaluacionId && String(r[1]).trim() !== String(evaluacionId).trim()) return false;
+  const idCounts = Object.create(null);
+  data.slice(1).forEach(row => {
+    const id = String(row[0] || "").trim();
+    if (id) idCounts[id] = (idCounts[id] || 0) + 1;
+  });
+  const recoveries = data.slice(1).filter(row => {
+    const recoveryId = String(row[0] || "").trim();
+    if (!recoveryId || idCounts[recoveryId] !== 1 ||
+        String(row[2] || "").trim() !== targetUserId ||
+        !String(row[1] || "").trim()) return false;
+    if (p.evaluacionId && String(row[1]).trim() !== String(p.evaluacionId).trim()) return false;
     return true;
-  }).map(r => ({
-    recuperacionId: r[0],
-    evaluacionId: r[1],
-    userId: r[2],
-    notaOriginal: parseFloat(r[3]),
-    notaRecuperada: parseFloat(r[4]),
-    notaFinalCalculada: parseFloat(r[5]),
-    metodoAplicado: r[6],
-    autorizadoPor: r[7],
-    fecha: r[8] ? new Date(r[8]).toISOString() : null
-  }));
+  }).map(row => {
+    const original = Number(row[3]), recovered = Number(row[4]), finalGrade = Number(row[5]);
+    const registeredAt = row[8] ? new Date(row[8]) : null;
+    return {
+      recuperacionId: row[0], evaluacionId: row[1], userId: row[2],
+      notaOriginal: Number.isFinite(original) ? original : null,
+      notaRecuperada: Number.isFinite(recovered) ? recovered : null,
+      notaFinalCalculada: Number.isFinite(finalGrade) ? finalGrade : null,
+      metodoAplicado: row[6], autorizadoPor: row[7],
+      fecha: registeredAt && !isNaN(registeredAt.getTime()) ? registeredAt.toISOString() : null
+    };
+  });
 
   return { status: "success", data: recoveries };
 }
-
 function publishGradebookForContext(ss, targetGrado, targetSeccion, targetAsignatura) {
   try {
     const usuariosSheet = ss.getSheetByName("Usuarios");
