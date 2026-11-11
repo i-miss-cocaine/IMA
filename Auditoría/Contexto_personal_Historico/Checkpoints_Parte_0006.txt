@@ -1912,3 +1912,23 @@ C1.566 queda verificada y Completada en cobertura local. Solo se amplió la suit
 
 HEAD inicial: bcb218eff043f04860c06e476e236c4cef31b945. Rama: NG_beta_0.0.0.1_work. Rama base sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59. HEAD final: se confirma tras publicar este checkpoint.
 ===============================================================================
+
+
+===============================================================================
+## C1.568 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — añadir cobertura de revocación RBAC bajo ScriptLock en reviewPeriodGradebook.
+
+### Hallazgo y cambio
+- reviewPeriodGradebook valida RBAC antes de adquirir ScriptLock y vuelve a validarlo en getAuthorizedPeriodGradebookReviewContext_ dentro del lock, antes de abrir Sheets.
+- La suite dedicada cubría RBAC denegado inicialmente e identidad degradada durante la revalidación, pero su fixture RBAC estático no modelaba concesión→revocación.
+- El fixture ahora admite secuencia RBAC determinista; se agrega escenario [true, false] que ejecuta el handler real. Comprueba RESOURCE_NOT_AVAILABLE en la segunda comprobación, eventos [rbac, identity, lock, rbac], dos verificaciones RBAC, una identidad, lock adquirido/liberado, cero aperturas de Sheets y fila CierresPeriodos intacta.
+- Solo se modifica tests/security/exam-service-period-gradebook-review-security.test.js. Backend productivo, roles, permisos, scope y persistencia sin cambios.
+
+### Verificación / estado
+- Parseo sintáctico del test modificado: PASS.
+- Suite Node focalizada: NOT RUN en esta iteración; 29 escenarios internos previstos. Pendiente ejecución local.
+- CI y Apps Script/Sheets real: NOT RUN. BETA-EXAM-053 permanece Pendiente beta e incorpora la revocación RBAC.
+- TASK-153 / AUD-NG-386 continúa En ejecución hasta completar la verificación local pertinente.
+
+HEAD inicial: a23caa4b70894a334ccf0ae408b963ed075823ca. Rama: NG_beta_0.0.0.1_work. Rama base sin cambios esperada: 44d9891132332e692dbe2ba8602b41f50a508a59. HEAD final: se confirma tras publicar.
+===============================================================================

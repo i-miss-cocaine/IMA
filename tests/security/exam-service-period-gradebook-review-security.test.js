@@ -54,6 +54,8 @@ function fixture(options = {}) {
   const stats = { acquired: 0, released: 0, held: false, opens: 0, writes: 0, permissionChecks: 0, identityChecks: 0, events: [] };
   const actors = options.actors || [options.actor || { authorized: true, userId: "SEC-1", role: "Secretaría" }];
   let actorIndex = 0;
+  const permissionResults = options.permissionResults || [options.denied !== true];
+  let permissionIndex = 0;
   const scope = options.scope || { authorized: true, institutionId: "INST-1", institutionWide: true };
   const ss = { getSheetByName(name) {
     if (name === "CierresPeriodos") return closure;
@@ -65,7 +67,7 @@ function fixture(options = {}) {
       tryLock() { stats.events.push("lock"); stats.acquired++; if (options.timeout || stats.held) return false; stats.held = true; return true; },
       releaseLock() { stats.released++; stats.held = false; }
     }; }},
-    validateRolePermission() { stats.events.push("rbac"); stats.permissionChecks++; return { authorized: options.denied !== true }; },
+    validateRolePermission() { stats.events.push("rbac"); stats.permissionChecks++; return { authorized: permissionResults[Math.min(permissionIndex++, permissionResults.length - 1)] === true }; },
     getVerifiedExamIdentity_() { stats.events.push("identity"); stats.identityChecks++; return options.invalidIdentity ? { authorized: false } : actors[Math.min(actorIndex++, actors.length - 1)]; },
     getVerifiedExamDepartmentScope_() { return scope; },
     getSheetOrThrow(spreadsheet, name) {
@@ -252,6 +254,21 @@ test(() => {
 });
 
 
+
+test(() => {
+  const x = fixture({ permissionResults: [true, false] });
+  const before = x.closure.rows[1].slice();
+  assert.throws(() => x.call(), /RESOURCE_NOT_AVAILABLE/);
+  assert.deepEqual(x.stats.events, ["rbac", "identity", "lock", "rbac"]);
+  assert.equal(x.stats.permissionChecks, 2);
+  assert.equal(x.stats.identityChecks, 1);
+  assert.equal(x.stats.acquired, 1);
+  assert.equal(x.stats.released, 1);
+  assert.equal(x.stats.opens, 0);
+  assert.equal(x.stats.held, false);
+  assert.deepEqual(x.closure.rows[1], before);
+});
+
 test(() => {
   const x = fixture({ actors: [
     { authorized: true, userId: "SEC-1", role: "Secretaría" },
@@ -265,4 +282,4 @@ test(() => {
   assert.equal(x.stats.held, false);
   assert.equal(x.closure.rows[1][7], "PendienteRevision");
 });
-console.log("exam-service-period-gradebook-review-security: PASS (" + count + "/28)");
+console.log("exam-service-period-gradebook-review-security: PASS (" + count + "/29)");

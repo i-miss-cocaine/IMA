@@ -4134,3 +4134,11 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Estado:** C1.566 queda verificada y cerrada localmente. TASK-153 / AUD-NG-386 continúa En ejecución para el inventario EXAM restante.
 - **Alcance:** cambio exclusivo de prueba; el backend ya aplica la revalidación requerida, sin cambios productivos.
 - **Verificación:** el usuario confirmó la ejecución de la suite focalizada con `PASS (30/30)`. La suite Node contiene un archivo de prueba aprobado; versión de Node y resumen completo de Node no informados. Los 30 escenarios internos completaron, incluido permiso concedido en preflight y revocado bajo ScriptLock: RESOURCE_NOT_AVAILABLE, lock liberado, cero aperturas de Sheets y calificaciones intactas. CI y Apps Script/Sheets real: NOT RUN.
+
+
+### 10.217 TASK-153 / AUD-NG-386 — cubrir revocación RBAC bajo ScriptLock en reviewPeriodGradebook (C1.568)
+- **Brecha confirmada:** `reviewPeriodGradebook` valida `reviewPeriodGradebook` en preflight y vuelve a validar RBAC dentro de `getAuthorizedPeriodGradebookReviewContext_` después de adquirir ScriptLock. La suite dedicada cubría denegación inicial e identidad degradada bajo lock, pero el fixture mantenía RBAC estático y no representaba concesión seguida de revocación.
+- **Cobertura añadida:** el fixture admite una secuencia determinista de respuestas RBAC y agrega el caso `[true, false]` invocando el handler real. Exige `RESOURCE_NOT_AVAILABLE` en la segunda comprobación, eventos `[rbac, identity, lock, rbac]`, dos consultas RBAC, una consulta de identidad, lock adquirido/liberado, cero aperturas de Sheets y fila de CierresPeriodos intacta.
+- **Alcance:** cambio exclusivo de prueba; el backend ya revalida RBAC bajo lock antes de abrir Sheets. No se modifican permisos, roles, scope, persistencia ni lógica productiva.
+- **Verificación:** parseo sintáctico del test modificado PASS. Suite Node focalizada (29 escenarios internos): NOT RUN en esta iteración; pendiente ejecución local. CI y Apps Script/Sheets real: NOT RUN. BETA-EXAM-053 permanece Pendiente beta e incorpora el escenario.
+- **Estado:** C1.568 registra la ampliación de cobertura; TASK-153 / AUD-NG-386 continúa En ejecución hasta ejecutar la suite local pertinente.

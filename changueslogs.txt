@@ -1895,3 +1895,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Harness V8 focalizado PASS. Suite completa actual 27 escenarios y parseo Node 22 NOT RUN; Apps Script/Sheets real NOT RUN.
 - BETA-EXAM-054 actualizado y Pendiente beta. Sin cambios productivos; TASK-153 / AUD-NG-386 continúa abierta.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] C1.568 — TASK-153 / reviewPeriodGradebook: cobertura de revocación RBAC bajo lock
+- El fixture RBAC de la suite dedicada ahora acepta resultados secuenciales.
+- Añadido escenario concedido→revocado entre preflight y contexto bajo ScriptLock; verifica RESOURCE_NOT_AVAILABLE, lock liberado, cero aperturas de Sheets y CierresPeriodos intacto.
+- Parseo sintáctico PASS; suite focalizada de 29 escenarios pendiente ejecución local. CI y Apps Script/Sheets real NOT RUN.
+- BETA-EXAM-053 actualizado y Pendiente beta. Sin cambios productivos; TASK-153 / AUD-NG-386 continúa abierta.
+===============================================================================
