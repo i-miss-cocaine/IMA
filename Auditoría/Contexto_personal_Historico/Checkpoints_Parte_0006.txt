@@ -210,3 +210,10 @@ Subalcance de autorización previa al lock para updateExamStatus, updateExam y d
 Siguiente acción: verificar CI y continuar el inventario de wrappers/handlers restantes sin repetir los subalcances cerrados.
 HEAD final: pendiente de confirmación tras publicar.
 ===============================================================================
+
+
+### ADDENDUM DE VERIFICACIÓN — C1.516
+- GitHub Actions **43035256222**: **PASS** sobre `31559023dfd397143dd1c67319df993ada68196e`; job `exam-security-contracts` completado con éxito.
+- El step `Run node tests/security/exam-service-security-contract.test.js` ejecutó el contrato ampliado y finalizó **success**; los demás contratos EXAM del workflow también finalizaron success.
+- Parseo local de Code.gs y del contrato: PASS. Harness local focalizado sobre el wrapper exacto: **6/6 PASS**.
+- HEAD de implementación probado: `31559023dfd397143dd1c67319df993ada68196e`.

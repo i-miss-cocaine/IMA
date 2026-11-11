@@ -3731,7 +3731,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Corrección:** permiso e identidad se validan antes del lock; `getAuthorizedExamMutationContext_` revalida bajo el lock permiso, identidad, scope institucional/departamental, existencia única y ownership. `finally` conserva la liberación.
 - **Pruebas locales:** parseo de Code.gs y contrato Node PASS; harness focalizado del wrapper exacto 6/6 PASS (RBAC/identidad pre-lock, flujo autorizado/revalidación, rechazo contextual, liberación y timeout).
 - **Contrato completo local:** NOT RUN por ausencia de checkout/runtime local; el contrato está integrado en el workflow EXAM.
-- **CI:** pendiente de ejecutar/verificar tras el commit de implementación.
+- **CI:** workflow GitHub Actions 43035256222 PASS; job `exam-security-contracts` completado con éxito y el step `Run node tests/security/exam-service-security-contract.test.js` finalizó success.
 - **Beta:** Apps Script/Sheets real NOT RUN; no requerido para aprobación local del wrapper.
 - **Estado:** subalcance de metadatos EXAM corregido; TASK-153 / AUD-NG-386 sigue En ejecución por otras mutaciones.
 - **Siguiente:** verificar CI y continuar el inventario de rutas mutadoras EXAM restantes.
