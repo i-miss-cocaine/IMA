@@ -550,3 +550,14 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta. Suite local V8 aislada 17 escenarios PASS; regresiones C1.493 (12), C1.492 (27), read-endpoints y security-contract PASS; Node nativo/CI y Apps Script/Sheets real NOT RUN.
 - **Evidencia requerida:** commit/build desplegado, matriz de roles/scopes y tokens sintéticos, respuestas saneadas, snapshots de RubricasEvaluacion antes/después y evidencia de que la hoja ausente no se inicializa.
 ===============================================================================
+
+===============================================================================
+## BETA-EXAM-049 — TASK-153 / AUD-NG-386 / EXAM: saveEvaluationCategory
+- **Módulo/acción:** EXAM — saveEvaluationCategory y getEvaluationCategories; categorías de evaluación.
+- **Objetivo:** validar en Apps Script/Sheets desplegado que alta/edición requieren RBAC, identidad firmada, scope y ownership departamental, y que la lectura respeta el ámbito del actor.
+- **Precondiciones:** beta aislada; usuarios sintéticos Profesor/Administrador/Desarrollador con sesiones, RBAC y scopes válidos/denegados; categorías con ownership del mismo departamento, otro departamento e institución, ownership duplicado/inactivo y registros legados sin ownership; ResourceOwnership y CategoriasEvaluacion válidas/inválidas.
+- **Pasos:** probar sesión ausente/inválida, RBAC denegado, scope ausente, departamento no asignado, departamento ambiguo, timeout y concurrencia; crear categoría y verificar registro único en ambas hojas; editar categoría propia; intentar editar categoría ajena, legado o con ownership ambiguo; provocar fallo de append y verificar rollback; consultar desde distintos departamentos/instituciones y verificar filtrado; probar porcentaje inválido, ID duplicado y esquemas incompatibles.
+- **Resultado esperado:** solo actores autorizados crean/actualizan; cada alta persiste ownership y categoría consistente; el rollback elimina registros parciales; la lectura muestra solo recursos propios/en ámbito y conserva registros legados compartidos; errores fallan cerrados.
+- **Estado:** Pendiente beta. Mutación local aislada 17 escenarios PASS; lectura local 17 escenarios PASS; read-endpoints/security-contract PASS. Node nativo/CI y Apps Script/Sheets real NOT RUN.
+- **Evidencia requerida:** commit/build desplegado, matriz RBAC/scope, tokens sintéticos, snapshots de CategoriasEvaluacion y ResourceOwnership antes/después, casos de acceso cruzado y evidencia de rollback.
+===============================================================================
