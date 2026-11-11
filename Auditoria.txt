@@ -1496,3 +1496,13 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - Node nativo/CI y Apps Script/Sheets real: NOT RUN. BETA-EXAM-042 Pendiente beta.
 - TASK-153 permanece En ejecución; AUD-NG-386 abierto por otras lecturas del servicio.
 ===============================================================================
+
+===============================================================================
+## C1.489 — EXAM: seguridad de getCompetencyEvaluations (TASK-153 / AUD-NG-386)
+- Hallazgo: la lectura consultaba EvaluacionesCompetencias directamente, confiaba en userId/asignaturaId/periodoId del cliente, no validaba RBAC/identidad/ámbito ni usaba el ScriptLock; getOrCreateSheet podía crear una hoja durante la consulta. Un filtro userId omitido exponía registros de otros estudiantes.
+- Corrección: handler usa withAuthorizedExamRead_("getCompetencyEvaluations", ...), revalidando el permiso específico, identidad y ámbito bajo el ScriptLock compartido. Estudiante/Alumno solo consulta su propio userId firmado. Profesor requiere estudiante único, asignatura y periodo obligatorios, y una asignación exacta en ConfiguracionAcademica para su identidad firmada; asignaciones ambiguas se deniegan. Roles administrativos autorizados requieren scope institucional; cualquier otro rol se deniega en el worker.
+- Integridad/privacidad: la lectura no crea hojas ni escribe; IDs de evaluación vacíos/duplicados se excluyen; esquema incompatible falla cerrado; fechas heredadas inválidas se representan como null; se conserva el contrato status/total/data.
+- Verificación local: parseo V8 del backend PASS; harness V8 aislado de las funciones reales PASS (16 escenarios: aislamiento estudiante/IDOR, asignación docente exacta/ambigua, filtros requeridos, roles/scope, RBAC, timeout, snapshot post-lock, hoja ausente sin mutación, perfil duplicado, fecha inválida y esquema). Se añadió suite Node dedicada con 17 escenarios; runner Node nativo/CI NOT RUN en este entorno.
+- Apps Script/Sheets real NOT RUN. BETA-EXAM-043 Pendiente beta.
+- TASK-153 permanece En ejecución; AUD-NG-386 abierto por otras lecturas y requisitos del servicio EXAM.
+===============================================================================
