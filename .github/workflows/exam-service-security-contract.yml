@@ -16,6 +16,7 @@ on:
       - 'tests/security/exam-service-security-contract.test.js'
       - 'tests/security/exam-service-departmental-access.test.js'
       - 'tests/security/exam-service-read-endpoints-security.test.js'
+      - 'tests/security/exam-service-save-rubric-security.test.js'
       - '.github/workflows/exam-service-security-contract.yml'
 jobs:
   exam-security-contracts:
@@ -25,8 +26,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Run rubric mutation security regression
+        run: node tests/security/exam-service-save-rubric-security.test.js
       - run: node tests/security/exam-service-security-contract.test.js
       - run: node tests/security/exam-service-departmental-access.test.js
       - run: node tests/security/exam-service-read-endpoints-security.test.js
-      - name: Run rubric mutation security regression
-        run: node tests/security/exam-service-save-rubric-security.test.js
