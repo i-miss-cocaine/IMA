@@ -1319,10 +1319,18 @@ function simulateExamRescheduleUnlocked_(payload, context) {
 
 // [TAREA-F4-P1-08] [Fase 4: Propagación y Recuperación de Cambios de Seguridad] - Purga de cachés de seguridad local
 function purgeSecurityCaches(payload) {
-  const eventType = (payload && payload.eventType) || "GENERIC_PURGE";
-  const targetUserId = payload && payload.targetUserId;
-  const targetRole = payload && payload.targetRole;
-  const sessionId = payload && payload.sessionId;
+  const p = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
+  const permission = validateRolePermission("purgeSecurityCaches", p);
+  if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const actor = getVerifiedExamIdentity_(p);
+  if (!actor || actor.authorized !== true || !String(actor.userId || "").trim()) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
+
+  const eventType = String(p.eventType || "GENERIC_PURGE").trim();
+  const targetUserId = p.targetUserId;
+  const targetRole = p.targetRole;
+  const sessionId = p.sessionId;
 
   try {
     const cache = CacheService.getScriptCache();
@@ -1336,12 +1344,16 @@ function purgeSecurityCaches(payload) {
       cache.remove("dynamic_perms_" + targetRole);
     }
     if (sessionId) {
-      cache.remove("revoked_session_" + sessionId);
+      if (eventType === "SESSION_REVOKED") {
+        cache.put("revoked_session_" + sessionId, "REVOKED", 86400);
+      } else {
+        cache.remove("revoked_session_" + sessionId);
+      }
     }
     if (eventType === "SESSION_REVOKED" || eventType === "ACCOUNT_STATE_CHANGED") {
-      if (targetUserId && payload.accountState && payload.accountState !== "Activa") {
+      if (targetUserId && p.accountState && p.accountState !== "Activa") {
         cache.put("revoked_user_" + targetUserId, "REVOKED", 86400);
-      } else if (targetUserId && payload.accountState === "Activa") {
+      } else if (targetUserId && p.accountState === "Activa") {
         cache.remove("revoked_user_" + targetUserId);
       }
     }
