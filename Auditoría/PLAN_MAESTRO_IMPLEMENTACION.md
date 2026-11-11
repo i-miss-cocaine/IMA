@@ -4273,3 +4273,9 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Alcance:** fixture/contrato en `tests/security/exam-service-student-recovery-mutation-security.test.js`; backend productivo, reglas de cálculo, roles, scope y persistencia sin cambios. BETA-EXAM-068 actualizado.
 - **Verificación local:** parseo sintáctico de backend y contrato PASS; suite completa aislada V8 con shims compatibles **19/19 PASS**. CI Node.js 22 pendiente de observación tras commit. Apps Script/Sheets real NOT RUN; contención en infraestructura desplegada continúa Pendiente beta.
 - **Estado:** C1.582 Completada en verificación local; TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas EXAM.
+
+
+#### Addendum CI — C1.582
+- GitHub Actions run **43114100704**, commit `e99a72450d7fe4522ab881579f099dbb2dad702e`, workflow `Exam-Service security local contracts`: **SUCCESS** en Node.js 22.
+- Job `exam-security-contracts`: SUCCESS; paso `Run student recovery mutation security regression`: SUCCESS; cero pasos fallidos.
+- C1.582 Completada en verificación local y CI. BETA-EXAM-068 permanece Pendiente beta para contención en Apps Script/Sheets real.

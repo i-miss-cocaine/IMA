@@ -2296,3 +2296,12 @@ HEAD inicial: `4451fd9d161fc72afab08b2a09263ec363e0141e`. HEAD final: se confirm
 - Siguiente: revisar la siguiente ruta mutadora EXAM no cubierta por reentrada local equivalente, sin repetir cobertura.
 - HEAD inicial: `84943d81087540f6b202a6578e9a08f611fd6be5`; HEAD final: se confirma tras publicar.
 ===============================================================================
+
+
+===============================================================================
+### Addendum CI — C1.582
+- GitHub Actions run `43114100704`, commit de implementación/prueba `e99a72450d7fe4522ab881579f099dbb2dad702e`: workflow `Exam-Service security local contracts` **SUCCESS** en Node.js 22.
+- Job `exam-security-contracts` y paso `Run student recovery mutation security regression`: SUCCESS; cero pasos fallidos.
+- C1.582 **Completada en verificación local y CI**. BETA-EXAM-068 permanece Pendiente beta para contención desplegada.
+- HEAD inicial: `84943d81087540f6b202a6578e9a08f611fd6be5`; HEAD de implementación/pruebas: `e99a72450d7fe4522ab881579f099dbb2dad702e`; HEAD final documental: se confirma tras publicar.
+===============================================================================

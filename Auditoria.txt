@@ -2010,3 +2010,9 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Brecha:** el contrato cubría RBAC, identidad, scope, integridad, timeout y revocación, pero no una segunda solicitud durante la escritura de la recuperación exterior.
 - **Cambio:** hook sintético en appendRow intenta una segunda llamada al handler mientras ScriptLock sigue retenido. La solicitud anidada falla STUDENT_RECOVERY_MUTATION_LOCK_TIMEOUT; la exterior registra una sola recuperación, libera el lock y mantiene éxito.
 - **Verificación local:** parseo Code.gs/test PASS; suite V8 aislada **19/19 PASS**. Backend productivo sin cambios. CI pendiente; Apps Script/Sheets real NOT RUN. BETA-EXAM-068 actualizado y Pendiente beta.
+
+
+### Addendum CI — C1.582
+- GitHub Actions run **43114100704**, commit `e99a72450d7fe4522ab881579f099dbb2dad702e`: workflow completo SUCCESS en Node.js 22.
+- Job `exam-security-contracts` y paso `Run student recovery mutation security regression`: SUCCESS; cero pasos fallidos.
+- C1.582 Completada en cobertura local/CI. BETA-EXAM-068 continúa Pendiente beta.
