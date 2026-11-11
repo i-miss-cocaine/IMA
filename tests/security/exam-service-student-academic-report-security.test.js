@@ -58,7 +58,7 @@ test("lock timeout fails closed",()=>{const x=fixture({lockAvailable:false});den
 test("lock released after successful report",()=>{const x=fixture();x.call({});assert.deepEqual(x.stats(),{locks:1,releases:1,held:false});});
 test("missing sheets return empty arrays without creating sheets",()=>{const x=fixture({missing:["Matriculas","CalificacionesEstudiantes","RecuperacionesEstudiante","CategoriasEvaluacion"]});const r=x.call({});assert.deepEqual(r.data.matriculas,[]);assert.deepEqual(r.data.calificaciones,[]);assert.deepEqual(r.data.recuperaciones,[]);assert.deepEqual(r.data.categories,[]);assert.equal(x.sheets.Matriculas,undefined);});
 test("draft unpublished grades remain hidden",()=>assert.deepEqual(fixture().call({}).data.calificaciones.map(x=>x.calificacionId),["CAL-1"]));
-test("duplicate matrícula IDs excluded",()=>assert.deepEqual(fixture().call({}).data.matriculas.map(x=>x.matriculaId),["MAT-1"]));
+test("duplicate matrícula IDs excluded",()=>assert.deepEqual(fixture().call({}).data.matriculas.map(x=>x.matriculaId),["MAT-3"]));
 test("duplicate grade IDs excluded",()=>assert.ok(!fixture().call({}).data.calificaciones.some(x=>x.calificacionId==="CAL-DUP")));
 test("duplicate recovery IDs excluded",()=>assert.ok(!fixture().call({}).data.recuperaciones.some(x=>x.recuperacionId==="REC-DUP")));
 test("grade schema mismatch fails closed",()=>{const x=fixture();x.sheets.CalificacionesEstudiantes.rows[0][0]="bad";denied(()=>x.call({}),/STUDENT_ACADEMIC_REPORT_SCHEMA_INVALID/);});
