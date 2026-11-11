@@ -1326,3 +1326,38 @@ bulkApplyGradebookGrades usa el contrato de guardado protegido por withAuthorize
 ### Beta y continuidad
 BETA-EXAM-057 ya contempla bulkApplyGradebookGrades; se explicita la secuencia de identidad cambiante y la verificación de snapshot. Pendiente beta. Siguiente acción: ejecutar la suite dedicada y corregir cualquier fallo antes de cerrar C1.544.
 ===============================================================================
+
+
+===============================================================================
+C1.545 — TASK-153 / AUD-NG-386 / verificación local de bulkApplyGradebookGrades
+ID de sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-11
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial verificado: 4f34f0166803432fa0c54848c0fb784c398c1ecd
+Checkpoint anterior: C1.544
+
+### Alcance y resultado
+Se completa la verificación local pendiente del escenario añadido en C1.544 para comprobar la pérdida de userId entre el preflight y la revalidación contextual bajo ScriptLock al ejecutar el handler real bulkApplyGradebookGrades.
+
+### Verificaciones ejecutadas
+- Parseo sintáctico V8 de backend/exam-service/Code.gs: PASS.
+- Parseo sintáctico V8 de tests/security/exam-service-gradebook-bulk-apply-security.test.js: PASS.
+- Suite completa exam-service-gradebook-bulk-apply-security: 29/29 PASS, ejecutada en aislamiento V8 con shims compatibles para assert/fs/path/vm.
+- El escenario C1.544 confirma: identidad válida en preflight y userId compuesto por espacios en la segunda validación; RESOURCE_NOT_AVAILABLE; dos verificaciones de identidad; ScriptLock adquirido y liberado; cero aperturas de Sheets; snapshot completo de CalificacionesEstudiantes sin cambios.
+- Node 22 nativo/CI: NOT RUN.
+- Apps Script/Sheets real: NOT RUN; BETA-EXAM-057 permanece Pendiente beta.
+
+### Cambios y revisión
+- No se modificó código productivo, permisos, roles, scope ni persistencia durante esta iteración.
+- El escenario de prueba ya estaba incorporado en C1.544 y se conserva sin cambios.
+- Se actualizan únicamente el estado de la tarea y los registros de continuidad/seguimiento.
+
+### Estado
+C1.544 queda Completada: la verificación local pertinente fue ejecutada con PASS. TASK-153 / AUD-NG-386 continúa En ejecución para el inventario de mutaciones EXAM restantes. No se declara aprobada ninguna prueba Node 22, CI ni beta que no se haya ejecutado.
+
+### Siguiente acción exacta
+En la próxima iteración, continuar el inventario de handlers de mutación EXAM y seleccionar el siguiente handler sin cobertura equivalente de pérdida de identidad durante la revalidación bajo lock. No repetir C1.534–C1.545.
+
+HEAD final: se confirmará mediante la verificación Git posterior a la publicación de este checkpoint.
+===============================================================================

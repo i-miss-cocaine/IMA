@@ -1808,3 +1808,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se exige rechazo RESOURCE_NOT_AVAILABLE, lock liberado, cero aperturas de Sheets y calificaciones intactas.
 - Ejecución de suite/harness local NOT RUN; tarea permanece En ejecución. Node22/CI y Apps Script/Sheets real NOT RUN.
 - BETA-EXAM-057 incluye el escenario y sigue Pendiente beta.
+
+
+===============================================================================
+[2026-11-11] C1.545 — cierre de verificación local de bulkApplyGradebookGrades
+- Parseo V8 de Code.gs y de la suite PASS; suite dedicada completa 29/29 PASS en aislamiento V8 con shims.
+- El handler rechaza userId en blanco en la revalidación bajo lock; lock liberado, cero aperturas de Sheets y calificaciones intactas.
+- C1.544 queda Completada. Node22/CI y Apps Script/Sheets real NOT RUN; BETA-EXAM-057 sigue Pendiente beta.
+- Sin cambios productivos; siguiente paso: inventariar mutaciones EXAM restantes y seleccionar el próximo handler sin cobertura equivalente.
+===============================================================================

@@ -3983,7 +3983,9 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Hallazgo de cobertura:** la suite verificaba dos llamadas de identidad, pero usaba el mismo actor estable; no demostraba que el handler rechazara la pérdida de userId entre preflight y contexto bajo lock ni que preservara las notas.
 - **Estado:** cobertura local añadida al handler saveGradebookGrades; parseo sintáctico V8 de la suite PASS. La ejecución del harness funcional y de la suite completa no quedó acreditada en esta sesión; Node 22/CI tampoco se ejecutaron. Sin cambios productivos. Sin cambios productivos. TASK-153 / AUD-NG-386 continúa En ejecución para el inventario restante.
 
-### 10.197 TASK-153 / AUD-NG-386 — cubrir pérdida de identidad en bulkApplyGradebookGrades bajo lock (C1.544)
-- **Hallazgo:** la suite del handler bulkApplyGradebookGrades comprueba la doble verificación de identidad, pero usa una identidad estable; no cubre pérdida de userId entre preflight y revalidación dentro del lock.
+### 10.197 TASK-153 / AUD-NG-386 — cubrir pérdida de identidad en bulkApplyGradebookGrades bajo lock (C1.544; cierre C1.545)
+- **Hallazgo:** la suite del handler bulkApplyGradebookGrades comprobaba la doble verificación de identidad, pero usaba una identidad estable; no cubría pérdida de userId entre preflight y revalidación dentro del lock.
 - **Cambio:** se añadió un escenario a la suite dedicada con identidad válida en preflight y userId compuesto por espacios en la segunda verificación; exige rechazo, liberación del lock, cero aperturas de Sheets y snapshot íntegro de CalificacionesEstudiantes.
-- **Estado:** En ejecución. La prueba nueva está añadida, pero la suite/harness local aún no se han ejecutado. No se cierra hasta ejecutar la verificación local pertinente. Sin cambios productivos.
+- **Verificación local de cierre (C1.545):** parseo V8 de Code.gs y suite PASS; suite completa 29/29 PASS en aislamiento V8 con shims assert/fs/path/vm. El escenario confirma RESOURCE_NOT_AVAILABLE, dos verificaciones de identidad, lock liberado, cero aperturas de Sheets y calificaciones intactas.
+- **No ejecutado:** Node 22 nativo/CI y Apps Script/Sheets real. BETA-EXAM-057 permanece Pendiente beta.
+- **Estado:** Completada. Sin cambios productivos, permisos, roles, scope ni persistencia en el cierre de C1.544. TASK-153 / AUD-NG-386 continúa En ejecución para inventariar las mutaciones EXAM restantes.
