@@ -216,7 +216,7 @@ assert.equal(examRows.find(row => row[0] === "EXM-1")[7], "Inactivo");
 assert.throws(() => runtime.updateExamStatus({ sessionToken: "teacher-token", examenId: "EXM-1", estado: "Publicado" }),
   /EXAM_STATUS_INVALID/, "exam status only accepts supported active/inactive values");
 runtime.gradeExamSubmission({ sessionToken: "teacher-token", entregaId: "DEL-1", calificacion: 95, estado: "Calificado", comentario: "Revisado" });
-assert.equal(deliveryRows.find(row => row[0] === "DEL-1")[5], 95, "teacher can grade a submission for own exam");
+assert.equal(deliveryRows.find(row => row[0] === "DEL-1")[5], "95.00", "teacher can grade a submission for own exam using normalized two-decimal storage");
 assert.throws(() => runtime.gradeExamSubmission({ sessionToken: "teacher-token", entregaId: "DEL-2", calificacion: 0 }),
   /RESOURCE_NOT_AVAILABLE/, "teacher cannot grade a submission belonging to another department");
 assert.throws(() => runtime.gradeExamSubmission({ sessionToken: "teacher-token", entregaId: "DEL-1", examenId: "EXM-2", calificacion: 0 }),
