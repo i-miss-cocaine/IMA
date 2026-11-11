@@ -10,6 +10,7 @@ on:
       - 'tests/security/exam-service-save-rubric-security.test.js'
       - 'tests/security/exam-service-competency-evaluation-mutation-security.test.js'
       - 'tests/security/exam-service-student-recovery-mutation-security.test.js'
+      - 'tests/security/exam-service-submit-mutation-security.test.js'
       - 'tests/security/exam-service-period-gradebook-closure-security.test.js'
       - 'tests/security/exam-service-period-gradebook-submission-security.test.js'
       - 'tests/security/exam-service-period-gradebook-review-security.test.js'
@@ -35,6 +36,7 @@ on:
       - 'tests/security/exam-service-save-rubric-security.test.js'
       - 'tests/security/exam-service-competency-evaluation-mutation-security.test.js'
       - 'tests/security/exam-service-student-recovery-mutation-security.test.js'
+      - 'tests/security/exam-service-submit-mutation-security.test.js'
       - 'tests/security/exam-service-period-gradebook-closure-security.test.js'
       - 'tests/security/exam-service-period-gradebook-submission-security.test.js'
       - 'tests/security/exam-service-period-gradebook-review-security.test.js'
@@ -60,6 +62,8 @@ jobs:
         run: node tests/security/exam-service-competency-evaluation-mutation-security.test.js
       - name: Run student recovery mutation security regression
         run: node tests/security/exam-service-student-recovery-mutation-security.test.js
+      - name: Run exam submission mutation security regression
+        run: node tests/security/exam-service-submit-mutation-security.test.js
       - name: Run period gradebook submission security regression
         run: node tests/security/exam-service-period-gradebook-submission-security.test.js
       - name: Run period gradebook closure security regression

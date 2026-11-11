@@ -1471,6 +1471,12 @@ function purgeSecurityCaches(payload) {
 function submitExam(payload) {
   const permission = validateRolePermission("submitExam", payload);
   if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const actor = getVerifiedExamIdentity_(payload);
+  const role = String(actor && actor.role || "").trim();
+  if (!actor || actor.authorized !== true || !String(actor.userId || "").trim() ||
+      (role !== "Estudiante" && role !== "Alumno")) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(5000)) throw new Error("EXAM_SUBMISSION_LOCK_TIMEOUT");
   try {
@@ -1580,7 +1586,9 @@ function getVerifiedGuardianStudentIds_(ss, tutorUserId) {
 }
 function getExamReadContext_(payload, requestedStudentId) {
   const actor = getVerifiedExamIdentity_(payload);
-  if (!actor.authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
+  if (!actor || actor.authorized !== true || !String(actor.userId || "").trim()) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID), role = String(actor.role || "").trim();
   const studentActor = role === "Estudiante" || role === "Alumno";
   const guardianActor = ["Tutor", "Padre", "Responsable"].indexOf(role) !== -1;
