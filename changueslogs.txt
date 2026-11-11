@@ -1657,3 +1657,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Harness local focalizado del wrapper 7/7 PASS; suite dedicada 28/28 PASS en runner JavaScript aislado; parseo Code.gs y suite PASS. Checkout/Node local no disponible por DNS.
 - GitHub Actions workflow 43053113842 SUCCESS; suite dedicada 28/28 PASS en Node 22. Apps Script/Sheets real NOT RUN; BETA-EXAM-067 agregado.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] C1.527 — EXAM gradeExamSubmission / deleteExamSubmission
+- withAuthorizedExamSubmissionMutation_ exige actor firmado autorizado y userId no vacío antes de ScriptLock.
+- getAuthorizedExamSubmissionMutationContext_ revalida identidad completa antes de abrir Sheets; permisos, roles, ownership, auditoría y liberación del lock permanecen intactos.
+- Suite local aislada 26/26 PASS; parseo Code.gs y suite PASS. Node nativo local NOT RUN por indisponibilidad del checkout/DNS.
+- GitHub Actions workflow 43058558651 SUCCESS; suite dedicada 26/26 PASS en Node 22. Apps Script/Sheets real NOT RUN.
+===============================================================================
