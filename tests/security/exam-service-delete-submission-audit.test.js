@@ -197,4 +197,51 @@ test(() => {
   assert.ok(identityCheck >= 0 && spreadsheetOpen > identityCheck,
     "context must reject an empty signed userId before opening Sheets");
 });
+
+test(() => {
+  const context = extract("getAuthorizedExamSubmissionMutationContext_");
+  const examContext = extract("getAuthorizedExamMutationContext_");
+  const wrapper = extract("withAuthorizedExamSubmissionMutation_");
+  const handler = extract("gradeExamSubmission");
+  const events = [];
+  let identityCalls = 0, spreadsheetOpens = 0, deliveryReads = 0, writes = 0;
+  const deliverySheet = {
+    getDataRange() {
+      deliveryReads++;
+      events.push("delivery-read");
+      return { getValues() { return [["EntregaID","ExamenID","EstudianteID"], ["EEX-1","EXM-1","STU-1"]]; } };
+    },
+    getRange() { return { setValues() { writes++; } }; }
+  };
+  const ss = { getSheetByName(name) { events.push("sheet:" + name); return name === "EntregasExamen" ? deliverySheet : null; } };
+  const runtime = {
+    validateRolePermission(action) { events.push("permission:" + action); return { authorized: true }; },
+    getVerifiedExamIdentity_() {
+      identityCalls++;
+      events.push("identity:" + identityCalls);
+      return { authorized: true, userId: identityCalls < 3 ? "TEACHER-1" : "   ", role: "Profesor" };
+    },
+    LockService: { getScriptLock() { return {
+      tryLock() { events.push("lock-acquire"); return true; },
+      releaseLock() { events.push("lock-release"); }
+    }; } },
+    SpreadsheetApp: { openById() { spreadsheetOpens++; events.push("spreadsheet-open"); return ss; } },
+    SPREADSHEET_ID: "SYNTHETIC-SHEET",
+    getSheetOrThrow(sheet, name) { return sheet.getSheetByName(name); }
+  };
+  const executable = [examContext, context, wrapper, handler].join("\n");
+  const grade = new Function("runtime", "with (runtime) { " + executable + "; return gradeExamSubmission; }")(runtime);
+  let error;
+  try {
+    grade({ entregaId: "EEX-1", examenId: "EXM-1", calificacion: 90, estado: "Calificado" });
+  } catch (e) { error = e.message; }
+  assert.equal(error, "RESOURCE_NOT_AVAILABLE",
+    "nested exam ownership revalidation must reject an identity that becomes incomplete");
+  assert.equal(identityCalls, 3, "preflight, delivery context and nested exam context must each verify identity");
+  assert.equal(spreadsheetOpens, 1, "the nested context must reject before opening Sheets a second time");
+  assert.equal(deliveryReads, 1, "only the delivery lookup needed to resolve its exam may occur before nested revalidation");
+  assert.equal(writes, 0, "the rejected grade must not mutate the delivery");
+  assert.equal(events[events.length - 1], "lock-release", "the shared lock must be released after nested identity denial");
+});
+
 console.log("exam-service-delete-submission-audit: " + scenarios + "/" + scenarios + " PASS");

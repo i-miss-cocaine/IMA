@@ -1130,3 +1130,30 @@ El contrato de withAuthorizedExamMutation_ cubría identidad no autorizada duran
 ### Beta y continuidad
 BETA-EXAM-072 ya contiene el escenario equivalente y permanece Pendiente beta; Apps Script/Sheets real NOT RUN. TASK-153 / AUD-NG-386 continúa En ejecución. Siguiente iteración: continuar una sola unidad del inventario EXAM restante sin repetir C1.534–C1.537.
 ===============================================================================
+
+
+===============================================================================
+C1.538 — TASK-153 / AUD-NG-386 / revalidación anidada de identidad en mutaciones de entregas EXAM
+ID de sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-11
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: c80a0436ee307145be7cd1072d2db20cc17ada71
+
+### Alcance y hallazgo
+La suite de mutaciones de entrega cubría la identidad incompleta en el contexto de entrega, pero su wrapper de prueba sustituía el contexto productivo y no ejecutaba la revalidación anidada de getAuthorizedExamMutationContext_ después de resolver entregaId → examId.
+
+### Cambio
+- tests/security/exam-service-delete-submission-audit.test.js: nuevo escenario que ejecuta gradeExamSubmission, withAuthorizedExamSubmissionMutation_, getAuthorizedExamSubmissionMutationContext_ y getAuthorizedExamMutationContext_ reales con Sheets simulado.
+- Identidad sintética válida en preflight y contexto de entrega; userId de espacios en la tercera verificación anidada.
+- Se exige RESOURCE_NOT_AVAILABLE, una sola apertura/lectura necesaria para resolver la entrega, cero escrituras y liberación del ScriptLock.
+- Sin cambios en Code.gs, permisos, roles, ownership ni persistencia.
+
+### Verificación local
+- Parseo V8 de backend/exam-service/Code.gs: PASS.
+- Parseo V8 de la suite dedicada: PASS.
+- Harness V8 aislado del flujo real anidado: PASS; 3 verificaciones de identidad, 1 apertura de Sheets, 1 lectura de entrega, 0 escrituras y lock liberado.
+- Suite Node 22/CI sobre el nuevo commit: pendiente.
+
+### Beta y continuidad
+BETA-EXAM-073 agregado; pendiente beta para validar gradeExamSubmission/deleteExamSubmission con identidad que cambia antes de la revalidación anidada en Apps Script/Sheets real. TASK-153 / AUD-NG-386 continúa En ejecución. Siguiente iteración: continuar una sola unidad del inventario EXAM restante sin repetir C1.534–C1.538.
+===============================================================================

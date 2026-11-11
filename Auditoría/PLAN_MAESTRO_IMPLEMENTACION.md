@@ -3932,3 +3932,12 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Verificación local:** parseo V8 de Code.gs y del contrato PASS; harness V8 focalizado de la ruta TOCTOU PASS. Node 22/CI sobre el nuevo commit pendiente.
 - **Beta:** BETA-EXAM-072 ya contempla la pérdida de userId bajo lock; permanece Pendiente beta. Apps Script/Sheets real NOT RUN.
 - **Estado:** cobertura local añadida; TASK-153 / AUD-NG-386 continúa En ejecución para el inventario restante, sin modificar lógica productiva.
+
+
+### 10.191 TASK-153 / AUD-NG-386 — cubrir revalidación anidada de identidad en mutaciones de entregas EXAM (C1.538)
+- **Hallazgo de cobertura:** la suite dedicada verificaba identidad incompleta en el contexto de entrega, pero no ejercitaba la revalidación anidada de `getAuthorizedExamMutationContext_` después de resolver `entregaId → examId`. El harness anterior simulaba el contexto de forma aislada.
+- **Contrato productivo verificado:** `withAuthorizedExamSubmissionMutation_` mantiene RBAC/identidad antes de ScriptLock y libera el lock en `finally`; el contexto de entrega resuelve el examen y la revalidación anidada vuelve a exigir permiso e identidad antes de abrir una segunda hoja. No se detectó bypass ni mutación tras la denegación.
+- **Cambio:** la suite dedicada ejecuta el handler real `gradeExamSubmission`, wrapper y ambos contextos con identidad sintética válida en preflight/contexto de entrega y `userId` en blanco en el contexto anidado. Comprueba una sola apertura/lectura necesaria para resolver la entrega, cero escrituras y liberación del lock.
+- **Verificación local:** parseo V8 de Code.gs y del test PASS; harness V8 aislado de la ruta anidada PASS (3 verificaciones de identidad, RESOURCE_NOT_AVAILABLE, 1 apertura/lectura, 0 escrituras, lock liberado). Suite Node 22/CI sobre el nuevo commit pendiente.
+- **Beta:** BETA-EXAM-073 agregado para confirmar el mismo escenario en gradeExamSubmission/deleteExamSubmission sobre Apps Script/Sheets desplegado; Pendiente beta.
+- **Estado:** cobertura local añadida; sin cambios productivos, permisos ni roles. TASK-153 / AUD-NG-386 continúa En ejecución para el inventario EXAM restante.

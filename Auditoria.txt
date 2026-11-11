@@ -1858,3 +1858,11 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Cambio:** nuevo escenario de identidad alternada y aserción estática de userId.trim() antes de SpreadsheetApp.openById; no se modifica lógica productiva.
 - **Verificación:** parseo V8 de Code.gs y contrato PASS; harness focalizado PASS con rechazo, ausencia de mutación y liberación del lock. Node 22/CI del nuevo commit pendiente.
 - **Beta:** BETA-EXAM-072 ya contempla el escenario y sigue Pendiente beta; Apps Script/Sheets real NOT RUN.
+
+
+### C1.538 — AUD-NG-386 / revalidación anidada de identidad en mutaciones de entregas EXAM
+- **Hallazgo:** la suite dedicada sustituía el contexto de entrega y no ejecutaba la tercera verificación de identidad realizada por getAuthorizedExamMutationContext_ al resolver el examen.
+- **Cambio:** prueba focalizada ejecuta el handler gradeExamSubmission, wrapper y contextos productivos con identidad válida en las dos primeras verificaciones y userId en blanco en la revalidación anidada.
+- **Resultado:** RESOURCE_NOT_AVAILABLE antes de la segunda apertura de Sheets y antes de cualquier escritura; una lectura de entrega para resolver examId; ScriptLock liberado. No se detectó defecto productivo.
+- **Verificación:** parseo V8 de Code.gs y suite PASS; harness V8 focalizado PASS. Node 22/CI posterior pendiente.
+- **Beta:** BETA-EXAM-073 Pendiente beta.
