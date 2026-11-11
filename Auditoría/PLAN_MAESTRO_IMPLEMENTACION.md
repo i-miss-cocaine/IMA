@@ -3507,7 +3507,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Corrección:** retirado de PUBLIC_ACTIONS. El endpoint valida RBAC, identidad firmada, rol permitido y scope institucional/departamental bajo ScriptLock, conservando los permisos RBAC existentes de profesores, estudiantes, tutores/responsables y roles institucionales.
 - **Lectura/integridad:** getSheetByName sin creación; hoja ausente/vacía devuelve status/data vacío; valida cinco encabezados, excluye IDs vacíos/duplicados y registros eliminados, conserva filtro por asignatura y falla cerrado ante JSON de criterios inválido.
 - **Límite explícito:** el esquema RubricasEvaluacion y saveRubric no contienen ownership institucional/departamental; el catálogo permanece compartido conforme al contrato legado. La segregación por institución requiere una tarea de evolución del modelo, no se simula con el scope del endpoint.
-- **Pruebas locales:** parseo V8 PASS; suite aislada 16 escenarios PASS; regresiones C1.493 12 y C1.492 27 PASS. Node nativo/CI/Apps Script real NOT RUN.
+- **Pruebas locales:** parseo V8 PASS; suite aislada 17 escenarios PASS; regresiones C1.493 12, C1.492 27, read-endpoints y security-contract PASS. Node nativo/CI/Apps Script real NOT RUN.
 - **Beta:** BETA-EXAM-048 Pendiente beta; no bloquea cierre local.
 - **Estado:** subalcance completado; TASK-153 permanece En ejecución y AUD-NG-386 abierto por otras lecturas EXAM.
 - **Siguiente:** identificar la siguiente lectura EXAM pendiente dentro de TASK-153 y auditar su autorización/efectos laterales en una iteración independiente.
