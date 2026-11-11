@@ -2882,29 +2882,112 @@ function closePeriodGradebookUnlocked_(c) {
 }
 
 function submitGradebookForReview(payload) {
-  const { anoId, periodoId, grado, seccion, asignatura, profesorId, notasPendientesCount } = payload || {};
-  if (!grado || !asignatura || !periodoId) throw new Error("Grado, Asignatura y Período son requeridos.");
+  return withAuthorizedPeriodGradebookSubmission_(payload, context =>
+    submitGradebookForReviewUnlocked_(context));
+}
 
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "CierresPeriodos");
-  if (sheet.getLastRow() === 0) {
-    sheet.appendRow(["CierreID", "AnoID", "PeriodoID", "Grado", "Seccion", "Asignatura", "ProfesorID", "Estado", "FechaCierre"]);
+function withAuthorizedPeriodGradebookSubmission_(payload, mutation) {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) throw new Error("GRADEBOOK_SUBMISSION_LOCK_TIMEOUT");
+  try {
+    return mutation(getAuthorizedPeriodGradebookSubmissionContext_(payload));
+  } finally {
+    try { lock.releaseLock(); } catch (_) {}
+  }
+}
+
+function getAuthorizedPeriodGradebookSubmissionContext_(payload) {
+  const p = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
+  // El esquema académico no ofrece una fuente canónica de año; se conserva el
+  // identificador legado fijo y no se acepta uno suministrado por el cliente.
+  const anoId = "ANO-CURRENT";
+  const periodoId = String(p.periodoId || "").trim();
+  const grado = String(p.grado || "").trim();
+  const seccion = String(p.seccion || "").trim();
+  const asignatura = String(p.asignatura || "").trim();
+  if (!periodoId || periodoId.length > 120 || !grado || grado.length > 120 ||
+      !seccion || seccion.length > 80 || !asignatura || asignatura.length > 160) {
+    throw new Error("GRADEBOOK_SUBMISSION_REQUIRED_CONTEXT_INVALID");
   }
 
-  const cierreId = "REV-" + Date.now();
-  const now = new Date();
+  const permission = validateRolePermission("submitGradebookForReview", p);
+  if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const actor = getVerifiedExamIdentity_(p);
+  if (!actor || actor.authorized !== true || !String(actor.userId || "").trim() ||
+      String(actor.role || "").trim() !== "Profesor") {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
 
-  sheet.appendRow([cierreId, anoId || "ANO-CURRENT", periodoId, grado, seccion || "A", asignatura, profesorId || "Docente", "PendienteRevision", now]);
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const scope = getVerifiedExamDepartmentScope_(p, ss, actor);
+  if (!scope || scope.authorized !== true || !String(scope.institutionId || "").trim() ||
+      !Array.isArray(scope.departmentIds) ||
+      !scope.departmentIds.some(id => String(id || "").trim())) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
 
+  const config = getSheetOrThrow(ss, "ConfiguracionAcademica").getDataRange().getValues();
+  const configHeaders = ["ID", "Fecha", "Parcial", "Grado", "Sección", "Asignatura", "Unidad", "Tema", "profesorId"];
+  if (!config.length || configHeaders.some((header, index) =>
+    String(config[0][index] || "").trim() !== header)) {
+    throw new Error("GRADEBOOK_SUBMISSION_ASSIGNMENT_SCHEMA_INVALID");
+  }
+  const assignedTeacherId = String(actor.userId).trim();
+  const assignmentRows = config.slice(1).filter(row =>
+    normalizeString(row[2]) === normalizeString(periodoId) &&
+    normalizeString(row[3]) === normalizeString(grado) &&
+    normalizeString(row[4]) === normalizeString(seccion) &&
+    normalizeString(row[5]) === normalizeString(asignatura));
+  if (!assignmentRows.length || assignmentRows.some(row =>
+    String(row[8] || "").trim() !== assignedTeacherId)) {
+    throw new Error("GRADEBOOK_SUBMISSION_ASSIGNMENT_UNVERIFIED");
+  }
+
+  const sheet = ss.getSheetByName("CierresPeriodos");
+  const closureHeaders = ["CierreID", "AnoID", "PeriodoID", "Grado", "Seccion", "Asignatura", "ProfesorID", "Estado", "FechaCierre"];
+  if (sheet) {
+    const data = sheet.getDataRange().getValues();
+    if (data.length && closureHeaders.some((header, index) =>
+      String(data[0][index] || "").trim() !== header)) {
+      throw new Error("GRADEBOOK_SUBMISSION_SCHEMA_INVALID");
+    }
+    const sameContext = data.slice(1).filter(row =>
+      normalizeString(row[1]) === normalizeString(anoId) &&
+      normalizeString(row[2]) === normalizeString(periodoId) &&
+      normalizeString(row[3]) === normalizeString(grado) &&
+      normalizeString(row[4]) === normalizeString(seccion) &&
+      normalizeString(row[5]) === normalizeString(asignatura));
+    if (sameContext.some(row =>
+      ["PendienteRevision", "Aprobado", "Cerrado"].indexOf(String(row[7] || "").trim()) !== -1)) {
+      throw new Error("GRADEBOOK_SUBMISSION_ALREADY_EXISTS");
+    }
+  }
+
+  return { ss, sheet, closureHeaders, anoId, periodoId, grado, seccion, asignatura, actor };
+}
+
+function submitGradebookForReviewUnlocked_(context) {
+  const sheet = context.sheet || getOrCreateSheet(context.ss, "CierresPeriodos");
+  if (!context.sheet || sheet.getLastRow() === 0) sheet.appendRow(context.closureHeaders);
+  const existing = sheet.getDataRange().getValues();
+  const cierreId = "REV-" + String(Utilities.getUuid() || "").trim();
+  if (cierreId === "REV-" || existing.slice(1).some(row =>
+    String(row[0] || "").trim() === cierreId)) {
+    throw new Error("GRADEBOOK_SUBMISSION_ID_COLLISION");
+  }
+
+  sheet.appendRow([
+    cierreId, context.anoId, context.periodoId, context.grado, context.seccion,
+    context.asignatura, String(context.actor.userId).trim(), "PendienteRevision", new Date()
+  ]);
   return {
     status: "success",
     cierreId,
     estado: "PendienteRevision",
-    notasPendientesCount: notasPendientesCount || 0,
-    message: `Libro de notas de ${asignatura} (${grado} ${seccion || 'A'}) enviado a revisión de Secretaría/Dirección.`
+    message: "Libro de notas de " + context.asignatura + " (" + context.grado + " " +
+      context.seccion + ") enviado a revisión de Secretaría/Dirección."
   };
 }
-
 function reviewPeriodGradebook(payload) {
   return withAuthorizedPeriodGradebookReview_(payload, context =>
     reviewPeriodGradebookUnlocked_(payload, context));

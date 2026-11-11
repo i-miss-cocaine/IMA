@@ -609,3 +609,15 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta. Harness V8 local 23/23 PASS; regresión closePeriodGradebook 16/16 PASS; security-contract PASS; CI NOT CONFIRMED; Apps Script/Sheets real NOT RUN.
 - **Evidencia requerida:** build/commit desplegado, tokens sintéticos, scopes, configuración académica, snapshots antes/después de CierresPeriodos y CalificacionesEstudiantes, evidencia de denegaciones y concurrencia.
 ===============================================================================
+
+
+===============================================================================
+## BETA-EXAM-054 — TASK-153 / AUD-NG-386 / EXAM: submitGradebookForReview
+- **Módulo/acción:** EXAM — submitGradebookForReview y creación de registros PendienteRevision.
+- **Objetivo:** comprobar en Apps Script/Sheets desplegado que solo el profesor autenticado con scope departamental activo y asignación exacta puede enviar el libro de notas a revisión; la identidad del profesor y el contexto persistido no dependen de identificadores manipulables del cliente.
+- **Precondiciones:** beta aislada; tokens sintéticos de Profesor, Administrador, Secretaría y Estudiante; asignaciones de ConfiguracionAcademica coincidentes, ausentes, duplicadas/conflictivas y de otro profesor; scopes departamentales activos, ausentes y vencidos; CierresPeriodos inexistente, vacío, con esquema válido/inválido y registros PendienteRevision/Aprobado/Observado/Cerrado.
+- **Pasos:** probar sesión ausente/expirada, RBAC denegado, roles no permitidos y scope ausente; alterar profesorId, anoId y notasPendientesCount; enviar contexto incompleto, asignación ajena o conflictiva; probar hoja ausente/esquema inválido, envío repetido, reenvío tras Observado, colisión de ID, timeout y solicitudes concurrentes; capturar CierresPeriodos antes/después.
+- **Resultado esperado:** solo Profesor autenticado y asignado puede crear una fila; ProfesorID deriva de la sesión, AnoID usa ANO-CURRENT, no se confía en notasPendientesCount; no hay escrituras ante denegación/error; no se duplican solicitudes activas/aprobadas/cerradas y el lock se libera.
+- **Estado:** Pendiente beta. Harness V8 local aislado 21/21 PASS; CI pendiente de confirmación; Apps Script/Sheets real NOT RUN.
+- **Evidencia requerida:** commit/build desplegado, tokens y scopes sintéticos, asignaciones académicas, snapshots antes/después de CierresPeriodos, evidencia de denegaciones, duplicidad, reenvío y concurrencia.
+===============================================================================

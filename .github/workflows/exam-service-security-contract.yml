@@ -11,6 +11,7 @@ on:
       - 'tests/security/exam-service-competency-evaluation-mutation-security.test.js'
       - 'tests/security/exam-service-student-recovery-mutation-security.test.js'
       - 'tests/security/exam-service-period-gradebook-closure-security.test.js'
+      - 'tests/security/exam-service-period-gradebook-submission-security.test.js'
       - 'tests/security/exam-service-period-gradebook-review-security.test.js'
       - '.github/workflows/exam-service-security-contract.yml'
   pull_request:
@@ -24,6 +25,7 @@ on:
       - 'tests/security/exam-service-competency-evaluation-mutation-security.test.js'
       - 'tests/security/exam-service-student-recovery-mutation-security.test.js'
       - 'tests/security/exam-service-period-gradebook-closure-security.test.js'
+      - 'tests/security/exam-service-period-gradebook-submission-security.test.js'
       - 'tests/security/exam-service-period-gradebook-review-security.test.js'
       - '.github/workflows/exam-service-security-contract.yml'
 jobs:
@@ -40,6 +42,8 @@ jobs:
         run: node tests/security/exam-service-competency-evaluation-mutation-security.test.js
       - name: Run student recovery mutation security regression
         run: node tests/security/exam-service-student-recovery-mutation-security.test.js
+      - name: Run period gradebook submission security regression
+        run: node tests/security/exam-service-period-gradebook-submission-security.test.js
       - name: Run period gradebook closure security regression
         run: node tests/security/exam-service-period-gradebook-closure-security.test.js
       - name: Run period gradebook review security regression

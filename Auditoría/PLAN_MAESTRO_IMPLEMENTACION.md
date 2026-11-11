@@ -3579,3 +3579,15 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Límite:** observaciones no se persisten porque CierresPeriodos carece de columna; se conserva solo el valor de respuesta legado. Publicación granular requiere evolución del esquema de calificaciones.
 - **Estado:** subalcance reviewPeriodGradebook completado con pruebas locales PASS; TASK-153 continúa En ejecución y AUD-NG-386 abierto.
 - **Siguiente:** auditar y proteger submitGradebookForReview, que crea los registros PendienteRevision que consume esta revisión.
+
+
+### 10.153 TASK-153 / AUD-NG-386 — autorización y creación de submitGradebookForReview (C1.501)
+
+- **Hallazgo:** submitGradebookForReview creaba registros PendienteRevision sin RBAC, identidad firmada, scope ni asignación docente; confiaba en profesorId, anoId y notasPendientesCount enviados por el cliente, creaba la hoja antes de autorizar y generaba IDs con Date.now sin protección frente a concurrencia o duplicados.
+- **Corrección:** wrapper ScriptLock con timeout/liberación; validación RBAC, identidad firmada y allowlist exclusiva Profesor; scope institucional activo con al menos un departamento; asignación exacta en ConfiguracionAcademica por período/grado/sección/asignatura y coincidencia de todas las filas con el usuario autenticado. ProfesorID se deriva de la sesión; se ignoran profesorId, anoId y notasPendientesCount del cliente. AnoID conserva el sentinel legado ANO-CURRENT por ausencia de año académico canónico en ConfiguracionAcademica.
+- **Persistencia:** esquema CierresPeriodos validado; no se crea hoja antes de autorizar; se bloquean solicitudes PendienteRevision/Aprobado/Cerrado para el mismo contexto, permitiendo reenvío tras Observado; ID REV-UUID con detección de colisión; escritura serializada.
+- **Pruebas locales:** harness aislado de la implementación 21/21 PASS; incluye RBAC/roles, identidad, scope departamental, contexto requerido, asignación ausente/conflictiva, esquema, duplicidad, reenvío Observado, hoja ausente, spoofing de profesor/año, timeout, liberación y reentrada concurrente.
+- **CI/beta:** workflow EXAM ampliado para ejecutar la suite dedicada; CI pendiente de ejecución/verificación tras publicar. Apps Script/Sheets real NOT RUN; BETA-EXAM-054 Pendiente beta.
+- **Límite:** ConfiguracionAcademica no contiene DepartmentID ni AnoID; la verificación puede exigir un scope departamental activo y asignación docente exacta, pero no correlacionar directamente cada asignación con un departamento ni derivar el año académico real. No se inventa esa relación ni se acepta el año del cliente.
+- **Estado:** subalcance de submitGradebookForReview completado localmente; TASK-153 continúa En ejecución y AUD-NG-386 permanece abierto por otras operaciones EXAM.
+- **Siguiente:** auditar reopenPeriodGradebook y sus efectos sobre CierresPeriodos como unidad independiente.
