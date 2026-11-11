@@ -798,3 +798,14 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta.
 - **Evidencia requerida:** trazas RBAC/identidad/Sheets/scope/lock, registros de Examenes/PreguntasExamen/ResourceOwnership y evidencia de rollback.
 ===============================================================================
+
+===============================================================================
+## BETA-EXAM-071 — TASK-153 / AUD-NG-386 / EXAM: identidad firmada completa en manageQuestionBank
+- **Módulo/rol:** Servicio EXAM; actor con permiso efectivo manageQuestionBank y ámbito departamental autorizado.
+- **Objetivo:** verificar en Apps Script/Sheets real que las operaciones crear/actualizar/eliminar del banco de preguntas rechazan identidades sin userId antes de abrir hojas y que la identidad se revalida bajo ScriptLock.
+- **Precondiciones:** versión beta desplegada; cuentas sintéticas con permiso manageQuestionBank, sesión firmada válida y sesiones incompletas; hojas BancoPreguntas y ResourceOwnership con esquemas vigentes.
+- **Pasos:** probar RBAC denegado, identidad no autorizada, userId ausente/blanco antes del lock; cambio de identidad entre preflight y contexto; alta válida con RegisteredBy completo; actualización y baja lógica con ownership consistente; fallo parcial y rollback.
+- **Resultado esperado:** identidad incompleta nunca llega a abrir Sheets ni a competir por el lock; la revalidación bajo lock falla cerrado y libera el lock; las mutaciones válidas conservan atribución y ownership.
+- **Estado:** Pendiente beta.
+- **Evidencia requerida:** trazas de permiso/identidad/lock/Sheets y filas de BancoPreguntas/ResourceOwnership, incluyendo RegisteredBy.
+===============================================================================

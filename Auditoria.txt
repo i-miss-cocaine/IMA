@@ -1809,3 +1809,10 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Verificación local:** parseo Code.gs PASS; harness sobre función productiva extraída 12/12 PASS.
 - **CI:** workflow 43062526177 SUCCESS; job 130668623026 SUCCESS; suite Node 22 12/12 PASS.
 - **Beta:** BETA-EXAM-070 Pendiente beta; Apps Script/Sheets real NOT RUN. TASK-153 / AUD-NG-386 permanece En ejecución por otras rutas EXAM.
+
+### C1.531 — AUD-NG-386 / manageQuestionBank
+- **Hallazgo alto corregido:** wrapper y contexto de manageQuestionBank aceptaban actor autorizado sin userId firmado no vacío, permitiendo alcanzar persistencia sin atribución completa.
+- **Corrección:** exigir actor presente, authorized === true y userId no vacío antes del lock y repetir la comprobación en contexto antes de abrir Sheets.
+- **Pruebas locales:** parseo Code.gs PASS; harness productivo extraído 4/4 PASS; suite existente ampliada con missing userId pre-lock/pre-Sheets y revalidación TOCTOU con liberación del lock.
+- **CI Node 22:** pendiente de ejecución tras publicar el cambio.
+- **Beta:** BETA-EXAM-071 Pendiente beta; Apps Script/Sheets real NOT RUN.

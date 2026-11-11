@@ -3876,3 +3876,11 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Suite Node 22:** exam-service-create-exam-security 12/12 PASS; workflow 43062526177 SUCCESS, job 130668623026 SUCCESS.
 - **Beta:** BETA-EXAM-070 Pendiente beta; Apps Script/Sheets real NOT RUN.
 - **Estado:** subalcance createExam corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras rutas EXAM.
+
+### 10.184 TASK-153 / AUD-NG-386 — identidad firmada completa en manageQuestionBank (C1.531)
+- **Hallazgo alto:** manageQuestionBank y su contexto de mutación comprobaban autorización de identidad, pero no exigían userId firmado no vacío. Una identidad incompleta podía alcanzar la mutación y registrar ownership sin atribución válida.
+- **Corrección:** el wrapper exige actor presente, authorized === true y userId no vacío antes de ScriptLock; getAuthorizedQuestionBankMutationContext_ repite la validación antes de abrir Sheets, preservando revalidación TOCTOU, RBAC, scope, ownership y rollback.
+- **Pruebas locales:** parseo Code.gs PASS; harness de wrappers productivos extraídos 4/4 PASS (userId ausente/blanco, identidad no autorizada y cambio de identidad entre preflight/contexto); suite question-bank ampliada con rechazo pre-lock/pre-Sheets y liberación del lock tras revalidación fallida.
+- **CI:** suite dedicada conectada al workflow existente; resultado Node 22 pendiente tras publicar el cambio.
+- **Beta:** BETA-EXAM-071 Pendiente beta; Apps Script/Sheets real NOT RUN.
+- **Estado:** subalcance manageQuestionBank corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras superficies EXAM.

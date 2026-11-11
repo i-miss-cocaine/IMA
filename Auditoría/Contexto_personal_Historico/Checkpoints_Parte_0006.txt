@@ -866,3 +866,42 @@ Completar validación de identidad firmada de createExam antes de abrir Sheets, 
 - Estado: subalcance createExam corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras rutas EXAM.
 - Siguiente acción: continuar inventario de mutadores EXAM no cubiertos, una sola operación en la siguiente iteración, conservando esta sesión.
 ===============================================================================
+
+===============================================================================
+C1.531 — TASK-153 / AUD-NG-386 / EXAM manageQuestionBank
+ID de sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-11
+HEAD inicial: 821fb9504e87095ac1857fa790235649a972158e
+Rama exclusiva: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 — HEAD 44d9891132332e692dbe2ba8602b41f50a508a59; sin escrituras.
+
+### Alcance
+Completar la identidad firmada de manageQuestionBank en el preflight y en el contexto revalidado bajo ScriptLock.
+
+### Hallazgo y corrección
+- withAuthorizedQuestionBankMutation_ comprobaba authorized === true pero no userId no vacío.
+- getAuthorizedQuestionBankMutationContext_ repetía el chequeo incompleto y podía abrir Sheets con actor sin userId.
+- Ambos puntos ahora exigen actor presente, authorized === true y String(userId).trim() no vacío.
+- Se conserva RBAC, scope departamental, ownership, operaciones de alta/actualización/baja lógica, rollback y revalidación TOCTOU.
+
+### Archivos modificados
+- backend/exam-service/Code.gs
+- tests/security/exam-service-question-bank-security.test.js
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- beta_test.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación
+- Parseo completo Code.gs: PASS.
+- Harness local de wrappers productivos extraídos: 4/4 PASS (userId ausente, userId blanco, identidad no autorizada, cambio de identidad entre preflight y contexto; no apertura de Sheets y liberación del lock).
+- Suite question-bank: ampliada con controles pre-lock/pre-Sheets y revalidación TOCTOU; CI Node 22 pendiente al publicar.
+- Apps Script/Sheets real: NOT RUN; BETA-EXAM-071 Pendiente beta.
+
+### Commits
+- Implementación y pruebas: 6aba8b7f0ac77cb681cb4ac38610d6d42a2267f8.
+- Documentación: se registra en commit posterior.
+- TASK-153 / AUD-NG-386 continúa En ejecución por otras superficies EXAM.
+===============================================================================
