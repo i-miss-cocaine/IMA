@@ -1726,3 +1726,57 @@ Revisión de consumidores: no se encontró llamada directa en js/exam.js, js/tea
 - Siguiente operación elegible: auditar saveStudentRecovery y sus efectos de escritura, identidad, RBAC, scope, asignación y persistencia en una iteración separada.
 - Rama base permanece sin cambios en 44d9891132332e692dbe2ba8602b41f50a508a59.
 ===============================================================================
+
+===============================================================================
+CHECKPOINT C1.498 — Protección de saveStudentRecovery
+Sesión: IMA-EXEC-20261110-1825Z-02.
+Fecha: 2026-11-11 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.497.
+HEAD inicial: 573117d6dddddf957e23a1b0545b3f7ca8c1cf9e.
+Commit implementación: 63f678a0a00479eb50bacf5b6d1d81cddf5da42a.
+Commit ajuste compatibilidad: d37c632e5a8f40346ce1a3bfa96c69c051fc0dee.
+Rama base: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+### Requisito y hallazgo
+TASK-153 / AUD-NG-386: proteger la escritura de recuperaciones académicas.
+La función original aceptaba userId, evaluacionId, notaOriginal, notaRecuperada y autorizadoPor del cliente; no validaba RBAC, identidad firmada, scope, perfil, asignación docente, contexto del cierre ni concurrencia. El consumidor js/teacher.js enviaba CAT-GLOBAL y omitía grado, sección, asignatura y período.
+
+### Implementación
+- saveStudentRecovery usa wrapper con ScriptLock, timeout cerrado, revalidación RBAC/identidad/scope bajo lock y liberación en finally.
+- Allowlist: Profesor y roles institucionales Administrador, Desarrollador, Dirección, Director y Secretaría. Roles institucionales requieren scope institutionWide; estudiantes, tutores y desconocidos quedan denegados.
+- Target debe tener perfil único Estudiante/Alumno y coincidir con grado/sección suministrados.
+- Profesor demuestra asignación exacta en ConfiguracionAcademica por período, grado, sección y asignatura; asignaciones ausentes o conflictivas se deniegan.
+- CierresPeriodos se valida con esquema esperado; período cerrado o registros ambiguos impiden la mutación.
+- Solo se admite el identificador global legado CAT-GLOBAL. La nota original se calcula en backend con las ponderaciones del libro docente (35/40/15/10); se ignoran notaOriginal y autorizadoPor del cliente y se usa la identidad firmada como autor.
+- Se validan nota 0–100, método permitido, esquemas de CalificacionesEstudiantes/RecuperacionesEstudiante, filas fuente duplicadas e historial previo. Recuperaciones anteriores válidas se incorporan al cálculo como hace el libro docente; historiales ambiguos o inválidos fallan cerrados.
+- La hoja de recuperaciones solo se crea después de autorizar y validar; ID UUID con control de colisión.
+- js/teacher.js transmite los filtros académicos activos y normaliza las opciones 1/2/3 a Sustitucion/Promedio/Mayor.
+
+### Archivos modificados
+1. backend/exam-service/Code.gs.
+2. js/teacher.js.
+3. tests/security/exam-service-student-recovery-mutation-security.test.js (14 escenarios).
+4. .github/workflows/exam-service-security-contract.yml.
+5. Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt (este checkpoint).
+6. Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md (sección 10.150).
+7. Auditoría/INDICE_CHECKPOINTS.md.
+8. changueslogs.txt.
+9. beta_test.txt (BETA-EXAM-051).
+
+### Verificación
+- Parseo V8 PASS para Code.gs, js/teacher.js y test dedicado.
+- Harness V8 aislado local: 14/14 PASS; incluye RBAC/identidad, roles, scope, perfil, asignación, cierres, validación de notas/métodos, historial previo, inicialización diferida, lock y colisión de ID.
+- GitHub Actions run 42958437047: saveRubric, saveCompetencyEvaluation, nueva suite saveStudentRecovery 12/12 y security-contract PASS. Workflow global FAIL en exam-service-departmental-access.test.js por ReferenceError: withAuthorizedExamRead_ is not defined.
+- GitHub Actions run 42958671205 tras ajuste de historial: saveStudentRecovery 14/14 y security-contract PASS; workflow global repite el mismo ReferenceError preexistente en departmental-access. Suites posteriores skipped por fail-fast.
+- No se ejecutó Apps Script/Sheets real ni entorno beta; BETA-EXAM-051 queda Pendiente beta.
+- Revisión del diff: cambios acotados a endpoint, consumidor docente, test y workflow; sin cambios en otros servicios.
+
+### Estado y continuidad
+- Subalcance saveStudentRecovery completado con verificación local y CI dedicada PASS.
+- TASK-153 continúa En ejecución; AUD-NG-386 permanece abierto por otras operaciones EXAM.
+- BETA-EXAM-051 Pendiente beta para validar asignación real, scope, cierre, cálculo/historial de recuperación y persistencia en Apps Script/Sheets.
+- Siguiente operación candidata: auditar closePeriodGradebook y sus efectos sobre CierresPeriodos/publicación de calificaciones.
+- Rama base permanece intacta en 44d9891132332e692dbe2ba8602b41f50a508a59.
+===============================================================================

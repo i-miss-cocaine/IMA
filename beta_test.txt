@@ -573,3 +573,15 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta. Harness V8 local aislado 21 escenarios PASS; GitHub Actions Node 22 21/21 PASS; Apps Script/Sheets real NOT RUN.
 - **Evidencia requerida:** commit/build desplegado, matriz de RBAC/scopes, tokens sintéticos, asignaciones de prueba, rúbricas/ownership, respuestas saneadas y snapshots de EvaluacionesCompetencias/ResourceOwnership antes/después.
 ===============================================================================
+
+ 
+===============================================================================
+## BETA-EXAM-051 — TASK-153 / AUD-NG-386 / EXAM: saveStudentRecovery
+- **Módulo/acción:** EXAM — saveStudentRecovery y consumidor del libro docente.
+- **Objetivo:** verificar en Apps Script/Sheets desplegado que la recuperación exige RBAC, identidad firmada, scope institucional, perfil único y asignación exacta; que respeta cierres y calcula la nota original desde el libro e historial previo.
+- **Precondiciones:** entorno beta aislado; cuentas sintéticas Profesor y roles institucionales; perfiles Estudiante/Alumno únicos, duplicados y ajenos; asignaciones coincidentes, ausentes y conflictivas; calificaciones CAT-1 a CAT-4; recuperaciones previas válidas, duplicadas e inválidas; cierres abiertos, cerrados y duplicados; hojas con esquemas válidos/inválidos.
+- **Pasos:** probar sesión ausente/expirada y RBAC denegado; intentar roles no permitidos y scope institucional no amplio; suplantar userId, notaOriginal y autorizadoPor; probar asignación exacta y cruzada; probar período cerrado/ambiguo; validar cálculo 35/40/15/10 y efecto de recuperación anterior; probar nota/método inválido, ID duplicado, esquema inválido, timeout y solicitudes concurrentes; capturar snapshots antes/después.
+- **Resultado esperado:** solo actor autorizado con scope y asignación correspondiente registra; el autor y nota original son derivados del servidor; cierres bloquean; historial previo válido se conserva en el cálculo; no hay escritura ante denegación/error y el lock se libera.
+- **Estado:** Pendiente beta. Harness V8 local 14/14 PASS; GitHub Actions run 42958671205 14/14 PASS; Apps Script/Sheets real NOT RUN.
+- **Evidencia requerida:** commit/build desplegado, matriz RBAC/scopes, tokens sintéticos, asignaciones, calificaciones y recuperaciones de prueba, snapshots de RecuperacionesEstudiante antes/después y evidencia de cierres/denegaciones.
+===============================================================================

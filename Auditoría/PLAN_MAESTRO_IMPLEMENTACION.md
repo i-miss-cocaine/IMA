@@ -3543,3 +3543,15 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Beta:** BETA-EXAM-050 Pendiente beta; Apps Script/Sheets real no ejecutado.
 - **Estado:** subalcance de seguridad completado; TASK-153 continúa En ejecución y AUD-NG-386 abierto.
 - **Siguiente:** auditar individualmente saveStudentRecovery, incluyendo autorización y persistencia.
+
+ 
+### 10.150 TASK-153 / AUD-NG-386 — autorización, integridad y persistencia de saveStudentRecovery (C1.498)
+
+- **Hallazgo:** saveStudentRecovery aceptaba target, evaluación, notas y autor del cliente; no validaba RBAC, identidad, scope, asignación ni cierre de período y permitía escrituras concurrentes. La UI no transmitía el contexto académico requerido.
+- **Corrección:** wrapper RBAC + identidad firmada + scope bajo ScriptLock; allowlist de Profesor/roles institucionales; target con perfil único Estudiante/Alumno; profesor exige asignación exacta por período/grado/sección/asignatura; roles institucionales exigen scope institutionWide; cierre coincidente o ambiguo bloquea.
+- **Integridad:** solo CAT-GLOBAL legado; nota original recalculada en servidor con pesos del libro docente e incluye recuperación anterior válida; se ignoran autor/nota original del cliente; método/nota/esquemas/historial/ID validados; hoja solo se crea tras autorización. UI envía filtros académicos y normaliza métodos.
+- **Pruebas locales:** parseo V8 Code.gs/teacher.js/test PASS; harness aislado 14/14 PASS.
+- **CI:** runs 42958437047 (12/12) y 42958671205 (14/14) para suite dedicada; security-contract PASS. Workflow global sigue FAIL por ReferenceError preexistente withAuthorizedExamRead_ en exam-service-departmental-access.test.js; no se modifica en esta tarea.
+- **Beta:** BETA-EXAM-051 Pendiente beta; Apps Script/Sheets real NOT RUN.
+- **Estado:** subalcance completado; TASK-153 sigue En ejecución y AUD-NG-386 abierto.
+- **Siguiente:** auditar individualmente closePeriodGradebook y sus efectos sobre CierresPeriodos/publicación de calificaciones.

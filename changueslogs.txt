@@ -1312,3 +1312,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Actions run 42949284319: saveRubric 17/17, saveCompetencyEvaluation 21/21 y security-contract PASS; suite global FAIL por ReferenceError preexistente withAuthorizedExamRead_ en departmental-access (también presente en runs anteriores). BETA-EXAM-050 Pendiente beta.
 - TASK-153 continúa En ejecución; siguiente operación: saveStudentRecovery.
 ===============================================================================
+
+ 
+===============================================================================
+[2026-11-11] C1.498 — IMA-EXEC-20261110-1825Z-02 — EXAM: protección de saveStudentRecovery
+- Escritura protegida por RBAC, identidad firmada, scope institucional y ScriptLock; target estudiante único y asignación docente exacta por grado/sección/asignatura/período.
+- Cierre cerrado o ambiguo bloquea. Nota original y autor se derivan en backend; se preserva el efecto de recuperaciones anteriores válidas; método/nota/esquemas/historial/ID se validan.
+- UI transmite contexto académico y normaliza método. Parseo V8 PASS; regresión aislada local 14/14 PASS; Actions 42958671205 14/14 PASS y security-contract PASS.
+- Workflow global FAIL por ReferenceError preexistente withAuthorizedExamRead_ en departmental-access. BETA-EXAM-051 Pendiente beta.
+===============================================================================
