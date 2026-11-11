@@ -5,11 +5,11 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.570**
+- Último checkpoint: **C1.585**
 - Última sesión: `IMA-EXEC-20261110-1825Z-02`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.570: **143183**
+- Caracteres del archivo activo tras C1.585: **177031**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 - Baseline lógico válido: **C1.316** (`31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`). C1.317–C1.382 se conservan, pero no se aceptan como evidencia de continuidad por corrección expresa del usuario.
@@ -514,3 +514,5 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.582 | IMA-EXEC-20261110-1825Z-02 | saveStudentRecovery: reentrada desde appendRow de RecuperacionesEstudiante; solicitud secundaria STUDENT_RECOVERY_MUTATION_LOCK_TIMEOUT; una sola recuperación, lock exterior liberado; V8 aislado 19/19 PASS; CI pendiente | PM-01 — TASK-153 / EXAM / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt — C1.582 | sección final | C1.581 | C1.582 Completada local/CI (run 43114100704 SUCCESS); BETA-EXAM-068 Pendiente beta |
 | C1.583 | IMA-EXEC-20261110-1825Z-02 | updateExamStatus: reentrada durante setValue; solicitud secundaria EXAM_MUTATION_LOCK_TIMEOUT; una sola transición/escritura, una apertura Sheets y lock exterior liberado; V8 aislado 19/19 PASS; CI run 43114753785 SUCCESS Node 22 | PM-01 — TASK-153 / EXAM / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt — C1.583 | sección final + addendum CI | C1.582 | C1.583 Completada local/CI; BETA-EXAM-084 Pendiente beta |
 | C1.584 | IMA-EXEC-20261110-1825Z-02 | updateExam: reentrada durante setValues; secundaria EXAM_MUTATION_LOCK_TIMEOUT; una sola escritura, una apertura Sheets y lock exterior liberado; V8 aislado 20/20 PASS; CI run 43115333376 SUCCESS Node 22 | PM-01 — TASK-153 / EXAM / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt — C1.584 | sección final + addendum CI | C1.583 | C1.584 Completada local/CI; BETA-EXAM-085 Pendiente beta |
+
+| C1.585 | IMA-EXEC-20261110-1825Z-02 | deleteExam: reentrada durante desactivación de ownership y actualización del Estado; ambas solicitudes secundarias EXAM_MUTATION_LOCK_TIMEOUT; dos escrituras exteriores, una apertura Sheets, lock liberado; V8 aislado 21/21 PASS | PM-01 — TASK-153 / EXAM / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt — C1.585 | sección final | C1.584 | backend sin cambios; CI pendiente; BETA-EXAM-086 Pendiente beta |

@@ -982,3 +982,14 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta; contrato local V8 aislado 20/20 PASS y GitHub Actions run 43115333376 SUCCESS (workflow completo, Node.js 22); Apps Script/Sheets real NOT RUN.
 - **Evidencia requerida:** commit desplegado, trazas saneadas de ambas solicitudes, conteo de adquisición/liberación del lock, lecturas/escrituras y snapshot antes/después de Examenes.
 ===============================================================================
+
+===============================================================================
+## BETA-EXAM-086 — TASK-153 / AUD-NG-386 / EXAM: contención reentrante de deleteExam en las dos escrituras de baja lógica
+- **Módulo/rol:** Servicio EXAM; Profesor con permiso deleteExam, identidad firmada, examen propio, scope departamental válido y sin entregas asociadas.
+- **Objetivo:** comprobar en Apps Script/Sheets desplegado que solicitudes deleteExam reentrantes durante la desactivación de ResourceOwnership y durante el cambio del Estado del examen no atraviesan el ScriptLock ni duplican la baja lógica.
+- **Precondiciones:** versión beta desplegada; examen sintético sin entregas, ResourceOwnership ACTIVE y Estado distinto de Eliminado; sesión firmada y asignación departamental; mecanismo controlado para intentar una solicitud secundaria desde cada una de las dos escrituras exteriores.
+- **Pasos:** invocar deleteExam; durante setValue de ResourceOwnership.Status intentar deleteExam anidado; continuar la solicitud exterior y durante setValue de Examenes.Estado intentar una segunda solicitud anidada; revisar respuestas, trazas RBAC/identidad/lock/Sheets y snapshots completos de ambas hojas.
+- **Resultado esperado:** ambas solicitudes anidadas terminan con EXAM_MUTATION_LOCK_TIMEOUT; la exterior desactiva una sola fila de ownership y marca una sola vez el examen como Eliminado; Sheets se abre una sola vez y ScriptLock se libera después de ambas escrituras. Repetir una eliminación individual válida para confirmar el flujo normal.
+- **Estado:** Pendiente beta; contrato local V8 aislado 21/21 PASS; CI Node.js 22 pendiente de observación; Apps Script/Sheets real NOT RUN.
+- **Evidencia requerida:** commit desplegado, trazas saneadas de las tres solicitudes, conteo de adquisiciones/liberaciones del lock, aperturas/lecturas/escrituras y snapshots completos de Examenes y ResourceOwnership antes/después.
+===============================================================================

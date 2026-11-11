@@ -4306,3 +4306,11 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - Job `exam-security-contracts` y paso `Run exam mutation security regression`: SUCCESS; 28/28 pasos del job completados sin fallos.
 - C1.584 Completada en verificación local y CI. BETA-EXAM-085 permanece Pendiente beta para Apps Script/Sheets desplegado.
 
+
+
+### 10.234 TASK-153 / AUD-NG-386 — contención reentrante en las dos escrituras de deleteExam (C1.585)
+- **Brecha confirmada:** deleteExam ejecuta una baja lógica de dos pasos bajo ScriptLock: primero ResourceOwnership.Status=INACTIVE y luego Examenes.Estado=Eliminado. Las pruebas existentes cubrían revocación RBAC y rollback, pero no una solicitud reentrante durante ninguna de esas escrituras.
+- **Cobertura añadida:** el contrato invoca deleteExam anidado desde ambos hooks setValue. Las dos solicitudes deben recibir EXAM_MUTATION_LOCK_TIMEOUT; la exterior completa exactamente las dos escrituras previstas, abre Sheets una sola vez y libera el lock.
+- **Alcance:** contrato local en tests/security/exam-service-exam-mutation-security.test.js; backend productivo sin cambios. BETA-EXAM-086 registra las dos ventanas de reentrada en Apps Script/Sheets desplegado.
+- **Verificación local:** parseo sintáctico de backend y contrato PASS; ejecución aislada V8 del contrato completo 21/21 PASS. CI Node.js 22 pendiente de observación tras commit. Apps Script/Sheets real NOT RUN.
+- **Estado:** C1.585 Completada en verificación local; TASK-153 / AUD-NG-386 continúa En ejecución para las rutas mutadoras EXAM restantes.

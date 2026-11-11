@@ -557,4 +557,33 @@ test(() => {
   assert.notEqual(JSON.stringify(examRows), snapshot);
 });
 
-process.stdout.write("exam-service-exam-mutation-security: " + passed + "/20 PASS\\n");
+test(() => {
+  const ownershipCheck = extractFunction("assertExamResourceOwnershipForScope_");
+  const context = extractFunction("getAuthorizedExamMutationContext_");
+  const wrapper = extractFunction("withAuthorizedExamMutation_");
+  const deleteWorker = extractFunction("deleteExamUnlocked_");
+  const deleteHandler = extractFunction("deleteExam");
+  const state = { permissionCalls: 0, identityCalls: 0, opens: 0, lockAttempts: 0, releases: 0, held: false, writes: 0, nestedErrors: [] };
+  const examRows = [["ID","Titulo","Asignatura","Grado","Seccion","FechaLimite","Tiempo","Estado","ProfesorID"],["EXAM-1","Examen","Matemáticas","10","A","","","Inactivo","TEACHER-1"]];
+  const ownershipRows = [["OwnershipID","InstitutionID","ResourceType","ResourceID","DepartmentID","Status","RegisteredBy","CreatedAt","UpdatedAt"],["OWN-1","I1","EXAMEN","EXAM-1","D1","ACTIVE","TEACHER-1","",""]];
+  const actor = { authorized: true, userId: "TEACHER-1", role: "Profesor" };
+  let remove;
+  function nested() { try { remove({ examenId: "EXAM-1" }); } catch (error) { state.nestedErrors.push(error.message); } }
+  const examSheet = { getDataRange() { return { getValues() { return examRows; } }; }, getRange(row,column) { return { setValue(value) { state.writes++; examRows[row-1][column-1]=value; nested(); } }; } };
+  const ownershipSheet = { getDataRange() { return { getValues() { return ownershipRows; } }; }, getRange(row,column) { return { setValue(value) { state.writes++; ownershipRows[row-1][column-1]=value; nested(); } }; } };
+  const deliveriesSheet = { getDataRange() { return { getValues() { return [["EntregaID","ExamenID"]]; } }; } };
+  const ss = { getSheetByName(name) { return ({ Examenes: examSheet, ResourceOwnership: ownershipSheet, EntregasExamen: deliveriesSheet })[name] || null; } };
+  const lock = { tryLock() { state.lockAttempts++; if (state.held) return false; state.held=true; return true; }, releaseLock() { state.releases++; state.held=false; } };
+  const runtime = { validateRolePermission() { state.permissionCalls++; return {authorized:true}; }, getVerifiedExamIdentity_() { state.identityCalls++; return actor; }, getVerifiedExamDepartmentScope_() { return {authorized:true,institutionId:"I1",departmentIds:["D1"]}; }, SpreadsheetApp:{openById(){state.opens++;return ss;}}, SPREADSHEET_ID:"SYNTHETIC", LockService:{getScriptLock(){return lock;}}, getSheetOrThrow(sheet,name){const value=sheet.getSheetByName(name);if(!value)throw Error("missing "+name);return value;}, EXAM_RESOURCE_OWNERSHIP_REQUEST_CACHE_:new WeakMap(), String, Error };
+  const executable = [ownershipCheck,context,wrapper,deleteWorker,deleteHandler].join("\n");
+  remove = new Function("runtime","with (runtime) { "+executable+"; return deleteExam; }")(runtime);
+  const result = remove({examenId:"EXAM-1"});
+  assert.deepEqual(result,{status:"success",message:"Examen eliminado."});
+  assert.deepEqual(state.nestedErrors,["EXAM_MUTATION_LOCK_TIMEOUT","EXAM_MUTATION_LOCK_TIMEOUT"]);
+  assert.equal(state.permissionCalls,4); assert.equal(state.identityCalls,4);
+  assert.equal(state.lockAttempts,3); assert.equal(state.releases,1); assert.equal(state.held,false);
+  assert.equal(state.opens,1); assert.equal(state.writes,2);
+  assert.equal(ownershipRows[1][5],"INACTIVE"); assert.equal(examRows[1][7],"Eliminado");
+});
+
+process.stdout.write("exam-service-exam-mutation-security: " + passed + "/21 PASS\\n");

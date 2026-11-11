@@ -2364,3 +2364,24 @@ HEAD inicial: `4451fd9d161fc72afab08b2a09263ec363e0141e`. HEAD final: se confirm
 - HEAD de implementación/pruebas: `230656e62f3d40d5d3e3588044608d2c274d8c5e`; cierre documental: commit posterior de esta actualización.
 ===============================================================================
 
+
+
+===============================================================================
+## C1.585 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — contención reentrante en las dos escrituras de deleteExam.
+
+### Hallazgo y corrección
+- deleteExam realiza baja lógica de dos pasos bajo ScriptLock: desactiva ResourceOwnership y luego cambia Examenes.Estado a Eliminado. Las pruebas anteriores cubrían revocación RBAC y rollback, pero no reentrada durante las escrituras.
+- Se añadió un escenario que invoca el handler real de forma anidada desde ambos hooks setValue. Las dos solicitudes secundarias reciben EXAM_MUTATION_LOCK_TIMEOUT; la exterior conserva la secuencia de baja lógica con exactamente dos escrituras, una apertura de Sheets y lock liberado.
+- Backend productivo sin cambios.
+
+### Verificación local
+- Parseo sintáctico de backend y contrato: PASS.
+- Ejecución del contrato completo en runtime V8 aislado con shims compatibles: **21/21 PASS**.
+- CI Node.js 22: pendiente de observación tras commit. Apps Script/Sheets real: NOT RUN; BETA-EXAM-086 Pendiente beta.
+
+### Estado y continuidad
+- C1.585 Completada en verificación local; TASK-153 / AUD-NG-386 continúa En ejecución.
+- Siguiente: inspeccionar la siguiente ruta mutadora EXAM no cubierta por reentrada local equivalente, sin repetir escenarios ya cubiertos.
+- HEAD inicial: `65a396c560b86e90693ebfdc74a952fc4fccbe01`; HEAD final: se confirma tras publicar.
+===============================================================================
