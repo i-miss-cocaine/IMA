@@ -1671,3 +1671,10 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Suite dedicada `exam-service-save-rubric-security.test.js`: 19/19 PASS ejecutada en V8 local mediante shim compatible con assert/fs/path/vm; incluye orden RBAC/identidad pre-lock, revalidación contextual y timeout.
 - Parseo completo de Code.gs y sintaxis del contrato: PASS. Harness productivo focalizado: 7/7 PASS.
 - Node 22 nativo NOT RUN. GitHub Actions y status checks para 70937df09f8dcae605a0bd63e7eb85e4fcb05375: NOT RUN/no se observó ejecución; no se declara PASS.
+
+
+### ADDENDUM FINAL DE VERIFICACIÓN — AUD-NG-386 saveRubric / C1.518
+- GitHub Actions workflow `43037336799` — **PASS**, HEAD probado `178e901275b84b28a3d6faa887e34d5445f02ced`, job `exam-security-contracts` completado con éxito.
+- Step `Run rubric mutation security regression`: SUCCESS; también SUCCESS los contratos EXAM generales, departmental-access y read-endpoints (23 pasos de pruebas).
+- La suite dedicada `exam-service-save-rubric-security.test.js` pasó en el workflow Node 22. La ejecución V8 local compatible permanece 19/19 PASS; Node 22 local NOT RUN.
+- HEAD de código/pruebas verificado: `178e901275b84b28a3d6faa887e34d5445f02ced`. Apps Script/Sheets real NOT RUN; beta no requerida para cerrar el subalcance.
