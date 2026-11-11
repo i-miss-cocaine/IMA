@@ -639,3 +639,57 @@ HEAD final: se verificará tras cierre documental.
 - Apps Script/Sheets real: NOT RUN; BETA-EXAM-055 continúa Pendiente beta.
 - Rama base `NG_beta_0.0.0.1` verificada sin modificaciones. HEAD final se registra después del cierre del checkpoint.
 ===============================================================================
+
+
+===============================================================================
+C1.526 — TASK-153 / AUD-NG-386 / EXAM rectifyStudentGrade
+ID de sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-11
+HEAD inicial: 324c4b216457f88ab63a8f64819e317c0fb539d3
+Rama exclusiva: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 — HEAD verificado 44d9891132332e692dbe2ba8602b41f50a508a59; sin escrituras.
+
+### Hallazgo y corrección
+- `withAuthorizedStudentGradeRectification_` adquiría ScriptLock antes de validar el permiso `rectifyStudentGrade` y la identidad firmada.
+- Se añadió preflight de RBAC, identidad autorizada, userId no vacío y allowlist contextual existente: Administrador, Desarrollador, Dirección, Director y Secretaría.
+- El contexto existente conserva la revalidación bajo lock de permiso, identidad, rol y scope `institutionWide`, además de unicidad de calificación, perfil estudiante, esquema e historial de auditoría.
+- No se ampliaron roles ni scopes y no se modificó la lógica de rectificación, persistencia o rollback.
+
+### Pruebas y verificaciones
+- Harness local focalizado sobre el wrapper productivo extraído: 7/7 PASS; denegaciones RBAC/identidad/userId/rol no adquieren lock ni ejecutan contexto; flujo autorizado revalida, timeout y liberación tras error.
+- Suite dedicada `exam-service-student-grade-rectification-security.test.js`: 28/28 PASS en runner JavaScript aislado con shims; parseo Code.gs y suite PASS. No se declara ejecución local nativa Node: checkout no disponible por fallo DNS al clonar.
+- GitHub Actions workflow `43053113842`: completed/success; job `exam-security-contracts` `130635301069` SUCCESS; step de rectificación SUCCESS, 28/28 PASS en Node 22. Las demás suites del workflow también SUCCESS.
+- Apps Script/Sheets real: NOT RUN; BETA-EXAM-067 permanece Pendiente beta.
+
+### Archivos modificados
+- backend/exam-service/Code.gs
+- tests/security/exam-service-student-grade-rectification-security.test.js
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- beta_test.txt
+
+### Commits
+- Implementación: `c6e779aeaa4ba367f6976d2f9b4acb8c822bbb14`.
+- Suite: `441783a3c9557bd354fff222cd2e32b4ea6ce8fa`.
+- Plan: `e95d900fa70ab5031df0226c0f7fd2ff6f0a7af9`.
+- Auditoría: `013136e4fe5c4d6bdbd79185eab244e00e11eb59`.
+- Changelog: `e987c5dd38d662195b3e4888efe9ce117bc5a0b7`.
+- Beta: `5f99576315a08ab1d158b4b641cb30b141d08178`.
+- Checkpoint e índice: commits posteriores; HEAD final pendiente de verificación.
+
+### Estado y continuidad
+Subalcance rectifyStudentGrade corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
+Siguiente: inspeccionar el siguiente wrapper mutador EXAM pendiente, una sola operación por iteración.
+===============================================================================
+
+
+===============================================================================
+### ADDENDUM FINAL DE VERIFICACIÓN — C1.526 / rectifyStudentGrade
+- GitHub Actions workflow `43053113842`: completed / success; job `exam-security-contracts` `130635301069` SUCCESS.
+- Suite `exam-service-student-grade-rectification-security`: 28/28 PASS en Node 22; step dedicado SUCCESS.
+- Harness focalizado local: 7/7 PASS; suite completa 28/28 PASS en runner aislado con shims; no se afirma Node nativo local.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-067 continúa Pendiente beta.
+===============================================================================
