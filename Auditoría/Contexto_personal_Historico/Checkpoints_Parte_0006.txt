@@ -1361,3 +1361,39 @@ En la próxima iteración, continuar el inventario de handlers de mutación EXAM
 
 HEAD final: se confirmará mediante la verificación Git posterior a la publicación de este checkpoint.
 ===============================================================================
+
+
+===============================================================================
+C1.546 — TASK-153 / AUD-NG-386 / saveEvaluationCategory: revalidación de identidad bajo lock
+ID de sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-11
+Repositorio: i-miss-cocaine/IMA
+Rama autorizada: NG_beta_0.0.0.1_work
+HEAD de partida: 2b08216d6fec1217f7dd0d378db584bb8f50308e (C1.545)
+Commits intermedios de esta unidad: 8b83eb1fe27b00f059760420572ba23b0d9e773d (escenario) y 9d2c907bf594d603e65e60a3e838f0820d0e4183 (corrección del extractor de pruebas).
+
+### Alcance y hallazgo
+Se seleccionó saveEvaluationCategory como siguiente mutación EXAM sin prueba específica de identidad válida en preflight y userId incompleto en la revalidación contextual dentro de ScriptLock. La función productiva ya revalida permiso e identidad y falla cerrada antes de abrir Sheets; faltaba evidencia local de ese comportamiento en el handler real.
+
+### Cambios
+- tests/security/exam-service-evaluation-category-mutation-security.test.js: fixture con secuencia de identidades y contador de verificaciones; escenario que degrada userId a espacios en la segunda verificación y exige RESOURCE_NOT_AVAILABLE, lock adquirido/liberado, cero aperturas de Sheets y snapshots intactos de CategoriasEvaluacion y ResourceOwnership.
+- Se corrigió el extractor de funciones de la suite: las comparaciones de escape y salto de línea usaban literales con escapes duplicados, lo que impedía terminar el análisis de funciones que contenían comentarios. Se ajustó el reconocimiento de \n y \\ para ejecutar correctamente el harness.
+- beta_test.txt / BETA-EXAM-049: se incorporó el escenario de identidad cambiante bajo lock y se actualizó el resultado local a 18 escenarios.
+- Sin cambios en backend/exam-service/Code.gs, permisos, roles, scope, contratos ni persistencia productiva.
+
+### Verificación local
+- Parseo V8 de backend/exam-service/Code.gs: PASS.
+- Parseo V8 de tests/security/exam-service-evaluation-category-mutation-security.test.js: PASS.
+- Suite completa exam-service-evaluation-category-mutation-security: 18/18 PASS en aislamiento V8 con shims assert/fs/path/vm.
+- Escenario nuevo: identidad válida en preflight; userId de espacios en revalidación; dos verificaciones; RESOURCE_NOT_AVAILABLE; ScriptLock adquirido y liberado; cero aperturas de Sheets; categorías y ownership sin cambios.
+- Node 22 nativo/CI: NOT RUN.
+- Apps Script/Sheets real: NOT RUN; BETA-EXAM-049 permanece Pendiente beta.
+
+### Estado y continuidad
+C1.546 completa la cobertura local de revalidación de identidad para saveEvaluationCategory. TASK-153 / AUD-NG-386 continúa En ejecución para mutaciones EXAM restantes. No se declara aprobado Node 22, CI ni beta. No se modificó código productivo.
+
+### Siguiente acción exacta
+Continuar el inventario de mutaciones EXAM sin cobertura equivalente; evaluar saveRubric y otras rutas de mutación de evaluación para identificar el siguiente handler elegible. No repetir C1.546 ni C1.534–C1.545.
+
+HEAD final: se confirmará después de publicar y verificar el commit de este checkpoint.
+===============================================================================

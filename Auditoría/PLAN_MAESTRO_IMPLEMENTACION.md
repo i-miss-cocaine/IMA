@@ -3989,3 +3989,11 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Verificación local de cierre (C1.545):** parseo V8 de Code.gs y suite PASS; suite completa 29/29 PASS en aislamiento V8 con shims assert/fs/path/vm. El escenario confirma RESOURCE_NOT_AVAILABLE, dos verificaciones de identidad, lock liberado, cero aperturas de Sheets y calificaciones intactas.
 - **No ejecutado:** Node 22 nativo/CI y Apps Script/Sheets real. BETA-EXAM-057 permanece Pendiente beta.
 - **Estado:** Completada. Sin cambios productivos, permisos, roles, scope ni persistencia en el cierre de C1.544. TASK-153 / AUD-NG-386 continúa En ejecución para inventariar las mutaciones EXAM restantes.
+
+
+### 10.198 TASK-153 / AUD-NG-386 — cubrir pérdida de identidad en saveEvaluationCategory bajo lock (C1.546)
+- **Hallazgo:** la mutación saveEvaluationCategory ya revalidaba permiso e identidad dentro de ScriptLock, pero la suite no ejercitaba el handler real con userId válido en preflight y vacío/espacios en la segunda validación.
+- **Cambio:** fixture con secuencia de identidades y prueba de regresión que exige RESOURCE_NOT_AVAILABLE, dos verificaciones, lock liberado, cero aperturas de Sheets y snapshots intactos de CategoriasEvaluacion y ResourceOwnership. Se corrigió además el extractor de funciones de la suite para procesar correctamente escapes y comentarios.
+- **Verificación local:** parseo V8 de Code.gs y suite PASS; suite completa 18/18 PASS en aislamiento V8 con shims assert/fs/path/vm.
+- **Beta:** BETA-EXAM-049 ampliado con el escenario; permanece Pendiente beta. Node 22 nativo/CI y Apps Script/Sheets real NOT RUN.
+- **Estado:** cobertura local completada; sin cambios productivos, permisos, roles, scope ni persistencia. TASK-153 / AUD-NG-386 continúa En ejecución para mutaciones EXAM restantes.
