@@ -33,7 +33,7 @@ function fixture(options = {}) {
     getDataRange() { return { getValues: () => this.rows.map(row => row.slice()) }; },
     getLastRow() { return this.rows.length; },
     appendRow(row) { if (options.failAuditAppend) throw new Error("audit append failed"); this.rows.push(row.slice()); calls.auditRows.push(row.slice()); },
-    getRange(row, col) { return { setValue(value) { if (options.failAuditUpdate) throw new Error("audit update failed"); this.rows[row - 1][col - 1] = value; calls.auditUpdates.push(value); } }; }
+    getRange(row, col) { return { setValue(value) { if (options.failAuditUpdate) throw new Error("audit update failed"); audit.rows[row - 1][col - 1] = value; calls.auditUpdates.push(value); } }; }
   };
   const delivery = {
     deleteRow() { calls.deleted++; if (options.failDelete) throw new Error("delete failed"); }
