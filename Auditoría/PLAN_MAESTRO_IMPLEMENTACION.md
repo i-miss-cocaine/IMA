@@ -4347,3 +4347,11 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - El paso `Run period gradebook closure security regression` ejecutó el contrato dedicado y registró `exam-service-period-gradebook-closure-security: PASS (22/22)`; el job completo `exam-security-contracts` terminó SUCCESS, incluidos los contratos generales y de acceso departamental.
 - Esta ejecución aislada en runner Node.js verifica código/fixtures sin despliegue ni infraestructura remota; satisface la verificación local del contrato. El clon local del agente no estuvo disponible por resolución DNS de github.com; no se afirma ejecución en shell local.
 - C1.588 **Completada en verificación local aislada y CI**. Apps Script/Sheets real NOT RUN; BETA-EXAM-089 permanece Pendiente beta.
+
+
+### 10.238 TASK-153 / AUD-NG-386 — contención reentrante de saveGradebookGrades durante setValues (C1.589)
+- **Brecha confirmada:** saveGradebookGrades adquiere ScriptLock y persiste el lote mediante setValues; el contrato existente cubría permisos, identidad, scope, timeout y revocación RBAC bajo lock, pero no una segunda solicitud reentrante durante la escritura exterior.
+- **Cobertura añadida:** el fixture intercepta setValues de CalificacionesEstudiantes e invoca el handler real de forma anidada. La secundaria debe recibir GRADEBOOK_SAVE_LOCK_TIMEOUT; la exterior conserva la nota solicitada, ejecuta una sola escritura, abre Sheets una vez y libera el lock.
+- **Alcance:** solo tests/security/exam-service-gradebook-save-security.test.js; backend productivo sin cambios. BETA-EXAM-090 registra la comprobación desplegada.
+- **Verificación local:** escenario añadido; ejecución aislada pendiente de CI tras commit. Apps Script/Sheets real NOT RUN.
+- **Estado:** C1.589 En ejecución hasta completar la verificación local aislada. TASK-153 / AUD-NG-386 continúa En ejecución.

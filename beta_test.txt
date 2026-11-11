@@ -1026,3 +1026,15 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta; contrato local aislado 22/22 PASS; GitHub Actions run 43119197178 SUCCESS en Node.js 22. Apps Script/Sheets real NOT RUN.
 - **Evidencia requerida:** commit desplegado, trazas saneadas de ambas solicitudes, adquisiciones/liberaciones del lock, aperturas de Sheets y snapshot de CierresPeriodos antes/después.
 ===============================================================================
+
+
+===============================================================================
+## BETA-EXAM-090 — TASK-153 / AUD-NG-386 / EXAM: contención reentrante de saveGradebookGrades durante setValues
+- **Módulo/rol:** Servicio EXAM; Profesor con permiso saveGradebookGrades, identidad firmada y asignación departamental verificadas; alternativamente rol institucional con scope institutionWide autorizado.
+- **Objetivo:** comprobar en Apps Script/Sheets desplegado que una segunda solicitud de guardado iniciada durante setValues no atraviesa ScriptLock ni duplica/sobrescribe la persistencia exterior.
+- **Precondiciones:** versión beta desplegada; período, asignatura, sección y roster válidos; calificación existente con esquema válido; actor autorizado y mecanismo controlado para intentar una segunda llamada durante setValues de CalificacionesEstudiantes.
+- **Pasos:** invocar saveGradebookGrades con una nota válida; durante setValues intentar saveGradebookGrades anidado para el mismo contexto y estudiante/categoría; revisar respuestas, trazas RBAC/identidad/lock/Sheets y snapshot completo de CalificacionesEstudiantes.
+- **Resultado esperado:** la solicitud secundaria termina con GRADEBOOK_SAVE_LOCK_TIMEOUT; la exterior persiste únicamente la nota solicitada, ejecuta una sola escritura, abre Sheets una sola vez y libera ScriptLock.
+- **Estado:** Pendiente beta; contrato local y CI por verificar tras el commit de C1.589. Apps Script/Sheets real NOT RUN.
+- **Evidencia requerida:** commit desplegado, trazas saneadas de ambas solicitudes, adquisiciones/liberaciones del lock, aperturas de Sheets, conteo de escrituras y snapshot de CalificacionesEstudiantes antes/después.
+===============================================================================

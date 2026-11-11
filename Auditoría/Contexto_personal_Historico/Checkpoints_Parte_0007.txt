@@ -71,3 +71,30 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - C1.588 Completada en verificación local aislada/CI. Apps Script/Sheets real NOT RUN; BETA-EXAM-089 Pendiente beta.
 - HEAD inicial de la iteración de verificación: 03d40c226c7d2761bc9fff73beac80fa4d59ff0a; HEAD final: se confirma tras commit documental.
 - Siguiente ruta candidata, sin implementar en este checkpoint: saveGradebookGrades, cuyo contrato actual no muestra prueba de reentrada durante sus escrituras (C1.579 cubrió revocación RBAC bajo lock).
+
+
+===============================================================================
+## C1.589 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — reentrada de saveGradebookGrades durante setValues.
+
+### Hallazgo y cambio
+- El contrato existente cubría revocación RBAC bajo lock, pero no reentrada durante la persistencia de CalificacionesEstudiantes.
+- Se añade un hook en setValues que intenta ejecutar saveGradebookGrades de forma anidada mientras el ScriptLock exterior permanece retenido.
+- Resultado esperado: secundaria GRADEBOOK_SAVE_LOCK_TIMEOUT; exterior persiste una sola nota mediante una escritura, abre Sheets una vez y libera el lock.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/exam-service-gradebook-save-security.test.js
+- beta_test.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Caso añadido al contrato; verificación aislada/CI pendiente tras commit.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-090 Pendiente beta.
+- C1.589 En ejecución hasta verificar el contrato local aislado.
+- HEAD inicial: a7c24bb6c9e2fc2eed91dbc991196229d236725c; HEAD final: se confirma tras publicar.
+===============================================================================

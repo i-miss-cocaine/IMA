@@ -2075,3 +2075,11 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - El contrato de cierre ejecutó el escenario reentrante y registró 22/22 PASS; job completo SUCCESS.
 - La ejecución Node.js aislada en CI verifica el código y fixtures sin despliegue, por lo que cuenta como verificación local. No se afirma ejecución desde shell local del agente (el clon no pudo resolver github.com).
 - C1.588 Completada en verificación local aislada/CI. Apps Script/Sheets real NOT RUN; BETA-EXAM-089 Pendiente beta.
+
+
+### C1.589 — AUD-NG-386 / saveGradebookGrades: contención reentrante durante setValues
+- **Brecha:** el contrato comprobaba autorización, identidad, scope, timeout y revocación RBAC bajo ScriptLock, pero no una segunda solicitud durante la escritura exterior de CalificacionesEstudiantes.
+- **Cambio:** el fixture intercepta setValues e invoca el handler real de forma anidada. La secundaria debe fallar GRADEBOOK_SAVE_LOCK_TIMEOUT; la exterior conserva la nota 88, realiza una sola escritura, abre Sheets una vez y libera el lock.
+- **Alcance:** contrato de seguridad; backend productivo sin cambios. BETA-EXAM-090 agregado y Pendiente beta.
+- **Verificación:** caso añadido; ejecución aislada/CI pendiente tras commit. Apps Script/Sheets real NOT RUN.
+- **Estado:** En ejecución hasta verificar el contrato local aislado.
