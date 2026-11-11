@@ -45,10 +45,20 @@ function fixture(options = {}) {
   if (options.badRecord) rows[1][5] = "";
   if (options.badState) rows[1][7] = "Cerrado";
   const closure = options.noSheet ? null : sheet(rows);
+  const configRows = [["ID","Fecha","Parcial","Grado","Sección","Asignatura","Unidad","Tema","profesorId"],
+    ["A1","","P1","10","A","Matemáticas","","","T1"]];
+  if (options.noAssignment) configRows.splice(1, 1);
+  if (options.otherTeacher) configRows.push(["A2","","P1","10","A","Matemáticas","","","T2"]);
+  if (options.badAssignmentSchema) configRows[0][0] = "Wrong";
+  const configSheet = sheet(configRows);
   const stats = { acquired: 0, released: 0, held: false, opens: 0, writes: 0 };
   const actor = options.actor || { authorized: true, userId: "SEC-1", role: "Secretaría" };
   const scope = options.scope || { authorized: true, institutionId: "INST-1", institutionWide: true };
-  const ss = { getSheetByName(name) { return name === "CierresPeriodos" ? closure : null; } };
+  const ss = { getSheetByName(name) {
+    if (name === "CierresPeriodos") return closure;
+    if (name === "ConfiguracionAcademica") return configSheet;
+    return null;
+  }};
   const runtime = {
     LockService: { getScriptLock() { return {
       tryLock() { stats.acquired++; if (options.timeout || stats.held) return false; stats.held = true; return true; },
@@ -57,6 +67,12 @@ function fixture(options = {}) {
     validateRolePermission() { return { authorized: options.denied !== true }; },
     getVerifiedExamIdentity_() { return options.invalidIdentity ? { authorized: false } : actor; },
     getVerifiedExamDepartmentScope_() { return scope; },
+    getSheetOrThrow(spreadsheet, name) {
+      const value = spreadsheet.getSheetByName(name);
+      if (!value) throw Error("MISSING_" + name);
+      return value;
+    },
+    normalizeString(value) { return String(value || "").normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLowerCase().trim(); },
     SpreadsheetApp: { openById() {
       stats.opens++;
       if (stats.onOpen) { const callback = stats.onOpen; stats.onOpen = null; callback(); }
@@ -166,6 +182,11 @@ test(() => {
   assert.throws(() => x.call(), /STATE_INVALID/);
 });
 test(() => {
+  assert.throws(() => fixture({ noAssignment: true }).call(), /ASSIGNMENT_UNVERIFIED/);
+  assert.throws(() => fixture({ otherTeacher: true }).call(), /ASSIGNMENT_UNVERIFIED/);
+  assert.throws(() => fixture({ badAssignmentSchema: true }).call(), /ASSIGNMENT_SCHEMA_INVALID/);
+});
+test(() => {
   const x = fixture();
   assert.throws(() => x.call({ decision: "anything" }), /REQUIRED_FIELDS_INVALID/);
   assert.throws(() => x.call({ cierreId: "" }), /REQUIRED_FIELDS_INVALID/);
@@ -195,4 +216,4 @@ test(() => {
   assert.throws(() => x.call(), /STATE_INVALID/);
   assert.equal(x.closure.rows[1][7], "Aprobado");
 });
-console.log("exam-service-period-gradebook-review-security: PASS (" + count + "/22)");
+console.log("exam-service-period-gradebook-review-security: PASS (" + count + "/23)");

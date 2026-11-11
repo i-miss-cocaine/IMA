@@ -2974,6 +2974,23 @@ function getAuthorizedPeriodGradebookReviewContext_(payload) {
     throw new Error("GRADEBOOK_REVIEW_STATE_INVALID");
   }
 
+  const config = getSheetOrThrow(ss, "ConfiguracionAcademica").getDataRange().getValues();
+  const configHeaders = ["ID", "Fecha", "Parcial", "Grado", "Sección", "Asignatura", "Unidad", "Tema", "profesorId"];
+  if (!config.length || configHeaders.some((header, index) =>
+    String(config[0][index] || "").trim() !== header)) {
+    throw new Error("GRADEBOOK_REVIEW_ASSIGNMENT_SCHEMA_INVALID");
+  }
+  const assignmentRows = config.slice(1).filter(row =>
+    normalizeString(row[2]) === normalizeString(target.row[2]) &&
+    normalizeString(row[3]) === normalizeString(target.row[3]) &&
+    normalizeString(row[4]) === normalizeString(target.row[4]) &&
+    normalizeString(row[5]) === normalizeString(target.row[5]));
+  const assignedTeacherId = String(target.row[6] || "").trim();
+  if (!assignmentRows.length || assignmentRows.some(row =>
+    String(row[8] || "").trim() !== assignedTeacherId)) {
+    throw new Error("GRADEBOOK_REVIEW_ASSIGNMENT_UNVERIFIED");
+  }
+
   return {
     sheet,
     rowIndex: target.rowIndex,
