@@ -1648,3 +1648,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Suite dedicada ampliada a 26 escenarios; harness local focalizado 10/10 PASS; GitHub Actions workflow 43052136181 SUCCESS y suite 26/26 PASS en Node 22.
 - Apps Script/Sheets real NOT RUN; BETA-EXAM-055 actualizado y permanece Pendiente beta.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] C1.526 — EXAM rectifyStudentGrade
+- withAuthorizedStudentGradeRectification_ ahora valida RBAC, identidad firmada, userId no vacío y allowlist de roles antes de solicitar ScriptLock.
+- El contexto conserva la revalidación bajo lock de permiso, identidad, rol, scope institutionWide, calificación única, perfil estudiante, esquema e historial de auditoría.
+- Harness local focalizado del wrapper 7/7 PASS; suite dedicada 28/28 PASS en runner JavaScript aislado; parseo Code.gs y suite PASS. Checkout/Node local no disponible por DNS.
+- GitHub Actions workflow 43053113842 SUCCESS; suite dedicada 28/28 PASS en Node 22. Apps Script/Sheets real NOT RUN; BETA-EXAM-067 agregado.
+===============================================================================
