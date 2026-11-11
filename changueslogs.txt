@@ -1430,3 +1430,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - El contrato departmental-access incorpora un intento directo con Tutor sin permiso y verifica que la denegación no adquiere el lock; el caso positivo Estudiante conserva el envío y las pruebas existentes de aislamiento/concurrencia.
 - Harness local focalizado: 6 aserciones PASS. Suite completa departmental-access/CI aún no observada; Apps Script/Sheets real NOT RUN. BETA-EXAM-064 Pendiente beta.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] C1.512 — IMA-EXEC-20261110-1825Z-02 — EXAM: reparación de contratos de seguridad y fixtures de integración
+- Se alineó exam-service-security-contract.test.js con el RBAC interno de createExam: el fixture ahora carga validateContextualAccess/validateRolePermission y comprueba denegación de Tutor antes de abrir Sheets o adquirir lock.
+- Se completó el fixture departmental-access con wrapper de lectura y workers correspondientes, permiso institucional de Dirección, almacenamiento normalizado de calificación 95.00 y motivo/hoja de auditoría para deleteExamSubmission.
+- Parseo sintáctico local de ambos tests PASS. Workflow GitHub Actions 43029272236 PASS: security-contract, departmental-access y read-endpoints-security; pasos previos del workflow también PASS.
+- Sin cambios al código de producción; no requiere despliegue beta. TASK-153 / AUD-NG-386 continúan En ejecución; siguiente tarea vuelve al inventario de seguridad de handlers EXAM.
+===============================================================================

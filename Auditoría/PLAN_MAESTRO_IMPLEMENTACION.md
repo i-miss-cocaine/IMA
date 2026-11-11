@@ -3678,3 +3678,13 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Beta:** BETA-EXAM-064 Pendiente beta; Apps Script/Sheets real NOT RUN.
 - **Estado:** subalcance submitExam implementado; TASK-153 / AUD-NG-386 continúan En ejecución por otras mutaciones EXAM.
 - **Siguiente:** continuar inventario de handlers mutadores/dispatcher EXAM y seleccionar la siguiente función que dependa exclusivamente de doPost para RBAC o identidad.
+
+
+### 10.164 TASK-153 / AUD-NG-386 — reparación de contratos automatizados EXAM (C1.512)
+- **Hallazgo:** CI reveló fixtures desactualizados respecto de protecciones ya incorporadas: el harness de createExam no cargaba validateRolePermission/validateContextualAccess; departmental-access omitía el wrapper/workers de lectura, el permiso institucional Dirección y los requisitos vigentes de nota normalizada y auditoría de borrado.
+- **Corrección:** fixtures de seguridad alineados con las funciones y contratos reales; se prueba denegación RBAC directa antes de Sheets/lock; se cargan wrapper/workers para lecturas; Dirección conserva permiso institucional; calificación espera formato persistido 95.00; borrado usa motivo válido y comprueba actor/estado DELETED en historial.
+- **Alcance:** solo tests/fixtures; no se modificó código de producción ni esquema persistente.
+- **Verificación local:** compilación sintáctica de ambos archivos Node mediante Function constructor PASS. La ejecución Node local completa no estuvo disponible en el entorno de edición.
+- **CI:** workflow 43029272236 PASS, commit de código de pruebas f06fbe6773321cf5e674b0f8ce3c8b9bc8c957cf; los tres contratos Node (security-contract, departmental-access, read-endpoints-security) completaron correctamente y el job finalizó success.
+- **Estado:** incidencia de harness resuelta; sin requisito beta ni despliegue. TASK-153 / AUD-NG-386 continúan En ejecución por otras superficies EXAM.
+- **Siguiente:** retomar el inventario de handlers mutadores EXAM y seleccionar la siguiente brecha de autorización/identidad verificable.

@@ -23,3 +23,37 @@ backend/exam-service/Code.gs; tests/security/exam-service-departmental-access.te
 Subalcance submitExam implementado. TASK-153 / AUD-NG-386 permanecen En ejecución por otras rutas EXAM. Siguiente acción: continuar revisión de endpoints mutadores restantes para identificar y corregir dependencias de RBAC/identidad exclusivamente en doPost.
 HEAD final: se confirma mediante lectura de la referencia de rama después del commit.
 ===============================================================================
+
+
+CHECKPOINT C1.512 — reparación de contratos automatizados EXAM
+Sesión: IMA-EXEC-20261110-1825Z-02.
+Fecha: 2026-11-11 UTC.
+Rama: NG_beta_0.0.0.1_work.
+HEAD inicial de iteración: 2f3e581d4739183e99b8d3da0fd363c3636e9f22.
+### Hallazgo
+El workflow de seguridad EXAM detectó fixtures de test obsoletos tras cambios de seguridad anteriores: falta de contexto RBAC en el harness createExam, wrapper/workers omitidos en departmental-access y expectativas que no reflejaban persistencia normalizada y auditoría obligatoria de borrado.
+### Corrección
+- exam-service-security-contract.test.js carga validateContextualAccess y validateRolePermission reales en el contexto aislado; agrega un Tutor sin permiso y verifica denegación antes de SpreadsheetApp.openById y LockService.
+- exam-service-departmental-access.test.js modela withAuthorizedExamRead_ en el primer harness y carga getAllExamsUnlocked_/getTeacherExamActivityUnlocked_; incorpora permiso institucional Dirección.
+- Alinea la expectativa de calificación con el formato persistido "95.00".
+- Proporciona hoja de historial, motivo válido y comprobaciones de actor/rol/estado DELETED para deleteExamSubmission.
+- No se modificó código de producción ni esquema persistente.
+### Archivos modificados en la iteración
+- tests/security/exam-service-security-contract.test.js
+- tests/security/exam-service-departmental-access.test.js
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt
+- changueslogs.txt
+### Verificación
+- Parseo sintáctico local de los dos archivos de prueba: PASS.
+- Workflow GitHub Actions 43029272236: PASS.
+- Pasos Node: exam-service-security-contract.test.js PASS; exam-service-departmental-access.test.js PASS; exam-service-read-endpoints-security.test.js PASS.
+- El job incluye además los contratos de regresión previos, todos completados; resultado global success.
+- Ejecución Node local completa no disponible en el entorno de edición; Apps Script/Sheets real NOT RUN; no requiere beta por ser corrección de fixtures.
+### Estado y continuidad
+La incidencia de CI del harness queda resuelta. TASK-153 / AUD-NG-386 siguen En ejecución por otras superficies EXAM. Siguiente tarea: continuar inventario de handlers mutadores EXAM para identificar la siguiente brecha de autorización/identidad.
+Commits de implementación iterativa de esta tarea: fe719e8235141f3629952c2fd777d438b00ba267; 4d687235c48c7c5952744c5ac950ef63fd29e1da; 9ef8827624a8a391b57395075a47722feec6bcbd; 73566d1fab21d14a006112f98942c946ef077362; 1b6fd8a7a5b6bb2ca82646a2980e399a5d6c5c40; f06fbe6773321cf5e674b0f8ce3c8b9bc8c957cf.
+Workflow: 43029272236 — PASS.
+HEAD final: se confirma mediante lectura de la referencia de rama después del commit documental.
+===============================================================================
