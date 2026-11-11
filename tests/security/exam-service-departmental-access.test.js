@@ -96,6 +96,19 @@ const runtime = {
   PropertiesService: { getScriptProperties() { return { getProperty(name) { return name === "IMA_INSTITUTION_ID" ? "I1" : null; } }; } },
   SpreadsheetApp: { openById() { return ss; } },
   getSheetOrThrow(spreadsheet, name) { const sheet = spreadsheet.getSheetByName(name); if (!sheet) throw new Error("Missing sheet " + name); return sheet; },
+  withAuthorizedExamRead_(action, payload, reader) {
+    const lock = runtime.LockService.getScriptLock();
+    if (!lock.tryLock(5000)) throw new Error("EXAM_READ_LOCK_TIMEOUT");
+    try {
+      const permission = runtime.validateRolePermission(action, payload);
+      if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+      const actor = runtime.getVerifiedExamIdentity_(payload);
+      if (!actor || actor.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+      const scope = runtime.getVerifiedExamDepartmentScope_(payload, ss, actor);
+      if (!scope || scope.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+      return reader({ actor, ss, scope });
+    } finally { lock.releaseLock(); }
+  },
   isInTeacherList(value, filter) { return String(value).trim() === String(filter).trim(); },
   normalizeString(value) { return String(value || "").trim().toLowerCase(); },
   LockService: { getScriptLock() { return {
