@@ -1756,3 +1756,10 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Suite `exam-service-period-gradebook-review-security`: **27/27 PASS** en Node 22; las pruebas del wrapper/contexto ejecutadas por CI completaron sin fallos.
 - Harness local focalizado: **12/12 PASS**. La suite completa no se declara local: no había checkout local y git clone falló por resolución DNS.
 - Apps Script/Sheets real: NOT RUN. BETA-EXAM-053 permanece Pendiente beta.
+
+
+### C1.525 — AUD-NG-386 / reopenPeriodGradebook
+- **Hallazgo alto corregido:** `withAuthorizedPeriodGradebookReopen_` adquiría ScriptLock antes de validar RBAC e identidad firmada.
+- **Corrección:** preflight del permiso `reopenPeriodGradebook`, identidad autorizada, `userId` no vacío y allowlist existente (Administrador, Desarrollador, Dirección, Director, Secretaría) antes del lock; revalidación contextual bajo lock.
+- **Suite dedicada:** ampliada de 22 a 26 escenarios; incorpora denegación pre-lock, identidad inválida, userId vacío, roles permitidos/no permitidos y doble validación. Verificación de ejecución pendiente.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-055 permanece Pendiente beta.
