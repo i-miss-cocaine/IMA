@@ -1862,3 +1862,19 @@ HEAD anterior: 13c331a7d94b1c3d7a85d7c63904dcf68b008f72. Rama: NG_beta_0.0.0.1_w
 
 HEAD inicial: 2096c07e6e7737ed41447bc5bf8a868219bcfcaa. Rama: NG_beta_0.0.0.1_work. Rama base esperada sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
 ===============================================================================
+
+===============================================================================
+## C1.565 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — confirmar la ejecución local de la suite de revocación RBAC bajo ScriptLock para reopenPeriodGradebook (continuación de C1.564).
+
+### Verificación confirmada
+- El usuario confirmó el resultado `PASS (28/28)` para `tests/security/exam-service-period-gradebook-reopen-security.test.js`.
+- La ejecución Node corresponde a 1 archivo de prueba aprobado y cero fallos; el helper de la suite ejecuta 28 escenarios internos síncronos, todos completados correctamente.
+- Se confirma el escenario RBAC concedido en preflight y revocado durante la revalidación bajo ScriptLock: RESOURCE_NOT_AVAILABLE antes de abrir Sheets, lock adquirido/liberado, cero aperturas y snapshots de CierresPeriodos e HistorialRectificacionesNotas sin cambios.
+- Versión de Node no informada. CI y Apps Script/Sheets real: NOT RUN. BETA-EXAM-054 permanece Pendiente beta.
+
+### Estado y continuidad
+C1.564 queda verificada y Completada en cobertura local. Solo se amplió la suite de seguridad; backend productivo, RBAC, roles, scope y persistencia permanecen sin cambios. TASK-153 / AUD-NG-386 continúa En ejecución para el inventario de mutaciones EXAM restantes. Siguiente acción: inspeccionar los handlers EXAM restantes con ScriptLock y revalidación contextual, seleccionar una mutación con brecha demostrable y repetir el análisis focalizado.
+
+HEAD inicial: 9d2945bd82fb7f99b6036f466563443a668a50bb. Rama: NG_beta_0.0.0.1_work. Rama base sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59. HEAD final: se confirma tras publicar este checkpoint.
+===============================================================================
