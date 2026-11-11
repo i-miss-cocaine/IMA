@@ -1740,5 +1740,5 @@ HEAD inicial: 16684ee9751d2d55bb59683f84d0259bdb6bee8f. Commit principal de C1.5
 ### Estado y continuidad
 C1.558 completa la cobertura local de revocación RBAC para saveEvaluationCategory. No hubo cambios productivos. TASK-153 / AUD-NG-386 continúa En ejecución para el inventario EXAM restante.
 
-HEAD inicial: 5f1677f0bd99fc0c422d885dcb0ead52deb983a2. HEAD final se confirmará tras publicar los cambios de prueba y documentación.
+HEAD inicial: 5f1677f0bd99fc0c422d885dcb0ead52deb983a2. Commit principal de C1.558 (prueba y documentación): 023fc59340f96fef14bb064319f0de4a175f2054. La publicación final de la rama se verificó después de este commit.
 ===============================================================================
