@@ -979,6 +979,6 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Precondiciones:** versión beta desplegada; examen sintético con ownership activo; sesión firmada y asignación departamental; mecanismo controlado para intentar una segunda solicitud durante la escritura exterior.
 - **Pasos:** invocar updateExam con cambios de título/asignatura/grado/sección/fecha/tiempo/parcial; durante setValues intentar updateExam secundario sobre el mismo examen; revisar respuesta, trazas RBAC/identidad/lock/Sheets y snapshot completo de Examenes.
 - **Resultado esperado:** la solicitud anidada termina con EXAM_MUTATION_LOCK_TIMEOUT; la exterior completa una sola escritura con todos sus campos, Sheets se abre una sola vez y ScriptLock queda liberado.
-- **Estado:** Pendiente beta; contrato local V8 aislado 20/20 PASS; GitHub Actions pendiente; Apps Script/Sheets real NOT RUN.
+- **Estado:** Pendiente beta; contrato local V8 aislado 20/20 PASS y GitHub Actions run 43115333376 SUCCESS (workflow completo, Node.js 22); Apps Script/Sheets real NOT RUN.
 - **Evidencia requerida:** commit desplegado, trazas saneadas de ambas solicitudes, conteo de adquisición/liberación del lock, lecturas/escrituras y snapshot antes/después de Examenes.
 ===============================================================================

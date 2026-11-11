@@ -2356,3 +2356,11 @@ HEAD inicial: `4451fd9d161fc72afab08b2a09263ec363e0141e`. HEAD final: se confirm
 - HEAD inicial: `5b8792918204eda3b08a43ab04646d0f8d6ab005`; HEAD final: se confirma tras publicar.
 ===============================================================================
 
+===============================================================================
+### Addendum CI — C1.584
+- GitHub Actions run `43115333376`, commit `230656e62f3d40d5d3e3588044608d2c274d8c5e`: workflow `Exam-Service security local contracts` **SUCCESS** en Node.js 22.
+- Job `exam-security-contracts`: SUCCESS; paso `Run exam mutation security regression`: SUCCESS; 28/28 pasos completados sin fallos.
+- C1.584 **Completada en verificación local y CI**. BETA-EXAM-085 permanece Pendiente beta para Apps Script/Sheets desplegado.
+- HEAD de implementación/pruebas: `230656e62f3d40d5d3e3588044608d2c274d8c5e`; cierre documental: commit posterior de esta actualización.
+===============================================================================
+

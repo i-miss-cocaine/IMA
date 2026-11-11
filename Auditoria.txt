@@ -2034,3 +2034,8 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Cambio:** hook sintético en setValues invoca updateExam anidado. La secundaria falla EXAM_MUTATION_LOCK_TIMEOUT; la exterior conserva la fila actualizada, realiza una escritura, no reabre Sheets y libera el lock.
 - **Verificación local:** parseo Code.gs/test PASS; contrato V8 aislado 20/20 PASS. Backend productivo sin cambios. CI pendiente; Apps Script/Sheets real NOT RUN. BETA-EXAM-085 actualizado y Pendiente beta.
 
+### Addendum CI — C1.584
+- GitHub Actions run **43115333376**, commit `230656e62f3d40d5d3e3588044608d2c274d8c5e`: workflow completo SUCCESS en Node.js 22.
+- Job `exam-security-contracts` y paso `Run exam mutation security regression`: SUCCESS; 28/28 pasos del job completados sin fallos.
+- C1.584 Completada en verificación local y CI. BETA-EXAM-085 continúa Pendiente beta.
+
