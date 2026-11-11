@@ -1209,3 +1209,51 @@ Asegurar exclusivamente el endpoint global de métricas de rendimiento y persist
 - Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios).
 
 ===============================================================================
+
+===============================================================================
+## CHECKPOINT C1.488 — EXAM: seguridad de getGradebookData
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-11 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.487.
+HEAD inicial: b42d40d33ecb7d4239721c817d8122b801d8c177.
+Commit de implementación: 4d60c97b8d13a0e16f5500c94bc1acde41ac11f9.
+HEAD de implementación verificado: 4d60c97b8d13a0e16f5500c94bc1acde41ac11f9.
+
+### Alcance
+Asegurar exclusivamente la lectura getGradebookData del servicio EXAM.
+
+### Hallazgo y corrección
+- El endpoint leía roster, emails, calificaciones y recuperaciones sin RBAC/identidad/scope. Filtros y profesorId procedían del cliente y no se validaba que el profesor tuviera asignado el grado/sección/asignatura/parcial. El endpoint también podía crear hojas por medio de getOrCreateSheet durante la lectura.
+- El handler delega en withAuthorizedExamRead_("getGradebookData", ...), con validación RBAC/identidad/scope bajo el ScriptLock compartido.
+- Profesor debe enviar profesorId igual al actor firmado y filtros completos; el contexto debe coincidir con ConfiguracionAcademica. Si otra identidad docente tiene una asignación coincidente, el contexto es ambiguo y se deniega.
+- Administrador, Desarrollador, Dirección, Director y Secretaría requieren scope.institutionWide === true. Los demás roles se deniegan explícitamente en el worker.
+- Los estudiantes con userId vacío o duplicado se excluyen, y sus calificaciones/recuperaciones no se devuelven.
+- Las categorías predeterminadas se construyen en memoria. CierresPeriodos ausente conserva estado Abierto. La lectura no crea hojas ni escribe.
+
+### Archivos
+- backend/exam-service/Code.gs
+- tests/security/exam-service-gradebook-read-security.test.js
+- tests/security/exam-service-security-contract.test.js
+- beta_test.txt
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+
+### Verificación local
+- Parseo V8 de Code.gs y sintaxis de las suites: PASS.
+- Harness V8 aislado exam-service-gradebook-read-security.test.js: PASS.
+- Escenarios: docente asignado; suplantación de profesor; grado/sección/asignatura/parcial no asignados; asignación conflictiva entre docentes; filtros obligatorios; Administrador institucional permitido; administrador solo departamental denegado; Estudiante denegado incluso con stub RBAC permisivo; RBAC denegado; timeout; lectura posterior al lock; esquema de asignación inválido; hoja de calificaciones faltante; exclusión de IDs de estudiante duplicados/vacíos; categorías por defecto sin escrituras.
+- Regresión exam-service-read-endpoints-security.test.js en harness V8: PASS.
+- Contrato estático exam-service-security-contract.test.js: PASS.
+- Intento de exam-service-departmental-access.test.js con VM V8 adaptada: BLOCKED por incompatibilidad del harness/stubs al reconstruir el contexto de acceso; no se considera PASS ni fallo del código de gradebook.
+- Runner Node nativo y CI: NOT RUN. Apps Script/Sheets real: NOT RUN. BETA-EXAM-042: Pendiente beta.
+
+### Estado y continuidad
+- Subalcance getGradebookData completado y publicado.
+- TASK-153 permanece En ejecución; AUD-NG-386 abierto por otras lecturas del servicio.
+- Siguiente subalcance único: auditar getCompetencyEvaluations.
+- Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios).
+
+===============================================================================
