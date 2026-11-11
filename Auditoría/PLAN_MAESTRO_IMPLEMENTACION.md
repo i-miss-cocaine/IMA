@@ -3522,3 +3522,12 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Límite:** edición de categorías antiguas sin ownership requiere migración/atribución explícita; no se asigna propietario por inferencia.
 - **Estado:** subalcance completado; TASK-153 permanece En ejecución y AUD-NG-386 abierto por otras operaciones EXAM.
 - **Siguiente:** reparar en una iteración independiente los dos defectos del harness `exam-service-save-rubric-security.test.js` detectados al ejecutar la regresión (mock de lock y expectativa de rollback); después continuar con la siguiente operación EXAM pendiente.
+
+
+### 10.148 TASK-153 / AUD-NG-386 — reparación del harness de saveRubric (C1.496)
+
+- **Alcance:** corregir exclusivamente `tests/security/exam-service-save-rubric-security.test.js`; no modificar lógica productiva.
+- **Correcciones:** instancia única del mock ScriptLock para probar reentrada; expectativa de rollback alineada con las tres filas iniciales de RubricasEvaluacion; separador VM corregido a salto de línea real. El workflow EXAM ejecuta esta regresión antes de otras suites y la incluye en push/pull_request.
+- **Verificación:** GitHub Actions run 42946376368 (Node 22.23.4): suite específica PASS, 17/17; exam-service-security-contract PASS. Workflow global FAIL en exam-service-departmental-access por `ReferenceError: withAuthorizedExamRead_ is not defined` (getAllExams); la misma falla aparece en run previo 42941521575, anterior a esta corrección. Suites posteriores skipped. Sin checkout local disponible; Apps Script/Sheets real y beta no ejecutados.
+- **Estado:** subtarea de harness completada; TASK-153 continúa En ejecución y AUD-NG-386 abierto.
+- **Siguiente:** auditar individualmente `saveCompetencyEvaluation` en una iteración independiente, verificando requisito, consumidores, RBAC, identidad, scope, ownership, lock y persistencia antes de modificar.

@@ -1625,3 +1625,48 @@ Auditar y asegurar saveEvaluationCategory dentro de TASK-153 / AUD-NG-386.
 - TASK-153 permanece En ejecución; AUD-NG-386 sigue abierto por otras operaciones EXAM.
 - Rama base NG_beta_0.0.0.1 permanece en 44d9891132332e692dbe2ba8602b41f50a508a59.
 ===============================================================================
+
+
+===============================================================================
+CHECKPOINT C1.496 — Reparación del harness de seguridad de saveRubric
+Sesión: IMA-EXEC-20261110-1825Z-02.
+Fecha: 2026-11-11 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.495.
+HEAD inicial de esta iteración: cd06c4853d98ab0c1b46a78b67adf93a112e1947.
+HEAD de código/pruebas tras la corrección: 81f8ad7ebd199026e8de6ed8b1c9cf3322bf5b18.
+Rama base: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+### Alcance
+Reparar exclusivamente los defectos del harness `tests/security/exam-service-save-rubric-security.test.js` identificados al cierre de C1.495. No se modifica lógica productiva de EXAM ni se amplía el alcance de TASK-153.
+
+### Correcciones
+- El fixture ahora devuelve la misma instancia de ScriptLock en cada llamada a getScriptLock; la prueba de reentrada/nested mutation monkeypatchea así el lock realmente utilizado por el wrapper.
+- La expectativa de rollback de RubricasEvaluacion vuelve a las 3 filas originales (encabezado + dos rúbricas); ResourceOwnership conserva sus 2 filas originales.
+- Se corrige el separador usado al unir las funciones extraídas para VM: salto de línea real en lugar de los caracteres literales barra+n, que provocaban SyntaxError/Invalid or unexpected token en los 17 escenarios.
+- El workflow EXAM incorpora el test a push y pull_request y lo ejecuta antes de otras suites, para que un fallo independiente posterior no impida observar su resultado.
+
+### Archivos modificados
+1. tests/security/exam-service-save-rubric-security.test.js.
+2. .github/workflows/exam-service-security-contract.yml.
+3. Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt (este checkpoint).
+4. Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md (seguimiento 10.148).
+5. changueslogs.txt (entrada C1.496).
+6. Auditoría/INDICE_CHECKPOINTS.md (fila C1.496 y estado actual; commit de índice posterior).
+
+### Verificación
+- GitHub Actions run 42946376368, Node.js 22.23.4: `exam-service-save-rubric-security.test.js` PASS, 17/17 escenarios; failed=[].
+- En el mismo run, `exam-service-security-contract.test.js` PASS.
+- El workflow completo termina FAIL en la suite preexistente `exam-service-departmental-access.test.js`: `ReferenceError: withAuthorizedExamRead_ is not defined`, en getAllExams. La misma falla está documentada en el run anterior 42941521575 (HEAD a480c83d91ab5fe83f59888e2c9f096a5ccb03ce), por lo que no se atribuye a este cambio. Las suites posteriores quedaron skipped por fail-fast.
+- Primer intento de CI 42946247717 detectó el separador defectuoso; se corrigió antes del run final.
+- No se dispone de checkout local en el entorno del agente para ejecutar Node fuera de Actions. No se ejecutaron Apps Script/Sheets reales ni pruebas beta; no eran necesarias para el harness aislado.
+- Revisión del diff: limitada a los dos defectos del harness y a su inclusión/orden en el workflow. Sin cambios en backend.
+
+### Estado y continuidad
+- Subtarea de reparación del harness: completada; evidencia 17/17 PASS en Actions.
+- TASK-153 permanece En ejecución; AUD-NG-386 continúa abierto.
+- Dependencia ajena pendiente: reparar/ajustar el contrato `exam-service-departmental-access.test.js` que referencia `withAuthorizedExamRead_`; no se incluye en esta iteración.
+- Siguiente operación EXAM elegible para una iteración independiente: auditar y asegurar `saveCompetencyEvaluation`, que actualmente recibe userId del payload y escribe en EvaluacionesCompetencias sin el wrapper de autorización usado por las operaciones protegidas. Confirmar su requisito/consumidores antes de modificarla.
+- Rama base permanece sin cambios en 44d9891132332e692dbe2ba8602b41f50a508a59.
+===============================================================================

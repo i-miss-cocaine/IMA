@@ -1291,3 +1291,13 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Validación de nombre/porcentaje, esquema e IDs; rollback de ambas escrituras ante fallo de alta.
 - Parseo V8 PASS; pruebas aisladas: mutación 17 escenarios y lectura 17 escenarios PASS; read-endpoints y security-contract PASS. Node nativo/CI/Apps Script real NOT RUN. BETA-EXAM-049 Pendiente beta.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] C1.496 — IMA-EXEC-20261110-1825Z-02 — Reparación del harness de saveRubric
+- Se estabilizó el mock ScriptLock para que todas las llamadas compartan el mismo lock y la prueba de reentrada valide el bloqueo real.
+- Se corrigió el número de filas esperado tras rollback (3 rúbricas/encabezado iniciales y 2 ownership) y el separador VM a salto de línea real.
+- La regresión específica ejecutada en GitHub Actions 42946376368 pasó 17/17 escenarios; exam-service-security-contract también PASS.
+- El workflow general quedó FAIL por ReferenceError: withAuthorizedExamRead_ is not defined en exam-service-departmental-access.test.js; el mismo fallo ya estaba presente en run 42941521575, anterior a este cambio. No se alteró ese contrato en esta iteración.
+- TASK-153 permanece En ejecución; siguiente operación candidata: saveCompetencyEvaluation.
+===============================================================================
