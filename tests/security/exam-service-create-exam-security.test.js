@@ -58,7 +58,11 @@ function fixture(options = {}) {
   const runtime = {
     SPREADSHEET_ID: "TEST",
     validateRolePermission(action) { stats.permissionCalls++; stats.action = action; return { authorized: options.permissionDenied !== true }; },
-    getVerifiedExamIdentity_() { return options.invalidIdentity ? { authorized: false } : { authorized: true, userId: "P1", role: "Profesor" }; },
+    getVerifiedExamIdentity_() {
+      if (options.invalidIdentity) return { authorized: false, userId: "P1", role: "Profesor" };
+      if (options.actor !== undefined) return options.actor;
+      return { authorized: true, userId: "P1", role: "Profesor" };
+    },
     getVerifiedExamDepartmentScope_() { return options.invalidScope ? { authorized: false } : { authorized: true, institutionId: "I1", departmentIds: ["D1"] }; },
     SpreadsheetApp: { openById() { stats.opened++; return { getSheetByName: name => sheets[name] || null }; } },
     getSheetOrThrow(ss, name) { const sheet = ss.getSheetByName(name); if (!sheet) throw new Error("missing " + name); return sheet; },
@@ -92,6 +96,8 @@ test(() => {
 });
 test(() => { const x=fixture({permissionDenied:true}); assert.throws(()=>x.call(),/RESOURCE_NOT_AVAILABLE/); assert.equal(x.stats.opened,0); assert.equal(x.stats.acquired,0); });
 test(() => { const x=fixture({invalidIdentity:true}); assert.throws(()=>x.call(),/RESOURCE_NOT_AVAILABLE/); assert.equal(x.stats.opened,0); });
+test(() => { const x=fixture({actor:{authorized:true,role:"Profesor"}}); assert.throws(()=>x.call(),/RESOURCE_NOT_AVAILABLE/); assert.equal(x.stats.opened,0); assert.equal(x.stats.acquired,0); });
+test(() => { const x=fixture({actor:{authorized:true,userId:" ",role:"Profesor"}}); assert.throws(()=>x.call(),/RESOURCE_NOT_AVAILABLE/); assert.equal(x.stats.opened,0); assert.equal(x.stats.acquired,0); });
 test(() => { const x=fixture({invalidScope:true}); assert.throws(()=>x.call(),/RESOURCE_NOT_AVAILABLE/); assert.equal(x.stats.acquired,0); });
 test(() => { const x=fixture({lockTimeout:true}); assert.throws(()=>x.call(),/EXAM_CREATE_LOCK_TIMEOUT/); assert.equal(x.sheets.Examenes.rows.length,1); assert.equal(x.sheets.ResourceOwnership.rows.length,1); });
 test(() => { const x=fixture({failOwnershipAppendAfterWrite:true}); assert.throws(()=>x.call(),/append persisted then failed/); assert.equal(x.sheets.ResourceOwnership.rows.length,1); assert.equal(x.sheets.Examenes.rows.length,1); assert.deepEqual([x.stats.acquired,x.stats.released,x.stats.held],[1,1,false]); });

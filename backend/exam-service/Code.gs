@@ -702,7 +702,9 @@ function createExam(p) {
   const permission = validateRolePermission("createExam", p);
   if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
   const actor = getVerifiedExamIdentity_(p);
-  if (!actor.authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
+  if (!actor || actor.authorized !== true || !String(actor.userId || "").trim()) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
 
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const scope = getVerifiedExamDepartmentScope_(p, ss, actor);
