@@ -34,6 +34,7 @@ function fixture(options={}){
 const cases=[];
 function test(name,fn){try{fn();cases.push({name,ok:true});}catch(e){cases.push({name,ok:false,error:e.message});}}
 function denied(fn,pattern){assert.throws(fn,pattern||/RESOURCE_NOT_AVAILABLE/);}
+function denied(fn,pattern){assert.throws(fn,pattern||/RESOURCE_NOT_AVAILABLE/);}
 test("authorized reader returns categories with legacy response contract",()=>{const x=fixture();const r=x.call();assert.equal(r.status,"success");assert.equal(r.data.length,1);assert.equal(r.data[0].categoriaId,"CAT-X");});
 test("missing category sheet returns defaults without creating a sheet",()=>{const x=fixture({rows:null});const r=x.call();assert.equal(r.data.length,4);assert.equal(r.data[0].categoriaId,"CAT-1");assert.equal(x.state.opens,1);});
 test("header-only sheet returns defaults without writing",()=>{const x=fixture({rows:[["ID","Nombre","Ambito","PorcentajePonderacion","EscalaID","Estado"]]});assert.equal(x.call().data.length,4);});
