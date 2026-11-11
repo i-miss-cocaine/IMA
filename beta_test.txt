@@ -454,3 +454,12 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Resultado esperado:** acceso solo a examen único dentro del ámbito; profesor solo consulta exámenes propios; ownership activo único; IDs de entrega duplicados excluidos; estados Pendiente sin nota contabilizados como pendientes; agregados calculados solo con notas finitas; timeout EXAM_READ_LOCK_TIMEOUT.
 - **Estado:** Pendiente beta. Harness V8 local con actores y fixtures sintéticos PASS; Apps Script/Sheets real no ejecutado.
 - **Evidencia requerida:** commit/build, matriz RBAC, IDs sintéticos, secuencias concurrentes, estadísticas saneadas y logs sin datos personales.
+
+## BETA-EXAM-039 — TASK-153 / AUD-NG-386 / EXAM: conflicto de programación por sección
+- **Módulo/acción:** EXAM checkExamSchedulingConflict; concurrencia con createExam, updateExam, updateExamStatus y deleteExam.
+- **Objetivo:** verificar en Apps Script/Sheets desplegado que el recuento de evaluaciones por sección/fecha respeta RBAC, identidad, propiedad, ámbito y snapshot serializado.
+- **Precondiciones:** entorno beta aislado; profesores de dos departamentos; exámenes activos, inactivos, cancelados, IDs duplicados, ownership válido/ausente/ajeno y fechas válidas/inválidas.
+- **Pasos:** consultar sin sesión y con permiso denegado; comparar profesor propietario/no propietario; probar IDs duplicados, examen excluido, estados inactivos/cancelados, límite por día, fechas calendario inválidas y timeout; intercalar consulta con alta/edición/baja de examen.
+- **Resultado esperado:** permiso específico e identidad firmada; ScriptLock compartido; solo exámenes únicos, activos, dentro del scope y propiedad docente cuando aplica; límite entero 1–100 (predeterminado 2); fecha ISO válida; timeout fail-closed.
+- **Estado:** Pendiente beta. Pruebas locales aisladas cubren RBAC, ownership, duplicados, filtro docente, exclusión de examen, estados, fechas, límite y lock.
+- **Evidencia requerida:** build/commit, actores sintéticos, matriz RBAC/ámbito, fixtures, secuencias concurrentes, respuestas saneadas y logs.

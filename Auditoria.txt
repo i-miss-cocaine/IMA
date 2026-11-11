@@ -1456,3 +1456,13 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - Suite de repositorio Node nativo: NOT RUN; CI: NOT RUN; Apps Script/Sheets real: NOT RUN. BETA-EXAM-038 queda Pendiente beta.
 - TASK-153 permanece En ejecución y AUD-NG-386 abierto por otras lecturas EXAM. Siguiente subalcance: revisar checkExamSchedulingConflict, simulateExamReschedule y getGradingPerformanceAndPersistenceMetrics sin reabrir analítica.
 ===============================================================================
+
+===============================================================================
+## C1.485 — EXAM: seguridad y consistencia de checkExamSchedulingConflict
+- Hallazgo: la consulta de sobrecarga de agenda leía Examenes sin permiso específico, identidad/ámbito verificados, ownership ni ScriptLock; IDs duplicados podían inflar el recuento y un profesor podía inferir evaluaciones ajenas.
+- Corrección: checkExamSchedulingConflict delega en withAuthorizedExamRead_ y valida el permiso de acción después de adquirir el lock. El worker filtra IDs únicos, estados Inactivo/Cancelado, propiedad del profesor y ResourceOwnership activo/autorizado antes de contar.
+- Validación: fecha calendario YYYY-MM-DD (se admite sufijo ISO de hora) y límite entero seguro 1–100; default 2. Los registros con fecha inválida, ID vacío/duplicado o ownership no autorizado no participan.
+- Pruebas locales: parseo V8 del backend y harness aislado con permiso denegado, ownership, IDs duplicados, profesor ajeno, estados, exclusión de examen, umbral, fecha imposible, límite inválido y lock/timeout.
+- Suites Node nativas, CI y Apps Script/Sheets real: NOT RUN en este entorno. BETA-EXAM-039 Pendiente beta.
+- TASK-153 permanece En ejecución; AUD-NG-386 abierto por otras lecturas EXAM. Siguiente subalcance: revisar individualmente simulateExamReschedule; no agruparlo con métricas de calificación.
+===============================================================================

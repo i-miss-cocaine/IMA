@@ -1189,3 +1189,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Parseo V8 y harness aislado (8 escenarios: permiso, ownership, duplicados, profesor ajeno, timeout, lock/snapshot y agregados) PASS. Suite Node, CI y Apps Script/Sheets real NOT RUN.
 - BETA-EXAM-038 Pendiente beta; TASK-153 En ejecución y AUD-NG-386 abierto.
 ===============================================================================
+
+===============================================================================
+[2026-11-10] C1.485 — IMA-EXEC-20261110-1825Z-02 — EXAM: checkExamSchedulingConflict
+- Se serializa con el ScriptLock compartido y revalida permiso RBAC específico, identidad firmada y ámbito.
+- Solo cuenta exámenes con ID único, fecha válida, estado distinto de Inactivo/Cancelado, propiedad docente cuando aplica y ResourceOwnership autorizado; se excluyen examen objetivo, duplicados y recursos ajenos.
+- Fecha calendario validada y límite entero 1–100 (default 2); contrato de respuesta de conflicto preservado.
+- Pruebas locales aisladas: parseo V8 y escenarios de RBAC, ownership, profesor ajeno, IDs duplicados, estados, exclusión, umbral, fecha/límite inválidos y lock/timeout. Node nativo, CI y Apps Script/Sheets real NOT RUN.
+- BETA-EXAM-039 Pendiente beta; TASK-153 En ejecución y AUD-NG-386 abierto.
+===============================================================================

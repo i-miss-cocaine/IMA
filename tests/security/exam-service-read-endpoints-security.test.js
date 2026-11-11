@@ -72,6 +72,7 @@ function runtime(options = {}) {
       releaseLock() { releases++; held = false; }
     }; } },
     getSheetOrThrow(spreadsheet, name) { const sheet = spreadsheet.getSheetByName(name); if (!sheet) throw new Error("MISSING_SHEET"); return sheet; },
+    normalizeString(value) { return String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim(); },
     validateRolePermission(action) {
       if (options.deniedAction === action) return { authorized: false };
       return { authorized: true };
@@ -96,11 +97,11 @@ function runtime(options = {}) {
   const names = ["withAuthorizedExamRead_", "getAuthorizedExamReadContext_", "getStudentExams", "getStudentExamsUnlocked_",
     "getExamQuestions", "getExamQuestionsUnlocked_", "getAllExams", "getAllExamsUnlocked_",
     "getTeacherExamActivity", "getTeacherExamActivityUnlocked_", "getExamGradeDistributionAnalytics",
-    "getExamGradeDistributionAnalyticsUnlocked_"];
+    "getExamGradeDistributionAnalyticsUnlocked_", "checkExamSchedulingConflict", "checkExamSchedulingConflictUnlocked_"];
   vm.runInNewContext(names.map(extractFunction).join("\n") +
     "\nthis.getStudentExams=getStudentExams; this.getExamQuestions=getExamQuestions; " +
     "this.getAllExams=getAllExams; this.getTeacherExamActivity=getTeacherExamActivity; " +
-    "this.getExamGradeDistributionAnalytics=getExamGradeDistributionAnalytics;", context);
+    "this.getExamGradeDistributionAnalytics=getExamGradeDistributionAnalytics; this.checkExamSchedulingConflict=checkExamSchedulingConflict;", context);
   return { context, sheets, stats: () => ({ acquires, releases, held }) };
 }
 const valid = runtime();
@@ -189,5 +190,43 @@ const analyticsRace = runtime({ studentActor: false, beforeAcquire() {
 const postLockAnalytics = analyticsRace.context.getExamGradeDistributionAnalytics({ sessionToken: "teacher", examenId: "EXM-1" });
 assert.equal(postLockAnalytics.data.promedio, 69, "analytics reads post-lock grades");
 assert.deepEqual(analyticsRace.stats(), { acquires: 1, releases: 1, held: false });
+
+
+const scheduling = runtime({ studentActor: false });
+const scheduleRows = scheduling.sheets.Examenes.rows;
+scheduleRows.push(
+  ["SCH-1","A","Math","10","A","2026-11-12","30","Activo","PROF-1"],
+  ["SCH-2","B","Math","10","A","2026-11-12T09:00:00","30","Activo","PROF-1"],
+  ["SCH-3","Cancelado","Math","10","A","2026-11-12","30","Cancelado","PROF-1"],
+  ["SCH-4","Inactivo","Math","10","A","2026-11-12","30","Inactivo","PROF-1"],
+  ["SCH-DUP","Duplicado","Math","10","A","2026-11-12","30","Activo","PROF-1"],
+  ["SCH-DUP","Duplicado 2","Math","10","A","2026-11-12","30","Activo","PROF-1"],
+  ["SCH-FOREIGN","Ajeno","Math","10","A","2026-11-12","30","Activo","PROF-2"]
+);
+const conflict = scheduling.context.checkExamSchedulingConflict({ sessionToken: "teacher", seccionAsignada: "A",
+  fechaLimite: "2026-11-12", examenId: "SCH-1", maxExamenesPorDia: 2 });
+assert.equal(conflict.hasConflict, false, "counts only one other active, unique, teacher-owned exam");
+assert.equal(conflict.examenesCount, 1);
+const conflictAtLimit = scheduling.context.checkExamSchedulingConflict({ sessionToken: "teacher",
+  seccionAsignada: "A", fechaLimite: "2026-11-12", maxExamenesPorDia: 1 });
+assert.equal(conflictAtLimit.hasConflict, true, "conflict is reported at configured threshold");
+assert.equal(conflictAtLimit.examenesCount, 2);
+assert.deepEqual(scheduling.stats(), { acquires: 2, releases: 2, held: false },
+  "scheduling reads share the bounded lock and release it");
+assert.throws(() => runtime({ deniedAction: "checkExamSchedulingConflict", studentActor: false }).context
+  .checkExamSchedulingConflict({ seccionAsignada: "A", fechaLimite: "2026-11-12" }),
+  /RESOURCE_NOT_AVAILABLE/, "scheduling requires its explicit RBAC action");
+assert.throws(() => runtime({ lockAvailable: false, studentActor: false }).context
+  .checkExamSchedulingConflict({ seccionAsignada: "A", fechaLimite: "2026-11-12" }),
+  /EXAM_READ_LOCK_TIMEOUT/, "scheduling fails closed on lock timeout");
+assert.throws(() => scheduling.context.checkExamSchedulingConflict({ seccionAsignada: "A", fechaLimite: "2026-02-31" }),
+  /EXAM_SCHEDULE_DATE_INVALID/, "impossible calendar dates are rejected");
+assert.throws(() => scheduling.context.checkExamSchedulingConflict({ seccionAsignada: "A", fechaLimite: "2026-11-12", maxExamenesPorDia: 0 }),
+  /EXAM_SCHEDULE_LIMIT_INVALID/, "zero limit is rejected");
+const deniedOwnership = runtime({ ownership: false, studentActor: false });
+const deniedCount = deniedOwnership.context.checkExamSchedulingConflict({ seccionAsignada: "A", fechaLimite: "2026-11-12" });
+assert.equal(deniedCount.hasConflict, false, "ownership-denied exams are excluded from the conflict count");
+assert.equal(deniedCount.examenesCount, 0, "ownership denial never leaks the number of inaccessible exams");
+assert.deepEqual(deniedOwnership.stats(), { acquires: 1, releases: 1, held: false });
 
 process.stdout.write("exam-service-read-endpoints-security: PASS\\n");

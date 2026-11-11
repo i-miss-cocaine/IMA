@@ -1188,37 +1188,66 @@ function getExamGradeDistributionAnalyticsUnlocked_(payload, context) {
 }
 // [TAREA-F7-IMP-07] [Fase 7: Planificación Académica, Horarios y Recursos] - Validación de sobrecarga de evaluaciones por sección y conflictos de agenda.
 function checkExamSchedulingConflict(payload) {
+  return withAuthorizedExamRead_("checkExamSchedulingConflict", payload,
+    context => checkExamSchedulingConflictUnlocked_(payload, context));
+}
+
+function checkExamSchedulingConflictUnlocked_(payload, context) {
   const { seccionAsignada, fechaLimite, examenId, maxExamenesPorDia } = payload || {};
-  if (!seccionAsignada || !fechaLimite) {
+  if (!String(seccionAsignada || "").trim() || !fechaLimite) {
     return { status: "success", hasConflict: false };
   }
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const examenesSheet = getSheetOrThrow(ss, "Examenes");
-  const examenesData = examenesSheet.getDataRange().getValues().slice(1);
-
-  const limitMax = Number(maxExamenesPorDia) || 2;
-  const dateTarget = String(fechaLimite).split("T")[0].split(" ")[0];
-
-  const sameDayExams = examenesData.filter(r => {
-    if (examenId && String(r[0]).trim() === String(examenId).trim()) return false;
-    if (r[7] === "Inactivo" || r[7] === "Cancelado") return false;
-    const sameSec = normalizeString(r[4]) === normalizeString(seccionAsignada) || normalizeString(r[3]) === normalizeString(seccionAsignada);
-    const rDate = String(r[5]).split("T")[0].split(" ")[0];
-    return sameSec && rDate === dateTarget;
-  });
-
-  if (sameDayExams.length >= limitMax) {
-    return {
-      status: "success",
-      hasConflict: true,
-      reason: `Sobrecarga evaluativa: La sección ${seccionAsignada} ya tiene ${sameDayExams.length} evaluacion(es) programada(s) para el ${dateTarget} (Límite máximo: ${limitMax}/día).`,
-      examenesCount: sameDayExams.length,
-      limitMax
-    };
+  const dateKey = value => {
+    if (value instanceof Date) {
+      if (isNaN(value.getTime())) return "";
+      const y = value.getFullYear(), m = value.getMonth() + 1, d = value.getDate();
+      return y + "-" + String(m).padStart(2, "0") + "-" + String(d).padStart(2, "0");
+    }
+    const raw = String(value || "").trim();
+    const match = /^(\d{4}-\d{2}-\d{2})(?:$|[T ])/.exec(raw);
+    if (!match) return "";
+    const parts = match[1].split("-").map(Number);
+    const check = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
+    if (check.getUTCFullYear() !== parts[0] || check.getUTCMonth() + 1 !== parts[1] ||
+        check.getUTCDate() !== parts[2]) return "";
+    return match[1];
+  };
+  const dateTarget = dateKey(fechaLimite);
+  if (!dateTarget) throw new Error("EXAM_SCHEDULE_DATE_INVALID");
+  const limitMax = maxExamenesPorDia === undefined || maxExamenesPorDia === null || maxExamenesPorDia === ""
+    ? 2 : Number(maxExamenesPorDia);
+  if (!Number.isSafeInteger(limitMax) || limitMax < 1 || limitMax > 100) {
+    throw new Error("EXAM_SCHEDULE_LIMIT_INVALID");
   }
-
-  return { status: "success", hasConflict: false, examenesCount: sameDayExams.length, limitMax };
+  const { ss, actor, scope } = context;
+  const rows = getSheetOrThrow(ss, "Examenes").getDataRange().getValues().slice(1);
+  const idCounts = {};
+  rows.forEach(row => {
+    const id = String(row[0] || "").trim();
+    if (id) idCounts[id] = (idCounts[id] || 0) + 1;
+  });
+  const section = normalizeString(seccionAsignada);
+  const excludedId = String(examenId || "").trim();
+  let examenesCount = 0;
+  rows.forEach(row => {
+    const id = String(row[0] || "").trim();
+    if (!id || idCounts[id] !== 1 || id === excludedId) return;
+    const status = String(row[7] || "").trim().toUpperCase();
+    if (status === "INACTIVO" || status === "CANCELADO") return;
+    if (actor.role === "Profesor" && String(row[8] || "").trim() !== actor.userId) return;
+    const sameSection = normalizeString(row[4]) === section || normalizeString(row[3]) === section;
+    if (!sameSection || dateKey(row[5]) !== dateTarget) return;
+    const ownership = assertExamResourceOwnershipForScope_(ss, scope, "EXAMEN", id,
+      "CHECK_SCHEDULING_CONFLICT", payload);
+    if (!ownership || ownership.authorized !== true) return;
+    examenesCount++;
+  });
+  if (examenesCount >= limitMax) {
+    return { status: "success", hasConflict: true,
+      reason: `Sobrecarga evaluativa: La sección ${seccionAsignada} ya tiene ${examenesCount} evaluacion(es) programada(s) para el ${dateTarget} (Límite máximo: ${limitMax}/día).`,
+      examenesCount, limitMax };
+  }
+  return { status: "success", hasConflict: false, examenesCount, limitMax };
 }
 
 // [TAREA-F7-IMP-07] [Fase 7: Planificación Académica, Horarios y Recursos] - Simulación de reprogramación de evaluaciones previa confirmación oficial.

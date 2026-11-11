@@ -3412,3 +3412,13 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Beta:** BETA-EXAM-038 Pendiente beta; no bloquea el cierre local del subalcance.
 - **Estado:** subalcance completado; TASK-153 En ejecución y AUD-NG-386 abierto por otras lecturas EXAM.
 - **Siguiente:** auditar individualmente checkExamSchedulingConflict, simulateExamReschedule y getGradingPerformanceAndPersistenceMetrics; no se agrupan en una sola implementación.
+
+### 10.137 TASK-153 / AUD-NG-386 — seguridad y consistencia de checkExamSchedulingConflict (C1.485)
+
+- **Hallazgo:** la comprobación de sobrecarga consultaba Examenes sin permiso específico ni lock compartido; podía contar IDs duplicados y exámenes ajenos al profesor/ámbito.
+- **Corrección:** checkExamSchedulingConflict delega en withAuthorizedExamRead_, revalida RBAC/identidad/scope después de adquirir ScriptLock y libera en finally. El worker cuenta únicamente IDs únicos con ownership autorizado, filtra propiedad docente, estados Inactivo/Cancelado y el examen excluido.
+- **Validación de entradas:** fecha calendario YYYY-MM-DD (admite sufijo de hora ISO) y límite entero seguro entre 1 y 100; valor predeterminado 2. Fechas/filas inválidas e IDs ambiguos no participan.
+- **Pruebas locales:** parseo V8 y harness aislado de RBAC denegado, ownership, aislamiento docente, duplicados, estados, exclusión, umbral, fecha/límite inválidos y timeout/lock PASS.
+- **CI/runner Node nativo y Apps Script/Sheets real:** NOT RUN. **Beta:** BETA-EXAM-039 Pendiente beta; no bloquea cierre local.
+- **Estado:** subalcance completado; TASK-153 En ejecución y AUD-NG-386 abierto por otras lecturas EXAM.
+- **Siguiente:** auditar individualmente simulateExamReschedule; no agrupar con getGradingPerformanceAndPersistenceMetrics.

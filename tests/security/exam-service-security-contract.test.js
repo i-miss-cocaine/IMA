@@ -332,4 +332,16 @@ assert.ok(analyticsWorker.includes("examIdCounts[examenId] !== 1") &&
   analyticsWorker.includes('actor.role === "Profesor"') &&
   analyticsWorker.includes("Number.isFinite(notaNum)"),
   "grade analytics requires a unique owned exam, unique deliveries and finite scores");
+
+const schedulingHandler = extractFunction(source, "checkExamSchedulingConflict");
+const schedulingWorker = extractFunction(source, "checkExamSchedulingConflictUnlocked_");
+assert.ok(schedulingHandler.includes('withAuthorizedExamRead_("checkExamSchedulingConflict"'),
+  "scheduling conflict check delegates to the shared serialized RBAC reader");
+assert.ok(schedulingWorker.includes("idCounts[id] !== 1") &&
+  schedulingWorker.includes("assertExamResourceOwnershipForScope_") &&
+  schedulingWorker.includes('actor.role === "Profesor"') &&
+  schedulingWorker.includes("EXAM_SCHEDULE_DATE_INVALID") &&
+  schedulingWorker.includes("EXAM_SCHEDULE_LIMIT_INVALID"),
+  "scheduling conflict counts only unique, owned, teacher-visible exams and validates date/limit inputs");
+
 process.stdout.write("exam-service-security-contract: authentication, identity, teacher ownership and serialized exam mutations assertions passed\\n");
