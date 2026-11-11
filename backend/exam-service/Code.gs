@@ -3339,6 +3339,17 @@ function reviewPeriodGradebook(payload) {
 }
 
 function withAuthorizedPeriodGradebookReview_(payload, mutation) {
+  // Rechazar RBAC e identidad inválidos antes de competir por el lock compartido.
+  // El contexto completo se revalida bajo el lock para evitar TOCTOU.
+  const permission = validateRolePermission("reviewPeriodGradebook", payload);
+  if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const actor = getVerifiedExamIdentity_(payload);
+  const reviewerRoles = ["Administrador", "Desarrollador", "Dirección", "Director", "Secretaría"];
+  if (!actor || actor.authorized !== true || !String(actor.userId || "").trim() ||
+      reviewerRoles.indexOf(String(actor.role || "").trim()) === -1) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
+
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(5000)) throw new Error("GRADEBOOK_REVIEW_LOCK_TIMEOUT");
   try {
