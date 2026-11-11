@@ -2119,7 +2119,7 @@ gradeExamSubmission ya utilizaba withAuthorizedExamSubmissionMutation_ (lock, pe
 backend/exam-service/Code.gs; tests/security/exam-service-grade-submission-validation.test.js; .github/workflows/exam-service-security-contract.yml; beta_test.txt (BETA-EXAM-062); Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; Auditoria.txt; changueslogs.txt; historial e índice.
 ### Verificación
 - Parseo completo del Code.gs mediante parser V8: PASS.
-- Contrato aislado sobre gradeExamSubmission productiva en V8: 15/15 PASS, incluyendo límites, valores no finitos, rango, precisión, float representation, metadatos inválidos y denegación del wrapper.
+- Contrato aislado sobre gradeExamSubmission productiva en V8: 17/17 PASS, incluyendo límites, valores no finitos, rango, precisión, float representation, metadatos inválidos y denegación del wrapper.
 - Fuente del test Node dedicada parseada correctamente; ejecución Node del archivo y CI aún no observadas.
 - Apps Script/Sheets real NOT RUN; BETA-EXAM-062 Pendiente beta.
 ### Limitaciones
