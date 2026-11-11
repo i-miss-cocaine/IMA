@@ -1823,3 +1823,22 @@ HEAD inicial: d4f2e81dd553bd5976f2703913a26e6bb52cbdbb. Rama de trabajo: NG_beta
 
 HEAD inicial: 16dad718e2462963bfc10af46a28899040685c45. Rama: NG_beta_0.0.0.1_work. Rama base esperada sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
 ===============================================================================
+
+
+===============================================================================
+## C1.563 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — verificar la suite de revocación RBAC bajo ScriptLock para closePeriodGradebook.
+
+### Verificación confirmada
+- El usuario ejecutó `node --test tests/security/exam-service-period-gradebook-closure-security.test.js`.
+- Resultado de Node informado: Tests 1, Pass 1, Fail 0; el usuario confirmó que el mensaje interno fue `exam-service-period-gradebook-closure-security: PASS (21/21)`.
+- Los 21 escenarios internos completaron correctamente, incluido permiso RBAC concedido en preflight y revocado bajo ScriptLock: RESOURCE_NOT_AVAILABLE antes de abrir Sheets, lock liberado y snapshot de CierresPeriodos intacto.
+- Versión de Node no informada. CI y Apps Script/Sheets real: NOT RUN. BETA-EXAM-054 permanece Pendiente beta.
+
+### Estado y continuidad
+C1.562 queda verificada y cerrada en cobertura local. Solo se modificó la suite de seguridad; backend productivo, RBAC, roles, scope, asignaciones y persistencia permanecen sin cambios. TASK-153 / AUD-NG-386 continúa En ejecución para el inventario de mutaciones EXAM restantes.
+
+**Siguiente tarea identificada:** revisar y cubrir la revocación RBAC concedido→revocado bajo ScriptLock en `reopenPeriodGradebook`. Su fixture actual utiliza un booleano RBAC estático y no representa el cambio entre preflight y contexto protegido.
+
+HEAD anterior: 13c331a7d94b1c3d7a85d7c63904dcf68b008f72. Rama: NG_beta_0.0.0.1_work. Rama base sin cambios esperada: 44d9891132332e692dbe2ba8602b41f50a508a59.
+===============================================================================
