@@ -3857,3 +3857,14 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Beta:** BETA-EXAM-068 agregado; Apps Script/Sheets real NOT RUN y permanece Pendiente beta.
 - **Estado:** subalcance saveStudentRecovery corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras rutas mutadoras EXAM.
 - **Siguiente:** continuar inventario de wrappers mutadores EXAM no cubiertos, una sola operación por iteración.
+
+
+### 10.182 TASK-153 / AUD-NG-386 — identidad firmada completa antes del lock en submitExam (C1.529)
+- **Hallazgo alto:** `submitExam` validaba RBAC antes de `ScriptLock`, pero no validaba la identidad firmada, el `userId` no vacío ni el rol de estudiante hasta que `submitExamUnlocked_` llamaba `getExamReadContext_` bajo lock. Las solicitudes inválidas podían competir por el bloqueo.
+- **Corrección:** preflight interno de permiso `submitExam`, identidad firmada autorizada, `userId` no vacío y rol exacto Estudiante/Alumno antes del lock. El contexto compartido `getExamReadContext_` ahora falla cerrado ante identidad no autorizada o `userId` vacío antes de abrir Sheets, preservando revalidación bajo lock.
+- **Compatibilidad:** se mantienen Estudiante y Alumno, el permiso submitExam, la comprobación de asignación/examen, unicidad de preguntas, límite de intentos y persistencia serializada.
+- **Pruebas:** suite dedicada `exam-service-submit-mutation-security.test.js` 9/9 PASS en Node 22; incluye RBAC denegado, identidad inválida/incompleta, rol no estudiante, flujo positivo para Estudiante y Alumno, timeout, liberación del lock y rechazo del contexto antes de Sheets. Parseo completo de Code.gs PASS.
+- **CI:** workflow `43061156667` SUCCESS; job `exam-security-contracts` `130663778064` SUCCESS; suite específica 9/9 PASS y todas las demás suites del job SUCCESS.
+- **Beta:** BETA-EXAM-069 agregado; Apps Script/Sheets real NOT RUN.
+- **Estado:** subalcance submitExam corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras superficies EXAM.
+- **Siguiente:** continuar inventario de rutas mutadoras EXAM aún no cubiertas, una operación por iteración.

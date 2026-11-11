@@ -1675,3 +1675,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - GitHub Actions workflow 43059932693 SUCCESS; job 130659396717 SUCCESS.
 - Apps Script/Sheets real NOT RUN; BETA-EXAM-068 agregado y Pendiente beta.
 ===============================================================================
+
+===============================================================================
+[2026-11-11] C1.529 — EXAM submitExam: identidad completa antes de ScriptLock
+- submitExam valida permiso, identidad firmada autorizada, userId no vacío y rol Estudiante/Alumno antes de adquirir el lock.
+- getExamReadContext_ rechaza identidad incompleta antes de abrir Sheets; se conserva la revalidación contextual y el control serializado de intentos/persistencia.
+- Suite dedicada 9/9 PASS Node 22; parseo Code.gs PASS; workflow 43061156667 / job 130663778064 SUCCESS.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-069 Pendiente beta.
+===============================================================================

@@ -777,3 +777,13 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Resultado esperado:** los casos inválidos fallan antes de adquirir ScriptLock; los casos válidos revalidan identidad/scope/datos bajo lock; el lock se libera en éxito y error; no hay escritura para solicitudes denegadas.
 - **Estado:** Pendiente beta.
 - **Evidencia requerida:** trazas controladas de orden RBAC/identidad/lock/Sheets, resultado de persistencia de los casos autorizados y confirmación de liberación del lock.
+
+===============================================================================
+## BETA-EXAM-069 — TASK-153 / AUD-NG-386 / EXAM: identidad completa en submitExam
+- **Módulo/rol:** EXAM; Estudiante y Alumno.
+- **Objetivo:** comprobar en Apps Script/Sheets real que submitExam exige permiso efectivo, identidad firmada autorizada, userId no vacío y rol de estudiante antes de solicitar ScriptLock.
+- **Precondiciones:** entorno beta disponible, cuentas sintéticas Estudiante/Alumno y cuentas de roles no admitidos; examen activo asignado y preguntas válidas; acceso controlado a EntregasExamen.
+- **Pasos:** probar RBAC denegado, identidad no autorizada, userId vacío y rol no estudiante; ejecutar envío válido como Estudiante y Alumno; probar límite de intentos y concurrencia/reintento; confirmar liberación del lock en éxito y error.
+- **Resultado esperado:** solicitudes inválidas no adquieren lock ni abren Sheets; identidades completas revalidan contexto bajo lock; un envío válido persiste una sola entrega y respeta el límite de intentos.
+- **Estado:** Pendiente beta.
+- **Evidencia requerida:** trazas RBAC/identidad/lock/Sheets, registros de entrega y resultado de intentos concurrentes.

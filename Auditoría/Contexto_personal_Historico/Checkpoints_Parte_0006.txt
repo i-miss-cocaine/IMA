@@ -786,3 +786,38 @@ Alcance: inspección y corrección de withAuthorizedStudentRecoveryMutation_ par
 - Estado: subalcance saveStudentRecovery corregido; TASK-153 / AUD-NG-386 permanece En ejecución por otras mutaciones EXAM.
 - Siguiente acción: inspeccionar el siguiente wrapper mutador EXAM no cubierto, una sola operación en la siguiente iteración, conservando esta sesión.
 ===============================================================================
+
+
+===============================================================================
+C1.529 — TASK-153 / AUD-NG-386 / EXAM submitExam
+ID de sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-11
+HEAD inicial: 2e043b6966e8e370b57c9233529b477bfbce6db4
+Rama exclusiva: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 — HEAD 44d9891132332e692dbe2ba8602b41f50a508a59; sin escrituras.
+### Alcance
+Corregir la autorización de identidad firmada en submitExam antes de solicitar ScriptLock, preservando la serialización del límite de intentos y la persistencia.
+
+### Hallazgo y corrección
+- submitExam ya comprobaba RBAC antes del lock, pero no identidad firmada, userId no vacío ni rol Estudiante/Alumno.
+- Se añadió preflight de identidad autorizada, userId no vacío y rol exacto Estudiante/Alumno antes de lock.
+- getExamReadContext_ ahora rechaza actor no autorizado o userId vacío antes de SpreadsheetApp.openById, preservando revalidación bajo lock.
+- Se mantienen los roles Estudiante y Alumno y el comportamiento existente de asignación, preguntas, límite de intentos y append de entrega.
+
+### Archivos modificados
+- backend/exam-service/Code.gs
+- tests/security/exam-service-submit-mutation-security.test.js (nuevo)
+- .github/workflows/exam-service-security-contract.yml
+
+### Verificación
+- Parseo completo de Code.gs: PASS (incluido en suite Node 22).
+- Suite dedicada submit mutation: 9/9 PASS en Node 22.
+- Casos: RBAC denegado pre-identidad/pre-lock; identidad inválida; userId vacío; rol no estudiante; flujo positivo Estudiante y Alumno; timeout; contexto inválido sin abrir Sheets; contexto válido.
+- GitHub Actions workflow 43061156667 SUCCESS; job exam-security-contracts 130663778064 SUCCESS; todas las suites del job SUCCESS.
+- Apps Script/Sheets real: NOT RUN; BETA-EXAM-069 Pendiente beta.
+
+### Commits y continuidad
+- Commit de implementación/pruebas/workflow: 57c8b6b73a623fc826d0363c358f0d4a746961dc.
+- Estado: subalcance submitExam corregido; TASK-153 / AUD-NG-386 continúa En ejecución.
+- Siguiente acción: inspeccionar siguiente ruta mutadora EXAM no cubierta, una sola operación en la próxima iteración, conservando esta sesión.
+===============================================================================

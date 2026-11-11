@@ -1794,3 +1794,11 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Verificación local:** parseo Code.gs PASS; harness del wrapper extraído 9/9 PASS; suite dedicada 16/16 PASS en Node 22 mediante CI.
 - **CI:** workflow `43059932693`, job `130659396717` SUCCESS; step de recuperación de notas SUCCESS.
 - **Apps Script/Sheets real:** NOT RUN; BETA-EXAM-068 permanece Pendiente beta.
+
+
+### Seguimiento AUD-NG-386 — C1.529 / submitExam
+- **Hallazgo alto corregido:** submitExam validaba permiso RBAC antes del lock, pero posponía identidad firmada, userId y rol de estudiante hasta el worker bajo lock.
+- **Corrección:** preflight de identidad autorizada, userId no vacío y rol Estudiante/Alumno antes de ScriptLock; getExamReadContext_ revalida identidad completa antes de abrir Sheets.
+- **Evidencia:** suite dedicada 9/9 PASS Node 22; parseo Code.gs PASS; workflow 43061156667 SUCCESS, job 130663778064 SUCCESS.
+- **Beta:** Apps Script/Sheets real NOT RUN; BETA-EXAM-069 Pendiente beta.
+- TASK-153 / AUD-NG-386 permanece En ejecución por otras rutas EXAM.
