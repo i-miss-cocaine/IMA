@@ -1266,3 +1266,50 @@ Asegurar exclusivamente la lectura getGradebookData del servicio EXAM.
 - Actualización fast-forward compare-and-swap en NG_beta_0.0.0.1_work; sin force.
 - NG_beta_0.0.0.1 permanece intacta: 44d9891132332e692dbe2ba8602b41f50a508a59.
 ===============================================================================
+
+===============================================================================
+## CHECKPOINT C1.489 — EXAM: seguridad de getCompetencyEvaluations
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-11 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.488.
+HEAD inicial: 118008e7e67e768f5fe8998919d722efd2809829.
+HEAD final de implementación y registros: 993ff672d75d3d53e2502de38859d122cdcc53aa.
+
+### Alcance
+Asegurar exclusivamente la lectura getCompetencyEvaluations del servicio EXAM.
+
+### Hallazgo y corrección
+- El endpoint consultaba EvaluacionesCompetencias directamente, aceptaba userId/asignaturaId/periodoId del cliente sin autorización propia y no usaba el ScriptLock. Omitir userId podía devolver evaluaciones de otros estudiantes; getOrCreateSheet podía crear una hoja durante la lectura.
+- El handler delega en withAuthorizedExamRead_("getCompetencyEvaluations", ...), revalidando RBAC, identidad y ámbito bajo el ScriptLock compartido.
+- Estudiante/Alumno solo consulta su identidad firmada. Profesor requiere estudiante único, asignatura y periodo, y una asignación exacta en ConfiguracionAcademica para su identidad y el grado/sección del estudiante; asignaciones ambiguas se deniegan.
+- Administrador, Desarrollador, Dirección, Director y Secretaría requieren scope.institutionWide === true. Cualquier otro rol se deniega en el worker.
+- La lectura no crea hojas ni escribe. Se excluyen IDs de evaluación vacíos/duplicados; se valida el esquema y las fechas heredadas inválidas se devuelven como null. Se conserva el contrato status/total/data.
+
+### Archivos
+- backend/exam-service/Code.gs
+- tests/security/exam-service-competency-evaluations-security.test.js
+- beta_test.txt
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+
+### Commits de la iteración
+- Suite: eefed804afca4ca28f279e5af9ff0f4d799087b0.
+- Implementación: 5360e6869fb0b82c890ac09b4a616be1b97db96a.
+- Ajuste de resumen de escenarios: 5b92d75a884537962bdca1c7a2e432c7de714e0e.
+- Registros: Auditoria.txt 056507a0cb03a30de08684e5925e0c94772b6666; changueslogs.txt a9917a6af3cb6271a8ca637231c21be8835aac9d; beta_test.txt 058340a68c61d4637650802cf3c4c99ad0592405; Plan Maestro 993ff672d75d3d53e2502de38859d122cdcc53aa.
+
+### Verificación local
+- Parseo V8 del backend: PASS.
+- Suite dedicada ejecutada en harness V8 aislado: PASS (17 escenarios).
+- Escenarios: aislamiento estudiante/IDOR; asignación docente exacta, filtros obligatorios, asignación conflictiva y asignatura ajena; administrador institucional y scope departamental; allowlist; RBAC; scope no autorizado; timeout; lectura post-lock; hoja ausente sin creación; perfil duplicado; fecha inválida; esquema incompatible.
+- Runner Node nativo y CI: NOT RUN. Apps Script/Sheets real: NOT RUN. BETA-EXAM-043: Pendiente beta.
+
+### Estado y continuidad
+- Subalcance getCompetencyEvaluations completado y publicado.
+- TASK-153 permanece En ejecución; AUD-NG-386 abierto por otras lecturas EXAM.
+- Siguiente acción concreta: identificar y auditar individualmente la siguiente lectura EXAM no cubierta.
+- Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios).
+===============================================================================
