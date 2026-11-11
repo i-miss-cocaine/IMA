@@ -48,7 +48,7 @@ function runExamMutationLockWrapper(options = {}, mutation = () => "ok") {
     getVerifiedExamIdentity_(payload) {
       events.push("identity");
       identityCalls++;
-      return { authorized: !(options.preflightIdentityDenied || (options.contextIdentityDenied && identityCalls > 1)) };
+      return { authorized: !(options.preflightIdentityDenied || (options.contextIdentityDenied && identityCalls > 1)), userId: "actor-1" };
     },
     LockService: { getScriptLock() {
       events.push("lock-request");

@@ -1844,3 +1844,10 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Cambio:** la fixture alterna actores; el nuevo caso usa identidad válida al inicio y `userId` de espacios en el contexto. Confirma rechazo antes de abrir Sheets, cierre sin modificar y liberación del lock.
 - **Verificación local:** parseo Code.gs PASS; suite dedicada 27/27 PASS en runtime V8 aislado con shims. Node 22 nativo NOT RUN; CI pendiente de resultado tras publicación.
 - **Beta:** BETA-EXAM-055 ampliado, Pendiente beta; Apps Script/Sheets real NOT RUN. Sin cambio productivo de permisos/roles/persistencia.
+
+
+### C1.536 — fallo CI en fixture de contrato de identidad EXAM
+- **Causa raíz:** `withAuthorizedExamMutation_` exige actor autorizado con `userId` no vacío en preflight. El mock de `tests/security/exam-service-security-contract.test.js` devolvía solo `{ authorized: true }`; la mutación no se ejecutaba y el resultado era `undefined`, provocando assertion `undefined !== saved` en línea 85.
+- **Corrección:** añadir `userId: "actor-1"` al mock de identidad de la primera suite. La validación productiva se mantiene estricta.
+- **Otras suites:** las suites específicas previas, incluida reopen 27/27, pasaron; el fallo reportado fue la suite de contrato.
+- **Verificación local:** parseo de Code.gs y del archivo de prueba PASS. Ejecución Node 22/CI nuevo pendiente.

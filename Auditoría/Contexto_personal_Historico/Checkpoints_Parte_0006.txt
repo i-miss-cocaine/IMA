@@ -1081,3 +1081,25 @@ No se modifica código productivo ni permisos, roles, scope o persistencia.
 Cobertura TOCTOU de reopenPeriodGradebook completada. TASK-153 / AUD-NG-386 sigue En ejecución por otras mutaciones EXAM.
 Siguiente acción: continuar el inventario de mutaciones EXAM restantes según dependencias y evidencia vigente, sin repetir controles ya cubiertos.
 ===============================================================================
+
+
+===============================================================================
+C1.536 — TASK-153 / AUD-NG-386 / corrección de fixture de contrato EXAM
+ID de sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-11
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: 16c2e6fc09f66a8b68f527c3eb469bc828b7e978
+
+### Causa raíz
+CI 43069165961 falló en tests/security/exam-service-security-contract.test.js:85. El mock getVerifiedExamIdentity_ del contrato de withAuthorizedExamMutation_ retornaba authorized true sin userId. El wrapper exige identidad completa y, correctamente, no ejecutaba la mutación; la aserción esperaba saved pero obtuvo undefined. Las suites específicas anteriores, incluida reopen 27/27, finalizaron PASS.
+
+### Cambio
+Se añade userId: actor-1 al mock, alineándolo con las otras fixtures de identidad del mismo archivo. No se modifica Code.gs ni se relajan controles productivos.
+
+### Verificación
+- Parseo Code.gs y archivo de prueba: PASS.
+- Ejecución Node 22 nativo y nuevo CI: pendientes tras publicar.
+
+### Continuidad
+C1.536 corrige exclusivamente el contrato de prueba desactualizado. Siguiente iteración: continuar inventario de mutaciones EXAM elegibles tras verificar CI, sin duplicar C1.534/C1.535.
+===============================================================================

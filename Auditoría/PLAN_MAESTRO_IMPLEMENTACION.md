@@ -3916,3 +3916,10 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Verificación local:** suite dedicada 27/27 PASS en runtime V8 aislado con shims de `fs`/`vm`/`assert`; parseo completo de `Code.gs` PASS. No se afirma Node 22 nativo.
 - **Beta:** BETA-EXAM-055 ampliado; Pendiente beta. Apps Script/Sheets real NOT RUN.
 - **Estado:** cobertura TOCTOU de `reopenPeriodGradebook` completada; TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
+
+
+### 10.189 TASK-153 / AUD-NG-386 — alinear fixture de contrato EXAM con identidad firmada completa (C1.536)
+- **Hallazgo CI:** workflow 43069165961 ejecutó satisfactoriamente las suites específicas, incluida reopenPeriodGradebook 27/27, pero falló en `exam-service-security-contract.test.js:85`: el mock de identidad de `withAuthorizedExamMutation_` no incluía `userId`, y el wrapper rechaza correctamente esa identidad incompleta antes de ejecutar la mutación. La fixture estaba desactualizada respecto al contrato reforzado en C1.532.
+- **Cambio:** el mock devuelve `userId: actor-1`, como las fixtures de las demás rutas del mismo archivo. No se debilita la validación productiva ni se altera autorización.
+- **Verificación local:** parseo del archivo de prueba PASS; parseo completo Code.gs PASS. Ejecución Node 22/CI pendiente tras el commit.
+- **Estado:** corrección de fixture; pendiente CI.

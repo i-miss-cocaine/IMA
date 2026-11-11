@@ -1730,3 +1730,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Suite dedicada 27/27 PASS en runtime V8 aislado con shims; parseo Code.gs PASS. Node 22 nativo/CI aún no verificados.
 - BETA-EXAM-055 ampliado y Pendiente beta; Apps Script/Sheets real NOT RUN.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] C1.536 — corrección fixture de contrato EXAM tras fallo CI
+- Causa: mock de identidad de withAuthorizedExamMutation_ omitía userId, aunque el wrapper ya exige identidad firmada completa. El contrato fallaba con undefined !== saved en línea 85.
+- Se añade userId actor-1 al mock; sin cambio productivo ni relajación de controles.
+- Suites específicas previas, incluida reopen 27/27, pasaron; parseo de archivos PASS. CI posterior pendiente.
+===============================================================================
