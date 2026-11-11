@@ -1630,3 +1630,11 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Corrección:** RBAC efectivo comprobado al inicio, antes de abrir Sheets o adquirir el lock; se mantienen identidad firmada, scope, departamento, ownership y rollback.
 - **Verificación:** contrato local aislado 10/10 PASS (Node 22) sobre createExam, incluyendo denegación RBAC previa a abrir Sheets, identidad/scope/departamento, lock y rollback parcial; parseo completo del archivo y workflow de push no verificados. BETA-EXAM-060 Pendiente beta.
 ===============================================================================
+
+===============================================================================
+### AUD-NG-386 — purgeSecurityCaches (C1.508)
+- **Hallazgo alto:** purgeSecurityCaches era invocable directamente sin volver a validar RBAC ni identidad; dependía solo de doPost. Además, SESSION_REVOKED eliminaba revoked_session_<id>, aunque verifySessionToken consulta esa clave para rechazar sesiones revocadas.
+- **Corrección:** normaliza payload; exige validateRolePermission("purgeSecurityCaches") y getVerifiedExamIdentity_ antes de acceder a CacheService. Para SESSION_REVOKED escribe el marcador REVOKED con TTL de 86400; los eventos genéricos conservan la purga explícita.
+- **Pruebas locales:** contrato aislado 7/7 PASS sobre la función productiva extraída y sintaxis de función PASS. Parseo completo de Code.gs/CI pendiente de observación; Apps Script/CacheService real NOT RUN.
+- **Beta:** BETA-EXAM-061 Pendiente beta. TASK-153 y AUD-NG-386 permanecen En ejecución por otras superficies EXAM.
+===============================================================================
