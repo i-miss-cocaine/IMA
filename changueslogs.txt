@@ -1455,3 +1455,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Los contratos exam-service-question-bank-security.test.js y exam-service-question-bank-read-security.test.js terminaron PASS en GitHub Actions (Ubuntu / Node 22), junto con los demás pasos del workflow.
 - Ejecución semántica local NOT RUN por falta de checkout; CI PASS verificado sobre bd1aeddaa658f8f6eb606eaec8b0cbc5e0b381fd.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] C1.514 — IMA-EXEC-20261110-1825Z-02 — EXAM: RBAC/identidad antes del lock de mutaciones de entregas
+- withAuthorizedExamSubmissionMutation_ valida permiso efectivo e identidad firmada antes de solicitar ScriptLock; el contexto completo se vuelve a validar dentro del lock y finally conserva la liberación.
+- Afecta gradeExamSubmission y deleteExamSubmission. Contrato de borrado ampliado con seis escenarios de orden, revalidación, excepción y timeout.
+- Parseo local de Code.gs y contrato Node: PASS; ejecución focalizada del wrapper se registra con su resultado verificable. CI pendiente de este commit.
+- Sin cambio de esquema. Apps Script/Sheets real NOT RUN; TASK-153 / AUD-NG-386 sigue En ejecución.
+===============================================================================

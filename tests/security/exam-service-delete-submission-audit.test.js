@@ -105,4 +105,73 @@ test(() => {
     wrapper.includes("getAuthorizedExamSubmissionMutationContext_(payload, action)") &&
     wrapper.includes("finally") && wrapper.includes("releaseLock()"));
 });
+
+function runSubmissionMutationWrapper(options = {}) {
+  const events = [];
+  let permissionCalls = 0, identityCalls = 0;
+  const runtime = {
+    validateRolePermission() {
+      permissionCalls++; events.push("permission");
+      return { authorized: !(options.preflightPermissionDenied || (options.contextPermissionDenied && permissionCalls > 1)) };
+    },
+    getVerifiedExamIdentity_() {
+      identityCalls++; events.push("identity");
+      return { authorized: !(options.preflightIdentityDenied || (options.contextIdentityDenied && identityCalls > 1)), userId: "ACTOR-1" };
+    },
+    LockService: { getScriptLock() {
+      events.push("lock-request");
+      return {
+        tryLock() { events.push("lock-acquire"); return options.lockAvailable !== false; },
+        releaseLock() { events.push("lock-release"); }
+      };
+    } },
+    getAuthorizedExamSubmissionMutationContext_() {
+      events.push("context");
+      const permission = runtime.validateRolePermission();
+      if (!permission.authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
+      const actor = runtime.getVerifiedExamIdentity_();
+      if (!actor.authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
+      return { actor };
+    }
+  };
+  vm.runInNewContext(extract("withAuthorizedExamSubmissionMutation_") +
+    "\nthis.invoke = withAuthorizedExamSubmissionMutation_;", runtime);
+  return {
+    events,
+    call(mutation = () => "ok") { return runtime.invoke({}, "gradeExamSubmission", mutation); }
+  };
+}
+test(() => {
+  const x = runSubmissionMutationWrapper({ preflightPermissionDenied: true });
+  assert.throws(() => x.call(), /RESOURCE_NOT_AVAILABLE/);
+  assert.deepEqual(x.events, ["permission"], "RBAC denial must happen before requesting the shared lock");
+});
+test(() => {
+  const x = runSubmissionMutationWrapper({ preflightIdentityDenied: true });
+  assert.throws(() => x.call(), /RESOURCE_NOT_AVAILABLE/);
+  assert.deepEqual(x.events, ["permission", "identity"], "invalid identity must not acquire the shared lock");
+});
+test(() => {
+  const x = runSubmissionMutationWrapper();
+  assert.equal(x.call(() => { x.events.push("mutation"); return "saved"; }), "saved");
+  assert.deepEqual(x.events, ["permission", "identity", "lock-request", "lock-acquire", "context",
+    "permission", "identity", "mutation", "lock-release"]);
+});
+test(() => {
+  const x = runSubmissionMutationWrapper({ contextPermissionDenied: true });
+  assert.throws(() => x.call(() => { x.events.push("mutation"); }), /RESOURCE_NOT_AVAILABLE/);
+  assert.deepEqual(x.events, ["permission", "identity", "lock-request", "lock-acquire", "context",
+    "permission", "lock-release"], "full authorization is rechecked under lock and lock is released on denial");
+});
+test(() => {
+  const x = runSubmissionMutationWrapper();
+  assert.throws(() => x.call(() => { x.events.push("mutation"); throw new Error("write failed"); }), /write failed/);
+  assert.equal(x.events[x.events.length - 1], "lock-release", "lock is released after mutation failure");
+});
+test(() => {
+  const x = runSubmissionMutationWrapper({ lockAvailable: false });
+  assert.throws(() => x.call(), /EXAM_SUBMISSION_LOCK_TIMEOUT/);
+  assert.deepEqual(x.events, ["permission", "identity", "lock-request", "lock-acquire"]);
+});
+
 console.log("exam-service-delete-submission-audit: " + scenarios + "/" + scenarios + " PASS");

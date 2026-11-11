@@ -3704,3 +3704,13 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Evidencia:** los steps `Run question bank mutation security regression` y `Run question bank read security regression` completaron `success`; los contratos EXAM restantes del mismo job también finalizaron correctamente.
 - **Distinción de entorno:** ejecución semántica local NOT RUN por falta de checkout; la ejecución real de ambos contratos se verificó en el runner Ubuntu con Node 22. Apps Script/Sheets real NOT RUN; no aplica beta por tratarse de integración de pruebas.
 - **Continuidad:** C1.513 queda verificado; TASK-153 / AUD-NG-386 permanece En ejecución por otras rutas mutadoras EXAM.
+
+
+### 10.167 TASK-153 / AUD-NG-386 — autorización antes del lock en mutaciones de entregas EXAM (C1.514)
+- **Hallazgo:** `withAuthorizedExamSubmissionMutation_` adquiría el ScriptLock compartido antes de validar RBAC e identidad. Las acciones `gradeExamSubmission` y `deleteExamSubmission` podían permitir que solicitudes inválidas compitieran por el bloqueo y retrasaran escrituras autorizadas.
+- **Corrección:** validar permiso efectivo e identidad firmada antes de solicitar el lock; dentro del lock se conserva la validación completa del contexto (permiso, identidad, examen, propiedad y entrega) para evitar TOCTOU. El lock se libera en `finally`.
+- **Pruebas locales:** parseo completo de Code.gs y del contrato actualizado PASS; seis escenarios deterministas del wrapper: denegación RBAC antes del lock, identidad inválida antes del lock, ruta autorizada, revalidación denegada bajo lock, liberación tras excepción de mutación y timeout de lock. Resultado de ejecución local registrado por separado.
+- **CI:** el contrato existente `exam-service-delete-submission-audit.test.js` se amplía; el workflow ya ejecuta este archivo.
+- **Beta:** Apps Script/Sheets real NOT RUN; no aplica para aprobación local del wrapper aislado.
+- **Estado:** subalcance de lock/autorización corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras rutas mutadoras EXAM.
+- **Siguiente:** continuar inventario de mutadores EXAM no cubiertos, sin repetir los wrappers ya endurecidos.

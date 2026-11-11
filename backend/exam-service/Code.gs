@@ -916,6 +916,13 @@ function deleteExamUnlocked_(payload, context) {
 }
 
 function withAuthorizedExamSubmissionMutation_(payload, action, mutation) {
+  // Rechazar solicitudes no autorizadas antes de competir por el lock compartido.
+  // El contexto completo se vuelve a validar dentro del lock para evitar TOCTOU.
+  const permission = validateRolePermission(action, payload);
+  if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const actor = getVerifiedExamIdentity_(payload);
+  if (!actor || actor.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(5000)) throw new Error("EXAM_SUBMISSION_LOCK_TIMEOUT");
   try {
