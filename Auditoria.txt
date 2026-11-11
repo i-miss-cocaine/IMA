@@ -1486,3 +1486,13 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - Node nativo/CI y Apps Script/Sheets real: NOT RUN. BETA-EXAM-041 Pendiente beta.
 - TASK-153 permanece En ejecución; AUD-NG-386 abierto por otras lecturas EXAM.
 ===============================================================================
+
+===============================================================================
+## C1.488 — EXAM: seguridad de getGradebookData
+- Hallazgo: endpoint sin RBAC/identidad/ámbito; aceptaba filtros y profesorId del cliente, devolvía roster, emails, calificaciones y recuperaciones de cualquier grado/sección; además creaba hojas al leer categorías/recuperaciones.
+- Corrección: handler usa withAuthorizedExamRead_ con RBAC y ScriptLock compartido. Profesor exige profesorId igual a actor verificado, filtros completos y asignación exacta en ConfiguracionAcademica. Cualquier asignación coincidente de otro profesor vuelve ambiguo el contexto y deniega acceso. Administrador/Desarrollador/Dirección/Director/Secretaría requieren scope institucional. Otros roles quedan denegados en el worker.
+- Integridad/privacidad: filtro de sección exacto; estudiantes con userId vacío o duplicado se excluyen y sus calificaciones/recuperaciones no se retornan. Lectura no crea hojas: categorías predeterminadas se devuelven en memoria y cierres ausentes mantienen estado Abierto.
+- Pruebas locales: parseo V8 y harness de exam-service-gradebook-read-security PASS (docente asignado, suplantación, sección no asignada, asignación conflictiva, filtros obligatorios, scope institucional, estudiante denegado, RBAC, timeout, snapshot post-lock, esquema inválido, hoja faltante y exclusión de IDs ambiguos). Contrato estático PASS.
+- Node nativo/CI y Apps Script/Sheets real: NOT RUN. BETA-EXAM-042 Pendiente beta.
+- TASK-153 permanece En ejecución; AUD-NG-386 abierto por otras lecturas del servicio.
+===============================================================================

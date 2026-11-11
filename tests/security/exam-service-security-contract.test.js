@@ -380,4 +380,19 @@ const professorPermissions = /"Profesor": \[([\s\S]*?)\n  \],/.exec(permissionsB
 assert.ok(professorPermissions && !professorPermissions[1].includes("getGradingPerformanceAndPersistenceMetrics"),
   "professors no longer receive institution-wide persistence metrics permission");
 
+const gradebookHandler = extractFunction(source, "getGradebookData");
+const gradebookWorker = extractFunction(source, "getGradebookDataUnlocked_");
+assert.ok(gradebookHandler.includes('withAuthorizedExamRead_("getGradebookData"'),
+  "gradebook reads delegate to the shared RBAC reader and lock");
+assert.ok(gradebookWorker.includes('role === "Profesor"') &&
+  gradebookWorker.includes('professorId !== String(actor.userId).trim()') &&
+  gradebookWorker.includes('"ConfiguracionAcademica"') &&
+  gradebookWorker.includes("matchingAssignments.some(row") && gradebookWorker.includes('String(row[8] || "").trim() !== String(actor.userId).trim()'),
+  "teacher gradebook access is bound to the verified teacher identity and assigned class context");
+assert.ok(gradebookWorker.includes('scope.institutionWide !== true') &&
+  gradebookWorker.includes('institutionRoles.indexOf(role) !== -1') &&
+  gradebookWorker.includes('userIdCounts[id] !== 1') &&
+  !gradebookWorker.includes("getOrCreateSheet("),
+  "administrative gradebook reads require institution scope, ambiguous student IDs are excluded and reads do not create sheets");
+
 process.stdout.write("exam-service-security-contract: authentication, identity, teacher ownership and serialized exam mutations assertions passed\\n");

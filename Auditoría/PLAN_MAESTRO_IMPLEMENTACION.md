@@ -3442,3 +3442,13 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Node nativo/CI/Apps Script real:** NOT RUN. **Beta:** BETA-EXAM-041 Pendiente beta; no bloquea cierre local.
 - **Estado:** subalcance completado; TASK-153 En ejecución y AUD-NG-386 abierto por otras lecturas EXAM.
 - **Siguiente:** identificar y auditar individualmente el siguiente endpoint de lectura EXAM no cubierto.
+
+### 10.140 TASK-153 / AUD-NG-386 — seguridad de getGradebookData (C1.488)
+
+- **Hallazgo:** getGradebookData leía roster, correos, notas y recuperaciones sin RBAC/identidad/scope. profesorId, grado, sección, asignatura y parcial provenían del cliente sin comprobar asignación docente. También creaba hojas durante una operación de lectura.
+- **Corrección:** el handler delega en withAuthorizedExamRead_; RBAC, identidad y scope se revalidan bajo ScriptLock. Profesor debe presentar su ID verificado y un contexto completo que coincida con ConfiguracionAcademica; cualquier asignación del mismo contexto a otro profesor causa denegación por ambigüedad. Roles administrativos autorizados requieren scope institucional.
+- **Privacidad/integridad:** estudiantes con IDs vacíos o duplicados se excluyen; notas/recuperaciones solo se filtran por el roster validado. Categorías por defecto se producen en memoria y cierres ausentes se interpretan como Abierto; el endpoint no crea hojas ni escribe.
+- **Pruebas locales:** parseo V8 y harness aislado exam-service-gradebook-read-security PASS (acceso docente válido, suplantación, asignación ajena/conflictiva, filtros incompletos, roles, scope, RBAC, timeout, lectura post-lock, schema inválido, hoja faltante y exclusión de IDs ambiguos). Contrato estático PASS.
+- **Node nativo/CI/Apps Script real:** NOT RUN. **Beta:** BETA-EXAM-042 Pendiente beta; no bloquea cierre local.
+- **Estado:** subalcance completado; TASK-153 En ejecución y AUD-NG-386 abierto.
+- **Siguiente:** auditar individualmente getCompetencyEvaluations como siguiente lectura no cubierta del servicio.

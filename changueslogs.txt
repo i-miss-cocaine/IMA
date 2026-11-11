@@ -1217,3 +1217,13 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Harness V8 de read-endpoints PASS: RBAC/roles, scope, timeout, intercalación, umbrales, hoja ausente y no exposición. Contrato estático PASS.
 - Node nativo/CI/Apps Script real NOT RUN. BETA-EXAM-041 Pendiente beta; TASK-153 En ejecución y AUD-NG-386 abierto.
 ===============================================================================
+
+===============================================================================
+[2026-11-11] C1.488 — IMA-EXEC-20261110-1825Z-02 — EXAM: getGradebookData
+- getGradebookData ahora valida RBAC, identidad y scope dentro del lock compartido.
+- Profesor solo accede al grado/sección/asignatura/parcial asignados a su identidad verificada en ConfiguracionAcademica; se rechaza profesorId ajeno y asignación ambigua.
+- Administrador, Desarrollador, Dirección, Director y Secretaría requieren scope institucional; otros roles no acceden.
+- Se excluyen userId vacíos/duplicados y se evita crear hojas al consultar categorías/recuperaciones/cierres.
+- Harness V8 de exam-service-gradebook-read-security PASS; contrato estático PASS.
+- Node nativo/CI/Apps Script real NOT RUN. BETA-EXAM-042 Pendiente beta; TASK-153 sigue En ejecución y AUD-NG-386 abierto.
+===============================================================================
