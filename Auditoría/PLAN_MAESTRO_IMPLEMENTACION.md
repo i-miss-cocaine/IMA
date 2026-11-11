@@ -3481,3 +3481,12 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Node nativo/CI/Apps Script real:** NOT RUN. **Beta:** BETA-EXAM-045 Pendiente beta; no bloquea cierre local.
 - **Estado:** subalcance completado; TASK-153 permanece En ejecución y AUD-NG-386 abierto por otras lecturas EXAM.
 - **Siguiente:** auditar individualmente getStudentAcademicReport, lectura consolidada de expediente académico aún no cubierta.
+### 10.144 TASK-153 / AUD-NG-386 — aislamiento de getStudentAcademicReport (C1.492)
+
+- **Hallazgo:** getStudentAcademicReport aceptaba userId arbitrario sin validar identidad, consultaba directamente Matriculas/CalificacionesEstudiantes/RecuperacionesEstudiante y utilizaba getOrCreateSheet. Además llamaba getEvaluationCategories, que podía crear y poblar CategoriasEvaluacion durante una lectura. El permiso docente permitía solicitar el informe consolidado sin probar asignación/roster para todas las asignaturas.
+- **Corrección:** endpoint protegido mediante withAuthorizedExamRead_ y ScriptLock compartido. Estudiante/Alumno solo obtiene su identidad; Tutor/Padre/Responsable requiere vínculo verificado; roles institucionales requieren scope institucional y estudiante explícito/único. Profesor se deniega en la ruta consolidada y utiliza getGradebookData con asignación/roster; se retira el permiso docente estático.
+- **Lectura/integridad:** ninguna hoja se crea o modifica. Categorías se leen directamente como conjunto opcional; esquemas conocidos de calificaciones, recuperaciones y categorías se validan; IDs de matrícula/calificación/recuperación duplicados se excluyen; borradores no publicados se ocultan; fechas inválidas se normalizan a null y los campos numéricos mantienen fallback 0 compatible.
+- **Pruebas locales:** parseo V8 PASS; suite dedicada ejecutada en shim V8 aislado PASS (27 escenarios: identidad/IDOR, tutor/vínculo, scope institucional, Profesor/RBAC, timeout/contención concurrente, identidad duplicada, hojas ausentes sin mutación, borradores, IDs duplicados, esquemas y datos/fechas inválidos).
+- **Node nativo/CI/Apps Script real:** NOT RUN. **Beta:** BETA-EXAM-046 Pendiente beta; no bloquea cierre local.
+- **Estado:** subalcance completado; TASK-153 permanece En ejecución y AUD-NG-386 abierto por otras lecturas EXAM.
+- **Siguiente:** continuar la siguiente lectura EXAM identificada en el plan, sin ampliar el alcance de esta iteración.
