@@ -352,7 +352,7 @@ HEAD final: pendiente de confirmar tras publicar.
 - Suite dedicada V8 local compatible: 24/24 PASS; Node 22 CI: PASS.
 - Apps Script/Sheets real: NOT RUN. BETA-EXAM-050 permanece Pendiente beta, sin bloquear el cierre de implementación.
 - Siguiente tarea elegible: inspeccionar el siguiente wrapper mutador de TASK-153 que aún adquiera ScriptLock antes de autorización; no iniciado en esta iteración.
-- HEAD de implementación probado: `d27b86312ff6d0b0194101c5e35f070a17fa2a96`.
-- Commit documental de cierre CI: `89e743e5ede2c0a2cf09d07da05c99cf3f568d45`.
-- HEAD final de la rama autorizada tras el cierre documental: `4755ecd84f949ae918f13bd089ca04e1ffe14626`.
-- Comparación final: rama de trabajo 1.232 commits adelante y 0 atrás; base `NG_beta_0.0.0.1` sin modificaciones.
+- HEAD de implementación y pruebas probado por CI: `d27b86312ff6d0b0194101c5e35f070a17fa2a96`.
+- Cierre documental CI: commit `89e743e5ede2c0a2cf09d07da05c99cf3f568d45`, seguido por commits de ajuste de checkpoint/índice en la misma rama autorizada.
+- HEAD de rama verificado tras los cierres documentales mediante consulta directa de la referencia; el SHA del propio commit de checkpoint no se duplica dentro de su contenido.
+- Comparación final: rama base `NG_beta_0.0.0.1` sin modificaciones; rama de trabajo adelantada y 0 commits detrás.
