@@ -101,7 +101,7 @@ function denied(fn, pattern = /RESOURCE_NOT_AVAILABLE/) { assert.throws(fn, patt
 
 test("student sees own recoveries only", () => {
   const x = fixture(), result = x.call({});
-  assert.deepEqual(Array.from(result.data, row => row.userId), ["STU-1", "STU-1"]);
+  assert.deepEqual(Array.from(result.data, row => row.userId), ["STU-1", "STU-1", "STU-1"]);
   assert.equal(result.data.length, 3);
 });
 test("student cannot request another user", () => denied(() => fixture().call({ userId: "STU-2" })));
@@ -127,7 +127,7 @@ test("institution role requires explicit target", () => denied(() => fixture({
 }).call({})));
 test("institution role reads one validated student", () => {
   assert.equal(fixture({ actor: { userId: "ADMIN", role: "Administrador" } })
-    .call({ userId: "STU-1" }).data.length, 2);
+    .call({ userId: "STU-1" }).data.length, 3);
 });
 test("teacher cannot bypass gradebook assignment and roster controls", () => denied(() => fixture({
   actor: { userId: "PROF-1", role: "Profesor" }
