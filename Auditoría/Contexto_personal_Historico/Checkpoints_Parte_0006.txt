@@ -995,7 +995,7 @@ Completar la validación de identidad firmada de getAuthorizedPeriodGradebookClo
 - Documentación y HEAD final: se confirman al terminar la publicación.
 
 ### Cierre documental de C1.533
-- Commit de documentación del checkpoint: 4ad13c0287a97ba659c8fd2069d2927b65eab6b1 (actualización de cierre en este commit).
+- Primer commit del checkpoint: 4ad13c0287a97ba659c8fd2069d2927b65eab6b1; commit de cierre y referencias finales del checkpoint: fa6194e7c6da814ea58b9cf66f1afeee2333eb67.
 - Plan maestro: bd13439c704837528878fbe958f52ba88f9d415b.
 - Auditoría: 0490d6d1bb00e8e27883d47a62728ddd43b1a0f0.
 - BETA-EXAM-065 ampliado: 18f202b7788412791fad324f8af854aad767d5e4.
