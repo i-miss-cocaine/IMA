@@ -4173,3 +4173,11 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Alcance:** solo se amplía `tests/security/exam-service-exam-mutation-security.test.js`; backend productivo, permisos, roles, scope, ownership y persistencia sin cambios. BETA-EXAM-076 incorpora el caso de revocación.
 - **Verificación:** el usuario confirma ejecución en Codespaces mediante `node tests/security/exam-service-exam-mutation-security.test.js`: **17/17 PASS**. El archivo en HEAD contiene 17 escenarios y salida /17. CI: NOT RUN en esta iteración. Apps Script/Sheets real: NOT RUN, reservado a beta (BETA-EXAM-076).
 - **Estado:** C1.572 **Completada en verificación local**. TASK-153 / AUD-NG-386 continúa En ejecución para el inventario EXAM restante.
+
+
+### 10.222 TASK-153 / AUD-NG-386 — cubrir revocación RBAC bajo ScriptLock en deleteExam (C1.573)
+- **Brecha confirmada:** `deleteExam` usa `withAuthorizedExamMutation_`; la suite cubría pérdida de identidad durante la revalidación bajo lock, pero no permiso concedido en preflight y revocado en la comprobación RBAC contextual.
+- **Cobertura añadida:** escenario del handler real con RBAC `[true, false]`. Exige `RESOURCE_NOT_AVAILABLE`, dos comprobaciones RBAC, una sola consulta de identidad, lock adquirido/liberado, cero aperturas de Sheets, cero escrituras/bajas y snapshots completos de Examenes y ResourceOwnership intactos.
+- **Alcance:** solo se amplía `tests/security/exam-service-exam-mutation-security.test.js`; backend productivo, permisos, roles, scope, ownership y persistencia sin cambios. BETA-EXAM-074 incorpora la variante de revocación.
+- **Verificación aislada:** suite ejecutada en V8 con shims compatibles para assert/fs/path/vm: **18/18 PASS**; parseo de Code.gs y del archivo de prueba PASS. Node 22/Codespaces y CI quedan pendientes de ejecución/verificación posterior al commit. Apps Script/Sheets real: NOT RUN, reservado a beta.
+- **Estado:** C1.573 En ejecución hasta completar la verificación Node 22/Codespaces; TASK-153 / AUD-NG-386 continúa En ejecución.

@@ -2049,3 +2049,24 @@ HEAD inicial: 04fdd9eb6f415ef5d38ceb32410d9549864397e0. Rama: NG_beta_0.0.0.1_wo
 - C1.572 **Completada en verificación local**. TASK-153 / AUD-NG-386 continúa En ejecución para el inventario EXAM restante.
 - HEAD de trabajo verificado antes de este registro: `77ebffd0c55b7d64daf579f04eebddb987607f1c`. Rama base verificada sin cambios: `44d9891132332e692dbe2ba8602b41f50a508a59`.
 ===============================================================================
+
+
+===============================================================================
+## C1.573 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — cubrir revocación RBAC durante revalidación bajo ScriptLock de `deleteExam`.
+
+### Hallazgo y cambio
+- `deleteExam` usa `withAuthorizedExamMutation_`; la suite comprobaba identidad incompleta en el contexto bajo lock, pero no permiso concedido en preflight y revocado en la revalidación RBAC dentro del lock.
+- Se añadió escenario del handler real con secuencia RBAC `[true, false]`. Exige `RESOURCE_NOT_AVAILABLE`, dos comprobaciones RBAC, una sola consulta de identidad, lock adquirido/liberado, cero aperturas de Sheets, cero escrituras/bajas y snapshots completos de Examenes y ResourceOwnership intactos.
+- Solo cambia `tests/security/exam-service-exam-mutation-security.test.js`; backend productivo, RBAC, roles, scope, ownership y persistencia sin cambios.
+
+### Verificación
+- Parseo V8 de `backend/exam-service/Code.gs`: PASS.
+- Parseo y ejecución aislada de la suite con shims compatibles assert/fs/path/vm: **18/18 PASS**.
+- Node 22/Codespaces: pendiente de ejecución/confirmación. CI: pendiente de observar el workflow disparado por el commit. Apps Script/Sheets real: NOT RUN; BETA-EXAM-074 permanece Pendiente beta.
+
+### Estado y continuidad
+C1.573 En ejecución hasta confirmar la suite en Node 22/Codespaces y revisar el CI específico. TASK-153 / AUD-NG-386 continúa En ejecución para el inventario EXAM restante.
+
+HEAD inicial: `685e81c59a479939c227eb34cc6957dd34d73aa7`. Rama: `NG_beta_0.0.0.1_work`. Rama base esperada sin cambios: `44d9891132332e692dbe2ba8602b41f50a508a59`. HEAD final: se confirma tras publicar.
+===============================================================================
