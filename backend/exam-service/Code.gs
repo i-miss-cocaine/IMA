@@ -83,13 +83,13 @@ const ROLE_PERMISSIONS = {
   "Tutor": ["getStudentExams", "getExamQuestions", "getExamResult", "getEvaluationCategories", "getRubrics", "getStudentRecoveries", "getStudentAcademicReport", "getGradeRectificationHistory"],
   "Responsable": ["getStudentExams", "getExamQuestions", "getExamResult", "getEvaluationCategories", "getRubrics", "getStudentRecoveries", "getStudentAcademicReport", "getGradeRectificationHistory"],
   "Dirección": ["*"],
-  "Director": ["reviewPeriodGradebook", "reopenPeriodGradebook"],
+  "Director": ["reviewPeriodGradebook", "reopenPeriodGradebook", "rectifyStudentGrade"],
   "Secretaría": ["*"],
   "Profesor": [
     "createExam", "updateExam", "updateExamStatus", "deleteExam", "gradeExamSubmission", "deleteExamSubmission",
     "getAllExams", "getTeacherExamActivity", "getExamQuestions", "getStudentExams", "getExamResult",
     "getGradebookData", "saveGradebookGrades", "bulkApplyGradebookGrades", "copyEvaluationSetupBetweenGroups", "getEvaluationCategories", "saveEvaluationCategory",
-    "getRubrics", "saveRubric", "saveCompetencyEvaluation", "getCompetencyEvaluations", "saveStudentRecovery", "closePeriodGradebook", "submitGradebookForReview", "rectifyStudentGrade",
+    "getRubrics", "saveRubric", "saveCompetencyEvaluation", "getCompetencyEvaluations", "saveStudentRecovery", "closePeriodGradebook", "submitGradebookForReview",
     "manageQuestionBank", "getQuestionBank", "checkExamSchedulingConflict", "simulateExamReschedule",
     "getExamGradeDistributionAnalytics"
   ],
@@ -3218,71 +3218,141 @@ function reopenPeriodGradebookUnlocked_(context) {
   };
 }
 function rectifyStudentGrade(payload) {
-  const { evaluacionId, userId, calificacionId, notaNueva, motivo, autorizadoPor, authRole } = payload || {};
-  if ((!calificacionId && (!evaluacionId || !userId)) || notaNueva === undefined || notaNueva === null) {
-    throw new Error("evaluacionId, userId o calificacionId, y notaNueva son requeridos.");
+  return withAuthorizedStudentGradeRectification_(payload, context =>
+    rectifyStudentGradeUnlocked_(context));
+}
+
+function withAuthorizedStudentGradeRectification_(payload, mutation) {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) throw new Error("GRADE_RECTIFICATION_LOCK_TIMEOUT");
+  try {
+    return mutation(getAuthorizedStudentGradeRectificationContext_(payload));
+  } finally {
+    try { lock.releaseLock(); } catch (_) {}
+  }
+}
+
+function getAuthorizedStudentGradeRectificationContext_(payload) {
+  const p = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
+  const calificacionId = String(p.calificacionId || "").trim();
+  const evaluacionId = String(p.evaluacionId || "").trim();
+  const requestedUserId = String(p.userId || "").trim();
+  const motivo = String(p.motivo || "").trim();
+  const rawGrade = p.notaNueva;
+  if ((!calificacionId && (!evaluacionId || !requestedUserId)) ||
+      rawGrade === undefined || rawGrade === null ||
+      !motivo || motivo.length < 10 || motivo.length > 2000) {
+    throw new Error("GRADE_RECTIFICATION_REQUIRED_FIELDS_INVALID");
+  }
+  if (typeof rawGrade !== "number" && typeof rawGrade !== "string") {
+    throw new Error("GRADE_RECTIFICATION_GRADE_INVALID");
+  }
+  const gradeText = String(rawGrade).trim();
+  if (!/^(?:0|[1-9]\d?)(?:\.\d{1,2})?$|^100(?:\.0{1,2})?$/.test(gradeText)) {
+    throw new Error("GRADE_RECTIFICATION_GRADE_INVALID");
+  }
+  const notaNum = Number(gradeText);
+  if (!Number.isFinite(notaNum) || notaNum < 0 || notaNum > 100) {
+    throw new Error("GRADE_RECTIFICATION_GRADE_INVALID");
   }
 
-  if (!motivo || String(motivo).trim().length < 10) {
-    throw new Error("Se requiere un motivo o justificación de al menos 10 caracteres para rectificar una nota oficial.");
-  }
-
-  const notaNum = parseFloat(notaNueva);
-  if (isNaN(notaNum) || notaNum < 0 || notaNum > 100) {
-    throw new Error("La nueva calificación debe ser un número válido dentro del rango 0 a 100.");
+  const permission = validateRolePermission("rectifyStudentGrade", p);
+  if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const actor = getVerifiedExamIdentity_(p);
+  const allowedRoles = ["Administrador", "Desarrollador", "Dirección", "Director", "Secretaría"];
+  if (!actor || actor.authorized !== true || !String(actor.userId || "").trim() ||
+      allowedRoles.indexOf(String(actor.role || "").trim()) === -1) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
   }
 
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "CalificacionesEstudiantes");
-  const data = sheet.getDataRange().getValues();
+  const scope = getVerifiedExamDepartmentScope_(p, ss, actor);
+  if (!scope || scope.authorized !== true || !String(scope.institutionId || "").trim() ||
+      scope.institutionWide !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
 
-  let targetIdx = -1;
-  if (calificacionId) {
-    targetIdx = data.findIndex(r => String(r[0]).trim() === String(calificacionId).trim());
-  } else {
-    targetIdx = data.findIndex(r => String(r[1]).trim() === String(evaluacionId).trim() && String(r[2]).trim() === String(userId).trim());
+  const gradeSheet = getSheetOrThrow(ss, "CalificacionesEstudiantes");
+  const gradeHeaders = ["ID", "EvaluacionID", "UserID", "NotaObtenida", "PuntajePonderado", "EsBorrador", "EsPublicada", "Observaciones", "FechaRegistro"];
+  const gradeRows = gradeSheet.getDataRange().getValues();
+  if (!gradeRows.length || gradeHeaders.some((h, i) => String(gradeRows[0][i] || "").trim() !== h)) {
+    throw new Error("GRADE_RECTIFICATION_SCHEMA_INVALID");
+  }
+  const matches = [];
+  for (let i = 1; i < gradeRows.length; i++) {
+    const row = gradeRows[i] || [];
+    const matchesId = calificacionId && String(row[0] || "").trim() === calificacionId;
+    const matchesPair = !calificacionId &&
+      String(row[1] || "").trim() === evaluacionId &&
+      String(row[2] || "").trim() === requestedUserId;
+    if (matchesId || matchesPair) matches.push({ row, rowIndex: i + 1 });
+  }
+  if (!matches.length) throw new Error("GRADE_RECTIFICATION_RECORD_NOT_FOUND");
+  if (matches.length !== 1) throw new Error("GRADE_RECTIFICATION_RECORD_AMBIGUOUS");
+  const target = matches[0], row = target.row;
+  const canonicalEvaluationId = String(row[1] || "").trim();
+  const canonicalUserId = String(row[2] || "").trim();
+  if (!String(row[0] || "").trim() || !canonicalEvaluationId || !canonicalUserId ||
+      (calificacionId && (evaluacionId && evaluacionId !== canonicalEvaluationId ||
+        requestedUserId && requestedUserId !== canonicalUserId)) ||
+      !Number.isFinite(Number(row[3])) || Number(row[3]) < 0 || Number(row[3]) > 100) {
+    throw new Error("GRADE_RECTIFICATION_RECORD_INVALID");
+  }
+  const profileRows = getSheetOrThrow(ss, "Usuarios").getDataRange().getValues().slice(1)
+    .filter(r => String(r[0] || "").trim() === canonicalUserId);
+  if (profileRows.length !== 1 ||
+      ["estudiante", "alumno"].indexOf(normalizeString(profileRows[0][6] || profileRows[0][5])) === -1) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
   }
 
-  if (targetIdx === -1) throw new Error("Registro de calificación no encontrado para rectificar.");
-
-  const rowData = data[targetIdx];
-  const notaAnterior = parseFloat(rowData[3]) || 0;
-  const now = new Date();
-
-  sheet.getRange(targetIdx + 1, 4).setValue(notaNum); // NotaObtenida
-  sheet.getRange(targetIdx + 1, 6).setValue(false);   // esBorrador = false
-  sheet.getRange(targetIdx + 1, 7).setValue(true);    // esPublicada = true
-  sheet.getRange(targetIdx + 1, 8).setValue(`RECTIFICADO: ${String(motivo).trim()}`);
-  sheet.getRange(targetIdx + 1, 9).setValue(now);
-
-  const rectSheet = getOrCreateSheet(ss, "HistorialRectificacionesNotas");
-  if (rectSheet.getLastRow() === 0) {
-    rectSheet.appendRow(["RectificacionID", "EvaluacionID", "UserID", "Accion", "NotaAnterior", "NotaNueva", "Motivo", "AutorizadoPor", "Fecha"]);
+  const auditHeaders = ["RectificacionID", "EvaluacionID", "UserID", "Accion", "NotaAnterior", "NotaNueva", "Motivo", "AutorizadoPor", "Fecha"];
+  const auditSheet = ss.getSheetByName("HistorialRectificacionesNotas");
+  let auditRows = [];
+  if (auditSheet && auditSheet.getLastRow() > 0) {
+    auditRows = auditSheet.getDataRange().getValues();
+    if (auditHeaders.some((h, i) => String(auditRows[0][i] || "").trim() !== h)) {
+      throw new Error("GRADE_RECTIFICATION_AUDIT_SCHEMA_INVALID");
+    }
   }
+  return { ss, gradeSheet, rowIndex: target.rowIndex, row, canonicalEvaluationId,
+    canonicalUserId, notaAnterior: Number(row[3]), notaNum, motivo, actor,
+    auditSheet, auditHeaders, auditRows };
+}
 
-  const rectId = "RECT-" + Date.now();
-  rectSheet.appendRow([
-    rectId,
-    evaluacionId || rowData[1],
-    userId || rowData[2],
-    "RECTIFICACION_NOTA",
-    notaAnterior,
-    notaNum,
-    String(motivo).trim(),
-    autorizadoPor || (payload && payload._verifiedUserId) || "Secretaría",
-    now
-  ]);
-
+function rectifyStudentGradeUnlocked_(context) {
+  const auditSheet = context.auditSheet || getOrCreateSheet(context.ss, "HistorialRectificacionesNotas");
+  if (!context.auditSheet || auditSheet.getLastRow() === 0) auditSheet.appendRow(context.auditHeaders);
+  const rectId = "RECT-" + String(Utilities.getUuid() || "").trim();
+  const priorAuditRows = auditSheet.getDataRange().getValues();
+  if (rectId === "RECT-" || priorAuditRows.slice(1).some(r => String(r[0] || "").trim() === rectId)) {
+    throw new Error("GRADE_RECTIFICATION_AUDIT_ID_COLLISION");
+  }
+  const now = new Date(), auditRowCount = auditSheet.getLastRow();
+  const oldValues = context.row.slice(3, 9);
+  try {
+    auditSheet.appendRow([
+      rectId, context.canonicalEvaluationId, context.canonicalUserId,
+      "RECTIFICACION_NOTA", context.notaAnterior, context.notaNum,
+      context.motivo, String(context.actor.userId).trim(), now
+    ]);
+    context.gradeSheet.getRange(context.rowIndex, 4, 1, 6).setValues([[
+      context.notaNum, oldValues[1], false, true,
+      "RECTIFICADO: " + context.motivo, now
+    ]]);
+  } catch (error) {
+    let rollbackFailed = false;
+    try { context.gradeSheet.getRange(context.rowIndex, 4, 1, 6).setValues([oldValues]); }
+    catch (rollbackError) { rollbackFailed = true; logDebug("GRADE_RECTIFICATION_ROLLBACK_FAILED", rollbackError.message); }
+    try {
+      if (auditSheet.getLastRow() > auditRowCount && auditSheet.deleteRow) auditSheet.deleteRow(auditSheet.getLastRow());
+    } catch (cleanupError) { rollbackFailed = true; logDebug("GRADE_RECTIFICATION_AUDIT_CLEANUP_FAILED", cleanupError.message); }
+    throw new Error(rollbackFailed ? "GRADE_RECTIFICATION_ROLLBACK_FAILED" : "GRADE_RECTIFICATION_WRITE_FAILED");
+  }
   return {
-    status: "success",
-    rectificacionId: rectId,
-    notaAnterior: notaAnterior,
-    notaNueva: notaNum,
-    autorizadoPor: autorizadoPor || "Secretaría",
+    status: "success", rectificacionId: rectId,
+    notaAnterior: context.notaAnterior, notaNueva: context.notaNum,
+    autorizadoPor: String(context.actor.userId).trim(),
     message: "Calificación rectificada oficialmente con trazabilidad y auditoría de cambios registrada."
   };
 }
-
 function getGradeRectificationHistory(payload) {
   return withAuthorizedExamRead_("getGradeRectificationHistory", payload,
     context => getGradeRectificationHistoryUnlocked_(payload, context));

@@ -1357,3 +1357,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Motivo obligatorio; HistorialRectificacionesNotas registra UUID, cierre, actor autenticado, transición y fecha. Fallo de auditoría intenta rollback de estado y fila parcial.
 - Harness V8 aislado 22/22 PASS; CI dedicado y security-contract PASS (run 43009948936); workflow global FAIL en departmental-access; Apps Script/Sheets NOT RUN; BETA-EXAM-055 Pendiente beta.
 ===============================================================================
+
+
+==========================================================================
+[2026-11-11] C1.503 — IMA-EXEC-20261110-1825Z-02 — EXAM: protección de rectifyStudentGrade
+- La rectificación exige RBAC, identidad firmada, allowlist institucional y scope institutionWide; Profesor queda excluido y Director recibe permiso explícito.
+- Solo se modifica una calificación única con esquema válido y alumno canónico único; nota decimal estricta 0–100, motivo obligatorio.
+- Auditoría con UUID y actor autenticado se escribe antes de mutar; fallo de actualización intenta restaurar fila y retirar evento parcial.
+- Prueba dedicada de 27 escenarios añadida al workflow; resultado CI pendiente de ejecución.
+==========================================================================

@@ -5,11 +5,11 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.502**
+- Último checkpoint: **C1.503**
 - Última sesión: `IMA-EXEC-20261110-1825Z-02`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.502: **157792**
+- Caracteres del archivo activo tras C1.503: **160412**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 - Baseline lógico válido: **C1.316** (`31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`). C1.317–C1.382 se conservan, pero no se aceptan como evidencia de continuidad por corrección expresa del usuario.
@@ -353,3 +353,5 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.500 | IMA-EXEC-20261110-1825Z-02 | EXAM: reviewPeriodGradebook protegido por RBAC/identidad/scope institucional/ScriptLock; asignación del profesor verificada; solo Aprobado/Observado; Publicado falla cerrado; local 23/23 PASS, cierre regresión 16/16 y security-contract PASS; CI NOT CONFIRMED | PM-01 — TASK-153 / EXAM / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt — sección C1.500 | 1836–1883 | C1.499 | implementación 04e5a0d5992616218c20e843eaf8595371695b06; asignación/pruebas 6d22f86577a3304088945ee91bb4f731b3312bf0 |
 
 | C1.502 | IMA-EXEC-20261110-1825Z-02 | EXAM: reopenPeriodGradebook protegido por RBAC/identidad/scope institutionWide/ScriptLock; Profesor excluido, Director habilitado; solo cierre único Cerrado y auditoría obligatoria con rollback compensatorio; local 22/22 PASS; CI dedicado PASS (run 43009948936), workflow global FAIL por departmental-access | PM-01 — TASK-153 / EXAM / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt — sección C1.502 | 1886–1929 | C1.500 | implementación b7cc4fe6c45e999fce2281d23eb5526450fd4ddf; harness 22/22 PASS |
+
+| C1.503 | IMA-EXEC-20261110-1825Z-02 | EXAM: rectifyStudentGrade con RBAC/identidad/scope institutionWide, validación de fila/alumno/nota y auditoría previa a mutación con rollback; contrato 27 escenarios añadido, CI pendiente | PM-01 — TASK-153 / EXAM / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt — sección C1.503 | 1933–1958 | C1.502 | implementación y checkpoint pendientes de publicar |

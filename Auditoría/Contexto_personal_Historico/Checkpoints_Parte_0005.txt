@@ -1928,3 +1928,31 @@ reopenPeriodGradebook cambiaba el estado a Reabierto sin validar RBAC, identidad
 - Siguiente tarea elegible: auditar rectifyStudentGrade, incluida autorización, propiedad de la calificación, integridad de nota y trazabilidad.
 - Rama base intacta en 44d9891132332e692dbe2ba8602b41f50a508a59.
 ===============================================================================
+
+
+===============================================================================
+CHECKPOINT C1.503 — Protección de rectifyStudentGrade
+Sesión: IMA-EXEC-20261110-1825Z-02.
+Fecha: 2026-11-11 UTC.
+Rama: NG_beta_0.0.0.1_work.
+HEAD inicial: 7083799ce85323c6fae0949a8f2fb300b708cdb5.
+Checkpoint anterior: C1.502.
+### Hallazgo
+rectifyStudentGrade modificaba notas sin autorización, identidad ni ámbito verificados; confiaba en IDs/actor del cliente, aceptaba la primera coincidencia, creaba hojas, parseaba notas parcialmente y mutaba antes de auditar.
+### Cambio
+- Wrapper ScriptLock; RBAC, identidad firmada, allowlist Administrador/Desarrollador/Dirección/Director/Secretaría y scope institutionWide. Profesor deja de tener permiso estático; Director obtiene permiso explícito.
+- Esquema exacto de CalificacionesEstudiantes, fila única y completa, coincidencia de IDs cliente con valores canónicos y perfil de estudiante único.
+- Nota numérica estricta 0–100 con máximo dos decimales; motivo 10–2.000 caracteres.
+- HistorialRectificacionesNotas registra UUID, evaluación/alumno canónicos, nota anterior/nueva, motivo, actor autenticado y fecha. Auditoría antes de mutar; rollback compensatorio si falla la actualización.
+### Archivos
+backend/exam-service/Code.gs; tests/security/exam-service-student-grade-rectification-security.test.js; .github/workflows/exam-service-security-contract.yml; Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; beta_test.txt (BETA-EXAM-056); changueslogs.txt; Auditoria.txt; historial e índice de checkpoints.
+### Verificación
+- Contrato dedicado de 27 escenarios incorporado al workflow; incluye parseo de Code.gs, roles, RBAC, scope, datos, límites, auditoría, timeout, reentrada y rollback.
+- No fue posible ejecutar Node localmente desde la sesión de herramientas; resultado CI pendiente tras publicación. No se declara PASS anticipado.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-056 Pendiente beta.
+### Riesgos/limitaciones
+- CalificacionesEstudiantes no contiene InstitutionID/DepartmentID ni Evaluation ownership; se exige spreadsheet institucional y scope institutionWide, más usuario canónico único. No se inventa vínculo departamental que el esquema no expresa.
+- El rollback de Sheets es compensatorio, no transaccional; fallos simultáneos de escritura/compensación requieren inspección.
+- TASK-153 y AUD-NG-386 siguen En ejecución por otras superficies EXAM.
+- Siguiente: continuar auditoría de mutaciones EXAM restantes, seleccionando el siguiente endpoint elegible con contratos y ownership disponibles.
+===============================================================================

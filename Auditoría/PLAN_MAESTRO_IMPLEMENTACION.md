@@ -3603,3 +3603,12 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Límite:** CierresPeriodos no almacena InstitutionID/DepartmentID; la protección institucional se apoya en el spreadsheet institucional y scope institutionWide verificado. No se atribuye ownership inexistente.
 - **Estado:** subalcance reopenPeriodGradebook completado con verificaciones locales aisladas; TASK-153 continúa En ejecución y AUD-NG-386 abierto por otros endpoints.
 - **Siguiente:** auditar rectifyStudentGrade, incluida autorización, propiedad de la calificación, integridad de nota y trazabilidad.
+
+
+### 10.155 TASK-153 / AUD-NG-386 — protección de rectifyStudentGrade (C1.503)
+- **Hallazgo:** el endpoint rectificaba calificaciones sin RBAC/identidad/scope; aceptaba actor y alumno desde payload, buscaba primera coincidencia, creaba hojas faltantes, parseaba notas parcialmente y actualizaba la nota antes de escribir auditoría.
+- **Corrección:** ScriptLock; RBAC, identidad firmada, allowlist institucional y scope institutionWide; Profesor excluido y Director habilitado explícitamente. Se exige calificación única, fila y esquema válidos, alumno canónico único y nota decimal estricta 0–100 con hasta dos decimales.
+- **Trazabilidad/integridad:** motivo acotado 10–2.000; auditoría con UUID, evaluación/alumno canónicos, transición, actor autenticado y fecha. Se escribe auditoría antes de mutar; si falla la mutación se intenta restaurar la fila y retirar el evento parcial. Se ignoran autorizadoPor/_verifiedUserId del cliente.
+- **Pruebas:** contrato aislado dedicado 27 escenarios incluido en CI; parseo completo Code.gs dentro del test. Ejecución local directa no disponible en el entorno de herramientas de esta sesión; el resultado CI se registrará después de la publicación. Apps Script/Sheets real NOT RUN; beta BETA-EXAM-056 Pendiente beta.
+- **Estado:** subalcance rectifyStudentGrade implementado; cierre sujeto a resultados CI y revisión del diff.
+- **Siguiente:** continuar el inventario de endpoints mutadores EXAM de TASK-153 tras verificar contratos y dependencias.

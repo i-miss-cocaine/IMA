@@ -633,3 +633,14 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta. Harness V8 aislado local 22/22 PASS; suite dedicada CI PASS y security-contract PASS (run 43009948936); workflow global FAIL en departmental-access; Apps Script/Sheets real NOT RUN.
 - **Evidencia requerida:** commit/build desplegado, tokens sintéticos, scopes, snapshots antes/después, evidencia de denegaciones, transición, trazabilidad, concurrencia y rollback.
 ===============================================================================
+
+
+===============================================================================
+## BETA-EXAM-056 — TASK-153 / AUD-NG-386 / EXAM: rectifyStudentGrade
+- **Objetivo:** verificar en entorno beta que solo un actor institucional autenticado con scope institutionWide rectifica una calificación única de un estudiante existente y que el cambio queda trazado con el actor real.
+- **Precondiciones:** beta aislada; actores sintéticos de roles institucionales, Profesor y Estudiante; scopes institutionWide/departamental/ausente; CalificacionesEstudiantes con esquema válido/inválido, ID único/duplicado/ausente y notas límite/malformadas; Usuarios con estudiante único/duplicado/no estudiante; historial de rectificaciones ausente/vacío/válido/inválido.
+- **Pasos:** probar token ausente/expirado, RBAC denegado, roles no permitidos, scope insuficiente, IDs alterados, estudiante ajeno/no único, nota negativa/mayor de 100/no numérica/precisión excesiva, motivo inválido, auditoría inválida/UUID duplicado, lock ocupado, concurrencia, fallo de append y fallo de actualización con rollback.
+- **Resultado esperado:** solo allowlist institucional y scope institucional amplio; identidad de auditoría tomada del token verificado; solo fila de calificación única cambia; nota entre 0 y 100; historial obligatorio y coherente; sin éxito si la escritura o compensación falla.
+- **Estado:** Pendiente beta. CI local dedicado será registrado en C1.503; Apps Script/Sheets real NOT RUN.
+- **Evidencia requerida:** build desplegado, tokens/scopes sintéticos, snapshots antes/después de calificaciones e historial, denegaciones, transición, actor auditado, concurrencia y rollback.
+===============================================================================

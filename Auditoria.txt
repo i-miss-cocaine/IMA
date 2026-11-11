@@ -1586,3 +1586,12 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Pruebas:** harness V8 aislado 22/22 PASS; parseo de funciones extraídas PASS; suite completa del checkout y regresiones previas NOT RUN; CI run 43009948936: suite dedicada y security-contract PASS; workflow global FAIL en departmental-access (read-endpoints skipped); Apps Script/Sheets NOT RUN; BETA-EXAM-055 Pendiente beta.
 - **Límite:** CierresPeriodos carece de InstitutionID/DepartmentID; se exige scope institucional amplio y se confía en el spreadsheet aislado de cada institución.
 ===============================================================================
+
+
+===============================================================================
+### AUD-NG-386 — EXAM: rectifyStudentGrade (C1.503)
+- **Hallazgo:** rectificación sin autorización contextual; actor/alumno manipulables; primera coincidencia aceptada; hojas creadas automáticamente; parseo permisivo; nota cambiada antes de confirmar auditoría.
+- **Corrección:** ScriptLock, RBAC, identidad firmada, allowlist institucional y scope institutionWide; Profesor excluido, Director habilitado. Se valida esquema, calificación única, alumno único en Usuarios y nota decimal 0–100.
+- **Integridad:** auditoría UUID/actor/motivo/transición antes de mutación; rollback compensatorio de fila y evento si falla actualización. Los datos de actor del payload se ignoran.
+- **Pruebas:** contrato local aislado 27 escenarios incorporado al workflow; ejecución local directa no disponible en esta sesión; CI pendiente tras commit; Apps Script/Sheets NOT RUN; BETA-EXAM-056 Pendiente beta.
+===============================================================================
