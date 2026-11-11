@@ -36,7 +36,7 @@ function makeSheet(rows, kind, options, state) {
   };
 }
 function fixture(options = {}) {
-  const state = { opens: 0, locks: 0, releases: 0, held: false, uuid: 0, action: "" };
+  const state = { opens: 0, locks: 0, releases: 0, held: false, uuid: 0, action: "", identityCalls: 0 };
   const categoryRows = options.categoryRows || [categoryHeaders,
     ["CAT-OWNED", "Propia", "Global", 20, "100", "Activo"],
     ["CAT-LEGACY", "Legada", "Global", 10, "100", "Activo"]];
@@ -61,7 +61,7 @@ function fixture(options = {}) {
       releaseLock() { state.releases++; state.held = false; }
     }; } },
     validateRolePermission(action) { state.action = action; return { authorized: options.permission !== false }; },
-    getVerifiedExamIdentity_() { return actor; },
+    getVerifiedExamIdentity_() { state.identityCalls++; const sequence = options.identitySequence; return Array.isArray(sequence) && sequence.length ? sequence[Math.min(state.identityCalls - 1, sequence.length - 1)] : actor; },
     getVerifiedExamDepartmentScope_() { if (options.duringScope) options.duringScope(); return scope; },
     assertExamResourceOwnershipForScope_(spreadsheet, currentScope, type, id) {
       const rows = sheets.ResourceOwnership ? sheets.ResourceOwnership.rows.slice(1) : [];
@@ -113,6 +113,23 @@ test("missing RBAC permission denied before spreadsheet access", () => {
 });
 test("missing verified identity denied before spreadsheet access", () => {
   const x = fixture({ actor: { authorized: false } }); denied(() => x.call({ nombre: "No" })); assert.equal(x.state.opens, 0);
+});
+test("identity losing userId during locked context revalidation is rejected before Sheets or mutation", () => {
+  const x = fixture({ identitySequence: [
+    { authorized: true, userId: "TEACHER-A", role: "Profesor" },
+    { authorized: true, userId: "   ", role: "Profesor" }
+  ] });
+  const categoriesBefore = x.sheets.CategoriasEvaluacion.rows.map(row => row.slice());
+  const ownershipBefore = x.sheets.ResourceOwnership.rows.map(row => row.slice());
+  const locksBefore = x.state.locks, releasesBefore = x.state.releases, opensBefore = x.state.opens;
+  denied(() => x.call({ categoriaId: "CAT-OWNED", nombre: "No debe actualizarse", porcentajePonderacion: 99 }));
+  assert.equal(x.state.identityCalls, 2, "identity must be checked before and after lock acquisition");
+  assert.equal(x.state.locks, locksBefore + 1, "valid preflight acquires the shared lock");
+  assert.equal(x.state.releases, releasesBefore + 1, "context denial releases the shared lock");
+  assert.equal(x.state.held, false);
+  assert.equal(x.state.opens, opensBefore, "incomplete revalidated identity must be rejected before opening Sheets");
+  assert.deepEqual(x.sheets.CategoriasEvaluacion.rows, categoriesBefore, "category data must remain unchanged");
+  assert.deepEqual(x.sheets.ResourceOwnership.rows, ownershipBefore, "ownership data must remain unchanged");
 });
 test("missing verified scope denied without writes", () => {
   const x = fixture({ scope: { authorized: false, institutionId: "INST-A", departmentIds: [] } });
