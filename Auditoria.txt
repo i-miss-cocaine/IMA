@@ -1998,3 +1998,9 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Brecha:** el contrato probaba reentrada al abrir Sheets y rollback ante fallo de append, pero no una segunda reapertura durante la escritura del historial.
 - **Cambio:** el hook sintético de append invoca el handler real anidado mientras ScriptLock sigue retenido. La segunda solicitud falla GRADEBOOK_REOPEN_LOCK_TIMEOUT; la exterior deja el cierre Reabierto, una sola fila de auditoría y libera el lock.
 - **Verificación local:** parseo backend/test PASS; suite V8 aislada **29/29 PASS**. Backend productivo sin cambios. CI pendiente; Apps Script/Sheets real NOT RUN. BETA-EXAM-055 actualizado y Pendiente beta.
+
+
+### Addendum CI — C1.581
+- GitHub Actions run **43113608977**, commit `decee670a4aee56207986c8e3a29ab6772c1f102`: workflow completo SUCCESS en Node.js 22.
+- Job `exam-security-contracts` y paso `Run period gradebook reopen security regression`: SUCCESS; cero pasos fallidos.
+- C1.581 Completada en verificación local y CI. BETA-EXAM-055 continúa Pendiente beta.

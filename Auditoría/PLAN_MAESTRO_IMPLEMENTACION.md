@@ -4259,3 +4259,9 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Alcance:** fixture/prueba en `tests/security/exam-service-period-gradebook-reopen-security.test.js`; backend productivo sin cambios. BETA-EXAM-055 actualizado.
 - **Verificación local:** parseo de `backend/exam-service/Code.gs` y del contrato PASS; suite completa aislada V8 con shims compatibles **29/29 PASS**. CI Node.js 22 pendiente de observación tras commit. Apps Script/Sheets real NOT RUN; concurrencia desplegada continúa Pendiente beta.
 - **Estado:** C1.581 Completada en verificación local; TASK-153 / AUD-NG-386 continúa En ejecución para las rutas restantes.
+
+
+#### Addendum CI — C1.581
+- GitHub Actions run **43113608977**, commit `decee670a4aee56207986c8e3a29ab6772c1f102`, workflow `Exam-Service security local contracts`: **SUCCESS** en Node.js 22.
+- Job `exam-security-contracts`: SUCCESS; paso `Run period gradebook reopen security regression`: SUCCESS; no hubo pasos fallidos.
+- C1.581 Completada en verificación local y CI. BETA-EXAM-055 permanece Pendiente beta para validación de Apps Script/Sheets real.

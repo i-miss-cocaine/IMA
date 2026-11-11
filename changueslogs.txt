@@ -2123,3 +2123,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Suite V8 aislada 29/29 PASS; parseo Code.gs/test PASS. Backend productivo sin cambios. CI pendiente; Apps Script/Sheets real NOT RUN.
 - BETA-EXAM-055 actualizado. TASK-153 / AUD-NG-386 continúa En ejecución.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] C1.581 — resultado CI
+- GitHub Actions run 43113608977, commit decee670a4aee56207986c8e3a29ab6772c1f102: workflow completo SUCCESS en Node.js 22.
+- Job exam-security-contracts y paso Run period gradebook reopen security regression: SUCCESS; cero pasos fallidos.
+- C1.581 Completada en cobertura local/CI. BETA-EXAM-055 sigue Pendiente beta para Apps Script/Sheets real.
+===============================================================================
