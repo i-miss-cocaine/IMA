@@ -42,7 +42,8 @@ function fixture(options = {}) {
     ["REC-DUP", "E-4", "STU-1", 20, 40, 40, "Mayor", "PROF-1", null],
     ["REC-DUP", "E-5", "STU-1", 30, 50, 50, "Mayor", "PROF-1", null],
     ["", "E-6", "STU-1", 20, 40, 40, "Mayor", "PROF-1", null],
-    ["REC-EMPTY-EVAL", "", "STU-1", 20, 40, 40, "Mayor", "PROF-1", null]
+    ["REC-EMPTY-EVAL", "", "STU-1", 20, 40, 40, "Mayor", "PROF-1", null],
+    ["REC-BLANK", "E-7", "STU-1", "", " ", null, "Mayor", "PROF-1", null]
   ];
   const sheets = {
     Usuarios: sheet([["UserID"], ["STU-1", "Student", "10", "A", "", "", "Estudiante"],
@@ -63,7 +64,7 @@ function fixture(options = {}) {
   };
   let held = false, acquires = 0, releases = 0;
   const LockService = { getScriptLock() { return {
-    tryLock() { acquires++; if (options.lockAvailable === false || held) return false; held = true; return true; },
+    tryLock() { acquires++; if (options.beforeAcquire) { const callback = options.beforeAcquire; options.beforeAcquire = null; callback(); } if (options.lockAvailable === false || held) return false; held = true; return true; },
     releaseLock() { releases++; held = false; }
   }; } };
   const helpers = [
@@ -101,7 +102,7 @@ function denied(fn, pattern = /RESOURCE_NOT_AVAILABLE/) { assert.throws(fn, patt
 test("student sees own recoveries only", () => {
   const x = fixture(), result = x.call({});
   assert.deepEqual(Array.from(result.data, row => row.userId), ["STU-1", "STU-1"]);
-  assert.equal(result.data.length, 2);
+  assert.equal(result.data.length, 3);
 });
 test("student cannot request another user", () => denied(() => fixture().call({ userId: "STU-2" })));
 test("student can filter by evaluation", () => {
@@ -110,7 +111,7 @@ test("student can filter by evaluation", () => {
 });
 test("guardian reads verified linked student only", () => {
   const x = fixture({ actor: { userId: "GUARD-1", role: "Tutor" }, guardian: true });
-  assert.equal(x.call({ userId: "STU-1" }).data.length, 2);
+  assert.equal(x.call({ userId: "STU-1" }).data.length, 3);
 });
 test("guardian cannot change target", () => denied(() => fixture({
   actor: { userId: "GUARD-1", role: "Tutor" }, guardian: true
@@ -163,7 +164,7 @@ test("invalid numeric values and dates are normalized", () => {
   assert.equal(row.notaOriginal, null);
   assert.equal(row.fecha, null);
 });
-test("duplicate student identity denied", () => denied(() => fixture({
+test("blank grade cells remain null instead of becoming zero", () => {\n  const row = fixture().call({}).data.find(item => item.recuperacionId === "REC-BLANK");\n  assert.equal(row.notaOriginal, null);\n  assert.equal(row.notaRecuperada, null);\n  assert.equal(row.notaFinalCalculada, null);\n});\ntest("post-lock snapshot includes a recovery inserted before lock acquisition", () => {\n  let x;\n  x = fixture({ beforeAcquire() { x.sheets.RecuperacionesEstudiante.rows.push(["REC-AFTER", "E-8", "STU-1", 10, 20, 20, "Mayor", "PROF-1", null]); } });\n  assert.ok(x.call({}).data.some(item => item.recuperacionId === "REC-AFTER"));\n});\ntest("duplicate student identity denied", () => denied(() => fixture({
   actor: { userId: "DUP", role: "Estudiante" }
 }).call({})));
 test("schema mismatch fails closed", () => {
