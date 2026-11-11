@@ -1887,3 +1887,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - BETA-EXAM-059 ampliado y Pendiente beta. Node22/CI actual y Apps Script/Sheets real NOT RUN; el workflow 43045163554 corresponde a revisión anterior.
 - Sin cambios productivos. TASK-153 / AUD-NG-386 continúa abierta.
 ===============================================================================
+
+===============================================================================
+[2026-11-11] C1.560 — TASK-153 / submitGradebookForReview: cobertura de revocación RBAC bajo lock
+- El mock RBAC del test ahora permite una secuencia determinista de resultados.
+- Añadido escenario concedido→revocado entre preflight y contexto bajo ScriptLock; comprueba RESOURCE_NOT_AVAILABLE, lock liberado, cero aperturas de Sheets y CierresPeriodos intacto.
+- Harness V8 focalizado PASS. Suite completa actual 27 escenarios y parseo Node 22 NOT RUN; Apps Script/Sheets real NOT RUN.
+- BETA-EXAM-054 actualizado y Pendiente beta. Sin cambios productivos; TASK-153 / AUD-NG-386 continúa abierta.
+===============================================================================
