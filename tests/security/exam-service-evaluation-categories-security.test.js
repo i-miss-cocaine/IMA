@@ -28,12 +28,11 @@ function fixture(options={}){
   getVerifiedExamDepartmentScope_(){return state.scope;},
   SpreadsheetApp:{openById(){state.opens++;return ss;}}
  };
- vm.runInNewContext([extract("getEvaluationCategories"),extract("withAuthorizedExamMetadataRead_"),extract("getEvaluationCategoriesUnlocked_")].join("\\n"),sandbox);
+ vm.runInNewContext([extract("getEvaluationCategories"),extract("withAuthorizedExamMetadataRead_"),extract("getEvaluationCategoriesUnlocked_")].join("\n"),sandbox);
  return {call:()=>sandbox.getEvaluationCategories({sessionToken:"synthetic"}),state};
 }
 const cases=[];
 function test(name,fn){try{fn();cases.push({name,ok:true});}catch(e){cases.push({name,ok:false,error:e.message});}}
-function denied(fn,pattern){assert.throws(fn,pattern||/RESOURCE_NOT_AVAILABLE/);}
 function denied(fn,pattern){assert.throws(fn,pattern||/RESOURCE_NOT_AVAILABLE/);}
 test("authorized reader returns categories with legacy response contract",()=>{const x=fixture();const r=x.call();assert.equal(r.status,"success");assert.equal(r.data.length,1);assert.equal(r.data[0].categoriaId,"CAT-X");});
 test("missing category sheet returns defaults without creating a sheet",()=>{const x=fixture({rows:null});const r=x.call();assert.equal(r.data.length,4);assert.equal(r.data[0].categoriaId,"CAT-1");assert.equal(x.state.opens,1);});
@@ -46,5 +45,5 @@ test("lock timeout fails closed without opening spreadsheet",()=>{const x=fixtur
 test("schema mismatch fails closed and releases lock",()=>{const x=fixture({rows:[["wrong","Nombre","Ambito","PorcentajePonderacion","EscalaID","Estado"]]});denied(()=>x.call(),/EVALUATION_CATEGORIES_SCHEMA_INVALID/);assert.equal(x.state.releases,1);});
 test("read path does not expose any sheet mutation API",()=>{const x=fixture();x.call();assert.equal(x.state.held,false);assert.equal(x.state.releases,1);});
 test("public action allowlist no longer contains getEvaluationCategories",()=>{const block=source.match(/const PUBLIC_ACTIONS = \[([\s\S]*?)\];/);assert.ok(block);assert.ok(!block[1].includes("getEvaluationCategories"));});
-const failed=cases.filter(x=>!x.ok);if(failed.length){for(const c of failed)process.stdout.write("FAIL "+c.name+": "+c.error+"\\n");throw Error(failed.length+" test(s) failed");}
-process.stdout.write("exam-service-evaluation-categories-security: PASS ("+cases.length+" scenarios)\\n");
+const failed=cases.filter(x=>!x.ok);if(failed.length){for(const c of failed)process.stdout.write("FAIL "+c.name+": "+c.error+"\n");throw Error(failed.length+" test(s) failed");}
+process.stdout.write("exam-service-evaluation-categories-security: PASS ("+cases.length+" scenarios)\n");
