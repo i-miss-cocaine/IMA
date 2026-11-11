@@ -250,3 +250,10 @@ Subalcance saveEvaluationCategory corregido. TASK-153 / AUD-NG-386 continúa En 
 Siguiente acción: verificar CI y continuar inventario de wrappers mutadores restantes.
 HEAD final: pendiente de confirmación tras publicar.
 ===============================================================================
+
+
+### ADDENDUM DE VERIFICACIÓN — C1.517
+- GitHub Actions **43035967966**: **PASS** sobre `c54b9e2a1d3f1fa1073d2b2f193251cca2d879d3`; job `exam-security-contracts` completado con éxito.
+- El step `Run node tests/security/exam-service-security-contract.test.js` y todos los demás contratos EXAM del workflow finalizaron **success**.
+- Parseo local de Code.gs y contrato: PASS; harness focalizado sobre el wrapper exacto: **6/6 PASS**; aserciones estáticas de RBAC/identidad/scope/ownership/esquema: PASS.
+- HEAD de implementación probado: `c54b9e2a1d3f1fa1073d2b2f193251cca2d879d3`.

@@ -3742,7 +3742,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Corrección:** valida `saveEvaluationCategory` e identidad con actor no vacío antes del lock; revalida dentro del lock permiso, identidad, scope, ownership de categoría y esquemas.
 - **Pruebas locales:** parseo Code.gs/contrato PASS; harness del wrapper exacto 6/6 PASS; aserciones estáticas de scope/ownership/esquema PASS.
 - **Contrato Node completo local:** NOT RUN por ausencia de checkout/runtime local; integrado al workflow EXAM.
-- **CI:** pendiente de ejecución/verificación.
+- **CI:** workflow GitHub Actions 43035967966 PASS; job `exam-security-contracts` completado con éxito, incluido `Run node tests/security/exam-service-security-contract.test.js`.
 - **Beta:** Apps Script/Sheets real NOT RUN; sin cambios de esquema.
 - **Estado:** subalcance saveEvaluationCategory corregido; TASK-153 / AUD-NG-386 sigue En ejecución por otras mutaciones.
 - **Siguiente:** verificar CI y continuar el inventario de mutaciones EXAM restantes.

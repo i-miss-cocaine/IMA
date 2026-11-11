@@ -1515,3 +1515,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Parseo Code.gs/contrato PASS; harness exacto 6/6 PASS; aserciones estáticas PASS. CI pendiente.
 - Apps Script/Sheets real NOT RUN; no cambia esquema. TASK-153 / AUD-NG-386 continúa En ejecución.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] Verificación C1.517 — workflow 43035967966 PASS
+- Contrato exam-service-security-contract.test.js: PASS; wrapper saveEvaluationCategory con RBAC/identidad pre-lock, revalidación contextual y seis escenarios.
+- Todos los demás contratos del job exam-security-contracts finalizaron success.
+- HEAD probado: c54b9e2a1d3f1fa1073d2b2f193251cca2d879d3. Harness focalizado 6/6 PASS; parseo Code.gs/contrato y aserciones estáticas PASS.
+===============================================================================
