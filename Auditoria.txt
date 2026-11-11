@@ -1920,3 +1920,9 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Resultado esperado:** RESOURCE_NOT_AVAILABLE, lock liberado, cero aperturas de Sheets y snapshot de notas intacto.
 - **Verificación:** ejecución de suite/harness local NOT RUN; tarea En ejecución hasta ejecutar prueba local pertinente. Node22/CI y Apps Script/Sheets real NOT RUN.
 - **Alcance:** solo prueba; sin cambios productivos.
+
+### C1.560 — AUD-NG-386 / revocación RBAC en submitGradebookForReview
+- **Brecha:** la suite verificaba identidad degradada bajo lock, pero el mock RBAC permanecía estático y no cubría revocación después de un preflight concedido.
+- **Cambio:** fixture con secuencia RBAC [true, false] y escenario del handler real; exige RESOURCE_NOT_AVAILABLE antes de la segunda consulta de identidad, lock liberado, cero aperturas de Sheets y CierresPeriodos intacto.
+- **Verificación:** harness V8 focalizado PASS; suite completa actual de 27 escenarios y parseo Node 22 NOT RUN. Apps Script/Sheets real NOT RUN.
+- **Alcance:** no se detectó defecto productivo; solo ampliación de cobertura. BETA-EXAM-054 actualizado y Pendiente beta. TASK-153 / AUD-NG-386 continúa En ejecución hasta ejecutar la suite completa.
