@@ -2078,3 +2078,27 @@ backend/exam-service/Code.gs; tests/security/exam-service-create-exam-security.t
 ### Estado
 Subalcance createExam; TASK-153 / AUD-NG-386 permanecen En ejecución por otras mutaciones EXAM.
 ===============================================================================
+
+===============================================================================
+CHECKPOINT C1.508 — Autorización y revocación de sesiones en purgeSecurityCaches
+Sesión: IMA-EXEC-20261110-1825Z-02.
+Fecha: 2026-11-11 UTC.
+Rama: NG_beta_0.0.0.1_work.
+HEAD inicial: 3755cdc1a13271224963d1566566e470384b19dd.
+### Hallazgo
+purgeSecurityCaches era llamado desde doPost tras RBAC externo, pero no repetía autorización/identidad en la función. Una invocación directa podía modificar cachés de seguridad. Además, SESSION_REVOKED eliminaba revoked_session_<id>, marcador que verifySessionToken consulta para invalidar sesiones.
+### Cambio
+- Normaliza payload y exige validateRolePermission("purgeSecurityCaches") más getVerifiedExamIdentity_ antes de acceder a CacheService.
+- Para SESSION_REVOKED escribe revoked_session_<id> = REVOKED con TTL 86400; GENERIC_PURGE conserva la eliminación explícita.
+- Añade contrato dedicado con autorización, identidad, eventos de cuenta/sesión, purga genérica y fallo de CacheService.
+### Archivos
+backend/exam-service/Code.gs; tests/security/exam-service-security-cache-purge.test.js; .github/workflows/exam-service-security-contract.yml; beta_test.txt (BETA-EXAM-061); Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; Auditoria.txt; changueslogs.txt; historial e índice de checkpoints.
+### Verificación
+- Node local: contrato aislado de la función productiva extraída 7/7 PASS; sintaxis de la función extraída PASS.
+- Parseo completo de Code.gs y ejecución Node del archivo completo NOT RUN localmente; CI pendiente de observación tras el commit de workflow.
+- Apps Script/CacheService real NOT RUN; BETA-EXAM-061 Pendiente beta.
+### Limitaciones
+La verificación local usa dobles de CacheService y no prueba la caché real de Apps Script ni el despliegue. Se conserva el comportamiento existente de GENERIC_PURGE; solo SESSION_REVOKED establece explícitamente el marcador de revocación.
+### Estado
+Subalcance purgeSecurityCaches implementado y verificado localmente. TASK-153 / AUD-NG-386 continúan En ejecución por otras superficies EXAM.
+===============================================================================
