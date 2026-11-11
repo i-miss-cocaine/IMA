@@ -435,3 +435,6 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.540 | IMA-EXEC-20261110-1825Z-02 | deleteExam real con identidad que pierde userId en contexto bajo lock; rechazo antes de abrir Sheets, cero escrituras/borrados, examen y ownership intactos, lock liberado; suite 13/13 PASS | PM-01 — TASK-153 / EXAM / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt — C1.540 | sección final | C1.539 | sin cambios productivos; Node22/CI y Apps Script/Sheets real NOT RUN; BETA-EXAM-074 Pendiente beta |
 
 | C1.541 | IMA-EXEC-20261110-1825Z-02 | updateExamStatus real rechaza userId incompleto en contexto bajo lock; cero aperturas/escrituras y Estado permanece Inactivo; suite 14/14 PASS | PM-01 — TASK-153 / EXAM / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt — C1.541 | sección final | C1.540 | sin cambios productivos; Node22/CI NOT RUN; BETA-EXAM-075 Pendiente beta |
+
+
+| C1.542 | IMA-EXEC-20261110-1825Z-02 | updateExam real rechaza userId incompleto bajo lock; cero aperturas/escrituras y fila completa del examen intacta; suite 15/15 PASS | PM-01 — TASK-153 / EXAM / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt — C1.542 | sección final | C1.541 | sin cambios productivos; Node22/CI NOT RUN; BETA-EXAM-076 Pendiente beta |

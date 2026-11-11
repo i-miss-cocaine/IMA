@@ -215,4 +215,66 @@ test(() => {
   assert.equal(JSON.stringify(examRows), examSnapshot, "exam status must remain unchanged");
 });
 
-process.stdout.write("exam-service-exam-mutation-security: " + passed + "/14 PASS\\n");
+
+test(() => {
+  const ownershipCheck = extractFunction("assertExamResourceOwnershipForScope_");
+  const context = extractFunction("getAuthorizedExamMutationContext_");
+  const wrapper = extractFunction("withAuthorizedExamMutation_");
+  const updateWorker = extractFunction("updateExamUnlocked_");
+  const updateHandler = extractFunction("updateExam");
+  const state = { permissionCalls: 0, identityCalls: 0, opens: 0,
+    lockAttempts: 0, releases: 0, held: false, writes: 0 };
+  const actors = [
+    { authorized: true, userId: "TEACHER-1", role: "Profesor" },
+    { authorized: true, userId: "   ", role: "Profesor" }
+  ];
+  const examRows = [
+    ["ID", "Titulo", "Asignatura", "Grado", "Seccion", "FechaLimite", "Tiempo", "Estado", "ProfesorID", "Parcial"],
+    ["EXAM-1", "Examen", "Matemáticas", "10", "A", "2026-11-30", 45, "Inactivo", "TEACHER-1", "I"]
+  ];
+  const examSnapshot = JSON.stringify(examRows);
+  const ownershipRows = [
+    ["OwnershipID", "InstitutionID", "ResourceType", "ResourceID", "DepartmentID", "Status", "RegisteredBy", "CreatedAt", "UpdatedAt"],
+    ["OWN-1", "I1", "EXAMEN", "EXAM-1", "D1", "ACTIVE", "TEACHER-1", "", ""]
+  ];
+  const examSheet = {
+    getDataRange() { return { getValues() { return examRows; } }; },
+    getRange() { return { setValue() { state.writes++; }, setValues() { state.writes++; } }; }
+  };
+  const ownershipSheet = { getDataRange() { return { getValues() { return ownershipRows; } }; } };
+  const ss = { getSheetByName(name) {
+    return ({ Examenes: examSheet, ResourceOwnership: ownershipSheet })[name] || null;
+  }};
+  const lock = {
+    tryLock() { state.lockAttempts++; state.held = true; return true; },
+    releaseLock() { state.releases++; state.held = false; }
+  };
+  const runtime = {
+    validateRolePermission() { state.permissionCalls++; return { authorized: true }; },
+    getVerifiedExamIdentity_() { return actors[Math.min(state.identityCalls++, actors.length - 1)]; },
+    getVerifiedExamDepartmentScope_() { return { authorized: true, institutionId: "I1", departmentIds: ["D1"] }; },
+    SpreadsheetApp: { openById() { state.opens++; return ss; } },
+    SPREADSHEET_ID: "SYNTHETIC",
+    LockService: { getScriptLock() { return lock; } },
+    getSheetOrThrow(sheet, name) { const value = sheet.getSheetByName(name); if (!value) throw new Error("missing " + name); return value; },
+    EXAM_RESOURCE_OWNERSHIP_REQUEST_CACHE_: new Map(), String, Error
+  };
+  const executable = [ownershipCheck, context, wrapper, updateWorker, updateHandler].join("\n");
+  const update = new Function("runtime", "with (runtime) { " + executable + "; return updateExam; }")(runtime);
+  assert.throws(() => update({
+    examenId: "EXAM-1", titulo: "Título alterado", asignatura: "Ciencias",
+    gradoAsignado: "11", seccionAsignada: "B", fechaLimite: "2026-12-15",
+    tiempoLimite: 90, parcial: "II"
+  }), /RESOURCE_NOT_AVAILABLE/,
+    "updateExam must reject identity that loses userId during locked context revalidation");
+  assert.equal(state.permissionCalls, 2, "permission must be checked before and inside the lock");
+  assert.equal(state.identityCalls, 2, "identity must be reverified after lock acquisition");
+  assert.equal(state.lockAttempts, 1);
+  assert.equal(state.releases, 1);
+  assert.equal(state.held, false, "lock must be released after identity denial");
+  assert.equal(state.opens, 0, "incomplete identity must be rejected before Sheets is opened");
+  assert.equal(state.writes, 0, "exam fields must not be written after identity denial");
+  assert.equal(JSON.stringify(examRows), examSnapshot, "all exam fields must remain unchanged");
+});
+
+process.stdout.write("exam-service-exam-mutation-security: " + passed + "/15 PASS\\n");

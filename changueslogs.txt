@@ -1780,3 +1780,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - La identidad pierde userId en contexto bajo lock: RESOURCE_NOT_AVAILABLE, lock liberado, cero aperturas/escrituras y Estado del examen inalterado.
 - Suite 14/14 PASS en V8 aislado con shims; parseo V8 PASS. Node22/CI y Apps Script/Sheets real NOT RUN.
 - BETA-EXAM-075 Pendiente beta; sin cambios productivos.
+
+
+
+[2026-11-11] C1.542 — TASK-153 / updateExam y revalidación de identidad bajo lock
+- Se añade prueba del handler real updateExam, su worker, wrapper y contexto.
+- Se solicitan cambios en siete campos; la identidad pierde userId en contexto bajo lock: RESOURCE_NOT_AVAILABLE, lock liberado, cero aperturas/escrituras y fila íntegra.
+- Suite 15/15 PASS en V8 aislado con shims; parseo V8 PASS. Node22/CI y Apps Script/Sheets real NOT RUN.
+- BETA-EXAM-076 Pendiente beta; sin cambios productivos.

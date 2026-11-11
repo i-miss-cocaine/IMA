@@ -1891,3 +1891,12 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Resultado:** RESOURCE_NOT_AVAILABLE; lock liberado; cero aperturas/escrituras; Estado permanece Inactivo.
 - **Verificación:** suite 14/14 PASS en V8 aislado con shims; parseo V8 de Code.gs/test PASS. Node22/CI y Apps Script/Sheets real NOT RUN.
 - **Beta:** BETA-EXAM-075 Pendiente beta.
+
+
+
+### C1.542 — AUD-NG-386 / revalidación de identidad en updateExam
+- **Hallazgo:** faltaba ejecutar el handler real de actualización y verificar que la denegación evitara cambios en todos los campos.
+- **Cambio:** escenario de identidad válida en preflight y userId en espacios en contexto bajo lock, invocando updateExam real con cambios solicitados en siete campos.
+- **Resultado:** RESOURCE_NOT_AVAILABLE; lock liberado; cero aperturas/escrituras; snapshot íntegro de Examenes sin cambios.
+- **Verificación:** suite 15/15 PASS en V8 aislado con shims; parseo V8 de Code.gs/test PASS. Node22/CI y Apps Script/Sheets real NOT RUN.
+- **Beta:** BETA-EXAM-076 Pendiente beta.

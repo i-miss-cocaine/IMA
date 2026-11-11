@@ -3968,3 +3968,13 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Verificación local:** suite exam-service-exam-mutation-security 14/14 PASS en V8 aislado con shims fs/vm/assert; parseo V8 de Code.gs y test PASS. Node 22 nativo/CI NOT RUN.
 - **Beta:** BETA-EXAM-075 agregado para validar el rechazo y la conservación de Estado en Apps Script/Sheets desplegado; Pendiente beta.
 - **Estado:** cobertura local del handler updateExamStatus añadida; sin cambios productivos. TASK-153 / AUD-NG-386 continúa En ejecución; updateExam queda como siguiente mutación a evaluar.
+
+
+
+### 10.195 TASK-153 / AUD-NG-386 — ejecutar updateExam real ante pérdida de identidad bajo lock (C1.542)
+- **Hallazgo de cobertura:** C1.541 cubrió updateExamStatus, pero updateExam aún no tenía una prueba que ejecutara el handler real y comprobara que la revalidación de identidad protegiera todos los campos de la fila del examen.
+- **Cambio:** escenario que ejecuta assertExamResourceOwnershipForScope_, getAuthorizedExamMutationContext_, withAuthorizedExamMutation_, updateExamUnlocked_ y updateExam reales. Identidad válida en preflight; userId de espacios en el contexto bajo lock.
+- **Contrato comprobado:** RESOURCE_NOT_AVAILABLE; dos verificaciones RBAC/identidad; lock adquirido y liberado; cero aperturas de Sheets y escrituras; snapshot completo de Examenes intacto pese a solicitar cambios en título, asignatura, grado, sección, fecha límite, tiempo y parcial.
+- **Verificación local:** suite exam-service-exam-mutation-security 15/15 PASS en V8 aislado con shims fs/vm/assert; parseo V8 de Code.gs y test PASS. Node 22 nativo/CI NOT RUN.
+- **Beta:** BETA-EXAM-076 agregado para validar el rechazo y conservación integral de la fila en Apps Script/Sheets desplegado; Pendiente beta.
+- **Estado:** cobertura local de updateExam añadida; sin cambios productivos. TASK-153 / AUD-NG-386 continúa En ejecución; continuar inventario de mutaciones EXAM sin cobertura equivalente.

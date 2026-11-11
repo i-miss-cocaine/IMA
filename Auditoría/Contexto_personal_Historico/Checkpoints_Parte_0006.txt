@@ -1241,3 +1241,32 @@ C1.540 cubrió deleteExam real. updateExamStatus usa el mismo wrapper y contexto
 ### Beta y continuidad
 BETA-EXAM-075 agregado; Pendiente beta. TASK-153 / AUD-NG-386 continúa En ejecución. Siguiente acción: evaluar updateExam con handler real y preservar todos los campos del examen ante revalidación de identidad fallida.
 ===============================================================================
+
+
+
+===============================================================================
+C1.542 — TASK-153 / AUD-NG-386 / revalidación de identidad en updateExam
+ID de sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-11
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: 75fed5b63ccd9ecf703fe18c684f6183751ad4e5
+
+### Alcance y hallazgo
+C1.541 cubrió updateExamStatus real. updateExam comparte el wrapper/contexto, pero faltaba ejecutar su handler real y demostrar que una identidad incompleta impide modificar todos los campos del examen.
+
+### Cambio
+- tests/security/exam-service-exam-mutation-security.test.js: escenario nuevo con assertExamResourceOwnershipForScope_, getAuthorizedExamMutationContext_, withAuthorizedExamMutation_, updateExamUnlocked_ y updateExam reales.
+- Identidad válida en preflight y userId de espacios en la revalidación contextual bajo lock.
+- Se solicita cambiar título, asignatura, grado, sección, fecha límite, tiempo y parcial; se exige RESOURCE_NOT_AVAILABLE, lock liberado, cero aperturas/escrituras y snapshot completo de Examenes sin cambios.
+- Sin cambios en Code.gs ni en permisos, roles, ownership o persistencia.
+
+### Verificación local
+- Parseo V8 de Code.gs y suite: PASS.
+- Suite exam-service-exam-mutation-security: 15/15 PASS en V8 aislado con shims fs/vm/assert.
+- Harness ejecuta updateExam real y comprueba la ausencia de escrituras y la integridad de la fila: PASS.
+- Node 22 nativo/CI: NOT RUN.
+- Apps Script/Sheets real: NOT RUN.
+
+### Beta y continuidad
+BETA-EXAM-076 agregado; Pendiente beta. TASK-153 / AUD-NG-386 continúa En ejecución. Siguiente acción: continuar el inventario de mutaciones EXAM restantes, sin repetir C1.534–C1.542.
+===============================================================================
