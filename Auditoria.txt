@@ -1778,3 +1778,11 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Cobertura local:** harness del wrapper exacto 7/7 PASS; suite dedicada 28/28 PASS en runner JavaScript aislado; parseo Code.gs y suite PASS. No se declara ejecución local nativa Node: checkout no disponible por DNS.
 - **CI:** workflow GitHub Actions 43053113842 SUCCESS; job `exam-security-contracts` SUCCESS; suite dedicada 28/28 PASS en Node 22.
 - Apps Script/Sheets real NOT RUN; BETA-EXAM-067 permanece Pendiente beta.
+
+
+### C1.527 — AUD-NG-386 / mutaciones de entregas EXAM
+- Hallazgo alto: el wrapper `withAuthorizedExamSubmissionMutation_` permitía identidad firmada autorizada sin `userId` no vacío antes de adquirir ScriptLock; el contexto también avanzaba a abrir Sheets sin comprobarlo.
+- Corrección: se exige `userId` no vacío en preflight y de nuevo en `getAuthorizedExamSubmissionMutationContext_` antes de `SpreadsheetApp.openById`. Se preservan permisos, roles, ownership, auditoría y revalidación TOCTOU.
+- Pruebas locales: parseo Code.gs/suite PASS; suite dedicada 26/26 PASS en runner aislado con shims; checkout local/Node nativo NOT RUN por fallo DNS al clonar.
+- CI: workflow 43058558651 SUCCESS; job 130654537657 SUCCESS; suite dedicada 26/26 PASS en Node 22.
+- Apps Script/Sheets real NOT RUN; no requerido para esta aprobación local.
