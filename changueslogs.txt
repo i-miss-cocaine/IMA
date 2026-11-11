@@ -1857,3 +1857,13 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - BETA-EXAM-068 ampliado y Pendiente beta. Node22/CI de la versión actual y Apps Script/Sheets real NOT RUN.
 - Sin cambios productivos. TASK-153 / AUD-NG-386 continúa abierta.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] C1.550 — TASK-153 / saveCompetencyEvaluation: revalidación de identidad bajo lock
+- Añadida prueba con identidad válida en preflight y userId de espacios en la revalidación bajo ScriptLock.
+- Verifica RESOURCE_NOT_AVAILABLE, dos verificaciones, liberación del lock, cero aperturas de Sheets y evaluación/ownership intactos.
+- Parseo V8 y suite completa 25/25 PASS en aislamiento V8 con shims.
+- BETA-EXAM-050 ampliado y Pendiente beta. Node22/CI de la versión actual y Apps Script/Sheets real NOT RUN.
+- Sin cambios productivos. TASK-153 / AUD-NG-386 continúa abierta.
+===============================================================================
