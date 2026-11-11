@@ -994,6 +994,14 @@ Completar la validación de identidad firmada de getAuthorizedPeriodGradebookClo
 - Corrección de formato de la prueba: ebd67db511e259b4217d8d37d96bdc1ef5de8604.
 - Documentación y HEAD final: se confirman al terminar la publicación.
 
+### Cierre documental de C1.533
+- Commit de documentación del checkpoint: 4ad13c0287a97ba659c8fd2069d2927b65eab6b1 (actualización de cierre en este commit).
+- Plan maestro: bd13439c704837528878fbe958f52ba88f9d415b.
+- Auditoría: 0490d6d1bb00e8e27883d47a62728ddd43b1a0f0.
+- BETA-EXAM-065 ampliado: 18f202b7788412791fad324f8af854aad767d5e4.
+- Changelog: 2422299e5eb41fa5daaed83425fa2fd2f1f73759.
+- Índice inicial de registro: b2889a4fe450cc9db4b042dc349265417c2c52fc; se actualiza al finalizar para apuntar a este cierre.
+
 ### Estado y continuidad
 El subalcance de identidad completa en el contexto de cierre queda corregido. TASK-153 / AUD-NG-386 permanece En ejecución por otras rutas EXAM. Rama base sin modificaciones.
 ===============================================================================
