@@ -1645,6 +1645,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-11] C1.525 — EXAM reopenPeriodGradebook
 - withAuthorizedPeriodGradebookReopen_ ahora valida RBAC, identidad firmada, userId no vacío y allowlist de roles antes de solicitar ScriptLock.
 - El contexto conserva la revalidación bajo lock de scope institutionWide, cierre único en estado Cerrado y auditoría obligatoria con rollback.
-- Suite dedicada ampliada a 26 escenarios; verificación CI pendiente.
+- Suite dedicada ampliada a 26 escenarios; harness local focalizado 10/10 PASS; GitHub Actions workflow 43052136181 SUCCESS y suite 26/26 PASS en Node 22.
 - Apps Script/Sheets real NOT RUN; BETA-EXAM-055 actualizado y permanece Pendiente beta.
 ===============================================================================
