@@ -1980,3 +1980,9 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Brecha:** el test específico cubría identidad degradada bajo lock, pero no el cambio RBAC concedido→revocado entre preflight y contexto bloqueado.
 - **Corrección:** fixture secuencial y prueba [true,false]; la denegación exige RESOURCE_NOT_AVAILABLE, lock liberado, cero identidad contextual adicional, cero apertura de Sheets y snapshot de CalificacionesEstudiantes intacto. Backend productivo sin cambios.
 - **Verificación local:** parseo Code.gs/contrato PASS; contrato completo aislado V8 **29/29 PASS**. CI pendiente. BETA-EXAM-083 Pendiente beta.
+
+
+### Addendum CI — C1.579
+- GitHub Actions run **43112000769**, commit `6ac57d1f0dd1d401aac225bb41cce53cb280c90e`: workflow `Exam-Service security local contracts` **SUCCESS** en Node.js 22.
+- Paso `Run gradebook save security regression`: SUCCESS; job completo, contrato general, acceso departamental y endpoints de lectura: SUCCESS.
+- C1.579 Completada en verificación local y CI. BETA-EXAM-083 permanece Pendiente beta.

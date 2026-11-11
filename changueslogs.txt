@@ -2097,3 +2097,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Contrato local aislado: 29/29 PASS; parseo Code.gs y contrato PASS. CI pendiente; BETA-EXAM-083 Pendiente beta.
 - Solo cambia tests/security/exam-service-gradebook-save-security.test.js y registros; backend productivo sin cambios.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] C1.579 — resultado CI de revocación RBAC en saveGradebookGrades
+- GitHub Actions run 43112000769, commit 6ac57d1f0dd1d401aac225bb41cce53cb280c90e: workflow completo SUCCESS en Node.js 22.
+- Job exam-security-contracts y paso Run gradebook save security regression: SUCCESS; también pasaron contrato general, acceso departamental y endpoints de lectura.
+- C1.579 Completada en verificación local y CI. BETA-EXAM-083 continúa Pendiente beta.
+===============================================================================

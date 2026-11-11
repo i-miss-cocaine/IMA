@@ -4236,3 +4236,10 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Alcance:** solo prueba/fixture; backend productivo, RBAC, identidad, scope, asignaciones, ownership y persistencia sin cambios. BETA-EXAM-083 registra el escenario desplegado.
 - **Verificación local:** parseo de Code.gs y del contrato PASS; ejecución completa aislada del contrato con shims compatibles: **29/29 PASS**. CI Node.js 22 pendiente de ejecución/observación tras commit. Apps Script/Sheets real NOT RUN, reservado a beta.
 - **Estado:** C1.579 Completada en verificación local; TASK-153 / AUD-NG-386 continúa En ejecución para el inventario EXAM restante.
+
+
+#### Addendum CI — C1.579
+- GitHub Actions run **43112000769**, commit `6ac57d1f0dd1d401aac225bb41cce53cb280c90e`, workflow `Exam-Service security local contracts`: **SUCCESS** en Node.js 22.
+- Job `exam-security-contracts`: SUCCESS. El paso `Run gradebook save security regression` terminó SUCCESS; también pasaron los demás contratos de seguridad EXAM, el contrato general, acceso departamental y endpoints de lectura.
+- La prueba ampliada `exam-service-gradebook-save-security.test.js` pasó en CI con el escenario de revocación RBAC bajo lock.
+- C1.579 Completada en verificación local y CI. BETA-EXAM-083 continúa Pendiente beta.
