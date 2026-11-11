@@ -1165,3 +1165,47 @@ Asegurar el endpoint de simulación de reprogramación como unidad independiente
 - Commits de la unidad: implementación 62e7e672234e128a0cca8e5c3a251bbc4fa21b8f; checkpoint 605152faa8b5727db29d59f2d3274a3a949d6bf9.
 - Rama base NG_beta_0.0.0.1 intacta: 44d9891132332e692dbe2ba8602b41f50a508a59.
 ===============================================================================
+
+===============================================================================
+## CHECKPOINT C1.487 — EXAM: seguridad de getGradingPerformanceAndPersistenceMetrics
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-11 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.486.
+HEAD inicial: d72cfdc9b1cac653de3976f53ce64acf6730e9f6.
+Commit de implementación: 7c6f3a395dfd962adfaa090c3de1f0fe0f7d7a87.
+
+### Alcance
+Asegurar exclusivamente el endpoint global de métricas de rendimiento y persistencia del servicio EXAM.
+
+### Hallazgo y corrección
+- El endpoint abría SpreadsheetApp directamente, leía seis hojas globales sin identidad, permiso ni lock y estaba autorizado explícitamente para Profesor.
+- El handler delega ahora en withAuthorizedExamRead_("getGradingPerformanceAndPersistenceMetrics", ...), que valida RBAC/identidad/ámbito y serializa la lectura bajo el ScriptLock compartido.
+- El worker permite únicamente Administrador y Desarrollador con scope.institutionWide === true. Se retiró la acción de la lista de permisos de Profesor; roles con wildcard o permisos dinámicos también fallan si no pertenecen a la allowlist.
+- Se conserva el contrato de salida y sus umbrales. La respuesta contiene únicamente nombre de hoja, existencia, conteo y estado; no devuelve valores de celdas ni datos personales.
+- Las seis métricas se muestrean después de adquirir el lock. Timeout fail-closed. Operación de solo lectura, sin escrituras.
+
+### Archivos
+- backend/exam-service/Code.gs
+- tests/security/exam-service-read-endpoints-security.test.js
+- tests/security/exam-service-security-contract.test.js
+- beta_test.txt
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+
+### Verificación local
+- Parseo V8 del backend y sintaxis de las dos suites: PASS.
+- Harness V8 local de tests/security/exam-service-read-endpoints-security.test.js: PASS.
+- Escenarios: Administrador/Desarrollador permitidos; Profesor/Dirección/Secretaría/Estudiante denegados; RBAC denegado; scope departamental denegado; timeout; intercalación de conteo antes/después del lock; umbrales por hoja/global; hoja ausente; respuesta sin valores de celdas; liberación del lock.
+- Contrato estático exam-service-security-contract.test.js: PASS.
+- Runner Node nativo y CI: NOT RUN. Apps Script/Sheets real: NOT RUN. BETA-EXAM-041: Pendiente beta.
+
+### Estado y continuidad
+- Subalcance getGradingPerformanceAndPersistenceMetrics completado y publicado.
+- TASK-153 permanece En ejecución; AUD-NG-386 abierto por otras lecturas EXAM.
+- Siguiente acción concreta: identificar y auditar individualmente el siguiente endpoint de lectura EXAM no cubierto.
+- Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios).
+
+===============================================================================
