@@ -1738,3 +1738,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se añade userId actor-1 al mock; sin cambio productivo ni relajación de controles.
 - Suites específicas previas, incluida reopen 27/27, pasaron; parseo de archivos PASS. CI posterior pendiente.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] C1.537 — contrato TOCTOU de identidad en mutaciones generales EXAM
+- El contrato simula identidad autorizada con userId válido en preflight y userId de espacios al revalidar bajo ScriptLock.
+- Se exige rechazo antes de ejecutar la mutación y liberación del lock; aserción estática confirma validación antes de abrir Sheets.
+- Parseo V8 de Code.gs/contrato y harness focalizado PASS. Node 22/CI sobre el nuevo commit pendiente.
+- Sin cambios productivos; BETA-EXAM-072 permanece Pendiente beta.
+===============================================================================

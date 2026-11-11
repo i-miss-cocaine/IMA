@@ -1103,3 +1103,30 @@ Se añade userId: actor-1 al mock, alineándolo con las otras fixtures de identi
 ### Continuidad
 C1.536 corrige exclusivamente el contrato de prueba desactualizado. Siguiente iteración: continuar inventario de mutaciones EXAM elegibles tras verificar CI, sin duplicar C1.534/C1.535.
 ===============================================================================
+
+
+===============================================================================
+C1.537 — TASK-153 / AUD-NG-386 / TOCTOU de identidad en mutaciones generales EXAM
+ID de sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-11
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: 87d1dff9c1db65b6a9430e54e9a4eb3c7dc044bd
+
+### Alcance y hallazgo
+El contrato de withAuthorizedExamMutation_ cubría identidad no autorizada durante la revalidación, pero no el caso de identidad todavía autorizada cuyo userId pasa a estar vacío/compuesto por espacios bajo ScriptLock. El contexto productivo ya rechaza ese estado antes de abrir Sheets; la brecha era de cobertura.
+
+### Cambio
+- tests/security/exam-service-security-contract.test.js: mock de identidad alterna userId válido y userId de espacios; contexto de prueba rechaza identidad incompleta; nuevo caso exige cero mutación y liberación del lock.
+- Se añade aserción estática de que getAuthorizedExamMutationContext_ comprueba userId no vacío antes de SpreadsheetApp.openById.
+- Sin cambios en código productivo, permisos, roles, scope ni persistencia.
+
+### Verificación local
+- Parseo V8 de backend/exam-service/Code.gs: PASS.
+- Parseo V8 del contrato: PASS.
+- Aserción estática del contexto antes de Sheets: PASS.
+- Harness V8 focalizado con identidad válida en preflight y userId en blanco bajo lock: PASS; resultado RESOURCE_NOT_AVAILABLE, sin mutación y lock liberado.
+- Node 22/CI sobre el nuevo commit: pendiente.
+
+### Beta y continuidad
+BETA-EXAM-072 ya contiene el escenario equivalente y permanece Pendiente beta; Apps Script/Sheets real NOT RUN. TASK-153 / AUD-NG-386 continúa En ejecución. Siguiente iteración: continuar una sola unidad del inventario EXAM restante sin repetir C1.534–C1.537.
+===============================================================================

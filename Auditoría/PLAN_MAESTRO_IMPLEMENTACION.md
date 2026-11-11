@@ -3923,3 +3923,12 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Cambio:** el mock devuelve `userId: actor-1`, como las fixtures de las demás rutas del mismo archivo. No se debilita la validación productiva ni se altera autorización.
 - **Verificación local:** parseo del archivo de prueba PASS; parseo completo Code.gs PASS. Ejecución Node 22/CI pendiente tras el commit.
 - **Estado:** corrección de fixture; pendiente CI.
+
+
+### 10.190 TASK-153 / AUD-NG-386 — cubrir pérdida de userId en revalidación TOCTOU de mutaciones generales EXAM (C1.537)
+- **Hallazgo de cobertura:** el contrato de `withAuthorizedExamMutation_` simulaba una identidad denegada en la segunda validación, pero no el caso más específico de actor aún autorizado con `userId` vacío/solo espacios después de adquirir `ScriptLock`.
+- **Contrato productivo verificado:** `getAuthorizedExamMutationContext_` exige `authorized === true` y `userId` no vacío tras `trim()` antes de `SpreadsheetApp.openById`; no se detectó defecto productivo en esta ruta.
+- **Cambio:** el test ahora alterna identidad válida en preflight y actor autorizado con `userId` compuesto por espacios en contexto; verifica rechazo antes de mutar, liberación del lock y el orden de identidad/contexto. Se añade aserción estática de la comprobación previa a Sheets.
+- **Verificación local:** parseo V8 de Code.gs y del contrato PASS; harness V8 focalizado de la ruta TOCTOU PASS. Node 22/CI sobre el nuevo commit pendiente.
+- **Beta:** BETA-EXAM-072 ya contempla la pérdida de userId bajo lock; permanece Pendiente beta. Apps Script/Sheets real NOT RUN.
+- **Estado:** cobertura local añadida; TASK-153 / AUD-NG-386 continúa En ejecución para el inventario restante, sin modificar lógica productiva.

@@ -35,6 +35,10 @@ assert.ok(examMutationLockWrapperContract.indexOf("validateRolePermission(action
   "exam metadata mutation wrapper must validate RBAC before requesting the shared lock");
 assert.ok(examMutationLockWrapperContract.indexOf("getVerifiedExamIdentity_(payload)") < examMutationLockWrapperContract.indexOf("LockService.getScriptLock()"),
   "exam metadata mutation wrapper must validate signed identity before requesting the shared lock");
+const examMutationContextContract = extractFunction(source, "getAuthorizedExamMutationContext_");
+assert.ok(examMutationContextContract.includes("!String(actor.userId || \"\").trim()") &&
+  examMutationContextContract.indexOf("getVerifiedExamIdentity_(payload)") < examMutationContextContract.indexOf("SpreadsheetApp.openById(SPREADSHEET_ID)"),
+  "exam mutation context must reject an incomplete signed identity before opening Sheets");
 
 function runExamMutationLockWrapper(options = {}, mutation = () => "ok") {
   const events = [];
@@ -48,7 +52,7 @@ function runExamMutationLockWrapper(options = {}, mutation = () => "ok") {
     getVerifiedExamIdentity_(payload) {
       events.push("identity");
       identityCalls++;
-      return { authorized: !(options.preflightIdentityDenied || (options.contextIdentityDenied && identityCalls > 1)), userId: "actor-1" };
+      return { authorized: !(options.preflightIdentityDenied || (options.contextIdentityDenied && identityCalls > 1)), userId: options.contextIdentityMissingUserId && identityCalls > 1 ? "   " : "actor-1" };
     },
     LockService: { getScriptLock() {
       events.push("lock-request");
@@ -62,7 +66,7 @@ function runExamMutationLockWrapper(options = {}, mutation = () => "ok") {
       const permission = sandbox.validateRolePermission(action, payload);
       if (!permission.authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
       const actor = sandbox.getVerifiedExamIdentity_(payload);
-      if (!actor.authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
+      if (!actor.authorized || !String(actor.userId || "").trim()) throw new Error("RESOURCE_NOT_AVAILABLE");
       return { actor, action };
     },
     runMutation(events, context) { events.push("mutation"); return mutation(events, context); }
@@ -93,6 +97,12 @@ assert.deepEqual(lockWrapperResult.events, [
   "permission:updateExam", "identity", "lock-request", "lock-acquire:5000",
   "context:updateExam", "permission:updateExam", "lock-release"
 ], "context RBAC must be rechecked under lock");
+lockWrapperResult = runExamMutationLockWrapper({ contextIdentityMissingUserId: true });
+assert.equal(lockWrapperResult.error, "RESOURCE_NOT_AVAILABLE");
+assert.deepEqual(lockWrapperResult.events, [
+  "permission:updateExam", "identity", "lock-request", "lock-acquire:5000",
+  "context:updateExam", "permission:updateExam", "identity", "lock-release"
+], "a signed identity that loses userId under the lock must be rejected before mutation and release the lock");
 lockWrapperResult = runExamMutationLockWrapper({}, () => { throw new Error("synthetic write failure"); });
 assert.equal(lockWrapperResult.error, "synthetic write failure");
 assert.equal(lockWrapperResult.events.at(-1), "lock-release", "lock must release after mutation failure");
