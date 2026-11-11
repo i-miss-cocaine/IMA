@@ -675,3 +675,14 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta; Apps Script/Sheets real NOT RUN. Harness local aislado: 22 escenarios PASS; parseo completo de Code.gs y parseo del contrato PASS.
 - **Evidencia requerida:** build desplegado, identidad/rol/scope, asignaciones origen/destino, headers de categoría/ownership, snapshots antes/después, IDs y ownership nuevos, rechazo del esquema canónico, simulación de fallo/rollback y logs sin datos sensibles.
 ===============================================================================
+
+===============================================================================
+## BETA-EXAM-060 — TASK-153 / AUD-NG-386 / EXAM: createExam
+- **Módulo/rol:** Servicio EXAM; Profesor y roles autorizados por la matriz RBAC.
+- **Objetivo:** verificar que la creación de exámenes exige permiso efectivo para createExam, identidad firmada, scope institucional/departamental y departamento autorizado; confirmar persistencia coordinada de examen, ownership y preguntas.
+- **Precondiciones:** versión beta desplegada; sesión firmada válida; actor con permiso createExam y departamento D1 autorizado; hojas Examenes, PreguntasExamen y ResourceOwnership con esquema vigente.
+- **Pasos:** probar permiso denegado con token válido, identidad inválida, scope ausente, departamento ajeno, lock ocupado, esquema ownership inválido, creación positiva con preguntas y fallos inducidos en cada escritura incluyendo append que persiste antes de reportar error.
+- **Resultado esperado:** sin permiso no se abre ni modifica el spreadsheet; sin identidad/scope no se escribe; creación positiva registra examen, ownership y preguntas relacionados; ante fallo capturable se eliminan todas las filas parciales y se libera el lock; errores de rollback se informan explícitamente.
+- **Estado:** Pendiente beta; Apps Script/Sheets real NOT RUN. Contrato local dedicado y parseo completo se ejecutan en CI.
+- **Evidencia requerida:** rol/permiso, scope y departamento, snapshots antes/después de las tres hojas, IDs relacionados, respuesta de creación, errores simulados, liberación del lock y logs sin datos sensibles.
+===============================================================================
