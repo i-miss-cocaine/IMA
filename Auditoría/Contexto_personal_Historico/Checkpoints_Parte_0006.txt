@@ -1652,3 +1652,21 @@ C1.554 completa la corrección y cobertura local de submitExam. TASK-153 / AUD-N
 
 Commit de implementación: 5a8da19637a2b3f02025784d001759fd0db683b2 (`fix(exam): revalidate submitExam authorization under lock`). Commit documental de cierre: a0075ede61606ffc62c04a27f2df64d0a2b5da72. HEAD de la rama de trabajo verificado tras el primer cierre documental: a0075ede61606ffc62c04a27f2df64d0a2b5da72; el cierre posterior de trazabilidad se publicó en 990b51db3851a799d78c9ac9e160a5db75d6bf35. Rama base sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
 ===============================================================================
+
+
+## C1.555 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — ejecutar y cerrar cobertura local de saveGradebookGrades ante pérdida de identidad bajo ScriptLock (continuación de C1.543).
+
+### Resultado
+- Se ejecutó el archivo completo `tests/security/exam-service-gradebook-save-security.test.js` contra el backend vigente mediante runtime V8 aislado y shims de assert/fs/path/vm.
+- Resultado de suite: **28/28 PASS**.
+- Parseo V8 de `backend/exam-service/Code.gs` y del test: PASS.
+- El escenario de regresión invoca saveGradebookGrades real y sus funciones reales de autorización/contexto: identidad válida en preflight y actor aún autorizado con userId de espacios en la segunda comprobación. Resultado RESOURCE_NOT_AVAILABLE, lock liberado, cero aperturas de Sheets y filas de CalificacionesEstudiantes intactas.
+- El caso positivo de guardado válido y las regresiones preexistentes de roles, RBAC, scope, asignación, roster, categorías, período cerrado, duplicados, notas inválidas, timeout y fallo de escritura también pasan.
+- Node 22/CI para esta revisión: NOT RUN. Apps Script/Sheets real: NOT RUN; BETA-EXAM-057 permanece Pendiente beta.
+
+### Estado y continuidad
+C1.543 queda verificada y Completada en su cobertura local. No hubo cambios productivos. TASK-153 / AUD-NG-386 continúa En ejecución para el inventario restante; siguiente iteración seleccionará una sola mutación EXAM con brecha local demostrable.
+
+HEAD inicial de esta iteración: c53b47a4102770d25c3ec0939792e75cf14063a3. HEAD final y commit documental se consignan tras publicar.
+===============================================================================
