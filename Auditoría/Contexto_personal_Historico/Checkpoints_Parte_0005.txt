@@ -1881,3 +1881,49 @@ Se decidió retirar al Profesor de la autorización de revisión, restringir la 
 - TASK-153 continúa En ejecución y AUD-NG-386 abierto.
 - Rama base intacta en 44d9891132332e692dbe2ba8602b41f50a508a59.
 ===============================================================================
+
+
+===============================================================================
+CHECKPOINT C1.502 — Protección de reopenPeriodGradebook
+Sesión: IMA-EXEC-20261110-1825Z-02.
+Fecha: 2026-11-11 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior registrado: C1.500 (C1.501 quedó documentado en Plan Maestro y Auditoria.txt; no tenía entrada en el índice/historial de checkpoints).
+HEAD inicial verificado: 8db6660bc9702c6793a0d980cc49b609bb1abe57.
+Commit de implementación: b7cc4fe6c45e999fce2281d23eb5526450fd4ddf.
+HEAD final de implementación: b7cc4fe6c45e999fce2281d23eb5526450fd4ddf.
+Rama base: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59 (sin modificaciones).
+
+### Hallazgo y decisión técnica
+reopenPeriodGradebook cambiaba el estado a Reabierto sin validar RBAC, identidad firmada ni scope; confiaba en autorizadoPor/_verifiedUserId del payload; creaba CierresPeriodos si faltaba, tomaba la primera coincidencia sin validar esquema, unicidad ni estado, y ocultaba fallos al escribir HistorialRectificacionesNotas. La reapertura es una operación institucional: se excluye Profesor y se exige scope institutionWide, con allowlist interna para impedir que permisos dinámicos amplíen los roles autorizados.
+
+### Implementación
+- Wrapper ScriptLock con timeout de 5 segundos y liberación en finally.
+- RBAC, identidad firmada y allowlist Administrador, Desarrollador, Dirección, Director y Secretaría; Director recibe permiso explícito y Profesor pierde el permiso estático de reapertura.
+- Scope institucional amplio verificado. CierresPeriodos debe existir, conservar su esquema exacto, tener cierreId único, campos requeridos y estado Cerrado.
+- Motivo obligatorio (10–2.000 caracteres). HistorialRectificacionesNotas valida esquema y registra UUID, cierre, actor firmado, acción, transición, motivo y fecha. Se ignora autorizadoPor del cliente.
+- Si falla el append de auditoría, se intenta restaurar Cerrado y eliminar una fila parcial; el endpoint no declara éxito.
+
+### Archivos modificados
+1. backend/exam-service/Code.gs
+2. tests/security/exam-service-period-gradebook-reopen-security.test.js
+3. .github/workflows/exam-service-security-contract.yml
+4. Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+5. beta_test.txt (BETA-EXAM-055)
+6. changueslogs.txt
+7. Auditoria.txt
+
+### Verificación
+- Harness V8 aislado de las funciones de reapertura: 22/22 PASS. Casos: roles/RBAC/identidad/scope, campos, cierre ausente/duplicado/malformado/estado no Cerrado, auditoría ausente/vacía/esquema inválido, UUID, repetición, timeout, liberación, reentrada y rollback ante fallo de auditoría.
+- Parseo V8 de las funciones extraídas: PASS. El parseo de Code.gs completo y las suites de regresión del checkout no se ejecutaron localmente en esta sesión.
+- GitHub Actions: NOT CONFIRMED tras publicar. Apps Script/Sheets real: NOT RUN. BETA-EXAM-055: Pendiente beta.
+- Diff revisado: solo endpoint/allowlist EXAM, prueba dedicada, workflow y registros pertinentes. No se modificó otra rama.
+
+### Limitaciones y continuidad
+- CierresPeriodos no contiene InstitutionID/DepartmentID; la autorización institucional se sustenta en el spreadsheet institucional y scope institutionWide verificado. No se inventa ownership ausente.
+- El rollback de Sheets es compensatorio; si la infraestructura falla también al restaurar/eliminar una escritura parcial, queda un evento de diagnóstico y se requiere inspección de beta.
+- TASK-153 continúa En ejecución y AUD-NG-386 abierto por otros endpoints.
+- Siguiente tarea elegible: auditar rectifyStudentGrade, incluida autorización, propiedad de la calificación, integridad de nota y trazabilidad.
+- Rama base intacta en 44d9891132332e692dbe2ba8602b41f50a508a59.
+===============================================================================
