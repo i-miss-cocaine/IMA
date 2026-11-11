@@ -1407,6 +1407,7 @@ Auditar y asegurar exclusivamente getGradeRectificationHistory del servicio EXAM
 ### Commits de la iteración
 - Implementación: 008a889f013d4f8498ebb8715782b5878dd8ea87.
 - Suite de seguridad: 1a25e3679f7828f24d2d10c383838495a3629613.
+- Pruebas adicionales de matriz RBAC: 0311f50b7cdaaa4306529f0cf656088d3ba5075c.
 - Ajuste de fixtures: ac5a2f41b2bc3d0efd1799aba938937472e0b493.
 - RBAC explícito estudiante/tutor y corrección de sintaxis: da8aef2c448d18d462a8e4e7e88f2d31666adec1; 01c3d394ceab7b8f15bb279d8d5a84cb8866f29f.
 - Cobertura estática de matriz de permisos: 0311f50b7cdaaa4306529f0cf656088d3ba5075c.
