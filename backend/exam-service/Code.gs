@@ -2486,6 +2486,10 @@ function getAuthorizedGradebookSaveContext_(payload) {
   if (!scope || scope.authorized !== true || !String(scope.institutionId || "").trim()) {
     throw new Error("RESOURCE_NOT_AVAILABLE");
   }
+  if (actor.role === "Profesor" && scope.institutionWide !== true &&
+      (!Array.isArray(scope.departmentIds) || !scope.departmentIds.length)) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
   const grado = String(p.grado || "").trim(), seccion = String(p.seccion || "").trim();
   const asignatura = String(p.asignatura || "").trim(), parcial = String(p.parcial || p.periodoId || "").trim();
   if (!grado || !seccion || !asignatura || !parcial) throw new Error("GRADEBOOK_CONTEXT_REQUIRED");
