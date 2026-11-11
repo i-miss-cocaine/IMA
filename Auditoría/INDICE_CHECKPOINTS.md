@@ -5,11 +5,11 @@
 Este índice localiza los checkpoints. Los cuerpos históricos permanecen íntegros en sus archivos originales. Los fragmentos Parte_01.txt a Parte_07.txt son recuperación del contexto original y no forman parte de la serie rotativa nueva.
 
 ## Estado actual
-- Último checkpoint: **C1.492**
+- Último checkpoint: **C1.496**
 - Última sesión: `IMA-EXEC-20261110-1825Z-02`
 - Archivo activo: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt`
 - Límite por archivo: **180.000 caracteres**
-- Caracteres del archivo activo tras C1.492: **119928**
+- Caracteres del archivo activo tras C1.496: **134035**
 - Próxima parte rotativa: `Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt`
 - Rama de trabajo: `NG_beta_0.0.0.1_work`
 - Baseline lógico válido: **C1.316** (`31262d5ccbfc46a5f87a5d0fc9c363b177283d9a`). C1.317–C1.382 se conservan, pero no se aceptan como evidencia de continuidad por corrección expresa del usuario.
@@ -346,3 +346,4 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 | C1.493 | IMA-EXEC-20261110-1825Z-02 | EXAM: getEvaluationCategories protegido por RBAC, identidad y scope; hoja ausente/vacía devuelve defaults sin persistencia; esquema validado; suite V8 12 escenarios PASS | PM-01 — TASK-153 / EXAM / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt — sección C1.493 | 1477–1524 | C1.492 | 9c578c9a71dbcd4f9b2ed12b5207d2d6bc3f6545; checkpoint 2cedfb2f33cb35586067b1d4c4dfd33aafb6716e; Node/CI NOT RUN |
 | C1.494 | IMA-EXEC-20261110-1825Z-02 | EXAM: getRubrics protegido por RBAC, identidad y scope; lectura sin creación de hoja; esquema, JSON e IDs validados; suite V8 17 escenarios PASS; regresiones C1.493 12, C1.492 27, read-endpoints y security-contract PASS | PM-01 — TASK-153 / EXAM / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt — sección C1.494 | 1526–1575 | C1.493 | bd64bf3bb3acc2e348392baba06089a2f6ab6c4b; checkpoint 19a465531e4169013a63a589f69680a88803ef94; Node/CI NOT RUN |
 | C1.495 | IMA-EXEC-20261110-1825Z-02 | EXAM: saveEvaluationCategory protegido por RBAC, identidad, scope y ownership; altas transaccionales con rollback; lectura filtra ownership por institución/departamento; mutación 17 y lectura 17 escenarios PASS | PM-01 — TASK-153 / EXAM / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt — sección C1.495 | 1578–1628 | C1.494 | HEAD efectivo cc9102326a5759c710e29534e32a244bcf93375c; backend 8ad4382c0be786949b6b40b6bc7890fc51206ce3/a480c83d91ab5fe83f59888e2c9f096a5ccb03ce; checkpoint 00b005cd0c6dcd9d65c92245f433101b76f495bb; Node/CI NOT RUN |
+| C1.496 | IMA-EXEC-20261110-1825Z-02 | EXAM: harness saveRubric reparado (lock compartido, rollback con 3 filas iniciales, separador VM); regresión específica 17/17 PASS; suite global bloqueada por ReferenceError preexistente en departmental-access | PM-01 — TASK-153 / EXAM / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt — sección C1.496 | 1630–1673 | C1.495 | checkpoint 890aca06f42ac1d92f78add9e1adc3d407e2c007; test commit 81f8ad7ebd199026e8de6ed8b1c9cf3322bf5b18; Actions run 42946376368 (17/17 PASS; suite global FAIL por withAuthorizedExamRead_ no definido) |
