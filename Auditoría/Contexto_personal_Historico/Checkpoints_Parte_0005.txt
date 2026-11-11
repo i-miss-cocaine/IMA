@@ -1105,3 +1105,55 @@ Asegurar la lectura checkExamSchedulingConflict expuesta por doPost, como subalc
 - NG_beta_0.0.0.1_work se actualizó mediante compare-and-swap fast-forward; no se usó force.
 - Rama base NG_beta_0.0.0.1 verificada intacta: 44d9891132332e692dbe2ba8602b41f50a508a59.
 ===============================================================================
+
+===============================================================================
+## CHECKPOINT C1.486 — EXAM: seguridad de simulateExamReschedule
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-11 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.485.
+HEAD inicial verificado: 19fe7cd36f02fcca145dc304b99a79e464f7a427.
+Commit de implementación: 62e7e672234e128a0cca8e5c3a251bbc4fa21b8f.
+
+### Alcance
+Asegurar el endpoint de simulación de reprogramación como unidad independiente; no se implementaron métricas de calificación ni otras acciones EXAM.
+
+### Hallazgo y corrección
+- El endpoint leía directamente Examenes, elegía la primera coincidencia del ID y no validaba permiso específico, identidad firmada, ámbito, ownership ni propiedad docente del examen.
+- Llamaba al handler público checkExamSchedulingConflict, que adquiría otro ScriptLock y podía producir lock anidado/timeout; el log confiaba en payload.authRole.
+- El handler delega ahora en withAuthorizedExamRead_("simulateExamReschedule", ...). El worker opera bajo la misma sección crítica, exige ID único, ResourceOwnership autorizado y propiedad del profesor cuando aplica.
+- La comprobación de conflicto reutiliza checkExamSchedulingConflictUnlocked_ con el contexto ya autorizado, evitando una segunda adquisición de lock.
+- Los IDs ambiguos y accesos no autorizados fallan con RESOURCE_NOT_AVAILABLE. El rol del evento procede del actor verificado. La operación es de solo lectura y no escribe hojas.
+
+### Archivos
+- backend/exam-service/Code.gs
+- tests/security/exam-service-read-endpoints-security.test.js
+- tests/security/exam-service-security-contract.test.js
+- beta_test.txt
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+
+### Verificación local
+- Parseo V8 del backend y sintaxis de ambas suites: PASS.
+- tests/security/exam-service-read-endpoints-security.test.js ejecutado en harness V8 local compatible con sus dependencias Node: PASS.
+- Escenarios: simulación permitida, cálculo de conflicto, un solo lock, RBAC denegado, ownership denegado, profesor no propietario, ID duplicado, fecha calendario inválida, timeout y cambio de ownership inmediatamente antes de adquirir lock; también se verificó rol auditado desde identidad y ausencia de escrituras.
+- Contrato estático de simulateExamReschedule: PASS.
+- Suite Node nativa y CI: NOT RUN. Apps Script/Sheets real: NOT RUN. BETA-EXAM-040: Pendiente beta.
+
+### Estado y continuidad
+- Subalcance simulateExamReschedule completado y publicado.
+- TASK-153 permanece En ejecución; AUD-NG-386 abierto por otras lecturas EXAM.
+- Siguiente subalcance único: getGradingPerformanceAndPersistenceMetrics.
+- Rama base NG_beta_0.0.0.1: no modificada.
+
+===============================================================================
+
+===============================================================================
+### Addendum C1.486-R1 — publicación y verificación
+- Commit de implementación/código/pruebas/registros: 62e7e672234e128a0cca8e5c3a251bbc4fa21b8f.
+- HEAD de implementación verificado: 62e7e672234e128a0cca8e5c3a251bbc4fa21b8f.
+- Actualización fast-forward compare-and-swap en NG_beta_0.0.0.1_work; sin force.
+- NG_beta_0.0.0.1 se mantiene en 44d9891132332e692dbe2ba8602b41f50a508a59.
+===============================================================================
