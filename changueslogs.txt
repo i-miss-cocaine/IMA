@@ -1628,5 +1628,5 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - withAuthorizedPeriodGradebookSubmission_ ahora valida RBAC, identidad firmada, userId no vacío y rol Profesor antes de solicitar ScriptLock.
 - El contexto conserva revalidación RBAC/identidad, scope institucional, asignación docente, esquema y existencia de cierres bajo lock.
 - Suite dedicada ajustada a 25 escenarios (23 previos + 2 nuevos); harness local focalizado 8/8 PASS (Node 22).
-- GitHub Actions workflow 43048342087 SUCCESS; suite dedicada 25/25 PASS en Node 22 y parseo Code.gs PASS. Apps Script/Sheets real NOT RUN. BETA-EXAM-066 agregado.
+- GitHub Actions workflow 43048598007 SUCCESS; suite dedicada 25/25 PASS en Node 22 y parseo Code.gs PASS. Apps Script/Sheets real NOT RUN. BETA-EXAM-066 agregado.
 ===============================================================================

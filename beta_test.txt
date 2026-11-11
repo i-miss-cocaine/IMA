@@ -752,6 +752,6 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Precondiciones:** versión beta desplegada; sesión firmada válida; asignación docente vigente y hoja CierresPeriodos con esquema vigente.
 - **Pasos:** probar RBAC denegado, identidad no autorizada/ausente, userId vacío, rol distinto de Profesor, lock ocupado, asignación no verificada, envío válido, envío duplicado y concurrencia de solicitudes para el mismo contexto.
 - **Resultado esperado:** solicitudes inválidas no adquieren lock ni abren Sheets; una solicitud válida revalida RBAC/identidad y asignación bajo lock y registra un único envío PendienteRevision; el lock se libera en éxito y error.
-- **Estado:** Pendiente beta; harness local del wrapper 8/8 PASS; suite dedicada 25/25 PASS en Node 22 (workflow 43048342087 SUCCESS); parseo Code.gs PASS; Apps Script/Sheets real NOT RUN.
+- **Estado:** Pendiente beta; harness local del wrapper 8/8 PASS; suite dedicada 25/25 PASS en Node 22 (workflow 43048598007 SUCCESS); parseo Code.gs PASS; Apps Script/Sheets real NOT RUN.
 - **Evidencia requerida:** commit desplegado, actor/rol/permiso, trazas del orden RBAC/identidad/lock, filas de CierresPeriodos antes/después y evidencia de ausencia de duplicados y liberación del lock.
 ===============================================================================

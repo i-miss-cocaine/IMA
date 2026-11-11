@@ -526,3 +526,15 @@ Subalcance submitGradebookForReview corregido; TASK-153 / AUD-NG-386 continúa E
 Siguiente acción: ejecutar suite local/CI, cerrar C1.523 y después inspeccionar el siguiente wrapper mutador pendiente.
 HEAD final: pendiente de confirmar tras publicar.
 ===============================================================================
+
+
+===============================================================================
+### ADDENDUM FINAL DE VERIFICACIÓN — C1.523 / submitGradebookForReview
+- Commit de implementación: `e2110415430dd96dc6b824113c14f197c7af8169`.
+- Commit de ajuste de suite y denominador: `66efc4b91fe1f364bf7a14b6308e252abf7ccc83`.
+- GitHub Actions workflow `43048598007`: **completed / success**; job `exam-security-contracts` `130619218017` SUCCESS.
+- Suite `exam-service-period-gradebook-submission-security`: **25/25 PASS** en Node 22; parseo completo de Code.gs PASS.
+- Harness local focalizado del wrapper: **8/8 PASS** en Node 22; denegación RBAC/identidad/rol antes del lock, doble validación autorizada, timeout y liberación ante error.
+- Apps Script/Sheets real: NOT RUN. BETA-EXAM-066 permanece Pendiente beta.
+- HEAD final de rama y rama base se verifican tras publicar este addendum.
+===============================================================================
