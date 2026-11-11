@@ -1054,3 +1054,45 @@ Auditar e implementar la seguridad y consistencia de la lectura getExamGradeDist
 - Rama base NG_beta_0.0.0.1 verificada sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
 - NG_beta_0.0.0.1_work actualizado mediante compare-and-swap fast-forward; no se utilizó force push.
 ===============================================================================
+
+===============================================================================
+## CHECKPOINT C1.485 — EXAM: seguridad de checkExamSchedulingConflict
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-10 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.484.
+HEAD inicial verificado: c03c55336123fc7887227e6818fc0c74e976bf71.
+Commit de implementación: 48c19cf263a338b06786dd044c529f70736bad2a.
+
+### Alcance
+Asegurar la lectura checkExamSchedulingConflict expuesta por doPost, como subalcance independiente de simulateExamReschedule y getGradingPerformanceAndPersistenceMetrics.
+
+### Hallazgo y corrección
+- La función leía Examenes sin permiso RBAC específico ni ScriptLock compartido con las mutaciones EXAM; no comprobaba propiedad docente ni ResourceOwnership, y contaba IDs duplicados.
+- El handler delega ahora en withAuthorizedExamRead_("checkExamSchedulingConflict", ...), que revalida permiso específico, identidad firmada y ámbito después de adquirir el lock compartido, con timeout fail-closed y liberación en finally.
+- El worker cuenta únicamente IDs no vacíos y únicos, dentro de fecha/sección coincidente, excluyendo examen solicitado, estados Inactivo/Cancelado, profesor ajeno y recursos sin ownership autorizado.
+- La fecha objetivo debe ser calendario YYYY-MM-DD válido (se admite sufijo de hora ISO); maxExamenesPorDia es entero seguro 1–100, predeterminado 2. Se conserva el esquema de respuesta del conflicto.
+
+### Archivos
+- backend/exam-service/Code.gs
+- tests/security/exam-service-read-endpoints-security.test.js
+- tests/security/exam-service-security-contract.test.js
+- beta_test.txt
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+
+### Verificación local
+- Parseo V8 completo de Code.gs: PASS.
+- Harness V8 aislado ejecutado sobre el código real: PASS (9 grupos de escenarios): umbral/recuento, examen excluido, duplicados, estados, propiedad docente, ownership, permiso denegado, fecha calendario inválida, límite inválido y timeout/liberación de lock.
+- Los contratos del repositorio fueron ampliados; runner Node nativo de las suites NOT RUN en este entorno.
+- CI: NOT RUN. Apps Script/Sheets real: NOT RUN. BETA-EXAM-039: Pendiente beta.
+
+### Estado y continuidad
+- Subalcance checkExamSchedulingConflict completado localmente y publicado.
+- TASK-153 permanece En ejecución; AUD-NG-386 abierto por otras lecturas EXAM.
+- Siguiente subalcance único: auditar simulateExamReschedule. No agruparlo con getGradingPerformanceAndPersistenceMetrics.
+- Rama base NG_beta_0.0.0.1: verificada sin cambios en el checkpoint de publicación.
+
+===============================================================================

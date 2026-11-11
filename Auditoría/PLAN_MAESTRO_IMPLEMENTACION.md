@@ -3411,7 +3411,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Pruebas locales:** parseo V8 y harness aislado de 8 escenarios PASS. El runner Node nativo, CI y Apps Script/Sheets real no se ejecutaron.
 - **Beta:** BETA-EXAM-038 Pendiente beta; no bloquea el cierre local del subalcance.
 - **Estado:** subalcance completado; TASK-153 En ejecución y AUD-NG-386 abierto por otras lecturas EXAM.
-- **Siguiente:** auditar individualmente checkExamSchedulingConflict, simulateExamReschedule y getGradingPerformanceAndPersistenceMetrics; no se agrupan en una sola implementación.
+- **Siguiente:** auditar individualmente simulateExamReschedule; no agruparlo con getGradingPerformanceAndPersistenceMetrics.
 
 ### 10.137 TASK-153 / AUD-NG-386 — seguridad y consistencia de checkExamSchedulingConflict (C1.485)
 
