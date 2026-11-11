@@ -1280,5 +1280,5 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se eliminó getOrCreateSheet del endpoint; hoja ausente/vacía devuelve lista vacía sin persistencia.
 - Se valida esquema, se excluyen IDs vacíos/duplicados y rúbricas eliminadas, y se maneja JSON de criterios con fallo cerrado, conservando el contrato status/data y filtro por asignatura.
 - Límite: el modelo RubricasEvaluacion carece de InstitutionID/DepartmentID y saveRubric no persiste ownership; se mantiene como catálogo compartido legado, pendiente de eventual evolución de modelo.
-- Parseo V8 PASS; suite local aislada 16 escenarios PASS; regresiones C1.493 12 y C1.492 27 PASS. Node nativo/CI/Apps Script real NOT RUN. BETA-EXAM-048 Pendiente beta.
+- Parseo V8 PASS; suite local aislada 17 escenarios PASS; regresiones C1.493 12, C1.492 27, read-endpoints y security-contract PASS. Node nativo/CI/Apps Script real NOT RUN. BETA-EXAM-048 Pendiente beta.
 ===============================================================================
