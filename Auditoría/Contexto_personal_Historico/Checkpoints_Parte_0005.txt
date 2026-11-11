@@ -1472,3 +1472,52 @@ Auditar y asegurar exclusivamente getStudentAcademicReport, que consolida matrí
 - TASK-153 permanece En ejecución; AUD-NG-386 abierto por otras lecturas EXAM.
 - Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios).
 ===============================================================================
+
+===============================================================================
+## CHECKPOINT C1.493 — EXAM: aislamiento de getEvaluationCategories
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-11 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.492.
+HEAD inicial: b1e9ce2ce42a1a80fd120f4c90547befd16dec54.
+
+### Alcance
+Auditar y asegurar exclusivamente getEvaluationCategories dentro de TASK-153 / AUD-NG-386.
+
+### Hallazgo y corrección
+- getEvaluationCategories estaba declarado como PUBLIC_ACTIONS, por lo que validateRolePermission omitía la sesión; además getOrCreateSheet creaba CategoriasEvaluacion y escribía encabezados y categorías predeterminadas durante una lectura.
+- Se retiró getEvaluationCategories de PUBLIC_ACTIONS.
+- El handler ahora pasa por withAuthorizedExamMetadataRead_: valida RBAC, identidad firmada, rol de allowlist y scope institucional/departamental, y serializa la lectura con ScriptLock.
+- Roles desconocidos, identidad ausente, permiso denegado, scope inválido y timeout se rechazan con fallo cerrado.
+- La lectura usa getSheetByName y no escribe. Hoja ausente/vacía/solo encabezados devuelve las cuatro categorías predeterminadas en memoria, preservando status/data. Hojas pobladas validan los seis encabezados esperados; esquema incompatible falla cerrado.
+
+### Archivos
+- backend/exam-service/Code.gs
+- tests/security/exam-service-evaluation-categories-security.test.js
+- Auditoria.txt
+- changueslogs.txt
+- beta_test.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación local
+- Parseo V8 del backend: PASS.
+- Suite dedicada ejecutada mediante shim V8 aislado: PASS (12 escenarios: contrato de respuesta, hoja ausente/vacía sin persistencia, RBAC, identidad, rol, scope, timeout, concurrencia, esquema y allowlist pública).
+- Node nativo: NOT RUN. CI: NOT RUN. Apps Script/Sheets real: NOT RUN.
+- BETA-EXAM-047: Pendiente beta; no bloquea cierre local.
+
+### Commits de la iteración
+- Implementación: 9c578c9a71dbcd4f9b2ed12b5207d2d6bc3f6545.
+- Suite de seguridad: 7211201fee45f7451dccf7e1cc4648a4e447a8f9; correcciones del harness: d331da5733fd566fd8d7667bab3e1444333c4f38, e241998dd672930b02e546a8d4f47af715b37ace, 8cde92c91cae0ba7a1e4cd5c7aefdc0fa2f6a898, 61864078c1d7c611701be27534e9e3da0e53343e, 777984076311ddf880d30f6a67a64a9b5c03fbf9, 6a0c9e58587217c154b02dcffeb73fce36f93981.
+- Auditoria.txt: 57beee0292b31c98108b2b44db3cab7d02330423.
+- Changelog: 2bdfda4b8046bed8e8bb9ebcc05b015120385527.
+- Beta: 03a75fbfdb2feb90e760fe798dc1691e4a109f09.
+- Plan Maestro: 8c6c6973f48e8326aa9aa8ca50173723119bc804.
+
+### Estado y continuidad
+- Subalcance getEvaluationCategories completado localmente.
+- TASK-153 permanece En ejecución; AUD-NG-386 abierto por otras lecturas EXAM.
+- Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios).
+===============================================================================
