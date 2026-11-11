@@ -3634,3 +3634,11 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **CI/beta:** workflow run 43015764891 ejecutó la suite 24/24 PASS y security-contract PASS; workflow global FAIL por ReferenceError withAuthorizedExamRead_ no definido en departmental-access, con read-endpoints skipped. BETA-EXAM-058 Pendiente beta; Apps Script/Sheets real NOT RUN.
 - **Estado:** subalcance bulkApplyGradebookGrades implementado y contrato aislado PASS; TASK-153 permanece En ejecución por otras mutaciones EXAM.
 - **Límite:** se reutilizan las mismas limitaciones de modelo de saveGradebookGrades: CalificacionesEstudiantes no persiste asignatura/período por fila y ConfiguracionAcademica no contiene DepartmentID. No se infiere ownership departamental por registro.
+
+
+### 10.158 TASK-153 / AUD-NG-386 — protección de copyEvaluationSetupBetweenGroups (C1.506)
+- **Hallazgo:** la copia legacy de categorías escribía con appendRow/IDs pseudoaleatorios sin identidad, asignación, scope ni ownership de origen; creaba hoja implícitamente.
+- **Corrección:** wrapper ScriptLock con permiso específico, identidad firmada Profesor, scope institucional/departamental, asignaciones únicas de origen/destino, ownership activo único de cada categoría fuente, UUID y ResourceOwnership por copia, escritura por lote y compensación ante error.
+- **Compatibilidad:** el contrato legacy espera ocho columnas por grupo. El esquema canónico actual de seis columnas de saveEvaluationCategory no contiene asignatura/grado/sección/período; se rechaza con EVALUATION_CATEGORY_COPY_SCHEMA_UNSUPPORTED. No se inventa migración ni se cambia el esquema.
+- **Pruebas locales:** harness aislado 19 escenarios PASS; parseo completo Code.gs y contrato PASS. Suite Node/CI pendiente de observación. BETA-EXAM-059 Pendiente beta.
+- **Limitación:** ConfiguracionAcademica carece de DepartmentID; se validan asignaciones exactas y scope activo, sin inferir correlación departamental por grupo. TASK-153 permanece En ejecución.
