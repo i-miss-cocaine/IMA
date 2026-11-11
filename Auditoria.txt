@@ -1506,3 +1506,13 @@ Se añadieron BETA-FUNC-007 (TASK-636/AUD-NG-369) y BETA-FUNC-008 (TASK-068/AUD-
 - Apps Script/Sheets real NOT RUN. BETA-EXAM-043 Pendiente beta.
 - TASK-153 permanece En ejecución; AUD-NG-386 abierto por otras lecturas y requisitos del servicio EXAM.
 ===============================================================================
+
+===============================================================================
+## C1.490 — EXAM: aislamiento de getStudentRecoveries (TASK-153 / AUD-NG-386)
+- Hallazgo: getStudentRecoveries leía RecuperacionesEstudiante sin validar RBAC, identidad/ámbito ni relación del tutor; userId y evaluacionId eran filtros opcionales del cliente, por lo que omitir userId exponía recuperaciones de otros estudiantes. getOrCreateSheet podía crear una hoja durante la lectura. La ruta docente no verificaba asignación/roster.
+- Corrección: handler usa withAuthorizedExamRead_("getStudentRecoveries", ...), con RBAC, identidad y scope revalidados bajo ScriptLock. Estudiante/Alumno solo consulta su identidad firmada; Tutor/Padre/Responsable solo el estudiante vinculado verificado; roles institucionales requieren scope institucional y un userId objetivo explícito y único. Profesor queda fuera de esta lectura directa y debe usar getGradebookData, que valida asignación y roster. Se retiró el permiso docente estático y el worker también deniega roles no admitidos, incluso si la matriz dinámica los habilita.
+- Integridad/privacidad: la lectura no crea hojas ni escribe; se validan los nueve encabezados; IDs de recuperación vacíos/duplicados y evaluacionId vacíos se excluyen; notas vacías/no numéricas y fechas inválidas se normalizan a null; filtro evaluacionId se aplica después del aislamiento del estudiante.
+- Verificación local: parseo V8 del backend PASS; suite dedicada ejecutada mediante shim V8 aislado PASS (23 escenarios: estudiante/IDOR, tutor y vínculo, scope institucional/target explícito, profesor/roles no permitidos, RBAC, timeout/liberación lock, snapshot post-lock, hoja ausente sin mutación, IDs duplicados/vacíos, esquema, valores y fechas inválidos).
+- Runner Node nativo/CI y Apps Script/Sheets real: NOT RUN. BETA-EXAM-044 Pendiente beta.
+- TASK-153 permanece En ejecución; AUD-NG-386 continúa abierto por otras lecturas EXAM.
+===============================================================================
