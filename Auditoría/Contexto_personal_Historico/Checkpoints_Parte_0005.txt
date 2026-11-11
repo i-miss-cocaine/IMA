@@ -1611,6 +1611,7 @@ Auditar y asegurar saveEvaluationCategory dentro de TASK-153 / AUD-NG-386.
 - exam-service-read-endpoints-security: PASS.
 - exam-service-security-contract: PASS.
 - Node nativo: NOT RUN. CI: NOT RUN. Apps Script/Sheets real: NOT RUN.
+- Regresión auxiliar `exam-service-save-rubric-security`: 15/17 en shim aislado tras normalizar su separador; dos fallas localizadas en el propio harness (mock crea una instancia de lock distinta al objeto monkeypatcheado y expectativa de rollback usa 2 filas cuando el fixture inicial contiene 3). No se modificó por mantener una tarea por iteración.
 - BETA-EXAM-049: Pendiente beta; no bloquea cierre local.
 
 ### Commits de código y pruebas
@@ -1620,6 +1621,7 @@ Auditar y asegurar saveEvaluationCategory dentro de TASK-153 / AUD-NG-386.
 
 ### Estado y continuidad
 - Subalcance saveEvaluationCategory completado localmente.
+- Siguiente iteración: reparar únicamente el harness de `exam-service-save-rubric-security.test.js` y verificar sus 17 escenarios.
 - TASK-153 permanece En ejecución; AUD-NG-386 sigue abierto por otras operaciones EXAM.
 - Rama base NG_beta_0.0.0.1 permanece en 44d9891132332e692dbe2ba8602b41f50a508a59.
 ===============================================================================
