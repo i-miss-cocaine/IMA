@@ -3511,3 +3511,14 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Beta:** BETA-EXAM-048 Pendiente beta; no bloquea cierre local.
 - **Estado:** subalcance completado; TASK-153 permanece En ejecución y AUD-NG-386 abierto por otras lecturas EXAM.
 - **Siguiente:** identificar la siguiente lectura EXAM pendiente dentro de TASK-153 y auditar su autorización/efectos laterales en una iteración independiente.
+
+
+### 10.147 TASK-153 / AUD-NG-386 — autorización y ownership de saveEvaluationCategory (C1.495)
+
+- **Hallazgo:** saveEvaluationCategory escribía CategoriasEvaluacion sin RBAC, identidad, scope, ownership ni lock; el alta/edición no distinguía institución/departamento.
+- **Corrección:** wrapper RBAC + identidad firmada + scope, bajo ScriptLock. La edición requiere registro único y ownership activo de tipo CATEGORIA_EVALUACION dentro del ámbito; las categorías legadas sin ownership se rechazan. El alta exige departamento autorizado y registra ownership institucional/departamental.
+- **Integridad:** esquema/IDs y porcentaje 0–100 validados; altas coordinan ResourceOwnership y CategoriasEvaluacion con rollback ante error. getEvaluationCategories filtra categorías con ownership por institución/departamento y excluye referencias ambiguas; registros legados sin ownership siguen compartidos para compatibilidad.
+- **Pruebas locales:** parseo V8 PASS; mutación 17 escenarios PASS (incluye concurrencia, denegación, ownership y rollback); lectura 17 escenarios PASS; read-endpoints y security-contract PASS. Node nativo/CI/Apps Script real NOT RUN. BETA-EXAM-049 Pendiente beta.
+- **Límite:** edición de categorías antiguas sin ownership requiere migración/atribución explícita; no se asigna propietario por inferencia.
+- **Estado:** subalcance completado; TASK-153 permanece En ejecución y AUD-NG-386 abierto por otras operaciones EXAM.
+- **Siguiente:** identificar la próxima mutación/lectura EXAM pendiente dentro de TASK-153 y verificar autorización, ownership y efectos laterales en una iteración independiente.
