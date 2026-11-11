@@ -2978,8 +2978,25 @@ function saveStudentRecovery(payload) {
  return withAuthorizedStudentRecoveryMutation_(payload, context => saveStudentRecoveryUnlocked_(payload, context));
 }
 function withAuthorizedStudentRecoveryMutation_(payload, mutation) {
- const lock=LockService.getScriptLock();if(!lock.tryLock(5000))throw new Error("STUDENT_RECOVERY_MUTATION_LOCK_TIMEOUT");
- try{return mutation(getAuthorizedStudentRecoveryMutationContext_(payload));}finally{try{lock.releaseLock();}catch(_){}}
+  // Rechazar RBAC, identidad incompleta y roles no admitidos antes de competir por el lock.
+  // El contexto completo se revalida dentro del lock para evitar TOCTOU.
+  const permission = validateRolePermission("saveStudentRecovery", payload);
+  if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const actor = getVerifiedExamIdentity_(payload);
+  const institutionRoles = ["Administrador", "Desarrollador", "Dirección", "Director", "Secretaría"];
+  if (!actor || actor.authorized !== true || !String(actor.userId || "").trim() ||
+      (String(actor.role || "").trim() !== "Profesor" &&
+       institutionRoles.indexOf(String(actor.role || "").trim()) === -1)) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
+
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) throw new Error("STUDENT_RECOVERY_MUTATION_LOCK_TIMEOUT");
+  try {
+    return mutation(getAuthorizedStudentRecoveryMutationContext_(payload));
+  } finally {
+    try { lock.releaseLock(); } catch (_) {}
+  }
 }
 function getAuthorizedStudentRecoveryMutationContext_(payload) {
  const p=payload&&typeof payload==="object"&&!Array.isArray(payload)?payload:{},evaluationId=String(p.evaluacionId||"").trim(),userId=String(p.userId||"").trim();
