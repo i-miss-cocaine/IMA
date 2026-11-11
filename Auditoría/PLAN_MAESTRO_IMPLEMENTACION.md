@@ -3825,3 +3825,14 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Pruebas:** suite dedicada ampliada de 22 a 26 escenarios; harness local focalizado 10/10 PASS; workflow GitHub Actions 43052136181 SUCCESS y suite 26/26 PASS en Node 22. Apps Script/Sheets real NOT RUN; BETA-EXAM-055 actualizado.
 - **Estado:** subalcance reopenPeriodGradebook corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
 - **Siguiente:** inspeccionar el siguiente wrapper mutador EXAM pendiente, una sola operación por iteración.
+
+
+### 10.179 TASK-153 / AUD-NG-386 — autorización previa al lock en rectifyStudentGrade (C1.526)
+- **Hallazgo alto:** `withAuthorizedStudentGradeRectification_` adquiría ScriptLock antes de validar el permiso `rectifyStudentGrade` y la identidad firmada; una solicitud inválida podía competir por el lock global.
+- **Política preservada:** allowlist contextual existente: Administrador, Desarrollador, Dirección, Director y Secretaría; identidad autorizada y `userId` no vacío; scope `institutionWide` obligatorio. No se amplían roles ni scopes.
+- **Corrección:** preflight RBAC/identidad/rol antes del lock; el contexto existente vuelve a validar permiso, identidad, rol y scope dentro del lock, además de unicidad de calificación, perfil estudiante, esquema y auditoría.
+- **Pruebas locales:** harness del wrapper productivo extraído 7/7 PASS; suite dedicada 28/28 PASS en runner JavaScript aislado con shims compatibles; parseo Code.gs y suite PASS. Checkout/Node local no disponible por error DNS al clonar; no se declara suite local nativa Node.
+- **CI:** GitHub Actions workflow 43053113842 SUCCESS; job exam-security-contracts SUCCESS; suite dedicada 28/28 PASS en Node 22.
+- **Beta:** BETA-EXAM-067 agregado; Apps Script/Sheets real NOT RUN.
+- **Estado:** subalcance rectifyStudentGrade corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
+- **Siguiente:** continuar inspección del siguiente wrapper mutador EXAM pendiente, una sola operación por iteración.
