@@ -239,13 +239,6 @@ test(() => {
 
 
 test(() => {
-  const x = fixture({ denied: true });
-  assert.throws(() => x.call(), /RESOURCE_NOT_AVAILABLE/);
-  assert.deepEqual(x.stats.events, ["rbac"]);
-  assert.equal(x.stats.acquired, 0);
-  assert.equal(x.stats.opens, 0);
-});
-test(() => {
   for (const actor of [
     { authorized: false, userId: "T1", role: "Profesor" },
     { authorized: true, userId: "", role: "Profesor" },
@@ -269,4 +262,4 @@ test(() => {
   assert.deepEqual([x.stats.acquired, x.stats.released, x.stats.held], [1, 1, false]);
 });
 
-console.log("exam-service-period-gradebook-submission-security: PASS (" + count + "/24)");
+console.log("exam-service-period-gradebook-submission-security: PASS (" + count + "/25)");

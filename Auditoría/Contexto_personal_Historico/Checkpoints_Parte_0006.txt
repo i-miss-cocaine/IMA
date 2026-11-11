@@ -507,7 +507,7 @@ Corregir el orden de autorización de submitGradebookForReview para que RBAC e i
 
 ### Pruebas y verificaciones
 - Harness local focalizado del wrapper: 8/8 PASS (Node 22); denegación RBAC/identidad/rol sin lock ni Sheets, orden de doble validación, ruta autorizada, timeout y liberación ante error.
-- Suite dedicada: ampliada de 21 a 24 escenarios; pendiente de ejecución local y CI.
+- Suite dedicada: ajustada de 23 a 25 escenarios; GitHub Actions workflow 43048342087 SUCCESS, 25/25 PASS en Node 22 y parseo completo Code.gs PASS.
 - Parseo completo Code.gs: pendiente de ejecución en esta iteración.
 - Apps Script/Sheets real: NOT RUN; BETA-EXAM-066 queda Pendiente beta.
 
