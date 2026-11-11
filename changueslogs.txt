@@ -1321,3 +1321,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - UI transmite contexto académico y normaliza método. Parseo V8 PASS; regresión aislada local 14/14 PASS; Actions 42958671205 14/14 PASS y security-contract PASS.
 - Workflow global FAIL por ReferenceError preexistente withAuthorizedExamRead_ en departmental-access. BETA-EXAM-051 Pendiente beta.
 ===============================================================================
+
+ 
+===============================================================================
+[2026-11-11] C1.499 — IMA-EXEC-20261110-1825Z-02 — EXAM: protección de closePeriodGradebook
+- Cierre protegido por RBAC, identidad firmada, scope y ScriptLock; Profesor requiere asignación exacta y roles institucionales scope amplio.
+- Rechaza contexto ambiguo (varias asignaturas/períodos), roster/perfiles duplicados, notas incompletas/no publicadas, esquemas inválidos y cierres duplicados.
+- Se elimina la publicación masiva desde el cierre; solo registra cierre si CAT-1..CAT-4 ya están publicadas; no muta filas de calificaciones. UI actualizada.
+- Parseo V8 PASS; harness local 16/16 PASS, incluida reentrada concurrente y no-mutación. CI NOT CONFIRMED; Apps Script/Sheets NOT RUN; BETA-EXAM-052 Pendiente beta.
+===============================================================================

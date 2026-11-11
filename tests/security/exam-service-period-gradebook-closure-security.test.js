@@ -31,4 +31,4 @@ t(()=>{const x=fx();x.call();assert.throws(()=>x.call(),/ALREADY_EXISTS/);assert
 t(()=>{const x=fx({actor:{authorized:true,userId:"A",role:"Administrador"},scope:{authorized:true,institutionId:"I1",institutionWide:true},otherSubject:true});assert.throws(()=>x.call(),/CONTEXT_AMBIGUOUS/);});
 t(()=>{const x=fx();x.stats.onOpen=()=>assert.throws(()=>x.call(),/LOCK_TIMEOUT/);assert.equal(x.call().status,"success");assert.equal(x.stats.acq,2);assert.equal(x.stats.rel,1);});
 t(()=>{const x=fx();x.rt.Utilities.getUuid=()=>"CL";x.sheets.CierresPeriodos.rows.push(["CIERRE-CL","2025","P0","9","B","Science","T1","Cerrado",""]);assert.throws(()=>x.call(),/ID_COLLISION/);});
-console.log("exam-service-period-gradebook-closure-security: PASS ("+n+"/15)");
+console.log("exam-service-period-gradebook-closure-security: PASS ("+n+"/16)");

@@ -1780,3 +1780,53 @@ La función original aceptaba userId, evaluacionId, notaOriginal, notaRecuperada
 - Siguiente operación candidata: auditar closePeriodGradebook y sus efectos sobre CierresPeriodos/publicación de calificaciones.
 - Rama base permanece intacta en 44d9891132332e692dbe2ba8602b41f50a508a59.
 ===============================================================================
+
+===============================================================================
+CHECKPOINT C1.499 — Protección de closePeriodGradebook
+Sesión: IMA-EXEC-20261110-1825Z-02.
+Fecha: 2026-11-11 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.498.
+HEAD inicial: dcc4427413b5ef0b5bb254120f81b183ebf25a85.
+Commits de implementación: dfed42fd130462cc269602a05a22e4faa4a71604; 64431a0eb329cb77c1c97cdd066632913f4d0187; fb9a235930b03d7e08e2b068b01401d1dd5a48d1.
+HEAD final antes del checkpoint documental: fb9a235930b03d7e08e2b068b01401d1dd5a48d1.
+Rama base: NG_beta_0.0.0.1 @ 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+### Hallazgo y decisión técnica
+closePeriodGradebook aceptaba los datos de cierre del cliente y escribía CierresPeriodos sin revalidar RBAC, identidad firmada, scope ni asignación. Después llamaba publishGradebookForContext, que publicaba todas las filas borrador de los estudiantes del grado/sección sin filtrar asignatura ni período. Además, CalificacionesEstudiantes solo guarda EvaluacionID (CAT-1..CAT-4), UserID y notas; no guarda PeriodoID ni Asignatura. getGradebookDataUnlocked_ también lee todas las categorías de los estudiantes, sin partición por período/asignatura.
+Por tanto, no existe evidencia persistida suficiente para publicar selectivamente un período/asignatura. Se optó por fallar cerrado ante contexto académico ambiguo y no ejecutar publicación masiva desde el cierre.
+
+### Implementación
+- closePeriodGradebook usa wrapper ScriptLock con timeout y liberación en finally; RBAC, identidad firmada y scope se vuelven a verificar dentro del lock.
+- Allowlist: Profesor y roles institucionales Administrador, Desarrollador, Dirección, Director y Secretaría. Profesor exige profesorId del payload igual a identidad firmada y asignación exacta en ConfiguracionAcademica. Roles institucionales requieren scope institutionWide.
+- Para cualquier rol, la configuración del grado/sección debe contener únicamente el período y asignatura solicitados; si hay múltiples asignaturas/períodos, se rechaza con GRADEBOOK_PERIOD_SUBJECT_CONTEXT_AMBIGUOUS. Esto evita atribuir a un período/curso notas que el esquema actual no puede distinguir.
+- Se exige roster no vacío y sin perfiles duplicados; esquema exacto de CalificacionesEstudiantes; las cuatro categorías CAT-1..CAT-4 deben existir exactamente una vez por estudiante, con notas 0–100, no borrador y ya publicadas.
+- CierresPeriodos se valida con esquema de nueve columnas y no permite segundo cierre para la misma clave año/período/grado/sección/asignatura. La hoja solo se crea después de validar todo.
+- ID de cierre UUID con detección de colisión. Se elimina del endpoint la llamada al publicador masivo; el cierre solo registra el estado Cerrado cuando las cuatro categorías ya estaban publicadas. No altera filas de calificaciones.
+- UI docente actualiza la confirmación para indicar que las calificaciones deben estar publicadas previamente y que el cierre no publica otras asignaturas/períodos.
+
+### Archivos modificados
+1. backend/exam-service/Code.gs.
+2. js/teacher.js.
+3. tests/security/exam-service-period-gradebook-closure-security.test.js (16 escenarios).
+4. .github/workflows/exam-service-security-contract.yml.
+5. Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt (este checkpoint).
+6. Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md (sección 10.151).
+7. Auditoría/INDICE_CHECKPOINTS.md.
+8. changueslogs.txt.
+9. beta_test.txt (BETA-EXAM-052).
+
+### Verificación
+- Parseo V8 PASS para Code.gs, teacher.js y test dedicado.
+- Harness V8 aislado PASS 16/16: cierre válido; RBAC/identidad/roles/scope; profesor y asignación; ambigüedad por materia/período para docente e institucional; roster duplicado/vacío; categorías incompletas/duplicadas, borrador/no publicada y notas inválidas; cierre duplicado/esquema inválido; creación diferida de hoja; contexto requerido; timeout/liberación; reentrada concurrente con lock; ID duplicado; comprobación de que no se mutan calificaciones.
+- No se obtuvo ejecución de GitHub Actions asociada a este commit en las consultas de estado; CI NOT CONFIRMED / NOT RUN en evidencia visible.
+- Apps Script/Sheets real NOT RUN. BETA-EXAM-052 Pendiente beta.
+- Revisión de alcance: endpoint closePeriodGradebook, confirmación UI, prueba dedicada y workflow; no se modificó reviewPeriodGradebook ni el esquema compartido de calificaciones.
+
+### Limitación y continuidad
+- closePeriodGradebook queda protegido y evita publicación cruzada; en clases con más de una asignatura o período configurado falla cerrado porque CalificacionesEstudiantes no almacena esa dimensión. Para habilitar cierres granulares en ese escenario hace falta una tarea separada de evolución del esquema/consumidores, no inferir la pertenencia de notas.
+- La operación reviewPeriodGradebook aún escribe CierresPeriodos y llama publishGradebookForContext; siguiente tarea independiente: auditar y proteger reviewPeriodGradebook y sus efectos de publicación.
+- TASK-153 continúa En ejecución y AUD-NG-386 abierto.
+- Rama base intacta en 44d9891132332e692dbe2ba8602b41f50a508a59.
+===============================================================================

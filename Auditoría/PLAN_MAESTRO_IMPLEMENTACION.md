@@ -3555,3 +3555,15 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Beta:** BETA-EXAM-051 Pendiente beta; Apps Script/Sheets real NOT RUN.
 - **Estado:** subalcance completado; TASK-153 sigue En ejecución y AUD-NG-386 abierto.
 - **Siguiente:** auditar individualmente closePeriodGradebook y sus efectos sobre CierresPeriodos/publicación de calificaciones.
+
+ 
+### 10.151 TASK-153 / AUD-NG-386 — seguridad y efectos de closePeriodGradebook (C1.499)
+
+- **Hallazgo:** el cierre escribía CierresPeriodos sin RBAC/identidad/scope/asignación y después llamaba un publicador que podía cambiar borradores de todos los períodos/asignaturas de los estudiantes del grupo. CalificacionesEstudiantes no almacena PeriodoID ni Asignatura, por lo que no es posible atribuir cada CAT-1..CAT-4 a un cierre concreto.
+- **Corrección:** wrapper RBAC + identidad firmada + scope bajo ScriptLock; Profesor exige asignación exacta y coincidencia de profesorId; roles institucionales requieren scope institutionWide. Contexto ambiguo por múltiples materias/períodos bloquea para cualquier rol. Roster único, cuatro categorías existentes/publicadas/no borrador, notas y esquemas validados; cierre duplicado rechazado; hoja creada solo tras validación; UUID con colisión controlada.
+- **Efecto:** el endpoint ya no ejecuta publicación masiva; solo registra cierre cuando las cuatro categorías ya están publicadas. UI explica el pre-requisito. No se mutan calificaciones ajenas.
+- **Pruebas locales:** parseo V8 Code.gs/teacher.js/test PASS; harness aislado 16/16 PASS, incluyendo reentrada concurrente y no-mutación de filas de notas.
+- **CI/beta:** no se obtuvo ejecución CI asociada al commit; CI NOT CONFIRMED. Apps Script/Sheets NOT RUN. BETA-EXAM-052 Pendiente beta.
+- **Limitación:** si una clase tiene varias asignaturas/períodos, el cierre falla cerrado por ausencia de esas dimensiones en CalificacionesEstudiantes; se requiere evolución separada del esquema y consumidores.
+- **Estado:** subalcance closePeriodGradebook completado con pruebas locales PASS; TASK-153 sigue En ejecución y AUD-NG-386 abierto.
+- **Siguiente:** auditar reviewPeriodGradebook y su escritura/publicación como tarea independiente.
