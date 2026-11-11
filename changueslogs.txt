@@ -1422,3 +1422,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - El evento se escribe antes del borrado; se marca DELETED o DELETE_FAILED. Si falla la finalización posterior al borrado, queda DELETE_REQUESTED para reconciliación.
 - Parseo completo Code.gs PASS; contrato aislado local 17/17 PASS; test Node parsea y workflow integrado; CI no observado. BETA-EXAM-063 Pendiente beta.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] C1.511 — IMA-EXEC-20261110-1825Z-02 — EXAM: RBAC interno de submitExam
+- submitExam ahora valida validateRolePermission("submitExam", payload) dentro de su propia entrada, antes de adquirir ScriptLock; mantiene la verificación posterior de identidad firmada, rol estudiante, asignación, scope y ownership.
+- El contrato departmental-access incorpora un intento directo con Tutor sin permiso y verifica que la denegación no adquiere el lock; el caso positivo Estudiante conserva el envío y las pruebas existentes de aislamiento/concurrencia.
+- Harness local focalizado: 6 aserciones PASS. Suite completa departmental-access/CI aún no observada; Apps Script/Sheets real NOT RUN. BETA-EXAM-064 Pendiente beta.
+===============================================================================

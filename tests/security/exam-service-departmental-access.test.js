@@ -89,7 +89,7 @@ const ss = { getSheetByName(name) { return sheetObjects[name] || null; } };
 let examMutationLockAvailable = true, examMutationLockHeld = false, examMutationLockAcquires = 0, examMutationLockReleases = 0, examMutationBeforeAcquire = null, examSubmissionDuringAppend = null;
 const runtime = {
   SPREADSHEET_ID: "LOCAL", EXAM_RESOURCE_OWNERSHIP_REQUEST_CACHE_: new WeakMap(),
-  PUBLIC_ACTIONS: [], ROLE_PERMISSIONS: { Profesor: ["getAllExams","getTeacherExamActivity","getStudentExams","getExamQuestions","updateExam","updateExamStatus","deleteExam","gradeExamSubmission","deleteExamSubmission"], Estudiante: ["getStudentExams","getExamQuestions","getExamResult"], Tutor: ["getStudentExams","getExamQuestions","getExamResult"] },
+  PUBLIC_ACTIONS: [], ROLE_PERMISSIONS: { Profesor: ["getAllExams","getTeacherExamActivity","getStudentExams","getExamQuestions","updateExam","updateExamStatus","deleteExam","gradeExamSubmission","deleteExamSubmission"], Estudiante: ["getStudentExams","getExamQuestions","getExamResult","submitExam"], Tutor: ["getStudentExams","getExamQuestions","getExamResult"] },
   getDynamicPermissionsForRole() { return null; }, hasActiveDelegationForAction() { return false; },
   validateContextualAccess() { return { authorized: true }; },
   verifySessionToken(token) { return claims[token] || null; },
@@ -148,6 +148,12 @@ assert.equal(runtime.getExamQuestions({ sessionToken: "tutor-token", studentId: 
 assert.equal(runtime.getExamResult({ sessionToken: "tutor-token", entregaExamenId: "DEL-1" }).data.calificacionTotal, 90);
 assert.throws(() => runtime.getExamResult({ sessionToken: "tutor-token", entregaExamenId: "DEL-2" }),
   /RESOURCE_NOT_AVAILABLE/, "guardian cannot read a result for an unrelated student");
+const submitLockAcquiresBeforeDeniedRole = examMutationLockAcquires;
+assert.throws(() => runtime.submitExam({ sessionToken: "tutor-token", examenId: "EXM-6",
+  respuestas: [{ preguntaId: "Q-6", respuestaEstudiante: "A" }] }), /RESOURCE_NOT_AVAILABLE/,
+  "submitExam rejects a role without effective permission when invoked directly");
+assert.equal(examMutationLockAcquires, submitLockAcquiresBeforeDeniedRole,
+  "submitExam checks RBAC before acquiring the mutation lock");
 const crossExamSubmission = { sessionToken: "student3-token", examenId: "EXM-2", userId: "STUDENT-1", respuestas: [{ preguntaId: "Q-2", respuestaEstudiante: "B" }] };
 assert.throws(() => runtime.submitExam(crossExamSubmission), /RESOURCE_NOT_AVAILABLE/,
   "student cannot submit an exam outside their department scope");

@@ -719,3 +719,15 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta; parseo completo Code.gs PASS; contrato aislado local 17/17 PASS; fuente del test Node parsea; CI aún no observado; Apps Script/Sheets real NOT RUN.
 - **Evidencia requerida:** commit desplegado, filas sintéticas antes/después, encabezados del historial, evento UUID y estado, pruebas negativas y confirmación de que el historial no contiene respuestas ni secretos.
 ===============================================================================
+
+
+===============================================================================
+## BETA-EXAM-064 — TASK-153 / AUD-NG-386 / EXAM: RBAC interno de submitExam
+- **Módulo/rol:** Servicio EXAM; Estudiante/Alumno con permiso efectivo submitExam; roles sin permiso deben ser rechazados.
+- **Objetivo:** verificar que submitExam aplica autorización RBAC dentro de su propia función, incluso cuando se invoca fuera del dispatcher doPost.
+- **Precondiciones:** versión beta desplegada; examen, preguntas y estudiante sintéticos; token de sesión firmado; asignación académica y ownership institucional/departamental válidos.
+- **Pasos:** enviar examen como Estudiante/Alumno autorizado; invocar directamente submitExam con Tutor u otro rol sin permiso; probar token ausente/inválido; verificar que la denegación ocurre antes de adquirir lock y antes de leer/escribir EntregasExamen; verificar propiedad, scope y límite de intentos.
+- **Resultado esperado:** solo una identidad autenticada con permiso efectivo y rol de estudiante puede enviar respuestas; las denegaciones no adquieren lock ni producen lecturas/escrituras del flujo de envío.
+- **Estado:** Pendiente beta; harness local focalizado 6 aserciones PASS; suite departmental-access integrada al workflow, CI aún no observado; Apps Script/Sheets real NOT RUN.
+- **Evidencia requerida:** commit desplegado, actor/rol firmado, decisión RBAC, lock no adquirido en denegación, filas de entrega antes/después y pruebas de aislamiento.
+===============================================================================

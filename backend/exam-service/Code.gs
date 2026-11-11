@@ -1444,6 +1444,8 @@ function purgeSecurityCaches(payload) {
 }
 
 function submitExam(payload) {
+  const permission = validateRolePermission("submitExam", payload);
+  if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(5000)) throw new Error("EXAM_SUBMISSION_LOCK_TIMEOUT");
   try {

@@ -3669,3 +3669,12 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Pruebas locales:** parseo completo Code.gs PASS; contrato aislado 17/17 PASS; fuente de test Node parsea. CI aún no observado; Apps Script/Sheets real NOT RUN.
 - **Beta:** BETA-EXAM-063 Pendiente beta. TASK-153 / AUD-NG-386 continúan En ejecución por otras mutaciones EXAM.
 - **Límite:** si falla la actualización de estado posterior a un borrado ya realizado, el historial conserva DELETE_REQUESTED y la operación devuelve EXAM_SUBMISSION_DELETION_AUDIT_FINALIZATION_FAILED; reconciliación requerida.
+
+
+### 10.163 TASK-153 / AUD-NG-386 — autorización RBAC interna de submitExam (C1.511)
+- **Hallazgo:** submitExam verificaba identidad firmada, rol Estudiante/Alumno, asignación académica, scope y ownership, pero confiaba en el chequeo RBAC previo de doPost. Una invocación directa de la función global podía omitir el permiso efectivo de la acción.
+- **Corrección:** valida validateRolePermission("submitExam", payload) en la propia función antes de adquirir ScriptLock; la lógica existente de identidad, contexto del estudiante, propiedad del examen, límite de intentos y concurrencia se conserva.
+- **Pruebas locales:** harness focalizado de autorización/orden de ejecución, 6 aserciones PASS. Se amplía exam-service-departmental-access.test.js para probar rol Tutor denegado sin adquisición del lock; el flujo positivo Estudiante conserva las pruebas de entrega, identidad firmada, aislamiento y concurrencia. Ejecución Node de la suite completa/CI pendiente de observación.
+- **Beta:** BETA-EXAM-064 Pendiente beta; Apps Script/Sheets real NOT RUN.
+- **Estado:** subalcance submitExam implementado; TASK-153 / AUD-NG-386 continúan En ejecución por otras mutaciones EXAM.
+- **Siguiente:** continuar inventario de handlers mutadores/dispatcher EXAM y seleccionar la siguiente función que dependa exclusivamente de doPost para RBAC o identidad.

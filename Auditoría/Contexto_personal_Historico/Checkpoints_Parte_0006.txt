@@ -1,0 +1,25 @@
+===============================================================================
+PARTE 0006 — CHECKPOINTS IMA
+Continuación append-only de Checkpoints_Parte_0005.txt; parte anterior conservada íntegra.
+
+CHECKPOINT C1.511 — RBAC interno de submitExam
+Sesión: IMA-EXEC-20261110-1825Z-02.
+Fecha: 2026-11-11 UTC.
+Rama: NG_beta_0.0.0.1_work.
+HEAD inicial de iteración: 2b52e0e8867828504fc4922679564e373873a0d7.
+### Hallazgo
+submitExam validaba identidad, rol de estudiante, asignación académica, scope y ownership, pero dependía del RBAC aplicado por doPost. La invocación directa de la función podía omitir el permiso efectivo submitExam.
+### Corrección
+- Añadida validación validateRolePermission("submitExam", payload) dentro de submitExam, antes de adquirir ScriptLock.
+- Se conserva la verificación de identidad firmada/contexto dentro de submitExamUnlocked_, además de asignación, propiedad, límite de intentos y serialización existente.
+- El contrato departmental-access prueba un Tutor sin permiso mediante invocación directa y comprueba que no se adquiere el lock; la ruta positiva de Estudiante conserva sus pruebas previas.
+### Archivos modificados
+backend/exam-service/Code.gs; tests/security/exam-service-departmental-access.test.js; beta_test.txt (BETA-EXAM-064); changueslogs.txt; Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; Auditoría/INDICE_CHECKPOINTS.md; Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt.
+### Verificación
+- Harness local focalizado: 6 aserciones PASS (RBAC denegado antes de lock/flujo de persistencia y actor autorizado continúa).
+- Suite departmental-access ampliada; ejecución Node completa y CI NOT RUN al preparar este checkpoint.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-064 Pendiente beta.
+### Estado y continuidad
+Subalcance submitExam implementado. TASK-153 / AUD-NG-386 permanecen En ejecución por otras rutas EXAM. Siguiente acción: continuar revisión de endpoints mutadores restantes para identificar y corregir dependencias de RBAC/identidad exclusivamente en doPost.
+HEAD final: se confirma mediante lectura de la referencia de rama después del commit.
+===============================================================================
