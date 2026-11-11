@@ -98,3 +98,11 @@ tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Audi
 - C1.589 En ejecución hasta verificar el contrato local aislado.
 - HEAD inicial: a7c24bb6c9e2fc2eed91dbc991196229d236725c; HEAD final: se confirma tras publicar.
 ===============================================================================
+
+
+#### Addendum de cierre — C1.589
+- GitHub Actions run 43119877509, commit 9c4e4f39b0fe5ada096745d4505e247f594103ea: workflow Exam-Service security local contracts SUCCESS en Node.js 22.
+- Contrato exam-service-gradebook-save-security: PASS (30/30); paso Run gradebook save security regression y job exam-security-contracts SUCCESS.
+- El runner ejecutó código/fixtures sin despliegue ni servicio remoto; satisface la verificación local aislada. Apps Script/Sheets real NOT RUN.
+- C1.589 Completada en verificación local aislada/CI. BETA-EXAM-090 permanece Pendiente beta.
+- HEAD inicial: 9c4e4f39b0fe5ada096745d4505e247f594103ea; HEAD final: se confirma tras commit documental.

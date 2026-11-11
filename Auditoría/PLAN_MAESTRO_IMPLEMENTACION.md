@@ -4353,5 +4353,12 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Brecha confirmada:** saveGradebookGrades adquiere ScriptLock y persiste el lote mediante setValues; el contrato existente cubría permisos, identidad, scope, timeout y revocación RBAC bajo lock, pero no una segunda solicitud reentrante durante la escritura exterior.
 - **Cobertura añadida:** el fixture intercepta setValues de CalificacionesEstudiantes e invoca el handler real de forma anidada. La secundaria debe recibir GRADEBOOK_SAVE_LOCK_TIMEOUT; la exterior conserva la nota solicitada, ejecuta una sola escritura, abre Sheets una vez y libera el lock.
 - **Alcance:** solo tests/security/exam-service-gradebook-save-security.test.js; backend productivo sin cambios. BETA-EXAM-090 registra la comprobación desplegada.
-- **Verificación local:** escenario añadido; ejecución aislada pendiente de CI tras commit. Apps Script/Sheets real NOT RUN.
-- **Estado:** C1.589 En ejecución hasta completar la verificación local aislada. TASK-153 / AUD-NG-386 continúa En ejecución.
+- **Verificación local:** GitHub Actions run 43119877509, workflow `Exam-Service security local contracts`, Node.js 22: **SUCCESS**; paso `Run gradebook save security regression` y contrato `exam-service-gradebook-save-security: PASS (30/30)`. Job `exam-security-contracts` SUCCESS. Apps Script/Sheets real NOT RUN.
+- **Estado:** C1.589 **Completada en verificación local aislada/CI**. TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras.
+
+
+#### Addendum de verificación local/CI — C1.589
+- GitHub Actions run **43119877509**, commit `9c4e4f39b0fe5ada096745d4505e247f594103ea`, workflow `Exam-Service security local contracts`: **SUCCESS** en Node.js 22.
+- El paso `Run gradebook save security regression` ejecutó `tests/security/exam-service-gradebook-save-security.test.js` y registró `exam-service-gradebook-save-security: PASS (30/30)`; job `exam-security-contracts` terminó SUCCESS.
+- El runner ejecutó el código y fixtures de forma aislada, sin despliegue ni infraestructura remota; satisface la verificación local del contrato. Apps Script/Sheets real NOT RUN.
+- C1.589 **Completada en verificación local aislada/CI**. BETA-EXAM-090 permanece Pendiente beta.
