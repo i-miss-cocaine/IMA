@@ -86,6 +86,9 @@ function fixture(options = {}) {
     },
     getVerifiedExamIdentity_() {
       state.events.push("identity"); state.identityCalls++;
+      if (Array.isArray(options.identitySequence) && options.identitySequence.length) {
+        return options.identitySequence[Math.min(state.identityCalls - 1, options.identitySequence.length - 1)];
+      }
       if (options.contextIdentity === false && state.identityCalls > 1) return { authorized: false };
       return actor;
     },
@@ -201,6 +204,27 @@ test("signed identity is revalidated inside the acquired lock", () => {
   assert.equal(x.state.locks, 1); assert.equal(x.state.releases, 1); assert.equal(x.state.opens, 0);
   assert.deepEqual(x.state.events, [
     "permission", "identity", "lock-request", "lock-acquire:5000", "permission", "identity", "lock-release"
+  ]);
+});
+test("signed identity losing userId under lock is rejected before spreadsheet access or writes", () => {
+  const x = fixture({ identitySequence: [
+    { authorized: true, userId: "PROF-1", role: "Profesor" },
+    { authorized: true, userId: "   ", role: "Profesor" }
+  ] });
+  const evaluationsBefore = x.sheets.EvaluacionesCompetencias.rows.map(row => row.slice());
+  const ownershipBefore = x.sheets.ResourceOwnership
+    ? x.sheets.ResourceOwnership.rows.map(row => row.slice()) : null;
+  denied(() => x.call());
+  assert.equal(x.state.identityCalls, 2);
+  assert.equal(x.state.locks, 1);
+  assert.equal(x.state.releases, 1);
+  assert.equal(x.state.held, false);
+  assert.equal(x.state.opens, 0);
+  assert.deepEqual(x.sheets.EvaluacionesCompetencias.rows, evaluationsBefore);
+  if (ownershipBefore) assert.deepEqual(x.sheets.ResourceOwnership.rows, ownershipBefore);
+  assert.deepEqual(x.state.events, [
+    "permission", "identity", "lock-request", "lock-acquire:5000", "permission",
+    "identity", "lock-release"
   ]);
 });
 test("lock timeout fails closed after preflight and before spreadsheet access", () => {
