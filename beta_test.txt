@@ -755,3 +755,15 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta; harness local del wrapper 8/8 PASS; suite dedicada 25/25 PASS en Node 22 (workflow 43048598007 SUCCESS); parseo Code.gs PASS; Apps Script/Sheets real NOT RUN.
 - **Evidencia requerida:** commit desplegado, actor/rol/permiso, trazas del orden RBAC/identidad/lock, filas de CierresPeriodos antes/después y evidencia de ausencia de duplicados y liberación del lock.
 ===============================================================================
+
+
+===============================================================================
+## BETA-EXAM-067 — TASK-153 / AUD-NG-386 / EXAM: rectificación de calificación estudiantil
+- **Módulo/rol:** Servicio EXAM; Administrador, Desarrollador, Dirección, Director o Secretaría con permiso efectivo `rectifyStudentGrade` y scope institucional completo.
+- **Objetivo:** comprobar que RBAC, identidad firmada, userId y rol se validan antes de solicitar ScriptLock; el contexto de rectificación revalida permiso, identidad, rol, scope y registros bajo lock.
+- **Precondiciones:** versión beta desplegada; sesión firmada válida; estudiante y calificación sintéticos; hojas CalificacionesEstudiantes, Usuarios e HistorialRectificacionesNotas con esquemas vigentes.
+- **Pasos:** probar RBAC denegado, identidad no autorizada/ausente, userId vacío, rol no permitido, scope no institucional, lock ocupado, calificación inexistente/duplicada, perfil no estudiante, rectificación válida, UUID duplicado, fallo de escritura/rollback y solicitudes concurrentes sobre la misma calificación.
+- **Resultado esperado:** solicitudes inválidas no adquieren lock ni abren Sheets; solo los roles y scope permitidos pueden rectificar; se conserva la revalidación bajo lock y la trazabilidad de auditoría; ante fallo de persistencia se ejecuta rollback y el lock se libera.
+- **Estado:** Pendiente beta; harness local focalizado 7/7 PASS; suite dedicada 28/28 PASS en runner aislado y 28/28 PASS en Node 22 (workflow 43053113842 SUCCESS); Apps Script/Sheets real NOT RUN.
+- **Evidencia requerida:** commit desplegado, actor/rol/permiso/scope, trazas de orden RBAC/identidad/lock, calificación antes/después, fila de auditoría, evidencia de rollback y ausencia de lock/lectura en denegaciones.
+===============================================================================
