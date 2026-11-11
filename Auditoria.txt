@@ -1609,6 +1609,6 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 ### AUD-NG-386 — bulkApplyGradebookGrades (C1.505)
 - **Hallazgo:** mutación masiva con permiso RBAC de Profesor, pero sin validación contextual propia de identidad, scope, asignación, roster, categoría/ownership, cierre ni unicidad; podía sobrescribir la primera coincidencia y crear hoja implícitamente. La acción no estaba en PUBLIC_ACTIONS.
 - **Corrección:** wrapper compartido con permiso específico bulkApplyGradebookGrades, ScriptLock, identidad firmada, scope, asignación exacta, roster, esquema, período abierto, categoría/ownership y validación estricta de lote/notas. Se conserva la omisión de notas positivas salvo sobrescritura explícita.
-- **Pruebas:** suite local dedicada 23 escenarios añadida; ejecución local y CI pendientes de confirmación. Apps Script/Sheets NOT RUN; BETA-EXAM-058 Pendiente beta.
+- **Pruebas:** suite dedicada 24/24 PASS y parseo Code.gs PASS (Actions run 43015764891); security-contract PASS. Workflow global FAIL por ReferenceError preexistente withAuthorizedExamRead_ en departmental-access; read-endpoints skipped. Ejecución directa en checkout local NOT RUN; Apps Script/Sheets NOT RUN. Apps Script/Sheets NOT RUN; BETA-EXAM-058 Pendiente beta.
 - **Límite:** CalificacionesEstudiantes no almacena período/asignatura por fila y ConfiguracionAcademica carece de DepartmentID; no se infiere propiedad departamental inexistente. TASK-153 y AUD-NG-386 siguen En ejecución.
 ===============================================================================

@@ -1380,5 +1380,5 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - La aplicación masiva reutiliza el guard contextual del libro con permiso RBAC específico, identidad firmada, scope, asignación docente, roster, categoría/ownership, cierre y ScriptLock.
 - Se limita el lote a 500; se rechazan IDs vacíos/duplicados, estudiantes fuera del roster, registros ambiguos y notas fuera de formato/rango; no se crean hojas implícitamente.
 - Se preserva la semántica de omitir notas positivas existentes salvo sobrescritura explícita; respuesta histórica con conteos aplicados/omitidos y estado borrador/no publicado.
-- Suite dedicada de 23 escenarios incorporada al workflow; resultados locales/CI pendientes de verificación.
+- Suite dedicada 24/24 PASS y parseo Code.gs PASS (Actions run 43015764891); security-contract PASS. Workflow global FAIL por ReferenceError preexistente en departmental-access; ejecución directa local NOT RUN.
 ===============================================================================

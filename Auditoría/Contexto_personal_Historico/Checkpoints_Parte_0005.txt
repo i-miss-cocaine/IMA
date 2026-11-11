@@ -2021,8 +2021,9 @@ bulkApplyGradebookGrades era una mutación masiva con permiso RBAC de Profesor, 
 ### Archivos
 backend/exam-service/Code.gs; tests/security/exam-service-gradebook-bulk-apply-security.test.js; .github/workflows/exam-service-security-contract.yml; Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; beta_test.txt (BETA-EXAM-058); changueslogs.txt; Auditoria.txt; historial e índice de checkpoints.
 ### Verificación
-- Parseo completo Code.gs y suite local dedicada: pendientes de ejecución/verificación.
-- CI: pendiente tras publicar.
+- GitHub Actions run 43015764891: suite dedicada 24/24 PASS; parseo completo Code.gs PASS mediante vm.Script; security-contract PASS.
+- Workflow global FAIL en departmental-access por ReferenceError withAuthorizedExamRead_ is not defined; read-endpoints skipped. Falla ajena al cambio y ya documentada en iteraciones previas.
+- Ejecución directa en checkout local NOT RUN en esta sesión; Apps Script/Sheets real NOT RUN.
 - Apps Script/Sheets real NOT RUN; BETA-EXAM-058 Pendiente beta.
 ### Limitaciones
 CalificacionesEstudiantes no persiste asignatura/período por fila y ConfiguracionAcademica no contiene DepartmentID; se reutiliza la validación contextual del endpoint de guardado sin inferir relaciones inexistentes. La escritura de Sheets no es transaccional.

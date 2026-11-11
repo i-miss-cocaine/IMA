@@ -31,4 +31,4 @@ t(()=>{const x=fixture({timeout:true});assert.throws(()=>x.call(),/GRADEBOOK_SAV
 t(()=>{const x=fixture();x.sheets.CalificacionesEstudiantes.fail=true;assert.throws(()=>x.call({estudiantes:["S2"]}),/write failed/);assert.equal(x.sheets.CalificacionesEstudiantes.rows.length,2);});
 t(()=>{const x=fixture();x.call({estudiantes:["S2"],observaciones:"masiva"});assert.equal(x.sheets.CalificacionesEstudiantes.rows[2][7],"masiva");});
 t(()=>{const x=fixture();x.call({estudiantes:["S1"],sobrescribirExistentes:true});assert.equal(x.sheets.CalificacionesEstudiantes.rows[1][7],"previa");});
-console.log("exam-service-gradebook-bulk-apply-security: PASS ("+n+"/23)");
+console.log("exam-service-gradebook-bulk-apply-security: PASS ("+n+"/24)");
