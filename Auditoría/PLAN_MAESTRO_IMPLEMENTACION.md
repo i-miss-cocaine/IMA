@@ -3662,3 +3662,10 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Corrección:** calificación finita 0–100, máximo dos decimales con tolerancia IEEE-754 y normalización a dos decimales; estado requerido (1–50), comentario string (0–2.000), tema/asignatura string (0–120). Validación antes de setValues.
 - **Pruebas locales:** parseo completo Code.gs PASS; contrato aislado V8 17/17 PASS; fuente del test Node parsea correctamente. CI aún no observado; Apps Script/Sheets real NOT RUN.
 - **Beta:** BETA-EXAM-062 Pendiente beta. TASK-153 / AUD-NG-386 permanecen En ejecución por otras mutaciones EXAM.
+
+### 10.162 TASK-153 / AUD-NG-386 — eliminación trazable de deleteExamSubmission (C1.510)
+- **Hallazgo:** borrado físico de una entrega sin motivo ni registro de actor/resultado; el wrapper ya protegía RBAC, identidad, propiedad, scope y concurrencia.
+- **Corrección:** motivo obligatorio 10–2.000; validación de fila/IDs; historial HistorialEliminacionesEntregasExamen con UUID, IDs, actor/rol firmado, motivo, fecha y estado. No se almacenan respuestas del estudiante. DELETE_REQUESTED antes del borrado; DELETED o DELETE_FAILED después.
+- **Pruebas locales:** parseo completo Code.gs PASS; contrato aislado 17/17 PASS; fuente de test Node parsea. CI aún no observado; Apps Script/Sheets real NOT RUN.
+- **Beta:** BETA-EXAM-063 Pendiente beta. TASK-153 / AUD-NG-386 continúan En ejecución por otras mutaciones EXAM.
+- **Límite:** si falla la actualización de estado posterior a un borrado ya realizado, el historial conserva DELETE_REQUESTED y la operación devuelve EXAM_SUBMISSION_DELETION_AUDIT_FINALIZATION_FAILED; reconciliación requerida.
