@@ -2763,9 +2763,16 @@ function getAuthorizedEvaluationSetupCopyContext_(payload) {
     if (!id || categoryIdCounts[id] !== 1) throw new Error("EVALUATION_CATEGORY_RECORD_AMBIGUOUS");
     const owners = activeOwners[id] || [];
     if (owners.length !== 1) throw new Error("RESOURCE_OWNERSHIP_UNVERIFIED");
+    const ownershipId = String(owners[0][0] || "").trim();
+    if (!ownershipId || ownershipIdCounts[ownershipId] !== 1) throw new Error("RESOURCE_OWNERSHIP_RECORD_AMBIGUOUS");
     const departmentId = String(owners[0][4] || "").trim();
     const inScope = (scope.departmentIds || []).some(value => String(value || "").trim() === departmentId);
     if (!departmentId || !(scope.institutionWide === true || inScope)) throw new Error("RESOURCE_SCOPE_DENIED");
+    const categoryName = String(row[2] || "").trim();
+    const percentage = row[3] === "" || row[3] === null || row[3] === undefined ? NaN : Number(row[3]);
+    if (!categoryName || !Number.isFinite(percentage) || percentage < 0 || percentage > 100) {
+      throw new Error("EVALUATION_CATEGORY_RECORD_INVALID");
+    }
     return { row, departmentId };
   });
   return { actor, scope, categorySheet, categoryRows, ownershipSheet, ownershipRows,
