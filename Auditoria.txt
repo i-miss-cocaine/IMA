@@ -1691,3 +1691,11 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - GitHub Actions workflow `43038212516`: **completed / success** sobre `d27b86312ff6d0b0194101c5e35f070a17fa2a96`.
 - Job `exam-security-contracts`: SUCCESS; step `Run competency evaluation mutation security regression`: SUCCESS en Node 22. Los restantes contratos EXAM del workflow también finalizaron SUCCESS.
 - Suite dedicada local V8 compatible 24/24 PASS; CI Node 22 PASS. Apps Script/Sheets real NOT RUN; beta permanece Pendiente beta.
+
+
+### C1.520 — AUD-NG-386 / saveGradebookGrades y bulkApplyGradebookGrades
+- **Hallazgo alto corregido:** el wrapper compartido withAuthorizedGradebookSave_ solicitaba ScriptLock antes de comprobar el permiso efectivo y la identidad firmada; afectaba tanto al guardado individual como a la aplicación masiva.
+- **Corrección:** preflight RBAC e identidad con userId no vacío antes del lock; el contexto contextual se revalida dentro del lock.
+- **Cobertura local:** save 27/27 PASS; bulk apply 28/28 PASS en V8 local compatible. Se verifica denegación pre-lock sin apertura de Sheets, identidad inválida/incompleta y doble validación RBAC/identidad.
+- **CI:** pendiente de ejecución sobre el commit de esta tarea. Apps Script/Sheets real NOT RUN.
+- **Beta:** BETA-EXAM-057 y BETA-EXAM-058 actualizados; permanecen Pendiente beta.

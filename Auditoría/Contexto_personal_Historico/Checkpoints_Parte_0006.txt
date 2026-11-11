@@ -356,3 +356,33 @@ HEAD final: pendiente de confirmar tras publicar.
 - Cierre documental CI: commit `89e743e5ede2c0a2cf09d07da05c99cf3f568d45`, seguido por commits de ajuste de checkpoint/índice en la misma rama autorizada.
 - HEAD de rama verificado tras los cierres documentales mediante consulta directa de la referencia; el SHA del propio commit de checkpoint no se duplica dentro de su contenido.
 - Comparación final: rama base `NG_beta_0.0.0.1` sin modificaciones; rama de trabajo adelantada y 0 commits detrás.
+
+
+### C1.520 — IMA-EXEC-20261110-1825Z-02 — TASK-153 / AUD-NG-386 / EXAM
+**HEAD inicial:** 2d5bb20c85a211296c51a4777ca17cfdc82a77ca
+**Alcance:** wrapper compartido `withAuthorizedGradebookSave_`, consumido por `saveGradebookGrades` y `bulkApplyGradebookGrades`.
+### Hallazgo y corrección
+- ScriptLock se solicitaba antes de validar el permiso efectivo y la identidad firmada, permitiendo que una solicitud directa no autorizada compitiera por el lock compartido.
+- Se agregó preflight RBAC según `permissionAction` (default `saveGradebookGrades`) y actor firmado autorizado con `userId` no vacío antes del lock.
+- El contexto existente permanece dentro del lock y revalida RBAC, identidad, rol, scope, asignación académica, roster, cierre y esquema.
+### Pruebas
+- `exam-service-gradebook-save-security.test.js`: 27/27 PASS en V8 local compatible.
+- `exam-service-gradebook-bulk-apply-security.test.js`: 28/28 PASS en V8 local compatible.
+- Parseo completo de Code.gs y ambas suites: PASS.
+- CI Node 22: pendiente de ejecución/verificación.
+- Apps Script/Sheets real: NOT RUN; sin cambio de esquema.
+### Archivos modificados
+- backend/exam-service/Code.gs
+- tests/security/exam-service-gradebook-save-security.test.js
+- tests/security/exam-service-gradebook-bulk-apply-security.test.js
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- beta_test.txt
+### Estado y continuidad
+Subalcance saveGradebookGrades/bulkApplyGradebookGrades corregido. TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
+Siguiente acción: inspeccionar el siguiente wrapper mutador pendiente; no repetir el wrapper compartido de guardado de calificaciones.
+HEAD final: pendiente de confirmar tras publicar.
+===============================================================================

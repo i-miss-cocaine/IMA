@@ -1568,3 +1568,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Suite local V8 compatible: 24/24 PASS; workflow completo SUCCESS.
 - Apps Script/Sheets real NOT RUN; BETA-EXAM-050 sigue Pendiente beta.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] C1.520 — EXAM saveGradebookGrades / bulkApplyGradebookGrades
+- Se corrigió withAuthorizedGradebookSave_: valida el permiso específico de cada operación y la identidad firmada con userId no vacío antes de solicitar ScriptLock.
+- El contexto de guardado conserva la revalidación bajo lock de RBAC, identidad, rol, scope, asignación académica, roster, cierre y esquemas.
+- Suites dedicadas locales: save 27/27 PASS; bulk apply 28/28 PASS en V8 local compatible; parseo Code.gs PASS.
+- CI Node 22 pendiente; Apps Script/Sheets real NOT RUN. BETA-EXAM-057 y 058 actualizados.
+===============================================================================
