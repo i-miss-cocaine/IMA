@@ -85,4 +85,7 @@ test("empty or nonnumeric grade values normalized to null",()=>{const x=fixture(
 test("duplicate student identity denied",()=>denied(()=>fixture({actor:{userId:"DUP",role:"Estudiante"}}).call({})));
 test("incompatible schema fails closed",()=>{const x=fixture();x.sheets.HistorialRectificacionesNotas.rows[0][0]="Wrong";denied(()=>x.call({}),/GRADE_RECTIFICATION_HISTORY_SCHEMA_INVALID/);});
 test("snapshot is read after acquiring lock",()=>{let x;x=fixture({beforeAcquire(){x.sheets.HistorialRectificacionesNotas.rows.push(["RECT-LATE","E-8","STU-1","RECTIFICACION_NOTA",1,2,"late","P",null]);}});assert.ok(x.call({}).data.some(y=>y.rectificacionId==="RECT-LATE"));});
+test("student roles have explicit RBAC permission for own history",()=>{assert.match(source,/"Estudiante": \[[\s\S]*?"getGradeRectificationHistory"/);assert.match(source,/"Alumno": \[[\s\S]*?"getGradeRectificationHistory"/);});
+test("guardian roles have explicit RBAC permission for linked history",()=>{for(const role of ["Padre","Tutor","Responsable"])assert.match(source,new RegExp('"'+role+'": \\[.*?"getGradeRectificationHistory"'));});
+test("teacher RBAC does not grant direct history access",()=>{const block=/"Profesor": \[([\s\S]*?)\n  \],/.exec(source);assert.ok(block);assert.ok(!block[1].includes('"getGradeRectificationHistory"'));});
 process.stdout.write("exam-service-grade-rectification-history-security: PASS ("+cases.length+" scenarios)\n");
