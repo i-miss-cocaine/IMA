@@ -800,7 +800,9 @@ function getAuthorizedExamMutationContext_(payload, action, requestedExamId) {
   const permission = validateRolePermission(action, payload);
   if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
   const actor = getVerifiedExamIdentity_(payload);
-  if (!actor.authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
+  if (!actor || actor.authorized !== true || !String(actor.userId || "").trim()) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const scope = getVerifiedExamDepartmentScope_(payload, ss, actor);
   if (!scope.authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
@@ -828,7 +830,9 @@ function withAuthorizedExamMutation_(payload, action, mutation) {
   const permission = validateRolePermission(action, payload);
   if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
   const actor = getVerifiedExamIdentity_(payload);
-  if (!actor || actor.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+  if (!actor || actor.authorized !== true || !String(actor.userId || "").trim()) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
 
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(5000)) throw new Error("EXAM_MUTATION_LOCK_TIMEOUT");
