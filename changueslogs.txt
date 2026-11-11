@@ -1407,3 +1407,10 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Se añade contrato local dedicado de 7 escenarios y se integra al workflow de seguridad EXAM.
 - Contrato local aislado 7/7 PASS; sintaxis de función extraída PASS. Parseo completo/CI aún no observado; BETA-EXAM-061 Pendiente beta.
 ===============================================================================
+
+===============================================================================
+[2026-11-11] C1.509 — IMA-EXEC-20261110-1825Z-02 — EXAM: validación de calificación manual
+- gradeExamSubmission conserva su wrapper de lock/RBAC/identidad/ownership y ahora valida nota finita 0–100 con hasta dos decimales; normaliza a dos decimales.
+- Estado, comentario, tema y asignatura deben ser strings dentro de límites definidos; payload inválido se rechaza antes de escribir.
+- Parseo completo Code.gs PASS; contrato aislado V8 15/15 PASS; test Node dedicado añadido al workflow; CI aún no observado. BETA-EXAM-062 Pendiente beta.
+===============================================================================
