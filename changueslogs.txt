@@ -1586,3 +1586,11 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Suites locales: save 27/27 PASS; bulk apply 28/28 PASS; parseo Code.gs PASS.
 - Apps Script/Sheets real NOT RUN; BETA-EXAM-057 y BETA-EXAM-058 siguen Pendiente beta.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] C1.521 — EXAM copyEvaluationSetupBetweenGroups
+- withAuthorizedEvaluationSetupCopy_ ahora valida RBAC e identidad firmada del Profesor (userId no vacío) antes de solicitar ScriptLock.
+- El contexto de mutación conserva la revalidación bajo lock de RBAC, identidad, scope, asignaciones, ownership y esquema; rollback compensatorio sin cambios.
+- Suite local dedicada ampliada a 27 escenarios; parseo Code.gs y contrato PASS. CI Node 22 pendiente; Apps Script/Sheets real NOT RUN. BETA-EXAM-059 actualizado.
+===============================================================================

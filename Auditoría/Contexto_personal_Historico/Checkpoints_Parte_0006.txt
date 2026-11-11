@@ -396,3 +396,32 @@ HEAD final: pendiente de confirmar tras publicar.
 - HEAD de implementación/pruebas probado por CI: `b9b0fca57760c6a19ce058bd607403c8e05d314a`; los commits siguientes son exclusivamente cierre documental.
 - HEAD final de rama y estado de base se verifican tras publicar el cierre documental; no se duplica el SHA del propio checkpoint en su contenido.
 ===============================================================================
+
+
+### C1.521 — IMA-EXEC-20261110-1825Z-02 — TASK-153 / AUD-NG-386 / EXAM
+**HEAD inicial:** 9b5a4c642201a91dc735f320ac65cde48124a7ec
+**Alcance:** wrapper `withAuthorizedEvaluationSetupCopy_` para `copyEvaluationSetupBetweenGroups`.
+### Hallazgo y corrección
+- ScriptLock se solicitaba antes de validar RBAC e identidad firmada del Profesor.
+- Se agregó preflight del permiso específico, actor autorizado, `userId` no vacío y rol Profesor antes del lock. El contexto existente revalida dentro del lock RBAC, identidad, scope, asignaciones, ownership y esquema.
+- Se preservaron la copia de categorías, el registro de ResourceOwnership y el rollback compensatorio.
+### Pruebas
+- Suite `exam-service-evaluation-setup-copy-security.test.js`: 27 escenarios PASS en V8 local compatible.
+- Parseo completo de Code.gs y contrato: PASS.
+- Reentrada concurrente determinista y rollback existentes: PASS.
+- CI Node 22: pendiente de ejecución/verificación.
+- Apps Script/Sheets real: NOT RUN; sin cambio de esquema.
+### Archivos modificados
+- backend/exam-service/Code.gs
+- tests/security/exam-service-evaluation-setup-copy-security.test.js
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- beta_test.txt
+### Estado y continuidad
+Subalcance copyEvaluationSetupBetweenGroups corregido. TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
+Siguiente acción: inspeccionar el siguiente wrapper mutador pendiente; no repetir este wrapper.
+HEAD final: pendiente de confirmar tras publicar.
+===============================================================================

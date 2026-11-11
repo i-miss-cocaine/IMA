@@ -68,18 +68,18 @@ function fixture(options = {}) {
     CategoriasEvaluacion: makeSheet(categories, { failWrite: options.failCategoryWrite }),
     ResourceOwnership: makeSheet(ownership)
   };
-  const stats = { acquired: 0, released: 0, held: false, opens: 0, action: "", reentryError: "" };
+  const stats = { acquired: 0, released: 0, held: false, opens: 0, action: "", reentryError: "", events: [] };
   let uuid = 0;
   const runtime = {
     SPREADSHEET_ID: "TEST",
-    LockService: { getScriptLock: () => ({
-      tryLock() { stats.acquired++; if (options.lockTimeout || stats.held) return false; stats.held = true; return true; },
-      releaseLock() { stats.released++; stats.held = false; }
-    })},
-    validateRolePermission(action) { stats.action = action; return { authorized: options.permissionDenied !== true }; },
-    getVerifiedExamIdentity_() { return options.invalidIdentity ? { authorized: false } : actor; },
+    LockService: { getScriptLock: () => { stats.events.push("getScriptLock"); return {
+      tryLock() { stats.events.push("tryLock"); stats.acquired++; if (options.lockTimeout || stats.held) return false; stats.held = true; return true; },
+      releaseLock() { stats.events.push("releaseLock"); stats.released++; stats.held = false; }
+    }; }},
+    validateRolePermission(action) { stats.events.push("rbac"); stats.action = action; return { authorized: options.permissionDenied !== true }; },
+    getVerifiedExamIdentity_() { stats.events.push("identity"); return options.invalidIdentity ? { authorized: false } : actor; },
     getVerifiedExamDepartmentScope_() { return options.invalidScope ? { authorized: false } : scope; },
-    SpreadsheetApp: { openById() { stats.opens++; if (options.reenter && stats.opens === 1) { try { runtime.run(payload); } catch (error) { stats.reentryError = String(error); } } return { getSheetByName: name => sheets[name] || null }; } },
+    SpreadsheetApp: { openById() { stats.events.push("openById"); stats.opens++; if (options.reenter && stats.opens === 1) { try { runtime.run(payload); } catch (error) { stats.reentryError = String(error); } } return { getSheetByName: name => sheets[name] || null }; } },
     getSheetOrThrow(ss, name) { const sheet = ss.getSheetByName(name); if (!sheet) throw new Error("missing " + name); return sheet; },
     normalizeString(value) { return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim(); },
     Utilities: { getUuid() { uuid++; return options.uuid || "U" + uuid; } }
@@ -140,4 +140,10 @@ test(() => {
   assert.throws(()=>x.call(),/EVALUATION_COPY_ID_COLLISION/);
   assert.equal(x.sheets.ResourceOwnership.writes,0);
 });
+
+test(() => { const x=fixture(),r=x.call(),e=x.stats.events;assert.equal(r.status,"success");assert.ok(e.indexOf("rbac")<e.indexOf("getScriptLock"));assert.ok(e.indexOf("identity")<e.indexOf("getScriptLock"));assert.equal(e.filter(v=>v==="rbac").length,2);assert.equal(e.filter(v=>v==="identity").length,2); });
+test(() => { const x=fixture({permissionDenied:true});assert.throws(()=>x.call(),/RESOURCE_NOT_AVAILABLE/);assert.deepEqual([x.stats.acquired,x.stats.opens],[0,0]);assert.deepEqual(x.stats.events,["rbac"]); });
+test(() => { const x=fixture({invalidIdentity:true});assert.throws(()=>x.call(),/RESOURCE_NOT_AVAILABLE/);assert.deepEqual([x.stats.acquired,x.stats.opens],[0,0]);assert.deepEqual(x.stats.events,["rbac","identity"]); });
+test(() => { const x=fixture({actor:{authorized:true,userId:"",role:"Profesor"}});assert.throws(()=>x.call(),/RESOURCE_NOT_AVAILABLE/);assert.deepEqual([x.stats.acquired,x.stats.opens],[0,0]);assert.deepEqual(x.stats.events,["rbac","identity"]); });
+test(() => { const x=fixture({actor:{authorized:true,userId:"P1",role:"Director"}});assert.throws(()=>x.call(),/RESOURCE_NOT_AVAILABLE/);assert.deepEqual([x.stats.acquired,x.stats.opens],[0,0]);assert.deepEqual(x.stats.events,["rbac","identity"]); });
 console.log("exam-service-evaluation-setup-copy-security: PASS (" + scenarios + " scenarios)");

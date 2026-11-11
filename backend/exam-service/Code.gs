@@ -2811,6 +2811,13 @@ function copyEvaluationSetupBetweenGroups(payload) {
 }
 
 function withAuthorizedEvaluationSetupCopy_(payload, mutation) {
+  // Rechazar RBAC e identidad inválidos antes de competir por el lock compartido.
+  // El contexto completo se revalida bajo el lock para evitar TOCTOU.
+  const permission = validateRolePermission("copyEvaluationSetupBetweenGroups", payload);
+  if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const actor = getVerifiedExamIdentity_(payload);
+  if (!actor || actor.authorized !== true || !String(actor.userId || "").trim() ||
+      String(actor.role || "").trim() !== "Profesor") throw new Error("RESOURCE_NOT_AVAILABLE");
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(5000)) throw new Error("EVALUATION_SETUP_COPY_LOCK_TIMEOUT");
   try {

@@ -3776,3 +3776,13 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Beta:** BETA-EXAM-057 y BETA-EXAM-058 ampliados; Apps Script/Sheets real NOT RUN.
 - **Estado:** subalcance saveGradebookGrades/bulkApplyGradebookGrades corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
 - **Siguiente:** inspeccionar el siguiente wrapper mutador pendiente; no repetir el wrapper compartido de guardado de calificaciones.
+
+
+### 10.174 TASK-153 / AUD-NG-386 — autorización previa al lock en copyEvaluationSetupBetweenGroups (C1.521)
+- **Hallazgo:** `withAuthorizedEvaluationSetupCopy_` solicitaba ScriptLock antes de validar el permiso específico y la identidad firmada del Profesor.
+- **Corrección:** preflight RBAC, identidad autorizada, `userId` no vacío y rol Profesor antes del lock; el contexto completo conserva su revalidación dentro del lock, incluyendo scope, asignaciones, ownership, esquema y propiedad de las categorías fuente.
+- **Pruebas locales:** suite `exam-service-evaluation-setup-copy-security.test.js` ampliada a 27 escenarios; orden RBAC/identidad antes del lock, denegaciones sin lock/Sheets, revalidación dentro del lock, reentrada concurrente, rollback y controles previos; parseo completo de Code.gs y contrato.
+- **CI:** pendiente de ejecución/verificación en Node 22.
+- **Beta:** BETA-EXAM-059 ampliado; Apps Script/Sheets real NOT RUN.
+- **Estado:** subalcance copyEvaluationSetupBetweenGroups corregido; TASK-153 / AUD-NG-386 continúa En ejecución por otras mutaciones EXAM.
+- **Siguiente:** inspeccionar el siguiente wrapper mutador EXAM que adquiera ScriptLock antes de autorización; no repetir este wrapper.

@@ -1706,3 +1706,10 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Job `exam-security-contracts`: SUCCESS; steps `Run gradebook save security regression` y `Run bulk gradebook apply security regression`: SUCCESS en Node 22; restantes contratos del workflow también SUCCESS.
 - Suites locales V8 compatibles: save 27/27 PASS; bulk apply 28/28 PASS; parseo Code.gs PASS.
 - Apps Script/Sheets real NOT RUN. BETA-EXAM-057 y BETA-EXAM-058 permanecen Pendiente beta.
+
+
+### C1.521 — AUD-NG-386 / copyEvaluationSetupBetweenGroups
+- **Hallazgo alto corregido:** withAuthorizedEvaluationSetupCopy_ adquiría ScriptLock antes de validar RBAC e identidad firmada del Profesor.
+- **Corrección:** preflight del permiso específico, actor autorizado, userId no vacío y rol Profesor antes del lock; el contexto interno vuelve a validar RBAC, identidad, ámbito, asignaciones y ownership dentro del lock.
+- **Cobertura local:** suite dedicada ampliada a 27 escenarios; denegación pre-lock sin apertura de Sheets, doble validación RBAC/identidad, identidad incompleta/no autorizada/rol incorrecto, reentrada concurrente y rollback.
+- **CI:** pendiente de ejecución/verificación. Apps Script/Sheets real NOT RUN; BETA-EXAM-059 permanece Pendiente beta.
