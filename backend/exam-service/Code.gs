@@ -3591,9 +3591,20 @@ function rectifyStudentGrade(payload) {
 }
 
 function withAuthorizedStudentGradeRectification_(payload, mutation) {
+  // Rechazar actores sin permiso antes de competir por el lock global.
+  const permission = validateRolePermission("rectifyStudentGrade", payload);
+  if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const actor = getVerifiedExamIdentity_(payload);
+  const allowedRoles = ["Administrador", "Desarrollador", "Dirección", "Director", "Secretaría"];
+  if (!actor || actor.authorized !== true || !String(actor.userId || "").trim() ||
+      allowedRoles.indexOf(String(actor.role || "").trim()) === -1) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
+
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(5000)) throw new Error("GRADE_RECTIFICATION_LOCK_TIMEOUT");
   try {
+    // El contexto vuelve a validar permiso, identidad, rol, scope y registros bajo lock.
     return mutation(getAuthorizedStudentGradeRectificationContext_(payload));
   } finally {
     try { lock.releaseLock(); } catch (_) {}
