@@ -209,7 +209,7 @@ test("invalid rubric or evaluation schema fails closed", () => {
 });
 test("missing evaluation sheet is initialized only after authorization", () => {
   const x = fixture({ missingEvaluationSheet: true }); assert.equal(x.call().status, "success");
-  assert.deepEqual(x.sheets.EvaluacionesCompetencias.rows[0], evaluationHeaders);
+  assert.equal(JSON.stringify(x.sheets.EvaluacionesCompetencias.rows[0]), JSON.stringify(evaluationHeaders));
 });
 test("required fields are validated before RBAC and persistence", () => {
   const x = fixture(); assert.throws(() => x.call(Object.assign({}, x.payload, { competenciaId: " ", nivelDesempeno: "" })), /COMPETENCY_EVALUATION_REQUIRED_FIELDS/);
