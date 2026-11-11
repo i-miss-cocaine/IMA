@@ -1096,3 +1096,12 @@ Asegurar la lectura checkExamSchedulingConflict expuesta por doPost, como subalc
 - Rama base NG_beta_0.0.0.1: verificada sin cambios en el checkpoint de publicación.
 
 ===============================================================================
+
+===============================================================================
+### Addendum C1.485-R1 — publicación y verificación
+- Commit de implementación/código/pruebas/registros: 48c19cf263a338b06786dd044c529f70736bad2a.
+- Commit de checkpoint, índice y secuenciación: 7af3e17d5cb3a2fd8a17773cf2f1ee63cee946bf.
+- HEAD verificado tras publicar el hito C1.485: 7af3e17d5cb3a2fd8a17773cf2f1ee63cee946bf.
+- NG_beta_0.0.0.1_work se actualizó mediante compare-and-swap fast-forward; no se usó force.
+- Rama base NG_beta_0.0.0.1 verificada intacta: 44d9891132332e692dbe2ba8602b41f50a508a59.
+===============================================================================
