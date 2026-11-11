@@ -1993,3 +1993,21 @@ HEAD inicial: 11a2475823531d5e54fe992b7a883963315681d8. Rama: NG_beta_0.0.0.1_wo
 - CI focalizado run 43104257279: 29/29 PASS en Node.js 22.23.4. El workflow global conserva el fallo preexistente `withAuthorizedExamCreation_ is not defined` en security-contract; no atribuible a C1.570.
 - C1.570 / cobertura local de `gradeExamSubmission`: **Completada**. Apps Script/Sheets desplegado: NOT RUN, registrado como Pendiente beta en BETA-EXAM-073. TASK-153 continúa En ejecución; siguiente operación aislada: `deleteExamSubmission`.
 - HEAD de entrada: `d04bd20c3053cba195c6690c440bc3e406e5543c`. Rama base observada: `44d9891132332e692dbe2ba8602b41f50a508a59` (sin cambios).
+
+
+===============================================================================
+## C1.571 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — cubrir revocación RBAC en la revalidación anidada de `deleteExamSubmission`.
+
+### Hallazgo y cambio
+- El handler comparte el wrapper/contexto de mutaciones de entregas. Tras preflight y resolución de entrega bajo ScriptLock, la tercera validación RBAC se realiza en `getAuthorizedExamMutationContext_` antes de abrir Sheets nuevamente.
+- Se añade un escenario de handler real con secuencia RBAC `[true, true, false]`. Comprueba rechazo `RESOURCE_NOT_AVAILABLE`, orden de eventos, dos verificaciones de identidad, lock liberado, una apertura/lectura de Sheets y cero eliminación o acceso/creación del historial de auditoría.
+- Solo cambia la suite `tests/security/exam-service-delete-submission-audit.test.js`; no se toca backend productivo ni políticas de autorización/persistencia.
+
+### Verificación / estado
+- Conteo esperado de escenarios internos tras la ampliación: 30 (antes: 29).
+- Ejecución local del usuario: pendiente. CI: pendiente. Apps Script/Sheets real: NOT RUN; BETA-EXAM-073.
+- C1.571 En ejecución. Siguiente paso: sincronizar rama de trabajo y ejecutar la suite focalizada; reconciliar cualquier diferencia de conteo antes de cerrar.
+
+HEAD inicial: 8388e58c76b0fca4836f2e7004745b4e4f08bf05. Rama: NG_beta_0.0.0.1_work. Rama base esperada sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59. HEAD final: se confirma tras publicar.
+===============================================================================

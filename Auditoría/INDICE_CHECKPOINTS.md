@@ -494,3 +494,5 @@ Este índice localiza los checkpoints. Los cuerpos históricos permanecen ínteg
 
 
 | C1.570 | IMA-EXEC-20261110-1825Z-02 | gradeExamSubmission: RBAC [true,true,false] en revalidación anidada; usuario confirma suite local 29/29 y CI 29/29; sin escritura y lock liberado | PM-01 — TASK-153 / EXAM / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt — C1.570 | sección final + addendum local | C1.569 | C1.570 Completada localmente; CI focalizado 43104257279 PASS; workflow global falla por ReferenceError preexistente; BETA-EXAM-073 Pendiente beta |
+
+| C1.571 | IMA-EXEC-20261110-1825Z-02 | deleteExamSubmission: revocación RBAC [true,true,false] en la tercera validación anidada; sin eliminación ni historial, lock liberado | PM-01 — TASK-153 / EXAM / AUD-NG-386 | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0006.txt — C1.571 | sección final | C1.570 | En ejecución; suite focalizada pasa de 29 a 30 escenarios; ejecución local y CI pendientes |
