@@ -2118,3 +2118,14 @@ HEAD inicial: `bb8e5282ca7d8694129c5d3ab28593fe718a3e5a`. Rama: `NG_beta_0.0.0.1
 - CI focalizado: pendiente de ejecución/observación tras el commit. Apps Script/Sheets real: NOT RUN; BETA-EXAM-080 Pendiente beta.
 - C1.575 supera las verificaciones locales; queda pendiente confirmar el paso focalizado de CI.
 ===============================================================================
+
+
+===============================================================================
+### Addendum de cierre — C1.575
+- Código fuente `backend/exam-service/Code.gs` y suite focalizada: parseo PASS.
+- Suite de `saveStudentRecovery` ejecutada en V8 aislado con shims compatibles: **18/18 PASS**. El escenario RBAC [true,false] verifica rechazo contextual, lock liberado, cero aperturas de Sheets y snapshots íntegros de todas las hojas sintéticas.
+- CI focalizado: NOT RUN; no se generó un run atribuible al commit de esta tarea. Apps Script/Sheets real: NOT RUN; BETA-EXAM-080 Pendiente beta.
+- Revisión del cambio: únicamente fixture/prueba y registros asociados; backend productivo sin cambios.
+- C1.575 **Completada en verificación local**. TASK-153 / AUD-NG-386 permanece En ejecución para el inventario EXAM restante.
+- Commit de implementación: `f9ff9d4d86474592cdd57602d9db98eb432661b2`. HEAD previo de rama: `3ca69a166a85ae31073be87c8b28fd2c2ad32f5e`. HEAD final de rama: pendiente de commit documental.
+===============================================================================
