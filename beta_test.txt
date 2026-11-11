@@ -909,3 +909,15 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta; cobertura local asociada C1.574: suite focalizada GitHub Actions Node.js 22.23.4 PASS (run 43108253372); Apps Script/Sheets real NOT RUN.
 - **Evidencia requerida:** commit desplegado, trazas saneadas de ambas comprobaciones RBAC, identidad, lock y accesos a Sheets; snapshots completos de BancoPreguntas y ResourceOwnership antes/después.
 ===============================================================================
+
+
+===============================================================================
+## BETA-EXAM-080 — TASK-153 / AUD-NG-386 / EXAM: revocación RBAC en saveStudentRecovery bajo lock
+- **Módulo/rol:** Servicio EXAM; Profesor con permiso efectivo saveStudentRecovery, identidad firmada y asignación académica válida.
+- **Objetivo:** verificar en Apps Script/Sheets desplegado que revocar el permiso después del preflight impide registrar una recuperación de nota durante la revalidación bajo ScriptLock.
+- **Precondiciones:** versión beta desplegada; alumno, evaluación, periodo y asignación sintéticos válidos; sesión firmada; mecanismo controlado para permitir saveStudentRecovery en preflight y denegarlo en el contexto bajo lock.
+- **Pasos:** invocar saveStudentRecovery con permiso concedido en preflight; revocarlo antes de la revalidación contextual; revisar respuesta, trazas RBAC/identidad/lock/Sheets y snapshots completos de las hojas implicadas. Repetir con permiso y contexto estables para confirmar el flujo válido.
+- **Resultado esperado:** la revocación devuelve RESOURCE_NOT_AVAILABLE, libera el lock, evita abrir Sheets y conserva intactas todas las hojas; el flujo válido mantiene las reglas de cálculo y autoría.
+- **Estado:** Pendiente beta; Apps Script/Sheets real NOT RUN.
+- **Evidencia requerida:** commit desplegado, trazas saneadas de RBAC/identidad/lock/Sheets y snapshots antes/después de las hojas implicadas.
+===============================================================================

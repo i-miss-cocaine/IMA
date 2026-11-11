@@ -4190,3 +4190,11 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Alcance:** solo se amplía `tests/security/exam-service-question-bank-security.test.js`; backend productivo, RBAC, roles, scope, ownership y persistencia sin cambios. BETA-EXAM-079 incorpora el escenario desplegado.
 - **Verificación:** GitHub Actions run **43108253372**, Node.js 22.23.4: paso `Run question bank mutation security regression` SUCCESS; la suite completa del job falla después en `exam-service-security-contract.test.js` por `ReferenceError: withAuthorizedExamCreation_ is not defined`, fallo preexistente reproducido en ejecuciones anteriores. El paso focalizado de question bank pasó y ejecutó todas las aserciones, incluida la revocación RBAC. Apps Script/Sheets real NOT RUN, reservado a beta.
 - **Estado:** C1.574 **Completada en verificación local/CI focalizado**. TASK-153 / AUD-NG-386 continúa En ejecución para el inventario EXAM restante.
+
+
+### 10.224 TASK-153 / AUD-NG-386 — cubrir revocación RBAC bajo ScriptLock en saveStudentRecovery (C1.575)
+- **Brecha confirmada:** `withAuthorizedStudentRecoveryMutation_` ejecuta RBAC en preflight y `getAuthorizedStudentRecoveryMutationContext_` vuelve a validar el permiso dentro del lock. La suite cubría identidad incompleta bajo lock, pero no permiso concedido→revocado.
+- **Cobertura añadida:** escenario del handler real con permisos `[true, false]`; exige `RESOURCE_NOT_AVAILABLE`, dos validaciones RBAC, una sola identidad, lock adquirido/liberado, cero apertura de Sheets y snapshots completos de todas las hojas sintéticas intactos.
+- **Alcance:** solo se amplía `tests/security/exam-service-student-recovery-mutation-security.test.js`; backend productivo, RBAC, roles, scope, ownership y persistencia sin cambios. BETA-EXAM-080 registra la variante desplegada.
+- **Verificación:** parseo y suite local aislada pendientes de repetir tras el ajuste de fixture. CI focalizado pendiente; Apps Script/Sheets real NOT RUN, reservado a beta.
+- **Estado:** C1.575 En ejecución hasta completar las verificaciones locales pertinentes. TASK-153 / AUD-NG-386 continúa En ejecución para el inventario EXAM restante.
