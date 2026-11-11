@@ -3521,4 +3521,4 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Pruebas locales:** parseo V8 PASS; mutación 17 escenarios PASS (incluye concurrencia, denegación, ownership y rollback); lectura 17 escenarios PASS; read-endpoints y security-contract PASS. Node nativo/CI/Apps Script real NOT RUN. BETA-EXAM-049 Pendiente beta.
 - **Límite:** edición de categorías antiguas sin ownership requiere migración/atribución explícita; no se asigna propietario por inferencia.
 - **Estado:** subalcance completado; TASK-153 permanece En ejecución y AUD-NG-386 abierto por otras operaciones EXAM.
-- **Siguiente:** identificar la próxima mutación/lectura EXAM pendiente dentro de TASK-153 y verificar autorización, ownership y efectos laterales en una iteración independiente.
+- **Siguiente:** reparar en una iteración independiente los dos defectos del harness `exam-service-save-rubric-security.test.js` detectados al ejecutar la regresión (mock de lock y expectativa de rollback); después continuar con la siguiente operación EXAM pendiente.
