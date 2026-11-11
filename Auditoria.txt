@@ -1536,3 +1536,13 @@ C1.492 — EXAM: aislamiento de getStudentAcademicReport (TASK-153 / AUD-NG-386)
 - Node nativo/CI/Apps Script real: NOT RUN. BETA-EXAM-046 Pendiente beta.
 - TASK-153 permanece En ejecución; AUD-NG-386 sigue abierto por otras lecturas EXAM.
 ===============================================================================
+
+===============================================================================
+C1.493 — EXAM: aislamiento de getEvaluationCategories (TASK-153 / AUD-NG-386)
+- Hallazgo: getEvaluationCategories estaba incluido en PUBLIC_ACTIONS y podía ejecutarse sin sesión; además usaba getOrCreateSheet y escribía encabezados/categorías predeterminadas al consultar una hoja ausente o vacía. El endpoint no comprobaba identidad ni ámbito institucional/departamental.
+- Corrección: se retiró getEvaluationCategories de PUBLIC_ACTIONS. El handler ahora valida permiso RBAC, identidad firmada, rol admitido y scope institucional/departamental bajo ScriptLock; roles no admitidos, identidad ausente, permisos denegados y scope no verificado fallan cerrados.
+- Integridad/compatibilidad: lectura usa getSheetByName sin crear hojas ni escribir filas. Hoja ausente/vacía conserva el contrato status/data y devuelve las cuatro categorías predeterminadas solo en memoria. Hoja poblada valida los seis encabezados esperados; esquema incompatible falla cerrado. Se conserva el mapeo y formato histórico de las categorías.
+- Pruebas locales: parseo V8 PASS; suite dedicada mediante shim V8 aislado PASS (12 escenarios: respuesta/contrato, hoja ausente, hoja solo encabezado, RBAC, identidad, rol desconocido, scope, timeout, exclusión concurrente, esquema, ausencia de mutación y allowlist pública).
+- Node nativo/CI/Apps Script real: NOT RUN. BETA-EXAM-047 Pendiente beta.
+- TASK-153 permanece En ejecución; AUD-NG-386 sigue abierto por otras lecturas EXAM.
+===============================================================================
