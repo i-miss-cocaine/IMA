@@ -1786,3 +1786,21 @@ La regresión quedó añadida, pero la suite completa actual debe ejecutarse ant
 
 HEAD inicial: 744b609399885036c145992ebd92e0f0877c5cbf. HEAD de rama antes de registrar el checkpoint: 14abfa1a7ba7adca66f55925d9b56a7cc8fae740. Rama base sin cambios esperado: 44d9891132332e692dbe2ba8602b41f50a508a59.
 ===============================================================================
+
+
+===============================================================================
+## C1.561 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — cerrar la ejecución de la suite local de seguridad de submitGradebookForReview (continuación de C1.560).
+
+### Evidencia y resultado
+- El usuario ejecutó `node --test tests/security/exam-service-period-gradebook-submission-security.test.js` en la rama de trabajo.
+- Resumen Node informado: Tests 1; Suites 0; Pass 1; Fail 0; Cancelled 0; Skipped 0; Todo 0. Duración informada: 312.40504 ms.
+- El archivo contiene 27 escenarios internos síncronos ejecutados por su helper `test(fn)`; Node contabiliza el archivo como una prueba de nivel superior. El resultado 1/1 PASS y la ausencia de excepción confirman la ejecución satisfactoria de los 27 escenarios.
+- Los escenarios cubren el camino positivo, RBAC/identidad, revalidación bajo ScriptLock, revocación RBAC entre preflight y lock, rechazo antes de abrir Sheets, liberación del lock y preservación de CierresPeriodos.
+- No se reportó la versión de Node. CI y Apps Script/Sheets real: NOT RUN; BETA-EXAM-054 permanece Pendiente beta.
+
+### Estado y continuidad
+La verificación local de los 27 escenarios queda completada. No se modificó código productivo ni la matriz RBAC, roles, scope o persistencia. TASK-153 / AUD-NG-386 continúa con el inventario de mutaciones EXAM restantes; siguiente acción: identificar la siguiente mutación EXAM con revalidación de autorización/identidad bajo ScriptLock sin cobertura de revocación entre preflight y lock.
+
+HEAD inicial: d4f2e81dd553bd5976f2703913a26e6bb52cbdbb. Rama de trabajo: NG_beta_0.0.0.1_work. Rama base sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+===============================================================================
