@@ -1668,5 +1668,5 @@ Commit de implementación: 5a8da19637a2b3f02025784d001759fd0db683b2 (`fix(exam):
 ### Estado y continuidad
 C1.543 queda verificada y Completada en su cobertura local. No hubo cambios productivos. TASK-153 / AUD-NG-386 continúa En ejecución para el inventario restante; siguiente iteración seleccionará una sola mutación EXAM con brecha local demostrable.
 
-HEAD inicial de esta iteración: c53b47a4102770d25c3ec0939792e75cf14063a3. HEAD final y commit documental se consignan tras publicar.
+HEAD inicial de esta iteración: c53b47a4102770d25c3ec0939792e75cf14063a3. Commit de cierre C1.555: 36081280dff85a0961411253ac47edbbdcdae746. HEAD final de `NG_beta_0.0.0.1_work` verificado: 36081280dff85a0961411253ac47edbbdcdae746. HEAD de `NG_beta_0.0.0.1` sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
 ===============================================================================
