@@ -1628,5 +1628,5 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 ### AUD-NG-386 — createExam (C1.507)
 - **Hallazgo:** el endpoint verificaba identidad y scope pero omitía validateRolePermission("createExam", payload) dentro de la función. El control RBAC del doPost no sustituye la autorización del propio endpoint ante invocación directa desde otro punto de entrada.
 - **Corrección:** RBAC efectivo comprobado al inicio, antes de abrir Sheets o adquirir el lock; se mantienen identidad firmada, scope, departamento, ownership y rollback.
-- **Verificación:** contrato local dedicado para creación positiva, denegación RBAC, identidad/scope/departamento, lock y fallos parciales; BETA-EXAM-060 Pendiente beta.
+- **Verificación:** contrato local aislado 10/10 PASS (Node 22) sobre createExam, incluyendo denegación RBAC previa a abrir Sheets, identidad/scope/departamento, lock y rollback parcial; parseo completo del archivo y workflow de push no verificados. BETA-EXAM-060 Pendiente beta.
 ===============================================================================
