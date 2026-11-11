@@ -1344,7 +1344,7 @@ Asegurar exclusivamente la lectura getStudentRecoveries del servicio EXAM.
 
 ### Verificación local
 - Parseo V8 del backend: PASS.
-- Suite dedicada ejecutada mediante shim V8 aislado: PASS (23 escenarios).
+- Suite dedicada ejecutada mediante shim V8 aislado: PASS (26 escenarios).
 - Cobertura: aislamiento estudiante/IDOR; tutor y vínculo verificado; scope institucional y target explícito; profesor/roles no permitidos; RBAC; timeout/liberación del lock; snapshot post-lock; hoja ausente sin mutación; IDs duplicados/vacíos; esquema incompatible; notas y fechas inválidas.
 - Runner Node nativo: NOT RUN. CI: NOT RUN. Apps Script/Sheets real: NOT RUN.
 - BETA-EXAM-044: Pendiente beta; no bloquea el cierre local.
@@ -1384,7 +1384,7 @@ Auditar y asegurar exclusivamente getGradeRectificationHistory del servicio EXAM
 - La función leía HistorialRectificacionesNotas directamente, aceptaba userId/evaluacionId como filtros opcionales y permitía enumerar rectificaciones ajenas. getOrCreateSheet podía crear la hoja en una lectura. No existían controles de identidad, vínculo familiar, scope ni RBAC contextual; notas inválidas se convertían a cero y fechas inválidas podían provocar excepción.
 - Handler ahora usa withAuthorizedExamRead_("getGradeRectificationHistory", ...), que valida permiso/identidad/contexto bajo ScriptLock compartido.
 - Estudiante/Alumno solo consulta su identidad firmada; Tutor/Padre/Responsable solo el estudiante verificado en contexto familiar; roles institucionales requieren scope.institutionWide y userId explícito con perfil único.
-- Profesor queda denegado en esta ruta directa para evitar eludir asignación/roster; la consulta docente de datos académicos debe pasar por gradebook. Se retiró el permiso estático getGradeRectificationHistory para Profesor.
+- Profesor queda denegado en esta ruta directa para evitar eludir asignación/roster; la consulta docente de datos académicos debe pasar por gradebook. Se retiró el permiso estático getGradeRectificationHistory para Profesor y se añadió permiso explícito a Estudiante/Alumno y Tutor/Padre/Responsable.
 - Lectura sin escrituras ni creación de hojas; esquema de nueve encabezados validado; IDs vacíos/duplicados y EvaluacionID vacío excluidos; notas no numéricas/vacías y fechas inválidas se normalizan a null.
 
 ### Archivos
@@ -1399,7 +1399,7 @@ Auditar y asegurar exclusivamente getGradeRectificationHistory del servicio EXAM
 
 ### Verificación local
 - Parseo V8 del backend: PASS.
-- Suite dedicada ejecutada mediante shim V8 aislado: PASS (23 escenarios).
+- Suite dedicada ejecutada mediante shim V8 aislado: PASS (26 escenarios).
 - Cobertura: aislamiento estudiante/IDOR; tutor y vínculo verificado; scope institucional y target explícito; Profesor/roles no permitidos; RBAC; timeout/liberación; snapshot post-lock; hoja ausente sin mutación; IDs duplicados/vacíos; esquema incompatible; notas y fechas inválidas.
 - Node nativo: NOT RUN. CI: NOT RUN. Apps Script/Sheets real: NOT RUN.
 - BETA-EXAM-045: Pendiente beta; no bloquea cierre local.
