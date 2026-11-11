@@ -1367,3 +1367,54 @@ Asegurar exclusivamente la lectura getStudentRecoveries del servicio EXAM.
 - Siguiente acción concreta: auditar individualmente getGradeRectificationHistory, lectura de trazabilidad de notas aún no cubierta.
 - Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios).
 ===============================================================================
+
+===============================================================================
+## CHECKPOINT C1.491 — EXAM: aislamiento de getGradeRectificationHistory
+Sesión: IMA-EXEC-20261110-1825Z-02
+Fecha: 2026-11-11 UTC.
+Repositorio: i-miss-cocaine/IMA.
+Rama exclusiva: NG_beta_0.0.0.1_work.
+Checkpoint anterior: C1.490.
+HEAD inicial: 6a2256d0564fba11498b0990043fba8e0e582fa9.
+
+### Alcance
+Auditar y asegurar exclusivamente getGradeRectificationHistory del servicio EXAM.
+
+### Hallazgo y corrección
+- La función leía HistorialRectificacionesNotas directamente, aceptaba userId/evaluacionId como filtros opcionales y permitía enumerar rectificaciones ajenas. getOrCreateSheet podía crear la hoja en una lectura. No existían controles de identidad, vínculo familiar, scope ni RBAC contextual; notas inválidas se convertían a cero y fechas inválidas podían provocar excepción.
+- Handler ahora usa withAuthorizedExamRead_("getGradeRectificationHistory", ...), que valida permiso/identidad/contexto bajo ScriptLock compartido.
+- Estudiante/Alumno solo consulta su identidad firmada; Tutor/Padre/Responsable solo el estudiante verificado en contexto familiar; roles institucionales requieren scope.institutionWide y userId explícito con perfil único.
+- Profesor queda denegado en esta ruta directa para evitar eludir asignación/roster; la consulta docente de datos académicos debe pasar por gradebook. Se retiró el permiso estático getGradeRectificationHistory para Profesor.
+- Lectura sin escrituras ni creación de hojas; esquema de nueve encabezados validado; IDs vacíos/duplicados y EvaluacionID vacío excluidos; notas no numéricas/vacías y fechas inválidas se normalizan a null.
+
+### Archivos
+- backend/exam-service/Code.gs
+- tests/security/exam-service-grade-rectification-history-security.test.js
+- Auditoria.txt
+- changueslogs.txt
+- beta_test.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0005.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación local
+- Parseo V8 del backend: PASS.
+- Suite dedicada ejecutada mediante shim V8 aislado: PASS (23 escenarios).
+- Cobertura: aislamiento estudiante/IDOR; tutor y vínculo verificado; scope institucional y target explícito; Profesor/roles no permitidos; RBAC; timeout/liberación; snapshot post-lock; hoja ausente sin mutación; IDs duplicados/vacíos; esquema incompatible; notas y fechas inválidas.
+- Node nativo: NOT RUN. CI: NOT RUN. Apps Script/Sheets real: NOT RUN.
+- BETA-EXAM-045: Pendiente beta; no bloquea cierre local.
+
+### Commits de la iteración
+- Implementación: 008a889f013d4f8498ebb8715782b5878dd8ea87.
+- Suite de seguridad: 1a25e3679f7828f24d2d10c383838495a3629613.
+- Ajuste de fixtures: ac5a2f41b2bc3d0efd1799aba938937472e0b493.
+- Auditoría: 95b214e7b31f011c22824a59c6a488934bf5f4ff.
+- Changelog: e410cd45f32f7973ac9ebcc46ce53b0d36698d57.
+- Beta: 136da8ba3af1d96344a4022805e10bc630e466c4.
+
+### Estado y continuidad
+- Subalcance getGradeRectificationHistory completado localmente.
+- TASK-153 permanece En ejecución; AUD-NG-386 abierto por otras lecturas EXAM.
+- Siguiente acción: auditar individualmente getStudentAcademicReport.
+- Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios).
+===============================================================================
