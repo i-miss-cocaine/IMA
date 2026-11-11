@@ -116,7 +116,7 @@ const runtime = {
     releaseLock() { examMutationLockReleases++; examMutationLockHeld = false; }
   }; } }
 };
-const helpers = ["getVerifiedExamIdentity_", "getVerifiedExamDepartmentScope_", "assertExamResourceOwnershipForScope_", "validateRolePermission", "getAllExams", "getTeacherExamActivity"].map(name => extractFunction(source, name)).join("\n");
+const helpers = ["getVerifiedExamIdentity_", "getVerifiedExamDepartmentScope_", "assertExamResourceOwnershipForScope_", "validateRolePermission", "getAllExams", "getAllExamsUnlocked_", "getTeacherExamActivity", "getTeacherExamActivityUnlocked_"].map(name => extractFunction(source, name)).join("\n");
 vm.runInNewContext(helpers + "\nthis.getAllExams = getAllExams; this.getTeacherExamActivity = getTeacherExamActivity; this.validateRolePermission = validateRolePermission; this.getVerifiedExamDepartmentScope_ = getVerifiedExamDepartmentScope_; this.assertExamResourceOwnershipForScope_ = assertExamResourceOwnershipForScope_;", runtime);
 const payload = { sessionToken: "teacher-token", profesorId: "TEACHER-2" };
 const list = runtime.getAllExams(payload);
