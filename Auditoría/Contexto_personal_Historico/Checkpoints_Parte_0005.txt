@@ -2041,13 +2041,13 @@ copyEvaluationSetupBetweenGroups escribía categorías con appendRow, generaba I
 - Wrapper con ScriptLock y permiso RBAC copyEvaluationSetupBetweenGroups.
 - Identidad firmada de Profesor y scope institucional/departamental verificados.
 - Exige asignatura/grado/sección/período completos y asignaciones únicas del Profesor tanto para origen como destino.
-- Exige esquema legacy de ocho columnas y ownership activo único de cada categoría fuente, dentro del scope.
+- Exige esquema legacy de ocho columnas y ownership activo único con ID de registro único y datos de categoría válidos, dentro del scope.
 - Genera IDs UUID y filas ResourceOwnership para cada copia; escritura consolidada y compensación de filas ante fallo capturable.
 - Rechaza origen=destino, asignaciones/categorías/ownership ambiguos, ID collision, lock ocupado y esquema incompatible; no crea hojas.
 ### Archivos
 backend/exam-service/Code.gs; tests/security/exam-service-evaluation-setup-copy-security.test.js; .github/workflows/exam-service-security-contract.yml; beta_test.txt (BETA-EXAM-059); Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; Auditoria.txt; changueslogs.txt; tareas_auditoria.txt; historial e índice de checkpoints.
 ### Verificación
-- Harness local aislado sobre funciones productivas: 19 escenarios PASS (copia positiva, lote vacío, RBAC/identidad/rol/scope, asignaciones, ownership, esquema, límites, lock, colisión y rollback).
+- Harness local aislado sobre funciones productivas: 22 escenarios PASS (copia positiva, lote vacío, RBAC/identidad/rol/scope, asignaciones, ownership, esquema, límites, lock, colisión y rollback).
 - Parseo completo de backend/exam-service/Code.gs PASS; parseo del contrato PASS.
 - CI Node nativo: pendiente de observación tras el commit final.
 - Apps Script/Sheets real NOT RUN; BETA-EXAM-059 Pendiente beta.
