@@ -438,4 +438,47 @@ test(() => {
   assert.equal(events[events.length - 1], "lock-release", "the shared lock must be released after nested RBAC denial");
 });
 
+
+function runDeleteSubmissionReentryAtWrite(target) {
+  const state = { permissionCalls: 0, identityCalls: 0, contextCalls: 0, lockAttempts: 0, releases: 0, held: false, auditAppends: 0, deliveryDeletes: 0, auditUpdates: [], nestedErrors: [], reentered: false };
+  const payload = { entregaId: "EEX-1", examenId: "EXM-1", motivo: "Solicitud administrativa documentada." };
+  let remove;
+  const reenter = () => { if (state.reentered) return; state.reentered = true; try { remove(payload); } catch (error) { state.nestedErrors.push(error.message); } };
+  const audit = {
+    rows: [["EventoID","EntregaExamenID","ExamenID","EstudianteID","ActorID","RolActor","Motivo","FechaSolicitud","Estado"]],
+    getDataRange() { return { getValues: () => this.rows.map(row => row.slice()) }; },
+    getLastRow() { return this.rows.length; },
+    appendRow(row) { this.rows.push(row.slice()); state.auditAppends++; if (target === "audit-append") reenter(); },
+    getRange(row, col) { return { setValue(value) { audit.rows[row - 1][col - 1] = value; state.auditUpdates.push(value); if (target === "audit-finalize") reenter(); } }; }
+  };
+  const deliverySheet = { deleteRow() { state.deliveryDeletes++; if (target === "delivery-delete") reenter(); } };
+  const ss = { getSheetByName(name) { return name === "HistorialEliminacionesEntregasExamen" ? audit : null; }, insertSheet() { throw new Error("unexpected audit sheet creation"); } };
+  const runtime = {
+    validateRolePermission() { state.permissionCalls++; return { authorized: true }; },
+    getVerifiedExamIdentity_() { state.identityCalls++; return { authorized: true, userId: "ADMIN-1", role: "Administrador" }; },
+    LockService: { getScriptLock() { return { tryLock() { state.lockAttempts++; if (state.held) return false; state.held = true; return true; }, releaseLock() { state.releases++; state.held = false; } }; } },
+    getAuthorizedExamSubmissionMutationContext_() {
+      state.contextCalls++;
+      const permission = runtime.validateRolePermission();
+      if (!permission.authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
+      const actor = runtime.getVerifiedExamIdentity_();
+      if (!actor.authorized || !String(actor.userId || "").trim()) throw new Error("RESOURCE_NOT_AVAILABLE");
+      return { ss, actor, examId: "EXM-1", entregaId: "EEX-1", delivery: { row: ["EEX-1","EXM-1","STU-1",new Date(),"[]","95.00","Calificado"], rowIndex: 1 }, deliverySheet };
+    },
+    Utilities: { getUuid() { return "UUID-EVENT-1"; } }, Date, String, Error
+  };
+  const executable = [extract("withAuthorizedExamSubmissionMutation_"), extract("getOrCreateExamSubmissionDeletionAuditSheet_"), extract("deleteExamSubmission")].join("\n");
+  remove = new Function("runtime", "with (runtime) { " + executable + "; return deleteExamSubmission; }")(runtime);
+  const result = remove(payload);
+  assert.equal(result.status, "success"); assert.equal(result.eventoId, "UUID-EVENT-1");
+  assert.deepEqual(state.nestedErrors, ["EXAM_SUBMISSION_LOCK_TIMEOUT"]);
+  assert.equal(state.permissionCalls, 3); assert.equal(state.identityCalls, 3); assert.equal(state.contextCalls, 1);
+  assert.equal(state.lockAttempts, 2); assert.equal(state.releases, 1); assert.equal(state.held, false);
+  assert.equal(state.auditAppends, 1); assert.equal(state.deliveryDeletes, 1);
+  assert.deepEqual(state.auditUpdates, ["DELETED"]); assert.equal(audit.rows[1][8], "DELETED");
+}
+test(() => runDeleteSubmissionReentryAtWrite("audit-append"));
+test(() => runDeleteSubmissionReentryAtWrite("delivery-delete"));
+test(() => runDeleteSubmissionReentryAtWrite("audit-finalize"));
+
 console.log("exam-service-delete-submission-audit: " + scenarios + "/" + scenarios + " PASS");

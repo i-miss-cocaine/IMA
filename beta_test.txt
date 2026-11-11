@@ -1004,3 +1004,14 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 - **Estado:** Pendiente beta; contrato local V8 aislado 12/12 PASS; CI Node.js 22 pendiente de observación; Apps Script/Sheets real NOT RUN.
 - **Evidencia requerida:** commit desplegado, trazas saneadas de ambas solicitudes, conteo de lock, aperturas/lecturas/escrituras y snapshots de EntregasExamen antes/después.
 ===============================================================================
+
+===============================================================================
+## BETA-EXAM-088 — TASK-153 / AUD-NG-386 / EXAM: contención reentrante de deleteExamSubmission
+- **Módulo/rol:** Servicio EXAM; Administrador/Desarrollador/Dirección con permiso deleteExamSubmission, identidad firmada, entrega existente y ownership/scope autorizados.
+- **Objetivo:** comprobar en Apps Script/Sheets desplegado que una segunda eliminación iniciada durante cualquiera de las escrituras de la eliminación exterior no atraviesa ScriptLock ni duplica auditoría o borrado.
+- **Precondiciones:** versión beta desplegada; entrega sintética existente en EntregasExamen; HistorialEliminacionesEntregasExamen con esquema válido; actor autorizado con sesión firmada; motivo válido; mecanismo controlado para intentar una segunda solicitud durante appendRow del historial, deleteRow de la entrega y setValue del estado final de auditoría.
+- **Pasos:** invocar deleteExamSubmission; durante appendRow del evento DELETE_REQUESTED intentar una segunda eliminación; repetir con reentrada durante deleteRow de EntregasExamen y durante setValue del estado DELETED; revisar respuestas, trazas RBAC/identidad/contexto/lock y snapshots de ambas hojas.
+- **Resultado esperado:** cada solicitud anidada termina con EXAM_SUBMISSION_LOCK_TIMEOUT; la exterior registra un solo evento, elimina una sola entrega, finaliza el evento como DELETED, obtiene un solo contexto y libera ScriptLock. Una eliminación individual válida conserva su comportamiento.
+- **Estado:** Pendiente beta; contrato local V8 aislado 3/3 escenarios de reentrada PASS; CI Node.js 22 pendiente de observación; Apps Script/Sheets real NOT RUN.
+- **Evidencia requerida:** commit desplegado, trazas saneadas de las solicitudes exterior/secundaria, conteo de lock, aperturas/contexto, escrituras y snapshots de EntregasExamen e HistorialEliminacionesEntregasExamen.
+===============================================================================

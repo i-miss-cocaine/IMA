@@ -2050,3 +2050,9 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Brecha:** el contrato de submitExam comprobaba RBAC, identidad y timeout, pero no una segunda entrega durante appendRow de EntregasExamen.
 - **Cambio:** se añade fixture con handlers submitExam y submitExamUnlocked_ reales; appendRow intenta una segunda entrega del mismo estudiante/examen. La secundaria recibe EXAM_SUBMISSION_LOCK_TIMEOUT; la exterior registra una sola fila, usa un único contexto y libera ScriptLock.
 - **Verificación local:** parseo Code.gs/test PASS; contrato V8 aislado 12/12 PASS. Backend productivo sin cambios. CI Node.js 22: run 43116458048 SUCCESS; Apps Script/Sheets real NOT RUN. BETA-EXAM-087 Pendiente beta.
+
+
+### C1.587 — AUD-NG-386 / deleteExamSubmission: contención reentrante durante auditoría, borrado y finalización
+- **Brecha:** el contrato verificaba la auditoría de borrado, los fallos y el wrapper/validación, pero no una solicitud anidada durante appendRow de DELETE_REQUESTED, deleteRow de EntregasExamen o setValue de DELETED.
+- **Cambio:** se amplía el contrato con los handlers reales y un lock sintético; en cada una de las tres ventanas la solicitud secundaria recibe EXAM_SUBMISSION_LOCK_TIMEOUT. La exterior crea un solo evento, elimina una entrega, marca DELETED, obtiene un contexto y libera el lock una sola vez.
+- **Verificación local:** parseo Code.gs/test PASS; harness V8 aislado 3/3 escenarios PASS. Backend productivo sin cambios. CI Node.js 22 pendiente; Apps Script/Sheets real NOT RUN. BETA-EXAM-088 agregado y Pendiente beta.

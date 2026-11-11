@@ -4321,3 +4321,10 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Alcance:** solo tests/security/exam-service-submit-mutation-security.test.js; backend productivo sin cambios. BETA-EXAM-087 registra la verificación desplegada.
 - **Verificación local:** parseo sintáctico de Code.gs y contrato PASS; contrato completo V8 aislado 12/12 PASS. CI Node.js 22: GitHub Actions run 43116458048 SUCCESS. Apps Script/Sheets real NOT RUN.
 - **Estado:** C1.586 Completada en verificación local; TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
+
+### 10.236 TASK-153 / AUD-NG-386 — contención reentrante de deleteExamSubmission (C1.587)
+- **Brecha confirmada:** deleteExamSubmission usa el ScriptLock compartido y realiza tres escrituras encadenadas: appendRow del evento DELETE_REQUESTED, deleteRow de EntregasExamen y setValue del estado DELETED. Los contratos existentes cubrían autorización, auditoría y fallos de persistencia, pero no una segunda solicitud durante ninguna de esas ventanas.
+- **Cobertura añadida:** el contrato real ejecuta el wrapper withAuthorizedExamSubmissionMutation_ y el handler deleteExamSubmission con contexto/Sheets sintéticos. Se fuerza una segunda llamada desde cada una de las tres escrituras; todas deben terminar EXAM_SUBMISSION_LOCK_TIMEOUT. La solicitud exterior registra un solo evento, elimina una entrega, finaliza el evento como DELETED, obtiene un único contexto y libera ScriptLock.
+- **Alcance:** solo tests/security/exam-service-delete-submission-audit.test.js; backend productivo sin cambios. BETA-EXAM-088 registra la validación desplegada.
+- **Verificación local:** parseo sintáctico de backend y contrato PASS; harness V8 aislado de los handlers reales 3/3 escenarios PASS. CI Node.js 22 pendiente de observación tras commit. Apps Script/Sheets real NOT RUN.
+- **Estado:** C1.587 Completada en verificación local; TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.

@@ -1,0 +1,33 @@
+===============================================================================
+PARTE 0007 — CHECKPOINTS IMA
+Continuación append-only de Checkpoints_Parte_0006.txt; parte anterior conservada íntegra.
+
+CHECKPOINT C1.587 — contención reentrante de deleteExamSubmission
+Sesión: IMA-EXEC-20261110-1825Z-02.
+Fecha: 2026-11-11 UTC.
+Rama: NG_beta_0.0.0.1_work.
+HEAD inicial de iteración: f562f7846da71016da62c29139e4e97bb0cae838.
+
+### Hallazgo
+deleteExamSubmission protegía sus escrituras con withAuthorizedExamSubmissionMutation_ y registraba auditoría antes de borrar la entrega, pero el contrato no probaba reentrada durante las tres escrituras: appendRow de DELETE_REQUESTED, deleteRow de EntregasExamen y setValue de DELETED.
+
+### Corrección
+- Se amplía el contrato de auditoría de borrado para ejecutar el wrapper y handler reales con lock, contexto y hojas sintéticas.
+- Se inyecta una segunda solicitud en cada una de las tres ventanas de escritura. Cada solicitud secundaria debe recibir EXAM_SUBMISSION_LOCK_TIMEOUT.
+- La solicitud exterior conserva un único evento de auditoría, un solo borrado, estado final DELETED, un contexto y una liberación del lock.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; Auditoria.txt; changueslogs.txt; Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt; Auditoría/INDICE_CHECKPOINTS.md.
+
+### Verificación local
+- Parseo sintáctico de backend y contrato: PASS.
+- Harness V8 aislado con handlers reales y fixtures sintéticos: 3/3 escenarios de reentrada PASS.
+- CI Node.js 22: pendiente de ejecución/observación tras commit.
+- Apps Script/Sheets real: NOT RUN; BETA-EXAM-088 Pendiente beta.
+
+### Estado y continuidad
+- C1.587 Completada en verificación local; TASK-153 / AUD-NG-386 continúa En ejecución.
+- Siguiente: inspeccionar otra ruta mutadora EXAM sin cobertura reentrante equivalente; no repetir createExam, updateExam, updateExamStatus, deleteExam, submitExam ni deleteExamSubmission.
+- HEAD final: se confirma tras publicar.
+===============================================================================
