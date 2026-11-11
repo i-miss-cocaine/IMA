@@ -4243,3 +4243,11 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - Job `exam-security-contracts`: SUCCESS. El paso `Run gradebook save security regression` terminó SUCCESS; también pasaron los demás contratos de seguridad EXAM, el contrato general, acceso departamental y endpoints de lectura.
 - La prueba ampliada `exam-service-gradebook-save-security.test.js` pasó en CI con el escenario de revocación RBAC bajo lock.
 - C1.579 Completada en verificación local y CI. BETA-EXAM-083 continúa Pendiente beta.
+
+
+### 10.229 TASK-153 / AUD-NG-386 — concurrencia reentrante en bulkApplyGradebookGrades (C1.580)
+- **Brecha confirmada:** `bulkApplyGradebookGrades` usa `withAuthorizedGradebookSave_` y ScriptLock, pero el contrato específico cubría timeout, autorización y persistencia sin simular una segunda solicitud reentrante mientras la primera mantenía el lock durante `setValues`.
+- **Cobertura añadida:** hook de escritura sintético que invoca una segunda aplicación masiva dentro de la sección crítica de la primera. La segunda solicitud debe fallar con `GRADEBOOK_SAVE_LOCK_TIMEOUT`; la primera completa una sola escritura y un solo alta, no abre Sheets por segunda vez y libera el lock.
+- **Alcance:** solo fixture/prueba en `tests/security/exam-service-gradebook-bulk-apply-security.test.js); backend productivo, permisos, identidad, scope y persistencia sin cambios. BETA-EXAM-057 actualizado.
+- **Verificación local:** parseo de `backend/exam-service/Code.gs` y del contrato PASS; ejecución completa aislada V8 con shims compatibles **31/31 PASS**, incluido el escenario de contención reentrante. CI Node.js 22 pendiente de ejecución/observación tras commit. Apps Script/Sheets real NOT RUN; la simultaneidad de infraestructura desplegada sigue Pendiente beta.
+- **Estado:** C1.580 Completada en verificación local; TASK-153 / AUD-NG-386 continúa En ejecución para las superficies restantes.

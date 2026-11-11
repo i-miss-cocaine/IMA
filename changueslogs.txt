@@ -2105,3 +2105,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Job exam-security-contracts y paso Run gradebook save security regression: SUCCESS; también pasaron contrato general, acceso departamental y endpoints de lectura.
 - C1.579 Completada en verificación local y CI. BETA-EXAM-083 continúa Pendiente beta.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] C1.580 — concurrencia reentrante en bulkApplyGradebookGrades
+- Se amplía el fixture con hook en setValues para intentar una segunda aplicación masiva mientras la primera conserva ScriptLock.
+- La segunda solicitud falla GRADEBOOK_SAVE_LOCK_TIMEOUT; la exterior realiza una sola escritura, no abre Sheets por segunda vez y libera el lock.
+- Suite V8 aislada 31/31 PASS; parseo Code.gs/test PASS. Backend productivo sin cambios. CI pendiente; Apps Script/Sheets real NOT RUN.
+- BETA-EXAM-057 actualizado. TASK-153 / AUD-NG-386 continúa En ejecución.
+===============================================================================

@@ -1986,3 +1986,9 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - GitHub Actions run **43112000769**, commit `6ac57d1f0dd1d401aac225bb41cce53cb280c90e`: workflow `Exam-Service security local contracts` **SUCCESS** en Node.js 22.
 - Paso `Run gradebook save security regression`: SUCCESS; job completo, contrato general, acceso departamental y endpoints de lectura: SUCCESS.
 - C1.579 Completada en verificación local y CI. BETA-EXAM-083 permanece Pendiente beta.
+
+
+### C1.580 — AUD-NG-386 / bulkApplyGradebookGrades: contención reentrante de ScriptLock
+- **Brecha:** el contrato verificaba lock ocupado/timeout, pero no intentaba una segunda aplicación masiva durante la escritura de la primera solicitud.
+- **Cambio:** el fixture invoca una segunda solicitud desde el hook sintético de `setValues`. La reentrada recibe GRADEBOOK_SAVE_LOCK_TIMEOUT; la operación exterior realiza una sola escritura/alta, no vuelve a abrir Sheets y libera el lock.
+- **Verificación local:** parseo backend y test PASS; contrato completo V8 aislado **31/31 PASS**. Backend productivo sin cambios. CI pendiente; Apps Script/Sheets real NOT RUN. BETA-EXAM-057 actualizado y Pendiente beta.

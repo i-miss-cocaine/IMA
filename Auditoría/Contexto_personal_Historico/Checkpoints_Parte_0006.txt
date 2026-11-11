@@ -2225,3 +2225,24 @@ HEAD inicial: `4451fd9d161fc72afab08b2a09263ec363e0141e`. HEAD final: se confirm
 - C1.579 **Completada en verificación local y CI**. BETA-EXAM-083 permanece Pendiente beta.
 - HEAD inicial: `1ced2a2ecdf4b5fca455cf6879b1b6c6b878ed49`; HEAD de implementación/pruebas: `6ac57d1f0dd1d401aac225bb41cce53cb280c90e`; HEAD final documental: se confirma tras publicar.
 ===============================================================================
+
+
+===============================================================================
+## C1.580 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — concurrencia reentrante en bulkApplyGradebookGrades.
+
+### Hallazgo y corrección
+- El contrato de `bulkApplyGradebookGrades` ya verificaba autorización, revocación RBAC, timeout y persistencia; no ejercitaba una segunda solicitud mientras la primera retenía ScriptLock durante `setValues`.
+- Se agregó un hook de escritura sintético y una reentrada determinista. La segunda solicitud recibe `GRADEBOOK_SAVE_LOCK_TIMEOUT`; la operación exterior persiste una sola vez, no abre Sheets por segunda vez y libera el lock.
+
+### Verificación local
+- Parseo sintáctico de `backend/exam-service/Code.gs`: PASS.
+- Parseo sintáctico del contrato: PASS.
+- Ejecución completa del contrato en V8 aislado con shims compatibles: **31/31 PASS**.
+- CI Node.js 22: pendiente de observación tras commit. Apps Script/Sheets real: NOT RUN; BETA-EXAM-057 Pendiente beta para simultaneidad desplegada.
+
+### Estado y continuidad
+- C1.580 Completada en verificación local; TASK-153 / AUD-NG-386 continúa En ejecución.
+- Siguiente: revisar la siguiente ruta de mutación sensible a concurrencia que carezca de prueba local equivalente; no repetir cobertura vigente.
+- HEAD inicial: `2a68e1449acb46869aeb10725af4c72b010faf53`; HEAD final: se confirma tras publicar.
+===============================================================================
