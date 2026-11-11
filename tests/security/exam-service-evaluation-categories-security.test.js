@@ -15,11 +15,13 @@ function extract(name){
 }
 function fixture(options={}){
  const state={permission:options.permission!==false,actor:options.actor||{authorized:true,userId:"USR-1",role:"Profesor"},
-  scope:options.scope||{authorized:true,institutionId:"INST-1"},opens:0,locks:0,releases:0,held:false};
+  scope:options.scope||{authorized:true,institutionId:"INST-1",departmentIds:["DEPT-1"],institutionWide:false},opens:0,locks:0,releases:0,held:false};
  const rows=options.rows===undefined?[["ID","Nombre","Ambito","PorcentajePonderacion","EscalaID","Estado"],
   ["CAT-X","Evaluación continua","Global",25,"100","Activo"]]:options.rows;
  const sheet=rows===null?null:{getDataRange(){return {getValues:()=>rows.map(r=>r.slice())};}};
- const ss={getSheetByName(name){return name==="CategoriasEvaluacion"?sheet:null;}};
+ const ownershipRows=options.ownershipRows===undefined?[]:options.ownershipRows;
+ const ownershipSheet=options.missingOwnership?null:{getDataRange(){return {getValues:()=>ownershipRows.map(r=>r.slice())};}};
+ const ss={getSheetByName(name){return name==="CategoriasEvaluacion"?sheet:(name==="ResourceOwnership"?ownershipSheet:null);}};
  const sandbox={SPREADSHEET_ID:"SHEET-1",
   LockService:{getScriptLock(){return {tryLock(){state.locks++;if(options.timeout)return false;if(state.held)return false;state.held=true;return true;},
    releaseLock(){state.releases++;state.held=false;}};}},
@@ -45,6 +47,11 @@ test("lock timeout fails closed without opening spreadsheet",()=>{const x=fixtur
 test("nested concurrent metadata read is rejected while lock is held",()=>{let x;let nested=false;x=fixture({duringScope(){denied(()=>x.call(),/EXAM_METADATA_READ_LOCK_TIMEOUT/);nested=true;}});x.call();assert.ok(nested);assert.equal(x.state.releases,1);assert.equal(x.state.held,false);});
 test("schema mismatch fails closed and releases lock",()=>{const x=fixture({rows:[["wrong","Nombre","Ambito","PorcentajePonderacion","EscalaID","Estado"],["CAT-1","Test","Global",10,"100","Activo"]]});denied(()=>x.call(),/EVALUATION_CATEGORIES_SCHEMA_INVALID/);assert.equal(x.state.releases,1);});
 test("read path does not expose any sheet mutation API",()=>{const x=fixture();x.call();assert.equal(x.state.held,false);assert.equal(x.state.releases,1);});
+test("owned category is visible only in its institution and department",()=>{const ownership=[["OwnershipID","InstitutionID","ResourceType","ResourceID","DepartmentID","Status","RegisteredBy","CreatedAt","UpdatedAt"],["OWN-1","INST-1","CATEGORIA_EVALUACION","CAT-X","DEPT-1","ACTIVE","USR-1","",""]];const x=fixture({ownershipRows:ownership});assert.equal(x.call().data.length,1);assert.equal(x.call().data[0].categoriaId,"CAT-X");});
+test("owned category is hidden from another institution",()=>{const ownership=[["OwnershipID","InstitutionID","ResourceType","ResourceID","DepartmentID","Status","RegisteredBy","CreatedAt","UpdatedAt"],["OWN-1","INST-2","CATEGORIA_EVALUACION","CAT-X","DEPT-2","ACTIVE","USR-2","",""]];const x=fixture({ownershipRows:ownership});assert.equal(x.call().data.length,0);});
+test("owned category is hidden from another department",()=>{const ownership=[["OwnershipID","InstitutionID","ResourceType","ResourceID","DepartmentID","Status","RegisteredBy","CreatedAt","UpdatedAt"],["OWN-1","INST-1","CATEGORIA_EVALUACION","CAT-X","DEPT-2","ACTIVE","USR-2","",""]];const x=fixture({ownershipRows:ownership});assert.equal(x.call().data.length,0);});
+test("ambiguous ownership records hide the category",()=>{const h=["OwnershipID","InstitutionID","ResourceType","ResourceID","DepartmentID","Status","RegisteredBy","CreatedAt","UpdatedAt"];const ownership=[h,["OWN-1","INST-1","CATEGORIA_EVALUACION","CAT-X","DEPT-1","ACTIVE","USR-1","",""],["OWN-2","INST-1","CATEGORIA_EVALUACION","CAT-X","DEPT-1","ACTIVE","USR-1","",""]];const x=fixture({ownershipRows:ownership});assert.equal(x.call().data.length,0);});
+test("invalid ownership schema fails closed",()=>{const x=fixture({ownershipRows:[["bad"],["x"]]});denied(()=>x.call(),/RESOURCE_OWNERSHIP_SCHEMA_INVALID/);});
 test("public action allowlist no longer contains getEvaluationCategories",()=>{const block=source.match(/const PUBLIC_ACTIONS = \[([\s\S]*?)\];/);assert.ok(block);assert.ok(!block[1].includes("getEvaluationCategories"));});
 const failed=cases.filter(x=>!x.ok);if(failed.length){for(const c of failed)process.stdout.write("FAIL "+c.name+": "+c.error+"\n");throw Error(failed.length+" test(s) failed");}
 process.stdout.write("exam-service-evaluation-categories-security: PASS ("+cases.length+" scenarios)\n");
