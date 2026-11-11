@@ -703,26 +703,34 @@ function getQuestionBankUnlocked_(payload, context) {
 }
 function createExam(p) {
   p = p && typeof p === "object" && !Array.isArray(p) ? p : {};
+  return withAuthorizedExamCreation_(p, context => createExamUnlocked_(p, context));
+}
+function withAuthorizedExamCreation_(p, mutation) {
   const permission = validateRolePermission("createExam", p);
   if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
   const actor = getVerifiedExamIdentity_(p);
-  if (!actor || actor.authorized !== true || !String(actor.userId || "").trim()) {
-    throw new Error("RESOURCE_NOT_AVAILABLE");
+  if (!actor || actor.authorized !== true || !String(actor.userId || "").trim()) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) throw new Error("EXAM_CREATE_LOCK_TIMEOUT");
+  try {
+    const lockedPermission = validateRolePermission("createExam", p);
+    if (!lockedPermission || lockedPermission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+    const lockedActor = getVerifiedExamIdentity_(p);
+    if (!lockedActor || lockedActor.authorized !== true || !String(lockedActor.userId || "").trim()) throw new Error("RESOURCE_NOT_AVAILABLE");
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const scope = getVerifiedExamDepartmentScope_(p, ss, lockedActor);
+    if (!scope || scope.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+    const requestedDepartmentId = String(p.departmentId || p.departamentoId || "").trim();
+    const departmentId = requestedDepartmentId || ((scope.departmentIds || []).length === 1 ? String(scope.departmentIds[0] || "").trim() : "");
+    const departmentAllowed = !!departmentId && (scope.departmentIds || []).some(value => String(value || "").trim() === departmentId);
+    if (!departmentAllowed) throw new Error("RESOURCE_SCOPE_DENIED");
+    return mutation({ ss, scope, actor: lockedActor, departmentId });
+  } finally {
+    try { lock.releaseLock(); } catch (_) {}
   }
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const scope = getVerifiedExamDepartmentScope_(p, ss, actor);
-  if (!scope.authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
-
-  const requestedDepartmentId = String(p.departmentId || p.departamentoId || "").trim();
-  const departmentId = requestedDepartmentId || ((scope.departmentIds || []).length === 1
-    ? String(scope.departmentIds[0] || "").trim() : "");
-  const departmentAllowed = !!departmentId && (scope.departmentIds || []).some(value =>
-    String(value || "").trim() === departmentId);
-  // Incluso los ámbitos institucionales deben seleccionar un departamento que
-  // figure explícitamente entre los departamentos autorizados del actor.
-  if (!departmentAllowed) throw new Error("RESOURCE_SCOPE_DENIED");
-
+}
+function createExamUnlocked_(p, context) {
+  const { ss, scope, actor, departmentId } = context;
   const examenes = getSheetOrThrow(ss, "Examenes");
   const preguntas = getSheetOrThrow(ss, "PreguntasExamen");
   const ownership = getSheetOrThrow(ss, "ResourceOwnership");
@@ -736,9 +744,6 @@ function createExam(p) {
     `PRE-${Date.now()}-${i}`, "", q && q.preguntaTipo, q && q.textoPregunta,
     JSON.stringify((q && q.opciones) || {}), q && q.respuestaCorrecta
   ]);
-  const lock = LockService.getScriptLock();
-  if (!lock.tryLock(5000)) throw new Error("EXAM_CREATE_LOCK_TIMEOUT");
-
   let examenId = "";
   let ownershipId = "";
   try {
@@ -791,8 +796,6 @@ function createExam(p) {
     }
     if (rollbackFailed) throw new Error("EXAM_CREATE_ROLLBACK_FAILED");
     throw error;
-  } finally {
-    try { lock.releaseLock(); } catch (_) {}
   }
 }
 

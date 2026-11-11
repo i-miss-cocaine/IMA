@@ -681,12 +681,12 @@ La implementación local de TASK-068 quedó Completada en C1.363 (rama NG_beta_0
 ===============================================================================
 ## BETA-EXAM-060 — TASK-153 / AUD-NG-386 / EXAM: createExam
 - **Módulo/rol:** Servicio EXAM; Profesor y roles autorizados por la matriz RBAC.
-- **Objetivo:** verificar que la creación de exámenes exige permiso efectivo para createExam, identidad firmada, scope institucional/departamental y departamento autorizado; confirmar persistencia coordinada de examen, ownership y preguntas.
-- **Precondiciones:** versión beta desplegada; sesión firmada válida; actor con permiso createExam y departamento D1 autorizado; hojas Examenes, PreguntasExamen y ResourceOwnership con esquema vigente.
-- **Pasos:** probar permiso denegado con token válido, identidad inválida, scope ausente, departamento ajeno, lock ocupado, esquema ownership inválido, creación positiva con preguntas y fallos inducidos en cada escritura incluyendo append que persiste antes de reportar error.
-- **Resultado esperado:** sin permiso no se abre ni modifica el spreadsheet; sin identidad/scope no se escribe; creación positiva registra examen, ownership y preguntas relacionados; ante fallo capturable se eliminan todas las filas parciales y se libera el lock; errores de rollback se informan explícitamente.
-- **Estado:** Pendiente beta; Apps Script/Sheets real NOT RUN. Contrato local aislado 10/10 PASS (Node 22) sobre la función createExam; parseo del archivo completo y estado del workflow de push no verificados en esta ejecución.
-- **Evidencia requerida:** rol/permiso, scope y departamento, snapshots antes/después de las tres hojas, IDs relacionados, respuesta de creación, errores simulados, liberación del lock y logs sin datos sensibles.
+- **Objetivo:** verificar permiso efectivo, identidad firmada, scope institucional/departamental y departamento autorizado, incluyendo revocación del permiso o pérdida de userId entre preflight y revalidación bajo ScriptLock.
+- **Precondiciones:** versión beta desplegada; sesión firmada válida; actor con permiso createExam y departamento D1 autorizado; hojas Examenes, PreguntasExamen y ResourceOwnership con esquema vigente; mecanismo controlado para variar la respuesta RBAC/identidad en la segunda comprobación.
+- **Pasos:** probar permiso denegado en preflight; identidad inválida o incompleta en preflight; permiso revocado bajo lock; userId vacío/espacios bajo lock; scope ausente; departamento ajeno; lock ocupado; esquema ownership inválido; creación positiva con preguntas; y fallos inducidos en cada escritura, incluyendo append que persiste antes de reportar error.
+- **Resultado esperado:** denegaciones de preflight no adquieren lock ni abren Sheets; cambios de RBAC/identidad bajo lock producen RESOURCE_NOT_AVAILABLE, liberan lock y no abren Sheets ni alteran las tres hojas; creación positiva registra examen, ownership y preguntas relacionados; ante fallo capturable se eliminan todas las filas parciales y se libera el lock; errores de rollback se informan explícitamente.
+- **Estado:** Pendiente beta; Apps Script/Sheets real NOT RUN. La cobertura local C1.553 es 14/14 PASS en V8 aislada con shims; Node 22/CI para este commit no ejecutado.
+- **Evidencia requerida:** commit desplegado, secuencia de RBAC/identidad/lock/Sheets, scope/departamento, snapshots antes/después de las tres hojas, IDs relacionados, respuesta de creación, errores simulados, liberación del lock y logs sin datos sensibles.
 ===============================================================================
 
 ===============================================================================

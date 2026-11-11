@@ -4045,3 +4045,10 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Verificación local:** parseo V8 de Code.gs y suite PASS; suite completa 28 escenarios PASS en aislamiento V8 con shims.
 - **Node 22/CI de esta revisión:** NOT RUN. El workflow 43045163554 SUCCESS es de una revisión anterior. Apps Script/Sheets real NOT RUN.
 - **Estado:** cobertura local completada; sin cambios productivos, permisos, roles, scope ni persistencia. TASK-153 / AUD-NG-386 continúa En ejecución.
+
+
+### 10.205 TASK-153 / AUD-NG-386 — revalidar RBAC e identidad de createExam bajo ScriptLock (C1.553)
+- **Hallazgo:** createExam comprobaba RBAC e identidad antes de adquirir ScriptLock, pero no repetía ambas comprobaciones dentro del lock; scope/departamento y acceso a Sheets también se resolvían antes de proteger la mutación. Una revocación de permiso o pérdida de userId entre ambas fases no tenía cobertura.
+- **Cambio:** createExam ahora ejecuta preflight RBAC/identidad, adquiere el lock compartido, revalida RBAC/identidad y solo entonces abre Sheets y resuelve scope/departamento. La persistencia y el rollback de examen, ownership y preguntas permanecen dentro de la sección protegida. Se amplió la suite dedicada con escenarios de pérdida de identidad y revocación RBAC bajo lock; BETA-EXAM-060 documenta la validación desplegada.
+- **Verificación local:** parseo V8 de Code.gs y suite: PASS; suite dedicada 14/14 PASS en V8 aislada con shims. Node 22/CI para este commit NOT RUN. Apps Script/Sheets real NOT RUN.
+- **Estado:** cobertura local completada; no se alteran matriz RBAC, roles, scope permitido ni esquema de persistencia. TASK-153 / AUD-NG-386 continúa En ejecución.

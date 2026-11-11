@@ -48,7 +48,7 @@ function makeSheet(rows, options = {}) {
   };
 }
 function fixture(options = {}) {
-  const stats = { permissionCalls: 0, action: "", acquired: 0, released: 0, opened: 0, held: false };
+  const stats = { permissionCalls: 0, action: "", acquired: 0, released: 0, opened: 0, held: false, events: [] };
   const sheets = {
     Examenes: makeSheet([["ID","Titulo","Asignatura","Grado","Seccion","FechaLimite","Tiempo","Estado","ProfesorID","Parcial"]], { failAppend: options.failExamAppend }),
     PreguntasExamen: makeSheet([["ID","ExamenID","Tipo","Texto","Opciones","Respuesta"]], { failWrite: options.failQuestionWrite }),
@@ -57,23 +57,19 @@ function fixture(options = {}) {
   let uuid = 0;
   const runtime = {
     SPREADSHEET_ID: "TEST",
-    validateRolePermission(action) { stats.permissionCalls++; stats.action = action; return { authorized: options.permissionDenied !== true }; },
-    getVerifiedExamIdentity_() {
-      if (options.invalidIdentity) return { authorized: false, userId: "P1", role: "Profesor" };
-      if (options.actor !== undefined) return options.actor;
-      return { authorized: true, userId: "P1", role: "Profesor" };
-    },
-    getVerifiedExamDepartmentScope_() { return options.invalidScope ? { authorized: false } : { authorized: true, institutionId: "I1", departmentIds: ["D1"] }; },
-    SpreadsheetApp: { openById() { stats.opened++; return { getSheetByName: name => sheets[name] || null }; } },
+    validateRolePermission(action) { stats.events.push("rbac"); stats.permissionCalls++; stats.action = action; const allowed = Array.isArray(options.permissions) ? options.permissions.shift() : options.permissionDenied !== true; return { authorized: allowed !== false }; },
+    getVerifiedExamIdentity_() { stats.events.push("identity"); if (Array.isArray(options.actors)) return options.actors.shift(); if (options.invalidIdentity) return { authorized: false, userId: "P1", role: "Profesor" }; if (options.actor !== undefined) return options.actor; return { authorized: true, userId: "P1", role: "Profesor" }; },
+    getVerifiedExamDepartmentScope_() { stats.events.push("scope"); return options.invalidScope ? { authorized: false } : { authorized: true, institutionId: "I1", departmentIds: ["D1"] }; },
+    SpreadsheetApp: { openById() { stats.events.push("sheets"); stats.opened++; return { getSheetByName: name => sheets[name] || null }; } },
     getSheetOrThrow(ss, name) { const sheet = ss.getSheetByName(name); if (!sheet) throw new Error("missing " + name); return sheet; },
     LockService: { getScriptLock: () => ({
-      tryLock() { stats.acquired++; if (options.lockTimeout || stats.held) return false; stats.held = true; return true; },
+      tryLock() { stats.events.push("lock"); stats.acquired++; if (options.lockTimeout || stats.held) return false; stats.held = true; return true; },
       releaseLock() { stats.released++; stats.held = false; }
     })},
     Utilities: { getUuid() { uuid++; return "UUID-" + uuid; } },
     Date
   };
-  vm.runInNewContext(extract("createExam"), runtime);
+  vm.runInNewContext(extract("withAuthorizedExamCreation_") + "\n" + extract("createExamUnlocked_") + "\n" + extract("createExam"), runtime);
   return { runtime, sheets, stats, call(payload = {}) { return runtime.createExam(Object.assign({
     sessionToken: "signed", departmentId: "D1", titulo: "Evaluación", asignatura: "Matemáticas",
     gradoAsignado: "10", seccionAsignada: "A", fechaLimite: "2026-11-20",
@@ -86,7 +82,8 @@ test(() => {
   const x = fixture(), result = x.call();
   assert.equal(result.status, "success");
   assert.equal(x.stats.action, "createExam");
-  assert.equal(x.stats.permissionCalls, 1);
+  assert.equal(x.stats.permissionCalls, 2);
+  assert.deepEqual(x.stats.events, ["rbac","identity","lock","rbac","identity","sheets","scope"]);
   assert.equal(x.sheets.Examenes.rows.length, 2);
   assert.equal(x.sheets.ResourceOwnership.rows.length, 2);
   assert.equal(x.sheets.PreguntasExamen.rows.length, 2);
@@ -98,11 +95,24 @@ test(() => { const x=fixture({permissionDenied:true}); assert.throws(()=>x.call(
 test(() => { const x=fixture({invalidIdentity:true}); assert.throws(()=>x.call(),/RESOURCE_NOT_AVAILABLE/); assert.equal(x.stats.opened,0); });
 test(() => { const x=fixture({actor:{authorized:true,role:"Profesor"}}); assert.throws(()=>x.call(),/RESOURCE_NOT_AVAILABLE/); assert.equal(x.stats.opened,0); assert.equal(x.stats.acquired,0); });
 test(() => { const x=fixture({actor:{authorized:true,userId:" ",role:"Profesor"}}); assert.throws(()=>x.call(),/RESOURCE_NOT_AVAILABLE/); assert.equal(x.stats.opened,0); assert.equal(x.stats.acquired,0); });
-test(() => { const x=fixture({invalidScope:true}); assert.throws(()=>x.call(),/RESOURCE_NOT_AVAILABLE/); assert.equal(x.stats.acquired,0); });
+test(() => { const x=fixture({invalidScope:true}); assert.throws(()=>x.call(),/RESOURCE_NOT_AVAILABLE/); assert.deepEqual([x.stats.acquired,x.stats.released,x.stats.held,x.stats.opened],[1,1,false,1]); });
 test(() => { const x=fixture({lockTimeout:true}); assert.throws(()=>x.call(),/EXAM_CREATE_LOCK_TIMEOUT/); assert.equal(x.sheets.Examenes.rows.length,1); assert.equal(x.sheets.ResourceOwnership.rows.length,1); });
 test(() => { const x=fixture({failOwnershipAppendAfterWrite:true}); assert.throws(()=>x.call(),/append persisted then failed/); assert.equal(x.sheets.ResourceOwnership.rows.length,1); assert.equal(x.sheets.Examenes.rows.length,1); assert.deepEqual([x.stats.acquired,x.stats.released,x.stats.held],[1,1,false]); });
 test(() => { const x=fixture({failExamAppend:true}); assert.throws(()=>x.call(),/append failed/); assert.equal(x.sheets.Examenes.rows.length,1); assert.equal(x.sheets.ResourceOwnership.rows.length,1); assert.equal(x.sheets.PreguntasExamen.rows.length,1); });
 test(() => { const x=fixture({failQuestionWrite:true}); assert.throws(()=>x.call(),/write failed/); assert.equal(x.sheets.Examenes.rows.length,1); assert.equal(x.sheets.ResourceOwnership.rows.length,1); assert.equal(x.sheets.PreguntasExamen.rows.length,1); });
-test(() => { const x=fixture(); assert.throws(()=>x.call({departmentId:"D2"}),/RESOURCE_SCOPE_DENIED/); assert.equal(x.stats.acquired,0); });
-test(() => { const x=fixture(); x.sheets.ResourceOwnership.rows[0]=["wrong"]; assert.throws(()=>x.call(),/RESOURCE_OWNERSHIP_SCHEMA_INVALID/); assert.equal(x.stats.acquired,0); });
+test(() => { const x=fixture(); assert.throws(()=>x.call({departmentId:"D2"}),/RESOURCE_SCOPE_DENIED/); assert.deepEqual([x.stats.acquired,x.stats.released,x.stats.held],[1,1,false]); });
+test(() => { const x=fixture(); x.sheets.ResourceOwnership.rows[0]=["wrong"]; assert.throws(()=>x.call(),/RESOURCE_OWNERSHIP_SCHEMA_INVALID/); assert.deepEqual([x.stats.acquired,x.stats.released,x.stats.held],[1,1,false]); });
+test(() => {
+ const x=fixture({actors:[{authorized:true,userId:"P1",role:"Profesor"},{authorized:true,userId:"   ",role:"Profesor"}]});
+ assert.throws(()=>x.call(),/RESOURCE_NOT_AVAILABLE/);
+ assert.deepEqual(x.stats.events,["rbac","identity","lock","rbac","identity"]);
+ assert.deepEqual([x.stats.acquired,x.stats.released,x.stats.held,x.stats.opened],[1,1,false,0]);
+ assert.deepEqual([x.sheets.Examenes.rows.length,x.sheets.PreguntasExamen.rows.length,x.sheets.ResourceOwnership.rows.length],[1,1,1]);
+});
+test(() => {
+ const x=fixture({permissions:[true,false]});
+ assert.throws(()=>x.call(),/RESOURCE_NOT_AVAILABLE/);
+ assert.deepEqual(x.stats.events,["rbac","identity","lock","rbac"]);
+ assert.deepEqual([x.stats.acquired,x.stats.released,x.stats.held,x.stats.opened],[1,1,false,0]);
+});
 console.log("exam-service-create-exam-security: " + scenarios + "/" + scenarios + " PASS");
