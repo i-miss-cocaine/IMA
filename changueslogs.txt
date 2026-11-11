@@ -1397,5 +1397,5 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-11] C1.507 — IMA-EXEC-20261110-1825Z-02 — EXAM: autorización RBAC de createExam
 - createExam ahora valida validateRolePermission("createExam", payload) dentro del endpoint antes de abrir el spreadsheet o tomar el lock; evita depender exclusivamente del control externo de doPost.
 - Se conserva la validación de identidad firmada, scope departamental, ownership y compensación de escrituras parciales.
-- Se añade contrato local de seguridad y se integra al workflow dedicado; BETA-EXAM-060 Pendiente beta.
+- Se añade contrato local de seguridad y se integra al workflow dedicado; contrato aislado local 10/10 PASS (Node 22); parseo completo/estado CI de push no verificados; BETA-EXAM-060 Pendiente beta.
 ===============================================================================
