@@ -817,6 +817,13 @@ function getAuthorizedExamMutationContext_(payload, action, requestedExamId) {
 }
 
 function withAuthorizedExamMutation_(payload, action, mutation) {
+  // Rechazar RBAC e identidad inválidos antes de competir por el lock compartido.
+  // El contexto completo se revalida dentro del lock para evitar TOCTOU.
+  const permission = validateRolePermission(action, payload);
+  if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const actor = getVerifiedExamIdentity_(payload);
+  if (!actor || actor.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(5000)) throw new Error("EXAM_MUTATION_LOCK_TIMEOUT");
   try {
