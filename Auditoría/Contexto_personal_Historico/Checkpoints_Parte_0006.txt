@@ -425,3 +425,13 @@ Subalcance copyEvaluationSetupBetweenGroups corregido. TASK-153 / AUD-NG-386 con
 Siguiente acción: inspeccionar el siguiente wrapper mutador pendiente; no repetir este wrapper.
 HEAD final: pendiente de confirmar tras publicar.
 ===============================================================================
+
+
+### ADDENDUM FINAL DE CI — C1.521
+- GitHub Actions workflow `43045163554`: **completed / success** sobre el commit de implementación y pruebas `285b30755ec1d5b0b5cf99cdb5942d5bc1ec8a87`.
+- Job `exam-security-contracts`: SUCCESS; step `Run evaluation setup copy security regression`: SUCCESS en Node 22; los demás steps del workflow también SUCCESS.
+- Suite local V8 compatible: 27/27 PASS; parseo completo de Code.gs y suite PASS; incluye reentrada concurrente determinista y rollback.
+- Apps Script/Sheets real: NOT RUN. BETA-EXAM-059 permanece Pendiente beta.
+- HEAD de implementación/pruebas probado por CI: `285b30755ec1d5b0b5cf99cdb5942d5bc1ec8a87`; los commits posteriores son exclusivamente cierre documental.
+- HEAD final de rama y estado de base se verifican tras publicar el cierre documental; no se duplica el SHA del propio checkpoint en su contenido.
+===============================================================================

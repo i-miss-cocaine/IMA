@@ -1713,3 +1713,10 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Corrección:** preflight del permiso específico, actor autorizado, userId no vacío y rol Profesor antes del lock; el contexto interno vuelve a validar RBAC, identidad, ámbito, asignaciones y ownership dentro del lock.
 - **Cobertura local:** suite dedicada ampliada a 27 escenarios; denegación pre-lock sin apertura de Sheets, doble validación RBAC/identidad, identidad incompleta/no autorizada/rol incorrecto, reentrada concurrente y rollback.
 - **CI:** pendiente de ejecución/verificación. Apps Script/Sheets real NOT RUN; BETA-EXAM-059 permanece Pendiente beta.
+
+
+### ADDENDUM FINAL DE CI — C1.521 / copyEvaluationSetupBetweenGroups
+- GitHub Actions workflow `43045163554`: **completed / success** sobre el commit de implementación y pruebas `285b30755ec1d5b0b5cf99cdb5942d5bc1ec8a87`.
+- Job `exam-security-contracts`: SUCCESS; step `Run evaluation setup copy security regression`: SUCCESS en Node 22; todos los demás contratos del workflow también SUCCESS.
+- Suite local V8 compatible: 27/27 PASS; parseo completo de Code.gs y suite PASS. Reentrada concurrente determinista y rollback compensatorio incluidos.
+- Apps Script/Sheets real NOT RUN. BETA-EXAM-059 permanece Pendiente beta.

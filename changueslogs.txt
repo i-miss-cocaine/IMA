@@ -1594,3 +1594,12 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - El contexto de mutación conserva la revalidación bajo lock de RBAC, identidad, scope, asignaciones, ownership y esquema; rollback compensatorio sin cambios.
 - Suite local dedicada ampliada a 27 escenarios; parseo Code.gs y contrato PASS. CI Node 22 pendiente; Apps Script/Sheets real NOT RUN. BETA-EXAM-059 actualizado.
 ===============================================================================
+
+
+===============================================================================
+[2026-11-11] Verificación CI C1.521 — workflow 43045163554 PASS
+- HEAD de implementación y pruebas: 285b30755ec1d5b0b5cf99cdb5942d5bc1ec8a87.
+- Job exam-security-contracts completed/success; Run evaluation setup copy security regression SUCCESS en Node 22; restantes pasos del workflow SUCCESS.
+- Suite local dedicada: 27/27 PASS; parseo Code.gs PASS.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-059 sigue Pendiente beta.
+===============================================================================
