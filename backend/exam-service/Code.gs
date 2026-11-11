@@ -933,7 +933,7 @@ function gradeExamSubmission(payload) {
     const score = typeof rawScore === "number" ? rawScore :
       (typeof rawScore === "string" && rawScore.trim() ? Number(rawScore) : NaN);
     if (!Number.isFinite(score) || score < 0 || score > 100 ||
-        Math.round(score * 100) / 100 !== score) {
+        Math.abs(score * 100 - Math.round(score * 100)) > 1e-8) {
       throw new Error("EXAM_GRADE_INVALID");
     }
     const estado = typeof p.estado === "string" ? p.estado.trim() : "";
